@@ -2,6 +2,7 @@ module Desugar where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), (\\), head)
+import Data.List.NonEmpty (NonEmptyList)
 import Data.Map (fromFoldable, singleton, toUnfoldable) as M
 import Data.Tuple (fst)
 import DataType (Ctr, DataType'(..), ctrToDataType, cCons, cNil, cTrue, cFalse)
@@ -30,7 +31,8 @@ data Pattern =
    PVar Var |
    PConstr Ctr (List Pattern)
 
-type Branch = Pattern × Expr 𝔹
+type Branch a = Pattern × Expr a
+type SRecDefs a = NonEmptyList (Var × Branch a)
 
 data Predicate =
    Guard SExpr |

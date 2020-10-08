@@ -167,7 +167,7 @@ recDefs expr' = do
    let fπss = groupBy (eq `on` fst) fπs
    pure $ fromList $ reverse $ toRecDef <$> fπss
    where
-   toRecDef :: NonEmptyList (String × Pattern) -> Binding Elim 𝔹
+   toRecDef :: NonEmptyList (Var × Pattern) -> Binding Elim 𝔹
    toRecDef fπs =
       let f = fst $ head fπs in
       f ↦ successfulWith ("Bad branches for '" <> f <> "'") (joinAll $ snd <$> fπs)
