@@ -12,7 +12,7 @@ import DataType (DataType, Ctr, arity, dataTypeFor)
 import Desugar (Pattern(..)) as D
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), Var, expr)
 import Lattice (𝔹)
-import Util (MayFail, (≞), (=<<<), absurd, error, om, report, with)
+import Util (Endo, MayFail, (≞), (=<<<), absurd, error, om, report, with)
 
 data PCont =
    PNone |              -- intermediate state during construction, but also for structured let
@@ -46,8 +46,8 @@ toElim2 (D.PVar x) κ       = pure $ ElimVar x κ
 toElim2 (D.PConstr c πs) κ = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont2 πs κ)
 
 class MapCont a where
-   -- replace a None continuation by a non-None one
-   setCont :: PCont -> a -> a
+   -- replace None continuation by non-None
+   setCont :: PCont -> Endo a
 
 instance setContPCont :: MapCont PCont where
    setCont κ PNone         = κ
