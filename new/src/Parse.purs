@@ -26,8 +26,8 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Binding, (↦), fromList)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
-import Desugar (Branch)
-import Desugar (Expr, Pattern(..)) as S
+import Desugar (Branch, Clause)
+import Desugar (Expr, Pattern(..), RecDefs) as S
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDefs, Var, VarDef(..), VarDefs, expr)
 import Lattice (𝔹)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
@@ -158,15 +158,12 @@ patternOne curried expr' delim = pattern' >>= rest
    body = PBody <$> (delim *> expr')
 
 branch :: Boolean -> SParser (S.Expr 𝔹) -> SParser Unit -> SParser (Branch 𝔹)
-branch curried expr' delim =
-   if curried then do
-      πs <- many $ simplePattern2 pattern2
-      e <- delim *> expr'
-      pure $ πs × e
-   else do
-      π <- pattern2
-      e <- delim *> expr'
-      pure $ NonEmptyList (π :| Nil) × e
+branch curried expr' delim = do
+   πs <- if curried
+         then many $ simplePattern2 pattern2
+         else NonEmptyList <$> pattern2 `lift2 (:|)` pure Nil
+   e <- delim *> expr'
+   pure $ πs × e
 
 varDefs :: SParser (Expr 𝔹) -> SParser (VarDefs 𝔹)
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
@@ -187,6 +184,12 @@ recDefs expr' = do
 
    clause :: SParser (Var × Pattern)
    clause = ident `lift2 (×)` (patternOne true expr' equals)
+
+recDefs2 :: SParser (S.Expr 𝔹) -> SParser (S.RecDefs 𝔹)
+recDefs2 expr' = error "todo"
+   where
+   clause :: SParser (Clause 𝔹)
+   clause = ident `lift2 (×)` (branch true expr' equals)
 
 defs :: SParser (Expr 𝔹) -> SParser (List (VarDef 𝔹 + RecDefs 𝔹))
 defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr')

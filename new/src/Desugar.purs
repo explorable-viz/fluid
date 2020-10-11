@@ -32,7 +32,8 @@ data Pattern =
    PConstr Ctr (List Pattern)
 
 type Branch a = NonEmptyList Pattern × Expr a
-type SRecDefs a = NonEmptyList (Var × Branch a)
+type Clause a = Var × Branch a
+type RecDefs a = NonEmptyList (Clause a)
 
 data Predicate a =
    Guard (Expr a) |
