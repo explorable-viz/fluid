@@ -10,7 +10,8 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
 import DataType (dataTypeFor, typeName)
-import Desugar (SExpr, desugar)
+import Desugar (Expr) as S
+import Desugar (desugar)
 import Expr (Expr)
 import Eval (eval)
 import Fwd (eval_fwd)
@@ -58,7 +59,7 @@ testWithDataset dataset file =
       bitraverse (uncurry openDatasetAs) openWithImports (dataset × "data" × file) <#>
       (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)
 
-desugarTest :: String -> SExpr -> String -> SpecT Aff Unit Effect Unit
+desugarTest :: String -> S.Expr 𝔹 -> String -> SpecT Aff Unit Effect Unit
 desugarTest name s expected =
    before (loadModule "prelude" primitives) $
       it name $ \ρ ->

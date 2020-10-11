@@ -6,98 +6,98 @@ import Data.List.NonEmpty (NonEmptyList)
 import Data.Map (fromFoldable, singleton, toUnfoldable) as M
 import Data.Tuple (fst)
 import DataType (Ctr, DataType'(..), ctrToDataType, cCons, cNil, cTrue, cFalse)
-import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), Var, expr)
-import Expr (RawExpr(..)) as E
-import Lattice (𝔹)
+import Expr (Cont(..), Elim(..), VarDef(..), Var)
+import Expr (Expr(..), RecDefs, RawExpr(..), expr) as E
+import Lattice (𝔹, class BoundedJoinSemilattice, bot)
 import Util (type (×), (×), absurd, error, fromJust, mustLookup)
 
-data RawSExpr =
+data RawExpr a =
    Var Var |
    Op Var |
    Int Int |
    Str String |
-   Constr Ctr (List SExpr) |
-   Lambda (Elim 𝔹) |
-   App SExpr SExpr |
-   BinaryApp SExpr Var SExpr |
-   MatchAs SExpr (Elim 𝔹) |
-   IfElse SExpr SExpr SExpr |
-   ListSeq SExpr SExpr |
-   ListComp SExpr (List Predicate) |
-   Let (VarDef 𝔹) SExpr |
-   LetRec (RecDefs 𝔹) SExpr
+   Constr Ctr (List (Expr a)) |
+   Lambda (Elim a) |
+   App (Expr a) (Expr a) |
+   BinaryApp (Expr a) Var (Expr a) |
+   MatchAs (Expr a) (Elim a) |
+   IfElse (Expr a) (Expr a) (Expr a) |
+   ListSeq (Expr a) (Expr a) |
+   ListComp (Expr a) (List (Predicate a)) |
+   Let (VarDef a) (Expr a) |
+   LetRec (E.RecDefs a) (Expr a)
 
 data Pattern =
    PVar Var |
    PConstr Ctr (List Pattern)
 
-type Branch a = Pattern × Expr a
+type Branch a = NonEmptyList Pattern × Expr a
 type SRecDefs a = NonEmptyList (Var × Branch a)
 
-data Predicate =
-   Guard SExpr |
-   Generator Pattern SExpr |
-   Declaration Pattern SExpr
+data Predicate a =
+   Guard (Expr a) |
+   Generator Pattern (Expr a) |
+   Declaration Pattern (Expr a)
 
-data SExpr =
-   SExpr 𝔹 RawSExpr
+data Expr a =
+   Expr a (RawExpr a)
 
-sexpr :: RawSExpr -> SExpr
-sexpr = SExpr false
+expr :: forall a . BoundedJoinSemilattice a => RawExpr a -> Expr a
+expr = Expr bot
 
-eapp :: Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
-eapp f = expr <<< E.App f
+eapp :: E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
+eapp f = E.expr <<< E.App f
 
-enil :: Expr 𝔹
-enil = expr $ E.Constr cNil Nil
+enil :: E.Expr 𝔹
+enil = E.expr $ E.Constr cNil Nil
 
-evar :: Var -> Expr 𝔹
-evar = expr <<< E.Var
+evar :: Var -> E.Expr 𝔹
+evar = E.expr <<< E.Var
 
-desugar :: SExpr -> Expr 𝔹
-desugar (SExpr α (Int n)) = Expr α (E.Int n)
-desugar (SExpr α (IfElse s1 s2 s3))
+desugar :: Expr 𝔹 -> E.Expr 𝔹
+desugar (Expr α (Int n)) = E.Expr α (E.Int n)
+desugar (Expr α (IfElse s1 s2 s3))
     = let e1 = desugar s1
           e2 = desugar s2
           e3 = desugar s3
           σ = ElimConstr (M.fromFoldable [ cTrue  × Body e2
                                          , cFalse × Body e3])
-      in  Expr α (E.MatchAs e1 σ)
-desugar (SExpr α (ListSeq s1 s2))
+      in  E.Expr α (E.MatchAs e1 σ)
+desugar (Expr α (ListSeq s1 s2))
    = let e1 = desugar s1
          e2 = desugar s2
      in  eapp (eapp (evar "range") e1) e2
-desugar (SExpr α (ListComp s_body (Guard (SExpr _ (Constr cTrue Nil)) : Nil )))
-   = expr $ E.Constr cCons (desugar s_body : enil : Nil)
-desugar (SExpr α (ListComp s_body (q:Nil)))
-   = desugar (sexpr $ ListComp s_body (q : Guard (sexpr $ Constr cTrue Nil) : Nil))
-desugar (SExpr α (ListComp s_body (Guard s : qs)))
+desugar (Expr α (ListComp s_body (Guard (Expr _ (Constr cTrue Nil)) : Nil )))
+   = E.expr $ E.Constr cCons (desugar s_body : enil : Nil)
+desugar (Expr α (ListComp s_body (q:Nil)))
+   = desugar (expr $ ListComp s_body (q : Guard (expr $ Constr cTrue Nil) : Nil))
+desugar (Expr α (ListComp s_body (Guard s : qs)))
    =  let e = desugar s
-          σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar (SExpr α (ListComp s_body qs)))
+          σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar (Expr α (ListComp s_body qs)))
                                           , cFalse × Body enil])
-      in  expr $ E.MatchAs e σ
-desugar (SExpr α (ListComp s_body (Generator p slist : qs)))
+      in  E.expr $ E.MatchAs e σ
+desugar (Expr α (ListComp s_body (Generator p slist : qs)))
    =  let elist = desugar slist
-          erest = desugar (sexpr $ ListComp s_body qs)
-          λ     = expr $ E.Lambda (totalise (patternToElim p (Body erest)) enil)
+          erest = desugar (expr $ ListComp s_body qs)
+          λ     = E.expr $ E.Lambda (totalise (patternToElim p (Body erest)) enil)
       in  eapp (evar "concat") (eapp (eapp (evar "map") λ) elist)
-desugar (SExpr α (ListComp s_body (Declaration p s : qs)))
+desugar (Expr α (ListComp s_body (Declaration p s : qs)))
    =  let e     = desugar s
           σ     = patternToElim p None
-          erest = desugar (SExpr α (ListComp s_body qs))
-      in  expr $ E.Let (VarDef σ e) erest
-desugar (SExpr α (ListComp s_body _))
+          erest = desugar (Expr α (ListComp s_body qs))
+      in  E.expr $ E.Let (VarDef σ e) erest
+desugar (Expr α (ListComp s_body _))
    =  error absurd
-desugar (SExpr α (Var x))              = Expr α (E.Var x)
-desugar (SExpr α (Op op))              = Expr α (E.Op op)
-desugar (SExpr α (Str s))              = Expr α (E.Str s)
-desugar (SExpr α (Constr ctr args))    = Expr α (E.Constr ctr (map desugar args))
-desugar (SExpr α (Lambda σ))           = Expr α (E.Lambda σ)
-desugar (SExpr α (App s1 s2))          = Expr α (E.App (desugar s1) (desugar s2))
-desugar (SExpr α (BinaryApp s1 op s2)) = Expr α (E.BinaryApp (desugar s1) op (desugar s2))
-desugar (SExpr α (MatchAs s σ))        = Expr α (E.MatchAs (desugar s) σ)
-desugar (SExpr α (Let def s))          = Expr α (E.Let def (desugar s))
-desugar (SExpr α (LetRec δ s))         = Expr α (E.LetRec δ (desugar s))
+desugar (Expr α (Var x))              = E.Expr α (E.Var x)
+desugar (Expr α (Op op))              = E.Expr α (E.Op op)
+desugar (Expr α (Str s))              = E.Expr α (E.Str s)
+desugar (Expr α (Constr ctr args))    = E.Expr α (E.Constr ctr (map desugar args))
+desugar (Expr α (Lambda σ))           = E.Expr α (E.Lambda σ)
+desugar (Expr α (App s1 s2))          = E.Expr α (E.App (desugar s1) (desugar s2))
+desugar (Expr α (BinaryApp s1 op s2)) = E.Expr α (E.BinaryApp (desugar s1) op (desugar s2))
+desugar (Expr α (MatchAs s σ))        = E.Expr α (E.MatchAs (desugar s) σ)
+desugar (Expr α (Let def s))          = E.Expr α (E.Let def (desugar s))
+desugar (Expr α (LetRec δ s))         = E.Expr α (E.LetRec δ (desugar s))
 
 patternToElim :: Pattern -> Cont 𝔹 -> Elim 𝔹
 patternToElim (PVar x) κ
@@ -108,7 +108,7 @@ patternToElim (PConstr ctr ps) κ
          go Nil            = κ
      in  ElimConstr (M.singleton ctr (go ps))
 
-totalise :: Elim 𝔹 -> Expr 𝔹 -> Elim 𝔹
+totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e
    = let ctr × κ              = fromJust "" (head $ M.toUnfoldable m)
          branches             = M.toUnfoldable m

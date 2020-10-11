@@ -11,8 +11,9 @@ import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List(..), (:), concat, foldr, groupBy, reverse, singleton, snoc, sortBy)
-import Data.List.NonEmpty (NonEmptyList, head, toList)
+import Data.List.NonEmpty (NonEmptyList(..), head, toList)
 import Data.Map (values)
+import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst, snd)
@@ -25,13 +26,14 @@ import Text.Parsing.Parser.Token (
 )
 import Bindings (Binding, (↦), fromList)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
-import Desugar (Pattern(..)) as D
+import Desugar (Branch)
+import Desugar (Expr, Pattern(..)) as S
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDefs, Var, VarDef(..), VarDefs, expr)
 import Lattice (𝔹)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
 import Util (Endo, type (×), (×), type (+), error, onlyIf, successful, successfulWith)
-import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try)
+import Util.Parse (SParser, many, sepBy_try, sepBy1, sepBy1_try)
 
 -- constants (should also be used by prettyprinter)
 strArrow       = "->"      :: String
@@ -106,24 +108,24 @@ simplePattern pattern' =
          π' <- pattern'
          pure $ PattConstr cPair 2 $ PArg $ setCont (PArg π') π
 
-simplePattern2 :: Endo (SParser D.Pattern)
+simplePattern2 :: Endo (SParser S.Pattern)
 simplePattern2 pattern' =
    try ctr_pattern
 
    where
    -- Constructor name as a nullary constructor pattern.
-   ctr_pattern :: SParser D.Pattern
-   ctr_pattern = D.PConstr <$> ctr <@> Nil
+   ctr_pattern :: SParser S.Pattern
+   ctr_pattern = S.PConstr <$> ctr <@> Nil
 
-   var_pattern :: SParser D.Pattern
-   var_pattern = D.PVar <$> ident
+   var_pattern :: SParser S.Pattern
+   var_pattern = S.PVar <$> ident
 
-   pair_pattern :: SParser D.Pattern
+   pair_pattern :: SParser S.Pattern
    pair_pattern =
       token.parens $ do
          π <- pattern' <* token.comma
          π' <- pattern'
-         pure $ D.PConstr cPair (π : π' : Nil)
+         pure $ S.PConstr cPair (π : π' : Nil)
 
 arrow :: SParser Unit
 arrow = token.reservedOp strArrow
@@ -154,6 +156,17 @@ patternOne curried expr' delim = pattern' >>= rest
 
    pattern' = if curried then simplePattern pattern else pattern
    body = PBody <$> (delim *> expr')
+
+branch :: Boolean -> SParser (S.Expr 𝔹) -> SParser Unit -> SParser (Branch 𝔹)
+branch curried expr' delim =
+   if curried then do
+      πs <- many $ simplePattern2 pattern2
+      e <- delim *> expr'
+      pure $ πs × e
+   else do
+      π <- pattern2
+      e <- delim *> expr'
+      pure $ NonEmptyList (π :| Nil) × e
 
 varDefs :: SParser (Expr 𝔹) -> SParser (VarDefs 𝔹)
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
@@ -290,25 +303,25 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
       onlyIf (isCtrOp op' && op == op') \π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π
 
 -- Pattern with no continuation.
-pattern2 :: SParser D.Pattern
+pattern2 :: SParser S.Pattern
 pattern2 = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
-   appChain_pattern :: Endo (SParser D.Pattern)
+   appChain_pattern :: Endo (SParser S.Pattern)
    appChain_pattern pattern' = simplePattern2 pattern' >>= rest
       where
-         rest ∷ D.Pattern -> SParser D.Pattern
-         rest π@(D.PConstr c πs) = ctrArgs <|> pure π
+         rest ∷ S.Pattern -> SParser S.Pattern
+         rest π@(S.PConstr c πs) = ctrArgs <|> pure π
             where
-            ctrArgs :: SParser D.Pattern
-            ctrArgs = simplePattern2 pattern' >>= \π' -> rest $ D.PConstr c (πs `snoc` π')
-         rest π@(D.PVar _) = pure π
+            ctrArgs :: SParser S.Pattern
+            ctrArgs = simplePattern2 pattern' >>= \π' -> rest $ S.PConstr c (πs `snoc` π')
+         rest π@(S.PVar _) = pure π
 
-   infixCtr :: String -> SParser (D.Pattern -> D.Pattern -> D.Pattern)
+   infixCtr :: String -> SParser (S.Pattern -> S.Pattern -> S.Pattern)
    infixCtr op = do
       op' <- token.operator
-      onlyIf (isCtrOp op' && op == op') \π π' -> D.PConstr (Ctr op') (π' : π : Nil)
+      onlyIf (isCtrOp op' && op == op') \π π' -> S.PConstr (Ctr op') (π' : π : Nil)
 
 topLevel :: forall a . Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
