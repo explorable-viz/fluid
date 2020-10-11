@@ -186,7 +186,9 @@ recDefs expr' = do
    clause = ident `lift2 (×)` (patternOne true expr' equals)
 
 recDefs2 :: SParser (S.Expr 𝔹) -> SParser (S.RecDefs 𝔹)
-recDefs2 expr' = error "todo"
+recDefs2 expr' = do
+   fπs <- keyword strLet *> sepBy1_try clause token.semi
+   error "todo"
    where
    clause :: SParser (Clause 𝔹)
    clause = ident `lift2 (×)` (branch true expr' equals)
