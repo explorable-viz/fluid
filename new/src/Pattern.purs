@@ -9,10 +9,11 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
 import DataType (DataType, Ctr, arity, dataTypeFor)
+import Desugar (Branch)
 import Desugar (Pattern(..)) as D
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), Var, expr)
 import Lattice (𝔹)
-import Util (Endo, MayFail, (≞), (=<<<), absurd, error, om, report, with)
+import Util (Endo, MayFail, (×), (≞), (=<<<), absurd, error, om, report, with)
 
 data PCont =
    PNone |              -- intermediate state during construction, but also for structured let
@@ -44,6 +45,11 @@ toElim (PattConstr c n κ) = checkArity c n *> (ElimConstr <$> (singleton c <$> 
 toElim2 :: D.Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 toElim2 (D.PVar x) κ       = pure $ ElimVar x κ
 toElim2 (D.PConstr c πs) κ = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont2 πs κ)
+
+toElim_curried :: NonEmptyList D.Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
+toElim_curried (NonEmptyList (π :| Nil)) κ         = toElim2 π κ
+toElim_curried (NonEmptyList (π :| (π' : πs))) κ   =
+   toElim2 π =<< Body <$> expr <$> Lambda <$> toElim_curried (NonEmptyList $ π' :| πs) κ
 
 class MapCont a where
    -- replace None continuation by non-None
@@ -101,3 +107,6 @@ instance joinablePContCont :: Joinable PCont (Cont Boolean) where
 
 joinAll :: NonEmptyList Pattern -> MayFail (Elim 𝔹)
 joinAll (NonEmptyList (π :| πs)) = foldl (om $ maybeJoin) (toElim π) πs
+
+joinAll2 :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
+joinAll2 (NonEmptyList ((πs × e) :| bs)) = error "todo"
