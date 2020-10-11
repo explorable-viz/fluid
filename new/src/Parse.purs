@@ -136,9 +136,10 @@ equals = token.reservedOp strEquals
 patternDelim :: SParser Unit
 patternDelim = arrow <|> equals
 
--- "nest" controls whether nested (curried) functions are permitted in this context
+-- "curried" controls whether nested functions are permitted in this context
 elim :: Boolean -> SParser (Expr 𝔹) -> SParser (Elim 𝔹)
-elim curried expr' = successfulWith "Incompatible branches in match or lambda" <$> (joinAll <$> patterns)
+elim curried expr' =
+   successfulWith "Incompatible branches in match or lambda" <$> (joinAll <$> patterns)
    where
    patterns :: SParser (NonEmptyList Pattern)
    patterns = pure <$> patternOne curried expr' patternDelim <|> patternMany
@@ -164,6 +165,13 @@ branch curried expr' delim = do
          else NonEmptyList <$> pattern2 `lift2 (:|)` pure Nil
    e <- delim *> expr'
    pure $ πs × e
+
+branches :: Boolean -> SParser (S.Expr 𝔹) -> SParser (NonEmptyList (Branch 𝔹))
+branches curried expr' =
+   pure <$> branch curried expr' patternDelim <|> branchMany
+   where
+   branchMany :: SParser (NonEmptyList (Branch 𝔹))
+   branchMany = token.braces $ sepBy1 (branch curried expr' arrow) token.semi
 
 varDefs :: SParser (Expr 𝔹) -> SParser (VarDefs 𝔹)
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi <#> toList
