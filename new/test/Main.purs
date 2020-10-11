@@ -63,7 +63,7 @@ desugarTest :: String -> S.Expr 𝔹 -> String -> SpecT Aff Unit Effect Unit
 desugarTest name s expected =
    before (loadModule "prelude" primitives) $
       it name $ \ρ ->
-         case successful $ eval ρ (desugar s) of
+         case successful $ eval ρ (successful $ desugar s) of
             t × v -> (render $ pretty v) `shouldEqual` expected
 
 main :: Effect Unit

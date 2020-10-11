@@ -9,7 +9,7 @@ import DataType (Ctr, DataType'(..), ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), VarDef(..), Var)
 import Expr (Expr(..), RecDefs, RawExpr(..), expr) as E
 import Lattice (𝔹, class BoundedJoinSemilattice, bot)
-import Util (type (×), (×), absurd, error, fromJust, mustLookup)
+import Util (MayFail, type (×), (×), absurd, error, fromJust, mustLookup)
 
 data RawExpr a =
    Var Var |
@@ -55,39 +55,42 @@ enil = E.expr $ E.Constr cNil Nil
 evar :: Var -> E.Expr 𝔹
 evar = E.expr <<< E.Var
 
-desugar :: Expr 𝔹 -> E.Expr 𝔹
-desugar (Expr α (Int n)) = E.Expr α (E.Int n)
-desugar (Expr α (IfElse s1 s2 s3))     =
-   let σ = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar s2),
-                                        cFalse × Body (desugar s3)])
-   in  E.Expr α (E.MatchAs (desugar s1) σ)
+desugar :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
+desugar (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
+desugar (Expr α (IfElse s1 s2 s3))     = do
+   e2 <- desugar s2
+   e3 <- desugar s3
+   let σ = ElimConstr (M.fromFoldable [cTrue × Body e2, cFalse × Body e3])
+   E.Expr α <$> (E.MatchAs <$> desugar s1 <@> σ)
 desugar (Expr α (ListSeq s1 s2))       =
-   eapp (eapp (evar "range") (desugar s1)) (desugar s2)
-desugar (Expr α (ListComp s_body (Guard (Expr _ (Constr cTrue Nil)) : Nil))) =
-   E.expr $ E.Constr cCons (desugar s_body : enil : Nil)
+   eapp <$> (eapp (evar "range") <$> desugar s1) <*> desugar s2
+desugar (Expr α (ListComp s_body (Guard (Expr _ (Constr cTrue Nil)) : Nil))) = do
+   e <- desugar s_body
+   pure $ E.expr $ E.Constr cCons (e : enil : Nil)
 desugar (Expr α (ListComp s_body (q:Nil))) =
-   desugar (expr $ ListComp s_body (q : Guard (expr $ Constr cTrue Nil) : Nil))
-desugar (Expr α (ListComp s_body (Guard s : qs))) =
-   let σ = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar (Expr α (ListComp s_body qs))),
-                                        cFalse × Body enil])
-   in  E.expr $ E.MatchAs (desugar s) σ
-desugar (Expr α (ListComp s_body (Generator p slist : qs))) =
-   let λ = E.expr $ E.Lambda (totalise (patternToElim p (Body $ desugar $ expr $ ListComp s_body qs)) enil)
-   in  eapp (evar "concat") $ eapp (eapp (evar "map") λ) $ desugar slist
-desugar (Expr α (ListComp s_body (Declaration p s : qs))) =
+   desugar $ expr $ ListComp s_body $ q : Guard (expr $ Constr cTrue Nil) : Nil
+desugar (Expr α (ListComp s_body (Guard s : qs))) = do
+   e <- desugar $ Expr α $ ListComp s_body qs
+   let σ = ElimConstr (M.fromFoldable [cTrue × Body e, cFalse × Body enil])
+   E.expr <$> (E.MatchAs <$> desugar s <@> σ)
+desugar (Expr α (ListComp s_body (Generator p slist : qs))) = do
+   e <- desugar $ expr $ ListComp s_body qs
+   let λ = E.expr $ E.Lambda $ totalise (patternToElim p (Body e)) enil
+   eapp (evar "concat") <$> (eapp (eapp (evar "map") λ) <$> desugar slist)
+desugar (Expr α (ListComp s_body (Declaration p s : qs))) = do
    let σ = patternToElim p None
-   in  E.expr $ E.Let (VarDef σ $ desugar s) $ desugar (Expr α (ListComp s_body qs))
-desugar (Expr α (ListComp s_body _))   =  error absurd
-desugar (Expr α (Var x))              = E.Expr α (E.Var x)
-desugar (Expr α (Op op))              = E.Expr α (E.Op op)
-desugar (Expr α (Str s))              = E.Expr α (E.Str s)
-desugar (Expr α (Constr ctr args))    = E.Expr α (E.Constr ctr (map desugar args))
-desugar (Expr α (Lambda σ))           = E.Expr α (E.Lambda σ)
-desugar (Expr α (App s1 s2))          = E.Expr α (E.App (desugar s1) (desugar s2))
-desugar (Expr α (BinaryApp s1 op s2)) = E.Expr α (E.BinaryApp (desugar s1) op (desugar s2))
-desugar (Expr α (MatchAs s σ))        = E.Expr α (E.MatchAs (desugar s) σ)
-desugar (Expr α (Let def s))          = E.Expr α (E.Let def (desugar s))
-desugar (Expr α (LetRec δ s))         = E.Expr α (E.LetRec δ (desugar s))
+   E.expr <$> (E.Let <$> (VarDef σ <$> desugar s) <*> desugar (Expr α $ ListComp s_body qs))
+desugar (Expr α (ListComp s_body _))  = error absurd
+desugar (Expr α (Var x))              = pure $ E.Expr α (E.Var x)
+desugar (Expr α (Op op))              = pure $ E.Expr α (E.Op op)
+desugar (Expr α (Str s))              = pure $ E.Expr α (E.Str s)
+desugar (Expr α (Constr ctr args))    = E.Expr α <$> (E.Constr ctr <$> error "todo") -- map desugar args)
+desugar (Expr α (Lambda σ))           = pure $ E.Expr α (E.Lambda σ)
+desugar (Expr α (App s1 s2))          = E.Expr α <$> (E.App <$> desugar s1 <*> desugar s2)
+desugar (Expr α (BinaryApp s1 op s2)) = E.Expr α <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
+desugar (Expr α (MatchAs s σ))        = E.Expr α <$> (E.MatchAs <$> desugar s <@> σ)
+desugar (Expr α (Let def s))          = E.Expr α <$> (E.Let def <$> desugar s)
+desugar (Expr α (LetRec δ s))         = E.Expr α <$> (E.LetRec δ <$> desugar s)
 
 patternToElim :: Pattern -> Cont 𝔹 -> Elim 𝔹
 patternToElim (PVar x) κ
