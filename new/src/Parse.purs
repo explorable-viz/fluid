@@ -166,14 +166,14 @@ branch curried expr' delim = do
    pure $ πs × e
 
 varDefs :: SParser (Expr 𝔹) -> SParser (VarDefs 𝔹)
-varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
+varDefs expr' = keyword strLet *> sepBy1_try clause token.semi <#> toList
    where
    clause :: SParser (VarDef 𝔹)
    clause = VarDef <$> (successful <<< toElim <$> pattern <* patternDelim) <*> expr'
 
 recDefs :: SParser (Expr 𝔹) -> SParser (RecDefs 𝔹)
 recDefs expr' = do
-   fπs <- keyword strLet *> sepBy1_try clause token.semi
+   fπs <- keyword strLet *> sepBy1_try clause token.semi <#> toList
    let fπss = groupBy (eq `on` fst) fπs
    pure $ fromList $ reverse $ toRecDef <$> fπss
    where
@@ -187,8 +187,7 @@ recDefs expr' = do
 
 recDefs2 :: SParser (S.Expr 𝔹) -> SParser (S.RecDefs 𝔹)
 recDefs2 expr' = do
-   fπs <- keyword strLet *> sepBy1_try clause token.semi
-   error "todo"
+   keyword strLet *> sepBy1_try clause token.semi
    where
    clause :: SParser (Clause 𝔹)
    clause = ident `lift2 (×)` (branch true expr' equals)
