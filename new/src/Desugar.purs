@@ -57,38 +57,27 @@ evar = E.expr <<< E.Var
 
 desugar :: Expr 𝔹 -> E.Expr 𝔹
 desugar (Expr α (Int n)) = E.Expr α (E.Int n)
-desugar (Expr α (IfElse s1 s2 s3))
-    = let e1 = desugar s1
-          e2 = desugar s2
-          e3 = desugar s3
-          σ = ElimConstr (M.fromFoldable [ cTrue  × Body e2
-                                         , cFalse × Body e3])
-      in  E.Expr α (E.MatchAs e1 σ)
-desugar (Expr α (ListSeq s1 s2))
-   = let e1 = desugar s1
-         e2 = desugar s2
-     in  eapp (eapp (evar "range") e1) e2
-desugar (Expr α (ListComp s_body (Guard (Expr _ (Constr cTrue Nil)) : Nil )))
-   = E.expr $ E.Constr cCons (desugar s_body : enil : Nil)
-desugar (Expr α (ListComp s_body (q:Nil)))
-   = desugar (expr $ ListComp s_body (q : Guard (expr $ Constr cTrue Nil) : Nil))
-desugar (Expr α (ListComp s_body (Guard s : qs)))
-   =  let e = desugar s
-          σ  = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar (Expr α (ListComp s_body qs)))
-                                          , cFalse × Body enil])
-      in  E.expr $ E.MatchAs e σ
-desugar (Expr α (ListComp s_body (Generator p slist : qs)))
-   =  let elist = desugar slist
-          erest = desugar (expr $ ListComp s_body qs)
-          λ     = E.expr $ E.Lambda (totalise (patternToElim p (Body erest)) enil)
-      in  eapp (evar "concat") (eapp (eapp (evar "map") λ) elist)
-desugar (Expr α (ListComp s_body (Declaration p s : qs)))
-   =  let e     = desugar s
-          σ     = patternToElim p None
-          erest = desugar (Expr α (ListComp s_body qs))
-      in  E.expr $ E.Let (VarDef σ e) erest
-desugar (Expr α (ListComp s_body _))
-   =  error absurd
+desugar (Expr α (IfElse s1 s2 s3))     =
+   let σ = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar s2),
+                                        cFalse × Body (desugar s3)])
+   in  E.Expr α (E.MatchAs (desugar s1) σ)
+desugar (Expr α (ListSeq s1 s2))       =
+   eapp (eapp (evar "range") (desugar s1)) (desugar s2)
+desugar (Expr α (ListComp s_body (Guard (Expr _ (Constr cTrue Nil)) : Nil))) =
+   E.expr $ E.Constr cCons (desugar s_body : enil : Nil)
+desugar (Expr α (ListComp s_body (q:Nil))) =
+   desugar (expr $ ListComp s_body (q : Guard (expr $ Constr cTrue Nil) : Nil))
+desugar (Expr α (ListComp s_body (Guard s : qs))) =
+   let σ = ElimConstr (M.fromFoldable [ cTrue  × Body (desugar (Expr α (ListComp s_body qs))),
+                                        cFalse × Body enil])
+   in  E.expr $ E.MatchAs (desugar s) σ
+desugar (Expr α (ListComp s_body (Generator p slist : qs))) =
+   let λ = E.expr $ E.Lambda (totalise (patternToElim p (Body $ desugar $ expr $ ListComp s_body qs)) enil)
+   in  eapp (evar "concat") $ eapp (eapp (evar "map") λ) $ desugar slist
+desugar (Expr α (ListComp s_body (Declaration p s : qs))) =
+   let σ = patternToElim p None
+   in  E.expr $ E.Let (VarDef σ $ desugar s) $ desugar (Expr α (ListComp s_body qs))
+desugar (Expr α (ListComp s_body _))   =  error absurd
 desugar (Expr α (Var x))              = E.Expr α (E.Var x)
 desugar (Expr α (Op op))              = E.Expr α (E.Op op)
 desugar (Expr α (Str s))              = E.Expr α (E.Str s)
