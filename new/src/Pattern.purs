@@ -1,7 +1,7 @@
 module Pattern where
 
 import Prelude hiding (absurd, join)
-import Data.List (List(..), (:), length)
+import Data.List (List(..), (:))
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, insert, lookup, singleton, update)
 import Data.Map.Internal (keys)
@@ -9,7 +9,6 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (foldl)
 import DataType (DataType, Ctr, arity, dataTypeFor)
-import Desugar (Pattern(..)) as D
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), Var, expr)
 import Lattice (𝔹)
 import Util (Endo, MayFail, (≞), (=<<<), absurd, error, om, report, with)
@@ -26,12 +25,6 @@ toCont (PBody e)     = pure $ Body e
 toCont (PLambda π)   = Body <$> (expr <$> (Lambda <$> toElim π))
 toCont (PArg π)      = Arg <$> toElim π
 
-toCont2 :: List D.Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
-toCont2 Nil κ        = pure κ
-toCont2 (π : πs) κ   = do
-   κ' <- toCont2 πs κ
-   Arg <$> toElim2 π κ'
-
 -- Since this includes the continuation, "Branch" might be a better name.
 data Pattern =
    PattVar Var PCont |
@@ -40,15 +33,6 @@ data Pattern =
 toElim :: Pattern -> MayFail (Elim 𝔹)
 toElim (PattVar x κ)      = ElimVar x <$> toCont κ
 toElim (PattConstr c n κ) = checkArity c n *> (ElimConstr <$> (singleton c <$> toCont κ))
-
-toElim2 :: D.Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
-toElim2 (D.PVar x) κ       = pure $ ElimVar x κ
-toElim2 (D.PConstr c πs) κ = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont2 πs κ)
-
-toElim_curried :: NonEmptyList D.Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
-toElim_curried (NonEmptyList (π :| Nil)) κ         = toElim2 π κ
-toElim_curried (NonEmptyList (π :| (π' : πs))) κ   =
-   toElim2 π =<< Body <$> expr <$> Lambda <$> toElim_curried (NonEmptyList $ π' :| πs) κ
 
 class MapCont a where
    -- replace None continuation by non-None

@@ -1,17 +1,17 @@
 module Desugar where
 
 import Prelude hiding (absurd)
-import Data.List (List(..), (:), (\\), head)
+import Data.List (List(..), (:), (\\), head, length)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable, singleton, toUnfoldable) as M
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst)
-import DataType (Ctr, DataType'(..), ctrToDataType, cCons, cNil, cTrue, cFalse)
+import DataType (Ctr, DataType'(..), arity, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), VarDef(..), Var)
 import Expr (Expr(..), RecDefs, RawExpr(..), expr) as E
 import Lattice (𝔹, class BoundedJoinSemilattice, bot)
-import Util (MayFail, type (×), (×), absurd, error, fromJust, mustLookup)
+import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, mustLookup, with)
 
 data RawExpr a =
    Var Var |
@@ -123,5 +123,26 @@ totalise (ElimVar e k) e'
                Body _ -> ElimVar e k
                None   -> ElimVar e $ Body e'
 
+toCont2 :: List Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
+toCont2 Nil κ        = pure κ
+toCont2 (π : πs) κ   = do
+   κ' <- toCont2 πs κ
+   Arg <$> toElim2 π κ'
+
+checkArity :: Ctr -> Int -> MayFail Unit
+checkArity c n = void $ with ("Checking arity of " <> show c) $
+   arity c `(=<<<) (≞)` pure n
+
+toElim2 :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
+toElim2 (PVar x) κ       = pure $ ElimVar x κ
+toElim2 (PConstr c πs) κ = checkArity c (length πs) *> (ElimConstr <$> M.singleton c <$> toCont2 πs κ)
+
+toElim_curried :: NonEmptyList Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
+toElim_curried (NonEmptyList (π :| Nil)) κ         = toElim2 π κ
+toElim_curried (NonEmptyList (π :| (π' : πs))) κ   =
+   toElim2 π =<< Body <$> E.expr <$> E.Lambda <$> toElim_curried (NonEmptyList $ π' :| πs) κ
+
 joinAll2 :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
-joinAll2 (NonEmptyList ((πs × e) :| bs)) = error "todo"
+joinAll2 (NonEmptyList ((πs × e) :| bs)) = do
+   blah <- toElim_curried πs <$> (Body <$> desugar e)
+   error "to do"
