@@ -162,7 +162,6 @@ instance joinableMap :: Joinable (Map Ctr (Cont Boolean)) where
    maybeJoin m1 m2 = do
       let kvs = M.toUnfoldable m2 :: List (Ctr × Cont 𝔹)
       error "todo"
---    foldl ?_ m1 kvs :: MayFail (Map Ctr (Cont 𝔹))
 
 joinAll :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
 joinAll bs = do
