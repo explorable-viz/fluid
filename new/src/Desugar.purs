@@ -2,8 +2,9 @@ module Desugar where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), (\\), head)
-import Data.List.NonEmpty (NonEmptyList)
+import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable, singleton, toUnfoldable) as M
+import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst)
 import DataType (Ctr, DataType'(..), ctrToDataType, cCons, cNil, cTrue, cFalse)
@@ -19,7 +20,7 @@ data RawExpr a =
    Str String |
    Constr Ctr (List (Expr a)) |
    Lambda (Elim a) |
---   Lambda2 (NonEmptyList (Branch a)) |
+   Lambda2 (NonEmptyList (Branch a)) |
    App (Expr a) (Expr a) |
    BinaryApp (Expr a) Var (Expr a) |
    MatchAs (Expr a) (Elim a) |
@@ -88,7 +89,7 @@ desugar (Expr α (Op op))              = pure $ E.Expr α (E.Op op)
 desugar (Expr α (Str s))              = pure $ E.Expr α (E.Str s)
 desugar (Expr α (Constr ctr args))    = E.Expr α <$> (E.Constr ctr <$> traverse desugar args)
 desugar (Expr α (Lambda σ))           = pure $ E.Expr α (E.Lambda σ)
--- desugar (Expr α (Lambda2 bs))         = E.Expr α (E.Lambda <$> joinAll bs)
+desugar (Expr α (Lambda2 bs))         = E.Expr α <$> (E.Lambda <$> joinAll2 bs)
 desugar (Expr α (App s1 s2))          = E.Expr α <$> (E.App <$> desugar s1 <*> desugar s2)
 desugar (Expr α (BinaryApp s1 op s2)) = E.Expr α <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
 desugar (Expr α (MatchAs s σ))        = E.Expr α <$> (E.MatchAs <$> desugar s <@> σ)
@@ -121,3 +122,6 @@ totalise (ElimVar e k) e'
    = case k of Arg σ  -> ElimVar e $ Arg (totalise σ e')
                Body _ -> ElimVar e k
                None   -> ElimVar e $ Body e'
+
+joinAll2 :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
+joinAll2 (NonEmptyList ((πs × e) :| bs)) = error "todo"
