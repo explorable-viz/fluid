@@ -89,4 +89,4 @@ instance joinablePContCont :: Joinable PCont (Cont Boolean) where
    maybeJoin _ _                                      = report "Incompatible continuations"
 
 joinAll :: NonEmptyList Pattern -> MayFail (Elim 𝔹)
-joinAll (NonEmptyList (π :| πs)) = foldl (om $ maybeJoin) (toElim π) πs
+joinAll (NonEmptyList (π :| πs)) = foldl (om maybeJoin) (toElim π) πs

@@ -3,6 +3,7 @@ module Desugar where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), (\\), head, length)
 import Data.List.NonEmpty (NonEmptyList(..))
+import Data.Map (Map)
 import Data.Map (fromFoldable, singleton, toUnfoldable) as M
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
@@ -11,7 +12,7 @@ import DataType (Ctr, DataType'(..), arity, ctrToDataType, cCons, cNil, cTrue, c
 import Expr (Cont(..), Elim(..), VarDef(..), Var)
 import Expr (Expr(..), RecDefs, RawExpr(..), expr) as E
 import Lattice (𝔹, class BoundedJoinSemilattice, bot)
-import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, mustLookup, with)
+import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, mustLookup, report, with)
 
 data RawExpr a =
    Var Var |
@@ -89,7 +90,7 @@ desugar (Expr α (Op op))              = pure $ E.Expr α (E.Op op)
 desugar (Expr α (Str s))              = pure $ E.Expr α (E.Str s)
 desugar (Expr α (Constr ctr args))    = E.Expr α <$> (E.Constr ctr <$> traverse desugar args)
 desugar (Expr α (Lambda σ))           = pure $ E.Expr α (E.Lambda σ)
-desugar (Expr α (Lambda2 bs))         = E.Expr α <$> (E.Lambda <$> joinAll2 bs)
+desugar (Expr α (Lambda2 bs))         = E.Expr α <$> (E.Lambda <$> joinAll bs)
 desugar (Expr α (App s1 s2))          = E.Expr α <$> (E.App <$> desugar s1 <*> desugar s2)
 desugar (Expr α (BinaryApp s1 op s2)) = E.Expr α <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
 desugar (Expr α (MatchAs s σ))        = E.Expr α <$> (E.MatchAs <$> desugar s <@> σ)
@@ -137,12 +138,33 @@ toElim2 :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 toElim2 (PVar x) κ       = pure $ ElimVar x κ
 toElim2 (PConstr c πs) κ = checkArity c (length πs) *> (ElimConstr <$> M.singleton c <$> toCont2 πs κ)
 
-toElim_curried :: NonEmptyList Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
-toElim_curried (NonEmptyList (π :| Nil)) κ         = toElim2 π κ
-toElim_curried (NonEmptyList (π :| (π' : πs))) κ   =
-   toElim2 π =<< Body <$> E.expr <$> E.Lambda <$> toElim_curried (NonEmptyList $ π' :| πs) κ
+toElim :: NonEmptyList Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
+toElim (NonEmptyList (π :| Nil)) κ     = toElim2 π κ
+toElim (NonEmptyList (π :| π' : πs)) κ =
+   toElim2 π =<< Body <$> E.expr <$> E.Lambda <$> toElim (NonEmptyList $ π' :| πs) κ
 
-joinAll2 :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
-joinAll2 (NonEmptyList ((πs × e) :| bs)) = do
-   blah <- toElim_curried πs <$> (Body <$> desugar e)
-   error "to do"
+class Joinable a where
+   maybeJoin :: a -> a -> MayFail a
+
+instance joinableElim :: Joinable (Elim Boolean) where
+   maybeJoin (ElimVar x κ) (ElimVar y κ')       = ElimVar <$> x ≞ y <*> maybeJoin κ κ'
+   maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
+   maybeJoin _ _                                = report "Can't join variable and constructor patterns"
+
+instance joinableCont :: Joinable (Cont Boolean) where
+   maybeJoin None None                       = pure None
+   maybeJoin (Arg σ) (Arg σ')                = Arg <$> maybeJoin σ σ'
+   maybeJoin (Body (E.Expr _ (E.Lambda σ)))
+             (Body (E.Expr _ (E.Lambda σ'))) = Body<$> (E.expr <$> (E.Lambda <$> maybeJoin σ σ'))
+   maybeJoin _ _                             = report "Incompatible continuations"
+
+instance joinableMap :: Joinable (Map Ctr (Cont Boolean)) where
+   maybeJoin m1 m2 = do
+      let kvs = M.toUnfoldable m2 :: List (Ctr × Cont 𝔹)
+      error "todo"
+--    foldl ?_ m1 kvs :: MayFail (Map Ctr (Cont 𝔹))
+
+joinAll :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
+joinAll bs = do
+   NonEmptyList (σ :| σs) <- traverse (\(πs × e) -> toElim πs <$> (Body <$> desugar e)) bs
+   error "todo"
