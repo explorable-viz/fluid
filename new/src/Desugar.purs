@@ -1,6 +1,7 @@
 module Desugar where
 
 import Prelude hiding (absurd)
+import Data.Foldable (foldM)
 import Data.List (List(..), (:), (\\), head, length)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map)
@@ -165,5 +166,5 @@ instance joinableMap :: Joinable (Map Ctr (Cont Boolean)) where
 
 joinAll :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
 joinAll bs = do
-   NonEmptyList (σ :| σs) <- traverse (\(πs × e) -> toElim πs <$> (Body <$> desugar e)) bs
-   error "todo"
+   NonEmptyList (σ :| σs) <- traverse (\(πs × e) -> (Body <$> desugar e) >>= toElim πs) bs
+   foldM maybeJoin σ σs
