@@ -201,7 +201,7 @@ recDefs2 expr' = do
    clause = ident `lift2 (×)` (branch true expr' equals)
 
 defs :: SParser (Expr 𝔹) -> SParser (List (VarDef 𝔹 + RecDefs 𝔹))
-defs expr' = bisequence <$> choose (try (varDefs expr')) (singleton <$> recDefs expr')
+defs expr' = bisequence <$> choose (try $ varDefs expr') (singleton <$> recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser (Expr 𝔹)
