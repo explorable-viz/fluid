@@ -2,19 +2,22 @@ module Desugar where
 
 import Prelude hiding (absurd)
 import Data.Foldable (foldM)
-import Data.List (List(..), (:), (\\), head, length)
-import Data.List.NonEmpty (NonEmptyList(..))
+import Data.Function (on)
+import Data.List (List(..), (:), (\\), length)
+import Data.List (head) as L
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, reverse, toList)
 import Data.Map (Map, fromFoldable, insert, lookup, singleton, toUnfoldable, update)
 import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
-import Data.Tuple (fst)
+import Data.Tuple (fst, snd)
+import Bindings (Binding, (↦), fromList)
 import DataType (Ctr, DataType, DataType'(..), arity, ctrToDataType, cCons, cNil, cTrue, cFalse, dataTypeFor)
 import Expr (Cont(..), Elim(..), VarDef(..), Var)
 import Expr (Expr(..), RecDefs, RawExpr(..), expr) as E
 import Lattice (𝔹, class BoundedJoinSemilattice, bot)
-import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, mustLookup, report, with)
+import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, mustLookup, report, successfulWith, with)
 
 data RawExpr a =
    Var Var |
@@ -30,7 +33,7 @@ data RawExpr a =
    ListSeq (Expr a) (Expr a) |
    ListComp (Expr a) (List (Predicate a)) |
    Let (VarDef a) (Expr a) |
-   LetRec (E.RecDefs a) (Expr a)
+   LetRec (RecDefs a) (Expr a)
 
 data Pattern =
    PVar Var |
@@ -71,7 +74,16 @@ desugar (Expr α (App s1 s2))           = E.Expr α <$> (E.App <$> desugar s1 <*
 desugar (Expr α (BinaryApp s1 op s2))  = E.Expr α <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
 desugar (Expr α (MatchAs s bs))        = E.Expr α <$> (E.MatchAs <$> desugar s <*> joinAll bs)
 desugar (Expr α (Let def s))           = E.Expr α <$> (E.Let def <$> desugar s)
-desugar (Expr α (LetRec δ s))          = E.Expr α <$> (E.LetRec δ <$> desugar s)
+desugar (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec δ' <$> desugar s)
+   where
+   fπss = groupBy (eq `on` fst) fπs :: NonEmptyList (NonEmptyList (Clause 𝔹))
+   δ' = fromList $ toList $ reverse $ toRecDef <$> fπss :: E.RecDefs 𝔹
+
+   toRecDef :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
+   toRecDef fπs' =
+      let f = fst $ head fπs' in
+      f ↦ successfulWith ("Bad branches for '" <> f <> "'") (joinAll $ snd <$> fπs')
+
 desugar (Expr α (IfElse s1 s2 s3)) = do
    e2 <- desugar s2
    e3 <- desugar s3
@@ -108,7 +120,7 @@ patternToElim (PConstr ctr ps) κ
 
 totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e
-   = let ctr × κ              = fromJust "" (head $ toUnfoldable m)
+   = let ctr × κ              = fromJust "" (L.head $ toUnfoldable m)
          branches             = toUnfoldable m
          DataType _ sigs      = mustLookup ctr ctrToDataType
          all_ctrs             = fst <$> toUnfoldable sigs
