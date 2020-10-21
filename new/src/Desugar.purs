@@ -4,12 +4,13 @@ import Prelude hiding (absurd)
 import Data.Foldable (foldM)
 import Data.List (List(..), (:), (\\), head, length)
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (Map)
-import Data.Map (fromFoldable, singleton, toUnfoldable) as M
+import Data.Map (Map, fromFoldable, insert, lookup, singleton, toUnfoldable, update)
+import Data.Map.Internal (keys)
+import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst)
-import DataType (Ctr, DataType'(..), arity, ctrToDataType, cCons, cNil, cTrue, cFalse)
+import DataType (Ctr, DataType, DataType'(..), arity, ctrToDataType, cCons, cNil, cTrue, cFalse, dataTypeFor)
 import Expr (Cont(..), Elim(..), VarDef(..), Var)
 import Expr (Expr(..), RecDefs, RawExpr(..), expr) as E
 import Lattice (𝔹, class BoundedJoinSemilattice, bot)
@@ -65,7 +66,7 @@ desugar (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
 desugar (Expr α (IfElse s1 s2 s3))     = do
    e2 <- desugar s2
    e3 <- desugar s3
-   let σ = ElimConstr (M.fromFoldable [cTrue × Body e2, cFalse × Body e3])
+   let σ = ElimConstr (fromFoldable [cTrue × Body e2, cFalse × Body e3])
    E.Expr α <$> (E.MatchAs <$> desugar s1 <@> σ)
 desugar (Expr α (ListSeq s1 s2))       =
    eapp <$> (eapp (evar "range") <$> desugar s1) <*> desugar s2
@@ -76,7 +77,7 @@ desugar (Expr α (ListComp s_body (q:Nil))) =
    desugar $ expr $ ListComp s_body $ q : Guard (expr $ Constr cTrue Nil) : Nil
 desugar (Expr α (ListComp s_body (Guard s : qs))) = do
    e <- desugar $ Expr α $ ListComp s_body qs
-   let σ = ElimConstr (M.fromFoldable [cTrue × Body e, cFalse × Body enil])
+   let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body enil])
    E.expr <$> (E.MatchAs <$> desugar s <@> σ)
 desugar (Expr α (ListComp s_body (Generator p slist : qs))) = do
    e <- desugar $ expr $ ListComp s_body qs
@@ -105,21 +106,21 @@ patternToElim (PConstr ctr ps) κ
    = let go (p':p'':ps')   = Arg (patternToElim p' (go (p'':ps')))
          go (p':Nil)       = Arg (patternToElim p' κ)
          go Nil            = κ
-     in  ElimConstr (M.singleton ctr (go ps))
+     in  ElimConstr (singleton ctr (go ps))
 
 totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e
-   = let ctr × κ              = fromJust "" (head $ M.toUnfoldable m)
-         branches             = M.toUnfoldable m
+   = let ctr × κ              = fromJust "" (head $ toUnfoldable m)
+         branches             = toUnfoldable m
          DataType _ sigs      = mustLookup ctr ctrToDataType
-         all_ctrs             = fst <$> M.toUnfoldable sigs
+         all_ctrs             = fst <$> toUnfoldable sigs
          new_branches         = (_ × Body e) <$> (all_ctrs \\ (fst <$> branches))
          totalised_branches   = branches <#>
                                  \(c × κ) -> case mustLookup c m of
                                                 Arg σ   -> c × Arg (totalise σ e)
                                                 Body e' -> c × Body e'
                                                 None    -> c × Body e
-     in   ElimConstr (M.fromFoldable $ totalised_branches <> new_branches)
+     in   ElimConstr (fromFoldable $ totalised_branches <> new_branches)
 totalise (ElimVar e k) e'
    = case k of Arg σ  -> ElimVar e $ Arg (totalise σ e')
                Body _ -> ElimVar e k
@@ -135,9 +136,22 @@ checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = void $ with ("Checking arity of " <> show c) $
    arity c `(=<<<) (≞)` pure n
 
+dataType :: Map Ctr (Cont 𝔹) -> MayFail DataType
+dataType κs = case keys κs of
+   Nil   -> error absurd
+   c : _ -> dataTypeFor c
+
+checkDataType :: String -> Ctr -> Map Ctr (Cont 𝔹) -> MayFail Unit
+checkDataType msg c κs = void $ do
+   d <- dataTypeFor c
+   d' <- dataType κs
+   if (d /= d')
+   then error "***"
+   else with (msg <> show c <> " is not a constructor of " <> show d') $ d ≞ d'
+
 toElim2 :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 toElim2 (PVar x) κ       = pure $ ElimVar x κ
-toElim2 (PConstr c πs) κ = checkArity c (length πs) *> (ElimConstr <$> M.singleton c <$> toCont2 πs κ)
+toElim2 (PConstr c πs) κ = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont2 πs κ)
 
 toElim :: NonEmptyList Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 toElim (NonEmptyList (π :| Nil)) κ     = toElim2 π κ
@@ -160,9 +174,18 @@ instance joinableCont :: Joinable (Cont Boolean) where
    maybeJoin _ _                             = report "Incompatible continuations"
 
 instance joinableMap :: Joinable (Map Ctr (Cont Boolean)) where
-   maybeJoin m1 m2 = do
-      let kvs = M.toUnfoldable m2 :: List (Ctr × Cont 𝔹)
-      error "todo"
+   maybeJoin κs1 κs2 = do
+      foldM maybeUpdate κs1 (toUnfoldable κs2 :: List (Ctr × Cont 𝔹))
+      where
+      maybeUpdate :: Map Ctr (Cont 𝔹) -> Ctr × Cont 𝔹 -> MayFail (Map Ctr (Cont 𝔹))
+      maybeUpdate κs (c × κ) =
+         case lookup c κs of
+            Nothing -> do
+               checkDataType "Non-uniform patterns: " c κs
+               pure $ insert c κ κs
+            Just κ' ->
+               update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
+
 
 joinAll :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
 joinAll bs = do
