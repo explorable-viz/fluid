@@ -15,7 +15,7 @@ import Data.Tuple (fst, snd)
 import Bindings (Binding, (↦), fromList)
 import DataType (Ctr, DataType, DataType'(..), arity, ctrToDataType, cCons, cNil, cTrue, cFalse, dataTypeFor)
 import Expr (Cont(..), Elim(..), VarDef(..), Var)
-import Expr (Expr(..), RecDefs, RawExpr(..), expr) as E
+import Expr (Expr(..), RawExpr(..), expr) as E
 import Lattice (𝔹, class BoundedJoinSemilattice, bot)
 import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, mustLookup, report, successfulWith, with)
 
@@ -77,7 +77,7 @@ desugar (Expr α (Let def s))           = E.Expr α <$> (E.Let def <$> desugar s
 desugar (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec δ' <$> desugar s)
    where
    fπss = groupBy (eq `on` fst) fπs :: NonEmptyList (NonEmptyList (Clause 𝔹))
-   δ' = fromList $ toList $ reverse $ toRecDef <$> fπss :: E.RecDefs 𝔹
+   δ' = fromList $ toList $ reverse $ toRecDef <$> fπss
 
    toRecDef :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
    toRecDef fπs' =
