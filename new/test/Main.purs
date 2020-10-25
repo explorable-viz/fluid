@@ -87,7 +87,7 @@ desugarTest name s expected =
 main :: Effect Unit
 main = do
    -- desugaring
-   run $ test2 "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
+--   run $ test2 "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
    -- desugaring
    run $ desugarTest "list-comp-1" lcomp1 lcomp1_eval
    run $ desugarTest "list-comp-2" lcomp2 lcomp2_eval
@@ -108,7 +108,7 @@ main = do
    run $ test "mergeSort" "[1, 2, 3]"
    run $ test "normalise" "(33, 66)"
    run $ test "pattern-match" "4"
-   run $ test "reverse" "[2, 1]"
+   run $ test2 "reverse" "[2, 1]"
    run $ test "zipWith" "[[10], [12], [20]]"
    -- graphics
    run $ testWithDataset "renewables-restricted" "graphics/background"
