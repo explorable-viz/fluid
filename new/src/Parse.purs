@@ -328,7 +328,12 @@ expr2 = fix $ appChain >>> buildExprParser (operators binaryOp)
          try float <|>
          try int <|> -- int may start with +/-
          string <|>
-         defsExpr
+         defsExpr <|>
+         matchAs <|>
+         try (token.parens expr') <|>
+         try parensOp <|>
+         pair <|>
+         lambda
 
          where
          ctrExpr :: SParser (S.Expr 𝔹)
@@ -359,6 +364,19 @@ expr2 = fix $ appChain >>> buildExprParser (operators binaryOp)
             defs' <- concat <<< toList <$> sepBy1 (defs2 expr') token.semi
             foldr (\def -> S.expr <<< (S.Let ||| S.LetRec) def) <$> (keyword strIn *> expr') <@> defs'
 
+         matchAs :: SParser (S.Expr 𝔹)
+         matchAs = S.expr <$> (S.MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> branches false expr')
+
+         -- any binary operator, in parentheses
+         parensOp :: SParser (S.Expr 𝔹)
+         parensOp = S.expr <$> (S.Op <$> token.parens token.operator)
+
+         pair :: SParser (S.Expr 𝔹)
+         pair = token.parens $
+            S.expr <$> (lift2 $ \e e' -> S.Constr cPair (e : e' : empty)) (expr' <* token.comma) expr'
+
+         lambda :: SParser (S.Expr 𝔹)
+         lambda = S.expr <$> (S.Lambda <$> (keyword strFun *> branches true expr'))
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
