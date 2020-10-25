@@ -87,7 +87,7 @@ desugarTest name s expected =
 main :: Effect Unit
 main = do
    -- desugaring
-   run $ test2 "list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
+   run $ test2 "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
    -- desugaring
    run $ desugarTest "list-comp-1" lcomp1 lcomp1_eval
    run $ desugarTest "list-comp-2" lcomp2 lcomp2_eval
