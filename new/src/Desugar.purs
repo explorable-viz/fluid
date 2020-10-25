@@ -23,6 +23,7 @@ data RawExpr a =
    Var Var |
    Op Var |
    Int Int |
+   Float Number |
    Str String |
    Constr Ctr (List (Expr a)) |
    Lambda (NonEmptyList (Branch a)) |
@@ -65,6 +66,7 @@ evar = E.expr <<< E.Var
 
 desugar :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugar (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
+desugar (Expr α (Float n))             = pure $ E.Expr α (E.Float n)
 desugar (Expr α (Var x))               = pure $ E.Expr α (E.Var x)
 desugar (Expr α (Op op))               = pure $ E.Expr α (E.Op op)
 desugar (Expr α (Str s))               = pure $ E.Expr α (E.Str s)

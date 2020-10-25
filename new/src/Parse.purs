@@ -313,7 +313,38 @@ expr2 = fix $ appChain >>> buildExprParser (operators binaryOp)
 
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser (S.Expr 𝔹)
-      simpleExpr = ?_
+      simpleExpr =
+         try ctrExpr <|>
+         try variable <|>
+         try float <|>
+         try int <|> -- int may start with +/-
+         string
+
+         where
+         ctrExpr :: SParser (S.Expr 𝔹)
+         ctrExpr = S.expr <$> (S.Constr <$> ctr <@> empty)
+
+         variable :: SParser (S.Expr 𝔹)
+         variable = ident <#> S.Var >>> S.expr
+
+         signOpt :: ∀ a . Ring a => SParser (a -> a)
+         signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
+
+         -- built-in integer/float parsers don't seem to allow leading signs.
+         int :: SParser (S.Expr 𝔹)
+         int = do
+            sign <- signOpt
+            (sign >>> S.Int >>> S.expr) <$> token.natural
+
+         float :: SParser (S.Expr 𝔹)
+         float = do
+            sign <- signOpt
+            (sign >>> S.Float >>> S.expr) <$> token.float
+
+         string :: SParser (S.Expr 𝔹)
+         string = (S.Str >>> S.expr) <$> token.stringLiteral
+
+
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
