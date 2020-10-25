@@ -27,7 +27,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Binding, (↦), fromList)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Desugar (Branch, Clause)
-import Desugar (Expr, Pattern(..), RecDefs) as S
+import Desugar (Expr(..), Pattern(..), RawExpr(..), RecDefs, expr) as S
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDefs, Var, VarDef(..), VarDefs, expr)
 import Lattice (𝔹)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
@@ -285,6 +285,35 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          lambda :: SParser (Expr 𝔹)
          lambda = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
+
+-- Tree whose branches are binary primitives and whose leaves are application chains.
+expr2 :: SParser (S.Expr 𝔹)
+expr2 = fix $ appChain >>> buildExprParser (operators binaryOp)
+   where
+   -- Syntactically distinguishing infix constructors from other operators (a la Haskell) allows us to
+   -- optimise an application tree into a (potentially partial) constructor application.
+   binaryOp :: String -> SParser (S.Expr 𝔹 -> S.Expr 𝔹 -> S.Expr 𝔹)
+   binaryOp op = do
+      op' <- token.operator
+      onlyIf (op == op') $
+         if isCtrOp op'
+         then \e e' -> S.expr $ S.Constr (Ctr op') (e : e' : empty)
+         else \e e' -> S.expr $ S.BinaryApp e op e'
+
+   -- Left-associative tree of applications of one or more simple terms.
+   appChain :: Endo (SParser (S.Expr 𝔹))
+   appChain expr' = simpleExpr >>= rest
+      where
+      rest :: S.Expr 𝔹 -> SParser (S.Expr 𝔹)
+      rest e@(S.Expr _ (S.Constr c es)) = ctrArgs <|> pure e
+         where
+         ctrArgs :: SParser (S.Expr 𝔹)
+         ctrArgs = simpleExpr >>= \e' -> rest (S.expr $ S.Constr c (es <> (e' : empty)))
+      rest e = (S.expr <$> (S.App e <$> simpleExpr) >>= rest) <|> pure e
+
+      -- Any expression other than an operator tree or an application chain.
+      simpleExpr :: SParser (S.Expr 𝔹)
+      simpleExpr = ?_
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
