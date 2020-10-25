@@ -98,7 +98,7 @@ main = do
    run $ test "arithmetic" "42"
    run $ test "compose" "5"
    run $ test "factorial" "40320"
-   run $ test "filter" "[8, 7]"
+   run $ test2 "filter" "[8, 7]"
    run $ test "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]"
    run $ test "foldr_sumSquares" "661"
    run $ test "lexicalScoping" "\"6\""
