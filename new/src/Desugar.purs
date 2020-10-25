@@ -14,8 +14,8 @@ import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
 import Bindings (Binding, (↦), fromList)
 import DataType (Ctr, DataType, DataType'(..), arity, ctrToDataType, cCons, cNil, cTrue, cFalse, dataTypeFor)
-import Expr (Cont(..), Elim(..), VarDef(..), Var)
-import Expr (Expr(..), RawExpr(..), expr) as E
+import Expr (Cont(..), Elim(..), Var)
+import Expr (Expr(..), RawExpr(..), VarDef(..), expr) as E
 import Lattice (𝔹, class BoundedJoinSemilattice, bot)
 import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, mustLookup, report, successfulWith, with)
 
@@ -43,6 +43,7 @@ data Pattern =
 type Branch a = NonEmptyList Pattern × Expr a
 type Clause a = Var × Branch a
 type RecDefs a = NonEmptyList (Clause a)
+type VarDef a = Pattern × Expr a
 
 data Predicate a =
    Guard (Expr a) |
@@ -75,7 +76,8 @@ desugar (Expr α (Lambda bs))           = E.Expr α <$> (E.Lambda <$> joinAll bs
 desugar (Expr α (App s1 s2))           = E.Expr α <$> (E.App <$> desugar s1 <*> desugar s2)
 desugar (Expr α (BinaryApp s1 op s2))  = E.Expr α <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
 desugar (Expr α (MatchAs s bs))        = E.Expr α <$> (E.MatchAs <$> desugar s <*> joinAll bs)
-desugar (Expr α (Let def s))           = E.Expr α <$> (E.Let def <$> desugar s)
+desugar (Expr α (Let (p × e) s))       =
+   E.Expr α <$> (E.Let <$> (E.VarDef (patternToElim p None) <$> desugar e) <*> desugar s)
 desugar (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec δ' <$> desugar s)
    where
    fπss = groupBy (eq `on` fst) fπs :: NonEmptyList (NonEmptyList (Clause 𝔹))
@@ -108,7 +110,7 @@ desugar (Expr α (ListComp s_body (Generator p slist : qs))) = do
    eapp (evar "concat") <$> (eapp (eapp (evar "map") λ) <$> desugar slist)
 desugar (Expr α (ListComp s_body (Declaration p s : qs))) = do
    let σ = patternToElim p None
-   E.expr <$> (E.Let <$> (VarDef σ <$> desugar s) <*> desugar (Expr α $ ListComp s_body qs))
+   E.expr <$> (E.Let <$> (E.VarDef σ <$> desugar s) <*> desugar (Expr α $ ListComp s_body qs))
 desugar (Expr _ (ListComp _ Nil)) = error absurd
 
 patternToElim :: Pattern -> Cont 𝔹 -> Elim 𝔹

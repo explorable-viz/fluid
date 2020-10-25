@@ -203,6 +203,9 @@ recDefs2 expr' = do
 defs :: SParser (Expr 𝔹) -> SParser (List (VarDef 𝔹 + RecDefs 𝔹))
 defs expr' = bisequence <$> choose (try $ varDefs expr') (singleton <$> recDefs expr')
 
+defs2 :: SParser (S.Expr 𝔹) -> SParser (List (VarDef 𝔹 + S.RecDefs 𝔹))
+defs2 expr' = bisequence <$> choose (try $ varDefs expr') (singleton <$> recDefs expr')
+
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser (Expr 𝔹)
 expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
