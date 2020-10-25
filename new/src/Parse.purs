@@ -210,7 +210,7 @@ defs :: SParser (Expr 𝔹) -> SParser (List (VarDef 𝔹 + RecDefs 𝔹))
 defs expr' = bisequence <$> choose (try $ varDefs expr') (singleton <$> recDefs expr')
 
 defs2 :: SParser (S.Expr 𝔹) -> SParser (List (S.VarDef 𝔹 + S.RecDefs 𝔹))
-defs2 expr' = bisequence <$> choose (try $ varDefs2 expr') (singleton <$> recDefs expr')
+defs2 expr' = bisequence <$> choose (try $ varDefs2 expr') (singleton <$> recDefs2 expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser (Expr 𝔹)
@@ -327,7 +327,8 @@ expr2 = fix $ appChain >>> buildExprParser (operators binaryOp)
          try variable <|>
          try float <|>
          try int <|> -- int may start with +/-
-         string
+         string <|>
+         defsExpr
 
          where
          ctrExpr :: SParser (S.Expr 𝔹)
@@ -353,6 +354,10 @@ expr2 = fix $ appChain >>> buildExprParser (operators binaryOp)
          string :: SParser (S.Expr 𝔹)
          string = (S.Str >>> S.expr) <$> token.stringLiteral
 
+         defsExpr :: SParser (S.Expr 𝔹)
+         defsExpr = do
+            defs' <- concat <<< toList <$> sepBy1 (defs2 expr') token.semi
+            foldr (\def -> S.expr <<< (S.Let ||| S.LetRec) def) <$> (keyword strIn *> expr') <@> defs'
 
 
 -- each element of the top-level list corresponds to a precedence level
