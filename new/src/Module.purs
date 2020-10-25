@@ -8,10 +8,11 @@ import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Bindings (Bindings(..), Var, (:+:), (↦))
+import Desugar (Expr) as S
 import Eval (defs, eval)
 import Expr (Expr)
 import Lattice (𝔹)
-import Parse (module_, program)
+import Parse (module_, program, program2)
 import Primitive (primitives)
 import Util (type (×), (×), error, successful)
 import Util.Parse (SParser)
@@ -38,6 +39,10 @@ openWithImports :: String -> Aff (Env 𝔹 × Expr 𝔹)
 openWithImports file =
    loadFile "fluid/example" file >>= parseWithImports
 
+openWithImports2 :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
+openWithImports2 file =
+   loadFile "fluid/example" file >>= parseWithImports2
+
 successfulParse :: forall t . String -> SParser t -> t
 successfulParse src p =
    case runParser src p of
@@ -48,6 +53,11 @@ parseWithImports :: String -> Aff (Env 𝔹 × Expr 𝔹)
 parseWithImports src = do
    (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics")
        <@> successfulParse src program
+
+parseWithImports2 :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
+parseWithImports2 src = do
+   (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics")
+       <@> successfulParse src program2
 
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do

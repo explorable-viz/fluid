@@ -16,7 +16,7 @@ import Expr (Expr)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Lattice (𝔹)
-import Module (loadModule, openDatasetAs, openWithImports)
+import Module (loadModule, openDatasetAs, openWithImports, openWithImports2)
 import Pretty (pretty, render)
 import Primitive (primitives)
 import Util (type (×), (×), successful)
@@ -50,8 +50,26 @@ test' name setup expected =
                   unless (isGraphical v) $
                      (render $ pretty v') `shouldEqual` expected
 
+test2' :: String -> Aff (Env 𝔹 × S.Expr 𝔹) -> String -> SpecT Aff Unit Effect Unit
+test2' name setup expected =
+   before setup $
+      it name $ \(ρ × s) -> do
+         let e = successful $ desugar s
+         case successful $ eval ρ e of
+            t × v -> do
+               unless (isGraphical v) $
+                  (render $ pretty v) `shouldEqual` expected
+               when slicing do
+                  let ρ' × e' × α'  = eval_bwd v t
+                      v'            = eval_fwd ρ' e' true
+                  unless (isGraphical v) $
+                     (render $ pretty v') `shouldEqual` expected
+
 test :: String -> String -> SpecT Aff Unit Effect Unit
 test file = test' file (openWithImports file)
+
+test2 :: String -> String -> SpecT Aff Unit Effect Unit
+test2 file = test2' file (openWithImports2 file)
 
 testWithDataset :: String -> String -> SpecT Aff Unit Effect Unit
 testWithDataset dataset file =
@@ -68,6 +86,8 @@ desugarTest name s expected =
 
 main :: Effect Unit
 main = do
+   -- desugaring
+   run $ test2 "list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
    -- desugaring
    run $ desugarTest "list-comp-1" lcomp1 lcomp1_eval
    run $ desugarTest "list-comp-2" lcomp2 lcomp2_eval

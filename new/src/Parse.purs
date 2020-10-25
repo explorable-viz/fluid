@@ -433,5 +433,8 @@ topLevel p = token.whiteSpace *> p <* eof
 program ∷ SParser (Expr 𝔹)
 program = topLevel expr_
 
+program2 ∷ SParser (S.Expr 𝔹)
+program2 = topLevel expr2
+
 module_ :: SParser (Module 𝔹)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
