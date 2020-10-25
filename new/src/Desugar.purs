@@ -31,8 +31,8 @@ data RawExpr a =
    BinaryApp (Expr a) Var (Expr a) |
    MatchAs (Expr a) (NonEmptyList (Branch a)) |
    IfElse (Expr a) (Expr a) (Expr a) |
-   ListSeq (Expr a) (Expr a) |
-   ListComp (Expr a) (List (Predicate a)) |
+   ListRange (Expr a) (Expr a) |
+   ListComp (Expr a) (List (Qualifier a)) |
    Let (VarDef a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
 
@@ -46,7 +46,7 @@ type RecDefs a = NonEmptyList (Clause a)
 type VarDef a = Pattern × Expr a
 type VarDefs a = List (VarDef a)
 
-data Predicate a =
+data Qualifier a =
    Guard (Expr a) |
    Generator Pattern (Expr a) |
    Declaration Pattern (Expr a)
@@ -94,7 +94,7 @@ desugar (Expr α (IfElse s1 s2 s3)) = do
    e3 <- desugar s3
    let σ = ElimConstr (fromFoldable [cTrue × Body e2, cFalse × Body e3])
    E.Expr α <$> (E.MatchAs <$> desugar s1 <@> σ)
-desugar (Expr α (ListSeq s1 s2)) =
+desugar (Expr α (ListRange s1 s2)) =
    eapp <$> (eapp (evar "range") <$> desugar s1) <*> desugar s2
 desugar (Expr α (ListComp s_body (Guard (Expr _ (Constr cTrue Nil)) : Nil))) = do
    e <- desugar s_body

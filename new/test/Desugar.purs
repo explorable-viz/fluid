@@ -4,7 +4,7 @@ import Prelude
 import Data.List (List(..), (:))
 import Bindings (Var)
 import DataType (cCons, cNil)
-import Desugar (Pattern(..), Predicate(..), Expr, RawExpr(..), expr)
+import Desugar (Pattern(..), Qualifier(..), Expr, RawExpr(..), expr)
 import Lattice (𝔹)
 
 lcomp1 :: Expr 𝔹
@@ -59,7 +59,7 @@ lcomp4_eval :: String
 lcomp4_eval = "[5, 4, 3]"
 
 lseq1 :: Expr 𝔹
-lseq1 = expr $ ListSeq (int 3) (int 7)
+lseq1 = expr $ ListRange (int 3) (int 7)
 
 lseq1_eval :: String
 lseq1_eval = "[3, 4, 5, 6, 7]"
