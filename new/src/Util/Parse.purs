@@ -28,6 +28,3 @@ sepBy1_try p sep = do
 
 some :: forall a . SParser a → SParser (NonEmptyList a)
 some p = fromJust absurd <$> (fromList <$> L.some p)
-
-many :: forall a . SParser a → SParser (NonEmptyList a)
-many p = fromJust absurd <$> (fromList <$> L.many p)
