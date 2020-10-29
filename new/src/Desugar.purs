@@ -87,7 +87,7 @@ instance desugarRecDefs :: Desugarable (NonEmptyList (Tuple String (Tuple (NonEm
       toRecDef :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
       toRecDef fπs' =
          let f = fst $ head fπs' in
-         f ↦ successfulWith ("Bad branches for '" <> f <> "'") (joinAll $ snd <$> fπs')
+         f ↦ successfulWith ("Bad branches for '" <> f <> "'") (desugar $ snd <$> fπs')
 
 instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
    desugar (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
@@ -96,10 +96,10 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
    desugar (Expr α (Op op))               = pure $ E.Expr α (E.Op op)
    desugar (Expr α (Str s))               = pure $ E.Expr α (E.Str s)
    desugar (Expr α (Constr ctr args))     = E.Expr α <$> (E.Constr ctr <$> traverse desugar args)
-   desugar (Expr α (Lambda bs))           = E.Expr α <$> (E.Lambda <$> joinAll bs)
+   desugar (Expr α (Lambda bs))           = E.Expr α <$> (E.Lambda <$> desugar bs)
    desugar (Expr α (App s1 s2))           = E.Expr α <$> (E.App <$> desugar s1 <*> desugar s2)
    desugar (Expr α (BinaryApp s1 op s2))  = E.Expr α <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
-   desugar (Expr α (MatchAs s bs))        = E.Expr α <$> (E.MatchAs <$> desugar s <*> joinAll bs)
+   desugar (Expr α (MatchAs s bs))        = E.Expr α <$> (E.MatchAs <$> desugar s <*> desugar bs)
    desugar (Expr α (Let d s'))            = E.Expr α <$> (E.Let <$> desugar d <*> desugar s')
    desugar (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec <$> desugar fπs <*> desugar s)
    desugar (Expr α (IfElse s1 s2 s3)) = do
@@ -165,9 +165,9 @@ totalise (ElimVar e k) e'
                Body _ -> ElimVar e k
                None   -> ElimVar e $ Body e'
 
-toCont2 :: List Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
-toCont2 Nil κ        = pure κ
-toCont2 (π : πs) κ   = Arg <$> (toCont2 πs κ >>= toElim2 π)
+toCont :: List Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
+toCont Nil κ        = pure κ
+toCont (π : πs) κ   = Arg <$> (toCont πs κ >>= toElim2 π)
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = void $ with ("Checking arity of " <> show c) $
@@ -188,12 +188,18 @@ checkDataType msg c κs = void $ do
 
 toElim2 :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 toElim2 (PVar x) κ       = pure $ ElimVar x κ
-toElim2 (PConstr c πs) κ = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont2 πs κ)
+toElim2 (PConstr c πs) κ = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs κ)
 
 toElim :: NonEmptyList Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 toElim (NonEmptyList (π :| Nil)) κ     = toElim2 π κ
 toElim (NonEmptyList (π :| π' : πs)) κ =
    toElim2 π =<< Body <$> E.expr <$> E.Lambda <$> toElim (NonEmptyList $ π' :| πs) κ
+
+instance desugarBranches :: Desugarable (NonEmptyList (NonEmptyList Pattern × Expr Boolean))
+                                        (Elim Boolean) where
+   desugar bs = do
+      NonEmptyList (σ :| σs) <- traverse (\(πs × e) -> (Body <$> desugar e) >>= toElim πs) bs
+      foldM maybeJoin σ σs
 
 class Joinable a where
    maybeJoin :: a -> a -> MayFail a
@@ -222,8 +228,3 @@ instance joinableMap :: Joinable (Map Ctr (Cont Boolean)) where
                pure $ insert c κ κs
             Just κ' ->
                update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
-
-joinAll :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
-joinAll bs = do
-   NonEmptyList (σ :| σs) <- traverse (\(πs × e) -> (Body <$> desugar e) >>= toElim πs) bs
-   foldM maybeJoin σ σs
