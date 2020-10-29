@@ -24,11 +24,11 @@ import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
-import Desugar (Branch, Clause)
-import Desugar (Expr(..), Module(..), Pattern(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr) as S
 import Expr (Var)
 import Lattice (𝔹)
 import Primitive (opDefs)
+import SExpr (Branch, Clause)
+import SExpr (Expr(..), Module(..), Pattern(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr) as S
 import Util (Endo, (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
 

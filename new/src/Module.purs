@@ -8,7 +8,7 @@ import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Bindings (Bindings(..), Var, (:+:), (↦))
-import Desugar (Expr) as S
+import SExpr (Expr) as S
 import Desugar (desugar)
 import Eval (eval, eval_module)
 import Lattice (𝔹)

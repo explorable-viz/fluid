@@ -4,8 +4,8 @@ import Prelude
 import Data.List (List(..), (:))
 import Bindings (Var)
 import DataType (cCons, cNil)
-import Desugar (Pattern(..), Qualifier(..), Expr, RawExpr(..), expr)
 import Lattice (𝔹)
+import SExpr (Pattern(..), Qualifier(..), Expr, RawExpr(..), expr)
 
 lcomp1 :: Expr 𝔹
 lcomp1

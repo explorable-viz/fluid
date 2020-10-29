@@ -16,48 +16,9 @@ import Bindings (Binding, Bindings, (↦), fromList)
 import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
-import Lattice (𝔹, class BoundedJoinSemilattice, bot)
-import Util (MayFail, type (×), (×), type (+), (≞), absurd, error, fromJust, mustLookup, report, successfulWith)
-
-data RawExpr a =
-   Var Var |
-   Op Var |
-   Int Int |
-   Float Number |
-   Str String |
-   Constr Ctr (List (Expr a)) |
-   Lambda (NonEmptyList (Branch a)) |
-   App (Expr a) (Expr a) |
-   BinaryApp (Expr a) Var (Expr a) |
-   MatchAs (Expr a) (NonEmptyList (Branch a)) |
-   IfElse (Expr a) (Expr a) (Expr a) |
-   ListRange (Expr a) (Expr a) |
-   ListComp (Expr a) (List (Qualifier a)) |
-   Let (VarDef a) (Expr a) |
-   LetRec (RecDefs a) (Expr a)
-
-data Pattern =
-   PVar Var |
-   PConstr Ctr (List Pattern)
-
-type Branch a = NonEmptyList Pattern × Expr a
-type Clause a = Var × Branch a
-type RecDefs a = NonEmptyList (Clause a)
-type VarDef a = Pattern × Expr a
-type VarDefs a = List (VarDef a)
-
-data Qualifier a =
-   Guard (Expr a) |
-   Generator Pattern (Expr a) |
-   Declaration Pattern (Expr a)
-
-data Expr a =
-   Expr a (RawExpr a)
-
-data Module a = Module (List (VarDef a + RecDefs a))
-
-expr :: forall a . BoundedJoinSemilattice a => RawExpr a -> Expr a
-expr = Expr bot
+import SExpr (Clause, Expr(..), Module(..), Pattern(..), Qualifier(..), RawExpr(..), expr)
+import Lattice (𝔹)
+import Util (MayFail, type (×), (×), (≞), absurd, error, fromJust, mustLookup, report, successfulWith)
 
 eapp :: E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 eapp f = E.expr <<< E.App f
@@ -126,22 +87,20 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
    desugar (Expr _ (ListComp _ Nil)) = error absurd
 
 totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
-totalise (ElimConstr m) e
-   = let ctr × κ              = fromJust absurd (L.head $ toUnfoldable m)
-         branches             = toUnfoldable m
-         DataType _ sigs      = mustLookup ctr ctrToDataType
-         all_ctrs             = fst <$> toUnfoldable sigs
-         new_branches         = (_ × Body e) <$> (all_ctrs \\ (fst <$> branches))
-         totalised_branches   = branches <#>
-                                 \(c × κ) -> case mustLookup c m of
-                                                Arg σ   -> c × Arg (totalise σ e)
-                                                Body e' -> c × Body e'
-                                                None    -> c × Body e
-     in   ElimConstr (fromFoldable $ totalised_branches <> new_branches)
-totalise (ElimVar e κ) e'
-   = case κ of Arg σ  -> ElimVar e $ Arg (totalise σ e')
-               Body _ -> ElimVar e κ
-               None   -> ElimVar e $ Body e'
+totalise (ElimConstr m) e =
+   let c × κ            = fromJust absurd $ L.head $ toUnfoldable m
+       bs               = toUnfoldable m
+       DataType _ sigs  = mustLookup c ctrToDataType
+       bs'              = (_ × Body e) <$> ((fst <$> toUnfoldable sigs) \\ (fst <$> bs))
+       bs''             = bs <#> \(c × κ) -> case mustLookup c m of
+                           Arg σ   -> c × Arg (totalise σ e)
+                           Body e' -> c × Body e'
+                           None    -> c × Body e
+     in   ElimConstr $ fromFoldable $ bs'' <> bs'
+totalise (ElimVar e κ) e' = case κ of
+   Arg σ  -> ElimVar e $ Arg $ totalise σ e'
+   Body _ -> ElimVar e κ
+   None   -> ElimVar e $ Body e'
 
 instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
    desugar (Module Nil) = pure $ E.Module Nil
