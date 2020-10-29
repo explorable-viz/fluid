@@ -77,6 +77,12 @@ testWithDataset dataset file =
       bitraverse (uncurry openDatasetAs) openWithImports (dataset × "data" × file) <#>
       (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)
 
+testWithDataset2 :: String -> String -> SpecT Aff Unit Effect Unit
+testWithDataset2 dataset file =
+   flip (test2' file) "" $
+      bitraverse (uncurry openDatasetAs) openWithImports2 (dataset × "data" × file) <#>
+      (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)
+
 desugarTest :: String -> S.Expr 𝔹 -> String -> SpecT Aff Unit Effect Unit
 desugarTest name s expected =
    before (loadModule "prelude" primitives) $
@@ -115,8 +121,10 @@ main = do
 {-
    run $ test2 "reverse" "[2, 1]"
    run $ test2 "zipWith" "[[10], [12], [20]]"
+-}
    -- graphics
-   run $ testWithDataset "renewables-restricted" "graphics/background"
+   run $ testWithDataset2 "renewables-restricted" "graphics/background"
+{-
    run $ testWithDataset "renewables-restricted" "graphics/grouped-bar-chart"
    run $ testWithDataset "renewables-restricted" "graphics/line-chart"
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
