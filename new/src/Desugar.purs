@@ -13,7 +13,7 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple, fst, snd)
-import Bindings (Binding, (↦), fromList)
+import Bindings (Binding, Bindings, (↦), fromList)
 import DataType (Ctr, DataType, DataType'(..), arity, ctrToDataType, cCons, cNil, cTrue, cFalse, dataTypeFor)
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
@@ -77,6 +77,18 @@ class Desugarable a b where
 instance desugarVarDef :: Desugarable (Tuple Pattern (Expr Boolean)) (E.VarDef Boolean) where
    desugar (p × s) = E.VarDef (patternToElim p None) <$> desugar s
 
+instance desugarRecDefs :: Desugarable (NonEmptyList (Tuple String (Tuple (NonEmptyList Pattern) (Expr Boolean))))
+                                       (Bindings Elim Boolean) where
+   desugar fπs = pure δ
+      where
+      fπss = groupBy (eq `on` fst) fπs :: NonEmptyList (NonEmptyList (Clause 𝔹))
+      δ = fromList $ toList $ reverse $ toRecDef <$> fπss
+
+      toRecDef :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
+      toRecDef fπs' =
+         let f = fst $ head fπs' in
+         f ↦ successfulWith ("Bad branches for '" <> f <> "'") (joinAll $ snd <$> fπs')
+
 instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
    desugar (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
    desugar (Expr α (Float n))             = pure $ E.Expr α (E.Float n)
@@ -89,16 +101,7 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
    desugar (Expr α (BinaryApp s1 op s2))  = E.Expr α <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
    desugar (Expr α (MatchAs s bs))        = E.Expr α <$> (E.MatchAs <$> desugar s <*> joinAll bs)
    desugar (Expr α (Let d s'))            = E.Expr α <$> (E.Let <$> desugar d <*> desugar s')
-   desugar (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec δ' <$> desugar s)
-      where
-      fπss = groupBy (eq `on` fst) fπs :: NonEmptyList (NonEmptyList (Clause 𝔹))
-      δ' = fromList $ toList $ reverse $ toRecDef <$> fπss
-
-      toRecDef :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
-      toRecDef fπs' =
-         let f = fst $ head fπs' in
-         f ↦ successfulWith ("Bad branches for '" <> f <> "'") (joinAll $ snd <$> fπs')
-
+   desugar (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec <$> desugar fπs <*> desugar s)
    desugar (Expr α (IfElse s1 s2 s3)) = do
       e2 <- desugar s2
       e3 <- desugar s3
@@ -128,11 +131,12 @@ instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
    desugar (Module Nil) = pure $ E.Module Nil
    desugar (Module (Left d : ds)) = do
       E.Module ds' <- desugar $ Module ds
-      d <- desugar d
-      pure $ E.Module $ Left d : ds'
+      d' <- desugar d
+      pure $ E.Module $ Left d' : ds'
    desugar (Module (Right fπs : ds)) = do
       E.Module ds' <- desugar $ Module ds
-      pure $ E.Module $ Right ?_ : ds'
+      δ <- desugar fπs
+      pure $ E.Module $ Right δ : ds'
 
 patternToElim :: Pattern -> Cont 𝔹 -> Elim 𝔹
 patternToElim (PVar x) κ
