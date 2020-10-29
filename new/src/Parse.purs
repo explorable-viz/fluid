@@ -183,14 +183,11 @@ varDefs expr' = keyword strLet *> sepBy1_try clause token.semi <#> toList
    clause :: SParser (VarDef 𝔹)
    clause = VarDef <$> (successful <<< toElim <$> pattern <* patternDelim) <*> expr'
 
---varDefs2 :: SParser (S.Expr 𝔹) -> SParser (S.VarDefs 𝔹)
---varDefs2 expr' = keyword strLet *> sepBy1_try clause token.semi <#> toList
---   where
---   clause :: SParser (S.VarDef 𝔹)
---   clause = (pattern2 <* patternDelim) `lift2 (×)` expr'
-
 varDefs2 :: SParser (S.Expr 𝔹) -> SParser (S.VarDefs 𝔹)
-varDefs2 expr' = keyword strLet *> ((pattern2 <* patternDelim) `lift2 (×)` expr') <#> singleton
+varDefs2 expr' = keyword strLet *> sepBy1_try clause token.semi <#> toList
+   where
+   clause :: SParser (S.VarDef 𝔹)
+   clause = (pattern2 <* patternDelim) `lift2 (×)` expr'
 
 recDefs :: SParser (Expr 𝔹) -> SParser (RecDefs 𝔹)
 recDefs expr' = do
@@ -216,11 +213,8 @@ recDefs2 expr' = do
 defs :: SParser (Expr 𝔹) -> SParser (List (VarDef 𝔹 + RecDefs 𝔹))
 defs expr' = bisequence <$> choose (try $ varDefs expr') (singleton <$> recDefs expr')
 
--- defs2 :: SParser (S.Expr 𝔹) -> SParser (List (S.VarDef 𝔹 + S.RecDefs 𝔹))
--- defs2 expr' = bisequence <$> choose (try $ varDefs2 expr') (singleton <$> recDefs2 expr')
-
-defs2 :: SParser (S.Expr 𝔹) -> SParser (List (S.VarDef 𝔹))
-defs2 expr' = varDefs2 expr'
+defs2 :: SParser (S.Expr 𝔹) -> SParser (List (S.VarDef 𝔹 + S.RecDefs 𝔹))
+defs2 expr' = bisequence <$> choose (try $ varDefs2 expr') (singleton <$> recDefs2 expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser (Expr 𝔹)
@@ -369,15 +363,10 @@ expr2 = fix $ appChain >>> buildExprParser (operators binaryOp)
          string :: SParser (S.Expr 𝔹)
          string = (S.Str >>> S.expr) <$> token.stringLiteral
 
---         defsExpr :: SParser (S.Expr 𝔹)
---         defsExpr = do
---            defs' <- concat <<< toList <$> sepBy1 (defs2 expr') token.semi
---            foldr (\def -> S.expr <<< (S.Let ||| S.LetRec) def) <$> (keyword strIn *> expr') <@> defs'
-
          defsExpr :: SParser (S.Expr 𝔹)
          defsExpr = do
             defs' <- concat <<< toList <$> sepBy1 (defs2 expr') token.semi
-            foldr (\def -> S.expr <<< S.Let def) <$> (keyword strIn *> expr') <@> defs'
+            foldr (\def -> S.expr <<< (S.Let ||| S.LetRec) def) <$> (keyword strIn *> expr') <@> defs'
 
          matchAs :: SParser (S.Expr 𝔹)
          matchAs = S.expr <$> (S.MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> branches false expr')
