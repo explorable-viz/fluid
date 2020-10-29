@@ -14,7 +14,7 @@ import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple, fst, snd)
 import Bindings (Binding, Bindings, (↦), fromList)
-import DataType (Ctr, DataType, DataType'(..), arity, ctrToDataType, cCons, cNil, cTrue, cFalse, dataTypeFor)
+import DataType (Ctr, DataType, DataType'(..), arity, checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse, dataTypeFor)
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
 import Lattice (𝔹, class BoundedJoinSemilattice, bot)
@@ -165,30 +165,13 @@ totalise (ElimVar e k) e'
                Body _ -> ElimVar e k
                None   -> ElimVar e $ Body e'
 
-checkArity :: Ctr -> Int -> MayFail Unit
-checkArity c n = void $ with ("Checking arity of " <> show c) $
-   arity c `(=<<<) (≞)` pure n
-
-dataType :: Map Ctr (Cont 𝔹) -> MayFail DataType
-dataType κs = case keys κs of
-   Nil   -> error absurd
-   c : _ -> dataTypeFor c
-
-checkDataType :: String -> Ctr -> Map Ctr (Cont 𝔹) -> MayFail Unit
-checkDataType msg c κs = void $ do
-   d <- dataTypeFor c
-   d' <- dataType κs
-   if (d /= d')
-   then error "***"
-   else with (msg <> show c <> " is not a constructor of " <> show d') $ d ≞ d'
-
 toCont :: List Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
 toCont Nil κ        = pure κ
 toCont (π : πs) κ   = Arg <$> do
    κ' <- toCont πs κ
    desugar $ π × κ'
 
--- The Cont arguments here act as accumulators.
+-- The Cont arguments here act as an accumulator.
 instance desugarPattern :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
    desugar (PVar x × κ)       = pure $ ElimVar x κ
    desugar (PConstr c πs × κ) = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs κ)
