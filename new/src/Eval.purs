@@ -6,14 +6,13 @@ import Data.List (List(..), (:), length, singleton, unzip, snoc)
 import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
-import Debug.Trace (trace)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity)
+import Desugar (checkDataType)
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
 import Lattice (𝔹)
-import Pattern (checkDataType)
 import Pretty (pretty, render)
 import Primitive (apply)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
@@ -29,9 +28,7 @@ match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
    κ <- note ("Incomplete pattern: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
    pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
-match v σ =
-   trace σ \_ ->
-   report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
+match v σ = report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchArgs _ Nil κ                = pure $ Empty × κ × Nil
