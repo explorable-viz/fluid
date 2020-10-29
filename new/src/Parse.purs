@@ -28,7 +28,7 @@ import Bindings (Binding, (↦), fromList)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Desugar (Branch, Clause)
 import Desugar (Expr(..), Module(..), Pattern(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr) as S
-import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDefs, Var, VarDef(..), VarDefs, expr)
+import Expr (Elim, Expr, RecDefs, Var, VarDef(..), VarDefs)
 import Lattice (𝔹)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
@@ -217,89 +217,6 @@ defs2 :: SParser (S.Expr 𝔹) -> SParser (List (S.VarDef 𝔹 + S.RecDefs 𝔹)
 defs2 expr' = bisequence <$> choose (try $ varDefs2 expr') (singleton <$> recDefs2 expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
-expr_ :: SParser (Expr 𝔹)
-expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
-   where
-   -- Syntactically distinguishing infix constructors from other operators (a la Haskell) allows us to
-   -- optimise an application tree into a (potentially partial) constructor application.
-   binaryOp :: String -> SParser (Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹)
-   binaryOp op = do
-      op' <- token.operator
-      onlyIf (op == op') $
-         if isCtrOp op'
-         then \e e' -> expr $ Constr (Ctr op') (e : e' : empty)
-         else \e e' -> expr $ BinaryApp e op e'
-
-   -- Left-associative tree of applications of one or more simple terms.
-   appChain :: Endo (SParser (Expr 𝔹))
-   appChain expr' = simpleExpr >>= rest
-      where
-      rest :: Expr 𝔹 -> SParser (Expr 𝔹)
-      rest e@(Expr _ (Constr c es)) = ctrArgs <|> pure e
-         where
-         ctrArgs :: SParser (Expr 𝔹)
-         ctrArgs = simpleExpr >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
-      rest e = (expr <$> (App e <$> simpleExpr) >>= rest) <|> pure e
-
-      -- Any expression other than an operator tree or an application chain.
-      simpleExpr :: SParser (Expr 𝔹)
-      simpleExpr =
-         try ctrExpr <|>
-         try variable <|>
-         try float <|>
-         try int <|> -- int may start with +/-
-         string <|>
-         defsExpr <|>
-         matchAs <|>
-         try (token.parens expr') <|>
-         try parensOp <|>
-         pair <|>
-         lambda
-
-         where
-         ctrExpr :: SParser (Expr 𝔹)
-         ctrExpr = expr <$> (Constr <$> ctr <@> empty)
-
-         variable :: SParser (Expr 𝔹)
-         variable = ident <#> Var >>> expr
-
-         signOpt :: ∀ a . Ring a => SParser (a -> a)
-         signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
-
-         -- built-in integer/float parsers don't seem to allow leading signs.
-         int :: SParser (Expr 𝔹)
-         int = do
-            sign <- signOpt
-            (sign >>> Int >>> expr) <$> token.natural
-
-         float :: SParser (Expr 𝔹)
-         float = do
-            sign <- signOpt
-            (sign >>> Float >>> expr) <$> token.float
-
-         string :: SParser (Expr 𝔹)
-         string = (Str >>> expr) <$> token.stringLiteral
-
-         defsExpr :: SParser (Expr 𝔹)
-         defsExpr = do
-            defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
-            foldr (\def -> expr <<< (Let ||| LetRec) def) <$> (keyword strIn *> expr') <@> defs'
-
-         matchAs :: SParser (Expr 𝔹)
-         matchAs = expr <$> (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> elim false expr')
-
-         -- any binary operator, in parentheses
-         parensOp :: SParser (Expr 𝔹)
-         parensOp = expr <$> (Op <$> token.parens token.operator)
-
-         pair :: SParser (Expr 𝔹)
-         pair = token.parens $
-            expr <$> (lift2 $ \e e' -> Constr cPair (e : e' : empty)) (expr' <* token.comma) expr'
-
-         lambda :: SParser (Expr 𝔹)
-         lambda = expr <$> (Lambda <$> (keyword strFun *> elim true expr'))
-
--- Tree whose branches are binary primitives and whose leaves are application chains.
 expr2 :: SParser (S.Expr 𝔹)
 expr2 = fix $ appChain >>> buildExprParser (operators binaryOp)
    where
@@ -437,8 +354,5 @@ topLevel p = token.whiteSpace *> p <* eof
 program ∷ SParser (S.Expr 𝔹)
 program = topLevel expr2
 
-module_ :: SParser (Module 𝔹)
-module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
-
-module2 :: SParser (S.Module 𝔹)
-module2 = S.Module <<< concat <$> topLevel (sepBy_try (defs2 expr2) token.semi <* token.semi)
+module_ :: SParser (S.Module 𝔹)
+module_ = S.Module <<< concat <$> topLevel (sepBy_try (defs2 expr2) token.semi <* token.semi)

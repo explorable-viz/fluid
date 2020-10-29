@@ -12,7 +12,7 @@ import Desugar (Expr) as S
 import Desugar (desugar)
 import Eval (eval, eval_module)
 import Lattice (𝔹)
-import Parse (module2, program)
+import Parse (module_, program)
 import Primitive (primitives)
 import Util (type (×), (×), error, successful)
 import Util.Parse (SParser)
@@ -33,7 +33,7 @@ loadFile folder file = do
 loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file ρ = do
    src <- loadFile "fluid/lib" file
-   pure $ successful $ eval_module ρ $ successful $ desugar $ successfulParse src module2
+   pure $ successful $ eval_module ρ $ successful $ desugar $ successfulParse src module_
 
 openWithImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithImports file =
