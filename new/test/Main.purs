@@ -124,10 +124,8 @@ main = do
 -}
    -- graphics
    run $ testWithDataset2 "renewables-restricted" "graphics/background"
-{-
-   run $ testWithDataset "renewables-restricted" "graphics/grouped-bar-chart"
-   run $ testWithDataset "renewables-restricted" "graphics/line-chart"
-   run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
--}
+   run $ testWithDataset2 "renewables-restricted" "graphics/grouped-bar-chart"
+   run $ testWithDataset2 "renewables-restricted" "graphics/line-chart"
+   run $ testWithDataset2 "renewables-restricted" "graphics/stacked-bar-chart"
    -- scratchpad
    run $ test2 "temp" "3"
