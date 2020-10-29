@@ -81,8 +81,8 @@ ctr = do
    x <- token.identifier
    onlyIf (isCtrName x) $ Ctr x
 
-simplePattern2 :: Endo (SParser S.Pattern)
-simplePattern2 pattern' =
+simplePattern :: Endo (SParser S.Pattern)
+simplePattern pattern' =
    try ctr_pattern <|>
    try var_pattern <|>
    try (token.parens pattern') <|>
@@ -117,8 +117,8 @@ patternDelim = arrow <|> equals
 branch :: Boolean -> SParser (S.Expr 𝔹) -> SParser Unit -> SParser (Branch 𝔹)
 branch curried expr' delim = do
    πs <- if curried
-         then some $ simplePattern2 pattern2
-         else NonEmptyList <$> pattern2 `lift2 (:|)` pure Nil
+         then some $ simplePattern pattern
+         else NonEmptyList <$> pattern `lift2 (:|)` pure Nil
    e <- delim *> expr'
    pure $ πs × e
 
@@ -129,21 +129,21 @@ branches curried expr' =
    branchMany :: SParser (NonEmptyList (Branch 𝔹))
    branchMany = token.braces $ sepBy1 (branch curried expr' arrow) token.semi
 
-varDefs2 :: SParser (S.Expr 𝔹) -> SParser (S.VarDefs 𝔹)
-varDefs2 expr' = keyword strLet *> sepBy1_try clause token.semi <#> toList
+varDefs :: SParser (S.Expr 𝔹) -> SParser (S.VarDefs 𝔹)
+varDefs expr' = keyword strLet *> sepBy1_try clause token.semi <#> toList
    where
    clause :: SParser (S.VarDef 𝔹)
-   clause = (pattern2 <* patternDelim) `lift2 (×)` expr'
+   clause = (pattern <* patternDelim) `lift2 (×)` expr'
 
-recDefs2 :: SParser (S.Expr 𝔹) -> SParser (S.RecDefs 𝔹)
-recDefs2 expr' = do
+recDefs :: SParser (S.Expr 𝔹) -> SParser (S.RecDefs 𝔹)
+recDefs expr' = do
    keyword strLet *> sepBy1_try clause token.semi
    where
    clause :: SParser (Clause 𝔹)
    clause = ident `lift2 (×)` (branch true expr' equals)
 
-defs2 :: SParser (S.Expr 𝔹) -> SParser (List (S.VarDef 𝔹 + S.RecDefs 𝔹))
-defs2 expr' = bisequence <$> choose (try $ varDefs2 expr') (singleton <$> recDefs2 expr')
+defs :: SParser (S.Expr 𝔹) -> SParser (List (S.VarDef 𝔹 + S.RecDefs 𝔹))
+defs expr' = bisequence <$> choose (try $ varDefs expr') (singleton <$> recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr :: SParser (S.Expr 𝔹)
@@ -211,7 +211,7 @@ expr = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          defsExpr :: SParser (S.Expr 𝔹)
          defsExpr = do
-            defs' <- concat <<< toList <$> sepBy1 (defs2 expr') token.semi
+            defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
             foldr (\def -> S.expr <<< (S.Let ||| S.LetRec) def) <$> (keyword strIn *> expr') <@> defs'
 
          matchAs :: SParser (S.Expr 𝔹)
@@ -236,19 +236,19 @@ operators binaryOp =
    groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
 
 -- Pattern with no continuation.
-pattern2 :: SParser S.Pattern
-pattern2 = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
+pattern :: SParser S.Pattern
+pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    where
    -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
    -- non-saturated constructor applications, or patterns other than constructors in the function position.
    appChain_pattern :: Endo (SParser S.Pattern)
-   appChain_pattern pattern' = simplePattern2 pattern' >>= rest
+   appChain_pattern pattern' = simplePattern pattern' >>= rest
       where
          rest ∷ S.Pattern -> SParser S.Pattern
          rest π@(S.PConstr c πs) = ctrArgs <|> pure π
             where
             ctrArgs :: SParser S.Pattern
-            ctrArgs = simplePattern2 pattern' >>= \π' -> rest $ S.PConstr c (πs `snoc` π')
+            ctrArgs = simplePattern pattern' >>= \π' -> rest $ S.PConstr c (πs `snoc` π')
          rest π@(S.PVar _) = pure π
 
    infixCtr :: String -> SParser (S.Pattern -> S.Pattern -> S.Pattern)
@@ -263,4 +263,4 @@ program ∷ SParser (S.Expr 𝔹)
 program = topLevel expr
 
 module_ :: SParser (S.Module 𝔹)
-module_ = S.Module <<< concat <$> topLevel (sepBy_try (defs2 expr) token.semi <* token.semi)
+module_ = S.Module <<< concat <$> topLevel (sepBy_try (defs expr) token.semi <* token.semi)
