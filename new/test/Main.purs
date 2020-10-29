@@ -107,7 +107,9 @@ main = do
    run $ test "lookup" "Some \"sarah\""
    run $ test2 "map" "[5, 7, 13, 15, 4, 3, -3]"
    run $ test "mergeSort" "[1, 2, 3]"
+-}
    run $ test "normalise" "(33, 66)"
+{-
    run $ test "pattern-match" "4"
    run $ test2 "reverse" "[2, 1]"
    run $ test2 "zipWith" "[[10], [12], [20]]"
