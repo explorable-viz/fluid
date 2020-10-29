@@ -9,10 +9,10 @@ import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import Desugar (Expr) as S
+import Desugar (desugar)
 import Eval (defs, eval)
-import Expr (Expr)
 import Lattice (𝔹)
-import Parse (module_, program, program2)
+import Parse (module_, program2)
 import Primitive (primitives)
 import Util (type (×), (×), error, successful)
 import Util.Parse (SParser)
@@ -35,13 +35,9 @@ loadModule file ρ = do
    src <- loadFile "fluid/lib" file
    pure $ successful $ defs ρ $ successfulParse src module_
 
-openWithImports :: String -> Aff (Env 𝔹 × Expr 𝔹)
+openWithImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithImports file =
    loadFile "fluid/example" file >>= parseWithImports
-
-openWithImports2 :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-openWithImports2 file =
-   loadFile "fluid/example" file >>= parseWithImports2
 
 successfulParse :: forall t . String -> SParser t -> t
 successfulParse src p =
@@ -49,18 +45,13 @@ successfulParse src p =
       Left parseError -> error $ show parseError
       Right t -> t
 
-parseWithImports :: String -> Aff (Env 𝔹 × Expr 𝔹)
+parseWithImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 parseWithImports src = do
-   (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics")
-       <@> successfulParse src program
-
-parseWithImports2 :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-parseWithImports2 src = do
    (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics")
        <@> successfulParse src program2
 
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do
-   ρ × e <- loadFile "fluid/dataset" file >>= parseWithImports
-   let _ × v = successful $ eval ρ e
+   ρ × s <- loadFile "fluid/dataset" file >>= parseWithImports
+   let _ × v = successful $ eval ρ $ successful $ desugar s
    pure $ Empty :+: x ↦ v

@@ -15,7 +15,7 @@ import Desugar (desugar)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Lattice (𝔹)
-import Module (loadModule, openDatasetAs, openWithImports2)
+import Module (loadModule, openDatasetAs, openWithImports)
 import Pretty (pretty, render)
 import Primitive (primitives)
 import Util (type (×), (×), successful)
@@ -51,12 +51,12 @@ test' name setup expected =
                      (render $ pretty v') `shouldEqual` expected
 
 test :: String -> String -> SpecT Aff Unit Effect Unit
-test file = test' file (openWithImports2 file)
+test file = test' file (openWithImports file)
 
 testWithDataset :: String -> String -> SpecT Aff Unit Effect Unit
 testWithDataset dataset file =
    flip (test' file) "" $
-      bitraverse (uncurry openDatasetAs) openWithImports2 (dataset × "data" × file) <#>
+      bitraverse (uncurry openDatasetAs) openWithImports (dataset × "data" × file) <#>
       (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)
 
 desugarTest :: String -> S.Expr 𝔹 -> String -> SpecT Aff Unit Effect Unit
