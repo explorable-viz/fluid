@@ -6,7 +6,6 @@ import Control.Apply (lift2)
 import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (elem, fromFoldable)
-import Data.Bitraversable (bisequence)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -142,8 +141,8 @@ recDefs expr' = do
    clause :: SParser (Clause 𝔹)
    clause = ident `lift2 (×)` (branch true expr' equals)
 
-defs :: SParser (S.Expr 𝔹) -> SParser (List (S.VarDef 𝔹 + S.RecDefs 𝔹))
-defs expr' = bisequence <$> choose (try $ varDefs expr') (singleton <$> recDefs expr')
+defs :: SParser (S.Expr 𝔹) -> SParser (List (S.VarDefs 𝔹 + S.RecDefs 𝔹))
+defs expr' = singleton <$> choose (try $ varDefs expr') (recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr :: SParser (S.Expr 𝔹)

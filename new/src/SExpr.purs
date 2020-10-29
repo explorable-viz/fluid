@@ -22,7 +22,7 @@ data RawExpr a =
    IfElse (Expr a) (Expr a) (Expr a) |
    ListRange (Expr a) (Expr a) |
    ListComp (Expr a) (List (Qualifier a)) |
-   Let (VarDef a) (Expr a) |
+   Let (VarDefs a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
 
 data Pattern =
@@ -43,7 +43,7 @@ data Qualifier a =
 data Expr a =
    Expr a (RawExpr a)
 
-data Module a = Module (List (VarDef a + RecDefs a))
+data Module a = Module (List (VarDefs a + RecDefs a))
 
 expr :: forall a . BoundedJoinSemilattice a => RawExpr a -> Expr a
 expr = Expr bot
