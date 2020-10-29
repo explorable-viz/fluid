@@ -98,11 +98,11 @@ main = do
    -- slicing
 -}
    run $ test2 "arithmetic" "42"
-{-
-   run $ test "compose" "5"
-   run $ test "factorial" "40320"
+   run $ test2 "compose" "5"
+   run $ test2 "factorial" "40320"
    run $ test2 "filter" "[8, 7]"
-   run $ test "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]"
+   run $ test2 "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]"
+{-
    run $ test "foldr_sumSquares" "661"
    run $ test "lexicalScoping" "\"6\""
    run $ test2 "length" "2"
