@@ -18,7 +18,7 @@ import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
 import SExpr (Clause, Expr(..), Module(..), Pattern(..), Qualifier(..), RawExpr(..), expr)
 import Lattice (𝔹)
-import Util (MayFail, type (×), (×), type (+), (≞), absurd, error, fromJust, mustLookup, report, successfulWith)
+import Util (MayFail, type (×), (×), (≞), absurd, error, fromJust, mustLookup, report, successfulWith)
 
 eapp :: E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 eapp f = E.expr <<< E.App f
@@ -107,11 +107,7 @@ instance desugarEither :: (Desugarable a b, Desugarable c d) => Desugarable (Eit
    desugar (Right x) = Right <$> desugar x
 
 instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
-   desugar (Module Nil) = pure $ E.Module Nil
-   desugar (Module (d : ds)) = do
-      E.Module ds' <- desugar $ Module ds
-      d' <- desugar d
-      pure $ E.Module $ d' : ds'
+   desugar (Module ds) = E.Module <$> traverse desugar ds
 
 -- The Cont arguments here act as an accumulator.
 instance desugarPattern :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
