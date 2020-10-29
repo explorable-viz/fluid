@@ -33,7 +33,7 @@ import Lattice (𝔹)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
 import Primitive (opDefs)
 import Util (Endo, type (×), (×), type (+), error, onlyIf, successful, successfulWith)
-import Util.Parse (SParser, many, sepBy_try, sepBy1, sepBy1_try)
+import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
 
 -- constants (should also be used by prettyprinter)
 strArrow       = "->"      :: String
