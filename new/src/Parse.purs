@@ -10,13 +10,12 @@ import Data.Bitraversable (bisequence)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List(..), (:), concat, foldr, groupBy, reverse, singleton, snoc, sortBy)
-import Data.List.NonEmpty (NonEmptyList(..), head, toList)
+import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy)
+import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Map (values)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
-import Data.Tuple (fst, snd)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
@@ -24,15 +23,14 @@ import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
-import Bindings (Binding, (↦), fromList)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Desugar (Branch, Clause)
 import Desugar (Expr(..), Module(..), Pattern(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr) as S
-import Expr (Elim, Expr, RecDefs, Var)
+import Expr (Var)
 import Lattice (𝔹)
-import Pattern (Pattern(..), PCont(..), joinAll, setCont)
+import Pattern (Pattern(..), PCont(..), setCont)
 import Primitive (opDefs)
-import Util (Endo, type (×), (×), type (+), error, onlyIf, successfulWith)
+import Util (Endo, (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
 
 -- constants (should also be used by prettyprinter)
@@ -141,27 +139,6 @@ patternDelim :: SParser Unit
 patternDelim = arrow <|> equals
 
 -- "curried" controls whether nested functions are permitted in this context
-elim :: Boolean -> SParser (Expr 𝔹) -> SParser (Elim 𝔹)
-elim curried expr' =
-   successfulWith "Incompatible branches in match or lambda" <$> (joinAll <$> patterns)
-   where
-   patterns :: SParser (NonEmptyList Pattern)
-   patterns = pure <$> patternOne curried expr' patternDelim <|> patternMany
-      where
-      patternMany :: SParser (NonEmptyList Pattern)
-      patternMany = token.braces $ sepBy1 (patternOne curried expr' arrow) token.semi
-
-patternOne :: Boolean -> SParser (Expr 𝔹) -> SParser Unit -> SParser Pattern
-patternOne curried expr' delim = pattern' >>= rest
-   where
-   rest :: Pattern -> SParser Pattern
-   rest π = setCont <$> body' <@> π
-      where
-      body' = if curried then body <|> PLambda <$> (pattern' >>= rest) else body
-
-   pattern' = if curried then simplePattern pattern else pattern
-   body = PBody <$> (delim *> expr')
-
 branch :: Boolean -> SParser (S.Expr 𝔹) -> SParser Unit -> SParser (Branch 𝔹)
 branch curried expr' delim = do
    πs <- if curried
@@ -182,20 +159,6 @@ varDefs2 expr' = keyword strLet *> sepBy1_try clause token.semi <#> toList
    where
    clause :: SParser (S.VarDef 𝔹)
    clause = (pattern2 <* patternDelim) `lift2 (×)` expr'
-
-recDefs :: SParser (Expr 𝔹) -> SParser (RecDefs 𝔹)
-recDefs expr' = do
-   fπs <- keyword strLet *> sepBy1_try clause token.semi <#> toList
-   let fπss = groupBy (eq `on` fst) fπs
-   pure $ fromList $ reverse $ toRecDef <$> fπss
-   where
-   toRecDef :: NonEmptyList (Var × Pattern) -> Binding Elim 𝔹
-   toRecDef fπs =
-      let f = fst $ head fπs in
-      f ↦ successfulWith ("Bad branches for '" <> f <> "'") (joinAll $ snd <$> fπs)
-
-   clause :: SParser (Var × Pattern)
-   clause = ident `lift2 (×)` (patternOne true expr' equals)
 
 recDefs2 :: SParser (S.Expr 𝔹) -> SParser (S.RecDefs 𝔹)
 recDefs2 expr' = do
