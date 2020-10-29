@@ -1,6 +1,7 @@
 module Desugar where
 
 import Prelude hiding (absurd)
+import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Function (on)
 import Data.List (List(..), (:), (\\), length)
@@ -11,11 +12,11 @@ import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
-import Data.Tuple (fst, snd)
+import Data.Tuple (Tuple, fst, snd)
 import Bindings (Binding, (↦), fromList)
 import DataType (Ctr, DataType, DataType'(..), arity, ctrToDataType, cCons, cNil, cTrue, cFalse, dataTypeFor)
 import Expr (Cont(..), Elim(..), Var)
-import Expr (Expr(..), RawExpr(..), VarDef(..), expr) as E
+import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
 import Lattice (𝔹, class BoundedJoinSemilattice, bot)
 import Util (
    MayFail, type (×), (×), type (+), (=<<<), (≞), absurd, error, fromJust, mustLookup, report, successfulWith, with
@@ -70,53 +71,68 @@ enil = E.expr $ E.Constr cNil Nil
 evar :: Var -> E.Expr 𝔹
 evar = E.expr <<< E.Var
 
-desugar :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
-desugar (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
-desugar (Expr α (Float n))             = pure $ E.Expr α (E.Float n)
-desugar (Expr α (Var x))               = pure $ E.Expr α (E.Var x)
-desugar (Expr α (Op op))               = pure $ E.Expr α (E.Op op)
-desugar (Expr α (Str s))               = pure $ E.Expr α (E.Str s)
-desugar (Expr α (Constr ctr args))     = E.Expr α <$> (E.Constr ctr <$> traverse desugar args)
-desugar (Expr α (Lambda bs))           = E.Expr α <$> (E.Lambda <$> joinAll bs)
-desugar (Expr α (App s1 s2))           = E.Expr α <$> (E.App <$> desugar s1 <*> desugar s2)
-desugar (Expr α (BinaryApp s1 op s2))  = E.Expr α <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
-desugar (Expr α (MatchAs s bs))        = E.Expr α <$> (E.MatchAs <$> desugar s <*> joinAll bs)
-desugar (Expr α (Let (p × e) s))       =
-   E.Expr α <$> (E.Let <$> (E.VarDef (patternToElim p None) <$> desugar e) <*> desugar s)
-desugar (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec δ' <$> desugar s)
-   where
-   fπss = groupBy (eq `on` fst) fπs :: NonEmptyList (NonEmptyList (Clause 𝔹))
-   δ' = fromList $ toList $ reverse $ toRecDef <$> fπss
+class Desugarable a b where
+   desugar :: a -> MayFail b
 
-   toRecDef :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
-   toRecDef fπs' =
-      let f = fst $ head fπs' in
-      f ↦ successfulWith ("Bad branches for '" <> f <> "'") (joinAll $ snd <$> fπs')
+instance desugarVarDef :: Desugarable (Tuple Pattern (Expr Boolean)) (E.VarDef Boolean) where
+   desugar (p × s) = E.VarDef (patternToElim p None) <$> desugar s
 
-desugar (Expr α (IfElse s1 s2 s3)) = do
-   e2 <- desugar s2
-   e3 <- desugar s3
-   let σ = ElimConstr (fromFoldable [cTrue × Body e2, cFalse × Body e3])
-   E.Expr α <$> (E.MatchAs <$> desugar s1 <@> σ)
-desugar (Expr α (ListRange s1 s2)) =
-   eapp <$> (eapp (evar "range") <$> desugar s1) <*> desugar s2
-desugar (Expr α (ListComp s_body (Guard (Expr _ (Constr cTrue Nil)) : Nil))) = do
-   e <- desugar s_body
-   pure $ E.expr $ E.Constr cCons (e : enil : Nil)
-desugar (Expr α (ListComp s_body (q:Nil))) =
-   desugar $ expr $ ListComp s_body $ q : Guard (expr $ Constr cTrue Nil) : Nil
-desugar (Expr α (ListComp s_body (Guard s : qs))) = do
-   e <- desugar $ Expr α $ ListComp s_body qs
-   let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body enil])
-   E.expr <$> (E.MatchAs <$> desugar s <@> σ)
-desugar (Expr α (ListComp s_body (Generator p slist : qs))) = do
-   e <- desugar $ expr $ ListComp s_body qs
-   let λ = E.expr $ E.Lambda $ totalise (patternToElim p (Body e)) enil
-   eapp (evar "concat") <$> (eapp (eapp (evar "map") λ) <$> desugar slist)
-desugar (Expr α (ListComp s_body (Declaration p s : qs))) = do
-   let σ = patternToElim p None
-   E.expr <$> (E.Let <$> (E.VarDef σ <$> desugar s) <*> desugar (Expr α $ ListComp s_body qs))
-desugar (Expr _ (ListComp _ Nil)) = error absurd
+instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
+   desugar (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
+   desugar (Expr α (Float n))             = pure $ E.Expr α (E.Float n)
+   desugar (Expr α (Var x))               = pure $ E.Expr α (E.Var x)
+   desugar (Expr α (Op op))               = pure $ E.Expr α (E.Op op)
+   desugar (Expr α (Str s))               = pure $ E.Expr α (E.Str s)
+   desugar (Expr α (Constr ctr args))     = E.Expr α <$> (E.Constr ctr <$> traverse desugar args)
+   desugar (Expr α (Lambda bs))           = E.Expr α <$> (E.Lambda <$> joinAll bs)
+   desugar (Expr α (App s1 s2))           = E.Expr α <$> (E.App <$> desugar s1 <*> desugar s2)
+   desugar (Expr α (BinaryApp s1 op s2))  = E.Expr α <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
+   desugar (Expr α (MatchAs s bs))        = E.Expr α <$> (E.MatchAs <$> desugar s <*> joinAll bs)
+   desugar (Expr α (Let d s'))            = E.Expr α <$> (E.Let <$> desugar d <*> desugar s')
+   desugar (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec δ' <$> desugar s)
+      where
+      fπss = groupBy (eq `on` fst) fπs :: NonEmptyList (NonEmptyList (Clause 𝔹))
+      δ' = fromList $ toList $ reverse $ toRecDef <$> fπss
+
+      toRecDef :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
+      toRecDef fπs' =
+         let f = fst $ head fπs' in
+         f ↦ successfulWith ("Bad branches for '" <> f <> "'") (joinAll $ snd <$> fπs')
+
+   desugar (Expr α (IfElse s1 s2 s3)) = do
+      e2 <- desugar s2
+      e3 <- desugar s3
+      let σ = ElimConstr (fromFoldable [cTrue × Body e2, cFalse × Body e3])
+      E.Expr α <$> (E.MatchAs <$> desugar s1 <@> σ)
+   desugar (Expr α (ListRange s1 s2)) =
+      eapp <$> (eapp (evar "range") <$> desugar s1) <*> desugar s2
+   desugar (Expr α (ListComp s_body (Guard (Expr _ (Constr cTrue Nil)) : Nil))) = do
+      e <- desugar s_body
+      pure $ E.expr $ E.Constr cCons (e : enil : Nil)
+   desugar (Expr α (ListComp s_body (q:Nil))) =
+      desugar $ expr $ ListComp s_body $ q : Guard (expr $ Constr cTrue Nil) : Nil
+   desugar (Expr α (ListComp s_body (Guard s : qs))) = do
+      e <- desugar $ Expr α $ ListComp s_body qs
+      let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body enil])
+      E.expr <$> (E.MatchAs <$> desugar s <@> σ)
+   desugar (Expr α (ListComp s_body (Generator p slist : qs))) = do
+      e <- desugar $ expr $ ListComp s_body qs
+      let λ = E.expr $ E.Lambda $ totalise (patternToElim p (Body e)) enil
+      eapp (evar "concat") <$> (eapp (eapp (evar "map") λ) <$> desugar slist)
+   desugar (Expr α (ListComp s_body (Declaration p s : qs))) = do
+      let σ = patternToElim p None
+      E.expr <$> (E.Let <$> (E.VarDef σ <$> desugar s) <*> desugar (Expr α $ ListComp s_body qs))
+   desugar (Expr _ (ListComp _ Nil)) = error absurd
+
+instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
+   desugar (Module Nil) = pure $ E.Module Nil
+   desugar (Module (Left d : ds)) = do
+      E.Module ds' <- desugar $ Module ds
+      d <- desugar d
+      pure $ E.Module $ Left d : ds'
+   desugar (Module (Right fπs : ds)) = do
+      E.Module ds' <- desugar $ Module ds
+      pure $ E.Module $ Right ?_ : ds'
 
 patternToElim :: Pattern -> Cont 𝔹 -> Elim 𝔹
 patternToElim (PVar x) κ
