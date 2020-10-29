@@ -102,8 +102,8 @@ main = do
    run $ test2 "factorial" "40320"
    run $ test2 "filter" "[8, 7]"
    run $ test2 "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]"
+   run $ test2 "foldr_sumSquares" "661"
 {-
-   run $ test "foldr_sumSquares" "661"
    run $ test "lexicalScoping" "\"6\""
    run $ test2 "length" "2"
    run $ test "lookup" "Some \"sarah\""
