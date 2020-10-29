@@ -28,7 +28,7 @@ import Bindings (Binding, (↦), fromList)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Desugar (Branch, Clause)
 import Desugar (Expr(..), Module(..), Pattern(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr) as S
-import Expr (Elim, Expr, RecDefs, Var, VarDef(..), VarDefs)
+import Expr (Elim, Expr, RecDefs, Var)
 import Lattice (𝔹)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont)
 import Primitive (opDefs)
