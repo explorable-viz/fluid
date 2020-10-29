@@ -125,17 +125,6 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
       E.expr <$> (E.Let <$> (E.VarDef σ <$> desugar s) <*> desugar (Expr α $ ListComp s_body qs))
    desugar (Expr _ (ListComp _ Nil)) = error absurd
 
-instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
-   desugar (Module Nil) = pure $ E.Module Nil
-   desugar (Module (Left d : ds)) = do
-      E.Module ds' <- desugar $ Module ds
-      d' <- desugar d
-      pure $ E.Module $ Left d' : ds'
-   desugar (Module (Right fπs : ds)) = do
-      E.Module ds' <- desugar $ Module ds
-      δ <- desugar fπs
-      pure $ E.Module $ Right δ : ds'
-
 totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e
    = let ctr × κ              = fromJust absurd (L.head $ toUnfoldable m)
@@ -149,10 +138,21 @@ totalise (ElimConstr m) e
                                                 Body e' -> c × Body e'
                                                 None    -> c × Body e
      in   ElimConstr (fromFoldable $ totalised_branches <> new_branches)
-totalise (ElimVar e k) e'
-   = case k of Arg σ  -> ElimVar e $ Arg (totalise σ e')
-               Body _ -> ElimVar e k
+totalise (ElimVar e κ) e'
+   = case κ of Arg σ  -> ElimVar e $ Arg (totalise σ e')
+               Body _ -> ElimVar e κ
                None   -> ElimVar e $ Body e'
+
+instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
+   desugar (Module Nil) = pure $ E.Module Nil
+   desugar (Module (Left d : ds)) = do
+      E.Module ds' <- desugar $ Module ds
+      d' <- desugar d
+      pure $ E.Module $ Left d' : ds'
+   desugar (Module (Right fπs : ds)) = do
+      E.Module ds' <- desugar $ Module ds
+      δ <- desugar fπs
+      pure $ E.Module $ Right δ : ds'
 
 -- The Cont arguments here act as an accumulator.
 instance desugarPattern :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
