@@ -138,15 +138,15 @@ instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
 patternToElim :: Pattern -> Cont 𝔹 -> Elim 𝔹
 patternToElim (PVar x) κ
    = ElimVar x κ
-patternToElim (PConstr ctr ps) κ
+patternToElim (PConstr c ps) κ
    = let go (p':p'':ps')   = Arg (patternToElim p' (go (p'':ps')))
          go (p':Nil)       = Arg (patternToElim p' κ)
          go Nil            = κ
-     in  ElimConstr (singleton ctr (go ps))
+     in  ElimConstr (singleton c (go ps))
 
 totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e
-   = let ctr × κ              = fromJust "" (L.head $ toUnfoldable m)
+   = let ctr × κ              = fromJust absurd (L.head $ toUnfoldable m)
          branches             = toUnfoldable m
          DataType _ sigs      = mustLookup ctr ctrToDataType
          all_ctrs             = fst <$> toUnfoldable sigs
