@@ -8,19 +8,16 @@ import Data.List (List(..), (:), (\\), length)
 import Data.List (head) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, reverse, toList)
 import Data.Map (Map, fromFoldable, insert, lookup, singleton, toUnfoldable, update)
-import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple, fst, snd)
 import Bindings (Binding, Bindings, (↦), fromList)
-import DataType (Ctr, DataType, DataType'(..), arity, checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse, dataTypeFor)
+import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
 import Lattice (𝔹, class BoundedJoinSemilattice, bot)
-import Util (
-   MayFail, type (×), (×), type (+), (=<<<), (≞), absurd, error, fromJust, mustLookup, report, successfulWith, with
-)
+import Util (MayFail, type (×), (×), type (+), (≞), absurd, error, fromJust, mustLookup, report, successfulWith)
 
 data RawExpr a =
    Var Var |
@@ -165,16 +162,16 @@ totalise (ElimVar e k) e'
                Body _ -> ElimVar e k
                None   -> ElimVar e $ Body e'
 
-toCont :: List Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
-toCont Nil κ        = pure κ
-toCont (π : πs) κ   = Arg <$> do
-   κ' <- toCont πs κ
-   desugar $ π × κ'
-
 -- The Cont arguments here act as an accumulator.
 instance desugarPattern :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
    desugar (PVar x × κ)       = pure $ ElimVar x κ
-   desugar (PConstr c πs × κ) = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs κ)
+   desugar (PConstr c πs × κ) = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs)
+      where
+      toCont :: List Pattern -> MayFail (Cont 𝔹)
+      toCont Nil        = pure κ
+      toCont (π : πs')  = Arg <$> do
+         κ' <- toCont πs'
+         desugar $ π × κ'
 
 instance desugarPatterns :: Desugarable (Tuple (NonEmptyList Pattern) (Cont Boolean)) (Elim Boolean) where
    desugar (NonEmptyList (π :| Nil) × κ)     = desugar $ π × κ
