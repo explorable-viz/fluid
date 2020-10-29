@@ -30,9 +30,9 @@ import Desugar (Branch, Clause)
 import Desugar (Expr(..), Module(..), Pattern(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr) as S
 import Expr (Elim, Expr, RecDefs, Var, VarDef(..), VarDefs)
 import Lattice (𝔹)
-import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
+import Pattern (Pattern(..), PCont(..), joinAll, setCont)
 import Primitive (opDefs)
-import Util (Endo, type (×), (×), type (+), error, onlyIf, successful, successfulWith)
+import Util (Endo, type (×), (×), type (+), error, onlyIf, successfulWith)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
 
 -- constants (should also be used by prettyprinter)
@@ -177,12 +177,6 @@ branches curried expr' =
    branchMany :: SParser (NonEmptyList (Branch 𝔹))
    branchMany = token.braces $ sepBy1 (branch curried expr' arrow) token.semi
 
-varDefs :: SParser (Expr 𝔹) -> SParser (VarDefs 𝔹)
-varDefs expr' = keyword strLet *> sepBy1_try clause token.semi <#> toList
-   where
-   clause :: SParser (VarDef 𝔹)
-   clause = VarDef <$> (successful <<< toElim <$> pattern <* patternDelim) <*> expr'
-
 varDefs2 :: SParser (S.Expr 𝔹) -> SParser (S.VarDefs 𝔹)
 varDefs2 expr' = keyword strLet *> sepBy1_try clause token.semi <#> toList
    where
@@ -210,15 +204,12 @@ recDefs2 expr' = do
    clause :: SParser (Clause 𝔹)
    clause = ident `lift2 (×)` (branch true expr' equals)
 
-defs :: SParser (Expr 𝔹) -> SParser (List (VarDef 𝔹 + RecDefs 𝔹))
-defs expr' = bisequence <$> choose (try $ varDefs expr') (singleton <$> recDefs expr')
-
 defs2 :: SParser (S.Expr 𝔹) -> SParser (List (S.VarDef 𝔹 + S.RecDefs 𝔹))
 defs2 expr' = bisequence <$> choose (try $ varDefs2 expr') (singleton <$> recDefs2 expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
-expr2 :: SParser (S.Expr 𝔹)
-expr2 = fix $ appChain >>> buildExprParser (operators binaryOp)
+expr :: SParser (S.Expr 𝔹)
+expr = fix $ appChain >>> buildExprParser (operators binaryOp)
    where
    -- Syntactically distinguishing infix constructors from other operators (a la Haskell) allows us to
    -- optimise an application tree into a (potentially partial) constructor application.
@@ -352,7 +343,7 @@ topLevel :: forall a . Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
 
 program ∷ SParser (S.Expr 𝔹)
-program = topLevel expr2
+program = topLevel expr
 
 module_ :: SParser (S.Module 𝔹)
-module_ = S.Module <<< concat <$> topLevel (sepBy_try (defs2 expr2) token.semi <* token.semi)
+module_ = S.Module <<< concat <$> topLevel (sepBy_try (defs2 expr) token.semi <* token.semi)
