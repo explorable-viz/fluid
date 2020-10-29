@@ -17,6 +17,7 @@ import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst, snd)
+import Debug.Trace (trace)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
@@ -429,7 +430,7 @@ pattern2 = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    infixCtr :: String -> SParser (S.Pattern -> S.Pattern -> S.Pattern)
    infixCtr op = do
       op' <- token.operator
-      onlyIf (isCtrOp op' && op == op') \π π' -> S.PConstr (Ctr op') (π' : π : Nil)
+      onlyIf (isCtrOp op' && op == op') \π π' -> S.PConstr (Ctr op') (π : π' : Nil)
 
 topLevel :: forall a . Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
@@ -438,7 +439,10 @@ program ∷ SParser (Expr 𝔹)
 program = topLevel expr_
 
 program2 ∷ SParser (S.Expr 𝔹)
-program2 = topLevel expr2
+program2 = do
+   blah <- topLevel expr2
+   trace blah \_ ->
+      pure blah
 
 module_ :: SParser (Module 𝔹)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
