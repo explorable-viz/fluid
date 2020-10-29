@@ -161,7 +161,7 @@ patternOne curried expr' delim = pattern' >>= rest
 branch :: Boolean -> SParser (S.Expr 𝔹) -> SParser Unit -> SParser (Branch 𝔹)
 branch curried expr' delim = do
    πs <- if curried
-         then many $ simplePattern2 pattern2
+         then some $ simplePattern2 pattern2
          else NonEmptyList <$> pattern2 `lift2 (:|)` pure Nil
    e <- delim *> expr'
    pure $ πs × e
