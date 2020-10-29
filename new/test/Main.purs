@@ -21,7 +21,7 @@ import Pretty (pretty, render)
 import Primitive (primitives)
 import Util (type (×), (×), successful)
 import Val (Env, Val(..), RawVal(..))
--- import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
+import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -95,7 +95,6 @@ main = do
    -- desugaring
 --   run $ test2 "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
    -- desugaring
-{-
    run $ desugarTest "list-comp-1" lcomp1 lcomp1_eval
    run $ desugarTest "list-comp-2" lcomp2 lcomp2_eval
    run $ desugarTest "list-comp-3" lcomp3 lcomp3_eval
@@ -112,16 +111,11 @@ main = do
    run $ test2 "length" "2"
    run $ test2 "lookup" "Some \"sarah\""
    run $ test2 "map" "[5, 7, 13, 15, 4, 3, -3]"
--}
    run $ test2 "mergeSort" "[1, 2, 3]"
-{-
    run $ test2 "normalise" "(33, 66)"
--}
    run $ test2 "pattern-match" "4"
-{-
    run $ test2 "reverse" "[2, 1]"
    run $ test2 "zipWith" "[[10], [12], [20]]"
--}
    -- graphics
    run $ testWithDataset2 "renewables-restricted" "graphics/background"
    run $ testWithDataset2 "renewables-restricted" "graphics/grouped-bar-chart"
