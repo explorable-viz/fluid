@@ -103,13 +103,11 @@ main = do
    run $ test2 "filter" "[8, 7]"
    run $ test2 "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]"
    run $ test2 "foldr_sumSquares" "661"
-{-
-   run $ test "lexicalScoping" "\"6\""
+   run $ test2 "lexicalScoping" "\"6\""
    run $ test2 "length" "2"
-   run $ test "lookup" "Some \"sarah\""
+   run $ test2 "lookup" "Some \"sarah\""
    run $ test2 "map" "[5, 7, 13, 15, 4, 3, -3]"
    run $ test "mergeSort" "[1, 2, 3]"
--}
    run $ test2 "normalise" "(33, 66)"
 {-
    run $ test "pattern-match" "4"
