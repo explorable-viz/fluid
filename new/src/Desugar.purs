@@ -72,7 +72,7 @@ class Desugarable a b where
    desugar :: a -> MayFail b
 
 instance desugarVarDef :: Desugarable (Tuple Pattern (Expr Boolean)) (E.VarDef Boolean) where
-   desugar (p × s) = E.VarDef (patternToElim p None) <$> desugar s
+   desugar (π × s) = E.VarDef <$> desugar (π × (None :: Cont 𝔹)) <*> desugar s
 
 instance desugarRecDefs :: Desugarable (NonEmptyList (Tuple String (Tuple (NonEmptyList Pattern) (Expr Boolean))))
                                        (Bindings Elim Boolean) where
@@ -117,10 +117,11 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
       E.expr <$> (E.MatchAs <$> desugar s <@> σ)
    desugar (Expr α (ListComp s_body (Generator p slist : qs))) = do
       e <- desugar $ expr $ ListComp s_body qs
-      let λ = E.expr $ E.Lambda $ totalise (patternToElim p (Body e)) enil
+      σ <- desugar $ p × (Body e :: Cont 𝔹)
+      let λ = E.expr $ E.Lambda $ totalise σ enil
       eapp (evar "concat") <$> (eapp (eapp (evar "map") λ) <$> desugar slist)
    desugar (Expr α (ListComp s_body (Declaration p s : qs))) = do
-      let σ = patternToElim p None
+      σ <- desugar $ p × (None :: Cont 𝔹)
       E.expr <$> (E.Let <$> (E.VarDef σ <$> desugar s) <*> desugar (Expr α $ ListComp s_body qs))
    desugar (Expr _ (ListComp _ Nil)) = error absurd
 
@@ -134,15 +135,6 @@ instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
       E.Module ds' <- desugar $ Module ds
       δ <- desugar fπs
       pure $ E.Module $ Right δ : ds'
-
-patternToElim :: Pattern -> Cont 𝔹 -> Elim 𝔹
-patternToElim (PVar x) κ
-   = ElimVar x κ
-patternToElim (PConstr c ps) κ
-   = let go (p':p'':ps')   = Arg (patternToElim p' (go (p'':ps')))
-         go (p':Nil)       = Arg (patternToElim p' κ)
-         go Nil            = κ
-     in  ElimConstr (singleton c (go ps))
 
 totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e
