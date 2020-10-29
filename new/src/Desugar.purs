@@ -18,7 +18,7 @@ import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
 import SExpr (Clause, Expr(..), Module(..), Pattern(..), Qualifier(..), RawExpr(..), expr)
 import Lattice (𝔹)
-import Util (MayFail, type (×), (×), (≞), absurd, error, fromJust, mustLookup, report, successfulWith)
+import Util (MayFail, type (×), (×), (≞), absurd, error, fromJust, mustLookup, report)
 
 eapp :: E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 eapp f = E.expr <<< E.App f
@@ -37,15 +37,12 @@ instance desugarVarDef :: Desugarable (Tuple Pattern (Expr Boolean)) (E.VarDef B
 
 instance desugarRecDefs :: Desugarable (NonEmptyList (Tuple String (Tuple (NonEmptyList Pattern) (Expr Boolean))))
                                        (Bindings Elim Boolean) where
-   desugar fπs = pure δ
+   desugar fπs = fromList <$> toList <$> reverse <$> traverse toRecDef fπss
       where
       fπss = groupBy (eq `on` fst) fπs :: NonEmptyList (NonEmptyList (Clause 𝔹))
-      δ = fromList $ toList $ reverse $ toRecDef <$> fπss
 
-      toRecDef :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
-      toRecDef fπs' =
-         let f = fst $ head fπs' in
-         f ↦ successfulWith ("Bad branches for '" <> f <> "'") (desugar $ snd <$> fπs')
+      toRecDef :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
+      toRecDef fπs' = ((↦) (fst $ head fπs')) <$> desugar (snd <$> fπs')
 
 instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
    desugar (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
