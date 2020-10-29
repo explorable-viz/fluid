@@ -55,7 +55,7 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
    desugar (Expr _ (App s1 s2))           = E.expr <$> (E.App <$> desugar s1 <*> desugar s2)
    desugar (Expr _ (BinaryApp s1 op s2))  = E.expr <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
    desugar (Expr _ (MatchAs s bs))        = E.expr <$> (E.App <$> (E.expr <$> E.Lambda <$> desugar bs) <*> desugar s)
-   desugar (Expr _ (Let d s))            = E.expr <$> (E.Let <$> desugar d <*> desugar s)
+   desugar (Expr _ (Let d s))             = E.expr <$> (E.Let <$> desugar d <*> desugar s)
    desugar (Expr _ (LetRec fπs s))        = E.expr <$> (E.LetRec <$> desugar fπs <*> desugar s)
    desugar (Expr _ (IfElse s1 s2 s3)) = do
       e2 <- desugar s2
