@@ -17,7 +17,9 @@ import DataType (Ctr, DataType, DataType'(..), arity, ctrToDataType, cCons, cNil
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), RawExpr(..), VarDef(..), expr) as E
 import Lattice (𝔹, class BoundedJoinSemilattice, bot)
-import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, mustLookup, report, successfulWith, with)
+import Util (
+   MayFail, type (×), (×), type (+), (=<<<), (≞), absurd, error, fromJust, mustLookup, report, successfulWith, with
+)
 
 data RawExpr a =
    Var Var |
@@ -53,6 +55,8 @@ data Qualifier a =
 
 data Expr a =
    Expr a (RawExpr a)
+
+data Module a = Module (List (VarDef a + RecDefs a))
 
 expr :: forall a . BoundedJoinSemilattice a => RawExpr a -> Expr a
 expr = Expr bot

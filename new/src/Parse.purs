@@ -27,7 +27,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Binding, (↦), fromList)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Desugar (Branch, Clause)
-import Desugar (Expr(..), Pattern(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr) as S
+import Desugar (Expr(..), Module(..), Pattern(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr) as S
 import Expr (Elim, Expr(..), Module(..), RawExpr(..), RecDefs, Var, VarDef(..), VarDefs, expr)
 import Lattice (𝔹)
 import Pattern (Pattern(..), PCont(..), joinAll, setCont, toElim)
@@ -434,11 +434,11 @@ pattern2 = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
 topLevel :: forall a . Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
 
-program ∷ SParser (Expr 𝔹)
-program = topLevel expr_
-
-program2 ∷ SParser (S.Expr 𝔹)
-program2 = topLevel expr2
+program ∷ SParser (S.Expr 𝔹)
+program = topLevel expr2
 
 module_ :: SParser (Module 𝔹)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)
+
+module2 :: SParser (S.Module 𝔹)
+module2 = S.Module <<< concat <$> topLevel (sepBy_try (defs2 expr2) token.semi <* token.semi)

@@ -12,7 +12,7 @@ import Desugar (Expr) as S
 import Desugar (desugar)
 import Eval (defs, eval)
 import Lattice (𝔹)
-import Parse (module_, program2)
+import Parse (module_, program)
 import Primitive (primitives)
 import Util (type (×), (×), error, successful)
 import Util.Parse (SParser)
@@ -48,7 +48,7 @@ successfulParse src p =
 parseWithImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 parseWithImports src = do
    (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics")
-       <@> successfulParse src program2
+       <@> successfulParse src program
 
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do
