@@ -28,7 +28,6 @@ import Desugar (Branch, Clause)
 import Desugar (Expr(..), Module(..), Pattern(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr) as S
 import Expr (Var)
 import Lattice (𝔹)
-import Pattern (Pattern(..), PCont(..), setCont)
 import Primitive (opDefs)
 import Util (Endo, (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
@@ -81,30 +80,6 @@ ctr :: SParser Ctr
 ctr = do
    x <- token.identifier
    onlyIf (isCtrName x) $ Ctr x
-
--- Singleton eliminator with no continuation.
-simplePattern :: Endo (SParser Pattern)
-simplePattern pattern' =
-   try ctr_pattern <|>
-   try patternVariable <|>
-   try (token.parens pattern') <|>
-   patternPair
-
-   where
-   -- Constructor name as a nullary constructor pattern.
-   ctr_pattern :: SParser Pattern
-   ctr_pattern = PattConstr <$> ctr <@> 0 <@> PNone
-
-   -- TODO: anonymous variables
-   patternVariable :: SParser Pattern
-   patternVariable = PattVar <$> ident <@> PNone
-
-   patternPair :: SParser Pattern
-   patternPair =
-      token.parens $ do
-         π <- pattern' <* token.comma
-         π' <- pattern'
-         pure $ PattConstr cPair 2 $ PArg $ setCont (PArg π') π
 
 simplePattern2 :: Endo (SParser S.Pattern)
 simplePattern2 pattern' =
@@ -259,27 +234,6 @@ operators binaryOp =
    fromFoldable $ fromFoldable <$>
    (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
    groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
-
--- Pattern with no continuation.
-pattern :: SParser Pattern
-pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
-   where
-   -- Analogous in some way to app_chain, but nothing higher-order here: no explicit application nodes,
-   -- non-saturated constructor applications, or patterns other than constructors in the function position.
-   appChain_pattern :: Endo (SParser Pattern)
-   appChain_pattern pattern' = simplePattern pattern' >>= rest
-      where
-         rest ∷ Pattern -> SParser Pattern
-         rest π@(PattConstr c n κ) = ctrArgs <|> pure π
-            where
-            ctrArgs :: SParser Pattern
-            ctrArgs = simplePattern pattern' >>= \π' -> rest $ setCont (PArg π') $ PattConstr c (n + 1) κ
-         rest π@(PattVar _ _) = pure π
-
-   infixCtr :: String -> SParser (Pattern -> Pattern -> Pattern)
-   infixCtr op = do
-      op' <- token.operator
-      onlyIf (isCtrOp op' && op == op') \π π' -> PattConstr (Ctr op') 2 $ PArg $ setCont (PArg π') π
 
 -- Pattern with no continuation.
 pattern2 :: SParser S.Pattern
