@@ -17,7 +17,6 @@ import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst, snd)
-import Debug.Trace (trace)
 import Text.Parsing.Parser.Combinators (try)
 import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
@@ -439,10 +438,7 @@ program ∷ SParser (Expr 𝔹)
 program = topLevel expr_
 
 program2 ∷ SParser (S.Expr 𝔹)
-program2 = do
-   blah <- topLevel expr2
-   trace blah \_ ->
-      pure blah
+program2 = topLevel expr2
 
 module_ :: SParser (Module 𝔹)
 module_ = Module <<< concat <$> topLevel (sepBy_try (defs expr_) token.semi <* token.semi)

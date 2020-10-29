@@ -12,7 +12,6 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import Debug.Trace (trace)
 import Bindings (Binding, (↦), fromList)
 import DataType (Ctr, DataType, DataType'(..), arity, ctrToDataType, cCons, cNil, cTrue, cFalse, dataTypeFor)
 import Expr (Cont(..), Elim(..), Var)
@@ -144,10 +143,7 @@ totalise (ElimVar e k) e'
 
 toCont2 :: List Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
 toCont2 Nil κ        = pure κ
-toCont2 (π : πs) κ   =
-   trace (π : πs) \_ -> do
-   κ' <- toCont2 πs κ
-   Arg <$> toElim2 π κ'
+toCont2 (π : πs) κ   = Arg <$> (toCont2 πs κ >>= toElim2 π)
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = void $ with ("Checking arity of " <> show c) $

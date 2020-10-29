@@ -106,9 +106,13 @@ main = do
    run $ test2 "length" "2"
    run $ test2 "lookup" "Some \"sarah\""
    run $ test2 "map" "[5, 7, 13, 15, 4, 3, -3]"
-   run $ test "mergeSort" "[1, 2, 3]"
+-}
+   run $ test2 "mergeSort" "[1, 2, 3]"
+{-
    run $ test2 "normalise" "(33, 66)"
+-}
    run $ test2 "pattern-match" "4"
+{-
    run $ test2 "reverse" "[2, 1]"
    run $ test2 "zipWith" "[[10], [12], [20]]"
    -- graphics
@@ -118,4 +122,4 @@ main = do
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
 -}
    -- scratchpad
-   run $ test2 "temp" "(33, 66)"
+   run $ test2 "temp" "3"
