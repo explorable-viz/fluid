@@ -96,7 +96,9 @@ main = do
    run $ desugarTest "list-comp-4" lcomp4 lcomp4_eval
    run $ desugarTest "list-seq-1" lseq1 lseq1_eval
    -- slicing
-   run $ test "arithmetic" "42"
+-}
+   run $ test2 "arithmetic" "42"
+{-
    run $ test "compose" "5"
    run $ test "factorial" "40320"
    run $ test2 "filter" "[8, 7]"
@@ -108,7 +110,7 @@ main = do
    run $ test2 "map" "[5, 7, 13, 15, 4, 3, -3]"
    run $ test "mergeSort" "[1, 2, 3]"
 -}
-   run $ test "normalise" "(33, 66)"
+   run $ test "normalise2" "(33, 66)"
 {-
    run $ test "pattern-match" "4"
    run $ test2 "reverse" "[2, 1]"
