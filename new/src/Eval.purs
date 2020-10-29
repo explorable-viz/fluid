@@ -109,11 +109,6 @@ eval ρ (Expr _ (Let (VarDef σ e) e')) = do
    ρ' × κ × ξ  <- match v σ
    t' × v'     <- eval (ρ <> ρ') e'
    (Expl ρ (T.Let (T.VarDef ξ t) t') × _) <$> pure v'
-eval ρ (Expr _ (MatchAs e σ)) = do
-   t  × v      <- eval ρ e
-   ρ' × e' × ξ <- match v σ
-   t' × v'     <- eval (ρ <> ρ') (body e')
-   (Expl ρ (T.MatchAs t ξ t') × _) <$> pure v'
 
 eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
 eval_module ρ (Module Nil) = pure ρ

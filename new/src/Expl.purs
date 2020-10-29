@@ -24,7 +24,6 @@ data RawExpl a =
    App (Expl a × RecDefs a) (Expl a) (Match a) (Expl a) |
    AppOp (ExplVal a) (ExplVal a) |
    BinaryApp (ExplVal a) (Var × Val a) (ExplVal a) |
-   MatchAs (Expl a) (Match a) (Expl a) |
    Let (VarDef a) (Expl a) |
    LetRec (RecDefs a) (Expl a)
 

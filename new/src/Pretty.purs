@@ -93,9 +93,6 @@ instance prettyRawExpl :: BoundedJoinSemilattice a => Pretty (RawExpl a) where
    pretty (T.AppOp tv tv')                = pretty tv :<>: space :<>: pretty tv'
    pretty (T.BinaryApp tv (op × _) tv')   =
       pretty tv :<>: space :<>: text op :<>: space :<>: pretty tv'
-   pretty (T.MatchAs t ξ t')              =
-      atop (text "match " :<>: pretty t :<>: text " as {")
-           (atop (tab :<>: pretty ξ) (atop (text "} where outcome was: ") (tab :<>: pretty t')))
    pretty (T.Let (T.VarDef ξ t) t')       =
       atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
            (pretty t')
@@ -151,8 +148,6 @@ instance prettyRawExpr :: BoundedJoinSemilattice a => Pretty (RawExpr a) where
    pretty (E.Op op)                 = parens $ text op
    pretty (E.Let (VarDef σ e) e')   =
       atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
-   pretty (E.MatchAs e σ)           =
-      text "match " :<>: pretty e :<>: text " as { " :<>: pretty σ :<>: text "}"
    pretty (E.LetRec δ e)            =
       atop (text "letrec " :<>: pretty δ) (text "in " :<>: pretty e)
    pretty (E.Lambda σ)              = text "fun " :<>: pretty σ

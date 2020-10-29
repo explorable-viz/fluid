@@ -45,42 +45,42 @@ instance desugarRecDefs :: Desugarable (NonEmptyList (Tuple String (Tuple (NonEm
       toRecDef fπs' = ((↦) (fst $ head fπs')) <$> desugar (snd <$> fπs')
 
 instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
-   desugar (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
-   desugar (Expr α (Float n))             = pure $ E.Expr α (E.Float n)
-   desugar (Expr α (Var x))               = pure $ E.Expr α (E.Var x)
-   desugar (Expr α (Op op))               = pure $ E.Expr α (E.Op op)
-   desugar (Expr α (Str s))               = pure $ E.Expr α (E.Str s)
-   desugar (Expr α (Constr ctr args))     = E.Expr α <$> (E.Constr ctr <$> traverse desugar args)
-   desugar (Expr α (Lambda bs))           = E.Expr α <$> (E.Lambda <$> desugar bs)
-   desugar (Expr α (App s1 s2))           = E.Expr α <$> (E.App <$> desugar s1 <*> desugar s2)
-   desugar (Expr α (BinaryApp s1 op s2))  = E.Expr α <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
-   desugar (Expr α (MatchAs s bs))        = E.Expr α <$> (E.MatchAs <$> desugar s <*> desugar bs)
-   desugar (Expr α (Let d s'))            = E.Expr α <$> (E.Let <$> desugar d <*> desugar s')
-   desugar (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec <$> desugar fπs <*> desugar s)
-   desugar (Expr α (IfElse s1 s2 s3)) = do
+   desugar (Expr _ (Int n))               = pure $ E.expr (E.Int n)
+   desugar (Expr _ (Float n))             = pure $ E.expr (E.Float n)
+   desugar (Expr _ (Var x))               = pure $ E.expr (E.Var x)
+   desugar (Expr _ (Op op))               = pure $ E.expr (E.Op op)
+   desugar (Expr _ (Str s))               = pure $ E.expr (E.Str s)
+   desugar (Expr _ (Constr ctr args))     = E.expr <$> (E.Constr ctr <$> traverse desugar args)
+   desugar (Expr _ (Lambda bs))           = E.expr <$> (E.Lambda <$> desugar bs)
+   desugar (Expr _ (App s1 s2))           = E.expr <$> (E.App <$> desugar s1 <*> desugar s2)
+   desugar (Expr _ (BinaryApp s1 op s2))  = E.expr <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
+   desugar (Expr _ (MatchAs s bs))        = E.expr <$> (E.App <$> (E.expr <$> E.Lambda <$> desugar bs) <*> desugar s)
+   desugar (Expr _ (Let d s))            = E.expr <$> (E.Let <$> desugar d <*> desugar s)
+   desugar (Expr _ (LetRec fπs s))        = E.expr <$> (E.LetRec <$> desugar fπs <*> desugar s)
+   desugar (Expr _ (IfElse s1 s2 s3)) = do
       e2 <- desugar s2
       e3 <- desugar s3
       let σ = ElimConstr (fromFoldable [cTrue × Body e2, cFalse × Body e3])
-      E.Expr α <$> (E.MatchAs <$> desugar s1 <@> σ)
-   desugar (Expr α (ListRange s1 s2)) =
+      E.expr <$> (E.App (E.expr $ E.Lambda σ) <$> desugar s1)
+   desugar (Expr _ (ListRange s1 s2)) =
       eapp <$> (eapp (evar "range") <$> desugar s1) <*> desugar s2
-   desugar (Expr α (ListComp s_body (Guard (Expr _ (Constr cTrue Nil)) : Nil))) = do
+   desugar (Expr _ (ListComp s_body (Guard (Expr _ (Constr cTrue Nil)) : Nil))) = do
       e <- desugar s_body
       pure $ E.expr $ E.Constr cCons (e : enil : Nil)
-   desugar (Expr α (ListComp s_body (q:Nil))) =
+   desugar (Expr _ (ListComp s_body (q:Nil))) =
       desugar $ expr $ ListComp s_body $ q : Guard (expr $ Constr cTrue Nil) : Nil
-   desugar (Expr α (ListComp s_body (Guard s : qs))) = do
-      e <- desugar $ Expr α $ ListComp s_body qs
+   desugar (Expr _ (ListComp s_body (Guard s : qs))) = do
+      e <- desugar $ expr $ ListComp s_body qs
       let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body enil])
-      E.expr <$> (E.MatchAs <$> desugar s <@> σ)
-   desugar (Expr α (ListComp s_body (Generator p slist : qs))) = do
+      E.expr <$> (E.App (E.expr $ E.Lambda σ) <$> desugar s)
+   desugar (Expr _ (ListComp s_body (Generator p slist : qs))) = do
       e <- desugar $ expr $ ListComp s_body qs
       σ <- desugar $ p × (Body e :: Cont 𝔹)
       let λ = E.expr $ E.Lambda $ totalise σ enil
       eapp (evar "concat") <$> (eapp (eapp (evar "map") λ) <$> desugar slist)
-   desugar (Expr α (ListComp s_body (Declaration p s : qs))) = do
+   desugar (Expr _ (ListComp s_body (Declaration p s : qs))) = do
       σ <- desugar $ p × (None :: Cont 𝔹)
-      E.expr <$> (E.Let <$> (E.VarDef σ <$> desugar s) <*> desugar (Expr α $ ListComp s_body qs))
+      E.expr <$> (E.Let <$> (E.VarDef σ <$> desugar s) <*> desugar (expr $ ListComp s_body qs))
    desugar (Expr _ (ListComp _ Nil)) = error absurd
 
 totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
