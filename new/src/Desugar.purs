@@ -165,10 +165,6 @@ totalise (ElimVar e k) e'
                Body _ -> ElimVar e k
                None   -> ElimVar e $ Body e'
 
-toCont :: List Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
-toCont Nil κ        = pure κ
-toCont (π : πs) κ   = Arg <$> (toCont πs κ >>= toElim2 π)
-
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = void $ with ("Checking arity of " <> show c) $
    arity c `(=<<<) (≞)` pure n
@@ -186,19 +182,32 @@ checkDataType msg c κs = void $ do
    then error "***"
    else with (msg <> show c <> " is not a constructor of " <> show d') $ d ≞ d'
 
-toElim2 :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
-toElim2 (PVar x) κ       = pure $ ElimVar x κ
-toElim2 (PConstr c πs) κ = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs κ)
+toCont :: List Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
+toCont Nil κ        = pure κ
+toCont (π : πs) κ   = Arg <$> do
+   κ' <- toCont πs κ
+   desugar $ π × κ'
 
-toElim :: NonEmptyList Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
-toElim (NonEmptyList (π :| Nil)) κ     = toElim2 π κ
-toElim (NonEmptyList (π :| π' : πs)) κ =
-   toElim2 π =<< Body <$> E.expr <$> E.Lambda <$> toElim (NonEmptyList $ π' :| πs) κ
+-- The Cont arguments here act as accumulators.
+instance desugarPattern :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
+   desugar (PVar x × κ)       = pure $ ElimVar x κ
+   desugar (PConstr c πs × κ) = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs κ)
+
+instance desugarPatterns :: Desugarable (Tuple (NonEmptyList Pattern) (Cont Boolean)) (Elim Boolean) where
+   desugar (NonEmptyList (π :| Nil) × κ)     = desugar $ π × κ
+   desugar (NonEmptyList (π :| π' : πs) × κ) = do
+      κ' <- Body <$> E.expr <$> E.Lambda <$> desugar (NonEmptyList (π' :| πs) × κ) :: MayFail (Cont 𝔹)
+      desugar $ π × κ'
+
+instance desugarBranch :: Desugarable (Tuple (NonEmptyList Pattern) (Expr Boolean)) (Elim Boolean) where
+   desugar (πs × s) = do
+      κ <- Body <$> desugar s :: MayFail (Cont 𝔹)
+      desugar $ πs × κ
 
 instance desugarBranches :: Desugarable (NonEmptyList (NonEmptyList Pattern × Expr Boolean))
                                         (Elim Boolean) where
    desugar bs = do
-      NonEmptyList (σ :| σs) <- traverse (\(πs × e) -> (Body <$> desugar e) >>= toElim πs) bs
+      NonEmptyList (σ :| σs) <- traverse desugar bs
       foldM maybeJoin σ σs
 
 class Joinable a where
