@@ -33,7 +33,7 @@ type Branch a = NonEmptyList Pattern × Expr a
 type Clause a = Var × Branch a
 type RecDefs a = NonEmptyList (Clause a)
 type VarDef a = Pattern × Expr a
-type VarDefs a = List (VarDef a)
+type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a =
    Guard (Expr a) |

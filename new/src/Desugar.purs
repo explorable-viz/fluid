@@ -16,9 +16,9 @@ import Bindings (Binding, Bindings, (↦), fromList)
 import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
-import SExpr (Clause, Expr(..), Module(..), Pattern(..), Qualifier(..), RawExpr(..), expr)
+import SExpr (Clause, Expr(..), Module(..), Pattern(..), Qualifier(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr)
 import Lattice (𝔹)
-import Util (MayFail, type (×), (×), (≞), absurd, error, fromJust, mustLookup, report)
+import Util (MayFail, type (×), (×), type (+), (≞), absurd, error, fromJust, mustLookup, report)
 
 eapp :: E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 eapp f = E.expr <<< E.App f
@@ -44,6 +44,12 @@ instance desugarRecDefs :: Desugarable (NonEmptyList (Tuple String (Tuple (NonEm
       toRecDef :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
       toRecDef fπs' = ((↦) (fst $ head fπs')) <$> desugar (snd <$> fπs')
 
+instance desugarVarDefs :: Desugarable (Tuple (NonEmptyList (Tuple Pattern (Expr Boolean))) (Expr Boolean))
+                                       (E.Expr Boolean) where
+   desugar (NonEmptyList (d :| Nil) × s)     = E.expr <$> (E.Let <$> desugar d <*> desugar s)
+   desugar (NonEmptyList (d :| d' : ds) × s) =
+      E.expr <$> (E.Let <$> desugar d <*> desugar (NonEmptyList (d' :| ds) × s))
+
 instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
    desugar (Expr _ (Int n))               = pure $ E.expr (E.Int n)
    desugar (Expr _ (Float n))             = pure $ E.expr (E.Float n)
@@ -55,7 +61,7 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
    desugar (Expr _ (App s1 s2))           = E.expr <$> (E.App <$> desugar s1 <*> desugar s2)
    desugar (Expr _ (BinaryApp s1 op s2))  = E.expr <$> (E.BinaryApp <$> desugar s1 <@> op <*> desugar s2)
    desugar (Expr _ (MatchAs s bs))        = E.expr <$> (E.App <$> (E.expr <$> E.Lambda <$> desugar bs) <*> desugar s)
-   desugar (Expr _ (Let ds s))            = E.expr <$> (E.Let <$> desugar ds <*> desugar s)
+   desugar (Expr _ (Let ds s))            = desugar $ ds × s
    desugar (Expr _ (LetRec fπs s))        = E.expr <$> (E.LetRec <$> desugar fπs <*> desugar s)
    desugar (Expr _ (IfElse s1 s2 s3)) = do
       e2 <- desugar s2
@@ -104,7 +110,10 @@ instance desugarEither :: (Desugarable a b, Desugarable c d) => Desugarable (Eit
    desugar (Right x) = Right <$> desugar x
 
 instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
-   desugar (Module ds) = E.Module <$> traverse desugar ds
+   desugar (Module ds) = E.Module <$> traverse desugar (wurble ds)
+
+wurble :: List (VarDefs 𝔹 + RecDefs 𝔹) -> List (VarDef 𝔹 + RecDefs 𝔹)
+wurble = error "todo"
 
 -- The Cont arguments here act as an accumulator.
 instance desugarPattern :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Boolean) where

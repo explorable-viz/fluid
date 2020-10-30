@@ -35,8 +35,6 @@ expr :: forall a . BoundedJoinSemilattice a => RawExpr a -> Expr a
 expr = Expr bot
 
 data VarDef a = VarDef (Elim a) (Expr a) -- elim has codomain unit
-type VarDefs a = List (VarDef a) -- todo: remove from core language
-
 type RecDefs = Bindings Elim
 
 data Elim a =

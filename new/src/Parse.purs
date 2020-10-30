@@ -129,7 +129,7 @@ branches curried expr' =
    branchMany = token.braces $ sepBy1 (branch curried expr' arrow) token.semi
 
 varDefs :: SParser (S.Expr 𝔹) -> SParser (S.VarDefs 𝔹)
-varDefs expr' = keyword strLet *> sepBy1_try clause token.semi <#> toList
+varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    where
    clause :: SParser (S.VarDef 𝔹)
    clause = (pattern <* patternDelim) `lift2 (×)` expr'
