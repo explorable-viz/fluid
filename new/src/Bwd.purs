@@ -91,12 +91,6 @@ eval_bwd (Val α v) (Expl _ (T.AppOp (t1 × v1) (t2 × v2)))
    = let ρ  × e  × _ = eval_bwd (setα α v1) t1
          ρ' × e' × _ = eval_bwd (setα α v2) t2 in
      (ρ ∨ ρ') × Expr α (App e e') × α
-eval_bwd v (Expl _ (T.MatchAs t1 ξ t2))
-   = let ρ1ρ2 × e × α   = eval_bwd v t2
-         ρ1 × ρ2        = unmatch ρ1ρ2 ξ
-         v1 × σ         = match_bwd ρ2 (Body e) α ξ
-         ρ1' × e' × α'  = eval_bwd v1 t1 in
-     (ρ1' ∨ ρ1) × Expr (α ∨ α') (MatchAs e' σ) × (α ∨ α')
 eval_bwd v (Expl _ (T.Let (T.VarDef ξ t1) t2))
    = let ρ1ρ2 × e2 × α2 = eval_bwd v t2
          ρ1 × ρ2        = unmatch ρ1ρ2 ξ

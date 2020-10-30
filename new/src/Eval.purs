@@ -7,12 +7,11 @@ import Data.Map (lookup, update)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
-import DataType (Ctr, arity)
+import DataType (Ctr, arity, checkDataType)
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
 import Lattice (𝔹)
-import Pattern (checkDataType)
 import Pretty (pretty, render)
 import Primitive (apply)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
@@ -28,7 +27,7 @@ match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
    κ <- note ("Incomplete pattern: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
    pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
-match v _ = report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
+match v σ = report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchArgs _ Nil κ                = pure $ Empty × κ × Nil
@@ -110,17 +109,12 @@ eval ρ (Expr _ (Let (VarDef σ e) e')) = do
    ρ' × κ × ξ  <- match v σ
    t' × v'     <- eval (ρ <> ρ') e'
    (Expl ρ (T.Let (T.VarDef ξ t) t') × _) <$> pure v'
-eval ρ (Expr _ (MatchAs e σ)) = do
-   t  × v      <- eval ρ e
-   ρ' × e' × ξ <- match v σ
-   t' × v'     <- eval (ρ <> ρ') (body e')
-   (Expl ρ (T.MatchAs t ξ t') × _) <$> pure v'
 
-defs :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
-defs ρ (Module Nil) = pure ρ
-defs ρ (Module (Left (VarDef σ e) : ds)) = do
+eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
+eval_module ρ (Module Nil) = pure ρ
+eval_module ρ (Module (Left (VarDef σ e) : ds)) = do
    _  × v      <- eval ρ e
    ρ' × _ × ξ  <- match v σ
-   defs (ρ <> ρ') (Module ds)
-defs ρ (Module (Right δ : ds)) =
-   defs (ρ <> closeDefs ρ δ δ) (Module ds)
+   eval_module (ρ <> ρ') (Module ds)
+eval_module ρ (Module (Right δ : ds)) =
+   eval_module (ρ <> closeDefs ρ δ δ) (Module ds)

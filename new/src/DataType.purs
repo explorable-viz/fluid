@@ -6,14 +6,14 @@ import Data.Either (note)
 import Data.Foldable (class Foldable)
 import Data.Function (on)
 import Data.List (fromFoldable) as L
-import Data.List (List, concat, length)
+import Data.List (List(..), (:), concat, length)
 import Data.Map (Map, lookup)
 import Data.Map (fromFoldable) as M
 import Data.Map.Internal (keys)
 import Data.Newtype (class Newtype, unwrap)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
-import Util (MayFail, type (×), (×), absurd, error, fromJust)
+import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, with)
 
 type TypeName = String
 type FieldName = String
@@ -69,6 +69,20 @@ arity :: Ctr -> MayFail Int
 arity c = do
    DataType _ sigs <- dataTypeFor c
    length <$> note absurd (lookup c sigs)
+
+checkArity :: Ctr -> Int -> MayFail Unit
+checkArity c n = void $ with ("Checking arity of " <> show c) $
+   arity c `(=<<<) (≞)` pure n
+
+checkDataType :: forall a . String -> Ctr -> Map Ctr a -> MayFail Unit
+checkDataType msg c κs = void $ do
+   d <- dataTypeFor c
+   d' <- case keys κs of
+      Nil   -> error absurd
+      c' : _ -> dataTypeFor c'
+   if (d /= d')
+   then error "***"
+   else with (msg <> show c <> " is not a constructor of " <> show d') $ d ≞ d'
 
 -- Used internally by primitives or desugaring.
 cFalse      = Ctr "False"     :: Ctr -- Bool

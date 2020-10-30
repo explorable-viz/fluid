@@ -8,8 +8,9 @@ import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Bindings (Bindings(..), Var, (:+:), (↦))
-import Eval (defs, eval)
-import Expr (Expr)
+import SExpr (Expr) as S
+import Desugar (desugar)
+import Eval (eval, eval_module)
 import Lattice (𝔹)
 import Parse (module_, program)
 import Primitive (primitives)
@@ -32,9 +33,9 @@ loadFile folder file = do
 loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file ρ = do
    src <- loadFile "fluid/lib" file
-   pure $ successful $ defs ρ $ successfulParse src module_
+   pure $ successful $ eval_module ρ $ successful $ desugar $ successfulParse src module_
 
-openWithImports :: String -> Aff (Env 𝔹 × Expr 𝔹)
+openWithImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithImports file =
    loadFile "fluid/example" file >>= parseWithImports
 
@@ -44,13 +45,13 @@ successfulParse src p =
       Left parseError -> error $ show parseError
       Right t -> t
 
-parseWithImports :: String -> Aff (Env 𝔹 × Expr 𝔹)
+parseWithImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 parseWithImports src = do
    (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics")
        <@> successfulParse src program
 
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do
-   ρ × e <- loadFile "fluid/dataset" file >>= parseWithImports
-   let _ × v = successful $ eval ρ e
+   ρ × s <- loadFile "fluid/dataset" file >>= parseWithImports
+   let _ × v = successful $ eval ρ $ successful $ desugar s
    pure $ Empty :+: x ↦ v

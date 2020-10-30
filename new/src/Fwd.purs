@@ -75,6 +75,3 @@ eval_fwd ρ (Expr _ (BinaryApp e1 op e2)) α =
 eval_fwd ρ (Expr _ (Let (VarDef σ e) e')) α =
    let ρ' × _ × α' = match_fwd (eval_fwd ρ e α) σ in
    eval_fwd (ρ <> ρ') e' α'
-eval_fwd ρ (Expr _ (MatchAs e σ)) α =
-   let ρ' × e' × α' = match_fwd (eval_fwd ρ e α) σ in
-   eval_fwd (ρ <> ρ') (body e') α'

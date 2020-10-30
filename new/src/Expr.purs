@@ -26,7 +26,6 @@ data RawExpr a =
    Lambda (Elim a) |
    App (Expr a) (Expr a) |
    BinaryApp (Expr a) Var (Expr a) |
-   MatchAs (Expr a) (Elim a) |
    Let (VarDef a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
 
@@ -36,8 +35,6 @@ expr :: forall a . BoundedJoinSemilattice a => RawExpr a -> Expr a
 expr = Expr bot
 
 data VarDef a = VarDef (Elim a) (Expr a) -- elim has codomain unit
-type VarDefs a = List (VarDef a) -- todo: move to surface language
-
 type RecDefs = Bindings Elim
 
 data Elim a =
@@ -120,7 +117,6 @@ instance slicesRawExpr :: JoinSemilattice a => Slices (RawExpr a) where
    maybeJoin (BinaryApp e1 op e2) (BinaryApp e1' op' e2')
       = BinaryApp <$> maybeJoin e1 e1' <*> op ≟ op' <*> maybeJoin e2 e2'
    maybeJoin (Lambda σ) (Lambda σ')        = Lambda <$> maybeJoin σ σ'
-   maybeJoin (MatchAs e σ) (MatchAs e' σ') = MatchAs <$> maybeJoin e e' <*> maybeJoin σ σ'
    maybeJoin (Let def e) (Let def' e')     = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec δ e) (LetRec δ' e')   = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'
    maybeJoin _ _                           = Nothing

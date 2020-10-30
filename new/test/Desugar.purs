@@ -4,46 +4,46 @@ import Prelude
 import Data.List (List(..), (:))
 import Bindings (Var)
 import DataType (cCons, cNil)
-import Desugar (Pattern(..), Predicate(..), SExpr, RawSExpr(..), sexpr)
+import Lattice (𝔹)
+import SExpr (Pattern(..), Qualifier(..), Expr, RawExpr(..), expr)
 
-lcomp1 :: SExpr
+lcomp1 :: Expr 𝔹
 lcomp1
- = sexpr $ ListComp (sexpr $ BinaryApp (svar "x") "+" (svar "y"))
-            ((Generator (PVar "x") (scons (sint 5)
-            (scons (sint 4) (scons (sint 3) (snil))))):
-            (Generator (PVar "y") (scons (sint 9)
-            (scons (sint 7) (scons (sint 5) (snil))))):
+ = expr $ ListComp (expr $ BinaryApp (var "x") "+" (var "y"))
+            ((Generator (PVar "x") (cons (int 5)
+            (cons (int 4) (cons (int 3) (nil))))):
+            (Generator (PVar "y") (cons (int 9)
+            (cons (int 7) (cons (int 5) (nil))))):
             Nil)
 
-lcomp2 :: SExpr
+lcomp2 :: Expr 𝔹
 lcomp2
- = sexpr $ ListComp (svar "z")
-            ((Generator (PVar "x") (scons (sint 5)
-            (scons (sint 4) (scons (sint 3) (snil))))):
-            (Generator (PVar "y") (scons (sint 9)
-            (scons (sint 7) (scons (sint 5) (snil))))):
-            (Declaration (PVar "z") (sexpr $ BinaryApp (svar "x") "+" (svar "y"))):
-            (Generator (PVar "c") (scons (sint 9)
-            (scons (sint 7) (scons (sint 5) (snil)))))
+ = expr $ ListComp (var "z")
+            ((Generator (PVar "x") (cons (int 5)
+            (cons (int 4) (cons (int 3) (nil))))):
+            (Generator (PVar "y") (cons (int 9)
+            (cons (int 7) (cons (int 5) (nil))))):
+            (Declaration (PVar "z") (expr $ BinaryApp (var "x") "+" (var "y"))):
+            (Generator (PVar "c") (cons (int 9)
+            (cons (int 7) (cons (int 5) (nil)))))
             :Nil)
 
-lcomp3 :: SExpr
+lcomp3 :: Expr 𝔹
 lcomp3
- = sexpr $ ListComp (svar "z")
-            ((Generator (PVar "x") (scons (sint 5)
-            (scons (sint 4) (scons (sint 3) (snil))))):
-            (Generator (PVar "y") (scons (sint 9)
-            (scons (sint 7) (scons (sint 5) (snil))))):
-            (Declaration (PVar "z") (sexpr $ BinaryApp (svar "x") "+" (svar "y"))):
-            (Guard (sexpr $ BinaryApp (svar "z") "<" (sint 10))):
+ = expr $ ListComp (var "z")
+            ((Generator (PVar "x") (cons (int 5)
+            (cons (int 4) (cons (int 3) (nil))))):
+            (Generator (PVar "y") (cons (int 9)
+            (cons (int 7) (cons (int 5) (nil))))):
+            (Declaration (PVar "z") (expr $ BinaryApp (var "x") "+" (var "y"))):
+            (Guard (expr $ BinaryApp (var "z") "<" (int 10))):
             Nil)
 
-
-lcomp4 :: SExpr
+lcomp4 :: Expr 𝔹
 lcomp4
- = sexpr $ ListComp (svar "x")
-            ((Generator (PConstr cCons (PVar "x":PVar "xs":Nil)) (scons (scons (sint 5) snil)
-             (scons (scons (sint 4) snil) (scons (scons (sint 3) snil) (scons snil snil))))):
+ = expr $ ListComp (var "x")
+            ((Generator (PConstr cCons (PVar "x":PVar "xs":Nil)) (cons (cons (int 5) nil)
+             (cons (cons (int 4) nil) (cons (cons (int 3) nil) (cons nil nil))))):
             Nil)
 
 lcomp1_eval :: String
@@ -58,20 +58,20 @@ lcomp3_eval = "[9, 8]"
 lcomp4_eval :: String
 lcomp4_eval = "[5, 4, 3]"
 
-lseq1 :: SExpr
-lseq1 = sexpr $ ListSeq (sint 3) (sint 7)
+lseq1 :: Expr 𝔹
+lseq1 = expr $ ListRange (int 3) (int 7)
 
 lseq1_eval :: String
 lseq1_eval = "[3, 4, 5, 6, 7]"
 
-svar :: Var -> SExpr
-svar x = sexpr $ Var x
+var :: Var -> Expr 𝔹
+var x = expr $ Var x
 
-scons :: SExpr -> SExpr -> SExpr
-scons se1 se2 = sexpr $ Constr cCons (se1:se2:Nil)
+cons :: Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
+cons se1 se2 = expr $ Constr cCons (se1:se2:Nil)
 
-snil :: SExpr
-snil = sexpr $ Constr cNil Nil
+nil :: Expr 𝔹
+nil = expr $ Constr cNil Nil
 
-sint :: Int -> SExpr
-sint n = sexpr $ Int n
+int :: Int -> Expr 𝔹
+int n = expr $ Int n

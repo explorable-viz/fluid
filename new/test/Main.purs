@@ -10,14 +10,14 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
 import DataType (dataTypeFor, typeName)
-import Desugar (SExpr, desugar)
-import Expr (Expr)
+import Desugar (desugar)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Lattice (𝔹)
 import Module (loadModule, openDatasetAs, openWithImports)
 import Pretty (pretty, render)
 import Primitive (primitives)
+import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..), RawVal(..))
 import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
@@ -35,10 +35,11 @@ slicing = true
 run :: forall a . SpecT Aff Unit Effect a → Effect Unit
 run = runMocha -- nicer name
 
-test' :: String -> Aff (Env 𝔹 × Expr 𝔹) -> String -> SpecT Aff Unit Effect Unit
+test' :: String -> Aff (Env 𝔹 × S.Expr 𝔹) -> String -> SpecT Aff Unit Effect Unit
 test' name setup expected =
    before setup $
-      it name $ \(ρ × e) -> do
+      it name $ \(ρ × s) -> do
+         let e = successful $ desugar s
          case successful $ eval ρ e of
             t × v -> do
                unless (isGraphical v) $
@@ -58,15 +59,17 @@ testWithDataset dataset file =
       bitraverse (uncurry openDatasetAs) openWithImports (dataset × "data" × file) <#>
       (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)
 
-desugarTest :: String -> SExpr -> String -> SpecT Aff Unit Effect Unit
+desugarTest :: String -> S.Expr 𝔹 -> String -> SpecT Aff Unit Effect Unit
 desugarTest name s expected =
    before (loadModule "prelude" primitives) $
       it name $ \ρ ->
-         case successful $ eval ρ (desugar s) of
+         case successful $ eval ρ (successful $ desugar s) of
             t × v -> (render $ pretty v) `shouldEqual` expected
 
 main :: Effect Unit
 main = do
+   -- desugaring
+--   run $ test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
    -- desugaring
    run $ desugarTest "list-comp-1" lcomp1 lcomp1_eval
    run $ desugarTest "list-comp-2" lcomp2 lcomp2_eval
@@ -95,4 +98,4 @@ main = do
    run $ testWithDataset "renewables-restricted" "graphics/line-chart"
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
    -- scratchpad
-   run $ test "temp" "2.0"
+   run $ test "temp" "3"
