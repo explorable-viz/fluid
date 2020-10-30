@@ -16,9 +16,9 @@ import Bindings (Binding, Bindings, (↦), fromList)
 import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
-import SExpr (Clause, Expr(..), Module(..), Pattern(..), Qualifier(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr)
+import SExpr (Clause, Expr(..), Module(..), Pattern(..), Qualifier(..), RawExpr(..), expr)
 import Lattice (𝔹)
-import Util (MayFail, type (×), (×), type (+), (≞), absurd, error, fromJust, mustLookup, report)
+import Util (MayFail, type (×), (×), (≞), absurd, error, fromJust, mustLookup, report)
 
 eapp :: E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 eapp f = E.expr <<< E.App f
@@ -110,10 +110,10 @@ instance desugarEither :: (Desugarable a b, Desugarable c d) => Desugarable (Eit
    desugar (Right x) = Right <$> desugar x
 
 instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
-   desugar (Module ds) = E.Module <$> traverse desugar (wurble ds)
-
-wurble :: List (VarDefs 𝔹 + RecDefs 𝔹) -> List (VarDef 𝔹 + RecDefs 𝔹)
-wurble = error "todo"
+   desugar (Module ds) = E.Module <$> traverse desugar (join $ ds <#> burble)
+      where
+      burble (Left ds') = toList ds' <#> Left
+      burble (Right δ)  = pure $ Right δ
 
 -- The Cont arguments here act as an accumulator.
 instance desugarPattern :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
