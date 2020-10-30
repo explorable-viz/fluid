@@ -109,13 +109,14 @@ instance desugarEither :: (Desugarable a b, Desugarable c d) => Desugarable (Eit
    desugar (Left x) = Left <$> desugar x
    desugar (Right x) = Right <$> desugar x
 
+-- Surface language supports "blocks" of variable declarations; core does not.
 instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
-   desugar (Module ds) = E.Module <$> traverse desugar (join $ ds <#> burble)
+   desugar (Module ds) = E.Module <$> traverse desugar (join $ ds <#> desugarDefs)
       where
-      burble (Left ds') = toList ds' <#> Left
-      burble (Right δ)  = pure $ Right δ
+      desugarDefs (Left ds')  = toList ds' <#> Left
+      desugarDefs (Right δ)   = pure $ Right δ
 
--- The Cont arguments here act as an accumulator.
+-- Cont arguments here act as an accumulator.
 instance desugarPattern :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
    desugar (PVar x × κ)       = pure $ ElimVar x κ
    desugar (PConstr c πs × κ) = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs)
