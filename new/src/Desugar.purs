@@ -1,6 +1,7 @@
 module Desugar where
 
 import Prelude hiding (absurd)
+import Control.Apply (lift2)
 import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Function (on)
@@ -16,7 +17,7 @@ import Bindings (Binding, Bindings, (↦), fromList)
 import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
-import SExpr (Clause, Expr(..), Module(..), Pattern(..), Qualifier(..), RawExpr(..), expr)
+import SExpr (Clause, Expr(..), ListRest(..), Module(..), Pattern(..), Qualifier(..), RawExpr(..), expr)
 import Lattice (𝔹)
 import Util (MayFail, type (×), (×), (≞), absurd, error, fromJust, mustLookup, report)
 
@@ -25,6 +26,9 @@ eapp f = E.expr <<< E.App f
 
 enil :: E.Expr 𝔹
 enil = E.expr $ E.Constr cNil Nil
+
+econs :: E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
+econs e e' = E.expr $ E.Constr cCons (e : e' : Nil)
 
 evar :: Var -> E.Expr 𝔹
 evar = E.expr <<< E.Var
@@ -68,6 +72,8 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
       e3 <- desugar s3
       let σ = ElimConstr (fromFoldable [cTrue × Body e2, cFalse × Body e3])
       E.expr <$> (E.App (E.expr $ E.Lambda σ) <$> desugar s1)
+   desugar (Expr _ (ListEmpty))           = pure enil
+   desugar (Expr _ (ListNonEmpty s l))    = lift2 econs (desugar s) (desugar l)
    desugar (Expr _ (ListRange s1 s2)) =
       eapp <$> (eapp (evar "range") <$> desugar s1) <*> desugar s2
    desugar (Expr _ (ListComp s_body (Guard (Expr _ (Constr cTrue Nil)) : Nil))) = do
@@ -88,6 +94,10 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
       σ <- desugar $ p × (None :: Cont 𝔹)
       E.expr <$> (E.Let <$> (E.VarDef σ <$> desugar s) <*> desugar (expr $ ListComp s_body qs))
    desugar (Expr _ (ListComp _ Nil)) = error absurd
+
+instance desugarListRest :: Desugarable (ListRest Boolean) (E.Expr Boolean) where
+   desugar End          = pure enil
+   desugar (Next s l)   = lift2 econs (desugar s) (desugar l)
 
 totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e =
@@ -117,7 +127,7 @@ instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
       desugarDefs (Right δ)   = pure $ Right δ
 
 -- Cont arguments here act as an accumulator.
-instance desugarPattern :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
+instance desugarPatternCont :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
    desugar (PVar x × κ)       = pure $ ElimVar x κ
    desugar (PConstr c πs × κ) = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs)
       where
@@ -127,7 +137,7 @@ instance desugarPattern :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Bool
          κ' <- toCont πs'
          desugar $ π × κ'
 
-instance desugarPatterns :: Desugarable (Tuple (NonEmptyList Pattern) (Cont Boolean)) (Elim Boolean) where
+instance desugarPatternsCont :: Desugarable (Tuple (NonEmptyList Pattern) (Cont Boolean)) (Elim Boolean) where
    desugar (NonEmptyList (π :| Nil) × κ)     = desugar $ π × κ
    desugar (NonEmptyList (π :| π' : πs) × κ) = do
       κ' <- Body <$> E.expr <$> E.Lambda <$> desugar (NonEmptyList (π' :| πs) × κ) :: MayFail (Cont 𝔹)

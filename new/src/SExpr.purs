@@ -20,10 +20,15 @@ data RawExpr a =
    BinaryApp (Expr a) Var (Expr a) |
    MatchAs (Expr a) (NonEmptyList (Branch a)) |
    IfElse (Expr a) (Expr a) (Expr a) |
+   ListEmpty |  -- in the formalism we unify with Nil, but cleaner here to keep separate
+   ListNonEmpty (Expr a) (ListRest a) |
    ListRange (Expr a) (Expr a) |
    ListComp (Expr a) (List (Qualifier a)) |
    Let (VarDefs a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
+
+data ListRest a =
+   End | Next (Expr a) (ListRest a)
 
 data Pattern =
    PVar Var |
