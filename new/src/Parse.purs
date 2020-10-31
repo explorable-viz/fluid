@@ -185,6 +185,9 @@ expr = fix $ appChain >>> buildExprParser (operators binaryOp)
          lambda
 
          where
+         nil :: SParser (S.Expr 𝔹)
+         nil = token.brackets $ pure $ S.expr S.ListEmpty
+
          ctrExpr :: SParser (S.Expr 𝔹)
          ctrExpr = S.expr <$> (S.Constr <$> ctr <@> empty)
 
