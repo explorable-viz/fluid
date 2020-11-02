@@ -26,7 +26,7 @@ import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Expr (Var)
 import Lattice (𝔹)
 import Primitive (opDefs)
-import SExpr (Branch, Clause)
+import SExpr (Branch, Clause, ListRest(..))
 import SExpr (Expr(..), Module(..), Pattern(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr) as S
 import Util (Endo, (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
@@ -185,8 +185,18 @@ expr = fix $ appChain >>> buildExprParser (operators binaryOp)
          lambda
 
          where
-         nil :: SParser (S.Expr 𝔹)
-         nil = token.brackets $ pure $ S.expr S.ListEmpty
+         listEmpty :: SParser (S.Expr 𝔹)
+         listEmpty = token.brackets $ pure $ S.expr S.ListEmpty
+
+         listNonEmpty :: SParser (S.Expr 𝔹)
+         listNonEmpty =
+            token.symbol "[" *> (S.expr <$> (S.ListNonEmpty <$> expr' <*> fix listRest))
+
+            where
+            listRest :: Endo (SParser (ListRest 𝔹))
+            listRest listRest' =
+               token.symbol "]" *> pure End <|>
+               token.comma *> (Next <$> expr' <*> listRest')
 
          ctrExpr :: SParser (S.Expr 𝔹)
          ctrExpr = S.expr <$> (S.Constr <$> ctr <@> empty)
