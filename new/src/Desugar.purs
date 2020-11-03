@@ -139,13 +139,14 @@ instance desugarPatternCont :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim 
          κ' <- toCont πs'
          desugar $ π × κ'
    desugar (PListEmpty × κ)         = pure $ ElimConstr $ singleton cNil κ
-   desugar (PListNonEmpty π o × κ)  = ElimConstr <$> singleton cCons <$> Arg <$> do
-      error "todo"
+   desugar (PListNonEmpty π o × κ)  = do
+      κ' <- Arg <$> desugar (o × κ)
+      ElimConstr <$> singleton cCons <$> Arg <$> desugar (π × κ')
 
 instance desugarListPatternRestCont :: Desugarable (Tuple ListPatternRest (Cont Boolean)) (Elim Boolean) where
    desugar (PEnd × κ)      = pure $ ElimConstr $ singleton cNil κ
-   desugar (PNext π ο × κ) = do
-      κ' <- Arg <$> desugar (ο × κ)
+   desugar (PNext π o × κ) = do
+      κ' <- Arg <$> desugar (o × κ)
       ElimConstr <$> singleton cCons <$> Arg <$> desugar (π × κ')
 
 instance desugarPatternsCont :: Desugarable (Tuple (NonEmptyList Pattern) (Cont Boolean)) (Elim Boolean) where
