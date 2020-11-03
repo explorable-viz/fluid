@@ -84,7 +84,7 @@ ctr = do
 
 simplePattern :: Endo (SParser Pattern)
 simplePattern pattern' =
-   listEmpty <|>
+   try listEmpty <|>
    listNonEmpty <|>
    try constr <|>
    try var <|>
@@ -189,7 +189,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser (Expr 𝔹)
       simpleExpr =
-         listEmpty <|>
+         try listEmpty <|>
          listNonEmpty <|>
          try constr <|>
          try variable <|>

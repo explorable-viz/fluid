@@ -105,7 +105,7 @@ let foldr op z [] = z;
     foldr op z (x : xs) = op (x, foldr op z xs);
 
 -- ((a, b) -> b) -> List a -> b
-let foldr1 op (x : []) = x;
+let foldr1 op [x] = x;
     foldr1 op (x : y : xs) = op (x, foldr1 op (y : xs));
 
 -- ((a, b) -> a) -> a -> List b -> List a
@@ -125,7 +125,7 @@ let map f [] = [];
 
 -- (List a, List a) -> List a
 let append ([], ys) = ys;
-    append ((x:xs), ys) = x : (append (xs, ys));
+    append (x : xs, ys) = x : (append (xs, ys));
 
 -- List a -> List -> List a
 -- Want infix ++
@@ -161,7 +161,7 @@ let length [] = 0;
 
 -- List a -> List a
 let reverse [] = [];
-    reverse (x : xs) = append ((reverse xs), (x : []));
+    reverse (x : xs) = append (reverse xs, [x]);
 
 -- Int -> a -> List a
 let repeat = flip iterate id;
