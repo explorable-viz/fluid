@@ -125,7 +125,7 @@ let map f [] = [];
 
 -- (List a, List a) -> List a
 let append ([], ys) = ys;
-    append (x : xs, ys) = x : (append (xs, ys));
+    append (x : xs, ys) = x : append (xs, ys);
 
 -- List a -> List -> List a
 -- Want infix ++
@@ -137,7 +137,7 @@ let concat = foldl (uncurry concat2) [];
 
 -- List a -> a -> List a
 let intersperse [] sep = [];
-    intersperse (x : []) sep = x : [];
+    intersperse (x : []) sep = [x];
     intersperse (x : y : ys) sep = x : sep : intersperse (y : ys);
 
 -- Int -> (a -> a) -> a -> List a
@@ -152,7 +152,7 @@ let sum xs =
    foldr (uncurry (+)) 0 xs;
 
 -- List a -> a
-let last (x : []) = x;
+let last [x] = x;
     last (x : y : ys) = last (y : ys);
 
 -- List a -> Int
