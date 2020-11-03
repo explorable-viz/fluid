@@ -17,7 +17,9 @@ import Bindings (Binding, Bindings, (↦), fromList)
 import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
-import SExpr (Clause, Expr(..), ListRest(..), Module(..), Pattern(..), Qualifier(..), RawExpr(..), expr)
+import SExpr (
+   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), Qualifier(..), RawExpr(..), expr
+)
 import Lattice (𝔹)
 import Util (MayFail, type (×), (×), (≞), absurd, error, fromJust, mustLookup, report)
 
@@ -33,11 +35,11 @@ econs e e' = E.expr $ E.Constr cCons (e : e' : Nil)
 evar :: Var -> E.Expr 𝔹
 evar = E.expr <<< E.Var
 
-class Desugarable a b where
+class Desugarable a b | a -> b where
    desugar :: a -> MayFail b
 
 instance desugarVarDef :: Desugarable (Tuple Pattern (Expr Boolean)) (E.VarDef Boolean) where
-   desugar (π × s) = E.VarDef <$> desugar (π × (None :: Cont 𝔹)) <*> desugar s
+   desugar (π × s) = E.VarDef <$> desugar (π × None) <*> desugar s
 
 instance desugarRecDefs :: Desugarable (NonEmptyList (Tuple String (Tuple (NonEmptyList Pattern) (Expr Boolean))))
                                        (Bindings Elim Boolean) where
@@ -87,7 +89,7 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
       E.expr <$> (E.App (E.expr $ E.Lambda σ) <$> desugar s)
    desugar (Expr _ (ListComp s_body (Generator p slist : qs))) = do
       e <- desugar $ expr $ ListComp s_body qs
-      σ <- desugar $ p × (Body e :: Cont 𝔹)
+      σ <- desugar $ p × Body e
       let λ = E.expr $ E.Lambda $ totalise σ enil
       eapp (evar "concat") <$> (eapp (eapp (evar "map") λ) <$> desugar slist)
    desugar (Expr _ (ListComp s_body (Declaration p s : qs))) = do
@@ -128,24 +130,33 @@ instance desugarModule :: Desugarable (Module Boolean) (E.Module Boolean) where
 
 -- Cont arguments here act as an accumulator.
 instance desugarPatternCont :: Desugarable (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
-   desugar (PVar x × κ)       = pure $ ElimVar x κ
-   desugar (PConstr c πs × κ) = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs)
+   desugar (PVar x × κ)             = pure $ ElimVar x κ
+   desugar (PConstr c πs × κ)       = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs)
       where
       toCont :: List Pattern -> MayFail (Cont 𝔹)
       toCont Nil        = pure κ
       toCont (π : πs')  = Arg <$> do
          κ' <- toCont πs'
          desugar $ π × κ'
+   desugar (PListEmpty × κ)         = pure $ ElimConstr $ singleton cNil κ
+   desugar (PListNonEmpty π o × κ)  = ElimConstr <$> singleton cCons <$> Arg <$> do
+      error "todo"
+
+instance desugarListPatternRestCont :: Desugarable (Tuple ListPatternRest (Cont Boolean)) (Elim Boolean) where
+   desugar (PEnd × κ)      = pure $ ElimConstr $ singleton cNil κ
+   desugar (PNext π ο × κ) = do
+      κ' <- Arg <$> desugar (ο × κ)
+      ElimConstr <$> singleton cCons <$> Arg <$> desugar (π × κ')
 
 instance desugarPatternsCont :: Desugarable (Tuple (NonEmptyList Pattern) (Cont Boolean)) (Elim Boolean) where
    desugar (NonEmptyList (π :| Nil) × κ)     = desugar $ π × κ
    desugar (NonEmptyList (π :| π' : πs) × κ) = do
-      κ' <- Body <$> E.expr <$> E.Lambda <$> desugar (NonEmptyList (π' :| πs) × κ) :: MayFail (Cont 𝔹)
+      κ' <- Body <$> E.expr <$> E.Lambda <$> desugar (NonEmptyList (π' :| πs) × κ)
       desugar $ π × κ'
 
 instance desugarBranch :: Desugarable (Tuple (NonEmptyList Pattern) (Expr Boolean)) (Elim Boolean) where
    desugar (πs × s) = do
-      κ <- Body <$> desugar s :: MayFail (Cont 𝔹)
+      κ <- Body <$> desugar s
       desugar $ πs × κ
 
 instance desugarBranches :: Desugarable (NonEmptyList (NonEmptyList Pattern × Expr Boolean))

@@ -32,7 +32,12 @@ data ListRest a =
 
 data Pattern =
    PVar Var |
-   PConstr Ctr (List Pattern)
+   PConstr Ctr (List Pattern) |
+   PListEmpty |
+   PListNonEmpty Pattern ListPatternRest
+
+data ListPatternRest =
+   PEnd | PNext Pattern ListPatternRest
 
 type Branch a = NonEmptyList Pattern × Expr a
 type Clause a = Var × Branch a
