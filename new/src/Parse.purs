@@ -27,7 +27,8 @@ import Expr (Var)
 import Lattice (𝔹)
 import Primitive (opDefs)
 import SExpr (
-   Branch, Clause, Expr(..), ListRest(..), Module(..), Pattern(..), RawExpr(..), RecDefs, VarDef, VarDefs, expr
+   Branch, Clause, Expr(..), ListRest(..), ListPatternRest(..), Module(..), Pattern(..), RawExpr(..), RecDefs,
+   VarDef, VarDefs, expr
 )
 import Util (Endo, (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
@@ -83,22 +84,35 @@ ctr = do
 
 simplePattern :: Endo (SParser Pattern)
 simplePattern pattern' =
-   try ctr_pattern <|>
-   try var_pattern <|>
+   try constr <|>
+   try var <|>
    try (token.parens pattern') <|>
-   pair_pattern
+   pair
 
    where
+   listEmpty :: SParser Pattern
+   listEmpty = token.brackets $ pure $ PListEmpty
+
+   listNonEmpty :: SParser Pattern
+   listNonEmpty =
+      token.symbol "[" *> (PListNonEmpty <$> pattern' <*> fix listRest)
+
+         where
+         listRest :: Endo (SParser ListPatternRest)
+         listRest listRest' =
+            token.symbol "]" *> pure PEnd <|>
+            token.comma *> (PNext <$> pattern' <*> listRest')
+
    -- Constructor name as a nullary constructor pattern.
-   ctr_pattern :: SParser Pattern
-   ctr_pattern = PConstr <$> ctr <@> Nil
+   constr :: SParser Pattern
+   constr = PConstr <$> ctr <@> Nil
 
    -- TODO: anonymous variables
-   var_pattern :: SParser Pattern
-   var_pattern = PVar <$> ident
+   var :: SParser Pattern
+   var = PVar <$> ident
 
-   pair_pattern :: SParser Pattern
-   pair_pattern =
+   pair :: SParser Pattern
+   pair =
       token.parens $ do
          π <- pattern' <* token.comma
          π' <- pattern'
@@ -173,7 +187,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser (Expr 𝔹)
       simpleExpr =
-         try ctrExpr <|>
+         try constr <|>
          try variable <|>
          try float <|>
          try int <|> -- int may start with +/-
@@ -199,8 +213,8 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
                token.symbol "]" *> pure End <|>
                token.comma *> (Next <$> expr' <*> listRest')
 
-         ctrExpr :: SParser (Expr 𝔹)
-         ctrExpr = expr <$> (Constr <$> ctr <@> empty)
+         constr :: SParser (Expr 𝔹)
+         constr = expr <$> (Constr <$> ctr <@> empty)
 
          variable :: SParser (Expr 𝔹)
          variable = ident <#> Var >>> expr
