@@ -84,6 +84,8 @@ ctr = do
 
 simplePattern :: Endo (SParser Pattern)
 simplePattern pattern' =
+   listEmpty <|>
+   listNonEmpty <|>
    try constr <|>
    try var <|>
    try (token.parens pattern') <|>
@@ -187,6 +189,8 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser (Expr 𝔹)
       simpleExpr =
+         listEmpty <|>
+         listNonEmpty <|>
          try constr <|>
          try variable <|>
          try float <|>
@@ -276,7 +280,7 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
             where
             ctrArgs :: SParser Pattern
             ctrArgs = simplePattern pattern' >>= \π' -> rest $ PConstr c (πs `snoc` π')
-         rest π@(PVar _) = pure π
+         rest π = pure π
 
    infixCtr :: String -> SParser (Pattern -> Pattern -> Pattern)
    infixCtr op = do

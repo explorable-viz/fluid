@@ -39,7 +39,7 @@ class Desugarable a b | a -> b where
    desugar :: a -> MayFail b
 
 instance desugarVarDef :: Desugarable (Tuple Pattern (Expr Boolean)) (E.VarDef Boolean) where
-   desugar (π × s) = E.VarDef <$> desugar (π × None) <*> desugar s
+   desugar (π × s) = E.VarDef <$> desugar (π × (None :: Cont 𝔹)) <*> desugar s
 
 instance desugarRecDefs :: Desugarable (NonEmptyList (Tuple String (Tuple (NonEmptyList Pattern) (Expr Boolean))))
                                        (Bindings Elim Boolean) where
