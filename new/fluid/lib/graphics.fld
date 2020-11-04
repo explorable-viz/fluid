@@ -52,8 +52,8 @@ let spaceRight z sep gs =
 
 -- Bake colour decisions into the library for the time being. Provide two palettes, so we can have two
 -- different sets of categorical values (e.g. countries and energy types). Palettes from colorbrewer2.org.
-let colours1 = "#66c2a5" : "#a6d854" : "#ffd92f" : "#e5c494" : "#fc8d62" : "#b3b3b3" : "#8da0cb" : "#e78ac3" : Nil;
-let colours2 = "#e41a1c" : "#377eb8" : "#4daf4a" : "#984ea3" : "#ff7f00" : "#ffff33" : "#a65628" : "#f781bf" : Nil;
+let colours1 = ["#66c2a5", "#a6d854", "#ffd92f", "#e5c494", "#fc8d62", "#b3b3b3", "#8da0cb", "#e78ac3"];
+let colours2 = ["#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf"];
 
 -- Compositionality principle: child coords/dimensions are always expressed directly using parent reference
 -- frame, to avoid depending on content of child, and so are not themselves scaled. Polyline can't be scaled
@@ -100,7 +100,7 @@ let label Horiz x distance str = Text x (0 - distance - 4) str "middle" "hanging
 
 -- Orient -> Colour -> Float -> Str -> GraphicsElement
 let labelledTick orient colour len str =
-   Group (tick orient colour len : label orient 0 len str : Nil);
+   Group [tick orient colour len, label orient 0 len str];
 
 -- Orient -> Float -> Float -> Point
 let mkPoint Horiz x y = Point y x;
@@ -120,15 +120,14 @@ let axis orient x start end =
           False -> ys
        };
        ys = match lastTick > end as {
-          True -> concat2 ys (lastTick : Nil);
+          True -> concat2 ys [lastTick];
           False -> ys
        };
        ps = map (mkPoint orient x) ys;
-       ax = Group (
-          Line (head ps) (last ps) axisColour axisStrokeWidth :
-          Polymarkers ps (flip map ys (compose (labelledTick orient axisColour tickLength) numToStr)) :
-          Nil
-       )
+       ax = Group [
+          Line (head ps) (last ps) axisColour axisStrokeWidth,
+          Polymarkers ps (flip map ys (compose (labelledTick orient axisColour tickLength) numToStr))
+       ]
    in (ax, lastTick);
 
 -- x is position of this axis on the other axis.
@@ -136,12 +135,11 @@ let axis orient x start end =
 let catAxis orient x catValues =
    let ys = iterate (length catValues + 1) ((+) 1) 0;
        ps = map (mkPoint orient x) ys
-   in Group (
-      Line (head ps) (last ps) axisColour axisStrokeWidth :
-      Polymarkers (tail ps) (map (const (tick orient axisColour tickLength)) catValues) :
-      Polymarkers (flip map (tail ps) (fun (Point x y) -> Point (x - 0.5) y)) (map (label orient -0.5 0) catValues) :
-      Nil
-   );
+   in Group [
+      Line (head ps) (last ps) axisColour axisStrokeWidth,
+      Polymarkers (tail ps) (map (const (tick orient axisColour tickLength)) catValues),
+      Polymarkers (flip map (tail ps) (fun (Point x y) -> Point (x - 0.5) y)) (map (label orient -0.5 0) catValues)
+   ];
 
 -- Float -> Float -> Float -> Float -> List GraphicsElement -> GraphicsElement
 let viewport x_start x_finish y_finish margin gs =
@@ -157,11 +155,10 @@ let lineChart withAxes colours x_start data =
    -- (Int, Colour) -> GraphicsElement
    let plot (n, colour) =
       let ps = map (fun (x, kvs) -> Point x (snd (nth n kvs))) data
-      in Group (
-         Polyline ps colour 1 :
-         Polymarkers ps (repeat (length ps) (Circle 0 0 markerRadius colour)) :
-         Nil
-      );
+      in Group [
+         Polyline ps colour 1,
+         Polymarkers ps (repeat (length ps) (Circle 0 0 markerRadius colour))
+      ];
    -- List GraphicsElement
    let lines = zipWith plot (iterate nCat ((+) 1) 0) colours;
        x_finish = last xs;
@@ -184,7 +181,7 @@ let categoricalChart plotValue withAxes colours sep data =
       True ->
          let x_axis = catAxis Horiz 0 (map fst data);
              (y_axis, h') = axis Vert 0 0 h
-         in viewport 0 w h' defaultMargin (concat2 gs (x_axis : y_axis : Nil)); -- axes on top
+         in viewport 0 w h' defaultMargin (concat2 gs [x_axis, y_axis]); -- axes on top
       False -> viewport 0 w h 0 gs
    };
 
@@ -218,9 +215,8 @@ let stackedBarChart = categoricalChart (compose map stackedBar);
 -- Bit of a hack, but how text fits into our model is a bit unclear at the moment.
 -- Str -> GraphicsElement -> GraphicsElement
 let caption str (Viewport x y w h fill margin scale translate g) =
-   let g' = Group (
-      Text (x + w / 2) -2 str "middle" "hanging" :
-      Viewport 0 0 w h fill margin scale translate g :
-      Nil
-   )
+   let g' = Group [
+      Text (x + w / 2) -2 str "middle" "hanging",
+      Viewport 0 0 w h fill margin scale translate g
+   ]
    in Viewport x y w h backgroundColour (defaultMargin / 2 + 4) (Scale 1 1) (Translate 0 0) g';

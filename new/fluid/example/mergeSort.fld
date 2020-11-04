@@ -1,11 +1,11 @@
-let split Nil = (Nil, Nil);
+let split [] = ([], []);
     split (x : xs) =
       let (ys, zs) = split xs in (x : zs, ys);
 
     merge xs ys =
        match (xs, ys) as {
-          (Nil, _) -> ys;
-          (x : xs', Nil) -> xs;
+          ([], _) -> ys;
+          (x : xs', []) -> xs;
           (x : xs', y : ys') ->
              match x < y as {
                 True -> x : merge xs' ys;
@@ -15,11 +15,11 @@ let split Nil = (Nil, Nil);
 
     mergesort xs =
        match xs as {
-          Nil -> xs;
-          x : Nil -> xs;
+          [] -> xs;
+          [x] -> xs;
           x : y : _ ->
              let (ys, zs) = split xs in
              merge (mergesort ys) (mergesort zs)
        }
 in
-mergesort (3 : 1 : 2 : Nil)
+mergesort [3, 1, 2]

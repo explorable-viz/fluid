@@ -72,19 +72,19 @@ let prod f g x = (f x, g x);
 let swap (a, b) = (b, a);
 
 -- List a -> a
-let head Nil = error "Can't take head of empty list";
+let head [] = error "Can't take head of empty list";
     head (x : _) = x;
 
 -- List a -> List a
-let tail Nil = error "Can't take tail of empty list";
+let tail [] = error "Can't take tail of empty list";
     tail (_ : xs) = xs;
 
 -- Int -> List Int -> Bool
-let elem x Nil = False;
+let elem x [] = False;
     elem x (x' : xs) = or (x == x') (elem x xs);
 
 -- (a -> Bool) -> List a -> List a
-let filter p Nil = Nil;
+let filter p [] = [];
     filter p (x : xs) =
       let ys = filter p xs in
       match p x as {
@@ -94,18 +94,18 @@ let filter p Nil = Nil;
 
 -- Todo: have these take uncurried operators
 -- ((a, b) -> a) -> a -> List b -> a
-let foldl op z Nil = z;
+let foldl op z [] = z;
     foldl op z (x : xs) = foldl op (op (z, x)) xs;
 
 -- ((a, b) -> a) -> List b -> a
 let foldl1 op (x : xs) = foldl op x xs;
 
 -- ((a, b) -> b) -> b -> List a -> b
-let foldr op z Nil = z;
+let foldr op z [] = z;
     foldr op z (x : xs) = op (x, foldr op z xs);
 
 -- ((a, b) -> b) -> List a -> b
-let foldr1 op (x : Nil) = x;
+let foldr1 op [x] = x;
     foldr1 op (x : y : xs) = op (x, foldr1 op (y : xs));
 
 -- ((a, b) -> a) -> a -> List b -> List a
@@ -113,37 +113,37 @@ let scanl1 op z xs =
    let go (x, continue) acc =
       let next = op (acc, x) in
       next : continue next in
-   foldr go (const Nil) xs z;
+   foldr go (const []) xs z;
 
 -- ((a, b) -> a) -> a -> List b -> List a
 let scanl op z xs =
    z : scanl1 op z xs;
 
 -- (a -> b) -> List a -> List b
-let map f Nil = Nil;
+let map f [] = [];
     map f (x : xs) = f x : map f xs;
 
 -- (List a, List a) -> List a
-let append (Nil, ys) = ys;
-    append ((x:xs), ys) = x : (append (xs, ys));
+let append ([], ys) = ys;
+    append (x : xs, ys) = x : append (xs, ys);
 
 -- List a -> List -> List a
 -- Want infix ++
-let concat2 Nil ys = ys;
+let concat2 [] ys = ys;
     concat2 (x : xs) ys = x : concat2 xs ys;
 
 -- List (List a) -> List a
-let concat = foldl (uncurry concat2) Nil;
+let concat = foldl (uncurry concat2) [];
 
 -- List a -> a -> List a
-let intersperse Nil sep = Nil;
-    intersperse (x : Nil) sep = x : Nil;
+let intersperse [] sep = [];
+    intersperse (x : []) sep = [x];
     intersperse (x : y : ys) sep = x : sep : intersperse (y : ys);
 
 -- Int -> (a -> a) -> a -> List a
 let iterate n f z =
    match n == 0 as {
-      True -> Nil;
+      True -> [];
       False -> z : map f (iterate (n - 1) f z)
    };
 
@@ -152,16 +152,16 @@ let sum xs =
    foldr (uncurry (+)) 0 xs;
 
 -- List a -> a
-let last (x : Nil) = x;
+let last [x] = x;
     last (x : y : ys) = last (y : ys);
 
 -- List a -> Int
-let length Nil = 0;
+let length [] = 0;
     length (_ : xs) = 1 + length xs;
 
 -- List a -> List a
-let reverse Nil = Nil;
-    reverse (x : xs) = append ((reverse xs), (x : Nil));
+let reverse [] = [];
+    reverse (x : xs) = append (reverse xs, [x]);
 
 -- Int -> a -> List a
 let repeat = flip iterate id;
@@ -169,9 +169,9 @@ let repeat = flip iterate id;
 -- Int -> List a -> List a
 let take n xs =
     match n <= 0 as {
-       True -> Nil;
+       True -> [];
        False -> match xs as {
-           Nil -> Nil;
+           [] -> [];
            x : xs -> x : take (n - 1) xs
        }
     };
@@ -181,7 +181,7 @@ let drop n xs =
    match n <= 0 as {
       True -> xs;
       False -> match xs as {
-         Nil -> Nil;
+         [] -> [];
          _ : xs -> drop (n - 1) xs
       }
    };
@@ -200,7 +200,7 @@ let nth n (x : xs) =
 
 -- Partial; requires k to be in the map.
 -- Int -> List (Int, b) -> b
-let lookup k Nil = error "Key not found in map";
+let lookup k [] = error "Key not found in map";
     lookup k ((k', v) : kvs) =
        match k == k' as {
           True -> v;
@@ -229,14 +229,14 @@ let max = foldr1 max2;
 let min = foldr1 min2;
 
 -- List (a, b) -> (List a, List b)
-let unzip Nil = (Nil, Nil);
+let unzip [] = ([], []);
     unzip ((x, y) : zs) =
       let (xs, ys) = unzip zs in
       (x : xs, y : ys);
 
 -- ((a, b) -> c) -> List a -> List b -> List c
-let zipWith op Nil ys = Nil;
-    zipWith op (x : xs) Nil = Nil;
+let zipWith op [] ys = [];
+    zipWith op (x : xs) [] = [];
     zipWith op (x : xs) (y : ys) = op (x, y) : zipWith op xs ys;
 
 -- List a -> List b -> List (a, b)
@@ -246,5 +246,5 @@ let zip = zipWith id;
 let range n m =
     match n <= m as {
        True  -> n : range (n + 1) m;
-       False -> Nil
+       False -> []
     };
