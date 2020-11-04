@@ -1,1 +1,1 @@
-length (2 : 3 : Nil)
+length [2, 3]
