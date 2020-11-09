@@ -37,6 +37,7 @@ import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
 strAs          = "as"      :: String
 strBackslash   = "\\"      :: String
 strBar         = "|"       :: String
+strEllipsis    = ".."      :: String
 strEquals      = "="       :: String
 strFun         = "fun"     :: String
 strIn          = "in"      :: String
@@ -57,7 +58,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    identLetter = alphaNum <|> oneOf ['_', '\''],
    opStart = opChar,
    opLetter = opChar,
-   reservedOpNames = [strBar],
+   reservedOpNames = [strBar, strEllipsis, strEquals, strLArrow, strRArrow],
    reservedNames = [strAs, strFun, strIn, strLet, strMatch],
    caseSensitive = true
 } where
@@ -78,14 +79,17 @@ lBracket = void $ token.symbol strLBracket
 bar :: SParser Unit
 bar = token.reservedOp strBar
 
+ellipsis :: SParser Unit
+ellipsis = token.reservedOp strEllipsis
+
+equals :: SParser Unit
+equals = token.reservedOp strEquals
+
 rBracket :: SParser Unit
 rBracket = void $ token.symbol strRBracket
 
 rArrow :: SParser Unit
 rArrow = token.reservedOp strRArrow
-
-equals :: SParser Unit
-equals = token.reservedOp strEquals
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
@@ -208,6 +212,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          try listEmpty <|>
          listNonEmpty <|>
          listComp <|>
+         listRange <|>
          try constr <|>
          try variable <|>
          try float <|>
@@ -244,6 +249,10 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
                lift2 Generator (pattern <* lArrow) expr' <|>
                Declaration <$> (keyword strLet *> pattern <* equals) `lift2 (×)` expr' <|>
                Guard <$> expr'
+
+         listRange :: SParser (Expr 𝔹)
+         listRange = token.brackets $
+            expr <$> lift2 ListRange (expr' <* ellipsis) expr'
 
          constr :: SParser (Expr 𝔹)
          constr = expr <$> (Constr <$> ctr <@> empty)

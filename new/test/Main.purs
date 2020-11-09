@@ -73,8 +73,7 @@ main = do
    run $ test "desugar/list-comp-2" "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9, 9, 12, 12, 12, 10, 10, 10, 8, 8, 8]"
    run $ test "desugar/list-comp-3" "[9, 8]"
    run $ test "desugar/list-comp-4" "[5, 4, 3]"
-{-
-   run $ desugarTest "list-seq-1" lseq1 lseq1_eval
+   run $ test "desugar/list-range" "[3, 4, 5, 6, 7]"
    -- slicing
    run $ test "arithmetic" "42"
    run $ test "compose" "5"
@@ -97,5 +96,4 @@ main = do
    run $ testWithDataset "renewables-restricted" "graphics/line-chart"
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
    -- scratchpad
--}
-   run $ test "temp" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
+   run $ test "temp" "[3, 4, 5, 6, 7]"
