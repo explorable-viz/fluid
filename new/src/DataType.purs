@@ -65,6 +65,12 @@ ctrToDataType = M.fromFoldable $
 dataTypeFor :: Ctr -> MayFail DataType
 dataTypeFor c = note ("Unknown constructor " <> show c) $ lookup c ctrToDataType
 
+dataTypeForKeys :: List Ctr -> MayFail DataType
+dataTypeForKeys cs =
+   case cs of
+      Nil   -> error absurd
+      c' : _ -> dataTypeFor c'
+
 arity :: Ctr -> MayFail Int
 arity c = do
    DataType _ sigs <- dataTypeFor c
@@ -77,9 +83,7 @@ checkArity c n = void $ with ("Checking arity of " <> show c) $
 checkDataType :: forall a . String -> Ctr -> Map Ctr a -> MayFail Unit
 checkDataType msg c κs = void $ do
    d <- dataTypeFor c
-   d' <- case keys κs of
-      Nil   -> error absurd
-      c' : _ -> dataTypeFor c'
+   d' <- dataTypeForKeys $ keys κs
    if (d /= d')
    then error "***"
    else with (msg <> show c <> " is not a constructor of " <> show d') $ d ≞ d'

@@ -4,10 +4,11 @@ import Prelude hiding (absurd, apply)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, singleton, unzip, snoc)
 import Data.Map (lookup, update)
+import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
-import DataType (Ctr, arity, checkDataType)
+import DataType (Ctr, arity, checkDataType, dataTypeForKeys)
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
@@ -27,7 +28,10 @@ match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
    κ <- note ("Incomplete pattern: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
    pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
-match v σ = report $ "Pattern mismatch: " <> render (pretty v) <> " is not a constructor value"
+match v (ElimConstr κs) = do
+   d <- dataTypeForKeys $ keys κs
+   report $ "Pattern mismatch: " <> render (pretty v) <>
+            " is not a constructor value, expected " <> show d
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchArgs _ Nil κ                = pure $ Empty × κ × Nil
