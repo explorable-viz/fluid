@@ -245,6 +245,6 @@ let zip = zipWith id;
 -- Int -> Int -> List Int
 let range n m =
     match n <= m as {
-       True  -> n : range (n + 1) m;
+       True  -> n : [n + 1 .. m];
        False -> []
     };

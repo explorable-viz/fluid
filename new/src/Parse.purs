@@ -2,7 +2,7 @@ module Parse where
 
 import Prelude hiding (absurd, add, between, join)
 import Control.Alt ((<|>))
-import Control.Apply (lift2)
+import Control.Apply (lift2, lift3)
 import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (elem, fromFoldable)
@@ -38,8 +38,10 @@ strAs          = "as"      :: String
 strBackslash   = "\\"      :: String
 strBar         = "|"       :: String
 strEllipsis    = ".."      :: String
+strElse        = "else"    :: String
 strEquals      = "="       :: String
 strFun         = "fun"     :: String
+strIf          = "if"      :: String
 strIn          = "in"      :: String
 strLBracket    = "["       :: String
 strLet         = "let"     :: String
@@ -47,6 +49,7 @@ strMatch       = "match"   :: String
 strLArrow      = "<-"      :: String
 strRArrow      = "->"      :: String
 strRBracket    = "]"       :: String
+strThen        = "then"    :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
@@ -59,7 +62,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    opStart = opChar,
    opLetter = opChar,
    reservedOpNames = [strBar, strEllipsis, strEquals, strLArrow, strRArrow],
-   reservedNames = [strAs, strFun, strIn, strLet, strMatch],
+   reservedNames = [strAs, strElse, strFun, strIf, strIn, strLet, strMatch, strThen],
    caseSensitive = true
 } where
    opChar :: SParser Char
@@ -223,7 +226,8 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          try (token.parens expr') <|>
          try parensOp <|>
          pair <|>
-         lambda
+         lambda <|>
+         ifElse
 
          where
          listEmpty :: SParser (Expr 𝔹)
@@ -295,6 +299,10 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          lambda :: SParser (Expr 𝔹)
          lambda = expr <$> (Lambda <$> (keyword strFun *> branches true expr'))
+
+         ifElse :: SParser (Expr 𝔹)
+         ifElse = expr <$>
+            lift3 IfElse (keyword strIf *> expr') (keyword strThen *> expr') (keyword strElse *> expr')
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
