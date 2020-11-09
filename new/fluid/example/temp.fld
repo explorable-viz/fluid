@@ -1,3 +1,1 @@
-match [3] as {
-    [x] -> x
-}
+[ 5 | True ]

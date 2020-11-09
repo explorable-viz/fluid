@@ -20,7 +20,7 @@ import Primitive (primitives)
 import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..), RawVal(..))
-import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
+-- import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -71,6 +71,7 @@ main = do
    -- desugaring
 --   run $ test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
    -- desugaring
+{-
    run $ desugarTest "list-comp-1" lcomp1 lcomp1_eval
    run $ desugarTest "list-comp-2" lcomp2 lcomp2_eval
    run $ desugarTest "list-comp-3" lcomp3 lcomp3_eval
@@ -98,4 +99,5 @@ main = do
    run $ testWithDataset "renewables-restricted" "graphics/line-chart"
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
    -- scratchpad
+-}
    run $ test "temp" "3"

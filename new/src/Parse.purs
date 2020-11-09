@@ -34,14 +34,18 @@ import Util (Endo, (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
 
 -- constants (should also be used by prettyprinter)
-strArrow       = "->"      :: String
 strAs          = "as"      :: String
 strBackslash   = "\\"      :: String
+strBar         = "|"       :: String
 strEquals      = "="       :: String
 strFun         = "fun"     :: String
 strIn          = "in"      :: String
+strLBracket    = "["       :: String
 strLet         = "let"     :: String
 strMatch       = "match"   :: String
+strLArrow      = "<-"      :: String
+strRArrow      = "->"      :: String
+strRBracket    = "]"       :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
@@ -65,11 +69,23 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
 token :: TokenParser
 token = makeTokenParser languageDef
 
+lArrow :: SParser Unit
+lArrow = token.reservedOp strLArrow
+
 lBracket :: SParser Unit
-lBracket = void $ token.symbol "["
+lBracket = void $ token.symbol strLBracket
+
+bar :: SParser Unit
+bar = token.reservedOp strBar
 
 rBracket :: SParser Unit
-rBracket = void $ token.symbol "]"
+rBracket = void $ token.symbol strRBracket
+
+rArrow :: SParser Unit
+rArrow = token.reservedOp strRArrow
+
+equals :: SParser Unit
+equals = token.reservedOp strEquals
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
@@ -126,14 +142,8 @@ simplePattern pattern' =
          π' <- pattern'
          pure $ PConstr cPair (π : π' : Nil)
 
-arrow :: SParser Unit
-arrow = token.reservedOp strArrow
-
-equals :: SParser Unit
-equals = token.reservedOp strEquals
-
 patternDelim :: SParser Unit
-patternDelim = arrow <|> equals
+patternDelim = rArrow <|> equals
 
 -- "curried" controls whether nested functions are permitted in this context
 branch :: Boolean -> SParser (Expr 𝔹) -> SParser Unit -> SParser (Branch 𝔹)
@@ -149,13 +159,13 @@ branches curried expr' =
    pure <$> branch curried expr' patternDelim <|> branchMany
    where
    branchMany :: SParser (NonEmptyList (Branch 𝔹))
-   branchMany = token.braces $ sepBy1 (branch curried expr' arrow) token.semi
+   branchMany = token.braces $ sepBy1 (branch curried expr' rArrow) token.semi
 
 varDefs :: SParser (Expr 𝔹) -> SParser (VarDefs 𝔹)
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    where
    clause :: SParser (VarDef 𝔹)
-   clause = (pattern <* patternDelim) `lift2 (×)` expr'
+   clause = (pattern <* equals) `lift2 (×)` expr'
 
 recDefs :: SParser (Expr 𝔹) -> SParser (RecDefs 𝔹)
 recDefs expr' = do
@@ -226,11 +236,14 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          listComp :: SParser (Expr 𝔹)
          listComp = token.brackets $
-            expr <$> lift2 ListComp (expr' <* token.symbol "|") (sepBy1 qualifier token.comma)
+            expr <$> lift2 ListComp (expr' <* bar) (sepBy1 qualifier token.comma)
 
             where
             qualifier :: SParser (Qualifier 𝔹)
-            qualifier = Guard <$> expr'
+            qualifier =
+               Guard <$> expr' <|>
+               lift2 Generator (pattern <* lArrow) expr' <|>
+               lift2 Declaration (pattern <* equals) expr'
 
          constr :: SParser (Expr 𝔹)
          constr = expr <$> (Constr <$> ctr <@> empty)
