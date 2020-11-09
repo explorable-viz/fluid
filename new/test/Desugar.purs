@@ -8,6 +8,7 @@ import Bindings (Var)
 import DataType (cCons, cNil)
 import Lattice (𝔹)
 import SExpr (Pattern(..), Qualifier(..), Expr, RawExpr(..), expr)
+import Util ((×))
 
 lcomp1 :: Expr 𝔹
 lcomp1
@@ -22,7 +23,7 @@ lcomp2
             NonEmptyList $
                (Generator (PVar "x") (cons (int 5) (cons (int 4) (cons (int 3) nil))) :|
                (Generator (PVar "y") (cons (int 9) (cons (int 7) (cons (int 5) nil)))) :
-               (Declaration (PVar "z") (expr $ BinaryApp (var "x") "+" (var "y"))) :
+               (Declaration (PVar "z" × expr (BinaryApp (var "x") "+" (var "y")))) :
                (Generator (PVar "c") (cons (int 9) (cons (int 7) (cons (int 5) nil))))
                : Nil)
 
@@ -32,7 +33,7 @@ lcomp3
             NonEmptyList $
             (Generator (PVar "x") (cons (int 5) (cons (int 4) (cons (int 3) nil))) :|
             (Generator (PVar "y") (cons (int 9) (cons (int 7) (cons (int 5) nil)))):
-            (Declaration (PVar "z") (expr $ BinaryApp (var "x") "+" (var "y"))):
+            (Declaration (PVar "z" × expr (BinaryApp (var "x") "+" (var "y")))) :
             (Guard (expr $ BinaryApp (var "z") "<" (int 10))):
             Nil)
 

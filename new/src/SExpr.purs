@@ -48,7 +48,7 @@ type VarDefs a = NonEmptyList (VarDef a)
 data Qualifier a =
    Guard (Expr a) |
    Generator Pattern (Expr a) |
-   Declaration Pattern (Expr a)
+   Declaration (VarDef a) -- could allow VarDefs instead
 
 data Expr a =
    Expr a (RawExpr a)

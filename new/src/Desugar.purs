@@ -92,7 +92,7 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
       σ <- desugar $ p × Body e
       let λ = E.expr $ E.Lambda $ totalise σ enil
       eapp (evar "concat") <$> (eapp (eapp (evar "map") λ) <$> desugar slist)
-   desugar (Expr _ (ListComp s_body (NonEmptyList ((Declaration p s) :| q : qs)))) = do
+   desugar (Expr _ (ListComp s_body (NonEmptyList ((Declaration (p × s)) :| q : qs)))) = do
       σ <- desugar $ p × (None :: Cont 𝔹)
       E.expr <$> (E.Let <$> (E.VarDef σ <$> desugar s) <*> desugar (expr $ ListComp s_body $ NonEmptyList $ q :| qs))
 

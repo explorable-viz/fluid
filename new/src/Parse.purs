@@ -57,7 +57,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    identLetter = alphaNum <|> oneOf ['_', '\''],
    opStart = opChar,
    opLetter = opChar,
-   reservedOpNames = [],
+   reservedOpNames = [strBar],
    reservedNames = [strAs, strFun, strIn, strLet, strMatch],
    caseSensitive = true
 } where
@@ -243,7 +243,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             qualifier =
                Guard <$> expr' <|>
                lift2 Generator (pattern <* lArrow) expr' <|>
-               lift2 Declaration (pattern <* equals) expr'
+               Declaration <$> (keyword strLet *> pattern <* equals) `lift2 (×)` expr'
 
          constr :: SParser (Expr 𝔹)
          constr = expr <$> (Constr <$> ctr <@> empty)
