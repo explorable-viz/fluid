@@ -2,6 +2,8 @@ module Test.Desugar where
 
 import Prelude
 import Data.List (List(..), (:))
+import Data.List.NonEmpty (NonEmptyList(..))
+import Data.NonEmpty ((:|))
 import Bindings (Var)
 import DataType (cCons, cNil)
 import Lattice (𝔹)
@@ -9,41 +11,36 @@ import SExpr (Pattern(..), Qualifier(..), Expr, RawExpr(..), expr)
 
 lcomp1 :: Expr 𝔹
 lcomp1
- = expr $ ListComp (expr $ BinaryApp (var "x") "+" (var "y"))
-            ((Generator (PVar "x") (cons (int 5)
-            (cons (int 4) (cons (int 3) (nil))))):
-            (Generator (PVar "y") (cons (int 9)
-            (cons (int 7) (cons (int 5) (nil))))):
-            Nil)
+ = expr $ ListComp (expr $ BinaryApp (var "x") "+" (var "y")) $
+            NonEmptyList $
+               (Generator (PVar "x") $ cons (int 5) (cons (int 4) (cons (int 3) nil))) :|
+               ((Generator (PVar "y") $ cons (int 9) (cons (int 7) (cons (int 5) nil))) : Nil)
 
 lcomp2 :: Expr 𝔹
 lcomp2
- = expr $ ListComp (var "z")
-            ((Generator (PVar "x") (cons (int 5)
-            (cons (int 4) (cons (int 3) (nil))))):
-            (Generator (PVar "y") (cons (int 9)
-            (cons (int 7) (cons (int 5) (nil))))):
-            (Declaration (PVar "z") (expr $ BinaryApp (var "x") "+" (var "y"))):
-            (Generator (PVar "c") (cons (int 9)
-            (cons (int 7) (cons (int 5) (nil)))))
-            :Nil)
+ = expr $ ListComp (var "z") $
+            NonEmptyList $
+               (Generator (PVar "x") (cons (int 5) (cons (int 4) (cons (int 3) nil))) :|
+               (Generator (PVar "y") (cons (int 9) (cons (int 7) (cons (int 5) nil)))) :
+               (Declaration (PVar "z") (expr $ BinaryApp (var "x") "+" (var "y"))) :
+               (Generator (PVar "c") (cons (int 9) (cons (int 7) (cons (int 5) nil))))
+               : Nil)
 
 lcomp3 :: Expr 𝔹
 lcomp3
- = expr $ ListComp (var "z")
-            ((Generator (PVar "x") (cons (int 5)
-            (cons (int 4) (cons (int 3) (nil))))):
-            (Generator (PVar "y") (cons (int 9)
-            (cons (int 7) (cons (int 5) (nil))))):
+ = expr $ ListComp (var "z") $
+            NonEmptyList $
+            (Generator (PVar "x") (cons (int 5) (cons (int 4) (cons (int 3) nil))) :|
+            (Generator (PVar "y") (cons (int 9) (cons (int 7) (cons (int 5) nil)))):
             (Declaration (PVar "z") (expr $ BinaryApp (var "x") "+" (var "y"))):
             (Guard (expr $ BinaryApp (var "z") "<" (int 10))):
             Nil)
 
 lcomp4 :: Expr 𝔹
 lcomp4
- = expr $ ListComp (var "x")
-            ((Generator (PConstr cCons (PVar "x":PVar "xs":Nil)) (cons (cons (int 5) nil)
-             (cons (cons (int 4) nil) (cons (cons (int 3) nil) (cons nil nil))))):
+ = expr $ ListComp (var "x") $
+            NonEmptyList $
+            (Generator (PConstr cCons (PVar "x" : PVar "xs":Nil)) (cons (cons (int 5) nil) (cons (cons (int 4) nil) (cons (cons (int 3) nil) (cons nil nil)))) :|
             Nil)
 
 lcomp1_eval :: String

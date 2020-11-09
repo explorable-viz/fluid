@@ -27,8 +27,8 @@ import Expr (Var)
 import Lattice (𝔹)
 import Primitive (opDefs)
 import SExpr (
-   Branch, Clause, Expr(..), ListRest(..), ListPatternRest(..), Module(..), Pattern(..), RawExpr(..), RecDefs,
-   VarDef, VarDefs, expr
+   Branch, Clause, Expr(..), ListRest(..), ListPatternRest(..), Module(..), Pattern(..), Qualifier(..),
+   RawExpr(..), RecDefs, VarDef, VarDefs, expr
 )
 import Util (Endo, (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
@@ -65,6 +65,12 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
 token :: TokenParser
 token = makeTokenParser languageDef
 
+lBracket :: SParser Unit
+lBracket = void $ token.symbol "["
+
+rBracket :: SParser Unit
+rBracket = void $ token.symbol "]"
+
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
 keyword str =
@@ -97,12 +103,12 @@ simplePattern pattern' =
 
    listNonEmpty :: SParser Pattern
    listNonEmpty =
-      token.symbol "[" *> (PListNonEmpty <$> pattern' <*> fix listRest)
+      lBracket *> (PListNonEmpty <$> pattern' <*> fix listRest)
 
          where
          listRest :: Endo (SParser ListPatternRest)
          listRest listRest' =
-            token.symbol "]" *> pure PEnd <|>
+            rBracket *> pure PEnd <|>
             token.comma *> (PNext <$> pattern' <*> listRest')
 
    -- Constructor name as a nullary constructor pattern.
@@ -191,6 +197,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
       simpleExpr =
          try listEmpty <|>
          listNonEmpty <|>
+         listComp <|>
          try constr <|>
          try variable <|>
          try float <|>
@@ -209,13 +216,21 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          listNonEmpty :: SParser (Expr 𝔹)
          listNonEmpty =
-            token.symbol "[" *> (expr <$> (ListNonEmpty <$> expr' <*> fix listRest))
+            lBracket *> (expr <$> (ListNonEmpty <$> expr' <*> fix listRest))
 
             where
             listRest :: Endo (SParser (ListRest 𝔹))
             listRest listRest' =
-               token.symbol "]" *> pure End <|>
+               rBracket *> pure End <|>
                token.comma *> (Next <$> expr' <*> listRest')
+
+         listComp :: SParser (Expr 𝔹)
+         listComp = token.brackets $
+            expr <$> lift2 ListComp (expr' <* token.symbol "|") (sepBy1 qualifier token.comma)
+
+            where
+            qualifier :: SParser (Qualifier 𝔹)
+            qualifier = Guard <$> expr'
 
          constr :: SParser (Expr 𝔹)
          constr = expr <$> (Constr <$> ctr <@> empty)
