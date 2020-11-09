@@ -14,13 +14,11 @@ let not True = False;
 
 -- Int -> Int -> Ordering
 let compare (x, y) =
-   match x < y as {
-      True -> LT;
-      False -> match x > y as {
-        True -> GT;
-        False -> EQ
-      }
-   };
+   if x < y
+   then LT
+   else if x > y
+      then GT
+      else EQ;
 
 -- Num -> Num
 let negate = (-) 0;
@@ -87,10 +85,7 @@ let elem x [] = False;
 let filter p [] = [];
     filter p (x : xs) =
       let ys = filter p xs in
-      match p x as {
-          True -> x : ys;
-          False -> ys
-      };
+      if p x then x : ys else ys;
 
 -- Todo: have these take uncurried operators
 -- ((a, b) -> a) -> a -> List b -> a
@@ -142,10 +137,7 @@ let intersperse [] sep = [];
 
 -- Int -> (a -> a) -> a -> List a
 let iterate n f z =
-   match n == 0 as {
-      True -> [];
-      False -> z : map f (iterate (n - 1) f z)
-   };
+   if n == 0 then [] else z : map f (iterate (n - 1) f z);
 
 -- List Int -> Int
 let sum xs =
@@ -168,22 +160,20 @@ let repeat = flip iterate id;
 
 -- Int -> List a -> List a
 let take n xs =
-    match n <= 0 as {
-       True -> [];
-       False -> match xs as {
-           [] -> [];
-           x : xs -> x : take (n - 1) xs
-       }
+    if n <= 0
+    then []
+    else match xs as {
+       [] -> [];
+       x : xs -> x : take (n - 1) xs
     };
 
 -- Int -> List a -> List a
 let drop n xs =
-   match n <= 0 as {
-      True -> xs;
-      False -> match xs as {
-         [] -> [];
-         _ : xs -> drop (n - 1) xs
-      }
+   if n <= 0
+   then xs
+   else match xs as {
+      [] -> [];
+      _ : xs -> drop (n - 1) xs
    };
 
 -- Int -> List a -> List a
@@ -193,34 +183,22 @@ let lastN n xs =
 -- Expects non-negative integer as first argument and non-empty list as second argument.
 -- Int -> List a -> a
 let nth n (x : xs) =
-   match n == 0 as {
-      True -> x;
-      False -> nth (n - 1) xs
-   };
+   if n == 0 then x else nth (n - 1) xs;
 
 -- Partial; requires k to be in the map.
 -- Int -> List (Int, b) -> b
 let lookup k [] = error "Key not found in map";
     lookup k ((k', v) : kvs) =
-       match k == k' as {
-          True -> v;
-          False -> lookup k kvs
-       };
+       if k == k' then v else lookup k kvs;
 
 -- TODO: curry.
 -- (Int, Int) -> Int
 let max2 (n, m) =
-   match n > m as {
-      True -> n;
-      False -> m
-   };
+   if n > m then n else m;
 
 -- (Int, Int) -> Int
 let min2 (n, m) =
-   match n < m as {
-      True -> n;
-      False -> m
-   };
+   if n < m then n else m;
 
 -- List Int -> Int
 let max = foldr1 max2;
@@ -244,7 +222,4 @@ let zip = zipWith id;
 
 -- Int -> Int -> List Int
 let range n m =
-    match n <= m as {
-       True  -> n : [n + 1 .. m];
-       False -> []
-    };
+    if n <= m then n : [n + 1 .. m] else [];
