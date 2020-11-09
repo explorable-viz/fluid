@@ -69,13 +69,11 @@ desugarTest name s expected =
 main :: Effect Unit
 main = do
    -- desugaring
---   run $ test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
-   -- desugaring
+   run $ test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
+   run $ test "desugar/list-comp-2" "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9, 9, 12, 12, 12, 10, 10, 10, 8, 8, 8]"
+   run $ test "desugar/list-comp-3" "[9, 8]"
+   run $ test "desugar/list-comp-4" "[5, 4, 3]"
 {-
-   run $ desugarTest "list-comp-1" lcomp1 lcomp1_eval
-   run $ desugarTest "list-comp-2" lcomp2 lcomp2_eval
-   run $ desugarTest "list-comp-3" lcomp3 lcomp3_eval
-   run $ desugarTest "list-comp-4" lcomp4 lcomp4_eval
    run $ desugarTest "list-seq-1" lseq1 lseq1_eval
    -- slicing
    run $ test "arithmetic" "42"
@@ -100,4 +98,4 @@ main = do
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
    -- scratchpad
 -}
-   run $ test "temp" "3"
+   run $ test "temp" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"

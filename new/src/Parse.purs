@@ -236,14 +236,14 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          listComp :: SParser (Expr 𝔹)
          listComp = token.brackets $
-            expr <$> lift2 ListComp (expr' <* bar) (sepBy1 qualifier token.comma)
+            expr <$> lift2 ListComp (expr' <* bar) (sepBy1 qualifier $ token.comma)
 
             where
             qualifier :: SParser (Qualifier 𝔹)
             qualifier =
-               Guard <$> expr' <|>
                lift2 Generator (pattern <* lArrow) expr' <|>
-               Declaration <$> (keyword strLet *> pattern <* equals) `lift2 (×)` expr'
+               Declaration <$> (keyword strLet *> pattern <* equals) `lift2 (×)` expr' <|>
+               Guard <$> expr'
 
          constr :: SParser (Expr 𝔹)
          constr = expr <$> (Constr <$> ctr <@> empty)

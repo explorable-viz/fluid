@@ -29,7 +29,7 @@ match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
    ρ × κ' × ξs <- matchArgs c vs κ
    pure $ ρ × κ' × (MatchConstr (c × ξs) $ update (const Nothing) c κs)
 match v (ElimConstr κs) = do
-   d <- dataTypeForKeys (keys κs)
+   d <- dataTypeForKeys $ keys κs
    report $ "Pattern mismatch: " <> render (pretty v) <>
             " is not a constructor value, expected " <> show d
 
