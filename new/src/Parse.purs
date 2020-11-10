@@ -2,7 +2,7 @@ module Parse where
 
 import Prelude hiding (absurd, add, between, join)
 import Control.Alt ((<|>))
-import Control.Apply (lift2, lift3)
+import Control.Apply (lift2)
 import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (elem, fromFoldable)
@@ -245,18 +245,18 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          listComp :: SParser (Expr 𝔹)
          listComp = token.brackets $
-            expr <$> lift2 ListComp (expr' <* bar) (sepBy1 qualifier $ token.comma)
+            expr <$> (pure ListComp <*> expr' <* bar <*> sepBy1 qualifier (token.comma))
 
             where
             qualifier :: SParser (Qualifier 𝔹)
             qualifier =
-               lift2 Generator (pattern <* lArrow) expr' <|>
+               pure Generator <*> pattern <* lArrow <*> expr' <|>
                Declaration <$> (keyword strLet *> pattern <* equals) `lift2 (×)` expr' <|>
                Guard <$> expr'
 
          listRange :: SParser (Expr 𝔹)
          listRange = token.brackets $
-            expr <$> lift2 ListRange (expr' <* ellipsis) expr'
+            expr <$> (pure ListRange <*> expr' <* ellipsis <*> expr')
 
          constr :: SParser (Expr 𝔹)
          constr = expr <$> (Constr <$> ctr <@> empty)
@@ -295,14 +295,14 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          pair :: SParser (Expr 𝔹)
          pair = token.parens $
-            expr <$> (lift2 $ \e e' -> Constr cPair (e : e' : empty)) (expr' <* token.comma) expr'
+            expr <$> ((pure $ \e e' -> Constr cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr')
 
          lambda :: SParser (Expr 𝔹)
          lambda = expr <$> (Lambda <$> (keyword strFun *> branches true expr'))
 
          ifElse :: SParser (Expr 𝔹)
          ifElse = expr <$>
-            lift3 IfElse (keyword strIf *> expr') (keyword strThen *> expr') (keyword strElse *> expr')
+            (pure IfElse <*> (keyword strIf *> expr') <* keyword strThen <*> expr' <* keyword strElse <*> expr')
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
