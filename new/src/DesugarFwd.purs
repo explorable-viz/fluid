@@ -20,7 +20,7 @@ import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
 import SExprX (
    Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), RawQualifier(..), Qualifier(..), RawExpr(..), expr
 )
-import Lattice (𝔹, (∧))
+import Lattice (𝔹, (∧), bot)
 import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
 
 eapp :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
@@ -74,14 +74,104 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    -- | The definition of list-comp-decl is different than that of the paper; need to check annotations
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Declaration (p × s))) :| q : qs)))) = do
       σ <- desugarFwd $ p × (None :: Cont 𝔹)
-      e <- desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))
-      E.Expr (α1 ∧ α2) <$> (E.Let <$> (E.VarDef σ <$> desugarFwd s) <*> e)
+      E.Expr (α1 ∧ α2) <$> (E.Let <$> (E.VarDef σ <$> desugarFwd s) <*> (desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))))
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Generator p slist)) :| q : qs)))) = do
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       σ <- desugarFwd $ p × Body e
       -- | What annotation should enil have here?
       let λ = E.Expr (α1 ∧ α2) $ E.Lambda $ totalise σ (enil (α1 ∧ α2))
       eapp (α1 ∧ α2) (evar (α1 ∧ α2) "concat") <$> (eapp (α1 ∧ α2) (eapp (α1 ∧ α2) (evar (α1 ∧ α2) "map") λ) <$> desugarFwd slist)
+
+
+instance desugarFwdRecDefs :: DesugarFwd (NonEmptyList (Tuple String (Tuple (NonEmptyList Pattern) (Expr Boolean))))
+                                         (Bindings Elim Boolean) where
+   desugarFwd fπs = fromList <$> toList <$> reverse <$> traverse toRecDef fπss
+      where
+      fπss = groupBy (eq `on` fst) fπs :: NonEmptyList (NonEmptyList (Clause 𝔹))
+
+      toRecDef :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
+      toRecDef fπs' = ((↦) (fst $ head fπs')) <$> desugarFwd (snd <$> fπs')
+
+instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
+   desugarFwd End          = pure (enil bot)
+   desugarFwd (Next s l)   = lift2 (econs bot) (desugarFwd s) (desugarFwd l)
+
+-- Cont arguments here act as an accumulator.
+instance desugarFwdPatternCont :: DesugarFwd (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
+   desugarFwd (PVar x × κ)             = pure $ ElimVar x κ
+   desugarFwd (PConstr c πs × κ)       = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs)
+      where
+      toCont :: List Pattern -> MayFail (Cont 𝔹)
+      toCont Nil        = pure κ
+      toCont (π : πs')  = Arg <$> do
+         κ' <- toCont πs'
+         desugarFwd $ π × κ'
+   desugarFwd (PListEmpty × κ)         = pure $ ElimConstr $ singleton cNil κ
+   desugarFwd (PListNonEmpty π o × κ)  = do
+      κ' <- Arg <$> desugarFwd (o × κ)
+      ElimConstr <$> singleton cCons <$> Arg <$> desugarFwd (π × κ')
+
+
+instance desugarFwdListPatternRestCont :: DesugarFwd (Tuple ListPatternRest (Cont Boolean)) (Elim Boolean) where
+   desugarFwd (PEnd × κ)      = pure $ ElimConstr $ singleton cNil κ
+   desugarFwd (PNext π o × κ) = do
+      κ' <- Arg <$> desugarFwd (o × κ)
+      ElimConstr <$> singleton cCons <$> Arg <$> desugarFwd (π × κ')
+
+instance desugarFwdVarDef :: DesugarFwd (Tuple Pattern (Expr Boolean)) (E.VarDef Boolean) where
+   desugarFwd (π × s) = E.VarDef <$> desugarFwd (π × (None :: Cont 𝔹)) <*> desugarFwd s
+
+instance desugarFwdVarDefs :: DesugarFwd (Tuple (NonEmptyList (Tuple Pattern (Expr Boolean))) (Expr Boolean))
+                                       (E.Expr Boolean) where
+   desugarFwd (NonEmptyList (d :| Nil) × s)     = E.expr <$> (E.Let <$> desugarFwd d <*> desugarFwd s)
+   desugarFwd (NonEmptyList (d :| d' : ds) × s) =
+      E.expr <$> (E.Let <$> desugarFwd d <*> desugarFwd (NonEmptyList (d' :| ds) × s))
+
+instance desugarFwdBranch :: DesugarFwd (Tuple (NonEmptyList Pattern) (Expr Boolean)) (Elim Boolean) where
+   desugarFwd (πs × s) = do
+      κ <- Body <$> desugarFwd s
+      desugarFwd $ πs × κ
+
+instance desugarFwdBranches :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean))
+                                        (Elim Boolean) where
+   desugarFwd bs = do
+      NonEmptyList (σ :| σs) <- traverse desugarFwd bs
+      foldM maybeJoin σ σs
+
+instance desugarFwdPatternsCont :: DesugarFwd (Tuple (NonEmptyList Pattern) (Cont Boolean)) (Elim Boolean) where
+   desugarFwd (NonEmptyList (π :| Nil) × κ)     = desugarFwd $ π × κ
+   desugarFwd (NonEmptyList (π :| π' : πs) × κ) = do
+      κ' <- Body <$> E.expr <$> E.Lambda <$> desugarFwd (NonEmptyList (π' :| πs) × κ)
+      desugarFwd $ π × κ'
+
+
+class Joinable a where
+   maybeJoin :: a -> a -> MayFail a
+
+instance joinableElim :: Joinable (Elim Boolean) where
+   maybeJoin (ElimVar x κ) (ElimVar y κ')       = ElimVar <$> x ≞ y <*> maybeJoin κ κ'
+   maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
+   maybeJoin _ _                                = report "Can't join variable and constructor patterns"
+
+instance joinableCont :: Joinable (Cont Boolean) where
+   maybeJoin None None                       = pure None
+   maybeJoin (Arg σ) (Arg σ')                = Arg <$> maybeJoin σ σ'
+   maybeJoin (Body (E.Expr _ (E.Lambda σ)))
+             (Body (E.Expr _ (E.Lambda σ'))) = Body<$> (E.expr <$> (E.Lambda <$> maybeJoin σ σ'))
+   maybeJoin _ _                             = report "Incompatible continuations"
+
+instance joinableMap :: Joinable (Map Ctr (Cont Boolean)) where
+   maybeJoin κs1 κs2 = do
+      foldM maybeUpdate κs1 (toUnfoldable κs2 :: List (Ctr × Cont 𝔹))
+      where
+      maybeUpdate :: Map Ctr (Cont 𝔹) -> Ctr × Cont 𝔹 -> MayFail (Map Ctr (Cont 𝔹))
+      maybeUpdate κs (c × κ) =
+         case lookup c κs of
+            Nothing -> do
+               checkDataType "Non-uniform patterns: " c κs
+               pure $ insert c κ κs
+            Just κ' ->
+               update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
 
 totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e =
