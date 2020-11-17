@@ -18,10 +18,10 @@ import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, c
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
 import SExprX (
-   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), RawQualifier(..), Qualifier(..), RawExpr(..), expr
+   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs(..), VarDef(..), RecDefs(..), RawQualifier(..), Qualifier(..), RawExpr(..), expr
 )
 import Lattice (𝔹, (∧), bot)
-import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
+import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report, error)
 
 eapp :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 eapp α f = E.Expr α <<< E.App f
@@ -41,11 +41,13 @@ class DesugarFwd a b | a -> b where
 instance desugarFwdVarDef :: DesugarFwd (Tuple Pattern (Expr Boolean)) (E.VarDef Boolean) where
    desugarFwd (π × s) = E.VarDef <$> desugarFwd (π × (None :: Cont 𝔹)) <*> desugarFwd s
 
-instance desugarFwdVarDefs :: DesugarFwd (Tuple (NonEmptyList (Tuple Pattern (Expr Boolean))) (Expr Boolean))
-                                       (E.Expr Boolean) where
-   desugarFwd (NonEmptyList (d :| Nil) × s)     = E.expr <$> (E.Let <$> desugarFwd d <*> desugarFwd s)
-   desugarFwd (NonEmptyList (d :| d' : ds) × s) =
-      E.expr <$> (E.Let <$> desugarFwd d <*> desugarFwd (NonEmptyList (d' :| ds) × s))
+-- | The first boolean represents the α of the outer expression which contains the var defs
+instance desugarFwdVarDefs :: DesugarFwd (Tuple Boolean (Tuple (NonEmptyList (Tuple Pattern (Expr Boolean))) (Expr Boolean)))
+                                         (E.Expr Boolean) where
+   desugarFwd  (α1 × (NonEmptyList (d@(_ × Expr α2 t) :| Nil) × s))     =
+      E.Expr (α1 ∧ α2) <$> (E.Let <$> desugarFwd d <*> desugarFwd s)
+   desugarFwd  (α1 × (NonEmptyList (d@(_ × Expr α2 t) :| d' : ds) × s)) =
+      E.Expr (α1 ∧ α2) <$> (E.Let <$> desugarFwd d <*> desugarFwd ((α1 ∧ α2) × (NonEmptyList (d' :| ds) × s)))
 
 instance desugarFwdRecDefs :: DesugarFwd (NonEmptyList (Tuple String (Tuple (NonEmptyList Pattern) (Expr Boolean))))
                                          (Bindings Elim Boolean) where
@@ -67,8 +69,8 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Expr α (App s1 s2))           = E.Expr α <$> (E.App <$> desugarFwd s1 <*> desugarFwd s2)
    desugarFwd (Expr α (BinaryApp s1 op s2))  = E.Expr α <$> (E.BinaryApp <$> desugarFwd s1 <@> op <*> desugarFwd s2)
    desugarFwd (Expr α (MatchAs s bs))        = E.Expr α <$> (E.App <$> (E.Expr α <$> E.Lambda <$> desugarFwd bs) <*> desugarFwd s)
-   -- | The α here is not propagated due to how desugarVarDefs is defined
-   desugarFwd (Expr α (Let ds s))            = desugarFwd $ ds × s
+   -- | Calls desugarVarDefs
+   desugarFwd (Expr α (Let ds s))            = desugarFwd $ α × (ds × s)
    desugarFwd (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec <$> desugarFwd fπs <*> desugarFwd s)
    desugarFwd (Expr α (IfElse s1 s2 s3)) = do
       e2 <- desugarFwd s2
@@ -84,19 +86,18 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
       pure $ econs (α1 ∧ α2) e (enil (α1 ∧ α2))
    desugarFwd (Expr α (ListComp s_body (NonEmptyList (q :| Nil)))) =
       desugarFwd $ Expr α $ ListComp s_body $ NonEmptyList $ q :| (Qualifier α (Guard (Expr α $ Constr cTrue Nil))) : Nil
-   -- | The definition of list-comp-guard is different than that of the paper; need to check annotations
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Guard s)) :| q : qs)))) = do
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body (enil (α1 ∧ α2))])
       E.Expr (α1 ∧ α2) <$> (E.App (E.Expr (α1 ∧ α2) $ E.Lambda σ) <$> desugarFwd s)
-   -- | The definition of list-comp-decl is different than that of the paper; need to check annotations
+   -- | List-comp-decl looks correct, but not sure about why this choice of implementation is used
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Declaration (p × s))) :| q : qs)))) = do
       σ <- desugarFwd $ p × (None :: Cont 𝔹)
-      E.Expr (α1 ∧ α2) <$> (E.Let <$> (E.VarDef σ <$> desugarFwd s) <*> (desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))))
+      E.Expr (α1 ∧ α2) <$> (E.Let <$> (E.VarDef σ <$> desugarFwd s)
+                                  <*> (desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))))
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Generator p slist)) :| q : qs)))) = do
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       σ <- desugarFwd $ p × Body e
-      -- | What annotation should enil have here?
       let λ = E.Expr (α1 ∧ α2) $ E.Lambda $ totalise σ (enil (α1 ∧ α2))
       eapp (α1 ∧ α2) (evar (α1 ∧ α2) "concat") <$> (eapp (α1 ∧ α2) (eapp (α1 ∧ α2) (evar (α1 ∧ α2) "map") λ) <$> desugarFwd slist)
 
@@ -120,16 +121,26 @@ totalise (ElimVar e κ) e' = case κ of
    Body _ -> ElimVar e κ
    None   -> ElimVar e $ Body e'
 
-
 instance desugarFwdEither :: (DesugarFwd a b, DesugarFwd c d) => DesugarFwd (Either a c) (Either b d) where
    desugarFwd (Left x) = Left <$> desugarFwd x
    desugarFwd (Right x) = Right <$> desugarFwd x
 
+-- | data Module a  = Module (List (VarDefs a + RecDefs a))
+-- | type VarDefs a = NonEmptyList (VarDef a)
+-- | type RecDefs a = NonEmptyList (Clause a)
+-- | type Clause a = Var × Branch a
+-- | type VarDef a = Pattern × Expr a
+-- | traverse :: (a -> m b) -> t a -> m (t b)
+
 -- Surface language supports "blocks" of variable declarations; core does not.
+-- No need to pass "α = true" because desugarFwd is called on VarDef, not VarDefs?
 instance desugarFwdModule :: DesugarFwd (Module Boolean) (E.Module Boolean) where
-   desugarFwd (Module ds) = E.Module <$> traverse desugarFwd (join $ ds <#> desugarDefs)
+   desugarFwd (Module ds) = E.Module <$> traverse desugarFwd
+    (join $ (ds <#> desugarDefs))
       where
-      desugarDefs (Left ds')  = toList ds' <#> Left
+      desugarDefs :: Either (VarDefs Boolean) (RecDefs Boolean)
+                  -> List (Either (VarDef Boolean) (RecDefs Boolean))
+      desugarDefs (Left ds')  = (toList ds' <#> Left)
       desugarDefs (Right δ)   = pure $ Right δ
 
 -- Cont arguments here act as an accumulator.
