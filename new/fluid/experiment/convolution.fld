@@ -16,7 +16,7 @@ let conv_extend image filter =
         spatial_extent       = (iz - ia + 1) * (jz - ja + 1)
     in  array (bounds image)
             [ ((c, d), sum [ image!(image_y, image_x) * filter!(filter_y, filter_x)
-                            |   (y, x) <- range (bounds filter),
+                             |  (y, x) <- range (bounds filter),
                                 let filter_y = iz - y,
                                 let filter_x = jz - x,
                                 let image_y  = bound (ma, mz) (c + y - half_height),
