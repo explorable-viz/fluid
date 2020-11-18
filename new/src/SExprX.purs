@@ -28,6 +28,9 @@ data RawExpr a =
    LetRec (RecDefs a) (Expr a)
 
 data ListRest a =
+   ListRest a (RawListRest a)
+
+data RawListRest a =
    End | Next (Expr a) (ListRest a)
 
 data Pattern =

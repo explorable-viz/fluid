@@ -18,7 +18,7 @@ import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, c
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
 import SExprX (
-   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef, RecDefs, RawQualifier(..), Qualifier(..), RawExpr(..)
+   Clause, Expr(..), ListPatternRest(..), ListRest(..), RawListRest(..), Module(..), Pattern(..), VarDefs, VarDef, RecDefs, RawQualifier(..), Qualifier(..), RawExpr(..)
 )
 import Lattice (𝔹, (∧), bot)
 import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
@@ -48,8 +48,7 @@ class DesugarFwd a b | a -> b where
 -- Surface language supports "blocks" of variable declarations; core does not.
 -- No need to pass "α = true" because desugarFwd is called on VarDef, not VarDefs?
 instance desugarFwdModule :: DesugarFwd (Module Boolean) (E.Module Boolean) where
-   desugarFwd (Module ds) = E.Module <$> traverse desugarFwd
-    (join $ (ds <#> desugarDefs))
+   desugarFwd (Module ds) = E.Module <$> traverse desugarFwd (join $ (ds <#> desugarDefs))
       where
       desugarDefs :: Either (VarDefs Boolean) (RecDefs Boolean)
                   -> List (Either (VarDef Boolean) (RecDefs Boolean))
@@ -115,11 +114,13 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body (enil (α1 ∧ α2))])
       E.Expr (α1 ∧ α2) <$> (E.App (E.Expr (α1 ∧ α2) $ E.Lambda σ) <$> desugarFwd s)
+
    -- List-comp-decl looks correct, but not sure about why this choice of implementation is used
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Declaration (p × s))) :| q : qs)))) = do
       σ <- desugarFwd $ p × (None :: Cont 𝔹)
       E.Expr (α1 ∧ α2) <$> (E.Let <$> (E.VarDef σ <$> desugarFwd s)
                                   <*> (desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))))
+
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Generator p slist)) :| q : qs)))) = do
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       σ <- desugarFwd $ p × Body e
@@ -128,8 +129,8 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
 
 {- l ↗ e -}
 instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
-   desugarFwd End          = pure (enil bot)
-   desugarFwd (Next s l)   = lift2 (econs bot) (desugarFwd s) (desugarFwd l)
+   desugarFwd (ListRest α End)         = pure (enil α)
+   desugarFwd (ListRest α (Next s l))  = lift2 (econs α) (desugarFwd s) (desugarFwd l)
 
 {- p, κ ↗ σ -}
 instance desugarFwdPatternsCont :: DesugarFwd (Tuple (NonEmptyList Pattern) (Cont Boolean)) (Elim Boolean) where
