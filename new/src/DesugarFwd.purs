@@ -57,13 +57,13 @@ instance desugarFwdModule :: DesugarFwd (Module Boolean) (E.Module Boolean) wher
 
 {- p, e ↗ σ      specialisation of    p, κ ↗ σ -}
 -- data E.VarDef a = E.VarDef (Elim a) (E.Expr a) -- where elim has codomain unit
-instance desugarFwdVarDef :: DesugarFwd (Tuple Pattern (Expr Boolean)) (E.VarDef Boolean) where
+instance desugarFwdVarDef :: DesugarFwd (Pattern × (Expr Boolean)) (E.VarDef Boolean) where
    desugarFwd (π × s) = E.VarDef <$> desugarFwd (π × (None :: Cont 𝔹)) <*> desugarFwd s
 
 {-        →                  -}
 {- (α, (p , s), s_body) ↗ e  -}
 -- | The first boolean represents the α of the outer expression which contains the var defs
-instance desugarFwdVarDefs :: DesugarFwd (Tuple Boolean (Tuple (NonEmptyList (Tuple Pattern (Expr Boolean))) (Expr Boolean)))
+instance desugarFwdVarDefs :: DesugarFwd (Boolean × (NonEmptyList (Pattern × Expr Boolean) × Expr Boolean))
                                          (E.Expr Boolean) where
    desugarFwd  (α1 × (NonEmptyList (d@(_ × Expr α2 t) :| Nil) × s))     =
       E.Expr (α1 ∧ α2) <$> (E.Let <$> desugarFwd d <*> desugarFwd s)
@@ -72,7 +72,7 @@ instance desugarFwdVarDefs :: DesugarFwd (Tuple Boolean (Tuple (NonEmptyList (Tu
 
 {-       →                      →                 -}
 {- let f c ↗ [f ↦ σ]       (f, (p, s))  ↗ [f ↦ σ] -}
-instance desugarFwdRecDefs :: DesugarFwd (NonEmptyList (Tuple String (Tuple (NonEmptyList Pattern) (Expr Boolean))))
+instance desugarFwdRecDefs :: DesugarFwd (NonEmptyList (String × (NonEmptyList Pattern × Expr Boolean)))
                                          (Bindings Elim Boolean) where
    desugarFwd fπs = fromList <$> toList <$> reverse <$> traverse toRecDef fπss
       where
@@ -133,7 +133,7 @@ instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) wh
    desugarFwd (ListRest α (Next s l))  = lift2 (econs α) (desugarFwd s) (desugarFwd l)
 
 {- p, κ ↗ σ -}
-instance desugarFwdPatternsCont :: DesugarFwd (Tuple (NonEmptyList Pattern) (Cont Boolean)) (Elim Boolean) where
+instance desugarFwdPatternsCont :: DesugarFwd (NonEmptyList Pattern × Cont Boolean) (Elim Boolean) where
    desugarFwd (NonEmptyList (π :| Nil) × κ)     = desugarFwd $ π × κ
    desugarFwd (NonEmptyList (π :| π' : πs) × κ) = do
       κ' <- Body <$> E.expr <$> E.Lambda <$> desugarFwd (NonEmptyList (π' :| πs) × κ)
@@ -142,7 +142,7 @@ instance desugarFwdPatternsCont :: DesugarFwd (Tuple (NonEmptyList Pattern) (Con
 {- →        -}
 {- p, κ ↗ σ -}
 -- Cont arguments here act as an accumulator.
-instance desugarFwdPatternCont :: DesugarFwd (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
+instance desugarFwdPatternCont :: DesugarFwd (Pattern × Cont Boolean) (Elim Boolean) where
    desugarFwd (PVar x × κ)             = pure $ ElimVar x κ
    desugarFwd (PConstr c πs × κ)       = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs)
       where
@@ -157,7 +157,7 @@ instance desugarFwdPatternCont :: DesugarFwd (Tuple Pattern (Cont Boolean)) (Eli
       ElimConstr <$> singleton cCons <$> Arg <$> desugarFwd (π × κ')
 
 {- o, κ ↗ σ -}
-instance desugarFwdListPatternRestCont :: DesugarFwd (Tuple ListPatternRest (Cont Boolean)) (Elim Boolean) where
+instance desugarFwdListPatternRestCont :: DesugarFwd (ListPatternRest × (Cont Boolean)) (Elim Boolean) where
    desugarFwd (PEnd × κ)      = pure $ ElimConstr $ singleton cNil κ
    desugarFwd (PNext π o × κ) = do
       κ' <- Arg <$> desugarFwd (o × κ)
@@ -165,7 +165,7 @@ instance desugarFwdListPatternRestCont :: DesugarFwd (Tuple ListPatternRest (Con
 
 {- →                              →        -}
 {- p, s ↗ σ   specialisation of   p, κ ↗ σ -}
-instance desugarFwdBranch :: DesugarFwd (Tuple (NonEmptyList Pattern) (Expr Boolean)) (Elim Boolean) where
+instance desugarFwdBranch :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (Elim Boolean) where
    desugarFwd (πs × s) = do
       κ <- Body <$> desugarFwd s
       desugarFwd $ πs × κ

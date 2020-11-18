@@ -33,6 +33,10 @@ instance desugarBwdListRest :: DesugarBwd (E.Expr Boolean) (ListRest Boolean) wh
       ListRest α <$> (Next <$> desugarBwd e s <*> desugarBwd e' l)
    desugarBwd _ _ = error absurd
 
+instance desugarBwdRecDefs :: DesugarBwd (Bindings Elim Boolean)
+                                         (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr Boolean)))) where
+   desugarBwd _ _ = error ""
+
 -- | traverse :: (a -> m b) -> t a -> m (t b)
 instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Expr α (E.Var x))   (Expr _ (Var x'))      = pure $ Expr α (Var (x ≜ x'))
@@ -40,6 +44,7 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Expr α (E.Int n))   (Expr _ (Int n'))      = pure $ Expr α (Int (n ≜ n'))
    desugarBwd (E.Expr α (E.Float n)) (Expr _ (Float n'))    = pure $ Expr α (Float (n ≜ n'))
    desugarBwd (E.Expr α (E.Str s))   (Expr _ (Str s'))      = pure $ Expr α (Str (s ≜ s'))
+   -- | This covers Cons
    desugarBwd (E.Expr α (E.Constr ctr args)) (Expr _ (Constr ctr' args')) =
       Expr α <$> (Constr ctr <$> traverse (uncurry desugarBwd) (zip args args'))
    -- | Application
@@ -52,6 +57,11 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    -- | Non-empty list
    desugarBwd (E.Expr α (E.Constr (Ctr ":") (e : e' : Nil))) (Expr _ (ListNonEmpty s l)) =
       Expr α <$> (ListNonEmpty <$> desugarBwd e s <*> desugarBwd e' l)
+   -- | Recursive-function
+   -- type E.RecDefs = Bindings Elim
+   -- type RecDefs   = NonEmptyList (Var × Branch a)
+   desugarBwd (E.Expr α (E.LetRec fπs e)) (Expr _ (LetRec fπs' s)) =
+      Expr α <$> (LetRec <$> desugarBwd fπs fπs' <*> desugarBwd e s)
    -- desugarBwd (E.Expr α (E.Let de e)) = desugarBwd $ α × (de × e)
    -- desugarBwd (E.LetRec fπs e)
    -- desugarBwd (E.Expr α (E.Lambda σ)) (Expr _ (Lambda σ))   =
