@@ -18,10 +18,10 @@ import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, c
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
 import SExprX (
-   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs(..), VarDef(..), RecDefs(..), RawQualifier(..), Qualifier(..), RawExpr(..), expr
+   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef, RecDefs, RawQualifier(..), Qualifier(..), RawExpr(..)
 )
 import Lattice (𝔹, (∧), bot)
-import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report, error)
+import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
 
 eapp :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 eapp α f = E.Expr α <<< E.App f
@@ -38,9 +38,31 @@ evar α = E.Expr α <<< E.Var
 class DesugarFwd a b | a -> b where
    desugarFwd :: a -> MayFail b
 
+-- | data Module a  = Module (List (VarDefs a + RecDefs a))
+-- | type VarDefs a = NonEmptyList (VarDef a)
+-- | type RecDefs a = NonEmptyList (Clause a)
+-- | type Clause a = Var × Branch a
+-- | type VarDef a = Pattern × Expr a
+-- | traverse :: (a -> m b) -> t a -> m (t b)
+
+-- Surface language supports "blocks" of variable declarations; core does not.
+-- No need to pass "α = true" because desugarFwd is called on VarDef, not VarDefs?
+instance desugarFwdModule :: DesugarFwd (Module Boolean) (E.Module Boolean) where
+   desugarFwd (Module ds) = E.Module <$> traverse desugarFwd
+    (join $ (ds <#> desugarDefs))
+      where
+      desugarDefs :: Either (VarDefs Boolean) (RecDefs Boolean)
+                  -> List (Either (VarDef Boolean) (RecDefs Boolean))
+      desugarDefs (Left ds')  = (toList ds' <#> Left)
+      desugarDefs (Right δ)   = pure $ Right δ
+
+{- p, e ↗ σ      specialisation of    p, κ ↗ σ -}
+-- data E.VarDef a = E.VarDef (Elim a) (E.Expr a) -- where elim has codomain unit
 instance desugarFwdVarDef :: DesugarFwd (Tuple Pattern (Expr Boolean)) (E.VarDef Boolean) where
    desugarFwd (π × s) = E.VarDef <$> desugarFwd (π × (None :: Cont 𝔹)) <*> desugarFwd s
 
+{-        →                  -}
+{- (α, (p , s), s_body) ↗ e  -}
 -- | The first boolean represents the α of the outer expression which contains the var defs
 instance desugarFwdVarDefs :: DesugarFwd (Tuple Boolean (Tuple (NonEmptyList (Tuple Pattern (Expr Boolean))) (Expr Boolean)))
                                          (E.Expr Boolean) where
@@ -49,6 +71,8 @@ instance desugarFwdVarDefs :: DesugarFwd (Tuple Boolean (Tuple (NonEmptyList (Tu
    desugarFwd  (α1 × (NonEmptyList (d@(_ × Expr α2 t) :| d' : ds) × s)) =
       E.Expr (α1 ∧ α2) <$> (E.Let <$> desugarFwd d <*> desugarFwd ((α1 ∧ α2) × (NonEmptyList (d' :| ds) × s)))
 
+{-       →                      →                 -}
+{- let f c ↗ [f ↦ σ]       (f, (p, s))  ↗ [f ↦ σ] -}
 instance desugarFwdRecDefs :: DesugarFwd (NonEmptyList (Tuple String (Tuple (NonEmptyList Pattern) (Expr Boolean))))
                                          (Bindings Elim Boolean) where
    desugarFwd fπs = fromList <$> toList <$> reverse <$> traverse toRecDef fπss
@@ -58,6 +82,7 @@ instance desugarFwdRecDefs :: DesugarFwd (NonEmptyList (Tuple String (Tuple (Non
       toRecDef :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
       toRecDef fπs' = ((↦) (fst $ head fπs')) <$> desugarFwd (snd <$> fπs')
 
+{- s ↗ e -}
 instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
    desugarFwd (Expr α (Float n))             = pure $ E.Expr α (E.Float n)
@@ -69,7 +94,7 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Expr α (App s1 s2))           = E.Expr α <$> (E.App <$> desugarFwd s1 <*> desugarFwd s2)
    desugarFwd (Expr α (BinaryApp s1 op s2))  = E.Expr α <$> (E.BinaryApp <$> desugarFwd s1 <@> op <*> desugarFwd s2)
    desugarFwd (Expr α (MatchAs s bs))        = E.Expr α <$> (E.App <$> (E.Expr α <$> E.Lambda <$> desugarFwd bs) <*> desugarFwd s)
-   -- | Calls desugarVarDefs
+   -- Calls desugarVarDefs
    desugarFwd (Expr α (Let ds s))            = desugarFwd $ α × (ds × s)
    desugarFwd (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec <$> desugarFwd fπs <*> desugarFwd s)
    desugarFwd (Expr α (IfElse s1 s2 s3)) = do
@@ -90,7 +115,7 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body (enil (α1 ∧ α2))])
       E.Expr (α1 ∧ α2) <$> (E.App (E.Expr (α1 ∧ α2) $ E.Lambda σ) <$> desugarFwd s)
-   -- | List-comp-decl looks correct, but not sure about why this choice of implementation is used
+   -- List-comp-decl looks correct, but not sure about why this choice of implementation is used
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Declaration (p × s))) :| q : qs)))) = do
       σ <- desugarFwd $ p × (None :: Cont 𝔹)
       E.Expr (α1 ∧ α2) <$> (E.Let <$> (E.VarDef σ <$> desugarFwd s)
@@ -101,48 +126,20 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
       let λ = E.Expr (α1 ∧ α2) $ E.Lambda $ totalise σ (enil (α1 ∧ α2))
       eapp (α1 ∧ α2) (evar (α1 ∧ α2) "concat") <$> (eapp (α1 ∧ α2) (eapp (α1 ∧ α2) (evar (α1 ∧ α2) "map") λ) <$> desugarFwd slist)
 
+{- l ↗ e -}
 instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
    desugarFwd End          = pure (enil bot)
    desugarFwd (Next s l)   = lift2 (econs bot) (desugarFwd s) (desugarFwd l)
 
-totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
-totalise (ElimConstr m) e =
-   let c × κ            = fromJust absurd $ L.head $ toUnfoldable m
-       bs               = toUnfoldable m
-       DataType _ sigs  = mustLookup c ctrToDataType
-       bs'              = (_ × Body e) <$> ((fst <$> toUnfoldable sigs) \\ (fst <$> bs))
-       bs''             = bs <#> \(c × κ) -> case mustLookup c m of
-                           Arg σ   -> c × Arg (totalise σ e)
-                           Body e' -> c × Body e'
-                           None    -> c × Body e
-     in   ElimConstr $ fromFoldable $ bs'' <> bs'
-totalise (ElimVar e κ) e' = case κ of
-   Arg σ  -> ElimVar e $ Arg $ totalise σ e'
-   Body _ -> ElimVar e κ
-   None   -> ElimVar e $ Body e'
+{- p, κ ↗ σ -}
+instance desugarFwdPatternsCont :: DesugarFwd (Tuple (NonEmptyList Pattern) (Cont Boolean)) (Elim Boolean) where
+   desugarFwd (NonEmptyList (π :| Nil) × κ)     = desugarFwd $ π × κ
+   desugarFwd (NonEmptyList (π :| π' : πs) × κ) = do
+      κ' <- Body <$> E.expr <$> E.Lambda <$> desugarFwd (NonEmptyList (π' :| πs) × κ)
+      desugarFwd $ π × κ'
 
-instance desugarFwdEither :: (DesugarFwd a b, DesugarFwd c d) => DesugarFwd (Either a c) (Either b d) where
-   desugarFwd (Left x) = Left <$> desugarFwd x
-   desugarFwd (Right x) = Right <$> desugarFwd x
-
--- | data Module a  = Module (List (VarDefs a + RecDefs a))
--- | type VarDefs a = NonEmptyList (VarDef a)
--- | type RecDefs a = NonEmptyList (Clause a)
--- | type Clause a = Var × Branch a
--- | type VarDef a = Pattern × Expr a
--- | traverse :: (a -> m b) -> t a -> m (t b)
-
--- Surface language supports "blocks" of variable declarations; core does not.
--- No need to pass "α = true" because desugarFwd is called on VarDef, not VarDefs?
-instance desugarFwdModule :: DesugarFwd (Module Boolean) (E.Module Boolean) where
-   desugarFwd (Module ds) = E.Module <$> traverse desugarFwd
-    (join $ (ds <#> desugarDefs))
-      where
-      desugarDefs :: Either (VarDefs Boolean) (RecDefs Boolean)
-                  -> List (Either (VarDef Boolean) (RecDefs Boolean))
-      desugarDefs (Left ds')  = (toList ds' <#> Left)
-      desugarDefs (Right δ)   = pure $ Right δ
-
+{- →        -}
+{- p, κ ↗ σ -}
 -- Cont arguments here act as an accumulator.
 instance desugarFwdPatternCont :: DesugarFwd (Tuple Pattern (Cont Boolean)) (Elim Boolean) where
    desugarFwd (PVar x × κ)             = pure $ ElimVar x κ
@@ -158,28 +155,48 @@ instance desugarFwdPatternCont :: DesugarFwd (Tuple Pattern (Cont Boolean)) (Eli
       κ' <- Arg <$> desugarFwd (o × κ)
       ElimConstr <$> singleton cCons <$> Arg <$> desugarFwd (π × κ')
 
+{- o, κ ↗ σ -}
 instance desugarFwdListPatternRestCont :: DesugarFwd (Tuple ListPatternRest (Cont Boolean)) (Elim Boolean) where
    desugarFwd (PEnd × κ)      = pure $ ElimConstr $ singleton cNil κ
    desugarFwd (PNext π o × κ) = do
       κ' <- Arg <$> desugarFwd (o × κ)
       ElimConstr <$> singleton cCons <$> Arg <$> desugarFwd (π × κ')
 
-instance desugarFwdPatternsCont :: DesugarFwd (Tuple (NonEmptyList Pattern) (Cont Boolean)) (Elim Boolean) where
-   desugarFwd (NonEmptyList (π :| Nil) × κ)     = desugarFwd $ π × κ
-   desugarFwd (NonEmptyList (π :| π' : πs) × κ) = do
-      κ' <- Body <$> E.expr <$> E.Lambda <$> desugarFwd (NonEmptyList (π' :| πs) × κ)
-      desugarFwd $ π × κ'
-
+{- →                              →        -}
+{- p, s ↗ σ   specialisation of   p, κ ↗ σ -}
 instance desugarFwdBranch :: DesugarFwd (Tuple (NonEmptyList Pattern) (Expr Boolean)) (Elim Boolean) where
    desugarFwd (πs × s) = do
       κ <- Body <$> desugarFwd s
       desugarFwd $ πs × κ
 
+{- →     -}
+{- c ↗ σ -}
 instance desugarFwdBranches :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean))
                                         (Elim Boolean) where
    desugarFwd bs = do
       NonEmptyList (σ :| σs) <- traverse desugarFwd bs
       foldM maybeJoin σ σs
+
+instance desugarFwdEither :: (DesugarFwd a b, DesugarFwd c d) => DesugarFwd (Either a c) (Either b d) where
+   desugarFwd (Left x) = Left <$> desugarFwd x
+   desugarFwd (Right x) = Right <$> desugarFwd x
+
+{- totalise κ ↗ κ'       totalise (singleton σ) enil = σ -}
+totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
+totalise (ElimConstr m) e =
+   let c × κ            = fromJust absurd $ L.head $ toUnfoldable m
+       bs               = toUnfoldable m
+       DataType _ sigs  = mustLookup c ctrToDataType
+       bs'              = (_ × Body e) <$> ((fst <$> toUnfoldable sigs) \\ (fst <$> bs))
+       bs''             = bs <#> \(c × κ) -> case mustLookup c m of
+                           Arg σ   -> c × Arg (totalise σ e)
+                           Body e' -> c × Body e'
+                           None    -> c × Body e
+     in   ElimConstr $ fromFoldable $ bs'' <> bs'
+totalise (ElimVar e κ) e' = case κ of
+   Arg σ  -> ElimVar e $ Arg $ totalise σ e'
+   Body _ -> ElimVar e κ
+   None   -> ElimVar e $ Body e'
 
 class Joinable a where
    maybeJoin :: a -> a -> MayFail a
