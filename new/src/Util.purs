@@ -45,6 +45,10 @@ onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
 onlyIf true    = pure
 onlyIf false   = const empty
 
+maybeToEither :: forall a. Maybe a -> MayFail a
+maybeToEither (Just a) = Right a
+maybeToEither Nothing  = Left "Nothing found when converting to Either"
+
 type MayFail a = String + a
 
 report :: String -> forall a . MayFail a

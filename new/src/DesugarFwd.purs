@@ -132,6 +132,7 @@ instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) wh
    desugarFwd (ListRest α End)         = pure (enil α)
    desugarFwd (ListRest α (Next s l))  = lift2 (econs α) (desugarFwd s) (desugarFwd l)
 
+{- →        -}
 {- p, κ ↗ σ -}
 instance desugarFwdPatternsCont :: DesugarFwd (NonEmptyList Pattern × Cont Boolean) (Elim Boolean) where
    desugarFwd (NonEmptyList (π :| Nil) × κ)     = desugarFwd $ π × κ
@@ -139,7 +140,6 @@ instance desugarFwdPatternsCont :: DesugarFwd (NonEmptyList Pattern × Cont Bool
       κ' <- Body <$> E.expr <$> E.Lambda <$> desugarFwd (NonEmptyList (π' :| πs) × κ)
       desugarFwd $ π × κ'
 
-{- →        -}
 {- p, κ ↗ σ -}
 -- Cont arguments here act as an accumulator.
 instance desugarFwdPatternCont :: DesugarFwd (Pattern × Cont Boolean) (Elim Boolean) where
@@ -163,8 +163,8 @@ instance desugarFwdListPatternRestCont :: DesugarFwd (ListPatternRest × (Cont B
       κ' <- Arg <$> desugarFwd (o × κ)
       ElimConstr <$> singleton cCons <$> Arg <$> desugarFwd (π × κ')
 
-{- →                              →        -}
-{- p, s ↗ σ   specialisation of   p, κ ↗ σ -}
+{-                →        -}
+{- c ↗ σ   i.e.   p, s ↗ σ -}
 instance desugarFwdBranch :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (Elim Boolean) where
    desugarFwd (πs × s) = do
       κ <- Body <$> desugarFwd s
@@ -173,7 +173,7 @@ instance desugarFwdBranch :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (
 {- →     -}
 {- c ↗ σ -}
 instance desugarFwdBranches :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean))
-                                        (Elim Boolean) where
+                                          (Elim Boolean) where
    desugarFwd bs = do
       NonEmptyList (σ :| σs) <- traverse desugarFwd bs
       foldM maybeJoin σ σs
