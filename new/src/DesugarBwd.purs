@@ -23,6 +23,9 @@ import SExprX (
 import Lattice (𝔹, (∧), bot)
 import Util (MayFail, type (×), (×), (≞), (≜), absurd, fromJust, mustLookup, report, error, onlyIf, maybeToEither)
 
+qualTrue :: 𝔹 -> Qualifier 𝔹
+qualTrue α = Qualifier α (Guard (Expr α (Constr cTrue Nil)))
+
 class DesugarBwd a b where
    desugarBwd :: a -> b -> MayFail b
 
@@ -48,23 +51,44 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    -- | Empty-list
    desugarBwd (E.Expr α (E.Constr (Ctr "Nil") Nil)) (Expr _ ListEmpty) = pure $ Expr α ListEmpty
    -- | Non-empty list
-   desugarBwd (E.Expr α (E.Constr (Ctr ":") (e : e' : Nil))) (Expr _ (ListNonEmpty s l)) =
+   desugarBwd (E.Expr α (E.Constr (Ctr ":") (e : e' : Nil)))
+              (Expr _ (ListNonEmpty s l)) =
       Expr α <$> (ListNonEmpty <$> desugarBwd e s <*> desugarBwd e' l)
    -- | Recursive-function
-   --   type E.RecDefs = Bindings Elim
-   --   type RecDefs   = NonEmptyList (Var × Branch a)
-   desugarBwd (E.Expr α (E.LetRec fπs e)) (Expr _ (LetRec fπs' s)) =
+   desugarBwd (E.Expr α (E.LetRec fπs e))
+              (Expr _ (LetRec fπs' s)) =
       Expr α <$> (LetRec <$> desugarBwd fπs fπs' <*> desugarBwd e s)
    -- | If-then-else
-   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1)) (Expr _ (IfElse s1 s2 s3)) = do
+   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1))
+              (Expr _ (IfElse s1 s2 s3)) = do
       κ2 <- maybeToEither $ lookup (Ctr "True") m
       κ3 <- maybeToEither $ lookup (Ctr "False") m
       case κ2, κ3 of
          Body e2, Body e3 -> Expr (α1 ∧ α2) <$> (IfElse <$> desugarBwd e1 s1 <*> desugarBwd e2 s2 <*> desugarBwd e3 s3)
          _, _             -> error "failed to match IfElse"
    -- | Match-as
-   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda σ)) e)) (Expr _ (MatchAs s bs)) =
+   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda σ)) e))
+              (Expr _ (MatchAs s bs)) =
       Expr (α1 ∧ α2) <$> (MatchAs <$> desugarBwd e s <*> desugarBwd σ bs)
+   -- | List-range
+   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.App (E.Expr _ (E.Var "range")) e1)) e2))
+              (Expr α (ListRange s1 s2)) =
+      Expr (α1 ∧ α2) <$> (ListRange <$> desugarBwd e1 s1 <*> desugarBwd e2 s2)
+   -- | List-comp-done
+   desugarBwd (E.Expr α2 (E.Constr (Ctr ":") (e : (E.Expr α1 (E.Constr (Ctr "Nil") Nil)) : Nil)))
+              (Expr _ (ListComp s_body (NonEmptyList (Qualifier _ (Guard (Expr _ (Constr (Ctr "True") Nil))) :| Nil)))) =
+      Expr (α1 ∧ α2) <$> (ListComp <$> desugarBwd e s_body <*> (pure $ NonEmptyList (Qualifier (α1 ∧ α2) (Guard (Expr (α1 ∧ α2) (Constr cTrue Nil))) :| Nil)))
+   -- | List-comp-qual
+   desugarBwd e
+              (Expr α (ListComp s_body (NonEmptyList (q :| Nil)))) = do
+      s <- desugarBwd e (Expr α (ListComp s_body (NonEmptyList (q :| (qualTrue true) : Nil))))
+      case s of
+         Expr α2 (ListComp s_body'
+                           (NonEmptyList (q' :| (Qualifier α1 (Guard (Expr _ (Constr (Ctr "True") Nil)))) : Nil))
+                  )
+            -> pure $ Expr (α1 ∧ α2) (ListComp s_body' (NonEmptyList (q' :| Nil)))
+         _  -> error ""
+
    -- desugarBwd (E.LetRec fπs e)
    -- desugarBwd (E.Expr α (E.Lambda σ)) (Expr _ (Lambda σ))   =
    --    Expr α <$> (Lambda <$> desugarBwd σ)
