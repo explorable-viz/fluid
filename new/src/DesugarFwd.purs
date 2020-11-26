@@ -105,22 +105,25 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Expr α (ListNonEmpty s l))    = lift2 (econs α) (desugarFwd s) (desugarFwd l)
    desugarFwd (Expr α (ListRange s1 s2)) =
       eapp α <$> ((eapp α (evar α "range")) <$> desugarFwd s1) <*> desugarFwd s2
+   -- | List-comp-done
    desugarFwd (Expr α1 (ListComp s_body (NonEmptyList (Qualifier _ (Guard (Expr α2 (Constr c Nil))) :| Nil)))) | c == cTrue = do
       e <- desugarFwd s_body
       pure $ econs (α1 ∧ α2) e (enil (α1 ∧ α2))
+   -- | List-comp-qual
    desugarFwd (Expr α (ListComp s_body (NonEmptyList (q :| Nil)))) =
       desugarFwd $ Expr α $ ListComp s_body $ NonEmptyList $ q :| (Qualifier α (Guard (Expr α $ Constr cTrue Nil))) : Nil
+   -- | List-comp-guard
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Guard s)) :| q : qs)))) = do
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body (enil (α1 ∧ α2))])
       E.Expr (α1 ∧ α2) <$> (E.App (E.Expr (α1 ∧ α2) $ E.Lambda σ) <$> desugarFwd s)
-
-   -- List-comp-decl looks correct, but not sure about why this choice of implementation is used
+   -- | List-comp-decl
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Declaration (p × s))) :| q : qs)))) = do
-      σ <- desugarFwd $ p × (None :: Cont 𝔹)
-      E.Expr (α1 ∧ α2) <$> (E.Let <$> (E.VarDef σ <$> desugarFwd s)
+      e <- desugarFwd s
+      σ <- desugarFwd $ p × (Body e :: Cont 𝔹)
+      E.Expr (α1 ∧ α2) <$> (E.App <$> (pure $ E.Expr (α1 ∧ α2) (E.Lambda σ))
                                   <*> (desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))))
-
+   -- | List-comp-gen
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Generator p slist)) :| q : qs)))) = do
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       σ <- desugarFwd $ p × Body e

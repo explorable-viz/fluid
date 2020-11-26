@@ -26,6 +26,10 @@ import Util (MayFail, type (×), (×), (≞), (≜), absurd, fromJust, mustLooku
 qualTrue :: 𝔹 -> Qualifier 𝔹
 qualTrue α = Qualifier α (Guard (Expr α (Constr cTrue Nil)))
 
+snil :: 𝔹 -> Expr 𝔹
+snil α = Expr α $ Constr cNil Nil
+
+
 class DesugarBwd a b where
    desugarBwd :: a -> b -> MayFail b
 
@@ -81,17 +85,39 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    -- | List-comp-qual
    desugarBwd e
               (Expr α (ListComp s_body (NonEmptyList (q :| Nil)))) = do
-      s <- desugarBwd e (Expr α (ListComp s_body (NonEmptyList (q :| (qualTrue true) : Nil))))
-      case s of
+      sListComp <- desugarBwd e (Expr α (ListComp s_body (NonEmptyList (q :| (qualTrue true) : Nil))))
+      case sListComp of
          Expr α2 (ListComp s_body'
                            (NonEmptyList (q' :| (Qualifier α1 (Guard (Expr _ (Constr (Ctr "True") Nil)))) : Nil))
                   )
             -> pure $ Expr (α1 ∧ α2) (ListComp s_body' (NonEmptyList (q' :| Nil)))
          _  -> error ""
-
-   -- desugarBwd (E.LetRec fπs e)
-   -- desugarBwd (E.Expr α (E.Lambda σ)) (Expr _ (Lambda σ))   =
-   --    Expr α <$> (Lambda <$> desugarBwd σ)
+   -- | List-comp-guard
+   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1))
+              (Expr _ (ListComp s1 (NonEmptyList ((Qualifier _ (Guard s2)) :| q : qs)))) = do
+      κ2 <- maybeToEither $ lookup cTrue m
+      κ3 <- maybeToEither $ lookup cFalse m
+      case κ2, κ3 of
+         Body e2, Body e3 -> do
+            s2'         <- desugarBwd e1 s2
+            sListComp   <- desugarBwd e2 (Expr true (ListComp s1 (NonEmptyList (q :| qs))))
+            sNil        <- desugarBwd e3 (snil true)
+            case sListComp, sNil of
+               Expr α3 (ListComp s1' (NonEmptyList (q' :| qs'))), Expr α4 (Constr (Ctr "Nil") Nil)
+                     -> pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
+                                    (ListComp s1' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3 ∧ α4) (Guard s2')) :| q' : qs')))
+               _, _  -> error ""
+         _, _ -> error ""
+   -- s  <- desugarBwd e (Expr α (IfThen s2 (Expr α (ListComp s1 (NonEmptyList (q :| qs)) snil ))))
+   -- | List-comp-decl
+   desugarBwd (E.Expr α1 (E.App (E.Expr α2 (E.Lambda σ)) e))
+              (Expr _ (ListComp s2 (NonEmptyList ((Qualifier _ (Declaration (p × s1))) :| q : qs)))) = do
+      (p' × s1') <- desugarBwd σ (NonEmptyList (p :| Nil) × s1)
+      s          <- desugarBwd e (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
+      case s of
+         Expr α3 (ListComp s2' (NonEmptyList (q' :| qs')))
+            -> pure $ Expr (α1 ∧ α2 ∧ α3) (ListComp s2' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3) (Declaration (p × s1'))) :| q' : qs')))
+         _  -> error ""
    desugarBwd _ _ = error ""
 
 {- e, l ↘ l -}
@@ -126,8 +152,8 @@ instance desugarPatternBwdPattern :: DesugarPatternBwd Pattern where
       | ctr == cNil || ctr == cPair = do
           κ <- maybeToEither $ lookup ctr m
           case κ of
-               Arg σ -> do κ <- desugarPatternBwd σ π
-                           case κ of
+               Arg σ -> do κ' <- desugarPatternBwd σ π
+                           case κ' of
                                 Arg σ' -> desugarPatternBwd σ' π'
                                 _      -> error "PConstr cCons: σ' not found"
                _     -> error "PConstr cCons: σ not found"
@@ -145,9 +171,9 @@ instance desugarPatternBwdListPatternRest :: DesugarPatternBwd ListPatternRest w
    desugarPatternBwd (ElimConstr m) PEnd        = maybeToEither $ lookup cCons m
    desugarPatternBwd (ElimConstr m) (PNext π o) = do
       κ <- maybeToEither $ lookup cCons m
-      case κ of Arg σ -> do κ <- desugarPatternBwd σ π
-                            case κ of Arg σ' -> desugarPatternBwd σ' o
-                                      _      -> error "PNext: σ' not found"
+      case κ of Arg σ -> do κ' <- desugarPatternBwd σ π
+                            case κ' of Arg σ' -> desugarPatternBwd σ' o
+                                       _      -> error "PNext: σ' not found"
                 _     -> error "PNext: σ not found"
    desugarPatternBwd _ _ = error ""
 
