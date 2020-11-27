@@ -108,7 +108,6 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
                                     (ListComp s1' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3 ∧ α4) (Guard s2')) :| q' : qs')))
                _, _  -> error ""
          _, _ -> error ""
-   -- s  <- desugarBwd e (Expr α (IfThen s2 (Expr α (ListComp s1 (NonEmptyList (q :| qs)) snil ))))
    -- | List-comp-decl
    desugarBwd (E.Expr α1 (E.App (E.Expr α2 (E.Lambda σ)) e))
               (Expr _ (ListComp s2 (NonEmptyList ((Qualifier _ (Declaration (p × s1))) :| q : qs)))) = do
@@ -118,6 +117,27 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
          Expr α3 (ListComp s2' (NonEmptyList (q' :| qs')))
             -> pure $ Expr (α1 ∧ α2 ∧ α3) (ListComp s2' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3) (Declaration (p × s1'))) :| q' : qs')))
          _  -> error ""
+   -- | List-comp-gen
+   desugarBwd (E.Expr α4 (E.App (E.Expr _  (E.Var "concat"))
+                                (E.Expr α3 (E.App (E.Expr α2 (E.App (E.Expr _  (E.Var "map"))
+                                                                    (E.Expr α1 (E.Lambda σ))))
+                                                  e1))))
+              (Expr _ (ListComp s2 (NonEmptyList ((Qualifier _ (Generator p s1)) :| q : qs)))) = do
+      s1' <- desugarBwd e1 s1
+      let κ1 = untotalisePatt (Arg σ) p
+      case κ1 of
+         Arg σ' -> do
+            κ2 <- desugarPatternBwd σ p
+            case κ2 of
+               Body e2 -> do
+                  s <- desugarBwd e2 (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
+                  case s of
+                     Expr α5 (ListComp s2' (NonEmptyList (q' :| qs'))) ->
+                        pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4 ∧ α5)
+                                    (ListComp s2' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3 ∧ α4) (Generator p s1)) :| q' : qs')))
+                     _ -> error ""
+               _ -> error ""
+         _ -> error ""
    desugarBwd _ _ = error ""
 
 {- e, l ↘ l -}
@@ -195,3 +215,57 @@ instance desugarBwdBranches :: DesugarBwd (Elim Boolean) (NonEmptyList (NonEmpty
    desugarBwd σ (NonEmptyList (b :| Nil)) = do
       b' <- desugarBwd σ b
       pure $ NonEmptyList (b' :| Nil)
+
+{- untotalise κ p ↗ κ' -}
+untotalisePatt :: Cont 𝔹 -> Pattern -> Cont 𝔹
+untotalisePatt (Arg σ) p =
+   case σ, p of
+      -- | var
+      ElimVar x κ, PVar x'            ->
+         if x == x' then Arg (ElimVar x κ) else error absurd
+      -- | true, false, pair, nil, cons
+      ElimConstr m, PConstr ctr ps    ->
+         let κ = fromJust absurd $ lookup ctr m
+         in  Arg $ ElimConstr (fromFoldable [ctr × untotaliseListPatt κ ps])
+      -- | patt-list-empty
+      ElimConstr m, PListEmpty        ->
+         let κ = fromJust absurd $ lookup cNil m
+         in  Arg $ ElimConstr (fromFoldable [cNil × κ])
+      -- | patt-list-non-empty
+      ElimConstr m, PListNonEmpty p o ->
+         let κ = fromJust absurd $ lookup cCons m
+         in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p) o])
+      _, _ -> error ""
+untotalisePatt _ _ = error ""
+
+untotaliseListPatt :: Cont 𝔹 -> List Pattern -> Cont 𝔹
+untotaliseListPatt κ Nil = κ
+untotaliseListPatt κ (p:ps) =
+   untotaliseListPatt (untotalisePatt κ p) ps
+
+{- untotalise κ o ↗ κ' -}
+untotaliseListPattRest :: Cont 𝔹 -> ListPatternRest -> Cont 𝔹
+untotaliseListPattRest (Arg (ElimConstr m)) PEnd =
+   let κ = fromJust absurd $ lookup cNil m
+   in  Arg $ ElimConstr (fromFoldable [cNil × κ])
+untotaliseListPattRest (Arg (ElimConstr m)) (PNext p o) =
+   let κ = fromJust absurd $ lookup cCons m
+   in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p) o])
+untotaliseListPattRest _ _ = error ""
+
+{- totalise κ ↗ κ'       totalise (singleton σ) enil = σ -}
+-- totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
+-- totalise (ElimConstr m) e =
+--    let c × κ            = fromJust absurd $ L.head $ toUnfoldable m
+--        bs               = toUnfoldable m
+--        DataType _ sigs  = mustLookup c ctrToDataType
+--        bs'              = (_ × Body e) <$> ((fst <$> toUnfoldable sigs) \\ (fst <$> bs))
+--        bs''             = bs <#> \(c × κ) -> case mustLookup c m of
+--                            Arg σ   -> c × Arg (totalise σ e)
+--                            Body e' -> c × Body e'
+--                            None    -> c × Body e
+--      in   ElimConstr $ fromFoldable $ bs'' <> bs'
+-- totalise (ElimVar e κ) e' = case κ of
+--    Arg σ  -> ElimVar e $ Arg $ totalise σ e'
+--    Body _ -> ElimVar e κ
+--    None   -> ElimVar e $ Body e'
