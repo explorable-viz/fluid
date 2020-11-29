@@ -21,7 +21,7 @@ import SExprX (
    Branch, Clause, Expr(..), ListPatternRest(..), ListRest(..), RawListRest(..), Module(..), Pattern(..), VarDefs(..), VarDef(..), RecDefs(..), RawQualifier(..), Qualifier(..), RawExpr(..), expr
 )
 import Lattice (𝔹, (∧), bot)
-import Util (MayFail, type (×), (×), (≞), (≜), absurd, fromJust, mustLookup, report, error, onlyIf, maybeToEither)
+import Util (MayFail, type (×), (×), (≞), (≜), absurd, fromJust, mustLookup, lookupE, report, error, onlyIf, maybeToEither)
 
 qualTrue :: 𝔹 -> Qualifier 𝔹
 qualTrue α = Qualifier α (Guard (Expr α (Constr cTrue Nil)))
@@ -53,8 +53,9 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Expr α (E.BinaryApp e1 x e2)) (Expr _ (BinaryApp s1 x' s2)) =
       Expr α <$> (BinaryApp <$> desugarBwd e1 s1 <@> x ≜ x' <*> desugarBwd e2 s2)
    -- | Empty-list
-   desugarBwd (E.Expr α (E.Constr (Ctr "Nil") Nil)) (Expr _ ListEmpty) = pure $ Expr α ListEmpty
-   -- | Non-empty list
+   desugarBwd (E.Expr α (E.Constr (Ctr "Nil") Nil)) (Expr _ ListEmpty) =
+      pure $ Expr α ListEmpty
+   -- | Non-empty-list
    desugarBwd (E.Expr α (E.Constr (Ctr ":") (e : e' : Nil)))
               (Expr _ (ListNonEmpty s l)) =
       Expr α <$> (ListNonEmpty <$> desugarBwd e s <*> desugarBwd e' l)
@@ -65,8 +66,8 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    -- | If-then-else
    desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1))
               (Expr _ (IfElse s1 s2 s3)) = do
-      κ2 <- maybeToEither $ lookup (Ctr "True") m
-      κ3 <- maybeToEither $ lookup (Ctr "False") m
+      κ2 <- lookupE cTrue m
+      κ3 <- lookupE cFalse m
       case κ2, κ3 of
          Body e2, Body e3 -> Expr (α1 ∧ α2) <$> (IfElse <$> desugarBwd e1 s1 <*> desugarBwd e2 s2 <*> desugarBwd e3 s3)
          _, _             -> error "failed to match IfElse"
@@ -95,19 +96,16 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    -- | List-comp-guard
    desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1))
               (Expr _ (ListComp s1 (NonEmptyList ((Qualifier _ (Guard s2)) :| q : qs)))) = do
-      κ2 <- maybeToEither $ lookup cTrue m
-      κ3 <- maybeToEither $ lookup cFalse m
-      case κ2, κ3 of
-         Body e2, Body e3 -> do
-            s2'         <- desugarBwd e1 s2
-            sListComp   <- desugarBwd e2 (Expr true (ListComp s1 (NonEmptyList (q :| qs))))
-            sNil        <- desugarBwd e3 (snil true)
-            case sListComp, sNil of
-               Expr α3 (ListComp s1' (NonEmptyList (q' :| qs'))), Expr α4 (Constr (Ctr "Nil") Nil)
-                     -> pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
-                                    (ListComp s1' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3 ∧ α4) (Guard s2')) :| q' : qs')))
-               _, _  -> error ""
-         _, _ -> error ""
+      e2          <- liftM1 asExpr $ lookupE cTrue  m
+      e3          <- liftM1 asExpr $ lookupE cFalse m
+      s2'         <- desugarBwd e1 s2
+      sListComp   <- desugarBwd e2 (Expr true (ListComp s1 (NonEmptyList (q :| qs))))
+      sNil        <- desugarBwd e3 (snil true)
+      case sListComp, sNil of
+         Expr α3 (ListComp s1' (NonEmptyList (q' :| qs'))), Expr α4 (Constr (Ctr "Nil") Nil)
+               -> pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
+                              (ListComp s1' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3 ∧ α4) (Guard s2')) :| q' : qs')))
+         _, _  -> error ""
    -- | List-comp-decl
    desugarBwd (E.Expr α1 (E.App (E.Expr α2 (E.Lambda σ)) e))
               (Expr _ (ListComp s2 (NonEmptyList ((Qualifier _ (Declaration (p × s1))) :| q : qs)))) = do
@@ -118,27 +116,29 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
             -> pure $ Expr (α1 ∧ α2 ∧ α3) (ListComp s2' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3) (Declaration (p × s1'))) :| q' : qs')))
          _  -> error ""
    -- | List-comp-gen
-   desugarBwd (E.Expr α4 (E.App (E.Expr _  (E.Var "concat"))
-                                (E.Expr α3 (E.App (E.Expr α2 (E.App (E.Expr _  (E.Var "map"))
-                                                                    (E.Expr α1 (E.Lambda σ))))
-                                                  e1))))
+   desugarBwd (E.Expr α3 (E.App (E.Expr α2 (E.App (E.Expr _  (E.Var "concatMap"))
+                                                  (E.Expr α1 (E.Lambda σ))))
+                                 e1))
               (Expr _ (ListComp s2 (NonEmptyList ((Qualifier _ (Generator p s1)) :| q : qs)))) = do
-      s1' <- desugarBwd e1 s1
-      let κ1 = untotalisePatt (Arg σ) p
-      case κ1 of
-         Arg σ' -> do
-            κ2 <- desugarPatternBwd σ p
-            case κ2 of
-               Body e2 -> do
-                  s <- desugarBwd e2 (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
-                  case s of
-                     Expr α5 (ListComp s2' (NonEmptyList (q' :| qs'))) ->
-                        pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4 ∧ α5)
-                                    (ListComp s2' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3 ∧ α4) (Generator p s1)) :| q' : qs')))
-                     _ -> error ""
-               _ -> error ""
+      s1'   <- desugarBwd e1 s1
+      σ'    <- pure $ asElim $ untotalisePatt (Arg σ) p
+      e2    <- liftM1 asExpr (desugarPatternBwd σ' p)
+      s     <- desugarBwd e2 (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
+      case s of
+         Expr α4 (ListComp s2' (NonEmptyList (q' :| qs'))) ->
+            pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
+                        (ListComp s2' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3) (Generator p s1)) :| q' : qs')))
          _ -> error ""
+
    desugarBwd _ _ = error ""
+
+asElim :: Cont 𝔹 -> Elim 𝔹
+asElim (Arg σ) =  σ
+asElim _ = error "Couldn't infer Elim from Cont"
+
+asExpr :: Cont 𝔹 -> E.Expr 𝔹
+asExpr (Body e) =  e
+asExpr _ = error "Couldn't infer Expr from Cont"
 
 {- e, l ↘ l -}
 instance desugarBwdListRest :: DesugarBwd (E.Expr Boolean) (ListRest Boolean) where
@@ -225,15 +225,15 @@ untotalisePatt (Arg σ) p =
          if x == x' then Arg (ElimVar x κ) else error absurd
       -- | true, false, pair, nil, cons
       ElimConstr m, PConstr ctr ps    ->
-         let κ = fromJust absurd $ lookup ctr m
+         let κ = mustLookup ctr m
          in  Arg $ ElimConstr (fromFoldable [ctr × untotaliseListPatt κ ps])
       -- | patt-list-empty
       ElimConstr m, PListEmpty        ->
-         let κ = fromJust absurd $ lookup cNil m
+         let κ = mustLookup cNil m
          in  Arg $ ElimConstr (fromFoldable [cNil × κ])
       -- | patt-list-non-empty
       ElimConstr m, PListNonEmpty p o ->
-         let κ = fromJust absurd $ lookup cCons m
+         let κ = mustLookup cCons m
          in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p) o])
       _, _ -> error ""
 untotalisePatt _ _ = error ""
@@ -246,10 +246,10 @@ untotaliseListPatt κ (p:ps) =
 {- untotalise κ o ↗ κ' -}
 untotaliseListPattRest :: Cont 𝔹 -> ListPatternRest -> Cont 𝔹
 untotaliseListPattRest (Arg (ElimConstr m)) PEnd =
-   let κ = fromJust absurd $ lookup cNil m
+   let κ = mustLookup cNil m
    in  Arg $ ElimConstr (fromFoldable [cNil × κ])
 untotaliseListPattRest (Arg (ElimConstr m)) (PNext p o) =
-   let κ = fromJust absurd $ lookup cCons m
+   let κ = mustLookup cCons m
    in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p) o])
 untotaliseListPattRest _ _ = error ""
 

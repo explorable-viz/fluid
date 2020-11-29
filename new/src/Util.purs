@@ -41,6 +41,9 @@ fromJust msg Nothing  = error msg
 mustLookup :: forall k v . Ord k => k -> Map k v -> v
 mustLookup k = fromJust absurd <<< lookup k
 
+lookupE :: forall k v . Ord k => k -> Map k v -> MayFail v
+lookupE k m = maybeToEither $ lookup k m
+
 onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
 onlyIf true    = pure
 onlyIf false   = const empty
