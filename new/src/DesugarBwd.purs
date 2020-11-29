@@ -66,11 +66,9 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    -- | If-then-else
    desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1))
               (Expr _ (IfElse s1 s2 s3)) = do
-      κ2 <- lookupE cTrue m
-      κ3 <- lookupE cFalse m
-      case κ2, κ3 of
-         Body e2, Body e3 -> Expr (α1 ∧ α2) <$> (IfElse <$> desugarBwd e1 s1 <*> desugarBwd e2 s2 <*> desugarBwd e3 s3)
-         _, _             -> error "failed to match IfElse"
+      e2 <- liftM1 asExpr $ lookupE cTrue m
+      e3 <- liftM1 asExpr $ lookupE cFalse m
+      Expr (α1 ∧ α2) <$> (IfElse <$> desugarBwd e1 s1 <*> desugarBwd e2 s2 <*> desugarBwd e3 s3)
    -- | Match-as
    desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda σ)) e))
               (Expr _ (MatchAs s bs)) =
@@ -110,21 +108,22 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Expr α1 (E.App (E.Expr α2 (E.Lambda σ)) e))
               (Expr _ (ListComp s2 (NonEmptyList ((Qualifier _ (Declaration (p × s1))) :| q : qs)))) = do
       (p' × s1') <- desugarBwd σ (NonEmptyList (p :| Nil) × s1)
-      s          <- desugarBwd e (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
-      case s of
+      sListComp  <- desugarBwd e (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
+      case sListComp of
          Expr α3 (ListComp s2' (NonEmptyList (q' :| qs')))
-            -> pure $ Expr (α1 ∧ α2 ∧ α3) (ListComp s2' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3) (Declaration (p × s1'))) :| q' : qs')))
+            -> pure $ Expr (α1 ∧ α2 ∧ α3)
+                           (ListComp s2' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3) (Declaration (p × s1'))) :| q' : qs')))
          _  -> error ""
    -- | List-comp-gen
    desugarBwd (E.Expr α3 (E.App (E.Expr α2 (E.App (E.Expr _  (E.Var "concatMap"))
                                                   (E.Expr α1 (E.Lambda σ))))
                                  e1))
               (Expr _ (ListComp s2 (NonEmptyList ((Qualifier _ (Generator p s1)) :| q : qs)))) = do
-      s1'   <- desugarBwd e1 s1
-      σ'    <- pure $ asElim $ untotalisePatt (Arg σ) p
-      e2    <- liftM1 asExpr (desugarPatternBwd σ' p)
-      s     <- desugarBwd e2 (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
-      case s of
+      s1'        <- desugarBwd e1 s1
+      σ'         <- pure $ asElim $ untotalisePatt (Arg σ) p
+      e2         <- liftM1 asExpr (desugarPatternBwd σ' p)
+      sListComp  <- desugarBwd e2 (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
+      case sListComp of
          Expr α4 (ListComp s2' (NonEmptyList (q' :| qs'))) ->
             pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
                         (ListComp s2' (NonEmptyList ((Qualifier (α1 ∧ α2 ∧ α3) (Generator p s1)) :| q' : qs')))
@@ -156,54 +155,44 @@ class DesugarPatternBwd a where
 instance desugarPatternBwdPatterns :: DesugarPatternBwd (NonEmptyList Pattern) where
    desugarPatternBwd σ (NonEmptyList (π :| Nil)) = desugarPatternBwd σ π
    desugarPatternBwd σ (NonEmptyList (π :| π' : πs)) = do
-      κ <- desugarPatternBwd σ π
-      case κ of
-           Arg σ' -> desugarPatternBwd σ' (NonEmptyList (π' :| πs))
-           _      -> error "NonEmptyList Pattern: σ' not found"
+      σ' <- liftM1 asElim $ desugarPatternBwd σ π
+      desugarPatternBwd σ' (NonEmptyList (π' :| πs))
 
 {- σ, p ↘ κ -}
 instance desugarPatternBwdPattern :: DesugarPatternBwd Pattern where
    -- | Var
    desugarPatternBwd (ElimVar x κ)  (PVar x') = (x ≞ x') *> pure κ
    -- | Nil
-   desugarPatternBwd (ElimConstr m) (PConstr (Ctr "Nil") Nil) = maybeToEither $ lookup cNil m
+   desugarPatternBwd (ElimConstr m) (PConstr (Ctr "Nil") Nil) = lookupE cNil m
    -- | Cons, Pair
    desugarPatternBwd (ElimConstr m) (PConstr ctr (π:π':_))
       | ctr == cNil || ctr == cPair = do
-          κ <- maybeToEither $ lookup ctr m
-          case κ of
-               Arg σ -> do κ' <- desugarPatternBwd σ π
-                           case κ' of
-                                Arg σ' -> desugarPatternBwd σ' π'
-                                _      -> error "PConstr cCons: σ' not found"
-               _     -> error "PConstr cCons: σ not found"
+          σ  <- liftM1 asElim $ lookupE ctr m
+          σ' <- liftM1 asElim $ desugarPatternBwd σ π
+          desugarPatternBwd σ' π'
    -- | Empty-list
-   desugarPatternBwd (ElimConstr m) (PListEmpty) = maybeToEither $ lookup cNil m
+   desugarPatternBwd (ElimConstr m) (PListEmpty) = lookupE cNil m
    -- | Non-empty-list
    desugarPatternBwd σ (PListNonEmpty π o)  = do
-      κ <- desugarPatternBwd σ π
-      case κ of Arg σ' -> desugarPatternBwd σ' o
-                _      -> error "PListNonEmpty: σ' not found"
+      σ' <- liftM1 asElim $ desugarPatternBwd σ π
+      desugarPatternBwd σ' o
    desugarPatternBwd _ _ = error ""
 
 {- σ, o ↘ κ -}
 instance desugarPatternBwdListPatternRest :: DesugarPatternBwd ListPatternRest where
-   desugarPatternBwd (ElimConstr m) PEnd        = maybeToEither $ lookup cCons m
+   desugarPatternBwd (ElimConstr m) PEnd        = lookupE cCons m
    desugarPatternBwd (ElimConstr m) (PNext π o) = do
-      κ <- maybeToEither $ lookup cCons m
-      case κ of Arg σ -> do κ' <- desugarPatternBwd σ π
-                            case κ' of Arg σ' -> desugarPatternBwd σ' o
-                                       _      -> error "PNext: σ' not found"
-                _     -> error "PNext: σ not found"
+      σ  <- liftM1 asElim $ lookupE cCons m
+      σ' <- liftM1 asElim $ desugarPatternBwd σ π
+      desugarPatternBwd σ' o
    desugarPatternBwd _ _ = error ""
 
 {- σ, c ↘ c -}
 instance desugarBwdBranch :: DesugarBwd (Elim Boolean) (NonEmptyList Pattern × Expr Boolean) where
    desugarBwd σ (πs × s) = do
-      κ  <- desugarPatternBwd σ πs
-      case κ of Body e -> do s' <- desugarBwd e s
-                             pure $ πs × s'
-                _      -> error "Branch: e not found"
+      e  <- liftM1 asExpr $ desugarPatternBwd σ πs
+      s' <- desugarBwd e s
+      pure $ πs × s'
 
 {-    →   → -}
 {- σ, c ↘ c -}
@@ -232,9 +221,9 @@ untotalisePatt (Arg σ) p =
          let κ = mustLookup cNil m
          in  Arg $ ElimConstr (fromFoldable [cNil × κ])
       -- | patt-list-non-empty
-      ElimConstr m, PListNonEmpty p o ->
+      ElimConstr m, PListNonEmpty p' o ->
          let κ = mustLookup cCons m
-         in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p) o])
+         in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p') o])
       _, _ -> error ""
 untotalisePatt _ _ = error ""
 
@@ -252,20 +241,3 @@ untotaliseListPattRest (Arg (ElimConstr m)) (PNext p o) =
    let κ = mustLookup cCons m
    in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p) o])
 untotaliseListPattRest _ _ = error ""
-
-{- totalise κ ↗ κ'       totalise (singleton σ) enil = σ -}
--- totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
--- totalise (ElimConstr m) e =
---    let c × κ            = fromJust absurd $ L.head $ toUnfoldable m
---        bs               = toUnfoldable m
---        DataType _ sigs  = mustLookup c ctrToDataType
---        bs'              = (_ × Body e) <$> ((fst <$> toUnfoldable sigs) \\ (fst <$> bs))
---        bs''             = bs <#> \(c × κ) -> case mustLookup c m of
---                            Arg σ   -> c × Arg (totalise σ e)
---                            Body e' -> c × Body e'
---                            None    -> c × Body e
---      in   ElimConstr $ fromFoldable $ bs'' <> bs'
--- totalise (ElimVar e κ) e' = case κ of
---    Arg σ  -> ElimVar e $ Arg $ totalise σ e'
---    Body _ -> ElimVar e κ
---    None   -> ElimVar e $ Body e'
