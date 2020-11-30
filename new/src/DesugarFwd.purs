@@ -12,7 +12,7 @@ import Data.Map (Map, fromFoldable, insert, lookup, singleton, toUnfoldable, upd
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
-import Data.Tuple (Tuple, fst, snd)
+import Data.Tuple (fst, snd)
 import Bindings (Binding, Bindings, (↦), fromList)
 import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Var)
@@ -20,7 +20,7 @@ import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
 import SExprX (
    Clause, Expr(..), ListPatternRest(..), ListRest(..), RawListRest(..), Module(..), Pattern(..), VarDefs, VarDef, RecDefs, RawQualifier(..), Qualifier(..), RawExpr(..)
 )
-import Lattice (𝔹, (∧), bot)
+import Lattice (𝔹, (∧))
 import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
 
 eapp :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹

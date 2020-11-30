@@ -1,34 +1,27 @@
 module DesugarBwd where
 
 import Prelude hiding (absurd)
-import Control.Apply (lift2)
-import Data.Either (Either(..))
-import Data.Foldable (foldM)
-import Data.Function (on)
-import Data.List (List(..), (:), (\\), length, zip)
-import Data.List (head) as L
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, reverse, toList)
-import Data.Map (Map, fromFoldable, insert, lookup, singleton, toUnfoldable, update)
-import Data.Maybe (Maybe(..))
+import Data.List (List(..), (:), zip)
+import Data.List.NonEmpty (NonEmptyList(..), toList)
+import Data.Map (fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
-import Data.Tuple (Tuple, fst, snd, uncurry)
-import Bindings (Binding, Bindings, (↦), fromList)
-import DataType (Ctr(..), DataType'(..), checkArity, checkDataType, ctrToDataType, cPair, cCons, cNil, cTrue, cFalse)
-import Expr (Cont(..), Elim(..), Var)
-import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
+import Data.Tuple (uncurry)
+import Bindings (Bindings)
+import DataType (Ctr(..), cPair, cCons, cNil, cTrue, cFalse)
+import Expr (Cont(..), Elim(..))
+import Expr (Expr(..), RawExpr(..)) as E
 import SExprX (
-   Branch, Clause, Expr(..), ListPatternRest(..), ListRest(..), RawListRest(..), Module(..), Pattern(..), VarDefs(..), VarDef(..), RecDefs(..), RawQualifier(..), Qualifier(..), RawExpr(..), expr
+   Expr(..), ListPatternRest(..), ListRest(..), RawListRest(..), Pattern(..), RawQualifier(..), Qualifier(..), RawExpr(..)
 )
-import Lattice (𝔹, (∧), bot)
-import Util (MayFail, type (×), (×), (≞), (≜), absurd, fromJust, mustLookup, lookupE, report, error, onlyIf, maybeToEither)
+import Lattice (𝔹, (∧))
+import Util (MayFail, type (×), (×), (≞), (≜), absurd, mustLookup, lookupE, error)
 
 qualTrue :: 𝔹 -> Qualifier 𝔹
 qualTrue α = Qualifier α (Guard (Expr α (Constr cTrue Nil)))
 
 snil :: 𝔹 -> Expr 𝔹
 snil α = Expr α $ Constr cNil Nil
-
 
 class DesugarBwd a b where
    desugarBwd :: a -> b -> MayFail b
@@ -37,7 +30,6 @@ instance desugarBwdRecDefs :: DesugarBwd (Bindings Elim Boolean)
                                          (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr Boolean)))) where
    desugarBwd _ _ = error ""
 
--- | traverse :: (a -> m b) -> t a -> m (t b)
 instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Expr α (E.Var x))   (Expr _ (Var x'))      = pure $ Expr α (Var (x ≜ x'))
    desugarBwd (E.Expr α (E.Op op))   (Expr _ (Op op'))      = pure $ Expr α (Op (op ≜ op'))
