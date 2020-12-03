@@ -11,7 +11,7 @@ import Bindings (Bindings)
 import DataType (Ctr(..), cPair, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RawExpr(..)) as E
-import SExprX (
+import SExpr (
    Expr(..), ListPatternRest(..), ListRest(..), Pattern(..), Qualifier(..), RawExpr(..)
 )
 import Lattice (𝔹, (∧))
