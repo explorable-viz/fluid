@@ -78,23 +78,28 @@ instance desugarExpr :: Desugarable (Expr Boolean) (E.Expr Boolean) where
    desugar (Expr _ (ListNonEmpty s l))    = lift2 econs (desugar s) (desugar l)
    desugar (Expr _ (ListRange s1 s2)) =
       eapp <$> (eapp (evar "range") <$> desugar s1) <*> desugar s2
+   -- | List-comp-done
    desugar (Expr _ (ListComp s_body (NonEmptyList (Guard bot (Expr _ (Constr c Nil)) :| Nil)))) | c == cTrue = do
       e <- desugar s_body
       pure $ econs e enil
+   -- | List-comp-qual
    desugar (Expr _ (ListComp s_body (NonEmptyList (q :| Nil)))) =
       desugar $ expr $ ListComp s_body $ NonEmptyList $ q :| Guard bot (expr $ Constr cTrue Nil) : Nil
+   -- | List-comp-guard
    desugar (Expr _ (ListComp s_body (NonEmptyList ((Guard _ s) :| q : qs)))) = do
       e <- desugar $ expr $ ListComp s_body $ NonEmptyList $ q :| qs
       let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body enil])
       E.expr <$> (E.App (E.expr $ E.Lambda σ) <$> desugar s)
-   desugar (Expr _ (ListComp s_body (NonEmptyList ((Generator _ p slist) :| q : qs)))) = do
-      e <- desugar $ expr $ ListComp s_body $ NonEmptyList $ q :| qs
-      σ <- desugar $ p × Body e
-      let λ = E.expr $ E.Lambda $ totalise σ enil
-      eapp (evar "concat") <$> (eapp (eapp (evar "map") λ) <$> desugar slist)
+   -- | List-comp-decl
    desugar (Expr _ (ListComp s_body (NonEmptyList (Declaration _ (p × s) :| q : qs)))) = do
       σ <- desugar $ p × (None :: Cont 𝔹)
       E.expr <$> (E.Let <$> (E.VarDef σ <$> desugar s) <*> desugar (expr $ ListComp s_body $ NonEmptyList $ q :| qs))
+   -- | List-comp-gen
+   desugar (Expr _ (ListComp s_body (NonEmptyList ((Generator _ p slist) :| q : qs)))) = do
+         e <- desugar $ expr $ ListComp s_body $ NonEmptyList $ q :| qs
+         σ <- desugar $ p × Body e
+         let λ = E.expr $ E.Lambda $ totalise σ enil
+         eapp (evar "concat") <$> (eapp (eapp (evar "map") λ) <$> desugar slist)
 
 instance desugarListRest :: Desugarable (ListRest Boolean) (E.Expr Boolean) where
    desugar (End _)      = pure enil

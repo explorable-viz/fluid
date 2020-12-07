@@ -23,6 +23,7 @@ import SExpr (
 import Lattice (𝔹, (∧))
 import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
 
+
 eapp :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 eapp α f = E.Expr α <<< E.App f
 
@@ -118,11 +119,14 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
       let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body (enil (α1 ∧ α2))])
       E.Expr (α1 ∧ α2) <$> (E.App (E.Expr (α1 ∧ α2) $ E.Lambda σ) <$> desugarFwd s)
    -- | List-comp-decl
+   -- desugarFwd (Expr α2 (ListComp s_body (NonEmptyList (Declaration α1 (p × s) :| q : qs)))) = do
+   --    e <- desugarFwd s
+   --    σ <- desugarFwd $ p × (Body e :: Cont 𝔹)
+   --    E.Expr (α1 ∧ α2) <$> (E.App <$> (pure $ E.Expr (α1 ∧ α2) (E.Lambda σ))
+   --                                <*> (desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))))
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList (Declaration α1 (p × s) :| q : qs)))) = do
-      e <- desugarFwd s
-      σ <- desugarFwd $ p × (Body e :: Cont 𝔹)
-      E.Expr (α1 ∧ α2) <$> (E.App <$> (pure $ E.Expr (α1 ∧ α2) (E.Lambda σ))
-                                  <*> (desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))))
+      σ <- desugarFwd $ p × (None :: Cont 𝔹)
+      E.Expr (α1 ∧ α2) <$> (E.Let <$> (E.VarDef σ <$> desugarFwd s) <*> (desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))))
    -- | List-comp-gen
    desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Generator α1 p slist) :| q : qs)))) = do
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
@@ -172,7 +176,7 @@ instance desugarFwdBranch :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (
    desugarFwd (πs × s) = do
       κ <- Body <$> desugarFwd s
       desugarFwd $ πs × κ
-
+--
 {- →     -}
 {- c ↗ σ -}
 instance desugarFwdBranches :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean))
