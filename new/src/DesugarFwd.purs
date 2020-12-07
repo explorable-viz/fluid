@@ -17,11 +17,12 @@ import Bindings (Binding, Bindings, (↦), fromList)
 import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
-import SExprX (
-   Clause, Expr(..), ListPatternRest(..), ListRest(..), RawListRest(..), Module(..), Pattern(..), VarDefs, VarDef, RecDefs, RawQualifier(..), Qualifier(..), RawExpr(..)
+import SExpr (
+   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef, RecDefs, Qualifier(..), RawExpr(..)
 )
 import Lattice (𝔹, (∧))
 import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
+
 
 eapp :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 eapp α f = E.Expr α <<< E.App f
@@ -106,25 +107,25 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Expr α (ListRange s1 s2)) =
       eapp α <$> ((eapp α (evar α "range")) <$> desugarFwd s1) <*> desugarFwd s2
    -- | List-comp-done
-   desugarFwd (Expr α1 (ListComp s_body (NonEmptyList (Qualifier _ (Guard (Expr α2 (Constr c Nil))) :| Nil)))) | c == cTrue = do
+   desugarFwd (Expr α1 (ListComp s_body (NonEmptyList (Guard _ (Expr α2 (Constr c Nil)) :| Nil)))) | c == cTrue = do
       e <- desugarFwd s_body
       pure $ econs (α1 ∧ α2) e (enil (α1 ∧ α2))
    -- | List-comp-qual
    desugarFwd (Expr α (ListComp s_body (NonEmptyList (q :| Nil)))) =
-      desugarFwd $ Expr α $ ListComp s_body $ NonEmptyList $ q :| (Qualifier α (Guard (Expr α $ Constr cTrue Nil))) : Nil
+      desugarFwd $ Expr α $ ListComp s_body $ NonEmptyList $ q :| (Guard α (Expr α $ Constr cTrue Nil)) : Nil
    -- | List-comp-guard
-   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Guard s)) :| q : qs)))) = do
+   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Guard α1 s) :| q : qs)))) = do
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body (enil (α1 ∧ α2))])
       E.Expr (α1 ∧ α2) <$> (E.App (E.Expr (α1 ∧ α2) $ E.Lambda σ) <$> desugarFwd s)
    -- | List-comp-decl
-   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Declaration (p × s))) :| q : qs)))) = do
-      e <- desugarFwd s
+   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList (Declaration α1 (p × s) :| q : qs)))) = do
+      e <- desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))
       σ <- desugarFwd $ p × (Body e :: Cont 𝔹)
       E.Expr (α1 ∧ α2) <$> (E.App <$> (pure $ E.Expr (α1 ∧ α2) (E.Lambda σ))
-                                  <*> (desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))))
+                                  <*> desugarFwd s)
    -- | List-comp-gen
-   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Qualifier α1 (Generator p slist)) :| q : qs)))) = do
+   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Generator α1 p slist) :| q : qs)))) = do
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       σ <- desugarFwd $ p × Body e
       let λ = E.Expr (α1 ∧ α2) $ E.Lambda $ totalise σ (enil (α1 ∧ α2))
@@ -132,8 +133,8 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
 
 {- l ↗ e -}
 instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
-   desugarFwd (ListRest α End)         = pure (enil α)
-   desugarFwd (ListRest α (Next s l))  = lift2 (econs α) (desugarFwd s) (desugarFwd l)
+   desugarFwd (End α)       = pure (enil α)
+   desugarFwd (Next α s l)  = lift2 (econs α) (desugarFwd s) (desugarFwd l)
 
 {- →        -}
 {- p, κ ↗ σ -}
@@ -172,7 +173,7 @@ instance desugarFwdBranch :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (
    desugarFwd (πs × s) = do
       κ <- Body <$> desugarFwd s
       desugarFwd $ πs × κ
-
+--
 {- →     -}
 {- c ↗ σ -}
 instance desugarFwdBranches :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean))

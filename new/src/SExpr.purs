@@ -26,9 +26,9 @@ data RawExpr a =
    ListComp (Expr a) (NonEmptyList (Qualifier a)) |
    Let (VarDefs a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
-
+--
 data ListRest a =
-   End | Next (Expr a) (ListRest a)
+   End a | Next a (Expr a) (ListRest a)
 
 data Pattern =
    PVar Var |
@@ -46,9 +46,9 @@ type VarDef a = Pattern × Expr a
 type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a =
-   Guard (Expr a) |
-   Generator Pattern (Expr a) |
-   Declaration (VarDef a) -- could allow VarDefs instead
+   Guard a (Expr a) |
+   Generator a Pattern (Expr a) |
+   Declaration a (VarDef a) -- could allow VarDefs instead
 
 data Expr a =
    Expr a (RawExpr a)

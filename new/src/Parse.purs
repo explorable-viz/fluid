@@ -240,8 +240,8 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             where
             listRest :: Endo (SParser (ListRest 𝔹))
             listRest listRest' =
-               rBracket *> pure End <|>
-               token.comma *> (Next <$> expr' <*> listRest')
+               rBracket *> pure (End true) <|>
+               token.comma *> (Next true <$> expr' <*> listRest')
 
          listComp :: SParser (Expr 𝔹)
          listComp = token.brackets $
@@ -250,9 +250,9 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             where
             qualifier :: SParser (Qualifier 𝔹)
             qualifier =
-               pure Generator <*> pattern <* lArrow <*> expr' <|>
-               Declaration <$> (keyword strLet *> pattern <* equals) `lift2 (×)` expr' <|>
-               Guard <$> expr'
+               pure (Generator true) <*> pattern <* lArrow <*> expr' <|>
+               Declaration true <$> (keyword strLet *> pattern <* equals) `lift2 (×)` expr' <|>
+               Guard true <$> expr'
 
          listRange :: SParser (Expr 𝔹)
          listRange = token.brackets $

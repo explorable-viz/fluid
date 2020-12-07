@@ -10,17 +10,16 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
 import DataType (dataTypeFor, typeName)
-import Desugar (desugar)
+import DesugarFwd (desugarFwd)
 import Eval (eval)
 import Fwd (eval_fwd)
 import Lattice (𝔹)
-import Module (loadModule, openDatasetAs, openWithImports)
+import Module (openDatasetAs, openWithImports)
 import Pretty (pretty, render)
-import Primitive (primitives)
 import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..), RawVal(..))
--- import Test.Desugar(lcomp1, lcomp2, lcomp3, lcomp4, lcomp1_eval, lcomp2_eval, lcomp3_eval, lcomp4_eval, lseq1, lseq1_eval)
+
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -39,7 +38,7 @@ test' :: String -> Aff (Env 𝔹 × S.Expr 𝔹) -> String -> SpecT Aff Unit Eff
 test' name setup expected =
    before setup $
       it name $ \(ρ × s) -> do
-         let e = successful $ desugar s
+         let e = successful $ desugarFwd s
          case successful $ eval ρ e of
             t × v -> do
                unless (isGraphical v) $
@@ -59,13 +58,6 @@ testWithDataset dataset file =
       bitraverse (uncurry openDatasetAs) openWithImports (dataset × "data" × file) <#>
       (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)
 
-desugarTest :: String -> S.Expr 𝔹 -> String -> SpecT Aff Unit Effect Unit
-desugarTest name s expected =
-   before (loadModule "prelude" primitives) $
-      it name $ \ρ ->
-         case successful $ eval ρ (successful $ desugar s) of
-            t × v -> (render $ pretty v) `shouldEqual` expected
-
 main :: Effect Unit
 main = do
    -- desugaring
@@ -73,6 +65,7 @@ main = do
    run $ test "desugar/list-comp-2" "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9, 9, 12, 12, 12, 10, 10, 10, 8, 8, 8]"
    run $ test "desugar/list-comp-3" "[9, 8]"
    run $ test "desugar/list-comp-4" "[5, 4, 3]"
+   run $ test "desugar/list-comp-5" "[5, 4, 3]"
    run $ test "desugar/list-range" "[3, 4, 5, 6, 7]"
    -- slicing
    run $ test "arithmetic" "42"
