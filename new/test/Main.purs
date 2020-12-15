@@ -3,6 +3,7 @@ module Test.Main where
 import Prelude
 import Data.Bitraversable (bitraverse)
 import Data.Tuple (uncurry)
+import Debug.Trace (trace) as T
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
@@ -10,6 +11,7 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
 import DataType (dataTypeFor, typeName)
+import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
 import Eval (eval)
 import Fwd (eval_fwd)
@@ -20,6 +22,7 @@ import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..), RawVal(..))
 
+trace a b = T.trace a (\_ -> b)
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -42,12 +45,17 @@ test' name setup expected =
          case successful $ eval ρ e of
             t × v -> do
                unless (isGraphical v) $
+                  --trace (render $ pretty v) $
                   (render $ pretty v) `shouldEqual` expected
                when slicing do
                   let ρ' × e' × α'  = eval_bwd v t
                       v'            = eval_fwd ρ' e' true
                   unless (isGraphical v) $
                      (render $ pretty v') `shouldEqual` expected
+                  when slicing do
+                     let s'         = successful $ desugarBwd e' s
+                     unless (isGraphical v) $
+                        trace (render $ pretty s') $ pure unit
 
 test :: String -> String -> SpecT Aff Unit Effect Unit
 test file = test' file (openWithImports file)
