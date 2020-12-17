@@ -3,7 +3,7 @@ module Test.Main where
 import Prelude
 import Data.Bitraversable (bitraverse)
 import Data.Tuple (uncurry)
-import Debug.Trace (trace) as T
+-- import Debug.Trace (trace) as T
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
@@ -22,8 +22,8 @@ import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..), RawVal(..))
 
-trace :: forall a b . a -> b -> b
-trace a b = T.trace a (\_ -> b)
+-- trace :: forall a b . a -> b -> b
+-- trace a b = T.trace a (\_ -> b)
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -51,7 +51,7 @@ test' name setup expected =
                when slicing do
                   let ρ' × e' × α'  = eval_bwd v t
                       v'            = eval_fwd ρ' e' true
-                      s'         = successful $ desugarBwd e' s
+                      s'            = successful $ desugarBwd e' s
                   unless (isGraphical v) $
                      (render $ pretty v') `shouldEqual` expected
 
