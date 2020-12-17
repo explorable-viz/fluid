@@ -39,6 +39,8 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    -- | This covers Cons
    desugarBwd (E.Expr α (E.Constr ctr args)) (Expr _ (Constr ctr' args')) =
       Expr α <$> (Constr ctr <$> traverse (uncurry desugarBwd) (zip args args'))
+   -- | Lambda
+   desugarBwd (E.Expr α (E.Lambda σ)) (Expr _ (Lambda bs))= Expr α <$> (Lambda <$> desugarBwd σ bs)
    -- | Application
    desugarBwd (E.Expr α (E.App e1 e2)) (Expr _ (App s1 s2)) =
       Expr α <$> (App <$> desugarBwd e1 s1 <*> desugarBwd e2 s2)
