@@ -22,6 +22,7 @@ import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..), RawVal(..))
 
+trace :: forall a b . a -> b -> b
 trace a b = T.trace a (\_ -> b)
 
 -- Don't enforce expected values for graphics tests (values too complex).
