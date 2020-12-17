@@ -11,8 +11,8 @@ import Text.Pretty (render) as P
 import Bindings (Binding, Bindings(..), (:+:), (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), VarDef(..), varAnon)
-import Expr (RawExpr(..), Expr(..), Expr(Hole), RawExpr, expr) as E
-import SExpr (RawExpr(..), RawExpr, Expr(..), Expr, Branch, Pattern(..), ListPatternRest(..), ListRest(..), Qualifier(..), expr)
+import Expr (RawExpr(..), Expr(..), expr) as E
+import SExpr (RawExpr(..), Expr(..), Pattern(..), ListPatternRest(..), ListRest(..), Qualifier(..), expr)
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..), RawExpl)
 import Lattice (class BoundedJoinSemilattice)

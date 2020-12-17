@@ -50,12 +50,9 @@ test' name setup expected =
                when slicing do
                   let ρ' × e' × α'  = eval_bwd v t
                       v'            = eval_fwd ρ' e' true
+                      s'         = successful $ desugarBwd e' s
                   unless (isGraphical v) $
                      (render $ pretty v') `shouldEqual` expected
-                  when slicing do
-                     let s'         = successful $ desugarBwd e' s
-                     unless (isGraphical v) $
-                        trace (render $ pretty s') $ pure unit
 
 test :: String -> String -> SpecT Aff Unit Effect Unit
 test file = test' file (openWithImports file)
