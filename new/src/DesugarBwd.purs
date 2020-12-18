@@ -36,7 +36,7 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Expr α (E.Int n))   (Expr _ (Int n'))      = pure $ Expr α (Int (n ≜ n'))
    desugarBwd (E.Expr α (E.Float n)) (Expr _ (Float n'))    = pure $ Expr α (Float (n ≜ n'))
    desugarBwd (E.Expr α (E.Str s))   (Expr _ (Str s'))      = pure $ Expr α (Str (s ≜ s'))
-   -- | This covers Cons
+   -- | Constr (this covers Cons)
    desugarBwd (E.Expr α (E.Constr ctr args)) (Expr _ (Constr ctr' args')) =
       Expr α <$> (Constr ctr <$> traverse (uncurry desugarBwd) (zip args args'))
    -- | Lambda
@@ -46,6 +46,16 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
       Expr α <$> (App <$> desugarBwd e1 s1 <*> desugarBwd e2 s2)
    desugarBwd (E.Expr α (E.BinaryApp e1 x e2)) (Expr _ (BinaryApp s1 x' s2)) =
       Expr α <$> (BinaryApp <$> desugarBwd e1 s1 <@> x ≜ x' <*> desugarBwd e2 s2)
+   -- | Match-as
+   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda σ)) e))
+              (Expr _ (MatchAs s bs)) =
+      Expr (α1 ∧ α2) <$> (MatchAs <$> desugarBwd e s <*> desugarBwd σ bs)
+   -- | If-then-else
+   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1))
+              (Expr _ (IfElse s1 s2 s3)) = do
+      e2 <- liftM1 asExpr $ lookupE cTrue m
+      e3 <- liftM1 asExpr $ lookupE cFalse m
+      Expr (α1 ∧ α2) <$> (IfElse <$> desugarBwd e1 s1 <*> desugarBwd e2 s2 <*> desugarBwd e3 s3)
    -- | Empty-list
    desugarBwd (E.Expr α (E.Constr (Ctr "Nil") Nil)) (Expr _ ListEmpty) =
       pure $ Expr α ListEmpty
@@ -53,20 +63,6 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Expr α (E.Constr (Ctr ":") (e : e' : Nil)))
               (Expr _ (ListNonEmpty s l)) =
       Expr α <$> (ListNonEmpty <$> desugarBwd e s <*> desugarBwd e' l)
-   -- | Recursive-function
-   desugarBwd (E.Expr α (E.LetRec fπs e))
-              (Expr _ (LetRec fπs' s)) =
-      Expr α <$> (LetRec <$> desugarBwd fπs fπs' <*> desugarBwd e s)
-   -- | If-then-else
-   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1))
-              (Expr _ (IfElse s1 s2 s3)) = do
-      e2 <- liftM1 asExpr $ lookupE cTrue m
-      e3 <- liftM1 asExpr $ lookupE cFalse m
-      Expr (α1 ∧ α2) <$> (IfElse <$> desugarBwd e1 s1 <*> desugarBwd e2 s2 <*> desugarBwd e3 s3)
-   -- | Match-as
-   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda σ)) e))
-              (Expr _ (MatchAs s bs)) =
-      Expr (α1 ∧ α2) <$> (MatchAs <$> desugarBwd e s <*> desugarBwd σ bs)
    -- | List-range
    desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.App (E.Expr _ (E.Var "range")) e1)) e2))
               (Expr α (ListRange s1 s2)) =
@@ -122,6 +118,12 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
             pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
                         (ListComp s2' (NonEmptyList ((Generator (α1 ∧ α2 ∧ α3) p s1) :| q' : qs')))
          _ -> error "desugarBwd for List-comp-gen failed"
+   -- | Let
+   -- desugarBwd (E.Expr  )
+   -- | LetRec (recursive function)
+   desugarBwd (E.Expr α (E.LetRec fπs e))
+              (Expr _ (LetRec fπs' s)) =
+      Expr α <$> (LetRec <$> desugarBwd fπs fπs' <*> desugarBwd e s)
 
    desugarBwd _ _ = error "desugarBwd match not found"
 
