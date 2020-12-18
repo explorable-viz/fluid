@@ -28,7 +28,7 @@ class DesugarBwd a b where
 
 instance desugarBwdRecDefs :: DesugarBwd (Bindings Elim Boolean)
                                          (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr Boolean)))) where
-   desugarBwd _ _ = error ""
+   desugarBwd _ _ = error "Desugar bwd for RecDefs not implemented"
 
 instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Expr α (E.Var x))   (Expr _ (Var x'))      = pure $ Expr α (Var (x ≜ x'))
@@ -84,7 +84,7 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
                            (NonEmptyList (q' :| (Guard α1 (Expr _ (Constr (Ctr "True") Nil))) : Nil))
                   )
             -> pure $ Expr (α1 ∧ α2) (ListComp s_body' (NonEmptyList (q' :| Nil)))
-         _  -> error ""
+         _  -> error "desugarBwd for List-comp-qual failed"
    -- | List-comp-guard
    desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1))
               (Expr _ (ListComp s1 (NonEmptyList ((Guard _ s2) :| q : qs)))) = do
@@ -97,7 +97,7 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
          Expr α3 (ListComp s1' (NonEmptyList (q' :| qs'))), Expr α4 (Constr (Ctr "Nil") Nil)
                -> pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
                               (ListComp s1' (NonEmptyList ((Guard (α1 ∧ α2 ∧ α3 ∧ α4) s2') :| q' : qs')))
-         _, _  -> error ""
+         _, _  -> error "desugarBwd for List-comp-guard failed"
    -- | List-comp-decl
    desugarBwd (E.Expr α1 (E.App (E.Expr α2 (E.Lambda σ)) e))
               (Expr _ (ListComp s2 (NonEmptyList ((Declaration _ (p × s1)) :| q : qs)))) = do
@@ -107,7 +107,7 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
          Expr α3 (ListComp s2' (NonEmptyList (q' :| qs')))
             -> pure $ Expr (α1 ∧ α2 ∧ α3)
                            (ListComp s2' (NonEmptyList ((Declaration (α1 ∧ α2 ∧ α3) (p × s1')) :| q' : qs')))
-         _  -> error ""
+         _  -> error "desugarBwd for List-comp-decl failed"
    -- | List-comp-gen
    desugarBwd (E.Expr α3 (E.App (E.Expr α2 (E.App (E.Expr _  (E.Var "concatMap"))
                                                   (E.Expr α1 (E.Lambda σ))))
@@ -121,9 +121,9 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
          Expr α4 (ListComp s2' (NonEmptyList (q' :| qs'))) ->
             pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
                         (ListComp s2' (NonEmptyList ((Generator (α1 ∧ α2 ∧ α3) p s1) :| q' : qs')))
-         _ -> error ""
+         _ -> error "desugarBwd for List-comp-gen failed"
 
-   desugarBwd _ _ = error ""
+   desugarBwd _ _ = error "desugarBwd match not found"
 
 asElim :: Cont 𝔹 -> Elim 𝔹
 asElim (Arg σ) =  σ
@@ -170,7 +170,7 @@ instance desugarPatternBwdPattern :: DesugarPatternBwd Pattern where
    desugarPatternBwd σ (PListNonEmpty π o)  = do
       σ' <- liftM1 asElim $ desugarPatternBwd σ π
       desugarPatternBwd σ' o
-   desugarPatternBwd _ _ = error ""
+   desugarPatternBwd _ _ = error "desugarPatternBwdPattern match not found"
 
 {- σ, o ↘ κ -}
 instance desugarPatternBwdListPatternRest :: DesugarPatternBwd ListPatternRest where
@@ -179,7 +179,7 @@ instance desugarPatternBwdListPatternRest :: DesugarPatternBwd ListPatternRest w
       σ  <- liftM1 asElim $ lookupE cCons m
       σ' <- liftM1 asElim $ desugarPatternBwd σ π
       desugarPatternBwd σ' o
-   desugarPatternBwd _ _ = error ""
+   desugarPatternBwd _ _ = error "desugarPatternBwdListPatternRest match not found"
 
 {- σ, c ↘ c -}
 instance desugarBwdBranch :: DesugarBwd (Elim Boolean) (NonEmptyList Pattern × Expr Boolean) where
@@ -218,8 +218,8 @@ untotalisePatt (Arg σ) p =
       ElimConstr m, PListNonEmpty p' o ->
          let κ = mustLookup cCons m
          in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p') o])
-      _, _ -> error ""
-untotalisePatt _ _ = error ""
+      _, _ -> error "untotalisePatt (σ, p) match not found"
+untotalisePatt _ _ = error "untotalisePatt (κ, p) match not found"
 
 untotaliseListPatt :: Cont 𝔹 -> List Pattern -> Cont 𝔹
 untotaliseListPatt κ Nil = κ
@@ -234,4 +234,4 @@ untotaliseListPattRest (Arg (ElimConstr m)) PEnd =
 untotaliseListPattRest (Arg (ElimConstr m)) (PNext p o) =
    let κ = mustLookup cCons m
    in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p) o])
-untotaliseListPattRest _ _ = error ""
+untotaliseListPattRest _ _ = error "untotaliseListPattRest (κ, o) not found"
