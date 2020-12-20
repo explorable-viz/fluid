@@ -138,7 +138,10 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
                         (ListComp s2' (NonEmptyList ((Generator (α1 ∧ α2 ∧ α3) p s1) :| q' : qs')))
          _ -> error "desugarBwd for List-comp-gen failed"
    -- | Let
-   -- desugarBwd (E.Expr  )
+   desugarBwd (E.Expr α (E.Let d e))
+              (Expr _ (Let ds s)) = do
+      α' × (ds' × s') <- desugarBwd (E.Expr α (E.Let d e)) (true × (ds × s))
+      pure $ Expr α' (Let ds' s')
    -- | LetRec (recursive function)
    desugarBwd (E.Expr α (E.LetRec fπs e))
               (Expr _ (LetRec fπs' s)) =
