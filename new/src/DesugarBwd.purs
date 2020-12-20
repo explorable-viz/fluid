@@ -10,7 +10,7 @@ import Data.Tuple (uncurry)
 import Bindings (Bindings)
 import DataType (Ctr(..), cPair, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..))
-import Expr (Expr(..), RawExpr(..)) as E
+import Expr (Expr(..), RawExpr(..), VarDef(..)) as E
 import SExpr (
    Expr(..), ListPatternRest(..), ListRest(..), Pattern(..), Qualifier(..), RawExpr(..)
 )
@@ -25,6 +25,25 @@ snil α = Expr α $ Constr cNil Nil
 
 class DesugarBwd a b where
    desugarBwd :: a -> b -> MayFail b
+
+-- data VarDef a = VarDef (Elim a) (Expr a)
+instance desugarBwdVarDef  :: DesugarBwd (E.VarDef Boolean) (Pattern × (Expr Boolean)) where
+   desugarBwd (E.VarDef σ e) (π × s) = do s' <- desugarBwd e s
+                                          pure (π × s')
+
+instance desugarBwdVarDefs :: DesugarBwd (E.Expr Boolean)
+                                         (Boolean × (NonEmptyList (Pattern × Expr Boolean) × Expr Boolean)) where
+   desugarBwd (E.Expr α1 (E.Let (E.VarDef σ e1@(E.Expr α2 _)) e2@(E.Expr α3 _)))
+              (_ × (NonEmptyList ((π × s1) :| Nil) × s2)) = do
+              s1' <- desugarBwd e1 s1
+              s2' <- desugarBwd e2 s2
+              pure $ (α1 ∧ α2 ∧ α3) × (NonEmptyList ((π × s1') :| Nil) × s2')
+   desugarBwd (E.Expr α1 (E.Let (E.VarDef σ e1@(E.Expr α2 _)) e2@(E.Expr α3 _)))
+              (_ × (NonEmptyList ((π × s1) :| d : ds) × s2)) = do
+              s1' <- desugarBwd e1 s1
+              α4 × (NonEmptyList (d' :| ds') × s2') <- desugarBwd e2 ((α1 ∧ α2 ∧ α3) × (NonEmptyList (d :| ds) × s2))
+              pure $ (α1 ∧ α2 ∧ α3 ∧ α4) × (NonEmptyList ((π × s1') :| d' : ds') × s2')
+   desugarBwd _ _ = error "Desugar var defs match not found"
 
 instance desugarBwdRecDefs :: DesugarBwd (Bindings Elim Boolean)
                                          (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr Boolean)))) where
