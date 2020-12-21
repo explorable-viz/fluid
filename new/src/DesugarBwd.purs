@@ -11,6 +11,7 @@ import Bindings (Bindings)
 import DataType (Ctr(..), cPair, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RawExpr(..), VarDef(..)) as E
+import Pretty (render, pretty)
 import SExpr (
    Expr(..), ListPatternRest(..), ListRest(..), Pattern(..), Qualifier(..), RawExpr(..)
 )
@@ -147,7 +148,7 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
               (Expr _ (LetRec fπs' s)) =
       Expr α <$> (LetRec <$> desugarBwd fπs fπs' <*> desugarBwd e s)
 
-   desugarBwd _ _ = error "desugarBwd match not found"
+   desugarBwd e s = error $ "desugarBwd match not found: " <> render (pretty e) <> "\n" <> render (pretty s)
 
 asElim :: Cont 𝔹 -> Elim 𝔹
 asElim (Arg σ) =  σ
