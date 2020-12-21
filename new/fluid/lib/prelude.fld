@@ -130,6 +130,9 @@ let concat2 [] ys = ys;
 -- List (List a) -> List a
 let concat = foldl (uncurry concat2) [];
 
+-- (a -> List b) -> List a -> List b
+let concatMap f xs = concat (map f xs);
+
 -- List a -> a -> List a
 let intersperse [] sep = [];
     intersperse (x : []) sep = [x];
