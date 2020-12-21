@@ -115,7 +115,7 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Expr α1 (ListComp s_body (NonEmptyList (Guard _ (Expr α2 (Constr c Nil)) :| Nil)))) | c == cTrue = do
       e <- desugarFwd s_body
       pure $ econs (α1 ∧ α2) e (enil (α1 ∧ α2))
-   -- | List-comp-qual
+   -- | List-comp-qual-
    desugarFwd (Expr α (ListComp s_body (NonEmptyList (q :| Nil)))) =
       desugarFwd $ Expr α $ ListComp s_body $ NonEmptyList $ q :| (Guard α (Expr α $ Constr cTrue Nil)) : Nil
    -- | List-comp-guard
