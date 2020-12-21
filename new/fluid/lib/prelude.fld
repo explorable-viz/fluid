@@ -131,7 +131,7 @@ let concat2 [] ys = ys;
 let concat = foldl (uncurry concat2) [];
 
 -- (a -> List b) -> List a -> List b
-let concatMap f = foldr (compose concat2 f) []
+let concatMap f = foldr (compose concat2 f) [];
 
 -- List a -> a -> List a
 let intersperse [] sep = [];

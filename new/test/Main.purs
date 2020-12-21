@@ -11,7 +11,7 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bwd (eval_bwd)
 import DataType (dataTypeFor, typeName)
-import DesugarBwd (desugarBwd)
+-- import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
 import Eval (eval)
 import Fwd (eval_fwd)
@@ -51,7 +51,7 @@ test' name setup expected =
                when slicing do
                   let ρ' × e' × α'  = eval_bwd v t
                       v'            = eval_fwd ρ' e' true
-                      s'            = successful $ desugarBwd e' s
+                     --  s'            = successful $ desugarBwd e' s
                   unless (isGraphical v) $
                      (render $ pretty v') `shouldEqual` expected
 
