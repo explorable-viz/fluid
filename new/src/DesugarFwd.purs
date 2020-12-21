@@ -134,7 +134,7 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       σ <- desugarFwd $ p × Body e
       let λ = E.Expr (α1 ∧ α2) $ E.Lambda $ totalise σ (enil (α1 ∧ α2))
-      eapp (α1 ∧ α2) (evar (α1 ∧ α2) "concat") <$> (eapp (α1 ∧ α2) (eapp (α1 ∧ α2) (evar (α1 ∧ α2) "map") λ) <$> desugarFwd slist)
+      (eapp (α1 ∧ α2) (eapp (α1 ∧ α2) (evar (α1 ∧ α2) "concatMap") λ) <$> desugarFwd slist)
    -- | Let (calls desugarVarDefs)
    desugarFwd (Expr α (Let ds s))            = desugarFwd $ α × (ds × s)
    -- | LetRec (recursive function)
