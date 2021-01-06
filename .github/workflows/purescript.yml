@@ -3,10 +3,10 @@ name: purescript
 on:
   push:
     paths-ignore:
-    - 'old'
+    - 'old/**'
   pull_request:
     paths-ignore:
-    - 'old'
+    - 'old/**'
 
 jobs:
   build:
