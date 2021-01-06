@@ -9,6 +9,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: test
       run: |
-        sudo npm install karma -g
-        cd old && npm install
-        npm test
+        yarn run test
+#        sudo npm install karma -g
+#        cd old && npm install
+#        npm test
