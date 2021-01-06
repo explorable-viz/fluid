@@ -16,7 +16,7 @@ conv_zero image filter =
                            image_y  >= 0, image_y <= mz,
                            image_x  >= 0, image_x <= nz ])
               / spatial_extent)
-                        | (c, d) <- range (bounds image) ]
+     | (c, d) <- range (bounds image) ]
     where ((0, 0), (mz, nz)) = bounds image
           ((0, 0), (iz, jz)) = bounds filter
           half_width           = quot jz 2
@@ -33,17 +33,17 @@ conv_extend image filter =
                     |  (y, x) <- range (bounds filter),
                        let filter_y = iz - y,
                        let filter_x = jz - x,
-                       let image_y  = bound (0, mz) (c + y - half_height),
-                       let image_x  = bound (0, nz) (d + x - half_width)
-                    ]) / spatial_extent)
-                        | (c, d) <- range (bounds image) ]
+                       let image_y  = bound mz (c + y - half_height),
+                       let image_x  = bound nz (d + x - half_width) ])
+              / spatial_extent)
+     | (c, d) <- range (bounds image) ]
     where ((0, 0), (mz, nz)) = bounds image
           ((0, 0), (iz, jz)) = bounds filter
           half_width         = quot jz 2
           half_height        = quot iz 2
           spatial_extent     = fromIntegral ((iz + 1) * (jz + 1))
-          bound :: (Int, Int) -> Int -> Int
-          bound (0, upper) x
+          bound :: Int -> Int -> Int
+          bound upper x
             | x > upper = upper
             | x < 0 = 0
             | otherwise = x
@@ -59,9 +59,9 @@ conv_wrap image filter =
                        let filter_y = iz - y,
                        let filter_x = jz - x,
                        let image_y  = (c + y - half_height) `mod` img_h,
-                       let image_x  = (d + x - half_width) `mod` img_w
-                    ]) / spatial_extent)
-                        | (c, d) <- range (bounds image) ]
+                       let image_x  = (d + x - half_width) `mod` img_w ])
+               / spatial_extent)
+     | (c, d) <- range (bounds image) ]
     where ((ma, na), (mz, nz)) = bounds image
           ((ia, ja), (iz, jz)) = bounds filter
           (img_h, img_w)       = (mz - ma + 1, nz - na + 1)
