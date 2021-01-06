@@ -14,12 +14,12 @@
 | 4 Nov 2020 | List notation as syntactic sugar | [386](https://github.com/explorable-viz/fluid/issues/386) |
 | 30 Oct 2020 | Syntactic sugar | [390](https://github.com/explorable-viz/fluid/issues/390) |
 | 3 Aug 2020 | Core PureScript migration complete | [281](https://github.com/explorable-viz/fluid/issues/281) |
-| 25 Jul 2020 | (PureScript implementation) Backward slicing | [300](https://github.com/explorable-viz/fluid/issues/300) |
-| 2 Jul 2020 | (PureScript implementation) First-class constructors | [49](https://github.com/explorable-viz/fluid/issues/49) |
-| 18 Jun 2020 | (PureScript implementation) Piecewise function definitions | [356](https://github.com/explorable-viz/fluid/issues/356) |
-| 4 Jun 2020 | (PureScript implementation) Structured `let` syntax | [171](https://github.com/explorable-viz/fluid/issues/171) |
+| 25 Jul 2020 | (PureScript migration) Backward slicing | [300](https://github.com/explorable-viz/fluid/issues/300) |
+| 2 Jul 2020 | (PureScript migration) First-class constructors | [49](https://github.com/explorable-viz/fluid/issues/49) |
+| 18 Jun 2020 | (PureScript migration) Piecewise function definitions | [356](https://github.com/explorable-viz/fluid/issues/356) |
+| 4 Jun 2020 | (PureScript migration) Structured `let` syntax | [171](https://github.com/explorable-viz/fluid/issues/171) |
 | 15 May 2020 | Update [f.luid.org](http://f.luid.org) | [289](https://github.com/explorable-viz/fluid/issues/289) |
-| 13 May 2020 | (PureScript implementation) First-class binary operations | [139](https://github.com/explorable-viz/fluid/issues/139) |
+| 13 May 2020 | (PureScript migration) First-class binary operations | [139](https://github.com/explorable-viz/fluid/issues/139) |
 | 2 Apr 2020 | Fluid plugin running in Binder | [W279](https://github.com/rolyp/wrattler/wrattler/issues/279) |
 | 10 Mar 2020 | Start on PureScript migration | [279](https://github.com/rolyp/lambdacalc/issues/279) |
 | 22 Feb 2020 | Make repository public |
