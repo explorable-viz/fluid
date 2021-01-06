@@ -1,6 +1,0 @@
-/node_modules/
-/output/
-/src/Main.purs
-/.psc*
-/.spago
-.cache

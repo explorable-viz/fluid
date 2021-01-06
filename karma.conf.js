@@ -5,7 +5,7 @@ module.exports = function (config) {
       browsers: ["ChromeHeadless"],
       client: {
          mocha: {
-           timeout : 6000 // 6 seconds - upped from 2 seconds
+           timeout : 8000
          }
       },
       colors: true,
