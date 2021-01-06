@@ -1,4 +1,4 @@
-## Transparent, self-explaining data visualisation
+## Interactive data provenance for data visualisations
 
 ![purescript](https://github.com/explorable-viz/fluid/workflows/purescript/badge.svg)
 
