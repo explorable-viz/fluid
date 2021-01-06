@@ -10,7 +10,7 @@ jobs:
     - name: test
       run: |
         sudo npm install karma -g
-        cd old
+        cd old && yarn install
         yarn run test
 #        sudo npm install karma -g
 #        cd old && npm install
