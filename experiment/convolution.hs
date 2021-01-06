@@ -17,8 +17,8 @@ conv_zero image filter =
                            image_x  >= 0, image_x <= nz ])
               / spatial_extent)
      | (c, d) <- range (bounds image) ]
-    where ((0, 0), (mz, nz)) = bounds image
-          ((0, 0), (iz, jz)) = bounds filter
+    where (_, (mz, nz)) = bounds image
+          (_, (iz, jz)) = bounds filter
           half_width         = quot jz 2
           half_height        = quot iz 2
           spatial_extent     = fromIntegral ((iz + 1) * (jz + 1))
@@ -37,8 +37,8 @@ conv_extend image filter =
                        let image_x  = bound nz (d + x - half_width) ])
               / spatial_extent)
      | (c, d) <- range (bounds image) ]
-    where ((0, 0), (mz, nz)) = bounds image
-          ((0, 0), (iz, jz)) = bounds filter
+    where (_, (mz, nz)) = bounds image
+          (_, (iz, jz)) = bounds filter
           half_width         = quot jz 2
           half_height        = quot iz 2
           spatial_extent     = fromIntegral ((iz + 1) * (jz + 1))
@@ -62,8 +62,8 @@ conv_wrap image filter =
                        let image_x  = (d + x - half_width) `mod` img_w ])
                / spatial_extent)
      | (c, d) <- range (bounds image) ]
-    where ((0, 0), (mz, nz)) = bounds image
-          ((0, 0), (iz, jz)) = bounds filter
+    where (_, (mz, nz)) = bounds image
+          (_, (iz, jz)) = bounds filter
           (img_h, img_w)     = (mz + 1, nz + 1)
           half_width         = quot jz 2
           half_height        = quot iz 2
@@ -96,10 +96,10 @@ conv_mirror image filter =
 
 
 test_image :: Array (Int, Int) Double
-test_image = array ((0,0), (5, 5)) [ ((i, j), fromIntegral $ i * j) | i <- [0..5], j <-[0..5]]
+test_image = array ((0, 0), (5, 5)) [ ((i, j), fromIntegral $ i * j) | i <- [0..5], j <- [0..5] ]
 
 test_filter :: Array (Int, Int) Double
-test_filter = array ((0,0), (2,2)) [ ((i, j), 2) | i <- [0..2], j <- [0..2]]
+test_filter = array ((0, 0), (2, 2)) [ ((i, j), 2) | i <- [0..2], j <- [0..2]]
 
 expected_zero :: String
 expected_zero = "array ((0,0),(5,5)) [((0,0),0.2222222222222222),((0,1),0.6666666666666666),((0,2),1.3333333333333333),((0,3),2.0),((0,4),2.6666666666666665),((0,5),2.0),((1,0),0.6666666666666666),((1,1),2.0),((1,2),4.0),((1,3),6.0),((1,4),8.0),((1,5),6.0),((2,0),1.3333333333333333),((2,1),4.0),((2,2),8.0),((2,3),12.0),((2,4),16.0),((2,5),12.0),((3,0),2.0),((3,1),6.0),((3,2),12.0),((3,3),18.0),((3,4),24.0),((3,5),18.0),((4,0),2.6666666666666665),((4,1),8.0),((4,2),16.0),((4,3),24.0),((4,4),32.0),((4,5),24.0),((5,0),2.0),((5,1),6.0),((5,2),12.0),((5,3),18.0),((5,4),24.0),((5,5),18.0)]"
