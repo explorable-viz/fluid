@@ -19,9 +19,9 @@ conv_zero image filter =
      | (c, d) <- range (bounds image) ]
     where ((0, 0), (mz, nz)) = bounds image
           ((0, 0), (iz, jz)) = bounds filter
-          half_width           = quot jz 2
-          half_height          = quot iz 2
-          spatial_extent       = fromIntegral ((iz + 1) * (jz + 1))
+          half_width         = quot jz 2
+          half_height        = quot iz 2
+          spatial_extent     = fromIntegral ((iz + 1) * (jz + 1))
 
 -- Extend with edge values
 
@@ -62,12 +62,12 @@ conv_wrap image filter =
                        let image_x  = (d + x - half_width) `mod` img_w ])
                / spatial_extent)
      | (c, d) <- range (bounds image) ]
-    where ((ma, na), (mz, nz)) = bounds image
-          ((ia, ja), (iz, jz)) = bounds filter
-          (img_h, img_w)       = (mz - ma + 1, nz - na + 1)
-          half_width           = quot (jz - ja) 2
-          half_height          = quot (iz - ia) 2
-          spatial_extent       = fromIntegral ((iz - ia + 1) * (jz - ja + 1))
+    where ((0, 0), (mz, nz)) = bounds image
+          ((0, 0), (iz, jz)) = bounds filter
+          (img_h, img_w)     = (mz + 1, nz + 1)
+          half_width         = quot jz 2
+          half_height        = quot iz 2
+          spatial_extent     = fromIntegral ((iz + 1) * (jz + 1))
 
 -- Mirror edge values
 
@@ -79,11 +79,11 @@ conv_mirror image filter =
                     |  (y, x) <- range (bounds filter),
                        let filter_y = iz - y,
                        let filter_x = jz - x,
-                       let image_y  = mirror (0, mz) (c + y - half_height),
-                       let image_x  = mirror (0, nz) (d + x - half_width)
-                    ]) / spatial_extent)
-                        | (c, d) <- range (bounds image) ]
-    where ((0, 0), (mz, nz)) = bounds image
+                       let image_y  = mirror (ma, mz) (c + y - half_height),
+                       let image_x  = mirror (na, nz) (d + x - half_width) ])
+               / spatial_extent)
+     | (c, d) <- range (bounds image) ]
+    where ((ma, na), (mz, nz)) = bounds image
           ((ia, ja), (iz, jz)) = bounds filter
           half_width           = quot (jz - ja) 2
           half_height          = quot (iz - ia) 2
