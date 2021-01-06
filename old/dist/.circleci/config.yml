@@ -1,5 +1,0 @@
-# no-op config to prevent Circle trying to run a non-existent job on this branch
-general:
-  branches:
-    ignore:
-      - gh-pages
