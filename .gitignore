@@ -1,5 +1,9 @@
-node_modules
-dist
+.cache/
+.psc*/
+.spago
+dist/
+node_modules/
+output/
 *.log
 .DS_Store
 .psc-ide-port
