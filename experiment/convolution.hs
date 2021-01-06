@@ -91,7 +91,7 @@ conv_mirror image filter =
           mirror :: Int -> Int -> Int
           mirror upper x
             | x > upper = upper - (x - upper) + 1
-            | x < 0 = 0 + (0 - x) -1
+            | x < 0 = - x - 1
             | otherwise = x
 
 
