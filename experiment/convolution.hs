@@ -33,19 +33,19 @@ conv_extend image filter =
                     |  (y, x) <- range (bounds filter),
                        let filter_y = iz - y,
                        let filter_x = jz - x,
-                       let image_y  = bound (ma, mz) (c + y - half_height),
-                       let image_x  = bound (na, nz) (d + x - half_width)
+                       let image_y  = bound (0, mz) (c + y - half_height),
+                       let image_x  = bound (0, nz) (d + x - half_width)
                     ]) / spatial_extent)
                         | (c, d) <- range (bounds image) ]
-    where ((ma, na), (mz, nz)) = bounds image
-          ((ia, ja), (iz, jz)) = bounds filter
-          half_width           = quot (jz - ja) 2
-          half_height          = quot (iz - ia) 2
-          spatial_extent       = fromIntegral ((iz - ia + 1) * (jz - ja + 1))
+    where ((0, 0), (mz, nz)) = bounds image
+          ((0, 0), (iz, jz)) = bounds filter
+          half_width         = quot jz 2
+          half_height        = quot iz 2
+          spatial_extent     = fromIntegral ((iz + 1) * (jz + 1))
           bound :: (Int, Int) -> Int -> Int
-          bound (lower, upper) x
+          bound (0, upper) x
             | x > upper = upper
-            | x < lower = lower
+            | x < 0 = 0
             | otherwise = x
 
 -- Wrap edges around image
