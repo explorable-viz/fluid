@@ -8,7 +8,13 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 9 November 2020 | List comprehensions | [277](https://github.com/explorable-viz/fluid/issues/277) |
+| | `[e..e]` (list ranges) | [278](https://github.com/explorable-viz/fluid/issues/278) |
+| | `if`..`then`..`else` as syntactic sugar | [115](https://github.com/explorable-viz/fluid/issues/115) |
+| 4 November 2020 | List notation as syntactic sugar | [386](https://github.com/explorable-viz/fluid/issues/386) |
+| 30 October 2020 | Syntactic sugar | [390](https://github.com/explorable-viz/fluid/issues/390) |
 | 3 August 2020 | Core PureScript migration complete | [281](https://github.com/explorable-viz/fluid/issues/281) |
+| 25 July 2020 | (PureScript implementation) Backward slicing | [300](https://github.com/explorable-viz/fluid/issues/300) |
 | 2 July 2020 | (PureScript implementation) First-class constructors | [49](https://github.com/explorable-viz/fluid/issues/49) |
 | 18 June 2020 | (PureScript implementation) Piecewise function definitions | [356](https://github.com/explorable-viz/fluid/issues/356) |
 | 4 June 2020 | (PureScript implementation) Structured `let` syntax | [171](https://github.com/explorable-viz/fluid/issues/171) |
