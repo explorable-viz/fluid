@@ -13,14 +13,15 @@ conv_zero image filter =
                        let filter_x = jz - x,
                        let image_y  = c + y - half_height,
                        let image_x  = d + x - half_width,
-                           image_y  >= ma, image_y <= mz,
-                           image_x  >= na, image_x <= nz ]) / spatial_extent)
+                           image_y  >= 0, image_y <= mz,
+                           image_x  >= 0, image_x <= nz ])
+              / spatial_extent)
                         | (c, d) <- range (bounds image) ]
-    where ((ma, na), (mz, nz)) = bounds image
-          ((ia, ja), (iz, jz)) = bounds filter
-          half_width           = quot (jz - ja) 2
-          half_height          = quot (iz - ia) 2
-          spatial_extent       = fromIntegral ((iz - ia + 1) * (jz - ja + 1))
+    where ((0, 0), (mz, nz)) = bounds image
+          ((0, 0), (iz, jz)) = bounds filter
+          half_width           = quot jz 2
+          half_height          = quot iz 2
+          spatial_extent       = fromIntegral ((iz + 1) * (jz + 1))
 
 -- Extend with edge values
 
