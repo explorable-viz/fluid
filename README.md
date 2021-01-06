@@ -1,6 +1,7 @@
 ## Interactive data provenance for data visualisations
 
 ![purescript](https://github.com/explorable-viz/fluid/workflows/purescript/badge.svg)
+![typescript](https://github.com/explorable-viz/fluid/workflows/typescript/badge.svg)
 
 ### Recent activity
 
@@ -10,7 +11,7 @@
 | --- | --- | --- |
 | 9 Nov 2020 | List comprehensions | [277](https://github.com/explorable-viz/fluid/issues/277) |
 | | `[e..e]` (list ranges) | [278](https://github.com/explorable-viz/fluid/issues/278) |
-| | `if`..`then`..`else` as syntactic sugar | [115](https://github.com/explorable-viz/fluid/issues/115) |
+| | `if`..`then`..`else` | [115](https://github.com/explorable-viz/fluid/issues/115) |
 | 4 Nov 2020 | List notation as syntactic sugar | [386](https://github.com/explorable-viz/fluid/issues/386) |
 | 30 Oct 2020 | Syntactic sugar | [390](https://github.com/explorable-viz/fluid/issues/390) |
 | 3 Aug 2020 | Core PureScript migration complete | [281](https://github.com/explorable-viz/fluid/issues/281) |
