@@ -84,33 +84,38 @@ instance desugarFwdRecDefs :: DesugarFwd (NonEmptyList (String × (NonEmptyList 
 
 {- s ↗ e -}
 instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
-   desugarFwd (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
-   desugarFwd (Expr α (Float n))             = pure $ E.Expr α (E.Float n)
    desugarFwd (Expr α (Var x))               = pure $ E.Expr α (E.Var x)
    desugarFwd (Expr α (Op op))               = pure $ E.Expr α (E.Op op)
+   desugarFwd (Expr α (Int n))               = pure $ E.Expr α (E.Int n)
+   desugarFwd (Expr α (Float n))             = pure $ E.Expr α (E.Float n)
    desugarFwd (Expr α (Str s))               = pure $ E.Expr α (E.Str s)
+   -- | Constr (this covers Cons)
    desugarFwd (Expr α (Constr ctr args))     = E.Expr α <$> (E.Constr ctr <$> traverse desugarFwd args)
+   -- | Lambda
    desugarFwd (Expr α (Lambda bs))           = E.Expr α <$> (E.Lambda <$> desugarFwd bs)
+   -- | Application
    desugarFwd (Expr α (App s1 s2))           = E.Expr α <$> (E.App <$> desugarFwd s1 <*> desugarFwd s2)
    desugarFwd (Expr α (BinaryApp s1 op s2))  = E.Expr α <$> (E.BinaryApp <$> desugarFwd s1 <@> op <*> desugarFwd s2)
+   -- | Match-as
    desugarFwd (Expr α (MatchAs s bs))        = E.Expr α <$> (E.App <$> (E.Expr α <$> E.Lambda <$> desugarFwd bs) <*> desugarFwd s)
-   -- Calls desugarVarDefs
-   desugarFwd (Expr α (Let ds s))            = desugarFwd $ α × (ds × s)
-   desugarFwd (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec <$> desugarFwd fπs <*> desugarFwd s)
+   -- | If-then-else
    desugarFwd (Expr α (IfElse s1 s2 s3)) = do
       e2 <- desugarFwd s2
       e3 <- desugarFwd s3
       let σ = ElimConstr (fromFoldable [cTrue × Body e2, cFalse × Body e3])
       E.Expr α <$> (E.App (E.Expr α $ E.Lambda σ) <$> desugarFwd s1)
+   -- | Empty-List
    desugarFwd (Expr α (ListEmpty))           = pure $ enil α
+   -- | Non-empty-list
    desugarFwd (Expr α (ListNonEmpty s l))    = lift2 (econs α) (desugarFwd s) (desugarFwd l)
+   -- | List-range
    desugarFwd (Expr α (ListRange s1 s2)) =
       eapp α <$> ((eapp α (evar α "range")) <$> desugarFwd s1) <*> desugarFwd s2
    -- | List-comp-done
    desugarFwd (Expr α1 (ListComp s_body (NonEmptyList (Guard _ (Expr α2 (Constr c Nil)) :| Nil)))) | c == cTrue = do
       e <- desugarFwd s_body
       pure $ econs (α1 ∧ α2) e (enil (α1 ∧ α2))
-   -- | List-comp-qual
+   -- | List-comp-qual-
    desugarFwd (Expr α (ListComp s_body (NonEmptyList (q :| Nil)))) =
       desugarFwd $ Expr α $ ListComp s_body $ NonEmptyList $ q :| (Guard α (Expr α $ Constr cTrue Nil)) : Nil
    -- | List-comp-guard
@@ -129,7 +134,11 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
       e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
       σ <- desugarFwd $ p × Body e
       let λ = E.Expr (α1 ∧ α2) $ E.Lambda $ totalise σ (enil (α1 ∧ α2))
-      eapp (α1 ∧ α2) (evar (α1 ∧ α2) "concat") <$> (eapp (α1 ∧ α2) (eapp (α1 ∧ α2) (evar (α1 ∧ α2) "map") λ) <$> desugarFwd slist)
+      (eapp (α1 ∧ α2) (eapp (α1 ∧ α2) (evar (α1 ∧ α2) "concatMap") λ) <$> desugarFwd slist)
+   -- | Let (calls desugarVarDefs)
+   desugarFwd (Expr α (Let ds s))            = desugarFwd $ α × (ds × s)
+   -- | LetRec (recursive function)
+   desugarFwd (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec <$> desugarFwd fπs <*> desugarFwd s)
 
 {- l ↗ e -}
 instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
