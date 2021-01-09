@@ -43,7 +43,10 @@ data ListPatternRest =
 type Branch a = NonEmptyList Pattern × Expr a
 type Clause a = Var × Branch a
 type RecDefs a = NonEmptyList (Clause a)
-type VarDef a = Pattern × Expr a
+
+-- The pattern/expr relationship is different to the one in branch (the expr is the "argument", not the "body").
+-- Using a data type makes for easier overloading.
+data VarDef a = VarDef Pattern (Expr a)
 type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a =

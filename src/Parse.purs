@@ -28,7 +28,7 @@ import Lattice (𝔹)
 import Primitive (opDefs)
 import SExpr (
    Branch, Clause, Expr(..), ListRest(..), ListPatternRest(..), Module(..), Pattern(..), Qualifier(..),
-   RawExpr(..), RecDefs, VarDef, VarDefs, expr
+   RawExpr(..), RecDefs, VarDef(..), VarDefs, expr
 )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
@@ -182,7 +182,7 @@ varDefs :: SParser (Expr 𝔹) -> SParser (VarDefs 𝔹)
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    where
    clause :: SParser (VarDef 𝔹)
-   clause = (pattern <* equals) `lift2 (×)` expr'
+   clause = VarDef <$> (pattern <* equals) <*> expr'
 
 recDefs :: SParser (Expr 𝔹) -> SParser (RecDefs 𝔹)
 recDefs expr' = do
@@ -261,7 +261,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             qualifier :: SParser (Qualifier 𝔹)
             qualifier =
                pure (Generator true) <*> pattern <* lArrow <*> expr' <|>
-               Declaration true <$> (keyword strLet *> pattern <* equals) `lift2 (×)` expr' <|>
+               Declaration true <$> (VarDef <$> (keyword strLet *> pattern <* equals) <*> expr') <|>
                Guard true <$> expr'
 
          listRange :: SParser (Expr 𝔹)

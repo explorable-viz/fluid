@@ -10,9 +10,9 @@ import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
 import Bindings (Binding, Bindings(..), (:+:), (↦))
 import DataType (Ctr, cCons, cNil, cPair)
-import Expr (Cont(..), Elim(..), VarDef(..), varAnon)
-import Expr (RawExpr(..), Expr(..), expr) as E
-import SExpr (RawExpr(..), Expr(..), Pattern(..), ListPatternRest(..), ListRest(..), Qualifier(..), expr)
+import Expr (Cont(..), Elim(..), varAnon)
+import Expr (Expr(..), RawExpr(..), VarDef(..), expr) as E
+import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Pattern(..), Qualifier(..), RawExpr(..), VarDef(..), expr)
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..), RawExpl)
 import Lattice (class BoundedJoinSemilattice)
@@ -149,7 +149,7 @@ instance prettyRawExpr :: BoundedJoinSemilattice a => Pretty (E.RawExpr a) where
       | c == cNil || c == cCons     = pretty $ toList $ E.expr r
       | otherwise                   = prettyConstr c es
    pretty (E.Op op)                 = parens $ text op
-   pretty (E.Let (VarDef σ e) e')   =
+   pretty (E.Let (E.VarDef σ e) e')   =
       atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
    pretty (E.LetRec δ e)            =
       atop (text "letrec " :<>: pretty δ) (text "in " :<>: pretty e)
@@ -246,13 +246,16 @@ instance prettyClause :: BoundedJoinSemilattice a => Pretty (String × (NonEmpty
 instance prettySBranch :: BoundedJoinSemilattice a => Pretty (NonEmptyList Pattern × Expr a) where
    pretty (πs × e) = pretty πs :<>: text " -> " :<>: pretty e
 
-instance prettyVarDef :: BoundedJoinSemilattice a => Pretty (Pattern × Expr a) where
-   pretty (π × e) = pretty π :<>: text " = " :<>: pretty e
+instance prettySVarDef :: BoundedJoinSemilattice a => Pretty (VarDef a) where
+   pretty (VarDef π e) = pretty π :<>: text " = " :<>: pretty e
+
+instance prettyPatternExpr :: BoundedJoinSemilattice a => Pretty (Pattern × Expr a) where
+   pretty (π × e) = pretty π :<>: text " -> " :<>: pretty e
 
 instance prettyQualifier :: BoundedJoinSemilattice a => Pretty (Qualifier a) where
    pretty (Guard _ e)                  = pretty e
    pretty (Generator _ π e)            = pretty π :<>: text " <- " :<>: pretty e
-   pretty (Declaration _ (π × e))      = text "let " :<>: pretty π :<>: text " = " :<>: pretty e
+   pretty (Declaration _ (VarDef π e)) = text "let " :<>: pretty π :<>: text " = " :<>: pretty e
 
 
 instance prettyPattern :: Pretty Pattern where

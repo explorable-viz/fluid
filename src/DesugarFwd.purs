@@ -18,7 +18,8 @@ import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, c
 import Expr (Cont(..), Elim(..), Var)
 import Expr (Expr(..), Module(..), RawExpr(..), VarDef(..), expr) as E
 import SExpr (
-   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef, RecDefs, Qualifier(..), RawExpr(..)
+   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..),
+   RecDefs, Qualifier(..), RawExpr(..)
 )
 import Lattice (𝔹, (∧))
 import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
@@ -43,8 +44,7 @@ class DesugarFwd a b | a -> b where
 -- | type VarDefs a = NonEmptyList (VarDef a)
 -- | type RecDefs a = NonEmptyList (Clause a)
 -- | type Clause a = Var × Branch a
--- | type VarDef a = Pattern × Expr a
--- | traverse :: (a -> m b) -> t a -> m (t b)
+-- | data VarDef a = VarDef Pattern (Expr a)
 
 -- Surface language supports "blocks" of variable declarations; core does not.
 -- No need to pass "α = true" because desugarFwd is called on VarDef, not VarDefs?
@@ -58,17 +58,17 @@ instance desugarFwdModule :: DesugarFwd (Module Boolean) (E.Module Boolean) wher
 
 {- p, e ↗ σ      specialisation of    p, κ ↗ σ -}
 -- data E.VarDef a = E.VarDef (Elim a) (E.Expr a) -- where elim has codomain unit
-instance desugarFwdVarDef :: DesugarFwd (Pattern × (Expr Boolean)) (E.VarDef Boolean) where
-   desugarFwd (π × s) = E.VarDef <$> desugarFwd (π × (None :: Cont 𝔹)) <*> desugarFwd s
+instance desugarFwdVarDef :: DesugarFwd (VarDef Boolean) (E.VarDef Boolean) where
+   desugarFwd (VarDef π s) = E.VarDef <$> desugarFwd (π × (None :: Cont 𝔹)) <*> desugarFwd s
 
 {-        →                  -}
 {- (α, (p , s), s_body) ↗ e  -}
 -- | The first boolean represents the α of the outer expression which contains the var defs
-instance desugarFwdVarDefs :: DesugarFwd (Boolean × (NonEmptyList (Pattern × Expr Boolean) × Expr Boolean))
+instance desugarFwdVarDefs :: DesugarFwd (Boolean × (NonEmptyList (VarDef Boolean) × Expr Boolean))
                                          (E.Expr Boolean) where
-   desugarFwd  (α1 × (NonEmptyList (d@(_ × Expr α2 t) :| Nil) × s))     =
+   desugarFwd  (α1 × (NonEmptyList (d@(VarDef _ (Expr α2 t)) :| Nil) × s))     =
       E.Expr (α1 ∧ α2) <$> (E.Let <$> desugarFwd d <*> desugarFwd s)
-   desugarFwd  (α1 × (NonEmptyList (d@(_ × Expr α2 t) :| d' : ds) × s)) =
+   desugarFwd  (α1 × (NonEmptyList (d@(VarDef _ (Expr α2 t)) :| d' : ds) × s)) =
       E.Expr (α1 ∧ α2) <$> (E.Let <$> desugarFwd d <*> desugarFwd ((α1 ∧ α2) × (NonEmptyList (d' :| ds) × s)))
 
 {-       →                      →                 -}
@@ -97,7 +97,8 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Expr α (App s1 s2))           = E.Expr α <$> (E.App <$> desugarFwd s1 <*> desugarFwd s2)
    desugarFwd (Expr α (BinaryApp s1 op s2))  = E.Expr α <$> (E.BinaryApp <$> desugarFwd s1 <@> op <*> desugarFwd s2)
    -- | Match-as
-   desugarFwd (Expr α (MatchAs s bs))        = E.Expr α <$> (E.App <$> (E.Expr α <$> E.Lambda <$> desugarFwd bs) <*> desugarFwd s)
+   desugarFwd (Expr α (MatchAs s bs))        =
+      E.Expr α <$> (E.App <$> (E.Expr α <$> E.Lambda <$> (desugarFwd bs)) <*> desugarFwd s)
    -- | If-then-else
    desugarFwd (Expr α (IfElse s1 s2 s3)) = do
       e2 <- desugarFwd s2
@@ -124,9 +125,9 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
       let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body (enil (α1 ∧ α2))])
       E.Expr (α1 ∧ α2) <$> (E.App (E.Expr (α1 ∧ α2) $ E.Lambda σ) <$> desugarFwd s)
    -- | List-comp-decl
-   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList (Declaration α1 (p × s) :| q : qs)))) = do
+   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList (Declaration α1 (VarDef π s) :| q : qs)))) = do
       e <- desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))
-      σ <- desugarFwd $ p × (Body e :: Cont 𝔹)
+      σ <- desugarFwd $ π × (Body e :: Cont 𝔹)
       E.Expr (α1 ∧ α2) <$> (E.App <$> (pure $ E.Expr (α1 ∧ α2) (E.Lambda σ))
                                   <*> desugarFwd s)
    -- | List-comp-gen
@@ -182,11 +183,21 @@ instance desugarFwdBranch :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (
    desugarFwd (πs × s) = do
       κ <- Body <$> desugarFwd s
       desugarFwd $ πs × κ
---
+
+instance desugarFwdBranchUncurried :: DesugarFwd (Pattern × Expr Boolean) (Elim Boolean) where
+   desugarFwd (π × s) = do
+      κ <- Body <$> desugarFwd s
+      desugarFwd $ π × κ
+
+-- To consolidate these without overlapping instances, probably need RecDefs to be a data type.
 {- →     -}
 {- c ↗ σ -}
-instance desugarFwdBranches :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean))
-                                          (Elim Boolean) where
+instance desugarFwdBranches :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) (Elim Boolean) where
+   desugarFwd bs = do
+      NonEmptyList (σ :| σs) <- traverse desugarFwd bs
+      foldM maybeJoin σ σs
+
+instance desugarFwdBranchesUncurried :: DesugarFwd (NonEmptyList (Pattern × Expr Boolean)) (Elim Boolean) where
    desugarFwd bs = do
       NonEmptyList (σ :| σs) <- traverse desugarFwd bs
       foldM maybeJoin σ σs
@@ -205,7 +216,7 @@ totalise (ElimConstr m) e =
        bs''             = bs <#> \(c × κ) -> case mustLookup c m of
                            Arg σ   -> c × Arg (totalise σ e)
                            Body e' -> c × Body e'
-                           None    -> c × Body e
+                           None    -> c × Body e -- should the None cases should be undefined instead?
      in   ElimConstr $ fromFoldable $ bs'' <> bs'
 totalise (ElimVar e κ) e' = case κ of
    Arg σ  -> ElimVar e $ Arg $ totalise σ e'
