@@ -10,7 +10,7 @@ import Lattice (
    class BoundedJoinSemilattice, class BoundedSlices, class JoinSemilattice, class Slices,
    𝔹, (∨), bot, botOf, definedJoin, maybeJoin
 )
-import Util (type(×), type (+), (≟), error)
+import Util ({-type(×), -}type (+), (≟), error)
 
 type Var = String
 
