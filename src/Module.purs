@@ -53,5 +53,5 @@ parseWithImports src = do
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do
    ρ × s <- loadFile "fluid/dataset" file >>= parseWithImports
-   let _ × v = successful $ eval ρ $ successful $ desugar s
+   let _ × v = successful $ eval ρ $ successful $ desugarFwd s
    pure $ Empty :+: x ↦ v

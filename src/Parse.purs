@@ -225,7 +225,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          try listEmpty <|>
          listNonEmpty <|>
          listComp <|>
-         listRange <|>
+         listEnum <|>
          try constr <|>
          try variable <|>
          try float <|>
@@ -264,9 +264,9 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
                Declaration true <$> (VarDef <$> (keyword strLet *> pattern <* equals) <*> expr') <|>
                Guard true <$> expr'
 
-         listRange :: SParser (Expr 𝔹)
-         listRange = token.brackets $
-            expr <$> (pure ListRange <*> expr' <* ellipsis <*> expr')
+         listEnum :: SParser (Expr 𝔹)
+         listEnum = token.brackets $
+            expr <$> (pure ListEnum <*> expr' <* ellipsis <*> expr')
 
          constr :: SParser (Expr 𝔹)
          constr = expr <$> (Constr <$> ctr <@> empty)

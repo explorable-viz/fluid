@@ -8,7 +8,7 @@ import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (uncurry)
 import Bindings (Bindings)
-import DataType (Ctr(..), cPair, cCons, cNil, cTrue, cFalse)
+import DataType (cPair, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RawExpr(..), VarDef(..)) as E
 import Pretty (render, pretty)
@@ -79,10 +79,10 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    -- | Non-empty-list
    desugarBwd (E.Expr α (E.Constr c (e : e' : Nil))) (Expr _ (ListNonEmpty s l)) | c == cCons =
       Expr α <$> (ListNonEmpty <$> desugarBwd e s <*> desugarBwd e' l)
-   -- | List-range
-   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.App (E.Expr _ (E.Var "range")) e1)) e2))
-              (Expr α (ListRange s1 s2)) =
-      Expr (α1 ∧ α2) <$> (ListRange <$> desugarBwd e1 s1 <*> desugarBwd e2 s2)
+   -- | List-enum
+   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.App (E.Expr _ (E.Var "enumFromTo")) e1)) e2))
+              (Expr α (ListEnum s1 s2)) =
+      Expr (α1 ∧ α2) <$> (ListEnum <$> desugarBwd e1 s1 <*> desugarBwd e2 s2)
    -- | List-comp-done
    desugarBwd (E.Expr α2 (E.Constr c (e : (E.Expr α1 (E.Constr c' Nil)) : Nil)))
               (Expr _ (ListComp s_body (NonEmptyList (Guard _ (Expr _ (Constr c'' Nil)) :| Nil))))

@@ -10,7 +10,7 @@ import Lattice (
    class BoundedJoinSemilattice, class BoundedSlices, class JoinSemilattice, class Slices,
    𝔹, (∨), bot, botOf, definedJoin, maybeJoin
 )
-import Util ({-type(×), -}type (+), (≟), error)
+import Util (type (+), (≟), error)
 
 type Var = String
 
@@ -22,7 +22,6 @@ data RawExpr a =
    Int Int |
    Float Number |
    Str String |
---   Array (Expr a) (Var × Var) (Expr a) |
    Constr Ctr (List (Expr a)) |
    Lambda (Elim a) |
    App (Expr a) (Expr a) |

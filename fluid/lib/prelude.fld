@@ -224,5 +224,5 @@ let zipWith op [] ys = [];
 let zip = zipWith id;
 
 -- Int -> Int -> List Int
-let range n m =
+let enumFromTo n m =
     if n <= m then n : [n + 1 .. m] else [];

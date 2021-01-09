@@ -109,9 +109,9 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Expr α (ListEmpty))           = pure $ enil α
    -- | Non-empty-list
    desugarFwd (Expr α (ListNonEmpty s l))    = lift2 (econs α) (desugarFwd s) (desugarFwd l)
-   -- | List-range
-   desugarFwd (Expr α (ListRange s1 s2)) =
-      eapp α <$> ((eapp α (evar α "range")) <$> desugarFwd s1) <*> desugarFwd s2
+   -- | List-enum
+   desugarFwd (Expr α (ListEnum s1 s2)) =
+      eapp α <$> ((eapp α (evar α "enumFromTo")) <$> desugarFwd s1) <*> desugarFwd s2
    -- | List-comp-done
    desugarFwd (Expr α1 (ListComp s_body (NonEmptyList (Guard _ (Expr α2 (Constr c Nil)) :| Nil)))) | c == cTrue = do
       e <- desugarFwd s_body

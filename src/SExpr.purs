@@ -22,7 +22,7 @@ data RawExpr a =
    IfElse (Expr a) (Expr a) (Expr a) |
    ListEmpty |  -- in the formalism we unify with Nil, but cleaner here to keep separate
    ListNonEmpty (Expr a) (ListRest a) |
-   ListRange (Expr a) (Expr a) |
+   ListEnum (Expr a) (Expr a) |
    ListComp (Expr a) (NonEmptyList (Qualifier a)) |
    Let (VarDefs a) (Expr a) |
    LetRec (RecDefs a) (Expr a)

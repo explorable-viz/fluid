@@ -10,7 +10,7 @@
 | When | Activity | Issue(s) |
 | --- | --- | --- |
 | 9 Nov 2020 | List comprehensions | [277](https://github.com/explorable-viz/fluid/issues/277) |
-| | `[e..e]` (list ranges) | [278](https://github.com/explorable-viz/fluid/issues/278) |
+| | `[e..e]` (list enumerations) | [278](https://github.com/explorable-viz/fluid/issues/278) |
 | | `if`..`then`..`else` | [115](https://github.com/explorable-viz/fluid/issues/115) |
 | 4 Nov 2020 | List notation as syntactic sugar | [386](https://github.com/explorable-viz/fluid/issues/386) |
 | 30 Oct 2020 | Syntactic sugar | [390](https://github.com/explorable-viz/fluid/issues/390) |
