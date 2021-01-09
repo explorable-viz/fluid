@@ -178,12 +178,6 @@ branches :: forall b . SParser (Expr 𝔹) -> (SParser (Expr 𝔹) -> SParser Un
 branches expr' branch_ =
    (pure <$> branch_ expr' patternDelim) <|> branchMany expr' branch_
 
-branches_curried :: SParser (Expr 𝔹) -> SParser (NonEmptyList (Branch 𝔹))
-branches_curried expr' = branches expr' branch_curried
-
-branches_uncurried :: SParser (Expr 𝔹) -> SParser (NonEmptyList (Pattern × Expr 𝔹))
-branches_uncurried expr' = branches expr' branch_uncurried
-
 varDefs :: SParser (Expr 𝔹) -> SParser (VarDefs 𝔹)
 varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
    where
@@ -303,7 +297,8 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             foldr (\def -> expr <<< (Let ||| LetRec) def) <$> (keyword strIn *> expr') <@> defs'
 
          matchAs :: SParser (Expr 𝔹)
-         matchAs = expr <$> (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> branches_uncurried expr')
+         matchAs =
+            expr <$> (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> branches expr' branch_uncurried)
 
          -- any binary operator, in parentheses
          parensOp :: SParser (Expr 𝔹)
@@ -314,7 +309,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             expr <$> ((pure $ \e e' -> Constr cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr')
 
          lambda :: SParser (Expr 𝔹)
-         lambda = expr <$> (Lambda <$> (keyword strFun *> branches_curried expr'))
+         lambda = expr <$> (Lambda <$> (keyword strFun *> branches expr' branch_curried))
 
          ifElse :: SParser (Expr 𝔹)
          ifElse = expr <$>
