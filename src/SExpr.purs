@@ -18,11 +18,11 @@ data RawExpr a =
    Lambda (NonEmptyList (Branch a)) |
    App (Expr a) (Expr a) |
    BinaryApp (Expr a) Var (Expr a) |
-   MatchAs (Expr a) (NonEmptyList (Branch a)) |
+   MatchAs (Expr a) (NonEmptyList (Pattern × Expr a)) |
    IfElse (Expr a) (Expr a) (Expr a) |
    ListEmpty |  -- in the formalism we unify with Nil, but cleaner here to keep separate
    ListNonEmpty (Expr a) (ListRest a) |
-   ListRange (Expr a) (Expr a) |
+   ListEnum (Expr a) (Expr a) |
    ListComp (Expr a) (NonEmptyList (Qualifier a)) |
    Let (VarDefs a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
@@ -39,10 +39,14 @@ data Pattern =
 data ListPatternRest =
    PEnd | PNext Pattern ListPatternRest
 
+-- in the spec, "clause" doesn't include the function name
 type Branch a = NonEmptyList Pattern × Expr a
 type Clause a = Var × Branch a
 type RecDefs a = NonEmptyList (Clause a)
-type VarDef a = Pattern × Expr a
+
+-- The pattern/expr relationship is different to the one in branch (the expr is the "argument", not the "body").
+-- Using a data type makes for easier overloading.
+data VarDef a = VarDef Pattern (Expr a)
 type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a =

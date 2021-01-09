@@ -9,7 +9,7 @@ import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import SExpr (Expr) as S
-import Desugar (desugar)
+import DesugarFwd (desugarFwd)
 import Eval (eval, eval_module)
 import Lattice (𝔹)
 import Parse (module_, program)
@@ -33,7 +33,7 @@ loadFile folder file = do
 loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file ρ = do
    src <- loadFile "fluid/lib" file
-   pure $ successful $ eval_module ρ $ successful $ desugar $ successfulParse src module_
+   pure $ successful $ eval_module ρ $ successful $ desugarFwd $ successfulParse src module_
 
 openWithImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithImports file =
@@ -53,5 +53,5 @@ parseWithImports src = do
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do
    ρ × s <- loadFile "fluid/dataset" file >>= parseWithImports
-   let _ × v = successful $ eval ρ $ successful $ desugar s
+   let _ × v = successful $ eval ρ $ successful $ desugarFwd s
    pure $ Empty :+: x ↦ v
