@@ -14,12 +14,11 @@ let conv_extend image filter =
         half_width           = quot (jz - ja) 2;
         half_height          = quot (iz - ia) 2;
         spatial_extent       = (iz - ia + 1) * (jz - ja + 1)
-    in  array (bounds image)
-            [ ((c, d), sum [ image!(image_y, image_x) * filter!(filter_y, filter_x)
+    in  [| sum [ image!(image_y, image_x) * filter!(filter_y, filter_x)
                              |  (y, x) <- range (bounds filter),
                                 let filter_y = iz - y,
                                 let filter_x = jz - x,
                                 let image_y  = bound (ma, mz) (c + y - half_height),
                                 let image_x  = bound (na, nz) (d + x - half_width) ]
-                      / spatial_extent)
-              | (c, d) <- range (bounds image) ];
+           / spatial_extent)
+         | (c, d) in bounds image |];

@@ -17,11 +17,11 @@ conv_zero image filter =
                            image_x  >= 0, image_x <= nz ])
               / spatial_extent)
      | (c, d) <- range (bounds image) ]
-    where (_, (mz, nz)) = bounds image
-          (_, (iz, jz)) = bounds filter
-          half_width         = quot jz 2
-          half_height        = quot iz 2
-          spatial_extent     = fromIntegral ((iz + 1) * (jz + 1))
+    where (_, (mz, nz))    = bounds image
+          (_, (iz, jz))    = bounds filter
+          half_width       = quot jz 2
+          half_height      = quot iz 2
+          spatial_extent   = fromIntegral ((iz + 1) * (jz + 1))
 
 -- Extend with edge values
 
@@ -37,11 +37,11 @@ conv_extend image filter =
                        let image_x  = bound nz (d + x - half_width) ])
               / spatial_extent)
      | (c, d) <- range (bounds image) ]
-    where (_, (mz, nz)) = bounds image
-          (_, (iz, jz)) = bounds filter
-          half_width         = quot jz 2
-          half_height        = quot iz 2
-          spatial_extent     = fromIntegral ((iz + 1) * (jz + 1))
+    where (_, (mz, nz))    = bounds image
+          (_, (iz, jz))    = bounds filter
+          half_width       = quot jz 2
+          half_height      = quot iz 2
+          spatial_extent   = fromIntegral ((iz + 1) * (jz + 1))
           bound :: Int -> Int -> Int
           bound upper x
             | x > upper = upper
@@ -62,12 +62,12 @@ conv_wrap image filter =
                        let image_x  = (d + x - half_width) `mod` img_w ])
                / spatial_extent)
      | (c, d) <- range (bounds image) ]
-    where (_, (mz, nz)) = bounds image
-          (_, (iz, jz)) = bounds filter
-          (img_h, img_w)     = (mz + 1, nz + 1)
-          half_width         = quot jz 2
-          half_height        = quot iz 2
-          spatial_extent     = fromIntegral ((iz + 1) * (jz + 1))
+    where (_, (mz, nz))    = bounds image
+          (_, (iz, jz))    = bounds filter
+          (img_h, img_w)   = (mz + 1, nz + 1)
+          half_width       = quot jz 2
+          half_height      = quot iz 2
+          spatial_extent   = fromIntegral ((iz + 1) * (jz + 1))
 
 -- Mirror edge values
 
@@ -83,11 +83,11 @@ conv_mirror image filter =
                        let image_x  = mirror nz (d + x - half_width) ])
                / spatial_extent)
      | (c, d) <- range (bounds image) ]
-    where ((0, 0), (mz, nz)) = bounds image
-          ((0, 0), (iz, jz)) = bounds filter
-          half_width         = quot jz 2
-          half_height        = quot iz 2
-          spatial_extent     = fromIntegral ((iz + 1) * (jz + 1))
+    where (_, (mz, nz))    = bounds image
+          (_, (iz, jz))    = bounds filter
+          half_width       = quot jz 2
+          half_height      = quot iz 2
+          spatial_extent   = fromIntegral ((iz + 1) * (jz + 1))
           mirror :: Int -> Int -> Int
           mirror upper x
             | x > upper = upper - (x - upper) + 1
