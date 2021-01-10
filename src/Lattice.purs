@@ -2,6 +2,7 @@ module Lattice where
 
 import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
+import Data.Array (length, zipWith) as A
 import Data.List (List, length, zipWith)
 import Data.Map (Map, fromFoldable, size, toUnfoldable)
 import Data.Maybe (Maybe(..))
@@ -72,3 +73,11 @@ instance slicesMap :: (Ord k, Slices t) => Slices (Map k t) where
       | size κs == size κs' =
          fromFoldable <$> (sequence $ zipWith maybeJoin (toUnfoldable κs) (toUnfoldable κs'))
       | otherwise = Nothing
+
+instance joinSemilatticeArrayArray :: Slices a => JoinSemilattice (Array a) where
+   join = definedJoin
+
+instance slicesArrayArray :: Slices a => Slices (Array a) where
+   maybeJoin xs ys
+      | A.length xs == A.length ys  = sequence $ A.zipWith maybeJoin xs ys
+      | otherwise                   = Nothing
