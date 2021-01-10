@@ -143,8 +143,7 @@ let iterate n f z =
    if n == 0 then [] else z : map f (iterate (n - 1) f z);
 
 -- List Int -> Int
-let sum xs =
-   foldr (uncurry (+)) 0 xs;
+let sum = foldr (uncurry (+)) 0;
 
 -- List a -> a
 let last [x] = x;
