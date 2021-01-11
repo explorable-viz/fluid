@@ -117,6 +117,12 @@ instance prettyExplVal :: BoundedJoinSemilattice a => Pretty (Expl a × Val a) w
 instance prettyList :: Pretty a => Pretty (List a) where
    pretty xs = brackets $ hcat $ intersperse comma $ map pretty xs
 
+instance prettyListRest :: BoundedJoinSemilattice a => Pretty (ListRest a) where
+   pretty l = pretty $ listRestToExprs l
+
+instance prettyListPatternRest :: Pretty (ListPatternRest) where
+   pretty l = pretty $ listPatternRestToPatterns l
+
 instance prettyExpr :: BoundedJoinSemilattice a => Pretty (E.Expr a) where
    pretty E.Hole     = hole
    pretty (E.Expr _ r) = pretty r
