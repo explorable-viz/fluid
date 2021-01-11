@@ -152,7 +152,8 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
          | c == cNil
                -> pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
                               (ListComp s1' (NonEmptyList ((Guard (α1 ∧ α2 ∧ α3 ∧ α4) s2') :| q' : qs')))
-         _, _  -> error "desugarBwd for List-comp-guard failed"
+         sListComp', sNil'  -> error $ "desugarBwd for List-comp-guard failed: " <>
+                                       render (pretty sListComp') <> "\n" <> render (pretty sNil')
    -- | List-comp-decl
    desugarBwd (E.Expr α1 (E.App (E.Expr α2 (E.Lambda σ)) e))
               (Expr _ (ListComp s2 (NonEmptyList ((Declaration _ (VarDef π s1)) :| q : qs)))) = do
