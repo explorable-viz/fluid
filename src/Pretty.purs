@@ -13,7 +13,6 @@ import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), varAnon)
 import Expr (Expr(..), RawExpr(..), VarDef(..), expr) as E
 import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Pattern(..), Qualifier(..), RawExpr(..), VarDef(..), expr)
-import SExpr (Expr(..))
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..), RawExpl)
 import Lattice (class BoundedJoinSemilattice)
