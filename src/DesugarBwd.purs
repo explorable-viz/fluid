@@ -3,7 +3,7 @@ module DesugarBwd where
 import Prelude hiding (absurd)
 import Data.Function (on)
 import Data.List (List(..), (:), zip)
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList, appendFoldable)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList, appendFoldable, reverse)
 import Data.Map (fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
@@ -61,7 +61,7 @@ instance desugarBwdRecDefs :: DesugarBwd (Bindings Elim Boolean)
 
       where
 
-         fπess  = groupBy (eq `on` fst) fπes :: NonEmptyList (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr Boolean))))
+         fπess  = reverse $ (groupBy (eq `on` fst) fπes :: NonEmptyList (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr Boolean)))))
 
          -- f a -> g b -> (a -> b -> b) -> (g b)
          zipRecDefs :: Bindings Elim 𝔹
