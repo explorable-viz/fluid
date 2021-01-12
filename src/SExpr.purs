@@ -54,8 +54,7 @@ data Qualifier a =
    Generator a Pattern (Expr a) |
    Declaration a (VarDef a) -- could allow VarDefs instead
 
-data Expr a =
-   Expr a (RawExpr a)
+data Expr a = Hole | Expr a (RawExpr a)
 
 data Module a = Module (List (VarDefs a + RecDefs a))
 

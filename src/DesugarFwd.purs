@@ -22,7 +22,7 @@ import SExpr (
    RecDefs, Qualifier(..), RawExpr(..)
 )
 import Lattice (𝔹, (∧))
-import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
+import Util (MayFail, error, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
 
 
 eapp :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
@@ -70,6 +70,8 @@ instance desugarFwdVarDefs :: DesugarFwd (Boolean × (NonEmptyList (VarDef Boole
       E.Expr (α1 ∧ α2) <$> (E.Let <$> desugarFwd d <*> desugarFwd s)
    desugarFwd  (α1 × (NonEmptyList (d@(VarDef _ (Expr α2 t)) :| d' : ds) × s)) =
       E.Expr (α1 ∧ α2) <$> (E.Let <$> desugarFwd d <*> desugarFwd ((α1 ∧ α2) × (NonEmptyList (d' :| ds) × s)))
+   desugarFwd  (_ × (NonEmptyList ((VarDef _ Hole) :| _) × _)) 
+      = error "Encountered hole during desugar fwd"
 
 {-       →                      →                 -}
 {- let f c ↗ [f ↦ σ]       (f, (p, s))  ↗ [f ↦ σ] -}
@@ -140,6 +142,7 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Expr α (Let ds s))            = desugarFwd $ α × (ds × s)
    -- | LetRec (recursive function)
    desugarFwd (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec <$> desugarFwd fπs <*> desugarFwd s)
+   desugarFwd (Hole)                         = error "Encountered a hole during desugarfwd"
 
 {- l ↗ e -}
 instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where

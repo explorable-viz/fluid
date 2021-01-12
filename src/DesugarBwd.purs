@@ -51,7 +51,6 @@ concatNonEmpty :: forall a. NonEmptyList (NonEmptyList a) -> NonEmptyList a
 concatNonEmpty (NonEmptyList (x :| x' : xs)) = appendFoldable x (concatNonEmpty (NonEmptyList (x' :| xs)))
 concatNonEmpty (NonEmptyList (x :| Nil))     = x
 
-
 {-                 →                        →           -}
 {-                                            →         -}
 {- let [f ↦ σ] ↘ (f c)         [f ↦ σ] ↘ (f, (p, s))    -}
@@ -191,6 +190,7 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Expr α (E.LetRec fπs e))
               (Expr _ (LetRec fπs' s)) =
       Expr α <$> (LetRec <$> desugarBwd fπs fπs' <*> desugarBwd e s)
+   desugarBwd (E.Hole) s = pure Hole
 
    desugarBwd e s = error $ "desugarBwd match not found: " <> render (pretty e) <> "\n" <> render (pretty s)
 

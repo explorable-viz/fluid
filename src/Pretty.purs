@@ -13,11 +13,12 @@ import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), varAnon)
 import Expr (Expr(..), RawExpr(..), VarDef(..), expr) as E
 import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Pattern(..), Qualifier(..), RawExpr(..), VarDef(..), expr)
+import SExpr (Expr(..))
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..), RawExpl)
 import Lattice (class BoundedJoinSemilattice)
 import Util (Endo, type (×), (×), absurd, error, intersperse)
-import Val (Primitive, RawVal, Val(..), val)
+import Val (Primitive, RawVal, Val(Val), val)
 import Val (RawVal(..), Val(Hole)) as V
 
 infixl 5 beside as :<>:
@@ -271,7 +272,9 @@ instance prettyPattern :: Pretty Pattern where
    pretty (PListNonEmpty π πs)   = pretty $ π : listPatternRestToPatterns πs
 
 instance prettySExpr :: BoundedJoinSemilattice a => Pretty (Expr a) where
+   pretty (Hole)     = hole
    pretty (Expr _ r) = pretty r
+
 
 prettyProgram :: E.Expr Boolean -> Doc
 prettyProgram e = atop (pretty e) (text "")
