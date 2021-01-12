@@ -118,6 +118,7 @@ instance prettyList :: Pretty a => Pretty (List a) where
    pretty xs = brackets $ hcat $ intersperse comma $ map pretty xs
 
 instance prettyListRest :: BoundedJoinSemilattice a => Pretty (ListRest a) where
+   pretty ListRestHole = hole
    pretty l = pretty $ listRestToExprs l
 
 instance prettyListPatternRest :: Pretty (ListPatternRest) where
@@ -205,6 +206,7 @@ instance prettyPrimitive :: Pretty Primitive where
 listRestToExprs :: forall a . ListRest a -> List (Expr a)
 listRestToExprs (End _) = Nil
 listRestToExprs (Next _ e l) = e : listRestToExprs l
+listRestToExprs (ListRestHole) = Nil
 
 listPatternRestToPatterns :: ListPatternRest -> List Pattern
 listPatternRestToPatterns PEnd         = Nil
@@ -259,6 +261,7 @@ instance prettyPatternExpr :: BoundedJoinSemilattice a => Pretty (Pattern × Exp
    pretty (π × e) = pretty π :<>: text " -> " :<>: pretty e
 
 instance prettyQualifier :: BoundedJoinSemilattice a => Pretty (Qualifier a) where
+   pretty (QualifierHole)              = hole
    pretty (Guard _ e)                  = pretty e
    pretty (Generator _ π e)            = pretty π :<>: text " <- " :<>: pretty e
    pretty (Declaration _ (VarDef π e)) = text "let " :<>: pretty π :<>: text " = " :<>: pretty e

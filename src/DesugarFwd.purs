@@ -142,12 +142,13 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Expr α (Let ds s))            = desugarFwd $ α × (ds × s)
    -- | LetRec (recursive function)
    desugarFwd (Expr α (LetRec fπs s))        = E.Expr α <$> (E.LetRec <$> desugarFwd fπs <*> desugarFwd s)
-   desugarFwd (Hole)                         = error "Encountered a hole during desugarfwd"
+   desugarFwd _                         = error "Encountered a hole during desugarfwd"
 
 {- l ↗ e -}
 instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
    desugarFwd (End α)       = pure (enil α)
    desugarFwd (Next α s l)  = lift2 (econs α) (desugarFwd s) (desugarFwd l)
+   desugarFwd _             = error "Encountered a hole dering desugarFwdListRest"
 
 {- →        -}
 {- p, κ ↗ σ -}

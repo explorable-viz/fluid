@@ -210,6 +210,8 @@ instance desugarBwdListRest :: DesugarBwd (E.Expr Boolean) (ListRest Boolean) wh
       pure $ End α
    desugarBwd (E.Expr α (E.Constr c (e : e' : Nil))) (Next _ s l) | c == cCons =
       Next α <$> desugarBwd e s <*> desugarBwd e' l
+   desugarBwd (E.Hole) s =
+      pure ListRestHole
    desugarBwd e l = error $ "desugarBwdListRest (e, l) match not found: \n" <>
                             render (pretty e) <> "\n" <>
                             render (pretty l)

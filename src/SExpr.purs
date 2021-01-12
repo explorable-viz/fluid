@@ -28,7 +28,7 @@ data RawExpr a =
    LetRec (RecDefs a) (Expr a)
 
 data ListRest a =
-   End a | Next a (Expr a) (ListRest a)
+   End a | Next a (Expr a) (ListRest a) | ListRestHole
 
 data Pattern =
    PVar Var |
@@ -52,7 +52,8 @@ type VarDefs a = NonEmptyList (VarDef a)
 data Qualifier a =
    Guard a (Expr a) |
    Generator a Pattern (Expr a) |
-   Declaration a (VarDef a) -- could allow VarDefs instead
+   Declaration a (VarDef a) | -- could allow VarDefs instead
+   QualifierHole
 
 data Expr a = Hole | Expr a (RawExpr a)
 
