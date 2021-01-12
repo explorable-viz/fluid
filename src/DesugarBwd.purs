@@ -1,13 +1,14 @@
 module DesugarBwd where
 
 import Prelude hiding (absurd)
+import Data.Function (on)
 import Data.List (List(..), (:), zip)
-import Data.List.NonEmpty (NonEmptyList(..), toList)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList, appendFoldable)
 import Data.Map (fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
-import Data.Tuple (uncurry)
-import Bindings (Bindings)
+import Data.Tuple (uncurry, fst, snd)
+import Bindings (Binding, Bindings(..), (↦), (:+:))
 import DataType (cPair, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RawExpr(..), VarDef(..)) as E
@@ -41,11 +42,50 @@ instance desugarBwdVarDefs :: DesugarBwd (E.Expr Boolean)
               s1' <- desugarBwd e1 s1
               α4 × (NonEmptyList (d' :| ds') × s2') <- desugarBwd e2 ((α1 ∧ α2 ∧ α3) × (NonEmptyList (d :| ds) × s2))
               pure $ (α1 ∧ α2 ∧ α3 ∧ α4) × (NonEmptyList (VarDef π s1' :| d' : ds') × s2')
-   desugarBwd _ _ = error "Desugar var defs match not found"
+   desugarBwd e (_ × (vardefs × s_body)) =
+      error $ "Desugar var defs (e, vardefs × s_body) match not found: \n" <>
+              render (pretty e) <> "\n" <>
+              render (pretty vardefs) <> " × " <> render (pretty s_body)
 
+concatNonEmpty :: forall a. NonEmptyList (NonEmptyList a) -> NonEmptyList a
+concatNonEmpty (NonEmptyList (x :| x' : xs)) = appendFoldable x (concatNonEmpty (NonEmptyList (x' :| xs)))
+concatNonEmpty (NonEmptyList (x :| Nil))     = x
+
+
+{-                 →                        →           -}
+{-                                            →         -}
+{- let [f ↦ σ] ↘ (f c)         [f ↦ σ] ↘ (f, (p, s))    -}
 instance desugarBwdRecDefs :: DesugarBwd (Bindings Elim Boolean)
                                          (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr Boolean)))) where
-   desugarBwd _ _ = error "Desugar bwd for RecDefs not implemented"
+   desugarBwd fσs fπes = concatNonEmpty <$> zipRecDefs fσs fπess --error "Desugar bwd for RecDefs not implemented"
+
+      where
+
+         fπess  = groupBy (eq `on` fst) fπes :: NonEmptyList (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr Boolean))))
+
+         -- f a -> g b -> (a -> b -> b) -> (g b)
+         zipRecDefs :: Bindings Elim 𝔹
+                    -> NonEmptyList (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr 𝔹))))
+                    -> MayFail (NonEmptyList (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr 𝔹)))))
+         zipRecDefs (ρ :+: f ↦ σ) (NonEmptyList (fπes1 :| fπes2 : fπes_rest)) = do
+            fπes1' <- fromRecDef (f ↦ σ) fπes1
+            fπess' <- toList <$> zipRecDefs ρ (NonEmptyList (fπes2 :| fπes_rest))
+            pure $ NonEmptyList (fπes1' :| fπess')
+         zipRecDefs (Empty :+: f ↦ σ) (NonEmptyList (fπes1 :| Nil)) = do
+            fπes1'  <- fromRecDef (f ↦ σ) fπes1
+            pure $ NonEmptyList (fπes1' :| Nil)
+         zipRecDefs ρ fπs = error $ "zipRecDefs error: recdefs (ρ, fπs) have different sizes \n" <>
+                                    render (pretty ρ) <> "\n" <>
+                                    render (pretty fπs)
+         -- backward slice the eliminator (containing different possible pattern matches of the f)
+         -- and the set of branches (for each pattern match of f)
+         --          →       →
+         -- f ↦ σ, (f c) ↘ (f c)
+         fromRecDef :: Binding Elim 𝔹
+                    -> NonEmptyList (String × (NonEmptyList Pattern × Expr 𝔹))
+                    -> MayFail (NonEmptyList (String × (NonEmptyList Pattern × Expr 𝔹)))
+         fromRecDef (f ↦ σ) fπs@(NonEmptyList ((f' × (πs × e)) :| fπs')) =
+            map ((×) f) <$> desugarBwd σ (snd <$> fπs)
 
 instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Expr α (E.Var x))   (Expr _ (Var x'))      = pure $ Expr α (Var (x ≜ x'))
@@ -96,7 +136,9 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
          Expr α2 (ListComp s_body' (NonEmptyList (q' :| (Guard α1 (Expr _ (Constr c Nil))) : Nil)))
          | c == cTrue
             -> pure $ Expr (α1 ∧ α2) (ListComp s_body' (NonEmptyList (q' :| Nil)))
-         _  -> error "desugarBwd for List-comp-qual failed"
+         sListComp'
+            -> error $ "desugarBwd for List-comp-qual failed: \n" <>
+                       render (pretty sListComp')
    -- | List-comp-guard
    desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1))
               (Expr _ (ListComp s1 (NonEmptyList ((Guard _ s2) :| q : qs)))) = do
@@ -120,7 +162,9 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
          Expr α3 (ListComp s2' (NonEmptyList (q' :| qs')))
             -> pure $ Expr (α1 ∧ α2 ∧ α3)
                            (ListComp s2' (NonEmptyList ((Declaration (α1 ∧ α2 ∧ α3) (VarDef π s1')) :| q' : qs')))
-         _  -> error "desugarBwd for List-comp-decl failed"
+         sListComp'
+            -> error $ "desugarBwd for List-comp-decl failed: \n" <>
+                       render (pretty sListComp')
    -- | List-comp-gen
    desugarBwd (E.Expr α3 (E.App (E.Expr α2 (E.App (E.Expr _  (E.Var "concatMap"))
                                                   (E.Expr α1 (E.Lambda σ))))
@@ -134,7 +178,9 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
          Expr α4 (ListComp s2' (NonEmptyList (q' :| qs'))) ->
             pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
                         (ListComp s2' (NonEmptyList ((Generator (α1 ∧ α2 ∧ α3) p s1) :| q' : qs')))
-         _ -> error "desugarBwd for List-comp-gen failed"
+         sListComp'
+            -> error $ "desugarBwd for List-comp-gen failed: \n" <>
+                       render (pretty sListComp')
    -- | Let
    desugarBwd (E.Expr α (E.Let d e))
               (Expr _ (Let ds s)) = do
@@ -149,11 +195,13 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
 
 asElim :: Cont 𝔹 -> Elim 𝔹
 asElim (Arg σ) =  σ
-asElim _ = error "Not an Elim"
+asElim κ = error $ "Couldn't infer Elim from Cont: \n" <>
+                   render (pretty κ)
 
 asExpr :: Cont 𝔹 -> E.Expr 𝔹
 asExpr (Body e) =  e
-asExpr _ = error "Not an Expr"
+asExpr κ = error $ "Couldn't infer Expr from Cont: \n" <>
+                   render (pretty κ)
 
 {- e, l ↘ l -}
 instance desugarBwdListRest :: DesugarBwd (E.Expr Boolean) (ListRest Boolean) where
@@ -161,7 +209,9 @@ instance desugarBwdListRest :: DesugarBwd (E.Expr Boolean) (ListRest Boolean) wh
       pure $ End α
    desugarBwd (E.Expr α (E.Constr c (e : e' : Nil))) (Next _ s l) | c == cCons =
       Next α <$> desugarBwd e s <*> desugarBwd e' l
-   desugarBwd _ _ = error absurd
+   desugarBwd e l = error $ "desugarBwdListRest (e, l) match not found: \n" <>
+                            render (pretty e) <> "\n" <>
+                            render (pretty l)
 
 class DesugarPatternBwd a where
    desugarPatternBwd :: Elim Boolean -> a -> MayFail (Cont Boolean)
@@ -192,7 +242,9 @@ instance desugarPatternBwdPattern :: DesugarPatternBwd Pattern where
    desugarPatternBwd σ (PListNonEmpty π o)  = do
       σ' <- liftM1 asElim $ desugarPatternBwd σ π
       desugarPatternBwd σ' o
-   desugarPatternBwd _ _ = error "desugarPatternBwdPattern match not found"
+   desugarPatternBwd σ π = error $ "desugarPatternBwdPattern (σ, π) match not found: \n" <>
+                                   render (pretty σ) <> "\n" <>
+                                   render (pretty π)
 
 {- σ, o ↘ κ -}
 instance desugarPatternBwdListPatternRest :: DesugarPatternBwd ListPatternRest where
@@ -201,8 +253,9 @@ instance desugarPatternBwdListPatternRest :: DesugarPatternBwd ListPatternRest w
       σ  <- liftM1 asElim $ lookupE cCons m
       σ' <- liftM1 asElim $ desugarPatternBwd σ π
       desugarPatternBwd σ' o
-   desugarPatternBwd _ _ = error "desugarPatternBwdListPatternRest match not found"
-
+   desugarPatternBwd σ l = error $ "desugarPatternBwdListPatternRest (σ, l) match not found: \n" <>
+                                   render (pretty σ) <> "\n" <>
+                                   render (pretty l)
 {- σ, c ↘ c -}
 instance desugarBwdBranch :: DesugarBwd (Elim Boolean) (NonEmptyList Pattern × Expr Boolean) where
    desugarBwd σ (πs × s) = do
@@ -255,8 +308,12 @@ untotalisePatt (Arg σ) p =
       ElimConstr m, PListNonEmpty p' o ->
          let κ = mustLookup cCons m
          in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p') o])
-      _, _ -> error "untotalisePatt (σ, p) match not found"
-untotalisePatt _ _ = error "untotalisePatt (κ, p) match not found"
+      σ', p' -> error $ "untotalisePatt (σ, π) match not found: \n" <>
+                      render (pretty σ') <> "\n" <>
+                      render (pretty p')
+untotalisePatt κ π = error $ "untotalisePatt (κ, π) match not found: \n" <>
+                             render (pretty κ) <> "\n" <>
+                             render (pretty π)
 
 untotaliseListPatt :: Cont 𝔹 -> List Pattern -> Cont 𝔹
 untotaliseListPatt κ Nil = κ
@@ -271,4 +328,6 @@ untotaliseListPattRest (Arg (ElimConstr m)) PEnd =
 untotaliseListPattRest (Arg (ElimConstr m)) (PNext p o) =
    let κ = mustLookup cCons m
    in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p) o])
-untotaliseListPattRest _ _ = error "untotaliseListPattRest (κ, o) not found"
+untotaliseListPattRest κ o = error $ "untotaliseListPattRest (κ, o) not found: \n" <>
+                                     render (pretty κ) <> "\n" <>
+                                     render (pretty o)
