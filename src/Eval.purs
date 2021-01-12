@@ -1,20 +1,22 @@
 module Eval where
 
 import Prelude hiding (absurd, apply)
+import Control.Apply (lift2)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, singleton, unzip, snoc)
+import Data.Enum (enumFromTo)
+import Data.List (List(..), (:), length, range, singleton, unzip, snoc)
 import Data.Map (lookup, update)
 import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
-import DataType (Ctr, arity, checkDataType, dataTypeForKeys)
+import DataType (Ctr, arity, checkDataType, cPair, dataTypeForKeys)
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
 import Lattice (𝔹)
 import Pretty (pretty, render)
-import Primitive (apply)
+import Primitive (class To, apply, to)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Val (Env, Val(Val), val)
 import Val (RawVal(..), Val(Hole)) as V
@@ -53,7 +55,7 @@ checkArity c n = do
    check (n' >= n) $ show c <> " got " <> show n <> " argument(s), expects at most " <> show n'
 
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
-eval ρ Hole = pure $ Expl ρ T.Hole × V.Hole
+eval ρ Hole = error absurd
 eval ρ (Expr _ (Var x)) =
    (Expl ρ (T.Var x) × _) <$> find x ρ
 eval ρ (Expr _ (Op op)) =
@@ -68,6 +70,17 @@ eval ρ (Expr _ (Constr c es)) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
    (Expl ρ (T.Constr c ts) × _) <$> pure (val $ V.Constr c vs)
+eval ρ (Expr _ (Matrix e (x × y) e')) = do
+   t' × v' <- eval ρ e'
+   case v' of
+      V.Hole -> error absurd
+      Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair  -> do
+         let ρs = do
+               i <- range 1 (to v1)
+               j <- range 1 (to v2)
+               pure $ (ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)
+         ?_
+      Val _ v -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v)
 eval ρ (Expr _ (LetRec δ e)) = do
    let ρ' = closeDefs ρ δ δ
    t × v <- eval (ρ <> ρ') e
@@ -77,8 +90,7 @@ eval ρ (Expr _ (Lambda σ)) =
 eval ρ (Expr _ (App e e')) = do
    t × v <- eval ρ e
    case v of
-      V.Hole ->
-         (Expl ρ (T.AppHole t) × _) <$> pure V.Hole
+      V.Hole -> error absurd
       Val _ u  -> do
          t' × v' <- eval ρ e'
          case u of
@@ -99,10 +111,10 @@ eval ρ (Expr _ (BinaryApp e op e')) = do
    v_φ <- find op ρ
    let t_app = Expl ρ (T.BinaryApp (t × v) (op × v_φ) (t' × v'))
    case v_φ of
-      V.Hole -> pure $ t_app × V.Hole
+      V.Hole -> error absurd
       Val _ (V.Primitive φ)   ->
          case apply φ v of
-            V.Hole   -> pure $ t_app × V.Hole
+            V.Hole   -> error absurd
             Val _ u' ->
                case u' of
                   V.Primitive φ_v   -> pure $ t_app × apply φ_v v'

@@ -24,7 +24,7 @@ data RawExpr a =
    Float Number |
    Str String |
    Constr Ctr (List (Expr a)) |
-   Array (Expr a) (Var × Var) (Expr a) |
+   Matrix (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
    App (Expr a) (Expr a) |
    BinaryApp (Expr a) Var (Expr a) |
@@ -115,8 +115,8 @@ instance slicesRawExpr :: JoinSemilattice a => Slices (RawExpr a) where
    maybeJoin (Float n) (Float n')                              = Float <$> n ≟ n'
    maybeJoin (Str s) (Var s')                                  = Str <$> s ≟ s'
    maybeJoin (Constr c es) (Constr c' es')                     = Constr <$> c ≟ c' <*> maybeJoin es es'
-   maybeJoin (Array e1 (x × y) e2) (Array e1' (x' × y') e2')   =
-      Array <$> maybeJoin e1 e1' <*> ((x ≟ x') `lift2 (×)` (y ≟ y')) <*> maybeJoin e2 e2'
+   maybeJoin (Matrix e1 (x × y) e2) (Matrix e1' (x' × y') e2') =
+      Matrix <$> maybeJoin e1 e1' <*> ((x ≟ x') `lift2 (×)` (y ≟ y')) <*> maybeJoin e2 e2'
    maybeJoin (App e1 e2) (App e1' e2')                         = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (BinaryApp e1 op e2) (BinaryApp e1' op' e2')      =
       BinaryApp <$> maybeJoin e1 e1' <*> op ≟ op' <*> maybeJoin e2 e2'
