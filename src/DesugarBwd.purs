@@ -229,6 +229,10 @@ instance desugarPatternBwdPatterns :: DesugarPatternBwd (NonEmptyList Pattern) w
 instance desugarPatternBwdPattern :: DesugarPatternBwd Pattern where
    -- | Var
    desugarPatternBwd (ElimVar x κ)  (PVar x') = (x ≞ x') *> pure κ
+   -- | True
+   desugarPatternBwd (ElimConstr m) (PConstr c Nil) | c == cTrue = lookupE cTrue m
+   -- | False
+   desugarPatternBwd (ElimConstr m) (PConstr c Nil) | c == cFalse = lookupE cFalse m
    -- | Nil
    desugarPatternBwd (ElimConstr m) (PConstr c Nil) | c == cNil = lookupE cNil m
    -- | Cons, Pair
