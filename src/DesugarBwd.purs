@@ -15,7 +15,7 @@ import Expr (Expr(..), RawExpr(..), VarDef(..)) as E
 import Pretty (render, pretty)
 import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Pattern(..), Qualifier(..), RawExpr(..), VarDef(..))
 import Lattice (𝔹, (∧))
-import Util (MayFail, type (×), (×), (≞), (≜), absurd, mustLookup, lookupE, error)
+import Util (MayFail, type (×), (×), (≞), (≜), mustLookup, lookupE, error)
 
 qualTrue :: 𝔹 -> Qualifier 𝔹
 qualTrue α = (Guard α (Expr α (Constr cTrue Nil)))
@@ -156,8 +156,8 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    -- | List-comp-decl
    desugarBwd (E.Expr α1 (E.App (E.Expr α2 (E.Lambda σ)) e))
               (Expr _ (ListComp s2 (NonEmptyList ((Declaration _ (VarDef π s1)) :| q : qs)))) = do
-      (_ × s1') <- desugarBwd σ (NonEmptyList (π :| Nil) × s1)
-      sListComp  <- desugarBwd e (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
+      (_ × sListComp)  <- desugarBwd σ (NonEmptyList (π :| Nil) × (Expr true (ListComp s2 (NonEmptyList (q :| qs)))))
+      s1'  <- desugarBwd e s1
       case sListComp of
          Expr α3 (ListComp s2' (NonEmptyList (q' :| qs')))
             -> pure $ Expr (α1 ∧ α2 ∧ α3)
@@ -302,7 +302,7 @@ untotalisePatt (Arg σ) p =
    case σ, p of
       -- | var
       ElimVar x κ, PVar x'            ->
-         if x == x' then Arg (ElimVar x κ) else error absurd
+         if x == x' then Arg (ElimVar x κ) else error $ "untotalisePatt: patterns don't match: " <> render (pretty x) <> " -> " <> render (pretty κ)  <> " \n " <> render (pretty x')
       -- | true, false, pair, nil, cons
       ElimConstr m, PConstr ctr ps    ->
          let κ = mustLookup ctr m
