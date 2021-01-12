@@ -1,6 +1,7 @@
 module Expr where
 
 import Prelude hiding (top)
+import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
@@ -10,7 +11,7 @@ import Lattice (
    class BoundedJoinSemilattice, class BoundedSlices, class JoinSemilattice, class Slices,
    𝔹, (∨), bot, botOf, definedJoin, maybeJoin
 )
-import Util (type (×), type (+), (≟), error)
+import Util (type (×), (×), type (+), (≟), error)
 
 type Var = String
 
@@ -107,17 +108,19 @@ instance joinSemilatticeRawExpr :: JoinSemilattice a => JoinSemilattice (RawExpr
    join = definedJoin
 
 instance slicesRawExpr :: JoinSemilattice a => Slices (RawExpr a) where
-   maybeJoin (Var x) (Var x')              = Var <$> x ≟ x'
-   maybeJoin (Op op) (Op op')              = Op <$> op ≟ op'
-   maybeJoin (Int n) (Int n')              = Int <$> n ≟ n'
-   maybeJoin (Str str) (Str str')          = Str <$> str ≟ str'
-   maybeJoin (Float n) (Float n')          = Float <$> n ≟ n'
-   maybeJoin (Str s) (Var s')              = Str <$> s ≟ s'
-   maybeJoin (Constr c es) (Constr c' es') = Constr <$> c ≟ c' <*> maybeJoin es es'
-   maybeJoin (App e1 e2) (App e1' e2')     = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
-   maybeJoin (BinaryApp e1 op e2) (BinaryApp e1' op' e2')
-      = BinaryApp <$> maybeJoin e1 e1' <*> op ≟ op' <*> maybeJoin e2 e2'
-   maybeJoin (Lambda σ) (Lambda σ')        = Lambda <$> maybeJoin σ σ'
-   maybeJoin (Let def e) (Let def' e')     = Let <$> maybeJoin def def' <*> maybeJoin e e'
-   maybeJoin (LetRec δ e) (LetRec δ' e')   = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'
-   maybeJoin _ _                           = Nothing
+   maybeJoin (Var x) (Var x')                                  = Var <$> x ≟ x'
+   maybeJoin (Op op) (Op op')                                  = Op <$> op ≟ op'
+   maybeJoin (Int n) (Int n')                                  = Int <$> n ≟ n'
+   maybeJoin (Str str) (Str str')                              = Str <$> str ≟ str'
+   maybeJoin (Float n) (Float n')                              = Float <$> n ≟ n'
+   maybeJoin (Str s) (Var s')                                  = Str <$> s ≟ s'
+   maybeJoin (Constr c es) (Constr c' es')                     = Constr <$> c ≟ c' <*> maybeJoin es es'
+   maybeJoin (Array e1 (x × y) e2) (Array e1' (x' × y') e2')   =
+      Array <$> maybeJoin e1 e1' <*> ((x ≟ x') `lift2 (×)` (y ≟ y')) <*> maybeJoin e2 e2'
+   maybeJoin (App e1 e2) (App e1' e2')                         = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
+   maybeJoin (BinaryApp e1 op e2) (BinaryApp e1' op' e2')      =
+      BinaryApp <$> maybeJoin e1 e1' <*> op ≟ op' <*> maybeJoin e2 e2'
+   maybeJoin (Lambda σ) (Lambda σ')                            = Lambda <$> maybeJoin σ σ'
+   maybeJoin (Let def e) (Let def' e')                         = Let <$> maybeJoin def def' <*> maybeJoin e e'
+   maybeJoin (LetRec δ e) (LetRec δ' e')                       = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'
+   maybeJoin _ _                                               = Nothing
