@@ -306,7 +306,8 @@ untotalisePatt (Arg σ) p =
       -- | true, false, pair, nil, cons
       ElimConstr m, PConstr ctr ps    ->
          let κ = mustLookup ctr m
-         in  Arg $ ElimConstr (fromFoldable [ctr × untotaliseListPatt κ ps])
+         in  --error $ "Testing untotalisePatt case 2: " <> render (pretty κ) <> " \n" <> render (pretty ctr) <> " " <> render (pretty ps)
+            Arg $ ElimConstr (fromFoldable [ctr × untotaliseListPatt κ ps])
       -- | patt-list-empty
       ElimConstr m, PListEmpty        ->
          let κ = mustLookup cNil m
@@ -314,7 +315,8 @@ untotalisePatt (Arg σ) p =
       -- | patt-list-non-empty
       ElimConstr m, PListNonEmpty p' o ->
          let κ = mustLookup cCons m
-         in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p') o])
+         in  error $ "Testing untotalisePatt case 4: " <> render (pretty κ) <> " \n" <> render (pretty p') <> " " <> render (pretty o)  
+         --Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p') o])
       σ', p' -> error $ "untotalisePatt (σ, π) match not found: \n" <>
                       render (pretty σ') <> "\n" <>
                       render (pretty p')
@@ -325,7 +327,8 @@ untotalisePatt κ π = error $ "untotalisePatt (κ, π) match not found: \n" <>
 untotaliseListPatt :: Cont 𝔹 -> List Pattern -> Cont 𝔹
 untotaliseListPatt κ Nil = κ
 untotaliseListPatt κ (p:ps) =
-   untotaliseListPatt (untotalisePatt κ p) ps
+ error $ "untotaliseListPatt test: " <> render (pretty κ) <> "\n" <> render (pretty p) <> " " <> render (pretty ps) <> "\n" <> render (pretty (untotalisePatt κ p))
+   --untotaliseListPatt (untotalisePatt κ p) ps
 
 {- untotalise κ o ↗ κ' -}
 untotaliseListPattRest :: Cont 𝔹 -> ListPatternRest -> Cont 𝔹
@@ -334,7 +337,8 @@ untotaliseListPattRest (Arg (ElimConstr m)) PEnd =
    in  Arg $ ElimConstr (fromFoldable [cNil × κ])
 untotaliseListPattRest (Arg (ElimConstr m)) (PNext p o) =
    let κ = mustLookup cCons m
-   in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p) o])
+   in  error $ "untotaliseListPattRest test: " <> render (pretty κ) <> "\n" <> render (pretty p) <> " " <> render (pretty o) 
+   --Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p) o])
 untotaliseListPattRest κ o = error $ "untotaliseListPattRest (κ, o) not found: \n" <>
                                      render (pretty κ) <> "\n" <>
                                      render (pretty o)
