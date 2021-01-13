@@ -52,15 +52,15 @@ hole = text "□"
 class ToList a where
    toList :: a -> List a
 
-instance toListExpr :: ToList (E.Expr a)  where
+instance toListExpr :: BoundedJoinSemilattice a => ToList (E.Expr a)  where
    toList (E.Expr _ (E.Constr c (e : e' : Nil))) | c == cCons = e : toList e'
    toList (E.Expr _ (E.Constr c Nil)) | c == cNil             = Nil
-   toList _                                                 = error "not a list"
+   toList e                                                   = error $ "toListExpr - not a list: " <> render (pretty e)
 
-instance toListVal :: ToList (Val a)  where
+instance toListVal :: BoundedJoinSemilattice a => ToList (Val a)  where
    toList (Val _ (V.Constr c (v : v' : Nil))) | c == cCons  = v : toList v'
    toList (Val _ (V.Constr c Nil)) | c == cNil              = Nil
-   toList _                                                 = error "not a list"
+   toList v                                                 = error $ "toListVal - not a list: " <> render (pretty v)
 
 class Pretty p where
    pretty :: p -> Doc
@@ -212,12 +212,12 @@ listPatternRestToPatterns :: ListPatternRest -> List Pattern
 listPatternRestToPatterns PEnd         = Nil
 listPatternRestToPatterns (PNext π πs) = π : listPatternRestToPatterns πs
 
-instance toListSExpr :: ToList (Expr a)  where
+instance toListSExpr :: BoundedJoinSemilattice a => ToList (Expr a)  where
    toList (Expr _ (Constr c (e : e' : Nil))) | c == cCons = e : toList e'
    toList (Expr _ (Constr c Nil)) | c == cNil             = Nil
    toList (Expr _ (ListEmpty))                            = Nil
    toList (Expr _ (ListNonEmpty e l))                     = e : listRestToExprs l
-   toList _                                               = error "not a list"
+   toList e                                               = error $ "toListSExpr - not a list: " <> render (pretty e)
 
 instance prettyRawSExpr :: BoundedJoinSemilattice a => Pretty (RawExpr a) where
    pretty (Var x)                   = text x
