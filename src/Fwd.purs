@@ -46,6 +46,8 @@ eval_fwd ρ (Expr α (Str str)) α' =
    Val (α ∧ α') $ V.Str str
 eval_fwd ρ (Expr α (Constr c es)) α' =
    Val (α ∧ α') $ V.Constr c $ map (\e -> eval_fwd ρ e α') es
+eval_fwd ρ (Expr _ (Matrix _ _ _)) _ =
+   error "todo"
 eval_fwd ρ (Expr _ (LetRec δ e)) α =
    let ρ' = closeDefs_fwd ρ δ δ α in
    eval_fwd (ρ <> ρ') e α
