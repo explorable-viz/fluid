@@ -68,8 +68,6 @@ eval ρ (Expr _ (Constr c es)) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
    (Expl ρ (T.Constr c ts) × _) <$> pure (val $ V.Constr c vs)
-eval ρ (Expr _ (Matrix _ _ _)) =
-   error "todo"
 eval ρ (Expr _ (LetRec δ e)) = do
    let ρ' = closeDefs ρ δ δ
    t × v <- eval (ρ <> ρ') e
