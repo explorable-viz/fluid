@@ -1,9 +1,7 @@
 module Eval where
 
 import Prelude hiding (absurd, apply)
-import Control.Apply (lift2)
 import Data.Either (Either(..), note)
-import Data.Enum (enumFromTo)
 import Data.List (List(..), (:), length, range, singleton, unzip, snoc)
 import Data.Map (lookup, update)
 import Data.Map.Internal (keys)
@@ -16,7 +14,7 @@ import Expl (Expl(..), Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
 import Lattice (𝔹)
 import Pretty (pretty, render)
-import Primitive (class To, apply, to)
+import Primitive (apply, to)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Val (Env, Val(Val), val)
 import Val (RawVal(..), Val(Hole)) as V

@@ -154,7 +154,7 @@ instance prettyRawExpr :: BoundedJoinSemilattice a => Pretty (E.RawExpr a) where
    pretty r@(E.Constr c es)
       | c == cNil || c == cCons     = pretty $ toList $ E.expr r
       | otherwise                   = prettyConstr c es
-   pretty (E.Matrix _ _ _)          = error "todo"
+   pretty (E.Matrix _ _ _)            = error "todo"
    pretty (E.Op op)                 = parens $ text op
    pretty (E.Let (E.VarDef σ e) e')   =
       atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
