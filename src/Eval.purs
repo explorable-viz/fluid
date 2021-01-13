@@ -8,7 +8,7 @@ import Data.List (List(..), (:), length, range, singleton, unzip, snoc)
 import Data.Map (lookup, update)
 import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
-import Data.Traversable (traverse)
+import Data.Traversable (sequence, traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity, checkDataType, cPair, dataTypeForKeys)
 import Expl (RawExpl(..), VarDef(..)) as T
@@ -75,10 +75,11 @@ eval ρ (Expr _ (Matrix e (x × y) e')) = do
    case v' of
       V.Hole -> error absurd
       Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair  -> do
-         let ρs = do
+         tvs <- sequence $ do
                i <- range 1 (to v1)
                j <- range 1 (to v2)
-               pure $ (ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)
+               pure $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e
+         let v = val $ V.Matrix ?_ ?_
          ?_
       Val _ v -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v)
 eval ρ (Expr _ (LetRec δ e)) = do
