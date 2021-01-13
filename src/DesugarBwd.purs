@@ -171,7 +171,7 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
                                  e1))
               (Expr _ (ListComp s2 (NonEmptyList ((Generator _ p s1) :| q : qs)))) = do
       s1'        <- desugarBwd e1 s1
-      σ'         <- pure $ asElim $ untotaliseListPatt (Arg σ) (p:Nil)
+      σ'         <- pure $ asElim "desugarbwd list-comp-gen" $ untotaliseListPatt (Arg σ) (p:Nil)
       e2         <- liftM1 asExpr (desugarPatternBwd σ' p)
       sListComp  <- desugarBwd e2 (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
       case sListComp of
@@ -194,10 +194,10 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
 
    desugarBwd e s = error $ "desugarBwd match not found: " <> render (pretty e) <> "\n" <> render (pretty s)
 
-asElim :: Cont 𝔹 -> Elim 𝔹
-asElim (Arg σ) =  σ
-asElim κ = error $ "Couldn't infer Elim from Cont: \n" <>
-                   render (pretty κ)
+asElim :: String -> Cont 𝔹 -> Elim 𝔹
+asElim msg (Arg σ) =  σ
+asElim msg κ = error $ "Couldn't infer Elim from Cont: \n" <>
+                       render (pretty κ) <> "\n during: \n" <> msg
 
 asExpr :: Cont 𝔹 -> E.Expr 𝔹
 asExpr (Body e) =  e
@@ -224,7 +224,8 @@ class DesugarPatternBwd a where
 instance desugarPatternBwdPatterns :: DesugarPatternBwd (NonEmptyList Pattern) where
    desugarPatternBwd σ (NonEmptyList (π :| Nil)) = desugarPatternBwd σ π
    desugarPatternBwd σ (NonEmptyList (π :| π' : πs)) = do
-      σ' <- liftM1 asElim $ desugarPatternBwd σ π
+      test <- desugarPatternBwd σ π
+      σ' <- liftM1 (asElim $ "desugarPatternBwd nonemptylist-pattern: " <> render (pretty test)) $ desugarPatternBwd σ π
       desugarPatternBwd σ' (NonEmptyList (π' :| πs))
 
 {- σ, p ↘ κ -}
@@ -240,14 +241,14 @@ instance desugarPatternBwdPattern :: DesugarPatternBwd Pattern where
    -- | Cons, Pair
    desugarPatternBwd (ElimConstr m) (PConstr ctr (π:π':_))
       | ctr == cCons || ctr == cPair = do
-          σ  <- liftM1 asElim $ lookupE ctr m
-          σ' <- liftM1 asElim $ desugarPatternBwd σ π
+          σ  <- liftM1 (asElim "desugarPatternBwd pattern cons/pair - 1") $ lookupE ctr m
+          σ' <- liftM1 (asElim "desugarPatternBwd pattern cons/pair - 2") $ desugarPatternBwd σ π
           desugarPatternBwd σ' π'
    -- | Empty-list
    desugarPatternBwd (ElimConstr m) (PListEmpty) = lookupE cNil m
    -- | Non-empty-list
    desugarPatternBwd σ (PListNonEmpty π o)  = do
-      σ' <- liftM1 asElim $ desugarPatternBwd σ π
+      σ' <- liftM1 (asElim "desugarPatternBwd pattern non-empty-list") $ desugarPatternBwd σ π
       desugarPatternBwd σ' o
    desugarPatternBwd σ π = error $ "desugarPatternBwdPattern (σ, π) match not found: \n" <>
                                    render (pretty σ) <> "\n" <>
@@ -257,8 +258,8 @@ instance desugarPatternBwdPattern :: DesugarPatternBwd Pattern where
 instance desugarPatternBwdListPatternRest :: DesugarPatternBwd ListPatternRest where
    desugarPatternBwd (ElimConstr m) PEnd        = lookupE cCons m
    desugarPatternBwd (ElimConstr m) (PNext π o) = do
-      σ  <- liftM1 asElim $ lookupE cCons m
-      σ' <- liftM1 asElim $ desugarPatternBwd σ π
+      σ  <- liftM1 (asElim "desugarPatternBwd listpatternrest - 1") $ lookupE cCons m
+      σ' <- liftM1 (asElim "desugarPatternBwd listpatternrest - 2") $ desugarPatternBwd σ π
       desugarPatternBwd σ' o
    desugarPatternBwd σ l = error $ "desugarPatternBwdListPatternRest (σ, l) match not found: \n" <>
                                    render (pretty σ) <> "\n" <>
