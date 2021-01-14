@@ -30,6 +30,9 @@ data RawExpr a =
 data ListRest a =
    End a | Next a (Expr a) (ListRest a) | ListRestHole
 
+data Patt =
+   Pattern Pattern | ListPatternRest ListPatternRest
+
 data Pattern =
    PVar Var |
    PConstr Ctr (List Pattern) |

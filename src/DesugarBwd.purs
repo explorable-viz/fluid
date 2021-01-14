@@ -13,7 +13,7 @@ import DataType (cPair, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), RawExpr(..), VarDef(..)) as E
 import Pretty (render, pretty)
-import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Pattern(..), Qualifier(..), RawExpr(..), VarDef(..))
+import SExpr (Expr(..), ListRest(..), Patt(..), Pattern(..), ListPatternRest(..), Qualifier(..), RawExpr(..), VarDef(..))
 import Lattice (𝔹, (∧))
 import Util (MayFail, type (×), (×), (≞), (≜), mustLookup, lookupE, error)
 
@@ -171,7 +171,7 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
                                  e1))
               (Expr _ (ListComp s2 (NonEmptyList ((Generator _ p s1) :| q : qs)))) = do
       s1'        <- desugarBwd e1 s1
-      σ'         <- pure $ asElim "desugarbwd list-comp-gen" $ untotaliseListPatt (Arg σ) (p:Nil)
+      σ'         <- pure $ asElim "desugarbwd list-comp-gen" $ untotalise (Arg σ) (Pattern p : Nil)
       e2         <- liftM1 asExpr (desugarPatternBwd σ' p)
       sListComp  <- desugarBwd e2 (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
       case sListComp of
@@ -297,80 +297,38 @@ instance desugarBwdBranchesUncurried :: DesugarBwd (Elim Boolean) (NonEmptyList 
       b' <- desugarBwd σ b
       pure $ NonEmptyList (b' :| Nil)
 
-
-{- untotalise κ p ↗ κ' -}
--- untotalisePatt :: Cont 𝔹 -> Pattern -> Cont 𝔹
--- untotalisePatt (Arg σ) p =
---    case σ, p of
---       -- | var
---       ElimVar x κ, PVar x'            ->
---          if x == x' then Arg (ElimVar x κ) else error $ "untotalisePatt: patterns don't match: " <> render (pretty x) <> " -> " <> render (pretty κ)  <> " \n " <> render (pretty x')
---       -- | true, false, pair, nil, cons
---       ElimConstr m, PConstr ctr ps    ->
---          let κ = mustLookup ctr m
---          in  --error $ "Testing untotalisePatt case 2: " <> render (pretty κ) <> " \n" <> render (pretty ctr) <> " " <> render (pretty ps)
---             Arg $ ElimConstr (fromFoldable [ctr × untotaliseListPatt κ ps])
---       -- | patt-list-empty
---       ElimConstr m, PListEmpty        ->
---          let κ = mustLookup cNil m
---          in  Arg $ ElimConstr (fromFoldable [cNil × κ])
---       -- | patt-list-non-empty
---       ElimConstr m, PListNonEmpty p' o ->
---          let κ = mustLookup cCons m
---          in  error $ "Testing untotalisePatt case 4: " <> render (pretty κ) <> " \n" <> render (pretty p') <> " " <> render (pretty o)  
---          --Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p') o])
---       σ', p' -> error $ "untotalisePatt (σ, π) match not found: \n" <>
---                       render (pretty σ') <> "\n" <>
---                       render (pretty p')
--- untotalisePatt κ π = error $ "untotalisePatt (κ, π) match not found: \n" <>
---                              render (pretty κ) <> "\n" <>
---                              render (pretty π)
-
--- Alternative implementation thought:
--- untotalise needs to return a tuple containing both the pattern (being a var or constructor) 
--- and the continuation, so that we can extract the continuation and untotalise it with any 
--- remaining patterns.
-
-untotaliseListPatt :: Cont 𝔹 -> List Pattern -> Cont 𝔹
-untotaliseListPatt κ Nil = κ
-untotaliseListPatt (Arg σ) (p:ps) =
+{-              →      -}
+{- untotalise κ π ↗ κ' -}
+untotalise :: Cont 𝔹 -> List Patt -> Cont 𝔹
+untotalise κ Nil = κ
+untotalise (Arg σ) (p:ps) =
    case σ, p of
-      ElimVar x κ, PVar x'  -> 
-         if x == x' then Arg (ElimVar x (untotaliseListPatt κ ps)) else error $ "untotaliseListPatt: patterns don't match " <> render (pretty x) <> " -> " <> render (pretty κ) <> " \n" <> render (pretty ps)
-      ElimConstr m, PConstr ctr ps' ->
-         let κ = mustLookup ctr m
-         in  Arg $ ElimConstr (fromFoldable [ctr × untotaliseListPatt (untotaliseListPatt κ ps') ps])
-      ElimConstr m, PListEmpty ->
-         let κ = mustLookup cNil m
-         in  Arg $ ElimConstr (fromFoldable [cNil × untotaliseListPatt κ ps])
-      ElimConstr m, PListNonEmpty p' o ->
-         let κ = mustLookup cCons m
-         in  Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPatt (untotaliseListPattRest (untotaliseListPatt κ (p':Nil)) o) ps  ])
-      σ', p' -> error $ "untotaliseListPatt (σ, π) match not found: \n" <>
+      ElimVar x κ, Pattern (PVar x') ->
+         if x == x' then Arg (ElimVar x (untotalise κ ps))
+         else error $ "untotalise: patterns don't match " <> render (pretty x) <> " & " <> render (pretty x')
+      ElimConstr m, Pattern (PConstr ctr arg_patts) ->
+         let κ  = mustLookup ctr m 
+             κ' = untotalise κ (map Pattern arg_patts <> ps)
+         in Arg $ ElimConstr (fromFoldable [ctr × κ'])
+      ElimConstr m, Pattern (PListEmpty) ->
+         let κ  = mustLookup cNil m
+             κ' = untotalise κ ps
+         in  Arg $ ElimConstr (fromFoldable [cNil × κ'])
+      ElimConstr m, Pattern (PListNonEmpty p' o) ->
+         let κ  = mustLookup cCons m
+             κ' = untotalise κ (Pattern p' : ListPatternRest o : ps)
+         in  Arg $ ElimConstr (fromFoldable [cCons × κ'])
+      ElimConstr m, ListPatternRest (PEnd) ->
+         let κ  = mustLookup cNil m
+             κ' = untotalise κ ps
+         in  Arg $ ElimConstr (fromFoldable [cNil × κ'])
+      ElimConstr m, ListPatternRest (PNext p' o) ->
+         let κ  = mustLookup cCons m
+             κ' = untotalise κ (Pattern p' : ListPatternRest o : ps)
+         in  Arg $ ElimConstr (fromFoldable [cCons × κ'])
+      σ', p' -> error $ "untotalise (σ, π) match not found: \n" <>
                       render (pretty σ') <> "\n" <>
                       render (pretty p')
-untotaliseListPatt κ π = error $ "untotaliseListPatt (κ, π) match not found: \n" <>
-                             render (pretty κ) <> "\n" <>
-                             render (pretty π)
-
--- untotaliseListPatt :: Cont 𝔹 -> List Pattern -> Cont 𝔹
--- untotaliseListPatt κ Nil = κ
--- untotaliseListPatt κ (p:ps) =
---    let κ' = untotalise κ p
---    in case κ' of 
---        ElimVar x κ'' -> Arg (ElimVar x (untotaliseListPatt κ'' ps)) 
---  error $ "untotaliseListPatt test: " <> render (pretty κ) <> "\n" <> render (pretty p) <> " " <> render (pretty ps) <> "\n" <> render (pretty (untotalisePatt κ p))
---    --untotaliseListPatt (untotalisePatt κ p) ps
-
-{- untotalise κ o ↗ κ' -}
-untotaliseListPattRest :: Cont 𝔹 -> ListPatternRest -> Cont 𝔹
-untotaliseListPattRest (Arg (ElimConstr m)) PEnd =
-   let κ = mustLookup cNil m
-   in  Arg $ ElimConstr (fromFoldable [cNil × κ])
-untotaliseListPattRest (Arg (ElimConstr m)) (PNext p o) =
-   let κ = mustLookup cCons m
-   in  error $ "untotaliseListPattRest test: " <> render (pretty κ) <> "\n" <> render (pretty p) <> " " <> render (pretty o) 
-   --Arg $ ElimConstr (fromFoldable [cCons × untotaliseListPattRest (untotalisePatt κ p) o])
-untotaliseListPattRest κ o = error $ "untotaliseListPattRest (κ, o) not found: \n" <>
-                                     render (pretty κ) <> "\n" <>
-                                     render (pretty o)
+untotalise κ π = error $ "untotalise (κ, π) match not found: \n" <>
+                          render (pretty κ) <> "\n" <>
+                          render (pretty π)
