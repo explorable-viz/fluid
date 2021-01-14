@@ -11,7 +11,7 @@ import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity, checkDataType, cPair, dataTypeForKeys)
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..))
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, Var, VarDef(..), body, varAnon)
 import Lattice (𝔹)
 import Pretty (pretty, render)
 import Primitive (apply, to)
@@ -52,6 +52,13 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) $ show c <> " got " <> show n <> " argument(s), expects at most " <> show n'
 
+wurble :: Env 𝔹 -> Expr 𝔹 -> Var × Var -> Int × Int -> List (List (MayFail (Expl 𝔹 × Val 𝔹)))
+wurble ρ e(x × y) (i' × j') = do
+   i <- range 1 i'
+   singleton $ do
+      j <- range 1 j'
+      singleton $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e
+
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ Hole = error absurd
 eval ρ (Expr _ (Var x)) =
@@ -73,12 +80,12 @@ eval ρ (Expr _ (Matrix e (x × y) e')) = do
    case v' of
       V.Hole -> error absurd
       Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair  -> do
+         let (i' × j') = (to v1 × to v2)
          tvs <- sequence $ do
-               i <- range 1 (to v1)
-               j <- range 1 (to v2)
+               i <- range 1 i'
+               j <- range 1 j'
                pure $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e
-         let v = val $ V.Matrix ?_ ?_
-         ?_
+         (Expl ρ T.Matrix × _) <$> pure (val $ V.Matrix (error "todo") (i' × j'))
       Val _ v -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v)
 eval ρ (Expr _ (LetRec δ e)) = do
    let ρ' = closeDefs ρ δ δ

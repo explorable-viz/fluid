@@ -19,6 +19,7 @@ data RawExpl a =
    Float |
    Str  |
    Constr Ctr (List (Expl a)) |
+   Matrix |
    Lambda |
    AppHole (Expl a) |
    App (Expl a × RecDefs a) (Expl a) (Match a) (Expl a) |
