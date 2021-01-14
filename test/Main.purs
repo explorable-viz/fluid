@@ -46,7 +46,7 @@ test' name setup expected =
          case successful $ eval ρ e of
             t × v -> do
                unless (isGraphical v) $
-                  --trace (render $ pretty v) $
+                  -- trace ((render $ pretty s) <> "\n" <> (render $ pretty e)) $
                   (render $ pretty v) `shouldEqual` expected
                when slicing do
                   let ρ' × e' × α'  = eval_bwd v t
@@ -72,6 +72,7 @@ main = do
    run $ test "desugar/list-comp-3" "[9, 8]"
    run $ test "desugar/list-comp-4" "[5, 4, 3]"
    run $ test "desugar/list-comp-5" "[5, 4, 3]"
+   run $ test "desugar/list-comp-6" "[5]"
    run $ test "desugar/list-enum" "[3, 4, 5, 6, 7]"
    -- slicing
    run $ test "arithmetic" "42"
