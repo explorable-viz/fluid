@@ -152,7 +152,7 @@ instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) wh
 
 {- →        -}
 {- p, κ ↗ σ -}
-instance desugarFwdPatternsCont :: DesugarFwd (NonEmptyList Pattern × Cont Boolean) (Elim Boolean) where
+instance desugarFwdPatternsCont :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (Elim Boolean) where
    desugarFwd (NonEmptyList (π :| Nil) × κ)     = desugarFwd $ π × κ
    desugarFwd (NonEmptyList (π :| π' : πs) × κ) = do
       κ' <- Body <$> E.expr <$> E.Lambda <$> desugarFwd (NonEmptyList (π' :| πs) × κ)
@@ -183,11 +183,6 @@ instance desugarFwdListPatternRestCont :: DesugarFwd (ListPatternRest × Cont Bo
 
 {-                →        -}
 {- c ↗ σ   i.e.   p, s ↗ σ -}
-instance desugarFwdBranch :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (Elim Boolean) where
-   desugarFwd (πs × s) = do
-      κ <- Body <$> desugarFwd s
-      desugarFwd $ πs × κ
-
 instance desugarFwdBranchUncurried :: DesugarFwd (Pattern × Expr Boolean) (Elim Boolean) where
    desugarFwd (π × s) = do
       κ <- Body <$> desugarFwd s
