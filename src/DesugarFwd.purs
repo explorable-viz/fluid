@@ -70,7 +70,7 @@ instance desugarFwdVarDefs :: DesugarFwd (Boolean × (NonEmptyList (VarDef Boole
       E.Expr (α1 ∧ α2) <$> (E.Let <$> desugarFwd d <*> desugarFwd s)
    desugarFwd  (α1 × (NonEmptyList (d@(VarDef _ (Expr α2 t)) :| d' : ds) × s)) =
       E.Expr (α1 ∧ α2) <$> (E.Let <$> desugarFwd d <*> desugarFwd ((α1 ∧ α2) × (NonEmptyList (d' :| ds) × s)))
-   desugarFwd  (_ × (NonEmptyList ((VarDef _ Hole) :| _) × _)) 
+   desugarFwd  (_ × (NonEmptyList ((VarDef _ Hole) :| _) × _))
       = error "Encountered hole during desugar fwd"
 
 {-       →                      →                 -}
@@ -175,7 +175,7 @@ instance desugarFwdPatternCont :: DesugarFwd (Pattern × Cont Boolean) (Elim Boo
       ElimConstr <$> singleton cCons <$> Arg <$> desugarFwd (π × κ')
 
 {- o, κ ↗ σ -}
-instance desugarFwdListPatternRestCont :: DesugarFwd (ListPatternRest × (Cont Boolean)) (Elim Boolean) where
+instance desugarFwdListPatternRestCont :: DesugarFwd (ListPatternRest × Cont Boolean) (Elim Boolean) where
    desugarFwd (PEnd × κ)      = pure $ ElimConstr $ singleton cNil κ
    desugarFwd (PNext π o × κ) = do
       κ' <- Arg <$> desugarFwd (o × κ)
