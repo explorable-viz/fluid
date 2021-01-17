@@ -273,8 +273,8 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          matrix :: SParser (Expr 𝔹)
          matrix =
-            between (token.symbol strArrayLBracket) (token.symbol strArrayRBracket) $
-               ?_
+            between (token.symbol strArrayLBracket) (token.symbol strArrayRBracket) $ do
+               expr <$> (Matrix <$> (expr' <* bar) <*> (ident `lift2 (×)` ident) <*> (keyword strIn *> expr'))
 
          constr :: SParser (Expr 𝔹)
          constr = expr <$> (Constr <$> ctr <@> empty)

@@ -229,6 +229,7 @@ instance prettyRawSExpr :: BoundedJoinSemilattice a => Pretty (RawExpr a) where
    pretty r@(Constr c es)
       | c == cNil || c == cCons     = pretty $ toList $ expr r
       | otherwise                   = prettyConstr c es
+   pretty (Matrix _ _ _)            = error "todo"
    pretty (Lambda bs)               = text "λ " :<>: pretty bs
    pretty (App e e')                = pretty e :<>: space :<>: pretty e'
    pretty (BinaryApp e op e')       = pretty e :<>: operator op :<>: pretty e'

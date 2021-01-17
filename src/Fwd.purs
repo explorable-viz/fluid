@@ -1,11 +1,12 @@
 module Fwd where
 
 import Prelude hiding (absurd)
-import Data.List (List(..), (:), singleton)
+import Data.List (List(..), (:), range, singleton)
 import Bindings (Bindings(..), (:+:), (↦), find)
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
+import DataType (cPair)
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDefs, Var, VarDef(..), body, varAnon)
 import Lattice (𝔹, (∧))
-import Primitive (apply_fwd)
+import Primitive (apply_fwd, to)
 import Util (type (×), (×), absurd, error, mustLookup, successful)
 import Val (Env, Val(Val))
 import Val (RawVal(..), Val(Hole)) as V
@@ -32,6 +33,14 @@ closeDefs_fwd :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> 𝔹 -> Env 𝔹
 closeDefs_fwd _ _ Empty _           = Empty
 closeDefs_fwd ρ δ0 (δ :+: f ↦ σ) α  = closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ0 σ)
 
+wurble :: Env 𝔹 -> Expr 𝔹 -> Var 𝔹 × Var 𝔹 -> Int × Int -> List (List (Val 𝔹))
+wurble ρ e (x × y) (i' × j') =
+   do
+      i <- range 1 i'
+      singleton $ do
+         j <- range 1 j'
+         singleton $ eval_fwd ((ρ :+: x ↦ Val true (V.Int i)) :+: y ↦ Val true (V.Int j)) e
+
 eval_fwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Val 𝔹
 eval_fwd _ Hole _ = V.Hole
 eval_fwd ρ (Expr _ (Var x)) _ =
@@ -46,8 +55,13 @@ eval_fwd ρ (Expr α (Str str)) α' =
    Val (α ∧ α') $ V.Str str
 eval_fwd ρ (Expr α (Constr c es)) α' =
    Val (α ∧ α') $ V.Constr c $ map (\e -> eval_fwd ρ e α') es
-eval_fwd ρ (Expr α (Matrix _ _ _)) α' =
-   error "todo"
+eval_fwd ρ (Expr α (Matrix e (x × y) e')) α' =
+   case eval_fwd ρ e' α of
+      V.Hole                                          -> V.Hole
+      Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair ->
+         let i' × j' = to v1 × to v2 in
+         Val (α ∧ α') $ V.Matrix ?_ (i' × j')
+      _ ->                                            error absurd
 eval_fwd ρ (Expr _ (LetRec δ e)) α =
    let ρ' = closeDefs_fwd ρ δ δ α in
    eval_fwd (ρ <> ρ') e α
