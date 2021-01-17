@@ -1,6 +1,8 @@
 module Eval where
 
 import Prelude hiding (absurd, apply)
+import Data.Array (fromFoldable)
+import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, range, singleton, unzip, snoc)
 import Data.Map (lookup, update)
@@ -52,8 +54,8 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) $ show c <> " got " <> show n <> " argument(s), expects at most " <> show n'
 
-wurble :: Env 𝔹 -> Expr 𝔹 -> Var × Var -> Int × Int -> MayFail ((List (List (Expl 𝔹))) × List (List (Val 𝔹)))
-wurble ρ e (x × y) (i' × j') = unzip <$> ((<$>) unzip) <$> (sequence $ do
+wurble :: Env 𝔹 -> Expr 𝔹 -> Var × Var -> Int × Int -> MayFail (List (Array (Expl 𝔹) × Array (Val 𝔹)))
+wurble ρ e (x × y) (i' × j') = ((<$>) (unzip >>> bimap fromFoldable fromFoldable)) <$> (sequence $ do
    i <- range 1 i'
    singleton $ sequence $ do
       j <- range 1 j'
