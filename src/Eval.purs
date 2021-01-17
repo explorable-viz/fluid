@@ -54,15 +54,15 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) $ show c <> " got " <> show n <> " argument(s), expects at most " <> show n'
 
-gibble :: forall a b . List (a × b) -> Array a × Array b
-gibble = unzip >>> bimap fromFoldable fromFoldable
-
 wurble :: Env 𝔹 -> Expr 𝔹 -> Var × Var -> Int × Int -> MayFail ((Array (Array (Expl 𝔹)) × Array (Array (Val 𝔹))))
-wurble ρ e (x × y) (i' × j') = gibble <$> ((<$>) gibble) <$> (sequence $ do
+wurble ρ e (x × y) (i' × j') = unzipToArray <$> ((<$>) unzipToArray) <$> (sequence $ do
    i <- range 1 i'
    singleton $ sequence $ do
       j <- range 1 j'
       singleton $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e)
+      where
+      unzipToArray :: forall a b . List (a × b) -> Array a × Array b
+      unzipToArray = unzip >>> bimap fromFoldable fromFoldable
 
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ Hole = error absurd
@@ -86,10 +86,7 @@ eval ρ (Expr _ (Matrix e (x × y) e')) = do
       V.Hole -> error absurd
       Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair  -> do
          let (i' × j') = (to v1 × to v2)
-         tvs <- sequence $ do
-               i <- range 1 i'
-               j <- range 1 j'
-               singleton $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e
+         ts × vs <- wurble ρ e (x × y) (i' × j')
          (Expl ρ T.Matrix × _) <$> pure (val $ V.Matrix (error "todo") (i' × j'))
       Val _ v -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v)
 eval ρ (Expr _ (LetRec δ e)) = do
