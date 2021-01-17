@@ -86,6 +86,7 @@ instance prettyRawExpl :: BoundedJoinSemilattice a => Pretty (RawExpl a) where
    pretty T.Float                         = text "float"
    pretty T.Str                           = text "str"
    pretty (T.Constr c ts)                 = prettyConstr c ts
+   pretty (T.Matrix _)                    = error "todo"
    pretty T.Lambda                        = text "fun"
    pretty (T.AppHole t)                   = text "App" :<>: parens (hole :<>: comma :<>: hole)
    pretty (T.App (t × _) t' ξ t'')        =
@@ -155,6 +156,7 @@ instance prettyRawExpr :: BoundedJoinSemilattice a => Pretty (E.RawExpr a) where
    pretty r@(E.Constr c es)
       | c == cNil || c == cCons     = pretty $ toList $ E.expr r
       | otherwise                   = prettyConstr c es
+   pretty (E.Matrix _ _ _)            = error "todo"
    pretty (E.Op op)                 = parens $ text op
    pretty (E.Let (E.VarDef σ e) e')   =
       atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
@@ -193,6 +195,7 @@ instance prettyRawVal :: BoundedJoinSemilattice a => Pretty (RawVal a) where
    pretty u@(V.Constr c vs)
       | c == cNil || c == cCons  = pretty $ toList $ val u
       | otherwise                = prettyConstr c vs
+   pretty (V.Matrix _ _)         = error "todo"
    pretty (V.Closure ρ δ σ)      =
     text "Closure" :<>: text "(" :<>:
     (atop (atop (text "env: " :<>: pretty ρ) (text "defs: " :<>: pretty δ)) (text "elim: " :<>: pretty σ)) :<>: (text ")")
@@ -228,6 +231,7 @@ instance prettyRawSExpr :: BoundedJoinSemilattice a => Pretty (RawExpr a) where
    pretty r@(Constr c es)
       | c == cNil || c == cCons     = pretty $ toList $ expr r
       | otherwise                   = prettyConstr c es
+   pretty (Matrix _ _ _)            = error "todo"
    pretty (Lambda bs)               = text "λ " :<>: pretty bs
    pretty (App e e')                = pretty e :<>: space :<>: pretty e'
    pretty (BinaryApp e op e')       = pretty e :<>: operator op :<>: pretty e'

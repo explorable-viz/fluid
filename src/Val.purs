@@ -10,7 +10,7 @@ import Lattice (
    class BoundedJoinSemilattice, class BoundedSlices, class JoinSemilattice, class Slices,
    𝔹, (∨), bot, definedJoin, maybeJoin
 )
-import Util (Endo, type (+), (≟), absurd, error)
+import Util (Endo, type (×), type (+), (≟), absurd, error)
 
 -- one constructor for each PureScript type that appears in an exported operator signature
 data Primitive =
@@ -26,6 +26,7 @@ data RawVal a =
    Float Number |
    Str String |
    Constr Ctr (List (Val a)) |
+   Matrix (Array (Array (Val a))) (Int × Int) |
    Closure (Env a) (RecDefs a) (Elim a) |
    Primitive Primitive
 
@@ -66,6 +67,7 @@ instance slicesRawVal :: JoinSemilattice a => Slices (RawVal a) where
    maybeJoin (Float n) (Float m)                = Float <$> n ≟ m
    maybeJoin (Str s) (Str s')                   = Str <$> s ≟ s'
    maybeJoin (Constr c vs) (Constr c' vs')      = Constr <$> c ≟ c' <*> maybeJoin vs vs'
+   maybeJoin (Matrix vs xy) (Matrix vs' xy')    = Matrix <$> (maybeJoin vs vs') <*> xy ≟ xy'
    maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
    maybeJoin _ _                                = Nothing

@@ -15,7 +15,7 @@ import Data.Map (values)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
-import Text.Parsing.Parser.Combinators (try)
+import Text.Parsing.Parser.Combinators (between, try)
 import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
@@ -34,22 +34,24 @@ import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
 
 -- constants (should also be used by prettyprinter)
-strAs          = "as"      :: String
-strBackslash   = "\\"      :: String
-strBar         = "|"       :: String
-strEllipsis    = ".."      :: String
-strElse        = "else"    :: String
-strEquals      = "="       :: String
-strFun         = "fun"     :: String
-strIf          = "if"      :: String
-strIn          = "in"      :: String
-strLBracket    = "["       :: String
-strLet         = "let"     :: String
-strMatch       = "match"   :: String
-strLArrow      = "<-"      :: String
-strRArrow      = "->"      :: String
-strRBracket    = "]"       :: String
-strThen        = "then"    :: String
+strArrayLBracket  = "[|"       :: String
+strArrayRBracket  = "|]"       :: String
+strAs             = "as"      :: String
+strBackslash      = "\\"      :: String
+strBar            = "|"       :: String
+strEllipsis       = ".."      :: String
+strElse           = "else"    :: String
+strEquals         = "="       :: String
+strFun            = "fun"     :: String
+strIf             = "if"      :: String
+strIn             = "in"      :: String
+strLBracket       = "["       :: String
+strLet            = "let"     :: String
+strMatch          = "match"   :: String
+strLArrow         = "<-"      :: String
+strRArrow         = "->"      :: String
+strRBracket       = "]"       :: String
+strThen           = "then"    :: String
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
@@ -226,6 +228,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          listNonEmpty <|>
          listComp <|>
          listEnum <|>
+         matrix <|>
          try constr <|>
          try variable <|>
          try float <|>
@@ -267,6 +270,11 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          listEnum :: SParser (Expr 𝔹)
          listEnum = token.brackets $
             expr <$> (pure ListEnum <*> expr' <* ellipsis <*> expr')
+
+         matrix :: SParser (Expr 𝔹)
+         matrix =
+            between (token.symbol strArrayLBracket) (token.symbol strArrayRBracket) $ do
+               expr <$> (Matrix <$> (expr' <* bar) <*> (ident `lift2 (×)` ident) <*> (keyword strIn *> expr'))
 
          constr :: SParser (Expr 𝔹)
          constr = expr <$> (Constr <$> ctr <@> empty)

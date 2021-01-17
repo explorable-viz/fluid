@@ -15,6 +15,7 @@ data RawExpr a =
    Float Number |
    Str String |
    Constr Ctr (List (Expr a)) |
+   Matrix (Expr a) (Var × Var) (Expr a) |
    Lambda (NonEmptyList (Branch a)) |
    App (Expr a) (Expr a) |
    BinaryApp (Expr a) Var (Expr a) |

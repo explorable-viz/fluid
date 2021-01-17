@@ -1,11 +1,13 @@
 module Fwd where
 
 import Prelude hiding (absurd)
-import Data.List (List(..), (:), singleton)
+import Data.Array (fromFoldable)
+import Data.List (List(..), (:), range, singleton)
 import Bindings (Bindings(..), (:+:), (↦), find)
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
+import DataType (cPair)
+import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), RecDefs, Var, VarDef(..), body, varAnon)
 import Lattice (𝔹, (∧))
-import Primitive (apply_fwd)
+import Primitive (apply_fwd, to)
 import Util (type (×), (×), absurd, error, mustLookup, successful)
 import Val (Env, Val(Val))
 import Val (RawVal(..), Val(Hole)) as V
@@ -32,6 +34,14 @@ closeDefs_fwd :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> 𝔹 -> Env 𝔹
 closeDefs_fwd _ _ Empty _           = Empty
 closeDefs_fwd ρ δ0 (δ :+: f ↦ σ) α  = closeDefs_fwd ρ δ0 δ α :+: f ↦ Val α (V.Closure ρ δ0 σ)
 
+wurble :: Env 𝔹 -> Expr 𝔹 -> Var × Var -> Int × Int -> 𝔹 -> Array (Array (Val 𝔹))
+wurble ρ e (x × y) (i' × j') α =
+   fromFoldable $ do
+      i <- range 1 i'
+      singleton $ fromFoldable $ do
+         j <- range 1 j'
+         singleton $ eval_fwd ((ρ :+: x ↦ Val true (V.Int i)) :+: y ↦ Val true (V.Int j)) e α
+
 eval_fwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Val 𝔹
 eval_fwd _ Hole _ = V.Hole
 eval_fwd ρ (Expr _ (Var x)) _ =
@@ -46,6 +56,18 @@ eval_fwd ρ (Expr α (Str str)) α' =
    Val (α ∧ α') $ V.Str str
 eval_fwd ρ (Expr α (Constr c es)) α' =
    Val (α ∧ α') $ V.Constr c $ map (\e -> eval_fwd ρ e α') es
+eval_fwd ρ (Expr α (Matrix e (x × y) e')) α' =
+   case eval_fwd ρ e' α of
+      V.Hole                                          -> V.Hole
+      Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair ->
+         let i' × j' = to v1 × to v2
+             vs = fromFoldable $ do
+                  i <- range 1 i'
+                  singleton $ fromFoldable $ do
+                     j <- range 1 j'
+                     singleton $ eval_fwd ((ρ :+: x ↦ Val α (V.Int i)) :+: y ↦ Val α (V.Int j)) e α'
+         in Val (α ∧ α') $ V.Matrix vs (i' × j')
+      _ ->                                            error absurd
 eval_fwd ρ (Expr _ (LetRec δ e)) α =
    let ρ' = closeDefs_fwd ρ δ δ α in
    eval_fwd (ρ <> ρ') e α
