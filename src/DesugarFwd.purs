@@ -91,6 +91,8 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Expr α (Str s))               = pure $ E.Expr α (E.Str s)
    -- | Constr (this covers Cons)
    desugarFwd (Expr α (Constr ctr args))     = E.Expr α <$> (E.Constr ctr <$> traverse desugarFwd args)
+   -- | Matrix
+   desugarFwd (Expr α (Matrix s (x × y) s')) = E.Expr α <$> (E.Matrix <$> desugarFwd s <@> x × y <*> desugarFwd s')
    -- | Lambda
    desugarFwd (Expr α (Lambda bs))           = E.Expr α <$> (E.Lambda <$> desugarFwd bs)
    -- | Application
