@@ -71,8 +71,8 @@ eval ρ (Expr _ (Constr c es)) = do
    ts × vs <- traverse (eval ρ) es <#> unzip
    (Expl ρ (T.Constr c ts) × _) <$> pure (val $ V.Constr c vs)
 eval ρ (Expr _ (Matrix e (x × y) e')) = do
-   t' × v' <- eval ρ e'
-   case v' of
+   t × v <- eval ρ e'
+   case v of
       V.Hole -> error absurd
       Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair -> do
          let i' × j' = to v1 × to v2
@@ -81,8 +81,8 @@ eval ρ (Expr _ (Matrix e (x × y) e')) = do
             singleton $ sequence $ do
                j <- range 1 j'
                singleton $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e)
-         (Expl ρ (T.Matrix ts) × _) <$> pure (val $ V.Matrix vs (i' × j'))
-      Val _ v -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v)
+         (Expl ρ (T.Matrix ts t) × _) <$> pure (val $ V.Matrix vs (i' × j'))
+      Val _ v' -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v')
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable
