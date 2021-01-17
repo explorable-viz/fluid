@@ -52,10 +52,10 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) $ show c <> " got " <> show n <> " argument(s), expects at most " <> show n'
 
-wurble :: Env 𝔹 -> Expr 𝔹 -> Var × Var -> Int × Int -> List (List (MayFail (Expl 𝔹 × Val 𝔹)))
-wurble ρ e(x × y) (i' × j') = do
+wurble :: Env 𝔹 -> Expr 𝔹 -> Var × Var -> Int × Int -> MayFail (List (List (Expl 𝔹 × Val 𝔹)))
+wurble ρ e(x × y) (i' × j') = sequence $ do
    i <- range 1 i'
-   singleton $ do
+   singleton $ sequence $ do
       j <- range 1 j'
       singleton $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e
 
@@ -84,7 +84,7 @@ eval ρ (Expr _ (Matrix e (x × y) e')) = do
          tvs <- sequence $ do
                i <- range 1 i'
                j <- range 1 j'
-               pure $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e
+               singleton $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e
          (Expl ρ T.Matrix × _) <$> pure (val $ V.Matrix (error "todo") (i' × j'))
       Val _ v -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v)
 eval ρ (Expr _ (LetRec δ e)) = do
