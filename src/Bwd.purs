@@ -83,7 +83,7 @@ eval_bwd (Val α (V.Matrix vs (i' × j'))) (Expl ρ (T.Matrix ts t)) =
             singleton (i' × j)
        eval_bwd_elem (i × j) =
           case eval_bwd (vs!i!j) (ts!i!j) of
-            Extend (Extend ρ' (x ↦ Val γ _)) (y ↦ Val γ' _) × e' × β' -> ρ' × e' × β'
+            Extend (Extend ρ' (x ↦ Val γ _)) (y ↦ Val γ' _) × e' × β' -> ρ' × e' × β' × (γ ∨ γ')
             _ -> error absurd
        blah = eval_bwd_elem <$> ijs in
    ?_

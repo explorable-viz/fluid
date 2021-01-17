@@ -76,6 +76,7 @@ eval ρ (Expr _ (Matrix e (x × y) e')) = do
       V.Hole -> error absurd
       Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair -> do
          let i' × j' = to v1 × to v2
+         check (i' × j' >= 1 × 1) $ "array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")"
          ts × vs <- unzipToArray <$> ((<$>) unzipToArray) <$> (sequence $ do
             i <- range 1 i'
             singleton $ sequence $ do
