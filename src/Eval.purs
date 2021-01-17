@@ -74,8 +74,8 @@ eval ρ (Expr _ (Matrix e (x × y) e')) = do
    t' × v' <- eval ρ e'
    case v' of
       V.Hole -> error absurd
-      Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair  -> do
-         let (i' × j') = (to v1 × to v2)
+      Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair -> do
+         let i' × j' = to v1 × to v2
          ts × vs <- unzipToArray <$> ((<$>) unzipToArray) <$> (sequence $ do
             i <- range 1 i'
             singleton $ sequence $ do
