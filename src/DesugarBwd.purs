@@ -94,8 +94,11 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Expr α (E.Float n)) (Expr _ (Float n'))    = pure $ Expr α (Float (n ≜ n'))
    desugarBwd (E.Expr α (E.Str s))   (Expr _ (Str s'))      = pure $ Expr α (Str (s ≜ s'))
    -- | Constr (this covers Cons)
-   desugarBwd (E.Expr α (E.Constr ctr args)) (Expr _ (Constr ctr' args')) =
-      Expr α <$> (Constr ctr <$> traverse (uncurry desugarBwd) (zip args args'))
+   desugarBwd (E.Expr α (E.Constr c es)) (Expr _ (Constr c' es')) =
+      Expr α <$> (Constr (c ≜ c') <$> traverse (uncurry desugarBwd) (zip es es'))
+   -- | Matrix
+   desugarBwd (E.Expr α (E.Matrix e (x × y) e')) (Expr _ (Matrix s (x' × y') s')) =
+      Expr α <$> (Matrix <$> desugarBwd e s <@> (x ≜ x') × (y ≜ y') <*> desugarBwd e' s')
    -- | Lambda
    desugarBwd (E.Expr α (E.Lambda σ)) (Expr _ (Lambda bs))= Expr α <$> (Lambda <$> desugarBwd σ bs)
    -- | Application
