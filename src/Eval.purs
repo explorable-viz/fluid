@@ -53,12 +53,12 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) $ show c <> " got " <> show n <> " argument(s), expects at most " <> show n'
 
-wurble :: Env 𝔹 -> Expr 𝔹 -> Var × Var -> Int × Int -> MayFail (List (Array (Expl 𝔹 × Val 𝔹)))
-wurble ρ e (x × y) (i' × j') = sequence $ do
+wurble :: Env 𝔹 -> Expr 𝔹 -> Var × Var -> Int × Int -> MayFail (Array (Array (Expl 𝔹 × Val 𝔹)))
+wurble ρ e (x × y) (i' × j') = fromFoldable <$> (sequence $ do
    i <- range 1 i'
    singleton $ fromFoldable <$> (sequence $ do
       j <- range 1 j'
-      singleton $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e)
+      singleton $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e))
 
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ Hole = error absurd
