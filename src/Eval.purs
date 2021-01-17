@@ -13,7 +13,7 @@ import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity, checkDataType, cPair, dataTypeForKeys)
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..))
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, Var, VarDef(..), body, varAnon)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
 import Lattice (𝔹)
 import Pretty (pretty, render)
 import Primitive (apply, to)
@@ -81,7 +81,7 @@ eval ρ (Expr _ (Matrix e (x × y) e')) = do
             singleton $ sequence $ do
                j <- range 1 j'
                singleton $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e)
-         (Expl ρ T.Matrix × _) <$> pure (val $ V.Matrix vs (i' × j'))
+         (Expl ρ (T.Matrix ts) × _) <$> pure (val $ V.Matrix vs (i' × j'))
       Val _ v -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v)
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
