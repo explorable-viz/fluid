@@ -2,14 +2,16 @@ module Bwd where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), foldr, range, singleton, zip)
+import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (insert)
+import Data.NonEmpty (foldl1)
 import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, find, foldEnv, splitAt)
 import DataType (cPair)
 import Expl (Expl(..), Match(..))
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), VarDef(..), RecDefs, varAnon)
 import Lattice (𝔹, botOf, (∨))
-import Util (Endo, type (×), (×), (≜), (!), absurd, error, successful)
+import Util (Endo, type (×), (×), (≜), (!), absurd, error, nonEmpty, successful)
 import Val (Env, Val(Val), setα)
 import Val (RawVal(..), Val(Hole)) as V
 
@@ -75,18 +77,20 @@ eval_bwd (Val α (V.Constr c vs)) (Expl ρ (T.Constr c' ts)) =
           where ρ'' × e × α'' = eval_bwd v t
        ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Nil × α) (zip vs ts) in
    ρ' × Expr α (Constr c es) × α'
-eval_bwd (Val α (V.Matrix vs (i' × j'))) (Expl ρ (T.Matrix ts t)) =
+eval_bwd (Val α (V.Matrix vs (i' × j'))) (Expl ρ (T.Matrix ts (x × y) t)) =
    let ρ × e × β = eval_bwd (Val false (V.Constr cPair (Val α (V.Int i') : Val α (V.Int j') : Nil))) t
-       ijs = do
+       NonEmptyList ijs = nonEmpty $ do
             i <- range 1 i'
             j <- range 1 j'
             singleton (i' × j)
        eval_bwd_elem (i × j) =
           case eval_bwd (vs!i!j) (ts!i!j) of
-            Extend (Extend ρ' (x ↦ Val γ _)) (y ↦ Val γ' _) × e' × β' -> ρ' × e' × β' × (γ ∨ γ')
+            Extend (Extend ρ' (_ ↦ Val γ _)) (_ ↦ Val γ' _) × e' × β' -> ρ' × e' × β' × (γ ∨ γ')
             _ -> error absurd
-       blah = eval_bwd_elem <$> ijs in
-   ?_
+       ρ' × e' × β' × γ = foldl1
+         (\(ρ1 × e1 × β1 × γ1) (ρ2 × e2 × β2 × γ2) -> ((ρ1 ∨ ρ2) × (e1 ∨ e2) × (β1 ∨ β2) × (γ1 ∨ γ2)))
+         (eval_bwd_elem <$> ijs) in
+   (ρ ∨ ρ') × Expr (α ∨ γ) (Matrix e' (x × y) e) × (α ∨ β ∨ β')
 eval_bwd v (Expl _ (T.App (t × δ) t' ξ t'')) =
    let ρ1ρ2ρ3 × e × α    = eval_bwd v t''
        ρ1ρ2 × ρ3         = unmatch ρ1ρ2ρ3 ξ

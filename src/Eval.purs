@@ -82,7 +82,7 @@ eval ρ (Expr _ (Matrix e (x × y) e')) = do
             singleton $ sequence $ do
                j <- range 1 j'
                singleton $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e)
-         (Expl ρ (T.Matrix ts t) × _) <$> pure (val $ V.Matrix vs (i' × j'))
+         (Expl ρ (T.Matrix ts (x × y) t) × _) <$> pure (val $ V.Matrix vs (i' × j'))
       Val _ v' -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v')
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
