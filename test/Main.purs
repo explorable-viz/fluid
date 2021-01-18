@@ -75,6 +75,7 @@ main = do
    run $ test "desugar/list-enum" "[3, 4, 5, 6, 7]"
    -- misc
    run $ test "arithmetic" "42"
+   run $ test "array" "blah"
    run $ test "compose" "5"
    run $ test "factorial" "40320"
    run $ test "filter" "[8, 7]"
