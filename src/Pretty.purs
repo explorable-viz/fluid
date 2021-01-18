@@ -1,9 +1,9 @@
 module Pretty (class Pretty, pretty, module P) where
 
 import Prelude hiding (absurd, between)
-import Data.List (List(..), (:))
-import Data.Map (toUnfoldable)
+import Data.List (List(..), (:), fromFoldable)
 import Data.List.NonEmpty (NonEmptyList(..))
+import Data.Map (toUnfoldable)
 import Data.NonEmpty ((:|))
 import Data.String (Pattern(..), contains) as Data.String
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
@@ -194,7 +194,7 @@ instance prettyRawVal :: BoundedJoinSemilattice a => Pretty (RawVal a) where
    pretty u@(V.Constr c vs)
       | c == cNil || c == cCons  = pretty $ toList $ val u
       | otherwise                = prettyConstr c vs
-   pretty (V.Matrix _ _)         = error "todo"
+   pretty (V.Matrix vss _)       = hcat (pretty <$> fromFoldable (fromFoldable <$> vss))
    pretty (V.Closure ρ δ σ)      =
     text "Closure" :<>: text "(" :<>:
     (atop (atop (text "env: " :<>: pretty ρ) (text "defs: " :<>: pretty δ)) (text "elim: " :<>: pretty σ)) :<>: (text ")")
@@ -241,7 +241,6 @@ instance prettyRawSExpr :: BoundedJoinSemilattice a => Pretty (RawExpr a) where
    pretty (ListComp e qs)           = brackets $ pretty e :<>: text " | " :<>: pretty qs
    pretty (Let ds e)                = atop (text "let " :<>: pretty ds) (text "in " :<>: pretty e)
    pretty (LetRec fπs e)            = atop (text "letrec " :<>: pretty fπs) (text "in " :<>: pretty e)
-
 
 instance prettyNonEmptyList :: Pretty a => Pretty (NonEmptyList a) where
    pretty (NonEmptyList (x :| Nil)) = pretty (x : Nil)
