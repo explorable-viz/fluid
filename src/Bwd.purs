@@ -84,7 +84,7 @@ eval_bwd (Val α (V.Matrix vs (i' × j'))) (Expl ρ (T.Matrix ts (x × y) t)) =
             j <- range 1 j'
             singleton (i' × j')
        eval_bwd_elem (i × j) =
-          case eval_bwd (vs!i!j) (ts!i!j) of
+          case eval_bwd (vs!(i - 1)!(j - 1)) (ts!(i - 1)!(j - 1)) of
             Extend (Extend ρ' (_ ↦ Val γ _)) (_ ↦ Val γ' _) × e' × β' -> ρ' × e' × β' × (γ ∨ γ')
             _ -> error absurd
        ρ' × e' × β' × γ = foldl1
