@@ -15,7 +15,7 @@ import Data.Map (values)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
-import Text.Parsing.Parser.Combinators ({-between, -}try)
+import Text.Parsing.Parser.Combinators (between, try)
 import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
@@ -245,12 +245,11 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          where
          matrix :: SParser (Expr 𝔹)
          matrix =
-            token.symbol strArrayLBracket *> int <* token.symbol strArrayRBracket
---          between (token.symbol strArrayLBracket) (token.symbol strArrayRBracket) $
---            expr <$> (Matrix <$>
---               (expr' <* bar) <*>
---               token.parens (ident `lift2 (×)` (token.comma *> ident)) <*>
---               (keyword strIn *> expr'))
+            between (token.symbol strArrayLBracket) (token.symbol strArrayRBracket) $
+               expr <$> (Matrix <$>
+                  (expr' <* bar) <*>
+                  token.parens (ident `lift2 (×)` (token.comma *> ident)) <*>
+                  (keyword strIn *> expr'))
 
          listEmpty :: SParser (Expr 𝔹)
          listEmpty = token.brackets $ pure $ expr ListEmpty
