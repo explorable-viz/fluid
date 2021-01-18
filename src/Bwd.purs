@@ -82,7 +82,7 @@ eval_bwd (Val α (V.Matrix vs (i' × j'))) (Expl ρ (T.Matrix ts (x × y) t)) =
        NonEmptyList ijs = nonEmpty $ do
             i <- range 1 i'
             j <- range 1 j'
-            singleton (i' × j)
+            singleton (i' × j')
        eval_bwd_elem (i × j) =
           case eval_bwd (vs!i!j) (ts!i!j) of
             Extend (Extend ρ' (_ ↦ Val γ _)) (_ ↦ Val γ' _) × e' × β' -> ρ' × e' × β' × (γ ∨ γ')
