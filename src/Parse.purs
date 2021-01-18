@@ -15,7 +15,7 @@ import Data.Map (values)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
-import Text.Parsing.Parser.Combinators (between, try)
+import Text.Parsing.Parser.Combinators ({-between, -}try)
 import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
@@ -224,11 +224,11 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser (Expr 𝔹)
       simpleExpr =
+         matrix <|> -- before list
          try listEmpty <|>
          listNonEmpty <|>
          listComp <|>
          listEnum <|>
-         matrix <|>
          try constr <|>
          try variable <|>
          try float <|>
@@ -243,6 +243,15 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          ifElse
 
          where
+         matrix :: SParser (Expr 𝔹)
+         matrix =
+            token.symbol strArrayLBracket *> int <* token.symbol strArrayRBracket
+--          between (token.symbol strArrayLBracket) (token.symbol strArrayRBracket) $
+--            expr <$> (Matrix <$>
+--               (expr' <* bar) <*>
+--               token.parens (ident `lift2 (×)` (token.comma *> ident)) <*>
+--               (keyword strIn *> expr'))
+
          listEmpty :: SParser (Expr 𝔹)
          listEmpty = token.brackets $ pure $ expr ListEmpty
 
@@ -270,13 +279,6 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          listEnum :: SParser (Expr 𝔹)
          listEnum = token.brackets $
             expr <$> (pure ListEnum <*> expr' <* ellipsis <*> expr')
-
-         matrix :: SParser (Expr 𝔹)
-         matrix = between (token.symbol strArrayLBracket) (token.symbol strArrayRBracket) $
-            expr <$> (Matrix <$>
-               (expr' <* bar) <*>
-               token.parens (ident `lift2 (×)` (token.comma *> ident))
-               <*> (keyword strIn *> expr'))
 
          constr :: SParser (Expr 𝔹)
          constr = expr <$> (Constr <$> ctr <@> empty)
