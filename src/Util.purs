@@ -3,11 +3,14 @@ module Util where
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Control.MonadPlus (class MonadPlus, empty)
+import Data.Array ((!!))
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List, intercalate)
+import Data.List (List(..), (:), intercalate)
+import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, lookup, unionWith)
 import Data.Maybe (Maybe(..))
+import Data.NonEmpty ((:|))
 import Data.Tuple (Tuple(..))
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
@@ -101,3 +104,13 @@ bind2Flipped f x y = join $ lift2 f x y
 infixr 1 bind2Flipped as =<<<
 
 type Endo a = a -> a
+
+-- version of this in Data.Array uses unsafePartial
+unsafeIndex :: forall a . Array a -> Int -> a
+unsafeIndex xs a = fromJust "Array index out of bounds" $ xs !! a
+
+infixl 8 unsafeIndex as !
+
+nonEmpty :: forall a . List a -> NonEmptyList a
+nonEmpty Nil = error absurd
+nonEmpty (x : xs) = NonEmptyList (x :| xs)
