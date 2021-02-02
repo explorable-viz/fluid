@@ -58,7 +58,7 @@ eval_fwd ρ (Expr α (Constr c es)) α' =
    Val (α ∧ α') $ V.Constr c $ map (\e -> eval_fwd ρ e α') es
 eval_fwd ρ (Expr α (Matrix e (x × y) e')) α' =
    case eval_fwd ρ e' α of
-      V.Hole                                          -> V.Hole
+      V.Hole -> V.Hole
       Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair ->
          let i' × j' = to v1 × to v2
              vs = fromFoldable $ do
@@ -67,7 +67,7 @@ eval_fwd ρ (Expr α (Matrix e (x × y) e')) α' =
                      j <- range 1 j'
                      singleton $ eval_fwd ((ρ :+: x ↦ Val α (V.Int i)) :+: y ↦ Val α (V.Int j)) e α'
          in Val (α ∧ α') $ V.Matrix vs (i' × j')
-      _ ->                                            error absurd
+      _ -> error absurd
 eval_fwd ρ (Expr _ (LetRec δ e)) α =
    let ρ' = closeDefs_fwd ρ δ δ α in
    eval_fwd (ρ <> ρ') e α
