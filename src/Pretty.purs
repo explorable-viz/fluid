@@ -17,8 +17,8 @@ import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..), RawExpl)
 import Lattice (class BoundedJoinSemilattice)
 import Util (Endo, type (×), (×), absurd, error, intersperse)
-import Val (Primitive, RawVal, Val(Val), val)
-import Val (RawVal(..), Val(Hole)) as V
+import Val (Primitive, Val)
+import Val (Val(..)) as V
 
 infixl 5 beside as :<>:
 
@@ -58,9 +58,9 @@ instance toListExpr :: BoundedJoinSemilattice a => ToList (E.Expr a)  where
    toList e                                                   = error $ "toListExpr - not a list: " <> render (pretty e)
 
 instance toListVal :: BoundedJoinSemilattice a => ToList (Val a)  where
-   toList (Val _ (V.Constr c (v : v' : Nil))) | c == cCons  = v : toList v'
-   toList (Val _ (V.Constr c Nil)) | c == cNil              = Nil
-   toList v                                                 = error $ "toListVal - not a list: " <> render (pretty v)
+   toList (V.Constr _ c (v : v' : Nil)) | c == cCons  = v : toList v'
+   toList (V.Constr _ c Nil)            | c == cNil   = Nil
+   toList v                                           = error $ "toListVal - not a list: " <> render (pretty v)
 
 class Pretty p where
    pretty :: p -> Doc
@@ -184,18 +184,15 @@ instance prettyElim :: BoundedJoinSemilattice a => Pretty (Elim a) where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = hcat $ map (\x -> pretty x :<>: comma) $ (toUnfoldable κs :: List _)
 
-instance prettyVal :: BoundedJoinSemilattice a => Pretty (Val a) where
-   pretty V.Hole     = hole
-   pretty (Val _ u)  = pretty u
-
-instance prettyRawVal :: BoundedJoinSemilattice a => Pretty (RawVal a) where
-   pretty (V.Int n)              = text $ show n
-   pretty (V.Float n)            = text $ show n
-   pretty (V.Str str)            = text $ show str
-   pretty u@(V.Constr c vs)
-      | c == cNil || c == cCons  = pretty $ toList $ val u
+instance prettyRawVal :: BoundedJoinSemilattice a => Pretty (Val a) where
+   pretty V.Hole                 = hole
+   pretty (V.Int _ n)            = text $ show n
+   pretty (V.Float _ n)          = text $ show n
+   pretty (V.Str _ str)          = text $ show str
+   pretty u@(V.Constr _ c vs)
+      | c == cNil || c == cCons  = pretty $ toList u
       | otherwise                = prettyConstr c vs
-   pretty (V.Matrix vss _)       = hcat (pretty <$> fromFoldable (fromFoldable <$> vss))
+   pretty (V.Matrix _ vss _)       = hcat (pretty <$> fromFoldable (fromFoldable <$> vss))
    pretty (V.Closure ρ δ σ)      =
     text "Closure" :<>: text "(" :<>:
     (atop (atop (text "env: " :<>: pretty ρ) (text "defs: " :<>: pretty δ)) (text "elim: " :<>: pretty σ)) :<>: (text ")")
