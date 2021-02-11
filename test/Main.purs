@@ -20,16 +20,16 @@ import Module (openDatasetAs, openWithImports)
 import Pretty (pretty, render)
 import SExpr (Expr) as S
 import Util (type (×), (×), successful)
-import Val (Env, Val(..), RawVal(..))
+import Val (Env, Val(..))
 
 -- trace :: forall a b . a -> b -> b
 -- trace a b = T.trace a (\_ -> b)
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
-isGraphical Hole                 = false
-isGraphical (Val _ (Constr c _)) = typeName (successful $ dataTypeFor c) == "GraphicsElement"
-isGraphical (Val _ _)            = false
+isGraphical Hole           = false
+isGraphical (Constr _ c _) = typeName (successful $ dataTypeFor c) == "GraphicsElement"
+isGraphical _              = false
 
 -- whether slicing is currently enabled in the tests
 slicing :: Boolean

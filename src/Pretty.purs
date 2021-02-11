@@ -196,7 +196,7 @@ instance prettyRawVal :: BoundedJoinSemilattice a => Pretty (Val a) where
    pretty (V.Closure ρ δ σ)      =
     text "Closure" :<>: text "(" :<>:
     (atop (atop (text "env: " :<>: pretty ρ) (text "defs: " :<>: pretty δ)) (text "elim: " :<>: pretty σ)) :<>: (text ")")
-   pretty (V.Primitive op)       = parens $ pretty op
+   pretty (V.Primitive _ op)     = parens $ pretty op
 
 instance prettyPrimitive :: Pretty Primitive where
    pretty _ = text "<prim-op>"
@@ -279,7 +279,6 @@ instance prettyPattern :: Pretty Pattern where
 instance prettySExpr :: BoundedJoinSemilattice a => Pretty (Expr a) where
    pretty (Hole)     = hole
    pretty (Expr _ r) = pretty r
-
 
 prettyProgram :: E.Expr Boolean -> Doc
 prettyProgram e = atop (pretty e) (text "")

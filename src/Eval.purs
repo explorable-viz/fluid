@@ -18,14 +18,14 @@ import Lattice (𝔹)
 import Pretty (pretty, render)
 import Primitive (apply, to)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
-import Val (Env, Val(Val), val)
-import Val (RawVal(..), Val(Hole)) as V
+import Val (Env, Val)
+import Val (Val(..)) as V
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match v (ElimVar x κ)
    | x == varAnon = pure $ Empty × κ × MatchVarAnon v
    | otherwise    = pure $ (Empty :+: x ↦ v) × κ × MatchVar x
-match (Val _ (V.Constr c vs)) (ElimConstr κs) = do
+match (V.Constr _ c vs) (ElimConstr κs) = do
    checkDataType "Pattern mismatch: " c κs
    κ <- note ("Incomplete pattern: no branch for " <> show c) $ lookup c κs
    ρ × κ' × ξs <- matchArgs c vs κ
@@ -47,7 +47,7 @@ matchArgs _ _ _                  = error absurd
 
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs _ _ Empty           = Empty
-closeDefs ρ δ0 (δ :+: f ↦ σ)  = closeDefs ρ δ0 δ :+: f ↦ val (V.Closure ρ δ0 σ)
+closeDefs ρ δ0 (δ :+: f ↦ σ)  = closeDefs ρ δ0 δ :+: f ↦ V.Closure ρ δ0 σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -61,29 +61,29 @@ eval ρ (Expr _ (Var x)) =
 eval ρ (Expr _ (Op op)) =
    (Expl ρ (T.Op op) × _) <$> find op ρ
 eval ρ (Expr _ (Int n)) =
-   (Expl ρ T.Int × _) <$> pure (val $ V.Int n)
+   (Expl ρ T.Int × _) <$> pure (V.Int false n)
 eval ρ (Expr _ (Float n)) =
-   (Expl ρ T.Float × _) <$> pure (val $ V.Float n)
+   (Expl ρ T.Float × _) <$> pure (V.Float false n)
 eval ρ (Expr _ (Str str)) =
-   (Expl ρ T.Str × _) <$> pure (val $ V.Str str)
+   (Expl ρ T.Str × _) <$> pure (V.Str false str)
 eval ρ (Expr _ (Constr c es)) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
-   (Expl ρ (T.Constr c ts) × _) <$> pure (val $ V.Constr c vs)
+   (Expl ρ (T.Constr c ts) × _) <$> pure (V.Constr false c vs)
 eval ρ (Expr _ (Matrix e (x × y) e')) = do
    t × v <- eval ρ e'
    case v of
       V.Hole -> error absurd
-      Val _ (V.Constr c (v1 : v2 : Nil)) | c == cPair -> do
+      V.Constr _ c (v1 : v2 : Nil) | c == cPair -> do
          let i' × j' = to v1 × to v2
          check (i' × j' >= 1 × 1) $ "array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")"
          ts × vs <- unzipToArray <$> ((<$>) unzipToArray) <$> (sequence $ do
             i <- range 1 i'
             singleton $ sequence $ do
                j <- range 1 j'
-               singleton $ eval ((ρ :+: x ↦ val (V.Int i)) :+: y ↦ val (V.Int j)) e)
-         (Expl ρ (T.Matrix ts (x × y) t) × _) <$> pure (val $ V.Matrix vs (i' × j'))
-      Val _ v' -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v')
+               singleton $ eval ((ρ :+: x ↦ V.Int false i) :+: y ↦ V.Int false j) e)
+         (Expl ρ (T.Matrix ts (x × y) t) × _) <$> pure (V.Matrix false vs (i' × j'))
+      v' -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v')
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable
@@ -92,25 +92,23 @@ eval ρ (Expr _ (LetRec δ e)) = do
    t × v <- eval (ρ <> ρ') e
    (Expl ρ (T.LetRec δ t) × _) <$> pure v
 eval ρ (Expr _ (Lambda σ)) =
-   (Expl ρ T.Lambda × _) <$> pure (val $ V.Closure ρ Empty σ)
+   (Expl ρ T.Lambda × _) <$> pure (V.Closure ρ Empty σ)
 eval ρ (Expr _ (App e e')) = do
    t × v <- eval ρ e
+   t' × v' <- eval ρ e'
    case v of
       V.Hole -> error absurd
-      Val _ u  -> do
-         t' × v' <- eval ρ e'
-         case u of
-            V.Closure ρ1 δ σ -> do
-               let ρ2 = closeDefs ρ1 δ δ
-               ρ3 × e'' × ξ <- match v' σ
-               t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
-               (Expl ρ (T.App (t × δ) t' ξ t'') × _) <$> pure v''
-            V.Primitive φ ->
-               (Expl ρ (T.AppOp (t × v) (t' × v')) × _) <$> pure (apply φ v')
-            V.Constr c vs -> do
-               check (successful (arity c) > length vs) $ "Too many arguments to " <> show c
-               (Expl ρ (T.AppOp (t × v) (t' × v')) × _) <$> pure (val $ V.Constr c $ vs <> singleton v')
-            _ -> report "Expected closure, operator or unsaturated constructor"
+      V.Closure ρ1 δ σ -> do
+         let ρ2 = closeDefs ρ1 δ δ
+         ρ3 × e'' × ξ <- match v' σ
+         t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
+         (Expl ρ (T.App (t × δ) t' ξ t'') × _) <$> pure v''
+      V.Primitive _ φ ->
+         (Expl ρ (T.AppOp (t × v) (t' × v')) × _) <$> pure (apply φ v')
+      V.Constr _ c vs -> do
+         check (successful (arity c) > length vs) $ "Too many arguments to " <> show c
+         (Expl ρ (T.AppOp (t × v) (t' × v')) × _) <$> pure (V.Constr false c $ vs <> singleton v')
+      _ -> report "Expected closure, operator or unsaturated constructor"
 eval ρ (Expr _ (BinaryApp e op e')) = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'
@@ -118,13 +116,11 @@ eval ρ (Expr _ (BinaryApp e op e')) = do
    let t_app = Expl ρ (T.BinaryApp (t × v) (op × v_φ) (t' × v'))
    case v_φ of
       V.Hole -> error absurd
-      Val _ (V.Primitive φ)   ->
+      V.Primitive _ φ ->
          case apply φ v of
-            V.Hole   -> error absurd
-            Val _ u' ->
-               case u' of
-                  V.Primitive φ_v   -> pure $ t_app × apply φ_v v'
-                  _                 -> report "Not a binary operator"
+            V.Hole -> error absurd
+            V.Primitive _ φ_v -> pure $ t_app × apply φ_v v'
+            _                 -> report "Not a binary operator"
       _ -> report "Not an operator"
 eval ρ (Expr _ (Let (VarDef σ e) e')) = do
    t  × v      <- eval ρ e
