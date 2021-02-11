@@ -17,24 +17,20 @@ type Var = String
 
 varAnon = "_" :: Var
 
-data RawExpr a =
+data Expr a =
+   Hole |
    Var Var |
    Op Var |
-   Int Int |
-   Float Number |
-   Str String |
-   Constr Ctr (List (Expr a)) |
-   Matrix (Expr a) (Var × Var) (Expr a) |
+   Int a Int |
+   Float a Number |
+   Str a String |
+   Constr a Ctr (List (Expr a)) |
+   Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
    App (Expr a) (Expr a) |
    BinaryApp (Expr a) Var (Expr a) |
    Let (VarDef a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
-
-data Expr a = Hole | Expr a (RawExpr a)
-
-expr :: forall a . BoundedJoinSemilattice a => RawExpr a -> Expr a
-expr = Expr bot
 
 data VarDef a = VarDef (Elim a) (Expr a) -- elim has codomain unit
 type RecDefs = Bindings Elim
@@ -56,7 +52,6 @@ data Module a = Module (List (VarDef a + RecDefs a))
 -- boilerplate
 -- ======================
 derive instance functorVarDef :: Functor VarDef
-derive instance functorRawExpr :: Functor RawExpr
 derive instance functorExpr :: Functor Expr
 derive instance functorCont :: Functor Cont
 derive instance functorElim :: Functor Elim
@@ -93,30 +88,23 @@ instance joinSemilatticeVarDef :: JoinSemilattice a => JoinSemilattice (VarDef a
 instance slicesVarDef :: JoinSemilattice a => Slices (VarDef a) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
 
+instance boundedSlicesExpr :: JoinSemilattice a => BoundedSlices (Expr a) where
+   botOf = const Hole
+
 instance joinSemilatticeExpr :: JoinSemilattice a => JoinSemilattice (Expr a) where
    join = definedJoin
 
 instance slicesExpr :: JoinSemilattice a => Slices (Expr a) where
-   maybeJoin Hole e                    = pure e
-   maybeJoin e Hole                    = pure e
-   maybeJoin (Expr α r) (Expr α' r')   = Expr <$> pure (α ∨ α') <*> maybeJoin r r'
-
-instance boundedSlicesExpr :: JoinSemilattice a => BoundedSlices (Expr a) where
-   botOf = const Hole
-
-instance joinSemilatticeRawExpr :: JoinSemilattice a => JoinSemilattice (RawExpr a) where
-   join = definedJoin
-
-instance slicesRawExpr :: JoinSemilattice a => Slices (RawExpr a) where
+   maybeJoin Hole e                                            = pure e
+   maybeJoin e Hole                                            = pure e
    maybeJoin (Var x) (Var x')                                  = Var <$> x ≟ x'
    maybeJoin (Op op) (Op op')                                  = Op <$> op ≟ op'
-   maybeJoin (Int n) (Int n')                                  = Int <$> n ≟ n'
-   maybeJoin (Str str) (Str str')                              = Str <$> str ≟ str'
-   maybeJoin (Float n) (Float n')                              = Float <$> n ≟ n'
-   maybeJoin (Str s) (Var s')                                  = Str <$> s ≟ s'
-   maybeJoin (Constr c es) (Constr c' es')                     = Constr <$> c ≟ c' <*> maybeJoin es es'
-   maybeJoin (Matrix e1 (x × y) e2) (Matrix e1' (x' × y') e2') =
-      Matrix <$> maybeJoin e1 e1' <*> ((x ≟ x') `lift2 (×)` (y ≟ y')) <*> maybeJoin e2 e2'
+   maybeJoin (Int α n) (Int α' n')                             = Int (α ∨ α') <$> n ≟ n'
+   maybeJoin (Str α str) (Str α' str')                         = Str (α ∨ α') <$> str ≟ str'
+   maybeJoin (Float α n) (Float α' n')                         = Float (α ∨ α') <$> n ≟ n'
+   maybeJoin (Constr α c es) (Constr α' c' es')                = Constr (α ∨ α') <$> c ≟ c' <*> maybeJoin es es'
+   maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
+      Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≟ x') `lift2 (×)` (y ≟ y')) <*> maybeJoin e2 e2'
    maybeJoin (App e1 e2) (App e1' e2')                         = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (BinaryApp e1 op e2) (BinaryApp e1' op' e2')      =
       BinaryApp <$> maybeJoin e1 e1' <*> op ≟ op' <*> maybeJoin e2 e2'

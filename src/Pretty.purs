@@ -11,7 +11,7 @@ import Text.Pretty (render) as P
 import Bindings (Binding, Bindings(..), (:+:), (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), varAnon)
-import Expr (Expr(..), RawExpr(..), VarDef(..), expr) as E
+import Expr (Expr(..), VarDef(..)) as E
 import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Patt(..), Pattern(..), Qualifier(..), RawExpr(..), VarDef(..), expr)
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..), RawExpl)
@@ -53,9 +53,9 @@ class ToList a where
    toList :: a -> List a
 
 instance toListExpr :: BoundedJoinSemilattice a => ToList (E.Expr a)  where
-   toList (E.Expr _ (E.Constr c (e : e' : Nil))) | c == cCons = e : toList e'
-   toList (E.Expr _ (E.Constr c Nil)) | c == cNil             = Nil
-   toList e                                                   = error $ "toListExpr - not a list: " <> render (pretty e)
+   toList (E.Constr _ c (e : e' : Nil))   | c == cCons   = e : toList e'
+   toList (E.Constr _ c Nil)              | c == cNil    = Nil
+   toList e                                              = error $ "toListExpr - not a list: " <> render (pretty e)
 
 instance toListVal :: BoundedJoinSemilattice a => ToList (Val a)  where
    toList (V.Constr _ c (v : v' : Nil)) | c == cCons  = v : toList v'
@@ -125,10 +125,6 @@ instance prettyListRest :: BoundedJoinSemilattice a => Pretty (ListRest a) where
 instance prettyListPatternRest :: Pretty (ListPatternRest) where
    pretty l = pretty $ listPatternRestToPatterns l
 
-instance prettyExpr :: BoundedJoinSemilattice a => Pretty (E.Expr a) where
-   pretty E.Hole     = hole
-   pretty (E.Expr _ r) = pretty r
-
 instance prettyCtr :: Pretty Ctr where
    pretty = show >>> text
 
@@ -148,15 +144,16 @@ prettyConstr c xs
    | c == cNil || c == cCons = pretty xs
    | otherwise = pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
 
-instance prettyRawExpr :: BoundedJoinSemilattice a => Pretty (E.RawExpr a) where
-   pretty (E.Int n)                 = text $ show n
-   pretty (E.Float n)               = text $ show n
-   pretty (E.Str str)               = text $ show str
+instance prettyExpr :: BoundedJoinSemilattice a => Pretty (E.Expr a) where
+   pretty E.Hole                    = hole
+   pretty (E.Int _ n)               = text $ show n
+   pretty (E.Float _ n)             = text $ show n
+   pretty (E.Str _ str)             = text $ show str
    pretty (E.Var x)                 = text x
-   pretty r@(E.Constr c es)
-      | c == cNil || c == cCons     = pretty $ toList $ E.expr r
+   pretty r@(E.Constr _ c es)
+      | c == cNil || c == cCons     = pretty $ toList r
       | otherwise                   = prettyConstr c es
-   pretty (E.Matrix _ _ _)            = error "todo"
+   pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Op op)                 = parens $ text op
    pretty (E.Let (E.VarDef σ e) e')   =
       atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
