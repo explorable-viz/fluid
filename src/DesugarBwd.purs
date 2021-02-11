@@ -11,7 +11,7 @@ import Data.Tuple (uncurry, fst, snd)
 import Bindings (Binding, Bindings(..), (↦), (:+:))
 import DataType (cPair, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..))
-import Expr (Expr(..), RawExpr(..), VarDef(..)) as E
+import Expr (Expr(..), VarDef(..)) as E
 import Pretty (render, pretty)
 import SExpr (Expr(..), ListRest(..), Patt(..), Pattern(..), ListPatternRest(..), Qualifier(..), RawExpr(..), VarDef(..))
 import Lattice (𝔹, (∧))
@@ -31,18 +31,18 @@ instance desugarBwdVarDef  :: DesugarBwd (E.VarDef Boolean) (VarDef Boolean) whe
    desugarBwd (E.VarDef σ e) (VarDef π s) = VarDef π <$> desugarBwd e s
 
 instance desugarBwdVarDefs :: DesugarBwd (E.Expr Boolean)
-                                         (Boolean × (NonEmptyList (VarDef Boolean) × Expr Boolean)) where
-   desugarBwd (E.Expr α1 (E.Let (E.VarDef σ e1@(E.Expr α2 _)) e2@(E.Expr α3 _)))
-              (_ × (NonEmptyList (VarDef π s1 :| Nil) × s2)) = do
+                                         (NonEmptyList (VarDef Boolean) × Expr Boolean) where
+   desugarBwd (E.Let (E.VarDef σ e1) e2)
+              (NonEmptyList (VarDef π s1 :| Nil) × s2) = do
               s1' <- desugarBwd e1 s1
               s2' <- desugarBwd e2 s2
-              pure $ (α1 ∧ α2 ∧ α3) × (NonEmptyList (VarDef π s1' :| Nil) × s2')
-   desugarBwd (E.Expr α1 (E.Let (E.VarDef σ e1@(E.Expr α2 _)) e2@(E.Expr α3 _)))
-              (_ × (NonEmptyList (VarDef π s1 :| d : ds) × s2)) = do
+              pure $ NonEmptyList (VarDef π s1' :| Nil) × s2'
+   desugarBwd (E.Let (E.VarDef σ e1) e2)
+              (NonEmptyList (VarDef π s1 :| d : ds) × s2) = do
               s1' <- desugarBwd e1 s1
-              α4 × (NonEmptyList (d' :| ds') × s2') <- desugarBwd e2 ((α1 ∧ α2 ∧ α3) × (NonEmptyList (d :| ds) × s2))
-              pure $ (α1 ∧ α2 ∧ α3 ∧ α4) × (NonEmptyList (VarDef π s1' :| d' : ds') × s2')
-   desugarBwd e (_ × (vardefs × s_body)) =
+              NonEmptyList (d' :| ds') × s2' <- desugarBwd e2 (NonEmptyList (d :| ds) × s2)
+              pure $ NonEmptyList (VarDef π s1' :| d' : ds') × s2'
+   desugarBwd e (vardefs × s_body) =
       error $ "Desugar var defs (e, vardefs × s_body) match not found: \n" <>
               render (pretty e) <> "\n" <>
               render (pretty vardefs) <> " × " <> render (pretty s_body)
@@ -87,52 +87,42 @@ instance desugarBwdRecDefs :: DesugarBwd (Bindings Elim Boolean)
             map ((×) f) <$> desugarBwd σ (snd <$> fπs)
 
 instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
-   desugarBwd (E.Expr α (E.Var x))   (Expr _ (Var x'))      = pure $ Expr α (Var (x ≜ x'))
-   desugarBwd (E.Expr α (E.Op op))   (Expr _ (Op op'))      = pure $ Expr α (Op (op ≜ op'))
-   desugarBwd (E.Expr α (E.Int n))   (Expr _ (Int n'))      = pure $ Expr α (Int (n ≜ n'))
-   desugarBwd (E.Expr α (E.Float n)) (Expr _ (Float n'))    = pure $ Expr α (Float (n ≜ n'))
-   desugarBwd (E.Expr α (E.Str s))   (Expr _ (Str s'))      = pure $ Expr α (Str (s ≜ s'))
-   -- | Constr (this covers Cons)
-   desugarBwd (E.Expr α (E.Constr c es)) (Expr _ (Constr c' es')) =
+   desugarBwd (E.Var x)             (Expr _ (Var x'))          = pure $ Expr false (Var (x ≜ x'))
+   desugarBwd (E.Op op)             (Expr _ (Op op'))          = pure $ Expr false (Op (op ≜ op'))
+   desugarBwd (E.Int α n)           (Expr _ (Int n'))          = pure $ Expr α (Int (n ≜ n'))
+   desugarBwd (E.Float α n)         (Expr _ (Float n'))        = pure $ Expr α (Float (n ≜ n'))
+   desugarBwd (E.Str α s)           (Expr _ (Str s'))          = pure $ Expr α (Str (s ≜ s'))
+   desugarBwd (E.Constr α c es)     (Expr _ (Constr c' es'))   =
       Expr α <$> (Constr (c ≜ c') <$> traverse (uncurry desugarBwd) (zip es es'))
-   -- | Matrix
-   desugarBwd (E.Expr α (E.Matrix e (x × y) e')) (Expr _ (Matrix s (x' × y') s')) =
+   desugarBwd (E.Matrix α e (x × y) e') (Expr _ (Matrix s (x' × y') s')) =
       Expr α <$> (Matrix <$> desugarBwd e s <@> (x ≜ x') × (y ≜ y') <*> desugarBwd e' s')
-   -- | Lambda
-   desugarBwd (E.Expr α (E.Lambda σ)) (Expr _ (Lambda bs))= Expr α <$> (Lambda <$> desugarBwd σ bs)
-   -- | Application
-   desugarBwd (E.Expr α (E.App e1 e2)) (Expr _ (App s1 s2)) =
-      Expr α <$> (App <$> desugarBwd e1 s1 <*> desugarBwd e2 s2)
-   desugarBwd (E.Expr α (E.BinaryApp e1 x e2)) (Expr _ (BinaryApp s1 x' s2)) =
-      Expr α <$> (BinaryApp <$> desugarBwd e1 s1 <@> x ≜ x' <*> desugarBwd e2 s2)
-   -- | Match-as
-   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda σ)) e))
-              (Expr _ (MatchAs s bs)) =
-      Expr (α1 ∧ α2) <$> (MatchAs <$> desugarBwd e s <*> desugarBwd σ bs)
+   desugarBwd (E.Lambda σ)          (Expr _ (Lambda bs))       = Expr false <$> (Lambda <$> desugarBwd σ bs)
+   desugarBwd (E.App e1 e2)         (Expr _ (App s1 s2))       =
+      Expr false <$> (App <$> desugarBwd e1 s1 <*> desugarBwd e2 s2)
+   desugarBwd (E.App (E.Lambda σ) e) (Expr _ (MatchAs s bs))  =
+      Expr false <$> (MatchAs <$> desugarBwd e s <*> desugarBwd σ bs)
    -- | If-then-else
-   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1))
-              (Expr _ (IfElse s1 s2 s3)) = do
+   desugarBwd (E.App (E.Lambda (ElimConstr m)) e1) (Expr _ (IfElse s1 s2 s3)) = do
       e2 <- liftM1 asExpr $ lookupE cTrue m
       e3 <- liftM1 asExpr $ lookupE cFalse m
-      Expr (α1 ∧ α2) <$> (IfElse <$> desugarBwd e1 s1 <*> desugarBwd e2 s2 <*> desugarBwd e3 s3)
-   -- | Empty-list
-   desugarBwd (E.Expr α (E.Constr c Nil)) (Expr _ ListEmpty) | c == cNil =
+      Expr false <$> (IfElse <$> desugarBwd e1 s1 <*> desugarBwd e2 s2 <*> desugarBwd e3 s3)
+   desugarBwd (E.BinaryApp e1 x e2) (Expr _ (BinaryApp s1 x' s2)) =
+      Expr false <$> (BinaryApp <$> desugarBwd e1 s1 <@> x ≜ x' <*> desugarBwd e2 s2)
+   desugarBwd (E.Constr α c Nil)    (Expr _ ListEmpty) | c == cNil =
       pure $ Expr α ListEmpty
    -- | Non-empty-list
-   desugarBwd (E.Expr α (E.Constr c (e : e' : Nil))) (Expr _ (ListNonEmpty s l)) | c == cCons =
+   desugarBwd (E.Constr α c (e : e' : Nil)) (Expr _ (ListNonEmpty s l)) | c == cCons =
       Expr α <$> (ListNonEmpty <$> desugarBwd e s <*> desugarBwd e' l)
    -- | List-enum
-   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.App (E.Expr _ (E.Var "enumFromTo")) e1)) e2))
-              (Expr α (ListEnum s1 s2)) =
-      Expr (α1 ∧ α2) <$> (ListEnum <$> desugarBwd e1 s1 <*> desugarBwd e2 s2)
+   desugarBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (Expr _ (ListEnum s1 s2)) =
+      Expr false <$> (ListEnum <$> desugarBwd e1 s1 <*> desugarBwd e2 s2)
    -- | List-comp-done
-   desugarBwd (E.Expr α2 (E.Constr c (e : (E.Expr α1 (E.Constr c' Nil)) : Nil)))
+   desugarBwd (E.Constr α2 c (e : (E.Constr α1 c' Nil) : Nil))
               (Expr _ (ListComp s_body (NonEmptyList (Guard _ (Expr _ (Constr c'' Nil)) :| Nil))))
       | c == cCons , c' == cNil, c'' == cTrue =
       Expr (α1 ∧ α2) <$> (ListComp <$> desugarBwd e s_body <*> (pure $ NonEmptyList (Guard (α1 ∧ α2) (Expr (α1 ∧ α2) (Constr cTrue Nil)) :| Nil)))
    -- | List-comp-qual
-   desugarBwd e
-              (Expr α (ListComp s_body (NonEmptyList (q :| Nil)))) = do
+   desugarBwd e (Expr α (ListComp s_body (NonEmptyList (q :| Nil)))) = do
       sListComp <- desugarBwd e (Expr α (ListComp s_body (NonEmptyList (q :| (qualTrue true) : Nil))))
       case sListComp of
          Expr α2 (ListComp s_body' (NonEmptyList (q' :| (Guard α1 (Expr _ (Constr c Nil))) : Nil)))
@@ -142,7 +132,7 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
             -> error $ "desugarBwd for List-comp-qual failed: \n" <>
                        render (pretty sListComp')
    -- | List-comp-guard
-   desugarBwd (E.Expr α2 (E.App (E.Expr α1 (E.Lambda (ElimConstr m))) e1))
+   desugarBwd (E.App (E.Lambda (ElimConstr m)) e1)
               (Expr _ (ListComp s1 (NonEmptyList ((Guard _ s2) :| q : qs)))) = do
       e2          <- liftM1 asExpr $ lookupE cTrue  m
       e3          <- liftM1 asExpr $ lookupE cFalse m
@@ -152,26 +142,24 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
       case sListComp, sNil of
          Expr α3 (ListComp s1' (NonEmptyList (q' :| qs'))), Expr α4 (Constr c Nil)
          | c == cNil
-               -> pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
-                              (ListComp s1' (NonEmptyList ((Guard (α1 ∧ α2 ∧ α3 ∧ α4) s2') :| q' : qs')))
+               -> pure $ Expr (α3 ∧ α4)
+                              (ListComp s1' (NonEmptyList (Guard (α3 ∧ α4) s2' :| q' : qs')))
          sListComp', sNil'  -> error $ "desugarBwd for List-comp-guard failed: " <>
                                        render (pretty sListComp') <> "\n" <> render (pretty sNil')
    -- | List-comp-decl
-   desugarBwd (E.Expr α1 (E.App (E.Expr α2 (E.Lambda σ)) e))
+   desugarBwd (E.App (E.Lambda σ) e)
               (Expr _ (ListComp s2 (NonEmptyList ((Declaration _ (VarDef π s1)) :| q : qs)))) = do
       (_ × sListComp)  <- desugarBwd σ (NonEmptyList (π :| Nil) × (Expr true (ListComp s2 (NonEmptyList (q :| qs)))))
       s1'  <- desugarBwd e s1
       case sListComp of
          Expr α3 (ListComp s2' (NonEmptyList (q' :| qs')))
-            -> pure $ Expr (α1 ∧ α2 ∧ α3)
-                           (ListComp s2' (NonEmptyList ((Declaration (α1 ∧ α2 ∧ α3) (VarDef π s1')) :| q' : qs')))
+            -> pure $ Expr (α3)
+                           (ListComp s2' (NonEmptyList ((Declaration α3 (VarDef π s1')) :| q' : qs')))
          sListComp'
             -> error $ "desugarBwd for List-comp-decl failed: \n" <>
                        render (pretty sListComp')
    -- | List-comp-gen
-   desugarBwd (E.Expr α3 (E.App (E.Expr α2 (E.App (E.Expr _  (E.Var "concatMap"))
-                                                  (E.Expr α1 (E.Lambda σ))))
-                                 e1))
+   desugarBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1)
               (Expr _ (ListComp s2 (NonEmptyList ((Generator _ p s1) :| q : qs)))) = do
       s1'        <- desugarBwd e1 s1
       σ'         <- pure $ asElim "desugarbwd list-comp-gen" $ untotalise (Arg σ) (Pattern p : Nil)
@@ -179,20 +167,17 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
       sListComp  <- desugarBwd e2 (Expr true (ListComp s2 (NonEmptyList (q :| qs))))
       case sListComp of
          Expr α4 (ListComp s2' (NonEmptyList (q' :| qs'))) ->
-            pure $ Expr (α1 ∧ α2 ∧ α3 ∧ α4)
-                        (ListComp s2' (NonEmptyList ((Generator (α1 ∧ α2 ∧ α3) p s1) :| q' : qs')))
+            pure $ Expr (α4)
+                        (ListComp s2' (NonEmptyList ((Generator α4 p s1) :| q' : qs')))
          sListComp'
             -> error $ "desugarBwd for List-comp-gen failed: \n" <>
                        render (pretty sListComp')
    -- | Let
-   desugarBwd (E.Expr α (E.Let d e))
-              (Expr _ (Let ds s)) = do
-      α' × (ds' × s') <- desugarBwd (E.Expr α (E.Let d e)) (true × (ds × s))
-      pure $ Expr α' (Let ds' s')
+   desugarBwd (E.Let d e) (Expr _ (Let ds s)) = do
+      ds' × s' <- desugarBwd (E.Let d e) (ds × s)
+      pure $ Expr false (Let ds' s')
    -- | LetRec (recursive function)
-   desugarBwd (E.Expr α (E.LetRec fπs e))
-              (Expr _ (LetRec fπs' s)) =
-      Expr α <$> (LetRec <$> desugarBwd fπs fπs' <*> desugarBwd e s)
+   desugarBwd (E.LetRec fπs e) (Expr _ (LetRec fπs' s)) = Expr false <$> (LetRec <$> desugarBwd fπs fπs' <*> desugarBwd e s)
    desugarBwd (E.Hole) s = pure Hole
 
    desugarBwd e s = error $ "desugarBwd match not found: " <> render (pretty e) <> "\n" <> render (pretty s)
@@ -209,9 +194,9 @@ asExpr κ = error $ "Couldn't infer Expr from Cont: \n" <>
 
 {- e, l ↘ l -}
 instance desugarBwdListRest :: DesugarBwd (E.Expr Boolean) (ListRest Boolean) where
-   desugarBwd (E.Expr α (E.Constr c Nil)) (End _) | c == cNil =
+   desugarBwd (E.Constr α c Nil) (End _) | c == cNil =
       pure $ End α
-   desugarBwd (E.Expr α (E.Constr c (e : e' : Nil))) (Next _ s l) | c == cCons =
+   desugarBwd (E.Constr α c (e : e' : Nil)) (Next _ s l) | c == cCons =
       Next α <$> desugarBwd e s <*> desugarBwd e' l
    desugarBwd (E.Hole) s =
       pure ListRestHole
