@@ -17,12 +17,11 @@ import Bindings (Binding, Bindings, (↦), fromList)
 import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), Module(..), VarDef(..)) as E
+import Lattice (𝔹)
 import SExpr (
-   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..),
-   RecDefs, Qualifier(..), RawExpr(..)
+   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
-import Lattice (𝔹, (∧))
-import Util (MayFail, error, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
+import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
 
 
 enil :: 𝔹 -> E.Expr 𝔹
@@ -52,14 +51,12 @@ instance desugarFwdVarDef :: DesugarFwd (VarDef Boolean) (E.VarDef Boolean) wher
 {-        →                  -}
 {- (α, (p , s), s_body) ↗ e  -}
 -- | The first boolean represents the α of the outer expression which contains the var defs
-instance desugarFwdVarDefs :: DesugarFwd (Boolean × NonEmptyList (VarDef Boolean) × Expr Boolean)
+instance desugarFwdVarDefs :: DesugarFwd (NonEmptyList (VarDef Boolean) × Expr Boolean)
                                          (E.Expr Boolean) where
-   desugarFwd (α1 × NonEmptyList (d@(VarDef _ (Expr α2 t)) :| Nil) × s) =
+   desugarFwd (NonEmptyList (d :| Nil) × s) =
       E.Let <$> desugarFwd d <*> desugarFwd s
-   desugarFwd (α1 × NonEmptyList (d@(VarDef _ (Expr α2 t)) :| d' : ds) × s) =
-      E.Let <$> desugarFwd d <*> desugarFwd ((α1 ∧ α2) × NonEmptyList (d' :| ds) × s)
-   desugarFwd (_ × NonEmptyList (VarDef _ Hole :| _) × _) =
-      error "Encountered hole during desugar fwd"
+   desugarFwd (NonEmptyList (d :| d' : ds) × s) =
+      E.Let <$> desugarFwd d <*> desugarFwd (NonEmptyList (d' :| ds) × s)
 
 {-       →                      →                 -}
 {- let f c ↗ [f ↦ σ]       (f, (p, s))  ↗ [f ↦ σ] -}
@@ -74,58 +71,53 @@ instance desugarFwdRecDefs :: DesugarFwd (NonEmptyList (String × (NonEmptyList 
 
 {- s ↗ e -}
 instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
-   desugarFwd Hole                           = error absurd
-   desugarFwd (Expr _ (Var x))               = pure $ E.Var x
-   desugarFwd (Expr _ (Op op))               = pure $ E.Op op
-   desugarFwd (Expr α (Int n))               = pure $ E.Int α n
-   desugarFwd (Expr α (Float n))             = pure $ E.Float α n
-   desugarFwd (Expr α (Str s))               = pure $ E.Str α s
-   desugarFwd (Expr α (Constr c ss))         = E.Constr α c <$> traverse desugarFwd ss
-   desugarFwd (Expr α (Matrix s (x × y) s')) = E.Matrix α <$> desugarFwd s <@> x × y <*> desugarFwd s'
-   desugarFwd (Expr _ (Lambda bs))           = E.Lambda <$> desugarFwd bs
-   desugarFwd (Expr _ (App s1 s2))           = E.App <$> desugarFwd s1 <*> desugarFwd s2
-   desugarFwd (Expr _ (BinaryApp s1 op s2))  = E.BinaryApp <$> desugarFwd s1 <@> op <*> desugarFwd s2
-   desugarFwd (Expr _ (MatchAs s bs))        = E.App <$> (E.Lambda <$> desugarFwd bs) <*> desugarFwd s
-   desugarFwd (Expr α (IfElse s1 s2 s3)) = do
+   desugarFwd (Var x)                  = pure $ E.Var x
+   desugarFwd (Op op)                  = pure $ E.Op op
+   desugarFwd (Int α n)                = pure $ E.Int α n
+   desugarFwd (Float α n)              = pure $ E.Float α n
+   desugarFwd (Str α s)                = pure $ E.Str α s
+   desugarFwd (Constr α c ss)          = E.Constr α c <$> traverse desugarFwd ss
+   desugarFwd (Matrix α s (x × y) s')  = E.Matrix α <$> desugarFwd s <@> x × y <*> desugarFwd s'
+   desugarFwd (Lambda bs)              = E.Lambda <$> desugarFwd bs
+   desugarFwd (App s1 s2)              = E.App <$> desugarFwd s1 <*> desugarFwd s2
+   desugarFwd (BinaryApp s1 op s2)     = E.BinaryApp <$> desugarFwd s1 <@> op <*> desugarFwd s2
+   desugarFwd (MatchAs s bs)           = E.App <$> (E.Lambda <$> desugarFwd bs) <*> desugarFwd s
+   desugarFwd (IfElse s1 s2 s3) = do
       e2 <- desugarFwd s2
       e3 <- desugarFwd s3
       let σ = ElimConstr (fromFoldable [cTrue × Body e2, cFalse × Body e3])
       E.App (E.Lambda σ) <$> desugarFwd s1
-   desugarFwd (Expr α (ListEmpty))           = pure $ enil α
-   desugarFwd (Expr α (ListNonEmpty s l))    = econs α <$> desugarFwd s <*> desugarFwd l
-   desugarFwd (Expr α (ListEnum s1 s2))      = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desugarFwd s1) <*> desugarFwd s2
+   desugarFwd (ListEmpty α)            = pure $ enil α
+   desugarFwd (ListNonEmpty α s l)     = econs α <$> desugarFwd s <*> desugarFwd l
+   desugarFwd (ListEnum s1 s2)         = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desugarFwd s1) <*> desugarFwd s2
    -- | List-comp-done
-   desugarFwd (Expr α1 (ListComp s_body (NonEmptyList (Guard _ (Expr α2 (Constr c Nil)) :| Nil)))) | c == cTrue = do
-      e <- desugarFwd s_body
-      pure $ econs (α1 ∧ α2) e (enil (α1 ∧ α2))
-   -- | List-comp-qual-
-   desugarFwd (Expr α (ListComp s_body (NonEmptyList (q :| Nil)))) =
-      desugarFwd $ Expr α $ ListComp s_body $ NonEmptyList $ q :| (Guard α (Expr α $ Constr cTrue Nil)) : Nil
+   desugarFwd (ListComp α s_body (NonEmptyList (Guard _ (Constr α2 c Nil) :| Nil))) | c == cTrue = do
+      econs α2 <$> desugarFwd s_body <@> enil α2
+   -- | List-comp-last
+   desugarFwd (ListComp α s_body (NonEmptyList (q :| Nil))) =
+      desugarFwd $ ListComp α s_body $ NonEmptyList $ q :| (Guard α (Constr α cTrue Nil)) : Nil
    -- | List-comp-guard
-   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Guard α1 s) :| q : qs)))) = do
-      e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
-      let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body (enil (α1 ∧ α2))])
+   desugarFwd (ListComp α s_body (NonEmptyList (Guard α1 s :| q : qs))) = do
+      e <- desugarFwd $ ListComp α s_body $ NonEmptyList $ q :| qs
+      let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body (enil α1)])
       E.App (E.Lambda σ) <$> desugarFwd s
    -- | List-comp-decl
-   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList (Declaration α1 (VarDef π s) :| q : qs)))) = do
-      e <- desugarFwd $ Expr α2 (ListComp s_body (NonEmptyList $ q :| qs))
+   desugarFwd (ListComp α s_body (NonEmptyList (Declaration α1 (VarDef π s) :| q : qs))) = do
+      e <- desugarFwd $ ListComp α s_body (NonEmptyList $ q :| qs)
       σ <- desugarFwd $ π × (Body e :: Cont 𝔹)
       E.App (E.Lambda σ) <$> desugarFwd s
    -- | List-comp-gen
-   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList ((Generator α1 p slist) :| q : qs)))) = do
-      e <- desugarFwd $ Expr α2 $ ListComp s_body $ NonEmptyList $ q :| qs
+   desugarFwd (ListComp α s_body (NonEmptyList (Generator α1 p slist :| q : qs))) = do
+      e <- desugarFwd $ ListComp α s_body $ NonEmptyList $ q :| qs
       σ <- desugarFwd $ p × Body e
-      E.App (E.App (E.Var "concatMap") (E.Lambda $ totalise σ (enil (α1 ∧ α2)))) <$> desugarFwd slist
-   desugarFwd (Expr α2 (ListComp s_body (NonEmptyList (_ :| q : qs)))) = error "todo"
-   desugarFwd (Expr α (Let ds s))            = desugarFwd $ α × ds × s
-   -- | LetRec (recursive function)
-   desugarFwd (Expr α (LetRec fπs s))        = E.LetRec <$> desugarFwd fπs <*> desugarFwd s
+      E.App (E.App (E.Var "concatMap") (E.Lambda $ totalise σ (enil α1))) <$> desugarFwd slist
+   desugarFwd (Let ds s)            = desugarFwd $ ds × s
+   desugarFwd (LetRec fπs s)        = E.LetRec <$> desugarFwd fπs <*> desugarFwd s
 
 {- l ↗ e -}
 instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
    desugarFwd (End α)       = pure (enil α)
    desugarFwd (Next α s l)  = lift2 (econs α) (desugarFwd s) (desugarFwd l)
-   desugarFwd _             = error "Encountered a hole dering desugarFwdListRest"
 
 {- →        -}
 {- p, κ ↗ σ -}

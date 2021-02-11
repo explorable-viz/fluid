@@ -12,7 +12,7 @@ import Bindings (Binding, Bindings(..), (:+:), (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), varAnon)
 import Expr (Expr(..), VarDef(..)) as E
-import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Patt(..), Pattern(..), Qualifier(..), RawExpr(..), VarDef(..), expr)
+import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Patt(..), Pattern(..), Qualifier(..), VarDef(..))
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..), RawExpl)
 import Lattice (class BoundedJoinSemilattice)
@@ -119,7 +119,6 @@ instance prettyList :: Pretty a => Pretty (List a) where
    pretty xs = brackets $ hcat $ intersperse comma $ map pretty xs
 
 instance prettyListRest :: BoundedJoinSemilattice a => Pretty (ListRest a) where
-   pretty ListRestHole = hole
    pretty l = pretty $ listRestToExprs l
 
 instance prettyListPatternRest :: Pretty (ListPatternRest) where
@@ -203,40 +202,40 @@ instance prettyPrimitive :: Pretty Primitive where
 listRestToExprs :: forall a . ListRest a -> List (Expr a)
 listRestToExprs (End _) = Nil
 listRestToExprs (Next _ e l) = e : listRestToExprs l
-listRestToExprs (ListRestHole) = Nil
 
 listPatternRestToPatterns :: ListPatternRest -> List Pattern
 listPatternRestToPatterns PEnd         = Nil
 listPatternRestToPatterns (PNext π πs) = π : listPatternRestToPatterns πs
 
 instance toListSExpr :: BoundedJoinSemilattice a => ToList (Expr a)  where
-   toList (Expr _ (Constr c (e : e' : Nil))) | c == cCons = e : toList e'
-   toList (Expr _ (Constr c Nil)) | c == cNil             = Nil
-   toList (Expr _ (ListEmpty))                            = Nil
-   toList (Expr _ (ListNonEmpty e l))                     = e : listRestToExprs l
-   toList e                                               = error $ "toListSExpr - not a list: " <> render (pretty e)
+   toList (Constr _ c (e : e' : Nil)) | c == cCons   = e : toList e'
+   toList (Constr _ c Nil) | c == cNil               = Nil
+   toList (ListEmpty _)                              = Nil
+   toList (ListNonEmpty _ e l)                       = e : listRestToExprs l
+   toList e                                          = error absurd
 
-instance prettyRawSExpr :: BoundedJoinSemilattice a => Pretty (RawExpr a) where
+instance prettyRawSExpr :: BoundedJoinSemilattice a => Pretty (Expr a) where
    pretty (Var x)                   = text x
    pretty (Op op)                   = parens $ text op
-   pretty (Int n)                   = text $ show n
-   pretty (Float n)                 = text $ show n
-   pretty (Str str)                 = text $ show str
-   pretty r@(Constr c es)
-      | c == cNil || c == cCons     = pretty $ toList $ expr r
+   pretty (Int _ n)                 = text $ show n
+   pretty (Float _ n)               = text $ show n
+   pretty (Str _ str)               = text $ show str
+   pretty r@(Constr _ c es)
+      | c == cNil || c == cCons     = pretty $ toList r
       | otherwise                   = prettyConstr c es
-   pretty (Matrix _ _ _)            = error "todo"
+   pretty (Matrix _ _ _ _)          = error "todo"
    pretty (Lambda bs)               = text "λ " :<>: pretty bs
-   pretty (App e e')                = pretty e :<>: space :<>: pretty e'
-   pretty (BinaryApp e op e')       = pretty e :<>: operator op :<>: pretty e'
-   pretty (MatchAs e bs)            = text "match " :<>: pretty e :<>: text " as " :<>: pretty bs
-   pretty (IfElse e1 e2 e3)         = text "if " :<>: pretty e1 :<>: text " then " :<>: pretty e2 :<>: text " else " :<>: pretty e3
-   pretty r@(ListEmpty)             = pretty $ toList $ expr r
-   pretty r@(ListNonEmpty e l)      = pretty $ toList $ expr r
-   pretty (ListEnum e e')           = brackets $ pretty e :<>: text " .. " :<>: pretty e'
-   pretty (ListComp e qs)           = brackets $ pretty e :<>: text " | " :<>: pretty qs
-   pretty (Let ds e)                = atop (text "let " :<>: pretty ds) (text "in " :<>: pretty e)
-   pretty (LetRec fπs e)            = atop (text "letrec " :<>: pretty fπs) (text "in " :<>: pretty e)
+   pretty (App s s')                = pretty s :<>: space :<>: pretty s'
+   pretty (BinaryApp s op s')       = pretty s :<>: operator op :<>: pretty s'
+   pretty (MatchAs s bs)            = text "match " :<>: pretty s :<>: text " as " :<>: pretty bs
+   pretty (IfElse s1 s2 s3)         =
+      text "if " :<>: pretty s1 :<>: text " then " :<>: pretty s2 :<>: text " else " :<>: pretty s3
+   pretty r@(ListEmpty _)           = pretty $ toList r
+   pretty r@(ListNonEmpty _ e l)    = pretty $ toList r
+   pretty (ListEnum s s')           = brackets $ pretty s :<>: text " .. " :<>: pretty s'
+   pretty (ListComp _ s qs)         = brackets $ pretty s :<>: text " | " :<>: pretty qs
+   pretty (Let ds s)                = atop (text "let " :<>: pretty ds) (text "in " :<>: pretty s)
+   pretty (LetRec fπs s)            = atop (text "letrec " :<>: pretty fπs) (text "in " :<>: pretty s)
 
 instance prettyNonEmptyList :: Pretty a => Pretty (NonEmptyList a) where
    pretty (NonEmptyList (x :| Nil)) = pretty (x : Nil)
@@ -258,7 +257,6 @@ instance prettyPatternExpr :: BoundedJoinSemilattice a => Pretty (Pattern × Exp
    pretty (π × e) = pretty π :<>: text " -> " :<>: pretty e
 
 instance prettyQualifier :: BoundedJoinSemilattice a => Pretty (Qualifier a) where
-   pretty (QualifierHole)              = hole
    pretty (Guard _ e)                  = pretty e
    pretty (Generator _ π e)            = pretty π :<>: text " <- " :<>: pretty e
    pretty (Declaration _ (VarDef π e)) = text "let " :<>: pretty π :<>: text " = " :<>: pretty e
@@ -272,10 +270,6 @@ instance prettyPattern :: Pretty Pattern where
    pretty (PConstr ctr πs)       = pretty ctr :<>: space :<>: pretty πs
    pretty (PListEmpty)           = text "[]"
    pretty (PListNonEmpty π πs)   = pretty $ π : listPatternRestToPatterns πs
-
-instance prettySExpr :: BoundedJoinSemilattice a => Pretty (Expr a) where
-   pretty (Hole)     = hole
-   pretty (Expr _ r) = pretty r
 
 prettyProgram :: E.Expr Boolean -> Doc
 prettyProgram e = atop (pretty e) (text "")
