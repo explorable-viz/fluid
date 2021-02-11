@@ -6,7 +6,7 @@ import Data.List (List(..), (:), range, singleton)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (cPair)
 import Eval (closeDefs)
-import Expr (Cont(..), Elim(..), Expr(..), RawExpr(..), VarDef(..), body, varAnon)
+import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), body, varAnon)
 import Lattice (𝔹, (∧))
 import Primitive (apply_fwd, to)
 import Util (type (×), (×), absurd, error, mustLookup, successful)
@@ -33,19 +33,19 @@ matchArgs_fwd _ _                = error absurd
 
 eval_fwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Val 𝔹
 eval_fwd _ Hole _ = V.Hole
-eval_fwd ρ (Expr _ (Var x)) _ =
+eval_fwd ρ (Var x) _ =
    successful $ find x ρ
-eval_fwd ρ (Expr _ (Op op)) _ =
+eval_fwd ρ (Op op) _ =
    successful $ find op ρ
-eval_fwd ρ (Expr α (Int n)) α' =
+eval_fwd ρ (Int α n) α' =
    V.Int (α ∧ α') n
-eval_fwd ρ (Expr α (Float n)) α' =
+eval_fwd ρ (Float α n) α' =
    V.Float (α ∧ α') n
-eval_fwd ρ (Expr α (Str str)) α' =
+eval_fwd ρ (Str α str) α' =
    V.Str (α ∧ α') str
-eval_fwd ρ (Expr α (Constr c es)) α' =
+eval_fwd ρ (Constr α c es) α' =
    V.Constr (α ∧ α') c $ map (\e -> eval_fwd ρ e α') es
-eval_fwd ρ (Expr α (Matrix e (x × y) e')) α' =
+eval_fwd ρ (Matrix α e (x × y) e') α' =
    case eval_fwd ρ e' α of
       V.Hole -> V.Hole
       (V.Constr _ c (v1 : v2 : Nil)) | c == cPair ->
@@ -57,11 +57,11 @@ eval_fwd ρ (Expr α (Matrix e (x × y) e')) α' =
                      singleton $ eval_fwd ((ρ :+: x ↦ V.Int α i) :+: y ↦ V.Int α j) e α'
          in V.Matrix (α ∧ α') vs (i' × j')
       _ -> error absurd
-eval_fwd ρ (Expr _ (LetRec δ e)) α =
+eval_fwd ρ (LetRec δ e) α =
    let ρ' = closeDefs ρ δ δ in
    eval_fwd (ρ <> ρ') e α
-eval_fwd ρ (Expr _ (Lambda σ)) α = V.Closure ρ Empty σ
-eval_fwd ρ (Expr _ (App e e')) α =
+eval_fwd ρ (Lambda σ) _ = V.Closure ρ Empty σ
+eval_fwd ρ (App e e') α =
    case eval_fwd ρ e α × eval_fwd ρ e' α of
       V.Hole × _           -> V.Hole
       V.Closure ρ1 δ σ × v ->
@@ -71,7 +71,7 @@ eval_fwd ρ (Expr _ (App e e')) α =
       V.Primitive α' φ × v    -> apply_fwd φ α' v
       V.Constr α' c vs × v -> V.Constr (α ∧ α') c $ vs <> singleton v
       _ × _                -> error absurd
-eval_fwd ρ (Expr _ (BinaryApp e1 op e2)) α =
+eval_fwd ρ (BinaryApp e1 op e2) α =
    case successful $ find op ρ of
       V.Hole         -> V.Hole
       V.Primitive α' φ  ->
@@ -80,6 +80,6 @@ eval_fwd ρ (Expr _ (BinaryApp e1 op e2)) α =
             V.Primitive α'' φ_v  -> apply_fwd φ_v α'' $ eval_fwd ρ e2 α
             _                    -> error absurd
       _                          -> error absurd
-eval_fwd ρ (Expr _ (Let (VarDef σ e) e')) α =
+eval_fwd ρ (Let (VarDef σ e) e') α =
    let ρ' × _ × α' = match_fwd (eval_fwd ρ e α) σ in
    eval_fwd (ρ <> ρ') e' α'

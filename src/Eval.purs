@@ -13,7 +13,7 @@ import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity, checkDataType, cPair, dataTypeForKeys)
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..))
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RawExpr(..), RecDefs, VarDef(..), body, varAnon)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), body, varAnon)
 import Lattice (𝔹)
 import Pretty (pretty, render)
 import Primitive (apply, to)
@@ -56,21 +56,21 @@ checkArity c n = do
 
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ Hole = error absurd
-eval ρ (Expr _ (Var x)) =
+eval ρ (Var x) =
    (Expl ρ (T.Var x) × _) <$> find x ρ
-eval ρ (Expr _ (Op op)) =
+eval ρ (Op op) =
    (Expl ρ (T.Op op) × _) <$> find op ρ
-eval ρ (Expr _ (Int n)) =
+eval ρ (Int _ n) =
    (Expl ρ T.Int × _) <$> pure (V.Int false n)
-eval ρ (Expr _ (Float n)) =
+eval ρ (Float _ n) =
    (Expl ρ T.Float × _) <$> pure (V.Float false n)
-eval ρ (Expr _ (Str str)) =
+eval ρ (Str _ str) =
    (Expl ρ T.Str × _) <$> pure (V.Str false str)
-eval ρ (Expr _ (Constr c es)) = do
+eval ρ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
    (Expl ρ (T.Constr c ts) × _) <$> pure (V.Constr false c vs)
-eval ρ (Expr _ (Matrix e (x × y) e')) = do
+eval ρ (Matrix _ e (x × y) e') = do
    t × v <- eval ρ e'
    case v of
       V.Hole -> error absurd
@@ -87,13 +87,13 @@ eval ρ (Expr _ (Matrix e (x × y) e')) = do
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable
-eval ρ (Expr _ (LetRec δ e)) = do
+eval ρ (LetRec δ e) = do
    let ρ' = closeDefs ρ δ δ
    t × v <- eval (ρ <> ρ') e
    (Expl ρ (T.LetRec δ t) × _) <$> pure v
-eval ρ (Expr _ (Lambda σ)) =
+eval ρ (Lambda σ) =
    (Expl ρ T.Lambda × _) <$> pure (V.Closure ρ Empty σ)
-eval ρ (Expr _ (App e e')) = do
+eval ρ (App e e') = do
    t × v <- eval ρ e
    t' × v' <- eval ρ e'
    case v of
@@ -109,7 +109,7 @@ eval ρ (Expr _ (App e e')) = do
          check (successful (arity c) > length vs) $ "Too many arguments to " <> show c
          (Expl ρ (T.AppOp (t × v) (t' × v')) × _) <$> pure (V.Constr false c $ vs <> singleton v')
       _ -> report "Expected closure, operator or unsaturated constructor"
-eval ρ (Expr _ (BinaryApp e op e')) = do
+eval ρ (BinaryApp e op e') = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'
    v_φ <- find op ρ
@@ -122,7 +122,7 @@ eval ρ (Expr _ (BinaryApp e op e')) = do
             V.Primitive _ φ_v -> pure $ t_app × apply φ_v v'
             _                 -> report "Not a binary operator"
       _ -> report "Not an operator"
-eval ρ (Expr _ (Let (VarDef σ e) e')) = do
+eval ρ (Let (VarDef σ e) e') = do
    t  × v      <- eval ρ e
    ρ' × κ × ξ  <- match v σ
    t' × v'     <- eval (ρ <> ρ') e'

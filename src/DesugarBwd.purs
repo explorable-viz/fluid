@@ -310,7 +310,7 @@ untotalise (Arg σ) (p:ps) =
          if x == x' then Arg (ElimVar x (untotalise κ ps))
          else error $ "untotalise: patterns don't match " <> render (pretty x) <> " & " <> render (pretty x')
       ElimConstr m, Pattern (PConstr ctr arg_patts) ->
-         let κ  = mustLookup ctr m 
+         let κ  = mustLookup ctr m
              κ' = untotalise κ (map Pattern arg_patts <> ps)
          in Arg $ ElimConstr (fromFoldable [ctr × κ'])
       ElimConstr m, Pattern (PListEmpty) ->
