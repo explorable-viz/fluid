@@ -13,7 +13,7 @@ import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity, checkDataType, cPair, dataTypeForKeys)
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..))
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), body, varAnon)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, varAnon)
 import Lattice (𝔹)
 import Pretty (pretty, render)
 import Primitive (apply, to)
@@ -101,7 +101,7 @@ eval ρ (App e e') = do
       V.Closure ρ1 δ σ -> do
          let ρ2 = closeDefs ρ1 δ δ
          ρ3 × e'' × ξ <- match v' σ
-         t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ body e''
+         t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ asExpr e''
          (Expl ρ (T.App (t × δ) t' ξ t'') × _) <$> pure v''
       V.Primitive _ φ ->
          (Expl ρ (T.AppOp (t × v) (t' × v')) × _) <$> pure (apply φ v')

@@ -28,10 +28,8 @@ data Expr a =
    LetRec (RecDefs a) (Expr a)
 
 data ListRest a =
-   End a | Next a (Expr a) (ListRest a)
-
-data Patt =
-   Pattern Pattern | ListPatternRest ListPatternRest
+   End a |
+   Next a (Expr a) (ListRest a)
 
 data Pattern =
    PVar Var |
@@ -40,7 +38,8 @@ data Pattern =
    PListNonEmpty Pattern ListPatternRest
 
 data ListPatternRest =
-   PEnd | PNext Pattern ListPatternRest
+   PEnd |
+   PNext Pattern ListPatternRest
 
 -- in the spec, "clause" doesn't include the function name
 type Branch a = NonEmptyList Pattern × Expr a

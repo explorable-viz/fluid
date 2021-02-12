@@ -1,6 +1,7 @@
 module Pretty (class Pretty, pretty, module P) where
 
 import Prelude hiding (absurd, between)
+import Data.Either (Either(..))
 import Data.List (List(..), (:), fromFoldable)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (toUnfoldable)
@@ -12,7 +13,7 @@ import Bindings (Binding, Bindings(..), (:+:), (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), varAnon)
 import Expr (Expr(..), VarDef(..)) as E
-import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Patt(..), Pattern(..), Qualifier(..), VarDef(..))
+import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Pattern(..), Qualifier(..), VarDef(..))
 import Expl (RawExpl(..), VarDef(..)) as T
 import Expl (Expl(..), Match(..), RawExpl)
 import Lattice (class BoundedJoinSemilattice)
@@ -261,9 +262,9 @@ instance prettyQualifier :: BoundedJoinSemilattice a => Pretty (Qualifier a) whe
    pretty (Generator _ π e)            = pretty π :<>: text " <- " :<>: pretty e
    pretty (Declaration _ (VarDef π e)) = text "let " :<>: pretty π :<>: text " = " :<>: pretty e
 
-instance prettyPatt :: Pretty Patt where
-   pretty (Pattern p)            = pretty p
-   pretty (ListPatternRest p)    = pretty p
+instance prettyPatt :: (Pretty a, Pretty b) => Pretty (Either a b) where
+   pretty (Left p)   = pretty p
+   pretty (Right p)  = pretty p
 
 instance prettyPattern :: Pretty Pattern where
    pretty (PVar x)               = text x

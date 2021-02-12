@@ -7,10 +7,7 @@ import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings)
 import DataType (Ctr)
-import Lattice (
-   class BoundedJoinSemilattice, class BoundedSlices, class JoinSemilattice, class Slices,
-   𝔹, (∨), bot, botOf, definedJoin, maybeJoin
-)
+import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), botOf, definedJoin, maybeJoin)
 import Util (type (×), (×), type (+), (≟), error)
 
 type Var = String
@@ -42,9 +39,13 @@ data Elim a =
 -- Continuation of an eliminator. None form only used in structured let.
 data Cont a = None | Body (Expr a) | Arg (Elim a)
 
-body :: Cont 𝔹 -> Expr 𝔹
-body (Body e)  = e
-body _         = error "Expression expected"
+asElim :: forall a . Cont a -> Elim a
+asElim (Arg σ) =  σ
+asElim _ = error "Eliminator expected"
+
+asExpr :: forall a . Cont a -> Expr a
+asExpr (Body e) =  e
+asExpr _ = error "Expression expected"
 
 data Module a = Module (List (VarDef a + RecDefs a))
 

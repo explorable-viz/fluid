@@ -174,7 +174,7 @@ instance desugarFwdEither :: (DesugarFwd a b, DesugarFwd c d) => DesugarFwd (Eit
    desugarFwd (Left x) = Left <$> desugarFwd x
    desugarFwd (Right x) = Right <$> desugarFwd x
 
-{- totalise κ ↗ κ'       totalise (singleton σ) enil = σ -}
+{- totalise κ, e ↗ κ' -}
 totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e =
    let c × κ            = fromJust absurd $ L.head $ toUnfoldable m
@@ -185,11 +185,11 @@ totalise (ElimConstr m) e =
                            Arg σ   -> c × Arg (totalise σ e)
                            Body e' -> c × Body e'
                            None    -> c × Body e -- should the None cases should be undefined instead?
-     in   ElimConstr $ fromFoldable $ bs'' <> bs'
+     in   ElimConstr (fromFoldable (bs'' <> bs'))
 totalise (ElimVar e κ) e' = case κ of
-   Arg σ  -> ElimVar e $ Arg $ totalise σ e'
+   Arg σ  -> ElimVar e (Arg (totalise σ e'))
    Body _ -> ElimVar e κ
-   None   -> ElimVar e $ Body e'
+   None   -> ElimVar e (Body e')
 
 class Joinable a where
    maybeJoin :: a -> a -> MayFail a
