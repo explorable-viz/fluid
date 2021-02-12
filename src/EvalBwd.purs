@@ -1,4 +1,4 @@
-module Bwd where
+module EvalBwd where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), foldr, range, singleton, zip)

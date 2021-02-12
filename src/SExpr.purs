@@ -20,7 +20,7 @@ data Expr a =
    BinaryApp (Expr a) Var (Expr a) |
    MatchAs (Expr a) (NonEmptyList (Pattern × Expr a)) |
    IfElse (Expr a) (Expr a) (Expr a) |
-   ListEmpty a |
+   ListEmpty a | -- called [] in the paper
    ListNonEmpty a (Expr a) (ListRest a) |
    ListEnum (Expr a) (Expr a) |
    ListComp a (Expr a) (NonEmptyList (Qualifier a)) |

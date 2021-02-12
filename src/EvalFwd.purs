@@ -1,4 +1,4 @@
-module Fwd where
+module EvalFwd where
 
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable)
