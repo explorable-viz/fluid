@@ -11,8 +11,8 @@ import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence, traverse)
 import Bindings (Bindings(..), (:+:), (↦), find)
 import DataType (Ctr, arity, checkDataType, cPair, dataTypeForKeys)
-import Expl (RawExpl(..), VarDef(..)) as T
-import Expl (Expl(..), Match(..))
+import Expl (Expl(..), VarDef(..)) as T
+import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, varAnon)
 import Lattice (𝔹)
 import Pretty (pretty, render)
@@ -57,19 +57,19 @@ checkArity c n = do
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ Hole = error absurd
 eval ρ (Var x) =
-   (Expl ρ (T.Var x) × _) <$> find x ρ
+   (T.Var ρ x × _) <$> find x ρ
 eval ρ (Op op) =
-   (Expl ρ (T.Op op) × _) <$> find op ρ
+   (T.Op ρ op × _) <$> find op ρ
 eval ρ (Int _ n) =
-   (Expl ρ T.Int × _) <$> pure (V.Int false n)
+   (T.Int ρ × _) <$> pure (V.Int false n)
 eval ρ (Float _ n) =
-   (Expl ρ T.Float × _) <$> pure (V.Float false n)
+   (T.Float ρ × _) <$> pure (V.Float false n)
 eval ρ (Str _ str) =
-   (Expl ρ T.Str × _) <$> pure (V.Str false str)
+   (T.Str ρ × _) <$> pure (V.Str false str)
 eval ρ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
-   (Expl ρ (T.Constr c ts) × _) <$> pure (V.Constr false c vs)
+   (T.Constr ρ c ts × _) <$> pure (V.Constr false c vs)
 eval ρ (Matrix _ e (x × y) e') = do
    t × v <- eval ρ e'
    case v of
@@ -82,7 +82,7 @@ eval ρ (Matrix _ e (x × y) e') = do
             singleton $ sequence $ do
                j <- range 1 j'
                singleton $ eval ((ρ :+: x ↦ V.Int false i) :+: y ↦ V.Int false j) e)
-         (Expl ρ (T.Matrix ts (x × y) t) × _) <$> pure (V.Matrix false vs (i' × j'))
+         ((T.Matrix ts (x × y) t) × _) <$> pure (V.Matrix false vs (i' × j'))
       v' -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v')
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
@@ -90,9 +90,9 @@ eval ρ (Matrix _ e (x × y) e') = do
 eval ρ (LetRec δ e) = do
    let ρ' = closeDefs ρ δ δ
    t × v <- eval (ρ <> ρ') e
-   (Expl ρ (T.LetRec δ t) × _) <$> pure v
+   (T.LetRec δ t × _) <$> pure v
 eval ρ (Lambda σ) =
-   (Expl ρ T.Lambda × _) <$> pure (V.Closure ρ Empty σ)
+   (T.Lambda × _) <$> pure (V.Closure ρ Empty σ)
 eval ρ (App e e') = do
    t × v <- eval ρ e
    t' × v' <- eval ρ e'
@@ -102,31 +102,31 @@ eval ρ (App e e') = do
          let ρ2 = closeDefs ρ1 δ δ
          ρ3 × e'' × ξ <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) $ asExpr e''
-         (Expl ρ (T.App (t × δ) t' ξ t'') × _) <$> pure v''
+         ((T.App (t × δ) t' ξ t'') × _) <$> pure v''
       V.Primitive _ φ ->
-         (Expl ρ (T.AppOp (t × v) (t' × v')) × _) <$> pure (apply φ v')
+         ((T.AppOp (t × v) (t' × v')) × _) <$> pure (apply φ v')
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) $ "Too many arguments to " <> show c
-         (Expl ρ (T.AppOp (t × v) (t' × v')) × _) <$> pure (V.Constr false c $ vs <> singleton v')
+         ((T.AppOp (t × v) (t' × v')) × _) <$> pure (V.Constr false c $ vs <> singleton v')
       _ -> report "Expected closure, operator or unsaturated constructor"
 eval ρ (BinaryApp e op e') = do
    t  × v  <- eval ρ e
    t' × v' <- eval ρ e'
    v_φ <- find op ρ
-   let t_app = Expl ρ (T.BinaryApp (t × v) (op × v_φ) (t' × v'))
+   let t_app = (T.BinaryApp (t × v) (op × v_φ) (t' × v'))
    case v_φ of
       V.Hole -> error absurd
       V.Primitive _ φ ->
          case apply φ v of
             V.Hole -> error absurd
             V.Primitive _ φ_v -> pure $ t_app × apply φ_v v'
-            _                 -> report "Not a binary operator"
+            _ -> report "Not a binary operator"
       _ -> report "Not an operator"
 eval ρ (Let (VarDef σ e) e') = do
    t  × v      <- eval ρ e
    ρ' × κ × ξ  <- match v σ
    t' × v'     <- eval (ρ <> ρ') e'
-   (Expl ρ (T.Let (T.VarDef ξ t) t') × _) <$> pure v'
+   ((T.Let (T.VarDef ξ t) t') × _) <$> pure v'
 
 eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
 eval_module ρ (Module Nil) = pure ρ

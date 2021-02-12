@@ -47,7 +47,7 @@ eval_fwd ρ (Constr α c es) α' =
 eval_fwd ρ (Matrix α e (x × y) e') α' =
    case eval_fwd ρ e' α of
       V.Hole -> V.Hole
-      (V.Constr _ c (v1 : v2 : Nil)) | c == cPair ->
+      V.Constr _ c (v1 : v2 : Nil) | c == cPair ->
          let i' × j' = to v1 × to v2
              vs = fromFoldable $ do
                   i <- range 1 i'
@@ -67,16 +67,16 @@ eval_fwd ρ (App e e') α =
          let ρ2 = closeDefs ρ1 δ δ
              ρ3 × e'' × β = match_fwd v σ in
          eval_fwd (ρ1 <> ρ2 <> ρ3) (asExpr e'') β
-      V.Primitive α' φ × v    -> apply_fwd φ α' v
+      V.Primitive α' φ × v -> apply_fwd φ α' v
       V.Constr α' c vs × v -> V.Constr (α ∧ α') c $ vs <> singleton v
       _ × _ -> error absurd
 eval_fwd ρ (BinaryApp e1 op e2) α =
    case successful $ find op ρ of
       V.Hole -> V.Hole
-      V.Primitive α' φ  ->
+      V.Primitive α' φ ->
          case apply_fwd φ α' (eval_fwd ρ e1 α) of
             V.Hole -> V.Hole
-            V.Primitive α'' φ_v  -> apply_fwd φ_v α'' $ eval_fwd ρ e2 α
+            V.Primitive α'' φ_v -> apply_fwd φ_v α'' $ eval_fwd ρ e2 α
             _ -> error absurd
       _ -> error absurd
 eval_fwd ρ (Let (VarDef σ e) e') α =

@@ -14,8 +14,8 @@ import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), varAnon)
 import Expr (Expr(..), VarDef(..)) as E
 import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Pattern(..), Qualifier(..), VarDef(..))
-import Expl (RawExpl(..), VarDef(..)) as T
-import Expl (Expl(..), Match(..), RawExpl)
+import Expl (Expl(..), VarDef(..)) as T
+import Expl (Expl, Match(..))
 import Lattice (class BoundedJoinSemilattice)
 import Util (Endo, type (×), (×), absurd, error, intersperse)
 import Val (Primitive, Val)
@@ -76,20 +76,15 @@ instance prettyBindings :: Pretty (t a) => Pretty (Bindings t a) where
 instance prettyVoid :: Pretty Void where
    pretty _ = error absurd
 
-instance prettyExpl :: BoundedJoinSemilattice a => Pretty (Expl a) where
-   pretty (Expl _ t) = pretty t
-
-instance prettyRawExpl :: BoundedJoinSemilattice a => Pretty (RawExpl a) where
-   pretty T.Hole                          = hole
-   pretty (T.Var x)                       = text x
-   pretty (T.Op op)                       = text op
-   pretty T.Int                           = text "int"
-   pretty T.Float                         = text "float"
-   pretty T.Str                           = text "str"
-   pretty (T.Constr c ts)                 = prettyConstr c ts
+instance prettyRawExpl :: BoundedJoinSemilattice a => Pretty (Expl a) where
+   pretty (T.Var _ x)                     = text x
+   pretty (T.Op _ op)                     = text op
+   pretty (T.Int _)                       = text "int"
+   pretty (T.Float _)                     = text "float"
+   pretty (T.Str _)                       = text "str"
+   pretty (T.Constr _ c ts)               = prettyConstr c ts
    pretty (T.Matrix _ _ _)                = error "todo"
    pretty T.Lambda                        = text "fun"
-   pretty (T.AppHole t)                   = text "App" :<>: parens (hole :<>: comma :<>: hole)
    pretty (T.App (t × _) t' ξ t'')        =
       text "App" :<>:
       parens (atop (text "t1: " :<>: pretty t :<>: comma)

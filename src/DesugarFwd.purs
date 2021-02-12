@@ -1,7 +1,6 @@
 module DesugarFwd where
 
 import Prelude hiding (absurd)
-import Control.Apply (lift2)
 import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Function (on)
@@ -21,8 +20,7 @@ import Lattice (𝔹)
 import SExpr (
    Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
-import Util (MayFail, type (×), (×), (≞), absurd, fromJust, mustLookup, report)
-
+import Util (MayFail, type (+), type (×), (×), (≞), absurd, error, fromJust, mustLookup)
 
 enil :: 𝔹 -> E.Expr 𝔹
 enil α = E.Constr α cNil Nil
@@ -38,8 +36,7 @@ class DesugarFwd a b | a -> b where
 instance desugarFwdModule :: DesugarFwd (Module Boolean) (E.Module Boolean) where
    desugarFwd (Module ds) = E.Module <$> traverse desugarFwd (join $ (ds <#> desugarDefs))
       where
-      desugarDefs :: Either (VarDefs Boolean) (RecDefs Boolean)
-                  -> List (Either (VarDef Boolean) (RecDefs Boolean))
+      desugarDefs :: VarDefs Boolean + RecDefs Boolean -> List (VarDef Boolean + RecDefs Boolean)
       desugarDefs (Left ds')  = (toList ds' <#> Left)
       desugarDefs (Right δ)   = pure $ Right δ
 
@@ -117,7 +114,7 @@ instance desugarFwdExpr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
 {- l ↗ e -}
 instance desugarFwdListRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
    desugarFwd (End α)       = pure (enil α)
-   desugarFwd (Next α s l)  = lift2 (econs α) (desugarFwd s) (desugarFwd l)
+   desugarFwd (Next α s l)  = econs α <$> desugarFwd s <*> desugarFwd l
 
 {- →        -}
 {- p, κ ↗ σ -}
@@ -170,22 +167,22 @@ instance desugarFwdBranchesUncurried :: DesugarFwd (NonEmptyList (Pattern × Exp
       NonEmptyList (σ :| σs) <- traverse desugarFwd bs
       foldM maybeJoin σ σs
 
-instance desugarFwdEither :: (DesugarFwd a b, DesugarFwd c d) => DesugarFwd (Either a c) (Either b d) where
+instance desugarFwdEither :: (DesugarFwd a b, DesugarFwd c d) => DesugarFwd (a + c) (b + d) where
    desugarFwd (Left x) = Left <$> desugarFwd x
    desugarFwd (Right x) = Right <$> desugarFwd x
 
 {- totalise κ, e ↗ κ' -}
 totalise :: Elim 𝔹 -> E.Expr 𝔹 -> Elim 𝔹
 totalise (ElimConstr m) e =
-   let c × κ            = fromJust absurd $ L.head $ toUnfoldable m
+   let c × κ            = fromJust absurd (L.head (toUnfoldable m))
        bs               = toUnfoldable m
        DataType _ sigs  = mustLookup c ctrToDataType
        bs'              = (_ × Body e) <$> ((fst <$> toUnfoldable sigs) \\ (fst <$> bs))
        bs''             = bs <#> \(c × κ) -> case mustLookup c m of
-                           Arg σ   -> c × Arg (totalise σ e)
-                           Body e' -> c × Body e'
-                           None    -> c × Body e -- should the None cases should be undefined instead?
-     in   ElimConstr (fromFoldable (bs'' <> bs'))
+         Arg σ   -> c × Arg (totalise σ e)
+         Body e' -> c × Body e'
+         None    -> c × Body e -- should the None cases should be undefined instead?
+   in ElimConstr (fromFoldable (bs'' <> bs'))
 totalise (ElimVar e κ) e' = case κ of
    Arg σ  -> ElimVar e (Arg (totalise σ e'))
    Body _ -> ElimVar e κ
@@ -197,13 +194,13 @@ class Joinable a where
 instance joinableElim :: Joinable (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar y κ')       = ElimVar <$> x ≞ y <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
-   maybeJoin _ _                                = report "Can't join variable and constructor patterns"
+   maybeJoin _ _                                = error absurd
 
 instance joinableCont :: Joinable (Cont Boolean) where
    maybeJoin None None                                = pure None
    maybeJoin (Arg σ) (Arg σ')                         = Arg <$> maybeJoin σ σ'
    maybeJoin (Body (E.Lambda σ)) (Body (E.Lambda σ')) = Body <$> (E.Lambda <$> maybeJoin σ σ')
-   maybeJoin _ _                                      = report "Incompatible continuations"
+   maybeJoin _ _                                      = error absurd
 
 instance joinableMap :: Joinable (Map Ctr (Cont Boolean)) where
    maybeJoin κs1 κs2 = do
