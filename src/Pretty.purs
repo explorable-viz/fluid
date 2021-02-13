@@ -83,7 +83,7 @@ instance prettyRawExpl :: BoundedJoinSemilattice a => Pretty (Expl a) where
    pretty (T.Float _ n)                   = text (show n)
    pretty (T.Str _ str)                   = text str
    pretty (T.Constr _ c ts)               = prettyConstr c ts
-   pretty (T.Matrix _ _ _)                = error "todo"
+   pretty (T.Matrix _ _ _ _)              = error "todo"
    pretty T.Lambda                        = text "fun"
    pretty (T.App (t × _) t' ξ t'')        =
       text "App" :<>:

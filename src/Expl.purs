@@ -19,7 +19,7 @@ data Expl a =
    Float (Env a) Number |
    Str (Env a) String |
    Constr (Env a) Ctr (List (Expl a)) |
-   Matrix (Array (Array (Expl a))) (Var × Var) (Expl a) |
+   Matrix (Array (Array (Expl a))) (Var × Var) (Int × Int) (Expl a) |
    Lambda |
    App (Expl a × RecDefs a) (Expl a) (Match a) (Expl a) |
    AppOp (ExplVal a) (ExplVal a) |

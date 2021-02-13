@@ -77,12 +77,12 @@ eval ρ (Matrix _ e (x × y) e') = do
       V.Constr _ c (v1 : v2 : Nil) | c == cPair -> do
          let i' × j' = to v1 × to v2
          check (i' × j' >= 1 × 1) $ "array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")"
-         ts × vs <- unzipToArray <$> ((<$>) unzipToArray) <$> (sequence $ do
+         tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$> (sequence $ do
             i <- range 1 i'
             singleton $ sequence $ do
                j <- range 1 j'
                singleton $ eval ((ρ :+: x ↦ V.Int false i) :+: y ↦ V.Int false j) e)
-         ((T.Matrix ts (x × y) t) × _) <$> pure (V.Matrix false vs (i' × j'))
+         ((T.Matrix tss (x × y) (i' × j') t) × _) <$> pure (V.Matrix false vss (i' × j'))
       v' -> report $ "Array dimensions must be pair of ints; got " <> render (pretty v')
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b

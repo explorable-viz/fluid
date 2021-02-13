@@ -1,6 +1,7 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
+import Data.Array (replicate)
 import Data.List (List(..), (:), foldr, range, singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (insert)
@@ -83,14 +84,16 @@ eval_bwd (V.Constr α c vs) (T.Constr ρ c' ts) | c == c' =
           where ρ'' × e × α'' = eval_bwd v t
        ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Nil × α) (zip vs ts) in
    ρ' × Constr α c es × α'
-eval_bwd (V.Matrix α vs (i' × j')) (T.Matrix ts (x × y) t) =
+eval_bwd V.Hole t@(T.Matrix tss _ (i' × j') _) =
+   eval_bwd (V.Matrix false (replicate i' (replicate j' V.Hole)) (i' × j')) t
+eval_bwd (V.Matrix α vss (i' × j')) (T.Matrix tss (x × y) _ t) =
    let ρ × e × β = eval_bwd (V.Constr false cPair (V.Int α i' : V.Int α j' : Nil)) t
        NonEmptyList ijs = nonEmpty $ do
             i <- range 1 i'
             j <- range 1 j'
             singleton (i' × j')
        eval_bwd_elem (i × j) =
-          case eval_bwd (vs!(i - 1)!(j - 1)) (ts!(i - 1)!(j - 1)) of
+          case eval_bwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
             Extend (Extend ρ' (_ ↦ V.Int γ _)) (_ ↦ V.Int γ' _) × e' × β' -> ρ' × e' × β' × (γ ∨ γ')
             _ -> error absurd
        ρ' × e' × β' × γ = foldl1
