@@ -84,6 +84,8 @@ eval_bwd V.Hole t@(T.Lambda ρ σ) =
    eval_bwd (V.Closure (botOf ρ) Empty (botOf σ)) t
 eval_bwd (V.Closure ρ Empty σ) (T.Lambda _ _) =
    ρ × Lambda σ × false
+eval_bwd _ (T.Lambda _ _) =
+   error absurd
 eval_bwd V.Hole t@(T.Constr _ c ts) =
    eval_bwd (V.Constr false c (ts <#> const V.Hole)) t
 eval_bwd (V.Constr α c vs) (T.Constr ρ c' ts) | c == c' =
