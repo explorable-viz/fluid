@@ -1,6 +1,7 @@
 module DesugarBwd where
 
 import Prelude hiding (absurd)
+import Control.Apply (lift2)
 import Data.Function (on)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), zip)
@@ -107,7 +108,7 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
                        render (pretty sListComp')
    -- | List-comp-guard
    desugarBwd (E.App (E.Lambda (ElimConstr m)) e1)
-              (ListComp α s1 (NonEmptyList ((Guard _ s2) :| q : qs))) = do
+              (ListComp α s1 (NonEmptyList (Guard _ s2 :| q : qs))) = do
       e2          <- asExpr <$> lookupE cTrue  m
       e3          <- asExpr <$> lookupE cFalse m
       s2'         <- desugarBwd e1 s2
@@ -128,14 +129,14 @@ instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
          _ -> error absurd
    -- | List-comp-gen
    desugarBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1)
-              (ListComp α s2 (NonEmptyList ((Generator _ p s1) :| q : qs))) = do
+              (ListComp α s2 (NonEmptyList (Generator _ p s1 :| q : qs))) = do
       s1'        <- desugarBwd e1 s1
       let σ' = asElim (untotalise (Arg σ) (Left p : Nil))
       e2         <- asExpr <$> desugarPatternBwd σ' p
       sListComp  <- desugarBwd e2 (ListComp α s2 (NonEmptyList (q :| qs)))
       case sListComp of
          ListComp α4 s2' (NonEmptyList (q' :| qs')) ->
-            pure $ ListComp α4 s2' (NonEmptyList ((Generator α4 p s1) :| q' : qs'))
+            pure $ ListComp α4 s2' (NonEmptyList (Generator α4 p s1 :| q' : qs'))
          _ -> error absurd
    -- | Let
    desugarBwd (E.Let d e) (Let ds s) = do
@@ -209,22 +210,16 @@ instance desugarBwdBranchUncurried :: DesugarBwd (Elim Boolean) (Pattern × Expr
 
 {- σ, cs ↘ c -}
 instance desugarBwdBranches :: DesugarBwd (Elim Boolean) (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) where
-   desugarBwd σ (NonEmptyList (b1 :| b2 : bs)) = do
-      b'  <- desugarBwd σ b1
-      bs' <- desugarBwd σ (NonEmptyList (b2 :| bs))
-      pure $ NonEmptyList (b' :| (toList bs'))
-   desugarBwd σ (NonEmptyList (b :| Nil)) = do
-      b' <- desugarBwd σ b
-      pure $ NonEmptyList (b' :| Nil)
+   desugarBwd σ (NonEmptyList (b1 :| b2 : bs)) =
+      NonEmptyList <$> (desugarBwd σ b1 `lift2 (:|)` (toList <$> desugarBwd σ (NonEmptyList (b2 :| bs))))
+   desugarBwd σ (NonEmptyList (b :| Nil)) =
+      NonEmptyList <$> (desugarBwd σ b `lift2 (:|)` pure Nil)
 
 instance desugarBwdBranchesUncurried :: DesugarBwd (Elim Boolean) (NonEmptyList (Pattern × Expr Boolean)) where
-   desugarBwd σ (NonEmptyList (b1 :| b2 : bs)) = do
-      b'  <- desugarBwd σ b1
-      bs' <- desugarBwd σ (NonEmptyList (b2 :| bs))
-      pure $ NonEmptyList (b' :| toList bs')
-   desugarBwd σ (NonEmptyList (b :| Nil)) = do
-      b' <- desugarBwd σ b
-      pure $ NonEmptyList (b' :| Nil)
+   desugarBwd σ (NonEmptyList (b1 :| b2 : bs)) =
+      NonEmptyList <$> (desugarBwd σ b1 `lift2 (:|)` (toList <$> desugarBwd σ (NonEmptyList (b2 :| bs))))
+   desugarBwd σ (NonEmptyList (b :| Nil)) =
+      NonEmptyList <$> (desugarBwd σ b `lift2 (:|)` pure Nil)
 
 {- untotalise κ πs ↗ κ' -}
 untotalise :: Cont 𝔹 -> List (Pattern + ListPatternRest) -> Cont 𝔹
