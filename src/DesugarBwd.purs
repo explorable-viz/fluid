@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.Function (on)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), zip)
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList, appendFoldable, reverse)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList, reverse)
 import Data.Map (fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
@@ -14,9 +14,9 @@ import DataType (cPair, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), VarDef(..)) as E
 import Pretty (render, pretty)
-import SExpr (Expr(..), ListRest(..), Pattern(..), ListPatternRest(..), Qualifier(..), VarDef(..))
+import SExpr (Clause, Expr(..), ListRest(..), Pattern(..), ListPatternRest(..), Qualifier(..), VarDef(..))
 import Lattice (𝔹, (∧))
-import Util (MayFail, type(+), type (×), (×), (≞), (≜), absurd, mustLookup, lookupE, error)
+import Util (MayFail, type(+), type (×), (×), (≞), (≜), absurd, assert, mustLookup, lookupE, error)
 
 qualTrue :: 𝔹 -> Qualifier 𝔹
 qualTrue α = Guard α (Constr α cTrue Nil)
@@ -32,52 +32,34 @@ instance desugarBwdVarDef  :: DesugarBwd (E.VarDef Boolean) (VarDef Boolean) whe
 
 instance desugarBwdVarDefs :: DesugarBwd (E.Expr Boolean)
                                          (NonEmptyList (VarDef Boolean) × Expr Boolean) where
-   desugarBwd (E.Let (E.VarDef σ e1) e2)
-              (NonEmptyList (VarDef π s1 :| Nil) × s2) = do
-              s1' <- desugarBwd e1 s1
-              s2' <- desugarBwd e2 s2
-              pure $ NonEmptyList (VarDef π s1' :| Nil) × s2'
-   desugarBwd (E.Let (E.VarDef σ e1) e2)
-              (NonEmptyList (VarDef π s1 :| d : ds) × s2) = do
-              s1' <- desugarBwd e1 s1
-              NonEmptyList (d' :| ds') × s2' <- desugarBwd e2 (NonEmptyList (d :| ds) × s2)
-              pure $ NonEmptyList (VarDef π s1' :| d' : ds') × s2'
-   desugarBwd _ (_ × _) = error absurd
+   desugarBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) = do
+      s1' <- desugarBwd e1 s1
+      (NonEmptyList (VarDef π s1' :| Nil) × _) <$> desugarBwd e2 s2
+   desugarBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × s2) = do
+      s1' <- desugarBwd e1 s1
+      NonEmptyList (d' :| ds') × s2' <- desugarBwd e2 (NonEmptyList (d :| ds) × s2)
+      pure $ NonEmptyList (VarDef π s1' :| d' : ds') × s2'
+   desugarBwd _ _ = error absurd
 
-concatNonEmpty :: forall a. NonEmptyList (NonEmptyList a) -> NonEmptyList a
-concatNonEmpty (NonEmptyList (x :| x' : xs)) = appendFoldable x (concatNonEmpty (NonEmptyList (x' :| xs)))
-concatNonEmpty (NonEmptyList (x :| Nil))     = x
-
-{-                 →                        →           -}
-{-                                            →         -}
-{- let [f ↦ σ] ↘ (f c)         [f ↦ σ] ↘ (f, (p, s))    -}
-instance desugarBwdRecDefs :: DesugarBwd (Bindings Elim Boolean)
-                                         (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr Boolean)))) where
-   desugarBwd fσs fπes = concatNonEmpty <$> zipRecDefs fσs fπess --error "Desugar bwd for RecDefs not implemented"
+instance desugarBwdRecDefs ::
+         DesugarBwd (Bindings Elim Boolean) (NonEmptyList (String × (NonEmptyList Pattern × Expr Boolean))) where
+   desugarBwd fσs fπes = join <$> zipRecDefs fσs fπess
       where
-      fπess  = reverse $ (groupBy (eq `on` fst) fπes ::
-               NonEmptyList (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr Boolean)))))
+      fπess = reverse (groupBy (eq `on` fst) fπes :: NonEmptyList (NonEmptyList (Clause 𝔹)))
 
-      -- f a -> g b -> (a -> b -> b) -> (g b)
-      zipRecDefs :: Bindings Elim 𝔹
-                  -> NonEmptyList (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr 𝔹))))
-                  -> MayFail (NonEmptyList (NonEmptyList (String × ((NonEmptyList Pattern) × (Expr 𝔹)))))
+      zipRecDefs :: Bindings Elim 𝔹 ->
+                    NonEmptyList (NonEmptyList (Clause 𝔹)) ->
+                    MayFail (NonEmptyList (NonEmptyList (Clause 𝔹)))
       zipRecDefs (ρ :+: f ↦ σ) (NonEmptyList (fπes1 :| fπes2 : fπes_rest)) = do
          fπes1' <- fromRecDef (f ↦ σ) fπes1
          fπess' <- toList <$> zipRecDefs ρ (NonEmptyList (fπes2 :| fπes_rest))
          pure $ NonEmptyList (fπes1' :| fπess')
       zipRecDefs (Empty :+: f ↦ σ) (NonEmptyList (fπes1 :| Nil)) = do
-         fπes1'  <- fromRecDef (f ↦ σ) fπes1
+         fπes1' <- fromRecDef (f ↦ σ) fπes1
          pure $ NonEmptyList (fπes1' :| Nil)
       zipRecDefs ρ fπs = error absurd
 
-      -- backward slice the eliminator (containing different possible pattern matches of the f)
-      -- and the set of branches (for each pattern match of f)
-      --          →       →
-      -- f ↦ σ, (f c) ↘ (f c)
-      fromRecDef :: Binding Elim 𝔹
-                  -> NonEmptyList (String × (NonEmptyList Pattern × Expr 𝔹))
-                  -> MayFail (NonEmptyList (String × (NonEmptyList Pattern × Expr 𝔹)))
+      fromRecDef :: Binding Elim 𝔹 -> NonEmptyList (Clause 𝔹) -> MayFail (NonEmptyList (Clause 𝔹))
       fromRecDef (f ↦ σ) fπs@(NonEmptyList ((f' × (πs × e)) :| fπs')) =
          map ((×) f) <$> desugarBwd σ (snd <$> fπs)
 
@@ -253,8 +235,8 @@ untotalise κ Nil = κ
 untotalise (Arg σ) (π : πs) =
    case σ × π of
       ElimVar x κ × Left (PVar x') ->
-         if x == x' then Arg (ElimVar x (untotalise κ πs))
-         else error $ "untotalise: patterns don't match " <> render (pretty x) <> " & " <> render (pretty x')
+         assert (x == x') $
+         Arg (ElimVar x (untotalise κ πs))
       ElimConstr m × Left (PConstr c ps) ->
          let κ  = mustLookup c m
              κ' = untotalise κ (map Left ps <> πs)

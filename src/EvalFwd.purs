@@ -20,7 +20,7 @@ match_fwd v (ElimVar x κ)
 match_fwd (V.Constr α c vs) (ElimConstr κs) =
    let ρ × κ × α' = matchArgs_fwd vs (mustLookup c κs) in
    ρ × κ × (α ∧ α')
-match_fwd v _ = error absurd
+match_fwd _ (ElimConstr _) = error absurd
 
 matchArgs_fwd :: List (Val 𝔹) -> Cont 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchArgs_fwd Nil κ = Empty × κ × true
