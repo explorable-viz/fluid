@@ -232,30 +232,29 @@ instance desugarBwdBranchesUncurried :: DesugarBwd (Elim Boolean) (NonEmptyList 
 {- untotalise κ πs ↗ κ' -}
 untotalise :: Cont 𝔹 -> List (Pattern + ListPatternRest) -> Cont 𝔹
 untotalise κ Nil = κ
+untotalise None (_ : _) = error "todo" -- is the None case essentially Hole?
 untotalise (Arg σ) (π : πs) =
    case σ × π of
       ElimVar x κ × Left (PVar x') ->
          assert (x == x') $
          Arg (ElimVar x (untotalise κ πs))
+      ElimVar _ _ × _ ->
+         error absurd
+      ElimConstr _ × Left (PVar _) ->
+         error absurd
       ElimConstr m × Left (PConstr c ps) ->
-         let κ  = mustLookup c m
-             κ' = untotalise κ (map Left ps <> πs)
-         in Arg $ ElimConstr (fromFoldable [c × κ'])
+         let κ' = untotalise (mustLookup c m) (map Left ps <> πs)
+         in Arg (ElimConstr (fromFoldable [c × κ']))
       ElimConstr m × Left PListEmpty ->
-         let κ  = mustLookup cNil m
-             κ' = untotalise κ πs
-         in  Arg $ ElimConstr (fromFoldable [cNil × κ'])
+         let κ' = untotalise (mustLookup cNil m) πs
+         in Arg (ElimConstr (fromFoldable [cNil × κ']))
       ElimConstr m × Left (PListNonEmpty p o) ->
-         let κ  = mustLookup cCons m
-             κ' = untotalise κ (Left p : Right o : πs)
-         in  Arg $ ElimConstr (fromFoldable [cCons × κ'])
+         let κ' = untotalise (mustLookup cCons m) (Left p : Right o : πs)
+         in Arg (ElimConstr (fromFoldable [cCons × κ']))
       ElimConstr m × Right PEnd ->
-         let κ  = mustLookup cNil m
-             κ' = untotalise κ πs
-         in  Arg $ ElimConstr (fromFoldable [cNil × κ'])
+         let κ' = untotalise (mustLookup cNil m) πs
+         in Arg (ElimConstr (fromFoldable [cNil × κ']))
       ElimConstr m × Right (PNext p o) ->
-         let κ  = mustLookup cCons m
-             κ' = untotalise κ (Left p : Right o : πs)
-         in  Arg $ ElimConstr (fromFoldable [cCons × κ'])
-      σ' × p' -> error absurd
-untotalise κ π = error absurd
+         let κ' = untotalise (mustLookup cCons m) (Left p : Right o : πs)
+         in Arg (ElimConstr (fromFoldable [cCons × κ']))
+untotalise (Body _) (_ : _) = error absurd
