@@ -75,6 +75,8 @@ eval_bwd (V.Float α n) (T.Float ρ n') | n == n' =
    botOf ρ × Float α n × α
 eval_bwd (V.Closure ρ δ σ) (T.Lambda) =
    ρ × Lambda σ × false
+eval_bwd V.Hole t@(T.Constr _ c ts) =
+   eval_bwd (V.Constr false c (ts <#> const V.Hole)) t
 eval_bwd (V.Constr α c vs) (T.Constr ρ c' ts) | c == c' =
    let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
        evalArg_bwd (v × t) (ρ' × es × α') = (ρ' ∨ ρ'') × (e : es) × (α' ∨ α'')
