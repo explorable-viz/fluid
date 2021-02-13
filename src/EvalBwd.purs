@@ -57,16 +57,21 @@ matchArgs_bwd ρ κ α (ξ : ξs)  =
    (vs <> v : Nil) × κ'
 
 eval_bwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
-eval_bwd V.Hole _ = error "todo"
 eval_bwd v (T.Var ρ x) =
    (botOf ρ ◃ x ↦ v) × Var x × false
 eval_bwd v (T.Op ρ op) =
    (botOf ρ ◃ op ↦ v) × Op op × false
-eval_bwd (V.Str α s) (T.Str ρ) =
+eval_bwd V.Hole t@(T.Str _ str) =
+   eval_bwd (V.Str false str) t
+eval_bwd (V.Str α s) (T.Str ρ s') | s == s' =
    botOf ρ × Str α s × α
-eval_bwd (V.Int α n) (T.Int ρ) =
+eval_bwd V.Hole t@(T.Int _ n) =
+   eval_bwd (V.Int false n) t
+eval_bwd (V.Int α n) (T.Int ρ n') | n == n' =
    botOf ρ × Int α n × α
-eval_bwd (V.Float α n) (T.Float ρ) =
+eval_bwd V.Hole t@(T.Float _ n) =
+   eval_bwd (V.Float false n) t
+eval_bwd (V.Float α n) (T.Float ρ n') | n == n' =
    botOf ρ × Float α n × α
 eval_bwd (V.Closure ρ δ σ) (T.Lambda) =
    ρ × Lambda σ × false

@@ -79,9 +79,9 @@ instance prettyVoid :: Pretty Void where
 instance prettyRawExpl :: BoundedJoinSemilattice a => Pretty (Expl a) where
    pretty (T.Var _ x)                     = text x
    pretty (T.Op _ op)                     = text op
-   pretty (T.Int _)                       = text "int"
-   pretty (T.Float _)                     = text "float"
-   pretty (T.Str _)                       = text "str"
+   pretty (T.Int _ n)                     = text (show n)
+   pretty (T.Float _ n)                   = text (show n)
+   pretty (T.Str _ str)                   = text str
    pretty (T.Constr _ c ts)               = prettyConstr c ts
    pretty (T.Matrix _ _ _)                = error "todo"
    pretty T.Lambda                        = text "fun"

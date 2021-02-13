@@ -61,11 +61,11 @@ eval ρ (Var x) =
 eval ρ (Op op) =
    (T.Op ρ op × _) <$> find op ρ
 eval ρ (Int _ n) =
-   (T.Int ρ × _) <$> pure (V.Int false n)
+   (T.Int ρ n × _) <$> pure (V.Int false n)
 eval ρ (Float _ n) =
-   (T.Float ρ × _) <$> pure (V.Float false n)
+   (T.Float ρ n × _) <$> pure (V.Float false n)
 eval ρ (Str _ str) =
-   (T.Str ρ × _) <$> pure (V.Str false str)
+   (T.Str ρ str × _) <$> pure (V.Str false str)
 eval ρ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip

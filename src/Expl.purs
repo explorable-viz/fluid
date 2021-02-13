@@ -15,9 +15,9 @@ data VarDef a = VarDef (Match a) (Expl a)
 data Expl a =
    Var (Env a) Var |
    Op (Env a) Var |
-   Int (Env a) |
-   Float (Env a) |
-   Str (Env a) |
+   Int (Env a) Int |
+   Float (Env a) Number |
+   Str (Env a) String |
    Constr (Env a) Ctr (List (Expl a)) |
    Matrix (Array (Array (Expl a))) (Var × Var) (Expl a) |
    Lambda |
