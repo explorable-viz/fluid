@@ -3,7 +3,7 @@ module Expl where
 import Data.List (List)
 import Data.Map (Map)
 import DataType (Ctr)
-import Expr (Cont, RecDefs, Var)
+import Expr (Cont, Elim, RecDefs, Var)
 import Util (type (×))
 import Val (Env, Val)
 
@@ -20,7 +20,7 @@ data Expl a =
    Str (Env a) String |
    Constr (Env a) Ctr (List (Expl a)) |
    Matrix (Array (Array (Expl a))) (Var × Var) (Int × Int) (Expl a) |
-   Lambda |
+   Lambda (Env a) (Elim a) |
    App (Expl a × RecDefs a) (Expl a) (Match a) (Expl a) |
    AppOp (ExplVal a) (ExplVal a) |
    BinaryApp (ExplVal a) (Var × Val a) (ExplVal a) |

@@ -66,15 +66,23 @@ eval_bwd V.Hole t@(T.Str _ str) =
    eval_bwd (V.Str false str) t
 eval_bwd (V.Str α s) (T.Str ρ s') | s == s' =
    botOf ρ × Str α s × α
+eval_bwd _ (T.Str _ _) =
+   error absurd
 eval_bwd V.Hole t@(T.Int _ n) =
    eval_bwd (V.Int false n) t
 eval_bwd (V.Int α n) (T.Int ρ n') | n == n' =
    botOf ρ × Int α n × α
+eval_bwd _ (T.Int _ _) =
+   error absurd
 eval_bwd V.Hole t@(T.Float _ n) =
    eval_bwd (V.Float false n) t
 eval_bwd (V.Float α n) (T.Float ρ n') | n == n' =
    botOf ρ × Float α n × α
-eval_bwd (V.Closure ρ δ σ) (T.Lambda) =
+eval_bwd _ (T.Float _ _) =
+   error absurd
+eval_bwd V.Hole t@(T.Lambda ρ σ) =
+   eval_bwd (V.Closure (botOf ρ) Empty (botOf σ)) t
+eval_bwd (V.Closure ρ Empty σ) (T.Lambda _ _) =
    ρ × Lambda σ × false
 eval_bwd V.Hole t@(T.Constr _ c ts) =
    eval_bwd (V.Constr false c (ts <#> const V.Hole)) t
@@ -84,6 +92,8 @@ eval_bwd (V.Constr α c vs) (T.Constr ρ c' ts) | c == c' =
           where ρ'' × e × α'' = eval_bwd v t
        ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Nil × α) (zip vs ts) in
    ρ' × Constr α c es × α'
+eval_bwd _ (T.Constr _ _ _) =
+   error absurd
 eval_bwd V.Hole t@(T.Matrix tss _ (i' × j') _) =
    eval_bwd (V.Matrix false (replicate i' (replicate j' V.Hole)) (i' × j')) t
 eval_bwd (V.Matrix α vss (i' × j')) (T.Matrix tss (x × y) _ t) =
@@ -100,6 +110,8 @@ eval_bwd (V.Matrix α vss (i' × j')) (T.Matrix tss (x × y) _ t) =
          (\(ρ1 × e1 × β1 × γ1) (ρ2 × e2 × β2 × γ2) -> ((ρ1 ∨ ρ2) × (e1 ∨ e2) × (β1 ∨ β2) × (γ1 ∨ γ2)))
          (eval_bwd_elem <$> ijs) in
    (ρ ∨ ρ') × Matrix (α ∨ γ) e' (x × y) e × (α ∨ β ∨ β')
+eval_bwd _ (T.Matrix _ _ _ _) =
+   error absurd
 eval_bwd v (T.App (t × δ) t' ξ t'') =
    let ρ1ρ2ρ3 × e × α    = eval_bwd v t''
        ρ1ρ2 × ρ3         = unmatch ρ1ρ2ρ3 ξ
@@ -130,4 +142,3 @@ eval_bwd v (T.LetRec δ t) =
        ρ1 × ρ2        = splitAt (length δ) ρ1ρ2
        ρ1' × δ' × α'  = closeDefs_bwd ρ2 (ρ1 × δ) in
    (ρ1 ∨ ρ1') × LetRec δ' e × (α ∨ α')
-eval_bwd _ _ = error absurd

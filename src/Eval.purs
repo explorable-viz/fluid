@@ -92,7 +92,7 @@ eval ρ (LetRec δ e) = do
    t × v <- eval (ρ <> ρ') e
    (T.LetRec δ t × _) <$> pure v
 eval ρ (Lambda σ) =
-   (T.Lambda × _) <$> pure (V.Closure ρ Empty σ)
+   (T.Lambda ρ σ × _) <$> pure (V.Closure ρ Empty σ)
 eval ρ (App e e') = do
    t × v <- eval ρ e
    t' × v' <- eval ρ e'
