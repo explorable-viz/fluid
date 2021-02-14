@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.Function (on)
 import Data.Either (Either(..))
-import Data.List (List(..), (:), zip)
+import Data.List (List(..), (:), length, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList, reverse)
 import Data.Map (fromFoldable)
 import Data.NonEmpty ((:|))
@@ -131,26 +131,31 @@ instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
          _ -> error absurd
    desugarBwd (E.Let d e) (Let ds s) = do
       ds' × s' <- desugarBwd (E.Let d e) (ds × s)
-      pure $ Let ds' s'
-   desugarBwd (E.LetRec fπs e) (LetRec fπs' s) = LetRec <$> desugarBwd fπs fπs' <*> desugarBwd e s
+      pure (Let ds' s')
+   desugarBwd (E.LetRec fπs e) (LetRec fπs' s) =
+      LetRec <$> desugarBwd fπs fπs' <*> desugarBwd e s
    desugarBwd (E.Hole) s = error "todo"
    desugarBwd _ _ = error absurd
 
-{- e, l ↘ l -}
 instance listRest :: DesugarBwd (E.Expr Boolean) (ListRest Boolean) where
-   desugarBwd (E.Constr α c Nil) (End _) | c == cNil =
-      pure $ End α
-   desugarBwd (E.Constr α c (e : e' : Nil)) (Next _ s l) | c == cCons =
-      Next α <$> desugarBwd e s <*> desugarBwd e' l
-   desugarBwd (E.Hole) s = error "todo"
-   desugarBwd e l = error $ "desugarBwdListRest (e, l) match not found: \n" <>
-                            render (pretty e) <> "\n" <>
-                            render (pretty l)
+   desugarBwd e l@(End _) = case e of
+      E.Constr α c Nil ->
+         assert (c == cNil) $
+         pure (End α)
+      E.Constr _ _ _ -> error absurd
+      E.Hole -> desugarBwd (E.Constr false cNil Nil) l
+      _ -> error absurd
+   desugarBwd e l@(Next _ s l') = case e of
+      E.Constr α c (e1 : e2 : Nil) ->
+         assert (c == cCons) $
+         Next α <$> desugarBwd e1 s <*> desugarBwd e2 l'
+      E.Constr _ _ _ -> error absurd
+      E.Hole -> desugarBwd (E.Constr false cCons (E.Hole : E.Hole : Nil)) l
+      _ -> error absurd
 
 class DesugarPatternBwd a where
    desugarPatternBwd :: Elim Boolean -> a -> MayFail (Cont Boolean)
 
-{- σ, ps ↘ κ -}
 instance patterns :: DesugarPatternBwd (NonEmptyList Pattern) where
    desugarPatternBwd σ (NonEmptyList (π :| Nil)) = desugarPatternBwd σ π
    desugarPatternBwd σ (NonEmptyList (π :| π' : πs)) = do
@@ -158,7 +163,6 @@ instance patterns :: DesugarPatternBwd (NonEmptyList Pattern) where
       σ' <- asElim <$> desugarPatternBwd σ π
       desugarPatternBwd σ' (NonEmptyList (π' :| πs))
 
-{- σ, p ↘ κ -}
 instance pattern :: DesugarPatternBwd Pattern where
    -- TODO: hole cases
    desugarPatternBwd (ElimVar x κ) (PVar x') = (x ≞ x') *> pure κ
@@ -176,7 +180,6 @@ instance pattern :: DesugarPatternBwd Pattern where
       σ' <- asElim <$> desugarPatternBwd σ π
       desugarPatternBwd σ' o
 
-{- σ, o ↘ κ -}
 instance patternRest :: DesugarPatternBwd ListPatternRest where
    desugarPatternBwd (ElimVar _ _) _ = error absurd
    desugarPatternBwd (ElimConstr m) PEnd = pure (mustLookup cCons m)
@@ -184,7 +187,6 @@ instance patternRest :: DesugarPatternBwd ListPatternRest where
       σ' <- asElim <$> desugarPatternBwd (asElim (mustLookup cCons m)) π
       desugarPatternBwd σ' o
 
-{- σ, c ↘ c -}
 instance branch :: DesugarBwd (Elim Boolean) (NonEmptyList Pattern × Expr Boolean) where
    desugarBwd σ (πs × s) = do
       e <- asExpr <$> desugarPatternBwd σ πs
@@ -195,7 +197,6 @@ instance branchUncurried :: DesugarBwd (Elim Boolean) (Pattern × Expr Boolean) 
       e <- asExpr <$> desugarPatternBwd σ πs
       (πs × _) <$> desugarBwd e s
 
-{- σ, cs ↘ c -}
 instance branches :: DesugarBwd (Elim Boolean) (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) where
    desugarBwd σ (NonEmptyList (b1 :| b2 : bs)) =
       NonEmptyList <$> (desugarBwd σ b1 `lift2 (:|)` (toList <$> desugarBwd σ (NonEmptyList (b2 :| bs))))
