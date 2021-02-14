@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.Function (on)
 import Data.Either (Either(..))
-import Data.List (List(..), (:), length, zip)
+import Data.List (List(..), (:), zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList, reverse)
 import Data.Map (fromFoldable)
 import Data.NonEmpty ((:|))
@@ -14,7 +14,6 @@ import Bindings (Binding, Bindings(..), (↦), (:+:))
 import DataType (cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), VarDef(..)) as E
-import Pretty (render, pretty)
 import SExpr (Clause, Expr(..), ListRest(..), Pattern(..), ListPatternRest(..), Qualifier(..), VarDef(..))
 import Lattice (𝔹, (∨))
 import Util (MayFail, type(+), type (×), (×), (≞), (≜), absurd, assert, mustLookup, error)
@@ -39,12 +38,10 @@ instance varDefs :: DesugarBwd (E.Expr Boolean) (NonEmptyList (VarDef Boolean) �
       s1' <- desugarBwd e1 s1
       NonEmptyList (d' :| ds') × s2' <- desugarBwd e2 (NonEmptyList (d :| ds) × s2)
       pure $ NonEmptyList (VarDef π s1' :| d' : ds') × s2'
-   desugarBwd _ _ = error absurd
+   desugarBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
 instance recDefs :: DesugarBwd (Bindings Elim Boolean) (NonEmptyList (String × (NonEmptyList Pattern × Expr Boolean))) where
-   desugarBwd xσs xcs = join <$> zipRecDefs xσs xcss
-      where
-      xcss = reverse (groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹)))
+   desugarBwd xσs xcs = join <$> zipRecDefs xσs (reverse (groupBy (eq `on` fst) xcs))
 
 zipRecDefs :: Bindings Elim 𝔹 ->
               NonEmptyList (NonEmptyList (Clause 𝔹)) ->
@@ -73,7 +70,8 @@ instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
       Lambda <$> desugarBwd σ bs
    desugarBwd (E.App e1 e2) (App s1 s2) =
       App <$> desugarBwd e1 s1 <*> desugarBwd e2 s2
-   desugarBwd (E.App (E.Lambda σ) e) (MatchAs s bs)   = MatchAs <$> desugarBwd e s <*> desugarBwd σ bs
+   desugarBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
+      MatchAs <$> desugarBwd e s <*> desugarBwd σ bs
    desugarBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) = do
       IfElse <$> desugarBwd e1 s1 <*>
                  desugarBwd (asExpr (mustLookup cTrue m)) s2 <*>
