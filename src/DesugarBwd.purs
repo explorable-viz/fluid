@@ -171,13 +171,12 @@ instance pattern :: DesugarPatternBwd Pattern where
    desugarPatternBwd (ElimConstr _) (PVar _) = error absurd
 
    desugarPatternBwd (ElimVar _ _) (PConstr c _) = error absurd
-   desugarPatternBwd (ElimConstr m) (PConstr c Nil) = lookupE c m
+   desugarPatternBwd (ElimConstr m) (PConstr c Nil) = pure (mustLookup c m)
    desugarPatternBwd (ElimConstr m) (PConstr c (π : πs)) = do
-      σ <- asElim <$> lookupE c m
-      desugarPatternBwd σ (NonEmptyList (π :| πs))
+      desugarPatternBwd (asElim (mustLookup c m)) (NonEmptyList (π :| πs))
 
    desugarPatternBwd (ElimVar _ _) (PListEmpty) = error absurd
-   desugarPatternBwd (ElimConstr m) (PListEmpty) = lookupE cNil m
+   desugarPatternBwd (ElimConstr m) (PListEmpty) = pure (mustLookup cNil m)
 
    desugarPatternBwd σ (PListNonEmpty π o) = do
       σ' <- asElim <$> desugarPatternBwd σ π
@@ -186,31 +185,30 @@ instance pattern :: DesugarPatternBwd Pattern where
 {- σ, o ↘ κ -}
 instance patternRest :: DesugarPatternBwd ListPatternRest where
    desugarPatternBwd (ElimVar _ _) _ = error absurd
-   desugarPatternBwd (ElimConstr m) PEnd = lookupE cCons m
+   desugarPatternBwd (ElimConstr m) PEnd = pure (mustLookup cCons m)
    desugarPatternBwd (ElimConstr m) (PNext π o) = do
-      σ  <- asElim <$> lookupE cCons m
-      σ' <- asElim <$> desugarPatternBwd σ π
+      σ' <- asElim <$> desugarPatternBwd (asElim (mustLookup cCons m)) π
       desugarPatternBwd σ' o
 
 {- σ, c ↘ c -}
-instance desugarBwdBranch :: DesugarBwd (Elim Boolean) (NonEmptyList Pattern × Expr Boolean) where
+instance branch :: DesugarBwd (Elim Boolean) (NonEmptyList Pattern × Expr Boolean) where
    desugarBwd σ (πs × s) = do
       e <- asExpr <$> desugarPatternBwd σ πs
       (πs × _) <$> desugarBwd e s
 
-instance desugarBwdBranchUncurried :: DesugarBwd (Elim Boolean) (Pattern × Expr Boolean) where
+instance branchUncurried :: DesugarBwd (Elim Boolean) (Pattern × Expr Boolean) where
    desugarBwd σ (πs × s) = do
       e <- asExpr <$> desugarPatternBwd σ πs
       (πs × _) <$> desugarBwd e s
 
 {- σ, cs ↘ c -}
-instance desugarBwdBranches :: DesugarBwd (Elim Boolean) (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) where
+instance branches :: DesugarBwd (Elim Boolean) (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) where
    desugarBwd σ (NonEmptyList (b1 :| b2 : bs)) =
       NonEmptyList <$> (desugarBwd σ b1 `lift2 (:|)` (toList <$> desugarBwd σ (NonEmptyList (b2 :| bs))))
    desugarBwd σ (NonEmptyList (b :| Nil)) =
       NonEmptyList <$> (desugarBwd σ b `lift2 (:|)` pure Nil)
 
-instance desugarBwdBranchesUncurried :: DesugarBwd (Elim Boolean) (NonEmptyList (Pattern × Expr Boolean)) where
+instance branchesUncurried :: DesugarBwd (Elim Boolean) (NonEmptyList (Pattern × Expr Boolean)) where
    desugarBwd σ (NonEmptyList (b1 :| b2 : bs)) =
       NonEmptyList <$> (desugarBwd σ b1 `lift2 (:|)` (toList <$> desugarBwd σ (NonEmptyList (b2 :| bs))))
    desugarBwd σ (NonEmptyList (b :| Nil)) =
