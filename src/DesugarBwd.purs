@@ -28,11 +28,10 @@ snil α = Constr α cNil Nil
 class DesugarBwd a b where
    desugarBwd :: a -> b -> MayFail b
 
-instance desugarBwdVarDef  :: DesugarBwd (E.VarDef Boolean) (VarDef Boolean) where
+instance varDef  :: DesugarBwd (E.VarDef Boolean) (VarDef Boolean) where
    desugarBwd (E.VarDef σ e) (VarDef π s) = VarDef π <$> desugarBwd e s
 
-instance desugarBwdVarDefs :: DesugarBwd (E.Expr Boolean)
-                                         (NonEmptyList (VarDef Boolean) × Expr Boolean) where
+instance varDefs :: DesugarBwd (E.Expr Boolean) (NonEmptyList (VarDef Boolean) × Expr Boolean) where
    desugarBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) = do
       s1' <- desugarBwd e1 s1
       (NonEmptyList (VarDef π s1' :| Nil) × _) <$> desugarBwd e2 s2
@@ -42,27 +41,22 @@ instance desugarBwdVarDefs :: DesugarBwd (E.Expr Boolean)
       pure $ NonEmptyList (VarDef π s1' :| d' : ds') × s2'
    desugarBwd _ _ = error absurd
 
-instance desugarBwdRecDefs ::
-         DesugarBwd (Bindings Elim Boolean) (NonEmptyList (String × (NonEmptyList Pattern × Expr Boolean))) where
-   desugarBwd fσs fπes = join <$> zipRecDefs fσs fπess
+instance recDefs :: DesugarBwd (Bindings Elim Boolean) (NonEmptyList (String × (NonEmptyList Pattern × Expr Boolean))) where
+   desugarBwd xσs xcs = join <$> zipRecDefs xσs xcss
       where
-      fπess = reverse (groupBy (eq `on` fst) fπes :: NonEmptyList (NonEmptyList (Clause 𝔹)))
+      xcss = reverse (groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹)))
 
-      zipRecDefs :: Bindings Elim 𝔹 ->
-                    NonEmptyList (NonEmptyList (Clause 𝔹)) ->
-                    MayFail (NonEmptyList (NonEmptyList (Clause 𝔹)))
-      zipRecDefs (ρ :+: f ↦ σ) (NonEmptyList (fπes1 :| fπes2 : fπes_rest)) = do
-         fπes1' <- fromRecDef (f ↦ σ) fπes1
-         fπess' <- toList <$> zipRecDefs ρ (NonEmptyList (fπes2 :| fπes_rest))
-         pure $ NonEmptyList (fπes1' :| fπess')
-      zipRecDefs (Empty :+: f ↦ σ) (NonEmptyList (fπes1 :| Nil)) = do
-         fπes1' <- fromRecDef (f ↦ σ) fπes1
-         pure $ NonEmptyList (fπes1' :| Nil)
-      zipRecDefs ρ fπs = error absurd
+zipRecDefs :: Bindings Elim 𝔹 ->
+               NonEmptyList (NonEmptyList (Clause 𝔹)) ->
+               MayFail (NonEmptyList (NonEmptyList (Clause 𝔹)))
+zipRecDefs (ρ :+: x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss)) = do
+   NonEmptyList <$> (fromRecDef (x ↦ σ) xcs1 `lift2 (:|)` (toList <$> zipRecDefs ρ (NonEmptyList (xcs2 :| xcss))))
+zipRecDefs (Empty :+: x ↦ σ) (NonEmptyList (fπes1 :| Nil)) = do
+   NonEmptyList <$> (fromRecDef (x ↦ σ) fπes1 `lift2 (:|)` pure Nil)
+zipRecDefs ρ fπs = error absurd
 
-      fromRecDef :: Binding Elim 𝔹 -> NonEmptyList (Clause 𝔹) -> MayFail (NonEmptyList (Clause 𝔹))
-      fromRecDef (f ↦ σ) fπs@(NonEmptyList ((f' × (πs × e)) :| fπs')) =
-         map ((×) f) <$> desugarBwd σ (snd <$> fπs)
+fromRecDef :: Binding Elim 𝔹 -> NonEmptyList (Clause 𝔹) -> MayFail (NonEmptyList (Clause 𝔹))
+fromRecDef (x ↦ σ) fπs = map (x × _) <$> desugarBwd σ (snd <$> fπs)
 
 instance desugarBwdExpr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Var x)             (Var x')          = pure $ Var (x ≜ x')
