@@ -271,9 +271,9 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             where
             qualifier :: SParser (Qualifier 𝔹)
             qualifier =
-               pure (Generator true) <*> pattern <* lArrow <*> expr' <|>
-               Declaration true <$> (VarDef <$> (keyword strLet *> pattern <* equals) <*> expr') <|>
-               Guard true <$> expr'
+               Generator <$> pattern <* lArrow <*> expr' <|>
+               Declaration <$> (VarDef <$> (keyword strLet *> pattern <* equals) <*> expr') <|>
+               Guard <$> expr'
 
          listEnum :: SParser (Expr 𝔹)
          listEnum = token.brackets $

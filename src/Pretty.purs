@@ -253,9 +253,9 @@ instance prettyPatternExpr :: BoundedJoinSemilattice a => Pretty (Pattern × Exp
    pretty (π × e) = pretty π :<>: text " -> " :<>: pretty e
 
 instance prettyQualifier :: BoundedJoinSemilattice a => Pretty (Qualifier a) where
-   pretty (Guard _ e)                  = pretty e
-   pretty (Generator _ π e)            = pretty π :<>: text " <- " :<>: pretty e
-   pretty (Declaration _ (VarDef π e)) = text "let " :<>: pretty π :<>: text " = " :<>: pretty e
+   pretty (Guard e)                    = pretty e
+   pretty (Generator π e)              = pretty π :<>: text " <- " :<>: pretty e
+   pretty (Declaration (VarDef π e))   = text "let " :<>: pretty π :<>: text " = " :<>: pretty e
 
 instance prettyPatt :: (Pretty a, Pretty b) => Pretty (Either a b) where
    pretty (Left p)   = pretty p

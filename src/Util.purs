@@ -44,16 +44,9 @@ fromJust msg Nothing  = error msg
 mustLookup :: forall k v . Ord k => k -> Map k v -> v
 mustLookup k = fromJust absurd <<< lookup k
 
-lookupE :: forall k v . Ord k => k -> Map k v -> MayFail v
-lookupE k = maybeToMayFail <<< lookup k
-
 onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
 onlyIf true    = pure
 onlyIf false   = const empty
-
-maybeToMayFail :: forall a. Maybe a -> MayFail a
-maybeToMayFail (Just a) = Right a
-maybeToMayFail Nothing  = Left "Nothing found when converting to Either"
 
 type MayFail a = String + a
 

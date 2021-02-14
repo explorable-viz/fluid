@@ -28,7 +28,7 @@ instance joinSemilatticeUnit :: JoinSemilattice Unit where
 instance boundedJoinSemilatticeUnit :: BoundedJoinSemilattice Unit where
    bot = unit
 
--- Notationally convenient to be able to assume join defined even if it may not be.
+-- Sometimes convenient to assume join defined even if it may not be.
 class JoinSemilattice a <= Slices a where
    maybeJoin :: a -> a -> Maybe a
 

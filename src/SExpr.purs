@@ -52,8 +52,8 @@ data VarDef a = VarDef Pattern (Expr a)
 type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a =
-   Guard a (Expr a) |
-   Generator a Pattern (Expr a) |
-   Declaration a (VarDef a) -- could allow VarDefs instead
+   Guard (Expr a) |
+   Generator Pattern (Expr a) |
+   Declaration (VarDef a) -- could allow VarDefs instead
 
 data Module a = Module (List (VarDefs a + RecDefs a))

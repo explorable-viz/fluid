@@ -16,11 +16,11 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), VarDef(..)) as E
 import Pretty (render, pretty)
 import SExpr (Clause, Expr(..), ListRest(..), Pattern(..), ListPatternRest(..), Qualifier(..), VarDef(..))
-import Lattice (𝔹, (∧))
-import Util (MayFail, type(+), type (×), (×), (≞), (≜), absurd, assert, mustLookup, lookupE, error)
+import Lattice (𝔹, (∨))
+import Util (MayFail, type(+), type (×), (×), (≞), (≜), absurd, assert, mustLookup, error)
 
 qualTrue :: 𝔹 -> Qualifier 𝔹
-qualTrue α = Guard α (Constr α cTrue Nil)
+qualTrue α = Guard (Constr α cTrue Nil)
 
 snil :: 𝔹 -> Expr 𝔹
 snil α = Constr α cNil Nil
@@ -84,56 +84,50 @@ instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
       pure $ ListEmpty α
    desugarBwd (E.Constr α c (e : e' : Nil)) (ListNonEmpty _ s l) | c == cCons =
       ListNonEmpty α <$> desugarBwd e s <*> desugarBwd e' l
-   -- | List-enum
    desugarBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
       ListEnum <$> desugarBwd e1 s1 <*> desugarBwd e2 s2
-   -- | List-comp-done
+   -- list-comp-done
    desugarBwd (E.Constr α2 c (e : (E.Constr α1 c' Nil) : Nil))
-              (ListComp _ s_body (NonEmptyList (Guard _ (Constr _ c'' Nil) :| Nil)))
+              (ListComp _ s_body (NonEmptyList (Guard (Constr _ c'' Nil) :| Nil)))
       | c == cCons , c' == cNil, c'' == cTrue =
-      ListComp (α1 ∧ α2) <$> desugarBwd e s_body
-                         <*> pure (NonEmptyList (Guard (α1 ∧ α2) (Constr (α1 ∧ α2) cTrue Nil) :| Nil))
-   -- | List-comp-qual
-   desugarBwd e (ListComp α s_body (NonEmptyList (q :| Nil))) = do
-      sListComp <- desugarBwd e (ListComp α s_body (NonEmptyList (q :| qualTrue true : Nil)))
-      case sListComp of
-         ListComp α2 s_body' (NonEmptyList (q' :| (Guard α1 (Constr _ c Nil)) : Nil))
-         | c == cTrue
-            -> pure $ ListComp (α1 ∧ α2) s_body' (NonEmptyList (q' :| Nil))
-         sListComp'
-            -> error $ "desugarBwd for List-comp-qual failed: \n" <>
-                       render (pretty sListComp')
-   -- | List-comp-guard
-   desugarBwd (E.App (E.Lambda (ElimConstr m)) e1)
-              (ListComp α s1 (NonEmptyList (Guard _ s2 :| q : qs))) = do
-      e2 <- asExpr <$> lookupE cTrue  m
-      e3 <- asExpr <$> lookupE cFalse m
-      s2' <- desugarBwd e1 s2
-      sListComp <- desugarBwd e2 (ListComp α s1 (NonEmptyList (q :| qs)))
-      sNil <- desugarBwd e3 (snil true)
+      ListComp (α1 ∨ α2) <$> desugarBwd e s_body
+                         <*> pure (NonEmptyList (Guard (Constr (α1 ∨ α2) cTrue Nil) :| Nil))
+   -- list-comp-last
+   desugarBwd e (ListComp α s (NonEmptyList (q :| Nil))) = do
+      s'' <- desugarBwd e (ListComp α s (NonEmptyList (q :| qualTrue true : Nil)))
+      case s'' of
+         ListComp β s' (NonEmptyList (q' :| (Guard (Constr _ c Nil)) : Nil)) | c == cTrue ->
+            pure (ListComp β s' (NonEmptyList (q' :| Nil)))
+         sListComp' -> error absurd
+   -- list-comp-guard
+   desugarBwd (E.App (E.Lambda (ElimConstr m)) e2)
+              (ListComp α0 s1 (NonEmptyList (Guard s2 :| q : qs))) = do
+      s2' <- desugarBwd e2 s2
+      sListComp <- desugarBwd (asExpr (mustLookup cTrue m)) (ListComp α0 s1 (NonEmptyList (q :| qs)))
+      sNil <- desugarBwd (asExpr (mustLookup cFalse m)) (snil true)
       case sListComp, sNil of
-         ListComp α3 s1' (NonEmptyList (q' :| qs')), Constr α4 c Nil | c == cNil ->
-            pure $ ListComp (α3 ∧ α4) s1' (NonEmptyList (Guard (α3 ∧ α4) s2' :| q' : qs'))
+         ListComp β s1' (NonEmptyList (q' :| qs')), Constr α c Nil | c == cNil ->
+            pure (ListComp (α ∨ β) s1' (NonEmptyList (Guard s2' :| q' : qs')))
          _, _ -> error absurd
-   -- | List-comp-decl
+   -- list-comp-decl
    desugarBwd (E.App (E.Lambda σ) e)
-              (ListComp α s2 (NonEmptyList ((Declaration _ (VarDef π s1)) :| q : qs))) = do
-      (_ × sListComp)  <- desugarBwd σ (NonEmptyList (π :| Nil) × (ListComp α s2 (NonEmptyList (q :| qs))))
+              (ListComp α0 s2 (NonEmptyList ((Declaration (VarDef π s1)) :| q : qs))) = do
+      (_ × sListComp)  <- desugarBwd σ (NonEmptyList (π :| Nil) × (ListComp α0 s2 (NonEmptyList (q :| qs))))
       s1' <- desugarBwd e s1
       case sListComp of
-         ListComp α3 s2' (NonEmptyList (q' :| qs')) ->
-            pure $ ListComp α3 s2' (NonEmptyList ((Declaration α3 (VarDef π s1')) :| q' : qs'))
+         ListComp β s2' (NonEmptyList (q' :| qs')) ->
+            pure (ListComp β s2' (NonEmptyList ((Declaration (VarDef π s1')) :| q' : qs')))
          _ -> error absurd
-   -- | List-comp-gen
+   -- list-comp-gen
    desugarBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1)
-              (ListComp α s2 (NonEmptyList (Generator _ p s1 :| q : qs))) = do
+              (ListComp α s2 (NonEmptyList (Generator p s1 :| q : qs))) = do
       s1' <- desugarBwd e1 s1
-      let σ' = asElim (untotalise (Arg σ) (Left p : Nil))
-      e2 <- asExpr <$> desugarPatternBwd σ' p
-      sListComp  <- desugarBwd e2 (ListComp α s2 (NonEmptyList (q :| qs)))
+      let σ' × β = totalise_bwd (Arg σ) (Left p : Nil)
+      e2 <- asExpr <$> desugarPatternBwd (asElim σ') p
+      sListComp <- desugarBwd e2 (ListComp α s2 (NonEmptyList (q :| qs)))
       case sListComp of
-         ListComp α4 s2' (NonEmptyList (q' :| qs')) ->
-            pure $ ListComp α4 s2' (NonEmptyList (Generator α4 p s1 :| q' : qs'))
+         ListComp β' s2' (NonEmptyList (q' :| qs')) ->
+            pure (ListComp (β ∨ β') s2' (NonEmptyList (Generator p s1 :| q' : qs')))
          _ -> error absurd
    desugarBwd (E.Let d e) (Let ds s) = do
       ds' × s' <- desugarBwd (E.Let d e) (ds × s)
@@ -214,27 +208,33 @@ instance branchesUncurried :: DesugarBwd (Elim Boolean) (NonEmptyList (Pattern �
    desugarBwd σ (NonEmptyList (b :| Nil)) =
       NonEmptyList <$> (desugarBwd σ b `lift2 (:|)` pure Nil)
 
-{- untotalise κ πs ↗ κ' -}
-untotalise :: Cont 𝔹 -> List (Pattern + ListPatternRest) -> Cont 𝔹
-untotalise κ Nil = κ
-untotalise (Body _) (_ : _) = error absurd
-untotalise None (_ : _) = error "todo" -- is None case essentially Hole?
-untotalise (Arg (ElimVar x κ)) (π : πs) =
+totalise_bwd :: Cont 𝔹 -> List (Pattern + ListPatternRest) -> Cont 𝔹 × 𝔹
+totalise_bwd κ Nil = κ × false
+totalise_bwd (Body _) (_ : _) = error absurd
+totalise_bwd None (_ : _) = error "todo" -- is None case essentially Hole?
+totalise_bwd (Arg (ElimVar x κ)) (π : πs) =
    case π of
       Left (PVar x') ->
-         assert (x == x') $ Arg (ElimVar x (untotalise κ πs))
+         assert (x == x') $
+         let κ × α = totalise_bwd κ πs in
+         Arg (ElimVar x κ) × α
       Left _ -> error absurd
       Right _ -> error absurd
-untotalise (Arg (ElimConstr m)) (π : πs) =
+totalise_bwd (Arg (ElimConstr m)) (π : πs) =
    case π of
       Left (PVar _) -> error absurd
       Left (PConstr c ps) ->
-         Arg (ElimConstr (fromFoldable [c × untotalise (mustLookup c m) (map Left ps <> πs)]))
+         let κ × α = totalise_bwd (mustLookup c m) (map Left ps <> πs) in
+         Arg (ElimConstr (fromFoldable [c × κ])) × α
       Left PListEmpty ->
-         Arg (ElimConstr (fromFoldable [cNil × untotalise (mustLookup cNil m) πs]))
+         let κ × α = totalise_bwd (mustLookup cNil m) πs in
+         Arg (ElimConstr (fromFoldable [cNil × κ])) × α
       Left (PListNonEmpty p o) ->
-         Arg (ElimConstr (fromFoldable [cCons × untotalise (mustLookup cCons m) (Left p : Right o : πs)]))
+         let κ × α = totalise_bwd (mustLookup cCons m) (Left p : Right o : πs) in
+         Arg (ElimConstr (fromFoldable [cCons × κ])) × α
       Right PEnd ->
-         Arg (ElimConstr (fromFoldable [cNil × untotalise (mustLookup cNil m) πs]))
+         let κ × α = totalise_bwd (mustLookup cNil m) πs in
+         Arg (ElimConstr (fromFoldable [cNil × κ])) × α
       Right (PNext p o) ->
-         Arg (ElimConstr (fromFoldable [cCons × untotalise (mustLookup cCons m) (Left p : Right o : πs)]))
+         let κ × α = totalise_bwd (mustLookup cCons m) (Left p : Right o : πs) in
+         Arg (ElimConstr (fromFoldable [cCons × κ])) × α
