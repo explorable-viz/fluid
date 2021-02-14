@@ -6,10 +6,7 @@ import Data.Maybe (Maybe(..))
 import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
-import Lattice (
-   class BoundedJoinSemilattice, class BoundedSlices, class JoinSemilattice, class Slices,
-   𝔹, (∨), bot, definedJoin, maybeJoin
-)
+import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, maybeJoin)
 import Util (Endo, type (×), type (+), (≟), absurd, error)
 
 -- one constructor for each PureScript type that appears in an exported operator signature
@@ -21,53 +18,60 @@ data Primitive =
    StringOp (String -> Val 𝔹) |
    IntOrNumberOrStringOp (Int + Number + String -> Val 𝔹)
 
-data RawVal a =
-   Int Int |
-   Float Number |
-   Str String |
-   Constr Ctr (List (Val a)) |
-   Matrix (Array (Array (Val a))) (Int × Int) |
+-- Only annotate first-order data for now.
+data Val a =
+   Hole |
+   Int a Int |
+   Float a Number |
+   Str a String |
+   Constr a Ctr (List (Val a)) |
+   Matrix a (Array (Array (Val a))) (Int × Int) |
    Closure (Env a) (RecDefs a) (Elim a) |
-   Primitive Primitive
+   Primitive a Primitive
 
-data Val a = Hole | Val a (RawVal a)
+-- The annotation on a value.
+getα :: Val 𝔹 -> 𝔹
+getα Hole             = false
+getα (Int α _)        = α
+getα (Float α _)      = α
+getα (Str α _)        = α
+getα (Constr α _ _)   = α
+getα (Matrix α _ _)   = α
+getα (Primitive α _)  = α
+getα (Closure _ _ _)  = error absurd
 
-val :: forall a . BoundedJoinSemilattice a => RawVal a -> Val a
-val = Val bot
-
+-- Set the annotation on a value, which may not be a hole.
 setα :: 𝔹 -> Endo (Val 𝔹)
-setα true Hole    = error absurd
-setα false Hole   = Hole
-setα α (Val _ u)  = Val α u
+setα α Hole               = error absurd
+setα α (Int _ n)          = Int α n
+setα α (Float _ n)        = Float α n
+setα α (Str _ str)        = Str α str
+setα α (Primitive _ φ)    = Primitive α φ
+setα α (Constr _ c vs)    = Constr α c vs
+setα α (Matrix _ vss ij)  = Matrix α vss ij
+setα α (Closure _ _ _)    = error absurd
 
 type Env = Bindings Val
 
 -- ======================
 -- boilerplate
 -- ======================
-derive instance functorRawVal :: Functor RawVal
 derive instance functorVal :: Functor Val
 
 instance joinSemilatticeVal :: JoinSemilattice a => JoinSemilattice (Val a) where
    join = definedJoin
 
 instance slicesVal :: JoinSemilattice a => Slices (Val a) where
-   maybeJoin Hole v                 = pure v
-   maybeJoin v Hole                 = pure v
-   maybeJoin (Val α r) (Val α' r')  = Val <$> pure (α ∨ α') <*> maybeJoin r r'
+   maybeJoin Hole v                                = pure v
+   maybeJoin v Hole                                = pure v
+   maybeJoin (Int α n) (Int α' n')                 = Int (α ∨ α') <$> n ≟ n'
+   maybeJoin (Float α n) (Float α' n')             = Float (α ∨ α') <$> n ≟ n'
+   maybeJoin (Str α str) (Str α' str')             = Str (α ∨ α') <$> str ≟ str'
+   maybeJoin (Constr α c vs) (Constr α' c' us)     = Constr (α ∨ α') <$> c ≟ c' <*> maybeJoin vs us
+   maybeJoin (Matrix α vs xy) (Matrix α' vs' xy')  = Matrix (α ∨ α') <$> (maybeJoin vs vs') <*> xy ≟ xy'
+   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ')    = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
+   maybeJoin (Primitive α φ) (Primitive α' φ')     = Primitive (α ∨ α') <$> pure φ -- should require φ == φ'
+   maybeJoin _ _                                   = Nothing
 
 instance boundedSlices :: JoinSemilattice a => BoundedSlices (Val a) where
    botOf = const Hole
-
-instance joinSemilatticeRawVal :: JoinSemilattice a => JoinSemilattice (RawVal a) where
-   join = definedJoin
-
-instance slicesRawVal :: JoinSemilattice a => Slices (RawVal a) where
-   maybeJoin (Int n) (Int m)                    = Int <$> n ≟ m
-   maybeJoin (Float n) (Float m)                = Float <$> n ≟ m
-   maybeJoin (Str s) (Str s')                   = Str <$> s ≟ s'
-   maybeJoin (Constr c vs) (Constr c' vs')      = Constr <$> c ≟ c' <*> maybeJoin vs vs'
-   maybeJoin (Matrix vs xy) (Matrix vs' xy')    = Matrix <$> (maybeJoin vs vs') <*> xy ≟ xy'
-   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ') = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
-   maybeJoin (Primitive φ) (Primitive φ')       = pure $ Primitive φ -- should require φ == φ'
-   maybeJoin _ _                                = Nothing

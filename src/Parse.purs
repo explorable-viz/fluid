@@ -28,7 +28,7 @@ import Lattice (𝔹)
 import Primitive (opDefs)
 import SExpr (
    Branch, Clause, Expr(..), ListRest(..), ListPatternRest(..), Module(..), Pattern(..), Qualifier(..),
-   RawExpr(..), RecDefs, VarDef(..), VarDefs, expr
+   RecDefs, VarDef(..), VarDefs
 )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
@@ -207,25 +207,25 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
       op' <- token.operator
       onlyIf (op == op') $
          if isCtrOp op'
-         then \e e' -> expr $ Constr (Ctr op') (e : e' : empty)
-         else \e e' -> expr $ BinaryApp e op e'
+         then \e e' -> Constr true (Ctr op') (e : e' : empty)
+         else \e e' -> BinaryApp e op e'
 
    -- Left-associative tree of applications of one or more simple terms.
    appChain :: Endo (SParser (Expr 𝔹))
    appChain expr' = simpleExpr >>= rest
       where
       rest :: Expr 𝔹 -> SParser (Expr 𝔹)
-      rest e@(Expr _ (Constr c es)) = ctrArgs <|> pure e
+      rest e@(Constr α c es) = ctrArgs <|> pure e
          where
          ctrArgs :: SParser (Expr 𝔹)
-         ctrArgs = simpleExpr >>= \e' -> rest (expr $ Constr c (es <> (e' : empty)))
-      rest e = (expr <$> (App e <$> simpleExpr) >>= rest) <|> pure e
+         ctrArgs = simpleExpr >>= \e' -> rest (Constr α c (es <> (e' : empty)))
+      rest e = ((App e <$> simpleExpr) >>= rest) <|> pure e
 
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser (Expr 𝔹)
       simpleExpr =
          matrix <|> -- before list
-         try listEmpty <|>
+         try nil <|>
          listNonEmpty <|>
          listComp <|>
          listEnum <|>
@@ -246,17 +246,17 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          matrix :: SParser (Expr 𝔹)
          matrix =
             between (token.symbol strArrayLBracket) (token.symbol strArrayRBracket) $
-               expr <$> (Matrix <$>
+               Matrix true <$>
                   (expr' <* bar) <*>
                   token.parens (ident `lift2 (×)` (token.comma *> ident)) <*>
-                  (keyword strIn *> expr'))
+                  (keyword strIn *> expr')
 
-         listEmpty :: SParser (Expr 𝔹)
-         listEmpty = token.brackets $ pure $ expr ListEmpty
+         nil :: SParser (Expr 𝔹)
+         nil = token.brackets $ pure (ListEmpty true)
 
          listNonEmpty :: SParser (Expr 𝔹)
          listNonEmpty =
-            lBracket *> (expr <$> (ListNonEmpty <$> expr' <*> fix listRest))
+            lBracket *> (ListNonEmpty true <$> expr' <*> fix listRest)
 
             where
             listRest :: Endo (SParser (ListRest 𝔹))
@@ -266,24 +266,24 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          listComp :: SParser (Expr 𝔹)
          listComp = token.brackets $
-            expr <$> (pure ListComp <*> expr' <* bar <*> sepBy1 qualifier (token.comma))
+            pure (ListComp true) <*> expr' <* bar <*> sepBy1 qualifier (token.comma)
 
             where
             qualifier :: SParser (Qualifier 𝔹)
             qualifier =
-               pure (Generator true) <*> pattern <* lArrow <*> expr' <|>
-               Declaration true <$> (VarDef <$> (keyword strLet *> pattern <* equals) <*> expr') <|>
-               Guard true <$> expr'
+               Generator <$> pattern <* lArrow <*> expr' <|>
+               Declaration <$> (VarDef <$> (keyword strLet *> pattern <* equals) <*> expr') <|>
+               Guard <$> expr'
 
          listEnum :: SParser (Expr 𝔹)
          listEnum = token.brackets $
-            expr <$> (pure ListEnum <*> expr' <* ellipsis <*> expr')
+            pure ListEnum <*> expr' <* ellipsis <*> expr'
 
          constr :: SParser (Expr 𝔹)
-         constr = expr <$> (Constr <$> ctr <@> empty)
+         constr = Constr true <$> ctr <@> empty
 
          variable :: SParser (Expr 𝔹)
-         variable = ident <#> Var >>> expr
+         variable = ident <#> Var
 
          signOpt :: ∀ a . Ring a => SParser (a -> a)
          signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
@@ -292,39 +292,38 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          int :: SParser (Expr 𝔹)
          int = do
             sign <- signOpt
-            (sign >>> Int >>> expr) <$> token.natural
+            (sign >>> Int true) <$> token.natural
 
          float :: SParser (Expr 𝔹)
          float = do
             sign <- signOpt
-            (sign >>> Float >>> expr) <$> token.float
+            (sign >>> Float true) <$> token.float
 
          string :: SParser (Expr 𝔹)
-         string = (Str >>> expr) <$> token.stringLiteral
+         string = Str true <$> token.stringLiteral
 
          defsExpr :: SParser (Expr 𝔹)
          defsExpr = do
             defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
-            foldr (\def -> expr <<< (Let ||| LetRec) def) <$> (keyword strIn *> expr') <@> defs'
+            foldr (\def -> (Let ||| LetRec) def) <$> (keyword strIn *> expr') <@> defs'
 
          matchAs :: SParser (Expr 𝔹)
          matchAs =
-            expr <$> (MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> branches expr' branch_uncurried)
+            MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> branches expr' branch_uncurried
 
          -- any binary operator, in parentheses
          parensOp :: SParser (Expr 𝔹)
-         parensOp = expr <$> (Op <$> token.parens token.operator)
+         parensOp = Op <$> token.parens token.operator
 
          pair :: SParser (Expr 𝔹)
          pair = token.parens $
-            expr <$> ((pure $ \e e' -> Constr cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr')
+            (pure $ \e e' -> Constr true cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 
          lambda :: SParser (Expr 𝔹)
-         lambda = expr <$> (Lambda <$> (keyword strFun *> branches expr' branch_curried))
+         lambda = Lambda <$> (keyword strFun *> branches expr' branch_curried)
 
          ifElse :: SParser (Expr 𝔹)
-         ifElse = expr <$>
-            (pure IfElse <*> (keyword strIf *> expr') <* keyword strThen <*> expr' <* keyword strElse <*> expr')
+         ifElse = pure IfElse <*> (keyword strIf *> expr') <* keyword strThen <*> expr' <* keyword strElse <*> expr'
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a

@@ -14,8 +14,8 @@ import DataType (cCons, cTrue, cFalse)
 import Lattice (𝔹, (∧))
 import Expr (Var)
 import Util (Endo, type (×), (×), type (+), absurd, error)
-import Val (Env, Primitive(..), Val(..), val)
-import Val (RawVal(..)) as V
+import Val (Env, Primitive(..), Val, getα, setα)
+import Val (Val(..)) as V
 
 -- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
 type OpDef = {
@@ -59,46 +59,46 @@ class From a where
    from :: a -> Val 𝔹
 
 instance toInt :: To Int where
-   to (Val _ (V.Int n)) = n
+   to (V.Int _ n) = n
    to _                 = error "Int expected"
 
 instance fromInt :: From Int where
-   from = V.Int >>> val
+   from = V.Int false
 
 instance toNumber :: To Number where
-   to (Val _ (V.Float n))  = n
-   to _                    = error "Float expected"
+   to (V.Float _ n)  = n
+   to _              = error "Float expected"
 
 instance fromNumber :: From Number where
-   from = V.Float >>> val
+   from = V.Float false
 
 instance toString :: To String where
-   to (Val _ (V.Str str))  = str
-   to _                    = error "Str expected"
+   to (V.Str _ str)  = str
+   to _              = error "Str expected"
 
 instance fromString :: From String where
-   from = V.Str >>> val
+   from = V.Str false
 
 instance toIntOrNumber :: To (Either Int Number) where
-   to (Val _ (V.Int n))    = Left n
-   to (Val _ (V.Float n))  = Right n
-   to _                    = error "Int or Float expected"
+   to (V.Int _ n)    = Left n
+   to (V.Float _ n)  = Right n
+   to _              = error "Int or Float expected"
 
 instance fromIntOrNumber :: From (Either Int Number) where
-   from (Left n)   = val $ V.Int n
-   from (Right n)  = val $ V.Float n
+   from (Left n)   = V.Int false n
+   from (Right n)  = V.Float false n
 
 instance toIntOrNumberOrString :: To (Either (Either Int Number) String) where
-   to (Val _ (V.Int n))    = Left (Left n)
-   to (Val _ (V.Float n))  = Left (Right n)
-   to (Val _ (V.Str n))    = Right n
-   to _                    = error "Int, Float or Str expected"
+   to (V.Int _ n)    = Left (Left n)
+   to (V.Float _ n)  = Left (Right n)
+   to (V.Str _ n)    = Right n
+   to _              = error "Int, Float or Str expected"
 
 true_ :: Val 𝔹
-true_ = val $ V.Constr cTrue Nil
+true_ = V.Constr false cTrue Nil
 
 false_ :: Val 𝔹
-false_ = val $ V.Constr cFalse Nil
+false_ = V.Constr false cFalse Nil
 
 instance fromVal :: From (Val Boolean) where
    from = identity
@@ -107,22 +107,22 @@ instance fromBoolean :: From Boolean where
    from b = if b then true_ else false_
 
 instance fromValOp :: From a => From (Val Boolean -> a) where
-   from op = val $ V.Primitive $ ValOp $ op >>> from
+   from op = V.Primitive false $ ValOp $ op >>> from
 
 instance fromIntOp :: From a => From (Int -> a) where
-   from op = val $ V.Primitive $ IntOp $ op >>> from
+   from op = V.Primitive false $ IntOp $ op >>> from
 
 instance fromNumberOp :: From a => From (Number -> a) where
-   from op = val $ V.Primitive $ NumberOp $ op >>> from
+   from op = V.Primitive false $ NumberOp $ op >>> from
 
 instance fromIntOrNumberOp :: From a => From (Either Int Number -> a) where
-   from op = val $ V.Primitive $ IntOrNumberOp $ op >>> from
+   from op = V.Primitive false $ IntOrNumberOp $ op >>> from
 
 instance fromStringOp :: From a => From (String -> a) where
-   from op = val $ V.Primitive $ StringOp $ op >>> from
+   from op = V.Primitive false $ StringOp $ op >>> from
 
 instance fromOrStringOp :: From a => From (Either (Either Int Number) String -> a) where
-   from op = val $ V.Primitive $ IntOrNumberOrStringOp $ op >>> from
+   from op = V.Primitive false $ IntOrNumberOrStringOp $ op >>> from
 
 apply :: Primitive -> Val 𝔹 -> Val 𝔹
 apply (ValOp op)                 = op
@@ -133,10 +133,12 @@ apply (StringOp op)              = op <<< to
 apply (IntOrNumberOrStringOp op) = op <<< to
 
 apply_fwd :: Primitive -> 𝔹 -> Val 𝔹 -> Val 𝔹
-apply_fwd _ _ Hole         = Hole
-apply_fwd φ α v@(Val α' _) = case apply φ v of
-   Hole     -> error absurd
-   Val _ u  -> Val (α ∧ α') u
+apply_fwd _ _ V.Hole = V.Hole
+apply_fwd φ α v      =
+   let α' = getα v in
+   case apply φ v of
+   V.Hole   -> error absurd
+   u  -> setα (α ∧ α') u
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
@@ -154,7 +156,7 @@ primitives = foldl (:+:) Empty [
    "<="        ↦ from   ((<=) `union2'` (<=) `unionDisj` (==)),
    ">="        ↦ from   ((>=) `union2'` (>=) `unionDisj` (==)),
    "++"        ↦ from   ((<>) :: String -> String -> String),
-   ":"         ↦ val (V.Constr cCons Nil),
+   ":"         ↦ V.Constr false cCons Nil,
    "ceiling"   ↦ from   ceil,
    "debugLog"  ↦ from   debugLog,
    "div"       ↦ from   (div :: Int -> Int -> Int),
