@@ -29,7 +29,8 @@ data Expr a =
    Let (VarDef a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
 
-data VarDef a = VarDef (Elim a) (Expr a) -- elim has codomain unit
+-- "terminal" eliminator in a var def is always a singleton, with a None continuation, representing unit codomain
+data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs = Bindings Elim
 
 data Elim a =

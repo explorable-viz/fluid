@@ -48,7 +48,7 @@ zipRecDefs (ρ :+: x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss)) =
    NonEmptyList (fromRecDef (x ↦ σ) xcs1 :| toList (zipRecDefs ρ (NonEmptyList (xcs2 :| xcss))))
 
 fromRecDef :: Binding Elim 𝔹 -> Endo (NonEmptyList (Clause 𝔹))
-fromRecDef (x ↦ σ) xcs = map (x × _) (desugarBwd σ (snd <$> xcs))
+fromRecDef (x ↦ σ) = map (x × _) <<< desugarBwd σ <<< map snd
 
 instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Var x) (Var _)           = Var x
