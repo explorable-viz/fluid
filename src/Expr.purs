@@ -7,7 +7,7 @@ import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings)
 import DataType (Ctr)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), botOf, definedJoin, maybeJoin)
+import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), definedJoin, maybeJoin)
 import Util (type (×), (×), type (+), (≟), error)
 
 type Var = String
@@ -29,24 +29,30 @@ data Expr a =
    Let (VarDef a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
 
--- "terminal" eliminator in a var def is always a singleton, with a None continuation, representing unit codomain
+-- eliminator in var def is always singleton, with an empty terminal continuation represented by hole
 data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs = Bindings Elim
 
 data Elim a =
+   ElimHole |
    ElimVar Var (Cont a) |
    ElimConstr (Map Ctr (Cont a))
 
 -- Continuation of an eliminator. None form only used in structured let.
-data Cont a = None | Body (Expr a) | Arg (Elim a)
+data Cont a =
+   ContHole | -- arise in backward slicing, but also used to represent structured let
+   ContExpr (Expr a) |
+   ContElim (Elim a)
 
 asElim :: forall a . Cont a -> Elim a
-asElim (Arg σ) =  σ
-asElim _ = error "Eliminator expected"
+asElim ContHole = ElimHole
+asElim (ContElim σ) = σ
+asElim (ContExpr _) = error "Eliminator expected"
 
 asExpr :: forall a . Cont a -> Expr a
-asExpr (Body e) =  e
-asExpr _ = error "Expression expected"
+asExpr ContHole = Hole
+asExpr (ContElim _) = error "Expression expected"
+asExpr (ContExpr e) = e
 
 data Module a = Module (List (VarDef a + RecDefs a))
 
@@ -62,27 +68,27 @@ instance joinSemilatticeElim :: JoinSemilattice a => JoinSemilattice (Elim a) wh
    join = definedJoin
 
 instance slicesElim :: JoinSemilattice a => Slices (Elim a) where
+   maybeJoin ElimHole σ                         = pure σ
+   maybeJoin σ ElimHole                         = pure σ
    maybeJoin (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> x ≟ x' <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
    maybeJoin _ _                                = Nothing
 
 instance boundedSlicesElim :: JoinSemilattice a => BoundedSlices (Elim a) where
-   botOf (ElimVar x κ)   = ElimVar x (botOf κ)
-   botOf (ElimConstr κs) = ElimConstr $ map botOf κs
+   botOf = const ElimHole
 
 instance joinSemilatticeCont :: JoinSemilattice a => JoinSemilattice (Cont a) where
    join = definedJoin
 
 instance slicesCont :: JoinSemilattice a => Slices (Cont a) where
-   maybeJoin None None            = pure None
-   maybeJoin (Body e) (Body e')   = Body <$> maybeJoin e e'
-   maybeJoin (Arg σ) (Arg σ')     = Arg <$> maybeJoin σ σ'
-   maybeJoin _ _                  = Nothing
+   maybeJoin ContHole κ                   = pure κ
+   maybeJoin κ ContHole                   = pure κ
+   maybeJoin (ContExpr e) (ContExpr e')   = ContExpr <$> maybeJoin e e'
+   maybeJoin (ContElim σ) (ContElim σ')   = ContElim <$> maybeJoin σ σ'
+   maybeJoin _ _                          = Nothing
 
 instance boundedSlicesCont :: JoinSemilattice a => BoundedSlices (Cont a) where
-   botOf None      = None
-   botOf (Body e)  = Body $ botOf e
-   botOf (Arg σ)   = Arg $ botOf σ
+   botOf = const ContHole
 
 instance joinSemilatticeVarDef :: JoinSemilattice a => JoinSemilattice (VarDef a) where
    join = definedJoin

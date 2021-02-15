@@ -14,6 +14,7 @@ import Val (Env, Val)
 import Val (Val(..)) as V
 
 match_fwd :: Val 𝔹 -> Elim 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
+match_fwd _ ElimHole = error "todo"
 match_fwd v (ElimVar x κ)
    | x == varAnon = Empty × κ × true
    | otherwise    = (Empty :+: x ↦ v) × κ × true
@@ -24,7 +25,7 @@ match_fwd _ (ElimConstr _) = error absurd
 
 matchArgs_fwd :: List (Val 𝔹) -> Cont 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchArgs_fwd Nil κ = Empty × κ × true
-matchArgs_fwd (v : vs) (Arg σ)   =
+matchArgs_fwd (v : vs) (ContElim σ)   =
    let ρ  × κ'  × α = match_fwd v σ
        ρ' × κ'' × α' = matchArgs_fwd vs κ' in
    (ρ <> ρ') × κ'' × (α ∧ α')

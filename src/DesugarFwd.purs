@@ -14,13 +14,13 @@ import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
 import Bindings (Binding, Bindings, (↦), fromList)
 import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
-import Expr (Cont(..), Elim(..))
+import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), VarDef(..)) as E
 import Lattice (𝔹)
 import SExpr (
    Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
-import Util (MayFail, type (+), type (×), (×), (≞), absurd, error, fromJust, mustLookup)
+import Util (MayFail, type (+), type (×), (×), (≞), absurd, error, fromJust, mustLookup, report)
 
 enil :: 𝔹 -> E.Expr 𝔹
 enil α = E.Constr α cNil Nil
@@ -40,7 +40,7 @@ instance module_ :: DesugarFwd (Module Boolean) (E.Module Boolean) where
       desugarDefs (Right δ)   = pure $ Right δ
 
 instance varDef :: DesugarFwd (VarDef Boolean) (E.VarDef Boolean) where
-   desugarFwd (VarDef π s) = E.VarDef <$> desugarFwd (π × (None :: Cont 𝔹)) <*> desugarFwd s
+   desugarFwd (VarDef π s) = E.VarDef <$> desugarFwd (π × (ContHole :: Cont 𝔹)) <*> desugarFwd s
 
 instance varDefs :: DesugarFwd (NonEmptyList (VarDef Boolean) × Expr Boolean) (E.Expr Boolean) where
    desugarFwd (NonEmptyList (d :| Nil) × s) =
@@ -71,7 +71,7 @@ instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (IfElse s1 s2 s3) = do
       e2 <- desugarFwd s2
       e3 <- desugarFwd s3
-      let σ = ElimConstr (fromFoldable [cTrue × Body e2, cFalse × Body e3])
+      let σ = ElimConstr (fromFoldable [cTrue × ContExpr e2, cFalse × ContExpr e3])
       E.App (E.Lambda σ) <$> desugarFwd s1
    desugarFwd (ListEmpty α)            = pure (enil α)
    desugarFwd (ListNonEmpty α s l)     = econs α <$> desugarFwd s <*> desugarFwd l
@@ -85,18 +85,18 @@ instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    -- | List-comp-guard
    desugarFwd (ListComp α s_body (NonEmptyList (Guard s :| q : qs))) = do
       e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
-      let σ = ElimConstr (fromFoldable [cTrue × Body e, cFalse × Body (enil α)])
+      let σ = ElimConstr (fromFoldable [cTrue × ContExpr e, cFalse × ContExpr (enil α)])
       E.App (E.Lambda σ) <$> desugarFwd s
    -- | List-comp-decl
    desugarFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))) = do
       e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
-      σ <- desugarFwd (π × (Body e :: Cont 𝔹))
+      σ <- desugarFwd (π × (ContExpr e :: Cont 𝔹))
       E.App (E.Lambda σ) <$> desugarFwd s
    -- | List-comp-gen
    desugarFwd (ListComp α s_body (NonEmptyList (Generator p slist :| q : qs))) = do
       e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
-      σ <- desugarFwd (p × Body e)
-      E.App (E.App (E.Var "concatMap") (E.Lambda (totalise σ α))) <$> desugarFwd slist
+      σ <- desugarFwd (p × ContExpr e)
+      E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totalise (ContElim σ) α)))) <$> desugarFwd slist
    desugarFwd (Let ds s)               = desugarFwd (ds × s)
    desugarFwd (LetRec fπs s)           = E.LetRec <$> desugarFwd fπs <*> desugarFwd s
 
@@ -107,7 +107,7 @@ instance listRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
 instance patternsExpr :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (Elim Boolean) where
    desugarFwd (NonEmptyList (π :| Nil) × κ) = desugarFwd (π × κ)
    desugarFwd (NonEmptyList (π :| π' : πs) × κ) =
-      (desugarFwd <<< (π × _)) =<< Body <$> E.Lambda <$> desugarFwd (NonEmptyList (π' :| πs) × κ)
+      (desugarFwd <<< (π × _)) =<< ContExpr <$> E.Lambda <$> desugarFwd (NonEmptyList (π' :| πs) × κ)
 
 -- Cont argument here acts as an accumulator.
 instance patternCont :: DesugarFwd (Pattern × Cont Boolean) (Elim Boolean) where
@@ -116,20 +116,20 @@ instance patternCont :: DesugarFwd (Pattern × Cont Boolean) (Elim Boolean) wher
       where
       toCont :: List Pattern -> MayFail (Cont 𝔹)
       toCont Nil = pure κ
-      toCont (π : πs')  = Arg <$> (desugarFwd <<< (π × _) =<< toCont πs')
+      toCont (π : πs') = ContElim <$> (desugarFwd <<< (π × _) =<< toCont πs')
    desugarFwd (PListEmpty × κ) = pure (ElimConstr (singleton cNil κ))
    desugarFwd (PListNonEmpty π o × κ)  = do
-      κ' <- Arg <$> desugarFwd (o × κ)
-      ElimConstr <$> singleton cCons <$> Arg <$> desugarFwd (π × κ')
+      κ' <- ContElim <$> desugarFwd (o × κ)
+      ElimConstr <$> singleton cCons <$> ContElim <$> desugarFwd (π × κ')
 
 instance listPatternRestCont :: DesugarFwd (ListPatternRest × Cont Boolean) (Elim Boolean) where
    desugarFwd (PEnd × κ) = pure (ElimConstr (singleton cNil κ))
    desugarFwd (PNext π o × κ) = do
-      κ' <- Arg <$> desugarFwd (o × κ)
-      ElimConstr <$> singleton cCons <$> Arg <$> desugarFwd (π × κ')
+      κ' <- ContElim <$> desugarFwd (o × κ)
+      ElimConstr <$> singleton cCons <$> ContElim <$> desugarFwd (π × κ')
 
 instance branchUncurried :: DesugarFwd (Pattern × Expr Boolean) (Elim Boolean) where
-   desugarFwd (π × s) = (Body <$> desugarFwd s) >>= (desugarFwd <<< (π × _))
+   desugarFwd (π × s) = (ContExpr <$> desugarFwd s) >>= (desugarFwd <<< (π × _))
 
 -- To consolidate these without overlapping instances, probably need RecDefs to be a data type.
 instance branches :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) (Elim Boolean) where
@@ -146,35 +146,32 @@ instance either :: (DesugarFwd a b, DesugarFwd c d) => DesugarFwd (a + c) (b + d
    desugarFwd (Left x) = Left <$> desugarFwd x
    desugarFwd (Right x) = Right <$> desugarFwd x
 
-totalise :: Elim 𝔹 -> 𝔹 -> Elim 𝔹
-totalise (ElimConstr m) α =
-   let c × κ            = fromJust absurd (L.head (toUnfoldable m))
-       bs               = toUnfoldable m
-       DataType _ sigs  = mustLookup c ctrToDataType
-       bs'              = (_ × Body (enil α)) <$> ((fst <$> toUnfoldable sigs) \\ (fst <$> bs))
-       bs''             = bs <#> \(c × κ) -> case mustLookup c m of
-         Arg σ   -> c × Arg (totalise σ α)
-         Body e' -> c × Body e'
-         None    -> c × Body (enil α) -- should the None cases should be undefined instead?
-   in ElimConstr (fromFoldable (bs'' <> bs'))
-totalise (ElimVar e κ) α = case κ of
-   Arg σ  -> ElimVar e (Arg (totalise σ α))
-   Body _ -> ElimVar e κ
-   None   -> ElimVar e (Body (enil α))
+-- holes used to represent var defs, but otherwise surface programs never contain holes
+totalise :: Cont 𝔹 -> 𝔹 -> Cont 𝔹
+totalise ContHole _                    = error absurd
+totalise (ContExpr e) _                = ContExpr e
+totalise (ContElim ElimHole) _         = error absurd
+totalise (ContElim (ElimConstr m)) α   =
+   let c × κ = fromJust absurd (L.head (toUnfoldable m))
+       bs = toUnfoldable m
+       DataType _ sigs = mustLookup c ctrToDataType
+       bs' = (_ × ContExpr (enil α)) <$> ((fst <$> toUnfoldable sigs) \\ (fst <$> bs))
+   in ContElim (ElimConstr (fromFoldable ((bs <#> \(c × κ) -> c × totalise κ α) <> bs')))
+totalise (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totalise κ α))
 
+-- TODO: subsume with (or distinguish from) Lattice instance on Elim
 class Joinable a where
    maybeJoin :: a -> a -> MayFail a
 
 instance joinableElim :: Joinable (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar y κ')       = ElimVar <$> x ≞ y <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
-   maybeJoin _ _                                = error absurd
+   maybeJoin _ _                                = report "Unmergable function branches"
 
 instance joinableCont :: Joinable (Cont Boolean) where
-   maybeJoin None None                                = pure None
-   maybeJoin (Arg σ) (Arg σ')                         = Arg <$> maybeJoin σ σ'
-   maybeJoin (Body (E.Lambda σ)) (Body (E.Lambda σ')) = Body <$> (E.Lambda <$> maybeJoin σ σ')
-   maybeJoin _ _                                      = error absurd
+   maybeJoin (ContElim σ) (ContElim σ')                        = ContElim <$> maybeJoin σ σ'
+   maybeJoin (ContExpr (E.Lambda σ)) (ContExpr (E.Lambda σ'))  = ContExpr <$> (E.Lambda <$> maybeJoin σ σ')
+   maybeJoin _ _                                               = report "Unmergable function branches"
 
 instance joinableMap :: Joinable (Map Ctr (Cont Boolean)) where
    maybeJoin κs1 κs2 = do

@@ -108,7 +108,7 @@ instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    -- list-comp-gen
    desugarBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1)
               (ListComp α s2 (NonEmptyList (Generator p s1 :| q : qs))) =
-      let σ' × β = totalise_bwd (Arg σ) (Left p : Nil) in
+      let σ' × β = totalise_bwd (ContElim σ) (Left p : Nil) in
       case desugarBwd (asExpr (desugarPatternBwd (asElim σ') p)) (ListComp α s2 (NonEmptyList (q :| qs))) of
          ListComp β' s2' (NonEmptyList (q' :| qs')) ->
             ListComp (β ∨ β') s2' (NonEmptyList (Generator p (desugarBwd e1 s1) :| q' : qs'))
@@ -145,7 +145,8 @@ instance patterns :: DesugarPatternBwd (NonEmptyList Pattern) where
       desugarPatternBwd (asElim (desugarPatternBwd σ π)) (NonEmptyList (π' :| πs))
 
 instance pattern :: DesugarPatternBwd Pattern where
-   -- TODO: hole cases
+   desugarPatternBwd ElimHole _ = error "todo"
+
    desugarPatternBwd (ElimVar x κ) (PVar _) = κ
    desugarPatternBwd (ElimConstr _) (PVar _) = error absurd
 
@@ -161,6 +162,8 @@ instance pattern :: DesugarPatternBwd Pattern where
       desugarPatternBwd (asElim (desugarPatternBwd σ π)) o
 
 instance patternRest :: DesugarPatternBwd ListPatternRest where
+   desugarPatternBwd ElimHole _ = error "todo"
+
    desugarPatternBwd (ElimVar _ _) _ = error absurd
    desugarPatternBwd (ElimConstr m) PEnd = mustLookup cCons m
    desugarPatternBwd (ElimConstr m) (PNext π o) =
@@ -187,32 +190,33 @@ instance branchesUncurried :: DesugarBwd (Elim Boolean) (NonEmptyList (Pattern �
       NonEmptyList (desugarBwd σ b :| Nil)
 
 totalise_bwd :: Cont 𝔹 -> List (Pattern + ListPatternRest) -> Cont 𝔹 × 𝔹
-totalise_bwd κ Nil = κ × false
-totalise_bwd (Body _) (_ : _) = error absurd
-totalise_bwd None (_ : _) = error "todo" -- is None case essentially Hole?
-totalise_bwd (Arg (ElimVar x κ)) (π : πs) =
+totalise_bwd κ Nil                              = κ × false
+totalise_bwd (ContExpr _) (_ : _)               = error absurd
+totalise_bwd ContHole (_ : _)                   = error "todo"
+totalise_bwd (ContElim ElimHole) _              = error "todo"
+totalise_bwd (ContElim (ElimVar x κ)) (π : πs)  =
    case π of
       Left (PVar x') ->
          assert (x == x') $
          let κ × α = totalise_bwd κ πs in
-         Arg (ElimVar x κ) × α
+         ContElim (ElimVar x κ) × α
       Left _ -> error absurd
       Right _ -> error absurd
-totalise_bwd (Arg (ElimConstr m)) (π : πs) =
+totalise_bwd (ContElim (ElimConstr m)) (π : πs) =
    case π of
       Left (PVar _) -> error absurd
       Left (PConstr c ps) ->
          let κ × α = totalise_bwd (mustLookup c m) (map Left ps <> πs) in
-         Arg (ElimConstr (fromFoldable [c × κ])) × α
+         ContElim (ElimConstr (fromFoldable [c × κ])) × α
       Left PListEmpty ->
          let κ × α = totalise_bwd (mustLookup cNil m) πs in
-         Arg (ElimConstr (fromFoldable [cNil × κ])) × α
+         ContElim (ElimConstr (fromFoldable [cNil × κ])) × α
       Left (PListNonEmpty p o) ->
          let κ × α = totalise_bwd (mustLookup cCons m) (Left p : Right o : πs) in
-         Arg (ElimConstr (fromFoldable [cCons × κ])) × α
+         ContElim (ElimConstr (fromFoldable [cCons × κ])) × α
       Right PEnd ->
          let κ × α = totalise_bwd (mustLookup cNil m) πs in
-         Arg (ElimConstr (fromFoldable [cNil × κ])) × α
+         ContElim (ElimConstr (fromFoldable [cNil × κ])) × α
       Right (PNext p o) ->
          let κ × α = totalise_bwd (mustLookup cCons m) (Left p : Right o : πs) in
-         Arg (ElimConstr (fromFoldable [cCons × κ])) × α
+         ContElim (ElimConstr (fromFoldable [cCons × κ])) × α
