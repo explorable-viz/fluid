@@ -85,7 +85,7 @@ checkDataType msg c κs = void $ do
    d <- dataTypeFor c
    d' <- dataTypeForKeys $ keys κs
    if (d /= d')
-   then error "***"
+   then error absurd
    else with (msg <> show c <> " is not a constructor of " <> show d') $ d ≞ d'
 
 -- Used internally by primitives or desugaring.

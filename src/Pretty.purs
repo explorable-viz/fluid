@@ -165,14 +165,15 @@ instance prettyBindingVal :: BoundedJoinSemilattice a => Pretty (Binding Val a) 
    pretty (x ↦ v) = text x :<>: text " ↦ " :<>: pretty v
 
 instance prettyCont :: BoundedJoinSemilattice a => Pretty (Cont a) where
-   pretty None          = text "⋆"
-   pretty (Body e)      = pretty e
-   pretty (Arg σ)       = pretty σ
+   pretty ContHole      = hole
+   pretty (ContExpr e)  = pretty e
+   pretty (ContElim σ)  = pretty σ
 
 instance prettyBranch :: BoundedJoinSemilattice a => Pretty (Ctr × Cont a) where
    pretty (c × κ) = text (show c) :<>: operator "->" :<>: pretty κ
 
 instance prettyElim :: BoundedJoinSemilattice a => Pretty (Elim a) where
+   pretty (ElimHole)       = hole
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = hcat $ map (\x -> pretty x :<>: comma) $ (toUnfoldable κs :: List _)
 
