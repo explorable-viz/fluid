@@ -28,6 +28,8 @@ enil α = E.Constr α cNil Nil
 econs :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 econs α e e' = E.Constr α cCons (e : e' : Nil)
 
+-- "Vanilla" desugaring is just forward-slicing where we disregard annotations, so user errors may occur during
+-- forward slicing.
 class DesugarFwd a b | a -> b where
    desugarFwd :: a -> MayFail b
 
@@ -36,7 +38,7 @@ instance module_ :: DesugarFwd (Module Boolean) (E.Module Boolean) where
    desugarFwd (Module ds) = E.Module <$> traverse desugarFwd (join $ (ds <#> desugarDefs))
       where
       desugarDefs :: VarDefs Boolean + RecDefs Boolean -> List (VarDef Boolean + RecDefs Boolean)
-      desugarDefs (Left ds')  = (toList ds' <#> Left)
+      desugarDefs (Left ds')  = toList ds' <#> Left
       desugarDefs (Right δ)   = pure $ Right δ
 
 instance varDef :: DesugarFwd (VarDef Boolean) (E.VarDef Boolean) where

@@ -32,19 +32,13 @@ matchArgs_fwd (v : vs) (ContElim σ)   =
 matchArgs_fwd _ _ = error absurd
 
 eval_fwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Val 𝔹
-eval_fwd _ Hole _ = V.Hole
-eval_fwd ρ (Var x) _ =
-   successful $ find x ρ
-eval_fwd ρ (Op op) _ =
-   successful $ find op ρ
-eval_fwd ρ (Int α n) α' =
-   V.Int (α ∧ α') n
-eval_fwd ρ (Float α n) α' =
-   V.Float (α ∧ α') n
-eval_fwd ρ (Str α str) α' =
-   V.Str (α ∧ α') str
-eval_fwd ρ (Constr α c es) α' =
-   V.Constr (α ∧ α') c $ map (\e -> eval_fwd ρ e α') es
+eval_fwd _ Hole _             = V.Hole
+eval_fwd ρ (Var x) _          = successful $ find x ρ
+eval_fwd ρ (Op op) _          = successful $ find op ρ
+eval_fwd ρ (Int α n) α'       = V.Int (α ∧ α') n
+eval_fwd ρ (Float α n) α'     = V.Float (α ∧ α') n
+eval_fwd ρ (Str α str) α'     = V.Str (α ∧ α') str
+eval_fwd ρ (Constr α c es) α' = V.Constr (α ∧ α') c $ map (\e -> eval_fwd ρ e α') es
 eval_fwd ρ (Matrix α e (x × y) e') α' =
    case eval_fwd ρ e' α of
       V.Hole -> V.Hole
@@ -57,10 +51,10 @@ eval_fwd ρ (Matrix α e (x × y) e') α' =
                      singleton $ eval_fwd ((ρ :+: x ↦ V.Int α i) :+: y ↦ V.Int α j) e α'
          in V.Matrix (α ∧ α') vs (i' × j')
       _ -> error absurd
-eval_fwd ρ (LetRec δ e) α =
+eval_fwd ρ (LetRec δ e) α     =
    let ρ' = closeDefs ρ δ δ in
    eval_fwd (ρ <> ρ') e α
-eval_fwd ρ (Lambda σ) _ = V.Closure ρ Empty σ
+eval_fwd ρ (Lambda σ) _       = V.Closure ρ Empty σ
 eval_fwd ρ (App e e') α =
    case eval_fwd ρ e α × eval_fwd ρ e' α of
       V.Hole × _ -> V.Hole
