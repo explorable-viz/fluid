@@ -51,28 +51,24 @@ fromRecDef :: Binding Elim 𝔹 -> Endo (NonEmptyList (Clause 𝔹))
 fromRecDef (x ↦ σ) = map (x × _) <<< desugarBwd σ <<< map snd
 
 instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
-   desugarBwd (E.Var x) (Var _)           = Var x
-   desugarBwd (E.Op op) (Op _)            = Op op
-   desugarBwd (E.Int α n) (Int _ _)       = Int α n
-   desugarBwd (E.Float α n) (Float _ _)   = Float α n
-   desugarBwd (E.Str α s) (Str _ _)       = Str α s
-   desugarBwd (E.Constr α c es) (Constr _ _ es') =
-      Constr α c (uncurry desugarBwd <$> zip es es')
-   desugarBwd (E.Matrix α e (x × y) e') (Matrix _ s _ s') =
-      Matrix α (desugarBwd e s) (x × y) (desugarBwd e' s')
-   desugarBwd (E.Lambda σ) (Lambda bs) =
-      Lambda (desugarBwd σ bs)
-   desugarBwd (E.App e1 e2) (App s1 s2) =
-      App (desugarBwd e1 s1) (desugarBwd e2 s2)
-   desugarBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
-      MatchAs (desugarBwd e s) (desugarBwd σ bs)
+   desugarBwd (E.Var x) (Var _)                             = Var x
+   desugarBwd (E.Op op) (Op _)                              = Op op
+   desugarBwd (E.Int α n) (Int _ _)                         = Int α n
+   desugarBwd (E.Float α n) (Float _ _)                     = Float α n
+   desugarBwd (E.Str α s) (Str _ _)                         = Str α s
+   desugarBwd (E.Constr α c es) (Constr _ _ es')            = Constr α c (uncurry desugarBwd <$> zip es es')
+   desugarBwd (E.Matrix α e (x × y) e') (Matrix _ s _ s')   = Matrix α (desugarBwd e s) (x × y) (desugarBwd e' s')
+   desugarBwd (E.Lambda σ) (Lambda bs)                      = Lambda (desugarBwd σ bs)
+   desugarBwd (E.App e1 e2) (App s1 s2)                     = App (desugarBwd e1 s1) (desugarBwd e2 s2)
+   desugarBwd (E.App (E.Lambda σ) e) (MatchAs s bs)         = MatchAs (desugarBwd e s) (desugarBwd σ bs)
    desugarBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) = do
       IfElse (desugarBwd e1 s1)
              (desugarBwd (asExpr (mustLookup cTrue m)) s2)
              (desugarBwd (asExpr (mustLookup cFalse m)) s3)
-   desugarBwd (E.BinaryApp e1 x e2) (BinaryApp s1 _ s2) =
-      BinaryApp (desugarBwd e1 s1) x (desugarBwd e2 s2)
-   desugarBwd (E.Constr α c Nil) (ListEmpty _) | c == cNil =
+   desugarBwd (E.BinaryApp e1 x e2) (BinaryApp s1 _ s2)     = BinaryApp (desugarBwd e1 s1) x (desugarBwd e2 s2)
+   desugarBwd (E.Let d e) (Let ds s)                        = uncurry Let (desugarBwd (E.Let d e) (ds × s))
+   desugarBwd (E.LetRec xσs e) (LetRec xcs s)               = LetRec (desugarBwd xσs xcs) (desugarBwd e s)
+   desugarBwd (E.Constr α c Nil) (ListEmpty _) | c == cNil  =
       ListEmpty α
    desugarBwd (E.Constr α c (e : e' : Nil)) (ListNonEmpty _ s l) | c == cCons =
       ListNonEmpty α (desugarBwd e s) (desugarBwd e' l)
@@ -113,10 +109,6 @@ instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
          ListComp β' s2' (NonEmptyList (q' :| qs')) ->
             ListComp (β ∨ β') s2' (NonEmptyList (Generator p (desugarBwd e1 s1) :| q' : qs'))
          _ -> error absurd
-   desugarBwd (E.Let d e) (Let ds s) =
-      uncurry Let (desugarBwd (E.Let d e) (ds × s))
-   desugarBwd (E.LetRec xσs e) (LetRec xcs s) =
-      LetRec (desugarBwd xσs xcs) (desugarBwd e s)
    desugarBwd (E.Hole) s = error "todo"
    desugarBwd _ _ = error absurd
 
