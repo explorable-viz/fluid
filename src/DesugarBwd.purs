@@ -8,6 +8,7 @@ import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList, reverse)
 import Data.Map (fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Tuple (uncurry, fst, snd)
+import Data.Profunctor.Strong (first)
 import Bindings (Binding, Bindings(..), (↦), (:+:))
 import DataType (cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -128,15 +129,17 @@ instance listRest :: DesugarBwd (E.Expr Boolean) (ListRest Boolean) where
       E.Hole -> desugarBwd (E.Constr false cCons (E.Hole : E.Hole : Nil)) l
       _ -> error absurd
 
-class DesugarPatternBwd a where
-   desugarPatternBwd :: Elim Boolean -> a -> Cont Boolean
+class DesugarPatternBwd a b | a -> b where
+   desugarPatternBwd :: Elim 𝔹 -> a -> b
 
-instance patterns :: DesugarPatternBwd (NonEmptyList Pattern) where
+instance patterns :: DesugarPatternBwd (NonEmptyList Pattern) (Cont Boolean) where
    desugarPatternBwd σ (NonEmptyList (π :| Nil)) = desugarPatternBwd σ π
    desugarPatternBwd σ (NonEmptyList (π :| π' : πs)) =
-      desugarPatternBwd (asElim (desugarPatternBwd σ π)) (NonEmptyList (π' :| πs))
+      case asExpr (desugarPatternBwd σ π) of
+         E.Lambda σ' -> desugarPatternBwd σ' (NonEmptyList (π' :| πs))
+         _ -> error absurd
 
-instance pattern :: DesugarPatternBwd Pattern where
+instance pattern :: DesugarPatternBwd Pattern (Cont Boolean) where
    desugarPatternBwd ElimHole _ = error "todo"
 
    desugarPatternBwd (ElimVar x κ) (PVar _) = κ
@@ -144,7 +147,7 @@ instance pattern :: DesugarPatternBwd Pattern where
 
    desugarPatternBwd (ElimVar _ _) (PConstr c _) = error absurd
    desugarPatternBwd (ElimConstr m) (PConstr c Nil) = mustLookup c m
-   desugarPatternBwd (ElimConstr m) (PConstr c (π : πs)) = do
+   desugarPatternBwd (ElimConstr m) (PConstr c (π : πs)) =
       desugarPatternBwd (asElim (mustLookup c m)) (NonEmptyList (π :| πs))
 
    desugarPatternBwd (ElimVar _ _) (PListEmpty) = error absurd
@@ -153,7 +156,7 @@ instance pattern :: DesugarPatternBwd Pattern where
    desugarPatternBwd σ (PListNonEmpty π o) =
       desugarPatternBwd (asElim (desugarPatternBwd σ π)) o
 
-instance patternRest :: DesugarPatternBwd ListPatternRest where
+instance patternRest :: DesugarPatternBwd ListPatternRest (Cont Boolean) where
    desugarPatternBwd ElimHole _ = error "todo"
 
    desugarPatternBwd (ElimVar _ _) _ = error absurd
@@ -188,27 +191,25 @@ totalise_bwd ContHole (_ : _)                   = error "todo"
 totalise_bwd (ContElim ElimHole) _              = error "todo"
 totalise_bwd (ContElim (ElimVar x κ)) (π : πs)  =
    case π of
-      Left (PVar x') ->
-         assert (x == x') $
-         let κ × α = totalise_bwd κ πs in
-         ContElim (ElimVar x κ) × α
+      Left (PVar _) ->
+         first (\κ' -> ContElim (ElimVar x κ')) (totalise_bwd κ πs)
       Left _ -> error absurd
       Right _ -> error absurd
 totalise_bwd (ContElim (ElimConstr m)) (π : πs) =
    case π of
       Left (PVar _) -> error absurd
       Left (PConstr c ps) ->
-         let κ × α = totalise_bwd (mustLookup c m) (map Left ps <> πs) in
-         ContElim (ElimConstr (fromFoldable [c × κ])) × α
+         first (\κ -> ContElim (ElimConstr (fromFoldable [c × κ])))
+               (totalise_bwd (mustLookup c m) ((Left <$> ps) <> πs))
       Left PListEmpty ->
-         let κ × α = totalise_bwd (mustLookup cNil m) πs in
-         ContElim (ElimConstr (fromFoldable [cNil × κ])) × α
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cNil × κ])))
+               (totalise_bwd (mustLookup cNil m) πs)
       Left (PListNonEmpty p o) ->
-         let κ × α = totalise_bwd (mustLookup cCons m) (Left p : Right o : πs) in
-         ContElim (ElimConstr (fromFoldable [cCons × κ])) × α
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cCons × κ])))
+               (totalise_bwd (mustLookup cCons m) (Left p : Right o : πs))
       Right PEnd ->
-         let κ × α = totalise_bwd (mustLookup cNil m) πs in
-         ContElim (ElimConstr (fromFoldable [cNil × κ])) × α
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cNil × κ])))
+               (totalise_bwd (mustLookup cNil m) πs)
       Right (PNext p o) ->
-         let κ × α = totalise_bwd (mustLookup cCons m) (Left p : Right o : πs) in
-         ContElim (ElimConstr (fromFoldable [cCons × κ])) × α
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cCons × κ])))
+               (totalise_bwd (mustLookup cCons m) (Left p : Right o : πs))

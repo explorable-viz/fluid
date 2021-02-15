@@ -107,9 +107,9 @@ instance listRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
    desugarFwd (Next α s l)  = econs α <$> desugarFwd s <*> desugarFwd l
 
 instance patternsExpr :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (Elim Boolean) where
-   desugarFwd (NonEmptyList (π :| Nil) × κ) = desugarFwd (π × κ)
-   desugarFwd (NonEmptyList (π :| π' : πs) × κ) =
-      (desugarFwd <<< (π × _)) =<< ContExpr <$> E.Lambda <$> desugarFwd (NonEmptyList (π' :| πs) × κ)
+   desugarFwd (NonEmptyList (p :| Nil) × e) = desugarFwd (p × e)
+   desugarFwd (NonEmptyList (p :| p' : ps) × e) =
+      (desugarFwd <<< (p × _)) =<< ContExpr <$> E.Lambda <$> desugarFwd (NonEmptyList (p' :| ps) × e)
 
 -- Cont argument here acts as an accumulator.
 instance patternCont :: DesugarFwd (Pattern × Cont Boolean) (Elim Boolean) where
