@@ -13,7 +13,7 @@ import Bindings (Binding, Bindings(..), (↦), (:+:))
 import DataType (cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), VarDef(..)) as E
-import SExpr (Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), VarDef(..))
+import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), VarDef(..))
 import Lattice (𝔹, (∨))
 import Util (Endo, type(+), type (×), (×), absurd, assert, mustLookup, error)
 
@@ -49,7 +49,7 @@ zipRecDefs (ρ :+: x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss)) =
    NonEmptyList (fromRecDef (x ↦ σ) xcs1 :| toList (zipRecDefs ρ (NonEmptyList (xcs2 :| xcss))))
 
 fromRecDef :: Binding Elim 𝔹 -> Endo (NonEmptyList (Clause 𝔹))
-fromRecDef (x ↦ σ) = map (x × _) <<< desugarBwd σ <<< map snd
+fromRecDef (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd
 
 instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Var x) (Var _)                             = Var x
@@ -59,9 +59,9 @@ instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.Str α s) (Str _ _)                         = Str α s
    desugarBwd (E.Constr α c es) (Constr _ _ es')            = Constr α c (uncurry desugarBwd <$> zip es es')
    desugarBwd (E.Matrix α e (x × y) e') (Matrix _ s _ s')   = Matrix α (desugarBwd e s) (x × y) (desugarBwd e' s')
-   desugarBwd (E.Lambda σ) (Lambda bs)                      = Lambda (desugarBwd σ bs)
+   desugarBwd (E.Lambda σ) (Lambda bs)                      = Lambda (branchesBwd_curried σ bs)
    desugarBwd (E.App e1 e2) (App s1 s2)                     = App (desugarBwd e1 s1) (desugarBwd e2 s2)
-   desugarBwd (E.App (E.Lambda σ) e) (MatchAs s bs)         = MatchAs (desugarBwd e s) (desugarBwd σ bs)
+   desugarBwd (E.App (E.Lambda σ) e) (MatchAs s bs)         = MatchAs (desugarBwd e s) (branchesBwd_uncurried σ bs)
    desugarBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) = do
       IfElse (desugarBwd e1 s1)
              (desugarBwd (asExpr (mustLookup cTrue m)) s2)
@@ -98,7 +98,7 @@ instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    -- list-comp-decl
    desugarBwd (E.App (E.Lambda σ) e)
               (ListComp α0 s2 (NonEmptyList ((Declaration (VarDef π s1)) :| q : qs))) =
-      case desugarBwd σ (NonEmptyList (π :| Nil) × (ListComp α0 s2 (NonEmptyList (q :| qs)))) of
+      case branchBwd_curried σ (NonEmptyList (π :| Nil) × (ListComp α0 s2 (NonEmptyList (q :| qs)))) of
          _ × ListComp β s2' (NonEmptyList (q' :| qs')) ->
             ListComp β s2' (NonEmptyList ((Declaration (VarDef π (desugarBwd e s1))) :| q' : qs'))
          _ × _ -> error absurd
@@ -106,7 +106,7 @@ instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
    desugarBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1)
               (ListComp α s2 (NonEmptyList (Generator p s1 :| q : qs))) =
       let σ' × β = totalise_bwd (ContElim σ) (Left p : Nil) in
-      case desugarBwd (asExpr (desugarPatternBwd (asElim σ') p)) (ListComp α s2 (NonEmptyList (q :| qs))) of
+      case desugarBwd (asExpr (patternBwd (asElim σ') p)) (ListComp α s2 (NonEmptyList (q :| qs))) of
          ListComp β' s2' (NonEmptyList (q' :| qs')) ->
             ListComp (β ∨ β') s2' (NonEmptyList (Generator p (desugarBwd e1 s1) :| q' : qs'))
          _ -> error absurd
@@ -129,61 +129,56 @@ instance listRest :: DesugarBwd (E.Expr Boolean) (ListRest Boolean) where
       E.Hole -> desugarBwd (E.Constr false cCons (E.Hole : E.Hole : Nil)) l
       _ -> error absurd
 
-class DesugarPatternBwd a b | a -> b where
-   desugarPatternBwd :: Elim 𝔹 -> a -> b
-
 -- σ, ps desugar_bwd e
-instance patterns :: DesugarPatternBwd (NonEmptyList Pattern) (E.Expr Boolean) where
-   desugarPatternBwd σ (NonEmptyList (π :| Nil)) = asExpr (desugarPatternBwd σ π)
-   desugarPatternBwd σ (NonEmptyList (π :| π' : πs)) =
-      case asExpr (desugarPatternBwd σ π) of
-         E.Lambda σ' -> desugarPatternBwd σ' (NonEmptyList (π' :| πs))
-         _ -> error absurd
+patternsBwd :: Elim 𝔹 -> NonEmptyList Pattern -> E.Expr 𝔹
+patternsBwd σ (NonEmptyList (p :| Nil))      = asExpr (patternBwd σ p)
+patternsBwd σ (NonEmptyList (p :| p' : πs))  =
+   case asExpr (patternBwd σ p) of
+      E.Lambda σ' -> patternsBwd σ' (NonEmptyList (p' :| πs))
+      _ -> error absurd
 
 -- σ, p desugar_bwd κ
-instance pattern :: DesugarPatternBwd Pattern (Cont Boolean) where
-   desugarPatternBwd ElimHole _                          = error "todo"
-   desugarPatternBwd (ElimVar x κ) (PVar _)              = κ
-   desugarPatternBwd (ElimConstr m) (PConstr c ps)       = desugarArgsBwd (mustLookup c m) (Left <$> ps)
-   desugarPatternBwd (ElimConstr m) (PListEmpty)         = mustLookup cNil m
-   desugarPatternBwd (ElimConstr m) (PListNonEmpty p o)  = desugarArgsBwd (mustLookup cCons m) (Left p : Right o : Nil)
-   desugarPatternBwd _ _                                 = error absurd
+patternBwd :: Elim 𝔹 -> Pattern -> Cont 𝔹
+patternBwd ElimHole _                          = error "todo"
+patternBwd (ElimVar x κ) (PVar _)              = κ
+patternBwd (ElimConstr m) (PConstr c ps)       = argsBwd (mustLookup c m) (Left <$> ps)
+patternBwd (ElimConstr m) (PListEmpty)         = mustLookup cNil m
+patternBwd (ElimConstr m) (PListNonEmpty p o)  = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
+patternBwd _ _                                 = error absurd
 
 -- σ, o desugar_bwd κ
-instance patternRest :: DesugarPatternBwd ListRestPattern (Cont Boolean) where
-   desugarPatternBwd ElimHole _                 = error "todo"
-   desugarPatternBwd (ElimVar _ _) _            = error absurd
-   desugarPatternBwd (ElimConstr m) PEnd        = mustLookup cNil m
-   desugarPatternBwd (ElimConstr m) (PNext p o) = desugarArgsBwd (mustLookup cCons m) (Left p : Right o : Nil)
+listRestPatternBwd :: Elim 𝔹 -> ListRestPattern -> Cont 𝔹
+listRestPatternBwd ElimHole _                 = error "todo"
+listRestPatternBwd (ElimVar _ _) _            = error absurd
+listRestPatternBwd (ElimConstr m) PEnd        = mustLookup cNil m
+listRestPatternBwd (ElimConstr m) (PNext p o) = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
 
-desugarArgsBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹
-desugarArgsBwd κ Nil = κ
-desugarArgsBwd κ (Left p : πs) = desugarArgsBwd (desugarPatternBwd (asElim κ) p) πs
-desugarArgsBwd κ (Right o : πs) = desugarArgsBwd (desugarPatternBwd (asElim κ) o) πs
-
--- σ, c desugar_bwd c
-instance branch :: DesugarBwd (Elim Boolean) (NonEmptyList Pattern × Expr Boolean) where
-   desugarBwd σ (πs × s) =
-      πs × desugarBwd (desugarPatternBwd σ πs) s
+argsBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹
+argsBwd κ Nil = κ
+argsBwd κ (Left p : πs) = argsBwd (patternBwd (asElim κ) p) πs
+argsBwd κ (Right o : πs) = argsBwd (listRestPatternBwd (asElim κ) o) πs
 
 -- σ, c desugar_bwd c
-instance branchUncurried :: DesugarBwd (Elim Boolean) (Pattern × Expr Boolean) where
-   desugarBwd σ (π × s) =
-      π × desugarBwd (asExpr (desugarPatternBwd σ π)) s
+branchBwd_curried :: Elim 𝔹 -> Endo (Branch 𝔹)
+branchBwd_curried σ (πs × s) = πs × desugarBwd (patternsBwd σ πs) s
+
+-- σ, c desugar_bwd c
+branchBwd_uncurried :: Elim 𝔹 -> Endo (Pattern × Expr 𝔹)
+branchBwd_uncurried σ (p × s) = p × desugarBwd (asExpr (patternBwd σ p)) s
 
 -- σ, cs desugar_bwd cs
-instance branches :: DesugarBwd (Elim Boolean) (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) where
-   desugarBwd σ (NonEmptyList (b1 :| b2 : bs)) =
-      NonEmptyList (desugarBwd σ b1 :| toList (desugarBwd σ (NonEmptyList (b2 :| bs))))
-   desugarBwd σ (NonEmptyList (b :| Nil)) =
-      NonEmptyList (desugarBwd σ b :| Nil)
+branchesBwd_curried :: Elim 𝔹 -> Endo (NonEmptyList (Branch 𝔹))
+branchesBwd_curried σ (NonEmptyList (b1 :| b2 : bs)) =
+   NonEmptyList (branchBwd_curried σ b1 :| toList (branchesBwd_curried σ (NonEmptyList (b2 :| bs))))
+branchesBwd_curried σ (NonEmptyList (b :| Nil)) =
+   NonEmptyList (branchBwd_curried σ b :| Nil)
 
 -- σ, cs desugar_bwd cs
-instance branchesUncurried :: DesugarBwd (Elim Boolean) (NonEmptyList (Pattern × Expr Boolean)) where
-   desugarBwd σ (NonEmptyList (b1 :| b2 : bs)) =
-      NonEmptyList (desugarBwd σ b1 :| toList (desugarBwd σ (NonEmptyList (b2 :| bs))))
-   desugarBwd σ (NonEmptyList (b :| Nil)) =
-      NonEmptyList (desugarBwd σ b :| Nil)
+branchesBwd_uncurried :: Elim 𝔹 -> Endo (NonEmptyList (Pattern × Expr 𝔹))
+branchesBwd_uncurried σ (NonEmptyList (b1 :| b2 : bs)) =
+   NonEmptyList (branchBwd_uncurried σ b1 :| toList (branchesBwd_uncurried σ (NonEmptyList (b2 :| bs))))
+branchesBwd_uncurried σ (NonEmptyList (b :| Nil)) =
+   NonEmptyList (branchBwd_uncurried σ b :| Nil)
 
 -- κ, πs totalise_bwd κ', α
 totalise_bwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹 × 𝔹

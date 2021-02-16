@@ -50,14 +50,17 @@ instance varDefs :: DesugarFwd (NonEmptyList (VarDef Boolean) × Expr Boolean) (
    desugarFwd (NonEmptyList (d :| d' : ds) × s) =
       E.Let <$> desugarFwd d <*> desugarFwd (NonEmptyList (d' :| ds) × s)
 
+-- In the formalism, "group by name" is part of the syntax.
+-- cs desugar_fwd σ
 instance recDefs :: DesugarFwd (NonEmptyList (String × (NonEmptyList Pattern × Expr Boolean))) (Bindings Elim Boolean) where
-   desugarFwd fπs = fromList <$> toList <$> reverse <$> traverse toRecDef fπss
+   desugarFwd xcs = fromList <$> toList <$> reverse <$> traverse toRecDef xcss
       where
-      fπss = groupBy (eq `on` fst) fπs :: NonEmptyList (NonEmptyList (Clause 𝔹))
+      xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 
-      toRecDef :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
-      toRecDef fπs' = ((↦) (fst (head fπs'))) <$> desugarFwd (snd <$> fπs')
+toRecDef :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
+toRecDef xcs = (fst (head xcs) ↦ _) <$> desugarFwd (snd <$> xcs)
 
+-- s desugar_fwd e
 instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Var x)                  = pure (E.Var x)
    desugarFwd (Op op)                  = pure (E.Op op)
@@ -102,16 +105,18 @@ instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Let ds s)               = desugarFwd (ds × s)
    desugarFwd (LetRec fπs s)           = E.LetRec <$> desugarFwd fπs <*> desugarFwd s
 
+-- l desugar_fwd e
 instance listRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
    desugarFwd (End α)       = pure (enil α)
    desugarFwd (Next α s l)  = econs α <$> desugarFwd s <*> desugarFwd l
 
+-- ps, e desugar_fwd σ
 instance patternsExpr :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (Elim Boolean) where
    desugarFwd (NonEmptyList (p :| Nil) × e) = desugarFwd (p × e)
    desugarFwd (NonEmptyList (p :| p' : ps) × e) =
       (desugarFwd <<< (p × _)) =<< ContExpr <$> E.Lambda <$> desugarFwd (NonEmptyList (p' :| ps) × e)
 
--- Cont argument here acts as an accumulator.
+-- p, κ desugar_fwd σ
 instance patternCont :: DesugarFwd (Pattern × Cont Boolean) (Elim Boolean) where
    desugarFwd (PVar x × κ)             = pure (ElimVar x κ)
    desugarFwd (PConstr c ps × κ)       =
@@ -119,6 +124,7 @@ instance patternCont :: DesugarFwd (Pattern × Cont Boolean) (Elim Boolean) wher
    desugarFwd (PListEmpty × κ)         = pure (ElimConstr (singleton cNil κ))
    desugarFwd (PListNonEmpty p o × κ)  = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
 
+-- o, κ desugar_fwd σ
 instance listPatternRestCont :: DesugarFwd (ListRestPattern × Cont Boolean) (Elim Boolean) where
    desugarFwd (PEnd × κ)      = pure (ElimConstr (singleton cNil κ))
    desugarFwd (PNext p o × κ) = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
@@ -132,7 +138,7 @@ instance branchUncurried :: DesugarFwd (Pattern × Expr Boolean) (Elim Boolean) 
    desugarFwd (π × s) = (ContExpr <$> desugarFwd s) >>= (desugarFwd <<< (π × _))
 
 -- To consolidate these without overlapping instances, probably need RecDefs to be a data type.
-instance branches :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) (Elim Boolean) where
+instance branchesCurried :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) (Elim Boolean) where
    desugarFwd bs = do
       NonEmptyList (σ :| σs) <- traverse desugarFwd bs
       foldM maybeJoin σ σs
