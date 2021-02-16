@@ -27,7 +27,7 @@ import Expr (Var)
 import Lattice (𝔹)
 import Primitive (opDefs)
 import SExpr (
-   Branch, Clause, Expr(..), ListRest(..), ListPatternRest(..), Module(..), Pattern(..), Qualifier(..),
+   Branch, Clause, Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..),
    RecDefs, VarDef(..), VarDefs
 )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
@@ -127,14 +127,12 @@ simplePattern pattern' =
    listEmpty = token.brackets $ pure $ PListEmpty
 
    listNonEmpty :: SParser Pattern
-   listNonEmpty =
-      lBracket *> (PListNonEmpty <$> pattern' <*> fix listRest)
-
-         where
-         listRest :: Endo (SParser ListPatternRest)
-         listRest listRest' =
-            rBracket *> pure PEnd <|>
-            token.comma *> (PNext <$> pattern' <*> listRest')
+   listNonEmpty = lBracket *> (PListNonEmpty <$> pattern' <*> fix listRest)
+      where
+      listRest :: Endo (SParser ListRestPattern)
+      listRest listRest' =
+         rBracket *> pure PEnd <|>
+         token.comma *> (PNext <$> pattern' <*> listRest')
 
    -- Constructor name as a nullary constructor pattern.
    constr :: SParser Pattern

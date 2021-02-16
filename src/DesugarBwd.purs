@@ -13,7 +13,7 @@ import Bindings (Binding, Bindings(..), (↦), (:+:))
 import DataType (cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), VarDef(..)) as E
-import SExpr (Clause, Expr(..), ListRest(..), Pattern(..), ListPatternRest(..), Qualifier(..), VarDef(..))
+import SExpr (Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), VarDef(..))
 import Lattice (𝔹, (∨))
 import Util (Endo, type(+), type (×), (×), absurd, assert, mustLookup, error)
 
@@ -149,17 +149,17 @@ instance pattern :: DesugarPatternBwd Pattern (Cont Boolean) where
    desugarPatternBwd (ElimConstr m) (PListNonEmpty p o)  = desugarArgsBwd (mustLookup cCons m) (Left p : Right o : Nil)
    desugarPatternBwd _ _                                 = error absurd
 
-desugarArgsBwd :: Cont 𝔹 -> List (Pattern + ListPatternRest) -> Cont 𝔹
-desugarArgsBwd κ Nil = κ
-desugarArgsBwd κ (Left p : πs) = desugarArgsBwd (desugarPatternBwd (asElim κ) p) πs
-desugarArgsBwd κ (Right o : πs) = desugarArgsBwd (desugarPatternBwd (asElim κ) o) πs
-
 -- σ, o desugar_bwd κ
-instance patternRest :: DesugarPatternBwd ListPatternRest (Cont Boolean) where
+instance patternRest :: DesugarPatternBwd ListRestPattern (Cont Boolean) where
    desugarPatternBwd ElimHole _                 = error "todo"
    desugarPatternBwd (ElimVar _ _) _            = error absurd
    desugarPatternBwd (ElimConstr m) PEnd        = mustLookup cNil m
    desugarPatternBwd (ElimConstr m) (PNext p o) = desugarArgsBwd (mustLookup cCons m) (Left p : Right o : Nil)
+
+desugarArgsBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹
+desugarArgsBwd κ Nil = κ
+desugarArgsBwd κ (Left p : πs) = desugarArgsBwd (desugarPatternBwd (asElim κ) p) πs
+desugarArgsBwd κ (Right o : πs) = desugarArgsBwd (desugarPatternBwd (asElim κ) o) πs
 
 -- σ, c desugar_bwd c
 instance branch :: DesugarBwd (Elim Boolean) (NonEmptyList Pattern × Expr Boolean) where
@@ -186,7 +186,7 @@ instance branchesUncurried :: DesugarBwd (Elim Boolean) (NonEmptyList (Pattern �
       NonEmptyList (desugarBwd σ b :| Nil)
 
 -- κ, πs totalise_bwd κ', α
-totalise_bwd :: Cont 𝔹 -> List (Pattern + ListPatternRest) -> Cont 𝔹 × 𝔹
+totalise_bwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹 × 𝔹
 totalise_bwd κ Nil                              = κ × false
 totalise_bwd (ContExpr _) (_ : _)               = error absurd
 totalise_bwd ContHole (_ : _)                   = error "todo"

@@ -18,7 +18,7 @@ import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), VarDef(..)) as E
 import Lattice (𝔹)
 import SExpr (
-   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
+   Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
 import Util (MayFail, type (+), type (×), (×), (≞), absurd, error, fromJust, mustLookup, report)
 
@@ -113,22 +113,20 @@ instance patternsExpr :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (Elim
 
 -- Cont argument here acts as an accumulator.
 instance patternCont :: DesugarFwd (Pattern × Cont Boolean) (Elim Boolean) where
-   desugarFwd (PVar x × κ) = pure (ElimVar x κ)
-   desugarFwd (PConstr c πs × κ) = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs)
-      where
-      toCont :: List Pattern -> MayFail (Cont 𝔹)
-      toCont Nil = pure κ
-      toCont (π : πs') = ContElim <$> (desugarFwd <<< (π × _) =<< toCont πs')
-   desugarFwd (PListEmpty × κ) = pure (ElimConstr (singleton cNil κ))
-   desugarFwd (PListNonEmpty π o × κ)  = do
-      κ' <- ContElim <$> desugarFwd (o × κ)
-      ElimConstr <$> singleton cCons <$> ContElim <$> desugarFwd (π × κ')
+   desugarFwd (PVar x × κ)             = pure (ElimVar x κ)
+   desugarFwd (PConstr c ps × κ)       =
+      checkArity c (length ps) *> (ElimConstr <$> singleton c <$> desugarArgsFwd (Left <$> ps) κ)
+   desugarFwd (PListEmpty × κ)         = pure (ElimConstr (singleton cNil κ))
+   desugarFwd (PListNonEmpty p o × κ)  = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
 
-instance listPatternRestCont :: DesugarFwd (ListPatternRest × Cont Boolean) (Elim Boolean) where
-   desugarFwd (PEnd × κ) = pure (ElimConstr (singleton cNil κ))
-   desugarFwd (PNext π o × κ) = do
-      κ' <- ContElim <$> desugarFwd (o × κ)
-      ElimConstr <$> singleton cCons <$> ContElim <$> desugarFwd (π × κ')
+instance listPatternRestCont :: DesugarFwd (ListRestPattern × Cont Boolean) (Elim Boolean) where
+   desugarFwd (PEnd × κ)      = pure (ElimConstr (singleton cNil κ))
+   desugarFwd (PNext p o × κ) = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
+
+desugarArgsFwd :: List (Pattern + ListRestPattern) -> Cont 𝔹 -> MayFail (Cont 𝔹)
+desugarArgsFwd Nil κ = pure κ
+desugarArgsFwd (Left p : πs) κ = ContElim <$> (desugarArgsFwd πs κ >>= desugarFwd <<< (p × _))
+desugarArgsFwd (Right o : πs) κ = ContElim <$> (desugarArgsFwd πs κ >>= desugarFwd <<< (o × _))
 
 instance branchUncurried :: DesugarFwd (Pattern × Expr Boolean) (Elim Boolean) where
    desugarFwd (π × s) = (ContExpr <$> desugarFwd s) >>= (desugarFwd <<< (π × _))

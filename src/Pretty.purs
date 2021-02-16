@@ -13,7 +13,7 @@ import Bindings (Binding, Bindings(..), (:+:), (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..), varAnon)
 import Expr (Expr(..), VarDef(..)) as E
-import SExpr (Expr(..), ListPatternRest(..), ListRest(..), Pattern(..), Qualifier(..), VarDef(..))
+import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
 import Lattice (class BoundedJoinSemilattice)
@@ -117,8 +117,8 @@ instance prettyList :: Pretty a => Pretty (List a) where
 instance prettyListRest :: BoundedJoinSemilattice a => Pretty (ListRest a) where
    pretty l = pretty $ listRestToExprs l
 
-instance prettyListPatternRest :: Pretty (ListPatternRest) where
-   pretty l = pretty $ listPatternRestToPatterns l
+instance prettyListPatternRest :: Pretty ListRestPattern where
+   pretty l = pretty $ listRestPatternToPatterns l
 
 instance prettyCtr :: Pretty Ctr where
    pretty = show >>> text
@@ -200,9 +200,9 @@ listRestToExprs :: forall a . ListRest a -> List (Expr a)
 listRestToExprs (End _) = Nil
 listRestToExprs (Next _ e l) = e : listRestToExprs l
 
-listPatternRestToPatterns :: ListPatternRest -> List Pattern
-listPatternRestToPatterns PEnd         = Nil
-listPatternRestToPatterns (PNext π πs) = π : listPatternRestToPatterns πs
+listRestPatternToPatterns :: ListRestPattern -> List Pattern
+listRestPatternToPatterns PEnd         = Nil
+listRestPatternToPatterns (PNext π πs) = π : listRestPatternToPatterns πs
 
 instance toListSExpr :: BoundedJoinSemilattice a => ToList (Expr a)  where
    toList (Constr _ c (e : e' : Nil)) | c == cCons   = e : toList e'
@@ -266,7 +266,7 @@ instance prettyPattern :: Pretty Pattern where
    pretty (PVar x)               = text x
    pretty (PConstr ctr πs)       = pretty ctr :<>: space :<>: pretty πs
    pretty (PListEmpty)           = text "[]"
-   pretty (PListNonEmpty π πs)   = pretty $ π : listPatternRestToPatterns πs
+   pretty (PListNonEmpty π πs)   = pretty $ π : listRestPatternToPatterns πs
 
 prettyProgram :: E.Expr Boolean -> Doc
 prettyProgram e = atop (pretty e) (text "")
