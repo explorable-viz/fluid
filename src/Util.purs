@@ -74,6 +74,9 @@ mayEq x x' = whenever (x == x') x
 mustEq :: forall a . Eq a => a -> a -> a
 mustEq x x' = fromJust "Must be equal" $ x ≟ x'
 
+mustGeq :: forall a . Ord a => a -> a -> a
+mustGeq x x' = fromJust "Must be greater" $ whenever (x >= x') x
+
 unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (map Just m) (map Just m')
 

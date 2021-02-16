@@ -2,13 +2,13 @@ module Expr where
 
 import Prelude hiding (top)
 import Control.Apply (lift2)
-import Data.List (List)
+import Data.List (List, zipWith)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings)
 import DataType (Ctr)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), definedJoin, maybeJoin)
-import Util (type (×), (×), type (+), (≟), error)
+import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, maybeJoin)
+import Util (type (×), (×), type (+), (≟), (≜), error, mustGeq)
 
 type Var = String
 
@@ -45,14 +45,26 @@ data Cont a =
    ContElim (Elim a)
 
 asElim :: forall a . Cont a -> Elim a
-asElim ContHole = ElimHole
-asElim (ContElim σ) = σ
-asElim (ContExpr _) = error "Eliminator expected"
+asElim ContHole      = ElimHole
+asElim (ContElim σ)  = σ
+asElim (ContExpr _)  = error "Eliminator expected"
 
 asExpr :: forall a . Cont a -> Expr a
-asExpr ContHole = Hole
-asExpr (ContElim _) = error "Expression expected"
-asExpr (ContExpr e) = e
+asExpr ContHole      = Hole
+asExpr (ContElim _)  = error "Expression expected"
+asExpr (ContExpr e)  = e
+
+expand :: Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
+expand Hole Hole                             = Hole
+expand Hole (Var x)                          = Var x
+expand Hole (Op φ)                           = Op φ
+expand Hole (Int α n)                        = Int false n
+expand Hole (Float α n)                      = Float false n
+expand Hole (Str α str)                      = Str false str
+expand Hole (Constr a c es)                  = Constr false c (expand Hole <$> es)
+expand (Constr α c es) (Constr β c' es')     = Constr (α `mustGeq` β) (c ≜ c') (zipWith expand es es')
+expand Hole (Matrix α e (x × y) e')          = Matrix false (expand Hole e) (x × y) (expand Hole e')
+expand _ _ = error "todo"
 
 data Module a = Module (List (VarDef a + RecDefs a))
 
