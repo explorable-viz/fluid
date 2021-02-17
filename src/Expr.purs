@@ -121,7 +121,7 @@ instance slicesExpr :: JoinSemilattice a => Slices (Expr a) where
    maybeJoin _ _                                               = Nothing
 
 instance exprExpandable :: Expandable (Expr Boolean) where
-   expand Hole Hole                             = Hole
+   expand e Hole                                = e
    expand Hole (Var x)                          = Var x
    expand Hole (Op op)                          = Op op
    expand Hole (Int false n)                    = Int false n
@@ -152,7 +152,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand _ _                                   = error absurd
 
 instance elimExpandable :: Expandable (Elim Boolean) where
-   expand ElimHole ElimHole               = ElimHole
+   expand σ ElimHole                      = σ
    expand ElimHole σ@(ElimVar _ _)        = expand (ElimVar varAnon ContHole) σ
    expand ElimHole σ@(ElimConstr m)       = expand (ElimConstr (const ContHole <$> m)) σ
    expand (ElimVar x κ) (ElimVar x' κ')   = ElimVar (x ⪂ x') (expand κ κ')
@@ -160,7 +160,7 @@ instance elimExpandable :: Expandable (Elim Boolean) where
    expand _ _                             = error absurd
 
 instance contExpandable :: Expandable (Cont Boolean) where
-   expand ContHole ContHole            = ContHole
+   expand κ ContHole                   = κ
    expand ContHole κ@(ContExpr _)      = expand (ContExpr Hole) κ
    expand ContHole κ@(ContElim _)      = expand (ContElim ElimHole) κ
    expand (ContExpr e) (ContExpr e')   = ContExpr (expand e e')

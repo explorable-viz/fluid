@@ -111,4 +111,3 @@ infixl 8 unsafeIndex as !
 nonEmpty :: forall a . List a -> NonEmptyList a
 nonEmpty Nil = error absurd
 nonEmpty (x : xs) = NonEmptyList (x :| xs)
-
