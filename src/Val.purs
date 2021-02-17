@@ -64,11 +64,11 @@ instance joinSemilatticeVal :: JoinSemilattice a => JoinSemilattice (Val a) wher
 instance slicesVal :: JoinSemilattice a => Slices (Val a) where
    maybeJoin Hole v                                = pure v
    maybeJoin v Hole                                = pure v
-   maybeJoin (Int α n) (Int α' n')                 = Int (α ∨ α') <$> n ≟ n'
-   maybeJoin (Float α n) (Float α' n')             = Float (α ∨ α') <$> n ≟ n'
-   maybeJoin (Str α str) (Str α' str')             = Str (α ∨ α') <$> str ≟ str'
-   maybeJoin (Constr α c vs) (Constr α' c' us)     = Constr (α ∨ α') <$> c ≟ c' <*> maybeJoin vs us
-   maybeJoin (Matrix α vs xy) (Matrix α' vs' xy')  = Matrix (α ∨ α') <$> (maybeJoin vs vs') <*> xy ≟ xy'
+   maybeJoin (Int α n) (Int α' n')                 = Int (α ∨ α') <$> (n ≟ n')
+   maybeJoin (Float α n) (Float α' n')             = Float (α ∨ α') <$> (n ≟ n')
+   maybeJoin (Str α str) (Str α' str')             = Str (α ∨ α') <$> (str ≟ str')
+   maybeJoin (Constr α c vs) (Constr α' c' us)     = Constr (α ∨ α') <$> (c ≟ c') <*> maybeJoin vs us
+   maybeJoin (Matrix α vs xy) (Matrix α' vs' xy')  = Matrix (α ∨ α') <$> (maybeJoin vs vs') <*> (xy ≟ xy')
    maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ')    = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
    maybeJoin (Primitive α φ) (Primitive α' φ')     = Primitive (α ∨ α') <$> pure φ -- should require φ == φ'
    maybeJoin _ _                                   = Nothing

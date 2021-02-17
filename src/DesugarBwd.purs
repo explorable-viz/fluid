@@ -11,10 +11,10 @@ import Data.Tuple (uncurry, fst, snd)
 import Data.Profunctor.Strong (first)
 import Bindings (Binding, Bindings(..), (↦), (:+:))
 import DataType (cCons, cNil, cTrue, cFalse)
-import Expr (Cont(..), Elim(..), asElim, asExpr, expand)
+import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), VarDef(..)) as E
 import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), VarDef(..))
-import Lattice (𝔹, (∨))
+import Lattice (𝔹, (∨), expand)
 import Util (Endo, type(+), type (×), (×), absurd, mustLookup, error)
 
 qualTrue :: 𝔹 -> Qualifier 𝔹

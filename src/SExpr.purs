@@ -1,9 +1,9 @@
 module SExpr where
 
+import Bindings (Var)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
 import DataType (Ctr)
-import Expr (Var)
 import Util (type (×), type (+))
 
 -- Surface language expressions.

@@ -22,8 +22,8 @@ import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
+import Bindings (Var)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
-import Expr (Var)
 import Lattice (𝔹)
 import Primitive (opDefs)
 import SExpr (

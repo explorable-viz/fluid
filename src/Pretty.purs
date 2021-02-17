@@ -9,9 +9,9 @@ import Data.NonEmpty ((:|))
 import Data.String (Pattern(..), contains) as Data.String
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
-import Bindings (Binding, Bindings(..), (:+:), (↦))
+import Bindings (Binding, Bindings(..), (:+:), (↦), varAnon)
 import DataType (Ctr, cCons, cNil, cPair)
-import Expr (Cont(..), Elim(..), varAnon)
+import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..))
 import Expl (Expl(..), VarDef(..)) as T

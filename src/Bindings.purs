@@ -1,10 +1,12 @@
 module Bindings where
 
-import Prelude
+import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
-import Lattice (class BoundedSlices, class Expandable, class JoinSemilattice, class Slices)
-import Lattice (botOf, definedJoin, expand, maybeJoin)
+import Lattice (
+   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
+   botOf, definedJoin, expand, maybeJoin
+)
 import Util (Endo, MayFail, type (×), (×), (≟), (≜), absurd, error, fromJust, report, whenever)
 
 type Var = String

@@ -170,7 +170,7 @@ class Joinable a where
    maybeJoin :: a -> a -> MayFail a
 
 instance joinableElim :: Joinable (Elim Boolean) where
-   maybeJoin (ElimVar x κ) (ElimVar y κ')       = ElimVar <$> x ≞ y <*> maybeJoin κ κ'
+   maybeJoin (ElimVar x κ) (ElimVar y κ')       = ElimVar <$> (x ≞ y) <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
    maybeJoin _ _                                = report "Unmergable function branches"
 
