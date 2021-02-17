@@ -123,7 +123,7 @@ instance slicesExpr :: JoinSemilattice a => Slices (Expr a) where
 instance exprExpandable :: Expandable (Expr Boolean) where
    expand Hole Hole                             = Hole
    expand Hole (Var x)                          = Var x
-   expand Hole (Op φ)                           = Op φ
+   expand Hole (Op op)                          = Op op
    expand Hole (Int false n)                    = Int false n
    expand Hole (Float false n)                  = Float false n
    expand Hole (Str false str)                  = Str false str
@@ -134,6 +134,11 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand Hole e@(BinaryApp _ _ _)              = expand (BinaryApp Hole varAnon Hole) e
    expand Hole e@(Let (VarDef _ _) _)           = expand (Let (VarDef ElimHole Hole) Hole) e
    expand Hole e@(LetRec h _)                   = expand (LetRec (botOf h) Hole) e
+   expand (Var x) (Var x')                      = Var (x ≜ x')
+   expand (Op op) (Op op')                      = Op (op ≜ op')
+   expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
+   expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
+   expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
    expand (Constr α c es) (Constr β c' es')     = Constr (α ⪄ β) (c ≜ c') (zipWith expand es es')
    expand (Matrix α e1 (x1 × y1) e2) (Matrix β e1' (x2 × y2) e2')
                                                 = Matrix (α ⪄ β) (expand e1 e1') ((x1 ⪂ x2) × (y1 ⪂ y2)) (expand e2 e2')
