@@ -133,7 +133,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand Hole e@(App _ _)                      = expand (App Hole Hole) e
    expand Hole e@(BinaryApp _ _ _)              = expand (BinaryApp Hole varAnon Hole) e
    expand Hole e@(Let (VarDef _ _) _)           = expand (Let (VarDef ElimHole Hole) Hole) e
-   expand Hole e@(LetRec h e')                  = expand (LetRec (botOf h) e) e'
+   expand Hole e@(LetRec h _)                   = expand (LetRec (botOf h) Hole) e
    expand (Constr α c es) (Constr β c' es')     = Constr (α ⪄ β) (c ≜ c') (zipWith expand es es')
    expand (Matrix α e1 (x1 × y1) e2) (Matrix β e1' (x2 × y2) e2')
                                                 = Matrix (α ⪄ β) (expand e1 e1') ((x1 ⪂ x2) × (y1 ⪂ y2)) (expand e2 e2')
