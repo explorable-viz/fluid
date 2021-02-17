@@ -83,9 +83,10 @@ unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (map Just m) (map J
 mayFailEq :: forall a . Show a => Eq a => a -> a -> MayFail a
 mayFailEq x x' = note (show x <> " ≠ " <> show x') $ x ≟ x'
 
-infixl 5 mayEq as ≟
-infixl 5 mayFailEq as ≞
-infixl 5 mustEq as ≜
+infixl 4 mayEq as ≟
+infixl 4 mayFailEq as ≞
+infixl 4 mustEq as ≜
+infixl 4 mustGeq as ⪄
 
 -- Could be more efficient
 intersperse :: forall a . a -> Endo (List a)
