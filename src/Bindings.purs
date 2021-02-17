@@ -3,8 +3,9 @@ module Bindings where
 import Prelude
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin)
-import Util (Endo, MayFail, type (×), (×), (≟), fromJust, report, whenever)
+import Lattice (class BoundedSlices, class Expandable, class JoinSemilattice, class Slices)
+import Lattice (botOf, definedJoin, expand, maybeJoin)
+import Util (Endo, MayFail, type (×), (×), (≟), (≜), absurd, error, fromJust, report, whenever)
 
 type Var = String
 
@@ -84,3 +85,8 @@ instance slicesBindings :: Slices (t a) => Slices (Bindings t a) where
 instance boundedSlices :: BoundedSlices (t Boolean) => BoundedSlices (Bindings t Boolean) where
    botOf Empty = Empty
    botOf (Extend ρ (x ↦ v)) = Extend (botOf ρ) (x ↦ botOf v)
+
+instance expandableBindings :: Expandable (t a) => Expandable (Bindings t a) where
+   expand Empty Empty                              = Empty
+   expand (Extend ρ (x ↦ v)) (Extend ρ' (x' ↦ v')) = Extend (expand ρ ρ') ((x ≜ x') ↦ expand v v')
+   expand _ _                                      = error absurd

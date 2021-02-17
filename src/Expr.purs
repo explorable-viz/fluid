@@ -1,13 +1,16 @@
 module Expr where
 
-import Prelude hiding (top)
+import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List, zipWith)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings, Var, (⪂), varAnon)
 import DataType (Ctr)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), botOf, definedJoin, maybeJoin)
+import Lattice (
+   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
+   (∨), botOf, definedJoin, expand, maybeJoin
+)
 import Util (type (×), (×), type (+), (≟), (≜), (⪄), absurd, error)
 
 data Expr a =
@@ -117,10 +120,6 @@ instance slicesExpr :: JoinSemilattice a => Slices (Expr a) where
    maybeJoin (LetRec δ e) (LetRec δ' e')                       = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'
    maybeJoin _ _                                               = Nothing
 
-class Expandable a where
-   -- Partial function defined iff e is above e', which expands in e any subtree prefixes which are expanded in e'
-   expand :: a -> a -> a
-
 instance exprExpandable :: Expandable (Expr Boolean) where
    expand Hole Hole                             = Hole
    expand Hole (Var x)                          = Var x
@@ -148,4 +147,17 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand _ _                                   = error absurd
 
 instance elimExpandable :: Expandable (Elim Boolean) where
-   expand _ _ = error "todo"
+   expand ElimHole ElimHole               = ElimHole
+   expand ElimHole σ@(ElimVar _ _)        = expand (ElimVar varAnon ContHole) σ
+   expand ElimHole σ@(ElimConstr m)       = expand (ElimConstr (const ContHole <$> m)) σ
+   expand (ElimVar x κ) (ElimVar x' κ')   = ElimVar (x ⪂ x') (expand κ κ')
+   expand (ElimConstr m) (ElimConstr m')  = ElimConstr (expand m m')
+   expand _ _                             = error absurd
+
+instance contExpandable :: Expandable (Cont Boolean) where
+   expand ContHole ContHole            = ContHole
+   expand ContHole κ@(ContExpr _)      = expand (ContExpr Hole) κ
+   expand ContHole κ@(ContElim _)      = expand (ContElim ElimHole) κ
+   expand (ContExpr e) (ContExpr e')   = ContExpr (expand e e')
+   expand (ContElim σ) (ContElim σ')   = ContElim (expand σ σ')
+   expand _ _                          = error absurd

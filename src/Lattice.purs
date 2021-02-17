@@ -4,11 +4,13 @@ import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
 import Data.Array (length, zipWith) as A
 import Data.List (List, length, zipWith)
-import Data.Map (Map, fromFoldable, size, toUnfoldable)
+import Data.Map (Map, fromFoldable, toUnfoldable)
+import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
+import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Util ((×), (≟), fromJust)
+import Util ((×), (≟), absurd, error, fromJust)
 
 class JoinSemilattice a where
    join :: a -> a -> a
@@ -69,10 +71,9 @@ instance joinSemilatticeMap :: (Ord k, Slices t) => JoinSemilattice (Map k t) wh
    join = definedJoin
 
 instance slicesMap :: (Ord k, Slices t) => Slices (Map k t) where
-   maybeJoin κs κs'
-      | size κs == size κs' =
-         fromFoldable <$> (sequence $ zipWith maybeJoin (toUnfoldable κs) (toUnfoldable κs'))
-      | otherwise = Nothing
+   maybeJoin m m'
+      | keys m == keys m'  = fromFoldable <$> (sequence $ zipWith maybeJoin (toUnfoldable m) (toUnfoldable m'))
+      | otherwise          = Nothing
 
 instance joinSemilatticeArrayArray :: Slices a => JoinSemilattice (Array a) where
    join = definedJoin
@@ -81,3 +82,14 @@ instance slicesArrayArray :: Slices a => Slices (Array a) where
    maybeJoin xs ys
       | A.length xs == A.length ys  = sequence $ A.zipWith maybeJoin xs ys
       | otherwise                   = Nothing
+
+class Expandable a where
+   -- Partial function defined iff x is above x', which expands in x any subtree prefixes which are expanded in x'
+   expand :: a -> a -> a
+
+instance expandableMap :: (Ord k, Expandable (t a)) => Expandable (Map k (t a)) where
+   expand m m'
+      | keys m == keys m'  = fromFoldable (zipWith expandValue (toUnfoldable m) (toUnfoldable m'))
+      where
+      expandValue (k × x) (_ × x') = k × expand x x'
+      | otherwise          = error absurd
