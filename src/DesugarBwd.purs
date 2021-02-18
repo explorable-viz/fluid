@@ -69,9 +69,9 @@ exprBwd e (Constr _ c es) =
    case expand e (E.Constr false c (const E.Hole <$> es)) of
       E.Constr α _ es' -> Constr α c (uncurry exprBwd <$> zip es' es)
       _ -> error absurd
-exprBwd e (Matrix _ s (x × y) s') =
-   case expand e (E.Matrix false E.Hole (x × y) E.Hole) of
-      E.Matrix α e1 _ e2 -> Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
+exprBwd e (Matrix _ s _ s') =
+   case expand e (E.Matrix false E.Hole (varAnon × varAnon) E.Hole) of
+      E.Matrix α e1 (x × y) e2 -> Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
       _ -> error absurd
 exprBwd e (Lambda bs) =
    case expand e (E.Lambda ElimHole) of
@@ -92,7 +92,10 @@ exprBwd e (IfElse s1 s2 s3) =
                   (exprBwd (asExpr (mustLookup cTrue m)) s2)
                   (exprBwd (asExpr (mustLookup cFalse m)) s3)
       _ -> error absurd
-exprBwd (E.BinaryApp e1 x e2) (BinaryApp s1 _ s2)     = BinaryApp (exprBwd e1 s1) x (exprBwd e2 s2)
+exprBwd e (BinaryApp s1 _ s2) =
+   case expand e (E.BinaryApp E.Hole varAnon E.Hole) of
+      E.BinaryApp e1 op e2 -> BinaryApp (exprBwd e1 s1) op (exprBwd e2 s2)
+      _ -> error absurd
 exprBwd (E.Let d e) (Let ds s)                        = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
 -- THIS CASE NEEDS WORK
 exprBwd (E.LetRec xσs e) (LetRec xcs s)               = LetRec (recDefsBwd xσs xcs) (exprBwd e s)
