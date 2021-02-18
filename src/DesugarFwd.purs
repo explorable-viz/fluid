@@ -49,7 +49,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarD
    desugarDefs (Right δ)   = pure (Right δ)
 
 varDefFwd :: VarDef 𝔹 -> MayFail (E.VarDef 𝔹)
-varDefFwd (VarDef π s) = E.VarDef <$> desugarFwd (π × (ContHole :: Cont 𝔹)) <*> desugarFwd s
+varDefFwd (VarDef π s) = E.VarDef <$> patternContFwd (π × (ContHole :: Cont 𝔹)) <*> desugarFwd s
 
 varDefsFwd :: VarDefs 𝔹 × Expr 𝔹 -> MayFail (E.Expr 𝔹)
 varDefsFwd (NonEmptyList (d :| Nil) × s) =
@@ -100,12 +100,12 @@ instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    -- | List-comp-decl
    desugarFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))) = do
       e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
-      σ <- desugarFwd (π × (ContExpr e :: Cont 𝔹))
+      σ <- patternContFwd (π × (ContExpr e :: Cont 𝔹))
       E.App (E.Lambda σ) <$> desugarFwd s
    -- | List-comp-gen
    desugarFwd (ListComp α s_body (NonEmptyList (Generator p slist :| q : qs))) = do
       e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
-      σ <- desugarFwd (p × ContExpr e)
+      σ <- patternContFwd (p × ContExpr e)
       E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totalise (ContElim σ) α)))) <$> desugarFwd slist
    desugarFwd (Let ds s)               = varDefsFwd (ds × s)
    desugarFwd (LetRec xcs s)           = E.LetRec <$> recDefsFwd xcs <*> desugarFwd s
@@ -119,15 +119,14 @@ listRestFwd (Next α s l)  = econs α <$> desugarFwd s <*> listRestFwd l
 instance patternsExpr :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (Elim Boolean) where
    desugarFwd (NonEmptyList (p :| Nil) × e) = branchFwd_uncurried p e
    desugarFwd (NonEmptyList (p :| p' : ps) × e) =
-      (desugarFwd <<< (p × _)) =<< ContExpr <$> E.Lambda <$> desugarFwd (NonEmptyList (p' :| ps) × e)
+      (patternContFwd <<< (p × _)) =<< ContExpr <$> E.Lambda <$> desugarFwd (NonEmptyList (p' :| ps) × e)
 
--- p, κ desugar_fwd σ
-instance patternCont :: DesugarFwd (Pattern × Cont Boolean) (Elim Boolean) where
-   desugarFwd (PVar x × κ)             = pure (ElimVar x κ)
-   desugarFwd (PConstr c ps × κ)       =
-      checkArity c (length ps) *> (ElimConstr <$> singleton c <$> desugarArgsFwd (Left <$> ps) κ)
-   desugarFwd (PListEmpty × κ)         = pure (ElimConstr (singleton cNil κ))
-   desugarFwd (PListNonEmpty p o × κ)  = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
+patternContFwd :: Pattern × Cont 𝔹 -> MayFail (Elim 𝔹)
+patternContFwd (PVar x × κ)             = pure (ElimVar x κ)
+patternContFwd (PConstr c ps × κ)       =
+   checkArity c (length ps) *> (ElimConstr <$> singleton c <$> desugarArgsFwd (Left <$> ps) κ)
+patternContFwd (PListEmpty × κ)         = pure (ElimConstr (singleton cNil κ))
+patternContFwd (PListNonEmpty p o × κ)  = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
 
 -- o, κ desugar_fwd σ
 instance listPatternRestCont :: DesugarFwd (ListRestPattern × Cont Boolean) (Elim Boolean) where
@@ -136,11 +135,11 @@ instance listPatternRestCont :: DesugarFwd (ListRestPattern × Cont Boolean) (El
 
 desugarArgsFwd :: List (Pattern + ListRestPattern) -> Cont 𝔹 -> MayFail (Cont 𝔹)
 desugarArgsFwd Nil κ = pure κ
-desugarArgsFwd (Left p : πs) κ = ContElim <$> (desugarArgsFwd πs κ >>= desugarFwd <<< (p × _))
+desugarArgsFwd (Left p : πs) κ = ContElim <$> (desugarArgsFwd πs κ >>= patternContFwd <<< (p × _))
 desugarArgsFwd (Right o : πs) κ = ContElim <$> (desugarArgsFwd πs κ >>= desugarFwd <<< (o × _))
 
 branchFwd_uncurried :: Pattern -> Expr 𝔹 -> MayFail (Elim 𝔹)
-branchFwd_uncurried π s = (ContExpr <$> desugarFwd s) >>= (desugarFwd <<< (π × _))
+branchFwd_uncurried π s = (ContExpr <$> desugarFwd s) >>= (patternContFwd <<< (π × _))
 
 branchesFwd_curried :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
 branchesFwd_curried bs = do
