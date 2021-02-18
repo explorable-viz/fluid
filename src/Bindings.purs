@@ -1,14 +1,24 @@
 module Bindings where
 
-import Prelude
+import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin)
-import Util (Endo, MayFail, type (×), (×), (≟), report)
+import Lattice (
+   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
+   botOf, definedJoin, expand, maybeJoin
+)
+import Util (Endo, MayFail, type (×), (×), (≟), (≜), absurd, error, fromJust, report, whenever)
 
-type Var = String
+type Var = String -- newtype?
 
 varAnon = "_" :: Var
+
+-- We need a "bottom" variable that we can use to define hole expansion, which is similar to pattern-matching on terms.
+-- For now use varAnon for this.
+mustGeq :: Var -> Var -> Var
+mustGeq x y = fromJust "Must be greater" (whenever (y == varAnon) x)
+
+infixl 4 mustGeq as ⪂
 
 data Binding t a = Binding Var (t a)
 data Bindings t a = Empty | Extend (Bindings t a) (Binding t a)
@@ -71,9 +81,14 @@ instance joinSemilatticeBindings :: Slices (t a) => JoinSemilattice (Bindings t 
 
 instance slicesBindings :: Slices (t a) => Slices (Bindings t a) where
    maybeJoin Empty Empty                     = pure Empty
-   maybeJoin (ρ :+: x ↦ v) (ρ' :+: y ↦ v')   = (:+:) <$> maybeJoin ρ ρ' <*> ((↦) <$> x ≟ y <*> maybeJoin v v')
+   maybeJoin (ρ :+: x ↦ v) (ρ' :+: y ↦ v')   = (:+:) <$> maybeJoin ρ ρ' <*> ((↦) <$> (x ≟ y) <*> maybeJoin v v')
    maybeJoin _ _                             = Nothing
 
 instance boundedSlices :: BoundedSlices (t Boolean) => BoundedSlices (Bindings t Boolean) where
    botOf Empty = Empty
    botOf (Extend ρ (x ↦ v)) = Extend (botOf ρ) (x ↦ botOf v)
+
+instance expandableBindings :: Expandable (t a) => Expandable (Bindings t a) where
+   expand Empty Empty                              = Empty
+   expand (Extend ρ (x ↦ v)) (Extend ρ' (x' ↦ v')) = Extend (expand ρ ρ') ((x ≜ x') ↦ expand v v')
+   expand _ _                                      = error absurd

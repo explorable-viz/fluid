@@ -12,13 +12,13 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import Bindings (Binding, Bindings, (↦), fromList)
+import Bindings (Binding, (↦), fromList)
 import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), asElim)
-import Expr (Expr(..), Module(..), VarDef(..)) as E
+import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹)
 import SExpr (
-   Clause, Expr(..), ListPatternRest(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
+   Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
 import Util (MayFail, type (+), type (×), (×), (≞), absurd, error, fromJust, mustLookup, report)
 
@@ -28,6 +28,9 @@ enil α = E.Constr α cNil Nil
 econs :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 econs α e e' = E.Constr α cCons (e : e' : Nil)
 
+elimBool :: Cont 𝔹 -> Cont 𝔹 -> Elim 𝔹
+elimBool κ κ' = ElimConstr (fromFoldable [cTrue × κ, cFalse × κ'])
+
 -- "Vanilla" desugaring is just forward-slicing where we disregard annotations, so user errors may occur during
 -- forward slicing.
 class DesugarFwd a b | a -> b where
@@ -35,29 +38,36 @@ class DesugarFwd a b | a -> b where
 
 -- Surface language supports "blocks" of variable declarations; core does not.
 instance module_ :: DesugarFwd (Module Boolean) (E.Module Boolean) where
-   desugarFwd (Module ds) = E.Module <$> traverse desugarFwd (join $ (ds <#> desugarDefs))
+   desugarFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarDefs <$> ds))
       where
-      desugarDefs :: VarDefs Boolean + RecDefs Boolean -> List (VarDef Boolean + RecDefs Boolean)
-      desugarDefs (Left ds')  = toList ds' <#> Left
-      desugarDefs (Right δ)   = pure $ Right δ
+      varDefOrRecDefsFwd :: VarDef 𝔹 + RecDefs 𝔹 -> MayFail (E.VarDef 𝔹 + E.RecDefs 𝔹)
+      varDefOrRecDefsFwd (Left d)      = Left <$> varDefFwd d
+      varDefOrRecDefsFwd (Right xcs)   = Right <$> recDefsFwd xcs
 
-instance varDef :: DesugarFwd (VarDef Boolean) (E.VarDef Boolean) where
-   desugarFwd (VarDef π s) = E.VarDef <$> desugarFwd (π × (ContHole :: Cont 𝔹)) <*> desugarFwd s
+      desugarDefs :: VarDefs 𝔹 + RecDefs 𝔹 -> List (VarDef 𝔹 + RecDefs 𝔹)
+      desugarDefs (Left ds')  = Left <$> toList ds'
+      desugarDefs (Right δ)   = pure (Right δ)
 
-instance varDefs :: DesugarFwd (NonEmptyList (VarDef Boolean) × Expr Boolean) (E.Expr Boolean) where
-   desugarFwd (NonEmptyList (d :| Nil) × s) =
-      E.Let <$> desugarFwd d <*> desugarFwd s
-   desugarFwd (NonEmptyList (d :| d' : ds) × s) =
-      E.Let <$> desugarFwd d <*> desugarFwd (NonEmptyList (d' :| ds) × s)
+varDefFwd :: VarDef 𝔹 -> MayFail (E.VarDef 𝔹)
+varDefFwd (VarDef π s) = E.VarDef <$> desugarFwd (π × (ContHole :: Cont 𝔹)) <*> desugarFwd s
 
-instance recDefs :: DesugarFwd (NonEmptyList (String × (NonEmptyList Pattern × Expr Boolean))) (Bindings Elim Boolean) where
-   desugarFwd fπs = fromList <$> toList <$> reverse <$> traverse toRecDef fπss
-      where
-      fπss = groupBy (eq `on` fst) fπs :: NonEmptyList (NonEmptyList (Clause 𝔹))
+varDefsFwd :: VarDefs 𝔹 × Expr 𝔹 -> MayFail (E.Expr 𝔹)
+varDefsFwd (NonEmptyList (d :| Nil) × s) =
+   E.Let <$> varDefFwd d <*> desugarFwd s
+varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
+   E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
 
-      toRecDef :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
-      toRecDef fπs' = ((↦) (fst (head fπs'))) <$> desugarFwd (snd <$> fπs')
+-- In the formalism, "group by name" is part of the syntax.
+-- cs desugar_fwd σ
+recDefsFwd :: RecDefs 𝔹 -> MayFail (E.RecDefs 𝔹)
+recDefsFwd xcs = fromList <$> toList <$> reverse <$> traverse recDefFwd xcss
+   where
+   xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 
+recDefFwd :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
+recDefFwd xcs = (fst (head xcs) ↦ _) <$> desugarFwd (snd <$> xcs)
+
+-- s desugar_fwd e
 instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Var x)                  = pure (E.Var x)
    desugarFwd (Op op)                  = pure (E.Op op)
@@ -73,8 +83,7 @@ instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (IfElse s1 s2 s3) = do
       e2 <- desugarFwd s2
       e3 <- desugarFwd s3
-      let σ = ElimConstr (fromFoldable [cTrue × ContExpr e2, cFalse × ContExpr e3])
-      E.App (E.Lambda σ) <$> desugarFwd s1
+      E.App (E.Lambda (elimBool (ContExpr e2) (ContExpr e3))) <$> desugarFwd s1
    desugarFwd (ListEmpty α)            = pure (enil α)
    desugarFwd (ListNonEmpty α s l)     = econs α <$> desugarFwd s <*> desugarFwd l
    desugarFwd (ListEnum s1 s2)         = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desugarFwd s1) <*> desugarFwd s2
@@ -87,8 +96,7 @@ instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    -- | List-comp-guard
    desugarFwd (ListComp α s_body (NonEmptyList (Guard s :| q : qs))) = do
       e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
-      let σ = ElimConstr (fromFoldable [cTrue × ContExpr e, cFalse × ContExpr (enil α)])
-      E.App (E.Lambda σ) <$> desugarFwd s
+      E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desugarFwd s
    -- | List-comp-decl
    desugarFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))) = do
       e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
@@ -99,42 +107,43 @@ instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
       e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
       σ <- desugarFwd (p × ContExpr e)
       E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totalise (ContElim σ) α)))) <$> desugarFwd slist
-   desugarFwd (Let ds s)               = desugarFwd (ds × s)
-   desugarFwd (LetRec fπs s)           = E.LetRec <$> desugarFwd fπs <*> desugarFwd s
+   desugarFwd (Let ds s)               = varDefsFwd (ds × s)
+   desugarFwd (LetRec xcs s)           = E.LetRec <$> recDefsFwd xcs <*> desugarFwd s
 
+-- l desugar_fwd e
 instance listRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
    desugarFwd (End α)       = pure (enil α)
    desugarFwd (Next α s l)  = econs α <$> desugarFwd s <*> desugarFwd l
 
+-- ps, e desugar_fwd σ
 instance patternsExpr :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (Elim Boolean) where
-   desugarFwd (NonEmptyList (π :| Nil) × κ) = desugarFwd (π × κ)
-   desugarFwd (NonEmptyList (π :| π' : πs) × κ) =
-      (desugarFwd <<< (π × _)) =<< ContExpr <$> E.Lambda <$> desugarFwd (NonEmptyList (π' :| πs) × κ)
+   desugarFwd (NonEmptyList (p :| Nil) × e) = desugarFwd (p × e)
+   desugarFwd (NonEmptyList (p :| p' : ps) × e) =
+      (desugarFwd <<< (p × _)) =<< ContExpr <$> E.Lambda <$> desugarFwd (NonEmptyList (p' :| ps) × e)
 
--- Cont argument here acts as an accumulator.
+-- p, κ desugar_fwd σ
 instance patternCont :: DesugarFwd (Pattern × Cont Boolean) (Elim Boolean) where
-   desugarFwd (PVar x × κ) = pure (ElimVar x κ)
-   desugarFwd (PConstr c πs × κ) = checkArity c (length πs) *> (ElimConstr <$> singleton c <$> toCont πs)
-      where
-      toCont :: List Pattern -> MayFail (Cont 𝔹)
-      toCont Nil = pure κ
-      toCont (π : πs') = ContElim <$> (desugarFwd <<< (π × _) =<< toCont πs')
-   desugarFwd (PListEmpty × κ) = pure (ElimConstr (singleton cNil κ))
-   desugarFwd (PListNonEmpty π o × κ)  = do
-      κ' <- ContElim <$> desugarFwd (o × κ)
-      ElimConstr <$> singleton cCons <$> ContElim <$> desugarFwd (π × κ')
+   desugarFwd (PVar x × κ)             = pure (ElimVar x κ)
+   desugarFwd (PConstr c ps × κ)       =
+      checkArity c (length ps) *> (ElimConstr <$> singleton c <$> desugarArgsFwd (Left <$> ps) κ)
+   desugarFwd (PListEmpty × κ)         = pure (ElimConstr (singleton cNil κ))
+   desugarFwd (PListNonEmpty p o × κ)  = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
 
-instance listPatternRestCont :: DesugarFwd (ListPatternRest × Cont Boolean) (Elim Boolean) where
-   desugarFwd (PEnd × κ) = pure (ElimConstr (singleton cNil κ))
-   desugarFwd (PNext π o × κ) = do
-      κ' <- ContElim <$> desugarFwd (o × κ)
-      ElimConstr <$> singleton cCons <$> ContElim <$> desugarFwd (π × κ')
+-- o, κ desugar_fwd σ
+instance listPatternRestCont :: DesugarFwd (ListRestPattern × Cont Boolean) (Elim Boolean) where
+   desugarFwd (PEnd × κ)      = pure (ElimConstr (singleton cNil κ))
+   desugarFwd (PNext p o × κ) = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
+
+desugarArgsFwd :: List (Pattern + ListRestPattern) -> Cont 𝔹 -> MayFail (Cont 𝔹)
+desugarArgsFwd Nil κ = pure κ
+desugarArgsFwd (Left p : πs) κ = ContElim <$> (desugarArgsFwd πs κ >>= desugarFwd <<< (p × _))
+desugarArgsFwd (Right o : πs) κ = ContElim <$> (desugarArgsFwd πs κ >>= desugarFwd <<< (o × _))
 
 instance branchUncurried :: DesugarFwd (Pattern × Expr Boolean) (Elim Boolean) where
    desugarFwd (π × s) = (ContExpr <$> desugarFwd s) >>= (desugarFwd <<< (π × _))
 
 -- To consolidate these without overlapping instances, probably need RecDefs to be a data type.
-instance branches :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) (Elim Boolean) where
+instance branchesCurried :: DesugarFwd (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) (Elim Boolean) where
    desugarFwd bs = do
       NonEmptyList (σ :| σs) <- traverse desugarFwd bs
       foldM maybeJoin σ σs
@@ -166,7 +175,7 @@ class Joinable a where
    maybeJoin :: a -> a -> MayFail a
 
 instance joinableElim :: Joinable (Elim Boolean) where
-   maybeJoin (ElimVar x κ) (ElimVar y κ')       = ElimVar <$> x ≞ y <*> maybeJoin κ κ'
+   maybeJoin (ElimVar x κ) (ElimVar y κ')       = ElimVar <$> (x ≞ y) <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
    maybeJoin _ _                                = report "Unmergable function branches"
 

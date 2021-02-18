@@ -1,9 +1,9 @@
 module SExpr where
 
+import Bindings (Var)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
 import DataType (Ctr)
-import Expr (Var)
 import Util (type (×), type (+))
 
 -- Surface language expressions.
@@ -35,11 +35,11 @@ data Pattern =
    PVar Var |
    PConstr Ctr (List Pattern) |
    PListEmpty |
-   PListNonEmpty Pattern ListPatternRest
+   PListNonEmpty Pattern ListRestPattern
 
-data ListPatternRest =
+data ListRestPattern =
    PEnd |
-   PNext Pattern ListPatternRest
+   PNext Pattern ListRestPattern
 
 -- in the spec, "clause" doesn't include the function name
 type Branch a = NonEmptyList Pattern × Expr a

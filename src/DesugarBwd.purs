@@ -4,211 +4,264 @@ import Prelude hiding (absurd)
 import Data.Function (on)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), zip)
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList, reverse)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, reverse)
 import Data.Map (fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Tuple (uncurry, fst, snd)
-import Bindings (Binding, Bindings(..), (↦), (:+:))
+import Data.Profunctor.Strong (first)
+import Bindings (Binding, Bindings(..), (↦), (:+:), fromList, varAnon)
 import DataType (cCons, cNil, cTrue, cFalse)
+import DesugarFwd (elimBool)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
-import Expr (Expr(..), VarDef(..)) as E
-import SExpr (Clause, Expr(..), ListRest(..), Pattern(..), ListPatternRest(..), Qualifier(..), VarDef(..))
-import Lattice (𝔹, (∨))
-import Util (Endo, type(+), type (×), (×), absurd, assert, mustLookup, error)
+import Expr (Expr(..), RecDefs, VarDef(..)) as E
+import SExpr (
+   Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs
+)
+import Lattice (𝔹, (∨), expand)
+import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup)
 
-qualTrue :: 𝔹 -> Qualifier 𝔹
-qualTrue α = Guard (Constr α cTrue Nil)
+desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
+desugarBwd = exprBwd
 
-snil :: 𝔹 -> Expr 𝔹
-snil α = Constr α cNil Nil
+-- TODO: can probably lose the outer 'let' here.
+varDefsBwd :: E.Expr 𝔹 -> VarDefs 𝔹 × Expr 𝔹 -> VarDefs 𝔹 × Expr 𝔹
+varDefsBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) =
+   NonEmptyList (VarDef π (exprBwd e1 s1) :| Nil) × exprBwd e2 s2
+varDefsBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × s2) =
+   let NonEmptyList (d' :| ds') × s2' = varDefsBwd e2 (NonEmptyList (d :| ds) × s2) in
+   NonEmptyList (VarDef π (exprBwd e1 s1) :| d' : ds') × s2'
+varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
-class DesugarBwd a b where
-   desugarBwd :: a -> Endo b
+recDefsBwd :: E.RecDefs 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
+recDefsBwd xσs xcs = join (zipRecDefs xσs (reverse (groupBy (eq `on` fst) xcs)))
 
-instance varDef  :: DesugarBwd (E.VarDef Boolean) (VarDef Boolean) where
-   desugarBwd (E.VarDef σ e) (VarDef π s) = VarDef π (desugarBwd e s)
+zipRecDefs :: E.RecDefs 𝔹 -> Endo (NonEmptyList (NonEmptyList (Clause 𝔹)))
+zipRecDefs Empty _                                             = error absurd
+zipRecDefs (Empty :+: x ↦ σ) (NonEmptyList (xcs :| Nil))       = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
+zipRecDefs (_ :+: _ :+: _) (NonEmptyList (_ :| Nil))           = error absurd
+zipRecDefs (ρ :+: x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
+   NonEmptyList (recDefBwd (x ↦ σ) xcs1 :| toList (zipRecDefs ρ (NonEmptyList (xcs2 :| xcss))))
 
-instance varDefs :: DesugarBwd (E.Expr Boolean) (NonEmptyList (VarDef Boolean) × Expr Boolean) where
-   desugarBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) =
-      (NonEmptyList (VarDef π (desugarBwd e1 s1) :| Nil) × desugarBwd e2 s2)
-   desugarBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × s2) =
-      let NonEmptyList (d' :| ds') × s2' = desugarBwd e2 (NonEmptyList (d :| ds) × s2) in
-      NonEmptyList (VarDef π (desugarBwd e1 s1) :| d' : ds') × s2'
-   desugarBwd _ (NonEmptyList (_ :| _) × _) = error absurd
+recDefBwd :: Binding Elim 𝔹 -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
+recDefBwd (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd
 
-instance recDefs :: DesugarBwd (Bindings Elim Boolean) (NonEmptyList (String × (NonEmptyList Pattern × Expr Boolean))) where
-   desugarBwd xσs xcs = join (zipRecDefs xσs (reverse (groupBy (eq `on` fst) xcs)))
-
-zipRecDefs :: Bindings Elim 𝔹 -> Endo (NonEmptyList (NonEmptyList (Clause 𝔹)))
-zipRecDefs Empty _ = error absurd
-zipRecDefs (Empty :+: x ↦ σ) (NonEmptyList (xcs :| Nil)) =
-   NonEmptyList (fromRecDef (x ↦ σ) xcs :| Nil)
-zipRecDefs (_ :+: _ :+: _) (NonEmptyList (_ :| Nil)) = error absurd
-zipRecDefs (ρ :+: x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss)) =
-   NonEmptyList (fromRecDef (x ↦ σ) xcs1 :| toList (zipRecDefs ρ (NonEmptyList (xcs2 :| xcss))))
-
-fromRecDef :: Binding Elim 𝔹 -> Endo (NonEmptyList (Clause 𝔹))
-fromRecDef (x ↦ σ) = map (x × _) <<< desugarBwd σ <<< map snd
-
-instance expr :: DesugarBwd (E.Expr Boolean) (Expr Boolean) where
-   desugarBwd (E.Var x) (Var _)                             = Var x
-   desugarBwd (E.Op op) (Op _)                              = Op op
-   desugarBwd (E.Int α n) (Int _ _)                         = Int α n
-   desugarBwd (E.Float α n) (Float _ _)                     = Float α n
-   desugarBwd (E.Str α s) (Str _ _)                         = Str α s
-   desugarBwd (E.Constr α c es) (Constr _ _ es')            = Constr α c (uncurry desugarBwd <$> zip es es')
-   desugarBwd (E.Matrix α e (x × y) e') (Matrix _ s _ s')   = Matrix α (desugarBwd e s) (x × y) (desugarBwd e' s')
-   desugarBwd (E.Lambda σ) (Lambda bs)                      = Lambda (desugarBwd σ bs)
-   desugarBwd (E.App e1 e2) (App s1 s2)                     = App (desugarBwd e1 s1) (desugarBwd e2 s2)
-   desugarBwd (E.App (E.Lambda σ) e) (MatchAs s bs)         = MatchAs (desugarBwd e s) (desugarBwd σ bs)
-   desugarBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) = do
-      IfElse (desugarBwd e1 s1)
-             (desugarBwd (asExpr (mustLookup cTrue m)) s2)
-             (desugarBwd (asExpr (mustLookup cFalse m)) s3)
-   desugarBwd (E.BinaryApp e1 x e2) (BinaryApp s1 _ s2)     = BinaryApp (desugarBwd e1 s1) x (desugarBwd e2 s2)
-   desugarBwd (E.Let d e) (Let ds s)                        = uncurry Let (desugarBwd (E.Let d e) (ds × s))
-   desugarBwd (E.LetRec xσs e) (LetRec xcs s)               = LetRec (desugarBwd xσs xcs) (desugarBwd e s)
-   desugarBwd (E.Constr α c Nil) (ListEmpty _) | c == cNil  =
-      ListEmpty α
-   desugarBwd (E.Constr α c (e : e' : Nil)) (ListNonEmpty _ s l) | c == cCons =
-      ListNonEmpty α (desugarBwd e s) (desugarBwd e' l)
-   desugarBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
-      ListEnum (desugarBwd e1 s1) (desugarBwd e2 s2)
-   -- list-comp-done
-   desugarBwd (E.Constr α2 cCons' (e : (E.Constr α1 cNil' Nil) : Nil))
-              (ListComp _ s_body (NonEmptyList (Guard (Constr _ cTrue' Nil) :| Nil)))
-      | cCons' == cCons , cNil' == cNil, cTrue' == cTrue =
-      ListComp (α1 ∨ α2) (desugarBwd e s_body)
-                         (NonEmptyList (Guard (Constr (α1 ∨ α2) cTrue Nil) :| Nil))
-   -- list-comp-last
-   desugarBwd e (ListComp α s (NonEmptyList (q :| Nil))) =
-      case desugarBwd e (ListComp α s (NonEmptyList (q :| qualTrue true : Nil))) of
-         ListComp β s' (NonEmptyList (q' :| (Guard (Constr _ c Nil)) : Nil)) | c == cTrue ->
-            (ListComp β s' (NonEmptyList (q' :| Nil)))
-         _ -> error absurd
-   -- list-comp-guard
-   desugarBwd (E.App (E.Lambda (ElimConstr m)) e2)
-              (ListComp α0 s1 (NonEmptyList (Guard s2 :| q : qs))) =
-      case desugarBwd (asExpr (mustLookup cTrue m)) (ListComp α0 s1 (NonEmptyList (q :| qs))) ×
-           desugarBwd (asExpr (mustLookup cFalse m)) (snil true) of
-         ListComp β s1' (NonEmptyList (q' :| qs')) × Constr α c Nil | c == cNil ->
-            ListComp (α ∨ β) s1' (NonEmptyList (Guard (desugarBwd e2 s2) :| q' : qs'))
-         _ × _ -> error absurd
-   -- list-comp-decl
-   desugarBwd (E.App (E.Lambda σ) e)
-              (ListComp α0 s2 (NonEmptyList ((Declaration (VarDef π s1)) :| q : qs))) =
-      case desugarBwd σ (NonEmptyList (π :| Nil) × (ListComp α0 s2 (NonEmptyList (q :| qs)))) of
-         _ × ListComp β s2' (NonEmptyList (q' :| qs')) ->
-            ListComp β s2' (NonEmptyList ((Declaration (VarDef π (desugarBwd e s1))) :| q' : qs'))
-         _ × _ -> error absurd
-   -- list-comp-gen
-   desugarBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1)
-              (ListComp α s2 (NonEmptyList (Generator p s1 :| q : qs))) =
-      let σ' × β = totalise_bwd (ContElim σ) (Left p : Nil) in
-      case desugarBwd (asExpr (desugarPatternBwd (asElim σ') p)) (ListComp α s2 (NonEmptyList (q :| qs))) of
-         ListComp β' s2' (NonEmptyList (q' :| qs')) ->
-            ListComp (β ∨ β') s2' (NonEmptyList (Generator p (desugarBwd e1 s1) :| q' : qs'))
-         _ -> error absurd
-   desugarBwd (E.Hole) s = error "todo"
-   desugarBwd _ _ = error absurd
-
-instance listRest :: DesugarBwd (E.Expr Boolean) (ListRest Boolean) where
-   desugarBwd e l@(End _) = case e of
-      E.Constr α c Nil ->
-         assert (c == cNil) $
-         End α
-      E.Constr _ _ _ -> error absurd
-      E.Hole -> desugarBwd (E.Constr false cNil Nil) l
+exprBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
+exprBwd e (Var x) =
+   case expand e (E.Var x) of
+      E.Var _ -> Var x
       _ -> error absurd
-   desugarBwd e l@(Next _ s l') = case e of
-      E.Constr α c (e1 : e2 : Nil) ->
-         assert (c == cCons) $
-         Next α (desugarBwd e1 s) (desugarBwd e2 l')
-      E.Constr _ _ _ -> error absurd
-      E.Hole -> desugarBwd (E.Constr false cCons (E.Hole : E.Hole : Nil)) l
+exprBwd e (Op op) =
+   case expand e (E.Op op) of
+      E.Op _ -> Op op
+      _ -> error absurd
+exprBwd e (Int _ n) =
+   case expand e (E.Int false n) of
+      E.Int α _ -> Int α n
+      _ -> error absurd
+exprBwd e (Float _ n) =
+   case expand e (E.Float false n) of
+      E.Float α _ -> Float α n
+      _ -> error absurd
+exprBwd e (Str _ str) =
+   case expand e (E.Str false str) of
+      E.Str α _ -> Str α str
+      _ -> error absurd
+exprBwd e (Constr _ c es) =
+   case expand e (E.Constr false c (const E.Hole <$> es)) of
+      E.Constr α _ es' -> Constr α c (uncurry exprBwd <$> zip es' es)
+      _ -> error absurd
+exprBwd e (Matrix _ s _ s') =
+   case expand e (E.Matrix false E.Hole (varAnon × varAnon) E.Hole) of
+      E.Matrix α e1 (x × y) e2 -> Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
+      _ -> error absurd
+exprBwd e (Lambda bs) =
+   case expand e (E.Lambda ElimHole) of
+      E.Lambda σ -> Lambda (branchesBwd_curried σ bs)
+      _ -> error absurd
+exprBwd e (App s1 s2) =
+   case expand e (E.App E.Hole E.Hole) of
+      E.App e1 e2 -> App (exprBwd e1 s1) (exprBwd e2 s2)
+      _ -> error absurd
+exprBwd e (MatchAs s bs) =
+   case expand e (E.App (E.Lambda ElimHole) E.Hole) of
+      E.App (E.Lambda σ) e' -> MatchAs (exprBwd e' s) (branchesBwd_uncurried σ bs)
+      _ -> error absurd
+exprBwd e (IfElse s1 s2 s3) =
+   case expand e (E.App (E.Lambda (elimBool ContHole ContHole)) E.Hole) of
+      E.App (E.Lambda (ElimConstr m)) e1 ->
+         IfElse (exprBwd e1 s1)
+                  (exprBwd (asExpr (mustLookup cTrue m)) s2)
+                  (exprBwd (asExpr (mustLookup cFalse m)) s3)
+      _ -> error absurd
+exprBwd e (BinaryApp s1 _ s2) =
+   case expand e (E.BinaryApp E.Hole varAnon E.Hole) of
+      E.BinaryApp e1 op e2 -> BinaryApp (exprBwd e1 s1) op (exprBwd e2 s2)
+      _ -> error absurd
+exprBwd e (Let ds s) =
+   case expand e (E.Let (E.VarDef ElimHole E.Hole) E.Hole) of
+      E.Let d e' -> uncurry Let (varDefsBwd (E.Let d e') (ds × s))
+      _ -> error absurd
+exprBwd e (LetRec xcs s) =
+   case expand e (E.LetRec (fromList (toList (reverse (map recDefHole xcss)))) E.Hole) of
+      E.LetRec xσs e' -> LetRec (recDefsBwd xσs xcs) (exprBwd e' s)
+      _ -> error absurd
+      where
+      -- repeat enough desugaring logic to determine shape of bindings
+      recDefHole :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
+      recDefHole xcs' = fst (head xcs') ↦ ElimHole
+      xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
+exprBwd e (ListEmpty _) =
+   case expand e (E.Constr false cNil Nil) of
+      E.Constr α _ Nil -> ListEmpty α
+      _ -> error absurd
+exprBwd e (ListNonEmpty _ s l) =
+   case expand e (E.Constr false cCons (E.Hole : E.Hole : Nil)) of
+      E.Constr α _ (e1 : e2 : Nil) ->
+         ListNonEmpty α (exprBwd e1 s) (listRestBwd e2 l)
+      _ -> error absurd
+exprBwd e (ListEnum s1 s2) =
+   case expand e (E.App (E.App (E.Var "enumFromTo") E.Hole) E.Hole) of
+      E.App (E.App (E.Var "enumFromTo") e1) e2 ->
+         ListEnum (exprBwd e1 s1) (exprBwd e2 s2)
+      _ -> error absurd
+-- list-comp-done
+exprBwd e (ListComp _ s_body (NonEmptyList (Guard (Constr _ cTrue' Nil) :| Nil))) | cTrue' == cTrue =
+   case expand e (E.Constr false cCons (E.Hole : E.Constr false cNil Nil : Nil)) of
+      E.Constr α2 cCons' (e' : E.Constr α1 cNil' Nil : Nil) ->
+         ListComp (α1 ∨ α2) (exprBwd e' s_body)
+                           (NonEmptyList (Guard (Constr (α1 ∨ α2) cTrue Nil) :| Nil))
+      _ -> error absurd
+-- list-comp-last
+exprBwd e (ListComp α s (NonEmptyList (q :| Nil))) =
+   case exprBwd e (ListComp α s (NonEmptyList (q :| Guard (Constr true cTrue Nil) : Nil))) of
+      ListComp β s' (NonEmptyList (q' :| (Guard (Constr _ c Nil)) : Nil)) | c == cTrue ->
+         (ListComp β s' (NonEmptyList (q' :| Nil)))
+      _ -> error absurd
+-- list-comp-guard
+exprBwd e (ListComp α0 s1 (NonEmptyList (Guard s2 :| q : qs))) =
+   case expand e (E.App (E.Lambda (elimBool ContHole ContHole)) E.Hole) of
+      E.App (E.Lambda (ElimConstr m)) e2 ->
+         case exprBwd (asExpr (mustLookup cTrue m)) (ListComp α0 s1 (NonEmptyList (q :| qs))) ×
+            exprBwd (asExpr (mustLookup cFalse m)) (Constr true cNil Nil) of
+            ListComp β s1' (NonEmptyList (q' :| qs')) × Constr α c Nil | c == cNil ->
+               ListComp (α ∨ β) s1' (NonEmptyList (Guard (exprBwd e2 s2) :| q' : qs'))
+            _ × _ -> error absurd
+      _ -> error absurd
+-- list-comp-decl
+exprBwd e (ListComp α0 s2 (NonEmptyList (Declaration (VarDef π s1) :| q : qs))) =
+   case expand e (E.App (E.Lambda ElimHole) E.Hole) of
+      E.App (E.Lambda σ) e1 ->
+         case branchBwd_curried σ (NonEmptyList (π :| Nil) × (ListComp α0 s2 (NonEmptyList (q :| qs)))) of
+            _ × ListComp β s2' (NonEmptyList (q' :| qs')) ->
+               ListComp β s2' (NonEmptyList ((Declaration (VarDef π (exprBwd e1 s1))) :| q' : qs'))
+            _ × _ -> error absurd
+      _ -> error absurd
+-- list-comp-gen
+exprBwd e (ListComp α s2 (NonEmptyList (Generator p s1 :| q : qs))) =
+   case expand e (E.App (E.App (E.Var "concatMap") (E.Lambda ElimHole)) E.Hole) of
+      E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1 ->
+         let σ' × β = totaliseBwd (ContElim σ) (Left p : Nil) in
+         case exprBwd (asExpr (patternBwd (asElim σ') p)) (ListComp α s2 (NonEmptyList (q :| qs))) of
+            ListComp β' s2' (NonEmptyList (q' :| qs')) ->
+               ListComp (β ∨ β') s2' (NonEmptyList (Generator p (exprBwd e1 s1) :| q' : qs'))
+            _ -> error absurd
       _ -> error absurd
 
-class DesugarPatternBwd a where
-   desugarPatternBwd :: Elim Boolean -> a -> Cont Boolean
+-- e, l desugar_bwd l
+listRestBwd :: E.Expr 𝔹 -> Endo (ListRest 𝔹)
+listRestBwd e l@(End _) =
+   case e of
+      E.Constr α c Nil | c == cNil  -> End α
+      E.Hole                        -> listRestBwd (E.Constr false cNil Nil) l
+      _                             -> error absurd
+listRestBwd e l@(Next _ s l') =
+   case e of
+      E.Constr α c (e1 : e2 : Nil) | c == cCons -> Next α (exprBwd e1 s) (listRestBwd e2 l')
+      E.Hole                                    -> listRestBwd (E.Constr false cCons (E.Hole : E.Hole : Nil)) l
+      _                                         -> error absurd
 
-instance patterns :: DesugarPatternBwd (NonEmptyList Pattern) where
-   desugarPatternBwd σ (NonEmptyList (π :| Nil)) = desugarPatternBwd σ π
-   desugarPatternBwd σ (NonEmptyList (π :| π' : πs)) =
-      desugarPatternBwd (asElim (desugarPatternBwd σ π)) (NonEmptyList (π' :| πs))
+-- σ, ps desugar_bwd e
+patternsBwd :: Elim 𝔹 -> NonEmptyList Pattern -> E.Expr 𝔹
+patternsBwd σ (NonEmptyList (p :| Nil))      = asExpr (patternBwd σ p)
+patternsBwd σ (NonEmptyList (p :| p' : ps))  = patternsBwd_rest (asExpr (patternBwd σ p))
+   where
+      patternsBwd_rest E.Hole        = patternsBwd_rest (E.Lambda ElimHole)
+      patternsBwd_rest (E.Lambda σ') = patternsBwd σ' (NonEmptyList (p' :| ps))
+      patternsBwd_rest _             = error absurd
 
-instance pattern :: DesugarPatternBwd Pattern where
-   desugarPatternBwd ElimHole _ = error "todo"
+-- σ, p desugar_bwd κ
+patternBwd :: Elim 𝔹 -> Pattern -> Cont 𝔹
+patternBwd (ElimVar x κ) (PVar _)               = κ
+patternBwd ElimHole (PVar _)                    = ContHole
+patternBwd ElimHole (PConstr c ps)              = argsBwd ContHole (Left <$> ps)
+patternBwd (ElimConstr m) (PConstr c ps)        = argsBwd (mustLookup c m) (Left <$> ps)
+patternBwd ElimHole (PListEmpty)                = ContHole
+patternBwd (ElimConstr m) (PListEmpty)          = mustLookup cNil m
+patternBwd ElimHole (PListNonEmpty p o)         = argsBwd ContHole (Left p : Right o : Nil)
+patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
+patternBwd _ _                                  = error absurd
 
-   desugarPatternBwd (ElimVar x κ) (PVar _) = κ
-   desugarPatternBwd (ElimConstr _) (PVar _) = error absurd
+-- σ, o desugar_bwd κ
+listRestPatternBwd :: Elim 𝔹 -> ListRestPattern -> Cont 𝔹
+listRestPatternBwd (ElimVar _ _) _              = error absurd
+listRestPatternBwd ElimHole PEnd                = ContHole
+listRestPatternBwd (ElimConstr m) PEnd          = mustLookup cNil m
+listRestPatternBwd ElimHole (PNext p o)         = argsBwd ContHole (Left p : Right o : Nil)
+listRestPatternBwd (ElimConstr m) (PNext p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
 
-   desugarPatternBwd (ElimVar _ _) (PConstr c _) = error absurd
-   desugarPatternBwd (ElimConstr m) (PConstr c Nil) = mustLookup c m
-   desugarPatternBwd (ElimConstr m) (PConstr c (π : πs)) = do
-      desugarPatternBwd (asElim (mustLookup c m)) (NonEmptyList (π :| πs))
+argsBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹
+argsBwd κ Nil              = κ
+argsBwd κ (Left p : πs)    = argsBwd (patternBwd (asElim κ) p) πs
+argsBwd κ (Right o : πs)   = argsBwd (listRestPatternBwd (asElim κ) o) πs
 
-   desugarPatternBwd (ElimVar _ _) (PListEmpty) = error absurd
-   desugarPatternBwd (ElimConstr m) (PListEmpty) = mustLookup cNil m
+-- σ, c desugar_bwd c
+branchBwd_curried :: Elim 𝔹 -> Endo (Branch 𝔹)
+branchBwd_curried σ (πs × s) = πs × exprBwd (patternsBwd σ πs) s
 
-   desugarPatternBwd σ (PListNonEmpty π o) =
-      desugarPatternBwd (asElim (desugarPatternBwd σ π)) o
+-- σ, c desugar_bwd c
+branchBwd_uncurried :: Elim 𝔹 -> Endo (Pattern × Expr 𝔹)
+branchBwd_uncurried σ (p × s) = p × exprBwd (asExpr (patternBwd σ p)) s
 
-instance patternRest :: DesugarPatternBwd ListPatternRest where
-   desugarPatternBwd ElimHole _ = error "todo"
+-- σ, cs desugar_bwd cs
+branchesBwd_curried :: Elim 𝔹 -> Endo (NonEmptyList (Branch 𝔹))
+branchesBwd_curried σ (NonEmptyList (b1 :| b2 : bs)) =
+   NonEmptyList (branchBwd_curried σ b1 :| toList (branchesBwd_curried σ (NonEmptyList (b2 :| bs))))
+branchesBwd_curried σ (NonEmptyList (b :| Nil)) =
+   NonEmptyList (branchBwd_curried σ b :| Nil)
 
-   desugarPatternBwd (ElimVar _ _) _ = error absurd
-   desugarPatternBwd (ElimConstr m) PEnd = mustLookup cCons m
-   desugarPatternBwd (ElimConstr m) (PNext π o) =
-      desugarPatternBwd (asElim (desugarPatternBwd (asElim (mustLookup cCons m)) π)) o
+-- σ, cs desugar_bwd cs
+branchesBwd_uncurried :: Elim 𝔹 -> Endo (NonEmptyList (Pattern × Expr 𝔹))
+branchesBwd_uncurried σ (NonEmptyList (b1 :| b2 : bs)) =
+   NonEmptyList (branchBwd_uncurried σ b1 :| toList (branchesBwd_uncurried σ (NonEmptyList (b2 :| bs))))
+branchesBwd_uncurried σ (NonEmptyList (b :| Nil)) =
+   NonEmptyList (branchBwd_uncurried σ b :| Nil)
 
-instance branch :: DesugarBwd (Elim Boolean) (NonEmptyList Pattern × Expr Boolean) where
-   desugarBwd σ (πs × s) =
-      πs × desugarBwd (asExpr (desugarPatternBwd σ πs)) s
-
-instance branchUncurried :: DesugarBwd (Elim Boolean) (Pattern × Expr Boolean) where
-   desugarBwd σ (πs × s) =
-      πs × desugarBwd (asExpr (desugarPatternBwd σ πs)) s
-
-instance branches :: DesugarBwd (Elim Boolean) (NonEmptyList (NonEmptyList Pattern × Expr Boolean)) where
-   desugarBwd σ (NonEmptyList (b1 :| b2 : bs)) =
-      NonEmptyList (desugarBwd σ b1 :| toList (desugarBwd σ (NonEmptyList (b2 :| bs))))
-   desugarBwd σ (NonEmptyList (b :| Nil)) =
-      NonEmptyList (desugarBwd σ b :| Nil)
-
-instance branchesUncurried :: DesugarBwd (Elim Boolean) (NonEmptyList (Pattern × Expr Boolean)) where
-   desugarBwd σ (NonEmptyList (b1 :| b2 : bs)) =
-      NonEmptyList (desugarBwd σ b1 :| toList (desugarBwd σ (NonEmptyList (b2 :| bs))))
-   desugarBwd σ (NonEmptyList (b :| Nil)) =
-      NonEmptyList (desugarBwd σ b :| Nil)
-
-totalise_bwd :: Cont 𝔹 -> List (Pattern + ListPatternRest) -> Cont 𝔹 × 𝔹
-totalise_bwd κ Nil                              = κ × false
-totalise_bwd (ContExpr _) (_ : _)               = error absurd
-totalise_bwd ContHole (_ : _)                   = error "todo"
-totalise_bwd (ContElim ElimHole) _              = error "todo"
-totalise_bwd (ContElim (ElimVar x κ)) (π : πs)  =
+-- κ, πs totalise_bwd κ', α
+totaliseBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹 × 𝔹
+totaliseBwd κ Nil                              = κ × false
+totaliseBwd (ContExpr _) (_ : _)               = error absurd
+totaliseBwd ContHole (_ : _)                   = error "todo"
+totaliseBwd (ContElim ElimHole) _              = error "todo"
+totaliseBwd (ContElim (ElimVar x κ)) (π : πs)  =
    case π of
-      Left (PVar x') ->
-         assert (x == x') $
-         let κ × α = totalise_bwd κ πs in
-         ContElim (ElimVar x κ) × α
-      Left _ -> error absurd
-      Right _ -> error absurd
-totalise_bwd (ContElim (ElimConstr m)) (π : πs) =
+      Left (PVar _)  -> first (\κ' -> ContElim (ElimVar x κ')) (totaliseBwd κ πs)
+      Left _         -> error absurd
+      Right _        -> error absurd
+totaliseBwd (ContElim (ElimConstr m)) (π : πs) =
    case π of
       Left (PVar _) -> error absurd
       Left (PConstr c ps) ->
-         let κ × α = totalise_bwd (mustLookup c m) (map Left ps <> πs) in
-         ContElim (ElimConstr (fromFoldable [c × κ])) × α
+         first (\κ -> ContElim (ElimConstr (fromFoldable [c × κ])))
+               (totaliseBwd (mustLookup c m) ((Left <$> ps) <> πs))
       Left PListEmpty ->
-         let κ × α = totalise_bwd (mustLookup cNil m) πs in
-         ContElim (ElimConstr (fromFoldable [cNil × κ])) × α
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cNil × κ])))
+               (totaliseBwd (mustLookup cNil m) πs)
       Left (PListNonEmpty p o) ->
-         let κ × α = totalise_bwd (mustLookup cCons m) (Left p : Right o : πs) in
-         ContElim (ElimConstr (fromFoldable [cCons × κ])) × α
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cCons × κ])))
+               (totaliseBwd (mustLookup cCons m) (Left p : Right o : πs))
       Right PEnd ->
-         let κ × α = totalise_bwd (mustLookup cNil m) πs in
-         ContElim (ElimConstr (fromFoldable [cNil × κ])) × α
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cNil × κ])))
+               (totaliseBwd (mustLookup cNil m) πs)
       Right (PNext p o) ->
-         let κ × α = totalise_bwd (mustLookup cCons m) (Left p : Right o : πs) in
-         ContElim (ElimConstr (fromFoldable [cCons × κ])) × α
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cCons × κ])))
+               (totaliseBwd (mustLookup cCons m) (Left p : Right o : πs))

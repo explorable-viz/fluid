@@ -1,18 +1,17 @@
 module Expr where
 
-import Prelude hiding (top)
+import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
-import Data.List (List)
+import Data.List (List, zipWith)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
-import Bindings (Bindings)
+import Bindings (Bindings, Var, (⪂), varAnon)
 import DataType (Ctr)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), definedJoin, maybeJoin)
-import Util (type (×), (×), type (+), (≟), error)
-
-type Var = String
-
-varAnon = "_" :: Var
+import Lattice (
+   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
+   (∨), botOf, definedJoin, expand, maybeJoin
+)
+import Util (type (×), (×), type (+), (≟), (≜), (⪄), absurd, error)
 
 data Expr a =
    Hole |
@@ -45,14 +44,14 @@ data Cont a =
    ContElim (Elim a)
 
 asElim :: forall a . Cont a -> Elim a
-asElim ContHole = ElimHole
-asElim (ContElim σ) = σ
-asElim (ContExpr _) = error "Eliminator expected"
+asElim ContHole      = ElimHole
+asElim (ContElim σ)  = σ
+asElim (ContExpr _)  = error "Eliminator expected"
 
 asExpr :: forall a . Cont a -> Expr a
-asExpr ContHole = Hole
-asExpr (ContElim _) = error "Expression expected"
-asExpr (ContExpr e) = e
+asExpr ContHole      = Hole
+asExpr (ContElim _)  = error "Expression expected"
+asExpr (ContExpr e)  = e
 
 data Module a = Module (List (VarDef a + RecDefs a))
 
@@ -70,7 +69,7 @@ instance joinSemilatticeElim :: JoinSemilattice a => JoinSemilattice (Elim a) wh
 instance slicesElim :: JoinSemilattice a => Slices (Elim a) where
    maybeJoin ElimHole σ                         = pure σ
    maybeJoin σ ElimHole                         = pure σ
-   maybeJoin (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> x ≟ x' <*> maybeJoin κ κ'
+   maybeJoin (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> (x ≟ x') <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
    maybeJoin _ _                                = Nothing
 
@@ -105,18 +104,65 @@ instance joinSemilatticeExpr :: JoinSemilattice a => JoinSemilattice (Expr a) wh
 instance slicesExpr :: JoinSemilattice a => Slices (Expr a) where
    maybeJoin Hole e                                            = pure e
    maybeJoin e Hole                                            = pure e
-   maybeJoin (Var x) (Var x')                                  = Var <$> x ≟ x'
-   maybeJoin (Op op) (Op op')                                  = Op <$> op ≟ op'
-   maybeJoin (Int α n) (Int α' n')                             = Int (α ∨ α') <$> n ≟ n'
-   maybeJoin (Str α str) (Str α' str')                         = Str (α ∨ α') <$> str ≟ str'
-   maybeJoin (Float α n) (Float α' n')                         = Float (α ∨ α') <$> n ≟ n'
-   maybeJoin (Constr α c es) (Constr α' c' es')                = Constr (α ∨ α') <$> c ≟ c' <*> maybeJoin es es'
+   maybeJoin (Var x) (Var x')                                  = Var <$> (x ≟ x')
+   maybeJoin (Op op) (Op op')                                  = Op <$> (op ≟ op')
+   maybeJoin (Int α n) (Int α' n')                             = Int (α ∨ α') <$> (n ≟ n')
+   maybeJoin (Str α str) (Str α' str')                         = Str (α ∨ α') <$> (str ≟ str')
+   maybeJoin (Float α n) (Float α' n')                         = Float (α ∨ α') <$> (n ≟ n')
+   maybeJoin (Constr α c es) (Constr α' c' es')                = Constr (α ∨ α') <$> (c ≟ c') <*> maybeJoin es es'
    maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
       Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≟ x') `lift2 (×)` (y ≟ y')) <*> maybeJoin e2 e2'
    maybeJoin (App e1 e2) (App e1' e2')                         = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (BinaryApp e1 op e2) (BinaryApp e1' op' e2')      =
-      BinaryApp <$> maybeJoin e1 e1' <*> op ≟ op' <*> maybeJoin e2 e2'
+      BinaryApp <$> maybeJoin e1 e1' <*> (op ≟ op') <*> maybeJoin e2 e2'
    maybeJoin (Lambda σ) (Lambda σ')                            = Lambda <$> maybeJoin σ σ'
    maybeJoin (Let def e) (Let def' e')                         = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec δ e) (LetRec δ' e')                       = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'
    maybeJoin _ _                                               = Nothing
+
+instance exprExpandable :: Expandable (Expr Boolean) where
+   expand e Hole                                = e
+   expand Hole (Var x)                          = Var x
+   expand Hole (Op op)                          = Op op
+   expand Hole (Int false n)                    = Int false n
+   expand Hole (Float false n)                  = Float false n
+   expand Hole (Str false str)                  = Str false str
+   expand Hole e@(Constr _ c es)                = expand (Constr false c (const Hole <$> es)) e
+   expand Hole e@(Matrix _ _ _ _)               = expand (Matrix false Hole (varAnon × varAnon) Hole) e
+   expand Hole e@(Lambda _)                     = expand (Lambda ElimHole) e
+   expand Hole e@(App _ _)                      = expand (App Hole Hole) e
+   expand Hole e@(BinaryApp _ _ _)              = expand (BinaryApp Hole varAnon Hole) e
+   expand Hole e@(Let (VarDef _ _) _)           = expand (Let (VarDef ElimHole Hole) Hole) e
+   expand Hole e@(LetRec h _)                   = expand (LetRec (botOf h) Hole) e
+   expand (Var x) (Var x')                      = Var (x ≜ x')
+   expand (Op op) (Op op')                      = Op (op ≜ op')
+   expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
+   expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
+   expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
+   expand (Constr α c es) (Constr β c' es')     = Constr (α ⪄ β) (c ≜ c') (zipWith expand es es')
+   expand (Matrix α e1 (x1 × y1) e2) (Matrix β e1' (x2 × y2) e2')
+                                                = Matrix (α ⪄ β) (expand e1 e1') ((x1 ⪂ x2) × (y1 ⪂ y2)) (expand e2 e2')
+   expand (Lambda σ) (Lambda σ')                = Lambda (expand σ σ')
+   expand (App e1 e2) (App e1' e2')             = App (expand e1 e1') (expand e2 e2')
+   expand (BinaryApp e1 op e2) (BinaryApp e1' op' e2')
+                                                = BinaryApp (expand e1 e1') (op ⪂ op') (expand e2 e2')
+   expand (Let (VarDef σ e1) e2) (Let (VarDef σ' e1') e2')
+                                                = Let (VarDef (expand σ σ') (expand e1 e1')) (expand e2 e2')
+   expand (LetRec h e) (LetRec h' e')           = LetRec (expand h h') (expand e e')
+   expand _ _                                   = error absurd
+
+instance elimExpandable :: Expandable (Elim Boolean) where
+   expand σ ElimHole                      = σ
+   expand ElimHole σ@(ElimVar _ _)        = expand (ElimVar varAnon ContHole) σ
+   expand ElimHole σ@(ElimConstr m)       = expand (ElimConstr (const ContHole <$> m)) σ
+   expand (ElimVar x κ) (ElimVar x' κ')   = ElimVar (x ⪂ x') (expand κ κ')
+   expand (ElimConstr m) (ElimConstr m')  = ElimConstr (expand m m')
+   expand _ _                             = error absurd
+
+instance contExpandable :: Expandable (Cont Boolean) where
+   expand κ ContHole                   = κ
+   expand ContHole κ@(ContExpr _)      = expand (ContExpr Hole) κ
+   expand ContHole κ@(ContElim _)      = expand (ContElim ElimHole) κ
+   expand (ContExpr e) (ContExpr e')   = ContExpr (expand e e')
+   expand (ContElim σ) (ContElim σ')   = ContElim (expand σ σ')
+   expand _ _                          = error absurd
