@@ -238,20 +238,30 @@ branchesBwd_uncurried σ (NonEmptyList (b :| Nil)) =
 
 -- κ, πs totalise_bwd κ', α
 totaliseBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹 × 𝔹
-totaliseBwd κ Nil                   = κ × false
-totaliseBwd (ContExpr _) (_ : _)    = error absurd
-totaliseBwd ContHole (_ : _)        = error "todo"
-totaliseBwd (ContElim ElimHole) _   = error "todo"
-totaliseBwd (ContElim (ElimVar x κ)) (Left (PVar _) : πs) =
-   first (\κ' -> ContElim (ElimVar x κ')) (totaliseBwd κ πs)
-totaliseBwd (ContElim (ElimConstr m)) (Left (PConstr c ps) : πs) =
-   first (\κ -> ContElim (ElimConstr (fromFoldable [c × κ]))) (totaliseBwd (mustLookup c m) ((Left <$> ps) <> πs))
-totaliseBwd (ContElim (ElimConstr m)) (Left PListEmpty : πs) =
-   first (\κ -> ContElim (ElimConstr (fromFoldable [cNil × κ]))) (totaliseBwd (mustLookup cNil m) πs)
-totaliseBwd (ContElim (ElimConstr m)) (Left (PListNonEmpty p o) : πs) =
-   first (\κ -> ContElim (ElimConstr (fromFoldable [cCons × κ]))) (totaliseBwd (mustLookup cCons m) (Left p : Right o : πs))
-totaliseBwd (ContElim (ElimConstr m)) (Right PEnd : πs) =
-   first (\κ -> ContElim (ElimConstr (fromFoldable [cNil × κ]))) (totaliseBwd (mustLookup cNil m) πs)
-totaliseBwd (ContElim (ElimConstr m)) (Right (PNext p o) : πs) =
-   first (\κ -> ContElim (ElimConstr (fromFoldable [cCons × κ]))) (totaliseBwd (mustLookup cCons m) (Left p : Right o : πs))
-totaliseBwd _ _                     = error absurd
+totaliseBwd κ Nil                              = κ × false
+totaliseBwd (ContExpr _) (_ : _)               = error absurd
+totaliseBwd ContHole (_ : _)                   = error "todo"
+totaliseBwd (ContElim ElimHole) _              = error "todo"
+totaliseBwd (ContElim (ElimVar x κ)) (π : πs)  =
+   case π of
+      Left (PVar _)  -> first (\κ' -> ContElim (ElimVar x κ')) (totaliseBwd κ πs)
+      Left _         -> error absurd
+      Right _        -> error absurd
+totaliseBwd (ContElim (ElimConstr m)) (π : πs) =
+   case π of
+      Left (PVar _) -> error absurd
+      Left (PConstr c ps) ->
+         first (\κ -> ContElim (ElimConstr (fromFoldable [c × κ])))
+               (totaliseBwd (mustLookup c m) ((Left <$> ps) <> πs))
+      Left PListEmpty ->
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cNil × κ])))
+               (totaliseBwd (mustLookup cNil m) πs)
+      Left (PListNonEmpty p o) ->
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cCons × κ])))
+               (totaliseBwd (mustLookup cCons m) (Left p : Right o : πs))
+      Right PEnd ->
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cNil × κ])))
+               (totaliseBwd (mustLookup cNil m) πs)
+      Right (PNext p o) ->
+         first (\κ -> ContElim (ElimConstr (fromFoldable [cCons × κ])))
+               (totaliseBwd (mustLookup cCons m) (Left p : Right o : πs))
