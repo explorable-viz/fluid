@@ -23,6 +23,7 @@ import Util (Endo, type (+), type (×), (×), absurd, mustLookup, error)
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
 
+-- TODO: can probably lose the outer 'let' here.
 varDefsBwd :: E.Expr 𝔹 -> VarDefs 𝔹 × Expr 𝔹 -> VarDefs 𝔹 × Expr 𝔹
 varDefsBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) =
    NonEmptyList (VarDef π (exprBwd e1 s1) :| Nil) × exprBwd e2 s2
@@ -100,8 +101,12 @@ exprBwd e (Let ds s) =
    case expand e (E.Let (E.VarDef ElimHole E.Hole) E.Hole) of
       E.Let d e' -> uncurry Let (varDefsBwd (E.Let d e') (ds × s))
       _ -> error absurd
--- THIS CASE NEEDS WORK
-exprBwd (E.LetRec xσs e) (LetRec xcs s)               = LetRec (recDefsBwd xσs xcs) (exprBwd e s)
+exprBwd e (LetRec xcs s) =
+   case expand e (E.LetRec ?_ E.Hole) of
+      E.LetRec xσs e -> LetRec (recDefsBwd xσs xcs) (exprBwd e s)
+         where
+         xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
+      _ -> error absurd
 exprBwd e (ListEmpty _) =
    case expand e (E.Constr false cNil Nil) of
       E.Constr α _ Nil -> ListEmpty α

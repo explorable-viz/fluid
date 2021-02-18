@@ -12,10 +12,10 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
-import Bindings (Binding, Bindings, (↦), fromList)
+import Bindings (Binding, (↦), fromList)
 import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
 import Expr (Cont(..), Elim(..), asElim)
-import Expr (Expr(..), Module(..), VarDef(..)) as E
+import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹)
 import SExpr (
    Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
@@ -38,30 +38,34 @@ class DesugarFwd a b | a -> b where
 
 -- Surface language supports "blocks" of variable declarations; core does not.
 instance module_ :: DesugarFwd (Module Boolean) (E.Module Boolean) where
-   desugarFwd (Module ds) = E.Module <$> traverse desugarFwd (join $ (ds <#> desugarDefs))
+   desugarFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (ds <#> desugarDefs))
       where
-      desugarDefs :: VarDefs Boolean + RecDefs Boolean -> List (VarDef Boolean + RecDefs Boolean)
+      varDefOrRecDefsFwd :: VarDef 𝔹 + RecDefs 𝔹 -> MayFail (E.VarDef 𝔹 + E.RecDefs 𝔹)
+      varDefOrRecDefsFwd (Left d)      = Left <$> varDefFwd d
+      varDefOrRecDefsFwd (Right xcs)   = Right <$> recDefsFwd xcs
+
+      desugarDefs :: VarDefs 𝔹 + RecDefs 𝔹 -> List (VarDef 𝔹 + RecDefs 𝔹)
       desugarDefs (Left ds')  = toList ds' <#> Left
       desugarDefs (Right δ)   = pure $ Right δ
 
-instance varDef :: DesugarFwd (VarDef Boolean) (E.VarDef Boolean) where
-   desugarFwd (VarDef π s) = E.VarDef <$> desugarFwd (π × (ContHole :: Cont 𝔹)) <*> desugarFwd s
+varDefFwd :: VarDef 𝔹 -> MayFail (E.VarDef 𝔹)
+varDefFwd (VarDef π s) = E.VarDef <$> desugarFwd (π × (ContHole :: Cont 𝔹)) <*> desugarFwd s
 
-instance varDefs :: DesugarFwd (NonEmptyList (VarDef Boolean) × Expr Boolean) (E.Expr Boolean) where
-   desugarFwd (NonEmptyList (d :| Nil) × s) =
-      E.Let <$> desugarFwd d <*> desugarFwd s
-   desugarFwd (NonEmptyList (d :| d' : ds) × s) =
-      E.Let <$> desugarFwd d <*> desugarFwd (NonEmptyList (d' :| ds) × s)
+varDefsFwd :: VarDefs 𝔹 × Expr 𝔹 -> MayFail (E.Expr 𝔹)
+varDefsFwd (NonEmptyList (d :| Nil) × s) =
+   E.Let <$> varDefFwd d <*> desugarFwd s
+varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
+   E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
 
 -- In the formalism, "group by name" is part of the syntax.
 -- cs desugar_fwd σ
-instance recDefs :: DesugarFwd (NonEmptyList (String × (NonEmptyList Pattern × Expr Boolean))) (Bindings Elim Boolean) where
-   desugarFwd xcs = fromList <$> toList <$> reverse <$> traverse toRecDef xcss
-      where
-      xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
+recDefsFwd :: RecDefs 𝔹 -> MayFail (E.RecDefs 𝔹)
+recDefsFwd xcs = fromList <$> toList <$> reverse <$> traverse recDefFwd xcss
+   where
+   xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 
-toRecDef :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
-toRecDef xcs = (fst (head xcs) ↦ _) <$> desugarFwd (snd <$> xcs)
+recDefFwd :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
+recDefFwd xcs = (fst (head xcs) ↦ _) <$> desugarFwd (snd <$> xcs)
 
 -- s desugar_fwd e
 instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
@@ -103,8 +107,8 @@ instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
       e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
       σ <- desugarFwd (p × ContExpr e)
       E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totalise (ContElim σ) α)))) <$> desugarFwd slist
-   desugarFwd (Let ds s)               = desugarFwd (ds × s)
-   desugarFwd (LetRec fπs s)           = E.LetRec <$> desugarFwd fπs <*> desugarFwd s
+   desugarFwd (Let ds s)               = varDefsFwd (ds × s)
+   desugarFwd (LetRec xcs s)           = E.LetRec <$> recDefsFwd xcs <*> desugarFwd s
 
 -- l desugar_fwd e
 instance listRest :: DesugarFwd (ListRest Boolean) (E.Expr Boolean) where
