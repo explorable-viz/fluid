@@ -4,12 +4,12 @@ import Prelude hiding (absurd)
 import Data.Function (on)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), zip)
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList, reverse)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, reverse)
 import Data.Map (fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Tuple (uncurry, fst, snd)
 import Data.Profunctor.Strong (first)
-import Bindings (Binding, Bindings(..), (↦), (:+:), varAnon)
+import Bindings (Binding, Bindings(..), (↦), (:+:), fromList, varAnon)
 import DataType (cCons, cNil, cTrue, cFalse)
 import DesugarFwd (elimBool)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -18,7 +18,7 @@ import SExpr (
    Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs
 )
 import Lattice (𝔹, (∨), expand)
-import Util (Endo, type (+), type (×), (×), absurd, mustLookup, error)
+import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup)
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -102,11 +102,14 @@ exprBwd e (Let ds s) =
       E.Let d e' -> uncurry Let (varDefsBwd (E.Let d e') (ds × s))
       _ -> error absurd
 exprBwd e (LetRec xcs s) =
-   case expand e (E.LetRec ?_ E.Hole) of
-      E.LetRec xσs e -> LetRec (recDefsBwd xσs xcs) (exprBwd e s)
-         where
-         xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
+   case expand e (E.LetRec (fromList (toList (reverse (map recDefHole xcss)))) E.Hole) of
+      E.LetRec xσs e' -> LetRec (recDefsBwd xσs xcs) (exprBwd e' s)
       _ -> error absurd
+      where
+      -- repeat enough desugaring logic to determine shape of bindings
+      recDefHole :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
+      recDefHole xcs' = fst (head xcs') ↦ ElimHole
+      xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 exprBwd e (ListEmpty _) =
    case expand e (E.Constr false cNil Nil) of
       E.Constr α _ Nil -> ListEmpty α
@@ -163,8 +166,6 @@ exprBwd e (ListComp α s2 (NonEmptyList (Generator p s1 :| q : qs))) =
                ListComp (β ∨ β') s2' (NonEmptyList (Generator p (exprBwd e1 s1) :| q' : qs'))
             _ -> error absurd
       _ -> error absurd
-exprBwd (E.Hole) s = error "todo"
-exprBwd _ _ = error absurd
 
 -- e, l desugar_bwd l
 listRestBwd :: E.Expr 𝔹 -> Endo (ListRest 𝔹)
@@ -190,12 +191,15 @@ patternsBwd σ (NonEmptyList (p :| p' : ps))  = patternsBwd_rest (asExpr (patter
 
 -- σ, p desugar_bwd κ
 patternBwd :: Elim 𝔹 -> Pattern -> Cont 𝔹
-patternBwd ElimHole _                          = error "todo"
-patternBwd (ElimVar x κ) (PVar _)              = κ
-patternBwd (ElimConstr m) (PConstr c ps)       = argsBwd (mustLookup c m) (Left <$> ps)
-patternBwd (ElimConstr m) (PListEmpty)         = mustLookup cNil m
-patternBwd (ElimConstr m) (PListNonEmpty p o)  = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
-patternBwd _ _                                 = error absurd
+patternBwd (ElimVar x κ) (PVar _)               = κ
+patternBwd ElimHole (PVar _)                    = ContHole
+patternBwd ElimHole (PConstr c ps)              = argsBwd ContHole (Left <$> ps)
+patternBwd (ElimConstr m) (PConstr c ps)        = argsBwd (mustLookup c m) (Left <$> ps)
+patternBwd ElimHole (PListEmpty)                = ContHole
+patternBwd (ElimConstr m) (PListEmpty)          = mustLookup cNil m
+patternBwd ElimHole (PListNonEmpty p o)         = argsBwd ContHole (Left p : Right o : Nil)
+patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
+patternBwd _ _                                  = error absurd
 
 -- σ, o desugar_bwd κ
 listRestPatternBwd :: Elim 𝔹 -> ListRestPattern -> Cont 𝔹

@@ -38,15 +38,15 @@ class DesugarFwd a b | a -> b where
 
 -- Surface language supports "blocks" of variable declarations; core does not.
 instance module_ :: DesugarFwd (Module Boolean) (E.Module Boolean) where
-   desugarFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (ds <#> desugarDefs))
+   desugarFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarDefs <$> ds))
       where
       varDefOrRecDefsFwd :: VarDef 𝔹 + RecDefs 𝔹 -> MayFail (E.VarDef 𝔹 + E.RecDefs 𝔹)
       varDefOrRecDefsFwd (Left d)      = Left <$> varDefFwd d
       varDefOrRecDefsFwd (Right xcs)   = Right <$> recDefsFwd xcs
 
       desugarDefs :: VarDefs 𝔹 + RecDefs 𝔹 -> List (VarDef 𝔹 + RecDefs 𝔹)
-      desugarDefs (Left ds')  = toList ds' <#> Left
-      desugarDefs (Right δ)   = pure $ Right δ
+      desugarDefs (Left ds')  = Left <$> toList ds'
+      desugarDefs (Right δ)   = pure (Right δ)
 
 varDefFwd :: VarDef 𝔹 -> MayFail (E.VarDef 𝔹)
 varDefFwd (VarDef π s) = E.VarDef <$> desugarFwd (π × (ContHole :: Cont 𝔹)) <*> desugarFwd s
