@@ -96,7 +96,10 @@ exprBwd e (BinaryApp s1 _ s2) =
    case expand e (E.BinaryApp E.Hole varAnon E.Hole) of
       E.BinaryApp e1 op e2 -> BinaryApp (exprBwd e1 s1) op (exprBwd e2 s2)
       _ -> error absurd
-exprBwd (E.Let d e) (Let ds s)                        = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
+exprBwd e (Let ds s) =
+   case expand e (E.Let (E.VarDef ElimHole E.Hole) E.Hole) of
+      E.Let d e' -> uncurry Let (varDefsBwd (E.Let d e') (ds × s))
+      _ -> error absurd
 -- THIS CASE NEEDS WORK
 exprBwd (E.LetRec xσs e) (LetRec xcs s)               = LetRec (recDefsBwd xσs xcs) (exprBwd e s)
 exprBwd e (ListEmpty _) =
