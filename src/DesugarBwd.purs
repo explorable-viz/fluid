@@ -45,18 +45,33 @@ recDefBwd :: Binding Elim 𝔹 -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Cl
 recDefBwd (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd
 
 exprBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
-exprBwd (E.Var x) (Var _)                             = Var x
-exprBwd (E.Op op) (Op _)                              = Op op
-exprBwd (E.Int α n) (Int _ _)                         = Int α n
-exprBwd (E.Float α n) (Float _ _)                     = Float α n
-exprBwd (E.Str α s) (Str _ _)                         = Str α s
+exprBwd e (Var x) =
+   case expand e (E.Var x) of
+      E.Var _ -> Var x
+      _ -> error absurd
+exprBwd e (Op op) =
+   case expand e (E.Op op) of
+      E.Op _ -> Op op
+      _ -> error absurd
+exprBwd e (Int _ n) =
+   case expand e (E.Int false n) of
+      E.Int α _ -> Int α n
+      _ -> error absurd
+exprBwd e (Float _ n) =
+   case expand e (E.Float false n) of
+      E.Float α _ -> Float α n
+      _ -> error absurd
+exprBwd e (Str _ str) =
+   case expand e (E.Str false str) of
+      E.Str α _ -> Str α str
+      _ -> error absurd
 exprBwd e (Constr _ c es) =
    case expand e (E.Constr false c (const E.Hole <$> es)) of
       E.Constr α _ es' -> Constr α c (uncurry exprBwd <$> zip es' es)
       _ -> error absurd
-exprBwd e (Matrix _ s _ s') =
-   case expand e (E.Matrix false E.Hole (varAnon × varAnon) E.Hole) of
-      E.Matrix α e1 (x × y) e2 -> Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
+exprBwd e (Matrix _ s (x × y) s') =
+   case expand e (E.Matrix false E.Hole (x × y) E.Hole) of
+      E.Matrix α e1 _ e2 -> Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
       _ -> error absurd
 exprBwd e (Lambda bs) =
    case expand e (E.Lambda ElimHole) of
