@@ -203,15 +203,16 @@ patternBwd _ _                                  = error absurd
 
 -- σ, o desugar_bwd κ
 listRestPatternBwd :: Elim 𝔹 -> ListRestPattern -> Cont 𝔹
-listRestPatternBwd ElimHole _                 = error "todo"
-listRestPatternBwd (ElimVar _ _) _            = error absurd
-listRestPatternBwd (ElimConstr m) PEnd        = mustLookup cNil m
-listRestPatternBwd (ElimConstr m) (PNext p o) = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
+listRestPatternBwd (ElimVar _ _) _              = error absurd
+listRestPatternBwd ElimHole PEnd                = ContHole
+listRestPatternBwd (ElimConstr m) PEnd          = mustLookup cNil m
+listRestPatternBwd ElimHole (PNext p o)         = argsBwd ContHole (Left p : Right o : Nil)
+listRestPatternBwd (ElimConstr m) (PNext p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
 
 argsBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹
-argsBwd κ Nil = κ
-argsBwd κ (Left p : πs) = argsBwd (patternBwd (asElim κ) p) πs
-argsBwd κ (Right o : πs) = argsBwd (listRestPatternBwd (asElim κ) o) πs
+argsBwd κ Nil              = κ
+argsBwd κ (Left p : πs)    = argsBwd (patternBwd (asElim κ) p) πs
+argsBwd κ (Right o : πs)   = argsBwd (listRestPatternBwd (asElim κ) o) πs
 
 -- σ, c desugar_bwd c
 branchBwd_curried :: Elim 𝔹 -> Endo (Branch 𝔹)
