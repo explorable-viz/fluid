@@ -28,6 +28,9 @@ enil α = E.Constr α cNil Nil
 econs :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 econs α e e' = E.Constr α cCons (e : e' : Nil)
 
+elimBool :: Cont 𝔹 -> Cont 𝔹 -> Elim 𝔹
+elimBool κ κ' = ElimConstr (fromFoldable [cTrue × κ, cFalse × κ'])
+
 -- "Vanilla" desugaring is just forward-slicing where we disregard annotations, so user errors may occur during
 -- forward slicing.
 class DesugarFwd a b | a -> b where
@@ -76,8 +79,7 @@ instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (IfElse s1 s2 s3) = do
       e2 <- desugarFwd s2
       e3 <- desugarFwd s3
-      let σ = ElimConstr (fromFoldable [cTrue × ContExpr e2, cFalse × ContExpr e3])
-      E.App (E.Lambda σ) <$> desugarFwd s1
+      E.App (E.Lambda (elimBool (ContExpr e2) (ContExpr e3))) <$> desugarFwd s1
    desugarFwd (ListEmpty α)            = pure (enil α)
    desugarFwd (ListNonEmpty α s l)     = econs α <$> desugarFwd s <*> desugarFwd l
    desugarFwd (ListEnum s1 s2)         = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desugarFwd s1) <*> desugarFwd s2
@@ -90,8 +92,7 @@ instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    -- | List-comp-guard
    desugarFwd (ListComp α s_body (NonEmptyList (Guard s :| q : qs))) = do
       e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
-      let σ = ElimConstr (fromFoldable [cTrue × ContExpr e, cFalse × ContExpr (enil α)])
-      E.App (E.Lambda σ) <$> desugarFwd s
+      E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desugarFwd s
    -- | List-comp-decl
    desugarFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))) = do
       e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
