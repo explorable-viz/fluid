@@ -9,7 +9,7 @@ import Data.Map (fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Tuple (uncurry, fst, snd)
 import Data.Profunctor.Strong (first)
-import Bindings (Binding, Bindings(..), (↦), (:+:))
+import Bindings (Binding, Bindings(..), (↦), (:+:), varAnon)
 import DataType (cCons, cNil, cTrue, cFalse)
 import DesugarFwd (elimBool)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -50,11 +50,26 @@ exprBwd (E.Op op) (Op _)                              = Op op
 exprBwd (E.Int α n) (Int _ _)                         = Int α n
 exprBwd (E.Float α n) (Float _ _)                     = Float α n
 exprBwd (E.Str α s) (Str _ _)                         = Str α s
-exprBwd (E.Constr α c es) (Constr _ _ es')            = Constr α c (uncurry exprBwd <$> zip es es')
-exprBwd (E.Matrix α e (x × y) e') (Matrix _ s _ s')   = Matrix α (exprBwd e s) (x × y) (exprBwd e' s')
-exprBwd (E.Lambda σ) (Lambda bs)                      = Lambda (branchesBwd_curried σ bs)
-exprBwd (E.App e1 e2) (App s1 s2)                     = App (exprBwd e1 s1) (exprBwd e2 s2)
-exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs)         = MatchAs (exprBwd e s) (branchesBwd_uncurried σ bs)
+exprBwd e (Constr _ c es) =
+   case expand e (E.Constr false c (const E.Hole <$> es)) of
+      E.Constr α _ es' -> Constr α c (uncurry exprBwd <$> zip es' es)
+      _ -> error absurd
+exprBwd e (Matrix _ s _ s') =
+   case expand e (E.Matrix false E.Hole (varAnon × varAnon) E.Hole) of
+      E.Matrix α e1 (x × y) e2 -> Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
+      _ -> error absurd
+exprBwd e (Lambda bs) =
+   case expand e (E.Lambda ElimHole) of
+      E.Lambda σ -> Lambda (branchesBwd_curried σ bs)
+      _ -> error absurd
+exprBwd e (App s1 s2) =
+   case expand e (E.App E.Hole E.Hole) of
+      E.App e1 e2 -> App (exprBwd e1 s1) (exprBwd e2 s2)
+      _ -> error absurd
+exprBwd e (MatchAs s bs) =
+   case expand e (E.App (E.Lambda ElimHole) E.Hole) of
+      E.App (E.Lambda σ) e' -> MatchAs (exprBwd e' s) (branchesBwd_uncurried σ bs)
+      _ -> error absurd
 exprBwd e (IfElse s1 s2 s3) =
    case expand e (E.App (E.Lambda (elimBool ContHole ContHole)) E.Hole) of
       E.App (E.Lambda (ElimConstr m)) e1 ->

@@ -9,14 +9,14 @@ import Lattice (
 )
 import Util (Endo, MayFail, type (×), (×), (≟), (≜), absurd, error, fromJust, report, whenever)
 
-type Var = String
+type Var = String -- newtype?
 
 varAnon = "_" :: Var
 
 -- We need a "bottom" variable that we can use to define hole expansion, which is similar to pattern-matching on terms.
--- For now use varAnon for this. Could define Var as a newtype and provide an Ord instance.
+-- For now use varAnon for this.
 mustGeq :: Var -> Var -> Var
-mustGeq x = fromJust "Must be greater" <<< whenever (x == varAnon)
+mustGeq x y = fromJust "Must be greater" (whenever (y == varAnon) x)
 
 infixl 4 mustGeq as ⪂
 
