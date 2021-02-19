@@ -134,9 +134,9 @@ instance listPatternRestCont :: DesugarFwd (ListRestPattern × Cont Boolean) (El
    desugarFwd (PNext p o × κ) = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
 
 desugarArgsFwd :: List (Pattern + ListRestPattern) -> Cont 𝔹 -> MayFail (Cont 𝔹)
-desugarArgsFwd Nil κ = pure κ
-desugarArgsFwd (Left p : πs) κ = ContElim <$> (desugarArgsFwd πs κ >>= patternContFwd p)
-desugarArgsFwd (Right o : πs) κ = ContElim <$> (desugarArgsFwd πs κ >>= desugarFwd <<< (o × _))
+desugarArgsFwd Nil κ             = pure κ
+desugarArgsFwd (Left p : πs) κ   = ContElim <$> (desugarArgsFwd πs κ >>= patternContFwd p)
+desugarArgsFwd (Right o : πs) κ  = ContElim <$> (desugarArgsFwd πs κ >>= desugarFwd <<< (o × _))
 
 branchFwd_uncurried :: Pattern -> Expr 𝔹 -> MayFail (Elim 𝔹)
 branchFwd_uncurried π s = (ContExpr <$> desugarFwd s) >>= patternContFwd π
@@ -160,7 +160,7 @@ totalise (ContElim (ElimConstr m)) α   =
    let cκs = toUnfoldable m
        c × κ = assert (length cκs == 1) (fromJust absurd (L.head cκs))
        cκs' = (_ × ContExpr (enil α)) <$> (ctrs (successful (dataTypeFor c)) \\ (L.singleton c))
-   in ContElim (ElimConstr (fromFoldable ((cκs <#> \(c × κ) -> c × totalise κ α) <> cκs')))
+   in ContElim (ElimConstr (fromFoldable ((c × totalise κ α) : cκs')))
 totalise (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totalise κ α))
 
 -- TODO: explain relationship to Lattice instance on Elim
