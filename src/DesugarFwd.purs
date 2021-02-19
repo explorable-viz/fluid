@@ -31,11 +31,6 @@ econs α e e' = E.Constr α cCons (e : e' : Nil)
 elimBool :: Cont 𝔹 -> Cont 𝔹 -> Elim 𝔹
 elimBool κ κ' = ElimConstr (fromFoldable [cTrue × κ, cFalse × κ'])
 
--- "Vanilla" desugaring is just forward-slicing where we disregard annotations, so user errors may occur during
--- forward slicing.
-class DesugarFwd a b | a -> b where
-   desugarFwd :: a -> MayFail b
-
 -- Surface language supports "blocks" of variable declarations; core does not.
 moduleFwd :: Module 𝔹 -> MayFail (E.Module 𝔹)
 moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarDefs <$> ds))
@@ -49,11 +44,11 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarD
    desugarDefs (Right δ)   = pure (Right δ)
 
 varDefFwd :: VarDef 𝔹 -> MayFail (E.VarDef 𝔹)
-varDefFwd (VarDef π s) = E.VarDef <$> patternContFwd π (ContHole :: Cont 𝔹) <*> desugarFwd s
+varDefFwd (VarDef π s) = E.VarDef <$> patternFwd π (ContHole :: Cont 𝔹) <*> exprFwd s
 
 varDefsFwd :: VarDefs 𝔹 × Expr 𝔹 -> MayFail (E.Expr 𝔹)
 varDefsFwd (NonEmptyList (d :| Nil) × s) =
-   E.Let <$> varDefFwd d <*> desugarFwd s
+   E.Let <$> varDefFwd d <*> exprFwd s
 varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
    E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
 
@@ -68,78 +63,78 @@ recDefFwd :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
 recDefFwd xcs = (fst (head xcs) ↦ _) <$> branchesFwd_curried (snd <$> xcs)
 
 -- s desugar_fwd e
-instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
-   desugarFwd (Var x)                  = pure (E.Var x)
-   desugarFwd (Op op)                  = pure (E.Op op)
-   desugarFwd (Int α n)                = pure (E.Int α n)
-   desugarFwd (Float α n)              = pure (E.Float α n)
-   desugarFwd (Str α s)                = pure (E.Str α s)
-   desugarFwd (Constr α c ss)          = E.Constr α c <$> traverse desugarFwd ss
-   desugarFwd (Matrix α s (x × y) s')  = E.Matrix α <$> desugarFwd s <@> x × y <*> desugarFwd s'
-   desugarFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
-   desugarFwd (App s1 s2)              = E.App <$> desugarFwd s1 <*> desugarFwd s2
-   desugarFwd (BinaryApp s1 op s2)     = E.BinaryApp <$> desugarFwd s1 <@> op <*> desugarFwd s2
-   desugarFwd (MatchAs s bs)           = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> desugarFwd s
-   desugarFwd (IfElse s1 s2 s3) = do
-      e2 <- desugarFwd s2
-      e3 <- desugarFwd s3
-      E.App (E.Lambda (elimBool (ContExpr e2) (ContExpr e3))) <$> desugarFwd s1
-   desugarFwd (ListEmpty α)            = pure (enil α)
-   desugarFwd (ListNonEmpty α s l)     = econs α <$> desugarFwd s <*> listRestFwd l
-   desugarFwd (ListEnum s1 s2)         = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desugarFwd s1) <*> desugarFwd s2
-   -- | List-comp-done
-   desugarFwd (ListComp α s_body (NonEmptyList (Guard (Constr α2 c Nil) :| Nil))) | c == cTrue = do
-      econs α2 <$> desugarFwd s_body <@> enil α2
-   -- | List-comp-last
-   desugarFwd (ListComp α s_body (NonEmptyList (q :| Nil))) =
-      desugarFwd (ListComp α s_body (NonEmptyList (q :| Guard (Constr α cTrue Nil) : Nil)))
-   -- | List-comp-guard
-   desugarFwd (ListComp α s_body (NonEmptyList (Guard s :| q : qs))) = do
-      e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
-      E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desugarFwd s
-   -- | List-comp-decl
-   desugarFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))) = do
-      e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
-      σ <- patternContFwd π (ContExpr e :: Cont 𝔹)
-      E.App (E.Lambda σ) <$> desugarFwd s
-   -- | List-comp-gen
-   desugarFwd (ListComp α s_body (NonEmptyList (Generator p slist :| q : qs))) = do
-      e <- desugarFwd (ListComp α s_body (NonEmptyList (q :| qs)))
-      σ <- patternContFwd p (ContExpr e)
-      E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totalise (ContElim σ) α)))) <$> desugarFwd slist
-   desugarFwd (Let ds s)               = varDefsFwd (ds × s)
-   desugarFwd (LetRec xcs s)           = E.LetRec <$> recDefsFwd xcs <*> desugarFwd s
+exprFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
+exprFwd (Var x)                  = pure (E.Var x)
+exprFwd (Op op)                  = pure (E.Op op)
+exprFwd (Int α n)                = pure (E.Int α n)
+exprFwd (Float α n)              = pure (E.Float α n)
+exprFwd (Str α s)                = pure (E.Str α s)
+exprFwd (Constr α c ss)          = E.Constr α c <$> traverse exprFwd ss
+exprFwd (Matrix α s (x × y) s')  = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
+exprFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
+exprFwd (App s1 s2)              = E.App <$> exprFwd s1 <*> exprFwd s2
+exprFwd (BinaryApp s1 op s2)     = E.BinaryApp <$> exprFwd s1 <@> op <*> exprFwd s2
+exprFwd (MatchAs s bs)           = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> exprFwd s
+exprFwd (IfElse s1 s2 s3) = do
+   e2 <- exprFwd s2
+   e3 <- exprFwd s3
+   E.App (E.Lambda (elimBool (ContExpr e2) (ContExpr e3))) <$> exprFwd s1
+exprFwd (ListEmpty α)            = pure (enil α)
+exprFwd (ListNonEmpty α s l)     = econs α <$> exprFwd s <*> listRestFwd l
+exprFwd (ListEnum s1 s2)         = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd s1) <*> exprFwd s2
+-- | List-comp-done
+exprFwd (ListComp α s_body (NonEmptyList (Guard (Constr α2 c Nil) :| Nil))) | c == cTrue = do
+   econs α2 <$> exprFwd s_body <@> enil α2
+-- | List-comp-last
+exprFwd (ListComp α s_body (NonEmptyList (q :| Nil))) =
+   exprFwd (ListComp α s_body (NonEmptyList (q :| Guard (Constr α cTrue Nil) : Nil)))
+-- | List-comp-guard
+exprFwd (ListComp α s_body (NonEmptyList (Guard s :| q : qs))) = do
+   e <- exprFwd (ListComp α s_body (NonEmptyList (q :| qs)))
+   E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> exprFwd s
+-- | List-comp-decl
+exprFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))) = do
+   e <- exprFwd (ListComp α s_body (NonEmptyList (q :| qs)))
+   σ <- patternFwd π (ContExpr e :: Cont 𝔹)
+   E.App (E.Lambda σ) <$> exprFwd s
+-- | List-comp-gen
+exprFwd (ListComp α s_body (NonEmptyList (Generator p slist :| q : qs))) = do
+   e <- exprFwd (ListComp α s_body (NonEmptyList (q :| qs)))
+   σ <- patternFwd p (ContExpr e)
+   E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totalise (ContElim σ) α)))) <$> exprFwd slist
+exprFwd (Let ds s)               = varDefsFwd (ds × s)
+exprFwd (LetRec xcs s)           = E.LetRec <$> recDefsFwd xcs <*> exprFwd s
 
 -- l desugar_fwd e
 listRestFwd :: ListRest 𝔹 -> MayFail (E.Expr 𝔹)
 listRestFwd (End α)       = pure (enil α)
-listRestFwd (Next α s l)  = econs α <$> desugarFwd s <*> listRestFwd l
+listRestFwd (Next α s l)  = econs α <$> exprFwd s <*> listRestFwd l
 
 -- ps, e desugar_fwd σ
 patternsFwd :: NonEmptyList Pattern × Expr 𝔹 -> MayFail (Elim 𝔹)
 patternsFwd (NonEmptyList (p :| Nil) × e) = branchFwd_uncurried p e
 patternsFwd (NonEmptyList (p :| p' : ps) × e) =
-   patternContFwd p =<< ContExpr <$> E.Lambda <$> patternsFwd (NonEmptyList (p' :| ps) × e)
+   patternFwd p =<< ContExpr <$> E.Lambda <$> patternsFwd (NonEmptyList (p' :| ps) × e)
 
-patternContFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
-patternContFwd (PVar x) κ              = pure (ElimVar x κ)
-patternContFwd (PConstr c ps) κ        =
-   checkArity c (length ps) *> (ElimConstr <$> singleton c <$> desugarArgsFwd (Left <$> ps) κ)
-patternContFwd PListEmpty κ            = pure (ElimConstr (singleton cNil κ))
-patternContFwd (PListNonEmpty p o) κ   = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
+patternFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
+patternFwd (PVar x) κ              = pure (ElimVar x κ)
+patternFwd (PConstr c ps) κ        =
+   checkArity c (length ps) *> (ElimConstr <$> singleton c <$> argPatternFwd (Left <$> ps) κ)
+patternFwd PListEmpty κ            = pure (ElimConstr (singleton cNil κ))
+patternFwd (PListNonEmpty p o) κ   = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
 -- o, κ desugar_fwd σ
-listRestPatternContFwd :: ListRestPattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
-listRestPatternContFwd PEnd κ          = pure (ElimConstr (singleton cNil κ))
-listRestPatternContFwd (PNext p o) κ   = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
+listRestPatternFwd :: ListRestPattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
+listRestPatternFwd PEnd κ          = pure (ElimConstr (singleton cNil κ))
+listRestPatternFwd (PNext p o) κ   = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
-desugarArgsFwd :: List (Pattern + ListRestPattern) -> Cont 𝔹 -> MayFail (Cont 𝔹)
-desugarArgsFwd Nil κ             = pure κ
-desugarArgsFwd (Left p : πs) κ   = ContElim <$> (desugarArgsFwd πs κ >>= patternContFwd p)
-desugarArgsFwd (Right o : πs) κ  = ContElim <$> (desugarArgsFwd πs κ >>= listRestPatternContFwd o)
+argPatternFwd :: List (Pattern + ListRestPattern) -> Cont 𝔹 -> MayFail (Cont 𝔹)
+argPatternFwd Nil κ             = pure κ
+argPatternFwd (Left p : πs) κ   = ContElim <$> (argPatternFwd πs κ >>= patternFwd p)
+argPatternFwd (Right o : πs) κ  = ContElim <$> (argPatternFwd πs κ >>= listRestPatternFwd o)
 
 branchFwd_uncurried :: Pattern -> Expr 𝔹 -> MayFail (Elim 𝔹)
-branchFwd_uncurried p s = (ContExpr <$> desugarFwd s) >>= patternContFwd p
+branchFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= patternFwd p
 
 branchesFwd_curried :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
 branchesFwd_curried bs = do
