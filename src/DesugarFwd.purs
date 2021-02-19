@@ -5,7 +5,7 @@ import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Function (on)
 import Data.List (List(..), (:), (\\), length)
-import Data.List (head) as L
+import Data.List (head, singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, reverse, toList)
 import Data.Map (Map, fromFoldable, insert, lookup, singleton, toUnfoldable, update)
 import Data.Maybe (Maybe(..))
@@ -13,14 +13,14 @@ import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
 import Bindings (Binding, (↦), fromList)
-import DataType (Ctr, DataType'(..), checkArity, checkDataType, ctrToDataType, cCons, cNil, cTrue, cFalse)
+import DataType (Ctr, checkArity, checkDataType, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹)
 import SExpr (
    Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
-import Util (MayFail, type (+), type (×), (×), (≞), absurd, error, fromJust, mustLookup, report)
+import Util (MayFail, type (+), type (×), (×), (≞), absurd, assert, error, fromJust, report, successful)
 
 enil :: 𝔹 -> E.Expr 𝔹
 enil α = E.Constr α cNil Nil
@@ -79,7 +79,7 @@ instance expr :: DesugarFwd (Expr Boolean) (E.Expr Boolean) where
    desugarFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
    desugarFwd (App s1 s2)              = E.App <$> desugarFwd s1 <*> desugarFwd s2
    desugarFwd (BinaryApp s1 op s2)     = E.BinaryApp <$> desugarFwd s1 <@> op <*> desugarFwd s2
-   desugarFwd (MatchAs s bs)           = E.App <$> (E.Lambda <$> desugarFwd bs) <*> desugarFwd s
+   desugarFwd (MatchAs s bs)           = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> desugarFwd s
    desugarFwd (IfElse s1 s2 s3) = do
       e2 <- desugarFwd s2
       e3 <- desugarFwd s3
@@ -146,14 +146,10 @@ branchesFwd_curried bs = do
    NonEmptyList (σ :| σs) <- traverse desugarFwd bs
    foldM maybeJoin σ σs
 
-instance branchesUncurried :: DesugarFwd (NonEmptyList (Pattern × Expr Boolean)) (Elim Boolean) where
-   desugarFwd bs = do
-      NonEmptyList (σ :| σs) <- traverse (uncurry branchFwd_uncurried) bs
-      foldM maybeJoin σ σs
-
-instance either :: (DesugarFwd a b, DesugarFwd c d) => DesugarFwd (a + c) (b + d) where
-   desugarFwd (Left x) = Left <$> desugarFwd x
-   desugarFwd (Right x) = Right <$> desugarFwd x
+branchesFwd_uncurried :: NonEmptyList (Pattern × Expr 𝔹) -> MayFail (Elim 𝔹)
+branchesFwd_uncurried bs = do
+   NonEmptyList (σ :| σs) <- traverse (uncurry branchFwd_uncurried) bs
+   foldM maybeJoin σ σs
 
 -- holes used to represent var defs, but otherwise surface programs never contain holes
 totalise :: Cont 𝔹 -> 𝔹 -> Cont 𝔹
@@ -161,14 +157,13 @@ totalise ContHole _                    = error absurd
 totalise (ContExpr e) _                = ContExpr e
 totalise (ContElim ElimHole) _         = error absurd
 totalise (ContElim (ElimConstr m)) α   =
-   let c × κ = fromJust absurd (L.head (toUnfoldable m))
-       bs = toUnfoldable m
-       DataType _ sigs = mustLookup c ctrToDataType
-       bs' = (_ × ContExpr (enil α)) <$> ((fst <$> toUnfoldable sigs) \\ (fst <$> bs))
-   in ContElim (ElimConstr (fromFoldable ((bs <#> \(c × κ) -> c × totalise κ α) <> bs')))
+   let cκs = toUnfoldable m
+       c × κ = assert (length cκs == 1) (fromJust absurd (L.head cκs))
+       cκs' = (_ × ContExpr (enil α)) <$> (ctrs (successful (dataTypeFor c)) \\ (L.singleton c))
+   in ContElim (ElimConstr (fromFoldable ((cκs <#> \(c × κ) -> c × totalise κ α) <> cκs')))
 totalise (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totalise κ α))
 
--- TODO: subsume with (or distinguish from) Lattice instance on Elim
+-- TODO: explain relationship to Lattice instance on Elim
 class Joinable a where
    maybeJoin :: a -> a -> MayFail a
 
@@ -191,6 +186,6 @@ instance joinableMap :: Joinable (Map Ctr (Cont Boolean)) where
          case lookup c κs of
             Nothing -> do
                checkDataType "Non-uniform patterns: " c κs
-               pure $ insert c κ κs
+               pure (insert c κ κs)
             Just κ' ->
                update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
