@@ -7,7 +7,7 @@ import Data.Function (on)
 import Data.List (List(..), (:), (\\), length)
 import Data.List (head, singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, reverse, toList)
-import Data.Map (Map, fromFoldable, insert, lookup, singleton, toUnfoldable, update)
+import Data.Map (Map, fromFoldable, insert, lookup, singleton, size, toUnfoldable, update)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
@@ -157,9 +157,9 @@ totalise ContHole _                    = error absurd
 totalise (ContExpr e) _                = ContExpr e
 totalise (ContElim ElimHole) _         = error absurd
 totalise (ContElim (ElimConstr m)) α   =
-   let cκs = toUnfoldable m
-       c × κ = assert (length cκs == 1) (fromJust absurd (L.head cκs))
-       cκs' = (_ × ContExpr (enil α)) <$> (ctrs (successful (dataTypeFor c)) \\ (L.singleton c))
+   let c × κ = assert (size m == 1) (fromJust absurd (L.head (toUnfoldable m)))
+       d = successful (dataTypeFor c)
+       cκs' = (_ × ContExpr (enil α)) <$> (ctrs d \\ L.singleton c)
    in ContElim (ElimConstr (fromFoldable ((c × totalise κ α) : cκs')))
 totalise (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totalise κ α))
 
