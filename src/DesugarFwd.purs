@@ -10,6 +10,7 @@ import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, reverse, toList)
 import Data.Map (Map, fromFoldable, insert, lookup, singleton, size, toUnfoldable, update)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
+import Data.Profunctor.Strong ((&&&))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
 import Bindings (Binding, (↦), fromList, varAnon)
@@ -158,14 +159,11 @@ totalise ContHole _                    = error absurd
 totalise (ContExpr e) _                = ContExpr e
 totalise (ContElim ElimHole) _         = error absurd
 totalise (ContElim (ElimConstr m)) α   =
-   let c × κ = assert (size m == 1) (fromJust absurd (L.head (toUnfoldable m)))
-       d = successful (dataTypeFor c)
-       cκs' = (\c' -> c' × wurble c' α) <$> (ctrs d \\ L.singleton c)
+   let defaultBranch c = applyN (ContElim <<< ElimVar varAnon) (successful (arity c)) (ContExpr (enil α))
+       c × κ = assert (size m == 1) (fromJust absurd (L.head (toUnfoldable m)))
+       cκs' = (identity &&& defaultBranch) <$> (ctrs (successful (dataTypeFor c)) \\ L.singleton c)
    in ContElim (ElimConstr (fromFoldable ((c × totalise κ α) : cκs')))
 totalise (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totalise κ α))
-
-wurble :: Ctr -> 𝔹 -> Cont 𝔹
-wurble c α = applyN (ContElim <<< ElimVar varAnon) (successful (arity c)) (ContExpr (enil α))
 
 -- TODO: explain relationship to Lattice instance on Elim
 class Joinable a where
