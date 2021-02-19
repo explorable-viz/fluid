@@ -3,13 +3,13 @@ module DesugarBwd where
 import Prelude hiding (absurd)
 import Data.Function (on)
 import Data.Either (Either(..))
-import Data.List (List(..), (:), zip)
+import Data.List (List(..), (:), singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, reverse)
 import Data.Map (fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Tuple (uncurry, fst, snd)
 import Data.Profunctor.Strong (first)
-import Bindings (Binding, Bindings(..), (↦), (:+:), fromList, varAnon)
+import Bindings (Binding, Bindings(..), (↦), (:+:), fromList)
 import DataType (cCons, cNil, cTrue, cFalse)
 import DesugarFwd (elimBool)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -33,14 +33,14 @@ varDefsBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) ×
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
 recDefsBwd :: E.RecDefs 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
-recDefsBwd xσs xcs = join (zipRecDefs xσs (reverse (groupBy (eq `on` fst) xcs)))
+recDefsBwd xσs xcs = join (recDefsBwd' xσs (reverse (groupBy (eq `on` fst) xcs)))
 
-zipRecDefs :: E.RecDefs 𝔹 -> Endo (NonEmptyList (NonEmptyList (Clause 𝔹)))
-zipRecDefs Empty _                                             = error absurd
-zipRecDefs (Empty :+: x ↦ σ) (NonEmptyList (xcs :| Nil))       = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
-zipRecDefs (_ :+: _ :+: _) (NonEmptyList (_ :| Nil))           = error absurd
-zipRecDefs (ρ :+: x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
-   NonEmptyList (recDefBwd (x ↦ σ) xcs1 :| toList (zipRecDefs ρ (NonEmptyList (xcs2 :| xcss))))
+recDefsBwd' :: E.RecDefs 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
+recDefsBwd' Empty _                                             = error absurd
+recDefsBwd' (Empty :+: x ↦ σ) (NonEmptyList (xcs :| Nil))       = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
+recDefsBwd' (_ :+: _ :+: _) (NonEmptyList (_ :| Nil))           = error absurd
+recDefsBwd' (ρ :+: x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
+   NonEmptyList (recDefBwd (x ↦ σ) xcs1 :| toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss))))
 
 recDefBwd :: Binding Elim 𝔹 -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
 recDefBwd (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd
@@ -70,9 +70,9 @@ exprBwd e (Constr _ c es) =
    case expand e (E.Constr false c (const E.Hole <$> es)) of
       E.Constr α _ es' -> Constr α c (uncurry exprBwd <$> zip es' es)
       _ -> error absurd
-exprBwd e (Matrix _ s _ s') =
-   case expand e (E.Matrix false E.Hole (varAnon × varAnon) E.Hole) of
-      E.Matrix α e1 (x × y) e2 -> Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
+exprBwd e (Matrix _ s (x × y) s') =
+   case expand e (E.Matrix false E.Hole (x × y) E.Hole) of
+      E.Matrix α e1 _ e2 -> Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
       _ -> error absurd
 exprBwd e (Lambda bs) =
    case expand e (E.Lambda ElimHole) of
@@ -93,9 +93,9 @@ exprBwd e (IfElse s1 s2 s3) =
                   (exprBwd (asExpr (mustLookup cTrue m)) s2)
                   (exprBwd (asExpr (mustLookup cFalse m)) s3)
       _ -> error absurd
-exprBwd e (BinaryApp s1 _ s2) =
-   case expand e (E.BinaryApp E.Hole varAnon E.Hole) of
-      E.BinaryApp e1 op e2 -> BinaryApp (exprBwd e1 s1) op (exprBwd e2 s2)
+exprBwd e (BinaryApp s1 op s2) =
+   case expand e (E.BinaryApp E.Hole op E.Hole) of
+      E.BinaryApp e1 _ e2 -> BinaryApp (exprBwd e1 s1) op (exprBwd e2 s2)
       _ -> error absurd
 exprBwd e (Let ds s) =
    case expand e (E.Let (E.VarDef ElimHole E.Hole) E.Hole) of
@@ -125,9 +125,9 @@ exprBwd e (ListEnum s1 s2) =
          ListEnum (exprBwd e1 s1) (exprBwd e2 s2)
       _ -> error absurd
 -- list-comp-done
-exprBwd e (ListComp _ s_body (NonEmptyList (Guard (Constr _ cTrue' Nil) :| Nil))) | cTrue' == cTrue =
+exprBwd e (ListComp _ s_body (NonEmptyList (Guard (Constr _ c Nil) :| Nil))) | c == cTrue =
    case expand e (E.Constr false cCons (E.Hole : E.Constr false cNil Nil : Nil)) of
-      E.Constr α2 cCons' (e' : E.Constr α1 cNil' Nil : Nil) ->
+      E.Constr α2 cCons' (e' : E.Constr α1 _ Nil : Nil) ->
          ListComp (α1 ∨ α2) (exprBwd e' s_body)
                            (NonEmptyList (Guard (Constr (α1 ∨ α2) cTrue Nil) :| Nil))
       _ -> error absurd
@@ -142,7 +142,7 @@ exprBwd e (ListComp α0 s1 (NonEmptyList (Guard s2 :| q : qs))) =
    case expand e (E.App (E.Lambda (elimBool ContHole ContHole)) E.Hole) of
       E.App (E.Lambda (ElimConstr m)) e2 ->
          case exprBwd (asExpr (mustLookup cTrue m)) (ListComp α0 s1 (NonEmptyList (q :| qs))) ×
-            exprBwd (asExpr (mustLookup cFalse m)) (Constr true cNil Nil) of
+              exprBwd (asExpr (mustLookup cFalse m)) (Constr true cNil Nil) of
             ListComp β s1' (NonEmptyList (q' :| qs')) × Constr α c Nil | c == cNil ->
                ListComp (α ∨ β) s1' (NonEmptyList (Guard (exprBwd e2 s2) :| q' : qs'))
             _ × _ -> error absurd
@@ -251,17 +251,17 @@ totaliseBwd (ContElim (ElimConstr m)) (π : πs) =
    case π of
       Left (PVar _) -> error absurd
       Left (PConstr c ps) ->
-         first (\κ -> ContElim (ElimConstr (fromFoldable [c × κ])))
-               (totaliseBwd (mustLookup c m) ((Left <$> ps) <> πs))
+         let κ × β = totaliseBwd (mustLookup c m) ((Left <$> ps) <> πs) in
+         ContElim (ElimConstr (fromFoldable (singleton (c × κ)))) × β
       Left PListEmpty ->
-         first (\κ -> ContElim (ElimConstr (fromFoldable [cNil × κ])))
+         first (\κ -> ContElim (ElimConstr (fromFoldable (singleton (cNil × κ)))))
                (totaliseBwd (mustLookup cNil m) πs)
       Left (PListNonEmpty p o) ->
-         first (\κ -> ContElim (ElimConstr (fromFoldable [cCons × κ])))
+         first (\κ -> ContElim (ElimConstr (fromFoldable (singleton (cCons × κ)))))
                (totaliseBwd (mustLookup cCons m) (Left p : Right o : πs))
       Right PEnd ->
-         first (\κ -> ContElim (ElimConstr (fromFoldable [cNil × κ])))
+         first (\κ -> ContElim (ElimConstr (fromFoldable (singleton (cNil × κ)))))
                (totaliseBwd (mustLookup cNil m) πs)
       Right (PNext p o) ->
-         first (\κ -> ContElim (ElimConstr (fromFoldable [cCons × κ])))
+         first (\κ -> ContElim (ElimConstr (fromFoldable (singleton (cCons × κ)))))
                (totaliseBwd (mustLookup cCons m) (Left p : Right o : πs))

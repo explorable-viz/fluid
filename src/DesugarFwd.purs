@@ -7,7 +7,7 @@ import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), length)
 import Data.List (head, singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, reverse, toList)
-import Data.Map (Map, fromFoldable, insert, lookup, singleton, size, toUnfoldable, update)
+import Data.Map (Map, fromFoldable, insert, lookup, mapMaybe, singleton, size, toUnfoldable, update)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
@@ -21,7 +21,7 @@ import Lattice (𝔹)
 import SExpr (
    Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
-import Util (MayFail, type (+), type (×), (×), (≞), absurd, assert, error, fromJust, report, successful)
+import Util (Endo, MayFail, type (+), type (×), (×), (≞), absurd, assert, error, fromJust, report, successful)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd
@@ -105,10 +105,10 @@ exprFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))
    σ <- patternFwd π (ContExpr e :: Cont 𝔹)
    E.App (E.Lambda σ) <$> exprFwd s
 -- | List-comp-gen
-exprFwd (ListComp α s_body (NonEmptyList (Generator p slist :| q : qs))) = do
+exprFwd (ListComp α s_body (NonEmptyList (Generator p s :| q : qs))) = do
    e <- exprFwd (ListComp α s_body (NonEmptyList (q :| qs)))
    σ <- patternFwd p (ContExpr e)
-   E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totalise (ContElim σ) α)))) <$> exprFwd slist
+   E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totaliseFwd (ContElim σ) α)))) <$> exprFwd s
 exprFwd (Let ds s)               = varDefsFwd (ds × s)
 exprFwd (LetRec xcs s)           = E.LetRec <$> recDefsFwd xcs <*> exprFwd s
 
@@ -154,16 +154,20 @@ branchesFwd_uncurried bs = do
    foldM maybeJoin σ σs
 
 -- holes used to represent var defs, but otherwise surface programs never contain holes
-totalise :: Cont 𝔹 -> 𝔹 -> Cont 𝔹
-totalise ContHole _                    = error absurd
-totalise (ContExpr e) _                = ContExpr e
-totalise (ContElim ElimHole) _         = error absurd
-totalise (ContElim (ElimConstr m)) α   =
+totaliseFwd :: Cont 𝔹 -> 𝔹 -> Cont 𝔹
+totaliseFwd ContHole _                    = error absurd
+totaliseFwd (ContExpr e) _                = ContExpr e
+totaliseFwd (ContElim ElimHole) _         = error absurd
+totaliseFwd (ContElim (ElimConstr m)) α   = ContElim (ElimConstr (completeFwd α (mapMaybe (Just <<< flip totaliseFwd α) m)))
+totaliseFwd (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totaliseFwd κ α))
+
+-- Complete singleton eliminator to map every missing constructor to empty list, with anonymous pattern variables.
+completeFwd :: 𝔹 -> Endo (Map Ctr (Cont 𝔹))
+completeFwd α m =
    let defaultBranch c = applyN (ContElim <<< ElimVar varAnon) (successful (arity c)) (ContExpr (enil α))
        c × κ = assert (size m == 1) (fromJust absurd (L.head (toUnfoldable m)))
        cκs' = (identity &&& defaultBranch) <$> (ctrs (successful (dataTypeFor c)) \\ L.singleton c)
-   in ContElim (ElimConstr (fromFoldable ((c × totalise κ α) : cκs')))
-totalise (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totalise κ α))
+   in fromFoldable (c × κ : cκs')
 
 -- TODO: explain relationship to Lattice instance on Elim
 class Joinable a where
