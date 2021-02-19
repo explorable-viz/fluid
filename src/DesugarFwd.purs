@@ -116,10 +116,10 @@ listRestFwd (End α)       = pure (enil α)
 listRestFwd (Next α s l)  = econs α <$> desugarFwd s <*> listRestFwd l
 
 -- ps, e desugar_fwd σ
-instance patternsExpr :: DesugarFwd (NonEmptyList Pattern × Expr Boolean) (Elim Boolean) where
-   desugarFwd (NonEmptyList (p :| Nil) × e) = branchFwd_uncurried p e
-   desugarFwd (NonEmptyList (p :| p' : ps) × e) =
-      patternContFwd p =<< ContExpr <$> E.Lambda <$> desugarFwd (NonEmptyList (p' :| ps) × e)
+patternsFwd :: NonEmptyList Pattern × Expr 𝔹 -> MayFail (Elim 𝔹)
+patternsFwd (NonEmptyList (p :| Nil) × e) = branchFwd_uncurried p e
+patternsFwd (NonEmptyList (p :| p' : ps) × e) =
+   patternContFwd p =<< ContExpr <$> E.Lambda <$> patternsFwd (NonEmptyList (p' :| ps) × e)
 
 patternContFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 patternContFwd (PVar x) κ              = pure (ElimVar x κ)
@@ -129,21 +129,21 @@ patternContFwd PListEmpty κ            = pure (ElimConstr (singleton cNil κ))
 patternContFwd (PListNonEmpty p o) κ   = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
 
 -- o, κ desugar_fwd σ
-instance listPatternRestCont :: DesugarFwd (ListRestPattern × Cont Boolean) (Elim Boolean) where
-   desugarFwd (PEnd × κ)      = pure (ElimConstr (singleton cNil κ))
-   desugarFwd (PNext p o × κ) = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
+listRestPatternContFwd :: ListRestPattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
+listRestPatternContFwd PEnd κ          = pure (ElimConstr (singleton cNil κ))
+listRestPatternContFwd (PNext p o) κ   = ElimConstr <$> singleton cCons <$> desugarArgsFwd (Left p : Right o : Nil) κ
 
 desugarArgsFwd :: List (Pattern + ListRestPattern) -> Cont 𝔹 -> MayFail (Cont 𝔹)
 desugarArgsFwd Nil κ             = pure κ
 desugarArgsFwd (Left p : πs) κ   = ContElim <$> (desugarArgsFwd πs κ >>= patternContFwd p)
-desugarArgsFwd (Right o : πs) κ  = ContElim <$> (desugarArgsFwd πs κ >>= desugarFwd <<< (o × _))
+desugarArgsFwd (Right o : πs) κ  = ContElim <$> (desugarArgsFwd πs κ >>= listRestPatternContFwd o)
 
 branchFwd_uncurried :: Pattern -> Expr 𝔹 -> MayFail (Elim 𝔹)
-branchFwd_uncurried π s = (ContExpr <$> desugarFwd s) >>= patternContFwd π
+branchFwd_uncurried p s = (ContExpr <$> desugarFwd s) >>= patternContFwd p
 
 branchesFwd_curried :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
 branchesFwd_curried bs = do
-   NonEmptyList (σ :| σs) <- traverse desugarFwd bs
+   NonEmptyList (σ :| σs) <- traverse patternsFwd bs
    foldM maybeJoin σ σs
 
 branchesFwd_uncurried :: NonEmptyList (Pattern × Expr 𝔹) -> MayFail (Elim 𝔹)
