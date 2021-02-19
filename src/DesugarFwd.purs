@@ -3,7 +3,7 @@ module DesugarFwd where
 import Prelude hiding (absurd)
 import Data.Either (Either(..))
 import Data.Foldable (foldM)
-import Data.Function (on)
+import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), length)
 import Data.List (head, singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, reverse, toList)
@@ -12,8 +12,8 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings (Binding, (↦), fromList)
-import DataType (Ctr, checkArity, checkDataType, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
+import Bindings (Binding, (↦), fromList, varAnon)
+import DataType (Ctr, arity, checkArity, checkDataType, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹)
@@ -21,6 +21,12 @@ import SExpr (
    Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
 import Util (MayFail, type (+), type (×), (×), (≞), absurd, assert, error, fromJust, report, successful)
+
+desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
+desugarFwd = exprFwd
+
+desugarModuleFwd :: Module 𝔹 -> MayFail (E.Module 𝔹)
+desugarModuleFwd = moduleFwd
 
 enil :: 𝔹 -> E.Expr 𝔹
 enil α = E.Constr α cNil Nil
@@ -154,9 +160,12 @@ totalise (ContElim ElimHole) _         = error absurd
 totalise (ContElim (ElimConstr m)) α   =
    let c × κ = assert (size m == 1) (fromJust absurd (L.head (toUnfoldable m)))
        d = successful (dataTypeFor c)
-       cκs' = (_ × ContExpr (enil α)) <$> (ctrs d \\ L.singleton c)
+       cκs' = (\c' -> c' × wurble c' α) <$> (ctrs d \\ L.singleton c)
    in ContElim (ElimConstr (fromFoldable ((c × totalise κ α) : cκs')))
 totalise (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totalise κ α))
+
+wurble :: Ctr -> 𝔹 -> Cont 𝔹
+wurble c α = applyN (ContElim <<< ElimVar varAnon) (successful (arity c)) (ContExpr (enil α))
 
 -- TODO: explain relationship to Lattice instance on Elim
 class Joinable a where
