@@ -1,10 +1,9 @@
 module DesugarBwd where
 
 import Prelude hiding (absurd)
-import Data.Function (on)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
-import Data.Function (applyN)
+import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, reverse)
 import Data.Map (Map, fromFoldable)
@@ -275,13 +274,14 @@ totaliseBwd' κ (π : πs) =
       Left PListEmpty ->
          case expand κ (ContElim (ElimConstr (totaliseConstrFwd (cNil × ContHole) false))) of
             ContElim (ElimConstr m) ->
-               let κ' × β = totaliseBwd (mustLookup cNil m) πs in
-               ContElim (ElimConstr (fromFoldable (singleton (cNil × κ')))) × β
+               let κ' × α = totaliseConstrBwd m cNil
+                   κ'' × β = totaliseBwd' κ' πs in
+               ContElim (ElimConstr (fromFoldable (singleton (cNil × κ'')))) × (α ∨ β)
             _ -> error absurd
       Left (PListNonEmpty p o) ->
          case expand κ (ContElim (ElimConstr (totaliseConstrFwd (cCons × ContHole) false))) of
             ContElim (ElimConstr m) ->
-               let κ' × β = totaliseBwd (mustLookup cCons m) (Left p : Right o : πs) in
+               let κ' × β = totaliseBwd' (mustLookup cCons m) (Left p : Right o : πs) in
                ContElim (ElimConstr (fromFoldable (singleton (cCons × κ')))) × β
             _ -> error absurd
       _ -> error "todo"
@@ -289,15 +289,18 @@ totaliseBwd' _ _ = error "todo"
 
 -- Discard all synthesised branches, returning the original singleton branch and the join of the annotations
 -- on the empty lists used as the bodies of synthesised branches.
-totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Ctr -> Map Ctr (Cont 𝔹) × 𝔹
+totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Ctr -> Cont 𝔹 × 𝔹
 totaliseConstrBwd m c =
    let cs = ctrs (successful (dataTypeFor c)) \\ singleton c in
-   fromFoldable (singleton (c × mustLookup c m)) × foldl (∨) false (map (bodyAnn <<< body) cs)
+   mustLookup c m × foldl (∨) false (map (bodyAnn <<< body) cs)
    where
+      body :: Ctr -> Cont 𝔹
       body c' = applyN unargument (successful (arity c')) (mustLookup c' m)
 
+      unargument :: Cont 𝔹 -> Cont 𝔹
       unargument (ContElim (ElimVar _ κ)) = κ
       unargument _                        = error absurd
 
+      bodyAnn :: Cont 𝔹 -> 𝔹
       bodyAnn (ContExpr (E.Constr α c' Nil)) | c' == cNil = α
       bodyAnn _                                           = error absurd
