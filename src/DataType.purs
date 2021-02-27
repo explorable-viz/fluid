@@ -41,7 +41,7 @@ instance showCtr :: Show Ctr where
 
 data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig
-type CtrSig = List FieldName -- but see issue #162
+type CtrSig = List FieldName
 
 typeName :: DataType -> TypeName
 typeName (DataType name _) = name
@@ -59,17 +59,17 @@ dataType :: forall f . Functor f => Foldable f => TypeName -> f (Ctr × f FieldN
 dataType name = map (uncurry ctr) >>> M.fromFoldable >>> DataType name
 
 ctrToDataType :: Map Ctr DataType
-ctrToDataType = M.fromFoldable $
-   concat $ dataTypes <#> (\d@(DataType _ sigs) -> keys sigs <#> (_ × d))
+ctrToDataType = M.fromFoldable (concat (dataTypes <#> (\d -> ctrs d <#> (_ × d))))
 
 dataTypeFor :: Ctr -> MayFail DataType
-dataTypeFor c = note ("Unknown constructor " <> show c) $ lookup c ctrToDataType
+dataTypeFor c = note ("Unknown constructor " <> show c) (lookup c ctrToDataType)
 
 dataTypeForKeys :: List Ctr -> MayFail DataType
-dataTypeForKeys cs =
-   case cs of
-      Nil   -> error absurd
-      c' : _ -> dataTypeFor c'
+dataTypeForKeys Nil     = error absurd
+dataTypeForKeys (c : _) = dataTypeFor c
+
+ctrs :: DataType -> List Ctr
+ctrs (DataType _ sigs) = keys sigs
 
 arity :: Ctr -> MayFail Int
 arity c = do
@@ -77,16 +77,14 @@ arity c = do
    length <$> note absurd (lookup c sigs)
 
 checkArity :: Ctr -> Int -> MayFail Unit
-checkArity c n = void $ with ("Checking arity of " <> show c) $
-   arity c `(=<<<) (≞)` pure n
+checkArity c n = void $
+   with ("Checking arity of " <> show c) (arity c `(=<<<) (≞)` pure n)
 
 checkDataType :: forall a . String -> Ctr -> Map Ctr a -> MayFail Unit
 checkDataType msg c κs = void $ do
    d <- dataTypeFor c
-   d' <- dataTypeForKeys $ keys κs
-   if (d /= d')
-   then error absurd
-   else with (msg <> show c <> " is not a constructor of " <> show d') $ d ≞ d'
+   d' <- dataTypeForKeys (keys κs)
+   with (msg <> show c <> " is not a constructor of " <> show d') (d ≞ d')
 
 -- Used internally by primitives or desugaring.
 cFalse      = Ctr "False"     :: Ctr -- Bool

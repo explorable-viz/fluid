@@ -42,18 +42,19 @@ test' :: String -> Aff (Env 𝔹 × S.Expr 𝔹) -> String -> SpecT Aff Unit Eff
 test' name setup expected =
    before setup $
       it name $ \(ρ × s) -> do
-         let e = successful $ desugarFwd s
-         case successful $ eval ρ e of
+         let e = successful (desugarFwd s)
+         case successful (eval ρ e) of
             t × v -> do
                unless (isGraphical v) $
                   --trace (render $ pretty v) $
-                  (render $ pretty v) `shouldEqual` expected
+                  render (pretty v) `shouldEqual` expected
                when slicing do
                   let ρ' × e' × α'  = eval_bwd v t
-                      v'            = eval_fwd ρ' e' true
-                      s'            = desugarBwd e' s
+                      s' = desugarBwd e' s
+                      e'' = successful (desugarFwd s')
+                      v' = eval_fwd ρ' e'' true
                   unless (isGraphical v) $
-                     (render $ pretty v') `shouldEqual` expected
+                     render (pretty v') `shouldEqual` expected
 
 test :: String -> String -> SpecT Aff Unit Effect Unit
 test file = test' file (openWithImports file)
@@ -72,6 +73,8 @@ main = do
    run $ test "desugar/list-comp-3" "[9, 8]"
    run $ test "desugar/list-comp-4" "[5, 4, 3]"
    run $ test "desugar/list-comp-5" "[5, 4, 3]"
+   run $ test "desugar/list-comp-6" "[5]"
+   run $ test "desugar/list-comp-7" "[[]]"
    run $ test "desugar/list-enum" "[3, 4, 5, 6, 7]"
    -- misc
    run $ test "arithmetic" "42"

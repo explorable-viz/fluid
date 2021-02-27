@@ -13,10 +13,9 @@ type Var = String -- newtype?
 
 varAnon = "_" :: Var
 
--- We need a "bottom" variable that we can use to define hole expansion, which is similar to pattern-matching on terms.
--- For now use varAnon for this.
+-- Discrete partial order for variables.
 mustGeq :: Var -> Var -> Var
-mustGeq x y = fromJust "Must be greater" (whenever (y == varAnon) x)
+mustGeq x y = fromJust "Must be greater" (whenever (x == y) x)
 
 infixl 4 mustGeq as ⪂
 

@@ -5,7 +5,7 @@ import Control.Apply (lift2)
 import Data.List (List, zipWith)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
-import Bindings (Bindings, Var, (⪂), varAnon)
+import Bindings (Bindings, Var, (⪂))
 import DataType (Ctr)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
@@ -128,10 +128,10 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand Hole (Float false n)                  = Float false n
    expand Hole (Str false str)                  = Str false str
    expand Hole e@(Constr _ c es)                = expand (Constr false c (const Hole <$> es)) e
-   expand Hole e@(Matrix _ _ _ _)               = expand (Matrix false Hole (varAnon × varAnon) Hole) e
+   expand Hole e@(Matrix _ _ (x × y) _)         = expand (Matrix false Hole (x × y) Hole) e
    expand Hole e@(Lambda _)                     = expand (Lambda ElimHole) e
    expand Hole e@(App _ _)                      = expand (App Hole Hole) e
-   expand Hole e@(BinaryApp _ _ _)              = expand (BinaryApp Hole varAnon Hole) e
+   expand Hole e@(BinaryApp _ op _)             = expand (BinaryApp Hole op Hole) e
    expand Hole e@(Let (VarDef _ _) _)           = expand (Let (VarDef ElimHole Hole) Hole) e
    expand Hole e@(LetRec h _)                   = expand (LetRec (botOf h) Hole) e
    expand (Var x) (Var x')                      = Var (x ≜ x')
@@ -153,7 +153,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
 
 instance elimExpandable :: Expandable (Elim Boolean) where
    expand σ ElimHole                      = σ
-   expand ElimHole σ@(ElimVar _ _)        = expand (ElimVar varAnon ContHole) σ
+   expand ElimHole σ@(ElimVar x _)        = expand (ElimVar x ContHole) σ
    expand ElimHole σ@(ElimConstr m)       = expand (ElimConstr (const ContHole <$> m)) σ
    expand (ElimVar x κ) (ElimVar x' κ')   = ElimVar (x ⪂ x') (expand κ κ')
    expand (ElimConstr m) (ElimConstr m')  = ElimConstr (expand m m')

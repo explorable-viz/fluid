@@ -9,7 +9,7 @@ import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import SExpr (Expr) as S
-import DesugarFwd (desugarFwd)
+import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import Lattice (𝔹)
 import Parse (module_, program)
@@ -27,13 +27,13 @@ loadFile folder file = do
    let url = resourceServerUrl <> "/" <> folder <> "/" <> file <> ".fld"
    result <- request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
-      Left err -> error $ printError err
+      Left err -> error (printError err)
       Right response -> pure response.body
 
 loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file ρ = do
    src <- loadFile "fluid/lib" file
-   pure $ successful $ eval_module ρ $ successful $ desugarFwd $ successfulParse src module_
+   pure (successful (eval_module ρ (successful (desugarModuleFwd (successfulParse src module_)))))
 
 openWithImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithImports file =
@@ -42,7 +42,7 @@ openWithImports file =
 successfulParse :: forall t . String -> SParser t -> t
 successfulParse src p =
    case runParser src p of
-      Left parseError -> error $ show parseError
+      Left parseError -> error (show parseError)
       Right t -> t
 
 parseWithImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
@@ -53,5 +53,5 @@ parseWithImports src = do
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do
    ρ × s <- loadFile "fluid/dataset" file >>= parseWithImports
-   let _ × v = successful $ eval ρ $ successful $ desugarFwd s
-   pure $ Empty :+: x ↦ v
+   let _ × v = successful (eval ρ (successful (desugarFwd s)))
+   pure (Empty :+: x ↦ v)
