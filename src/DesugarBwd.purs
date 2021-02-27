@@ -281,8 +281,9 @@ totaliseBwd' κ (π : πs) =
       Left (PListNonEmpty p o) ->
          case expand κ (ContElim (ElimConstr (totaliseConstrFwd (cCons × ContHole) false))) of
             ContElim (ElimConstr m) ->
-               let κ' × β = totaliseBwd' (mustLookup cCons m) (Left p : Right o : πs) in
-               ContElim (ElimConstr (fromFoldable (singleton (cCons × κ')))) × β
+               let κ' × α = totaliseConstrBwd m cCons
+                   κ'' × β = totaliseBwd' κ (Left p : Right o : πs) in
+               ContElim (ElimConstr (fromFoldable (singleton (cCons × κ'')))) × (α ∨ β)
             _ -> error absurd
       _ -> error "todo"
 totaliseBwd' _ _ = error "todo"
