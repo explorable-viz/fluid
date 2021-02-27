@@ -291,10 +291,13 @@ totaliseBwd' _ _ = error "todo"
 -- on the empty lists used as the bodies of synthesised branches.
 totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Ctr -> Map Ctr (Cont 𝔹) × 𝔹
 totaliseConstrBwd m c =
-   let α = false
-       wurble c' = applyN ?_ (successful (arity c')) (mustLookup c' m)
-       ann κ = case κ of
-         ContExpr (E.Constr α c Nil) | c == cNil -> α
-         _ -> error absurd
-       cs = ctrs (successful (dataTypeFor c)) \\ singleton c in
-   fromFoldable (singleton (c × mustLookup c m)) × (α ∨ foldl (∨) false (map (ann <<< wurble) cs))
+   let cs = ctrs (successful (dataTypeFor c)) \\ singleton c in
+   fromFoldable (singleton (c × mustLookup c m)) × foldl (∨) false (map (bodyAnn <<< body) cs)
+   where
+      body c' = applyN unargument (successful (arity c')) (mustLookup c' m)
+
+      unargument (ContElim (ElimVar _ κ)) = κ
+      unargument _                        = error absurd
+
+      bodyAnn (ContExpr (E.Constr α c' Nil)) | c' == cNil = α
+      bodyAnn _                                           = error absurd
