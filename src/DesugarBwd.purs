@@ -239,6 +239,12 @@ branchesBwd_uncurried σ (NonEmptyList (b :| Nil)) =
 -- κ, πs totalise_bwd κ', α
 totaliseBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹 × 𝔹
 totaliseBwd κ Nil = κ × false
+totaliseBwd κ (Left (PVar x) : πs) =
+   case expand κ (ContElim (ElimVar x ContHole)) of
+      ContElim (ElimVar _ κ') ->
+         let κ'' × α = totaliseBwd κ' πs in
+         ContElim (ElimVar x κ'') × α
+      _ -> error absurd
 totaliseBwd κ (π : πs) =
    let c × πs' = case π of
          Left (PVar _)              -> error absurd
@@ -255,8 +261,8 @@ totaliseBwd κ (π : πs) =
          ContElim (ElimConstr (fromFoldable (singleton (c × κ'')))) × (α ∨ β)
       _ -> error absurd
 
--- Discard all synthesised branches, returning the original singleton branch and the join of the annotations
--- on the empty lists used as the bodies of synthesised branches.
+-- Discard all synthesised branches, returning the original singleton branch for c, plus join of annotations
+-- on the empty lists used for bodies of synthesised branches.
 totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Ctr -> Cont 𝔹 × 𝔹
 totaliseConstrBwd m c =
    let cs = ctrs (successful (dataTypeFor c)) \\ singleton c in

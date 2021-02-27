@@ -42,18 +42,19 @@ test' :: String -> Aff (Env 𝔹 × S.Expr 𝔹) -> String -> SpecT Aff Unit Eff
 test' name setup expected =
    before setup $
       it name $ \(ρ × s) -> do
-         let e = successful $ desugarFwd s
-         case successful $ eval ρ e of
+         let e = successful (desugarFwd s)
+         case successful (eval ρ e) of
             t × v -> do
                unless (isGraphical v) $
                   --trace (render $ pretty v) $
-                  (render $ pretty v) `shouldEqual` expected
+                  render (pretty v) `shouldEqual` expected
                when slicing do
                   let ρ' × e' × α'  = eval_bwd v t
-                      v'            = eval_fwd ρ' e' true
-                      s'            = desugarBwd e' s
+                      s' = desugarBwd e' s
+                      e'' = successful (desugarFwd s')
+                      v' = eval_fwd ρ' e' true
                   unless (isGraphical v) $
-                     (render $ pretty v') `shouldEqual` expected
+                     render (pretty v') `shouldEqual` expected
 
 test :: String -> String -> SpecT Aff Unit Effect Unit
 test file = test' file (openWithImports file)
