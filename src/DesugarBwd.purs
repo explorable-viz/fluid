@@ -8,7 +8,6 @@ import Data.List (List(..), (:), (\\), singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, reverse)
 import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
-import Data.Profunctor.Strong (first)
 import Data.Tuple (uncurry, fst, snd)
 import Bindings (Binding, Bindings(..), (↦), (:+:), fromList)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
@@ -239,54 +238,22 @@ branchesBwd_uncurried σ (NonEmptyList (b :| Nil)) =
 
 -- κ, πs totalise_bwd κ', α
 totaliseBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹 × 𝔹
-totaliseBwd κ Nil                              = κ × false
-totaliseBwd (ContExpr _) (_ : _)               = error absurd
-totaliseBwd ContHole (_ : _)                   = error "todo"
-totaliseBwd (ContElim ElimHole) _              = error "todo"
-totaliseBwd (ContElim (ElimVar x κ)) (π : πs)  =
-   case π of
-      Left (PVar _)  -> first (\κ' -> ContElim (ElimVar x κ')) (totaliseBwd κ πs)
-      Left _         -> error absurd
-      Right _        -> error absurd
-totaliseBwd (ContElim (ElimConstr m)) (π : πs) =
-   case π of
-      Left (PVar _) -> error absurd
-      Left (PConstr c ps) ->
-         let κ × β = totaliseBwd (mustLookup c m) ((Left <$> ps) <> πs) in
-         ContElim (ElimConstr (fromFoldable (singleton (c × κ)))) × β
-      Left PListEmpty ->
-         first (\κ -> ContElim (ElimConstr (fromFoldable (singleton (cNil × κ)))))
-               (totaliseBwd (mustLookup cNil m) πs)
-      Left (PListNonEmpty p o) ->
-         first (\κ -> ContElim (ElimConstr (fromFoldable (singleton (cCons × κ)))))
-               (totaliseBwd (mustLookup cCons m) (Left p : Right o : πs))
-      Right PEnd ->
-         first (\κ -> ContElim (ElimConstr (fromFoldable (singleton (cNil × κ)))))
-               (totaliseBwd (mustLookup cNil m) πs)
-      Right (PNext p o) ->
-         first (\κ -> ContElim (ElimConstr (fromFoldable (singleton (cCons × κ)))))
-               (totaliseBwd (mustLookup cCons m) (Left p : Right o : πs))
-
--- Use totaliseConstrFwd to construct the "eliminator patterns" the rules must match against.
-totaliseBwd' :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹 × 𝔹
-totaliseBwd' κ (π : πs) =
-   case π of
-      Left PListEmpty ->
-         case expand κ (ContElim (ElimConstr (totaliseConstrFwd (cNil × ContHole) false))) of
-            ContElim (ElimConstr m) ->
-               let κ' × α = totaliseConstrBwd m cNil
-                   κ'' × β = totaliseBwd' κ' πs in
-               ContElim (ElimConstr (fromFoldable (singleton (cNil × κ'')))) × (α ∨ β)
-            _ -> error absurd
-      Left (PListNonEmpty p o) ->
-         case expand κ (ContElim (ElimConstr (totaliseConstrFwd (cCons × ContHole) false))) of
-            ContElim (ElimConstr m) ->
-               let κ' × α = totaliseConstrBwd m cCons
-                   κ'' × β = totaliseBwd' κ (Left p : Right o : πs) in
-               ContElim (ElimConstr (fromFoldable (singleton (cCons × κ'')))) × (α ∨ β)
-            _ -> error absurd
-      _ -> error "todo"
-totaliseBwd' _ _ = error "todo"
+totaliseBwd κ Nil = κ × false
+totaliseBwd κ (π : πs) =
+   let c × πs' = case π of
+         Left (PVar _)              -> error absurd
+         Left (PConstr c ps)        -> c × (Left <$> ps)
+         Left PListEmpty            -> cNil × Nil
+         Left (PListNonEmpty p o)   -> cCons × (Left p : Right o : Nil)
+         Right PEnd                 -> cNil × Nil
+         Right (PNext p o)          -> cCons × (Left p : Right o : Nil)
+   -- use totaliseConstrFwd to construct "eliminator pattern" to match against
+   in case expand κ (ContElim (ElimConstr (totaliseConstrFwd (c × ContHole) false))) of
+      ContElim (ElimConstr m) ->
+         let κ' × α = totaliseConstrBwd m c
+             κ'' × β = totaliseBwd κ' (πs' <> πs) in
+         ContElim (ElimConstr (fromFoldable (singleton (c × κ'')))) × (α ∨ β)
+      _ -> error absurd
 
 -- Discard all synthesised branches, returning the original singleton branch and the join of the annotations
 -- on the empty lists used as the bodies of synthesised branches.
