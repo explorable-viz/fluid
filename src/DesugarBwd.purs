@@ -3,14 +3,16 @@ module DesugarBwd where
 import Prelude hiding (absurd)
 import Data.Function (on)
 import Data.Either (Either(..))
+import Data.Foldable (foldl)
+import Data.Function (applyN)
 import Data.List (List(..), (:), (\\), singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, reverse)
 import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
-import Data.Tuple (uncurry, fst, snd)
 import Data.Profunctor.Strong (first)
+import Data.Tuple (uncurry, fst, snd)
 import Bindings (Binding, Bindings(..), (↦), (:+:), fromList)
-import DataType (Ctr, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
+import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import DesugarFwd (elimBool, totaliseConstrFwd)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
@@ -290,5 +292,9 @@ totaliseBwd' _ _ = error "todo"
 totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Ctr -> Map Ctr (Cont 𝔹) × 𝔹
 totaliseConstrBwd m c =
    let α = false
+       wurble c' = applyN ?_ (successful (arity c')) (mustLookup c' m)
+       ann κ = case κ of
+         ContExpr (E.Constr α c Nil) | c == cNil -> α
+         _ -> error absurd
        cs = ctrs (successful (dataTypeFor c)) \\ singleton c in
-   fromFoldable (singleton (c × mustLookup c m)) × α
+   fromFoldable (singleton (c × mustLookup c m)) × (α ∨ foldl (∨) false (map (ann <<< wurble) cs))
