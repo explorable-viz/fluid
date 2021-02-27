@@ -3,14 +3,14 @@ module DesugarBwd where
 import Prelude hiding (absurd)
 import Data.Function (on)
 import Data.Either (Either(..))
-import Data.List (List(..), (:), singleton, zip)
+import Data.List (List(..), (:), (\\), singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, reverse)
 import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Tuple (uncurry, fst, snd)
 import Data.Profunctor.Strong (first)
 import Bindings (Binding, Bindings(..), (↦), (:+:), fromList)
-import DataType (Ctr, cCons, cNil, cTrue, cFalse)
+import DataType (Ctr, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import DesugarFwd (elimBool, totaliseConstrFwd)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
@@ -18,7 +18,7 @@ import SExpr (
    Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs
 )
 import Lattice (𝔹, (∨), expand)
-import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup)
+import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -271,13 +271,13 @@ totaliseBwd' :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹 × �
 totaliseBwd' κ (π : πs) =
    case π of
       Left PListEmpty ->
-         case expand κ (ContElim (ElimConstr (totaliseConstrFwd (fromFoldable (singleton (cNil × ContHole))) false))) of
+         case expand κ (ContElim (ElimConstr (totaliseConstrFwd (cNil × ContHole) false))) of
             ContElim (ElimConstr m) ->
                let κ' × β = totaliseBwd (mustLookup cNil m) πs in
                ContElim (ElimConstr (fromFoldable (singleton (cNil × κ')))) × β
             _ -> error absurd
       Left (PListNonEmpty p o) ->
-         case expand κ (ContElim (ElimConstr (totaliseConstrFwd (fromFoldable (singleton (cCons × ContHole))) false))) of
+         case expand κ (ContElim (ElimConstr (totaliseConstrFwd (cCons × ContHole) false))) of
             ContElim (ElimConstr m) ->
                let κ' × β = totaliseBwd (mustLookup cCons m) (Left p : Right o : πs) in
                ContElim (ElimConstr (fromFoldable (singleton (cCons × κ')))) × β
@@ -287,5 +287,8 @@ totaliseBwd' _ _ = error "todo"
 
 -- Discard all synthesised branches, returning the original singleton branch and the join of the annotations
 -- on the empty lists used as the bodies of synthesised branches.
-totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Map Ctr (Cont 𝔹) × 𝔹
-totaliseConstrBwd m = error "todo"
+totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Ctr -> Map Ctr (Cont 𝔹) × 𝔹
+totaliseConstrBwd m c =
+   let α = false
+       cs = ctrs (successful (dataTypeFor c)) \\ singleton c in
+   fromFoldable (singleton (c × mustLookup c m)) × α

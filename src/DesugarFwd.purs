@@ -7,7 +7,7 @@ import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), length)
 import Data.List (head, singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, reverse, toList)
-import Data.Map (Map, fromFoldable, insert, lookup, mapMaybe, singleton, size, toUnfoldable, update)
+import Data.Map (Map, fromFoldable, insert, lookup, singleton, size, toUnfoldable, update)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
@@ -21,7 +21,7 @@ import Lattice (𝔹)
 import SExpr (
    Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
-import Util (Endo, MayFail, type (+), type (×), (×), (≞), absurd, assert, error, fromJust, report, successful)
+import Util (MayFail, type (+), type (×), (×), (≞), absurd, assert, error, fromJust, report, successful)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd
@@ -195,4 +195,4 @@ instance joinableMap :: Joinable (Map Ctr (Cont Boolean)) where
                checkDataType "Non-uniform patterns: " c κs
                pure (insert c κ κs)
             Just κ' ->
-               update <$> (const <$> pure <$> maybeJoin κ' κ) <@> c <@> κs
+               update <$> (const <$> Just <$> maybeJoin κ' κ) <@> c <@> κs
