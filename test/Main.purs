@@ -52,7 +52,7 @@ test' name setup expected =
                   let ρ' × e' × α'  = eval_bwd v t
                       s' = desugarBwd e' s
                       e'' = successful (desugarFwd s')
-                      v' = eval_fwd ρ' e' true
+                      v' = eval_fwd ρ' e'' true
                   unless (isGraphical v) $
                      render (pretty v') `shouldEqual` expected
 
