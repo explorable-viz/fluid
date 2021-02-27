@@ -158,16 +158,17 @@ totaliseFwd :: Cont 𝔹 -> 𝔹 -> Cont 𝔹
 totaliseFwd ContHole _                    = error absurd
 totaliseFwd (ContExpr e) _                = ContExpr e
 totaliseFwd (ContElim ElimHole) _         = error absurd
-totaliseFwd (ContElim (ElimConstr m)) α   = ContElim (ElimConstr (completeFwd α (mapMaybe (Just <<< flip totaliseFwd α) m)))
+totaliseFwd (ContElim (ElimConstr m)) α   = ContElim (ElimConstr (totaliseConstrFwd (c × totaliseFwd κ α) α))
+   where c × κ = assert (size m == 1) (fromJust absurd (L.head (toUnfoldable m)))
 totaliseFwd (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totaliseFwd κ α))
 
--- Complete singleton eliminator to map every missing constructor to empty list, with anonymous pattern variables.
-completeFwd :: 𝔹 -> Endo (Map Ctr (Cont 𝔹))
-completeFwd α m =
-   let defaultBranch c = applyN (ContElim <<< ElimVar varAnon) (successful (arity c)) (ContExpr (enil α))
-       c × κ = assert (size m == 1) (fromJust absurd (L.head (toUnfoldable m)))
-       cκs' = (identity &&& defaultBranch) <$> (ctrs (successful (dataTypeFor c)) \\ L.singleton c)
-   in fromFoldable (c × κ : cκs')
+-- Extend singleton branch to set of branches where any missing constructors have been mapped to the empty list,
+-- using anonymous pattern variables where necessary.
+totaliseConstrFwd :: Ctr × Cont 𝔹 -> 𝔹 -> Map Ctr (Cont 𝔹)
+totaliseConstrFwd (c × κ) α =
+   let defaultBranch c' = applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
+       cκs = (identity &&& defaultBranch) <$> (ctrs (successful (dataTypeFor c)) \\ L.singleton c)
+   in fromFoldable (c × κ : cκs)
 
 -- TODO: explain relationship to Lattice instance on Elim
 class Joinable a where

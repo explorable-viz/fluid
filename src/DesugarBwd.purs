@@ -5,13 +5,13 @@ import Data.Function (on)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, reverse)
-import Data.Map (fromFoldable)
+import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Tuple (uncurry, fst, snd)
 import Data.Profunctor.Strong (first)
 import Bindings (Binding, Bindings(..), (↦), (:+:), fromList)
-import DataType (cCons, cNil, cTrue, cFalse)
-import DesugarFwd (elimBool)
+import DataType (Ctr, cCons, cNil, cTrue, cFalse)
+import DesugarFwd (elimBool, totaliseConstrFwd)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
 import SExpr (
@@ -265,3 +265,27 @@ totaliseBwd (ContElim (ElimConstr m)) (π : πs) =
       Right (PNext p o) ->
          first (\κ -> ContElim (ElimConstr (fromFoldable (singleton (cCons × κ)))))
                (totaliseBwd (mustLookup cCons m) (Left p : Right o : πs))
+
+-- Use totaliseConstrFwd to construct the "eliminator patterns" the rules must match against.
+totaliseBwd' :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹 × 𝔹
+totaliseBwd' κ (π : πs) =
+   case π of
+      Left PListEmpty ->
+         case expand κ (ContElim (ElimConstr (totaliseConstrFwd (fromFoldable (singleton (cNil × ContHole))) false))) of
+            ContElim (ElimConstr m) ->
+               let κ' × β = totaliseBwd (mustLookup cNil m) πs in
+               ContElim (ElimConstr (fromFoldable (singleton (cNil × κ')))) × β
+            _ -> error absurd
+      Left (PListNonEmpty p o) ->
+         case expand κ (ContElim (ElimConstr (totaliseConstrFwd (fromFoldable (singleton (cCons × ContHole))) false))) of
+            ContElim (ElimConstr m) ->
+               let κ' × β = totaliseBwd (mustLookup cCons m) (Left p : Right o : πs) in
+               ContElim (ElimConstr (fromFoldable (singleton (cCons × κ')))) × β
+            _ -> error absurd
+      _ -> error "todo"
+totaliseBwd' _ _ = error "todo"
+
+-- Discard all synthesised branches, returning the original singleton branch and the join of the annotations
+-- on the empty lists used as the bodies of synthesised branches.
+totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Map Ctr (Cont 𝔹) × 𝔹
+totaliseConstrBwd m = error "todo"
