@@ -12,7 +12,7 @@
     "nearley": "^2.16.0",
     "psa": "^1.0.0",
     "style-loader": "^1.0.0",
-    "three": "^0.93",
+    "three": "^0.125",
     "three-orbitcontrols-ts": "^0.1.2",
     "three.meshline": "^1.2.0",
     "tippy.js": "^5.1.1",
