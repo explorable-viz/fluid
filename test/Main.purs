@@ -52,8 +52,8 @@ test' name setup expected =
                   let ρ' × e' × α'  = eval_bwd v t
                       s' = desugarBwd e' s
                       e'' = successful (desugarFwd s')
-                      _ = eval_fwd (botOf ρ') E.Hole true
-                      v' = eval_fwd ρ' e'' true
+                      _ = eval_fwd (botOf ρ') E.Hole true t
+                      v' = eval_fwd ρ' e'' true t
                   unless (isGraphical v) $
                      render (pretty v') `shouldEqual` expected
 
