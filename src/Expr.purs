@@ -141,7 +141,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
    expand (Constr α c es) (Constr β c' es')     = Constr (α ⪄ β) (c ≜ c') (zipWith expand es es')
    expand (Matrix α e1 (x1 × y1) e2) (Matrix β e1' (x2 × y2) e2') =
-      Matrix (α ⪄ β) (expand e1 e1') ((x1 ⪂ x2) × (y1 ⪂ y2)) (expand e2 e2')
+      Matrix (α ⪄ β) (expand e1 e1') ((x1 ≜ x2) × (y1 ≜ y2)) (expand e2 e2')
    expand (Lambda σ) (Lambda σ')                = Lambda (expand σ σ')
    expand (App e1 e2) (App e1' e2')             = App (expand e1 e1') (expand e2 e2')
    expand (BinaryApp e1 op e2) (BinaryApp e1' op' e2') =

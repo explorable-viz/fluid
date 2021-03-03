@@ -33,24 +33,39 @@ matchArgs_fwd (v : vs) (ContElim σ) = (ρ <> ρ') × κ' × (α ∧ α')
 matchArgs_fwd _ _ = error absurd
 
 eval_fwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
-eval_fwd ρ (Var x) _ _                    = successful (find x ρ)
-eval_fwd ρ (Op op) _ _                    = successful (find op ρ)
-eval_fwd ρ (Int α n) α' _                 = V.Int (α ∧ α') n
+eval_fwd ρ e _ (T.Var _ x) =
+   case expand e (Var x) of
+      Var _ -> successful (find x ρ)
+      _ -> error absurd
+eval_fwd ρ e _ (T.Op _ op) =
+   case expand e (Op op) of
+      Op _ -> successful (find op ρ)
+      _ -> error absurd
+eval_fwd ρ e α' (T.Int _ n) =
+   case expand e (Int false n) of
+      Int α _ -> V.Int (α ∧ α') n
+      _ -> error absurd
 eval_fwd ρ (Float α n) α' _               = V.Float (α ∧ α') n
 eval_fwd ρ (Str α str) α' _               = V.Str (α ∧ α') str
-eval_fwd ρ (Constr α c es) α' (T.Constr _ _ ts) =
-   V.Constr (α ∧ α') c ((\(e × t) -> eval_fwd ρ e α' t) <$> zip es ts)
-eval_fwd ρ (Matrix α e (x × y) e') α' (T.Matrix tss _ _ t') =
-   case eval_fwd ρ e' α t' of
-      V.Hole -> V.Hole
-      V.Constr _ c (v1 : v2 : Nil) | c == cPair ->
-         let i' × j' = to v1 × to v2
-             vs = fromFoldable $ do
-                  i <- range 1 i'
-                  singleton $ fromFoldable $ do
-                     j <- range 1 j'
-                     singleton (eval_fwd ((ρ :+: x ↦ V.Int α i) :+: y ↦ V.Int α j) e α' (tss!(i - 1)!(j - 1)))
-         in V.Matrix (α ∧ α') vs (i' × j')
+eval_fwd ρ e α' (T.Constr _ c ts) =
+   case expand e (Constr false c (const Hole <$> ts)) of
+      Constr α _ es ->
+         V.Constr (α ∧ α') c ((\(e' × t) -> eval_fwd ρ e' α' t) <$> zip es ts)
+      _ -> error absurd
+eval_fwd ρ e α' (T.Matrix tss (x × y) _ t2) =
+   case expand e (Matrix false Hole (x × y) Hole) of
+      Matrix α e1 _ e2 ->
+         case eval_fwd ρ e2 α t2 of
+            V.Hole -> V.Hole
+            V.Constr _ c (v1 : v2 : Nil) | c == cPair ->
+               let i' × j' = to v1 × to v2
+                   vs = fromFoldable $ do
+                        i <- range 1 i'
+                        singleton $ fromFoldable $ do
+                           j <- range 1 j'
+                           singleton (eval_fwd ((ρ :+: x ↦ V.Int α i) :+: y ↦ V.Int α j) e1 α' (tss!(i - 1)!(j - 1)))
+               in V.Matrix (α ∧ α') vs (i' × j')
+            _ -> error absurd
       _ -> error absurd
 eval_fwd ρ e α (T.LetRec δ t) =
    case expand e (LetRec (botOf δ) Hole) of
