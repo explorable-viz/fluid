@@ -49,7 +49,10 @@ eval_fwd ρ e α' (T.Float _ n) =
    case expand e (Float false n) of
       Float α _ -> V.Float (α ∧ α') n
       _ -> error absurd
-eval_fwd ρ (Str α str) α' _               = V.Str (α ∧ α') str
+eval_fwd ρ e α' (T.Str _ str) =
+   case expand e (Str false str) of
+      Str α _ -> V.Str (α ∧ α') str
+      _ -> error absurd
 eval_fwd ρ e α' (T.Constr _ c ts) =
    case expand e (Constr false c (const Hole <$> ts)) of
       Constr α _ es ->
@@ -89,6 +92,13 @@ eval_fwd ρ e α (T.App (t1 × _) t2 _ t3) =
                let ρ2 = closeDefs ρ1 δ δ
                    ρ3 × e3 × β = match_fwd v σ in
                eval_fwd (ρ1 <> ρ2 <> ρ3) (asExpr e3) β t3
+            _ × _ -> error absurd
+      _ -> error absurd
+eval_fwd ρ e α (T.AppOp (t1 × _) (t2 × _)) =
+   case expand e (App Hole Hole) of
+      App e1 e2 ->
+         case eval_fwd ρ e1 α t1 × eval_fwd ρ e2 α t2 of
+            V.Hole × _ -> V.Hole
             V.Primitive α' φ × v -> apply_fwd φ α' v
             V.Constr α' c vs × v -> V.Constr (α ∧ α') c (vs <> singleton v)
             _ × _ -> error absurd
@@ -111,4 +121,3 @@ eval_fwd ρ e α (T.Let (T.VarDef _ t1) t2) =
          let ρ' × _ × α' = match_fwd (eval_fwd ρ e1 α t1) σ in
          eval_fwd (ρ <> ρ') e2 α' t2
       _ -> error absurd
-eval_fwd _ _ _ _                          = error "todo"
