@@ -9,7 +9,7 @@ import Eval (closeDefs)
 import Expl (Expl)
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asExpr)
-import Lattice (𝔹, (∧))
+import Lattice (𝔹, (∧), expand)
 import Primitive (apply_fwd, to)
 import Util (type (×), (×), (!), absurd, error, mustLookup, successful)
 import Val (Env, Val)
@@ -75,7 +75,10 @@ eval_fwd ρ (BinaryApp e1 op e2) α (T.BinaryApp (t1 × _) _ (t2 × _)) =
             V.Primitive α'' φ_v -> apply_fwd φ_v α'' (eval_fwd ρ e2 α t2)
             _ -> error absurd
       _ -> error absurd
-eval_fwd ρ (Let (VarDef σ e) e') α (T.Let (T.VarDef _ t) t') =
-   let ρ' × _ × α' = match_fwd (eval_fwd ρ e α t) σ in
-   eval_fwd (ρ <> ρ') e' α' t'
+eval_fwd ρ e α (T.Let (T.VarDef _ t1) t2) =
+   case expand e (Let (VarDef ElimHole Hole) Hole) of
+      Let (VarDef σ e1) e2 ->
+         let ρ' × _ × α' = match_fwd (eval_fwd ρ e1 α t1) σ in
+         eval_fwd (ρ <> ρ') e2 α' t2
+      _ -> error absurd
 eval_fwd _ _ _ _                          = error "todo"
