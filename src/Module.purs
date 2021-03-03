@@ -35,9 +35,9 @@ loadModule file ρ = do
    src <- loadFile "fluid/lib" file
    pure (successful (eval_module ρ (successful (desugarModuleFwd (successfulParse src module_)))))
 
-openWithImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-openWithImports file =
-   loadFile "fluid/example" file >>= parseWithImports
+openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
+openWithDefaultImports file =
+   loadFile "fluid/example" file >>= parseWithDefaultImports
 
 successfulParse :: forall t . String -> SParser t -> t
 successfulParse src p =
@@ -45,13 +45,13 @@ successfulParse src p =
       Left parseError -> error (show parseError)
       Right t -> t
 
-parseWithImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-parseWithImports src = do
+parseWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
+parseWithDefaultImports src = do
    (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics")
        <@> successfulParse src program
 
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do
-   ρ × s <- loadFile "fluid/dataset" file >>= parseWithImports
+   ρ × s <- loadFile "fluid/dataset" file >>= parseWithDefaultImports
    let _ × v = successful (eval ρ (successful (desugarFwd s)))
    pure (Empty :+: x ↦ v)

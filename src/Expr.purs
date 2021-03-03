@@ -37,7 +37,7 @@ data Elim a =
    ElimVar Var (Cont a) |
    ElimConstr (Map Ctr (Cont a))
 
--- Continuation of an eliminator. None form only used in structured let.
+-- Continuation of an eliminator branch.
 data Cont a =
    ContHole | -- arise in backward slicing, but also used to represent structured let
    ContExpr (Expr a) |
@@ -140,14 +140,14 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
    expand (Constr α c es) (Constr β c' es')     = Constr (α ⪄ β) (c ≜ c') (zipWith expand es es')
-   expand (Matrix α e1 (x1 × y1) e2) (Matrix β e1' (x2 × y2) e2')
-                                                = Matrix (α ⪄ β) (expand e1 e1') ((x1 ⪂ x2) × (y1 ⪂ y2)) (expand e2 e2')
+   expand (Matrix α e1 (x1 × y1) e2) (Matrix β e1' (x2 × y2) e2') =
+      Matrix (α ⪄ β) (expand e1 e1') ((x1 ⪂ x2) × (y1 ⪂ y2)) (expand e2 e2')
    expand (Lambda σ) (Lambda σ')                = Lambda (expand σ σ')
    expand (App e1 e2) (App e1' e2')             = App (expand e1 e1') (expand e2 e2')
-   expand (BinaryApp e1 op e2) (BinaryApp e1' op' e2')
-                                                = BinaryApp (expand e1 e1') (op ⪂ op') (expand e2 e2')
-   expand (Let (VarDef σ e1) e2) (Let (VarDef σ' e1') e2')
-                                                = Let (VarDef (expand σ σ') (expand e1 e1')) (expand e2 e2')
+   expand (BinaryApp e1 op e2) (BinaryApp e1' op' e2') =
+      BinaryApp (expand e1 e1') (op ⪂ op') (expand e2 e2')
+   expand (Let (VarDef σ e1) e2)
+          (Let (VarDef σ' e1') e2')             = Let (VarDef (expand σ σ') (expand e1 e1')) (expand e2 e2')
    expand (LetRec h e) (LetRec h' e')           = LetRec (expand h h') (expand e e')
    expand _ _                                   = error absurd
 

@@ -15,8 +15,8 @@ import DesugarFwd (desugarFwd)
 import Eval (eval)
 import EvalBwd (eval_bwd)
 import EvalFwd (eval_fwd)
-import Lattice (𝔹)
-import Module (openDatasetAs, openWithImports)
+import Lattice (𝔹, botOf)
+import Module (openDatasetAs, openWithDefaultImports)
 import Pretty (pretty, render)
 import SExpr (Expr) as S
 import Util (type (×), (×), successful)
@@ -28,7 +28,7 @@ import Val (Env, Val(..))
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
 isGraphical Hole           = false
-isGraphical (Constr _ c _) = typeName (successful $ dataTypeFor c) == "GraphicsElement"
+isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) == "GraphicsElement"
 isGraphical _              = false
 
 -- whether slicing is currently enabled in the tests
@@ -46,23 +46,23 @@ test' name setup expected =
          case successful (eval ρ e) of
             t × v -> do
                unless (isGraphical v) $
-                  --trace (render $ pretty v) $
                   render (pretty v) `shouldEqual` expected
                when slicing do
                   let ρ' × e' × α'  = eval_bwd v t
                       s' = desugarBwd e' s
                       e'' = successful (desugarFwd s')
+                      _ = eval_fwd (botOf ρ') e'' true
                       v' = eval_fwd ρ' e'' true
                   unless (isGraphical v) $
                      render (pretty v') `shouldEqual` expected
 
 test :: String -> String -> SpecT Aff Unit Effect Unit
-test file = test' file (openWithImports file)
+test file = test' file (openWithDefaultImports file)
 
 testWithDataset :: String -> String -> SpecT Aff Unit Effect Unit
 testWithDataset dataset file =
    flip (test' file) "" $
-      bitraverse (uncurry openDatasetAs) openWithImports (dataset × "data" × file) <#>
+      bitraverse (uncurry openDatasetAs) openWithDefaultImports (dataset × "data" × file) <#>
       (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)
 
 main :: Effect Unit

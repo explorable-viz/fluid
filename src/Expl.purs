@@ -1,10 +1,9 @@
 module Expl where
 
 import Data.List (List)
-import Data.Map (Map)
 import Bindings (Var)
 import DataType (Ctr)
-import Expr (Cont, Elim, RecDefs)
+import Expr (Elim, RecDefs)
 import Util (type (×))
 import Val (Env, Val)
 
@@ -31,4 +30,4 @@ data Expl a =
 data Match a =
    MatchVar Var |
    MatchVarAnon (Val a) |
-   MatchConstr (Ctr × List (Match a)) (Map Ctr (Cont a))
+   MatchConstr (Ctr × List (Match a))

@@ -7,15 +7,15 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (toUnfoldable)
 import Data.NonEmpty ((:|))
 import Data.String (Pattern(..), contains) as Data.String
-import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
+import Text.Pretty (Doc, atop, beside, hcat, render, text)
 import Text.Pretty (render) as P
-import Bindings (Binding, Bindings(..), (:+:), (↦), varAnon)
+import Bindings (Binding, Bindings(..), (:+:), (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..))
 import Expl (Expl(..), VarDef(..)) as T
-import Expl (Expl, Match(..))
+import Expl (Expl, Match)
 import Lattice (class BoundedJoinSemilattice)
 import Util (Endo, type (×), (×), absurd, error, intersperse)
 import Val (Primitive, Val)
@@ -76,7 +76,7 @@ instance prettyBindings :: Pretty (t a) => Pretty (Bindings t a) where
 instance prettyVoid :: Pretty Void where
    pretty _ = error absurd
 
-instance prettyRawExpl :: BoundedJoinSemilattice a => Pretty (Expl a) where
+instance prettyExpl :: BoundedJoinSemilattice a => Pretty (Expl a) where
    pretty (T.Var _ x)                     = text x
    pretty (T.Op _ op)                     = text op
    pretty (T.Int _ n)                     = pretty (E.Int false n)
@@ -101,12 +101,7 @@ instance prettyRawExpl :: BoundedJoinSemilattice a => Pretty (Expl a) where
            (text "in     " :<>: pretty t)
 
 instance prettyMatch :: BoundedJoinSemilattice a => Pretty (Match a) where
-   pretty (MatchConstr (c × ξs) κs) =
-      text "ξ = " :<>:
-      atop (text "Pattern:       " :<>: text (show c) :<>: operator "-> " :<>: vcat (map pretty ξs))
-           (text "Continuations: " :<>: vcat (map pretty $ (toUnfoldable κs :: List _)))
-   pretty (MatchVar x) = text "ξ = " :<>: text x
-   pretty (MatchVarAnon x) = text "ξ = " :<>: text varAnon
+   pretty _ = error "todo"
 
 instance prettyExplVal :: BoundedJoinSemilattice a => Pretty (Expl a × Val a) where
    pretty (t × v) = parens $ pretty t :<>: comma :<>: pretty v
@@ -177,7 +172,7 @@ instance prettyElim :: BoundedJoinSemilattice a => Pretty (Elim a) where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = hcat $ map (\x -> pretty x :<>: comma) $ (toUnfoldable κs :: List _)
 
-instance prettyRawVal :: BoundedJoinSemilattice a => Pretty (Val a) where
+instance prettyVal :: BoundedJoinSemilattice a => Pretty (Val a) where
    pretty V.Hole                 = hole
    pretty (V.Int _ n)            = text $ show n
    pretty (V.Float _ n)          = text $ show n
@@ -211,7 +206,7 @@ instance toListSExpr :: BoundedJoinSemilattice a => ToList (Expr a)  where
    toList (ListNonEmpty _ e l)                       = e : listRestToExprs l
    toList e                                          = error absurd
 
-instance prettyRawSExpr :: BoundedJoinSemilattice a => Pretty (Expr a) where
+instance prettySExpr :: BoundedJoinSemilattice a => Pretty (Expr a) where
    pretty (Var x)                   = text x
    pretty (Op op)                   = parens $ text op
    pretty (Int _ n)                 = text $ show n

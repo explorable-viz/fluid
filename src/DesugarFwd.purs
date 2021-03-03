@@ -166,8 +166,8 @@ totaliseFwd (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totaliseFwd �
 -- using anonymous pattern variables where necessary.
 totaliseConstrFwd :: Ctr × Cont 𝔹 -> 𝔹 -> Map Ctr (Cont 𝔹)
 totaliseConstrFwd (c × κ) α =
-   let defaultBranch c' = applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
-       cκs = (identity &&& defaultBranch) <$> (ctrs (successful (dataTypeFor c)) \\ L.singleton c)
+   let defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
+       cκs = defaultBranch <$> (ctrs (successful (dataTypeFor c)) \\ L.singleton c)
    in fromFoldable (c × κ : cκs)
 
 -- TODO: explain relationship to Lattice instance on Elim

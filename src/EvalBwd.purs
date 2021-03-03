@@ -2,12 +2,12 @@ module EvalBwd where
 
 import Prelude hiding (absurd)
 import Data.Array (replicate)
-import Data.List (List(..), (:), foldr, range, singleton, zip)
+import Data.List (List(..), (:), (\\), foldr, range, singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (insert)
+import Data.Map (insert, fromFoldable)
 import Data.NonEmpty (foldl1)
 import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, find, foldEnv, splitAt, varAnon)
-import DataType (cPair)
+import DataType (cPair, ctrs, dataTypeFor)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
@@ -20,14 +20,13 @@ unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
 unmatch (ρ :+: x ↦ v) (MatchVar x') = ρ × (Empty :+: (x ≜ x') ↦ v)
 unmatch Empty (MatchVar x')         = error absurd
 unmatch ρ (MatchVarAnon _)          = ρ × Empty
-unmatch ρ (MatchConstr (_ × ws) _)  = unmatchArgs ρ ws
+unmatch ρ (MatchConstr (_ × ws))    = unmatchArgs ρ ws
 
 unmatchArgs :: Env 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Env 𝔹
-unmatchArgs ρ Nil = ρ × Empty
-unmatchArgs ρ (w : ws) =
-   let ρ'  × ρ2   = unmatch ρ w
-       ρ'' × ρ1   = unmatchArgs ρ' ws in
-   ρ'' × (ρ1 <> ρ2)
+unmatchArgs ρ Nil       = ρ × Empty
+unmatchArgs ρ (w : ws)  = ρ'' × (ρ1 <> ρ2)
+   where ρ'  × ρ2 = unmatch ρ w
+         ρ'' × ρ1 = unmatchArgs ρ' ws
 
 -- second argument contains original environment and recursive definitions
 closeDefs_bwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
@@ -44,9 +43,9 @@ closeDefs_bwd ρ (ρ0 × δ0) =
 match_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
 match_bwd Empty κ α (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
-match_bwd ρ κ α (MatchConstr (c × ws) κs)       =
-   let vs × κ' = matchArgs_bwd ρ κ α ws in
-   V.Constr α c vs × (ElimConstr $ insert c κ' $ map botOf κs)
+match_bwd ρ κ α (MatchConstr (c × ws))          = V.Constr α c vs × ElimConstr (fromFoldable cκs)
+   where vs × κ' = matchArgs_bwd ρ κ α ws
+         cκs = c × κ' : ((_ × ContHole) <$> (ctrs (successful (dataTypeFor c)) \\ singleton c))
 match_bwd _ _ _ _                               = error absurd
 
 matchArgs_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
