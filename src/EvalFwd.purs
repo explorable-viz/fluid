@@ -45,7 +45,10 @@ eval_fwd ρ e α' (T.Int _ n) =
    case expand e (Int false n) of
       Int α _ -> V.Int (α ∧ α') n
       _ -> error absurd
-eval_fwd ρ (Float α n) α' _               = V.Float (α ∧ α') n
+eval_fwd ρ e α' (T.Float _ n) =
+   case expand e (Float false n) of
+      Float α _ -> V.Float (α ∧ α') n
+      _ -> error absurd
 eval_fwd ρ (Str α str) α' _               = V.Str (α ∧ α') str
 eval_fwd ρ e α' (T.Constr _ c ts) =
    case expand e (Constr false c (const Hole <$> ts)) of
