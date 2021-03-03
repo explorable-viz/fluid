@@ -66,13 +66,16 @@ eval_fwd ρ (App e e') α (T.App (t × _) t' _ t'') =
       V.Primitive α' φ × v -> apply_fwd φ α' v
       V.Constr α' c vs × v -> V.Constr (α ∧ α') c (vs <> singleton v)
       _ × _ -> error absurd
-eval_fwd ρ (BinaryApp e1 op e2) α (T.BinaryApp (t1 × _) _ (t2 × _)) =
-   case successful (find op ρ) of
-      V.Hole -> V.Hole
-      V.Primitive α' φ ->
-         case apply_fwd φ α' (eval_fwd ρ e1 α t1) of
+eval_fwd ρ e α (T.BinaryApp (t1 × _) (op × _) (t2 × _)) =
+   case expand e (BinaryApp Hole op Hole) of
+      BinaryApp e1 _ e2 ->
+         case successful (find op ρ) of
             V.Hole -> V.Hole
-            V.Primitive α'' φ_v -> apply_fwd φ_v α'' (eval_fwd ρ e2 α t2)
+            V.Primitive α' φ ->
+               case apply_fwd φ α' (eval_fwd ρ e1 α t1) of
+                  V.Hole -> V.Hole
+                  V.Primitive α'' φ_v -> apply_fwd φ_v α'' (eval_fwd ρ e2 α t2)
+                  _ -> error absurd
             _ -> error absurd
       _ -> error absurd
 eval_fwd ρ e α (T.Let (T.VarDef _ t1) t2) =

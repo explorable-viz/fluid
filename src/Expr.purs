@@ -145,7 +145,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Lambda σ) (Lambda σ')                = Lambda (expand σ σ')
    expand (App e1 e2) (App e1' e2')             = App (expand e1 e1') (expand e2 e2')
    expand (BinaryApp e1 op e2) (BinaryApp e1' op' e2') =
-      BinaryApp (expand e1 e1') (op ⪂ op') (expand e2 e2')
+      BinaryApp (expand e1 e1') (op ≜ op') (expand e2 e2')
    expand (Let (VarDef σ e1) e2)
           (Let (VarDef σ' e1') e2')             = Let (VarDef (expand σ σ') (expand e1 e1')) (expand e2 e2')
    expand (LetRec h e) (LetRec h' e')           = LetRec (expand h h') (expand e e')
