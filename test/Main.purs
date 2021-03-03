@@ -12,6 +12,7 @@ import Test.Spec.Mocha (runMocha)
 import DataType (dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
+import Expr (Expr(..)) as E
 import Eval (eval)
 import EvalBwd (eval_bwd)
 import EvalFwd (eval_fwd)
@@ -51,7 +52,7 @@ test' name setup expected =
                   let ρ' × e' × α'  = eval_bwd v t
                       s' = desugarBwd e' s
                       e'' = successful (desugarFwd s')
-                      _ = eval_fwd (botOf ρ') e'' true
+                      _ = eval_fwd (botOf ρ') E.Hole true
                       v' = eval_fwd ρ' e'' true
                   unless (isGraphical v) $
                      render (pretty v') `shouldEqual` expected

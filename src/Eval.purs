@@ -21,16 +21,16 @@ import Val (Env, Val)
 import Val (Val(..)) as V
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
-match _ ElimHole = error "todo"
+match _ ElimHole                          = error "todo"
 match v (ElimVar x κ)
-   | x == varAnon = pure $ Empty × κ × MatchVarAnon v
-   | otherwise = pure ((Empty :+: x ↦ v) × κ × MatchVar x)
-match (V.Constr _ c vs) (ElimConstr κs) = do
+   | x == varAnon                         = pure $ Empty × κ × MatchVarAnon v
+   | otherwise                            = pure ((Empty :+: x ↦ v) × κ × MatchVar x)
+match (V.Constr _ c vs) (ElimConstr κs)   = do
    checkDataType "Pattern mismatch: " c κs
    κ <- note ("Incomplete pattern: no branch for " <> show c) (lookup c κs)
    ρ × κ' × ws <- matchArgs c vs κ
    pure (ρ × κ' × MatchConstr (c × ws))
-match v (ElimConstr κs) = do
+match v (ElimConstr κs)                   = do
    d <- dataTypeForKeys (keys κs)
    report ("Pattern mismatch: " <> render (pretty v) <> " is not a constructor value, expected " <> show d)
 
