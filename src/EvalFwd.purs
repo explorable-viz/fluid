@@ -9,7 +9,7 @@ import Eval (closeDefs)
 import Expl (Expl)
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asExpr)
-import Lattice (𝔹, (∧), expand)
+import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (apply_fwd, to)
 import Util (type (×), (×), (!), absurd, error, mustLookup, successful)
 import Val (Env, Val)
@@ -52,20 +52,29 @@ eval_fwd ρ (Matrix α e (x × y) e') α' (T.Matrix tss _ _ t') =
                      singleton (eval_fwd ((ρ :+: x ↦ V.Int α i) :+: y ↦ V.Int α j) e α' (tss!(i - 1)!(j - 1)))
          in V.Matrix (α ∧ α') vs (i' × j')
       _ -> error absurd
-eval_fwd ρ (LetRec δ e) α (T.LetRec _ t)  =
-   let ρ' = closeDefs ρ δ δ in
-   eval_fwd (ρ <> ρ') e α t
-eval_fwd ρ (Lambda σ) _ _                 = V.Closure ρ Empty σ
-eval_fwd ρ (App e e') α (T.App (t × _) t' _ t'') =
-   case eval_fwd ρ e α t × eval_fwd ρ e' α t' of
-      V.Hole × _ -> V.Hole
-      V.Closure ρ1 δ σ × v ->
-         let ρ2 = closeDefs ρ1 δ δ
-             ρ3 × e'' × β = match_fwd v σ in
-         eval_fwd (ρ1 <> ρ2 <> ρ3) (asExpr e'') β t''
-      V.Primitive α' φ × v -> apply_fwd φ α' v
-      V.Constr α' c vs × v -> V.Constr (α ∧ α') c (vs <> singleton v)
-      _ × _ -> error absurd
+eval_fwd ρ e α (T.LetRec δ t) =
+   case expand e (LetRec (botOf δ) Hole) of
+      LetRec δ' e' ->
+         let ρ' = closeDefs ρ δ' δ' in
+         eval_fwd (ρ <> ρ') e' α t
+      _ -> error absurd
+eval_fwd ρ e _ (T.Lambda _ _) =
+   case expand e (Lambda ElimHole) of
+      Lambda σ -> V.Closure ρ Empty σ
+      _ -> error absurd
+eval_fwd ρ e α (T.App (t1 × _) t2 _ t3) =
+   case expand e (App Hole Hole) of
+      App e1 e2 ->
+         case eval_fwd ρ e1 α t1 × eval_fwd ρ e2 α t2 of
+            V.Hole × _ -> V.Hole
+            V.Closure ρ1 δ σ × v ->
+               let ρ2 = closeDefs ρ1 δ δ
+                   ρ3 × e3 × β = match_fwd v σ in
+               eval_fwd (ρ1 <> ρ2 <> ρ3) (asExpr e3) β t3
+            V.Primitive α' φ × v -> apply_fwd φ α' v
+            V.Constr α' c vs × v -> V.Constr (α ∧ α') c (vs <> singleton v)
+            _ × _ -> error absurd
+      _ -> error absurd
 eval_fwd ρ e α (T.BinaryApp (t1 × _) (op × _) (t2 × _)) =
    case expand e (BinaryApp Hole op Hole) of
       BinaryApp e1 _ e2 ->

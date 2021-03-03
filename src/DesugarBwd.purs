@@ -102,7 +102,7 @@ exprBwd e (Let ds s) =
       E.Let d e' -> uncurry Let (varDefsBwd (E.Let d e') (ds × s))
       _ -> error absurd
 exprBwd e (LetRec xcs s) =
-   case expand e (E.LetRec (fromList (toList (reverse (map recDefHole xcss)))) E.Hole) of
+   case expand e (E.LetRec (fromList (toList (reverse (recDefHole <$> xcss)))) E.Hole) of
       E.LetRec xσs e' -> LetRec (recDefsBwd xσs xcs) (exprBwd e' s)
       _ -> error absurd
       where
