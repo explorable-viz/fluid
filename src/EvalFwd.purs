@@ -5,7 +5,7 @@ import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), range, singleton, zip)
 import Data.Map (fromFoldable)
 import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
-import DataType (cPair, ctrs, dataTypeFor)
+import DataType (cPair)
 import Eval (closeDefs)
 import Expl (Expl, Match)
 import Expl (Expl(..), Match(..), VarDef(..)) as T
@@ -25,9 +25,9 @@ match_fwd _ σ (T.MatchVarAnon _) =
    case expand σ (ElimVar varAnon ContHole) of
       ElimVar _ κ -> Empty × κ × true
       _ -> error absurd
-match_fwd v σ (T.MatchConstr c ws) =
+match_fwd v σ (T.MatchConstr c ws cs) =
    case expand v (V.Constr false c (const V.Hole <$> ws)) ×
-        expand σ (ElimConstr (fromFoldable ((_ × ContHole) <$> ctrs (successful (dataTypeFor c))))) of
+        expand σ (ElimConstr (fromFoldable ((_ × ContHole) <$> c : cs))) of
       V.Constr α _ vs × ElimConstr m ->
          ρ × κ × (α ∧ α')
          where ρ × κ × α' = matchArgs_fwd vs (mustLookup c m) ws

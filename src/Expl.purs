@@ -28,7 +28,9 @@ data Expl a =
    Let (VarDef a) (Expl a) |
    LetRec (RecDefs a) (Expl a)
 
+-- Constructor matches store the non-matched constructors too, because we tolerate partial eliminators
+-- and need hole expansion to be be defined for those too.
 data Match a =
    MatchVar Var |
    MatchVarAnon (Val a) |
-   MatchConstr Ctr (List (Match a))
+   MatchConstr Ctr (List (Match a)) (List Ctr)

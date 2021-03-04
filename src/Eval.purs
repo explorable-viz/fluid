@@ -4,7 +4,7 @@ import Prelude hiding (absurd, apply)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, range, singleton, unzip)
+import Data.List (List(..), (:), (\\), length, range, singleton, unzip)
 import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Traversable (sequence, traverse)
@@ -29,9 +29,9 @@ match (V.Constr _ c vs) (ElimConstr κs) = do
    checkDataType "Pattern mismatch: " c κs
    κ <- note ("Incomplete pattern: no branch for " <> show c) (lookup c κs)
    ρ × κ' × ws <- matchArgs c vs κ
-   pure (ρ × κ' × MatchConstr c ws)
+   pure (ρ × κ' × MatchConstr c ws (keys κs \\ singleton c))
 match v (ElimConstr κs) = do
-   d <- dataTypeForKeys (keys κs)
+   d <- dataTypeForKeys (keys κs) -- bit redundant with checkDataType, maybe merge branches
    report ("Pattern mismatch: " <> render (pretty v) <> " is not a constructor value, expected " <> show d)
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
