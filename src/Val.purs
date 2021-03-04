@@ -5,9 +5,12 @@ import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings)
 import DataType (Ctr)
-import Expr (Elim, RecDefs)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, maybeJoin)
-import Util (Endo, type (×), type (+), (≟), absurd, error)
+import Expr (Elim(..), RecDefs)
+import Lattice (
+   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
+   𝔹, (∨), botOf, definedJoin, expand, maybeJoin
+)
+import Util (Endo, type (×), type (+), (≟), (≜), (⪄), absurd, error)
 
 -- one constructor for each PureScript type that appears in an exported operator signature
 data Primitive =
@@ -62,16 +65,34 @@ instance joinSemilatticeVal :: JoinSemilattice a => JoinSemilattice (Val a) wher
    join = definedJoin
 
 instance slicesVal :: JoinSemilattice a => Slices (Val a) where
-   maybeJoin Hole v                                = pure v
-   maybeJoin v Hole                                = pure v
-   maybeJoin (Int α n) (Int α' n')                 = Int (α ∨ α') <$> (n ≟ n')
-   maybeJoin (Float α n) (Float α' n')             = Float (α ∨ α') <$> (n ≟ n')
-   maybeJoin (Str α str) (Str α' str')             = Str (α ∨ α') <$> (str ≟ str')
-   maybeJoin (Constr α c vs) (Constr α' c' us)     = Constr (α ∨ α') <$> (c ≟ c') <*> maybeJoin vs us
-   maybeJoin (Matrix α vs xy) (Matrix α' vs' xy')  = Matrix (α ∨ α') <$> (maybeJoin vs vs') <*> (xy ≟ xy')
-   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ')    = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
-   maybeJoin (Primitive α φ) (Primitive α' φ')     = Primitive (α ∨ α') <$> pure φ -- should require φ == φ'
-   maybeJoin _ _                                   = Nothing
+   maybeJoin Hole v                                   = pure v
+   maybeJoin v Hole                                   = pure v
+   maybeJoin (Int α n) (Int α' n')                    = Int (α ∨ α') <$> (n ≟ n')
+   maybeJoin (Float α n) (Float α' n')                = Float (α ∨ α') <$> (n ≟ n')
+   maybeJoin (Str α str) (Str α' str')                = Str (α ∨ α') <$> (str ≟ str')
+   maybeJoin (Constr α c vs) (Constr α' c' us)        = Constr (α ∨ α') <$> (c ≟ c') <*> maybeJoin vs us
+   maybeJoin (Matrix α vss xy) (Matrix α' vss' xy')   = Matrix (α ∨ α') <$> (maybeJoin vss vss') <*> (xy ≟ xy')
+   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ')       = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
+   maybeJoin (Primitive α φ) (Primitive α' φ')        = Primitive (α ∨ α') <$> pure φ -- TODO: require φ == φ'
+   maybeJoin _ _                                      = Nothing
 
 instance boundedSlices :: JoinSemilattice a => BoundedSlices (Val a) where
    botOf = const Hole
+
+instance valExpandable :: Expandable (Val Boolean) where
+   expand v Hole                                = v
+   expand Hole v@(Int false n)                  = v
+   expand Hole v@(Float false n)                = v
+   expand Hole v@(Str false str)                = v
+   expand Hole v@(Primitive false φ)            = v
+   expand Hole v@(Constr false c vs)            = Constr false c (expand Hole <$> vs)
+   expand Hole v@(Matrix false vs xy)           = Matrix false (((<$>) (expand Hole)) <$> vs) xy
+   expand Hole v@(Closure ρ δ σ)                = Closure (botOf ρ) (botOf δ) ElimHole
+   expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
+   expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
+   expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
+   expand (Constr α c vs) (Constr β c' vs')     = Constr (α ⪄ β) (c ≜ c') (expand vs vs')
+   expand (Matrix α vss xy) (Matrix β vss' xy') = Matrix (α ⪄ β) (expand vss vss') (xy ≜ xy)
+   expand (Closure ρ δ σ) (Closure ρ' δ' σ')    = Closure (expand ρ ρ') (expand δ δ') (expand σ σ')
+   expand (Primitive α φ) (Primitive β φ')      = Primitive (α ⪄ β) φ -- TODO: require φ = φ'
+   expand _ _                                   = error absurd

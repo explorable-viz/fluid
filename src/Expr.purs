@@ -2,7 +2,7 @@ module Expr where
 
 import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
-import Data.List (List, zipWith)
+import Data.List (List)
 import Data.Map (Map)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings, Var, (⪂))
@@ -122,11 +122,11 @@ instance slicesExpr :: JoinSemilattice a => Slices (Expr a) where
 
 instance exprExpandable :: Expandable (Expr Boolean) where
    expand e Hole                                = e
-   expand Hole (Var x)                          = Var x
-   expand Hole (Op op)                          = Op op
-   expand Hole (Int false n)                    = Int false n
-   expand Hole (Float false n)                  = Float false n
-   expand Hole (Str false str)                  = Str false str
+   expand Hole e@(Var x)                        = e
+   expand Hole e@(Op op)                        = e
+   expand Hole e@(Int false n)                  = e
+   expand Hole e@(Float false n)                = e
+   expand Hole e@(Str false str)                = e
    expand Hole e@(Constr _ c es)                = expand (Constr false c (const Hole <$> es)) e
    expand Hole e@(Matrix _ _ (x × y) _)         = expand (Matrix false Hole (x × y) Hole) e
    expand Hole e@(Lambda _)                     = expand (Lambda ElimHole) e
@@ -139,7 +139,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
    expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
-   expand (Constr α c es) (Constr β c' es')     = Constr (α ⪄ β) (c ≜ c') (zipWith expand es es')
+   expand (Constr α c es) (Constr β c' es')     = Constr (α ⪄ β) (c ≜ c') (expand es es')
    expand (Matrix α e1 (x1 × y1) e2) (Matrix β e1' (x2 × y2) e2') =
       Matrix (α ⪄ β) (expand e1 e1') ((x1 ≜ x2) × (y1 ≜ y2)) (expand e2 e2')
    expand (Lambda σ) (Lambda σ')                = Lambda (expand σ σ')

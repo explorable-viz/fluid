@@ -60,7 +60,7 @@ instance joinSemilatticeList :: Slices t => JoinSemilattice (List t) where
 
 instance slicesList :: Slices t => Slices (List t) where
    maybeJoin xs ys
-      | length xs == length ys   = sequence $ zipWith maybeJoin xs ys
+      | length xs == length ys   = sequence (zipWith maybeJoin xs ys)
       | otherwise                = Nothing
 
 instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
@@ -71,20 +71,30 @@ instance joinSemilatticeMap :: (Ord k, Slices t) => JoinSemilattice (Map k t) wh
 
 instance slicesMap :: (Ord k, Slices t) => Slices (Map k t) where
    maybeJoin m m'
-      | keys m == keys m'  = fromFoldable <$> (sequence $ zipWith maybeJoin (toUnfoldable m) (toUnfoldable m'))
+      | keys m == keys m'  = fromFoldable <$> (sequence (zipWith maybeJoin (toUnfoldable m) (toUnfoldable m')))
       | otherwise          = Nothing
 
-instance joinSemilatticeArrayArray :: Slices a => JoinSemilattice (Array a) where
+instance joinSemilatticeArray :: Slices a => JoinSemilattice (Array a) where
    join = definedJoin
 
-instance slicesArrayArray :: Slices a => Slices (Array a) where
+instance slicesArray :: Slices a => Slices (Array a) where
    maybeJoin xs ys
-      | A.length xs == A.length ys  = sequence $ A.zipWith maybeJoin xs ys
+      | A.length xs == A.length ys  = sequence (A.zipWith maybeJoin xs ys)
       | otherwise                   = Nothing
 
 class Expandable a where
    -- Partial function defined iff x is above x', which expands in x any subtree prefixes which are expanded in x'
    expand :: a -> a -> a
+
+instance expandableArray :: Expandable t => Expandable (Array t) where
+   expand xs ys
+      | A.length xs == A.length ys  = A.zipWith expand xs ys
+      | otherwise                   = error absurd
+
+instance expandableList :: Expandable t => Expandable (List t) where
+   expand xs ys
+      | length xs == length ys   = zipWith expand xs ys
+      | otherwise                = error absurd
 
 instance expandableMap :: (Ord k, Expandable (t a)) => Expandable (Map k (t a)) where
    expand m m'

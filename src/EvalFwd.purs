@@ -86,22 +86,24 @@ eval_fwd ρ e _ (T.Lambda _ _) =
 eval_fwd ρ e α (T.App (t1 × _) t2 _ t3) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
-         case eval_fwd ρ e1 α t1 × eval_fwd ρ e2 α t2 of
-            V.Hole × _ -> V.Hole
-            V.Closure ρ1 δ σ × v ->
+         let v = eval_fwd ρ e2 α t2 in
+         case eval_fwd ρ e1 α t1 of
+            V.Hole -> V.Hole
+            V.Closure ρ1 δ σ ->
                let ρ2 = closeDefs ρ1 δ δ
                    ρ3 × e3 × β = match_fwd v σ in
                eval_fwd (ρ1 <> ρ2 <> ρ3) (asExpr e3) β t3
-            _ × _ -> error absurd
+            _ -> error absurd
       _ -> error absurd
 eval_fwd ρ e α (T.AppOp (t1 × _) (t2 × _)) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
-         case eval_fwd ρ e1 α t1 × eval_fwd ρ e2 α t2 of
-            V.Hole × _ -> V.Hole
-            V.Primitive α' φ × v -> apply_fwd φ α' v
-            V.Constr α' c vs × v -> V.Constr (α ∧ α') c (vs <> singleton v)
-            _ × _ -> error absurd
+         let v = eval_fwd ρ e2 α t2 in
+         case eval_fwd ρ e1 α t1 of
+            V.Hole -> V.Hole
+            V.Primitive α' φ -> apply_fwd φ α' v
+            V.Constr α' c vs -> V.Constr (α ∧ α') c (vs <> singleton v)
+            _ -> error absurd
       _ -> error absurd
 eval_fwd ρ e α (T.BinaryApp (t1 × _) (op × _) (t2 × _)) =
    case expand e (BinaryApp Hole op Hole) of

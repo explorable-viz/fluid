@@ -106,22 +106,22 @@ instance fromBoolean :: From Boolean where
    from b = if b then true_ else false_
 
 instance fromValOp :: From a => From (Val Boolean -> a) where
-   from op = V.Primitive false $ ValOp $ op >>> from
+   from op = V.Primitive false (ValOp (op >>> from))
 
 instance fromIntOp :: From a => From (Int -> a) where
-   from op = V.Primitive false $ IntOp $ op >>> from
+   from op = V.Primitive false (IntOp (op >>> from))
 
 instance fromNumberOp :: From a => From (Number -> a) where
-   from op = V.Primitive false $ NumberOp $ op >>> from
+   from op = V.Primitive false (NumberOp (op >>> from))
 
 instance fromIntOrNumberOp :: From a => From (Either Int Number -> a) where
-   from op = V.Primitive false $ IntOrNumberOp $ op >>> from
+   from op = V.Primitive false (IntOrNumberOp (op >>> from))
 
 instance fromStringOp :: From a => From (String -> a) where
-   from op = V.Primitive false $ StringOp $ op >>> from
+   from op = V.Primitive false (StringOp (op >>> from))
 
 instance fromOrStringOp :: From a => From (Either (Either Int Number) String -> a) where
-   from op = V.Primitive false $ IntOrNumberOrStringOp $ op >>> from
+   from op = V.Primitive false (IntOrNumberOrStringOp (op >>> from))
 
 apply :: Primitive -> Val 𝔹 -> Val 𝔹
 apply (ValOp op)                 = op
@@ -136,8 +136,8 @@ apply_fwd _ _ V.Hole = V.Hole
 apply_fwd φ α v      =
    let α' = getα v in
    case apply φ v of
-   V.Hole   -> error absurd
-   u  -> setα (α ∧ α') u
+      V.Hole -> error absurd
+      u -> setα (α ∧ α') u
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
