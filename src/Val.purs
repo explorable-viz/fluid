@@ -85,9 +85,9 @@ instance valExpandable :: Expandable (Val Boolean) where
    expand Hole v@(Float false n)                = v
    expand Hole v@(Str false str)                = v
    expand Hole v@(Primitive false φ)            = v
-   expand Hole v@(Constr false c vs)            = Constr false c (expand Hole <$> vs)
-   expand Hole v@(Matrix false vs xy)           = Matrix false (((<$>) (expand Hole)) <$> vs) xy
-   expand Hole v@(Closure ρ δ σ)                = Closure (botOf ρ) (botOf δ) ElimHole
+   expand Hole (Constr false c vs)              = Constr false c (expand Hole <$> vs)
+   expand Hole (Matrix false vs xy)             = Matrix false (((<$>) (expand Hole)) <$> vs) xy
+   expand Hole (Closure ρ δ σ)                  = Closure (expand (botOf ρ) ρ) (expand (botOf δ) δ) (expand ElimHole σ)
    expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
    expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
