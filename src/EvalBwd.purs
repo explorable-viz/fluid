@@ -2,7 +2,7 @@ module EvalBwd where
 
 import Prelude hiding (absurd)
 import Data.Array (replicate)
-import Data.List (List(..), (:), (\\), foldr, range, singleton, zip)
+import Data.List (List(..), (:), (\\), foldr, range, reverse, singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
@@ -20,8 +20,9 @@ unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
 unmatch (ρ :+: x ↦ v) (MatchVar x') = ρ × (Empty :+: (x ≜ x') ↦ v)
 unmatch Empty (MatchVar x')         = error absurd
 unmatch ρ (MatchVarAnon _)          = ρ × Empty
-unmatch ρ (MatchConstr _ ws)    = unmatchArgs ρ ws
+unmatch ρ (MatchConstr _ ws)        = unmatchArgs ρ (reverse ws)
 
+-- matches are in a reverse order to the original arguments, to correspond with the 'snoc' order of ρ
 unmatchArgs :: Env 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Env 𝔹
 unmatchArgs ρ Nil       = ρ × Empty
 unmatchArgs ρ (w : ws)  = ρ'' × (ρ1 <> ρ2)
@@ -44,7 +45,7 @@ match_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim �
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
 match_bwd Empty κ α (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
 match_bwd ρ κ α (MatchConstr c ws)              = V.Constr α c vs × ElimConstr (fromFoldable cκs)
-   where vs × κ' = matchArgs_bwd ρ κ α ws
+   where vs × κ' = matchArgs_bwd ρ κ α (reverse ws)
          cκs = c × κ' : ((_ × ContHole) <$> (ctrs (successful (dataTypeFor c)) \\ singleton c))
 match_bwd _ _ _ _                               = error absurd
 

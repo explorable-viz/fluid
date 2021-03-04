@@ -21,7 +21,7 @@ match_fwd v σ (T.MatchVar x) =
    case expand σ (ElimVar x ContHole) of
       ElimVar _ κ -> (Empty :+: x ↦ v) × κ × true
       _ -> error absurd
-match_fwd v σ (T.MatchVarAnon _) =
+match_fwd _ σ (T.MatchVarAnon _) =
    case expand σ (ElimVar varAnon ContHole) of
       ElimVar _ κ -> Empty × κ × true
       _ -> error absurd

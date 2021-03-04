@@ -4,7 +4,7 @@ import Prelude hiding (absurd, apply)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, range, singleton, unzip, snoc)
+import Data.List (List(..), (:), length, range, singleton, unzip)
 import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Traversable (sequence, traverse)
@@ -21,26 +21,26 @@ import Val (Env, Val)
 import Val (Val(..)) as V
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
-match _ ElimHole                          = error "todo"
+match _ ElimHole = error "todo"
 match v (ElimVar x κ)
-   | x == varAnon                         = pure $ Empty × κ × MatchVarAnon v
-   | otherwise                            = pure ((Empty :+: x ↦ v) × κ × MatchVar x)
-match (V.Constr _ c vs) (ElimConstr κs)   = do
+   | x == varAnon = pure (Empty × κ × MatchVarAnon v)
+   | otherwise    = pure ((Empty :+: x ↦ v) × κ × MatchVar x)
+match (V.Constr _ c vs) (ElimConstr κs) = do
    checkDataType "Pattern mismatch: " c κs
    κ <- note ("Incomplete pattern: no branch for " <> show c) (lookup c κs)
    ρ × κ' × ws <- matchArgs c vs κ
    pure (ρ × κ' × MatchConstr c ws)
-match v (ElimConstr κs)                   = do
+match v (ElimConstr κs) = do
    d <- dataTypeForKeys (keys κs)
    report ("Pattern mismatch: " <> render (pretty v) <> " is not a constructor value, expected " <> show d)
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
-matchArgs _ Nil κ                   = pure $ Empty × κ × Nil
-matchArgs c (v : vs) (ContElim σ)   = do
+matchArgs _ Nil κ = pure (Empty × κ × Nil)
+matchArgs c (v : vs) (ContElim σ) = do
    ρ  × κ'  × w  <- match v σ
    ρ' × κ'' × ws <- matchArgs c vs κ'
-   pure ((ρ <> ρ') × κ'' × snoc ws w)
-matchArgs c (_ : vs) (ContExpr _)   = report $
+   pure ((ρ <> ρ') × κ'' × (w : ws))
+matchArgs c (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _ = error absurd
 

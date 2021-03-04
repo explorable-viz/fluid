@@ -7,10 +7,9 @@ let split [] = ([], []);
           ([], _) -> ys;
           (x : xs', []) -> xs;
           (x : xs', y : ys') ->
-             match x < y as {
-                True -> x : merge xs' ys;
-                False -> y : merge xs ys'
-             }
+             if x < y
+             then x : merge xs' ys
+             else y : merge xs ys'
        };
 
     mergesort xs =
