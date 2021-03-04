@@ -153,16 +153,16 @@ instance exprExpandable :: Expandable (Expr Boolean) where
 
 instance elimExpandable :: Expandable (Elim Boolean) where
    expand σ ElimHole                      = σ
-   expand ElimHole σ@(ElimVar x _)        = expand (ElimVar x ContHole) σ
-   expand ElimHole σ@(ElimConstr m)       = expand (ElimConstr (const ContHole <$> m)) σ
+   expand ElimHole (ElimVar x κ)          = ElimVar x (expand ContHole κ)
+   expand ElimHole (ElimConstr m)         = ElimConstr (expand ContHole <$> m)
    expand (ElimVar x κ) (ElimVar x' κ')   = ElimVar (x ⪂ x') (expand κ κ')
    expand (ElimConstr m) (ElimConstr m')  = ElimConstr (expand m m')
    expand _ _                             = error absurd
 
 instance contExpandable :: Expandable (Cont Boolean) where
    expand κ ContHole                   = κ
-   expand ContHole κ@(ContExpr _)      = expand (ContExpr Hole) κ
-   expand ContHole κ@(ContElim _)      = expand (ContElim ElimHole) κ
+   expand ContHole (ContExpr e)        = ContExpr (expand Hole e)
+   expand ContHole (ContElim σ)        = ContElim (expand ElimHole σ)
    expand (ContExpr e) (ContExpr e')   = ContExpr (expand e e')
    expand (ContElim σ) (ContElim σ')   = ContElim (expand σ σ')
    expand _ _                          = error absurd
