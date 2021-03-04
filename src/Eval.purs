@@ -112,7 +112,7 @@ eval ρ (BinaryApp e op e') = do
       V.Primitive _ φ ->
          case apply φ v of
             V.Hole -> error absurd
-            V.Primitive _ φ_v -> pure (T.BinaryApp (t × v) (op × v_φ) (t' × v') × apply φ_v v')
+            V.Primitive _ φ_v -> pure (T.BinaryApp (t × v) (op × φ) (t' × v') × apply φ_v v')
             _ -> report "Not a binary operator"
       _ -> report "Not an operator"
 eval ρ (Let (VarDef σ e) e') = do

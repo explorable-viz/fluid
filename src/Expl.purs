@@ -24,7 +24,7 @@ data Expl a =
    App (Expl a × Env a × RecDefs a × Elim a) (Expl a) (Match a) (Expl a) |
    AppPrim (Expl a × Primitive) (ExplVal a) |
    AppConstr (Expl a × Ctr × List (Val a)) (ExplVal a) |
-   BinaryApp (ExplVal a) (Var × Val a) (ExplVal a) |
+   BinaryApp (ExplVal a) (Var × Primitive) (ExplVal a) |
    Let (VarDef a) (Expl a) |
    LetRec (RecDefs a) (Expl a)
 
