@@ -64,7 +64,7 @@ instance slicesList :: Slices t => Slices (List t) where
       | otherwise                = Nothing
 
 instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
-   botOf = map botOf
+   botOf = (<$>) botOf
 
 instance joinSemilatticeMap :: (Ord k, Slices t) => JoinSemilattice (Map k t) where
    join = definedJoin

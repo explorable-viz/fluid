@@ -29,7 +29,7 @@ match (V.Constr _ c vs) (ElimConstr κs)   = do
    checkDataType "Pattern mismatch: " c κs
    κ <- note ("Incomplete pattern: no branch for " <> show c) (lookup c κs)
    ρ × κ' × ws <- matchArgs c vs κ
-   pure (ρ × κ' × MatchConstr (c × ws))
+   pure (ρ × κ' × MatchConstr c ws)
 match v (ElimConstr κs)                   = do
    d <- dataTypeForKeys (keys κs)
    report ("Pattern mismatch: " <> render (pretty v) <> " is not a constructor value, expected " <> show d)
@@ -104,7 +104,7 @@ eval ρ (App e e') = do
          pure (T.AppConstr (t × c × vs) (t' × v') × V.Constr false c (vs <> singleton v'))
       _ -> report "Expected closure, operator or unsaturated constructor"
 eval ρ (BinaryApp e op e') = do
-   t × v  <- eval ρ e
+   t × v <- eval ρ e
    t' × v' <- eval ρ e'
    v_φ <- find op ρ
    case v_φ of
@@ -112,7 +112,7 @@ eval ρ (BinaryApp e op e') = do
       V.Primitive _ φ ->
          case apply φ v of
             V.Hole -> error absurd
-            V.Primitive _ φ_v -> pure (T.BinaryApp (t × v) (op × φ) (t' × v') × apply φ_v v')
+            V.Primitive _ φ_v -> pure (T.BinaryApp (t × v) (op × φ) φ_v (t' × v') × apply φ_v v')
             _ -> report "Not a binary operator"
       _ -> report "Not an operator"
 eval ρ (Let (VarDef σ e) e') = do

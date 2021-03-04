@@ -1,13 +1,14 @@
 module EvalFwd where
 
 import Prelude hiding (absurd)
-import Data.Array (fromFoldable)
+import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), range, singleton, zip)
+import Data.Map (fromFoldable)
 import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
-import DataType (cPair)
+import DataType (cPair, ctrs, dataTypeFor)
 import Eval (closeDefs)
-import Expl (Expl)
-import Expl (Expl(..), VarDef(..)) as T
+import Expl (Expl, Match)
+import Expl (Expl(..), Match(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (apply_fwd, to)
@@ -15,22 +16,33 @@ import Util (type (×), (×), (!), absurd, error, mustLookup, successful)
 import Val (Env, Val)
 import Val (Val(..)) as V
 
-match_fwd :: Val 𝔹 -> Elim 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
-match_fwd _ ElimHole                         = error "todo"
-match_fwd v (ElimVar x κ)
-   | x == varAnon                            = Empty × κ × true
-   | otherwise                               = (Empty :+: x ↦ v) × κ × true
-match_fwd (V.Constr α c vs) (ElimConstr κs)  = ρ × κ × (α ∧ α')
-   where ρ × κ × α' = matchArgs_fwd vs (mustLookup c κs)
-match_fwd V.Hole (ElimConstr _)              = error "todo"
-match_fwd _ (ElimConstr _)                   = error absurd
+match_fwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
+match_fwd v σ (T.MatchVar x) =
+   case expand σ (ElimVar x ContHole) of
+      ElimVar _ κ -> (Empty :+: x ↦ v) × κ × true
+      _ -> error absurd
+match_fwd v σ (T.MatchVarAnon _) =
+   case expand σ (ElimVar varAnon ContHole) of
+      ElimVar _ κ -> Empty × κ × true
+      _ -> error absurd
+match_fwd v σ (T.MatchConstr c ws) =
+   case expand v (V.Constr false c (const V.Hole <$> ws)) ×
+        expand σ (ElimConstr (fromFoldable ((_ × ContHole) <$> ctrs (successful (dataTypeFor c))))) of
+      V.Constr α _ vs × ElimConstr m ->
+         ρ × κ × (α ∧ α')
+         where ρ × κ × α' = matchArgs_fwd vs (mustLookup c m) ws
+      _ -> error absurd
 
-matchArgs_fwd :: List (Val 𝔹) -> Cont 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchArgs_fwd Nil κ                 = Empty × κ × true
-matchArgs_fwd (v : vs) (ContElim σ) = (ρ <> ρ') × κ' × (α ∧ α')
-   where ρ  × κ  × α = match_fwd v σ
-         ρ' × κ' × α' = matchArgs_fwd vs κ
-matchArgs_fwd _ _ = error absurd
+matchArgs_fwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchArgs_fwd Nil κ Nil = Empty × κ × true
+matchArgs_fwd (v : vs) κ (w : ws) =
+   case expand κ (ContElim ElimHole) of
+      ContElim σ ->
+         (ρ <> ρ') × κ' × (α ∧ α')
+         where ρ  × κ  × α = match_fwd v σ w
+               ρ' × κ' × α' = matchArgs_fwd vs κ ws
+      _ -> error absurd
+matchArgs_fwd _ _ _ = error absurd
 
 eval_fwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
 eval_fwd ρ e _ (T.Var _ x) =
@@ -65,9 +77,9 @@ eval_fwd ρ e α' (T.Matrix tss (x × y) _ t2) =
             V.Hole -> V.Hole
             V.Constr _ c (v1 : v2 : Nil) | c == cPair ->
                let i' × j' = to v1 × to v2
-                   vs = fromFoldable $ do
+                   vs = A.fromFoldable $ do
                         i <- range 1 i'
-                        singleton $ fromFoldable $ do
+                        singleton $ A.fromFoldable $ do
                            j <- range 1 j'
                            singleton (eval_fwd ((ρ :+: x ↦ V.Int α i) :+: y ↦ V.Int α j) e1 α' (tss!(i - 1)!(j - 1)))
                in V.Matrix (α ∧ α') vs (i' × j')
@@ -83,14 +95,14 @@ eval_fwd ρ e _ (T.Lambda _ _) =
    case expand e (Lambda ElimHole) of
       Lambda σ -> V.Closure ρ Empty σ
       _ -> error absurd
-eval_fwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 _ t3) =
+eval_fwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
          case expand (eval_fwd ρ e1 α t1) (V.Closure (botOf ρ1) (botOf δ) ElimHole) of
             V.Closure ρ1' δ' σ' ->
                let v = eval_fwd ρ e2 α t2
                    ρ2 = closeDefs ρ1' δ' δ'
-                   ρ3 × e3 × β = match_fwd v σ' in
+                   ρ3 × e3 × β = match_fwd v σ' w in
                eval_fwd (ρ1' <> ρ2 <> ρ3) (asExpr e3) β t3
             _ -> error absurd
       _ -> error absurd
@@ -112,20 +124,21 @@ eval_fwd ρ e α (T.AppConstr (t1 × c × vs) (t2 × _)) =
                V.Constr (α ∧ α') c (vs' <> singleton v)
             _ -> error absurd
       _ -> error absurd
-eval_fwd ρ e α (T.BinaryApp (t1 × _) (op × φ) (t2 × _)) =
+eval_fwd ρ e α (T.BinaryApp (t1 × _) (op × φ) φ_v (t2 × _)) =
    case expand e (BinaryApp Hole op Hole) of
       BinaryApp e1 _ e2 ->
          case expand (successful (find op ρ)) (V.Primitive false φ) of
             V.Primitive α' _ ->
-               case apply_fwd φ α' (eval_fwd ρ e1 α t1) of
-                  V.Hole -> V.Hole
-                  V.Primitive α'' φ_v -> apply_fwd φ_v α'' (eval_fwd ρ e2 α t2)
+               let v = eval_fwd ρ e1 α t1 in
+               case expand (apply_fwd φ α' v) (V.Primitive false φ_v) of
+                  V.Primitive α'' _ -> apply_fwd φ_v α'' (eval_fwd ρ e2 α t2)
                   _ -> error absurd
             _ -> error absurd
       _ -> error absurd
-eval_fwd ρ e α (T.Let (T.VarDef _ t1) t2) =
+eval_fwd ρ e α (T.Let (T.VarDef w t1) t2) =
    case expand e (Let (VarDef ElimHole Hole) Hole) of
       Let (VarDef σ e1) e2 ->
-         let ρ' × _ × α' = match_fwd (eval_fwd ρ e1 α t1) σ in
+         let v = eval_fwd ρ e1 α t1
+             ρ' × _ × α' = match_fwd v σ w in
          eval_fwd (ρ <> ρ') e2 α' t2
       _ -> error absurd

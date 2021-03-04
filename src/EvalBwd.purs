@@ -20,7 +20,7 @@ unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
 unmatch (ρ :+: x ↦ v) (MatchVar x') = ρ × (Empty :+: (x ≜ x') ↦ v)
 unmatch Empty (MatchVar x')         = error absurd
 unmatch ρ (MatchVarAnon _)          = ρ × Empty
-unmatch ρ (MatchConstr (_ × ws))    = unmatchArgs ρ ws
+unmatch ρ (MatchConstr _ ws)    = unmatchArgs ρ ws
 
 unmatchArgs :: Env 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Env 𝔹
 unmatchArgs ρ Nil       = ρ × Empty
@@ -43,7 +43,7 @@ closeDefs_bwd ρ (ρ0 × δ0) =
 match_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 match_bwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
 match_bwd Empty κ α (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
-match_bwd ρ κ α (MatchConstr (c × ws))          = V.Constr α c vs × ElimConstr (fromFoldable cκs)
+match_bwd ρ κ α (MatchConstr c ws)              = V.Constr α c vs × ElimConstr (fromFoldable cκs)
    where vs × κ' = matchArgs_bwd ρ κ α ws
          cκs = c × κ' : ((_ × ContHole) <$> (ctrs (successful (dataTypeFor c)) \\ singleton c))
 match_bwd _ _ _ _                               = error absurd
@@ -132,11 +132,11 @@ eval_bwd v (T.AppConstr (t1 × c × vs) (t2 × v2)) =
        ρ × e × α = eval_bwd (V.Constr β c vs) t1
        ρ' × e' × α' = eval_bwd (setα β v2) t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
-eval_bwd v (T.BinaryApp (t1 × v1) (op × φ) (t2 × v2)) =
+eval_bwd v (T.BinaryApp (t1 × v1) (op × φ) _ (t2 × v2)) =
    let β = getα v
        ρ × e × α = eval_bwd (setα β v1) t1
        ρ' × e' × α' = eval_bwd (setα β v2) t2 in
-   (ρ ∨ ρ' ◃ op ↦ φ) × BinaryApp e op e' × (α ∨ α')
+   (ρ ∨ ρ' ◃ op ↦ V.Primitive β φ) × BinaryApp e op e' × (α ∨ α')
 eval_bwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = eval_bwd v t2
        ρ1 × ρ2 = unmatch ρ1ρ2 w

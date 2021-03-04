@@ -92,7 +92,7 @@ instance prettyExpl :: BoundedJoinSemilattice a => Pretty (Expl a) where
                          (atop (text "match: " :<>:  pretty ξ :<>: comma) (text "t3: " :<>: pretty t''))))
    pretty (T.AppPrim (t × φ) tv')         = error "todo"
    pretty (T.AppConstr tv tv')            = error "todo"
-   pretty (T.BinaryApp tv (op × _) tv')   =
+   pretty (T.BinaryApp tv (op × _) _ tv') =
       pretty tv :<>: space :<>: text op :<>: space :<>: pretty tv'
    pretty (T.Let (T.VarDef ξ t) t')       =
       atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
