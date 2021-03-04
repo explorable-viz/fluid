@@ -113,7 +113,7 @@ eval_bwd (V.Matrix α vss (i' × j')) (T.Matrix tss (x × y) _ t) =
    (ρ ∨ ρ') × Matrix (α ∨ γ) e' (x × y) e × (α ∨ β ∨ β')
 eval_bwd _ (T.Matrix _ _ _ _) =
    error absurd
-eval_bwd v (T.App (t × δ) t' w t'') =
+eval_bwd v (T.App (t × _ × δ × _) t' w t'') =
    let ρ1ρ2ρ3 × e × α = eval_bwd v t''
        ρ1ρ2 × ρ3 = unmatch ρ1ρ2ρ3 w
        v' × σ = match_bwd ρ3 (ContExpr e) α w
@@ -122,16 +122,21 @@ eval_bwd v (T.App (t × δ) t' w t'') =
        ρ1' × δ' × α2 = closeDefs_bwd ρ2 (ρ1 × δ)
        ρ'' × e'' × α'' = eval_bwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t in
    (ρ' ∨ ρ'') × App e'' e' × (α' ∨ α'')
+eval_bwd v (T.AppPrim (t1 × φ) (t2 × v2)) =
+   let β = getα v
+       ρ × e × α = eval_bwd (V.Primitive β φ) t1
+       ρ' × e' × α' = eval_bwd (setα β v2) t2 in
+   (ρ ∨ ρ') × App e e' × (α ∨ α')
+eval_bwd v (T.AppConstr (t1 × c × vs) (t2 × v2)) =
+   let β = getα v
+       ρ × e × α = eval_bwd (V.Constr β c vs) t1
+       ρ' × e' × α' = eval_bwd (setα β v2) t2 in
+   (ρ ∨ ρ') × App e e' × (α ∨ α')
 eval_bwd v (T.BinaryApp (t1 × v1) (op × φ) (t2 × v2)) =
    let β = getα v
        ρ × e × α = eval_bwd (setα β v1) t1
        ρ' × e' × α' = eval_bwd (setα β v2) t2 in
    (ρ ∨ ρ' ◃ op ↦ φ) × BinaryApp e op e' × (α ∨ α')
-eval_bwd v (T.AppOp (t1 × v1) (t2 × v2)) =
-   let β = getα v
-       ρ × e × α = eval_bwd (setα β v1) t1
-       ρ' × e' × α' = eval_bwd (setα β v2) t2 in
-   (ρ ∨ ρ') × App e e' × (α ∨ α')
 eval_bwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = eval_bwd v t2
        ρ1 × ρ2 = unmatch ρ1ρ2 w

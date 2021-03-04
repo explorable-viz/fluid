@@ -85,12 +85,13 @@ instance prettyExpl :: BoundedJoinSemilattice a => Pretty (Expl a) where
    pretty (T.Constr _ c ts)               = prettyConstr c ts
    pretty (T.Matrix _ _ _ _)              = error "todo"
    pretty (T.Lambda ρ σ)                  = pretty (E.Lambda σ)
-   pretty (T.App (t × _) t' ξ t'')        =
+   pretty (T.App (t × _ × _ ×_) t' ξ t'')        =
       text "App" :<>:
       parens (atop (text "t1: " :<>: pretty t :<>: comma)
                    (atop (text "t2: " :<>: pretty t' :<>: comma)
                          (atop (text "match: " :<>:  pretty ξ :<>: comma) (text "t3: " :<>: pretty t''))))
-   pretty (T.AppOp tv tv')                = pretty tv :<>: space :<>: pretty tv'
+   pretty (T.AppPrim (t × φ) tv')         = error "todo"
+   pretty (T.AppConstr tv tv')            = error "todo"
    pretty (T.BinaryApp tv (op × _) tv')   =
       pretty tv :<>: space :<>: text op :<>: space :<>: pretty tv'
    pretty (T.Let (T.VarDef ξ t) t')       =

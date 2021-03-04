@@ -96,12 +96,12 @@ eval ρ (App e e') = do
          let ρ2 = closeDefs ρ1 δ δ
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) (asExpr e'')
-         pure (T.App (t × δ) t' w t'' × v'')
+         pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
       V.Primitive _ φ ->
-         pure (T.AppOp (t × v) (t' × v') × apply φ v')
+         pure (T.AppPrim (t × φ) (t' × v') × apply φ v')
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> show c)
-         pure (T.AppOp (t × v) (t' × v') × V.Constr false c (vs <> singleton v'))
+         pure (T.AppConstr (t × c × vs) (t' × v') × V.Constr false c (vs <> singleton v'))
       _ -> report "Expected closure, operator or unsaturated constructor"
 eval ρ (BinaryApp e op e') = do
    t × v  <- eval ρ e

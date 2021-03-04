@@ -5,7 +5,7 @@ import Bindings (Var)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Util (type (×))
-import Val (Env, Val)
+import Val (Env, Primitive, Val)
 
 type ExplVal a = Expl a × Val a
 
@@ -21,8 +21,9 @@ data Expl a =
    Constr (Env a) Ctr (List (Expl a)) |
    Matrix (Array (Array (Expl a))) (Var × Var) (Int × Int) (Expl a) |
    Lambda (Env a) (Elim a) |
-   App (Expl a × RecDefs a) (Expl a) (Match a) (Expl a) |
-   AppOp (ExplVal a) (ExplVal a) |
+   App (Expl a × Env a × RecDefs a × Elim a) (Expl a) (Match a) (Expl a) |
+   AppPrim (Expl a × Primitive) (ExplVal a) |
+   AppConstr (Expl a × Ctr × List (Val a)) (ExplVal a) |
    BinaryApp (ExplVal a) (Var × Val a) (ExplVal a) |
    Let (VarDef a) (Expl a) |
    LetRec (RecDefs a) (Expl a)

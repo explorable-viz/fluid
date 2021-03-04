@@ -83,26 +83,33 @@ eval_fwd ρ e _ (T.Lambda _ _) =
    case expand e (Lambda ElimHole) of
       Lambda σ -> V.Closure ρ Empty σ
       _ -> error absurd
-eval_fwd ρ e α (T.App (t1 × _) t2 _ t3) =
+eval_fwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 _ t3) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
-         let v = eval_fwd ρ e2 α t2 in
-         case eval_fwd ρ e1 α t1 of
-            V.Hole -> V.Hole
-            V.Closure ρ1 δ σ ->
-               let ρ2 = closeDefs ρ1 δ δ
-                   ρ3 × e3 × β = match_fwd v σ in
-               eval_fwd (ρ1 <> ρ2 <> ρ3) (asExpr e3) β t3
+         case expand (eval_fwd ρ e1 α t1) (V.Closure (botOf ρ1) (botOf δ) ElimHole) of
+            V.Closure ρ1' δ' σ' ->
+               let v = eval_fwd ρ e2 α t2
+                   ρ2 = closeDefs ρ1' δ' δ'
+                   ρ3 × e3 × β = match_fwd v σ' in
+               eval_fwd (ρ1' <> ρ2 <> ρ3) (asExpr e3) β t3
             _ -> error absurd
       _ -> error absurd
-eval_fwd ρ e α (T.AppOp (t1 × _) (t2 × _)) =
+eval_fwd ρ e α (T.AppPrim (t1 × φ) (t2 × _)) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
-         let v = eval_fwd ρ e2 α t2 in
-         case eval_fwd ρ e1 α t1 of
-            V.Hole -> V.Hole
-            V.Primitive α' φ -> apply_fwd φ α' v
-            V.Constr α' c vs -> V.Constr (α ∧ α') c (vs <> singleton v)
+         case expand (eval_fwd ρ e1 α t1) (V.Primitive false φ) of
+            V.Primitive α' _ ->
+               let v = eval_fwd ρ e2 α t2 in
+               apply_fwd φ α' v
+            _ -> error absurd
+      _ -> error absurd
+eval_fwd ρ e α (T.AppConstr (t1 × c × vs) (t2 × _)) =
+   case expand e (App Hole Hole) of
+      App e1 e2 ->
+         case expand (eval_fwd ρ e1 α t1) (V.Constr false c (const V.Hole <$> vs)) of
+            V.Constr α' _ vs' ->
+               let v = eval_fwd ρ e2 α t2 in
+               V.Constr (α ∧ α') c (vs' <> singleton v)
             _ -> error absurd
       _ -> error absurd
 eval_fwd ρ e α (T.BinaryApp (t1 × _) (op × _) (t2 × _)) =

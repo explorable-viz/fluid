@@ -21,7 +21,7 @@ data Primitive =
    StringOp (String -> Val 𝔹) |
    IntOrNumberOrStringOp (Int + Number + String -> Val 𝔹)
 
--- Only annotate first-order data for now.
+-- Only annotate first-order data for now (but convenient to annotate primitive ops as well).
 data Val a =
    Hole |
    Int a Int |
@@ -29,8 +29,8 @@ data Val a =
    Str a String |
    Constr a Ctr (List (Val a)) |
    Matrix a (Array (Array (Val a))) (Int × Int) |
-   Closure (Env a) (RecDefs a) (Elim a) |
-   Primitive a Primitive
+   Primitive a Primitive |
+   Closure (Env a) (RecDefs a) (Elim a)
 
 -- The annotation on a value.
 getα :: Val 𝔹 -> 𝔹
