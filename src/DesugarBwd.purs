@@ -5,7 +5,7 @@ import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), singleton, zip)
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, reverse)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Tuple (uncurry, fst, snd)
@@ -33,7 +33,7 @@ varDefsBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) ×
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
 recDefsBwd :: E.RecDefs 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
-recDefsBwd xσs xcs = join (recDefsBwd' xσs (reverse (groupBy (eq `on` fst) xcs)))
+recDefsBwd xσs xcs = join (recDefsBwd' xσs (groupBy (eq `on` fst) xcs))
 
 recDefsBwd' :: E.RecDefs 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
 recDefsBwd' Empty _                                             = error absurd
@@ -102,7 +102,7 @@ exprBwd e (Let ds s) =
       E.Let d e' -> uncurry Let (varDefsBwd (E.Let d e') (ds × s))
       _ -> error absurd
 exprBwd e (LetRec xcs s) =
-   case expand e (E.LetRec (fromList (toList (reverse (recDefHole <$> xcss)))) E.Hole) of
+   case expand e (E.LetRec (fromList (toList (recDefHole <$> xcss))) E.Hole) of
       E.LetRec xσs e' -> LetRec (recDefsBwd xσs xcs) (exprBwd e' s)
       _ -> error absurd
       where

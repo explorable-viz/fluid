@@ -6,7 +6,7 @@ import Data.Foldable (foldM)
 import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), length)
 import Data.List (head, singleton) as L
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, reverse, toList)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Map (Map, fromFoldable, insert, lookup, singleton, size, toUnfoldable, update)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
@@ -61,7 +61,7 @@ varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
 -- In the formalism, "group by name" is part of the syntax.
 -- cs desugar_fwd σ
 recDefsFwd :: RecDefs 𝔹 -> MayFail (E.RecDefs 𝔹)
-recDefsFwd xcs = fromList <$> toList <$> reverse <$> traverse recDefFwd xcss
+recDefsFwd xcs = fromList <$> toList <$> traverse recDefFwd xcss
    where
    xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 
