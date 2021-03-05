@@ -11,7 +11,7 @@ import Math (log, pow)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cTrue, cFalse)
-import Lattice (𝔹, (∧))
+import Lattice (𝔹, (∧), expand)
 import Util (Endo, type (×), (×), type (+), absurd, error)
 import Val (Env, Primitive(..), Val, getα, setα)
 import Val (Val(..)) as V
@@ -59,7 +59,7 @@ class From a where
 
 instance toInt :: To Int where
    to (V.Int _ n) = n
-   to _                 = error "Int expected"
+   to _           = error "Int expected"
 
 instance fromInt :: From Int where
    from = V.Int false
@@ -125,19 +125,22 @@ instance fromOrStringOp :: From a => From (Either (Either Int Number) String -> 
 
 apply :: Primitive -> Val 𝔹 -> Val 𝔹
 apply (ValOp op)                 = op
-apply (IntOp op)                 = op <<< to
-apply (NumberOp op)              = op <<< to
-apply (IntOrNumberOp op)         = op <<< to
-apply (StringOp op)              = op <<< to
-apply (IntOrNumberOrStringOp op) = op <<< to
+apply (IntOp op)                 = to >>> op
+apply (NumberOp op)              = to >>> op
+apply (IntOrNumberOp op)         = to >>> op
+apply (StringOp op)              = to >>> op
+apply (IntOrNumberOrStringOp op) = to >>> op
 
-apply_fwd :: Primitive -> 𝔹 -> Val 𝔹 -> Val 𝔹
-apply_fwd _ _ V.Hole = V.Hole
-apply_fwd φ α v      =
-   let α' = getα v in
-   case apply φ v of
-      V.Hole -> error absurd
-      u -> setα (α ∧ α') u
+-- φ acts as a "trace" of the original operator.
+apply_fwd :: Val 𝔹 -> Primitive -> Val 𝔹 -> Val 𝔹
+apply_fwd v_φ φ V.Hole = V.Hole -- more convenient than returning the equivalent explicit value
+apply_fwd v_φ φ v =
+   case expand v_φ (V.Primitive false φ) of
+      V.Primitive α _ ->
+         case apply φ v of
+            V.Hole -> error absurd
+            u -> setα (α ∧ getα v) u
+      _ -> error absurd
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [

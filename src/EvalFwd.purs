@@ -39,8 +39,8 @@ matchArgs_fwd (v : vs) κ (w : ws) =
    case expand κ (ContElim ElimHole) of
       ContElim σ ->
          (ρ <> ρ') × κ' × (α ∧ α')
-         where ρ  × κ  × α = match_fwd v σ w
-               ρ' × κ' × α' = matchArgs_fwd vs κ ws
+         where ρ  × κ  × α    = match_fwd v σ w
+               ρ' × κ' × α'   = matchArgs_fwd vs κ ws
       _ -> error absurd
 matchArgs_fwd _ _ _ = error absurd
 
@@ -109,11 +109,7 @@ eval_fwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
 eval_fwd ρ e α (T.AppPrim (t1 × φ) (t2 × _)) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
-         case expand (eval_fwd ρ e1 α t1) (V.Primitive false φ) of
-            V.Primitive α' _ ->
-               let v = eval_fwd ρ e2 α t2 in
-               apply_fwd φ α' v
-            _ -> error absurd
+         apply_fwd (eval_fwd ρ e1 α t1) φ (eval_fwd ρ e2 α t2)
       _ -> error absurd
 eval_fwd ρ e α (T.AppConstr (t1 × c × vs) (t2 × _)) =
    case expand e (App Hole Hole) of
@@ -127,13 +123,8 @@ eval_fwd ρ e α (T.AppConstr (t1 × c × vs) (t2 × _)) =
 eval_fwd ρ e α (T.BinaryApp (t1 × _) (op × φ) φ_v (t2 × _)) =
    case expand e (BinaryApp Hole op Hole) of
       BinaryApp e1 _ e2 ->
-         case expand (successful (find op ρ)) (V.Primitive false φ) of
-            V.Primitive α' _ ->
-               let v = eval_fwd ρ e1 α t1 in
-               case expand (apply_fwd φ α' v) (V.Primitive false φ_v) of
-                  V.Primitive α'' _ -> apply_fwd φ_v α'' (eval_fwd ρ e2 α t2)
-                  _ -> error absurd
-            _ -> error absurd
+         let v = eval_fwd ρ e1 α t1 in
+         apply_fwd (apply_fwd (successful (find op ρ)) φ v) φ_v (eval_fwd ρ e2 α t2)
       _ -> error absurd
 eval_fwd ρ e α (T.Let (T.VarDef w t1) t2) =
    case expand e (Let (VarDef ElimHole Hole) Hole) of
