@@ -3,13 +3,14 @@ module Lattice where
 import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
 import Data.Array (length, zipWith) as A
+import Data.Foldable (foldM)
 import Data.List (List, length, zipWith)
-import Data.Map (Map, fromFoldable, toUnfoldable)
+import Data.Map (Map, fromFoldable, insert, lookup, toUnfoldable, update)
 import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Util ((×), (≟), absurd, error, fromJust)
+import Util (type (×), (×), (≟), absurd, error, fromJust)
 
 class JoinSemilattice a where
    join :: a -> a -> a
@@ -69,10 +70,26 @@ instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
 instance joinSemilatticeMap :: (Ord k, Slices t) => JoinSemilattice (Map k t) where
    join = definedJoin
 
+{-
 instance slicesMap :: (Ord k, Slices t) => Slices (Map k t) where
    maybeJoin m m'
       | keys m == keys m'  = fromFoldable <$> (sequence (zipWith maybeJoin (toUnfoldable m) (toUnfoldable m')))
       | otherwise          = Nothing
+-}
+
+-- TODO: document how this is more general than strictly required for slicing.
+instance slicesMap :: (Ord k, Slices t) => Slices (Map k t) where
+   maybeJoin m m' =
+      foldM maybeUpdate m (toUnfoldable m' :: List (k × t))
+      where
+      maybeUpdate :: Map k t -> k × t -> Maybe (Map k t)
+      maybeUpdate κs (c × κ) =
+         case lookup c κs of
+            Nothing -> do
+               -- report "Non-uniform patterns" here
+               pure (insert c κ κs)
+            Just κ' ->
+               update <$> (const <$> Just <$> maybeJoin κ' κ) <@> c <@> κs
 
 instance joinSemilatticeArray :: Slices a => JoinSemilattice (Array a) where
    join = definedJoin

@@ -169,7 +169,12 @@ totaliseConstrFwd (c × κ) α =
        cκs = defaultBranch <$> (ctrs (successful (dataTypeFor c)) \\ L.singleton c)
    in fromFoldable (c × κ : cκs)
 
--- TODO: explain relationship to Lattice instance on Elim
+-- This is quite similar in flavour to the maybeJoin operation on Lattice. It is more general in that one can
+-- merge sets of eliminator branches with distinct domains (as long as the branches are mergable where the
+-- domains overlap). This isn't appropriate for slicing, where the domains are always equivalent. It is also
+-- less general in one (less important) respect, namely that we only allow expressions to be merged if they
+-- are the body of a curried function (i.e. a nested eliminator). Unfortunately this latter property breaks
+-- idempotence.
 class Joinable a where
    maybeJoin :: a -> a -> MayFail a
 
