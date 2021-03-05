@@ -50,6 +50,10 @@ onlyIf false   = const empty
 
 type MayFail a = String + a
 
+otherwise :: forall a . String -> Maybe a -> MayFail a
+otherwise msg Nothing  = Left msg
+otherwise _ (Just x)   = Right x
+
 report :: String -> forall a . MayFail a
 report = Left
 

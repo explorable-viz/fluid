@@ -1,26 +1,25 @@
 module DesugarFwd where
 
-import Prelude hiding (absurd)
+import Prelude hiding (absurd, otherwise)
 import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), length)
 import Data.List (head, singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
-import Data.Map (Map, fromFoldable, insert, lookup, singleton, size, toUnfoldable, update)
-import Data.Maybe (Maybe(..))
+import Data.Map (Map, fromFoldable, singleton, size, toUnfoldable)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
 import Bindings (Binding, (↦), fromList, varAnon)
-import DataType (Ctr, arity, checkArity, checkDataType, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
+import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
-import Lattice (𝔹)
+import Lattice (𝔹, maybeJoin)
 import SExpr (
    Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
-import Util (MayFail, type (+), type (×), (×), (≞), absurd, assert, error, fromJust, report, successful)
+import Util (MayFail, type (+), type (×), (×), absurd, assert, error, fromJust, otherwise, successful)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd
@@ -145,12 +144,12 @@ branchFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= patternFwd p
 branchesFwd_curried :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
 branchesFwd_curried bs = do
    NonEmptyList (σ :| σs) <- traverse patternsFwd bs
-   foldM maybeJoin σ σs
+   foldM (\σ' -> maybeJoin σ' >>> otherwise "Unmergable function branches") σ σs
 
 branchesFwd_uncurried :: NonEmptyList (Pattern × Expr 𝔹) -> MayFail (Elim 𝔹)
 branchesFwd_uncurried bs = do
    NonEmptyList (σ :| σs) <- traverse (uncurry branchFwd_uncurried) bs
-   foldM maybeJoin σ σs
+   foldM (\σ' -> maybeJoin σ' >>> otherwise "Unmergable function branches") σ σs
 
 -- holes used to represent var defs, but otherwise surface programs never contain holes
 totaliseFwd :: Cont 𝔹 -> 𝔹 -> Cont 𝔹
@@ -168,35 +167,3 @@ totaliseConstrFwd (c × κ) α =
    let defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
        cκs = defaultBranch <$> (ctrs (successful (dataTypeFor c)) \\ L.singleton c)
    in fromFoldable (c × κ : cκs)
-
--- This is quite similar in flavour to the maybeJoin operation on Lattice. It is more general in that one can
--- merge sets of eliminator branches with distinct domains (as long as the branches are mergable where the
--- domains overlap). This isn't appropriate for slicing, where the domains are always equivalent. It is also
--- less general in one (less important) respect, namely that we only allow expressions to be merged if they
--- are the body of a curried function (i.e. a nested eliminator). Unfortunately this latter property breaks
--- idempotence.
-class Joinable a where
-   maybeJoin :: a -> a -> MayFail a
-
-instance joinableElim :: Joinable (Elim Boolean) where
-   maybeJoin (ElimVar x κ) (ElimVar y κ')       = ElimVar <$> (x ≞ y) <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
-   maybeJoin _ _                                = report "Unmergable function branches"
-
-instance joinableCont :: Joinable (Cont Boolean) where
-   maybeJoin (ContElim σ) (ContElim σ')                        = ContElim <$> maybeJoin σ σ'
-   maybeJoin (ContExpr (E.Lambda σ)) (ContExpr (E.Lambda σ'))  = ContExpr <$> (E.Lambda <$> maybeJoin σ σ')
-   maybeJoin _ _                                               = report "Unmergable function branches"
-
-instance joinableMap :: Joinable (Map Ctr (Cont Boolean)) where
-   maybeJoin κs1 κs2 = do
-      foldM maybeUpdate κs1 (toUnfoldable κs2 :: List (Ctr × Cont 𝔹))
-      where
-      maybeUpdate :: Map Ctr (Cont 𝔹) -> Ctr × Cont 𝔹 -> MayFail (Map Ctr (Cont 𝔹))
-      maybeUpdate κs (c × κ) =
-         case lookup c κs of
-            Nothing -> do
-               checkDataType "Non-uniform patterns: " c κs
-               pure (insert c κ κs)
-            Just κ' ->
-               update <$> (const <$> Just <$> maybeJoin κ' κ) <@> c <@> κs
