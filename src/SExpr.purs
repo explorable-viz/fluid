@@ -15,6 +15,7 @@ data Expr a =
    Str a String |
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
+   MatrixLookup (Expr a) (Expr a) |
    Lambda (NonEmptyList (Branch a)) |
    App (Expr a) (Expr a) |
    BinaryApp (Expr a) Var (Expr a) |
