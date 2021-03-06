@@ -19,7 +19,8 @@ data Primitive =
    NumberOp (Number -> Val 𝔹) |
    IntOrNumberOp (Int + Number -> Val 𝔹) |
    StringOp (String -> Val 𝔹) |
-   IntOrNumberOrStringOp (Int + Number + String -> Val 𝔹)
+   IntOrNumberOrStringOp (Int + Number + String -> Val 𝔹) |
+   ArrayOp (Array (Array (Val 𝔹)) -> Val 𝔹)
 
 -- Only annotate first-order data for now (but convenient to annotate primitive ops as well).
 data Val a =

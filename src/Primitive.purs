@@ -12,7 +12,7 @@ import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cTrue, cFalse)
 import Lattice (𝔹, (∧), expand)
-import Util (Endo, type (×), (×), type (+), absurd, error)
+import Util (Endo, type (×), (×), type (+), (!), absurd, error)
 import Val (Env, Primitive(..), Val, getα, setα)
 import Val (Val(..)) as V
 
@@ -94,11 +94,12 @@ instance toIntOrNumberOrString :: To (Either (Either Int Number) String) where
    to (V.Str _ n)    = Right n
    to _              = error "Int, Float or Str expected"
 
-true_ :: Val 𝔹
-true_ = V.Constr false cTrue Nil
+instance toArray :: To (Array (Array (Val Boolean))) where
+   to (V.Matrix _ vss _)   = vss
+   to _                    = error "Matrix expected"
 
-false_ :: Val 𝔹
-false_ = V.Constr false cFalse Nil
+instance fromArray :: From a => From (Array (Array (Val Boolean)) -> a) where
+   from op = V.Primitive false (ArrayOp (op >>> from))
 
 instance fromVal :: From (Val Boolean) where
    from = identity
@@ -115,14 +116,20 @@ instance fromIntOp :: From a => From (Int -> a) where
 instance fromNumberOp :: From a => From (Number -> a) where
    from op = V.Primitive false (NumberOp (op >>> from))
 
-instance fromIntOrNumberOp :: From a => From (Either Int Number -> a) where
+instance fromIntOrNumberOp :: From a => From (Int + Number -> a) where
    from op = V.Primitive false (IntOrNumberOp (op >>> from))
 
 instance fromStringOp :: From a => From (String -> a) where
    from op = V.Primitive false (StringOp (op >>> from))
 
-instance fromOrStringOp :: From a => From (Either (Either Int Number) String -> a) where
+instance fromOrStringOp :: From a => From (Int + Number + String -> a) where
    from op = V.Primitive false (IntOrNumberOrStringOp (op >>> from))
+
+true_ :: Val 𝔹
+true_ = V.Constr false cTrue Nil
+
+false_ :: Val 𝔹
+false_ = V.Constr false cFalse Nil
 
 apply :: Primitive -> Val 𝔹 -> Val 𝔹
 apply (ValOp op)                 = op
@@ -131,6 +138,7 @@ apply (NumberOp op)              = to >>> op
 apply (IntOrNumberOp op)         = to >>> op
 apply (StringOp op)              = to >>> op
 apply (IntOrNumberOrStringOp op) = to >>> op
+apply (ArrayOp op)               = to >>> op
 
 -- φ acts as a "trace" of the original operator.
 apply_fwd :: Val 𝔹 -> Primitive -> Val 𝔹 -> Val 𝔹
@@ -160,6 +168,7 @@ primitives = foldl (:+:) Empty [
    ">="        ↦ from   ((>=) `union2'` (>=) `unionDisj` (==)),
    "++"        ↦ from   ((<>) :: String -> String -> String),
    ":"         ↦ V.Constr false cCons Nil,
+   "!"         ↦ from   matrixLookup,
    "ceiling"   ↦ from   ceil,
    "debugLog"  ↦ from   debugLog,
    "div"       ↦ from   (div :: Int -> Int -> Int),
@@ -171,6 +180,9 @@ primitives = foldl (:+:) Empty [
 
 debugLog :: Endo (Val 𝔹)
 debugLog x = trace x (const x)
+
+matrixLookup :: Array (Array (Val 𝔹)) -> Int -> Int -> Val 𝔹
+matrixLookup vss i = (!) (vss!i)
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
