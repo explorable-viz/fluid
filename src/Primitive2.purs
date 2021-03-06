@@ -31,7 +31,7 @@ instance toInt :: To Int where
 instance fromInt :: From Int where
    from (n × α) = Int α n
 
-from1 :: forall a . From a => (Int × 𝔹 -> a × 𝔹) -> Val 𝔹
+from1 :: forall a b . To a => From b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
 from1 op = Primitive (to >>> op >>> from)
 
 from2 :: (Int × 𝔹 -> Int × 𝔹 -> Int × 𝔹) -> Val 𝔹
