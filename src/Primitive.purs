@@ -154,7 +154,7 @@ apply (ArrayOp op)               = to >>> op
 
 -- φ acts as a "trace" of the original operator.
 apply_fwd :: Val 𝔹 -> Primitive -> Val 𝔹 -> Val 𝔹
-apply_fwd v_φ φ V.Hole = V.Hole -- more convenient than returning the equivalent explicit value
+apply_fwd v_φ φ V.Hole = V.Hole -- more convenient than returning equivalent explicit value
 apply_fwd v_φ φ v =
    case expand v_φ (V.Primitive false φ) of
       V.Primitive α _ ->
@@ -190,6 +190,20 @@ primitives = foldl (:+:) Empty [
    "log"       ↦ from   ((toNumber >>> log) `union` log),
    "numToStr"  ↦ from   (show `union` show)
 ]
+
+class DependBinary a b where
+   dependNonZero :: a × 𝔹 -> b × 𝔹 -> 𝔹
+
+dependBoth :: forall a b . a × 𝔹 -> b × 𝔹 -> 𝔹
+dependBoth (_ × α) (_ × β) = α ∧ β
+
+instance dependNonZeroIntInt :: DependBinary Int Int where
+   dependNonZero (x × α) (y × β) =
+      if x == 0 then α else if y == 0 then β else α ∧ β
+
+instance dependNonZeroNumberNumber :: DependBinary Number Number where
+   dependNonZero (x × α) (y × β) =
+      if x == 0.0 then α else if y == 0.0 then β else α ∧ β
 
 debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)

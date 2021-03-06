@@ -12,16 +12,18 @@ import Lattice (
 )
 import Util (Endo, type (×), type (+), (≟), (≜), (⪄), absurd, error)
 
+type Op a = a -> Val 𝔹
+
 -- one constructor for each PureScript type that appears in an exported operator signature
 data Primitive =
-   ValOp (Val 𝔹 -> Val 𝔹) |
-   IntOp (Int -> Val 𝔹) |
-   NumberOp (Number -> Val 𝔹) |
-   IntOrNumberOp (Int + Number -> Val 𝔹) |
-   StringOp (String -> Val 𝔹) |
-   IntOrNumberOrStringOp (Int + Number + String -> Val 𝔹) |
-   IntAndIntOp (Int × Int -> Val 𝔹) |
-   ArrayOp (Array (Array (Val 𝔹)) × (Int × Int) -> Val 𝔹)
+   ValOp (Op (Val 𝔹)) |
+   IntOp (Op Int) |
+   NumberOp (Op Number) |
+   IntOrNumberOp (Op (Int + Number)) |
+   StringOp (Op String) |
+   IntOrNumberOrStringOp (Op (Int + Number + String)) |
+   IntAndIntOp (Op (Int × Int)) |
+   ArrayOp (Op (Array (Array (Val 𝔹)) × (Int × Int)))
 
 -- Only annotate first-order data for now (but convenient to annotate primitive ops as well).
 data Val a =
