@@ -81,7 +81,7 @@ instance slicesMap :: (Ord k, Slices t) => Slices (Map k t) where
       maybeUpdate κs (c × κ) =
          case lookup c κs of
             Nothing -> do
-               -- report "Non-uniform patterns" here
+--               checkDataType "Inconsistent keys: " c κs
                pure (insert c κ κs)
             Just κ' ->
                update <$> (const <$> Just <$> maybeJoin κ' κ) <@> c <@> κs

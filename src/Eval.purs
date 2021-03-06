@@ -9,7 +9,7 @@ import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Traversable (sequence, traverse)
 import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
-import DataType (Ctr, arity, checkDataType, cPair, dataTypeForKeys)
+import DataType (Ctr, arity, checkDataType, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr)
@@ -31,7 +31,7 @@ match (V.Constr _ c vs) (ElimConstr κs) = do
    ρ × κ' × ws <- matchArgs c vs κ
    pure (ρ × κ' × MatchConstr c ws (keys κs \\ singleton c))
 match v (ElimConstr κs) = do
-   d <- dataTypeForKeys (keys κs) -- bit redundant with checkDataType, maybe merge branches
+   d <- dataTypeFor (keys κs) -- bit redundant with checkDataType, maybe merge branches
    report ("Pattern mismatch: " <> render (pretty v) <> " is not a constructor value, expected " <> show d)
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))

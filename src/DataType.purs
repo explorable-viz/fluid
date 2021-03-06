@@ -61,12 +61,15 @@ dataType name = map (uncurry ctr) >>> M.fromFoldable >>> DataType name
 ctrToDataType :: Map Ctr DataType
 ctrToDataType = M.fromFoldable (concat (dataTypes <#> (\d -> ctrs d <#> (_ × d))))
 
-dataTypeFor :: Ctr -> MayFail DataType
-dataTypeFor c = note ("Unknown constructor " <> show c) (lookup c ctrToDataType)
+class DataTypeFor a where
+   dataTypeFor :: a -> MayFail DataType
 
-dataTypeForKeys :: List Ctr -> MayFail DataType
-dataTypeForKeys Nil     = error absurd
-dataTypeForKeys (c : _) = dataTypeFor c
+instance dataTypeForCtr :: DataTypeFor Ctr where
+   dataTypeFor c = note ("Unknown constructor " <> show c) (lookup c ctrToDataType)
+
+instance dataTypeForListCtr :: DataTypeFor (List Ctr) where
+   dataTypeFor Nil     = error absurd
+   dataTypeFor (c : _) = dataTypeFor c
 
 ctrs :: DataType -> List Ctr
 ctrs (DataType _ sigs) = keys sigs
@@ -83,7 +86,7 @@ checkArity c n = void $
 checkDataType :: forall a . String -> Ctr -> Map Ctr a -> MayFail Unit
 checkDataType msg c κs = void $ do
    d <- dataTypeFor c
-   d' <- dataTypeForKeys (keys κs)
+   d' <- dataTypeFor (keys κs)
    with (msg <> show c <> " is not a constructor of " <> show d') (d ≞ d')
 
 -- Used internally by primitives or desugaring.
