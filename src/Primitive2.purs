@@ -34,7 +34,7 @@ instance fromInt :: From Int where
 from1 :: forall a b . To a => From b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
 from1 op = Primitive (to >>> op >>> from)
 
-from2 :: (Int × 𝔹 -> Int × 𝔹 -> Int × 𝔹) -> Val 𝔹
+from2 :: forall a b c . To a => To b => From c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
 from2 op = Primitive (to >>> op >>> from1)
 
 apply' :: Val 𝔹 -> Val 𝔹 -> Val 𝔹
