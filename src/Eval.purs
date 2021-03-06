@@ -9,11 +9,11 @@ import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Traversable (sequence, traverse)
 import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
-import DataType (Ctr, arity, checkDataType, cPair, dataTypeFor)
+import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr)
-import Lattice (𝔹)
+import Lattice (𝔹, checkConsistent)
 import Pretty (pretty, render)
 import Primitive (apply, to)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
@@ -21,17 +21,17 @@ import Val (Env, Val)
 import Val (Val(..)) as V
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
-match _ ElimHole = error "todo"
+match _ ElimHole = error absurd
 match v (ElimVar x κ)
    | x == varAnon = pure (Empty × κ × MatchVarAnon v)
    | otherwise    = pure ((Empty :+: x ↦ v) × κ × MatchVar x)
-match (V.Constr _ c vs) (ElimConstr κs) = do
-   checkDataType "Pattern mismatch: " c κs
-   κ <- note ("Incomplete pattern: no branch for " <> show c) (lookup c κs)
+match (V.Constr _ c vs) (ElimConstr m) = do
+   checkConsistent "Pattern mismatch: " c (keys m)
+   κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
    ρ × κ' × ws <- matchArgs c vs κ
-   pure (ρ × κ' × MatchConstr c ws (keys κs \\ singleton c))
-match v (ElimConstr κs) = do
-   d <- dataTypeFor (keys κs) -- bit redundant with checkDataType, maybe merge branches
+   pure (ρ × κ' × MatchConstr c ws (keys m \\ singleton c))
+match v (ElimConstr m) = do
+   d <- dataTypeFor (keys m)
    report ("Pattern mismatch: " <> render (pretty v) <> " is not a constructor value, expected " <> show d)
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))

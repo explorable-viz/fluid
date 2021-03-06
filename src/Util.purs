@@ -54,6 +54,10 @@ otherwise :: forall a . String -> Maybe a -> MayFail a
 otherwise msg Nothing  = Left msg
 otherwise _ (Just x)   = Right x
 
+ignoreMessage :: forall a . MayFail a -> Maybe a
+ignoreMessage (Left _)   = Nothing
+ignoreMessage (Right x)  = Just x
+
 report :: String -> forall a . MayFail a
 report = Left
 
