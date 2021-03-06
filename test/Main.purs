@@ -103,4 +103,4 @@ main = do
    run $ test "temp" "(1, (3, 3))"
    run $ do
       let v = testPrim
-      show v `shouldEqual` "11"
+      show v `shouldEqual` "11_false"

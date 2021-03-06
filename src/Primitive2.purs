@@ -13,8 +13,8 @@ data Val a =
    Int a Int |
    Primitive Primitive
 
-instance showVal :: Show (Val a) where
-   show (Int _ n)       = show n
+instance showVal :: Show (Val Boolean) where
+   show (Int α n)       = show n <> "_" <> show α
    show (Primitive op)  = error "todo"
 
 class To a where
@@ -34,7 +34,7 @@ instance toInt :: To Int where
 instance fromInt :: From Int where
    from (n × α) = Int α n
 
-from1 :: (Int × 𝔹 -> Int × 𝔹) -> Val 𝔹
+from1 :: forall a . From a => (Int × 𝔹 -> a × 𝔹) -> Val 𝔹
 from1 op = Primitive (IntOp (op >>> from))
 
 from2 :: (Int × 𝔹 -> Int × 𝔹 -> Int × 𝔹) -> Val 𝔹
@@ -57,4 +57,4 @@ dependsBoth :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × �
 dependsBoth op (x × α) (y × β) = x `op` y × (α ∧ β)
 
 testPrim :: Val 𝔹
-testPrim = apply' (apply' plus_ (Int false 5)) (Int false 6)
+testPrim = apply' (apply' plus_ (Int true 5)) (Int true 6)
