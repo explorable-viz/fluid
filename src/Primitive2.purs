@@ -5,25 +5,42 @@ import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..))
-import Data.Tuple (snd)
 import Debug.Trace (trace)
 import Math (log, pow)
 import Bindings (Bindings(..), (:+:), (↦))
-import DataType (Ctr, cCons)
+import DataType (Ctr, cCons, cFalse, cTrue)
 import Lattice (𝔹, (∧))
-import Util (type (×), (×), type (+), absurd, error)
+import Util (Endo, type (×), (×), type (+), (!), absurd, error)
 
 type Op a = a × 𝔹 -> Val 𝔹
 
 data Val a =
    Int a Int |
+   Float a Number |
+   Str a String |
    Constr a Ctr (List (Val a)) |
    Primitive (Val 𝔹 -> Val 𝔹)
 
 instance showVal :: Show (Val Boolean) where
    show (Int α n)       = show n <> "_" <> show α
+   show (Float α n)     = show n <> "_" <> show α
+   show (Str α str)     = show str <> "_" <> show α
    show (Constr _ _ _)  = error "todo"
    show (Primitive op)  = error "todo"
+
+getα :: Val 𝔹 -> 𝔹
+getα (Int α _)       = α
+getα (Float α _)     = α
+getα (Str α _)       = α
+getα (Constr α _ _)  = α
+getα _         = error absurd
+
+setα :: 𝔹 -> Endo (Val 𝔹)
+setα α (Int _ n)        = Int α n
+setα α (Float _ n)      = Float α n
+setα α (Str _ str)      = Str α str
+setα α (Constr _ c vs)  = Constr α c vs
+setα _ _                = error absurd
 
 class To a where
    to :: Val 𝔹 -> a × 𝔹
@@ -31,9 +48,8 @@ class To a where
 class From a where
    from :: a × 𝔹 -> Val 𝔹
 
-getα :: Val 𝔹 -> 𝔹
-getα (Int α _) = α
-getα _         = error absurd
+instance fromVal :: From (Val Boolean) where
+   from (v × α) = setα α v
 
 instance toInt :: To Int where
    to (Int α n)   = n × α
@@ -41,6 +57,24 @@ instance toInt :: To Int where
 
 instance fromInt :: From Int where
    from (n × α) = Int α n
+
+instance fromNumber :: From Number where
+   from (n × α) = Float α n
+
+instance toIntOrNumber :: To (Int + Number) where
+   to (Int α n)    = Left n × α
+   to (Float α n)  = Right n × α
+   to _            = error "Int or Float expected"
+
+instance fromIntOrNumber :: From (Int + Number) where
+   from (Left n × α)    = Int α n
+   from (Right n × α)   = Float α n
+
+instance toIntOrNumberOrString :: To (Either (Either Int Number) String) where
+   to (Int α n)   = Left (Left n) × α
+   to (Float α n) = Left (Right n) × α
+   to (Str α n)   = Right n × α
+   to _           = error "Int, Float or Str expected"
 
 from1 :: forall a b . To a => From b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
 from1 op = Primitive (to >>> op >>> from)
@@ -52,59 +86,74 @@ apply :: Val 𝔹 -> Val 𝔹 -> Val 𝔹
 apply (Primitive op)   = op
 apply _                = error absurd
 
-plus_ :: Val 𝔹
-plus_ = from2 plus
-
-plus :: (Int + Number) × 𝔹 -> (Int + Number) × 𝔹 -> (Int + Number) × 𝔹
-plus = dependsBoth ((+) `union2` (+))
-
-times_ :: Val 𝔹
-times_ = from2 times
-
-times :: Int × 𝔹 -> Int × 𝔹 -> Int × 𝔹
-times = dependsNonZero (*)
+depends :: forall a b c . (a -> b) -> a × 𝔹 -> b × 𝔹
+depends op (x × α) = op x × α
 
 dependsBoth :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
 dependsBoth op (x × α) (y × β) = x `op` y × (α ∧ β)
+
+dependsNeither :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
+dependsNeither op (x × _) (y × _) = x `op` y × false
 
 class DependsBinary a b c where
    dependsNonZero :: (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
 
 -- If both are false, we depend on the first.
-instance dependsNonZeroIntInt :: DependsBinary Int Int a where
+instance dependsNonZeroInt :: DependsBinary Int Int a where
    dependsNonZero op (x × α) (y × β) =
       x `op` y × if x == 0 then α else if y == 0 then β else α ∧ β
+
+instance dependsNonZeroNumber :: DependsBinary Number Number a where
+   dependsNonZero op (x × α) (y × β) =
+      x `op` y × if x == 0.0 then α else if y == 0.0 then β else α ∧ β
+
+instance dependsNonZeroIntOrNumber :: DependsBinary (Int + Number) (Int + Number) a where
+   dependsNonZero op (x × α) (y × β) =
+      x `op` y ×
+      if x `((==) `union2'` (==))` (Left 0)
+      then α
+      else if y `((==) `union2'` (==))` (Left 0) then β else α ∧ β
+
+instance fromBoolean :: From Boolean where
+   from (true × α)   = Constr α cTrue Nil
+   from (false × α)  = Constr α cFalse Nil
 
 primitives :: Bindings Val 𝔹
 primitives = foldl (:+:) Empty [
    -- some signatures are specified for clarity or to drive instance resolution
    -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
-   "+"         ↦ from   ((+) `union2` (+)),
-   "-"         ↦ from   ((-) `union2` (-)),
-   "*"         ↦ from   ((*) `union2` (*)),
-   "**"        ↦ from   ((\x y -> toNumber x `pow` toNumber y) `union2'` pow),
-   "/"         ↦ from   ((\x y -> toNumber x / toNumber y)  `union2'` (/)),
-   "=="        ↦ from   ((==) `union2'` (==) `unionDisj` (==)),
-   "/="        ↦ from   ((/=) `union2'` (/=) `unionDisj` (==)),
-   "<"         ↦ from   ((<)  `union2'` (<)  `unionDisj` (==)),
-   ">"         ↦ from   ((>)  `union2'` (>)  `unionDisj` (==)),
-   "<="        ↦ from   ((<=) `union2'` (<=) `unionDisj` (==)),
-   ">="        ↦ from   ((>=) `union2'` (>=) `unionDisj` (==)),
-   "++"        ↦ from   ((<>) :: String -> String -> String),
+   "+"         ↦ from2 (dependsBoth ((+) `union2` (+))),
+   "-"         ↦ from2 (dependsBoth ((-) `union2` (-))),
+   "*"         ↦ from2 (dependsNonZero ((*) `union2` (*))),
+   "**"        ↦ from2 (dependsNonZero ((\x y -> toNumber x `pow` toNumber y) `union2'` pow)),
+   "/"         ↦ from2 (dependsNonZero ((\x y -> toNumber x / toNumber y)  `union2'` (/))),
+   "=="        ↦ from2 (dependsBoth ((==) `union2'` (==) `unionDisj` (==))),
+   "/="        ↦ from2 (dependsBoth ((/=) `union2'` (/=) `unionDisj` (==))),
+   "<"         ↦ from2 (dependsBoth ((<)  `union2'` (<)  `unionDisj` (==))),
+   ">"         ↦ from2 (dependsBoth ((>)  `union2'` (>)  `unionDisj` (==))),
+   "<="        ↦ from2 (dependsBoth ((<=) `union2'` (<=) `unionDisj` (==))),
+   ">="        ↦ from2 (dependsBoth ((>=) `union2'` (>=) `unionDisj` (==))),
+   "++"        ↦ from2 (dependsBoth ((<>) :: String -> String -> String)),
    ":"         ↦ Constr false cCons Nil,
---   "!"         ↦ from   matrixLookup,
-   "ceiling"   ↦ from   ceil,
-   "debugLog"  ↦ from   debugLog,
-   "dims"      ↦ from   (snd :: Array (Array (Val 𝔹)) × (Int × Int) -> Int × Int),
-   "div"       ↦ from   (div :: Int -> Int -> Int),
-   "error"     ↦ from   (error :: String -> Boolean),
-   "floor"     ↦ from   floor,
-   "log"       ↦ from   ((toNumber >>> log) `union` log),
-   "numToStr"  ↦ from   (show `union` show)
+   "!"         ↦ from2 (dependsNeither matrixLookup),
+   "ceiling"   ↦ from1 (depends ceil),
+   "debugLog"  ↦ from1 (depends debugLog),
+   "dims"      ↦ from1 dims,
+   "div"       ↦ from2 (dependsNonZero (div :: Int -> Int -> Int)),
+   "error"     ↦ from1 (depends  (error :: String -> Boolean)),
+   "floor"     ↦ from1 (depends floor),
+   "log"       ↦ from1 (depends ((toNumber >>> log) `union` log)),
+   "numToStr"  ↦ from1 (depends (show `union` show))
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)
+
+dims :: (Array (Array (Val 𝔹)) × (Int × Int)) × 𝔹 -> (Val 𝔹 × Val 𝔹) × 𝔹
+dims = error "todo"
+
+matrixLookup :: Array (Array (Val 𝔹)) × (Int × Int) -> Int × Int -> Val 𝔹
+matrixLookup (vss × _) (i × j) = vss!(i - 1)!(j - 1)
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
@@ -130,4 +179,4 @@ unionDisj _ f (Right x) (Right y) = f x y
 unionDisj _ _ (Right _) (Left _)  = error "Non-uniform argument types"
 
 testPrim :: Val 𝔹
-testPrim = apply (apply times_ (Int false 0)) (Int true 0)
+testPrim = apply (apply (from2 (dependsNonZero ((*) `union2` (*)))) (Int false 0)) (Int true 0)
