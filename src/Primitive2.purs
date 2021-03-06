@@ -4,7 +4,7 @@ import Prelude
 import Data.Int (toNumber)
 import Data.Either (Either(..))
 import Lattice (𝔹, (∧))
-import Util (type (+), type (×), (×))
+import Util (type (+), type (×), (×), error)
 
 type Op a = a × 𝔹 -> Val 𝔹
 
@@ -14,6 +14,20 @@ data Primitive =
 data Val a =
    Int a Int |
    Primitive a Primitive
+
+class To a where
+   to :: Val 𝔹 -> a × 𝔹
+
+getα :: Val 𝔹 -> 𝔹
+getα (Int α _)        = α
+getα (Primitive α _)  = α
+
+instance toInt :: To Int where
+   to (Int α n)   = n × α
+   to _           = error "Int expected"
+
+apply :: Primitive -> Val 𝔹 -> Val 𝔹
+apply (IntOp op) v = op (to v)
 
 plus :: Int + Number -> Int + Number -> Int + Number
 plus = (+) `union2` (+)
