@@ -191,19 +191,19 @@ primitives = foldl (:+:) Empty [
    "numToStr"  ↦ from   (show `union` show)
 ]
 
-class DependBinary a b where
-   dependNonZero :: a × 𝔹 -> b × 𝔹 -> 𝔹
+class DependsBinary a b c where
+   dependsNonZero :: (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
 
-dependBoth :: forall a b . a × 𝔹 -> b × 𝔹 -> 𝔹
-dependBoth (_ × α) (_ × β) = α ∧ β
+dependsBoth :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
+dependsBoth op (x × α) (y × β) = x `op` y × (α ∧ β)
 
-instance dependNonZeroIntInt :: DependBinary Int Int where
-   dependNonZero (x × α) (y × β) =
-      if x == 0 then α else if y == 0 then β else α ∧ β
+instance dependsNonZeroIntInt :: DependsBinary Int Int a where
+   dependsNonZero op (x × α) (y × β) =
+      x `op` y × if x == 0 then α else if y == 0 then β else α ∧ β
 
-instance dependNonZeroNumberNumber :: DependBinary Number Number where
-   dependNonZero (x × α) (y × β) =
-      if x == 0.0 then α else if y == 0.0 then β else α ∧ β
+instance dependsNonZeroNumberNumber :: DependsBinary Number Number a where
+   dependsNonZero op (x × α) (y × β) =
+      x `op` y × if x == 0.0 then α else if y == 0.0 then β else α ∧ β
 
 debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)
