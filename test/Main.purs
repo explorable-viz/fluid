@@ -102,4 +102,4 @@ main = do
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
    -- scratchpad
 -}
-   run $ test "temp" "[1, 2, 3][2, 4, 6][3, 6, 9]"
+   run $ test "temp" "1"

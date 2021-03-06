@@ -105,6 +105,9 @@ instance toPair :: (To a, To b) => To (a × b) where
    to (V.Constr _ c (x : y : Nil)) | c == cPair = to x × to y
    to _                                         = error "Pair expected"
 
+instance fromIntPair :: From c => From (Int × Int -> c) where
+   from op = V.Primitive false (IntAndIntOp (op >>> from))
+
 instance fromVal :: From (Val Boolean) where
    from = identity
 
@@ -142,6 +145,7 @@ apply (NumberOp op)              = to >>> op
 apply (IntOrNumberOp op)         = to >>> op
 apply (StringOp op)              = to >>> op
 apply (IntOrNumberOrStringOp op) = to >>> op
+apply (IntAndIntOp op)           = to >>> op
 apply (ArrayOp op)               = to >>> op
 
 -- φ acts as a "trace" of the original operator.
@@ -185,11 +189,8 @@ primitives = foldl (:+:) Empty [
 debugLog :: Endo (Val 𝔹)
 debugLog x = trace x (const x)
 
-matrixLookup' :: Array (Array (Val 𝔹)) -> Val 𝔹 -> Val 𝔹
-matrixLookup' vss i = ?_
-
-matrixLookup :: Array (Array (Val 𝔹)) -> Int -> Int -> Val 𝔹
-matrixLookup vss i = (!) (vss!i)
+matrixLookup :: Array (Array (Val 𝔹)) -> Int × Int -> Val 𝔹
+matrixLookup vss (i × j) = vss!(i - 1)!(j - 1)
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a

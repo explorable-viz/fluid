@@ -56,7 +56,7 @@ checkArity c n = do
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ Hole          = error absurd
 eval ρ (Var x)       = (T.Var ρ x × _) <$> find x ρ
-eval ρ (Op op)       =  (T.Op ρ op × _) <$> find op ρ
+eval ρ (Op op)       = (T.Op ρ op × _) <$> find op ρ
 eval ρ (Int _ n)     = pure (T.Int ρ n × V.Int false n)
 eval ρ (Float _ n)   = pure (T.Float ρ n × V.Float false n)
 eval ρ (Str _ str)   = pure (T.Str ρ str × V.Str false str)
