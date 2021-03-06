@@ -6,12 +6,9 @@ import Util (type (×), (×), absurd, error)
 
 type Op a = a × 𝔹 -> Val 𝔹
 
-data Primitive =
-   IntOp (Op Int)
-
 data Val a =
    Int a Int |
-   Primitive Primitive
+   Primitive (Val 𝔹 -> Val 𝔹)
 
 instance showVal :: Show (Val Boolean) where
    show (Int α n)       = show n <> "_" <> show α
@@ -35,16 +32,13 @@ instance fromInt :: From Int where
    from (n × α) = Int α n
 
 from1 :: forall a . From a => (Int × 𝔹 -> a × 𝔹) -> Val 𝔹
-from1 op = Primitive (IntOp (op >>> from))
+from1 op = Primitive (to >>> op >>> from)
 
 from2 :: (Int × 𝔹 -> Int × 𝔹 -> Int × 𝔹) -> Val 𝔹
-from2 op = Primitive (IntOp (op >>> from1))
-
-apply :: Primitive -> Val 𝔹 -> Val 𝔹
-apply (IntOp op) v = op (to v)
+from2 op = Primitive (to >>> op >>> from1)
 
 apply' :: Val 𝔹 -> Val 𝔹 -> Val 𝔹
-apply' (Primitive op)   = apply op
+apply' (Primitive op)   = op
 apply' _                = error absurd
 
 plus_ :: Val 𝔹
