@@ -183,12 +183,12 @@ primitives = foldl (:+:) Empty [
    "!"         ↦ from   matrixLookup,
    "ceiling"   ↦ from   ceil,
    "debugLog"  ↦ from   debugLog,
+   "dims"      ↦ from   (snd :: Array (Array (Val 𝔹)) × (Int × Int) -> Int × Int),
    "div"       ↦ from   (div :: Int -> Int -> Int),
    "error"     ↦ from   (error :: String -> Boolean),
    "floor"     ↦ from   floor,
    "log"       ↦ from   ((toNumber >>> log) `union` log),
-   "numToStr"  ↦ from   (show `union` show),
-   "size"      ↦ from   (snd :: Array (Array (Val 𝔹)) × (Int × Int) -> Int × Int)
+   "numToStr"  ↦ from   (show `union` show)
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹
