@@ -6,6 +6,7 @@ import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
+import Data.Tuple (snd)
 import Debug.Trace (trace)
 import Math (log, pow)
 import Text.Parsing.Parser.Expr (Assoc(..))
@@ -94,18 +95,21 @@ instance toIntOrNumberOrString :: To (Either (Either Int Number) String) where
    to (V.Str _ n)    = Right n
    to _              = error "Int, Float or Str expected"
 
-instance toArray :: To (Array (Array (Val Boolean))) where
-   to (V.Matrix _ vss _)   = vss
+instance toArray :: To (Array (Array (Val Boolean)) × (Int × Int)) where
+   to (V.Matrix _ vss ij)  = vss × ij
    to _                    = error "Matrix expected"
 
-instance fromArray :: From a => From (Array (Array (Val Boolean)) -> a) where
+instance fromArray :: From a => From (Array (Array (Val Boolean)) × (Int × Int) -> a) where
    from op = V.Primitive false (ArrayOp (op >>> from))
 
-instance toPair :: (To a, To b) => To (a × b) where
+instance toIntPair :: To (Int × Int) where
    to (V.Constr _ c (x : y : Nil)) | c == cPair = to x × to y
    to _                                         = error "Pair expected"
 
-instance fromIntPair :: From c => From (Int × Int -> c) where
+instance fromIntPair :: From (Int × Int) where
+   from (x × y) = V.Constr false cPair (from x : from y : Nil)
+
+instance fromIntPairOp :: From c => From (Int × Int -> c) where
    from op = V.Primitive false (IntAndIntOp (op >>> from))
 
 instance fromVal :: From (Val Boolean) where
@@ -161,7 +165,7 @@ apply_fwd v_φ φ v =
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
-   -- some signatures are documented for clarity
+   -- some signatures are specified for clarity or to drive instance resolution
    -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
    "+"         ↦ from   ((+) `union2` (+)),
    "-"         ↦ from   ((-) `union2` (-)),
@@ -183,14 +187,15 @@ primitives = foldl (:+:) Empty [
    "error"     ↦ from   (error :: String -> Boolean),
    "floor"     ↦ from   floor,
    "log"       ↦ from   ((toNumber >>> log) `union` log),
-   "numToStr"  ↦ from   (show `union` show)
+   "numToStr"  ↦ from   (show `union` show),
+   "size"      ↦ from   (snd :: Array (Array (Val 𝔹)) × (Int × Int) -> Int × Int)
 ]
 
 debugLog :: Endo (Val 𝔹)
 debugLog x = trace x (const x)
 
-matrixLookup :: Array (Array (Val 𝔹)) -> Int × Int -> Val 𝔹
-matrixLookup vss (i × j) = vss!(i - 1)!(j - 1)
+matrixLookup :: Array (Array (Val 𝔹)) × (Int × Int) -> Int × Int -> Val 𝔹
+matrixLookup (vss × _) (i × j) = vss!(i - 1)!(j - 1)
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a

@@ -1,1 +1,2 @@
-[| i * j | (i, j) in (3, 3) |]
+let xs = [| i * j | (i, j) in (3, 3) |]
+in (xs ! (1, 1), size xs)
