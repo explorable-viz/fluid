@@ -22,9 +22,7 @@ import Pretty (pretty, render)
 import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..))
-
--- trace :: forall a b . a -> b -> b
--- trace a b = T.trace a (\_ -> b)
+import Primitive2 (testPrim)
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -103,3 +101,6 @@ main = do
    -- scratchpad
 -}
    run $ test "temp" "(1, (3, 3))"
+   run $ do
+      let v = testPrim
+      show v `shouldEqual` "11"

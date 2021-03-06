@@ -1,10 +1,8 @@
 module Primitive2 where
 
-import Prelude
-import Data.Int (toNumber)
-import Data.Either (Either(..))
+import Prelude hiding (absurd, apply)
 import Lattice (𝔹, (∧))
-import Util (type (+), type (×), (×), absurd, error)
+import Util (type (×), (×), absurd, error)
 
 type Op a = a × 𝔹 -> Val 𝔹
 
@@ -14,6 +12,10 @@ data Primitive =
 data Val a =
    Int a Int |
    Primitive Primitive
+
+instance showVal :: Show (Val a) where
+   show (Int _ n)       = show n
+   show (Primitive op)  = error "todo"
 
 class To a where
    to :: Val 𝔹 -> a × 𝔹
@@ -41,6 +43,10 @@ from2 op = Primitive (IntOp (op >>> from1))
 apply :: Primitive -> Val 𝔹 -> Val 𝔹
 apply (IntOp op) v = op (to v)
 
+apply' :: Val 𝔹 -> Val 𝔹 -> Val 𝔹
+apply' (Primitive op)   = apply op
+apply' _                = error absurd
+
 plus_ :: Val 𝔹
 plus_ = from2 plus
 
@@ -49,3 +55,6 @@ plus = dependsBoth (+)
 
 dependsBoth :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
 dependsBoth op (x × α) (y × β) = x `op` y × (α ∧ β)
+
+testPrim :: Val 𝔹
+testPrim = apply' (apply' plus_ (Int false 5)) (Int false 6)
