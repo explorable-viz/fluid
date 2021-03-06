@@ -4,13 +4,13 @@ import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
-import Data.List (List(..))
+import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Debug.Trace (trace)
 import Math (log, pow)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
-import DataType (cCons, cTrue, cFalse)
+import DataType (cCons, cTrue, cFalse, cPair)
 import Lattice (𝔹, (∧), expand)
 import Util (Endo, type (×), (×), type (+), (!), absurd, error)
 import Val (Env, Primitive(..), Val, getα, setα)
@@ -101,6 +101,10 @@ instance toArray :: To (Array (Array (Val Boolean))) where
 instance fromArray :: From a => From (Array (Array (Val Boolean)) -> a) where
    from op = V.Primitive false (ArrayOp (op >>> from))
 
+instance toPair :: (To a, To b) => To (a × b) where
+   to (V.Constr _ c (x : y : Nil)) | c == cPair = to x × to y
+   to _                                         = error "Pair expected"
+
 instance fromVal :: From (Val Boolean) where
    from = identity
 
@@ -180,6 +184,9 @@ primitives = foldl (:+:) Empty [
 
 debugLog :: Endo (Val 𝔹)
 debugLog x = trace x (const x)
+
+matrixLookup' :: Array (Array (Val 𝔹)) -> Val 𝔹 -> Val 𝔹
+matrixLookup' vss i = ?_
 
 matrixLookup :: Array (Array (Val 𝔹)) -> Int -> Int -> Val 𝔹
 matrixLookup vss i = (!) (vss!i)
