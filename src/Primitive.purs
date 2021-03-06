@@ -13,7 +13,7 @@ import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cTrue, cFalse, cPair)
 import Lattice (𝔹, (∧), expand)
-import Util (Endo, type (×), (×), type (+), (!), absurd, error)
+import Util (type (×), (×), type (+), (!), absurd, error)
 import Val (Env, Primitive(..), Val, getα, setα)
 import Val (Val(..)) as V
 
@@ -66,6 +66,9 @@ instance toInt :: To Int where
 instance fromInt :: From Int where
    from = V.Int false
 
+instance fromIntOp :: From a => From (Int -> a) where
+   from op = V.Primitive false (IntOp (op >>> from))
+
 instance toNumber :: To Number where
    to (V.Float _ n)  = n
    to _              = error "Float expected"
@@ -73,12 +76,18 @@ instance toNumber :: To Number where
 instance fromNumber :: From Number where
    from = V.Float false
 
+instance fromNumberOp :: From a => From (Number -> a) where
+   from op = V.Primitive false (NumberOp (op >>> from))
+
 instance toString :: To String where
    to (V.Str _ str)  = str
    to _              = error "Str expected"
 
 instance fromString :: From String where
    from = V.Str false
+
+instance fromStringOp :: From a => From (String -> a) where
+   from op = V.Primitive false (StringOp (op >>> from))
 
 instance toIntOrNumber :: To (Either Int Number) where
    to (V.Int _ n)    = Left n
@@ -89,11 +98,17 @@ instance fromIntOrNumber :: From (Either Int Number) where
    from (Left n)   = V.Int false n
    from (Right n)  = V.Float false n
 
+instance fromIntOrNumberOp :: From a => From (Int + Number -> a) where
+   from op = V.Primitive false (IntOrNumberOp (op >>> from))
+
 instance toIntOrNumberOrString :: To (Either (Either Int Number) String) where
    to (V.Int _ n)    = Left (Left n)
    to (V.Float _ n)  = Left (Right n)
    to (V.Str _ n)    = Right n
    to _              = error "Int, Float or Str expected"
+
+instance fromIntOrNumberOrStringOp :: From a => From (Int + Number + String -> a) where
+   from op = V.Primitive false (IntOrNumberOrStringOp (op >>> from))
 
 instance toArray :: To (Array (Array (Val Boolean)) × (Int × Int)) where
    to (V.Matrix _ vss ij)  = vss × ij
@@ -115,26 +130,11 @@ instance fromIntPairOp :: From c => From (Int × Int -> c) where
 instance fromVal :: From (Val Boolean) where
    from = identity
 
-instance fromBoolean :: From Boolean where
-   from b = if b then true_ else false_
-
 instance fromValOp :: From a => From (Val Boolean -> a) where
    from op = V.Primitive false (ValOp (op >>> from))
 
-instance fromIntOp :: From a => From (Int -> a) where
-   from op = V.Primitive false (IntOp (op >>> from))
-
-instance fromNumberOp :: From a => From (Number -> a) where
-   from op = V.Primitive false (NumberOp (op >>> from))
-
-instance fromIntOrNumberOp :: From a => From (Int + Number -> a) where
-   from op = V.Primitive false (IntOrNumberOp (op >>> from))
-
-instance fromStringOp :: From a => From (String -> a) where
-   from op = V.Primitive false (StringOp (op >>> from))
-
-instance fromOrStringOp :: From a => From (Int + Number + String -> a) where
-   from op = V.Primitive false (IntOrNumberOrStringOp (op >>> from))
+instance fromBoolean :: From Boolean where
+   from b = if b then true_ else false_
 
 true_ :: Val 𝔹
 true_ = V.Constr false cTrue Nil
@@ -191,7 +191,7 @@ primitives = foldl (:+:) Empty [
    "size"      ↦ from   (snd :: Array (Array (Val 𝔹)) × (Int × Int) -> Int × Int)
 ]
 
-debugLog :: Endo (Val 𝔹)
+debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)
 
 matrixLookup :: Array (Array (Val 𝔹)) × (Int × Int) -> Int × Int -> Val 𝔹
