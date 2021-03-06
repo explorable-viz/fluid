@@ -70,15 +70,6 @@ instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
 instance joinSemilatticeMap :: (Ord k, Slices t) => JoinSemilattice (Map k t) where
    join = definedJoin
 
-{-
-instance slicesMap :: (Ord k, Slices t) => Slices (Map k t) where
-   maybeJoin m m'
-      | keys m == keys m'  = fromFoldable <$> (sequence (zipWith maybeJoin (toUnfoldable m) (toUnfoldable m')))
-      | otherwise          = Nothing
--}
-
--- TODO: document how this is more general than strictly required for slicing.
-
 -- This is more general than we technically need for slicing, in that one can merge maps with distinct keys, as long as
 -- the values are mergable for overlapping keys. I think this is harmless, and it allows use to reuse the join operator
 -- here for merging branches of function definitions.
