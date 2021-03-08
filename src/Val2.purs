@@ -1,6 +1,7 @@
 module Val2 where
 
 import Prelude hiding (absurd)
+import Control.Apply (lift2)
 import Data.List (List)
 import Data.Maybe (Maybe(..))
 import Bindings (Bindings)
@@ -50,7 +51,7 @@ type Env = Bindings Val
 -- ======================
 -- boilerplate
 -- ======================
-derive instance functorVal :: Functor Val
+-- derive instance functorVal :: Functor Val
 
 instance joinSemilatticeVal :: JoinSemilattice a => JoinSemilattice (Val a) where
    join = definedJoin
@@ -62,9 +63,14 @@ instance slicesVal :: JoinSemilattice a => Slices (Val a) where
    maybeJoin (Float α n) (Float α' n')                = Float (α ∨ α') <$> (n ≟ n')
    maybeJoin (Str α str) (Str α' str')                = Str (α ∨ α') <$> (str ≟ str')
    maybeJoin (Constr α c vs) (Constr α' c' us)        = Constr (α ∨ α') <$> (c ≟ c') <*> maybeJoin vs us
-   maybeJoin (Matrix α vss xy) (Matrix α' vss' xy')   = Matrix (α ∨ α') <$> (maybeJoin vss vss') <*> (xy ≟ xy')
+   maybeJoin (Matrix α (vss × (i × β) × (j × γ))) (Matrix α' (vss' × (i' × β') × (j' × γ'))) =
+      Matrix (α ∨ α') <$> (
+         maybeJoin vss vss' `lift2 (×)`
+         ((flip (×) (β ∨ β')) <$> (i ≟ i')) `lift2 (×)`
+         ((flip (×) (γ ∨ γ')) <$> (j ≟ j'))
+      )
    maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ')       = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
-   maybeJoin (Primitive α φ) (Primitive α' φ')        = Primitive (α ∨ α') <$> pure φ -- TODO: require φ == φ'
+   maybeJoin (Primitive φ) (Primitive φ')             = pure (Primitive φ) -- TODO: require φ == φ'
    maybeJoin _ _                                      = Nothing
 
 instance boundedSlices :: JoinSemilattice a => BoundedSlices (Val a) where
