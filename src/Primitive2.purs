@@ -4,28 +4,31 @@ import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
-import Data.List (List(..))
+import Data.List (List(..), (:))
 import Debug.Trace (trace)
 import Math (log, pow)
 import Bindings (Bindings(..), (:+:), (↦))
-import DataType (Ctr, cCons, cFalse, cTrue)
+import DataType (Ctr, cCons, cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
 import Util (Endo, type (×), (×), type (+), (!), absurd, error)
 
 type Op a = a × 𝔹 -> Val 𝔹
+type MatrixRep a = Array (Array (Val a)) × (Int × a) × (Int × a)
 
 data Val a =
    Int a Int |
    Float a Number |
    Str a String |
    Constr a Ctr (List (Val a)) |
-   Primitive (Val 𝔹 -> Val 𝔹)
+   Matrix a (MatrixRep a) |
+   Primitive  (Val 𝔹 -> Val 𝔹)
 
 instance showVal :: Show (Val Boolean) where
    show (Int α n)       = show n <> "_" <> show α
    show (Float α n)     = show n <> "_" <> show α
    show (Str α str)     = show str <> "_" <> show α
    show (Constr _ _ _)  = error "todo"
+   show (Matrix _ _)    = error "todo"
    show (Primitive op)  = error "todo"
 
 getα :: Val 𝔹 -> 𝔹
@@ -61,6 +64,13 @@ instance fromInt :: From Int where
 instance fromNumber :: From Number where
    from (n × α) = Float α n
 
+instance toString :: To String where
+   to (Str α str) = str × α
+   to _           = error "Str expected"
+
+instance fromString :: From String where
+   from (str × α) = Str α str
+
 instance toIntOrNumber :: To (Int + Number) where
    to (Int α n)    = Left n × α
    to (Float α n)  = Right n × α
@@ -76,6 +86,14 @@ instance toIntOrNumberOrString :: To (Either (Either Int Number) String) where
    to (Str α n)   = Right n × α
    to _           = error "Int, Float or Str expected"
 
+instance toIntAndInt :: To (Int × Boolean × (Int × Boolean)) where
+   to (Constr α c (v : v' : Nil)) | c == cPair  = to v × to v' × α
+   to _                                         = error "Pair expected"
+
+instance toMatrixRep :: To (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
+   to (Matrix α (vss × i × j))   = vss × i × j × α
+   to _                          = error "Matrix expected"
+
 from1 :: forall a b . To a => From b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
 from1 op = Primitive (to >>> op >>> from)
 
@@ -86,14 +104,14 @@ apply :: Val 𝔹 -> Val 𝔹 -> Val 𝔹
 apply (Primitive op)   = op
 apply _                = error absurd
 
-depends :: forall a b c . (a -> b) -> a × 𝔹 -> b × 𝔹
+depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends op (x × α) = op x × α
 
 dependsBoth :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
 dependsBoth op (x × α) (y × β) = x `op` y × (α ∧ β)
 
 dependsNeither :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
-dependsNeither op (x × _) (y × _) = x `op` y × false
+dependsNeither op (x × _) (y × _) = x `op` y × true
 
 class DependsBinary a b c where
    dependsNonZero :: (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
@@ -152,8 +170,8 @@ debugLog x = trace x (const x)
 dims :: (Array (Array (Val 𝔹)) × (Int × Int)) × 𝔹 -> (Val 𝔹 × Val 𝔹) × 𝔹
 dims = error "todo"
 
-matrixLookup :: Array (Array (Val 𝔹)) × (Int × Int) -> Int × Int -> Val 𝔹
-matrixLookup (vss × _) (i × j) = vss!(i - 1)!(j - 1)
+matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
+matrixLookup (vss × _ × _) (i × _ × (j × _)) = vss!(i - 1)!(j - 1)
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
