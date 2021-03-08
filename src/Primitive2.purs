@@ -103,11 +103,11 @@ instance toMatrixRep :: To (Array (Array (Val Boolean)) × (Int × Boolean) × (
 instance fromPair :: From (Val Boolean × Val Boolean) where
    from (v × v' × α) = Constr α cPair (v : v' : Nil)
 
-from1 :: forall a b . To a => From b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
-from1 op = Primitive (to >>> op >>> from)
+unary :: forall a b . To a => From b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
+unary op = Primitive (to >>> op >>> from)
 
-from2 :: forall a b c . To a => To b => From c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
-from2 op = Primitive (to >>> op >>> from1)
+binary :: forall a b c . To a => To b => From c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
+binary op = Primitive (to >>> op >>> unary)
 
 apply :: Val 𝔹 -> Val 𝔹 -> Val 𝔹
 apply (Primitive op)   = op
@@ -116,11 +116,20 @@ apply _                = error absurd
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends op (x × α) = op x × α
 
+depends_bwd :: 𝔹 -> 𝔹
+depends_bwd α = α
+
 dependsBoth :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
 dependsBoth op (x × α) (y × β) = x `op` y × (α ∧ β)
 
+dependsBoth_bwd :: 𝔹 -> 𝔹 × 𝔹
+dependsBoth_bwd α = α × α
+
 dependsNeither :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
 dependsNeither op (x × _) (y × _) = x `op` y × true
+
+dependsNeither_bwd :: 𝔹 -> 𝔹 × 𝔹
+dependsNeither_bwd _ = false × false
 
 class DependsBinary a b c where
    dependsNonZero :: (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
@@ -149,35 +158,40 @@ primitives :: Bindings Val 𝔹
 primitives = foldl (:+:) Empty [
    -- some signatures are specified for clarity or to drive instance resolution
    -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
-   "+"         ↦ from2 (dependsBoth ((+) `union2` (+))),
-   "-"         ↦ from2 (dependsBoth ((-) `union2` (-))),
-   "*"         ↦ from2 (dependsNonZero ((*) `union2` (*))),
-   "**"        ↦ from2 (dependsNonZero ((\x y -> toNumber x `pow` toNumber y) `union2'` pow)),
-   "/"         ↦ from2 (dependsNonZero ((\x y -> toNumber x / toNumber y)  `union2'` (/))),
-   "=="        ↦ from2 (dependsBoth ((==) `union2'` (==) `unionDisj` (==))),
-   "/="        ↦ from2 (dependsBoth ((/=) `union2'` (/=) `unionDisj` (==))),
-   "<"         ↦ from2 (dependsBoth ((<)  `union2'` (<)  `unionDisj` (==))),
-   ">"         ↦ from2 (dependsBoth ((>)  `union2'` (>)  `unionDisj` (==))),
-   "<="        ↦ from2 (dependsBoth ((<=) `union2'` (<=) `unionDisj` (==))),
-   ">="        ↦ from2 (dependsBoth ((>=) `union2'` (>=) `unionDisj` (==))),
-   "++"        ↦ from2 (dependsBoth ((<>) :: String -> String -> String)),
+   "+"         ↦ binary (dependsBoth ((+) `union2` (+))),
+   "-"         ↦ binary (dependsBoth ((-) `union2` (-))),
+   "*"         ↦ binary (dependsNonZero ((*) `union2` (*))),
+   "**"        ↦ binary (dependsNonZero ((\x y -> toNumber x `pow` toNumber y) `union2'` pow)),
+   "/"         ↦ binary (dependsNonZero ((\x y -> toNumber x / toNumber y)  `union2'` (/))),
+   "=="        ↦ binary (dependsBoth ((==) `union2'` (==) `unionDisj` (==))),
+   "/="        ↦ binary (dependsBoth ((/=) `union2'` (/=) `unionDisj` (==))),
+   "<"         ↦ binary (dependsBoth ((<)  `union2'` (<)  `unionDisj` (==))),
+   ">"         ↦ binary (dependsBoth ((>)  `union2'` (>)  `unionDisj` (==))),
+   "<="        ↦ binary (dependsBoth ((<=) `union2'` (<=) `unionDisj` (==))),
+   ">="        ↦ binary (dependsBoth ((>=) `union2'` (>=) `unionDisj` (==))),
+   "++"        ↦ binary (dependsBoth ((<>) :: String -> String -> String)),
    ":"         ↦ Constr false cCons Nil,
-   "!"         ↦ from2 (dependsNeither matrixLookup),
-   "ceiling"   ↦ from1 (depends ceil),
-   "debugLog"  ↦ from1 (depends debugLog),
-   "dims"      ↦ from1 dims,
-   "div"       ↦ from2 (dependsNonZero (div :: Int -> Int -> Int)),
-   "error"     ↦ from1 (depends  (error :: String -> Boolean)),
-   "floor"     ↦ from1 (depends floor),
-   "log"       ↦ from1 (depends ((toNumber >>> log) `union` log)),
-   "numToStr"  ↦ from1 (depends (show `union` show))
+   "!"         ↦ binary (dependsNeither matrixLookup),
+   "ceiling"   ↦ unary (depends ceil),
+   "debugLog"  ↦ unary (depends debugLog),
+   "dims"      ↦ unary dims,
+   "div"       ↦ binary (dependsNonZero (div :: Int -> Int -> Int)),
+   "error"     ↦ unary (depends  (error :: String -> Boolean)),
+   "floor"     ↦ unary (depends floor),
+   "log"       ↦ unary (depends ((toNumber >>> log) `union` log)),
+   "numToStr"  ↦ unary (depends (show `union` show))
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)
 
 dims :: MatrixRep 𝔹 × 𝔹 -> Val 𝔹 × Val 𝔹 × 𝔹
-dims (_ × (i × α) × (j × β) × γ) = Int α i × Int α j × γ
+dims (_ × (i × α) × (j × β) × γ) = Int α i × Int β j × γ
+
+dims_bwd :: Val 𝔹 × Val 𝔹 × 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹 × 𝔹
+dims_bwd (Int α i' × Int β j' × γ) (vss × (i × _) × (j × _)) | i == i' && j == j' =
+   vss × (i × α) × (j × β) × γ
+dims_bwd _ _ = error absurd
 
 matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
 matrixLookup (vss × _ × _) (i × _ × (j × _)) = vss!(i - 1)!(j - 1)
@@ -206,4 +220,4 @@ unionDisj _ f (Right x) (Right y) = f x y
 unionDisj _ _ (Right _) (Left _)  = error "Non-uniform argument types"
 
 testPrim :: Val 𝔹
-testPrim = apply (apply (from2 (dependsNonZero ((*) `union2` (*)))) (Int false 0)) (Int true 0)
+testPrim = apply (apply (binary (dependsNonZero ((*) `union2` (*)))) (Int false 0)) (Int true 0)
