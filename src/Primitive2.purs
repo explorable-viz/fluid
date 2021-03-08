@@ -101,6 +101,9 @@ instance toMatrixRep :: To (Array (Array (Val Boolean)) × (Int × Boolean) × (
    to (Matrix α (vss × i × j))   = vss × i × j × α
    to _                          = error "Matrix expected"
 
+instance fromPair :: From (Val Boolean × Val Boolean) where
+   from (v × v' × α) = Constr α cPair (v : v' : Nil)
+
 from1 :: forall a b . To a => From b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
 from1 op = Primitive (to >>> op >>> from)
 
@@ -143,6 +146,9 @@ instance fromBoolean :: From Boolean where
    from (true × α)   = Constr α cTrue Nil
    from (false × α)  = Constr α cFalse Nil
 
+dims :: MatrixRep 𝔹 × 𝔹 -> (Val 𝔹 × Val 𝔹) × 𝔹
+dims (_ × (i × α) × (j × β) × γ) = Int α i × Int α j × γ
+
 primitives :: Bindings Val 𝔹
 primitives = foldl (:+:) Empty [
    -- some signatures are specified for clarity or to drive instance resolution
@@ -173,9 +179,6 @@ primitives = foldl (:+:) Empty [
 
 debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)
-
-dims :: (Array (Array (Val 𝔹)) × (Int × Int)) × 𝔹 -> (Val 𝔹 × Val 𝔹) × 𝔹
-dims = error "todo"
 
 matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
 matrixLookup (vss × _ × _) (i × _ × (j × _)) = vss!(i - 1)!(j - 1)
