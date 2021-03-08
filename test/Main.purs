@@ -101,6 +101,4 @@ main = do
    -- scratchpad
 -}
    run $ test "temp" "(1, (3, 3))"
-   run $ do
-      let v = testPrim
-      show v `shouldEqual` "0_true"
+   run $ show (testPrim) `shouldEqual` "0_false"
