@@ -51,6 +51,9 @@ class To a where
 class From a where
    from :: a × 𝔹 -> Val 𝔹
 
+instance toVal :: To (Val Boolean) where
+   to v = v × getα v
+
 instance fromVal :: From (Val Boolean) where
    from (v × α) = setα α v
 
@@ -60,6 +63,10 @@ instance toInt :: To Int where
 
 instance fromInt :: From Int where
    from (n × α) = Int α n
+
+instance toNumber :: To Number where
+   to (Float α n) = n × α
+   to _           = error "Float expected"
 
 instance fromNumber :: From Number where
    from (n × α) = Float α n
