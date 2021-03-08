@@ -5,13 +5,44 @@ import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..), (:))
+import Data.Map (Map, fromFoldable)
 import Debug.Trace (trace)
 import Math (log, pow)
-import Bindings (Bindings(..), (:+:), (↦))
+import Text.Parsing.Parser.Expr (Assoc(..))
+import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
 import Util (type (×), (×), type (+), (!), absurd, error)
 import Val2 (MatrixRep, Val(..), getα, setα)
+
+-- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
+type OpDef = {
+   op    :: Var,
+   prec  :: Int,
+   assoc :: Assoc
+}
+
+opDef :: Var -> Int -> Assoc -> Var × OpDef
+opDef op prec assoc = op × { op, prec, assoc }
+
+-- Syntactic information only. No guarantee that any of these will be defined.
+opDefs :: Map String OpDef
+opDefs = fromFoldable [
+   opDef "!"   8 AssocLeft,
+   opDef "**"  8 AssocRight,
+   opDef "*"   7 AssocLeft,
+   opDef "/"   7 AssocLeft,
+   opDef "+"   6 AssocLeft,
+   opDef "-"   6 AssocLeft,
+   opDef ":"   6 AssocRight,
+   opDef "++"  5 AssocRight,
+   opDef "=="  4 AssocNone,
+   opDef "/="  4 AssocNone,
+   opDef "<"   4 AssocLeft,
+   opDef ">"   4 AssocLeft,
+   opDef "<="  4 AssocLeft,
+   opDef ">="  4 AssocLeft
+]
 
 class To a where
    to :: Val 𝔹 -> a × 𝔹
@@ -114,9 +145,6 @@ instance fromBoolean :: From Boolean where
    from (true × α)   = Constr α cTrue Nil
    from (false × α)  = Constr α cFalse Nil
 
-dims :: MatrixRep 𝔹 × 𝔹 -> (Val 𝔹 × Val 𝔹) × 𝔹
-dims (_ × (i × α) × (j × β) × γ) = Int α i × Int α j × γ
-
 primitives :: Bindings Val 𝔹
 primitives = foldl (:+:) Empty [
    -- some signatures are specified for clarity or to drive instance resolution
@@ -147,6 +175,9 @@ primitives = foldl (:+:) Empty [
 
 debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)
+
+dims :: MatrixRep 𝔹 × 𝔹 -> Val 𝔹 × Val 𝔹 × 𝔹
+dims (_ × (i × α) × (j × β) × γ) = Int α i × Int α j × γ
 
 matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
 matrixLookup (vss × _ × _) (i × _ × (j × _)) = vss!(i - 1)!(j - 1)
