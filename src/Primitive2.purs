@@ -133,40 +133,31 @@ dependsNeither_bwd :: 𝔹 -> 𝔹 × 𝔹
 dependsNeither_bwd _ = false × false
 
 -- Bit of boiler plate for 3 kinds of numeric operation. Should be able to improve this.
-class DependsBinary a b where
-   dependsNonZero :: (a -> a -> b) -> a × 𝔹 -> a × 𝔹 -> b × 𝔹
-   dependsNonZero_bwd :: b × 𝔹 -> (a × a) -> 𝔹 × 𝔹
+class IsZero a where
+   isZero :: a -> Boolean
+
+instance isZeroInt :: IsZero Int where
+   isZero = ((==) 0)
+
+instance isZeroNumber :: IsZero Number where
+   isZero = ((==) 0.0)
+
+instance isZeroIntOrNumber :: IsZero (Int + Number) where
+   isZero (Left x)   = x == 0
+   isZero (Right x)  = x == 0.0
 
 -- If both are zero, we depend only on the first.
-instance dependsNonZeroInt :: DependsBinary Int a where
-   dependsNonZero op (x × α) (y × β)
-      | x == 0    = x `op` y × α
-      | y == 0    = x `op` y × β
-      | otherwise = x `op` y × (α ∧ β)
-   dependsNonZero_bwd (_ × α) (x × y)
-      | x == 0    = α × false
-      | y == 0    = false × α
-      | otherwise = α × α
+dependsNonZero :: forall a b . IsZero a => (a -> a -> b) -> a × 𝔹 -> a × 𝔹 -> b × 𝔹
+dependsNonZero op (x × α) (y × β)
+   | isZero x  = x `op` y × α
+   | isZero y  = x `op` y × β
+   | otherwise = x `op` y × (α ∧ β)
 
-instance dependsNonZeroNumber :: DependsBinary Number a where
-   dependsNonZero op (x × α) (y × β)
-      | x == 0.0  = x `op` y × α
-      | y == 0.0  = x `op` y × β
-      | otherwise = x `op` y × (α ∧ β)
-   dependsNonZero_bwd (_ × α) (x × y)
-      | x == 0.0    = α × false
-      | y == 0.0    = false × α
-      | otherwise = α × α
-
-instance dependsNonZeroIntOrNumber :: DependsBinary (Int + Number) a where
-   dependsNonZero op (x × α) (y × β)
-      | x `((==) `union2'` (==))` (Left 0)   = x `op` y × α
-      | y `((==) `union2'` (==))` (Left 0)   = x `op` y × β
-      | otherwise                            = x `op` y × (α ∧ β)
-   dependsNonZero_bwd (_ × α) (x × y)
-      | x `((==) `union2'` (==))` (Left 0)   = α × false
-      | y `((==) `union2'` (==))` (Left 0)   = false × α
-      | otherwise                            = α × α
+dependsNonZero_bwd :: forall a b . IsZero a => b × 𝔹 -> (a × a) -> 𝔹 × 𝔹
+dependsNonZero_bwd (_ × α) (x × y)
+   | isZero x  = α × false
+   | isZero y  = false × α
+   | otherwise = α × α
 
 instance fromBoolean :: To Boolean where
    to (true × α)   = Constr α cTrue Nil
