@@ -133,12 +133,12 @@ dependsNeither_bwd :: 𝔹 -> 𝔹 × 𝔹
 dependsNeither_bwd _ = false × false
 
 -- Bit of boiler plate for 3 kinds of numeric operation. Should be able to improve this.
-class DependsBinary a b c where
-   dependsNonZero :: (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
-   dependsNonZero_bwd :: c × 𝔹 -> (a × b) -> 𝔹 × 𝔹
+class DependsBinary a b where
+   dependsNonZero :: (a -> a -> b) -> a × 𝔹 -> a × 𝔹 -> b × 𝔹
+   dependsNonZero_bwd :: b × 𝔹 -> (a × a) -> 𝔹 × 𝔹
 
 -- If both are zero, we depend only on the first.
-instance dependsNonZeroInt :: DependsBinary Int Int a where
+instance dependsNonZeroInt :: DependsBinary Int a where
    dependsNonZero op (x × α) (y × β)
       | x == 0    = x `op` y × α
       | y == 0    = x `op` y × β
@@ -148,7 +148,7 @@ instance dependsNonZeroInt :: DependsBinary Int Int a where
       | y == 0    = false × α
       | otherwise = α × α
 
-instance dependsNonZeroNumber :: DependsBinary Number Number a where
+instance dependsNonZeroNumber :: DependsBinary Number a where
    dependsNonZero op (x × α) (y × β)
       | x == 0.0  = x `op` y × α
       | y == 0.0  = x `op` y × β
@@ -158,7 +158,7 @@ instance dependsNonZeroNumber :: DependsBinary Number Number a where
       | y == 0.0    = false × α
       | otherwise = α × α
 
-instance dependsNonZeroIntOrNumber :: DependsBinary (Int + Number) (Int + Number) a where
+instance dependsNonZeroIntOrNumber :: DependsBinary (Int + Number) a where
    dependsNonZero op (x × α) (y × β)
       | x `((==) `union2'` (==))` (Left 0)   = x `op` y × α
       | y `((==) `union2'` (==))` (Left 0)   = x `op` y × β
