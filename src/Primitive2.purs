@@ -6,6 +6,7 @@ import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
+import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
 import Debug.Trace (trace)
 import Math (log, pow)
@@ -142,9 +143,8 @@ instance isZeroInt :: IsZero Int where
 instance isZeroNumber :: IsZero Number where
    isZero = ((==) 0.0)
 
-instance isZeroIntOrNumber :: IsZero (Int + Number) where
-   isZero (Left x)   = x == 0
-   isZero (Right x)  = x == 0.0
+instance isZeroEither :: (IsZero a, IsZero b) => IsZero (a + b) where
+   isZero = isZero ||| isZero
 
 -- If both are zero, we depend only on the first.
 dependsNonZero :: forall a b . IsZero a => (a -> a -> b) -> a × 𝔹 -> a × 𝔹 -> b × 𝔹
