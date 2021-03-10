@@ -114,6 +114,12 @@ binary op = Primitive (PrimOp (from >>> op >>> unary))
 apply :: PrimOp -> Val 𝔹 -> Val 𝔹
 apply (PrimOp op) = op
 
+-- φ acts as a "trace" of the original operator.
+apply_fwd :: Val 𝔹 -> PrimOp -> Val 𝔹 -> Val 𝔹
+apply_fwd Hole φ            = apply φ
+apply_fwd (Primitive φ) _   = apply φ
+apply_fwd _ _               = error absurd
+
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends = first
 
