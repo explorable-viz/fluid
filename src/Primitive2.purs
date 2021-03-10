@@ -197,7 +197,7 @@ matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
 matrixLookup (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
 
 matrixLookup_bwd :: Val 𝔹 -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹) -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹)
-matrixLookup_bwd v ((vss × _ × _) × (i × _) × (j × _)) = ?_ × ?_ × ?_ × ?_ × ?_
+matrixLookup_bwd v ((vss × _ × _) × (i × _) × (j × _)) = (((<$>) (const Hole)) <$> vss) × ?_ × ?_ × ?_ × ?_
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
