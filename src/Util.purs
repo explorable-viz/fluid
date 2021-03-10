@@ -119,3 +119,7 @@ infixl 8 unsafeIndex as !
 nonEmpty :: forall a . List a -> NonEmptyList a
 nonEmpty Nil = error absurd
 nonEmpty (x : xs) = NonEmptyList (x :| xs)
+
+-- Also defined in Data.Profunctor.Monoidal, but perhaps not "standard library"
+dup :: forall a. a -> a × a
+dup x = x × x

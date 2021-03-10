@@ -6,13 +6,14 @@ import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
+import Data.Profunctor.Strong (first)
 import Debug.Trace (trace)
 import Math (log, pow)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
-import Util (type (×), (×), type (+), (!), absurd, error)
+import Util (type (×), (×), type (+), (!), absurd, dup, error)
 import Val2 (MatrixRep, Val(..), getα, setα)
 
 -- name in user land, precedence 0 from 9 (similar from Haskell 98), associativity
@@ -114,16 +115,16 @@ apply (Primitive op)   = op
 apply _                = error absurd
 
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
-depends op (x × α) = op x × α
+depends = first
 
 depends_bwd :: 𝔹 -> 𝔹
-depends_bwd α = α
+depends_bwd = identity
 
 dependsBoth :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
 dependsBoth op (x × α) (y × β) = x `op` y × (α ∧ β)
 
 dependsBoth_bwd :: 𝔹 -> 𝔹 × 𝔹
-dependsBoth_bwd α = α × α
+dependsBoth_bwd = dup
 
 dependsNeither :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
 dependsNeither op (x × _) (y × _) = x `op` y × true
@@ -174,7 +175,7 @@ primitives = foldl (:+:) Empty [
    "!"         ↦ binary (dependsNeither matrixLookup),
    "ceiling"   ↦ unary (depends ceil),
    "debugLog"  ↦ unary (depends debugLog),
-   "dims"      ↦ unary dims,
+   "dims"      ↦ unary (depends dims),
    "div"       ↦ binary (dependsNonZero (div :: Int -> Int -> Int)),
    "error"     ↦ unary (depends  (error :: String -> Boolean)),
    "floor"     ↦ unary (depends floor),
@@ -185,8 +186,8 @@ primitives = foldl (:+:) Empty [
 debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)
 
-dims :: MatrixRep 𝔹 × 𝔹 -> Val 𝔹 × Val 𝔹 × 𝔹
-dims (_ × (i × α) × (j × β) × γ) = Int α i × Int β j × γ
+dims :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
+dims (_ × (i × α) × (j × β)) = Int α i × Int β j
 
 dims_bwd :: Val 𝔹 × Val 𝔹 × 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹 × 𝔹
 dims_bwd (Int α i' × Int β j' × γ) (vss × (i × _) × (j × _)) | i == i' && j == j' =
@@ -197,7 +198,7 @@ matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
 matrixLookup (vss × _ × _) (i × _ × (j × _)) = vss!(i - 1)!(j - 1)
 
 matrixLookup_bwd :: Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹)
-matrixLookup_bwd v vss = (?_ × ?_ × ?_ × ?_) × ?_
+matrixLookup_bwd v vss = error "todo" -- (?_ × ?_ × ?_ × ?_) × ?_
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
