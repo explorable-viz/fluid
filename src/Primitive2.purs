@@ -13,7 +13,7 @@ import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
-import Util (type (×), (×), type (+), (!), absurd, dup, error)
+import Util (type (×), (×), type (+), (!), absurd, dup, error, unsafeUpdateAt)
 import Val2 (MatrixRep, Val(..), getα, setα)
 
 -- name in user land, precedence 0 from 9 (similar from Haskell 98), associativity
@@ -197,7 +197,11 @@ matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
 matrixLookup (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
 
 matrixLookup_bwd :: Val 𝔹 -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹) -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹)
-matrixLookup_bwd v ((vss × _ × _) × (i × _) × (j × _)) = (((<$>) (const Hole)) <$> vss) × ?_ × ?_ × ?_ × ?_
+matrixLookup_bwd v ((vss × (i' × _) × (j' × _)) × (i × _) × (j × _)) =
+   vss'' × (i' × false) × (j' × false) × (i × false) × (j × false)
+   where vss'  = (((<$>) (const Hole)) <$> vss)
+         vs_i  = vss'!(i - 1)
+         vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) (vs_i!(j - 1)) vs_i) vss'
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
