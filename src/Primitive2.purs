@@ -189,16 +189,15 @@ debugLog x = trace x (const x)
 dims :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
 dims (_ × (i × α) × (j × β)) = Int α i × Int β j
 
-dims_bwd :: Val 𝔹 × Val 𝔹 × 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹 × 𝔹
-dims_bwd (Int α i' × Int β j' × γ) (vss × (i × _) × (j × _)) | i == i' && j == j' =
-   vss × (i × α) × (j × β) × γ
-dims_bwd _ _ = error absurd
+dims_bwd :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
+dims_bwd (Int α i' × Int β j') (vss × (i × _) × (j × _)) | i == i' && j == j' = vss × (i × α) × (j × β)
+dims_bwd _ _                                                                  = error absurd
 
 matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
-matrixLookup (vss × _ × _) (i × _ × (j × _)) = vss!(i - 1)!(j - 1)
+matrixLookup (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
 
-matrixLookup_bwd :: Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹)
-matrixLookup_bwd v vss = error "todo" -- (?_ × ?_ × ?_ × ?_) × ?_
+matrixLookup_bwd :: Val 𝔹 -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹) -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹)
+matrixLookup_bwd v ((vss × _ × _) × (i × _) × (j × _)) = ?_ × ?_ × ?_ × ?_ × ?_
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
