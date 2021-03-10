@@ -15,10 +15,10 @@ import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr)
 import Lattice (𝔹, checkConsistent)
 import Pretty (pretty, render)
-import Primitive (apply, to)
+import Primitive2 (apply, from)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
-import Val (Env, Val)
-import Val (Val(..)) as V
+import Val2 (Env, Val)
+import Val2 (Val(..)) as V
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match _ ElimHole = error absurd
@@ -69,14 +69,14 @@ eval ρ (Matrix _ e (x × y) e') = do
    case v of
       V.Hole -> error absurd
       V.Constr _ c (v1 : v2 : Nil) | c == cPair -> do
-         let i' × j' = to v1 × to v2
+         let (i' × _) × (j' × _) = from v1 × from v2
          check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
          tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$> (sequence $ do
             i <- range 1 i'
             singleton $ sequence $ do
                j <- range 1 j'
                singleton (eval ((ρ :+: x ↦ V.Int false i) :+: y ↦ V.Int false j) e))
-         pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false vss (i' × j'))
+         pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × i' × j'))
       v' -> report ("Array dimensions must be pair of ints; got " <> render (pretty v'))
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b

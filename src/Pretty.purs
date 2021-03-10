@@ -18,8 +18,8 @@ import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match)
 import Lattice (class BoundedJoinSemilattice)
 import Util (Endo, type (×), (×), absurd, error, intersperse)
-import Val (Primitive, Val)
-import Val (Val(..)) as V
+import Val2 (PrimOp, Val)
+import Val2 (Val(..)) as V
 
 infixl 5 beside as :<>:
 
@@ -174,20 +174,20 @@ instance prettyElim :: BoundedJoinSemilattice a => Pretty (Elim a) where
    pretty (ElimConstr κs)  = hcat $ map (\x -> pretty x :<>: comma) $ (toUnfoldable κs :: List _)
 
 instance prettyVal :: BoundedJoinSemilattice a => Pretty (Val a) where
-   pretty V.Hole                 = hole
-   pretty (V.Int _ n)            = text $ show n
-   pretty (V.Float _ n)          = text $ show n
-   pretty (V.Str _ str)          = text $ show str
+   pretty V.Hole                       = hole
+   pretty (V.Int _ n)                  = text $ show n
+   pretty (V.Float _ n)                = text $ show n
+   pretty (V.Str _ str)                = text $ show str
    pretty u@(V.Constr _ c vs)
-      | c == cNil || c == cCons  = pretty $ toList u
-      | otherwise                = prettyConstr c vs
-   pretty (V.Matrix _ vss _)       = hcat (pretty <$> fromFoldable (fromFoldable <$> vss))
-   pretty (V.Closure ρ δ σ)      =
+      | c == cNil || c == cCons        = pretty $ toList u
+      | otherwise                      = prettyConstr c vs
+   pretty (V.Matrix _ (vss × _ × _))   = hcat (pretty <$> fromFoldable (fromFoldable <$> vss))
+   pretty (V.Closure ρ δ σ) =
     text "Closure" :<>: text "(" :<>:
     (atop (atop (text "env: " :<>: pretty ρ) (text "defs: " :<>: pretty δ)) (text "elim: " :<>: pretty σ)) :<>: (text ")")
-   pretty (V.Primitive _ op)     = parens $ pretty op
+   pretty (V.Primitive op)             = parens $ pretty op
 
-instance prettyPrimitive :: Pretty Primitive where
+instance prettyPrimOp :: Pretty PrimOp where
    pretty _ = text "<prim-op>"
 
 -- Surface language

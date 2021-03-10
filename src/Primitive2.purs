@@ -15,7 +15,7 @@ import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
 import Util (type (×), (×), type (+), (!), absurd, dup, error, unsafeUpdateAt)
-import Val2 (MatrixRep, Val(..), getα, setα)
+import Val2 (MatrixRep, PrimOp(..), Val(..), getα, setα)
 
 -- name in user land, precedence 0 from 9 (similar from Haskell 98), associativity
 type OpDef = {
@@ -106,14 +106,14 @@ instance toPair :: To (Val Boolean × Val Boolean) where
    to (v × v' × α) = Constr α cPair (v : v' : Nil)
 
 unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
-unary op = Primitive (from >>> op >>> to)
+unary op = Primitive (PrimOp (from >>> op >>> to))
 
 binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
-binary op = Primitive (from >>> op >>> unary)
+binary op = Primitive (PrimOp (from >>> op >>> unary))
 
 apply :: Val 𝔹 -> Val 𝔹 -> Val 𝔹
-apply (Primitive op)   = op
-apply _                = error absurd
+apply (Primitive (PrimOp op)) = op
+apply _                       = error absurd
 
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends = first

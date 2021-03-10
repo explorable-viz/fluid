@@ -23,8 +23,10 @@ data Val a =
    Str a String |
    Constr a Ctr (List (Val a)) |
    Matrix a (MatrixRep a) |
-   Primitive (Val 𝔹 -> Val 𝔹) |
+   Primitive PrimOp |
    Closure (Env a) (RecDefs a) (Elim a)
+
+data PrimOp = PrimOp (Val 𝔹 -> Val 𝔹)
 
 instance showVal :: Show (Val Boolean) where
    show (Int α n)    = show n <> "_" <> show α

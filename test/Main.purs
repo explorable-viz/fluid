@@ -21,7 +21,7 @@ import Module (openDatasetAs, openWithDefaultImports)
 import Pretty (pretty, render)
 import SExpr (Expr) as S
 import Util (type (×), (×), successful)
-import Val (Env, Val(..))
+import Val2 (Env, Val(..))
 import Primitive2 (testPrim)
 
 -- Don't enforce expected values for graphics tests (values too complex).
