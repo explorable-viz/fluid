@@ -111,9 +111,8 @@ unary op = Primitive (PrimOp (from >>> op >>> to))
 binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
 binary op = Primitive (PrimOp (from >>> op >>> unary))
 
-apply :: Val 𝔹 -> Val 𝔹 -> Val 𝔹
-apply (Primitive (PrimOp op)) = op
-apply _                       = error absurd
+apply :: PrimOp -> Val 𝔹 -> Val 𝔹
+apply (PrimOp op) = op
 
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends = first
@@ -233,6 +232,3 @@ unionDisj f _ (Left x) (Left y)   = f x y
 unionDisj _ _ (Left _) (Right _)  = error "Non-uniform argument types"
 unionDisj _ f (Right x) (Right y) = f x y
 unionDisj _ _ (Right _) (Left _)  = error "Non-uniform argument types"
-
-testPrim :: Val 𝔹
-testPrim = apply (apply (binary (dependsNonZero ((*) `union2` (*)))) (Int false 0)) (Int true 0)

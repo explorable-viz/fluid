@@ -76,7 +76,7 @@ eval ρ (Matrix _ e (x × y) e') = do
             singleton $ sequence $ do
                j <- range 1 j'
                singleton (eval ((ρ :+: x ↦ V.Int false i) :+: y ↦ V.Int false j) e))
-         pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × i' × j'))
+         pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false)))
       v' -> report ("Array dimensions must be pair of ints; got " <> render (pretty v'))
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
@@ -97,7 +97,7 @@ eval ρ (App e e') = do
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) (asExpr e'')
          pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
-      V.Primitive _ φ ->
+      V.Primitive φ ->
          pure (T.AppPrim (t × φ) (t' × v') × apply φ v')
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> show c)
@@ -109,10 +109,10 @@ eval ρ (BinaryApp e op e') = do
    v_φ <- find op ρ
    case v_φ of
       V.Hole -> error absurd
-      V.Primitive _ φ ->
+      V.Primitive φ ->
          case apply φ v of
             V.Hole -> error absurd
-            V.Primitive _ φ_v -> pure (T.BinaryApp (t × v) (op × φ) φ_v (t' × v') × apply φ_v v')
+            V.Primitive φ_v -> pure (T.BinaryApp (t × v) (op × φ) φ_v (t' × v') × apply φ_v v')
             _ -> report "Not a binary operator"
       _ -> report "Not an operator"
 eval ρ (Let (VarDef σ e) e') = do
