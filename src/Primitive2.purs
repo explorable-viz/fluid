@@ -15,7 +15,7 @@ import Lattice (𝔹, (∧))
 import Util (type (×), (×), type (+), (!), absurd, error)
 import Val2 (MatrixRep, Val(..), getα, setα)
 
--- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
+-- name in user land, precedence 0 from 9 (similar from Haskell 98), associativity
 type OpDef = {
    op    :: Var,
    prec  :: Int,
@@ -44,70 +44,70 @@ opDefs = fromFoldable [
    opDef ">="  4 AssocLeft
 ]
 
-class To a where
-   to :: Val 𝔹 -> a × 𝔹
-
 class From a where
-   from :: a × 𝔹 -> Val 𝔹
+   from :: Val 𝔹 -> a × 𝔹
 
-instance toVal :: To (Val Boolean) where
-   to v = v × getα v
+class To a where
+   to :: a × 𝔹 -> Val 𝔹
 
-instance fromVal :: From (Val Boolean) where
-   from (v × α) = setα α v
+instance toVal :: From (Val Boolean) where
+   from v = v × getα v
 
-instance toInt :: To Int where
-   to (Int α n)   = n × α
-   to _           = error "Int expected"
+instance fromVal :: To (Val Boolean) where
+   to (v × α) = setα α v
 
-instance fromInt :: From Int where
-   from (n × α) = Int α n
+instance toInt :: From Int where
+   from (Int α n)   = n × α
+   from _           = error "Int expected"
 
-instance toNumber :: To Number where
-   to (Float α n) = n × α
-   to _           = error "Float expected"
+instance fromInt :: To Int where
+   to (n × α) = Int α n
 
-instance fromNumber :: From Number where
-   from (n × α) = Float α n
+instance toNumber :: From Number where
+   from (Float α n) = n × α
+   from _           = error "Float expected"
 
-instance toString :: To String where
-   to (Str α str) = str × α
-   to _           = error "Str expected"
+instance fromNumber :: To Number where
+   to (n × α) = Float α n
 
-instance fromString :: From String where
-   from (str × α) = Str α str
+instance toString :: From String where
+   from (Str α str) = str × α
+   from _           = error "Str expected"
 
-instance toIntOrNumber :: To (Int + Number) where
-   to (Int α n)    = Left n × α
-   to (Float α n)  = Right n × α
-   to _            = error "Int or Float expected"
+instance fromString :: To String where
+   to (str × α) = Str α str
 
-instance fromIntOrNumber :: From (Int + Number) where
-   from (Left n × α)    = Int α n
-   from (Right n × α)   = Float α n
+instance toIntOrNumber :: From (Int + Number) where
+   from (Int α n)    = Left n × α
+   from (Float α n)  = Right n × α
+   from _            = error "Int or Float expected"
 
-instance toIntOrNumberOrString :: To (Either (Either Int Number) String) where
-   to (Int α n)   = Left (Left n) × α
-   to (Float α n) = Left (Right n) × α
-   to (Str α n)   = Right n × α
-   to _           = error "Int, Float or Str expected"
+instance fromIntOrNumber :: To (Int + Number) where
+   to (Left n × α)    = Int α n
+   to (Right n × α)   = Float α n
 
-instance toIntAndInt :: To (Int × Boolean × (Int × Boolean)) where
-   to (Constr α c (v : v' : Nil)) | c == cPair  = to v × to v' × α
-   to _                                         = error "Pair expected"
+instance toIntOrNumberOrString :: From (Either (Either Int Number) String) where
+   from (Int α n)   = Left (Left n) × α
+   from (Float α n) = Left (Right n) × α
+   from (Str α n)   = Right n × α
+   from _           = error "Int, Float or Str expected"
 
-instance toMatrixRep :: To (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
-   to (Matrix α (vss × i × j))   = vss × i × j × α
-   to _                          = error "Matrix expected"
+instance toIntAndInt :: From (Int × Boolean × (Int × Boolean)) where
+   from (Constr α c (v : v' : Nil)) | c == cPair  = from v × from v' × α
+   from _                                         = error "Pair expected"
 
-instance fromPair :: From (Val Boolean × Val Boolean) where
-   from (v × v' × α) = Constr α cPair (v : v' : Nil)
+instance toMatrixRep :: From (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
+   from (Matrix α (vss × i × j))   = vss × i × j × α
+   from _                          = error "Matrix expected"
 
-unary :: forall a b . To a => From b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
-unary op = Primitive (to >>> op >>> from)
+instance fromPair :: To (Val Boolean × Val Boolean) where
+   to (v × v' × α) = Constr α cPair (v : v' : Nil)
 
-binary :: forall a b c . To a => To b => From c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
-binary op = Primitive (to >>> op >>> unary)
+unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
+unary op = Primitive (from >>> op >>> to)
+
+binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
+binary op = Primitive (from >>> op >>> unary)
 
 apply :: Val 𝔹 -> Val 𝔹 -> Val 𝔹
 apply (Primitive op)   = op
@@ -150,13 +150,13 @@ instance dependsNonZeroIntOrNumber :: DependsBinary (Int + Number) (Int + Number
       then α
       else if y `((==) `union2'` (==))` (Left 0) then β else α ∧ β
 
-instance fromBoolean :: From Boolean where
-   from (true × α)   = Constr α cTrue Nil
-   from (false × α)  = Constr α cFalse Nil
+instance fromBoolean :: To Boolean where
+   to (true × α)   = Constr α cTrue Nil
+   to (false × α)  = Constr α cFalse Nil
 
 primitives :: Bindings Val 𝔹
 primitives = foldl (:+:) Empty [
-   -- some signatures are specified for clarity or to drive instance resolution
+   -- some signatures are specified for clarity or from drive instance resolution
    -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
    "+"         ↦ binary (dependsBoth ((+) `union2` (+))),
    "-"         ↦ binary (dependsBoth ((-) `union2` (-))),
@@ -195,6 +195,9 @@ dims_bwd _ _ = error absurd
 
 matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
 matrixLookup (vss × _ × _) (i × _ × (j × _)) = vss!(i - 1)!(j - 1)
+
+matrixLookup_bwd :: Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹)
+matrixLookup_bwd v vss = (?_ × ?_ × ?_ × ?_) × ?_
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
