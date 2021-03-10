@@ -13,9 +13,9 @@ import Math (log, pow)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
-import Lattice (𝔹, (∧))
+import Lattice (𝔹, (∧), expand)
 import Util (type (×), (×), type (+), (!), absurd, dup, error, unsafeUpdateAt)
-import Val2 (MatrixRep, PrimOp(..), Val(..), getα, setα)
+import Val2 (MatrixRep, PrimOp(..), Val(..), setα)
 
 -- name in user land, precedence 0 from 9 (similar from Haskell 98), associativity
 type OpDef = {
@@ -47,13 +47,11 @@ opDefs = fromFoldable [
 ]
 
 class From a where
-   from :: Val 𝔹 -> a × 𝔹
+   from :: Val 𝔹 -> a × 𝔹           -- value may not be a hole
+   expand' :: a -> Val 𝔹            -- expand a hole to be least as big as argument
 
 class To a where
    to :: a × 𝔹 -> Val 𝔹
-
-instance fromVal :: From (Val Boolean) where
-   from v = v × getα v
 
 instance toVal :: To (Val Boolean) where
    to (v × α) = setα α v
@@ -62,12 +60,16 @@ instance fromInt :: From Int where
    from (Int α n)   = n × α
    from _           = error "Int expected"
 
+   expand' = Int false
+
 instance toInt :: To Int where
    to (n × α) = Int α n
 
 instance fromNumber :: From Number where
    from (Float α n) = n × α
    from _           = error "Float expected"
+
+   expand' = Float false
 
 instance toNumber :: To Number where
    to (n × α) = Float α n
@@ -76,6 +78,8 @@ instance fromString :: From String where
    from (Str α str) = str × α
    from _           = error "Str expected"
 
+   expand' = Str false
+
 instance toString :: To String where
    to (str × α) = Str α str
 
@@ -83,6 +87,9 @@ instance fromIntOrNumber :: From (Int + Number) where
    from (Int α n)    = Left n × α
    from (Float α n)  = Right n × α
    from _            = error "Int or Float expected"
+
+   expand' (Left n)  = Int false n
+   expand' (Right n) = Float false n
 
 instance toIntOrNumber :: To (Int + Number) where
    to (Left n × α)    = Int α n
@@ -94,13 +101,21 @@ instance fromIntOrNumberOrString :: From (Either (Either Int Number) String) whe
    from (Str α n)   = Right n × α
    from _           = error "Int, Float or Str expected"
 
+   expand' (Left (Left n))    = Int false n
+   expand' (Left (Right n))   = Float false n
+   expand' (Right str)        = Str false str
+
 instance fromIntAndInt :: From (Int × Boolean × (Int × Boolean)) where
    from (Constr α c (v : v' : Nil)) | c == cPair  = from v × from v' × α
    from _                                         = error "Pair expected"
 
+   expand' (nβ × mβ') = Constr false cPair (Hole : Hole : Nil)
+
 instance fromMatrixRep :: From (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
-   from (Matrix α (vss × i × j))   = vss × i × j × α
-   from _                          = error "Matrix expected"
+   from (Matrix α (vss × iβ × jβ')) = vss × iβ × jβ' × α
+   from _                           = error "Matrix expected"
+
+   expand' (vss × (i × _) × (j × _)) = Matrix false (((<$>) (const Hole) <$> vss) × (i × false) × (j × false))
 
 instance toPair :: To (Val Boolean × Val Boolean) where
    to (v × v' × α) = Constr α cPair (v : v' : Nil)
@@ -187,7 +202,7 @@ primitives = foldl (:+:) Empty [
    "++"        ↦ binary (dependsBoth ((<>) :: String -> String -> String)),
    "!"         ↦ binary (dependsNeither matrixLookup),
    "ceiling"   ↦ unary (depends ceil),
-   "debugLog"  ↦ unary (depends debugLog),
+   "debugLog"  ↦ Primitive (PrimOp debugLog),
    "dims"      ↦ unary (depends dims),
    "div"       ↦ binary (dependsNonZero (div :: Int -> Int -> Int)),
    "error"     ↦ unary (depends  (error :: String -> Boolean)),
