@@ -51,57 +51,57 @@ class From a where
 class To a where
    to :: a × 𝔹 -> Val 𝔹
 
-instance toVal :: From (Val Boolean) where
+instance fromVal :: From (Val Boolean) where
    from v = v × getα v
 
-instance fromVal :: To (Val Boolean) where
+instance toVal :: To (Val Boolean) where
    to (v × α) = setα α v
 
-instance toInt :: From Int where
+instance fromInt :: From Int where
    from (Int α n)   = n × α
    from _           = error "Int expected"
 
-instance fromInt :: To Int where
+instance toInt :: To Int where
    to (n × α) = Int α n
 
-instance toNumber :: From Number where
+instance fromNumber :: From Number where
    from (Float α n) = n × α
    from _           = error "Float expected"
 
-instance fromNumber :: To Number where
+instance toNumber :: To Number where
    to (n × α) = Float α n
 
-instance toString :: From String where
+instance fromString :: From String where
    from (Str α str) = str × α
    from _           = error "Str expected"
 
-instance fromString :: To String where
+instance toString :: To String where
    to (str × α) = Str α str
 
-instance toIntOrNumber :: From (Int + Number) where
+instance fromIntOrNumber :: From (Int + Number) where
    from (Int α n)    = Left n × α
    from (Float α n)  = Right n × α
    from _            = error "Int or Float expected"
 
-instance fromIntOrNumber :: To (Int + Number) where
+instance toIntOrNumber :: To (Int + Number) where
    to (Left n × α)    = Int α n
    to (Right n × α)   = Float α n
 
-instance toIntOrNumberOrString :: From (Either (Either Int Number) String) where
+instance fromIntOrNumberOrString :: From (Either (Either Int Number) String) where
    from (Int α n)   = Left (Left n) × α
    from (Float α n) = Left (Right n) × α
    from (Str α n)   = Right n × α
    from _           = error "Int, Float or Str expected"
 
-instance toIntAndInt :: From (Int × Boolean × (Int × Boolean)) where
+instance fromIntAndInt :: From (Int × Boolean × (Int × Boolean)) where
    from (Constr α c (v : v' : Nil)) | c == cPair  = from v × from v' × α
    from _                                         = error "Pair expected"
 
-instance toMatrixRep :: From (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
+instance fromMatrixRep :: From (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
    from (Matrix α (vss × i × j))   = vss × i × j × α
    from _                          = error "Matrix expected"
 
-instance fromPair :: To (Val Boolean × Val Boolean) where
+instance toPair :: To (Val Boolean × Val Boolean) where
    to (v × v' × α) = Constr α cPair (v : v' : Nil)
 
 unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
@@ -159,6 +159,7 @@ primitives :: Bindings Val 𝔹
 primitives = foldl (:+:) Empty [
    -- some signatures are specified for clarity or from drive instance resolution
    -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
+   ":"         ↦ Constr false cCons Nil,
    "+"         ↦ binary (dependsBoth ((+) `union2` (+))),
    "-"         ↦ binary (dependsBoth ((-) `union2` (-))),
    "*"         ↦ binary (dependsNonZero ((*) `union2` (*))),
@@ -171,7 +172,6 @@ primitives = foldl (:+:) Empty [
    "<="        ↦ binary (dependsBoth ((<=) `union2'` (<=) `unionDisj` (==))),
    ">="        ↦ binary (dependsBoth ((>=) `union2'` (>=) `unionDisj` (==))),
    "++"        ↦ binary (dependsBoth ((<>) :: String -> String -> String)),
-   ":"         ↦ Constr false cCons Nil,
    "!"         ↦ binary (dependsNeither matrixLookup),
    "ceiling"   ↦ unary (depends ceil),
    "debugLog"  ↦ unary (depends debugLog),
