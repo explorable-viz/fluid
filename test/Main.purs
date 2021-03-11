@@ -44,14 +44,14 @@ test' name setup expected =
          let e = successful (desugarFwd s)
          case successful (eval ρ e) of
             t × v -> do
-               unless (isGraphical v) $
-                  render (pretty v) `shouldEqual` expected
+--               unless (isGraphical v) $
+--                  render (pretty v) `shouldEqual` expected
                when slicing do
                   let ρ' × e' × α'  = eval_bwd v t
                       s' = desugarBwd e' s
                       e'' = successful (desugarFwd s')
                       _ = eval_fwd (botOf ρ') E.Hole true t
-                      v' = eval_fwd ρ' e'' true t
+                      v' = eval_fwd ρ' e true t
                   unless (isGraphical v) $
                      render (pretty v') `shouldEqual` expected
 
@@ -95,7 +95,7 @@ main = do
    run $ test "zipWith" "[[10], [12], [20]]"
 -}
    -- slicing
-   run $ test' "slicing/arithmetic" (pure (primitives × S.BinaryApp (S.Int true 0) "*" (S.Int true 0))) "0"
+   run $ test' "slicing/arithmetic" (pure (primitives × S.BinaryApp (S.Int false 0) "*" (S.Int true 5))) "0_true"
 {-
    -- graphics
    run $ testWithDataset "renewables-restricted" "graphics/background"
