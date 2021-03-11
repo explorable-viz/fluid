@@ -107,8 +107,7 @@ eval_fwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
       _ -> error absurd
 eval_fwd ρ e α (T.AppPrim (t1 × φ) (t2 × v2)) =
    case expand e (App Hole Hole) of
-      App e1 e2 ->
-         apply_fwd (eval_fwd ρ e1 α t1 × φ) (eval_fwd ρ e2 α t2 × v2)
+      App e1 e2 -> apply_fwd φ (eval_fwd ρ e2 α t2 × v2)
       _ -> error absurd
 eval_fwd ρ e α (T.AppConstr (t1 × c × vs) (t2 × _)) =
    case expand e (App Hole Hole) of
@@ -121,9 +120,7 @@ eval_fwd ρ e α (T.AppConstr (t1 × c × vs) (t2 × _)) =
       _ -> error absurd
 eval_fwd ρ e α (T.BinaryApp (t1 × v1) (op × φ) φ_v (t2 × v2)) =
    case expand e (BinaryApp Hole op Hole) of
-      BinaryApp e1 _ e2 ->
-         apply_fwd (apply_fwd (successful (find op ρ) × φ) (eval_fwd ρ e1 α t1 × v1) × φ_v)
-                   (eval_fwd ρ e2 α t2 × v2)
+      BinaryApp e1 _ e2 -> apply_fwd φ_v (eval_fwd ρ e2 α t2 × v2)
       _ -> error absurd
 eval_fwd ρ e α (T.Let (T.VarDef w t1) t2) =
    case expand e (Let (VarDef ElimHole Hole) Hole) of

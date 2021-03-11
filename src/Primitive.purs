@@ -145,11 +145,12 @@ binary op = Primitive $ PrimOp {
 apply :: PrimOp -> Val 𝔹 -> Val 𝔹
 apply (PrimOp { op }) = op
 
--- φ acts as a "trace" of the original operator.
-apply_fwd :: Val 𝔹 × PrimOp -> Val 𝔹 × Val 𝔹 -> Val 𝔹
-apply_fwd (Hole × PrimOp { op_fwd }) (v × u)          = op_fwd (v × u)
-apply_fwd (Primitive (PrimOp { op_fwd }) × _) (v × u) = op_fwd (v × u)
-apply_fwd _ _                                         = error absurd
+-- φ and u are the original operator and operand.
+apply_fwd :: PrimOp -> Val 𝔹 × Val 𝔹 -> Val 𝔹
+apply_fwd (PrimOp { op_fwd }) (v × u) = op_fwd (v × u)
+
+apply_bwd :: Val 𝔹 -> PrimOp -> Val 𝔹 -> Val 𝔹
+apply_bwd v φ u = u -- TODO
 
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends = first

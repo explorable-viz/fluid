@@ -12,6 +12,7 @@ import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, botOf, (∨))
+import Primitive (apply_bwd)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, nonEmpty, successful)
 import Val (Env, Val, getα, setα)
 import Val (Val(..)) as V
@@ -126,9 +127,9 @@ eval_bwd v (T.App (t1 × _ × δ × _) t2 w t3) =
        ρ'' × e1 × α'' = eval_bwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
    (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
 eval_bwd v (T.AppPrim (t1 × φ) (t2 × v2)) =
-   -- TODO: plug in bwd slicing
    let ρ × e × α = eval_bwd (V.Primitive φ) t1
-       ρ' × e' × α' = eval_bwd v2 t2 in
+       v2' = apply_bwd v φ v2
+       ρ' × e' × α' = eval_bwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
 eval_bwd v (T.AppConstr (t1 × c × vs) (t2 × v2)) =
    let β = getα v
