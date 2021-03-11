@@ -19,8 +19,7 @@ import EvalFwd (eval_fwd)
 import Lattice (𝔹, botOf)
 import Module (openDatasetAs, openWithDefaultImports)
 import Pretty (pretty, render)
-import Primitive (primitives)
-import SExpr (Expr(..)) as S
+import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..))
 
@@ -44,14 +43,14 @@ test' name setup expected =
          let e = successful (desugarFwd s)
          case successful (eval ρ e) of
             t × v -> do
---               unless (isGraphical v) $
---                  render (pretty v) `shouldEqual` expected
+               unless (isGraphical v) $
+                  render (pretty v) `shouldEqual` expected
                when slicing do
                   let ρ' × e' × α'  = eval_bwd v t
                       s' = desugarBwd e' s
                       e'' = successful (desugarFwd s')
                       _ = eval_fwd (botOf ρ') E.Hole true t
-                      v' = eval_fwd ρ' e true t
+                      v' = eval_fwd ρ' e'' true t
                   unless (isGraphical v) $
                      render (pretty v') `shouldEqual` expected
 
@@ -67,7 +66,6 @@ testWithDataset dataset file =
 main :: Effect Unit
 main = do
    -- desugaring
-{-
    run $ test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
    run $ test "desugar/list-comp-2" "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9, 9, 12, 12, 12, 10, 10, 10, 8, 8, 8]"
    run $ test "desugar/list-comp-3" "[9, 8]"
@@ -93,10 +91,8 @@ main = do
    run $ test "pattern-match" "4"
    run $ test "reverse" "[2, 1]"
    run $ test "zipWith" "[[10], [12], [20]]"
--}
    -- slicing
-   run $ test' "slicing/arithmetic" (pure (primitives × S.BinaryApp (S.Int true 0) "*" (S.Int false 5))) "0_true"
-{-
+   run $ test "slicing/arithmetic" ""
    -- graphics
    run $ testWithDataset "renewables-restricted" "graphics/background"
    run $ testWithDataset "renewables-restricted" "graphics/grouped-bar-chart"
@@ -104,4 +100,3 @@ main = do
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
    -- scratchpad
    run $ test "temp" "(1, (3, 3))"
--}
