@@ -95,7 +95,7 @@ main = do
    run $ test "zipWith" "[[10], [12], [20]]"
 -}
    -- slicing
-   run $ test' "slicing/arithmetic" (pure (primitives × S.BinaryApp (S.Int false 0) "*" (S.Int true 5))) "0_true"
+   run $ test' "slicing/arithmetic" (pure (primitives × S.BinaryApp (S.Int true 0) "*" (S.Int false 5))) "0_true"
 {-
    -- graphics
    run $ testWithDataset "renewables-restricted" "graphics/background"
