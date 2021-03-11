@@ -175,7 +175,7 @@ instance prettyElim :: (Show a, BoundedJoinSemilattice a) => Pretty (Elim a) whe
 
 instance prettyVal :: (Show a, BoundedJoinSemilattice a) => Pretty (Val a) where
    pretty V.Hole                       = hole
-   pretty (V.Int α n)                  = text (show n <> "_" <> show α)
+   pretty (V.Int _ n)                  = text (show n)
    pretty (V.Float _ n)                = text (show n)
    pretty (V.Str _ str)                = text (show str)
    pretty u@(V.Constr _ c vs)
@@ -205,7 +205,7 @@ instance toListSExpr :: BoundedJoinSemilattice a => ToList (Expr a)  where
    toList (Constr _ c Nil) | c == cNil               = Nil
    toList (ListEmpty _)                              = Nil
    toList (ListNonEmpty _ e l)                       = e : listRestToExprs l
-   toList e                                          = error absurd
+   toList _                                          = error absurd
 
 instance prettySExpr :: BoundedJoinSemilattice a => Pretty (Expr a) where
    pretty (Var x)                   = text x
