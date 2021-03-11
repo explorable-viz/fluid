@@ -8,6 +8,7 @@ import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
+import Data.Tuple (fst)
 import Debug.Trace (trace)
 import Math (log, pow)
 import Text.Parsing.Parser.Expr (Assoc(..))
@@ -127,11 +128,31 @@ instance toPair :: To (Val Boolean × Val Boolean) where
 unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
 unary op = Primitive (PrimOp (from >>> op >>> to))
 
+unary_fwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹 × Val 𝔹 -> Val 𝔹
+unary_fwd op (v × u) = to (op (from_fwd (v × fst (from u))))
+
 binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
 binary op = Primitive (PrimOp (from >>> op >>> unary))
 
-unary_fwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹 × Val 𝔹 -> Val 𝔹
-unary_fwd op (v × u) = to (op (from_fwd (v × u'))) where u' × b = from u
+type PrimOp2 = {
+   op :: Val 𝔹 -> Val 𝔹,
+   op_fwd :: Val 𝔹 × Val 𝔹 -> Val 𝔹
+}
+
+primOp :: PrimOp2 -> Val 𝔹
+primOp = error "todo"
+
+unary2 :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> PrimOp2
+unary2 op = {
+   op: from >>> op >>> to,
+   op_fwd: \(v × u) -> to (op (from_fwd (v × fst (from u))))
+}
+
+binary2 :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> PrimOp2
+binary2 op = {
+   op: \v -> primOp (unary2 (op (from v))),
+   op_fwd: \(v × u) -> primOp (unary2 (op (from_fwd (v × fst (from u)))))
+}
 
 apply :: PrimOp -> Val 𝔹 -> Val 𝔹
 apply (PrimOp op) = op
