@@ -31,12 +31,6 @@ newtype PrimOp = PrimOp {
    op_fwd :: Val 𝔹 × Val 𝔹 -> Val 𝔹 -- will be provided with the original (non-hole) argument
 }
 
-instance showVal :: Show (Val Boolean) where
-   show (Int α n)    = show n <> "_" <> show α
-   show (Float α n)  = show n <> "_" <> show α
-   show (Str α str)  = show str <> "_" <> show α
-   show _            = error "todo"
-
 getα :: Val 𝔹 -> 𝔹
 getα Hole            = false
 getα (Int α _)       = α
