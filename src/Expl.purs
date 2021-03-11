@@ -5,7 +5,7 @@ import Bindings (Var)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Util (type (×))
-import Val2 (Env, PrimOp, Val)
+import Val (Env, PrimOp, Val)
 
 data VarDef a = VarDef (Match a) (Expl a)
 

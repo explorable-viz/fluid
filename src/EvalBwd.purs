@@ -13,8 +13,8 @@ import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, botOf, (∨))
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, nonEmpty, successful)
-import Val2 (Env, Val, getα, setα)
-import Val2 (Val(..)) as V
+import Val (Env, Val, getα, setα)
+import Val (Val(..)) as V
 
 unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
 unmatch (ρ :+: x ↦ v) (MatchVar x') = ρ × (Empty :+: (x ≜ x') ↦ v)

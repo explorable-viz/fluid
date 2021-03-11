@@ -15,10 +15,10 @@ import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr)
 import Lattice (𝔹, checkConsistent)
 import Pretty (pretty, render)
-import Primitive2 (apply, from)
+import Primitive (apply, from)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
-import Val2 (Env, Val)
-import Val2 (Val(..)) as V
+import Val (Env, Val)
+import Val (Val(..)) as V
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match _ ElimHole = error absurd

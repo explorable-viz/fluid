@@ -11,10 +11,10 @@ import Expl (Expl, Match)
 import Expl (Expl(..), Match(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
-import Primitive2 (apply_fwd, from)
+import Primitive (apply_fwd, from)
 import Util (type (×), (×), (!), absurd, error, mustLookup, successful)
-import Val2 (Env, Val)
-import Val2 (Val(..)) as V
+import Val (Env, Val)
+import Val (Val(..)) as V
 
 match_fwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 match_fwd v σ (T.MatchVar x) =

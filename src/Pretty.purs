@@ -18,8 +18,8 @@ import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match)
 import Lattice (class BoundedJoinSemilattice)
 import Util (Endo, type (×), (×), absurd, error, intersperse)
-import Val2 (PrimOp, Val)
-import Val2 (Val(..)) as V
+import Val (PrimOp, Val)
+import Val (Val(..)) as V
 
 infixl 5 beside as :<>:
 

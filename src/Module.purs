@@ -13,10 +13,10 @@ import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import Lattice (𝔹)
 import Parse (module_, program)
-import Primitive2 (primitives)
+import Primitive (primitives)
 import Util (type (×), (×), error, successful)
 import Util.Parse (SParser)
-import Val2 (Env)
+import Val (Env)
 
 -- For Wrattler integration. Should not end in "/".
 resourceServerUrl :: String

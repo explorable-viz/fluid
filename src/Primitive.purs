@@ -6,18 +6,19 @@ import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
-import Data.Tuple (snd)
+import Data.Profunctor.Choice ((|||))
+import Data.Profunctor.Strong (first)
+import Data.Tuple (fst)
 import Debug.Trace (trace)
 import Math (log, pow)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
-import DataType (cCons, cTrue, cFalse, cPair)
-import Lattice (𝔹, (∧), expand)
-import Util (type (×), (×), type (+), (!), absurd, error)
-import Val (Env, Primitive(..), Val, getα, setα)
-import Val (Val(..)) as V
+import DataType (cCons, cFalse, cPair, cTrue)
+import Lattice (𝔹, (∧))
+import Util (type (×), (×), type (+), (!), absurd, dup, error, unsafeUpdateAt)
+import Val (MatrixRep, PrimOp(..), Val(..), getα, setα)
 
--- name in user land, precedence 0 to 9 (similar to Haskell 98), associativity
+-- name in user land, precedence 0 from 9 (similar from Haskell 98), associativity
 type OpDef = {
    op    :: Var,
    prec  :: Int,
@@ -46,170 +47,204 @@ opDefs = fromFoldable [
    opDef ">="  4 AssocLeft
 ]
 
-class ToList a where
-   toList :: a -> List a
-
-class FromList a where
-   fromList :: List a -> a
-
--- Enforce primitive argument types.
-class To a where
-   to :: Val 𝔹 -> a
-
 class From a where
-   from :: a -> Val 𝔹
+   from :: Val 𝔹 -> a × 𝔹          -- only defined for non-holes
+   expand :: a -> Val 𝔹            -- use just enough information from supplied value to construct an argument to 'from'
 
-instance toInt :: To Int where
-   to (V.Int _ n) = n
-   to _           = error "Int expected"
+from_fwd :: forall a . From a => Val 𝔹 × a -> a × 𝔹
+from_fwd (Hole × v') = from (expand v')
+from_fwd (v × _)     = from v
+
+class To a where
+   to :: a × 𝔹 -> Val 𝔹
+
+-- Only needed for debugLog
+instance fromVal :: From (Val Boolean) where
+   from v = v × getα v
+   expand = identity
+
+instance toVal :: To (Val Boolean) where
+   to (v × α) = setα α v
 
 instance fromInt :: From Int where
-   from = V.Int false
+   from (Int α n)   = n × α
+   from _           = error "Int expected"
 
-instance fromIntOp :: From a => From (Int -> a) where
-   from op = V.Primitive false (IntOp (op >>> from))
+   expand = Int false
 
-instance toNumber :: To Number where
-   to (V.Float _ n)  = n
-   to _              = error "Float expected"
+instance toInt :: To Int where
+   to (n × α) = Int α n
 
 instance fromNumber :: From Number where
-   from = V.Float false
+   from (Float α n) = n × α
+   from _           = error "Float expected"
 
-instance fromNumberOp :: From a => From (Number -> a) where
-   from op = V.Primitive false (NumberOp (op >>> from))
+   expand = Float false
 
-instance toString :: To String where
-   to (V.Str _ str)  = str
-   to _              = error "Str expected"
+instance toNumber :: To Number where
+   to (n × α) = Float α n
 
 instance fromString :: From String where
-   from = V.Str false
+   from (Str α str) = str × α
+   from _           = error "Str expected"
 
-instance fromStringOp :: From a => From (String -> a) where
-   from op = V.Primitive false (StringOp (op >>> from))
+   expand = Str false
 
-instance toIntOrNumber :: To (Either Int Number) where
-   to (V.Int _ n)    = Left n
-   to (V.Float _ n)  = Right n
-   to _              = error "Int or Float expected"
+instance toString :: To String where
+   to (str × α) = Str α str
 
-instance fromIntOrNumber :: From (Either Int Number) where
-   from (Left n)   = V.Int false n
-   from (Right n)  = V.Float false n
+instance fromIntOrNumber :: From (Int + Number) where
+   from (Int α n)    = Left n × α
+   from (Float α n)  = Right n × α
+   from _            = error "Int or Float expected"
 
-instance fromIntOrNumberOp :: From a => From (Int + Number -> a) where
-   from op = V.Primitive false (IntOrNumberOp (op >>> from))
+   expand (Left n)  = Int false n
+   expand (Right n) = Float false n
 
-instance toIntOrNumberOrString :: To (Either (Either Int Number) String) where
-   to (V.Int _ n)    = Left (Left n)
-   to (V.Float _ n)  = Left (Right n)
-   to (V.Str _ n)    = Right n
-   to _              = error "Int, Float or Str expected"
+instance toIntOrNumber :: To (Int + Number) where
+   to (Left n × α)    = Int α n
+   to (Right n × α)   = Float α n
 
-instance fromIntOrNumberOrStringOp :: From a => From (Int + Number + String -> a) where
-   from op = V.Primitive false (IntOrNumberOrStringOp (op >>> from))
+instance fromIntOrNumberOrString :: From (Either (Either Int Number) String) where
+   from (Int α n)   = Left (Left n) × α
+   from (Float α n) = Left (Right n) × α
+   from (Str α n)   = Right n × α
+   from _           = error "Int, Float or Str expected"
 
-instance toArray :: To (Array (Array (Val Boolean)) × (Int × Int)) where
-   to (V.Matrix _ vss ij)  = vss × ij
-   to _                    = error "Matrix expected"
+   expand (Left (Left n))    = Int false n
+   expand (Left (Right n))   = Float false n
+   expand (Right str)        = Str false str
 
-instance fromArray :: From a => From (Array (Array (Val Boolean)) × (Int × Int) -> a) where
-   from op = V.Primitive false (ArrayOp (op >>> from))
+instance fromIntAndInt :: From (Int × Boolean × (Int × Boolean)) where
+   from (Constr α c (v : v' : Nil)) | c == cPair  = from v × from v' × α
+   from _                                         = error "Pair expected"
 
-instance toIntPair :: To (Int × Int) where
-   to (V.Constr _ c (x : y : Nil)) | c == cPair = to x × to y
-   to _                                         = error "Pair expected"
+   expand _ = Constr false cPair (Hole : Hole : Nil)
 
-instance fromIntPair :: From (Int × Int) where
-   from (x × y) = V.Constr false cPair (from x : from y : Nil)
+instance fromMatrixRep :: From (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
+   from (Matrix α r) = r × α
+   from _            = error "Matrix expected"
 
-instance fromIntPairOp :: From c => From (Int × Int -> c) where
-   from op = V.Primitive false (IntAndIntOp (op >>> from))
+   expand (vss × (i × _) × (j × _)) = Matrix false (((<$>) (const Hole) <$> vss) × (i × false) × (j × false))
 
-instance fromVal :: From (Val Boolean) where
-   from = identity
+instance toPair :: To (Val Boolean × Val Boolean) where
+   to (v × v' × α) = Constr α cPair (v : v' : Nil)
 
-instance fromValOp :: From a => From (Val Boolean -> a) where
-   from op = V.Primitive false (ValOp (op >>> from))
+unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
+unary op = Primitive $ PrimOp {
+   op: from >>> op >>> to,
+   op_fwd: \(v × u) -> to (op (from_fwd (v × fst (from u))))
+}
 
-instance fromBoolean :: From Boolean where
-   from b = if b then true_ else false_
+binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
+binary op = Primitive $ PrimOp {
+   op: \v -> unary (op (from v)),
+   op_fwd: \(v × u) -> unary (op (from_fwd (v × fst (from u))))
+}
 
-true_ :: Val 𝔹
-true_ = V.Constr false cTrue Nil
-
-false_ :: Val 𝔹
-false_ = V.Constr false cFalse Nil
-
-apply :: Primitive -> Val 𝔹 -> Val 𝔹
-apply (ValOp op)                 = op
-apply (IntOp op)                 = to >>> op
-apply (NumberOp op)              = to >>> op
-apply (IntOrNumberOp op)         = to >>> op
-apply (StringOp op)              = to >>> op
-apply (IntOrNumberOrStringOp op) = to >>> op
-apply (IntAndIntOp op)           = to >>> op
-apply (ArrayOp op)               = to >>> op
+apply :: PrimOp -> Val 𝔹 -> Val 𝔹
+apply (PrimOp { op }) = op
 
 -- φ acts as a "trace" of the original operator.
-apply_fwd :: Val 𝔹 -> Primitive -> Val 𝔹 -> Val 𝔹
-apply_fwd v_φ φ V.Hole = V.Hole -- more convenient than returning equivalent explicit value
-apply_fwd v_φ φ v =
-   case expand v_φ (V.Primitive false φ) of
-      V.Primitive α _ ->
-         case apply φ v of
-            V.Hole -> error absurd
-            u -> setα (α ∧ getα v) u
-      _ -> error absurd
+apply_fwd :: Val 𝔹 × PrimOp -> Val 𝔹 × Val 𝔹 -> Val 𝔹
+apply_fwd (Hole × PrimOp { op_fwd }) (v × u)          = op_fwd (v × u)
+apply_fwd (Primitive (PrimOp { op_fwd }) × _) (v × u) = op_fwd (v × u)
+apply_fwd _ _                                         = error absurd
 
-primitives :: Env 𝔹
-primitives = foldl (:+:) Empty [
-   -- some signatures are specified for clarity or to drive instance resolution
-   -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
-   "+"         ↦ from   ((+) `union2` (+)),
-   "-"         ↦ from   ((-) `union2` (-)),
-   "*"         ↦ from   ((*) `union2` (*)),
-   "**"        ↦ from   ((\x y -> toNumber x `pow` toNumber y) `union2'` pow),
-   "/"         ↦ from   ((\x y -> toNumber x / toNumber y)  `union2'` (/)),
-   "=="        ↦ from   ((==) `union2'` (==) `unionDisj` (==)),
-   "/="        ↦ from   ((/=) `union2'` (/=) `unionDisj` (==)),
-   "<"         ↦ from   ((<)  `union2'` (<)  `unionDisj` (==)),
-   ">"         ↦ from   ((>)  `union2'` (>)  `unionDisj` (==)),
-   "<="        ↦ from   ((<=) `union2'` (<=) `unionDisj` (==)),
-   ">="        ↦ from   ((>=) `union2'` (>=) `unionDisj` (==)),
-   "++"        ↦ from   ((<>) :: String -> String -> String),
-   ":"         ↦ V.Constr false cCons Nil,
-   "!"         ↦ from   matrixLookup,
-   "ceiling"   ↦ from   ceil,
-   "debugLog"  ↦ from   debugLog,
-   "dims"      ↦ from   (snd :: Array (Array (Val 𝔹)) × (Int × Int) -> Int × Int),
-   "div"       ↦ from   (div :: Int -> Int -> Int),
-   "error"     ↦ from   (error :: String -> Boolean),
-   "floor"     ↦ from   floor,
-   "log"       ↦ from   ((toNumber >>> log) `union` log),
-   "numToStr"  ↦ from   (show `union` show)
-]
+depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
+depends = first
 
-class DependsBinary a b c where
-   dependsNonZero :: (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
+depends_bwd :: 𝔹 -> 𝔹
+depends_bwd = identity
 
 dependsBoth :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
 dependsBoth op (x × α) (y × β) = x `op` y × (α ∧ β)
 
-instance dependsNonZeroIntInt :: DependsBinary Int Int a where
-   dependsNonZero op (x × α) (y × β) =
-      x `op` y × if x == 0 then α else if y == 0 then β else α ∧ β
+dependsBoth_bwd :: 𝔹 -> 𝔹 × 𝔹
+dependsBoth_bwd = dup
 
-instance dependsNonZeroNumberNumber :: DependsBinary Number Number a where
-   dependsNonZero op (x × α) (y × β) =
-      x `op` y × if x == 0.0 then α else if y == 0.0 then β else α ∧ β
+dependsNeither :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
+dependsNeither op (x × _) (y × _) = x `op` y × true
+
+dependsNeither_bwd :: 𝔹 -> 𝔹 × 𝔹
+dependsNeither_bwd _ = dup false
+
+class IsZero a where
+   isZero :: a -> Boolean
+
+instance isZeroInt :: IsZero Int where
+   isZero = ((==) 0)
+
+instance isZeroNumber :: IsZero Number where
+   isZero = ((==) 0.0)
+
+instance isZeroEither :: (IsZero a, IsZero b) => IsZero (a + b) where
+   isZero = isZero ||| isZero
+
+-- If both are zero, we depend only on the first.
+dependsNonZero :: forall a b . IsZero a => (a -> a -> b) -> a × 𝔹 -> a × 𝔹 -> b × 𝔹
+dependsNonZero op (x × α) (y × β)
+   | isZero x  = x `op` y × α
+   | isZero y  = x `op` y × β
+   | otherwise = x `op` y × (α ∧ β)
+
+dependsNonZero_bwd :: forall a b . IsZero a => b × 𝔹 -> (a × a) -> 𝔹 × 𝔹
+dependsNonZero_bwd (_ × α) (x × y)
+   | isZero x  = α × false
+   | isZero y  = false × α
+   | otherwise = α × α
+
+instance fromBoolean :: To Boolean where
+   to (true × α)   = Constr α cTrue Nil
+   to (false × α)  = Constr α cFalse Nil
+
+primitives :: Bindings Val 𝔹
+primitives = foldl (:+:) Empty [
+   -- some signatures are specified for clarity or from drive instance resolution
+   -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
+   ":"         ↦ Constr false cCons Nil,
+   "+"         ↦ binary (dependsBoth ((+) `union2` (+))),
+   "-"         ↦ binary (dependsBoth ((-) `union2` (-))),
+   "*"         ↦ binary (dependsNonZero ((*) `union2` (*))),
+   "**"        ↦ binary (dependsNonZero ((\x y -> toNumber x `pow` toNumber y) `union2'` pow)),
+   "/"         ↦ binary (dependsNonZero ((\x y -> toNumber x / toNumber y)  `union2'` (/))),
+   "=="        ↦ binary (dependsBoth ((==) `union2'` (==) `unionDisj` (==))),
+   "/="        ↦ binary (dependsBoth ((/=) `union2'` (/=) `unionDisj` (==))),
+   "<"         ↦ binary (dependsBoth ((<)  `union2'` (<)  `unionDisj` (==))),
+   ">"         ↦ binary (dependsBoth ((>)  `union2'` (>)  `unionDisj` (==))),
+   "<="        ↦ binary (dependsBoth ((<=) `union2'` (<=) `unionDisj` (==))),
+   ">="        ↦ binary (dependsBoth ((>=) `union2'` (>=) `unionDisj` (==))),
+   "++"        ↦ binary (dependsBoth ((<>) :: String -> String -> String)),
+   "!"         ↦ binary (dependsNeither matrixLookup),
+   "ceiling"   ↦ unary (depends ceil),
+   "debugLog"  ↦ unary (depends debugLog),
+   "dims"      ↦ unary (depends dims),
+   "div"       ↦ binary (dependsNonZero (div :: Int -> Int -> Int)),
+   "error"     ↦ unary (depends  (error :: String -> Boolean)),
+   "floor"     ↦ unary (depends floor),
+   "log"       ↦ unary (depends ((toNumber >>> log) `union` log)),
+   "numToStr"  ↦ unary (depends (show `union` show))
+]
 
 debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)
 
-matrixLookup :: Array (Array (Val 𝔹)) × (Int × Int) -> Int × Int -> Val 𝔹
-matrixLookup (vss × _) (i × j) = vss!(i - 1)!(j - 1)
+dims :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
+dims (_ × (i × α) × (j × β)) = Int α i × Int β j
+
+dims_bwd :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
+dims_bwd (Int α i' × Int β j') (vss × (i × _) × (j × _)) | i == i' && j == j' = vss × (i × α) × (j × β)
+dims_bwd _ _                                                                  = error absurd
+
+matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
+matrixLookup (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
+
+matrixLookup_bwd :: Val 𝔹 -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹) -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹)
+matrixLookup_bwd v ((vss × (i' × _) × (j' × _)) × (i × _) × (j × _)) =
+   vss'' × (i' × false) × (j' × false) × (i × false) × (j × false)
+   where vss'  = (((<$>) (const Hole)) <$> vss)
+         vs_i  = vss'!(i - 1)
+         vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) (vs_i!(j - 1)) vs_i) vss'
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
