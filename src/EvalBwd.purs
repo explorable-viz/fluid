@@ -126,9 +126,9 @@ eval_bwd v (T.App (t × _ × δ × _) t' w t'') =
        ρ'' × e'' × α'' = eval_bwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t in
    (ρ' ∨ ρ'') × App e'' e' × (α' ∨ α'')
 eval_bwd v (T.AppPrim (t1 × φ) (t2 × v2)) =
-   let β = getα v
-       ρ × e × α = eval_bwd (V.Primitive φ) t1
-       ρ' × e' × α' = eval_bwd (setα β v2) t2 in
+   -- TODO: plug in bwd slicing
+   let ρ × e × α = eval_bwd (V.Primitive φ) t1
+       ρ' × e' × α' = eval_bwd v2 t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
 eval_bwd v (T.AppConstr (t1 × c × vs) (t2 × v2)) =
    let β = getα v

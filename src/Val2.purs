@@ -35,18 +35,24 @@ instance showVal :: Show (Val Boolean) where
    show _            = error "todo"
 
 getα :: Val 𝔹 -> 𝔹
+getα Hole            = false
 getα (Int α _)       = α
 getα (Float α _)     = α
 getα (Str α _)       = α
 getα (Constr α _ _)  = α
-getα _         = error absurd
+getα (Matrix α _)    = α
+getα (Primitive _)   = error absurd
+getα (Closure _ _ _) = error absurd
 
 setα :: 𝔹 -> Endo (Val 𝔹)
+setα α Hole             = error absurd
 setα α (Int _ n)        = Int α n
 setα α (Float _ n)      = Float α n
 setα α (Str _ str)      = Str α str
 setα α (Constr _ c vs)  = Constr α c vs
-setα _ _                = error absurd
+setα α (Matrix _ r)     = Matrix α r
+setα _ (Primitive _)    = error absurd
+setα _ (Closure _ _ _)  = error absurd
 
 type Env = Bindings Val
 

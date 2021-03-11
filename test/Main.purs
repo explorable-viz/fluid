@@ -22,7 +22,6 @@ import Pretty (pretty, render)
 import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val2 (Env, Val(..))
-import Primitive2 (testPrim)
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -94,11 +93,11 @@ main = do
    run $ test "reverse" "[2, 1]"
    run $ test "zipWith" "[[10], [12], [20]]"
    -- graphics
+-}
+
    run $ testWithDataset "renewables-restricted" "graphics/background"
    run $ testWithDataset "renewables-restricted" "graphics/grouped-bar-chart"
    run $ testWithDataset "renewables-restricted" "graphics/line-chart"
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
    -- scratchpad
--}
    run $ test "temp" "(1, (3, 3))"
-   run $ show (testPrim) `shouldEqual` "0_false"

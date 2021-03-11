@@ -13,7 +13,7 @@ import Math (log, pow)
 import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
-import Lattice (𝔹, (∧), expand)
+import Lattice (𝔹, (∧))
 import Util (type (×), (×), type (+), (!), absurd, dup, error, unsafeUpdateAt)
 import Val2 (MatrixRep, PrimOp(..), Val(..), setα)
 
@@ -109,7 +109,7 @@ instance fromIntAndInt :: From (Int × Boolean × (Int × Boolean)) where
    from (Constr α c (v : v' : Nil)) | c == cPair  = from v × from v' × α
    from _                                         = error "Pair expected"
 
-   expand' (nβ × mβ') = Constr false cPair (Hole : Hole : Nil)
+   expand' ((n × _) × (m × _)) = Constr false cPair (Int false n : Int false m : Nil)
 
 instance fromMatrixRep :: From (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
    from (Matrix α (vss × iβ × jβ')) = vss × iβ × jβ' × α
@@ -131,9 +131,9 @@ apply (PrimOp op) = op
 
 -- φ acts as a "trace" of the original operator.
 apply_fwd :: Val 𝔹 -> PrimOp -> Val 𝔹 -> Val 𝔹
-apply_fwd Hole φ            = apply φ
-apply_fwd (Primitive φ) _   = apply φ
-apply_fwd _ _               = error absurd
+apply_fwd Hole φ v          = apply φ v
+apply_fwd (Primitive φ) _ v = apply φ v
+apply_fwd _ _ _             = error absurd
 
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends = first
@@ -151,9 +151,8 @@ dependsNeither :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c ×
 dependsNeither op (x × _) (y × _) = x `op` y × true
 
 dependsNeither_bwd :: 𝔹 -> 𝔹 × 𝔹
-dependsNeither_bwd _ = false × false
+dependsNeither_bwd _ = dup false
 
--- Bit of boiler plate for 3 kinds of numeric operation. Should be able to improve this.
 class IsZero a where
    isZero :: a -> Boolean
 
