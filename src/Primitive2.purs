@@ -128,9 +128,6 @@ instance toPair :: To (Val Boolean × Val Boolean) where
 unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
 unary op = Primitive (PrimOp (from >>> op >>> to))
 
-unary_fwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹 × Val 𝔹 -> Val 𝔹
-unary_fwd op (v × u) = to (op (from_fwd (v × fst (from u))))
-
 binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
 binary op = Primitive (PrimOp (from >>> op >>> unary))
 
