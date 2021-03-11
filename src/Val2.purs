@@ -26,7 +26,10 @@ data Val a =
    Primitive PrimOp |
    Closure (Env a) (RecDefs a) (Elim a)
 
-data PrimOp = PrimOp (Val 𝔹 -> Val 𝔹)
+newtype PrimOp = PrimOp {
+   op :: Val 𝔹 -> Val 𝔹,
+   op_fwd :: Val 𝔹 × Val 𝔹 -> Val 𝔹 -- will be provided with the (non-hole) original argument
+}
 
 instance showVal :: Show (Val Boolean) where
    show (Int α n)    = show n <> "_" <> show α
@@ -41,8 +44,8 @@ getα (Float α _)     = α
 getα (Str α _)       = α
 getα (Constr α _ _)  = α
 getα (Matrix α _)    = α
-getα (Primitive _)   = error absurd
-getα (Closure _ _ _) = error absurd
+getα (Primitive _)   = true
+getα (Closure _ _ _) = true
 
 setα :: 𝔹 -> Endo (Val 𝔹)
 setα α Hole             = error absurd

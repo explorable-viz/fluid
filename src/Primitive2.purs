@@ -16,7 +16,7 @@ import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
 import Util (type (×), (×), type (+), (!), absurd, dup, error, unsafeUpdateAt)
-import Val2 (MatrixRep, PrimOp(..), Val(..), setα)
+import Val2 (MatrixRep, PrimOp(..), Val(..), getα, setα)
 
 -- name in user land, precedence 0 from 9 (similar from Haskell 98), associativity
 type OpDef = {
@@ -57,6 +57,11 @@ from_fwd (v × _)     = from v
 
 class To a where
    to :: a × 𝔹 -> Val 𝔹
+
+-- Only needed for debugLog
+instance fromVal :: From (Val Boolean) where
+   from v = v × getα v
+   expand = identity
 
 instance toVal :: To (Val Boolean) where
    to (v × α) = setα α v
@@ -126,39 +131,25 @@ instance toPair :: To (Val Boolean × Val Boolean) where
    to (v × v' × α) = Constr α cPair (v : v' : Nil)
 
 unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
-unary op = Primitive (PrimOp (from >>> op >>> to))
-
-binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
-binary op = Primitive (PrimOp (from >>> op >>> unary))
-
-type PrimOp2 = {
-   op :: Val 𝔹 -> Val 𝔹,
-   op_fwd :: Val 𝔹 × Val 𝔹 -> Val 𝔹
-}
-
-primOp :: PrimOp2 -> Val 𝔹
-primOp = error "todo"
-
-unary2 :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> PrimOp2
-unary2 op = {
+unary op = Primitive $ PrimOp {
    op: from >>> op >>> to,
    op_fwd: \(v × u) -> to (op (from_fwd (v × fst (from u))))
 }
 
-binary2 :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> PrimOp2
-binary2 op = {
-   op: \v -> primOp (unary2 (op (from v))),
-   op_fwd: \(v × u) -> primOp (unary2 (op (from_fwd (v × fst (from u)))))
+binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
+binary op = Primitive $ PrimOp {
+   op: \v -> unary (op (from v)),
+   op_fwd: \(v × u) -> unary (op (from_fwd (v × fst (from u))))
 }
 
 apply :: PrimOp -> Val 𝔹 -> Val 𝔹
-apply (PrimOp op) = op
+apply (PrimOp { op }) = op
 
 -- φ acts as a "trace" of the original operator.
-apply_fwd :: Val 𝔹 -> PrimOp -> Val 𝔹 -> Val 𝔹
-apply_fwd Hole φ v          = apply φ v
-apply_fwd (Primitive φ) _ v = apply φ v
-apply_fwd _ _ _             = error absurd
+apply_fwd :: Val 𝔹 × PrimOp -> Val 𝔹 × Val 𝔹 -> Val 𝔹
+apply_fwd (Hole × PrimOp { op_fwd }) (v × u)          = op_fwd (v × u)
+apply_fwd (Primitive (PrimOp { op_fwd }) × _) (v × u) = op_fwd (v × u)
+apply_fwd _ _                                         = error absurd
 
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends = first
@@ -226,7 +217,7 @@ primitives = foldl (:+:) Empty [
    "++"        ↦ binary (dependsBoth ((<>) :: String -> String -> String)),
    "!"         ↦ binary (dependsNeither matrixLookup),
    "ceiling"   ↦ unary (depends ceil),
-   "debugLog"  ↦ Primitive (PrimOp debugLog),
+   "debugLog"  ↦ unary (depends debugLog),
    "dims"      ↦ unary (depends dims),
    "div"       ↦ binary (dependsNonZero (div :: Int -> Int -> Int)),
    "error"     ↦ unary (depends  (error :: String -> Boolean)),
