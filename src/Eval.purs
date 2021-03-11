@@ -9,29 +9,29 @@ import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Traversable (sequence, traverse)
 import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
-import DataType (Ctr, arity, checkDataType, cPair, dataTypeForKeys)
+import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr)
-import Lattice (𝔹)
+import Lattice (𝔹, checkConsistent)
 import Pretty (pretty, render)
-import Primitive (apply, to)
+import Primitive (apply, from)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Val (Env, Val)
 import Val (Val(..)) as V
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
-match _ ElimHole = error "todo"
+match _ ElimHole = error absurd
 match v (ElimVar x κ)
    | x == varAnon = pure (Empty × κ × MatchVarAnon v)
    | otherwise    = pure ((Empty :+: x ↦ v) × κ × MatchVar x)
-match (V.Constr _ c vs) (ElimConstr κs) = do
-   checkDataType "Pattern mismatch: " c κs
-   κ <- note ("Incomplete pattern: no branch for " <> show c) (lookup c κs)
+match (V.Constr _ c vs) (ElimConstr m) = do
+   checkConsistent "Pattern mismatch: " c (keys m)
+   κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
    ρ × κ' × ws <- matchArgs c vs κ
-   pure (ρ × κ' × MatchConstr c ws (keys κs \\ singleton c))
-match v (ElimConstr κs) = do
-   d <- dataTypeForKeys (keys κs) -- bit redundant with checkDataType, maybe merge branches
+   pure (ρ × κ' × MatchConstr c ws (keys m \\ singleton c))
+match v (ElimConstr m) = do
+   d <- dataTypeFor (keys m)
    report ("Pattern mismatch: " <> render (pretty v) <> " is not a constructor value, expected " <> show d)
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -56,7 +56,7 @@ checkArity c n = do
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ Hole          = error absurd
 eval ρ (Var x)       = (T.Var ρ x × _) <$> find x ρ
-eval ρ (Op op)       =  (T.Op ρ op × _) <$> find op ρ
+eval ρ (Op op)       = (T.Op ρ op × _) <$> find op ρ
 eval ρ (Int _ n)     = pure (T.Int ρ n × V.Int false n)
 eval ρ (Float _ n)   = pure (T.Float ρ n × V.Float false n)
 eval ρ (Str _ str)   = pure (T.Str ρ str × V.Str false str)
@@ -69,14 +69,14 @@ eval ρ (Matrix _ e (x × y) e') = do
    case v of
       V.Hole -> error absurd
       V.Constr _ c (v1 : v2 : Nil) | c == cPair -> do
-         let i' × j' = to v1 × to v2
+         let (i' × _) × (j' × _) = from v1 × from v2
          check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
          tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$> (sequence $ do
             i <- range 1 i'
             singleton $ sequence $ do
                j <- range 1 j'
                singleton (eval ((ρ :+: x ↦ V.Int false i) :+: y ↦ V.Int false j) e))
-         pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false vss (i' × j'))
+         pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false)))
       v' -> report ("Array dimensions must be pair of ints; got " <> render (pretty v'))
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
@@ -97,7 +97,7 @@ eval ρ (App e e') = do
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) (asExpr e'')
          pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
-      V.Primitive _ φ ->
+      V.Primitive φ ->
          pure (T.AppPrim (t × φ) (t' × v') × apply φ v')
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> show c)
@@ -109,10 +109,10 @@ eval ρ (BinaryApp e op e') = do
    v_φ <- find op ρ
    case v_φ of
       V.Hole -> error absurd
-      V.Primitive _ φ ->
+      V.Primitive φ ->
          case apply φ v of
             V.Hole -> error absurd
-            V.Primitive _ φ_v -> pure (T.BinaryApp (t × v) (op × φ) φ_v (t' × v') × apply φ_v v')
+            V.Primitive φ_v -> pure (T.BinaryApp (t × v) (op × φ) φ_v (t' × v') × apply φ_v v')
             _ -> report "Not a binary operator"
       _ -> report "Not an operator"
 eval ρ (Let (VarDef σ e) e') = do

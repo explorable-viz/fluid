@@ -11,7 +11,7 @@ import Expl (Expl, Match)
 import Expl (Expl(..), Match(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
-import Primitive (apply_fwd, to)
+import Primitive (apply_fwd, from)
 import Util (type (×), (×), (!), absurd, error, mustLookup, successful)
 import Val (Env, Val)
 import Val (Val(..)) as V
@@ -73,16 +73,15 @@ eval_fwd ρ e α' (T.Constr _ c ts) =
 eval_fwd ρ e α' (T.Matrix tss (x × y) _ t2) =
    case expand e (Matrix false Hole (x × y) Hole) of
       Matrix α e1 _ e2 ->
-         case eval_fwd ρ e2 α t2 of
-            V.Hole -> V.Hole
-            V.Constr _ c (v1 : v2 : Nil) | c == cPair ->
-               let i' × j' = to v1 × to v2
-                   vs = A.fromFoldable $ do
+         case expand (eval_fwd ρ e2 α t2) (V.Constr false cPair (V.Hole : V.Hole : Nil)) of
+            V.Constr _ c (v1 : v2 : Nil) ->
+               let (i' × β) × (j' × β') = from v1 × from v2
+                   vss = A.fromFoldable $ do
                         i <- range 1 i'
                         singleton $ A.fromFoldable $ do
                            j <- range 1 j'
                            singleton (eval_fwd ((ρ :+: x ↦ V.Int α i) :+: y ↦ V.Int α j) e1 α' (tss!(i - 1)!(j - 1)))
-               in V.Matrix (α ∧ α') vs (i' × j')
+               in V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
             _ -> error absurd
       _ -> error absurd
 eval_fwd ρ e α (T.LetRec δ t) =
@@ -106,10 +105,10 @@ eval_fwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
                eval_fwd (ρ1' <> ρ2 <> ρ3) (asExpr e3) β t3
             _ -> error absurd
       _ -> error absurd
-eval_fwd ρ e α (T.AppPrim (t1 × φ) (t2 × _)) =
+eval_fwd ρ e α (T.AppPrim (t1 × φ) (t2 × v2)) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
-         apply_fwd (eval_fwd ρ e1 α t1) φ (eval_fwd ρ e2 α t2)
+         apply_fwd (eval_fwd ρ e1 α t1 × φ) (eval_fwd ρ e2 α t2 × v2)
       _ -> error absurd
 eval_fwd ρ e α (T.AppConstr (t1 × c × vs) (t2 × _)) =
    case expand e (App Hole Hole) of
@@ -120,11 +119,11 @@ eval_fwd ρ e α (T.AppConstr (t1 × c × vs) (t2 × _)) =
                V.Constr (α ∧ α') c (vs' <> singleton v)
             _ -> error absurd
       _ -> error absurd
-eval_fwd ρ e α (T.BinaryApp (t1 × _) (op × φ) φ_v (t2 × _)) =
+eval_fwd ρ e α (T.BinaryApp (t1 × v1) (op × φ) φ_v (t2 × v2)) =
    case expand e (BinaryApp Hole op Hole) of
       BinaryApp e1 _ e2 ->
-         let v = eval_fwd ρ e1 α t1 in
-         apply_fwd (apply_fwd (successful (find op ρ)) φ v) φ_v (eval_fwd ρ e2 α t2)
+         apply_fwd (apply_fwd (successful (find op ρ) × φ) (eval_fwd ρ e1 α t1 × v1) × φ_v)
+                   (eval_fwd ρ e2 α t2 × v2)
       _ -> error absurd
 eval_fwd ρ e α (T.Let (T.VarDef w t1) t2) =
    case expand e (Let (VarDef ElimHole Hole) Hole) of

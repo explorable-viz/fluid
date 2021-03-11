@@ -3,7 +3,7 @@ module Util where
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Control.MonadPlus (class MonadPlus, empty)
-import Data.Array ((!!))
+import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), intercalate)
@@ -53,6 +53,10 @@ type MayFail a = String + a
 otherwise :: forall a . String -> Maybe a -> MayFail a
 otherwise msg Nothing  = Left msg
 otherwise _ (Just x)   = Right x
+
+ignoreMessage :: forall a . MayFail a -> Maybe a
+ignoreMessage (Left _)   = Nothing
+ignoreMessage (Right x)  = Just x
 
 report :: String -> forall a . MayFail a
 report = Left
@@ -108,10 +112,17 @@ type Endo a = a -> a
 
 -- version of this in Data.Array uses unsafePartial
 unsafeIndex :: forall a . Array a -> Int -> a
-unsafeIndex xs a = fromJust "Array index out of bounds" $ xs !! a
+unsafeIndex xs i = fromJust "Array index out of bounds" $ xs !! i
+
+unsafeUpdateAt :: forall a . Int -> a -> Endo (Array a)
+unsafeUpdateAt i x = updateAt i x >>> fromJust "Array index out of bounds"
 
 infixl 8 unsafeIndex as !
 
 nonEmpty :: forall a . List a -> NonEmptyList a
 nonEmpty Nil = error absurd
 nonEmpty (x : xs) = NonEmptyList (x :| xs)
+
+-- Also defined in Data.Profunctor.Monoidal, but perhaps not "standard library"
+dup :: forall a. a -> a × a
+dup x = x × x

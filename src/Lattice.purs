@@ -10,7 +10,7 @@ import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Util (type (×), (×), (≟), absurd, error, fromJust)
+import Util (MayFail, type (×), (×), (≟), absurd, error, fromJust, ignoreMessage)
 
 class JoinSemilattice a where
    join :: a -> a -> a
@@ -67,24 +67,27 @@ instance slicesList :: Slices t => Slices (List t) where
 instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
    botOf = (<$>) botOf
 
-instance joinSemilatticeMap :: (Ord k, Slices t) => JoinSemilattice (Map k t) where
+instance joinSemilatticeMap :: (Key k, Slices t) => JoinSemilattice (Map k t) where
    join = definedJoin
+
+class Ord k <= Key k where
+   checkConsistent :: String -> k -> List k -> MayFail Unit
 
 -- This is more general than we technically need for slicing, in that one can merge maps with distinct keys, as long as
 -- the values are mergable for overlapping keys. I think this is harmless, and it allows use to reuse the join operator
 -- here for merging branches of function definitions.
-instance slicesMap :: (Ord k, Slices t) => Slices (Map k t) where
+instance slicesMap :: (Key k, Slices t) => Slices (Map k t) where
    maybeJoin m m' =
       foldM maybeUpdate m (toUnfoldable m' :: List (k × t))
-      where
-      maybeUpdate :: Map k t -> k × t -> Maybe (Map k t)
-      maybeUpdate κs (c × κ) =
-         case lookup c κs of
-            Nothing -> do
-               -- report "Non-uniform patterns" here
-               pure (insert c κ κs)
-            Just κ' ->
-               update <$> (const <$> Just <$> maybeJoin κ' κ) <@> c <@> κs
+
+maybeUpdate :: forall k t . Key k => Slices t => Map k t -> k × t -> Maybe (Map k t)
+maybeUpdate m (k × v) =
+   case lookup k m of
+      Nothing -> do
+         ignoreMessage (checkConsistent "Inconsistent keys: " k (keys m)) -- TODO: report message
+         pure (insert k v m)
+      Just v' ->
+         update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
 
 instance joinSemilatticeArray :: Slices a => JoinSemilattice (Array a) where
    join = definedJoin

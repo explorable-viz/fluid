@@ -97,36 +97,38 @@ eval_bwd (V.Constr α c vs) (T.Constr ρ c' ts) | c == c' =
 eval_bwd _ (T.Constr _ _ _) =
    error absurd
 eval_bwd V.Hole t@(T.Matrix tss _ (i' × j') _) =
-   eval_bwd (V.Matrix false (replicate i' (replicate j' V.Hole)) (i' × j')) t
-eval_bwd (V.Matrix α vss (i' × j')) (T.Matrix tss (x × y) _ t) =
-   let ρ × e × β = eval_bwd (V.Constr false cPair (V.Int α i' : V.Int α j' : Nil)) t
-       NonEmptyList ijs = nonEmpty $ do
+   eval_bwd (V.Matrix false (replicate i' (replicate j' V.Hole) × (i' × false) × (j' × false))) t
+eval_bwd (V.Matrix α (vss × (i' × β) × (j' × β'))) (T.Matrix tss (x × y) _ t) =
+   let NonEmptyList ijs = nonEmpty $ do
             i <- range 1 i'
             j <- range 1 j'
             singleton (i' × j')
+       eval_bwd_elem :: (Int × Int) -> Env 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
        eval_bwd_elem (i × j) =
           case eval_bwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
-            Extend (Extend ρ' (_ ↦ V.Int γ _)) (_ ↦ V.Int γ' _) × e' × β' -> ρ' × e' × β' × (γ ∨ γ')
+            Extend (Extend ρ (_ ↦ V.Int γ _)) (_ ↦ V.Int γ' _) × e × α' -> ρ × e × α' × γ × γ'
             _ -> error absurd
-       ρ' × e' × β' × γ = foldl1
-         (\(ρ1 × e1 × β1 × γ1) (ρ2 × e2 × β2 × γ2) -> ((ρ1 ∨ ρ2) × (e1 ∨ e2) × (β1 ∨ β2) × (γ1 ∨ γ2)))
-         (eval_bwd_elem <$> ijs) in
-   (ρ ∨ ρ') × Matrix (α ∨ γ) e' (x × y) e × (α ∨ β ∨ β')
+       ρ × e × α' × γ × γ' = foldl1
+         (\(ρ1 × e1 × α1 × γ1 × γ1') (ρ2 × e2 × α2 × γ2 × γ2') ->
+            ((ρ1 ∨ ρ2) × (e1 ∨ e2) × (α1 ∨ α2) × (γ1 ∨ γ2) × (γ1' ∨ γ2')))
+         (eval_bwd_elem <$> ijs)
+       ρ' × e' × α'' = eval_bwd (V.Constr false cPair (V.Int (γ ∨ β) i' : V.Int (γ' ∨ β') j' : Nil)) t in
+   (ρ ∨ ρ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
 eval_bwd _ (T.Matrix _ _ _ _) =
    error absurd
-eval_bwd v (T.App (t × _ × δ × _) t' w t'') =
-   let ρ1ρ2ρ3 × e × α = eval_bwd v t''
+eval_bwd v (T.App (t1 × _ × δ × _) t2 w t3) =
+   let ρ1ρ2ρ3 × e × α = eval_bwd v t3
        ρ1ρ2 × ρ3 = unmatch ρ1ρ2ρ3 w
        v' × σ = match_bwd ρ3 (ContExpr e) α w
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
-       ρ' × e' × α' = eval_bwd v' t'
+       ρ' × e2 × α' = eval_bwd v' t2
        ρ1' × δ' × α2 = closeDefs_bwd ρ2 (ρ1 × δ)
-       ρ'' × e'' × α'' = eval_bwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t in
-   (ρ' ∨ ρ'') × App e'' e' × (α' ∨ α'')
+       ρ'' × e1 × α'' = eval_bwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
+   (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
 eval_bwd v (T.AppPrim (t1 × φ) (t2 × v2)) =
-   let β = getα v
-       ρ × e × α = eval_bwd (V.Primitive β φ) t1
-       ρ' × e' × α' = eval_bwd (setα β v2) t2 in
+   -- TODO: plug in bwd slicing
+   let ρ × e × α = eval_bwd (V.Primitive φ) t1
+       ρ' × e' × α' = eval_bwd v2 t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
 eval_bwd v (T.AppConstr (t1 × c × vs) (t2 × v2)) =
    let β = getα v
@@ -137,7 +139,7 @@ eval_bwd v (T.BinaryApp (t1 × v1) (op × φ) _ (t2 × v2)) =
    let β = getα v
        ρ × e × α = eval_bwd (setα β v1) t1
        ρ' × e' × α' = eval_bwd (setα β v2) t2 in
-   (ρ ∨ ρ' ◃ op ↦ V.Primitive β φ) × BinaryApp e op e' × (α ∨ α')
+   (ρ ∨ ρ' ◃ op ↦ V.Primitive φ) × BinaryApp e op e' × (α ∨ α')
 eval_bwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = eval_bwd v t2
        ρ1 × ρ2 = unmatch ρ1ρ2 w

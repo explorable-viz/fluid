@@ -161,7 +161,7 @@ totaliseFwd (ContElim (ElimConstr m)) α   = ContElim (ElimConstr (totaliseConst
 totaliseFwd (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totaliseFwd κ α))
 
 -- Extend singleton branch to set of branches where any missing constructors have been mapped to the empty list,
--- using anonymous pattern variables where necessary.
+-- using anonymous variables in any generated patterns.
 totaliseConstrFwd :: Ctr × Cont 𝔹 -> 𝔹 -> Map Ctr (Cont 𝔹)
 totaliseConstrFwd (c × κ) α =
    let defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))

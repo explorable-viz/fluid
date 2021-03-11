@@ -23,9 +23,6 @@ import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..))
 
--- trace :: forall a b . a -> b -> b
--- trace a b = T.trace a (\_ -> b)
-
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
 isGraphical Hole           = false
@@ -79,7 +76,7 @@ main = do
    run $ test "desugar/list-enum" "[3, 4, 5, 6, 7]"
    -- misc
    run $ test "arithmetic" "42"
-   run $ test "array" "[1, 2, 3][2, 4, 6][3, 6, 9]"
+   run $ test "array" "(1, (3, 3))"
    run $ test "compose" "5"
    run $ test "factorial" "40320"
    run $ test "filter" "[8, 7]"
@@ -100,4 +97,4 @@ main = do
    run $ testWithDataset "renewables-restricted" "graphics/line-chart"
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
    -- scratchpad
-   run $ test "temp" "[1, 2, 3][2, 4, 6][3, 6, 9]"
+   run $ test "temp" "(1, (3, 3))"

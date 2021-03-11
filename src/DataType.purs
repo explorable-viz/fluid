@@ -13,6 +13,7 @@ import Data.Map.Internal (keys)
 import Data.Newtype (class Newtype, unwrap)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
+import Lattice (class Key)
 import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, with)
 
 type TypeName = String
@@ -39,6 +40,12 @@ instance showCtr :: Show Ctr where
                 | isCtrOp str    = "(" <> str <> ")"
                 | otherwise      = error absurd
 
+instance keyCtr :: Key Ctr where
+   checkConsistent msg c cs = void $ do
+      d <- dataTypeFor c
+      d' <- dataTypeFor cs
+      with (msg <> show c <> " is not a constructor of " <> show d') (d ≞ d')
+
 data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig
 type CtrSig = List FieldName
@@ -61,12 +68,15 @@ dataType name = map (uncurry ctr) >>> M.fromFoldable >>> DataType name
 ctrToDataType :: Map Ctr DataType
 ctrToDataType = M.fromFoldable (concat (dataTypes <#> (\d -> ctrs d <#> (_ × d))))
 
-dataTypeFor :: Ctr -> MayFail DataType
-dataTypeFor c = note ("Unknown constructor " <> show c) (lookup c ctrToDataType)
+class DataTypeFor a where
+   dataTypeFor :: a -> MayFail DataType
 
-dataTypeForKeys :: List Ctr -> MayFail DataType
-dataTypeForKeys Nil     = error absurd
-dataTypeForKeys (c : _) = dataTypeFor c
+instance dataTypeForCtr :: DataTypeFor Ctr where
+   dataTypeFor c = note ("Unknown constructor " <> show c) (lookup c ctrToDataType)
+
+instance dataTypeForListCtr :: DataTypeFor (List Ctr) where
+   dataTypeFor Nil     = error absurd
+   dataTypeFor (c : _) = dataTypeFor c
 
 ctrs :: DataType -> List Ctr
 ctrs (DataType _ sigs) = keys sigs
@@ -79,12 +89,6 @@ arity c = do
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = void $
    with ("Checking arity of " <> show c) (arity c `(=<<<) (≞)` pure n)
-
-checkDataType :: forall a . String -> Ctr -> Map Ctr a -> MayFail Unit
-checkDataType msg c κs = void $ do
-   d <- dataTypeFor c
-   d' <- dataTypeForKeys (keys κs)
-   with (msg <> show c <> " is not a constructor of " <> show d') (d ≞ d')
 
 -- Used internally by primitives or desugaring.
 cFalse      = Ctr "False"     :: Ctr -- Bool
