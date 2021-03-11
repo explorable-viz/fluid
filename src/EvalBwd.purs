@@ -1,7 +1,7 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
-import Data.Array (replicate)
+import Data.Array (replicate) as A
 import Data.List (List(..), (:), foldr, range, reverse, singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
@@ -13,7 +13,7 @@ import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, botOf, (∨))
 import Primitive (apply_bwd)
-import Util (Endo, type (×), (×), (≜), (!), absurd, error, nonEmpty, successful)
+import Util (Endo, type (×), (×), (≜), (!), absurd, error, nonEmpty, replicate, successful)
 import Val (Env, Val, getα, setα)
 import Val (Val(..)) as V
 
@@ -98,7 +98,7 @@ eval_bwd (V.Constr α c vs) (T.Constr ρ c' ts) | c == c' =
 eval_bwd _ (T.Constr _ _ _) =
    error absurd
 eval_bwd V.Hole t@(T.Matrix tss _ (i' × j') _) =
-   eval_bwd (V.Matrix false (replicate i' (replicate j' V.Hole) × (i' × false) × (j' × false))) t
+   eval_bwd (V.Matrix false (A.replicate i' (A.replicate j' V.Hole) × (i' × false) × (j' × false))) t
 eval_bwd (V.Matrix α (vss × (i' × β) × (j' × β'))) (T.Matrix tss (x × y) _ t) =
    let NonEmptyList ijs = nonEmpty $ do
             i <- range 1 i'
@@ -131,9 +131,10 @@ eval_bwd v (T.AppPrim (t1 × φ) (t2 × v2)) =
        ρ × e × α = eval_bwd v_φ t1
        ρ' × e' × α' = eval_bwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
-eval_bwd v (T.AppConstr (t1 × c × vs) (t2 × v2)) =
-   let β = getα v
-       ρ × e × α = eval_bwd (V.Constr β c vs) t1
+eval_bwd V.Hole t@(T.AppConstr (t1 × c × n) (t2 × v2)) =
+   eval_bwd (V.Constr false c (replicate (n + 1) V.Hole)) t
+eval_bwd (V.Constr β c vs) (T.AppConstr (t1 × c' × n) (t2 × v2)) | c == c' =
+   let ρ × e × α = eval_bwd (V.Constr β c vs) t1
        ρ' × e' × α' = eval_bwd (setα β v2) t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
 eval_bwd v (T.Let (T.VarDef w t1) t2) =

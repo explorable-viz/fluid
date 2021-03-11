@@ -22,7 +22,7 @@ data Expl a =
    Lambda (Env a) (Elim a) |
    App (Expl a × Env a × RecDefs a × Elim a) (Expl a) (Match a) (Expl a) |
    AppPrim (Expl a × PrimOp) (Expl a × Val a) |
-   AppConstr (Expl a × Ctr × List (Val a)) (Expl a × Val a) |
+   AppConstr (Expl a × Ctr × Int) (Expl a × Val a) | -- record how many arguments supplied prior to this one
    Let (VarDef a) (Expl a) |
    LetRec (RecDefs a) (Expl a)
 

@@ -101,7 +101,7 @@ eval ρ (App e e') = do
          pure (T.AppPrim (t × φ) (t' × v') × apply φ v')
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> show c)
-         pure (T.AppConstr (t × c × vs) (t' × v') × V.Constr false c (vs <> singleton v'))
+         pure (T.AppConstr (t × c × length vs) (t' × v') × V.Constr false c (vs <> singleton v'))
       _ -> report "Expected closure, operator or unsaturated constructor"
 eval ρ (Let (VarDef σ e) e') = do
    t × v <- eval ρ e

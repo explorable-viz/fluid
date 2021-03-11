@@ -148,7 +148,7 @@ op_bwd op = \(v × u) -> to (op (from_fwd (v × fst (from u))))
 apply :: PrimOp -> Val 𝔹 -> Val 𝔹
 apply (PrimOp { op }) = op
 
--- φ and u are the original operator and operand.
+-- φ and u are original operator and operand.
 apply_fwd :: Val 𝔹 × PrimOp -> Val 𝔹 × Val 𝔹 -> Val 𝔹
 apply_fwd (Hole × φ) (v × u)                          = apply_fwd (Primitive φ × φ) (v × u)
 apply_fwd (Primitive (PrimOp { op_fwd }) × _) (v × u) = op_fwd (v × u)
