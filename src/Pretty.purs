@@ -92,8 +92,6 @@ instance prettyExpl :: (Show a, BoundedJoinSemilattice a) => Pretty (Expl a) whe
                          (atop (text "match: " :<>:  pretty ξ :<>: comma) (text "t3: " :<>: pretty t''))))
    pretty (T.AppPrim (t × φ) tv')         = error "todo"
    pretty (T.AppConstr tv tv')            = error "todo"
-   pretty (T.BinaryApp tv (op × _) _ tv') =
-      pretty tv :<>: space :<>: text op :<>: space :<>: pretty tv'
    pretty (T.Let (T.VarDef ξ t) t')       =
       atop (text "let " :<>: pretty ξ :<>: text " = " :<>: pretty t :<>: text " in")
            (pretty t')
@@ -152,7 +150,6 @@ instance prettyExpr :: (Show a, BoundedJoinSemilattice a) => Pretty (E.Expr a) w
       atop (text "letrec " :<>: pretty δ) (text "in " :<>: pretty e)
    pretty (E.Lambda σ)              = text "fun " :<>: pretty σ
    pretty (E.App e e')              = pretty e :<>: space :<>: pretty e'
-   pretty (E.BinaryApp e op e')     = pretty e :<>: operator op :<>: pretty e'
 
 instance prettyBindingElim :: (Show a, BoundedJoinSemilattice a) => Pretty (Binding Elim a) where
    pretty (f ↦ σ) = text f :<>: operator "=" :<>: pretty σ

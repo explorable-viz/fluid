@@ -24,7 +24,6 @@ data Expr a =
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
    App (Expr a) (Expr a) |
-   BinaryApp (Expr a) Var (Expr a) |
    Let (VarDef a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
 
@@ -113,8 +112,6 @@ instance slicesExpr :: JoinSemilattice a => Slices (Expr a) where
    maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
       Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≟ x') `lift2 (×)` (y ≟ y')) <*> maybeJoin e2 e2'
    maybeJoin (App e1 e2) (App e1' e2')                         = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
-   maybeJoin (BinaryApp e1 op e2) (BinaryApp e1' op' e2')      =
-      BinaryApp <$> maybeJoin e1 e1' <*> (op ≟ op') <*> maybeJoin e2 e2'
    maybeJoin (Lambda σ) (Lambda σ')                            = Lambda <$> maybeJoin σ σ'
    maybeJoin (Let def e) (Let def' e')                         = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec δ e) (LetRec δ' e')                       = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'
@@ -132,7 +129,6 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand Hole (Lambda σ)                       = Lambda (expand ElimHole σ)
    expand Hole (App e1 e2)                      = App (expand Hole e1) (expand Hole e2)
    expand Hole (Let (VarDef σ e1) e2)           = Let (VarDef (expand ElimHole σ) (expand Hole e1)) (expand Hole e2)
-   expand Hole (BinaryApp e1 op e2)             = (BinaryApp (expand Hole e1) op (expand Hole e2))
    expand Hole (LetRec h e)                     = LetRec (expand (botOf h) h) (expand Hole e)
    expand (Var x) (Var x')                      = Var (x ≜ x')
    expand (Op op) (Op op')                      = Op (op ≜ op')
@@ -144,8 +140,6 @@ instance exprExpandable :: Expandable (Expr Boolean) where
       Matrix (α ⪄ β) (expand e1 e1') ((x1 ≜ x2) × (y1 ≜ y2)) (expand e2 e2')
    expand (Lambda σ) (Lambda σ')                = Lambda (expand σ σ')
    expand (App e1 e2) (App e1' e2')             = App (expand e1 e1') (expand e2 e2')
-   expand (BinaryApp e1 op e2) (BinaryApp e1' op' e2') =
-      BinaryApp (expand e1 e1') (op ≜ op') (expand e2 e2')
    expand (Let (VarDef σ e1) e2)
           (Let (VarDef σ' e1') e2')             = Let (VarDef (expand σ σ') (expand e1 e1')) (expand e2 e2')
    expand (LetRec h e) (LetRec h' e')           = LetRec (expand h h') (expand e e')

@@ -127,8 +127,8 @@ eval_bwd v (T.App (t1 × _ × δ × _) t2 w t3) =
        ρ'' × e1 × α'' = eval_bwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
    (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
 eval_bwd v (T.AppPrim (t1 × φ) (t2 × v2)) =
-   let ρ × e × α = eval_bwd (V.Primitive φ) t1
-       v2' = apply_bwd v φ v2
+   let v_φ × v2' = apply_bwd v φ v2
+       ρ × e × α = eval_bwd v_φ t1
        ρ' × e' × α' = eval_bwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
 eval_bwd v (T.AppConstr (t1 × c × vs) (t2 × v2)) =
@@ -136,11 +136,6 @@ eval_bwd v (T.AppConstr (t1 × c × vs) (t2 × v2)) =
        ρ × e × α = eval_bwd (V.Constr β c vs) t1
        ρ' × e' × α' = eval_bwd (setα β v2) t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
-eval_bwd v (T.BinaryApp (t1 × v1) (op × φ) _ (t2 × v2)) =
-   let β = getα v
-       ρ × e × α = eval_bwd (setα β v1) t1
-       ρ' × e' × α' = eval_bwd (setα β v2) t2 in
-   (ρ ∨ ρ' ◃ op ↦ V.Primitive φ) × BinaryApp e op e' × (α ∨ α')
 eval_bwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = eval_bwd v t2
        ρ1 × ρ2 = unmatch ρ1ρ2 w

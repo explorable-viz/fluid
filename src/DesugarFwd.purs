@@ -78,7 +78,7 @@ exprFwd (Constr α c ss)          = E.Constr α c <$> traverse exprFwd ss
 exprFwd (Matrix α s (x × y) s')  = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
 exprFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
 exprFwd (App s1 s2)              = E.App <$> exprFwd s1 <*> exprFwd s2
-exprFwd (BinaryApp s1 op s2)     = E.BinaryApp <$> exprFwd s1 <@> op <*> exprFwd s2
+exprFwd (BinaryApp s1 op s2)     = E.App <$> (E.App (E.Op op) <$> exprFwd s1) <*> exprFwd s2
 exprFwd (MatchAs s bs)           = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> exprFwd s
 exprFwd (IfElse s1 s2 s3) = do
    e2 <- exprFwd s2

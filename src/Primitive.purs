@@ -142,6 +142,9 @@ binary op = Primitive $ PrimOp {
    op_fwd: \(v × u) -> unary (op (from_fwd (v × fst (from u))))
 }
 
+op_bwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹 × Val 𝔹 -> Val 𝔹
+op_bwd op = \(v × u) -> to (op (from_fwd (v × fst (from u))))
+
 apply :: PrimOp -> Val 𝔹 -> Val 𝔹
 apply (PrimOp { op }) = op
 
@@ -151,8 +154,8 @@ apply_fwd (Hole × φ) (v × u)                          = apply_fwd (Primitive 
 apply_fwd (Primitive (PrimOp { op_fwd }) × _) (v × u) = op_fwd (v × u)
 apply_fwd _ _                                         = error absurd
 
-apply_bwd :: Val 𝔹 -> PrimOp -> Val 𝔹 -> Val 𝔹
-apply_bwd v φ u = u -- TODO
+apply_bwd :: Val 𝔹 -> PrimOp -> Val 𝔹 -> Val 𝔹 × Val 𝔹
+apply_bwd v φ u = u × Primitive φ -- TODO
 
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends = first

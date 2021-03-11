@@ -103,18 +103,6 @@ eval ρ (App e e') = do
          check (successful (arity c) > length vs) ("Too many arguments to " <> show c)
          pure (T.AppConstr (t × c × vs) (t' × v') × V.Constr false c (vs <> singleton v'))
       _ -> report "Expected closure, operator or unsaturated constructor"
-eval ρ (BinaryApp e op e') = do
-   t × v <- eval ρ e
-   t' × v' <- eval ρ e'
-   v_φ <- find op ρ
-   case v_φ of
-      V.Hole -> error absurd
-      V.Primitive φ ->
-         case apply φ v of
-            V.Hole -> error absurd
-            V.Primitive φ_v -> pure (T.BinaryApp (t × v) (op × φ) φ_v (t' × v') × apply φ_v v')
-            _ -> report "Not a binary operator"
-      _ -> report "Not an operator"
 eval ρ (Let (VarDef σ e) e') = do
    t × v <- eval ρ e
    ρ' × _ × w <- match v σ -- terminal type of eliminator is unit, represented as hole

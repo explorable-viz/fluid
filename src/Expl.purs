@@ -23,7 +23,6 @@ data Expl a =
    App (Expl a × Env a × RecDefs a × Elim a) (Expl a) (Match a) (Expl a) |
    AppPrim (Expl a × PrimOp) (Expl a × Val a) |
    AppConstr (Expl a × Ctr × List (Val a)) (Expl a × Val a) |
-   BinaryApp (Expl a × Val a) (Var × PrimOp) PrimOp (Expl a × Val a) | -- second primop is partial application of first
    Let (VarDef a) (Expl a) |
    LetRec (RecDefs a) (Expl a)
 
