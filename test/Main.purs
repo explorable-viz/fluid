@@ -43,6 +43,7 @@ test' name setup expected =
          let e = successful (desugarFwd s)
          case successful (eval ρ e) of
             t × v -> do
+--               render (pretty t) `shouldEqual` "stop"
                unless (isGraphical v) $
                   render (pretty v) `shouldEqual` expected
                when slicing do

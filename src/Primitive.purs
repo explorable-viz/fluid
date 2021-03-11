@@ -155,7 +155,7 @@ apply_fwd (Primitive (PrimOp { op_fwd }) × _) (v × u) = op_fwd (v × u)
 apply_fwd _ _                                         = error absurd
 
 apply_bwd :: Val 𝔹 -> PrimOp -> Val 𝔹 -> Val 𝔹 × Val 𝔹
-apply_bwd v φ u = u × Primitive φ -- TODO
+apply_bwd v φ u = Primitive φ × u -- TODO
 
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends = first
