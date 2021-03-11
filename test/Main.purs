@@ -66,7 +66,6 @@ testWithDataset dataset file =
 
 main :: Effect Unit
 main = do
-{-
    -- desugaring
    run $ test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
    run $ test "desugar/list-comp-2" "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9, 9, 12, 12, 12, 10, 10, 10, 8, 8, 8]"
@@ -93,13 +92,10 @@ main = do
    run $ test "pattern-match" "4"
    run $ test "reverse" "[2, 1]"
    run $ test "zipWith" "[[10], [12], [20]]"
-   -- slicing
-   run $ test "slicing/arithmetic" ""
    -- graphics
    run $ testWithDataset "renewables-restricted" "graphics/background"
    run $ testWithDataset "renewables-restricted" "graphics/grouped-bar-chart"
    run $ testWithDataset "renewables-restricted" "graphics/line-chart"
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
--}
    -- scratchpad
    run $ test "temp" "42"

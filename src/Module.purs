@@ -47,7 +47,7 @@ successfulParse src p =
 
 parseWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 parseWithDefaultImports src = do
-   (×) <$> pure primitives --(loadModule "prelude" primitives >>= loadModule "graphics")
+   (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics")
        <@> successfulParse src program
 
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
