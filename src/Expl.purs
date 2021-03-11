@@ -9,7 +9,8 @@ import Val2 (Env, PrimOp, Val)
 
 data VarDef a = VarDef (Match a) (Expl a)
 
--- Easier to store environments than contexts in our setting.
+-- Easier to store environments than contexts in our setting. We also record values in some cases, which should
+-- be assumed to be "unannotated" (= annotated with false).
 data Expl a =
    Var (Env a) Var |
    Op (Env a) Var |

@@ -116,15 +116,15 @@ eval_bwd (V.Matrix α (vss × (i' × β) × (j' × β'))) (T.Matrix tss (x × y)
    (ρ ∨ ρ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
 eval_bwd _ (T.Matrix _ _ _ _) =
    error absurd
-eval_bwd v (T.App (t × _ × δ × _) t' w t'') =
-   let ρ1ρ2ρ3 × e × α = eval_bwd v t''
+eval_bwd v (T.App (t1 × _ × δ × _) t2 w t3) =
+   let ρ1ρ2ρ3 × e × α = eval_bwd v t3
        ρ1ρ2 × ρ3 = unmatch ρ1ρ2ρ3 w
        v' × σ = match_bwd ρ3 (ContExpr e) α w
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
-       ρ' × e' × α' = eval_bwd v' t'
+       ρ' × e2 × α' = eval_bwd v' t2
        ρ1' × δ' × α2 = closeDefs_bwd ρ2 (ρ1 × δ)
-       ρ'' × e'' × α'' = eval_bwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t in
-   (ρ' ∨ ρ'') × App e'' e' × (α' ∨ α'')
+       ρ'' × e1 × α'' = eval_bwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
+   (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
 eval_bwd v (T.AppPrim (t1 × φ) (t2 × v2)) =
    -- TODO: plug in bwd slicing
    let ρ × e × α = eval_bwd (V.Primitive φ) t1

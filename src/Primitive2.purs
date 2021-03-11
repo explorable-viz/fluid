@@ -47,8 +47,12 @@ opDefs = fromFoldable [
 ]
 
 class From a where
-   from :: Val 𝔹 -> a × 𝔹           -- value may not be a hole
-   expand' :: a -> Val 𝔹            -- expand a hole to be least as big as argument
+   from :: Val 𝔹 -> a × 𝔹          -- only defined for non-holes
+   expand :: a -> Val 𝔹            -- use just enough information from supplied value to construct an argument to 'from'
+
+from_fwd :: forall a . From a => Val 𝔹 × a -> a × 𝔹
+from_fwd (Hole × v') = from (expand v')
+from_fwd (v × _)     = from v
 
 class To a where
    to :: a × 𝔹 -> Val 𝔹
@@ -60,7 +64,7 @@ instance fromInt :: From Int where
    from (Int α n)   = n × α
    from _           = error "Int expected"
 
-   expand' = Int false
+   expand = Int false
 
 instance toInt :: To Int where
    to (n × α) = Int α n
@@ -69,7 +73,7 @@ instance fromNumber :: From Number where
    from (Float α n) = n × α
    from _           = error "Float expected"
 
-   expand' = Float false
+   expand = Float false
 
 instance toNumber :: To Number where
    to (n × α) = Float α n
@@ -78,7 +82,7 @@ instance fromString :: From String where
    from (Str α str) = str × α
    from _           = error "Str expected"
 
-   expand' = Str false
+   expand = Str false
 
 instance toString :: To String where
    to (str × α) = Str α str
@@ -88,8 +92,8 @@ instance fromIntOrNumber :: From (Int + Number) where
    from (Float α n)  = Right n × α
    from _            = error "Int or Float expected"
 
-   expand' (Left n)  = Int false n
-   expand' (Right n) = Float false n
+   expand (Left n)  = Int false n
+   expand (Right n) = Float false n
 
 instance toIntOrNumber :: To (Int + Number) where
    to (Left n × α)    = Int α n
@@ -101,21 +105,21 @@ instance fromIntOrNumberOrString :: From (Either (Either Int Number) String) whe
    from (Str α n)   = Right n × α
    from _           = error "Int, Float or Str expected"
 
-   expand' (Left (Left n))    = Int false n
-   expand' (Left (Right n))   = Float false n
-   expand' (Right str)        = Str false str
+   expand (Left (Left n))    = Int false n
+   expand (Left (Right n))   = Float false n
+   expand (Right str)        = Str false str
 
 instance fromIntAndInt :: From (Int × Boolean × (Int × Boolean)) where
    from (Constr α c (v : v' : Nil)) | c == cPair  = from v × from v' × α
    from _                                         = error "Pair expected"
 
-   expand' ((n × _) × (m × _)) = Constr false cPair (Int false n : Int false m : Nil)
+   expand _ = Constr false cPair (Hole : Hole : Nil)
 
 instance fromMatrixRep :: From (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
-   from (Matrix α (vss × iβ × jβ')) = vss × iβ × jβ' × α
-   from _                           = error "Matrix expected"
+   from (Matrix α r) = r × α
+   from _            = error "Matrix expected"
 
-   expand' (vss × (i × _) × (j × _)) = Matrix false (((<$>) (const Hole) <$> vss) × (i × false) × (j × false))
+   expand (vss × (i × _) × (j × _)) = Matrix false (((<$>) (const Hole) <$> vss) × (i × false) × (j × false))
 
 instance toPair :: To (Val Boolean × Val Boolean) where
    to (v × v' × α) = Constr α cPair (v : v' : Nil)
@@ -125,6 +129,9 @@ unary op = Primitive (PrimOp (from >>> op >>> to))
 
 binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
 binary op = Primitive (PrimOp (from >>> op >>> unary))
+
+unary_fwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹 × Val 𝔹 -> Val 𝔹
+unary_fwd op (v × u) = to (op (from_fwd (v × u'))) where u' × b = from u
 
 apply :: PrimOp -> Val 𝔹 -> Val 𝔹
 apply (PrimOp op) = op
