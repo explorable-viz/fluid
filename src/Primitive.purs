@@ -16,7 +16,7 @@ import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
 import Util (type (×), (×), type (+), (!), absurd, dup, error, unsafeUpdateAt)
-import Val (MatrixRep, PrimOp(..), Val(..), getα, setα)
+import Val (Env, MatrixRep, PrimOp(..), Val(..), getα, setα)
 
 -- name in user land, precedence 0 from 9 (similar from Haskell 98), associativity
 type OpDef = {
@@ -146,8 +146,10 @@ apply :: PrimOp -> Val 𝔹 -> Val 𝔹
 apply (PrimOp { op }) = op
 
 -- φ and u are the original operator and operand.
-apply_fwd :: PrimOp -> Val 𝔹 × Val 𝔹 -> Val 𝔹
-apply_fwd (PrimOp { op_fwd }) (v × u) = op_fwd (v × u)
+apply_fwd :: Val 𝔹 × PrimOp -> Val 𝔹 × Val 𝔹 -> Val 𝔹
+apply_fwd (Hole × PrimOp { op_fwd }) (v × u)          = op_fwd (v × u)
+apply_fwd (Primitive (PrimOp { op_fwd }) × _) (v × u) = op_fwd (v × u)
+apply_fwd _ _                                         = error absurd
 
 apply_bwd :: Val 𝔹 -> PrimOp -> Val 𝔹 -> Val 𝔹
 apply_bwd v φ u = u -- TODO
@@ -199,7 +201,7 @@ instance fromBoolean :: To Boolean where
    to (true × α)   = Constr α cTrue Nil
    to (false × α)  = Constr α cFalse Nil
 
-primitives :: Bindings Val 𝔹
+primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    -- some signatures are specified for clarity or from drive instance resolution
    -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own

@@ -19,7 +19,8 @@ import EvalFwd (eval_fwd)
 import Lattice (𝔹, botOf)
 import Module (openDatasetAs, openWithDefaultImports)
 import Pretty (pretty, render)
-import SExpr (Expr) as S
+import Primitive (primitives)
+import SExpr (Expr(..)) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..))
 
@@ -66,6 +67,7 @@ testWithDataset dataset file =
 main :: Effect Unit
 main = do
    -- desugaring
+{-
    run $ test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
    run $ test "desugar/list-comp-2" "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9, 9, 12, 12, 12, 10, 10, 10, 8, 8, 8]"
    run $ test "desugar/list-comp-3" "[9, 8]"
@@ -91,6 +93,10 @@ main = do
    run $ test "pattern-match" "4"
    run $ test "reverse" "[2, 1]"
    run $ test "zipWith" "[[10], [12], [20]]"
+-}
+   -- slicing
+   run $ test' "slicing/arithmetic" (pure (primitives × S.BinaryApp (S.Int true 0) "*" (S.Int true 0))) "0"
+{-
    -- graphics
    run $ testWithDataset "renewables-restricted" "graphics/background"
    run $ testWithDataset "renewables-restricted" "graphics/grouped-bar-chart"
@@ -98,3 +104,4 @@ main = do
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
    -- scratchpad
    run $ test "temp" "(1, (3, 3))"
+-}
