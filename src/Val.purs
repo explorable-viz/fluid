@@ -28,7 +28,7 @@ data Val a =
 
 newtype PrimOp = PrimOp {
    op :: Val 𝔹 -> Val 𝔹,
-   op_fwd :: Val 𝔹 × Val 𝔹 -> Val 𝔹 -- will be provided with the (non-hole) original argument
+   op_fwd :: Val 𝔹 × Val 𝔹 -> Val 𝔹 -- will be provided with the original (non-hole) argument
 }
 
 instance showVal :: Show (Val Boolean) where
