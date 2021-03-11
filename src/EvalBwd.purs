@@ -14,7 +14,7 @@ import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, botOf, (∨))
 import Primitive (apply_bwd)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, nonEmpty, replicate, successful)
-import Val (Env, Val, getα, setα)
+import Val (Env, Val, setα)
 import Val (Val(..)) as V
 
 unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
@@ -133,10 +133,12 @@ eval_bwd v (T.AppPrim (t1 × φ) (t2 × v2)) =
    (ρ ∨ ρ') × App e e' × (α ∨ α')
 eval_bwd V.Hole t@(T.AppConstr (t1 × c × n) (t2 × v2)) =
    eval_bwd (V.Constr false c (replicate (n + 1) V.Hole)) t
-eval_bwd (V.Constr β c vs) (T.AppConstr (t1 × c' × n) (t2 × v2)) | c == c' =
+eval_bwd (V.Constr β c vs) (T.AppConstr (t1 × _ × n) (t2 × v2)) =
    let ρ × e × α = eval_bwd (V.Constr β c vs) t1
        ρ' × e' × α' = eval_bwd (setα β v2) t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
+eval_bwd _ (T.AppConstr _ _) =
+   error absurd
 eval_bwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = eval_bwd v t2
        ρ1 × ρ2 = unmatch ρ1ρ2 w
