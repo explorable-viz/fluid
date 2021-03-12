@@ -172,9 +172,6 @@ binary op = flip Primitive Nil $ PrimOp {
 op_bwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹 × Val 𝔹 -> Val 𝔹
 op_bwd op = \(v × u) -> to (op (from_fwd (v × fst (from u))))
 
-apply :: PrimOp -> Val 𝔹 -> Val 𝔹
-apply (PrimOp { op }) = op
-
 -- φ and u are original operator and operand.
 apply_fwd :: Val 𝔹 × PrimOp -> Val 𝔹 × Val 𝔹 -> Val 𝔹
 apply_fwd (Hole × φ) (v × u)                             = apply_fwd (Primitive φ Nil × φ) (v × u)

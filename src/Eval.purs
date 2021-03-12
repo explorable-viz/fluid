@@ -1,6 +1,6 @@
 module Eval where
 
-import Prelude hiding (absurd, apply)
+import Prelude hiding (absurd)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
