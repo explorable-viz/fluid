@@ -130,6 +130,12 @@ instance fromMatrixRep :: From (Array (Array (Val Boolean)) × (Int × Boolean) 
 instance toPair :: To (Val Boolean × Val Boolean) where
    to (v × v' × α) = Constr α cPair (v : v' : Nil)
 
+instance fromPair :: From (Val Boolean × Val Boolean) where
+   from (Constr α c (v : v' : Nil)) | c == cPair   = v × v' × α
+   from _                                          = error "Pair expected"
+
+   expand _ = Constr false cPair (Hole : Hole : Nil)
+
 unary' :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹) -> Val 𝔹
 unary' op (v : Nil) = to (op (from v))
 unary' _ _          = error absurd
@@ -137,6 +143,10 @@ unary' _ _          = error absurd
 unary_fwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹 × Val 𝔹) -> Val 𝔹
 unary_fwd op (v × u : Nil) = to (op (from_fwd (v × fst (from u))))
 unary_fwd _ _              = error absurd
+
+unary_bwd :: forall a b . From a => To b => (b × 𝔹 -> a -> a × 𝔹) -> Val 𝔹 -> List (Val 𝔹) -> List (Val 𝔹)
+unary_bwd op_bwd v (v1 : Nil) = v1 : Nil
+unary_bwd _ _ _               = error absurd
 
 binary' :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹) -> Val 𝔹
 binary' op (v : vs)   = unary' (op (from v)) vs
@@ -146,12 +156,12 @@ binary_fwd :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹
 binary_fwd op (v × u : vus)   = unary_fwd (op (from_fwd (v × fst (from u)))) vus
 binary_fwd _ _                = error absurd
 
-unary :: forall a b . From a => To b => UnarySpec a b -> Val 𝔹
-unary (op × op') = flip Primitive Nil $ PrimOp {
+unary :: forall a b . From a => To b => From b => UnarySpec a b -> Val 𝔹
+unary (fwd × bwd) = flip Primitive Nil $ PrimOp {
    arity: 1,
-   op: unary' op,
-   op_fwd: unary_fwd op,
-   op_bwd: \v vs -> vs
+   op: unary' fwd,
+   op_fwd: unary_fwd fwd,
+   op_bwd: unary_bwd bwd
 }
 
 binary :: forall a b c . From a => From b => To c => BinarySpec a b c -> Val 𝔹
@@ -236,7 +246,7 @@ primitives = foldl (:+:) Empty [
    "debugLog"  ↦ unary (depends debugLog),
    "dims"      ↦ unary (depends dims),
    "div"       ↦ binary (dependsNonZero (div :: Int -> Int -> Int)),
-   "error"     ↦ unary (depends  (error :: String -> Boolean)),
+   "error"     ↦ unary (depends (error :: String -> Val 𝔹)),
    "floor"     ↦ unary (depends floor),
    "log"       ↦ unary (depends ((toNumber >>> log) `union` log)),
    "numToStr"  ↦ unary (depends (show `union` show))
