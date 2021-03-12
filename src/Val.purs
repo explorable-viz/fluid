@@ -3,7 +3,6 @@ module Val where
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.List (List)
-import Data.Maybe (Maybe(..))
 import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim(..), RecDefs)
@@ -11,7 +10,7 @@ import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
    𝔹, (∨), botOf, definedJoin, expand, maybeJoin
 )
-import Util (Endo, type (×), (×), (⪄), (≟), (≜), absurd, error)
+import Util (Endo, type (×), (×), (⪄), (≞), (≜), absurd, error, report)
 
 type Op a = a × 𝔹 -> Val 𝔹
 type MatrixRep a = Array (Array (Val a)) × (Int × a) × (Int × a)
@@ -64,19 +63,19 @@ instance joinSemilatticeVal :: JoinSemilattice a => JoinSemilattice (Val a) wher
 instance slicesVal :: JoinSemilattice a => Slices (Val a) where
    maybeJoin Hole v                                   = pure v
    maybeJoin v Hole                                   = pure v
-   maybeJoin (Int α n) (Int α' n')                    = Int (α ∨ α') <$> (n ≟ n')
-   maybeJoin (Float α n) (Float α' n')                = Float (α ∨ α') <$> (n ≟ n')
-   maybeJoin (Str α str) (Str α' str')                = Str (α ∨ α') <$> (str ≟ str')
-   maybeJoin (Constr α c vs) (Constr α' c' us)        = Constr (α ∨ α') <$> (c ≟ c') <*> maybeJoin vs us
+   maybeJoin (Int α n) (Int α' n')                    = Int (α ∨ α') <$> (n ≞ n')
+   maybeJoin (Float α n) (Float α' n')                = Float (α ∨ α') <$> (n ≞ n')
+   maybeJoin (Str α str) (Str α' str')                = Str (α ∨ α') <$> (str ≞ str')
+   maybeJoin (Constr α c vs) (Constr α' c' us)        = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
    maybeJoin (Matrix α (vss × (i × β) × (j × γ))) (Matrix α' (vss' × (i' × β') × (j' × γ'))) =
       Matrix (α ∨ α') <$> (
          maybeJoin vss vss' `lift2 (×)`
-         ((flip (×) (β ∨ β')) <$> (i ≟ i')) `lift2 (×)`
-         ((flip (×) (γ ∨ γ')) <$> (j ≟ j'))
+         ((flip (×) (β ∨ β')) <$> (i ≞ i')) `lift2 (×)`
+         ((flip (×) (γ ∨ γ')) <$> (j ≞ j'))
       )
    maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ')       = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ) (Primitive φ')             = pure (Primitive φ) -- TODO: require φ == φ'
-   maybeJoin _ _                                      = Nothing
+   maybeJoin _ _                                      = report "Incompatible values"
 
 instance boundedSlices :: JoinSemilattice a => BoundedSlices (Val a) where
    botOf = const Hole

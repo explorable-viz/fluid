@@ -2,7 +2,7 @@ module EvalBwd where
 
 import Prelude hiding (absurd)
 import Data.Array (replicate) as A
-import Data.List (List(..), (:), foldr, range, reverse, singleton, zip)
+import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
@@ -13,8 +13,8 @@ import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, botOf, (∨))
 import Primitive (apply_bwd)
-import Util (Endo, type (×), (×), (≜), (!), absurd, error, nonEmpty, replicate, successful)
-import Val (Env, Val, setα)
+import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate, successful)
+import Val (Env, Val)
 import Val (Val(..)) as V
 
 unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
@@ -131,11 +131,12 @@ eval_bwd v (T.AppPrim (t1 × φ) (t2 × v2)) =
        ρ × e × α = eval_bwd v_φ t1
        ρ' × e' × α' = eval_bwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
-eval_bwd V.Hole t@(T.AppConstr (t1 × c × n) (t2 × v2)) =
+eval_bwd V.Hole t@(T.AppConstr (_ × c × n) _) =
    eval_bwd (V.Constr false c (replicate (n + 1) V.Hole)) t
-eval_bwd (V.Constr β c vs) (T.AppConstr (t1 × _ × n) (t2 × v2)) =
-   let ρ × e × α = eval_bwd (V.Constr β c vs) t1
-       ρ' × e' × α' = eval_bwd (setα β v2) t2 in
+eval_bwd (V.Constr β c vs) (T.AppConstr (t1 × _ × n) t2) =
+   let { init: vs', last: v2 } = fromJust absurd (unsnoc vs)
+       ρ × e × α = eval_bwd (V.Constr β c vs') t1
+       ρ' × e' × α' = eval_bwd v2 t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
 eval_bwd _ (T.AppConstr _ _) =
    error absurd

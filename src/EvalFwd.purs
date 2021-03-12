@@ -110,7 +110,7 @@ eval_fwd ρ e α (T.AppPrim (t1 × φ) (t2 × v2)) =
       App e1 e2 ->
          apply_fwd (eval_fwd ρ e1 α t1 × φ) (eval_fwd ρ e2 α t2 × v2)
       _ -> error absurd
-eval_fwd ρ e α (T.AppConstr (t1 × c × n) (t2 × _)) =
+eval_fwd ρ e α (T.AppConstr (t1 × c × n) t2) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
          case expand (eval_fwd ρ e1 α t1) (V.Constr false c (replicate n V.Hole)) of

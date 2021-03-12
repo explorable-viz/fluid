@@ -10,7 +10,7 @@ import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Util (MayFail, type (×), (×), (≟), absurd, error, fromJust, ignoreMessage)
+import Util (MayFail, type (×), (×), (≞), absurd, error, report, successfulWith)
 
 class JoinSemilattice a where
    join :: a -> a -> a
@@ -32,10 +32,10 @@ instance boundedJoinSemilatticeUnit :: BoundedJoinSemilattice Unit where
 
 -- Sometimes convenient to assume join defined even if it may not be.
 class JoinSemilattice a <= Slices a where
-   maybeJoin :: a -> a -> Maybe a
+   maybeJoin :: a -> a -> MayFail a
 
 definedJoin :: forall a . Slices a => a -> a -> a
-definedJoin x = fromJust "Join undefined" <<< maybeJoin x
+definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
 
 class Slices a <= BoundedSlices a where
    botOf :: a -> a
@@ -50,11 +50,11 @@ type 𝔹 = Boolean
 meet :: Boolean -> Boolean -> Boolean
 meet = (&&)
 
-instance joinSemilatticeTuple :: (Eq k, Slices t) => JoinSemilattice (Tuple k t) where
+instance joinSemilatticeTuple :: (Eq k, Show k, Slices t) => JoinSemilattice (Tuple k t) where
    join = definedJoin
 
-instance slicesTuple :: (Eq k, Slices t) => Slices (Tuple k t) where
-   maybeJoin (k × v) (k' × v') = (k ≟ k') `lift2 (×)` maybeJoin v v'
+instance slicesTuple :: (Eq k, Show k, Slices t) => Slices (Tuple k t) where
+   maybeJoin (k × v) (k' × v') = (k ≞ k') `lift2 (×)` maybeJoin v v'
 
 instance joinSemilatticeList :: Slices t => JoinSemilattice (List t) where
    join = definedJoin
@@ -62,7 +62,7 @@ instance joinSemilatticeList :: Slices t => JoinSemilattice (List t) where
 instance slicesList :: Slices t => Slices (List t) where
    maybeJoin xs ys
       | length xs == length ys   = sequence (zipWith maybeJoin xs ys)
-      | otherwise                = Nothing
+      | otherwise                = report "Lists of different lengths"
 
 instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
    botOf = (<$>) botOf
@@ -78,13 +78,13 @@ class Ord k <= Key k where
 -- here for merging branches of function definitions.
 instance slicesMap :: (Key k, Slices t) => Slices (Map k t) where
    maybeJoin m m' =
-      foldM maybeUpdate m (toUnfoldable m' :: List (k × t))
+      foldM mayFailUpdate m (toUnfoldable m' :: List (k × t))
 
-maybeUpdate :: forall k t . Key k => Slices t => Map k t -> k × t -> Maybe (Map k t)
-maybeUpdate m (k × v) =
+mayFailUpdate :: forall k t . Key k => Slices t => Map k t -> k × t -> MayFail (Map k t)
+mayFailUpdate m (k × v) =
    case lookup k m of
       Nothing -> do
-         ignoreMessage (checkConsistent "Inconsistent keys: " k (keys m)) -- TODO: report message
+         checkConsistent "Inconsistent keys: " k (keys m)
          pure (insert k v m)
       Just v' ->
          update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
@@ -95,7 +95,7 @@ instance joinSemilatticeArray :: Slices a => JoinSemilattice (Array a) where
 instance slicesArray :: Slices a => Slices (Array a) where
    maybeJoin xs ys
       | A.length xs == A.length ys  = sequence (A.zipWith maybeJoin xs ys)
-      | otherwise                   = Nothing
+      | otherwise                   = report "Arrays of different lengths"
 
 class Expandable a where
    -- Partial function defined iff x is above x', which expands in x any subtree prefixes which are expanded in x'
