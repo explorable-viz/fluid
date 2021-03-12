@@ -110,10 +110,10 @@ eval_fwd ρ e α (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
          case expand (eval_fwd ρ e1 α t1) (V.Primitive (PrimOp φ) (const V.Hole <$> vs)) of
-            V.Primitive φ' vs' ->
+            V.Primitive _ vs' ->
                let v2' = eval_fwd ρ e2 α t2
                    vs'' = zip vs' vs <> singleton (v2' × v2) in
-               if φ.arity > length vs' then V.Primitive (PrimOp φ) (fst <$> vs'') else φ.op_fwd vs''
+               if φ.arity > length vs'' then V.Primitive (PrimOp φ) (fst <$> vs'') else φ.op_fwd vs''
             _ -> error absurd
       _ -> error absurd
 eval_fwd ρ e α (T.AppConstr (t1 × c × n) t2) =
