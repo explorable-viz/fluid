@@ -7,7 +7,6 @@ import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Data.Profunctor.Choice ((|||))
-import Data.Profunctor.Strong (first)
 import Data.Tuple (fst)
 import Debug.Trace (trace)
 import Math (log, pow)
@@ -15,7 +14,7 @@ import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
-import Util (type (×), (×), type (+), (!), absurd, dup, error, unsafeUpdateAt)
+import Util (type (×), (×), type (+), (!), absurd, error, unsafeUpdateAt)
 import Val (Env, MatrixRep, PrimOp(..), Val(..))
 
 -- name in user land, precedence 0 from 9 (similar from Haskell 98), associativity
@@ -148,37 +147,41 @@ binary_fwd op (v × u : vus)   = unary_fwd (op (from_fwd (v × fst (from u)))) v
 binary_fwd _ _                = error absurd
 
 unary :: forall a b . From a => To b => UnarySpec a b -> Val 𝔹
-unary (op × _) = flip Primitive Nil $ PrimOp {
+unary (op × op') = flip Primitive Nil $ PrimOp {
    arity: 1,
    op: unary' op,
    op_fwd: unary_fwd op,
-   op_bwd: \_ vs -> vs
+   op_bwd: \v vs -> vs
 }
 
-binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
-binary op = flip Primitive Nil $ PrimOp {
+binary :: forall a b c . From a => From b => To c => BinarySpec a b c -> Val 𝔹
+binary (op × _) = flip Primitive Nil $ PrimOp {
    arity: 2,
    op: binary' op,
    op_fwd: binary_fwd op,
    op_bwd: \_ vs -> vs
 }
 
-type UnarySpec a b = (a × 𝔹 -> b × 𝔹) × (𝔹 -> 𝔹)
+type UnarySpec a b = (a × 𝔹 -> b × 𝔹) × (b × 𝔹 -> a -> a × 𝔹)
+type BinarySpec a b c = (a × 𝔹 -> b × 𝔹 -> c × 𝔹) × (𝔹 -> a × b -> 𝔹 × 𝔹)
 
 depends :: forall a b . (a -> b) -> UnarySpec a b
-depends op = first op × identity
+depends op = fwd × bwd
+   where
+   fwd (x × α)    = op x × α
+   bwd (y × α) x  = x × α
 
-dependsBoth :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
-dependsBoth op (x × α) (y × β) = x `op` y × (α ∧ β)
+dependsBoth :: forall a b c . (a -> b -> c) -> BinarySpec a b c
+dependsBoth op = fwd × bwd
+   where
+   fwd (x × α) (y × β) = x `op` y × (α ∧ β)
+   bwd α _ = α × α
 
-dependsBoth_bwd :: 𝔹 -> 𝔹 × 𝔹
-dependsBoth_bwd = dup
-
-dependsNeither :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
-dependsNeither op (x × _) (y × _) = x `op` y × true
-
-dependsNeither_bwd :: 𝔹 -> 𝔹 × 𝔹
-dependsNeither_bwd _ = dup false
+dependsNeither :: forall a b c . (a -> b -> c) -> BinarySpec a b c
+dependsNeither op = fwd × bwd
+   where
+   fwd (x × _) (y × _) = x `op` y × true
+   bwd _ _ = false × false
 
 class IsZero a where
    isZero :: a -> Boolean
@@ -193,17 +196,19 @@ instance isZeroEither :: (IsZero a, IsZero b) => IsZero (a + b) where
    isZero = isZero ||| isZero
 
 -- If both are zero, we depend only on the first.
-dependsNonZero :: forall a b . IsZero a => (a -> a -> b) -> a × 𝔹 -> a × 𝔹 -> b × 𝔹
-dependsNonZero op (x × α) (y × β)
-   | isZero x  = x `op` y × α
-   | isZero y  = x `op` y × β
-   | otherwise = x `op` y × (α ∧ β)
-
-dependsNonZero_bwd :: forall a b . IsZero a => b × 𝔹 -> (a × a) -> 𝔹 × 𝔹
-dependsNonZero_bwd (_ × α) (x × y)
-   | isZero x  = α × false
-   | isZero y  = false × α
-   | otherwise = α × α
+dependsNonZero :: forall a b . IsZero a => (a -> a -> b) -> BinarySpec a a b
+dependsNonZero op = fwd × bwd
+   where
+   fwd :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
+   fwd (x × α) (y × β)
+      | isZero x  = x `op` y × α
+      | isZero y  = x `op` y × β
+      | otherwise = x `op` y × (α ∧ β)
+   bwd :: 𝔹 -> a × a -> 𝔹 × 𝔹
+   bwd α (x × y)
+      | isZero x  = α × false
+      | isZero y  = false × α
+      | otherwise = α × α
 
 instance fromBoolean :: To Boolean where
    to (true × α)   = Constr α cTrue Nil
