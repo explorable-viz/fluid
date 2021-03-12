@@ -165,14 +165,16 @@ unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
 unary op = flip Primitive Nil $ PrimOp {
    arity: 1,
    op: unary' op,
-   op_fwd: unary_fwd op
+   op_fwd: unary_fwd op,
+   op_bwd: \_ vs -> vs
 }
 
 binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
 binary op = flip Primitive Nil $ PrimOp {
    arity: 2,
    op: binary' op,
-   op_fwd: binary_fwd op
+   op_fwd: binary_fwd op,
+   op_bwd: \_ vs -> vs
 }
 
 op_bwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹 × Val 𝔹 -> Val 𝔹
