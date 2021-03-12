@@ -63,7 +63,7 @@ instance fromVal :: From (Val Boolean) where
    from = (_ × false)
    expand = identity
 
--- Returned value is already a Val, then it's not being constructed.
+-- Return value is already a Val, then it's not being constructed.
 instance toVal :: To (Val Boolean) where
    to = fst
 
@@ -147,8 +147,8 @@ binary_fwd :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹
 binary_fwd op (v × u : vus)   = unary_fwd (op (from_fwd (v × fst (from u)))) vus
 binary_fwd _ _                = error absurd
 
-unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
-unary op = flip Primitive Nil $ PrimOp {
+unary :: forall a b . From a => To b => UnarySpec a b -> Val 𝔹
+unary (op × _) = flip Primitive Nil $ PrimOp {
    arity: 1,
    op: unary' op,
    op_fwd: unary_fwd op,
@@ -163,14 +163,10 @@ binary op = flip Primitive Nil $ PrimOp {
    op_bwd: \_ vs -> vs
 }
 
-op_bwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹 × Val 𝔹 -> Val 𝔹
-op_bwd op = \(v × u) -> to (op (from_fwd (v × fst (from u))))
+type UnarySpec a b = (a × 𝔹 -> b × 𝔹) × (𝔹 -> 𝔹)
 
-depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
-depends = first
-
-depends_bwd :: 𝔹 -> 𝔹
-depends_bwd = identity
+depends :: forall a b . (a -> b) -> UnarySpec a b
+depends op = first op × identity
 
 dependsBoth :: forall a b c . (a -> b -> c) -> a × 𝔹 -> b × 𝔹 -> c × 𝔹
 dependsBoth op (x × α) (y × β) = x `op` y × (α ∧ β)
