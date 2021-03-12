@@ -20,9 +20,9 @@ data Val a =
    Int a Int |
    Float a Number |
    Str a String |
-   Constr a Ctr (List (Val a)) |
+   Constr a Ctr (List (Val a)) |       -- potentially unsaturated
    Matrix a (MatrixRep a) |
-   Primitive PrimOp |
+   Primitive PrimOp (List (Val a)) |   -- always unsaturated
    Closure (Env a) (RecDefs a) (Elim a)
 
 newtype PrimOp = PrimOp {
@@ -54,7 +54,7 @@ instance slicesVal :: JoinSemilattice a => Slices (Val a) where
          ((flip (×) (γ ∨ γ')) <$> (j ≞ j'))
       )
    maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ')       = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
-   maybeJoin (Primitive φ) (Primitive φ')             = pure (Primitive φ) -- TODO: require φ == φ'
+   maybeJoin (Primitive φ vs) (Primitive φ' vs')      = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _                                      = report "Incompatible values"
 
 instance boundedSlices :: JoinSemilattice a => BoundedSlices (Val a) where
@@ -65,7 +65,7 @@ instance valExpandable :: Expandable (Val Boolean) where
    expand Hole v@(Int false n)                  = v
    expand Hole v@(Float false n)                = v
    expand Hole v@(Str false str)                = v
-   expand Hole v@(Primitive φ)                  = v
+   expand Hole v@(Primitive φ vs)               = Primitive φ (expand Hole <$> vs)
    expand Hole (Constr false c vs)              = Constr false c (expand Hole <$> vs)
    expand Hole (Matrix false (vss × (i × false) × (j × false))) =
       Matrix false ((((<$>) (expand Hole)) <$> vss) × (i × false) × (j × false))
@@ -77,5 +77,5 @@ instance valExpandable :: Expandable (Val Boolean) where
    expand (Matrix α (vss × (i × β) × (j × γ))) (Matrix α' (vss' × (i' × β') × (j' × γ'))) =
       Matrix (α ⪄ β) (expand vss vss' × ((i ≜ i') × (β ⪄ β')) × ((j ≜ j') × (γ ⪄ γ')))
    expand (Closure ρ δ σ) (Closure ρ' δ' σ')    = Closure (expand ρ ρ') (expand δ δ') (expand σ σ')
-   expand (Primitive φ) (Primitive φ')          = Primitive φ -- TODO: require φ = φ'
+   expand (Primitive φ vs) (Primitive φ' vs')   = Primitive φ (expand vs vs') -- TODO: require φ = φ'
    expand _ _                                   = error absurd

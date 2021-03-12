@@ -66,7 +66,7 @@ instance fromVal :: From (Val Boolean) where
    from v@(Str α _)       = v × α
    from v@(Constr α _ _)  = v × α
    from v@(Matrix α _)    = v × α
-   from v@(Primitive _)   = v × true
+   from v@(Primitive _ _) = v × true
    from v@(Closure _ _ _) = v × true
 
    expand = identity
@@ -78,7 +78,7 @@ instance toVal :: To (Val Boolean) where
    to (Str _ str × α)      = Str α str
    to (Constr _ c vs × α)  = Constr α c vs
    to (Matrix _ r × α)     = Matrix α r
-   to (Primitive _ × α)    = error absurd
+   to (Primitive _ vs × α) = error absurd
    to (Closure _ _ _ × α)  = error absurd
 
 instance fromInt :: From Int where
@@ -146,13 +146,13 @@ instance toPair :: To (Val Boolean × Val Boolean) where
    to (v × v' × α) = Constr α cPair (v : v' : Nil)
 
 unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
-unary op = Primitive $ PrimOp {
+unary op = flip Primitive Nil $ PrimOp {
    op: from >>> op >>> to,
    op_fwd: \(v × u) -> to (op (from_fwd (v × fst (from u))))
 }
 
 binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
-binary op = Primitive $ PrimOp {
+binary op = flip Primitive Nil $ PrimOp {
    op: \v -> unary (op (from v)),
    op_fwd: \(v × u) -> unary (op (from_fwd (v × fst (from u))))
 }
@@ -165,12 +165,12 @@ apply (PrimOp { op }) = op
 
 -- φ and u are original operator and operand.
 apply_fwd :: Val 𝔹 × PrimOp -> Val 𝔹 × Val 𝔹 -> Val 𝔹
-apply_fwd (Hole × φ) (v × u)                          = apply_fwd (Primitive φ × φ) (v × u)
-apply_fwd (Primitive (PrimOp { op_fwd }) × _) (v × u) = op_fwd (v × u)
-apply_fwd _ _                                         = error absurd
+apply_fwd (Hole × φ) (v × u)                             = apply_fwd (Primitive φ Nil × φ) (v × u)
+apply_fwd (Primitive (PrimOp { op_fwd }) _ × _) (v × u)  = op_fwd (v × u)
+apply_fwd _ _                                            = error absurd
 
 apply_bwd :: Val 𝔹 -> PrimOp -> Val 𝔹 -> Val 𝔹 × Val 𝔹
-apply_bwd v φ u = Primitive φ × u -- TODO
+apply_bwd v φ u = Primitive φ Nil × u -- TODO
 
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends = first

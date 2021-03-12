@@ -97,7 +97,7 @@ eval ρ (App e e') = do
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) (asExpr e'')
          pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
-      V.Primitive φ ->
+      V.Primitive φ _ ->
          pure (T.AppPrim (t × φ) (t' × v') × apply φ v')
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> show c)

@@ -182,10 +182,10 @@ instance prettyVal :: (Show a, BoundedJoinSemilattice a) => Pretty (Val a) where
    pretty (V.Closure ρ δ σ) =
     text "Closure" :<>: text "(" :<>:
     (atop (atop (text "env: " :<>: pretty ρ) (text "defs: " :<>: pretty δ)) (text "elim: " :<>: pretty σ)) :<>: (text ")")
-   pretty (V.Primitive op)             = parens $ pretty op
+   pretty (V.Primitive φ _)            = parens (pretty φ)
 
 instance prettyPrimOp :: Pretty PrimOp where
-   pretty _ = text "<prim-op>"
+   pretty _ = error "todo"
 
 -- Surface language
 
