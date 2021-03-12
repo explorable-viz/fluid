@@ -60,26 +60,12 @@ class To a where
 
 -- REVISIT: These two are a bit weird. Former is only needed for debugLog, latter for debugLog and matrix lookup.
 instance fromVal :: From (Val Boolean) where
-   from v@Hole            = v × false
-   from v@(Int α _)       = v × α
-   from v@(Float α _)     = v × α
-   from v@(Str α _)       = v × α
-   from v@(Constr α _ _)  = v × α
-   from v@(Matrix α _)    = v × α
-   from v@(Primitive _ _) = v × true
-   from v@(Closure _ _ _) = v × true
-
+   from = (_ × false)
    expand = identity
 
+-- If the returned value is already a Val, assume it's not being constructed.
 instance toVal :: To (Val Boolean) where
-   to (Hole × α)           = error absurd
-   to (Int _ n × α)        = Int α n
-   to (Float _ n × α)      = Float α n
-   to (Str _ str × α)      = Str α str
-   to (Constr _ c vs × α)  = Constr α c vs
-   to (Matrix _ r × α)     = Matrix α r
-   to (Primitive _ vs × α) = error absurd
-   to (Closure _ _ _ × α)  = error absurd
+   to = fst
 
 instance fromInt :: From Int where
    from (Int α n)   = n × α
