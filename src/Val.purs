@@ -28,7 +28,7 @@ data Val a =
 newtype PrimOp = PrimOp {
    arity :: Int,
    op :: List (Val 𝔹) -> Val 𝔹,
-   op_fwd :: Val 𝔹 × Val 𝔹 -> Val 𝔹 -- will be provided with the original (non-hole) argument
+   op_fwd :: List (Val 𝔹 × Val 𝔹) -> Val 𝔹 -- will be provided with the original (non-hole) arguments
 }
 
 type Env = Bindings Val

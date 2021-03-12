@@ -2,8 +2,9 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
-import Data.List (List(..), (:), range, singleton, zip)
+import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
+import Data.Tuple (fst)
 import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
 import DataType (cPair)
 import Eval (closeDefs)
@@ -11,9 +12,9 @@ import Expl (Expl, Match)
 import Expl (Expl(..), Match(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
-import Primitive (apply_fwd, from)
+import Primitive (from)
 import Util (type (×), (×), (!), absurd, error, mustLookup, replicate, successful)
-import Val (Env, Val)
+import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 match_fwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
@@ -105,10 +106,15 @@ eval_fwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
                eval_fwd (ρ1' <> ρ2 <> ρ3) (asExpr e3) β t3
             _ -> error absurd
       _ -> error absurd
-eval_fwd ρ e α (T.AppPrim (t1 × φ) (t2 × v2)) =
+eval_fwd ρ e α (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
-         apply_fwd (eval_fwd ρ e1 α t1 × φ) (eval_fwd ρ e2 α t2 × v2)
+         case expand (eval_fwd ρ e1 α t1) (V.Primitive (PrimOp φ) (const V.Hole <$> vs)) of
+            V.Primitive φ' vs' ->
+               let v2' = eval_fwd ρ e2 α t2
+                   vs'' = zip vs' vs <> singleton (v2' × v2) in
+               if φ.arity > length vs' then V.Primitive (PrimOp φ) (fst <$> vs'') else φ.op_fwd vs''
+            _ -> error absurd
       _ -> error absurd
 eval_fwd ρ e α (T.AppConstr (t1 × c × n) t2) =
    case expand e (App Hole Hole) of

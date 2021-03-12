@@ -99,8 +99,8 @@ eval ρ (App e e') = do
          pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
          let vs' = vs <> singleton v'
-             v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op' vs' in
-         pure (T.AppPrim (t × PrimOp φ) (t' × v') × v'')
+             v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs' in
+         pure (T.AppPrim (t × PrimOp φ × vs') (t' × v') × v'')
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> show c)
          pure (T.AppConstr (t × c × length vs) t' × V.Constr false c (vs <> singleton v'))

@@ -145,39 +145,38 @@ instance fromMatrixRep :: From (Array (Array (Val Boolean)) × (Int × Boolean) 
 instance toPair :: To (Val Boolean × Val Boolean) where
    to (v × v' × α) = Constr α cPair (v : v' : Nil)
 
-blah :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹) -> Val 𝔹
-blah op (v : Nil) = to (op (from v))
-blah _ _          = error absurd
+unary' :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹) -> Val 𝔹
+unary' op (v : Nil) = to (op (from v))
+unary' _ _          = error absurd
 
-blah2 :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹) -> Val 𝔹
-blah2 op (v1 : v2 : Nil)   = to (op (from v1) (from v2))
-blah2 _ _                  = error absurd
+unary_fwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹 × Val 𝔹) -> Val 𝔹
+unary_fwd op (v × u : Nil) = to (op (from_fwd (v × fst (from u))))
+unary_fwd _ _              = error absurd
+
+binary' :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹) -> Val 𝔹
+binary' op (v : vs)   = unary' (op (from v)) vs
+binary' _ _           = error absurd
+
+binary_fwd :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹 × Val 𝔹) -> Val 𝔹
+binary_fwd op (v × u : vus)   = unary_fwd (op (from_fwd (v × fst (from u)))) vus
+binary_fwd _ _                = error absurd
 
 unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
 unary op = flip Primitive Nil $ PrimOp {
    arity: 1,
-   op: blah op,
-   op_fwd: \(v × u) -> to (op (from_fwd (v × fst (from u))))
+   op: unary' op,
+   op_fwd: unary_fwd op
 }
 
 binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
 binary op = flip Primitive Nil $ PrimOp {
    arity: 2,
-   op: blah2 op,
-   op_fwd: \(v × u) -> unary (op (from_fwd (v × fst (from u))))
+   op: binary' op,
+   op_fwd: binary_fwd op
 }
 
 op_bwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹 × Val 𝔹 -> Val 𝔹
 op_bwd op = \(v × u) -> to (op (from_fwd (v × fst (from u))))
-
--- φ and u are original operator and operand.
-apply_fwd :: Val 𝔹 × PrimOp -> Val 𝔹 × Val 𝔹 -> Val 𝔹
-apply_fwd (Hole × φ) (v × u)                             = apply_fwd (Primitive φ Nil × φ) (v × u)
-apply_fwd (Primitive (PrimOp { op_fwd }) _ × _) (v × u)  = op_fwd (v × u)
-apply_fwd _ _                                            = error absurd
-
-apply_bwd :: Val 𝔹 -> PrimOp -> Val 𝔹 -> Val 𝔹 × Val 𝔹
-apply_bwd v φ u = Primitive φ Nil × u -- TODO
 
 depends :: forall a b . (a -> b) -> a × 𝔹 -> b × 𝔹
 depends = first
