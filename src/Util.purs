@@ -131,4 +131,4 @@ dup x = x × x
 replicate :: forall a . Int -> a -> List a
 replicate n a
    | n == 0 = Nil
-   | true   = replicate (n - 1) a
+   | true   = a : replicate (n - 1) a
