@@ -26,6 +26,7 @@ data Val a =
    Closure (Env a) (RecDefs a) (Elim a)
 
 newtype PrimOp = PrimOp {
+   arity :: Int,
    op :: Val 𝔹 -> Val 𝔹,
    op_fwd :: Val 𝔹 × Val 𝔹 -> Val 𝔹 -- will be provided with the original (non-hole) argument
 }
