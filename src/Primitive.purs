@@ -63,7 +63,7 @@ instance fromVal :: From (Val Boolean) where
    from = (_ × false)
    expand = identity
 
--- If the returned value is already a Val, assume it's not being constructed.
+-- Returned value is already a Val, then it's not being constructed.
 instance toVal :: To (Val Boolean) where
    to = fst
 
