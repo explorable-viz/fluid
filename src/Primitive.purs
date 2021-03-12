@@ -149,7 +149,7 @@ blah :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> List (Val �
 blah op (v : Nil) = to (op (from v))
 blah _ _          = error absurd
 
-blah2 :: forall a b . forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹) -> Val 𝔹
+blah2 :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹) -> Val 𝔹
 blah2 op (v1 : v2 : Nil)   = to (op (from v1) (from v2))
 blah2 _ _                  = error absurd
 

@@ -15,9 +15,9 @@ import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr)
 import Lattice (𝔹, checkConsistent)
 import Pretty (pretty, render)
-import Primitive (apply, from)
+import Primitive (from)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
-import Val (Env, Val)
+import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
@@ -97,8 +97,10 @@ eval ρ (App e e') = do
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) (asExpr e'')
          pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
-      V.Primitive φ _ ->
-         pure (T.AppPrim (t × φ) (t' × v') × apply φ v')
+      V.Primitive (PrimOp φ) vs ->
+         let vs' = vs <> singleton v'
+             v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op' vs' in
+         pure (T.AppPrim (t × PrimOp φ) (t' × v') × v'')
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> show c)
          pure (T.AppConstr (t × c × length vs) t' × V.Constr false c (vs <> singleton v'))

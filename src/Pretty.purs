@@ -185,7 +185,7 @@ instance prettyVal :: (Show a, BoundedJoinSemilattice a) => Pretty (Val a) where
    pretty (V.Primitive φ _)            = parens (pretty φ)
 
 instance prettyPrimOp :: Pretty PrimOp where
-   pretty _ = error "todo"
+   pretty _ = text "<prim op>" -- TODO
 
 -- Surface language
 
