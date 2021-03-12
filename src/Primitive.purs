@@ -156,16 +156,14 @@ blah2 _ _                  = error absurd
 unary :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> Val 𝔹
 unary op = flip Primitive Nil $ PrimOp {
    arity: 1,
-   op: from >>> op >>> to,
-   op': blah op,
+   op: blah op,
    op_fwd: \(v × u) -> to (op (from_fwd (v × fst (from u))))
 }
 
 binary :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> Val 𝔹
 binary op = flip Primitive Nil $ PrimOp {
    arity: 2,
-   op: \v -> unary (op (from v)),
-   op': blah2 op,
+   op: blah2 op,
    op_fwd: \(v × u) -> unary (op (from_fwd (v × fst (from u))))
 }
 
