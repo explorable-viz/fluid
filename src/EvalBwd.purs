@@ -13,7 +13,7 @@ import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, botOf, (∨))
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate, successful)
-import Val (Env, Val)
+import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
@@ -125,10 +125,11 @@ eval_bwd v (T.App (t1 × _ × δ × _) t2 w t3) =
        ρ1' × δ' × α2 = closeDefs_bwd ρ2 (ρ1 × δ)
        ρ'' × e1 × α'' = eval_bwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
    (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
-eval_bwd v (T.AppPrim (t1 × φ × vs) (t2 × v2)) =
-   -- TODO
-   let ρ × e × α = eval_bwd (V.Primitive φ vs) t1
-       ρ' × e' × α' = eval_bwd v2 t2 in
+eval_bwd v (T.AppPrim (t1 × (PrimOp φ) × vs) (t2 × v2)) =
+   let vs' = φ.op_bwd v (vs <> singleton v2)
+       { init: vs'', last: v2' } = fromJust absurd (unsnoc vs')
+       ρ × e × α = eval_bwd (V.Primitive (PrimOp φ) vs'') t1
+       ρ' × e' × α' = eval_bwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
 eval_bwd V.Hole t@(T.AppConstr (_ × c × n) _) =
    eval_bwd (V.Constr false c (replicate (n + 1) V.Hole)) t
