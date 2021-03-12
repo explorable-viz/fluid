@@ -16,7 +16,7 @@ import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
 import Util (type (×), (×), type (+), (!), absurd, dup, error, unsafeUpdateAt)
-import Val (Env, MatrixRep, PrimOp(..), Val(..), getα, setα)
+import Val (Env, MatrixRep, PrimOp(..), Val(..))
 
 -- name in user land, precedence 0 from 9 (similar from Haskell 98), associativity
 type OpDef = {
@@ -58,13 +58,28 @@ from_fwd (v × _)     = from v
 class To a where
    to :: a × 𝔹 -> Val 𝔹
 
--- Only needed for debugLog
+-- REVISIT: These two are a bit weird. Former is only needed for debugLog, latter for debugLog and matrix lookup.
 instance fromVal :: From (Val Boolean) where
-   from v = v × getα v
+   from v@Hole            = v × false
+   from v@(Int α _)       = v × α
+   from v@(Float α _)     = v × α
+   from v@(Str α _)       = v × α
+   from v@(Constr α _ _)  = v × α
+   from v@(Matrix α _)    = v × α
+   from v@(Primitive _)   = v × true
+   from v@(Closure _ _ _) = v × true
+
    expand = identity
 
 instance toVal :: To (Val Boolean) where
-   to (v × α) = setα α v
+   to (Hole × α)           = error absurd
+   to (Int _ n × α)        = Int α n
+   to (Float _ n × α)      = Float α n
+   to (Str _ str × α)      = Str α str
+   to (Constr _ c vs × α)  = Constr α c vs
+   to (Matrix _ r × α)     = Matrix α r
+   to (Primitive _ × α)    = error absurd
+   to (Closure _ _ _ × α)  = error absurd
 
 instance fromInt :: From Int where
    from (Int α n)   = n × α
