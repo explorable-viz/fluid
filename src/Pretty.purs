@@ -28,6 +28,10 @@ between l r doc = l :<>: doc :<>: r
 brackets :: Endo Doc
 brackets = between (text "[") (text "]")
 
+bracketsIf :: Boolean -> Endo Doc
+bracketsIf false   = identity
+bracketsIf true    = brackets
+
 comma :: Doc
 comma = text "," :<>: space
 
@@ -169,13 +173,9 @@ instance prettyElim :: Pretty (Elim Boolean) where
    pretty (ElimVar x κ)    = text x :<>: operator "->" :<>: pretty κ
    pretty (ElimConstr κs)  = hcat (map (\x -> pretty x :<>: comma) (toUnfoldable κs :: List _))
 
-bracketIf :: Boolean -> Endo Doc
-bracketIf false   = identity
-bracketIf true    = brackets
-
 instance prettyVal :: Pretty (Val Boolean) where
    pretty V.Hole                       = hole
-   pretty (V.Int α n)                  = bracketIf α (text (show n))
+   pretty (V.Int α n)                  = bracketsIf α (text (show n))
    pretty (V.Float _ n)                = text (show n)
    pretty (V.Str _ str)                = text (show str)
    pretty u@(V.Constr _ c vs)
