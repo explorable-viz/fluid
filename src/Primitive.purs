@@ -227,7 +227,7 @@ dependsNonZero op = { fwd, bwd }
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
-   -- some signatures are specified for clarity or from drive instance resolution
+   -- some signatures are specified for clarity or to drive instance resolution
    -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
    ":"         ↦ Constr false cCons Nil,
    "+"         ↦ binary (dependsBoth ((+) `union2` (+))),
@@ -268,12 +268,12 @@ matrixLookup :: BinarySpec (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Va
 matrixLookup = { fwd, bwd }
    where
    fwd :: MatrixRep 𝔹 × 𝔹 -> (Int × 𝔹) × (Int × 𝔹) × 𝔹 -> Val 𝔹 × 𝔹
-   fwd (vss × _ × _ × _) ((i × _) × (j × _) × _) = vss!(i - 1)!(j - 1) × true
+   fwd (vss × _ × _ × _) ((i × _) × (j × _) × _) = vss!(i - 1)!(j - 1) × false
 
-   bwd :: (Val 𝔹 × 𝔹) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> (MatrixRep 𝔹 × 𝔹) × ((Int × 𝔹) × (Int × 𝔹) × 𝔹)
+   bwd :: Val 𝔹 × 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> (MatrixRep 𝔹 × 𝔹) × ((Int × 𝔹) × (Int × 𝔹) × 𝔹)
    bwd (v × _) (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
       (vss'' × (i' × false) × (j' × false) × false) × ((i × false) × (j × false) × false)
-      where vss'  = (((<$>) (const Hole)) <$> vss)
+      where vss'  = (<$>) (const Hole) <$> vss
             vs_i  = vss'!(i - 1)
             vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
 
