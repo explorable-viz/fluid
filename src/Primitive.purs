@@ -137,11 +137,11 @@ instance toFromBoolean :: ToFrom Boolean where
 
    expand = \_ -> error "todo"
 
-unary' :: forall a b . ToFrom a => ToFrom b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹) -> Val 𝔹
+unary' :: forall a b . ToFrom a => ToFrom b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
 unary' op (v : Nil) = to (op (from v))
 unary' _ _          = error absurd
 
-unary_fwd :: forall a b . ToFrom a => ToFrom b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹 × Val 𝔹) -> Val 𝔹
+unary_fwd :: forall a b . ToFrom a => ToFrom b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹 × Val 𝔹) {-[(a, a)]-} -> Val 𝔹 {-b-}
 unary_fwd op (v × u : Nil) = to (op (from_fwd (v × fst (from u))))
 unary_fwd _ _              = error absurd
 
@@ -150,12 +150,13 @@ unary_bwd :: forall a b . ToFrom a => ToFrom b => (b × 𝔹 -> a -> a × 𝔹) 
 unary_bwd op_bwd v (v1 : Nil) = to (op_bwd (from v) (fst (from v1))) : Nil
 unary_bwd _ _ _               = error absurd
 
-binary' :: forall a b c . ToFrom a => ToFrom b => ToFrom c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹) -> Val 𝔹
+binary' :: forall a b c . ToFrom a => ToFrom b => ToFrom c =>
+           (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
 binary' op (v : vs)   = unary' (op (from v)) vs
 binary' _ _           = error absurd
 
 binary_fwd :: forall a b c . ToFrom a => ToFrom b => ToFrom c =>
-              (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹 × Val 𝔹) -> Val 𝔹
+              (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹 × Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
 binary_fwd op (v × u : vus)   = unary_fwd (op (from_fwd (v × fst (from u)))) vus
 binary_fwd _ _                = error absurd
 
