@@ -150,40 +150,36 @@ instance isZeroNumber :: IsZero Number where
 instance isZeroEither :: (IsZero a, IsZero b) => IsZero (a + b) where
    isZero = isZero ||| isZero
 
-unary' :: forall a b . Partial => ToFrom a => ToFrom b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
-unary' op (v : Nil) = to (op (from v))
-
-unary_fwd :: forall a b . Partial => ToFrom a => ToFrom b =>
-             (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹 × Val 𝔹) {-[(a, a)]-} -> Val 𝔹 {-b-}
-unary_fwd op (v × u : Nil) = to (op (from_fwd (v × fst (from u))))
-
-unary_bwd :: forall a b . Partial => ToFrom a => ToFrom b =>
-             (b × 𝔹 -> a -> a × 𝔹) -> Val 𝔹 {-b-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
-unary_bwd op_bwd v (v1 : Nil) = to (op_bwd (from v) (fst (from v1))) : Nil
-
-binary' :: forall a b c . Partial => ToFrom a => ToFrom b => ToFrom c =>
-           (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
-binary' op (v : vs) = unary' (op (from v)) vs
-
-binary_fwd :: forall a b c . Partial => ToFrom a => ToFrom b => ToFrom c =>
-              (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹 × Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
-binary_fwd op (v × u : vus)   = unary_fwd (op (from_fwd (v × fst (from u)))) vus
-
 unary :: forall a b . ToFrom a => ToFrom b => UnarySpec a b -> Val 𝔹
 unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 1,
-   op: unsafePartial (unary' fwd),
-   op_fwd: unsafePartial (unary_fwd fwd),
-   op_bwd: unsafePartial (unary_bwd bwd)
+   op: unsafePartial apply,
+   op_fwd: unsafePartial apply_fwd,
+   op_bwd: unsafePartial apply_bwd
 }
+   where
+   apply :: Partial => List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
+   apply (v : Nil) = to (fwd (from v))
+
+   apply_fwd :: Partial => List (Val 𝔹 × Val 𝔹) {-[(a, a)]-} -> Val 𝔹 {-b-}
+   apply_fwd (v × u : Nil) = to (fwd (from_fwd (v × fst (from u))))
+
+   apply_bwd :: Partial => Val 𝔹 {-b-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
+   apply_bwd v (v1 : Nil) = to (bwd (from v) (fst (from v1))) : Nil
 
 binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySpec a b c -> Val 𝔹
 binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 2,
-   op: unsafePartial (binary' fwd),
-   op_fwd: unsafePartial (binary_fwd fwd),
+   op: unsafePartial apply,
+   op_fwd: unsafePartial apply_fwd,
    op_bwd: \_ vs -> vs
 }
+   where
+   apply :: Partial => List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
+   apply (v : v' : Nil) = to (fwd (from v) (from v'))
+
+   apply_fwd :: Partial => List (Val 𝔹 × Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
+   apply_fwd (v × u : v' × u' : Nil) = to (fwd (from_fwd (v × fst (from u))) (from_fwd (v' × fst (from u'))))
 
 type UnarySpec a b = {
    fwd :: a × 𝔹 -> b × 𝔹,
