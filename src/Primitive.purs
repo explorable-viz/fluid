@@ -46,54 +46,46 @@ opDefs = fromFoldable [
    opDef ">="  4 AssocLeft
 ]
 
-class From a where
+class ToFrom a where
+   to :: a × 𝔹 -> Val 𝔹
    from :: Val 𝔹 -> a × 𝔹          -- only defined for non-holes
    expand :: a -> Val 𝔹            -- use just enough information from supplied value to construct an argument to 'from'
 
-from_fwd :: forall a . From a => Val 𝔹 × a -> a × 𝔹
+from_fwd :: forall a . ToFrom a => Val 𝔹 × a -> a × 𝔹
 from_fwd (Hole × v') = from (expand v')
 from_fwd (v × _)     = from v
 
-class To a where
-   to :: a × 𝔹 -> Val 𝔹
-
--- REVISIT: These two are a bit weird. Former is only needed for debugLog, latter for debugLog and matrix lookup.
-instance fromVal :: From (Val Boolean) where
-   from = (_ × false)
+-- REVISIT: This instance is a bit weird. Former is only needed for debugLog, latter for debugLog and matrix lookup.
+instance toFromVal :: ToFrom (Val Boolean) where
+   to = fst
+   from = (_ × false) -- if return value is already a Val it's not being constructed
    expand = identity
 
--- Return value is already a Val, then it's not being constructed.
-instance toVal :: To (Val Boolean) where
-   to = fst
-
-instance fromInt :: From Int where
+instance toFromInt :: ToFrom Int where
    from (Int α n)   = n × α
    from _           = error "Int expected"
 
+   to (n × α) = Int α n
    expand = Int false
 
-instance toInt :: To Int where
-   to (n × α) = Int α n
-
-instance fromNumber :: From Number where
+instance toFromNumber :: ToFrom Number where
    from (Float α n) = n × α
    from _           = error "Float expected"
 
+   to (n × α) = Float α n
    expand = Float false
 
-instance toNumber :: To Number where
-   to (n × α) = Float α n
-
-instance fromString :: From String where
+instance toFromString :: ToFrom String where
    from (Str α str) = str × α
    from _           = error "Str expected"
 
+   to (str × α) = Str α str
    expand = Str false
 
-instance toString :: To String where
-   to (str × α) = Str α str
+instance toFromIntOrNumber :: ToFrom (Int + Number) where
+   to (Left n × α)    = Int α n
+   to (Right n × α)   = Float α n
 
-instance fromIntOrNumber :: From (Int + Number) where
    from (Int α n)    = Left n × α
    from (Float α n)  = Right n × α
    from _            = error "Int or Float expected"
@@ -101,11 +93,9 @@ instance fromIntOrNumber :: From (Int + Number) where
    expand (Left n)  = Int false n
    expand (Right n) = Float false n
 
-instance toIntOrNumber :: To (Int + Number) where
-   to (Left n × α)    = Int α n
-   to (Right n × α)   = Float α n
+instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String) where
+   to _ = error "todo"
 
-instance fromIntOrNumberOrString :: From (Either (Either Int Number) String) where
    from (Int α n)   = Left (Left n) × α
    from (Float α n) = Left (Right n) × α
    from (Str α n)   = Right n × α
@@ -115,48 +105,61 @@ instance fromIntOrNumberOrString :: From (Either (Either Int Number) String) whe
    expand (Left (Right n))   = Float false n
    expand (Right str)        = Str false str
 
-instance fromIntAndInt :: From (Int × Boolean × (Int × Boolean)) where
+instance toFromIntAndInt :: ToFrom (Int × Boolean × (Int × Boolean)) where
    from (Constr α c (v : v' : Nil)) | c == cPair  = from v × from v' × α
    from _                                         = error "Pair expected"
 
+   to _ = error "todo"
    expand _ = Constr false cPair (Hole : Hole : Nil)
 
-instance fromMatrixRep :: From (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
+instance toFromMatrixRep :: ToFrom (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
    from (Matrix α r) = r × α
    from _            = error "Matrix expected"
 
+   to (r × α) = Matrix α r
    expand (vss × (i × _) × (j × _)) = Matrix false (((<$>) (const Hole) <$> vss) × (i × false) × (j × false))
 
-instance toPair :: To (Val Boolean × Val Boolean) where
-   to (v × v' × α) = Constr α cPair (v : v' : Nil)
-
-instance fromPair :: From (Val Boolean × Val Boolean) where
+instance toFromPair :: ToFrom (Val Boolean × Val Boolean) where
    from (Constr α c (v : v' : Nil)) | c == cPair   = v × v' × α
    from _                                          = error "Pair expected"
 
+   to (v × v' × α) = Constr α cPair (v : v' : Nil)
    expand _ = Constr false cPair (Hole : Hole : Nil)
 
-unary' :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹) -> Val 𝔹
+instance toFromBoolean :: ToFrom Boolean where
+   from (Constr α c Nil )
+      | c == cTrue   = true × α
+      | c == cFalse  = false × α
+   from _ = error absurd
+
+   to (true × α)   = Constr α cTrue Nil
+   to (false × α)  = Constr α cFalse Nil
+
+   expand = \_ -> error "todo"
+
+unary' :: forall a b . ToFrom a => ToFrom b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹) -> Val 𝔹
 unary' op (v : Nil) = to (op (from v))
 unary' _ _          = error absurd
 
-unary_fwd :: forall a b . From a => To b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹 × Val 𝔹) -> Val 𝔹
+unary_fwd :: forall a b . ToFrom a => ToFrom b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹 × Val 𝔹) -> Val 𝔹
 unary_fwd op (v × u : Nil) = to (op (from_fwd (v × fst (from u))))
 unary_fwd _ _              = error absurd
 
-unary_bwd :: forall a b . From a => To b => (b × 𝔹 -> a -> a × 𝔹) -> Val 𝔹 -> List (Val 𝔹) -> List (Val 𝔹)
-unary_bwd op_bwd v (v1 : Nil) = v1 : Nil
+unary_bwd :: forall a b . ToFrom a => ToFrom b => (b × 𝔹 -> a -> a × 𝔹) ->
+             Val 𝔹 {-b-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
+unary_bwd op_bwd v (v1 : Nil) = to (op_bwd (from v) (fst (from v1))) : Nil
 unary_bwd _ _ _               = error absurd
 
-binary' :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹) -> Val 𝔹
+binary' :: forall a b c . ToFrom a => ToFrom b => ToFrom c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹) -> Val 𝔹
 binary' op (v : vs)   = unary' (op (from v)) vs
 binary' _ _           = error absurd
 
-binary_fwd :: forall a b c . From a => From b => To c => (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹 × Val 𝔹) -> Val 𝔹
+binary_fwd :: forall a b c . ToFrom a => ToFrom b => ToFrom c =>
+              (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹 × Val 𝔹) -> Val 𝔹
 binary_fwd op (v × u : vus)   = unary_fwd (op (from_fwd (v × fst (from u)))) vus
 binary_fwd _ _                = error absurd
 
-unary :: forall a b . From a => To b => From b => UnarySpec a b -> Val 𝔹
+unary :: forall a b . ToFrom a => ToFrom b => UnarySpec a b -> Val 𝔹
 unary (fwd × bwd) = flip Primitive Nil $ PrimOp {
    arity: 1,
    op: unary' fwd,
@@ -164,7 +167,7 @@ unary (fwd × bwd) = flip Primitive Nil $ PrimOp {
    op_bwd: unary_bwd bwd
 }
 
-binary :: forall a b c . From a => From b => To c => BinarySpec a b c -> Val 𝔹
+binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySpec a b c -> Val 𝔹
 binary (op × _) = flip Primitive Nil $ PrimOp {
    arity: 2,
    op: binary' op,
@@ -219,10 +222,6 @@ dependsNonZero op = fwd × bwd
       | isZero x  = α × false
       | isZero y  = false × α
       | otherwise = α × α
-
-instance fromBoolean :: To Boolean where
-   to (true × α)   = Constr α cTrue Nil
-   to (false × α)  = Constr α cFalse Nil
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
