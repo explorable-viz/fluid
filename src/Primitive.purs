@@ -1,5 +1,6 @@
 module Primitive where
 
+import Partial.Unsafe (unsafePartial)
 import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
@@ -137,42 +138,50 @@ instance toFromBoolean :: ToFrom Boolean where
 
    expand = \_ -> error "todo"
 
-unary' :: forall a b . ToFrom a => ToFrom b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
+class IsZero a where
+   isZero :: a -> Boolean
+
+instance isZeroInt :: IsZero Int where
+   isZero = ((==) 0)
+
+instance isZeroNumber :: IsZero Number where
+   isZero = ((==) 0.0)
+
+instance isZeroEither :: (IsZero a, IsZero b) => IsZero (a + b) where
+   isZero = isZero ||| isZero
+
+unary' :: forall a b . Partial => ToFrom a => ToFrom b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
 unary' op (v : Nil) = to (op (from v))
-unary' _ _          = error absurd
 
-unary_fwd :: forall a b . ToFrom a => ToFrom b => (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹 × Val 𝔹) {-[(a, a)]-} -> Val 𝔹 {-b-}
+unary_fwd :: forall a b . Partial => ToFrom a => ToFrom b =>
+             (a × 𝔹 -> b × 𝔹) -> List (Val 𝔹 × Val 𝔹) {-[(a, a)]-} -> Val 𝔹 {-b-}
 unary_fwd op (v × u : Nil) = to (op (from_fwd (v × fst (from u))))
-unary_fwd _ _              = error absurd
 
-unary_bwd :: forall a b . ToFrom a => ToFrom b => (b × 𝔹 -> a -> a × 𝔹) ->
-             Val 𝔹 {-b-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
+unary_bwd :: forall a b . Partial => ToFrom a => ToFrom b =>
+             (b × 𝔹 -> a -> a × 𝔹) -> Val 𝔹 {-b-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
 unary_bwd op_bwd v (v1 : Nil) = to (op_bwd (from v) (fst (from v1))) : Nil
-unary_bwd _ _ _               = error absurd
 
-binary' :: forall a b c . ToFrom a => ToFrom b => ToFrom c =>
+binary' :: forall a b c . Partial => ToFrom a => ToFrom b => ToFrom c =>
            (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
-binary' op (v : vs)   = unary' (op (from v)) vs
-binary' _ _           = error absurd
+binary' op (v : vs) = unary' (op (from v)) vs
 
-binary_fwd :: forall a b c . ToFrom a => ToFrom b => ToFrom c =>
+binary_fwd :: forall a b c . Partial => ToFrom a => ToFrom b => ToFrom c =>
               (a × 𝔹 -> b × 𝔹 -> c × 𝔹) -> List (Val 𝔹 × Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
 binary_fwd op (v × u : vus)   = unary_fwd (op (from_fwd (v × fst (from u)))) vus
-binary_fwd _ _                = error absurd
 
 unary :: forall a b . ToFrom a => ToFrom b => UnarySpec a b -> Val 𝔹
 unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 1,
-   op: unary' fwd,
-   op_fwd: unary_fwd fwd,
-   op_bwd: unary_bwd bwd
+   op: unsafePartial (unary' fwd),
+   op_fwd: unsafePartial (unary_fwd fwd),
+   op_bwd: unsafePartial (unary_bwd bwd)
 }
 
 binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySpec a b c -> Val 𝔹
 binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 2,
-   op: binary' fwd,
-   op_fwd: binary_fwd fwd,
+   op: unsafePartial (binary' fwd),
+   op_fwd: unsafePartial (binary_fwd fwd),
    op_bwd: \_ vs -> vs
 }
 
@@ -197,18 +206,6 @@ dependsBoth op = { fwd, bwd }
    where
    fwd (x × α) (y × β) = x `op` y × (α ∧ β)
    bwd (_ × α) (x × y) = (x × α) × (y × α)
-
-class IsZero a where
-   isZero :: a -> Boolean
-
-instance isZeroInt :: IsZero Int where
-   isZero = ((==) 0)
-
-instance isZeroNumber :: IsZero Number where
-   isZero = ((==) 0.0)
-
-instance isZeroEither :: (IsZero a, IsZero b) => IsZero (a + b) where
-   isZero = isZero ||| isZero
 
 -- If both are zero, we depend only on the first.
 dependsNonZero :: forall a b . IsZero a => (a -> a -> b) -> BinarySpec a a b
