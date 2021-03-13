@@ -198,12 +198,6 @@ dependsBoth op = { fwd, bwd }
    fwd (x × α) (y × β) = x `op` y × (α ∧ β)
    bwd (_ × α) (x × y) = (x × α) × (y × α)
 
-dependsNeither :: forall a b c . (a -> b -> c) -> BinarySpec a b c
-dependsNeither op = { fwd, bwd }
-   where
-   fwd (x × _) (y × _) = x `op` y × true
-   bwd _ (x × y) = (x × false) × (y × false)
-
 class IsZero a where
    isZero :: a -> Boolean
 
@@ -248,7 +242,7 @@ primitives = foldl (:+:) Empty [
    "<="        ↦ binary (dependsBoth ((<=) `union2'` (<=) `unionDisj` (==))),
    ">="        ↦ binary (dependsBoth ((>=) `union2'` (>=) `unionDisj` (==))),
    "++"        ↦ binary (dependsBoth ((<>) :: String -> String -> String)),
-   "!"         ↦ binary (dependsNeither matrixLookup),
+   "!"         ↦ binary matrixLookup,
    "ceiling"   ↦ unary (depends ceil),
    "debugLog"  ↦ unary (depends debugLog),
    "dims"      ↦ unary (depends dims),
@@ -276,8 +270,8 @@ matrixLookup = { fwd, bwd }
    fwd :: MatrixRep 𝔹 × 𝔹 -> (Int × 𝔹) × (Int × 𝔹) × 𝔹 -> Val 𝔹 × 𝔹
    fwd (vss × _ × _ × _) ((i × _) × (j × _) × _) = vss!(i - 1)!(j - 1) × true
 
-   bwd :: (Val 𝔹 × 𝔹) -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹) -> (MatrixRep 𝔹 × 𝔹) × ((Int × 𝔹) × (Int × 𝔹) × 𝔹)
-   bwd (v × _) ((vss × (i' × _) × (j' × _)) × (i × _) × (j × _)) =
+   bwd :: (Val 𝔹 × 𝔹) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> (MatrixRep 𝔹 × 𝔹) × ((Int × 𝔹) × (Int × 𝔹) × 𝔹)
+   bwd (v × _) (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
       (vss'' × (i' × false) × (j' × false) × false) × ((i × false) × (j × false) × false)
       where vss'  = (((<$>) (const Hole)) <$> vss)
             vs_i  = vss'!(i - 1)
