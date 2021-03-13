@@ -265,14 +265,14 @@ dims_bwd _ _                                                                  = 
 matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
 matrixLookup (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
 
--- TODO: val isn't used; sig of first argument is weird
+-- TODO: sig of first argument needs sorting
 matrixLookup_bwd :: (Val 𝔹 × 𝔹) -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹) ->
                     (MatrixRep 𝔹 × 𝔹) × ((Int × 𝔹) × (Int × 𝔹) × 𝔹)
-matrixLookup_bwd _ ((vss × (i' × _) × (j' × _)) × (i × _) × (j × _)) =
+matrixLookup_bwd (v × _) ((vss × (i' × _) × (j' × _)) × (i × _) × (j × _)) =
    (vss'' × (i' × false) × (j' × false) × false) × ((i × false) × (j × false) × false)
    where vss'  = (((<$>) (const Hole)) <$> vss)
          vs_i  = vss'!(i - 1)
-         vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) (vs_i!(j - 1)) vs_i) vss'
+         vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
