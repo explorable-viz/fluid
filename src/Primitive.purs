@@ -55,10 +55,10 @@ from_fwd :: forall a . ToFrom a => Val 𝔹 × a -> a × 𝔹
 from_fwd (Hole × v') = from (expand v')
 from_fwd (v × _)     = from v
 
--- REVISIT: This instance is a bit weird. Former is only needed for debugLog, latter for debugLog and matrix lookup.
+-- REVISIT: This instance is a bit weird (see matrix lookup and comments below).
 instance toFromVal :: ToFrom (Val Boolean) where
-   to = fst
-   from = (_ × false) -- if return value is already a Val it's not being constructed
+   to = fst             -- constructing a Val from a Val isn't "construction"
+   from = (_ × false)   -- pattern-matching a Val as a Val isn't "pattern-matching"
    expand = identity
 
 instance toFromInt :: ToFrom Int where
@@ -161,7 +161,7 @@ binary_fwd op (v × u : vus)   = unary_fwd (op (from_fwd (v × fst (from u)))) v
 binary_fwd _ _                = error absurd
 
 unary :: forall a b . ToFrom a => ToFrom b => UnarySpec a b -> Val 𝔹
-unary (fwd × bwd) = flip Primitive Nil $ PrimOp {
+unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 1,
    op: unary' fwd,
    op_fwd: unary_fwd fwd,
@@ -169,30 +169,37 @@ unary (fwd × bwd) = flip Primitive Nil $ PrimOp {
 }
 
 binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySpec a b c -> Val 𝔹
-binary (fwd × bwd) = flip Primitive Nil $ PrimOp {
+binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 2,
    op: binary' fwd,
    op_fwd: binary_fwd fwd,
    op_bwd: \_ vs -> vs
 }
 
-type UnarySpec a b = (a × 𝔹 -> b × 𝔹) × (b × 𝔹 -> a -> a × 𝔹)
-type BinarySpec a b c = (a × 𝔹 -> b × 𝔹 -> c × 𝔹) × (c × 𝔹 -> a × b -> (a × 𝔹) × (b × 𝔹))
+type UnarySpec a b = {
+   fwd :: a × 𝔹 -> b × 𝔹,
+   bwd :: b × 𝔹 -> a -> a × 𝔹
+}
+
+type BinarySpec a b c = {
+   fwd :: a × 𝔹 -> b × 𝔹 -> c × 𝔹,
+   bwd :: c × 𝔹 -> a × b -> (a × 𝔹) × (b × 𝔹)
+}
 
 depends :: forall a b . (a -> b) -> UnarySpec a b
-depends op = fwd × bwd
+depends op = { fwd, bwd }
    where
    fwd (x × α)    = op x × α
    bwd (_ × α) x  = x × α
 
 dependsBoth :: forall a b c . (a -> b -> c) -> BinarySpec a b c
-dependsBoth op = fwd × bwd
+dependsBoth op = { fwd, bwd }
    where
    fwd (x × α) (y × β) = x `op` y × (α ∧ β)
    bwd (_ × α) (x × y) = (x × α) × (y × α)
 
 dependsNeither :: forall a b c . (a -> b -> c) -> BinarySpec a b c
-dependsNeither op = fwd × bwd
+dependsNeither op = { fwd, bwd }
    where
    fwd (x × _) (y × _) = x `op` y × true
    bwd _ (x × y) = (x × false) × (y × false)
@@ -211,7 +218,7 @@ instance isZeroEither :: (IsZero a, IsZero b) => IsZero (a + b) where
 
 -- If both are zero, we depend only on the first.
 dependsNonZero :: forall a b . IsZero a => (a -> a -> b) -> BinarySpec a a b
-dependsNonZero op = fwd × bwd
+dependsNonZero op = { fwd, bwd }
    where
    fwd :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
    fwd (x × α) (y × β)
@@ -262,17 +269,19 @@ dims_bwd :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
 dims_bwd (Int α i' × Int β j') (vss × (i × _) × (j × _)) | i == i' && j == j' = vss × (i × α) × (j × β)
 dims_bwd _ _                                                                  = error absurd
 
-matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
-matrixLookup (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
+-- TODO: sigs of first argument to bwd, and return value of bwd, are suspect
+matrixLookup :: BinarySpec (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
+matrixLookup = { fwd, bwd }
+   where
+   fwd :: MatrixRep 𝔹 × 𝔹 -> (Int × 𝔹) × (Int × 𝔹) × 𝔹 -> Val 𝔹 × 𝔹
+   fwd (vss × _ × _ × _) ((i × _) × (j × _) × _) = vss!(i - 1)!(j - 1) × true
 
--- TODO: sig of first argument needs sorting
-matrixLookup_bwd :: (Val 𝔹 × 𝔹) -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹) ->
-                    (MatrixRep 𝔹 × 𝔹) × ((Int × 𝔹) × (Int × 𝔹) × 𝔹)
-matrixLookup_bwd (v × _) ((vss × (i' × _) × (j' × _)) × (i × _) × (j × _)) =
-   (vss'' × (i' × false) × (j' × false) × false) × ((i × false) × (j × false) × false)
-   where vss'  = (((<$>) (const Hole)) <$> vss)
-         vs_i  = vss'!(i - 1)
-         vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
+   bwd :: (Val 𝔹 × 𝔹) -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹) -> (MatrixRep 𝔹 × 𝔹) × ((Int × 𝔹) × (Int × 𝔹) × 𝔹)
+   bwd (v × _) ((vss × (i' × _) × (j' × _)) × (i × _) × (j × _)) =
+      (vss'' × (i' × false) × (j' × false) × false) × ((i × false) × (j × false) × false)
+      where vss'  = (((<$>) (const Hole)) <$> vss)
+            vs_i  = vss'!(i - 1)
+            vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
 union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
