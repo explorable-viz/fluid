@@ -183,7 +183,7 @@ depends :: forall a b . (a -> b) -> UnarySpec a b
 depends op = fwd × bwd
    where
    fwd (x × α)    = op x × α
-   bwd (y × α) x  = x × α
+   bwd (_ × α) x  = x × α
 
 dependsBoth :: forall a b c . (a -> b -> c) -> BinarySpec a b c
 dependsBoth op = fwd × bwd
