@@ -265,9 +265,11 @@ dims_bwd _ _                                                                  = 
 matrixLookup :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
 matrixLookup (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
 
-matrixLookup_bwd :: Val 𝔹 -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹) -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹)
-matrixLookup_bwd v ((vss × (i' × _) × (j' × _)) × (i × _) × (j × _)) =
-   vss'' × (i' × false) × (j' × false) × (i × false) × (j × false)
+-- TODO: val isn't used; sig of first argument is weird
+matrixLookup_bwd :: (Val 𝔹 × 𝔹) -> MatrixRep 𝔹 × (Int × 𝔹) × (Int × 𝔹) ->
+                    (MatrixRep 𝔹 × 𝔹) × ((Int × 𝔹) × (Int × 𝔹) × 𝔹)
+matrixLookup_bwd _ ((vss × (i' × _) × (j' × _)) × (i × _) × (j × _)) =
+   (vss'' × (i' × false) × (j' × false) × false) × ((i × false) × (j × false) × false)
    where vss'  = (((<$>) (const Hole)) <$> vss)
          vs_i  = vss'!(i - 1)
          vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) (vs_i!(j - 1)) vs_i) vss'
