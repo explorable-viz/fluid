@@ -169,10 +169,10 @@ unary (fwd × bwd) = flip Primitive Nil $ PrimOp {
 }
 
 binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySpec a b c -> Val 𝔹
-binary (op × _) = flip Primitive Nil $ PrimOp {
+binary (fwd × bwd) = flip Primitive Nil $ PrimOp {
    arity: 2,
-   op: binary' op,
-   op_fwd: binary_fwd op,
+   op: binary' fwd,
+   op_fwd: binary_fwd fwd,
    op_bwd: \_ vs -> vs
 }
 
