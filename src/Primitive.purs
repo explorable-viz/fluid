@@ -177,7 +177,7 @@ binary (fwd × bwd) = flip Primitive Nil $ PrimOp {
 }
 
 type UnarySpec a b = (a × 𝔹 -> b × 𝔹) × (b × 𝔹 -> a -> a × 𝔹)
-type BinarySpec a b c = (a × 𝔹 -> b × 𝔹 -> c × 𝔹) × (𝔹 -> a × b -> 𝔹 × 𝔹)
+type BinarySpec a b c = (a × 𝔹 -> b × 𝔹 -> c × 𝔹) × (c × 𝔹 -> a × b -> (a × 𝔹) × (b × 𝔹))
 
 depends :: forall a b . (a -> b) -> UnarySpec a b
 depends op = fwd × bwd
@@ -189,13 +189,13 @@ dependsBoth :: forall a b c . (a -> b -> c) -> BinarySpec a b c
 dependsBoth op = fwd × bwd
    where
    fwd (x × α) (y × β) = x `op` y × (α ∧ β)
-   bwd α _ = α × α
+   bwd (_ × α) (x × y) = (x × α) × (y × α)
 
 dependsNeither :: forall a b c . (a -> b -> c) -> BinarySpec a b c
 dependsNeither op = fwd × bwd
    where
    fwd (x × _) (y × _) = x `op` y × true
-   bwd _ _ = false × false
+   bwd _ (x × y) = (x × false) × (y × false)
 
 class IsZero a where
    isZero :: a -> Boolean
@@ -218,11 +218,11 @@ dependsNonZero op = fwd × bwd
       | isZero x  = x `op` y × α
       | isZero y  = x `op` y × β
       | otherwise = x `op` y × (α ∧ β)
-   bwd :: 𝔹 -> a × a -> 𝔹 × 𝔹
-   bwd α (x × y)
-      | isZero x  = α × false
-      | isZero y  = false × α
-      | otherwise = α × α
+   bwd :: b × 𝔹 -> a × a -> (a × 𝔹) × (a × 𝔹)
+   bwd (_ × α) (x × y)
+      | isZero x  = (x × α) × (y × false)
+      | isZero y  = (x × false) × (y × α)
+      | otherwise = (x × α) × (y × α)
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
