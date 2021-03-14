@@ -5,7 +5,7 @@ import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
-import Data.List (List(..), (:), length)
+import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
@@ -185,11 +185,7 @@ binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply_fwd (v × u : v' × u' : Nil) = to (fwd (from_fwd (v × fst (from u))) (from_fwd (v' × fst (from u'))))
 
    apply_bwd :: Partial => Val 𝔹 {-c-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
-   apply_bwd v vs =
-      case vs of
-         (v1 : v2 : Nil) ->
-            to v1' : to v2' : Nil where v1' × v2' = bwd (from v) (fst (from v1) × fst (from v2))
-         _ -> error (show (length vs))
+   apply_bwd v (v1 : v2 : Nil) = to v1' : to v2' : Nil where v1' × v2' = bwd (from v) (fst (from v1) × fst (from v2))
 
 type UnarySpec a b = {
    fwd :: a × 𝔹 -> b × 𝔹,
@@ -286,10 +282,10 @@ union f _ (Left x)   = f x
 union _ f (Right x)  = f x
 
 union2 :: (Int -> Int -> Int) -> (Number -> Number -> Number) -> Int + Number -> Int + Number -> Int + Number
-union2 f _ (Left x) (Left y)     = Left $ f x y
-union2 _ f (Left x) (Right y)    = Right $ f (toNumber x) y
-union2 _ f (Right x) (Right y)   = Right $ f x y
-union2 _ f (Right x) (Left y)    = Right $ f x (toNumber y)
+union2 f _ (Left x) (Left y)     = Left (f x y)
+union2 _ f (Left x) (Right y)    = Right (f (toNumber x) y)
+union2 _ f (Right x) (Right y)   = Right (f x y)
+union2 _ f (Right x) (Left y)    = Right (f x (toNumber y))
 
 union2' :: forall a . (Int -> Int -> a) -> (Number -> Number -> a) -> Int + Number -> Int + Number -> a
 union2' f _ (Left x) (Left y)    = f x y
