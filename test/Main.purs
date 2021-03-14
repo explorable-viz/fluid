@@ -43,6 +43,7 @@ test' name setup expected =
          let e = successful (desugarFwd s)
          case successful (eval ρ e) of
             t × v -> do
+--               render (pretty t) `shouldEqual` "stop"
                unless (isGraphical v) $
                   render (pretty v) `shouldEqual` expected
                when slicing do
@@ -97,4 +98,4 @@ main = do
    run $ testWithDataset "renewables-restricted" "graphics/line-chart"
    run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
    -- scratchpad
-   run $ test "temp" "(1, (3, 3))"
+   run $ test "temp" "[[10], [12], [20]]"

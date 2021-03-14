@@ -124,5 +124,11 @@ nonEmpty Nil = error absurd
 nonEmpty (x : xs) = NonEmptyList (x :| xs)
 
 -- Also defined in Data.Profunctor.Monoidal, but perhaps not "standard library"
-dup :: forall a. a -> a × a
+dup :: forall a . a -> a × a
 dup x = x × x
+
+-- Can't find this in the prelude.
+replicate :: forall a . Int -> a -> List a
+replicate n a
+   | n == 0 = Nil
+   | true   = a : replicate (n - 1) a

@@ -19,7 +19,7 @@ import Lattice (𝔹, maybeJoin)
 import SExpr (
    Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
-import Util (MayFail, type (+), type (×), (×), absurd, assert, error, fromJust, otherwise, successful)
+import Util (MayFail, type (+), type (×), (×), absurd, assert, error, fromJust, successful)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd
@@ -78,7 +78,7 @@ exprFwd (Constr α c ss)          = E.Constr α c <$> traverse exprFwd ss
 exprFwd (Matrix α s (x × y) s')  = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
 exprFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
 exprFwd (App s1 s2)              = E.App <$> exprFwd s1 <*> exprFwd s2
-exprFwd (BinaryApp s1 op s2)     = E.BinaryApp <$> exprFwd s1 <@> op <*> exprFwd s2
+exprFwd (BinaryApp s1 op s2)     = E.App <$> (E.App (E.Op op) <$> exprFwd s1) <*> exprFwd s2
 exprFwd (MatchAs s bs)           = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> exprFwd s
 exprFwd (IfElse s1 s2 s3) = do
    e2 <- exprFwd s2
@@ -144,12 +144,12 @@ branchFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= patternFwd p
 branchesFwd_curried :: NonEmptyList (Branch 𝔹) -> MayFail (Elim 𝔹)
 branchesFwd_curried bs = do
    NonEmptyList (σ :| σs) <- traverse patternsFwd bs
-   foldM (\σ' -> maybeJoin σ' >>> otherwise "Unmergable function branches") σ σs
+   foldM maybeJoin σ σs
 
 branchesFwd_uncurried :: NonEmptyList (Pattern × Expr 𝔹) -> MayFail (Elim 𝔹)
 branchesFwd_uncurried bs = do
    NonEmptyList (σ :| σs) <- traverse (uncurry branchFwd_uncurried) bs
-   foldM (\σ' -> maybeJoin σ' >>> otherwise "Unmergable function branches") σ σs
+   foldM maybeJoin σ σs
 
 -- holes used to represent var defs, but otherwise surface programs never contain holes
 totaliseFwd :: Cont 𝔹 -> 𝔹 -> Cont 𝔹

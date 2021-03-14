@@ -94,8 +94,8 @@ exprBwd e (IfElse s1 s2 s3) =
                   (exprBwd (asExpr (mustLookup cFalse m)) s3)
       _ -> error absurd
 exprBwd e (BinaryApp s1 op s2) =
-   case expand e (E.BinaryApp E.Hole op E.Hole) of
-      E.BinaryApp e1 _ e2 -> BinaryApp (exprBwd e1 s1) op (exprBwd e2 s2)
+   case expand e (E.App (E.App (E.Op op) E.Hole) E.Hole) of
+      E.App (E.App (E.Op _) e1) e2 -> BinaryApp (exprBwd e1 s1) op (exprBwd e2 s2)
       _ -> error absurd
 exprBwd e (Let ds s) =
    case expand e (E.Let (E.VarDef ElimHole E.Hole) E.Hole) of

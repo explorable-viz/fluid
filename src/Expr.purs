@@ -4,14 +4,13 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
-import Data.Maybe (Maybe(..))
 import Bindings (Bindings, Var, (⪂))
 import DataType (Ctr)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
    (∨), botOf, definedJoin, expand, maybeJoin
 )
-import Util (type (×), (×), type (+), (≟), (≜), (⪄), absurd, error)
+import Util (type (×), (×), type (+), (≞), (≜), (⪄), absurd, error, report)
 
 data Expr a =
    Hole |
@@ -24,7 +23,6 @@ data Expr a =
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
    App (Expr a) (Expr a) |
-   BinaryApp (Expr a) Var (Expr a) |
    Let (VarDef a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
 
@@ -69,9 +67,9 @@ instance joinSemilatticeElim :: JoinSemilattice a => JoinSemilattice (Elim a) wh
 instance slicesElim :: JoinSemilattice a => Slices (Elim a) where
    maybeJoin ElimHole σ                         = pure σ
    maybeJoin σ ElimHole                         = pure σ
-   maybeJoin (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> (x ≟ x') <*> maybeJoin κ κ'
+   maybeJoin (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
-   maybeJoin _ _                                = Nothing
+   maybeJoin _ _                                = report "Incompatible eliminators"
 
 instance boundedSlicesElim :: JoinSemilattice a => BoundedSlices (Elim a) where
    botOf = const ElimHole
@@ -84,7 +82,7 @@ instance slicesCont :: JoinSemilattice a => Slices (Cont a) where
    maybeJoin κ ContHole                   = pure κ
    maybeJoin (ContExpr e) (ContExpr e')   = ContExpr <$> maybeJoin e e'
    maybeJoin (ContElim σ) (ContElim σ')   = ContElim <$> maybeJoin σ σ'
-   maybeJoin _ _                          = Nothing
+   maybeJoin _ _                          = report "Incompatible continuations"
 
 instance boundedSlicesCont :: JoinSemilattice a => BoundedSlices (Cont a) where
    botOf = const ContHole
@@ -104,21 +102,19 @@ instance joinSemilatticeExpr :: JoinSemilattice a => JoinSemilattice (Expr a) wh
 instance slicesExpr :: JoinSemilattice a => Slices (Expr a) where
    maybeJoin Hole e                                            = pure e
    maybeJoin e Hole                                            = pure e
-   maybeJoin (Var x) (Var x')                                  = Var <$> (x ≟ x')
-   maybeJoin (Op op) (Op op')                                  = Op <$> (op ≟ op')
-   maybeJoin (Int α n) (Int α' n')                             = Int (α ∨ α') <$> (n ≟ n')
-   maybeJoin (Str α str) (Str α' str')                         = Str (α ∨ α') <$> (str ≟ str')
-   maybeJoin (Float α n) (Float α' n')                         = Float (α ∨ α') <$> (n ≟ n')
-   maybeJoin (Constr α c es) (Constr α' c' es')                = Constr (α ∨ α') <$> (c ≟ c') <*> maybeJoin es es'
+   maybeJoin (Var x) (Var x')                                  = Var <$> (x ≞ x')
+   maybeJoin (Op op) (Op op')                                  = Op <$> (op ≞ op')
+   maybeJoin (Int α n) (Int α' n')                             = Int (α ∨ α') <$> (n ≞ n')
+   maybeJoin (Str α str) (Str α' str')                         = Str (α ∨ α') <$> (str ≞ str')
+   maybeJoin (Float α n) (Float α' n')                         = Float (α ∨ α') <$> (n ≞ n')
+   maybeJoin (Constr α c es) (Constr α' c' es')                = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin es es'
    maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
-      Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≟ x') `lift2 (×)` (y ≟ y')) <*> maybeJoin e2 e2'
+      Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≞ x') `lift2 (×)` (y ≞ y')) <*> maybeJoin e2 e2'
    maybeJoin (App e1 e2) (App e1' e2')                         = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
-   maybeJoin (BinaryApp e1 op e2) (BinaryApp e1' op' e2')      =
-      BinaryApp <$> maybeJoin e1 e1' <*> (op ≟ op') <*> maybeJoin e2 e2'
    maybeJoin (Lambda σ) (Lambda σ')                            = Lambda <$> maybeJoin σ σ'
    maybeJoin (Let def e) (Let def' e')                         = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec δ e) (LetRec δ' e')                       = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'
-   maybeJoin _ _                                               = Nothing
+   maybeJoin _ _                                               = report "Incompatible expressions"
 
 instance exprExpandable :: Expandable (Expr Boolean) where
    expand e Hole                                = e
@@ -132,7 +128,6 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand Hole (Lambda σ)                       = Lambda (expand ElimHole σ)
    expand Hole (App e1 e2)                      = App (expand Hole e1) (expand Hole e2)
    expand Hole (Let (VarDef σ e1) e2)           = Let (VarDef (expand ElimHole σ) (expand Hole e1)) (expand Hole e2)
-   expand Hole (BinaryApp e1 op e2)             = (BinaryApp (expand Hole e1) op (expand Hole e2))
    expand Hole (LetRec h e)                     = LetRec (expand (botOf h) h) (expand Hole e)
    expand (Var x) (Var x')                      = Var (x ≜ x')
    expand (Op op) (Op op')                      = Op (op ≜ op')
@@ -144,8 +139,6 @@ instance exprExpandable :: Expandable (Expr Boolean) where
       Matrix (α ⪄ β) (expand e1 e1') ((x1 ≜ x2) × (y1 ≜ y2)) (expand e2 e2')
    expand (Lambda σ) (Lambda σ')                = Lambda (expand σ σ')
    expand (App e1 e2) (App e1' e2')             = App (expand e1 e1') (expand e2 e2')
-   expand (BinaryApp e1 op e2) (BinaryApp e1' op' e2') =
-      BinaryApp (expand e1 e1') (op ≜ op') (expand e2 e2')
    expand (Let (VarDef σ e1) e2)
           (Let (VarDef σ' e1') e2')             = Let (VarDef (expand σ σ') (expand e1 e1')) (expand e2 e2')
    expand (LetRec h e) (LetRec h' e')           = LetRec (expand h h') (expand e e')

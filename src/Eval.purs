@@ -1,6 +1,6 @@
 module Eval where
 
-import Prelude hiding (absurd, apply)
+import Prelude hiding (absurd)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
@@ -15,9 +15,9 @@ import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr)
 import Lattice (𝔹, checkConsistent)
 import Pretty (pretty, render)
-import Primitive (apply, from)
+import Primitive (from)
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
-import Val (Env, Val)
+import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
@@ -97,24 +97,14 @@ eval ρ (App e e') = do
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) (asExpr e'')
          pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
-      V.Primitive φ ->
-         pure (T.AppPrim (t × φ) (t' × v') × apply φ v')
+      V.Primitive (PrimOp φ) vs ->
+         let vs' = vs <> singleton v'
+             v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs' in
+         pure (T.AppPrim (t × PrimOp φ × vs) (t' × v') × v'')
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> show c)
-         pure (T.AppConstr (t × c × vs) (t' × v') × V.Constr false c (vs <> singleton v'))
+         pure (T.AppConstr (t × c × length vs) t' × V.Constr false c (vs <> singleton v'))
       _ -> report "Expected closure, operator or unsaturated constructor"
-eval ρ (BinaryApp e op e') = do
-   t × v <- eval ρ e
-   t' × v' <- eval ρ e'
-   v_φ <- find op ρ
-   case v_φ of
-      V.Hole -> error absurd
-      V.Primitive φ ->
-         case apply φ v of
-            V.Hole -> error absurd
-            V.Primitive φ_v -> pure (T.BinaryApp (t × v) (op × φ) φ_v (t' × v') × apply φ_v v')
-            _ -> report "Not a binary operator"
-      _ -> report "Not an operator"
 eval ρ (Let (VarDef σ e) e') = do
    t × v <- eval ρ e
    ρ' × _ × w <- match v σ -- terminal type of eliminator is unit, represented as hole

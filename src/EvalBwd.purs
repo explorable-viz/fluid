@@ -1,8 +1,9 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
-import Data.Array (replicate)
-import Data.List (List(..), (:), foldr, range, reverse, singleton, zip)
+import Data.Array (replicate) as A
+import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
+import Data.List (length) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
@@ -11,9 +12,9 @@ import DataType (cPair)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
-import Lattice (𝔹, botOf, (∨))
-import Util (Endo, type (×), (×), (≜), (!), absurd, error, nonEmpty, successful)
-import Val (Env, Val, getα, setα)
+import Lattice (𝔹, (∨), botOf, expand)
+import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate, successful)
+import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
@@ -97,7 +98,7 @@ eval_bwd (V.Constr α c vs) (T.Constr ρ c' ts) | c == c' =
 eval_bwd _ (T.Constr _ _ _) =
    error absurd
 eval_bwd V.Hole t@(T.Matrix tss _ (i' × j') _) =
-   eval_bwd (V.Matrix false (replicate i' (replicate j' V.Hole) × (i' × false) × (j' × false))) t
+   eval_bwd (V.Matrix false (A.replicate i' (A.replicate j' V.Hole) × (i' × false) × (j' × false))) t
 eval_bwd (V.Matrix α (vss × (i' × β) × (j' × β'))) (T.Matrix tss (x × y) _ t) =
    let NonEmptyList ijs = nonEmpty $ do
             i <- range 1 i'
@@ -125,21 +126,26 @@ eval_bwd v (T.App (t1 × _ × δ × _) t2 w t3) =
        ρ1' × δ' × α2 = closeDefs_bwd ρ2 (ρ1 × δ)
        ρ'' × e1 × α'' = eval_bwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
    (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
-eval_bwd v (T.AppPrim (t1 × φ) (t2 × v2)) =
-   -- TODO: plug in bwd slicing
-   let ρ × e × α = eval_bwd (V.Primitive φ) t1
+eval_bwd v (T.AppPrim (t1 × (PrimOp φ) × vs) (t2 × v2)) =
+   let vs' = vs <> singleton v2
+       { init: vs'', last: v2' } = fromJust absurd $ unsnoc $
+         if φ.arity > L.length vs'
+         then case expand v (V.Primitive (PrimOp φ) (const V.Hole <$> vs')) of
+            V.Primitive _ vs'' -> vs''
+            _ -> error absurd
+         else φ.op_bwd v vs'
+       ρ × e × α = eval_bwd (V.Primitive (PrimOp φ) vs'') t1
+       ρ' × e' × α' = eval_bwd v2' t2 in
+   (ρ ∨ ρ') × App e e' × (α ∨ α')
+eval_bwd V.Hole t@(T.AppConstr (_ × c × n) _) =
+   eval_bwd (V.Constr false c (replicate (n + 1) V.Hole)) t
+eval_bwd (V.Constr β c vs) (T.AppConstr (t1 × _ × n) t2) =
+   let { init: vs', last: v2 } = fromJust absurd (unsnoc vs)
+       ρ × e × α = eval_bwd (V.Constr β c vs') t1
        ρ' × e' × α' = eval_bwd v2 t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
-eval_bwd v (T.AppConstr (t1 × c × vs) (t2 × v2)) =
-   let β = getα v
-       ρ × e × α = eval_bwd (V.Constr β c vs) t1
-       ρ' × e' × α' = eval_bwd (setα β v2) t2 in
-   (ρ ∨ ρ') × App e e' × (α ∨ α')
-eval_bwd v (T.BinaryApp (t1 × v1) (op × φ) _ (t2 × v2)) =
-   let β = getα v
-       ρ × e × α = eval_bwd (setα β v1) t1
-       ρ' × e' × α' = eval_bwd (setα β v2) t2 in
-   (ρ ∨ ρ' ◃ op ↦ V.Primitive φ) × BinaryApp e op e' × (α ∨ α')
+eval_bwd _ (T.AppConstr _ _) =
+   error absurd
 eval_bwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = eval_bwd v t2
        ρ1 × ρ2 = unmatch ρ1ρ2 w

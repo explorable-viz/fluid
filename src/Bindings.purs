@@ -2,12 +2,11 @@ module Bindings where
 
 import Prelude hiding (absurd)
 import Data.List (List(..), (:))
-import Data.Maybe (Maybe(..))
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
    botOf, definedJoin, expand, maybeJoin
 )
-import Util (Endo, MayFail, type (×), (×), (≟), (≜), absurd, error, fromJust, report, whenever)
+import Util (Endo, MayFail, type (×), (×), (≞), (≜), absurd, error, fromJust, report, whenever)
 
 type Var = String -- newtype?
 
@@ -80,8 +79,8 @@ instance joinSemilatticeBindings :: Slices (t a) => JoinSemilattice (Bindings t 
 
 instance slicesBindings :: Slices (t a) => Slices (Bindings t a) where
    maybeJoin Empty Empty                     = pure Empty
-   maybeJoin (ρ :+: x ↦ v) (ρ' :+: y ↦ v')   = (:+:) <$> maybeJoin ρ ρ' <*> ((↦) <$> (x ≟ y) <*> maybeJoin v v')
-   maybeJoin _ _                             = Nothing
+   maybeJoin (ρ :+: x ↦ v) (ρ' :+: y ↦ v')   = (:+:) <$> maybeJoin ρ ρ' <*> ((↦) <$> (x ≞ y) <*> maybeJoin v v')
+   maybeJoin _ _                             = report "Bindings of different lengths"
 
 instance boundedSlices :: BoundedSlices (t Boolean) => BoundedSlices (Bindings t Boolean) where
    botOf Empty = Empty
