@@ -109,10 +109,11 @@ instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String)
    expand (Right str)        = Str false str
 
 instance toFromIntAndInt :: ToFrom (Int × Boolean × (Int × Boolean)) where
+   to (nβ × mβ' × α) = Constr α cPair (to nβ : to mβ' : Nil)
+
    from (Constr α c (v : v' : Nil)) | c == cPair  = from v × from v' × α
    from _                                         = error "Pair expected"
 
-   to _ = error "todo"
    expand _ = Constr false cPair (Hole : Hole : Nil)
 
 instance toFromMatrixRep :: ToFrom (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
