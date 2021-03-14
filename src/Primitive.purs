@@ -5,7 +5,7 @@ import Prelude hiding (absurd, apply)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
-import Data.List (List(..), (:))
+import Data.List (List(..), (:), length)
 import Data.Map (Map, fromFoldable)
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
@@ -165,14 +165,14 @@ unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply_fwd (v × u : Nil) = to (fwd (from_fwd (v × fst (from u))))
 
    apply_bwd :: Partial => Val 𝔹 {-b-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
-   apply_bwd v (v1 : Nil) = to (bwd (from v) (fst (from v1))) : Nil
+   apply_bwd v (v1 : Nil) = to v1' : Nil where v1' = bwd (from v) (fst (from v1))
 
 binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySpec a b c -> Val 𝔹
 binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 2,
    op: unsafePartial apply,
    op_fwd: unsafePartial apply_fwd,
-   op_bwd: \_ vs -> vs
+   op_bwd: unsafePartial apply_bwd
 }
    where
    apply :: Partial => List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
@@ -180,6 +180,13 @@ binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
 
    apply_fwd :: Partial => List (Val 𝔹 × Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
    apply_fwd (v × u : v' × u' : Nil) = to (fwd (from_fwd (v × fst (from u))) (from_fwd (v' × fst (from u'))))
+
+   apply_bwd :: Partial => Val 𝔹 {-c-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
+   apply_bwd v vs =
+      case vs of
+         (v1 : v2 : Nil) ->
+            to v1' : to v2' : Nil where v1' × v2' = bwd (from v) (fst (from v1) × fst (from v2))
+         _ -> error (show (length vs))
 
 type UnarySpec a b = {
    fwd :: a × 𝔹 -> b × 𝔹,

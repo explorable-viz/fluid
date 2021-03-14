@@ -21,9 +21,9 @@ data Expl a =
    Matrix (Array (Array (Expl a))) (Var × Var) (Int × Int) (Expl a) |
    Lambda (Env a) (Elim a) |
    App (Expl a × Env a × RecDefs a × Elim a) (Expl a) (Match a) (Expl a) |
-   -- record arguments encountered prior to this one
+   -- record prior arguments
    AppPrim (Expl a × PrimOp × List (Val a)) (Expl a × Val a) |
-   -- record number of arguments encountered prior to this one
+   -- record number of prior arguments
    AppConstr (Expl a × Ctr × Int) (Expl a) |
    Let (VarDef a) (Expl a) |
    LetRec (RecDefs a) (Expl a)
