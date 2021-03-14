@@ -95,11 +95,13 @@ instance toFromIntOrNumber :: ToFrom (Int + Number) where
    expand (Right n) = Float false n
 
 instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String) where
-   to _ = error "todo"
+   to (Left (Left n) × α)  = Int α n
+   to (Left (Right n) × α) = Float α n
+   to (Right str × α)      = Str α str
 
    from (Int α n)   = Left (Left n) × α
    from (Float α n) = Left (Right n) × α
-   from (Str α n)   = Right n × α
+   from (Str α str) = Right str × α
    from _           = error "Int, Float or Str expected"
 
    expand (Left (Left n))    = Int false n

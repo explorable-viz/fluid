@@ -3,6 +3,7 @@ module EvalBwd where
 import Prelude hiding (absurd)
 import Data.Array (replicate) as A
 import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
+import Data.List (length) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
@@ -11,7 +12,7 @@ import DataType (cPair)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
-import Lattice (𝔹, botOf, (∨))
+import Lattice (𝔹, (∨), botOf, expand)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate, successful)
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
@@ -126,8 +127,13 @@ eval_bwd v (T.App (t1 × _ × δ × _) t2 w t3) =
        ρ'' × e1 × α'' = eval_bwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
    (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
 eval_bwd v (T.AppPrim (t1 × (PrimOp φ) × vs) (t2 × v2)) =
-   let vs' = φ.op_bwd v (vs <> singleton v2)
-       { init: vs'', last: v2' } = fromJust absurd (unsnoc vs')
+   let vs' = vs <> singleton v2
+       { init: vs'', last: v2' } = fromJust absurd $ unsnoc $
+         if φ.arity > L.length vs'
+         then case expand v (V.Primitive (PrimOp φ) (const V.Hole <$> vs')) of
+            V.Primitive _ vs'' -> vs''
+            _ -> error absurd
+         else φ.op_bwd v vs'
        ρ × e × α = eval_bwd (V.Primitive (PrimOp φ) vs'') t1
        ρ' × e' × α' = eval_bwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
