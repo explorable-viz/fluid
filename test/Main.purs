@@ -16,11 +16,12 @@ import Expr (Expr(..)) as E
 import Eval (eval)
 import EvalBwd (eval_bwd)
 import EvalFwd (eval_fwd)
+import Expl (Expl)
 import Lattice (𝔹, botOf)
 import Module (openDatasetAs, openWithDefaultImports)
 import Pretty (pretty, render)
 import SExpr (Expr) as S
-import Util (type (×), (×), successful)
+import Util (MayFail, type (×), (×), successful)
 import Val (Env, Val(..))
 
 -- Don't enforce expected values for graphics tests (values too complex).
@@ -36,22 +37,28 @@ slicing = true
 run :: forall a . SpecT Aff Unit Effect a → Effect Unit
 run = runMocha -- nicer name
 
+desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
+desugarEval ρ s = desugarFwd s >>= eval ρ
+
+desugarEval_bwd :: Expl 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr 𝔹
+desugarEval_bwd (t × s) v = let ρ × e × _ = eval_bwd v t in ρ × desugarBwd e s
+
+desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
+desugarEval_fwd ρ s =
+   let _ = eval_fwd (botOf ρ) E.Hole true in -- sanity-check that this is defined
+   eval_fwd ρ (successful (desugarFwd s)) true
+
 test' :: String -> Aff (Env 𝔹 × S.Expr 𝔹) -> String -> SpecT Aff Unit Effect Unit
 test' name setup expected =
    before setup $
       it name $ \(ρ × s) -> do
-         let e = successful (desugarFwd s)
-         case successful (eval ρ e) of
+         case successful (desugarEval ρ s) of
             t × v -> do
---               render (pretty t) `shouldEqual` "stop"
                unless (isGraphical v) $
                   render (pretty v) `shouldEqual` expected
                when slicing do
-                  let ρ' × e' × α'  = eval_bwd v t
-                      s' = desugarBwd e' s
-                      e'' = successful (desugarFwd s')
-                      _ = eval_fwd (botOf ρ') E.Hole true t
-                      v' = eval_fwd ρ' e'' true t
+                  let ρ' × s' = desugarEval_bwd (t × s) v
+                      v' = desugarEval_fwd ρ' s' t
                   unless (isGraphical v) $
                      render (pretty v') `shouldEqual` expected
 

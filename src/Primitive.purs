@@ -18,7 +18,7 @@ import Lattice (𝔹, (∧))
 import Util (type (×), (×), type (+), (!), absurd, error, unsafeUpdateAt)
 import Val (Env, MatrixRep, PrimOp(..), Val(..))
 
--- name in user land, precedence 0 from 9 (similar from Haskell 98), associativity
+-- name in user land, precedence 0 from 9 (similar to Haskell 98), associativity
 type OpDef = {
    op    :: Var,
    prec  :: Int,
@@ -131,7 +131,7 @@ instance toFromPair :: ToFrom (Val Boolean × Val Boolean) where
    expand _ = Constr false cPair (Hole : Hole : Nil)
 
 instance toFromBoolean :: ToFrom Boolean where
-   from (Constr α c Nil )
+   from (Constr α c Nil)
       | c == cTrue   = true × α
       | c == cFalse  = false × α
    from _ = error absurd
@@ -168,7 +168,8 @@ unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply_fwd (v × u : Nil) = to (fwd (from_fwd (v × fst (from u))))
 
    apply_bwd :: Partial => Val 𝔹 {-b-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
-   apply_bwd v (v1 : Nil) = to v1' : Nil where v1' = bwd (from v) (fst (from v1))
+   apply_bwd v (v1 : Nil) = to v1' : Nil
+      where v1' = bwd (from v) (fst (from v1))
 
 binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySpec a b c -> Val 𝔹
 binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
@@ -182,10 +183,11 @@ binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply (v : v' : Nil) = to (fwd (from v) (from v'))
 
    apply_fwd :: Partial => List (Val 𝔹 × Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
-   apply_fwd (v × u : v' × u' : Nil) = to (fwd (from_fwd (v × fst (from u))) (from_fwd (v' × fst (from u'))))
+   apply_fwd (v1 × u1 : v2 × u2 : Nil) = to (fwd (from_fwd (v1 × fst (from u1))) (from_fwd (v2 × fst (from u2))))
 
    apply_bwd :: Partial => Val 𝔹 {-c-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
-   apply_bwd v (v1 : v2 : Nil) = to v1' : to v2' : Nil where v1' × v2' = bwd (from v) (fst (from v1) × fst (from v2))
+   apply_bwd v (v1 : v2 : Nil) = to v1' : to v2' : Nil
+      where v1' × v2' = bwd (from v) (fst (from v1) × fst (from v2))
 
 type UnarySpec a b = {
    fwd :: a × 𝔹 -> b × 𝔹,
