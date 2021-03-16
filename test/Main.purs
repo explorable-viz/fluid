@@ -2,6 +2,7 @@ module Test.Main where
 
 import Prelude
 import Data.Bitraversable (bitraverse)
+import Data.Traversable (sequence)
 import Data.Tuple (uncurry)
 -- import Debug.Trace (trace) as T
 import Effect (Effect)
@@ -72,37 +73,37 @@ testWithDataset dataset file =
       (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)
 
 main :: Effect Unit
-main = do
-   -- desugaring
-   run $ test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]"
-   run $ test "desugar/list-comp-2" "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9, 9, 12, 12, 12, 10, 10, 10, 8, 8, 8]"
-   run $ test "desugar/list-comp-3" "[9, 8]"
-   run $ test "desugar/list-comp-4" "[5, 4, 3]"
-   run $ test "desugar/list-comp-5" "[5, 4, 3]"
-   run $ test "desugar/list-comp-6" "[5]"
-   run $ test "desugar/list-comp-7" "[[]]"
-   run $ test "desugar/list-enum" "[3, 4, 5, 6, 7]"
+main = void $ sequence $ run <$> [
+   test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]",
+   test "desugar/list-comp-2" "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9, 9, 12, 12, 12, 10, 10, 10, 8, 8, 8]",
+   test "desugar/list-comp-3" "[9, 8]",
+   test "desugar/list-comp-4" "[5, 4, 3]",
+   test "desugar/list-comp-5" "[5, 4, 3]",
+   test "desugar/list-comp-6" "[5]",
+   test "desugar/list-comp-7" "[[]]",
+   test "desugar/list-enum" "[3, 4, 5, 6, 7]",
    -- misc
-   run $ test "arithmetic" "42"
-   run $ test "array" "(1, (3, 3))"
-   run $ test "compose" "5"
-   run $ test "factorial" "40320"
-   run $ test "filter" "[8, 7]"
-   run $ test "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]"
-   run $ test "foldr_sumSquares" "661"
-   run $ test "lexicalScoping" "\"6\""
-   run $ test "length" "2"
-   run $ test "lookup" "Some \"sarah\""
-   run $ test "map" "[5, 7, 13, 15, 4, 3, -3]"
-   run $ test "mergeSort" "[1, 2, 3]"
-   run $ test "normalise" "(33, 66)"
-   run $ test "pattern-match" "4"
-   run $ test "reverse" "[2, 1]"
-   run $ test "zipWith" "[[10], [12], [20]]"
+   test "arithmetic" "42",
+   test "array" "(1, (3, 3))",
+   test "compose" "5",
+   test "factorial" "40320",
+   test "filter" "[8, 7]",
+   test "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]",
+   test "foldr_sumSquares" "661",
+   test "lexicalScoping" "\"6\"",
+   test "length" "2",
+   test "lookup" "Some \"sarah\"",
+   test "map" "[5, 7, 13, 15, 4, 3, -3]",
+   test "mergeSort" "[1, 2, 3]",
+   test "normalise" "(33, 66)",
+   test "pattern-match" "4",
+   test "reverse" "[2, 1]",
+   test "zipWith" "[[10], [12], [20]]",
    -- graphics
-   run $ testWithDataset "renewables-restricted" "graphics/background"
-   run $ testWithDataset "renewables-restricted" "graphics/grouped-bar-chart"
-   run $ testWithDataset "renewables-restricted" "graphics/line-chart"
-   run $ testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
+   testWithDataset "renewables-restricted" "graphics/background",
+   testWithDataset "renewables-restricted" "graphics/grouped-bar-chart",
+   testWithDataset "renewables-restricted" "graphics/line-chart",
+   testWithDataset "renewables-restricted" "graphics/stacked-bar-chart",
    -- scratchpad
-   run $ test "temp" "[[10], [12], [20]]"
+   test "temp" "[[10], [12], [20]]"
+]
