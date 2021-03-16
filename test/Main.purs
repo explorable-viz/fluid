@@ -8,6 +8,20 @@ import Effect (Effect)
 import Test.Util (Test, run, test, testWithDataset, test_bwd)
 import Val (Val(..))
 
+main :: Effect Unit
+main = void $ sequence $ run <$> concat [
+   test_desugaring,
+   test_misc,
+   test_graphics,
+   test_slicing,
+   test_scratchpad
+]
+
+test_scratchpad :: Array (Test Unit)
+test_scratchpad = [
+   test "temp" "[[10], [12], [20]]"
+]
+
 test_desugaring :: Array (Test Unit)
 test_desugaring = [
    test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]",
@@ -52,18 +66,4 @@ test_graphics = [
 test_slicing :: Array (Test Unit)
 test_slicing = [
    test_bwd "slicing/multiply" (Int true 0) "0"
-]
-
-test_scratchpad :: Array (Test Unit)
-test_scratchpad = [
-   test "temp" "[[10], [12], [20]]"
-]
-
-main :: Effect Unit
-main = void $ sequence $ run <$> concat [
-   test_desugaring,
-   test_misc,
-   test_graphics,
-   test_slicing,
-   test_scratchpad
 ]
