@@ -90,8 +90,8 @@ exprBwd e (IfElse s1 s2 s3) =
    case expand e (E.App (E.Lambda (elimBool ContHole ContHole)) E.Hole) of
       E.App (E.Lambda (ElimConstr m)) e1 ->
          IfElse (exprBwd e1 s1)
-                  (exprBwd (asExpr (mustLookup cTrue m)) s2)
-                  (exprBwd (asExpr (mustLookup cFalse m)) s3)
+                (exprBwd (asExpr (mustLookup cTrue m)) s2)
+                (exprBwd (asExpr (mustLookup cFalse m)) s3)
       _ -> error absurd
 exprBwd e (BinaryApp s1 op s2) =
    case expand e (E.App (E.App (E.Op op) E.Hole) E.Hole) of
