@@ -13,8 +13,8 @@ import DataType (dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
 import Eval (eval)
-import EvalBwd (eval_bwd)
-import EvalFwd (eval_fwd)
+import EvalBwd (evalBwd)
+import EvalFwd (evalFwd)
 import Expl (Expl)
 import Expr (Expr(..)) as E
 import SExpr (Expr) as S
@@ -39,12 +39,12 @@ desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 desugarEval ρ s = desugarFwd s >>= eval ρ
 
 desugarEval_bwd :: Expl 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr 𝔹
-desugarEval_bwd (t × s) v = let ρ × e × _ = eval_bwd v t in ρ × desugarBwd e s
+desugarEval_bwd (t × s) v = let ρ × e × _ = evalBwd v t in ρ × desugarBwd e s
 
 desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
 desugarEval_fwd ρ s =
-   let _ = eval_fwd (botOf ρ) E.Hole true in -- sanity-check that this is defined
-   eval_fwd ρ (successful (desugarFwd s)) true
+   let _ = evalFwd (botOf ρ) E.Hole true in -- sanity-check that this is defined
+   evalFwd ρ (successful (desugarFwd s)) true
 
 checkPretty :: forall a . Pretty a => a -> String -> Aff Unit
 checkPretty x expected = render (pretty x) `shouldEqual` expected
@@ -60,7 +60,7 @@ testWithSetup name v_str bwd_opt setup =
              v = desugarEval_fwd ρ' s' t
          unless (isGraphical v) (checkPretty v v_str)
          when (isJust s_str_opt) $ do
-            let _ × e × _ = eval_bwd (fromMaybe v v_opt) t
+            let _ × e × _ = evalBwd (fromMaybe v v_opt) t
             checkPretty e (fromJust absurd s_str_opt)
 
 test :: String -> String -> Test Unit
