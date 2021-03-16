@@ -210,7 +210,7 @@ instance toListSExpr :: ToList (Expr Boolean)  where
 instance prettySExpr :: Pretty (Expr Boolean) where
    pretty (Var x)                   = text x
    pretty (Op op)                   = parens (text op)
-   pretty (Int _ n)                 = text (show n)
+   pretty (Int α n)                 = highlightIf α (text (show n))
    pretty (Float _ n)               = text (show n)
    pretty (Str _ str)               = text (show str)
    pretty r@(Constr _ c es)

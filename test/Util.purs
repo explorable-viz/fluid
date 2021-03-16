@@ -60,8 +60,7 @@ testWithSetup name v_str bwd_opt setup =
              v = desugarEval_fwd ρ' s' t
          unless (isGraphical v) (checkPretty v v_str)
          when (isJust s_str_opt) $ do
-            let _ × e × _ = evalBwd (fromMaybe v v_opt) t
-            checkPretty e (fromJust absurd s_str_opt)
+            checkPretty s (fromJust absurd s_str_opt)
 
 test :: String -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
