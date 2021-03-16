@@ -49,11 +49,10 @@ desugarEval_fwd ρ s =
 testWithSetup :: String -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup name expected v_opt setup =
    before setup $
-      it name $ \(ρ × s) -> do
-         case successful (desugarEval ρ s) of
-            t × v ->
-               let ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt) in
-               checkExpected (desugarEval_fwd ρ' s' t)
+      it name $ \(ρ × s) ->
+         let t × v = successful (desugarEval ρ s)
+             ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt) in
+         checkExpected (desugarEval_fwd ρ' s' t)
    where
    checkExpected :: Val 𝔹 -> Aff Unit
    checkExpected v = unless (isGraphical v) (render (pretty v) `shouldEqual` expected)
