@@ -219,7 +219,7 @@ instance prettySExpr :: Pretty (Expr Boolean) where
    pretty (Matrix _ _ _ _)          = error "todo"
    pretty (Lambda bs)               = text "λ " :<>: pretty bs
    pretty (App s s')                = pretty s :<>: space :<>: pretty s'
-   pretty (BinaryApp s op s')       = pretty s :<>: operator op :<>: pretty s'
+   pretty (BinaryApp s op s')       = parens (pretty s :<>: operator op :<>: pretty s')
    pretty (MatchAs s bs)            = text "match " :<>: pretty s :<>: text " as " :<>: pretty bs
    pretty (IfElse s1 s2 s3)         =
       text "if " :<>: pretty s1 :<>: text " then " :<>: pretty s2 :<>: text " else " :<>: pretty s3
