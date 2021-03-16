@@ -55,14 +55,16 @@ testWithSetup name expected v_opt setup =
    before setup $
       it name $ \(ρ × s) -> do
          case successful (desugarEval ρ s) of
-            t × v -> do
-               unless (isGraphical v) $
-                  render (pretty v) `shouldEqual` expected
-               when slicing do
+            t × v ->
+               if slicing
+               then
                   let ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
-                      v' = desugarEval_fwd ρ' s' t
-                  unless (isGraphical v) $
-                     render (pretty v') `shouldEqual` expected
+                      v' = desugarEval_fwd ρ' s' t in
+                  checkExpected v'
+               else checkExpected v
+   where
+   checkExpected :: Val 𝔹 -> Aff Unit
+   checkExpected v = unless (isGraphical v) (render (pretty v) `shouldEqual` expected)
 
 test :: String -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)

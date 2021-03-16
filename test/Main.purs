@@ -10,16 +10,21 @@ import Val (Val(..))
 
 main :: Effect Unit
 main = void $ sequence $ run <$> concat [
-   test_desugaring,
-   test_misc,
-   test_graphics,
-   test_slicing,
-   test_scratchpad
+--   test_desugaring,
+--   test_misc,
+   test_slicing
+--   test_graphics,
+--   test_scratchpad
 ]
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
    test "temp" "[[10], [12], [20]]"
+]
+
+test_slicing :: Array (Test Unit)
+test_slicing = [
+   test_bwd "slicing/multiply" (Int true 0) "[0]"
 ]
 
 test_desugaring :: Array (Test Unit)
@@ -61,9 +66,4 @@ test_graphics = [
    testWithDataset "renewables-restricted" "graphics/grouped-bar-chart",
    testWithDataset "renewables-restricted" "graphics/line-chart",
    testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
-]
-
-test_slicing :: Array (Test Unit)
-test_slicing = [
-   test_bwd "slicing/multiply" (Int true 0) "0"
 ]
