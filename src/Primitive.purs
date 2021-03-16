@@ -15,7 +15,7 @@ import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
-import Util (type (×), (×), type (+), (!), absurd, error, unsafeUpdateAt)
+import Util (type (×), (×), type (+), (!), (≜), absurd, assert, error, unsafeUpdateAt)
 import Val (Env, MatrixRep, PrimOp(..), Val(..))
 
 -- name in user land, precedence 0 from 9 (similar to Haskell 98), associativity
@@ -47,6 +47,9 @@ opDefs = fromFoldable [
    opDef ">="  4 AssocLeft
 ]
 
+-- Mediates between a Val, and its underlying data, where "from" resembles pattern-matching, and "to" resembles
+-- construction. The annotation associated with the underlying data is the analogue (for primitives) of the
+-- annotation argument to eval (and returned by pattern-matching) controlling whether construction is permitted.
 class ToFrom a where
    to :: a × 𝔹 -> Val 𝔹
    from :: Val 𝔹 -> a × 𝔹          -- only defined for non-holes
@@ -56,10 +59,9 @@ from_fwd :: forall a . ToFrom a => Val 𝔹 × a -> a × 𝔹
 from_fwd (Hole × v') = from (expand v')
 from_fwd (v × _)     = from v
 
--- REVISIT: This instance is a bit weird (see matrix lookup and comments below).
 instance toFromVal :: ToFrom (Val Boolean) where
-   to = fst             -- constructing a Val from a Val isn't "construction"
-   from = (_ × false)   -- pattern-matching a Val as a Val isn't "pattern-matching"
+   to = fst             -- construction rights not required
+   from = (_ × true)    -- construction rights always provided
    expand = identity
 
 instance toFromInt :: ToFrom Int where
@@ -211,7 +213,7 @@ dependsBoth op = { fwd, bwd }
    fwd (x × α) (y × β) = x `op` y × (α ∧ β)
    bwd (_ × α) (x × y) = (x × α) × (y × α)
 
--- If both are zero, we depend only on the first.
+-- If both are zero, depend only on the first.
 dependsZero :: forall a b . IsZero a => (a -> a -> b) -> BinarySpec a a b
 dependsZero op = { fwd, bwd }
    where
@@ -261,18 +263,19 @@ dims :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
 dims (_ × (i × α) × (j × β)) = Int α i × Int β j
 
 dims_bwd :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
-dims_bwd (Int α i' × Int β j') (vss × (i × _) × (j × _)) | i == i' && j == j' = vss × (i × α) × (j × β)
-dims_bwd _ _                                                                  = error absurd
+dims_bwd (Int α i' × Int β j') (vss × (i × _) × (j × _)) = vss × ((i ≜ i') × α) × ((j ≜ j') × β)
+dims_bwd (_ × _) _                                       = error absurd
 
--- TODO: sigs of first argument to bwd, and return value of bwd, are suspect
+-- Annotation on first arg to bwd is always true, and on return value of bwd should always be false.
 matrixLookup :: BinarySpec (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
 matrixLookup = { fwd, bwd }
    where
    fwd :: MatrixRep 𝔹 × 𝔹 -> (Int × 𝔹) × (Int × 𝔹) × 𝔹 -> Val 𝔹 × 𝔹
-   fwd (vss × _ × _ × _) ((i × _) × (j × _) × _) = vss!(i - 1)!(j - 1) × false
+   fwd ((vss × _ × _) × _) ((i × _) × (j × _) × _) = vss!(i - 1)!(j - 1) × false
 
    bwd :: Val 𝔹 × 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> (MatrixRep 𝔹 × 𝔹) × ((Int × 𝔹) × (Int × 𝔹) × 𝔹)
-   bwd (v × _) (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
+   bwd (v × α) (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
+      assert α $
       (vss'' × (i' × false) × (j' × false) × false) × ((i × false) × (j × false) × false)
       where vss'  = (<$>) (const Hole) <$> vss
             vs_i  = vss'!(i - 1)
