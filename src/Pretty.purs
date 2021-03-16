@@ -147,7 +147,7 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
       | otherwise                   = prettyConstr c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Op op)                 = parens (text op)
-   pretty (E.Let (E.VarDef σ e) e')   =
+   pretty (E.Let (E.VarDef σ e) e') =
       atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
    pretty (E.LetRec δ e)            =
       atop (text "letrec " :<>: pretty δ) (text "in " :<>: pretty e)

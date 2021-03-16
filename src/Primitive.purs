@@ -84,8 +84,8 @@ instance toFromString :: ToFrom String where
    expand = Str false
 
 instance toFromIntOrNumber :: ToFrom (Int + Number) where
-   to (Left n × α)    = Int α n
-   to (Right n × α)   = Float α n
+   to (Left n × α)   = Int α n
+   to (Right n × α)  = Float α n
 
    from (Int α n)    = Left n × α
    from (Float α n)  = Right n × α
