@@ -2,6 +2,7 @@ module Test.Main where
 
 import Prelude
 import Data.Bitraversable (bitraverse)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Traversable (sequence)
 import Data.Tuple (uncurry)
 -- import Debug.Trace (trace) as T
@@ -49,8 +50,8 @@ desugarEval_fwd ρ s =
    let _ = eval_fwd (botOf ρ) E.Hole true in -- sanity-check that this is defined
    eval_fwd ρ (successful (desugarFwd s)) true
 
-test' :: String -> Aff (Env 𝔹 × S.Expr 𝔹) -> String -> SpecT Aff Unit Effect Unit
-test' name setup expected =
+test' :: String -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> SpecT Aff Unit Effect Unit
+test' name expected v_opt setup =
    before setup $
       it name $ \(ρ × s) -> do
          case successful (desugarEval ρ s) of
@@ -58,22 +59,23 @@ test' name setup expected =
                unless (isGraphical v) $
                   render (pretty v) `shouldEqual` expected
                when slicing do
-                  let ρ' × s' = desugarEval_bwd (t × s) v
+                  let ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
                       v' = desugarEval_fwd ρ' s' t
                   unless (isGraphical v) $
                      render (pretty v') `shouldEqual` expected
 
 test :: String -> String -> SpecT Aff Unit Effect Unit
-test file = test' file (openWithDefaultImports file)
+test file expected = test' file expected Nothing (openWithDefaultImports file)
 
 testWithDataset :: String -> String -> SpecT Aff Unit Effect Unit
 testWithDataset dataset file =
-   flip (test' file) "" $
+   test' file "" Nothing $
       bitraverse (uncurry openDatasetAs) openWithDefaultImports (dataset × "data" × file) <#>
       (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)
 
 main :: Effect Unit
 main = void $ sequence $ run <$> [
+   -- desugaring
    test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]",
    test "desugar/list-comp-2" "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9, 9, 12, 12, 12, 10, 10, 10, 8, 8, 8]",
    test "desugar/list-comp-3" "[9, 8]",
