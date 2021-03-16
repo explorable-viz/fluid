@@ -28,9 +28,9 @@ between l r doc = l :<>: doc :<>: r
 brackets :: Endo Doc
 brackets = between (text "[") (text "]")
 
-bracketsIf :: Boolean -> Endo Doc
-bracketsIf false   = identity
-bracketsIf true    = brackets
+highlightIf :: Boolean -> Endo Doc
+highlightIf false   = identity
+highlightIf true    = between (text "_") (text "_")
 
 comma :: Doc
 comma = text "," :<>: space
@@ -138,7 +138,7 @@ prettyConstr c xs
 
 instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty E.Hole                    = hole
-   pretty (E.Int α n)               = text (show n)
+   pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
    pretty (E.Var x)                 = text x
@@ -175,7 +175,7 @@ instance prettyElim :: Pretty (Elim Boolean) where
 
 instance prettyVal :: Pretty (Val Boolean) where
    pretty V.Hole                       = hole
-   pretty (V.Int α n)                  = bracketsIf α (text (show n))
+   pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float _ n)                = text (show n)
    pretty (V.Str _ str)                = text (show str)
    pretty u@(V.Constr _ c vs)

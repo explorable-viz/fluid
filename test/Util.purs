@@ -21,7 +21,7 @@ import SExpr (Expr) as S
 import Lattice (𝔹, botOf)
 import Module (openDatasetAs, openWithDefaultImports)
 import Pretty (pretty, render)
-import Util (MayFail, type (×), (×), successful)
+import Util (MayFail, type (×), (×), successful, unzip)
 import Val (Env, Val(..))
 
 -- Don't enforce expected values for graphics tests (values too complex).
@@ -33,7 +33,7 @@ isGraphical _              = false
 type Test a = SpecT Aff Unit Effect a
 
 run :: forall a . Test a → Effect Unit
-run = runMocha -- nicer name
+run = runMocha -- no reason at all to have to look at the word "Mocha"
 
 desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 desugarEval ρ s = desugarFwd s >>= eval ρ
@@ -46,8 +46,9 @@ desugarEval_fwd ρ s =
    let _ = eval_fwd (botOf ρ) E.Hole true in -- sanity-check that this is defined
    eval_fwd ρ (successful (desugarFwd s)) true
 
-testWithSetup :: String -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
-testWithSetup name expected v_opt setup =
+testWithSetup :: String -> String -> Maybe (Val 𝔹 × String) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
+testWithSetup name expected v_str_opt setup =
+   let v_opt × str_opt = unzip v_str_opt in
    before setup $
       it name $ \(ρ × s) ->
          let t × v = successful (desugarEval ρ s)
@@ -60,8 +61,8 @@ testWithSetup name expected v_opt setup =
 test :: String -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
 
-test_bwd :: String -> Val 𝔹 -> String -> Test Unit
-test_bwd file v expected = testWithSetup file expected (Just v) (openWithDefaultImports file)
+test_bwd :: String -> (Val 𝔹 × String) -> String -> Test Unit
+test_bwd file v_str expected = testWithSetup file expected (Just v_str) (openWithDefaultImports file)
 
 testWithDataset :: String -> String -> Test Unit
 testWithDataset dataset file =

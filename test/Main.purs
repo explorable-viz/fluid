@@ -6,6 +6,7 @@ import Data.Traversable (sequence)
 -- import Debug.Trace (trace) as T
 import Effect (Effect)
 import Test.Util (Test, run, test, testWithDataset, test_bwd)
+import Util ((×))
 import Val (Val(..))
 
 main :: Effect Unit
@@ -24,7 +25,7 @@ test_scratchpad = [
 
 test_slicing :: Array (Test Unit)
 test_slicing = [
-   test_bwd "slicing/multiply" (Int true 0) "[0]"
+   test_bwd "slicing/multiply" (Int true 0 × "5 * (_0_ * 3)") "_0_"
 ]
 
 test_desugaring :: Array (Test Unit)

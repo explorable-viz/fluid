@@ -11,7 +11,8 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, lookup, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
-import Data.Tuple (Tuple(..))
+import Data.Profunctor.Strong ((&&&))
+import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 
@@ -132,3 +133,6 @@ replicate :: forall a . Int -> a -> List a
 replicate n a
    | n == 0 = Nil
    | true   = a : replicate (n - 1) a
+
+unzip :: forall t a b . Functor t => t (a × b) -> t a × t b
+unzip = map fst &&& map snd
