@@ -1,8 +1,8 @@
 module Test.Util where
 
-import Prelude
+import Prelude hiding (absurd)
 import Data.Bitraversable (bitraverse)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -20,8 +20,8 @@ import Expr (Expr(..)) as E
 import SExpr (Expr) as S
 import Lattice (𝔹, botOf)
 import Module (openDatasetAs, openWithDefaultImports)
-import Pretty (pretty, render)
-import Util (MayFail, type (×), (×), successful, unzip)
+import Pretty (class Pretty, pretty, render)
+import Util (MayFail, type (×), (×), absurd, fromJust, successful, unzip)
 import Val (Env, Val(..))
 
 -- Don't enforce expected values for graphics tests (values too complex).
@@ -46,17 +46,20 @@ desugarEval_fwd ρ s =
    let _ = eval_fwd (botOf ρ) E.Hole true in -- sanity-check that this is defined
    eval_fwd ρ (successful (desugarFwd s)) true
 
+checkPretty :: forall a . Pretty a => a -> String -> Aff Unit
+checkPretty x expected = render (pretty x) `shouldEqual` expected
+
+-- bwd_opt is pair of (output slice, string representation of expected program slice)
 testWithSetup :: String -> String -> Maybe (Val 𝔹 × String) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
-testWithSetup name expected v_str_opt setup =
-   let v_opt × str_opt = unzip v_str_opt in
+testWithSetup name v_str bwd_opt setup =
+   let v_opt × s_str_opt = unzip bwd_opt in
    before setup $
-      it name $ \(ρ × s) ->
+      it name $ \(ρ × s) -> do
          let t × v = successful (desugarEval ρ s)
-             ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt) in
-         checkExpected (desugarEval_fwd ρ' s' t)
-   where
-   checkExpected :: Val 𝔹 -> Aff Unit
-   checkExpected v = unless (isGraphical v) (render (pretty v) `shouldEqual` expected)
+             ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
+             v = desugarEval_fwd ρ' s' t
+         unless (isGraphical v) (checkPretty v v_str)
+         when (isJust s_str_opt) (checkPretty s (fromJust absurd s_str_opt))
 
 test :: String -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
