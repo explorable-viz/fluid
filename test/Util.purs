@@ -30,10 +30,6 @@ isGraphical Hole           = false
 isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) == "GraphicsElement"
 isGraphical _              = false
 
--- whether slicing is currently enabled in the tests
-slicing :: Boolean
-slicing = true
-
 type Test a = SpecT Aff Unit Effect a
 
 run :: forall a . Test a → Effect Unit
@@ -56,12 +52,8 @@ testWithSetup name expected v_opt setup =
       it name $ \(ρ × s) -> do
          case successful (desugarEval ρ s) of
             t × v ->
-               if slicing
-               then
-                  let ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
-                      v' = desugarEval_fwd ρ' s' t in
-                  checkExpected v'
-               else checkExpected v
+               let ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt) in
+               checkExpected (desugarEval_fwd ρ' s' t)
    where
    checkExpected :: Val 𝔹 -> Aff Unit
    checkExpected v = unless (isGraphical v) (render (pretty v) `shouldEqual` expected)
