@@ -269,7 +269,7 @@ dims = { fwd, bwd }
    bwd ((Int β i' × Int β' j') × α) (vss × (i × _) × (j × _))  = (vss × ((i ≜ i') × β) × ((j ≜ j') × β')) × α
    bwd ((_ × _) × _) _                                         = error absurd
 
--- Annotation on first arg to bwd is always true, and on return value of bwd should always be false.
+-- Annotation on first arg to bwd is always true, and on return value of fwd is irrelevant.
 matrixLookup :: BinarySpec (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
 matrixLookup = { fwd, bwd }
    where

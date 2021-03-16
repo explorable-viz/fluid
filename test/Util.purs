@@ -2,7 +2,7 @@ module Test.Util where
 
 import Prelude hiding (absurd)
 import Data.Bitraversable (bitraverse)
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -21,7 +21,7 @@ import SExpr (Expr) as S
 import Lattice (𝔹, botOf)
 import Module (openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, pretty, render)
-import Util (MayFail, type (×), (×), absurd, fromJust, successful, unzip)
+import Util (MayFail, type (×), (×), successful, unzip)
 import Val (Env, Val(..))
 
 -- Don't enforce expected values for graphics tests (values too complex).
@@ -59,8 +59,9 @@ testWithSetup name v_str bwd_opt setup =
              ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
              v = desugarEval_fwd ρ' s' t
          unless (isGraphical v) (checkPretty v v_str)
-         when (isJust s_str_opt) $ do
-            checkPretty s' (fromJust absurd s_str_opt)
+         case s_str_opt of
+            Nothing -> pure unit
+            Just s_str -> checkPretty s' s_str
 
 test :: String -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
