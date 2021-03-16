@@ -212,8 +212,8 @@ dependsBoth op = { fwd, bwd }
    bwd (_ × α) (x × y) = (x × α) × (y × α)
 
 -- If both are zero, we depend only on the first.
-dependsNonZero :: forall a b . IsZero a => (a -> a -> b) -> BinarySpec a a b
-dependsNonZero op = { fwd, bwd }
+dependsZero :: forall a b . IsZero a => (a -> a -> b) -> BinarySpec a a b
+dependsZero op = { fwd, bwd }
    where
    fwd :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
    fwd (x × α) (y × β)
@@ -233,9 +233,9 @@ primitives = foldl (:+:) Empty [
    ":"         ↦ Constr false cCons Nil,
    "+"         ↦ binary (dependsBoth ((+) `union2` (+))),
    "-"         ↦ binary (dependsBoth ((-) `union2` (-))),
-   "*"         ↦ binary (dependsNonZero ((*) `union2` (*))),
-   "**"        ↦ binary (dependsNonZero ((\x y -> toNumber x `pow` toNumber y) `union2'` pow)),
-   "/"         ↦ binary (dependsNonZero ((\x y -> toNumber x / toNumber y)  `union2'` (/))),
+   "*"         ↦ binary (dependsZero ((*) `union2` (*))),
+   "**"        ↦ binary (dependsZero ((\x y -> toNumber x `pow` toNumber y) `union2'` pow)),
+   "/"         ↦ binary (dependsZero ((\x y -> toNumber x / toNumber y)  `union2'` (/))),
    "=="        ↦ binary (dependsBoth ((==) `union2'` (==) `unionDisj` (==))),
    "/="        ↦ binary (dependsBoth ((/=) `union2'` (/=) `unionDisj` (==))),
    "<"         ↦ binary (dependsBoth ((<)  `union2'` (<)  `unionDisj` (==))),
@@ -247,7 +247,7 @@ primitives = foldl (:+:) Empty [
    "ceiling"   ↦ unary (depends ceil),
    "debugLog"  ↦ unary (depends debugLog),
    "dims"      ↦ unary (depends dims),
-   "div"       ↦ binary (dependsNonZero (div :: Int -> Int -> Int)),
+   "div"       ↦ binary (dependsZero (div :: Int -> Int -> Int)),
    "error"     ↦ unary (depends (error :: String -> Val 𝔹)),
    "floor"     ↦ unary (depends floor),
    "log"       ↦ unary (depends ((toNumber >>> log) `union` log)),
