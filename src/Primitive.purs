@@ -248,7 +248,7 @@ primitives = foldl (:+:) Empty [
    "!"         ↦ binary matrixLookup,
    "ceiling"   ↦ unary (depends ceil),
    "debugLog"  ↦ unary (depends debugLog),
-   "dims"      ↦ unary (depends dims),
+   "dims"      ↦ unary dims,
    "div"       ↦ binary (dependsZero (div :: Int -> Int -> Int)),
    "error"     ↦ unary (depends (error :: String -> Val 𝔹)),
    "floor"     ↦ unary (depends floor),
@@ -259,12 +259,15 @@ primitives = foldl (:+:) Empty [
 debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)
 
-dims :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
-dims (_ × (i × α) × (j × β)) = Int α i × Int β j
+dims :: UnarySpec (MatrixRep 𝔹) (Val 𝔹 × Val 𝔹)
+dims = { fwd, bwd }
+   where
+   fwd :: MatrixRep 𝔹 × 𝔹 -> (Val 𝔹 × Val 𝔹) × 𝔹
+   fwd ((_ × (i × β) × (j × β')) × α) = (Int β i × Int β' j) × α
 
-dims_bwd :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
-dims_bwd (Int α i' × Int β j') (vss × (i × _) × (j × _)) = vss × ((i ≜ i') × α) × ((j ≜ j') × β)
-dims_bwd (_ × _) _                                       = error absurd
+   bwd :: (Val 𝔹 × Val 𝔹) × 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹 × 𝔹
+   bwd ((Int β i' × Int β' j') × α) (vss × (i × _) × (j × _))  = (vss × ((i ≜ i') × β) × ((j ≜ j') × β')) × α
+   bwd ((_ × _) × _) _                                         = error absurd
 
 -- Annotation on first arg to bwd is always true, and on return value of bwd should always be false.
 matrixLookup :: BinarySpec (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
