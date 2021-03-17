@@ -242,14 +242,13 @@ dependsZero op = { fwd, bwd }
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
-   -- some signatures are specified for clarity or to drive instance resolution
    -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
    ":"         ↦ Constr false cCons Nil,
-   "+"         ↦ binary (dependsBoth ((+) `union2` (+))),
-   "-"         ↦ binary (dependsBoth ((-) `union2` (-))),
-   "*"         ↦ binary (dependsZero ((*) `union2` (*))),
-   "**"        ↦ binary (dependsZero ((\x y -> toNumber x `pow` toNumber y) `union2'` pow)),
-   "/"         ↦ binary (dependsZero ((\x y -> toNumber x / toNumber y)  `union2'` (/))),
+   "+"         ↦ binary (dependsBoth plus),
+   "-"         ↦ binary (dependsBoth minus),
+   "*"         ↦ binary (dependsZero times),
+   "**"        ↦ binary (dependsZero exp),
+   "/"         ↦ binary (dependsZero divide),
    "=="        ↦ binary (dependsBoth ((==) `union2'` (==) `unionDisj` (==))),
    "/="        ↦ binary (dependsBoth ((/=) `union2'` (/=) `unionDisj` (==))),
    "<"         ↦ binary (dependsBoth ((<)  `union2'` (<)  `unionDisj` (==))),
@@ -264,8 +263,8 @@ primitives = foldl (:+:) Empty [
    "div"       ↦ binary (dependsZero (div :: Int -> Int -> Int)),
    "error"     ↦ unary (depends (error :: String -> Val 𝔹)),
    "floor"     ↦ unary (depends floor),
-   "log"       ↦ unary (depends ((toNumber >>> log) `union` log)),
-   "numToStr"  ↦ unary (depends (show `union` show))
+   "log"       ↦ unary (depends ((toNumber >>> log) `union1` log)),
+   "numToStr"  ↦ unary (depends (show `union1` show))
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹
@@ -295,9 +294,9 @@ matrixLookup = dependsBoth2 (fwd × bwd)
             vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
 
 -- Could improve this a bit with some type class shenanigans, but not straightforward.
-union :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
-union f _ (Left x)   = f x
-union _ f (Right x)  = f x
+union1 :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
+union1 f _ (Left x)   = f x
+union1 _ f (Right x)  = f x
 
 union2 :: (Int -> Int -> Int) -> (Number -> Number -> Number) -> Int + Number -> Int + Number -> Int + Number
 union2 f _ (Left x) (Left y)     = Left (f x y)
@@ -316,3 +315,48 @@ unionDisj f _ (Left x) (Left y)   = f x y
 unionDisj _ _ (Left _) (Right _)  = error "Non-uniform argument types"
 unionDisj _ f (Right x) (Right y) = f x y
 unionDisj _ _ (Right _) (Left _)  = error "Non-uniform argument types"
+
+class As a b where
+   as :: a -> b
+
+-- Biased towards g, in that if arguments are of mixed type we try to coerce to an application of g.
+union :: forall a1 b1 c1 a2 b2 c2 c . As c1 c => As c2 c => As a1 a2 => As b1 b2 =>
+         (a1 -> b1 -> c1) -> (a2 -> b2 -> c2) -> a1 + a2 -> b1 + b2 -> c
+union f _ (Left x) (Left y)     = as (f x y)
+union _ g (Left x) (Right y)    = as (g (as x) y)
+union _ g (Right x) (Right y)   = as (g x y)
+union _ g (Right x) (Left y)    = as (g x (as y))
+
+instance asIntIntOrNumber :: As Int (Int + Number) where
+   as = Left
+
+instance asNumberIntOrNumber :: As Number (Int + Number) where
+   as = Right
+
+instance asIntNumber :: As Int Number where
+   as = toNumber
+
+instance asBooleanBoolean :: As Boolean Boolean where
+   as = identity
+
+instance asIntOrNumberString :: As (Int + Number) String where
+   as = error "Non-uniform argument types"
+
+plus :: Int + Number -> Int + Number -> Int + Number
+plus = (+) `union` (+)
+
+minus :: Int + Number -> Int + Number -> Int + Number
+minus = (-) `union` (-)
+
+times :: Int + Number -> Int + Number -> Int + Number
+times = (*) `union` (*)
+
+-- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
+exp :: Int + Number -> Int + Number -> Int + Number
+exp = (\x y -> toNumber x `pow` toNumber y) `union` pow
+
+divide :: Int + Number -> Int + Number -> Int + Number
+divide = (\x y -> toNumber x / toNumber y)  `union` (/)
+
+equals :: Int + Number + String -> Int + Number + String -> Boolean
+equals = ((==) `union` (==) :: Int + Number -> Int + Number -> Boolean) `union` (==)
