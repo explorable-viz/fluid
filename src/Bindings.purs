@@ -1,7 +1,7 @@
 module Bindings where
 
 import Prelude hiding (absurd)
-import Data.List (List(..), (:))
+import Data.List (List(..), (:), singleton)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
    botOf, definedJoin, expand, maybeJoin
@@ -58,8 +58,12 @@ length Empty      = 0
 length (ρ :+: _)  = 1 + length ρ
 
 fromList :: forall t a . List (Binding t a) -> Bindings t a
-fromList Nil         = Empty
-fromList (xv : xvs)  = fromList xvs :+: xv
+fromList Nil      = Empty
+fromList (xv : ρ) = fromList ρ :+: xv
+
+toList :: forall t a . Bindings t a -> List (Binding t a)
+toList Empty      = Nil
+toList (ρ :+: xv) = toList ρ <> singleton xv
 
 -- ======================
 -- boilerplate
