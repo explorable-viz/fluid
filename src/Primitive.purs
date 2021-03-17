@@ -146,27 +146,26 @@ instance isZeroEither :: (IsZero a, IsZero b) => IsZero (a + b) where
    isZero = isZero ||| isZero
 
 type Unary a b = {
-   f :: a -> b,
-   g :: b -> a -> a
+   fwd :: a -> b,
+   bwd :: b -> a -> a
 }
 
--- TODO: rename these
-type UnarySpec a b = {
+type UnarySlicer a b = {
    fwd :: a × 𝔹 -> b × 𝔹,
    bwd :: b × 𝔹 -> a -> a × 𝔹
 }
 
 type Binary a b c = {
-   f :: a -> b -> c,
-   g :: c -> a × b -> a × b
+   fwd :: a -> b -> c,
+   bwd :: c -> a × b -> a × b
 }
 
-type BinarySpec a b c = {
+type BinarySlicer a b c = {
    fwd :: a × 𝔹 -> b × 𝔹 -> c × 𝔹,
    bwd :: c × 𝔹 -> a × b -> (a × 𝔹) × (b × 𝔹)
 }
 
-unary :: forall a b . ToFrom a => ToFrom b => UnarySpec a b -> Val 𝔹
+unary :: forall a b . ToFrom a => ToFrom b => UnarySlicer a b -> Val 𝔹
 unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 1,
    op: unsafePartial apply,
@@ -184,7 +183,7 @@ unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply_bwd v (v1 : Nil) = match_bwd v1' : Nil
       where v1' = bwd (constr_bwd v) (fst (match v1))
 
-binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySpec a b c -> Val 𝔹
+binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySlicer a b c -> Val 𝔹
 binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 2,
    op: unsafePartial apply,
@@ -203,34 +202,34 @@ binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
       where v1' × v2' = bwd (constr_bwd v) (fst (match v1) × fst (match v2))
 
 withInverse1 :: forall a b . (a -> b) -> Unary a b
-withInverse1 f = { f, g: const identity }
-
-depends1 :: forall a b . ToFrom a => ToFrom b => Unary a b -> Val 𝔹
-depends1 { f, g } = unary { fwd: f', bwd: g' }
-   where
-   f' (x × α)    = f x × α
-   g' (y × α) x  = g y x × α
+withInverse1 fwd = { fwd, bwd: const identity }
 
 withInverse2 :: forall a b c . (a -> b -> c) -> Binary a b c
-withInverse2 f = { f, g: const identity }
+withInverse2 fwd = { fwd, bwd: const identity }
+
+depends1 :: forall a b . ToFrom a => ToFrom b => Unary a b -> Val 𝔹
+depends1 { fwd, bwd } = unary { fwd: fwd', bwd: bwd' }
+   where
+   fwd' (x × α)    = fwd x × α
+   bwd' (y × α) x  = bwd y x × α
 
 depends2 :: forall a b c . ToFrom a => ToFrom b => ToFrom c => Binary a b c -> Val 𝔹
-depends2 { f, g } = binary { fwd: f', bwd: g' }
+depends2 { fwd, bwd } = binary { fwd: fwd', bwd: bwd' }
    where
-   f' (x × α) (y × β) = f x y × (α ∧ β)
-   g' (z × α) (x × y) = (x' × α) × (y' × α) where x' × y' = g z (x × y)
+   fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
+   bwd' (z × α) (x × y) = (x' × α) × (y' × α) where x' × y' = bwd z (x × y)
 
 -- If both are zero, depend only on the first.
 depends2Zero :: forall a b . IsZero a => ToFrom a => ToFrom b => Binary a a b -> Val 𝔹
-depends2Zero { f, g } = binary { fwd: f', bwd: g' }
+depends2Zero { fwd, bwd } = binary { fwd: fwd', bwd: bwd' }
    where
-   f' :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
-   f' (x × α) (y × β) =
-      f x y × if isZero x then α else if isZero y then β else α ∧ β
-   g' :: b × 𝔹 -> a × a -> (a × 𝔹) × (a × 𝔹)
-   g' (z × α) (x × y) =
-      if isZero x then (x' × α) × (y' × false) else if isZero y then (x' × false) × (y' × α) else (x' × α) × (y' × α)
-      where x' × y' = g z (x × y)
+   fwd' :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
+   fwd' (x × α) (y × β) =
+        fwd x y × if isZero x then α else if isZero y then β else α ∧ β
+   bwd' :: b × 𝔹 -> a × a -> (a × 𝔹) × (a × 𝔹)
+   bwd' (z × α) (x × y) =
+        if isZero x then (x' × α) × (y' × false) else if isZero y then (x' × false) × (y' × α) else (x' × α) × (y' × α)
+        where x' × y' = bwd z (x × y)
 
 class As a b where
    as :: a -> b

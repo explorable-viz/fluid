@@ -72,27 +72,29 @@ error_ :: String -> Val 𝔹
 error_ = error
 
 dims :: Unary (MatrixRep 𝔹) (Val 𝔹 × Val 𝔹)
-dims = { f, g }
+dims = { fwd, bwd }
    where
-   f :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
-   f (_ × (i × β) × (j × β')) = Int β i × Int β' j
+   fwd :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
+   fwd (_ × (i × β) × (j × β')) = Int β i × Int β' j
 
-   g :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
-   g (Int β i' × Int β' j') (vss × (i × _) × (j × _))  = vss × ((i ≜ i') × β) × ((j ≜ j') × β')
-   g (_ × _) _                                         = error absurd
+   bwd :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
+   bwd (Int β i' × Int β' j') (vss × (i × _) × (j × _))  = vss × ((i ≜ i') × β) × ((j ≜ j') × β')
+   bwd (_ × _) _                                         = error absurd
 
 matrixLookup :: Binary (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
-matrixLookup = { f, g }
+matrixLookup = { fwd, bwd }
    where
-   f :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
-   f (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
+   fwd :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
+   fwd (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
 
-   g :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
-   g v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-     (vss'' × (i' × false) × (j' × false)) × ((i × false) × (j × false))
-     where vss'  = (<$>) (const Hole) <$> vss
-           vs_i  = vss'!(i - 1)
-           vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
+   -- This is the desired behaviour, but should be more automatic: non-neededness of matrix bounds and indices
+   -- should arise from the fact that no "construction rights" are needed for projection.
+   bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
+   bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
+       (vss'' × (i' × false) × (j' × false)) × ((i × false) × (j × false))
+       where vss'  = (<$>) (const Hole) <$> vss
+             vs_i  = vss'!(i - 1)
+             vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
 
 plus :: Int + Number -> Int + Number -> Int + Number
 plus = (+) `union` (+)
