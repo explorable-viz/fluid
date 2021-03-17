@@ -75,8 +75,9 @@ instance prettyBindings :: Pretty (Binding t a) => Pretty (Bindings t a) where
 instance prettyList_ :: Pretty a => Pretty (List a) where
    pretty xs = vcat (pretty <$> xs)
 
+-- Render a user-level list reflected as a PureScript list.
 prettyList :: forall a. Pretty a => List a -> Doc
-prettyList xs = hcat (intersperse comma (pretty <$> xs))
+prettyList xs = brackets (hcat (intersperse comma (pretty <$> xs)))
 
 instance prettyListRest :: Pretty (ListRest Boolean) where
    pretty = pretty <<< listRestToExprs
@@ -91,7 +92,7 @@ instance prettyCtr :: Pretty Ctr where
 prettyParensOpt :: forall a . Pretty a => a -> Doc
 prettyParensOpt x =
    let doc = pretty x in
-   if Data.String.contains (Data.String.Pattern " ") $ render doc
+   if Data.String.contains (Data.String.Pattern " ") (render doc)
    then parens doc
    else doc
 
@@ -115,9 +116,9 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Op op)                 = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') =
-      atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
+      atop (text str.let_ :<>: pretty σ :<>: operator str.equals :<>: pretty e :<>: space :<>: text str.in_) (pretty e')
    pretty (E.LetRec δ e)            =
-      atop (text str.let_ :<>: pretty δ) (text "in " :<>: pretty e)
+      atop (text str.let_ :<>: pretty δ :<>: text str.in_) (pretty e)
    pretty (E.Lambda σ)              = text "fun " :<>: pretty σ
    pretty (E.App e e')              = pretty e :<>: space :<>: pretty e'
 
@@ -187,8 +188,8 @@ instance prettySExpr :: Pretty (Expr Boolean) where
    pretty (MatchAs s bs)            = text "match " :<>: pretty s :<>: text " as " :<>: pretty bs
    pretty (IfElse s1 s2 s3)         =
       text "if " :<>: pretty s1 :<>: text " then " :<>: pretty s2 :<>: text " else " :<>: pretty s3
-   pretty r@(ListEmpty _)           = pretty (toList r)
-   pretty r@(ListNonEmpty _ e l)    = pretty (toList r)
+   pretty r@(ListEmpty _)           = prettyList (toList r)
+   pretty r@(ListNonEmpty _ e l)    = prettyList (toList r)
    pretty (ListEnum s s')           = brackets (pretty s :<>: text " .. " :<>: pretty s')
    pretty (ListComp _ s qs)         = brackets (pretty s :<>: text " | " :<>: pretty qs)
    pretty (Let ds s)                = atop (text str.let_ :<>: space :<>: pretty ds) (text "in " :<>: pretty s)

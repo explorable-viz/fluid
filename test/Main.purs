@@ -25,9 +25,9 @@ test_scratchpad = [
 
 test_slicing :: Array (Test Unit)
 test_slicing = [
-   test_bwd "slicing/add" (Int true 0 × "(_5_ + (_0_ + _3_))") "_8_",
-   test_bwd "slicing/array-lookup" (Float true 0.9 × "(_5_ + (_0_ + _3_))") "17",
-   test_bwd "slicing/multiply" (Int true 0 × "(5 * (_0_ * 3))") "_0_"
+--   test_bwd "slicing/add" (Int true 0 × "(_5_ + (_0_ + _3_))") "_8_",
+   test_bwd "slicing/array-lookup" (Float true 0.9 × "(_5_ + (_0_ + _3_))") "17"
+--   test_bwd "slicing/multiply" (Int true 0 × "(5 * (_0_ * 3))") "_0_"
 ]
 
 test_desugaring :: Array (Test Unit)
