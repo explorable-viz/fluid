@@ -181,7 +181,8 @@ instance prettySExpr :: Pretty (Expr Boolean) where
    pretty r@(Constr _ c es)
       | c == cNil || c == cCons     = prettyList (toList r)
       | otherwise                   = prettyConstr c es
-   pretty (Matrix α e (x × y) e')   = text str.arrayLBracket :<>: text "TODO!" :<>: text str.arrayRBracket
+   pretty (Matrix α e (x × y) e')   =
+      text str.arrayLBracket :<>: pretty e :<>: space :<>: text str.bar :<>: space :<>: pretty e' :<>: space :<>: text str.arrayRBracket
    pretty (Lambda bs)               = text str.fun :<>: pretty bs
    pretty (App s s')                = pretty s :<>: space :<>: pretty s'
    pretty (BinaryApp s op s')       = parens (pretty s :<>: operator op :<>: pretty s')

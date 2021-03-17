@@ -27,7 +27,7 @@ str :: String
 str = "\
 \let nth2 i j xs = nth (i - 1) nth (j - 1) xs\n\
 \in let xs = [[1, 4, 8], [3, 2, 17], [0, 14, 6]]\n\
-\       ys = [|TODO!|]\n\
+\       ys = [|nth2 i j xs | (3, 3) |]\n\
 \   in (ys ! (3, 2))"
 
 test_slicing :: Array (Test Unit)
