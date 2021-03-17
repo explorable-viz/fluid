@@ -11,7 +11,7 @@ import Text.Parsing.Parser.Expr (Assoc)
 import Bindings (Var)
 import DataType (cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
-import Util (type (×), (×), type (+), absurd, error)
+import Util (type (×), (×), type (+), error)
 import Val (PrimOp(..), Val(..))
 
 -- name in user land, precedence 0 from 9 (similar to Haskell 98), associativity
@@ -51,7 +51,7 @@ instance toFromInt :: ToFrom Int where
 
    constr (n × α) = Int α n
    constr_bwd v = match v
-   expand = Int false
+   expand n = constr (n × false)
 
 instance toFromNumber :: ToFrom Number where
    match (Float α n) = n × α
@@ -59,7 +59,7 @@ instance toFromNumber :: ToFrom Number where
 
    constr (n × α) = Float α n
    constr_bwd v = match v
-   expand = Float false
+   expand n = constr (n × false)
 
 instance toFromString :: ToFrom String where
    match (Str α str) = str × α
@@ -67,7 +67,7 @@ instance toFromString :: ToFrom String where
 
    constr (str × α) = Str α str
    constr_bwd v = match v
-   expand = Str false
+   expand str = constr (str × false)
 
 instance toFromIntOrNumber :: ToFrom (Int + Number) where
    constr (Left n × α)   = Int α n
@@ -79,8 +79,7 @@ instance toFromIntOrNumber :: ToFrom (Int + Number) where
    match (Float α n)  = Right n × α
    match _            = error "Int or Float expected"
 
-   expand (Left n)  = Int false n
-   expand (Right n) = Float false n
+   expand x = constr (x × false)
 
 instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String) where
    constr (Left (Left n) × α)  = Int α n
@@ -94,11 +93,9 @@ instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String)
    match (Str α str) = Right str × α
    match _           = error "Int, Float or Str expected"
 
-   expand (Left (Left n))    = Int false n
-   expand (Left (Right n))   = Float false n
-   expand (Right str)        = Str false str
+   expand x = constr (x × false)
 
-instance toFromIntAndInt :: ToFrom (Int × Boolean × (Int × Boolean)) where
+instance toFromIntAndInt :: ToFrom ((Int × Boolean) × (Int × Boolean)) where
    constr (nβ × mβ' × α) = Constr α cPair (constr nβ : constr mβ' : Nil)
    constr_bwd v = match v
 
@@ -115,25 +112,26 @@ instance toFromMatrixRep :: ToFrom (Array (Array (Val Boolean)) × (Int × Boole
    constr_bwd v = match v
    expand (vss × (i × _) × (j × _)) = Matrix false (((<$>) (const Hole) <$> vss) × (i × false) × (j × false))
 
-instance toFromPair :: ToFrom (Val Boolean × Val Boolean) where
+instance toFromValAndVal :: ToFrom (Val Boolean × Val Boolean) where
+   constr (v × v' × α) = Constr α cPair (v : v' : Nil)
+   constr_bwd v = match v
+
    match (Constr α c (v : v' : Nil)) | c == cPair   = v × v' × α
    match _                                          = error "Pair expected"
 
-   constr (v × v' × α) = Constr α cPair (v : v' : Nil)
-   constr_bwd v = match v
    expand _ = Constr false cPair (Hole : Hole : Nil)
 
 instance toFromBoolean :: ToFrom Boolean where
    match (Constr α c Nil)
       | c == cTrue   = true × α
       | c == cFalse  = false × α
-   match _ = error absurd
+   match _ = error "Boolean expected"
 
    constr (true × α)   = Constr α cTrue Nil
    constr (false × α)  = Constr α cFalse Nil
 
    constr_bwd v = match v
-   expand _ = error "todo"
+   expand b = constr (b × false)
 
 class IsZero a where
    isZero :: a -> Boolean
@@ -239,7 +237,7 @@ union1 :: forall a1 b . (a1 -> b) -> (Number -> b) -> a1 + Number -> b
 union1 f _ (Left x)   = f x
 union1 _ g (Right x)  = g x
 
--- Biased towards g, in that if arguments are of mixed type we try to coerce to an application of g.
+-- Biased towards g: if arguments are of mixed types, we try to coerce to an application of g.
 union :: forall a1 b1 c1 a2 b2 c2 c . As c1 c => As c2 c => As a1 a2 => As b1 b2 =>
          (a1 -> b1 -> c1) -> (a2 -> b2 -> c2) -> a1 + a2 -> b1 + b2 -> c
 union f _ (Left x) (Left y)     = as (f x y)
@@ -247,7 +245,7 @@ union _ g (Left x) (Right y)    = as (g (as x) y)
 union _ g (Right x) (Right y)   = as (g x y)
 union _ g (Right x) (Left y)    = as (g x (as y))
 
--- Helper to avoid some explicit type annotations later
+-- Helper to avoid some explicit type annotations when defining primitives.
 unionStr :: forall a b . As a a => As b String => (b -> b -> a) -> (String -> String -> a) -> b + String -> b + String -> a
 unionStr = union
 
