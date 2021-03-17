@@ -128,11 +128,11 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Op op)                 = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') =
-      atop (text str.let_ :<>: pretty σ :<>: operator str.equals :<>: pretty e :<>: space :<>: text str.in_) (pretty e')
+      atop (text str.let_ :<>: pretty σ :<>: operator str.equals :<>: pretty e :<>: lrspace (text str.in_)) (pretty e')
    pretty (E.LetRec δ e)            =
-      atop (text str.let_ :<>: pretty δ :<>: text str.in_) (pretty e)
+      atop (text str.let_ :<>: pretty δ :<>: lspace (text str.in_)) (pretty e)
    pretty (E.Lambda σ)              = text "fun " :<>: pretty σ
-   pretty (E.App e e')              = pretty e :<>: space :<>: pretty e'
+   pretty (E.App e e')              = pretty e :<>: lspace (pretty e')
 
 instance prettyBinding :: Pretty (t Boolean) => Pretty (Binding t Boolean) where
    pretty (f ↦ σ) = text f :<>: operator "=" :<>: pretty σ
@@ -194,29 +194,29 @@ instance prettySExpr :: Pretty (Expr Boolean) where
       | c == cNil || c == cCons     = prettyList (toList r)
       | otherwise                   = prettyConstr c es
    pretty (Matrix α e (x × y) e')   =
-      text str.arrayLBracket :<>: pretty e :<>: space :<>: text str.bar :<>: space :<>: pretty e' :<>: space :<>: text str.arrayRBracket
+      text str.arrayLBracket :<>: pretty e :<>: lrspace (text str.bar) :<>: pretty e' :<>: lspace (text str.arrayRBracket)
    pretty (Lambda bs)               = text str.fun :<>: pretty bs
-   pretty (App s s')                = pretty s :<>: space :<>: pretty s'
+   pretty (App s s')                = pretty s :<>: lspace (pretty s')
    pretty (BinaryApp s op s')       = parens (pretty s :<>: operator op :<>: pretty s')
    pretty (MatchAs s bs)            =
-      text str.match :<>: space :<>: pretty s :<>: space :<>: text str.as :<>: space :<>: pretty bs
+      text str.match :<>: lspace (pretty s) :<>: lrspace (text str.as) :<>: pretty bs
    pretty (IfElse s1 s2 s3)         =
       text str.if_ :<>: pretty s1 :<>: text str.then_ :<>: pretty s2 :<>: text str.else_ :<>: pretty s3
    pretty r@(ListEmpty _)           = prettyList (toList r)
    pretty r@(ListNonEmpty _ e l)    = prettyList (toList r)
    pretty (ListEnum s s')           = brackets (pretty s :<>: text " .. " :<>: pretty s')
    pretty (ListComp _ s qs)         = brackets (pretty s :<>: text " | " :<>: pretty qs)
-   pretty (Let ds s)                = atop (text str.let_ :<>: space :<>: pretty ds) (text "in " :<>: pretty s)
-   pretty (LetRec h s)              = atop (text str.let_ :<>: space :<>: pretty h) (text "in " :<>: pretty s)
+   pretty (Let ds s)                = atop (text str.let_ :<>: lspace (pretty ds)) (rspace (text str.in_) :<>: pretty s)
+   pretty (LetRec h s)              = atop (text str.let_ :<>: lspace (pretty h)) (rspace (text str.in_) :<>: pretty s)
 
 instance prettyNonEmptyList :: Pretty a => Pretty (NonEmptyList a) where
    pretty = pretty <<< NEL.toList
 
 instance prettyClause :: Pretty (String × (NonEmptyList Pattern × Expr Boolean)) where
-   pretty (x × b) = text x :<>: space :<>: pretty b
+   pretty (x × b) = text x :<>: lspace (pretty b)
 
 instance prettySBranch :: Pretty (NonEmptyList Pattern × Expr Boolean) where
-   pretty (πs × e) = hspace (pretty <$> NEL.toList πs) :<>: space :<>: text str.equals :<>: space :<>: pretty e
+   pretty (πs × e) = hspace (pretty <$> NEL.toList πs) :<>: operator str.equals :<>: pretty e
 
 instance prettySVarDef :: Pretty (VarDef Boolean) where
    pretty (VarDef π e) = pretty π :<>: text " = " :<>: pretty e
@@ -227,7 +227,7 @@ instance prettyPatternExpr :: Pretty (Pattern × Expr Boolean) where
 instance prettyQualifier :: Pretty (Qualifier Boolean) where
    pretty (Guard e)                    = pretty e
    pretty (Generator π e)              = pretty π :<>: text " <- " :<>: pretty e
-   pretty (Declaration (VarDef π e))   = text str.let_ :<>: space :<>: pretty π :<>: text " = " :<>: pretty e
+   pretty (Declaration (VarDef π e))   = text str.let_ :<>: lspace (pretty π) :<>: lrspace (text str.equals) :<>: pretty e
 
 instance prettyPatt :: (Pretty a, Pretty b) => Pretty (Either a b) where
    pretty (Left p)   = pretty p
@@ -235,7 +235,7 @@ instance prettyPatt :: (Pretty a, Pretty b) => Pretty (Either a b) where
 
 instance prettyPattern :: Pretty Pattern where
    pretty (PVar x)               = text x
-   pretty (PConstr ctr πs)       = pretty ctr :<>: space :<>: pretty πs
+   pretty (PConstr ctr πs)       = pretty ctr :<>: lspace (pretty πs)
    pretty (PListEmpty)           = text (str.lBracket <> str.rBracket)
    pretty (PListNonEmpty π πs)   = pretty (π : listRestPatternToPatterns πs)
 
