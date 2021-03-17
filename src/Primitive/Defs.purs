@@ -103,14 +103,14 @@ times :: Binary (Int + Number) (Int + Number) (Int + Number)
 times = { f: (*) `union` (*), g: const identity }
 
 -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
-pow :: Int + Number -> Int + Number -> Int + Number
-pow = (\x y -> toNumber x `M.pow` toNumber y) `union` M.pow
+pow :: Binary (Int + Number) (Int + Number) (Int + Number)
+pow = { f: (\x y -> toNumber x `M.pow` toNumber y) `union` M.pow, g: const identity }
 
-divide :: Int + Number -> Int + Number -> Int + Number
-divide = (\x y -> toNumber x / toNumber y)  `union` (/)
+divide :: Binary (Int + Number) (Int + Number) (Int + Number)
+divide = { f: (\x y -> toNumber x / toNumber y)  `union` (/), g: const identity }
 
-div :: Int -> Int -> Int
-div = P.div
+div :: Binary Int Int Int
+div = { f: P.div, g: const identity }
 
 equals :: Int + Number + String -> Int + Number + String -> Boolean
 equals = (==) `union` (==) `unionStr` (==)
