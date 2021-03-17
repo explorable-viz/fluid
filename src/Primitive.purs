@@ -145,6 +145,16 @@ instance isZeroNumber :: IsZero Number where
 instance isZeroEither :: (IsZero a, IsZero b) => IsZero (a + b) where
    isZero = isZero ||| isZero
 
+type UnarySpec a b = {
+   fwd :: a × 𝔹 -> b × 𝔹,
+   bwd :: b × 𝔹 -> a -> a × 𝔹
+}
+
+type BinarySpec a b c = {
+   fwd :: a × 𝔹 -> b × 𝔹 -> c × 𝔹,
+   bwd :: c × 𝔹 -> a × b -> (a × 𝔹) × (b × 𝔹)
+}
+
 unary :: forall a b . ToFrom a => ToFrom b => UnarySpec a b -> Val 𝔹
 unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 1,
@@ -181,20 +191,10 @@ binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply_bwd v (v1 : v2 : Nil) = match_bwd v1' : match_bwd v2' : Nil
       where v1' × v2' = bwd (constr_bwd v) (fst (match v1) × fst (match v2))
 
-type UnarySpec a b = {
-   fwd :: a × 𝔹 -> b × 𝔹,
-   bwd :: b × 𝔹 -> a -> a × 𝔹
-}
-
-type BinarySpec a b c = {
-   fwd :: a × 𝔹 -> b × 𝔹 -> c × 𝔹,
-   bwd :: c × 𝔹 -> a × b -> (a × 𝔹) × (b × 𝔹)
-}
-
 depends :: forall a b . (a -> b) -> UnarySpec a b
-depends op = { fwd, bwd }
+depends f = { fwd, bwd }
    where
-   fwd (x × α)    = op x × α
+   fwd (x × α)    = f x × α
    bwd (_ × α) x  = x × α
 
 depends2 :: forall a b . ((a -> b) × (b -> a -> a)) -> UnarySpec a b
@@ -204,9 +204,9 @@ depends2 (f × g) = { fwd: f', bwd: g' }
    g' (y × α) x  = g y x × α
 
 dependsBoth :: forall a b c . (a -> b -> c) -> BinarySpec a b c
-dependsBoth op = { fwd, bwd }
+dependsBoth f = { fwd, bwd }
    where
-   fwd (x × α) (y × β) = x `op` y × (α ∧ β)
+   fwd (x × α) (y × β) = f x y × (α ∧ β)
    bwd (_ × α) (x × y) = (x × α) × (y × α)
 
 dependsBoth2 :: forall a b c . ((a -> b -> c) × (c -> a × b -> a × b)) -> BinarySpec a b c
