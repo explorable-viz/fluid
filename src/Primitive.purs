@@ -150,6 +150,7 @@ type Unary a b = {
    g :: b -> a -> a
 }
 
+-- TODO: rename these
 type UnarySpec a b = {
    fwd :: a × 𝔹 -> b × 𝔹,
    bwd :: b × 𝔹 -> a -> a × 𝔹
@@ -204,8 +205,8 @@ binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
 withInverse1 :: forall a b . (a -> b) -> Unary a b
 withInverse1 f = { f, g: const identity }
 
-depends1 :: forall a b . Unary a b -> UnarySpec a b
-depends1 { f, g } = { fwd: f', bwd: g' }
+depends1 :: forall a b . ToFrom a => ToFrom b => Unary a b -> Val 𝔹
+depends1 { f, g } = unary { fwd: f', bwd: g' }
    where
    f' (x × α)    = f x × α
    g' (y × α) x  = g y x × α
@@ -213,15 +214,15 @@ depends1 { f, g } = { fwd: f', bwd: g' }
 withInverse2 :: forall a b c . (a -> b -> c) -> Binary a b c
 withInverse2 f = { f, g: const identity }
 
-depends2 :: forall a b c . Binary a b c -> BinarySpec a b c
-depends2 { f, g } = { fwd: f', bwd: g' }
+depends2 :: forall a b c . ToFrom a => ToFrom b => ToFrom c => Binary a b c -> Val 𝔹
+depends2 { f, g } = binary { fwd: f', bwd: g' }
    where
    f' (x × α) (y × β) = f x y × (α ∧ β)
    g' (z × α) (x × y) = (x' × α) × (y' × α) where x' × y' = g z (x × y)
 
 -- If both are zero, depend only on the first.
-depends2Zero :: forall a b . IsZero a => Binary a a b -> BinarySpec a a b
-depends2Zero { f, g } = { fwd: f', bwd: g' }
+depends2Zero :: forall a b . IsZero a => ToFrom a => ToFrom b => Binary a a b -> Val 𝔹
+depends2Zero { f, g } = binary { fwd: f', bwd: g' }
    where
    f' :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
    f' (x × α) (y × β) =
