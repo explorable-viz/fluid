@@ -25,7 +25,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Lattice (𝔹)
-import Primitive (opDefs)
+import Primitive.Defs (opDefs)
 import SExpr (
    Branch, Clause, Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..),
    RecDefs, VarDef(..), VarDefs
