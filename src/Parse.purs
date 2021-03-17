@@ -34,24 +34,27 @@ import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
 
 -- constants (should also be used by prettyprinter)
-strArrayLBracket  = "[|"       :: String
-strArrayRBracket  = "|]"       :: String
-strAs             = "as"      :: String
-strBackslash      = "\\"      :: String
-strBar            = "|"       :: String
-strEllipsis       = ".."      :: String
-strElse           = "else"    :: String
-strEquals         = "="       :: String
-strFun            = "fun"     :: String
-strIf             = "if"      :: String
-strIn             = "in"      :: String
-strLBracket       = "["       :: String
-strLet            = "let"     :: String
-strMatch          = "match"   :: String
-strLArrow         = "<-"      :: String
-strRArrow         = "->"      :: String
-strRBracket       = "]"       :: String
-strThen           = "then"    :: String
+str :: _
+str = {
+   arrayLBracket: "[|"       :: String,
+   arrayRBracket: "|]"       :: String,
+   as:            "as"      :: String,
+   backslash:     "\\"      :: String,
+   bar:           "|"       :: String,
+   ellipsis:      ".."      :: String,
+   else_:         "else"    :: String,
+   equals:        "="       :: String,
+   fun:           "fun"     :: String,
+   if_:           "if"      :: String,
+   in_:           "in"      :: String,
+   lBracket:      "["       :: String,
+   let_:          "let"     :: String,
+   match:         "match"   :: String,
+   lArrow:        "<-"      :: String,
+   rArrow:        "->"      :: String,
+   rBracket:      "]"       :: String,
+   then_:         "then"    :: String
+}
 
 languageDef :: LanguageDef
 languageDef = LanguageDef (unGenLanguageDef emptyDef) {
@@ -63,8 +66,8 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    identLetter = alphaNum <|> oneOf ['_', '\''],
    opStart = opChar,
    opLetter = opChar,
-   reservedOpNames = [strBar, strEllipsis, strEquals, strLArrow, strRArrow],
-   reservedNames = [strAs, strElse, strFun, strIf, strIn, strLet, strMatch, strThen],
+   reservedOpNames = [str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow],
+   reservedNames = [str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_],
    caseSensitive = true
 } where
    opChar :: SParser Char
@@ -76,32 +79,32 @@ token :: TokenParser
 token = makeTokenParser languageDef
 
 lArrow :: SParser Unit
-lArrow = token.reservedOp strLArrow
+lArrow = token.reservedOp str.lArrow
 
 lBracket :: SParser Unit
-lBracket = void $ token.symbol strLBracket
+lBracket = void $ token.symbol str.lBracket
 
 bar :: SParser Unit
-bar = token.reservedOp strBar
+bar = token.reservedOp str.bar
 
 ellipsis :: SParser Unit
-ellipsis = token.reservedOp strEllipsis
+ellipsis = token.reservedOp str.ellipsis
 
 equals :: SParser Unit
-equals = token.reservedOp strEquals
+equals = token.reservedOp str.equals
 
 rBracket :: SParser Unit
-rBracket = void $ token.symbol strRBracket
+rBracket = void $ token.symbol str.rBracket
 
 rArrow :: SParser Unit
-rArrow = token.reservedOp strRArrow
+rArrow = token.reservedOp str.rArrow
 
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
-keyword str =
-   if str `elem` (unGenLanguageDef languageDef).reservedNames
-   then token.reserved str
-   else error $ str <> " is not a reserved word"
+keyword str' =
+   if str' `elem` (unGenLanguageDef languageDef).reservedNames
+   then token.reserved str'
+   else error $ str' <> " is not a reserved word"
 
 ident ∷ SParser Var
 ident = do
@@ -179,14 +182,14 @@ branches expr' branch_ =
    (pure <$> branch_ expr' patternDelim) <|> branchMany expr' branch_
 
 varDefs :: SParser (Expr 𝔹) -> SParser (VarDefs 𝔹)
-varDefs expr' = keyword strLet *> sepBy1_try clause token.semi
+varDefs expr' = keyword str.let_ *> sepBy1_try clause token.semi
    where
    clause :: SParser (VarDef 𝔹)
    clause = VarDef <$> (pattern <* equals) <*> expr'
 
 recDefs :: SParser (Expr 𝔹) -> SParser (RecDefs 𝔹)
 recDefs expr' = do
-   keyword strLet *> sepBy1_try clause token.semi
+   keyword str.let_ *> sepBy1_try clause token.semi
    where
    clause :: SParser (Clause 𝔹)
    clause = ident `lift2 (×)` (branch_curried expr' equals)
@@ -243,11 +246,11 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          where
          matrix :: SParser (Expr 𝔹)
          matrix =
-            between (token.symbol strArrayLBracket) (token.symbol strArrayRBracket) $
+            between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
                Matrix false <$>
                   (expr' <* bar) <*>
                   token.parens (ident `lift2 (×)` (token.comma *> ident)) <*>
-                  (keyword strIn *> expr')
+                  (keyword str.in_ *> expr')
 
          nil :: SParser (Expr 𝔹)
          nil = token.brackets $ pure (ListEmpty false)
@@ -270,7 +273,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             qualifier :: SParser (Qualifier 𝔹)
             qualifier =
                Generator <$> pattern <* lArrow <*> expr' <|>
-               Declaration <$> (VarDef <$> (keyword strLet *> pattern <* equals) <*> expr') <|>
+               Declaration <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr') <|>
                Guard <$> expr'
 
          listEnum :: SParser (Expr 𝔹)
@@ -303,11 +306,11 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          defsExpr :: SParser (Expr 𝔹)
          defsExpr = do
             defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
-            foldr (\def -> (Let ||| LetRec) def) <$> (keyword strIn *> expr') <@> defs'
+            foldr (\def -> (Let ||| LetRec) def) <$> (keyword str.in_ *> expr') <@> defs'
 
          matchAs :: SParser (Expr 𝔹)
          matchAs =
-            MatchAs <$> (keyword strMatch *> expr' <* keyword strAs) <*> branches expr' branch_uncurried
+            MatchAs <$> (keyword str.match *> expr' <* keyword str.as) <*> branches expr' branch_uncurried
 
          -- any binary operator, in parentheses
          parensOp :: SParser (Expr 𝔹)
@@ -318,10 +321,10 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             (pure $ \e e' -> Constr false cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 
          lambda :: SParser (Expr 𝔹)
-         lambda = Lambda <$> (keyword strFun *> branches expr' branch_curried)
+         lambda = Lambda <$> (keyword str.fun *> branches expr' branch_curried)
 
          ifElse :: SParser (Expr 𝔹)
-         ifElse = pure IfElse <*> (keyword strIf *> expr') <* keyword strThen <*> expr' <* keyword strElse <*> expr'
+         ifElse = pure IfElse <*> (keyword str.if_ *> expr') <* keyword str.then_ <*> expr' <* keyword str.else_ <*> expr'
 
 -- each element of the top-level list corresponds to a precedence level
 operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
