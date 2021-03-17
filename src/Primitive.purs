@@ -293,28 +293,9 @@ matrixLookup = dependsBoth2 (fwd × bwd)
             vs_i  = vss'!(i - 1)
             vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
 
--- Could improve this a bit with some type class shenanigans, but not straightforward.
 union1 :: forall a . (Int -> a) -> (Number -> a) -> Int + Number -> a
 union1 f _ (Left x)   = f x
 union1 _ f (Right x)  = f x
-
-union2 :: (Int -> Int -> Int) -> (Number -> Number -> Number) -> Int + Number -> Int + Number -> Int + Number
-union2 f _ (Left x) (Left y)     = Left (f x y)
-union2 _ f (Left x) (Right y)    = Right (f (toNumber x) y)
-union2 _ f (Right x) (Right y)   = Right (f x y)
-union2 _ f (Right x) (Left y)    = Right (f x (toNumber y))
-
-union2' :: forall a . (Int -> Int -> a) -> (Number -> Number -> a) -> Int + Number -> Int + Number -> a
-union2' f _ (Left x) (Left y)    = f x y
-union2' _ f (Left x) (Right y)   = f (toNumber x) y
-union2' _ f (Right x) (Right y)  = f x y
-union2' _ f (Right x) (Left y)   = f x (toNumber y)
-
-unionDisj :: forall a b . (b -> b -> a) -> (String -> String -> a) -> b + String -> b + String -> a
-unionDisj f _ (Left x) (Left y)   = f x y
-unionDisj _ _ (Left _) (Right _)  = error "Non-uniform argument types"
-unionDisj _ f (Right x) (Right y) = f x y
-unionDisj _ _ (Right _) (Left _)  = error "Non-uniform argument types"
 
 class As a b where
    as :: a -> b
