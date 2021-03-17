@@ -14,7 +14,7 @@ import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (
    Binary, BinarySpec, OpDef, UnarySpec,
-   binary, depends, depends2, dependsBoth, dependsBoth2, dependsZero, opDef, unary, union, union1, unionStr
+   binary, depends1, depends2, depends2Zero, opDef, unary, union, union1, unionStr, withInverse1, withInverse2
 )
 import Util (type (×), (×), type (+), (≜), (!), absurd, error, unsafeUpdateAt)
 import Val (Env, MatrixRep, Val(..))
@@ -41,27 +41,28 @@ opDefs = fromFoldable [
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    ":"         ↦ Constr false cCons Nil,
-   "+"         ↦ binary (dependsBoth2 plus),
-   "-"         ↦ binary (dependsBoth2 minus),
-   "*"         ↦ binary (dependsZero times),
-   "**"        ↦ binary (dependsZero pow),
-   "/"         ↦ binary (dependsZero divide),
-   "=="        ↦ binary (dependsBoth equals),
-   "/="        ↦ binary (dependsBoth notEquals),
-   "<"         ↦ binary (dependsBoth lessThan),
-   ">"         ↦ binary (dependsBoth greaterThan),
-   "<="        ↦ binary (dependsBoth lessThanEquals),
-   ">="        ↦ binary (dependsBoth greaterThanEquals),
-   "++"        ↦ binary (dependsBoth concat),
+   "+"         ↦ binary (depends2 plus),
+   "-"         ↦ binary (depends2 minus),
+   "*"         ↦ binary (depends2Zero times),
+   "**"        ↦ binary (depends2Zero pow),
+   "/"         ↦ binary (depends2Zero divide),
+   "=="        ↦ binary (depends2 equals),
+   "/="        ↦ binary (depends2 notEquals),
+   "<"         ↦ binary (depends2 lessThan),
+   ">"         ↦ binary (depends2 greaterThan),
+   "<="        ↦ binary (depends2 lessThanEquals),
+   ">="        ↦ binary (depends2 greaterThanEquals),
+   "++"        ↦ binary (depends2 concat),
    "!"         ↦ binary matrixLookup,
-   "ceiling"   ↦ unary (depends ceil),
-   "debugLog"  ↦ unary (depends debugLog),
+   "div"       ↦ binary (depends2Zero div),
+
+   "ceiling"   ↦ unary (withInverse1 ceil),
+   "debugLog"  ↦ unary (withInverse1 debugLog),
    "dims"      ↦ unary dims,
-   "div"       ↦ binary (dependsZero div),
-   "error"     ↦ unary (depends error_),
-   "floor"     ↦ unary (depends floor),
-   "log"       ↦ unary (depends log),
-   "numToStr"  ↦ unary (depends numToStr)
+   "error"     ↦ unary (withInverse1 error_),
+   "floor"     ↦ unary (withInverse1 floor),
+   "log"       ↦ unary (withInverse1 log),
+   "numToStr"  ↦ unary (withInverse1 numToStr)
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹
@@ -71,7 +72,7 @@ error_ :: String -> Val 𝔹
 error_ = error
 
 dims :: UnarySpec (MatrixRep 𝔹) (Val 𝔹 × Val 𝔹)
-dims = depends2 { f, g }
+dims = depends1 { f, g }
    where
    f :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
    f (_ × (i × β) × (j × β')) = Int β i × Int β' j
@@ -81,7 +82,7 @@ dims = depends2 { f, g }
    g (_ × _) _                                         = error absurd
 
 matrixLookup :: BinarySpec (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
-matrixLookup = dependsBoth2 { f, g }
+matrixLookup = depends2 { f, g }
    where
    f :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
    f (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
@@ -112,26 +113,26 @@ divide = { f: (\x y -> toNumber x / toNumber y)  `union` (/), g: const identity 
 div :: Binary Int Int Int
 div = { f: P.div, g: const identity }
 
-equals :: Int + Number + String -> Int + Number + String -> Boolean
-equals = (==) `union` (==) `unionStr` (==)
+equals :: Binary (Int + Number + String) (Int + Number + String) Boolean
+equals = { f: (==) `union` (==) `unionStr` (==), g: const identity }
 
-notEquals :: Int + Number + String -> Int + Number + String -> Boolean
-notEquals = (/=) `union` (/=) `unionStr` (/=)
+notEquals :: Binary (Int + Number + String) (Int + Number + String) Boolean
+notEquals = { f: (/=) `union` (/=) `unionStr` (/=), g: const identity }
 
-lessThan :: Int + Number + String -> Int + Number + String -> Boolean
-lessThan = (<)  `union` (<)  `unionStr` (<)
+lessThan :: Binary (Int + Number + String) (Int + Number + String) Boolean
+lessThan = { f: (<)  `union` (<)  `unionStr` (<), g: const identity }
 
-greaterThan :: Int + Number + String -> Int + Number + String -> Boolean
-greaterThan = (>)  `union` (>)  `unionStr` (>)
+greaterThan :: Binary (Int + Number + String) (Int + Number + String) Boolean
+greaterThan = { f: (>)  `union` (>)  `unionStr` (>), g: const identity }
 
-lessThanEquals :: Int + Number + String -> Int + Number + String -> Boolean
-lessThanEquals = (<=) `union` (<=) `unionStr` (<=)
+lessThanEquals :: Binary (Int + Number + String) (Int + Number + String) Boolean
+lessThanEquals = { f: (<=) `union` (<=) `unionStr` (<=), g: const identity }
 
-greaterThanEquals :: Int + Number + String -> Int + Number + String -> Boolean
-greaterThanEquals = (>=) `union` (>=) `unionStr` (>=)
+greaterThanEquals :: Binary (Int + Number + String) (Int + Number + String) Boolean
+greaterThanEquals = { f: (>=) `union` (>=) `unionStr` (>=), g: const identity }
 
-concat :: String -> String -> String
-concat = (<>)
+concat :: Binary String String String
+concat = { f: (<>), g: const identity }
 
 numToStr :: Int + Number -> String
 numToStr = show `union1` show

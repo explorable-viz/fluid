@@ -201,27 +201,27 @@ binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply_bwd v (v1 : v2 : Nil) = match_bwd v1' : match_bwd v2' : Nil
       where v1' × v2' = bwd (constr_bwd v) (fst (match v1) × fst (match v2))
 
-depends :: forall a b . (a -> b) -> UnarySpec a b
-depends f = depends2 { f, g: const identity }
+withInverse1 :: forall a b . (a -> b) -> UnarySpec a b
+withInverse1 f = depends1 { f, g: const identity }
 
-depends2 :: forall a b . Unary a b -> UnarySpec a b
-depends2 { f, g } = { fwd: f', bwd: g' }
+depends1 :: forall a b . Unary a b -> UnarySpec a b
+depends1 { f, g } = { fwd: f', bwd: g' }
    where
    f' (x × α)    = f x × α
    g' (y × α) x  = g y x × α
 
-dependsBoth :: forall a b c . (a -> b -> c) -> BinarySpec a b c
-dependsBoth f = dependsBoth2 { f, g: const identity }
+withInverse2 :: forall a b c . (a -> b -> c) -> BinarySpec a b c
+withInverse2 f = depends2 { f, g: const identity }
 
-dependsBoth2 :: forall a b c . Binary a b c -> BinarySpec a b c
-dependsBoth2 { f, g } = { fwd: f', bwd: g' }
+depends2 :: forall a b c . Binary a b c -> BinarySpec a b c
+depends2 { f, g } = { fwd: f', bwd: g' }
    where
    f' (x × α) (y × β) = f x y × (α ∧ β)
    g' (z × α) (x × y) = (x' × α) × (y' × α) where x' × y' = g z (x × y)
 
 -- If both are zero, depend only on the first.
-dependsZero :: forall a b . IsZero a => Binary a a b -> BinarySpec a a b
-dependsZero { f, g } = { fwd: f', bwd: g' }
+depends2Zero :: forall a b . IsZero a => Binary a a b -> BinarySpec a a b
+depends2Zero { f, g } = { fwd: f', bwd: g' }
    where
    f' :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
    f' (x × α) (y × β) =
