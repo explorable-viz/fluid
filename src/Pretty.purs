@@ -33,10 +33,19 @@ highlightIf false   = identity
 highlightIf true    = between (text "_") (text "_")
 
 comma :: Doc
-comma = text "," :<>: space
+comma = rspace (text ",")
 
 space :: Doc
 space = text " "
+
+lspace :: Endo Doc
+lspace = (:<>:) space
+
+rspace :: Endo Doc
+rspace = flip (:<>:) space
+
+lrspace :: Endo Doc
+lrspace = lspace >>> rspace
 
 tab :: Doc
 tab = text "   "
@@ -189,7 +198,7 @@ instance prettySExpr :: Pretty (Expr Boolean) where
    pretty (MatchAs s bs)            =
       text str.match :<>: space :<>: pretty s :<>: space :<>: text str.as :<>: space :<>: pretty bs
    pretty (IfElse s1 s2 s3)         =
-      text "if " :<>: pretty s1 :<>: text " then " :<>: pretty s2 :<>: text " else " :<>: pretty s3
+      text str.if_ :<>: pretty s1 :<>: text str.then_ :<>: pretty s2 :<>: text str.else_ :<>: pretty s3
    pretty r@(ListEmpty _)           = prettyList (toList r)
    pretty r@(ListNonEmpty _ e l)    = prettyList (toList r)
    pretty (ListEnum s s')           = brackets (pretty s :<>: text " .. " :<>: pretty s')
