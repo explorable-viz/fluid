@@ -207,6 +207,12 @@ depends op = { fwd, bwd }
    fwd (x × α)    = op x × α
    bwd (_ × α) x  = x × α
 
+depends2 :: forall a b . ((a -> b) × (b -> a -> a)) -> UnarySpec a b
+depends2 (fwd × bwd) = { fwd: fwd', bwd: bwd' }
+   where
+   fwd' (x × α)    = fwd x × α
+   bwd' (y × α) x  = bwd y x × α
+
 dependsBoth :: forall a b c . (a -> b -> c) -> BinarySpec a b c
 dependsBoth op = { fwd, bwd }
    where
@@ -260,14 +266,14 @@ debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)
 
 dims :: UnarySpec (MatrixRep 𝔹) (Val 𝔹 × Val 𝔹)
-dims = { fwd, bwd }
+dims = depends2 (fwd × bwd)
    where
-   fwd :: MatrixRep 𝔹 × 𝔹 -> (Val 𝔹 × Val 𝔹) × 𝔹
-   fwd ((_ × (i × β) × (j × β')) × α) = (Int β i × Int β' j) × α
+   fwd :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
+   fwd (_ × (i × β) × (j × β')) = Int β i × Int β' j
 
-   bwd :: (Val 𝔹 × Val 𝔹) × 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹 × 𝔹
-   bwd ((Int β i' × Int β' j') × α) (vss × (i × _) × (j × _))  = (vss × ((i ≜ i') × β) × ((j ≜ j') × β')) × α
-   bwd ((_ × _) × _) _                                         = error absurd
+   bwd :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
+   bwd (Int β i' × Int β' j') (vss × (i × _) × (j × _))  = vss × ((i ≜ i') × β) × ((j ≜ j') × β')
+   bwd (_ × _) _                                         = error absurd
 
 -- Annotation on first arg to bwd is always true, and on return value of fwd is irrelevant.
 matrixLookup :: BinarySpec (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
