@@ -13,7 +13,7 @@ import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (
-   Binary, OpDef, Unary, depends1, depends2, depends2Zero, opDef, union, union1, unionStr, withInverse1, withInverse2
+   Binary, OpDef, Unary, unary, binary, binaryZero, opDef, union, union1, unionStr, withInverse1, withInverse2
 )
 import Util (type (×), (×), type (+), (≜), (!), absurd, error, unsafeUpdateAt)
 import Val (Env, MatrixRep, Val(..))
@@ -41,28 +41,28 @@ primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    ":"         ↦ Constr false cCons Nil,
 
-   "+"         ↦ depends2 (withInverse2 plus),
-   "-"         ↦ depends2 (withInverse2 minus),
-   "*"         ↦ depends2Zero (withInverse2 times),
-   "**"        ↦ depends2Zero (withInverse2 pow),
-   "/"         ↦ depends2Zero (withInverse2 divide),
-   "=="        ↦ depends2 (withInverse2 equals),
-   "/="        ↦ depends2 (withInverse2 notEquals),
-   "<"         ↦ depends2 (withInverse2 lessThan),
-   ">"         ↦ depends2 (withInverse2 greaterThan),
-   "<="        ↦ depends2 (withInverse2 lessThanEquals),
-   ">="        ↦ depends2 (withInverse2 greaterThanEquals),
-   "++"        ↦ depends2 (withInverse2 concat),
-   "!"         ↦ depends2 matrixLookup,
-   "div"       ↦ depends2Zero (withInverse2 div),
+   "+"         ↦ binary (withInverse2 plus),
+   "-"         ↦ binary (withInverse2 minus),
+   "*"         ↦ binaryZero (withInverse2 times),
+   "**"        ↦ binaryZero (withInverse2 pow),
+   "/"         ↦ binaryZero (withInverse2 divide),
+   "=="        ↦ binary (withInverse2 equals),
+   "/="        ↦ binary (withInverse2 notEquals),
+   "<"         ↦ binary (withInverse2 lessThan),
+   ">"         ↦ binary (withInverse2 greaterThan),
+   "<="        ↦ binary (withInverse2 lessThanEquals),
+   ">="        ↦ binary (withInverse2 greaterThanEquals),
+   "++"        ↦ binary (withInverse2 concat),
+   "!"         ↦ binary matrixLookup,
+   "div"       ↦ binaryZero (withInverse2 div),
 
-   "ceiling"   ↦ depends1 (withInverse1 ceil),
-   "debugLog"  ↦ depends1 (withInverse1 debugLog),
-   "dims"      ↦ depends1 dims,
-   "error"     ↦ depends1 (withInverse1 error_),
-   "floor"     ↦ depends1 (withInverse1 floor),
-   "log"       ↦ depends1 (withInverse1 log),
-   "numToStr"  ↦ depends1 (withInverse1 numToStr)
+   "ceiling"   ↦ unary (withInverse1 ceil),
+   "debugLog"  ↦ unary (withInverse1 debugLog),
+   "dims"      ↦ unary dims,
+   "error"     ↦ unary (withInverse1 error_),
+   "floor"     ↦ unary (withInverse1 floor),
+   "log"       ↦ unary (withInverse1 log),
+   "numToStr"  ↦ unary (withInverse1 numToStr)
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹

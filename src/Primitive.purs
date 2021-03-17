@@ -165,8 +165,8 @@ type BinarySlicer a b c = {
    bwd :: c × 𝔹 -> a × b -> (a × 𝔹) × (b × 𝔹)
 }
 
-unary :: forall a b . ToFrom a => ToFrom b => UnarySlicer a b -> Val 𝔹
-unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
+unary_ :: forall a b . ToFrom a => ToFrom b => UnarySlicer a b -> Val 𝔹
+unary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 1,
    op: unsafePartial apply,
    op_fwd: unsafePartial apply_fwd,
@@ -183,8 +183,8 @@ unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply_bwd v (v1 : Nil) = match_bwd v1' : Nil
       where v1' = bwd (constr_bwd v) (fst (match v1))
 
-binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySlicer a b c -> Val 𝔹
-binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
+binary_ :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySlicer a b c -> Val 𝔹
+binary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 2,
    op: unsafePartial apply,
    op_fwd: unsafePartial apply_fwd,
@@ -207,21 +207,21 @@ withInverse1 fwd = { fwd, bwd: const identity }
 withInverse2 :: forall a b c . (a -> b -> c) -> Binary a b c
 withInverse2 fwd = { fwd, bwd: const identity }
 
-depends1 :: forall a b . ToFrom a => ToFrom b => Unary a b -> Val 𝔹
-depends1 { fwd, bwd } = unary { fwd: fwd', bwd: bwd' }
+unary :: forall a b . ToFrom a => ToFrom b => Unary a b -> Val 𝔹
+unary { fwd, bwd } = unary_ { fwd: fwd', bwd: bwd' }
    where
    fwd' (x × α)    = fwd x × α
    bwd' (y × α) x  = bwd y x × α
 
-depends2 :: forall a b c . ToFrom a => ToFrom b => ToFrom c => Binary a b c -> Val 𝔹
-depends2 { fwd, bwd } = binary { fwd: fwd', bwd: bwd' }
+binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => Binary a b c -> Val 𝔹
+binary { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
    where
    fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
    bwd' (z × α) (x × y) = (x' × α) × (y' × α) where x' × y' = bwd z (x × y)
 
 -- If both are zero, depend only on the first.
-depends2Zero :: forall a b . IsZero a => ToFrom a => ToFrom b => Binary a a b -> Val 𝔹
-depends2Zero { fwd, bwd } = binary { fwd: fwd', bwd: bwd' }
+binaryZero :: forall a b . IsZero a => ToFrom a => ToFrom b => Binary a a b -> Val 𝔹
+binaryZero { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
    where
    fwd' :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
    fwd' (x × α) (y × β) =
