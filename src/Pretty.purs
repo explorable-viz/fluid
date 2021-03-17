@@ -185,7 +185,8 @@ instance prettySExpr :: Pretty (Expr Boolean) where
    pretty (Lambda bs)               = text str.fun :<>: pretty bs
    pretty (App s s')                = pretty s :<>: space :<>: pretty s'
    pretty (BinaryApp s op s')       = parens (pretty s :<>: operator op :<>: pretty s')
-   pretty (MatchAs s bs)            = text "match " :<>: pretty s :<>: text " as " :<>: pretty bs
+   pretty (MatchAs s bs)            =
+      text str.match :<>: space :<>: pretty s :<>: space :<>: text str.as :<>: space :<>: pretty bs
    pretty (IfElse s1 s2 s3)         =
       text "if " :<>: pretty s1 :<>: text " then " :<>: pretty s2 :<>: text " else " :<>: pretty s3
    pretty r@(ListEmpty _)           = prettyList (toList r)
@@ -199,10 +200,10 @@ instance prettyNonEmptyList :: Pretty a => Pretty (NonEmptyList a) where
    pretty = pretty <<< NEL.toList
 
 instance prettyClause :: Pretty (String × (NonEmptyList Pattern × Expr Boolean)) where
-   pretty (x × b) = text x :<>: text " = " :<>: pretty b
+   pretty (x × b) = text x :<>: space :<>: pretty b
 
 instance prettySBranch :: Pretty (NonEmptyList Pattern × Expr Boolean) where
-   pretty (πs × e) = hcat (intersperse space (pretty <$> NEL.toList πs)) :<>: text " -> " :<>: pretty e
+   pretty (πs × e) = hcat (intersperse space (pretty <$> NEL.toList πs)) :<>: space :<>: text str.equals :<>: space :<>: pretty e
 
 instance prettySVarDef :: Pretty (VarDef Boolean) where
    pretty (VarDef π e) = pretty π :<>: text " = " :<>: pretty e

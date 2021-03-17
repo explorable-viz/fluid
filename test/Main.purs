@@ -23,10 +23,17 @@ test_scratchpad = [
    test "temp" "17"
 ]
 
+str :: String
+str = "\
+\let nth2 i j xs = nth (i - 1) nth (j - 1) xs\n\
+\in let xs = [[1, 4, 8], [3, 2, 17], [0, 14, 6]]\n\
+\       ys = [|TODO!|]\n\
+\   in (ys ! (3, 2))"
+
 test_slicing :: Array (Test Unit)
 test_slicing = [
 --   test_bwd "slicing/add" (Int true 0 × "(_5_ + (_0_ + _3_))") "_8_",
-   test_bwd "slicing/array-lookup" (Float true 0.9 × "(_5_ + (_0_ + _3_))") "17"
+   test_bwd "slicing/array-lookup" (Float true 0.9 × str) "17"
 --   test_bwd "slicing/multiply" (Int true 0 × "(5 * (_0_ * 3))") "_0_"
 ]
 
