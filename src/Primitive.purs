@@ -249,12 +249,12 @@ primitives = foldl (:+:) Empty [
    "*"         ↦ binary (dependsZero times),
    "**"        ↦ binary (dependsZero exp),
    "/"         ↦ binary (dependsZero divide),
-   "=="        ↦ binary (dependsBoth ((==) `union2'` (==) `unionDisj` (==))),
-   "/="        ↦ binary (dependsBoth ((/=) `union2'` (/=) `unionDisj` (==))),
-   "<"         ↦ binary (dependsBoth ((<)  `union2'` (<)  `unionDisj` (==))),
-   ">"         ↦ binary (dependsBoth ((>)  `union2'` (>)  `unionDisj` (==))),
-   "<="        ↦ binary (dependsBoth ((<=) `union2'` (<=) `unionDisj` (==))),
-   ">="        ↦ binary (dependsBoth ((>=) `union2'` (>=) `unionDisj` (==))),
+   "=="        ↦ binary (dependsBoth equals),
+   "/="        ↦ binary (dependsBoth notEquals),
+   "<"         ↦ binary (dependsBoth lessThan),
+   ">"         ↦ binary (dependsBoth greaterThan),
+   "<="        ↦ binary (dependsBoth lessThanEquals),
+   ">="        ↦ binary (dependsBoth greaterThanEquals),
    "++"        ↦ binary (dependsBoth ((<>) :: String -> String -> String)),
    "!"         ↦ binary matrixLookup,
    "ceiling"   ↦ unary (depends ceil),
@@ -327,6 +327,10 @@ union _ g (Left x) (Right y)    = as (g (as x) y)
 union _ g (Right x) (Right y)   = as (g x y)
 union _ g (Right x) (Left y)    = as (g x (as y))
 
+-- Helper to avoid some explicit type annotations later
+unionStr :: forall a b . As a a => As b String => (b -> b -> a) -> (String -> String -> a) -> b + String -> b + String -> a
+unionStr = union
+
 instance asIntIntOrNumber :: As Int (Int + Number) where
    as = Left
 
@@ -359,4 +363,19 @@ divide :: Int + Number -> Int + Number -> Int + Number
 divide = (\x y -> toNumber x / toNumber y)  `union` (/)
 
 equals :: Int + Number + String -> Int + Number + String -> Boolean
-equals = ((==) `union` (==) :: Int + Number -> Int + Number -> Boolean) `union` (==)
+equals = (==) `union` (==) `unionStr` (==)
+
+notEquals :: Int + Number + String -> Int + Number + String -> Boolean
+notEquals = (/=) `union` (/=) `unionStr` (/=)
+
+lessThan :: Int + Number + String -> Int + Number + String -> Boolean
+lessThan = (<)  `union` (<)  `unionStr` (<)
+
+greaterThan :: Int + Number + String -> Int + Number + String -> Boolean
+greaterThan = (>)  `union` (>)  `unionStr` (>)
+
+lessThanEquals :: Int + Number + String -> Int + Number + String -> Boolean
+lessThanEquals = (<=) `union` (<=) `unionStr` (<=)
+
+greaterThanEquals :: Int + Number + String -> Int + Number + String -> Boolean
+greaterThanEquals = (>=) `union` (>=) `unionStr` (>=)
