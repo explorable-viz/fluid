@@ -208,16 +208,22 @@ depends op = { fwd, bwd }
    bwd (_ × α) x  = x × α
 
 depends2 :: forall a b . ((a -> b) × (b -> a -> a)) -> UnarySpec a b
-depends2 (fwd × bwd) = { fwd: fwd', bwd: bwd' }
+depends2 (f × g) = { fwd: f', bwd: g' }
    where
-   fwd' (x × α)    = fwd x × α
-   bwd' (y × α) x  = bwd y x × α
+   f' (x × α)    = f x × α
+   g' (y × α) x  = g y x × α
 
 dependsBoth :: forall a b c . (a -> b -> c) -> BinarySpec a b c
 dependsBoth op = { fwd, bwd }
    where
    fwd (x × α) (y × β) = x `op` y × (α ∧ β)
    bwd (_ × α) (x × y) = (x × α) × (y × α)
+
+dependsBoth2 :: forall a b c . ((a -> b -> c) × (c -> a × b -> a × b)) -> BinarySpec a b c
+dependsBoth2 (f × g) = { fwd: f', bwd: g' }
+   where
+   f' (x × α) (y × β) = f x y × (α ∧ β)
+   g' (z × α) (x × y) = (x' × α) × (y' × α) where x' × y' = g z (x × y)
 
 -- If both are zero, depend only on the first.
 dependsZero :: forall a b . IsZero a => (a -> a -> b) -> BinarySpec a a b
