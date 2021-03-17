@@ -41,6 +41,7 @@ opDefs = fromFoldable [
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    ":"         ↦ Constr false cCons Nil,
+
    "+"         ↦ binary (depends2 plus),
    "-"         ↦ binary (depends2 minus),
    "*"         ↦ binary (depends2Zero times),
@@ -56,13 +57,13 @@ primitives = foldl (:+:) Empty [
    "!"         ↦ binary matrixLookup,
    "div"       ↦ binary (depends2Zero div),
 
-   "ceiling"   ↦ unary (withInverse1 ceil),
-   "debugLog"  ↦ unary (withInverse1 debugLog),
+   "ceiling"   ↦ unary (depends1 (withInverse1 ceil)),
+   "debugLog"  ↦ unary (depends1 (withInverse1 debugLog)),
    "dims"      ↦ unary dims,
-   "error"     ↦ unary (withInverse1 error_),
-   "floor"     ↦ unary (withInverse1 floor),
-   "log"       ↦ unary (withInverse1 log),
-   "numToStr"  ↦ unary (withInverse1 numToStr)
+   "error"     ↦ unary (depends1 (withInverse1 error_)),
+   "floor"     ↦ unary (depends1 (withInverse1 floor)),
+   "log"       ↦ unary (depends1 (withInverse1 log)),
+   "numToStr"  ↦ unary (depends1 (withInverse1 numToStr))
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹
@@ -95,44 +96,44 @@ matrixLookup = depends2 { f, g }
            vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
 
 plus :: Binary (Int + Number) (Int + Number) (Int + Number)
-plus = { f: (+) `union` (+), g: const identity }
+plus = withInverse2 ((+) `union` (+))
 
 minus :: Binary (Int + Number) (Int + Number) (Int + Number)
-minus = { f: (-) `union` (-), g: const identity }
+minus = withInverse2 ((-) `union` (-))
 
 times :: Binary (Int + Number) (Int + Number) (Int + Number)
-times = { f: (*) `union` (*), g: const identity }
+times = withInverse2 ((*) `union` (*))
 
 -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
 pow :: Binary (Int + Number) (Int + Number) (Int + Number)
-pow = { f: (\x y -> toNumber x `M.pow` toNumber y) `union` M.pow, g: const identity }
+pow = withInverse2 ((\x y -> toNumber x `M.pow` toNumber y) `union` M.pow)
 
 divide :: Binary (Int + Number) (Int + Number) (Int + Number)
-divide = { f: (\x y -> toNumber x / toNumber y)  `union` (/), g: const identity }
+divide = withInverse2 ((\x y -> toNumber x / toNumber y)  `union` (/))
 
 div :: Binary Int Int Int
-div = { f: P.div, g: const identity }
+div = withInverse2 P.div
 
 equals :: Binary (Int + Number + String) (Int + Number + String) Boolean
-equals = { f: (==) `union` (==) `unionStr` (==), g: const identity }
+equals = withInverse2 ((==) `union` (==) `unionStr` (==))
 
 notEquals :: Binary (Int + Number + String) (Int + Number + String) Boolean
-notEquals = { f: (/=) `union` (/=) `unionStr` (/=), g: const identity }
+notEquals = withInverse2 ((/=) `union` (/=) `unionStr` (/=))
 
 lessThan :: Binary (Int + Number + String) (Int + Number + String) Boolean
-lessThan = { f: (<)  `union` (<)  `unionStr` (<), g: const identity }
+lessThan = withInverse2 ((<)  `union` (<)  `unionStr` (<))
 
 greaterThan :: Binary (Int + Number + String) (Int + Number + String) Boolean
-greaterThan = { f: (>)  `union` (>)  `unionStr` (>), g: const identity }
+greaterThan = withInverse2 ((>)  `union` (>)  `unionStr` (>))
 
 lessThanEquals :: Binary (Int + Number + String) (Int + Number + String) Boolean
-lessThanEquals = { f: (<=) `union` (<=) `unionStr` (<=), g: const identity }
+lessThanEquals = withInverse2 ((<=) `union` (<=) `unionStr` (<=))
 
 greaterThanEquals :: Binary (Int + Number + String) (Int + Number + String) Boolean
-greaterThanEquals = { f: (>=) `union` (>=) `unionStr` (>=), g: const identity }
+greaterThanEquals = withInverse2 ((>=) `union` (>=) `unionStr` (>=))
 
 concat :: Binary String String String
-concat = { f: (<>), g: const identity }
+concat = withInverse2 (<>)
 
 numToStr :: Int + Number -> String
 numToStr = show `union1` show
