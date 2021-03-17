@@ -11,16 +11,17 @@ import Val (Val(..))
 
 main :: Effect Unit
 main = void $ sequence $ run <$> concat [
-   test_desugaring,
-   test_misc,
-   test_slicing,
-   test_graphics,
+   -- test_desugaring,
+   -- test_misc,
+   -- test_slicing,
+   -- test_graphics,
    test_scratchpad
 ]
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   test "temp" "[[10], [12], [20]]"
+   test "temp" "[[10], [12], [20]]",
+   test "array" "(1, (3, 3))"
 ]
 
 test_slicing :: Array (Test Unit)
