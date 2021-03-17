@@ -15,7 +15,7 @@ import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), Var, (:+:), (↦))
 import DataType (cCons, cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
-import Util (type (×), (×), type (+), (!), (≜), absurd, assert, error, unsafeUpdateAt)
+import Util (type (×), (×), type (+), (!), (≜), absurd, error, unsafeUpdateAt)
 import Val (Env, MatrixRep, PrimOp(..), Val(..))
 
 -- name in user land, precedence 0 from 9 (similar to Haskell 98), associativity
@@ -281,17 +281,15 @@ dims = depends2 (fwd × bwd)
    bwd (Int β i' × Int β' j') (vss × (i × _) × (j × _))  = vss × ((i ≜ i') × β) × ((j ≜ j') × β')
    bwd (_ × _) _                                         = error absurd
 
--- Annotation on first arg to bwd is always true, and on return value of fwd is irrelevant.
 matrixLookup :: BinarySpec (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
-matrixLookup = { fwd, bwd }
+matrixLookup = dependsBoth2 (fwd × bwd)
    where
-   fwd :: MatrixRep 𝔹 × 𝔹 -> (Int × 𝔹) × (Int × 𝔹) × 𝔹 -> Val 𝔹 × 𝔹
-   fwd ((vss × _ × _) × _) ((i × _) × (j × _) × _) = vss!(i - 1)!(j - 1) × false
+   fwd :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
+   fwd (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
 
-   bwd :: Val 𝔹 × 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> (MatrixRep 𝔹 × 𝔹) × ((Int × 𝔹) × (Int × 𝔹) × 𝔹)
-   bwd (v × α) (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-      assert α $
-      (vss'' × (i' × false) × (j' × false) × false) × ((i × false) × (j × false) × false)
+   bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
+   bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
+      (vss'' × (i' × false) × (j' × false)) × ((i × false) × (j × false))
       where vss'  = (<$>) (const Hole) <$> vss
             vs_i  = vss'!(i - 1)
             vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
