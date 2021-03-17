@@ -13,13 +13,13 @@ import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (
-   BinarySpec, OpDef, UnarySpec,
+   Binary, BinarySpec, OpDef, UnarySpec,
    binary, depends, depends2, dependsBoth, dependsBoth2, dependsZero, opDef, unary, union, union1, unionStr
 )
 import Util (type (×), (×), type (+), (≜), (!), absurd, error, unsafeUpdateAt)
 import Val (Env, MatrixRep, Val(..))
 
--- Syntactic information only. No guarantee that any of these will be defined.
+-- Syntactic information only. No requirement that any of these be defined.
 opDefs :: Map String OpDef
 opDefs = fromFoldable [
    opDef "!"   8 AssocLeft,
@@ -40,9 +40,8 @@ opDefs = fromFoldable [
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
-   -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
    ":"         ↦ Constr false cCons Nil,
-   "+"         ↦ binary (dependsBoth plus),
+   "+"         ↦ binary (dependsBoth2 plus),
    "-"         ↦ binary (dependsBoth minus),
    "*"         ↦ binary (dependsZero times),
    "**"        ↦ binary (dependsZero pow),
@@ -72,30 +71,30 @@ error_ :: String -> Val 𝔹
 error_ = error
 
 dims :: UnarySpec (MatrixRep 𝔹) (Val 𝔹 × Val 𝔹)
-dims = depends2 (fwd × bwd)
+dims = depends2 { f, g }
    where
-   fwd :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
-   fwd (_ × (i × β) × (j × β')) = Int β i × Int β' j
+   f :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
+   f (_ × (i × β) × (j × β')) = Int β i × Int β' j
 
-   bwd :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
-   bwd (Int β i' × Int β' j') (vss × (i × _) × (j × _))  = vss × ((i ≜ i') × β) × ((j ≜ j') × β')
-   bwd (_ × _) _                                         = error absurd
+   g :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
+   g (Int β i' × Int β' j') (vss × (i × _) × (j × _))  = vss × ((i ≜ i') × β) × ((j ≜ j') × β')
+   g (_ × _) _                                         = error absurd
 
 matrixLookup :: BinarySpec (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
-matrixLookup = dependsBoth2 (fwd × bwd)
+matrixLookup = dependsBoth2 { f, g }
    where
-   fwd :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
-   fwd (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
+   f :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
+   f (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
 
-   bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
-   bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-      (vss'' × (i' × false) × (j' × false)) × ((i × false) × (j × false))
-      where vss'  = (<$>) (const Hole) <$> vss
-            vs_i  = vss'!(i - 1)
-            vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
+   g :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
+   g v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
+     (vss'' × (i' × false) × (j' × false)) × ((i × false) × (j × false))
+     where vss'  = (<$>) (const Hole) <$> vss
+           vs_i  = vss'!(i - 1)
+           vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
 
-plus :: Int + Number -> Int + Number -> Int + Number
-plus = (+) `union` (+)
+plus :: Binary (Int + Number) (Int + Number) (Int + Number)
+plus = { f: (+) `union` (+), g: const identity }
 
 minus :: Int + Number -> Int + Number -> Int + Number
 minus = (-) `union` (-)
