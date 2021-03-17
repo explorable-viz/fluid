@@ -28,9 +28,9 @@ between l r doc = l :<>: doc :<>: r
 brackets :: Endo Doc
 brackets = between (text "[") (text "]")
 
-bracketsIf :: Boolean -> Endo Doc
-bracketsIf false   = identity
-bracketsIf true    = brackets
+highlightIf :: Boolean -> Endo Doc
+highlightIf false   = identity
+highlightIf true    = between (text "_") (text "_")
 
 comma :: Doc
 comma = text "," :<>: space
@@ -138,7 +138,7 @@ prettyConstr c xs
 
 instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty E.Hole                    = hole
-   pretty (E.Int α n)               = text (show n)
+   pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
    pretty (E.Var x)                 = text x
@@ -147,7 +147,7 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
       | otherwise                   = prettyConstr c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Op op)                 = parens (text op)
-   pretty (E.Let (E.VarDef σ e) e')   =
+   pretty (E.Let (E.VarDef σ e) e') =
       atop (text ("let ") :<>: pretty σ :<>: operator "=" :<>: pretty e :<>: text " in") (pretty e')
    pretty (E.LetRec δ e)            =
       atop (text "letrec " :<>: pretty δ) (text "in " :<>: pretty e)
@@ -175,7 +175,7 @@ instance prettyElim :: Pretty (Elim Boolean) where
 
 instance prettyVal :: Pretty (Val Boolean) where
    pretty V.Hole                       = hole
-   pretty (V.Int α n)                  = bracketsIf α (text (show n))
+   pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float _ n)                = text (show n)
    pretty (V.Str _ str)                = text (show str)
    pretty u@(V.Constr _ c vs)
@@ -210,7 +210,7 @@ instance toListSExpr :: ToList (Expr Boolean)  where
 instance prettySExpr :: Pretty (Expr Boolean) where
    pretty (Var x)                   = text x
    pretty (Op op)                   = parens (text op)
-   pretty (Int _ n)                 = text (show n)
+   pretty (Int α n)                 = highlightIf α (text (show n))
    pretty (Float _ n)               = text (show n)
    pretty (Str _ str)               = text (show str)
    pretty r@(Constr _ c es)
@@ -219,7 +219,7 @@ instance prettySExpr :: Pretty (Expr Boolean) where
    pretty (Matrix _ _ _ _)          = error "todo"
    pretty (Lambda bs)               = text "λ " :<>: pretty bs
    pretty (App s s')                = pretty s :<>: space :<>: pretty s'
-   pretty (BinaryApp s op s')       = pretty s :<>: operator op :<>: pretty s'
+   pretty (BinaryApp s op s')       = parens (pretty s :<>: operator op :<>: pretty s')
    pretty (MatchAs s bs)            = text "match " :<>: pretty s :<>: text " as " :<>: pretty bs
    pretty (IfElse s1 s2 s3)         =
       text "if " :<>: pretty s1 :<>: text " then " :<>: pretty s2 :<>: text " else " :<>: pretty s3

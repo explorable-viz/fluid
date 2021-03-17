@@ -11,7 +11,8 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map, lookup, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
-import Data.Tuple (Tuple(..))
+import Data.Profunctor.Strong ((&&&))
+import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 
@@ -80,16 +81,16 @@ mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = whenever (x == x') x
 
 mustEq :: forall a . Eq a => a -> a -> a
-mustEq x x' = fromJust "Must be equal" $ x ≟ x'
+mustEq x x' = fromJust "Must be equal" (x ≟ x')
 
 mustGeq :: forall a . Ord a => a -> a -> a
-mustGeq x x' = fromJust "Must be greater" $ whenever (x >= x') x
+mustGeq x x' = fromJust "Must be greater" (whenever (x >= x') x)
 
 unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
-unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (map Just m) (map Just m')
+unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
 
 mayFailEq :: forall a . Show a => Eq a => a -> a -> MayFail a
-mayFailEq x x' = note (show x <> " ≠ " <> show x') $ x ≟ x'
+mayFailEq x x' = note (show x <> " ≠ " <> show x') (x ≟ x')
 
 infixl 4 mayEq as ≟
 infixl 4 mayFailEq as ≞
@@ -104,7 +105,7 @@ om :: forall a b c m . Monad m => (a -> b -> m c) -> m a -> b -> m c
 om f m x = m >>= flip f x
 
 bind2Flipped :: forall m a b c . Monad m => (a -> b -> m c) -> m a -> m b -> m c
-bind2Flipped f x y = join $ lift2 f x y
+bind2Flipped f x y = join (lift2 f x y)
 
 infixr 1 bind2Flipped as =<<<
 
@@ -112,7 +113,7 @@ type Endo a = a -> a
 
 -- version of this in Data.Array uses unsafePartial
 unsafeIndex :: forall a . Array a -> Int -> a
-unsafeIndex xs i = fromJust "Array index out of bounds" $ xs !! i
+unsafeIndex xs i = fromJust "Array index out of bounds" (xs !! i)
 
 unsafeUpdateAt :: forall a . Int -> a -> Endo (Array a)
 unsafeUpdateAt i x = updateAt i x >>> fromJust "Array index out of bounds"
@@ -132,3 +133,6 @@ replicate :: forall a . Int -> a -> List a
 replicate n a
    | n == 0 = Nil
    | true   = a : replicate (n - 1) a
+
+unzip :: forall t a b . Functor t => t (a × b) -> t a × t b
+unzip = (<$>) fst &&& (<$>) snd

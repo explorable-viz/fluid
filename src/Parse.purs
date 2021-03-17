@@ -25,7 +25,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Lattice (𝔹)
-import Primitive (opDefs)
+import Primitive.Defs (opDefs)
 import SExpr (
    Branch, Clause, Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..),
    RecDefs, VarDef(..), VarDefs
@@ -205,7 +205,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
       op' <- token.operator
       onlyIf (op == op') $
          if isCtrOp op'
-         then \e e' -> Constr true (Ctr op') (e : e' : empty)
+         then \e e' -> Constr false (Ctr op') (e : e' : empty)
          else \e e' -> BinaryApp e op e'
 
    -- Left-associative tree of applications of one or more simple terms.
@@ -244,27 +244,27 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          matrix :: SParser (Expr 𝔹)
          matrix =
             between (token.symbol strArrayLBracket) (token.symbol strArrayRBracket) $
-               Matrix true <$>
+               Matrix false <$>
                   (expr' <* bar) <*>
                   token.parens (ident `lift2 (×)` (token.comma *> ident)) <*>
                   (keyword strIn *> expr')
 
          nil :: SParser (Expr 𝔹)
-         nil = token.brackets $ pure (ListEmpty true)
+         nil = token.brackets $ pure (ListEmpty false)
 
          listNonEmpty :: SParser (Expr 𝔹)
          listNonEmpty =
-            lBracket *> (ListNonEmpty true <$> expr' <*> fix listRest)
+            lBracket *> (ListNonEmpty false <$> expr' <*> fix listRest)
 
             where
             listRest :: Endo (SParser (ListRest 𝔹))
             listRest listRest' =
-               rBracket *> pure (End true) <|>
-               token.comma *> (Next true <$> expr' <*> listRest')
+               rBracket *> pure (End false) <|>
+               token.comma *> (Next false <$> expr' <*> listRest')
 
          listComp :: SParser (Expr 𝔹)
          listComp = token.brackets $
-            pure (ListComp true) <*> expr' <* bar <*> sepBy1 qualifier (token.comma)
+            pure (ListComp false) <*> expr' <* bar <*> sepBy1 qualifier (token.comma)
 
             where
             qualifier :: SParser (Qualifier 𝔹)
@@ -278,7 +278,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
             pure ListEnum <*> expr' <* ellipsis <*> expr'
 
          constr :: SParser (Expr 𝔹)
-         constr = Constr true <$> ctr <@> empty
+         constr = Constr false <$> ctr <@> empty
 
          variable :: SParser (Expr 𝔹)
          variable = ident <#> Var
@@ -290,15 +290,15 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          int :: SParser (Expr 𝔹)
          int = do
             sign <- signOpt
-            (sign >>> Int true) <$> token.natural
+            (sign >>> Int false) <$> token.natural
 
          float :: SParser (Expr 𝔹)
          float = do
             sign <- signOpt
-            (sign >>> Float true) <$> token.float
+            (sign >>> Float false) <$> token.float
 
          string :: SParser (Expr 𝔹)
-         string = Str true <$> token.stringLiteral
+         string = Str false <$> token.stringLiteral
 
          defsExpr :: SParser (Expr 𝔹)
          defsExpr = do
@@ -315,7 +315,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          pair :: SParser (Expr 𝔹)
          pair = token.parens $
-            (pure $ \e e' -> Constr true cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
+            (pure $ \e e' -> Constr false cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 
          lambda :: SParser (Expr 𝔹)
          lambda = Lambda <$> (keyword strFun *> branches expr' branch_curried)

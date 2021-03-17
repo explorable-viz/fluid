@@ -21,15 +21,13 @@ data Expl a =
    Matrix (Array (Array (Expl a))) (Var × Var) (Int × Int) (Expl a) |
    Lambda (Env a) (Elim a) |
    App (Expl a × Env a × RecDefs a × Elim a) (Expl a) (Match a) (Expl a) |
-   -- record prior arguments
-   AppPrim (Expl a × PrimOp × List (Val a)) (Expl a × Val a) |
-   -- record number of prior arguments
-   AppConstr (Expl a × Ctr × Int) (Expl a) |
+   AppPrim (Expl a × PrimOp × List (Val a)) (Expl a × Val a) | -- record prior arguments
+   AppConstr (Expl a × Ctr × Int) (Expl a) |                   -- record number of prior arguments
    Let (VarDef a) (Expl a) |
    LetRec (RecDefs a) (Expl a)
 
 -- Constructor matches store the non-matched constructors too, because we tolerate partial eliminators
--- and need hole expansion to be be defined for those too.
+-- and need hole expansion to be defined for those too.
 data Match a =
    MatchVar Var |
    MatchVarAnon (Val a) |

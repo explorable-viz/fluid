@@ -15,7 +15,7 @@ import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr)
 import Lattice (𝔹, checkConsistent)
 import Pretty (pretty, render)
-import Primitive (from)
+import Primitive (match) as P
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
@@ -69,7 +69,7 @@ eval ρ (Matrix _ e (x × y) e') = do
    case v of
       V.Hole -> error absurd
       V.Constr _ c (v1 : v2 : Nil) | c == cPair -> do
-         let (i' × _) × (j' × _) = from v1 × from v2
+         let (i' × _) × (j' × _) = P.match v1 × P.match v2
          check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
          tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$> (sequence $ do
             i <- range 1 i'
