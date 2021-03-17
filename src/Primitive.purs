@@ -24,47 +24,57 @@ type OpDef = {
 opDef :: Var -> Int -> Assoc -> Var × OpDef
 opDef op prec assoc = op × { op, prec, assoc }
 
--- Mediates between a Val, and its underlying data, where "from" resembles pattern-matching, and "to" resembles
--- construction. The annotation associated with the underlying data is the analogue (for primitives) of the
--- annotation argument to eval (and returned by pattern-matching) controlling whether construction is permitted.
+-- Mediates between a Val and its underlying data, where "from" ≈ pattern-matching, and "to" ≈ construction.
+-- Annotation associated with underlying data is analogue (for primitives) of annotation input to eval and output of match.
 class ToFrom a where
-   to :: a × 𝔹 -> Val 𝔹
+   constr :: a × 𝔹 -> Val 𝔹
+   constr_bwd :: Val 𝔹 -> a × 𝔹        -- equivalent to "from" except in the Val case
    from :: Val 𝔹 -> a × 𝔹          -- only defined for non-holes
-   expand :: a -> Val 𝔹            -- use just enough information from supplied value to construct an argument to 'from'
+   expand :: a -> Val 𝔹            -- use just enough information from supplied value to construct an argument to "from"
 
 from_fwd :: forall a . ToFrom a => Val 𝔹 × a -> a × 𝔹
 from_fwd (Hole × v') = from (expand v')
 from_fwd (v × _)     = from v
 
+from_bwd :: forall a . ToFrom a => a × 𝔹 -> Val 𝔹
+from_bwd = constr
+
+-- Similar to the "variable" case in pattern-matching (or "use existing subvalue" case in construction).
 instance toFromVal :: ToFrom (Val Boolean) where
-   to = fst             -- construction rights not required
-   from = (_ × true)    -- construction rights always provided
+   constr = fst               -- when constructing, construction rights are not required
+   constr_bwd = (_ × false)   -- return unit of disjunction rather than conjunction
+   from = (_ × true)          -- when matching, construction rights are provided
    expand = identity
 
 instance toFromInt :: ToFrom Int where
    from (Int α n)   = n × α
    from _           = error "Int expected"
 
-   to (n × α) = Int α n
+   constr (n × α) = Int α n
+   constr_bwd v = from v
    expand = Int false
 
 instance toFromNumber :: ToFrom Number where
    from (Float α n) = n × α
    from _           = error "Float expected"
 
-   to (n × α) = Float α n
+   constr (n × α) = Float α n
+   constr_bwd v = from v
    expand = Float false
 
 instance toFromString :: ToFrom String where
    from (Str α str) = str × α
    from _           = error "Str expected"
 
-   to (str × α) = Str α str
+   constr (str × α) = Str α str
+   constr_bwd v = from v
    expand = Str false
 
 instance toFromIntOrNumber :: ToFrom (Int + Number) where
-   to (Left n × α)   = Int α n
-   to (Right n × α)  = Float α n
+   constr (Left n × α)   = Int α n
+   constr (Right n × α)  = Float α n
+
+   constr_bwd v = from v
 
    from (Int α n)    = Left n × α
    from (Float α n)  = Right n × α
@@ -74,9 +84,11 @@ instance toFromIntOrNumber :: ToFrom (Int + Number) where
    expand (Right n) = Float false n
 
 instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String) where
-   to (Left (Left n) × α)  = Int α n
-   to (Left (Right n) × α) = Float α n
-   to (Right str × α)      = Str α str
+   constr (Left (Left n) × α)  = Int α n
+   constr (Left (Right n) × α) = Float α n
+   constr (Right str × α)      = Str α str
+
+   constr_bwd v = from v
 
    from (Int α n)   = Left (Left n) × α
    from (Float α n) = Left (Right n) × α
@@ -88,7 +100,8 @@ instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String)
    expand (Right str)        = Str false str
 
 instance toFromIntAndInt :: ToFrom (Int × Boolean × (Int × Boolean)) where
-   to (nβ × mβ' × α) = Constr α cPair (to nβ : to mβ' : Nil)
+   constr (nβ × mβ' × α) = Constr α cPair (constr nβ : constr mβ' : Nil)
+   constr_bwd v = from v
 
    from (Constr α c (v : v' : Nil)) | c == cPair  = from v × from v' × α
    from _                                         = error "Pair expected"
@@ -99,14 +112,16 @@ instance toFromMatrixRep :: ToFrom (Array (Array (Val Boolean)) × (Int × Boole
    from (Matrix α r) = r × α
    from _            = error "Matrix expected"
 
-   to (r × α) = Matrix α r
+   constr (r × α) = Matrix α r
+   constr_bwd v = from v
    expand (vss × (i × _) × (j × _)) = Matrix false (((<$>) (const Hole) <$> vss) × (i × false) × (j × false))
 
 instance toFromPair :: ToFrom (Val Boolean × Val Boolean) where
    from (Constr α c (v : v' : Nil)) | c == cPair   = v × v' × α
    from _                                          = error "Pair expected"
 
-   to (v × v' × α) = Constr α cPair (v : v' : Nil)
+   constr (v × v' × α) = Constr α cPair (v : v' : Nil)
+   constr_bwd v = from v
    expand _ = Constr false cPair (Hole : Hole : Nil)
 
 instance toFromBoolean :: ToFrom Boolean where
@@ -115,10 +130,11 @@ instance toFromBoolean :: ToFrom Boolean where
       | c == cFalse  = false × α
    from _ = error absurd
 
-   to (true × α)   = Constr α cTrue Nil
-   to (false × α)  = Constr α cFalse Nil
+   constr (true × α)   = Constr α cTrue Nil
+   constr (false × α)  = Constr α cFalse Nil
 
-   expand = \_ -> error "todo"
+   constr_bwd v = from v
+   expand _ = error "todo"
 
 class IsZero a where
    isZero :: a -> Boolean
@@ -141,14 +157,14 @@ unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
 }
    where
    apply :: Partial => List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
-   apply (v : Nil) = to (fwd (from v))
+   apply (v : Nil) = constr (fwd (from v))
 
    apply_fwd :: Partial => List (Val 𝔹 × Val 𝔹) {-[(a, a)]-} -> Val 𝔹 {-b-}
-   apply_fwd (v × u : Nil) = to (fwd (from_fwd (v × fst (from u))))
+   apply_fwd (v × u : Nil) = constr (fwd (from_fwd (v × fst (from u))))
 
    apply_bwd :: Partial => Val 𝔹 {-b-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
-   apply_bwd v (v1 : Nil) = to v1' : Nil
-      where v1' = bwd (from v) (fst (from v1))
+   apply_bwd v (v1 : Nil) = constr v1' : Nil
+      where v1' = bwd (constr_bwd v) (fst (from v1))
 
 binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySpec a b c -> Val 𝔹
 binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
@@ -159,14 +175,14 @@ binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
 }
    where
    apply :: Partial => List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
-   apply (v : v' : Nil) = to (fwd (from v) (from v'))
+   apply (v : v' : Nil) = constr (fwd (from v) (from v'))
 
    apply_fwd :: Partial => List (Val 𝔹 × Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
-   apply_fwd (v1 × u1 : v2 × u2 : Nil) = to (fwd (from_fwd (v1 × fst (from u1))) (from_fwd (v2 × fst (from u2))))
+   apply_fwd (v1 × u1 : v2 × u2 : Nil) = constr (fwd (from_fwd (v1 × fst (from u1))) (from_fwd (v2 × fst (from u2))))
 
    apply_bwd :: Partial => Val 𝔹 {-c-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
-   apply_bwd v (v1 : v2 : Nil) = to v1' : to v2' : Nil
-      where v1' × v2' = bwd (from v) (fst (from v1) × fst (from v2))
+   apply_bwd v (v1 : v2 : Nil) = constr v1' : constr v2' : Nil
+      where v1' × v2' = bwd (constr_bwd v) (fst (from v1) × fst (from v2))
 
 type UnarySpec a b = {
    fwd :: a × 𝔹 -> b × 𝔹,
@@ -249,4 +265,4 @@ instance asBooleanBoolean :: As Boolean Boolean where
    as = identity
 
 instance asIntOrNumberString :: As (Int + Number) String where
-   as = const (error "Non-uniform argument types")
+   as _ = error "Non-uniform argument types"
