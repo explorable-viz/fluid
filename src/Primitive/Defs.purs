@@ -42,7 +42,7 @@ primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    ":"         ↦ Constr false cCons Nil,
    "+"         ↦ binary (dependsBoth2 plus),
-   "-"         ↦ binary (dependsBoth minus),
+   "-"         ↦ binary (dependsBoth2 minus),
    "*"         ↦ binary (dependsZero times),
    "**"        ↦ binary (dependsZero pow),
    "/"         ↦ binary (dependsZero divide),
@@ -96,11 +96,11 @@ matrixLookup = dependsBoth2 { f, g }
 plus :: Binary (Int + Number) (Int + Number) (Int + Number)
 plus = { f: (+) `union` (+), g: const identity }
 
-minus :: Int + Number -> Int + Number -> Int + Number
-minus = (-) `union` (-)
+minus :: Binary (Int + Number) (Int + Number) (Int + Number)
+minus = { f: (-) `union` (-), g: const identity }
 
-times :: Int + Number -> Int + Number -> Int + Number
-times = (*) `union` (*)
+times :: Binary (Int + Number) (Int + Number) (Int + Number)
+times = { f: (*) `union` (*), g: const identity }
 
 -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
 pow :: Int + Number -> Int + Number -> Int + Number

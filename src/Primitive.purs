@@ -220,19 +220,16 @@ dependsBoth2 { f, g } = { fwd: f', bwd: g' }
    g' (z × α) (x × y) = (x' × α) × (y' × α) where x' × y' = g z (x × y)
 
 -- If both are zero, depend only on the first.
-dependsZero :: forall a b . IsZero a => (a -> a -> b) -> BinarySpec a a b
-dependsZero op = { fwd, bwd }
+dependsZero :: forall a b . IsZero a => Binary a a b -> BinarySpec a a b
+dependsZero { f, g } = { fwd: f', bwd: g' }
    where
-   fwd :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
-   fwd (x × α) (y × β)
-      | isZero x  = x `op` y × α
-      | isZero y  = x `op` y × β
-      | otherwise = x `op` y × (α ∧ β)
-   bwd :: b × 𝔹 -> a × a -> (a × 𝔹) × (a × 𝔹)
-   bwd (_ × α) (x × y)
-      | isZero x  = (x × α) × (y × false)
-      | isZero y  = (x × false) × (y × α)
-      | otherwise = (x × α) × (y × α)
+   f' :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
+   f' (x × α) (y × β) =
+      f x y × if isZero x then α else if isZero y then β else α ∧ β
+   g' :: b × 𝔹 -> a × a -> (a × 𝔹) × (a × 𝔹)
+   g' (z × α) (x × y) =
+      if isZero x then (x' × α) × (y' × false) else if isZero y then (x' × false) × (y' × α) else (x' × α) × (y' × α)
+      where x' × y' = g z (x × y)
 
 class As a b where
    as :: a -> b
