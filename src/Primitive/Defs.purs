@@ -13,9 +13,10 @@ import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (
-   Binary, OpDef, Unary, unary, binary, binaryZero, opDef, union, union1, unionStr, withInverse1, withInverse2
+   Binary, OpDef, Unary,
+   binary, binaryZero, constr, constr_bwd, opDef, unary, union, union1, unionStr, withInverse1, withInverse2
 )
-import Util (type (×), (×), type (+), (≜), (!), absurd, error, unsafeUpdateAt)
+import Util (type (×), (×), type (+), (!), error, unsafeUpdateAt)
 import Val (Env, MatrixRep, Val(..))
 
 -- Syntactic information only. No requirement that any of these be defined.
@@ -75,20 +76,19 @@ dims :: Unary (MatrixRep 𝔹) (Val 𝔹 × Val 𝔹)
 dims = { fwd, bwd }
    where
    fwd :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
-   fwd (_ × (i × β) × (j × β')) = Int β i × Int β' j
+   fwd (_ × i × j) = constr i × constr j
 
    bwd :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
-   bwd (Int β i' × Int β' j') (vss × (i × _) × (j × _))  = vss × ((i ≜ i') × β) × ((j ≜ j') × β')
-   bwd (_ × _) _                                         = error absurd
+   bwd (u × v) (vss × _ × _) = vss × constr_bwd u × constr_bwd v
 
+-- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
+-- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.
 matrixLookup :: Binary (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
 matrixLookup = { fwd, bwd }
    where
    fwd :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
    fwd (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
 
-   -- This is the desired behaviour, but should be more automatic: non-neededness of matrix bounds and indices
-   -- should arise from the fact that no "construction rights" are needed for projection.
    bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
        (vss'' × (i' × false) × (j' × false)) × ((i × false) × (j × false))
