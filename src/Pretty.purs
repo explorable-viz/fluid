@@ -45,13 +45,16 @@ rspace :: Endo Doc
 rspace = flip (:<>:) space
 
 lrspace :: Endo Doc
-lrspace = lspace >>> rspace
+lrspace = between space space -- = lspace >>> rspace
+
+hspace :: List Doc -> Doc
+hspace xs = hcat (intersperse space xs)
 
 tab :: Doc
 tab = text "   "
 
 operator :: String -> Doc
-operator = text >>> between space space
+operator = text >>> lrspace
 
 parens :: Endo Doc
 parens = between (text "(") (text ")")
@@ -111,7 +114,7 @@ prettyConstr c xs
       x : y : Nil -> parens (pretty x :<>: comma :<>: pretty y)
       _           -> error absurd
    | c == cNil || c == cCons = pretty xs
-   | otherwise = pretty c :<>: space :<>: hcat (intersperse space $ map prettyParensOpt xs)
+   | otherwise = pretty c :<>: lspace (hspace (prettyParensOpt <$> xs))
 
 instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty E.Hole                    = hole
@@ -213,7 +216,7 @@ instance prettyClause :: Pretty (String × (NonEmptyList Pattern × Expr Boolean
    pretty (x × b) = text x :<>: space :<>: pretty b
 
 instance prettySBranch :: Pretty (NonEmptyList Pattern × Expr Boolean) where
-   pretty (πs × e) = hcat (intersperse space (pretty <$> NEL.toList πs)) :<>: space :<>: text str.equals :<>: space :<>: pretty e
+   pretty (πs × e) = hspace (pretty <$> NEL.toList πs) :<>: space :<>: text str.equals :<>: space :<>: pretty e
 
 instance prettySVarDef :: Pretty (VarDef Boolean) where
    pretty (VarDef π e) = pretty π :<>: text " = " :<>: pretty e
