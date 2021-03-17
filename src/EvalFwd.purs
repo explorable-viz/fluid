@@ -12,7 +12,7 @@ import Expl (Expl, Match)
 import Expl (Expl(..), Match(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
-import Primitive (from)
+import Primitive (match_fwd) as P
 import Util (type (×), (×), (!), absurd, error, mustLookup, replicate, successful)
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
@@ -71,18 +71,18 @@ evalFwd ρ e α' (T.Constr _ c ts) =
       Constr α _ es ->
          V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd ρ e' α' t) <$> zip es ts)
       _ -> error absurd
-evalFwd ρ e α' (T.Matrix tss (x × y) _ t2) =
+evalFwd ρ e α' (T.Matrix tss (x × y) (i × j) t2) =
    case expand e (Matrix false Hole (x × y) Hole) of
       Matrix α e1 _ e2 ->
          case expand (evalFwd ρ e2 α t2) (V.Constr false cPair (V.Hole : V.Hole : Nil)) of
             V.Constr _ c (v1 : v2 : Nil) ->
-               let (i' × β) × (j' × β') = from v1 × from v2
+               let (_ × β) × (_ × β') = P.match_fwd (v1 × i) × P.match_fwd (v2 × j)
                    vss = A.fromFoldable $ do
-                        i <- range 1 i'
+                        i' <- range 1 i
                         singleton $ A.fromFoldable $ do
-                           j <- range 1 j'
-                           singleton (evalFwd ((ρ :+: x ↦ V.Int α i) :+: y ↦ V.Int α j) e1 α' (tss!(i - 1)!(j - 1)))
-               in V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
+                           j' <- range 1 j
+                           singleton (evalFwd ((ρ :+: x ↦ V.Int α i) :+: y ↦ V.Int α j) e1 α' (tss!(i' - 1)!(j' - 1)))
+               in V.Matrix (α ∧ α') (vss × (i × β) × (j × β'))
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.LetRec δ t) =

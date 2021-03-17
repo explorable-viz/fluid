@@ -24,61 +24,60 @@ type OpDef = {
 opDef :: Var -> Int -> Assoc -> Var × OpDef
 opDef op prec assoc = op × { op, prec, assoc }
 
--- Mediates between a Val and its underlying data, where "from" ≈ pattern-matching, and "to" ≈ construction.
--- Annotation associated with underlying data is analogue (for primitives) of annotation input to eval and output of match.
+-- Mediates between Val and underlying data, analously to pattern-matching and construction for data types.
 class ToFrom a where
    constr :: a × 𝔹 -> Val 𝔹
-   constr_bwd :: Val 𝔹 -> a × 𝔹        -- equivalent to "from" except in the Val case
-   from :: Val 𝔹 -> a × 𝔹          -- only defined for non-holes
-   expand :: a -> Val 𝔹            -- use just enough information from supplied value to construct an argument to "from"
+   constr_bwd :: Val 𝔹 -> a × 𝔹  -- equivalent to "match" except in the Val case
+   match :: Val 𝔹 -> a × 𝔹       -- only defined for non-holes
+   expand :: a -> Val 𝔹          -- use just enough information from supplied value to construct an argument to "match"
 
-from_fwd :: forall a . ToFrom a => Val 𝔹 × a -> a × 𝔹
-from_fwd (Hole × v') = from (expand v')
-from_fwd (v × _)     = from v
+match_fwd :: forall a . ToFrom a => Val 𝔹 × a -> a × 𝔹
+match_fwd (Hole × v') = match (expand v')
+match_fwd (v × _)     = match v
 
-from_bwd :: forall a . ToFrom a => a × 𝔹 -> Val 𝔹
-from_bwd = constr
+match_bwd :: forall a . ToFrom a => a × 𝔹 -> Val 𝔹
+match_bwd = constr
 
--- Similar to the "variable" case in pattern-matching (or "use existing subvalue" case in construction).
+-- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
 instance toFromVal :: ToFrom (Val Boolean) where
-   constr = fst               -- when constructing, construction rights are not required
+   constr = fst               -- construction rights not required
    constr_bwd = (_ × false)   -- return unit of disjunction rather than conjunction
-   from = (_ × true)          -- when matching, construction rights are provided
+   match = (_ × true)         -- construction rights are always provided
    expand = identity
 
 instance toFromInt :: ToFrom Int where
-   from (Int α n)   = n × α
-   from _           = error "Int expected"
+   match (Int α n)   = n × α
+   match _           = error "Int expected"
 
    constr (n × α) = Int α n
-   constr_bwd v = from v
+   constr_bwd v = match v
    expand = Int false
 
 instance toFromNumber :: ToFrom Number where
-   from (Float α n) = n × α
-   from _           = error "Float expected"
+   match (Float α n) = n × α
+   match _           = error "Float expected"
 
    constr (n × α) = Float α n
-   constr_bwd v = from v
+   constr_bwd v = match v
    expand = Float false
 
 instance toFromString :: ToFrom String where
-   from (Str α str) = str × α
-   from _           = error "Str expected"
+   match (Str α str) = str × α
+   match _           = error "Str expected"
 
    constr (str × α) = Str α str
-   constr_bwd v = from v
+   constr_bwd v = match v
    expand = Str false
 
 instance toFromIntOrNumber :: ToFrom (Int + Number) where
    constr (Left n × α)   = Int α n
    constr (Right n × α)  = Float α n
 
-   constr_bwd v = from v
+   constr_bwd v = match v
 
-   from (Int α n)    = Left n × α
-   from (Float α n)  = Right n × α
-   from _            = error "Int or Float expected"
+   match (Int α n)    = Left n × α
+   match (Float α n)  = Right n × α
+   match _            = error "Int or Float expected"
 
    expand (Left n)  = Int false n
    expand (Right n) = Float false n
@@ -88,12 +87,12 @@ instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String)
    constr (Left (Right n) × α) = Float α n
    constr (Right str × α)      = Str α str
 
-   constr_bwd v = from v
+   constr_bwd v = match v
 
-   from (Int α n)   = Left (Left n) × α
-   from (Float α n) = Left (Right n) × α
-   from (Str α str) = Right str × α
-   from _           = error "Int, Float or Str expected"
+   match (Int α n)   = Left (Left n) × α
+   match (Float α n) = Left (Right n) × α
+   match (Str α str) = Right str × α
+   match _           = error "Int, Float or Str expected"
 
    expand (Left (Left n))    = Int false n
    expand (Left (Right n))   = Float false n
@@ -101,39 +100,39 @@ instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String)
 
 instance toFromIntAndInt :: ToFrom (Int × Boolean × (Int × Boolean)) where
    constr (nβ × mβ' × α) = Constr α cPair (constr nβ : constr mβ' : Nil)
-   constr_bwd v = from v
+   constr_bwd v = match v
 
-   from (Constr α c (v : v' : Nil)) | c == cPair  = from v × from v' × α
-   from _                                         = error "Pair expected"
+   match (Constr α c (v : v' : Nil)) | c == cPair  = match v × match v' × α
+   match _                                         = error "Pair expected"
 
    expand _ = Constr false cPair (Hole : Hole : Nil)
 
 instance toFromMatrixRep :: ToFrom (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
-   from (Matrix α r) = r × α
-   from _            = error "Matrix expected"
+   match (Matrix α r) = r × α
+   match _            = error "Matrix expected"
 
    constr (r × α) = Matrix α r
-   constr_bwd v = from v
+   constr_bwd v = match v
    expand (vss × (i × _) × (j × _)) = Matrix false (((<$>) (const Hole) <$> vss) × (i × false) × (j × false))
 
 instance toFromPair :: ToFrom (Val Boolean × Val Boolean) where
-   from (Constr α c (v : v' : Nil)) | c == cPair   = v × v' × α
-   from _                                          = error "Pair expected"
+   match (Constr α c (v : v' : Nil)) | c == cPair   = v × v' × α
+   match _                                          = error "Pair expected"
 
    constr (v × v' × α) = Constr α cPair (v : v' : Nil)
-   constr_bwd v = from v
+   constr_bwd v = match v
    expand _ = Constr false cPair (Hole : Hole : Nil)
 
 instance toFromBoolean :: ToFrom Boolean where
-   from (Constr α c Nil)
+   match (Constr α c Nil)
       | c == cTrue   = true × α
       | c == cFalse  = false × α
-   from _ = error absurd
+   match _ = error absurd
 
    constr (true × α)   = Constr α cTrue Nil
    constr (false × α)  = Constr α cFalse Nil
 
-   constr_bwd v = from v
+   constr_bwd v = match v
    expand _ = error "todo"
 
 class IsZero a where
@@ -157,14 +156,14 @@ unary { fwd, bwd } = flip Primitive Nil $ PrimOp {
 }
    where
    apply :: Partial => List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
-   apply (v : Nil) = constr (fwd (from v))
+   apply (v : Nil) = constr (fwd (match v))
 
    apply_fwd :: Partial => List (Val 𝔹 × Val 𝔹) {-[(a, a)]-} -> Val 𝔹 {-b-}
-   apply_fwd (v × u : Nil) = constr (fwd (from_fwd (v × fst (from u))))
+   apply_fwd (v × u : Nil) = constr (fwd (match_fwd (v × fst (match u))))
 
    apply_bwd :: Partial => Val 𝔹 {-b-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
-   apply_bwd v (v1 : Nil) = constr v1' : Nil
-      where v1' = bwd (constr_bwd v) (fst (from v1))
+   apply_bwd v (v1 : Nil) = match_bwd v1' : Nil
+      where v1' = bwd (constr_bwd v) (fst (match v1))
 
 binary :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySpec a b c -> Val 𝔹
 binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
@@ -175,14 +174,14 @@ binary { fwd, bwd } = flip Primitive Nil $ PrimOp {
 }
    where
    apply :: Partial => List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
-   apply (v : v' : Nil) = constr (fwd (from v) (from v'))
+   apply (v : v' : Nil) = constr (fwd (match v) (match v'))
 
    apply_fwd :: Partial => List (Val 𝔹 × Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
-   apply_fwd (v1 × u1 : v2 × u2 : Nil) = constr (fwd (from_fwd (v1 × fst (from u1))) (from_fwd (v2 × fst (from u2))))
+   apply_fwd (v1 × u1 : v2 × u2 : Nil) = constr (fwd (match_fwd (v1 × fst (match u1))) (match_fwd (v2 × fst (match u2))))
 
    apply_bwd :: Partial => Val 𝔹 {-c-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
-   apply_bwd v (v1 : v2 : Nil) = constr v1' : constr v2' : Nil
-      where v1' × v2' = bwd (constr_bwd v) (fst (from v1) × fst (from v2))
+   apply_bwd v (v1 : v2 : Nil) = match_bwd v1' : match_bwd v2' : Nil
+      where v1' × v2' = bwd (constr_bwd v) (fst (match v1) × fst (match v2))
 
 type UnarySpec a b = {
    fwd :: a × 𝔹 -> b × 𝔹,
