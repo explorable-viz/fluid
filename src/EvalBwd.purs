@@ -89,7 +89,7 @@ evalBwd (V.Matrix α (vss × (i' × β) × (j' × β'))) (T.Matrix tss (x × y) 
    let NonEmptyList ijs = nonEmpty $ do
             i <- range 1 i'
             j <- range 1 j'
-            singleton (i' × j')
+            singleton (i × j)
        evalBwd_elem :: (Int × Int) -> Env 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
        evalBwd_elem (i × j) =
           case evalBwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
