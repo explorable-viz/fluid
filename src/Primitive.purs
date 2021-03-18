@@ -7,22 +7,11 @@ import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
-import Text.Parsing.Parser.Expr (Assoc)
-import Bindings (Var)
 import DataType (cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
+import Pretty (prettyP)
 import Util (type (×), (×), type (+), error)
 import Val (PrimOp(..), Val(..))
-
--- name in user land, precedence 0 from 9 (similar to Haskell 98), associativity
-type OpDef = {
-   op    :: Var,
-   prec  :: Int,
-   assoc :: Assoc
-}
-
-opDef :: Var -> Int -> Assoc -> Var × OpDef
-opDef op prec assoc = op × { op, prec, assoc }
 
 -- Mediates between Val and underlying data, analously to pattern-matching and construction for data types.
 class ToFrom a where
@@ -47,7 +36,7 @@ instance toFromVal :: ToFrom (Val Boolean) where
 
 instance toFromInt :: ToFrom Int where
    match (Int α n)   = n × α
-   match _           = error "Int expected"
+   match v           = error ("Int expected; got " <> prettyP v)
 
    constr (n × α) = Int α n
    constr_bwd v = match v
@@ -55,7 +44,7 @@ instance toFromInt :: ToFrom Int where
 
 instance toFromNumber :: ToFrom Number where
    match (Float α n) = n × α
-   match _           = error "Float expected"
+   match v           = error ("Float expected; got " <> prettyP v)
 
    constr (n × α) = Float α n
    constr_bwd v = match v
@@ -63,7 +52,7 @@ instance toFromNumber :: ToFrom Number where
 
 instance toFromString :: ToFrom String where
    match (Str α str) = str × α
-   match _           = error "Str expected"
+   match v           = error ("Str expected; got " <> prettyP v)
 
    constr (str × α) = Str α str
    constr_bwd v = match v
@@ -77,7 +66,7 @@ instance toFromIntOrNumber :: ToFrom (Int + Number) where
 
    match (Int α n)    = Left n × α
    match (Float α n)  = Right n × α
-   match _            = error "Int or Float expected"
+   match v            = error ("Int or Float expected; got " <> prettyP v)
 
    expand x = constr (x × false)
 
@@ -91,7 +80,7 @@ instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String)
    match (Int α n)   = Left (Left n) × α
    match (Float α n) = Left (Right n) × α
    match (Str α str) = Right str × α
-   match _           = error "Int, Float or Str expected"
+   match v           = error ("Int, Float or Str expected; got " <> prettyP v)
 
    expand x = constr (x × false)
 
@@ -100,13 +89,13 @@ instance toFromIntAndInt :: ToFrom ((Int × Boolean) × (Int × Boolean)) where
    constr_bwd v = match v
 
    match (Constr α c (v : v' : Nil)) | c == cPair  = match v × match v' × α
-   match _                                         = error "Pair expected"
+   match v                                         = error ("Pair expected; got " <> prettyP v)
 
    expand _ = Constr false cPair (Hole : Hole : Nil)
 
 instance toFromMatrixRep :: ToFrom (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
    match (Matrix α r) = r × α
-   match _            = error "Matrix expected"
+   match v            = error ("Matrix expected; got " <> prettyP v)
 
    constr (r × α) = Matrix α r
    constr_bwd v = match v
@@ -117,7 +106,7 @@ instance toFromValAndVal :: ToFrom (Val Boolean × Val Boolean) where
    constr_bwd v = match v
 
    match (Constr α c (v : v' : Nil)) | c == cPair   = v × v' × α
-   match _                                          = error "Pair expected"
+   match v                                          = error ("Pair expected; got " <> prettyP v)
 
    expand _ = Constr false cPair (Hole : Hole : Nil)
 
@@ -125,7 +114,7 @@ instance toFromBoolean :: ToFrom Boolean where
    match (Constr α c Nil)
       | c == cTrue   = true × α
       | c == cFalse  = false × α
-   match _ = error "Boolean expected"
+   match v = error ("Boolean expected; got " <> prettyP v)
 
    constr (true × α)   = Constr α cTrue Nil
    constr (false × α)  = Constr α cFalse Nil

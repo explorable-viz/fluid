@@ -112,7 +112,7 @@ evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
        ρ1' × δ' × α2 = closeDefsBwd ρ2 (ρ1 × δ)
        ρ'' × e1 × α'' = evalBwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
    (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
-evalBwd v (T.AppPrim (t1 × (PrimOp φ) × vs) (t2 × v2)) =
+evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let vs' = vs <> singleton v2
        { init: vs'', last: v2' } = fromJust absurd $ unsnoc $
          if φ.arity > L.length vs'

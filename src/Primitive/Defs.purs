@@ -5,38 +5,16 @@ import Prelude (div) as P
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..))
-import Data.Map (Map, fromFoldable)
 import Debug.Trace (trace)
 import Math (log, pow) as M
-import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (
-   Binary, OpDef, Unary,
-   binary, binaryZero, constr, constr_bwd, opDef, unary, union, union1, unionStr, withInverse1, withInverse2
+   Binary, Unary, binary, binaryZero, constr, constr_bwd, unary, union, union1, unionStr, withInverse1, withInverse2
 )
 import Util (type (×), (×), type (+), (!), error, unsafeUpdateAt)
 import Val (Env, MatrixRep, Val(..))
-
--- Syntactic information only. No requirement that any of these be defined.
-opDefs :: Map String OpDef
-opDefs = fromFoldable [
-   opDef "!"   8 AssocLeft,
-   opDef "**"  8 AssocRight,
-   opDef "*"   7 AssocLeft,
-   opDef "/"   7 AssocLeft,
-   opDef "+"   6 AssocLeft,
-   opDef "-"   6 AssocLeft,
-   opDef ":"   6 AssocRight,
-   opDef "++"  5 AssocRight,
-   opDef "=="  4 AssocNone,
-   opDef "/="  4 AssocNone,
-   opDef "<"   4 AssocLeft,
-   opDef ">"   4 AssocLeft,
-   opDef "<="  4 AssocLeft,
-   opDef ">="  4 AssocLeft
-]
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
