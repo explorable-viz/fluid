@@ -156,7 +156,7 @@ instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Float _ n)                = text (show n)
    pretty (V.Str _ str)                = text (show str)
    pretty u@(V.Constr _ c vs)
-      | c == cNil || c == cCons        = pretty (toList u)
+      | c == cNil || c == cCons        = prettyList (toList u)
       | otherwise                      = prettyConstr c vs
    pretty (V.Matrix _ (vss × _ × _))   = hcat (pretty <$> fromFoldable (fromFoldable <$> vss))
    pretty (V.Closure ρ δ σ) =
