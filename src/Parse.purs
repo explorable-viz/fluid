@@ -33,27 +33,46 @@ import SExpr (
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
 
--- constants (should also be used by prettyprinter)
-str :: _
+-- Constants (should also be used by prettyprinter). Haven't found a way to avoid the type definition.
+str :: {
+   arrayLBracket  :: String,
+   arrayRBracket  :: String,
+   as             :: String,
+   backslash      :: String,
+   bar            :: String,
+   ellipsis       :: String,
+   else_          :: String,
+   equals         :: String,
+   fun            :: String,
+   if_            :: String,
+   in_            :: String,
+   lBracket       :: String,
+   let_           :: String,
+   match          :: String,
+   lArrow         :: String,
+   rArrow         :: String,
+   rBracket       :: String,
+   then_          :: String
+}
 str = {
-   arrayLBracket: "[|"       :: String,
-   arrayRBracket: "|]"       :: String,
-   as:            "as"      :: String,
-   backslash:     "\\"      :: String,
-   bar:           "|"       :: String,
-   ellipsis:      ".."      :: String,
-   else_:         "else"    :: String,
-   equals:        "="       :: String,
-   fun:           "fun"     :: String,
-   if_:           "if"      :: String,
-   in_:           "in"      :: String,
-   lBracket:      "["       :: String,
-   let_:          "let"     :: String,
-   match:         "match"   :: String,
-   lArrow:        "<-"      :: String,
-   rArrow:        "->"      :: String,
-   rBracket:      "]"       :: String,
-   then_:         "then"    :: String
+   arrayLBracket: "[|",
+   arrayRBracket: "|]",
+   as:            "as",
+   backslash:     "\\",
+   bar:           "|",
+   ellipsis:      "..",
+   else_:         "else",
+   equals:        "=",
+   fun:           "fun",
+   if_:           "if",
+   in_:           "in",
+   lBracket:      "[",
+   let_:          "let",
+   match:         "match",
+   lArrow:        "<-",
+   rArrow:        "->",
+   rBracket:      "]",
+   then_:         "then"
 }
 
 languageDef :: LanguageDef
