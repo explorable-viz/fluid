@@ -3,30 +3,29 @@ module Test.Main where
 import Prelude
 import Data.Array (concat)
 import Data.Traversable (sequence)
--- import Debug.Trace (trace) as T
 import Effect (Effect)
 import Test.Util (Test, run, test, testWithDataset, test_bwd)
-import Util ((×))
 import Val (Val(..))
 
+tests :: Array (Array (Test Unit))
+tests = [ test_desugaring, test_misc, test_slicing, test_graphics ]
+--tests = [ test_slicing ]
+
 main :: Effect Unit
-main = void $ sequence $ run <$> concat [
-   test_desugaring,
-   test_misc,
-   test_slicing,
-   test_graphics,
-   test_scratchpad
-]
+main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   test "temp" "[[10], [12], [20]]"
+   test "scratchpad" "17"
 ]
 
 test_slicing :: Array (Test Unit)
 test_slicing = [
-   test_bwd "slicing/multiply" (Int true 0 × "(5 * (_0_ * 3))") "_0_",
-   test_bwd "slicing/add" (Int true 0 × "(_5_ + (_0_ + _3_))") "_8_"
+   test_bwd "slicing/add" (Int true 0) "_8_",
+   test_bwd "slicing/divide" Hole "0.75",
+   test_bwd "slicing/array-lookup" (Float true 0.68) "17",
+   test_bwd "slicing/multiply" (Int true 0) "_0_",
+   test_bwd "slicing/nth" (Int true 4) "_4_"
 ]
 
 test_desugaring :: Array (Test Unit)

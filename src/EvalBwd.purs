@@ -13,7 +13,7 @@ import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, (∨), botOf, expand)
-import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate, successful)
+import Util (Endo, type (×), (×), (≜), (!), absurd, assert, error, fromJust, nonEmpty, replicate, successful)
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
@@ -59,34 +59,20 @@ matchArgs_bwd ρ κ α (w : ws)  =
    (vs <> v : Nil) × κ'
 
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
-evalBwd v (T.Var ρ x) =
-   (botOf ρ ◃ x ↦ v) × Var x × false
-evalBwd v (T.Op ρ op) =
-   (botOf ρ ◃ op ↦ v) × Op op × false
-evalBwd V.Hole t@(T.Str _ str) =
-   evalBwd (V.Str false str) t
-evalBwd (V.Str α s) (T.Str ρ s') | s == s' =
-   botOf ρ × Str α s × α
-evalBwd _ (T.Str _ _) =
-   error absurd
-evalBwd V.Hole t@(T.Int _ n) =
-   evalBwd (V.Int false n) t
-evalBwd (V.Int α n) (T.Int ρ n') | n == n' =
-   botOf ρ × Int α n × α
-evalBwd _ (T.Int _ _) =
-   error absurd
-evalBwd V.Hole t@(T.Float _ n) =
-   evalBwd (V.Float false n) t
-evalBwd (V.Float α n) (T.Float ρ n') | n == n' =
-   botOf ρ × Float α n × α
-evalBwd _ (T.Float _ _) =
-   error absurd
-evalBwd V.Hole t@(T.Lambda ρ σ) =
-   evalBwd (V.Closure (botOf ρ) Empty (botOf σ)) t
-evalBwd (V.Closure ρ Empty σ) (T.Lambda _ _) =
-   ρ × Lambda σ × false
-evalBwd _ (T.Lambda _ _) =
-   error absurd
+evalBwd v (T.Var ρ x)                        = (botOf ρ ◃ x ↦ v) × Var x × false
+evalBwd v (T.Op ρ op)                        = (botOf ρ ◃ op ↦ v) × Op op × false
+evalBwd V.Hole t@(T.Str _ str)               = evalBwd (V.Str false str) t
+evalBwd (V.Str α str) (T.Str ρ str')         = assert (str == str') (botOf ρ × Str α str × α)
+evalBwd _ (T.Str _ _)                        = error absurd
+evalBwd V.Hole t@(T.Int _ n)                 = evalBwd (V.Int false n) t
+evalBwd (V.Int α n) (T.Int ρ n')             = assert (n == n') (botOf ρ × Int α n × α)
+evalBwd _ (T.Int _ _)                        = error absurd
+evalBwd V.Hole t@(T.Float _ n)               = evalBwd (V.Float false n) t
+evalBwd (V.Float α n) (T.Float ρ n')         = assert (n == n') (botOf ρ × Float α n × α)
+evalBwd _ (T.Float _ _)                      = error absurd
+evalBwd V.Hole t@(T.Lambda ρ σ)              = evalBwd (V.Closure (botOf ρ) Empty (botOf σ)) t
+evalBwd (V.Closure ρ Empty σ) (T.Lambda _ _) = ρ × Lambda σ × false
+evalBwd _ (T.Lambda _ _)                     = error absurd
 evalBwd V.Hole t@(T.Constr _ c ts) =
    evalBwd (V.Constr false c (ts <#> const V.Hole)) t
 evalBwd (V.Constr α c vs) (T.Constr ρ c' ts) | c == c' =
@@ -126,14 +112,14 @@ evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
        ρ1' × δ' × α2 = closeDefsBwd ρ2 (ρ1 × δ)
        ρ'' × e1 × α'' = evalBwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
    (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
-evalBwd v (T.AppPrim (t1 × (PrimOp φ) × vs) (t2 × v2)) =
+evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let vs' = vs <> singleton v2
        { init: vs'', last: v2' } = fromJust absurd $ unsnoc $
          if φ.arity > L.length vs'
          then case expand v (V.Primitive (PrimOp φ) (const V.Hole <$> vs')) of
             V.Primitive _ vs'' -> vs''
             _ -> error absurd
-         else φ.op_bwd v vs'
+         else φ.op_bwd (v × φ.op vs') vs'
        ρ × e × α = evalBwd (V.Primitive (PrimOp φ) vs'') t1
        ρ' × e' × α' = evalBwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')

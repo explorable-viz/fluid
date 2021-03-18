@@ -5,64 +5,41 @@ import Prelude (div) as P
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.List (List(..))
-import Data.Map (Map, fromFoldable)
 import Debug.Trace (trace)
 import Math (log, pow) as M
-import Text.Parsing.Parser.Expr (Assoc(..))
 import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cCons)
 import Lattice (𝔹)
-import Primitive (
-   Binary, OpDef, Unary, depends1, depends2, depends2Zero, opDef, union, union1, unionStr, withInverse1, withInverse2
-)
-import Util (type (×), (×), type (+), (≜), (!), absurd, error, unsafeUpdateAt)
+import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
+import Util (Endo, type (×), (×), type (+), (!), error, unsafeUpdateAt)
 import Val (Env, MatrixRep, Val(..))
-
--- Syntactic information only. No requirement that any of these be defined.
-opDefs :: Map String OpDef
-opDefs = fromFoldable [
-   opDef "!"   8 AssocLeft,
-   opDef "**"  8 AssocRight,
-   opDef "*"   7 AssocLeft,
-   opDef "/"   7 AssocLeft,
-   opDef "+"   6 AssocLeft,
-   opDef "-"   6 AssocLeft,
-   opDef ":"   6 AssocRight,
-   opDef "++"  5 AssocRight,
-   opDef "=="  4 AssocNone,
-   opDef "/="  4 AssocNone,
-   opDef "<"   4 AssocLeft,
-   opDef ">"   4 AssocLeft,
-   opDef "<="  4 AssocLeft,
-   opDef ">="  4 AssocLeft
-]
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
    ":"         ↦ Constr false cCons Nil,
 
-   "+"         ↦ depends2 (withInverse2 plus),
-   "-"         ↦ depends2 (withInverse2 minus),
-   "*"         ↦ depends2Zero (withInverse2 times),
-   "**"        ↦ depends2Zero (withInverse2 pow),
-   "/"         ↦ depends2Zero (withInverse2 divide),
-   "=="        ↦ depends2 (withInverse2 equals),
-   "/="        ↦ depends2 (withInverse2 notEquals),
-   "<"         ↦ depends2 (withInverse2 lessThan),
-   ">"         ↦ depends2 (withInverse2 greaterThan),
-   "<="        ↦ depends2 (withInverse2 lessThanEquals),
-   ">="        ↦ depends2 (withInverse2 greaterThanEquals),
-   "++"        ↦ depends2 (withInverse2 concat),
-   "!"         ↦ depends2 matrixLookup,
-   "div"       ↦ depends2Zero (withInverse2 div),
+   "+"         ↦ binary (withInverse2 plus),
+   "-"         ↦ binary (withInverse2 minus),
+   "*"         ↦ binaryZero (withInverse2 times),
+   "**"        ↦ binaryZero (withInverse2 pow),
+   "/"         ↦ binaryZero (withInverse2 divide),
+   "=="        ↦ binary (withInverse2 equals),
+   "/="        ↦ binary (withInverse2 notEquals),
+   "<"         ↦ binary (withInverse2 lessThan),
+   ">"         ↦ binary (withInverse2 greaterThan),
+   "<="        ↦ binary (withInverse2 lessThanEquals),
+   ">="        ↦ binary (withInverse2 greaterThanEquals),
+   "++"        ↦ binary (withInverse2 concat),
+   "!"         ↦ binary matrixLookup,
+   "div"       ↦ binaryZero (withInverse2 div),
 
-   "ceiling"   ↦ depends1 (withInverse1 ceil),
-   "debugLog"  ↦ depends1 (withInverse1 debugLog),
-   "dims"      ↦ depends1 dims,
-   "error"     ↦ depends1 (withInverse1 error_),
-   "floor"     ↦ depends1 (withInverse1 floor),
-   "log"       ↦ depends1 (withInverse1 log),
-   "numToStr"  ↦ depends1 (withInverse1 numToStr)
+   "ceiling"   ↦ unary (withInverse1 ceil),
+   "debugLog"  ↦ unary (withInverse1 debugLog),
+   "dims"      ↦ unary dims,
+   "error"     ↦ unary (withInverse1 error_),
+   "floor"     ↦ unary (withInverse1 floor),
+   "log"       ↦ unary (withInverse1 log),
+   "numToStr"  ↦ unary (withInverse1 numToStr)
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹
@@ -71,28 +48,29 @@ debugLog x = trace x (const x)
 error_ :: String -> Val 𝔹
 error_ = error
 
-dims :: Unary (MatrixRep 𝔹) (Val 𝔹 × Val 𝔹)
-dims = { f, g }
+dims :: Unary (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹))
+dims = { fwd, bwd }
    where
-   f :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
-   f (_ × (i × β) × (j × β')) = Int β i × Int β' j
+   fwd :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹)
+   fwd (_ × i × j) = i × j
 
-   g :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
-   g (Int β i' × Int β' j') (vss × (i × _) × (j × _))  = vss × ((i ≜ i') × β) × ((j ≜ j') × β')
-   g (_ × _) _                                         = error absurd
+   bwd :: (Int × 𝔹) × (Int × 𝔹) -> Endo (MatrixRep 𝔹)
+   bwd (i × j) (vss × _ × _) = vss × i × j
 
+-- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
+-- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.
 matrixLookup :: Binary (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
-matrixLookup = { f, g }
+matrixLookup = { fwd, bwd }
    where
-   f :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
-   f (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
+   fwd :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
+   fwd (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
 
-   g :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
-   g v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-     (vss'' × (i' × false) × (j' × false)) × ((i × false) × (j × false))
-     where vss'  = (<$>) (const Hole) <$> vss
-           vs_i  = vss'!(i - 1)
-           vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
+   bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
+   bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
+       (vss'' × (i' × false) × (j' × false)) × ((i × false) × (j × false))
+       where vss'  = (<$>) (const Hole) <$> vss
+             vs_i  = vss'!(i - 1)
+             vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
 
 plus :: Int + Number -> Int + Number -> Int + Number
 plus = (+) `union` (+)

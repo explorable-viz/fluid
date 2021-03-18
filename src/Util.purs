@@ -99,7 +99,7 @@ infixl 4 mustGeq as ⪄
 
 -- Could be more efficient
 intersperse :: forall a . a -> Endo (List a)
-intersperse x xs = intercalate (pure x) $ map pure xs
+intersperse x xs = intercalate (pure x) (pure <$> xs)
 
 om :: forall a b c m . Monad m => (a -> b -> m c) -> m a -> b -> m c
 om f m x = m >>= flip f x
