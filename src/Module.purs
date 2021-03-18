@@ -5,6 +5,7 @@ import Affjax (defaultRequest, printError, request)
 import Affjax.ResponseFormat (string)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
+import Debug.Trace (trace)
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Bindings (Bindings(..), Var, (:+:), (↦))
@@ -32,8 +33,9 @@ loadFile folder file = do
 
 loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file ρ = do
-   src <- loadFile "fluid/lib" file
-   pure (successful (eval_module ρ (successful (desugarModuleFwd (successfulParse src module_)))))
+   trace file \_ -> do
+      src <- loadFile "fluid/lib" file
+      pure (successful (eval_module ρ (successful (desugarModuleFwd (successfulParse src module_)))))
 
 openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file =

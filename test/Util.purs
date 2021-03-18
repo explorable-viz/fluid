@@ -19,7 +19,7 @@ import Expl (Expl)
 import Expr (Expr(..)) as E
 import SExpr (Expr) as S
 import Lattice (𝔹, botOf)
-import Module (openDatasetAs, openWithDefaultImports)
+import Module (loadFile, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, pretty, render)
 import Util (MayFail, type (×), (×), successful, unzip)
 import Val (Env, Val(..))
@@ -33,7 +33,7 @@ isGraphical _              = false
 type Test a = SpecT Aff Unit Effect a
 
 run :: forall a . Test a → Effect Unit
-run = runMocha -- no reason at all to have to look at the word "Mocha"
+run = runMocha -- no reason at all to see the word "Mocha"
 
 desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 desugarEval ρ s = desugarFwd s >>= eval ρ
@@ -54,14 +54,16 @@ testWithSetup :: String -> String -> Maybe (Val 𝔹 × String) -> Aff (Env 𝔹
 testWithSetup name v_str bwd_opt setup =
    let v_opt × s_str_opt = unzip bwd_opt in
    before setup $
-      it name $ \(ρ × s) -> do
+      it name \(ρ × s) -> do
          let t × v = successful (desugarEval ρ s)
              ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
              v = desugarEval_fwd ρ' s' t
          unless (isGraphical v) (checkPretty v v_str)
          case s_str_opt of
             Nothing -> pure unit
-            Just s_str -> checkPretty s' s_str
+            Just s_str -> do
+               s_str' <- loadFile "fluid/example" (name <> ".expect")
+               checkPretty s' s_str'
 
 test :: String -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
