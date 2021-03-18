@@ -3,19 +3,16 @@ module Test.Main where
 import Prelude
 import Data.Array (concat)
 import Data.Traversable (sequence)
--- import Debug.Trace (trace) as T
 import Effect (Effect)
 import Test.Util (Test, run, test, testWithDataset, test_bwd)
 import Val (Val(..))
 
+tests :: Array (Array (Test Unit))
+tests = [ test_desugaring, test_misc, test_slicing, test_graphics ]
+-- tests = [ test_scratchpad ]
+
 main :: Effect Unit
-main = void $ sequence $ run <$> concat [
---   test_desugaring,
---   test_misc,
-   test_slicing
---   test_graphics,
---   test_scratchpad
-]
+main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
