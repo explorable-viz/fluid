@@ -78,7 +78,7 @@ instance valExpandable :: Expandable (Val Boolean) where
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
    expand (Constr α c vs) (Constr β c' vs')     = Constr (α ⪄ β) (c ≜ c') (expand vs vs')
    expand (Matrix α (vss × (i × β) × (j × γ))) (Matrix α' (vss' × (i' × β') × (j' × γ'))) =
-      Matrix (α ⪄ β) (expand vss vss' × ((i ≜ i') × (β ⪄ β')) × ((j ≜ j') × (γ ⪄ γ')))
+      Matrix (α ⪄ α') (expand vss vss' × ((i ≜ i') × (β ⪄ β')) × ((j ≜ j') × (γ ⪄ γ')))
    expand (Closure ρ δ σ) (Closure ρ' δ' σ')    = Closure (expand ρ ρ') (expand δ δ') (expand σ σ')
    expand (Primitive φ vs) (Primitive φ' vs')   = Primitive φ (expand vs vs') -- TODO: require φ = φ'
    expand _ _                                   = error absurd
