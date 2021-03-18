@@ -93,7 +93,10 @@ evalBwd (V.Matrix α (vss × (i' × β) × (j' × β'))) (T.Matrix tss (x × y) 
        evalBwd_elem :: (Int × Int) -> Env 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
        evalBwd_elem (i × j) =
           case evalBwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
-            Extend (Extend ρ (_ ↦ V.Int γ _)) (_ ↦ V.Int γ' _) × e × α' -> ρ × e × α' × γ × γ'
+            Extend (Extend ρ (_ ↦ v1)) (_ ↦ v2) × e × α' ->
+               case expand v1 (V.Int false i) × expand v2 (V.Int false j) of
+                  V.Int γ _ × V.Int γ' _ -> ρ × e × α' × γ × γ'
+                  _ -> error absurd
             _ -> error absurd
        ρ × e × α' × γ × γ' = foldl1
          (\(ρ1 × e1 × α1 × γ1 × γ1') (ρ2 × e2 × α2 × γ2 × γ2') ->
