@@ -16,7 +16,7 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   test "temp" "17"
+   test "scratchpad" "17"
 ]
 
 test_slicing :: Array (Test Unit)
