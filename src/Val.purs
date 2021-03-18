@@ -10,7 +10,7 @@ import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
    𝔹, (∨), botOf, definedJoin, expand, maybeJoin
 )
-import Util (type (×), (×), (⪄), (≞), (≜), absurd, error, report)
+import Util (Endo, type (×), (×), (⪄), (≞), (≜), absurd, error, report)
 
 type Op a = a × 𝔹 -> Val 𝔹
 type MatrixRep a = Array (Array (Val a)) × (Int × a) × (Int × a)
@@ -30,7 +30,7 @@ newtype PrimOp = PrimOp {
    arity :: Int,
    op :: List (Val 𝔹) -> Val 𝔹,
    op_fwd :: List (Val 𝔹 × Val 𝔹) -> Val 𝔹,
-   op_bwd :: Val 𝔹 × Val 𝔹 -> List (Val 𝔹) -> List (Val 𝔹)
+   op_bwd :: Val 𝔹 × Val 𝔹 -> Endo (List (Val 𝔹))
 }
 
 type Env = Bindings Val

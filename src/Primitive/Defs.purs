@@ -11,7 +11,7 @@ import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
-import Util (type (×), (×), type (+), (!), error, unsafeUpdateAt)
+import Util (Endo, type (×), (×), type (+), (!), error, unsafeUpdateAt)
 import Val (Env, MatrixRep, Val(..))
 
 primitives :: Env 𝔹
@@ -54,7 +54,7 @@ dims = { fwd, bwd }
    fwd :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹)
    fwd (_ × i × j) = i × j
 
-   bwd :: (Int × 𝔹) × (Int × 𝔹) -> MatrixRep 𝔹 -> MatrixRep 𝔹
+   bwd :: (Int × 𝔹) × (Int × 𝔹) -> Endo (MatrixRep 𝔹)
    bwd (i × j) (vss × _ × _) = vss × i × j
 
 -- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here

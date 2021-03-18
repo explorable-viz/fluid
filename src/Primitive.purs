@@ -10,7 +10,7 @@ import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
 import Pretty (prettyP)
-import Util (type (×), (×), type (+), error)
+import Util (Endo, type (×), (×), type (+), error)
 import Val (PrimOp(..), Val(..))
 
 -- Mediates between Val and underlying data, analously to pattern-matching and construction for data types.
@@ -139,7 +139,7 @@ instance isZeroEither :: (IsZero a, IsZero b) => IsZero (a + b) where
 
 type Unary a b = {
    fwd :: a -> b,
-   bwd :: b -> a -> a
+   bwd :: b -> Endo a
 }
 
 type UnarySlicer a b = {
@@ -149,7 +149,7 @@ type UnarySlicer a b = {
 
 type Binary a b c = {
    fwd :: a -> b -> c,
-   bwd :: c -> a × b -> a × b
+   bwd :: c -> Endo (a × b)
 }
 
 type BinarySlicer a b c = {
