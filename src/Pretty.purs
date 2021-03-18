@@ -49,10 +49,10 @@ rspace :: Endo Doc
 rspace = flip (:<>:) space
 
 lrspace :: Endo Doc
-lrspace = between space space -- = lspace >>> rspace
+lrspace = between space space -- or: lspace >>> rspace
 
 hspace :: forall f . Foldable f => f Doc -> Doc
-hspace xs = hcat (intersperse space (fromFoldable xs))
+hspace = hcat <<< intersperse space <<< fromFoldable
 
 tab :: Doc
 tab = text "   "
@@ -104,7 +104,7 @@ instance prettyListPatternRest :: Pretty S.ListRestPattern where
 instance prettyCtr :: Pretty Ctr where
    pretty = show >>> text
 
--- Cheap hack to make progress on migrating some tests; need to revisit.
+-- Cheap hack; revisit.
 prettyParensOpt :: forall a . Pretty a => a -> Doc
 prettyParensOpt x =
    let doc = pretty x in
@@ -197,7 +197,7 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
       | c == cNil || c == cCons        = prettyList (toList r)
       | otherwise                      = prettyConstr c es
    pretty (S.Matrix α e (x × y) e')    =
-      hspace [text str.arrayLBracket, pretty e, text str.bar, pretty e', text str.arrayRBracket]
+      hspace [text str.arrayLBracket, pretty e, text str.bar, parens (text x :<>: comma :<>: lspace (text y)), pretty e', text str.arrayRBracket]
    pretty (S.Lambda bs)                = text str.fun :<>: pretty bs
    pretty (S.App s s')                 = pretty s :<>: lspace (pretty s')
    pretty (S.BinaryApp s op s')        = parens (pretty s :<>: operator op :<>: pretty s')

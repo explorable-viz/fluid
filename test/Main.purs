@@ -8,8 +8,8 @@ import Test.Util (Test, run, test, testWithDataset, test_bwd)
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_slicing, test_graphics ]
--- tests = [ test_scratchpad ]
+--tests = [ test_desugaring, test_misc, test_slicing, test_graphics ]
+tests = [ test_slicing ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -21,9 +21,9 @@ test_scratchpad = [
 
 test_slicing :: Array (Test Unit)
 test_slicing = [
---   test_bwd "slicing/add" (Int true 0 × "(_5_ + (_0_ + _3_))") "_8_",
-   test_bwd "slicing/array-lookup" (Float true 0.9) "17"
---   test_bwd "slicing/multiply" (Int true 0 × "(5 * (_0_ * 3))") "_0_"
+   test_bwd "slicing/add" (Int true 0) "_8_",
+   test_bwd "slicing/array-lookup" (Float true 0.9) "17",
+   test_bwd "slicing/multiply" (Int true 0) "_0_"
 ]
 
 test_desugaring :: Array (Test Unit)
