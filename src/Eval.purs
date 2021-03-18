@@ -14,7 +14,7 @@ import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr)
 import Lattice (𝔹, checkConsistent)
-import Pretty (pretty, render)
+import Pretty (prettyP)
 import Primitive (match) as P
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Val (Env, PrimOp(..), Val)
@@ -32,7 +32,7 @@ match (V.Constr _ c vs) (ElimConstr m) = do
    pure (ρ × κ' × MatchConstr c ws (keys m \\ singleton c))
 match v (ElimConstr m) = do
    d <- dataTypeFor (keys m)
-   report ("Pattern mismatch: " <> render (pretty v) <> " is not a constructor value, expected " <> show d)
+   report ("Pattern mismatch: " <> prettyP v <> " is not a constructor value, expected " <> show d)
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchArgs _ Nil κ = pure (Empty × κ × Nil)
@@ -77,7 +77,7 @@ eval ρ (Matrix _ e (x × y) e') = do
                j <- range 1 j'
                singleton (eval ((ρ :+: x ↦ V.Int false i) :+: y ↦ V.Int false j) e))
          pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false)))
-      v' -> report ("Array dimensions must be pair of ints; got " <> render (pretty v'))
+      v' -> report ("Array dimensions must be pair of ints; got " <> prettyP v')
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable

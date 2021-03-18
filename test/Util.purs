@@ -20,7 +20,7 @@ import Expr (Expr(..)) as E
 import SExpr (Expr) as S
 import Lattice (𝔹, botOf)
 import Module (loadFile, openDatasetAs, openWithDefaultImports)
-import Pretty (class Pretty, pretty, render)
+import Pretty (class Pretty, prettyP)
 import Util (MayFail, type (×), (×), successful)
 import Val (Env, Val(..))
 
@@ -47,7 +47,7 @@ desugarEval_fwd ρ s =
    evalFwd ρ (successful (desugarFwd s)) true
 
 checkPretty :: forall a . Pretty a => a -> String -> Aff Unit
-checkPretty x expected = render (pretty x) `shouldEqual` expected
+checkPretty x expected = prettyP x `shouldEqual` expected
 
 -- bwd_opt is pair of (output slice, string representation of expected program slice)
 testWithSetup :: String -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit

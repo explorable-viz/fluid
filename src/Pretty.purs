@@ -1,4 +1,4 @@
-module Pretty (class Pretty, pretty, module P) where
+module Pretty (class Pretty, pretty, prettyP, module P) where
 
 import Prelude hiding (absurd, between)
 import Data.Either (Either(..))
@@ -22,6 +22,9 @@ import Val (PrimOp, Val)
 import Val (Val(..)) as V
 
 infixl 5 beside as :<>:
+
+prettyP :: forall a . Pretty a => a -> String
+prettyP = pretty >>> render
 
 between :: Doc -> Doc -> Endo Doc
 between l r doc = l :<>: doc :<>: r
@@ -128,10 +131,9 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
       | otherwise                   = prettyConstr c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Op op)                 = parens (text op)
-   pretty (E.Let (E.VarDef σ e) e') =
-      atop (text str.let_ :<>: pretty σ :<>: operator str.equals :<>: pretty e :<>: lspace (text str.in_)) (pretty e')
-   pretty (E.LetRec δ e)            =
-      atop (text str.let_ :<>: pretty δ :<>: lspace (text str.in_)) (pretty e)
+   pretty (E.Let (E.VarDef σ e) e') = atop (hspace [text str.let_, pretty σ, text str.equals, pretty e, text str.in_])
+                                           (pretty e')
+   pretty (E.LetRec δ e)            = atop (text str.let_ :<>: pretty δ :<>: lspace (text str.in_)) (pretty e)
    pretty (E.Lambda σ)              = rspace (text str.fun) :<>: pretty σ
    pretty (E.App e e')              = pretty e :<>: lspace (pretty e')
 
@@ -144,12 +146,12 @@ instance prettyCont :: Pretty (Cont Boolean) where
    pretty (ContElim σ)  = pretty σ
 
 instance prettyBranch :: Pretty (Ctr × Cont Boolean) where
-   pretty (c × κ) = text (show c) :<>: operator "->" :<>: pretty κ
+   pretty (c × κ) = hspace [text (show c), text str.rArrow, pretty κ]
 
 instance prettyElim :: Pretty (Elim Boolean) where
    pretty (ElimHole)       = hole
    pretty (ElimVar x κ)    = text x :<>: operator str.rArrow :<>: pretty κ
-   pretty (ElimConstr κs)  = hcat (map (\x -> pretty x :<>: comma) (toUnfoldable κs :: List _))
+   pretty (ElimConstr κs)  = hcat ((\x -> pretty x :<>: comma) <$> toUnfoldable κs :: List _)
 
 instance prettyVal :: Pretty (Val Boolean) where
    pretty V.Hole                       = hole
@@ -162,7 +164,7 @@ instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Matrix _ (vss × _ × _))   = hcat (pretty <$> fromFoldable (fromFoldable <$> vss))
    pretty (V.Closure ρ δ σ) =
     text "Closure" :<>: text "(" :<>:
-    (atop (atop (text "env: " :<>: pretty ρ) (text "defs: " :<>: pretty δ)) (text "elim: " :<>: pretty σ)) :<>: (text ")")
+    (atop (atop (text "env: " :<>: pretty ρ) (text "defs: " :<>: pretty δ)) (text "elim: " :<>: pretty σ)) :<>: text ")"
    pretty (V.Primitive φ _)            = parens (pretty φ)
 
 instance prettyPrimOp :: Pretty PrimOp where
@@ -171,8 +173,8 @@ instance prettyPrimOp :: Pretty PrimOp where
 -- Surface language
 
 listRestToExprs :: forall a . S.ListRest a -> List (S.Expr a)
-listRestToExprs (S.End _) = Nil
-listRestToExprs (S.Next _ e l) = e : listRestToExprs l
+listRestToExprs (S.End _)        = Nil
+listRestToExprs (S.Next _ e l)   = e : listRestToExprs l
 
 listRestPatternToPatterns :: S.ListRestPattern -> List S.Pattern
 listRestPatternToPatterns S.PEnd         = Nil
@@ -227,9 +229,9 @@ instance prettyPatternExpr :: Pretty (S.Pattern × S.Expr Boolean) where
 instance prettyQualifier :: Pretty (S.Qualifier Boolean) where
    pretty (S.Guard e)                     = pretty e
    pretty (S.Generator π e)               = pretty π :<>: operator str.lArrow :<>: pretty e
-   pretty (S.Declaration (S.VarDef π e))  = text str.let_ :<>: lspace (pretty π) :<>: operator str.equals :<>: pretty e
+   pretty (S.Declaration (S.VarDef π e))  = hspace [text str.let_, pretty π, text str.equals, pretty e]
 
-instance prettyPatt :: (Pretty a, Pretty b) => Pretty (Either a b) where
+instance prettyEither :: (Pretty a, Pretty b) => Pretty (Either a b) where
    pretty (Left p)   = pretty p
    pretty (Right p)  = pretty p
 
@@ -238,6 +240,3 @@ instance prettyPattern :: Pretty S.Pattern where
    pretty (S.PConstr ctr πs)       = pretty ctr :<>: lspace (pretty πs)
    pretty (S.PListEmpty)           = text (str.lBracket <> str.rBracket)
    pretty (S.PListNonEmpty π πs)   = pretty (π : listRestPatternToPatterns πs)
-
-prettyProgram :: E.Expr Boolean -> Doc
-prettyProgram e = atop (pretty e) (text "")
