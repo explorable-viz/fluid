@@ -34,28 +34,22 @@ loadFile folder file = do
 loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file ρ = do
    src <- loadFile "fluid/lib" file
-   pure (successful (eval_module ρ (successful (desugarModuleFwd (successful (parse src module_))))))
+   pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module ρ))
 
 openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file =
    loadFile "fluid/example" file >>= parseWithDefaultImports
 
-successfulParse :: forall t . String -> SParser t -> t
-successfulParse src p =
-   case runParser src p of
-      Left parseError -> error (show parseError)
-      Right t -> t
-
 parse :: forall t . String -> SParser t -> MayFail t
-parse src = bimap show identity <<< runParser src
+parse src = runParser src >>> bimap show identity
 
 parseWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 parseWithDefaultImports src = do
    (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics")
-       <@> successfulParse src program
+       <@> successful (parse src program)
 
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do
    ρ × s <- loadFile "fluid/dataset" file >>= parseWithDefaultImports
-   let _ × v = successful (eval ρ =<< desugarFwd s)
+   let _ × v = successful (desugarFwd s >>= eval ρ)
    pure (Empty :+: x ↦ v)
