@@ -21,7 +21,7 @@ test_scratchpad = [
 
 test_slicing :: Array (Test Unit)
 test_slicing = [
-   test_bwd "slicing/add" (Int true 0) "_8_",
+   test_bwd "slicing/add" (Int true 8) "_8_",
    test_bwd "slicing/divide" Hole "0.75",
    test_bwd "slicing/array-lookup" (Float true 0.68) "17",
    test_bwd "slicing/multiply" (Int true 0) "_0_",

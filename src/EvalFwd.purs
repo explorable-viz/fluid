@@ -13,7 +13,7 @@ import Expl (Expl(..), Match(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (match_fwd) as P
-import Util (type (×), (×), (!), absurd, error, mustLookup, replicate, successful)
+import Util (type (×), (×), (!), absurd, assert, error, mustLookup, replicate, successful)
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
@@ -76,8 +76,8 @@ evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
       Matrix α e1 _ e2 ->
          case expand (evalFwd ρ e2 α t2) (V.Constr false cPair (V.Hole : V.Hole : Nil)) of
             V.Constr _ c (v1 : v2 : Nil) ->
-               let (_ × β) × (_ × β') = P.match_fwd (v1 × i') × P.match_fwd (v2 × j')
-                   vss = A.fromFoldable $ do
+               let (i'' × β) × (j'' × β') = P.match_fwd (v1 × V.Int false i') × P.match_fwd (v2 × V.Int false j')
+                   vss = assert (i'' == i' && j'' == j') $ A.fromFoldable $ do
                         i <- range 1 i'
                         singleton $ A.fromFoldable $ do
                            j <- range 1 j'
