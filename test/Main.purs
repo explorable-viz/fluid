@@ -2,8 +2,10 @@ module Test.Main where
 
 import Prelude
 import Data.Array (concat)
+import Data.List (List(..), (:))
 import Data.Traversable (sequence)
 import Effect (Effect)
+import DataType (cPair)
 import Test.Util (Test, run, test, testWithDataset, test_bwd)
 import Val (Val(..))
 
@@ -16,7 +18,8 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   test "scratchpad" "17"
+--   test "scratchpad" "17"
+   test_bwd "slicing/array-dims" (Constr false cPair (Int true 3 : Int true 3 : Nil)) "(_3_, _3_)"
 ]
 
 test_slicing :: Array (Test Unit)
