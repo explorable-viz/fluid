@@ -10,9 +10,7 @@ import Math (log, pow) as M
 import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cCons)
 import Lattice (𝔹)
-import Primitive (
-   Binary, Unary, binary, binaryZero, constr, constr_bwd, unary, union, union1, unionStr, withInverse1, withInverse2
-)
+import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
 import Util (type (×), (×), type (+), (!), error, unsafeUpdateAt)
 import Val (Env, MatrixRep, Val(..))
 
@@ -50,14 +48,14 @@ debugLog x = trace x (const x)
 error_ :: String -> Val 𝔹
 error_ = error
 
-dims :: Unary (MatrixRep 𝔹) (Val 𝔹 × Val 𝔹)
+dims :: Unary (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹))
 dims = { fwd, bwd }
    where
-   fwd :: MatrixRep 𝔹 -> Val 𝔹 × Val 𝔹
-   fwd (_ × i × j) = constr i × constr j
+   fwd :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹)
+   fwd (_ × i × j) = i × j
 
-   bwd :: Val 𝔹 × Val 𝔹 -> MatrixRep 𝔹 -> MatrixRep 𝔹
-   bwd (u × v) (vss × _ × _) = vss × constr_bwd u × constr_bwd v
+   bwd :: (Int × 𝔹) × (Int × 𝔹) -> MatrixRep 𝔹 -> MatrixRep 𝔹
+   bwd (i × j) (vss × _ × _) = vss × i × j
 
 -- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
 -- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.

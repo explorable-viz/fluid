@@ -119,7 +119,7 @@ evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
          then case expand v (V.Primitive (PrimOp φ) (const V.Hole <$> vs')) of
             V.Primitive _ vs'' -> vs''
             _ -> error absurd
-         else φ.op_bwd v vs'
+         else φ.op_bwd (v × φ.op vs') vs'
        ρ × e × α = evalBwd (V.Primitive (PrimOp φ) vs'') t1
        ρ' × e' × α' = evalBwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
