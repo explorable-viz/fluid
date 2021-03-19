@@ -9,6 +9,7 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 19 March 2021 | Matrices | [276](https://github.com/explorable-viz/fluid/issues/276)
 | 5 March 2021 | Forward and backward slicing for desugaring | [391](https://github.com/explorable-viz/fluid/issues/391)
 | 9 Nov 2020 | List comprehensions | [277](https://github.com/explorable-viz/fluid/issues/277) |
 | | `[e..e]` (list enumerations) | [278](https://github.com/explorable-viz/fluid/issues/278) |
