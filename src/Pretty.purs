@@ -47,7 +47,7 @@ hspace :: forall f . Foldable f => f Doc -> Doc
 hspace = fromFoldable >>> intersperse space >>> hcat
 
 hcomma :: forall f . Foldable f => f Doc -> Doc
-hcomma = fromFoldable >>> intersperse comma >>> hcat
+hcomma = fromFoldable >>> intersperse (comma :<>: space) >>> hcat
 
 parens :: Endo Doc
 parens = between (text "(") (text ")")
@@ -105,10 +105,6 @@ prettyList xs = brackets (hcomma (pretty <$> xs))
 -- Render a user-level pair reflected as a PureScript pair.
 prettyPair :: forall a . Pretty a => a × a -> Doc
 prettyPair (x × y) = parens (hcomma [pretty x, pretty y])
-
-instance prettyListRest :: Pretty (S.ListRest Boolean) where
-   pretty (S.End _)        = pretty str.rBracket
-   pretty (S.Next _ s l)   = comma :<>: hspace [pretty s, pretty l]
 
 instance prettyCtr :: Pretty Ctr where
    pretty = show >>> pretty
@@ -199,18 +195,22 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
               text (str.in_), pretty e', text str.arrayRBracket]
    pretty (S.Lambda bs)                = text str.fun :<>: vert semi (pretty <$> bs)
    pretty (S.App s s')                 = hspace [pretty s, pretty s']
-   pretty (S.BinaryApp s op s')        = parens (hspace [pretty s, text op, pretty s']
+   pretty (S.BinaryApp s op s')        = parens (hspace [pretty s, text op, pretty s'])
    pretty (S.MatchAs s bs)             = atop (hspace [text str.match, pretty s, text str.as]) (vert semi (pretty <$> bs))
    pretty (S.IfElse s1 s2 s3)          =
       hspace [text str.if_, pretty s1, text str.then_, pretty s2, text str.else_, pretty s3]
    pretty (S.ListEmpty _)              = nil
-   pretty (S.ListNonEmpty _ e l)       = comma :<>: hspace [pretty e, pretty l]
+   pretty (S.ListNonEmpty _ e l)       = text str.lBracket :<>: pretty e :<>: pretty l
    pretty (S.ListEnum s s')            = brackets (hspace [pretty s, text str.ellipsis, pretty s'])
    pretty (S.ListComp _ s qs)          = brackets (hspace [pretty s, text str.bar, hcomma (pretty <$> qs)])
    pretty (S.Let ds s)                 = atop (hspace [text str.let_, vert semi (pretty <$> ds)])
                                               (hspace [text str.in_, pretty s])
    pretty (S.LetRec h s)               = atop (hspace [text str.let_, vert semi (pretty <$> h)])
                                               (hspace [text str.in_, pretty s])
+
+instance prettyListRest :: Pretty (S.ListRest Boolean) where
+   pretty (S.End _)        = text str.rBracket
+   pretty (S.Next _ s l)   = hspace [comma, pretty s :<>: pretty l]
 
 instance prettyClause :: Pretty (String × (NonEmptyList S.Pattern × S.Expr Boolean)) where
    pretty (x × b) = hspace [text x, pretty b]
@@ -239,7 +239,7 @@ instance prettyPattern :: Pretty S.Pattern where
       | c == cPair               = prettyPair (toPair p)
       | otherwise                = prettyConstr c πs
    pretty (S.PListEmpty)         = nil
-   pretty (S.PListNonEmpty s l)  = text str.lBracket :<>: hspace [pretty s, pretty l]
+   pretty (S.PListNonEmpty s l)  = text str.lBracket :<>: pretty s :<>: pretty l
 
 instance toListPattern :: ToList S.Pattern  where
    toList (S.PConstr c (p : p' : Nil)) | c == cCons   = p : toList p'
@@ -251,5 +251,5 @@ instance toPairPattern :: ToPair S.Pattern where
    toPair _                                           = error absurd
 
 instance prettyListPatternRest :: Pretty S.ListRestPattern where
-   pretty S.PEnd        = pretty str.rBracket
-   pretty (S.PNext s l) = comma :<>: hspace [pretty s, pretty l]
+   pretty S.PEnd        = text str.rBracket
+   pretty (S.PNext s l) = hspace [comma, pretty s :<>: pretty l]
