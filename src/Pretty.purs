@@ -43,9 +43,6 @@ semi = text ";"
 space :: Doc
 space = text " "
 
-lrspace :: Endo Doc
-lrspace = between space space -- or: lspace >>> rspace
-
 hspace :: forall f . Foldable f => f Doc -> Doc
 hspace = fromFoldable >>> intersperse space >>> hcat
 
