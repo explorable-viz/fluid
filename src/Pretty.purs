@@ -5,7 +5,6 @@ import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), fromFoldable)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
-import Data.Map (toUnfoldable)
 import Data.Profunctor.Choice ((|||))
 import Data.String (Pattern(..), contains) as Data.String
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
@@ -138,10 +137,10 @@ nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
 
 prettyConstr :: forall a . Pretty a => Ctr -> List a -> Doc
-prettyConstr c (x : y : Nil)  | c == cPair   = parens (pretty x :<>: comma :<>: pretty y)
+prettyConstr c (x : y : Nil)  | c == cPair   = parens (hcomma [pretty x, pretty y])
 prettyConstr c Nil            | c == cNil    = nil
 prettyConstr c (x : y : Nil)  | c == cCons   = parens (hspace [pretty x, pretty cCons, pretty y])
-prettyConstr c xs                            = pretty c :<>: lspace (hspace (prettyParensOpt <$> xs))
+prettyConstr c xs                            = hspace (pretty c : (prettyParensOpt <$> xs))
 
 instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty E.Hole                    = hole
@@ -177,7 +176,7 @@ instance prettyBranch :: Pretty (Ctr × Cont Boolean) where
 instance prettyElim :: Pretty (Elim Boolean) where
    pretty (ElimHole)       = hole
    pretty (ElimVar x κ)    = text x :<>: operator str.rArrow :<>: pretty κ
-   pretty (ElimConstr κs)  = hcat ((\x -> pretty x :<>: comma) <$> toUnfoldable κs :: List _)
+   pretty (ElimConstr κs)  = hcomma (pretty <$> κs) -- looks dodgy
 
 instance prettyVal :: Pretty (Val Boolean) where
    pretty V.Hole                       = hole
