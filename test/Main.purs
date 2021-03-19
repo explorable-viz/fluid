@@ -5,7 +5,7 @@ import Data.Array (concat)
 import Data.List (List(..), (:))
 import Data.Traversable (sequence)
 import Effect (Effect)
-import DataType (cPair)
+import DataType (cCons, cPair)
 import Test.Util (Test, run, test, testWithDataset, test_bwd)
 import Val (Val(..))
 
@@ -27,6 +27,7 @@ test_slicing = [
    test_bwd "slicing/array-lookup" (Int true 17) "_17_",
    test_bwd "slicing/array-dims" (Constr true cPair (Int true 3 : Int true 3 : Nil)) "(_3_, _3_)",
    test_bwd "slicing/divide" Hole "0.75",
+   test_bwd "slicing/map" (Constr false cCons (Hole : (Constr true cCons (Hole : Hole : Nil)) : Nil)) "[5, 6]",
    test_bwd "slicing/multiply" (Int true 0) "_0_",
    test_bwd "slicing/nth" (Int true 4) "_4_"
 ]
