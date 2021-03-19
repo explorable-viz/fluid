@@ -52,8 +52,7 @@
 
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
-| June | Arrays | [276](https://github.com/rolyp/fluid/issues/276) |
-| July | Table view | [121](https://github.com/rolyp/fluid/issues/121) |
+| Apr 2021 | Table view | [121](https://github.com/rolyp/fluid/issues/121) |
 
 ### Possible submissions
 
@@ -65,8 +64,8 @@
 | <s>3 Mar 2020</s> | <s>ICFP 2020</s> |
 | <s>15 May 2020</s> | <s>OOPSLA 2020</s> |
 | <s>9 Jul 2020</s> | <s>POPL 2021</s> |
-| <s>20 Nov 2020 | PLDI 2021 |
-| 2 Mar 2021 | ICFP 2021 |
+| <s>20 Nov 2020</s> | PLDI 2021 |
+| <s>2 Mar 2021</s> | ICFP 2021 |
 | 16 Apr 2021 | OOPSLA 2021 |
 
 ### Installation
