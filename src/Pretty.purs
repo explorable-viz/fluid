@@ -1,12 +1,12 @@
 module Pretty (class Pretty, pretty, prettyP, module P) where
 
 import Prelude hiding (absurd, between)
-import Data.Either (Either(..))
 import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), fromFoldable)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
 import Data.Map (toUnfoldable)
+import Data.Profunctor.Choice ((|||))
 import Data.String (Pattern(..), contains) as Data.String
 import Text.Pretty (Doc, atop, beside, hcat, render, text, vcat)
 import Text.Pretty (render) as P
@@ -17,7 +17,7 @@ import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
 import Parse (str)
-import Util (Endo, type (×), (×), absurd, error, intersperse)
+import Util (Endo, type (×), (×), type (+), absurd, error, intersperse)
 import Val (PrimOp, Val)
 import Val (Val(..)) as V
 
@@ -72,23 +72,23 @@ class ToList a where
 instance toListExpr :: ToList (E.Expr Boolean)  where
    toList (E.Constr _ c (e : e' : Nil))   | c == cCons   = e : toList e'
    toList (E.Constr _ c Nil)              | c == cNil    = Nil
-   toList e                                              = error ("Not a list: " <> prettyP e)
+   toList e                                              = error absurd
 
 instance toListVal :: ToList (Val Boolean)  where
    toList (V.Constr _ c (v : v' : Nil)) | c == cCons  = v : toList v'
    toList (V.Constr _ c Nil)            | c == cNil   = Nil
-   toList v                                           = error ("Not a list: " <> prettyP v)
+   toList v                                           = error absurd
 
 class ToPair a where
    toPair :: a -> a × a
 
 instance toPairExpr :: ToPair (E.Expr Boolean) where
    toPair (E.Constr _ c (e : e' : Nil))   | c == cPair   = e × e'
-   toPair e                                              = error ("Not a pair: " <> prettyP e)
+   toPair e                                              = error absurd
 
 instance toPairVal :: ToPair (Val Boolean) where
    toPair (V.Constr _ c (v : v' : Nil))   | c == cPair   = v × v'
-   toPair v                                              = error ("Not a pair: " <> prettyP v)
+   toPair v                                              = error absurd
 
 class Pretty p where
    pretty :: p -> Doc
@@ -250,15 +250,26 @@ instance prettyQualifier :: Pretty (S.Qualifier Boolean) where
    pretty (S.Generator π e)               = pretty π :<>: operator str.lArrow :<>: pretty e
    pretty (S.Declaration (S.VarDef π e))  = hspace [text str.let_, pretty π, text str.equals, pretty e]
 
-instance prettyEither :: (Pretty a, Pretty b) => Pretty (Either a b) where
-   pretty (Left p)   = pretty p
-   pretty (Right p)  = pretty p
+instance prettyEither :: (Pretty a, Pretty b) => Pretty (a + b) where
+   pretty = pretty ||| pretty
 
 instance prettyPattern :: Pretty S.Pattern where
    pretty (S.PVar x)             = text x
-   pretty (S.PConstr c πs)       = hspace [pretty c, pretty πs]
+   pretty p@(S.PConstr c πs)
+      | c == cNil || c == cCons  = prettyList (toList p)
+      | c == cPair               = prettyPair (toPair p)
+      | otherwise                = prettyConstr c πs
    pretty (S.PListEmpty)         = text (str.lBracket <> str.rBracket)
    pretty (S.PListNonEmpty π πs) = pretty (π : listRestPatternToPatterns πs)
+
+instance toListPattern :: ToList S.Pattern  where
+   toList (S.PConstr c (p : p' : Nil)) | c == cCons   = p : toList p'
+   toList (S.PConstr c Nil)            | c == cNil    = Nil
+   toList _                                           = error absurd
+
+instance toPairPattern :: ToPair S.Pattern where
+   toPair (S.PConstr c (p : p' : Nil)) | c == cPair   = p × p'
+   toPair _                                           = error absurd
 
 instance prettyListPatternRest :: Pretty S.ListRestPattern where
    pretty = pretty <<< listRestPatternToPatterns
