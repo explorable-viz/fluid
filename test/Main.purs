@@ -10,8 +10,8 @@ import Test.Util (Test, run, test, testWithDataset, test_bwd)
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_slicing, test_graphics ]
-tests = [ test_slicing ]
+tests = [ test_desugaring, test_misc, test_slicing, test_graphics ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
