@@ -52,7 +52,7 @@
 
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
-| March 2021 | Matrix convolution | [272](https://github.com/rolyp/fluid/issues/272) |
+| Mar 2021 | Matrix convolution | [272](https://github.com/rolyp/fluid/issues/272) |
 | Apr 2021 | Table view | [121](https://github.com/rolyp/fluid/issues/121) |
 
 ### Possible submissions
