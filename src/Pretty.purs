@@ -190,9 +190,10 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
    pretty (S.Float _ n)                = text (show n)
    pretty (S.Str _ str)                = text (show str)
    pretty r@(S.Constr _ c es)          = prettyConstr c es
-   pretty (S.Matrix α e (x × y) e')    =
-      hspace [text str.arrayLBracket, pretty e, text str.bar, parens (hcomma [text x, text y]),
-              text (str.in_), pretty e', text str.arrayRBracket]
+   pretty (S.Matrix α e (x × y) e')    = highlightIf α (hspace (init <> quant))
+      where
+      init = [text str.arrayLBracket, pretty e, text str.bar]
+      quant = [parens (hcomma [text x, text y]), text (str.in_), pretty e', text str.arrayRBracket]
    pretty (S.Lambda bs)                = text str.fun :<>: vert semi (pretty <$> bs)
    pretty (S.App s s')                 = hspace [pretty s, pretty s']
    pretty (S.BinaryApp s op s')        = parens (hspace [pretty s, text op, pretty s'])
