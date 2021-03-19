@@ -200,8 +200,8 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
    pretty (S.MatchAs s bs)             = atop (hspace [text str.match, pretty s, text str.as]) (vert semi (pretty <$> bs))
    pretty (S.IfElse s1 s2 s3)          =
       hspace [text str.if_, pretty s1, text str.then_, pretty s2, text str.else_, pretty s3]
-   pretty (S.ListEmpty _)              = nil
-   pretty (S.ListNonEmpty _ e l)       = text str.lBracket :<>: pretty e :<>: pretty l
+   pretty (S.ListEmpty α)              = highlightIf α nil
+   pretty (S.ListNonEmpty α e l)       = highlightIf α (text str.lBracket) :<>: pretty e :<>: pretty l
    pretty (S.ListEnum s s')            = brackets (hspace [pretty s, text str.ellipsis, pretty s'])
    pretty (S.ListComp _ s qs)          = brackets (hspace [pretty s, text str.bar, hcomma (pretty <$> qs)])
    pretty (S.Let ds s)                 = atop (hspace [text str.let_, vert semi (pretty <$> ds)])
@@ -210,8 +210,8 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
                                               (hspace [text str.in_, pretty s])
 
 instance prettyListRest :: Pretty (S.ListRest Boolean) where
-   pretty (S.End _)        = text str.rBracket
-   pretty (S.Next _ s l)   = hspace [comma, pretty s :<>: pretty l]
+   pretty (S.End α)        = highlightIf α (text str.rBracket)
+   pretty (S.Next α s l)   = hspace [highlightIf α comma, pretty s :<>: pretty l]
 
 instance prettyClause :: Pretty (String × (NonEmptyList S.Pattern × S.Expr Boolean)) where
    pretty (x × b) = hspace [text x, pretty b]
