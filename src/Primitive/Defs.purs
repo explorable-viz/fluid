@@ -68,9 +68,8 @@ matrixLookup = { fwd, bwd }
    bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
        (vss'' × (i' × false) × (j' × false)) × ((i × false) × (j × false))
-       where vss'  = (<$>) (const Hole) <$> vss
-             vs_i  = vss'!(i - 1)
-             vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss'
+       where vs_i  = vss!(i - 1)
+             vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss
 
 plus :: Int + Number -> Int + Number -> Int + Number
 plus = (+) `union` (+)

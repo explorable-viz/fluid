@@ -11,7 +11,7 @@ import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
 tests = [ test_desugaring, test_misc, test_slicing, test_graphics ]
---tests = [ test_scratchpad ]
+--tests = [ test_slicing ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -27,7 +27,7 @@ test_slicing = [
    test_bwd "slicing/array-lookup" (Int true 17) "_17_",
    test_bwd "slicing/array-dims" (Constr true cPair (Int true 3 : Int true 3 : Nil)) "(_3_, _3_)",
    test_bwd "slicing/divide" Hole "0.75",
-   test_bwd "slicing/map" (Constr false cCons (Hole : (Constr true cCons (Hole : Hole : Nil)) : Nil)) "[5, 6]",
+   test_bwd "slicing/map" (Constr true cCons (Hole : (Constr true cCons (Hole : Hole : Nil)) : Nil)) "[5, 6]",
    test_bwd "slicing/multiply" (Int true 0) "_0_",
    test_bwd "slicing/nth" (Int true 4) "_4_"
 ]
