@@ -48,24 +48,24 @@ test_desugaring = [
 
 test_misc :: Array (Test Unit)
 test_misc = [
-   test "convolution" "1.3333333333333333, 5.555555555555555, 6.444444444444445,\n5.777777777777778, 10.11111111111111, 9.555555555555555,\n6.666666666666667, 6.888888888888889, 4.222222222222222"
-   -- test "range" "[(0, 0), (0, 1), (1, 0), (1, 1)]",
-   -- test "arithmetic" "42",
-   -- test "array" "(1, (3, 3))",
-   -- test "compose" "5",
-   -- test "factorial" "40320",
-   -- test "filter" "[8, 7]",
-   -- test "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]",
-   -- test "foldr_sumSquares" "661",
-   -- test "lexicalScoping" "\"6\"",
-   -- test "length" "2",
-   -- test "lookup" "Some \"sarah\"",
-   -- test "map" "[5, 7, 13, 15, 4, 3, -3]",
-   -- test "mergeSort" "[1, 2, 3]",
-   -- test "normalise" "(33, 66)",
-   -- test "pattern-match" "4",
-   -- test "reverse" "[2, 1]",
-   -- test "zipWith" "[[10], [12], [20]]"
+   test "convolution" "1.3333333333333333, 5.555555555555555, 6.444444444444445,\n5.777777777777778, 10.11111111111111, 9.555555555555555,\n6.666666666666667, 6.888888888888889, 4.222222222222222",
+   test "range" "[(0, 0), (0, 1), (1, 0), (1, 1)]",
+   test "arithmetic" "42",
+   test "array" "(1, (3, 3))",
+   test "compose" "5",
+   test "factorial" "40320",
+   test "filter" "[8, 7]",
+   test "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]",
+   test "foldr_sumSquares" "661",
+   test "lexicalScoping" "\"6\"",
+   test "length" "2",
+   test "lookup" "Some \"sarah\"",
+   test "map" "[5, 7, 13, 15, 4, 3, -3]",
+   test "mergeSort" "[1, 2, 3]",
+   test "normalise" "(33, 66)",
+   test "pattern-match" "4",
+   test "reverse" "[2, 1]",
+   test "zipWith" "[[10], [12], [20]]"
 ]
 
 test_graphics :: Array (Test Unit)
