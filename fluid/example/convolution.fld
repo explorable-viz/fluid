@@ -3,10 +3,6 @@ let range1 (m, n) = [m..n];
     range2 ((m1, n1), (m2, n2)) = 
       [ (i1, i2) | i1 <- range1 (m1, m2), i2 <- range1 (n1, n2)];
 
-let bound (upper) x =
-    if x > upper then upper else
-    if x < 1 then 1 else x;
-
 let quot' a b c = if a - b > 0 then quot' (a - b) b (c + 1) else c;
     quot a b    = quot' a b 0;
 
@@ -14,20 +10,22 @@ let conv_extend image filter =
     let (mz, nz)     = dims image;
         (iz, jz)     = dims filter;
         half_width   = quot jz 2;
-        half_height  = quot iz 2
-    in  [|  [ ((img_y, img_x), (fil_y, fil_x))
+        half_height  = quot iz 2;
+        area         = iz * jz
+    in  [| sum [ image!(img_y, img_x) * filter!(fil_y, fil_x)
                     | (y, x) <- range2 ((0, 0), (iz - 1, jz - 1)),
                       let fil_y = iz - y ,
                       let fil_x = jz - x ,
                       let img_y = c + y - half_height,
                       let img_x = d + x - half_width,
-                        img_y  >= 0, img_y <= mz,
-                        img_x  >= 0, img_x <= nz 
-                      ]
+                        img_y  >= 1, img_y <= mz,
+                        img_x  >= 1, img_x <= nz 
+                      ] / area
              | (c, d) in (mz, nz) |];
 
 let nth2 i j xs = nth (i - 1) (nth (j - 1) xs);
-let xs = [[0, 0],
-          [1, 1]];
-    ys = [| nth2 i j xs | (i, j) in (2, 2) |]
+let xs = [[0, 2, 4],
+          [3, 7, 1],
+          [2, 5, 2]];
+    ys = [| nth2 i j xs | (i, j) in (3, 3) |]
 in  conv_extend ys ys

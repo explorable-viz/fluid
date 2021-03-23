@@ -48,7 +48,8 @@ test_desugaring = [
 
 test_misc :: Array (Test Unit)
 test_misc = [
-   test "convolution" "[1, 2]"
+   test "convolution" "[1, 2]",
+   test "matrix" ""
    -- test "range" "[(0, 0), (0, 1), (1, 0), (1, 1)]",
    -- test "arithmetic" "42",
    -- test "array" "(1, (3, 3))",
