@@ -10,7 +10,7 @@ let bound (upper) x =
 let quot' a b c = if a - b > 0 then quot' (a - b) b (c + 1) else c;
     quot a b    = quot' a b 0;
 
-let conv_extend image filter =
+let conv_zero image filter =
     let (mz, nz)     = dims image;
         (iz, jz)     = dims filter;
         half_width   = quot jz 2;
@@ -28,8 +28,14 @@ let conv_extend image filter =
              | (c, d) in (mz, nz) |];
 
 let nth2 i j xss = nth (j - 1) (nth (i - 1) xss);
-let xs = [[0, 2, 4],
-          [3, 7, 1],
-          [2, 5, 2]];
-    ys = [| nth2 i j xs | (i, j) in (3, 3) |]
-in  conv_extend ys ys
+let fil_list = [[0, 2, 4],
+                [3, 7, 1],
+                [2, 5, 2]];
+    fil_arr  = [| nth2 i j fil_list | (i, j) in (3, 3) |];
+    img_list = [[15, 13, 6 , 9, 16],
+                [12, 5 , 15, 4, 13],
+                [14, 9 , 20, 8, 1 ],
+                [4 , 10, 3 , 7, 19],
+                [3 , 11, 15, 2, 9 ]];
+    img_arr  = [| nth2 i j img_list | (i, j) in (5, 5) |]
+in  conv_zero img_arr fil_arr
