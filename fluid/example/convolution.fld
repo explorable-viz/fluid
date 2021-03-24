@@ -27,7 +27,7 @@ let conv_extend image filter =
                       ]) / area
              | (c, d) in (mz, nz) |];
 
-let nth2 i j xs = nth (i - 1) (nth (j - 1) xs);
+let nth2 i j xss = nth (j - 1) (nth (i - 1) xss);
 let xs = [[0, 2, 4],
           [3, 7, 1],
           [2, 5, 2]];
