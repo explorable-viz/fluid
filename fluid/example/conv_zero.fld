@@ -1,7 +1,3 @@
-let range1 (m, n) = [m..n];
-    range2 ((m1, n1), (m2, n2)) = 
-      [ (i1, i2) | i1 <- range1 (m1, m2), i2 <- range1 (n1, n2)];
-
 let quot' a b c = if a - b > 0 then quot' (a - b) b (c + 1) else c;
     quot a b    = quot' a b 0;
 
@@ -12,13 +8,13 @@ let conv_zero image filter =
         half_height  = quot iz 2;
         area         = iz * jz
     in  [| (sum [ image!(img_y, img_x) * filter!(fil_y, fil_x)
-                    | (y, x) <- range2 ((0, 0), (iz - 1, jz - 1)),
+                    | (y, x) <- range ((0, 0), (iz - 1, jz - 1)),
                       let fil_x = jz - x ,
                       let fil_y = iz - y ,
                       let img_x = d + x - half_width,
                       let img_y = c + y - half_height,
                         img_y  >= 1, img_y <= mz,
-                        img_x  >= 1, img_x <= nz 
+                        img_x  >= 1, img_x <= nz
                       ]) / area
              | (c, d) in (mz, nz) |];
 
