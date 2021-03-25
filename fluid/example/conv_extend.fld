@@ -1,11 +1,16 @@
+
 let range1 (m, n) = [m..n];
     range2 ((m1, n1), (m2, n2)) = 
       [ (i1, i2) | i1 <- range1 (m1, m2), i2 <- range1 (n1, n2)];
 
+let bound (upper) x =
+    if x > upper then upper else
+    if x < 1 then 1 else x;
+
 let quot' a b c = if a - b > 0 then quot' (a - b) b (c + 1) else c;
     quot a b    = quot' a b 0;
 
-let conv_zero image filter =
+let conv_extend image filter =
     let (mz, nz)     = dims image;
         (iz, jz)     = dims filter;
         half_width   = quot jz 2;
@@ -15,10 +20,8 @@ let conv_zero image filter =
                     | (y, x) <- range2 ((0, 0), (iz - 1, jz - 1)),
                       let fil_x = jz - x ,
                       let fil_y = iz - y ,
-                      let img_x = d + x - half_width,
-                      let img_y = c + y - half_height,
-                        img_y  >= 1, img_y <= mz,
-                        img_x  >= 1, img_x <= nz 
+                      let img_x = bound nz (d + x - half_width),
+                      let img_y = bound mz (c + y - half_height)
                       ]) / area
              | (c, d) in (mz, nz) |];
 
@@ -33,4 +36,4 @@ let fil_list = [[0, 2, 4],
                 [4 , 10, 3 , 7, 19],
                 [3 , 11, 15, 2, 9 ]];
     img_arr  = [| nth2 i j img_list | (i, j) in (5, 5) |]
-in  conv_zero img_arr fil_arr
+in  conv_extend img_arr fil_arr
