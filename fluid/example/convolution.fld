@@ -10,26 +10,32 @@ let bound (upper) x =
 let quot' a b c = if a - b > 0 then quot' (a - b) b (c + 1) else c;
     quot a b    = quot' a b 0;
 
-let conv_extend image filter =
+let conv_zero image filter =
     let (mz, nz)     = dims image;
         (iz, jz)     = dims filter;
-        half_width   = quot iz 2;
-        half_height  = quot jz 2;
+        half_width   = quot jz 2;
+        half_height  = quot iz 2;
         area         = iz * jz
-    in  [| (sum [ image!(img_x, img_y) * filter!(fil_x, fil_y)
-                    | (x, y) <- range2 ((0, 0), (iz - 1, jz - 1)),
-                      let fil_x = iz - x ,
-                      let fil_y = jz - y ,
-                      let img_x = c + x - half_width,
-                      let img_y = d + y - half_height,
-                        img_y  >= 1, img_y <= nz,
-                        img_x  >= 1, img_x <= mz 
+    in  [| (sum [ image!(img_y, img_x) * filter!(fil_y, fil_x)
+                    | (y, x) <- range2 ((0, 0), (iz - 1, jz - 1)),
+                      let fil_x = jz - x ,
+                      let fil_y = iz - y ,
+                      let img_x = d + x - half_width,
+                      let img_y = c + y - half_height,
+                        img_y  >= 1, img_y <= mz,
+                        img_x  >= 1, img_x <= nz 
                       ]) / area
              | (c, d) in (mz, nz) |];
 
-let nth2 i j xs = nth (i - 1) (nth (j - 1) xs);
-let xs = [[0, 2, 4],
-          [3, 7, 1],
-          [2, 5, 2]];
-    ys = [| nth2 i j xs | (i, j) in (3, 3) |]
-in  conv_extend ys ys
+let nth2 i j xss = nth (j - 1) (nth (i - 1) xss);
+let fil_list = [[0, 2, 4],
+                [3, 7, 1],
+                [2, 5, 2]];
+    fil_arr  = [| nth2 i j fil_list | (i, j) in (3, 3) |];
+    img_list = [[15, 13, 6 , 9, 16],
+                [12, 5 , 15, 4, 13],
+                [14, 9 , 20, 8, 1 ],
+                [4 , 10, 3 , 7, 19],
+                [3 , 11, 15, 2, 9 ]];
+    img_arr  = [| nth2 i j img_list | (i, j) in (5, 5) |]
+in  conv_zero img_arr fil_arr
