@@ -11,7 +11,7 @@ import Val (Val(..), testMat)
 
 tests :: Array (Array (Test Unit))
 -- tests = [ test_convolution, test_desugaring, test_misc, test_slicing, test_graphics ]
-tests = [ test_scratchpad ]
+tests = [ test_convolution ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
