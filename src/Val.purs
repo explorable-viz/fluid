@@ -3,6 +3,7 @@ module Val where
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.List (List)
+import Data.Array
 import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim(..), RecDefs)
@@ -10,23 +11,23 @@ import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
    𝔹, (∨), botOf, definedJoin, expand, maybeJoin
 )
-import Util (Endo, type (×), (×), (⪄), (≞), (≜), absurd, error, report)
+import Util (Endo, type (×), (×), (⪄), (≞), (≜), absurd, error, report, fromJust)
 
 type Op a = a × 𝔹 -> Val 𝔹
 type MatrixRep a = Array (Array (Val a)) × (Int × a) × (Int × a)
 
--- emptyMat :: Int -> Int -> MatrixRep Boolean
--- emptyMat m n = replicate m (replicate n Hole) × (m × true) × (n × true)
+emptyMat :: Int -> Int -> MatrixRep Boolean
+emptyMat m n = replicate m (replicate n Hole) × (m × true) × (n × true)
 
--- insertMat :: Int -> Int -> Val Boolean -> MatrixRep Boolean -> MatrixRep Boolean
--- insertMat m n v (mat × h × w) = 
---    let row  = fromJust "" $ mat !! (m - 1)
---        row' = fromJust "" $ insertAt (n - 1) v row
---        mat' = fromJust "" $ insertAt (m - 1) row' mat
---    in  (mat' × h × w)
+insertMat :: Int -> Int -> Val Boolean -> MatrixRep Boolean -> MatrixRep Boolean
+insertMat m n v (mat × h × w) = 
+   let row  = fromJust "" $ mat !! (m - 1)
+       row' = fromJust "" $ insertAt (n - 1) v row
+       mat' = fromJust "" $ insertAt (m - 1) row' mat
+   in  (mat' × h × w) 
 
--- testMat :: Val Boolean
--- testMat = Matrix true (insertMat 1 1 (Float true 18.666666666666668) (emptyMat 5 5))
+testMat :: Val Boolean
+testMat = Matrix true (insertMat 1 1 (Float true 18.666666666666668) (emptyMat 5 5))
 
 data Val a =
    Hole |
