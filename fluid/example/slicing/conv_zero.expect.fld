@@ -1,12 +1,5 @@
-let conv_zero image filter = let (mz, nz) = dims image;
-                                 (iz, jz) = dims filter;
-                                 half_width = quot jz 2;
-                                 half_height = quot iz 2;
-                                 area = (iz * jz)
-                             in _[| (sum [((image ! (img_y, img_x)) * (filter ! (fil_y, fil_x))) | (y, x) <- range ((0, 0), ((iz - 1), (jz - 1))), let fil_x = (jz - x), let fil_y = (iz - y), let img_x = ((d + x) - half_width), let img_y = ((c + y) - half_height), (img_y >= 1), (img_y <= mz), (img_x >= 1), (img_x <= nz)] / area) | (c, d) in (mz, nz) |]_
-in let nth2 i j xss = nth (j - 1) nth (i - 1) xss
-   in let fil_list = [[_0_, _2_, 4], [_3_, _7_, 1], [2, 5, 2]];
-          fil_arr = _[| nth2 i j fil_list | (i, j) in (_3_, _3_) |]_;
-          img_list = [[_15_, _13_, 6, 9, 16], [_12_, 5, 15, 4, 13], [14, 9, 20, 8, 1], [4, 10, 3, 7, 19], [3, 11, 15, 2, 9]];
-          img_arr = _[| nth2 i j img_list | (i, j) in (_5_, _5_) |]_
-      in conv_zero img_arr fil_arr
+let fil_list = [[_0_, _2_, 4], [_3_, _7_, 1], [2, 5, 2]];
+    fil_arr = _[| nth2 i j fil_list | (i, j) in (_3_, _3_) |]_;
+    img_list = [[_15_, _13_, 6, 9, 16], [_12_, 5, 15, 4, 13], [14, 9, 20, 8, 1], [4, 10, 3, 7, 19], [3, 11, 15, 2, 9]];
+    img_arr = _[| nth2 i j img_list | (i, j) in (_5_, _5_) |]_
+in conv img_arr fil_arr zero

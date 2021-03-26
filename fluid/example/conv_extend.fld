@@ -1,23 +1,3 @@
-let bound (upper) x =
-    if x > upper then upper else
-    if x < 1 then 1 else x;
-
-let conv_extend image filter =
-    let (mz, nz)     = dims image;
-        (iz, jz)     = dims filter;
-        half_width   = quot jz 2;
-        half_height  = quot iz 2;
-        area         = iz * jz
-    in  [| (sum [ image!(img_y, img_x) * filter!(fil_y, fil_x)
-                    | (y, x) <- range ((0, 0), (iz - 1, jz - 1)),
-                      let fil_x = jz - x ,
-                      let fil_y = iz - y ,
-                      let img_x = bound nz (d + x - half_width),
-                      let img_y = bound mz (c + y - half_height)
-                      ]) / area
-             | (c, d) in (mz, nz) |];
-
-let nth2 i j xss = nth (j - 1) (nth (i - 1) xss);
 let fil_list = [[0, 2, 4],
                 [3, 7, 1],
                 [2, 5, 2]];
@@ -28,4 +8,4 @@ let fil_list = [[0, 2, 4],
                 [4 , 10, 3 , 7, 19],
                 [3 , 11, 15, 2, 9 ]];
     img_arr  = [| nth2 i j img_list | (i, j) in (5, 5) |]
-in  conv_extend img_arr fil_arr
+in  conv img_arr fil_arr extend

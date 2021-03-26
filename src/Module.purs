@@ -45,7 +45,7 @@ parse src = runParser src >>> bimap show identity
 
 parseWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 parseWithDefaultImports src = do
-   (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics")
+   (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics" >>= loadModule "convolution")
        <@> successful (parse src program)
 
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
