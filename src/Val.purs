@@ -1,9 +1,8 @@
 module Val where
 
-import Prelude hiding (absurd)
+import Prelude (const, flip, pure, (<$>), (<*>))
 import Control.Apply (lift2)
 import Data.List (List)
-import Data.Array
 import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim(..), RecDefs)
@@ -11,7 +10,7 @@ import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
    𝔹, (∨), botOf, definedJoin, expand, maybeJoin
 )
-import Util (Endo, type (×), (×), (⪄), (≞), (≜), absurd, error, report, fromJust)
+import Util (Endo, type (×), (×), (⪄), (≞), (≜), absurd, error, report)
 
 type Op a = a × 𝔹 -> Val 𝔹
 type MatrixRep a = Array (Array (Val a)) × (Int × a) × (Int × a)
