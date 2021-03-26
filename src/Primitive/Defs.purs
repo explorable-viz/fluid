@@ -1,9 +1,11 @@
 module Primitive.Defs where
 
-import Prelude hiding (absurd, div)
-import Prelude (div) as P
+import Prelude hiding (absurd, div, mod)
+import Prelude (div, mod) as P
+import Data.Array ((!!), replicate, insertAt)
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
+import Data.Int (quot, rem) as I
 import Data.List (List(..))
 import Debug.Trace (trace)
 import Math (log, pow) as M
@@ -11,7 +13,7 @@ import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
-import Util (Endo, type (×), (×), type (+), (!), error, unsafeUpdateAt)
+import Util (Endo, type (×), (×), type (+), (!), error, unsafeUpdateAt, fromJust)
 import Val (Env, MatrixRep, Val(..))
 
 primitives :: Env 𝔹
@@ -32,6 +34,9 @@ primitives = foldl (:+:) Empty [
    "++"        ↦ binary (withInverse2 concat),
    "!"         ↦ binary matrixLookup,
    "div"       ↦ binaryZero (withInverse2 div),
+   "mod"       ↦ binaryZero (withInverse2 mod),
+   "quot"      ↦ binaryZero (withInverse2 quot),
+   "rem"       ↦ binaryZero (withInverse2 rem),
 
    "ceiling"   ↦ unary (withInverse1 ceil),
    "debugLog"  ↦ unary (withInverse1 debugLog),
@@ -71,6 +76,16 @@ matrixLookup = { fwd, bwd }
        where vs_i  = vss!(i - 1)
              vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss
 
+emptyMat :: Int -> Int -> MatrixRep Boolean
+emptyMat m n = replicate m (replicate n Hole) × (m × true) × (n × true)
+
+insertMat :: Int -> Int -> Val Boolean -> MatrixRep Boolean -> MatrixRep Boolean
+insertMat m n v (mat × h × w) = 
+   let row  = fromJust "" $ mat !! (m - 1)
+       row' = fromJust "" $ insertAt (n - 1) v row
+       mat' = fromJust "" $ insertAt (m - 1) row' mat
+   in  (mat' × h × w) 
+
 plus :: Int + Number -> Int + Number -> Int + Number
 plus = (+) `union` (+)
 
@@ -87,8 +102,18 @@ pow = (\x y -> toNumber x `M.pow` toNumber y) `union` M.pow
 divide :: Int + Number -> Int + Number -> Int + Number
 divide = (\x y -> toNumber x / toNumber y)  `union` (/)
 
+-- See T-, F- and E-definitions discussed at https://github.com/purescript/purescript-prelude/issues/161
 div :: Int -> Int -> Int
 div = P.div
+
+mod :: Int -> Int -> Int
+mod = P.mod
+
+quot :: Int -> Int -> Int
+quot = I.quot
+
+rem :: Int -> Int -> Int
+rem = I.rem
 
 equals :: Int + Number + String -> Int + Number + String -> Boolean
 equals = (==) `union` (==) `unionStr` (==)

@@ -1,6 +1,6 @@
 module Val where
 
-import Prelude hiding (absurd)
+import Prelude (const, flip, pure, (<$>), (<*>))
 import Control.Apply (lift2)
 import Data.List (List)
 import Bindings (Bindings)
