@@ -1,9 +1,10 @@
 module Primitive.Defs where
 
-import Prelude hiding (absurd, div)
-import Prelude (div) as P
+import Prelude hiding (absurd, div, mod)
+import Prelude (div, mod) as P
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
+import Data.Int (quot, rem) as I
 import Data.List (List(..))
 import Debug.Trace (trace)
 import Math (log, pow) as M
@@ -32,6 +33,9 @@ primitives = foldl (:+:) Empty [
    "++"        ↦ binary (withInverse2 concat),
    "!"         ↦ binary matrixLookup,
    "div"       ↦ binaryZero (withInverse2 div),
+   "mod"       ↦ binaryZero (withInverse2 mod),
+   "quot"      ↦ binaryZero (withInverse2 quot),
+   "rem"       ↦ binaryZero (withInverse2 rem),
 
    "ceiling"   ↦ unary (withInverse1 ceil),
    "debugLog"  ↦ unary (withInverse1 debugLog),
@@ -87,8 +91,18 @@ pow = (\x y -> toNumber x `M.pow` toNumber y) `union` M.pow
 divide :: Int + Number -> Int + Number -> Int + Number
 divide = (\x y -> toNumber x / toNumber y)  `union` (/)
 
+-- See T-, F- and E-definitions discussed at https://github.com/purescript/purescript-prelude/issues/161
 div :: Int -> Int -> Int
 div = P.div
+
+mod :: Int -> Int -> Int
+mod = P.mod
+
+quot :: Int -> Int -> Int
+quot = I.quot
+
+rem :: Int -> Int -> Int
+rem = I.rem
 
 equals :: Int + Number + String -> Int + Number + String -> Boolean
 equals = (==) `union` (==) `unionStr` (==)
