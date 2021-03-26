@@ -18,7 +18,7 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   test "div-mod-quot-rem" "[[1, -1, -2, 2], [2, 2, 1, 1], [1, -1, -1, 1], [2, 2, -2, -2]]"
+   test_bwd "slicing/conv_zero" Hole "18.666666666666668, 20.22222222222222, 14.666666666666666, 20.555555555555557, 18.11111111111111,\n25.333333333333332, 30.333333333333332, 30.22222222222222, 29.666666666666668, 25.22222222222222,\n22.555555555555557, 28.0, 34.666666666666664, 20.11111111111111, 17.11111111111111,\n16.88888888888889, 25.555555555555557, 28.88888888888889, 28.333333333333332, 20.77777777777778,\n10.444444444444445, 21.0, 19.0, 15.0, 19.333333333333332"
 ]
 
 test_slicing :: Array (Test Unit)
@@ -54,10 +54,10 @@ test_desugaring = [
 
 test_misc :: Array (Test Unit)
 test_misc = [
-   test "range" "[(0, 0), (0, 1), (1, 0), (1, 1)]",
    test "arithmetic" "42",
    test "array" "(1, (3, 3))",
    test "compose" "5",
+   test "div-mod-quot-rem" "[[1, -1, -2, 2], [2, 2, 1, 1], [1, -1, -1, 1], [2, 2, -2, -2]]",
    test "factorial" "40320",
    test "filter" "[8, 7]",
    test "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]",
@@ -67,9 +67,9 @@ test_misc = [
    test "lookup" "Some \"sarah\"",
    test "map" "[5, 7, 13, 15, 4, 3, -3]",
    test "mergeSort" "[1, 2, 3]",
-   test "mod-rem" "[2, 2, -1, 2, 1, -2, -2, -2]",
    test "normalise" "(33, 66)",
    test "pattern-match" "4",
+   test "range" "[(0, 0), (0, 1), (1, 0), (1, 1)]",
    test "reverse" "[2, 1]",
    test "zipWith" "[[10], [12], [20]]"
 ]

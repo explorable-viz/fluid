@@ -15,6 +15,19 @@ import Util (Endo, type (×), (×), (⪄), (≞), (≜), absurd, error, report)
 type Op a = a × 𝔹 -> Val 𝔹
 type MatrixRep a = Array (Array (Val a)) × (Int × a) × (Int × a)
 
+-- emptyMat :: Int -> Int -> MatrixRep Boolean
+-- emptyMat m n = replicate m (replicate n Hole) × (m × true) × (n × true)
+
+-- insertMat :: Int -> Int -> Val Boolean -> MatrixRep Boolean -> MatrixRep Boolean
+-- insertMat m n v (mat × h × w) = 
+--    let row  = fromJust "" $ mat !! (m - 1)
+--        row' = fromJust "" $ insertAt (n - 1) v row
+--        mat' = fromJust "" $ insertAt (m - 1) row' mat
+--    in  (mat' × h × w)
+
+-- testMat :: Val Boolean
+-- testMat = Matrix true (insertMat 1 1 (Float true 18.666666666666668) (emptyMat 5 5))
+
 data Val a =
    Hole |
    Int a Int |
