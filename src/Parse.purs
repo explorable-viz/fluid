@@ -345,12 +345,12 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          ifElse :: SParser (Expr 𝔹)
          ifElse = pure IfElse <*> (keyword str.if_ *> expr') <* keyword str.then_ <*> expr' <* keyword str.else_ <*> expr'
 
--- each element of the top-level list corresponds to a precedence level
+-- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
 operators binaryOp =
    fromFoldable $ fromFoldable <$>
-   (map (\({ op, assoc }) -> Infix (try $ binaryOp op) assoc)) <$>
-   groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) $ values opDefs)
+   (<$>) (\({ op, assoc }) -> Infix (try (binaryOp op)) assoc) <$>
+   groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) (values opDefs))
 
 -- Pattern with no continuation.
 pattern :: SParser Pattern
