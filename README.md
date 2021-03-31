@@ -9,8 +9,9 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
-| 19 Mar 2021 | Matrices | [276](https://github.com/explorable-viz/fluid/issues/276)
-| 5 Mar 2021 | Forward and backward slicing for desugaring | [391](https://github.com/explorable-viz/fluid/issues/391)
+| 26 Mar 2021 | Matrix convolution examples | [272](https://github.com/explorable-viz/fluid/issues/272) |
+| 19 Mar 2021 | Matrices | [276](https://github.com/explorable-viz/fluid/issues/276) |
+| 5 Mar 2021 | Forward and backward slicing for desugaring | [391](https://github.com/explorable-viz/fluid/issues/391) |
 | 9 Nov 2020 | List comprehensions | [277](https://github.com/explorable-viz/fluid/issues/277) |
 | | `[e..e]` (list enumerations) | [278](https://github.com/explorable-viz/fluid/issues/278) |
 | | `if`..`then`..`else` | [115](https://github.com/explorable-viz/fluid/issues/115) |
@@ -52,7 +53,6 @@
 
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
-| Mar 2021 | Matrix convolution | [272](https://github.com/rolyp/fluid/issues/272) |
 | Apr 2021 | Table view | [121](https://github.com/rolyp/fluid/issues/121) |
 
 ### Possible submissions
@@ -68,6 +68,7 @@
 | <s>20 Nov 2020</s> | PLDI 2021 |
 | <s>2 Mar 2021</s> | ICFP 2021 |
 | 16 Apr 2021 | OOPSLA 2021 |
+| **8 Jul 2021** | **POPL 2022** |
 
 ### Installation
 
