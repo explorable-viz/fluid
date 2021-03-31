@@ -1,4 +1,4 @@
-## Interactive data provenance for data visualisations
+## Interactive data provenance for data visualisation
 
 ![purescript](https://github.com/explorable-viz/fluid/workflows/purescript/badge.svg)
 ![typescript](https://github.com/explorable-viz/fluid/workflows/typescript/badge.svg)
