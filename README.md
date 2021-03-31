@@ -65,8 +65,8 @@
 | <s>3 Mar 2020</s> | <s>ICFP 2020</s> |
 | <s>15 May 2020</s> | <s>OOPSLA 2020</s> |
 | <s>9 Jul 2020</s> | <s>POPL 2021</s> |
-| <s>20 Nov 2020</s> | PLDI 2021 |
-| <s>2 Mar 2021</s> | ICFP 2021 |
+| <s>20 Nov 2020</s> | <s>PLDI 2021</s> |
+| <s>2 Mar 2021</s> | <s>ICFP 2021</s> |
 | 16 Apr 2021 | OOPSLA 2021 |
 | **8 Jul 2021** | **POPL 2022** |
 
