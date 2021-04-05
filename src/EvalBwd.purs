@@ -39,7 +39,7 @@ closeDefsBwd ρ (ρ0 × δ0) =
    joinDefs :: Binding Val 𝔹 -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹)
    joinDefs (f ↦ V.Closure ρ_f δ_f σ_f) (δ_acc × ρ' × δ × α)
       = (δ_acc :+: f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f) × α
-   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ × α) = (δ_acc :+: f ↦ botOf (successful $ find f δ0)) × ρ' × δ × α
+   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ × α) = (δ_acc :+: f ↦ botOf (successful (find f δ0))) × ρ' × δ × α
    joinDefs (_ ↦ _) _ = error absurd
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹

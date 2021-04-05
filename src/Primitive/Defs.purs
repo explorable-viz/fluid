@@ -2,7 +2,7 @@ module Primitive.Defs where
 
 import Prelude hiding (absurd, div, mod)
 import Prelude (div, mod) as P
-import Data.Array ((!!), replicate, insertAt)
+import Data.Array (replicate, insertAt)
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
@@ -13,7 +13,7 @@ import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
-import Util (Endo, type (×), (×), type (+), (!), error, unsafeUpdateAt, fromJust)
+import Util (Endo, type (×), (×), type (+), (!), absurd, error, unsafeUpdateAt, fromJust)
 import Val (Env, MatrixRep, Val(..))
 
 primitives :: Env 𝔹
@@ -80,11 +80,11 @@ emptyMat :: Int -> Int -> MatrixRep Boolean
 emptyMat m n = replicate m (replicate n Hole) × (m × true) × (n × true)
 
 insertMat :: Int -> Int -> Val Boolean -> MatrixRep Boolean -> MatrixRep Boolean
-insertMat m n v (mat × h × w) = 
-   let row  = fromJust "" $ mat !! (m - 1)
-       row' = fromJust "" $ insertAt (n - 1) v row
-       mat' = fromJust "" $ insertAt (m - 1) row' mat
-   in  (mat' × h × w) 
+insertMat i j v (mat × h × w) =
+   let row  = mat ! (i - 1)
+       row' = fromJust absurd $ insertAt (j - 1) v row
+       mat' = fromJust absurd $ insertAt (i - 1) row' mat
+   in  (mat' × h × w)
 
 plus :: Int + Number -> Int + Number -> Int + Number
 plus = (+) `union` (+)
