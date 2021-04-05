@@ -26,7 +26,7 @@ import Val (Env, Val(..))
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
-isGraphical Hole           = false
+isGraphical (Hole _)       = false
 isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) == "GraphicsElement"
 isGraphical _              = false
 

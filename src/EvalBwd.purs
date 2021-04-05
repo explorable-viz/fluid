@@ -77,7 +77,7 @@ evalBwd v t@(T.Lambda ρ σ) =
       V.Closure ρ' _ σ' -> ρ' × Lambda σ' × false
       _ -> error absurd
 evalBwd v t@(T.Constr ρ c ts) =
-   case expand v (V.Constr false c (ts <#> const V.Hole)) of
+   case expand v (V.Constr false c (ts <#> const (V.Hole false))) of
       V.Constr α _ vs ->
          let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
              evalArg_bwd (v' × t') (ρ' × es × α') = (ρ' ∨ ρ'') × (e : es) × (α' ∨ α'')
@@ -120,7 +120,7 @@ evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let vs' = vs <> singleton v2
        { init: vs'', last: v2' } = fromJust absurd $ unsnoc $
          if φ.arity > L.length vs'
-         then case expand v (V.Primitive (PrimOp φ) (const V.Hole <$> vs')) of
+         then case expand v (V.Primitive (PrimOp φ) (const (V.Hole false) <$> vs')) of
             V.Primitive _ vs'' -> vs''
             _ -> error absurd
          else φ.op_bwd (v × φ.op vs') vs'
@@ -128,7 +128,7 @@ evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
        ρ' × e' × α' = evalBwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
 evalBwd v t@(T.AppConstr (t1 × c × n) t2) =
-   case expand v (V.Constr false c (replicate (n + 1) V.Hole)) of
+   case expand v (V.Constr false c (replicate (n + 1) (V.Hole false))) of
       V.Constr β _ vs ->
          let { init: vs', last: v2 } = fromJust absurd (unsnoc vs)
              ρ × e × α = evalBwd (V.Constr β c vs') t1

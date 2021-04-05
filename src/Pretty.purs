@@ -163,7 +163,7 @@ instance prettyElim :: Pretty (Elim Boolean) where
    pretty (ElimConstr κs)  = hcomma (pretty <$> κs) -- looks dodgy
 
 instance prettyVal :: Pretty (Val Boolean) where
-   pretty V.Hole                       = hole
+   pretty (V.Hole _)                   = hole
    pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float _ n)                = text (show n)
    pretty (V.Str _ str)                = text (show str)

@@ -67,7 +67,7 @@ eval ρ (Constr _ c es) = do
 eval ρ (Matrix _ e (x × y) e') = do
    t × v <- eval ρ e'
    case v of
-      V.Hole -> error absurd
+      V.Hole _ -> error absurd
       V.Constr _ c (v1 : v2 : Nil) | c == cPair -> do
          let (i' × _) × (j' × _) = P.match v1 × P.match v2
          check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
@@ -91,7 +91,7 @@ eval ρ (App e e') = do
    t × v <- eval ρ e
    t' × v' <- eval ρ e'
    case v of
-      V.Hole -> error absurd
+      V.Hole _ -> error absurd
       V.Closure ρ1 δ σ -> do
          let ρ2 = closeDefs ρ1 δ δ
          ρ3 × e'' × w <- match v' σ

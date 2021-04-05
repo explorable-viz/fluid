@@ -27,7 +27,7 @@ matchFwd _ σ (T.MatchVarAnon _) =
       ElimVar _ κ -> Empty × κ × true
       _ -> error absurd
 matchFwd v σ (T.MatchConstr c ws cs) =
-   case expand v (V.Constr false c (const V.Hole <$> ws)) ×
+   case expand v (V.Constr false c (const (V.Hole false) <$> ws)) ×
         expand σ (ElimConstr (fromFoldable ((_ × ContHole) <$> c : cs))) of
       V.Constr α _ vs × ElimConstr m ->
          ρ × κ × (α ∧ α')
@@ -74,7 +74,7 @@ evalFwd ρ e α' (T.Constr _ c ts) =
 evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
    case expand e (Matrix false Hole (x × y) Hole) of
       Matrix α e1 _ e2 ->
-         case expand (evalFwd ρ e2 α t2) (V.Constr false cPair (V.Hole : V.Hole : Nil)) of
+         case expand (evalFwd ρ e2 α t2) (V.Constr false cPair (V.Hole false : V.Hole false : Nil)) of
             V.Constr _ c (v1 : v2 : Nil) ->
                let (i'' × β) × (j'' × β') = P.match_fwd (v1 × V.Int false i') × P.match_fwd (v2 × V.Int false j')
                    vss = assert (i'' == i' && j'' == j') $ A.fromFoldable $ do
@@ -109,7 +109,7 @@ evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
 evalFwd ρ e α (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
-         case expand (evalFwd ρ e1 α t1) (V.Primitive (PrimOp φ) (const V.Hole <$> vs)) of
+         case expand (evalFwd ρ e1 α t1) (V.Primitive (PrimOp φ) (const (V.Hole false) <$> vs)) of
             V.Primitive _ vs' ->
                let v2' = evalFwd ρ e2 α t2
                    vs'' = zip vs' vs <> singleton (v2' × v2) in
@@ -119,7 +119,7 @@ evalFwd ρ e α (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
 evalFwd ρ e α (T.AppConstr (t1 × c × n) t2) =
    case expand e (App Hole Hole) of
       App e1 e2 ->
-         case expand (evalFwd ρ e1 α t1) (V.Constr false c (replicate n V.Hole)) of
+         case expand (evalFwd ρ e1 α t1) (V.Constr false c (replicate n (V.Hole false))) of
             V.Constr α' _ vs' ->
                let v = evalFwd ρ e2 α t2 in
                V.Constr (α ∧ α') c (vs' <> singleton v)

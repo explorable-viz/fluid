@@ -8,15 +8,15 @@ import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim(..), RecDefs)
 import Lattice (
-   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
-   𝔹, (∨), botOf, definedJoin, expand, maybeJoin
+   class BoundedJoinSemilattice, class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
+   𝔹, (∨), bot, botOf, definedJoin, expand, maybeJoin
 )
 import Util (Endo, type (×), (×), (⪄), (≞), (≜), (!), absurd, error, report, unsafeUpdateAt)
 
 type Op a = a × 𝔹 -> Val 𝔹
 
 data Val a =
-   Hole |
+   Hole a |
    Int a Int |
    Float a Number |
    Str a String |
@@ -45,7 +45,7 @@ insertMatrix i j v (vss × h × w) =
    in  vss' × h × w
 
 holeMatrix :: Int -> Int -> MatrixRep 𝔹
-holeMatrix i j = replicate i (replicate j Hole) × (i × false) × (j × false)
+holeMatrix i j = replicate i (replicate j (Hole false)) × (i × false) × (j × false)
 
 -- ======================
 -- boilerplate
@@ -56,8 +56,8 @@ instance joinSemilatticeVal :: JoinSemilattice a => JoinSemilattice (Val a) wher
    join = definedJoin
 
 instance slicesVal :: JoinSemilattice a => Slices (Val a) where
-   maybeJoin Hole v                                   = pure v
-   maybeJoin v Hole                                   = pure v
+   maybeJoin (Hole _) v                               = pure v -- TODO: fix
+   maybeJoin v (Hole _)                               = pure v -- TODO: fix
    maybeJoin (Int α n) (Int α' n')                    = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Float α n) (Float α' n')                = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α str) (Str α' str')                = Str (α ∨ α') <$> (str ≞ str')
@@ -72,19 +72,20 @@ instance slicesVal :: JoinSemilattice a => Slices (Val a) where
    maybeJoin (Primitive φ vs) (Primitive φ' vs')      = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _                                      = report "Incompatible values"
 
-instance boundedSlices :: JoinSemilattice a => BoundedSlices (Val a) where
-   botOf = const Hole
+instance boundedSlices :: BoundedJoinSemilattice a => BoundedSlices (Val a) where
+   botOf = const (Hole bot)
 
 instance valExpandable :: Expandable (Val Boolean) where
-   expand v Hole                                = v
-   expand Hole v@(Int false n)                  = v
-   expand Hole v@(Float false n)                = v
-   expand Hole v@(Str false str)                = v
-   expand Hole v@(Primitive φ vs)               = Primitive φ (expand Hole <$> vs)
-   expand Hole (Constr false c vs)              = Constr false c (expand Hole <$> vs)
-   expand Hole (Matrix false (vss × (i × false) × (j × false))) =
-      Matrix false ((((<$>) (expand Hole)) <$> vss) × (i × false) × (j × false))
-   expand Hole (Closure ρ δ σ)                  = Closure (expand (botOf ρ) ρ) (expand (botOf δ) δ) (expand ElimHole σ)
+   expand _ (Hole true)                         = error absurd
+   expand v (Hole false)                        = v
+   expand (Hole α) (Int β n)                    = Int (α ⪄ β) n
+   expand (Hole α) (Float β n)                  = Float (α ⪄ β) n
+   expand (Hole α) (Str β str)                  = Str (α ⪄ β) str
+   expand (Hole α) (Primitive φ vs)             = Primitive φ (expand (Hole α) <$> vs)
+   expand (Hole α) (Constr β c vs)              = Constr (α ⪄ β) c (expand (Hole α) <$> vs)
+   expand (Hole α) (Matrix β (vss × (i × β1) × (j × β2))) =
+      Matrix (α ⪄ β) ((((<$>) (expand (Hole α))) <$> vss) × (i × (α ⪄ β1)) × (j × (α ⪄ β2)))
+   expand (Hole α) (Closure ρ δ σ)              = Closure (expand (botOf ρ) ρ) (expand (botOf δ) δ) (expand ElimHole σ)
    expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
    expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
