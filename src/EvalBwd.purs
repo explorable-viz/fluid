@@ -7,13 +7,13 @@ import Data.List (length) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
-import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, find, foldEnv, splitAt, varAnon)
+import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, foldEnv, splitAt, varAnon)
 import DataType (cPair)
 import Expl (Expl, Match(..))
 import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, (∨), botOf, expand)
-import Util (Endo, type (×), (×), (≜), (!), absurd, assert, error, fromJust, nonEmpty, replicate, successful)
+import Util (Endo, type (×), (×), (≜), (!), absurd, assert, error, fromJust, nonEmpty, replicate)
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
@@ -31,15 +31,16 @@ unmatchArgs ρ (w : ws)  = ρ'' × (ρ1 <> ρ2)
          ρ'' × ρ1 = unmatchArgs ρ' ws
 
 -- second argument contains original environment and recursive definitions
-closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
+closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹
 closeDefsBwd ρ (ρ0 × δ0) =
-   case foldEnv joinDefs (Empty × botOf ρ0 × botOf δ0 × false) ρ of
-   δ' × ρ' × δ × α -> ρ' × (δ ∨ δ') × α
+   case foldEnv joinDefs (Empty × botOf ρ0 × botOf δ0) ρ of
+   δ' × ρ' × δ -> ρ' × (δ ∨ δ')
    where
-   joinDefs :: Binding Val 𝔹 -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹)
-   joinDefs (f ↦ V.Closure ρ_f δ_f σ_f) (δ_acc × ρ' × δ × α)
-      = (δ_acc :+: f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f) × α
-   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ × α) = (δ_acc :+: f ↦ botOf (successful (find f δ0))) × ρ' × δ × α
+   joinDefs :: Binding Val 𝔹 -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹)
+   -- V.Closure ?_ ?_ ElimHole
+   joinDefs (f ↦ V.Closure ρ_f δ_f σ_f) (δ_acc × ρ' × δ)
+      = (δ_acc :+: f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f)
+   joinDefs (f ↦ V.Hole) (δ_acc × ρ' × δ) = (δ_acc :+: f ↦ ElimHole) × ρ' × δ
    joinDefs (_ ↦ _) _ = error absurd
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
@@ -110,7 +111,7 @@ evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
        v' × σ = matchBwd ρ3 (ContExpr e) α w
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
        ρ' × e2 × α' = evalBwd v' t2
-       ρ1' × δ' × α2 = closeDefsBwd ρ2 (ρ1 × δ)
+       ρ1' × δ' = closeDefsBwd ρ2 (ρ1 × δ)
        ρ'' × e1 × α'' = evalBwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
    (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
 evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
@@ -141,5 +142,5 @@ evalBwd v (T.Let (T.VarDef w t1) t2) =
 evalBwd v (T.LetRec δ t) =
    let ρ1ρ2 × e × α = evalBwd v t
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
-       ρ1' × δ' × α' = closeDefsBwd ρ2 (ρ1 × δ) in
-   (ρ1 ∨ ρ1') × LetRec δ' e × (α ∨ α')
+       ρ1' × δ' = closeDefsBwd ρ2 (ρ1 × δ) in
+   (ρ1 ∨ ρ1') × LetRec δ' e × α

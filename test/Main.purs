@@ -1,32 +1,36 @@
 module Test.Main where
 
 import Prelude
-import Data.Array (concat)
+import Data.Array (concat, replicate)
 import Data.List (List(..), (:))
 import Data.Traversable (sequence)
 import Effect (Effect)
 import DataType (cCons, cPair)
+import Lattice (𝔹)
 import Test.Util (Test, run, test, testWithDataset, test_bwd)
-import Val (Val(..))
-import Primitive.Defs (insertMat, emptyMat)
- 
+import Util ((×))
+import Val (MatrixRep, Val(..), insertMatrix)
+
 tests :: Array (Array (Test Unit))
 tests = [ test_desugaring, test_misc, test_slicing, test_graphics ]
 -- tests = [ test_slicing ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
- 
+
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
 ]
 
+holeMatrix :: Int -> Int -> MatrixRep 𝔹
+holeMatrix m n = replicate m (replicate n Hole) × (m × true) × (n × true)
+
 testMatZero :: Val Boolean
-testMatZero = Matrix true (insertMat 1 1 (Float true 18.666666666666668) (emptyMat 5 5))
+testMatZero = Matrix true (insertMatrix 1 1 (Float true 18.666666666666668) (holeMatrix 5 5))
 testMatExtend :: Val Boolean
-testMatExtend = Matrix true (insertMat 1 1 (Float true 40.22222222222222) (emptyMat 5 5))
+testMatExtend = Matrix true (insertMatrix 1 1 (Float true 40.22222222222222) (holeMatrix 5 5))
 testMatWrap :: Val Boolean
-testMatWrap = Matrix true (insertMat 1 1 (Float true 32.333333333333336) (emptyMat 5 5))
+testMatWrap = Matrix true (insertMatrix 1 1 (Float true 32.333333333333336) (holeMatrix 5 5))
 
 test_slicing :: Array (Test Unit)
 test_slicing = [

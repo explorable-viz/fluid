@@ -1,6 +1,6 @@
 module Val where
 
-import Prelude (const, flip, pure, (<$>), (<*>))
+import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.List (List)
 import Bindings (Bindings)
@@ -10,10 +10,9 @@ import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
    𝔹, (∨), botOf, definedJoin, expand, maybeJoin
 )
-import Util (Endo, type (×), (×), (⪄), (≞), (≜), absurd, error, report)
+import Util (Endo, type (×), (×), (⪄), (≞), (≜), (!), absurd, error, report, unsafeUpdateAt)
 
 type Op a = a × 𝔹 -> Val 𝔹
-type MatrixRep a = Array (Array (Val a)) × (Int × a) × (Int × a)
 
 data Val a =
    Hole |
@@ -34,6 +33,15 @@ newtype PrimOp = PrimOp {
 }
 
 type Env = Bindings Val
+
+-- Matrices.
+type MatrixRep a = Array (Array (Val a)) × (Int × a) × (Int × a)
+
+insertMatrix :: Int -> Int -> Val 𝔹 -> Endo (MatrixRep 𝔹)
+insertMatrix i j v (vss × h × w) =
+   let vs_i = vss!(i - 1)
+       vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss
+   in  vss' × h × w
 
 -- ======================
 -- boilerplate

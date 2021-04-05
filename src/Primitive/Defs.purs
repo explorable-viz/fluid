@@ -2,7 +2,6 @@ module Primitive.Defs where
 
 import Prelude hiding (absurd, div, mod)
 import Prelude (div, mod) as P
-import Data.Array (replicate)
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
@@ -13,8 +12,8 @@ import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
-import Util (Endo, type (×), (×), type (+), (!), error, unsafeUpdateAt)
-import Val (Env, MatrixRep, Val(..))
+import Util (Endo, type (×), (×), type (+), (!), error)
+import Val (Env, MatrixRep, Val(..), insertMatrix)
 
 primitives :: Env 𝔹
 primitives = foldl (:+:) Empty [
@@ -72,18 +71,7 @@ matrixLookup = { fwd, bwd }
 
    bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-       (vss'' × (i' × false) × (j' × false)) × ((i × false) × (j × false))
-       where vs_i  = vss!(i - 1)
-             vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss
-
-emptyMat :: Int -> Int -> MatrixRep 𝔹
-emptyMat m n = replicate m (replicate n Hole) × (m × true) × (n × true)
-
-insertMat :: Int -> Int -> Val 𝔹 -> Endo (MatrixRep 𝔹)
-insertMat i j v (vss × h × w) =
-   let vs_i = vss!(i - 1)
-       vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss
-   in  vss' × h × w
+       insertMatrix i j v (vss × (i' × false) × (j' × false)) × ((i × false) × (j × false))
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
