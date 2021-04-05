@@ -2,6 +2,7 @@ module Val where
 
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
+import Data.Array (replicate)
 import Data.List (List)
 import Bindings (Bindings)
 import DataType (Ctr)
@@ -42,6 +43,9 @@ insertMatrix i j v (vss × h × w) =
    let vs_i = vss!(i - 1)
        vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss
    in  vss' × h × w
+
+holeMatrix :: Int -> Int -> MatrixRep 𝔹
+holeMatrix m n = replicate m (replicate n Hole) × (m × false) × (n × false)
 
 -- ======================
 -- boilerplate

@@ -1,15 +1,13 @@
 module Test.Main where
 
 import Prelude
-import Data.Array (concat, replicate)
+import Data.Array (concat)
 import Data.List (List(..), (:))
 import Data.Traversable (sequence)
 import Effect (Effect)
 import DataType (cCons, cPair)
-import Lattice (𝔹)
 import Test.Util (Test, run, test, testWithDataset, test_bwd)
-import Util ((×))
-import Val (MatrixRep, Val(..), insertMatrix)
+import Val (Val(..), holeMatrix, insertMatrix)
 
 tests :: Array (Array (Test Unit))
 tests = [ test_desugaring, test_misc, test_slicing, test_graphics ]
@@ -21,9 +19,6 @@ main = void (sequence (run <$> concat tests))
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
 ]
-
-holeMatrix :: Int -> Int -> MatrixRep 𝔹
-holeMatrix m n = replicate m (replicate n Hole) × (m × true) × (n × true)
 
 testMatZero :: Val Boolean
 testMatZero = Matrix true (insertMatrix 1 1 (Float true 18.666666666666668) (holeMatrix 5 5))
