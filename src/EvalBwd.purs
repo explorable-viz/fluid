@@ -127,14 +127,14 @@ evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
        ρ × e × α = evalBwd (V.Primitive (PrimOp φ) vs'') t1
        ρ' × e' × α' = evalBwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
-evalBwd V.Hole t@(T.AppConstr (_ × c × n) _) =
-   evalBwd (V.Constr false c (replicate (n + 1) V.Hole)) t
-evalBwd (V.Constr β c vs) (T.AppConstr (t1 × _ × n) t2) =
-   let { init: vs', last: v2 } = fromJust absurd (unsnoc vs)
-       ρ × e × α = evalBwd (V.Constr β c vs') t1
-       ρ' × e' × α' = evalBwd v2 t2 in
-   (ρ ∨ ρ') × App e e' × (α ∨ α')
-evalBwd _ (T.AppConstr _ _) = error absurd
+evalBwd v t@(T.AppConstr (t1 × c × n) t2) =
+   case expand v (V.Constr false c (replicate (n + 1) V.Hole)) of
+      V.Constr β _ vs ->
+         let { init: vs', last: v2 } = fromJust absurd (unsnoc vs)
+             ρ × e × α = evalBwd (V.Constr β c vs') t1
+             ρ' × e' × α' = evalBwd v2 t2 in
+         (ρ ∨ ρ') × App e e' × (α ∨ α')
+      _ -> error absurd
 evalBwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = evalBwd v t2
        ρ1 × ρ2 = unmatch ρ1ρ2 w
