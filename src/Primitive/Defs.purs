@@ -2,7 +2,7 @@ module Primitive.Defs where
 
 import Prelude hiding (absurd, div, mod)
 import Prelude (div, mod) as P
-import Data.Array (replicate, insertAt)
+import Data.Array (replicate)
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
@@ -13,7 +13,7 @@ import Bindings (Bindings(..), (:+:), (↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
-import Util (Endo, type (×), (×), type (+), (!), absurd, error, unsafeUpdateAt, fromJust)
+import Util (Endo, type (×), (×), type (+), (!), error, unsafeUpdateAt)
 import Val (Env, MatrixRep, Val(..))
 
 primitives :: Env 𝔹
@@ -76,43 +76,42 @@ matrixLookup = { fwd, bwd }
        where vs_i  = vss!(i - 1)
              vss'' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss
 
-emptyMat :: Int -> Int -> MatrixRep Boolean
+emptyMat :: Int -> Int -> MatrixRep 𝔹
 emptyMat m n = replicate m (replicate n Hole) × (m × true) × (n × true)
 
-insertMat :: Int -> Int -> Val Boolean -> MatrixRep Boolean -> MatrixRep Boolean
-insertMat i j v (mat × h × w) =
-   let row  = mat ! (i - 1)
-       row' = fromJust absurd $ insertAt (j - 1) v row
-       mat' = fromJust absurd $ insertAt (i - 1) row' mat
-   in  (mat' × h × w)
+insertMat :: Int -> Int -> Val 𝔹 -> Endo (MatrixRep 𝔹)
+insertMat i j v (vss × h × w) =
+   let vs_i = vss!(i - 1)
+       vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss
+   in  vss' × h × w
 
-plus :: Int + Number -> Int + Number -> Int + Number
+plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
 
-minus :: Int + Number -> Int + Number -> Int + Number
+minus :: Int + Number -> Endo (Int + Number)
 minus = (-) `union` (-)
 
-times :: Int + Number -> Int + Number -> Int + Number
+times :: Int + Number -> Endo (Int + Number)
 times = (*) `union` (*)
 
 -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
-pow :: Int + Number -> Int + Number -> Int + Number
+pow :: Int + Number -> Endo (Int + Number)
 pow = (\x y -> toNumber x `M.pow` toNumber y) `union` M.pow
 
-divide :: Int + Number -> Int + Number -> Int + Number
+divide :: Int + Number -> Endo (Int + Number)
 divide = (\x y -> toNumber x / toNumber y)  `union` (/)
 
 -- See T-, F- and E-definitions discussed at https://github.com/purescript/purescript-prelude/issues/161
-div :: Int -> Int -> Int
+div :: Int -> Endo Int
 div = P.div
 
-mod :: Int -> Int -> Int
+mod :: Int -> Endo Int
 mod = P.mod
 
-quot :: Int -> Int -> Int
+quot :: Int -> Endo Int
 quot = I.quot
 
-rem :: Int -> Int -> Int
+rem :: Int -> Endo Int
 rem = I.rem
 
 equals :: Int + Number + String -> Int + Number + String -> Boolean
@@ -133,7 +132,7 @@ lessThanEquals = (<=) `union` (<=) `unionStr` (<=)
 greaterThanEquals :: Int + Number + String -> Int + Number + String -> Boolean
 greaterThanEquals = (>=) `union` (>=) `unionStr` (>=)
 
-concat :: String -> String -> String
+concat :: String -> Endo String
 concat = (<>)
 
 numToStr :: Int + Number -> String
