@@ -86,28 +86,28 @@ evalBwd v t@(T.Constr ρ c ts) =
              ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Nil × α) (zip vs ts) in
          ρ' × Constr α c es × α'
       _ -> error absurd
-evalBwd V.Hole t@(T.Matrix tss _ (i' × j') _) =
-   evalBwd (V.Matrix false (A.replicate i' (A.replicate j' V.Hole) × (i' × false) × (j' × false))) t
-evalBwd (V.Matrix α (vss × (i' × β) × (j' × β'))) (T.Matrix tss (x × y) _ t) =
-   let NonEmptyList ijs = nonEmpty $ do
-            i <- range 1 i'
-            j <- range 1 j'
-            singleton (i × j)
-       evalBwd_elem :: (Int × Int) -> Env 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
-       evalBwd_elem (i × j) =
-          case evalBwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
-            Extend (Extend ρ (_ ↦ v1)) (_ ↦ v2) × e × α' ->
-               case expand v1 (V.Int false i) × expand v2 (V.Int false j) of
-                  V.Int γ _ × V.Int γ' _ -> ρ × e × α' × γ × γ'
-                  _ -> error absurd
-            _ -> error absurd
-       ρ × e × α' × γ × γ' = foldl1
-         (\(ρ1 × e1 × α1 × γ1 × γ1') (ρ2 × e2 × α2 × γ2 × γ2') ->
-            ((ρ1 ∨ ρ2) × (e1 ∨ e2) × (α1 ∨ α2) × (γ1 ∨ γ2) × (γ1' ∨ γ2')))
-         (evalBwd_elem <$> ijs)
-       ρ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (γ ∨ β) i' : V.Int (γ' ∨ β') j' : Nil)) t in
-   (ρ ∨ ρ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
-evalBwd _ (T.Matrix _ _ _ _) = error absurd
+evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
+   case expand v (V.Matrix false (A.replicate i' (A.replicate j' V.Hole) × (i' × false) × (j' × false))) of
+      V.Matrix α (vss × (_ × β) × (_ × β')) ->
+         let NonEmptyList ijs = nonEmpty $ do
+                  i <- range 1 i'
+                  j <- range 1 j'
+                  singleton (i × j)
+             evalBwd_elem :: (Int × Int) -> Env 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
+             evalBwd_elem (i × j) =
+                case evalBwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
+                   Extend (Extend ρ (_ ↦ v1)) (_ ↦ v2) × e × α' ->
+                      case expand v1 (V.Int false i) × expand v2 (V.Int false j) of
+                         V.Int γ _ × V.Int γ' _ -> ρ × e × α' × γ × γ'
+                         _ -> error absurd
+                   _ -> error absurd
+             ρ × e × α' × γ × γ' = foldl1
+                (\(ρ1 × e1 × α1 × γ1 × γ1') (ρ2 × e2 × α2 × γ2 × γ2') ->
+                   ((ρ1 ∨ ρ2) × (e1 ∨ e2) × (α1 ∨ α2) × (γ1 ∨ γ2) × (γ1' ∨ γ2')))
+                (evalBwd_elem <$> ijs)
+             ρ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (γ ∨ β) i' : V.Int (γ' ∨ β') j' : Nil)) t' in
+          (ρ ∨ ρ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
+      _ -> error absurd
 evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
    let ρ1ρ2ρ3 × e × α = evalBwd v t3
        ρ1ρ2 × ρ3 = unmatch ρ1ρ2ρ3 w
