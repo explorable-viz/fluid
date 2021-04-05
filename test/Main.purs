@@ -6,6 +6,7 @@ import Data.List (List(..), (:))
 import Data.Traversable (sequence)
 import Effect (Effect)
 import DataType (cCons, cPair)
+import Lattice (𝔹)
 import Test.Util (Test, run, test, testWithDataset, test_bwd)
 import Val (Val(..), holeMatrix, insertMatrix)
 
@@ -20,11 +21,13 @@ test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
 ]
 
-testMatZero :: Val Boolean
+testMatZero :: Val 𝔹
 testMatZero = Matrix true (insertMatrix 1 1 (Float true 18.666666666666668) (holeMatrix 5 5))
-testMatExtend :: Val Boolean
+
+testMatExtend :: Val 𝔹
 testMatExtend = Matrix true (insertMatrix 1 1 (Float true 40.22222222222222) (holeMatrix 5 5))
-testMatWrap :: Val Boolean
+
+testMatWrap :: Val 𝔹
 testMatWrap = Matrix true (insertMatrix 1 1 (Float true 32.333333333333336) (holeMatrix 5 5))
 
 test_slicing :: Array (Test Unit)

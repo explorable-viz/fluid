@@ -1,7 +1,6 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
-import Data.Array (replicate) as A
 import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
 import Data.List (length) as L
 import Data.List.NonEmpty (NonEmptyList(..))
@@ -14,7 +13,7 @@ import Expl (Expl(..), VarDef(..)) as T
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, (∨), botOf, expand)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate)
-import Val (Env, PrimOp(..), Val)
+import Val (Env, PrimOp(..), Val, holeMatrix)
 import Val (Val(..)) as V
 
 unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
@@ -87,7 +86,7 @@ evalBwd v t@(T.Constr ρ c ts) =
          ρ' × Constr α c es × α'
       _ -> error absurd
 evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
-   case expand v (V.Matrix false (A.replicate i' (A.replicate j' V.Hole) × (i' × false) × (j' × false))) of
+   case expand v (V.Matrix false (holeMatrix i' j')) of
       V.Matrix α (vss × (_ × β) × (_ × β')) ->
          let NonEmptyList ijs = nonEmpty $ do
                   i <- range 1 i'

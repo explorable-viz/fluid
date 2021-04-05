@@ -45,7 +45,7 @@ insertMatrix i j v (vss × h × w) =
    in  vss' × h × w
 
 holeMatrix :: Int -> Int -> MatrixRep 𝔹
-holeMatrix m n = replicate m (replicate n Hole) × (m × false) × (n × false)
+holeMatrix i j = replicate i (replicate j Hole) × (i × false) × (j × false)
 
 -- ======================
 -- boilerplate
