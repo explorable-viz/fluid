@@ -81,8 +81,7 @@ evalBwd (V.Constr α c vs) (T.Constr ρ c' ts) | c == c' =
           where ρ'' × e × α'' = evalBwd v t
        ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Nil × α) (zip vs ts) in
    ρ' × Constr α c es × α'
-evalBwd _ (T.Constr _ _ _) =
-   error absurd
+evalBwd _ (T.Constr _ _ _) = error absurd
 evalBwd V.Hole t@(T.Matrix tss _ (i' × j') _) =
    evalBwd (V.Matrix false (A.replicate i' (A.replicate j' V.Hole) × (i' × false) × (j' × false))) t
 evalBwd (V.Matrix α (vss × (i' × β) × (j' × β'))) (T.Matrix tss (x × y) _ t) =
@@ -104,8 +103,7 @@ evalBwd (V.Matrix α (vss × (i' × β) × (j' × β'))) (T.Matrix tss (x × y) 
          (evalBwd_elem <$> ijs)
        ρ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (γ ∨ β) i' : V.Int (γ' ∨ β') j' : Nil)) t in
    (ρ ∨ ρ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
-evalBwd _ (T.Matrix _ _ _ _) =
-   error absurd
+evalBwd _ (T.Matrix _ _ _ _) = error absurd
 evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
    let ρ1ρ2ρ3 × e × α = evalBwd v t3
        ρ1ρ2 × ρ3 = unmatch ρ1ρ2ρ3 w
@@ -133,8 +131,7 @@ evalBwd (V.Constr β c vs) (T.AppConstr (t1 × _ × n) t2) =
        ρ × e × α = evalBwd (V.Constr β c vs') t1
        ρ' × e' × α' = evalBwd v2 t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
-evalBwd _ (T.AppConstr _ _) =
-   error absurd
+evalBwd _ (T.AppConstr _ _) = error absurd
 evalBwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = evalBwd v t2
        ρ1 × ρ2 = unmatch ρ1ρ2 w
