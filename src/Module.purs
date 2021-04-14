@@ -52,6 +52,6 @@ parseWithDefaultImports src = do
 
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do
-   ρ × s <- loadFile "fluid/dataset" file >>= parseWithDefaultImports
+   ρ × s <- loadFile "fluid" file >>= parseWithDefaultImports
    let _ × v = successful (desugarFwd s >>= eval ρ)
    pure (Empty :+: x ↦ v)

@@ -76,7 +76,7 @@ testLink file =
        setup = do
          ρ1 × s1 <- openWithDefaultImports (name <> "-1") :: Aff (Env 𝔹 × S.Expr 𝔹)
          ρ2 × s2 <- openWithDefaultImports (name <> "-2") :: Aff (Env 𝔹 × S.Expr 𝔹)
-         ρ <- openDatasetAs (name <> "-data") "data" :: Aff (Env 𝔹)
+         ρ <- openDatasetAs ("example/" <> name <> "-data") "data" :: Aff (Env 𝔹)
          pure ((ρ1 × s1) × (ρ2 × s2) × ρ) in
    before setup $
       it name \((ρ1 × s1) × (ρ2 × s2) × ρ) -> do
@@ -87,5 +87,5 @@ testLink file =
 testWithDataset :: String -> String -> Test Unit
 testWithDataset dataset file =
    testWithSetup file "" Nothing $
-      bitraverse (uncurry openDatasetAs) openWithDefaultImports (dataset × "data" × file) <#>
+      bitraverse (uncurry openDatasetAs) openWithDefaultImports (("dataset/" <> dataset) × "data" × file) <#>
       (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)
