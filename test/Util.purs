@@ -66,16 +66,20 @@ test :: String -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
 
 testBwd :: String -> Val 𝔹 -> String -> Test Unit
-testBwd file v expected = testWithSetup file expected (Just v) (openWithDefaultImports file)
+testBwd file v expected =
+   let name = "slicing/" <> file in
+   testWithSetup name expected (Just v) (openWithDefaultImports name)
 
 testLink :: String -> Test Unit
 testLink file =
    let name = "linking/" <> file
-       blah1 = openWithDefaultImports (name <> "-data") :: Aff (Env 𝔹 × S.Expr 𝔹)
+       readData = openWithDefaultImports (name <> "-data") :: Aff (Env 𝔹 × S.Expr 𝔹)
        blah2 = openWithDefaultImports (name <> "-1") :: Aff (Env 𝔹 × S.Expr 𝔹)
        blah3 = openWithDefaultImports (name <> "-2") :: Aff (Env 𝔹 × S.Expr 𝔹) in
-   it name \_ -> do
-      pure unit
+   before readData $
+      it name \(ρ × s) -> do
+         let _ × v = successful (desugarEval ρ s)
+         pure unit
 
 testWithDataset :: String -> String -> Test Unit
 testWithDataset dataset file =
