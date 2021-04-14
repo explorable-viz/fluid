@@ -74,10 +74,10 @@ testLink :: String -> Val 𝔹 -> String -> Test Unit
 testLink file v1_sel v2_expect =
    let name = "linking/" <> file
        setup = do
-         -- the views share an ambient environment as well as a dataset
-         ρ0 × s1 <- openWithDefaultImports (name <> "-1") :: Aff (Env 𝔹 × S.Expr 𝔹)
-         _ × s2 <- openWithDefaultImports (name <> "-2") :: Aff (Env 𝔹 × S.Expr 𝔹)
-         ρ <- openDatasetAs ("example/" <> name <> "-data") "data" :: Aff (Env 𝔹)
+         -- the views share an ambient environment as well as dataset
+         ρ0 × s1 <- openWithDefaultImports (name <> "-1")
+         _ × s2 <- openWithDefaultImports (name <> "-2")
+         ρ <- openDatasetAs ("example/" <> name <> "-data") "data"
          pure (ρ0 × ρ × s1 × s2) in
    before setup $
       it name \(ρ0 × ρ × s1 × s2) -> do
