@@ -1,5 +1,6 @@
 module SExpr where
 
+import Prelude
 import Bindings (Var)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
@@ -57,3 +58,11 @@ data Qualifier a =
    Declaration (VarDef a) -- could allow VarDefs instead
 
 data Module a = Module (List (VarDefs a + RecDefs a))
+
+-- ======================
+-- boilerplate
+-- ======================
+derive instance functorExpr :: Functor Expr
+derive instance functorListRest :: Functor ListRest
+derive instance functorVarDef :: Functor VarDef
+derive instance functorQualifier :: Functor Qualifier
