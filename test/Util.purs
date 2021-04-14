@@ -49,7 +49,7 @@ desugarEval_fwd ρ s =
 checkPretty :: forall a . Pretty a => a -> String -> Aff Unit
 checkPretty x expected = prettyP x `shouldEqual` expected
 
--- bwd_opt is pair of (output slice, string representation of expected program slice)
+-- v_opt is output slice
 testWithSetup :: String -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup name v_str v_opt setup =
    before setup $
@@ -65,8 +65,17 @@ testWithSetup name v_str v_opt setup =
 test :: String -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
 
-test_bwd :: String -> Val 𝔹 -> String -> Test Unit
-test_bwd file v expected = testWithSetup file expected (Just v) (openWithDefaultImports file)
+testBwd :: String -> Val 𝔹 -> String -> Test Unit
+testBwd file v expected = testWithSetup file expected (Just v) (openWithDefaultImports file)
+
+testLink :: String -> Test Unit
+testLink file =
+   let name = "linking/" <> file
+       blah1 = openWithDefaultImports (name <> "-data") :: Aff (Env 𝔹 × S.Expr 𝔹)
+       blah2 = openWithDefaultImports (name <> "-1") :: Aff (Env 𝔹 × S.Expr 𝔹)
+       blah3 = openWithDefaultImports (name <> "-2") :: Aff (Env 𝔹 × S.Expr 𝔹) in
+   it name \_ -> do
+      pure unit
 
 testWithDataset :: String -> String -> Test Unit
 testWithDataset dataset file =
