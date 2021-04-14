@@ -9,6 +9,7 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 14 Apr 2021 | (PureScript migration) Linking via negation | [436](https://github.com/explorable-viz/fluid/issues/436) |
 | 26 Mar 2021 | Matrix convolution examples | [272](https://github.com/explorable-viz/fluid/issues/272) |
 | 19 Mar 2021 | Matrices | [276](https://github.com/explorable-viz/fluid/issues/276) |
 | 5 Mar 2021 | Forward and backward slicing for desugaring | [391](https://github.com/explorable-viz/fluid/issues/391) |
@@ -53,7 +54,7 @@
 
 | When | Feature/change | Issue(s) |
 | --- | --- | --- |
-| Apr 2021 | Table view | [121](https://github.com/rolyp/fluid/issues/121) |
+| Apr 2021 | Matrix view | [121](https://github.com/rolyp/fluid/issues/121) |
 
 ### Possible submissions
 

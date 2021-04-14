@@ -9,7 +9,7 @@ import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Bindings (bindingsMap, splitAt)
+import Bindings (splitAt)
 import DataType (dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
@@ -90,7 +90,7 @@ testLink file v1_sel v2_expect =
              _ × ρ' = splitAt 1 ρ0ρ
              -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we need (topOf ρ0)
              -- combine with the negation of the dataset environment slice
-             v2' = neg (evalFwd (bindingsMap (const (Hole true)) ρ0 <> neg ρ') (const true <$> e2) true t2)
+             v2' = neg (evalFwd (neg (botOf ρ0) <> neg ρ') (const true <$> e2) true t2)
          checkPretty v2' v2_expect
 
 testWithDataset :: String -> String -> Test Unit
