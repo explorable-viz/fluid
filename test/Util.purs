@@ -49,15 +49,15 @@ desugarEval_fwd ρ s =
 checkPretty :: forall a . Pretty a => a -> String -> Aff Unit
 checkPretty x expected = prettyP x `shouldEqual` expected
 
--- v_opt is output slice
+-- v_opt is output slice; v_expect is expected result after round-trip
 testWithSetup :: String -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
-testWithSetup name v_str v_opt setup =
+testWithSetup name v_expect v_opt setup =
    before setup $
       it name \(ρ × s) -> do
          let t × v = successful (desugarEval ρ s)
              ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
              v = desugarEval_fwd ρ' s' t
-         unless (isGraphical v) (checkPretty v v_str)
+         unless (isGraphical v) (checkPretty v v_expect)
          case v_opt of
             Nothing -> pure unit
             Just _ -> loadFile "fluid/example" (name <> ".expect") >>= checkPretty s'
