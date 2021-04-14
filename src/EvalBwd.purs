@@ -58,8 +58,8 @@ matchArgs_bwd ρ κ α (w : ws)  =
    (vs <> v : Nil) × κ'
 
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
-evalBwd v (T.Var ρ x)                        = (botOf ρ ◃ x ↦ v) × Var x × false
-evalBwd v (T.Op ρ op)                        = (botOf ρ ◃ op ↦ v) × Op op × false
+evalBwd v (T.Var ρ x) = (botOf ρ ◃ x ↦ v) × Var x × false
+evalBwd v (T.Op ρ op) = (botOf ρ ◃ op ↦ v) × Op op × false
 evalBwd v t@(T.Str ρ str) =
    case expand v (V.Str false str) of
       V.Str α _ -> botOf ρ × Str α str × α

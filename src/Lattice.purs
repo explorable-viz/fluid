@@ -8,24 +8,28 @@ import Data.List (List, length, zipWith)
 import Data.Map (Map, fromFoldable, insert, lookup, toUnfoldable, update)
 import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
+import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
 import Util (MayFail, type (×), (×), (≞), absurd, error, report, successfulWith)
 
 class JoinSemilattice a where
    join :: a -> a -> a
+   neg :: a -> a
 
 class JoinSemilattice a <= BoundedJoinSemilattice a where
    bot :: a
 
 instance joinSemilatticeBoolean :: JoinSemilattice Boolean where
    join = (||)
+   neg = not
 
 instance boundedJoinSemilatticeBoolean :: BoundedJoinSemilattice Boolean where
    bot = false
 
 instance joinSemilatticeUnit :: JoinSemilattice Unit where
    join _ = identity
+   neg = identity
 
 instance boundedJoinSemilatticeUnit :: BoundedJoinSemilattice Unit where
    bot = unit
@@ -52,12 +56,14 @@ meet = (&&)
 
 instance joinSemilatticeTuple :: (Eq k, Show k, Slices t) => JoinSemilattice (Tuple k t) where
    join = definedJoin
+   neg = second neg
 
 instance slicesTuple :: (Eq k, Show k, Slices t) => Slices (Tuple k t) where
    maybeJoin (k × v) (k' × v') = (k ≞ k') `lift2 (×)` maybeJoin v v'
 
 instance joinSemilatticeList :: Slices t => JoinSemilattice (List t) where
    join = definedJoin
+   neg = (<$>) neg
 
 instance slicesList :: Slices t => Slices (List t) where
    maybeJoin xs ys
@@ -69,6 +75,7 @@ instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
 
 instance joinSemilatticeMap :: (Key k, Slices t) => JoinSemilattice (Map k t) where
    join = definedJoin
+   neg = (<$>) neg
 
 class Ord k <= Key k where
    checkConsistent :: String -> k -> List k -> MayFail Unit
@@ -91,6 +98,7 @@ mayFailUpdate m (k × v) =
 
 instance joinSemilatticeArray :: Slices a => JoinSemilattice (Array a) where
    join = definedJoin
+   neg = (<$>) neg
 
 instance slicesArray :: Slices a => Slices (Array a) where
    maybeJoin xs ys

@@ -1,13 +1,13 @@
 module Expr where
 
-import Prelude hiding (absurd, map, top)
+import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
-import Bindings (Bindings, Var, (⪂), map)
+import Bindings (Bindings, Var, (⪂), bindingsMap)
 import DataType (Ctr)
 import Lattice (
-   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin
+   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg
 )
 import Util (type (×), (×), type (+), (≞), (≜), (⪄), absurd, error, report)
 
@@ -62,6 +62,7 @@ derive instance functorElim :: Functor Elim
 
 instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
    join = definedJoin
+   neg = (<$>) neg
 
 instance slicesElim :: Slices (Elim Boolean) where
    maybeJoin (ElimHole false) σ                 = pure σ
@@ -77,6 +78,7 @@ instance boundedSlicesElim :: BoundedSlices (Elim Boolean) where
 
 instance joinSemilatticeCont :: JoinSemilattice (Cont Boolean) where
    join = definedJoin
+   neg = (<$>) neg
 
 instance slicesCont :: Slices (Cont Boolean) where
    maybeJoin (ContHole false) κ           = pure κ
@@ -92,6 +94,7 @@ instance boundedSlicesCont :: BoundedSlices (Cont Boolean) where
 
 instance joinSemilatticeVarDef :: JoinSemilattice (VarDef Boolean) where
    join = definedJoin
+   neg = (<$>) neg
 
 instance slicesVarDef :: Slices (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
@@ -101,6 +104,7 @@ instance boundedSlicesExpr :: BoundedSlices (Expr Boolean) where
 
 instance joinSemilatticeExpr :: JoinSemilattice (Expr Boolean) where
    join = definedJoin
+   neg = (<$>) neg
 
 instance slicesExpr :: Slices (Expr Boolean) where
    maybeJoin (Hole false) e                                    = pure e
@@ -134,7 +138,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Hole α) (App e1 e2)                  = App (expand (Hole α) e1) (expand (Hole α) e2)
    expand (Hole α) (Let (VarDef σ e1) e2) =
       Let (VarDef (expand (ElimHole α) σ) (expand (Hole α) e1)) (expand (Hole α) e2)
-   expand (Hole α) (LetRec h e)                 = LetRec (expand (map (const (ElimHole α)) h) h) (expand (Hole α) e)
+   expand (Hole α) (LetRec h e)                 = LetRec (expand (bindingsMap (const (ElimHole α)) h) h) (expand (Hole α) e)
    expand (Var x) (Var x')                      = Var (x ≜ x')
    expand (Op op) (Op op')                      = Op (op ≜ op')
    expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')

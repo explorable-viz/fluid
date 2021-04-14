@@ -43,7 +43,7 @@ desugarEval_bwd (t × s) v = let ρ × e × _ = evalBwd v t in ρ × desugarBwd 
 
 desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
 desugarEval_fwd ρ s =
-   let _ = evalFwd (botOf ρ) E.Hole true in -- sanity-check that this is defined
+   let _ = evalFwd (botOf ρ) (E.Hole false) false in -- sanity-check that this is defined
    evalFwd ρ (successful (desugarFwd s)) true
 
 checkPretty :: forall a . Pretty a => a -> String -> Aff Unit

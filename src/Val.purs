@@ -1,15 +1,15 @@
 module Val where
 
-import Prelude hiding (absurd, map)
+import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.Array (replicate)
 import Data.List (List)
-import Bindings (Bindings, map)
+import Bindings (Bindings, bindingsMap)
 import DataType (Ctr)
 import Expr (Elim(..), RecDefs)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
-   𝔹, (∨), bot, definedJoin, expand, maybeJoin
+   𝔹, (∨), bot, definedJoin, expand, maybeJoin, neg
 )
 import Util (Endo, type (×), (×), (⪄), (≞), (≜), (!), absurd, error, report, unsafeUpdateAt)
 
@@ -50,10 +50,20 @@ holeMatrix i j = replicate i (replicate j (Hole false)) × (i × false) × (j ×
 -- ======================
 -- boilerplate
 -- ======================
--- derive instance functorVal :: Functor Val
+instance functorVal :: Functor Val where
+   map f (Hole α)                   = Hole (f α)
+   map f (Int α n)                  = Int (f α) n
+   map f (Float α n)                = Float (f α) n
+   map f (Str α str)                = Str (f α) str
+   map f (Constr α c vs)            = Constr (f α) c (((<$>) f) <$> vs)
+   -- Purescript can't derive this case
+   map f (Matrix α (r × iα × jβ))   = Matrix (f α) (((<$>) ((<$>) f) <$> r) × (f <$> iα) × (f <$> jβ))
+   map f (Primitive φ vs)           = Primitive φ (((<$>) f) <$> vs)
+   map f (Closure ρ h σ)            = Closure (f <$> ρ) (f <$> h) (f <$> σ)
 
 instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
    join = definedJoin
+   neg = (<$>) neg
 
 instance slicesVal :: Slices (Val Boolean) where
    maybeJoin (Hole false) v                           = pure v
@@ -87,7 +97,9 @@ instance valExpandable :: Expandable (Val Boolean) where
    expand (Hole α) (Matrix β (vss × (i × β1) × (j × β2))) =
       Matrix (α ⪄ β) ((((<$>) (expand (Hole α))) <$> vss) × (i × (α ⪄ β1)) × (j × (α ⪄ β2)))
    expand (Hole α) (Closure ρ δ σ) =
-      Closure (expand (map (const (Hole α)) ρ) ρ) (expand (map (const (ElimHole α)) δ) δ) (expand (ElimHole α) σ)
+      Closure (expand (bindingsMap (const (Hole α)) ρ) ρ)
+              (expand (bindingsMap (const (ElimHole α)) δ) δ)
+              (expand (ElimHole α) σ)
    expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
    expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
