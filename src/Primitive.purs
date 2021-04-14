@@ -201,11 +201,11 @@ binaryZero { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
    where
    fwd' :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
    fwd' (x × α) (y × β) =
-        fwd x y × if isZero x then α else if isZero y then β else α ∧ β
+      fwd x y × if isZero x then α else if isZero y then β else α ∧ β
    bwd' :: b × 𝔹 -> a × a -> (a × 𝔹) × (a × 𝔹)
    bwd' (z × α) (x × y) =
-        if isZero x then (x' × α) × (y' × false) else if isZero y then (x' × false) × (y' × α) else (x' × α) × (y' × α)
-        where x' × y' = bwd z (x × y)
+      if isZero x then (x' × α) × (y' × false) else if isZero y then (x' × false) × (y' × α) else (x' × α) × (y' × α)
+      where x' × y' = bwd z (x × y)
 
 class As a b where
    as :: a -> b

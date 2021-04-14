@@ -165,8 +165,8 @@ instance prettyElim :: Pretty (Elim Boolean) where
 instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Hole _)                   = hole
    pretty (V.Int α n)                  = highlightIf α (text (show n))
-   pretty (V.Float _ n)                = text (show n)
-   pretty (V.Str _ str)                = text (show str)
+   pretty (V.Float α n)                = highlightIf α (text (show n))
+   pretty (V.Str α str)                = highlightIf α (text (show str))
    pretty u@(V.Constr _ c vs)
       | c == cNil || c == cCons        = prettyList (toList u) -- list values always printed using list notation
       | otherwise                      = prettyConstr c vs
@@ -187,9 +187,9 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
    pretty (S.Var x)                    = text x
    pretty (S.Op op)                    = parens (text op)
    pretty (S.Int α n)                  = highlightIf α (text (show n))
-   pretty (S.Float _ n)                = text (show n)
-   pretty (S.Str _ str)                = text (show str)
-   pretty r@(S.Constr _ c es)          = prettyConstr c es
+   pretty (S.Float α n)                = highlightIf α (text (show n))
+   pretty (S.Str α str)                = highlightIf α (text (show str))
+   pretty r@(S.Constr α c es)          = prettyConstr c es
    pretty (S.Matrix α e (x × y) e')    = highlightIf α (hspace (init <> quant))
       where
       init = [text str.arrayLBracket, pretty e, text str.bar]
