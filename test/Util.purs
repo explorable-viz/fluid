@@ -73,12 +73,15 @@ testBwd file v expected =
 testLink :: String -> Test Unit
 testLink file =
    let name = "linking/" <> file
-       readData = openWithDefaultImports (name <> "-data") :: Aff (Env 𝔹 × S.Expr 𝔹)
-       blah2 = openWithDefaultImports (name <> "-1") :: Aff (Env 𝔹 × S.Expr 𝔹)
-       blah3 = openWithDefaultImports (name <> "-2") :: Aff (Env 𝔹 × S.Expr 𝔹) in
-   before readData $
-      it name \(ρ × s) -> do
-         let _ × v = successful (desugarEval ρ s)
+       setup = do
+         ρ1 × s1 <- openWithDefaultImports (name <> "-1") :: Aff (Env 𝔹 × S.Expr 𝔹)
+         ρ2 × s2 <- openWithDefaultImports (name <> "-2") :: Aff (Env 𝔹 × S.Expr 𝔹)
+         ρ <- openDatasetAs (name <> "-data") "data" :: Aff (Env 𝔹)
+         pure ((ρ1 × s1) × (ρ2 × s2) × ρ) in
+   before setup $
+      it name \((ρ1 × s1) × (ρ2 × s2) × ρ) -> do
+         let t1 × v1 = successful (desugarEval (ρ1 <> ρ) s1)
+             t2 × v2 = successful (desugarEval (ρ2 <> ρ) s2)
          pure unit
 
 testWithDataset :: String -> String -> Test Unit

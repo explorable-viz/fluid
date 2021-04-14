@@ -6,6 +6,7 @@ import Affjax.ResponseFormat (string)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.Bifunctor (bimap)
+import Debug.Trace (trace)
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Bindings (Bindings(..), Var, (:+:), (↦))
@@ -37,8 +38,9 @@ loadModule file ρ = do
    pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module ρ))
 
 openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-openWithDefaultImports file =
-   loadFile "fluid/example" file >>= parseWithDefaultImports
+openWithDefaultImports file = do
+   trace file \_ ->
+      loadFile "fluid/example" file >>= parseWithDefaultImports
 
 parse :: forall t . String -> SParser t -> MayFail t
 parse src = runParser src >>> bimap show identity
