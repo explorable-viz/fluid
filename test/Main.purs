@@ -26,9 +26,7 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   testBwd "conv-extend"
-         (Int true 362)
-         "_362_"
+   testBwd "divide" (Hole true) "_40.22222222222222_"
 ]
 
 test_linking :: Array (Test Unit)
