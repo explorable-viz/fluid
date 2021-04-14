@@ -18,7 +18,7 @@ import EvalFwd (evalFwd)
 import Expl (Expl)
 import Expr (Expr(..)) as E
 import SExpr (Expr) as S
-import Lattice (𝔹, botOf)
+import Lattice (𝔹, botOf, neg)
 import Module (loadFile, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import Util (MayFail, type (×), (×), successful)
@@ -70,19 +70,25 @@ testBwd file v expected =
    let name = "slicing/" <> file in
    testWithSetup name expected (Just v) (openWithDefaultImports name)
 
-testLink :: String -> Test Unit
-testLink file =
+testLink :: String -> Val 𝔹 -> String -> Test Unit
+testLink file v1_sel v2_expect =
    let name = "linking/" <> file
        setup = do
-         ρ1 × s1 <- openWithDefaultImports (name <> "-1") :: Aff (Env 𝔹 × S.Expr 𝔹)
-         ρ2 × s2 <- openWithDefaultImports (name <> "-2") :: Aff (Env 𝔹 × S.Expr 𝔹)
+         -- the views share an ambient environment as well as a dataset
+         ρ0 × s1 <- openWithDefaultImports (name <> "-1") :: Aff (Env 𝔹 × S.Expr 𝔹)
+         _ × s2 <- openWithDefaultImports (name <> "-2") :: Aff (Env 𝔹 × S.Expr 𝔹)
          ρ <- openDatasetAs ("example/" <> name <> "-data") "data" :: Aff (Env 𝔹)
-         pure ((ρ1 × s1) × (ρ2 × s2) × ρ) in
+         pure (ρ0 × ρ × s1 × s2) in
    before setup $
-      it name \((ρ1 × s1) × (ρ2 × s2) × ρ) -> do
-         let t1 × v1 = successful (desugarEval (ρ1 <> ρ) s1)
-             t2 × v2 = successful (desugarEval (ρ2 <> ρ) s2)
-         pure unit
+      it name \(ρ0 × ρ × s1 × s2) -> do
+         let e1 = successful (desugarFwd s1)
+             e2 = successful (desugarFwd s2)
+             t1 × v1 = successful (eval (ρ0 <> ρ) e1)
+             t2 × v2 = successful (eval (ρ0 <> ρ) e2)
+             ρ0ρ × _ × _ = evalBwd v1_sel t1
+             -- negate shared environment slice, but make e2 fully available
+             v2' = neg (evalFwd (neg ρ0ρ) (const true <$> e2) true t2)
+         checkPretty v2' v2_expect
 
 testWithDataset :: String -> String -> Test Unit
 testWithDataset dataset file =
