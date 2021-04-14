@@ -127,7 +127,7 @@ prettyConstr c (x : y : Nil)  | c == cCons   = parens (hspace [pretty x, pretty 
 prettyConstr c xs                            = hspace (pretty c : (prettyParensOpt <$> xs))
 
 instance prettyExpr :: Pretty (E.Expr Boolean) where
-   pretty E.Hole                    = hole
+   pretty (E.Hole α)                = hole
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
@@ -150,7 +150,7 @@ instance prettyRecDef :: Pretty (Binding Elim Boolean) where
    pretty (f ↦ σ) = hspace [text f, text str.equals, pretty σ]
 
 instance prettyCont :: Pretty (Cont Boolean) where
-   pretty ContHole      = hole
+   pretty (ContHole α)  = hole
    pretty (ContExpr e)  = pretty e
    pretty (ContElim σ)  = pretty σ
 
@@ -158,7 +158,7 @@ instance prettyBranch :: Pretty (Ctr × Cont Boolean) where
    pretty (c × κ) = hspace [text (show c), text str.rArrow, pretty κ]
 
 instance prettyElim :: Pretty (Elim Boolean) where
-   pretty (ElimHole)       = hole
+   pretty (ElimHole α)     = hole
    pretty (ElimVar x κ)    = hspace [text x, text str.rArrow, pretty κ]
    pretty (ElimConstr κs)  = hcomma (pretty <$> κs) -- looks dodgy
 

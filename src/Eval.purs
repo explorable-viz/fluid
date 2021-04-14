@@ -21,7 +21,7 @@ import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
-match _ ElimHole = error absurd
+match _ (ElimHole _) = error absurd
 match v (ElimVar x κ)
    | x == varAnon = pure (Empty × κ × MatchVarAnon v)
    | otherwise    = pure ((Empty :+: x ↦ v) × κ × MatchVar x)
@@ -54,7 +54,7 @@ checkArity c n = do
    check (n' >= n) (show c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
-eval ρ Hole          = error absurd
+eval ρ (Hole _)      = error absurd
 eval ρ (Var x)       = (T.Var ρ x × _) <$> find x ρ
 eval ρ (Op op)       = (T.Op ρ op × _) <$> find op ρ
 eval ρ (Int _ n)     = pure (T.Int ρ n × V.Int false n)

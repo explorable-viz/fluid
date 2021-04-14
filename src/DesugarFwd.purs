@@ -49,7 +49,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarD
    desugarDefs (Right δ)   = pure (Right δ)
 
 varDefFwd :: VarDef 𝔹 -> MayFail (E.VarDef 𝔹)
-varDefFwd (VarDef π s) = E.VarDef <$> patternFwd π (ContHole :: Cont 𝔹) <*> exprFwd s
+varDefFwd (VarDef π s) = E.VarDef <$> patternFwd π (ContHole false :: Cont 𝔹) <*> exprFwd s
 
 varDefsFwd :: VarDefs 𝔹 × Expr 𝔹 -> MayFail (E.Expr 𝔹)
 varDefsFwd (NonEmptyList (d :| Nil) × s) =
@@ -153,9 +153,9 @@ branchesFwd_uncurried bs = do
 
 -- holes used to represent var defs, but otherwise surface programs never contain holes
 totaliseFwd :: Cont 𝔹 -> 𝔹 -> Cont 𝔹
-totaliseFwd ContHole _                    = error absurd
+totaliseFwd (ContHole _) _                = error absurd
 totaliseFwd (ContExpr e) _                = ContExpr e
-totaliseFwd (ContElim ElimHole) _         = error absurd
+totaliseFwd (ContElim (ElimHole _)) _     = error absurd
 totaliseFwd (ContElim (ElimConstr m)) α   = ContElim (ElimConstr (totaliseConstrFwd (c × totaliseFwd κ α) α))
    where c × κ = assert (size m == 1) (fromJust absurd (L.head (toUnfoldable m)))
 totaliseFwd (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totaliseFwd κ α))

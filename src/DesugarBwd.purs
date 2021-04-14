@@ -192,21 +192,21 @@ patternsBwd σ (NonEmptyList (p :| p' : ps))  = patternsBwd_rest (asExpr (patter
 -- σ, p desugar_bwd κ
 patternBwd :: Elim 𝔹 -> Pattern -> Cont 𝔹
 patternBwd (ElimVar x κ) (PVar _)               = κ
-patternBwd ElimHole (PVar _)                    = ContHole
-patternBwd ElimHole (PConstr c ps)              = argsBwd ContHole (Left <$> ps)
+patternBwd (ElimHole α) (PVar _)                = ContHole α
+patternBwd (ElimHole α) (PConstr c ps)          = argsBwd (ContHole α) (Left <$> ps)
 patternBwd (ElimConstr m) (PConstr c ps)        = argsBwd (mustLookup c m) (Left <$> ps)
-patternBwd ElimHole (PListEmpty)                = ContHole
+patternBwd (ElimHole α) (PListEmpty)            = ContHole α
 patternBwd (ElimConstr m) (PListEmpty)          = mustLookup cNil m
-patternBwd ElimHole (PListNonEmpty p o)         = argsBwd ContHole (Left p : Right o : Nil)
+patternBwd (ElimHole α) (PListNonEmpty p o)     = argsBwd (ContHole α) (Left p : Right o : Nil)
 patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
 patternBwd _ _                                  = error absurd
 
 -- σ, o desugar_bwd κ
 listRestPatternBwd :: Elim 𝔹 -> ListRestPattern -> Cont 𝔹
 listRestPatternBwd (ElimVar _ _) _              = error absurd
-listRestPatternBwd ElimHole PEnd                = ContHole
+listRestPatternBwd (ElimHole α) PEnd            = ContHole α
 listRestPatternBwd (ElimConstr m) PEnd          = mustLookup cNil m
-listRestPatternBwd ElimHole (PNext p o)         = argsBwd ContHole (Left p : Right o : Nil)
+listRestPatternBwd (ElimHole α) (PNext p o)     = argsBwd (ContHole α) (Left p : Right o : Nil)
 listRestPatternBwd (ElimConstr m) (PNext p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
 
 argsBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹
@@ -240,7 +240,7 @@ branchesBwd_uncurried σ (NonEmptyList (b :| Nil)) =
 totaliseBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹 × 𝔹
 totaliseBwd κ Nil = κ × false
 totaliseBwd κ (Left (PVar x) : πs) =
-   case expand κ (ContElim (ElimVar x ContHole)) of
+   case expand κ (ContElim (ElimVar x (ContHole false))) of
       ContElim (ElimVar _ κ') ->
          let κ'' × α = totaliseBwd κ' πs in
          ContElim (ElimVar x κ'') × α
@@ -254,7 +254,7 @@ totaliseBwd κ (π : πs) =
          Right PEnd                 -> cNil × Nil
          Right (PNext p o)          -> cCons × (Left p : Right o : Nil)
    -- use totaliseConstrFwd to construct "eliminator pattern" to match against
-   in case expand κ (ContElim (ElimConstr (totaliseConstrFwd (c × ContHole) false))) of
+   in case expand κ (ContElim (ElimConstr (totaliseConstrFwd (c × ContHole false) false))) of
       ContElim (ElimConstr m) ->
          let κ' × α = totaliseConstrBwd m c
              κ'' × β = totaliseBwd κ' (πs' <> πs) in

@@ -1,15 +1,15 @@
 module Val where
 
-import Prelude hiding (absurd)
+import Prelude hiding (absurd, map)
 import Control.Apply (lift2)
 import Data.Array (replicate)
 import Data.List (List)
-import Bindings (Bindings)
+import Bindings (Bindings, map)
 import DataType (Ctr)
 import Expr (Elim(..), RecDefs)
 import Lattice (
-   class BoundedJoinSemilattice, class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
-   𝔹, (∨), bot, botOf, definedJoin, expand, maybeJoin
+   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
+   𝔹, (∨), bot, definedJoin, expand, maybeJoin
 )
 import Util (Endo, type (×), (×), (⪄), (≞), (≜), (!), absurd, error, report, unsafeUpdateAt)
 
@@ -52,12 +52,14 @@ holeMatrix i j = replicate i (replicate j (Hole false)) × (i × false) × (j ×
 -- ======================
 -- derive instance functorVal :: Functor Val
 
-instance joinSemilatticeVal :: JoinSemilattice a => JoinSemilattice (Val a) where
+instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
    join = definedJoin
 
-instance slicesVal :: JoinSemilattice a => Slices (Val a) where
-   maybeJoin (Hole _) v                               = pure v -- TODO: fix
-   maybeJoin v (Hole _)                               = pure v -- TODO: fix
+instance slicesVal :: Slices (Val Boolean) where
+   maybeJoin (Hole false) v                           = pure v
+   maybeJoin (Hole true) v                            = pure (Hole true)
+   maybeJoin v (Hole false)                           = pure v
+   maybeJoin v (Hole true)                            = pure (Hole true)
    maybeJoin (Int α n) (Int α' n')                    = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Float α n) (Float α' n')                = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α str) (Str α' str')                = Str (α ∨ α') <$> (str ≞ str')
@@ -72,11 +74,10 @@ instance slicesVal :: JoinSemilattice a => Slices (Val a) where
    maybeJoin (Primitive φ vs) (Primitive φ' vs')      = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _                                      = report "Incompatible values"
 
-instance boundedSlices :: BoundedJoinSemilattice a => BoundedSlices (Val a) where
+instance boundedSlices :: BoundedSlices (Val Boolean) where
    botOf = const (Hole bot)
 
 instance valExpandable :: Expandable (Val Boolean) where
-   expand _ (Hole true)                         = error absurd
    expand v (Hole false)                        = v
    expand (Hole α) (Int β n)                    = Int (α ⪄ β) n
    expand (Hole α) (Float β n)                  = Float (α ⪄ β) n
@@ -85,7 +86,8 @@ instance valExpandable :: Expandable (Val Boolean) where
    expand (Hole α) (Constr β c vs)              = Constr (α ⪄ β) c (expand (Hole α) <$> vs)
    expand (Hole α) (Matrix β (vss × (i × β1) × (j × β2))) =
       Matrix (α ⪄ β) ((((<$>) (expand (Hole α))) <$> vss) × (i × (α ⪄ β1)) × (j × (α ⪄ β2)))
-   expand (Hole α) (Closure ρ δ σ)              = Closure (expand (botOf ρ) ρ) (expand (botOf δ) δ) (expand ElimHole σ)
+   expand (Hole α) (Closure ρ δ σ) =
+      Closure (expand (map (const (Hole α)) ρ) ρ) (expand (map (const (ElimHole α)) δ) δ) (expand (ElimHole α) σ)
    expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
    expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')

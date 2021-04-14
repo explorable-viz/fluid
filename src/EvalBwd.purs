@@ -37,7 +37,7 @@ closeDefsBwd ρ (ρ0 × δ0) =
    where
    joinDefs :: Binding Val 𝔹 -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹)
    joinDefs (f ↦ v) (δ_acc × ρ' × δ) =
-      case expand v (V.Closure (botOf ρ') (botOf δ) ElimHole) of
+      case expand v (V.Closure (botOf ρ') (botOf δ) (ElimHole false)) of
          V.Closure ρ_f δ_f σ_f -> (δ_acc :+: f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f)
          _ -> error absurd
 
@@ -46,7 +46,7 @@ matchBwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
 matchBwd Empty κ α (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)            = V.Constr α c vs × ElimConstr (fromFoldable cκs)
    where vs × κ' = matchArgs_bwd ρ κ α (reverse ws)
-         cκs = c × κ' : ((_ × ContHole) <$> cs)
+         cκs = c × κ' : ((_ × ContHole false) <$> cs)
 matchBwd _ _ _ _                               = error absurd
 
 matchArgs_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
@@ -138,7 +138,7 @@ evalBwd v t@(T.AppConstr (t1 × c × n) t2) =
 evalBwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = evalBwd v t2
        ρ1 × ρ2 = unmatch ρ1ρ2 w
-       v' × σ = matchBwd ρ2 ContHole α2 w
+       v' × σ = matchBwd ρ2 (ContHole false) α2 w
        ρ1' × e1 × α1 = evalBwd v' t1 in
    (ρ1 ∨ ρ1') × Let (VarDef σ e1) e2 × (α1 ∨ α2)
 evalBwd v (T.LetRec δ t) =

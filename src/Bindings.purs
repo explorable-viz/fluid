@@ -65,6 +65,10 @@ toList :: forall t a . Bindings t a -> List (Binding t a)
 toList Empty      = Nil
 toList (ρ :+: xv) = toList ρ <> singleton xv
 
+map :: forall t a u b . (t a -> u b) -> Bindings t a -> Bindings u b
+map _ Empty = Empty
+map f (Extend ρ (x ↦ v)) = Extend (map f ρ) (x ↦ f v)
+
 -- ======================
 -- boilerplate
 -- ======================

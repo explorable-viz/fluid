@@ -99,6 +99,7 @@ instance slicesArray :: Slices a => Slices (Array a) where
 
 class Expandable a where
    -- Partial function defined iff x is above x', which expands in x any subtree prefixes which are expanded in x'
+   -- Negative holes are used in x' to represent unexpand subtrees; positive holes will never occur.
    expand :: a -> a -> a
 
 instance expandableArray :: Expandable t => Expandable (Array t) where

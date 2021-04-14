@@ -19,16 +19,16 @@ import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchFwd v σ (T.MatchVar x) =
-   case expand σ (ElimVar x ContHole) of
+   case expand σ (ElimVar x (ContHole false)) of
       ElimVar _ κ -> (Empty :+: x ↦ v) × κ × true
       _ -> error absurd
 matchFwd _ σ (T.MatchVarAnon _) =
-   case expand σ (ElimVar varAnon ContHole) of
+   case expand σ (ElimVar varAnon (ContHole false)) of
       ElimVar _ κ -> Empty × κ × true
       _ -> error absurd
 matchFwd v σ (T.MatchConstr c ws cs) =
    case expand v (V.Constr false c (const (V.Hole false) <$> ws)) ×
-        expand σ (ElimConstr (fromFoldable ((_ × ContHole) <$> c : cs))) of
+        expand σ (ElimConstr (fromFoldable ((_ × ContHole false) <$> c : cs))) of
       V.Constr α _ vs × ElimConstr m ->
          ρ × κ × (α ∧ α')
          where ρ × κ × α' = matchArgsFwd vs (mustLookup c m) ws
@@ -37,7 +37,7 @@ matchFwd v σ (T.MatchConstr c ws cs) =
 matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchArgsFwd Nil κ Nil = Empty × κ × true
 matchArgsFwd (v : vs) κ (w : ws) =
-   case expand κ (ContElim ElimHole) of
+   case expand κ (ContElim (ElimHole false)) of
       ContElim σ ->
          (ρ <> ρ') × κ' × (α ∧ α')
          where ρ  × κ  × α    = matchFwd v σ w
@@ -67,12 +67,12 @@ evalFwd ρ e α' (T.Str _ str) =
       Str α _ -> V.Str (α ∧ α') str
       _ -> error absurd
 evalFwd ρ e α' (T.Constr _ c ts) =
-   case expand e (Constr false c (const Hole <$> ts)) of
+   case expand e (Constr false c (const (Hole false) <$> ts)) of
       Constr α _ es ->
          V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd ρ e' α' t) <$> zip es ts)
       _ -> error absurd
 evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
-   case expand e (Matrix false Hole (x × y) Hole) of
+   case expand e (Matrix false (Hole false) (x × y) (Hole false)) of
       Matrix α e1 _ e2 ->
          case expand (evalFwd ρ e2 α t2) (V.Constr false cPair (V.Hole false : V.Hole false : Nil)) of
             V.Constr _ c (v1 : v2 : Nil) ->
@@ -86,19 +86,19 @@ evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.LetRec δ t) =
-   case expand e (LetRec (botOf δ) Hole) of
+   case expand e (LetRec (botOf δ) (Hole false)) of
       LetRec δ' e' ->
          let ρ' = closeDefs ρ δ' δ' in
          evalFwd (ρ <> ρ') e' α t
       _ -> error absurd
 evalFwd ρ e _ (T.Lambda _ _) =
-   case expand e (Lambda ElimHole) of
+   case expand e (Lambda (ElimHole false)) of
       Lambda σ -> V.Closure ρ Empty σ
       _ -> error absurd
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
-   case expand e (App Hole Hole) of
+   case expand e (App (Hole false) (Hole false)) of
       App e1 e2 ->
-         case expand (evalFwd ρ e1 α t1) (V.Closure (botOf ρ1) (botOf δ) ElimHole) of
+         case expand (evalFwd ρ e1 α t1) (V.Closure (botOf ρ1) (botOf δ) (ElimHole false)) of
             V.Closure ρ1' δ' σ' ->
                let v = evalFwd ρ e2 α t2
                    ρ2 = closeDefs ρ1' δ' δ'
@@ -107,7 +107,7 @@ evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
-   case expand e (App Hole Hole) of
+   case expand e (App (Hole false) (Hole false)) of
       App e1 e2 ->
          case expand (evalFwd ρ e1 α t1) (V.Primitive (PrimOp φ) (const (V.Hole false) <$> vs)) of
             V.Primitive _ vs' ->
@@ -117,7 +117,7 @@ evalFwd ρ e α (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.AppConstr (t1 × c × n) t2) =
-   case expand e (App Hole Hole) of
+   case expand e (App (Hole false) (Hole false)) of
       App e1 e2 ->
          case expand (evalFwd ρ e1 α t1) (V.Constr false c (replicate n (V.Hole false))) of
             V.Constr α' _ vs' ->
@@ -126,7 +126,7 @@ evalFwd ρ e α (T.AppConstr (t1 × c × n) t2) =
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.Let (T.VarDef w t1) t2) =
-   case expand e (Let (VarDef ElimHole Hole) Hole) of
+   case expand e (Let (VarDef (ElimHole false) (Hole false)) (Hole false)) of
       Let (VarDef σ e1) e2 ->
          let v = evalFwd ρ e1 α t1
              ρ' × _ × α' = matchFwd v σ w in
