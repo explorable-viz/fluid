@@ -26,7 +26,9 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   testBwd "array" (Matrix false (insertMatrix 2 2 (Hole true) (holeMatrix 3 3))) "1, 4, 8,\n3, _2_, 17,\n0, 14, 6"
+   testBwd "conv-extend"
+         (Int true 362)
+         "_362_"
 ]
 
 test_linking :: Array (Test Unit)

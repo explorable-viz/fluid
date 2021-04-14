@@ -1,3 +1,12 @@
+let conv image filter =
+   sum [ image!(img_y, img_x) * filter!(3 - y, 3 - x)
+               | (y, x) <- range ((0, 0), (2, 2)),
+                  let img_x = if x > 5 then 5 else if x < 1 then 1 else x,
+                  let img_y = if y > 5 then 5 else if y < 1 then 1 else y,
+                  img_y  >= 1, img_y <= 5,
+                  img_x  >= 1, img_x <= 5
+                  ];
+
 let fil_list = [[0, 2, 4],
                 [3, 7, 1],
                 [2, 5, 2]];
@@ -8,4 +17,4 @@ let fil_list = [[0, 2, 4],
                 [4 , 10, 3 , 7, 19],
                 [3 , 11, 15, 2, 9 ]];
     img_arr  = [| nth2 i j img_list | (i, j) in (5, 5) |]
-in  conv img_arr fil_arr extend
+in  conv img_arr fil_arr

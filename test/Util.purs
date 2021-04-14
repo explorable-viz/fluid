@@ -19,7 +19,7 @@ import Expl (Expl)
 import Expr (Expr(..)) as E
 import SExpr (Expr) as S
 import Lattice (𝔹, botOf, neg)
-import Module (loadFile, openDatasetAs, openWithDefaultImports)
+import Module (openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import Util (MayFail, type (×), (×), successful)
 import Val (Env, Val(..))
@@ -58,9 +58,7 @@ testWithSetup name v_expect v_opt setup =
              ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
              v = desugarEval_fwd ρ' s' t
          unless (isGraphical v) (checkPretty v v_expect)
-         case v_opt of
-            Nothing -> pure unit
-            Just _ -> loadFile "fluid/example" (name <> ".expect") >>= checkPretty s'
+         pure unit
 
 test :: String -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
