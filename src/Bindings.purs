@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:), singleton)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
-   botOf, definedJoin, expand, maybeJoin
+   botOf, definedJoin, expand, maybeJoin, neg
 )
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), absurd, error, fromJust, report, whenever)
 
@@ -65,6 +65,10 @@ toList :: forall t a . Bindings t a -> List (Binding t a)
 toList Empty      = Nil
 toList (ρ :+: xv) = toList ρ <> singleton xv
 
+bindingsMap :: forall t a u b . (t a -> u b) -> Bindings t a -> Bindings u b
+bindingsMap _ Empty = Empty
+bindingsMap f (Extend ρ (x ↦ v)) = Extend (bindingsMap f ρ) (x ↦ f v)
+
 -- ======================
 -- boilerplate
 -- ======================
@@ -78,15 +82,16 @@ instance semigroupBindings :: Semigroup (Bindings t a) where
 instance monoidBindings :: Monoid (Bindings t a) where
    mempty = Empty
 
-instance joinSemilatticeBindings :: Slices (t a) => JoinSemilattice (Bindings t a) where
+instance joinSemilatticeBindings :: (Functor t, JoinSemilattice a, Slices (t a)) => JoinSemilattice (Bindings t a) where
    join = definedJoin
+   neg = (<$>) neg
 
-instance slicesBindings :: Slices (t a) => Slices (Bindings t a) where
+instance slicesBindings :: (Functor t, JoinSemilattice a, Slices (t a)) => Slices (Bindings t a) where
    maybeJoin Empty Empty                     = pure Empty
    maybeJoin (ρ :+: x ↦ v) (ρ' :+: y ↦ v')   = (:+:) <$> maybeJoin ρ ρ' <*> ((↦) <$> (x ≞ y) <*> maybeJoin v v')
    maybeJoin _ _                             = report "Bindings of different lengths"
 
-instance boundedSlices :: BoundedSlices (t Boolean) => BoundedSlices (Bindings t Boolean) where
+instance boundedSlices :: (Functor t, BoundedSlices (t Boolean)) => BoundedSlices (Bindings t Boolean) where
    botOf Empty = Empty
    botOf (Extend ρ (x ↦ v)) = Extend (botOf ρ) (x ↦ botOf v)
 

@@ -37,7 +37,7 @@ loadModule file ρ = do
    pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module ρ))
 
 openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-openWithDefaultImports file =
+openWithDefaultImports file = do
    loadFile "fluid/example" file >>= parseWithDefaultImports
 
 parse :: forall t . String -> SParser t -> MayFail t
@@ -50,6 +50,6 @@ parseWithDefaultImports src = do
 
 openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do
-   ρ × s <- loadFile "fluid/dataset" file >>= parseWithDefaultImports
+   ρ × s <- loadFile "fluid" file >>= parseWithDefaultImports
    let _ × v = successful (desugarFwd s >>= eval ρ)
    pure (Empty :+: x ↦ v)

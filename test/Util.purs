@@ -9,6 +9,7 @@ import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
+import Bindings (splitAt)
 import DataType (dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
@@ -18,7 +19,7 @@ import EvalFwd (evalFwd)
 import Expl (Expl)
 import Expr (Expr(..)) as E
 import SExpr (Expr) as S
-import Lattice (𝔹, botOf)
+import Lattice (𝔹, botOf, neg)
 import Module (loadFile, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import Util (MayFail, type (×), (×), successful)
@@ -26,7 +27,7 @@ import Val (Env, Val(..))
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
-isGraphical Hole           = false
+isGraphical (Hole _)       = false
 isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) == "GraphicsElement"
 isGraphical _              = false
 
@@ -43,21 +44,21 @@ desugarEval_bwd (t × s) v = let ρ × e × _ = evalBwd v t in ρ × desugarBwd 
 
 desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
 desugarEval_fwd ρ s =
-   let _ = evalFwd (botOf ρ) E.Hole true in -- sanity-check that this is defined
+   let _ = evalFwd (botOf ρ) (E.Hole false) false in -- sanity-check that this is defined
    evalFwd ρ (successful (desugarFwd s)) true
 
 checkPretty :: forall a . Pretty a => a -> String -> Aff Unit
 checkPretty x expected = prettyP x `shouldEqual` expected
 
--- bwd_opt is pair of (output slice, string representation of expected program slice)
+-- v_opt is output slice; v_expect is expected result after round-trip
 testWithSetup :: String -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
-testWithSetup name v_str v_opt setup =
+testWithSetup name v_expect v_opt setup =
    before setup $
       it name \(ρ × s) -> do
          let t × v = successful (desugarEval ρ s)
              ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
              v = desugarEval_fwd ρ' s' t
-         unless (isGraphical v) (checkPretty v v_str)
+         unless (isGraphical v) (checkPretty v v_expect)
          case v_opt of
             Nothing -> pure unit
             Just _ -> loadFile "fluid/example" (name <> ".expect") >>= checkPretty s'
@@ -65,11 +66,35 @@ testWithSetup name v_str v_opt setup =
 test :: String -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
 
-test_bwd :: String -> Val 𝔹 -> String -> Test Unit
-test_bwd file v expected = testWithSetup file expected (Just v) (openWithDefaultImports file)
+testBwd :: String -> Val 𝔹 -> String -> Test Unit
+testBwd file v expected =
+   let name = "slicing/" <> file in
+   testWithSetup name expected (Just v) (openWithDefaultImports name)
+
+testLink :: String -> Val 𝔹 -> String -> Test Unit
+testLink file v1_sel v2_expect =
+   let name = "linking/" <> file
+       setup = do
+         -- the views share an ambient environment ρ0 as well as dataset
+         ρ0 × s1 <- openWithDefaultImports (name <> "-1")
+         _ × s2 <- openWithDefaultImports (name <> "-2")
+         ρ <- openDatasetAs ("example/" <> name <> "-data") "data"
+         pure (ρ0 × ρ × s1 × s2) in
+   before setup $
+      it name \(ρ0 × ρ × s1 × s2) -> do
+         let e1 = successful (desugarFwd s1)
+             e2 = successful (desugarFwd s2)
+             t1 × v1 = successful (eval (ρ0 <> ρ) e1)
+             t2 × v2 = successful (eval (ρ0 <> ρ) e2)
+             ρ0ρ × _ × _ = evalBwd v1_sel t1
+             _ × ρ' = splitAt 1 ρ0ρ
+             -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we need (topOf ρ0)
+             -- combine with the negation of the dataset environment slice
+             v2' = neg (evalFwd (neg (botOf ρ0) <> neg ρ') (const true <$> e2) true t2)
+         checkPretty v2' v2_expect
 
 testWithDataset :: String -> String -> Test Unit
 testWithDataset dataset file =
    testWithSetup file "" Nothing $
-      bitraverse (uncurry openDatasetAs) openWithDefaultImports (dataset × "data" × file) <#>
+      bitraverse (uncurry openDatasetAs) openWithDefaultImports (("dataset/" <> dataset) × "data" × file) <#>
       (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)

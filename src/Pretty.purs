@@ -127,7 +127,7 @@ prettyConstr c (x : y : Nil)  | c == cCons   = parens (hspace [pretty x, pretty 
 prettyConstr c xs                            = hspace (pretty c : (prettyParensOpt <$> xs))
 
 instance prettyExpr :: Pretty (E.Expr Boolean) where
-   pretty E.Hole                    = hole
+   pretty (E.Hole α)                = hole
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
@@ -150,7 +150,7 @@ instance prettyRecDef :: Pretty (Binding Elim Boolean) where
    pretty (f ↦ σ) = hspace [text f, text str.equals, pretty σ]
 
 instance prettyCont :: Pretty (Cont Boolean) where
-   pretty ContHole      = hole
+   pretty (ContHole α)  = hole
    pretty (ContExpr e)  = pretty e
    pretty (ContElim σ)  = pretty σ
 
@@ -158,15 +158,15 @@ instance prettyBranch :: Pretty (Ctr × Cont Boolean) where
    pretty (c × κ) = hspace [text (show c), text str.rArrow, pretty κ]
 
 instance prettyElim :: Pretty (Elim Boolean) where
-   pretty (ElimHole)       = hole
+   pretty (ElimHole α)     = hole
    pretty (ElimVar x κ)    = hspace [text x, text str.rArrow, pretty κ]
    pretty (ElimConstr κs)  = hcomma (pretty <$> κs) -- looks dodgy
 
 instance prettyVal :: Pretty (Val Boolean) where
-   pretty V.Hole                       = hole
+   pretty (V.Hole _)                   = hole
    pretty (V.Int α n)                  = highlightIf α (text (show n))
-   pretty (V.Float _ n)                = text (show n)
-   pretty (V.Str _ str)                = text (show str)
+   pretty (V.Float α n)                = highlightIf α (text (show n))
+   pretty (V.Str α str)                = highlightIf α (text (show str))
    pretty u@(V.Constr _ c vs)
       | c == cNil || c == cCons        = prettyList (toList u) -- list values always printed using list notation
       | otherwise                      = prettyConstr c vs
@@ -187,9 +187,9 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
    pretty (S.Var x)                    = text x
    pretty (S.Op op)                    = parens (text op)
    pretty (S.Int α n)                  = highlightIf α (text (show n))
-   pretty (S.Float _ n)                = text (show n)
-   pretty (S.Str _ str)                = text (show str)
-   pretty r@(S.Constr _ c es)          = prettyConstr c es
+   pretty (S.Float α n)                = highlightIf α (text (show n))
+   pretty (S.Str α str)                = highlightIf α (text (show str))
+   pretty r@(S.Constr α c es)          = prettyConstr c es
    pretty (S.Matrix α e (x × y) e')    = highlightIf α (hspace (init <> quant))
       where
       init = [text str.arrayLBracket, pretty e, text str.bar]

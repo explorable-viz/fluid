@@ -8,10 +8,9 @@ import Data.List (List(..), (:))
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
-import Lattice (𝔹, (∧))
-import Lattice (expand) as L
+import Lattice (𝔹, (∧), expand)
 import Pretty (prettyP)
-import Util (Endo, type (×), (×), type (+), absurd, error)
+import Util (Endo, type (×), (×), type (+), error)
 import Val (PrimOp(..), Val(..))
 
 -- Mediates between Val and underlying data, analously to pattern-matching and construction for data types.
@@ -24,22 +23,10 @@ unwrap :: forall a . ToFrom a => Val 𝔹 -> a
 unwrap = match >>> fst
 
 match_fwd :: forall a . ToFrom a => Val 𝔹 × Val 𝔹 -> a × 𝔹
-match_fwd (v × v') = match (expand' v v')
+match_fwd (v × v') = match (expand v v')
 
 match_bwd :: forall a . ToFrom a => a × 𝔹 -> Val 𝔹
 match_bwd = constr
-
--- One level of expansion is sufficient for all primitives.
-expand' :: Val 𝔹 -> Val 𝔹 -> Val 𝔹
-expand' _ Hole             = error absurd
-expand' v u@(Int _ _)      = L.expand v u
-expand' v u@(Float _ _)    = L.expand v u
-expand' v u@(Str _ _)      = L.expand v u
-expand' v (Constr α c vs)  = L.expand v (Constr α c (const Hole <$> vs))
-expand' v (Matrix α (vss × (i × β) × (j × β'))) =
-   L.expand v (Matrix α (((<$>) (const Hole) <$> vss) × (i × β) × (j × β')))
-expand' v (Primitive _ _)  = error absurd
-expand' v (Closure _ _ _)  = error absurd
 
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
 instance toFromVal :: ToFrom (Val Boolean) where
@@ -214,11 +201,11 @@ binaryZero { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
    where
    fwd' :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
    fwd' (x × α) (y × β) =
-        fwd x y × if isZero x then α else if isZero y then β else α ∧ β
+      fwd x y × if isZero x then α else if isZero y then β else α ∧ β
    bwd' :: b × 𝔹 -> a × a -> (a × 𝔹) × (a × 𝔹)
    bwd' (z × α) (x × y) =
-        if isZero x then (x' × α) × (y' × false) else if isZero y then (x' × false) × (y' × α) else (x' × α) × (y' × α)
-        where x' × y' = bwd z (x × y)
+      if isZero x then (x' × α) × (y' × false) else if isZero y then (x' × false) × (y' × α) else (x' × α) × (y' × α)
+      where x' × y' = bwd z (x × y)
 
 class As a b where
    as :: a -> b
