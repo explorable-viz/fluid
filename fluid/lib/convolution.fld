@@ -9,12 +9,11 @@ let conv image filter method =
         (half_width, half_height) = (quot jz 2, quot iz 2);
         area                      = iz * jz
     in  [| (sum [ image!(img_y, img_x) * filter!(fil_y, fil_x)
-                    | (y, x) <- range ((0, 0), (iz - 1, jz - 1)),
-                        let fil_x = jz - x,
-                        let fil_y = iz - y,
-                        let img_x = method (d + x - half_width) nz,
-                        let img_y = method (c + y - half_height) mz,
-                        img_y >= 1, img_y <= mz,
-                        img_x >= 1, img_x <= nz
-                        ]) / area
-                | (c, d) in (mz, nz) |];
+                | (y, x) <- range ((0, 0), (iz - 1, jz - 1)),
+                  let fil_x = jz - x,
+                  let fil_y = iz - y,
+                  let img_x = method (d + x - half_width) nz,
+                  let img_y = method (c + y - half_height) mz,
+                  img_y >= 1, img_y <= mz,
+                  img_x >= 1, img_x <= nz ]) / area
+         | (c, d) in (mz, nz) |];
