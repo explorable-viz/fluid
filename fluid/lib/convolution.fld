@@ -4,16 +4,13 @@ let zero a _ = a;
     nth2 i j xss = nth (j - 1) (nth (i - 1) xss);
 
 let conv image filter method =
-    let (mz, nz)                  = dims image;
-        (iz, jz)                  = dims filter;
-        (half_width, half_height) = (quot jz 2, quot iz 2);
-        area                      = iz * jz
-    in  [| (sum [ image!(img_y, img_x) * filter!(fil_y, fil_x)
-                | (y, x) <- range ((0, 0), (iz - 1, jz - 1)),
-                  let fil_x = jz - x,
-                  let fil_y = iz - y,
-                  let img_x = method (d + x - half_width) nz,
-                  let img_y = method (c + y - half_height) mz,
-                  img_y >= 1, img_y <= mz,
-                  img_x >= 1, img_x <= nz ]) / area
-         | (c, d) in (mz, nz) |];
+    let ((m, n), (i, j)) = (dims image, dims filter);
+        (half_j, half_i) = (quot j 2, quot i 2);
+        area             = i * j
+    in  [| (sum [ image!(img_y, img_x) * filter!(i - y, j - x)
+                | (y, x) <- range ((0, 0), (i - 1, j - 1)),
+                  let img_x = method (d + x - half_j) n,
+                  let img_y = method (c + y - half_i) m,
+                  img_y >= 1, img_y <= m,
+                  img_x >= 1, img_x <= n ]) / area
+         | (c, d) in (m, n) |];
