@@ -11,12 +11,22 @@ on:
     - '**/README.md'
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
     - name: test
       run: |
         yarn install
-        yarn run bundle
-        yarn run test
+        yarn run bundle-tests
+        yarn run tests
+
+  deploy:
+    runs-on: ubuntu-18.04
+    needs: test
+    if: github.ref == 'refs/heads/release'
+    steps:
+    - name: deploy
+      run: |
+        yarn install
+        yarn run deploy-app
