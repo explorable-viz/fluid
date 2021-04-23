@@ -31,9 +31,9 @@ jobs:
       run: |
         yarn install
         yarn run bundle-app
-    - name: deploy
+    - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: dist/app
-        destination_dir: new
+        publish_dir: ./dist/app
+        destination_dir: /new
