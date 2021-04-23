@@ -7,6 +7,7 @@
     "continuous-test": "npm-run-all --parallel bundle-watch browser-test",
     "bundle-watch": "yarn run build --watch && parcel watch index.html",
     "browser-test": "karma start --browsers=Chrome --singleRun=false",
+    "serve": "parcel serve index.html --public-url /new/",
     "test": "karma start",
     "deploy": "yarn run bundle && gh-pages --dist dist --dest new"
   },
