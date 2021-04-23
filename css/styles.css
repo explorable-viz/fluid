@@ -1,6 +1,5 @@
 @charset "UTF-8";
-body,
-h3.title {
+body {
     font-size: 11pt
 }
 
@@ -43,8 +42,10 @@ h3.title {
 }
 
 h3.title {
+    margin-top: 10pt;
     margin-bottom: 0;
-    color: #404040 /* #FFF */
+    color: darkblue;
+    font-size: '24px'
 }
 
 .glowing {

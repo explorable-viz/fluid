@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Fluid 0.4 demo</title>
-  <script src='https://d3js.org/d3.v4.min.js'></script>
   <script src="https://use.fontawesome.com/1091715d00.js"></script>
   <link href="/css/styles.css" rel="stylesheet" type="text/css">
   <link href="/css/simplegrid.css" rel="stylesheet" type="text/css">
@@ -42,17 +41,29 @@
       </div>
    </div>
 
+   <script src='https://d3js.org/d3.v4.min.js'></script>
    <script>
-      //Select SVG element
-      var svg = d3.select('svg')
+      const div = d3.select('body'),
+            svg = div.append('svg')
+                  .attr('width', 300)
+                  .attr('height', 300),
+            w = 30,
+            h = 30
 
-      //Create rectangle element inside SVG
-      svg.append('rect')
-         .attr('x', 50)
-         .attr('y', 50)
-         .attr('width', 200)
-         .attr('height', 100)
-         .attr('fill', 'green')
+      const data = Array(5).fill(d3.range(5))
+      const grp = svg.selectAll('g')
+         .data(data)
+         .enter()
+         .append('g')
+         .attr('transform', (d, i) => 'translate(0, ' + h * 1.15 * i + ')')
+
+      grp.selectAll('rect')
+         .data(d => d)
+         .enter()
+         .append('rect')
+            .attr('x', (d, i) => w * 1.15 * i)
+            .attr('width', w)
+            .attr('height', h)
    </script>
 
 </body>
