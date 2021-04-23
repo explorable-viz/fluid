@@ -1,15 +1,18 @@
 {
   "license": "MIT",
   "scripts": {
-    "build": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Demo --to dist/app.js",
-    "bundle": "yarn run clean && yarn run build && parcel build index.html --public-url /new/",
-    "clean": "rm -rf dist",
-    "continuous-test": "npm-run-all --parallel bundle-watch browser-test",
-    "bundle-watch": "yarn run build --watch && parcel watch index.html",
-    "browser-test": "karma start --browsers=Chrome --singleRun=false",
-    "serve": "yarn run clean && yarn run build && parcel serve index.html",
-    "test": "karma start",
-    "deploy": "yarn run bundle && gh-pages --dist dist --dest new"
+    "build-app": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Demo --to dist/app/app.js",
+    "build-tests": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/test/app.js",
+    "bundle-app": "yarn run clean-app && yarn run build-app && parcel build -d dist/app --public-url /new/ index.html",
+    "bundle-tests": "yarn run clean-tests && yarn run build-tests && parcel build -d dist/test tests.html",
+    "clean-app": "rm -rf dist/app",
+    "clean-tests": "rm -rf dist/test",
+    "continuous-test": "npm-run-all --parallel bundle-tests-watch browser-tests",
+    "bundle-tests-watch": "yarn run build-tests --watch && parcel watch index.html",
+    "browser-tests": "karma start --browsers=Chrome --singleRun=false",
+    "serve-app": "yarn run clean-app && yarn run build-app && parcel serve index.html",
+    "tests": "karma start",
+    "deploy-app": "yarn run bundle-app && gh-pages --dist dist/app --dest new"
   },
   "staticFiles": {
     "staticPath": {
@@ -19,6 +22,7 @@
     "watcherGlob": "**"
   },
   "dependencies": {
+    "parcel-bundler": "1.12.3",
     "purescript": "0.13.6",
     "purescript-psa": "0.7.3"
   },
@@ -29,7 +33,6 @@
     "karma-mocha-reporter": "2.2.5",
     "mocha": "7.1.2",
     "npm-run-all": "4.1.5",
-    "parcel": "2.0.0-beta.2",
     "parcel-plugin-static-files-copy": "2.5.1",
     "spago": "0.15.2"
   }
