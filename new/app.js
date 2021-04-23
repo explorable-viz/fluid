@@ -30203,9 +30203,13 @@ var PS = {};
   var Data_Unit = $PS["Data.Unit"];
   var Effect_Aff = $PS["Effect.Aff"];
   var Module = $PS["Module"];                
-  var main = Control_Bind.bind(Effect_Aff.bindAff)(Module.openWithDefaultImports("slicing/conv-extend"))(function () {
+  var wibble = Control_Bind.bind(Effect_Aff.bindAff)(Module.openWithDefaultImports("slicing/conv-extend"))(function () {
       return Control_Applicative.pure(Effect_Aff.applicativeAff)(Data_Unit.unit);
   });
-  exports["main"] = main;
+  var gibble = Control_Bind.bind(Effect_Aff.bindAff)(Module.openWithDefaultImports("slicing/conv-extend"))(function () {
+      return Control_Applicative.pure(Effect_Aff.applicativeAff)(Data_Unit.unit);
+  });
+  exports["wibble"] = wibble;
+  exports["gibble"] = gibble;
 })(PS);
 PS["App.Demo"].main();
