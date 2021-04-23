@@ -27,7 +27,13 @@ jobs:
     if: github.ref == 'refs/heads/release'
     steps:
     - uses: actions/checkout@v2
-    - name: deploy
+    - name: bundle
       run: |
         yarn install
-        yarn run deploy-app
+        yarn run bundle-app
+    - name: deploy
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: dist/app
+        destination_dir: new

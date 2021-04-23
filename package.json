@@ -12,7 +12,7 @@
     "browser-tests": "karma start --browsers=Chrome --singleRun=false",
     "serve-app": "yarn run clean-app && yarn run build-app && parcel serve index.html",
     "tests": "karma start",
-    "deploy-app": "yarn run bundle-app && gh-pages --user \"Roly Perera <roly.perera@dynamicaspects.org>\" --dist dist/app --dest new"
+    "deploy-app": "yarn run bundle-app && gh-pages --dist dist/app --dest new"
   },
   "staticFiles": {
     "staticPath": {
