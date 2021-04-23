@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Fluid 0.4 demo</title>
+  <script src='https://d3js.org/d3.v4.min.js'></script>
   <script src="https://use.fontawesome.com/1091715d00.js"></script>
   <link href="/css/styles.css" rel="stylesheet" type="text/css">
   <link href="/css/simplegrid.css" rel="stylesheet" type="text/css">
@@ -26,23 +27,35 @@
            </ul>
          </nav>
       </div>
-      </div>
 
       <div id="FLUID" class="grid grid-pad">
-      <div class="col-3-12 align-right">
-         <h3 class="title lowercase">fluid:</br><u>f</u>unctional <u>l</u>anguage for <u>u</u>nderstanding and <u>i</u>nteracting with <u>d</u>ependencies</h3>
-      </div>
-      <div class="col-9-12">
+         <div class="col-3-12 align-right">
+            <h3 class="title lowercase">fluid:</br><u>f</u>unctional <u>l</u>anguage for <u>u</u>nderstanding and <u>i</u>nteracting with <u>d</u>ependencies</h3>
+         </div>
+         <div class="col-9-12">
+            <p>Intro blurb. Figure to go here:
 
-         <p>Intro blurb. Figure to go here:
+            <div id="app-root"></div>
 
-         <div id="app-root"></div>
+            <p>More blurb.
+         </div>
+      </div>
+   </div>
 
-         <p>More blurb.
+   <script>
+      //Select SVG element
+      var svg = d3.select('svg')
 
-      </div>
-      </div>
-      </div>
+      //Create rectangle element inside SVG
+      svg.append('rect')
+         .attr('x', 50)
+         .attr('y', 50)
+         .attr('width', 200)
+         .attr('height', 100)
+         .attr('fill', 'green')
+
+      d3.select('#app-root').append(svg)
+   </script>
 
 </body>
 </html>
