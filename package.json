@@ -2,11 +2,12 @@
   "license": "MIT",
   "scripts": {
     "build": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/app.js",
-    "bundle": "yarn run build && parcel build index.html",
+    "bundle": "yarn run build && parcel build index.html --public-url /new/",
     "continuous-test": "npm-run-all --parallel bundle-watch browser-test",
     "bundle-watch": "yarn run build --watch && parcel watch index.html",
     "browser-test": "karma start --browsers=Chrome --singleRun=false",
-    "test": "karma start"
+    "test": "karma start",
+    "deploy": "gh-pages --dist dist --dest new"
   },
   "staticFiles": {
     "staticPath": {
