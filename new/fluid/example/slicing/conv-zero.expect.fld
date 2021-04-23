@@ -1,0 +1,5 @@
+let fil_list = [[_0_, _2_, 4], [_3_, _7_, 1], [2, 5, 2]];
+    fil_arr = _[| nth2 i j fil_list | (i, j) in (_3_, _3_) |]_;
+    img_list = [[_15_, _13_, 6, 9, 16], [_12_, 5, 15, 4, 13], [14, 9, 20, 8, 1], [4, 10, 3, 7, 19], [3, 11, 15, 2, 9]];
+    img_arr = _[| nth2 i j img_list | (i, j) in (5, 5) |]_
+in conv img_arr fil_arr zero
