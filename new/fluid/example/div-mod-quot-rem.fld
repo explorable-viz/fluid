@@ -1,4 +1,0 @@
-[[div 5 3, div 5 -3, div -5 3, div -5 -3],
- [mod 5 3, mod 5 -3, mod -5 3, mod -5 -3],
- [quot 5 3, quot 5 -3, quot -5 3, quot -5 -3],
- [rem 5 3, rem 5 -3, rem -5 3, rem -5 -3]]

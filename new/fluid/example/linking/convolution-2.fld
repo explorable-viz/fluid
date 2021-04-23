@@ -1,6 +1,0 @@
-let fil_list = [[0, 2, 0],
-                [0, 7, 0],
-                [0, 5, 0]];
-    fil_arr  = [| nth2 i j fil_list | (i, j) in (3, 3) |];
-    img_arr  = [| nth2 i j data | (i, j) in (5, 5) |]
-in  conv img_arr fil_arr zero
