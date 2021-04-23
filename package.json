@@ -1,8 +1,9 @@
 {
   "license": "MIT",
   "scripts": {
-    "build": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/app.js",
-    "bundle": "yarn run build && parcel build index.html --public-url /new/",
+    "build": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Demo --to dist/app.js",
+    "bundle": "yarn run clean && yarn run build && parcel build index.html --public-url /new/",
+    "clean": "rm -rf dist",
     "continuous-test": "npm-run-all --parallel bundle-watch browser-test",
     "bundle-watch": "yarn run build --watch && parcel watch index.html",
     "browser-test": "karma start --browsers=Chrome --singleRun=false",
