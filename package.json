@@ -8,7 +8,7 @@
     "bundle-watch": "yarn run build --watch && parcel watch index.html",
     "browser-test": "karma start --browsers=Chrome --singleRun=false",
     "test": "karma start",
-    "deploy": "gh-pages --dist dist --dest new"
+    "deploy": "yarn run bundle && gh-pages --dist dist --dest new"
   },
   "staticFiles": {
     "staticPath": {
