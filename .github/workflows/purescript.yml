@@ -23,7 +23,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-18.04
-    needs: test
+    #  needs: test
     if: github.ref == 'refs/heads/release'
     steps:
     - uses: actions/checkout@v2
