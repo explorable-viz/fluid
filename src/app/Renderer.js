@@ -1,5 +1,7 @@
 "use strict"
 
+const d3 = require("d3")
+
 function drawMatrix (el, i, j) {
    const w = 30, h = 30, gap = 1.15
    const data = Array(i).fill(d3.range(j))
