@@ -5,6 +5,7 @@ import Data.Either (Either(..))
 import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
+import App.Renderer (drawMatrix)
 import Module (openWithDefaultImports)
 import Pretty (prettyP)
 import Test.Util (desugarEval)
@@ -19,4 +20,4 @@ main =
          Left msg -> log ("Execution failed: " <> msg)
          Right (_ × v) -> do
             log (prettyP v)
-            pure unit
+            drawMatrix 5 5
