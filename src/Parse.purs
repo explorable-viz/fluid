@@ -230,6 +230,15 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
          then \e e' -> Constr false (Ctr op') (e : e' : empty)
          else \e e' -> BinaryApp e op e'
 
+   backtickOp :: Operator Identity String (Expr 𝔹)
+   backtickOp = Infix p AssocNone
+      where
+      p :: SParser (Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹)
+      p = do
+         -- TODO: surrounding backticks
+         x <- ident
+         pure (\e e' -> BinaryApp e x e')
+
    -- Left-associative tree of applications of one or more simple terms.
    appChain :: Endo (SParser (Expr 𝔹))
    appChain expr' = simpleExpr >>= rest
@@ -344,16 +353,6 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          ifElse :: SParser (Expr 𝔹)
          ifElse = pure IfElse <*> (keyword str.if_ *> expr') <* keyword str.then_ <*> expr' <* keyword str.else_ <*> expr'
-
-backtickOp :: Operator Identity String (Expr 𝔹)
-backtickOp = Infix p AssocNone
-   where
-   p :: SParser (Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹)
-   p = do
-      op <- token.operator
-      pure $ if isCtrOp op
-         then \e e' -> Constr false (Ctr op) (e : e' : empty)
-         else \e e' -> BinaryApp e op e'
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
