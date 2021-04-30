@@ -2,13 +2,17 @@
 
 const d3 = require("d3")
 
-function drawMatrix (nss, i, j) {
+function drawMatrix (
+   nss,     // Array (Array (Int × Bool))
+   i_max,   // Int
+   j_max    // Int
+) {
    return () => {
       const w = 30, h = 30, gap = 1.15
       const div = d3.select('#app-root'),
             svg = div.append('svg')
-                     .attr('width', w * j * gap)
-                     .attr('height', h * i * gap)
+                     .attr('width', w * j_max * gap)
+                     .attr('height', h * i_max * gap)
                      .attr('fill', 'lightgray')
       const grp = svg.selectAll('g')
          .data(nss)
@@ -27,8 +31,9 @@ function drawMatrix (nss, i, j) {
 
       rect.append('text')
           .attr('x', (_, j) => w * gap * j)
+          .attr('y', 0.5 * h)
           .attr('fill', 'black')
-          .text(d => `${d}`)
+          .text(d => d.value0)
    }
 }
 
