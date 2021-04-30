@@ -2,14 +2,14 @@
 
 const d3 = require("d3")
 
-function drawMatrix (nss) {
+function drawMatrix (nss, i, j) {
    return () => {
+      const w = 30, h = 30, gap = 1.15
       const div = d3.select('#app-root'),
             svg = div.append('svg')
-                     .attr('width', 200)
-                     .attr('height', 200)
-                     .attr('fill', 'grey')
-      const w = 30, h = 30, gap = 1.15
+                     .attr('width', w * j * gap)
+                     .attr('height', h * i * gap)
+                     .attr('fill', 'lightgray')
       const grp = svg.selectAll('g')
          .data(nss)
          .enter()
@@ -40,4 +40,4 @@ function curry3 (f) {
    return x => y => z => f(x, y, z)
 }
 
-exports.drawMatrix = drawMatrix
+exports.drawMatrix = curry3(drawMatrix)
