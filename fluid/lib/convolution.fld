@@ -12,5 +12,5 @@ let conv image filter method =
                   let img_x = method (d + x - half_j) n,
                   let img_y = method (c + y - half_i) m,
                   img_y >= 1, img_y <= m,
-                  img_x >= 1, img_x <= n ]) / area
+                  img_x >= 1, img_x <= n ]) `quot` area
          | (c, d) in (m, n) |];
