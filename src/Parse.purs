@@ -39,6 +39,7 @@ str :: {
    arrayRBracket  :: String,
    as             :: String,
    backslash      :: String,
+   backtick       :: String,
    bar            :: String,
    ellipsis       :: String,
    else_          :: String,
@@ -59,6 +60,7 @@ str = {
    arrayRBracket: "|]",
    as:            "as",
    backslash:     "\\",
+   backtick:      "`",
    bar:           "|",
    ellipsis:      "..",
    else_:         "else",
@@ -101,7 +103,10 @@ lArrow :: SParser Unit
 lArrow = token.reservedOp str.lArrow
 
 lBracket :: SParser Unit
-lBracket = void $ token.symbol str.lBracket
+lBracket = void (token.symbol str.lBracket)
+
+backtick :: SParser Unit
+backtick = void (token.symbol str.backtick)
 
 bar :: SParser Unit
 bar = token.reservedOp str.bar
@@ -236,7 +241,7 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
       p :: SParser (Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹)
       p = do
          -- TODO: surrounding backticks
-         x <- ident
+         x <- between backtick backtick ident
          pure (\e e' -> BinaryApp e x e')
 
    -- Left-associative tree of applications of one or more simple terms.
