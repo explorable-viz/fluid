@@ -28,6 +28,7 @@ function drawMatrix (
           .attr('x', (_, j) => w * gap * j)
           .attr('width', w)
           .attr('height', h)
+          .attr('fill', d => d.value1 ? 'green' : 'lightgray')
 
       rect.append('text')
           .attr('x', (_, j) => w * gap * j)
