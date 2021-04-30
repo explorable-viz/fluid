@@ -8,11 +8,11 @@ import Primitive (match)
 import Util (type (×), (×))
 import Val (MatrixRep, Val)
 
-foreign import drawMatrix :: Array (Array Number) -> Int -> Int -> Effect Unit
+foreign import drawMatrix :: Array (Array Int) -> Effect Unit
 
 -- Will want to generalise to arrays of "drawable values".
-toNumArray :: Array (Array (Val 𝔹)) -> Array (Array Number)
-toNumArray = (<$>) ((<$>) (match >>> fst))
+toIntArray :: Array (Array (Val 𝔹)) -> Array (Array Int)
+toIntArray = (<$>) ((<$>) (match >>> fst))
 
 renderMatrix :: MatrixRep 𝔹 × 𝔹 -> Effect Unit
-renderMatrix (vss × (i × _) × (j × _) × _) = drawMatrix (toNumArray vss) i j
+renderMatrix (vss × _ × _ × _) = drawMatrix (toIntArray vss)

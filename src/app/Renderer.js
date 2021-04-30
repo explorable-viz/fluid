@@ -2,28 +2,33 @@
 
 const d3 = require("d3")
 
-function drawMatrix (nss, i, j) {
+function drawMatrix (nss) {
    return () => {
       const div = d3.select('#app-root'),
             svg = div.append('svg')
-                        .attr('width', 200)
-                        .attr('height', 200)
-                        .attr('fill', 'green')
+                     .attr('width', 200)
+                     .attr('height', 200)
+                     .attr('fill', 'grey')
       const w = 30, h = 30, gap = 1.15
-      const data = Array(i).fill(d3.range(j))
       const grp = svg.selectAll('g')
-         .data(data)
+         .data(nss)
          .enter()
          .append('g')
-         .attr('transform', (d, i) => 'translate(0, ' + h * gap * i + ')')
+         .attr('transform', (_, i) => "translate(0, " + h * gap * i + ")")
 
-      grp.selectAll('rect')
-         .data(d => d)
-         .enter()
-         .append('rect')
-            .attr('x', (d, j) => w * gap * j)
-            .attr('width', w)
-            .attr('height', h)
+      const rect = grp.selectAll('rect')
+                      .data(d => d)
+                      .enter()
+
+      rect.append('rect')
+          .attr('x', (_, j) => w * gap * j)
+          .attr('width', w)
+          .attr('height', h)
+
+      rect.append('text')
+          .attr('x', (_, j) => w * gap * j)
+          .attr('fill', 'black')
+          .text(d => `${d}`)
    }
 }
 
@@ -35,4 +40,4 @@ function curry3 (f) {
    return x => y => z => f(x, y, z)
 }
 
-exports.drawMatrix = curry3(drawMatrix)
+exports.drawMatrix = drawMatrix
