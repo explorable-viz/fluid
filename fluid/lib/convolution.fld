@@ -1,11 +1,11 @@
 let zero a _ = a;
-    wrap a n = let b = mod a n in if b == 0 then n else b;
+    wrap a n = let b = a `mod` n in if b == 0 then n else b;
     extend x upper = if x > upper then upper else if x < 1 then 1 else x;
     nth2 i j xss = nth (j - 1) (nth (i - 1) xss);
 
 let conv image filter method =
     let ((m, n), (i, j)) = (dims image, dims filter);
-        (half_j, half_i) = (quot j 2, quot i 2);
+        (half_j, half_i) = (j `quot` 2, i `quot` 2);
         area             = i * j
     in  [| (sum [ image!(img_y, img_x) * filter!(i - y, j - x)
                 | (y, x) <- range ((0, 0), (i - 1, j - 1)),

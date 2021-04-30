@@ -12,7 +12,7 @@ import Val (Val(..), holeMatrix, insertMatrix)
 
 tests :: Array (Array (Test Unit))
 tests = [ test_desugaring, test_misc, test_slicing, test_linking, test_graphics ]
---tests = [ test_linking ]
+--tests = [ test_slicing ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
