@@ -16,7 +16,7 @@ import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Text.Parsing.Parser.Combinators (between, try)
-import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
+import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
@@ -344,6 +344,16 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 
          ifElse :: SParser (Expr 𝔹)
          ifElse = pure IfElse <*> (keyword str.if_ *> expr') <* keyword str.then_ <*> expr' <* keyword str.else_ <*> expr'
+
+backtickOp :: Operator Identity String (Expr 𝔹)
+backtickOp = Infix p AssocNone
+   where
+   p :: SParser (Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹)
+   p = do
+      op <- token.operator
+      pure $ if isCtrOp op
+         then \e e' -> Constr false (Ctr op) (e : e' : empty)
+         else \e e' -> BinaryApp e op e'
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a

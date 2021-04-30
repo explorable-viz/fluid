@@ -2,7 +2,7 @@
 
 const d3 = require("d3")
 
-function drawMatrix (i, j) {
+function drawMatrix (nss, i, j) {
    return () => {
       const div = d3.select('#app-root'),
             svg = div.append('svg')
@@ -31,4 +31,8 @@ function curry2 (f) {
    return x => y => f(x, y)
 }
 
-exports.drawMatrix = curry2(drawMatrix)
+function curry3 (f) {
+   return x => y => z => f(x, y, z)
+}
+
+exports.drawMatrix = curry3(drawMatrix)
