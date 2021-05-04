@@ -44,18 +44,19 @@ function wibble (svg) {
    const { width, height } = svg.getBBox(),
          outerHTML = svg.outerHTML,
          blob = new Blob([outerHTML], { type: 'image/svg+xml;charset=utf-8' }),
-         URL = window.URL || window.webkitURL || window,  // por que?
-         blobURL = URL.createObjectURL(blob),
-         image = new Image()
+         blobURL = window.URL.createObjectURL(blob),
+         image = document.createElement('img')
 
-   image.src = blobURL
    const canvas = document.createElement('canvas')
    canvas.width = width
    canvas.height = height
    const context = canvas.getContext('2d')
-   context.drawImage(image, 0, 0, width, height)
-   const png = canvas.toDataURL()  // default png
-   download(canvas, png, "image.png")
+
+   image.onload = () => {
+      context.drawImage(image, 0, 0, width, height)
+      download(canvas, canvas.toDataURL(), "image.png")
+   }
+   image.src = blobURL
 }
 
 function download (parent, url, name) {
