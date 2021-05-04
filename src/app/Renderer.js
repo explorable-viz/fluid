@@ -35,8 +35,41 @@ function drawMatrix (
           .attr('y', 0.5 * h)
           .attr('fill', 'black')
           .text(d => d.value0)
+
+      wibble(svg.node())
    }
 }
+
+function wibble (svg) {
+   const { width, height } = svg.getBBox()
+         outerHTML = svg.outerHTML
+         blob = new Blob([outerHTML], { type: 'image/svg+xml;charset=utf-8' })
+         URL = window.URL || window.webkitURL || window  // por que?
+         blobURL = URL.createObjectURL(blob)
+         image = new Image()
+
+   image.onload = () => {
+      let canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      let context = canvas.getContext('2d')
+      context.drawImage(image, 0, 0, width, height)
+      let png = canvas.toDataURL()  // default png
+      download(png, "image.png")
+   }
+
+   image.src = blobURL
+}
+
+function download (url, name) {
+   const link = document.createElement('a')
+   link.download = name
+   link.style.opacity = '0'
+   document.append(link)
+   link.href = url
+   link.click()
+   link.remove()
+ }
 
 function curry2 (f) {
    return x => y => f(x, y)
