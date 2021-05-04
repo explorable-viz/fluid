@@ -41,11 +41,11 @@ function drawMatrix (
 }
 
 function wibble (svg) {
-   const { width, height } = svg.getBBox()
-         outerHTML = svg.outerHTML
-         blob = new Blob([outerHTML], { type: 'image/svg+xml;charset=utf-8' })
-         URL = window.URL || window.webkitURL || window  // por que?
-         blobURL = URL.createObjectURL(blob)
+   const { width, height } = svg.getBBox(),
+         outerHTML = svg.outerHTML,
+         blob = new Blob([outerHTML], { type: 'image/svg+xml;charset=utf-8' }),
+         URL = window.URL || window.webkitURL || window,  // por que?
+         blobURL = URL.createObjectURL(blob),
          image = new Image()
 
    image.onload = () => {
