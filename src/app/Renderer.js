@@ -48,24 +48,21 @@ function wibble (svg) {
          blobURL = URL.createObjectURL(blob),
          image = new Image()
 
-   image.onload = () => {
-      let canvas = document.createElement('canvas')
-      canvas.width = width
-      canvas.height = height
-      let context = canvas.getContext('2d')
-      context.drawImage(image, 0, 0, width, height)
-      let png = canvas.toDataURL()  // default png
-      download(png, "image.png")
-   }
-
    image.src = blobURL
+   const canvas = document.createElement('canvas')
+   canvas.width = width
+   canvas.height = height
+   const context = canvas.getContext('2d')
+   context.drawImage(image, 0, 0, width, height)
+   const png = canvas.toDataURL()  // default png
+   download(canvas, png, "image.png")
 }
 
-function download (url, name) {
+function download (parent, url, name) {
    const link = document.createElement('a')
    link.download = name
    link.style.opacity = '0'
-   document.append(link)
+   parent.append(link)
    link.href = url
    link.click()
    link.remove()
