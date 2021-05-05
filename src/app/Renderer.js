@@ -2,11 +2,8 @@
 
 const d3 = require("d3")
 
-function drawMatrix (
-   nss,     // Array2 (Int × Bool)
-   i_max,   // Int
-   j_max    // Int
-) {
+// MatrixRep' -> Effect Unit
+function drawMatrix ({ value0: { value0: nss, value1: i_max }, value1: j_max }) {
    return () => {
       const w = 30, h = 30, gap = 1.15
       const div = d3.select('#app-root'),
@@ -35,6 +32,15 @@ function drawMatrix (
           .attr('y', 0.5 * h)
           .attr('fill', 'black')
           .text(d => d.value0)
+   }
+}
+
+// MatrixRep' -> MatrixRep' -> MatrixRep' -> Effect Unit
+function drawFigure (m1, m2, m3) {
+   return () => {
+      drawMatrix(m1)()
+      drawMatrix(m2)()
+      drawMatrix(m3)()
    }
 }
 
@@ -82,4 +88,4 @@ function curry3 (f) {
    return x => y => z => f(x, y, z)
 }
 
-exports.drawMatrix = curry3(drawMatrix)
+exports.drawFigure = curry3(drawFigure)
