@@ -36,7 +36,8 @@ newtype PrimOp = PrimOp {
 type Env = Bindings Val
 
 -- Matrices.
-type MatrixRep a = Array (Array (Val a)) × (Int × a) × (Int × a)
+type Array2 a = Array (Array a)
+type MatrixRep a = Array2 (Val a) × (Int × a) × (Int × a)
 
 insertMatrix :: Int -> Int -> Val 𝔹 -> Endo (MatrixRep 𝔹)
 insertMatrix i j v (vss × h × w) =

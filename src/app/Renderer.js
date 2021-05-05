@@ -3,7 +3,7 @@
 const d3 = require("d3")
 
 function drawMatrix (
-   nss,     // Array (Array (Int × Bool))
+   nss,     // Array2 (Int × Bool)
    i_max,   // Int
    j_max    // Int
 ) {
@@ -35,11 +35,10 @@ function drawMatrix (
           .attr('y', 0.5 * h)
           .attr('fill', 'black')
           .text(d => d.value0)
-
-      saveImage(svg.node())
    }
 }
 
+// Currently unused.
 function saveImage (svg) {
    const svg_xml = (new XMLSerializer()).serializeToString(svg),
          blob = new Blob([svg_xml], { type:'image/svg+xml;charset=utf-8' }),
