@@ -37,7 +37,7 @@ main =
          case desugarEval (ρ1 <> ρ2) s of
             Left msg -> log ("Execution failed: " <> msg)
             Right (t × output) -> do
-               let output' = Matrix true (insertMatrix 2 2 (Hole true) (holeMatrix 5 5))
+               let output' = Matrix true (insertMatrix 2 1 (Hole true) (holeMatrix 5 5))
                    ρ1ρ2 × s' = desugarEval_bwd (t × s) output'
                    filter' = successful (find "filter" ρ1ρ2)
                    input' = successful (find "image" ρ1ρ2)

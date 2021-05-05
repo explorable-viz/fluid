@@ -5,12 +5,12 @@ let zero a _ = a;
 
 let conv image filter method =
     let ((m, n), (i, j)) = (dims image, dims filter);
-        (half_j, half_i) = (j `quot` 2, i `quot` 2);
+        (half_i, half_j) = (i `quot` 2, j `quot` 2);
         area             = i * j
-    in  [| (sum [ image!(img_y, img_x) * filter!(i - y, j - x)
-                | (y, x) <- range ((0, 0), (i - 1, j - 1)),
-                  let img_x = method (d + x - half_j) n,
-                  let img_y = method (c + y - half_i) m,
+    in  [| (sum [ image!(img_y, img_x) * filter!(i' + 1, j' + 1)
+                | (i', j') <- range ((0, 0), (i - 1, j - 1)),
+                  let img_x = method (d + j' - half_j) n,
+                  let img_y = method (c + i' - half_i) m,
                   img_y >= 1, img_y <= m,
                   img_x >= 1, img_x <= n ]) `quot` area
          | (c, d) in (m, n) |];
