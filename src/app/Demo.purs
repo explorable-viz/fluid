@@ -25,9 +25,10 @@ splitDefs (S.Let defs s) ρ = do
    pure (ρ' × s)
 splitDefs _ _ = error absurd
 
-main :: Effect Unit
-main =
-   flip runAff_ (openWithDefaultImports "slicing/conv-extend") \result ->
+-- This is completely non-general, but that's fine for now.
+makeFigure :: String -> String -> Effect Unit
+makeFigure file divId =
+   flip runAff_ (openWithDefaultImports ("slicing/" <> file)) \result ->
    case result of
       Left e -> log ("Open failed: " <> show e)
       Right (ρ1 × s0) ->
@@ -41,4 +42,7 @@ main =
                    ρ1ρ2 × s' = desugarEval_bwd (t × s) output'
                    filter' = successful (find "filter" ρ1ρ2)
                    input' = successful (find "image" ρ1ρ2)
-               renderFigure "fig-2" (input' × input) (filter' × filter) (output' × output)
+               renderFigure divId (input' × input) (filter' × filter) (output' × output)
+
+main :: Effect Unit
+main = makeFigure "conv-extend" "fig-2"
