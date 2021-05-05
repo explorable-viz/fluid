@@ -35,7 +35,7 @@ let ceilingToNearest n m =
 -- Want infix <<<
 let compose f g x = f (g x);
 
--- (a, b) -> c) -> a -> b -> c
+-- ((a, b) -> c) -> a -> b -> c
 let curry f x y = f (x, y);
 
 -- (a -> b -> c) -> (a, b) -> c
@@ -212,14 +212,13 @@ let unzip [] = ([], []);
       let (xs, ys) = unzip zs in
       (x : xs, y : ys);
 
--- TODO: curry argument
--- ((a, b) -> c) -> List a -> List b -> List c
+-- (a -> b -> c) -> List a -> List b -> List c
 let zipWith op [] ys = [];
     zipWith op (x : xs) [] = [];
-    zipWith op (x : xs) (y : ys) = op (x, y) : zipWith op xs ys;
+    zipWith op (x : xs) (y : ys) = op x y : zipWith op xs ys;
 
 -- List a -> List b -> List (a, b)
-let zip = zipWith id;
+let zip = zipWith (curry id);
 
 -- Int -> Int -> List Int
 let enumFromTo n m =
