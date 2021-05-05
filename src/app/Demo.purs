@@ -12,7 +12,6 @@ import DesugarFwd (desugarModuleFwd)
 import Eval (eval_module)
 import Lattice (𝔹)
 import Module (openWithDefaultImports)
-import Primitive (match)
 import SExpr (Expr(..), Module(..)) as S
 import Test.Util (desugarEval, desugarEval_bwd)
 import Util (MayFail, type (×), (×), absurd, error, successful)
@@ -32,14 +31,16 @@ main =
    case result of
       Left e -> log ("Open failed: " <> show e)
       Right (ρ1 × s0) ->
-         let ρ2 × s = successful (splitDefs s0 ρ1) in
+         let ρ2 × s = successful (splitDefs s0 ρ1)
+             filter = successful (find "filter" ρ2)
+             input = successful (find "image" ρ2) in
          case desugarEval (ρ1 <> ρ2) s of
             Left msg -> log ("Execution failed: " <> msg)
-            Right (t × _) -> do
-               let output = Matrix true (insertMatrix 2 2 (Hole true) (holeMatrix 5 5))
-                   ρ1ρ2 × s' = desugarEval_bwd (t × s) output
-                   filter = successful (find "filter" ρ1ρ2)
-                   input = successful (find "image" ρ1ρ2)
-               renderMatrix (match input)
-               renderMatrix (match filter)
-               renderMatrix (match output)
+            Right (t × output) -> do
+               let output' = Matrix true (insertMatrix 2 2 (Hole true) (holeMatrix 5 5))
+                   ρ1ρ2 × s' = desugarEval_bwd (t × s) output'
+                   filter' = successful (find "filter" ρ1ρ2)
+                   input' = successful (find "image" ρ1ρ2)
+               renderMatrix (input × input')
+               renderMatrix (filter × filter')
+               renderMatrix (output × output')

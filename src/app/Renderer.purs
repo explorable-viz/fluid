@@ -17,9 +17,9 @@ toIntArray = (<$>) ((<$>) match)
 toIntArray2 :: Array2 (Val 𝔹 × Val 𝔹) -> Array2 (Int × 𝔹)
 toIntArray2 = (<$>) ((<$>) match_fwd)
 
-renderMatrix :: MatrixRep 𝔹 × 𝔹 -> Effect Unit
-renderMatrix (vss × (i × _) × (j × _) × _) = drawMatrix (toIntArray vss) i j
-
 -- Inputs are matrices; second is original (unsliced) value.
-renderMatrix2 :: Val 𝔹 × Val 𝔹 -> Effect Unit
-renderMatrix2 = match_fwd >>> renderMatrix
+renderMatrix :: Val 𝔹 × Val 𝔹 -> Effect Unit
+renderMatrix = match_fwd >>> renderMatrix'
+   where
+   renderMatrix' :: MatrixRep 𝔹 × 𝔹 -> Effect Unit
+   renderMatrix' (vss × (i × _) × (j × _) × _) = drawMatrix (toIntArray vss) i j
