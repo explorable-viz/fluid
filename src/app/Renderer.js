@@ -36,35 +36,45 @@ function drawMatrix (
           .attr('fill', 'black')
           .text(d => d.value0)
 
-      wibble()
+      wibble(svg.node())
    }
 }
 
-function wibble () {
-   var svg = document.getElementsByTagName('svg')[0];
+function wibble (svg) {
    var svg_xml = (new XMLSerializer()).serializeToString(svg),
-      blob = new Blob([svg_xml], {type:'image/svg+xml;charset=utf-8'}),
-      url = window.URL.createObjectURL(blob);
+       blob = new Blob([svg_xml], {type:'image/svg+xml;charset=utf-8'}),
+       url = window.URL.createObjectURL(blob),
+       { width, height } = svg.getBBox()
 
    var img = new Image();
-   img.width = 730;
-   img.height = 300;
-   img.onload = function() {
-      var canvas = document.createElement('canvas');
-      canvas.width = 730;
-      canvas.height = 300;
+   img.width = width;
+   img.height = height;
+   img.onload = function(){
+       var canvas = document.createElement('canvas');
+       canvas.width = width;
+       canvas.height = height;
 
-      var ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, 730, 300);
+       var ctx = canvas.getContext('2d');
+       ctx.drawImage(img, 0, 0, width, height);
 
-      window.URL.revokeObjectURL(url);
-      var canvasdata = canvas.toDataURL('image/png');
-      var a = document.getElementById('imgId');
-      a.download = "export_" + Date.now() + ".png";
-      a.href=canvasdata;
+       window.URL.revokeObjectURL(url);
+       var canvasdata = canvas.toDataURL('image/png');
+       var a = document.getElementById('imgId');
+       a.download = "export_" + Date.now() + ".png";
+       a.href=canvasdata;
    }
    img.src = url
 }
+
+function download (parent, url, name) {
+   const link = document.createElement('a')
+   link.download = name
+   link.style.opacity = '0'
+   parent.append(link)
+   link.href = url
+   link.click()
+   link.remove()
+ }
 
 function curry2 (f) {
    return x => y => f(x, y)
