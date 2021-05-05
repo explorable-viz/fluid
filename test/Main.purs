@@ -11,8 +11,8 @@ import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..), holeMatrix, insertMatrix)
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_slicing, test_linking, test_graphics ]
-tests = [ test_slicing ]
+tests = [ test_desugaring, test_misc, test_slicing, test_linking, test_graphics ]
+--tests = [ test_linking ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -33,11 +33,11 @@ test_linking = [
    testLink "pairs" (pair false hole (pair false hole (pair false (Int true 3) hole))) "(3, (_5_, _7_))",
    testLink "convolution"
             (Matrix true (insertMatrix 2 2 (Hole true) (holeMatrix 5 5)))
-            "_14_, _11_, _8_, 7, 15,\n\
-            \_20_, _13_, _19_, 9, 19,\n\
-            \_18_, _12_, _24_, 10, 12,\n\
-            \11, 15, 16, 10, 17,\n\
-            \4, 14, 13, 5, 17"
+            "_18_, _12_, _13_, 9, 19,\n\
+            \_20_, _11_, _24_, 9, 14,\n\
+            \_15_, _13_, _20_, 11, 14,\n\
+            \7, 15, 15, 8, 20,\n\
+            \3, 10, 12, 3, 11"
 ]
 
 test_slicing :: Array (Test Unit)
