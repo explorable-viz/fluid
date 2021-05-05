@@ -30,8 +30,8 @@ let dimensions2 (Point x1 y1, Point x2 y2) = Point (max2 x1 x2) (max2 y1 y2);
 -- since they are scale-invariant.
 -- GraphicsElement -> Point
 let
-   dimensions (Group gs) = foldl dimensions2 (Point 0 0) (map (coords_op) gs);
-   dimensions (Polyline ps _ _) = foldl dimensions2 (Point 0 0) ps;
+   dimensions (Group gs) = foldl (curry dimensions2) (Point 0 0) (map (coords_op) gs);
+   dimensions (Polyline ps _ _) = foldl (curry dimensions2) (Point 0 0) ps;
    dimensions (Rect _ _ w h _) = Point w h;
    dimensions (Text _ _ _ _ _) = Point 0 0; -- treat text like markers; scale-invariant
    dimensions (Viewport _ _ w h _ _ _ _ _) = Point w h;
