@@ -41,31 +41,33 @@ function drawMatrix (
 }
 
 function wibble (svg) {
-   var svg_xml = (new XMLSerializer()).serializeToString(svg),
-       blob = new Blob([svg_xml], {type:'image/svg+xml;charset=utf-8'}),
-       url = window.URL.createObjectURL(blob),
-       { width, height } = svg.getBBox()
+   const svg_xml = (new XMLSerializer()).serializeToString(svg),
+         blob = new Blob([svg_xml], { type:'image/svg+xml;charset=utf-8' }),
+         url = window.URL.createObjectURL(blob),
+         { width, height } = svg.getBBox()
 
-   var img = new Image();
-   img.width = width;
-   img.height = height;
-   img.onload = function(){
-       var canvas = document.createElement('canvas');
-       canvas.width = width;
-       canvas.height = height;
+   const img = new Image()
+   img.width = width
+   img.height = height
 
-       var ctx = canvas.getContext('2d');
-       ctx.drawImage(img, 0, 0, width, height);
+   img.onload = function() {
+       const canvas = document.createElement('canvas')
+       canvas.width = width
+       canvas.height = height
 
-       window.URL.revokeObjectURL(url);
-       var canvasdata = canvas.toDataURL('image/png');
-       var a = document.getElementById('imgId');
-       a.download = "export_" + Date.now() + ".png";
-       a.href=canvasdata;
+       const ctx = canvas.getContext('2d')
+       ctx.drawImage(img, 0, 0, width, height)
+
+       window.URL.revokeObjectURL(url)
+       const canvasData = canvas.toDataURL('image/png'),
+             a = document.getElementById('imgId')
+       a.download = "export_" + Date.now() + ".png"
+       a.href = canvasdata;
    }
    img.src = url
 }
 
+// not using this yet
 function download (parent, url, name) {
    const link = document.createElement('a')
    link.download = name
