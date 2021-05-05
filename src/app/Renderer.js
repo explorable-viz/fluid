@@ -2,11 +2,11 @@
 
 const d3 = require("d3")
 
-// MatrixRep' -> Effect Unit
-function drawMatrix ({ value0: { value0: nss, value1: i_max }, value1: j_max }) {
+// String -> MatrixRep' -> Effect Unit
+function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max }) {
    return () => {
       const w = 30, h = 30, gap = 1.15
-      const div = d3.select('#app-root'),
+      const div = d3.select('#' + id),
             svg = div.append('svg')
                      .attr('width', w * j_max * gap)
                      .attr('height', h * i_max * gap)
@@ -35,12 +35,12 @@ function drawMatrix ({ value0: { value0: nss, value1: i_max }, value1: j_max }) 
    }
 }
 
-// MatrixRep' -> MatrixRep' -> MatrixRep' -> Effect Unit
-function drawFigure (m1, m2, m3) {
+// String -> MatrixRep' -> MatrixRep' -> MatrixRep' -> Effect Unit
+function drawFigure (id, m1, m2, m3) {
    return () => {
-      drawMatrix(m1)()
-      drawMatrix(m2)()
-      drawMatrix(m3)()
+      drawMatrix(id, m1)()
+      drawMatrix(id, m2)()
+      drawMatrix(id, m3)()
    }
 }
 
@@ -81,11 +81,15 @@ function download (parent, dataURL, name) {
  }
 
 function curry2 (f) {
-   return x => y => f(x, y)
+   return x1 => x2 => f(x1, x2)
 }
 
 function curry3 (f) {
-   return x => y => z => f(x, y, z)
+   return x1 => x2 => x3 => f(x1, x2, x3)
 }
 
-exports.drawFigure = curry3(drawFigure)
+function curry4 (f) {
+   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
+}
+
+exports.drawFigure = curry4(drawFigure)
