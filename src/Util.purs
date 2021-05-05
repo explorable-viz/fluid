@@ -80,11 +80,11 @@ check false msg   = report msg
 mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = whenever (x == x') x
 
-mustEq :: forall a . Eq a => a -> a -> a
-mustEq x x' = fromJust "Must be equal" (x ≟ x')
+mustEq :: forall a . Eq a => Show a => a -> a -> a
+mustEq x x' = fromJust (show x <> " must be equal to " <> show x') (x ≟ x')
 
-mustGeq :: forall a . Ord a => a -> a -> a
-mustGeq x x' = fromJust "Must be greater" (whenever (x >= x') x)
+mustGeq :: forall a . Ord a => Show a => a -> a -> a
+mustGeq x x' = fromJust (show x <> " must be greater than " <> show x') (whenever (x >= x') x)
 
 unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
