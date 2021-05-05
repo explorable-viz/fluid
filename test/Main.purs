@@ -33,11 +33,11 @@ test_linking = [
    testLink "pairs" (pair false hole (pair false hole (pair false (Int true 3) hole))) "(3, (_5_, _7_))",
    testLink "convolution"
             (Matrix true (insertMatrix 2 2 (Hole true) (holeMatrix 5 5)))
-            "_14_, _11_, _8_, 7, 15,\n\
-            \_20_, _13_, _19_, 9, 19,\n\
-            \_18_, _12_, _24_, 10, 12,\n\
-            \11, 15, 16, 10, 17,\n\
-            \4, 14, 13, 5, 17"
+            "_18_, _12_, _13_, 9, 19,\n\
+            \_20_, _11_, _24_, 9, 14,\n\
+            \_15_, _13_, _20_, 11, 14,\n\
+            \7, 15, 15, 8, 20,\n\
+            \3, 10, 12, 3, 11"
 ]
 
 test_slicing :: Array (Test Unit)
@@ -47,25 +47,25 @@ test_slicing = [
    testBwd "array-dims" (pair true (Int true 3) (Int true 3)) "(_3_, _3_)",
    testBwd "conv-extend"
            (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
-           "_40_, 32, 22, 30, 37,\n\
-            \36, 30, 30, 29, 33,\n\
-            \28, 28, 34, 20, 20,\n\
-            \21, 25, 28, 28, 27,\n\
-            \13, 24, 27, 22, 29",
+            "_37_, 30, 25, 28, 38,\n\
+            \35, 27, 34, 27, 26,\n\
+            \26, 28, 30, 28, 28,\n\
+            \17, 30, 25, 17, 27,\n\
+            \14, 24, 30, 24, 28",
    testBwd "conv-wrap"
            (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
-           "_32_, 30, 25, 27, 29,\n\
-           \30, 30, 30, 29, 32,\n\
-           \34, 28, 34, 20, 24,\n\
-           \23, 25, 28, 28, 25,\n\
-           \26, 30, 26, 19, 28",
+           "_34_, 33, 24, 23, 31,\n\
+           \33, 27, 34, 27, 28,\n\
+           \25, 28, 30, 28, 26,\n\
+           \23, 30, 25, 17, 30,\n\
+           \26, 26, 27, 27, 28",
    testBwd "conv-zero"
            (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
-           "_18_, 20, 14, 20, 18,\n\
-           \25, 30, 30, 29, 25,\n\
-           \22, 28, 34, 20, 17,\n\
-           \16, 25, 28, 28, 20,\n\
-           \10, 21, 19, 15, 19",
+           "_20_, 24, 20, 19, 23,\n\
+           \28, 27, 34, 27, 17,\n\
+           \21, 28, 30, 28, 18,\n\
+           \15, 30, 25, 17, 22,\n\
+           \8, 14, 19, 17, 11",
    testBwd "divide" (Hole true) "_40.22222222222222_",
    testBwd "map"
             (Constr true cCons (Hole false : (Constr true cCons (Hole false : Hole false : Nil)) : Nil)) "[5, 6]",

@@ -35,7 +35,7 @@ let ceilingToNearest n m =
 -- Want infix <<<
 let compose f g x = f (g x);
 
--- (a, b) -> c) -> a -> b -> c
+-- ((a, b) -> c) -> a -> b -> c
 let curry f x y = f (x, y);
 
 -- (a -> b -> c) -> (a, b) -> c
@@ -87,25 +87,24 @@ let filter p [] = [];
       let ys = filter p xs in
       if p x then x : ys else ys;
 
--- Todo: have these take uncurried operators
--- ((a, b) -> a) -> a -> List b -> a
+-- (a -> b -> a) -> a -> List b -> a
 let foldl op z [] = z;
-    foldl op z (x : xs) = foldl op (op (z, x)) xs;
+    foldl op z (x : xs) = foldl op (op z x) xs;
 
--- ((a, b) -> a) -> List b -> a
+-- (a -> b -> a) -> List b -> a
 let foldl1 op (x : xs) = foldl op x xs;
 
--- ((a, b) -> b) -> b -> List a -> b
+-- (a -> b -> b) -> b -> List a -> b
 let foldr op z [] = z;
-    foldr op z (x : xs) = op (x, foldr op z xs);
+    foldr op z (x : xs) = op x (foldr op z xs);
 
--- ((a, b) -> b) -> List a -> b
+-- (a -> b -> b) -> List a -> b
 let foldr1 op [x] = x;
-    foldr1 op (x : y : xs) = op (x, foldr1 op (y : xs));
+    foldr1 op (x : y : xs) = op x (foldr1 op (y : xs));
 
 -- ((a, b) -> a) -> a -> List b -> List a
 let scanl1 op z xs =
-   let go (x, continue) acc =
+   let go x continue acc =
       let next = op (acc, x) in
       next : continue next in
    foldr go (const []) xs z;
@@ -128,7 +127,7 @@ let concat2 [] ys = ys;
     concat2 (x : xs) ys = x : concat2 xs ys;
 
 -- List (List a) -> List a
-let concat = foldl (uncurry concat2) [];
+let concat = foldl concat2 [];
 
 -- (a -> List b) -> List a -> List b
 let concatMap f xs = concat (map f xs);
@@ -143,7 +142,7 @@ let iterate n f z =
    if n == 0 then [] else z : map f (iterate (n - 1) f z);
 
 -- List Int -> Int
-let sum = foldr (uncurry (+)) 0;
+let sum = foldr (+) 0;
 
 -- List a -> a
 let last [x] = x;
@@ -180,7 +179,7 @@ let drop n xs =
 
 -- Int -> List a -> List a
 let lastN n xs =
-   foldl (uncurry (compose const (drop 1))) xs (drop n xs);
+   foldl (compose const (drop 1)) xs (drop n xs);
 
 -- Expects non-negative integer as first argument and non-empty list as second argument.
 -- Int -> List a -> a
@@ -193,20 +192,19 @@ let lookup k [] = error "Key not found in map";
     lookup k ((k', v) : kvs) =
        if k == k' then v else lookup k kvs;
 
--- TODO: curry.
--- (Int, Int) -> Int
-let max2 (n, m) =
+-- Int -> Int -> Int
+let max n m =
    if n > m then n else m;
 
--- (Int, Int) -> Int
-let min2 (n, m) =
+-- Int -> Int -> Int
+let min n m =
    if n < m then n else m;
 
 -- List Int -> Int
-let max = foldr1 max2;
+let maximum = foldr1 max;
 
 -- List Int -> Int
-let min = foldr1 min2;
+let minimum = foldr1 min;
 
 -- List (a, b) -> (List a, List b)
 let unzip [] = ([], []);
@@ -214,13 +212,13 @@ let unzip [] = ([], []);
       let (xs, ys) = unzip zs in
       (x : xs, y : ys);
 
--- ((a, b) -> c) -> List a -> List b -> List c
+-- (a -> b -> c) -> List a -> List b -> List c
 let zipWith op [] ys = [];
     zipWith op (x : xs) [] = [];
-    zipWith op (x : xs) (y : ys) = op (x, y) : zipWith op xs ys;
+    zipWith op (x : xs) (y : ys) = op x y : zipWith op xs ys;
 
 -- List a -> List b -> List (a, b)
-let zip = zipWith id;
+let zip = zipWith (curry id);
 
 -- Int -> Int -> List Int
 let enumFromTo n m =
