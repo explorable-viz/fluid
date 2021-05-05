@@ -23,7 +23,7 @@ let set_x x (Group gs) = error "Group has immutable coordinates";
     set_x x (Viewport _ y w h fill margin scale translate g) = Viewport x y w h fill margin scale translate g;
 
 -- (Point, Point) -> Point
-let dimensions2 (Point x1 y1, Point x2 y2) = Point (max2 x1 x2) (max2 y1 y2);
+let dimensions2 (Point x1 y1, Point x2 y2) = Point (max x1 x2) (max y1 y2);
 
 -- For Group, dimensions are relative to implicit coords of (0, 0), since a Group's children are effectively
 -- positioned relative to parent of Group. For Polymarker, will probably have to ignore the markers themselves,

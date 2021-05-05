@@ -193,18 +193,18 @@ let lookup k [] = error "Key not found in map";
        if k == k' then v else lookup k kvs;
 
 -- Int -> Int -> Int
-let max2 n m =
+let max n m =
    if n > m then n else m;
 
 -- Int -> Int -> Int
-let min2 n m =
+let min n m =
    if n < m then n else m;
 
 -- List Int -> Int
-let maximum = foldr1 max2;
+let maximum = foldr1 max;
 
 -- List Int -> Int
-let minimum = foldr1 min2;
+let minimum = foldr1 min;
 
 -- List (a, b) -> (List a, List b)
 let unzip [] = ([], []);
