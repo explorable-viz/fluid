@@ -79,7 +79,7 @@ let tail [] = error "Can't take tail of empty list";
 
 -- Int -> List Int -> Bool
 let elem x [] = False;
-    elem x (x' : xs) = or (x == x') (elem x xs);
+    elem x (x' : xs) = (x == x') `or` (elem x xs);
 
 -- (a -> Bool) -> List a -> List a
 let filter p [] = [];

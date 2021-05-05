@@ -5,7 +5,7 @@ import Control.Alt ((<|>))
 import Control.Apply (lift2)
 import Control.Lazy (fix)
 import Control.MonadPlus (empty)
-import Data.Array (elem, fromFoldable)
+import Data.Array (cons, elem, fromFoldable)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
@@ -16,7 +16,7 @@ import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import Text.Parsing.Parser.Combinators (between, try)
-import Text.Parsing.Parser.Expr (Operator(..), OperatorTable, buildExprParser)
+import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
@@ -25,7 +25,7 @@ import Text.Parsing.Parser.Token (
 import Bindings (Var)
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Lattice (𝔹)
-import Primitive.Parse (opDefs)
+import Primitive.Parse (OpDef, opDefs)
 import SExpr (
    Branch, Clause, Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..),
    RecDefs, VarDef(..), VarDefs
@@ -39,6 +39,7 @@ str :: {
    arrayRBracket  :: String,
    as             :: String,
    backslash      :: String,
+   backtick       :: String,
    bar            :: String,
    ellipsis       :: String,
    else_          :: String,
@@ -59,6 +60,7 @@ str = {
    arrayRBracket: "|]",
    as:            "as",
    backslash:     "\\",
+   backtick:      "`",
    bar:           "|",
    ellipsis:      "..",
    else_:         "else",
@@ -101,7 +103,10 @@ lArrow :: SParser Unit
 lArrow = token.reservedOp str.lArrow
 
 lBracket :: SParser Unit
-lBracket = void $ token.symbol str.lBracket
+lBracket = void (token.symbol str.lBracket)
+
+backtick :: SParser Unit
+backtick = void (token.symbol str.backtick)
 
 bar :: SParser Unit
 bar = token.reservedOp str.bar
@@ -218,8 +223,15 @@ defs expr' = singleton <$> choose (try $ varDefs expr') (recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser (Expr 𝔹)
-expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
+expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binaryOp)
    where
+   -- Pushing this to front of operator table to give it higher precedence than any other binary op.
+   -- (Reasonable approximation to Haskell, where backticked functions have default precedence 9.)
+   backtickOp :: Operator Identity String (Expr 𝔹)
+   backtickOp = flip Infix AssocLeft $ do
+      x <- between backtick backtick ident
+      pure (\e e' -> BinaryApp e x e')
+
    -- Syntactically distinguishing infix constructors from other operators (a la Haskell) allows us to
    -- optimise an application tree into a (potentially partial) constructor application.
    binaryOp :: String -> SParser (Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹)
@@ -349,8 +361,9 @@ expr_ = fix $ appChain >>> buildExprParser (operators binaryOp)
 operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
 operators binaryOp =
    fromFoldable $ fromFoldable <$>
-   (<$>) (\({ op, assoc }) -> Infix (try (binaryOp op)) assoc) <$>
-   groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) (values opDefs))
+   ops <#> (<$>) (\({ op, assoc }) -> Infix (try (binaryOp op)) assoc)
+   where ops :: List (NonEmptyList OpDef)
+         ops = groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) (values opDefs))
 
 -- Pattern with no continuation.
 pattern :: SParser Pattern

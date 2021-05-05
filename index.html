@@ -41,33 +41,5 @@
       </div>
    </div>
 
-   <script src='https://d3js.org/d3.v4.min.js'></script>
-   <script>
-      function drawMatrix (el, i, j) {
-         const w = 30, h = 30
-         const data = Array(i).fill(d3.range(j))
-         const grp = el.selectAll('g')
-            .data(data)
-            .enter()
-            .append('g')
-            .attr('transform', (d, i) => 'translate(0, ' + h * 1.15 * i + ')')
-
-         grp.selectAll('rect')
-            .data(d => d)
-            .enter()
-            .append('rect')
-               .attr('x', (d, j) => w * 1.15 * j)
-               .attr('width', w)
-               .attr('height', h)
-      }
-
-      const div = d3.select('#app-root'),
-            svg = div.append('svg')
-                  .attr('width', 200)
-                  .attr('height', 200)
-                  .attr('fill', 'green')
-      drawMatrix(svg, 5, 5)
-   </script>
-
 </body>
 </html>
