@@ -23,15 +23,15 @@ let set_x x (Group gs) = error "Group has immutable coordinates";
     set_x x (Viewport _ y w h fill margin scale translate g) = Viewport x y w h fill margin scale translate g;
 
 -- (Point, Point) -> Point
-let dimensions2 (Point x1 y1, Point x2 y2) = Point (max2 (x1, x2)) (max2 (y1, y2));
+let dimensions2 (Point x1 y1, Point x2 y2) = Point (max x1 x2) (max y1 y2);
 
 -- For Group, dimensions are relative to implicit coords of (0, 0), since a Group's children are effectively
 -- positioned relative to parent of Group. For Polymarker, will probably have to ignore the markers themselves,
 -- since they are scale-invariant.
 -- GraphicsElement -> Point
 let
-   dimensions (Group gs) = foldl dimensions2 (Point 0 0) (map (coords_op) gs);
-   dimensions (Polyline ps _ _) = foldl dimensions2 (Point 0 0) ps;
+   dimensions (Group gs) = foldl (curry dimensions2) (Point 0 0) (map (coords_op) gs);
+   dimensions (Polyline ps _ _) = foldl (curry dimensions2) (Point 0 0) ps;
    dimensions (Rect _ _ w h _) = Point w h;
    dimensions (Text _ _ _ _ _) = Point 0 0; -- treat text like markers; scale-invariant
    dimensions (Viewport _ _ w h _ _ _ _ _) = Point w h;
@@ -48,7 +48,7 @@ let height g = let Point _ h = dimensions g in h;
 
 -- Float -> Float -> List GraphicsElement -> List GraphicsElement
 let spaceRight z sep gs =
-   zipWith (uncurry set_x) (iterate (length gs) ((+) sep) z) gs;
+   zipWith set_x (iterate (length gs) ((+) sep) z) gs;
 
 -- Bake colour decisions into the library for the time being. Provide two palettes, so we can have two
 -- different sets of categorical values (e.g. countries and energy types). Palettes from colorbrewer2.org.
@@ -71,7 +71,7 @@ let stackRight sep gs =
 
 -- Float -> List GraphicsElement -> GraphicsElement
 let groupRight sep gs =
-   Viewport 0 0 (length gs) (max (map height gs)) "none" 0 (Scale 1 1) (Translate 0 0) (Group (stackRight sep gs));
+   Viewport 0 0 (length gs) (maximum (map height gs)) "none" 0 (Scale 1 1) (Translate 0 0) (Group (stackRight sep gs));
 
 -- Heuristic saying how often to place a tick on an axis of length n.
 -- Float -> Float
@@ -160,9 +160,9 @@ let lineChart withAxes colours x_start data =
          Polymarkers ps (repeat (length ps) (Circle 0 0 markerRadius colour))
       ];
    -- List GraphicsElement
-   let lines = zipWith plot (iterate nCat ((+) 1) 0) colours;
+   let lines = zipWith (curry plot) (iterate nCat ((+) 1) 0) colours;
        x_finish = last xs;
-       y_finish = max (flip map data (fun (_, kvs) -> max (map snd kvs)))
+       y_finish = maximum (flip map data (fun (_, kvs) -> maximum (map snd kvs)))
    in match withAxes as {
       True ->
          let (x_axis, x_finish) = axis Horiz 0 x_start x_finish;
@@ -176,7 +176,7 @@ let lineChart withAxes colours x_start data =
 let categoricalChart plotValue withAxes colours sep data =
    let gs = stackRight sep (plotValue colours (map snd data));
        w = length gs;
-       h = max (map height gs)
+       h = maximum (map height gs)
    in match withAxes as {
       True ->
          let x_axis = catAxis Horiz 0 (map fst data);
@@ -187,7 +187,7 @@ let categoricalChart plotValue withAxes colours sep data =
 
 -- Colours -> List a -> GraphicsElement
 let rects colours ns =
-   zipWith (fun (colour, n) -> Rect 0 0 1 n colour) colours ns;
+   zipWith (fun colour n -> Rect 0 0 1 n colour) colours ns;
 
 -- First component of data (categorical value) currently ignored; values just mapped positionally to colors.
 -- Can we use Group instead of Viewport here?

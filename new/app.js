@@ -1555,6 +1555,15 @@ var PS = {};
   var showNumber = new Show($foreign.showNumberImpl);
   var showInt = new Show($foreign.showIntImpl);
   var showChar = new Show($foreign.showCharImpl);
+  var showBoolean = new Show(function (v) {
+      if (v) {
+          return "true";
+      };
+      if (!v) {
+          return "false";
+      };
+      throw new Error("Failed pattern match at Data.Show (line 20, column 1 - line 22, column 23): " + [ v.constructor.name ]);
+  });
   var show = function (dict) {
       return dict.show;
   };
@@ -1563,6 +1572,7 @@ var PS = {};
   };
   exports["Show"] = Show;
   exports["show"] = show;
+  exports["showBoolean"] = showBoolean;
   exports["showInt"] = showInt;
   exports["showNumber"] = showNumber;
   exports["showChar"] = showChar;
@@ -5565,14 +5575,11 @@ var PS = {};
 
   const d3 = require("d3")
 
-  function drawMatrix (
-     nss,     // Array (Array (Int × Bool))
-     i_max,   // Int
-     j_max    // Int
-  ) {
+  // String -> MatrixRep' -> Effect Unit
+  function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max }) {
      return () => {
         const w = 30, h = 30, gap = 1.15
-        const div = d3.select('#app-root'),
+        const div = d3.select('#' + id),
               svg = div.append('svg')
                        .attr('width', w * j_max * gap)
                        .attr('height', h * i_max * gap)
@@ -5598,11 +5605,19 @@ var PS = {};
             .attr('y', 0.5 * h)
             .attr('fill', 'black')
             .text(d => d.value0)
-
-        saveImage(svg.node())
      }
   }
 
+  // String -> MatrixRep' -> MatrixRep' -> MatrixRep' -> Effect Unit
+  function drawFigure (id, m1, m2, m3) {
+     return () => {
+        drawMatrix(id, m1)()
+        drawMatrix(id, m2)()
+        drawMatrix(id, m3)()
+     }
+  }
+
+  // Currently unused.
   function saveImage (svg) {
      const svg_xml = (new XMLSerializer()).serializeToString(svg),
            blob = new Blob([svg_xml], { type:'image/svg+xml;charset=utf-8' }),
@@ -5639,14 +5654,18 @@ var PS = {};
    }
 
   function curry2 (f) {
-     return x => y => f(x, y)
+     return x1 => x2 => f(x1, x2)
   }
 
   function curry3 (f) {
-     return x => y => z => f(x, y, z)
+     return x1 => x2 => x3 => f(x1, x2, x3)
   }
 
-  exports.drawMatrix = curry3(drawMatrix)
+  function curry4 (f) {
+     return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
+  }
+
+  exports.drawFigure = curry4(drawFigure)
 })(PS["App.Renderer"] = PS["App.Renderer"] || {});
 (function(exports) {
   "use strict";
@@ -24820,8 +24839,8 @@ var PS = {};
   var $$with = function (msg) {
       return Data_Bifunctor.bimap(Data_Either.bifunctorEither)(function (msg$prime) {
           return msg$prime + (function () {
-              var $24 = msg === "";
-              if ($24) {
+              var $26 = msg === "";
+              if ($26) {
                   return "";
               };
               return "\x0a" + msg;
@@ -24893,16 +24912,20 @@ var PS = {};
       };
   };
   var mustEq = function (dictEq) {
-      return function (x) {
-          return function (x$prime) {
-              return fromJust("Must be equal")(mayEq(dictEq)(x)(x$prime));
+      return function (dictShow) {
+          return function (x) {
+              return function (x$prime) {
+                  return fromJust(Data_Show.show(dictShow)(x) + (" must be equal to " + Data_Show.show(dictShow)(x$prime)))(mayEq(dictEq)(x)(x$prime));
+              };
           };
       };
   };
   var mustGeq = function (dictOrd) {
-      return function (x) {
-          return function (x$prime) {
-              return fromJust("Must be greater")(whenever(Data_Ord.greaterThanOrEq(dictOrd)(x)(x$prime))(x));
+      return function (dictShow) {
+          return function (x) {
+              return function (x$prime) {
+                  return fromJust(Data_Show.show(dictShow)(x) + (" must be greater than " + Data_Show.show(dictShow)(x$prime)))(whenever(Data_Ord.greaterThanOrEq(dictOrd)(x)(x$prime))(x));
+              };
           };
       };
   };
@@ -24913,10 +24936,10 @@ var PS = {};
   };
   var unsafeUpdateAt = function (i) {
       return function (x) {
-          var $50 = fromJust("Array index out of bounds");
-          var $51 = Data_Array.updateAt(i)(x);
-          return function ($52) {
-              return $50($51($52));
+          var $52 = fromJust("Array index out of bounds");
+          var $53 = Data_Array.updateAt(i)(x);
+          return function ($54) {
+              return $52($53($54));
           };
       };
   };
@@ -24930,9 +24953,9 @@ var PS = {};
       throw new Error("Failed pattern match at Util (line 65, column 1 - line 65, column 40): " + [ v.constructor.name ]);
   };
   var successfulWith = function (msg) {
-      var $53 = $$with(msg);
-      return function ($54) {
-          return successful($53($54));
+      var $55 = $$with(msg);
+      return function ($56) {
+          return successful($55($56));
       };
   };
   var check = function (v) {
@@ -24969,10 +24992,10 @@ var PS = {};
   var absurd = "absurd";
   var mustLookup = function (dictOrd) {
       return function (k) {
-          var $55 = fromJust(absurd);
-          var $56 = Data_Map_Internal.lookup(dictOrd)(k);
-          return function ($57) {
-              return $55($56($57));
+          var $57 = fromJust(absurd);
+          var $58 = Data_Map_Internal.lookup(dictOrd)(k);
+          return function ($59) {
+              return $57($58($59));
           };
       };
   };
@@ -28266,7 +28289,7 @@ var PS = {};
                   return Empty.value;
               };
               if (v instanceof Extend && v1 instanceof Extend) {
-                  return new Extend(Lattice.expand(expandableBindings(dictExpandable))(v.value0)(v1.value0), new Binding(Util.mustEq(Data_Eq.eqString)(v.value1.value0)(v1.value1.value0), Lattice.expand(dictExpandable)(v.value1.value1)(v1.value1.value1)));
+                  return new Extend(Lattice.expand(expandableBindings(dictExpandable))(v.value0)(v1.value0), new Binding(Util.mustEq(Data_Eq.eqString)(Data_Show.showString)(v.value1.value0)(v1.value1.value0), Lattice.expand(dictExpandable)(v.value1.value1)(v1.value1.value1)));
               };
               return Util.error(Util.absurd);
           };
@@ -28755,19 +28778,19 @@ var PS = {};
               return v1;
           };
           if (v instanceof Hole && v1 instanceof Int) {
-              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
+              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), v1.value1);
           };
           if (v instanceof Hole && v1 instanceof Float) {
-              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
+              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), v1.value1);
           };
           if (v instanceof Hole && v1 instanceof Str) {
-              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
+              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), v1.value1);
           };
           if (v instanceof Hole && v1 instanceof Constr) {
-              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1, Data_Functor.map(Data_List_Types.functorList)(Lattice.expand(exprExpandable)(new Hole(v.value0)))(v1.value2));
+              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), v1.value1, Data_Functor.map(Data_List_Types.functorList)(Lattice.expand(exprExpandable)(new Hole(v.value0)))(v1.value2));
           };
           if (v instanceof Hole && v1 instanceof Matrix) {
-              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value1), new Data_Tuple.Tuple(v1.value2.value0, v1.value2.value1), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value3));
+              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value1), new Data_Tuple.Tuple(v1.value2.value0, v1.value2.value1), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value3));
           };
           if (v instanceof Hole && v1 instanceof Lambda) {
               return new Lambda(Lattice.expand(elimExpandable)(new ElimHole(v.value0))(v1.value0));
@@ -28782,25 +28805,25 @@ var PS = {};
               return new LetRec(Lattice.expand(Bindings.expandableBindings(elimExpandable))(Bindings.bindingsMap(Data_Function["const"](new ElimHole(v.value0)))(v1.value0))(v1.value0), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value1));
           };
           if (v instanceof Var && v1 instanceof Var) {
-              return new Var(Util.mustEq(Data_Eq.eqString)(v.value0)(v1.value0));
+              return new Var(Util.mustEq(Data_Eq.eqString)(Data_Show.showString)(v.value0)(v1.value0));
           };
           if (v instanceof Op && v1 instanceof Op) {
-              return new Op(Util.mustEq(Data_Eq.eqString)(v.value0)(v1.value0));
+              return new Op(Util.mustEq(Data_Eq.eqString)(Data_Show.showString)(v.value0)(v1.value0));
           };
           if (v instanceof Int && v1 instanceof Int) {
-              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqInt)(v.value1)(v1.value1));
+              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqInt)(Data_Show.showInt)(v.value1)(v1.value1));
           };
           if (v instanceof Float && v1 instanceof Float) {
-              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqNumber)(v.value1)(v1.value1));
+              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqNumber)(Data_Show.showNumber)(v.value1)(v1.value1));
           };
           if (v instanceof Str && v1 instanceof Str) {
-              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqString)(v.value1)(v1.value1));
+              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqString)(Data_Show.showString)(v.value1)(v1.value1));
           };
           if (v instanceof Constr && v1 instanceof Constr) {
-              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(DataType.eqCtr)(v.value1)(v1.value1), Lattice.expand(Lattice.expandableList(exprExpandable))(v.value2)(v1.value2));
+              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), Util.mustEq(DataType.eqCtr)(DataType.showCtr)(v.value1)(v1.value1), Lattice.expand(Lattice.expandableList(exprExpandable))(v.value2)(v1.value2));
           };
           if (v instanceof Matrix && v1 instanceof Matrix) {
-              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Lattice.expand(exprExpandable)(v.value1)(v1.value1), new Data_Tuple.Tuple(Util.mustEq(Data_Eq.eqString)(v.value2.value0)(v1.value2.value0), Util.mustEq(Data_Eq.eqString)(v.value2.value1)(v1.value2.value1)), Lattice.expand(exprExpandable)(v.value3)(v1.value3));
+              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), Lattice.expand(exprExpandable)(v.value1)(v1.value1), new Data_Tuple.Tuple(Util.mustEq(Data_Eq.eqString)(Data_Show.showString)(v.value2.value0)(v1.value2.value0), Util.mustEq(Data_Eq.eqString)(Data_Show.showString)(v.value2.value1)(v1.value2.value1)), Lattice.expand(exprExpandable)(v.value3)(v1.value3));
           };
           if (v instanceof Lambda && v1 instanceof Lambda) {
               return new Lambda(Lattice.expand(elimExpandable)(v.value0)(v1.value0));
@@ -29040,40 +29063,40 @@ var PS = {};
               return v;
           };
           if (v instanceof Hole && v1 instanceof Int) {
-              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
+              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), v1.value1);
           };
           if (v instanceof Hole && v1 instanceof Float) {
-              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
+              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), v1.value1);
           };
           if (v instanceof Hole && v1 instanceof Str) {
-              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
+              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), v1.value1);
           };
           if (v instanceof Hole && v1 instanceof Primitive) {
               return new Primitive(v1.value0, Data_Functor.map(Data_List_Types.functorList)(Lattice.expand(valExpandable)(new Hole(v.value0)))(v1.value1));
           };
           if (v instanceof Hole && v1 instanceof Constr) {
-              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1, Data_Functor.map(Data_List_Types.functorList)(Lattice.expand(valExpandable)(new Hole(v.value0)))(v1.value2));
+              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), v1.value1, Data_Functor.map(Data_List_Types.functorList)(Lattice.expand(valExpandable)(new Hole(v.value0)))(v1.value2));
           };
           if (v instanceof Hole && v1 instanceof Matrix) {
-              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Lattice.expand(valExpandable)(new Hole(v.value0))))(v1.value1.value0.value0), new Data_Tuple.Tuple(v1.value1.value0.value1.value0, Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value1.value0.value1.value1))), new Data_Tuple.Tuple(v1.value1.value1.value0, Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value1.value1.value1))));
+              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Lattice.expand(valExpandable)(new Hole(v.value0))))(v1.value1.value0.value0), new Data_Tuple.Tuple(v1.value1.value0.value1.value0, Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value1.value0.value1.value1))), new Data_Tuple.Tuple(v1.value1.value1.value0, Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value1.value1.value1))));
           };
           if (v instanceof Hole && v1 instanceof Closure) {
               return new Closure(Lattice.expand(Bindings.expandableBindings(valExpandable))(Bindings.bindingsMap(Data_Function["const"](new Hole(v.value0)))(v1.value0))(v1.value0), Lattice.expand(Bindings.expandableBindings(Expr.elimExpandable))(Bindings.bindingsMap(Data_Function["const"](new Expr.ElimHole(v.value0)))(v1.value1))(v1.value1), Lattice.expand(Expr.elimExpandable)(new Expr.ElimHole(v.value0))(v1.value2));
           };
           if (v instanceof Int && v1 instanceof Int) {
-              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqInt)(v.value1)(v1.value1));
+              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqInt)(Data_Show.showInt)(v.value1)(v1.value1));
           };
           if (v instanceof Float && v1 instanceof Float) {
-              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqNumber)(v.value1)(v1.value1));
+              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqNumber)(Data_Show.showNumber)(v.value1)(v1.value1));
           };
           if (v instanceof Str && v1 instanceof Str) {
-              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqString)(v.value1)(v1.value1));
+              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqString)(Data_Show.showString)(v.value1)(v1.value1));
           };
           if (v instanceof Constr && v1 instanceof Constr) {
-              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(DataType.eqCtr)(v.value1)(v1.value1), Lattice.expand(Lattice.expandableList(valExpandable))(v.value2)(v1.value2));
+              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), Util.mustEq(DataType.eqCtr)(DataType.showCtr)(v.value1)(v1.value1), Lattice.expand(Lattice.expandableList(valExpandable))(v.value2)(v1.value2));
           };
           if (v instanceof Matrix && v1 instanceof Matrix) {
-              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.expand(Lattice.expandableArray(Lattice.expandableArray(valExpandable)))(v.value1.value0.value0)(v1.value1.value0.value0), new Data_Tuple.Tuple(Util.mustEq(Data_Eq.eqInt)(v.value1.value0.value1.value0)(v1.value1.value0.value1.value0), Util.mustGeq(Data_Ord.ordBoolean)(v.value1.value0.value1.value1)(v1.value1.value0.value1.value1))), new Data_Tuple.Tuple(Util.mustEq(Data_Eq.eqInt)(v.value1.value1.value0)(v1.value1.value1.value0), Util.mustGeq(Data_Ord.ordBoolean)(v.value1.value1.value1)(v1.value1.value1.value1))));
+              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.expand(Lattice.expandableArray(Lattice.expandableArray(valExpandable)))(v.value1.value0.value0)(v1.value1.value0.value0), new Data_Tuple.Tuple(Util.mustEq(Data_Eq.eqInt)(Data_Show.showInt)(v.value1.value0.value1.value0)(v1.value1.value0.value1.value0), Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value1.value0.value1.value1)(v1.value1.value0.value1.value1))), new Data_Tuple.Tuple(Util.mustEq(Data_Eq.eqInt)(Data_Show.showInt)(v.value1.value1.value0)(v1.value1.value1.value0), Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value1.value1.value1)(v1.value1.value1.value1))));
           };
           if (v instanceof Closure && v1 instanceof Closure) {
               return new Closure(Lattice.expand(Bindings.expandableBindings(valExpandable))(v.value0)(v1.value0), Lattice.expand(Bindings.expandableBindings(Expr.elimExpandable))(v.value1)(v1.value1), Lattice.expand(Expr.elimExpandable)(v.value2)(v1.value2));
@@ -29126,7 +29149,7 @@ var PS = {};
           if (v instanceof Closure) {
               return new Closure(Data_Functor.map(Bindings.functorBindings(functorVal))(f)(v.value0), Data_Functor.map(Bindings.functorBindings(Expr.functorElim))(f)(v.value1), Data_Functor.map(Expr.functorElim)(f)(v.value2));
           };
-          throw new Error("Failed pattern match at Val (line 53, column 1 - line 62, column 76): " + [ f.constructor.name, v.constructor.name ]);
+          throw new Error("Failed pattern match at Val (line 54, column 1 - line 63, column 76): " + [ f.constructor.name, v.constructor.name ]);
       };
   });
   var slicesVal = new Lattice.Slices(function () {
@@ -29823,31 +29846,27 @@ var PS = {};
   $PS["App.Renderer"] = $PS["App.Renderer"] || {};
   var exports = $PS["App.Renderer"];
   var $foreign = $PS["App.Renderer"];
+  var Data_Array = $PS["Data.Array"];
   var Data_Functor = $PS["Data.Functor"];
+  var Data_Tuple = $PS["Data.Tuple"];
   var Primitive = $PS["Primitive"];                
-  var toIntArray = Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Primitive.match(Primitive.toFromInt)));
-  var renderMatrix = function (v) {
-      return $foreign.drawMatrix(toIntArray(v.value0.value0.value0))(v.value0.value0.value1.value0)(v.value0.value1.value0);
+  var toIntMatrix = Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Primitive.match_fwd(Primitive.toFromInt)));
+  var bits = function (v) {
+      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(toIntMatrix(Data_Array.zipWith(Data_Array.zip)(v.value0.value0.value0)(v.value1.value0.value0)), v.value1.value0.value1.value0), v.value1.value1.value0);
   };
-  exports["renderMatrix"] = renderMatrix;
-})(PS);
-(function(exports) {
-  "use strict";
-
-  exports.log = function (s) {
-    return function () {
-      console.log(s);
-      return {};
-    };
+  var renderFigure = function (id) {
+      return function (v) {
+          return function (v1) {
+              return function (v2) {
+                  var v3 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.value0, v.value1));
+                  var v4 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v1.value0, v1.value1));
+                  var v5 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v2.value0, v2.value1));
+                  return $foreign.drawFigure(id)(bits(new Data_Tuple.Tuple(v3.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.value1)))))(bits(new Data_Tuple.Tuple(v4.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v1.value1)))))(bits(new Data_Tuple.Tuple(v5.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v2.value1)))));
+              };
+          };
+      };
   };
-})(PS["Effect.Console"] = PS["Effect.Console"] || {});
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Effect.Console"] = $PS["Effect.Console"] || {};
-  var exports = $PS["Effect.Console"];
-  var $foreign = $PS["Effect.Console"];
-  exports["log"] = $foreign.log;
+  exports["renderFigure"] = renderFigure;
 })(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
@@ -30131,6 +30150,24 @@ var PS = {};
   exports["desugarModuleFwd"] = desugarModuleFwd;
   exports["elimBool"] = elimBool;
   exports["totaliseConstrFwd"] = totaliseConstrFwd;
+})(PS);
+(function(exports) {
+  "use strict";
+
+  exports.log = function (s) {
+    return function () {
+      console.log(s);
+      return {};
+    };
+  };
+})(PS["Effect.Console"] = PS["Effect.Console"] || {});
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Effect.Console"] = $PS["Effect.Console"] || {};
+  var exports = $PS["Effect.Console"];
+  var $foreign = $PS["Effect.Console"];
+  exports["log"] = $foreign.log;
 })(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
@@ -30602,7 +30639,6 @@ var PS = {};
           throw new Error("Failed pattern match at Eval (line 114, column 1 - line 114, column 52): " + [ ρ.constructor.name, v.constructor.name ]);
       };
   };
-  exports["closeDefs"] = closeDefs;
   exports["eval"] = $$eval;
   exports["eval_module"] = eval_module;
 })(PS);
@@ -31273,6 +31309,7 @@ var PS = {};
   var Data_Map_Internal = $PS["Data.Map.Internal"];
   var Data_NonEmpty = $PS["Data.NonEmpty"];
   var Data_Semigroup = $PS["Data.Semigroup"];
+  var Data_Show = $PS["Data.Show"];
   var Data_Tuple = $PS["Data.Tuple"];
   var DataType = $PS["DataType"];
   var Expl = $PS["Expl"];
@@ -31296,7 +31333,7 @@ var PS = {};
   var unmatch = function (v) {
       return function (v1) {
           if (v instanceof Bindings.Extend && v1 instanceof Expl.MatchVar) {
-              return new Data_Tuple.Tuple(v.value0, new Bindings.Extend(Bindings.Empty.value, new Bindings.Binding(Util.mustEq(Data_Eq.eqString)(v.value1.value0)(v1.value0), v.value1.value1)));
+              return new Data_Tuple.Tuple(v.value0, new Bindings.Extend(Bindings.Empty.value, new Bindings.Binding(Util.mustEq(Data_Eq.eqString)(Data_Show.showString)(v.value1.value0)(v1.value0), v.value1.value1)));
           };
           if (v instanceof Bindings.Empty && v1 instanceof Expl.MatchVar) {
               return Util.error(Util.absurd);
@@ -31315,7 +31352,7 @@ var PS = {};
           return function (v2) {
               return function (v3) {
                   if (v instanceof Bindings.Extend && (v.value0 instanceof Bindings.Empty && v3 instanceof Expl.MatchVar)) {
-                      return new Data_Tuple.Tuple(v.value1.value1, new Expr.ElimVar(Util.mustEq(Data_Eq.eqString)(v.value1.value0)(v3.value0), v1));
+                      return new Data_Tuple.Tuple(v.value1.value1, new Expr.ElimVar(Util.mustEq(Data_Eq.eqString)(Data_Show.showString)(v.value1.value0)(v3.value0), v1));
                   };
                   if (v instanceof Bindings.Empty && v3 instanceof Expl.MatchVarAnon) {
                       return new Data_Tuple.Tuple(Lattice.botOf(Val.boundedSlices)(v3.value0), new Expr.ElimVar(Bindings.varAnon, v1));
@@ -31502,222 +31539,8 @@ var PS = {};
 (function($PS) {
   // Generated by purs version 0.13.6
   "use strict";
-  $PS["EvalFwd"] = $PS["EvalFwd"] || {};
-  var exports = $PS["EvalFwd"];
-  var Bindings = $PS["Bindings"];
-  var Control_Bind = $PS["Control.Bind"];
-  var Data_Array = $PS["Data.Array"];
-  var Data_Function = $PS["Data.Function"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_List = $PS["Data.List"];
-  var Data_List_Types = $PS["Data.List.Types"];
-  var Data_Map_Internal = $PS["Data.Map.Internal"];
-  var Data_Semigroup = $PS["Data.Semigroup"];
-  var Data_Tuple = $PS["Data.Tuple"];
-  var DataType = $PS["DataType"];
-  var Eval = $PS["Eval"];
-  var Expl = $PS["Expl"];
-  var Expr = $PS["Expr"];
-  var Lattice = $PS["Lattice"];
-  var Primitive = $PS["Primitive"];
-  var Util = $PS["Util"];
-  var Val = $PS["Val"];                
-  var matchFwd = function (v) {
-      return function (σ) {
-          return function (v1) {
-              var v2 = v;
-              if (v1 instanceof Expl.MatchVar) {
-                  var v3 = Lattice.expand(Expr.elimExpandable)(σ)(new Expr.ElimVar(v1.value0, new Expr.ContHole(false)));
-                  if (v3 instanceof Expr.ElimVar) {
-                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Bindings.Extend(Bindings.Empty.value, new Bindings.Binding(v1.value0, v2)), v3.value1), true);
-                  };
-                  return Util.error(Util.absurd);
-              };
-              if (v1 instanceof Expl.MatchVarAnon) {
-                  var v2 = Lattice.expand(Expr.elimExpandable)(σ)(new Expr.ElimVar(Bindings.varAnon, new Expr.ContHole(false)));
-                  if (v2 instanceof Expr.ElimVar) {
-                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Bindings.Empty.value, v2.value1), true);
-                  };
-                  return Util.error(Util.absurd);
-              };
-              if (v1 instanceof Expl.MatchConstr) {
-                  var v3 = new Data_Tuple.Tuple(Lattice.expand(Val.valExpandable)(v)(new Val.Constr(false, v1.value0, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Val.Hole(false)))(v1.value1))), Lattice.expand(Expr.elimExpandable)(σ)(new Expr.ElimConstr(Data_Map_Internal.fromFoldable(DataType.ordCtr)(Data_List_Types.foldableList)(Data_Functor.map(Data_List_Types.functorList)(function (v4) {
-                      return new Data_Tuple.Tuple(v4, new Expr.ContHole(false));
-                  })(new Data_List_Types.Cons(v1.value0, v1.value2))))));
-                  if (v3.value0 instanceof Val.Constr && v3.value1 instanceof Expr.ElimConstr) {
-                      var v4 = matchArgsFwd(v3.value0.value2)(Util.mustLookup(DataType.ordCtr)(v1.value0)(v3.value1.value0))(v1.value1);
-                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(v4.value0.value0, v4.value0.value1), Lattice.meet(v3.value0.value0)(v4.value1));
-                  };
-                  return Util.error(Util.absurd);
-              };
-              throw new Error("Failed pattern match at EvalFwd (line 20, column 1 - line 20, column 61): " + [ v.constructor.name, σ.constructor.name, v1.constructor.name ]);
-          };
-      };
-  };
-  var matchArgsFwd = function (v) {
-      return function (v1) {
-          return function (v2) {
-              if (v instanceof Data_List_Types.Nil && v2 instanceof Data_List_Types.Nil) {
-                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Bindings.Empty.value, v1), true);
-              };
-              if (v instanceof Data_List_Types.Cons && v2 instanceof Data_List_Types.Cons) {
-                  var v4 = Lattice.expand(Expr.contExpandable)(v1)(new Expr.ContElim(new Expr.ElimHole(false)));
-                  if (v4 instanceof Expr.ContElim) {
-                      var v5 = matchFwd(v.value0)(v4.value0)(v2.value0);
-                      var v6 = matchArgsFwd(v.value1)(v5.value0.value1)(v2.value1);
-                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Semigroup.append(Bindings.semigroupBindings)(v5.value0.value0)(v6.value0.value0), v6.value0.value1), Lattice.meet(v5.value1)(v6.value1));
-                  };
-                  return Util.error(Util.absurd);
-              };
-              return Util.error(Util.absurd);
-          };
-      };
-  };
-  var evalFwd = function (ρ) {
-      return function (e) {
-          return function (v) {
-              return function (v1) {
-                  if (v1 instanceof Expl.Var) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Var(v1.value1));
-                      if (v2 instanceof Expr.Var) {
-                          return Util.successful(Bindings.find(v1.value1)(ρ));
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.Op) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Op(v1.value1));
-                      if (v2 instanceof Expr.Op) {
-                          return Util.successful(Bindings.find(v1.value1)(ρ));
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.Int) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Int(false, v1.value1));
-                      if (v2 instanceof Expr.Int) {
-                          return new Val.Int(Lattice.meet(v2.value0)(v), v1.value1);
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.Float) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Float(false, v1.value1));
-                      if (v2 instanceof Expr.Float) {
-                          return new Val.Float(Lattice.meet(v2.value0)(v), v1.value1);
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.Str) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Str(false, v1.value1));
-                      if (v2 instanceof Expr.Str) {
-                          return new Val.Str(Lattice.meet(v2.value0)(v), v1.value1);
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.Constr) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, v1.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Expr.Hole(false)))(v1.value2)));
-                      if (v2 instanceof Expr.Constr) {
-                          return new Val.Constr(Lattice.meet(v2.value0)(v), v1.value1, Data_Functor.map(Data_List_Types.functorList)(function (v3) {
-                              return evalFwd(ρ)(v3.value0)(v)(v3.value1);
-                          })(Data_List.zip(v2.value2)(v1.value2)));
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.Matrix) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Matrix(false, new Expr.Hole(false), new Data_Tuple.Tuple(v1.value1.value0, v1.value1.value1), new Expr.Hole(false)));
-                      if (v2 instanceof Expr.Matrix) {
-                          var v3 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v2.value3)(v2.value0)(v1.value3))(new Val.Constr(false, DataType.cPair, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value))));
-                          if (v3 instanceof Val.Constr && (v3.value2 instanceof Data_List_Types.Cons && (v3.value2.value1 instanceof Data_List_Types.Cons && v3.value2.value1.value1 instanceof Data_List_Types.Nil))) {
-                              var v4 = new Data_Tuple.Tuple(Primitive.match_fwd(Primitive.toFromInt)(new Data_Tuple.Tuple(v3.value2.value0, new Val.Int(false, v1.value2.value0))), Primitive.match_fwd(Primitive.toFromInt)(new Data_Tuple.Tuple(v3.value2.value1.value0, new Val.Int(false, v1.value2.value1))));
-                              var vss = Util.assert(v4.value0.value0 === v1.value2.value0 && v4.value1.value0 === v1.value2.value1)(Data_Array.fromFoldable(Data_List_Types.foldableList)(Control_Bind.bind(Data_List_Types.bindList)(Data_List.range(1)(v1.value2.value0))(function (i) {
-                                  return Data_List.singleton(Data_Array.fromFoldable(Data_List_Types.foldableList)(Control_Bind.bind(Data_List_Types.bindList)(Data_List.range(1)(v1.value2.value1))(function (j) {
-                                      return Data_List.singleton(evalFwd(new Bindings.Extend(new Bindings.Extend(ρ, new Bindings.Binding(v1.value1.value0, new Val.Int(v2.value0, i))), new Bindings.Binding(v1.value1.value1, new Val.Int(v2.value0, j))))(v2.value1)(v)(Util.unsafeIndex(Util.unsafeIndex(v1.value0)(i - 1 | 0))(j - 1 | 0)));
-                                  })));
-                              })));
-                              return new Val.Matrix(Lattice.meet(v2.value0)(v), new Data_Tuple.Tuple(new Data_Tuple.Tuple(vss, new Data_Tuple.Tuple(v1.value2.value0, v4.value0.value1)), new Data_Tuple.Tuple(v1.value2.value1, v4.value1.value1)));
-                          };
-                          return Util.error(Util.absurd);
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.LetRec) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.LetRec(Lattice.botOf(Bindings.boundedSlices(Expr.functorElim)(Expr.boundedSlicesElim))(v1.value0), new Expr.Hole(false)));
-                      if (v2 instanceof Expr.LetRec) {
-                          var ρ$prime = Eval.closeDefs(ρ)(v2.value0)(v2.value0);
-                          return evalFwd(Data_Semigroup.append(Bindings.semigroupBindings)(ρ)(ρ$prime))(v2.value1)(v)(v1.value1);
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.Lambda) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Lambda(new Expr.ElimHole(false)));
-                      if (v2 instanceof Expr.Lambda) {
-                          return new Val.Closure(ρ, Bindings.Empty.value, v2.value0);
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.App) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
-                      if (v2 instanceof Expr.App) {
-                          var v3 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v2.value0)(v)(v1.value0.value0.value0.value0))(new Val.Closure(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v1.value0.value0.value0.value1), Lattice.botOf(Bindings.boundedSlices(Expr.functorElim)(Expr.boundedSlicesElim))(v1.value0.value0.value1), new Expr.ElimHole(false)));
-                          if (v3 instanceof Val.Closure) {
-                              var ρ2 = Eval.closeDefs(v3.value0)(v3.value1)(v3.value1);
-                              var v4 = evalFwd(ρ)(v2.value1)(v)(v1.value1);
-                              var v5 = matchFwd(v4)(v3.value2)(v1.value2);
-                              return evalFwd(Data_Semigroup.append(Bindings.semigroupBindings)(v3.value0)(Data_Semigroup.append(Bindings.semigroupBindings)(ρ2)(v5.value0.value0)))(Expr.asExpr(v5.value0.value1))(v5.value1)(v1.value3);
-                          };
-                          return Util.error(Util.absurd);
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.AppPrim) {
-                      var v3 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
-                      if (v3 instanceof Expr.App) {
-                          var v4 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v3.value0)(v)(v1.value0.value0.value0))(new Val.Primitive(v1.value0.value0.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Val.Hole(false)))(v1.value0.value1)));
-                          if (v4 instanceof Val.Primitive) {
-                              var v2$prime = evalFwd(ρ)(v3.value1)(v)(v1.value1.value0);
-                              var vs$prime$prime = Data_Semigroup.append(Data_List_Types.semigroupList)(Data_List.zip(v4.value1)(v1.value0.value1))(Data_List.singleton(new Data_Tuple.Tuple(v2$prime, v1.value1.value1)));
-                              var $179 = v1.value0.value0.value1.arity > Data_List.length(vs$prime$prime);
-                              if ($179) {
-                                  return new Val.Primitive(v1.value0.value0.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Tuple.fst)(vs$prime$prime));
-                              };
-                              return v1.value0.value0.value1.op_fwd(vs$prime$prime);
-                          };
-                          return Util.error(Util.absurd);
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.AppConstr) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
-                      if (v2 instanceof Expr.App) {
-                          var v3 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v2.value0)(v)(v1.value0.value0.value0))(new Val.Constr(false, v1.value0.value0.value1, Util.replicate(v1.value0.value1)(new Val.Hole(false))));
-                          if (v3 instanceof Val.Constr) {
-                              var v4 = evalFwd(ρ)(v2.value1)(v)(v1.value1);
-                              return new Val.Constr(Lattice.meet(v)(v3.value0), v1.value0.value0.value1, Data_Semigroup.append(Data_List_Types.semigroupList)(v3.value2)(Data_List.singleton(v4)));
-                          };
-                          return Util.error(Util.absurd);
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  if (v1 instanceof Expl.Let) {
-                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Let(new Expr.VarDef(new Expr.ElimHole(false), new Expr.Hole(false)), new Expr.Hole(false)));
-                      if (v2 instanceof Expr.Let) {
-                          var v3 = evalFwd(ρ)(v2.value0.value1)(v)(v1.value0.value1);
-                          var v4 = matchFwd(v3)(v2.value0.value0)(v1.value0.value0);
-                          return evalFwd(Data_Semigroup.append(Bindings.semigroupBindings)(ρ)(v4.value0.value0))(v2.value1)(v4.value1)(v1.value1);
-                      };
-                      return Util.error(Util.absurd);
-                  };
-                  throw new Error("Failed pattern match at EvalFwd (line 48, column 1 - line 48, column 51): " + [ ρ.constructor.name, e.constructor.name, v.constructor.name, v1.constructor.name ]);
-              };
-          };
-      };
-  };
-  exports["evalFwd"] = evalFwd;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
   $PS["Test.Util"] = $PS["Test.Util"] || {};
   var exports = $PS["Test.Util"];
-  var Bindings = $PS["Bindings"];
   var Control_Bind = $PS["Control.Bind"];
   var Data_Either = $PS["Data.Either"];
   var Data_Tuple = $PS["Data.Tuple"];
@@ -31725,17 +31548,6 @@ var PS = {};
   var DesugarFwd = $PS["DesugarFwd"];
   var Eval = $PS["Eval"];
   var EvalBwd = $PS["EvalBwd"];
-  var EvalFwd = $PS["EvalFwd"];
-  var Expr = $PS["Expr"];
-  var Lattice = $PS["Lattice"];
-  var Util = $PS["Util"];
-  var Val = $PS["Val"];
-  var desugarEval_fwd = function (ρ) {
-      return function (s) {
-          var v = EvalFwd.evalFwd(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(ρ))(new Expr.Hole(false))(false);
-          return EvalFwd.evalFwd(ρ)(Util.successful(DesugarFwd.desugarFwd(s)))(true);
-      };
-  };
   var desugarEval_bwd = function (v) {
       return function (v1) {
           var v3 = EvalBwd.evalBwd(v1)(v.value0);
@@ -31749,7 +31561,6 @@ var PS = {};
   };
   exports["desugarEval"] = desugarEval;
   exports["desugarEval_bwd"] = desugarEval_bwd;
-  exports["desugarEval_fwd"] = desugarEval_fwd;
 })(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
@@ -31757,36 +31568,69 @@ var PS = {};
   $PS["App.Demo"] = $PS["App.Demo"] || {};
   var exports = $PS["App.Demo"];
   var App_Renderer = $PS["App.Renderer"];
+  var Bindings = $PS["Bindings"];
+  var Control_Applicative = $PS["Control.Applicative"];
+  var Control_Bind = $PS["Control.Bind"];
   var Data_Either = $PS["Data.Either"];
   var Data_Function = $PS["Data.Function"];
+  var Data_List = $PS["Data.List"];
+  var Data_Semigroup = $PS["Data.Semigroup"];
   var Data_Show = $PS["Data.Show"];
   var Data_Tuple = $PS["Data.Tuple"];
+  var DesugarFwd = $PS["DesugarFwd"];
   var Effect_Aff = $PS["Effect.Aff"];
   var Effect_Console = $PS["Effect.Console"];
   var Effect_Exception = $PS["Effect.Exception"];
+  var Eval = $PS["Eval"];
   var Module = $PS["Module"];
-  var Primitive = $PS["Primitive"];
+  var SExpr = $PS["SExpr"];
   var Test_Util = $PS["Test.Util"];
+  var Util = $PS["Util"];
   var Val = $PS["Val"];                
-  var main = Data_Function.flip(Effect_Aff.runAff_)(Module.openWithDefaultImports("slicing/conv-extend"))(function (result) {
-      if (result instanceof Data_Either.Left) {
-          return Effect_Console.log("Open failed: " + Data_Show.show(Effect_Exception.showError)(result.value0));
-      };
-      if (result instanceof Data_Either.Right) {
-          var v = Test_Util.desugarEval(result.value0.value0)(result.value0.value1);
-          if (v instanceof Data_Either.Left) {
-              return Effect_Console.log("Execution failed: " + v.value0);
+  var splitDefs = function (v) {
+      return function (v1) {
+          if (v instanceof SExpr.Let) {
+              return Control_Bind.bind(Data_Either.bindEither)(Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarModuleFwd(new SExpr.Module(Data_List.singleton(new Data_Either.Left(v.value0)))))(Eval.eval_module(v1)))(function (ρ$prime) {
+                  return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(ρ$prime, v.value1));
+              });
           };
-          if (v instanceof Data_Either.Right) {
-              var v1 = new Val.Matrix(true, Val.insertMatrix(2)(2)(new Val.Hole(true))(Val.holeMatrix(5)(5)));
-              var v2 = Test_Util.desugarEval_bwd(new Data_Tuple.Tuple(v.value0.value0, result.value0.value1))(v1);
-              var v$prime = Test_Util.desugarEval_fwd(v2.value0)(v2.value1)(v.value0.value0);
-              return App_Renderer.renderMatrix(Primitive.match(Primitive.toFromMatrixRep)(v$prime));
-          };
-          throw new Error("Failed pattern match at App.Demo (line 20, column 24 - line 26, column 36): " + [ v.constructor.name ]);
+          return Util.error(Util.absurd);
       };
-      throw new Error("Failed pattern match at App.Demo (line 18, column 4 - line 26, column 36): " + [ result.constructor.name ]);
-  });
+  };
+  var makeFigure = function (file) {
+      return function (divId) {
+          return Data_Function.flip(Effect_Aff.runAff_)(Module.openWithDefaultImports("slicing/" + file))(function (result) {
+              if (result instanceof Data_Either.Left) {
+                  return Effect_Console.log("Open failed: " + Data_Show.show(Effect_Exception.showError)(result.value0));
+              };
+              if (result instanceof Data_Either.Right) {
+                  var v = Util.successful(splitDefs(result.value0.value1)(result.value0.value0));
+                  var input = Util.successful(Bindings.find("image")(v.value0));
+                  var filter = Util.successful(Bindings.find("filter")(v.value0));
+                  var v1 = Test_Util.desugarEval(Data_Semigroup.append(Bindings.semigroupBindings)(result.value0.value0)(v.value0))(v.value1);
+                  if (v1 instanceof Data_Either.Left) {
+                      return Effect_Console.log("Execution failed: " + v1.value0);
+                  };
+                  if (v1 instanceof Data_Either.Right) {
+                      var output$prime = new Val.Matrix(true, Val.insertMatrix(2)(1)(new Val.Hole(true))(Val.holeMatrix(5)(5)));
+                      var v2 = Test_Util.desugarEval_bwd(new Data_Tuple.Tuple(v1.value0.value0, v.value1))(output$prime);
+                      var input$prime = Util.successful(Bindings.find("image")(v2.value0));
+                      var filter$prime = Util.successful(Bindings.find("filter")(v2.value0));
+                      return App_Renderer.renderFigure(divId)(new Data_Tuple.Tuple(input$prime, input))(new Data_Tuple.Tuple(filter$prime, filter))(new Data_Tuple.Tuple(output$prime, v1.value0.value1));
+                  };
+                  throw new Error("Failed pattern match at App.Demo (line 38, column 10 - line 45, column 89): " + [ v1.constructor.name ]);
+              };
+              throw new Error("Failed pattern match at App.Demo (line 32, column 4 - line 45, column 89): " + [ result.constructor.name ]);
+          });
+      };
+  };
+  var main = function __do() {
+      makeFigure("conv-wrap")("fig-1")();
+      makeFigure("conv-extend")("fig-2")();
+      return makeFigure("conv-zero")("fig-3")();
+  };
+  exports["splitDefs"] = splitDefs;
+  exports["makeFigure"] = makeFigure;
   exports["main"] = main;
 })(PS);
 PS["App.Demo"].main();

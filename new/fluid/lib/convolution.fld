@@ -1,16 +1,15 @@
-let zero a _ = a;
-    wrap a n = let b = a `mod` n in if b == 0 then n else b;
-    extend x upper = if x > upper then upper else if x < 1 then 1 else x;
+let zero n = const n;
+    wrap n n_max = ((n - 1) `mod` n_max) + 1;
+    extend n = min (max n 1);
     nth2 i j xss = nth (j - 1) (nth (i - 1) xss);
 
-let conv image filter method =
+let convolve image filter method =
     let ((m, n), (i, j)) = (dims image, dims filter);
-        (half_j, half_i) = (j `quot` 2, i `quot` 2);
+        (half_i, half_j) = (i `quot` 2, j `quot` 2);
         area             = i * j
-    in  [| (sum [ image!(img_y, img_x) * filter!(i - y, j - x)
-                | (y, x) <- range ((0, 0), (i - 1, j - 1)),
-                  let img_x = method (d + x - half_j) n,
-                  let img_y = method (c + y - half_i) m,
-                  img_y >= 1, img_y <= m,
-                  img_x >= 1, img_x <= n ]) `quot` area
-         | (c, d) in (m, n) |];
+    in  [| (sum [ image!(x, y) * filter!(i' + 1, j' + 1)
+                | (i', j') <- range ((0, 0), (i - 1, j - 1)),
+                  let x = method (m' + i' - half_i) m,
+                  let y = method (n' + j' - half_j) n,
+                  x >= 1, x <= m, y >= 1, y <= n ]) `quot` area
+         | (m', n') in (m, n) |];
