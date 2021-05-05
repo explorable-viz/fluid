@@ -36,11 +36,11 @@ function drawMatrix (
           .attr('fill', 'black')
           .text(d => d.value0)
 
-      wibble(svg.node())
+      saveImage(svg.node())
    }
 }
 
-function wibble (svg) {
+function saveImage (svg) {
    const svg_xml = (new XMLSerializer()).serializeToString(svg),
          blob = new Blob([svg_xml], { type:'image/svg+xml;charset=utf-8' }),
          url = window.URL.createObjectURL(blob),
@@ -60,7 +60,7 @@ function wibble (svg) {
 
        window.URL.revokeObjectURL(url)
        const dataURL = canvas.toDataURL('image/png')
-       download(canvas, dataURL, "export_" + Date.now() + ".png")
+       download(canvas, dataURL, "image.png")
    }
    img.src = url
 }
