@@ -59,23 +59,20 @@ function wibble (svg) {
        ctx.drawImage(img, 0, 0, width, height)
 
        window.URL.revokeObjectURL(url)
-       const canvasData = canvas.toDataURL('image/png'),
-             a = document.getElementById('imgId')
-       a.download = "export_" + Date.now() + ".png"
-       a.href = canvasdata;
+       const dataURL = canvas.toDataURL('image/png')
+       download(canvas, dataURL, "export_" + Date.now() + ".png")
    }
    img.src = url
 }
 
-// not using this yet
-function download (parent, url, name) {
-   const link = document.createElement('a')
-   link.download = name
-   link.style.opacity = '0'
-   parent.append(link)
-   link.href = url
-   link.click()
-   link.remove()
+function download (parent, dataURL, name) {
+   const a = document.createElement('a')
+   a.download = name
+   a.style.opacity = '0'
+   parent.append(a)
+   a.href = dataURL
+   a.click()
+   a.remove()
  }
 
 function curry2 (f) {
