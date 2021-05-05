@@ -41,18 +41,19 @@ function drawMatrix (
 }
 
 function wibble (svg) {
-   const { width, height } = svg.getBBox(),
-         outerHTML = svg.outerHTML,
+   const outerHTML = svg.outerHTML,
          blob = new Blob([outerHTML], { type: 'image/svg+xml;charset=utf-8' }),
          blobURL = window.URL.createObjectURL(blob),
          image = document.createElement('img')
 
-   const canvas = document.createElement('canvas')
-   canvas.width = width
-   canvas.height = height
-   const context = canvas.getContext('2d')
+   const canvas = document.createElement('canvas'),
+         { width, height } = svg.getBBox()
 
    image.onload = () => {
+      console.log("LOADING")
+      const context = canvas.getContext('2d')
+      canvas.width = width
+      canvas.height = height
       context.drawImage(image, 0, 0, width, height)
       download(canvas, canvas.toDataURL(), "image.png")
    }
