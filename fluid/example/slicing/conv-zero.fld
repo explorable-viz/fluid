@@ -8,4 +8,4 @@ let fil_list = [[0, 2, 4],
                 [4 , 10, 3 , 7, 19],
                 [3 , 11, 15, 2, 9 ]];
     img_arr  = [| nth2 i j img_list | (i, j) in (5, 5) |]
-in  conv img_arr fil_arr zero
+in  convolve img_arr fil_arr zero
