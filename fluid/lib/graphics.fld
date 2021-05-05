@@ -71,7 +71,7 @@ let stackRight sep gs =
 
 -- Float -> List GraphicsElement -> GraphicsElement
 let groupRight sep gs =
-   Viewport 0 0 (length gs) (max (map height gs)) "none" 0 (Scale 1 1) (Translate 0 0) (Group (stackRight sep gs));
+   Viewport 0 0 (length gs) (maximum (map height gs)) "none" 0 (Scale 1 1) (Translate 0 0) (Group (stackRight sep gs));
 
 -- Heuristic saying how often to place a tick on an axis of length n.
 -- Float -> Float
@@ -162,7 +162,7 @@ let lineChart withAxes colours x_start data =
    -- List GraphicsElement
    let lines = zipWith (curry plot) (iterate nCat ((+) 1) 0) colours;
        x_finish = last xs;
-       y_finish = max (flip map data (fun (_, kvs) -> max (map snd kvs)))
+       y_finish = maximum (flip map data (fun (_, kvs) -> maximum (map snd kvs)))
    in match withAxes as {
       True ->
          let (x_axis, x_finish) = axis Horiz 0 x_start x_finish;
@@ -176,7 +176,7 @@ let lineChart withAxes colours x_start data =
 let categoricalChart plotValue withAxes colours sep data =
    let gs = stackRight sep (plotValue colours (map snd data));
        w = length gs;
-       h = max (map height gs)
+       h = maximum (map height gs)
    in match withAxes as {
       True ->
          let x_axis = catAxis Horiz 0 (map fst data);
