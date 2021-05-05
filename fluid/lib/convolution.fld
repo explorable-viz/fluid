@@ -1,6 +1,6 @@
-let zero n _ = n;
-    wrap n n_max = let m = n `mod` n_max in if m == 0 then n_max else m;
-    extend n n_max = if n > n_max then n_max else if n < 1 then 1 else n;
+let zero n = const n;
+    wrap n n_max = ((n - 1) `mod` n_max) + 1;
+    extend n = min (max n 1);
     nth2 i j xss = nth (j - 1) (nth (i - 1) xss);
 
 let convolve image filter method =
