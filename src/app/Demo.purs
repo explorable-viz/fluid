@@ -41,6 +41,6 @@ main =
                    ρ1ρ2 × s' = desugarEval_bwd (t × s) output'
                    filter' = successful (find "filter" ρ1ρ2)
                    input' = successful (find "image" ρ1ρ2)
-               renderMatrix (input × input')
-               renderMatrix (filter × filter')
-               renderMatrix (output × output')
+               renderMatrix (input' × input)
+               renderMatrix (filter' × filter)
+               renderMatrix (output' × output)
