@@ -45,4 +45,7 @@ makeFigure file divId =
                renderFigure divId (input' × input) (filter' × filter) (output' × output)
 
 main :: Effect Unit
-main = makeFigure "conv-extend" "fig-2"
+main = do
+   makeFigure "conv-wrap" "fig-1"
+   makeFigure "conv-extend" "fig-2"
+   makeFigure "conv-zero" "fig-3"
