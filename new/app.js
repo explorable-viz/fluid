@@ -1576,6 +1576,7 @@ var PS = {};
   var exports = $PS["Data.Tuple"];
   var Data_Bifunctor = $PS["Data.Bifunctor"];
   var Data_Eq = $PS["Data.Eq"];
+  var Data_Functor = $PS["Data.Functor"];
   var Data_Ord = $PS["Data.Ord"];
   var Data_Ordering = $PS["Data.Ordering"];
   var Data_Show = $PS["Data.Show"];                        
@@ -1605,7 +1606,12 @@ var PS = {};
               return "(Tuple " + (Data_Show.show(dictShow)(v.value0) + (" " + (Data_Show.show(dictShow1)(v.value1) + ")")));
           });
       };
-  };                                                                                                    
+  };
+  var functorTuple = new Data_Functor.Functor(function (f) {
+      return function (m) {
+          return new Tuple(m.value0, f(m.value1));
+      };
+  });                                                                                                   
   var fst = function (v) {
       return v.value0;
   }; 
@@ -1649,6 +1655,7 @@ var PS = {};
   exports["uncurry"] = uncurry;
   exports["showTuple"] = showTuple;
   exports["ordTuple"] = ordTuple;
+  exports["functorTuple"] = functorTuple;
   exports["bifunctorTuple"] = bifunctorTuple;
 })(PS);
 (function($PS) {
@@ -1960,7 +1967,31 @@ var PS = {};
       result[n] = i;
       return result;
     };
-  };                                                                                                 
+  };
+
+  var replicateFill = function (count) {
+    return function (value) {
+      if (count < 1) {
+        return [];
+      }
+      var result = new Array(count);
+      return result.fill(value);
+    };
+  };
+
+  var replicatePolyfill = function (count) {
+    return function (value) {
+      var result = [];
+      var n = 0;
+      for (var i = 0; i < count; i++) {
+        result[n++] = value;
+      }
+      return result;
+    };
+  };
+
+  // In browsers that have Array.prototype.fill we use it, as it's faster.
+  exports.replicate = typeof Array.prototype.fill === "function" ? replicateFill : replicatePolyfill;
 
   exports.fromFoldableImpl = (function () {
     function Cons(head, tail) {
@@ -2370,7 +2401,9 @@ var PS = {};
   exports["sort"] = sort;
   exports["zip"] = zip;
   exports["range"] = $foreign.range;
+  exports["replicate"] = $foreign.replicate;
   exports["length"] = $foreign.length;
+  exports["cons"] = $foreign.cons;
   exports["snoc"] = $foreign.snoc;
   exports["take"] = $foreign.take;
   exports["zipWith"] = $foreign.zipWith;
@@ -2801,6 +2834,13 @@ var PS = {};
           };
       });
   };
+  var foldl1 = function (dictFoldable) {
+      return function (f) {
+          return function (v) {
+              return Data_Foldable.foldl(dictFoldable)(f)(v.value0)(v.value1);
+          };
+      };
+  };
   var foldableNonEmpty = function (dictFoldable) {
       return new Data_Foldable.Foldable(function (dictMonoid) {
           return function (f) {
@@ -2841,6 +2881,7 @@ var PS = {};
   };
   exports["NonEmpty"] = NonEmpty;
   exports["singleton"] = singleton;
+  exports["foldl1"] = foldl1;
   exports["functorNonEmpty"] = functorNonEmpty;
   exports["foldableNonEmpty"] = foldableNonEmpty;
   exports["traversableNonEmpty"] = traversableNonEmpty;
@@ -2991,6 +3032,9 @@ var PS = {};
   })();
   var NonEmptyList = function (x) {
       return x;
+  };
+  var toList = function (v) {
+      return new Cons(v.value0, v.value1);
   };
   var listMap = function (f) {
       var chunkedRevMap = function ($copy_chunksAcc) {
@@ -3254,6 +3298,16 @@ var PS = {};
           throw new Error("Failed pattern match at Data.List.Types (line 162, column 1 - line 164, column 37): " + [ v.constructor.name, v1.constructor.name ]);
       };
   });
+  var bindNonEmptyList = new Control_Bind.Bind(function () {
+      return applyNonEmptyList;
+  }, function (v) {
+      return function (f) {
+          var v1 = f(v.value0);
+          return new Data_NonEmpty.NonEmpty(v1.value0, Data_Semigroup.append(semigroupList)(v1.value1)(Control_Bind.bind(bindList)(v.value1)(function ($232) {
+              return toList(f($232));
+          })));
+      };
+  });
   var applicativeList = new Control_Applicative.Applicative(function () {
       return applyList;
   }, function (a) {
@@ -3288,6 +3342,7 @@ var PS = {};
   exports["plusList"] = plusList;
   exports["functorNonEmptyList"] = functorNonEmptyList;
   exports["applicativeNonEmptyList"] = applicativeNonEmptyList;
+  exports["bindNonEmptyList"] = bindNonEmptyList;
   exports["foldableNonEmptyList"] = foldableNonEmptyList;
   exports["traversableNonEmptyList"] = traversableNonEmptyList;
 })(PS);
@@ -3580,6 +3635,7 @@ var PS = {};
           };
       };
   };
+  var zip = zipWith(Data_Tuple.Tuple.create);
   var range = function (start) {
       return function (end) {
           if (start === end) {
@@ -3732,11 +3788,14 @@ var PS = {};
   exports["length"] = length;
   exports["snoc"] = snoc;
   exports["head"] = head;
+  exports["unsnoc"] = unsnoc;
+  exports["reverse"] = reverse;
   exports["concat"] = concat;
   exports["sortBy"] = sortBy;
   exports["groupBy"] = groupBy;
   exports["difference"] = difference;
   exports["zipWith"] = zipWith;
+  exports["zip"] = zip;
   exports["unzip"] = unzip;
 })(PS);
 (function(exports) {
@@ -5502,1404 +5561,123 @@ var PS = {};
   exports["request"] = request;
 })(PS);
 (function(exports) {
+  "use strict"
+
+  const d3 = require("d3")
+
+  function drawMatrix (
+     nss,     // Array (Array (Int × Bool))
+     i_max,   // Int
+     j_max    // Int
+  ) {
+     return () => {
+        const w = 30, h = 30, gap = 1.15
+        const div = d3.select('#app-root'),
+              svg = div.append('svg')
+                       .attr('width', w * j_max * gap)
+                       .attr('height', h * i_max * gap)
+                       .attr('fill', 'lightgray')
+        const grp = svg.selectAll('g')
+           .data(nss)
+           .enter()
+           .append('g')
+           .attr('transform', (_, i) => "translate(0, " + h * gap * i + ")")
+
+        const rect = grp.selectAll('rect')
+                        .data(d => d)
+                        .enter()
+
+        rect.append('rect')
+            .attr('x', (_, j) => w * gap * j)
+            .attr('width', w)
+            .attr('height', h)
+            .attr('fill', d => d.value1 ? 'green' : 'lightgray')
+
+        rect.append('text')
+            .attr('x', (_, j) => w * gap * j)
+            .attr('y', 0.5 * h)
+            .attr('fill', 'black')
+            .text(d => d.value0)
+
+        saveImage(svg.node())
+     }
+  }
+
+  function saveImage (svg) {
+     const svg_xml = (new XMLSerializer()).serializeToString(svg),
+           blob = new Blob([svg_xml], { type:'image/svg+xml;charset=utf-8' }),
+           url = window.URL.createObjectURL(blob),
+           { width, height } = svg.getBBox()
+
+     const img = new Image()
+     img.width = width
+     img.height = height
+
+     img.onload = function() {
+         const canvas = document.createElement('canvas')
+         canvas.width = width
+         canvas.height = height
+
+         const ctx = canvas.getContext('2d')
+         ctx.drawImage(img, 0, 0, width, height)
+
+         window.URL.revokeObjectURL(url)
+         const dataURL = canvas.toDataURL('image/png')
+         download(canvas, dataURL, "image.png")
+     }
+     img.src = url
+  }
+
+  function download (parent, dataURL, name) {
+     const a = document.createElement('a')
+     a.download = name
+     a.style.opacity = '0'
+     parent.append(a)
+     a.href = dataURL
+     a.click()
+     a.remove()
+   }
+
+  function curry2 (f) {
+     return x => y => f(x, y)
+  }
+
+  function curry3 (f) {
+     return x => y => z => f(x, y, z)
+  }
+
+  exports.drawMatrix = curry3(drawMatrix)
+})(PS["App.Renderer"] = PS["App.Renderer"] || {});
+(function(exports) {
   "use strict";
 
-  exports.log = function (s) {
-    return function () {
-      console.log(s);
-      return {};
+  exports.fromNumberImpl = function (just) {
+    return function (nothing) {
+      return function (n) {
+        /* jshint bitwise: false */
+        return (n | 0) === n ? just(n) : nothing;
+      };
     };
   };
-})(PS["Effect.Console"] = PS["Effect.Console"] || {});
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Effect.Console"] = $PS["Effect.Console"] || {};
-  var exports = $PS["Effect.Console"];
-  var $foreign = $PS["Effect.Console"];
-  exports["log"] = $foreign.log;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Data.Map.Internal"] = $PS["Data.Map.Internal"] || {};
-  var exports = $PS["Data.Map.Internal"];
-  var Control_Applicative = $PS["Control.Applicative"];
-  var Data_Foldable = $PS["Data.Foldable"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_List_Types = $PS["Data.List.Types"];
-  var Data_Maybe = $PS["Data.Maybe"];
-  var Data_Ord = $PS["Data.Ord"];
-  var Data_Ordering = $PS["Data.Ordering"];
-  var Data_Semigroup = $PS["Data.Semigroup"];
-  var Data_Tuple = $PS["Data.Tuple"];
-  var Data_Unfoldable = $PS["Data.Unfoldable"];                
-  var Leaf = (function () {
-      function Leaf() {
 
-      };
-      Leaf.value = new Leaf();
-      return Leaf;
-  })();
-  var Two = (function () {
-      function Two(value0, value1, value2, value3) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-          this.value3 = value3;
-      };
-      Two.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return function (value3) {
-                      return new Two(value0, value1, value2, value3);
-                  };
-              };
-          };
-      };
-      return Two;
-  })();
-  var Three = (function () {
-      function Three(value0, value1, value2, value3, value4, value5, value6) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-          this.value3 = value3;
-          this.value4 = value4;
-          this.value5 = value5;
-          this.value6 = value6;
-      };
-      Three.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return function (value3) {
-                      return function (value4) {
-                          return function (value5) {
-                              return function (value6) {
-                                  return new Three(value0, value1, value2, value3, value4, value5, value6);
-                              };
-                          };
-                      };
-                  };
-              };
-          };
-      };
-      return Three;
-  })();
-  var TwoLeft = (function () {
-      function TwoLeft(value0, value1, value2) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-      };
-      TwoLeft.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return new TwoLeft(value0, value1, value2);
-              };
-          };
-      };
-      return TwoLeft;
-  })();
-  var TwoRight = (function () {
-      function TwoRight(value0, value1, value2) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-      };
-      TwoRight.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return new TwoRight(value0, value1, value2);
-              };
-          };
-      };
-      return TwoRight;
-  })();
-  var ThreeLeft = (function () {
-      function ThreeLeft(value0, value1, value2, value3, value4, value5) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-          this.value3 = value3;
-          this.value4 = value4;
-          this.value5 = value5;
-      };
-      ThreeLeft.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return function (value3) {
-                      return function (value4) {
-                          return function (value5) {
-                              return new ThreeLeft(value0, value1, value2, value3, value4, value5);
-                          };
-                      };
-                  };
-              };
-          };
-      };
-      return ThreeLeft;
-  })();
-  var ThreeMiddle = (function () {
-      function ThreeMiddle(value0, value1, value2, value3, value4, value5) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-          this.value3 = value3;
-          this.value4 = value4;
-          this.value5 = value5;
-      };
-      ThreeMiddle.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return function (value3) {
-                      return function (value4) {
-                          return function (value5) {
-                              return new ThreeMiddle(value0, value1, value2, value3, value4, value5);
-                          };
-                      };
-                  };
-              };
-          };
-      };
-      return ThreeMiddle;
-  })();
-  var ThreeRight = (function () {
-      function ThreeRight(value0, value1, value2, value3, value4, value5) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-          this.value3 = value3;
-          this.value4 = value4;
-          this.value5 = value5;
-      };
-      ThreeRight.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return function (value3) {
-                      return function (value4) {
-                          return function (value5) {
-                              return new ThreeRight(value0, value1, value2, value3, value4, value5);
-                          };
-                      };
-                  };
-              };
-          };
-      };
-      return ThreeRight;
-  })();
-  var KickUp = (function () {
-      function KickUp(value0, value1, value2, value3) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-          this.value3 = value3;
-      };
-      KickUp.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return function (value3) {
-                      return new KickUp(value0, value1, value2, value3);
-                  };
-              };
-          };
-      };
-      return KickUp;
-  })();
-  var values = function (v) {
-      if (v instanceof Leaf) {
-          return Data_List_Types.Nil.value;
-      };
-      if (v instanceof Two) {
-          return Data_Semigroup.append(Data_List_Types.semigroupList)(values(v.value0))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value2))(values(v.value3)));
-      };
-      if (v instanceof Three) {
-          return Data_Semigroup.append(Data_List_Types.semigroupList)(values(v.value0))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value2))(Data_Semigroup.append(Data_List_Types.semigroupList)(values(v.value3))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value5))(values(v.value6)))));
-      };
-      throw new Error("Failed pattern match at Data.Map.Internal (line 612, column 1 - line 612, column 40): " + [ v.constructor.name ]);
-  };
-  var size = function (v) {
-      if (v instanceof Leaf) {
-          return 0;
-      };
-      if (v instanceof Two) {
-          return (1 + size(v.value0) | 0) + size(v.value3) | 0;
-      };
-      if (v instanceof Three) {
-          return ((2 + size(v.value0) | 0) + size(v.value3) | 0) + size(v.value6) | 0;
-      };
-      throw new Error("Failed pattern match at Data.Map.Internal (line 662, column 1 - line 662, column 35): " + [ v.constructor.name ]);
-  };
-  var singleton = function (k) {
-      return function (v) {
-          return new Two(Leaf.value, k, v, Leaf.value);
-      };
-  };
-  var toUnfoldable = function (dictUnfoldable) {
-      return function (m) {
-          var go = function ($copy_v) {
-              var $tco_done = false;
-              var $tco_result;
-              function $tco_loop(v) {
-                  if (v instanceof Data_List_Types.Nil) {
-                      $tco_done = true;
-                      return Data_Maybe.Nothing.value;
-                  };
-                  if (v instanceof Data_List_Types.Cons) {
-                      if (v.value0 instanceof Leaf) {
-                          $copy_v = v.value1;
-                          return;
-                      };
-                      if (v.value0 instanceof Two && (v.value0.value0 instanceof Leaf && v.value0.value3 instanceof Leaf)) {
-                          $tco_done = true;
-                          return Data_Maybe.Just.create(new Data_Tuple.Tuple(new Data_Tuple.Tuple(v.value0.value1, v.value0.value2), v.value1));
-                      };
-                      if (v.value0 instanceof Two && v.value0.value0 instanceof Leaf) {
-                          $tco_done = true;
-                          return Data_Maybe.Just.create(new Data_Tuple.Tuple(new Data_Tuple.Tuple(v.value0.value1, v.value0.value2), new Data_List_Types.Cons(v.value0.value3, v.value1)));
-                      };
-                      if (v.value0 instanceof Two) {
-                          $copy_v = new Data_List_Types.Cons(v.value0.value0, new Data_List_Types.Cons(singleton(v.value0.value1)(v.value0.value2), new Data_List_Types.Cons(v.value0.value3, v.value1)));
-                          return;
-                      };
-                      if (v.value0 instanceof Three) {
-                          $copy_v = new Data_List_Types.Cons(v.value0.value0, new Data_List_Types.Cons(singleton(v.value0.value1)(v.value0.value2), new Data_List_Types.Cons(v.value0.value3, new Data_List_Types.Cons(singleton(v.value0.value4)(v.value0.value5), new Data_List_Types.Cons(v.value0.value6, v.value1)))));
-                          return;
-                      };
-                      throw new Error("Failed pattern match at Data.Map.Internal (line 577, column 18 - line 586, column 71): " + [ v.value0.constructor.name ]);
-                  };
-                  throw new Error("Failed pattern match at Data.Map.Internal (line 576, column 3 - line 576, column 19): " + [ v.constructor.name ]);
-              };
-              while (!$tco_done) {
-                  $tco_result = $tco_loop($copy_v);
-              };
-              return $tco_result;
-          };
-          return Data_Unfoldable.unfoldr(dictUnfoldable)(go)(new Data_List_Types.Cons(m, Data_List_Types.Nil.value));
-      };
-  };
-  var lookup = function (dictOrd) {
-      return function (k) {
-          var comp = Data_Ord.compare(dictOrd);
-          var go = function ($copy_v) {
-              var $tco_done = false;
-              var $tco_result;
-              function $tco_loop(v) {
-                  if (v instanceof Leaf) {
-                      $tco_done = true;
-                      return Data_Maybe.Nothing.value;
-                  };
-                  if (v instanceof Two) {
-                      var v2 = comp(k)(v.value1);
-                      if (v2 instanceof Data_Ordering.EQ) {
-                          $tco_done = true;
-                          return new Data_Maybe.Just(v.value2);
-                      };
-                      if (v2 instanceof Data_Ordering.LT) {
-                          $copy_v = v.value0;
-                          return;
-                      };
-                      $copy_v = v.value3;
-                      return;
-                  };
-                  if (v instanceof Three) {
-                      var v3 = comp(k)(v.value1);
-                      if (v3 instanceof Data_Ordering.EQ) {
-                          $tco_done = true;
-                          return new Data_Maybe.Just(v.value2);
-                      };
-                      var v4 = comp(k)(v.value4);
-                      if (v4 instanceof Data_Ordering.EQ) {
-                          $tco_done = true;
-                          return new Data_Maybe.Just(v.value5);
-                      };
-                      if (v3 instanceof Data_Ordering.LT) {
-                          $copy_v = v.value0;
-                          return;
-                      };
-                      if (v4 instanceof Data_Ordering.GT) {
-                          $copy_v = v.value6;
-                          return;
-                      };
-                      $copy_v = v.value3;
-                      return;
-                  };
-                  throw new Error("Failed pattern match at Data.Map.Internal (line 200, column 5 - line 200, column 22): " + [ v.constructor.name ]);
-              };
-              while (!$tco_done) {
-                  $tco_result = $tco_loop($copy_v);
-              };
-              return $tco_result;
-          };
-          return go;
-      };
-  };
-  var keys = function (v) {
-      if (v instanceof Leaf) {
-          return Data_List_Types.Nil.value;
-      };
-      if (v instanceof Two) {
-          return Data_Semigroup.append(Data_List_Types.semigroupList)(keys(v.value0))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value1))(keys(v.value3)));
-      };
-      if (v instanceof Three) {
-          return Data_Semigroup.append(Data_List_Types.semigroupList)(keys(v.value0))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value1))(Data_Semigroup.append(Data_List_Types.semigroupList)(keys(v.value3))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value4))(keys(v.value6)))));
-      };
-      throw new Error("Failed pattern match at Data.Map.Internal (line 606, column 1 - line 606, column 38): " + [ v.constructor.name ]);
-  };
-  var functorMap = new Data_Functor.Functor(function (v) {
-      return function (v1) {
-          if (v1 instanceof Leaf) {
-              return Leaf.value;
-          };
-          if (v1 instanceof Two) {
-              return new Two(Data_Functor.map(functorMap)(v)(v1.value0), v1.value1, v(v1.value2), Data_Functor.map(functorMap)(v)(v1.value3));
-          };
-          if (v1 instanceof Three) {
-              return new Three(Data_Functor.map(functorMap)(v)(v1.value0), v1.value1, v(v1.value2), Data_Functor.map(functorMap)(v)(v1.value3), v1.value4, v(v1.value5), Data_Functor.map(functorMap)(v)(v1.value6));
-          };
-          throw new Error("Failed pattern match at Data.Map.Internal (line 96, column 1 - line 99, column 110): " + [ v.constructor.name, v1.constructor.name ]);
-      };
-  });
-  var fromZipper = function ($copy_dictOrd) {
-      return function ($copy_v) {
-          return function ($copy_tree) {
-              var $tco_var_dictOrd = $copy_dictOrd;
-              var $tco_var_v = $copy_v;
-              var $tco_done = false;
-              var $tco_result;
-              function $tco_loop(dictOrd, v, tree) {
-                  if (v instanceof Data_List_Types.Nil) {
-                      $tco_done = true;
-                      return tree;
-                  };
-                  if (v instanceof Data_List_Types.Cons) {
-                      if (v.value0 instanceof TwoLeft) {
-                          $tco_var_dictOrd = dictOrd;
-                          $tco_var_v = v.value1;
-                          $copy_tree = new Two(tree, v.value0.value0, v.value0.value1, v.value0.value2);
-                          return;
-                      };
-                      if (v.value0 instanceof TwoRight) {
-                          $tco_var_dictOrd = dictOrd;
-                          $tco_var_v = v.value1;
-                          $copy_tree = new Two(v.value0.value0, v.value0.value1, v.value0.value2, tree);
-                          return;
-                      };
-                      if (v.value0 instanceof ThreeLeft) {
-                          $tco_var_dictOrd = dictOrd;
-                          $tco_var_v = v.value1;
-                          $copy_tree = new Three(tree, v.value0.value0, v.value0.value1, v.value0.value2, v.value0.value3, v.value0.value4, v.value0.value5);
-                          return;
-                      };
-                      if (v.value0 instanceof ThreeMiddle) {
-                          $tco_var_dictOrd = dictOrd;
-                          $tco_var_v = v.value1;
-                          $copy_tree = new Three(v.value0.value0, v.value0.value1, v.value0.value2, tree, v.value0.value3, v.value0.value4, v.value0.value5);
-                          return;
-                      };
-                      if (v.value0 instanceof ThreeRight) {
-                          $tco_var_dictOrd = dictOrd;
-                          $tco_var_v = v.value1;
-                          $copy_tree = new Three(v.value0.value0, v.value0.value1, v.value0.value2, v.value0.value3, v.value0.value4, v.value0.value5, tree);
-                          return;
-                      };
-                      throw new Error("Failed pattern match at Data.Map.Internal (line 418, column 3 - line 423, column 88): " + [ v.value0.constructor.name ]);
-                  };
-                  throw new Error("Failed pattern match at Data.Map.Internal (line 415, column 1 - line 415, column 80): " + [ v.constructor.name, tree.constructor.name ]);
-              };
-              while (!$tco_done) {
-                  $tco_result = $tco_loop($tco_var_dictOrd, $tco_var_v, $copy_tree);
-              };
-              return $tco_result;
-          };
-      };
-  };
-  var insert = function (dictOrd) {
-      return function (k) {
-          return function (v) {
-              var up = function ($copy_v1) {
-                  return function ($copy_v2) {
-                      var $tco_var_v1 = $copy_v1;
-                      var $tco_done = false;
-                      var $tco_result;
-                      function $tco_loop(v1, v2) {
-                          if (v1 instanceof Data_List_Types.Nil) {
-                              $tco_done = true;
-                              return new Two(v2.value0, v2.value1, v2.value2, v2.value3);
-                          };
-                          if (v1 instanceof Data_List_Types.Cons) {
-                              if (v1.value0 instanceof TwoLeft) {
-                                  $tco_done = true;
-                                  return fromZipper(dictOrd)(v1.value1)(new Three(v2.value0, v2.value1, v2.value2, v2.value3, v1.value0.value0, v1.value0.value1, v1.value0.value2));
-                              };
-                              if (v1.value0 instanceof TwoRight) {
-                                  $tco_done = true;
-                                  return fromZipper(dictOrd)(v1.value1)(new Three(v1.value0.value0, v1.value0.value1, v1.value0.value2, v2.value0, v2.value1, v2.value2, v2.value3));
-                              };
-                              if (v1.value0 instanceof ThreeLeft) {
-                                  $tco_var_v1 = v1.value1;
-                                  $copy_v2 = new KickUp(new Two(v2.value0, v2.value1, v2.value2, v2.value3), v1.value0.value0, v1.value0.value1, new Two(v1.value0.value2, v1.value0.value3, v1.value0.value4, v1.value0.value5));
-                                  return;
-                              };
-                              if (v1.value0 instanceof ThreeMiddle) {
-                                  $tco_var_v1 = v1.value1;
-                                  $copy_v2 = new KickUp(new Two(v1.value0.value0, v1.value0.value1, v1.value0.value2, v2.value0), v2.value1, v2.value2, new Two(v2.value3, v1.value0.value3, v1.value0.value4, v1.value0.value5));
-                                  return;
-                              };
-                              if (v1.value0 instanceof ThreeRight) {
-                                  $tco_var_v1 = v1.value1;
-                                  $copy_v2 = new KickUp(new Two(v1.value0.value0, v1.value0.value1, v1.value0.value2, v1.value0.value3), v1.value0.value4, v1.value0.value5, new Two(v2.value0, v2.value1, v2.value2, v2.value3));
-                                  return;
-                              };
-                              throw new Error("Failed pattern match at Data.Map.Internal (line 454, column 5 - line 459, column 108): " + [ v1.value0.constructor.name, v2.constructor.name ]);
-                          };
-                          throw new Error("Failed pattern match at Data.Map.Internal (line 451, column 3 - line 451, column 56): " + [ v1.constructor.name, v2.constructor.name ]);
-                      };
-                      while (!$tco_done) {
-                          $tco_result = $tco_loop($tco_var_v1, $copy_v2);
-                      };
-                      return $tco_result;
-                  };
-              };
-              var comp = Data_Ord.compare(dictOrd);
-              var down = function ($copy_ctx) {
-                  return function ($copy_v1) {
-                      var $tco_var_ctx = $copy_ctx;
-                      var $tco_done = false;
-                      var $tco_result;
-                      function $tco_loop(ctx, v1) {
-                          if (v1 instanceof Leaf) {
-                              $tco_done = true;
-                              return up(ctx)(new KickUp(Leaf.value, k, v, Leaf.value));
-                          };
-                          if (v1 instanceof Two) {
-                              var v2 = comp(k)(v1.value1);
-                              if (v2 instanceof Data_Ordering.EQ) {
-                                  $tco_done = true;
-                                  return fromZipper(dictOrd)(ctx)(new Two(v1.value0, k, v, v1.value3));
-                              };
-                              if (v2 instanceof Data_Ordering.LT) {
-                                  $tco_var_ctx = new Data_List_Types.Cons(new TwoLeft(v1.value1, v1.value2, v1.value3), ctx);
-                                  $copy_v1 = v1.value0;
-                                  return;
-                              };
-                              $tco_var_ctx = new Data_List_Types.Cons(new TwoRight(v1.value0, v1.value1, v1.value2), ctx);
-                              $copy_v1 = v1.value3;
-                              return;
-                          };
-                          if (v1 instanceof Three) {
-                              var v3 = comp(k)(v1.value1);
-                              if (v3 instanceof Data_Ordering.EQ) {
-                                  $tco_done = true;
-                                  return fromZipper(dictOrd)(ctx)(new Three(v1.value0, k, v, v1.value3, v1.value4, v1.value5, v1.value6));
-                              };
-                              var v4 = comp(k)(v1.value4);
-                              if (v4 instanceof Data_Ordering.EQ) {
-                                  $tco_done = true;
-                                  return fromZipper(dictOrd)(ctx)(new Three(v1.value0, v1.value1, v1.value2, v1.value3, k, v, v1.value6));
-                              };
-                              if (v3 instanceof Data_Ordering.LT) {
-                                  $tco_var_ctx = new Data_List_Types.Cons(new ThreeLeft(v1.value1, v1.value2, v1.value3, v1.value4, v1.value5, v1.value6), ctx);
-                                  $copy_v1 = v1.value0;
-                                  return;
-                              };
-                              if (v3 instanceof Data_Ordering.GT && v4 instanceof Data_Ordering.LT) {
-                                  $tco_var_ctx = new Data_List_Types.Cons(new ThreeMiddle(v1.value0, v1.value1, v1.value2, v1.value4, v1.value5, v1.value6), ctx);
-                                  $copy_v1 = v1.value3;
-                                  return;
-                              };
-                              $tco_var_ctx = new Data_List_Types.Cons(new ThreeRight(v1.value0, v1.value1, v1.value2, v1.value3, v1.value4, v1.value5), ctx);
-                              $copy_v1 = v1.value6;
-                              return;
-                          };
-                          throw new Error("Failed pattern match at Data.Map.Internal (line 434, column 3 - line 434, column 55): " + [ ctx.constructor.name, v1.constructor.name ]);
-                      };
-                      while (!$tco_done) {
-                          $tco_result = $tco_loop($tco_var_ctx, $copy_v1);
-                      };
-                      return $tco_result;
-                  };
-              };
-              return down(Data_List_Types.Nil.value);
-          };
-      };
-  };
-  var pop = function (dictOrd) {
-      return function (k) {
-          var up = function ($copy_ctxs) {
-              return function ($copy_tree) {
-                  var $tco_var_ctxs = $copy_ctxs;
-                  var $tco_done = false;
-                  var $tco_result;
-                  function $tco_loop(ctxs, tree) {
-                      if (ctxs instanceof Data_List_Types.Nil) {
-                          $tco_done = true;
-                          return tree;
-                      };
-                      if (ctxs instanceof Data_List_Types.Cons) {
-                          if (ctxs.value0 instanceof TwoLeft && (ctxs.value0.value2 instanceof Leaf && tree instanceof Leaf)) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Two(Leaf.value, ctxs.value0.value0, ctxs.value0.value1, Leaf.value));
-                          };
-                          if (ctxs.value0 instanceof TwoRight && (ctxs.value0.value0 instanceof Leaf && tree instanceof Leaf)) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Two(Leaf.value, ctxs.value0.value1, ctxs.value0.value2, Leaf.value));
-                          };
-                          if (ctxs.value0 instanceof TwoLeft && ctxs.value0.value2 instanceof Two) {
-                              $tco_var_ctxs = ctxs.value1;
-                              $copy_tree = new Three(tree, ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2.value0, ctxs.value0.value2.value1, ctxs.value0.value2.value2, ctxs.value0.value2.value3);
-                              return;
-                          };
-                          if (ctxs.value0 instanceof TwoRight && ctxs.value0.value0 instanceof Two) {
-                              $tco_var_ctxs = ctxs.value1;
-                              $copy_tree = new Three(ctxs.value0.value0.value0, ctxs.value0.value0.value1, ctxs.value0.value0.value2, ctxs.value0.value0.value3, ctxs.value0.value1, ctxs.value0.value2, tree);
-                              return;
-                          };
-                          if (ctxs.value0 instanceof TwoLeft && ctxs.value0.value2 instanceof Three) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Two(new Two(tree, ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2.value0), ctxs.value0.value2.value1, ctxs.value0.value2.value2, new Two(ctxs.value0.value2.value3, ctxs.value0.value2.value4, ctxs.value0.value2.value5, ctxs.value0.value2.value6)));
-                          };
-                          if (ctxs.value0 instanceof TwoRight && ctxs.value0.value0 instanceof Three) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Two(new Two(ctxs.value0.value0.value0, ctxs.value0.value0.value1, ctxs.value0.value0.value2, ctxs.value0.value0.value3), ctxs.value0.value0.value4, ctxs.value0.value0.value5, new Two(ctxs.value0.value0.value6, ctxs.value0.value1, ctxs.value0.value2, tree)));
-                          };
-                          if (ctxs.value0 instanceof ThreeLeft && (ctxs.value0.value2 instanceof Leaf && (ctxs.value0.value5 instanceof Leaf && tree instanceof Leaf))) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Three(Leaf.value, ctxs.value0.value0, ctxs.value0.value1, Leaf.value, ctxs.value0.value3, ctxs.value0.value4, Leaf.value));
-                          };
-                          if (ctxs.value0 instanceof ThreeMiddle && (ctxs.value0.value0 instanceof Leaf && (ctxs.value0.value5 instanceof Leaf && tree instanceof Leaf))) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Three(Leaf.value, ctxs.value0.value1, ctxs.value0.value2, Leaf.value, ctxs.value0.value3, ctxs.value0.value4, Leaf.value));
-                          };
-                          if (ctxs.value0 instanceof ThreeRight && (ctxs.value0.value0 instanceof Leaf && (ctxs.value0.value3 instanceof Leaf && tree instanceof Leaf))) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Three(Leaf.value, ctxs.value0.value1, ctxs.value0.value2, Leaf.value, ctxs.value0.value4, ctxs.value0.value5, Leaf.value));
-                          };
-                          if (ctxs.value0 instanceof ThreeLeft && ctxs.value0.value2 instanceof Two) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Two(new Three(tree, ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2.value0, ctxs.value0.value2.value1, ctxs.value0.value2.value2, ctxs.value0.value2.value3), ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5));
-                          };
-                          if (ctxs.value0 instanceof ThreeMiddle && ctxs.value0.value0 instanceof Two) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Two(new Three(ctxs.value0.value0.value0, ctxs.value0.value0.value1, ctxs.value0.value0.value2, ctxs.value0.value0.value3, ctxs.value0.value1, ctxs.value0.value2, tree), ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5));
-                          };
-                          if (ctxs.value0 instanceof ThreeMiddle && ctxs.value0.value5 instanceof Two) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Two(ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2, new Three(tree, ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5.value0, ctxs.value0.value5.value1, ctxs.value0.value5.value2, ctxs.value0.value5.value3)));
-                          };
-                          if (ctxs.value0 instanceof ThreeRight && ctxs.value0.value3 instanceof Two) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Two(ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2, new Three(ctxs.value0.value3.value0, ctxs.value0.value3.value1, ctxs.value0.value3.value2, ctxs.value0.value3.value3, ctxs.value0.value4, ctxs.value0.value5, tree)));
-                          };
-                          if (ctxs.value0 instanceof ThreeLeft && ctxs.value0.value2 instanceof Three) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Three(new Two(tree, ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2.value0), ctxs.value0.value2.value1, ctxs.value0.value2.value2, new Two(ctxs.value0.value2.value3, ctxs.value0.value2.value4, ctxs.value0.value2.value5, ctxs.value0.value2.value6), ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5));
-                          };
-                          if (ctxs.value0 instanceof ThreeMiddle && ctxs.value0.value0 instanceof Three) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Three(new Two(ctxs.value0.value0.value0, ctxs.value0.value0.value1, ctxs.value0.value0.value2, ctxs.value0.value0.value3), ctxs.value0.value0.value4, ctxs.value0.value0.value5, new Two(ctxs.value0.value0.value6, ctxs.value0.value1, ctxs.value0.value2, tree), ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5));
-                          };
-                          if (ctxs.value0 instanceof ThreeMiddle && ctxs.value0.value5 instanceof Three) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Three(ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2, new Two(tree, ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5.value0), ctxs.value0.value5.value1, ctxs.value0.value5.value2, new Two(ctxs.value0.value5.value3, ctxs.value0.value5.value4, ctxs.value0.value5.value5, ctxs.value0.value5.value6)));
-                          };
-                          if (ctxs.value0 instanceof ThreeRight && ctxs.value0.value3 instanceof Three) {
-                              $tco_done = true;
-                              return fromZipper(dictOrd)(ctxs.value1)(new Three(ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2, new Two(ctxs.value0.value3.value0, ctxs.value0.value3.value1, ctxs.value0.value3.value2, ctxs.value0.value3.value3), ctxs.value0.value3.value4, ctxs.value0.value3.value5, new Two(ctxs.value0.value3.value6, ctxs.value0.value4, ctxs.value0.value5, tree)));
-                          };
-                          throw new Error("Failed pattern match at Data.Map.Internal (line 511, column 9 - line 528, column 136): " + [ ctxs.value0.constructor.name, tree.constructor.name ]);
-                      };
-                      throw new Error("Failed pattern match at Data.Map.Internal (line 508, column 5 - line 528, column 136): " + [ ctxs.constructor.name ]);
-                  };
-                  while (!$tco_done) {
-                      $tco_result = $tco_loop($tco_var_ctxs, $copy_tree);
-                  };
-                  return $tco_result;
-              };
-          };
-          var removeMaxNode = function ($copy_ctx) {
-              return function ($copy_m) {
-                  var $tco_var_ctx = $copy_ctx;
-                  var $tco_done = false;
-                  var $tco_result;
-                  function $tco_loop(ctx, m) {
-                      if (m instanceof Two && (m.value0 instanceof Leaf && m.value3 instanceof Leaf)) {
-                          $tco_done = true;
-                          return up(ctx)(Leaf.value);
-                      };
-                      if (m instanceof Two) {
-                          $tco_var_ctx = new Data_List_Types.Cons(new TwoRight(m.value0, m.value1, m.value2), ctx);
-                          $copy_m = m.value3;
-                          return;
-                      };
-                      if (m instanceof Three && (m.value0 instanceof Leaf && (m.value3 instanceof Leaf && m.value6 instanceof Leaf))) {
-                          $tco_done = true;
-                          return up(new Data_List_Types.Cons(new TwoRight(Leaf.value, m.value1, m.value2), ctx))(Leaf.value);
-                      };
-                      if (m instanceof Three) {
-                          $tco_var_ctx = new Data_List_Types.Cons(new ThreeRight(m.value0, m.value1, m.value2, m.value3, m.value4, m.value5), ctx);
-                          $copy_m = m.value6;
-                          return;
-                      };
-                      throw new Error("Failed pattern match at Data.Map.Internal (line 540, column 5 - line 544, column 107): " + [ m.constructor.name ]);
-                  };
-                  while (!$tco_done) {
-                      $tco_result = $tco_loop($tco_var_ctx, $copy_m);
-                  };
-                  return $tco_result;
-              };
-          };
-          var maxNode = function ($copy_m) {
-              var $tco_done = false;
-              var $tco_result;
-              function $tco_loop(m) {
-                  if (m instanceof Two && m.value3 instanceof Leaf) {
-                      $tco_done = true;
-                      return {
-                          key: m.value1,
-                          value: m.value2
-                      };
-                  };
-                  if (m instanceof Two) {
-                      $copy_m = m.value3;
-                      return;
-                  };
-                  if (m instanceof Three && m.value6 instanceof Leaf) {
-                      $tco_done = true;
-                      return {
-                          key: m.value4,
-                          value: m.value5
-                      };
-                  };
-                  if (m instanceof Three) {
-                      $copy_m = m.value6;
-                      return;
-                  };
-                  throw new Error("Failed pattern match at Data.Map.Internal (line 531, column 33 - line 535, column 45): " + [ m.constructor.name ]);
-              };
-              while (!$tco_done) {
-                  $tco_result = $tco_loop($copy_m);
-              };
-              return $tco_result;
-          };
-          var comp = Data_Ord.compare(dictOrd);
-          var down = function ($copy_ctx) {
-              return function ($copy_m) {
-                  var $tco_var_ctx = $copy_ctx;
-                  var $tco_done = false;
-                  var $tco_result;
-                  function $tco_loop(ctx, m) {
-                      if (m instanceof Leaf) {
-                          $tco_done = true;
-                          return Data_Maybe.Nothing.value;
-                      };
-                      if (m instanceof Two) {
-                          var v = comp(k)(m.value1);
-                          if (m.value3 instanceof Leaf && v instanceof Data_Ordering.EQ) {
-                              $tco_done = true;
-                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value2, up(ctx)(Leaf.value)));
-                          };
-                          if (v instanceof Data_Ordering.EQ) {
-                              var max = maxNode(m.value0);
-                              $tco_done = true;
-                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value2, removeMaxNode(new Data_List_Types.Cons(new TwoLeft(max.key, max.value, m.value3), ctx))(m.value0)));
-                          };
-                          if (v instanceof Data_Ordering.LT) {
-                              $tco_var_ctx = new Data_List_Types.Cons(new TwoLeft(m.value1, m.value2, m.value3), ctx);
-                              $copy_m = m.value0;
-                              return;
-                          };
-                          $tco_var_ctx = new Data_List_Types.Cons(new TwoRight(m.value0, m.value1, m.value2), ctx);
-                          $copy_m = m.value3;
-                          return;
-                      };
-                      if (m instanceof Three) {
-                          var leaves = (function () {
-                              if (m.value0 instanceof Leaf && (m.value3 instanceof Leaf && m.value6 instanceof Leaf)) {
-                                  return true;
-                              };
-                              return false;
-                          })();
-                          var v = comp(k)(m.value4);
-                          var v3 = comp(k)(m.value1);
-                          if (leaves && v3 instanceof Data_Ordering.EQ) {
-                              $tco_done = true;
-                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value2, fromZipper(dictOrd)(ctx)(new Two(Leaf.value, m.value4, m.value5, Leaf.value))));
-                          };
-                          if (leaves && v instanceof Data_Ordering.EQ) {
-                              $tco_done = true;
-                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value5, fromZipper(dictOrd)(ctx)(new Two(Leaf.value, m.value1, m.value2, Leaf.value))));
-                          };
-                          if (v3 instanceof Data_Ordering.EQ) {
-                              var max = maxNode(m.value0);
-                              $tco_done = true;
-                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value2, removeMaxNode(new Data_List_Types.Cons(new ThreeLeft(max.key, max.value, m.value3, m.value4, m.value5, m.value6), ctx))(m.value0)));
-                          };
-                          if (v instanceof Data_Ordering.EQ) {
-                              var max = maxNode(m.value3);
-                              $tco_done = true;
-                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value5, removeMaxNode(new Data_List_Types.Cons(new ThreeMiddle(m.value0, m.value1, m.value2, max.key, max.value, m.value6), ctx))(m.value3)));
-                          };
-                          if (v3 instanceof Data_Ordering.LT) {
-                              $tco_var_ctx = new Data_List_Types.Cons(new ThreeLeft(m.value1, m.value2, m.value3, m.value4, m.value5, m.value6), ctx);
-                              $copy_m = m.value0;
-                              return;
-                          };
-                          if (v3 instanceof Data_Ordering.GT && v instanceof Data_Ordering.LT) {
-                              $tco_var_ctx = new Data_List_Types.Cons(new ThreeMiddle(m.value0, m.value1, m.value2, m.value4, m.value5, m.value6), ctx);
-                              $copy_m = m.value3;
-                              return;
-                          };
-                          $tco_var_ctx = new Data_List_Types.Cons(new ThreeRight(m.value0, m.value1, m.value2, m.value3, m.value4, m.value5), ctx);
-                          $copy_m = m.value6;
-                          return;
-                      };
-                      throw new Error("Failed pattern match at Data.Map.Internal (line 481, column 34 - line 504, column 80): " + [ m.constructor.name ]);
-                  };
-                  while (!$tco_done) {
-                      $tco_result = $tco_loop($tco_var_ctx, $copy_m);
-                  };
-                  return $tco_result;
-              };
-          };
-          return down(Data_List_Types.Nil.value);
-      };
-  };
-  var empty = Leaf.value;
-  var fromFoldable = function (dictOrd) {
-      return function (dictFoldable) {
-          return Data_Foldable.foldl(dictFoldable)(function (m) {
-              return function (v) {
-                  return insert(dictOrd)(v.value0)(v.value1)(m);
-              };
-          })(empty);
-      };
-  };
-  var $$delete = function (dictOrd) {
-      return function (k) {
-          return function (m) {
-              return Data_Maybe.maybe(m)(Data_Tuple.snd)(pop(dictOrd)(k)(m));
-          };
-      };
-  }; 
-  var alter = function (dictOrd) {
-      return function (f) {
-          return function (k) {
-              return function (m) {
-                  var v = f(lookup(dictOrd)(k)(m));
-                  if (v instanceof Data_Maybe.Nothing) {
-                      return $$delete(dictOrd)(k)(m);
-                  };
-                  if (v instanceof Data_Maybe.Just) {
-                      return insert(dictOrd)(k)(v.value0)(m);
-                  };
-                  throw new Error("Failed pattern match at Data.Map.Internal (line 549, column 15 - line 551, column 25): " + [ v.constructor.name ]);
-              };
-          };
-      };
-  };
-  var update = function (dictOrd) {
-      return function (f) {
-          return function (k) {
-              return function (m) {
-                  return alter(dictOrd)(Data_Maybe.maybe(Data_Maybe.Nothing.value)(f))(k)(m);
-              };
-          };
-      };
-  };
-  exports["singleton"] = singleton;
-  exports["insert"] = insert;
-  exports["lookup"] = lookup;
-  exports["fromFoldable"] = fromFoldable;
-  exports["toUnfoldable"] = toUnfoldable;
-  exports["update"] = update;
-  exports["keys"] = keys;
-  exports["values"] = values;
-  exports["size"] = size;
-  exports["functorMap"] = functorMap;
-})(PS);
-(function(exports) {
-  "use strict";
-
-  exports.unsafePerformEffect = function (f) {
-    return f();
-  };
-})(PS["Effect.Unsafe"] = PS["Effect.Unsafe"] || {});
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Effect.Unsafe"] = $PS["Effect.Unsafe"] || {};
-  var exports = $PS["Effect.Unsafe"];
-  var $foreign = $PS["Effect.Unsafe"];
-  exports["unsafePerformEffect"] = $foreign.unsafePerformEffect;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Util"] = $PS["Util"] || {};
-  var exports = $PS["Util"];
-  var Control_Applicative = $PS["Control.Applicative"];
-  var Control_Apply = $PS["Control.Apply"];
-  var Control_Bind = $PS["Control.Bind"];
-  var Control_Category = $PS["Control.Category"];
-  var Control_Plus = $PS["Control.Plus"];
-  var Data_Array = $PS["Data.Array"];
-  var Data_Bifunctor = $PS["Data.Bifunctor"];
-  var Data_Either = $PS["Data.Either"];
-  var Data_Eq = $PS["Data.Eq"];
-  var Data_Foldable = $PS["Data.Foldable"];
-  var Data_Function = $PS["Data.Function"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_List_Types = $PS["Data.List.Types"];
-  var Data_Maybe = $PS["Data.Maybe"];
-  var Data_Ord = $PS["Data.Ord"];
-  var Data_Show = $PS["Data.Show"];
-  var Data_Unit = $PS["Data.Unit"];
-  var Effect_Exception = $PS["Effect.Exception"];
-  var Effect_Unsafe = $PS["Effect.Unsafe"];                
-  var $$with = function (msg) {
-      return Data_Bifunctor.bimap(Data_Either.bifunctorEither)(function (msg$prime) {
-          return msg$prime + (function () {
-              var $24 = msg === "";
-              if ($24) {
-                  return "";
-              };
-              return "\x0a" + msg;
-          })();
-      })(Control_Category.identity(Control_Category.categoryFn));
-  };
-  var whenever = function (v) {
-      if (!v) {
-          return Data_Function["const"](Data_Maybe.Nothing.value);
-      };
-      if (v) {
-          return Data_Maybe.Just.create;
-      };
-      throw new Error("Failed pattern match at Util (line 37, column 1 - line 37, column 47): " + [ v.constructor.name ]);
-  };                                  
-  var report = Data_Either.Left.create;
-  var onlyIf = function (v) {
-      return function (dictMonadPlus) {
-          if (v) {
-              return Control_Applicative.pure(((dictMonadPlus.MonadZero0()).Alternative1()).Applicative0());
-          };
-          if (!v) {
-              return Data_Function["const"](Control_Plus.empty(((dictMonadPlus.MonadZero0()).Alternative1()).Plus1()));
-          };
-          throw new Error("Failed pattern match at Util (line 48, column 1 - line 48, column 58): " + [ v.constructor.name ]);
-      };
-  };
-  var mayEq = function (dictEq) {
-      return function (x) {
-          return function (x$prime) {
-              return whenever(Data_Eq.eq(dictEq)(x)(x$prime))(x);
-          };
-      };
-  };
-  var mayFailEq = function (dictShow) {
-      return function (dictEq) {
-          return function (x) {
-              return function (x$prime) {
-                  return Data_Either.note(Data_Show.show(dictShow)(x) + (" \u2260 " + Data_Show.show(dictShow)(x$prime)))(mayEq(dictEq)(x)(x$prime));
-              };
-          };
-      };
-  };
-  var intersperse = function (x) {
-      return function (xs) {
-          return Data_Foldable.intercalate(Data_List_Types.foldableList)(Data_List_Types.monoidList)(Control_Applicative.pure(Data_List_Types.applicativeList)(x))(Data_Functor.map(Data_List_Types.functorList)(Control_Applicative.pure(Data_List_Types.applicativeList))(xs));
-      };
-  };
-  var error = function (msg) {
-      return Effect_Unsafe.unsafePerformEffect(Effect_Exception["throw"](msg));
-  };
-  var fromJust = function (v) {
-      return function (v1) {
-          if (v1 instanceof Data_Maybe.Just) {
-              return v1.value0;
-          };
-          if (v1 instanceof Data_Maybe.Nothing) {
-              return error(v);
-          };
-          throw new Error("Failed pattern match at Util (line 41, column 1 - line 41, column 46): " + [ v.constructor.name, v1.constructor.name ]);
-      };
-  };
-  var mustEq = function (dictEq) {
-      return function (x) {
-          return function (x$prime) {
-              return fromJust("Must be equal")(mayEq(dictEq)(x)(x$prime));
-          };
-      };
-  };
-  var mustGeq = function (dictOrd) {
-      return function (x) {
-          return function (x$prime) {
-              return fromJust("Must be greater")(whenever(Data_Ord.greaterThanOrEq(dictOrd)(x)(x$prime))(x));
-          };
-      };
-  };
-  var unsafeIndex = function (xs) {
-      return function (i) {
-          return fromJust("Array index out of bounds")(Data_Array.index(xs)(i));
-      };
-  };
-  var unsafeUpdateAt = function (i) {
-      return function (x) {
-          var $50 = fromJust("Array index out of bounds");
-          var $51 = Data_Array.updateAt(i)(x);
-          return function ($52) {
-              return $50($51($52));
-          };
-      };
-  };
-  var successful = function (v) {
-      if (v instanceof Data_Either.Left) {
-          return error(v.value0);
-      };
-      if (v instanceof Data_Either.Right) {
-          return v.value0;
-      };
-      throw new Error("Failed pattern match at Util (line 65, column 1 - line 65, column 40): " + [ v.constructor.name ]);
-  };
-  var successfulWith = function (msg) {
-      var $53 = $$with(msg);
-      return function ($54) {
-          return successful($53($54));
-      };
-  };
-  var check = function (v) {
-      return function (v1) {
-          if (v) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Unit.unit);
-          };
-          if (!v) {
-              return report(v1);
-          };
-          throw new Error("Failed pattern match at Util (line 76, column 1 - line 76, column 43): " + [ v.constructor.name, v1.constructor.name ]);
-      };
-  };
-  var bind2Flipped = function (dictMonad) {
-      return function (f) {
-          return function (x) {
-              return function (y) {
-                  return Control_Bind.join(dictMonad.Bind1())(Control_Apply.lift2((dictMonad.Bind1()).Apply0())(f)(x)(y));
-              };
-          };
-      };
-  };
-  var assert = function (v) {
-      if (v) {
-          return Control_Category.identity(Control_Category.categoryFn);
-      };
-      if (!v) {
-          return function (v1) {
-              return error("Assertion failure");
-          };
-      };
-      throw new Error("Failed pattern match at Util (line 27, column 1 - line 27, column 34): " + [ v.constructor.name ]);
-  };
-  var absurd = "absurd";
-  exports["error"] = error;
-  exports["assert"] = assert;
-  exports["absurd"] = absurd;
-  exports["whenever"] = whenever;
-  exports["fromJust"] = fromJust;
-  exports["onlyIf"] = onlyIf;
-  exports["report"] = report;
-  exports["successful"] = successful;
-  exports["successfulWith"] = successfulWith;
-  exports["with"] = $$with;
-  exports["check"] = check;
-  exports["mustEq"] = mustEq;
-  exports["mustGeq"] = mustGeq;
-  exports["mayFailEq"] = mayFailEq;
-  exports["intersperse"] = intersperse;
-  exports["bind2Flipped"] = bind2Flipped;
-  exports["unsafeIndex"] = unsafeIndex;
-  exports["unsafeUpdateAt"] = unsafeUpdateAt;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Lattice"] = $PS["Lattice"] || {};
-  var exports = $PS["Lattice"];
-  var Control_Applicative = $PS["Control.Applicative"];
-  var Control_Bind = $PS["Control.Bind"];
-  var Data_Array = $PS["Data.Array"];
-  var Data_Boolean = $PS["Data.Boolean"];
-  var Data_Either = $PS["Data.Either"];
-  var Data_Eq = $PS["Data.Eq"];
-  var Data_Foldable = $PS["Data.Foldable"];
-  var Data_Function = $PS["Data.Function"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_HeytingAlgebra = $PS["Data.HeytingAlgebra"];
-  var Data_List = $PS["Data.List"];
-  var Data_List_Types = $PS["Data.List.Types"];
-  var Data_Map_Internal = $PS["Data.Map.Internal"];
-  var Data_Maybe = $PS["Data.Maybe"];
-  var Data_Traversable = $PS["Data.Traversable"];
-  var Data_Tuple = $PS["Data.Tuple"];
-  var Util = $PS["Util"];                
-  var Key = function (Ord0, checkConsistent) {
-      this.Ord0 = Ord0;
-      this.checkConsistent = checkConsistent;
-  };
-  var JoinSemilattice = function (join, neg) {
-      this.join = join;
-      this.neg = neg;
-  };
-  var Slices = function (JoinSemilattice0, maybeJoin) {
-      this.JoinSemilattice0 = JoinSemilattice0;
-      this.maybeJoin = maybeJoin;
-  };
-  var Expandable = function (expand) {
-      this.expand = expand;
-  };
-  var neg = function (dict) {
-      return dict.neg;
-  };
-  var meet = Data_HeytingAlgebra.conj(Data_HeytingAlgebra.heytingAlgebraBoolean);
-  var maybeJoin = function (dict) {
-      return dict.maybeJoin;
-  };                                                         
-  var joinSemilatticeBoolean = new JoinSemilattice(Data_HeytingAlgebra.disj(Data_HeytingAlgebra.heytingAlgebraBoolean), Data_HeytingAlgebra.not(Data_HeytingAlgebra.heytingAlgebraBoolean));
-  var join = function (dict) {
-      return dict.join;
-  };
-  var expand = function (dict) {
-      return dict.expand;
-  };
-  var expandableArray = function (dictExpandable) {
-      return new Expandable(function (xs) {
-          return function (ys) {
-              if (Data_Array.length(xs) === Data_Array.length(ys)) {
-                  return Data_Array.zipWith(expand(dictExpandable))(xs)(ys);
-              };
-              if (Data_Boolean.otherwise) {
-                  return Util.error(Util.absurd);
-              };
-              throw new Error("Failed pattern match at Lattice (line 113, column 1 - line 116, column 51): " + [ xs.constructor.name, ys.constructor.name ]);
-          };
-      });
-  };
-  var expandableList = function (dictExpandable) {
-      return new Expandable(function (xs) {
-          return function (ys) {
-              if (Data_List.length(xs) === Data_List.length(ys)) {
-                  return Data_List.zipWith(expand(dictExpandable))(xs)(ys);
-              };
-              if (Data_Boolean.otherwise) {
-                  return Util.error(Util.absurd);
-              };
-              throw new Error("Failed pattern match at Lattice (line 118, column 1 - line 121, column 48): " + [ xs.constructor.name, ys.constructor.name ]);
-          };
-      });
-  };
-  var expandableMap = function (dictOrd) {
-      return function (dictExpandable) {
-          return new Expandable(function (m) {
-              return function (m$prime) {
-                  if (Data_Eq.eq(Data_List_Types.eqList(dictOrd.Eq0()))(Data_Map_Internal.keys(m))(Data_Map_Internal.keys(m$prime))) {
-                      var expandValue = function (v) {
-                          return function (v1) {
-                              return new Data_Tuple.Tuple(v.value0, expand(dictExpandable)(v.value1)(v1.value1));
-                          };
-                      };
-                      return Data_Map_Internal.fromFoldable(dictOrd)(Data_List_Types.foldableList)(Data_List.zipWith(expandValue)(Data_Map_Internal.toUnfoldable(Data_List_Types.unfoldableList)(m))(Data_Map_Internal.toUnfoldable(Data_List_Types.unfoldableList)(m$prime)));
-                  };
-                  if (Data_Boolean.otherwise) {
-                      return Util.error(Util.absurd);
-                  };
-                  throw new Error("Failed pattern match at Lattice (line 123, column 1 - line 128, column 42): " + [ m.constructor.name, m$prime.constructor.name ]);
-              };
-          });
-      };
-  };
-  var definedJoin = function (dictSlices) {
-      return function (x) {
-          var $57 = Util.successfulWith("Join undefined");
-          var $58 = maybeJoin(dictSlices)(x);
-          return function ($59) {
-              return $57($58($59));
-          };
-      };
-  };
-  var slicesList = function (dictSlices) {
-      return new Slices(function () {
-          return joinSemilatticeList(dictSlices);
-      }, function (xs) {
-          return function (ys) {
-              if (Data_List.length(xs) === Data_List.length(ys)) {
-                  return Data_Traversable.sequence(Data_List_Types.traversableList)(Data_Either.applicativeEither)(Data_List.zipWith(maybeJoin(dictSlices))(xs)(ys));
-              };
-              if (Data_Boolean.otherwise) {
-                  return Util.report("Lists of different lengths");
-              };
-              throw new Error("Failed pattern match at Lattice (line 68, column 1 - line 71, column 71): " + [ xs.constructor.name, ys.constructor.name ]);
-          };
-      });
-  };
-  var joinSemilatticeList = function (dictSlices) {
-      return new JoinSemilattice(definedJoin(slicesList(dictSlices)), Data_Functor.map(Data_List_Types.functorList)(neg(dictSlices.JoinSemilattice0())));
-  };
-  var checkConsistent = function (dict) {
-      return dict.checkConsistent;
-  };
-  var mayFailUpdate = function (dictKey) {
-      return function (dictSlices) {
-          return function (m) {
-              return function (v) {
-                  var v2 = Data_Map_Internal.lookup(dictKey.Ord0())(v.value0)(m);
-                  if (v2 instanceof Data_Maybe.Nothing) {
-                      return Control_Bind.discard(Control_Bind.discardUnit)(Data_Either.bindEither)(checkConsistent(dictKey)("Inconsistent keys: ")(v.value0)(Data_Map_Internal.keys(m)))(function () {
-                          return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Map_Internal.insert(dictKey.Ord0())(v.value0)(v.value1)(m));
-                      });
-                  };
-                  if (v2 instanceof Data_Maybe.Just) {
-                      return Data_Functor.flap(Data_Either.functorEither)(Data_Functor.flap(Data_Either.functorEither)(Data_Functor.map(Data_Either.functorEither)(Data_Map_Internal.update(dictKey.Ord0()))(Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Data_Function["const"])(Data_Maybe.Just.create))(maybeJoin(dictSlices)(v2.value0)(v.value1))))(v.value0))(m);
-                  };
-                  throw new Error("Failed pattern match at Lattice (line 92, column 4 - line 97, column 68): " + [ v2.constructor.name ]);
-              };
-          };
-      };
-  };
-  var slicesMap = function (dictKey) {
-      return function (dictSlices) {
-          return new Slices(function () {
-              return joinSemilatticeMap(dictKey)(dictSlices);
-          }, function (m) {
-              return function (m$prime) {
-                  return Data_Foldable.foldM(Data_List_Types.foldableList)(Data_Either.monadEither)(mayFailUpdate(dictKey)(dictSlices))(m)(Data_Map_Internal.toUnfoldable(Data_List_Types.unfoldableList)(m$prime));
-              };
-          });
-      };
-  };
-  var joinSemilatticeMap = function (dictKey) {
-      return function (dictSlices) {
-          return new JoinSemilattice(definedJoin(slicesMap(dictKey)(dictSlices)), Data_Functor.map(Data_Map_Internal.functorMap)(neg(dictSlices.JoinSemilattice0())));
-      };
-  };
-  exports["checkConsistent"] = checkConsistent;
-  exports["expand"] = expand;
-  exports["join"] = join;
-  exports["maybeJoin"] = maybeJoin;
-  exports["neg"] = neg;
-  exports["JoinSemilattice"] = JoinSemilattice;
-  exports["Slices"] = Slices;
-  exports["definedJoin"] = definedJoin;
-  exports["meet"] = meet;
-  exports["Key"] = Key;
-  exports["Expandable"] = Expandable;
-  exports["joinSemilatticeBoolean"] = joinSemilatticeBoolean;
-  exports["slicesList"] = slicesList;
-  exports["slicesMap"] = slicesMap;
-  exports["expandableArray"] = expandableArray;
-  exports["expandableList"] = expandableList;
-  exports["expandableMap"] = expandableMap;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Bindings"] = $PS["Bindings"] || {};
-  var exports = $PS["Bindings"];
-  var Control_Applicative = $PS["Control.Applicative"];
-  var Control_Apply = $PS["Control.Apply"];
-  var Data_Boolean = $PS["Data.Boolean"];
-  var Data_Either = $PS["Data.Either"];
-  var Data_Eq = $PS["Data.Eq"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_List_Types = $PS["Data.List.Types"];
-  var Data_Semigroup = $PS["Data.Semigroup"];
-  var Data_Show = $PS["Data.Show"];
-  var Lattice = $PS["Lattice"];
-  var Util = $PS["Util"];                
-  var Binding = (function () {
-      function Binding(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Binding.create = function (value0) {
-          return function (value1) {
-              return new Binding(value0, value1);
-          };
-      };
-      return Binding;
-  })();
-  var Empty = (function () {
-      function Empty() {
-
-      };
-      Empty.value = new Empty();
-      return Empty;
-  })();
-  var Extend = (function () {
-      function Extend(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Extend.create = function (value0) {
-          return function (value1) {
-              return new Extend(value0, value1);
-          };
-      };
-      return Extend;
-  })();
-  var varAnon = "_";
-  var semigroupBindings = new Data_Semigroup.Semigroup(function (ρ) {
-      return function (v) {
-          if (v instanceof Empty) {
-              return ρ;
-          };
-          if (v instanceof Extend) {
-              return new Extend(Data_Semigroup.append(semigroupBindings)(ρ)(v.value0), v.value1);
-          };
-          throw new Error("Failed pattern match at Bindings (line 78, column 1 - line 80, column 53): " + [ ρ.constructor.name, v.constructor.name ]);
-      };
-  });
-  var mustGeq = function (x) {
-      return function (y) {
-          return Util.fromJust("Must be greater")(Util.whenever(x === y)(x));
-      };
-  };
-  var functorBinding = function (dictFunctor) {
-      return new Data_Functor.Functor(function (f) {
-          return function (m) {
-              return new Binding(m.value0, Data_Functor.map(dictFunctor)(f)(m.value1));
-          };
-      });
-  };
-  var functorBindings = function (dictFunctor) {
-      return new Data_Functor.Functor(function (f) {
-          return function (m) {
-              if (m instanceof Empty) {
-                  return Empty.value;
-              };
-              if (m instanceof Extend) {
-                  return new Extend(Data_Functor.map(functorBindings(dictFunctor))(f)(m.value0), Data_Functor.map(functorBinding(dictFunctor))(f)(m.value1));
-              };
-              throw new Error("Failed pattern match at Bindings (line 76, column 1 - line 76, column 69): " + [ m.constructor.name ]);
-          };
-      });
-  };
-  var slicesBindings = function (dictFunctor) {
-      return function (dictJoinSemilattice) {
-          return function (dictSlices) {
-              return new Lattice.Slices(function () {
-                  return joinSemilatticeBindings(dictFunctor)(dictJoinSemilattice)(dictSlices);
-              }, function (v) {
-                  return function (v1) {
-                      if (v instanceof Empty && v1 instanceof Empty) {
-                          return Control_Applicative.pure(Data_Either.applicativeEither)(Empty.value);
-                      };
-                      if (v instanceof Extend && v1 instanceof Extend) {
-                          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Extend.create)(Lattice.maybeJoin(slicesBindings(dictFunctor)(dictJoinSemilattice)(dictSlices))(v.value0)(v1.value0)))(Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Binding.create)(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value1.value0)(v1.value1.value0)))(Lattice.maybeJoin(dictSlices)(v.value1.value1)(v1.value1.value1)));
-                      };
-                      return Util.report("Bindings of different lengths");
-                  };
-              });
-          };
-      };
-  };
-  var joinSemilatticeBindings = function (dictFunctor) {
-      return function (dictJoinSemilattice) {
-          return function (dictSlices) {
-              return new Lattice.JoinSemilattice(Lattice.definedJoin(slicesBindings(dictFunctor)(dictJoinSemilattice)(dictSlices)), Data_Functor.map(functorBindings(dictFunctor))(Lattice.neg(dictJoinSemilattice)));
-          };
-      };
-  };
-  var fromList = function (v) {
-      if (v instanceof Data_List_Types.Nil) {
-          return Empty.value;
-      };
-      if (v instanceof Data_List_Types.Cons) {
-          return new Extend(fromList(v.value1), v.value0);
-      };
-      throw new Error("Failed pattern match at Bindings (line 60, column 1 - line 60, column 60): " + [ v.constructor.name ]);
-  };
-  var find = function ($copy_x) {
-      return function ($copy_v) {
-          var $tco_var_x = $copy_x;
-          var $tco_done = false;
-          var $tco_result;
-          function $tco_loop(x, v) {
-              if (v instanceof Empty) {
-                  $tco_done = true;
-                  return Util.report("variable " + (x + " not found"));
-              };
-              if (v instanceof Extend) {
-                  if (x === v.value1.value0) {
-                      $tco_done = true;
-                      return Control_Applicative.pure(Data_Either.applicativeEither)(v.value1.value1);
-                  };
-                  if (Data_Boolean.otherwise) {
-                      $tco_var_x = x;
-                      $copy_v = v.value0;
-                      return;
-                  };
-              };
-              throw new Error("Failed pattern match at Bindings (line 28, column 1 - line 28, column 58): " + [ x.constructor.name, v.constructor.name ]);
-          };
-          while (!$tco_done) {
-              $tco_result = $tco_loop($tco_var_x, $copy_v);
-          };
-          return $tco_result;
-      };
-  };
-  var expandableBindings = function (dictExpandable) {
-      return new Lattice.Expandable(function (v) {
-          return function (v1) {
-              if (v instanceof Empty && v1 instanceof Empty) {
-                  return Empty.value;
-              };
-              if (v instanceof Extend && v1 instanceof Extend) {
-                  return new Extend(Lattice.expand(expandableBindings(dictExpandable))(v.value0)(v1.value0), new Binding(Util.mustEq(Data_Eq.eqString)(v.value1.value0)(v1.value1.value0), Lattice.expand(dictExpandable)(v.value1.value1)(v1.value1.value1)));
-              };
-              return Util.error(Util.absurd);
-          };
-      });
-  };
-  var bindingsMap = function (v) {
-      return function (v1) {
-          if (v1 instanceof Empty) {
-              return Empty.value;
-          };
-          if (v1 instanceof Extend) {
-              return new Extend(bindingsMap(v)(v1.value0), new Binding(v1.value1.value0, v(v1.value1.value1)));
-          };
-          throw new Error("Failed pattern match at Bindings (line 68, column 1 - line 68, column 77): " + [ v.constructor.name, v1.constructor.name ]);
-      };
-  };
-  exports["varAnon"] = varAnon;
-  exports["mustGeq"] = mustGeq;
-  exports["Binding"] = Binding;
-  exports["Empty"] = Empty;
-  exports["Extend"] = Extend;
-  exports["find"] = find;
-  exports["fromList"] = fromList;
-  exports["bindingsMap"] = bindingsMap;
-  exports["functorBindings"] = functorBindings;
-  exports["semigroupBindings"] = semigroupBindings;
-  exports["slicesBindings"] = slicesBindings;
-  exports["expandableBindings"] = expandableBindings;
-})(PS);
-(function(exports) {
-  exports.withCharCode = function(f) {
-      return function (c) {
-          return String.fromCharCode(f(c.charCodeAt()));
-      }
-  }
-})(PS["Data.Char.Unicode"] = PS["Data.Char.Unicode"] || {});
-(function(exports) {
-  "use strict";
-
-  exports.toCharCode = function (c) {
-    return c.charCodeAt(0);
+  exports.toNumber = function (n) {
+    return n;
   };
 
-  exports.fromCharCode = function (c) {
-    return String.fromCharCode(c);
+
+  exports.quot = function (x) {
+    return function (y) {
+      /* jshint bitwise: false */
+      return x / y | 0;
+    };
   };
-})(PS["Data.Enum"] = PS["Data.Enum"] || {});
+
+  exports.rem = function (x) {
+    return function (y) {
+      return x % y;
+    };
+  };
+})(PS["Data.Int"] = PS["Data.Int"] || {});
 (function(exports) {
   "use strict";
 
@@ -6938,6 +5716,171 @@ var PS = {};
   exports["boundedInt"] = boundedInt;
   exports["boundedChar"] = boundedChar;
 })(PS);
+(function(exports) {
+  "use strict";
+
+  exports.ceil = Math.ceil;
+
+  exports.floor = Math.floor;
+
+  exports.log = Math.log;
+
+  exports.pow = function (n) {
+    return function (p) {
+      return Math.pow(n, p);
+    };
+  };
+})(PS["Math"] = PS["Math"] || {});
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Math"] = $PS["Math"] || {};
+  var exports = $PS["Math"];
+  var $foreign = $PS["Math"];
+  exports["ceil"] = $foreign.ceil;
+  exports["floor"] = $foreign.floor;
+  exports["log"] = $foreign.log;
+  exports["pow"] = $foreign.pow;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Data.Int"] = $PS["Data.Int"] || {};
+  var exports = $PS["Data.Int"];
+  var $foreign = $PS["Data.Int"];
+  var Data_Boolean = $PS["Data.Boolean"];
+  var Data_Bounded = $PS["Data.Bounded"];
+  var Data_Maybe = $PS["Data.Maybe"];
+  var Global = $PS["Global"];
+  var $$Math = $PS["Math"];         
+  var fromNumber = $foreign.fromNumberImpl(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
+  var unsafeClamp = function (x) {
+      if (x === Global.infinity) {
+          return 0;
+      };
+      if (x === -Global.infinity) {
+          return 0;
+      };
+      if (x >= $foreign.toNumber(Data_Bounded.top(Data_Bounded.boundedInt))) {
+          return Data_Bounded.top(Data_Bounded.boundedInt);
+      };
+      if (x <= $foreign.toNumber(Data_Bounded.bottom(Data_Bounded.boundedInt))) {
+          return Data_Bounded.bottom(Data_Bounded.boundedInt);
+      };
+      if (Data_Boolean.otherwise) {
+          return Data_Maybe.fromMaybe(0)(fromNumber(x));
+      };
+      throw new Error("Failed pattern match at Data.Int (line 66, column 1 - line 66, column 29): " + [ x.constructor.name ]);
+  };
+  var floor = function ($24) {
+      return unsafeClamp($$Math.floor($24));
+  }; 
+  var ceil = function ($25) {
+      return unsafeClamp($$Math.ceil($25));
+  };
+  exports["ceil"] = ceil;
+  exports["floor"] = floor;
+  exports["toNumber"] = $foreign.toNumber;
+  exports["quot"] = $foreign.quot;
+  exports["rem"] = $foreign.rem;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Data.Profunctor"] = $PS["Data.Profunctor"] || {};
+  var exports = $PS["Data.Profunctor"];                  
+  var Profunctor = function (dimap) {
+      this.dimap = dimap;
+  };
+  var profunctorFn = new Profunctor(function (a2b) {
+      return function (c2d) {
+          return function (b2c) {
+              return function ($9) {
+                  return c2d(b2c(a2b($9)));
+              };
+          };
+      };
+  });
+  var dimap = function (dict) {
+      return dict.dimap;
+  };
+  exports["dimap"] = dimap;
+  exports["profunctorFn"] = profunctorFn;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Data.Profunctor.Choice"] = $PS["Data.Profunctor.Choice"] || {};
+  var exports = $PS["Data.Profunctor.Choice"];
+  var Control_Category = $PS["Control.Category"];
+  var Control_Semigroupoid = $PS["Control.Semigroupoid"];
+  var Data_Either = $PS["Data.Either"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_Profunctor = $PS["Data.Profunctor"];                
+  var Choice = function (Profunctor0, left, right) {
+      this.Profunctor0 = Profunctor0;
+      this.left = left;
+      this.right = right;
+  };
+  var right = function (dict) {
+      return dict.right;
+  };
+  var left = function (dict) {
+      return dict.left;
+  };
+  var splitChoice = function (dictCategory) {
+      return function (dictChoice) {
+          return function (l) {
+              return function (r) {
+                  return Control_Semigroupoid.composeFlipped(dictCategory.Semigroupoid0())(left(dictChoice)(l))(right(dictChoice)(r));
+              };
+          };
+      };
+  };
+  var fanin = function (dictCategory) {
+      return function (dictChoice) {
+          return function (l) {
+              return function (r) {
+                  var join = Data_Profunctor.dimap(dictChoice.Profunctor0())(Data_Either.either(Control_Category.identity(Control_Category.categoryFn))(Control_Category.identity(Control_Category.categoryFn)))(Control_Category.identity(Control_Category.categoryFn))(Control_Category.identity(dictCategory));
+                  return Control_Semigroupoid.composeFlipped(dictCategory.Semigroupoid0())(splitChoice(dictCategory)(dictChoice)(l)(r))(join);
+              };
+          };
+      };
+  };
+  var choiceFn = new Choice(function () {
+      return Data_Profunctor.profunctorFn;
+  }, function (v) {
+      return function (v1) {
+          if (v1 instanceof Data_Either.Left) {
+              return Data_Either.Left.create(v(v1.value0));
+          };
+          if (v1 instanceof Data_Either.Right) {
+              return new Data_Either.Right(v1.value0);
+          };
+          throw new Error("Failed pattern match at Data.Profunctor.Choice (line 32, column 1 - line 35, column 16): " + [ v.constructor.name, v1.constructor.name ]);
+      };
+  }, Data_Functor.map(Data_Either.functorEither));
+  exports["fanin"] = fanin;
+  exports["choiceFn"] = choiceFn;
+})(PS);
+(function(exports) {
+  exports.withCharCode = function(f) {
+      return function (c) {
+          return String.fromCharCode(f(c.charCodeAt()));
+      }
+  }
+})(PS["Data.Char.Unicode"] = PS["Data.Char.Unicode"] || {});
+(function(exports) {
+  "use strict";
+
+  exports.toCharCode = function (c) {
+    return c.charCodeAt(0);
+  };
+
+  exports.fromCharCode = function (c) {
+    return String.fromCharCode(c);
+  };
+})(PS["Data.Enum"] = PS["Data.Enum"] || {});
 (function($PS) {
   // Generated by purs version 0.13.6
   "use strict";
@@ -7028,104 +5971,6 @@ var PS = {};
   var fromCharCode = Data_Enum.toEnum(Data_Enum.boundedEnumChar);
   exports["toCharCode"] = toCharCode;
   exports["fromCharCode"] = fromCharCode;
-})(PS);
-(function(exports) {
-  "use strict";
-
-  exports.fromNumberImpl = function (just) {
-    return function (nothing) {
-      return function (n) {
-        /* jshint bitwise: false */
-        return (n | 0) === n ? just(n) : nothing;
-      };
-    };
-  };
-
-  exports.toNumber = function (n) {
-    return n;
-  };
-
-
-  exports.quot = function (x) {
-    return function (y) {
-      /* jshint bitwise: false */
-      return x / y | 0;
-    };
-  };
-
-  exports.rem = function (x) {
-    return function (y) {
-      return x % y;
-    };
-  };
-})(PS["Data.Int"] = PS["Data.Int"] || {});
-(function(exports) {
-  "use strict";
-
-  exports.ceil = Math.ceil;
-
-  exports.floor = Math.floor;
-
-  exports.log = Math.log;
-
-  exports.pow = function (n) {
-    return function (p) {
-      return Math.pow(n, p);
-    };
-  };
-})(PS["Math"] = PS["Math"] || {});
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Math"] = $PS["Math"] || {};
-  var exports = $PS["Math"];
-  var $foreign = $PS["Math"];
-  exports["ceil"] = $foreign.ceil;
-  exports["floor"] = $foreign.floor;
-  exports["log"] = $foreign.log;
-  exports["pow"] = $foreign.pow;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Data.Int"] = $PS["Data.Int"] || {};
-  var exports = $PS["Data.Int"];
-  var $foreign = $PS["Data.Int"];
-  var Data_Boolean = $PS["Data.Boolean"];
-  var Data_Bounded = $PS["Data.Bounded"];
-  var Data_Maybe = $PS["Data.Maybe"];
-  var Global = $PS["Global"];
-  var $$Math = $PS["Math"];         
-  var fromNumber = $foreign.fromNumberImpl(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
-  var unsafeClamp = function (x) {
-      if (x === Global.infinity) {
-          return 0;
-      };
-      if (x === -Global.infinity) {
-          return 0;
-      };
-      if (x >= $foreign.toNumber(Data_Bounded.top(Data_Bounded.boundedInt))) {
-          return Data_Bounded.top(Data_Bounded.boundedInt);
-      };
-      if (x <= $foreign.toNumber(Data_Bounded.bottom(Data_Bounded.boundedInt))) {
-          return Data_Bounded.bottom(Data_Bounded.boundedInt);
-      };
-      if (Data_Boolean.otherwise) {
-          return Data_Maybe.fromMaybe(0)(fromNumber(x));
-      };
-      throw new Error("Failed pattern match at Data.Int (line 66, column 1 - line 66, column 29): " + [ x.constructor.name ]);
-  };
-  var floor = function ($24) {
-      return unsafeClamp($$Math.floor($24));
-  }; 
-  var ceil = function ($25) {
-      return unsafeClamp($$Math.ceil($25));
-  };
-  exports["ceil"] = ceil;
-  exports["floor"] = floor;
-  exports["toNumber"] = $foreign.toNumber;
-  exports["quot"] = $foreign.quot;
-  exports["rem"] = $foreign.rem;
 })(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
@@ -25026,6 +23871,805 @@ var PS = {};
   exports["toLower"] = toLower;
   exports["toUpper"] = toUpper;
 })(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Data.Map.Internal"] = $PS["Data.Map.Internal"] || {};
+  var exports = $PS["Data.Map.Internal"];
+  var Control_Applicative = $PS["Control.Applicative"];
+  var Data_Foldable = $PS["Data.Foldable"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Maybe = $PS["Data.Maybe"];
+  var Data_Ord = $PS["Data.Ord"];
+  var Data_Ordering = $PS["Data.Ordering"];
+  var Data_Semigroup = $PS["Data.Semigroup"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var Data_Unfoldable = $PS["Data.Unfoldable"];                
+  var Leaf = (function () {
+      function Leaf() {
+
+      };
+      Leaf.value = new Leaf();
+      return Leaf;
+  })();
+  var Two = (function () {
+      function Two(value0, value1, value2, value3) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+          this.value3 = value3;
+      };
+      Two.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return function (value3) {
+                      return new Two(value0, value1, value2, value3);
+                  };
+              };
+          };
+      };
+      return Two;
+  })();
+  var Three = (function () {
+      function Three(value0, value1, value2, value3, value4, value5, value6) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+          this.value3 = value3;
+          this.value4 = value4;
+          this.value5 = value5;
+          this.value6 = value6;
+      };
+      Three.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return function (value3) {
+                      return function (value4) {
+                          return function (value5) {
+                              return function (value6) {
+                                  return new Three(value0, value1, value2, value3, value4, value5, value6);
+                              };
+                          };
+                      };
+                  };
+              };
+          };
+      };
+      return Three;
+  })();
+  var TwoLeft = (function () {
+      function TwoLeft(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      TwoLeft.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new TwoLeft(value0, value1, value2);
+              };
+          };
+      };
+      return TwoLeft;
+  })();
+  var TwoRight = (function () {
+      function TwoRight(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      TwoRight.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new TwoRight(value0, value1, value2);
+              };
+          };
+      };
+      return TwoRight;
+  })();
+  var ThreeLeft = (function () {
+      function ThreeLeft(value0, value1, value2, value3, value4, value5) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+          this.value3 = value3;
+          this.value4 = value4;
+          this.value5 = value5;
+      };
+      ThreeLeft.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return function (value3) {
+                      return function (value4) {
+                          return function (value5) {
+                              return new ThreeLeft(value0, value1, value2, value3, value4, value5);
+                          };
+                      };
+                  };
+              };
+          };
+      };
+      return ThreeLeft;
+  })();
+  var ThreeMiddle = (function () {
+      function ThreeMiddle(value0, value1, value2, value3, value4, value5) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+          this.value3 = value3;
+          this.value4 = value4;
+          this.value5 = value5;
+      };
+      ThreeMiddle.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return function (value3) {
+                      return function (value4) {
+                          return function (value5) {
+                              return new ThreeMiddle(value0, value1, value2, value3, value4, value5);
+                          };
+                      };
+                  };
+              };
+          };
+      };
+      return ThreeMiddle;
+  })();
+  var ThreeRight = (function () {
+      function ThreeRight(value0, value1, value2, value3, value4, value5) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+          this.value3 = value3;
+          this.value4 = value4;
+          this.value5 = value5;
+      };
+      ThreeRight.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return function (value3) {
+                      return function (value4) {
+                          return function (value5) {
+                              return new ThreeRight(value0, value1, value2, value3, value4, value5);
+                          };
+                      };
+                  };
+              };
+          };
+      };
+      return ThreeRight;
+  })();
+  var KickUp = (function () {
+      function KickUp(value0, value1, value2, value3) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+          this.value3 = value3;
+      };
+      KickUp.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return function (value3) {
+                      return new KickUp(value0, value1, value2, value3);
+                  };
+              };
+          };
+      };
+      return KickUp;
+  })();
+  var values = function (v) {
+      if (v instanceof Leaf) {
+          return Data_List_Types.Nil.value;
+      };
+      if (v instanceof Two) {
+          return Data_Semigroup.append(Data_List_Types.semigroupList)(values(v.value0))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value2))(values(v.value3)));
+      };
+      if (v instanceof Three) {
+          return Data_Semigroup.append(Data_List_Types.semigroupList)(values(v.value0))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value2))(Data_Semigroup.append(Data_List_Types.semigroupList)(values(v.value3))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value5))(values(v.value6)))));
+      };
+      throw new Error("Failed pattern match at Data.Map.Internal (line 612, column 1 - line 612, column 40): " + [ v.constructor.name ]);
+  };
+  var size = function (v) {
+      if (v instanceof Leaf) {
+          return 0;
+      };
+      if (v instanceof Two) {
+          return (1 + size(v.value0) | 0) + size(v.value3) | 0;
+      };
+      if (v instanceof Three) {
+          return ((2 + size(v.value0) | 0) + size(v.value3) | 0) + size(v.value6) | 0;
+      };
+      throw new Error("Failed pattern match at Data.Map.Internal (line 662, column 1 - line 662, column 35): " + [ v.constructor.name ]);
+  };
+  var singleton = function (k) {
+      return function (v) {
+          return new Two(Leaf.value, k, v, Leaf.value);
+      };
+  };
+  var toUnfoldable = function (dictUnfoldable) {
+      return function (m) {
+          var go = function ($copy_v) {
+              var $tco_done = false;
+              var $tco_result;
+              function $tco_loop(v) {
+                  if (v instanceof Data_List_Types.Nil) {
+                      $tco_done = true;
+                      return Data_Maybe.Nothing.value;
+                  };
+                  if (v instanceof Data_List_Types.Cons) {
+                      if (v.value0 instanceof Leaf) {
+                          $copy_v = v.value1;
+                          return;
+                      };
+                      if (v.value0 instanceof Two && (v.value0.value0 instanceof Leaf && v.value0.value3 instanceof Leaf)) {
+                          $tco_done = true;
+                          return Data_Maybe.Just.create(new Data_Tuple.Tuple(new Data_Tuple.Tuple(v.value0.value1, v.value0.value2), v.value1));
+                      };
+                      if (v.value0 instanceof Two && v.value0.value0 instanceof Leaf) {
+                          $tco_done = true;
+                          return Data_Maybe.Just.create(new Data_Tuple.Tuple(new Data_Tuple.Tuple(v.value0.value1, v.value0.value2), new Data_List_Types.Cons(v.value0.value3, v.value1)));
+                      };
+                      if (v.value0 instanceof Two) {
+                          $copy_v = new Data_List_Types.Cons(v.value0.value0, new Data_List_Types.Cons(singleton(v.value0.value1)(v.value0.value2), new Data_List_Types.Cons(v.value0.value3, v.value1)));
+                          return;
+                      };
+                      if (v.value0 instanceof Three) {
+                          $copy_v = new Data_List_Types.Cons(v.value0.value0, new Data_List_Types.Cons(singleton(v.value0.value1)(v.value0.value2), new Data_List_Types.Cons(v.value0.value3, new Data_List_Types.Cons(singleton(v.value0.value4)(v.value0.value5), new Data_List_Types.Cons(v.value0.value6, v.value1)))));
+                          return;
+                      };
+                      throw new Error("Failed pattern match at Data.Map.Internal (line 577, column 18 - line 586, column 71): " + [ v.value0.constructor.name ]);
+                  };
+                  throw new Error("Failed pattern match at Data.Map.Internal (line 576, column 3 - line 576, column 19): " + [ v.constructor.name ]);
+              };
+              while (!$tco_done) {
+                  $tco_result = $tco_loop($copy_v);
+              };
+              return $tco_result;
+          };
+          return Data_Unfoldable.unfoldr(dictUnfoldable)(go)(new Data_List_Types.Cons(m, Data_List_Types.Nil.value));
+      };
+  };
+  var lookup = function (dictOrd) {
+      return function (k) {
+          var comp = Data_Ord.compare(dictOrd);
+          var go = function ($copy_v) {
+              var $tco_done = false;
+              var $tco_result;
+              function $tco_loop(v) {
+                  if (v instanceof Leaf) {
+                      $tco_done = true;
+                      return Data_Maybe.Nothing.value;
+                  };
+                  if (v instanceof Two) {
+                      var v2 = comp(k)(v.value1);
+                      if (v2 instanceof Data_Ordering.EQ) {
+                          $tco_done = true;
+                          return new Data_Maybe.Just(v.value2);
+                      };
+                      if (v2 instanceof Data_Ordering.LT) {
+                          $copy_v = v.value0;
+                          return;
+                      };
+                      $copy_v = v.value3;
+                      return;
+                  };
+                  if (v instanceof Three) {
+                      var v3 = comp(k)(v.value1);
+                      if (v3 instanceof Data_Ordering.EQ) {
+                          $tco_done = true;
+                          return new Data_Maybe.Just(v.value2);
+                      };
+                      var v4 = comp(k)(v.value4);
+                      if (v4 instanceof Data_Ordering.EQ) {
+                          $tco_done = true;
+                          return new Data_Maybe.Just(v.value5);
+                      };
+                      if (v3 instanceof Data_Ordering.LT) {
+                          $copy_v = v.value0;
+                          return;
+                      };
+                      if (v4 instanceof Data_Ordering.GT) {
+                          $copy_v = v.value6;
+                          return;
+                      };
+                      $copy_v = v.value3;
+                      return;
+                  };
+                  throw new Error("Failed pattern match at Data.Map.Internal (line 200, column 5 - line 200, column 22): " + [ v.constructor.name ]);
+              };
+              while (!$tco_done) {
+                  $tco_result = $tco_loop($copy_v);
+              };
+              return $tco_result;
+          };
+          return go;
+      };
+  };
+  var keys = function (v) {
+      if (v instanceof Leaf) {
+          return Data_List_Types.Nil.value;
+      };
+      if (v instanceof Two) {
+          return Data_Semigroup.append(Data_List_Types.semigroupList)(keys(v.value0))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value1))(keys(v.value3)));
+      };
+      if (v instanceof Three) {
+          return Data_Semigroup.append(Data_List_Types.semigroupList)(keys(v.value0))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value1))(Data_Semigroup.append(Data_List_Types.semigroupList)(keys(v.value3))(Data_Semigroup.append(Data_List_Types.semigroupList)(Control_Applicative.pure(Data_List_Types.applicativeList)(v.value4))(keys(v.value6)))));
+      };
+      throw new Error("Failed pattern match at Data.Map.Internal (line 606, column 1 - line 606, column 38): " + [ v.constructor.name ]);
+  };
+  var functorMap = new Data_Functor.Functor(function (v) {
+      return function (v1) {
+          if (v1 instanceof Leaf) {
+              return Leaf.value;
+          };
+          if (v1 instanceof Two) {
+              return new Two(Data_Functor.map(functorMap)(v)(v1.value0), v1.value1, v(v1.value2), Data_Functor.map(functorMap)(v)(v1.value3));
+          };
+          if (v1 instanceof Three) {
+              return new Three(Data_Functor.map(functorMap)(v)(v1.value0), v1.value1, v(v1.value2), Data_Functor.map(functorMap)(v)(v1.value3), v1.value4, v(v1.value5), Data_Functor.map(functorMap)(v)(v1.value6));
+          };
+          throw new Error("Failed pattern match at Data.Map.Internal (line 96, column 1 - line 99, column 110): " + [ v.constructor.name, v1.constructor.name ]);
+      };
+  });
+  var fromZipper = function ($copy_dictOrd) {
+      return function ($copy_v) {
+          return function ($copy_tree) {
+              var $tco_var_dictOrd = $copy_dictOrd;
+              var $tco_var_v = $copy_v;
+              var $tco_done = false;
+              var $tco_result;
+              function $tco_loop(dictOrd, v, tree) {
+                  if (v instanceof Data_List_Types.Nil) {
+                      $tco_done = true;
+                      return tree;
+                  };
+                  if (v instanceof Data_List_Types.Cons) {
+                      if (v.value0 instanceof TwoLeft) {
+                          $tco_var_dictOrd = dictOrd;
+                          $tco_var_v = v.value1;
+                          $copy_tree = new Two(tree, v.value0.value0, v.value0.value1, v.value0.value2);
+                          return;
+                      };
+                      if (v.value0 instanceof TwoRight) {
+                          $tco_var_dictOrd = dictOrd;
+                          $tco_var_v = v.value1;
+                          $copy_tree = new Two(v.value0.value0, v.value0.value1, v.value0.value2, tree);
+                          return;
+                      };
+                      if (v.value0 instanceof ThreeLeft) {
+                          $tco_var_dictOrd = dictOrd;
+                          $tco_var_v = v.value1;
+                          $copy_tree = new Three(tree, v.value0.value0, v.value0.value1, v.value0.value2, v.value0.value3, v.value0.value4, v.value0.value5);
+                          return;
+                      };
+                      if (v.value0 instanceof ThreeMiddle) {
+                          $tco_var_dictOrd = dictOrd;
+                          $tco_var_v = v.value1;
+                          $copy_tree = new Three(v.value0.value0, v.value0.value1, v.value0.value2, tree, v.value0.value3, v.value0.value4, v.value0.value5);
+                          return;
+                      };
+                      if (v.value0 instanceof ThreeRight) {
+                          $tco_var_dictOrd = dictOrd;
+                          $tco_var_v = v.value1;
+                          $copy_tree = new Three(v.value0.value0, v.value0.value1, v.value0.value2, v.value0.value3, v.value0.value4, v.value0.value5, tree);
+                          return;
+                      };
+                      throw new Error("Failed pattern match at Data.Map.Internal (line 418, column 3 - line 423, column 88): " + [ v.value0.constructor.name ]);
+                  };
+                  throw new Error("Failed pattern match at Data.Map.Internal (line 415, column 1 - line 415, column 80): " + [ v.constructor.name, tree.constructor.name ]);
+              };
+              while (!$tco_done) {
+                  $tco_result = $tco_loop($tco_var_dictOrd, $tco_var_v, $copy_tree);
+              };
+              return $tco_result;
+          };
+      };
+  };
+  var insert = function (dictOrd) {
+      return function (k) {
+          return function (v) {
+              var up = function ($copy_v1) {
+                  return function ($copy_v2) {
+                      var $tco_var_v1 = $copy_v1;
+                      var $tco_done = false;
+                      var $tco_result;
+                      function $tco_loop(v1, v2) {
+                          if (v1 instanceof Data_List_Types.Nil) {
+                              $tco_done = true;
+                              return new Two(v2.value0, v2.value1, v2.value2, v2.value3);
+                          };
+                          if (v1 instanceof Data_List_Types.Cons) {
+                              if (v1.value0 instanceof TwoLeft) {
+                                  $tco_done = true;
+                                  return fromZipper(dictOrd)(v1.value1)(new Three(v2.value0, v2.value1, v2.value2, v2.value3, v1.value0.value0, v1.value0.value1, v1.value0.value2));
+                              };
+                              if (v1.value0 instanceof TwoRight) {
+                                  $tco_done = true;
+                                  return fromZipper(dictOrd)(v1.value1)(new Three(v1.value0.value0, v1.value0.value1, v1.value0.value2, v2.value0, v2.value1, v2.value2, v2.value3));
+                              };
+                              if (v1.value0 instanceof ThreeLeft) {
+                                  $tco_var_v1 = v1.value1;
+                                  $copy_v2 = new KickUp(new Two(v2.value0, v2.value1, v2.value2, v2.value3), v1.value0.value0, v1.value0.value1, new Two(v1.value0.value2, v1.value0.value3, v1.value0.value4, v1.value0.value5));
+                                  return;
+                              };
+                              if (v1.value0 instanceof ThreeMiddle) {
+                                  $tco_var_v1 = v1.value1;
+                                  $copy_v2 = new KickUp(new Two(v1.value0.value0, v1.value0.value1, v1.value0.value2, v2.value0), v2.value1, v2.value2, new Two(v2.value3, v1.value0.value3, v1.value0.value4, v1.value0.value5));
+                                  return;
+                              };
+                              if (v1.value0 instanceof ThreeRight) {
+                                  $tco_var_v1 = v1.value1;
+                                  $copy_v2 = new KickUp(new Two(v1.value0.value0, v1.value0.value1, v1.value0.value2, v1.value0.value3), v1.value0.value4, v1.value0.value5, new Two(v2.value0, v2.value1, v2.value2, v2.value3));
+                                  return;
+                              };
+                              throw new Error("Failed pattern match at Data.Map.Internal (line 454, column 5 - line 459, column 108): " + [ v1.value0.constructor.name, v2.constructor.name ]);
+                          };
+                          throw new Error("Failed pattern match at Data.Map.Internal (line 451, column 3 - line 451, column 56): " + [ v1.constructor.name, v2.constructor.name ]);
+                      };
+                      while (!$tco_done) {
+                          $tco_result = $tco_loop($tco_var_v1, $copy_v2);
+                      };
+                      return $tco_result;
+                  };
+              };
+              var comp = Data_Ord.compare(dictOrd);
+              var down = function ($copy_ctx) {
+                  return function ($copy_v1) {
+                      var $tco_var_ctx = $copy_ctx;
+                      var $tco_done = false;
+                      var $tco_result;
+                      function $tco_loop(ctx, v1) {
+                          if (v1 instanceof Leaf) {
+                              $tco_done = true;
+                              return up(ctx)(new KickUp(Leaf.value, k, v, Leaf.value));
+                          };
+                          if (v1 instanceof Two) {
+                              var v2 = comp(k)(v1.value1);
+                              if (v2 instanceof Data_Ordering.EQ) {
+                                  $tco_done = true;
+                                  return fromZipper(dictOrd)(ctx)(new Two(v1.value0, k, v, v1.value3));
+                              };
+                              if (v2 instanceof Data_Ordering.LT) {
+                                  $tco_var_ctx = new Data_List_Types.Cons(new TwoLeft(v1.value1, v1.value2, v1.value3), ctx);
+                                  $copy_v1 = v1.value0;
+                                  return;
+                              };
+                              $tco_var_ctx = new Data_List_Types.Cons(new TwoRight(v1.value0, v1.value1, v1.value2), ctx);
+                              $copy_v1 = v1.value3;
+                              return;
+                          };
+                          if (v1 instanceof Three) {
+                              var v3 = comp(k)(v1.value1);
+                              if (v3 instanceof Data_Ordering.EQ) {
+                                  $tco_done = true;
+                                  return fromZipper(dictOrd)(ctx)(new Three(v1.value0, k, v, v1.value3, v1.value4, v1.value5, v1.value6));
+                              };
+                              var v4 = comp(k)(v1.value4);
+                              if (v4 instanceof Data_Ordering.EQ) {
+                                  $tco_done = true;
+                                  return fromZipper(dictOrd)(ctx)(new Three(v1.value0, v1.value1, v1.value2, v1.value3, k, v, v1.value6));
+                              };
+                              if (v3 instanceof Data_Ordering.LT) {
+                                  $tco_var_ctx = new Data_List_Types.Cons(new ThreeLeft(v1.value1, v1.value2, v1.value3, v1.value4, v1.value5, v1.value6), ctx);
+                                  $copy_v1 = v1.value0;
+                                  return;
+                              };
+                              if (v3 instanceof Data_Ordering.GT && v4 instanceof Data_Ordering.LT) {
+                                  $tco_var_ctx = new Data_List_Types.Cons(new ThreeMiddle(v1.value0, v1.value1, v1.value2, v1.value4, v1.value5, v1.value6), ctx);
+                                  $copy_v1 = v1.value3;
+                                  return;
+                              };
+                              $tco_var_ctx = new Data_List_Types.Cons(new ThreeRight(v1.value0, v1.value1, v1.value2, v1.value3, v1.value4, v1.value5), ctx);
+                              $copy_v1 = v1.value6;
+                              return;
+                          };
+                          throw new Error("Failed pattern match at Data.Map.Internal (line 434, column 3 - line 434, column 55): " + [ ctx.constructor.name, v1.constructor.name ]);
+                      };
+                      while (!$tco_done) {
+                          $tco_result = $tco_loop($tco_var_ctx, $copy_v1);
+                      };
+                      return $tco_result;
+                  };
+              };
+              return down(Data_List_Types.Nil.value);
+          };
+      };
+  };
+  var pop = function (dictOrd) {
+      return function (k) {
+          var up = function ($copy_ctxs) {
+              return function ($copy_tree) {
+                  var $tco_var_ctxs = $copy_ctxs;
+                  var $tco_done = false;
+                  var $tco_result;
+                  function $tco_loop(ctxs, tree) {
+                      if (ctxs instanceof Data_List_Types.Nil) {
+                          $tco_done = true;
+                          return tree;
+                      };
+                      if (ctxs instanceof Data_List_Types.Cons) {
+                          if (ctxs.value0 instanceof TwoLeft && (ctxs.value0.value2 instanceof Leaf && tree instanceof Leaf)) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Two(Leaf.value, ctxs.value0.value0, ctxs.value0.value1, Leaf.value));
+                          };
+                          if (ctxs.value0 instanceof TwoRight && (ctxs.value0.value0 instanceof Leaf && tree instanceof Leaf)) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Two(Leaf.value, ctxs.value0.value1, ctxs.value0.value2, Leaf.value));
+                          };
+                          if (ctxs.value0 instanceof TwoLeft && ctxs.value0.value2 instanceof Two) {
+                              $tco_var_ctxs = ctxs.value1;
+                              $copy_tree = new Three(tree, ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2.value0, ctxs.value0.value2.value1, ctxs.value0.value2.value2, ctxs.value0.value2.value3);
+                              return;
+                          };
+                          if (ctxs.value0 instanceof TwoRight && ctxs.value0.value0 instanceof Two) {
+                              $tco_var_ctxs = ctxs.value1;
+                              $copy_tree = new Three(ctxs.value0.value0.value0, ctxs.value0.value0.value1, ctxs.value0.value0.value2, ctxs.value0.value0.value3, ctxs.value0.value1, ctxs.value0.value2, tree);
+                              return;
+                          };
+                          if (ctxs.value0 instanceof TwoLeft && ctxs.value0.value2 instanceof Three) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Two(new Two(tree, ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2.value0), ctxs.value0.value2.value1, ctxs.value0.value2.value2, new Two(ctxs.value0.value2.value3, ctxs.value0.value2.value4, ctxs.value0.value2.value5, ctxs.value0.value2.value6)));
+                          };
+                          if (ctxs.value0 instanceof TwoRight && ctxs.value0.value0 instanceof Three) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Two(new Two(ctxs.value0.value0.value0, ctxs.value0.value0.value1, ctxs.value0.value0.value2, ctxs.value0.value0.value3), ctxs.value0.value0.value4, ctxs.value0.value0.value5, new Two(ctxs.value0.value0.value6, ctxs.value0.value1, ctxs.value0.value2, tree)));
+                          };
+                          if (ctxs.value0 instanceof ThreeLeft && (ctxs.value0.value2 instanceof Leaf && (ctxs.value0.value5 instanceof Leaf && tree instanceof Leaf))) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Three(Leaf.value, ctxs.value0.value0, ctxs.value0.value1, Leaf.value, ctxs.value0.value3, ctxs.value0.value4, Leaf.value));
+                          };
+                          if (ctxs.value0 instanceof ThreeMiddle && (ctxs.value0.value0 instanceof Leaf && (ctxs.value0.value5 instanceof Leaf && tree instanceof Leaf))) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Three(Leaf.value, ctxs.value0.value1, ctxs.value0.value2, Leaf.value, ctxs.value0.value3, ctxs.value0.value4, Leaf.value));
+                          };
+                          if (ctxs.value0 instanceof ThreeRight && (ctxs.value0.value0 instanceof Leaf && (ctxs.value0.value3 instanceof Leaf && tree instanceof Leaf))) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Three(Leaf.value, ctxs.value0.value1, ctxs.value0.value2, Leaf.value, ctxs.value0.value4, ctxs.value0.value5, Leaf.value));
+                          };
+                          if (ctxs.value0 instanceof ThreeLeft && ctxs.value0.value2 instanceof Two) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Two(new Three(tree, ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2.value0, ctxs.value0.value2.value1, ctxs.value0.value2.value2, ctxs.value0.value2.value3), ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5));
+                          };
+                          if (ctxs.value0 instanceof ThreeMiddle && ctxs.value0.value0 instanceof Two) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Two(new Three(ctxs.value0.value0.value0, ctxs.value0.value0.value1, ctxs.value0.value0.value2, ctxs.value0.value0.value3, ctxs.value0.value1, ctxs.value0.value2, tree), ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5));
+                          };
+                          if (ctxs.value0 instanceof ThreeMiddle && ctxs.value0.value5 instanceof Two) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Two(ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2, new Three(tree, ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5.value0, ctxs.value0.value5.value1, ctxs.value0.value5.value2, ctxs.value0.value5.value3)));
+                          };
+                          if (ctxs.value0 instanceof ThreeRight && ctxs.value0.value3 instanceof Two) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Two(ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2, new Three(ctxs.value0.value3.value0, ctxs.value0.value3.value1, ctxs.value0.value3.value2, ctxs.value0.value3.value3, ctxs.value0.value4, ctxs.value0.value5, tree)));
+                          };
+                          if (ctxs.value0 instanceof ThreeLeft && ctxs.value0.value2 instanceof Three) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Three(new Two(tree, ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2.value0), ctxs.value0.value2.value1, ctxs.value0.value2.value2, new Two(ctxs.value0.value2.value3, ctxs.value0.value2.value4, ctxs.value0.value2.value5, ctxs.value0.value2.value6), ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5));
+                          };
+                          if (ctxs.value0 instanceof ThreeMiddle && ctxs.value0.value0 instanceof Three) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Three(new Two(ctxs.value0.value0.value0, ctxs.value0.value0.value1, ctxs.value0.value0.value2, ctxs.value0.value0.value3), ctxs.value0.value0.value4, ctxs.value0.value0.value5, new Two(ctxs.value0.value0.value6, ctxs.value0.value1, ctxs.value0.value2, tree), ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5));
+                          };
+                          if (ctxs.value0 instanceof ThreeMiddle && ctxs.value0.value5 instanceof Three) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Three(ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2, new Two(tree, ctxs.value0.value3, ctxs.value0.value4, ctxs.value0.value5.value0), ctxs.value0.value5.value1, ctxs.value0.value5.value2, new Two(ctxs.value0.value5.value3, ctxs.value0.value5.value4, ctxs.value0.value5.value5, ctxs.value0.value5.value6)));
+                          };
+                          if (ctxs.value0 instanceof ThreeRight && ctxs.value0.value3 instanceof Three) {
+                              $tco_done = true;
+                              return fromZipper(dictOrd)(ctxs.value1)(new Three(ctxs.value0.value0, ctxs.value0.value1, ctxs.value0.value2, new Two(ctxs.value0.value3.value0, ctxs.value0.value3.value1, ctxs.value0.value3.value2, ctxs.value0.value3.value3), ctxs.value0.value3.value4, ctxs.value0.value3.value5, new Two(ctxs.value0.value3.value6, ctxs.value0.value4, ctxs.value0.value5, tree)));
+                          };
+                          throw new Error("Failed pattern match at Data.Map.Internal (line 511, column 9 - line 528, column 136): " + [ ctxs.value0.constructor.name, tree.constructor.name ]);
+                      };
+                      throw new Error("Failed pattern match at Data.Map.Internal (line 508, column 5 - line 528, column 136): " + [ ctxs.constructor.name ]);
+                  };
+                  while (!$tco_done) {
+                      $tco_result = $tco_loop($tco_var_ctxs, $copy_tree);
+                  };
+                  return $tco_result;
+              };
+          };
+          var removeMaxNode = function ($copy_ctx) {
+              return function ($copy_m) {
+                  var $tco_var_ctx = $copy_ctx;
+                  var $tco_done = false;
+                  var $tco_result;
+                  function $tco_loop(ctx, m) {
+                      if (m instanceof Two && (m.value0 instanceof Leaf && m.value3 instanceof Leaf)) {
+                          $tco_done = true;
+                          return up(ctx)(Leaf.value);
+                      };
+                      if (m instanceof Two) {
+                          $tco_var_ctx = new Data_List_Types.Cons(new TwoRight(m.value0, m.value1, m.value2), ctx);
+                          $copy_m = m.value3;
+                          return;
+                      };
+                      if (m instanceof Three && (m.value0 instanceof Leaf && (m.value3 instanceof Leaf && m.value6 instanceof Leaf))) {
+                          $tco_done = true;
+                          return up(new Data_List_Types.Cons(new TwoRight(Leaf.value, m.value1, m.value2), ctx))(Leaf.value);
+                      };
+                      if (m instanceof Three) {
+                          $tco_var_ctx = new Data_List_Types.Cons(new ThreeRight(m.value0, m.value1, m.value2, m.value3, m.value4, m.value5), ctx);
+                          $copy_m = m.value6;
+                          return;
+                      };
+                      throw new Error("Failed pattern match at Data.Map.Internal (line 540, column 5 - line 544, column 107): " + [ m.constructor.name ]);
+                  };
+                  while (!$tco_done) {
+                      $tco_result = $tco_loop($tco_var_ctx, $copy_m);
+                  };
+                  return $tco_result;
+              };
+          };
+          var maxNode = function ($copy_m) {
+              var $tco_done = false;
+              var $tco_result;
+              function $tco_loop(m) {
+                  if (m instanceof Two && m.value3 instanceof Leaf) {
+                      $tco_done = true;
+                      return {
+                          key: m.value1,
+                          value: m.value2
+                      };
+                  };
+                  if (m instanceof Two) {
+                      $copy_m = m.value3;
+                      return;
+                  };
+                  if (m instanceof Three && m.value6 instanceof Leaf) {
+                      $tco_done = true;
+                      return {
+                          key: m.value4,
+                          value: m.value5
+                      };
+                  };
+                  if (m instanceof Three) {
+                      $copy_m = m.value6;
+                      return;
+                  };
+                  throw new Error("Failed pattern match at Data.Map.Internal (line 531, column 33 - line 535, column 45): " + [ m.constructor.name ]);
+              };
+              while (!$tco_done) {
+                  $tco_result = $tco_loop($copy_m);
+              };
+              return $tco_result;
+          };
+          var comp = Data_Ord.compare(dictOrd);
+          var down = function ($copy_ctx) {
+              return function ($copy_m) {
+                  var $tco_var_ctx = $copy_ctx;
+                  var $tco_done = false;
+                  var $tco_result;
+                  function $tco_loop(ctx, m) {
+                      if (m instanceof Leaf) {
+                          $tco_done = true;
+                          return Data_Maybe.Nothing.value;
+                      };
+                      if (m instanceof Two) {
+                          var v = comp(k)(m.value1);
+                          if (m.value3 instanceof Leaf && v instanceof Data_Ordering.EQ) {
+                              $tco_done = true;
+                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value2, up(ctx)(Leaf.value)));
+                          };
+                          if (v instanceof Data_Ordering.EQ) {
+                              var max = maxNode(m.value0);
+                              $tco_done = true;
+                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value2, removeMaxNode(new Data_List_Types.Cons(new TwoLeft(max.key, max.value, m.value3), ctx))(m.value0)));
+                          };
+                          if (v instanceof Data_Ordering.LT) {
+                              $tco_var_ctx = new Data_List_Types.Cons(new TwoLeft(m.value1, m.value2, m.value3), ctx);
+                              $copy_m = m.value0;
+                              return;
+                          };
+                          $tco_var_ctx = new Data_List_Types.Cons(new TwoRight(m.value0, m.value1, m.value2), ctx);
+                          $copy_m = m.value3;
+                          return;
+                      };
+                      if (m instanceof Three) {
+                          var leaves = (function () {
+                              if (m.value0 instanceof Leaf && (m.value3 instanceof Leaf && m.value6 instanceof Leaf)) {
+                                  return true;
+                              };
+                              return false;
+                          })();
+                          var v = comp(k)(m.value4);
+                          var v3 = comp(k)(m.value1);
+                          if (leaves && v3 instanceof Data_Ordering.EQ) {
+                              $tco_done = true;
+                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value2, fromZipper(dictOrd)(ctx)(new Two(Leaf.value, m.value4, m.value5, Leaf.value))));
+                          };
+                          if (leaves && v instanceof Data_Ordering.EQ) {
+                              $tco_done = true;
+                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value5, fromZipper(dictOrd)(ctx)(new Two(Leaf.value, m.value1, m.value2, Leaf.value))));
+                          };
+                          if (v3 instanceof Data_Ordering.EQ) {
+                              var max = maxNode(m.value0);
+                              $tco_done = true;
+                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value2, removeMaxNode(new Data_List_Types.Cons(new ThreeLeft(max.key, max.value, m.value3, m.value4, m.value5, m.value6), ctx))(m.value0)));
+                          };
+                          if (v instanceof Data_Ordering.EQ) {
+                              var max = maxNode(m.value3);
+                              $tco_done = true;
+                              return new Data_Maybe.Just(new Data_Tuple.Tuple(m.value5, removeMaxNode(new Data_List_Types.Cons(new ThreeMiddle(m.value0, m.value1, m.value2, max.key, max.value, m.value6), ctx))(m.value3)));
+                          };
+                          if (v3 instanceof Data_Ordering.LT) {
+                              $tco_var_ctx = new Data_List_Types.Cons(new ThreeLeft(m.value1, m.value2, m.value3, m.value4, m.value5, m.value6), ctx);
+                              $copy_m = m.value0;
+                              return;
+                          };
+                          if (v3 instanceof Data_Ordering.GT && v instanceof Data_Ordering.LT) {
+                              $tco_var_ctx = new Data_List_Types.Cons(new ThreeMiddle(m.value0, m.value1, m.value2, m.value4, m.value5, m.value6), ctx);
+                              $copy_m = m.value3;
+                              return;
+                          };
+                          $tco_var_ctx = new Data_List_Types.Cons(new ThreeRight(m.value0, m.value1, m.value2, m.value3, m.value4, m.value5), ctx);
+                          $copy_m = m.value6;
+                          return;
+                      };
+                      throw new Error("Failed pattern match at Data.Map.Internal (line 481, column 34 - line 504, column 80): " + [ m.constructor.name ]);
+                  };
+                  while (!$tco_done) {
+                      $tco_result = $tco_loop($tco_var_ctx, $copy_m);
+                  };
+                  return $tco_result;
+              };
+          };
+          return down(Data_List_Types.Nil.value);
+      };
+  };
+  var empty = Leaf.value;
+  var fromFoldable = function (dictOrd) {
+      return function (dictFoldable) {
+          return Data_Foldable.foldl(dictFoldable)(function (m) {
+              return function (v) {
+                  return insert(dictOrd)(v.value0)(v.value1)(m);
+              };
+          })(empty);
+      };
+  };
+  var $$delete = function (dictOrd) {
+      return function (k) {
+          return function (m) {
+              return Data_Maybe.maybe(m)(Data_Tuple.snd)(pop(dictOrd)(k)(m));
+          };
+      };
+  }; 
+  var alter = function (dictOrd) {
+      return function (f) {
+          return function (k) {
+              return function (m) {
+                  var v = f(lookup(dictOrd)(k)(m));
+                  if (v instanceof Data_Maybe.Nothing) {
+                      return $$delete(dictOrd)(k)(m);
+                  };
+                  if (v instanceof Data_Maybe.Just) {
+                      return insert(dictOrd)(k)(v.value0)(m);
+                  };
+                  throw new Error("Failed pattern match at Data.Map.Internal (line 549, column 15 - line 551, column 25): " + [ v.constructor.name ]);
+              };
+          };
+      };
+  };
+  var update = function (dictOrd) {
+      return function (f) {
+          return function (k) {
+              return function (m) {
+                  return alter(dictOrd)(Data_Maybe.maybe(Data_Maybe.Nothing.value)(f))(k)(m);
+              };
+          };
+      };
+  };
+  exports["singleton"] = singleton;
+  exports["insert"] = insert;
+  exports["lookup"] = lookup;
+  exports["fromFoldable"] = fromFoldable;
+  exports["toUnfoldable"] = toUnfoldable;
+  exports["update"] = update;
+  exports["keys"] = keys;
+  exports["values"] = values;
+  exports["size"] = size;
+  exports["functorMap"] = functorMap;
+})(PS);
 (function(exports) {
   "use strict";
 
@@ -25131,6 +24775,456 @@ var PS = {};
   exports["length"] = $foreign.length;
   exports["take"] = $foreign.take;
   exports["drop"] = $foreign.drop;
+})(PS);
+(function(exports) {
+  "use strict";
+
+  exports.unsafePerformEffect = function (f) {
+    return f();
+  };
+})(PS["Effect.Unsafe"] = PS["Effect.Unsafe"] || {});
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Effect.Unsafe"] = $PS["Effect.Unsafe"] || {};
+  var exports = $PS["Effect.Unsafe"];
+  var $foreign = $PS["Effect.Unsafe"];
+  exports["unsafePerformEffect"] = $foreign.unsafePerformEffect;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Util"] = $PS["Util"] || {};
+  var exports = $PS["Util"];
+  var Control_Applicative = $PS["Control.Applicative"];
+  var Control_Apply = $PS["Control.Apply"];
+  var Control_Bind = $PS["Control.Bind"];
+  var Control_Category = $PS["Control.Category"];
+  var Control_Plus = $PS["Control.Plus"];
+  var Data_Array = $PS["Data.Array"];
+  var Data_Bifunctor = $PS["Data.Bifunctor"];
+  var Data_Either = $PS["Data.Either"];
+  var Data_Eq = $PS["Data.Eq"];
+  var Data_Foldable = $PS["Data.Foldable"];
+  var Data_Function = $PS["Data.Function"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Map_Internal = $PS["Data.Map.Internal"];
+  var Data_Maybe = $PS["Data.Maybe"];
+  var Data_NonEmpty = $PS["Data.NonEmpty"];
+  var Data_Ord = $PS["Data.Ord"];
+  var Data_Show = $PS["Data.Show"];
+  var Data_Unit = $PS["Data.Unit"];
+  var Effect_Exception = $PS["Effect.Exception"];
+  var Effect_Unsafe = $PS["Effect.Unsafe"];                
+  var $$with = function (msg) {
+      return Data_Bifunctor.bimap(Data_Either.bifunctorEither)(function (msg$prime) {
+          return msg$prime + (function () {
+              var $24 = msg === "";
+              if ($24) {
+                  return "";
+              };
+              return "\x0a" + msg;
+          })();
+      })(Control_Category.identity(Control_Category.categoryFn));
+  };
+  var whenever = function (v) {
+      if (!v) {
+          return Data_Function["const"](Data_Maybe.Nothing.value);
+      };
+      if (v) {
+          return Data_Maybe.Just.create;
+      };
+      throw new Error("Failed pattern match at Util (line 37, column 1 - line 37, column 47): " + [ v.constructor.name ]);
+  };                                  
+  var report = Data_Either.Left.create;
+  var replicate = function (n) {
+      return function (a) {
+          if (n === 0) {
+              return Data_List_Types.Nil.value;
+          };
+          return new Data_List_Types.Cons(a, replicate(n - 1 | 0)(a));
+      };
+  };
+  var onlyIf = function (v) {
+      return function (dictMonadPlus) {
+          if (v) {
+              return Control_Applicative.pure(((dictMonadPlus.MonadZero0()).Alternative1()).Applicative0());
+          };
+          if (!v) {
+              return Data_Function["const"](Control_Plus.empty(((dictMonadPlus.MonadZero0()).Alternative1()).Plus1()));
+          };
+          throw new Error("Failed pattern match at Util (line 48, column 1 - line 48, column 58): " + [ v.constructor.name ]);
+      };
+  };
+  var mayEq = function (dictEq) {
+      return function (x) {
+          return function (x$prime) {
+              return whenever(Data_Eq.eq(dictEq)(x)(x$prime))(x);
+          };
+      };
+  };
+  var mayFailEq = function (dictShow) {
+      return function (dictEq) {
+          return function (x) {
+              return function (x$prime) {
+                  return Data_Either.note(Data_Show.show(dictShow)(x) + (" \u2260 " + Data_Show.show(dictShow)(x$prime)))(mayEq(dictEq)(x)(x$prime));
+              };
+          };
+      };
+  };
+  var intersperse = function (x) {
+      return function (xs) {
+          return Data_Foldable.intercalate(Data_List_Types.foldableList)(Data_List_Types.monoidList)(Control_Applicative.pure(Data_List_Types.applicativeList)(x))(Data_Functor.map(Data_List_Types.functorList)(Control_Applicative.pure(Data_List_Types.applicativeList))(xs));
+      };
+  };
+  var error = function (msg) {
+      return Effect_Unsafe.unsafePerformEffect(Effect_Exception["throw"](msg));
+  };
+  var fromJust = function (v) {
+      return function (v1) {
+          if (v1 instanceof Data_Maybe.Just) {
+              return v1.value0;
+          };
+          if (v1 instanceof Data_Maybe.Nothing) {
+              return error(v);
+          };
+          throw new Error("Failed pattern match at Util (line 41, column 1 - line 41, column 46): " + [ v.constructor.name, v1.constructor.name ]);
+      };
+  };
+  var mustEq = function (dictEq) {
+      return function (x) {
+          return function (x$prime) {
+              return fromJust("Must be equal")(mayEq(dictEq)(x)(x$prime));
+          };
+      };
+  };
+  var mustGeq = function (dictOrd) {
+      return function (x) {
+          return function (x$prime) {
+              return fromJust("Must be greater")(whenever(Data_Ord.greaterThanOrEq(dictOrd)(x)(x$prime))(x));
+          };
+      };
+  };
+  var unsafeIndex = function (xs) {
+      return function (i) {
+          return fromJust("Array index out of bounds")(Data_Array.index(xs)(i));
+      };
+  };
+  var unsafeUpdateAt = function (i) {
+      return function (x) {
+          var $50 = fromJust("Array index out of bounds");
+          var $51 = Data_Array.updateAt(i)(x);
+          return function ($52) {
+              return $50($51($52));
+          };
+      };
+  };
+  var successful = function (v) {
+      if (v instanceof Data_Either.Left) {
+          return error(v.value0);
+      };
+      if (v instanceof Data_Either.Right) {
+          return v.value0;
+      };
+      throw new Error("Failed pattern match at Util (line 65, column 1 - line 65, column 40): " + [ v.constructor.name ]);
+  };
+  var successfulWith = function (msg) {
+      var $53 = $$with(msg);
+      return function ($54) {
+          return successful($53($54));
+      };
+  };
+  var check = function (v) {
+      return function (v1) {
+          if (v) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Unit.unit);
+          };
+          if (!v) {
+              return report(v1);
+          };
+          throw new Error("Failed pattern match at Util (line 76, column 1 - line 76, column 43): " + [ v.constructor.name, v1.constructor.name ]);
+      };
+  };
+  var bind2Flipped = function (dictMonad) {
+      return function (f) {
+          return function (x) {
+              return function (y) {
+                  return Control_Bind.join(dictMonad.Bind1())(Control_Apply.lift2((dictMonad.Bind1()).Apply0())(f)(x)(y));
+              };
+          };
+      };
+  };
+  var assert = function (v) {
+      if (v) {
+          return Control_Category.identity(Control_Category.categoryFn);
+      };
+      if (!v) {
+          return function (v1) {
+              return error("Assertion failure");
+          };
+      };
+      throw new Error("Failed pattern match at Util (line 27, column 1 - line 27, column 34): " + [ v.constructor.name ]);
+  };
+  var absurd = "absurd";
+  var mustLookup = function (dictOrd) {
+      return function (k) {
+          var $55 = fromJust(absurd);
+          var $56 = Data_Map_Internal.lookup(dictOrd)(k);
+          return function ($57) {
+              return $55($56($57));
+          };
+      };
+  };
+  var nonEmpty = function (v) {
+      if (v instanceof Data_List_Types.Nil) {
+          return error(absurd);
+      };
+      if (v instanceof Data_List_Types.Cons) {
+          return new Data_NonEmpty.NonEmpty(v.value0, v.value1);
+      };
+      throw new Error("Failed pattern match at Util (line 123, column 1 - line 123, column 48): " + [ v.constructor.name ]);
+  };
+  exports["error"] = error;
+  exports["assert"] = assert;
+  exports["absurd"] = absurd;
+  exports["whenever"] = whenever;
+  exports["fromJust"] = fromJust;
+  exports["mustLookup"] = mustLookup;
+  exports["onlyIf"] = onlyIf;
+  exports["report"] = report;
+  exports["successful"] = successful;
+  exports["successfulWith"] = successfulWith;
+  exports["with"] = $$with;
+  exports["check"] = check;
+  exports["mustEq"] = mustEq;
+  exports["mustGeq"] = mustGeq;
+  exports["mayFailEq"] = mayFailEq;
+  exports["intersperse"] = intersperse;
+  exports["bind2Flipped"] = bind2Flipped;
+  exports["unsafeIndex"] = unsafeIndex;
+  exports["unsafeUpdateAt"] = unsafeUpdateAt;
+  exports["nonEmpty"] = nonEmpty;
+  exports["replicate"] = replicate;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Lattice"] = $PS["Lattice"] || {};
+  var exports = $PS["Lattice"];
+  var Control_Applicative = $PS["Control.Applicative"];
+  var Control_Bind = $PS["Control.Bind"];
+  var Data_Array = $PS["Data.Array"];
+  var Data_Boolean = $PS["Data.Boolean"];
+  var Data_Either = $PS["Data.Either"];
+  var Data_Eq = $PS["Data.Eq"];
+  var Data_Foldable = $PS["Data.Foldable"];
+  var Data_Function = $PS["Data.Function"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_HeytingAlgebra = $PS["Data.HeytingAlgebra"];
+  var Data_List = $PS["Data.List"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Map_Internal = $PS["Data.Map.Internal"];
+  var Data_Maybe = $PS["Data.Maybe"];
+  var Data_Traversable = $PS["Data.Traversable"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var Util = $PS["Util"];                
+  var Key = function (Ord0, checkConsistent) {
+      this.Ord0 = Ord0;
+      this.checkConsistent = checkConsistent;
+  };
+  var JoinSemilattice = function (join, neg) {
+      this.join = join;
+      this.neg = neg;
+  };
+  var Slices = function (JoinSemilattice0, maybeJoin) {
+      this.JoinSemilattice0 = JoinSemilattice0;
+      this.maybeJoin = maybeJoin;
+  };
+  var Expandable = function (expand) {
+      this.expand = expand;
+  };
+  var BoundedSlices = function (Slices0, botOf) {
+      this.Slices0 = Slices0;
+      this.botOf = botOf;
+  };
+  var BoundedJoinSemilattice = function (JoinSemilattice0, bot) {
+      this.JoinSemilattice0 = JoinSemilattice0;
+      this.bot = bot;
+  };
+  var neg = function (dict) {
+      return dict.neg;
+  };
+  var meet = Data_HeytingAlgebra.conj(Data_HeytingAlgebra.heytingAlgebraBoolean);
+  var maybeJoin = function (dict) {
+      return dict.maybeJoin;
+  };                                                         
+  var joinSemilatticeBoolean = new JoinSemilattice(Data_HeytingAlgebra.disj(Data_HeytingAlgebra.heytingAlgebraBoolean), Data_HeytingAlgebra.not(Data_HeytingAlgebra.heytingAlgebraBoolean));
+  var join = function (dict) {
+      return dict.join;
+  };
+  var expand = function (dict) {
+      return dict.expand;
+  };
+  var expandableArray = function (dictExpandable) {
+      return new Expandable(function (xs) {
+          return function (ys) {
+              if (Data_Array.length(xs) === Data_Array.length(ys)) {
+                  return Data_Array.zipWith(expand(dictExpandable))(xs)(ys);
+              };
+              if (Data_Boolean.otherwise) {
+                  return Util.error(Util.absurd);
+              };
+              throw new Error("Failed pattern match at Lattice (line 113, column 1 - line 116, column 51): " + [ xs.constructor.name, ys.constructor.name ]);
+          };
+      });
+  };
+  var expandableList = function (dictExpandable) {
+      return new Expandable(function (xs) {
+          return function (ys) {
+              if (Data_List.length(xs) === Data_List.length(ys)) {
+                  return Data_List.zipWith(expand(dictExpandable))(xs)(ys);
+              };
+              if (Data_Boolean.otherwise) {
+                  return Util.error(Util.absurd);
+              };
+              throw new Error("Failed pattern match at Lattice (line 118, column 1 - line 121, column 48): " + [ xs.constructor.name, ys.constructor.name ]);
+          };
+      });
+  };
+  var expandableMap = function (dictOrd) {
+      return function (dictExpandable) {
+          return new Expandable(function (m) {
+              return function (m$prime) {
+                  if (Data_Eq.eq(Data_List_Types.eqList(dictOrd.Eq0()))(Data_Map_Internal.keys(m))(Data_Map_Internal.keys(m$prime))) {
+                      var expandValue = function (v) {
+                          return function (v1) {
+                              return new Data_Tuple.Tuple(v.value0, expand(dictExpandable)(v.value1)(v1.value1));
+                          };
+                      };
+                      return Data_Map_Internal.fromFoldable(dictOrd)(Data_List_Types.foldableList)(Data_List.zipWith(expandValue)(Data_Map_Internal.toUnfoldable(Data_List_Types.unfoldableList)(m))(Data_Map_Internal.toUnfoldable(Data_List_Types.unfoldableList)(m$prime)));
+                  };
+                  if (Data_Boolean.otherwise) {
+                      return Util.error(Util.absurd);
+                  };
+                  throw new Error("Failed pattern match at Lattice (line 123, column 1 - line 128, column 42): " + [ m.constructor.name, m$prime.constructor.name ]);
+              };
+          });
+      };
+  };
+  var definedJoin = function (dictSlices) {
+      return function (x) {
+          var $57 = Util.successfulWith("Join undefined");
+          var $58 = maybeJoin(dictSlices)(x);
+          return function ($59) {
+              return $57($58($59));
+          };
+      };
+  };
+  var slicesArray = function (dictSlices) {
+      return new Slices(function () {
+          return joinSemilatticeArray(dictSlices);
+      }, function (xs) {
+          return function (ys) {
+              if (Data_Array.length(xs) === Data_Array.length(ys)) {
+                  return Data_Traversable.sequence(Data_Traversable.traversableArray)(Data_Either.applicativeEither)(Data_Array.zipWith(maybeJoin(dictSlices))(xs)(ys));
+              };
+              if (Data_Boolean.otherwise) {
+                  return Util.report("Arrays of different lengths");
+              };
+              throw new Error("Failed pattern match at Lattice (line 103, column 1 - line 106, column 75): " + [ xs.constructor.name, ys.constructor.name ]);
+          };
+      });
+  };
+  var joinSemilatticeArray = function (dictSlices) {
+      return new JoinSemilattice(definedJoin(slicesArray(dictSlices)), Data_Functor.map(Data_Functor.functorArray)(neg(dictSlices.JoinSemilattice0())));
+  };
+  var slicesList = function (dictSlices) {
+      return new Slices(function () {
+          return joinSemilatticeList(dictSlices);
+      }, function (xs) {
+          return function (ys) {
+              if (Data_List.length(xs) === Data_List.length(ys)) {
+                  return Data_Traversable.sequence(Data_List_Types.traversableList)(Data_Either.applicativeEither)(Data_List.zipWith(maybeJoin(dictSlices))(xs)(ys));
+              };
+              if (Data_Boolean.otherwise) {
+                  return Util.report("Lists of different lengths");
+              };
+              throw new Error("Failed pattern match at Lattice (line 68, column 1 - line 71, column 71): " + [ xs.constructor.name, ys.constructor.name ]);
+          };
+      });
+  };
+  var joinSemilatticeList = function (dictSlices) {
+      return new JoinSemilattice(definedJoin(slicesList(dictSlices)), Data_Functor.map(Data_List_Types.functorList)(neg(dictSlices.JoinSemilattice0())));
+  };
+  var checkConsistent = function (dict) {
+      return dict.checkConsistent;
+  };
+  var mayFailUpdate = function (dictKey) {
+      return function (dictSlices) {
+          return function (m) {
+              return function (v) {
+                  var v2 = Data_Map_Internal.lookup(dictKey.Ord0())(v.value0)(m);
+                  if (v2 instanceof Data_Maybe.Nothing) {
+                      return Control_Bind.discard(Control_Bind.discardUnit)(Data_Either.bindEither)(checkConsistent(dictKey)("Inconsistent keys: ")(v.value0)(Data_Map_Internal.keys(m)))(function () {
+                          return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Map_Internal.insert(dictKey.Ord0())(v.value0)(v.value1)(m));
+                      });
+                  };
+                  if (v2 instanceof Data_Maybe.Just) {
+                      return Data_Functor.flap(Data_Either.functorEither)(Data_Functor.flap(Data_Either.functorEither)(Data_Functor.map(Data_Either.functorEither)(Data_Map_Internal.update(dictKey.Ord0()))(Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Data_Function["const"])(Data_Maybe.Just.create))(maybeJoin(dictSlices)(v2.value0)(v.value1))))(v.value0))(m);
+                  };
+                  throw new Error("Failed pattern match at Lattice (line 92, column 4 - line 97, column 68): " + [ v2.constructor.name ]);
+              };
+          };
+      };
+  };
+  var slicesMap = function (dictKey) {
+      return function (dictSlices) {
+          return new Slices(function () {
+              return joinSemilatticeMap(dictKey)(dictSlices);
+          }, function (m) {
+              return function (m$prime) {
+                  return Data_Foldable.foldM(Data_List_Types.foldableList)(Data_Either.monadEither)(mayFailUpdate(dictKey)(dictSlices))(m)(Data_Map_Internal.toUnfoldable(Data_List_Types.unfoldableList)(m$prime));
+              };
+          });
+      };
+  };
+  var joinSemilatticeMap = function (dictKey) {
+      return function (dictSlices) {
+          return new JoinSemilattice(definedJoin(slicesMap(dictKey)(dictSlices)), Data_Functor.map(Data_Map_Internal.functorMap)(neg(dictSlices.JoinSemilattice0())));
+      };
+  };                 
+  var boundedJoinSemilatticeBoolean = new BoundedJoinSemilattice(function () {
+      return joinSemilatticeBoolean;
+  }, false);
+  var botOf = function (dict) {
+      return dict.botOf;
+  };
+  var bot = function (dict) {
+      return dict.bot;
+  };
+  exports["bot"] = bot;
+  exports["botOf"] = botOf;
+  exports["checkConsistent"] = checkConsistent;
+  exports["expand"] = expand;
+  exports["join"] = join;
+  exports["maybeJoin"] = maybeJoin;
+  exports["neg"] = neg;
+  exports["JoinSemilattice"] = JoinSemilattice;
+  exports["Slices"] = Slices;
+  exports["definedJoin"] = definedJoin;
+  exports["BoundedSlices"] = BoundedSlices;
+  exports["meet"] = meet;
+  exports["Key"] = Key;
+  exports["Expandable"] = Expandable;
+  exports["joinSemilatticeBoolean"] = joinSemilatticeBoolean;
+  exports["boundedJoinSemilatticeBoolean"] = boundedJoinSemilatticeBoolean;
+  exports["slicesList"] = slicesList;
+  exports["slicesMap"] = slicesMap;
+  exports["slicesArray"] = slicesArray;
+  exports["expandableArray"] = expandableArray;
+  exports["expandableList"] = expandableList;
+  exports["expandableMap"] = expandableMap;
 })(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
@@ -25306,1590 +25400,6 @@ var PS = {};
   exports["showDataType"] = showDataType;
   exports["dataTypeForCtr"] = dataTypeForCtr;
   exports["dataTypeForListCtr"] = dataTypeForListCtr;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Expr"] = $PS["Expr"] || {};
-  var exports = $PS["Expr"];
-  var Bindings = $PS["Bindings"];
-  var Control_Applicative = $PS["Control.Applicative"];
-  var Control_Apply = $PS["Control.Apply"];
-  var Data_Either = $PS["Data.Either"];
-  var Data_Eq = $PS["Data.Eq"];
-  var Data_Function = $PS["Data.Function"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_List_Types = $PS["Data.List.Types"];
-  var Data_Map_Internal = $PS["Data.Map.Internal"];
-  var Data_Ord = $PS["Data.Ord"];
-  var Data_Show = $PS["Data.Show"];
-  var Data_Tuple = $PS["Data.Tuple"];
-  var DataType = $PS["DataType"];
-  var Lattice = $PS["Lattice"];
-  var Util = $PS["Util"];                
-  var ContHole = (function () {
-      function ContHole(value0) {
-          this.value0 = value0;
-      };
-      ContHole.create = function (value0) {
-          return new ContHole(value0);
-      };
-      return ContHole;
-  })();
-  var ContExpr = (function () {
-      function ContExpr(value0) {
-          this.value0 = value0;
-      };
-      ContExpr.create = function (value0) {
-          return new ContExpr(value0);
-      };
-      return ContExpr;
-  })();
-  var ContElim = (function () {
-      function ContElim(value0) {
-          this.value0 = value0;
-      };
-      ContElim.create = function (value0) {
-          return new ContElim(value0);
-      };
-      return ContElim;
-  })();
-  var Hole = (function () {
-      function Hole(value0) {
-          this.value0 = value0;
-      };
-      Hole.create = function (value0) {
-          return new Hole(value0);
-      };
-      return Hole;
-  })();
-  var Var = (function () {
-      function Var(value0) {
-          this.value0 = value0;
-      };
-      Var.create = function (value0) {
-          return new Var(value0);
-      };
-      return Var;
-  })();
-  var Op = (function () {
-      function Op(value0) {
-          this.value0 = value0;
-      };
-      Op.create = function (value0) {
-          return new Op(value0);
-      };
-      return Op;
-  })();
-  var Int = (function () {
-      function Int(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Int.create = function (value0) {
-          return function (value1) {
-              return new Int(value0, value1);
-          };
-      };
-      return Int;
-  })();
-  var Float = (function () {
-      function Float(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Float.create = function (value0) {
-          return function (value1) {
-              return new Float(value0, value1);
-          };
-      };
-      return Float;
-  })();
-  var Str = (function () {
-      function Str(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Str.create = function (value0) {
-          return function (value1) {
-              return new Str(value0, value1);
-          };
-      };
-      return Str;
-  })();
-  var Constr = (function () {
-      function Constr(value0, value1, value2) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-      };
-      Constr.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return new Constr(value0, value1, value2);
-              };
-          };
-      };
-      return Constr;
-  })();
-  var Matrix = (function () {
-      function Matrix(value0, value1, value2, value3) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-          this.value3 = value3;
-      };
-      Matrix.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return function (value3) {
-                      return new Matrix(value0, value1, value2, value3);
-                  };
-              };
-          };
-      };
-      return Matrix;
-  })();
-  var Lambda = (function () {
-      function Lambda(value0) {
-          this.value0 = value0;
-      };
-      Lambda.create = function (value0) {
-          return new Lambda(value0);
-      };
-      return Lambda;
-  })();
-  var App = (function () {
-      function App(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      App.create = function (value0) {
-          return function (value1) {
-              return new App(value0, value1);
-          };
-      };
-      return App;
-  })();
-  var Let = (function () {
-      function Let(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Let.create = function (value0) {
-          return function (value1) {
-              return new Let(value0, value1);
-          };
-      };
-      return Let;
-  })();
-  var LetRec = (function () {
-      function LetRec(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      LetRec.create = function (value0) {
-          return function (value1) {
-              return new LetRec(value0, value1);
-          };
-      };
-      return LetRec;
-  })();
-  var ElimHole = (function () {
-      function ElimHole(value0) {
-          this.value0 = value0;
-      };
-      ElimHole.create = function (value0) {
-          return new ElimHole(value0);
-      };
-      return ElimHole;
-  })();
-  var ElimVar = (function () {
-      function ElimVar(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      ElimVar.create = function (value0) {
-          return function (value1) {
-              return new ElimVar(value0, value1);
-          };
-      };
-      return ElimVar;
-  })();
-  var ElimConstr = (function () {
-      function ElimConstr(value0) {
-          this.value0 = value0;
-      };
-      ElimConstr.create = function (value0) {
-          return new ElimConstr(value0);
-      };
-      return ElimConstr;
-  })();
-  var VarDef = (function () {
-      function VarDef(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      VarDef.create = function (value0) {
-          return function (value1) {
-              return new VarDef(value0, value1);
-          };
-      };
-      return VarDef;
-  })();
-  var Module = (function () {
-      function Module(value0) {
-          this.value0 = value0;
-      };
-      Module.create = function (value0) {
-          return new Module(value0);
-      };
-      return Module;
-  })();
-  var functorVarDef = new Data_Functor.Functor(function (f) {
-      return function (m) {
-          return new VarDef(Data_Functor.map(functorElim)(f)(m.value0), Data_Functor.map(functorExpr)(f)(m.value1));
-      };
-  });
-  var functorExpr = new Data_Functor.Functor(function (f) {
-      return function (m) {
-          if (m instanceof Hole) {
-              return new Hole(f(m.value0));
-          };
-          if (m instanceof Var) {
-              return new Var(m.value0);
-          };
-          if (m instanceof Op) {
-              return new Op(m.value0);
-          };
-          if (m instanceof Int) {
-              return new Int(f(m.value0), m.value1);
-          };
-          if (m instanceof Float) {
-              return new Float(f(m.value0), m.value1);
-          };
-          if (m instanceof Str) {
-              return new Str(f(m.value0), m.value1);
-          };
-          if (m instanceof Constr) {
-              return new Constr(f(m.value0), m.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Functor.map(functorExpr)(f))(m.value2));
-          };
-          if (m instanceof Matrix) {
-              return new Matrix(f(m.value0), Data_Functor.map(functorExpr)(f)(m.value1), m.value2, Data_Functor.map(functorExpr)(f)(m.value3));
-          };
-          if (m instanceof Lambda) {
-              return new Lambda(Data_Functor.map(functorElim)(f)(m.value0));
-          };
-          if (m instanceof App) {
-              return new App(Data_Functor.map(functorExpr)(f)(m.value0), Data_Functor.map(functorExpr)(f)(m.value1));
-          };
-          if (m instanceof Let) {
-              return new Let(Data_Functor.map(functorVarDef)(f)(m.value0), Data_Functor.map(functorExpr)(f)(m.value1));
-          };
-          if (m instanceof LetRec) {
-              return new LetRec(Data_Functor.map(Bindings.functorBindings(functorElim))(f)(m.value0), Data_Functor.map(functorExpr)(f)(m.value1));
-          };
-          throw new Error("Failed pattern match at Expr (line 59, column 1 - line 59, column 44): " + [ m.constructor.name ]);
-      };
-  });
-  var functorElim = new Data_Functor.Functor(function (f) {
-      return function (m) {
-          if (m instanceof ElimHole) {
-              return new ElimHole(f(m.value0));
-          };
-          if (m instanceof ElimVar) {
-              return new ElimVar(m.value0, Data_Functor.map(functorCont)(f)(m.value1));
-          };
-          if (m instanceof ElimConstr) {
-              return new ElimConstr(Data_Functor.map(Data_Map_Internal.functorMap)(Data_Functor.map(functorCont)(f))(m.value0));
-          };
-          throw new Error("Failed pattern match at Expr (line 61, column 1 - line 61, column 44): " + [ m.constructor.name ]);
-      };
-  });
-  var functorCont = new Data_Functor.Functor(function (f) {
-      return function (m) {
-          if (m instanceof ContHole) {
-              return new ContHole(f(m.value0));
-          };
-          if (m instanceof ContExpr) {
-              return new ContExpr(Data_Functor.map(functorExpr)(f)(m.value0));
-          };
-          if (m instanceof ContElim) {
-              return new ContElim(Data_Functor.map(functorElim)(f)(m.value0));
-          };
-          throw new Error("Failed pattern match at Expr (line 60, column 1 - line 60, column 44): " + [ m.constructor.name ]);
-      };
-  });
-  var slicesVarDef = new Lattice.Slices(function () {
-      return joinSemilatticeVarDef;
-  }, function (v) {
-      return function (v1) {
-          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(VarDef.create)(Lattice.maybeJoin(slicesElim)(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesExpr)(v.value1)(v1.value1));
-      };
-  });
-  var slicesExpr = new Lattice.Slices(function () {
-      return joinSemilatticeExpr;
-  }, function (v) {
-      return function (v1) {
-          if (v instanceof Hole && !v.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(v1);
-          };
-          if (v instanceof Hole && v.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new Hole(true));
-          };
-          if (v1 instanceof Hole && !v1.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(v);
-          };
-          if (v1 instanceof Hole && v1.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new Hole(true));
-          };
-          if (v instanceof Var && v1 instanceof Var) {
-              return Data_Functor.map(Data_Either.functorEither)(Var.create)(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value0)(v1.value0));
-          };
-          if (v instanceof Op && v1 instanceof Op) {
-              return Data_Functor.map(Data_Either.functorEither)(Op.create)(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value0)(v1.value0));
-          };
-          if (v instanceof Int && v1 instanceof Int) {
-              return Data_Functor.map(Data_Either.functorEither)(Int.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(Data_Show.showInt)(Data_Eq.eqInt)(v.value1)(v1.value1));
-          };
-          if (v instanceof Str && v1 instanceof Str) {
-              return Data_Functor.map(Data_Either.functorEither)(Str.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value1)(v1.value1));
-          };
-          if (v instanceof Float && v1 instanceof Float) {
-              return Data_Functor.map(Data_Either.functorEither)(Float.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(Data_Show.showNumber)(Data_Eq.eqNumber)(v.value1)(v1.value1));
-          };
-          if (v instanceof Constr && v1 instanceof Constr) {
-              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Constr.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(DataType.showCtr)(DataType.eqCtr)(v.value1)(v1.value1)))(Lattice.maybeJoin(Lattice.slicesList(slicesExpr))(v.value2)(v1.value2));
-          };
-          if (v instanceof Matrix && v1 instanceof Matrix) {
-              return Control_Apply.apply(Data_Either.applyEither)(Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Matrix.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesExpr)(v.value1)(v1.value1)))(Control_Apply.lift2(Data_Either.applyEither)(Data_Tuple.Tuple.create)(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value2.value0)(v1.value2.value0))(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value2.value1)(v1.value2.value1))))(Lattice.maybeJoin(slicesExpr)(v.value3)(v1.value3));
-          };
-          if (v instanceof App && v1 instanceof App) {
-              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(App.create)(Lattice.maybeJoin(slicesExpr)(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesExpr)(v.value1)(v1.value1));
-          };
-          if (v instanceof Lambda && v1 instanceof Lambda) {
-              return Data_Functor.map(Data_Either.functorEither)(Lambda.create)(Lattice.maybeJoin(slicesElim)(v.value0)(v1.value0));
-          };
-          if (v instanceof Let && v1 instanceof Let) {
-              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Let.create)(Lattice.maybeJoin(slicesVarDef)(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesExpr)(v.value1)(v1.value1));
-          };
-          if (v instanceof LetRec && v1 instanceof LetRec) {
-              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(LetRec.create)(Lattice.maybeJoin(Bindings.slicesBindings(functorElim)(Lattice.joinSemilatticeBoolean)(slicesElim))(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesExpr)(v.value1)(v1.value1));
-          };
-          return Util.report("Incompatible expressions");
-      };
-  });
-  var slicesElim = new Lattice.Slices(function () {
-      return joinSemilatticeElim;
-  }, function (v) {
-      return function (v1) {
-          if (v instanceof ElimHole && !v.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(v1);
-          };
-          if (v instanceof ElimHole && v.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new ElimHole(true));
-          };
-          if (v1 instanceof ElimHole && !v1.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(v);
-          };
-          if (v1 instanceof ElimHole && v1.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new ElimHole(true));
-          };
-          if (v instanceof ElimVar && v1 instanceof ElimVar) {
-              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(ElimVar.create)(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesCont)(v.value1)(v1.value1));
-          };
-          if (v instanceof ElimConstr && v1 instanceof ElimConstr) {
-              return Data_Functor.map(Data_Either.functorEither)(ElimConstr.create)(Lattice.maybeJoin(Lattice.slicesMap(DataType.keyCtr)(slicesCont))(v.value0)(v1.value0));
-          };
-          return Util.report("Incompatible eliminators");
-      };
-  });
-  var slicesCont = new Lattice.Slices(function () {
-      return joinSemilatticeCont;
-  }, function (v) {
-      return function (v1) {
-          if (v instanceof ContHole && !v.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(v1);
-          };
-          if (v instanceof ContHole && v.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new ContHole(true));
-          };
-          if (v1 instanceof ContHole && !v1.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(v);
-          };
-          if (v1 instanceof ContHole && v1.value0) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new ContHole(true));
-          };
-          if (v instanceof ContExpr && v1 instanceof ContExpr) {
-              return Data_Functor.map(Data_Either.functorEither)(ContExpr.create)(Lattice.maybeJoin(slicesExpr)(v.value0)(v1.value0));
-          };
-          if (v instanceof ContElim && v1 instanceof ContElim) {
-              return Data_Functor.map(Data_Either.functorEither)(ContElim.create)(Lattice.maybeJoin(slicesElim)(v.value0)(v1.value0));
-          };
-          return Util.report("Incompatible continuations");
-      };
-  });
-  var joinSemilatticeVarDef = new Lattice.JoinSemilattice(Lattice.definedJoin(slicesVarDef), Data_Functor.map(functorVarDef)(Lattice.neg(Lattice.joinSemilatticeBoolean)));
-  var joinSemilatticeExpr = new Lattice.JoinSemilattice(Lattice.definedJoin(slicesExpr), Data_Functor.map(functorExpr)(Lattice.neg(Lattice.joinSemilatticeBoolean)));
-  var joinSemilatticeElim = new Lattice.JoinSemilattice(Lattice.definedJoin(slicesElim), Data_Functor.map(functorElim)(Lattice.neg(Lattice.joinSemilatticeBoolean)));
-  var joinSemilatticeCont = new Lattice.JoinSemilattice(Lattice.definedJoin(slicesCont), Data_Functor.map(functorCont)(Lattice.neg(Lattice.joinSemilatticeBoolean)));
-  var exprExpandable = new Lattice.Expandable(function (v) {
-      return function (v1) {
-          if (v1 instanceof Hole && !v1.value0) {
-              return v;
-          };
-          if (v instanceof Hole && v1 instanceof Var) {
-              return v1;
-          };
-          if (v instanceof Hole && v1 instanceof Op) {
-              return v1;
-          };
-          if (v instanceof Hole && v1 instanceof Int) {
-              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
-          };
-          if (v instanceof Hole && v1 instanceof Float) {
-              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
-          };
-          if (v instanceof Hole && v1 instanceof Str) {
-              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
-          };
-          if (v instanceof Hole && v1 instanceof Constr) {
-              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1, Data_Functor.map(Data_List_Types.functorList)(Lattice.expand(exprExpandable)(new Hole(v.value0)))(v1.value2));
-          };
-          if (v instanceof Hole && v1 instanceof Matrix) {
-              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value1), new Data_Tuple.Tuple(v1.value2.value0, v1.value2.value1), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value3));
-          };
-          if (v instanceof Hole && v1 instanceof Lambda) {
-              return new Lambda(Lattice.expand(elimExpandable)(new ElimHole(v.value0))(v1.value0));
-          };
-          if (v instanceof Hole && v1 instanceof App) {
-              return new App(Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value0), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value1));
-          };
-          if (v instanceof Hole && v1 instanceof Let) {
-              return new Let(new VarDef(Lattice.expand(elimExpandable)(new ElimHole(v.value0))(v1.value0.value0), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value0.value1)), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value1));
-          };
-          if (v instanceof Hole && v1 instanceof LetRec) {
-              return new LetRec(Lattice.expand(Bindings.expandableBindings(elimExpandable))(Bindings.bindingsMap(Data_Function["const"](new ElimHole(v.value0)))(v1.value0))(v1.value0), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value1));
-          };
-          if (v instanceof Var && v1 instanceof Var) {
-              return new Var(Util.mustEq(Data_Eq.eqString)(v.value0)(v1.value0));
-          };
-          if (v instanceof Op && v1 instanceof Op) {
-              return new Op(Util.mustEq(Data_Eq.eqString)(v.value0)(v1.value0));
-          };
-          if (v instanceof Int && v1 instanceof Int) {
-              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqInt)(v.value1)(v1.value1));
-          };
-          if (v instanceof Float && v1 instanceof Float) {
-              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqNumber)(v.value1)(v1.value1));
-          };
-          if (v instanceof Str && v1 instanceof Str) {
-              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqString)(v.value1)(v1.value1));
-          };
-          if (v instanceof Constr && v1 instanceof Constr) {
-              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(DataType.eqCtr)(v.value1)(v1.value1), Lattice.expand(Lattice.expandableList(exprExpandable))(v.value2)(v1.value2));
-          };
-          if (v instanceof Matrix && v1 instanceof Matrix) {
-              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Lattice.expand(exprExpandable)(v.value1)(v1.value1), new Data_Tuple.Tuple(Util.mustEq(Data_Eq.eqString)(v.value2.value0)(v1.value2.value0), Util.mustEq(Data_Eq.eqString)(v.value2.value1)(v1.value2.value1)), Lattice.expand(exprExpandable)(v.value3)(v1.value3));
-          };
-          if (v instanceof Lambda && v1 instanceof Lambda) {
-              return new Lambda(Lattice.expand(elimExpandable)(v.value0)(v1.value0));
-          };
-          if (v instanceof App && v1 instanceof App) {
-              return new App(Lattice.expand(exprExpandable)(v.value0)(v1.value0), Lattice.expand(exprExpandable)(v.value1)(v1.value1));
-          };
-          if (v instanceof Let && v1 instanceof Let) {
-              return new Let(new VarDef(Lattice.expand(elimExpandable)(v.value0.value0)(v1.value0.value0), Lattice.expand(exprExpandable)(v.value0.value1)(v1.value0.value1)), Lattice.expand(exprExpandable)(v.value1)(v1.value1));
-          };
-          if (v instanceof LetRec && v1 instanceof LetRec) {
-              return new LetRec(Lattice.expand(Bindings.expandableBindings(elimExpandable))(v.value0)(v1.value0), Lattice.expand(exprExpandable)(v.value1)(v1.value1));
-          };
-          return Util.error(Util.absurd);
-      };
-  });
-  var elimExpandable = new Lattice.Expandable(function (v) {
-      return function (v1) {
-          if (v1 instanceof ElimHole && !v1.value0) {
-              return v;
-          };
-          if (v instanceof ElimHole && v1 instanceof ElimVar) {
-              return new ElimVar(v1.value0, Lattice.expand(contExpandable)(new ContHole(v.value0))(v1.value1));
-          };
-          if (v instanceof ElimHole && v1 instanceof ElimConstr) {
-              return new ElimConstr(Data_Functor.map(Data_Map_Internal.functorMap)(Lattice.expand(contExpandable)(new ContHole(v.value0)))(v1.value0));
-          };
-          if (v instanceof ElimVar && v1 instanceof ElimVar) {
-              return new ElimVar(Bindings.mustGeq(v.value0)(v1.value0), Lattice.expand(contExpandable)(v.value1)(v1.value1));
-          };
-          if (v instanceof ElimConstr && v1 instanceof ElimConstr) {
-              return new ElimConstr(Lattice.expand(Lattice.expandableMap(DataType.ordCtr)(contExpandable))(v.value0)(v1.value0));
-          };
-          return Util.error(Util.absurd);
-      };
-  });
-  var contExpandable = new Lattice.Expandable(function (v) {
-      return function (v1) {
-          if (v1 instanceof ContHole && !v1.value0) {
-              return v;
-          };
-          if (v instanceof ContHole && v1 instanceof ContExpr) {
-              return new ContExpr(Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value0));
-          };
-          if (v instanceof ContHole && v1 instanceof ContElim) {
-              return new ContElim(Lattice.expand(elimExpandable)(new ElimHole(v.value0))(v1.value0));
-          };
-          if (v instanceof ContExpr && v1 instanceof ContExpr) {
-              return new ContExpr(Lattice.expand(exprExpandable)(v.value0)(v1.value0));
-          };
-          if (v instanceof ContElim && v1 instanceof ContElim) {
-              return new ContElim(Lattice.expand(elimExpandable)(v.value0)(v1.value0));
-          };
-          return Util.error(Util.absurd);
-      };
-  });                                             
-  var asExpr = function (v) {
-      if (v instanceof ContHole) {
-          return new Hole(v.value0);
-      };
-      if (v instanceof ContElim) {
-          return Util.error("Expression expected");
-      };
-      if (v instanceof ContExpr) {
-          return v.value0;
-      };
-      throw new Error("Failed pattern match at Expr (line 48, column 1 - line 48, column 38): " + [ v.constructor.name ]);
-  };
-  var asElim = function (v) {
-      if (v instanceof ContHole) {
-          return new ElimHole(v.value0);
-      };
-      if (v instanceof ContElim) {
-          return v.value0;
-      };
-      if (v instanceof ContExpr) {
-          return Util.error("Eliminator expected");
-      };
-      throw new Error("Failed pattern match at Expr (line 43, column 1 - line 43, column 38): " + [ v.constructor.name ]);
-  };
-  exports["Hole"] = Hole;
-  exports["Var"] = Var;
-  exports["Op"] = Op;
-  exports["Int"] = Int;
-  exports["Float"] = Float;
-  exports["Str"] = Str;
-  exports["Constr"] = Constr;
-  exports["Matrix"] = Matrix;
-  exports["Lambda"] = Lambda;
-  exports["App"] = App;
-  exports["Let"] = Let;
-  exports["LetRec"] = LetRec;
-  exports["VarDef"] = VarDef;
-  exports["ElimHole"] = ElimHole;
-  exports["ElimVar"] = ElimVar;
-  exports["ElimConstr"] = ElimConstr;
-  exports["ContHole"] = ContHole;
-  exports["ContExpr"] = ContExpr;
-  exports["ContElim"] = ContElim;
-  exports["asElim"] = asElim;
-  exports["asExpr"] = asExpr;
-  exports["Module"] = Module;
-  exports["slicesElim"] = slicesElim;
-  exports["elimExpandable"] = elimExpandable;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["SExpr"] = $PS["SExpr"] || {};
-  var exports = $PS["SExpr"];                        
-  var PEnd = (function () {
-      function PEnd() {
-
-      };
-      PEnd.value = new PEnd();
-      return PEnd;
-  })();
-  var PNext = (function () {
-      function PNext(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      PNext.create = function (value0) {
-          return function (value1) {
-              return new PNext(value0, value1);
-          };
-      };
-      return PNext;
-  })();
-  var PVar = (function () {
-      function PVar(value0) {
-          this.value0 = value0;
-      };
-      PVar.create = function (value0) {
-          return new PVar(value0);
-      };
-      return PVar;
-  })();
-  var PConstr = (function () {
-      function PConstr(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      PConstr.create = function (value0) {
-          return function (value1) {
-              return new PConstr(value0, value1);
-          };
-      };
-      return PConstr;
-  })();
-  var PListEmpty = (function () {
-      function PListEmpty() {
-
-      };
-      PListEmpty.value = new PListEmpty();
-      return PListEmpty;
-  })();
-  var PListNonEmpty = (function () {
-      function PListNonEmpty(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      PListNonEmpty.create = function (value0) {
-          return function (value1) {
-              return new PListNonEmpty(value0, value1);
-          };
-      };
-      return PListNonEmpty;
-  })();
-  var Var = (function () {
-      function Var(value0) {
-          this.value0 = value0;
-      };
-      Var.create = function (value0) {
-          return new Var(value0);
-      };
-      return Var;
-  })();
-  var Op = (function () {
-      function Op(value0) {
-          this.value0 = value0;
-      };
-      Op.create = function (value0) {
-          return new Op(value0);
-      };
-      return Op;
-  })();
-  var Int = (function () {
-      function Int(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Int.create = function (value0) {
-          return function (value1) {
-              return new Int(value0, value1);
-          };
-      };
-      return Int;
-  })();
-  var Float = (function () {
-      function Float(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Float.create = function (value0) {
-          return function (value1) {
-              return new Float(value0, value1);
-          };
-      };
-      return Float;
-  })();
-  var Str = (function () {
-      function Str(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Str.create = function (value0) {
-          return function (value1) {
-              return new Str(value0, value1);
-          };
-      };
-      return Str;
-  })();
-  var Constr = (function () {
-      function Constr(value0, value1, value2) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-      };
-      Constr.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return new Constr(value0, value1, value2);
-              };
-          };
-      };
-      return Constr;
-  })();
-  var Matrix = (function () {
-      function Matrix(value0, value1, value2, value3) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-          this.value3 = value3;
-      };
-      Matrix.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return function (value3) {
-                      return new Matrix(value0, value1, value2, value3);
-                  };
-              };
-          };
-      };
-      return Matrix;
-  })();
-  var Lambda = (function () {
-      function Lambda(value0) {
-          this.value0 = value0;
-      };
-      Lambda.create = function (value0) {
-          return new Lambda(value0);
-      };
-      return Lambda;
-  })();
-  var App = (function () {
-      function App(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      App.create = function (value0) {
-          return function (value1) {
-              return new App(value0, value1);
-          };
-      };
-      return App;
-  })();
-  var BinaryApp = (function () {
-      function BinaryApp(value0, value1, value2) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-      };
-      BinaryApp.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return new BinaryApp(value0, value1, value2);
-              };
-          };
-      };
-      return BinaryApp;
-  })();
-  var MatchAs = (function () {
-      function MatchAs(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      MatchAs.create = function (value0) {
-          return function (value1) {
-              return new MatchAs(value0, value1);
-          };
-      };
-      return MatchAs;
-  })();
-  var IfElse = (function () {
-      function IfElse(value0, value1, value2) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-      };
-      IfElse.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return new IfElse(value0, value1, value2);
-              };
-          };
-      };
-      return IfElse;
-  })();
-  var ListEmpty = (function () {
-      function ListEmpty(value0) {
-          this.value0 = value0;
-      };
-      ListEmpty.create = function (value0) {
-          return new ListEmpty(value0);
-      };
-      return ListEmpty;
-  })();
-  var ListNonEmpty = (function () {
-      function ListNonEmpty(value0, value1, value2) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-      };
-      ListNonEmpty.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return new ListNonEmpty(value0, value1, value2);
-              };
-          };
-      };
-      return ListNonEmpty;
-  })();
-  var ListEnum = (function () {
-      function ListEnum(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      ListEnum.create = function (value0) {
-          return function (value1) {
-              return new ListEnum(value0, value1);
-          };
-      };
-      return ListEnum;
-  })();
-  var ListComp = (function () {
-      function ListComp(value0, value1, value2) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-      };
-      ListComp.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return new ListComp(value0, value1, value2);
-              };
-          };
-      };
-      return ListComp;
-  })();
-  var Let = (function () {
-      function Let(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Let.create = function (value0) {
-          return function (value1) {
-              return new Let(value0, value1);
-          };
-      };
-      return Let;
-  })();
-  var LetRec = (function () {
-      function LetRec(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      LetRec.create = function (value0) {
-          return function (value1) {
-              return new LetRec(value0, value1);
-          };
-      };
-      return LetRec;
-  })();
-  var End = (function () {
-      function End(value0) {
-          this.value0 = value0;
-      };
-      End.create = function (value0) {
-          return new End(value0);
-      };
-      return End;
-  })();
-  var Next = (function () {
-      function Next(value0, value1, value2) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-      };
-      Next.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return new Next(value0, value1, value2);
-              };
-          };
-      };
-      return Next;
-  })();
-  var Guard = (function () {
-      function Guard(value0) {
-          this.value0 = value0;
-      };
-      Guard.create = function (value0) {
-          return new Guard(value0);
-      };
-      return Guard;
-  })();
-  var Generator = (function () {
-      function Generator(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Generator.create = function (value0) {
-          return function (value1) {
-              return new Generator(value0, value1);
-          };
-      };
-      return Generator;
-  })();
-  var Declaration = (function () {
-      function Declaration(value0) {
-          this.value0 = value0;
-      };
-      Declaration.create = function (value0) {
-          return new Declaration(value0);
-      };
-      return Declaration;
-  })();
-  var VarDef = (function () {
-      function VarDef(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      VarDef.create = function (value0) {
-          return function (value1) {
-              return new VarDef(value0, value1);
-          };
-      };
-      return VarDef;
-  })();
-  var Module = (function () {
-      function Module(value0) {
-          this.value0 = value0;
-      };
-      Module.create = function (value0) {
-          return new Module(value0);
-      };
-      return Module;
-  })();
-  exports["Var"] = Var;
-  exports["Op"] = Op;
-  exports["Int"] = Int;
-  exports["Float"] = Float;
-  exports["Str"] = Str;
-  exports["Constr"] = Constr;
-  exports["Matrix"] = Matrix;
-  exports["Lambda"] = Lambda;
-  exports["App"] = App;
-  exports["BinaryApp"] = BinaryApp;
-  exports["MatchAs"] = MatchAs;
-  exports["IfElse"] = IfElse;
-  exports["ListEmpty"] = ListEmpty;
-  exports["ListNonEmpty"] = ListNonEmpty;
-  exports["ListEnum"] = ListEnum;
-  exports["ListComp"] = ListComp;
-  exports["Let"] = Let;
-  exports["LetRec"] = LetRec;
-  exports["End"] = End;
-  exports["Next"] = Next;
-  exports["PVar"] = PVar;
-  exports["PConstr"] = PConstr;
-  exports["PListEmpty"] = PListEmpty;
-  exports["PListNonEmpty"] = PListNonEmpty;
-  exports["PEnd"] = PEnd;
-  exports["PNext"] = PNext;
-  exports["VarDef"] = VarDef;
-  exports["Guard"] = Guard;
-  exports["Generator"] = Generator;
-  exports["Declaration"] = Declaration;
-  exports["Module"] = Module;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["DesugarFwd"] = $PS["DesugarFwd"] || {};
-  var exports = $PS["DesugarFwd"];
-  var Bindings = $PS["Bindings"];
-  var Control_Applicative = $PS["Control.Applicative"];
-  var Control_Apply = $PS["Control.Apply"];
-  var Control_Bind = $PS["Control.Bind"];
-  var Data_Either = $PS["Data.Either"];
-  var Data_Eq = $PS["Data.Eq"];
-  var Data_Foldable = $PS["Data.Foldable"];
-  var Data_Function = $PS["Data.Function"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_List = $PS["Data.List"];
-  var Data_List_NonEmpty = $PS["Data.List.NonEmpty"];
-  var Data_List_Types = $PS["Data.List.Types"];
-  var Data_Map_Internal = $PS["Data.Map.Internal"];
-  var Data_NonEmpty = $PS["Data.NonEmpty"];
-  var Data_Traversable = $PS["Data.Traversable"];
-  var Data_Tuple = $PS["Data.Tuple"];
-  var DataType = $PS["DataType"];
-  var Expr = $PS["Expr"];
-  var Lattice = $PS["Lattice"];
-  var SExpr = $PS["SExpr"];
-  var Util = $PS["Util"];                
-  var enil = function (α) {
-      return new Expr.Constr(α, DataType.cNil, Data_List_Types.Nil.value);
-  };
-  var totaliseConstrFwd = function (v) {
-      return function (α) {
-          var defaultBranch = function (c$prime) {
-              return new Data_Tuple.Tuple(c$prime, Data_Function.applyN((function () {
-                  var $179 = Expr.ElimVar.create(Bindings.varAnon);
-                  return function ($180) {
-                      return Expr.ContElim.create($179($180));
-                  };
-              })())(Util.successful(DataType.arity(c$prime)))(new Expr.ContExpr(enil(α))));
-          };
-          var cκs = Data_Functor.map(Data_List_Types.functorList)(defaultBranch)(Data_List.difference(DataType.eqCtr)(DataType.ctrs(Util.successful(DataType.dataTypeFor(DataType.dataTypeForCtr)(v.value0))))(Data_List.singleton(v.value0)));
-          return Data_Map_Internal.fromFoldable(DataType.ordCtr)(Data_List_Types.foldableList)(new Data_List_Types.Cons(new Data_Tuple.Tuple(v.value0, v.value1), cκs));
-      };
-  };
-  var totaliseFwd = function (v) {
-      return function (v1) {
-          if (v instanceof Expr.ContHole) {
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof Expr.ContExpr) {
-              return new Expr.ContExpr(v.value0);
-          };
-          if (v instanceof Expr.ContElim && v.value0 instanceof Expr.ElimHole) {
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof Expr.ContElim && v.value0 instanceof Expr.ElimConstr) {
-              var v2 = Util.assert(Data_Map_Internal.size(v.value0.value0) === 1)(Util.fromJust(Util.absurd)(Data_List.head(Data_Map_Internal.toUnfoldable(Data_List_Types.unfoldableList)(v.value0.value0))));
-              return new Expr.ContElim(new Expr.ElimConstr(totaliseConstrFwd(new Data_Tuple.Tuple(v2.value0, totaliseFwd(v2.value1)(v1)))(v1)));
-          };
-          if (v instanceof Expr.ContElim && v.value0 instanceof Expr.ElimVar) {
-              return new Expr.ContElim(new Expr.ElimVar(v.value0.value0, totaliseFwd(v.value0.value1)(v1)));
-          };
-          throw new Error("Failed pattern match at DesugarFwd (line 155, column 1 - line 155, column 37): " + [ v.constructor.name, v1.constructor.name ]);
-      };
-  };
-  var elimBool = function (κ) {
-      return function (κ$prime) {
-          return new Expr.ElimConstr(Data_Map_Internal.fromFoldable(DataType.ordCtr)(Data_Foldable.foldableArray)([ new Data_Tuple.Tuple(DataType.cTrue, κ), new Data_Tuple.Tuple(DataType.cFalse, κ$prime) ]));
-      };
-  };
-  var econs = function (α) {
-      return function (e) {
-          return function (e$prime) {
-              return new Expr.Constr(α, DataType.cCons, new Data_List_Types.Cons(e, new Data_List_Types.Cons(e$prime, Data_List_Types.Nil.value)));
-          };
-      };
-  };
-  var patternFwd = function (v) {
-      return function (κ) {
-          if (v instanceof SExpr.PVar) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.ElimVar(v.value0, κ));
-          };
-          if (v instanceof SExpr.PConstr) {
-              return Control_Apply.applySecond(Data_Either.applyEither)(DataType.checkArity(v.value0)(Data_List.length(v.value1)))(Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Expr.ElimConstr.create)(Data_Map_Internal.singleton(v.value0)))(argPatternFwd(Data_Functor.map(Data_List_Types.functorList)(Data_Either.Left.create)(v.value1))(κ)));
-          };
-          if (v instanceof SExpr.PListEmpty) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.ElimConstr(Data_Map_Internal.singleton(DataType.cNil)(κ)));
-          };
-          if (v instanceof SExpr.PListNonEmpty) {
-              return Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Expr.ElimConstr.create)(Data_Map_Internal.singleton(DataType.cCons)))(argPatternFwd(new Data_List_Types.Cons(new Data_Either.Left(v.value0), new Data_List_Types.Cons(new Data_Either.Right(v.value1), Data_List_Types.Nil.value)))(κ));
-          };
-          throw new Error("Failed pattern match at DesugarFwd (line 124, column 1 - line 124, column 52): " + [ v.constructor.name, κ.constructor.name ]);
-      };
-  };
-  var listRestPatternFwd = function (v) {
-      return function (κ) {
-          if (v instanceof SExpr.PEnd) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.ElimConstr(Data_Map_Internal.singleton(DataType.cNil)(κ)));
-          };
-          if (v instanceof SExpr.PNext) {
-              return Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Expr.ElimConstr.create)(Data_Map_Internal.singleton(DataType.cCons)))(argPatternFwd(new Data_List_Types.Cons(new Data_Either.Left(v.value0), new Data_List_Types.Cons(new Data_Either.Right(v.value1), Data_List_Types.Nil.value)))(κ));
-          };
-          throw new Error("Failed pattern match at DesugarFwd (line 132, column 1 - line 132, column 68): " + [ v.constructor.name, κ.constructor.name ]);
-      };
-  };
-  var argPatternFwd = function (v) {
-      return function (κ) {
-          if (v instanceof Data_List_Types.Nil) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(κ);
-          };
-          if (v instanceof Data_List_Types.Cons && v.value0 instanceof Data_Either.Left) {
-              return Data_Functor.map(Data_Either.functorEither)(Expr.ContElim.create)(Control_Bind.bind(Data_Either.bindEither)(argPatternFwd(v.value1)(κ))(patternFwd(v.value0.value0)));
-          };
-          if (v instanceof Data_List_Types.Cons && v.value0 instanceof Data_Either.Right) {
-              return Data_Functor.map(Data_Either.functorEither)(Expr.ContElim.create)(Control_Bind.bind(Data_Either.bindEither)(argPatternFwd(v.value1)(κ))(listRestPatternFwd(v.value0.value0)));
-          };
-          throw new Error("Failed pattern match at DesugarFwd (line 136, column 1 - line 136, column 80): " + [ v.constructor.name, κ.constructor.name ]);
-      };
-  };
-  var varDefsFwd = function (v) {
-      if (v.value0.value1 instanceof Data_List_Types.Nil) {
-          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.Let.create)(varDefFwd(v.value0.value0)))(exprFwd(v.value1));
-      };
-      if (v.value0.value1 instanceof Data_List_Types.Cons) {
-          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.Let.create)(varDefFwd(v.value0.value0)))(varDefsFwd(new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(v.value0.value1.value0, v.value0.value1.value1), v.value1)));
-      };
-      throw new Error("Failed pattern match at DesugarFwd (line 54, column 1 - line 54, column 55): " + [ v.constructor.name ]);
-  };
-  var varDefFwd = function (v) {
-      return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.VarDef.create)(patternFwd(v.value0)(new Expr.ContHole(false))))(exprFwd(v.value1));
-  };
-  var recDefsFwd = function (xcs) {
-      var xcss = Data_List_NonEmpty.groupBy(Data_Function.on(Data_Eq.eq(Data_Eq.eqString))(Data_Tuple.fst))(xcs);
-      return Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Bindings.fromList)(Data_List_NonEmpty.toList))(Data_Traversable.traverse(Data_List_Types.traversableNonEmptyList)(Data_Either.applicativeEither)(recDefFwd)(xcss));
-  };
-  var recDefFwd = function (xcs) {
-      return Data_Functor.map(Data_Either.functorEither)(function (v) {
-          return new Bindings.Binding(Data_Tuple.fst(Data_List_NonEmpty.head(xcs)), v);
-      })(branchesFwd_curried(Data_Functor.map(Data_List_Types.functorNonEmptyList)(Data_Tuple.snd)(xcs)));
-  };
-  var patternsFwd = function (v) {
-      if (v.value0.value1 instanceof Data_List_Types.Nil) {
-          return branchFwd_uncurried(v.value0.value0)(v.value1);
-      };
-      if (v.value0.value1 instanceof Data_List_Types.Cons) {
-          return Control_Bind.bindFlipped(Data_Either.bindEither)(patternFwd(v.value0.value0))(Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Expr.ContExpr.create)(Expr.Lambda.create))(patternsFwd(new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(v.value0.value1.value0, v.value0.value1.value1), v.value1))));
-      };
-      throw new Error("Failed pattern match at DesugarFwd (line 119, column 1 - line 119, column 65): " + [ v.constructor.name ]);
-  };
-  var listRestFwd = function (v) {
-      if (v instanceof SExpr.End) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(enil(v.value0));
-      };
-      if (v instanceof SExpr.Next) {
-          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(econs(v.value0))(exprFwd(v.value1)))(listRestFwd(v.value2));
-      };
-      throw new Error("Failed pattern match at DesugarFwd (line 114, column 1 - line 114, column 48): " + [ v.constructor.name ]);
-  };
-  var exprFwd = function (v) {
-      if (v instanceof SExpr.Var) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.Var(v.value0));
-      };
-      if (v instanceof SExpr.Op) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.Op(v.value0));
-      };
-      if (v instanceof SExpr.Int) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.Int(v.value0, v.value1));
-      };
-      if (v instanceof SExpr.Float) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.Float(v.value0, v.value1));
-      };
-      if (v instanceof SExpr.Str) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.Str(v.value0, v.value1));
-      };
-      if (v instanceof SExpr.Constr) {
-          return Data_Functor.map(Data_Either.functorEither)(Expr.Constr.create(v.value0)(v.value1))(Data_Traversable.traverse(Data_List_Types.traversableList)(Data_Either.applicativeEither)(exprFwd)(v.value2));
-      };
-      if (v instanceof SExpr.Matrix) {
-          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.flap(Data_Either.functorEither)(Data_Functor.map(Data_Either.functorEither)(Expr.Matrix.create(v.value0))(exprFwd(v.value1)))(new Data_Tuple.Tuple(v.value2.value0, v.value2.value1)))(exprFwd(v.value3));
-      };
-      if (v instanceof SExpr.Lambda) {
-          return Data_Functor.map(Data_Either.functorEither)(Expr.Lambda.create)(branchesFwd_curried(v.value0));
-      };
-      if (v instanceof SExpr.App) {
-          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create)(exprFwd(v.value0)))(exprFwd(v.value1));
-      };
-      if (v instanceof SExpr.BinaryApp) {
-          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.Op(v.value1)))(exprFwd(v.value0))))(exprFwd(v.value2));
-      };
-      if (v instanceof SExpr.MatchAs) {
-          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create)(Data_Functor.map(Data_Either.functorEither)(Expr.Lambda.create)(branchesFwd_uncurried(v.value1))))(exprFwd(v.value0));
-      };
-      if (v instanceof SExpr.IfElse) {
-          return Control_Bind.bind(Data_Either.bindEither)(exprFwd(v.value1))(function (e2) {
-              return Control_Bind.bind(Data_Either.bindEither)(exprFwd(v.value2))(function (e3) {
-                  return Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.Lambda(elimBool(new Expr.ContExpr(e2))(new Expr.ContExpr(e3)))))(exprFwd(v.value0));
-              });
-          });
-      };
-      if (v instanceof SExpr.ListEmpty) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(enil(v.value0));
-      };
-      if (v instanceof SExpr.ListNonEmpty) {
-          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(econs(v.value0))(exprFwd(v.value1)))(listRestFwd(v.value2));
-      };
-      if (v instanceof SExpr.ListEnum) {
-          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.Var("enumFromTo")))(exprFwd(v.value0))))(exprFwd(v.value1));
-      };
-      if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Guard && (v.value2.value0.value0 instanceof SExpr.Constr && (v.value2.value0.value0.value2 instanceof Data_List_Types.Nil && (v.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value2.value0.value0.value1)(DataType.cTrue)))))) {
-          return Data_Functor.flap(Data_Either.functorEither)(Data_Functor.map(Data_Either.functorEither)(econs(v.value2.value0.value0.value0))(exprFwd(v.value1)))(enil(v.value2.value0.value0.value0));
-      };
-      if (v instanceof SExpr.ListComp && v.value2.value1 instanceof Data_List_Types.Nil) {
-          return exprFwd(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value0, new Data_List_Types.Cons(new SExpr.Guard(new SExpr.Constr(v.value0, DataType.cTrue, Data_List_Types.Nil.value)), Data_List_Types.Nil.value))));
-      };
-      if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Guard && v.value2.value1 instanceof Data_List_Types.Cons)) {
-          return Control_Bind.bind(Data_Either.bindEither)(exprFwd(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1))))(function (e) {
-              return Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.Lambda(elimBool(new Expr.ContExpr(e))(new Expr.ContExpr(enil(v.value0))))))(exprFwd(v.value2.value0.value0));
-          });
-      };
-      if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Declaration && v.value2.value1 instanceof Data_List_Types.Cons)) {
-          return Control_Bind.bind(Data_Either.bindEither)(exprFwd(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1))))(function (e) {
-              return Control_Bind.bind(Data_Either.bindEither)(patternFwd(v.value2.value0.value0.value0)(new Expr.ContExpr(e)))(function (σ) {
-                  return Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.Lambda(σ)))(exprFwd(v.value2.value0.value0.value1));
-              });
-          });
-      };
-      if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Generator && v.value2.value1 instanceof Data_List_Types.Cons)) {
-          return Control_Bind.bind(Data_Either.bindEither)(exprFwd(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1))))(function (e) {
-              return Control_Bind.bind(Data_Either.bindEither)(patternFwd(v.value2.value0.value0)(new Expr.ContExpr(e)))(function (σ) {
-                  return Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.App(new Expr.Var("concatMap"), new Expr.Lambda(Expr.asElim(totaliseFwd(new Expr.ContElim(σ))(v.value0))))))(exprFwd(v.value2.value0.value1));
-              });
-          });
-      };
-      if (v instanceof SExpr.Let) {
-          return varDefsFwd(new Data_Tuple.Tuple(v.value0, v.value1));
-      };
-      if (v instanceof SExpr.LetRec) {
-          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.LetRec.create)(recDefsFwd(v.value0)))(exprFwd(v.value1));
-      };
-      throw new Error("Failed pattern match at DesugarFwd (line 71, column 1 - line 71, column 40): " + [ v.constructor.name ]);
-  };
-  var branchesFwd_uncurried = function (bs) {
-      return Control_Bind.bind(Data_Either.bindEither)(Data_Traversable.traverse(Data_List_Types.traversableNonEmptyList)(Data_Either.applicativeEither)(Data_Tuple.uncurry(branchFwd_uncurried))(bs))(function (v) {
-          return Data_Foldable.foldM(Data_List_Types.foldableList)(Data_Either.monadEither)(Lattice.maybeJoin(Expr.slicesElim))(v.value0)(v.value1);
-      });
-  };
-  var branchesFwd_curried = function (bs) {
-      return Control_Bind.bind(Data_Either.bindEither)(Data_Traversable.traverse(Data_List_Types.traversableNonEmptyList)(Data_Either.applicativeEither)(patternsFwd)(bs))(function (v) {
-          return Data_Foldable.foldM(Data_List_Types.foldableList)(Data_Either.monadEither)(Lattice.maybeJoin(Expr.slicesElim))(v.value0)(v.value1);
-      });
-  };
-  var branchFwd_uncurried = function (p) {
-      return function (s) {
-          return Control_Bind.bind(Data_Either.bindEither)(Data_Functor.map(Data_Either.functorEither)(Expr.ContExpr.create)(exprFwd(s)))(patternFwd(p));
-      };
-  };
-  var moduleFwd = function (v) {
-      var varDefOrRecDefsFwd = function (v1) {
-          if (v1 instanceof Data_Either.Left) {
-              return Data_Functor.map(Data_Either.functorEither)(Data_Either.Left.create)(varDefFwd(v1.value0));
-          };
-          if (v1 instanceof Data_Either.Right) {
-              return Data_Functor.map(Data_Either.functorEither)(Data_Either.Right.create)(recDefsFwd(v1.value0));
-          };
-          throw new Error("Failed pattern match at DesugarFwd (line 43, column 4 - line 43, column 84): " + [ v1.constructor.name ]);
-      };
-      var desugarDefs = function (v1) {
-          if (v1 instanceof Data_Either.Left) {
-              return Data_Functor.map(Data_List_Types.functorList)(Data_Either.Left.create)(Data_List_NonEmpty.toList(v1.value0));
-          };
-          if (v1 instanceof Data_Either.Right) {
-              return Control_Applicative.pure(Data_List_Types.applicativeList)(new Data_Either.Right(v1.value0));
-          };
-          throw new Error("Failed pattern match at DesugarFwd (line 47, column 4 - line 47, column 71): " + [ v1.constructor.name ]);
-      };
-      return Data_Functor.map(Data_Either.functorEither)(Expr.Module.create)(Data_Traversable.traverse(Data_List_Types.traversableList)(Data_Either.applicativeEither)(varDefOrRecDefsFwd)(Control_Bind.join(Data_List_Types.bindList)(Data_Functor.map(Data_List_Types.functorList)(desugarDefs)(v.value0))));
-  };
-  var desugarModuleFwd = moduleFwd;
-  var desugarFwd = exprFwd;
-  exports["desugarFwd"] = desugarFwd;
-  exports["desugarModuleFwd"] = desugarModuleFwd;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Expl"] = $PS["Expl"] || {};
-  var exports = $PS["Expl"];
-  var MatchVar = (function () {
-      function MatchVar(value0) {
-          this.value0 = value0;
-      };
-      MatchVar.create = function (value0) {
-          return new MatchVar(value0);
-      };
-      return MatchVar;
-  })();
-  var MatchVarAnon = (function () {
-      function MatchVarAnon(value0) {
-          this.value0 = value0;
-      };
-      MatchVarAnon.create = function (value0) {
-          return new MatchVarAnon(value0);
-      };
-      return MatchVarAnon;
-  })();
-  var MatchConstr = (function () {
-      function MatchConstr(value0, value1, value2) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-      };
-      MatchConstr.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return new MatchConstr(value0, value1, value2);
-              };
-          };
-      };
-      return MatchConstr;
-  })();
-  var Var = (function () {
-      function Var(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Var.create = function (value0) {
-          return function (value1) {
-              return new Var(value0, value1);
-          };
-      };
-      return Var;
-  })();
-  var Op = (function () {
-      function Op(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Op.create = function (value0) {
-          return function (value1) {
-              return new Op(value0, value1);
-          };
-      };
-      return Op;
-  })();
-  var Int = (function () {
-      function Int(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Int.create = function (value0) {
-          return function (value1) {
-              return new Int(value0, value1);
-          };
-      };
-      return Int;
-  })();
-  var Float = (function () {
-      function Float(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Float.create = function (value0) {
-          return function (value1) {
-              return new Float(value0, value1);
-          };
-      };
-      return Float;
-  })();
-  var Str = (function () {
-      function Str(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Str.create = function (value0) {
-          return function (value1) {
-              return new Str(value0, value1);
-          };
-      };
-      return Str;
-  })();
-  var Constr = (function () {
-      function Constr(value0, value1, value2) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-      };
-      Constr.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return new Constr(value0, value1, value2);
-              };
-          };
-      };
-      return Constr;
-  })();
-  var Matrix = (function () {
-      function Matrix(value0, value1, value2, value3) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-          this.value3 = value3;
-      };
-      Matrix.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return function (value3) {
-                      return new Matrix(value0, value1, value2, value3);
-                  };
-              };
-          };
-      };
-      return Matrix;
-  })();
-  var Lambda = (function () {
-      function Lambda(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Lambda.create = function (value0) {
-          return function (value1) {
-              return new Lambda(value0, value1);
-          };
-      };
-      return Lambda;
-  })();
-  var App = (function () {
-      function App(value0, value1, value2, value3) {
-          this.value0 = value0;
-          this.value1 = value1;
-          this.value2 = value2;
-          this.value3 = value3;
-      };
-      App.create = function (value0) {
-          return function (value1) {
-              return function (value2) {
-                  return function (value3) {
-                      return new App(value0, value1, value2, value3);
-                  };
-              };
-          };
-      };
-      return App;
-  })();
-  var AppPrim = (function () {
-      function AppPrim(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      AppPrim.create = function (value0) {
-          return function (value1) {
-              return new AppPrim(value0, value1);
-          };
-      };
-      return AppPrim;
-  })();
-  var AppConstr = (function () {
-      function AppConstr(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      AppConstr.create = function (value0) {
-          return function (value1) {
-              return new AppConstr(value0, value1);
-          };
-      };
-      return AppConstr;
-  })();
-  var Let = (function () {
-      function Let(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      Let.create = function (value0) {
-          return function (value1) {
-              return new Let(value0, value1);
-          };
-      };
-      return Let;
-  })();
-  var LetRec = (function () {
-      function LetRec(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      LetRec.create = function (value0) {
-          return function (value1) {
-              return new LetRec(value0, value1);
-          };
-      };
-      return LetRec;
-  })();
-  var VarDef = (function () {
-      function VarDef(value0, value1) {
-          this.value0 = value0;
-          this.value1 = value1;
-      };
-      VarDef.create = function (value0) {
-          return function (value1) {
-              return new VarDef(value0, value1);
-          };
-      };
-      return VarDef;
-  })();
-  exports["VarDef"] = VarDef;
-  exports["Var"] = Var;
-  exports["Op"] = Op;
-  exports["Int"] = Int;
-  exports["Float"] = Float;
-  exports["Str"] = Str;
-  exports["Constr"] = Constr;
-  exports["Matrix"] = Matrix;
-  exports["Lambda"] = Lambda;
-  exports["App"] = App;
-  exports["AppPrim"] = AppPrim;
-  exports["AppConstr"] = AppConstr;
-  exports["Let"] = Let;
-  exports["LetRec"] = LetRec;
-  exports["MatchVar"] = MatchVar;
-  exports["MatchVarAnon"] = MatchVarAnon;
-  exports["MatchConstr"] = MatchConstr;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Data.Profunctor"] = $PS["Data.Profunctor"] || {};
-  var exports = $PS["Data.Profunctor"];                  
-  var Profunctor = function (dimap) {
-      this.dimap = dimap;
-  };
-  var profunctorFn = new Profunctor(function (a2b) {
-      return function (c2d) {
-          return function (b2c) {
-              return function ($9) {
-                  return c2d(b2c(a2b($9)));
-              };
-          };
-      };
-  });
-  var dimap = function (dict) {
-      return dict.dimap;
-  };
-  exports["dimap"] = dimap;
-  exports["profunctorFn"] = profunctorFn;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Data.Profunctor.Choice"] = $PS["Data.Profunctor.Choice"] || {};
-  var exports = $PS["Data.Profunctor.Choice"];
-  var Control_Category = $PS["Control.Category"];
-  var Control_Semigroupoid = $PS["Control.Semigroupoid"];
-  var Data_Either = $PS["Data.Either"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_Profunctor = $PS["Data.Profunctor"];                
-  var Choice = function (Profunctor0, left, right) {
-      this.Profunctor0 = Profunctor0;
-      this.left = left;
-      this.right = right;
-  };
-  var right = function (dict) {
-      return dict.right;
-  };
-  var left = function (dict) {
-      return dict.left;
-  };
-  var splitChoice = function (dictCategory) {
-      return function (dictChoice) {
-          return function (l) {
-              return function (r) {
-                  return Control_Semigroupoid.composeFlipped(dictCategory.Semigroupoid0())(left(dictChoice)(l))(right(dictChoice)(r));
-              };
-          };
-      };
-  };
-  var fanin = function (dictCategory) {
-      return function (dictChoice) {
-          return function (l) {
-              return function (r) {
-                  var join = Data_Profunctor.dimap(dictChoice.Profunctor0())(Data_Either.either(Control_Category.identity(Control_Category.categoryFn))(Control_Category.identity(Control_Category.categoryFn)))(Control_Category.identity(Control_Category.categoryFn))(Control_Category.identity(dictCategory));
-                  return Control_Semigroupoid.composeFlipped(dictCategory.Semigroupoid0())(splitChoice(dictCategory)(dictChoice)(l)(r))(join);
-              };
-          };
-      };
-  };
-  var choiceFn = new Choice(function () {
-      return Data_Profunctor.profunctorFn;
-  }, function (v) {
-      return function (v1) {
-          if (v1 instanceof Data_Either.Left) {
-              return Data_Either.Left.create(v(v1.value0));
-          };
-          if (v1 instanceof Data_Either.Right) {
-              return new Data_Either.Right(v1.value0);
-          };
-          throw new Error("Failed pattern match at Data.Profunctor.Choice (line 32, column 1 - line 35, column 16): " + [ v.constructor.name, v1.constructor.name ]);
-      };
-  }, Data_Functor.map(Data_Either.functorEither));
-  exports["fanin"] = fanin;
-  exports["choiceFn"] = choiceFn;
 })(PS);
 (function(exports) {
   "use strict";
@@ -27849,6 +26359,402 @@ var PS = {};
   var opDefs = Data_Map_Internal.fromFoldable(Data_Ord.ordString)(Data_Foldable.foldableArray)([ opDef("!")(8)(Text_Parsing_Parser_Expr.AssocLeft.value), opDef("**")(8)(Text_Parsing_Parser_Expr.AssocRight.value), opDef("*")(7)(Text_Parsing_Parser_Expr.AssocLeft.value), opDef("/")(7)(Text_Parsing_Parser_Expr.AssocLeft.value), opDef("+")(6)(Text_Parsing_Parser_Expr.AssocLeft.value), opDef("-")(6)(Text_Parsing_Parser_Expr.AssocLeft.value), opDef(":")(6)(Text_Parsing_Parser_Expr.AssocRight.value), opDef("++")(5)(Text_Parsing_Parser_Expr.AssocRight.value), opDef("==")(4)(Text_Parsing_Parser_Expr.AssocNone.value), opDef("/=")(4)(Text_Parsing_Parser_Expr.AssocNone.value), opDef("<")(4)(Text_Parsing_Parser_Expr.AssocLeft.value), opDef(">")(4)(Text_Parsing_Parser_Expr.AssocLeft.value), opDef("<=")(4)(Text_Parsing_Parser_Expr.AssocLeft.value), opDef(">=")(4)(Text_Parsing_Parser_Expr.AssocLeft.value) ]);
   exports["opDefs"] = opDefs;
 })(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["SExpr"] = $PS["SExpr"] || {};
+  var exports = $PS["SExpr"];                        
+  var PEnd = (function () {
+      function PEnd() {
+
+      };
+      PEnd.value = new PEnd();
+      return PEnd;
+  })();
+  var PNext = (function () {
+      function PNext(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      PNext.create = function (value0) {
+          return function (value1) {
+              return new PNext(value0, value1);
+          };
+      };
+      return PNext;
+  })();
+  var PVar = (function () {
+      function PVar(value0) {
+          this.value0 = value0;
+      };
+      PVar.create = function (value0) {
+          return new PVar(value0);
+      };
+      return PVar;
+  })();
+  var PConstr = (function () {
+      function PConstr(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      PConstr.create = function (value0) {
+          return function (value1) {
+              return new PConstr(value0, value1);
+          };
+      };
+      return PConstr;
+  })();
+  var PListEmpty = (function () {
+      function PListEmpty() {
+
+      };
+      PListEmpty.value = new PListEmpty();
+      return PListEmpty;
+  })();
+  var PListNonEmpty = (function () {
+      function PListNonEmpty(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      PListNonEmpty.create = function (value0) {
+          return function (value1) {
+              return new PListNonEmpty(value0, value1);
+          };
+      };
+      return PListNonEmpty;
+  })();
+  var Var = (function () {
+      function Var(value0) {
+          this.value0 = value0;
+      };
+      Var.create = function (value0) {
+          return new Var(value0);
+      };
+      return Var;
+  })();
+  var Op = (function () {
+      function Op(value0) {
+          this.value0 = value0;
+      };
+      Op.create = function (value0) {
+          return new Op(value0);
+      };
+      return Op;
+  })();
+  var Int = (function () {
+      function Int(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Int.create = function (value0) {
+          return function (value1) {
+              return new Int(value0, value1);
+          };
+      };
+      return Int;
+  })();
+  var Float = (function () {
+      function Float(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Float.create = function (value0) {
+          return function (value1) {
+              return new Float(value0, value1);
+          };
+      };
+      return Float;
+  })();
+  var Str = (function () {
+      function Str(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Str.create = function (value0) {
+          return function (value1) {
+              return new Str(value0, value1);
+          };
+      };
+      return Str;
+  })();
+  var Constr = (function () {
+      function Constr(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      Constr.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new Constr(value0, value1, value2);
+              };
+          };
+      };
+      return Constr;
+  })();
+  var Matrix = (function () {
+      function Matrix(value0, value1, value2, value3) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+          this.value3 = value3;
+      };
+      Matrix.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return function (value3) {
+                      return new Matrix(value0, value1, value2, value3);
+                  };
+              };
+          };
+      };
+      return Matrix;
+  })();
+  var Lambda = (function () {
+      function Lambda(value0) {
+          this.value0 = value0;
+      };
+      Lambda.create = function (value0) {
+          return new Lambda(value0);
+      };
+      return Lambda;
+  })();
+  var App = (function () {
+      function App(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      App.create = function (value0) {
+          return function (value1) {
+              return new App(value0, value1);
+          };
+      };
+      return App;
+  })();
+  var BinaryApp = (function () {
+      function BinaryApp(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      BinaryApp.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new BinaryApp(value0, value1, value2);
+              };
+          };
+      };
+      return BinaryApp;
+  })();
+  var MatchAs = (function () {
+      function MatchAs(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      MatchAs.create = function (value0) {
+          return function (value1) {
+              return new MatchAs(value0, value1);
+          };
+      };
+      return MatchAs;
+  })();
+  var IfElse = (function () {
+      function IfElse(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      IfElse.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new IfElse(value0, value1, value2);
+              };
+          };
+      };
+      return IfElse;
+  })();
+  var ListEmpty = (function () {
+      function ListEmpty(value0) {
+          this.value0 = value0;
+      };
+      ListEmpty.create = function (value0) {
+          return new ListEmpty(value0);
+      };
+      return ListEmpty;
+  })();
+  var ListNonEmpty = (function () {
+      function ListNonEmpty(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      ListNonEmpty.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new ListNonEmpty(value0, value1, value2);
+              };
+          };
+      };
+      return ListNonEmpty;
+  })();
+  var ListEnum = (function () {
+      function ListEnum(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      ListEnum.create = function (value0) {
+          return function (value1) {
+              return new ListEnum(value0, value1);
+          };
+      };
+      return ListEnum;
+  })();
+  var ListComp = (function () {
+      function ListComp(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      ListComp.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new ListComp(value0, value1, value2);
+              };
+          };
+      };
+      return ListComp;
+  })();
+  var Let = (function () {
+      function Let(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Let.create = function (value0) {
+          return function (value1) {
+              return new Let(value0, value1);
+          };
+      };
+      return Let;
+  })();
+  var LetRec = (function () {
+      function LetRec(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      LetRec.create = function (value0) {
+          return function (value1) {
+              return new LetRec(value0, value1);
+          };
+      };
+      return LetRec;
+  })();
+  var End = (function () {
+      function End(value0) {
+          this.value0 = value0;
+      };
+      End.create = function (value0) {
+          return new End(value0);
+      };
+      return End;
+  })();
+  var Next = (function () {
+      function Next(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      Next.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new Next(value0, value1, value2);
+              };
+          };
+      };
+      return Next;
+  })();
+  var Guard = (function () {
+      function Guard(value0) {
+          this.value0 = value0;
+      };
+      Guard.create = function (value0) {
+          return new Guard(value0);
+      };
+      return Guard;
+  })();
+  var Generator = (function () {
+      function Generator(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Generator.create = function (value0) {
+          return function (value1) {
+              return new Generator(value0, value1);
+          };
+      };
+      return Generator;
+  })();
+  var Declaration = (function () {
+      function Declaration(value0) {
+          this.value0 = value0;
+      };
+      Declaration.create = function (value0) {
+          return new Declaration(value0);
+      };
+      return Declaration;
+  })();
+  var VarDef = (function () {
+      function VarDef(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      VarDef.create = function (value0) {
+          return function (value1) {
+              return new VarDef(value0, value1);
+          };
+      };
+      return VarDef;
+  })();
+  var Module = (function () {
+      function Module(value0) {
+          this.value0 = value0;
+      };
+      Module.create = function (value0) {
+          return new Module(value0);
+      };
+      return Module;
+  })();
+  exports["Var"] = Var;
+  exports["Op"] = Op;
+  exports["Int"] = Int;
+  exports["Float"] = Float;
+  exports["Str"] = Str;
+  exports["Constr"] = Constr;
+  exports["Matrix"] = Matrix;
+  exports["Lambda"] = Lambda;
+  exports["App"] = App;
+  exports["BinaryApp"] = BinaryApp;
+  exports["MatchAs"] = MatchAs;
+  exports["IfElse"] = IfElse;
+  exports["ListEmpty"] = ListEmpty;
+  exports["ListNonEmpty"] = ListNonEmpty;
+  exports["ListEnum"] = ListEnum;
+  exports["ListComp"] = ListComp;
+  exports["Let"] = Let;
+  exports["LetRec"] = LetRec;
+  exports["End"] = End;
+  exports["Next"] = Next;
+  exports["PVar"] = PVar;
+  exports["PConstr"] = PConstr;
+  exports["PListEmpty"] = PListEmpty;
+  exports["PListNonEmpty"] = PListNonEmpty;
+  exports["PEnd"] = PEnd;
+  exports["PNext"] = PNext;
+  exports["VarDef"] = VarDef;
+  exports["Guard"] = Guard;
+  exports["Generator"] = Generator;
+  exports["Declaration"] = Declaration;
+  exports["Module"] = Module;
+})(PS);
 (function(exports) {
   "use strict";
   /* global Symbol */
@@ -28779,6 +27685,7 @@ var PS = {};
       arrayRBracket: "|]",
       as: "as",
       backslash: "\\",
+      backtick: "`",
       bar: "|",
       ellipsis: "..",
       else_: "else",
@@ -28795,9 +27702,7 @@ var PS = {};
       then_: "then"
   };
   var operators = function (binaryOp) {
-      return Data_Array.fromFoldable(Data_List_Types.foldableList)(Data_Functor.map(Data_List_Types.functorList)(Data_Functor.map(Data_Functor.functorFn)(Data_Array.fromFoldable(Data_List_Types.foldableNonEmptyList))(Data_Functor.map(Data_List_Types.functorNonEmptyList)(function (v) {
-          return new Text_Parsing_Parser_Expr.Infix(Text_Parsing_Parser_Combinators["try"](Data_Identity.monadIdentity)(binaryOp(v.op)), v.assoc);
-      })))(Data_List.groupBy(Data_Function.on(Data_Eq.eq(Data_Eq.eqInt))(function (v) {
+      var ops = Data_List.groupBy(Data_Function.on(Data_Eq.eq(Data_Eq.eqInt))(function (v) {
           return v.prec;
       }))(Data_List.sortBy(function (x) {
           var $20 = Data_Ord.comparing(Data_Ord.ordInt)(function (v) {
@@ -28806,7 +27711,10 @@ var PS = {};
           return function ($21) {
               return Data_Ordering.invert($20($21));
           };
-      })(Data_Map_Internal.values(Primitive_Parse.opDefs)))));
+      })(Data_Map_Internal.values(Primitive_Parse.opDefs)));
+      return Data_Array.fromFoldable(Data_List_Types.foldableList)(Data_Functor.mapFlipped(Data_List_Types.functorList)(Data_Functor.map(Data_List_Types.functorList)(Data_Array.fromFoldable(Data_List_Types.foldableNonEmptyList))(ops))(Data_Functor.map(Data_Functor.functorArray)(function (v) {
+          return new Text_Parsing_Parser_Expr.Infix(Text_Parsing_Parser_Combinators["try"](Data_Identity.monadIdentity)(binaryOp(v.op)), v.assoc);
+      })));
   };
   var languageDef = (function () {
       var opChar = Text_Parsing_Parser_String.oneOf(Text_Parsing_Parser_String.stringLikeString)(Data_Identity.monadIdentity)([ ":", "!", "#", "$", "%", "&", "*", "+", ".", "/", "<", "=", ">", "?", "@", "\\", "^", "|", "-", "~" ]);
@@ -28927,6 +27835,7 @@ var PS = {};
       };
   };
   var bar = token.reservedOp(str.bar);
+  var backtick = Data_Functor["void"](Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(token.symbol(str.backtick));
   var expr_ = (function () {
       var binaryOp = function (op) {
           return Control_Bind.bind(Text_Parsing_Parser.bindParserT(Data_Identity.monadIdentity))(token.operator)(function (op$prime) {
@@ -28947,6 +27856,13 @@ var PS = {};
               })());
           });
       };
+      var backtickOp = Data_Function.flip(Text_Parsing_Parser_Expr.Infix.create)(Text_Parsing_Parser_Expr.AssocLeft.value)(Control_Bind.bind(Text_Parsing_Parser.bindParserT(Data_Identity.monadIdentity))(Text_Parsing_Parser_Combinators.between(Data_Identity.monadIdentity)(backtick)(backtick)(ident))(function (x) {
+          return Control_Applicative.pure(Text_Parsing_Parser.applicativeParserT(Data_Identity.monadIdentity))(function (e) {
+              return function (e$prime) {
+                  return new SExpr.BinaryApp(e, x, e$prime);
+              };
+          });
+      }));
       var appChain = function (expr$prime) {
           var simpleExpr = (function () {
               var variable = Data_Functor.mapFlipped(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(ident)(SExpr.Var.create);
@@ -29014,7 +27930,7 @@ var PS = {};
           return Control_Bind.bind(Text_Parsing_Parser.bindParserT(Data_Identity.monadIdentity))(simpleExpr)(rest);
       };
       return Control_Lazy.fix(Text_Parsing_Parser.lazyParserT)((function () {
-          var $29 = Text_Parsing_Parser_Expr.buildExprParser(Data_Identity.monadIdentity)(operators(binaryOp));
+          var $29 = Text_Parsing_Parser_Expr.buildExprParser(Data_Identity.monadIdentity)(Data_Array.cons([ backtickOp ])(operators(binaryOp)));
           return function ($30) {
               return $29(appChain($30));
           };
@@ -29133,14 +28049,887 @@ var PS = {};
 (function($PS) {
   // Generated by purs version 0.13.6
   "use strict";
+  $PS["Bindings"] = $PS["Bindings"] || {};
+  var exports = $PS["Bindings"];
+  var Control_Applicative = $PS["Control.Applicative"];
+  var Control_Apply = $PS["Control.Apply"];
+  var Data_Boolean = $PS["Data.Boolean"];
+  var Data_Either = $PS["Data.Either"];
+  var Data_Eq = $PS["Data.Eq"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Semigroup = $PS["Data.Semigroup"];
+  var Data_Show = $PS["Data.Show"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var Lattice = $PS["Lattice"];
+  var Util = $PS["Util"];                
+  var Binding = (function () {
+      function Binding(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Binding.create = function (value0) {
+          return function (value1) {
+              return new Binding(value0, value1);
+          };
+      };
+      return Binding;
+  })();
+  var Empty = (function () {
+      function Empty() {
+
+      };
+      Empty.value = new Empty();
+      return Empty;
+  })();
+  var Extend = (function () {
+      function Extend(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Extend.create = function (value0) {
+          return function (value1) {
+              return new Extend(value0, value1);
+          };
+      };
+      return Extend;
+  })();
+  var varAnon = "_";
+  var update = function (v) {
+      return function (v1) {
+          if (v instanceof Empty) {
+              return Empty.value;
+          };
+          if (v instanceof Extend) {
+              if (v.value1.value0 === v1.value0) {
+                  return new Extend(v.value0, new Binding(v1.value0, v1.value1));
+              };
+              if (Data_Boolean.otherwise) {
+                  return new Extend(update(v.value0)(new Binding(v1.value0, v1.value1)), new Binding(v.value1.value0, v.value1.value1));
+              };
+          };
+          throw new Error("Failed pattern match at Bindings (line 38, column 1 - line 38, column 67): " + [ v.constructor.name, v1.constructor.name ]);
+      };
+  };
+  var splitAt = function (n) {
+      return function (ρ) {
+          if (n <= 0) {
+              return new Data_Tuple.Tuple(ρ, Empty.value);
+          };
+          if (Data_Boolean.otherwise) {
+              var splitAt$prime = function (v) {
+                  return function (v1) {
+                      if (v1 instanceof Empty) {
+                          return new Data_Tuple.Tuple(Empty.value, Empty.value);
+                      };
+                      if (v === 1 && v1 instanceof Extend) {
+                          return new Data_Tuple.Tuple(v1.value0, new Extend(Empty.value, v1.value1));
+                      };
+                      if (v1 instanceof Extend) {
+                          var v2 = splitAt$prime(v - 1 | 0)(v1.value0);
+                          return new Data_Tuple.Tuple(v2.value0, new Extend(v2.value1, v1.value1));
+                      };
+                      throw new Error("Failed pattern match at Bindings (line 49, column 4 - line 49, column 66): " + [ v.constructor.name, v1.constructor.name ]);
+                  };
+              };
+              return splitAt$prime(n)(ρ);
+          };
+          throw new Error("Failed pattern match at Bindings (line 44, column 1 - line 44, column 75): " + [ n.constructor.name, ρ.constructor.name ]);
+      };
+  };
+  var semigroupBindings = new Data_Semigroup.Semigroup(function (ρ) {
+      return function (v) {
+          if (v instanceof Empty) {
+              return ρ;
+          };
+          if (v instanceof Extend) {
+              return new Extend(Data_Semigroup.append(semigroupBindings)(ρ)(v.value0), v.value1);
+          };
+          throw new Error("Failed pattern match at Bindings (line 78, column 1 - line 80, column 53): " + [ ρ.constructor.name, v.constructor.name ]);
+      };
+  });
+  var mustGeq = function (x) {
+      return function (y) {
+          return Util.fromJust("Must be greater")(Util.whenever(x === y)(x));
+      };
+  };              
+  var length = function (v) {
+      if (v instanceof Empty) {
+          return 0;
+      };
+      if (v instanceof Extend) {
+          return 1 + length(v.value0) | 0;
+      };
+      throw new Error("Failed pattern match at Bindings (line 56, column 1 - line 56, column 43): " + [ v.constructor.name ]);
+  };
+  var functorBinding = function (dictFunctor) {
+      return new Data_Functor.Functor(function (f) {
+          return function (m) {
+              return new Binding(m.value0, Data_Functor.map(dictFunctor)(f)(m.value1));
+          };
+      });
+  };
+  var functorBindings = function (dictFunctor) {
+      return new Data_Functor.Functor(function (f) {
+          return function (m) {
+              if (m instanceof Empty) {
+                  return Empty.value;
+              };
+              if (m instanceof Extend) {
+                  return new Extend(Data_Functor.map(functorBindings(dictFunctor))(f)(m.value0), Data_Functor.map(functorBinding(dictFunctor))(f)(m.value1));
+              };
+              throw new Error("Failed pattern match at Bindings (line 76, column 1 - line 76, column 69): " + [ m.constructor.name ]);
+          };
+      });
+  };
+  var slicesBindings = function (dictFunctor) {
+      return function (dictJoinSemilattice) {
+          return function (dictSlices) {
+              return new Lattice.Slices(function () {
+                  return joinSemilatticeBindings(dictFunctor)(dictJoinSemilattice)(dictSlices);
+              }, function (v) {
+                  return function (v1) {
+                      if (v instanceof Empty && v1 instanceof Empty) {
+                          return Control_Applicative.pure(Data_Either.applicativeEither)(Empty.value);
+                      };
+                      if (v instanceof Extend && v1 instanceof Extend) {
+                          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Extend.create)(Lattice.maybeJoin(slicesBindings(dictFunctor)(dictJoinSemilattice)(dictSlices))(v.value0)(v1.value0)))(Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Binding.create)(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value1.value0)(v1.value1.value0)))(Lattice.maybeJoin(dictSlices)(v.value1.value1)(v1.value1.value1)));
+                      };
+                      return Util.report("Bindings of different lengths");
+                  };
+              });
+          };
+      };
+  };
+  var joinSemilatticeBindings = function (dictFunctor) {
+      return function (dictJoinSemilattice) {
+          return function (dictSlices) {
+              return new Lattice.JoinSemilattice(Lattice.definedJoin(slicesBindings(dictFunctor)(dictJoinSemilattice)(dictSlices)), Data_Functor.map(functorBindings(dictFunctor))(Lattice.neg(dictJoinSemilattice)));
+          };
+      };
+  };
+  var fromList = function (v) {
+      if (v instanceof Data_List_Types.Nil) {
+          return Empty.value;
+      };
+      if (v instanceof Data_List_Types.Cons) {
+          return new Extend(fromList(v.value1), v.value0);
+      };
+      throw new Error("Failed pattern match at Bindings (line 60, column 1 - line 60, column 60): " + [ v.constructor.name ]);
+  };
+  var foldEnv = function (v) {
+      return function (z) {
+          return function (v1) {
+              if (v1 instanceof Extend) {
+                  return v(new Binding(v1.value1.value0, v1.value1.value1))(foldEnv(v)(z)(v1.value0));
+              };
+              if (v1 instanceof Empty) {
+                  return z;
+              };
+              throw new Error("Failed pattern match at Bindings (line 34, column 1 - line 34, column 76): " + [ v.constructor.name, z.constructor.name, v1.constructor.name ]);
+          };
+      };
+  };
+  var find = function ($copy_x) {
+      return function ($copy_v) {
+          var $tco_var_x = $copy_x;
+          var $tco_done = false;
+          var $tco_result;
+          function $tco_loop(x, v) {
+              if (v instanceof Empty) {
+                  $tco_done = true;
+                  return Util.report("variable " + (x + " not found"));
+              };
+              if (v instanceof Extend) {
+                  if (x === v.value1.value0) {
+                      $tco_done = true;
+                      return Control_Applicative.pure(Data_Either.applicativeEither)(v.value1.value1);
+                  };
+                  if (Data_Boolean.otherwise) {
+                      $tco_var_x = x;
+                      $copy_v = v.value0;
+                      return;
+                  };
+              };
+              throw new Error("Failed pattern match at Bindings (line 28, column 1 - line 28, column 58): " + [ x.constructor.name, v.constructor.name ]);
+          };
+          while (!$tco_done) {
+              $tco_result = $tco_loop($tco_var_x, $copy_v);
+          };
+          return $tco_result;
+      };
+  };
+  var expandableBindings = function (dictExpandable) {
+      return new Lattice.Expandable(function (v) {
+          return function (v1) {
+              if (v instanceof Empty && v1 instanceof Empty) {
+                  return Empty.value;
+              };
+              if (v instanceof Extend && v1 instanceof Extend) {
+                  return new Extend(Lattice.expand(expandableBindings(dictExpandable))(v.value0)(v1.value0), new Binding(Util.mustEq(Data_Eq.eqString)(v.value1.value0)(v1.value1.value0), Lattice.expand(dictExpandable)(v.value1.value1)(v1.value1.value1)));
+              };
+              return Util.error(Util.absurd);
+          };
+      });
+  };
+  var boundedSlices = function (dictFunctor) {
+      return function (dictBoundedSlices) {
+          return new Lattice.BoundedSlices(function () {
+              return slicesBindings(dictFunctor)(Lattice.joinSemilatticeBoolean)(dictBoundedSlices.Slices0());
+          }, function (v) {
+              if (v instanceof Empty) {
+                  return Empty.value;
+              };
+              if (v instanceof Extend) {
+                  return new Extend(Lattice.botOf(boundedSlices(dictFunctor)(dictBoundedSlices))(v.value0), new Binding(v.value1.value0, Lattice.botOf(dictBoundedSlices)(v.value1.value1)));
+              };
+              throw new Error("Failed pattern match at Bindings (line 94, column 1 - line 96, column 61): " + [ v.constructor.name ]);
+          });
+      };
+  };
+  var bindingsMap = function (v) {
+      return function (v1) {
+          if (v1 instanceof Empty) {
+              return Empty.value;
+          };
+          if (v1 instanceof Extend) {
+              return new Extend(bindingsMap(v)(v1.value0), new Binding(v1.value1.value0, v(v1.value1.value1)));
+          };
+          throw new Error("Failed pattern match at Bindings (line 68, column 1 - line 68, column 77): " + [ v.constructor.name, v1.constructor.name ]);
+      };
+  };
+  exports["varAnon"] = varAnon;
+  exports["mustGeq"] = mustGeq;
+  exports["Binding"] = Binding;
+  exports["Empty"] = Empty;
+  exports["Extend"] = Extend;
+  exports["find"] = find;
+  exports["foldEnv"] = foldEnv;
+  exports["update"] = update;
+  exports["splitAt"] = splitAt;
+  exports["length"] = length;
+  exports["fromList"] = fromList;
+  exports["bindingsMap"] = bindingsMap;
+  exports["functorBindings"] = functorBindings;
+  exports["semigroupBindings"] = semigroupBindings;
+  exports["joinSemilatticeBindings"] = joinSemilatticeBindings;
+  exports["slicesBindings"] = slicesBindings;
+  exports["boundedSlices"] = boundedSlices;
+  exports["expandableBindings"] = expandableBindings;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Expr"] = $PS["Expr"] || {};
+  var exports = $PS["Expr"];
+  var Bindings = $PS["Bindings"];
+  var Control_Applicative = $PS["Control.Applicative"];
+  var Control_Apply = $PS["Control.Apply"];
+  var Data_Either = $PS["Data.Either"];
+  var Data_Eq = $PS["Data.Eq"];
+  var Data_Function = $PS["Data.Function"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Map_Internal = $PS["Data.Map.Internal"];
+  var Data_Ord = $PS["Data.Ord"];
+  var Data_Show = $PS["Data.Show"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var DataType = $PS["DataType"];
+  var Lattice = $PS["Lattice"];
+  var Util = $PS["Util"];                
+  var ContHole = (function () {
+      function ContHole(value0) {
+          this.value0 = value0;
+      };
+      ContHole.create = function (value0) {
+          return new ContHole(value0);
+      };
+      return ContHole;
+  })();
+  var ContExpr = (function () {
+      function ContExpr(value0) {
+          this.value0 = value0;
+      };
+      ContExpr.create = function (value0) {
+          return new ContExpr(value0);
+      };
+      return ContExpr;
+  })();
+  var ContElim = (function () {
+      function ContElim(value0) {
+          this.value0 = value0;
+      };
+      ContElim.create = function (value0) {
+          return new ContElim(value0);
+      };
+      return ContElim;
+  })();
+  var Hole = (function () {
+      function Hole(value0) {
+          this.value0 = value0;
+      };
+      Hole.create = function (value0) {
+          return new Hole(value0);
+      };
+      return Hole;
+  })();
+  var Var = (function () {
+      function Var(value0) {
+          this.value0 = value0;
+      };
+      Var.create = function (value0) {
+          return new Var(value0);
+      };
+      return Var;
+  })();
+  var Op = (function () {
+      function Op(value0) {
+          this.value0 = value0;
+      };
+      Op.create = function (value0) {
+          return new Op(value0);
+      };
+      return Op;
+  })();
+  var Int = (function () {
+      function Int(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Int.create = function (value0) {
+          return function (value1) {
+              return new Int(value0, value1);
+          };
+      };
+      return Int;
+  })();
+  var Float = (function () {
+      function Float(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Float.create = function (value0) {
+          return function (value1) {
+              return new Float(value0, value1);
+          };
+      };
+      return Float;
+  })();
+  var Str = (function () {
+      function Str(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Str.create = function (value0) {
+          return function (value1) {
+              return new Str(value0, value1);
+          };
+      };
+      return Str;
+  })();
+  var Constr = (function () {
+      function Constr(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      Constr.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new Constr(value0, value1, value2);
+              };
+          };
+      };
+      return Constr;
+  })();
+  var Matrix = (function () {
+      function Matrix(value0, value1, value2, value3) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+          this.value3 = value3;
+      };
+      Matrix.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return function (value3) {
+                      return new Matrix(value0, value1, value2, value3);
+                  };
+              };
+          };
+      };
+      return Matrix;
+  })();
+  var Lambda = (function () {
+      function Lambda(value0) {
+          this.value0 = value0;
+      };
+      Lambda.create = function (value0) {
+          return new Lambda(value0);
+      };
+      return Lambda;
+  })();
+  var App = (function () {
+      function App(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      App.create = function (value0) {
+          return function (value1) {
+              return new App(value0, value1);
+          };
+      };
+      return App;
+  })();
+  var Let = (function () {
+      function Let(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Let.create = function (value0) {
+          return function (value1) {
+              return new Let(value0, value1);
+          };
+      };
+      return Let;
+  })();
+  var LetRec = (function () {
+      function LetRec(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      LetRec.create = function (value0) {
+          return function (value1) {
+              return new LetRec(value0, value1);
+          };
+      };
+      return LetRec;
+  })();
+  var ElimHole = (function () {
+      function ElimHole(value0) {
+          this.value0 = value0;
+      };
+      ElimHole.create = function (value0) {
+          return new ElimHole(value0);
+      };
+      return ElimHole;
+  })();
+  var ElimVar = (function () {
+      function ElimVar(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      ElimVar.create = function (value0) {
+          return function (value1) {
+              return new ElimVar(value0, value1);
+          };
+      };
+      return ElimVar;
+  })();
+  var ElimConstr = (function () {
+      function ElimConstr(value0) {
+          this.value0 = value0;
+      };
+      ElimConstr.create = function (value0) {
+          return new ElimConstr(value0);
+      };
+      return ElimConstr;
+  })();
+  var VarDef = (function () {
+      function VarDef(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      VarDef.create = function (value0) {
+          return function (value1) {
+              return new VarDef(value0, value1);
+          };
+      };
+      return VarDef;
+  })();
+  var Module = (function () {
+      function Module(value0) {
+          this.value0 = value0;
+      };
+      Module.create = function (value0) {
+          return new Module(value0);
+      };
+      return Module;
+  })();
+  var functorVarDef = new Data_Functor.Functor(function (f) {
+      return function (m) {
+          return new VarDef(Data_Functor.map(functorElim)(f)(m.value0), Data_Functor.map(functorExpr)(f)(m.value1));
+      };
+  });
+  var functorExpr = new Data_Functor.Functor(function (f) {
+      return function (m) {
+          if (m instanceof Hole) {
+              return new Hole(f(m.value0));
+          };
+          if (m instanceof Var) {
+              return new Var(m.value0);
+          };
+          if (m instanceof Op) {
+              return new Op(m.value0);
+          };
+          if (m instanceof Int) {
+              return new Int(f(m.value0), m.value1);
+          };
+          if (m instanceof Float) {
+              return new Float(f(m.value0), m.value1);
+          };
+          if (m instanceof Str) {
+              return new Str(f(m.value0), m.value1);
+          };
+          if (m instanceof Constr) {
+              return new Constr(f(m.value0), m.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Functor.map(functorExpr)(f))(m.value2));
+          };
+          if (m instanceof Matrix) {
+              return new Matrix(f(m.value0), Data_Functor.map(functorExpr)(f)(m.value1), m.value2, Data_Functor.map(functorExpr)(f)(m.value3));
+          };
+          if (m instanceof Lambda) {
+              return new Lambda(Data_Functor.map(functorElim)(f)(m.value0));
+          };
+          if (m instanceof App) {
+              return new App(Data_Functor.map(functorExpr)(f)(m.value0), Data_Functor.map(functorExpr)(f)(m.value1));
+          };
+          if (m instanceof Let) {
+              return new Let(Data_Functor.map(functorVarDef)(f)(m.value0), Data_Functor.map(functorExpr)(f)(m.value1));
+          };
+          if (m instanceof LetRec) {
+              return new LetRec(Data_Functor.map(Bindings.functorBindings(functorElim))(f)(m.value0), Data_Functor.map(functorExpr)(f)(m.value1));
+          };
+          throw new Error("Failed pattern match at Expr (line 59, column 1 - line 59, column 44): " + [ m.constructor.name ]);
+      };
+  });
+  var functorElim = new Data_Functor.Functor(function (f) {
+      return function (m) {
+          if (m instanceof ElimHole) {
+              return new ElimHole(f(m.value0));
+          };
+          if (m instanceof ElimVar) {
+              return new ElimVar(m.value0, Data_Functor.map(functorCont)(f)(m.value1));
+          };
+          if (m instanceof ElimConstr) {
+              return new ElimConstr(Data_Functor.map(Data_Map_Internal.functorMap)(Data_Functor.map(functorCont)(f))(m.value0));
+          };
+          throw new Error("Failed pattern match at Expr (line 61, column 1 - line 61, column 44): " + [ m.constructor.name ]);
+      };
+  });
+  var functorCont = new Data_Functor.Functor(function (f) {
+      return function (m) {
+          if (m instanceof ContHole) {
+              return new ContHole(f(m.value0));
+          };
+          if (m instanceof ContExpr) {
+              return new ContExpr(Data_Functor.map(functorExpr)(f)(m.value0));
+          };
+          if (m instanceof ContElim) {
+              return new ContElim(Data_Functor.map(functorElim)(f)(m.value0));
+          };
+          throw new Error("Failed pattern match at Expr (line 60, column 1 - line 60, column 44): " + [ m.constructor.name ]);
+      };
+  });
+  var slicesVarDef = new Lattice.Slices(function () {
+      return joinSemilatticeVarDef;
+  }, function (v) {
+      return function (v1) {
+          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(VarDef.create)(Lattice.maybeJoin(slicesElim)(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesExpr)(v.value1)(v1.value1));
+      };
+  });
+  var slicesExpr = new Lattice.Slices(function () {
+      return joinSemilatticeExpr;
+  }, function (v) {
+      return function (v1) {
+          if (v instanceof Hole && !v.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(v1);
+          };
+          if (v instanceof Hole && v.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new Hole(true));
+          };
+          if (v1 instanceof Hole && !v1.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(v);
+          };
+          if (v1 instanceof Hole && v1.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new Hole(true));
+          };
+          if (v instanceof Var && v1 instanceof Var) {
+              return Data_Functor.map(Data_Either.functorEither)(Var.create)(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value0)(v1.value0));
+          };
+          if (v instanceof Op && v1 instanceof Op) {
+              return Data_Functor.map(Data_Either.functorEither)(Op.create)(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value0)(v1.value0));
+          };
+          if (v instanceof Int && v1 instanceof Int) {
+              return Data_Functor.map(Data_Either.functorEither)(Int.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(Data_Show.showInt)(Data_Eq.eqInt)(v.value1)(v1.value1));
+          };
+          if (v instanceof Str && v1 instanceof Str) {
+              return Data_Functor.map(Data_Either.functorEither)(Str.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value1)(v1.value1));
+          };
+          if (v instanceof Float && v1 instanceof Float) {
+              return Data_Functor.map(Data_Either.functorEither)(Float.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(Data_Show.showNumber)(Data_Eq.eqNumber)(v.value1)(v1.value1));
+          };
+          if (v instanceof Constr && v1 instanceof Constr) {
+              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Constr.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(DataType.showCtr)(DataType.eqCtr)(v.value1)(v1.value1)))(Lattice.maybeJoin(Lattice.slicesList(slicesExpr))(v.value2)(v1.value2));
+          };
+          if (v instanceof Matrix && v1 instanceof Matrix) {
+              return Control_Apply.apply(Data_Either.applyEither)(Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Matrix.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesExpr)(v.value1)(v1.value1)))(Control_Apply.lift2(Data_Either.applyEither)(Data_Tuple.Tuple.create)(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value2.value0)(v1.value2.value0))(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value2.value1)(v1.value2.value1))))(Lattice.maybeJoin(slicesExpr)(v.value3)(v1.value3));
+          };
+          if (v instanceof App && v1 instanceof App) {
+              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(App.create)(Lattice.maybeJoin(slicesExpr)(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesExpr)(v.value1)(v1.value1));
+          };
+          if (v instanceof Lambda && v1 instanceof Lambda) {
+              return Data_Functor.map(Data_Either.functorEither)(Lambda.create)(Lattice.maybeJoin(slicesElim)(v.value0)(v1.value0));
+          };
+          if (v instanceof Let && v1 instanceof Let) {
+              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Let.create)(Lattice.maybeJoin(slicesVarDef)(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesExpr)(v.value1)(v1.value1));
+          };
+          if (v instanceof LetRec && v1 instanceof LetRec) {
+              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(LetRec.create)(Lattice.maybeJoin(Bindings.slicesBindings(functorElim)(Lattice.joinSemilatticeBoolean)(slicesElim))(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesExpr)(v.value1)(v1.value1));
+          };
+          return Util.report("Incompatible expressions");
+      };
+  });
+  var slicesElim = new Lattice.Slices(function () {
+      return joinSemilatticeElim;
+  }, function (v) {
+      return function (v1) {
+          if (v instanceof ElimHole && !v.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(v1);
+          };
+          if (v instanceof ElimHole && v.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new ElimHole(true));
+          };
+          if (v1 instanceof ElimHole && !v1.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(v);
+          };
+          if (v1 instanceof ElimHole && v1.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new ElimHole(true));
+          };
+          if (v instanceof ElimVar && v1 instanceof ElimVar) {
+              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(ElimVar.create)(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value0)(v1.value0)))(Lattice.maybeJoin(slicesCont)(v.value1)(v1.value1));
+          };
+          if (v instanceof ElimConstr && v1 instanceof ElimConstr) {
+              return Data_Functor.map(Data_Either.functorEither)(ElimConstr.create)(Lattice.maybeJoin(Lattice.slicesMap(DataType.keyCtr)(slicesCont))(v.value0)(v1.value0));
+          };
+          return Util.report("Incompatible eliminators");
+      };
+  });
+  var slicesCont = new Lattice.Slices(function () {
+      return joinSemilatticeCont;
+  }, function (v) {
+      return function (v1) {
+          if (v instanceof ContHole && !v.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(v1);
+          };
+          if (v instanceof ContHole && v.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new ContHole(true));
+          };
+          if (v1 instanceof ContHole && !v1.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(v);
+          };
+          if (v1 instanceof ContHole && v1.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new ContHole(true));
+          };
+          if (v instanceof ContExpr && v1 instanceof ContExpr) {
+              return Data_Functor.map(Data_Either.functorEither)(ContExpr.create)(Lattice.maybeJoin(slicesExpr)(v.value0)(v1.value0));
+          };
+          if (v instanceof ContElim && v1 instanceof ContElim) {
+              return Data_Functor.map(Data_Either.functorEither)(ContElim.create)(Lattice.maybeJoin(slicesElim)(v.value0)(v1.value0));
+          };
+          return Util.report("Incompatible continuations");
+      };
+  });
+  var joinSemilatticeVarDef = new Lattice.JoinSemilattice(Lattice.definedJoin(slicesVarDef), Data_Functor.map(functorVarDef)(Lattice.neg(Lattice.joinSemilatticeBoolean)));
+  var joinSemilatticeExpr = new Lattice.JoinSemilattice(Lattice.definedJoin(slicesExpr), Data_Functor.map(functorExpr)(Lattice.neg(Lattice.joinSemilatticeBoolean)));
+  var joinSemilatticeElim = new Lattice.JoinSemilattice(Lattice.definedJoin(slicesElim), Data_Functor.map(functorElim)(Lattice.neg(Lattice.joinSemilatticeBoolean)));
+  var joinSemilatticeCont = new Lattice.JoinSemilattice(Lattice.definedJoin(slicesCont), Data_Functor.map(functorCont)(Lattice.neg(Lattice.joinSemilatticeBoolean)));
+  var exprExpandable = new Lattice.Expandable(function (v) {
+      return function (v1) {
+          if (v1 instanceof Hole && !v1.value0) {
+              return v;
+          };
+          if (v instanceof Hole && v1 instanceof Var) {
+              return v1;
+          };
+          if (v instanceof Hole && v1 instanceof Op) {
+              return v1;
+          };
+          if (v instanceof Hole && v1 instanceof Int) {
+              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
+          };
+          if (v instanceof Hole && v1 instanceof Float) {
+              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
+          };
+          if (v instanceof Hole && v1 instanceof Str) {
+              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1);
+          };
+          if (v instanceof Hole && v1 instanceof Constr) {
+              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), v1.value1, Data_Functor.map(Data_List_Types.functorList)(Lattice.expand(exprExpandable)(new Hole(v.value0)))(v1.value2));
+          };
+          if (v instanceof Hole && v1 instanceof Matrix) {
+              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value1), new Data_Tuple.Tuple(v1.value2.value0, v1.value2.value1), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value3));
+          };
+          if (v instanceof Hole && v1 instanceof Lambda) {
+              return new Lambda(Lattice.expand(elimExpandable)(new ElimHole(v.value0))(v1.value0));
+          };
+          if (v instanceof Hole && v1 instanceof App) {
+              return new App(Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value0), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value1));
+          };
+          if (v instanceof Hole && v1 instanceof Let) {
+              return new Let(new VarDef(Lattice.expand(elimExpandable)(new ElimHole(v.value0))(v1.value0.value0), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value0.value1)), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value1));
+          };
+          if (v instanceof Hole && v1 instanceof LetRec) {
+              return new LetRec(Lattice.expand(Bindings.expandableBindings(elimExpandable))(Bindings.bindingsMap(Data_Function["const"](new ElimHole(v.value0)))(v1.value0))(v1.value0), Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value1));
+          };
+          if (v instanceof Var && v1 instanceof Var) {
+              return new Var(Util.mustEq(Data_Eq.eqString)(v.value0)(v1.value0));
+          };
+          if (v instanceof Op && v1 instanceof Op) {
+              return new Op(Util.mustEq(Data_Eq.eqString)(v.value0)(v1.value0));
+          };
+          if (v instanceof Int && v1 instanceof Int) {
+              return new Int(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqInt)(v.value1)(v1.value1));
+          };
+          if (v instanceof Float && v1 instanceof Float) {
+              return new Float(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqNumber)(v.value1)(v1.value1));
+          };
+          if (v instanceof Str && v1 instanceof Str) {
+              return new Str(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqString)(v.value1)(v1.value1));
+          };
+          if (v instanceof Constr && v1 instanceof Constr) {
+              return new Constr(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Util.mustEq(DataType.eqCtr)(v.value1)(v1.value1), Lattice.expand(Lattice.expandableList(exprExpandable))(v.value2)(v1.value2));
+          };
+          if (v instanceof Matrix && v1 instanceof Matrix) {
+              return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(v.value0)(v1.value0), Lattice.expand(exprExpandable)(v.value1)(v1.value1), new Data_Tuple.Tuple(Util.mustEq(Data_Eq.eqString)(v.value2.value0)(v1.value2.value0), Util.mustEq(Data_Eq.eqString)(v.value2.value1)(v1.value2.value1)), Lattice.expand(exprExpandable)(v.value3)(v1.value3));
+          };
+          if (v instanceof Lambda && v1 instanceof Lambda) {
+              return new Lambda(Lattice.expand(elimExpandable)(v.value0)(v1.value0));
+          };
+          if (v instanceof App && v1 instanceof App) {
+              return new App(Lattice.expand(exprExpandable)(v.value0)(v1.value0), Lattice.expand(exprExpandable)(v.value1)(v1.value1));
+          };
+          if (v instanceof Let && v1 instanceof Let) {
+              return new Let(new VarDef(Lattice.expand(elimExpandable)(v.value0.value0)(v1.value0.value0), Lattice.expand(exprExpandable)(v.value0.value1)(v1.value0.value1)), Lattice.expand(exprExpandable)(v.value1)(v1.value1));
+          };
+          if (v instanceof LetRec && v1 instanceof LetRec) {
+              return new LetRec(Lattice.expand(Bindings.expandableBindings(elimExpandable))(v.value0)(v1.value0), Lattice.expand(exprExpandable)(v.value1)(v1.value1));
+          };
+          return Util.error(Util.absurd);
+      };
+  });
+  var elimExpandable = new Lattice.Expandable(function (v) {
+      return function (v1) {
+          if (v1 instanceof ElimHole && !v1.value0) {
+              return v;
+          };
+          if (v instanceof ElimHole && v1 instanceof ElimVar) {
+              return new ElimVar(v1.value0, Lattice.expand(contExpandable)(new ContHole(v.value0))(v1.value1));
+          };
+          if (v instanceof ElimHole && v1 instanceof ElimConstr) {
+              return new ElimConstr(Data_Functor.map(Data_Map_Internal.functorMap)(Lattice.expand(contExpandable)(new ContHole(v.value0)))(v1.value0));
+          };
+          if (v instanceof ElimVar && v1 instanceof ElimVar) {
+              return new ElimVar(Bindings.mustGeq(v.value0)(v1.value0), Lattice.expand(contExpandable)(v.value1)(v1.value1));
+          };
+          if (v instanceof ElimConstr && v1 instanceof ElimConstr) {
+              return new ElimConstr(Lattice.expand(Lattice.expandableMap(DataType.ordCtr)(contExpandable))(v.value0)(v1.value0));
+          };
+          return Util.error(Util.absurd);
+      };
+  });
+  var contExpandable = new Lattice.Expandable(function (v) {
+      return function (v1) {
+          if (v1 instanceof ContHole && !v1.value0) {
+              return v;
+          };
+          if (v instanceof ContHole && v1 instanceof ContExpr) {
+              return new ContExpr(Lattice.expand(exprExpandable)(new Hole(v.value0))(v1.value0));
+          };
+          if (v instanceof ContHole && v1 instanceof ContElim) {
+              return new ContElim(Lattice.expand(elimExpandable)(new ElimHole(v.value0))(v1.value0));
+          };
+          if (v instanceof ContExpr && v1 instanceof ContExpr) {
+              return new ContExpr(Lattice.expand(exprExpandable)(v.value0)(v1.value0));
+          };
+          if (v instanceof ContElim && v1 instanceof ContElim) {
+              return new ContElim(Lattice.expand(elimExpandable)(v.value0)(v1.value0));
+          };
+          return Util.error(Util.absurd);
+      };
+  });                                         
+  var boundedSlicesElim = new Lattice.BoundedSlices(function () {
+      return slicesElim;
+  }, Data_Function["const"](new ElimHole(false)));
+  var asExpr = function (v) {
+      if (v instanceof ContHole) {
+          return new Hole(v.value0);
+      };
+      if (v instanceof ContElim) {
+          return Util.error("Expression expected");
+      };
+      if (v instanceof ContExpr) {
+          return v.value0;
+      };
+      throw new Error("Failed pattern match at Expr (line 48, column 1 - line 48, column 38): " + [ v.constructor.name ]);
+  };
+  var asElim = function (v) {
+      if (v instanceof ContHole) {
+          return new ElimHole(v.value0);
+      };
+      if (v instanceof ContElim) {
+          return v.value0;
+      };
+      if (v instanceof ContExpr) {
+          return Util.error("Eliminator expected");
+      };
+      throw new Error("Failed pattern match at Expr (line 43, column 1 - line 43, column 38): " + [ v.constructor.name ]);
+  };
+  exports["Hole"] = Hole;
+  exports["Var"] = Var;
+  exports["Op"] = Op;
+  exports["Int"] = Int;
+  exports["Float"] = Float;
+  exports["Str"] = Str;
+  exports["Constr"] = Constr;
+  exports["Matrix"] = Matrix;
+  exports["Lambda"] = Lambda;
+  exports["App"] = App;
+  exports["Let"] = Let;
+  exports["LetRec"] = LetRec;
+  exports["VarDef"] = VarDef;
+  exports["ElimHole"] = ElimHole;
+  exports["ElimVar"] = ElimVar;
+  exports["ElimConstr"] = ElimConstr;
+  exports["ContHole"] = ContHole;
+  exports["ContExpr"] = ContExpr;
+  exports["ContElim"] = ContElim;
+  exports["asElim"] = asElim;
+  exports["asExpr"] = asExpr;
+  exports["Module"] = Module;
+  exports["functorElim"] = functorElim;
+  exports["slicesElim"] = slicesElim;
+  exports["boundedSlicesElim"] = boundedSlicesElim;
+  exports["joinSemilatticeExpr"] = joinSemilatticeExpr;
+  exports["exprExpandable"] = exprExpandable;
+  exports["elimExpandable"] = elimExpandable;
+  exports["contExpandable"] = contExpandable;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
   $PS["Val"] = $PS["Val"] || {};
   var exports = $PS["Val"];
   var Bindings = $PS["Bindings"];
+  var Control_Applicative = $PS["Control.Applicative"];
+  var Control_Apply = $PS["Control.Apply"];
+  var Data_Array = $PS["Data.Array"];
+  var Data_Either = $PS["Data.Either"];
   var Data_Eq = $PS["Data.Eq"];
   var Data_Function = $PS["Data.Function"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_List_Types = $PS["Data.List.Types"];
   var Data_Ord = $PS["Data.Ord"];
+  var Data_Show = $PS["Data.Show"];
   var Data_Tuple = $PS["Data.Tuple"];
   var DataType = $PS["DataType"];
   var Expr = $PS["Expr"];
@@ -29306,6 +29095,84 @@ var PS = {};
           };
       };
   };
+  var holeMatrix = function (i) {
+      return function (j) {
+          return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Array.replicate(i)(Data_Array.replicate(j)(new Hole(false))), new Data_Tuple.Tuple(i, false)), new Data_Tuple.Tuple(j, false));
+      };
+  };
+  var functorVal = new Data_Functor.Functor(function (f) {
+      return function (v) {
+          if (v instanceof Hole) {
+              return new Hole(f(v.value0));
+          };
+          if (v instanceof Int) {
+              return new Int(f(v.value0), v.value1);
+          };
+          if (v instanceof Float) {
+              return new Float(f(v.value0), v.value1);
+          };
+          if (v instanceof Str) {
+              return new Str(f(v.value0), v.value1);
+          };
+          if (v instanceof Constr) {
+              return new Constr(f(v.value0), v.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Functor.map(functorVal)(f))(v.value2));
+          };
+          if (v instanceof Matrix) {
+              return new Matrix(f(v.value0), new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(functorVal)(f)))(v.value1.value0.value0), Data_Functor.map(Data_Tuple.functorTuple)(f)(v.value1.value0.value1)), Data_Functor.map(Data_Tuple.functorTuple)(f)(v.value1.value1)));
+          };
+          if (v instanceof Primitive) {
+              return new Primitive(v.value0, Data_Functor.map(Data_List_Types.functorList)(Data_Functor.map(functorVal)(f))(v.value1));
+          };
+          if (v instanceof Closure) {
+              return new Closure(Data_Functor.map(Bindings.functorBindings(functorVal))(f)(v.value0), Data_Functor.map(Bindings.functorBindings(Expr.functorElim))(f)(v.value1), Data_Functor.map(Expr.functorElim)(f)(v.value2));
+          };
+          throw new Error("Failed pattern match at Val (line 53, column 1 - line 62, column 76): " + [ f.constructor.name, v.constructor.name ]);
+      };
+  });
+  var slicesVal = new Lattice.Slices(function () {
+      return joinSemilatticeVal;
+  }, function (v) {
+      return function (v1) {
+          if (v instanceof Hole && !v.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(v1);
+          };
+          if (v instanceof Hole && v.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new Hole(true));
+          };
+          if (v1 instanceof Hole && !v1.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(v);
+          };
+          if (v1 instanceof Hole && v1.value0) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new Hole(true));
+          };
+          if (v instanceof Int && v1 instanceof Int) {
+              return Data_Functor.map(Data_Either.functorEither)(Int.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(Data_Show.showInt)(Data_Eq.eqInt)(v.value1)(v1.value1));
+          };
+          if (v instanceof Float && v1 instanceof Float) {
+              return Data_Functor.map(Data_Either.functorEither)(Float.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(Data_Show.showNumber)(Data_Eq.eqNumber)(v.value1)(v1.value1));
+          };
+          if (v instanceof Str && v1 instanceof Str) {
+              return Data_Functor.map(Data_Either.functorEither)(Str.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(Data_Show.showString)(Data_Eq.eqString)(v.value1)(v1.value1));
+          };
+          if (v instanceof Constr && v1 instanceof Constr) {
+              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Constr.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Util.mayFailEq(DataType.showCtr)(DataType.eqCtr)(v.value1)(v1.value1)))(Lattice.maybeJoin(Lattice.slicesList(slicesVal))(v.value2)(v1.value2));
+          };
+          if (v instanceof Matrix && v1 instanceof Matrix) {
+              return Data_Functor.map(Data_Either.functorEither)(Matrix.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Control_Apply.lift2(Data_Either.applyEither)(Data_Tuple.Tuple.create)(Control_Apply.lift2(Data_Either.applyEither)(Data_Tuple.Tuple.create)(Lattice.maybeJoin(Lattice.slicesArray(Lattice.slicesArray(slicesVal)))(v.value1.value0.value0)(v1.value1.value0.value0))(Data_Functor.map(Data_Either.functorEither)(Data_Function.flip(Data_Tuple.Tuple.create)(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value1.value0.value1.value1)(v1.value1.value0.value1.value1)))(Util.mayFailEq(Data_Show.showInt)(Data_Eq.eqInt)(v.value1.value0.value1.value0)(v1.value1.value0.value1.value0))))(Data_Functor.map(Data_Either.functorEither)(Data_Function.flip(Data_Tuple.Tuple.create)(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value1.value1.value1)(v1.value1.value1.value1)))(Util.mayFailEq(Data_Show.showInt)(Data_Eq.eqInt)(v.value1.value1.value0)(v1.value1.value1.value0))));
+          };
+          if (v instanceof Closure && v1 instanceof Closure) {
+              return Control_Apply.apply(Data_Either.applyEither)(Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Closure.create)(Lattice.maybeJoin(Bindings.slicesBindings(functorVal)(Lattice.joinSemilatticeBoolean)(slicesVal))(v.value0)(v1.value0)))(Lattice.maybeJoin(Bindings.slicesBindings(Expr.functorElim)(Lattice.joinSemilatticeBoolean)(Expr.slicesElim))(v.value1)(v1.value1)))(Lattice.maybeJoin(Expr.slicesElim)(v.value2)(v1.value2));
+          };
+          if (v instanceof Primitive && v1 instanceof Primitive) {
+              return Data_Functor.map(Data_Either.functorEither)(Primitive.create(v.value0))(Lattice.maybeJoin(Lattice.slicesList(slicesVal))(v.value1)(v1.value1));
+          };
+          return Util.report("Incompatible values");
+      };
+  });
+  var joinSemilatticeVal = new Lattice.JoinSemilattice(Lattice.definedJoin(slicesVal), Data_Functor.map(functorVal)(Lattice.neg(Lattice.joinSemilatticeBoolean)));
+  var boundedSlices = new Lattice.BoundedSlices(function () {
+      return slicesVal;
+  }, Data_Function["const"](new Hole(Lattice.bot(Lattice.boundedJoinSemilatticeBoolean))));
   exports["Hole"] = Hole;
   exports["Int"] = Int;
   exports["Float"] = Float;
@@ -29315,6 +29182,10 @@ var PS = {};
   exports["Primitive"] = Primitive;
   exports["Closure"] = Closure;
   exports["insertMatrix"] = insertMatrix;
+  exports["holeMatrix"] = holeMatrix;
+  exports["functorVal"] = functorVal;
+  exports["slicesVal"] = slicesVal;
+  exports["boundedSlices"] = boundedSlices;
   exports["valExpandable"] = valExpandable;
 })(PS);
 (function($PS) {
@@ -29919,6 +29790,7 @@ var PS = {};
       };
   };
   exports["match"] = match;
+  exports["match_fwd"] = match_fwd;
   exports["withInverse1"] = withInverse1;
   exports["withInverse2"] = withInverse2;
   exports["unary"] = unary;
@@ -29944,6 +29816,560 @@ var PS = {};
   exports["asIntNumber"] = asIntNumber;
   exports["asBooleanBoolean"] = asBooleanBoolean;
   exports["asIntOrNumberString"] = asIntOrNumberString;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["App.Renderer"] = $PS["App.Renderer"] || {};
+  var exports = $PS["App.Renderer"];
+  var $foreign = $PS["App.Renderer"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Primitive = $PS["Primitive"];                
+  var toIntArray = Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Primitive.match(Primitive.toFromInt)));
+  var renderMatrix = function (v) {
+      return $foreign.drawMatrix(toIntArray(v.value0.value0.value0))(v.value0.value0.value1.value0)(v.value0.value1.value0);
+  };
+  exports["renderMatrix"] = renderMatrix;
+})(PS);
+(function(exports) {
+  "use strict";
+
+  exports.log = function (s) {
+    return function () {
+      console.log(s);
+      return {};
+    };
+  };
+})(PS["Effect.Console"] = PS["Effect.Console"] || {});
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Effect.Console"] = $PS["Effect.Console"] || {};
+  var exports = $PS["Effect.Console"];
+  var $foreign = $PS["Effect.Console"];
+  exports["log"] = $foreign.log;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["DesugarFwd"] = $PS["DesugarFwd"] || {};
+  var exports = $PS["DesugarFwd"];
+  var Bindings = $PS["Bindings"];
+  var Control_Applicative = $PS["Control.Applicative"];
+  var Control_Apply = $PS["Control.Apply"];
+  var Control_Bind = $PS["Control.Bind"];
+  var Data_Either = $PS["Data.Either"];
+  var Data_Eq = $PS["Data.Eq"];
+  var Data_Foldable = $PS["Data.Foldable"];
+  var Data_Function = $PS["Data.Function"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_List = $PS["Data.List"];
+  var Data_List_NonEmpty = $PS["Data.List.NonEmpty"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Map_Internal = $PS["Data.Map.Internal"];
+  var Data_NonEmpty = $PS["Data.NonEmpty"];
+  var Data_Traversable = $PS["Data.Traversable"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var DataType = $PS["DataType"];
+  var Expr = $PS["Expr"];
+  var Lattice = $PS["Lattice"];
+  var SExpr = $PS["SExpr"];
+  var Util = $PS["Util"];                
+  var enil = function (α) {
+      return new Expr.Constr(α, DataType.cNil, Data_List_Types.Nil.value);
+  };
+  var totaliseConstrFwd = function (v) {
+      return function (α) {
+          var defaultBranch = function (c$prime) {
+              return new Data_Tuple.Tuple(c$prime, Data_Function.applyN((function () {
+                  var $179 = Expr.ElimVar.create(Bindings.varAnon);
+                  return function ($180) {
+                      return Expr.ContElim.create($179($180));
+                  };
+              })())(Util.successful(DataType.arity(c$prime)))(new Expr.ContExpr(enil(α))));
+          };
+          var cκs = Data_Functor.map(Data_List_Types.functorList)(defaultBranch)(Data_List.difference(DataType.eqCtr)(DataType.ctrs(Util.successful(DataType.dataTypeFor(DataType.dataTypeForCtr)(v.value0))))(Data_List.singleton(v.value0)));
+          return Data_Map_Internal.fromFoldable(DataType.ordCtr)(Data_List_Types.foldableList)(new Data_List_Types.Cons(new Data_Tuple.Tuple(v.value0, v.value1), cκs));
+      };
+  };
+  var totaliseFwd = function (v) {
+      return function (v1) {
+          if (v instanceof Expr.ContHole) {
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof Expr.ContExpr) {
+              return new Expr.ContExpr(v.value0);
+          };
+          if (v instanceof Expr.ContElim && v.value0 instanceof Expr.ElimHole) {
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof Expr.ContElim && v.value0 instanceof Expr.ElimConstr) {
+              var v2 = Util.assert(Data_Map_Internal.size(v.value0.value0) === 1)(Util.fromJust(Util.absurd)(Data_List.head(Data_Map_Internal.toUnfoldable(Data_List_Types.unfoldableList)(v.value0.value0))));
+              return new Expr.ContElim(new Expr.ElimConstr(totaliseConstrFwd(new Data_Tuple.Tuple(v2.value0, totaliseFwd(v2.value1)(v1)))(v1)));
+          };
+          if (v instanceof Expr.ContElim && v.value0 instanceof Expr.ElimVar) {
+              return new Expr.ContElim(new Expr.ElimVar(v.value0.value0, totaliseFwd(v.value0.value1)(v1)));
+          };
+          throw new Error("Failed pattern match at DesugarFwd (line 155, column 1 - line 155, column 37): " + [ v.constructor.name, v1.constructor.name ]);
+      };
+  };
+  var elimBool = function (κ) {
+      return function (κ$prime) {
+          return new Expr.ElimConstr(Data_Map_Internal.fromFoldable(DataType.ordCtr)(Data_Foldable.foldableArray)([ new Data_Tuple.Tuple(DataType.cTrue, κ), new Data_Tuple.Tuple(DataType.cFalse, κ$prime) ]));
+      };
+  };
+  var econs = function (α) {
+      return function (e) {
+          return function (e$prime) {
+              return new Expr.Constr(α, DataType.cCons, new Data_List_Types.Cons(e, new Data_List_Types.Cons(e$prime, Data_List_Types.Nil.value)));
+          };
+      };
+  };
+  var patternFwd = function (v) {
+      return function (κ) {
+          if (v instanceof SExpr.PVar) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.ElimVar(v.value0, κ));
+          };
+          if (v instanceof SExpr.PConstr) {
+              return Control_Apply.applySecond(Data_Either.applyEither)(DataType.checkArity(v.value0)(Data_List.length(v.value1)))(Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Expr.ElimConstr.create)(Data_Map_Internal.singleton(v.value0)))(argPatternFwd(Data_Functor.map(Data_List_Types.functorList)(Data_Either.Left.create)(v.value1))(κ)));
+          };
+          if (v instanceof SExpr.PListEmpty) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.ElimConstr(Data_Map_Internal.singleton(DataType.cNil)(κ)));
+          };
+          if (v instanceof SExpr.PListNonEmpty) {
+              return Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Expr.ElimConstr.create)(Data_Map_Internal.singleton(DataType.cCons)))(argPatternFwd(new Data_List_Types.Cons(new Data_Either.Left(v.value0), new Data_List_Types.Cons(new Data_Either.Right(v.value1), Data_List_Types.Nil.value)))(κ));
+          };
+          throw new Error("Failed pattern match at DesugarFwd (line 124, column 1 - line 124, column 52): " + [ v.constructor.name, κ.constructor.name ]);
+      };
+  };
+  var listRestPatternFwd = function (v) {
+      return function (κ) {
+          if (v instanceof SExpr.PEnd) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.ElimConstr(Data_Map_Internal.singleton(DataType.cNil)(κ)));
+          };
+          if (v instanceof SExpr.PNext) {
+              return Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Expr.ElimConstr.create)(Data_Map_Internal.singleton(DataType.cCons)))(argPatternFwd(new Data_List_Types.Cons(new Data_Either.Left(v.value0), new Data_List_Types.Cons(new Data_Either.Right(v.value1), Data_List_Types.Nil.value)))(κ));
+          };
+          throw new Error("Failed pattern match at DesugarFwd (line 132, column 1 - line 132, column 68): " + [ v.constructor.name, κ.constructor.name ]);
+      };
+  };
+  var argPatternFwd = function (v) {
+      return function (κ) {
+          if (v instanceof Data_List_Types.Nil) {
+              return Control_Applicative.pure(Data_Either.applicativeEither)(κ);
+          };
+          if (v instanceof Data_List_Types.Cons && v.value0 instanceof Data_Either.Left) {
+              return Data_Functor.map(Data_Either.functorEither)(Expr.ContElim.create)(Control_Bind.bind(Data_Either.bindEither)(argPatternFwd(v.value1)(κ))(patternFwd(v.value0.value0)));
+          };
+          if (v instanceof Data_List_Types.Cons && v.value0 instanceof Data_Either.Right) {
+              return Data_Functor.map(Data_Either.functorEither)(Expr.ContElim.create)(Control_Bind.bind(Data_Either.bindEither)(argPatternFwd(v.value1)(κ))(listRestPatternFwd(v.value0.value0)));
+          };
+          throw new Error("Failed pattern match at DesugarFwd (line 136, column 1 - line 136, column 80): " + [ v.constructor.name, κ.constructor.name ]);
+      };
+  };
+  var varDefsFwd = function (v) {
+      if (v.value0.value1 instanceof Data_List_Types.Nil) {
+          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.Let.create)(varDefFwd(v.value0.value0)))(exprFwd(v.value1));
+      };
+      if (v.value0.value1 instanceof Data_List_Types.Cons) {
+          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.Let.create)(varDefFwd(v.value0.value0)))(varDefsFwd(new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(v.value0.value1.value0, v.value0.value1.value1), v.value1)));
+      };
+      throw new Error("Failed pattern match at DesugarFwd (line 54, column 1 - line 54, column 55): " + [ v.constructor.name ]);
+  };
+  var varDefFwd = function (v) {
+      return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.VarDef.create)(patternFwd(v.value0)(new Expr.ContHole(false))))(exprFwd(v.value1));
+  };
+  var recDefsFwd = function (xcs) {
+      var xcss = Data_List_NonEmpty.groupBy(Data_Function.on(Data_Eq.eq(Data_Eq.eqString))(Data_Tuple.fst))(xcs);
+      return Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Bindings.fromList)(Data_List_NonEmpty.toList))(Data_Traversable.traverse(Data_List_Types.traversableNonEmptyList)(Data_Either.applicativeEither)(recDefFwd)(xcss));
+  };
+  var recDefFwd = function (xcs) {
+      return Data_Functor.map(Data_Either.functorEither)(function (v) {
+          return new Bindings.Binding(Data_Tuple.fst(Data_List_NonEmpty.head(xcs)), v);
+      })(branchesFwd_curried(Data_Functor.map(Data_List_Types.functorNonEmptyList)(Data_Tuple.snd)(xcs)));
+  };
+  var patternsFwd = function (v) {
+      if (v.value0.value1 instanceof Data_List_Types.Nil) {
+          return branchFwd_uncurried(v.value0.value0)(v.value1);
+      };
+      if (v.value0.value1 instanceof Data_List_Types.Cons) {
+          return Control_Bind.bindFlipped(Data_Either.bindEither)(patternFwd(v.value0.value0))(Data_Functor.map(Data_Either.functorEither)(Data_Functor.map(Data_Functor.functorFn)(Expr.ContExpr.create)(Expr.Lambda.create))(patternsFwd(new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(v.value0.value1.value0, v.value0.value1.value1), v.value1))));
+      };
+      throw new Error("Failed pattern match at DesugarFwd (line 119, column 1 - line 119, column 65): " + [ v.constructor.name ]);
+  };
+  var listRestFwd = function (v) {
+      if (v instanceof SExpr.End) {
+          return Control_Applicative.pure(Data_Either.applicativeEither)(enil(v.value0));
+      };
+      if (v instanceof SExpr.Next) {
+          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(econs(v.value0))(exprFwd(v.value1)))(listRestFwd(v.value2));
+      };
+      throw new Error("Failed pattern match at DesugarFwd (line 114, column 1 - line 114, column 48): " + [ v.constructor.name ]);
+  };
+  var exprFwd = function (v) {
+      if (v instanceof SExpr.Var) {
+          return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.Var(v.value0));
+      };
+      if (v instanceof SExpr.Op) {
+          return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.Op(v.value0));
+      };
+      if (v instanceof SExpr.Int) {
+          return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.Int(v.value0, v.value1));
+      };
+      if (v instanceof SExpr.Float) {
+          return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.Float(v.value0, v.value1));
+      };
+      if (v instanceof SExpr.Str) {
+          return Control_Applicative.pure(Data_Either.applicativeEither)(new Expr.Str(v.value0, v.value1));
+      };
+      if (v instanceof SExpr.Constr) {
+          return Data_Functor.map(Data_Either.functorEither)(Expr.Constr.create(v.value0)(v.value1))(Data_Traversable.traverse(Data_List_Types.traversableList)(Data_Either.applicativeEither)(exprFwd)(v.value2));
+      };
+      if (v instanceof SExpr.Matrix) {
+          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.flap(Data_Either.functorEither)(Data_Functor.map(Data_Either.functorEither)(Expr.Matrix.create(v.value0))(exprFwd(v.value1)))(new Data_Tuple.Tuple(v.value2.value0, v.value2.value1)))(exprFwd(v.value3));
+      };
+      if (v instanceof SExpr.Lambda) {
+          return Data_Functor.map(Data_Either.functorEither)(Expr.Lambda.create)(branchesFwd_curried(v.value0));
+      };
+      if (v instanceof SExpr.App) {
+          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create)(exprFwd(v.value0)))(exprFwd(v.value1));
+      };
+      if (v instanceof SExpr.BinaryApp) {
+          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.Op(v.value1)))(exprFwd(v.value0))))(exprFwd(v.value2));
+      };
+      if (v instanceof SExpr.MatchAs) {
+          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create)(Data_Functor.map(Data_Either.functorEither)(Expr.Lambda.create)(branchesFwd_uncurried(v.value1))))(exprFwd(v.value0));
+      };
+      if (v instanceof SExpr.IfElse) {
+          return Control_Bind.bind(Data_Either.bindEither)(exprFwd(v.value1))(function (e2) {
+              return Control_Bind.bind(Data_Either.bindEither)(exprFwd(v.value2))(function (e3) {
+                  return Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.Lambda(elimBool(new Expr.ContExpr(e2))(new Expr.ContExpr(e3)))))(exprFwd(v.value0));
+              });
+          });
+      };
+      if (v instanceof SExpr.ListEmpty) {
+          return Control_Applicative.pure(Data_Either.applicativeEither)(enil(v.value0));
+      };
+      if (v instanceof SExpr.ListNonEmpty) {
+          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(econs(v.value0))(exprFwd(v.value1)))(listRestFwd(v.value2));
+      };
+      if (v instanceof SExpr.ListEnum) {
+          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create)(Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.Var("enumFromTo")))(exprFwd(v.value0))))(exprFwd(v.value1));
+      };
+      if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Guard && (v.value2.value0.value0 instanceof SExpr.Constr && (v.value2.value0.value0.value2 instanceof Data_List_Types.Nil && (v.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value2.value0.value0.value1)(DataType.cTrue)))))) {
+          return Data_Functor.flap(Data_Either.functorEither)(Data_Functor.map(Data_Either.functorEither)(econs(v.value2.value0.value0.value0))(exprFwd(v.value1)))(enil(v.value2.value0.value0.value0));
+      };
+      if (v instanceof SExpr.ListComp && v.value2.value1 instanceof Data_List_Types.Nil) {
+          return exprFwd(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value0, new Data_List_Types.Cons(new SExpr.Guard(new SExpr.Constr(v.value0, DataType.cTrue, Data_List_Types.Nil.value)), Data_List_Types.Nil.value))));
+      };
+      if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Guard && v.value2.value1 instanceof Data_List_Types.Cons)) {
+          return Control_Bind.bind(Data_Either.bindEither)(exprFwd(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1))))(function (e) {
+              return Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.Lambda(elimBool(new Expr.ContExpr(e))(new Expr.ContExpr(enil(v.value0))))))(exprFwd(v.value2.value0.value0));
+          });
+      };
+      if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Declaration && v.value2.value1 instanceof Data_List_Types.Cons)) {
+          return Control_Bind.bind(Data_Either.bindEither)(exprFwd(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1))))(function (e) {
+              return Control_Bind.bind(Data_Either.bindEither)(patternFwd(v.value2.value0.value0.value0)(new Expr.ContExpr(e)))(function (σ) {
+                  return Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.Lambda(σ)))(exprFwd(v.value2.value0.value0.value1));
+              });
+          });
+      };
+      if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Generator && v.value2.value1 instanceof Data_List_Types.Cons)) {
+          return Control_Bind.bind(Data_Either.bindEither)(exprFwd(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1))))(function (e) {
+              return Control_Bind.bind(Data_Either.bindEither)(patternFwd(v.value2.value0.value0)(new Expr.ContExpr(e)))(function (σ) {
+                  return Data_Functor.map(Data_Either.functorEither)(Expr.App.create(new Expr.App(new Expr.Var("concatMap"), new Expr.Lambda(Expr.asElim(totaliseFwd(new Expr.ContElim(σ))(v.value0))))))(exprFwd(v.value2.value0.value1));
+              });
+          });
+      };
+      if (v instanceof SExpr.Let) {
+          return varDefsFwd(new Data_Tuple.Tuple(v.value0, v.value1));
+      };
+      if (v instanceof SExpr.LetRec) {
+          return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Expr.LetRec.create)(recDefsFwd(v.value0)))(exprFwd(v.value1));
+      };
+      throw new Error("Failed pattern match at DesugarFwd (line 71, column 1 - line 71, column 40): " + [ v.constructor.name ]);
+  };
+  var branchesFwd_uncurried = function (bs) {
+      return Control_Bind.bind(Data_Either.bindEither)(Data_Traversable.traverse(Data_List_Types.traversableNonEmptyList)(Data_Either.applicativeEither)(Data_Tuple.uncurry(branchFwd_uncurried))(bs))(function (v) {
+          return Data_Foldable.foldM(Data_List_Types.foldableList)(Data_Either.monadEither)(Lattice.maybeJoin(Expr.slicesElim))(v.value0)(v.value1);
+      });
+  };
+  var branchesFwd_curried = function (bs) {
+      return Control_Bind.bind(Data_Either.bindEither)(Data_Traversable.traverse(Data_List_Types.traversableNonEmptyList)(Data_Either.applicativeEither)(patternsFwd)(bs))(function (v) {
+          return Data_Foldable.foldM(Data_List_Types.foldableList)(Data_Either.monadEither)(Lattice.maybeJoin(Expr.slicesElim))(v.value0)(v.value1);
+      });
+  };
+  var branchFwd_uncurried = function (p) {
+      return function (s) {
+          return Control_Bind.bind(Data_Either.bindEither)(Data_Functor.map(Data_Either.functorEither)(Expr.ContExpr.create)(exprFwd(s)))(patternFwd(p));
+      };
+  };
+  var moduleFwd = function (v) {
+      var varDefOrRecDefsFwd = function (v1) {
+          if (v1 instanceof Data_Either.Left) {
+              return Data_Functor.map(Data_Either.functorEither)(Data_Either.Left.create)(varDefFwd(v1.value0));
+          };
+          if (v1 instanceof Data_Either.Right) {
+              return Data_Functor.map(Data_Either.functorEither)(Data_Either.Right.create)(recDefsFwd(v1.value0));
+          };
+          throw new Error("Failed pattern match at DesugarFwd (line 43, column 4 - line 43, column 84): " + [ v1.constructor.name ]);
+      };
+      var desugarDefs = function (v1) {
+          if (v1 instanceof Data_Either.Left) {
+              return Data_Functor.map(Data_List_Types.functorList)(Data_Either.Left.create)(Data_List_NonEmpty.toList(v1.value0));
+          };
+          if (v1 instanceof Data_Either.Right) {
+              return Control_Applicative.pure(Data_List_Types.applicativeList)(new Data_Either.Right(v1.value0));
+          };
+          throw new Error("Failed pattern match at DesugarFwd (line 47, column 4 - line 47, column 71): " + [ v1.constructor.name ]);
+      };
+      return Data_Functor.map(Data_Either.functorEither)(Expr.Module.create)(Data_Traversable.traverse(Data_List_Types.traversableList)(Data_Either.applicativeEither)(varDefOrRecDefsFwd)(Control_Bind.join(Data_List_Types.bindList)(Data_Functor.map(Data_List_Types.functorList)(desugarDefs)(v.value0))));
+  };
+  var desugarModuleFwd = moduleFwd;
+  var desugarFwd = exprFwd;
+  exports["desugarFwd"] = desugarFwd;
+  exports["desugarModuleFwd"] = desugarModuleFwd;
+  exports["elimBool"] = elimBool;
+  exports["totaliseConstrFwd"] = totaliseConstrFwd;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Expl"] = $PS["Expl"] || {};
+  var exports = $PS["Expl"];
+  var MatchVar = (function () {
+      function MatchVar(value0) {
+          this.value0 = value0;
+      };
+      MatchVar.create = function (value0) {
+          return new MatchVar(value0);
+      };
+      return MatchVar;
+  })();
+  var MatchVarAnon = (function () {
+      function MatchVarAnon(value0) {
+          this.value0 = value0;
+      };
+      MatchVarAnon.create = function (value0) {
+          return new MatchVarAnon(value0);
+      };
+      return MatchVarAnon;
+  })();
+  var MatchConstr = (function () {
+      function MatchConstr(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      MatchConstr.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new MatchConstr(value0, value1, value2);
+              };
+          };
+      };
+      return MatchConstr;
+  })();
+  var Var = (function () {
+      function Var(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Var.create = function (value0) {
+          return function (value1) {
+              return new Var(value0, value1);
+          };
+      };
+      return Var;
+  })();
+  var Op = (function () {
+      function Op(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Op.create = function (value0) {
+          return function (value1) {
+              return new Op(value0, value1);
+          };
+      };
+      return Op;
+  })();
+  var Int = (function () {
+      function Int(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Int.create = function (value0) {
+          return function (value1) {
+              return new Int(value0, value1);
+          };
+      };
+      return Int;
+  })();
+  var Float = (function () {
+      function Float(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Float.create = function (value0) {
+          return function (value1) {
+              return new Float(value0, value1);
+          };
+      };
+      return Float;
+  })();
+  var Str = (function () {
+      function Str(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Str.create = function (value0) {
+          return function (value1) {
+              return new Str(value0, value1);
+          };
+      };
+      return Str;
+  })();
+  var Constr = (function () {
+      function Constr(value0, value1, value2) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+      };
+      Constr.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return new Constr(value0, value1, value2);
+              };
+          };
+      };
+      return Constr;
+  })();
+  var Matrix = (function () {
+      function Matrix(value0, value1, value2, value3) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+          this.value3 = value3;
+      };
+      Matrix.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return function (value3) {
+                      return new Matrix(value0, value1, value2, value3);
+                  };
+              };
+          };
+      };
+      return Matrix;
+  })();
+  var Lambda = (function () {
+      function Lambda(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Lambda.create = function (value0) {
+          return function (value1) {
+              return new Lambda(value0, value1);
+          };
+      };
+      return Lambda;
+  })();
+  var App = (function () {
+      function App(value0, value1, value2, value3) {
+          this.value0 = value0;
+          this.value1 = value1;
+          this.value2 = value2;
+          this.value3 = value3;
+      };
+      App.create = function (value0) {
+          return function (value1) {
+              return function (value2) {
+                  return function (value3) {
+                      return new App(value0, value1, value2, value3);
+                  };
+              };
+          };
+      };
+      return App;
+  })();
+  var AppPrim = (function () {
+      function AppPrim(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      AppPrim.create = function (value0) {
+          return function (value1) {
+              return new AppPrim(value0, value1);
+          };
+      };
+      return AppPrim;
+  })();
+  var AppConstr = (function () {
+      function AppConstr(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      AppConstr.create = function (value0) {
+          return function (value1) {
+              return new AppConstr(value0, value1);
+          };
+      };
+      return AppConstr;
+  })();
+  var Let = (function () {
+      function Let(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      Let.create = function (value0) {
+          return function (value1) {
+              return new Let(value0, value1);
+          };
+      };
+      return Let;
+  })();
+  var LetRec = (function () {
+      function LetRec(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      LetRec.create = function (value0) {
+          return function (value1) {
+              return new LetRec(value0, value1);
+          };
+      };
+      return LetRec;
+  })();
+  var VarDef = (function () {
+      function VarDef(value0, value1) {
+          this.value0 = value0;
+          this.value1 = value1;
+      };
+      VarDef.create = function (value0) {
+          return function (value1) {
+              return new VarDef(value0, value1);
+          };
+      };
+      return VarDef;
+  })();
+  exports["VarDef"] = VarDef;
+  exports["Var"] = Var;
+  exports["Op"] = Op;
+  exports["Int"] = Int;
+  exports["Float"] = Float;
+  exports["Str"] = Str;
+  exports["Constr"] = Constr;
+  exports["Matrix"] = Matrix;
+  exports["Lambda"] = Lambda;
+  exports["App"] = App;
+  exports["AppPrim"] = AppPrim;
+  exports["AppConstr"] = AppConstr;
+  exports["Let"] = Let;
+  exports["LetRec"] = LetRec;
+  exports["MatchVar"] = MatchVar;
+  exports["MatchVarAnon"] = MatchVarAnon;
+  exports["MatchConstr"] = MatchConstr;
 })(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
@@ -30176,6 +30602,7 @@ var PS = {};
           throw new Error("Failed pattern match at Eval (line 114, column 1 - line 114, column 52): " + [ ρ.constructor.name, v.constructor.name ]);
       };
   };
+  exports["closeDefs"] = closeDefs;
   exports["eval"] = $$eval;
   exports["eval_module"] = eval_module;
 })(PS);
@@ -30370,34 +30797,977 @@ var PS = {};
 (function($PS) {
   // Generated by purs version 0.13.6
   "use strict";
-  $PS["Test.Util"] = $PS["Test.Util"] || {};
-  var exports = $PS["Test.Util"];
+  $PS["DesugarBwd"] = $PS["DesugarBwd"] || {};
+  var exports = $PS["DesugarBwd"];
+  var Bindings = $PS["Bindings"];
   var Control_Bind = $PS["Control.Bind"];
   var Data_Either = $PS["Data.Either"];
+  var Data_Eq = $PS["Data.Eq"];
+  var Data_Foldable = $PS["Data.Foldable"];
+  var Data_Function = $PS["Data.Function"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_List = $PS["Data.List"];
+  var Data_List_NonEmpty = $PS["Data.List.NonEmpty"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Map_Internal = $PS["Data.Map.Internal"];
+  var Data_NonEmpty = $PS["Data.NonEmpty"];
+  var Data_Semigroup = $PS["Data.Semigroup"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var DataType = $PS["DataType"];
+  var DesugarFwd = $PS["DesugarFwd"];
+  var Expr = $PS["Expr"];
+  var Lattice = $PS["Lattice"];
+  var SExpr = $PS["SExpr"];
+  var Util = $PS["Util"];                
+  var totaliseConstrBwd = function (m) {
+      return function (c) {
+          var unargument = function (v) {
+              if (v instanceof Expr.ContElim && v.value0 instanceof Expr.ElimVar) {
+                  return v.value0.value1;
+              };
+              return Util.error(Util.absurd);
+          };
+          var bodyAnn = function (v) {
+              if (v instanceof Expr.ContExpr && (v.value0 instanceof Expr.Constr && (v.value0.value2 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value0.value1)(DataType.cNil)))) {
+                  return v.value0.value0;
+              };
+              return Util.error(Util.absurd);
+          };
+          var body = function (c$prime) {
+              return Data_Function.applyN(unargument)(Util.successful(DataType.arity(c$prime)))(Util.mustLookup(DataType.ordCtr)(c$prime)(m));
+          };
+          var cs = Data_List.difference(DataType.eqCtr)(DataType.ctrs(Util.successful(DataType.dataTypeFor(DataType.dataTypeForCtr)(c))))(Data_List.singleton(c));
+          return new Data_Tuple.Tuple(Util.mustLookup(DataType.ordCtr)(c)(m), Data_Foldable.foldl(Data_List_Types.foldableList)(Lattice.join(Lattice.joinSemilatticeBoolean))(false)(Data_Functor.map(Data_List_Types.functorList)(function ($476) {
+              return bodyAnn(body($476));
+          })(cs)));
+      };
+  };
+  var totaliseBwd = function (κ) {
+      return function (v) {
+          if (v instanceof Data_List_Types.Nil) {
+              return new Data_Tuple.Tuple(κ, false);
+          };
+          if (v instanceof Data_List_Types.Cons && (v.value0 instanceof Data_Either.Left && v.value0.value0 instanceof SExpr.PVar)) {
+              var v1 = Lattice.expand(Expr.contExpandable)(κ)(new Expr.ContElim(new Expr.ElimVar(v.value0.value0.value0, new Expr.ContHole(false))));
+              if (v1 instanceof Expr.ContElim && v1.value0 instanceof Expr.ElimVar) {
+                  var v2 = totaliseBwd(v1.value0.value1)(v.value1);
+                  return new Data_Tuple.Tuple(new Expr.ContElim(new Expr.ElimVar(v.value0.value0.value0, v2.value0)), v2.value1);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof Data_List_Types.Cons) {
+              var v1 = (function () {
+                  if (v.value0 instanceof Data_Either.Left && v.value0.value0 instanceof SExpr.PVar) {
+                      return Util.error(Util.absurd);
+                  };
+                  if (v.value0 instanceof Data_Either.Left && v.value0.value0 instanceof SExpr.PConstr) {
+                      return new Data_Tuple.Tuple(v.value0.value0.value0, Data_Functor.map(Data_List_Types.functorList)(Data_Either.Left.create)(v.value0.value0.value1));
+                  };
+                  if (v.value0 instanceof Data_Either.Left && v.value0.value0 instanceof SExpr.PListEmpty) {
+                      return new Data_Tuple.Tuple(DataType.cNil, Data_List_Types.Nil.value);
+                  };
+                  if (v.value0 instanceof Data_Either.Left && v.value0.value0 instanceof SExpr.PListNonEmpty) {
+                      return new Data_Tuple.Tuple(DataType.cCons, new Data_List_Types.Cons(new Data_Either.Left(v.value0.value0.value0), new Data_List_Types.Cons(new Data_Either.Right(v.value0.value0.value1), Data_List_Types.Nil.value)));
+                  };
+                  if (v.value0 instanceof Data_Either.Right && v.value0.value0 instanceof SExpr.PEnd) {
+                      return new Data_Tuple.Tuple(DataType.cNil, Data_List_Types.Nil.value);
+                  };
+                  if (v.value0 instanceof Data_Either.Right && v.value0.value0 instanceof SExpr.PNext) {
+                      return new Data_Tuple.Tuple(DataType.cCons, new Data_List_Types.Cons(new Data_Either.Left(v.value0.value0.value0), new Data_List_Types.Cons(new Data_Either.Right(v.value0.value0.value1), Data_List_Types.Nil.value)));
+                  };
+                  throw new Error("Failed pattern match at DesugarBwd (line 246, column 18 - line 252, column 72): " + [ v.value0.constructor.name ]);
+              })();
+              var v2 = Lattice.expand(Expr.contExpandable)(κ)(new Expr.ContElim(new Expr.ElimConstr(DesugarFwd.totaliseConstrFwd(new Data_Tuple.Tuple(v1.value0, new Expr.ContHole(false)))(false))));
+              if (v2 instanceof Expr.ContElim && v2.value0 instanceof Expr.ElimConstr) {
+                  var v3 = totaliseConstrBwd(v2.value0.value0)(v1.value0);
+                  var v4 = totaliseBwd(v3.value0)(Data_Semigroup.append(Data_List_Types.semigroupList)(v1.value1)(v.value1));
+                  return new Data_Tuple.Tuple(new Expr.ContElim(new Expr.ElimConstr(Data_Map_Internal.fromFoldable(DataType.ordCtr)(Data_List_Types.foldableList)(Data_List.singleton(new Data_Tuple.Tuple(v1.value0, v4.value0))))), Lattice.join(Lattice.joinSemilatticeBoolean)(v3.value1)(v4.value1));
+              };
+              return Util.error(Util.absurd);
+          };
+          throw new Error("Failed pattern match at DesugarBwd (line 237, column 1 - line 237, column 72): " + [ κ.constructor.name, v.constructor.name ]);
+      };
+  };
+  var patternBwd = function (v) {
+      return function (v1) {
+          if (v instanceof Expr.ElimVar && v1 instanceof SExpr.PVar) {
+              return v.value1;
+          };
+          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PVar) {
+              return new Expr.ContHole(v.value0);
+          };
+          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PConstr) {
+              return argsBwd(new Expr.ContHole(v.value0))(Data_Functor.map(Data_List_Types.functorList)(Data_Either.Left.create)(v1.value1));
+          };
+          if (v instanceof Expr.ElimConstr && v1 instanceof SExpr.PConstr) {
+              return argsBwd(Util.mustLookup(DataType.ordCtr)(v1.value0)(v.value0))(Data_Functor.map(Data_List_Types.functorList)(Data_Either.Left.create)(v1.value1));
+          };
+          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PListEmpty) {
+              return new Expr.ContHole(v.value0);
+          };
+          if (v instanceof Expr.ElimConstr && v1 instanceof SExpr.PListEmpty) {
+              return Util.mustLookup(DataType.ordCtr)(DataType.cNil)(v.value0);
+          };
+          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PListNonEmpty) {
+              return argsBwd(new Expr.ContHole(v.value0))(new Data_List_Types.Cons(new Data_Either.Left(v1.value0), new Data_List_Types.Cons(new Data_Either.Right(v1.value1), Data_List_Types.Nil.value)));
+          };
+          if (v instanceof Expr.ElimConstr && v1 instanceof SExpr.PListNonEmpty) {
+              return argsBwd(Util.mustLookup(DataType.ordCtr)(DataType.cCons)(v.value0))(new Data_List_Types.Cons(new Data_Either.Left(v1.value0), new Data_List_Types.Cons(new Data_Either.Right(v1.value1), Data_List_Types.Nil.value)));
+          };
+          return Util.error(Util.absurd);
+      };
+  };
+  var listRestPatternBwd = function (v) {
+      return function (v1) {
+          if (v instanceof Expr.ElimVar) {
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PEnd) {
+              return new Expr.ContHole(v.value0);
+          };
+          if (v instanceof Expr.ElimConstr && v1 instanceof SExpr.PEnd) {
+              return Util.mustLookup(DataType.ordCtr)(DataType.cNil)(v.value0);
+          };
+          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PNext) {
+              return argsBwd(new Expr.ContHole(v.value0))(new Data_List_Types.Cons(new Data_Either.Left(v1.value0), new Data_List_Types.Cons(new Data_Either.Right(v1.value1), Data_List_Types.Nil.value)));
+          };
+          if (v instanceof Expr.ElimConstr && v1 instanceof SExpr.PNext) {
+              return argsBwd(Util.mustLookup(DataType.ordCtr)(DataType.cCons)(v.value0))(new Data_List_Types.Cons(new Data_Either.Left(v1.value0), new Data_List_Types.Cons(new Data_Either.Right(v1.value1), Data_List_Types.Nil.value)));
+          };
+          throw new Error("Failed pattern match at DesugarBwd (line 202, column 1 - line 202, column 58): " + [ v.constructor.name, v1.constructor.name ]);
+      };
+  };
+  var argsBwd = function ($copy_κ) {
+      return function ($copy_v) {
+          var $tco_var_κ = $copy_κ;
+          var $tco_done = false;
+          var $tco_result;
+          function $tco_loop(κ, v) {
+              if (v instanceof Data_List_Types.Nil) {
+                  $tco_done = true;
+                  return κ;
+              };
+              if (v instanceof Data_List_Types.Cons && v.value0 instanceof Data_Either.Left) {
+                  $tco_var_κ = patternBwd(Expr.asElim(κ))(v.value0.value0);
+                  $copy_v = v.value1;
+                  return;
+              };
+              if (v instanceof Data_List_Types.Cons && v.value0 instanceof Data_Either.Right) {
+                  $tco_var_κ = listRestPatternBwd(Expr.asElim(κ))(v.value0.value0);
+                  $copy_v = v.value1;
+                  return;
+              };
+              throw new Error("Failed pattern match at DesugarBwd (line 209, column 1 - line 209, column 64): " + [ κ.constructor.name, v.constructor.name ]);
+          };
+          while (!$tco_done) {
+              $tco_result = $tco_loop($tco_var_κ, $copy_v);
+          };
+          return $tco_result;
+      };
+  };
+  var patternsBwd = function (σ) {
+      return function (v) {
+          if (v.value1 instanceof Data_List_Types.Nil) {
+              return Expr.asExpr(patternBwd(σ)(v.value0));
+          };
+          if (v.value1 instanceof Data_List_Types.Cons) {
+              var patternsBwd_rest = function (σ$prime) {
+                  var v1 = Lattice.expand(Expr.exprExpandable)(σ$prime)(new Expr.Lambda(new Expr.ElimHole(false)));
+                  if (v1 instanceof Expr.Lambda) {
+                      return patternsBwd(v1.value0)(new Data_NonEmpty.NonEmpty(v.value1.value0, v.value1.value1));
+                  };
+                  return Util.error(Util.absurd);
+              };
+              return patternsBwd_rest(Expr.asExpr(patternBwd(σ)(v.value0)));
+          };
+          throw new Error("Failed pattern match at DesugarBwd (line 180, column 1 - line 180, column 58): " + [ σ.constructor.name, v.constructor.name ]);
+      };
+  };
+  var varDefsBwd = function (v) {
+      return function (v1) {
+          if (v instanceof Expr.Let && v1.value0.value1 instanceof Data_List_Types.Nil) {
+              return new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(new SExpr.VarDef(v1.value0.value0.value0, exprBwd(v.value0.value1)(v1.value0.value0.value1)), Data_List_Types.Nil.value), exprBwd(v.value1)(v1.value1));
+          };
+          if (v instanceof Expr.Let && v1.value0.value1 instanceof Data_List_Types.Cons) {
+              var v2 = varDefsBwd(v.value1)(new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(v1.value0.value1.value0, v1.value0.value1.value1), v1.value1));
+              return new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(new SExpr.VarDef(v1.value0.value0.value0, exprBwd(v.value0.value1)(v1.value0.value0.value1)), new Data_List_Types.Cons(v2.value0.value0, v2.value0.value1)), v2.value1);
+          };
+          return Util.error(Util.absurd);
+      };
+  };
+  var recDefsBwd$prime = function (v) {
+      return function (v1) {
+          if (v instanceof Bindings.Empty) {
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof Bindings.Extend && (v.value0 instanceof Bindings.Empty && v1.value1 instanceof Data_List_Types.Nil)) {
+              return new Data_NonEmpty.NonEmpty(recDefBwd(new Bindings.Binding(v.value1.value0, v.value1.value1))(v1.value0), Data_List_Types.Nil.value);
+          };
+          if (v instanceof Bindings.Extend && (v.value0 instanceof Bindings.Extend && v1.value1 instanceof Data_List_Types.Nil)) {
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof Bindings.Extend && v1.value1 instanceof Data_List_Types.Cons) {
+              return new Data_NonEmpty.NonEmpty(recDefBwd(new Bindings.Binding(v.value1.value0, v.value1.value1))(v1.value0), Data_List_NonEmpty.toList(recDefsBwd$prime(v.value0)(new Data_NonEmpty.NonEmpty(v1.value1.value0, v1.value1.value1))));
+          };
+          throw new Error("Failed pattern match at DesugarBwd (line 36, column 1 - line 36, column 83): " + [ v.constructor.name, v1.constructor.name ]);
+      };
+  };
+  var recDefsBwd = function (xσs) {
+      return function (xcs) {
+          return Control_Bind.join(Data_List_Types.bindNonEmptyList)(recDefsBwd$prime(xσs)(Data_List_NonEmpty.groupBy(Data_Function.on(Data_Eq.eq(Data_Eq.eqString))(Data_Tuple.fst))(xcs)));
+      };
+  };
+  var recDefBwd = function (v) {
+      var $477 = Data_Functor.map(Data_List_Types.functorNonEmptyList)(function (v1) {
+          return new Data_Tuple.Tuple(v.value0, v1);
+      });
+      var $478 = branchesBwd_curried(v.value1);
+      var $479 = Data_Functor.map(Data_List_Types.functorNonEmptyList)(Data_Tuple.snd);
+      return function ($480) {
+          return $477($478($479($480)));
+      };
+  };
+  var listRestBwd = function (e) {
+      return function (v) {
+          if (v instanceof SExpr.End) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, DataType.cNil, Data_List_Types.Nil.value));
+              if (v1 instanceof Expr.Constr) {
+                  return new SExpr.End(v1.value0);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.Next) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Expr.Hole(false), new Data_List_Types.Cons(new Expr.Hole(false), Data_List_Types.Nil.value))));
+              if (v1 instanceof Expr.Constr && (v1.value2 instanceof Data_List_Types.Cons && (v1.value2.value1 instanceof Data_List_Types.Cons && v1.value2.value1.value1 instanceof Data_List_Types.Nil))) {
+                  return new SExpr.Next(v1.value0, exprBwd(v1.value2.value0)(v.value1), listRestBwd(v1.value2.value1.value0)(v.value2));
+              };
+              return Util.error(Util.absurd);
+          };
+          throw new Error("Failed pattern match at DesugarBwd (line 169, column 1 - line 169, column 45): " + [ e.constructor.name, v.constructor.name ]);
+      };
+  };
+  var exprBwd = function (e) {
+      return function (v) {
+          if (v instanceof SExpr.Var) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Var(v.value0));
+              if (v1 instanceof Expr.Var) {
+                  return new SExpr.Var(v.value0);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.Op) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Op(v.value0));
+              if (v1 instanceof Expr.Op) {
+                  return new SExpr.Op(v.value0);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.Int) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Int(false, v.value1));
+              if (v1 instanceof Expr.Int) {
+                  return new SExpr.Int(v1.value0, v.value1);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.Float) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Float(false, v.value1));
+              if (v1 instanceof Expr.Float) {
+                  return new SExpr.Float(v1.value0, v.value1);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.Str) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Str(false, v.value1));
+              if (v1 instanceof Expr.Str) {
+                  return new SExpr.Str(v1.value0, v.value1);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.Constr) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, v.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Expr.Hole(false)))(v.value2)));
+              if (v1 instanceof Expr.Constr) {
+                  return new SExpr.Constr(v1.value0, v.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Tuple.uncurry(exprBwd))(Data_List.zip(v1.value2)(v.value2)));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.Matrix) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Matrix(false, new Expr.Hole(false), new Data_Tuple.Tuple(v.value2.value0, v.value2.value1), new Expr.Hole(false)));
+              if (v1 instanceof Expr.Matrix) {
+                  return new SExpr.Matrix(v1.value0, exprBwd(v1.value1)(v.value1), new Data_Tuple.Tuple(v.value2.value0, v.value2.value1), exprBwd(v1.value3)(v.value3));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.Lambda) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Lambda(new Expr.ElimHole(false)));
+              if (v1 instanceof Expr.Lambda) {
+                  return new SExpr.Lambda(branchesBwd_curried(v1.value0)(v.value0));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.App) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
+              if (v1 instanceof Expr.App) {
+                  return new SExpr.App(exprBwd(v1.value0)(v.value0), exprBwd(v1.value1)(v.value1));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.MatchAs) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Lambda(new Expr.ElimHole(false)), new Expr.Hole(false)));
+              if (v1 instanceof Expr.App && v1.value0 instanceof Expr.Lambda) {
+                  return new SExpr.MatchAs(exprBwd(v1.value1)(v.value0), branchesBwd_uncurried(v1.value0.value0)(v.value1));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.IfElse) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Lambda(DesugarFwd.elimBool(new Expr.ContHole(false))(new Expr.ContHole(false))), new Expr.Hole(false)));
+              if (v1 instanceof Expr.App && (v1.value0 instanceof Expr.Lambda && v1.value0.value0 instanceof Expr.ElimConstr)) {
+                  return new SExpr.IfElse(exprBwd(v1.value1)(v.value0), exprBwd(Expr.asExpr(Util.mustLookup(DataType.ordCtr)(DataType.cTrue)(v1.value0.value0.value0)))(v.value1), exprBwd(Expr.asExpr(Util.mustLookup(DataType.ordCtr)(DataType.cFalse)(v1.value0.value0.value0)))(v.value2));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.BinaryApp) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.App(new Expr.Op(v.value1), new Expr.Hole(false)), new Expr.Hole(false)));
+              if (v1 instanceof Expr.App && (v1.value0 instanceof Expr.App && v1.value0.value0 instanceof Expr.Op)) {
+                  return new SExpr.BinaryApp(exprBwd(v1.value0.value1)(v.value0), v.value1, exprBwd(v1.value1)(v.value2));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.Let) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Let(new Expr.VarDef(new Expr.ElimHole(false), new Expr.Hole(false)), new Expr.Hole(false)));
+              if (v1 instanceof Expr.Let) {
+                  return Data_Tuple.uncurry(SExpr.Let.create)(varDefsBwd(new Expr.Let(v1.value0, v1.value1))(new Data_Tuple.Tuple(v.value0, v.value1)));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.LetRec) {
+              var xcss = Data_List_NonEmpty.groupBy(Data_Function.on(Data_Eq.eq(Data_Eq.eqString))(Data_Tuple.fst))(v.value0);
+              var recDefHole = function (xcs$prime) {
+                  return new Bindings.Binding(Data_Tuple.fst(Data_List_NonEmpty.head(xcs$prime)), new Expr.ElimHole(false));
+              };
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.LetRec(Bindings.fromList(Data_List_NonEmpty.toList(Data_Functor.map(Data_List_Types.functorNonEmptyList)(recDefHole)(xcss))), new Expr.Hole(false)));
+              if (v1 instanceof Expr.LetRec) {
+                  return new SExpr.LetRec(recDefsBwd(v1.value0)(v.value0), exprBwd(v1.value1)(v.value1));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.ListEmpty) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, DataType.cNil, Data_List_Types.Nil.value));
+              if (v1 instanceof Expr.Constr && v1.value2 instanceof Data_List_Types.Nil) {
+                  return new SExpr.ListEmpty(v1.value0);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.ListNonEmpty) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Expr.Hole(false), new Data_List_Types.Cons(new Expr.Hole(false), Data_List_Types.Nil.value))));
+              if (v1 instanceof Expr.Constr && (v1.value2 instanceof Data_List_Types.Cons && (v1.value2.value1 instanceof Data_List_Types.Cons && v1.value2.value1.value1 instanceof Data_List_Types.Nil))) {
+                  return new SExpr.ListNonEmpty(v1.value0, exprBwd(v1.value2.value0)(v.value1), listRestBwd(v1.value2.value1.value0)(v.value2));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.ListEnum) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.App(new Expr.Var("enumFromTo"), new Expr.Hole(false)), new Expr.Hole(false)));
+              if (v1 instanceof Expr.App && (v1.value0 instanceof Expr.App && (v1.value0.value0 instanceof Expr.Var && v1.value0.value0.value0 === "enumFromTo"))) {
+                  return new SExpr.ListEnum(exprBwd(v1.value0.value1)(v.value0), exprBwd(v1.value1)(v.value1));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Guard && (v.value2.value0.value0 instanceof SExpr.Constr && (v.value2.value0.value0.value2 instanceof Data_List_Types.Nil && (v.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value2.value0.value0.value1)(DataType.cTrue)))))) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Expr.Hole(false), new Data_List_Types.Cons(new Expr.Constr(false, DataType.cNil, Data_List_Types.Nil.value), Data_List_Types.Nil.value))));
+              if (v1 instanceof Expr.Constr && (v1.value2 instanceof Data_List_Types.Cons && (v1.value2.value1 instanceof Data_List_Types.Cons && (v1.value2.value1.value0 instanceof Expr.Constr && (v1.value2.value1.value0.value2 instanceof Data_List_Types.Nil && v1.value2.value1.value1 instanceof Data_List_Types.Nil))))) {
+                  return new SExpr.ListComp(Lattice.join(Lattice.joinSemilatticeBoolean)(v1.value2.value1.value0.value0)(v1.value0), exprBwd(v1.value2.value0)(v.value1), new Data_NonEmpty.NonEmpty(new SExpr.Guard(new SExpr.Constr(Lattice.join(Lattice.joinSemilatticeBoolean)(v1.value2.value1.value0.value0)(v1.value0), DataType.cTrue, Data_List_Types.Nil.value)), Data_List_Types.Nil.value));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.ListComp && v.value2.value1 instanceof Data_List_Types.Nil) {
+              var v1 = exprBwd(e)(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value0, new Data_List_Types.Cons(new SExpr.Guard(new SExpr.Constr(true, DataType.cTrue, Data_List_Types.Nil.value)), Data_List_Types.Nil.value))));
+              if (v1 instanceof SExpr.ListComp && (v1.value2.value1 instanceof Data_List_Types.Cons && (v1.value2.value1.value0 instanceof SExpr.Guard && (v1.value2.value1.value0.value0 instanceof SExpr.Constr && (v1.value2.value1.value0.value0.value2 instanceof Data_List_Types.Nil && (v1.value2.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v1.value2.value1.value0.value0.value1)(DataType.cTrue))))))) {
+                  return new SExpr.ListComp(v1.value0, v1.value1, new Data_NonEmpty.NonEmpty(v1.value2.value0, Data_List_Types.Nil.value));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Guard && v.value2.value1 instanceof Data_List_Types.Cons)) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Lambda(DesugarFwd.elimBool(new Expr.ContHole(false))(new Expr.ContHole(false))), new Expr.Hole(false)));
+              if (v1 instanceof Expr.App && (v1.value0 instanceof Expr.Lambda && v1.value0.value0 instanceof Expr.ElimConstr)) {
+                  var v2 = new Data_Tuple.Tuple(exprBwd(Expr.asExpr(Util.mustLookup(DataType.ordCtr)(DataType.cTrue)(v1.value0.value0.value0)))(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1))), exprBwd(Expr.asExpr(Util.mustLookup(DataType.ordCtr)(DataType.cFalse)(v1.value0.value0.value0)))(new SExpr.Constr(true, DataType.cNil, Data_List_Types.Nil.value)));
+                  if (v2.value0 instanceof SExpr.ListComp && (v2.value1 instanceof SExpr.Constr && (v2.value1.value2 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v2.value1.value1)(DataType.cNil)))) {
+                      return new SExpr.ListComp(Lattice.join(Lattice.joinSemilatticeBoolean)(v2.value1.value0)(v2.value0.value0), v2.value0.value1, new Data_NonEmpty.NonEmpty(new SExpr.Guard(exprBwd(v1.value1)(v.value2.value0.value0)), new Data_List_Types.Cons(v2.value0.value2.value0, v2.value0.value2.value1)));
+                  };
+                  return Util.error(Util.absurd);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Declaration && v.value2.value1 instanceof Data_List_Types.Cons)) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Lambda(new Expr.ElimHole(false)), new Expr.Hole(false)));
+              if (v1 instanceof Expr.App && v1.value0 instanceof Expr.Lambda) {
+                  var v2 = branchBwd_curried(v1.value0.value0)(new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(v.value2.value0.value0.value0, Data_List_Types.Nil.value), new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1))));
+                  if (v2.value1 instanceof SExpr.ListComp) {
+                      return new SExpr.ListComp(v2.value1.value0, v2.value1.value1, new Data_NonEmpty.NonEmpty(new SExpr.Declaration(new SExpr.VarDef(v.value2.value0.value0.value0, exprBwd(v1.value1)(v.value2.value0.value0.value1))), new Data_List_Types.Cons(v2.value1.value2.value0, v2.value1.value2.value1)));
+                  };
+                  return Util.error(Util.absurd);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Generator && v.value2.value1 instanceof Data_List_Types.Cons)) {
+              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.App(new Expr.Var("concatMap"), new Expr.Lambda(new Expr.ElimHole(false))), new Expr.Hole(false)));
+              if (v1 instanceof Expr.App && (v1.value0 instanceof Expr.App && (v1.value0.value0 instanceof Expr.Var && (v1.value0.value0.value0 === "concatMap" && v1.value0.value1 instanceof Expr.Lambda)))) {
+                  var v2 = totaliseBwd(new Expr.ContElim(v1.value0.value1.value0))(new Data_List_Types.Cons(new Data_Either.Left(v.value2.value0.value0), Data_List_Types.Nil.value));
+                  var v3 = exprBwd(Expr.asExpr(patternBwd(Expr.asElim(v2.value0))(v.value2.value0.value0)))(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1)));
+                  if (v3 instanceof SExpr.ListComp) {
+                      return new SExpr.ListComp(Lattice.join(Lattice.joinSemilatticeBoolean)(v2.value1)(v3.value0), v3.value1, new Data_NonEmpty.NonEmpty(new SExpr.Generator(v.value2.value0.value0, exprBwd(v1.value1)(v.value2.value0.value1)), new Data_List_Types.Cons(v3.value2.value0, v3.value2.value1)));
+                  };
+                  return Util.error(Util.absurd);
+              };
+              return Util.error(Util.absurd);
+          };
+          throw new Error("Failed pattern match at DesugarBwd (line 46, column 1 - line 46, column 40): " + [ e.constructor.name, v.constructor.name ]);
+      };
+  };
+  var branchesBwd_uncurried = function (σ) {
+      return function (v) {
+          if (v.value1 instanceof Data_List_Types.Cons) {
+              return new Data_NonEmpty.NonEmpty(branchBwd_uncurried(σ)(v.value0), Data_List_NonEmpty.toList(branchesBwd_uncurried(σ)(new Data_NonEmpty.NonEmpty(v.value1.value0, v.value1.value1))));
+          };
+          if (v.value1 instanceof Data_List_Types.Nil) {
+              return new Data_NonEmpty.NonEmpty(branchBwd_uncurried(σ)(v.value0), Data_List_Types.Nil.value);
+          };
+          throw new Error("Failed pattern match at DesugarBwd (line 230, column 1 - line 230, column 74): " + [ σ.constructor.name, v.constructor.name ]);
+      };
+  };
+  var branchesBwd_curried = function (σ) {
+      return function (v) {
+          if (v.value1 instanceof Data_List_Types.Cons) {
+              return new Data_NonEmpty.NonEmpty(branchBwd_curried(σ)(v.value0), Data_List_NonEmpty.toList(branchesBwd_curried(σ)(new Data_NonEmpty.NonEmpty(v.value1.value0, v.value1.value1))));
+          };
+          if (v.value1 instanceof Data_List_Types.Nil) {
+              return new Data_NonEmpty.NonEmpty(branchBwd_curried(σ)(v.value0), Data_List_Types.Nil.value);
+          };
+          throw new Error("Failed pattern match at DesugarBwd (line 223, column 1 - line 223, column 64): " + [ σ.constructor.name, v.constructor.name ]);
+      };
+  };
+  var branchBwd_uncurried = function (σ) {
+      return function (v) {
+          return new Data_Tuple.Tuple(v.value0, exprBwd(Expr.asExpr(patternBwd(σ)(v.value0)))(v.value1));
+      };
+  };
+  var branchBwd_curried = function (σ) {
+      return function (v) {
+          return new Data_Tuple.Tuple(v.value0, exprBwd(patternsBwd(σ)(v.value0))(v.value1));
+      };
+  };
+  var desugarBwd = exprBwd;
+  exports["desugarBwd"] = desugarBwd;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["EvalBwd"] = $PS["EvalBwd"] || {};
+  var exports = $PS["EvalBwd"];
+  var Bindings = $PS["Bindings"];
+  var Control_Bind = $PS["Control.Bind"];
+  var Data_Eq = $PS["Data.Eq"];
+  var Data_Foldable = $PS["Data.Foldable"];
+  var Data_Function = $PS["Data.Function"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_List = $PS["Data.List"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Map_Internal = $PS["Data.Map.Internal"];
+  var Data_NonEmpty = $PS["Data.NonEmpty"];
+  var Data_Semigroup = $PS["Data.Semigroup"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var DataType = $PS["DataType"];
+  var Expl = $PS["Expl"];
+  var Expr = $PS["Expr"];
+  var Lattice = $PS["Lattice"];
+  var Util = $PS["Util"];
+  var Val = $PS["Val"];                
+  var unmatchArgs = function (ρ) {
+      return function (v) {
+          if (v instanceof Data_List_Types.Nil) {
+              return new Data_Tuple.Tuple(ρ, Bindings.Empty.value);
+          };
+          if (v instanceof Data_List_Types.Cons) {
+              var v1 = unmatch(ρ)(v.value0);
+              var v2 = unmatchArgs(v1.value0)(v.value1);
+              return new Data_Tuple.Tuple(v2.value0, Data_Semigroup.append(Bindings.semigroupBindings)(v2.value1)(v1.value1));
+          };
+          throw new Error("Failed pattern match at EvalBwd (line 26, column 1 - line 26, column 56): " + [ ρ.constructor.name, v.constructor.name ]);
+      };
+  };
+  var unmatch = function (v) {
+      return function (v1) {
+          if (v instanceof Bindings.Extend && v1 instanceof Expl.MatchVar) {
+              return new Data_Tuple.Tuple(v.value0, new Bindings.Extend(Bindings.Empty.value, new Bindings.Binding(Util.mustEq(Data_Eq.eqString)(v.value1.value0)(v1.value0), v.value1.value1)));
+          };
+          if (v instanceof Bindings.Empty && v1 instanceof Expl.MatchVar) {
+              return Util.error(Util.absurd);
+          };
+          if (v1 instanceof Expl.MatchVarAnon) {
+              return new Data_Tuple.Tuple(v, Bindings.Empty.value);
+          };
+          if (v1 instanceof Expl.MatchConstr) {
+              return unmatchArgs(v)(Data_List.reverse(v1.value1));
+          };
+          throw new Error("Failed pattern match at EvalBwd (line 19, column 1 - line 19, column 45): " + [ v.constructor.name, v1.constructor.name ]);
+      };
+  };
+  var matchBwd = function (v) {
+      return function (v1) {
+          return function (v2) {
+              return function (v3) {
+                  if (v instanceof Bindings.Extend && (v.value0 instanceof Bindings.Empty && v3 instanceof Expl.MatchVar)) {
+                      return new Data_Tuple.Tuple(v.value1.value1, new Expr.ElimVar(Util.mustEq(Data_Eq.eqString)(v.value1.value0)(v3.value0), v1));
+                  };
+                  if (v instanceof Bindings.Empty && v3 instanceof Expl.MatchVarAnon) {
+                      return new Data_Tuple.Tuple(Lattice.botOf(Val.boundedSlices)(v3.value0), new Expr.ElimVar(Bindings.varAnon, v1));
+                  };
+                  if (v3 instanceof Expl.MatchConstr) {
+                      var v4 = matchArgs_bwd(v)(v1)(v2)(Data_List.reverse(v3.value1));
+                      var cκs = new Data_List_Types.Cons(new Data_Tuple.Tuple(v3.value0, v4.value1), Data_Functor.map(Data_List_Types.functorList)(function (v5) {
+                          return new Data_Tuple.Tuple(v5, new Expr.ContHole(false));
+                      })(v3.value2));
+                      return new Data_Tuple.Tuple(new Val.Constr(v2, v3.value0, v4.value0), new Expr.ElimConstr(Data_Map_Internal.fromFoldable(DataType.ordCtr)(Data_List_Types.foldableList)(cκs)));
+                  };
+                  return Util.error(Util.absurd);
+              };
+          };
+      };
+  };
+  var matchArgs_bwd = function (ρ) {
+      return function (κ) {
+          return function (α) {
+              return function (v) {
+                  if (v instanceof Data_List_Types.Nil) {
+                      return new Data_Tuple.Tuple(Data_List_Types.Nil.value, κ);
+                  };
+                  if (v instanceof Data_List_Types.Cons) {
+                      var v1 = unmatch(ρ)(v.value0);
+                      var v2 = matchBwd(v1.value1)(κ)(α)(v.value0);
+                      var v4 = matchArgs_bwd(v1.value0)(new Expr.ContElim(v2.value1))(α)(v.value1);
+                      return new Data_Tuple.Tuple(Data_Semigroup.append(Data_List_Types.semigroupList)(v4.value0)(new Data_List_Types.Cons(v2.value0, Data_List_Types.Nil.value)), v4.value1);
+                  };
+                  throw new Error("Failed pattern match at EvalBwd (line 52, column 1 - line 52, column 81): " + [ ρ.constructor.name, κ.constructor.name, α.constructor.name, v.constructor.name ]);
+              };
+          };
+      };
+  };
+  var closeDefsBwd = function (ρ) {
+      return function (v) {
+          var joinDefs = function (v1) {
+              return function (v2) {
+                  var v4 = Lattice.expand(Val.valExpandable)(v1.value1)(new Val.Closure(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v2.value0.value1), Lattice.botOf(Bindings.boundedSlices(Expr.functorElim)(Expr.boundedSlicesElim))(v2.value1), new Expr.ElimHole(false)));
+                  if (v4 instanceof Val.Closure) {
+                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Bindings.Extend(v2.value0.value0, new Bindings.Binding(v1.value0, v4.value2)), Lattice.join(Bindings.joinSemilatticeBindings(Val.functorVal)(Lattice.joinSemilatticeBoolean)(Val.slicesVal))(v2.value0.value1)(v4.value0)), Lattice.join(Bindings.joinSemilatticeBindings(Expr.functorElim)(Lattice.joinSemilatticeBoolean)(Expr.slicesElim))(v2.value1)(v4.value1));
+                  };
+                  return Util.error(Util.absurd);
+              };
+          };
+          var v1 = Bindings.foldEnv(joinDefs)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(Bindings.Empty.value, Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v.value0)), Lattice.botOf(Bindings.boundedSlices(Expr.functorElim)(Expr.boundedSlicesElim))(v.value1)))(ρ);
+          return new Data_Tuple.Tuple(v1.value0.value1, Lattice.join(Bindings.joinSemilatticeBindings(Expr.functorElim)(Lattice.joinSemilatticeBoolean)(Expr.slicesElim))(v1.value1)(v1.value0.value0));
+      };
+  };
+  var evalBwd = function (v) {
+      return function (v1) {
+          if (v1 instanceof Expl.Var) {
+              return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Bindings.update(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v1.value0))(new Bindings.Binding(v1.value1, v)), new Expr.Var(v1.value1)), false);
+          };
+          if (v1 instanceof Expl.Op) {
+              return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Bindings.update(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v1.value0))(new Bindings.Binding(v1.value1, v)), new Expr.Op(v1.value1)), false);
+          };
+          if (v1 instanceof Expl.Str) {
+              var v3 = Lattice.expand(Val.valExpandable)(v)(new Val.Str(false, v1.value1));
+              if (v3 instanceof Val.Str) {
+                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v1.value0), new Expr.Str(v3.value0, v1.value1)), v3.value0);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v1 instanceof Expl.Int) {
+              var v3 = Lattice.expand(Val.valExpandable)(v)(new Val.Int(false, v1.value1));
+              if (v3 instanceof Val.Int) {
+                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v1.value0), new Expr.Int(v3.value0, v1.value1)), v3.value0);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v1 instanceof Expl.Float) {
+              var v3 = Lattice.expand(Val.valExpandable)(v)(new Val.Float(false, v1.value1));
+              if (v3 instanceof Val.Float) {
+                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v1.value0), new Expr.Float(v3.value0, v1.value1)), v3.value0);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v1 instanceof Expl.Lambda) {
+              var v3 = Lattice.expand(Val.valExpandable)(v)(new Val.Closure(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v1.value0), Bindings.Empty.value, Lattice.botOf(Expr.boundedSlicesElim)(v1.value1)));
+              if (v3 instanceof Val.Closure) {
+                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(v3.value0, new Expr.Lambda(v3.value2)), false);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v1 instanceof Expl.Constr) {
+              var v3 = Lattice.expand(Val.valExpandable)(v)(new Val.Constr(false, v1.value1, Data_Functor.mapFlipped(Data_List_Types.functorList)(v1.value2)(Data_Function["const"](new Val.Hole(false)))));
+              if (v3 instanceof Val.Constr) {
+                  var evalArg_bwd = function (v4) {
+                      return function (v5) {
+                          var v6 = evalBwd(v4.value0)(v4.value1);
+                          return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.join(Bindings.joinSemilatticeBindings(Val.functorVal)(Lattice.joinSemilatticeBoolean)(Val.slicesVal))(v5.value0.value0)(v6.value0.value0), new Data_List_Types.Cons(v6.value0.value1, v5.value0.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(v5.value1)(v6.value1));
+                      };
+                  };
+                  var v4 = Data_Foldable.foldr(Data_List_Types.foldableList)(evalArg_bwd)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v1.value0), Data_List_Types.Nil.value), v3.value0))(Data_List.zip(v3.value2)(v1.value2));
+                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(v4.value0.value0, new Expr.Constr(v3.value0, v1.value1, v4.value0.value1)), v4.value1);
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v1 instanceof Expl.Matrix) {
+              var v3 = Lattice.expand(Val.valExpandable)(v)(new Val.Matrix(false, Val.holeMatrix(v1.value2.value0)(v1.value2.value1)));
+              if (v3 instanceof Val.Matrix) {
+                  var v4 = Util.nonEmpty(Control_Bind.bind(Data_List_Types.bindList)(Data_List.range(1)(v1.value2.value0))(function (i) {
+                      return Control_Bind.bind(Data_List_Types.bindList)(Data_List.range(1)(v1.value2.value1))(function (j) {
+                          return Data_List.singleton(new Data_Tuple.Tuple(i, j));
+                      });
+                  }));
+                  var evalBwd_elem = function (v5) {
+                      var v6 = evalBwd(Util.unsafeIndex(Util.unsafeIndex(v3.value1.value0.value0)(v5.value0 - 1 | 0))(v5.value1 - 1 | 0))(Util.unsafeIndex(Util.unsafeIndex(v1.value0)(v5.value0 - 1 | 0))(v5.value1 - 1 | 0));
+                      if (v6.value0.value0 instanceof Bindings.Extend && v6.value0.value0.value0 instanceof Bindings.Extend) {
+                          var v7 = new Data_Tuple.Tuple(Lattice.expand(Val.valExpandable)(v6.value0.value0.value0.value1.value1)(new Val.Int(false, v5.value0)), Lattice.expand(Val.valExpandable)(v6.value0.value0.value1.value1)(new Val.Int(false, v5.value1)));
+                          if (v7.value0 instanceof Val.Int && v7.value1 instanceof Val.Int) {
+                              return new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(v6.value0.value0.value0.value0, v6.value0.value1), v6.value1), v7.value0.value0), v7.value1.value0);
+                          };
+                          return Util.error(Util.absurd);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  var v5 = Data_NonEmpty.foldl1(Data_List_Types.foldableList)(function (v6) {
+                      return function (v7) {
+                          return new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.join(Bindings.joinSemilatticeBindings(Val.functorVal)(Lattice.joinSemilatticeBoolean)(Val.slicesVal))(v6.value0.value0.value0.value0)(v7.value0.value0.value0.value0), Lattice.join(Expr.joinSemilatticeExpr)(v6.value0.value0.value0.value1)(v7.value0.value0.value0.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(v6.value0.value0.value1)(v7.value0.value0.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(v6.value0.value1)(v7.value0.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(v6.value1)(v7.value1));
+                      };
+                  })(Data_Functor.map(Data_NonEmpty.functorNonEmpty(Data_List_Types.functorList))(evalBwd_elem)(v4));
+                  var v6 = evalBwd(new Val.Constr(false, DataType.cPair, new Data_List_Types.Cons(new Val.Int(Lattice.join(Lattice.joinSemilatticeBoolean)(v5.value0.value1)(v3.value1.value0.value1.value1), v1.value2.value0), new Data_List_Types.Cons(new Val.Int(Lattice.join(Lattice.joinSemilatticeBoolean)(v5.value1)(v3.value1.value1.value1), v1.value2.value1), Data_List_Types.Nil.value))))(v1.value3);
+                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.join(Bindings.joinSemilatticeBindings(Val.functorVal)(Lattice.joinSemilatticeBoolean)(Val.slicesVal))(v5.value0.value0.value0.value0)(v6.value0.value0), new Expr.Matrix(v3.value0, v5.value0.value0.value0.value1, new Data_Tuple.Tuple(v1.value1.value0, v1.value1.value1), v6.value0.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(Lattice.join(Lattice.joinSemilatticeBoolean)(v3.value0)(v5.value0.value0.value1))(v6.value1));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v1 instanceof Expl.App) {
+              var v3 = evalBwd(v)(v1.value3);
+              var v4 = unmatch(v3.value0.value0)(v1.value2);
+              var v5 = matchBwd(v4.value1)(new Expr.ContExpr(v3.value0.value1))(v3.value1)(v1.value2);
+              var v6 = Bindings.splitAt(Bindings.length(v1.value0.value0.value1))(v4.value0);
+              var v7 = evalBwd(v5.value0)(v1.value1);
+              var v8 = closeDefsBwd(v6.value1)(new Data_Tuple.Tuple(v6.value0, v1.value0.value0.value1));
+              var v9 = evalBwd(new Val.Closure(Lattice.join(Bindings.joinSemilatticeBindings(Val.functorVal)(Lattice.joinSemilatticeBoolean)(Val.slicesVal))(v6.value0)(v8.value0), v8.value1, v5.value1))(v1.value0.value0.value0.value0);
+              return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.join(Bindings.joinSemilatticeBindings(Val.functorVal)(Lattice.joinSemilatticeBoolean)(Val.slicesVal))(v7.value0.value0)(v9.value0.value0), new Expr.App(v9.value0.value1, v7.value0.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(v7.value1)(v9.value1));
+          };
+          if (v1 instanceof Expl.AppPrim) {
+              var vs$prime = Data_Semigroup.append(Data_List_Types.semigroupList)(v1.value0.value1)(Data_List.singleton(v1.value1.value1));
+              var v3 = Util.fromJust(Util.absurd)(Data_List.unsnoc((function () {
+                  var $299 = v1.value0.value0.value1.arity > Data_List.length(vs$prime);
+                  if ($299) {
+                      var v4 = Lattice.expand(Val.valExpandable)(v)(new Val.Primitive(v1.value0.value0.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Val.Hole(false)))(vs$prime)));
+                      if (v4 instanceof Val.Primitive) {
+                          return v4.value1;
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  return v1.value0.value0.value1.op_bwd(new Data_Tuple.Tuple(v, v1.value0.value0.value1.op(vs$prime)))(vs$prime);
+              })()));
+              var v4 = evalBwd(new Val.Primitive(v1.value0.value0.value1, v3.init))(v1.value0.value0.value0);
+              var v5 = evalBwd(v3.last)(v1.value1.value0);
+              return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.join(Bindings.joinSemilatticeBindings(Val.functorVal)(Lattice.joinSemilatticeBoolean)(Val.slicesVal))(v4.value0.value0)(v5.value0.value0), new Expr.App(v4.value0.value1, v5.value0.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(v4.value1)(v5.value1));
+          };
+          if (v1 instanceof Expl.AppConstr) {
+              var v3 = Lattice.expand(Val.valExpandable)(v)(new Val.Constr(false, v1.value0.value0.value1, Util.replicate(v1.value0.value1 + 1 | 0)(new Val.Hole(false))));
+              if (v3 instanceof Val.Constr) {
+                  var v4 = Util.fromJust(Util.absurd)(Data_List.unsnoc(v3.value2));
+                  var v5 = evalBwd(new Val.Constr(v3.value0, v1.value0.value0.value1, v4.init))(v1.value0.value0.value0);
+                  var v6 = evalBwd(v4.last)(v1.value1);
+                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.join(Bindings.joinSemilatticeBindings(Val.functorVal)(Lattice.joinSemilatticeBoolean)(Val.slicesVal))(v5.value0.value0)(v6.value0.value0), new Expr.App(v5.value0.value1, v6.value0.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(v5.value1)(v6.value1));
+              };
+              return Util.error(Util.absurd);
+          };
+          if (v1 instanceof Expl.Let) {
+              var v3 = evalBwd(v)(v1.value1);
+              var v4 = unmatch(v3.value0.value0)(v1.value0.value0);
+              var v5 = matchBwd(v4.value1)(new Expr.ContHole(false))(v3.value1)(v1.value0.value0);
+              var v6 = evalBwd(v5.value0)(v1.value0.value1);
+              return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.join(Bindings.joinSemilatticeBindings(Val.functorVal)(Lattice.joinSemilatticeBoolean)(Val.slicesVal))(v4.value0)(v6.value0.value0), new Expr.Let(new Expr.VarDef(v5.value1, v6.value0.value1), v3.value0.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(v6.value1)(v3.value1));
+          };
+          if (v1 instanceof Expl.LetRec) {
+              var v3 = evalBwd(v)(v1.value1);
+              var v4 = Bindings.splitAt(Bindings.length(v1.value0))(v3.value0.value0);
+              var v5 = closeDefsBwd(v4.value1)(new Data_Tuple.Tuple(v4.value0, v1.value0));
+              return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.join(Bindings.joinSemilatticeBindings(Val.functorVal)(Lattice.joinSemilatticeBoolean)(Val.slicesVal))(v4.value0)(v5.value0), new Expr.LetRec(v5.value1, v3.value0.value1)), v3.value1);
+          };
+          throw new Error("Failed pattern match at EvalBwd (line 60, column 1 - line 60, column 49): " + [ v.constructor.name, v1.constructor.name ]);
+      };
+  };
+  exports["evalBwd"] = evalBwd;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["EvalFwd"] = $PS["EvalFwd"] || {};
+  var exports = $PS["EvalFwd"];
+  var Bindings = $PS["Bindings"];
+  var Control_Bind = $PS["Control.Bind"];
+  var Data_Array = $PS["Data.Array"];
+  var Data_Function = $PS["Data.Function"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_List = $PS["Data.List"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Map_Internal = $PS["Data.Map.Internal"];
+  var Data_Semigroup = $PS["Data.Semigroup"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var DataType = $PS["DataType"];
+  var Eval = $PS["Eval"];
+  var Expl = $PS["Expl"];
+  var Expr = $PS["Expr"];
+  var Lattice = $PS["Lattice"];
+  var Primitive = $PS["Primitive"];
+  var Util = $PS["Util"];
+  var Val = $PS["Val"];                
+  var matchFwd = function (v) {
+      return function (σ) {
+          return function (v1) {
+              var v2 = v;
+              if (v1 instanceof Expl.MatchVar) {
+                  var v3 = Lattice.expand(Expr.elimExpandable)(σ)(new Expr.ElimVar(v1.value0, new Expr.ContHole(false)));
+                  if (v3 instanceof Expr.ElimVar) {
+                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Bindings.Extend(Bindings.Empty.value, new Bindings.Binding(v1.value0, v2)), v3.value1), true);
+                  };
+                  return Util.error(Util.absurd);
+              };
+              if (v1 instanceof Expl.MatchVarAnon) {
+                  var v2 = Lattice.expand(Expr.elimExpandable)(σ)(new Expr.ElimVar(Bindings.varAnon, new Expr.ContHole(false)));
+                  if (v2 instanceof Expr.ElimVar) {
+                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Bindings.Empty.value, v2.value1), true);
+                  };
+                  return Util.error(Util.absurd);
+              };
+              if (v1 instanceof Expl.MatchConstr) {
+                  var v3 = new Data_Tuple.Tuple(Lattice.expand(Val.valExpandable)(v)(new Val.Constr(false, v1.value0, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Val.Hole(false)))(v1.value1))), Lattice.expand(Expr.elimExpandable)(σ)(new Expr.ElimConstr(Data_Map_Internal.fromFoldable(DataType.ordCtr)(Data_List_Types.foldableList)(Data_Functor.map(Data_List_Types.functorList)(function (v4) {
+                      return new Data_Tuple.Tuple(v4, new Expr.ContHole(false));
+                  })(new Data_List_Types.Cons(v1.value0, v1.value2))))));
+                  if (v3.value0 instanceof Val.Constr && v3.value1 instanceof Expr.ElimConstr) {
+                      var v4 = matchArgsFwd(v3.value0.value2)(Util.mustLookup(DataType.ordCtr)(v1.value0)(v3.value1.value0))(v1.value1);
+                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(v4.value0.value0, v4.value0.value1), Lattice.meet(v3.value0.value0)(v4.value1));
+                  };
+                  return Util.error(Util.absurd);
+              };
+              throw new Error("Failed pattern match at EvalFwd (line 20, column 1 - line 20, column 61): " + [ v.constructor.name, σ.constructor.name, v1.constructor.name ]);
+          };
+      };
+  };
+  var matchArgsFwd = function (v) {
+      return function (v1) {
+          return function (v2) {
+              if (v instanceof Data_List_Types.Nil && v2 instanceof Data_List_Types.Nil) {
+                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Bindings.Empty.value, v1), true);
+              };
+              if (v instanceof Data_List_Types.Cons && v2 instanceof Data_List_Types.Cons) {
+                  var v4 = Lattice.expand(Expr.contExpandable)(v1)(new Expr.ContElim(new Expr.ElimHole(false)));
+                  if (v4 instanceof Expr.ContElim) {
+                      var v5 = matchFwd(v.value0)(v4.value0)(v2.value0);
+                      var v6 = matchArgsFwd(v.value1)(v5.value0.value1)(v2.value1);
+                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Semigroup.append(Bindings.semigroupBindings)(v5.value0.value0)(v6.value0.value0), v6.value0.value1), Lattice.meet(v5.value1)(v6.value1));
+                  };
+                  return Util.error(Util.absurd);
+              };
+              return Util.error(Util.absurd);
+          };
+      };
+  };
+  var evalFwd = function (ρ) {
+      return function (e) {
+          return function (v) {
+              return function (v1) {
+                  if (v1 instanceof Expl.Var) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Var(v1.value1));
+                      if (v2 instanceof Expr.Var) {
+                          return Util.successful(Bindings.find(v1.value1)(ρ));
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Op) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Op(v1.value1));
+                      if (v2 instanceof Expr.Op) {
+                          return Util.successful(Bindings.find(v1.value1)(ρ));
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Int) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Int(false, v1.value1));
+                      if (v2 instanceof Expr.Int) {
+                          return new Val.Int(Lattice.meet(v2.value0)(v), v1.value1);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Float) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Float(false, v1.value1));
+                      if (v2 instanceof Expr.Float) {
+                          return new Val.Float(Lattice.meet(v2.value0)(v), v1.value1);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Str) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Str(false, v1.value1));
+                      if (v2 instanceof Expr.Str) {
+                          return new Val.Str(Lattice.meet(v2.value0)(v), v1.value1);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Constr) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, v1.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Expr.Hole(false)))(v1.value2)));
+                      if (v2 instanceof Expr.Constr) {
+                          return new Val.Constr(Lattice.meet(v2.value0)(v), v1.value1, Data_Functor.map(Data_List_Types.functorList)(function (v3) {
+                              return evalFwd(ρ)(v3.value0)(v)(v3.value1);
+                          })(Data_List.zip(v2.value2)(v1.value2)));
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Matrix) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Matrix(false, new Expr.Hole(false), new Data_Tuple.Tuple(v1.value1.value0, v1.value1.value1), new Expr.Hole(false)));
+                      if (v2 instanceof Expr.Matrix) {
+                          var v3 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v2.value3)(v2.value0)(v1.value3))(new Val.Constr(false, DataType.cPair, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value))));
+                          if (v3 instanceof Val.Constr && (v3.value2 instanceof Data_List_Types.Cons && (v3.value2.value1 instanceof Data_List_Types.Cons && v3.value2.value1.value1 instanceof Data_List_Types.Nil))) {
+                              var v4 = new Data_Tuple.Tuple(Primitive.match_fwd(Primitive.toFromInt)(new Data_Tuple.Tuple(v3.value2.value0, new Val.Int(false, v1.value2.value0))), Primitive.match_fwd(Primitive.toFromInt)(new Data_Tuple.Tuple(v3.value2.value1.value0, new Val.Int(false, v1.value2.value1))));
+                              var vss = Util.assert(v4.value0.value0 === v1.value2.value0 && v4.value1.value0 === v1.value2.value1)(Data_Array.fromFoldable(Data_List_Types.foldableList)(Control_Bind.bind(Data_List_Types.bindList)(Data_List.range(1)(v1.value2.value0))(function (i) {
+                                  return Data_List.singleton(Data_Array.fromFoldable(Data_List_Types.foldableList)(Control_Bind.bind(Data_List_Types.bindList)(Data_List.range(1)(v1.value2.value1))(function (j) {
+                                      return Data_List.singleton(evalFwd(new Bindings.Extend(new Bindings.Extend(ρ, new Bindings.Binding(v1.value1.value0, new Val.Int(v2.value0, i))), new Bindings.Binding(v1.value1.value1, new Val.Int(v2.value0, j))))(v2.value1)(v)(Util.unsafeIndex(Util.unsafeIndex(v1.value0)(i - 1 | 0))(j - 1 | 0)));
+                                  })));
+                              })));
+                              return new Val.Matrix(Lattice.meet(v2.value0)(v), new Data_Tuple.Tuple(new Data_Tuple.Tuple(vss, new Data_Tuple.Tuple(v1.value2.value0, v4.value0.value1)), new Data_Tuple.Tuple(v1.value2.value1, v4.value1.value1)));
+                          };
+                          return Util.error(Util.absurd);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.LetRec) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.LetRec(Lattice.botOf(Bindings.boundedSlices(Expr.functorElim)(Expr.boundedSlicesElim))(v1.value0), new Expr.Hole(false)));
+                      if (v2 instanceof Expr.LetRec) {
+                          var ρ$prime = Eval.closeDefs(ρ)(v2.value0)(v2.value0);
+                          return evalFwd(Data_Semigroup.append(Bindings.semigroupBindings)(ρ)(ρ$prime))(v2.value1)(v)(v1.value1);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Lambda) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Lambda(new Expr.ElimHole(false)));
+                      if (v2 instanceof Expr.Lambda) {
+                          return new Val.Closure(ρ, Bindings.Empty.value, v2.value0);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.App) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
+                      if (v2 instanceof Expr.App) {
+                          var v3 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v2.value0)(v)(v1.value0.value0.value0.value0))(new Val.Closure(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v1.value0.value0.value0.value1), Lattice.botOf(Bindings.boundedSlices(Expr.functorElim)(Expr.boundedSlicesElim))(v1.value0.value0.value1), new Expr.ElimHole(false)));
+                          if (v3 instanceof Val.Closure) {
+                              var ρ2 = Eval.closeDefs(v3.value0)(v3.value1)(v3.value1);
+                              var v4 = evalFwd(ρ)(v2.value1)(v)(v1.value1);
+                              var v5 = matchFwd(v4)(v3.value2)(v1.value2);
+                              return evalFwd(Data_Semigroup.append(Bindings.semigroupBindings)(v3.value0)(Data_Semigroup.append(Bindings.semigroupBindings)(ρ2)(v5.value0.value0)))(Expr.asExpr(v5.value0.value1))(v5.value1)(v1.value3);
+                          };
+                          return Util.error(Util.absurd);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.AppPrim) {
+                      var v3 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
+                      if (v3 instanceof Expr.App) {
+                          var v4 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v3.value0)(v)(v1.value0.value0.value0))(new Val.Primitive(v1.value0.value0.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Val.Hole(false)))(v1.value0.value1)));
+                          if (v4 instanceof Val.Primitive) {
+                              var v2$prime = evalFwd(ρ)(v3.value1)(v)(v1.value1.value0);
+                              var vs$prime$prime = Data_Semigroup.append(Data_List_Types.semigroupList)(Data_List.zip(v4.value1)(v1.value0.value1))(Data_List.singleton(new Data_Tuple.Tuple(v2$prime, v1.value1.value1)));
+                              var $179 = v1.value0.value0.value1.arity > Data_List.length(vs$prime$prime);
+                              if ($179) {
+                                  return new Val.Primitive(v1.value0.value0.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Tuple.fst)(vs$prime$prime));
+                              };
+                              return v1.value0.value0.value1.op_fwd(vs$prime$prime);
+                          };
+                          return Util.error(Util.absurd);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.AppConstr) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
+                      if (v2 instanceof Expr.App) {
+                          var v3 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v2.value0)(v)(v1.value0.value0.value0))(new Val.Constr(false, v1.value0.value0.value1, Util.replicate(v1.value0.value1)(new Val.Hole(false))));
+                          if (v3 instanceof Val.Constr) {
+                              var v4 = evalFwd(ρ)(v2.value1)(v)(v1.value1);
+                              return new Val.Constr(Lattice.meet(v)(v3.value0), v1.value0.value0.value1, Data_Semigroup.append(Data_List_Types.semigroupList)(v3.value2)(Data_List.singleton(v4)));
+                          };
+                          return Util.error(Util.absurd);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Let) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Let(new Expr.VarDef(new Expr.ElimHole(false), new Expr.Hole(false)), new Expr.Hole(false)));
+                      if (v2 instanceof Expr.Let) {
+                          var v3 = evalFwd(ρ)(v2.value0.value1)(v)(v1.value0.value1);
+                          var v4 = matchFwd(v3)(v2.value0.value0)(v1.value0.value0);
+                          return evalFwd(Data_Semigroup.append(Bindings.semigroupBindings)(ρ)(v4.value0.value0))(v2.value1)(v4.value1)(v1.value1);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  throw new Error("Failed pattern match at EvalFwd (line 48, column 1 - line 48, column 51): " + [ ρ.constructor.name, e.constructor.name, v.constructor.name, v1.constructor.name ]);
+              };
+          };
+      };
+  };
+  exports["evalFwd"] = evalFwd;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Test.Util"] = $PS["Test.Util"] || {};
+  var exports = $PS["Test.Util"];
+  var Bindings = $PS["Bindings"];
+  var Control_Bind = $PS["Control.Bind"];
+  var Data_Either = $PS["Data.Either"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var DesugarBwd = $PS["DesugarBwd"];
   var DesugarFwd = $PS["DesugarFwd"];
   var Eval = $PS["Eval"];
+  var EvalBwd = $PS["EvalBwd"];
+  var EvalFwd = $PS["EvalFwd"];
+  var Expr = $PS["Expr"];
+  var Lattice = $PS["Lattice"];
+  var Util = $PS["Util"];
+  var Val = $PS["Val"];
+  var desugarEval_fwd = function (ρ) {
+      return function (s) {
+          var v = EvalFwd.evalFwd(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(ρ))(new Expr.Hole(false))(false);
+          return EvalFwd.evalFwd(ρ)(Util.successful(DesugarFwd.desugarFwd(s)))(true);
+      };
+  };
+  var desugarEval_bwd = function (v) {
+      return function (v1) {
+          var v3 = EvalBwd.evalBwd(v1)(v.value0);
+          return new Data_Tuple.Tuple(v3.value0.value0, DesugarBwd.desugarBwd(v3.value0.value1)(v.value1));
+      };
+  };
   var desugarEval = function (ρ) {
       return function (s) {
           return Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarFwd(s))(Eval["eval"](ρ));
       };
   };
   exports["desugarEval"] = desugarEval;
+  exports["desugarEval_bwd"] = desugarEval_bwd;
+  exports["desugarEval_fwd"] = desugarEval_fwd;
 })(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
   "use strict";
   $PS["App.Demo"] = $PS["App.Demo"] || {};
   var exports = $PS["App.Demo"];
+  var App_Renderer = $PS["App.Renderer"];
   var Data_Either = $PS["Data.Either"];
   var Data_Function = $PS["Data.Function"];
   var Data_Show = $PS["Data.Show"];
-  var Data_Unit = $PS["Data.Unit"];
+  var Data_Tuple = $PS["Data.Tuple"];
   var Effect_Aff = $PS["Effect.Aff"];
   var Effect_Console = $PS["Effect.Console"];
   var Effect_Exception = $PS["Effect.Exception"];
   var Module = $PS["Module"];
-  var Pretty = $PS["Pretty"];
-  var Test_Util = $PS["Test.Util"];                
+  var Primitive = $PS["Primitive"];
+  var Test_Util = $PS["Test.Util"];
+  var Val = $PS["Val"];                
   var main = Data_Function.flip(Effect_Aff.runAff_)(Module.openWithDefaultImports("slicing/conv-extend"))(function (result) {
       if (result instanceof Data_Either.Left) {
           return Effect_Console.log("Open failed: " + Data_Show.show(Effect_Exception.showError)(result.value0));
@@ -30408,14 +31778,14 @@ var PS = {};
               return Effect_Console.log("Execution failed: " + v.value0);
           };
           if (v instanceof Data_Either.Right) {
-              return function __do() {
-                  Effect_Console.log(Pretty.prettyP(Pretty.prettyVal)(v.value0.value1))();
-                  return Data_Unit.unit;
-              };
+              var v1 = new Val.Matrix(true, Val.insertMatrix(2)(2)(new Val.Hole(true))(Val.holeMatrix(5)(5)));
+              var v2 = Test_Util.desugarEval_bwd(new Data_Tuple.Tuple(v.value0.value0, result.value0.value1))(v1);
+              var v$prime = Test_Util.desugarEval_fwd(v2.value0)(v2.value1)(v.value0.value0);
+              return App_Renderer.renderMatrix(Primitive.match(Primitive.toFromMatrixRep)(v$prime));
           };
-          throw new Error("Failed pattern match at App.Demo (line 18, column 24 - line 22, column 22): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at App.Demo (line 20, column 24 - line 26, column 36): " + [ v.constructor.name ]);
       };
-      throw new Error("Failed pattern match at App.Demo (line 16, column 4 - line 22, column 22): " + [ result.constructor.name ]);
+      throw new Error("Failed pattern match at App.Demo (line 18, column 4 - line 26, column 36): " + [ result.constructor.name ]);
   });
   exports["main"] = main;
 })(PS);
