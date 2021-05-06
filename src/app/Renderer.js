@@ -2,40 +2,76 @@
 
 const d3 = require("d3")
 
-// String -> MatrixRep' -> Effect Unit
-function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max }) {
+const cellFillDefault         = 'White',
+      cellFillSelected        = '#bfeebf',
+      cellFillOutputSelected  = '#90ee90',
+      cellStroke              = 'DarkGray',
+      cellTextFill            = 'Black',
+      cellFontSize            = '10pt',
+      fontFamily              = "Roboto, sans-serif",
+      strokeWidth             = 0.5,
+      titleTextFill           = 'DarkGray',
+      titleFontSize           = '8pt'
+
+// String -> MatrixFig -> Effect Unit
+function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } }) {
    return () => {
-      const w = 30, h = 30, gap = 1.15
-      const div = d3.select('#' + id),
-            svg = div.append('svg')
-                     .attr('width', w * j_max * gap)
-                     .attr('height', h * i_max * gap)
-                     .attr('fill', 'lightgray')
+      const w = 30, h = 30
+      const div = d3.select('#' + id)
+      const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
+      const hMargin = w / 2
+      const vMargin = h / 2
+
+      const svg = div.append('svg')
+                     .attr('width', width + hMargin)
+                     .attr('height', height + vMargin)
+
+      // group for each row
       const grp = svg.selectAll('g')
          .data(nss)
          .enter()
          .append('g')
-         .attr('transform', (_, i) => "translate(0, " + h * gap * i + ")")
+         .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
 
       const rect = grp.selectAll('rect')
                       .data(d => d)
                       .enter()
 
+      // Bit of a hack to highlight output selection slightly differently
+      const cellFillSelected_ =
+         title == "output" ? cellFillOutputSelected : cellFillSelected
+
       rect.append('rect')
-          .attr('x', (_, j) => w * gap * j)
+          .attr('x', (_, j) => w * j)
           .attr('width', w)
           .attr('height', h)
-          .attr('fill', d => d.value1 ? 'green' : 'lightgray')
+          .attr('fill', d => d.value1 ? cellFillSelected_ : cellFillDefault)
+          .attr('stroke', cellStroke)
+          .attr('stroke-width', strokeWidth)
 
       rect.append('text')
-          .attr('x', (_, j) => w * gap * j)
-          .attr('y', 0.5 * h)
-          .attr('fill', 'black')
           .text(d => d.value0)
-   }
+          .attr('x', (_, j) => w * (j + 0.5))
+          .attr('y', 0.5 * h)
+          .attr('fill', cellTextFill)
+          .attr('font-family', fontFamily)
+          .attr('font-size', cellFontSize)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+
+      svg.append('text')
+         .text(title)
+         .attr('x', hMargin / 2)
+         .attr('y', vMargin / 2)
+         .attr('fill', titleTextFill)
+         .attr('font-family', fontFamily)
+         .attr('font-size', titleFontSize)
+         .attr('dominant-baseline', 'middle')
+         .attr('text-anchor', 'left')
+      }
 }
 
-// String -> MatrixRep' -> MatrixRep' -> MatrixRep' -> Effect Unit
+// String -> MatrixFig -> MatrixFig -> MatrixFig -> Effect Unit
 function drawFigure (id, m1, m2, m3) {
    return () => {
       drawMatrix(id, m1)()
