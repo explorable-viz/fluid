@@ -46,6 +46,6 @@ makeFigure file divId =
 
 main :: Effect Unit
 main = do
-   makeFigure "conv-wrap" "fig-1"
+--   makeFigure "conv-wrap" "fig-1"
    makeFigure "conv-extend" "fig-2"
-   makeFigure "conv-zero" "fig-3"
+--   makeFigure "conv-zero" "fig-3"

@@ -2,36 +2,56 @@
 
 const d3 = require("d3")
 
+const cellFillDefault   = 'White',
+      cellFillSelected  = 'PaleGreen',
+      cellStroke        = 'DarkGray'
+
 // String -> MatrixRep' -> Effect Unit
 function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max }) {
    return () => {
-      const w = 30, h = 30, gap = 1.15
+      const w = 30, h = 30
       const div = d3.select('#' + id),
             svg = div.append('svg')
-                     .attr('width', w * j_max * gap)
-                     .attr('height', h * i_max * gap)
-                     .attr('fill', 'lightgray')
+                     .attr('width', w * j_max)
+                     .attr('height', h * i_max)
+
+      // group for each row
       const grp = svg.selectAll('g')
          .data(nss)
          .enter()
          .append('g')
-         .attr('transform', (_, i) => "translate(0, " + h * gap * i + ")")
+         .attr('transform', (_, i) => "translate(0, " + h * i + ")")
 
       const rect = grp.selectAll('rect')
                       .data(d => d)
                       .enter()
 
       rect.append('rect')
-          .attr('x', (_, j) => w * gap * j)
+          .attr('x', (_, j) => w * j)
           .attr('width', w)
           .attr('height', h)
-          .attr('fill', d => d.value1 ? 'green' : 'lightgray')
+          .attr('fill', d => d.value1 ? cellFillSelected : cellFillDefault)
+          .attr('stroke', cellStroke)
+          .attr('stroke-width', '0.5')
 
       rect.append('text')
-          .attr('x', (_, j) => w * gap * j)
+          .attr('x', (_, j) => w * j)
           .attr('y', 0.5 * h)
           .attr('fill', 'black')
+          .attr('font-family', 'Roboto, sans-serif')
+          .attr('font-size', '10pt')
           .text(d => d.value0)
+
+      grp.selectAll('line')
+         .data([1])
+         .enter()
+         .append('line')
+         .attr('stroke', cellStroke)
+         .attr('stroke-width', '5')
+         .attr('x1', 0)
+         .attr('y1', 0)
+         .attr('x2', w * j_max)
+         .attr('y2', 0)
    }
 }
 
