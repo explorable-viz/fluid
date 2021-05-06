@@ -5576,15 +5576,15 @@ var PS = {};
   const d3 = require("d3")
 
   const cellFillDefault         = 'White',
-        cellFillSelected        = '#bfeebf',
-        cellFillOutputSelected  = '#90ee90',
+        cellFillSelected        = 'LightGreen',
+        cellFillOutputSelected  = 'Yellow',
         cellStroke              = 'DarkGray',
         cellTextFill            = 'Black',
         cellFontSize            = '10pt',
         fontFamily              = "Roboto, sans-serif",
         strokeWidth             = 0.5,
-        titleTextFill           = 'DarkGray',
-        titleFontSize           = '8pt'
+        titleTextFill           = 'Black',
+        titleFontSize           = '9pt'
 
   // String -> MatrixFig -> Effect Unit
   function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } }) {
@@ -5641,7 +5641,7 @@ var PS = {};
            .attr('font-size', titleFontSize)
            .attr('dominant-baseline', 'middle')
            .attr('text-anchor', 'left')
-        }
+     }
   }
 
   // String -> MatrixFig -> MatrixFig -> MatrixFig -> Effect Unit
@@ -31669,7 +31669,11 @@ var PS = {};
           });
       };
   };
-  var main = makeFigure("conv-extend")("fig-2");
+  var main = function __do() {
+      makeFigure("conv-wrap")("fig-1")();
+      makeFigure("conv-extend")("fig-2")();
+      return makeFigure("conv-zero")("fig-3")();
+  };
   exports["splitDefs"] = splitDefs;
   exports["makeFigure"] = makeFigure;
   exports["main"] = main;
