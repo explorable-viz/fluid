@@ -28,6 +28,6 @@ renderFigure id (output × output') (filter × filter') (input × input') =
    let input'' × _ = match_fwd (input × input')
        filter'' × _ = match_fwd (filter × filter')
        output'' × _ = match_fwd (output × output')
-   in drawFigure id { title: "Output", matrix: bits (output'' × fst (match output')) }
-                    { title: "Filter", matrix: bits (filter'' × fst (match filter')) }
-                    { title: "Input", matrix: bits (input'' × fst (match input')) }
+   in drawFigure id { title: "output", matrix: bits (output'' × fst (match output')) }
+                    { title: "filter", matrix: bits (filter'' × fst (match filter')) }
+                    { title: "input", matrix: bits (input'' × fst (match input')) }

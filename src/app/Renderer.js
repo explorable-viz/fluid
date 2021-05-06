@@ -18,18 +18,19 @@ function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max
       const w = 30, h = 30
       const div = d3.select('#' + id)
       const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
-      const topMargin = h / 2
+      const hMargin = w / 2
+      const vMargin = h / 2
 
       const svg = div.append('svg')
-                     .attr('width', width)
-                     .attr('height', height + topMargin)
+                     .attr('width', width + hMargin)
+                     .attr('height', height + vMargin)
 
       // group for each row
       const grp = svg.selectAll('g')
          .data(nss)
          .enter()
          .append('g')
-         .attr('transform', (_, i) => `translate(${strokeWidth / 2}, ${h * i + strokeWidth / 2 + topMargin})`)
+         .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
 
       const rect = grp.selectAll('rect')
                       .data(d => d)
@@ -55,8 +56,8 @@ function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max
 
       svg.append('text')
          .text(title)
-         .attr('x', 0)
-         .attr('y', topMargin / 2)
+         .attr('x', hMargin / 2)
+         .attr('y', vMargin / 2)
          .attr('fill', titleTextFill)
          .attr('font-family', fontFamily)
          .attr('font-size', titleFontSize)
