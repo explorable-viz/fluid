@@ -1,6 +1,6 @@
-let edgeDetect = [[0, 2, 4],
-                  [3, 7, 1],
-                  [2, 5, 2]];
+let edgeDetect = [[0,  1, 0],
+                  [1, -4, 1],
+                  [0,  1, 0]];
     filter = [| nth2 i j edgeDetect | (i, j) in (3, 3) |];
     image' = [[15, 13,  6, 9, 16],
               [12,  5, 15, 4, 13],
