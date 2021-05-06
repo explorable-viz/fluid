@@ -9,7 +9,7 @@ const cellFillDefault   = 'White',
       cellFontSize      = '10pt',
       fontFamily        = "Roboto, sans-serif",
       strokeWidth       = 0.5,
-      titleTextFill     = 'LightGray',
+      titleTextFill     = 'DarkGray',
       titleFontSize     = '8pt'
 
 // String -> MatrixFig -> Effect Unit
