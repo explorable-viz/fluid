@@ -1,5 +1,5 @@
-let emboss' = [[_-2_, _-1_, _0_], [_-1_, _1_, _1_], [_0_, _1_, _2_]];
-    emboss = _[| nth2 i j emboss' | (i, j) in (_3_, _3_) |]_;
+let emboss = [[_-2_, _-1_, _0_], [_-1_, _1_, _1_], [_0_, _1_, _2_]];
+    filter = _[| nth2 i j emboss | (i, j) in (_3_, _3_) |]_;
     image' = [[_15_, _13_, 6, 9, _16_], [_12_, _5_, 15, 4, 13], [14, 9, 20, 8, 1], [4, 10, 3, 7, 19], [_3_, 11, 15, 2, _9_]];
     image = _[| nth2 i j image' | (i, j) in (5, 5) |]_
-in convolve image emboss wrap
+in convolve image filter wrap

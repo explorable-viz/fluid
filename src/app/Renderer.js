@@ -3,15 +3,15 @@
 const d3 = require("d3")
 
 const cellFillDefault         = 'White',
-      cellFillSelected        = '#bfeebf',
-      cellFillOutputSelected  = '#90ee90',
+      cellFillSelected        = 'LightGreen',
+      cellFillOutputSelected  = 'Yellow',
       cellStroke              = 'DarkGray',
       cellTextFill            = 'Black',
       cellFontSize            = '10pt',
       fontFamily              = "Roboto, sans-serif",
       strokeWidth             = 0.5,
-      titleTextFill           = 'DarkGray',
-      titleFontSize           = '8pt'
+      titleTextFill           = 'Black',
+      titleFontSize           = '9pt'
 
 // String -> MatrixFig -> Effect Unit
 function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } }) {
@@ -68,7 +68,7 @@ function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max
          .attr('font-size', titleFontSize)
          .attr('dominant-baseline', 'middle')
          .attr('text-anchor', 'left')
-      }
+   }
 }
 
 // String -> MatrixFig -> MatrixFig -> MatrixFig -> Effect Unit
