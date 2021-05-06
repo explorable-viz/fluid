@@ -5,14 +5,24 @@ const d3 = require("d3")
 const cellFillDefault   = 'White',
       cellFillSelected  = 'PaleGreen',
       cellStroke        = 'DarkGray',
-      strokeWidth       = 0.5
+      strokeWidth       = 0.5,
+      textFill          = 'Black',
+      fontFamily        = "Roboto, sans-serif",
+      fontSize          = '10pt'
 
 // String -> MatrixRep' -> Effect Unit
 function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max }) {
    return () => {
       const w = 30, h = 30
-      const div = d3.select('#' + id),
-            svg = div.append('svg')
+      const div = d3.select('#' + id)
+
+      div.append('text')
+         .text("Label")
+         .attr('fill', textFill)
+         .attr('font-family', fontFamily)
+         .attr('font-size', fontSize)
+
+      const svg = div.append('svg')
                      .attr('width', w * j_max + strokeWidth)
                      .attr('height', h * i_max + strokeWidth)
 
@@ -36,14 +46,14 @@ function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max
           .attr('stroke-width', strokeWidth)
 
       rect.append('text')
+          .text(d => d.value0)
           .attr('x', (_, j) => w * (j + 0.5))
           .attr('y', 0.5 * h)
-          .attr('fill', 'black')
-          .attr('font-family', 'Roboto, sans-serif')
-          .attr('font-size', '10pt')
+          .attr('fill', textFill)
+          .attr('font-family', fontFamily)
+          .attr('font-size', fontSize)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')
-          .text(d => d.value0)
    }
 }
 
