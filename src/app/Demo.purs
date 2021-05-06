@@ -42,10 +42,10 @@ makeFigure file divId =
                    ρ1ρ2 × s' = desugarEval_bwd (t × s) output'
                    filter' = successful (find "filter" ρ1ρ2)
                    input' = successful (find "image" ρ1ρ2)
-               renderFigure divId (input' × input) (filter' × filter) (output' × output)
+               renderFigure divId (output' × output) (filter' × filter) (input' × input)
 
 main :: Effect Unit
 main = do
-   makeFigure "conv-wrap" "fig-1"
+--   makeFigure "conv-wrap" "fig-1"
    makeFigure "conv-extend" "fig-2"
-   makeFigure "conv-zero" "fig-3"
+--   makeFigure "conv-zero" "fig-3"

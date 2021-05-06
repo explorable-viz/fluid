@@ -224,5 +224,5 @@ let zip = zipWith (curry id);
 let enumFromTo n m =
     if n <= m then n : [n + 1 .. m] else [];
 
-let range ((m1, n1), (m2, n2)) =
+let range (m1, n1) (m2, n2) =
       [ (i1, i2) | i1 <- [m1 .. m2], i2 <- [n1 .. n2] ];
