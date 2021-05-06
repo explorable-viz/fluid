@@ -5575,40 +5575,76 @@ var PS = {};
 
   const d3 = require("d3")
 
-  // String -> MatrixRep' -> Effect Unit
-  function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max }) {
+  const cellFillDefault         = 'White',
+        cellFillSelected        = '#bfeebf',
+        cellFillOutputSelected  = '#90ee90',
+        cellStroke              = 'DarkGray',
+        cellTextFill            = 'Black',
+        cellFontSize            = '10pt',
+        fontFamily              = "Roboto, sans-serif",
+        strokeWidth             = 0.5,
+        titleTextFill           = 'DarkGray',
+        titleFontSize           = '8pt'
+
+  // String -> MatrixFig -> Effect Unit
+  function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } }) {
      return () => {
-        const w = 30, h = 30, gap = 1.15
-        const div = d3.select('#' + id),
-              svg = div.append('svg')
-                       .attr('width', w * j_max * gap)
-                       .attr('height', h * i_max * gap)
-                       .attr('fill', 'lightgray')
+        const w = 30, h = 30
+        const div = d3.select('#' + id)
+        const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
+        const hMargin = w / 2
+        const vMargin = h / 2
+
+        const svg = div.append('svg')
+                       .attr('width', width + hMargin)
+                       .attr('height', height + vMargin)
+
+        // group for each row
         const grp = svg.selectAll('g')
            .data(nss)
            .enter()
            .append('g')
-           .attr('transform', (_, i) => "translate(0, " + h * gap * i + ")")
+           .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
 
         const rect = grp.selectAll('rect')
                         .data(d => d)
                         .enter()
 
+        // Bit of a hack to highlight output selection slightly differently
+        const cellFillSelected_ =
+           title == "output" ? cellFillOutputSelected : cellFillSelected
+
         rect.append('rect')
-            .attr('x', (_, j) => w * gap * j)
+            .attr('x', (_, j) => w * j)
             .attr('width', w)
             .attr('height', h)
-            .attr('fill', d => d.value1 ? 'green' : 'lightgray')
+            .attr('fill', d => d.value1 ? cellFillSelected_ : cellFillDefault)
+            .attr('stroke', cellStroke)
+            .attr('stroke-width', strokeWidth)
 
         rect.append('text')
-            .attr('x', (_, j) => w * gap * j)
-            .attr('y', 0.5 * h)
-            .attr('fill', 'black')
             .text(d => d.value0)
-     }
+            .attr('x', (_, j) => w * (j + 0.5))
+            .attr('y', 0.5 * h)
+            .attr('fill', cellTextFill)
+            .attr('font-family', fontFamily)
+            .attr('font-size', cellFontSize)
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+
+        svg.append('text')
+           .text(title)
+           .attr('x', hMargin / 2)
+           .attr('y', vMargin / 2)
+           .attr('fill', titleTextFill)
+           .attr('font-family', fontFamily)
+           .attr('font-size', titleFontSize)
+           .attr('dominant-baseline', 'middle')
+           .attr('text-anchor', 'left')
+        }
   }
 
-  // String -> MatrixRep' -> MatrixRep' -> MatrixRep' -> Effect Unit
+  // String -> MatrixFig -> MatrixFig -> MatrixFig -> Effect Unit
   function drawFigure (id, m1, m2, m3) {
      return () => {
         drawMatrix(id, m1)()
@@ -29858,10 +29894,19 @@ var PS = {};
       return function (v) {
           return function (v1) {
               return function (v2) {
-                  var v3 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.value0, v.value1));
+                  var v3 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v2.value0, v2.value1));
                   var v4 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v1.value0, v1.value1));
-                  var v5 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v2.value0, v2.value1));
-                  return $foreign.drawFigure(id)(bits(new Data_Tuple.Tuple(v3.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.value1)))))(bits(new Data_Tuple.Tuple(v4.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v1.value1)))))(bits(new Data_Tuple.Tuple(v5.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v2.value1)))));
+                  var v5 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.value0, v.value1));
+                  return $foreign.drawFigure(id)({
+                      title: "output",
+                      matrix: bits(new Data_Tuple.Tuple(v5.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.value1))))
+                  })({
+                      title: "filter",
+                      matrix: bits(new Data_Tuple.Tuple(v4.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v1.value1))))
+                  })({
+                      title: "input",
+                      matrix: bits(new Data_Tuple.Tuple(v3.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v2.value1))))
+                  });
               };
           };
       };
@@ -31616,7 +31661,7 @@ var PS = {};
                       var v2 = Test_Util.desugarEval_bwd(new Data_Tuple.Tuple(v1.value0.value0, v.value1))(output$prime);
                       var input$prime = Util.successful(Bindings.find("image")(v2.value0));
                       var filter$prime = Util.successful(Bindings.find("filter")(v2.value0));
-                      return App_Renderer.renderFigure(divId)(new Data_Tuple.Tuple(input$prime, input))(new Data_Tuple.Tuple(filter$prime, filter))(new Data_Tuple.Tuple(output$prime, v1.value0.value1));
+                      return App_Renderer.renderFigure(divId)(new Data_Tuple.Tuple(output$prime, v1.value0.value1))(new Data_Tuple.Tuple(filter$prime, filter))(new Data_Tuple.Tuple(input$prime, input));
                   };
                   throw new Error("Failed pattern match at App.Demo (line 38, column 10 - line 45, column 89): " + [ v1.constructor.name ]);
               };
@@ -31624,11 +31669,7 @@ var PS = {};
           });
       };
   };
-  var main = function __do() {
-      makeFigure("conv-wrap")("fig-1")();
-      makeFigure("conv-extend")("fig-2")();
-      return makeFigure("conv-zero")("fig-3")();
-  };
+  var main = makeFigure("conv-extend")("fig-2");
   exports["splitDefs"] = splitDefs;
   exports["makeFigure"] = makeFigure;
   exports["main"] = main;

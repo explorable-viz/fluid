@@ -6,10 +6,11 @@ let zero n = const n;
 let convolve image filter method =
     let ((m, n), (i, j)) = (dims image, dims filter);
         (half_i, half_j) = (i `quot` 2, j `quot` 2);
-        area             = i * j
+        area = i * j
     in  [| (sum [ image!(x, y) * filter!(i' + 1, j' + 1)
-                | (i', j') <- range ((0, 0), (i - 1, j - 1)),
+                | (i', j') <- range (0, 0) (i - 1, j - 1),
                   let x = method (m' + i' - half_i) m,
                   let y = method (n' + j' - half_j) n,
-                  x >= 1, x <= m, y >= 1, y <= n ]) `quot` area
+                  x >= 1, x <= m, y >= 1, y <= n ])
+           `quot` area
          | (m', n') in (m, n) |];
