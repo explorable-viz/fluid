@@ -36,6 +36,10 @@ function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max
                       .data(d => d)
                       .enter()
 
+      // Bit of a hack to highlight output selection slightly differently
+      const [cellStrokeSelected, strokeWidthSelected] =
+         title == "output" ? ['Black', 2 * strokeWidth] : [cellStroke, strokeWidth]
+
       rect.append('rect')
           .attr('x', (_, j) => w * j)
           .attr('width', w)
