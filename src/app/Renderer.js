@@ -15,23 +15,19 @@ function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max
    return () => {
       const w = 30, h = 30
       const div = d3.select('#' + id)
-
-      div.append('text')
-         .text("Label")
-         .attr('fill', textFill)
-         .attr('font-family', fontFamily)
-         .attr('font-size', fontSize)
+      const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
+      const topMargin = h / 2
 
       const svg = div.append('svg')
-                     .attr('width', w * j_max + strokeWidth)
-                     .attr('height', h * i_max + strokeWidth)
+                     .attr('width', width)
+                     .attr('height', height + topMargin)
 
       // group for each row
       const grp = svg.selectAll('g')
          .data(nss)
          .enter()
          .append('g')
-         .attr('transform', (_, i) => `translate(${strokeWidth / 2}, ${h * i + strokeWidth / 2})`)
+         .attr('transform', (_, i) => `translate(${strokeWidth / 2}, ${h * i + strokeWidth / 2 + topMargin})`)
 
       const rect = grp.selectAll('rect')
                       .data(d => d)
@@ -54,7 +50,17 @@ function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max
           .attr('font-size', fontSize)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')
-   }
+
+      svg.append('text')
+         .text("Label")
+         .attr('x', width / 2)
+         .attr('y', topMargin / 2)
+         .attr('fill', textFill)
+         .attr('font-family', fontFamily)
+         .attr('font-size', fontSize)
+         .attr('dominant-baseline', 'middle')
+         .attr('text-anchor', 'middle')
+      }
 }
 
 // String -> MatrixRep' -> MatrixRep' -> MatrixRep' -> Effect Unit
