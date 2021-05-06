@@ -4,7 +4,8 @@ const d3 = require("d3")
 
 const cellFillDefault   = 'White',
       cellFillSelected  = 'PaleGreen',
-      cellStroke        = 'DarkGray'
+      cellStroke        = 'DarkGray',
+      strokeWidth       = 5
 
 // String -> MatrixRep' -> Effect Unit
 function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max }) {
@@ -12,15 +13,15 @@ function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max
       const w = 30, h = 30
       const div = d3.select('#' + id),
             svg = div.append('svg')
-                     .attr('width', w * j_max)
-                     .attr('height', h * i_max)
+                     .attr('width', w * j_max + strokeWidth)
+                     .attr('height', h * i_max + strokeWidth)
 
       // group for each row
       const grp = svg.selectAll('g')
          .data(nss)
          .enter()
          .append('g')
-         .attr('transform', (_, i) => "translate(0, " + h * i + ")")
+         .attr('transform', (_, i) => `translate(${strokeWidth / 2}, ${h * i + strokeWidth / 2})`)
 
       const rect = grp.selectAll('rect')
                       .data(d => d)
@@ -32,7 +33,7 @@ function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max
           .attr('height', h)
           .attr('fill', d => d.value1 ? cellFillSelected : cellFillDefault)
           .attr('stroke', cellStroke)
-          .attr('stroke-width', '0.5')
+          .attr('stroke-width', strokeWidth)
 
       rect.append('text')
           .attr('x', (_, j) => w * j)
@@ -47,7 +48,7 @@ function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max
          .enter()
          .append('line')
          .attr('stroke', cellStroke)
-         .attr('stroke-width', '5')
+         .attr('stroke-width', strokeWidth)
          .attr('x1', 0)
          .attr('y1', 0)
          .attr('x2', w * j_max)
