@@ -12,8 +12,8 @@ const cellFillDefault   = 'White',
       titleTextFill     = 'LightGray',
       titleFontSize     = '8pt'
 
-// String -> MatrixRep' -> Effect Unit
-function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max }) {
+// String -> MatrixFig -> Effect Unit
+function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } }) {
    return () => {
       const w = 30, h = 30
       const div = d3.select('#' + id)
@@ -54,7 +54,7 @@ function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max
           .attr('dominant-baseline', 'middle')
 
       svg.append('text')
-         .text("Label")
+         .text(title)
          .attr('x', 0)
          .attr('y', topMargin / 2)
          .attr('fill', titleTextFill)
@@ -65,7 +65,7 @@ function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max
       }
 }
 
-// String -> MatrixRep' -> MatrixRep' -> MatrixRep' -> Effect Unit
+// String -> MatrixFig -> MatrixFig -> MatrixFig -> Effect Unit
 function drawFigure (id, m1, m2, m3) {
    return () => {
       drawMatrix(id, m1)()

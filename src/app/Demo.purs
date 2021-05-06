@@ -42,7 +42,7 @@ makeFigure file divId =
                    ρ1ρ2 × s' = desugarEval_bwd (t × s) output'
                    filter' = successful (find "filter" ρ1ρ2)
                    input' = successful (find "image" ρ1ρ2)
-               renderFigure divId  (output' × output) (filter' × filter) (input' × input)
+               renderFigure divId (output' × output) (filter' × filter) (input' × input)
 
 main :: Effect Unit
 main = do
