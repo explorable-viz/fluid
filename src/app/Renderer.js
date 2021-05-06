@@ -2,15 +2,16 @@
 
 const d3 = require("d3")
 
-const cellFillDefault   = 'White',
-      cellFillSelected  = 'PaleGreen',
-      cellStroke        = 'DarkGray',
-      cellTextFill      = 'Black',
-      cellFontSize      = '10pt',
-      fontFamily        = "Roboto, sans-serif",
-      strokeWidth       = 0.5,
-      titleTextFill     = 'DarkGray',
-      titleFontSize     = '8pt'
+const cellFillDefault         = 'White',
+      cellFillSelected        = 'PaleGreen',
+      cellFillOutputSelected  = 'Green',
+      cellStroke              = 'DarkGray',
+      cellTextFill            = 'Black',
+      cellFontSize            = '10pt',
+      fontFamily              = "Roboto, sans-serif",
+      strokeWidth             = 0.5,
+      titleTextFill           = 'DarkGray',
+      titleFontSize           = '8pt'
 
 // String -> MatrixFig -> Effect Unit
 function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } }) {
@@ -37,14 +38,14 @@ function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max
                       .enter()
 
       // Bit of a hack to highlight output selection slightly differently
-      const [cellStrokeSelected, strokeWidthSelected] =
-         title == "output" ? ['Black', 2 * strokeWidth] : [cellStroke, strokeWidth]
+      const cellFillSelected_ =
+         title == "output" ? cellFillOutputSelected : cellFillSelected
 
       rect.append('rect')
           .attr('x', (_, j) => w * j)
           .attr('width', w)
           .attr('height', h)
-          .attr('fill', d => d.value1 ? cellFillSelected : cellFillDefault)
+          .attr('fill', d => d.value1 ? cellFillSelected_ : cellFillDefault)
           .attr('stroke', cellStroke)
           .attr('stroke-width', strokeWidth)
 
