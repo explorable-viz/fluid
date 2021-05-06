@@ -5,7 +5,7 @@ const d3 = require("d3")
 const cellFillDefault   = 'White',
       cellFillSelected  = 'PaleGreen',
       cellStroke        = 'DarkGray',
-      strokeWidth       = 5
+      strokeWidth       = 0.5
 
 // String -> MatrixRep' -> Effect Unit
 function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max }) {
@@ -36,23 +36,14 @@ function drawMatrix (id, { value0: { value0: nss, value1: i_max }, value1: j_max
           .attr('stroke-width', strokeWidth)
 
       rect.append('text')
-          .attr('x', (_, j) => w * j)
+          .attr('x', (_, j) => w * (j + 0.5))
           .attr('y', 0.5 * h)
           .attr('fill', 'black')
           .attr('font-family', 'Roboto, sans-serif')
           .attr('font-size', '10pt')
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
           .text(d => d.value0)
-
-      grp.selectAll('line')
-         .data([1])
-         .enter()
-         .append('line')
-         .attr('stroke', cellStroke)
-         .attr('stroke-width', strokeWidth)
-         .attr('x1', 0)
-         .attr('y1', 0)
-         .attr('x2', w * j_max)
-         .attr('y2', 0)
    }
 }
 
