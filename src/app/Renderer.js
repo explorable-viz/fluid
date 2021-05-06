@@ -3,8 +3,8 @@
 const d3 = require("d3")
 
 const cellFillDefault         = 'White',
-      cellFillSelected        = 'PaleGreen',
-      cellFillOutputSelected  = 'Green',
+      cellFillSelected        = '#bfeebf',
+      cellFillOutputSelected  = '#90ee90',
       cellStroke              = 'DarkGray',
       cellTextFill            = 'Black',
       cellFontSize            = '10pt',

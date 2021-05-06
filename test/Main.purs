@@ -11,8 +11,8 @@ import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..), holeMatrix, insertMatrix)
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_slicing, test_linking, test_graphics ]
-tests = [ test_slicing ]
+tests = [ test_desugaring, test_misc, test_slicing, test_linking, test_graphics ]
+-- tests = [ test_slicing ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -47,25 +47,25 @@ test_slicing = [
    testBwd "array-dims" (pair true (Int true 3) (Int true 3)) "(_3_, _3_)",
    testBwd "conv-extend"
            (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
-            "_37_, 30, 25, 28, 38,\n\
-            \35, 27, 34, 27, 26,\n\
-            \26, 28, 30, 28, 28,\n\
-            \17, 30, 25, 17, 27,\n\
-            \14, 24, 30, 24, 28",
+            "_0_, -1, 2, 0, -1,\n\
+            \0, 3, -2, 3, -2,\n\
+            \-1, 1, -5, 0, 4,\n\
+            \1, -1, 4, 0, -4,\n\
+            \1, 0, -3, 2, 0",
    testBwd "conv-wrap"
            (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
-           "_34_, 33, 24, 23, 31,\n\
-           \33, 27, 34, 27, 28,\n\
-           \25, 28, 30, 28, 26,\n\
-           \23, 30, 25, 17, 30,\n\
-           \26, 26, 27, 27, 28",
+           "_1_, 2, -1, 1, 5,\n\
+           \-1, 1, 2, -1, 1,\n\
+           \0, 0, 1, 0, 1,\n\
+           \0, 1, -2, 0, 1,\n\
+           \0, 3, 0, 2, 2",
    testBwd "conv-zero"
            (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
-           "_20_, 24, 20, 19, 23,\n\
-           \28, 27, 34, 27, 17,\n\
-           \21, 28, 30, 28, 18,\n\
-           \15, 30, 25, 17, 22,\n\
-           \8, 14, 19, 17, 11",
+           "_38_, 37, 28, 30, 38,\n\
+           \38, 36, 46, 31, 34,\n\
+           \37, 41, 54, 34, 20,\n\
+           \21, 35, 31, 31, 42,\n\
+           \13, 32, 35, 19, 26",
    testBwd "divide" (Hole true) "_40.22222222222222_",
    testBwd "map"
             (Constr true cCons (Hole false : (Constr true cCons (Hole false : Hole false : Nil)) : Nil)) "[5, 6]",
