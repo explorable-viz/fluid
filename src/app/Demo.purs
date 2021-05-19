@@ -10,10 +10,11 @@ import Effect.Aff (runAff_)
 import Effect.Console (log)
 import DesugarFwd (desugarModuleFwd)
 import Eval (eval_module)
+import EvalBwd (evalBwd)
 import Lattice (𝔹)
 import Module (openWithDefaultImports)
 import SExpr (Expr(..), Module(..)) as S
-import Test.Util (desugarEval, desugarEval_bwd)
+import Test.Util (desugarEval)
 import Util (MayFail, type (×), (×), absurd, error, successful)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
@@ -35,7 +36,7 @@ example_needed ρ1 s0 = do
    i <- find "image" ρ2
    t × o <- desugarEval (ρ1 <> ρ2) s
    let o' = selectCell 2 1 5 5
-       ρ1ρ2 × s' = desugarEval_bwd (t × s) o'
+       ρ1ρ2 × _ × _ = evalBwd o' t
    ω' <- find "filter" ρ1ρ2
    i' <- find "image" ρ1ρ2
    pure ((o' × o) × (ω' × ω) × (i' × i))
