@@ -23,13 +23,11 @@ bits :: MatrixRep 𝔹 × MatrixRep 𝔹 -> MatrixRep'
 bits ((vss × _ × _) × (vss' × (i × _) × (j × _))) = toIntMatrix (zipWith zip vss vss') × i × j
 
 -- Inputs are pairs of matrices; second component is original (unsliced) matrix.
-renderFigure :: String -> Val 𝔹 × Val 𝔹 -> Val 𝔹 × Val 𝔹 -> Val 𝔹 × Val 𝔹 -> Effect Unit
-renderFigure id (i × i') (ω × ω') (o × o') =
-   let i'' × _ = match_fwd (i × i')
-       ω'' × _ = match_fwd (ω × ω')
-       o'' × _ = match_fwd (o × o')
-   in drawFigure id [
-      { title: "output", cellFillSelected: "Yellow", matrix: bits (o'' × fst (match o')) },
-      { title: "filter", cellFillSelected: "LightGreen", matrix: bits (ω'' × fst (match ω')) },
-      { title: "input", cellFillSelected: "LightGreen", matrix: bits (i'' × fst (match i')) }
-   ]
+renderFigures :: String -> Array (Val 𝔹 × Val 𝔹) -> Effect Unit
+renderFigures divId uvs =
+   drawFigure divId (uvs <#> renderFigure)
+      where
+      renderFigure :: Val 𝔹 × Val 𝔹 -> MatrixFig
+      renderFigure (u × v) =
+         let v' × _ = match_fwd (u × v) in
+         { title: "output", cellFillSelected: "LightGreen", matrix: bits (v' × fst (match v)) }

@@ -74,7 +74,7 @@ function drawMatrix (
 // String -> Array MatrixFig -> Effect Unit
 function drawFigure (id, figs) {
    return () => {
-      for (fig in figs) {
+      for (const fig of figs) {
          drawMatrix(id, fig)()
       }
    }
@@ -128,4 +128,4 @@ function curry4 (f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
-exports.drawFigure = curry4(drawFigure)
+exports.drawFigure = curry2(drawFigure)

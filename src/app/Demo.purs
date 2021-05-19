@@ -7,7 +7,7 @@ import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (renderFigure)
+import App.Renderer (renderFigures)
 import Bindings ((↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -63,7 +63,7 @@ makeFigure file example divId =
       Left e -> log ("Open failed: " <> show e)
       Right (ρ × s) -> do
          let (o' × o) × (ω' × ω) × (i' × i) = successful (example ρ s)
-         renderFigure divId (i' × i) (ω' × ω) (o' × o)
+         renderFigures divId [ i' × i, ω' × ω, o' × o ]
 
 main :: Effect Unit
 main = do
