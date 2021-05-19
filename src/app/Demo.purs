@@ -5,6 +5,7 @@ import App.Renderer (renderFigure)
 import Bindings (find)
 import Data.Either (Either(..))
 import Data.List (singleton)
+import Data.Profunctor.Strong ((&&&))
 import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
@@ -31,13 +32,11 @@ splitDefs (S.Let defs s) ρ =
 example_needed :: Env 𝔹 -> S.Expr 𝔹 -> MayFail ((Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹))
 example_needed ρ1 s0 = do
    ρ2 × s <- unsafePartial (splitDefs s0 ρ1)
-   ω <- find "filter" ρ2
-   i <- find "image" ρ2
    t × o <- desugarEval (ρ1 <> ρ2) s
    let o' = selectCell 2 1 5 5
        ρ1ρ2 × _ × _ = evalBwd o' t
-   ω' <- find "filter" ρ1ρ2
-   i' <- find "image" ρ1ρ2
+   ω × i <- (find "filter" &&& find "image") ρ2
+   ω' × i' <- (find "filter" &&& find "image") ρ1ρ2
    pure ((o' × o) × (ω' × ω) × (i' × i))
 
 example_neededBy :: Env 𝔹 -> S.Expr 𝔹 -> MayFail ((Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹))
