@@ -11,8 +11,8 @@ import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..), holeMatrix, insertMatrix)
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_slicing, test_linking, test_graphics ]
--- tests = [ test_slicing ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+-- tests = [ test_bwd ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -40,8 +40,8 @@ test_linking = [
             \3, 10, 12, 3, 11"
 ]
 
-test_slicing :: Array (Test Unit)
-test_slicing = [
+test_bwd :: Array (Test Unit)
+test_bwd = [
    testBwd "add" (Int true 8) "_8_",
    testBwd "array-lookup" (Int true 14) "_14_",
    testBwd "array-dims" (pair true (Int true 3) (Int true 3)) "(_3_, _3_)",
