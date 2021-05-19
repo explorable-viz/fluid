@@ -8,6 +8,7 @@ import Data.List (singleton)
 import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
+import Partial.Unsafe (unsafePartial)
 import DesugarFwd (desugarModuleFwd)
 import Eval (eval_module)
 import EvalBwd (evalBwd)
@@ -15,23 +16,21 @@ import Lattice (𝔹)
 import Module (openWithDefaultImports)
 import SExpr (Expr(..), Module(..)) as S
 import Test.Util (desugarEval)
-import Util (MayFail, type (×), (×), absurd, error, successful)
+import Util (MayFail, type (×), (×), successful)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
 selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
 selectCell i j i' j' = Matrix true (insertMatrix i j (Hole true) (holeMatrix i' j'))
 
--- Require examples to be of the form (let <defs> in expr), and then rewrite to a "module" and expr, so
--- we can treat the defs as part of the environment that we can easily inspect.
-splitDefs :: S.Expr 𝔹 -> Env 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
-splitDefs (S.Let defs s) ρ = do
-   ρ' <- desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ
-   pure (ρ' × s)
-splitDefs _ _ = error absurd
+-- Rewrite example of the form (let <defs> in expr) to a "module" and expr, so we can treat defs as part of
+-- the environment that we can easily inspect.
+splitDefs :: Partial => S.Expr 𝔹 -> Env 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
+splitDefs (S.Let defs s) ρ =
+   (desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ) <#> (_ × s)
 
 example_needed :: Env 𝔹 -> S.Expr 𝔹 -> MayFail ((Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹))
 example_needed ρ1 s0 = do
-   ρ2 × s <- splitDefs s0 ρ1
+   ρ2 × s <- unsafePartial (splitDefs s0 ρ1)
    ω <- find "filter" ρ2
    i <- find "image" ρ2
    t × o <- desugarEval (ρ1 <> ρ2) s
