@@ -40,7 +40,11 @@ example_needed ρ1 s0 = do
    pure ((o' × o) × (ω' × ω) × (i' × i))
 
 example_neededBy :: Env 𝔹 -> S.Expr 𝔹 -> MayFail ((Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹))
-example_neededBy ρ1 s0 = ?_
+example_neededBy ρ1 s0 = do
+   ρ2 × s <- unsafePartial (splitDefs s0 ρ1)
+   t × o <- desugarEval (ρ1 <> ρ2) s
+   let o' = selectCell 1 2 5 5
+   ?_
 
 -- Completely non-general, but fine for now.
 makeFigure :: String -> String -> Effect Unit
