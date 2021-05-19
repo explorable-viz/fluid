@@ -57,16 +57,16 @@ example_neededBy ρ s0 = do
    pure ((o' × o) × (ω' × ω) × (i' × i))
 
 makeFigure :: String -> ConvExample -> String -> Effect Unit
-makeFigure file ex divId =
+makeFigure file example divId =
    flip runAff_ (openWithDefaultImports ("slicing/" <> file))
    case _ of
       Left e -> log ("Open failed: " <> show e)
       Right (ρ × s) -> do
-         let (o' × o) × (ω' × ω) × (i' × i) = successful (example_needed ρ s)
+         let (o' × o) × (ω' × ω) × (i' × i) = successful (example ρ s)
          renderFigure divId (o' × o) (ω' × ω) (i' × i)
 
 main :: Effect Unit
 main = do
    makeFigure "conv-wrap" example_needed "fig-1"
-   makeFigure "conv-extend" example_needed "fig-2"
+   makeFigure "conv-extend" example_neededBy "fig-2"
    makeFigure "conv-zero" example_needed "fig-3"
