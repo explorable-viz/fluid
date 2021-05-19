@@ -9,9 +9,9 @@ import Primitive (match, match_fwd)
 import Util (type (×), (×))
 import Val (Array2, MatrixRep, Val)
 
--- Similar to MatrixRep 𝔹, but with elements converted from values to the underlying data.
+-- Similar to MatrixRep 𝔹, but with elements converted from values to the underlying data type.
 type MatrixRep' = Array2 (Int × 𝔹) × Int × Int
-type MatrixFig = { title :: String, matrix :: MatrixRep' }
+type MatrixFig = { title :: String, cellFillSelected :: String, matrix :: MatrixRep' }
 
 foreign import drawFigure :: String -> MatrixFig -> MatrixFig -> MatrixFig -> Effect Unit
 
@@ -24,10 +24,10 @@ bits ((vss × _ × _) × (vss' × (i × _) × (j × _))) = toIntMatrix (zipWith 
 
 -- Inputs are pairs of matrices; second component is original (unsliced) matrix.
 renderFigure :: String -> Val 𝔹 × Val 𝔹 -> Val 𝔹 × Val 𝔹 -> Val 𝔹 × Val 𝔹 -> Effect Unit
-renderFigure id (output × output') (filter × filter') (input × input') =
-   let input'' × _ = match_fwd (input × input')
-       filter'' × _ = match_fwd (filter × filter')
-       output'' × _ = match_fwd (output × output')
-   in drawFigure id { title: "output", matrix: bits (output'' × fst (match output')) }
-                    { title: "filter", matrix: bits (filter'' × fst (match filter')) }
-                    { title: "input", matrix: bits (input'' × fst (match input')) }
+renderFigure id (o × o') (ω × ω') (i × i') =
+   let i'' × _ = match_fwd (i × i')
+       ω'' × _ = match_fwd (ω × ω')
+       o'' × _ = match_fwd (o × o')
+   in drawFigure id { title: "output", cellFillSelected: "Yellow", matrix: bits (o'' × fst (match o')) }
+                    { title: "filter", cellFillSelected: "LightGreen", matrix: bits (ω'' × fst (match ω')) }
+                    { title: "input", cellFillSelected: "LightGreen", matrix: bits (i'' × fst (match i')) }

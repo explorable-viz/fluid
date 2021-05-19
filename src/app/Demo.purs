@@ -63,7 +63,7 @@ makeFigure file example divId =
       Left e -> log ("Open failed: " <> show e)
       Right (ρ × s) -> do
          let (o' × o) × (ω' × ω) × (i' × i) = successful (example ρ s)
-         renderFigure divId (o' × o) (ω' × ω) (i' × i)
+         renderFigure divId (i' × i) (ω' × ω) (o' × o)
 
 main :: Effect Unit
 main = do

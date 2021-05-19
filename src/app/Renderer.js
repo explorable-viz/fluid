@@ -3,8 +3,6 @@
 const d3 = require("d3")
 
 const cellFillDefault         = 'White',
-      cellFillSelected        = 'LightGreen',
-      cellFillOutputSelected  = 'Yellow',
       cellStroke              = 'DarkGray',
       cellTextFill            = 'Black',
       cellFontSize            = '10pt',
@@ -14,7 +12,13 @@ const cellFillDefault         = 'White',
       titleFontSize           = '9pt'
 
 // String -> MatrixFig -> Effect Unit
-function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } }) {
+function drawMatrix (
+   id, {
+      title,
+      cellFillSelected,
+      matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }
+   }
+) {
    return () => {
       const w = 30, h = 30
       const div = d3.select('#' + id)
@@ -37,15 +41,11 @@ function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max
                       .data(d => d)
                       .enter()
 
-      // Bit of a hack to highlight output selection slightly differently
-      const cellFillSelected_ =
-         title == "output" ? cellFillOutputSelected : cellFillSelected
-
       rect.append('rect')
           .attr('x', (_, j) => w * j)
           .attr('width', w)
           .attr('height', h)
-          .attr('fill', d => d.value1 ? cellFillSelected_ : cellFillDefault)
+          .attr('fill', d => d.value1 ? cellFillSelected : cellFillDefault)
           .attr('stroke', cellStroke)
           .attr('stroke-width', strokeWidth)
 
@@ -72,11 +72,11 @@ function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max
 }
 
 // String -> MatrixFig -> MatrixFig -> MatrixFig -> Effect Unit
-function drawFigure (id, m1, m2, m3) {
+function drawFigure (id, fig1, fig2, fig3) {
    return () => {
-      drawMatrix(id, m1)()
-      drawMatrix(id, m2)()
-      drawMatrix(id, m3)()
+      drawMatrix(id, fig1)()
+      drawMatrix(id, fig2)()
+      drawMatrix(id, fig3)()
    }
 }
 
