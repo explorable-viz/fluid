@@ -40,6 +40,9 @@ example_needed ρ1 s0 = do
    i' <- find "image" ρ1ρ2
    pure ((o' × o) × (ω' × ω) × (i' × i))
 
+example_neededBy :: Env 𝔹 -> S.Expr 𝔹 -> MayFail ((Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹))
+example_neededBy ρ1 s0 = ?_
+
 -- Completely non-general, but fine for now.
 makeFigure :: String -> String -> Effect Unit
 makeFigure file divId =
