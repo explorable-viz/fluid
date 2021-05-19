@@ -17,7 +17,10 @@ import Test.Util (desugarEval, desugarEval_bwd)
 import Util (MayFail, type (×), (×), absurd, error, successful)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
--- We require examples to be of the form (let <defs> in expr), and rewrite them to a "module" and expr, so
+selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
+selectCell i j i' j' = Matrix true (insertMatrix i j (Hole true) (holeMatrix i' j'))
+
+-- Require examples to be of the form (let <defs> in expr), and then rewrite to a "module" and expr, so
 -- we can treat the defs as part of the environment that we can easily inspect.
 splitDefs :: S.Expr 𝔹 -> Env 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
 splitDefs (S.Let defs s) ρ = do
@@ -25,24 +28,27 @@ splitDefs (S.Let defs s) ρ = do
    pure (ρ' × s)
 splitDefs _ _ = error absurd
 
--- This is completely non-general, but that's fine for now.
+example_needed :: Env 𝔹 -> S.Expr 𝔹 -> MayFail ((Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹))
+example_needed ρ1 s0 = do
+   ρ2 × s <- splitDefs s0 ρ1
+   ω <- find "filter" ρ2
+   i <- find "image" ρ2
+   t × o <- desugarEval (ρ1 <> ρ2) s
+   let o' = selectCell 2 1 5 5
+       ρ1ρ2 × s' = desugarEval_bwd (t × s) o'
+   ω' <- find "filter" ρ1ρ2
+   i' <- find "image" ρ1ρ2
+   pure ((o' × o) × (ω' × ω) × (i' × i))
+
+-- Completely non-general, but fine for now.
 makeFigure :: String -> String -> Effect Unit
 makeFigure file divId =
    flip runAff_ (openWithDefaultImports ("slicing/" <> file)) \result ->
    case result of
       Left e -> log ("Open failed: " <> show e)
-      Right (ρ1 × s0) ->
-         let ρ2 × s = successful (splitDefs s0 ρ1)
-             filter = successful (find "filter" ρ2)
-             input = successful (find "image" ρ2) in
-         case desugarEval (ρ1 <> ρ2) s of
-            Left msg -> log ("Execution failed: " <> msg)
-            Right (t × output) -> do
-               let output' = Matrix true (insertMatrix 2 1 (Hole true) (holeMatrix 5 5))
-                   ρ1ρ2 × s' = desugarEval_bwd (t × s) output'
-                   filter' = successful (find "filter" ρ1ρ2)
-                   input' = successful (find "image" ρ1ρ2)
-               renderFigure divId (output' × output) (filter' × filter) (input' × input)
+      Right (ρ × s) -> do
+         let (o' × o) × (ω' × ω) × (i' × i) = successful (example_needed ρ s)
+         renderFigure divId (o' × o) (ω' × ω) (i' × i)
 
 main :: Effect Unit
 main = do
