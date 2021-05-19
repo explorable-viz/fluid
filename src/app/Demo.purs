@@ -7,7 +7,7 @@ import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (drawFigure, matrixFig)
+import App.Renderer (MatrixFig, drawFigure, matrixFig)
 import Bindings ((↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -29,7 +29,7 @@ splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail (Env 𝔹 × S.Expr �
 splitDefs ρ (S.Let defs s) =
    (desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ) <#> (_ × s)
 
-type ConvExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail ((Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹))
+type ConvExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
 
 example_needed :: ConvExample
 example_needed ρ s0 = do
@@ -41,36 +41,39 @@ example_needed ρ s0 = do
    i <- find "image" ρ'
    ω' <- find "filter" ρρ'
    i' <- find "image" ρρ'
-   pure ((o' × o) × (ω' × ω) × (i' × i))
+   pure [
+      matrixFig "output" "LightGreen" (o' × o),
+      matrixFig "filter" "Yellow" (ω' × ω),
+      matrixFig "input" "Yellow" (i' × i)
+   ]
 
 example_neededBy :: ConvExample
 example_neededBy ρ s0 = do
    ρ' × s <- unsafePartial (splitDefs ρ s0)
    e <- desugarFwd s
    t × o <- eval (ρ <> ρ') e
-   let i' = selectCell 1 2 5 5
-       ρ'' = update (botOf ρ') ("image" ↦ i')
+   let ω' = selectCell 1 1 3 3
+       ρ'' = update (botOf ρ') ("filter" ↦ ω')
        o' = neg (evalFwd (neg (botOf ρ <> ρ'')) (const true <$> e) true t)
    ω <- find "filter" ρ'
    i <- find "image" ρ'
-   ω' <- find "filter" ρ''
-   pure ((o' × o) × (ω' × ω) × (i' × i))
+   i' <- find "image" ρ''
+   pure [
+      matrixFig "output" "Yellow" (o' × o),
+      matrixFig "filter" "LightGreen" (ω' × ω),
+      matrixFig "input" "Yellow" (i' × i)
+   ]
 
 makeFigure :: String -> ConvExample -> String -> Effect Unit
 makeFigure file example divId =
    flip runAff_ (openWithDefaultImports ("slicing/" <> file))
    case _ of
       Left e -> log ("Open failed: " <> show e)
-      Right (ρ × s) -> do
-         let (o' × o) × (ω' × ω) × (i' × i) = successful (example ρ s)
-         drawFigure divId [
-            matrixFig "input" "LightGreen" (i' × i),
-            matrixFig "filter" "LightGreen" (ω' × ω),
-            matrixFig "output" "Yellow" (o' × o)
-         ]
+      Right (ρ × s) -> drawFigure divId (successful (example ρ s))
 
 main :: Effect Unit
 main = do
    makeFigure "conv-wrap" example_needed "fig-1"
-   makeFigure "conv-extend" example_neededBy "fig-2"
+   makeFigure "conv-wrap" example_neededBy "fig-2"
    makeFigure "conv-zero" example_needed "fig-3"
+   makeFigure "conv-zero" example_neededBy "fig-4"
