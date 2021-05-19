@@ -13,7 +13,7 @@ import Val (Array2, MatrixRep, Val)
 type MatrixRep' = Array2 (Int × 𝔹) × Int × Int
 type MatrixFig = { title :: String, cellFillSelected :: String, matrix :: MatrixRep' }
 
-foreign import drawFigure :: String -> MatrixFig -> MatrixFig -> MatrixFig -> Effect Unit
+foreign import drawFigure :: String -> Array MatrixFig -> Effect Unit
 
 -- Will want to generalise to arrays of "drawable values". Second component of elements is original value.
 toIntMatrix :: Array2 (Val 𝔹 × Val 𝔹) -> Array2 (Int × 𝔹)
@@ -28,6 +28,8 @@ renderFigure id (i × i') (ω × ω') (o × o') =
    let i'' × _ = match_fwd (i × i')
        ω'' × _ = match_fwd (ω × ω')
        o'' × _ = match_fwd (o × o')
-   in drawFigure id { title: "output", cellFillSelected: "Yellow", matrix: bits (o'' × fst (match o')) }
-                    { title: "filter", cellFillSelected: "LightGreen", matrix: bits (ω'' × fst (match ω')) }
-                    { title: "input", cellFillSelected: "LightGreen", matrix: bits (i'' × fst (match i')) }
+   in drawFigure id [
+      { title: "output", cellFillSelected: "Yellow", matrix: bits (o'' × fst (match o')) },
+      { title: "filter", cellFillSelected: "LightGreen", matrix: bits (ω'' × fst (match ω')) },
+      { title: "input", cellFillSelected: "LightGreen", matrix: bits (i'' × fst (match i')) }
+   ]

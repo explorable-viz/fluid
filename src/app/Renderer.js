@@ -71,12 +71,12 @@ function drawMatrix (
    }
 }
 
-// String -> MatrixFig -> MatrixFig -> MatrixFig -> Effect Unit
-function drawFigure (id, fig1, fig2, fig3) {
+// String -> Array MatrixFig -> Effect Unit
+function drawFigure (id, figs) {
    return () => {
-      drawMatrix(id, fig1)()
-      drawMatrix(id, fig2)()
-      drawMatrix(id, fig3)()
+      for (fig in figs) {
+         drawMatrix(id, fig)()
+      }
    }
 }
 
