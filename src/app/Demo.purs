@@ -1,19 +1,19 @@
 module App.Demo where
 
 import Prelude hiding (absurd)
-import App.Renderer (renderFigure)
-import Bindings (find)
 import Data.Either (Either(..))
 import Data.List (singleton)
-import Data.Profunctor.Strong ((&&&))
 import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import DesugarFwd (desugarModuleFwd)
-import Eval (eval_module)
+import App.Renderer (renderFigure)
+import Bindings ((↦), find, update)
+import DesugarFwd (desugarFwd, desugarModuleFwd)
+import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
-import Lattice (𝔹)
+import EvalFwd (evalFwd)
+import Lattice (𝔹, botOf, neg)
 import Module (openWithDefaultImports)
 import SExpr (Expr(..), Module(..)) as S
 import Test.Util (desugarEval)
@@ -25,32 +25,41 @@ selectCell i j i' j' = Matrix true (insertMatrix i j (Hole true) (holeMatrix i' 
 
 -- Rewrite example of the form (let <defs> in expr) to a "module" and expr, so we can treat defs as part of
 -- the environment that we can easily inspect.
-splitDefs :: Partial => S.Expr 𝔹 -> Env 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
-splitDefs (S.Let defs s) ρ =
+splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
+splitDefs ρ (S.Let defs s) =
    (desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ) <#> (_ × s)
 
-example_needed :: Env 𝔹 -> S.Expr 𝔹 -> MayFail ((Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹))
-example_needed ρ1 s0 = do
-   ρ2 × s <- unsafePartial (splitDefs s0 ρ1)
-   t × o <- desugarEval (ρ1 <> ρ2) s
+type ConvExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail ((Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹))
+
+example_needed :: ConvExample
+example_needed ρ s0 = do
+   ρ' × s <- unsafePartial (splitDefs ρ s0)
+   t × o <- desugarEval (ρ <> ρ') s
    let o' = selectCell 2 1 5 5
-       ρ1ρ2 × _ × _ = evalBwd o' t
-   ω × i <- (find "filter" &&& find "image") ρ2
-   ω' × i' <- (find "filter" &&& find "image") ρ1ρ2
+       ρρ' × _ × _ = evalBwd o' t
+   ω <- find "filter" ρ'
+   i <- find "image" ρ'
+   ω' <- find "filter" ρρ'
+   i' <- find "image" ρρ'
    pure ((o' × o) × (ω' × ω) × (i' × i))
 
-example_neededBy :: Env 𝔹 -> S.Expr 𝔹 -> MayFail ((Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹) × (Val 𝔹 × Val 𝔹))
-example_neededBy ρ1 s0 = do
-   ρ2 × s <- unsafePartial (splitDefs s0 ρ1)
-   t × o <- desugarEval (ρ1 <> ρ2) s
-   let o' = selectCell 1 2 5 5
-   ?_
+example_neededBy :: ConvExample
+example_neededBy ρ s0 = do
+   ρ' × s <- unsafePartial (splitDefs ρ s0)
+   e <- desugarFwd s
+   t × o <- eval (ρ <> ρ') e
+   let i' = selectCell 1 2 5 5
+       ρ'' = update (botOf ρ') ("image" ↦ i')
+       o' = neg (evalFwd (neg (botOf ρ) <> neg ρ'') (const true <$> e) true t)
+   ω <- find "filter" ρ'
+   i <- find "image" ρ'
+   ω' <- find "filter" ρ''
+   pure ((o' × o) × (ω' × ω) × (i' × i))
 
--- Completely non-general, but fine for now.
-makeFigure :: String -> String -> Effect Unit
-makeFigure file divId =
-   flip runAff_ (openWithDefaultImports ("slicing/" <> file)) \result ->
-   case result of
+makeFigure :: String -> ConvExample -> String -> Effect Unit
+makeFigure file ex divId =
+   flip runAff_ (openWithDefaultImports ("slicing/" <> file))
+   case _ of
       Left e -> log ("Open failed: " <> show e)
       Right (ρ × s) -> do
          let (o' × o) × (ω' × ω) × (i' × i) = successful (example_needed ρ s)
@@ -58,6 +67,6 @@ makeFigure file divId =
 
 main :: Effect Unit
 main = do
-   makeFigure "conv-wrap" "fig-1"
-   makeFigure "conv-extend" "fig-2"
-   makeFigure "conv-zero" "fig-3"
+   makeFigure "conv-wrap" example_needed "fig-1"
+   makeFigure "conv-extend" example_needed "fig-2"
+   makeFigure "conv-zero" example_needed "fig-3"
