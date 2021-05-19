@@ -13,6 +13,11 @@ import Val (Array2, MatrixRep, Val)
 type MatrixRep' = Array2 (Int × 𝔹) × Int × Int
 type MatrixFig = { title :: String, cellFillSelected :: String, matrix :: MatrixRep' }
 
+matrixFig :: String -> String -> Val 𝔹 × Val 𝔹 -> MatrixFig
+matrixFig title cellFillSelected (u × v) =
+   let v' × _ = match_fwd (u × v) in
+   { title, cellFillSelected, matrix: bits (v' × fst (match v)) }
+
 foreign import drawFigure :: String -> Array MatrixFig -> Effect Unit
 
 -- Will want to generalise to arrays of "drawable values". Second component of elements is original value.
@@ -23,11 +28,5 @@ bits :: MatrixRep 𝔹 × MatrixRep 𝔹 -> MatrixRep'
 bits ((vss × _ × _) × (vss' × (i × _) × (j × _))) = toIntMatrix (zipWith zip vss vss') × i × j
 
 -- Inputs are pairs of matrices; second component is original (unsliced) matrix.
-renderFigures :: String -> Array (Val 𝔹 × Val 𝔹) -> Effect Unit
-renderFigures divId uvs =
-   drawFigure divId (uvs <#> renderFigure)
-      where
-      renderFigure :: Val 𝔹 × Val 𝔹 -> MatrixFig
-      renderFigure (u × v) =
-         let v' × _ = match_fwd (u × v) in
-         { title: "output", cellFillSelected: "LightGreen", matrix: bits (v' × fst (match v)) }
+renderFigures :: String -> Array MatrixFig -> Effect Unit
+renderFigures divId uvs = drawFigure divId uvs
