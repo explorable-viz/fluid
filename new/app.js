@@ -3043,9 +3043,6 @@ var PS = {};
   var NonEmptyList = function (x) {
       return x;
   };
-  var toList = function (v) {
-      return new Cons(v.value0, v.value1);
-  };
   var listMap = function (f) {
       var chunkedRevMap = function ($copy_chunksAcc) {
           return function ($copy_v) {
@@ -3308,16 +3305,6 @@ var PS = {};
           throw new Error("Failed pattern match at Data.List.Types (line 162, column 1 - line 164, column 37): " + [ v.constructor.name, v1.constructor.name ]);
       };
   });
-  var bindNonEmptyList = new Control_Bind.Bind(function () {
-      return applyNonEmptyList;
-  }, function (v) {
-      return function (f) {
-          var v1 = f(v.value0);
-          return new Data_NonEmpty.NonEmpty(v1.value0, Data_Semigroup.append(semigroupList)(v1.value1)(Control_Bind.bind(bindList)(v.value1)(function ($232) {
-              return toList(f($232));
-          })));
-      };
-  });
   var applicativeList = new Control_Applicative.Applicative(function () {
       return applyList;
   }, function (a) {
@@ -3352,7 +3339,6 @@ var PS = {};
   exports["plusList"] = plusList;
   exports["functorNonEmptyList"] = functorNonEmptyList;
   exports["applicativeNonEmptyList"] = applicativeNonEmptyList;
-  exports["bindNonEmptyList"] = bindNonEmptyList;
   exports["foldableNonEmptyList"] = foldableNonEmptyList;
   exports["traversableNonEmptyList"] = traversableNonEmptyList;
 })(PS);
@@ -5576,8 +5562,6 @@ var PS = {};
   const d3 = require("d3")
 
   const cellFillDefault         = 'White',
-        cellFillSelected        = 'LightGreen',
-        cellFillOutputSelected  = 'Yellow',
         cellStroke              = 'DarkGray',
         cellTextFill            = 'Black',
         cellFontSize            = '10pt',
@@ -5587,7 +5571,13 @@ var PS = {};
         titleFontSize           = '9pt'
 
   // String -> MatrixFig -> Effect Unit
-  function drawMatrix (id, { title, matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } }) {
+  function drawMatrix (
+     id, {
+        title,
+        cellFillSelected,
+        matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }
+     }
+  ) {
      return () => {
         const w = 30, h = 30
         const div = d3.select('#' + id)
@@ -5610,15 +5600,11 @@ var PS = {};
                         .data(d => d)
                         .enter()
 
-        // Bit of a hack to highlight output selection slightly differently
-        const cellFillSelected_ =
-           title == "output" ? cellFillOutputSelected : cellFillSelected
-
         rect.append('rect')
             .attr('x', (_, j) => w * j)
             .attr('width', w)
             .attr('height', h)
-            .attr('fill', d => d.value1 ? cellFillSelected_ : cellFillDefault)
+            .attr('fill', d => d.value1 ? cellFillSelected : cellFillDefault)
             .attr('stroke', cellStroke)
             .attr('stroke-width', strokeWidth)
 
@@ -5644,12 +5630,12 @@ var PS = {};
      }
   }
 
-  // String -> MatrixFig -> MatrixFig -> MatrixFig -> Effect Unit
-  function drawFigure (id, m1, m2, m3) {
+  // String -> Array MatrixFig -> Effect Unit
+  function drawFigure (id, figs) {
      return () => {
-        drawMatrix(id, m1)()
-        drawMatrix(id, m2)()
-        drawMatrix(id, m3)()
+        for (const fig of figs) {
+           drawMatrix(id, fig)()
+        }
      }
   }
 
@@ -5701,7 +5687,7 @@ var PS = {};
      return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
   }
 
-  exports.drawFigure = curry4(drawFigure)
+  exports.drawFigure = curry2(drawFigure)
 })(PS["App.Renderer"] = PS["App.Renderer"] || {});
 (function(exports) {
   "use strict";
@@ -27760,6 +27746,7 @@ var PS = {};
       rBracket: "]",
       then_: "then"
   };
+  var selState = false;
   var operators = function (binaryOp) {
       var ops = Data_List.groupBy(Data_Function.on(Data_Eq.eq(Data_Eq.eqInt))(function (v) {
           return v.prec;
@@ -27903,7 +27890,7 @@ var PS = {};
                   if ($15) {
                       return function (e) {
                           return function (e$prime) {
-                              return new SExpr.Constr(false, op$prime, new Data_List_Types.Cons(e, new Data_List_Types.Cons(e$prime, Control_Plus.empty(Data_List_Types.plusList))));
+                              return new SExpr.Constr(selState, op$prime, new Data_List_Types.Cons(e, new Data_List_Types.Cons(e$prime, Control_Plus.empty(Data_List_Types.plusList))));
                           };
                       };
                   };
@@ -27925,34 +27912,34 @@ var PS = {};
       var appChain = function (expr$prime) {
           var simpleExpr = (function () {
               var variable = Data_Functor.mapFlipped(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(ident)(SExpr.Var.create);
-              var string = Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Str.create(false))(token.stringLiteral);
+              var string = Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Str.create(selState))(token.stringLiteral);
               var signOpt = function (dictRing) {
                   return Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Data_Functor.voidLeft(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(Text_Parsing_Parser_String["char"](Text_Parsing_Parser_String.stringLikeString)(Data_Identity.monadIdentity)("-"))(Data_Ring.negate(dictRing)))(Data_Functor.voidLeft(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(Text_Parsing_Parser_String["char"](Text_Parsing_Parser_String.stringLikeString)(Data_Identity.monadIdentity)("+"))(Control_Category.identity(Control_Category.categoryFn))))(Control_Applicative.pure(Text_Parsing_Parser.applicativeParserT(Data_Identity.monadIdentity))(Control_Category.identity(Control_Category.categoryFn)));
               };
               var parensOp = Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Op.create)(token.parens(token.operator));
               var pair = token.parens(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Applicative.pure(Text_Parsing_Parser.applicativeParserT(Data_Identity.monadIdentity))(function (e) {
                   return function (e$prime) {
-                      return new SExpr.Constr(false, DataType.cPair, new Data_List_Types.Cons(e, new Data_List_Types.Cons(e$prime, Control_Plus.empty(Data_List_Types.plusList))));
+                      return new SExpr.Constr(selState, DataType.cPair, new Data_List_Types.Cons(e, new Data_List_Types.Cons(e$prime, Control_Plus.empty(Data_List_Types.plusList))));
                   };
               }))(Control_Apply.applyFirst(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(expr$prime)(token.comma)))(expr$prime));
-              var nil = token.brackets(Control_Applicative.pure(Text_Parsing_Parser.applicativeParserT(Data_Identity.monadIdentity))(new SExpr.ListEmpty(false)));
-              var matrix = Text_Parsing_Parser_Combinators.between(Data_Identity.monadIdentity)(token.symbol(str.arrayLBracket))(token.symbol(str.arrayRBracket))(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Matrix.create(false))(Control_Apply.applyFirst(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(expr$prime)(bar)))(token.parens(Control_Apply.lift2(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Data_Tuple.Tuple.create)(ident)(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(token.comma)(ident)))))(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(keyword(str.in_))(expr$prime)));
+              var nil = token.brackets(Control_Applicative.pure(Text_Parsing_Parser.applicativeParserT(Data_Identity.monadIdentity))(new SExpr.ListEmpty(selState)));
+              var matrix = Text_Parsing_Parser_Combinators.between(Data_Identity.monadIdentity)(token.symbol(str.arrayLBracket))(token.symbol(str.arrayRBracket))(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Matrix.create(selState))(Control_Apply.applyFirst(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(expr$prime)(bar)))(token.parens(Control_Apply.lift2(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Data_Tuple.Tuple.create)(ident)(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(token.comma)(ident)))))(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(keyword(str.in_))(expr$prime)));
               var matchAs = Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.MatchAs.create)(Control_Apply.applyFirst(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(keyword(str.match))(expr$prime))(keyword(str.as))))(branches(expr$prime)(branch_uncurried));
               var listNonEmpty = (function () {
                   var listRest = function (listRest$prime) {
-                      return Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(rBracket)(Control_Applicative.pure(Text_Parsing_Parser.applicativeParserT(Data_Identity.monadIdentity))(new SExpr.End(false))))(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(token.comma)(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Next.create(false))(expr$prime))(listRest$prime)));
+                      return Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(rBracket)(Control_Applicative.pure(Text_Parsing_Parser.applicativeParserT(Data_Identity.monadIdentity))(new SExpr.End(selState))))(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(token.comma)(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Next.create(selState))(expr$prime))(listRest$prime)));
                   };
-                  return Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(lBracket)(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.ListNonEmpty.create(false))(expr$prime))(Control_Lazy.fix(Text_Parsing_Parser.lazyParserT)(listRest)));
+                  return Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(lBracket)(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.ListNonEmpty.create(selState))(expr$prime))(Control_Lazy.fix(Text_Parsing_Parser.lazyParserT)(listRest)));
               })();
               var listEnum = token.brackets(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.applyFirst(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Applicative.pure(Text_Parsing_Parser.applicativeParserT(Data_Identity.monadIdentity))(SExpr.ListEnum.create))(expr$prime))(ellipsis))(expr$prime));
               var listComp = (function () {
                   var qualifier = Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.applyFirst(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Generator.create)(pattern))(lArrow))(expr$prime))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Declaration.create)(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.VarDef.create)(Control_Apply.applyFirst(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(keyword(str.let_))(pattern))(equals)))(expr$prime))))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Guard.create)(expr$prime));
-                  return token.brackets(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.applyFirst(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Applicative.pure(Text_Parsing_Parser.applicativeParserT(Data_Identity.monadIdentity))(SExpr.ListComp.create(false)))(expr$prime))(bar))(Util_Parse.sepBy1(qualifier)(token.comma)));
+                  return token.brackets(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.applyFirst(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Applicative.pure(Text_Parsing_Parser.applicativeParserT(Data_Identity.monadIdentity))(SExpr.ListComp.create(selState)))(expr$prime))(bar))(Util_Parse.sepBy1(qualifier)(token.comma)));
               })();
               var lambda = Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Lambda.create)(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(keyword(str.fun))(branches(expr$prime)(branch_curried)));
               var $$int = Control_Bind.bind(Text_Parsing_Parser.bindParserT(Data_Identity.monadIdentity))(signOpt(Data_Ring.ringInt))(function (sign) {
                   return Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))((function () {
-                      var $24 = SExpr.Int.create(false);
+                      var $24 = SExpr.Int.create(selState);
                       return function ($25) {
                           return $24(sign($25));
                       };
@@ -27961,7 +27948,7 @@ var PS = {};
               var ifElse = Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.applyFirst(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.applyFirst(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Apply.apply(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(Control_Applicative.pure(Text_Parsing_Parser.applicativeParserT(Data_Identity.monadIdentity))(SExpr.IfElse.create))(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(keyword(str.if_))(expr$prime)))(keyword(str.then_)))(expr$prime))(keyword(str.else_)))(expr$prime);
               var $$float = Control_Bind.bind(Text_Parsing_Parser.bindParserT(Data_Identity.monadIdentity))(signOpt(Data_Ring.ringNumber))(function (sign) {
                   return Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))((function () {
-                      var $26 = SExpr.Float.create(false);
+                      var $26 = SExpr.Float.create(selState);
                       return function ($27) {
                           return $26(sign($27));
                       };
@@ -27974,7 +27961,7 @@ var PS = {};
                       return Data_Profunctor_Choice.fanin(Control_Category.categoryFn)(Data_Profunctor_Choice.choiceFn)(SExpr.Let.create)(SExpr.LetRec.create)(def);
                   }))(Control_Apply.applySecond(Text_Parsing_Parser.applyParserT(Data_Identity.monadIdentity))(keyword(str.in_))(expr$prime)))(defs$prime);
               });
-              var constr = Data_Functor.flap(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Constr.create(false))(ctr))(Control_Plus.empty(Data_List_Types.plusList));
+              var constr = Data_Functor.flap(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(Data_Functor.map(Text_Parsing_Parser.functorParserT(Data_Identity.functorIdentity))(SExpr.Constr.create(selState))(ctr))(Control_Plus.empty(Data_List_Types.plusList));
               return Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(Control_Alt.alt(Text_Parsing_Parser.altParserT(Data_Identity.monadIdentity))(matrix)(Text_Parsing_Parser_Combinators["try"](Data_Identity.monadIdentity)(nil)))(listNonEmpty))(listComp))(listEnum))(Text_Parsing_Parser_Combinators["try"](Data_Identity.monadIdentity)(constr)))(Text_Parsing_Parser_Combinators["try"](Data_Identity.monadIdentity)(variable)))(Text_Parsing_Parser_Combinators["try"](Data_Identity.monadIdentity)($$float)))(Text_Parsing_Parser_Combinators["try"](Data_Identity.monadIdentity)($$int)))(string))(defsExpr))(matchAs))(Text_Parsing_Parser_Combinators["try"](Data_Identity.monadIdentity)(token.parens(expr$prime))))(Text_Parsing_Parser_Combinators["try"](Data_Identity.monadIdentity)(parensOp)))(pair))(lambda))(ifElse);
           })();
           var rest = function (v) {
@@ -28965,6 +28952,7 @@ var PS = {};
   exports["asElim"] = asElim;
   exports["asExpr"] = asExpr;
   exports["Module"] = Module;
+  exports["functorExpr"] = functorExpr;
   exports["functorElim"] = functorElim;
   exports["slicesElim"] = slicesElim;
   exports["boundedSlicesElim"] = boundedSlicesElim;
@@ -29243,6 +29231,7 @@ var PS = {};
   exports["insertMatrix"] = insertMatrix;
   exports["holeMatrix"] = holeMatrix;
   exports["functorVal"] = functorVal;
+  exports["joinSemilatticeVal"] = joinSemilatticeVal;
   exports["slicesVal"] = slicesVal;
   exports["boundedSlices"] = boundedSlices;
   exports["valExpandable"] = valExpandable;
@@ -29890,28 +29879,20 @@ var PS = {};
   var bits = function (v) {
       return new Data_Tuple.Tuple(new Data_Tuple.Tuple(toIntMatrix(Data_Array.zipWith(Data_Array.zip)(v.value0.value0.value0)(v.value1.value0.value0)), v.value1.value0.value1.value0), v.value1.value1.value0);
   };
-  var renderFigure = function (id) {
-      return function (v) {
-          return function (v1) {
-              return function (v2) {
-                  var v3 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v2.value0, v2.value1));
-                  var v4 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v1.value0, v1.value1));
-                  var v5 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.value0, v.value1));
-                  return $foreign.drawFigure(id)({
-                      title: "output",
-                      matrix: bits(new Data_Tuple.Tuple(v5.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.value1))))
-                  })({
-                      title: "filter",
-                      matrix: bits(new Data_Tuple.Tuple(v4.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v1.value1))))
-                  })({
-                      title: "input",
-                      matrix: bits(new Data_Tuple.Tuple(v3.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v2.value1))))
-                  });
+  var matrixFig = function (title) {
+      return function (cellFillSelected) {
+          return function (v) {
+              var v2 = Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.value0, v.value1));
+              return {
+                  title: title,
+                  cellFillSelected: cellFillSelected,
+                  matrix: bits(new Data_Tuple.Tuple(v2.value0, Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.value1))))
               };
           };
       };
   };
-  exports["renderFigure"] = renderFigure;
+  exports["matrixFig"] = matrixFig;
+  exports["drawFigure"] = $foreign.drawFigure;
 })(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
@@ -30193,8 +30174,6 @@ var PS = {};
   var desugarFwd = exprFwd;
   exports["desugarFwd"] = desugarFwd;
   exports["desugarModuleFwd"] = desugarModuleFwd;
-  exports["elimBool"] = elimBool;
-  exports["totaliseConstrFwd"] = totaliseConstrFwd;
 })(PS);
 (function(exports) {
   "use strict";
@@ -30684,659 +30663,9 @@ var PS = {};
           throw new Error("Failed pattern match at Eval (line 114, column 1 - line 114, column 52): " + [ ρ.constructor.name, v.constructor.name ]);
       };
   };
+  exports["closeDefs"] = closeDefs;
   exports["eval"] = $$eval;
   exports["eval_module"] = eval_module;
-})(PS);
-(function(exports) {
-  "use strict";
-
-  // Alias require to prevent webpack or browserify from actually requiring.
-  var req = typeof module === "undefined" ? undefined : module.require;
-  var util = req === undefined ? undefined : req("util");
-
-  exports.trace = function () {
-    return function (x) {
-      return function (k) {
-        // node only recurses two levels into an object before printing
-        // "[object]" for further objects when using console.log()
-        if (util !== undefined) {
-          console.log(util.inspect(x, { depth: null, colors: true }));
-        } else {
-          console.log(x);
-        }
-        return k({});
-      };
-    };
-  };
-})(PS["Debug.Trace"] = PS["Debug.Trace"] || {});
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Debug.Trace"] = $PS["Debug.Trace"] || {};
-  var exports = $PS["Debug.Trace"];
-  var $foreign = $PS["Debug.Trace"];
-  exports["trace"] = $foreign.trace;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Primitive.Defs"] = $PS["Primitive.Defs"] || {};
-  var exports = $PS["Primitive.Defs"];
-  var Bindings = $PS["Bindings"];
-  var Data_Eq = $PS["Data.Eq"];
-  var Data_EuclideanRing = $PS["Data.EuclideanRing"];
-  var Data_Foldable = $PS["Data.Foldable"];
-  var Data_Function = $PS["Data.Function"];
-  var Data_Int = $PS["Data.Int"];
-  var Data_List_Types = $PS["Data.List.Types"];
-  var Data_Ord = $PS["Data.Ord"];
-  var Data_Ring = $PS["Data.Ring"];
-  var Data_Semigroup = $PS["Data.Semigroup"];
-  var Data_Semiring = $PS["Data.Semiring"];
-  var Data_Show = $PS["Data.Show"];
-  var Data_Tuple = $PS["Data.Tuple"];
-  var DataType = $PS["DataType"];
-  var Debug_Trace = $PS["Debug.Trace"];
-  var $$Math = $PS["Math"];
-  var Primitive = $PS["Primitive"];
-  var Util = $PS["Util"];
-  var Val = $PS["Val"];                
-  var times = Primitive.union(Primitive.asIntIntOrNumber)(Primitive.asNumberIntOrNumber)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Semiring.mul(Data_Semiring.semiringInt))(Data_Semiring.mul(Data_Semiring.semiringNumber));
-  var rem = Data_Int.rem;
-  var quot = Data_Int.quot;
-  var pow = Primitive.union(Primitive.asNumberIntOrNumber)(Primitive.asNumberIntOrNumber)(Primitive.asIntNumber)(Primitive.asIntNumber)(function (x) {
-      return function (y) {
-          return $$Math.pow(Data_Int.toNumber(x))(Data_Int.toNumber(y));
-      };
-  })($$Math.pow);
-  var plus = Primitive.union(Primitive.asIntIntOrNumber)(Primitive.asNumberIntOrNumber)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Semiring.add(Data_Semiring.semiringInt))(Data_Semiring.add(Data_Semiring.semiringNumber));
-  var numToStr = Primitive.union1(Data_Show.show(Data_Show.showInt))(Data_Show.show(Data_Show.showNumber));
-  var notEquals = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Eq.notEq(Data_Eq.eqInt))(Data_Eq.notEq(Data_Eq.eqNumber)))(Data_Eq.notEq(Data_Eq.eqString));
-  var mod = Data_EuclideanRing.mod(Data_EuclideanRing.euclideanRingInt);
-  var minus = Primitive.union(Primitive.asIntIntOrNumber)(Primitive.asNumberIntOrNumber)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Ring.sub(Data_Ring.ringInt))(Data_Ring.sub(Data_Ring.ringNumber));
-  var matrixLookup = (function () {
-      var fwd = function (v) {
-          return function (v1) {
-              return Util.unsafeIndex(Util.unsafeIndex(v.value0.value0)(v1.value0.value0 - 1 | 0))(v1.value1.value0 - 1 | 0);
-          };
-      };
-      var bwd = function (v) {
-          return function (v1) {
-              return new Data_Tuple.Tuple(Val.insertMatrix(v1.value1.value0.value0)(v1.value1.value1.value0)(v)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(v1.value0.value0.value0, new Data_Tuple.Tuple(v1.value0.value0.value1.value0, false)), new Data_Tuple.Tuple(v1.value0.value1.value0, false))), new Data_Tuple.Tuple(new Data_Tuple.Tuple(v1.value1.value0.value0, false), new Data_Tuple.Tuple(v1.value1.value1.value0, false)));
-          };
-      };
-      return {
-          fwd: fwd,
-          bwd: bwd
-      };
-  })();
-  var log = Primitive.union1(function ($49) {
-      return $$Math.log(Data_Int.toNumber($49));
-  })($$Math.log);
-  var lessThanEquals = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Ord.lessThanOrEq(Data_Ord.ordInt))(Data_Ord.lessThanOrEq(Data_Ord.ordNumber)))(Data_Ord.lessThanOrEq(Data_Ord.ordString));
-  var lessThan = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Ord.lessThan(Data_Ord.ordInt))(Data_Ord.lessThan(Data_Ord.ordNumber)))(Data_Ord.lessThan(Data_Ord.ordString));
-  var greaterThanEquals = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Ord.greaterThanOrEq(Data_Ord.ordInt))(Data_Ord.greaterThanOrEq(Data_Ord.ordNumber)))(Data_Ord.greaterThanOrEq(Data_Ord.ordString));
-  var greaterThan = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Ord.greaterThan(Data_Ord.ordInt))(Data_Ord.greaterThan(Data_Ord.ordNumber)))(Data_Ord.greaterThan(Data_Ord.ordString));
-  var error_ = Util.error;
-  var equals = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Eq.eq(Data_Eq.eqInt))(Data_Eq.eq(Data_Eq.eqNumber)))(Data_Eq.eq(Data_Eq.eqString));
-  var divide = Primitive.union(Primitive.asNumberIntOrNumber)(Primitive.asNumberIntOrNumber)(Primitive.asIntNumber)(Primitive.asIntNumber)(function (x) {
-      return function (y) {
-          return Data_Int.toNumber(x) / Data_Int.toNumber(y);
-      };
-  })(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingNumber));
-  var div = Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt);
-  var dims = (function () {
-      var fwd = function (v) {
-          return new Data_Tuple.Tuple(v.value0.value1, v.value1);
-      };
-      var bwd = function (v) {
-          return function (v1) {
-              return new Data_Tuple.Tuple(new Data_Tuple.Tuple(v1.value0.value0, v.value0), v.value1);
-          };
-      };
-      return {
-          fwd: fwd,
-          bwd: bwd
-      };
-  })();
-  var debugLog = function (x) {
-      return Debug_Trace.trace()(x)(Data_Function["const"](x));
-  };
-  var concat = Data_Semigroup.append(Data_Semigroup.semigroupString);
-  var primitives = Data_Foldable.foldl(Data_Foldable.foldableArray)(Bindings.Extend.create)(Bindings.Empty.value)([ new Bindings.Binding(":", new Val.Constr(false, DataType.cCons, Data_List_Types.Nil.value)), new Bindings.Binding("+", Primitive.binary(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.withInverse2(plus))), new Bindings.Binding("-", Primitive.binary(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.withInverse2(minus))), new Bindings.Binding("*", Primitive.binaryZero(Primitive.isZeroEither(Primitive.isZeroInt)(Primitive.isZeroNumber))(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.withInverse2(times))), new Bindings.Binding("**", Primitive.binaryZero(Primitive.isZeroEither(Primitive.isZeroInt)(Primitive.isZeroNumber))(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.withInverse2(pow))), new Bindings.Binding("/", Primitive.binaryZero(Primitive.isZeroEither(Primitive.isZeroInt)(Primitive.isZeroNumber))(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.withInverse2(divide))), new Bindings.Binding("==", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(equals))), new Bindings.Binding("/=", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(notEquals))), new Bindings.Binding("<", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(lessThan))), new Bindings.Binding(">", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(greaterThan))), new Bindings.Binding("<=", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(lessThanEquals))), new Bindings.Binding(">=", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(greaterThanEquals))), new Bindings.Binding("++", Primitive.binary(Primitive.toFromString)(Primitive.toFromString)(Primitive.toFromString)(Primitive.withInverse2(concat))), new Bindings.Binding("!", Primitive.binary(Primitive.toFromMatrixRep)(Primitive.toFromIntAndInt)(Primitive.toFromVal)(matrixLookup)), new Bindings.Binding("div", Primitive.binaryZero(Primitive.isZeroInt)(Primitive.toFromInt)(Primitive.toFromInt)(Primitive.withInverse2(div))), new Bindings.Binding("mod", Primitive.binaryZero(Primitive.isZeroInt)(Primitive.toFromInt)(Primitive.toFromInt)(Primitive.withInverse2(mod))), new Bindings.Binding("quot", Primitive.binaryZero(Primitive.isZeroInt)(Primitive.toFromInt)(Primitive.toFromInt)(Primitive.withInverse2(quot))), new Bindings.Binding("rem", Primitive.binaryZero(Primitive.isZeroInt)(Primitive.toFromInt)(Primitive.toFromInt)(Primitive.withInverse2(rem))), new Bindings.Binding("ceiling", Primitive.unary(Primitive.toFromNumber)(Primitive.toFromInt)(Primitive.withInverse1(Data_Int.ceil))), new Bindings.Binding("debugLog", Primitive.unary(Primitive.toFromVal)(Primitive.toFromVal)(Primitive.withInverse1(debugLog))), new Bindings.Binding("dims", Primitive.unary(Primitive.toFromMatrixRep)(Primitive.toFromIntAndInt)(dims)), new Bindings.Binding("error", Primitive.unary(Primitive.toFromString)(Primitive.toFromVal)(Primitive.withInverse1(error_))), new Bindings.Binding("floor", Primitive.unary(Primitive.toFromNumber)(Primitive.toFromInt)(Primitive.withInverse1(Data_Int.floor))), new Bindings.Binding("log", Primitive.unary(Primitive.toFromIntOrNumber)(Primitive.toFromNumber)(Primitive.withInverse1(log))), new Bindings.Binding("numToStr", Primitive.unary(Primitive.toFromIntOrNumber)(Primitive.toFromString)(Primitive.withInverse1(numToStr))) ]);
-  exports["primitives"] = primitives;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["Module"] = $PS["Module"] || {};
-  var exports = $PS["Module"];
-  var Affjax = $PS["Affjax"];
-  var Affjax_ResponseFormat = $PS["Affjax.ResponseFormat"];
-  var Control_Applicative = $PS["Control.Applicative"];
-  var Control_Bind = $PS["Control.Bind"];
-  var Control_Category = $PS["Control.Category"];
-  var Data_Bifunctor = $PS["Data.Bifunctor"];
-  var Data_Either = $PS["Data.Either"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_HTTP_Method = $PS["Data.HTTP.Method"];
-  var Data_Show = $PS["Data.Show"];
-  var Data_Tuple = $PS["Data.Tuple"];
-  var DesugarFwd = $PS["DesugarFwd"];
-  var Effect_Aff = $PS["Effect.Aff"];
-  var Eval = $PS["Eval"];
-  var Parse = $PS["Parse"];
-  var Primitive_Defs = $PS["Primitive.Defs"];
-  var Text_Parsing_Parser = $PS["Text.Parsing.Parser"];
-  var Util = $PS["Util"];                
-  var resourceServerUrl = ".";
-  var parse = function (src) {
-      var $12 = Data_Bifunctor.bimap(Data_Either.bifunctorEither)(Data_Show.show(Text_Parsing_Parser.showParseError))(Control_Category.identity(Control_Category.categoryFn));
-      var $13 = Text_Parsing_Parser.runParser(src);
-      return function ($14) {
-          return $12($13($14));
-      };
-  };
-  var loadFile = function (folder) {
-      return function (file) {
-          var url = resourceServerUrl + ("/" + (folder + ("/" + (file + ".fld"))));
-          return Control_Bind.bind(Effect_Aff.bindAff)(Affjax.request({
-              method: new Data_Either.Left(Data_HTTP_Method.GET.value),
-              url: url,
-              headers: Affjax.defaultRequest.headers,
-              content: Affjax.defaultRequest.content,
-              username: Affjax.defaultRequest.username,
-              password: Affjax.defaultRequest.password,
-              withCredentials: Affjax.defaultRequest.withCredentials,
-              responseFormat: Affjax_ResponseFormat.string
-          }))(function (result) {
-              if (result instanceof Data_Either.Left) {
-                  return Util.error(Affjax.printError(result.value0));
-              };
-              if (result instanceof Data_Either.Right) {
-                  return Control_Applicative.pure(Effect_Aff.applicativeAff)(result.value0.body);
-              };
-              throw new Error("Failed pattern match at Module (line 30, column 4 - line 32, column 43): " + [ result.constructor.name ]);
-          });
-      };
-  };
-  var loadModule = function (file) {
-      return function (ρ) {
-          return Control_Bind.bind(Effect_Aff.bindAff)(loadFile("fluid/lib")(file))(function (src) {
-              return Control_Applicative.pure(Effect_Aff.applicativeAff)(Util.successful(Control_Bind.bind(Data_Either.bindEither)(Control_Bind.bind(Data_Either.bindEither)(parse(src)(Parse.module_))(DesugarFwd.desugarModuleFwd))(Eval.eval_module(ρ))));
-          });
-      };
-  };
-  var parseWithDefaultImports = function (src) {
-      return Data_Functor.flap(Effect_Aff.functorAff)(Data_Functor.map(Effect_Aff.functorAff)(Data_Tuple.Tuple.create)(Control_Bind.bind(Effect_Aff.bindAff)(Control_Bind.bind(Effect_Aff.bindAff)(loadModule("prelude")(Primitive_Defs.primitives))(loadModule("graphics")))(loadModule("convolution"))))(Util.successful(parse(src)(Parse.program)));
-  };
-  var openWithDefaultImports = function (file) {
-      return Control_Bind.bind(Effect_Aff.bindAff)(loadFile("fluid/example")(file))(parseWithDefaultImports);
-  };
-  exports["openWithDefaultImports"] = openWithDefaultImports;
-})(PS);
-(function($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-  $PS["DesugarBwd"] = $PS["DesugarBwd"] || {};
-  var exports = $PS["DesugarBwd"];
-  var Bindings = $PS["Bindings"];
-  var Control_Bind = $PS["Control.Bind"];
-  var Data_Either = $PS["Data.Either"];
-  var Data_Eq = $PS["Data.Eq"];
-  var Data_Foldable = $PS["Data.Foldable"];
-  var Data_Function = $PS["Data.Function"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_List = $PS["Data.List"];
-  var Data_List_NonEmpty = $PS["Data.List.NonEmpty"];
-  var Data_List_Types = $PS["Data.List.Types"];
-  var Data_Map_Internal = $PS["Data.Map.Internal"];
-  var Data_NonEmpty = $PS["Data.NonEmpty"];
-  var Data_Semigroup = $PS["Data.Semigroup"];
-  var Data_Tuple = $PS["Data.Tuple"];
-  var DataType = $PS["DataType"];
-  var DesugarFwd = $PS["DesugarFwd"];
-  var Expr = $PS["Expr"];
-  var Lattice = $PS["Lattice"];
-  var SExpr = $PS["SExpr"];
-  var Util = $PS["Util"];                
-  var totaliseConstrBwd = function (m) {
-      return function (c) {
-          var unargument = function (v) {
-              if (v instanceof Expr.ContElim && v.value0 instanceof Expr.ElimVar) {
-                  return v.value0.value1;
-              };
-              return Util.error(Util.absurd);
-          };
-          var bodyAnn = function (v) {
-              if (v instanceof Expr.ContExpr && (v.value0 instanceof Expr.Constr && (v.value0.value2 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value0.value1)(DataType.cNil)))) {
-                  return v.value0.value0;
-              };
-              return Util.error(Util.absurd);
-          };
-          var body = function (c$prime) {
-              return Data_Function.applyN(unargument)(Util.successful(DataType.arity(c$prime)))(Util.mustLookup(DataType.ordCtr)(c$prime)(m));
-          };
-          var cs = Data_List.difference(DataType.eqCtr)(DataType.ctrs(Util.successful(DataType.dataTypeFor(DataType.dataTypeForCtr)(c))))(Data_List.singleton(c));
-          return new Data_Tuple.Tuple(Util.mustLookup(DataType.ordCtr)(c)(m), Data_Foldable.foldl(Data_List_Types.foldableList)(Lattice.join(Lattice.joinSemilatticeBoolean))(false)(Data_Functor.map(Data_List_Types.functorList)(function ($476) {
-              return bodyAnn(body($476));
-          })(cs)));
-      };
-  };
-  var totaliseBwd = function (κ) {
-      return function (v) {
-          if (v instanceof Data_List_Types.Nil) {
-              return new Data_Tuple.Tuple(κ, false);
-          };
-          if (v instanceof Data_List_Types.Cons && (v.value0 instanceof Data_Either.Left && v.value0.value0 instanceof SExpr.PVar)) {
-              var v1 = Lattice.expand(Expr.contExpandable)(κ)(new Expr.ContElim(new Expr.ElimVar(v.value0.value0.value0, new Expr.ContHole(false))));
-              if (v1 instanceof Expr.ContElim && v1.value0 instanceof Expr.ElimVar) {
-                  var v2 = totaliseBwd(v1.value0.value1)(v.value1);
-                  return new Data_Tuple.Tuple(new Expr.ContElim(new Expr.ElimVar(v.value0.value0.value0, v2.value0)), v2.value1);
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof Data_List_Types.Cons) {
-              var v1 = (function () {
-                  if (v.value0 instanceof Data_Either.Left && v.value0.value0 instanceof SExpr.PVar) {
-                      return Util.error(Util.absurd);
-                  };
-                  if (v.value0 instanceof Data_Either.Left && v.value0.value0 instanceof SExpr.PConstr) {
-                      return new Data_Tuple.Tuple(v.value0.value0.value0, Data_Functor.map(Data_List_Types.functorList)(Data_Either.Left.create)(v.value0.value0.value1));
-                  };
-                  if (v.value0 instanceof Data_Either.Left && v.value0.value0 instanceof SExpr.PListEmpty) {
-                      return new Data_Tuple.Tuple(DataType.cNil, Data_List_Types.Nil.value);
-                  };
-                  if (v.value0 instanceof Data_Either.Left && v.value0.value0 instanceof SExpr.PListNonEmpty) {
-                      return new Data_Tuple.Tuple(DataType.cCons, new Data_List_Types.Cons(new Data_Either.Left(v.value0.value0.value0), new Data_List_Types.Cons(new Data_Either.Right(v.value0.value0.value1), Data_List_Types.Nil.value)));
-                  };
-                  if (v.value0 instanceof Data_Either.Right && v.value0.value0 instanceof SExpr.PEnd) {
-                      return new Data_Tuple.Tuple(DataType.cNil, Data_List_Types.Nil.value);
-                  };
-                  if (v.value0 instanceof Data_Either.Right && v.value0.value0 instanceof SExpr.PNext) {
-                      return new Data_Tuple.Tuple(DataType.cCons, new Data_List_Types.Cons(new Data_Either.Left(v.value0.value0.value0), new Data_List_Types.Cons(new Data_Either.Right(v.value0.value0.value1), Data_List_Types.Nil.value)));
-                  };
-                  throw new Error("Failed pattern match at DesugarBwd (line 246, column 18 - line 252, column 72): " + [ v.value0.constructor.name ]);
-              })();
-              var v2 = Lattice.expand(Expr.contExpandable)(κ)(new Expr.ContElim(new Expr.ElimConstr(DesugarFwd.totaliseConstrFwd(new Data_Tuple.Tuple(v1.value0, new Expr.ContHole(false)))(false))));
-              if (v2 instanceof Expr.ContElim && v2.value0 instanceof Expr.ElimConstr) {
-                  var v3 = totaliseConstrBwd(v2.value0.value0)(v1.value0);
-                  var v4 = totaliseBwd(v3.value0)(Data_Semigroup.append(Data_List_Types.semigroupList)(v1.value1)(v.value1));
-                  return new Data_Tuple.Tuple(new Expr.ContElim(new Expr.ElimConstr(Data_Map_Internal.fromFoldable(DataType.ordCtr)(Data_List_Types.foldableList)(Data_List.singleton(new Data_Tuple.Tuple(v1.value0, v4.value0))))), Lattice.join(Lattice.joinSemilatticeBoolean)(v3.value1)(v4.value1));
-              };
-              return Util.error(Util.absurd);
-          };
-          throw new Error("Failed pattern match at DesugarBwd (line 237, column 1 - line 237, column 72): " + [ κ.constructor.name, v.constructor.name ]);
-      };
-  };
-  var patternBwd = function (v) {
-      return function (v1) {
-          if (v instanceof Expr.ElimVar && v1 instanceof SExpr.PVar) {
-              return v.value1;
-          };
-          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PVar) {
-              return new Expr.ContHole(v.value0);
-          };
-          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PConstr) {
-              return argsBwd(new Expr.ContHole(v.value0))(Data_Functor.map(Data_List_Types.functorList)(Data_Either.Left.create)(v1.value1));
-          };
-          if (v instanceof Expr.ElimConstr && v1 instanceof SExpr.PConstr) {
-              return argsBwd(Util.mustLookup(DataType.ordCtr)(v1.value0)(v.value0))(Data_Functor.map(Data_List_Types.functorList)(Data_Either.Left.create)(v1.value1));
-          };
-          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PListEmpty) {
-              return new Expr.ContHole(v.value0);
-          };
-          if (v instanceof Expr.ElimConstr && v1 instanceof SExpr.PListEmpty) {
-              return Util.mustLookup(DataType.ordCtr)(DataType.cNil)(v.value0);
-          };
-          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PListNonEmpty) {
-              return argsBwd(new Expr.ContHole(v.value0))(new Data_List_Types.Cons(new Data_Either.Left(v1.value0), new Data_List_Types.Cons(new Data_Either.Right(v1.value1), Data_List_Types.Nil.value)));
-          };
-          if (v instanceof Expr.ElimConstr && v1 instanceof SExpr.PListNonEmpty) {
-              return argsBwd(Util.mustLookup(DataType.ordCtr)(DataType.cCons)(v.value0))(new Data_List_Types.Cons(new Data_Either.Left(v1.value0), new Data_List_Types.Cons(new Data_Either.Right(v1.value1), Data_List_Types.Nil.value)));
-          };
-          return Util.error(Util.absurd);
-      };
-  };
-  var listRestPatternBwd = function (v) {
-      return function (v1) {
-          if (v instanceof Expr.ElimVar) {
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PEnd) {
-              return new Expr.ContHole(v.value0);
-          };
-          if (v instanceof Expr.ElimConstr && v1 instanceof SExpr.PEnd) {
-              return Util.mustLookup(DataType.ordCtr)(DataType.cNil)(v.value0);
-          };
-          if (v instanceof Expr.ElimHole && v1 instanceof SExpr.PNext) {
-              return argsBwd(new Expr.ContHole(v.value0))(new Data_List_Types.Cons(new Data_Either.Left(v1.value0), new Data_List_Types.Cons(new Data_Either.Right(v1.value1), Data_List_Types.Nil.value)));
-          };
-          if (v instanceof Expr.ElimConstr && v1 instanceof SExpr.PNext) {
-              return argsBwd(Util.mustLookup(DataType.ordCtr)(DataType.cCons)(v.value0))(new Data_List_Types.Cons(new Data_Either.Left(v1.value0), new Data_List_Types.Cons(new Data_Either.Right(v1.value1), Data_List_Types.Nil.value)));
-          };
-          throw new Error("Failed pattern match at DesugarBwd (line 202, column 1 - line 202, column 58): " + [ v.constructor.name, v1.constructor.name ]);
-      };
-  };
-  var argsBwd = function ($copy_κ) {
-      return function ($copy_v) {
-          var $tco_var_κ = $copy_κ;
-          var $tco_done = false;
-          var $tco_result;
-          function $tco_loop(κ, v) {
-              if (v instanceof Data_List_Types.Nil) {
-                  $tco_done = true;
-                  return κ;
-              };
-              if (v instanceof Data_List_Types.Cons && v.value0 instanceof Data_Either.Left) {
-                  $tco_var_κ = patternBwd(Expr.asElim(κ))(v.value0.value0);
-                  $copy_v = v.value1;
-                  return;
-              };
-              if (v instanceof Data_List_Types.Cons && v.value0 instanceof Data_Either.Right) {
-                  $tco_var_κ = listRestPatternBwd(Expr.asElim(κ))(v.value0.value0);
-                  $copy_v = v.value1;
-                  return;
-              };
-              throw new Error("Failed pattern match at DesugarBwd (line 209, column 1 - line 209, column 64): " + [ κ.constructor.name, v.constructor.name ]);
-          };
-          while (!$tco_done) {
-              $tco_result = $tco_loop($tco_var_κ, $copy_v);
-          };
-          return $tco_result;
-      };
-  };
-  var patternsBwd = function (σ) {
-      return function (v) {
-          if (v.value1 instanceof Data_List_Types.Nil) {
-              return Expr.asExpr(patternBwd(σ)(v.value0));
-          };
-          if (v.value1 instanceof Data_List_Types.Cons) {
-              var patternsBwd_rest = function (σ$prime) {
-                  var v1 = Lattice.expand(Expr.exprExpandable)(σ$prime)(new Expr.Lambda(new Expr.ElimHole(false)));
-                  if (v1 instanceof Expr.Lambda) {
-                      return patternsBwd(v1.value0)(new Data_NonEmpty.NonEmpty(v.value1.value0, v.value1.value1));
-                  };
-                  return Util.error(Util.absurd);
-              };
-              return patternsBwd_rest(Expr.asExpr(patternBwd(σ)(v.value0)));
-          };
-          throw new Error("Failed pattern match at DesugarBwd (line 180, column 1 - line 180, column 58): " + [ σ.constructor.name, v.constructor.name ]);
-      };
-  };
-  var varDefsBwd = function (v) {
-      return function (v1) {
-          if (v instanceof Expr.Let && v1.value0.value1 instanceof Data_List_Types.Nil) {
-              return new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(new SExpr.VarDef(v1.value0.value0.value0, exprBwd(v.value0.value1)(v1.value0.value0.value1)), Data_List_Types.Nil.value), exprBwd(v.value1)(v1.value1));
-          };
-          if (v instanceof Expr.Let && v1.value0.value1 instanceof Data_List_Types.Cons) {
-              var v2 = varDefsBwd(v.value1)(new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(v1.value0.value1.value0, v1.value0.value1.value1), v1.value1));
-              return new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(new SExpr.VarDef(v1.value0.value0.value0, exprBwd(v.value0.value1)(v1.value0.value0.value1)), new Data_List_Types.Cons(v2.value0.value0, v2.value0.value1)), v2.value1);
-          };
-          return Util.error(Util.absurd);
-      };
-  };
-  var recDefsBwd$prime = function (v) {
-      return function (v1) {
-          if (v instanceof Bindings.Empty) {
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof Bindings.Extend && (v.value0 instanceof Bindings.Empty && v1.value1 instanceof Data_List_Types.Nil)) {
-              return new Data_NonEmpty.NonEmpty(recDefBwd(new Bindings.Binding(v.value1.value0, v.value1.value1))(v1.value0), Data_List_Types.Nil.value);
-          };
-          if (v instanceof Bindings.Extend && (v.value0 instanceof Bindings.Extend && v1.value1 instanceof Data_List_Types.Nil)) {
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof Bindings.Extend && v1.value1 instanceof Data_List_Types.Cons) {
-              return new Data_NonEmpty.NonEmpty(recDefBwd(new Bindings.Binding(v.value1.value0, v.value1.value1))(v1.value0), Data_List_NonEmpty.toList(recDefsBwd$prime(v.value0)(new Data_NonEmpty.NonEmpty(v1.value1.value0, v1.value1.value1))));
-          };
-          throw new Error("Failed pattern match at DesugarBwd (line 36, column 1 - line 36, column 83): " + [ v.constructor.name, v1.constructor.name ]);
-      };
-  };
-  var recDefsBwd = function (xσs) {
-      return function (xcs) {
-          return Control_Bind.join(Data_List_Types.bindNonEmptyList)(recDefsBwd$prime(xσs)(Data_List_NonEmpty.groupBy(Data_Function.on(Data_Eq.eq(Data_Eq.eqString))(Data_Tuple.fst))(xcs)));
-      };
-  };
-  var recDefBwd = function (v) {
-      var $477 = Data_Functor.map(Data_List_Types.functorNonEmptyList)(function (v1) {
-          return new Data_Tuple.Tuple(v.value0, v1);
-      });
-      var $478 = branchesBwd_curried(v.value1);
-      var $479 = Data_Functor.map(Data_List_Types.functorNonEmptyList)(Data_Tuple.snd);
-      return function ($480) {
-          return $477($478($479($480)));
-      };
-  };
-  var listRestBwd = function (e) {
-      return function (v) {
-          if (v instanceof SExpr.End) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, DataType.cNil, Data_List_Types.Nil.value));
-              if (v1 instanceof Expr.Constr) {
-                  return new SExpr.End(v1.value0);
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.Next) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Expr.Hole(false), new Data_List_Types.Cons(new Expr.Hole(false), Data_List_Types.Nil.value))));
-              if (v1 instanceof Expr.Constr && (v1.value2 instanceof Data_List_Types.Cons && (v1.value2.value1 instanceof Data_List_Types.Cons && v1.value2.value1.value1 instanceof Data_List_Types.Nil))) {
-                  return new SExpr.Next(v1.value0, exprBwd(v1.value2.value0)(v.value1), listRestBwd(v1.value2.value1.value0)(v.value2));
-              };
-              return Util.error(Util.absurd);
-          };
-          throw new Error("Failed pattern match at DesugarBwd (line 169, column 1 - line 169, column 45): " + [ e.constructor.name, v.constructor.name ]);
-      };
-  };
-  var exprBwd = function (e) {
-      return function (v) {
-          if (v instanceof SExpr.Var) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Var(v.value0));
-              if (v1 instanceof Expr.Var) {
-                  return new SExpr.Var(v.value0);
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.Op) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Op(v.value0));
-              if (v1 instanceof Expr.Op) {
-                  return new SExpr.Op(v.value0);
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.Int) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Int(false, v.value1));
-              if (v1 instanceof Expr.Int) {
-                  return new SExpr.Int(v1.value0, v.value1);
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.Float) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Float(false, v.value1));
-              if (v1 instanceof Expr.Float) {
-                  return new SExpr.Float(v1.value0, v.value1);
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.Str) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Str(false, v.value1));
-              if (v1 instanceof Expr.Str) {
-                  return new SExpr.Str(v1.value0, v.value1);
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.Constr) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, v.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Expr.Hole(false)))(v.value2)));
-              if (v1 instanceof Expr.Constr) {
-                  return new SExpr.Constr(v1.value0, v.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Tuple.uncurry(exprBwd))(Data_List.zip(v1.value2)(v.value2)));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.Matrix) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Matrix(false, new Expr.Hole(false), new Data_Tuple.Tuple(v.value2.value0, v.value2.value1), new Expr.Hole(false)));
-              if (v1 instanceof Expr.Matrix) {
-                  return new SExpr.Matrix(v1.value0, exprBwd(v1.value1)(v.value1), new Data_Tuple.Tuple(v.value2.value0, v.value2.value1), exprBwd(v1.value3)(v.value3));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.Lambda) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Lambda(new Expr.ElimHole(false)));
-              if (v1 instanceof Expr.Lambda) {
-                  return new SExpr.Lambda(branchesBwd_curried(v1.value0)(v.value0));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.App) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
-              if (v1 instanceof Expr.App) {
-                  return new SExpr.App(exprBwd(v1.value0)(v.value0), exprBwd(v1.value1)(v.value1));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.MatchAs) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Lambda(new Expr.ElimHole(false)), new Expr.Hole(false)));
-              if (v1 instanceof Expr.App && v1.value0 instanceof Expr.Lambda) {
-                  return new SExpr.MatchAs(exprBwd(v1.value1)(v.value0), branchesBwd_uncurried(v1.value0.value0)(v.value1));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.IfElse) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Lambda(DesugarFwd.elimBool(new Expr.ContHole(false))(new Expr.ContHole(false))), new Expr.Hole(false)));
-              if (v1 instanceof Expr.App && (v1.value0 instanceof Expr.Lambda && v1.value0.value0 instanceof Expr.ElimConstr)) {
-                  return new SExpr.IfElse(exprBwd(v1.value1)(v.value0), exprBwd(Expr.asExpr(Util.mustLookup(DataType.ordCtr)(DataType.cTrue)(v1.value0.value0.value0)))(v.value1), exprBwd(Expr.asExpr(Util.mustLookup(DataType.ordCtr)(DataType.cFalse)(v1.value0.value0.value0)))(v.value2));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.BinaryApp) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.App(new Expr.Op(v.value1), new Expr.Hole(false)), new Expr.Hole(false)));
-              if (v1 instanceof Expr.App && (v1.value0 instanceof Expr.App && v1.value0.value0 instanceof Expr.Op)) {
-                  return new SExpr.BinaryApp(exprBwd(v1.value0.value1)(v.value0), v.value1, exprBwd(v1.value1)(v.value2));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.Let) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Let(new Expr.VarDef(new Expr.ElimHole(false), new Expr.Hole(false)), new Expr.Hole(false)));
-              if (v1 instanceof Expr.Let) {
-                  return Data_Tuple.uncurry(SExpr.Let.create)(varDefsBwd(new Expr.Let(v1.value0, v1.value1))(new Data_Tuple.Tuple(v.value0, v.value1)));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.LetRec) {
-              var xcss = Data_List_NonEmpty.groupBy(Data_Function.on(Data_Eq.eq(Data_Eq.eqString))(Data_Tuple.fst))(v.value0);
-              var recDefHole = function (xcs$prime) {
-                  return new Bindings.Binding(Data_Tuple.fst(Data_List_NonEmpty.head(xcs$prime)), new Expr.ElimHole(false));
-              };
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.LetRec(Bindings.fromList(Data_List_NonEmpty.toList(Data_Functor.map(Data_List_Types.functorNonEmptyList)(recDefHole)(xcss))), new Expr.Hole(false)));
-              if (v1 instanceof Expr.LetRec) {
-                  return new SExpr.LetRec(recDefsBwd(v1.value0)(v.value0), exprBwd(v1.value1)(v.value1));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.ListEmpty) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, DataType.cNil, Data_List_Types.Nil.value));
-              if (v1 instanceof Expr.Constr && v1.value2 instanceof Data_List_Types.Nil) {
-                  return new SExpr.ListEmpty(v1.value0);
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.ListNonEmpty) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Expr.Hole(false), new Data_List_Types.Cons(new Expr.Hole(false), Data_List_Types.Nil.value))));
-              if (v1 instanceof Expr.Constr && (v1.value2 instanceof Data_List_Types.Cons && (v1.value2.value1 instanceof Data_List_Types.Cons && v1.value2.value1.value1 instanceof Data_List_Types.Nil))) {
-                  return new SExpr.ListNonEmpty(v1.value0, exprBwd(v1.value2.value0)(v.value1), listRestBwd(v1.value2.value1.value0)(v.value2));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.ListEnum) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.App(new Expr.Var("enumFromTo"), new Expr.Hole(false)), new Expr.Hole(false)));
-              if (v1 instanceof Expr.App && (v1.value0 instanceof Expr.App && (v1.value0.value0 instanceof Expr.Var && v1.value0.value0.value0 === "enumFromTo"))) {
-                  return new SExpr.ListEnum(exprBwd(v1.value0.value1)(v.value0), exprBwd(v1.value1)(v.value1));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Guard && (v.value2.value0.value0 instanceof SExpr.Constr && (v.value2.value0.value0.value2 instanceof Data_List_Types.Nil && (v.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value2.value0.value0.value1)(DataType.cTrue)))))) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Expr.Hole(false), new Data_List_Types.Cons(new Expr.Constr(false, DataType.cNil, Data_List_Types.Nil.value), Data_List_Types.Nil.value))));
-              if (v1 instanceof Expr.Constr && (v1.value2 instanceof Data_List_Types.Cons && (v1.value2.value1 instanceof Data_List_Types.Cons && (v1.value2.value1.value0 instanceof Expr.Constr && (v1.value2.value1.value0.value2 instanceof Data_List_Types.Nil && v1.value2.value1.value1 instanceof Data_List_Types.Nil))))) {
-                  return new SExpr.ListComp(Lattice.join(Lattice.joinSemilatticeBoolean)(v1.value2.value1.value0.value0)(v1.value0), exprBwd(v1.value2.value0)(v.value1), new Data_NonEmpty.NonEmpty(new SExpr.Guard(new SExpr.Constr(Lattice.join(Lattice.joinSemilatticeBoolean)(v1.value2.value1.value0.value0)(v1.value0), DataType.cTrue, Data_List_Types.Nil.value)), Data_List_Types.Nil.value));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.ListComp && v.value2.value1 instanceof Data_List_Types.Nil) {
-              var v1 = exprBwd(e)(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value0, new Data_List_Types.Cons(new SExpr.Guard(new SExpr.Constr(true, DataType.cTrue, Data_List_Types.Nil.value)), Data_List_Types.Nil.value))));
-              if (v1 instanceof SExpr.ListComp && (v1.value2.value1 instanceof Data_List_Types.Cons && (v1.value2.value1.value0 instanceof SExpr.Guard && (v1.value2.value1.value0.value0 instanceof SExpr.Constr && (v1.value2.value1.value0.value0.value2 instanceof Data_List_Types.Nil && (v1.value2.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v1.value2.value1.value0.value0.value1)(DataType.cTrue))))))) {
-                  return new SExpr.ListComp(v1.value0, v1.value1, new Data_NonEmpty.NonEmpty(v1.value2.value0, Data_List_Types.Nil.value));
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Guard && v.value2.value1 instanceof Data_List_Types.Cons)) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Lambda(DesugarFwd.elimBool(new Expr.ContHole(false))(new Expr.ContHole(false))), new Expr.Hole(false)));
-              if (v1 instanceof Expr.App && (v1.value0 instanceof Expr.Lambda && v1.value0.value0 instanceof Expr.ElimConstr)) {
-                  var v2 = new Data_Tuple.Tuple(exprBwd(Expr.asExpr(Util.mustLookup(DataType.ordCtr)(DataType.cTrue)(v1.value0.value0.value0)))(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1))), exprBwd(Expr.asExpr(Util.mustLookup(DataType.ordCtr)(DataType.cFalse)(v1.value0.value0.value0)))(new SExpr.Constr(true, DataType.cNil, Data_List_Types.Nil.value)));
-                  if (v2.value0 instanceof SExpr.ListComp && (v2.value1 instanceof SExpr.Constr && (v2.value1.value2 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v2.value1.value1)(DataType.cNil)))) {
-                      return new SExpr.ListComp(Lattice.join(Lattice.joinSemilatticeBoolean)(v2.value1.value0)(v2.value0.value0), v2.value0.value1, new Data_NonEmpty.NonEmpty(new SExpr.Guard(exprBwd(v1.value1)(v.value2.value0.value0)), new Data_List_Types.Cons(v2.value0.value2.value0, v2.value0.value2.value1)));
-                  };
-                  return Util.error(Util.absurd);
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Declaration && v.value2.value1 instanceof Data_List_Types.Cons)) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Lambda(new Expr.ElimHole(false)), new Expr.Hole(false)));
-              if (v1 instanceof Expr.App && v1.value0 instanceof Expr.Lambda) {
-                  var v2 = branchBwd_curried(v1.value0.value0)(new Data_Tuple.Tuple(new Data_NonEmpty.NonEmpty(v.value2.value0.value0.value0, Data_List_Types.Nil.value), new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1))));
-                  if (v2.value1 instanceof SExpr.ListComp) {
-                      return new SExpr.ListComp(v2.value1.value0, v2.value1.value1, new Data_NonEmpty.NonEmpty(new SExpr.Declaration(new SExpr.VarDef(v.value2.value0.value0.value0, exprBwd(v1.value1)(v.value2.value0.value0.value1))), new Data_List_Types.Cons(v2.value1.value2.value0, v2.value1.value2.value1)));
-                  };
-                  return Util.error(Util.absurd);
-              };
-              return Util.error(Util.absurd);
-          };
-          if (v instanceof SExpr.ListComp && (v.value2.value0 instanceof SExpr.Generator && v.value2.value1 instanceof Data_List_Types.Cons)) {
-              var v1 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.App(new Expr.Var("concatMap"), new Expr.Lambda(new Expr.ElimHole(false))), new Expr.Hole(false)));
-              if (v1 instanceof Expr.App && (v1.value0 instanceof Expr.App && (v1.value0.value0 instanceof Expr.Var && (v1.value0.value0.value0 === "concatMap" && v1.value0.value1 instanceof Expr.Lambda)))) {
-                  var v2 = totaliseBwd(new Expr.ContElim(v1.value0.value1.value0))(new Data_List_Types.Cons(new Data_Either.Left(v.value2.value0.value0), Data_List_Types.Nil.value));
-                  var v3 = exprBwd(Expr.asExpr(patternBwd(Expr.asElim(v2.value0))(v.value2.value0.value0)))(new SExpr.ListComp(v.value0, v.value1, new Data_NonEmpty.NonEmpty(v.value2.value1.value0, v.value2.value1.value1)));
-                  if (v3 instanceof SExpr.ListComp) {
-                      return new SExpr.ListComp(Lattice.join(Lattice.joinSemilatticeBoolean)(v2.value1)(v3.value0), v3.value1, new Data_NonEmpty.NonEmpty(new SExpr.Generator(v.value2.value0.value0, exprBwd(v1.value1)(v.value2.value0.value1)), new Data_List_Types.Cons(v3.value2.value0, v3.value2.value1)));
-                  };
-                  return Util.error(Util.absurd);
-              };
-              return Util.error(Util.absurd);
-          };
-          throw new Error("Failed pattern match at DesugarBwd (line 46, column 1 - line 46, column 40): " + [ e.constructor.name, v.constructor.name ]);
-      };
-  };
-  var branchesBwd_uncurried = function (σ) {
-      return function (v) {
-          if (v.value1 instanceof Data_List_Types.Cons) {
-              return new Data_NonEmpty.NonEmpty(branchBwd_uncurried(σ)(v.value0), Data_List_NonEmpty.toList(branchesBwd_uncurried(σ)(new Data_NonEmpty.NonEmpty(v.value1.value0, v.value1.value1))));
-          };
-          if (v.value1 instanceof Data_List_Types.Nil) {
-              return new Data_NonEmpty.NonEmpty(branchBwd_uncurried(σ)(v.value0), Data_List_Types.Nil.value);
-          };
-          throw new Error("Failed pattern match at DesugarBwd (line 230, column 1 - line 230, column 74): " + [ σ.constructor.name, v.constructor.name ]);
-      };
-  };
-  var branchesBwd_curried = function (σ) {
-      return function (v) {
-          if (v.value1 instanceof Data_List_Types.Cons) {
-              return new Data_NonEmpty.NonEmpty(branchBwd_curried(σ)(v.value0), Data_List_NonEmpty.toList(branchesBwd_curried(σ)(new Data_NonEmpty.NonEmpty(v.value1.value0, v.value1.value1))));
-          };
-          if (v.value1 instanceof Data_List_Types.Nil) {
-              return new Data_NonEmpty.NonEmpty(branchBwd_curried(σ)(v.value0), Data_List_Types.Nil.value);
-          };
-          throw new Error("Failed pattern match at DesugarBwd (line 223, column 1 - line 223, column 64): " + [ σ.constructor.name, v.constructor.name ]);
-      };
-  };
-  var branchBwd_uncurried = function (σ) {
-      return function (v) {
-          return new Data_Tuple.Tuple(v.value0, exprBwd(Expr.asExpr(patternBwd(σ)(v.value0)))(v.value1));
-      };
-  };
-  var branchBwd_curried = function (σ) {
-      return function (v) {
-          return new Data_Tuple.Tuple(v.value0, exprBwd(patternsBwd(σ)(v.value0))(v.value1));
-      };
-  };
-  var desugarBwd = exprBwd;
-  exports["desugarBwd"] = desugarBwd;
 })(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
@@ -31584,28 +30913,419 @@ var PS = {};
 (function($PS) {
   // Generated by purs version 0.13.6
   "use strict";
+  $PS["EvalFwd"] = $PS["EvalFwd"] || {};
+  var exports = $PS["EvalFwd"];
+  var Bindings = $PS["Bindings"];
+  var Control_Bind = $PS["Control.Bind"];
+  var Data_Array = $PS["Data.Array"];
+  var Data_Function = $PS["Data.Function"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_List = $PS["Data.List"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Map_Internal = $PS["Data.Map.Internal"];
+  var Data_Semigroup = $PS["Data.Semigroup"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var DataType = $PS["DataType"];
+  var Eval = $PS["Eval"];
+  var Expl = $PS["Expl"];
+  var Expr = $PS["Expr"];
+  var Lattice = $PS["Lattice"];
+  var Primitive = $PS["Primitive"];
+  var Util = $PS["Util"];
+  var Val = $PS["Val"];                
+  var matchFwd = function (v) {
+      return function (σ) {
+          return function (v1) {
+              var v2 = v;
+              if (v1 instanceof Expl.MatchVar) {
+                  var v3 = Lattice.expand(Expr.elimExpandable)(σ)(new Expr.ElimVar(v1.value0, new Expr.ContHole(false)));
+                  if (v3 instanceof Expr.ElimVar) {
+                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Bindings.Extend(Bindings.Empty.value, new Bindings.Binding(v1.value0, v2)), v3.value1), true);
+                  };
+                  return Util.error(Util.absurd);
+              };
+              if (v1 instanceof Expl.MatchVarAnon) {
+                  var v2 = Lattice.expand(Expr.elimExpandable)(σ)(new Expr.ElimVar(Bindings.varAnon, new Expr.ContHole(false)));
+                  if (v2 instanceof Expr.ElimVar) {
+                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Bindings.Empty.value, v2.value1), true);
+                  };
+                  return Util.error(Util.absurd);
+              };
+              if (v1 instanceof Expl.MatchConstr) {
+                  var v3 = new Data_Tuple.Tuple(Lattice.expand(Val.valExpandable)(v)(new Val.Constr(false, v1.value0, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Val.Hole(false)))(v1.value1))), Lattice.expand(Expr.elimExpandable)(σ)(new Expr.ElimConstr(Data_Map_Internal.fromFoldable(DataType.ordCtr)(Data_List_Types.foldableList)(Data_Functor.map(Data_List_Types.functorList)(function (v4) {
+                      return new Data_Tuple.Tuple(v4, new Expr.ContHole(false));
+                  })(new Data_List_Types.Cons(v1.value0, v1.value2))))));
+                  if (v3.value0 instanceof Val.Constr && v3.value1 instanceof Expr.ElimConstr) {
+                      var v4 = matchArgsFwd(v3.value0.value2)(Util.mustLookup(DataType.ordCtr)(v1.value0)(v3.value1.value0))(v1.value1);
+                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(v4.value0.value0, v4.value0.value1), Lattice.meet(v3.value0.value0)(v4.value1));
+                  };
+                  return Util.error(Util.absurd);
+              };
+              throw new Error("Failed pattern match at EvalFwd (line 20, column 1 - line 20, column 61): " + [ v.constructor.name, σ.constructor.name, v1.constructor.name ]);
+          };
+      };
+  };
+  var matchArgsFwd = function (v) {
+      return function (v1) {
+          return function (v2) {
+              if (v instanceof Data_List_Types.Nil && v2 instanceof Data_List_Types.Nil) {
+                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Bindings.Empty.value, v1), true);
+              };
+              if (v instanceof Data_List_Types.Cons && v2 instanceof Data_List_Types.Cons) {
+                  var v4 = Lattice.expand(Expr.contExpandable)(v1)(new Expr.ContElim(new Expr.ElimHole(false)));
+                  if (v4 instanceof Expr.ContElim) {
+                      var v5 = matchFwd(v.value0)(v4.value0)(v2.value0);
+                      var v6 = matchArgsFwd(v.value1)(v5.value0.value1)(v2.value1);
+                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Semigroup.append(Bindings.semigroupBindings)(v5.value0.value0)(v6.value0.value0), v6.value0.value1), Lattice.meet(v5.value1)(v6.value1));
+                  };
+                  return Util.error(Util.absurd);
+              };
+              return Util.error(Util.absurd);
+          };
+      };
+  };
+  var evalFwd = function (ρ) {
+      return function (e) {
+          return function (v) {
+              return function (v1) {
+                  if (v1 instanceof Expl.Var) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Var(v1.value1));
+                      if (v2 instanceof Expr.Var) {
+                          return Util.successful(Bindings.find(v1.value1)(ρ));
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Op) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Op(v1.value1));
+                      if (v2 instanceof Expr.Op) {
+                          return Util.successful(Bindings.find(v1.value1)(ρ));
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Int) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Int(false, v1.value1));
+                      if (v2 instanceof Expr.Int) {
+                          return new Val.Int(Lattice.meet(v2.value0)(v), v1.value1);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Float) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Float(false, v1.value1));
+                      if (v2 instanceof Expr.Float) {
+                          return new Val.Float(Lattice.meet(v2.value0)(v), v1.value1);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Str) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Str(false, v1.value1));
+                      if (v2 instanceof Expr.Str) {
+                          return new Val.Str(Lattice.meet(v2.value0)(v), v1.value1);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Constr) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Constr(false, v1.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Expr.Hole(false)))(v1.value2)));
+                      if (v2 instanceof Expr.Constr) {
+                          return new Val.Constr(Lattice.meet(v2.value0)(v), v1.value1, Data_Functor.map(Data_List_Types.functorList)(function (v3) {
+                              return evalFwd(ρ)(v3.value0)(v)(v3.value1);
+                          })(Data_List.zip(v2.value2)(v1.value2)));
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Matrix) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Matrix(false, new Expr.Hole(false), new Data_Tuple.Tuple(v1.value1.value0, v1.value1.value1), new Expr.Hole(false)));
+                      if (v2 instanceof Expr.Matrix) {
+                          var v3 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v2.value3)(v2.value0)(v1.value3))(new Val.Constr(false, DataType.cPair, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value))));
+                          if (v3 instanceof Val.Constr && (v3.value2 instanceof Data_List_Types.Cons && (v3.value2.value1 instanceof Data_List_Types.Cons && v3.value2.value1.value1 instanceof Data_List_Types.Nil))) {
+                              var v4 = new Data_Tuple.Tuple(Primitive.match_fwd(Primitive.toFromInt)(new Data_Tuple.Tuple(v3.value2.value0, new Val.Int(false, v1.value2.value0))), Primitive.match_fwd(Primitive.toFromInt)(new Data_Tuple.Tuple(v3.value2.value1.value0, new Val.Int(false, v1.value2.value1))));
+                              var vss = Util.assert(v4.value0.value0 === v1.value2.value0 && v4.value1.value0 === v1.value2.value1)(Data_Array.fromFoldable(Data_List_Types.foldableList)(Control_Bind.bind(Data_List_Types.bindList)(Data_List.range(1)(v1.value2.value0))(function (i) {
+                                  return Data_List.singleton(Data_Array.fromFoldable(Data_List_Types.foldableList)(Control_Bind.bind(Data_List_Types.bindList)(Data_List.range(1)(v1.value2.value1))(function (j) {
+                                      return Data_List.singleton(evalFwd(new Bindings.Extend(new Bindings.Extend(ρ, new Bindings.Binding(v1.value1.value0, new Val.Int(v2.value0, i))), new Bindings.Binding(v1.value1.value1, new Val.Int(v2.value0, j))))(v2.value1)(v)(Util.unsafeIndex(Util.unsafeIndex(v1.value0)(i - 1 | 0))(j - 1 | 0)));
+                                  })));
+                              })));
+                              return new Val.Matrix(Lattice.meet(v2.value0)(v), new Data_Tuple.Tuple(new Data_Tuple.Tuple(vss, new Data_Tuple.Tuple(v1.value2.value0, v4.value0.value1)), new Data_Tuple.Tuple(v1.value2.value1, v4.value1.value1)));
+                          };
+                          return Util.error(Util.absurd);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.LetRec) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.LetRec(Lattice.botOf(Bindings.boundedSlices(Expr.functorElim)(Expr.boundedSlicesElim))(v1.value0), new Expr.Hole(false)));
+                      if (v2 instanceof Expr.LetRec) {
+                          var ρ$prime = Eval.closeDefs(ρ)(v2.value0)(v2.value0);
+                          return evalFwd(Data_Semigroup.append(Bindings.semigroupBindings)(ρ)(ρ$prime))(v2.value1)(v)(v1.value1);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Lambda) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Lambda(new Expr.ElimHole(false)));
+                      if (v2 instanceof Expr.Lambda) {
+                          return new Val.Closure(ρ, Bindings.Empty.value, v2.value0);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.App) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
+                      if (v2 instanceof Expr.App) {
+                          var v3 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v2.value0)(v)(v1.value0.value0.value0.value0))(new Val.Closure(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v1.value0.value0.value0.value1), Lattice.botOf(Bindings.boundedSlices(Expr.functorElim)(Expr.boundedSlicesElim))(v1.value0.value0.value1), new Expr.ElimHole(false)));
+                          if (v3 instanceof Val.Closure) {
+                              var ρ2 = Eval.closeDefs(v3.value0)(v3.value1)(v3.value1);
+                              var v4 = evalFwd(ρ)(v2.value1)(v)(v1.value1);
+                              var v5 = matchFwd(v4)(v3.value2)(v1.value2);
+                              return evalFwd(Data_Semigroup.append(Bindings.semigroupBindings)(v3.value0)(Data_Semigroup.append(Bindings.semigroupBindings)(ρ2)(v5.value0.value0)))(Expr.asExpr(v5.value0.value1))(v5.value1)(v1.value3);
+                          };
+                          return Util.error(Util.absurd);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.AppPrim) {
+                      var v3 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
+                      if (v3 instanceof Expr.App) {
+                          var v4 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v3.value0)(v)(v1.value0.value0.value0))(new Val.Primitive(v1.value0.value0.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Val.Hole(false)))(v1.value0.value1)));
+                          if (v4 instanceof Val.Primitive) {
+                              var v2$prime = evalFwd(ρ)(v3.value1)(v)(v1.value1.value0);
+                              var vs$prime$prime = Data_Semigroup.append(Data_List_Types.semigroupList)(Data_List.zip(v4.value1)(v1.value0.value1))(Data_List.singleton(new Data_Tuple.Tuple(v2$prime, v1.value1.value1)));
+                              var $179 = v1.value0.value0.value1.arity > Data_List.length(vs$prime$prime);
+                              if ($179) {
+                                  return new Val.Primitive(v1.value0.value0.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Tuple.fst)(vs$prime$prime));
+                              };
+                              return v1.value0.value0.value1.op_fwd(vs$prime$prime);
+                          };
+                          return Util.error(Util.absurd);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.AppConstr) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
+                      if (v2 instanceof Expr.App) {
+                          var v3 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v2.value0)(v)(v1.value0.value0.value0))(new Val.Constr(false, v1.value0.value0.value1, Util.replicate(v1.value0.value1)(new Val.Hole(false))));
+                          if (v3 instanceof Val.Constr) {
+                              var v4 = evalFwd(ρ)(v2.value1)(v)(v1.value1);
+                              return new Val.Constr(Lattice.meet(v)(v3.value0), v1.value0.value0.value1, Data_Semigroup.append(Data_List_Types.semigroupList)(v3.value2)(Data_List.singleton(v4)));
+                          };
+                          return Util.error(Util.absurd);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  if (v1 instanceof Expl.Let) {
+                      var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Let(new Expr.VarDef(new Expr.ElimHole(false), new Expr.Hole(false)), new Expr.Hole(false)));
+                      if (v2 instanceof Expr.Let) {
+                          var v3 = evalFwd(ρ)(v2.value0.value1)(v)(v1.value0.value1);
+                          var v4 = matchFwd(v3)(v2.value0.value0)(v1.value0.value0);
+                          return evalFwd(Data_Semigroup.append(Bindings.semigroupBindings)(ρ)(v4.value0.value0))(v2.value1)(v4.value1)(v1.value1);
+                      };
+                      return Util.error(Util.absurd);
+                  };
+                  throw new Error("Failed pattern match at EvalFwd (line 48, column 1 - line 48, column 51): " + [ ρ.constructor.name, e.constructor.name, v.constructor.name, v1.constructor.name ]);
+              };
+          };
+      };
+  };
+  exports["evalFwd"] = evalFwd;
+})(PS);
+(function(exports) {
+  "use strict";
+
+  // Alias require to prevent webpack or browserify from actually requiring.
+  var req = typeof module === "undefined" ? undefined : module.require;
+  var util = req === undefined ? undefined : req("util");
+
+  exports.trace = function () {
+    return function (x) {
+      return function (k) {
+        // node only recurses two levels into an object before printing
+        // "[object]" for further objects when using console.log()
+        if (util !== undefined) {
+          console.log(util.inspect(x, { depth: null, colors: true }));
+        } else {
+          console.log(x);
+        }
+        return k({});
+      };
+    };
+  };
+})(PS["Debug.Trace"] = PS["Debug.Trace"] || {});
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Debug.Trace"] = $PS["Debug.Trace"] || {};
+  var exports = $PS["Debug.Trace"];
+  var $foreign = $PS["Debug.Trace"];
+  exports["trace"] = $foreign.trace;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Primitive.Defs"] = $PS["Primitive.Defs"] || {};
+  var exports = $PS["Primitive.Defs"];
+  var Bindings = $PS["Bindings"];
+  var Data_Eq = $PS["Data.Eq"];
+  var Data_EuclideanRing = $PS["Data.EuclideanRing"];
+  var Data_Foldable = $PS["Data.Foldable"];
+  var Data_Function = $PS["Data.Function"];
+  var Data_Int = $PS["Data.Int"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Ord = $PS["Data.Ord"];
+  var Data_Ring = $PS["Data.Ring"];
+  var Data_Semigroup = $PS["Data.Semigroup"];
+  var Data_Semiring = $PS["Data.Semiring"];
+  var Data_Show = $PS["Data.Show"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var DataType = $PS["DataType"];
+  var Debug_Trace = $PS["Debug.Trace"];
+  var $$Math = $PS["Math"];
+  var Primitive = $PS["Primitive"];
+  var Util = $PS["Util"];
+  var Val = $PS["Val"];                
+  var times = Primitive.union(Primitive.asIntIntOrNumber)(Primitive.asNumberIntOrNumber)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Semiring.mul(Data_Semiring.semiringInt))(Data_Semiring.mul(Data_Semiring.semiringNumber));
+  var rem = Data_Int.rem;
+  var quot = Data_Int.quot;
+  var pow = Primitive.union(Primitive.asNumberIntOrNumber)(Primitive.asNumberIntOrNumber)(Primitive.asIntNumber)(Primitive.asIntNumber)(function (x) {
+      return function (y) {
+          return $$Math.pow(Data_Int.toNumber(x))(Data_Int.toNumber(y));
+      };
+  })($$Math.pow);
+  var plus = Primitive.union(Primitive.asIntIntOrNumber)(Primitive.asNumberIntOrNumber)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Semiring.add(Data_Semiring.semiringInt))(Data_Semiring.add(Data_Semiring.semiringNumber));
+  var numToStr = Primitive.union1(Data_Show.show(Data_Show.showInt))(Data_Show.show(Data_Show.showNumber));
+  var notEquals = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Eq.notEq(Data_Eq.eqInt))(Data_Eq.notEq(Data_Eq.eqNumber)))(Data_Eq.notEq(Data_Eq.eqString));
+  var mod = Data_EuclideanRing.mod(Data_EuclideanRing.euclideanRingInt);
+  var minus = Primitive.union(Primitive.asIntIntOrNumber)(Primitive.asNumberIntOrNumber)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Ring.sub(Data_Ring.ringInt))(Data_Ring.sub(Data_Ring.ringNumber));
+  var matrixLookup = (function () {
+      var fwd = function (v) {
+          return function (v1) {
+              return Util.unsafeIndex(Util.unsafeIndex(v.value0.value0)(v1.value0.value0 - 1 | 0))(v1.value1.value0 - 1 | 0);
+          };
+      };
+      var bwd = function (v) {
+          return function (v1) {
+              return new Data_Tuple.Tuple(Val.insertMatrix(v1.value1.value0.value0)(v1.value1.value1.value0)(v)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(v1.value0.value0.value0, new Data_Tuple.Tuple(v1.value0.value0.value1.value0, false)), new Data_Tuple.Tuple(v1.value0.value1.value0, false))), new Data_Tuple.Tuple(new Data_Tuple.Tuple(v1.value1.value0.value0, false), new Data_Tuple.Tuple(v1.value1.value1.value0, false)));
+          };
+      };
+      return {
+          fwd: fwd,
+          bwd: bwd
+      };
+  })();
+  var log = Primitive.union1(function ($49) {
+      return $$Math.log(Data_Int.toNumber($49));
+  })($$Math.log);
+  var lessThanEquals = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Ord.lessThanOrEq(Data_Ord.ordInt))(Data_Ord.lessThanOrEq(Data_Ord.ordNumber)))(Data_Ord.lessThanOrEq(Data_Ord.ordString));
+  var lessThan = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Ord.lessThan(Data_Ord.ordInt))(Data_Ord.lessThan(Data_Ord.ordNumber)))(Data_Ord.lessThan(Data_Ord.ordString));
+  var greaterThanEquals = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Ord.greaterThanOrEq(Data_Ord.ordInt))(Data_Ord.greaterThanOrEq(Data_Ord.ordNumber)))(Data_Ord.greaterThanOrEq(Data_Ord.ordString));
+  var greaterThan = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Ord.greaterThan(Data_Ord.ordInt))(Data_Ord.greaterThan(Data_Ord.ordNumber)))(Data_Ord.greaterThan(Data_Ord.ordString));
+  var error_ = Util.error;
+  var equals = Primitive.unionStr(Primitive.asBooleanBoolean)(Primitive.asIntOrNumberString)(Primitive.union(Primitive.asBooleanBoolean)(Primitive.asBooleanBoolean)(Primitive.asIntNumber)(Primitive.asIntNumber)(Data_Eq.eq(Data_Eq.eqInt))(Data_Eq.eq(Data_Eq.eqNumber)))(Data_Eq.eq(Data_Eq.eqString));
+  var divide = Primitive.union(Primitive.asNumberIntOrNumber)(Primitive.asNumberIntOrNumber)(Primitive.asIntNumber)(Primitive.asIntNumber)(function (x) {
+      return function (y) {
+          return Data_Int.toNumber(x) / Data_Int.toNumber(y);
+      };
+  })(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingNumber));
+  var div = Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt);
+  var dims = (function () {
+      var fwd = function (v) {
+          return new Data_Tuple.Tuple(v.value0.value1, v.value1);
+      };
+      var bwd = function (v) {
+          return function (v1) {
+              return new Data_Tuple.Tuple(new Data_Tuple.Tuple(v1.value0.value0, v.value0), v.value1);
+          };
+      };
+      return {
+          fwd: fwd,
+          bwd: bwd
+      };
+  })();
+  var debugLog = function (x) {
+      return Debug_Trace.trace()(x)(Data_Function["const"](x));
+  };
+  var concat = Data_Semigroup.append(Data_Semigroup.semigroupString);
+  var primitives = Data_Foldable.foldl(Data_Foldable.foldableArray)(Bindings.Extend.create)(Bindings.Empty.value)([ new Bindings.Binding(":", new Val.Constr(false, DataType.cCons, Data_List_Types.Nil.value)), new Bindings.Binding("+", Primitive.binary(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.withInverse2(plus))), new Bindings.Binding("-", Primitive.binary(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.withInverse2(minus))), new Bindings.Binding("*", Primitive.binaryZero(Primitive.isZeroEither(Primitive.isZeroInt)(Primitive.isZeroNumber))(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.withInverse2(times))), new Bindings.Binding("**", Primitive.binaryZero(Primitive.isZeroEither(Primitive.isZeroInt)(Primitive.isZeroNumber))(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.withInverse2(pow))), new Bindings.Binding("/", Primitive.binaryZero(Primitive.isZeroEither(Primitive.isZeroInt)(Primitive.isZeroNumber))(Primitive.toFromIntOrNumber)(Primitive.toFromIntOrNumber)(Primitive.withInverse2(divide))), new Bindings.Binding("==", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(equals))), new Bindings.Binding("/=", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(notEquals))), new Bindings.Binding("<", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(lessThan))), new Bindings.Binding(">", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(greaterThan))), new Bindings.Binding("<=", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(lessThanEquals))), new Bindings.Binding(">=", Primitive.binary(Primitive.toFromIntOrNumberOrString)(Primitive.toFromIntOrNumberOrString)(Primitive.toFromBoolean)(Primitive.withInverse2(greaterThanEquals))), new Bindings.Binding("++", Primitive.binary(Primitive.toFromString)(Primitive.toFromString)(Primitive.toFromString)(Primitive.withInverse2(concat))), new Bindings.Binding("!", Primitive.binary(Primitive.toFromMatrixRep)(Primitive.toFromIntAndInt)(Primitive.toFromVal)(matrixLookup)), new Bindings.Binding("div", Primitive.binaryZero(Primitive.isZeroInt)(Primitive.toFromInt)(Primitive.toFromInt)(Primitive.withInverse2(div))), new Bindings.Binding("mod", Primitive.binaryZero(Primitive.isZeroInt)(Primitive.toFromInt)(Primitive.toFromInt)(Primitive.withInverse2(mod))), new Bindings.Binding("quot", Primitive.binaryZero(Primitive.isZeroInt)(Primitive.toFromInt)(Primitive.toFromInt)(Primitive.withInverse2(quot))), new Bindings.Binding("rem", Primitive.binaryZero(Primitive.isZeroInt)(Primitive.toFromInt)(Primitive.toFromInt)(Primitive.withInverse2(rem))), new Bindings.Binding("ceiling", Primitive.unary(Primitive.toFromNumber)(Primitive.toFromInt)(Primitive.withInverse1(Data_Int.ceil))), new Bindings.Binding("debugLog", Primitive.unary(Primitive.toFromVal)(Primitive.toFromVal)(Primitive.withInverse1(debugLog))), new Bindings.Binding("dims", Primitive.unary(Primitive.toFromMatrixRep)(Primitive.toFromIntAndInt)(dims)), new Bindings.Binding("error", Primitive.unary(Primitive.toFromString)(Primitive.toFromVal)(Primitive.withInverse1(error_))), new Bindings.Binding("floor", Primitive.unary(Primitive.toFromNumber)(Primitive.toFromInt)(Primitive.withInverse1(Data_Int.floor))), new Bindings.Binding("log", Primitive.unary(Primitive.toFromIntOrNumber)(Primitive.toFromNumber)(Primitive.withInverse1(log))), new Bindings.Binding("numToStr", Primitive.unary(Primitive.toFromIntOrNumber)(Primitive.toFromString)(Primitive.withInverse1(numToStr))) ]);
+  exports["primitives"] = primitives;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["Module"] = $PS["Module"] || {};
+  var exports = $PS["Module"];
+  var Affjax = $PS["Affjax"];
+  var Affjax_ResponseFormat = $PS["Affjax.ResponseFormat"];
+  var Control_Applicative = $PS["Control.Applicative"];
+  var Control_Bind = $PS["Control.Bind"];
+  var Control_Category = $PS["Control.Category"];
+  var Data_Bifunctor = $PS["Data.Bifunctor"];
+  var Data_Either = $PS["Data.Either"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_HTTP_Method = $PS["Data.HTTP.Method"];
+  var Data_Show = $PS["Data.Show"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var DesugarFwd = $PS["DesugarFwd"];
+  var Effect_Aff = $PS["Effect.Aff"];
+  var Eval = $PS["Eval"];
+  var Parse = $PS["Parse"];
+  var Primitive_Defs = $PS["Primitive.Defs"];
+  var Text_Parsing_Parser = $PS["Text.Parsing.Parser"];
+  var Util = $PS["Util"];                
+  var resourceServerUrl = ".";
+  var parse = function (src) {
+      var $12 = Data_Bifunctor.bimap(Data_Either.bifunctorEither)(Data_Show.show(Text_Parsing_Parser.showParseError))(Control_Category.identity(Control_Category.categoryFn));
+      var $13 = Text_Parsing_Parser.runParser(src);
+      return function ($14) {
+          return $12($13($14));
+      };
+  };
+  var loadFile = function (folder) {
+      return function (file) {
+          var url = resourceServerUrl + ("/" + (folder + ("/" + (file + ".fld"))));
+          return Control_Bind.bind(Effect_Aff.bindAff)(Affjax.request({
+              method: new Data_Either.Left(Data_HTTP_Method.GET.value),
+              url: url,
+              headers: Affjax.defaultRequest.headers,
+              content: Affjax.defaultRequest.content,
+              username: Affjax.defaultRequest.username,
+              password: Affjax.defaultRequest.password,
+              withCredentials: Affjax.defaultRequest.withCredentials,
+              responseFormat: Affjax_ResponseFormat.string
+          }))(function (result) {
+              if (result instanceof Data_Either.Left) {
+                  return Util.error(Affjax.printError(result.value0));
+              };
+              if (result instanceof Data_Either.Right) {
+                  return Control_Applicative.pure(Effect_Aff.applicativeAff)(result.value0.body);
+              };
+              throw new Error("Failed pattern match at Module (line 30, column 4 - line 32, column 43): " + [ result.constructor.name ]);
+          });
+      };
+  };
+  var loadModule = function (file) {
+      return function (ρ) {
+          return Control_Bind.bind(Effect_Aff.bindAff)(loadFile("fluid/lib")(file))(function (src) {
+              return Control_Applicative.pure(Effect_Aff.applicativeAff)(Util.successful(Control_Bind.bind(Data_Either.bindEither)(Control_Bind.bind(Data_Either.bindEither)(parse(src)(Parse.module_))(DesugarFwd.desugarModuleFwd))(Eval.eval_module(ρ))));
+          });
+      };
+  };
+  var parseWithDefaultImports = function (src) {
+      return Data_Functor.flap(Effect_Aff.functorAff)(Data_Functor.map(Effect_Aff.functorAff)(Data_Tuple.Tuple.create)(Control_Bind.bind(Effect_Aff.bindAff)(Control_Bind.bind(Effect_Aff.bindAff)(loadModule("prelude")(Primitive_Defs.primitives))(loadModule("graphics")))(loadModule("convolution"))))(Util.successful(parse(src)(Parse.program)));
+  };
+  var openWithDefaultImports = function (file) {
+      return Control_Bind.bind(Effect_Aff.bindAff)(loadFile("fluid/example")(file))(parseWithDefaultImports);
+  };
+  exports["openWithDefaultImports"] = openWithDefaultImports;
+})(PS);
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
   $PS["Test.Util"] = $PS["Test.Util"] || {};
   var exports = $PS["Test.Util"];
   var Control_Bind = $PS["Control.Bind"];
   var Data_Either = $PS["Data.Either"];
-  var Data_Tuple = $PS["Data.Tuple"];
-  var DesugarBwd = $PS["DesugarBwd"];
   var DesugarFwd = $PS["DesugarFwd"];
   var Eval = $PS["Eval"];
-  var EvalBwd = $PS["EvalBwd"];
-  var desugarEval_bwd = function (v) {
-      return function (v1) {
-          var v3 = EvalBwd.evalBwd(v1)(v.value0);
-          return new Data_Tuple.Tuple(v3.value0.value0, DesugarBwd.desugarBwd(v3.value0.value1)(v.value1));
-      };
-  };
   var desugarEval = function (ρ) {
       return function (s) {
           return Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarFwd(s))(Eval["eval"](ρ));
       };
   };
   exports["desugarEval"] = desugarEval;
-  exports["desugarEval_bwd"] = desugarEval_bwd;
 })(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
@@ -31618,6 +31338,7 @@ var PS = {};
   var Control_Bind = $PS["Control.Bind"];
   var Data_Either = $PS["Data.Either"];
   var Data_Function = $PS["Data.Function"];
+  var Data_Functor = $PS["Data.Functor"];
   var Data_List = $PS["Data.List"];
   var Data_Semigroup = $PS["Data.Semigroup"];
   var Data_Show = $PS["Data.Show"];
@@ -31627,54 +31348,100 @@ var PS = {};
   var Effect_Console = $PS["Effect.Console"];
   var Effect_Exception = $PS["Effect.Exception"];
   var Eval = $PS["Eval"];
+  var EvalBwd = $PS["EvalBwd"];
+  var EvalFwd = $PS["EvalFwd"];
+  var Expr = $PS["Expr"];
+  var Lattice = $PS["Lattice"];
   var Module = $PS["Module"];
   var SExpr = $PS["SExpr"];
   var Test_Util = $PS["Test.Util"];
   var Util = $PS["Util"];
   var Val = $PS["Val"];                
-  var splitDefs = function (v) {
-      return function (v1) {
-          if (v instanceof SExpr.Let) {
-              return Control_Bind.bind(Data_Either.bindEither)(Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarModuleFwd(new SExpr.Module(Data_List.singleton(new Data_Either.Left(v.value0)))))(Eval.eval_module(v1)))(function (ρ$prime) {
-                  return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(ρ$prime, v.value1));
-              });
+  var splitDefs = function (dictPartial) {
+      return function (ρ) {
+          return function (v) {
+              if (v instanceof SExpr.Let) {
+                  return Data_Functor.mapFlipped(Data_Either.functorEither)(Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarModuleFwd(new SExpr.Module(Data_List.singleton(new Data_Either.Left(v.value0)))))(Eval.eval_module(ρ)))(function (v1) {
+                      return new Data_Tuple.Tuple(v1, v.value1);
+                  });
+              };
+              throw new Error("Failed pattern match at App.Demo (line 28, column 1 - line 28, column 72): " + [ ρ.constructor.name, v.constructor.name ]);
           };
-          return Util.error(Util.absurd);
+      };
+  };
+  var selectCell = function (i) {
+      return function (j) {
+          return function (i$prime) {
+              return function (j$prime) {
+                  return new Val.Matrix(true, Val.insertMatrix(i)(j)(new Val.Hole(true))(Val.holeMatrix(i$prime)(j$prime)));
+              };
+          };
       };
   };
   var makeFigure = function (file) {
-      return function (divId) {
-          return Data_Function.flip(Effect_Aff.runAff_)(Module.openWithDefaultImports("slicing/" + file))(function (result) {
-              if (result instanceof Data_Either.Left) {
-                  return Effect_Console.log("Open failed: " + Data_Show.show(Effect_Exception.showError)(result.value0));
-              };
-              if (result instanceof Data_Either.Right) {
-                  var v = Util.successful(splitDefs(result.value0.value1)(result.value0.value0));
-                  var input = Util.successful(Bindings.find("image")(v.value0));
-                  var filter = Util.successful(Bindings.find("filter")(v.value0));
-                  var v1 = Test_Util.desugarEval(Data_Semigroup.append(Bindings.semigroupBindings)(result.value0.value0)(v.value0))(v.value1);
-                  if (v1 instanceof Data_Either.Left) {
-                      return Effect_Console.log("Execution failed: " + v1.value0);
+      return function (example) {
+          return function (divId) {
+              return Data_Function.flip(Effect_Aff.runAff_)(Module.openWithDefaultImports("slicing/" + file))(function (v) {
+                  if (v instanceof Data_Either.Left) {
+                      return Effect_Console.log("Open failed: " + Data_Show.show(Effect_Exception.showError)(v.value0));
                   };
-                  if (v1 instanceof Data_Either.Right) {
-                      var output$prime = new Val.Matrix(true, Val.insertMatrix(2)(1)(new Val.Hole(true))(Val.holeMatrix(5)(5)));
-                      var v2 = Test_Util.desugarEval_bwd(new Data_Tuple.Tuple(v1.value0.value0, v.value1))(output$prime);
-                      var input$prime = Util.successful(Bindings.find("image")(v2.value0));
-                      var filter$prime = Util.successful(Bindings.find("filter")(v2.value0));
-                      return App_Renderer.renderFigure(divId)(new Data_Tuple.Tuple(output$prime, v1.value0.value1))(new Data_Tuple.Tuple(filter$prime, filter))(new Data_Tuple.Tuple(input$prime, input));
+                  if (v instanceof Data_Either.Right) {
+                      return App_Renderer.drawFigure(divId)(Util.successful(example(v.value0.value0)(v.value0.value1)));
                   };
-                  throw new Error("Failed pattern match at App.Demo (line 38, column 10 - line 45, column 89): " + [ v1.constructor.name ]);
-              };
-              throw new Error("Failed pattern match at App.Demo (line 32, column 4 - line 45, column 89): " + [ result.constructor.name ]);
+                  throw new Error("Failed pattern match at App.Demo (line 70, column 4 - line 72, column 67): " + [ v.constructor.name ]);
+              });
+          };
+      };
+  };
+  var example_neededBy = function (ρ) {
+      return function (s0) {
+          return Control_Bind.bind(Data_Either.bindEither)(splitDefs()(ρ)(s0))(function (v) {
+              return Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarFwd(v.value1))(function (e) {
+                  return Control_Bind.bind(Data_Either.bindEither)(Eval["eval"](Data_Semigroup.append(Bindings.semigroupBindings)(ρ)(v.value0))(e))(function (v1) {
+                      var ω$prime = selectCell(1)(1)(3)(3);
+                      var ρ$prime$prime = Bindings.update(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(v.value0))(new Bindings.Binding("filter", ω$prime));
+                      var o$prime = Lattice.neg(Val.joinSemilatticeVal)(EvalFwd.evalFwd(Lattice.neg(Bindings.joinSemilatticeBindings(Val.functorVal)(Lattice.joinSemilatticeBoolean)(Val.slicesVal))(Data_Semigroup.append(Bindings.semigroupBindings)(Lattice.botOf(Bindings.boundedSlices(Val.functorVal)(Val.boundedSlices))(ρ))(ρ$prime$prime)))(Data_Functor.map(Expr.functorExpr)(Data_Function["const"](true))(e))(true)(v1.value0));
+                      return Control_Bind.bind(Data_Either.bindEither)(Bindings.find("filter")(v.value0))(function (ω) {
+                          return Control_Bind.bind(Data_Either.bindEither)(Bindings.find("image")(v.value0))(function (i) {
+                              return Control_Bind.bind(Data_Either.bindEither)(Bindings.find("image")(ρ$prime$prime))(function (i$prime) {
+                                  return Control_Applicative.pure(Data_Either.applicativeEither)([ App_Renderer.matrixFig("output")("Yellow")(new Data_Tuple.Tuple(o$prime, v1.value1)), App_Renderer.matrixFig("filter")("LightGreen")(new Data_Tuple.Tuple(ω$prime, ω)), App_Renderer.matrixFig("input")("Yellow")(new Data_Tuple.Tuple(i$prime, i)) ]);
+                              });
+                          });
+                      });
+                  });
+              });
+          });
+      };
+  };
+  var example_needed = function (ρ) {
+      return function (s0) {
+          return Control_Bind.bind(Data_Either.bindEither)(splitDefs()(ρ)(s0))(function (v) {
+              return Control_Bind.bind(Data_Either.bindEither)(Test_Util.desugarEval(Data_Semigroup.append(Bindings.semigroupBindings)(ρ)(v.value0))(v.value1))(function (v1) {
+                  var o$prime = selectCell(2)(1)(5)(5);
+                  var v2 = EvalBwd.evalBwd(o$prime)(v1.value0);
+                  return Control_Bind.bind(Data_Either.bindEither)(Bindings.find("filter")(v.value0))(function (ω) {
+                      return Control_Bind.bind(Data_Either.bindEither)(Bindings.find("image")(v.value0))(function (i) {
+                          return Control_Bind.bind(Data_Either.bindEither)(Bindings.find("filter")(v2.value0.value0))(function (ω$prime) {
+                              return Control_Bind.bind(Data_Either.bindEither)(Bindings.find("image")(v2.value0.value0))(function (i$prime) {
+                                  return Control_Applicative.pure(Data_Either.applicativeEither)([ App_Renderer.matrixFig("output")("LightGreen")(new Data_Tuple.Tuple(o$prime, v1.value1)), App_Renderer.matrixFig("filter")("Yellow")(new Data_Tuple.Tuple(ω$prime, ω)), App_Renderer.matrixFig("input")("Yellow")(new Data_Tuple.Tuple(i$prime, i)) ]);
+                              });
+                          });
+                      });
+                  });
+              });
           });
       };
   };
   var main = function __do() {
-      makeFigure("conv-wrap")("fig-1")();
-      makeFigure("conv-extend")("fig-2")();
-      return makeFigure("conv-zero")("fig-3")();
+      makeFigure("conv-wrap")(example_needed)("fig-1")();
+      makeFigure("conv-wrap")(example_neededBy)("fig-2")();
+      makeFigure("conv-zero")(example_needed)("fig-3")();
+      return makeFigure("conv-zero")(example_neededBy)("fig-4")();
   };
+  exports["selectCell"] = selectCell;
   exports["splitDefs"] = splitDefs;
+  exports["example_needed"] = example_needed;
+  exports["example_neededBy"] = example_neededBy;
   exports["makeFigure"] = makeFigure;
   exports["main"] = main;
 })(PS);
