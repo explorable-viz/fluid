@@ -24,7 +24,7 @@ bits ((vss × _ × _) × (vss' × (i × _) × (j × _))) = toIntMatrix (zipWith 
 
 -- Inputs are pairs of matrices; second component is original (unsliced) matrix.
 renderFigure :: String -> Val 𝔹 × Val 𝔹 -> Val 𝔹 × Val 𝔹 -> Val 𝔹 × Val 𝔹 -> Effect Unit
-renderFigure id (o × o') (ω × ω') (i × i') =
+renderFigure id (i × i') (ω × ω') (o × o') =
    let i'' × _ = match_fwd (i × i')
        ω'' × _ = match_fwd (ω × ω')
        o'' × _ = match_fwd (o × o')
