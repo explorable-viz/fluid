@@ -7,7 +7,7 @@ import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (matrixFig, renderFigures)
+import App.Renderer (drawFigure, matrixFig)
 import Bindings ((↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -63,7 +63,7 @@ makeFigure file example divId =
       Left e -> log ("Open failed: " <> show e)
       Right (ρ × s) -> do
          let (o' × o) × (ω' × ω) × (i' × i) = successful (example ρ s)
-         renderFigures divId [
+         drawFigure divId [
             matrixFig "input" "LightGreen" (i' × i),
             matrixFig "filter" "LightGreen" (ω' × ω),
             matrixFig "output" "Yellow" (o' × o)

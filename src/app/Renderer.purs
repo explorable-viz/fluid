@@ -26,7 +26,3 @@ toIntMatrix = (<$>) ((<$>) match_fwd)
 
 bits :: MatrixRep 𝔹 × MatrixRep 𝔹 -> MatrixRep'
 bits ((vss × _ × _) × (vss' × (i × _) × (j × _))) = toIntMatrix (zipWith zip vss vss') × i × j
-
--- Inputs are pairs of matrices; second component is original (unsliced) matrix.
-renderFigures :: String -> Array MatrixFig -> Effect Unit
-renderFigures divId uvs = drawFigure divId uvs
