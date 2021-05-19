@@ -33,6 +33,10 @@ import SExpr (
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
 
+-- Initial selection state.
+selState :: 𝔹
+selState = false
+
 -- Constants (should also be used by prettyprinter). Haven't found a way to avoid the type definition.
 str :: {
    arrayLBracket  :: String,
@@ -239,7 +243,7 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
       op' <- token.operator
       onlyIf (op == op') $
          if isCtrOp op'
-         then \e e' -> Constr false (Ctr op') (e : e' : empty)
+         then \e e' -> Constr selState (Ctr op') (e : e' : empty)
          else \e e' -> BinaryApp e op e'
 
    -- Left-associative tree of applications of one or more simple terms.
@@ -278,27 +282,27 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
          matrix :: SParser (Expr 𝔹)
          matrix =
             between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
-               Matrix false <$>
+               Matrix selState <$>
                   (expr' <* bar) <*>
                   token.parens (ident `lift2 (×)` (token.comma *> ident)) <*>
                   (keyword str.in_ *> expr')
 
          nil :: SParser (Expr 𝔹)
-         nil = token.brackets $ pure (ListEmpty false)
+         nil = token.brackets $ pure (ListEmpty selState)
 
          listNonEmpty :: SParser (Expr 𝔹)
          listNonEmpty =
-            lBracket *> (ListNonEmpty false <$> expr' <*> fix listRest)
+            lBracket *> (ListNonEmpty selState <$> expr' <*> fix listRest)
 
             where
             listRest :: Endo (SParser (ListRest 𝔹))
             listRest listRest' =
-               rBracket *> pure (End false) <|>
-               token.comma *> (Next false <$> expr' <*> listRest')
+               rBracket *> pure (End selState) <|>
+               token.comma *> (Next selState <$> expr' <*> listRest')
 
          listComp :: SParser (Expr 𝔹)
          listComp = token.brackets $
-            pure (ListComp false) <*> expr' <* bar <*> sepBy1 qualifier (token.comma)
+            pure (ListComp selState) <*> expr' <* bar <*> sepBy1 qualifier (token.comma)
 
             where
             qualifier :: SParser (Qualifier 𝔹)
@@ -312,7 +316,7 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
             pure ListEnum <*> expr' <* ellipsis <*> expr'
 
          constr :: SParser (Expr 𝔹)
-         constr = Constr false <$> ctr <@> empty
+         constr = Constr selState <$> ctr <@> empty
 
          variable :: SParser (Expr 𝔹)
          variable = ident <#> Var
@@ -324,15 +328,15 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
          int :: SParser (Expr 𝔹)
          int = do
             sign <- signOpt
-            (sign >>> Int false) <$> token.natural
+            (sign >>> Int selState) <$> token.natural
 
          float :: SParser (Expr 𝔹)
          float = do
             sign <- signOpt
-            (sign >>> Float false) <$> token.float
+            (sign >>> Float selState) <$> token.float
 
          string :: SParser (Expr 𝔹)
-         string = Str false <$> token.stringLiteral
+         string = Str selState <$> token.stringLiteral
 
          defsExpr :: SParser (Expr 𝔹)
          defsExpr = do
@@ -349,7 +353,7 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
 
          pair :: SParser (Expr 𝔹)
          pair = token.parens $
-            (pure $ \e e' -> Constr false cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
+            (pure $ \e e' -> Constr selState cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 
          lambda :: SParser (Expr 𝔹)
          lambda = Lambda <$> (keyword str.fun *> branches expr' branch_curried)

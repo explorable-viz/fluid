@@ -1,51 +1,79 @@
 module App.Demo where
 
 import Prelude hiding (absurd)
-import App.Renderer (renderFigure)
-import Bindings (find)
 import Data.Either (Either(..))
 import Data.List (singleton)
 import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
-import DesugarFwd (desugarModuleFwd)
-import Eval (eval_module)
-import Lattice (𝔹)
+import Partial.Unsafe (unsafePartial)
+import App.Renderer (MatrixFig, drawFigure, matrixFig)
+import Bindings ((↦), find, update)
+import DesugarFwd (desugarFwd, desugarModuleFwd)
+import Eval (eval, eval_module)
+import EvalBwd (evalBwd)
+import EvalFwd (evalFwd)
+import Lattice (𝔹, botOf, neg)
 import Module (openWithDefaultImports)
 import SExpr (Expr(..), Module(..)) as S
-import Test.Util (desugarEval, desugarEval_bwd)
-import Util (MayFail, type (×), (×), absurd, error, successful)
+import Test.Util (desugarEval)
+import Util (MayFail, type (×), (×), successful)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
--- We require examples to be of the form (let <defs> in expr), and rewrite them to a "module" and expr, so
--- we can treat the defs as part of the environment that we can easily inspect.
-splitDefs :: S.Expr 𝔹 -> Env 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
-splitDefs (S.Let defs s) ρ = do
-   ρ' <- desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ
-   pure (ρ' × s)
-splitDefs _ _ = error absurd
+selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
+selectCell i j i' j' = Matrix true (insertMatrix i j (Hole true) (holeMatrix i' j'))
 
--- This is completely non-general, but that's fine for now.
-makeFigure :: String -> String -> Effect Unit
-makeFigure file divId =
-   flip runAff_ (openWithDefaultImports ("slicing/" <> file)) \result ->
-   case result of
+-- Rewrite example of the form (let <defs> in expr) to a "module" and expr, so we can treat defs as part of
+-- the environment that we can easily inspect.
+splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
+splitDefs ρ (S.Let defs s) =
+   (desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ) <#> (_ × s)
+
+type ConvExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
+
+example_needed :: ConvExample
+example_needed ρ s0 = do
+   ρ' × s <- unsafePartial (splitDefs ρ s0)
+   t × o <- desugarEval (ρ <> ρ') s
+   let o' = selectCell 2 1 5 5
+       ρρ' × _ × _ = evalBwd o' t
+   ω <- find "filter" ρ'
+   i <- find "image" ρ'
+   ω' <- find "filter" ρρ'
+   i' <- find "image" ρρ'
+   pure [
+      matrixFig "output" "LightGreen" (o' × o),
+      matrixFig "filter" "Yellow" (ω' × ω),
+      matrixFig "input" "Yellow" (i' × i)
+   ]
+
+example_neededBy :: ConvExample
+example_neededBy ρ s0 = do
+   ρ' × s <- unsafePartial (splitDefs ρ s0)
+   e <- desugarFwd s
+   t × o <- eval (ρ <> ρ') e
+   let ω' = selectCell 1 1 3 3
+       ρ'' = update (botOf ρ') ("filter" ↦ ω')
+       o' = neg (evalFwd (neg (botOf ρ <> ρ'')) (const true <$> e) true t)
+   ω <- find "filter" ρ'
+   i <- find "image" ρ'
+   i' <- find "image" ρ''
+   pure [
+      matrixFig "output" "Yellow" (o' × o),
+      matrixFig "filter" "LightGreen" (ω' × ω),
+      matrixFig "input" "Yellow" (i' × i)
+   ]
+
+makeFigure :: String -> ConvExample -> String -> Effect Unit
+makeFigure file example divId =
+   flip runAff_ (openWithDefaultImports ("slicing/" <> file))
+   case _ of
       Left e -> log ("Open failed: " <> show e)
-      Right (ρ1 × s0) ->
-         let ρ2 × s = successful (splitDefs s0 ρ1)
-             filter = successful (find "filter" ρ2)
-             input = successful (find "image" ρ2) in
-         case desugarEval (ρ1 <> ρ2) s of
-            Left msg -> log ("Execution failed: " <> msg)
-            Right (t × output) -> do
-               let output' = Matrix true (insertMatrix 2 1 (Hole true) (holeMatrix 5 5))
-                   ρ1ρ2 × s' = desugarEval_bwd (t × s) output'
-                   filter' = successful (find "filter" ρ1ρ2)
-                   input' = successful (find "image" ρ1ρ2)
-               renderFigure divId (output' × output) (filter' × filter) (input' × input)
+      Right (ρ × s) -> drawFigure divId (successful (example ρ s))
 
 main :: Effect Unit
 main = do
-   makeFigure "conv-wrap" "fig-1"
-   makeFigure "conv-extend" "fig-2"
-   makeFigure "conv-zero" "fig-3"
+   makeFigure "conv-wrap" example_needed "fig-1"
+   makeFigure "conv-wrap" example_neededBy "fig-2"
+   makeFigure "conv-zero" example_needed "fig-3"
+   makeFigure "conv-zero" example_neededBy "fig-4"
