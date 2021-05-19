@@ -50,7 +50,7 @@ example_neededBy ρ s0 = do
    t × o <- eval (ρ <> ρ') e
    let i' = selectCell 1 2 5 5
        ρ'' = update (botOf ρ') ("image" ↦ i')
-       o' = neg (evalFwd (neg (botOf ρ) <> neg ρ'') (const true <$> e) true t)
+       o' = neg (evalFwd (neg (botOf ρ <> ρ'')) (const true <$> e) true t)
    ω <- find "filter" ρ'
    i <- find "image" ρ'
    ω' <- find "filter" ρ''
