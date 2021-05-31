@@ -20,6 +20,7 @@ matrixFig title cellFillSelected (u × v) =
 
 foreign import drawBarChart :: String -> Effect Unit
 foreign import drawFigure :: String -> Array MatrixFig -> Effect Unit
+foreign import drawTable :: String -> Effect Unit
 
 -- Will want to generalise to arrays of "drawable values". Second component of elements is original value.
 toIntMatrix :: Array2 (Val 𝔹 × Val 𝔹) -> Array2 (Int × 𝔹)

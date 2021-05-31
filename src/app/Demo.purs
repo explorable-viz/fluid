@@ -7,7 +7,7 @@ import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (MatrixFig, drawBarChart, drawFigure, matrixFig)
+import App.Renderer (MatrixFig, {-drawBarChart, drawTable, -}drawFigure, matrixFig)
 import Bindings ((↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -69,14 +69,14 @@ makeFigure file example divId =
    flip runAff_ (openWithDefaultImports ("slicing/" <> file))
    case _ of
       Left e -> log ("Open failed: " <> show e)
-      Right (ρ × s) -> drawFigure divId (successful (example ρ s))
+      Right (ρ × s) -> do
+--         drawBarChart "fig-bar-chart"
+--         drawTable "table"
+         drawFigure divId (successful (example ρ s))
 
 main :: Effect Unit
 main = do
-   drawBarChart "fig-bar-chart"
-{-
    makeFigure "conv-wrap" example_needed "fig-1"
    makeFigure "conv-wrap" example_neededBy "fig-2"
    makeFigure "conv-zero" example_needed "fig-3"
    makeFigure "conv-zero" example_neededBy "fig-4"
--}
