@@ -5,6 +5,7 @@ import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
 import Bindings (Bindings, Var, (⪂), bindingsMap)
+import Bindings2 (Bindings2)
 import DataType (Ctr)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg
@@ -30,6 +31,7 @@ data Expr a =
 -- eliminator in var def is always singleton, with an empty terminal continuation represented by hole
 data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs = Bindings Elim
+type RecDefs2 a = Bindings2 (Elim a)
 
 data Elim a =
    ElimHole a |
