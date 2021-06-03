@@ -3,6 +3,7 @@ module EvalBwd where
 import Prelude hiding (absurd)
 
 import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, foldBindings, splitAt, toSnocList, varAnon)
+import Bindings2 (asBindings, asBindings2)
 import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
 import Data.List (length) as L
 import Data.List.NonEmpty (NonEmptyList(..))
@@ -27,8 +28,8 @@ closeDefsBwd ρ (ρ0 × δ0) =
    where
    joinDefs :: Binding Val 𝔹 -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹)
    joinDefs (f ↦ v) (δ_acc × ρ' × δ) =
-      case expand v (V.Closure (botOf ρ') (botOf δ) (ElimHole false)) of
-         V.Closure ρ_f δ_f σ_f -> (δ_acc :+: f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f)
+      case expand v (V.Closure (asBindings2 (botOf ρ')) (botOf δ) (ElimHole false)) of
+         V.Closure ρ_f δ_f σ_f -> (δ_acc :+: f ↦ σ_f) × (ρ' ∨ asBindings ρ_f) × (δ ∨ δ_f)
          _ -> error absurd
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
@@ -75,8 +76,8 @@ evalBwd v t@(T.Float ρ n) =
       V.Float α _ -> botOf ρ × Float α n × α
       _ -> error absurd
 evalBwd v t@(T.Lambda ρ σ) =
-   case expand v (V.Closure (botOf ρ) Empty (botOf σ)) of
-      V.Closure ρ' _ σ' -> ρ' × Lambda σ' × false
+   case expand v (V.Closure (asBindings2 (botOf ρ)) Empty (botOf σ)) of
+      V.Closure ρ' _ σ' -> asBindings ρ' × Lambda σ' × false
       _ -> error absurd
 evalBwd v t@(T.Record ρ xts) =
    error "todo"
@@ -118,7 +119,7 @@ evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
        ρ' × e2 × α' = evalBwd v' t2
        ρ1' × δ' = closeDefsBwd ρ2 (ρ1 × δ)
-       ρ'' × e1 × α'' = evalBwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
+       ρ'' × e1 × α'' = evalBwd (V.Closure (asBindings2 (ρ1 ∨ ρ1')) δ' σ) t1 in
    (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
 evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let vs' = vs <> singleton v2

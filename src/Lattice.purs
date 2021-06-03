@@ -12,7 +12,7 @@ import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
 import Util (MayFail, type (×), (×), (≞), absurd, error, report, successfulWith)
-import Util.SnocList (SnocList(..))
+import Util.SnocList (SnocList)
 import Util.SnocList (zipWith) as S
 
 class JoinSemilattice a where
@@ -67,9 +67,18 @@ instance joinSemilatticeList :: Slices t => JoinSemilattice (List t) where
    join = definedJoin
    neg = (<$>) neg
 
+instance joinSemilatticeSnocList :: Slices t => JoinSemilattice (SnocList t) where
+   join = definedJoin
+   neg = (<$>) neg
+
 instance slicesList :: Slices t => Slices (List t) where
    maybeJoin xs ys
       | (length xs :: Int) == length ys   = sequence (zipWith maybeJoin xs ys)
+      | otherwise                         = report "Lists of different lengths"
+
+instance slicesSnocList :: Slices t => Slices (SnocList t) where
+   maybeJoin xs ys
+      | (length xs :: Int) == length ys   = sequence (S.zipWith maybeJoin xs ys)
       | otherwise                         = report "Lists of different lengths"
 
 instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where

@@ -3,6 +3,7 @@ module EvalFwd where
 import Prelude hiding (absurd)
 
 import Bindings (Bindings(..), (:+:), (↦), bindingsMap, find, toSnocList, varAnon)
+import Bindings2 (asBindings, asBindings2)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
@@ -106,17 +107,17 @@ evalFwd ρ e α (T.LetRec δ t) =
       _ -> error absurd
 evalFwd ρ e _ (T.Lambda _ _) =
    case expand e (Lambda (ElimHole false)) of
-      Lambda σ -> V.Closure ρ Empty σ
+      Lambda σ -> V.Closure (asBindings2 ρ) Empty σ
       _ -> error absurd
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
    case expand e (App (Hole false) (Hole false)) of
       App e1 e2 ->
-         case expand (evalFwd ρ e1 α t1) (V.Closure (botOf ρ1) (botOf δ) (ElimHole false)) of
+         case expand (evalFwd ρ e1 α t1) (V.Closure (asBindings2 (botOf ρ1)) (botOf δ) (ElimHole false)) of
             V.Closure ρ1' δ' σ' ->
                let v = evalFwd ρ e2 α t2
-                   ρ2 = closeDefs ρ1' δ' δ'
+                   ρ2 = closeDefs (asBindings ρ1') δ' δ'
                    ρ3 × e3 × β = matchFwd v σ' w in
-               evalFwd (ρ1' <> ρ2 <> ρ3) (asExpr e3) β t3
+               evalFwd (asBindings ρ1' <> ρ2 <> ρ3) (asExpr e3) β t3
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =

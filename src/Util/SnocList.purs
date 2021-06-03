@@ -1,7 +1,9 @@
 module Util.SnocList where
 
 import Prelude
+import Control.Apply (lift2)
 import Data.Foldable (class Foldable, foldl)
+import Data.Traversable (class Traversable, traverse)
 import Data.Function (on)
 import Data.List (List(..), (:))
 import Data.List (reverse) as L
@@ -44,7 +46,7 @@ zipWith f xs ys = reverse $ go xs ys SnocNil
    go (as :- a) (bs :- b) acc = go as bs $ acc :- f a b
 
 -- Adapted from PureScript prelude.
-instance foldableList :: Foldable SnocList where
+instance foldableSnocList :: Foldable SnocList where
    foldr f b = foldl (flip f) b <<< rev
       where
       rev = go SnocNil
@@ -57,3 +59,8 @@ instance foldableList :: Foldable SnocList where
          SnocNil -> b
          as :- a -> go (f b a) as
    foldMap f = foldl (\acc -> append acc <<< f) mempty
+
+-- Adapted from PureScript prelude.
+instance traversableSnocList :: Traversable SnocList where
+  traverse f = map (foldl (:-) SnocNil) <<< foldl (\acc -> lift2 (:-) acc <<< f) (pure SnocNil)
+  sequence = traverse identity
