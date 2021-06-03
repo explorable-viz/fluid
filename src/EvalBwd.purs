@@ -2,10 +2,10 @@ module EvalBwd where
 
 import Prelude hiding (absurd)
 
-import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, foldBindings, splitAt, toSnocList, varAnon)
+import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), foldBindings, splitAt, toSnocList, varAnon)
 import Bindings2 (asBindings, asBindings2)
+import Data.Foldable (length)
 import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
-import Data.List (length) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
@@ -47,7 +47,7 @@ matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (
 matchArgsBwd Empty κ α SnocNil       = Nil × κ
 matchArgsBwd (_ :+: _) κ α SnocNil   = error absurd
 matchArgsBwd ρρ' κ α (ws :- w) =
-   let ρ × ρ'  = splitAt (vars w # L.length) ρρ'
+   let ρ × ρ'  = splitAt (vars w # length) ρρ'
        v × σ   = matchBwd ρ' κ α w
        vs × κ' = matchArgsBwd ρ (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
@@ -56,7 +56,7 @@ matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings Match 𝔹 -> Bindin
 matchRecordBwd Empty κ α Empty         = Empty × κ
 matchRecordBwd (_ :+: _) κ α Empty     = error absurd
 matchRecordBwd ρρ' κ α (xws :+: x ↦ w) =
-   let ρ × ρ'  = splitAt (vars w # L.length) ρρ'
+   let ρ × ρ'  = splitAt (vars w # length) ρρ'
        v × σ   = matchBwd ρ' κ α w in
    (first (_ :+: x ↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
 
@@ -114,17 +114,17 @@ evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
       _ -> error absurd
 evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
    let ρ1ρ2ρ3 × e × α = evalBwd v t3
-       ρ1ρ2 × ρ3 = splitAt (vars w # L.length) ρ1ρ2ρ3
+       ρ1ρ2 × ρ3 = splitAt (vars w # length) ρ1ρ2ρ3
        v' × σ = matchBwd ρ3 (ContExpr e) α w
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
        ρ' × e2 × α' = evalBwd v' t2
-       ρ1' × δ' = closeDefsBwd ρ2 (ρ1 × δ)
+       ρ1' × δ' = closeDefsBwd ρ2 (ρ1 × asBindings δ)
        ρ'' × e1 × α'' = evalBwd (V.Closure (asBindings2 (ρ1 ∨ ρ1')) (asBindings2 δ') σ) t1 in
    (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
 evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let vs' = vs <> singleton v2
        { init: vs'', last: v2' } = fromJust absurd $ unsnoc $
-         if φ.arity > L.length vs'
+         if φ.arity > length vs'
          then case expand v (V.Primitive (PrimOp φ) (const (V.Hole false) <$> vs')) of
             V.Primitive _ vs'' -> vs''
             _ -> error absurd
@@ -142,12 +142,12 @@ evalBwd v t@(T.AppConstr (t1 × c × n) t2) =
       _ -> error absurd
 evalBwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = evalBwd v t2
-       ρ1 × ρ2 = splitAt (vars w # L.length) ρ1ρ2
+       ρ1 × ρ2 = splitAt (vars w # length) ρ1ρ2
        v' × σ = matchBwd ρ2 (ContHole false) α2 w
        ρ1' × e1 × α1 = evalBwd v' t1 in
    (ρ1 ∨ ρ1') × Let (VarDef σ e1) e2 × (α1 ∨ α2)
 evalBwd v (T.LetRec δ t) =
    let ρ1ρ2 × e × α = evalBwd v t
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
-       ρ1' × δ' = closeDefsBwd ρ2 (ρ1 × δ) in
-   (ρ1 ∨ ρ1') × LetRec δ' e × α
+       ρ1' × δ' = closeDefsBwd ρ2 (ρ1 × asBindings δ) in
+   (ρ1 ∨ ρ1') × LetRec (asBindings2 δ') e × α

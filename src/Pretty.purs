@@ -19,7 +19,7 @@ import Expr (Expr(..), VarDef(..)) as E
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
 import Parse (str)
 import Util (Endo, type (×), (×), type (+), absurd, error, intersperse)
-import Util.SnocList (SnocList)
+import Util.SnocList (SnocList(..), (:-))
 import Util.SnocList (toList) as S
 import Val (PrimOp, Val)
 import Val (Val(..)) as V
@@ -150,13 +150,21 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]
    pretty (E.App e e')              = hspace [pretty e, pretty e']
 
-instance prettyRecDefs :: Pretty (Bindings Elim Boolean) where
+instance prettyRecDefs_old :: Pretty (Bindings Elim Boolean) where
    pretty Empty               = error absurd -- non-empty
    pretty (Extend Empty fσ)   = pretty fσ
    pretty (Extend δ fσ)       = atop (pretty δ :<>: semi) (pretty fσ)
 
-instance prettyRecDef :: Pretty (Binding Elim Boolean) where
+instance prettyRecDefs :: Pretty (SnocList (Bind (Elim Boolean))) where
+   pretty SnocNil          = error absurd -- non-empty
+   pretty (SnocNil :- fσ)  = pretty fσ
+   pretty (δ :- fσ)        = atop (pretty δ :<>: semi) (pretty fσ)
+
+instance prettyRecDef_old :: Pretty (Binding Elim Boolean) where
    pretty (f ↦ σ) = hspace [text f, text str.equals, pretty σ]
+
+instance prettyRecDef :: Pretty (Bind (Elim Boolean)) where
+   pretty (Bind (f B.↦ σ)) = hspace [text f, text str.equals, pretty σ]
 
 instance prettyRecord_old :: Pretty (Bindings Val Boolean) where
    pretty xvs = xvs # B.toList <#> pretty # hcomma # parens

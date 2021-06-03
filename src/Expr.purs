@@ -26,7 +26,7 @@ data Expr a =
    Lambda (Elim a) |
    App (Expr a) (Expr a) |
    Let (VarDef a) (Expr a) |
-   LetRec (RecDefs a) (Expr a)
+   LetRec (RecDefs2 a) (Expr a)
 
 -- eliminator in var def is always singleton, with an empty terminal continuation represented by hole
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -146,7 +146,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Hole α) (App e1 e2)                  = App (expand (Hole α) e1) (expand (Hole α) e2)
    expand (Hole α) (Let (VarDef σ e1) e2) =
       Let (VarDef (expand (ElimHole α) σ) (expand (Hole α) e1)) (expand (Hole α) e2)
-   expand (Hole α) (LetRec h e)                 = LetRec (expand (bindingsMap (const (ElimHole α)) h) h) (expand (Hole α) e)
+   expand (Hole α) (LetRec h e)                 = LetRec (expand (map (const (ElimHole α)) <$> h) h) (expand (Hole α) e)
    expand (Var x) (Var x')                      = Var (x ≜ x')
    expand (Op op) (Op op')                      = Op (op ≜ op')
    expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
