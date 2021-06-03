@@ -39,8 +39,8 @@ matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
 matchBwd ρ κ α (MatchRecord xws)             = V.Record α (asBindings2 xvs) × ElimRecord xs κ'
-   where xvs × κ' = matchRecordBwd ρ κ α xws
-         xs = (\(x ↦ _) -> x) <$> toSnocList xws
+   where xvs × κ' = matchRecordBwd ρ κ α (asBindings xws)
+         xs = (\(x ↦ _) -> x) <$> toSnocList (asBindings xws)
 matchBwd _ _ _ _                             = error absurd
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
@@ -61,7 +61,7 @@ matchRecordBwd ρρ' κ α (xws :+: x ↦ w) =
    (first (_ :+: x ↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
 
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
-evalBwd v (T.Var ρ x) = (botOf ρ ◃ x ↦ v) × Var x × false
+evalBwd v (T.Var ρ x) = (asBindings (botOf ρ) ◃ x ↦ v) × Var x × false
 evalBwd v (T.Op ρ op) = (botOf ρ ◃ op ↦ v) × Op op × false
 evalBwd v t@(T.Str ρ str) =
    case expand v (V.Str false str) of

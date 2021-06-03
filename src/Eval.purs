@@ -4,14 +4,14 @@ import Prelude hiding (absurd)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), (\\), length, range, singleton, unzip, zip)
+import Data.List (List(..), (:), (\\), length, range, singleton, unzip, zipWith)
 import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (uncurry)
-import Bindings (Bindings(..), Var, (:+:), (↦), find, fromList, toList, varAnon)
-import Bindings2 (asBindings, asBindings2)
+import Data.Tuple (curry)
+import Bindings (Bindings(..), Var, (:+:), (↦), find, toList, varAnon)
+import Bindings2 (Bindings2, Bind(..), asBindings, asBindings2)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -20,7 +20,7 @@ import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
-import Util.SnocList (SnocList(..), (:-))
+import Util.SnocList (SnocList(..), (:-), fromList)
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
@@ -36,7 +36,7 @@ match (V.Constr _ c vs) (ElimConstr m) = do
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
    (second (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs c vs κ
 match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
-match (V.Record _ xvs) (ElimRecord xs κ)  = (second MatchRecord) <$> matchRecord (asBindings xvs) xs κ
+match (V.Record _ xvs) (ElimRecord xs κ)  = (second (asBindings2 >>> MatchRecord)) <$> (matchRecord (asBindings xvs) xs κ)
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -70,7 +70,7 @@ checkArity c n = do
 
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ (Hole _)      = error absurd
-eval ρ (Var x)       = (T.Var ρ x × _) <$> find x ρ
+eval ρ (Var x)       = (T.Var (asBindings2 ρ) x × _) <$> find x ρ
 eval ρ (Op op)       = (T.Op ρ op × _) <$> find op ρ
 eval ρ (Int _ n)     = pure (T.Int ρ n × V.Int false n)
 eval ρ (Float _ n)   = pure (T.Float ρ n × V.Float false n)
@@ -78,9 +78,9 @@ eval ρ (Str _ str)   = pure (T.Str ρ str × V.Str false str)
 eval ρ (Record _ xes) = do
    let xs × es = toList xes <#> (\(x ↦ e) -> x × e) # unzip
    ts × vs <- traverse (eval ρ) es <#> unzip
-   let recOf :: forall a . List (a 𝔹) -> Bindings a 𝔹
-       recOf zs = fromList (zip xs zs <#> (uncurry (↦)))
-   pure (T.Record ρ (recOf ts) × V.Record false (asBindings2 (recOf vs)))
+   let recOf :: forall a . List (a 𝔹) -> Bindings2 (a 𝔹)
+       recOf zs = fromList (zipWith (curry Bind) xs zs)
+   pure (T.Record ρ (recOf ts) × V.Record false (recOf vs))
 eval ρ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip

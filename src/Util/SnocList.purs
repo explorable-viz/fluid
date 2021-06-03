@@ -64,3 +64,5 @@ instance foldableSnocList :: Foldable SnocList where
 instance traversableSnocList :: Traversable SnocList where
   traverse f = map (foldl (:-) SnocNil) <<< foldl (\acc -> lift2 (:-) acc <<< f) (pure SnocNil)
   sequence = traverse identity
+
+-- TODO: monad instance

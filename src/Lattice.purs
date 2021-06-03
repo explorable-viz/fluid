@@ -84,6 +84,9 @@ instance slicesSnocList :: Slices t => Slices (SnocList t) where
 instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
    botOf = (<$>) botOf
 
+instance boundedSlicesSnocList :: BoundedSlices t => BoundedSlices (SnocList t) where
+   botOf = (<$>) botOf
+
 instance joinSemilatticeMap :: (Key k, Slices t) => JoinSemilattice (Map k t) where
    join = definedJoin
    neg = (<$>) neg

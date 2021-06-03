@@ -2,11 +2,12 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 
-import Bindings (Bindings(..), (:+:), (↦), find, toSnocList, varAnon)
+import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
 import Bindings2 (asBindings, asBindings2)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***), first, second)
 import Data.Tuple (fst)
 import DataType (cPair)
@@ -37,11 +38,11 @@ matchFwd v σ (T.MatchConstr c ws cs) =
          (second (_ ∧ α)) (matchArgsFwd vs (mustLookup c m) ws)
       _ -> error absurd
 matchFwd v σ (T.MatchRecord xws) =
-   let xs = toSnocList xws <#> (\(x ↦ _) -> x) in
-   case expand v (V.Record false (map (const (V.Hole false)) <$> asBindings2 xws)) ×
+   let xs = xws <#> (unwrap >>> fst) in
+   case expand v (V.Record false (map (const (V.Hole false)) <$> xws)) ×
         expand σ (ElimRecord xs (ContHole false)) of
       V.Record α xvs × ElimRecord _ κ ->
-         (second (_ ∧ α)) (matchRecordFwd (asBindings xvs) κ xws)
+         (second (_ ∧ α)) (matchRecordFwd (asBindings xvs) κ (asBindings xws))
       _ -> error absurd
 
 matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹

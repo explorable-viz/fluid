@@ -5,7 +5,9 @@ import Data.Newtype (class Newtype)
 import Data.Tuple (Tuple(..))
 import Bindings (Bindings(..), (:+:))
 import Bindings ((↦)) as B
-import Lattice (class Expandable, class JoinSemilattice, class Slices, definedJoin, expand, maybeJoin, neg)
+import Lattice (
+   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, botOf, definedJoin, expand, maybeJoin, neg
+)
 import Util (type (×), (≜), (≞))
 import Util.SnocList (SnocList(..), (:-))
 
@@ -22,12 +24,15 @@ infix 6 Tuple as ↦
 instance expandableBind :: Expandable a => Expandable (Bind a) where
    expand (Bind (x ↦ v)) (Bind (x' ↦ v')) = Bind ((x ≜ x') ↦ expand v v')
 
-instance joinSemilatticeBindings :: Slices a => JoinSemilattice (Bind a) where
+instance joinSemilatticeBind :: Slices a => JoinSemilattice (Bind a) where
    join = definedJoin
    neg = (<$>) neg
 
 instance slicesBind :: Slices a => Slices (Bind a) where
    maybeJoin (Bind (x ↦ v)) (Bind (y ↦ v')) = Bind <$> ((↦) <$> (x ≞ y) <*> maybeJoin v v')
+
+instance boundedSlicesBind :: BoundedSlices a => BoundedSlices (Bind a) where
+   botOf = (<$>) botOf
 
 -- Temporary conversion from new bindings to old.
 asBindings :: forall t a . Bindings2 (t a) -> Bindings t a
