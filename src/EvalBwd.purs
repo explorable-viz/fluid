@@ -3,7 +3,7 @@ module EvalBwd where
 import Prelude hiding (absurd)
 
 import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, foldEnv, splitAt, toSnocList, varAnon)
-import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
+import Data.List (List(..), (:), foldr, range, singleton, unsnoc, zip)
 import Data.List (length) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
@@ -50,16 +50,16 @@ matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 matchBwd (Empty :+: x ↦ v) κ α (MatchVar x') = v × ElimVar (x ≜ x') κ
 matchBwd Empty κ α (MatchVarAnon v)          = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
-   where vs × κ' = matchArgsBwd ρ κ α (reverse ws)
+   where vs × κ' = matchArgsBwd ρ κ α (fromListRev ws)
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
 matchBwd ρ κ α (MatchRecord xws)             = error "todo" -- V.Record ?_ ?_ × ElimRecord ?_ ?_
    where xvs × κ' = matchRecordBwd ρ κ α xws
 matchBwd _ _ _ _                             = error absurd
 
-matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgsBwd Empty κ α Nil       = Nil × κ
-matchArgsBwd (_ :+: _) κ α Nil   = error absurd
-matchArgsBwd ρρ' κ α (w : ws) =  -- arg matches are arriving in reverse order
+matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
+matchArgsBwd Empty κ α SnocNil       = Nil × κ
+matchArgsBwd (_ :+: _) κ α SnocNil   = error absurd
+matchArgsBwd ρρ' κ α (ws :- w) =
    let ρ × ρ'  = unmatch ρρ' w
        v × σ   = matchBwd ρ' κ α w
        vs × κ' = matchArgsBwd ρ (ContElim σ) α ws in
