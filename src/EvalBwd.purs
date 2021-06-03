@@ -3,7 +3,7 @@ module EvalBwd where
 import Prelude hiding (absurd)
 
 import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, foldEnv, splitAt, toSnocList, varAnon)
-import Data.List (List(..), (:), foldr, range, singleton, unsnoc, zip)
+import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
 import Data.List (length) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
@@ -15,7 +15,7 @@ import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, (∨), botOf, expand)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate)
-import Util.SnocList (SnocList(..), (:-), fromListRev)
+import Util.SnocList (SnocList(..), (:-), fromList)
 import Val (Env, PrimOp(..), Val, holeMatrix)
 import Val (Val(..)) as V
 
@@ -23,7 +23,7 @@ unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
 unmatch (ρ :+: x ↦ v) (MatchVar x') = ρ × (Empty :+: (x ≜ x') ↦ v)
 unmatch Empty (MatchVar x')         = error absurd
 unmatch ρ (MatchVarAnon _)          = ρ × Empty
-unmatch ρ (MatchConstr _ ws _)      = unmatchArgs ρ (fromListRev ws)
+unmatch ρ (MatchConstr _ ws _)      = unmatchArgs ρ (reverse ws # fromList)
 unmatch ρ (MatchRecord xws)         = unmatchArgs ρ ((\(_ ↦ w) -> w) <$> toSnocList xws)
 
 -- matches provided in reverse order to original arguments, to correspond with 'snoc' order of ρ
@@ -50,7 +50,7 @@ matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 matchBwd (Empty :+: x ↦ v) κ α (MatchVar x') = v × ElimVar (x ≜ x') κ
 matchBwd Empty κ α (MatchVarAnon v)          = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
-   where vs × κ' = matchArgsBwd ρ κ α (fromListRev ws)
+   where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
 matchBwd ρ κ α (MatchRecord xws)             = V.Record α xvs × ElimRecord xs κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
