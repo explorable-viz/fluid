@@ -46,16 +46,16 @@ matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 matchBwd (Empty :+: x ↦ v) κ α (MatchVar x')   = v × ElimVar (x ≜ x') κ
 matchBwd Empty κ α (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)            = V.Constr α c vs × ElimConstr (fromFoldable cκs)
-   where vs × κ' = matchArgs_bwd ρ κ α (reverse ws)
+   where vs × κ' = matchArgsBwd ρ κ α (reverse ws)
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
 matchBwd _ _ _ _                               = error absurd
 
-matchArgs_bwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgs_bwd ρ κ α Nil       = Nil × κ
-matchArgs_bwd ρ κ α (w : ws)  =
+matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
+matchArgsBwd ρ κ α Nil       = Nil × κ
+matchArgsBwd ρ κ α (w : ws)  =
    let ρ' × ρ1   = unmatch ρ w
        v  × σ    = matchBwd ρ1 κ α w
-       vs × κ'   = matchArgs_bwd ρ' (ContElim σ) α ws in
+       vs × κ'   = matchArgsBwd ρ' (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
 
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
