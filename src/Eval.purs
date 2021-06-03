@@ -7,6 +7,7 @@ import Data.Either (Either(..), note)
 import Data.List (List(..), (:), (\\), length, range, singleton, unzip, zip)
 import Data.Map (lookup)
 import Data.Map.Internal (keys)
+import Data.Profunctor.Strong ((***))
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (uncurry)
 import Bindings (Bindings(..), Var, (:+:), (↦), find, fromList, toList, varAnon)
@@ -25,22 +26,16 @@ patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
-match _ (ElimHole _) = error absurd
-match v (ElimVar x κ)
-   | x == varAnon = pure (Empty × κ × MatchVarAnon v)
-   | otherwise    = pure ((Empty :+: x ↦ v) × κ × MatchVar x)
+match _ (ElimHole _)                      = error absurd
+match v (ElimVar x κ)   | x == varAnon    = pure (Empty × κ × MatchVarAnon v)
+                        | otherwise       = pure ((Empty :+: x ↦ v) × κ × MatchVar x)
 match (V.Constr _ c vs) (ElimConstr m) = do
    checkConsistent "Pattern mismatch: " c (keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
-   ρ × κ' × ws <- matchArgs c vs κ
-   pure (ρ × κ' × MatchConstr c ws (keys m \\ singleton c))
-match v (ElimConstr m) =
-   (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
-match (V.Record _ xvs) (ElimRecord xs κ) = do
-   ρ × κ' × xws <- matchRecord xvs xs κ
-   pure (ρ × κ' × MatchRecord xws)
-match v (ElimRecord xs _) =
-   report (patternMismatch (prettyP v) (show xs))
+   (identity *** \ws -> MatchConstr c ws (keys m \\ singleton c)) <$> matchArgs c vs κ
+match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
+match (V.Record _ xvs) (ElimRecord xs κ)  = (identity *** MatchRecord) <$> matchRecord xvs xs κ
+match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchArgs _ Nil κ = pure (Empty × κ × Nil)
@@ -54,13 +49,13 @@ matchArgs _ _ _ = error absurd
 
 matchRecord :: Bindings Val 𝔹 -> SnocList Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings Match 𝔹)
 matchRecord Empty SnocNil κ               = pure (Empty × κ × Empty)
-matchRecord (_ :+: x ↦ _) SnocNil _       = report (patternMismatch "end of record pattern" (show x))
-matchRecord Empty (_ :- x) _              = report (patternMismatch "end of record" (show x))
 matchRecord (xvs :+: x ↦ v) (xs :- x') σ  = do
    check (x == x') (patternMismatch (show x) (show x'))
    ρ × σ' × xws <- matchRecord xvs xs σ
    ρ' × κ × w <- match v (asElim σ')
    pure ((ρ <> ρ') × κ × (xws :+: x ↦ w))
+matchRecord (_ :+: x ↦ _) SnocNil _       = report (patternMismatch "end of record pattern" (show x))
+matchRecord Empty (_ :- x) _              = report (patternMismatch "end of record" (show x))
 
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs _ _ Empty = Empty

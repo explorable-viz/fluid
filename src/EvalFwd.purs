@@ -1,19 +1,20 @@
 module EvalFwd where
 
 import Prelude hiding (absurd)
+
+import Bindings (Bindings(..), Var, (:+:), (↦), find, varAnon)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
 import Data.Tuple (fst)
-import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
 import DataType (cPair)
 import Eval (closeDefs)
-import Expl (Expl, Match)
 import Expl (Expl(..), Match(..), VarDef(..)) as T
-import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asExpr)
+import Expl (Expl, Match)
+import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asElim, asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (match_fwd) as P
-import Util (type (×), (×), (!), absurd, assert, error, mustLookup, replicate, successful)
+import Util (SnocList(..), type (×), (×), (:-), (!), absurd, assert, error, mustLookup, replicate, successful)
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
@@ -33,6 +34,7 @@ matchFwd v σ (T.MatchConstr c ws cs) =
          ρ × κ × (α ∧ α')
          where ρ × κ × α' = matchArgsFwd vs (mustLookup c m) ws
       _ -> error absurd
+matchFwd v σ (T.MatchRecord xws) = error "todo"
 
 matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchArgsFwd Nil κ Nil = Empty × κ × true
@@ -44,6 +46,15 @@ matchArgsFwd (v : vs) κ (w : ws) =
                ρ' × κ' × α'   = matchArgsFwd vs κ ws
       _ -> error absurd
 matchArgsFwd _ _ _ = error absurd
+
+matchRecordFwd :: Bindings Val 𝔹 -> SnocList Var -> Cont 𝔹 -> Bindings Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchRecordFwd Empty SnocNil κ Empty = Empty × κ × true
+matchRecordFwd (xvs :+: x ↦ v) (xs :- x') σ (xws :+: x'' ↦ w) | x == x' && x' == x'' =
+   (ρ <> ρ') × κ × (α ∧ α')
+   where
+   ρ × σ' × α  = matchRecordFwd xvs xs σ xws
+   ρ' × κ × α' = matchFwd v (asElim σ') w
+matchRecordFwd _ _ _ _ = error absurd
 
 evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
 evalFwd ρ e _ (T.Var _ x) =

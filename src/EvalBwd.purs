@@ -21,6 +21,7 @@ unmatch (ρ :+: x ↦ v) (MatchVar x') = ρ × (Empty :+: (x ≜ x') ↦ v)
 unmatch Empty (MatchVar x')         = error absurd
 unmatch ρ (MatchVarAnon _)          = ρ × Empty
 unmatch ρ (MatchConstr _ ws _)      = unmatchArgs ρ (reverse ws)
+unmatch ρ (MatchRecord _)           = error "todo"
 
 -- matches are in a reverse order to the original arguments, to correspond with the 'snoc' order of ρ
 unmatchArgs :: Env 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Env 𝔹

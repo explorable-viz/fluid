@@ -153,12 +153,13 @@ branchesFwd_uncurried bs = do
 
 -- holes used to represent var defs, but otherwise surface programs never contain holes
 totaliseFwd :: Cont 𝔹 -> 𝔹 -> Cont 𝔹
-totaliseFwd (ContHole _) _                = error absurd
-totaliseFwd (ContExpr e) _                = ContExpr e
-totaliseFwd (ContElim (ElimHole _)) _     = error absurd
-totaliseFwd (ContElim (ElimConstr m)) α   = ContElim (ElimConstr (totaliseConstrFwd (c × totaliseFwd κ α) α))
+totaliseFwd (ContHole _) _                   = error absurd
+totaliseFwd (ContExpr e) _                   = ContExpr e
+totaliseFwd (ContElim (ElimHole _)) _        = error absurd
+totaliseFwd (ContElim (ElimConstr m)) α      = ContElim (ElimConstr (totaliseConstrFwd (c × totaliseFwd κ α) α))
    where c × κ = assert (size m == 1) (fromJust absurd (L.head (toUnfoldable m)))
-totaliseFwd (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totaliseFwd κ α))
+totaliseFwd (ContElim (ElimRecord xs κ)) α   = ContElim (ElimRecord xs (totaliseFwd κ α))
+totaliseFwd (ContElim (ElimVar x κ)) α       = ContElim (ElimVar x (totaliseFwd κ α))
 
 -- Extend singleton branch to set of branches where any missing constructors have been mapped to the empty list,
 -- using anonymous variables in any generated patterns.

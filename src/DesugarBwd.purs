@@ -201,6 +201,7 @@ patternBwd _ _                                  = error absurd
 -- σ, o desugar_bwd κ
 listRestPatternBwd :: Elim 𝔹 -> ListRestPattern -> Cont 𝔹
 listRestPatternBwd (ElimVar _ _) _              = error absurd
+listRestPatternBwd (ElimRecord _ _) _           = error absurd
 listRestPatternBwd (ElimHole α) PEnd            = ContHole α
 listRestPatternBwd (ElimConstr m) PEnd          = mustLookup cNil m
 listRestPatternBwd (ElimHole α) (PNext p o)     = argsBwd (ContHole α) (Left p : Right o : Nil)
