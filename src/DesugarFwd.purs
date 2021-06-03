@@ -12,6 +12,7 @@ import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
 import Bindings (Binding, (↦), fromList, varAnon)
+import Bindings2 (asBindings2)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
@@ -108,7 +109,7 @@ exprFwd (ListComp α s_body (NonEmptyList (Generator p s :| q : qs))) = do
    σ <- patternFwd p (ContExpr e)
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totaliseFwd (ContElim σ) α)))) <$> exprFwd s
 exprFwd (Let ds s)               = varDefsFwd (ds × s)
-exprFwd (LetRec xcs s)           = E.LetRec <$> recDefsFwd xcs <*> exprFwd s
+exprFwd (LetRec xcs s)           = E.LetRec <$> (asBindings2 <$> recDefsFwd xcs) <*> exprFwd s
 
 -- l desugar_fwd e
 listRestFwd :: ListRest 𝔹 -> MayFail (E.Expr 𝔹)

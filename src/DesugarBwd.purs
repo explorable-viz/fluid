@@ -3,6 +3,8 @@ module DesugarBwd where
 import Prelude hiding (absurd)
 
 import Bindings (Binding, Bindings(..), (↦), (:+:), fromList)
+import Bindings2 (Bind(..), asBindings)
+import Bindings2 ((↦)) as B
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
@@ -100,13 +102,13 @@ exprBwd e (Let ds s) =
       E.Let d e' -> uncurry Let (varDefsBwd (E.Let d e') (ds × s))
       _ -> error absurd
 exprBwd e (LetRec xcs s) =
-   case expand e (E.LetRec (fromList (toList (recDefHole <$> xcss))) (E.Hole false)) of
-      E.LetRec xσs e' -> LetRec (recDefsBwd xσs xcs) (exprBwd e' s)
+   case expand e (E.LetRec ?_ {-(fromList (toList (recDefHole <$> xcss)))-} (E.Hole false)) of
+      E.LetRec xσs e' -> LetRec (recDefsBwd (asBindings xσs) xcs) (exprBwd e' s)
       _ -> error absurd
       where
       -- repeat enough desugaring logic to determine shape of bindings
-      recDefHole :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
-      recDefHole xcs' = fst (head xcs') ↦ ElimHole false
+      recDefHole :: NonEmptyList (Clause 𝔹) -> Bind (Elim 𝔹)
+      recDefHole xcs' = Bind (fst (head xcs') B.↦ ElimHole false)
       xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 exprBwd e (ListEmpty _) =
    case expand e (E.Constr false cNil Nil) of

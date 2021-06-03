@@ -103,7 +103,7 @@ eval ρ (Matrix _ e (x × y) e') = do
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable
 eval ρ (LetRec δ e) = do
-   let ρ' = closeDefs ρ δ δ
+   let ρ' = closeDefs ρ (asBindings δ) (asBindings δ)
    t × v <- eval (ρ <> ρ') e
    pure (T.LetRec δ t × v)
 eval ρ (Lambda σ) =
@@ -117,7 +117,7 @@ eval ρ (App e e') = do
          let ρ2 = closeDefs (asBindings ρ1) (asBindings δ) (asBindings δ)
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (asBindings ρ1 <> ρ2 <> ρ3) (asExpr e'')
-         pure (T.App (t × ρ1 × asBindings δ × σ) t' w t'' × v'')
+         pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
          let vs' = vs <> singleton v'
              v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs' in
