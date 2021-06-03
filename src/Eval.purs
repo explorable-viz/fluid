@@ -71,20 +71,20 @@ checkArity c n = do
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ (Hole _)      = error absurd
 eval ρ (Var x)       = (T.Var (asBindings2 ρ) x × _) <$> find x ρ
-eval ρ (Op op)       = (T.Op ρ op × _) <$> find op ρ
-eval ρ (Int _ n)     = pure (T.Int ρ n × V.Int false n)
-eval ρ (Float _ n)   = pure (T.Float ρ n × V.Float false n)
-eval ρ (Str _ str)   = pure (T.Str ρ str × V.Str false str)
+eval ρ (Op op)       = (T.Op (asBindings2 ρ) op × _) <$> find op ρ
+eval ρ (Int _ n)     = pure (T.Int (asBindings2 ρ) n × V.Int false n)
+eval ρ (Float _ n)   = pure (T.Float (asBindings2 ρ) n × V.Float false n)
+eval ρ (Str _ str)   = pure (T.Str (asBindings2 ρ) str × V.Str false str)
 eval ρ (Record _ xes) = do
    let xs × es = toList xes <#> (\(x ↦ e) -> x × e) # unzip
    ts × vs <- traverse (eval ρ) es <#> unzip
    let recOf :: forall a . List (a 𝔹) -> Bindings2 (a 𝔹)
        recOf zs = fromList (zipWith (curry Bind) xs zs)
-   pure (T.Record ρ (recOf ts) × V.Record false (recOf vs))
+   pure (T.Record (asBindings2 ρ) (recOf ts) × V.Record false (recOf vs))
 eval ρ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
-   pure (T.Constr ρ c ts × V.Constr false c vs)
+   pure (T.Constr (asBindings2 ρ) c ts × V.Constr false c vs)
 eval ρ (Matrix _ e (x × y) e') = do
    t × v <- eval ρ e'
    case v of
@@ -107,7 +107,7 @@ eval ρ (LetRec δ e) = do
    t × v <- eval (ρ <> ρ') e
    pure (T.LetRec δ t × v)
 eval ρ (Lambda σ) =
-   pure (T.Lambda ρ σ × V.Closure (asBindings2 ρ) SnocNil σ)
+   pure (T.Lambda (asBindings2 ρ) σ × V.Closure (asBindings2 ρ) SnocNil σ)
 eval ρ (App e e') = do
    t × v <- eval ρ e
    t' × v' <- eval ρ e'
@@ -117,7 +117,7 @@ eval ρ (App e e') = do
          let ρ2 = closeDefs (asBindings ρ1) (asBindings δ) (asBindings δ)
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (asBindings ρ1 <> ρ2 <> ρ3) (asExpr e'')
-         pure (T.App (t × asBindings ρ1 × asBindings δ × σ) t' w t'' × v'')
+         pure (T.App (t × ρ1 × asBindings δ × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
          let vs' = vs <> singleton v'
              v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs' in

@@ -114,7 +114,7 @@ evalFwd ρ e _ (T.Lambda _ _) =
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
    case expand e (App (Hole false) (Hole false)) of
       App e1 e2 ->
-         case expand (evalFwd ρ e1 α t1) (V.Closure (asBindings2 (botOf ρ1)) (asBindings2 (botOf δ)) (ElimHole false)) of
+         case expand (evalFwd ρ e1 α t1) (V.Closure (botOf ρ1) (asBindings2 (botOf δ)) (ElimHole false)) of
             V.Closure ρ1' δ' σ' ->
                let v = evalFwd ρ e2 α t2
                    ρ2 = closeDefs (asBindings ρ1') (asBindings δ') (asBindings δ')

@@ -62,21 +62,21 @@ matchRecordBwd ρρ' κ α (xws :+: x ↦ w) =
 
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var ρ x) = (asBindings (botOf ρ) ◃ x ↦ v) × Var x × false
-evalBwd v (T.Op ρ op) = (botOf ρ ◃ op ↦ v) × Op op × false
+evalBwd v (T.Op ρ op) = (asBindings (botOf ρ) ◃ op ↦ v) × Op op × false
 evalBwd v t@(T.Str ρ str) =
    case expand v (V.Str false str) of
-      V.Str α _ -> botOf ρ × Str α str × α
+      V.Str α _ -> asBindings (botOf ρ) × Str α str × α
       _ -> error absurd
 evalBwd v t@(T.Int ρ n) =
    case expand v (V.Int false n) of
-      V.Int α _ -> botOf ρ × Int α n × α
+      V.Int α _ -> asBindings (botOf ρ) × Int α n × α
       _ -> error absurd
 evalBwd v t@(T.Float ρ n) =
    case expand v (V.Float false n) of
-      V.Float α _ -> botOf ρ × Float α n × α
+      V.Float α _ -> asBindings (botOf ρ) × Float α n × α
       _ -> error absurd
 evalBwd v t@(T.Lambda ρ σ) =
-   case expand v (V.Closure (asBindings2 (botOf ρ)) SnocNil (botOf σ)) of
+   case expand v (V.Closure (botOf ρ) SnocNil (botOf σ)) of
       V.Closure ρ' _ σ' -> asBindings ρ' × Lambda σ' × false
       _ -> error absurd
 evalBwd v t@(T.Record ρ xts) =
@@ -87,7 +87,7 @@ evalBwd v t@(T.Constr ρ c ts) =
          let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
              evalArg_bwd (v' × t') (ρ' × es × α') = (ρ' ∨ ρ'') × (e : es) × (α' ∨ α'')
                where ρ'' × e × α'' = evalBwd v' t'
-             ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Nil × α) (zip vs ts) in
+             ρ' × es × α' = foldr evalArg_bwd (asBindings (botOf ρ) × Nil × α) (zip vs ts) in
          ρ' × Constr α c es × α'
       _ -> error absurd
 evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
