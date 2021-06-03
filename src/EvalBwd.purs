@@ -52,8 +52,9 @@ matchBwd Empty κ α (MatchVarAnon v)          = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
    where vs × κ' = matchArgsBwd ρ κ α (fromListRev ws)
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
-matchBwd ρ κ α (MatchRecord xws)             = error "todo" -- V.Record ?_ ?_ × ElimRecord ?_ ?_
+matchBwd ρ κ α (MatchRecord xws)             = V.Record α xvs × ElimRecord xs κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
+         xs = (\(x ↦ _) -> x) <$> toSnocList xws
 matchBwd _ _ _ _                             = error absurd
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
