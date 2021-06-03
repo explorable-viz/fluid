@@ -23,15 +23,21 @@ unmatch (ρ :+: x ↦ v) (MatchVar x') = ρ × (Empty :+: (x ≜ x') ↦ v)
 unmatch Empty (MatchVar x')         = error absurd
 unmatch ρ (MatchVarAnon _)          = ρ × Empty
 unmatch ρ (MatchConstr _ ws _)      = unmatchArgs ρ (reverse ws)
-unmatch ρ (MatchRecord _)           = error "todo"
+unmatch ρ (MatchRecord xws)         = unmatchRecord ρ xws
 
 -- matches are in a reverse order to the original arguments, to correspond with the 'snoc' order of ρ
--- TODO: swap result order?
+-- (uncurry (<>)) (unmatchArgs ρ ws) = ρ
 unmatchArgs :: Env 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Env 𝔹
 unmatchArgs ρ Nil       = ρ × Empty
 unmatchArgs ρ (w : ws)  = ρ'' × (ρ1 <> ρ2)
    where ρ'  × ρ2 = unmatch ρ w
          ρ'' × ρ1 = unmatchArgs ρ' ws
+
+unmatchRecord :: Env 𝔹 -> Bindings Match 𝔹 -> Env 𝔹 × Env 𝔹
+unmatchRecord ρ Empty = ρ × Empty
+unmatchRecord ρ (xws :+: _ ↦ w) = ρ'' × (ρ1 <> ρ2)
+   where ρ'  × ρ2 = unmatch ρ w
+         ρ'' × ρ1 = unmatchRecord ρ' xws
 
 -- second argument contains original environment and recursive definitions
 closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹
@@ -58,7 +64,7 @@ matchBwd _ _ _ _                             = error absurd
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
 matchArgsBwd Empty κ α Nil       = Nil × κ
 matchArgsBwd (_ :+: _) κ α Nil   = error absurd
-matchArgsBwd ρρ' κ α (w : ws) =
+matchArgsBwd ρρ' κ α (w : ws) =  -- arg matches are arriving in reverse order
    let ρ × ρ'  = unmatch ρρ' w
        v × σ   = matchBwd ρ' κ α w
        vs × κ' = matchArgsBwd ρ (ContElim σ) α ws in
