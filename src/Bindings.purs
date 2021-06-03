@@ -32,9 +32,9 @@ find x (ρ :+: x' ↦ v)
    | x == x'   = pure v
    | otherwise = find x ρ
 
-foldEnv :: forall t a b . (Binding t a -> Endo b) -> b -> Bindings t a -> b
-foldEnv f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldEnv f z ρ)
-foldEnv _ z Empty           = z
+foldBindings :: forall t a b . (Binding t a -> Endo b) -> b -> Bindings t a -> b
+foldBindings f z (ρ :+: x ↦ v)   = f (x ↦ v) (foldBindings f z ρ)
+foldBindings _ z Empty           = z
 
 update :: forall t a . Bindings t a -> Binding t a -> Bindings t a
 update Empty _ = Empty
