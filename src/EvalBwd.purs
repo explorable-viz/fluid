@@ -2,7 +2,7 @@ module EvalBwd where
 
 import Prelude hiding (absurd)
 
-import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, foldEnv, splitAt, varAnon)
+import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), length, foldEnv, splitAt, toSnocList, varAnon)
 import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
 import Data.List (length) as L
 import Data.List.NonEmpty (NonEmptyList(..))
@@ -15,6 +15,7 @@ import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, (∨), botOf, expand)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate)
+import Util.SnocList (SnocList(..), (:-), fromListRev)
 import Val (Env, PrimOp(..), Val, holeMatrix)
 import Val (Val(..)) as V
 
@@ -22,22 +23,16 @@ unmatch :: Env 𝔹 -> Match 𝔹 -> Env 𝔹 × Env 𝔹
 unmatch (ρ :+: x ↦ v) (MatchVar x') = ρ × (Empty :+: (x ≜ x') ↦ v)
 unmatch Empty (MatchVar x')         = error absurd
 unmatch ρ (MatchVarAnon _)          = ρ × Empty
-unmatch ρ (MatchConstr _ ws _)      = unmatchArgs ρ (reverse ws)
-unmatch ρ (MatchRecord xws)         = unmatchRecord ρ xws
+unmatch ρ (MatchConstr _ ws _)      = unmatchArgs ρ (fromListRev ws)
+unmatch ρ (MatchRecord xws)         = unmatchArgs ρ ((\(_ ↦ w) -> w) <$> toSnocList xws)
 
--- matches are in a reverse order to the original arguments, to correspond with the 'snoc' order of ρ
--- (uncurry (<>)) (unmatchArgs ρ ws) = ρ
-unmatchArgs :: Env 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Env 𝔹
-unmatchArgs ρ Nil       = ρ × Empty
-unmatchArgs ρ (w : ws)  = ρ'' × (ρ1 <> ρ2)
+-- matches provided in reverse order to original arguments, to correspond with 'snoc' order of ρ
+-- uncurry (<>) (unmatchArgs ρ ws) = ρ
+unmatchArgs :: Env 𝔹 -> SnocList (Match 𝔹) -> Env 𝔹 × Env 𝔹
+unmatchArgs ρ SnocNil   = ρ × Empty
+unmatchArgs ρ (ws :- w) = ρ'' × (ρ1 <> ρ2)
    where ρ'  × ρ2 = unmatch ρ w
          ρ'' × ρ1 = unmatchArgs ρ' ws
-
-unmatchRecord :: Env 𝔹 -> Bindings Match 𝔹 -> Env 𝔹 × Env 𝔹
-unmatchRecord ρ Empty = ρ × Empty
-unmatchRecord ρ (xws :+: _ ↦ w) = ρ'' × (ρ1 <> ρ2)
-   where ρ'  × ρ2 = unmatch ρ w
-         ρ'' × ρ1 = unmatchRecord ρ' xws
 
 -- second argument contains original environment and recursive definitions
 closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹

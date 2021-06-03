@@ -2,7 +2,7 @@ module Util.SnocList where
 
 import Prelude
 import Data.Function (on)
-import Data.List (List(..), snoc)
+import Data.List (List(..), (:), snoc)
 
 -- Snoc lists. Could reformuate Bindings as SnocList Binding.
 data SnocList a =
@@ -13,9 +13,18 @@ derive instance snocListFunctor :: Functor SnocList
 
 infix 6 Snoc as :-
 
+-- There are (at least) two isomorphisms to List, one order preserving, one order inverting.
 toList :: forall a . SnocList a -> List a
 toList SnocNil    = Nil
 toList (xs :- x)  = snoc (toList xs) x
+
+toListRev :: forall a . SnocList a -> List a
+toListRev SnocNil = Nil
+toListRev (xs :- x) = x : toListRev xs
+
+fromListRev :: forall a . List a -> SnocList a
+fromListRev Nil = SnocNil
+fromListRev (x : xs) = fromListRev xs :- x
 
 instance showSnocList :: Show a => Show (SnocList a) where
    show = toList >>> show
