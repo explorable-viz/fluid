@@ -62,7 +62,7 @@ matchArgsBwd ρ κ α (w : ws)  =
    (vs <> v : Nil) × κ'
 
 matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings Match 𝔹 -> Bindings Val 𝔹 × Cont 𝔹
-matchRecordBwd = error "todo"
+matchRecordBwd _ = error "todo"
 
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var ρ x) = (botOf ρ ◃ x ↦ v) × Var x × false
