@@ -55,10 +55,8 @@ matchArgsFwd _ _ _ = error absurd
 matchRecordFwd :: Bindings Val 𝔹 -> Cont 𝔹 -> Bindings Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchRecordFwd Empty κ Empty = Empty × κ × true
 matchRecordFwd (xvs :+: x ↦ v) σ (xws :+: x' ↦ w) | x == x' =
-   (ρ <> ρ') × κ × (α ∧ α')
-   where
-   ρ × σ' × α  = matchRecordFwd xvs σ xws
-   ρ' × κ × α' = matchFwd v (asElim σ') w
+   (first (ρ <> _) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
+   where ρ × σ' × α = matchRecordFwd xvs σ xws
 matchRecordFwd _ _ _ = error absurd
 
 evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
