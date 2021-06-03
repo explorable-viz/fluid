@@ -6,7 +6,8 @@ import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
    botOf, definedJoin, expand, maybeJoin, neg
 )
-import Util (Endo, MayFail, SnocList(..), type (×), (×), (:-), (≞), (≜), absurd, error, fromJust, report, whenever)
+import Util (Endo, MayFail, type (×), (×), (≞), (≜), absurd, error, fromJust, report, whenever)
+import Util.SnocList (SnocList(..), (:-))
 
 type Var = String -- newtype?
 

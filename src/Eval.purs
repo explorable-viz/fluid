@@ -7,7 +7,7 @@ import Data.Either (Either(..), note)
 import Data.List (List(..), (:), (\\), length, range, singleton, unzip, zip)
 import Data.Map (lookup)
 import Data.Map.Internal (keys)
-import Data.Profunctor.Strong ((***))
+import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (uncurry)
 import Bindings (Bindings(..), Var, (:+:), (↦), find, fromList, toList, varAnon)
@@ -18,7 +18,8 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asEx
 import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
-import Util (SnocList(..), (:-), MayFail, type (×), (×), absurd, check, error, report, successful)
+import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
+import Util.SnocList (SnocList(..), (:-))
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
@@ -32,9 +33,9 @@ match v (ElimVar x κ)   | x == varAnon    = pure (Empty × κ × MatchVarAnon v
 match (V.Constr _ c vs) (ElimConstr m) = do
    checkConsistent "Pattern mismatch: " c (keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
-   (identity *** \ws -> MatchConstr c ws (keys m \\ singleton c)) <$> matchArgs c vs κ
+   (second (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs c vs κ
 match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
-match (V.Record _ xvs) (ElimRecord xs κ)  = (identity *** MatchRecord) <$> matchRecord xvs xs κ
+match (V.Record _ xvs) (ElimRecord xs κ)  = (second MatchRecord) <$> matchRecord xvs xs κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))

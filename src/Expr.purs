@@ -9,7 +9,8 @@ import DataType (Ctr)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg
 )
-import Util (SnocList, type (×), (×), type (+), (≞), (≜), (⪄), absurd, error, report)
+import Util (type (×), (×), type (+), (≞), (≜), (⪄), absurd, error, report)
+import Util.SnocList (SnocList)
 
 data Expr a =
    Hole a |

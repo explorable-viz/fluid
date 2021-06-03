@@ -49,7 +49,7 @@ matchBwd Empty κ α (MatchVarAnon v)          = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws)
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
-matchBwd ρ κ α (MatchRecord xws)             = V.Record ?_ ?_ × ElimRecord ?_ ?_
+matchBwd ρ κ α (MatchRecord xws)             = error "todo" -- V.Record ?_ ?_ × ElimRecord ?_ ?_
    where xvs × κ' = matchRecordBwd ρ κ α xws
 matchBwd _ _ _ _                             = error absurd
 
