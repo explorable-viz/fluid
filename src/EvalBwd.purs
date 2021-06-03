@@ -57,7 +57,7 @@ matchBwd _ _ _ _                             = error absurd
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
 matchArgsBwd Empty κ α Nil       = Nil × κ
-matchArgsBwd (_ :+: _) κ α Nil   = Nil × κ
+matchArgsBwd (_ :+: _) κ α Nil   = error absurd
 matchArgsBwd ρρ' κ α (w : ws) =
    let ρ × ρ'  = unmatch ρρ' w
        v × σ   = matchBwd ρ' κ α w
@@ -66,11 +66,11 @@ matchArgsBwd ρρ' κ α (w : ws) =
 
 matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings Match 𝔹 -> Bindings Val 𝔹 × Cont 𝔹
 matchRecordBwd Empty κ α Empty         = Empty × κ
+matchRecordBwd (_ :+: _) κ α Empty     = error absurd
 matchRecordBwd ρρ' κ α (xws :+: x ↦ w) =
    let ρ × ρ'  = unmatch ρρ' w
        v × σ   = matchBwd ρ' κ α w in
    (first (_ :+: x ↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
-matchRecordBwd _ _ _ _ = error "todo"
 
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var ρ x) = (botOf ρ ◃ x ↦ v) × Var x × false
