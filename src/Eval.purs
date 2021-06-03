@@ -61,7 +61,7 @@ matchRecord Empty (_ :- x) _              = report (patternMismatch "end of reco
 
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs _ _ Empty = Empty
-closeDefs ρ δ0 (δ :+: f ↦ σ) = closeDefs ρ δ0 δ :+: f ↦ V.Closure (asBindings2 ρ) δ0 σ
+closeDefs ρ δ0 (δ :+: f ↦ σ) = closeDefs ρ δ0 δ :+: f ↦ V.Closure (asBindings2 ρ) (asBindings2 δ0) σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -107,17 +107,17 @@ eval ρ (LetRec δ e) = do
    t × v <- eval (ρ <> ρ') e
    pure (T.LetRec δ t × v)
 eval ρ (Lambda σ) =
-   pure (T.Lambda ρ σ × V.Closure (asBindings2 ρ) Empty σ)
+   pure (T.Lambda ρ σ × V.Closure (asBindings2 ρ) SnocNil σ)
 eval ρ (App e e') = do
    t × v <- eval ρ e
    t' × v' <- eval ρ e'
    case v of
       V.Hole _ -> error absurd
       V.Closure ρ1 δ σ -> do
-         let ρ2 = closeDefs (asBindings ρ1) δ δ
+         let ρ2 = closeDefs (asBindings ρ1) (asBindings δ) (asBindings δ)
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (asBindings ρ1 <> ρ2 <> ρ3) (asExpr e'')
-         pure (T.App (t × asBindings ρ1 × δ × σ) t' w t'' × v'')
+         pure (T.App (t × asBindings ρ1 × asBindings δ × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
          let vs' = vs <> singleton v'
              v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs' in

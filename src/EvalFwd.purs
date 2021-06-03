@@ -17,6 +17,7 @@ import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asElim, asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (match_fwd) as P
 import Util (type (×), (×), (!), absurd, assert, error, mustLookup, replicate, successful)
+import Util.SnocList (SnocList(..))
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
@@ -107,15 +108,15 @@ evalFwd ρ e α (T.LetRec δ t) =
       _ -> error absurd
 evalFwd ρ e _ (T.Lambda _ _) =
    case expand e (Lambda (ElimHole false)) of
-      Lambda σ -> V.Closure (asBindings2 ρ) Empty σ
+      Lambda σ -> V.Closure (asBindings2 ρ) SnocNil σ
       _ -> error absurd
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
    case expand e (App (Hole false) (Hole false)) of
       App e1 e2 ->
-         case expand (evalFwd ρ e1 α t1) (V.Closure (asBindings2 (botOf ρ1)) (botOf δ) (ElimHole false)) of
+         case expand (evalFwd ρ e1 α t1) (V.Closure (asBindings2 (botOf ρ1)) (asBindings2 (botOf δ)) (ElimHole false)) of
             V.Closure ρ1' δ' σ' ->
                let v = evalFwd ρ e2 α t2
-                   ρ2 = closeDefs (asBindings ρ1') δ' δ'
+                   ρ2 = closeDefs (asBindings ρ1') (asBindings δ') (asBindings δ')
                    ρ3 × e3 × β = matchFwd v σ' w in
                evalFwd (asBindings ρ1' <> ρ2 <> ρ3) (asExpr e3) β t3
             _ -> error absurd
