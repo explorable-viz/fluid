@@ -9,7 +9,7 @@ import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (uncurry)
-import Bindings (Bindings(..), (:+:), (↦), find, fromList, toList, varAnon)
+import Bindings (Bindings(..), Var, (:+:), (↦), find, fromList, toList, varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -38,12 +38,12 @@ match v (ElimConstr m) =
    (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
 match (V.Record _ Empty) (ElimRecord SnocNil κ) =
    pure (Empty × κ × MatchRecord Empty)
-match (V.Record α (_ :+: x ↦ _)) (ElimRecord SnocNil σ) =
-   report ("Pattern mismatch")
-match (V.Record α Empty) (ElimRecord (xs :- x) σ) =
-   report ("Pattern mismatch")
+match (V.Record _ (_ :+: x ↦ _)) (ElimRecord SnocNil _) =
+   report (patternMismatch "end of record pattern" (show x))
+match (V.Record _ Empty) (ElimRecord (_ :- x) _) =
+   report (patternMismatch "end of record" (show x))
 match (V.Record α (xvs :+: x ↦ v)) (ElimRecord (xs :- x') σ) = do
-   check (x == x') ("Pattern mismatch: found '" <> show x <> "', expected '" <> show x' <> "'")
+   check (x == x') (patternMismatch (show x) (show x'))
    ρ × σ' × ws <- match (V.Record α xvs) (ElimRecord xs σ)
    case ws of
       MatchRecord xws -> do
@@ -51,7 +51,7 @@ match (V.Record α (xvs :+: x ↦ v)) (ElimRecord (xs :- x') σ) = do
          pure ((ρ <> ρ') × κ × MatchRecord (xws :+: x ↦ w))
       _ -> error absurd
 match v (ElimRecord xs _) =
-   report ("Pattern mismatch: " <> prettyP v <> " is not a record value, expected " <> show xs)
+   report (patternMismatch (prettyP v) (show xs))
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchArgs _ Nil κ = pure (Empty × κ × Nil)
@@ -62,6 +62,10 @@ matchArgs c (v : vs) (ContElim σ) = do
 matchArgs c (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _ = error absurd
+
+matchRecord :: Bindings Val 𝔹 -> SnocList Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings Match 𝔹)
+matchRecord Empty SnocNil κ = pure (Empty × κ × Empty)
+matchRecord _ _ _ = error "todo"
 
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs _ _ Empty = Empty
