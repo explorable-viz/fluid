@@ -1,6 +1,7 @@
 module Util.SnocList where
 
 import Prelude
+import Data.Foldable (class Foldable, foldl)
 import Data.Function (on)
 import Data.List (List(..), (:))
 import Data.List (reverse) as L
@@ -34,3 +35,25 @@ instance eqSnocList :: Eq a => Eq (SnocList a) where
 
 instance ordSnocList :: Ord a => Ord (SnocList a) where
    compare = compare `on` toList
+
+zipWith :: forall a b c. (a -> b -> c) -> SnocList a -> SnocList b -> SnocList c
+zipWith f xs ys = reverse $ go xs ys SnocNil
+   where
+   go SnocNil _ acc = acc
+   go _ SnocNil acc = acc
+   go (as :- a) (bs :- b) acc = go as bs $ acc :- f a b
+
+-- Adapted from PureScript prelude.
+instance foldableList :: Foldable SnocList where
+   foldr f b = foldl (flip f) b <<< rev
+      where
+      rev = go SnocNil
+         where
+         go acc SnocNil = acc
+         go acc (xs :- x) = go (acc :- x) xs
+   foldl f = go
+      where
+      go b = case _ of
+         SnocNil -> b
+         as :- a -> go (f b a) as
+   foldMap f = foldl (\acc -> append acc <<< f) mempty

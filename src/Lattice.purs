@@ -3,8 +3,8 @@ module Lattice where
 import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
 import Data.Array (length, zipWith) as A
-import Data.Foldable (foldM)
-import Data.List (List, length, zipWith)
+import Data.Foldable (foldM, length)
+import Data.List (List, zipWith)
 import Data.Map (Map, fromFoldable, insert, lookup, toUnfoldable, update)
 import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
@@ -12,6 +12,8 @@ import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
 import Util (MayFail, type (×), (×), (≞), absurd, error, report, successfulWith)
+import Util.SnocList (SnocList(..))
+import Util.SnocList (zipWith) as S
 
 class JoinSemilattice a where
    join :: a -> a -> a
@@ -67,8 +69,8 @@ instance joinSemilatticeList :: Slices t => JoinSemilattice (List t) where
 
 instance slicesList :: Slices t => Slices (List t) where
    maybeJoin xs ys
-      | length xs == length ys   = sequence (zipWith maybeJoin xs ys)
-      | otherwise                = report "Lists of different lengths"
+      | (length xs :: Int) == length ys   = sequence (zipWith maybeJoin xs ys)
+      | otherwise                         = report "Lists of different lengths"
 
 instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
    botOf = (<$>) botOf
@@ -117,8 +119,13 @@ instance expandableArray :: Expandable t => Expandable (Array t) where
 
 instance expandableList :: Expandable t => Expandable (List t) where
    expand xs ys
-      | length xs == length ys   = zipWith expand xs ys
-      | otherwise                = error absurd
+      | (length xs :: Int) == length ys   = zipWith expand xs ys
+      | otherwise                         = error absurd
+
+instance expandableSnocList :: Expandable t => Expandable (SnocList t) where
+   expand xs ys
+      | (length xs :: Int) == length ys   = S.zipWith expand xs ys
+      | otherwise                         = error absurd
 
 instance expandableMap :: (Ord k, Expandable (t a)) => Expandable (Map k (t a)) where
    expand m m'

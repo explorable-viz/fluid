@@ -11,7 +11,7 @@ import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (first)
 import DataType (cPair)
 import Expl (Expl(..), VarDef(..)) as T
-import Expl (Expl, Match(..), numVars)
+import Expl (Expl, Match(..), vars)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, (∨), botOf, expand)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate)
@@ -46,7 +46,7 @@ matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (
 matchArgsBwd Empty κ α SnocNil       = Nil × κ
 matchArgsBwd (_ :+: _) κ α SnocNil   = error absurd
 matchArgsBwd ρρ' κ α (ws :- w) =
-   let ρ × ρ'  = splitAt (numVars w) ρρ'
+   let ρ × ρ'  = splitAt (vars w # L.length) ρρ'
        v × σ   = matchBwd ρ' κ α w
        vs × κ' = matchArgsBwd ρ (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
@@ -55,7 +55,7 @@ matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings Match 𝔹 -> Bindin
 matchRecordBwd Empty κ α Empty         = Empty × κ
 matchRecordBwd (_ :+: _) κ α Empty     = error absurd
 matchRecordBwd ρρ' κ α (xws :+: x ↦ w) =
-   let ρ × ρ'  = splitAt (numVars w) ρρ'
+   let ρ × ρ'  = splitAt (vars w # L.length) ρρ'
        v × σ   = matchBwd ρ' κ α w in
    (first (_ :+: x ↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
 
@@ -113,7 +113,7 @@ evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
       _ -> error absurd
 evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
    let ρ1ρ2ρ3 × e × α = evalBwd v t3
-       ρ1ρ2 × ρ3 = splitAt (numVars w) ρ1ρ2ρ3
+       ρ1ρ2 × ρ3 = splitAt (vars w # L.length) ρ1ρ2ρ3
        v' × σ = matchBwd ρ3 (ContExpr e) α w
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
        ρ' × e2 × α' = evalBwd v' t2
@@ -141,7 +141,7 @@ evalBwd v t@(T.AppConstr (t1 × c × n) t2) =
       _ -> error absurd
 evalBwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = evalBwd v t2
-       ρ1 × ρ2 = splitAt (numVars w) ρ1ρ2
+       ρ1 × ρ2 = splitAt (vars w # L.length) ρ1ρ2
        v' × σ = matchBwd ρ2 (ContHole false) α2 w
        ρ1' × e1 × α1 = evalBwd v' t1 in
    (ρ1 ∨ ρ1') × Let (VarDef σ e1) e2 × (α1 ∨ α2)

@@ -1,9 +1,8 @@
 module Expl where
 
 import Prelude
-import Data.Foldable (sum)
-import Data.List (List)
-import Bindings (Bindings, Var, (↦), foldBindings)
+import Data.List (List(..), singleton)
+import Bindings (Bindings, Var, (↦), toList)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Util (type (×))
@@ -36,8 +35,8 @@ data Match a =
    MatchConstr Ctr (List (Match a)) (List Ctr) |  -- list of matches should be a snoc list
    MatchRecord (Bindings Match a)
 
-numVars :: forall a . Match a -> Int
-numVars (MatchVar _)          = 1
-numVars (MatchVarAnon _)      = 0
-numVars (MatchConstr _ ws _)  = sum (numVars <$> ws)
-numVars (MatchRecord xws)     = foldBindings (\(_ ↦ w) n -> n + numVars w) 0 xws
+vars :: forall a . Match a -> List Var
+vars (MatchVar x)          = singleton x
+vars (MatchVarAnon _)      = Nil
+vars (MatchConstr _ ws _)  = vars <$> ws # join
+vars (MatchRecord xws)     = vars <$> (\(_ ↦ w) -> w) <$> toList xws # join

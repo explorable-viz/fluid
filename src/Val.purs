@@ -5,6 +5,7 @@ import Control.Apply (lift2)
 import Data.Array (replicate)
 import Data.List (List)
 import Bindings (Bindings, bindingsMap)
+import Bindings2 (Binding2(..), (↦), Bindings2)
 import DataType (Ctr)
 import Expr (Elim(..), RecDefs)
 import Lattice (
@@ -24,7 +25,7 @@ data Val a =
    Constr a Ctr (List (Val a)) |       -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |   -- always unsaturated
-   Closure (Env a) (RecDefs a) (Elim a)
+   Closure (Env2 a) (RecDefs a) (Elim a)
 
 -- op_fwd will be provided with original (non-hole) arguments, op_bwd with original output and arguments
 newtype PrimOp = PrimOp {
@@ -35,6 +36,7 @@ newtype PrimOp = PrimOp {
 }
 
 type Env = Bindings Val
+type Env2 a = Bindings2 (Val a)
 
 -- Matrices.
 type Array2 a = Array (Array a)
@@ -102,9 +104,10 @@ instance valExpandable :: Expandable (Val Boolean) where
    expand (Hole α) (Matrix β (vss × (i × β1) × (j × β2))) =
       Matrix (α ⪄ β) ((((<$>) (expand (Hole α))) <$> vss) × (i × (α ⪄ β1)) × (j × (α ⪄ β2)))
    expand (Hole α) (Closure ρ δ σ) =
-      Closure (expand (bindingsMap (const (Hole α)) ρ) ρ)
-              (expand (bindingsMap (const (ElimHole α)) δ) δ)
-              (expand (ElimHole α) σ)
+      Closure (expand ((\(Binding2 (x ↦ _)) -> Binding2 (x ↦ Hole α)) <$> ρ) ρ) ?_ (expand (ElimHole α) σ)
+{-
+      (expand (bindingsMap (const (ElimHole α)) δ) δ)
+-}
    expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
    expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
