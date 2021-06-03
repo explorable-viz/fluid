@@ -18,6 +18,7 @@ data Expr a =
    Int a Int |
    Float a Number |
    Str a String |
+   Record a (Bindings Expr a) |
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
@@ -116,6 +117,7 @@ instance slicesExpr :: Slices (Expr Boolean) where
    maybeJoin (Int α n) (Int α' n')                             = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α str) (Str α' str')                         = Str (α ∨ α') <$> (str ≞ str')
    maybeJoin (Float α n) (Float α' n')                         = Float (α ∨ α') <$> (n ≞ n')
+   maybeJoin (Record α xes) (Record α' xes')                   = Record (α ∨ α') <$> maybeJoin xes xes'
    maybeJoin (Constr α c es) (Constr α' c' es')                = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin es es'
    maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
       Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≞ x') `lift2 (×)` (y ≞ y')) <*> maybeJoin e2 e2'
@@ -132,6 +134,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Hole α) e@(Int β n)                  = Int (α ⪄ β) n
    expand (Hole α) e@(Float β n)                = Float (α ⪄ β) n
    expand (Hole α) e@(Str β str)                = Str (α ⪄ β) str
+   expand (Hole α) (Record β xes)               = Record (α ⪄ β) (expand (bindingsMap (const (Hole α)) xes) xes)
    expand (Hole α) (Constr β c es)              = Constr (α ⪄ β) c (expand (Hole α) <$> es)
    expand (Hole α) (Matrix β e1 (x × y) e2)     = Matrix (α ⪄ β) (expand (Hole α) e1) (x × y) (expand (Hole α) e2)
    expand (Hole α) (Lambda σ)                   = Lambda (expand (ElimHole α) σ)
@@ -144,6 +147,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
    expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
+   expand (Record α xes) (Record β xes')        = Record (α ⪄ β) (expand xes xes')
    expand (Constr α c es) (Constr β c' es')     = Constr (α ⪄ β) (c ≜ c') (expand es es')
    expand (Matrix α e1 (x1 × y1) e2) (Matrix β e1' (x2 × y2) e2') =
       Matrix (α ⪄ β) (expand e1 e1') ((x1 ≜ x2) × (y1 ≜ y2)) (expand e2 e2')

@@ -59,6 +59,7 @@ str :: {
    rBracket       :: String,
    then_          :: String
 }
+
 str = {
    arrayLBracket: "[|",
    arrayRBracket: "|]",

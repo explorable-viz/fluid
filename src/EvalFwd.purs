@@ -66,6 +66,8 @@ evalFwd ρ e α' (T.Str _ str) =
    case expand e (Str false str) of
       Str α _ -> V.Str (α ∧ α') str
       _ -> error absurd
+evalFwd ρ e α' (T.Record _ xts) =
+   error "todo"
 evalFwd ρ e α' (T.Constr _ c ts) =
    case expand e (Constr false c (const (Hole false) <$> ts)) of
       Constr α _ es ->

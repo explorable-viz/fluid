@@ -20,6 +20,7 @@ data Val a =
    Int a Int |
    Float a Number |
    Str a String |
+   Record a (Env a) |                  -- always saturated
    Constr a Ctr (List (Val a)) |       -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |   -- always unsaturated
@@ -56,6 +57,7 @@ instance functorVal :: Functor Val where
    map f (Int α n)                  = Int (f α) n
    map f (Float α n)                = Float (f α) n
    map f (Str α str)                = Str (f α) str
+   map f (Record α xvs)             = Record (f α) (bindingsMap ((<$>) f) xvs)
    map f (Constr α c vs)            = Constr (f α) c (((<$>) f) <$> vs)
    -- Purescript can't derive this case
    map f (Matrix α (r × iα × jβ))   = Matrix (f α) (((<$>) ((<$>) f) <$> r) × (f <$> iα) × (f <$> jβ))
@@ -74,6 +76,7 @@ instance slicesVal :: Slices (Val Boolean) where
    maybeJoin (Int α n) (Int α' n')                    = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Float α n) (Float α' n')                = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α str) (Str α' str')                = Str (α ∨ α') <$> (str ≞ str')
+   maybeJoin (Record α xvs) (Record α' xvs')          = Record (α ∨ α') <$> maybeJoin xvs xvs'
    maybeJoin (Constr α c vs) (Constr α' c' us)        = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
    maybeJoin (Matrix α (vss × (i × β) × (j × γ))) (Matrix α' (vss' × (i' × β') × (j' × γ'))) =
       Matrix (α ∨ α') <$> (
@@ -94,6 +97,7 @@ instance valExpandable :: Expandable (Val Boolean) where
    expand (Hole α) (Float β n)                  = Float (α ⪄ β) n
    expand (Hole α) (Str β str)                  = Str (α ⪄ β) str
    expand (Hole α) (Primitive φ vs)             = Primitive φ (expand (Hole α) <$> vs)
+   expand (Hole α) (Record β xvs)               = Record (α ⪄ β) (expand (bindingsMap (const (Hole α)) xvs) xvs)
    expand (Hole α) (Constr β c vs)              = Constr (α ⪄ β) c (expand (Hole α) <$> vs)
    expand (Hole α) (Matrix β (vss × (i × β1) × (j × β2))) =
       Matrix (α ⪄ β) ((((<$>) (expand (Hole α))) <$> vss) × (i × (α ⪄ β1)) × (j × (α ⪄ β2)))
@@ -104,6 +108,7 @@ instance valExpandable :: Expandable (Val Boolean) where
    expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
    expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
+   expand (Record α xvs) (Record β xvs')        = Record (α ⪄ β) (expand xvs xvs')
    expand (Constr α c vs) (Constr β c' vs')     = Constr (α ⪄ β) (c ≜ c') (expand vs vs')
    expand (Matrix α (vss × (i × β) × (j × γ))) (Matrix α' (vss' × (i' × β') × (j' × γ'))) =
       Matrix (α ⪄ α') (expand vss vss' × ((i ≜ i') × (β ⪄ β')) × ((j ≜ j') × (γ ⪄ γ')))

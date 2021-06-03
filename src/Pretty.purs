@@ -10,6 +10,7 @@ import Data.String (Pattern(..), contains) as Data.String
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
 import Bindings (Binding, Bindings(..), (↦))
+import Bindings (toList) as B
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
@@ -33,6 +34,9 @@ brackets = between (text str.lBracket) (text str.rBracket)
 highlightIf :: Boolean -> Endo Doc
 highlightIf false   = identity
 highlightIf true    = between (text "_") (text "_")
+
+colon :: Doc
+colon = text ":"
 
 comma :: Doc
 comma = text ","
@@ -61,12 +65,12 @@ null = empty 0 0
 class ToList a where
    toList :: a -> List a
 
-instance toListExpr :: ToList (E.Expr Boolean)  where
+instance toListExpr :: ToList (E.Expr Boolean) where
    toList (E.Constr _ c (e : e' : Nil))   | c == cCons   = e : toList e'
    toList (E.Constr _ c Nil)              | c == cNil    = Nil
    toList e                                              = error absurd
 
-instance toListVal :: ToList (Val Boolean)  where
+instance toListVal :: ToList (Val Boolean) where
    toList (V.Constr _ c (v : v' : Nil)) | c == cCons  = v : toList v'
    toList (V.Constr _ c Nil)            | c == cNil   = Nil
    toList v                                           = error absurd
@@ -128,10 +132,11 @@ prettyConstr c xs                            = hspace (pretty c : (prettyParensO
 
 instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.Hole α)                = hole
+   pretty (E.Var x)                 = text x
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
-   pretty (E.Var x)                 = text x
+   pretty (E.Record _ xes)          = error "todo"
    pretty (E.Constr _ c es)         = prettyConstr c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Op op)                 = parens (text op)
@@ -148,6 +153,12 @@ instance prettyRecDefs :: Pretty (Bindings Elim Boolean) where
 
 instance prettyRecDef :: Pretty (Binding Elim Boolean) where
    pretty (f ↦ σ) = hspace [text f, text str.equals, pretty σ]
+
+instance prettyRecord :: Pretty (Bindings Val Boolean) where
+   pretty xvs = xvs # B.toList <#> pretty # hcomma # parens
+
+instance prettyField :: Pretty (Binding Val Boolean) where
+   pretty (x ↦ v) = hspace [text x :<>: colon, pretty v]
 
 instance prettyCont :: Pretty (Cont Boolean) where
    pretty (ContHole α)  = hole
@@ -167,6 +178,7 @@ instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
+   pretty (V.Record α xvs)             = highlightIf α (pretty xvs)
    pretty u@(V.Constr _ c vs)
       | c == cNil || c == cCons        = prettyList (toList u) -- list values always printed using list notation
       | otherwise                      = prettyConstr c vs

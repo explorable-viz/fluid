@@ -1,7 +1,7 @@
 module Expl where
 
 import Data.List (List)
-import Bindings (Var)
+import Bindings (Bindings, Var)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Util (type (×))
@@ -17,6 +17,7 @@ data Expl a =
    Int (Env a) Int |
    Float (Env a) Number |
    Str (Env a) String |
+   Record (Env a) (Bindings Expl a) |
    Constr (Env a) Ctr (List (Expl a)) |
    Matrix (Array2 (Expl a)) (Var × Var) (Int × Int) (Expl a) |
    Lambda (Env a) (Elim a) |

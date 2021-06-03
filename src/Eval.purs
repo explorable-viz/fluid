@@ -4,11 +4,12 @@ import Prelude hiding (absurd)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), (\\), length, range, singleton, unzip)
+import Data.List (List(..), (:), (\\), length, range, singleton, unzip, zip)
 import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Traversable (sequence, traverse)
-import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
+import Data.Tuple (uncurry)
+import Bindings (Bindings(..), (:+:), (↦), find, fromList, toList, varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -60,6 +61,12 @@ eval ρ (Op op)       = (T.Op ρ op × _) <$> find op ρ
 eval ρ (Int _ n)     = pure (T.Int ρ n × V.Int false n)
 eval ρ (Float _ n)   = pure (T.Float ρ n × V.Float false n)
 eval ρ (Str _ str)   = pure (T.Str ρ str × V.Str false str)
+eval ρ (Record _ xes) = do
+   let xs × es = toList xes <#> (\(x ↦ e) -> x × e) # unzip
+   ts × vs <- traverse (eval ρ) es <#> unzip
+   let recOf :: forall a . List (a 𝔹) -> Bindings a 𝔹
+       recOf zs = fromList (zip xs zs <#> (uncurry (↦)))
+   pure (T.Record ρ (recOf ts) × V.Record false (recOf vs))
 eval ρ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip

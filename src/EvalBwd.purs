@@ -76,6 +76,8 @@ evalBwd v t@(T.Lambda ρ σ) =
    case expand v (V.Closure (botOf ρ) Empty (botOf σ)) of
       V.Closure ρ' _ σ' -> ρ' × Lambda σ' × false
       _ -> error absurd
+evalBwd v t@(T.Record ρ xts) =
+   error "todo"
 evalBwd v t@(T.Constr ρ c ts) =
    case expand v (V.Constr false c (ts <#> const (V.Hole false))) of
       V.Constr α _ vs ->
