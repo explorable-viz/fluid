@@ -169,9 +169,10 @@ instance prettyBranch :: Pretty (Ctr × Cont Boolean) where
    pretty (c × κ) = hspace [text (show c), text str.rArrow, pretty κ]
 
 instance prettyElim :: Pretty (Elim Boolean) where
-   pretty (ElimHole α)     = hole
-   pretty (ElimVar x κ)    = hspace [text x, text str.rArrow, pretty κ]
-   pretty (ElimConstr κs)  = hcomma (pretty <$> κs) -- looks dodgy
+   pretty (ElimHole α)        = hole
+   pretty (ElimVar x κ)       = hspace [text x, text str.rArrow, pretty κ]
+   pretty (ElimConstr κs)     = hcomma (pretty <$> κs) -- looks dodgy
+   pretty (ElimRecord xs κ)   = error "todo"
 
 instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Hole _)                   = hole

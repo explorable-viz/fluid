@@ -32,4 +32,5 @@ data Expl a =
 data Match a =
    MatchVar Var |
    MatchVarAnon (Val a) |
-   MatchConstr Ctr (List (Match a)) (List Ctr)
+   MatchConstr Ctr (List (Match a)) (List Ctr) |
+   MatchRecord (Bindings Match a)

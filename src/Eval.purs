@@ -13,13 +13,16 @@ import Bindings (Bindings(..), (:+:), (↦), find, fromList, toList, varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim)
 import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
-import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
+import Util (SnocList(..), (:-), MayFail, type (×), (×), absurd, check, error, report, successful)
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
+
+patternMismatch :: String -> String -> String
+patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match _ (ElimHole _) = error absurd
@@ -31,9 +34,24 @@ match (V.Constr _ c vs) (ElimConstr m) = do
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
    ρ × κ' × ws <- matchArgs c vs κ
    pure (ρ × κ' × MatchConstr c ws (keys m \\ singleton c))
-match v (ElimConstr m) = do
-   d <- dataTypeFor (keys m)
-   report ("Pattern mismatch: " <> prettyP v <> " is not a constructor value, expected " <> show d)
+match v (ElimConstr m) =
+   (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
+match (V.Record _ Empty) (ElimRecord SnocNil κ) =
+   pure (Empty × κ × MatchRecord Empty)
+match (V.Record α (_ :+: x ↦ _)) (ElimRecord SnocNil σ) =
+   report ("Pattern mismatch")
+match (V.Record α Empty) (ElimRecord (xs :- x) σ) =
+   report ("Pattern mismatch")
+match (V.Record α (xvs :+: x ↦ v)) (ElimRecord (xs :- x') σ) = do
+   check (x == x') ("Pattern mismatch: found '" <> show x <> "', expected '" <> show x' <> "'")
+   ρ × σ' × ws <- match (V.Record α xvs) (ElimRecord xs σ)
+   case ws of
+      MatchRecord xws -> do
+         ρ' × κ × w <- match v (asElim σ')
+         pure ((ρ <> ρ') × κ × MatchRecord (xws :+: x ↦ w))
+      _ -> error absurd
+match v (ElimRecord xs _) =
+   report ("Pattern mismatch: " <> prettyP v <> " is not a record value, expected " <> show xs)
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchArgs _ Nil κ = pure (Empty × κ × Nil)
