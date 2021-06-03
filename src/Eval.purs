@@ -36,20 +36,9 @@ match (V.Constr _ c vs) (ElimConstr m) = do
    pure (ρ × κ' × MatchConstr c ws (keys m \\ singleton c))
 match v (ElimConstr m) =
    (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
-match (V.Record _ Empty) (ElimRecord SnocNil κ) =
-   pure (Empty × κ × MatchRecord Empty)
-match (V.Record _ (_ :+: x ↦ _)) (ElimRecord SnocNil _) =
-   report (patternMismatch "end of record pattern" (show x))
-match (V.Record _ Empty) (ElimRecord (_ :- x) _) =
-   report (patternMismatch "end of record" (show x))
-match (V.Record α (xvs :+: x ↦ v)) (ElimRecord (xs :- x') σ) = do
-   check (x == x') (patternMismatch (show x) (show x'))
-   ρ × σ' × ws <- match (V.Record α xvs) (ElimRecord xs σ)
-   case ws of
-      MatchRecord xws -> do
-         ρ' × κ × w <- match v (asElim σ')
-         pure ((ρ <> ρ') × κ × MatchRecord (xws :+: x ↦ w))
-      _ -> error absurd
+match (V.Record _ xvs) (ElimRecord xs κ) = do
+   ρ × κ' × xws <- matchRecord xvs xs κ
+   pure (ρ × κ' × MatchRecord xws)
 match v (ElimRecord xs _) =
    report (patternMismatch (prettyP v) (show xs))
 
@@ -64,8 +53,14 @@ matchArgs c (_ : vs) (ContExpr _) = report $
 matchArgs _ _ _ = error absurd
 
 matchRecord :: Bindings Val 𝔹 -> SnocList Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings Match 𝔹)
-matchRecord Empty SnocNil κ = pure (Empty × κ × Empty)
-matchRecord _ _ _ = error "todo"
+matchRecord Empty SnocNil κ               = pure (Empty × κ × Empty)
+matchRecord (_ :+: x ↦ _) SnocNil _       = report (patternMismatch "end of record pattern" (show x))
+matchRecord Empty (_ :- x) _              = report (patternMismatch "end of record" (show x))
+matchRecord (xvs :+: x ↦ v) (xs :- x') σ  = do
+   check (x == x') (patternMismatch (show x) (show x'))
+   ρ × σ' × xws <- matchRecord xvs xs σ
+   ρ' × κ × w <- match v (asElim σ')
+   pure ((ρ <> ρ') × κ × (xws :+: x ↦ w))
 
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs _ _ Empty = Empty
