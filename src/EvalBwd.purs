@@ -8,6 +8,7 @@ import Data.List (length) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
+import Data.Profunctor.Strong (first)
 import DataType (cPair)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -25,6 +26,7 @@ unmatch ρ (MatchConstr _ ws _)      = unmatchArgs ρ (reverse ws)
 unmatch ρ (MatchRecord _)           = error "todo"
 
 -- matches are in a reverse order to the original arguments, to correspond with the 'snoc' order of ρ
+-- TODO: swap result order?
 unmatchArgs :: Env 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Env 𝔹
 unmatchArgs ρ Nil       = ρ × Empty
 unmatchArgs ρ (w : ws)  = ρ'' × (ρ1 <> ρ2)
@@ -54,15 +56,21 @@ matchBwd ρ κ α (MatchRecord xws)             = error "todo" -- V.Record ?_ ?_
 matchBwd _ _ _ _                             = error absurd
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgsBwd ρ κ α Nil       = Nil × κ
-matchArgsBwd ρ κ α (w : ws)  =
-   let ρ' × ρ1   = unmatch ρ w
-       v  × σ    = matchBwd ρ1 κ α w
-       vs × κ'   = matchArgsBwd ρ' (ContElim σ) α ws in
+matchArgsBwd Empty κ α Nil       = Nil × κ
+matchArgsBwd (_ :+: _) κ α Nil   = Nil × κ
+matchArgsBwd ρρ' κ α (w : ws) =
+   let ρ × ρ'  = unmatch ρρ' w
+       v × σ   = matchBwd ρ' κ α w
+       vs × κ' = matchArgsBwd ρ (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
 
 matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings Match 𝔹 -> Bindings Val 𝔹 × Cont 𝔹
-matchRecordBwd _ = error "todo"
+matchRecordBwd Empty κ α Empty         = Empty × κ
+matchRecordBwd ρρ' κ α (xws :+: x ↦ w) =
+   let ρ × ρ'  = unmatch ρρ' w
+       v × σ   = matchBwd ρ' κ α w in
+   (first (_ :+: x ↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
+matchRecordBwd _ _ _ _ = error "todo"
 
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var ρ x) = (botOf ρ ◃ x ↦ v) × Var x × false
