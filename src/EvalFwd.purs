@@ -2,10 +2,11 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 
-import Bindings (Bindings(..), Var, (:+:), (↦), find, varAnon)
+import Bindings (Bindings(..), Var, (:+:), (↦), bindingsMap, find, toSnocList, varAnon)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
+import Data.Profunctor.Strong ((***))
 import Data.Tuple (fst)
 import DataType (cPair)
 import Eval (closeDefs)
@@ -14,7 +15,7 @@ import Expl (Expl, Match)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asElim, asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (match_fwd) as P
-import Util (SnocList(..), type (×), (×), (:-), (!), absurd, assert, error, mustLookup, replicate, successful)
+import Util (type (×), (×), (!), absurd, assert, error, mustLookup, replicate, successful)
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
@@ -31,30 +32,34 @@ matchFwd v σ (T.MatchConstr c ws cs) =
    case expand v (V.Constr false c (const (V.Hole false) <$> ws)) ×
         expand σ (ElimConstr (fromFoldable ((_ × ContHole false) <$> c : cs))) of
       V.Constr α _ vs × ElimConstr m ->
-         ρ × κ × (α ∧ α')
-         where ρ × κ × α' = matchArgsFwd vs (mustLookup c m) ws
+         (identity *** (_ ∧ α)) (matchArgsFwd vs (mustLookup c m) ws)
       _ -> error absurd
-matchFwd v σ (T.MatchRecord xws) = error "todo"
+matchFwd v σ (T.MatchRecord xws) =
+   let xs = toSnocList xws <#> (\(x ↦ _) -> x) in
+   case expand v (V.Record false (bindingsMap (const (V.Hole false)) xws)) ×
+        expand σ (ElimRecord xs ?_) of
+      V.Record α xvs × ElimRecord _ κ ->
+         ?_ (matchRecordFwd xvs κ xws)
+      _ -> error absurd
 
 matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchArgsFwd Nil κ Nil = Empty × κ × true
 matchArgsFwd (v : vs) κ (w : ws) =
    case expand κ (ContElim (ElimHole false)) of
       ContElim σ ->
-         (ρ <> ρ') × κ' × (α ∧ α')
-         where ρ  × κ  × α    = matchFwd v σ w
-               ρ' × κ' × α'   = matchArgsFwd vs κ ws
+         (((ρ <> _) *** identity) *** (_ ∧ α)) (matchArgsFwd vs κ ws)
+         where ρ × κ × α = matchFwd v σ w
       _ -> error absurd
 matchArgsFwd _ _ _ = error absurd
 
-matchRecordFwd :: Bindings Val 𝔹 -> SnocList Var -> Cont 𝔹 -> Bindings Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchRecordFwd Empty SnocNil κ Empty = Empty × κ × true
-matchRecordFwd (xvs :+: x ↦ v) (xs :- x') σ (xws :+: x'' ↦ w) | x == x' && x' == x'' =
+matchRecordFwd :: Bindings Val 𝔹 -> Cont 𝔹 -> Bindings Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchRecordFwd Empty κ Empty = Empty × κ × true
+matchRecordFwd (xvs :+: x ↦ v) σ (xws :+: x' ↦ w) | x == x' =
    (ρ <> ρ') × κ × (α ∧ α')
    where
-   ρ × σ' × α  = matchRecordFwd xvs xs σ xws
+   ρ × σ' × α  = matchRecordFwd xvs σ xws
    ρ' × κ × α' = matchFwd v (asElim σ') w
-matchRecordFwd _ _ _ _ = error absurd
+matchRecordFwd _ _ _ = error absurd
 
 evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
 evalFwd ρ e _ (T.Var _ x) =

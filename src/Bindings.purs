@@ -6,7 +6,7 @@ import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
    botOf, definedJoin, expand, maybeJoin, neg
 )
-import Util (Endo, MayFail, type (×), (×), (≞), (≜), absurd, error, fromJust, report, whenever)
+import Util (Endo, MayFail, SnocList(..), type (×), (×), (:-), (≞), (≜), absurd, error, fromJust, report, whenever)
 
 type Var = String -- newtype?
 
@@ -61,9 +61,15 @@ fromList :: forall t a . List (Binding t a) -> Bindings t a
 fromList Nil      = Empty
 fromList (xv : ρ) = fromList ρ :+: xv
 
+-- Delete once we treat Bindings as snoc lists.
 toList :: forall t a . Bindings t a -> List (Binding t a)
 toList Empty      = Nil
 toList (ρ :+: xv) = toList ρ <> singleton xv
+
+-- Probably better to recast Bindings as a snoc list.
+toSnocList :: forall t a . Bindings t a -> SnocList (Binding t a)
+toSnocList Empty = SnocNil
+toSnocList (ρ :+: xv) = toSnocList ρ :- xv
 
 bindingsMap :: forall t a u b . (t a -> u b) -> Bindings t a -> Bindings u b
 bindingsMap _ Empty = Empty
