@@ -2,7 +2,7 @@ module Pretty (class Pretty, pretty, prettyP, module P) where
 
 import Prelude hiding (absurd, between)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), (:), fromFoldable)
+import Data.List (List(..), (:), fromFoldable, reverse)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
 import Data.Profunctor.Choice ((|||))
@@ -10,13 +10,17 @@ import Data.String (Pattern(..), contains) as Data.String
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
 import Bindings (Binding, Bindings(..), (↦))
+import Bindings2 (Bind(..))
 import Bindings (toList) as B
+import Bindings2 ((↦)) as B
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
 import Parse (str)
 import Util (Endo, type (×), (×), type (+), absurd, error, intersperse)
+import Util.SnocList (SnocList)
+import Util.SnocList (toList) as S
 import Val (PrimOp, Val)
 import Val (Val(..)) as V
 
@@ -154,11 +158,17 @@ instance prettyRecDefs :: Pretty (Bindings Elim Boolean) where
 instance prettyRecDef :: Pretty (Binding Elim Boolean) where
    pretty (f ↦ σ) = hspace [text f, text str.equals, pretty σ]
 
-instance prettyRecord :: Pretty (Bindings Val Boolean) where
+instance prettyRecord_old :: Pretty (Bindings Val Boolean) where
    pretty xvs = xvs # B.toList <#> pretty # hcomma # parens
 
-instance prettyField :: Pretty (Binding Val Boolean) where
+instance prettyRecord :: Pretty (SnocList (Bind (Val Boolean))) where
+   pretty xvs = xvs # S.toList # reverse <#> pretty # hcomma # parens
+
+instance prettyField_old :: Pretty (Binding Val Boolean) where
    pretty (x ↦ v) = hspace [text x :<>: colon, pretty v]
+
+instance prettyField :: Pretty (Bind (Val Boolean)) where
+   pretty (Bind (x B.↦ v)) = hspace [text x :<>: colon, pretty v]
 
 instance prettyCont :: Pretty (Cont Boolean) where
    pretty (ContHole α)  = hole

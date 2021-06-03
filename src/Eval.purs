@@ -36,7 +36,7 @@ match (V.Constr _ c vs) (ElimConstr m) = do
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
    (second (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs c vs κ
 match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
-match (V.Record _ xvs) (ElimRecord xs κ)  = (second MatchRecord) <$> matchRecord xvs xs κ
+match (V.Record _ xvs) (ElimRecord xs κ)  = (second MatchRecord) <$> matchRecord (asBindings xvs) xs κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -80,7 +80,7 @@ eval ρ (Record _ xes) = do
    ts × vs <- traverse (eval ρ) es <#> unzip
    let recOf :: forall a . List (a 𝔹) -> Bindings a 𝔹
        recOf zs = fromList (zip xs zs <#> (uncurry (↦)))
-   pure (T.Record ρ (recOf ts) × V.Record false (recOf vs))
+   pure (T.Record ρ (recOf ts) × V.Record false (asBindings2 (recOf vs)))
 eval ρ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
