@@ -1,7 +1,8 @@
 module Expl where
 
 import Prelude
-import Data.List (List, foldl)
+import Data.Foldable (sum)
+import Data.List (List)
 import Bindings (Bindings, Var, (↦), foldBindings)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
@@ -38,5 +39,5 @@ data Match a =
 numVars :: forall a . Match a -> Int
 numVars (MatchVar _)          = 1
 numVars (MatchVarAnon _)      = 0
-numVars (MatchConstr _ ws _)  = foldl (+) 0 (numVars <$> ws)
+numVars (MatchConstr _ ws _)  = sum (numVars <$> ws)
 numVars (MatchRecord xws)     = foldBindings (\(_ ↦ w) n -> n + numVars w) 0 xws
