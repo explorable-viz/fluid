@@ -3,6 +3,7 @@ module Util.SnocList where
 import Prelude
 import Data.Function (on)
 import Data.List (List(..), (:))
+import Data.List (reverse) as L
 
 -- Snoc lists. Could reformuate Bindings as SnocList Binding.
 data SnocList a =
@@ -14,28 +15,16 @@ derive instance snocListFunctor :: Functor SnocList
 infix 6 Snoc as :-
 
 reverse :: SnocList ~> SnocList
-reverse = go SnocNil
-  where
-  go acc SnocNil = acc
-  go acc (xs :- x) = go (acc :- x) xs
+reverse = toList >>> L.reverse >>> fromList
 
-cons :: forall a. a -> SnocList a -> SnocList a
-cons x xs = reverse (reverse xs :- x)
+-- (Order-preserving) natural isomorphisms to List.
+toList :: SnocList ~> List
+toList SnocNil = Nil
+toList (xs :- x) = x : toList xs
 
--- There are (at least) two isomorphisms to List, one order preserving, one order inverting.
-toList :: forall a . SnocList a -> List a
-toList = reverse >>> toListRev
-
-fromList :: forall a . List a -> SnocList a
-fromList = reverse <<< fromListRev
-
-toListRev :: SnocList ~> List
-toListRev SnocNil = Nil
-toListRev (xs :- x) = x : toListRev xs
-
-fromListRev :: List ~> SnocList
-fromListRev Nil = SnocNil
-fromListRev (x : xs) = fromListRev xs :- x
+fromList :: List ~> SnocList
+fromList Nil = SnocNil
+fromList (x : xs) = fromList xs :- x
 
 instance showSnocList :: Show a => Show (SnocList a) where
    show = toList >>> show
