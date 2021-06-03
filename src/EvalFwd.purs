@@ -44,12 +44,9 @@ matchFwd v σ (T.MatchRecord xws) =
 
 matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchArgsFwd Nil κ Nil = Empty × κ × true
-matchArgsFwd (v : vs) κ (w : ws) =
-   case expand κ (ContElim (ElimHole false)) of
-      ContElim σ ->
-         (first (ρ <> _) *** (_ ∧ α)) (matchArgsFwd vs κ ws)
-         where ρ × κ × α = matchFwd v σ w
-      _ -> error absurd
+matchArgsFwd (v : vs) σ (w : ws) =
+   (first (ρ <> _) *** (_ ∧ α)) (matchArgsFwd vs κ ws)
+   where ρ × κ × α = matchFwd v (asElim σ) w
 matchArgsFwd _ _ _ = error absurd
 
 matchRecordFwd :: Bindings Val 𝔹 -> Cont 𝔹 -> Bindings Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
