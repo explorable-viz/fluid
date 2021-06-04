@@ -22,6 +22,12 @@ type Bindings a = SnocList (Bind a)
 
 derive instance functorBind :: Functor Bind
 
+key :: forall a . Bind a -> Var
+key (x ↦ _) = x
+
+val :: forall a . Bind a -> a
+val (_ ↦ v) = v
+
 instance foldableBind :: Foldable Bind where
    foldl f b (_ ↦ v) = f b v
    foldr x = foldrDefault x

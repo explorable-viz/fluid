@@ -2,7 +2,7 @@ module Expl where
 
 import Prelude
 import Data.List (List(..), singleton)
-import Bindings (Bindings, Var, (↦))
+import Bindings (Bindings, Var, (↦), val)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Util (type (×))
@@ -41,4 +41,4 @@ vars (MatchVar x)          = singleton x
 vars (MatchVarAnon _)      = Nil
 vars (MatchConstr _ ws _)  = ws <#> vars # join
 vars (MatchRecord xws)     = ws <#> vars # join
-   where ws = xws # (reverse >>> toList) <#> (\(_ ↦ w) -> w)
+   where ws = xws # (reverse >>> toList) <#> val

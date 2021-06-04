@@ -2,12 +2,12 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 
-import Bindings (Bindings, (↦), find, varAnon)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
-import Data.Profunctor.Strong ((***), first, second)
+import Data.Profunctor.Strong ((***), (&&&), first, second)
 import Data.Tuple (fst)
+import Bindings (Bindings, (↦), find, key, val, varAnon)
 import DataType (cPair)
 import Eval (closeDefs)
 import Expl (Expl(..), Match(..), VarDef(..)) as T
@@ -37,7 +37,7 @@ matchFwd v σ (T.MatchConstr c ws cs) =
          (second (_ ∧ α)) (matchArgsFwd vs (mustLookup c m) ws)
       _ -> error absurd
 matchFwd v σ (T.MatchRecord xws) =
-   let xs = xws <#> (\(x ↦ _) -> x) in
+   let xs = xws <#> key in
    case expand v (V.Record false (map (const (V.Hole false)) <$> xws)) ×
         expand σ (ElimRecord xs (ContHole false)) of
       V.Record α xvs × ElimRecord _ κ ->
@@ -82,8 +82,8 @@ evalFwd ρ e α' (T.Str _ str) =
 evalFwd ρ e α' (T.Record _ xts) =
    case expand e (Record false (map (const (Hole false)) <$> xts)) of
       Record α xes ->
-         let xs × ts = xts <#> (\(x ↦ t) -> x × t) # S.unzip
-             es = xes <#> (\(_ ↦ e') -> e')
+         let xs × ts = xts <#> (key &&& val) # S.unzip
+             es = xes <#> val
              vs = (\(e' × t) -> evalFwd ρ e' α' t) <$> S.zip es ts in
          V.Record (α ∧ α') (S.zipWith (↦) xs vs)
       _ -> error absurd

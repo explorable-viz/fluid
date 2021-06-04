@@ -203,7 +203,8 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
    pretty (S.Int α n)                  = highlightIf α (text (show n))
    pretty (S.Float α n)                = highlightIf α (text (show n))
    pretty (S.Str α str)                = highlightIf α (text (show str))
-   pretty r@(S.Constr α c es)          = prettyConstr c es
+   pretty (S.Constr α c es)            = prettyConstr c es
+   pretty (S.Record α xes)             = error "todo"
    pretty (S.Matrix α e (x × y) e')    = highlightIf α (hspace (init <> quant))
       where
       init = [text str.arrayLBracket, pretty e, text str.bar]

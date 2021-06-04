@@ -7,9 +7,9 @@ import Data.Either (Either(..), note)
 import Data.List (List(..), (:), (\\), length, range, singleton, unzip)
 import Data.Map (lookup)
 import Data.Map.Internal (keys)
-import Data.Profunctor.Strong (second)
+import Data.Profunctor.Strong ((&&&), second)
 import Data.Traversable (sequence, traverse)
-import Bindings (Bindings, (↦), find, varAnon, Var)
+import Bindings (Bindings, (↦), find, key, val, varAnon, Var)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -75,7 +75,7 @@ eval ρ (Int _ n)     = pure (T.Int ρ n × V.Int false n)
 eval ρ (Float _ n)   = pure (T.Float ρ n × V.Float false n)
 eval ρ (Str _ str)   = pure (T.Str ρ str × V.Str false str)
 eval ρ (Record _ xes) = do
-   let xs × es = xes <#> (\(x ↦ e) -> x × e) # S.unzip
+   let xs × es = xes <#> (key &&& val) # S.unzip
    ts × vs <- traverse (eval ρ) es <#> S.unzip
    pure (T.Record ρ (zipWith (↦) xs ts) × V.Record false (zipWith (↦) xs vs))
 eval ρ (Constr _ c es) = do

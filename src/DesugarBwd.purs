@@ -1,6 +1,7 @@
 module DesugarBwd where
 
 import Prelude hiding (absurd)
+
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
@@ -8,8 +9,9 @@ import Data.List (List(..), (:), (\\), singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
+import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry, fst, snd)
-import Bindings (Bind, (↦))
+import Bindings (Bind, (↦), key, val)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import DesugarFwd (elimBool, totaliseConstrFwd)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -18,6 +20,7 @@ import Lattice (𝔹, (∨), expand)
 import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
 import Util.SnocList (SnocList(..), (:-), fromList)
+import Util.SnocList (unzip, zip, zipWith) as S
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -64,9 +67,17 @@ exprBwd e (Str _ str) =
    case expand e (E.Str false str) of
       E.Str α _ -> Str α str
       _ -> error absurd
-exprBwd e (Constr _ c es) =
-   case expand e (E.Constr false c (const (E.Hole false) <$> es)) of
-      E.Constr α _ es' -> Constr α c (uncurry exprBwd <$> zip es' es)
+exprBwd e (Constr _ c ss) =
+   case expand e (E.Constr false c (const (E.Hole false) <$> ss)) of
+      E.Constr α _ es -> Constr α c (uncurry exprBwd <$> zip es ss)
+      _ -> error absurd
+exprBwd e (Record _ xss) =
+   case expand e (E.Record false (map (const (E.Hole false)) <$> xss)) of
+      E.Record α xes ->
+         let xs × ss = xss <#> (key &&& val) # S.unzip
+             es = xes <#> val
+             ss' = uncurry exprBwd <$> S.zip es ss in
+         Record α (S.zipWith (↦) xs ss')
       _ -> error absurd
 exprBwd e (Matrix _ s (x × y) s') =
    case expand e (E.Matrix false (E.Hole false) (x × y) (E.Hole false)) of

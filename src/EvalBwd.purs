@@ -2,13 +2,13 @@ module EvalBwd where
 
 import Prelude hiding (absurd)
 
-import Bindings (Bindings, Bind, (↦), (◃), foldBindings, varAnon)
 import Data.Foldable (length)
 import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
-import Data.Profunctor.Strong (first)
+import Data.Profunctor.Strong ((&&&), first)
+import Bindings (Bindings, Bind, (↦), (◃), foldBindings, key, val, varAnon)
 import DataType (cPair)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..), vars)
@@ -40,7 +40,7 @@ matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
 matchBwd ρ κ α (MatchRecord xws)             = V.Record α xvs × ElimRecord xs κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
-         xs = (\(x ↦ _) -> x) <$> xws
+         xs = key <$> xws
 matchBwd _ _ _ _                             = error absurd
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
@@ -82,8 +82,8 @@ evalBwd v t@(T.Lambda ρ σ) =
 evalBwd v t@(T.Record ρ xts) =
    case expand v (V.Record false (xts <#> map (const (V.Hole false)))) of
       V.Record α xvs ->
-         let xs × ts = xts <#> (\(x ↦ t) -> x × t) # S.unzip
-             vs = xvs <#> (\(_ ↦ v') -> v')
+         let xs × ts = xts <#> (key &&& val) # S.unzip
+             vs = xvs <#> val
          -- Could unify with similar function in constructor case
              evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × SnocList (Expr 𝔹) × 𝔹)
              evalArg_bwd (v' × t') (ρ' × es × α') = (ρ' ∨ ρ'') × (es :- e) × (α' ∨ α'')
