@@ -9,6 +9,7 @@ import Data.Bifunctor (bimap)
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
 import Bindings (Bindings(..), Var, (:+:), (↦))
+import Bindings2 (asBindings, asBindings2)
 import SExpr (Expr) as S
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -34,7 +35,7 @@ loadFile folder file = do
 loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file ρ = do
    src <- loadFile "fluid/lib" file
-   pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module ρ))
+   pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module (asBindings2 ρ) <#> asBindings))
 
 openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file = do

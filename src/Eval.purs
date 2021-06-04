@@ -8,7 +8,7 @@ import Data.List (List(..), (:), (\\), length, range, singleton, unzip)
 import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Newtype (unwrap)
-import Data.Profunctor.Strong (first, (***))
+import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (curry)
 import Bindings (Bindings(..), Var, (:+:), (↦), find, varAnon)
@@ -30,16 +30,16 @@ import Val (Val(..)) as V
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
+match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × Match 𝔹)
 match _ (ElimHole _)                      = error absurd
-match v (ElimVar x κ)   | x == varAnon    = pure (Empty × κ × MatchVarAnon v)
-                        | otherwise       = pure ((Empty :+: x ↦ v) × κ × MatchVar x)
+match v (ElimVar x κ)   | x == varAnon    = pure (Lin × κ × MatchVarAnon v)
+                        | otherwise       = pure ((Lin :- Bind (x B.↦ v)) × κ × MatchVar x)
 match (V.Constr _ c vs) (ElimConstr m) = do
    checkConsistent "Pattern mismatch: " c (keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
-   (first asBindings *** (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs c vs κ
+   (second (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs c vs κ
 match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
-match (V.Record _ xvs) (ElimRecord xs κ)  = (first asBindings *** MatchRecord) <$> (matchRecord xvs xs κ)
+match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs xs κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -47,7 +47,7 @@ matchArgs _ Nil κ = pure (Lin × κ × Nil)
 matchArgs c (v : vs) (ContElim σ) = do
    ρ  × κ'  × w  <- match v σ
    ρ' × κ'' × ws <- matchArgs c vs κ'
-   pure ((asBindings2 ρ <> ρ') × κ'' × (w : ws))
+   pure ((ρ <> ρ') × κ'' × (w : ws))
 matchArgs c (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _ = error absurd
@@ -58,7 +58,7 @@ matchRecord (xvs :- Bind (x B.↦ v)) (xs :- x') σ = do
    check (x == x') (patternMismatch (show x) (show x'))
    ρ × σ' × xws <- matchRecord xvs xs σ
    ρ' × κ × w <- match v (asElim σ')
-   pure (asBindings2 (asBindings ρ <> ρ') × κ × (xws :- Bind (x B.↦ w)))
+   pure ((ρ <> ρ') × κ × (xws :- Bind (x B.↦ w)))
 matchRecord (_ :- Bind (x B.↦ _)) Lin _ = report (patternMismatch "end of record pattern" (show x))
 matchRecord Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
 
@@ -117,7 +117,7 @@ eval ρ (App e e') = do
       V.Closure ρ1 δ σ -> do
          let ρ2 = closeDefs ρ1 (asBindings δ) (asBindings δ)
          ρ3 × e'' × w <- match v' σ
-         t'' × v'' <- eval (asBindings ρ1 <> asBindings ρ2 <> ρ3) (asExpr e'')
+         t'' × v'' <- eval (asBindings (ρ1 <> ρ2 <> ρ3)) (asExpr e'')
          pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
          let vs' = vs <> singleton v'
@@ -130,14 +130,14 @@ eval ρ (App e e') = do
 eval ρ (Let (VarDef σ e) e') = do
    t × v <- eval ρ e
    ρ' × _ × w <- match v σ -- terminal type of eliminator is unit, represented as hole
-   t' × v' <- eval (ρ <> ρ') e'
+   t' × v' <- eval (ρ <> asBindings ρ') e'
    pure (T.Let (T.VarDef w t) t' × v')
 
-eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
+eval_module :: Env2 𝔹 -> Module 𝔹 -> MayFail (Env2 𝔹)
 eval_module ρ (Module Nil) = pure ρ
 eval_module ρ (Module (Left (VarDef σ e) : ds)) = do
-   _  × v <- eval ρ e
+   _  × v <- eval (asBindings ρ) e
    ρ' × _ × w  <- match v σ
    eval_module (ρ <> ρ') (Module ds)
 eval_module ρ (Module (Right δ : ds)) =
-   eval_module (ρ <> asBindings (closeDefs (asBindings2 ρ) (asBindings δ) (asBindings δ))) (Module ds)
+   eval_module (ρ <> closeDefs ρ (asBindings δ) (asBindings δ)) (Module ds)

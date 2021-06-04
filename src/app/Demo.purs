@@ -9,6 +9,7 @@ import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 import App.Renderer (MatrixFig, {-drawBarChart, drawTable, -}drawFigure, matrixFig)
 import Bindings ((↦), find, update)
+import Bindings2 (asBindings, asBindings2)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
@@ -27,7 +28,7 @@ selectCell i j i' j' = Matrix true (insertMatrix i j (Hole true) (holeMatrix i' 
 -- the environment that we can easily inspect.
 splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
 splitDefs ρ (S.Let defs s) =
-   (desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ) <#> (_ × s)
+   (desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module (asBindings2 ρ) <#> asBindings) <#> (_ × s)
 
 type ConvExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
 
