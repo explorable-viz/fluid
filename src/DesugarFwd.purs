@@ -11,16 +11,16 @@ import Data.Map (Map, fromFoldable, singleton, size, toUnfoldable)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings (Binding, (↦), fromList, varAnon)
-import Bindings2 (asBindings2)
+import Bindings2 (Bind(..), (↦), varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
-import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
+import Expr (Expr(..), Module(..), RecDefs2, VarDef(..)) as E
 import Lattice (𝔹, maybeJoin)
 import SExpr (
    Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
 import Util (MayFail, type (+), type (×), (×), absurd, assert, error, fromJust, successful)
+import Util.SnocList (fromList)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd
@@ -41,7 +41,7 @@ elimBool κ κ' = ElimConstr (fromFoldable [cTrue × κ, cFalse × κ'])
 moduleFwd :: Module 𝔹 -> MayFail (E.Module 𝔹)
 moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarDefs <$> ds))
    where
-   varDefOrRecDefsFwd :: VarDef 𝔹 + RecDefs 𝔹 -> MayFail (E.VarDef 𝔹 + E.RecDefs 𝔹)
+   varDefOrRecDefsFwd :: VarDef 𝔹 + RecDefs 𝔹 -> MayFail (E.VarDef 𝔹 + E.RecDefs2 𝔹)
    varDefOrRecDefsFwd (Left d)      = Left <$> varDefFwd d
    varDefOrRecDefsFwd (Right xcs)   = Right <$> recDefsFwd xcs
 
@@ -60,13 +60,13 @@ varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
 
 -- In the formalism, "group by name" is part of the syntax.
 -- cs desugar_fwd σ
-recDefsFwd :: RecDefs 𝔹 -> MayFail (E.RecDefs 𝔹)
+recDefsFwd :: RecDefs 𝔹 -> MayFail (E.RecDefs2 𝔹)
 recDefsFwd xcs = fromList <$> toList <$> traverse recDefFwd xcss
    where
    xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 
-recDefFwd :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
-recDefFwd xcs = (fst (head xcs) ↦ _) <$> branchesFwd_curried (snd <$> xcs)
+recDefFwd :: NonEmptyList (Clause 𝔹) -> MayFail (Bind (Elim 𝔹))
+recDefFwd xcs = (Bind <<< (fst (head xcs) ↦ _)) <$> branchesFwd_curried (snd <$> xcs)
 
 -- s desugar_fwd e
 exprFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
@@ -109,7 +109,7 @@ exprFwd (ListComp α s_body (NonEmptyList (Generator p s :| q : qs))) = do
    σ <- patternFwd p (ContExpr e)
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totaliseFwd (ContElim σ) α)))) <$> exprFwd s
 exprFwd (Let ds s)               = varDefsFwd (ds × s)
-exprFwd (LetRec xcs s)           = E.LetRec <$> (asBindings2 <$> recDefsFwd xcs) <*> exprFwd s
+exprFwd (LetRec xcs s)           = E.LetRec <$> recDefsFwd xcs <*> exprFwd s
 
 -- l desugar_fwd e
 listRestFwd :: ListRest 𝔹 -> MayFail (E.Expr 𝔹)

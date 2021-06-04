@@ -4,14 +4,15 @@ import Prelude hiding (absurd)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), (\\), length, range, singleton, unzip, zipWith)
+import Data.List (List(..), (:), (\\), length, range, singleton, unzip)
 import Data.Map (lookup)
 import Data.Map.Internal (keys)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (curry)
-import Bindings (Bindings(..), Var, (:+:), (↦), find, toList, varAnon)
-import Bindings2 (Bindings2, Bind(..), asBindings, asBindings2)
+import Bindings (Bindings(..), Var, (:+:), (↦), find, varAnon)
+import Bindings2 (Bind(..), asBindings, asBindings2)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -20,7 +21,8 @@ import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
-import Util.SnocList (SnocList(..), (:-), fromList)
+import Util.SnocList (SnocList(..), (:-), zipWith)
+import Util.SnocList (unzip) as S
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
@@ -76,11 +78,9 @@ eval ρ (Int _ n)     = pure (T.Int (asBindings2 ρ) n × V.Int false n)
 eval ρ (Float _ n)   = pure (T.Float (asBindings2 ρ) n × V.Float false n)
 eval ρ (Str _ str)   = pure (T.Str (asBindings2 ρ) str × V.Str false str)
 eval ρ (Record _ xes) = do
-   let xs × es = toList xes <#> (\(x ↦ e) -> x × e) # unzip
-   ts × vs <- traverse (eval ρ) es <#> unzip
-   let recOf :: forall a . List (a 𝔹) -> Bindings2 (a 𝔹)
-       recOf zs = fromList (zipWith (curry Bind) xs zs)
-   pure (T.Record (asBindings2 ρ) (recOf ts) × V.Record false (recOf vs))
+   let xs × es = xes <#> unwrap # S.unzip
+   ts × vs <- traverse (eval ρ) es <#> S.unzip
+   pure (T.Record (asBindings2 ρ) (zipWith (curry Bind) xs ts) × V.Record false (zipWith (curry Bind) xs vs))
 eval ρ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
@@ -139,4 +139,4 @@ eval_module ρ (Module (Left (VarDef σ e) : ds)) = do
    ρ' × _ × w  <- match v σ
    eval_module (ρ <> ρ') (Module ds)
 eval_module ρ (Module (Right δ : ds)) =
-   eval_module (ρ <> closeDefs ρ δ δ) (Module ds)
+   eval_module (ρ <> closeDefs ρ (asBindings δ) (asBindings δ)) (Module ds)

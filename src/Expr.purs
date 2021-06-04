@@ -4,8 +4,8 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
-import Bindings (Bindings, Var, (⪂))
-import Bindings2 (Bindings2)
+import Bindings (Bindings, (⪂))
+import Bindings2 (Bindings2, Var)
 import DataType (Ctr)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg
@@ -55,7 +55,7 @@ asExpr (ContHole α)  = Hole α
 asExpr (ContElim _)  = error "Expression expected"
 asExpr (ContExpr e)  = e
 
-data Module a = Module (List (VarDef a + RecDefs a))
+data Module a = Module (List (VarDef a + RecDefs2 a))
 
 -- ======================
 -- boilerplate

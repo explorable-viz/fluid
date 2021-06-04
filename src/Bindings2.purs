@@ -13,6 +13,8 @@ import Util.SnocList (SnocList(..), (:-))
 
 type Var = String -- newtype?
 
+varAnon = "_" :: Var
+
 newtype Bind a = Bind (Var × a)
 type Bindings2 a = SnocList (Bind a)
 
