@@ -1,9 +1,7 @@
 module DesugarBwd where
 
 import Prelude hiding (absurd)
-import Bindings (Binding, (↦))
-import Bindings2 (Bind)
-import Bindings2 ((↦)) as B
+import Bindings2 (Bind, (↦))
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
@@ -36,13 +34,13 @@ recDefsBwd :: E.RecDefs2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
 recDefsBwd xσs xcs = join (recDefsBwd' xσs (groupBy (eq `on` fst) xcs))
 
 recDefsBwd' :: E.RecDefs2 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
-recDefsBwd' Lin _                                             = error absurd
-recDefsBwd' (Lin :- x B.↦ σ) (NonEmptyList (xcs :| Nil))      = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
-recDefsBwd' (_ :- _ :- _) (NonEmptyList (_ :| Nil))           = error absurd
-recDefsBwd' (ρ :- x B.↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss)) =
+recDefsBwd' Lin _                                              = error absurd
+recDefsBwd' (Lin :- x ↦ σ) (NonEmptyList (xcs :| Nil))         = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
+recDefsBwd' (_ :- _ :- _) (NonEmptyList (_ :| Nil))            = error absurd
+recDefsBwd' (ρ :- x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
    NonEmptyList (recDefBwd (x ↦ σ) xcs1 :| toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss))))
 
-recDefBwd :: Binding Elim 𝔹 -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
+recDefBwd :: Bind (Elim 𝔹) -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
 recDefBwd (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd
 
 exprBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
@@ -108,7 +106,7 @@ exprBwd e (LetRec xcs s) =
       where
       -- repeat enough desugaring logic to determine shape of bindings
       recDefHole :: NonEmptyList (Clause 𝔹) -> Bind (Elim 𝔹)
-      recDefHole xcs' = fst (head xcs') B.↦ ElimHole false
+      recDefHole xcs' = fst (head xcs') ↦ ElimHole false
       xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 exprBwd e (ListEmpty _) =
    case expand e (E.Constr false cNil Nil) of
