@@ -8,7 +8,7 @@ import Bindings ((↦)) as B
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, botOf, definedJoin, expand, maybeJoin, neg
 )
-import Util (type (×), (≜), (≞))
+import Util (MayFail, type (×), (≜), (≞), report)
 import Util.SnocList (SnocList(..), (:-))
 
 type Var = String -- newtype?
@@ -44,3 +44,16 @@ asBindings (ρ :- Bind (x ↦ v)) = asBindings ρ :+: x B.↦ v
 asBindings2 :: forall t a . Bindings t a -> Bindings2 (t a)
 asBindings2 Empty = Lin
 asBindings2 (ρ :+: x B.↦ v) = asBindings2 ρ :- Bind (x ↦ v)
+
+-- Could simplify these now but not high priority.
+find :: forall a . Var -> Bindings2 a -> MayFail a
+find x Lin  = report ("variable " <> x <> " not found")
+find x (ρ :- Bind (x' ↦ v))
+   | x == x'   = pure v
+   | otherwise = find x ρ
+
+update :: forall a . Bindings2 a -> Bind a -> Bindings2 a
+update Lin _ = Lin
+update (ρ :- Bind (x ↦ v)) (Bind (x' ↦ v'))
+   | x == x'    = ρ :- Bind (x' ↦ v')
+   | otherwise  = update ρ (Bind (x' ↦ v')) :- Bind (x ↦ v)
