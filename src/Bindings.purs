@@ -1,6 +1,8 @@
 module Bindings where
 
 import Prelude
+import Data.Foldable (class Foldable, foldMapDefaultL, foldrDefault)
+import Data.Traversable (class Traversable, sequenceDefault)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, botOf, definedJoin, expand, maybeJoin, neg
 )
@@ -19,6 +21,15 @@ data Bind a = Bind Var a
 type Bindings a = SnocList (Bind a)
 
 derive instance functorBind :: Functor Bind
+
+instance foldableBind :: Foldable Bind where
+   foldl f b (_ ↦ v) = f b v
+   foldr x = foldrDefault x
+   foldMap = foldMapDefaultL
+
+instance traversableBind :: Traversable Bind where
+   traverse f (x ↦ v) = (x ↦ _) <$> f v
+   sequence = sequenceDefault
 
 infix 7 Bind as ↦
 infixl 5 update as ◃
