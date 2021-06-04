@@ -7,7 +7,7 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (first)
-import Bindings2 (Bindings2, Bind, (↦), (◃), asBindings, asBindings2, foldBindings, varAnon)
+import Bindings2 (Bindings2, Bind, (↦), (◃), foldBindings, varAnon)
 import DataType (cPair)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..), vars)
@@ -15,7 +15,7 @@ import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs2)
 import Lattice (𝔹, (∨), botOf, expand)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate)
 import Util.SnocList (SnocList(..), (:-), fromList, splitAt)
-import Val (Env, Env2, PrimOp(..), Val, holeMatrix)
+import Val (Env2, PrimOp(..), Val, holeMatrix)
 import Val (Val(..)) as V
 
 -- second argument contains original environment and recursive definitions
@@ -82,11 +82,11 @@ evalBwd v t@(T.Record ρ xts) =
 evalBwd v t@(T.Constr ρ c ts) =
    case expand v (V.Constr false c (ts <#> const (V.Hole false))) of
       V.Constr α _ vs ->
-         let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
-             evalArg_bwd (v' × t') (ρ' × es × α') = (ρ' ∨ asBindings ρ'') × (e : es) × (α' ∨ α'')
+         let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env2 𝔹 × List (Expr 𝔹) × 𝔹)
+             evalArg_bwd (v' × t') (ρ' × es × α') = (ρ' ∨ ρ'') × (e : es) × (α' ∨ α'')
                where ρ'' × e × α'' = evalBwd v' t'
-             ρ' × es × α' = foldr evalArg_bwd (asBindings (botOf ρ) × Nil × α) (zip vs ts) in
-         asBindings2 ρ' × Constr α c es × α'
+             ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Nil × α) (zip vs ts) in
+         ρ' × Constr α c es × α'
       _ -> error absurd
 evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
    case expand v (V.Matrix false (holeMatrix i' j')) of
@@ -95,12 +95,12 @@ evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
                   i <- range 1 i'
                   j <- range 1 j'
                   singleton (i × j)
-             evalBwd_elem :: (Int × Int) -> Env 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
+             evalBwd_elem :: (Int × Int) -> Env2 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
              evalBwd_elem (i × j) =
                 case evalBwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
                    (ρ :- _ ↦ v1 :- _ ↦ v2) × e × α' ->
                       case expand v1 (V.Int false i) × expand v2 (V.Int false j) of
-                         V.Int γ _ × V.Int γ' _ -> asBindings ρ × e × α' × γ × γ'
+                         V.Int γ _ × V.Int γ' _ -> ρ × e × α' × γ × γ'
                          _ -> error absurd
                    _ -> error absurd
              ρ × e × α' × γ × γ' = foldl1
@@ -108,7 +108,7 @@ evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
                    ((ρ1 ∨ ρ2) × (e1 ∨ e2) × (α1 ∨ α2) × (γ1 ∨ γ2) × (γ1' ∨ γ2')))
                 (evalBwd_elem <$> ijs)
              ρ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (γ ∨ β) i' : V.Int (γ' ∨ β') j' : Nil)) t' in
-          (asBindings2 (ρ ∨ asBindings ρ')) × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
+          (ρ ∨ ρ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
       _ -> error absurd
 evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
    let ρ1ρ2ρ3 × e × α = evalBwd v t3

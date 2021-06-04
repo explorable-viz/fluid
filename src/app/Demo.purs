@@ -8,7 +8,7 @@ import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 import App.Renderer (MatrixFig, {-drawBarChart, drawTable, -}drawFigure, matrixFig)
-import Bindings2 ((↦), asBindings, asBindings2, find, update)
+import Bindings2 ((↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
@@ -34,7 +34,7 @@ type ConvExample = Env2 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
 example_needed :: ConvExample
 example_needed ρ s0 = do
    ρ' × s <- unsafePartial (splitDefs ρ s0)
-   t × o <- desugarEval (asBindings (ρ <> ρ')) s
+   t × o <- desugarEval (ρ <> ρ') s
    let o' = selectCell 2 1 5 5
        ρρ' × _ × _ = evalBwd o' t
    ω <- find "filter" ρ'
@@ -72,7 +72,7 @@ makeFigure file example divId =
       Right (ρ × s) -> do
 --         drawBarChart "fig-bar-chart"
 --         drawTable "table"
-         drawFigure divId (successful (example (asBindings2 ρ) s))
+         drawFigure divId (successful (example ρ s))
 
 main :: Effect Unit
 main = do
