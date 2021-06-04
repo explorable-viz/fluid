@@ -1,7 +1,6 @@
 module DesugarBwd where
 
 import Prelude hiding (absurd)
-
 import Bindings (Binding, Bindings(..), (↦), (:+:))
 import Bindings2 (Bind, asBindings)
 import Bindings2 ((↦)) as B
