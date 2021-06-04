@@ -17,7 +17,7 @@ data SnocList a =
 
 derive instance snocListFunctor :: Functor SnocList
 
-infix 6 Snoc as :-
+infixl 6 Snoc as :-
 
 -- (Order-preserving) natural isomorphism to List.
 toList :: SnocList ~> List

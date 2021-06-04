@@ -10,6 +10,7 @@ import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Bindings (splitAt)
+import Bindings2 (asBindings, asBindings2)
 import DataType (dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
@@ -37,7 +38,7 @@ run :: forall a . Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
 desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
-desugarEval ρ s = desugarFwd s >>= eval ρ
+desugarEval ρ s = desugarFwd s >>= eval (asBindings2 ρ)
 
 desugarEval_bwd :: Expl 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr 𝔹
 desugarEval_bwd (t × s) v = let ρ × e × _ = evalBwd v t in ρ × desugarBwd e s
@@ -84,8 +85,8 @@ testLink file v1_sel v2_expect =
       it name \(ρ0 × ρ × s1 × s2) -> do
          let e1 = successful (desugarFwd s1)
              e2 = successful (desugarFwd s2)
-             t1 × v1 = successful (eval (ρ0 <> ρ) e1)
-             t2 × v2 = successful (eval (ρ0 <> ρ) e2)
+             t1 × v1 = successful (eval (asBindings2 (ρ0 <> ρ)) e1)
+             t2 × v2 = successful (eval (asBindings2 (ρ0 <> ρ)) e2)
              ρ0ρ × _ × _ = evalBwd v1_sel t1
              _ × ρ' = splitAt 1 ρ0ρ
              -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)

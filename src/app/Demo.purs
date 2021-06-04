@@ -51,7 +51,7 @@ example_neededBy :: ConvExample
 example_neededBy ρ s0 = do
    ρ' × s <- unsafePartial (splitDefs ρ s0)
    e <- desugarFwd s
-   t × o <- eval (asBindings (ρ <> ρ')) e
+   t × o <- eval (ρ <> ρ') e
    let ω' = selectCell 1 1 3 3
        ρ'' = update (botOf ρ') (Bind ("filter" ↦ ω'))
        o' = neg (evalFwd (asBindings (neg (botOf ρ <> ρ''))) (const true <$> e) true t)

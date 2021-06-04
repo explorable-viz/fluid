@@ -11,8 +11,8 @@ import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (curry)
-import Bindings (Bindings(..), Var, (:+:), (↦), find, varAnon)
-import Bindings2 (Bind(..), Bindings2, asBindings, asBindings2)
+import Bindings (Bindings(..), Var, (:+:), (↦))
+import Bindings2 (Bind(..), Bindings2, asBindings, asBindings2, find, varAnon)
 import Bindings2 ((↦)) as B
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
@@ -24,7 +24,7 @@ import Primitive (match) as P
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Util.SnocList (SnocList(..), (:-), zipWith)
 import Util.SnocList (unzip) as S
-import Val (Env, Env2, PrimOp(..), Val)
+import Val (Env2, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 patternMismatch :: String -> String -> String
@@ -71,21 +71,21 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (show c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
+eval :: Env2 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ (Hole _)      = error absurd
-eval ρ (Var x)       = (T.Var (asBindings2 ρ) x × _) <$> find x ρ
-eval ρ (Op op)       = (T.Op (asBindings2 ρ) op × _) <$> find op ρ
-eval ρ (Int _ n)     = pure (T.Int (asBindings2 ρ) n × V.Int false n)
-eval ρ (Float _ n)   = pure (T.Float (asBindings2 ρ) n × V.Float false n)
-eval ρ (Str _ str)   = pure (T.Str (asBindings2 ρ) str × V.Str false str)
+eval ρ (Var x)       = (T.Var ρ x × _) <$> find x ρ
+eval ρ (Op op)       = (T.Op ρ op × _) <$> find op ρ
+eval ρ (Int _ n)     = pure (T.Int ρ n × V.Int false n)
+eval ρ (Float _ n)   = pure (T.Float ρ n × V.Float false n)
+eval ρ (Str _ str)   = pure (T.Str ρ str × V.Str false str)
 eval ρ (Record _ xes) = do
    let xs × es = xes <#> unwrap # S.unzip
    ts × vs <- traverse (eval ρ) es <#> S.unzip
-   pure (T.Record (asBindings2 ρ) (zipWith (curry Bind) xs ts) × V.Record false (zipWith (curry Bind) xs vs))
+   pure (T.Record ρ (zipWith (curry Bind) xs ts) × V.Record false (zipWith (curry Bind) xs vs))
 eval ρ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
-   pure (T.Constr (asBindings2 ρ) c ts × V.Constr false c vs)
+   pure (T.Constr ρ c ts × V.Constr false c vs)
 eval ρ (Matrix _ e (x × y) e') = do
    t × v <- eval ρ e'
    case v of
@@ -97,18 +97,18 @@ eval ρ (Matrix _ e (x × y) e') = do
             i <- range 1 i'
             singleton $ sequence $ do
                j <- range 1 j'
-               singleton (eval ((ρ :+: x ↦ V.Int false i) :+: y ↦ V.Int false j) e))
+               singleton (eval (ρ :- Bind (x B.↦ V.Int false i) :- Bind (y B.↦ V.Int false j)) e))
          pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false)))
       v' -> report ("Array dimensions must be pair of ints; got " <> prettyP v')
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable
 eval ρ (LetRec δ e) = do
-   let ρ' = closeDefs (asBindings2 ρ) (asBindings δ) (asBindings δ)
-   t × v <- eval (ρ <> asBindings ρ') e
+   let ρ' = closeDefs ρ (asBindings δ) (asBindings δ)
+   t × v <- eval (ρ <> ρ') e
    pure (T.LetRec δ t × v)
 eval ρ (Lambda σ) =
-   pure (T.Lambda (asBindings2 ρ) σ × V.Closure (asBindings2 ρ) Lin σ)
+   pure (T.Lambda ρ σ × V.Closure ρ Lin σ)
 eval ρ (App e e') = do
    t × v <- eval ρ e
    t' × v' <- eval ρ e'
@@ -117,7 +117,7 @@ eval ρ (App e e') = do
       V.Closure ρ1 δ σ -> do
          let ρ2 = closeDefs ρ1 (asBindings δ) (asBindings δ)
          ρ3 × e'' × w <- match v' σ
-         t'' × v'' <- eval (asBindings (ρ1 <> ρ2 <> ρ3)) (asExpr e'')
+         t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) (asExpr e'')
          pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
          let vs' = vs <> singleton v'
@@ -130,13 +130,13 @@ eval ρ (App e e') = do
 eval ρ (Let (VarDef σ e) e') = do
    t × v <- eval ρ e
    ρ' × _ × w <- match v σ -- terminal type of eliminator is unit, represented as hole
-   t' × v' <- eval (ρ <> asBindings ρ') e'
+   t' × v' <- eval (ρ <> ρ') e'
    pure (T.Let (T.VarDef w t) t' × v')
 
 eval_module :: Env2 𝔹 -> Module 𝔹 -> MayFail (Env2 𝔹)
 eval_module ρ (Module Nil) = pure ρ
 eval_module ρ (Module (Left (VarDef σ e) : ds)) = do
-   _  × v <- eval (asBindings ρ) e
+   _  × v <- eval ρ e
    ρ' × _ × w  <- match v σ
    eval_module (ρ <> ρ') (Module ds)
 eval_module ρ (Module (Right δ : ds)) =
