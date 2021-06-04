@@ -4,8 +4,7 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
-import Bindings ((⪂))
-import Bindings2 (Bindings2, Var)
+import Bindings2 (Bindings2, Var, (⪂))
 import DataType (Ctr)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg

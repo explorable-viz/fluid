@@ -6,12 +6,16 @@ import Bindings ((↦)) as B
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, botOf, definedJoin, expand, maybeJoin, neg
 )
-import Util (Endo, MayFail, (≜), (≞), report)
+import Util (Endo, MayFail, (≜), (≞), fromJust, report, whenever)
 import Util.SnocList (SnocList(..), (:-))
 
 type Var = String -- newtype?
 
 varAnon = "_" :: Var
+
+-- Discrete partial order for variables.
+mustGeq :: Var -> Var -> Var
+mustGeq x y = fromJust "Must be greater" (whenever (x == y) x)
 
 data Bind a = Bind Var a
 type Bindings2 a = SnocList (Bind a)
@@ -20,6 +24,7 @@ derive instance functorBind :: Functor Bind
 
 infix 7 Bind as ↦
 infixl 5 update as ◃
+infixl 4 mustGeq as ⪂
 
 instance expandableBind :: Expandable a => Expandable (Bind a) where
    expand (x ↦ v) (x' ↦ v') = (x ≜ x') ↦ expand v v'
