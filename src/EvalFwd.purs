@@ -20,7 +20,7 @@ import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (match_fwd) as P
 import Util (type (×), (×), (!), absurd, assert, error, mustLookup, replicate, successful)
 import Util.SnocList (SnocList(..), (:-))
-import Val (Env, PrimOp(..), Val)
+import Val (Env, Env2, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
@@ -43,7 +43,7 @@ matchFwd v σ (T.MatchRecord xws) =
    case expand v (V.Record false (map (const (V.Hole false)) <$> xws)) ×
         expand σ (ElimRecord xs (ContHole false)) of
       V.Record α xvs × ElimRecord _ κ ->
-         (second (_ ∧ α)) (matchRecordFwd xvs κ xws)
+         (first asBindings *** (_ ∧ α)) (matchRecordFwd xvs κ xws)
       _ -> error absurd
 
 matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
@@ -53,11 +53,11 @@ matchArgsFwd (v : vs) σ (w : ws) =
    (first (ρ <> _) *** (_ ∧ α)) (matchArgsFwd vs κ ws)
 matchArgsFwd _ _ _ = error absurd
 
-matchRecordFwd :: Bindings2 (Val 𝔹) -> Cont 𝔹 -> Bindings2 (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchRecordFwd Lin κ Lin = Empty × κ × true
+matchRecordFwd :: Bindings2 (Val 𝔹) -> Cont 𝔹 -> Bindings2 (Match 𝔹) -> Env2 𝔹 × Cont 𝔹 × 𝔹
+matchRecordFwd Lin κ Lin = Lin × κ × true
 matchRecordFwd (xvs :- Bind (x B.↦ v)) σ (xws :- Bind (x' B.↦ w)) | x == x' =
    let ρ × σ' × α = matchRecordFwd xvs σ xws in
-   (first (ρ <> _) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
+   (first (asBindings2 >>> (ρ <> _)) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
 matchRecordFwd _ _ _ = error absurd
 
 evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
