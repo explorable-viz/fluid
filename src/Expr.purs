@@ -4,7 +4,7 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
-import Bindings (Bindings, Var, (⪂), bindingsMap)
+import Bindings (Bindings, Var, (⪂))
 import Bindings2 (Bindings2)
 import DataType (Ctr)
 import Lattice (
@@ -20,7 +20,7 @@ data Expr a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Bindings Expr a) |
+   Record a (Bindings2 (Expr a)) |
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
@@ -139,7 +139,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Hole α) e@(Int β n)                  = Int (α ⪄ β) n
    expand (Hole α) e@(Float β n)                = Float (α ⪄ β) n
    expand (Hole α) e@(Str β str)                = Str (α ⪄ β) str
-   expand (Hole α) (Record β xes)               = Record (α ⪄ β) (expand (bindingsMap (const (Hole α)) xes) xes)
+   expand (Hole α) (Record β xes)               = Record (α ⪄ β) (expand (map (const (Hole α)) <$> xes) xes)
    expand (Hole α) (Constr β c es)              = Constr (α ⪄ β) c (expand (Hole α) <$> es)
    expand (Hole α) (Matrix β e1 (x × y) e2)     = Matrix (α ⪄ β) (expand (Hole α) e1) (x × y) (expand (Hole α) e2)
    expand (Hole α) (Lambda σ)                   = Lambda (expand (ElimHole α) σ)
