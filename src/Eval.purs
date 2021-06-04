@@ -13,6 +13,7 @@ import Data.Traversable (sequence, traverse)
 import Data.Tuple (curry)
 import Bindings (Bindings(..), Var, (:+:), (↦), find, varAnon)
 import Bindings2 (Bind(..), asBindings, asBindings2)
+import Bindings2 ((↦)) as B
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -23,7 +24,7 @@ import Primitive (match) as P
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Util.SnocList (SnocList(..), (:-), zipWith)
 import Util.SnocList (unzip) as S
-import Val (Env, PrimOp(..), Val)
+import Val (Env, Env2, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 patternMismatch :: String -> String -> String
@@ -61,9 +62,9 @@ matchRecord (xvs :+: x ↦ v) (xs :- x') σ  = do
 matchRecord (_ :+: x ↦ _) SnocNil _       = report (patternMismatch "end of record pattern" (show x))
 matchRecord Empty (_ :- x) _              = report (patternMismatch "end of record" (show x))
 
-closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
-closeDefs _ _ Empty = Empty
-closeDefs ρ δ0 (δ :+: f ↦ σ) = closeDefs ρ δ0 δ :+: f ↦ V.Closure (asBindings2 ρ) (asBindings2 δ0) σ
+closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env2 𝔹
+closeDefs _ _ Empty = SnocNil
+closeDefs ρ δ0 (δ :+: f ↦ σ) = closeDefs ρ δ0 δ :- Bind (f B.↦ V.Closure (asBindings2 ρ) (asBindings2 δ0) σ)
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -104,7 +105,7 @@ eval ρ (Matrix _ e (x × y) e') = do
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable
 eval ρ (LetRec δ e) = do
    let ρ' = closeDefs ρ (asBindings δ) (asBindings δ)
-   t × v <- eval (ρ <> ρ') e
+   t × v <- eval (ρ <> asBindings ρ') e
    pure (T.LetRec δ t × v)
 eval ρ (Lambda σ) =
    pure (T.Lambda (asBindings2 ρ) σ × V.Closure (asBindings2 ρ) SnocNil σ)
@@ -116,7 +117,7 @@ eval ρ (App e e') = do
       V.Closure ρ1 δ σ -> do
          let ρ2 = closeDefs (asBindings ρ1) (asBindings δ) (asBindings δ)
          ρ3 × e'' × w <- match v' σ
-         t'' × v'' <- eval (asBindings ρ1 <> ρ2 <> ρ3) (asExpr e'')
+         t'' × v'' <- eval (asBindings ρ1 <> asBindings ρ2 <> ρ3) (asExpr e'')
          pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
          let vs' = vs <> singleton v'
@@ -139,4 +140,4 @@ eval_module ρ (Module (Left (VarDef σ e) : ds)) = do
    ρ' × _ × w  <- match v σ
    eval_module (ρ <> ρ') (Module ds)
 eval_module ρ (Module (Right δ : ds)) =
-   eval_module (ρ <> closeDefs ρ (asBindings δ) (asBindings δ)) (Module ds)
+   eval_module (ρ <> asBindings (closeDefs ρ (asBindings δ) (asBindings δ))) (Module ds)

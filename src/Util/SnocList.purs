@@ -57,3 +57,10 @@ unzip :: forall a b . SnocList (a × b) -> SnocList a × SnocList b
 unzip = toList >>> L.unzip >>> (fromList *** fromList)
 
 -- TODO: monad instance
+
+instance semigroupSnocList :: Semigroup (SnocList a) where
+   -- common pattern, probably some shorthand somewhere
+   append = curry $ (toList *** toList) >>> uncurry append >>> fromList
+
+instance monoidSnocList :: Monoid (SnocList a) where
+   mempty = SnocNil
