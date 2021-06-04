@@ -44,4 +44,4 @@ vars (MatchVar x)          = singleton x
 vars (MatchVarAnon _)      = Nil
 vars (MatchConstr _ ws _)  = ws <#> vars # join
 vars (MatchRecord xws)     = ws <#> vars # join
-   where ws = xws # reverse # toList <#> (unwrap >>> snd)
+   where ws = xws # (reverse >>> toList) <#> (unwrap >>> snd)

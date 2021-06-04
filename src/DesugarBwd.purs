@@ -2,7 +2,7 @@ module DesugarBwd where
 
 import Prelude hiding (absurd)
 
-import Bindings (Binding, Bindings(..), (↦), (:+:), fromList)
+import Bindings (Binding, Bindings(..), (↦), (:+:))
 import Bindings2 (Bind(..), asBindings)
 import Bindings2 ((↦)) as B
 import Data.Either (Either(..))
@@ -20,6 +20,7 @@ import Expr (Expr(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, (∨), expand)
 import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
+import Util.SnocList (fromList)
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -102,7 +103,7 @@ exprBwd e (Let ds s) =
       E.Let d e' -> uncurry Let (varDefsBwd (E.Let d e') (ds × s))
       _ -> error absurd
 exprBwd e (LetRec xcs s) =
-   case expand e (E.LetRec ?_ {-(fromList (toList (recDefHole <$> xcss)))-} (E.Hole false)) of
+   case expand e (E.LetRec (fromList (toList (recDefHole <$> xcss))) (E.Hole false)) of
       E.LetRec xσs e' -> LetRec (recDefsBwd (asBindings xσs) xcs) (exprBwd e' s)
       _ -> error absurd
       where
