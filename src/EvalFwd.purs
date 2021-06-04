@@ -104,7 +104,7 @@ evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
 evalFwd ρ e α (T.LetRec δ t) =
    case expand e (LetRec (botOf δ) (Hole false)) of
       LetRec δ' e' ->
-         let ρ' = closeDefs ρ (asBindings δ') (asBindings δ') in
+         let ρ' = closeDefs (asBindings2 ρ) (asBindings δ') (asBindings δ') in
          evalFwd (ρ <> asBindings ρ') e' α t
       _ -> error absurd
 evalFwd ρ e _ (T.Lambda _ _) =
@@ -117,7 +117,7 @@ evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
          case expand (evalFwd ρ e1 α t1) (V.Closure (botOf ρ1) (botOf δ) (ElimHole false)) of
             V.Closure ρ1' δ' σ' ->
                let v = evalFwd ρ e2 α t2
-                   ρ2 = closeDefs (asBindings ρ1') (asBindings δ') (asBindings δ')
+                   ρ2 = closeDefs ρ1' (asBindings δ') (asBindings δ')
                    ρ3 × e3 × β = matchFwd v σ' w in
                evalFwd (asBindings ρ1' <> asBindings ρ2 <> ρ3) (asExpr e3) β t3
             _ -> error absurd

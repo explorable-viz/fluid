@@ -62,9 +62,9 @@ matchRecord (xvs :+: x ↦ v) (xs :- x') σ  = do
 matchRecord (_ :+: x ↦ _) SnocNil _       = report (patternMismatch "end of record pattern" (show x))
 matchRecord Empty (_ :- x) _              = report (patternMismatch "end of record" (show x))
 
-closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env2 𝔹
+closeDefs :: Env2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env2 𝔹
 closeDefs _ _ Empty = SnocNil
-closeDefs ρ δ0 (δ :+: f ↦ σ) = closeDefs ρ δ0 δ :- Bind (f B.↦ V.Closure (asBindings2 ρ) (asBindings2 δ0) σ)
+closeDefs ρ δ0 (δ :+: f ↦ σ) = closeDefs ρ δ0 δ :- Bind (f B.↦ V.Closure ρ (asBindings2 δ0) σ)
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -104,7 +104,7 @@ eval ρ (Matrix _ e (x × y) e') = do
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable
 eval ρ (LetRec δ e) = do
-   let ρ' = closeDefs ρ (asBindings δ) (asBindings δ)
+   let ρ' = closeDefs (asBindings2 ρ) (asBindings δ) (asBindings δ)
    t × v <- eval (ρ <> asBindings ρ') e
    pure (T.LetRec δ t × v)
 eval ρ (Lambda σ) =
@@ -115,7 +115,7 @@ eval ρ (App e e') = do
    case v of
       V.Hole _ -> error absurd
       V.Closure ρ1 δ σ -> do
-         let ρ2 = closeDefs (asBindings ρ1) (asBindings δ) (asBindings δ)
+         let ρ2 = closeDefs ρ1 (asBindings δ) (asBindings δ)
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (asBindings ρ1 <> asBindings ρ2 <> ρ3) (asExpr e'')
          pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
@@ -140,4 +140,4 @@ eval_module ρ (Module (Left (VarDef σ e) : ds)) = do
    ρ' × _ × w  <- match v σ
    eval_module (ρ <> ρ') (Module ds)
 eval_module ρ (Module (Right δ : ds)) =
-   eval_module (ρ <> asBindings (closeDefs ρ (asBindings δ) (asBindings δ))) (Module ds)
+   eval_module (ρ <> asBindings (closeDefs (asBindings2 ρ) (asBindings δ) (asBindings δ))) (Module ds)
