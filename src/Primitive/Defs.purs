@@ -8,15 +8,16 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..))
 import Debug.Trace (trace)
 import Math (log, pow) as M
-import Bindings (Bindings(..), (:+:), (↦))
+import Bindings2 ((↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
-import Val (Env, MatrixRep, Val(..), insertMatrix)
+import Util.SnocList (SnocList(..), (:-))
+import Val (Env2, MatrixRep, Val(..), insertMatrix)
 
-primitives :: Env 𝔹
-primitives = foldl (:+:) Empty [
+primitives :: Env2 𝔹
+primitives = foldl (:-) Lin [
    ":"         ↦ Constr false cCons Nil,
 
    "+"         ↦ binary (withInverse2 plus),

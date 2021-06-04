@@ -1,7 +1,7 @@
 module SExpr where
 
 import Prelude
-import Bindings (Var)
+import Bindings2 (Var)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
 import DataType (Ctr)

@@ -8,8 +8,7 @@ import Data.HTTP.Method (Method(..))
 import Data.Bifunctor (bimap)
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
-import Bindings (Bindings(..), Var, (:+:), (↦))
-import Bindings2 (asBindings, asBindings2)
+import Bindings2 (Var, (↦))
 import SExpr (Expr) as S
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -18,7 +17,8 @@ import Parse (module_, program)
 import Primitive.Defs (primitives)
 import Util (MayFail, type (×), (×), error, successful)
 import Util.Parse (SParser)
-import Val (Env)
+import Util.SnocList (SnocList(..), (:-))
+import Val (Env2)
 
 -- For Wrattler integration. Should not end in "/".
 resourceServerUrl :: String
@@ -32,25 +32,25 @@ loadFile folder file = do
       Left err -> error (printError err)
       Right response -> pure response.body
 
-loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
+loadModule :: String -> Env2 𝔹 -> Aff (Env2 𝔹)
 loadModule file ρ = do
    src <- loadFile "fluid/lib" file
-   pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module (asBindings2 ρ) <#> asBindings))
+   pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module ρ))
 
-openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
+openWithDefaultImports :: String -> Aff (Env2 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file = do
    loadFile "fluid/example" file >>= parseWithDefaultImports
 
 parse :: forall t . String -> SParser t -> MayFail t
 parse src = runParser src >>> bimap show identity
 
-parseWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
+parseWithDefaultImports :: String -> Aff (Env2 𝔹 × S.Expr 𝔹)
 parseWithDefaultImports src = do
    (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics" >>= loadModule "convolution")
        <@> successful (parse src program)
 
-openDatasetAs :: String -> Var -> Aff (Env 𝔹)
+openDatasetAs :: String -> Var -> Aff (Env2 𝔹)
 openDatasetAs file x = do
    ρ × s <- loadFile "fluid" file >>= parseWithDefaultImports
-   let _ × v = successful (desugarFwd s >>= eval (asBindings2 ρ))
-   pure (Empty :+: x ↦ v)
+   let _ × v = successful (desugarFwd s >>= eval ρ)
+   pure (Lin :- x ↦ v)
