@@ -39,7 +39,7 @@ match (V.Constr _ c vs) (ElimConstr m) = do
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
    (second (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs c vs κ
 match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
-match (V.Record _ xvs) (ElimRecord xs κ)  = (first asBindings *** MatchRecord) <$> (matchRecord (asBindings xvs) xs κ)
+match (V.Record _ xvs) (ElimRecord xs κ)  = (first asBindings *** MatchRecord) <$> (matchRecord xvs xs κ)
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -52,15 +52,15 @@ matchArgs c (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _ = error absurd
 
-matchRecord :: Bindings Val 𝔹 -> SnocList Var -> Cont 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × Bindings2 (Match 𝔹))
-matchRecord Empty SnocNil κ               = pure (SnocNil × κ × SnocNil)
-matchRecord (xvs :+: x ↦ v) (xs :- x') σ  = do
+matchRecord :: Bindings2 (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × Bindings2 (Match 𝔹))
+matchRecord SnocNil SnocNil κ = pure (SnocNil × κ × SnocNil)
+matchRecord (xvs :- Bind (x B.↦ v)) (xs :- x') σ = do
    check (x == x') (patternMismatch (show x) (show x'))
    ρ × σ' × xws <- matchRecord xvs xs σ
    ρ' × κ × w <- match v (asElim σ')
    pure (asBindings2 (asBindings ρ <> ρ') × κ × (xws :- Bind (x B.↦ w)))
-matchRecord (_ :+: x ↦ _) SnocNil _       = report (patternMismatch "end of record pattern" (show x))
-matchRecord Empty (_ :- x) _              = report (patternMismatch "end of record" (show x))
+matchRecord (_ :- Bind (x B.↦ _)) SnocNil _ = report (patternMismatch "end of record pattern" (show x))
+matchRecord SnocNil (_ :- x) _ = report (patternMismatch "end of record" (show x))
 
 closeDefs :: Env2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env2 𝔹
 closeDefs _ _ Empty = SnocNil
