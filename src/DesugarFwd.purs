@@ -14,7 +14,7 @@ import Data.Tuple (fst, snd, uncurry)
 import Bindings (Bind, (↦), varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
-import Expr (Expr(..), Module(..), RecDefs2, VarDef(..)) as E
+import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, maybeJoin)
 import SExpr (
    Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
@@ -41,7 +41,7 @@ elimBool κ κ' = ElimConstr (fromFoldable [cTrue × κ, cFalse × κ'])
 moduleFwd :: Module 𝔹 -> MayFail (E.Module 𝔹)
 moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarDefs <$> ds))
    where
-   varDefOrRecDefsFwd :: VarDef 𝔹 + RecDefs 𝔹 -> MayFail (E.VarDef 𝔹 + E.RecDefs2 𝔹)
+   varDefOrRecDefsFwd :: VarDef 𝔹 + RecDefs 𝔹 -> MayFail (E.VarDef 𝔹 + E.RecDefs 𝔹)
    varDefOrRecDefsFwd (Left d)      = Left <$> varDefFwd d
    varDefOrRecDefsFwd (Right xcs)   = Right <$> recDefsFwd xcs
 
@@ -60,7 +60,7 @@ varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
 
 -- In the formalism, "group by name" is part of the syntax.
 -- cs desugar_fwd σ
-recDefsFwd :: RecDefs 𝔹 -> MayFail (E.RecDefs2 𝔹)
+recDefsFwd :: RecDefs 𝔹 -> MayFail (E.RecDefs 𝔹)
 recDefsFwd xcs = fromList <$> toList <$> traverse recDefFwd xcss
    where
    xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))

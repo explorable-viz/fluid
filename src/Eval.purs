@@ -13,20 +13,20 @@ import Bindings (Bindings, (↦), find, varAnon, Var)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs2, VarDef(..), asExpr, asElim)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim)
 import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Util.SnocList (SnocList(..), (:-), zipWith)
 import Util.SnocList (unzip) as S
-import Val (Env2, PrimOp(..), Val)
+import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × Match 𝔹)
+match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match _ (ElimHole _)                      = error absurd
 match v (ElimVar x κ)   | x == varAnon    = pure (Lin × κ × MatchVarAnon v)
                         | otherwise       = pure ((Lin :- x ↦ v) × κ × MatchVar x)
@@ -38,7 +38,7 @@ match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP
 match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs xs κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
-matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × List (Match 𝔹))
+matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchArgs _ Nil κ = pure (Lin × κ × Nil)
 matchArgs c (v : vs) (ContElim σ) = do
    ρ  × κ'  × w  <- match v σ
@@ -48,7 +48,7 @@ matchArgs c (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _ = error absurd
 
-matchRecord :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
+matchRecord :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
 matchRecord Lin Lin κ = pure (Lin × κ × Lin)
 matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
    check (x == x') (patternMismatch (show x) (show x'))
@@ -58,7 +58,7 @@ matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
 matchRecord (_ :- x ↦ _) Lin _ = report (patternMismatch "end of record pattern" (show x))
 matchRecord Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
 
-closeDefs :: Env2 𝔹 -> RecDefs2 𝔹 -> RecDefs2 𝔹 -> Env2 𝔹
+closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs _ _ Lin = Lin
 closeDefs ρ δ0 (δ :- f ↦ σ) = closeDefs ρ δ0 δ :- f ↦ V.Closure ρ δ0 σ
 
@@ -67,7 +67,7 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (show c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-eval :: Env2 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
+eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval ρ (Hole _)      = error absurd
 eval ρ (Var x)       = (T.Var ρ x × _) <$> find x ρ
 eval ρ (Op op)       = (T.Op ρ op × _) <$> find op ρ
@@ -129,7 +129,7 @@ eval ρ (Let (VarDef σ e) e') = do
    t' × v' <- eval (ρ <> ρ') e'
    pure (T.Let (T.VarDef w t) t' × v')
 
-eval_module :: Env2 𝔹 -> Module 𝔹 -> MayFail (Env2 𝔹)
+eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
 eval_module ρ (Module Nil) = pure ρ
 eval_module ρ (Module (Left (VarDef σ e) : ds)) = do
    _  × v <- eval ρ e

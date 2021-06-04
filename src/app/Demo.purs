@@ -18,18 +18,18 @@ import Module (openWithDefaultImports)
 import SExpr (Expr(..), Module(..)) as S
 import Test.Util (desugarEval)
 import Util (MayFail, type (×), (×), successful)
-import Val (Env2, Val(..), holeMatrix, insertMatrix)
+import Val (Env, Val(..), holeMatrix, insertMatrix)
 
 selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
 selectCell i j i' j' = Matrix true (insertMatrix i j (Hole true) (holeMatrix i' j'))
 
 -- Rewrite example of the form (let <defs> in expr) to a "module" and expr, so we can treat defs as part of
 -- the environment that we can easily inspect.
-splitDefs :: Partial => Env2 𝔹 -> S.Expr 𝔹 -> MayFail (Env2 𝔹 × S.Expr 𝔹)
+splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
 splitDefs ρ (S.Let defs s) =
    (desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ) <#> (_ × s)
 
-type ConvExample = Env2 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
+type ConvExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
 
 example_needed :: ConvExample
 example_needed ρ s0 = do

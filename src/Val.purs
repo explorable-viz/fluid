@@ -6,7 +6,7 @@ import Data.Array (replicate)
 import Data.List (List)
 import Bindings (Bindings)
 import DataType (Ctr)
-import Expr (Elim(..), RecDefs2)
+import Expr (Elim(..), RecDefs)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
    𝔹, (∨), bot, definedJoin, expand, maybeJoin, neg
@@ -24,7 +24,7 @@ data Val a =
    Constr a Ctr (List (Val a)) |       -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |   -- always unsaturated
-   Closure (Env2 a) (RecDefs2 a) (Elim a)
+   Closure (Env a) (RecDefs a) (Elim a)
 
 -- op_fwd will be provided with original (non-hole) arguments, op_bwd with original output and arguments
 newtype PrimOp = PrimOp {
@@ -34,7 +34,7 @@ newtype PrimOp = PrimOp {
    op_bwd :: Val 𝔹 × Val 𝔹 -> Endo (List (Val 𝔹))
 }
 
-type Env2 a = Bindings (Val a)
+type Env a = Bindings (Val a)
 
 -- Matrices.
 type Array2 a = Array (Array a)

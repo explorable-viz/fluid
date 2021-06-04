@@ -11,26 +11,26 @@ import Bindings (Bindings, Bind, (↦), (◃), foldBindings, varAnon)
 import DataType (cPair)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..), vars)
-import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs2)
+import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, (∨), botOf, expand)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate)
 import Util.SnocList (SnocList(..), (:-), fromList, splitAt)
-import Val (Env2, PrimOp(..), Val, holeMatrix)
+import Val (Env, PrimOp(..), Val, holeMatrix)
 import Val (Val(..)) as V
 
 -- second argument contains original environment and recursive definitions
-closeDefsBwd :: Env2 𝔹 -> Env2 𝔹 × RecDefs2 𝔹 -> Env2 𝔹 × RecDefs2 𝔹
+closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹
 closeDefsBwd ρ (ρ0 × δ0) =
    case foldBindings joinDefs (Lin × botOf ρ0 × botOf δ0) ρ of
    δ' × ρ' × δ -> ρ' × (δ ∨ δ')
    where
-   joinDefs :: Bind (Val 𝔹) -> Endo (RecDefs2 𝔹 × Env2 𝔹 × RecDefs2 𝔹)
+   joinDefs :: Bind (Val 𝔹) -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹)
    joinDefs (f ↦ v) (δ_acc × ρ' × δ) =
       case expand v (V.Closure (botOf ρ') (botOf δ) (ElimHole false)) of
          V.Closure ρ_f δ_f σ_f -> (δ_acc :- f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f)
          _ -> error absurd
 
-matchBwd :: Env2 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
+matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 matchBwd (Lin :- x ↦ v) κ α (MatchVar x') = v × ElimVar (x ≜ x') κ
 matchBwd Lin κ α (MatchVarAnon v)          = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
@@ -41,7 +41,7 @@ matchBwd ρ κ α (MatchRecord xws)             = V.Record α xvs × ElimRecord 
          xs = (\(x ↦ _) -> x) <$> xws
 matchBwd _ _ _ _                             = error absurd
 
-matchArgsBwd :: Env2 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
+matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
 matchArgsBwd Lin κ α Lin       = Nil × κ
 matchArgsBwd (_ :- _) κ α Lin   = error absurd
 matchArgsBwd ρρ' κ α (ws :- w) =
@@ -50,7 +50,7 @@ matchArgsBwd ρρ' κ α (ws :- w) =
        vs × κ' = matchArgsBwd ρ (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
 
-matchRecordBwd :: Env2 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings (Match 𝔹) -> Bindings (Val 𝔹) × Cont 𝔹
+matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings (Match 𝔹) -> Bindings (Val 𝔹) × Cont 𝔹
 matchRecordBwd Lin κ α Lin         = Lin × κ
 matchRecordBwd (_ :- _) κ α Lin    = error absurd
 matchRecordBwd ρρ' κ α (xws :- x ↦ w) =
@@ -58,7 +58,7 @@ matchRecordBwd ρρ' κ α (xws :- x ↦ w) =
        v × σ   = matchBwd ρ' κ α w in
    (first (_ :- x ↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
 
-evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env2 𝔹 × Expr 𝔹 × 𝔹
+evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var ρ x) = (botOf ρ ◃ x ↦ v) × Var x × false
 evalBwd v (T.Op ρ op) = (botOf ρ ◃ op ↦ v) × Op op × false
 evalBwd v t@(T.Str ρ str) =
@@ -82,7 +82,7 @@ evalBwd v t@(T.Record ρ xts) =
 evalBwd v t@(T.Constr ρ c ts) =
    case expand v (V.Constr false c (ts <#> const (V.Hole false))) of
       V.Constr α _ vs ->
-         let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env2 𝔹 × List (Expr 𝔹) × 𝔹)
+         let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
              evalArg_bwd (v' × t') (ρ' × es × α') = (ρ' ∨ ρ'') × (e : es) × (α' ∨ α'')
                where ρ'' × e × α'' = evalBwd v' t'
              ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Nil × α) (zip vs ts) in
@@ -95,7 +95,7 @@ evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
                   i <- range 1 i'
                   j <- range 1 j'
                   singleton (i × j)
-             evalBwd_elem :: (Int × Int) -> Env2 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
+             evalBwd_elem :: (Int × Int) -> Env 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
              evalBwd_elem (i × j) =
                 case evalBwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
                    (ρ :- _ ↦ v1 :- _ ↦ v2) × e × α' ->

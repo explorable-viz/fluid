@@ -25,11 +25,11 @@ data Expr a =
    Lambda (Elim a) |
    App (Expr a) (Expr a) |
    Let (VarDef a) (Expr a) |
-   LetRec (RecDefs2 a) (Expr a)
+   LetRec (RecDefs a) (Expr a)
 
 -- eliminator in var def is always singleton, with an empty terminal continuation represented by hole
 data VarDef a = VarDef (Elim a) (Expr a)
-type RecDefs2 a = Bindings (Elim a)
+type RecDefs a = Bindings (Elim a)
 
 data Elim a =
    ElimHole a |
@@ -53,7 +53,7 @@ asExpr (ContHole α)  = Hole α
 asExpr (ContElim _)  = error "Expression expected"
 asExpr (ContExpr e)  = e
 
-data Module a = Module (List (VarDef a + RecDefs2 a))
+data Module a = Module (List (VarDef a + RecDefs a))
 
 -- ======================
 -- boilerplate

@@ -23,7 +23,7 @@ import Module (loadFile, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import Util (MayFail, type (×), (×), successful)
 import Util.SnocList (splitAt)
-import Val (Env2, Val(..))
+import Val (Env, Val(..))
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -36,13 +36,13 @@ type Test a = SpecT Aff Unit Effect a
 run :: forall a . Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
-desugarEval :: Env2 𝔹 -> S.Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
+desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 desugarEval ρ s = desugarFwd s >>= eval ρ
 
-desugarEval_bwd :: Expl 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env2 𝔹 × S.Expr 𝔹
+desugarEval_bwd :: Expl 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr 𝔹
 desugarEval_bwd (t × s) v = let ρ × e × _ = evalBwd v t in ρ × desugarBwd e s
 
-desugarEval_fwd :: Env2 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
+desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
 desugarEval_fwd ρ s =
    let _ = evalFwd (botOf ρ) (E.Hole false) false in -- sanity-check that this is defined
    evalFwd ρ (successful (desugarFwd s)) true
@@ -51,7 +51,7 @@ checkPretty :: forall a . Pretty a => a -> String -> Aff Unit
 checkPretty x expected = prettyP x `shouldEqual` expected
 
 -- v_opt is output slice; v_expect is expected result after round-trip
-testWithSetup :: String -> String -> Maybe (Val 𝔹) -> Aff (Env2 𝔹 × S.Expr 𝔹) -> Test Unit
+testWithSetup :: String -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup name v_expect v_opt setup =
    before setup $
       it name \(ρ × s) -> do

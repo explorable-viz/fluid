@@ -13,7 +13,7 @@ import Bindings (Bind, (↦))
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import DesugarFwd (elimBool, totaliseConstrFwd)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
-import Expr (Expr(..), RecDefs2, VarDef(..)) as E
+import Expr (Expr(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, (∨), expand)
 import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
@@ -30,10 +30,10 @@ varDefsBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) ×
    NonEmptyList (VarDef π (exprBwd e1 s1) :| d' : ds') × s2'
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
-recDefsBwd :: E.RecDefs2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
+recDefsBwd :: E.RecDefs 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
 recDefsBwd xσs xcs = join (recDefsBwd' xσs (groupBy (eq `on` fst) xcs))
 
-recDefsBwd' :: E.RecDefs2 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
+recDefsBwd' :: E.RecDefs 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
 recDefsBwd' Lin _                                              = error absurd
 recDefsBwd' (Lin :- x ↦ σ) (NonEmptyList (xcs :| Nil))         = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
 recDefsBwd' (_ :- _ :- _) (NonEmptyList (_ :| Nil))            = error absurd
