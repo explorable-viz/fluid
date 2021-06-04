@@ -56,11 +56,9 @@ instance traversableSnocList :: Traversable SnocList where
 unzip :: forall a b . SnocList (a × b) -> SnocList a × SnocList b
 unzip = toList >>> L.unzip >>> (fromList *** fromList)
 
--- TODO: monad instance
-
 instance semigroupSnocList :: Semigroup (SnocList a) where
-   -- common pattern, probably some shorthand somewhere
-   append = curry $ (toList *** toList) >>> uncurry append >>> fromList
+   -- The flip is crucial -- see https://stackoverflow.com/questions/13034856.
+   append = curry $ (toList *** toList) >>> uncurry (flip append) >>> fromList
 
 instance monoidSnocList :: Monoid (SnocList a) where
    mempty = SnocNil

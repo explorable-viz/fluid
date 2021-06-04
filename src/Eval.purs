@@ -8,7 +8,7 @@ import Data.List (List(..), (:), (\\), length, range, singleton, unzip)
 import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Newtype (unwrap)
-import Data.Profunctor.Strong (first, second, (***))
+import Data.Profunctor.Strong (first, (***))
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (curry)
 import Bindings (Bindings(..), Var, (:+:), (↦), find, varAnon)
@@ -37,17 +37,17 @@ match v (ElimVar x κ)   | x == varAnon    = pure (Empty × κ × MatchVarAnon v
 match (V.Constr _ c vs) (ElimConstr m) = do
    checkConsistent "Pattern mismatch: " c (keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
-   (second (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs c vs κ
+   (first asBindings *** (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs c vs κ
 match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
 match (V.Record _ xvs) (ElimRecord xs κ)  = (first asBindings *** MatchRecord) <$> (matchRecord xvs xs κ)
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
-matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
-matchArgs _ Nil κ = pure (Empty × κ × Nil)
+matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × List (Match 𝔹))
+matchArgs _ Nil κ = pure (SnocNil × κ × Nil)
 matchArgs c (v : vs) (ContElim σ) = do
    ρ  × κ'  × w  <- match v σ
    ρ' × κ'' × ws <- matchArgs c vs κ'
-   pure ((ρ <> ρ') × κ'' × (w : ws))
+   pure ((asBindings2 ρ <> ρ') × κ'' × (w : ws))
 matchArgs c (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _ = error absurd
