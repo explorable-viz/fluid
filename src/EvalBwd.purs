@@ -7,9 +7,7 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (first)
-import Bindings ((↦), toSnocList)
-import Bindings2 (Bindings2, Bind, (◃), asBindings, asBindings2, foldBindings, varAnon)
-import Bindings2 ((↦)) as B
+import Bindings2 (Bindings2, Bind, (↦), (◃), asBindings, asBindings2, foldBindings, varAnon)
 import DataType (cPair)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..), vars)
@@ -27,20 +25,20 @@ closeDefsBwd ρ (ρ0 × δ0) =
    δ' × ρ' × δ -> ρ' × (δ ∨ δ')
    where
    joinDefs :: Bind (Val 𝔹) -> Endo (RecDefs2 𝔹 × Env2 𝔹 × RecDefs2 𝔹)
-   joinDefs (f B.↦ v) (δ_acc × ρ' × δ) =
+   joinDefs (f ↦ v) (δ_acc × ρ' × δ) =
       case expand v (V.Closure (botOf ρ') (botOf δ) (ElimHole false)) of
-         V.Closure ρ_f δ_f σ_f -> (δ_acc :- f B.↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f)
+         V.Closure ρ_f δ_f σ_f -> (δ_acc :- f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f)
          _ -> error absurd
 
 matchBwd :: Env2 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
-matchBwd (Lin :- x B.↦ v) κ α (MatchVar x') = v × ElimVar (x ≜ x') κ
+matchBwd (Lin :- x ↦ v) κ α (MatchVar x') = v × ElimVar (x ≜ x') κ
 matchBwd Lin κ α (MatchVarAnon v)          = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
 matchBwd ρ κ α (MatchRecord xws)             = V.Record α xvs × ElimRecord xs κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
-         xs = (\(x ↦ _) -> x) <$> toSnocList (asBindings xws)
+         xs = (\(x ↦ _) -> x) <$> xws
 matchBwd _ _ _ _                             = error absurd
 
 matchArgsBwd :: Env2 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
@@ -55,14 +53,14 @@ matchArgsBwd ρρ' κ α (ws :- w) =
 matchRecordBwd :: Env2 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings2 (Match 𝔹) -> Bindings2 (Val 𝔹) × Cont 𝔹
 matchRecordBwd Lin κ α Lin         = Lin × κ
 matchRecordBwd (_ :- _) κ α Lin    = error absurd
-matchRecordBwd ρρ' κ α (xws :- x B.↦ w) =
+matchRecordBwd ρρ' κ α (xws :- x ↦ w) =
    let ρ × ρ'  = splitAt (vars w # length) ρρ'
        v × σ   = matchBwd ρ' κ α w in
-   (first (_ :- x B.↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
+   (first (_ :- x ↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
 
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env2 𝔹 × Expr 𝔹 × 𝔹
-evalBwd v (T.Var ρ x) = (botOf ρ ◃ x B.↦ v) × Var x × false
-evalBwd v (T.Op ρ op) = (botOf ρ ◃ op B.↦ v) × Op op × false
+evalBwd v (T.Var ρ x) = (botOf ρ ◃ x ↦ v) × Var x × false
+evalBwd v (T.Op ρ op) = (botOf ρ ◃ op ↦ v) × Op op × false
 evalBwd v t@(T.Str ρ str) =
    case expand v (V.Str false str) of
       V.Str α _ -> botOf ρ × Str α str × α
@@ -100,7 +98,7 @@ evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
              evalBwd_elem :: (Int × Int) -> Env 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
              evalBwd_elem (i × j) =
                 case evalBwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
-                   (ρ :- _ B.↦ v1 :- _ B.↦ v2) × e × α' ->
+                   (ρ :- _ ↦ v1 :- _ ↦ v2) × e × α' ->
                       case expand v1 (V.Int false i) × expand v2 (V.Int false j) of
                          V.Int γ _ × V.Int γ' _ -> asBindings ρ × e × α' × γ × γ'
                          _ -> error absurd
