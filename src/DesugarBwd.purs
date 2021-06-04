@@ -3,7 +3,7 @@ module DesugarBwd where
 import Prelude hiding (absurd)
 
 import Bindings (Binding, Bindings(..), (↦), (:+:))
-import Bindings2 (Bind(..), asBindings)
+import Bindings2 (Bind, asBindings)
 import Bindings2 ((↦)) as B
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
@@ -109,7 +109,7 @@ exprBwd e (LetRec xcs s) =
       where
       -- repeat enough desugaring logic to determine shape of bindings
       recDefHole :: NonEmptyList (Clause 𝔹) -> Bind (Elim 𝔹)
-      recDefHole xcs' = Bind (fst (head xcs') B.↦ ElimHole false)
+      recDefHole xcs' = fst (head xcs') B.↦ ElimHole false
       xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 exprBwd e (ListEmpty _) =
    case expand e (E.Constr false cNil Nil) of

@@ -1,37 +1,34 @@
 module Bindings2 where
 
 import Prelude
-import Data.Newtype (class Newtype)
-import Data.Tuple (Tuple(..))
 import Bindings (Bindings(..), (:+:))
 import Bindings ((↦)) as B
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, botOf, definedJoin, expand, maybeJoin, neg
 )
-import Util (MayFail, type (×), (≜), (≞), report)
+import Util (MayFail, (≜), (≞), report)
 import Util.SnocList (SnocList(..), (:-))
 
 type Var = String -- newtype?
 
 varAnon = "_" :: Var
 
-newtype Bind a = Bind (Var × a)
+data Bind a = Bind Var a
 type Bindings2 a = SnocList (Bind a)
 
-derive instance newtypeBind :: Newtype (Bind a) _
 derive instance functorBind :: Functor Bind
 
-infix 6 Tuple as ↦
+infix 7 Bind as ↦
 
 instance expandableBind :: Expandable a => Expandable (Bind a) where
-   expand (Bind (x ↦ v)) (Bind (x' ↦ v')) = Bind ((x ≜ x') ↦ expand v v')
+   expand (x ↦ v) (x' ↦ v') = (x ≜ x') ↦ expand v v'
 
 instance joinSemilatticeBind :: Slices a => JoinSemilattice (Bind a) where
    join = definedJoin
    neg = (<$>) neg
 
 instance slicesBind :: Slices a => Slices (Bind a) where
-   maybeJoin (Bind (x ↦ v)) (Bind (y ↦ v')) = Bind <$> ((↦) <$> (x ≞ y) <*> maybeJoin v v')
+   maybeJoin (x ↦ v) (y ↦ v') = (↦) <$> (x ≞ y) <*> maybeJoin v v'
 
 instance boundedSlicesBind :: BoundedSlices a => BoundedSlices (Bind a) where
    botOf = (<$>) botOf
@@ -39,21 +36,21 @@ instance boundedSlicesBind :: BoundedSlices a => BoundedSlices (Bind a) where
 -- Temporary conversion from new bindings to old.
 asBindings :: forall t a . Bindings2 (t a) -> Bindings t a
 asBindings Lin = Empty
-asBindings (ρ :- Bind (x ↦ v)) = asBindings ρ :+: x B.↦ v
+asBindings (ρ :- x ↦ v) = asBindings ρ :+: x B.↦ v
 
 asBindings2 :: forall t a . Bindings t a -> Bindings2 (t a)
 asBindings2 Empty = Lin
-asBindings2 (ρ :+: x B.↦ v) = asBindings2 ρ :- Bind (x ↦ v)
+asBindings2 (ρ :+: x B.↦ v) = asBindings2 ρ :- x ↦ v
 
 -- Could simplify these now but not high priority.
 find :: forall a . Var -> Bindings2 a -> MayFail a
 find x Lin  = report ("variable " <> x <> " not found")
-find x (ρ :- Bind (x' ↦ v))
+find x (ρ :- x' ↦ v)
    | x == x'   = pure v
    | otherwise = find x ρ
 
 update :: forall a . Bindings2 a -> Bind a -> Bindings2 a
 update Lin _ = Lin
-update (ρ :- Bind (x ↦ v)) (Bind (x' ↦ v'))
-   | x == x'    = ρ :- Bind (x' ↦ v')
-   | otherwise  = update ρ (Bind (x' ↦ v')) :- Bind (x ↦ v)
+update (ρ :- x ↦ v) (x' ↦ v')
+   | x == x'    = ρ :- x' ↦ v'
+   | otherwise  = update ρ (x' ↦ v') :- x ↦ v

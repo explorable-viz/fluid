@@ -9,10 +9,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.String (Pattern(..), contains) as Data.String
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
-import Bindings (Binding, Bindings(..), (↦))
-import Bindings2 (Bind(..))
-import Bindings (toList) as B
-import Bindings2 ((↦)) as B
+import Bindings2 (Bind, (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
@@ -150,33 +147,19 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]
    pretty (E.App e e')              = hspace [pretty e, pretty e']
 
-instance prettyRecDefs_old :: Pretty (Bindings Elim Boolean) where
-   pretty Empty               = error absurd -- non-empty
-   pretty (Extend Empty fσ)   = pretty fσ
-   pretty (Extend δ fσ)       = atop (pretty δ :<>: semi) (pretty fσ)
-
 instance prettyRecDefs :: Pretty (SnocList (Bind (Elim Boolean))) where
    pretty Lin          = error absurd -- non-empty
    pretty (Lin :- fσ)  = pretty fσ
    pretty (δ :- fσ)        = atop (pretty δ :<>: semi) (pretty fσ)
 
-instance prettyRecDef_old :: Pretty (Binding Elim Boolean) where
-   pretty (f ↦ σ) = hspace [text f, text str.equals, pretty σ]
-
 instance prettyRecDef :: Pretty (Bind (Elim Boolean)) where
-   pretty (Bind (f B.↦ σ)) = hspace [text f, text str.equals, pretty σ]
-
-instance prettyRecord_old :: Pretty (Bindings Val Boolean) where
-   pretty xvs = xvs # B.toList <#> pretty # hcomma # parens
+   pretty (f ↦ σ) = hspace [text f, text str.equals, pretty σ]
 
 instance prettyRecord :: Pretty (SnocList (Bind (Val Boolean))) where
    pretty xvs = xvs # S.toList # reverse <#> pretty # hcomma # parens
 
-instance prettyField_old :: Pretty (Binding Val Boolean) where
-   pretty (x ↦ v) = hspace [text x :<>: colon, pretty v]
-
 instance prettyField :: Pretty (Bind (Val Boolean)) where
-   pretty (Bind (x B.↦ v)) = hspace [text x :<>: colon, pretty v]
+   pretty (x ↦ v) = hspace [text x :<>: colon, pretty v]
 
 instance prettyCont :: Pretty (Cont Boolean) where
    pretty (ContHole α)  = hole

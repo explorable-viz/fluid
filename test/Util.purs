@@ -45,8 +45,8 @@ desugarEval_bwd (t × s) v = let ρ × e × _ = evalBwd v t in ρ × desugarBwd 
 
 desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
 desugarEval_fwd ρ s =
-   let _ = evalFwd (botOf ρ) (E.Hole false) false in -- sanity-check that this is defined
-   evalFwd ρ (successful (desugarFwd s)) true
+   let _ = evalFwd (asBindings2 (botOf ρ)) (E.Hole false) false in -- sanity-check that this is defined
+   evalFwd (asBindings2 ρ) (successful (desugarFwd s)) true
 
 checkPretty :: forall a . Pretty a => a -> String -> Aff Unit
 checkPretty x expected = prettyP x `shouldEqual` expected
@@ -91,7 +91,7 @@ testLink file v1_sel v2_expect =
              _ × ρ' = splitAt 1 ρ0ρ
              -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
              -- combine with the negation of the dataset environment slice
-             v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
+             v2' = neg (evalFwd (asBindings2 (neg (botOf ρ0 <> ρ'))) (const true <$> e2) true t2)
          checkPretty v2' v2_expect
 
 testWithDataset :: String -> String -> Test Unit

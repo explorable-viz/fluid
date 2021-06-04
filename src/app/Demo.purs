@@ -8,7 +8,7 @@ import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 import App.Renderer (MatrixFig, {-drawBarChart, drawTable, -}drawFigure, matrixFig)
-import Bindings2 (Bind(..), (↦), asBindings, asBindings2, find, update)
+import Bindings2 ((↦), asBindings, asBindings2, find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
@@ -53,8 +53,8 @@ example_neededBy ρ s0 = do
    e <- desugarFwd s
    t × o <- eval (ρ <> ρ') e
    let ω' = selectCell 1 1 3 3
-       ρ'' = update (botOf ρ') (Bind ("filter" ↦ ω'))
-       o' = neg (evalFwd (asBindings (neg (botOf ρ <> ρ''))) (const true <$> e) true t)
+       ρ'' = update (botOf ρ') ("filter" ↦ ω')
+       o' = neg (evalFwd (neg (botOf ρ <> ρ'')) (const true <$> e) true t)
    ω <- find "filter" ρ'
    i <- find "image" ρ'
    i' <- find "image" ρ''

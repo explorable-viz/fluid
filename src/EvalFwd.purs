@@ -2,13 +2,10 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 
-import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
-import Bindings2 (Bindings2, Bind(..), asBindings, asBindings2)
-import Bindings2 ((↦)) as B
+import Bindings2 (Bindings2, (↦), asBindings, find, varAnon)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
-import Data.Newtype (unwrap)
 import Data.Profunctor.Strong ((***), first, second)
 import Data.Tuple (fst)
 import DataType (cPair)
@@ -20,13 +17,13 @@ import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (match_fwd) as P
 import Util (type (×), (×), (!), absurd, assert, error, mustLookup, replicate, successful)
 import Util.SnocList (SnocList(..), (:-))
-import Val (Env, Env2, PrimOp(..), Val)
+import Val (Env2, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env2 𝔹 × Cont 𝔹 × 𝔹
 matchFwd v σ (T.MatchVar x) =
    case expand σ (ElimVar x (ContHole false)) of
-      ElimVar _ κ -> (Lin :- Bind (x B.↦ v)) × κ × true
+      ElimVar _ κ -> (Lin :- x ↦ v) × κ × true
       _ -> error absurd
 matchFwd _ σ (T.MatchVarAnon _) =
    case expand σ (ElimVar varAnon (ContHole false)) of
@@ -39,7 +36,7 @@ matchFwd v σ (T.MatchConstr c ws cs) =
          (second (_ ∧ α)) (matchArgsFwd vs (mustLookup c m) ws)
       _ -> error absurd
 matchFwd v σ (T.MatchRecord xws) =
-   let xs = xws <#> (unwrap >>> fst) in
+   let xs = xws <#> (\(x ↦ _) -> x) in
    case expand v (V.Record false (map (const (V.Hole false)) <$> xws)) ×
         expand σ (ElimRecord xs (ContHole false)) of
       V.Record α xvs × ElimRecord _ κ ->
@@ -55,12 +52,12 @@ matchArgsFwd _ _ _ = error absurd
 
 matchRecordFwd :: Bindings2 (Val 𝔹) -> Cont 𝔹 -> Bindings2 (Match 𝔹) -> Env2 𝔹 × Cont 𝔹 × 𝔹
 matchRecordFwd Lin κ Lin = Lin × κ × true
-matchRecordFwd (xvs :- Bind (x B.↦ v)) σ (xws :- Bind (x' B.↦ w)) | x == x' =
+matchRecordFwd (xvs :- x ↦ v) σ (xws :- x' ↦ w) | x == x' =
    let ρ × σ' × α = matchRecordFwd xvs σ xws in
    (first (ρ <> _) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
 matchRecordFwd _ _ _ = error absurd
 
-evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
+evalFwd :: Env2 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
 evalFwd ρ e _ (T.Var _ x) =
    case expand e (Var x) of
       Var _ -> successful (find x ρ)
@@ -98,19 +95,19 @@ evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
                         i <- range 1 i'
                         singleton $ A.fromFoldable $ do
                            j <- range 1 j'
-                           singleton (evalFwd ((ρ :+: x ↦ V.Int α i) :+: y ↦ V.Int α j) e1 α' (tss!(i - 1)!(j - 1)))
+                           singleton (evalFwd (ρ :- x ↦ V.Int α i :- y ↦ V.Int α j) e1 α' (tss!(i - 1)!(j - 1)))
                in V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.LetRec δ t) =
    case expand e (LetRec (botOf δ) (Hole false)) of
       LetRec δ' e' ->
-         let ρ' = closeDefs (asBindings2 ρ) (asBindings δ') (asBindings δ') in
-         evalFwd (ρ <> asBindings ρ') e' α t
+         let ρ' = closeDefs ρ (asBindings δ') (asBindings δ') in
+         evalFwd (ρ <> ρ') e' α t
       _ -> error absurd
 evalFwd ρ e _ (T.Lambda _ _) =
    case expand e (Lambda (ElimHole false)) of
-      Lambda σ -> V.Closure (asBindings2 ρ) Lin σ
+      Lambda σ -> V.Closure ρ Lin σ
       _ -> error absurd
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
    case expand e (App (Hole false) (Hole false)) of
@@ -120,7 +117,7 @@ evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
                let v = evalFwd ρ e2 α t2
                    ρ2 = closeDefs ρ1' (asBindings δ') (asBindings δ')
                    ρ3 × e3 × β = matchFwd v σ' w in
-               evalFwd (asBindings (ρ1' <> ρ2 <> ρ3)) (asExpr e3) β t3
+               evalFwd (ρ1' <> ρ2 <> ρ3) (asExpr e3) β t3
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
@@ -147,5 +144,5 @@ evalFwd ρ e α (T.Let (T.VarDef w t1) t2) =
       Let (VarDef σ e1) e2 ->
          let v = evalFwd ρ e1 α t1
              ρ' × _ × α' = matchFwd v σ w in
-         evalFwd (ρ <> asBindings ρ') e2 α' t2
+         evalFwd (ρ <> ρ') e2 α' t2
       _ -> error absurd

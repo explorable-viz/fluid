@@ -11,7 +11,7 @@ import Data.Map (Map, fromFoldable, singleton, size, toUnfoldable)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings2 (Bind(..), (↦), varAnon)
+import Bindings2 (Bind, (↦), varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs2, VarDef(..)) as E
@@ -66,7 +66,7 @@ recDefsFwd xcs = fromList <$> toList <$> traverse recDefFwd xcss
    xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 
 recDefFwd :: NonEmptyList (Clause 𝔹) -> MayFail (Bind (Elim 𝔹))
-recDefFwd xcs = (Bind <<< (fst (head xcs) ↦ _)) <$> branchesFwd_curried (snd <$> xcs)
+recDefFwd xcs = (fst (head xcs) ↦ _) <$> branchesFwd_curried (snd <$> xcs)
 
 -- s desugar_fwd e
 exprFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
