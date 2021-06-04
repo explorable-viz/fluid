@@ -1,7 +1,6 @@
 module Bindings2 where
 
 import Prelude
-import Bindings (Bindings(..), (:+:))
 import Bindings ((↦)) as B
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, botOf, definedJoin, expand, maybeJoin, neg
@@ -38,15 +37,6 @@ instance slicesBind :: Slices a => Slices (Bind a) where
 
 instance boundedSlicesBind :: BoundedSlices a => BoundedSlices (Bind a) where
    botOf = (<$>) botOf
-
--- Temporary conversion from new bindings to old.
-asBindings :: forall t a . Bindings2 (t a) -> Bindings t a
-asBindings Lin = Empty
-asBindings (ρ :- x ↦ v) = asBindings ρ :+: x B.↦ v
-
-asBindings2 :: forall t a . Bindings t a -> Bindings2 (t a)
-asBindings2 Empty = Lin
-asBindings2 (ρ :+: x B.↦ v) = asBindings2 ρ :- x ↦ v
 
 -- Could simplify these now but not high priority.
 find :: forall a . Var -> Bindings2 a -> MayFail a
