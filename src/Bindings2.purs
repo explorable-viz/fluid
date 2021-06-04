@@ -1,7 +1,6 @@
 module Bindings2 where
 
 import Prelude
-import Bindings ((↦)) as B
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, botOf, definedJoin, expand, maybeJoin, neg
 )
