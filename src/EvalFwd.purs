@@ -23,14 +23,14 @@ import Util.SnocList (SnocList(..), (:-))
 import Val (Env, Env2, PrimOp(..), Val)
 import Val (Val(..)) as V
 
-matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env2 𝔹 × Cont 𝔹 × 𝔹
 matchFwd v σ (T.MatchVar x) =
    case expand σ (ElimVar x (ContHole false)) of
-      ElimVar _ κ -> (Empty :+: x ↦ v) × κ × true
+      ElimVar _ κ -> (Lin :- Bind (x B.↦ v)) × κ × true
       _ -> error absurd
 matchFwd _ σ (T.MatchVarAnon _) =
    case expand σ (ElimVar varAnon (ContHole false)) of
-      ElimVar _ κ -> Empty × κ × true
+      ElimVar _ κ -> Lin × κ × true
       _ -> error absurd
 matchFwd v σ (T.MatchConstr c ws cs) =
    case expand v (V.Constr false c (const (V.Hole false) <$> ws)) ×
@@ -43,11 +43,11 @@ matchFwd v σ (T.MatchRecord xws) =
    case expand v (V.Record false (map (const (V.Hole false)) <$> xws)) ×
         expand σ (ElimRecord xs (ContHole false)) of
       V.Record α xvs × ElimRecord _ κ ->
-         (first asBindings *** (_ ∧ α)) (matchRecordFwd xvs κ xws)
+         (second (_ ∧ α)) (matchRecordFwd xvs κ xws)
       _ -> error absurd
 
-matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchArgsFwd Nil κ Nil = Empty × κ × true
+matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env2 𝔹 × Cont 𝔹 × 𝔹
+matchArgsFwd Nil κ Nil = Lin × κ × true
 matchArgsFwd (v : vs) σ (w : ws) =
    let ρ × κ × α = matchFwd v (asElim σ) w in
    (first (ρ <> _) *** (_ ∧ α)) (matchArgsFwd vs κ ws)
@@ -57,7 +57,7 @@ matchRecordFwd :: Bindings2 (Val 𝔹) -> Cont 𝔹 -> Bindings2 (Match 𝔹) ->
 matchRecordFwd Lin κ Lin = Lin × κ × true
 matchRecordFwd (xvs :- Bind (x B.↦ v)) σ (xws :- Bind (x' B.↦ w)) | x == x' =
    let ρ × σ' × α = matchRecordFwd xvs σ xws in
-   (first (asBindings2 >>> (ρ <> _)) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
+   (first (ρ <> _) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
 matchRecordFwd _ _ _ = error absurd
 
 evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
@@ -120,7 +120,7 @@ evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
                let v = evalFwd ρ e2 α t2
                    ρ2 = closeDefs ρ1' (asBindings δ') (asBindings δ')
                    ρ3 × e3 × β = matchFwd v σ' w in
-               evalFwd (asBindings ρ1' <> asBindings ρ2 <> ρ3) (asExpr e3) β t3
+               evalFwd (asBindings (ρ1' <> ρ2 <> ρ3)) (asExpr e3) β t3
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
@@ -147,5 +147,5 @@ evalFwd ρ e α (T.Let (T.VarDef w t1) t2) =
       Let (VarDef σ e1) e2 ->
          let v = evalFwd ρ e1 α t1
              ρ' × _ × α' = matchFwd v σ w in
-         evalFwd (ρ <> ρ') e2 α' t2
+         evalFwd (ρ <> asBindings ρ') e2 α' t2
       _ -> error absurd
