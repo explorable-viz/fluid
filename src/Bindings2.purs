@@ -38,9 +38,9 @@ instance boundedSlicesBind :: BoundedSlices a => BoundedSlices (Bind a) where
 
 -- Temporary conversion from new bindings to old.
 asBindings :: forall t a . Bindings2 (t a) -> Bindings t a
-asBindings SnocNil = Empty
+asBindings Lin = Empty
 asBindings (ρ :- Bind (x ↦ v)) = asBindings ρ :+: x B.↦ v
 
 asBindings2 :: forall t a . Bindings t a -> Bindings2 (t a)
-asBindings2 Empty = SnocNil
+asBindings2 Empty = Lin
 asBindings2 (ρ :+: x B.↦ v) = asBindings2 ρ :- Bind (x ↦ v)

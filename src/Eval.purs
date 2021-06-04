@@ -43,7 +43,7 @@ match (V.Record _ xvs) (ElimRecord xs κ)  = (first asBindings *** MatchRecord) 
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × List (Match 𝔹))
-matchArgs _ Nil κ = pure (SnocNil × κ × Nil)
+matchArgs _ Nil κ = pure (Lin × κ × Nil)
 matchArgs c (v : vs) (ContElim σ) = do
    ρ  × κ'  × w  <- match v σ
    ρ' × κ'' × ws <- matchArgs c vs κ'
@@ -53,17 +53,17 @@ matchArgs c (_ : vs) (ContExpr _) = report $
 matchArgs _ _ _ = error absurd
 
 matchRecord :: Bindings2 (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × Bindings2 (Match 𝔹))
-matchRecord SnocNil SnocNil κ = pure (SnocNil × κ × SnocNil)
+matchRecord Lin Lin κ = pure (Lin × κ × Lin)
 matchRecord (xvs :- Bind (x B.↦ v)) (xs :- x') σ = do
    check (x == x') (patternMismatch (show x) (show x'))
    ρ × σ' × xws <- matchRecord xvs xs σ
    ρ' × κ × w <- match v (asElim σ')
    pure (asBindings2 (asBindings ρ <> ρ') × κ × (xws :- Bind (x B.↦ w)))
-matchRecord (_ :- Bind (x B.↦ _)) SnocNil _ = report (patternMismatch "end of record pattern" (show x))
-matchRecord SnocNil (_ :- x) _ = report (patternMismatch "end of record" (show x))
+matchRecord (_ :- Bind (x B.↦ _)) Lin _ = report (patternMismatch "end of record pattern" (show x))
+matchRecord Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
 
 closeDefs :: Env2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env2 𝔹
-closeDefs _ _ Empty = SnocNil
+closeDefs _ _ Empty = Lin
 closeDefs ρ δ0 (δ :+: f ↦ σ) = closeDefs ρ δ0 δ :- Bind (f B.↦ V.Closure ρ (asBindings2 δ0) σ)
 
 checkArity :: Ctr -> Int -> MayFail Unit
@@ -108,7 +108,7 @@ eval ρ (LetRec δ e) = do
    t × v <- eval (ρ <> asBindings ρ') e
    pure (T.LetRec δ t × v)
 eval ρ (Lambda σ) =
-   pure (T.Lambda (asBindings2 ρ) σ × V.Closure (asBindings2 ρ) SnocNil σ)
+   pure (T.Lambda (asBindings2 ρ) σ × V.Closure (asBindings2 ρ) Lin σ)
 eval ρ (App e e') = do
    t × v <- eval ρ e
    t' × v' <- eval ρ e'

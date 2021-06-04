@@ -156,8 +156,8 @@ instance prettyRecDefs_old :: Pretty (Bindings Elim Boolean) where
    pretty (Extend δ fσ)       = atop (pretty δ :<>: semi) (pretty fσ)
 
 instance prettyRecDefs :: Pretty (SnocList (Bind (Elim Boolean))) where
-   pretty SnocNil          = error absurd -- non-empty
-   pretty (SnocNil :- fσ)  = pretty fσ
+   pretty Lin          = error absurd -- non-empty
+   pretty (Lin :- fσ)  = pretty fσ
    pretty (δ :- fσ)        = atop (pretty δ :<>: semi) (pretty fσ)
 
 instance prettyRecDef_old :: Pretty (Binding Elim Boolean) where

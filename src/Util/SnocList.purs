@@ -12,7 +12,7 @@ import Util (type (×))
 
 -- Snoc lists. Could reformuate Bindings as SnocList Binding.
 data SnocList a =
-   SnocNil |
+   Lin |
    Snoc (SnocList a) a
 
 derive instance snocListFunctor :: Functor SnocList
@@ -21,11 +21,11 @@ infix 6 Snoc as :-
 
 -- (Order-preserving) natural isomorphism to List.
 toList :: SnocList ~> List
-toList SnocNil = Nil
+toList Lin = Nil
 toList (xs :- x) = x : toList xs
 
 fromList :: List ~> SnocList
-fromList Nil = SnocNil
+fromList Nil = Lin
 fromList (x : xs) = fromList xs :- x
 
 reverse :: SnocList ~> SnocList
@@ -61,4 +61,4 @@ instance semigroupSnocList :: Semigroup (SnocList a) where
    append = curry $ (toList *** toList) >>> uncurry (flip append) >>> fromList
 
 instance monoidSnocList :: Monoid (SnocList a) where
-   mempty = SnocNil
+   mempty = Lin

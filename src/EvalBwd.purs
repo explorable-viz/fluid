@@ -44,8 +44,8 @@ matchBwd ρ κ α (MatchRecord xws)             = V.Record α (asBindings2 xvs) 
 matchBwd _ _ _ _                             = error absurd
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgsBwd Empty κ α SnocNil       = Nil × κ
-matchArgsBwd (_ :+: _) κ α SnocNil   = error absurd
+matchArgsBwd Empty κ α Lin       = Nil × κ
+matchArgsBwd (_ :+: _) κ α Lin   = error absurd
 matchArgsBwd ρρ' κ α (ws :- w) =
    let ρ × ρ'  = splitAt (vars w # length) ρρ'
        v × σ   = matchBwd ρ' κ α w
@@ -76,7 +76,7 @@ evalBwd v t@(T.Float ρ n) =
       V.Float α _ -> asBindings (botOf ρ) × Float α n × α
       _ -> error absurd
 evalBwd v t@(T.Lambda ρ σ) =
-   case expand v (V.Closure (botOf ρ) SnocNil (botOf σ)) of
+   case expand v (V.Closure (botOf ρ) Lin (botOf σ)) of
       V.Closure ρ' _ σ' -> asBindings ρ' × Lambda σ' × false
       _ -> error absurd
 evalBwd v t@(T.Record ρ xts) =

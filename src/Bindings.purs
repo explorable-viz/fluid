@@ -69,7 +69,7 @@ toList (ρ :+: xv) = toList ρ <> singleton xv
 
 -- Probably better to recast Bindings as a snoc list.
 toSnocList :: forall t a . Bindings t a -> SnocList (Binding t a)
-toSnocList Empty = SnocNil
+toSnocList Empty = Lin
 toSnocList (ρ :+: xv) = toSnocList ρ :- xv
 
 bindingsMap :: forall t a u b . (t a -> u b) -> Bindings t a -> Bindings u b

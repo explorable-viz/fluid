@@ -109,7 +109,7 @@ evalFwd ρ e α (T.LetRec δ t) =
       _ -> error absurd
 evalFwd ρ e _ (T.Lambda _ _) =
    case expand e (Lambda (ElimHole false)) of
-      Lambda σ -> V.Closure (asBindings2 ρ) SnocNil σ
+      Lambda σ -> V.Closure (asBindings2 ρ) Lin σ
       _ -> error absurd
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
    case expand e (App (Hole false) (Hole false)) of
