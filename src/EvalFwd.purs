@@ -3,7 +3,8 @@ module EvalFwd where
 import Prelude hiding (absurd)
 
 import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
-import Bindings2 (asBindings, asBindings2)
+import Bindings2 (Bindings2, Bind(..), asBindings, asBindings2)
+import Bindings2 ((↦)) as B
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
@@ -18,7 +19,7 @@ import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asElim, asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (match_fwd) as P
 import Util (type (×), (×), (!), absurd, assert, error, mustLookup, replicate, successful)
-import Util.SnocList (SnocList(..))
+import Util.SnocList (SnocList(..), (:-))
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
@@ -42,7 +43,7 @@ matchFwd v σ (T.MatchRecord xws) =
    case expand v (V.Record false (map (const (V.Hole false)) <$> xws)) ×
         expand σ (ElimRecord xs (ContHole false)) of
       V.Record α xvs × ElimRecord _ κ ->
-         (second (_ ∧ α)) (matchRecordFwd (asBindings xvs) κ (asBindings xws))
+         (second (_ ∧ α)) (matchRecordFwd xvs κ xws)
       _ -> error absurd
 
 matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
@@ -52,9 +53,9 @@ matchArgsFwd (v : vs) σ (w : ws) =
    (first (ρ <> _) *** (_ ∧ α)) (matchArgsFwd vs κ ws)
 matchArgsFwd _ _ _ = error absurd
 
-matchRecordFwd :: Bindings Val 𝔹 -> Cont 𝔹 -> Bindings Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchRecordFwd Empty κ Empty = Empty × κ × true
-matchRecordFwd (xvs :+: x ↦ v) σ (xws :+: x' ↦ w) | x == x' =
+matchRecordFwd :: Bindings2 (Val 𝔹) -> Cont 𝔹 -> Bindings2 (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchRecordFwd Lin κ Lin = Empty × κ × true
+matchRecordFwd (xvs :- Bind (x B.↦ v)) σ (xws :- Bind (x' B.↦ w)) | x == x' =
    let ρ × σ' × α = matchRecordFwd xvs σ xws in
    (first (ρ <> _) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
 matchRecordFwd _ _ _ = error absurd
