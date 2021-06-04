@@ -1,13 +1,14 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
+
+import Bindings (Bindings, Bind, (↦), (◃), foldBindings, varAnon)
 import Data.Foldable (length)
 import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (first)
-import Bindings (Bindings, Bind, (↦), (◃), foldBindings, varAnon)
 import DataType (cPair)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..), vars)
@@ -15,6 +16,7 @@ import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, (∨), botOf, expand)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate)
 import Util.SnocList (SnocList(..), (:-), fromList, splitAt)
+import Util.SnocList (unzip, zip, zipWith) as S
 import Val (Env, PrimOp(..), Val, holeMatrix)
 import Val (Val(..)) as V
 
@@ -78,7 +80,17 @@ evalBwd v t@(T.Lambda ρ σ) =
       V.Closure ρ' _ σ' -> ρ' × Lambda σ' × false
       _ -> error absurd
 evalBwd v t@(T.Record ρ xts) =
-   error "todo"
+   case expand v (V.Record false (xts <#> map (const (V.Hole false)))) of
+      V.Record α xvs ->
+         let xs × ts = xts <#> (\(x ↦ t) -> x × t) # S.unzip
+             vs = xvs <#> (\(_ ↦ v') -> v')
+         -- Could unify with similar function in constructor case
+             evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × SnocList (Expr 𝔹) × 𝔹)
+             evalArg_bwd (v' × t') (ρ' × es × α') = (ρ' ∨ ρ'') × (es :- e) × (α' ∨ α'')
+               where ρ'' × e × α'' = evalBwd v' t'
+             ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Lin × α) (S.zip vs ts) in
+         ρ' × Record α (S.zipWith (↦) xs es) × α'
+      _ -> error absurd
 evalBwd v t@(T.Constr ρ c ts) =
    case expand v (V.Constr false c (ts <#> const (V.Hole false))) of
       V.Constr α _ vs ->
