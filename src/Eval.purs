@@ -9,7 +9,7 @@ import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence, traverse)
-import Bindings2 (Bindings2, (↦), find, varAnon, Var)
+import Bindings (Bindings, (↦), find, varAnon, Var)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -48,7 +48,7 @@ matchArgs c (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _ = error absurd
 
-matchRecord :: Bindings2 (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × Bindings2 (Match 𝔹))
+matchRecord :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
 matchRecord Lin Lin κ = pure (Lin × κ × Lin)
 matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
    check (x == x') (patternMismatch (show x) (show x'))

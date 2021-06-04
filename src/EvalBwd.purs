@@ -7,7 +7,7 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (first)
-import Bindings2 (Bindings2, Bind, (↦), (◃), foldBindings, varAnon)
+import Bindings (Bindings, Bind, (↦), (◃), foldBindings, varAnon)
 import DataType (cPair)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..), vars)
@@ -50,7 +50,7 @@ matchArgsBwd ρρ' κ α (ws :- w) =
        vs × κ' = matchArgsBwd ρ (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
 
-matchRecordBwd :: Env2 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings2 (Match 𝔹) -> Bindings2 (Val 𝔹) × Cont 𝔹
+matchRecordBwd :: Env2 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings (Match 𝔹) -> Bindings (Val 𝔹) × Cont 𝔹
 matchRecordBwd Lin κ α Lin         = Lin × κ
 matchRecordBwd (_ :- _) κ α Lin    = error absurd
 matchRecordBwd ρρ' κ α (xws :- x ↦ w) =

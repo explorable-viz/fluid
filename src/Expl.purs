@@ -2,7 +2,7 @@ module Expl where
 
 import Prelude
 import Data.List (List(..), singleton)
-import Bindings2 (Bindings2, Var, (↦))
+import Bindings (Bindings, Var, (↦))
 import DataType (Ctr)
 import Expr (Elim, RecDefs2)
 import Util (type (×))
@@ -18,7 +18,7 @@ data Expl a =
    Int (Env2 a) Int |
    Float (Env2 a) Number |
    Str (Env2 a) String |
-   Record (Env2 a) (Bindings2 (Expl a)) |
+   Record (Env2 a) (Bindings (Expl a)) |
    Constr (Env2 a) Ctr (List (Expl a)) |
    Matrix (Array2 (Expl a)) (Var × Var) (Int × Int) (Expl a) |
    Lambda (Env2 a) (Elim a) |
@@ -34,7 +34,7 @@ data Match a =
    MatchVar Var |
    MatchVarAnon (Val a) |
    MatchConstr Ctr (List (Match a)) (List Ctr) |  -- list of matches should be a snoc list
-   MatchRecord (Bindings2 (Match a))
+   MatchRecord (Bindings (Match a))
 
 vars :: forall a . Match a -> List Var
 vars (MatchVar x)          = singleton x

@@ -8,7 +8,7 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..))
 import Debug.Trace (trace)
 import Math (log, pow) as M
-import Bindings2 ((↦))
+import Bindings ((↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)

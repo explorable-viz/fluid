@@ -4,7 +4,7 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
-import Bindings2 (Bindings2, Var, (⪂))
+import Bindings (Bindings, Var, (⪂))
 import DataType (Ctr)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg
@@ -19,7 +19,7 @@ data Expr a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Bindings2 (Expr a)) |
+   Record a (Bindings (Expr a)) |
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
@@ -29,7 +29,7 @@ data Expr a =
 
 -- eliminator in var def is always singleton, with an empty terminal continuation represented by hole
 data VarDef a = VarDef (Elim a) (Expr a)
-type RecDefs2 a = Bindings2 (Elim a)
+type RecDefs2 a = Bindings (Elim a)
 
 data Elim a =
    ElimHole a |

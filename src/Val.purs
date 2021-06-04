@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.Array (replicate)
 import Data.List (List)
-import Bindings2 (Bindings2)
+import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim(..), RecDefs2)
 import Lattice (
@@ -20,7 +20,7 @@ data Val a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Bindings2 (Val a)) |      -- always saturated
+   Record a (Bindings (Val a)) |      -- always saturated
    Constr a Ctr (List (Val a)) |       -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |   -- always unsaturated
@@ -34,7 +34,7 @@ newtype PrimOp = PrimOp {
    op_bwd :: Val 𝔹 × Val 𝔹 -> Endo (List (Val 𝔹))
 }
 
-type Env2 a = Bindings2 (Val a)
+type Env2 a = Bindings (Val a)
 
 -- Matrices.
 type Array2 a = Array (Array a)

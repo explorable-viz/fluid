@@ -11,7 +11,7 @@ import Data.Map (Map, fromFoldable, singleton, size, toUnfoldable)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings2 (Bind, (↦), varAnon)
+import Bindings (Bind, (↦), varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs2, VarDef(..)) as E

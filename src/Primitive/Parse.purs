@@ -2,7 +2,7 @@ module Primitive.Parse where
 
 import Data.Map (Map, fromFoldable)
 import Text.Parsing.Parser.Expr (Assoc(..))
-import Bindings2 (Var)
+import Bindings (Var)
 import Util (type (×), (×))
 
 -- name in user land, precedence 0 from 9 (similar to Haskell 98), associativity

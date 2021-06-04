@@ -2,7 +2,7 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 
-import Bindings2 (Bindings2, (↦), find, varAnon)
+import Bindings (Bindings, (↦), find, varAnon)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
@@ -50,7 +50,7 @@ matchArgsFwd (v : vs) σ (w : ws) =
    (first (ρ <> _) *** (_ ∧ α)) (matchArgsFwd vs κ ws)
 matchArgsFwd _ _ _ = error absurd
 
-matchRecordFwd :: Bindings2 (Val 𝔹) -> Cont 𝔹 -> Bindings2 (Match 𝔹) -> Env2 𝔹 × Cont 𝔹 × 𝔹
+matchRecordFwd :: Bindings (Val 𝔹) -> Cont 𝔹 -> Bindings (Match 𝔹) -> Env2 𝔹 × Cont 𝔹 × 𝔹
 matchRecordFwd Lin κ Lin = Lin × κ × true
 matchRecordFwd (xvs :- x ↦ v) σ (xws :- x' ↦ w) | x == x' =
    let ρ × σ' × α = matchRecordFwd xvs σ xws in
