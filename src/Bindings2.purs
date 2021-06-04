@@ -19,6 +19,7 @@ type Bindings2 a = SnocList (Bind a)
 derive instance functorBind :: Functor Bind
 
 infix 7 Bind as ↦
+infixl 5 update as ◃
 
 instance expandableBind :: Expandable a => Expandable (Bind a) where
    expand (x ↦ v) (x' ↦ v') = (x ≜ x') ↦ expand v v'
@@ -49,13 +50,13 @@ find x (ρ :- x' ↦ v)
    | x == x'   = pure v
    | otherwise = find x ρ
 
+-- Replace by SnocList fold?
+foldBindings :: forall a b . (Bind a -> Endo b) -> b -> Bindings2 a -> b
+foldBindings f z (ρ :- x)  = f x (foldBindings f z ρ)
+foldBindings _ z Lin       = z
+
 update :: forall a . Bindings2 a -> Bind a -> Bindings2 a
 update Lin _ = Lin
 update (ρ :- x ↦ v) (x' ↦ v')
    | x == x'    = ρ :- x' ↦ v'
    | otherwise  = update ρ (x' ↦ v') :- x ↦ v
-
--- Replace by SnocList fold?
-foldBindings :: forall a b . (Bind a -> Endo b) -> b -> Bindings2 a -> b
-foldBindings f z (ρ :- x)  = f x (foldBindings f z ρ)
-foldBindings _ z Lin       = z

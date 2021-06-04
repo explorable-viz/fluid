@@ -9,8 +9,7 @@ import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Bindings (splitAt)
-import Bindings2 (asBindings2)
+import Bindings2 (asBindings, asBindings2)
 import DataType (dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
@@ -24,6 +23,7 @@ import Lattice (𝔹, botOf, neg)
 import Module (loadFile, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import Util (MayFail, type (×), (×), successful)
+import Util.SnocList (splitAt)
 import Val (Env, Val(..))
 
 -- Don't enforce expected values for graphics tests (values too complex).
@@ -41,7 +41,7 @@ desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 desugarEval ρ s = desugarFwd s >>= eval (asBindings2 ρ)
 
 desugarEval_bwd :: Expl 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr 𝔹
-desugarEval_bwd (t × s) v = let ρ × e × _ = evalBwd v t in ρ × desugarBwd e s
+desugarEval_bwd (t × s) v = let ρ × e × _ = evalBwd v t in asBindings ρ × desugarBwd e s
 
 desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
 desugarEval_fwd ρ s =
@@ -91,7 +91,7 @@ testLink file v1_sel v2_expect =
              _ × ρ' = splitAt 1 ρ0ρ
              -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
              -- combine with the negation of the dataset environment slice
-             v2' = neg (evalFwd (asBindings2 (neg (botOf ρ0 <> ρ'))) (const true <$> e2) true t2)
+             v2' = neg (evalFwd (asBindings2 (neg (botOf ρ0 <> asBindings ρ'))) (const true <$> e2) true t2)
          checkPretty v2' v2_expect
 
 testWithDataset :: String -> String -> Test Unit

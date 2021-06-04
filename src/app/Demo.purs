@@ -39,8 +39,8 @@ example_needed ρ s0 = do
        ρρ' × _ × _ = evalBwd o' t
    ω <- find "filter" ρ'
    i <- find "image" ρ'
-   ω' <- find "filter" (asBindings2 ρρ')
-   i' <- find "image" (asBindings2 ρρ')
+   ω' <- find "filter" ρρ'
+   i' <- find "image" ρρ'
    pure [
       matrixFig "output" "LightGreen" (o' × o),
       matrixFig "filter" "Yellow" (ω' × ω),
