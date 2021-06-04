@@ -9,13 +9,11 @@ import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence, traverse)
-import Bindings (Bindings(..), (:+:), (↦))
-import Bindings2 (Bindings2, asBindings, asBindings2, find, varAnon, Var)
-import Bindings2 ((↦)) as B
+import Bindings2 (Bindings2, (↦), find, varAnon, Var)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs2, VarDef(..), asExpr, asElim)
 import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
@@ -31,7 +29,7 @@ patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × Match 𝔹)
 match _ (ElimHole _)                      = error absurd
 match v (ElimVar x κ)   | x == varAnon    = pure (Lin × κ × MatchVarAnon v)
-                        | otherwise       = pure ((Lin :- x B.↦ v) × κ × MatchVar x)
+                        | otherwise       = pure ((Lin :- x ↦ v) × κ × MatchVar x)
 match (V.Constr _ c vs) (ElimConstr m) = do
    checkConsistent "Pattern mismatch: " c (keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
@@ -52,17 +50,17 @@ matchArgs _ _ _ = error absurd
 
 matchRecord :: Bindings2 (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env2 𝔹 × Cont 𝔹 × Bindings2 (Match 𝔹))
 matchRecord Lin Lin κ = pure (Lin × κ × Lin)
-matchRecord (xvs :- x B.↦ v) (xs :- x') σ = do
+matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
    check (x == x') (patternMismatch (show x) (show x'))
    ρ × σ' × xws <- matchRecord xvs xs σ
    ρ' × κ × w <- match v (asElim σ')
-   pure ((ρ <> ρ') × κ × (xws :- x B.↦ w))
-matchRecord (_ :- x B.↦ _) Lin _ = report (patternMismatch "end of record pattern" (show x))
+   pure ((ρ <> ρ') × κ × (xws :- x ↦ w))
+matchRecord (_ :- x ↦ _) Lin _ = report (patternMismatch "end of record pattern" (show x))
 matchRecord Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
 
-closeDefs :: Env2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env2 𝔹
-closeDefs _ _ Empty = Lin
-closeDefs ρ δ0 (δ :+: f ↦ σ) = closeDefs ρ δ0 δ :- f B.↦ V.Closure ρ (asBindings2 δ0) σ
+closeDefs :: Env2 𝔹 -> RecDefs2 𝔹 -> RecDefs2 𝔹 -> Env2 𝔹
+closeDefs _ _ Lin = Lin
+closeDefs ρ δ0 (δ :- f ↦ σ) = closeDefs ρ δ0 δ :- f ↦ V.Closure ρ δ0 σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -77,9 +75,9 @@ eval ρ (Int _ n)     = pure (T.Int ρ n × V.Int false n)
 eval ρ (Float _ n)   = pure (T.Float ρ n × V.Float false n)
 eval ρ (Str _ str)   = pure (T.Str ρ str × V.Str false str)
 eval ρ (Record _ xes) = do
-   let xs × es = xes <#> (\(x B.↦ e) -> x × e) # S.unzip
+   let xs × es = xes <#> (\(x ↦ e) -> x × e) # S.unzip
    ts × vs <- traverse (eval ρ) es <#> S.unzip
-   pure (T.Record ρ (zipWith B.(↦) xs ts) × V.Record false (zipWith B.(↦) xs vs))
+   pure (T.Record ρ (zipWith (↦) xs ts) × V.Record false (zipWith (↦) xs vs))
 eval ρ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
@@ -95,14 +93,14 @@ eval ρ (Matrix _ e (x × y) e') = do
             i <- range 1 i'
             singleton $ sequence $ do
                j <- range 1 j'
-               singleton (eval (ρ :- x B.↦ V.Int false i :- y B.↦ V.Int false j) e))
+               singleton (eval (ρ :- x ↦ V.Int false i :- y ↦ V.Int false j) e))
          pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false)))
       v' -> report ("Array dimensions must be pair of ints; got " <> prettyP v')
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable
 eval ρ (LetRec δ e) = do
-   let ρ' = closeDefs ρ (asBindings δ) (asBindings δ)
+   let ρ' = closeDefs ρ δ δ
    t × v <- eval (ρ <> ρ') e
    pure (T.LetRec δ t × v)
 eval ρ (Lambda σ) =
@@ -113,7 +111,7 @@ eval ρ (App e e') = do
    case v of
       V.Hole _ -> error absurd
       V.Closure ρ1 δ σ -> do
-         let ρ2 = closeDefs ρ1 (asBindings δ) (asBindings δ)
+         let ρ2 = closeDefs ρ1 δ δ
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) (asExpr e'')
          pure (T.App (t × ρ1 × δ × σ) t' w t'' × v'')
@@ -138,4 +136,4 @@ eval_module ρ (Module (Left (VarDef σ e) : ds)) = do
    ρ' × _ × w  <- match v σ
    eval_module (ρ <> ρ') (Module ds)
 eval_module ρ (Module (Right δ : ds)) =
-   eval_module (ρ <> closeDefs ρ (asBindings δ) (asBindings δ)) (Module ds)
+   eval_module (ρ <> closeDefs ρ δ δ) (Module ds)
