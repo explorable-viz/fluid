@@ -4,7 +4,7 @@ import Prelude
 import Data.Foldable (class Foldable, foldl, foldMap, foldr)
 import Data.Function (on)
 import Data.List (List(..), (:), take, drop)
-import Data.List (reverse, unzip, zipWith) as L
+import Data.List (reverse, unzip, zip, zipWith) as L
 import Data.Profunctor.Strong ((***))
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (curry, uncurry)
@@ -58,6 +58,9 @@ instance traversableSnocList :: Traversable SnocList where
 
 unzip :: forall a b . SnocList (a × b) -> SnocList a × SnocList b
 unzip = toList >>> L.unzip >>> (fromList *** fromList)
+
+zip :: forall a b . SnocList a -> SnocList b -> SnocList (a × b)
+zip = curry ((toList *** toList) >>> uncurry L.zip >>> fromList)
 
 instance semigroupSnocList :: Semigroup (SnocList a) where
    -- The flip is crucial -- see https://stackoverflow.com/questions/13034856.

@@ -17,6 +17,7 @@ import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (match_fwd) as P
 import Util (type (×), (×), (!), absurd, assert, error, mustLookup, replicate, successful)
 import Util.SnocList (SnocList(..), (:-))
+import Util.SnocList (unzip, zip, zipWith) as S
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
@@ -79,7 +80,14 @@ evalFwd ρ e α' (T.Str _ str) =
       Str α _ -> V.Str (α ∧ α') str
       _ -> error absurd
 evalFwd ρ e α' (T.Record _ xts) =
-   error "todo"
+   case expand e (Record false (map (const (Hole false)) <$> xts)) of
+      Record α xes ->
+         let xs × ts = xts <#> (\(x ↦ t) -> x × t) # S.unzip
+             es = xes <#> (\(_ ↦ e') -> e')
+             vs = (\(e' × t) -> evalFwd ρ e' α' t) <$> S.zip es ts in
+         V.Record (α ∧ α') (S.zipWith (↦) xs vs)
+      _ -> error absurd
+--   pure (T.Record ρ (zipWith (↦) xs ts) × V.Record false (zipWith (↦) xs vs))
 evalFwd ρ e α' (T.Constr _ c ts) =
    case expand e (Constr false c (const (Hole false) <$> ts)) of
       Constr α _ es ->
