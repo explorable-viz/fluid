@@ -3,12 +3,12 @@ module Util.SnocList where
 import Prelude
 import Data.Foldable (class Foldable, foldl, foldMap, foldr)
 import Data.Function (on)
-import Data.List (List(..), (:))
+import Data.List (List(..), (:), take, drop)
 import Data.List (reverse, unzip, zipWith) as L
 import Data.Profunctor.Strong ((***))
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (curry, uncurry)
-import Util (type (×))
+import Util (type (×), (×))
 
 -- Snoc lists. Could reformuate Bindings as SnocList Binding.
 data SnocList a =
@@ -18,6 +18,9 @@ data SnocList a =
 derive instance snocListFunctor :: Functor SnocList
 
 infixl 6 Snoc as :-
+
+singleton :: forall a . a -> SnocList a
+singleton x = Lin :- x
 
 -- (Order-preserving) natural isomorphism to List.
 toList :: SnocList ~> List
@@ -62,3 +65,7 @@ instance semigroupSnocList :: Semigroup (SnocList a) where
 
 instance monoidSnocList :: Monoid (SnocList a) where
    mempty = Lin
+
+splitAt :: forall a . Int -> SnocList a -> SnocList a × SnocList a
+splitAt n xs =
+   fromList (drop n (toList xs)) × fromList (take n (toList xs))

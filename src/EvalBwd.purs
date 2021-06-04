@@ -1,23 +1,23 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
-
-import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), foldBindings, splitAt, toSnocList, varAnon)
-import Bindings2 (asBindings, asBindings2)
 import Data.Foldable (length)
 import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong (first)
+import Bindings (Binding, Bindings(..), (:+:), (↦), (◃), foldBindings, toSnocList, varAnon)
+import Bindings2 (Bindings2, asBindings, asBindings2)
+import Bindings2 ((↦)) as B
 import DataType (cPair)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..), vars)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, (∨), botOf, expand)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate)
-import Util.SnocList (SnocList(..), (:-), fromList)
-import Val (Env, PrimOp(..), Val, holeMatrix)
+import Util.SnocList (SnocList(..), (:-), fromList, splitAt)
+import Val (Env, Env2, PrimOp(..), Val, holeMatrix)
 import Val (Val(..)) as V
 
 -- second argument contains original environment and recursive definitions
@@ -32,33 +32,33 @@ closeDefsBwd ρ (ρ0 × δ0) =
          V.Closure ρ_f δ_f σ_f -> (δ_acc :+: f ↦ σ_f) × (ρ' ∨ asBindings ρ_f) × (δ ∨ asBindings δ_f)
          _ -> error absurd
 
-matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
-matchBwd (Empty :+: x ↦ v) κ α (MatchVar x') = v × ElimVar (x ≜ x') κ
-matchBwd Empty κ α (MatchVarAnon v)          = botOf v × ElimVar varAnon κ
+matchBwd :: Env2 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
+matchBwd (Lin :- x B.↦ v) κ α (MatchVar x') = v × ElimVar (x ≜ x') κ
+matchBwd Lin κ α (MatchVarAnon v)          = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
-matchBwd ρ κ α (MatchRecord xws)             = V.Record α (asBindings2 xvs) × ElimRecord xs κ'
-   where xvs × κ' = matchRecordBwd ρ κ α (asBindings xws)
+matchBwd ρ κ α (MatchRecord xws)             = V.Record α xvs × ElimRecord xs κ'
+   where xvs × κ' = matchRecordBwd ρ κ α xws
          xs = (\(x ↦ _) -> x) <$> toSnocList (asBindings xws)
 matchBwd _ _ _ _                             = error absurd
 
-matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgsBwd Empty κ α Lin       = Nil × κ
-matchArgsBwd (_ :+: _) κ α Lin   = error absurd
+matchArgsBwd :: Env2 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
+matchArgsBwd Lin κ α Lin       = Nil × κ
+matchArgsBwd (_ :- _) κ α Lin   = error absurd
 matchArgsBwd ρρ' κ α (ws :- w) =
    let ρ × ρ'  = splitAt (vars w # length) ρρ'
        v × σ   = matchBwd ρ' κ α w
        vs × κ' = matchArgsBwd ρ (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
 
-matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings Match 𝔹 -> Bindings Val 𝔹 × Cont 𝔹
-matchRecordBwd Empty κ α Empty         = Empty × κ
-matchRecordBwd (_ :+: _) κ α Empty     = error absurd
-matchRecordBwd ρρ' κ α (xws :+: x ↦ w) =
+matchRecordBwd :: Env2 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings2 (Match 𝔹) -> Bindings2 (Val 𝔹) × Cont 𝔹
+matchRecordBwd Lin κ α Lin         = Lin × κ
+matchRecordBwd (_ :- _) κ α Lin    = error absurd
+matchRecordBwd ρρ' κ α (xws :- x B.↦ w) =
    let ρ × ρ'  = splitAt (vars w # length) ρρ'
        v × σ   = matchBwd ρ' κ α w in
-   (first (_ :+: x ↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
+   (first (_ :- x B.↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
 
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var ρ x) = (asBindings (botOf ρ) ◃ x ↦ v) × Var x × false
@@ -114,12 +114,12 @@ evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
       _ -> error absurd
 evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
    let ρ1ρ2ρ3 × e × α = evalBwd v t3
-       ρ1ρ2 × ρ3 = splitAt (vars w # length) ρ1ρ2ρ3
+       ρ1ρ2 × ρ3 = splitAt (vars w # length) (asBindings2 ρ1ρ2ρ3)
        v' × σ = matchBwd ρ3 (ContExpr e) α w
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
        ρ' × e2 × α' = evalBwd v' t2
-       ρ1' × δ' = closeDefsBwd ρ2 (ρ1 × asBindings δ)
-       ρ'' × e1 × α'' = evalBwd (V.Closure (asBindings2 (ρ1 ∨ ρ1')) (asBindings2 δ') σ) t1 in
+       ρ1' × δ' = closeDefsBwd (asBindings ρ2) (asBindings ρ1 × asBindings δ)
+       ρ'' × e1 × α'' = evalBwd (V.Closure (ρ1 ∨ asBindings2 ρ1') (asBindings2 δ') σ) t1 in
    (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
 evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let vs' = vs <> singleton v2
@@ -142,12 +142,12 @@ evalBwd v t@(T.AppConstr (t1 × c × n) t2) =
       _ -> error absurd
 evalBwd v (T.Let (T.VarDef w t1) t2) =
    let ρ1ρ2 × e2 × α2 = evalBwd v t2
-       ρ1 × ρ2 = splitAt (vars w # length) ρ1ρ2
+       ρ1 × ρ2 = splitAt (vars w # length) (asBindings2 ρ1ρ2)
        v' × σ = matchBwd ρ2 (ContHole false) α2 w
        ρ1' × e1 × α1 = evalBwd v' t1 in
-   (ρ1 ∨ ρ1') × Let (VarDef σ e1) e2 × (α1 ∨ α2)
+   (asBindings ρ1 ∨ ρ1') × Let (VarDef σ e1) e2 × (α1 ∨ α2)
 evalBwd v (T.LetRec δ t) =
    let ρ1ρ2 × e × α = evalBwd v t
-       ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
-       ρ1' × δ' = closeDefsBwd ρ2 (ρ1 × asBindings δ) in
-   (ρ1 ∨ ρ1') × LetRec (asBindings2 δ') e × α
+       ρ1 × ρ2 = splitAt (length δ) (asBindings2 ρ1ρ2)
+       ρ1' × δ' = closeDefsBwd (asBindings ρ2) (asBindings ρ1 × asBindings δ) in
+   (asBindings ρ1 ∨ ρ1') × LetRec (asBindings2 δ') e × α
