@@ -1,8 +1,8 @@
 module DesugarBwd where
 
 import Prelude hiding (absurd)
-import Bindings (Binding, Bindings(..), (↦), (:+:))
-import Bindings2 (Bind, asBindings)
+import Bindings (Binding, (↦))
+import Bindings2 (Bind)
 import Bindings2 ((↦)) as B
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
@@ -15,11 +15,11 @@ import Data.Tuple (uncurry, fst, snd)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import DesugarFwd (elimBool, totaliseConstrFwd)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
-import Expr (Expr(..), RecDefs, VarDef(..)) as E
+import Expr (Expr(..), RecDefs2, VarDef(..)) as E
 import Lattice (𝔹, (∨), expand)
 import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
-import Util.SnocList (fromList)
+import Util.SnocList (SnocList(..), (:-), fromList)
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -32,14 +32,14 @@ varDefsBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) ×
    NonEmptyList (VarDef π (exprBwd e1 s1) :| d' : ds') × s2'
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
-recDefsBwd :: E.RecDefs 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
+recDefsBwd :: E.RecDefs2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
 recDefsBwd xσs xcs = join (recDefsBwd' xσs (groupBy (eq `on` fst) xcs))
 
-recDefsBwd' :: E.RecDefs 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
-recDefsBwd' Empty _                                             = error absurd
-recDefsBwd' (Empty :+: x ↦ σ) (NonEmptyList (xcs :| Nil))       = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
-recDefsBwd' (_ :+: _ :+: _) (NonEmptyList (_ :| Nil))           = error absurd
-recDefsBwd' (ρ :+: x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
+recDefsBwd' :: E.RecDefs2 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
+recDefsBwd' Lin _                                             = error absurd
+recDefsBwd' (Lin :- x B.↦ σ) (NonEmptyList (xcs :| Nil))      = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
+recDefsBwd' (_ :- _ :- _) (NonEmptyList (_ :| Nil))           = error absurd
+recDefsBwd' (ρ :- x B.↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss)) =
    NonEmptyList (recDefBwd (x ↦ σ) xcs1 :| toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss))))
 
 recDefBwd :: Binding Elim 𝔹 -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
@@ -103,7 +103,7 @@ exprBwd e (Let ds s) =
       _ -> error absurd
 exprBwd e (LetRec xcs s) =
    case expand e (E.LetRec (fromList (toList (recDefHole <$> xcss))) (E.Hole false)) of
-      E.LetRec xσs e' -> LetRec (recDefsBwd (asBindings xσs) xcs) (exprBwd e' s)
+      E.LetRec xσs e' -> LetRec (recDefsBwd xσs xcs) (exprBwd e' s)
       _ -> error absurd
       where
       -- repeat enough desugaring logic to determine shape of bindings
