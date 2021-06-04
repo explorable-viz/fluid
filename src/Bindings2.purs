@@ -6,7 +6,7 @@ import Bindings ((↦)) as B
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, botOf, definedJoin, expand, maybeJoin, neg
 )
-import Util (MayFail, (≜), (≞), report)
+import Util (Endo, MayFail, (≜), (≞), report)
 import Util.SnocList (SnocList(..), (:-))
 
 type Var = String -- newtype?
@@ -54,3 +54,8 @@ update Lin _ = Lin
 update (ρ :- x ↦ v) (x' ↦ v')
    | x == x'    = ρ :- x' ↦ v'
    | otherwise  = update ρ (x' ↦ v') :- x ↦ v
+
+-- Replace by SnocList fold?
+foldBindings :: forall a b . (Bind a -> Endo b) -> b -> Bindings2 a -> b
+foldBindings f z (ρ :- x)  = f x (foldBindings f z ρ)
+foldBindings _ z Lin       = z
