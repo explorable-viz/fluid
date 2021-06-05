@@ -135,7 +135,7 @@ prettyConstr c xs                            = hspace (pretty c : (prettyParensO
 prettyRecord :: forall a . Pretty a => Bindings a -> Doc
 prettyRecord xvs =
    xvs <#> (\(x ↦ v) -> hspace [text x :<>: colon, pretty v])
-   # S.reverse >>> hcomma >>> parens
+   # S.reverse >>> hcomma >>> between (text "{") (text "}")
 
 instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.Hole α)                = hole

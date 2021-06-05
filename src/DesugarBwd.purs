@@ -11,7 +11,7 @@ import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry, fst, snd)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bind, (↦), key, val)
+import Bindings (Bindings, Bind, (↦), key, val)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import DesugarFwd (elimBool, totaliseConstrFwd)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -207,6 +207,8 @@ patternBwd (ElimHole α) (PListEmpty)            = ContHole α
 patternBwd (ElimConstr m) (PListEmpty)          = mustLookup cNil m
 patternBwd (ElimHole α) (PListNonEmpty p o)     = argsBwd (ContHole α) (Left p : Right o : Nil)
 patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
+patternBwd (ElimHole α) (PRecord xps)           = recordBwd (ContHole α) xps
+patternBwd (ElimRecord xs κ) (PRecord xps)      = recordBwd κ xps
 patternBwd _ _                                  = error absurd
 
 -- σ, o desugar_bwd κ
@@ -222,6 +224,10 @@ argsBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹
 argsBwd κ Nil              = κ
 argsBwd κ (Left p : πs)    = argsBwd (patternBwd (asElim κ) p) πs
 argsBwd κ (Right o : πs)   = argsBwd (listRestPatternBwd (asElim κ) o) πs
+
+recordBwd :: Cont 𝔹 -> Bindings Pattern -> Cont 𝔹
+recordBwd κ Lin            = κ
+recordBwd σ (xps :- x ↦ p) = recordBwd σ xps # (asElim >>> flip patternBwd p)
 
 -- σ, c desugar_bwd c
 branchBwd_curried :: Elim 𝔹 -> Endo (Branch 𝔹)
