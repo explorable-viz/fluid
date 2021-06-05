@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
-import Data.List (List(..), (:), (\\), singleton, zip)
+import Data.List (List(..), (:), (\\), reverse, singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
@@ -20,7 +20,7 @@ import Lattice (𝔹, (∨), expand)
 import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
 import Util.SnocList (SnocList(..), (:-), fromList)
-import Util.SnocList (unzip, zip, zipWith) as S
+import Util.SnocList (toList, unzip, zip, zipWith) as S
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -260,8 +260,16 @@ totaliseBwd κ (Left (PVar x) : πs) =
          let κ'' × α = totaliseBwd κ' πs in
          ContElim (ElimVar x κ'') × α
       _ -> error absurd
+totaliseBwd κ (Left (PRecord xps) : πs) =
+   case expand κ (ContElim (ElimRecord (xps <#> key) (ContHole false))) of
+      ContElim (ElimRecord _ κ') ->
+         let ps = xps <#> (val >>> Left) # S.toList # reverse
+             κ'' × α = totaliseBwd κ' (ps <> πs) in
+         ContElim (ElimRecord (xps <#> key) κ'') × α
+      _ -> error absurd
 totaliseBwd κ (π : πs) =
    let c × πs' = case π of
+         -- TODO: refactor so these two cases aren't necessary
          Left (PVar _)              -> error absurd
          Left (PRecord xps)         -> error absurd
          Left (PConstr c ps)        -> c × (Left <$> ps)
