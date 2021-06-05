@@ -8,7 +8,7 @@ import Data.HTTP.Method (Method(..))
 import Data.Bifunctor (bimap)
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
-import Bindings (Bindings(..), Var, (:+:), (↦))
+import Bindings (Var, (↦))
 import SExpr (Expr) as S
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -17,6 +17,7 @@ import Parse (module_, program)
 import Primitive.Defs (primitives)
 import Util (MayFail, type (×), (×), error, successful)
 import Util.Parse (SParser)
+import Util.SnocList (SnocList(..), (:-))
 import Val (Env)
 
 -- For Wrattler integration. Should not end in "/".
@@ -52,4 +53,4 @@ openDatasetAs :: String -> Var -> Aff (Env 𝔹)
 openDatasetAs file x = do
    ρ × s <- loadFile "fluid" file >>= parseWithDefaultImports
    let _ × v = successful (desugarFwd s >>= eval ρ)
-   pure (Empty :+: x ↦ v)
+   pure (Lin :- x ↦ v)

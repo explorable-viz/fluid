@@ -22,7 +22,7 @@ infixl 7 Tuple as ×
 infixl 6 type Either as +
 
 error :: String -> ∀ a . a
-error msg = unsafePerformEffect $ throw msg
+error msg = unsafePerformEffect (throw msg)
 
 assert :: Boolean -> ∀ a . a -> a
 assert true = identity

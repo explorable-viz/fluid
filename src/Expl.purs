@@ -1,22 +1,24 @@
 module Expl where
 
-import Data.List (List)
-import Bindings (Var)
+import Prelude
+import Data.List (List(..), singleton)
+import Bindings (Bindings, Var, val)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Util (type (×))
+import Util.SnocList (toList, reverse)
 import Val (Array2, Env, PrimOp, Val)
 
 data VarDef a = VarDef (Match a) (Expl a)
 
--- Easier to store environments than contexts in our setting. We also record values in some cases, which should
--- be assumed to be "unannotated" (= annotated with false).
+-- We record values in some cases, which should be assumed to be "unannotated" (= annotated with false).
 data Expl a =
    Var (Env a) Var |
    Op (Env a) Var |
    Int (Env a) Int |
    Float (Env a) Number |
    Str (Env a) String |
+   Record (Env a) (Bindings (Expl a)) |
    Constr (Env a) Ctr (List (Expl a)) |
    Matrix (Array2 (Expl a)) (Var × Var) (Int × Int) (Expl a) |
    Lambda (Env a) (Elim a) |
@@ -31,4 +33,12 @@ data Expl a =
 data Match a =
    MatchVar Var |
    MatchVarAnon (Val a) |
-   MatchConstr Ctr (List (Match a)) (List Ctr)
+   MatchConstr Ctr (List (Match a)) (List Ctr) |  -- list of matches should be a snoc list
+   MatchRecord (Bindings (Match a))
+
+vars :: forall a . Match a -> List Var
+vars (MatchVar x)          = singleton x
+vars (MatchVarAnon _)      = Nil
+vars (MatchConstr _ ws _)  = ws <#> vars # join
+vars (MatchRecord xws)     = ws <#> vars # join
+   where ws = xws # (reverse >>> toList) <#> val

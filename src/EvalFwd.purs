@@ -1,49 +1,62 @@
 module EvalFwd where
 
 import Prelude hiding (absurd)
+
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
+import Data.Profunctor.Strong ((***), (&&&), first, second)
 import Data.Tuple (fst)
-import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
+import Bindings (Bindings, (↦), find, key, val, varAnon)
 import DataType (cPair)
 import Eval (closeDefs)
-import Expl (Expl, Match)
 import Expl (Expl(..), Match(..), VarDef(..)) as T
-import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asExpr)
+import Expl (Expl, Match)
+import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asElim, asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (match_fwd) as P
 import Util (type (×), (×), (!), absurd, assert, error, mustLookup, replicate, successful)
+import Util.SnocList (SnocList(..), (:-))
+import Util.SnocList (unzip, zip, zipWith) as S
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchFwd v σ (T.MatchVar x) =
    case expand σ (ElimVar x (ContHole false)) of
-      ElimVar _ κ -> (Empty :+: x ↦ v) × κ × true
+      ElimVar _ κ -> (Lin :- x ↦ v) × κ × true
       _ -> error absurd
 matchFwd _ σ (T.MatchVarAnon _) =
    case expand σ (ElimVar varAnon (ContHole false)) of
-      ElimVar _ κ -> Empty × κ × true
+      ElimVar _ κ -> Lin × κ × true
       _ -> error absurd
 matchFwd v σ (T.MatchConstr c ws cs) =
    case expand v (V.Constr false c (const (V.Hole false) <$> ws)) ×
         expand σ (ElimConstr (fromFoldable ((_ × ContHole false) <$> c : cs))) of
       V.Constr α _ vs × ElimConstr m ->
-         ρ × κ × (α ∧ α')
-         where ρ × κ × α' = matchArgsFwd vs (mustLookup c m) ws
+         (second (_ ∧ α)) (matchArgsFwd vs (mustLookup c m) ws)
+      _ -> error absurd
+matchFwd v σ (T.MatchRecord xws) =
+   let xs = xws <#> key in
+   case expand v (V.Record false (map (const (V.Hole false)) <$> xws)) ×
+        expand σ (ElimRecord xs (ContHole false)) of
+      V.Record α xvs × ElimRecord _ κ ->
+         (second (_ ∧ α)) (matchRecordFwd xvs κ xws)
       _ -> error absurd
 
 matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchArgsFwd Nil κ Nil = Empty × κ × true
-matchArgsFwd (v : vs) κ (w : ws) =
-   case expand κ (ContElim (ElimHole false)) of
-      ContElim σ ->
-         (ρ <> ρ') × κ' × (α ∧ α')
-         where ρ  × κ  × α    = matchFwd v σ w
-               ρ' × κ' × α'   = matchArgsFwd vs κ ws
-      _ -> error absurd
+matchArgsFwd Nil κ Nil = Lin × κ × true
+matchArgsFwd (v : vs) σ (w : ws) =
+   let ρ × κ × α = matchFwd v (asElim σ) w in
+   (first (ρ <> _) *** (_ ∧ α)) (matchArgsFwd vs κ ws)
 matchArgsFwd _ _ _ = error absurd
+
+matchRecordFwd :: Bindings (Val 𝔹) -> Cont 𝔹 -> Bindings (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchRecordFwd Lin κ Lin = Lin × κ × true
+matchRecordFwd (xvs :- x ↦ v) σ (xws :- x' ↦ w) | x == x' =
+   let ρ × σ' × α = matchRecordFwd xvs σ xws in
+   (first (ρ <> _) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
+matchRecordFwd _ _ _ = error absurd
 
 evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
 evalFwd ρ e _ (T.Var _ x) =
@@ -66,6 +79,15 @@ evalFwd ρ e α' (T.Str _ str) =
    case expand e (Str false str) of
       Str α _ -> V.Str (α ∧ α') str
       _ -> error absurd
+evalFwd ρ e α' (T.Record _ xts) =
+   case expand e (Record false (map (const (Hole false)) <$> xts)) of
+      Record α xes ->
+         let xs × ts = xts <#> (key &&& val) # S.unzip
+             es = xes <#> val
+             vs = (\(e' × t) -> evalFwd ρ e' α' t) <$> S.zip es ts in
+         V.Record (α ∧ α') (S.zipWith (↦) xs vs)
+      _ -> error absurd
+--   pure (T.Record ρ (zipWith (↦) xs ts) × V.Record false (zipWith (↦) xs vs))
 evalFwd ρ e α' (T.Constr _ c ts) =
    case expand e (Constr false c (const (Hole false) <$> ts)) of
       Constr α _ es ->
@@ -81,7 +103,7 @@ evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
                         i <- range 1 i'
                         singleton $ A.fromFoldable $ do
                            j <- range 1 j'
-                           singleton (evalFwd ((ρ :+: x ↦ V.Int α i) :+: y ↦ V.Int α j) e1 α' (tss!(i - 1)!(j - 1)))
+                           singleton (evalFwd (ρ :- x ↦ V.Int α i :- y ↦ V.Int α j) e1 α' (tss!(i - 1)!(j - 1)))
                in V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
             _ -> error absurd
       _ -> error absurd
@@ -93,7 +115,7 @@ evalFwd ρ e α (T.LetRec δ t) =
       _ -> error absurd
 evalFwd ρ e _ (T.Lambda _ _) =
    case expand e (Lambda (ElimHole false)) of
-      Lambda σ -> V.Closure ρ Empty σ
+      Lambda σ -> V.Closure ρ Lin σ
       _ -> error absurd
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
    case expand e (App (Hole false) (Hole false)) of

@@ -4,12 +4,13 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
-import Bindings (Bindings, Var, (⪂), bindingsMap)
+import Bindings (Bindings, Var, (⪂))
 import DataType (Ctr)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg
 )
 import Util (type (×), (×), type (+), (≞), (≜), (⪄), absurd, error, report)
+import Util.SnocList (SnocList)
 
 data Expr a =
    Hole a |
@@ -18,6 +19,7 @@ data Expr a =
    Int a Int |
    Float a Number |
    Str a String |
+   Record a (Bindings (Expr a)) |
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
@@ -27,12 +29,13 @@ data Expr a =
 
 -- eliminator in var def is always singleton, with an empty terminal continuation represented by hole
 data VarDef a = VarDef (Elim a) (Expr a)
-type RecDefs = Bindings Elim
+type RecDefs a = Bindings (Elim a)
 
 data Elim a =
    ElimHole a |
    ElimVar Var (Cont a) |
-   ElimConstr (Map Ctr (Cont a))
+   ElimConstr (Map Ctr (Cont a)) |
+   ElimRecord (SnocList Var) (Cont a)
 
 -- Continuation of an eliminator branch.
 data Cont a =
@@ -65,13 +68,14 @@ instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
    neg = (<$>) neg
 
 instance slicesElim :: Slices (Elim Boolean) where
-   maybeJoin (ElimHole false) σ                 = pure σ
-   maybeJoin (ElimHole true) σ                  = pure (ElimHole true)
-   maybeJoin σ (ElimHole false)                 = pure σ
-   maybeJoin σ (ElimHole true)                  = pure (ElimHole true)
-   maybeJoin (ElimVar x κ) (ElimVar x' κ')      = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr κs) (ElimConstr κs')   = ElimConstr <$> maybeJoin κs κs'
-   maybeJoin _ _                                = report "Incompatible eliminators"
+   maybeJoin (ElimHole false) σ                    = pure σ
+   maybeJoin (ElimHole true) σ                     = pure (ElimHole true)
+   maybeJoin σ (ElimHole false)                    = pure σ
+   maybeJoin σ (ElimHole true)                     = pure (ElimHole true)
+   maybeJoin (ElimVar x κ) (ElimVar x' κ')         = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
+   maybeJoin (ElimConstr κs) (ElimConstr κs')      = ElimConstr <$> maybeJoin κs κs'
+   maybeJoin (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
+   maybeJoin _ _                                   = report "Incompatible eliminators"
 
 instance boundedSlicesElim :: BoundedSlices (Elim Boolean) where
    botOf = const (ElimHole false)
@@ -116,6 +120,7 @@ instance slicesExpr :: Slices (Expr Boolean) where
    maybeJoin (Int α n) (Int α' n')                             = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α str) (Str α' str')                         = Str (α ∨ α') <$> (str ≞ str')
    maybeJoin (Float α n) (Float α' n')                         = Float (α ∨ α') <$> (n ≞ n')
+   maybeJoin (Record α xes) (Record α' xes')                   = Record (α ∨ α') <$> maybeJoin xes xes'
    maybeJoin (Constr α c es) (Constr α' c' es')                = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin es es'
    maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
       Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≞ x') `lift2 (×)` (y ≞ y')) <*> maybeJoin e2 e2'
@@ -132,18 +137,20 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Hole α) e@(Int β n)                  = Int (α ⪄ β) n
    expand (Hole α) e@(Float β n)                = Float (α ⪄ β) n
    expand (Hole α) e@(Str β str)                = Str (α ⪄ β) str
+   expand (Hole α) (Record β xes)               = Record (α ⪄ β) (expand (map (const (Hole α)) <$> xes) xes)
    expand (Hole α) (Constr β c es)              = Constr (α ⪄ β) c (expand (Hole α) <$> es)
    expand (Hole α) (Matrix β e1 (x × y) e2)     = Matrix (α ⪄ β) (expand (Hole α) e1) (x × y) (expand (Hole α) e2)
    expand (Hole α) (Lambda σ)                   = Lambda (expand (ElimHole α) σ)
    expand (Hole α) (App e1 e2)                  = App (expand (Hole α) e1) (expand (Hole α) e2)
    expand (Hole α) (Let (VarDef σ e1) e2) =
       Let (VarDef (expand (ElimHole α) σ) (expand (Hole α) e1)) (expand (Hole α) e2)
-   expand (Hole α) (LetRec h e)                 = LetRec (expand (bindingsMap (const (ElimHole α)) h) h) (expand (Hole α) e)
+   expand (Hole α) (LetRec h e)                 = LetRec (expand (map (const (ElimHole α)) <$> h) h) (expand (Hole α) e)
    expand (Var x) (Var x')                      = Var (x ≜ x')
    expand (Op op) (Op op')                      = Op (op ≜ op')
    expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
    expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
    expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
+   expand (Record α xes) (Record β xes')        = Record (α ⪄ β) (expand xes xes')
    expand (Constr α c es) (Constr β c' es')     = Constr (α ⪄ β) (c ≜ c') (expand es es')
    expand (Matrix α e1 (x1 × y1) e2) (Matrix β e1' (x2 × y2) e2') =
       Matrix (α ⪄ β) (expand e1 e1') ((x1 ≜ x2) × (y1 ≜ y2)) (expand e2 e2')
@@ -155,12 +162,14 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand _ _                                   = error absurd
 
 instance elimExpandable :: Expandable (Elim Boolean) where
-   expand σ (ElimHole false)              = σ
-   expand (ElimHole α) (ElimVar x κ)      = ElimVar x (expand (ContHole α) κ)
-   expand (ElimHole α) (ElimConstr m)     = ElimConstr (expand (ContHole α) <$> m)
-   expand (ElimVar x κ) (ElimVar x' κ')   = ElimVar (x ⪂ x') (expand κ κ')
-   expand (ElimConstr m) (ElimConstr m')  = ElimConstr (expand m m')
-   expand _ _                             = error absurd
+   expand σ (ElimHole false)                    = σ
+   expand (ElimHole α) (ElimVar x κ)            = ElimVar x (expand (ContHole α) κ)
+   expand (ElimHole α) (ElimConstr m)           = ElimConstr (expand (ContHole α) <$> m)
+   expand (ElimHole α) (ElimRecord xs κ)        = ElimRecord xs (expand (ContHole α) κ)
+   expand (ElimVar x κ) (ElimVar x' κ')         = ElimVar (x ⪂ x') (expand κ κ')
+   expand (ElimConstr m) (ElimConstr m')        = ElimConstr (expand m m')
+   expand (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord (xs ⪄ ys) (expand κ κ')
+   expand _ _                                   = error absurd
 
 instance contExpandable :: Expandable (Cont Boolean) where
    expand κ (ContHole false)           = κ

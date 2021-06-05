@@ -11,7 +11,7 @@ import Data.Map (Map, fromFoldable, singleton, size, toUnfoldable)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings (Binding, (↦), fromList, varAnon)
+import Bindings (Bindings, Bind, (↦), key, varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
@@ -20,6 +20,7 @@ import SExpr (
    Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
 import Util (MayFail, type (+), type (×), (×), absurd, assert, error, fromJust, successful)
+import Util.SnocList (SnocList(..), (:-), fromList)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd
@@ -64,7 +65,7 @@ recDefsFwd xcs = fromList <$> toList <$> traverse recDefFwd xcss
    where
    xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 
-recDefFwd :: NonEmptyList (Clause 𝔹) -> MayFail (Binding Elim 𝔹)
+recDefFwd :: NonEmptyList (Clause 𝔹) -> MayFail (Bind (Elim 𝔹))
 recDefFwd xcs = (fst (head xcs) ↦ _) <$> branchesFwd_curried (snd <$> xcs)
 
 -- s desugar_fwd e
@@ -75,6 +76,7 @@ exprFwd (Int α n)                = pure (E.Int α n)
 exprFwd (Float α n)              = pure (E.Float α n)
 exprFwd (Str α s)                = pure (E.Str α s)
 exprFwd (Constr α c ss)          = E.Constr α c <$> traverse exprFwd ss
+exprFwd (Record α xss)           = E.Record α <$> traverse (traverse exprFwd) xss
 exprFwd (Matrix α s (x × y) s')  = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
 exprFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
 exprFwd (App s1 s2)              = E.App <$> exprFwd s1 <*> exprFwd s2
@@ -122,11 +124,12 @@ patternsFwd (NonEmptyList (p :| p' : ps) × e) =
    patternFwd p =<< ContExpr <$> E.Lambda <$> patternsFwd (NonEmptyList (p' :| ps) × e)
 
 patternFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
-patternFwd (PVar x) κ              = pure (ElimVar x κ)
-patternFwd (PConstr c ps) κ        =
+patternFwd (PVar x) κ            = pure (ElimVar x κ)
+patternFwd (PConstr c ps) κ      =
    checkArity c (length ps) *> (ElimConstr <$> singleton c <$> argPatternFwd (Left <$> ps) κ)
-patternFwd PListEmpty κ            = pure (ElimConstr (singleton cNil κ))
-patternFwd (PListNonEmpty p o) κ   = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
+patternFwd (PRecord xps) κ       = ElimRecord (xps <#> key) <$> recordPatternFwd xps κ
+patternFwd PListEmpty κ          = pure (ElimConstr (singleton cNil κ))
+patternFwd (PListNonEmpty p o) κ = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
 -- o, κ desugar_fwd σ
 listRestPatternFwd :: ListRestPattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
@@ -137,6 +140,10 @@ argPatternFwd :: List (Pattern + ListRestPattern) -> Cont 𝔹 -> MayFail (Cont 
 argPatternFwd Nil κ             = pure κ
 argPatternFwd (Left p : πs) κ   = ContElim <$> (argPatternFwd πs κ >>= patternFwd p)
 argPatternFwd (Right o : πs) κ  = ContElim <$> (argPatternFwd πs κ >>= listRestPatternFwd o)
+
+recordPatternFwd :: Bindings Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
+recordPatternFwd Lin κ              = pure κ
+recordPatternFwd (xps :- x ↦ p) κ   = patternFwd p κ >>= ContElim >>> recordPatternFwd xps
 
 branchFwd_uncurried :: Pattern -> Expr 𝔹 -> MayFail (Elim 𝔹)
 branchFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= patternFwd p
@@ -153,12 +160,13 @@ branchesFwd_uncurried bs = do
 
 -- holes used to represent var defs, but otherwise surface programs never contain holes
 totaliseFwd :: Cont 𝔹 -> 𝔹 -> Cont 𝔹
-totaliseFwd (ContHole _) _                = error absurd
-totaliseFwd (ContExpr e) _                = ContExpr e
-totaliseFwd (ContElim (ElimHole _)) _     = error absurd
-totaliseFwd (ContElim (ElimConstr m)) α   = ContElim (ElimConstr (totaliseConstrFwd (c × totaliseFwd κ α) α))
+totaliseFwd (ContHole _) _                   = error absurd
+totaliseFwd (ContExpr e) _                   = ContExpr e
+totaliseFwd (ContElim (ElimHole _)) _        = error absurd
+totaliseFwd (ContElim (ElimConstr m)) α      = ContElim (ElimConstr (totaliseConstrFwd (c × totaliseFwd κ α) α))
    where c × κ = assert (size m == 1) (fromJust absurd (L.head (toUnfoldable m)))
-totaliseFwd (ContElim (ElimVar x κ)) α    = ContElim (ElimVar x (totaliseFwd κ α))
+totaliseFwd (ContElim (ElimRecord xs κ)) α   = ContElim (ElimRecord xs (totaliseFwd κ α))
+totaliseFwd (ContElim (ElimVar x κ)) α       = ContElim (ElimVar x (totaliseFwd κ α))
 
 -- Extend singleton branch to set of branches where any missing constructors have been mapped to the empty list,
 -- using anonymous variables in any generated patterns.
