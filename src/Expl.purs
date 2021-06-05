@@ -2,7 +2,7 @@ module Expl where
 
 import Prelude
 import Data.List (List(..), singleton)
-import Bindings (Bindings, Var, (↦), val)
+import Bindings (Bindings, Var, val)
 import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Util (type (×))
