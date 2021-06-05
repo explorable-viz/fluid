@@ -124,11 +124,12 @@ patternsFwd (NonEmptyList (p :| p' : ps) × e) =
    patternFwd p =<< ContExpr <$> E.Lambda <$> patternsFwd (NonEmptyList (p' :| ps) × e)
 
 patternFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
-patternFwd (PVar x) κ              = pure (ElimVar x κ)
-patternFwd (PConstr c ps) κ        =
+patternFwd (PVar x) κ            = pure (ElimVar x κ)
+patternFwd (PConstr c ps) κ      =
    checkArity c (length ps) *> (ElimConstr <$> singleton c <$> argPatternFwd (Left <$> ps) κ)
-patternFwd PListEmpty κ            = pure (ElimConstr (singleton cNil κ))
-patternFwd (PListNonEmpty p o) κ   = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
+patternFwd (PRecord xps) κ       = ?_
+patternFwd PListEmpty κ          = pure (ElimConstr (singleton cNil κ))
+patternFwd (PListNonEmpty p o) κ = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
 -- o, κ desugar_fwd σ
 listRestPatternFwd :: ListRestPattern -> Cont 𝔹 -> MayFail (Elim 𝔹)

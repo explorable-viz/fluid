@@ -36,6 +36,7 @@ data ListRest a =
 data Pattern =
    PVar Var |
    PConstr Ctr (List Pattern) |
+   PRecord (Bindings Pattern) |
    PListEmpty |
    PListNonEmpty Pattern ListRestPattern
 

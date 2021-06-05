@@ -9,20 +9,20 @@ import Data.Array (cons, elem, fromFoldable)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy)
+import Data.List (List(..), (:), concat, foldr, groupBy, reverse, singleton, snoc, sortBy)
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Map (values)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
-import Text.Parsing.Parser.Combinators (between, try)
+import Text.Parsing.Parser.Combinators (between, sepBy, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Text.Parsing.Parser.Language (emptyDef)
 import Text.Parsing.Parser.String (char, eof, oneOf)
 import Text.Parsing.Parser.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
-import Bindings (Var)
+import Bindings (Bind, Var, (↦))
 import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
 import Lattice (𝔹)
 import Primitive.Parse (OpDef, opDefs)
@@ -32,6 +32,7 @@ import SExpr (
 )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
+import Util.SnocList (fromList)
 
 -- Initial selection state.
 selState :: 𝔹
@@ -45,6 +46,7 @@ str :: {
    backslash      :: String,
    backtick       :: String,
    bar            :: String,
+   colon          :: String,
    ellipsis       :: String,
    else_          :: String,
    equals         :: String,
@@ -67,6 +69,7 @@ str = {
    backslash:     "\\",
    backtick:      "`",
    bar:           "|",
+   colon:         ":",
    ellipsis:      "..",
    else_:         "else",
    equals:        "=",
@@ -92,7 +95,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    identLetter = alphaNum <|> oneOf ['_', '\''],
    opStart = opChar,
    opLetter = opChar,
-   reservedOpNames = [str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow],
+   reservedOpNames = [str.bar, str.colon, str.ellipsis, str.equals, str.lArrow, str.rArrow],
    reservedNames = [str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_],
    caseSensitive = true
 } where
@@ -145,6 +148,9 @@ ctr = do
    x <- token.identifier
    onlyIf (isCtrName x) $ Ctr x
 
+field :: forall a . SParser a -> SParser (Bind a)
+field p = ident `lift2 (↦)` (token.colon *> p)
+
 simplePattern :: Endo (SParser Pattern)
 simplePattern pattern' =
    try listEmpty <|>
@@ -169,6 +175,12 @@ simplePattern pattern' =
    -- Constructor name as a nullary constructor pattern.
    constr :: SParser Pattern
    constr = PConstr <$> ctr <@> Nil
+
+   record :: SParser Pattern
+   record =
+      sepBy (field pattern) token.comma
+      <#> (reverse >>> fromList >>> PRecord)
+      # token.brackets
 
    -- TODO: anonymous variables
    var :: SParser Pattern
