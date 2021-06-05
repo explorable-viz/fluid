@@ -257,6 +257,7 @@ totaliseBwd κ (Left (PVar x) : πs) =
 totaliseBwd κ (π : πs) =
    let c × πs' = case π of
          Left (PVar _)              -> error absurd
+         Left (PRecord xps)         -> error absurd
          Left (PConstr c ps)        -> c × (Left <$> ps)
          Left PListEmpty            -> cNil × Nil
          Left (PListNonEmpty p o)   -> cCons × (Left p : Right o : Nil)
