@@ -1,7 +1,6 @@
 module DesugarBwd where
 
 import Prelude hiding (absurd)
-
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
@@ -11,6 +10,7 @@ import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry, fst, snd)
+import Partial.Unsafe (unsafePartial)
 import Bindings (Bind, (↦), key, val)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import DesugarFwd (elimBool, totaliseConstrFwd)
@@ -274,17 +274,15 @@ totaliseBwd κ (π : πs) =
 -- Discard all synthesised branches, returning the original singleton branch for c, plus join of annotations
 -- on the empty lists used for bodies of synthesised branches.
 totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Ctr -> Cont 𝔹 × 𝔹
-totaliseConstrBwd m c =
+totaliseConstrBwd m c = unsafePartial $
    let cs = ctrs (successful (dataTypeFor c)) \\ singleton c in
    mustLookup c m × foldl (∨) false (map (bodyAnn <<< body) cs)
    where
-      body :: Ctr -> Cont 𝔹
+      body :: Partial => Ctr -> Cont 𝔹
       body c' = applyN unargument (successful (arity c')) (mustLookup c' m)
 
-      unargument :: Cont 𝔹 -> Cont 𝔹
+      unargument :: Partial => Cont 𝔹 -> Cont 𝔹
       unargument (ContElim (ElimVar _ κ)) = κ
-      unargument _                        = error absurd
 
-      bodyAnn :: Cont 𝔹 -> 𝔹
+      bodyAnn :: Partial => Cont 𝔹 -> 𝔹
       bodyAnn (ContExpr (E.Constr α c' Nil)) | c' == cNil = α
-      bodyAnn _                                           = error absurd
