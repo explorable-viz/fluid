@@ -95,7 +95,7 @@ languageDef = LanguageDef (unGenLanguageDef emptyDef) {
    identLetter = alphaNum <|> oneOf ['_', '\''],
    opStart = opChar,
    opLetter = opChar,
-   reservedOpNames = [str.bar, str.colon, str.ellipsis, str.equals, str.lArrow, str.rArrow],
+   reservedOpNames = [str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow],
    reservedNames = [str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_],
    caseSensitive = true
 } where
@@ -156,6 +156,7 @@ simplePattern pattern' =
    try listEmpty <|>
    listNonEmpty <|>
    try constr <|>
+   try record <|>
    try var <|>
    try (token.parens pattern') <|>
    pair
@@ -178,9 +179,9 @@ simplePattern pattern' =
 
    record :: SParser Pattern
    record =
-      sepBy (field pattern) token.comma
+      sepBy (field pattern') token.comma
       <#> (reverse >>> fromList >>> PRecord)
-      # token.brackets
+      # token.braces
 
    -- TODO: anonymous variables
    var :: SParser Pattern
@@ -279,6 +280,7 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
          listComp <|>
          listEnum <|>
          try constr <|>
+         record <|>
          try variable <|>
          try float <|>
          try int <|> -- int may start with +/-
@@ -330,6 +332,12 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
 
          constr :: SParser (Expr 𝔹)
          constr = Constr selState <$> ctr <@> empty
+
+         record :: SParser (Expr 𝔹)
+         record =
+            sepBy (field expr') token.comma
+            <#> (reverse >>> fromList >>> Record selState)
+            # token.braces
 
          variable :: SParser (Expr 𝔹)
          variable = ident <#> Var

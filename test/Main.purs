@@ -11,8 +11,8 @@ import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..), holeMatrix, insertMatrix)
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
--- tests = [ test_bwd ]
+-- tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -26,6 +26,7 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
+   test "records" "5"
 ]
 
 test_linking :: Array (Test Unit)
@@ -104,6 +105,7 @@ test_misc = [
    test "normalise" "(33, 66)",
    test "pattern-match" "4",
    test "range" "[(0, 0), (0, 1), (1, 0), (1, 1)]",
+   test "records" "5",
    test "reverse" "[2, 1]",
    test "zipWith" "[[10], [12], [20]]"
 ]
