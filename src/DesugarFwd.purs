@@ -11,7 +11,7 @@ import Data.Map (Map, fromFoldable, singleton, size, toUnfoldable)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings (Bind, (↦), varAnon)
+import Bindings (Bindings, Bind, (↦), key, varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
@@ -20,7 +20,7 @@ import SExpr (
    Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
 )
 import Util (MayFail, type (+), type (×), (×), absurd, assert, error, fromJust, successful)
-import Util.SnocList (fromList)
+import Util.SnocList (SnocList(..), (:-), fromList)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd
@@ -127,7 +127,7 @@ patternFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 patternFwd (PVar x) κ            = pure (ElimVar x κ)
 patternFwd (PConstr c ps) κ      =
    checkArity c (length ps) *> (ElimConstr <$> singleton c <$> argPatternFwd (Left <$> ps) κ)
-patternFwd (PRecord xps) κ       = ?_
+patternFwd (PRecord xps) κ       = ElimRecord (xps <#> key) <$> recordPatternFwd xps κ
 patternFwd PListEmpty κ          = pure (ElimConstr (singleton cNil κ))
 patternFwd (PListNonEmpty p o) κ = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
@@ -140,6 +140,10 @@ argPatternFwd :: List (Pattern + ListRestPattern) -> Cont 𝔹 -> MayFail (Cont 
 argPatternFwd Nil κ             = pure κ
 argPatternFwd (Left p : πs) κ   = ContElim <$> (argPatternFwd πs κ >>= patternFwd p)
 argPatternFwd (Right o : πs) κ  = ContElim <$> (argPatternFwd πs κ >>= listRestPatternFwd o)
+
+recordPatternFwd :: Bindings Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
+recordPatternFwd Lin κ              = pure κ
+recordPatternFwd (xps :- x ↦ p) κ   = patternFwd p κ >>= ContElim >>> recordPatternFwd xps
 
 branchFwd_uncurried :: Pattern -> Expr 𝔹 -> MayFail (Elim 𝔹)
 branchFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= patternFwd p
