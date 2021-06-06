@@ -11,8 +11,8 @@ import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..), holeMatrix, insertMatrix)
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_scratchpad ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -117,5 +117,6 @@ test_graphics = [
    testWithDataset "renewables-restricted" "graphics/grouped-bar-chart",
    testWithDataset "renewables-restricted" "graphics/line-chart",
    testWithDataset "renewables-restricted" "graphics/stacked-bar-chart",
-   testWithDataset "renewables-new" "graphics-new/bar-chart"
+   testWithDataset "renewables-new" "graphics-new/bar-chart",
+   testWithDataset "renewables-new" "graphics-new/line-chart"
 ]

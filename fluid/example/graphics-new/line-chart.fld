@@ -1,9 +1,13 @@
-let chinaData = [ row | row <- data, row.country == "China" ];
-let series type rows = [ {x: year, y: row.output } |
-       year <- [2013..2015], row <- rows,
-       row.year == year, row.type == type
-    ]
-in LineChart {
+let china =
+   [ row | row <- data, row.country == "China" ];
+let series type rows = [
+   {x: year, y: row.output }
+   | year <- [2013..2018], row <- rows,
+     row.year == year, row.energyType == type
+] in LineChart {
    caption: "Growth in renewables for China",
-   data: chinaData
+   plots: [
+      LinePlot { name: type, data: series type china }
+      | type <- ["Bio", "Hydro", "Solar", "Wind"]
+   ]
 }

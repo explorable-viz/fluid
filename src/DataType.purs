@@ -131,8 +131,9 @@ dataTypes = L.fromFoldable [
    ],
 
    dataType "Plot" [
-      Ctr "BarChart" × 2, -- Record<caption: Str, List<Record<x: Str, y: Float>>>
-      Ctr "LineChart" × 2 -- Record<caption: Str, List<Record<x: Float, y: Float>>>
+      Ctr "BarChart" × 2,  -- Record<caption: Str, List<Record<x: Str, y: Float>>>
+      Ctr "LineChart" × 2, -- Record<caption: Str, List<LinePlot>>
+      Ctr "LinePlot" × 2   -- Record<name: Str, List<Record<x: Float, y: Float>>>
    ],
 
    dataType "GraphicsElement" [
