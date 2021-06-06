@@ -1,6 +1,8 @@
 module Eval where
 
 import Prelude hiding (absurd)
+
+import Bindings (Bindings, (↦), find, key, val, varAnon, Var)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
@@ -9,7 +11,6 @@ import Data.Map (lookup)
 import Data.Map.Internal (keys)
 import Data.Profunctor.Strong ((&&&), second)
 import Data.Traversable (sequence, traverse)
-import Bindings (Bindings, (↦), find, key, val, varAnon, Var)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
@@ -105,6 +106,12 @@ eval ρ (LetRec δ e) = do
    pure (T.LetRec δ t × v)
 eval ρ (Lambda σ) =
    pure (T.Lambda ρ σ × V.Closure ρ Lin σ)
+eval ρ (RecordLookup e x) = do
+   t × v <- eval ρ e
+   case v of
+      V.Record _ xvs ->
+         (T.RecordLookup t (xvs <#> key) x × _) <$> find x xvs
+      _ -> report "Expected record"
 eval ρ (App e e') = do
    t × v <- eval ρ e
    t' × v' <- eval ρ e'

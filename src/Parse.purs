@@ -47,16 +47,17 @@ str :: {
    backtick       :: String,
    bar            :: String,
    colon          :: String,
+   dot            :: String,
    ellipsis       :: String,
    else_          :: String,
    equals         :: String,
    fun            :: String,
    if_            :: String,
    in_            :: String,
+   lArrow         :: String,
    lBracket       :: String,
    let_           :: String,
    match          :: String,
-   lArrow         :: String,
    rArrow         :: String,
    rBracket       :: String,
    then_          :: String
@@ -70,16 +71,17 @@ str = {
    backtick:      "`",
    bar:           "|",
    colon:         ":",
+   dot:           ".",
    ellipsis:      "..",
    else_:         "else",
    equals:        "=",
    fun:           "fun",
    if_:           "if",
    in_:           "in",
+   lArrow:        "<-",
    lBracket:      "[",
    let_:          "let",
    match:         "match",
-   lArrow:        "<-",
    rArrow:        "->",
    rBracket:      "]",
    then_:         "then"
@@ -251,14 +253,21 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
       pure (\e e' -> BinaryApp e x e')
 
    -- Syntactically distinguishing infix constructors from other operators (a la Haskell) allows us to
-   -- optimise an application tree into a (potentially partial) constructor application.
+   -- optimise an application tree into a (potentially partial) constructor application. We also treat
+   -- record lookup syntactically like a binary operator, although the second argument must always be a
+   -- variable.
    binaryOp :: String -> SParser (Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹)
    binaryOp op = do
       op' <- token.operator
       onlyIf (op == op') $
-         if isCtrOp op'
-         then \e e' -> Constr selState (Ctr op') (e : e' : empty)
-         else \e e' -> BinaryApp e op e'
+         if op == str.dot
+         then \e e' -> case e' of
+            Var x -> RecordLookup e x
+            _ -> error "Field names are not first class."
+         else
+            if isCtrOp op'
+            then \e e' -> Constr selState (Ctr op') (e : e' : empty)
+            else \e e' -> BinaryApp e op e'
 
    -- Left-associative tree of applications of one or more simple terms.
    appChain :: Endo (SParser (Expr 𝔹))

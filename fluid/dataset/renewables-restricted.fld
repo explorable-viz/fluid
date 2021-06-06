@@ -92,12 +92,6 @@
       ("Hydro", 5.6),
       ("Solar", 41),
       ("Wind", 50)
-   ]),
-   ("India", [
-      ("Bio", 8.3),
-      ("Hydro", 47),
-      ("Solar", 9.1),
-      ("Wind", 29)
    ])
 ]),
 -- http://www.ren21.net/gsr-2018/pages/tables/tables/#Table_R2

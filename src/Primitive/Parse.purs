@@ -18,6 +18,7 @@ opDef op prec assoc = op × { op, prec, assoc }
 -- Syntactic information only. No requirement that any of these be defined.
 opDefs :: Map String OpDef
 opDefs = fromFoldable [
+   opDef "."   8 AssocLeft,
    opDef "!"   8 AssocLeft,
    opDef "**"  8 AssocRight,
    opDef "*"   7 AssocLeft,
