@@ -8,7 +8,7 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong ((&&&), first)
-import Bindings (Bindings, Bind, (↦), (◃), foldBindings, key, val, varAnon)
+import Bindings (Bindings, Bind, (↦), (◃), foldBindings, key, update, val, varAnon)
 import DataType (cPair)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..), vars)
@@ -123,7 +123,9 @@ evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
           (ρ ∨ ρ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
       _ -> error absurd
 evalBwd v (T.RecordLookup t xs x) =
-   ?_
+   let v' = V.Record false (update (xs <#> (_ ↦ V.Hole false)) (x ↦ v))
+       ρ × e × α = evalBwd v' t in
+   ρ × RecordLookup e x × α
 evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
    let ρ1ρ2ρ3 × e × α = evalBwd v t3
        ρ1ρ2 × ρ3 = splitAt (vars w # length) ρ1ρ2ρ3
