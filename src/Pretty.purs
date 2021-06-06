@@ -214,6 +214,7 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
       init = [text str.arrayLBracket, pretty e, text str.bar]
       quant = [parens (hcomma [text x, text y]), text (str.in_), pretty e', text str.arrayRBracket]
    pretty (S.Lambda bs)                = text str.fun :<>: vert semi (pretty <$> bs)
+   pretty (S.RecordLookup _ _)         = error "todo"
    pretty (S.App s s')                 = hspace [pretty s, pretty s']
    pretty (S.BinaryApp s op s')        = parens (hspace [pretty s, text op, pretty s'])
    pretty (S.MatchAs s bs)             = atop (hspace [text str.match, pretty s, text str.as]) (vert semi (pretty <$> bs))

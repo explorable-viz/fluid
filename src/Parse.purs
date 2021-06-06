@@ -53,10 +53,10 @@ str :: {
    fun            :: String,
    if_            :: String,
    in_            :: String,
+   lArrow         :: String,
    lBracket       :: String,
    let_           :: String,
    match          :: String,
-   lArrow         :: String,
    rArrow         :: String,
    rBracket       :: String,
    then_          :: String
@@ -76,10 +76,10 @@ str = {
    fun:           "fun",
    if_:           "if",
    in_:           "in",
+   lArrow:        "<-",
    lBracket:      "[",
    let_:          "let",
    match:         "match",
-   lArrow:        "<-",
    rArrow:        "->",
    rBracket:      "]",
    then_:         "then"
@@ -332,6 +332,9 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
 
          constr :: SParser (Expr 𝔹)
          constr = Constr selState <$> ctr <@> empty
+
+         recordLookup :: SParser (Expr 𝔹)
+         recordLookup = RecordLookup <$> expr' <* token.dot <*> ident
 
          record :: SParser (Expr 𝔹)
          record =
