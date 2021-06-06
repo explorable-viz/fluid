@@ -1,4 +1,9 @@
+let totalFor c rows =
+   sum [ row.output | row <- rows, row.country == c ];
 let data2015 = [ row | row <- data, row.year == 2015 ];
-let total c = sum [ row.output | row <- data2015, row.country == c ];
-let countryData = [ { x: c, y: total c } | c <- ["China", "USA", "Germany"] ]
-in BarChart countryData
+    countryData = [ { x: c, y: totalFor c data2015 }
+                  | c <- ["China", "USA", "Germany"] ]
+in BarChart {
+   caption: "Total renewables output by country",
+   data: countryData
+}
