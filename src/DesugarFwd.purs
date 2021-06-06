@@ -1,6 +1,8 @@
 module DesugarFwd where
 
-import Prelude hiding (absurd, otherwise)
+import Prelude hiding (absurd,otherwise)
+
+import Bindings (Bindings, Bind, (↦), key, varAnon)
 import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Function (applyN, on)
@@ -11,14 +13,11 @@ import Data.Map (Map, fromFoldable, singleton, size, toUnfoldable)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings (Bindings, Bind, (↦), key, varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, maybeJoin)
-import SExpr (
-   Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..)
-)
+import SExpr (Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..))
 import Util (MayFail, type (+), type (×), (×), absurd, assert, error, fromJust, successful)
 import Util.SnocList (SnocList(..), (:-), fromList)
 
@@ -79,6 +78,7 @@ exprFwd (Constr α c ss)          = E.Constr α c <$> traverse exprFwd ss
 exprFwd (Record α xss)           = E.Record α <$> traverse (traverse exprFwd) xss
 exprFwd (Matrix α s (x × y) s')  = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
 exprFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
+exprFwd (RecordLookup s x)       = E.RecordLookup <$> exprFwd s <@> x
 exprFwd (App s1 s2)              = E.App <$> exprFwd s1 <*> exprFwd s2
 exprFwd (BinaryApp s1 op s2)     = E.App <$> (E.App (E.Op op) <$> exprFwd s1) <*> exprFwd s2
 exprFwd (MatchAs s bs)           = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> exprFwd s

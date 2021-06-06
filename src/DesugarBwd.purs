@@ -1,6 +1,8 @@
 module DesugarBwd where
 
 import Prelude hiding (absurd)
+
+import Bindings (Bindings, Bind, (↦), key, val)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
@@ -10,13 +12,12 @@ import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry, fst, snd)
-import Partial.Unsafe (unsafePartial)
-import Bindings (Bindings, Bind, (↦), key, val)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import DesugarFwd (elimBool, totaliseConstrFwd)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, (∨), expand)
+import Partial.Unsafe (unsafePartial)
 import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
 import Util.SnocList (SnocList(..), (:-), fromList)
@@ -86,6 +87,10 @@ exprBwd e (Matrix _ s (x × y) s') =
 exprBwd e (Lambda bs) =
    case expand e (E.Lambda (ElimHole false)) of
       E.Lambda σ -> Lambda (branchesBwd_curried σ bs)
+      _ -> error absurd
+exprBwd e (RecordLookup s x) =
+   case expand e (E.RecordLookup (E.Hole false) x) of
+      E.RecordLookup e' _ -> RecordLookup (exprBwd e' s) x
       _ -> error absurd
 exprBwd e (App s1 s2) =
    case expand e (E.App (E.Hole false) (E.Hole false)) of
