@@ -1,1 +1,2 @@
-data
+let x = data
+in BarChart {}

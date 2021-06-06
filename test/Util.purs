@@ -2,6 +2,7 @@ module Test.Util where
 
 import Prelude hiding (absurd)
 import Data.Bitraversable (bitraverse)
+import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (uncurry)
 import Effect (Effect)
@@ -28,7 +29,7 @@ import Val (Env, Val(..))
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
 isGraphical (Hole _)       = false
-isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) == "GraphicsElement"
+isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` ["GraphicsElement", "Plot"]
 isGraphical _              = false
 
 type Test a = SpecT Aff Unit Effect a
@@ -52,13 +53,13 @@ checkPretty x expected = prettyP x `shouldEqual` expected
 
 -- v_opt is output slice; v_expect is expected result after round-trip
 testWithSetup :: String -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
-testWithSetup name v_expect v_opt setup =
+testWithSetup name expected v_opt setup =
    before setup $
       it name \(ρ × s) -> do
          let t × v = successful (desugarEval ρ s)
              ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
              v = desugarEval_fwd ρ' s' t
-         unless (isGraphical v) (checkPretty v v_expect)
+         unless (isGraphical v) (checkPretty v expected)
          case v_opt of
             Nothing -> pure unit
             Just _ -> loadFile "fluid/example" (name <> ".expect") >>= checkPretty s'

@@ -149,6 +149,12 @@ dataTypes = L.fromFoldable [
       Ctr "Vert"  × []
    ],
 
+   dataType "Plot" [
+      Ctr "BarChart" × [
+         "dummy"        -- Record<>
+      ]
+   ],
+
    dataType "GraphicsElement" [
       Ctr "Circle" × [
          "x",        -- Float
