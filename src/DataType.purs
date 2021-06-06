@@ -3,10 +3,10 @@ module DataType where
 import Prelude hiding (absurd)
 import Data.Char.Unicode (isUpper)
 import Data.Either (note)
-import Data.Foldable (class Foldable)
+import Data.Foldable (class Foldable, length)
 import Data.Function (on)
 import Data.List (fromFoldable) as L
-import Data.List (List(..), (:), concat, length)
+import Data.List (List(..), (:), concat)
 import Data.Map (Map, lookup)
 import Data.Map (fromFoldable) as M
 import Data.Map.Internal (keys)
@@ -48,19 +48,19 @@ instance keyCtr :: Key Ctr where
 
 data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig
-type CtrSig = List FieldName
+type CtrSig = Int
 
 typeName :: DataType -> TypeName
 typeName (DataType name _) = name
 
-instance eqDataType :: Eq (DataType' (List String)) where
+instance eqDataType :: Eq (DataType' Int) where
    eq = eq `on` typeName
 
-instance showDataType :: Show (DataType' (List String)) where
+instance showDataType :: Show (DataType' Int) where
    show = typeName
 
 ctr :: forall f . Foldable f => Ctr -> f FieldName -> Ctr × CtrSig
-ctr c = L.fromFoldable >>> (×) c
+ctr c fs = c × length fs
 
 dataType :: forall f . Functor f => Foldable f => TypeName -> f (Ctr × f FieldName) -> DataType
 dataType name = map (uncurry ctr) >>> M.fromFoldable >>> DataType name
@@ -84,7 +84,7 @@ ctrs (DataType _ sigs) = keys sigs
 arity :: Ctr -> MayFail Int
 arity c = do
    DataType _ sigs <- dataTypeFor c
-   length <$> note absurd (lookup c sigs)
+   note absurd (lookup c sigs)
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = void $
@@ -107,8 +107,8 @@ dataTypes = L.fromFoldable [
    dataType "List" [
       cNil  × [],
       cCons × [
-         "head",  -- any
-         "tail"   -- List<any>
+         "",  -- any
+         ""   -- List<any>
       ]
    ],
    dataType "Option" [
