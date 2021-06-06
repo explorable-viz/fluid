@@ -1,12 +1,4 @@
--- typedef Year = Num
--- typedef Country = Str
--- typedef EnergyType = Str
--- typedef Output = Num
--- typedef CountryData = List (EnergyType, Output)
--- typedef AnnualData = List (Country, CountryData)
--- typedef Data = List (Year, AnnualData)
 -- The original dataset sometimes has '~0' instead of '0'.
-
 -- Including only 3 countries here. Also, have reduced the Hydro value for China 2015 from 296 to 96 (ouch)
 -- to make the charts fit nicely into grant proposal. Fix this once proposal submitted!
 [
