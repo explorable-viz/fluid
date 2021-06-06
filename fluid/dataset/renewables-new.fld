@@ -7,5 +7,85 @@
    { year: 2013, country: "USA", energyType: "Bio", output: 15.8 },
    { year: 2013, country: "USA", energyType: "Hydro", output: 78 },
    { year: 2013, country: "USA", energyType: "Solar", output: 12.1 },
-   { year: 2013, country: "USA", energyType: "Wind", output: 61 }
+   { year: 2013, country: "USA", energyType: "Wind", output: 61 },
+
+   { year: 2013, country: "Germany", energyType: "Bio", output: 8.1 },
+   { year: 2013, country: "Germany", energyType: "Hydro", output: 5.6 },
+   { year: 2013, country: "Germany", energyType: "Solar", output: 36 },
+   { year: 2013, country: "Germany", energyType: "Wind", output: 34 },
+
+   { year: 2014, country: "China", energyType: "Bio", output: 6.2 },
+   { year: 2014, country: "China", energyType: "Hydro", output: 260 },
+   { year: 2014, country: "China", energyType: "Solar", output: 19.9 },
+   { year: 2014, country: "China", energyType: "Wind", output: 91 },
+
+   { year: 2014, country: "USA", energyType: "Bio", output: 15.8 },
+   { year: 2014, country: "USA", energyType: "Hydro", output: 78 },
+   { year: 2014, country: "USA", energyType: "Solar", output: 12.1 },
+   { year: 2014, country: "USA", energyType: "Wind", output: 61 },
+
+   { year: 2014, country: "Germany", energyType: "Bio", output: 8.1 },
+   { year: 2014, country: "Germany", energyType: "Hydro", output: 5.6 },
+   { year: 2014, country: "Germany", energyType: "Solar", output: 36 },
+   { year: 2014, country: "Germany", energyType: "Wind", output: 34 },
+
+   { year: 2015, country: "China", energyType: "Bio", output: 6.2 },
+   { year: 2015, country: "China", energyType: "Hydro", output: 260 },
+   { year: 2015, country: "China", energyType: "Solar", output: 19.9 },
+   { year: 2015, country: "China", energyType: "Wind", output: 91 },
+
+   { year: 2015, country: "USA", energyType: "Bio", output: 15.8 },
+   { year: 2015, country: "USA", energyType: "Hydro", output: 78 },
+   { year: 2015, country: "USA", energyType: "Solar", output: 12.1 },
+   { year: 2015, country: "USA", energyType: "Wind", output: 61 },
+
+   { year: 2015, country: "Germany", energyType: "Bio", output: 8.1 },
+   { year: 2015, country: "Germany", energyType: "Hydro", output: 5.6 },
+   { year: 2015, country: "Germany", energyType: "Solar", output: 36 },
+   { year: 2015, country: "Germany", energyType: "Wind", output: 34 },
+
+   { year: 2016, country: "China", energyType: "Bio", output: 6.2 },
+   { year: 2016, country: "China", energyType: "Hydro", output: 260 },
+   { year: 2016, country: "China", energyType: "Solar", output: 19.9 },
+   { year: 2016, country: "China", energyType: "Wind", output: 91 },
+
+   { year: 2016, country: "USA", energyType: "Bio", output: 15.8 },
+   { year: 2016, country: "USA", energyType: "Hydro", output: 78 },
+   { year: 2016, country: "USA", energyType: "Solar", output: 12.1 },
+   { year: 2016, country: "USA", energyType: "Wind", output: 61 },
+
+   { year: 2016, country: "Germany", energyType: "Bio", output: 8.1 },
+   { year: 2016, country: "Germany", energyType: "Hydro", output: 5.6 },
+   { year: 2016, country: "Germany", energyType: "Solar", output: 36 },
+   { year: 2016, country: "Germany", energyType: "Wind", output: 34 },
+
+   { year: 2017, country: "China", energyType: "Bio", output: 6.2 },
+   { year: 2017, country: "China", energyType: "Hydro", output: 260 },
+   { year: 2017, country: "China", energyType: "Solar", output: 19.9 },
+   { year: 2017, country: "China", energyType: "Wind", output: 91 },
+
+   { year: 2017, country: "USA", energyType: "Bio", output: 15.8 },
+   { year: 2017, country: "USA", energyType: "Hydro", output: 78 },
+   { year: 2017, country: "USA", energyType: "Solar", output: 12.1 },
+   { year: 2017, country: "USA", energyType: "Wind", output: 61 },
+
+   { year: 2017, country: "Germany", energyType: "Bio", output: 8.1 },
+   { year: 2017, country: "Germany", energyType: "Hydro", output: 5.6 },
+   { year: 2017, country: "Germany", energyType: "Solar", output: 36 },
+   { year: 2017, country: "Germany", energyType: "Wind", output: 34 },
+
+   { year: 2018, country: "China", energyType: "Bio", output: 6.2 },
+   { year: 2018, country: "China", energyType: "Hydro", output: 260 },
+   { year: 2018, country: "China", energyType: "Solar", output: 19.9 },
+   { year: 2018, country: "China", energyType: "Wind", output: 91 },
+
+   { year: 2018, country: "USA", energyType: "Bio", output: 15.8 },
+   { year: 2018, country: "USA", energyType: "Hydro", output: 78 },
+   { year: 2018, country: "USA", energyType: "Solar", output: 12.1 },
+   { year: 2018, country: "USA", energyType: "Wind", output: 61 },
+
+   { year: 2018, country: "Germany", energyType: "Bio", output: 8.1 },
+   { year: 2018, country: "Germany", energyType: "Hydro", output: 5.6 },
+   { year: 2018, country: "Germany", energyType: "Solar", output: 36 },
+   { year: 2018, country: "Germany", energyType: "Wind", output: 34 }
 ]
