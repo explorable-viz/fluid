@@ -117,11 +117,13 @@ evalFwd ρ e _ (T.Lambda _ _) =
    case expand e (Lambda (ElimHole false)) of
       Lambda σ -> V.Closure ρ Lin σ
       _ -> error absurd
-evalFwd ρ e α (T.RecordLookup t x) =
+evalFwd ρ e α (T.RecordLookup t xs x) =
    case expand e (RecordLookup (Hole false) x) of
       RecordLookup e' _ ->
          case evalFwd ρ e' α t of
-            V.Record _ xvs -> successful (find x xvs)
+            V.Record _ xvs ->
+               assert ((xvs <#> key) == xs) $
+               successful (find x xvs)
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =

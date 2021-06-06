@@ -109,8 +109,8 @@ eval ρ (Lambda σ) =
 eval ρ (RecordLookup e x) = do
    t × v <- eval ρ e
    case v of
-      V.Record _ xvs -> do
-         (T.RecordLookup t x × _) <$> find x xvs
+      V.Record _ xvs ->
+         (T.RecordLookup t (xvs <#> key) x × _) <$> find x xvs
       _ -> report "Expected record"
 eval ρ (App e e') = do
    t × v <- eval ρ e
