@@ -3,7 +3,6 @@ module DataType where
 import Prelude hiding (absurd)
 import Data.Char.Unicode (isUpper)
 import Data.Either (note)
-import Data.Foldable (class Foldable)
 import Data.Function (on)
 import Data.List (fromFoldable) as L
 import Data.List (List(..), (:), concat)
@@ -59,7 +58,7 @@ instance eqDataType :: Eq (DataType' Int) where
 instance showDataType :: Show (DataType' Int) where
    show = typeName
 
-dataType :: forall f . Functor f => Foldable f => TypeName -> f (Ctr × CtrSig) -> DataType
+dataType :: TypeName -> Array (Ctr × CtrSig) -> DataType
 dataType name = map (uncurry (×)) >>> M.fromFoldable >>> DataType name
 
 ctrToDataType :: Map Ctr DataType
