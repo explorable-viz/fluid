@@ -1,0 +1,4 @@
+LineChart {
+   caption: "Growth in renewables for China",
+   data: chinaData
+}
