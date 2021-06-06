@@ -3,7 +3,7 @@ module DataType where
 import Prelude hiding (absurd)
 import Data.Char.Unicode (isUpper)
 import Data.Either (note)
-import Data.Foldable (class Foldable, length)
+import Data.Foldable (class Foldable)
 import Data.Function (on)
 import Data.List (fromFoldable) as L
 import Data.List (List(..), (:), concat)
@@ -59,11 +59,8 @@ instance eqDataType :: Eq (DataType' Int) where
 instance showDataType :: Show (DataType' Int) where
    show = typeName
 
-ctr :: forall f . Foldable f => Ctr -> f FieldName -> Ctr × CtrSig
-ctr c fs = c × length fs
-
-dataType :: forall f . Functor f => Foldable f => TypeName -> f (Ctr × f FieldName) -> DataType
-dataType name = map (uncurry ctr) >>> M.fromFoldable >>> DataType name
+dataType :: forall f . Functor f => Foldable f => TypeName -> f (Ctr × CtrSig) -> DataType
+dataType name = map (uncurry (×)) >>> M.fromFoldable >>> DataType name
 
 ctrToDataType :: Map Ctr DataType
 ctrToDataType = M.fromFoldable (concat (dataTypes <#> (\d -> ctrs d <#> (_ × d))))
@@ -101,124 +98,63 @@ dataTypes :: List DataType
 dataTypes = L.fromFoldable [
    -- Core
    dataType "Bool" [
-      cTrue    × [],
-      cFalse   × []
+      cTrue × 0,
+      cFalse × 0
    ],
    dataType "List" [
-      cNil  × [],
-      cCons × [
-         "",  -- any
-         ""   -- List<any>
-      ]
+      cNil × 0,
+      cCons × 2 -- any × List<any>
    ],
    dataType "Option" [
-      Ctr "None"  × [],
-      Ctr "Some"  × [
-         "x"   -- any
-      ]
+      Ctr "None" × 0,
+      Ctr "Some" × 1 -- any
    ],
    dataType "Ordering" [
-      Ctr "GT" × [],
-      Ctr "LT" × [],
-      Ctr "EQ" × []
+      Ctr "GT" × 0,
+      Ctr "LT" × 0,
+      Ctr "EQ" × 0
    ],
    dataType "Pair" [
-      Ctr "Pair" × [
-         "fst",   -- any
-         "snd"    -- any
-      ]
+      Ctr "Pair" × 2 -- any × any
    ],
    dataType "Tree" [
-      Ctr "Empty"    × [],
-      Ctr "NonEmpty" × [
-         "left",  -- Tree<any>
-         "x",     -- any
-         "right"  -- Tree<any>
-      ]
+      Ctr "Empty" × 0,
+      Ctr "NonEmpty" × 3 -- Tree<any> × any × Tree<any>
    ],
    -- Graphics
    dataType "Point" [
-      Ctr "Point" × [
-         "x",  -- Float
-         "y"   -- Float
-      ]
+      Ctr "Point" × 2 -- Float × Float
    ],
 
    dataType "Orient" [  -- iso to Bool
-      Ctr "Horiz" × [],
-      Ctr "Vert"  × []
+      Ctr "Horiz" × 0,
+      Ctr "Vert"  × 0
    ],
 
    dataType "Plot" [
-      Ctr "BarChart" × [
-         "dummy"        -- Record<>
-      ]
+      Ctr "BarChart" × 1 -- Record<>
    ],
 
    dataType "GraphicsElement" [
-      Ctr "Circle" × [
-         "x",        -- Float
-         "y",        -- Float
-         "radius",   -- Float
-         "fill"      -- Str
-      ],
-      Ctr "Group" × [
-         "gs"  -- List<GraphicsElement>
-      ],
-      Ctr "Line" × [
-         "p1",          -- Float
-         "p2",          -- Float
-         "stroke",      -- Str
-         "strokeWidth"  -- Float
-      ],
-      Ctr "Polyline" × [
-         "points",      -- List<Point>
-         "stroke",      -- Str
-         "strokeWidth"  -- Float
-      ],
-      Ctr "Polymarkers" × [
-         "points",   -- List<Point>
-         "markers"   -- List<GraphicsElement>
-      ],
-      Ctr "Rect" × [
-         "x",        -- Float
-         "y",        -- Float
-         "width",    -- Float
-         "height",   -- Float
-         "fill"      -- Str
-      ],
-      Ctr "Text" × [
-         "x",        -- Float
-         "y",        -- Float
-         "str",      -- Str
-         "anchor",   -- Str (SVG text-anchor)
-         "baseline"  -- Str (SVG alignment-baseline)
-      ],
-      Ctr "Viewport" × [
-         "x",           -- Float
-         "y",           -- Float
-         "width",       -- Float
-         "height",      -- Float
-         "fill",        -- Str
-         "margin",      -- Float (in *parent* reference frame)
-         "scale",       -- Transform
-         "translate",   -- Transform (scaling applies to translated coordinates)
-         "g"            -- GraphicsElement
-      ]
+      Ctr "Circle" × 4,       -- Float (x), Float (y), Float (radius), Str (fill),
+      Ctr "Group" × 1,        -- List<GraphicsElement>,
+      Ctr "Line" × 4,         -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth),
+      Ctr "Polyline" × 3,     -- List<Point> (points), Str (stroke), Float (strokeWidth)
+      Ctr "Polymarkers" × 2,  -- List<Point> (points), List<GraphicsElement> (markers),
+      Ctr "Rect" × 5,         -- Float (x), Float (y), Float (width), Float (height), Str (fill)
+      -- these are SVG text-anchor and alignment-baseline properties
+      Ctr "Text" × 5,         -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
+      -- margin is in *parent* reference frame; scaling applies to translated coordinates
+      Ctr "Viewport" × 9      -- Float (x), Float (y), Float (width), Float (height), Str (fill),
+                              -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
    ],
 
    dataType "Transform" [
-      Ctr "Scale" × [
-         "x",  -- Float
-         "y"   -- Float
-      ],
-      Ctr "Translate" × [
-         "x",  -- Float
-         "y"   -- Float
-      ]
+      Ctr "Scale" × 2, -- Float (x), Float (y)
+      Ctr "Translate" × 2 -- Float (x), Float (y)
    ],
 
    dataType "Marker" [
-      Ctr "Arrowhead" × []
+      Ctr "Arrowhead" × 0
    ]
 ]
