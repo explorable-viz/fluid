@@ -26,6 +26,7 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
+   test "records" "{a: 5, b: 6, c: 7, d: [5]}",
    testWithDataset "renewables-new" "graphics-new/bar-chart"
 ]
 

@@ -122,6 +122,8 @@ evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
              ρ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (γ ∨ β) i' : V.Int (γ' ∨ β') j' : Nil)) t' in
           (ρ ∨ ρ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
       _ -> error absurd
+evalBwd v (T.RecordLookup t x) =
+   ?_
 evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
    let ρ1ρ2ρ3 × e × α = evalBwd v t3
        ρ1ρ2 × ρ3 = splitAt (vars w # length) ρ1ρ2ρ3

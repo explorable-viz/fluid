@@ -2,12 +2,12 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 
+import Bindings (Bindings, (↦), find, key, val, varAnon)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
 import Data.Profunctor.Strong ((***), (&&&), first, second)
 import Data.Tuple (fst)
-import Bindings (Bindings, (↦), find, key, val, varAnon)
 import DataType (cPair)
 import Eval (closeDefs)
 import Expl (Expl(..), Match(..), VarDef(..)) as T
@@ -116,6 +116,13 @@ evalFwd ρ e α (T.LetRec δ t) =
 evalFwd ρ e _ (T.Lambda _ _) =
    case expand e (Lambda (ElimHole false)) of
       Lambda σ -> V.Closure ρ Lin σ
+      _ -> error absurd
+evalFwd ρ e α (T.RecordLookup t x) =
+   case expand e (RecordLookup (Hole false) x) of
+      RecordLookup e' _ ->
+         case evalFwd ρ e' α t of
+            V.Record _ xvs -> successful (find x xvs)
+            _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
    case expand e (App (Hole false) (Hole false)) of

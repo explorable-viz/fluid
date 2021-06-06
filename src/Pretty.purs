@@ -146,11 +146,12 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.Record _ xes)          = prettyRecord xes
    pretty (E.Constr _ c es)         = prettyConstr c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
+   pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]
    pretty (E.Op op)                 = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') = atop (hspace [text str.let_, pretty σ, text str.equals, pretty e, text str.in_])
                                            (pretty e')
    pretty (E.LetRec δ e)            = atop (hspace [text str.let_, pretty δ, text str.in_]) (pretty e)
-   pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]
+   pretty (E.RecordLookup e x)      = error "todo"
    pretty (E.App e e')              = hspace [pretty e, pretty e']
 
 instance prettyRecDefs :: Pretty (SnocList (Bind (Elim Boolean))) where

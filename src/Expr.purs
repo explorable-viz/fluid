@@ -23,6 +23,7 @@ data Expr a =
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
+   RecordLookup (Expr a) Var |
    App (Expr a) (Expr a) |
    Let (VarDef a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
@@ -124,8 +125,9 @@ instance slicesExpr :: Slices (Expr Boolean) where
    maybeJoin (Constr α c es) (Constr α' c' es')                = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin es es'
    maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
       Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≞ x') `lift2 (×)` (y ≞ y')) <*> maybeJoin e2 e2'
-   maybeJoin (App e1 e2) (App e1' e2')                         = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Lambda σ) (Lambda σ')                            = Lambda <$> maybeJoin σ σ'
+   maybeJoin (RecordLookup e x) (RecordLookup e' x')            = RecordLookup <$> maybeJoin e e' <*> (x ≞ x')
+   maybeJoin (App e1 e2) (App e1' e2')                         = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Let def e) (Let def' e')                         = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec δ e) (LetRec δ' e')                       = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'
    maybeJoin _ _                                               = report "Incompatible expressions"
@@ -141,6 +143,7 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Hole α) (Constr β c es)              = Constr (α ⪄ β) c (expand (Hole α) <$> es)
    expand (Hole α) (Matrix β e1 (x × y) e2)     = Matrix (α ⪄ β) (expand (Hole α) e1) (x × y) (expand (Hole α) e2)
    expand (Hole α) (Lambda σ)                   = Lambda (expand (ElimHole α) σ)
+   expand (Hole α) (RecordLookup e x)           = RecordLookup (expand (Hole α) e) x
    expand (Hole α) (App e1 e2)                  = App (expand (Hole α) e1) (expand (Hole α) e2)
    expand (Hole α) (Let (VarDef σ e1) e2) =
       Let (VarDef (expand (ElimHole α) σ) (expand (Hole α) e1)) (expand (Hole α) e2)
@@ -155,6 +158,8 @@ instance exprExpandable :: Expandable (Expr Boolean) where
    expand (Matrix α e1 (x1 × y1) e2) (Matrix β e1' (x2 × y2) e2') =
       Matrix (α ⪄ β) (expand e1 e1') ((x1 ≜ x2) × (y1 ≜ y2)) (expand e2 e2')
    expand (Lambda σ) (Lambda σ')                = Lambda (expand σ σ')
+   expand (RecordLookup e x) (RecordLookup e' x') =
+      RecordLookup (expand e e') (x ≜ x')
    expand (App e1 e2) (App e1' e2')             = App (expand e1 e1') (expand e2 e2')
    expand (Let (VarDef σ e1) e2)
           (Let (VarDef σ' e1') e2')             = Let (VarDef (expand σ σ') (expand e1 e1')) (expand e2 e2')

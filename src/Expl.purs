@@ -22,6 +22,7 @@ data Expl a =
    Constr (Env a) Ctr (List (Expl a)) |
    Matrix (Array2 (Expl a)) (Var × Var) (Int × Int) (Expl a) |
    Lambda (Env a) (Elim a) |
+   RecordLookup (Expl a) Var |
    App (Expl a × Env a × RecDefs a × Elim a) (Expl a) (Match a) (Expl a) |
    AppPrim (Expl a × PrimOp × List (Val a)) (Expl a × Val a) | -- record prior arguments
    AppConstr (Expl a × Ctr × Int) (Expl a) |                   -- record number of prior arguments
