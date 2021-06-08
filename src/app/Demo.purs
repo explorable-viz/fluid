@@ -7,7 +7,7 @@ import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (MatrixFig, {-drawBarChart, drawTable, -}drawFigure, matrixFig)
+import App.Renderer (MatrixFig, {-drawBarChart, -}drawTable, drawFigure, matrixFig)
 import Bindings ((↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -70,13 +70,21 @@ makeFigure file example divId =
    case _ of
       Left e -> log ("Open failed: " <> show e)
       Right (ρ × s) -> do
---         drawBarChart "fig-bar-chart"
---         drawTable "table"
          drawFigure divId (successful (example ρ s))
+
+makeTable :: String -> String -> Effect Unit
+makeTable file divId =
+   flip runAff_ (openWithDefaultImports ("graphics-new/" <> file))
+   case _ of
+      Left e -> log ("Open failed: " <> show e)
+      Right (ρ × s) -> do
+         drawTable "table"
+--       drawBarChart "fig-bar-chart"
 
 main :: Effect Unit
 main = do
-   makeFigure "conv-wrap" example_needed "fig-1"
-   makeFigure "conv-wrap" example_neededBy "fig-2"
-   makeFigure "conv-zero" example_needed "fig-3"
-   makeFigure "conv-zero" example_neededBy "fig-4"
+   makeTable "line-chart" "table"
+-- makeFigure "conv-wrap" example_needed "fig-1"
+-- makeFigure "conv-wrap" example_neededBy "fig-2"
+-- makeFigure "conv-zero" example_needed "fig-3"
+-- makeFigure "conv-zero" example_neededBy "fig-4"
