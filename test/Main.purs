@@ -41,7 +41,30 @@ test_linking = [
             \3, 10, 12, 3, 11",
    testLink "bar-chart" "line-chart" "renewables"
             (Hole false)
-            ""
+            "LineChart ({\
+               \caption: \"Growth in renewables for China\", \
+               \plots: [\
+                  \LinePlot ({\
+                     \name: \"Bio\", \
+                     \data: [{\
+                        \x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 10.3}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                     \]}), \
+                  \LinePlot ({\
+                     \name: \"Hydro\", \
+                     \data: [{\
+                        \x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 96}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                     \]}), \
+                  \LinePlot ({\
+                     \name: \"Solar\", \
+                     \data: [{\
+                        \x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 44}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}]\
+                     \}), \
+                  \LinePlot ({\
+                     \name: \"Wind\", \
+                     \data: [{\
+                        \x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 145}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}]\
+                     \})\
+                  \]})"
 ]
 
 test_bwd :: Array (Test Unit)
@@ -118,5 +141,5 @@ test_graphics = [
    testWithDataset "renewables-restricted" "graphics/background",
    testWithDataset "renewables-restricted" "graphics/grouped-bar-chart",
    testWithDataset "renewables-restricted" "graphics/line-chart",
-   testWithDataset "renewables-restricted" "graphics/stacked-bar-chart",
+   testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
 ]

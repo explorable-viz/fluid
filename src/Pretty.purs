@@ -184,7 +184,7 @@ instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
-   pretty (V.Record α xvs)             = highlightIf α (pretty xvs)
+   pretty (V.Record α xvs)             = highlightIf α (prettyRecord xvs)
    pretty u@(V.Constr _ c vs)
       | c == cNil || c == cCons        = prettyList (toList u) -- list values always printed using list notation
       | otherwise                      = prettyConstr c vs
