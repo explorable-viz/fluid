@@ -59,10 +59,10 @@ example_needed2 xs ρ s0 = do
    let o' = selectCell 2 1 5 5
        ρρ' × _ × _ = evalBwd o' t
    vs <- sequence (flip find ρ' <$> xs)
-   us <- sequence (flip find ρρ' <$> xs)
+   vs' <- sequence (flip find ρρ' <$> xs)
    pure $ [
       matrixFig "output" "LightGreen" (o' × o)
-   ] <> (uncurry (flip matrixFig "Yellow") <$> zip xs (zip vs us))
+   ] <> (uncurry (flip matrixFig "Yellow") <$> zip xs (zip vs' vs))
 
 example_neededBy :: ConvExample
 example_neededBy ρ s0 = do
@@ -100,8 +100,8 @@ makeTable file divId =
 
 main :: Effect Unit
 main = do
-   makeTable "line-chart" "table"
-   makeFigure "conv-wrap" (example_needed2 ["filter", "image"]) "fig-1"
+--   makeTable "line-chart" "table"
+   makeFigure "conv-wrap" (example_needed) "fig-1"
 -- makeFigure "conv-wrap" example_neededBy "fig-2"
 -- makeFigure "conv-zero" example_needed "fig-3"
 -- makeFigure "conv-zero" example_neededBy "fig-4"
