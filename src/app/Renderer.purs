@@ -14,22 +14,24 @@ import Val (Array2, MatrixRep, Val)
 
 -- Similar to MatrixRep 𝔹, but with elements converted from values to the underlying data type.
 type MatrixRep' = Array2 (Int × 𝔹) × Int × Int
-type MatrixFig = { title :: String, cellFillSelected :: String, matrix :: MatrixRep' }
 
 -- Hardcode to specific example for now.
 type RecordRep = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Int × 𝔹 }
 type TableRep = Array RecordRep
-type TableFig = { title :: String, cellFillSelected :: String, table :: TableRep }
 
-matrixFig :: String -> String -> Val 𝔹 × Val 𝔹 -> MatrixFig
+data Fig =
+   MatrixFig { title :: String, cellFillSelected :: String, matrix :: MatrixRep' } |
+   TableFig { title :: String, cellFillSelected :: String, table :: TableRep }
+
+matrixFig :: String -> String -> Val 𝔹 × Val 𝔹 -> Fig
 matrixFig title cellFillSelected (u × v) =
    let v' × _ = match_fwd (u × v) in
-   { title, cellFillSelected, matrix: matrixRep (v' × fst (match v)) }
+   MatrixFig { title, cellFillSelected, matrix: matrixRep (v' × fst (match v)) }
 
 -- Discard annotations on the list itself.
-tableFig :: String -> String -> Val 𝔹 × Val 𝔹 -> TableFig
+tableFig :: String -> String -> Val 𝔹 × Val 𝔹 -> Fig
 tableFig title cellFillSelected (u × v) =
-   { title, cellFillSelected, table: fromFoldable (recordRep' <$> (L.zip (toList u) (toList v))) }
+   TableFig { title, cellFillSelected, table: fromFoldable (recordRep' <$> (L.zip (toList u) (toList v))) }
 
 recordRep' :: Val 𝔹 × Val 𝔹 -> RecordRep
 recordRep' (u × v) =
@@ -37,7 +39,7 @@ recordRep' (u × v) =
    recordRep (v' × fst (match v))
 
 foreign import drawBarChart :: String -> Effect Unit
-foreign import drawFigure :: String -> Array MatrixFig -> Effect Unit
+foreign import drawFigure :: String -> Array Fig -> Effect Unit
 foreign import drawTable :: String -> Effect Unit
 
 -- Will want to generalise to arrays of "drawable values". Second component of elements is original value.

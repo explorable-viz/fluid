@@ -10,7 +10,7 @@ import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (MatrixFig, TableFig, {-drawBarChart, -}drawTable, drawFigure, matrixFig)
+import App.Renderer (Fig, {-drawBarChart, -}drawTable, drawFigure, matrixFig)
 import Bindings (Var, (↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -31,23 +31,23 @@ splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail (Env 𝔹 × S.Expr �
 splitDefs ρ (S.Let defs s) =
    (desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ) <#> (_ × s)
 
-type ConvExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
-type ChartExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail TableFig
+type Example = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array Fig)
 
-example_needed :: Array Var -> Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
+example_needed :: Array Var -> Example
 example_needed xs ρ s0 = do
    ρ' × s <- unsafePartial (splitDefs ρ s0)
    e <- desugarFwd s
-   t × o <- eval (ρ <> ρ') e
+   let ρρ' = ρ <> ρ'
+   t × o <- eval ρρ' e
    let o' = selectCell 2 1 5 5
-       ρρ' × _ × _ = evalBwd o' t
-   vs <- sequence (flip find ρ' <$> xs)
-   vs' <- sequence (flip find ρρ' <$> xs)
+       ρρ'' × _ × _ = evalBwd o' t
+   vs <- sequence (flip find ρρ' <$> xs)
+   vs' <- sequence (flip find ρρ'' <$> xs)
    pure $ [
       matrixFig "output" "LightGreen" (o' × o)
    ] <> (uncurry (flip matrixFig "Yellow") <$> zip xs (zip vs' vs))
 
-example_neededBy :: ConvExample
+example_neededBy :: Example
 example_neededBy ρ s0 = do
    ρ' × s <- unsafePartial (splitDefs ρ s0)
    e <- desugarFwd s
@@ -64,27 +64,19 @@ example_neededBy ρ s0 = do
       matrixFig "input" "Yellow" (i' × i)
    ]
 
-makeFigure :: String -> ConvExample -> String -> Effect Unit
+makeFigure :: String -> Example -> String -> Effect Unit
 makeFigure file example divId =
-   flip runAff_ (openWithDefaultImports ("slicing/" <> file))
+   flip runAff_ (openWithDefaultImports file)
    case _ of
       Left e -> log ("Open failed: " <> show e)
       Right (ρ × s) -> do
          drawFigure divId (successful (example ρ s))
 
-makeTable :: String -> String -> Effect Unit
-makeTable file divId =
-   flip runAff_ (openWithDefaultImports ("linking/" <> file))
-   case _ of
-      Left e -> log ("Open failed: " <> show e)
-      Right (ρ × s) -> do
-         drawTable "table"
---       drawBarChart "fig-bar-chart"
-
 main :: Effect Unit
 main = do
---   makeTable "line-chart" "table"
-   makeFigure "conv-wrap" (example_needed ["filter", "image"]) "fig-1"
-   makeFigure "conv-wrap" example_neededBy "fig-2"
-   makeFigure "conv-zero" (example_needed ["filter", "image"]) "fig-3"
-   makeFigure "conv-zero" example_neededBy "fig-4"
+--   drawBarChart "fig-bar-chart"
+   makeFigure "linking/line-chart" (example_needed ["data"]) "table-1"
+--   makeFigure "slicing/conv-wrap" (example_needed ["filter", "image"]) "fig-1"
+--   makeFigure "slicing/conv-wrap" example_neededBy "fig-2"
+--   makeFigure "slicing/conv-zero" (example_needed ["filter", "image"]) "fig-3"
+--   makeFigure "slicing/conv-zero" example_neededBy "fig-4"

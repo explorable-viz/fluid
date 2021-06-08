@@ -153,11 +153,25 @@ function drawTable (id) {
    }
 }
 
-// String -> Array MatrixFig -> Effect Unit
+function className (o) {
+   return o.constructor.name
+}
+
+// String -> Array Fig -> Effect Unit
 function drawFigure (id, figs) {
    return () => {
       for (const fig of figs) {
-         drawMatrix(id, fig)()
+         // Bit horrible but will do for now.
+         if (className(fig) == "MatrixFig") {
+            drawMatrix(id, fig.value0)()
+         }
+         else
+         if (className(fig) == "RecordFig") {
+            drawTable(id)
+         }
+         else {
+            throw new Exception("Figure type not recognised.")
+         }
       }
    }
 }
