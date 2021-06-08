@@ -34,25 +34,8 @@ splitDefs ρ (S.Let defs s) =
 type ConvExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
 type ChartExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail TableFig
 
-example_needed :: ConvExample
-example_needed ρ s0 = do
-   ρ' × s <- unsafePartial (splitDefs ρ s0)
-   e <- desugarFwd s
-   t × o <- eval (ρ <> ρ') e
-   let o' = selectCell 2 1 5 5
-       ρρ' × _ × _ = evalBwd o' t
-   ω <- find "filter" ρ'
-   i <- find "image" ρ'
-   ω' <- find "filter" ρρ'
-   i' <- find "image" ρρ'
-   pure [
-      matrixFig "output" "LightGreen" (o' × o),
-      matrixFig "filter" "Yellow" (ω' × ω),
-      matrixFig "input" "Yellow" (i' × i)
-   ]
-
-example_needed2 :: Array Var -> Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
-example_needed2 xs ρ s0 = do
+example_needed :: Array Var -> Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
+example_needed xs ρ s0 = do
    ρ' × s <- unsafePartial (splitDefs ρ s0)
    e <- desugarFwd s
    t × o <- eval (ρ <> ρ') e
@@ -101,7 +84,7 @@ makeTable file divId =
 main :: Effect Unit
 main = do
 --   makeTable "line-chart" "table"
-   makeFigure "conv-wrap" (example_needed2 ["filter", "image"]) "fig-1"
+   makeFigure "conv-wrap" (example_needed ["filter", "image"]) "fig-1"
    makeFigure "conv-wrap" example_neededBy "fig-2"
-   makeFigure "conv-zero" (example_needed2 ["filter", "image"]) "fig-3"
+   makeFigure "conv-zero" (example_needed ["filter", "image"]) "fig-3"
    makeFigure "conv-zero" example_neededBy "fig-4"
