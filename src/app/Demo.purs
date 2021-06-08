@@ -1,14 +1,17 @@
 module App.Demo where
 
 import Prelude hiding (absurd)
+import Data.Array (zip)
 import Data.Either (Either(..))
 import Data.List (singleton)
+import Data.Traversable (sequence)
+import Data.Tuple (uncurry)
 import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (MatrixFig, {-drawBarChart, -}drawTable, drawFigure, matrixFig)
-import Bindings ((↦), find, update)
+import App.Renderer (MatrixFig, TableFig, {-drawBarChart, -}drawTable, drawFigure, matrixFig)
+import Bindings (Var, (↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
@@ -29,6 +32,7 @@ splitDefs ρ (S.Let defs s) =
    (desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ) <#> (_ × s)
 
 type ConvExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
+type ChartExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail TableFig
 
 example_needed :: ConvExample
 example_needed ρ s0 = do
@@ -46,6 +50,19 @@ example_needed ρ s0 = do
       matrixFig "filter" "Yellow" (ω' × ω),
       matrixFig "input" "Yellow" (i' × i)
    ]
+
+example_needed2 :: Array Var -> Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
+example_needed2 xs ρ s0 = do
+   ρ' × s <- unsafePartial (splitDefs ρ s0)
+   e <- desugarFwd s
+   t × o <- eval (ρ <> ρ') e
+   let o' = selectCell 2 1 5 5
+       ρρ' × _ × _ = evalBwd o' t
+   vs <- sequence (flip find ρ' <$> xs)
+   us <- sequence (flip find ρρ' <$> xs)
+   pure $ [
+      matrixFig "output" "LightGreen" (o' × o)
+   ] <> (uncurry (flip matrixFig "Yellow") <$> zip xs (zip vs us))
 
 example_neededBy :: ConvExample
 example_neededBy ρ s0 = do
@@ -84,7 +101,7 @@ makeTable file divId =
 main :: Effect Unit
 main = do
    makeTable "line-chart" "table"
--- makeFigure "conv-wrap" example_needed "fig-1"
+   makeFigure "conv-wrap" (example_needed2 ["filter", "image"]) "fig-1"
 -- makeFigure "conv-wrap" example_neededBy "fig-2"
 -- makeFigure "conv-zero" example_needed "fig-3"
 -- makeFigure "conv-zero" example_neededBy "fig-4"

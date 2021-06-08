@@ -26,8 +26,9 @@ matrixFig title cellFillSelected (u × v) =
    let v' × _ = match_fwd (u × v) in
    { title, cellFillSelected, matrix: matrixRep (v' × fst (match v)) }
 
-recordFig :: String -> String -> Val 𝔹 × Val 𝔹 -> TableFig
-recordFig title cellFillSelected (u × v) =
+-- Discard annotations on the list itself.
+tableFig :: String -> String -> Val 𝔹 × Val 𝔹 -> TableFig
+tableFig title cellFillSelected (u × v) =
    { title, cellFillSelected, table: fromFoldable (recordRep' <$> (L.zip (toList u) (toList v))) }
 
 recordRep' :: Val 𝔹 × Val 𝔹 -> RecordRep
