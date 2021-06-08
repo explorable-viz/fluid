@@ -74,7 +74,7 @@ makeFigure file example divId =
 
 makeTable :: String -> String -> Effect Unit
 makeTable file divId =
-   flip runAff_ (openWithDefaultImports ("graphics-new/" <> file))
+   flip runAff_ (openWithDefaultImports ("linking/" <> file))
    case _ of
       Left e -> log ("Open failed: " <> show e)
       Right (ρ × s) -> do
