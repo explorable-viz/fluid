@@ -38,14 +38,14 @@ loadModule file ρ = do
    pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module ρ))
 
 openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-openWithDefaultImports file = do
+openWithDefaultImports file =
    loadFile "fluid/example" file >>= parseWithDefaultImports
 
 parse :: forall t . String -> SParser t -> MayFail t
 parse src = runParser src >>> bimap show identity
 
 parseWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-parseWithDefaultImports src = do
+parseWithDefaultImports src =
    (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics" >>= loadModule "convolution")
        <@> successful (parse src program)
 
@@ -54,3 +54,4 @@ openDatasetAs file x = do
    ρ × s <- loadFile "fluid" file >>= parseWithDefaultImports
    let _ × v = successful (desugarFwd s >>= eval ρ)
    pure (Lin :- x ↦ v)
+

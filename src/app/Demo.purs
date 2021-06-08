@@ -7,17 +7,17 @@ import Data.List (singleton)
 import Data.Traversable (sequence)
 import Data.Tuple (uncurry)
 import Effect (Effect)
-import Effect.Aff (runAff_)
+import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, {-drawBarChart, -}drawTable, drawFigure, matrixFig)
+import App.Renderer (Fig, {-drawBarChart, -} drawFigure, matrixFig)
 import Bindings (Var, (↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
 import Lattice (𝔹, botOf, neg)
-import Module (openWithDefaultImports)
+import Module (openWithDefaultImports, openDatasetAs)
 import SExpr (Expr(..), Module(..)) as S
 import Util (MayFail, type (×), (×), successful)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
@@ -66,11 +66,17 @@ example_neededBy ρ s0 = do
 
 makeFigure :: String -> Example -> String -> Effect Unit
 makeFigure file example divId =
-   flip runAff_ (openWithDefaultImports file)
+   flip runAff_ (burble file)
    case _ of
       Left e -> log ("Open failed: " <> show e)
       Right (ρ × s) -> do
          drawFigure divId (successful (example ρ s))
+
+burble :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
+burble file = do
+   ρ0 × s <- openWithDefaultImports file
+   ρ <- openDatasetAs ("example/linking/" <> "renewables") "data"
+   pure ((ρ0 <> ρ) × s)
 
 main :: Effect Unit
 main = do

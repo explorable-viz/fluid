@@ -226,4 +226,3 @@ function curry4 (f) {
 
 exports.drawBarChart = drawBarChart
 exports.drawFigure = curry2(drawFigure)
-exports.drawTable = drawTable

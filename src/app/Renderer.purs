@@ -40,7 +40,6 @@ recordRep' (u × v) =
 
 foreign import drawBarChart :: String -> Effect Unit
 foreign import drawFigure :: String -> Array Fig -> Effect Unit
-foreign import drawTable :: String -> Effect Unit
 
 -- Will want to generalise to arrays of "drawable values". Second component of elements is original value.
 matrixRep :: MatrixRep 𝔹 × MatrixRep 𝔹 -> MatrixRep'
