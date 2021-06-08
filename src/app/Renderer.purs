@@ -23,13 +23,15 @@ data Fig =
    MatrixFig { title :: String, cellFillSelected :: String, matrix :: MatrixRep' } |
    TableFig { title :: String, cellFillSelected :: String, table :: TableRep }
 
-matrixFig :: String -> String -> Val 𝔹 × Val 𝔹 -> Fig
+type FigConstructor = String -> String -> Val 𝔹 × Val 𝔹 -> Fig
+
+matrixFig :: FigConstructor
 matrixFig title cellFillSelected (u × v) =
    let v' × _ = match_fwd (u × v) in
    MatrixFig { title, cellFillSelected, matrix: matrixRep (v' × fst (match v)) }
 
 -- Discard annotations on the list itself.
-tableFig :: String -> String -> Val 𝔹 × Val 𝔹 -> Fig
+tableFig :: FigConstructor
 tableFig title cellFillSelected (u × v) =
    TableFig { title, cellFillSelected, table: fromFoldable (recordRep' <$> (L.zip (toList u) (toList v))) }
 

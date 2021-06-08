@@ -1,16 +1,17 @@
 module App.Demo where
 
 import Prelude hiding (absurd)
-import Data.Array (zip)
+import Data.Array (unzip, zip)
 import Data.Either (Either(..))
 import Data.List (singleton)
+import Data.Profunctor.Strong ((&&&))
 import Data.Traversable (sequence)
 import Data.Tuple (uncurry)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, {-drawBarChart, -} drawFigure, matrixFig)
+import App.Renderer (Fig, FigConstructor, drawFigure, matrixFig, tableFig)
 import Bindings (Var, (↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -32,19 +33,24 @@ splitDefs ρ (S.Let defs s) =
    (desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ) <#> (_ × s)
 
 type Example = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array Fig)
+type VarSpec = {
+   var :: Var,
+   fig :: FigConstructor
+}
 
-example_needed :: Array Var -> Val 𝔹 -> Example
-example_needed xs o' ρ s0 = do
+example_needed :: Array VarSpec -> Val 𝔹 -> Example
+example_needed x_figs o' ρ s0 = do
    ρ' × s <- unsafePartial (splitDefs ρ s0)
    e <- desugarFwd s
    let ρρ' = ρ <> ρ'
    t × o <- eval ρρ' e
    let ρρ'' × _ × _ = evalBwd o' t
+       xs = _.var <$> x_figs
    vs <- sequence (flip find ρρ' <$> xs)
    vs' <- sequence (flip find ρρ'' <$> xs)
    pure $ [
       matrixFig "output" "LightGreen" (o' × o)
-   ] <> (uncurry (flip matrixFig "Yellow") <$> zip xs (zip vs' vs))
+   ] <> ((\({var: x, fig} × vs2) -> fig x "Yellow" vs2) <$> zip x_figs (zip vs' vs))
 
 example_neededBy :: Example
 example_neededBy ρ s0 = do
@@ -80,9 +86,15 @@ burble file = do
 
 main :: Effect Unit
 main = do
---   drawBarChart "fig-bar-chart"
-   makeFigure "linking/line-chart" (example_needed ["data"] (Hole false)) "table-1"
-   makeFigure "slicing/conv-wrap" (example_needed ["filter", "image"] (selectCell 2 1 5 5)) "fig-1"
+   makeFigure "linking/line-chart"
+              (example_needed [{ var: "data", fig: tableFig } ] (Hole false)) "table-1"
+   makeFigure "slicing/conv-wrap"
+              (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig } ]
+              (selectCell 2 1 5 5))
+              "fig-1"
    makeFigure "slicing/conv-wrap" example_neededBy "fig-2"
-   makeFigure "slicing/conv-zero" (example_needed ["filter", "image"] (selectCell 2 1 5 5)) "fig-3"
+   makeFigure "slicing/conv-zero"
+              (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig } ]
+              (selectCell 2 1 5 5))
+              "fig-3"
    makeFigure "slicing/conv-zero" example_neededBy "fig-4"
