@@ -101,7 +101,7 @@ makeTable file divId =
 main :: Effect Unit
 main = do
 --   makeTable "line-chart" "table"
-   makeFigure "conv-wrap" (example_needed) "fig-1"
--- makeFigure "conv-wrap" example_neededBy "fig-2"
--- makeFigure "conv-zero" example_needed "fig-3"
--- makeFigure "conv-zero" example_neededBy "fig-4"
+   makeFigure "conv-wrap" (example_needed2 ["filter", "image"]) "fig-1"
+   makeFigure "conv-wrap" example_neededBy "fig-2"
+   makeFigure "conv-zero" (example_needed2 ["filter", "image"]) "fig-3"
+   makeFigure "conv-zero" example_neededBy "fig-4"
