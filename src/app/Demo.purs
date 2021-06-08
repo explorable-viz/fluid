@@ -16,7 +16,6 @@ import EvalFwd (evalFwd)
 import Lattice (𝔹, botOf, neg)
 import Module (openWithDefaultImports)
 import SExpr (Expr(..), Module(..)) as S
-import Test.Util (desugarEval)
 import Util (MayFail, type (×), (×), successful)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
@@ -34,7 +33,8 @@ type ConvExample = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array MatrixFig)
 example_needed :: ConvExample
 example_needed ρ s0 = do
    ρ' × s <- unsafePartial (splitDefs ρ s0)
-   t × o <- desugarEval (ρ <> ρ') s
+   e <- desugarFwd s
+   t × o <- eval (ρ <> ρ') e
    let o' = selectCell 2 1 5 5
        ρρ' × _ × _ = evalBwd o' t
    ω <- find "filter" ρ'
