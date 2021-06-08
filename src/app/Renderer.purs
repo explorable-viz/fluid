@@ -1,11 +1,13 @@
 module App.Renderer where
 
 import Prelude
-import Data.Array (zip, zipWith)
+import Data.Array (fromFoldable, zip, zipWith)
+import Data.List (zip) as L
 import Data.Tuple (fst)
 import Effect (Effect)
 import Bindings (Bindings, Var, find)
 import Lattice (𝔹)
+import Pretty (toList)
 import Primitive (class ToFrom, match, match_fwd)
 import Util (type (×), (×), successful)
 import Val (Array2, MatrixRep, Val)
@@ -16,16 +18,22 @@ type MatrixFig = { title :: String, cellFillSelected :: String, matrix :: Matrix
 
 -- Hardcode to specific example for now.
 type RecordRep = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Int × 𝔹 }
-type TableFig = { title :: String, cellFillSelected :: String, table :: Array RecordRep }
+type TableRep = Array RecordRep
+type TableFig = { title :: String, cellFillSelected :: String, table :: TableRep }
 
 matrixFig :: String -> String -> Val 𝔹 × Val 𝔹 -> MatrixFig
 matrixFig title cellFillSelected (u × v) =
    let v' × _ = match_fwd (u × v) in
    { title, cellFillSelected, matrix: matrixRep (v' × fst (match v)) }
 
-tableFig :: String -> String -> Val 𝔹 × Val 𝔹 -> TableFig
-tableFig title cellFillSelected (u × v) =
-   { title, cellFillSelected, table: ?_ }
+recordFig :: String -> String -> Val 𝔹 × Val 𝔹 -> TableFig
+recordFig title cellFillSelected (u × v) =
+   { title, cellFillSelected, table: fromFoldable (recordRep' <$> (L.zip (toList u) (toList v))) }
+
+recordRep' :: Val 𝔹 × Val 𝔹 -> RecordRep
+recordRep' (u × v) =
+   let v' × _ = match_fwd (u × v) in
+   recordRep (v' × fst (match v))
 
 foreign import drawBarChart :: String -> Effect Unit
 foreign import drawFigure :: String -> Array MatrixFig -> Effect Unit

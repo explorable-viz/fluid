@@ -7,10 +7,12 @@ import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
+import Bindings (Bind)
 import DataType (cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧), expand)
 import Pretty (prettyP)
 import Util (Endo, type (×), (×), type (+), error)
+import Util.SnocList (SnocList)
 import Val (PrimOp(..), Val(..))
 
 -- Mediates between Val and underlying data, analously to pattern-matching and construction for data types.
@@ -89,6 +91,13 @@ instance toFromMatrixRep :: ToFrom (Array (Array (Val Boolean)) × (Int × Boole
    match v            = error ("Matrix expected; got " <> prettyP v)
 
    constr (r × α) = Matrix α r
+   constr_bwd v = match_fwd v
+
+instance toFromRecordRep :: ToFrom (SnocList (Bind (Val Boolean))) where
+   match (Record α xvs) = xvs × α
+   match v              = error ("Record expected; got " <> prettyP v)
+
+   constr (xvs × α) = Record α xvs
    constr_bwd v = match_fwd v
 
 instance toFromValAndVal :: ToFrom (Val Boolean × Val Boolean) where

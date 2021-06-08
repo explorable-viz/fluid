@@ -1,4 +1,4 @@
-module Pretty (class Pretty, pretty, prettyP, module P) where
+module Pretty (class Pretty, class ToList, pretty, prettyP, toList, module P) where
 
 import Prelude hiding (absurd,between)
 
