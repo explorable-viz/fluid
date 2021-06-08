@@ -33,14 +33,13 @@ splitDefs ρ (S.Let defs s) =
 
 type Example = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array Fig)
 
-example_needed :: Array Var -> Example
-example_needed xs ρ s0 = do
+example_needed :: Array Var -> Val 𝔹 -> Example
+example_needed xs o' ρ s0 = do
    ρ' × s <- unsafePartial (splitDefs ρ s0)
    e <- desugarFwd s
    let ρρ' = ρ <> ρ'
    t × o <- eval ρρ' e
-   let o' = selectCell 2 1 5 5
-       ρρ'' × _ × _ = evalBwd o' t
+   let ρρ'' × _ × _ = evalBwd o' t
    vs <- sequence (flip find ρρ' <$> xs)
    vs' <- sequence (flip find ρρ'' <$> xs)
    pure $ [
@@ -72,6 +71,7 @@ makeFigure file example divId =
       Right (ρ × s) -> do
          drawFigure divId (successful (example ρ s))
 
+-- TODO: consolidate with similar test util code; move to Module?
 burble :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 burble file = do
    ρ0 × s <- openWithDefaultImports file
@@ -81,8 +81,8 @@ burble file = do
 main :: Effect Unit
 main = do
 --   drawBarChart "fig-bar-chart"
-   makeFigure "linking/line-chart" (example_needed ["data"]) "table-1"
---   makeFigure "slicing/conv-wrap" (example_needed ["filter", "image"]) "fig-1"
---   makeFigure "slicing/conv-wrap" example_neededBy "fig-2"
---   makeFigure "slicing/conv-zero" (example_needed ["filter", "image"]) "fig-3"
---   makeFigure "slicing/conv-zero" example_neededBy "fig-4"
+   makeFigure "linking/line-chart" (example_needed ["data"] (Hole false)) "table-1"
+   makeFigure "slicing/conv-wrap" (example_needed ["filter", "image"] (selectCell 2 1 5 5)) "fig-1"
+   makeFigure "slicing/conv-wrap" example_neededBy "fig-2"
+   makeFigure "slicing/conv-zero" (example_needed ["filter", "image"] (selectCell 2 1 5 5)) "fig-3"
+   makeFigure "slicing/conv-zero" example_neededBy "fig-4"
