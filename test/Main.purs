@@ -119,6 +119,4 @@ test_graphics = [
    testWithDataset "renewables-restricted" "graphics/grouped-bar-chart",
    testWithDataset "renewables-restricted" "graphics/line-chart",
    testWithDataset "renewables-restricted" "graphics/stacked-bar-chart",
-   testWithDataset "renewables-new" "graphics-new/bar-chart",
-   testWithDataset "renewables-new" "graphics-new/line-chart"
 ]
