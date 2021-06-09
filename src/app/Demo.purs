@@ -19,7 +19,7 @@ import Lattice (𝔹, botOf, neg)
 import Module (openWithDefaultImports, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Util (MayFail, type (×), (×), type (+), error, successful)
+import Util (MayFail, type (×), (×), type (+), successful)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
 selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
