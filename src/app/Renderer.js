@@ -136,7 +136,7 @@ function drawTable (
       .data(table).enter()
       .append('tr')
    rows.selectAll('td')
-      .data(d => titles.map(k => { return { 'value': d[k], 'name': k } }))
+      .data(d => titles.map(k => { return { 'value': d[k].value0, 'name': k } }))
       .enter()
       .append('td')
       .attr('data-th', d => d.name)

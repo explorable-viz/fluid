@@ -11,7 +11,7 @@ import Data.Tuple (fst)
 import DataType (cCons, cNil)
 import Effect (Effect)
 import Lattice (𝔹, expand)
-import Primitive (Slice, class ToFrom, match, match_fwd)
+import Primitive (Slice, class ToFrom, as, match, match_fwd)
 import Util (type (×), (×), type (+), absurd, error, successful)
 import Val (Array2, MatrixRep, Val)
 import Val (Val(..)) as V
@@ -21,7 +21,7 @@ foreign import drawFigure :: String -> Array Fig -> Effect Unit
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int
-type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: (Int + Number) × 𝔹 }
+type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
 
 data Fig =
    MatrixFig { title :: String, cellFillSelected :: String, matrix :: IntMatrix } |
@@ -60,8 +60,12 @@ energyRecord (u × v) =
    toEnergyRecord (fst (match_fwd (u × v)) × fst (match v))
    where
    toEnergyRecord :: Slice (Bindings (Val 𝔹)) -> EnergyRecord
-   toEnergyRecord xvs2 =
-      { year: get "year" xvs2, country: get "country" xvs2, energyType: get "energyType" xvs2, output: get "output" xvs2 }
+   toEnergyRecord xvs2 = {
+      year: get "year" xvs2,
+      country: get "country" xvs2,
+      energyType: get "energyType" xvs2,
+      output: let n × α = get "output" xvs2 :: (Int + Number) × 𝔹 in as n × α
+   }
 
 matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
 matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) = toMatrix (zipWith zip vss uss) × i × j

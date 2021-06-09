@@ -253,3 +253,7 @@ instance asBooleanBoolean :: As Boolean Boolean where
 
 instance asIntOrNumberString :: As (Int + Number) String where
    as _ = error "Non-uniform argument types"
+
+instance asEither :: As (Int + Number) Number where
+   as (Left n)    = as n
+   as (Right n)   = n
