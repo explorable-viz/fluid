@@ -127,16 +127,20 @@ function drawTable (
    id, {
       title,               // String
       cellFillSelected,    // String
-      table                // Record
+      table                // Array Record
    }) {
    const HTMLtable = d3.select('#' + id)
       .append('table')
-   const titles = Object.keys(table[0])
+   const colNames = Object.keys(table[0])
+   HTMLtable.append('thead').append('tr').selectAll('th')
+      .data(colNames).enter()
+      .append('th')
+      .text(d => d)
    const rows = HTMLtable.append('tbody').selectAll('tr')
       .data(table).enter()
       .append('tr')
    rows.selectAll('td')
-      .data(d => titles.map(k => { return { 'value': d[k].value0, 'name': k } }))
+      .data(d => colNames.map(k => { return { 'value': d[k].value0, 'name': k } }))
       .enter()
       .append('td')
       .attr('data-th', d => d.name)
