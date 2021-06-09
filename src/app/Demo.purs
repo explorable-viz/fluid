@@ -9,7 +9,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, MakeFig, barChart, drawFigure, energyTable, matrixFig)
+import App.Renderer (Fig, MakeFig, drawFigure, makeBarChart, makeEnergyTable, matrixFig)
 import Bindings (Var, (↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -107,7 +107,7 @@ convolutionFigs = do
 linkingFigs :: Effect Unit
 linkingFigs = do
    makeFigure "linking/bar-chart"
-              (example_needed [{ var: "data", fig: energyTable } ] barChart (Hole false)) "table-1"
+              (example_needed [{ var: "data", fig: makeEnergyTable } ] makeBarChart (Hole false)) "table-1"
 
 main :: Effect Unit
 main = do

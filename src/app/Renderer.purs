@@ -52,10 +52,10 @@ makeEnergyTable title cellFillSelected (u × v) =
    EnergyTable { title, cellFillSelected, table: record energyRecord <$> toArray (u × v) }
 
 makeBarChart :: MakeFig
-makeBarChart title _ (u × V.Constr _ c (V.Record _ xvs : Nil)) | c == cBarChart =
-   case expand u (V.Constr false cBarChart (V.Record false (xvs <#> map (const (V.Hole false))) : Nil)) of
-      V.Constr _ _ (V.Record _ xus : Nil) ->
-         let { caption, data_ } = record barChart (xus × xvs) in BarChart { caption, data: data_ }
+makeBarChart title _ (u × V.Constr _ c (v1 : Nil)) | c == cBarChart =
+   case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
+      V.Constr _ _ (u1 : Nil) ->
+         let { caption: caption × _, data_ } = record barChart (u1 × v1) in BarChart { caption, data: data_ }
 
 lineChart :: MakeFig
 lineChart title _ _ = LineChart { title }
