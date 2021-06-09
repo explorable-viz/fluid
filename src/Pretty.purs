@@ -1,4 +1,4 @@
-module Pretty (class Pretty, pretty, prettyP, module P) where
+module Pretty (class Pretty, class ToList, pretty, prettyP, toList, module P) where
 
 import Prelude hiding (absurd,between)
 
@@ -72,6 +72,7 @@ instance toListExpr :: ToList (E.Expr Boolean) where
    toList (E.Constr _ c Nil)              | c == cNil    = Nil
    toList e                                              = error absurd
 
+-- This doesn't work if we hit a hole in the tail of the list.
 instance toListVal :: ToList (Val Boolean) where
    toList (V.Constr _ c (v : v' : Nil)) | c == cCons  = v : toList v'
    toList (V.Constr _ c Nil)            | c == cNil   = Nil
@@ -184,7 +185,7 @@ instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
-   pretty (V.Record α xvs)             = highlightIf α (pretty xvs)
+   pretty (V.Record α xvs)             = highlightIf α (prettyRecord xvs)
    pretty u@(V.Constr _ c vs)
       | c == cNil || c == cCons        = prettyList (toList u) -- list values always printed using list notation
       | otherwise                      = prettyConstr c vs

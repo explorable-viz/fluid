@@ -72,17 +72,18 @@ testBwd file v expected =
    let name = "slicing/" <> file in
    testWithSetup name expected (Just v) (openWithDefaultImports name)
 
-testLink :: String -> Val 𝔹 -> String -> Test Unit
-testLink file v1_sel v2_expect =
-   let name = "linking/" <> file
+testLink :: String -> String -> String -> Val 𝔹 -> String -> Test Unit
+testLink file1 file2 dataFile v1_sel v2_expect =
+   let dir = "linking/"
+       name1 × name2 = (dir <> file1) × (dir <> file2)
        setup = do
          -- the views share an ambient environment ρ0 as well as dataset
-         ρ0 × s1 <- openWithDefaultImports (name <> "-1")
-         _ × s2 <- openWithDefaultImports (name <> "-2")
-         ρ <- openDatasetAs ("example/" <> name <> "-data") "data"
+         ρ0 × s1 <- openWithDefaultImports name1
+         _ × s2 <- openWithDefaultImports name2
+         ρ <- openDatasetAs ("example/" <> dir <> dataFile) "data"
          pure (ρ0 × ρ × s1 × s2) in
    before setup $
-      it name \(ρ0 × ρ × s1 × s2) -> do
+      it (dir <> file1 <> " <-> " <> file2) \(ρ0 × ρ × s1 × s2) -> do
          let e1 = successful (desugarFwd s1)
              e2 = successful (desugarFwd s2)
              t1 × v1 = successful (eval (ρ0 <> ρ) e1)
