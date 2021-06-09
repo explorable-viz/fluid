@@ -167,7 +167,7 @@ function drawFigure (id, figs) {
          }
          else
          if (className(fig) == "EnergyTable") {
-            drawTable(id, fig.value0)
+            drawTable(id, fig.value0)()
          }
          else {
             throw new Error(`Figure type '${className(fig)}' not recognised.`)
