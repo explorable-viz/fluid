@@ -131,14 +131,14 @@ function drawTable (
    id, {
       title,               // String
       cellFillSelected,    // String
-      table                // Record
+      records                // Record
    }) {
    return () => {
       const table = d3.select('#' + id)
          .append('table')
-      const titles = Object.keys(table[0])
+      const titles = Object.keys(records[0])
       const rows = table.append('tbody').selectAll('tr')
-         .data(table).enter()
+         .data(records).enter()
          .append('tr')
       rows.selectAll('td')
          .data(d => titles.map(k => { return { 'value': d[k], 'name': k } }))
