@@ -127,12 +127,12 @@ function drawTable (
    id, {
       title,               // String
       cellFillSelected,    // String
-      records              // Record
+      table                // Record
    }) {
-   const table = d3.select('#' + id)
+   const HTMLtable = d3.select('#' + id)
       .append('table')
    const titles = Object.keys(records[0])
-   const rows = table.append('tbody').selectAll('tr')
+   const rows = HTMLtable.append('tbody').selectAll('tr')
       .data(records).enter()
       .append('tr')
    rows.selectAll('td')
