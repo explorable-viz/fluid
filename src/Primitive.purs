@@ -15,6 +15,10 @@ import Util (Endo, type (×), (×), type (+), error)
 import Util.SnocList (SnocList)
 import Val (PrimOp(..), Val(..))
 
+-- A pair used idiomatically to represent a slice. First component is actual slice; second is original (unsliced)
+-- value to allow for hole-expansion.
+type Slice a = a × a
+
 -- Mediates between Val and underlying data, analously to pattern-matching and construction for data types.
 class ToFrom a where
    constr :: a × 𝔹 -> Val 𝔹
@@ -161,10 +165,10 @@ unary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply :: Partial => List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
    apply (v : Nil) = constr (fwd (match v))
 
-   apply_fwd :: Partial => List (Val 𝔹 × Val 𝔹) {-[(a, a)]-} -> Val 𝔹 {-b-}
+   apply_fwd :: Partial => List (Slice (Val 𝔹)) {-[(a, a)]-} -> Val 𝔹 {-b-}
    apply_fwd (v × u : Nil) = constr (fwd (match_fwd (v × u)))
 
-   apply_bwd :: Partial => Val 𝔹 × Val 𝔹 {-(b, b)-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
+   apply_bwd :: Partial => Slice (Val 𝔹) {-(b, b)-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
    apply_bwd (v × u) (u1 : Nil) = match_bwd v1 : Nil
       where v1 = bwd (constr_bwd (v × u)) (unwrap u1)
 
@@ -179,10 +183,10 @@ binary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply :: Partial => List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
    apply (v : v' : Nil) = constr (fwd (match v) (match v'))
 
-   apply_fwd :: Partial => List (Val 𝔹 × Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
+   apply_fwd :: Partial => List (Slice (Val 𝔹)) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
    apply_fwd (v1 × u1 : v2 × u2 : Nil) = constr (fwd (match_fwd (v1 × u1)) (match_fwd (v2 × u2)))
 
-   apply_bwd :: Partial => Val 𝔹 × Val 𝔹 {-(c, c)-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
+   apply_bwd :: Partial => Slice (Val 𝔹) {-(c, c)-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
    apply_bwd (v × u) (u1 : u2 : Nil) = match_bwd v1 : match_bwd v2 : Nil
       where v1 × v2 = bwd (constr_bwd (v × u)) (unwrap u1 × unwrap u2)
 

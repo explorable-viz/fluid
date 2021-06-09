@@ -3,15 +3,18 @@ module App.Renderer where
 import Prelude
 import Control.Apply (lift2)
 import Data.Array (fromFoldable, zip, zipWith)
+import Data.List (List(..), (:))
 import Data.List (zip) as L
 import Data.Tuple (fst)
 import Effect (Effect)
 import Bindings (Bindings, Var, find)
+import DataType (cCons, cNil)
 import Lattice (𝔹)
 import Pretty (toList)
-import Primitive (class ToFrom, match, match_fwd)
-import Util (type (×), (×), successful)
+import Primitive (Slice, class ToFrom, match, match_fwd)
+import Util (type (×), (×), absurd, error, successful)
 import Val (Array2, MatrixRep, Val)
+import Val (Val(..)) as V
 
 foreign import drawBarChart :: String -> Effect Unit
 foreign import drawFigure :: String -> Array Fig -> Effect Unit
@@ -26,14 +29,19 @@ data Fig =
    EnergyTable { title :: String, cellFillSelected :: String, table :: Array EnergyRecord } |
    LineChart { title :: String }
 
--- Convert sliced value to appropriate Fig, discarding top-level annotations for now. As elsewhere, second
--- component of pair is original (unsliced) value, to allow for hole-expansion.
-type MakeFig = String -> String -> Val 𝔹 × Val 𝔹 -> Fig
+-- Convert sliced value to appropriate Fig, discarding top-level annotations for now.
+type MakeFig = String -> String -> Slice (Val 𝔹) -> Fig
 
 matrixFig :: MakeFig
 matrixFig title cellFillSelected (u × v) =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig { title, cellFillSelected, matrix: matrixRep vss2 }
+
+-- Convert a list slice to an array of slices, with hole expansion as necessary.
+toArray :: Slice (Val 𝔹) -> Array (Slice (Val 𝔹))
+toArray (vs × V.Constr _ c (v : v' : Nil)) | c == cCons = ?_
+toArray (vs × V.Constr _ c Nil) | c == cNil = ?_
+toArray _ = error absurd
 
 energyTable :: MakeFig
 energyTable title cellFillSelected (u × v) =
@@ -42,19 +50,19 @@ energyTable title cellFillSelected (u × v) =
 lineChart :: MakeFig
 lineChart title _ _ = LineChart { title }
 
-energyRecord :: Val 𝔹 × Val 𝔹 -> EnergyRecord
+energyRecord :: Slice (Val 𝔹) -> EnergyRecord
 energyRecord (u × v) =
    toEnergyRecord (fst (match_fwd (u × v)) × fst (match v))
    where
-   toEnergyRecord :: Bindings (Val 𝔹) × Bindings (Val 𝔹) -> EnergyRecord
+   toEnergyRecord :: Slice (Bindings (Val 𝔹)) -> EnergyRecord
    toEnergyRecord xvs2 =
       { year: get "year" xvs2, country: get "country" xvs2, energyType: get "energyType" xvs2, output: get "output" xvs2 }
 
-matrixRep :: MatrixRep 𝔹 × MatrixRep 𝔹 -> IntMatrix
+matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
 matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) = toMatrix (zipWith zip vss uss) × i × j
    where toMatrix :: forall a . ToFrom a => Array2 (Val 𝔹 × Val 𝔹) -> Array2 (a × 𝔹)
          toMatrix = (<$>) ((<$>) match_fwd)
 
-get :: forall a . ToFrom a => Var -> Bindings (Val 𝔹) × Bindings (Val 𝔹) -> a × 𝔹
+get :: forall a . ToFrom a => Var -> Slice (Bindings (Val 𝔹)) -> a × 𝔹
 get x (xvs × xus) = successful $
    match_fwd <$> (find x xvs `lift2 (×)` find x xus)

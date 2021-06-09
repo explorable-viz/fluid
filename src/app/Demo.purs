@@ -1,12 +1,10 @@
 module App.Demo where
 
 import Prelude hiding (absurd)
-import Data.Array (unzip, zip)
+import Data.Array (zip)
 import Data.Either (Either(..))
 import Data.List (singleton)
-import Data.Profunctor.Strong ((&&&))
 import Data.Traversable (sequence)
-import Data.Tuple (uncurry)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
@@ -77,7 +75,8 @@ makeFigure file example divId =
       Right (ρ × s) -> do
          drawFigure divId (successful (example ρ s))
 
--- TODO: consolidate with similar test util code; move to Module?
+-- TODO: rename; consolidate with similar test util code/move to Module; not every example should run in
+-- context of renewables data.
 burble :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 burble file = do
    ρ0 × s <- openWithDefaultImports file

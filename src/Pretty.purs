@@ -72,6 +72,7 @@ instance toListExpr :: ToList (E.Expr Boolean) where
    toList (E.Constr _ c Nil)              | c == cNil    = Nil
    toList e                                              = error absurd
 
+-- This doesn't work if we hit a hole in the tail of the list.
 instance toListVal :: ToList (Val Boolean) where
    toList (V.Constr _ c (v : v' : Nil)) | c == cCons  = v : toList v'
    toList (V.Constr _ c Nil)            | c == cNil   = Nil
