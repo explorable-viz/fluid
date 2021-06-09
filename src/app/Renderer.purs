@@ -26,7 +26,8 @@ type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType
 data Fig =
    MatrixFig { title :: String, cellFillSelected :: String, matrix :: IntMatrix } |
    EnergyTable { title :: String, cellFillSelected :: String, table :: Array EnergyRecord } |
-   LineChart { title :: String }
+   LineChart { title :: String } |
+   BarChart { title :: String }
 
 -- Convert sliced value to appropriate Fig, discarding top-level annotations for now.
 type MakeFig = String -> String -> Slice (Val 𝔹) -> Fig
@@ -54,6 +55,9 @@ energyTable title cellFillSelected (u × v) =
 
 lineChart :: MakeFig
 lineChart title _ _ = LineChart { title }
+
+barChart :: MakeFig
+barChart title _ _ = BarChart { title }
 
 energyRecord :: Slice (Val 𝔹) -> EnergyRecord
 energyRecord (u × v) =

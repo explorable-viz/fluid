@@ -9,7 +9,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, MakeFig, drawFigure, energyTable, lineChart, matrixFig)
+import App.Renderer (Fig, MakeFig, barChart, drawFigure, energyTable, matrixFig)
 import Bindings (Var, (↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -17,8 +17,8 @@ import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
 import Lattice (𝔹, botOf, neg)
 import Module (openWithDefaultImports, openDatasetAs)
-import SExpr (Expr(..), Module(..)) as S
-import Util (MayFail, type (×), (×), successful)
+import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
+import Util (MayFail, type (×), (×), type (+), successful)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
 selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
@@ -27,8 +27,12 @@ selectCell i j i' j' = Matrix true (insertMatrix i j (Hole true) (holeMatrix i' 
 -- Rewrite example of the form (let <defs> in expr) to a "module" and expr, so we can treat defs as part of
 -- the environment that we can easily inspect.
 splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
-splitDefs ρ (S.Let defs s) =
-   (desugarModuleFwd (S.Module (singleton (Left defs))) >>= eval_module ρ) <#> (_ × s)
+splitDefs ρ s' =
+   (desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ) <#> (_ × s)
+   where unpack :: S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
+         unpack (S.LetRec defs s) = Right defs × s
+         unpack (S.Let defs s) = Left defs × s
+         defs × s = unpack s'
 
 type Example = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array Fig)
 type VarSpec = {
@@ -100,8 +104,8 @@ convolutionFigs = do
 
 linkingFigs :: Effect Unit
 linkingFigs = do
-   makeFigure "linking/line-chart"
-              (example_needed [{ var: "data", fig: energyTable } ] lineChart (Hole false)) "table-1"
+   makeFigure "linking/bar-chart"
+              (example_needed [{ var: "data", fig: energyTable } ] barChart (Hole false)) "table-1"
 
 main :: Effect Unit
 main = do
