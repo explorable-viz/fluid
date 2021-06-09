@@ -97,12 +97,13 @@ function drawBarChart (
       .call(d3.axisBottom(x))
       .selectAll('text')
          .attr('transform', "translate(-10,0)rotate(-45)")
-         .style('text-anchor', 'end');
+         .style('text-anchor', 'end')
 
    // y-axis
-   nearest = 100
+   const nearest = 100,
+         y_max = Math.ceil(Math.max(...data.map(d => d.y.value0)) / nearest) * nearest
    const y = d3.scaleLinear()
-      .domain([0, Math.ceil(Math.max(...data.map(d => d.y.value0)) / nearest) * nearest])
+      .domain([0, y_max])
       .range([ height, 0])
    svg.append('g')
       .call(d3.axisLeft(y))
