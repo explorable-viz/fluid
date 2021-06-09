@@ -86,7 +86,10 @@ checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = void $
    with ("Checking arity of " <> show c) (arity c `(=<<<) (≞)` pure n)
 
--- Used internally by primitives or desugaring.
+-- Used internally by primitives, desugaring or rendering layer.
+cBarChart   = Ctr "BarChart"  :: Ctr -- Plot
+cLineChart  = Ctr "LineChart" :: Ctr
+cLinePlot   = Ctr "LinePlot"  :: Ctr
 cFalse      = Ctr "False"     :: Ctr -- Bool
 cTrue       = Ctr "True"      :: Ctr
 cNil        = Ctr "Nil"       :: Ctr -- List
@@ -131,9 +134,9 @@ dataTypes = L.fromFoldable [
    ],
 
    dataType "Plot" [
-      Ctr "BarChart" × 2,  -- Record<caption: Str, List<Record<x: Str, y: Float>>>
-      Ctr "LineChart" × 2, -- Record<caption: Str, List<LinePlot>>
-      Ctr "LinePlot" × 2   -- Record<name: Str, List<Record<x: Float, y: Float>>>
+      cBarChart × 2,   -- Record<caption: Str, List<Record<x: Str, y: Float>>>
+      cLineChart × 2,  -- Record<caption: Str, List<LinePlot>>
+      cLinePlot × 2    -- Record<name: Str, List<Record<x: Float, y: Float>>>
    ],
 
    dataType "GraphicsElement" [

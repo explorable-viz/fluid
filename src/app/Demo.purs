@@ -17,8 +17,9 @@ import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
 import Lattice (𝔹, botOf, neg)
 import Module (openWithDefaultImports, openDatasetAs)
+import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Util (MayFail, type (×), (×), type (+), successful)
+import Util (MayFail, type (×), (×), type (+), error, successful)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
 selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
@@ -50,9 +51,10 @@ example_needed x_figs o_fig o' ρ s0 = do
        xs = _.var <$> x_figs
    vs <- sequence (flip find ρρ' <$> xs)
    vs' <- sequence (flip find ρρ'' <$> xs)
-   pure $ [
-      o_fig "output" "LightGreen" (o' × o)
-   ] <> ((\({var: x, fig} × vs2) -> fig x "Yellow" vs2) <$> zip x_figs (zip vs' vs))
+   pure $ [ unsafePartial o_fig "output" "LightGreen" (o' × o) ] <> (varFig <$> zip x_figs (zip vs' vs))
+   where
+      varFig :: VarSpec × Slice (Val 𝔹) -> Fig
+      varFig ({var: x, fig} × (v × u)) = unsafePartial (fig x "Yellow" (v × u))
 
 example_neededBy :: Example
 example_neededBy ρ s0 = do
@@ -66,9 +68,9 @@ example_neededBy ρ s0 = do
    i <- find "image" ρ'
    i' <- find "image" ρ''
    pure [
-      matrixFig "output" "Yellow" (o' × o),
-      matrixFig "filter" "LightGreen" (ω' × ω),
-      matrixFig "input" "Yellow" (i' × i)
+      unsafePartial matrixFig "output" "Yellow" (o' × o),
+      unsafePartial matrixFig "filter" "LightGreen" (ω' × ω),
+      unsafePartial matrixFig "input" "Yellow" (i' × i)
    ]
 
 makeFigure :: String -> Example -> String -> Effect Unit

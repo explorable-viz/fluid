@@ -68,7 +68,12 @@ function drawMatrix (
       .attr('text-anchor', 'left')
 }
 
-function drawBarChart (id) {
+function drawBarChart (
+   id, {
+      title,   // String
+      data,    // Array BarChartRecord
+   }
+) {
    // set the dimensions and margins of the graph
    var margin = {top: 30, right: 30, bottom: 70, left: 60},
       width = 460 - margin.left - margin.right,
@@ -82,19 +87,10 @@ function drawBarChart (id) {
       .append('g')
          .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-   const data = [
-      { 'Country': "United States", 'Value': 12394 },
-      { 'Country': "Russia", 'Value': 6148 },
-      { 'Country': "Germany", 'Value': 1653 },
-      { 'Country': "France", 'Value': 2162 },
-      { 'Country': "United Kingdom", 'Value': 1214 },
-      { 'Country': "China", 'Value': 1131 }
-   ]
-
    // x-axis
    const x = d3.scaleBand()
       .range([ 0, width ])
-      .domain(data.map(d => d.Country))
+      .domain(data.map(d => d.x.value0))
       .padding(0.2)
    svg.append('g')
       .attr('transform', "translate(0," + height + ")")
@@ -115,8 +111,8 @@ function drawBarChart (id) {
       .data(data)
       .enter()
       .append('rect')
-         .attr('x', d => x(d.Country))
-         .attr('y', d => y(d.Value))
+         .attr('x', d => x(d.x.value0))
+         .attr('y', d => y(d.y.value0))
          .attr('width', x.bandwidth())
          .attr('height', d => height - y(d.Value))
          .attr('fill', "#69b3a2")
@@ -127,7 +123,7 @@ function drawTable (
    id, {
       title,               // String
       cellFillSelected,    // String
-      table                // Array Record
+      table                // Array of any record type
    }) {
    const HTMLtable = d3.select('#' + id)
       .append('table')
@@ -161,11 +157,11 @@ function drawFigure (id, figs) {
          }
          else
          if (className(fig) == "BarChart") {
-            drawBarChart(id)
+            drawBarChart(id, fig.value0)
          }
          else
          if (className(fig) == "LineChart") {
-            drawBarChart(id)
+            drawBarChart(id, fig.value0)
          }
          else
          if (className(fig) == "MatrixFig") {
