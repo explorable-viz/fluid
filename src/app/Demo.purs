@@ -23,7 +23,7 @@ import Util (MayFail, type (×), (×), type (+), successful)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
 selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
-selectCell i j i' j' = Matrix true (insertMatrix i j (Hole true) (holeMatrix i' j'))
+selectCell i j i' j' = Matrix false (insertMatrix i j (Hole true) (holeMatrix i' j'))
 
 -- Rewrite example of the form (let <defs> in expr) to a "module" and expr, so we can treat defs as part of
 -- the environment that we can easily inspect.
@@ -92,22 +92,25 @@ burble file = do
 convolutionFigs :: Effect Unit
 convolutionFigs = do
    makeFigure "slicing/conv-wrap"
-              (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig } ]
-              matrixFig
-              (selectCell 2 1 5 5))
+              (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig }]
+                             matrixFig
+                             (selectCell 2 1 5 5))
               "fig-1"
    makeFigure "slicing/conv-wrap" example_neededBy "fig-2"
    makeFigure "slicing/conv-zero"
-              (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig } ]
-              matrixFig
-              (selectCell 2 1 5 5))
+              (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig }]
+                              matrixFig
+                              (selectCell 2 1 5 5))
               "fig-3"
    makeFigure "slicing/conv-zero" example_neededBy "fig-4"
 
 linkingFigs :: Effect Unit
 linkingFigs = do
    makeFigure "linking/bar-chart"
-              (example_needed [{ var: "data", fig: makeEnergyTable } ] makeBarChart (Hole false)) "table-1"
+              (example_needed [{ var: "data", fig: makeEnergyTable }]
+                              makeBarChart
+                              (Hole false))
+              "table-1"
 
 main :: Effect Unit
 main = do
