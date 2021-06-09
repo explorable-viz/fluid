@@ -163,18 +163,18 @@ function drawFigure (id, figs) {
       for (const fig of figs) {
          // Bit horrible but will do for now.
          if (className(fig) == "LineChart") {
-            drawBarChart(id)
+            drawBarChart(id)()
          }
          else
          if (className(fig) == "MatrixFig") {
             drawMatrix(id, fig.value0)()
          }
          else
-         if (className(fig) == "RecordFig") {
-            drawTable(id)
+         if (className(fig) == "EnergyTable") {
+            drawTable(id)()
          }
          else {
-            throw new Exception("Figure type not recognised.")
+            throw new Error(`Figure type '${className(fig)}' not recognised.`)
          }
       }
    }
