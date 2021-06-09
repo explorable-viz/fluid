@@ -11,7 +11,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, FigConstructor, drawFigure, energyTableFig, lineChart, matrixFig)
+import App.Renderer (Fig, MakeFig, drawFigure, energyTable, lineChart, matrixFig)
 import Bindings (Var, (↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -35,10 +35,10 @@ splitDefs ρ (S.Let defs s) =
 type Example = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array Fig)
 type VarSpec = {
    var :: Var,
-   fig :: FigConstructor
+   fig :: MakeFig
 }
 
-example_needed :: Array VarSpec -> FigConstructor -> Val 𝔹 -> Example
+example_needed :: Array VarSpec -> MakeFig -> Val 𝔹 -> Example
 example_needed x_figs o_fig o' ρ s0 = do
    ρ' × s <- unsafePartial (splitDefs ρ s0)
    e <- desugarFwd s
@@ -87,7 +87,7 @@ burble file = do
 main :: Effect Unit
 main = do
    makeFigure "linking/line-chart"
-              (example_needed [{ var: "data", fig: energyTableFig } ] lineChart (Hole false)) "table-1"
+              (example_needed [{ var: "data", fig: energyTable } ] lineChart (Hole false)) "table-1"
    makeFigure "slicing/conv-wrap"
               (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig } ]
               matrixFig
