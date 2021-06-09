@@ -1,18 +1,19 @@
 module App.Renderer where
 
 import Prelude
-import Bindings (Bindings, Var, find)
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (zip, zipWith)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import Data.Profunctor.Strong (first)
+import Bindings (Bindings, Bind, Var, (↦), find)
 import DataType (cBarChart, cCons, cNil)
 import Effect (Effect)
 import Lattice (𝔹, expand)
-import Primitive (Slice, class ToFrom, as, match, match_fwd)
+import Primitive (Slice, class ToFrom, as, match, match_bwd, match_fwd)
 import Util (type (×), (×), type (+), successful)
+import Util.SnocList (SnocList(..), (:-))
 import Val (Array2, MatrixRep, Val)
 import Val (Val(..)) as V
 
@@ -75,13 +76,7 @@ energyRecord r = {
 barChart :: Partial => Slice (Bindings (Val 𝔹)) -> BarChart
 barChart r = {
    caption: get_prim "caption" r,
-   data_: record barChartRecord <$> toArray (get "data" r)
-}
-
-barChartRecord :: Slice (Bindings (Val 𝔹)) -> BarChartRecord
-barChartRecord r = {
-   x: get_prim "x" r,
-   y: get_intNumber "y" r
+   data_: record from <$> toArray (get "data" r)
 }
 
 matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
@@ -96,3 +91,16 @@ get_intNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
 
 get :: Var -> Slice (Bindings (Val 𝔹)) -> Slice (Val 𝔹)
 get x (r × r') = successful $ find x r `lift2 (×)` find x r'
+
+class Reflect a b | a -> b where
+   from :: Slice a -> b
+   to :: b -> a
+
+instance reflectBarChartRecord :: Reflect (SnocList (Bind (Val Boolean)))
+                                  { x :: String × Boolean, y :: Number × Boolean } where
+   from r = {
+      x: get_prim "x" r,
+      y: get_intNumber "y" r
+   }
+
+   to { x, y } = Lin :- "x" ↦ match_bwd x :- "y" ↦ match_bwd y
