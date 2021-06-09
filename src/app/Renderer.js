@@ -100,11 +100,12 @@ function drawBarChart (
          .style('text-anchor', 'end');
 
    // y-axis
+   nearest = 100
    const y = d3.scaleLinear()
-      .domain([0, 13000])
-      .range([ height, 0]);
+      .domain([0, Math.ceil(Math.max(...data.map(d => d.y.value0)) / nearest) * nearest])
+      .range([ height, 0])
    svg.append('g')
-      .call(d3.axisLeft(y));
+      .call(d3.axisLeft(y))
 
    // Bars
    svg.selectAll('rect')
