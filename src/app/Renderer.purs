@@ -32,8 +32,8 @@ type MakeFig = String -> String -> Val 𝔹 × Val 𝔹 -> Fig
 
 matrixFig :: MakeFig
 matrixFig title cellFillSelected (u × v) =
-   let vss × _ = match_fwd (u × v) in
-   MatrixFig { title, cellFillSelected, matrix: matrixRep (vss × fst (match v)) }
+   let vss2 = fst (match_fwd (u × v)) × fst (match v) in
+   MatrixFig { title, cellFillSelected, matrix: matrixRep vss2 }
 
 energyTable :: MakeFig
 energyTable title cellFillSelected (u × v) =
@@ -44,8 +44,7 @@ lineChart title _ _ = LineChart { title }
 
 energyRecord :: Val 𝔹 × Val 𝔹 -> EnergyRecord
 energyRecord (u × v) =
-   let xvs × _ = match_fwd (u × v) in
-   toEnergyRecord (xvs × fst (match v))
+   toEnergyRecord (fst (match_fwd (u × v)) × fst (match v))
    where
    toEnergyRecord :: Bindings (Val 𝔹) × Bindings (Val 𝔹) -> EnergyRecord
    toEnergyRecord xvs2 =
