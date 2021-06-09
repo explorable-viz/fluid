@@ -156,16 +156,20 @@ function drawFigure (id, figs) {
    return () => {
       for (const fig of figs) {
          // Bit horrible but will do for now.
+         if (className(fig) == "EnergyTable") {
+            drawTable(id, fig.value0)
+         }
+         else
+         if (className(fig) == "BarChart") {
+            drawBarChart(id)
+         }
+         else
          if (className(fig) == "LineChart") {
             drawBarChart(id)
          }
          else
          if (className(fig) == "MatrixFig") {
             drawMatrix(id, fig.value0)
-         }
-         else
-         if (className(fig) == "EnergyTable") {
-            drawTable(id, fig.value0)
          }
          else {
             throw new Error(`Figure type '${className(fig)}' not recognised.`)
