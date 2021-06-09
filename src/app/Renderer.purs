@@ -21,14 +21,14 @@ foreign import drawFigure :: String -> Array Fig -> Effect Unit
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
-type BarChart = { caption :: String, data :: Array BarChartRecord }
+type BarChart = { caption :: String × 𝔹, data_ :: Array BarChartRecord × 𝔹 }
 type BarChartRecord = { x :: String × 𝔹, y :: Number × 𝔹 }
 
 data Fig =
    MatrixFig { title :: String, cellFillSelected :: String, matrix :: IntMatrix } |
    EnergyTable { title :: String, cellFillSelected :: String, table :: Array EnergyRecord } |
    LineChart { title :: String } |
-   BarChart { title :: String, data :: Array BarChartRecord }
+   BarChart { caption :: String, data :: Array BarChartRecord }
 
 -- Convert sliced value to appropriate Fig, discarding top-level annotations for now.
 type MakeFig = Partial => String -> String -> Slice (Val 𝔹) -> Fig
@@ -47,15 +47,15 @@ toArray (us × V.Constr _ c (v1 : v2 : Nil)) | c == cCons =
    case expand us (V.Constr false cCons (V.Hole false : V.Hole false : Nil)) of
       V.Constr _ _ (u1 : u2 : Nil) -> (u1 × v1) A.: toArray (u2 × v2)
 
-energyTable :: MakeFig
-energyTable title cellFillSelected (u × v) =
+makeEnergyTable :: MakeFig
+makeEnergyTable title cellFillSelected (u × v) =
    EnergyTable { title, cellFillSelected, table: record energyRecord <$> toArray (u × v) }
 
-barChart :: MakeFig
-barChart title _ (u × V.Constr _ c (v1 : Nil)) | c == cBarChart =
-   case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
-      V.Constr _ _ (u1 : Nil) ->
-         BarChart { title, data: record barChartRecord <$> toArray (u1 × v1) }
+makeBarChart :: MakeFig
+makeBarChart title _ (u × V.Constr _ c (V.Record _ xvs : Nil)) | c == cBarChart =
+   case expand u (V.Constr false cBarChart (V.Record false (const (V.Hole false) <$> xvs) : Nil)) of
+      V.Constr _ _ (V.Record _ xus : Nil) ->
+         let { caption, data_ } = record barChart (xus × xvs) in BarChart { caption, data: data_ }
 
 lineChart :: MakeFig
 lineChart title _ _ = LineChart { title }
@@ -73,11 +73,11 @@ energyRecord xvs2 = {
    output: let n × α = get "output" xvs2 :: (Int + Number) × 𝔹 in as n × α
 }
 
+barChart :: Slice (Bindings (Val 𝔹)) -> BarChart
+barChart xvs2 = { caption: get "caption" xvs2, data_: ?_ {-get "data" xvs2-} }
+
 barChartRecord :: Slice (Bindings (Val 𝔹)) -> BarChartRecord
-barChartRecord xvs2 = {
-   x: get "x" xvs2,
-   y: let n × α = get "y" xvs2 :: (Int + Number) × 𝔹 in as n × α
-}
+barChartRecord xvs2 = { x: get "x" xvs2, y: get_intNumber"y" xvs2 }
 
 matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
 matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) = toMatrix (zipWith zip vss uss) × i × j
@@ -87,3 +87,6 @@ matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) = toMatrix (zipWith
 get :: forall a . ToFrom a => Var -> Slice (Bindings (Val 𝔹)) -> a × 𝔹
 get x (xvs × xus) = successful $
    match_fwd <$> (find x xvs `lift2 (×)` find x xus)
+
+get_intNumber :: Var -> Slice (Bindings (Val 𝔹)) -> Number × 𝔹
+get_intNumber x xvs2 = let n × α = get x xvs2 :: (Int + Number) × 𝔹 in as n × α
