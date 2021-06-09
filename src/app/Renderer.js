@@ -18,112 +18,108 @@ function drawMatrix (
       matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } // IntMatrix
    }
 ) {
-   return () => {
-      const w = 30, h = 30
-      const div = d3.select('#' + id)
-      const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
-      const hMargin = w / 2
-      const vMargin = h / 2
+   const w = 30, h = 30
+   const div = d3.select('#' + id)
+   const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
+   const hMargin = w / 2
+   const vMargin = h / 2
 
-      const svg = div.append('svg')
-                     .attr('width', width + hMargin)
-                     .attr('height', height + vMargin)
+   const svg = div.append('svg')
+                  .attr('width', width + hMargin)
+                  .attr('height', height + vMargin)
 
-      // group for each row
-      const grp = svg.selectAll('g')
-         .data(nss)
-         .enter()
-         .append('g')
-         .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
+   // group for each row
+   const grp = svg.selectAll('g')
+      .data(nss)
+      .enter()
+      .append('g')
+      .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
 
-      const rect = grp.selectAll('rect')
-                      .data(d => d)
-                      .enter()
+   const rect = grp.selectAll('rect')
+                     .data(d => d)
+                     .enter()
 
-      rect.append('rect')
-          .attr('x', (_, j) => w * j)
-          .attr('width', w)
-          .attr('height', h)
-          .attr('fill', d => d.value1 ? cellFillSelected : cellFillDefault)
-          .attr('stroke', cellStroke)
-          .attr('stroke-width', strokeWidth)
+   rect.append('rect')
+         .attr('x', (_, j) => w * j)
+         .attr('width', w)
+         .attr('height', h)
+         .attr('fill', d => d.value1 ? cellFillSelected : cellFillDefault)
+         .attr('stroke', cellStroke)
+         .attr('stroke-width', strokeWidth)
 
-      rect.append('text')
-          .text(d => d.value0)
-          .attr('x', (_, j) => w * (j + 0.5))
-          .attr('y', 0.5 * h)
-          .attr('fill', cellTextFill)
-          .attr('font-family', fontFamily)
-          .attr('font-size', cellFontSize)
-          .attr('text-anchor', 'middle')
-          .attr('dominant-baseline', 'middle')
-
-      svg.append('text')
-         .text(title)
-         .attr('x', hMargin / 2)
-         .attr('y', vMargin / 2)
-         .attr('fill', titleTextFill)
+   rect.append('text')
+         .text(d => d.value0)
+         .attr('x', (_, j) => w * (j + 0.5))
+         .attr('y', 0.5 * h)
+         .attr('fill', cellTextFill)
          .attr('font-family', fontFamily)
-         .attr('font-size', titleFontSize)
+         .attr('font-size', cellFontSize)
+         .attr('text-anchor', 'middle')
          .attr('dominant-baseline', 'middle')
-         .attr('text-anchor', 'left')
-   }
+
+   svg.append('text')
+      .text(title)
+      .attr('x', hMargin / 2)
+      .attr('y', vMargin / 2)
+      .attr('fill', titleTextFill)
+      .attr('font-family', fontFamily)
+      .attr('font-size', titleFontSize)
+      .attr('dominant-baseline', 'middle')
+      .attr('text-anchor', 'left')
 }
 
 function drawBarChart (id) {
-   return () => {
-      // set the dimensions and margins of the graph
-      var margin = {top: 30, right: 30, bottom: 70, left: 60},
-         width = 460 - margin.left - margin.right,
-         height = 400 - margin.top - margin.bottom;
+   // set the dimensions and margins of the graph
+   var margin = {top: 30, right: 30, bottom: 70, left: 60},
+      width = 460 - margin.left - margin.right,
+      height = 400 - margin.top - margin.bottom;
 
-      // append the svg object to the body of the page
-      const svg = d3.select('#' + id)
-         .append('svg')
-            .attr('width', width + margin.left + margin.right)
-            .attr('height', height + margin.top + margin.bottom)
-         .append('g')
-            .attr('transform', `translate(${margin.left}, ${margin.top})`)
+   // append the svg object to the body of the page
+   const svg = d3.select('#' + id)
+      .append('svg')
+         .attr('width', width + margin.left + margin.right)
+         .attr('height', height + margin.top + margin.bottom)
+      .append('g')
+         .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-      const data = [
-         { 'Country': "United States", 'Value': 12394 },
-         { 'Country': "Russia", 'Value': 6148 },
-         { 'Country': "Germany", 'Value': 1653 },
-         { 'Country': "France", 'Value': 2162 },
-         { 'Country': "United Kingdom", 'Value': 1214 },
-         { 'Country': "China", 'Value': 1131 }
-      ]
+   const data = [
+      { 'Country': "United States", 'Value': 12394 },
+      { 'Country': "Russia", 'Value': 6148 },
+      { 'Country': "Germany", 'Value': 1653 },
+      { 'Country': "France", 'Value': 2162 },
+      { 'Country': "United Kingdom", 'Value': 1214 },
+      { 'Country': "China", 'Value': 1131 }
+   ]
 
-      // x-axis
-      const x = d3.scaleBand()
-         .range([ 0, width ])
-         .domain(data.map(d => d.Country))
-         .padding(0.2)
-      svg.append('g')
-         .attr('transform', "translate(0," + height + ")")
-         .call(d3.axisBottom(x))
-         .selectAll('text')
-            .attr('transform', "translate(-10,0)rotate(-45)")
-            .style('text-anchor', 'end');
+   // x-axis
+   const x = d3.scaleBand()
+      .range([ 0, width ])
+      .domain(data.map(d => d.Country))
+      .padding(0.2)
+   svg.append('g')
+      .attr('transform', "translate(0," + height + ")")
+      .call(d3.axisBottom(x))
+      .selectAll('text')
+         .attr('transform', "translate(-10,0)rotate(-45)")
+         .style('text-anchor', 'end');
 
-      // y-axis
-      const y = d3.scaleLinear()
-         .domain([0, 13000])
-         .range([ height, 0]);
-      svg.append('g')
-         .call(d3.axisLeft(y));
+   // y-axis
+   const y = d3.scaleLinear()
+      .domain([0, 13000])
+      .range([ height, 0]);
+   svg.append('g')
+      .call(d3.axisLeft(y));
 
-      // Bars
-      svg.selectAll('rect')
-         .data(data)
-         .enter()
-         .append('rect')
-            .attr('x', d => x(d.Country))
-            .attr('y', d => y(d.Value))
-            .attr('width', x.bandwidth())
-            .attr('height', d => height - y(d.Value))
-            .attr('fill', "#69b3a2")
-   }
+   // Bars
+   svg.selectAll('rect')
+      .data(data)
+      .enter()
+      .append('rect')
+         .attr('x', d => x(d.Country))
+         .attr('y', d => y(d.Value))
+         .attr('width', x.bandwidth())
+         .attr('height', d => height - y(d.Value))
+         .attr('fill', "#69b3a2")
 }
 
 // Generic to all tables.
@@ -131,22 +127,20 @@ function drawTable (
    id, {
       title,               // String
       cellFillSelected,    // String
-      records                // Record
+      records              // Record
    }) {
-   return () => {
-      const table = d3.select('#' + id)
-         .append('table')
-      const titles = Object.keys(records[0])
-      const rows = table.append('tbody').selectAll('tr')
-         .data(records).enter()
-         .append('tr')
-      rows.selectAll('td')
-         .data(d => titles.map(k => { return { 'value': d[k], 'name': k } }))
-         .enter()
-         .append('td')
-         .attr('data-th', d => d.name)
-         .text(d => d.value)
-   }
+   const table = d3.select('#' + id)
+      .append('table')
+   const titles = Object.keys(records[0])
+   const rows = table.append('tbody').selectAll('tr')
+      .data(records).enter()
+      .append('tr')
+   rows.selectAll('td')
+      .data(d => titles.map(k => { return { 'value': d[k], 'name': k } }))
+      .enter()
+      .append('td')
+      .attr('data-th', d => d.name)
+      .text(d => d.value)
 }
 
 function className (o) {
@@ -159,15 +153,15 @@ function drawFigure (id, figs) {
       for (const fig of figs) {
          // Bit horrible but will do for now.
          if (className(fig) == "LineChart") {
-            drawBarChart(id)()
+            drawBarChart(id)
          }
          else
          if (className(fig) == "MatrixFig") {
-            drawMatrix(id, fig.value0)()
+            drawMatrix(id, fig.value0)
          }
          else
          if (className(fig) == "EnergyTable") {
-            drawTable(id, fig.value0)()
+            drawTable(id, fig.value0)
          }
          else {
             throw new Error(`Figure type '${className(fig)}' not recognised.`)
