@@ -106,4 +106,4 @@ linkingFigs = do
 main :: Effect Unit
 main = do
    linkingFigs
-   convolutionFigs
+--   convolutionFigs

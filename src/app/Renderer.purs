@@ -12,7 +12,7 @@ import DataType (cCons, cNil)
 import Effect (Effect)
 import Lattice (𝔹, expand)
 import Primitive (Slice, class ToFrom, match, match_fwd)
-import Util (type (×), (×), absurd, error, successful)
+import Util (type (×), (×), type (+), absurd, error, successful)
 import Val (Array2, MatrixRep, Val)
 import Val (Val(..)) as V
 
@@ -22,7 +22,7 @@ foreign import drawFigure :: String -> Array Fig -> Effect Unit
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int
-type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
+type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: (Int + Number) × 𝔹 }
 
 data Fig =
    MatrixFig { title :: String, cellFillSelected :: String, matrix :: IntMatrix } |
