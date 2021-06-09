@@ -20,10 +20,10 @@ data Val a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Bindings (Val a)) |      -- always saturated
+   Record a (Bindings (Val a)) |       -- always saturated
    Constr a Ctr (List (Val a)) |       -- potentially unsaturated
    Matrix a (MatrixRep a) |
-   Primitive PrimOp (List (Val a)) |   -- always unsaturated
+   Primitive PrimOp (List (Val a)) |   -- never saturated
    Closure (Env a) (RecDefs a) (Elim a)
 
 -- op_fwd will be provided with original (non-hole) arguments, op_bwd with original output and arguments

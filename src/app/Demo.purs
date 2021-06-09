@@ -83,10 +83,8 @@ burble file = do
    ρ <- openDatasetAs ("example/linking/" <> "renewables") "data"
    pure ((ρ0 <> ρ) × s)
 
-main :: Effect Unit
-main = do
-   makeFigure "linking/line-chart"
-              (example_needed [{ var: "data", fig: energyTable } ] lineChart (Hole false)) "table-1"
+convolutionFigs :: Effect Unit
+convolutionFigs = do
    makeFigure "slicing/conv-wrap"
               (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig } ]
               matrixFig
@@ -99,3 +97,13 @@ main = do
               (selectCell 2 1 5 5))
               "fig-3"
    makeFigure "slicing/conv-zero" example_neededBy "fig-4"
+
+linkingFigs :: Effect Unit
+linkingFigs = do
+   makeFigure "linking/line-chart"
+              (example_needed [{ var: "data", fig: energyTable } ] lineChart (Hole false)) "table-1"
+
+main :: Effect Unit
+main = do
+   linkingFigs
+   convolutionFigs

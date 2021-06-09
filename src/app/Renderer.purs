@@ -1,16 +1,16 @@
 module App.Renderer where
 
-import Prelude
+import Prelude hiding (absurd)
+
+import Bindings (Bindings, Var, find)
 import Control.Apply (lift2)
+import Data.Array ((:)) as A
 import Data.Array (fromFoldable, zip, zipWith)
 import Data.List (List(..), (:))
-import Data.List (zip) as L
 import Data.Tuple (fst)
-import Effect (Effect)
-import Bindings (Bindings, Var, find)
 import DataType (cCons, cNil)
-import Lattice (𝔹)
-import Pretty (toList)
+import Effect (Effect)
+import Lattice (𝔹, expand)
 import Primitive (Slice, class ToFrom, match, match_fwd)
 import Util (type (×), (×), absurd, error, successful)
 import Val (Array2, MatrixRep, Val)
@@ -22,7 +22,7 @@ foreign import drawFigure :: String -> Array Fig -> Effect Unit
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int
-type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Int × 𝔹 }
+type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
 
 data Fig =
    MatrixFig { title :: String, cellFillSelected :: String, matrix :: IntMatrix } |
@@ -37,15 +37,21 @@ matrixFig title cellFillSelected (u × v) =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig { title, cellFillSelected, matrix: matrixRep vss2 }
 
--- Convert a list slice to an array of slices, with hole expansion as necessary.
+-- Convert a list slice to an array of slices, with hole expansion as necessary, discarding list-level annotations.
 toArray :: Slice (Val 𝔹) -> Array (Slice (Val 𝔹))
-toArray (vs × V.Constr _ c (v : v' : Nil)) | c == cCons = ?_
-toArray (vs × V.Constr _ c Nil) | c == cNil = ?_
+toArray (vs × V.Constr _ c Nil) | c == cNil =
+   case expand vs (V.Constr false cNil Nil) of
+      V.Constr _ _ Nil -> []
+      _ -> error absurd
+toArray (us × V.Constr _ c (v1 : v2 : Nil)) | c == cCons =
+   case expand us (V.Constr false cCons (V.Hole false : V.Hole false : Nil)) of
+      V.Constr _ _ (u1 : u2 : Nil) -> (u1 × v1) A.: toArray (u2 × v2)
+      _ -> error absurd
 toArray _ = error absurd
 
 energyTable :: MakeFig
 energyTable title cellFillSelected (u × v) =
-   EnergyTable { title, cellFillSelected, table: fromFoldable (energyRecord <$> (L.zip (toList u) (toList v))) }
+   EnergyTable { title, cellFillSelected, table: fromFoldable (energyRecord <$> toArray (u × v)) }
 
 lineChart :: MakeFig
 lineChart title _ _ = LineChart { title }
