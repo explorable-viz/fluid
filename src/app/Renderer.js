@@ -131,9 +131,9 @@ function drawTable (
    }) {
    const HTMLtable = d3.select('#' + id)
       .append('table')
-   const titles = Object.keys(records[0])
+   const titles = Object.keys(table[0])
    const rows = HTMLtable.append('tbody').selectAll('tr')
-      .data(records).enter()
+      .data(table).enter()
       .append('tr')
    rows.selectAll('td')
       .data(d => titles.map(k => { return { 'value': d[k], 'name': k } }))
