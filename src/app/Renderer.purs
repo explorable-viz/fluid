@@ -21,7 +21,7 @@ foreign import drawFigure :: String -> Array Fig -> Effect Unit
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
-type BarChart = { caption :: String × 𝔹, data_ :: Array BarChartRecord × 𝔹 }
+type BarChart = { caption :: String × 𝔹, data_ :: Array BarChartRecord }
 type BarChartRecord = { x :: String × 𝔹, y :: Number × 𝔹 }
 
 data Fig =
@@ -53,7 +53,7 @@ makeEnergyTable title cellFillSelected (u × v) =
 
 makeBarChart :: MakeFig
 makeBarChart title _ (u × V.Constr _ c (V.Record _ xvs : Nil)) | c == cBarChart =
-   case expand u (V.Constr false cBarChart (V.Record false (const (V.Hole false) <$> xvs) : Nil)) of
+   case expand u (V.Constr false cBarChart (V.Record false (xvs <#> map (const (V.Hole false))) : Nil)) of
       V.Constr _ _ (V.Record _ xus : Nil) ->
          let { caption, data_ } = record barChart (xus × xvs) in BarChart { caption, data: data_ }
 
@@ -73,11 +73,14 @@ energyRecord xvs2 = {
    output: let n × α = get "output" xvs2 :: (Int + Number) × 𝔹 in as n × α
 }
 
-barChart :: Slice (Bindings (Val 𝔹)) -> BarChart
-barChart xvs2 = { caption: get "caption" xvs2, data_: ?_ {-get "data" xvs2-} }
+barChart :: Partial => Slice (Bindings (Val 𝔹)) -> BarChart
+barChart xvs2 = {
+   caption: get "caption" xvs2,
+   data_: record barChartRecord <$> toArray (get2 "data" xvs2)
+}
 
 barChartRecord :: Slice (Bindings (Val 𝔹)) -> BarChartRecord
-barChartRecord xvs2 = { x: get "x" xvs2, y: get_intNumber"y" xvs2 }
+barChartRecord xvs2 = { x: get "x" xvs2, y: get_intNumber "y" xvs2 }
 
 matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
 matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) = toMatrix (zipWith zip vss uss) × i × j
@@ -85,8 +88,10 @@ matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) = toMatrix (zipWith
          toMatrix = (<$>) ((<$>) match_fwd)
 
 get :: forall a . ToFrom a => Var -> Slice (Bindings (Val 𝔹)) -> a × 𝔹
-get x (xvs × xus) = successful $
-   match_fwd <$> (find x xvs `lift2 (×)` find x xus)
+get x = match_fwd <<< get2 x
 
 get_intNumber :: Var -> Slice (Bindings (Val 𝔹)) -> Number × 𝔹
 get_intNumber x xvs2 = let n × α = get x xvs2 :: (Int + Number) × 𝔹 in as n × α
+
+get2 :: Var -> Slice (Bindings (Val 𝔹)) -> Slice (Val 𝔹)
+get2 x (xvs × xus) = successful $ find x xvs `lift2 (×)` find x xus
