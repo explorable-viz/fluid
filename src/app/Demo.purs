@@ -28,11 +28,11 @@ selectCell i j i' j' = Matrix true (insertMatrix i j (Hole true) (holeMatrix i' 
 -- the environment that we can easily inspect.
 splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
 splitDefs ρ s' =
+   let defs × s = unpack s' in
    (desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ) <#> (_ × s)
    where unpack :: S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
          unpack (S.LetRec defs s) = Right defs × s
          unpack (S.Let defs s) = Left defs × s
-         defs × s = unpack s'
 
 type Example = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array Fig)
 type VarSpec = {

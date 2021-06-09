@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Bindings (Bindings, Var, find)
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
-import Data.Array (fromFoldable, zip, zipWith)
+import Data.Array (zip, zipWith)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import DataType (cCons, cNil)
@@ -22,12 +22,13 @@ foreign import drawFigure :: String -> Array Fig -> Effect Unit
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
+type BarChartRecord = { x :: String × 𝔹, y :: Number × 𝔹 }
 
 data Fig =
    MatrixFig { title :: String, cellFillSelected :: String, matrix :: IntMatrix } |
    EnergyTable { title :: String, cellFillSelected :: String, table :: Array EnergyRecord } |
    LineChart { title :: String } |
-   BarChart { title :: String }
+   BarChart { title :: String, data :: Array BarChartRecord }
 
 -- Convert sliced value to appropriate Fig, discarding top-level annotations for now.
 type MakeFig = String -> String -> Slice (Val 𝔹) -> Fig
@@ -51,25 +52,31 @@ toArray _ = error absurd
 
 energyTable :: MakeFig
 energyTable title cellFillSelected (u × v) =
-   EnergyTable { title, cellFillSelected, table: fromFoldable (energyRecord <$> toArray (u × v)) }
+   EnergyTable { title, cellFillSelected, table: record energyRecord <$> toArray (u × v) }
+
+barChart :: MakeFig
+barChart title _ (u × v) = BarChart { title, data: record barChartRecord <$> toArray (u × v) }
 
 lineChart :: MakeFig
 lineChart title _ _ = LineChart { title }
 
-barChart :: MakeFig
-barChart title _ _ = BarChart { title }
+record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
+record toRecord (u × v) =
+   toRecord (fst (match_fwd (u × v)) × fst (match v))
 
-energyRecord :: Slice (Val 𝔹) -> EnergyRecord
-energyRecord (u × v) =
-   toEnergyRecord (fst (match_fwd (u × v)) × fst (match v))
-   where
-   toEnergyRecord :: Slice (Bindings (Val 𝔹)) -> EnergyRecord
-   toEnergyRecord xvs2 = {
-      year: get "year" xvs2,
-      country: get "country" xvs2,
-      energyType: get "energyType" xvs2,
-      output: let n × α = get "output" xvs2 :: (Int + Number) × 𝔹 in as n × α
-   }
+energyRecord :: Slice (Bindings (Val 𝔹)) -> EnergyRecord
+energyRecord xvs2 = {
+   year: get "year" xvs2,
+   country: get "country" xvs2,
+   energyType: get "energyType" xvs2,
+   output: let n × α = get "output" xvs2 :: (Int + Number) × 𝔹 in as n × α
+}
+
+barChartRecord :: Slice (Bindings (Val 𝔹)) -> BarChartRecord
+barChartRecord xvs2 = {
+   x: get "x" xvs2,
+   y: let n × α = get "y" xvs2 :: (Int + Number) × 𝔹 in as n × α
+}
 
 matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
 matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) = toMatrix (zipWith zip vss uss) × i × j
