@@ -11,7 +11,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, FigConstructor, drawFigure, matrixFig, tableFig)
+import App.Renderer (Fig, FigConstructor, drawFigure, energyTableFig, lineChart, matrixFig)
 import Bindings (Var, (↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -38,8 +38,8 @@ type VarSpec = {
    fig :: FigConstructor
 }
 
-example_needed :: Array VarSpec -> Val 𝔹 -> Example
-example_needed x_figs o' ρ s0 = do
+example_needed :: Array VarSpec -> FigConstructor -> Val 𝔹 -> Example
+example_needed x_figs o_fig o' ρ s0 = do
    ρ' × s <- unsafePartial (splitDefs ρ s0)
    e <- desugarFwd s
    let ρρ' = ρ <> ρ'
@@ -49,7 +49,7 @@ example_needed x_figs o' ρ s0 = do
    vs <- sequence (flip find ρρ' <$> xs)
    vs' <- sequence (flip find ρρ'' <$> xs)
    pure $ [
-      matrixFig "output" "LightGreen" (o' × o)
+      o_fig "output" "LightGreen" (o' × o)
    ] <> ((\({var: x, fig} × vs2) -> fig x "Yellow" vs2) <$> zip x_figs (zip vs' vs))
 
 example_neededBy :: Example
@@ -87,14 +87,16 @@ burble file = do
 main :: Effect Unit
 main = do
    makeFigure "linking/line-chart"
-              (example_needed [{ var: "data", fig: tableFig } ] (Hole false)) "table-1"
+              (example_needed [{ var: "data", fig: energyTableFig } ] lineChart (Hole false)) "table-1"
    makeFigure "slicing/conv-wrap"
               (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig } ]
+              matrixFig
               (selectCell 2 1 5 5))
               "fig-1"
    makeFigure "slicing/conv-wrap" example_neededBy "fig-2"
    makeFigure "slicing/conv-zero"
               (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig } ]
+              matrixFig
               (selectCell 2 1 5 5))
               "fig-3"
    makeFigure "slicing/conv-zero" example_neededBy "fig-4"

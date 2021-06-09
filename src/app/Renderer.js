@@ -162,6 +162,10 @@ function drawFigure (id, figs) {
    return () => {
       for (const fig of figs) {
          // Bit horrible but will do for now.
+         if (className(fig) == "LineChart") {
+            drawBarChart(id)
+         }
+         else
          if (className(fig) == "MatrixFig") {
             drawMatrix(id, fig.value0)()
          }
