@@ -16,7 +16,6 @@ import Util (type (×), (×), type (+), absurd, error, successful)
 import Val (Array2, MatrixRep, Val)
 import Val (Val(..)) as V
 
-foreign import drawBarChart :: String -> Effect Unit
 foreign import drawFigure :: String -> Array Fig -> Effect Unit
 
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.

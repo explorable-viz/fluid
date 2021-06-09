@@ -11,12 +11,11 @@ const cellFillDefault         = 'White',
       titleTextFill           = 'Black',
       titleFontSize           = '9pt'
 
-// String -> MatrixFig -> Effect Unit
 function drawMatrix (
    id, {
-      title,
-      cellFillSelected,
-      matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }
+      title,                                                            // String
+      cellFillSelected,                                                 // String
+      matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } // IntMatrix
    }
 ) {
    return () => {
@@ -127,22 +126,19 @@ function drawBarChart (id) {
    }
 }
 
-function drawTable (id) {
+// Generic to all tables.
+function drawTable (
+   id, {
+      title,               // String
+      cellFillSelected,    // String
+      table                // Record
+   }) {
    return () => {
-      const data = [
-         { 'Country': "United States", 'Value': 12394 },
-         { 'Country': "Russia", 'Value': 6148 },
-         { 'Country': "Germany", 'Value': 1653 },
-         { 'Country': "France", 'Value': 2162 },
-         { 'Country': "United Kingdom", 'Value': 1214 },
-         { 'Country': "China", 'Value': 1131 }
-      ]
-
       const table = d3.select('#' + id)
          .append('table')
-      const titles = Object.keys(data[0])
+      const titles = Object.keys(table[0])
       const rows = table.append('tbody').selectAll('tr')
-         .data(data).enter()
+         .data(table).enter()
          .append('tr')
       rows.selectAll('td')
          .data(d => titles.map(k => { return { 'value': d[k], 'name': k } }))
@@ -171,7 +167,7 @@ function drawFigure (id, figs) {
          }
          else
          if (className(fig) == "EnergyTable") {
-            drawTable(id)()
+            drawTable(id, fig.value0)
          }
          else {
             throw new Error(`Figure type '${className(fig)}' not recognised.`)
@@ -228,5 +224,4 @@ function curry4 (f) {
    return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
-exports.drawBarChart = drawBarChart
 exports.drawFigure = curry2(drawFigure)
