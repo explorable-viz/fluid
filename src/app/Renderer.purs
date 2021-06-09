@@ -7,6 +7,7 @@ import Data.Array ((:)) as A
 import Data.Array (zip, zipWith)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
+import Data.Profunctor.Strong (first)
 import DataType (cBarChart, cCons, cNil)
 import Effect (Effect)
 import Lattice (𝔹, expand)
@@ -38,7 +39,7 @@ matrixFig title cellFillSelected (u × v) =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig { title, cellFillSelected, matrix: matrixRep vss2 }
 
--- Convert a list slice to an array of slices, with hole expansion as necessary, discarding list-level annotations.
+-- Convert list slice to array of slices, with hole expansion as necessary, discarding list-level annotations.
 toArray :: Partial => Slice (Val 𝔹) -> Array (Slice (Val 𝔹))
 toArray (vs × V.Constr _ c Nil) | c == cNil =
    case expand vs (V.Constr false cNil Nil) of
@@ -61,37 +62,37 @@ lineChart :: MakeFig
 lineChart title _ _ = LineChart { title }
 
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
-record toRecord (u × v) =
-   toRecord (fst (match_fwd (u × v)) × fst (match v))
+record toRecord (u × v) = toRecord (fst (match_fwd (u × v)) × fst (match v))
 
 energyRecord :: Slice (Bindings (Val 𝔹)) -> EnergyRecord
-energyRecord xvs2 = {
-   year: get "year" xvs2,
-   country: get "country" xvs2,
-   energyType: get "energyType" xvs2,
-   -- TODO: extract helper for this
-   output: let n × α = get "output" xvs2 :: (Int + Number) × 𝔹 in as n × α
+energyRecord r = {
+   year: get_prim "year" r,
+   country: get_prim "country" r,
+   energyType: get_prim "energyType" r,
+   output: get_intNumber "output" r
 }
 
 barChart :: Partial => Slice (Bindings (Val 𝔹)) -> BarChart
-barChart xvs2 = {
-   caption: get "caption" xvs2,
-   data_: record barChartRecord <$> toArray (get2 "data" xvs2)
+barChart r = {
+   caption: get_prim "caption" r,
+   data_: record barChartRecord <$> toArray (get "data" r)
 }
 
 barChartRecord :: Slice (Bindings (Val 𝔹)) -> BarChartRecord
-barChartRecord xvs2 = { x: get "x" xvs2, y: get_intNumber "y" xvs2 }
+barChartRecord r = {
+   x: get_prim "x" r,
+   y: get_intNumber "y" r
+}
 
 matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
-matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) = toMatrix (zipWith zip vss uss) × i × j
-   where toMatrix :: forall a . ToFrom a => Array2 (Val 𝔹 × Val 𝔹) -> Array2 (a × 𝔹)
-         toMatrix = (<$>) ((<$>) match_fwd)
+matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
+   ((<$>) ((<$>) match_fwd)) (zipWith zip vss uss) × i × j
 
-get :: forall a . ToFrom a => Var -> Slice (Bindings (Val 𝔹)) -> a × 𝔹
-get x = match_fwd <<< get2 x
+get_prim :: forall a . ToFrom a => Var -> Slice (Bindings (Val 𝔹)) -> a × 𝔹
+get_prim x = match_fwd <<< get x
 
 get_intNumber :: Var -> Slice (Bindings (Val 𝔹)) -> Number × 𝔹
-get_intNumber x xvs2 = let n × α = get x xvs2 :: (Int + Number) × 𝔹 in as n × α
+get_intNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
 
-get2 :: Var -> Slice (Bindings (Val 𝔹)) -> Slice (Val 𝔹)
-get2 x (xvs × xus) = successful $ find x xvs `lift2 (×)` find x xus
+get :: Var -> Slice (Bindings (Val 𝔹)) -> Slice (Val 𝔹)
+get x (r × r') = successful $ find x r `lift2 (×)` find x r'

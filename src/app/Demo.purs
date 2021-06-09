@@ -32,8 +32,8 @@ splitDefs ρ s' =
    let defs × s = unpack s' in
    (desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ) <#> (_ × s)
    where unpack :: S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
-         unpack (S.LetRec defs s) = Right defs × s
-         unpack (S.Let defs s) = Left defs × s
+         unpack (S.LetRec defs s)   = Right defs × s
+         unpack (S.Let defs s)      = Left defs × s
 
 type Example = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array Fig)
 type VarSpec = {
