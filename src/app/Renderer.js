@@ -70,8 +70,8 @@ function drawMatrix (
 
 function drawBarChart (
    id, {
-      title,   // String
-      data,    // Array BarChartRecord
+      caption,   // String
+      data_,     // Array BarChartRecord
    }
 ) {
    // set the dimensions and margins of the graph
@@ -90,7 +90,7 @@ function drawBarChart (
    // x-axis
    const x = d3.scaleBand()
       .range([ 0, width ])
-      .domain(data.map(d => d.x.value0))
+      .domain(data_.map(d => d.x.value0))
       .padding(0.2)
    svg.append('g')
       .attr('transform', "translate(0," + height + ")")
@@ -101,7 +101,7 @@ function drawBarChart (
 
    // y-axis
    const nearest = 100,
-         y_max = Math.ceil(Math.max(...data.map(d => d.y.value0)) / nearest) * nearest
+         y_max = Math.ceil(Math.max(...data_.map(d => d.y.value0)) / nearest) * nearest
    const y = d3.scaleLinear()
       .domain([0, y_max])
       .range([ height, 0])
@@ -110,7 +110,7 @@ function drawBarChart (
 
    // Bars
    svg.selectAll('rect')
-      .data(data)
+      .data(data_)
       .enter()
       .append('rect')
          .attr('x', d => x(d.x.value0))
@@ -158,7 +158,7 @@ function drawFigure (id, figs) {
             drawTable(id, fig.value0)
          }
          else
-         if (className(fig) == "BarChart") {
+         if (className(fig) == "BarChartFig") {
             drawBarChart(id, fig.value0)
          }
          else

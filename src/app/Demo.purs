@@ -3,7 +3,7 @@ module App.Demo where
 import Prelude hiding (absurd)
 import Data.Array (zip)
 import Data.Either (Either(..))
-import Data.List (singleton)
+import Data.List (List(..), (:), singleton)
 import Data.Traversable (sequence)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
@@ -11,6 +11,7 @@ import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 import App.Renderer (Fig, MakeFig, drawFigure, makeBarChart, makeEnergyTable, matrixFig)
 import Bindings (Var, (↦), find, update)
+import DataType (cBarChart, cCons)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
@@ -20,10 +21,21 @@ import Module (openWithDefaultImports, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Util (MayFail, type (×), (×), type (+), successful)
+import Util.SnocList (SnocList(..), (:-))
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
 selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
 selectCell i j i' j' = Matrix false (insertMatrix i j (Hole true) (holeMatrix i' j'))
+
+selectNth :: Int -> Val 𝔹 -> Val 𝔹
+selectNth 0 v = Constr false cCons (v : Hole true : Nil)
+selectNth n v = Constr false cCons (Hole true : selectNth (n - 1) v : Nil)
+
+select_y :: Val 𝔹
+select_y = Record false (Lin :- "x" ↦ Hole false :- "y" ↦ Hole true)
+
+select_barChart_data :: Val 𝔹 -> Val 𝔹
+select_barChart_data v = Constr false cBarChart (Record false (Lin :- "caption" ↦ Hole false :- "data" ↦ v) : Nil)
 
 -- Rewrite example of the form (let <defs> in expr) to a "module" and expr, so we can treat defs as part of
 -- the environment that we can easily inspect.
@@ -42,8 +54,8 @@ type VarSpec = {
 }
 
 example_needed :: Array VarSpec -> MakeFig -> Val 𝔹 -> Example
-example_needed x_figs o_fig o' ρ s0 = do
-   ρ' × s <- unsafePartial (splitDefs ρ s0)
+example_needed x_figs o_fig o' ρ s0 = unsafePartial $ do
+   ρ' × s <- splitDefs ρ s0
    e <- desugarFwd s
    let ρρ' = ρ <> ρ'
    t × o <- eval ρρ' e
@@ -51,14 +63,14 @@ example_needed x_figs o_fig o' ρ s0 = do
        xs = _.var <$> x_figs
    vs <- sequence (flip find ρρ' <$> xs)
    vs' <- sequence (flip find ρρ'' <$> xs)
-   pure $ [ unsafePartial o_fig "output" "LightGreen" (o' × o) ] <> (varFig <$> zip x_figs (zip vs' vs))
+   pure $ [ o_fig "output" "LightGreen" (o' × o) ] <> (varFig <$> zip x_figs (zip vs' vs))
    where
-      varFig :: VarSpec × Slice (Val 𝔹) -> Fig
-      varFig ({var: x, fig} × (v × u)) = unsafePartial (fig x "Yellow" (v × u))
+      varFig :: Partial => VarSpec × Slice (Val 𝔹) -> Fig
+      varFig ({var: x, fig} × (v × u)) = fig x "Yellow" (v × u)
 
 example_neededBy :: Example
-example_neededBy ρ s0 = do
-   ρ' × s <- unsafePartial (splitDefs ρ s0)
+example_neededBy ρ s0 = unsafePartial $ do
+   ρ' × s <- splitDefs ρ s0
    e <- desugarFwd s
    t × o <- eval (ρ <> ρ') e
    let ω' = selectCell 1 1 3 3
@@ -68,9 +80,9 @@ example_neededBy ρ s0 = do
    i <- find "image" ρ'
    i' <- find "image" ρ''
    pure [
-      unsafePartial matrixFig "output" "Yellow" (o' × o),
-      unsafePartial matrixFig "filter" "LightGreen" (ω' × ω),
-      unsafePartial matrixFig "input" "Yellow" (i' × i)
+      matrixFig "output" "Yellow" (o' × o),
+      matrixFig "filter" "LightGreen" (ω' × ω),
+      matrixFig "input" "Yellow" (i' × i)
    ]
 
 makeFigure :: String -> Example -> String -> Effect Unit
@@ -109,7 +121,7 @@ linkingFigs = do
    makeFigure "linking/bar-chart"
               (example_needed [{ var: "data", fig: makeEnergyTable }]
                               makeBarChart
-                              (Hole false))
+                              (select_barChart_data (selectNth 1 (select_y))))
               "table-1"
 
 main :: Effect Unit
