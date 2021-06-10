@@ -88,10 +88,12 @@ function drawBarChart (
       .append('g')
          .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-   const tip = d3tip.default()
+   const tip = d3tip.default(d3)
       .attr('class', 'd3-tip')
       .offset([-10, 0])
-      .html(d => "<strong>Frequency:</strong> <span style='color:red'>" + d + "</span>")
+      .html(d => {
+         return d.blah
+      })
 
    svg.call(tip)
 
