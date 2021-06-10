@@ -148,6 +148,10 @@ table {
    outline-color: coral;
 }
 
+.d3-tip {
+   font-size: 11px;
+}
+
 th {
    font-size: 11px;
    border-bottom: 'thin solid';

@@ -90,7 +90,7 @@ function drawBarChart (
 
    const tip = d3tip.default()
       .attr('class', 'd3-tip')
-      .offset([-10, 0])
+      .offset([0, 0])
       .html((ev, d) => {
          return d.y.value0
       })
