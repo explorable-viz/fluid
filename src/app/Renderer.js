@@ -76,8 +76,8 @@ function drawBarChart (
 ) {
    // set the dimensions and margins of the graph
    const margin = {top: 15, right: 0, bottom: 30, left: 30},
-         width = 250 - margin.left - margin.right,
-         height = 250 - margin.top - margin.bottom
+         width = 200 - margin.left - margin.right,
+         height = 175 - margin.top - margin.bottom
 
    // append the svg object to the body of the page
    const svg = d3.select('#' + id)
@@ -104,8 +104,11 @@ function drawBarChart (
    const y = d3.scaleLinear()
       .domain([0, y_max])
       .range([ height, 0])
+   const tick_every = nearest / 2
+   const yAxis = d3.axisLeft(y)
+      .tickValues(Array.from(Array(y_max / tick_every + 1).keys()).map(n => n * tick_every))
    svg.append('g')
-      .call(d3.axisLeft(y))
+      .call(yAxis)
 
    // Bars
    const barFill = '#dcdcdc'
