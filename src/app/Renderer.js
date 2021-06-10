@@ -116,6 +116,7 @@ function drawBarChart (
       .data(data_)
       .enter()
       .append('rect')
+         .attr('id', 'mouse-cursor')
          .attr('x', d => x(d.x.value0))
          .attr('y', d => y(d.y.value0 + 1))  // ouch: bars overplot x-axis!
          .attr('width', x.bandwidth())

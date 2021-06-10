@@ -123,6 +123,11 @@ linkingFigs = do
                               makeBarChart
                               (select_barChart_data (selectNth 1 (select_y))))
               "table-1"
+   makeFigure "linking/bar-chart"
+              (example_needed [{ var: "data", fig: makeEnergyTable }]
+                              makeBarChart
+                              (select_barChart_data (selectNth 0 (select_y))))
+              "table-2"
 
 main :: Effect Unit
 main = do
