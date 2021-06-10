@@ -19,7 +19,7 @@ import Val (PrimOp(..), Val(..))
 -- value to allow for hole-expansion.
 type Slice a = a × a
 
--- Mediates between Val and underlying data, analously to pattern-matching and construction for data types.
+-- Mediates between Val and underlying data, analogously to pattern-matching and construction for data types.
 class ToFrom a where
    constr :: a × 𝔹 -> Val 𝔹
    constr_bwd :: Val 𝔹 × Val 𝔹 -> a × 𝔹   -- equivalent to match_fwd (except at Val)

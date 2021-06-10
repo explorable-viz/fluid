@@ -1,6 +1,7 @@
 "use strict"
 
 const d3 = require("d3")
+const d3tip = require("d3-tip")
 
 const cellFillDefault         = 'White',
       cellStroke              = 'DarkGray',
@@ -70,14 +71,14 @@ function drawMatrix (
 
 function drawBarChart (
    id, {
-      title,   // String
-      data,    // Array BarChartRecord
+      caption,   // String
+      data_,     // Array BarChartRecord
    }
 ) {
    // set the dimensions and margins of the graph
-   var margin = {top: 30, right: 30, bottom: 70, left: 60},
-      width = 460 - margin.left - margin.right,
-      height = 400 - margin.top - margin.bottom;
+   const margin = {top: 15, right: 0, bottom: 30, left: 30},
+         width = 200 - margin.left - margin.right,
+         height = 175 - margin.top - margin.bottom
 
    // append the svg object to the body of the page
    const svg = d3.select('#' + id)
@@ -87,37 +88,78 @@ function drawBarChart (
       .append('g')
          .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
+   const tip = d3tip.default()
+      .attr('class', 'd3-tip')
+      .offset([0, 0])
+      .html((ev, d) => {
+         return d.y.value0
+      })
+
+   svg.call(tip)
+
    // x-axis
    const x = d3.scaleBand()
       .range([ 0, width ])
-      .domain(data.map(d => d.x.value0))
+      .domain(data_.map(d => d.x.value0))
       .padding(0.2)
    svg.append('g')
       .attr('transform', "translate(0," + height + ")")
       .call(d3.axisBottom(x))
       .selectAll('text')
-         .attr('transform', "translate(-10,0)rotate(-45)")
-         .style('text-anchor', 'end')
+         .style('text-anchor', 'middle')
 
    // y-axis
    const nearest = 100,
-         y_max = Math.ceil(Math.max(...data.map(d => d.y.value0)) / nearest) * nearest
+         y_max = Math.ceil(Math.max(...data_.map(d => d.y.value0)) / nearest) * nearest
    const y = d3.scaleLinear()
       .domain([0, y_max])
       .range([ height, 0])
+   const tick_every = nearest / 2
+   const yAxis = d3.axisLeft(y)
+      .tickValues(Array.from(Array(y_max / tick_every + 1).keys()).map(n => n * tick_every))
    svg.append('g')
-      .call(d3.axisLeft(y))
+      .call(yAxis)
 
    // Bars
+   const barFill = '#dcdcdc'
    svg.selectAll('rect')
-      .data(data)
+      .data(data_)
       .enter()
       .append('rect')
+         .attr('id', 'mouse-cursor')
          .attr('x', d => x(d.x.value0))
-         .attr('y', d => y(d.y.value0))
+         .attr('y', d => y(d.y.value0 + 1))  // ouch: bars overplot x-axis!
          .attr('width', x.bandwidth())
          .attr('height', d => height - y(d.y.value0))
-         .attr('fill', "#69b3a2")
+         .attr('fill', d => d.y.value1 ? colorShade(barFill, -40) : barFill)
+         .attr('stroke', d => d.y.value1 ? 'coral' : '')
+         .on('mouseover', tip.show)
+         .on('mouseout', tip.hide)
+}
+
+// https://stackoverflow.com/questions/5560248
+function colorShade (col, amt) {
+   col = col.replace(/^#/, '')
+   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
+
+   let [r, g, b] = col.match(/.{2}/g);
+   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
+
+   r = Math.max(Math.min(255, r), 0).toString(16)
+   g = Math.max(Math.min(255, g), 0).toString(16)
+   b = Math.max(Math.min(255, b), 0).toString(16)
+
+   const rr = (r.length < 2 ? '0' : '') + r
+   const gg = (g.length < 2 ? '0' : '') + g
+   const bb = (b.length < 2 ? '0' : '') + b
+
+   return `#${rr}${gg}${bb}`
+ }
+
+
+// any record type with only primitive fields -> boolean
+function isUsed (r) {
+   return Object.keys(r).some(k => r[k].value1)
 }
 
 // Generic to all tables.
@@ -125,12 +167,16 @@ function drawTable (
    id, {
       title,               // String
       cellFillSelected,    // String
-      table                // Array of any record type
+      table                // Array of any record type with only primitive fields
    }) {
+   table = table.filter(r => isUsed(r))
+   const cellFill = '#ffffff'
    const HTMLtable = d3.select('#' + id)
       .append('table')
    const colNames = Object.keys(table[0])
-   HTMLtable.append('thead').append('tr').selectAll('th')
+   HTMLtable.append('thead')
+      .append('tr')
+      .selectAll('th')
       .data(colNames).enter()
       .append('th')
       .text(d => d)
@@ -138,11 +184,13 @@ function drawTable (
       .data(table).enter()
       .append('tr')
    rows.selectAll('td')
-      .data(d => colNames.map(k => { return { 'value': d[k].value0, 'name': k } }))
+      .data(d => colNames.map(k => { return { 'value': d[k], 'name': k } }))
       .enter()
       .append('td')
       .attr('data-th', d => d.name)
-      .text(d => d.value)
+      .attr('class', d => d.value.value1 ? 'cell-selected' : null)
+      .attr('bgcolor', d => d.value.value1 ? colorShade(cellFill, -40) : cellFill)
+      .text(d => d.value.value0)
 }
 
 function className (o) {
@@ -158,7 +206,7 @@ function drawFigure (id, figs) {
             drawTable(id, fig.value0)
          }
          else
-         if (className(fig) == "BarChart") {
+         if (className(fig) == "BarChartFig") {
             drawBarChart(id, fig.value0)
          }
          else
@@ -214,14 +262,6 @@ function download (parent, dataURL, name) {
 
 function curry2 (f) {
    return x1 => x2 => f(x1, x2)
-}
-
-function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
-}
-
-function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
 exports.drawFigure = curry2(drawFigure)
