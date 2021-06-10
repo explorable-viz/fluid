@@ -120,13 +120,19 @@ function drawBarChart (
          .attr('fill', d => d.y.value1 ? 'gray' : 'gainsboro')
 }
 
+// any record type with only primitive fields -> boolean
+function isUsed (r) {
+   return Object.keys(r).some(k => r[k].value1)
+}
+
 // Generic to all tables.
 function drawTable (
    id, {
       title,               // String
       cellFillSelected,    // String
-      table                // Array of any record type
+      table                // Array of any record type with only primitive fields
    }) {
+   table = table.filter(r => isUsed(r))
    const HTMLtable = d3.select('#' + id)
       .append('table')
    const colNames = Object.keys(table[0])
