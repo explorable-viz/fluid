@@ -117,7 +117,7 @@ function drawBarChart (
          .attr('y', d => y(d.y.value0))
          .attr('width', x.bandwidth())
          .attr('height', d => height - y(d.y.value0))
-         .attr('fill', "#69b3a2")
+         .attr('fill', d => d.y.value1 ? 'gray' : 'gainsboro')
 }
 
 // Generic to all tables.
@@ -214,14 +214,6 @@ function download (parent, dataURL, name) {
 
 function curry2 (f) {
    return x1 => x2 => f(x1, x2)
-}
-
-function curry3 (f) {
-   return x1 => x2 => x3 => f(x1, x2, x3)
-}
-
-function curry4 (f) {
-   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
 }
 
 exports.drawFigure = curry2(drawFigure)

@@ -28,8 +28,8 @@ selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
 selectCell i j i' j' = Matrix false (insertMatrix i j (Hole true) (holeMatrix i' j'))
 
 selectNth :: Int -> Val 𝔹 -> Val 𝔹
-selectNth 0 v = Constr false cCons (v : Hole true : Nil)
-selectNth n v = Constr false cCons (Hole true : selectNth (n - 1) v : Nil)
+selectNth 0 v = Constr false cCons (v : Hole false : Nil)
+selectNth n v = Constr false cCons (Hole false : selectNth (n - 1) v : Nil)
 
 select_y :: Val 𝔹
 select_y = Record false (Lin :- "x" ↦ Hole false :- "y" ↦ Hole true)
