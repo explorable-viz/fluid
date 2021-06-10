@@ -144,12 +144,16 @@ span.email3:before {
 
 table {
    margin-left: 4mm;
-   outline: thin solid;
-   outline-color: coral;
+   outline: thin dotted;
+   outline-color: lightgray;
 }
 
 .d3-tip {
    font-size: 11px;
+}
+
+.cell-selected {
+   border: 1px solid coral;
 }
 
 th {

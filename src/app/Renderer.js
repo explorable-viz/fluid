@@ -188,6 +188,7 @@ function drawTable (
       .enter()
       .append('td')
       .attr('data-th', d => d.name)
+      .attr('class', d => d.value.value1 ? 'cell-selected' : null)
       .attr('bgcolor', d => d.value.value1 ? colorShade(cellFill, -40) : cellFill)
       .text(d => d.value.value0)
 }
