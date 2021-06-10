@@ -158,7 +158,9 @@ function drawTable (
    const HTMLtable = d3.select('#' + id)
       .append('table')
    const colNames = Object.keys(table[0])
-   HTMLtable.append('thead').append('tr').selectAll('th')
+   HTMLtable.append('thead')
+      .append('tr')
+      .selectAll('th')
       .data(colNames).enter()
       .append('th')
       .text(d => d)
@@ -166,12 +168,12 @@ function drawTable (
       .data(table).enter()
       .append('tr')
    rows.selectAll('td')
-      .data(d => colNames.map(k => { return { 'value': d[k].value0, 'name': k } }))
+      .data(d => colNames.map(k => { return { 'value': d[k], 'name': k } }))
       .enter()
       .append('td')
       .attr('data-th', d => d.name)
-      .attr('bgcolor', colorShade(cellFill, -40))
-      .text(d => d.value)
+      .attr('bgcolor', d => d.value.value1 ? colorShade(cellFill, -40) : cellFill)
+      .text(d => d.value.value0)
 }
 
 function className (o) {
