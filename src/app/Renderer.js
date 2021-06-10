@@ -121,6 +121,7 @@ function drawBarChart (
          .attr('width', x.bandwidth())
          .attr('height', d => height - y(d.y.value0))
          .attr('fill', d => d.y.value1 ? colorShade(barFill, -40) : barFill)
+         .attr('stroke', d => d.y.value1 ? 'coral' : '')
 }
 
 // https://stackoverflow.com/questions/5560248
