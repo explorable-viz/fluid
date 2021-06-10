@@ -75,9 +75,9 @@ function drawBarChart (
    }
 ) {
    // set the dimensions and margins of the graph
-   var margin = {top: 30, right: 30, bottom: 70, left: 60},
-      width = 460 - margin.left - margin.right,
-      height = 400 - margin.top - margin.bottom;
+   const margin = {top: 15, right: 0, bottom: 30, left: 30},
+         width = 250 - margin.left - margin.right,
+         height = 250 - margin.top - margin.bottom
 
    // append the svg object to the body of the page
    const svg = d3.select('#' + id)
@@ -96,8 +96,7 @@ function drawBarChart (
       .attr('transform', "translate(0," + height + ")")
       .call(d3.axisBottom(x))
       .selectAll('text')
-         .attr('transform', "translate(-10,0)rotate(-45)")
-         .style('text-anchor', 'end')
+         .style('text-anchor', 'middle')
 
    // y-axis
    const nearest = 100,
@@ -115,7 +114,7 @@ function drawBarChart (
       .enter()
       .append('rect')
          .attr('x', d => x(d.x.value0))
-         .attr('y', d => y(d.y.value0))
+         .attr('y', d => y(d.y.value0 + 1))  // ouch: bars overplot x-axis!
          .attr('width', x.bandwidth())
          .attr('height', d => height - y(d.y.value0))
          .attr('fill', d => d.y.value1 ? colorShade(barFill, -40) : barFill)
