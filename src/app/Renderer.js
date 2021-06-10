@@ -88,11 +88,11 @@ function drawBarChart (
       .append('g')
          .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-   const tip = d3tip.default(d3)
+   const tip = d3tip.default()
       .attr('class', 'd3-tip')
       .offset([-10, 0])
-      .html(d => {
-         return d.blah
+      .html((ev, d) => {
+         return d.y.value0
       })
 
    svg.call(tip)
