@@ -143,6 +143,7 @@ span.email3:before {
 }
 
 table {
+   margin-left: 4mm;
    outline: thin solid;
    outline-color: coral;
 }

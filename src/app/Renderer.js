@@ -1,6 +1,7 @@
 "use strict"
 
 const d3 = require("d3")
+const d3tip = require("d3-tip")
 
 const cellFillDefault         = 'White',
       cellStroke              = 'DarkGray',
@@ -87,6 +88,13 @@ function drawBarChart (
       .append('g')
          .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
+   const tip = d3tip.default()
+      .attr('class', 'd3-tip')
+      .offset([-10, 0])
+      .html(d => "<strong>Frequency:</strong> <span style='color:red'>" + d + "</span>")
+
+   svg.call(tip)
+
    // x-axis
    const x = d3.scaleBand()
       .range([ 0, width ])
@@ -123,6 +131,8 @@ function drawBarChart (
          .attr('height', d => height - y(d.y.value0))
          .attr('fill', d => d.y.value1 ? colorShade(barFill, -40) : barFill)
          .attr('stroke', d => d.y.value1 ? 'coral' : '')
+         .on('mouseover', tip.show)
+         .on('mouseout', tip.hide)
 }
 
 // https://stackoverflow.com/questions/5560248
