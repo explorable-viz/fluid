@@ -148,6 +148,7 @@ function drawTable (
       .enter()
       .append('td')
       .attr('data-th', d => d.name)
+      .attr('bgcolor', 'yellow')
       .text(d => d.value)
 }
 
