@@ -84,6 +84,15 @@ splitDefs ρ0 s' = do
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
 
+splitDefs2 :: Env 𝔹 -> S.Expr 𝔹 -> MayFail View
+splitDefs2 ρ0 s' = unsafePartial $ do
+   let defs × s = unpack s'
+   ρ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ0
+   pure { ρ, s }
+   where unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
+         unpack (S.LetRec defs s)   = Right defs × s
+         unpack (S.Let defs s)      = Left defs × s
+
 varFig :: Partial => VarSpec × Slice (Val 𝔹) -> Fig
 varFig ({var: x, fig} × uv) = fig { title: x, uv }
 
@@ -136,17 +145,19 @@ makeFigures divId { file, makeFigs } =
       Left err -> log ("Open failed: " <> show err)
       Right (ρ × s) -> drawFigure divId (successful (splitDefs ρ s >>= makeFigs))
 
-makeFigures2 :: String -> Shared -> String × View -> String × View -> Effect Unit
-makeFigures2 divId { ρ0 } (file1 × { ρ: ρ1, s: s1 }) (file2 × { ρ: ρ2, s: s2 }) =
+makeFigures2 :: String -> NeededSpec -> Shared -> String -> String -> Effect Unit
+makeFigures2 divId spec { ρ0 } file1 file2 =
    flip runAff_ (do
       ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
-      s1 <- openIn file1 ρ0
-      s2 <- openIn file2 ρ0
-      pure $ { ρ0, ρ, s1, s2 } :: Aff LinkConfig
+      let ρ0' = ρ0 <> ρ
+      view1 <- (successful <<< splitDefs2 ρ0') <$> openIn file1 ρ0'
+      view2 <- (successful <<< splitDefs2 ρ0') <$> openIn file2 ρ0'
+      pure $ ρ0' × view1 × view2 :: Aff (Env 𝔹 × View × View)
    )
    case _ of
       Left err -> log ("Open failed: " <> show err)
-      Right { ρ0, ρ, s1, s2 } -> ?_
+      Right (ρ0 × { ρ: ρ1, s: s1 } × { ρ: ρ2, s: s2 }) -> do
+         ?_
 
 -- TODO: not every example should run in context of renewables data.
 convolutionFigs :: Partial => Effect Unit
