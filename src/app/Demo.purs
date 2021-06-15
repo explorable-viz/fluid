@@ -64,9 +64,9 @@ varFig :: Partial => VarSpec × Slice (Val 𝔹) -> Fig
 varFig ({var: x, fig} × uv) = fig { title: x, uv }
 
 makeFigs_needed :: Partial => Array VarSpec -> MakeFig -> Val 𝔹 -> Example -> MayFail (Array Fig)
-makeFigs_needed x_figs o_fig o' {ρ0: ρ, ρ: ρ', s: s} = do
+makeFigs_needed x_figs o_fig o' {ρ0, ρ, s} = do
    e <- desugarFwd s
-   let ρρ' = ρ <> ρ'
+   let ρρ' = ρ0 <> ρ
    t × o <- eval ρρ' e
    let ρρ'' × _ × _ = evalBwd o' t
        xs = _.var <$> x_figs
@@ -75,14 +75,14 @@ makeFigs_needed x_figs o_fig o' {ρ0: ρ, ρ: ρ', s: s} = do
    pure $ [ o_fig { title: "output", uv: o' × o } ] <> (varFig <$> zip x_figs (zip vs' vs))
 
 makeFigs_neededBy :: Partial => Array VarSpec -> MakeFig -> Val 𝔹 -> Example -> MayFail (Array Fig)
-makeFigs_neededBy x_figs o_fig ω' {ρ0: ρ, ρ: ρ', s: s} = do
+makeFigs_neededBy x_figs o_fig ω' {ρ0, ρ, s} = do
    e <- desugarFwd s
-   let ρρ' = ρ <> ρ'
-       ρ'' = selectOnly ("filter" ↦ ω') ρ'
+   let ρρ' = ρ0 <> ρ
    t × o <- eval ρρ' e
-   let o' = neg (evalFwd (neg (botOf ρ <> ρ'')) (const true <$> e) true t)
+   let ρ'' = selectOnly ("filter" ↦ ω') ρ
+   let o' = neg (evalFwd (neg (botOf ρ0 <> ρ'')) (const true <$> e) true t)
        xs = _.var <$> x_figs
-   vs <- sequence (flip find ρ' <$> xs)
+   vs <- sequence (flip find ρ <$> xs)
    vs' <- sequence (flip find ρ'' <$> xs)
    pure $ [ o_fig { title: "output", uv: o' × o } ] <> (varFig <$> zip x_figs (zip vs' vs))
 
