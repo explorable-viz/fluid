@@ -6,7 +6,7 @@ import Data.Either (Either(..))
 import Data.List (List(..), (:), singleton)
 import Data.Traversable (sequence)
 import Effect (Effect)
-import Effect.Aff (runAff_)
+import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 import App.Renderer (Fig, MakeFig, drawFigure, makeBarChart, makeEnergyTable, matrixFig)
@@ -19,9 +19,10 @@ import EvalFwd (evalFwd)
 import Expl (Expl)
 import Expr (Expr)
 import Lattice (𝔹, botOf, neg)
+import Module (openDatasetAs, openIn)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (openFileWithDataset)
+import Test.Util (LinkConfig, openFileWithDataset)
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
 import Util.SnocList (SnocList(..), (:-))
 import Val (Env, Val(..), holeMatrix, insertMatrix)
@@ -100,8 +101,8 @@ evalExample { ρ0, ρ, s } = do
    t × o <- eval ρ0ρ e
    pure { e, ρ0ρ, t, o }
 
-gibble :: ExampleEval -> NeededSpec -> Env 𝔹 -> Env 𝔹 -> MayFail (Array Fig)
-gibble q { x_figs, o_fig, o' } ρ ρ' = do
+makeFigs_ :: ExampleEval -> NeededSpec -> Env 𝔹 -> Env 𝔹 -> MayFail (Array Fig)
+makeFigs_ q { x_figs, o_fig, o' } ρ ρ' = do
    let xs = _.var <$> x_figs
    vs <- sequence (flip find ρ <$> xs)
    vs' <- sequence (flip find ρ' <$> xs)
@@ -111,29 +112,41 @@ needed :: NeededSpec -> Example -> MayFail (Array Fig)
 needed spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
-   gibble q spec q.ρ0ρ ρ0ρ'
+   makeFigs_ q spec q.ρ0ρ ρ0ρ'
 
 neededBy :: NeededBySpec -> Example -> MayFail (Array Fig)
 neededBy { x_figs, o_fig, ρ' } { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
        xs = _.var <$> x_figs
-   gibble q { x_figs, o_fig, o' } ρ ρ'
+   makeFigs_ q { x_figs, o_fig, o' } ρ ρ'
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
-type Wurble = {
+type FigsSpec = {
    file :: String,
    makeFigs :: Example -> MayFail (Array Fig)
 }
 
-makeFigures :: Partial => String -> Wurble -> Effect Unit
+makeFigures :: Partial => String -> FigsSpec -> Effect Unit
 makeFigures divId { file, makeFigs } =
    flip runAff_ (openFileWithDataset "example/linking/renewables" file)
    case _ of
-      Left e -> log ("Open failed: " <> show e)
+      Left err -> log ("Open failed: " <> show err)
       Right (ρ × s) -> drawFigure divId (successful (splitDefs ρ s >>= makeFigs))
+
+makeFigures2 :: String -> Shared -> String × View -> String × View -> Effect Unit
+makeFigures2 divId { ρ0 } (file1 × { ρ: ρ1, s: s1 }) (file2 × { ρ: ρ2, s: s2 }) =
+   flip runAff_ (do
+      ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
+      s1 <- openIn file1 ρ0
+      s2 <- openIn file2 ρ0
+      pure $ { ρ0, ρ, s1, s2 } :: Aff LinkConfig
+   )
+   case _ of
+      Left err -> log ("Open failed: " <> show err)
+      Right { ρ0, ρ, s1, s2 } -> ?_
 
 -- TODO: not every example should run in context of renewables data.
 convolutionFigs :: Partial => Effect Unit
