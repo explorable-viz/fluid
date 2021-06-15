@@ -32,29 +32,33 @@ loadFile folder file = do
       Left err -> error (printError err)
       Right response -> pure response.body
 
+parse :: forall t . String -> SParser t -> MayFail t
+parse src = runParser src >>> show `bimap` identity
+
 loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file ρ = do
    src <- loadFile "fluid/lib" file
    pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module ρ))
 
-parse :: forall t . String -> SParser t -> MayFail t
-parse src = runParser src >>> show `bimap` identity
-
 parseProgram :: String -> String -> Aff (S.Expr 𝔹)
 parseProgram folder file = loadFile folder file <#> (successful <<< flip parse program)
 
-openIn :: String -> Env 𝔹 -> Aff (Env 𝔹 × S.Expr 𝔹)
-openIn file ρ = parseProgram "fluid/example" file <#> (ρ × _)
+openIn :: String -> Env 𝔹 -> Aff (S.Expr 𝔹)
+openIn file ρ = parseProgram "fluid/example" file
 
 defaultImports :: Aff (Env 𝔹)
 defaultImports =
    loadModule "prelude" primitives >>= loadModule "graphics" >>= loadModule "convolution"
 
 openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-openWithDefaultImports file = defaultImports >>= openIn file
+openWithDefaultImports file = do
+   ρ <- defaultImports
+   openIn file ρ <#> (ρ × _)
 
-openDatasetAs :: String -> Env 𝔹 -> Var -> Aff (Env 𝔹)
-openDatasetAs file ρ x = do
+-- Return ambient environment used to load dataset along with new binding.
+openDatasetAs :: String -> Var -> Aff (Env 𝔹 × Env 𝔹)
+openDatasetAs file x = do
    s <- parseProgram "fluid" file
+   ρ <- defaultImports
    let _ × v = successful (desugarFwd s >>= eval ρ)
-   pure (Lin :- x ↦ v)
+   pure (ρ × (Lin :- x ↦ v))

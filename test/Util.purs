@@ -18,7 +18,7 @@ import Expl (Expl)
 import Expr (Expr(..)) as E
 import SExpr (Expr) as S
 import Lattice (𝔹, botOf, neg)
-import Module (loadFile, openDatasetAs, openWithDefaultImports)
+import Module (loadFile, openDatasetAs, openIn, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import Util (MayFail, type (×), (×), successful)
 import Util.SnocList (splitAt)
@@ -70,18 +70,25 @@ testBwd file v expected =
    let name = "slicing/" <> file in
    testWithSetup name expected (Just v) (openWithDefaultImports name)
 
+type LinkConfig = {
+   ρ0 :: Env 𝔹,      -- default env
+   ρ :: Env 𝔹,       -- additional singleton env for dataset
+   s1 :: S.Expr 𝔹,   -- view 1
+   s2 :: S.Expr 𝔹    -- view 2
+}
+
 testLink :: String -> String -> String -> Val 𝔹 -> String -> Test Unit
 testLink file1 file2 dataFile v1_sel v2_expect =
    let dir = "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)
        setup = do
          -- the views share an ambient environment ρ0 as well as dataset
-         ρ0 × s1 <- openWithDefaultImports name1
-         _ × s2 <- openWithDefaultImports name2
-         ρ <- openDatasetAs ("example/" <> dir <> dataFile) ρ0 "data"
-         pure (ρ0 × ρ × s1 × s2) in
+         ρ0 × ρ <- openDatasetAs ("example/" <> dir <> dataFile) "data"
+         s1 <- openIn name1 ρ0
+         s2 <- openIn name2 ρ0
+         pure { ρ0, ρ, s1, s2 } :: Aff LinkConfig in
    before setup $
-      it (dir <> file1 <> " <-> " <> file2) \(ρ0 × ρ × s1 × s2) -> do
+      it (dir <> file1 <> " <-> " <> file2) \{ ρ0, ρ, s1, s2 } -> do
          let e1 = successful (desugarFwd s1)
              e2 = successful (desugarFwd s2)
              t1 × v1 = successful (eval (ρ0 <> ρ) e1)
@@ -93,12 +100,11 @@ testLink file1 file2 dataFile v1_sel v2_expect =
              v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
          checkPretty v2' v2_expect
 
--- TODO: generalise to multiple files that share a dataset, then reuse in testLink.
 openFileWithDataset :: String -> String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openFileWithDataset dataset file = do
-   ρ0 × s <- openWithDefaultImports file
-   ρ <- openDatasetAs dataset ρ0 "data"
-   pure ((ρ0 <> ρ) × s)
+   ρ0 × ρ <- openDatasetAs dataset "data"
+   let ρ' = ρ0 <> ρ
+   (ρ' × _) <$> openIn file ρ'
 
 testWithDataset :: String -> String -> Test Unit
 testWithDataset dataset file =
