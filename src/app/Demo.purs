@@ -22,7 +22,7 @@ import Lattice (𝔹, botOf, neg)
 import Module (openDatasetAs, openIn)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (LinkConfig, openFileWithDataset)
+import Test.Util (openFileWithDataset)
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
 import Util.SnocList (SnocList(..), (:-))
 import Val (Env, Val(..), holeMatrix, insertMatrix)
@@ -117,25 +117,25 @@ makeFigs_ q { x_figs, o_fig, o' } ρ ρ' = do
    vs' <- sequence (flip find ρ' <$> xs)
    unsafePartial $ pure $ [ o_fig { title: "output", uv: o' × q.o } ] <> (varFig <$> zip x_figs (zip vs' vs))
 
-needed :: NeededSpec -> Example -> MayFail (Array Fig)
+needed :: NeededSpec -> Example -> MayFail (ExampleEval × Array Fig)
 needed spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
-   makeFigs_ q spec q.ρ0ρ ρ0ρ'
+   (q × _) <$> makeFigs_ q spec q.ρ0ρ ρ0ρ'
 
-neededBy :: NeededBySpec -> Example -> MayFail (Array Fig)
+neededBy :: NeededBySpec -> Example -> MayFail (ExampleEval × Array Fig)
 neededBy { x_figs, o_fig, ρ' } { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
        xs = _.var <$> x_figs
-   makeFigs_ q { x_figs, o_fig, o' } ρ ρ'
+   (q × _) <$> makeFigs_ q { x_figs, o_fig, o' } ρ ρ'
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
 type FigsSpec = {
    file :: String,
-   makeFigs :: Example -> MayFail (Array Fig)
+   makeFigs :: Example -> MayFail (ExampleEval × Array Fig)
 }
 
 makeFigures :: Partial => String -> FigsSpec -> Effect Unit
@@ -143,10 +143,12 @@ makeFigures divId { file, makeFigs } =
    flip runAff_ (openFileWithDataset "example/linking/renewables" file)
    case _ of
       Left err -> log ("Open failed: " <> show err)
-      Right (ρ × s) -> drawFigure divId (successful (splitDefs ρ s >>= makeFigs))
+      Right (ρ × s) ->
+         let _ × figs = successful (splitDefs ρ s >>= makeFigs) in
+         drawFigure divId figs
 
-makeFigures2 :: String -> NeededSpec -> String -> String -> Effect Unit
-makeFigures2 divId spec file1 file2 =
+makeFigures2 :: String -> String -> NeededSpec -> String -> String -> Effect Unit
+makeFigures2 divId1 divId2 spec file1 file2 =
    flip runAff_ (do
       ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
       let ρ0' = ρ0 <> ρ
@@ -157,7 +159,8 @@ makeFigures2 divId spec file1 file2 =
    case _ of
       Left err -> log ("Open failed: " <> show err)
       Right (ρ0 × { ρ: ρ1, s: s1 } × { ρ: ρ2, s: s2 }) -> do
-         drawFigure divId (successful (needed spec { ρ0, ρ: ρ1, s: s1 }))
+         let q × figs = successful (needed spec { ρ0, ρ: ρ1, s: s1 })
+         drawFigure divId1 figs
 
 -- TODO: not every example should run in context of renewables data.
 convolutionFigs :: Partial => Effect Unit
