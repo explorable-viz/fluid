@@ -40,9 +40,28 @@ select_barChart_data v = Constr false cBarChart (Record false (Lin :- "caption" 
 -- Example assumed to be of the form (let <defs> in expr), so we can treat defs as part of the environment that
 -- we can easily inspect.
 type Example = {
-   ρ0 :: Env 𝔹,     -- module environment
-   ρ :: Env 𝔹,      -- additional bindings introduce by "let" at beginning of example
+   ρ0 :: Env 𝔹,     -- ambient environment, including any dataset loaded
+   ρ :: Env 𝔹,      -- "local" env (additional bindings introduce by "let" at beginning of ex)
    s :: S.Expr 𝔹    -- body of let
+}
+
+type VarSpec = {
+   var :: Var,
+   fig :: MakeFig
+}
+
+type NeededExample = {
+   ex       :: Example,
+   x_figs   :: Array VarSpec,    -- one for each variable we want a figure for
+   o_fig    :: MakeFig,          -- for output
+   o'       :: Val 𝔹             -- selection on output
+}
+
+type NeededByExample = {
+   ex       :: Example,
+   x_figs   :: Array VarSpec,    -- one for each variable we want a figure for
+   o_fig    :: MakeFig,          -- for output
+   ρ'       :: Env 𝔹             -- selection on local env
 }
 
 -- Extract the ρ' and s components of an example s'.
@@ -55,23 +74,11 @@ splitDefs ρ0 s' = do
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
 
-type VarSpec = {
-   var :: Var,
-   fig :: MakeFig
-}
-
 varFig :: Partial => VarSpec × Slice (Val 𝔹) -> Fig
 varFig ({var: x, fig} × uv) = fig { title: x, uv }
 
-type NeededExample = {
-   ex       :: Example,
-   x_figs   :: Array VarSpec,    -- one for each variable we want a figure for
-   o_fig    :: MakeFig,          -- for output
-   o'       :: Val 𝔹             -- selection on output
-}
-
 makeFigs_needed :: Partial => NeededExample -> MayFail (Array Fig)
-makeFigs_needed { ex: {ρ0, ρ, s}, x_figs, o_fig, o' } = do
+makeFigs_needed { ex: { ρ0, ρ, s }, x_figs, o_fig, o' } = do
    e <- desugarFwd s
    let ρ0ρ = ρ0 <> ρ
    t × o <- eval ρ0ρ e
@@ -81,15 +88,15 @@ makeFigs_needed { ex: {ρ0, ρ, s}, x_figs, o_fig, o' } = do
    vs' <- sequence (flip find ρ0ρ' <$> xs)
    pure $ [ o_fig { title: "output", uv: o' × o } ] <> (varFig <$> zip x_figs (zip vs' vs))
 
-makeFigs_neededBy :: Partial => Array VarSpec -> MakeFig -> Env 𝔹 -> Example -> MayFail (Array Fig)
-makeFigs_neededBy x_figs o_fig ρ'' {ρ0, ρ, s} = do
+makeFigs_neededBy :: Partial => NeededByExample -> MayFail (Array Fig)
+makeFigs_neededBy { ex: { ρ0, ρ, s }, x_figs, o_fig, ρ' } = do
    e <- desugarFwd s
    let ρ0ρ = ρ0 <> ρ
    t × o <- eval ρ0ρ e
-   let o' = neg (evalFwd (neg (botOf ρ0 <> ρ'')) (const true <$> e) true t)
+   let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e) true t)
        xs = _.var <$> x_figs
    vs <- sequence (flip find ρ <$> xs)
-   vs' <- sequence (flip find ρ'' <$> xs)
+   vs' <- sequence (flip find ρ' <$> xs)
    pure $ [ o_fig { title: "output", uv: o' × o } ] <> (varFig <$> zip x_figs (zip vs' vs))
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
@@ -111,29 +118,23 @@ convolutionFigs = do
                (\ex -> makeFigs_needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 })
                "fig-1"
    makeFigures ["slicing/conv-wrap"]
-               (\ex ->
-                  makeFigs_neededBy x_figs matrixFig (selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ) ex)
+               (\ex -> makeFigs_neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ })
                "fig-2"
    makeFigures ["slicing/conv-zero"]
                (\ex -> makeFigs_needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 })
                "fig-3"
    makeFigures ["slicing/conv-zero"]
-               (\ex ->
-                  makeFigs_neededBy x_figs matrixFig (selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ) ex)
+               (\ex -> makeFigs_neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ })
                "fig-4"
 
 linkingFigs :: Partial => Effect Unit
 linkingFigs = do
    let x_figs = [{ var: "data", fig: makeEnergyTable }] :: Array VarSpec
    makeFigures ["linking/bar-chart"]
-               (\ex -> do
-                  let o' = select_barChart_data (selectNth 1 (select_y))
-                  makeFigs_needed { ex, x_figs, o_fig: makeBarChart, o' })
+               (\ex -> makeFigs_needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) })
                "table-1"
    makeFigures ["linking/bar-chart"]
-               (\ex -> do
-                  let o' = select_barChart_data (selectNth 0 (select_y))
-                  makeFigs_needed { ex, x_figs, o_fig: makeBarChart, o' })
+               (\ex -> makeFigs_needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) })
                "table-2"
 
 main :: Effect Unit
