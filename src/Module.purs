@@ -37,17 +37,20 @@ loadModule file ρ = do
    src <- loadFile "fluid/lib" file
    pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module ρ))
 
+defaultImports :: Aff (Env 𝔹)
+defaultImports =
+   loadModule "prelude" primitives >>= loadModule "graphics" >>= loadModule "convolution"
+
 openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-openWithDefaultImports file =
-   loadFile "fluid/example" file >>= parseWithDefaultImports
+openWithDefaultImports file = defaultImports >>= openIn file
+
+openIn :: String -> Env 𝔹 -> Aff (Env 𝔹 × S.Expr 𝔹)
+openIn file ρ = do
+   s <- loadFile "fluid/example" file <#> (successful <<< flip parse program)
+   pure (ρ × s)
 
 parse :: forall t . String -> SParser t -> MayFail t
-parse src = runParser src >>> bimap show identity
-
-parseWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-parseWithDefaultImports src =
-   (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics" >>= loadModule "convolution")
-       <@> successful (parse src program)
+parse src = runParser src >>> show `bimap` identity
 
 openDatasetAs :: String -> Env 𝔹 -> Var -> Aff (Env 𝔹)
 openDatasetAs file ρ x = do
