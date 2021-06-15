@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.Array (zip)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), singleton)
-import Data.Traversable (sequence)
+import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
@@ -74,13 +74,12 @@ makeFigs_needed x_figs o_fig o' {ρ0, ρ, s} = do
    vs' <- sequence (flip find ρρ'' <$> xs)
    pure $ [ o_fig { title: "output", uv: o' × o } ] <> (varFig <$> zip x_figs (zip vs' vs))
 
-makeFigs_neededBy :: Partial => Array VarSpec -> MakeFig -> Val 𝔹 -> Example -> MayFail (Array Fig)
-makeFigs_neededBy x_figs o_fig ω' {ρ0, ρ, s} = do
+makeFigs_neededBy :: Partial => Array VarSpec -> MakeFig -> Env 𝔹 -> Example -> MayFail (Array Fig)
+makeFigs_neededBy x_figs o_fig ρ'' {ρ0, ρ, s} = do
    e <- desugarFwd s
    let ρ0ρ = ρ0 <> ρ
    t × o <- eval ρ0ρ e
-   let ρ'' = selectOnly ("filter" ↦ ω') ρ
-       o' = neg (evalFwd (neg (botOf ρ0 <> ρ'')) (const true <$> e) true t)
+   let o' = neg (evalFwd (neg (botOf ρ0 <> ρ'')) (const true <$> e) true t)
        xs = _.var <$> x_figs
    vs <- sequence (flip find ρ <$> xs)
    vs' <- sequence (flip find ρ'' <$> xs)
@@ -89,38 +88,42 @@ makeFigs_neededBy x_figs o_fig ω' {ρ0, ρ, s} = do
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
-makeFigures :: Partial => String -> (Example -> MayFail (Array Fig)) -> String -> Effect Unit
-makeFigures file makeFigs divId =
-   flip runAff_ (openFileWithDataset "example/linking/renewables" file)
+makeFigures :: Partial => Array String -> (Example -> MayFail (Array Fig)) -> String -> Effect Unit
+makeFigures files makeFigs divId =
+   flip runAff_ (sequence (openFileWithDataset "example/linking/renewables" <$> files))
    case _ of
       Left e -> log ("Open failed: " <> show e)
-      Right (ρ × s) -> drawFigure divId (successful (splitDefs ρ s >>= makeFigs))
-
--- selectOnly ("filter" ↦ selectCell 1 1 3 3) ρ'
+      Right ρs -> sequence_ $
+         ρs <#> \(ρ × s) -> drawFigure divId (successful (splitDefs ρ s >>= makeFigs))
 
 -- TODO: not every example should run in context of renewables data.
 convolutionFigs :: Partial => Effect Unit
 convolutionFigs = do
    let vars = [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig }] :: Array VarSpec
-   makeFigures "slicing/conv-wrap"
+   makeFigures ["slicing/conv-wrap"]
                (makeFigs_needed vars matrixFig (selectCell 2 1 5 5))
                "fig-1"
-   makeFigures "slicing/conv-wrap"
-               (\{ρ0, ρ, s} ->
-                  makeFigs_neededBy vars matrixFig (selectCell 1 1 3 3) {ρ0, ρ, s})
+   makeFigures ["slicing/conv-wrap"]
+               (\ex ->
+                  makeFigs_neededBy vars matrixFig (selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ) ex)
                "fig-2"
-   makeFigures "slicing/conv-zero"
+   makeFigures ["slicing/conv-zero"]
                (makeFigs_needed vars matrixFig (selectCell 2 1 5 5))
                "fig-3"
-   makeFigures "slicing/conv-zero" (makeFigs_neededBy vars matrixFig (selectCell 1 1 3 3)) "fig-4"
+   makeFigures ["slicing/conv-zero"]
+               (\ex ->
+                  makeFigs_neededBy vars matrixFig (selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ) ex)
+               "fig-4"
 
 linkingFigs :: Partial => Effect Unit
 linkingFigs = do
    let vars = [{ var: "data", fig: makeEnergyTable }] :: Array VarSpec
-   makeFigures "linking/bar-chart"
-               (makeFigs_needed vars makeBarChart (select_barChart_data (selectNth 1 (select_y))))
+   makeFigures ["linking/bar-chart"]
+               (\ex -> do
+                  figs <- makeFigs_needed vars makeBarChart (select_barChart_data (selectNth 1 (select_y))) ex
+                  pure figs)
                "table-1"
-   makeFigures "linking/bar-chart"
+   makeFigures ["linking/bar-chart"]
                (makeFigs_needed vars makeBarChart (select_barChart_data (selectNth 0 (select_y))))
                "table-2"
 
