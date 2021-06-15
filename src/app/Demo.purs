@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Data.Array (zip)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), singleton)
-import Data.Traversable (sequence, sequence_)
+import Data.Traversable (sequence)
 import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
@@ -16,6 +16,8 @@ import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
+import Expl (Expl)
+import Expr (Expr)
 import Lattice (𝔹, botOf, neg)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
@@ -59,15 +61,13 @@ type VarSpec = {
    fig :: MakeFig
 }
 
-type NeededExample = {
-   ex       :: Example,
+type NeededSpec = {
    x_figs   :: Array VarSpec,    -- one for each variable we want a figure for
    o_fig    :: MakeFig,          -- for output
    o'       :: Val 𝔹             -- selection on output
 }
 
-type NeededByExample = {
-   ex       :: Example,
+type NeededBySpec = {
    x_figs   :: Array VarSpec,    -- one for each variable we want a figure for
    o_fig    :: MakeFig,          -- for output
    ρ'       :: Env 𝔹             -- selection on local env
@@ -86,27 +86,39 @@ splitDefs ρ0 s' = do
 varFig :: Partial => VarSpec × Slice (Val 𝔹) -> Fig
 varFig ({var: x, fig} × uv) = fig { title: x, uv }
 
-needed :: Partial => NeededExample -> MayFail (Array Fig)
-needed { ex: { ρ0, ρ, s }, x_figs, o_fig, o' } = do
-   e <- desugarFwd s
-   let ρ0ρ = ρ0 <> ρ
-   t × o <- eval ρ0ρ e
-   let ρ0ρ' × _ × _ = evalBwd o' t
-       xs = _.var <$> x_figs
-   vs <- sequence (flip find ρ0ρ <$> xs)
-   vs' <- sequence (flip find ρ0ρ' <$> xs)
-   pure $ [ o_fig { title: "output", uv: o' × o } ] <> (varFig <$> zip x_figs (zip vs' vs))
+type ExampleEval = {
+   e :: Expr 𝔹,
+   ρ0ρ :: Env 𝔹,
+   t :: Expl 𝔹,
+   o :: Val 𝔹
+}
 
-neededBy :: Partial => NeededByExample -> MayFail (Array Fig)
-neededBy { ex: { ρ0, ρ, s }, x_figs, o_fig, ρ' } = do
+evalExample :: Example -> MayFail ExampleEval
+evalExample { ρ0, ρ, s } = do
    e <- desugarFwd s
    let ρ0ρ = ρ0 <> ρ
    t × o <- eval ρ0ρ e
-   let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e) true t)
-       xs = _.var <$> x_figs
+   pure { e, ρ0ρ, t, o }
+
+gibble :: ExampleEval -> NeededSpec -> Env 𝔹 -> Env 𝔹 -> MayFail (Array Fig)
+gibble q { x_figs, o_fig, o' } ρ ρ' = do
+   let xs = _.var <$> x_figs
    vs <- sequence (flip find ρ <$> xs)
    vs' <- sequence (flip find ρ' <$> xs)
-   pure $ [ o_fig { title: "output", uv: o' × o } ] <> (varFig <$> zip x_figs (zip vs' vs))
+   unsafePartial $ pure $ [ o_fig { title: "output", uv: o' × q.o } ] <> (varFig <$> zip x_figs (zip vs' vs))
+
+needed :: NeededSpec -> Example -> MayFail (Array Fig)
+needed spec { ρ0, ρ, s } = do
+   q <- evalExample { ρ0, ρ, s }
+   let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
+   gibble q spec q.ρ0ρ ρ0ρ'
+
+neededBy :: NeededBySpec -> Example -> MayFail (Array Fig)
+neededBy { x_figs, o_fig, ρ' } { ρ0, ρ, s } = do
+   q <- evalExample { ρ0, ρ, s }
+   let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
+       xs = _.var <$> x_figs
+   gibble q { x_figs, o_fig, o' } ρ ρ'
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
@@ -129,22 +141,22 @@ convolutionFigs = do
    let x_figs = [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig }] :: Array VarSpec
    makeFigures "fig-1" {
       file: "slicing/conv-wrap",
-      makeFigs: \ex -> needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 }
+      makeFigs: needed { x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 }
    }
 
    makeFigures "fig-2" {
       file: "slicing/conv-wrap",
-      makeFigs: \ex -> neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ }
+      makeFigs: \ex -> neededBy { x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ } ex
    }
 
    makeFigures "fig-3" {
       file: "slicing/conv-zero",
-      makeFigs: \ex -> needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 }
+      makeFigs: needed { x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 }
    }
 
    makeFigures "fig-4" {
       file: "slicing/conv-zero",
-      makeFigs: \ex -> neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ }
+      makeFigs: \ex -> neededBy { x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ } ex
    }
 
 linkingFigs :: Partial => Effect Unit
@@ -152,12 +164,11 @@ linkingFigs = do
    let x_figs = [{ var: "data", fig: makeEnergyTable }] :: Array VarSpec
    makeFigures "table-1" {
       file: "linking/bar-chart",
-      makeFigs: \ex ->
-         needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) }
+      makeFigs: needed { x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) }
    }
    makeFigures "table-2" {
       file: "linking/bar-chart",
-      makeFigs: \ex -> needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) }
+      makeFigs: needed { x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) }
    }
 
 main :: Effect Unit

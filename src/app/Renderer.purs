@@ -33,7 +33,7 @@ data Fig =
    BarChartFig BarChart
 
 -- Convert sliced value to appropriate Fig, discarding top-level annotations for now.
-type MakeFig = Partial => { title :: String, uv :: Slice (Val 𝔹) } -> Fig
+type MakeFig = { title :: String, uv :: Slice (Val 𝔹) } -> Fig
 
 matrixFig :: MakeFig
 matrixFig { title, uv: (u × v) } =
@@ -48,11 +48,11 @@ toArray (us × V.Constr _ c (v1 : v2 : Nil)) | c == cCons =
    case expand us (V.Constr false cCons (V.Hole false : V.Hole false : Nil)) of
       V.Constr _ _ (u1 : u2 : Nil) -> (u1 × v1) A.: toArray (u2 × v2)
 
-makeEnergyTable :: MakeFig
+makeEnergyTable :: Partial => MakeFig
 makeEnergyTable { title, uv: (u × v) } =
    EnergyTable { title, cellFillSelected: "Not used?", table: record energyRecord <$> toArray (u × v) }
 
-makeBarChart :: MakeFig
+makeBarChart :: Partial => MakeFig
 makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> BarChartFig (record from (u1 × v1))
