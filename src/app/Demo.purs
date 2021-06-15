@@ -77,8 +77,8 @@ splitDefs ρ0 s' = do
 varFig :: Partial => VarSpec × Slice (Val 𝔹) -> Fig
 varFig ({var: x, fig} × uv) = fig { title: x, uv }
 
-makeFigs_needed :: Partial => NeededExample -> MayFail (Array Fig)
-makeFigs_needed { ex: { ρ0, ρ, s }, x_figs, o_fig, o' } = do
+needed :: Partial => NeededExample -> MayFail (Array Fig)
+needed { ex: { ρ0, ρ, s }, x_figs, o_fig, o' } = do
    e <- desugarFwd s
    let ρ0ρ = ρ0 <> ρ
    t × o <- eval ρ0ρ e
@@ -88,8 +88,8 @@ makeFigs_needed { ex: { ρ0, ρ, s }, x_figs, o_fig, o' } = do
    vs' <- sequence (flip find ρ0ρ' <$> xs)
    pure $ [ o_fig { title: "output", uv: o' × o } ] <> (varFig <$> zip x_figs (zip vs' vs))
 
-makeFigs_neededBy :: Partial => NeededByExample -> MayFail (Array Fig)
-makeFigs_neededBy { ex: { ρ0, ρ, s }, x_figs, o_fig, ρ' } = do
+neededBy :: Partial => NeededByExample -> MayFail (Array Fig)
+neededBy { ex: { ρ0, ρ, s }, x_figs, o_fig, ρ' } = do
    e <- desugarFwd s
    let ρ0ρ = ρ0 <> ρ
    t × o <- eval ρ0ρ e
@@ -115,26 +115,26 @@ convolutionFigs :: Partial => Effect Unit
 convolutionFigs = do
    let x_figs = [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig }] :: Array VarSpec
    makeFigures ["slicing/conv-wrap"]
-               (\ex -> makeFigs_needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 })
+               (\ex -> needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 })
                "fig-1"
    makeFigures ["slicing/conv-wrap"]
-               (\ex -> makeFigs_neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ })
+               (\ex -> neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ })
                "fig-2"
    makeFigures ["slicing/conv-zero"]
-               (\ex -> makeFigs_needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 })
+               (\ex -> needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 })
                "fig-3"
    makeFigures ["slicing/conv-zero"]
-               (\ex -> makeFigs_neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ })
+               (\ex -> neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ })
                "fig-4"
 
 linkingFigs :: Partial => Effect Unit
 linkingFigs = do
    let x_figs = [{ var: "data", fig: makeEnergyTable }] :: Array VarSpec
    makeFigures ["linking/bar-chart"]
-               (\ex -> makeFigs_needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) })
+               (\ex -> needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) })
                "table-1"
    makeFigures ["linking/bar-chart"]
-               (\ex -> makeFigs_needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) })
+               (\ex -> needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) })
                "table-2"
 
 main :: Effect Unit
