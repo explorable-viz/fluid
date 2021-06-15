@@ -45,6 +45,15 @@ type Example = {
    s :: S.Expr 𝔹    -- body of let
 }
 
+type Shared = {
+   ρ0 :: Env 𝔹      -- ambient environment, including any dataset loaded
+}
+
+type View = {
+   ρ :: Env 𝔹,      -- "local" env (additional bindings introduce by "let" at beginning of ex)
+   s :: S.Expr 𝔹    -- body of let
+}
+
 type VarSpec = {
    var :: Var,
    fig :: MakeFig
@@ -102,40 +111,54 @@ neededBy { ex: { ρ0, ρ, s }, x_figs, o_fig, ρ' } = do
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
-makeFigures :: Partial => Array String -> (Example -> MayFail (Array Fig)) -> String -> Effect Unit
-makeFigures files makeFigs divId =
-   flip runAff_ (sequence (openFileWithDataset "example/linking/renewables" <$> files))
+type Wurble = {
+   file :: String,
+   makeFigs :: Example -> MayFail (Array Fig)
+}
+
+makeFigures :: Partial => String -> Wurble -> Effect Unit
+makeFigures divId { file, makeFigs } =
+   flip runAff_ (openFileWithDataset "example/linking/renewables" file)
    case _ of
       Left e -> log ("Open failed: " <> show e)
-      Right ρs -> sequence_ $
-         ρs <#> \(ρ × s) -> drawFigure divId (successful (splitDefs ρ s >>= makeFigs))
+      Right (ρ × s) -> drawFigure divId (successful (splitDefs ρ s >>= makeFigs))
 
 -- TODO: not every example should run in context of renewables data.
 convolutionFigs :: Partial => Effect Unit
 convolutionFigs = do
    let x_figs = [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig }] :: Array VarSpec
-   makeFigures ["slicing/conv-wrap"]
-               (\ex -> needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 })
-               "fig-1"
-   makeFigures ["slicing/conv-wrap"]
-               (\ex -> neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ })
-               "fig-2"
-   makeFigures ["slicing/conv-zero"]
-               (\ex -> needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 })
-               "fig-3"
-   makeFigures ["slicing/conv-zero"]
-               (\ex -> neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ })
-               "fig-4"
+   makeFigures "fig-1" {
+      file: "slicing/conv-wrap",
+      makeFigs: \ex -> needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 }
+   }
+
+   makeFigures "fig-2" {
+      file: "slicing/conv-wrap",
+      makeFigs: \ex -> neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ }
+   }
+
+   makeFigures "fig-3" {
+      file: "slicing/conv-zero",
+      makeFigs: \ex -> needed { ex, x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 }
+   }
+
+   makeFigures "fig-4" {
+      file: "slicing/conv-zero",
+      makeFigs: \ex -> neededBy { ex, x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ }
+   }
 
 linkingFigs :: Partial => Effect Unit
 linkingFigs = do
    let x_figs = [{ var: "data", fig: makeEnergyTable }] :: Array VarSpec
-   makeFigures ["linking/bar-chart"]
-               (\ex -> needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) })
-               "table-1"
-   makeFigures ["linking/bar-chart"]
-               (\ex -> needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) })
-               "table-2"
+   makeFigures "table-1" {
+      file: "linking/bar-chart",
+      makeFigs: \ex ->
+         needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) }
+   }
+   makeFigures "table-2" {
+      file: "linking/bar-chart",
+      makeFigs: \ex -> needed { ex, x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) }
+   }
 
 main :: Effect Unit
 main = unsafePartial $ do
