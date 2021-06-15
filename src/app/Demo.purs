@@ -74,14 +74,13 @@ example_needed x_figs o_fig o' {ρ0: ρ, ρ: ρ', s: s} = do
    vs' <- sequence (flip find ρρ'' <$> xs)
    pure $ [ o_fig { title: "output", uv: o' × o } ] <> (varFig <$> zip x_figs (zip vs' vs))
 
-example_neededBy :: Partial => MakeFig -> Val 𝔹 -> Example -> MayFail (Array Fig)
-example_neededBy o_fig ω' {ρ0: ρ, ρ: ρ', s: s} = do
+example_neededBy :: Partial => Array VarSpec -> MakeFig -> Val 𝔹 -> Example -> MayFail (Array Fig)
+example_neededBy x_figs o_fig ω' {ρ0: ρ, ρ: ρ', s: s} = do
    e <- desugarFwd s
    let ρρ' = ρ <> ρ'
        ρ'' = selectOnly ("filter" ↦ ω') ρ'
    t × o <- eval ρρ' e
    let o' = neg (evalFwd (neg (botOf ρ <> ρ'')) (const true <$> e) true t)
-   let x_figs = [ { var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig } ] :: Array VarSpec
        xs = _.var <$> x_figs
    vs <- sequence (flip find ρ' <$> xs)
    vs' <- sequence (flip find ρ'' <$> xs)
@@ -107,11 +106,11 @@ convolutionFigs = do
    makeFigures "slicing/conv-wrap"
                (example_needed vars matrixFig (selectCell 2 1 5 5))
                "fig-1"
-   makeFigures "slicing/conv-wrap" (example_neededBy matrixFig (selectCell 1 1 3 3)) "fig-2"
+   makeFigures "slicing/conv-wrap" (example_neededBy vars matrixFig (selectCell 1 1 3 3)) "fig-2"
    makeFigures "slicing/conv-zero"
                (example_needed vars matrixFig (selectCell 2 1 5 5))
                "fig-3"
-   makeFigures "slicing/conv-zero" (example_neededBy matrixFig (selectCell 1 1 3 3)) "fig-4"
+   makeFigures "slicing/conv-zero" (example_neededBy vars matrixFig (selectCell 1 1 3 3)) "fig-4"
 
 linkingFigs :: Partial => Effect Unit
 linkingFigs = do
