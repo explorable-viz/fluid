@@ -145,8 +145,8 @@ makeFigures divId { file, makeFigs } =
       Left err -> log ("Open failed: " <> show err)
       Right (ρ × s) -> drawFigure divId (successful (splitDefs ρ s >>= makeFigs))
 
-makeFigures2 :: String -> NeededSpec -> Shared -> String -> String -> Effect Unit
-makeFigures2 divId spec { ρ0 } file1 file2 =
+makeFigures2 :: String -> NeededSpec -> String -> String -> Effect Unit
+makeFigures2 divId spec file1 file2 =
    flip runAff_ (do
       ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
       let ρ0' = ρ0 <> ρ
@@ -157,7 +157,7 @@ makeFigures2 divId spec { ρ0 } file1 file2 =
    case _ of
       Left err -> log ("Open failed: " <> show err)
       Right (ρ0 × { ρ: ρ1, s: s1 } × { ρ: ρ2, s: s2 }) -> do
-         ?_
+         drawFigure divId (successful (needed spec { ρ0, ρ: ρ1, s: s1 }))
 
 -- TODO: not every example should run in context of renewables data.
 convolutionFigs :: Partial => Effect Unit
