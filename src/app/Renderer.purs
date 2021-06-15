@@ -33,12 +33,12 @@ data Fig =
    BarChartFig BarChart
 
 -- Convert sliced value to appropriate Fig, discarding top-level annotations for now.
-type MakeFig = Partial => String -> String -> Slice (Val 𝔹) -> Fig
+type MakeFig = Partial => { title :: String, uv :: Slice (Val 𝔹) } -> Fig
 
 matrixFig :: MakeFig
-matrixFig title cellFillSelected (u × v) =
+matrixFig { title, uv: (u × v) } =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
-   MatrixFig { title, cellFillSelected, matrix: matrixRep vss2 }
+   MatrixFig { title, cellFillSelected: "Yellow", matrix: matrixRep vss2 }
 
 toArray :: Partial => Slice (Val 𝔹) -> Array (Slice (Val 𝔹))
 toArray (vs × V.Constr _ c Nil) | c == cNil =
@@ -49,16 +49,16 @@ toArray (us × V.Constr _ c (v1 : v2 : Nil)) | c == cCons =
       V.Constr _ _ (u1 : u2 : Nil) -> (u1 × v1) A.: toArray (u2 × v2)
 
 makeEnergyTable :: MakeFig
-makeEnergyTable title cellFillSelected (u × v) =
-   EnergyTable { title, cellFillSelected, table: record energyRecord <$> toArray (u × v) }
+makeEnergyTable { title, uv: (u × v) } =
+   EnergyTable { title, cellFillSelected: "Not used?", table: record energyRecord <$> toArray (u × v) }
 
 makeBarChart :: MakeFig
-makeBarChart title _ (u × V.Constr _ c (v1 : Nil)) | c == cBarChart =
+makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> BarChartFig (record from (u1 × v1))
 
 lineChart :: MakeFig
-lineChart title _ _ = LineChart { title }
+lineChart { title } = LineChart { title }
 
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
 record toRecord (u × v) = toRecord (fst (match_fwd (u × v)) × fst (match v))
