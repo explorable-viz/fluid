@@ -44,16 +44,17 @@ defaultImports =
 openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file = defaultImports >>= openIn file
 
+parseProgram :: String -> String -> Aff (S.Expr 𝔹)
+parseProgram folder file = loadFile folder file <#> (successful <<< flip parse program)
+
 openIn :: String -> Env 𝔹 -> Aff (Env 𝔹 × S.Expr 𝔹)
-openIn file ρ = do
-   s <- loadFile "fluid/example" file <#> (successful <<< flip parse program)
-   pure (ρ × s)
+openIn file ρ = parseProgram "fluid/example" file <#> (ρ × _)
 
 parse :: forall t . String -> SParser t -> MayFail t
 parse src = runParser src >>> show `bimap` identity
 
 openDatasetAs :: String -> Env 𝔹 -> Var -> Aff (Env 𝔹)
 openDatasetAs file ρ x = do
-   s <- loadFile "fluid" file <#> (successful <<< flip parse program)
+   s <- parseProgram "fluid" file
    let _ × v = successful (desugarFwd s >>= eval ρ)
    pure (Lin :- x ↦ v)
