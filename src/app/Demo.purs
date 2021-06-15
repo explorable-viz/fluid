@@ -63,8 +63,8 @@ type VarSpec = {
 varFig :: Partial => VarSpec × Slice (Val 𝔹) -> Fig
 varFig ({var: x, fig} × uv) = fig { title: x, uv }
 
-example_needed :: Partial => Array VarSpec -> MakeFig -> Val 𝔹 -> Example -> MayFail (Array Fig)
-example_needed x_figs o_fig o' {ρ0: ρ, ρ: ρ', s: s} = do
+makeFigs_needed :: Partial => Array VarSpec -> MakeFig -> Val 𝔹 -> Example -> MayFail (Array Fig)
+makeFigs_needed x_figs o_fig o' {ρ0: ρ, ρ: ρ', s: s} = do
    e <- desugarFwd s
    let ρρ' = ρ <> ρ'
    t × o <- eval ρρ' e
@@ -74,8 +74,8 @@ example_needed x_figs o_fig o' {ρ0: ρ, ρ: ρ', s: s} = do
    vs' <- sequence (flip find ρρ'' <$> xs)
    pure $ [ o_fig { title: "output", uv: o' × o } ] <> (varFig <$> zip x_figs (zip vs' vs))
 
-example_neededBy :: Partial => Array VarSpec -> MakeFig -> Val 𝔹 -> Example -> MayFail (Array Fig)
-example_neededBy x_figs o_fig ω' {ρ0: ρ, ρ: ρ', s: s} = do
+makeFigs_neededBy :: Partial => Array VarSpec -> MakeFig -> Val 𝔹 -> Example -> MayFail (Array Fig)
+makeFigs_neededBy x_figs o_fig ω' {ρ0: ρ, ρ: ρ', s: s} = do
    e <- desugarFwd s
    let ρρ' = ρ <> ρ'
        ρ'' = selectOnly ("filter" ↦ ω') ρ'
@@ -104,22 +104,22 @@ convolutionFigs :: Partial => Effect Unit
 convolutionFigs = do
    let vars = [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig }] :: Array VarSpec
    makeFigures "slicing/conv-wrap"
-               (example_needed vars matrixFig (selectCell 2 1 5 5))
+               (makeFigs_needed vars matrixFig (selectCell 2 1 5 5))
                "fig-1"
-   makeFigures "slicing/conv-wrap" (example_neededBy vars matrixFig (selectCell 1 1 3 3)) "fig-2"
+   makeFigures "slicing/conv-wrap" (makeFigs_neededBy vars matrixFig (selectCell 1 1 3 3)) "fig-2"
    makeFigures "slicing/conv-zero"
-               (example_needed vars matrixFig (selectCell 2 1 5 5))
+               (makeFigs_needed vars matrixFig (selectCell 2 1 5 5))
                "fig-3"
-   makeFigures "slicing/conv-zero" (example_neededBy vars matrixFig (selectCell 1 1 3 3)) "fig-4"
+   makeFigures "slicing/conv-zero" (makeFigs_neededBy vars matrixFig (selectCell 1 1 3 3)) "fig-4"
 
 linkingFigs :: Partial => Effect Unit
 linkingFigs = do
    let vars = [{ var: "data", fig: makeEnergyTable }] :: Array VarSpec
    makeFigures "linking/bar-chart"
-               (example_needed vars makeBarChart (select_barChart_data (selectNth 1 (select_y))))
+               (makeFigs_needed vars makeBarChart (select_barChart_data (selectNth 1 (select_y))))
                "table-1"
    makeFigures "linking/bar-chart"
-               (example_needed vars makeBarChart (select_barChart_data (selectNth 0 (select_y))))
+               (makeFigs_needed vars makeBarChart (select_barChart_data (selectNth 0 (select_y))))
                "table-2"
 
 main :: Effect Unit
