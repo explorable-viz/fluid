@@ -6,21 +6,21 @@ import Data.Either (Either(..))
 import Data.List (List(..), (:), singleton)
 import Data.Traversable (sequence)
 import Effect (Effect)
-import Effect.Aff (Aff, runAff_)
+import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 import App.Renderer (Fig, MakeFig, drawFigure, makeBarChart, makeEnergyTable, matrixFig)
-import Bindings (Var, (↦), find, update)
+import Bindings (Bind, Var, (↦), find, update)
 import DataType (cBarChart, cCons)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
 import Lattice (𝔹, botOf, neg)
-import Module (openWithDefaultImports, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Util (MayFail, type (×), (×), type (+), successful)
+import Test.Util (openFileWithDataset)
+import Util (Endo, MayFail, type (×), (×), type (+), successful)
 import Util.SnocList (SnocList(..), (:-))
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
@@ -37,25 +37,35 @@ select_y = Record false (Lin :- "x" ↦ Hole false :- "y" ↦ Hole true)
 select_barChart_data :: Val 𝔹 -> Val 𝔹
 select_barChart_data v = Constr false cBarChart (Record false (Lin :- "caption" ↦ Hole false :- "data" ↦ v) : Nil)
 
--- Rewrite example of the form (let <defs> in expr) to a "module" and expr, so we can treat defs as part of
--- the environment that we can easily inspect.
-splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail (Env 𝔹 × S.Expr 𝔹)
-splitDefs ρ s' =
-   let defs × s = unpack s' in
-   (desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ) <#> (_ × s)
+-- Example assumed to be of the form (let <defs> in expr), so we can treat defs as part of the environment that
+-- we can easily inspect.
+type Example = {
+   ρ :: Env 𝔹,       -- module environment
+   ρ' :: Env 𝔹,      -- additional bindings introduce by "let" at beginning of example
+   s :: S.Expr 𝔹     -- body of let
+}
+
+-- Extract the ρ' and s components of an example s'.
+splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail Example
+splitDefs ρ s' = do
+   let defs × s = unpack s'
+   ρ' <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ
+   pure { ρ, ρ', s }
    where unpack :: S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
 
-type Example = Env 𝔹 -> S.Expr 𝔹 -> MayFail (Array Fig)
+type MakeFigs = Example -> MayFail (Array Fig)
 type VarSpec = {
    var :: Var,
    fig :: MakeFig
 }
 
-example_needed :: Array VarSpec -> MakeFig -> Val 𝔹 -> Example
-example_needed x_figs o_fig o' ρ s0 = unsafePartial $ do
-   ρ' × s <- splitDefs ρ s0
+varFig :: Partial => VarSpec × Slice (Val 𝔹) -> Fig
+varFig ({var: x, fig} × (v × u)) = fig x "Yellow" (v × u)
+
+example_needed :: Partial => Array VarSpec -> MakeFig -> Val 𝔹 -> MakeFigs
+example_needed x_figs o_fig o' {ρ, ρ', s} = do
    e <- desugarFwd s
    let ρρ' = ρ <> ρ'
    t × o <- eval ρρ' e
@@ -64,59 +74,56 @@ example_needed x_figs o_fig o' ρ s0 = unsafePartial $ do
    vs <- sequence (flip find ρρ' <$> xs)
    vs' <- sequence (flip find ρρ'' <$> xs)
    pure $ [ o_fig "output" "LightGreen" (o' × o) ] <> (varFig <$> zip x_figs (zip vs' vs))
-   where
-      varFig :: Partial => VarSpec × Slice (Val 𝔹) -> Fig
-      varFig ({var: x, fig} × (v × u)) = fig x "Yellow" (v × u)
 
-example_neededBy :: Example
-example_neededBy ρ s0 = unsafePartial $ do
-   ρ' × s <- splitDefs ρ s0
+example_neededBy :: Partial => MakeFig -> Val 𝔹 -> MakeFigs
+example_neededBy o_fig ω' {ρ, ρ', s} = do
    e <- desugarFwd s
-   t × o <- eval (ρ <> ρ') e
-   let ω' = selectCell 1 1 3 3
-       ρ'' = update (botOf ρ') ("filter" ↦ ω')
+   let ρρ' = ρ <> ρ'
+   t × o <- eval ρρ' e
+   let ρ'' = selectOnly ("filter" ↦ ω') ρ'
        o' = neg (evalFwd (neg (botOf ρ <> ρ'')) (const true <$> e) true t)
+   let x_figs = [ { var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig } ] :: Array VarSpec
+       xs = _.var <$> x_figs
    ω <- find "filter" ρ'
    i <- find "image" ρ'
    i' <- find "image" ρ''
+   let vs = [ω, i]
+       vs' = [ω', i']
+       burble = zip x_figs (zip vs' vs) :: Array (VarSpec × (Slice (Val 𝔹)))
    pure [
-      matrixFig "output" "Yellow" (o' × o),
+      o_fig "output" "Yellow" (o' × o),
       matrixFig "filter" "LightGreen" (ω' × ω),
       matrixFig "input" "Yellow" (i' × i)
    ]
 
-makeFigure :: String -> Example -> String -> Effect Unit
+selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
+selectOnly xv ρ = update (botOf ρ) xv
+
+makeFigure :: Partial => String -> MakeFigs -> String -> Effect Unit
 makeFigure file example divId =
-   flip runAff_ (burble file)
+   flip runAff_ (openFileWithDataset "example/linking/renewables" file)
    case _ of
       Left e -> log ("Open failed: " <> show e)
       Right (ρ × s) -> do
-         drawFigure divId (successful (example ρ s))
+         drawFigure divId (successful (example =<< splitDefs ρ s))
 
--- TODO: rename; consolidate with similar test util code/move to Module; not every example should run in
--- context of renewables data.
-burble :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-burble file = do
-   ρ0 × s <- openWithDefaultImports file
-   ρ <- openDatasetAs ("example/linking/" <> "renewables") "data"
-   pure ((ρ0 <> ρ) × s)
-
-convolutionFigs :: Effect Unit
+-- TODO: not every example should run in context of renewables data.
+convolutionFigs :: Partial => Effect Unit
 convolutionFigs = do
    makeFigure "slicing/conv-wrap"
               (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig }]
                              matrixFig
                              (selectCell 2 1 5 5))
               "fig-1"
-   makeFigure "slicing/conv-wrap" example_neededBy "fig-2"
+   makeFigure "slicing/conv-wrap" (example_neededBy matrixFig (selectCell 1 1 3 3)) "fig-2"
    makeFigure "slicing/conv-zero"
               (example_needed [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig }]
                               matrixFig
                               (selectCell 2 1 5 5))
               "fig-3"
-   makeFigure "slicing/conv-zero" example_neededBy "fig-4"
+   makeFigure "slicing/conv-zero" (example_neededBy matrixFig (selectCell 1 1 3 3)) "fig-4"
 
-linkingFigs :: Effect Unit
+linkingFigs :: Partial => Effect Unit
 linkingFigs = do
    makeFigure "linking/bar-chart"
               (example_needed [{ var: "data", fig: makeEnergyTable }]
@@ -130,6 +137,6 @@ linkingFigs = do
               "table-2"
 
 main :: Effect Unit
-main = do
+main = unsafePartial $ do
    linkingFigs
---   convolutionFigs
+   convolutionFigs

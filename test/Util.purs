@@ -1,10 +1,8 @@
 module Test.Util where
 
 import Prelude hiding (absurd)
-import Data.Bitraversable (bitraverse)
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Tuple (uncurry)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
@@ -95,8 +93,13 @@ testLink file1 file2 dataFile v1_sel v2_expect =
              v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
          checkPretty v2' v2_expect
 
+-- TODO: generalise to multiple files that share a dataset, then reuse in testLink.
+openFileWithDataset :: String -> String -> Aff (Env 𝔹 × S.Expr 𝔹)
+openFileWithDataset dataset file = do
+   ρ0 × s <- openWithDefaultImports file
+   ρ <- openDatasetAs dataset "data"
+   pure ((ρ0 <> ρ) × s)
+
 testWithDataset :: String -> String -> Test Unit
 testWithDataset dataset file =
-   testWithSetup file "" Nothing $
-      bitraverse (uncurry openDatasetAs) openWithDefaultImports (("dataset/" <> dataset) × "data" × file) <#>
-      (\(ρ × (ρ' × e)) -> (ρ <> ρ') × e)
+   testWithSetup file "" Nothing $ openFileWithDataset dataset file

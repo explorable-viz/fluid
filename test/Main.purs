@@ -138,8 +138,8 @@ test_misc = [
 
 test_graphics :: Array (Test Unit)
 test_graphics = [
-   testWithDataset "renewables-restricted" "graphics/background",
-   testWithDataset "renewables-restricted" "graphics/grouped-bar-chart",
-   testWithDataset "renewables-restricted" "graphics/line-chart",
-   testWithDataset "renewables-restricted" "graphics/stacked-bar-chart"
+   testWithDataset "dataset/renewables-restricted" "graphics/background",
+   testWithDataset "dataset/renewables-restricted" "graphics/grouped-bar-chart",
+   testWithDataset "dataset/renewables-restricted" "graphics/line-chart",
+   testWithDataset "dataset/renewables-restricted" "graphics/stacked-bar-chart"
 ]
