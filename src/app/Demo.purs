@@ -66,21 +66,21 @@ varFig ({var: x, fig} × uv) = fig { title: x, uv }
 makeFigs_needed :: Partial => Array VarSpec -> MakeFig -> Val 𝔹 -> Example -> MayFail (Array Fig)
 makeFigs_needed x_figs o_fig o' {ρ0, ρ, s} = do
    e <- desugarFwd s
-   let ρρ' = ρ0 <> ρ
-   t × o <- eval ρρ' e
+   let ρ0ρ = ρ0 <> ρ
+   t × o <- eval ρ0ρ e
    let ρρ'' × _ × _ = evalBwd o' t
        xs = _.var <$> x_figs
-   vs <- sequence (flip find ρρ' <$> xs)
+   vs <- sequence (flip find ρ0ρ <$> xs)
    vs' <- sequence (flip find ρρ'' <$> xs)
    pure $ [ o_fig { title: "output", uv: o' × o } ] <> (varFig <$> zip x_figs (zip vs' vs))
 
 makeFigs_neededBy :: Partial => Array VarSpec -> MakeFig -> Val 𝔹 -> Example -> MayFail (Array Fig)
 makeFigs_neededBy x_figs o_fig ω' {ρ0, ρ, s} = do
    e <- desugarFwd s
-   let ρρ' = ρ0 <> ρ
-   t × o <- eval ρρ' e
+   let ρ0ρ = ρ0 <> ρ
+   t × o <- eval ρ0ρ e
    let ρ'' = selectOnly ("filter" ↦ ω') ρ
-   let o' = neg (evalFwd (neg (botOf ρ0 <> ρ'')) (const true <$> e) true t)
+       o' = neg (evalFwd (neg (botOf ρ0 <> ρ'')) (const true <$> e) true t)
        xs = _.var <$> x_figs
    vs <- sequence (flip find ρ <$> xs)
    vs' <- sequence (flip find ρ'' <$> xs)
@@ -94,8 +94,7 @@ makeFigures file makeFigs divId =
    flip runAff_ (openFileWithDataset "example/linking/renewables" file)
    case _ of
       Left e -> log ("Open failed: " <> show e)
-      Right (ρ × s) -> do
-         drawFigure divId (successful (splitDefs ρ s >>= makeFigs))
+      Right (ρ × s) -> drawFigure divId (successful (splitDefs ρ s >>= makeFigs))
 
 -- selectOnly ("filter" ↦ selectCell 1 1 3 3) ρ'
 
@@ -106,7 +105,10 @@ convolutionFigs = do
    makeFigures "slicing/conv-wrap"
                (makeFigs_needed vars matrixFig (selectCell 2 1 5 5))
                "fig-1"
-   makeFigures "slicing/conv-wrap" (makeFigs_neededBy vars matrixFig (selectCell 1 1 3 3)) "fig-2"
+   makeFigures "slicing/conv-wrap"
+               (\{ρ0, ρ, s} ->
+                  makeFigs_neededBy vars matrixFig (selectCell 1 1 3 3) {ρ0, ρ, s})
+               "fig-2"
    makeFigures "slicing/conv-zero"
                (makeFigs_needed vars matrixFig (selectCell 2 1 5 5))
                "fig-3"
