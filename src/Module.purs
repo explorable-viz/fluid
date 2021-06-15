@@ -49,9 +49,8 @@ parseWithDefaultImports src =
    (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics" >>= loadModule "convolution")
        <@> successful (parse src program)
 
-openDatasetAs :: String -> Var -> Aff (Env 𝔹)
-openDatasetAs file x = do
-   ρ × s <- loadFile "fluid" file >>= parseWithDefaultImports
+openDatasetAs :: String -> Env 𝔹 -> Var -> Aff (Env 𝔹)
+openDatasetAs file ρ x = do
+   s <- loadFile "fluid" file <#> (successful <<< flip parse program)
    let _ × v = successful (desugarFwd s >>= eval ρ)
    pure (Lin :- x ↦ v)
-

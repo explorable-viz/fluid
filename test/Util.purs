@@ -78,7 +78,7 @@ testLink file1 file2 dataFile v1_sel v2_expect =
          -- the views share an ambient environment ρ0 as well as dataset
          ρ0 × s1 <- openWithDefaultImports name1
          _ × s2 <- openWithDefaultImports name2
-         ρ <- openDatasetAs ("example/" <> dir <> dataFile) "data"
+         ρ <- openDatasetAs ("example/" <> dir <> dataFile) ρ0 "data"
          pure (ρ0 × ρ × s1 × s2) in
    before setup $
       it (dir <> file1 <> " <-> " <> file2) \(ρ0 × ρ × s1 × s2) -> do
@@ -97,7 +97,7 @@ testLink file1 file2 dataFile v1_sel v2_expect =
 openFileWithDataset :: String -> String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openFileWithDataset dataset file = do
    ρ0 × s <- openWithDefaultImports file
-   ρ <- openDatasetAs dataset "data"
+   ρ <- openDatasetAs dataset ρ0 "data"
    pure ((ρ0 <> ρ) × s)
 
 testWithDataset :: String -> String -> Test Unit
