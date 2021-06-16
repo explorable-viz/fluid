@@ -49,28 +49,6 @@ type Example = {
    s :: S.Expr 𝔹    -- body of let
 }
 
-type View = {
-   ρ :: Env 𝔹,      -- "local" env (additional bindings introduce by "let" at beginning of ex)
-   s :: S.Expr 𝔹    -- body of let
-}
-
-type VarSpec = {
-   var :: Var,
-   makeFig :: MakeSubFig
-}
-
-type NeededSpec = {
-   vars     :: Array VarSpec,    -- variables we want subfigs for
-   o_fig    :: MakeSubFig,       -- for output
-   o'       :: Val 𝔹             -- selection on output
-}
-
-type NeededBySpec = {
-   vars     :: Array VarSpec,    -- variables we want subfigs for
-   o_fig    :: MakeSubFig,       -- for output
-   ρ'       :: Env 𝔹             -- selection on local env
-}
-
 -- Expect a program to be an "example" as defined above.
 splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail Example
 splitDefs ρ0 s' = do
@@ -81,6 +59,11 @@ splitDefs ρ0 s' = do
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
 
+type View = {
+   ρ :: Env 𝔹,      -- "local" env (additional bindings introduce by "let" at beginning of ex)
+   s :: S.Expr 𝔹    -- body of let
+}
+
 splitDefs2 :: Env 𝔹 -> S.Expr 𝔹 -> MayFail View
 splitDefs2 ρ0 s' = unsafePartial $ do
    let defs × s = unpack s'
@@ -89,6 +72,11 @@ splitDefs2 ρ0 s' = unsafePartial $ do
    where unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
+
+type VarSpec = {
+   var :: Var,
+   makeFig :: MakeSubFig
+}
 
 varFig :: Partial => VarSpec × Slice (Val 𝔹) -> SubFig
 varFig ({ var: x, makeFig } × uv) = makeFig { title: x, uv }
@@ -115,11 +103,23 @@ varFigs q { vars, o_fig, o' } ρ ρ' = do
    unsafePartial $ pure $
       [ o_fig { title: "output", uv: o' × q.o } ] <> (varFig <$> zip vars (zip vs' vs))
 
+type NeededSpec = {
+   vars     :: Array VarSpec,    -- variables we want subfigs for
+   o_fig    :: MakeSubFig,       -- for output
+   o'       :: Val 𝔹             -- selection on output
+}
+
 needed :: NeededSpec -> Example -> MayFail (Env 𝔹 × Array SubFig)
 needed spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
    (ρ0ρ' × _) <$> varFigs q spec q.ρ0ρ ρ0ρ'
+
+type NeededBySpec = {
+   vars     :: Array VarSpec,    -- variables we want subfigs for
+   o_fig    :: MakeSubFig,       -- for output
+   ρ'       :: Env 𝔹             -- selection on local env
+}
 
 neededBy :: NeededBySpec -> Example -> MayFail (ExampleEval × Array SubFig)
 neededBy { vars, o_fig, ρ' } { ρ0, ρ, s } = do
