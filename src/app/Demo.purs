@@ -139,12 +139,13 @@ fig divId { file, makeSubfigs } = do
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId , subfigs }
 
-fig2 :: String -> String -> NeededSpec -> String -> String -> Aff Fig
-fig2 divId1 divId2 spec file1 file2 = do
+fig2 :: String -> String -> NeededSpec -> NeededBySpec -> String -> String -> Aff Fig
+fig2 divId1 divId2 spec1 spec2 file1 file2 = do
    ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file1
    { ρ: ρ2, s: s2 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file2
-   let { ρ0', ρ': ρρ1' } × subfigs = successful (needed spec { ρ0, ρ: ρ <> ρ1, s: s1 })
+   let { ρ0', ρ': ρρ1' } × subfigs = successful (needed spec1 { ρ0, ρ: ρ <> ρ1, s: s1 })
+       blah = successful (neededBy spec2 { ρ0, ρ: ρρ1', s: s2 })
    pure { divId: divId1, subfigs }
 
 convolutionFigs :: Partial => Aff (Array Fig)
