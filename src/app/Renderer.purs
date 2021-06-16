@@ -62,8 +62,8 @@ makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> BarChartFig (record from (u1 × v1))
 
-lineChart :: MakeSubFig
-lineChart { title } = LineChart { title }
+makeLineChart :: MakeSubFig
+makeLineChart { title } = LineChart { title }
 
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
 record toRecord (u × v) = toRecord (fst (match_fwd (u × v)) × fst (match v))

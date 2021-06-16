@@ -10,7 +10,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, matrixFig)
+import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart, matrixFig)
 import Bindings (Bind, Var, (↦), find, update)
 import DataType (cBarChart, cCons)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
@@ -139,8 +139,8 @@ fig divId { file, makeSubfigs } = do
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure [ { divId , subfigs } ]
 
-fig2 :: String -> File -> File -> NeedsSpec -> MakeSubFig -> Aff (Array Fig)
-fig2 divId file1 file2 spec1 o_fig = do
+fig2 :: String -> File -> File -> MakeSubFig -> NeedsSpec -> Aff (Array Fig)
+fig2 divId file1 file2 o_fig spec1 = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file1
    { ρ: ρ2, s: s2 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file2
@@ -179,6 +179,8 @@ linkingFigs = do
          file: File "linking/bar-chart",
          makeSubfigs: needs { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) }
       },
+--      fig2 "fig-5" (File "linking/bar-chart") (File "linking/line-chart") makeLineChart
+--           { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) },
       fig "fig-6" {
          file: File "linking/bar-chart",
          makeSubfigs: needs { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) }
