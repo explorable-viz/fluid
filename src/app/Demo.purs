@@ -139,14 +139,14 @@ fig divId { file, makeSubfigs } = do
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure [ { divId , subfigs } ]
 
-fig2 :: String -> String -> NeededSpec -> NeededBySpec -> File -> File -> Aff (Array Fig)
-fig2 divId1 divId2 spec1 spec2 file1 file2 = do
+fig2 :: String -> NeededSpec -> NeededBySpec -> File -> File -> Aff (Array Fig)
+fig2 divId spec1 spec2 file1 file2 = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file1
    { ρ: ρ2, s: s2 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file2
    let { ρ0', ρ': ρρ1' } × subfigs1 = successful (needed spec1 { ρ0, ρ: ρ <> ρ1, s: s1 })
        _ × subfigs2 = successful (neededBy spec2 { ρ0, ρ: ρρ1', s: s2 })
-   pure [ { divId: divId1, subfigs: subfigs1 }, { divId: divId2, subfigs: subfigs2 } ]
+   pure [ { divId, subfigs: subfigs1 <> subfigs2 } ]
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
@@ -174,11 +174,11 @@ linkingFigs :: Partial => Aff (Array Fig)
 linkingFigs = do
    let vars = [{ var: "data", makeFig: makeEnergyTable }] :: Array VarSpec
    join <$> sequence [
-      fig "table-1" {
+      fig "fig-5" {
          file: File "linking/bar-chart",
          makeSubfigs: needed { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) }
       },
-      fig "table-2" {
+      fig "fig-6" {
          file: File "linking/bar-chart",
          makeSubfigs: needed { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) }
       }
