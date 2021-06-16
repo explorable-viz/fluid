@@ -52,7 +52,7 @@ type View = {
    s :: S.Expr 𝔹    -- body of example
 }
 
--- Interpret a program as a "view" in the sense above.
+-- Interpret a program as a "view" in the sense above. TODO: generalise to sequence of let/let recs, rather than one.
 splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail View
 splitDefs ρ0 s' = unsafePartial $ do
    let defs × s = unpack s'
@@ -147,7 +147,7 @@ fig2 divId file1 file2 o_fig spec1 = do
    { ρ: ρ2, s: s2 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file2
    let { ρ0', ρ': ρρ1' } × subfigs1 = successful (needs spec1 { ρ0, ρ: ρ <> ρ1, s: s1 })
        ρ' × _ = splitAt 1 ρρ1' -- data selection
-       _ × subfigs2 = successful (neededBy { vars: [], o_fig, ρ' } { ρ0, ρ: ρ <> ρ2, s: s2 })
+       _ × subfigs2 = successful (neededBy { vars: [], o_fig, ρ': ρ' <> botOf ρ2 } { ρ0, ρ: ρ <> ρ2, s: s2 })
    pure [ { divId, subfigs: subfigs1 <> subfigs2 } ]
 
 convolutionFigs :: Partial => Aff (Array Fig)
@@ -186,8 +186,8 @@ linkingFigs = do
 
 main :: Effect Unit
 main = unsafePartial $
-   flip runAff_ ((<>) <$> convolutionFigs <*> linkingFigs)
+   flip runAff_ ((<>) <$> pure []{-convolutionFigs-} <*> linkingFigs)
    case _ of
-      Left err -> log ("Open failed: " <> show err)
+      Left err -> log $ show err
       Right figs ->
          sequence_ $ drawFig <$> figs
