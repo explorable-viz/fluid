@@ -30,6 +30,8 @@ type IntMatrix = Array2 (Int × 𝔹) × Int × Int
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
 newtype BarChart = BarChart { caption :: String × 𝔹, data_ :: Array BarChartRecord }
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
+newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
+newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹}
 
 data SubFig =
    MatrixFig { title :: String, matrix :: IntMatrix } |
@@ -73,7 +75,7 @@ energyRecord r = {
    year: get_prim "year" r,
    country: get_prim "country" r,
    energyType: get_prim "energyType" r,
-   output: get_intNumber "output" r
+   output: get_intOrNumber "output" r
 }
 
 matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
@@ -83,8 +85,8 @@ matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
 get_prim :: forall a . ToFrom a => Var -> Slice (Bindings (Val 𝔹)) -> a × 𝔹
 get_prim x = match_fwd <<< get x
 
-get_intNumber :: Var -> Slice (Bindings (Val 𝔹)) -> Number × 𝔹
-get_intNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
+get_intOrNumber :: Var -> Slice (Bindings (Val 𝔹)) -> Number × 𝔹
+get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
 
 get :: Var -> Slice (Bindings (Val 𝔹)) -> Slice (Val 𝔹)
 get x (r × r') = successful $ find x r `lift2 (×)` find x r'
@@ -95,12 +97,24 @@ class Reflect a b where
 instance reflectBarChartRecord :: Reflect (SnocList (Bind (Val Boolean))) BarChartRecord where
    from r = BarChartRecord {
       x: get_prim "x" r,
-      y: get_intNumber "y" r
+      y: get_intOrNumber "y" r
    }
 
 instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart where
    from r = BarChart {
       caption: get_prim "caption" r,
+      data_: record from <$> from (get "data" r)
+   }
+
+instance reflectPoint :: Reflect (SnocList (Bind (Val Boolean))) Point where
+   from r = Point {
+      x: get_intOrNumber "x" r,
+      y: get_intOrNumber "y" r
+   }
+
+instance reflectLinePlot :: Reflect (SnocList (Bind (Val Boolean))) LinePlot where
+   from r = LinePlot {
+      name: get_prim "name" r,
       data_: record from <$> from (get "data" r)
    }
 
