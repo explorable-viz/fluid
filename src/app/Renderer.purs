@@ -8,7 +8,7 @@ import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import Data.Profunctor.Strong (first)
 import Bindings (Bindings, Bind, Var, find)
-import DataType (cBarChart, cCons, cNil)
+import DataType (cBarChart, cCons, cLineChart, cNil)
 import Effect (Effect)
 import Lattice (𝔹, expand)
 import Primitive (Slice, class ToFrom, as, match, match_fwd)
@@ -30,13 +30,14 @@ type IntMatrix = Array2 (Int × 𝔹) × Int × Int
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
 newtype BarChart = BarChart { caption :: String × 𝔹, data_ :: Array BarChartRecord }
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
+newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
 newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹}
 
 data SubFig =
    MatrixFig { title :: String, matrix :: IntMatrix } |
    EnergyTable { title :: String, table :: Array EnergyRecord } |
-   LineChart { title :: String } |
+   LineChartFig LineChart |
    BarChartFig BarChart
 
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
@@ -64,8 +65,10 @@ makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> BarChartFig (record from (u1 × v1))
 
-makeLineChart :: MakeSubFig
-makeLineChart { title } = LineChart { title }
+makeLineChart :: Partial => MakeSubFig
+makeLineChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
+   case expand u (V.Constr false cLineChart (V.Hole false : Nil)) of
+      V.Constr _ _ (u1 : Nil) -> LineChartFig (record from (u1 × v1))
 
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
 record toRecord (u × v) = toRecord (fst (match_fwd (u × v)) × fst (match v))
@@ -116,6 +119,12 @@ instance reflectLinePlot :: Reflect (SnocList (Bind (Val Boolean))) LinePlot whe
    from r = LinePlot {
       name: get_prim "name" r,
       data_: record from <$> from (get "data" r)
+   }
+
+instance reflectLineChart :: Reflect (SnocList (Bind (Val Boolean))) LineChart where
+   from r = LineChart {
+      caption: get_prim "caption" r,
+      plots: record from <$> from (get "data" r)
    }
 
 -- Hole expansion as necessary; discards list-level annotations.

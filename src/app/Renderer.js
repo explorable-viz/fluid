@@ -217,7 +217,7 @@ function drawFig ({ divId, subfigs }) {
             drawBarChart(divId, fig.value0)
          }
          else
-         if (className(fig) == "LineChart") {
+         if (className(fig) == "LineChartFig") {
             drawLineChart(divId, fig.value0)
          }
          else
