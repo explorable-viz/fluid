@@ -140,22 +140,15 @@ type FigsSpec a = {
 fig :: forall a . Partial => String -> FigsSpec a -> Aff Fig
 fig divId { file, makeSubfigs } = do
    ρ × s <- openFileWithDataset "example/linking/renewables" file
-   pure $ { divId , subfigs: snd (successful (splitDefs ρ s >>= makeSubfigs)) }
+   pure { divId , subfigs: snd (successful (splitDefs ρ s >>= makeSubfigs)) }
 
-fig2 :: String -> String -> NeededSpec -> String -> String -> Effect Unit
-fig2 divId1 divId2 spec file1 file2 =
-   flip runAff_ (do
-      ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
-      let ρ0' = ρ0 <> ρ
-      view1 <- (successful <<< splitDefs2 ρ0') <$> openIn file1 ρ0'
-      view2 <- (successful <<< splitDefs2 ρ0') <$> openIn file2 ρ0'
-      pure $ ρ0' × view1 × view2 :: Aff (Env 𝔹 × View × View)
-   )
-   case _ of
-      Left err -> log ("Open failed: " <> show err)
-      Right (ρ0 × { ρ: ρ1, s: s1 } × { ρ: ρ2, s: s2 }) -> do
-         let q × figs1 = successful (needed spec { ρ0, ρ: ρ1, s: s1 })
-         drawFig { divId: divId1, subfigs: figs1 }
+fig2 :: String -> String -> NeededSpec -> String -> String -> Aff Fig
+fig2 divId1 divId2 spec file1 file2 = do
+   ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
+   let ρ0' = ρ0 <> ρ
+   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 ρ0') <$> openIn file1 ρ0'
+   { ρ: ρ2, s: s2 } <- (successful <<< splitDefs2 ρ0') <$> openIn file2 ρ0'
+   pure { divId: divId1, subfigs: snd (successful (needed spec { ρ0, ρ: ρ1, s: s1 })) }
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
