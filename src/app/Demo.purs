@@ -20,10 +20,9 @@ import EvalFwd (evalFwd)
 import Expl (Expl)
 import Expr (Expr)
 import Lattice (𝔹, botOf, neg)
-import Module (openDatasetAs, openIn)
+import Module (open, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (openFileWithDataset)
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
 import Util.SnocList (SnocList(..), (:-), splitAt)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
@@ -144,8 +143,10 @@ type FigSpec a = {
 -- TODO: not every example should run in context of renewables data.
 fig :: forall a . Partial => String -> FigSpec a -> Aff Fig
 fig divId { file, makeSubfigs } = do
-   ρ × s <- openFileWithDataset "example/linking/renewables" file
-   let _ × subfigs = successful (splitDefs ρ s >>= makeSubfigs)
+   ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
+   let ρ' = ρ0 <> ρ
+   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 ρ') <$> open file
+   let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId , subfigs }
 
 fig2 :: String -> String -> NeededSpec -> String -> String -> Aff Fig
@@ -153,8 +154,8 @@ fig2 divId1 divId2 spec file1 file2 = do
    let x = "data"
    ρ0' × ρ <- openDatasetAs "example/linking/renewables" x
    let ρ0 = ρ0' <> ρ
-   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 ρ0) <$> openIn file1 ρ0
-   { ρ: ρ2, s: s2 } <- (successful <<< splitDefs2 ρ0) <$> openIn file2 ρ0
+   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 ρ0) <$> open file1
+   { ρ: ρ2, s: s2 } <- (successful <<< splitDefs2 ρ0) <$> open file2
    let { ρ0': ρ0'', ρ': ρ1' } × subfigs = successful (needed spec { ρ0, ρ: ρ1, s: s1 })
    pure { divId: divId1, subfigs }
 

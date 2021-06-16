@@ -43,8 +43,8 @@ loadModule file ρ = do
 parseProgram :: String -> String -> Aff (S.Expr 𝔹)
 parseProgram folder file = loadFile folder file <#> (successful <<< flip parse program)
 
-openIn :: String -> Env 𝔹 -> Aff (S.Expr 𝔹)
-openIn file ρ = parseProgram "fluid/example" file
+open :: String -> Aff (S.Expr 𝔹)
+open = parseProgram "fluid/example"
 
 defaultImports :: Aff (Env 𝔹)
 defaultImports =
@@ -53,7 +53,7 @@ defaultImports =
 openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file = do
    ρ <- defaultImports
-   openIn file ρ <#> (ρ × _)
+   open file <#> (ρ × _)
 
 -- Return ambient environment used to load dataset along with new binding.
 openDatasetAs :: String -> Var -> Aff (Env 𝔹 × Env 𝔹)

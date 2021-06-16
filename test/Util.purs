@@ -100,12 +100,9 @@ testLink file1 file2 dataFile v1_sel v2_expect =
              v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
          checkPretty v2' v2_expect
 
-openFileWithDataset :: String -> String -> Aff (Env 𝔹 × S.Expr 𝔹)
-openFileWithDataset dataset file = do
-   ρ0 × ρ <- openDatasetAs dataset "data"
-   let ρ' = ρ0 <> ρ
-   (ρ' × _) <$> openIn file ρ'
-
 testWithDataset :: String -> String -> Test Unit
-testWithDataset dataset file =
-   testWithSetup file "" Nothing $ openFileWithDataset dataset file
+testWithDataset dataset file = do
+   testWithSetup file "" Nothing $ do
+      ρ0 × ρ <- openDatasetAs dataset "data"
+      let ρ' = ρ0 <> ρ
+      (ρ' × _) <$> openIn file ρ'
