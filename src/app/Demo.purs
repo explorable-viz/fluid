@@ -144,19 +144,17 @@ type FigSpec a = {
 fig :: forall a . Partial => String -> FigSpec a -> Aff Fig
 fig divId { file, makeSubfigs } = do
    ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
-   let ρ' = ρ0 <> ρ
-   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 ρ') <$> open file
+   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 (ρ0 <> ρ)) <$> open file
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId , subfigs }
 
 fig2 :: String -> String -> NeededSpec -> String -> String -> Aff Fig
 fig2 divId1 divId2 spec file1 file2 = do
    let x = "data"
-   ρ0' × ρ <- openDatasetAs "example/linking/renewables" x
-   let ρ0 = ρ0' <> ρ
-   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 ρ0) <$> open file1
-   { ρ: ρ2, s: s2 } <- (successful <<< splitDefs2 ρ0) <$> open file2
-   let { ρ0': ρ0'', ρ': ρ1' } × subfigs = successful (needed spec { ρ0, ρ: ρ1, s: s1 })
+   ρ0 × ρ <- openDatasetAs "example/linking/renewables" x
+   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 (ρ0 <> ρ)) <$> open file1
+   { ρ: ρ2, s: s2 } <- (successful <<< splitDefs2 (ρ0 <> ρ)) <$> open file2
+   let { ρ0', ρ': ρρ1' } × subfigs = successful (needed spec { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId: divId1, subfigs }
 
 convolutionFigs :: Partial => Aff (Array Fig)

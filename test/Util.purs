@@ -18,7 +18,7 @@ import Expl (Expl)
 import Expr (Expr(..)) as E
 import SExpr (Expr) as S
 import Lattice (𝔹, botOf, neg)
-import Module (loadFile, openDatasetAs, openIn, openWithDefaultImports)
+import Module (loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import Util (MayFail, type (×), (×), successful)
 import Util.SnocList (splitAt)
@@ -71,7 +71,7 @@ testBwd file v expected =
    testWithSetup name expected (Just v) (openWithDefaultImports name)
 
 type LinkConfig = {
-   ρ0 :: Env 𝔹,      -- default env
+   ρ0 :: Env 𝔹,      -- ambient env (default imports)
    ρ :: Env 𝔹,       -- additional singleton env for dataset
    s1 :: S.Expr 𝔹,   -- view 1
    s2 :: S.Expr 𝔹    -- view 2
@@ -84,8 +84,8 @@ testLink file1 file2 dataFile v1_sel v2_expect =
        setup = do
          -- the views share an ambient environment ρ0 as well as dataset
          ρ0 × ρ <- openDatasetAs ("example/" <> dir <> dataFile) "data"
-         s1 <- openIn name1 ρ0
-         s2 <- openIn name2 ρ0
+         s1 <- open name1
+         s2 <- open name2
          pure { ρ0, ρ, s1, s2 } :: Aff LinkConfig in
    before setup $
       it (dir <> file1 <> " <-> " <> file2) \{ ρ0, ρ, s1, s2 } -> do
@@ -105,4 +105,4 @@ testWithDataset dataset file = do
    testWithSetup file "" Nothing $ do
       ρ0 × ρ <- openDatasetAs dataset "data"
       let ρ' = ρ0 <> ρ
-      (ρ' × _) <$> openIn file ρ'
+      (ρ' × _) <$> open file
