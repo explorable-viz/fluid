@@ -40,30 +40,21 @@ select_y = Record false (Lin :- "x" ↦ Hole false :- "y" ↦ Hole true)
 select_barChart_data :: Val 𝔹 -> Val 𝔹
 select_barChart_data v = Constr false cBarChart (Record false (Lin :- "caption" ↦ Hole false :- "data" ↦ v) : Nil)
 
--- Example assumed to be of the form (let <defs> in expr).
 type Example = {
    ρ0 :: Env 𝔹,     -- ambient env (default imports)
    ρ :: Env 𝔹,      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
    s :: S.Expr 𝔹    -- body of example
 }
 
--- Expect a program to be an "example" in the sense above.
-splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail Example
-splitDefs ρ0 s' = do
-   let defs × s = unpack s'
-   ρ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ0
-   pure { ρ0, ρ, s }
-   where unpack :: S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
-         unpack (S.LetRec defs s)   = Right defs × s
-         unpack (S.Let defs s)      = Left defs × s
-
+-- Example assumed to be of the form (let <defs> in expr).
 type View = {
-   ρ :: Env 𝔹,      -- "local" env (additional bindings introduce by "let" at beginning of ex)
-   s :: S.Expr 𝔹    -- body of let
+   ρ :: Env 𝔹,      -- local env (additional let bindings at beginning of ex)
+   s :: S.Expr 𝔹    -- body of example
 }
 
-splitDefs2 :: Env 𝔹 -> S.Expr 𝔹 -> MayFail View
-splitDefs2 ρ0 s' = unsafePartial $ do
+-- Interpret a program as a "view" in the sense above.
+splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail View
+splitDefs ρ0 s' = unsafePartial $ do
    let defs × s = unpack s'
    ρ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ0
    pure { ρ, s }
@@ -144,16 +135,15 @@ type FigSpec a = {
 fig :: forall a . Partial => String -> FigSpec a -> Aff Fig
 fig divId { file, makeSubfigs } = do
    ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
-   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 (ρ0 <> ρ)) <$> open file
+   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId , subfigs }
 
 fig2 :: String -> String -> NeededSpec -> String -> String -> Aff Fig
 fig2 divId1 divId2 spec file1 file2 = do
-   let x = "data"
-   ρ0 × ρ <- openDatasetAs "example/linking/renewables" x
-   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 (ρ0 <> ρ)) <$> open file1
-   { ρ: ρ2, s: s2 } <- (successful <<< splitDefs2 (ρ0 <> ρ)) <$> open file2
+   ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
+   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file1
+   { ρ: ρ2, s: s2 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file2
    let { ρ0', ρ': ρρ1' } × subfigs = successful (needed spec { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId: divId1, subfigs }
 
