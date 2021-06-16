@@ -75,12 +75,10 @@ function drawBarChart (
       data_,     // Array BarChartRecord
    }
 ) {
-   // set the dimensions and margins of the graph
    const margin = {top: 15, right: 0, bottom: 30, left: 30},
          width = 200 - margin.left - margin.right,
          height = 175 - margin.top - margin.bottom
 
-   // append the svg object to the body of the page
    const svg = d3.select('#' + id)
       .append('svg')
          .attr('width', width + margin.left + margin.right)
@@ -120,7 +118,7 @@ function drawBarChart (
    svg.append('g')
       .call(yAxis)
 
-   // Bars
+   // bars
    const barFill = '#dcdcdc'
    svg.selectAll('rect')
       .data(data_)
@@ -143,7 +141,47 @@ function drawLineChart (
       plots,     // Array LinePlot
    }
 ) {
-   console.log(plots)
+   const margin = {top: 15, right: 0, bottom: 30, left: 30},
+         width = 200 - margin.left - margin.right,
+         height = 175 - margin.top - margin.bottom
+
+   const svg = d3.select('#' + id)
+      .append('svg')
+         .attr('width', width + margin.left + margin.right)
+         .attr('height', height + margin.top + margin.bottom)
+      .append('g')
+         .attr('transform', `translate(${margin.left}, ${margin.top})`)
+
+   const x = d3.scaleTime().range([0, width]),
+         y = d3.scaleLinear().range([height, 0])
+
+   const line1 = d3.line()
+      .x(d => {
+         return x(d.x.value0)
+      })
+      .y(d => {
+         return y(d.y.value0)
+      })
+
+   const line2 = d3.line()
+      .x(d => x(d.x))
+      .y(d => y(d.y))
+
+   svg.selectAll('path')
+      .data(plots)
+      .enter()
+      .append('path')
+      .attr('class', 'line')
+      .attr('d', d => {
+         line1(d.data_)
+      })
+
+   svg.append('g')
+      .attr('transform', "translate(0," + height + ")")
+      .call(d3.axisBottom(x))
+
+   svg.append('g')
+      .call(d3.axisLeft(y))
 }
 
 // https://stackoverflow.com/questions/5560248
