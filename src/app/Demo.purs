@@ -146,7 +146,7 @@ fig2 divId file1 file2 o_fig spec1 = do
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file1
    { ρ: ρ2, s: s2 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file2
    let { ρ0', ρ': ρρ1' } × subfigs1 = successful (needs spec1 { ρ0, ρ: ρ <> ρ1, s: s1 })
-       _ × ρ' = splitAt 1 ρρ1' -- data selection
+       ρ' × _ = splitAt 1 ρρ1' -- data selection
        _ × subfigs2 = successful (neededBy { vars: [], o_fig, ρ' } { ρ0, ρ: ρ <> ρ2, s: s2 })
    pure [ { divId, subfigs: subfigs1 <> subfigs2 } ]
 
