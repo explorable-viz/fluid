@@ -15,10 +15,10 @@ const cellFillDefault         = 'White',
 function drawMatrix (
    id, {
       title,                                                            // String
-      cellFillSelected,                                                 // String
       matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } // IntMatrix
    }
 ) {
+   const cellFillSelected = 'Yellow'
    const w = 30, h = 30
    const div = d3.select('#' + id)
    const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
@@ -137,6 +137,14 @@ function drawBarChart (
          .on('mouseout', tip.hide)
 }
 
+function drawLineChart (
+   id, {
+      caption,   // String
+      data_,     // Array BarChartRecord
+   }
+) {
+}
+
 // https://stackoverflow.com/questions/5560248
 function colorShade (col, amt) {
    col = col.replace(/^#/, '')
@@ -166,7 +174,6 @@ function isUsed (r) {
 function drawTable (
    id, {
       title,               // String
-      cellFillSelected,    // String
       table                // Array of any record type with only primitive fields
    }) {
    table = table.filter(r => isUsed(r))
@@ -211,7 +218,7 @@ function drawFig ({ divId, subfigs }) {
          }
          else
          if (className(fig) == "LineChart") {
-            drawBarChart(divId, fig.value0)
+            drawLineChart(divId, fig.value0)
          }
          else
          if (className(fig) == "MatrixFig") {

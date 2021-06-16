@@ -32,8 +32,8 @@ newtype BarChart = BarChart { caption :: String × 𝔹, data_ :: Array BarChart
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
 
 data SubFig =
-   MatrixFig { title :: String, cellFillSelected :: String, matrix :: IntMatrix } |
-   EnergyTable { title :: String, cellFillSelected :: String, table :: Array EnergyRecord } |
+   MatrixFig { title :: String, matrix :: IntMatrix } |
+   EnergyTable { title :: String, table :: Array EnergyRecord } |
    LineChart { title :: String } |
    BarChartFig BarChart
 
@@ -43,7 +43,7 @@ type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 matrixFig :: MakeSubFig
 matrixFig { title, uv: (u × v) } =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
-   MatrixFig { title, cellFillSelected: "Yellow", matrix: matrixRep vss2 }
+   MatrixFig { title, matrix: matrixRep vss2 }
 
 toArray :: Partial => Slice (Val 𝔹) -> Array (Slice (Val 𝔹))
 toArray (vs × V.Constr _ c Nil) | c == cNil =
@@ -55,7 +55,7 @@ toArray (us × V.Constr _ c (v1 : v2 : Nil)) | c == cCons =
 
 makeEnergyTable :: Partial => MakeSubFig
 makeEnergyTable { title, uv: (u × v) } =
-   EnergyTable { title, cellFillSelected: "Not used?", table: record energyRecord <$> toArray (u × v) }
+   EnergyTable { title, table: record energyRecord <$> toArray (u × v) }
 
 makeBarChart :: Partial => MakeSubFig
 makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
