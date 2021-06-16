@@ -132,26 +132,26 @@ type FigSpec a = {
 }
 
 -- TODO: not every example should run in context of renewables data.
-fig :: forall a . Partial => String -> FigSpec a -> Aff Fig
+fig :: forall a . Partial => String -> FigSpec a -> Aff (Array Fig)
 fig divId { file, makeSubfigs } = do
    ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
-   pure { divId , subfigs }
+   pure [ { divId , subfigs } ]
 
-fig2 :: String -> String -> NeededSpec -> NeededBySpec -> String -> String -> Aff Fig
+fig2 :: String -> String -> NeededSpec -> NeededBySpec -> String -> String -> Aff (Array Fig)
 fig2 divId1 divId2 spec1 spec2 file1 file2 = do
    ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file1
    { ρ: ρ2, s: s2 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file2
    let { ρ0', ρ': ρρ1' } × subfigs = successful (needed spec1 { ρ0, ρ: ρ <> ρ1, s: s1 })
        blah = successful (neededBy spec2 { ρ0, ρ: ρρ1', s: s2 })
-   pure { divId: divId1, subfigs }
+   pure [ { divId: divId1, subfigs } ]
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
    let vars = [{ var: "filter", makeFig: matrixFig }, { var: "image", makeFig: matrixFig }] :: Array VarSpec
-   sequence [
+   join <$> sequence [
       fig "fig-1" {
          file: "slicing/conv-wrap",
          makeSubfigs: needed { vars, o_fig: matrixFig, o': selectCell 2 1 5 5 }
@@ -173,7 +173,7 @@ convolutionFigs = do
 linkingFigs :: Partial => Aff (Array Fig)
 linkingFigs = do
    let vars = [{ var: "data", makeFig: makeEnergyTable }] :: Array VarSpec
-   sequence [
+   join <$> sequence [
       fig "table-1" {
          file: "linking/bar-chart",
          makeSubfigs: needed { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) }
