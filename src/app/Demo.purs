@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 import Data.Array (zip)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), singleton)
+import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (snd)
 import Effect (Effect)
@@ -25,7 +26,7 @@ import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Test.Util (openFileWithDataset)
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
-import Util.SnocList (SnocList(..), (:-))
+import Util.SnocList (SnocList(..), (:-), splitAt)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
 selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
@@ -109,11 +110,17 @@ type NeededSpec = {
    o'       :: Val 𝔹             -- selection on output
 }
 
-needed :: NeededSpec -> Example -> MayFail (Env 𝔹 × Array SubFig)
+type NeededResult = {
+   ρ0       :: Env 𝔹,            -- selection on ambient environment
+   ρ        :: Env 𝔹             -- selection on local environment
+}
+
+needed :: NeededSpec -> Example -> MayFail (NeededResult × Array SubFig)
 needed spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
-   (ρ0ρ' × _) <$> varFigs q spec q.ρ0ρ ρ0ρ'
+       ρ0' × ρ' = splitAt (length ρ0) ρ0ρ'
+   ({ ρ0: ρ0', ρ: ρ' } × _) <$> varFigs q spec q.ρ0ρ ρ0ρ'
 
 type NeededBySpec = {
    vars     :: Array VarSpec,    -- variables we want subfigs for
@@ -121,26 +128,27 @@ type NeededBySpec = {
    ρ'       :: Env 𝔹             -- selection on local env
 }
 
-neededBy :: NeededBySpec -> Example -> MayFail (ExampleEval × Array SubFig)
+neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array SubFig)
 neededBy { vars, o_fig, ρ' } { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
        xs = _.var <$> vars
-   (q × _) <$> varFigs q { vars, o_fig, o' } ρ ρ'
+   (unit × _) <$> varFigs q { vars, o_fig, o' } ρ ρ'
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
-type FigsSpec a = {
+type FigSpec a = {
    file :: String,
    makeSubfigs :: Example -> MayFail (a × Array SubFig)
 }
 
 -- TODO: not every example should run in context of renewables data.
-fig :: forall a . Partial => String -> FigsSpec a -> Aff Fig
+fig :: forall a . Partial => String -> FigSpec a -> Aff Fig
 fig divId { file, makeSubfigs } = do
    ρ × s <- openFileWithDataset "example/linking/renewables" file
-   pure { divId , subfigs: snd (successful (splitDefs ρ s >>= makeSubfigs)) }
+   let _ × subfigs = successful (splitDefs ρ s >>= makeSubfigs)
+   pure { divId , subfigs }
 
 fig2 :: String -> String -> NeededSpec -> String -> String -> Aff Fig
 fig2 divId1 divId2 spec file1 file2 = do
@@ -148,7 +156,9 @@ fig2 divId1 divId2 spec file1 file2 = do
    let ρ0' = ρ0 <> ρ
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 ρ0') <$> openIn file1 ρ0'
    { ρ: ρ2, s: s2 } <- (successful <<< splitDefs2 ρ0') <$> openIn file2 ρ0'
-   pure { divId: divId1, subfigs: snd (successful (needed spec { ρ0, ρ: ρ1, s: s1 })) }
+   let ρ0ρ' × subfigs = successful (needed spec { ρ0, ρ: ρ1, s: s1 })
+       ρ0ρ'' = selectOnly (?_ ↦ ?_) ρ0ρ'
+   pure { divId: divId1, subfigs }
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
