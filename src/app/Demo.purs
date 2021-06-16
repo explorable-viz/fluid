@@ -23,7 +23,7 @@ import Module (openDatasetAs, openIn)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Test.Util (openFileWithDataset)
-import Util (Endo, MayFail, type (×), (×), type (+), successful)
+import Util (Endo, MayFail, type (×), (×), type (+), error, successful)
 import Util.SnocList (SnocList(..), (:-))
 import Val (Env, Val(..), holeMatrix, insertMatrix)
 
@@ -197,5 +197,5 @@ linkingFigs = do
 
 main :: Effect Unit
 main = unsafePartial $ do
-   linkingFigs
    convolutionFigs
+   linkingFigs

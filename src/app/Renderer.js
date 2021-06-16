@@ -264,4 +264,4 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-exports.drawFigs = curry2(drawFigs)
+exports.drawFigs = drawFigs
