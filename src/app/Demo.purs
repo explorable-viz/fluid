@@ -84,7 +84,7 @@ evalExample { ρ0, ρ, s } = do
    t × o <- eval ρ0ρ e
    pure { e, ρ0ρ, t, o }
 
-varFigs :: ExampleEval -> NeededSpec -> Env 𝔹 -> Env 𝔹 -> MayFail (Array SubFig)
+varFigs :: ExampleEval -> NeedsSpec -> Env 𝔹 -> Env 𝔹 -> MayFail (Array SubFig)
 varFigs q { vars, o_fig, o' } ρ ρ' = do
    let xs = _.var <$> vars
    vs <- sequence (flip find ρ <$> xs)
@@ -92,19 +92,19 @@ varFigs q { vars, o_fig, o' } ρ ρ' = do
    unsafePartial $ pure $
       [ o_fig { title: "output", uv: o' × q.o } ] <> (varFig <$> zip vars (zip vs' vs))
 
-type NeededSpec = {
-   vars     :: Array VarSpec,    -- variables we want subfigs for
-   o_fig    :: MakeSubFig,       -- for output
-   o'       :: Val 𝔹             -- selection on output
+type NeedsSpec = {
+   vars  :: Array VarSpec, -- variables we want subfigs for
+   o_fig :: MakeSubFig,    -- for output
+   o'    :: Val 𝔹          -- selection on output
 }
 
-type NeededResult = {
-   ρ0'       :: Env 𝔹,            -- selection on ambient environment
-   ρ'        :: Env 𝔹             -- selection on local environment
+type NeedsResult = {
+   ρ0'   :: Env 𝔹,         -- selection on ambient environment
+   ρ'    :: Env 𝔹          -- selection on local environment
 }
 
-needed :: NeededSpec -> Example -> MayFail (NeededResult × Array SubFig)
-needed spec { ρ0, ρ, s } = do
+needs :: NeedsSpec -> Example -> MayFail (NeedsResult × Array SubFig)
+needs spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
        ρ0' × ρ' = splitAt (length ρ0) ρ0ρ'
@@ -139,12 +139,12 @@ fig divId { file, makeSubfigs } = do
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure [ { divId , subfigs } ]
 
-fig2 :: String -> File -> File -> NeededSpec -> MakeSubFig -> Aff (Array Fig)
+fig2 :: String -> File -> File -> NeedsSpec -> MakeSubFig -> Aff (Array Fig)
 fig2 divId file1 file2 spec1 o_fig = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file1
    { ρ: ρ2, s: s2 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file2
-   let { ρ0', ρ': ρρ1' } × subfigs1 = successful (needed spec1 { ρ0, ρ: ρ <> ρ1, s: s1 })
+   let { ρ0', ρ': ρρ1' } × subfigs1 = successful (needs spec1 { ρ0, ρ: ρ <> ρ1, s: s1 })
        ρ' × _ = splitAt 1 ρρ1' -- data selection
        _ × subfigs2 = successful (neededBy { vars: [], o_fig, ρ' } { ρ0, ρ: ρ <> ρ2, s: s2 })
    pure [ { divId, subfigs: subfigs1 <> subfigs2 } ]
@@ -155,7 +155,7 @@ convolutionFigs = do
    join <$> sequence [
       fig "fig-1" {
          file: File "slicing/conv-wrap",
-         makeSubfigs: needed { vars, o_fig: matrixFig, o': selectCell 2 1 5 5 }
+         makeSubfigs: needs { vars, o_fig: matrixFig, o': selectCell 2 1 5 5 }
       },
       fig "fig-2" {
          file: File "slicing/conv-wrap",
@@ -163,7 +163,7 @@ convolutionFigs = do
       },
       fig "fig-3" {
          file: File "slicing/conv-zero",
-         makeSubfigs: needed { vars, o_fig: matrixFig, o': selectCell 2 1 5 5 }
+         makeSubfigs: needs { vars, o_fig: matrixFig, o': selectCell 2 1 5 5 }
       },
       fig "fig-4" {
          file: File "slicing/conv-zero",
@@ -177,11 +177,11 @@ linkingFigs = do
    join <$> sequence [
       fig "fig-5" {
          file: File "linking/bar-chart",
-         makeSubfigs: needed { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) }
+         makeSubfigs: needs { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) }
       },
       fig "fig-6" {
          file: File "linking/bar-chart",
-         makeSubfigs: needed { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) }
+         makeSubfigs: needs { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) }
       }
    ]
 
