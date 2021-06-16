@@ -17,7 +17,12 @@ import Util.SnocList (SnocList)
 import Val (Array2, MatrixRep, Val)
 import Val (Val(..)) as V
 
-foreign import drawFigure :: String -> Array Fig -> Effect Unit
+type Figs = {
+   divId :: String,
+   figs :: Array Fig
+}
+
+foreign import drawFigs :: Figs -> Effect Unit
 
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.

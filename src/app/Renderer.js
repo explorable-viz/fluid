@@ -197,25 +197,25 @@ function className (o) {
    return o.constructor.name
 }
 
-// String -> Array Fig -> Effect Unit
-function drawFigure (id, figs) {
+// Figs -> Effect Unit
+function drawFigs ({ divId, figs }) {
    return () => {
       for (const fig of figs) {
          // Bit horrible but will do for now.
          if (className(fig) == "EnergyTable") {
-            drawTable(id, fig.value0)
+            drawTable(divId, fig.value0)
          }
          else
          if (className(fig) == "BarChartFig") {
-            drawBarChart(id, fig.value0)
+            drawBarChart(divId, fig.value0)
          }
          else
          if (className(fig) == "LineChart") {
-            drawBarChart(id, fig.value0)
+            drawBarChart(divId, fig.value0)
          }
          else
          if (className(fig) == "MatrixFig") {
-            drawMatrix(id, fig.value0)
+            drawMatrix(divId, fig.value0)
          }
          else {
             throw new Error(`Figure type '${className(fig)}' not recognised.`)
@@ -264,4 +264,4 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-exports.drawFigure = curry2(drawFigure)
+exports.drawFigs = curry2(drawFigs)

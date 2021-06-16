@@ -9,7 +9,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, MakeFig, drawFigure, makeBarChart, makeEnergyTable, matrixFig)
+import App.Renderer (Fig, MakeFig, drawFigs, makeBarChart, makeEnergyTable, matrixFig)
 import Bindings (Bind, Var, (↦), find, update)
 import DataType (cBarChart, cCons)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
@@ -48,10 +48,6 @@ type Example = {
    s :: S.Expr 𝔹    -- body of let
 }
 
-type Shared = {
-   ρ0 :: Env 𝔹      -- ambient environment, including any dataset loaded
-}
-
 type View = {
    ρ :: Env 𝔹,      -- "local" env (additional bindings introduce by "let" at beginning of ex)
    s :: S.Expr 𝔹    -- body of let
@@ -74,7 +70,7 @@ type NeededBySpec = {
    ρ'       :: Env 𝔹             -- selection on local env
 }
 
--- Extract the ρ' and s components of an example s'.
+-- Expect a program to be an "example" as defined above.
 splitDefs :: Partial => Env 𝔹 -> S.Expr 𝔹 -> MayFail Example
 splitDefs ρ0 s' = do
    let defs × s = unpack s'
@@ -110,45 +106,47 @@ evalExample { ρ0, ρ, s } = do
    t × o <- eval ρ0ρ e
    pure { e, ρ0ρ, t, o }
 
-makeFigs_ :: ExampleEval -> NeededSpec -> Env 𝔹 -> Env 𝔹 -> MayFail (Array Fig)
-makeFigs_ q { x_figs, o_fig, o' } ρ ρ' = do
+varFigs :: ExampleEval -> NeededSpec -> Env 𝔹 -> Env 𝔹 -> MayFail (Array Fig)
+varFigs q { x_figs, o_fig, o' } ρ ρ' = do
    let xs = _.var <$> x_figs
    vs <- sequence (flip find ρ <$> xs)
    vs' <- sequence (flip find ρ' <$> xs)
-   unsafePartial $ pure $ [ o_fig { title: "output", uv: o' × q.o } ] <> (varFig <$> zip x_figs (zip vs' vs))
+   unsafePartial $ pure $
+      [ o_fig { title: "output", uv: o' × q.o } ] <> (varFig <$> zip x_figs (zip vs' vs))
 
-needed :: NeededSpec -> Example -> MayFail (ExampleEval × Array Fig)
+needed :: NeededSpec -> Example -> MayFail (Env 𝔹 × Array Fig)
 needed spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
-   (q × _) <$> makeFigs_ q spec q.ρ0ρ ρ0ρ'
+   (ρ0ρ' × _) <$> varFigs q spec q.ρ0ρ ρ0ρ'
 
 neededBy :: NeededBySpec -> Example -> MayFail (ExampleEval × Array Fig)
 neededBy { x_figs, o_fig, ρ' } { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
        xs = _.var <$> x_figs
-   (q × _) <$> makeFigs_ q { x_figs, o_fig, o' } ρ ρ'
+   (q × _) <$> varFigs q { x_figs, o_fig, o' } ρ ρ'
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
-type FigsSpec = {
+type FigsSpec a = {
    file :: String,
-   makeFigs :: Example -> MayFail (ExampleEval × Array Fig)
+   makeFigs :: Example -> MayFail (a × Array Fig)
 }
 
-makeFigures :: Partial => String -> FigsSpec -> Effect Unit
-makeFigures divId { file, makeFigs } =
+-- TODO: not every example should run in context of renewables data.
+figs :: forall a . Partial => String -> FigsSpec a -> Effect Unit
+figs divId { file, makeFigs } =
    flip runAff_ (openFileWithDataset "example/linking/renewables" file)
    case _ of
       Left err -> log ("Open failed: " <> show err)
       Right (ρ × s) ->
          let _ × figs = successful (splitDefs ρ s >>= makeFigs) in
-         drawFigure divId figs
+         drawFigs { divId, figs }
 
-makeFigures2 :: String -> String -> NeededSpec -> String -> String -> Effect Unit
-makeFigures2 divId1 divId2 spec file1 file2 =
+figs2 :: String -> String -> NeededSpec -> String -> String -> Effect Unit
+figs2 divId1 divId2 spec file1 file2 =
    flip runAff_ (do
       ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
       let ρ0' = ρ0 <> ρ
@@ -159,29 +157,28 @@ makeFigures2 divId1 divId2 spec file1 file2 =
    case _ of
       Left err -> log ("Open failed: " <> show err)
       Right (ρ0 × { ρ: ρ1, s: s1 } × { ρ: ρ2, s: s2 }) -> do
-         let q × figs = successful (needed spec { ρ0, ρ: ρ1, s: s1 })
-         drawFigure divId1 figs
+         let q × figs1 = successful (needed spec { ρ0, ρ: ρ1, s: s1 })
+         drawFigs { divId: divId1, figs: figs1 }
 
--- TODO: not every example should run in context of renewables data.
 convolutionFigs :: Partial => Effect Unit
 convolutionFigs = do
    let x_figs = [{ var: "filter", fig: matrixFig }, { var: "image", fig: matrixFig }] :: Array VarSpec
-   makeFigures "fig-1" {
+   figs "fig-1" {
       file: "slicing/conv-wrap",
       makeFigs: needed { x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 }
    }
 
-   makeFigures "fig-2" {
+   figs "fig-2" {
       file: "slicing/conv-wrap",
       makeFigs: \ex -> neededBy { x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ } ex
    }
 
-   makeFigures "fig-3" {
+   figs "fig-3" {
       file: "slicing/conv-zero",
       makeFigs: needed { x_figs, o_fig: matrixFig, o': selectCell 2 1 5 5 }
    }
 
-   makeFigures "fig-4" {
+   figs "fig-4" {
       file: "slicing/conv-zero",
       makeFigs: \ex -> neededBy { x_figs, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ } ex
    }
@@ -189,11 +186,11 @@ convolutionFigs = do
 linkingFigs :: Partial => Effect Unit
 linkingFigs = do
    let x_figs = [{ var: "data", fig: makeEnergyTable }] :: Array VarSpec
-   makeFigures "table-1" {
+   figs "table-1" {
       file: "linking/bar-chart",
       makeFigs: needed { x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) }
    }
-   makeFigures "table-2" {
+   figs "table-2" {
       file: "linking/bar-chart",
       makeFigs: needed { x_figs, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) }
    }
