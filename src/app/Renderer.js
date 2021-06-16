@@ -135,6 +135,10 @@ function drawBarChart (
          .on('mouseout', tip.hide)
 }
 
+function max_y (linePlot) {
+   return Math.max(...linePlot.data_.map(point => point.y.value0))
+}
+
 function drawLineChart (
    id, {
       caption,   // String
@@ -143,7 +147,8 @@ function drawLineChart (
 ) {
    const margin = {top: 15, right: 0, bottom: 30, left: 30},
          width = 200 - margin.left - margin.right,
-         height = 175 - margin.top - margin.bottom
+         height = 175 - margin.top - margin.bottom,
+         y_max = Math.max(...plots.map(max_y))
 
    const svg = d3.select('#' + id)
       .append('svg')
@@ -152,8 +157,8 @@ function drawLineChart (
       .append('g')
          .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-   const x = d3.scaleTime().range([0, width]),
-         y = d3.scaleLinear().range([height, 0])
+   const x = d3.scaleLinear().domain([2000,2020]).range([0, width]),
+         y = d3.scaleLinear().domain([0, y_max]).range([height, 0])
 
    const line1 = d3.line()
       .x(d => {
@@ -167,13 +172,14 @@ function drawLineChart (
       .x(d => x(d.x))
       .y(d => y(d.y))
 
-   svg.selectAll('path')
+   svg.selectAll('lines')
       .data(plots)
       .enter()
+      .append('g')
       .append('path')
       .attr('class', 'line')
       .attr('d', d => {
-         line1(d.data_)
+         return line1(d.data_)
       })
 
    svg.append('g')
