@@ -10,7 +10,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, {-makeLineChart, -}matrixFig)
+import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart, matrixFig)
 import Bindings (Bind, Var, (↦), find, update)
 import DataType (cBarChart, cCons)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
@@ -107,7 +107,7 @@ needs :: NeedsSpec -> Example -> MayFail (NeedsResult × Array SubFig)
 needs spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
-       ρ0' × ρ' = splitAt (length ρ0) ρ0ρ'
+       ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
    ({ ρ0', ρ' } × _) <$> varFigs q spec q.ρ0ρ ρ0ρ'
 
 type NeededBySpec = {
@@ -145,7 +145,7 @@ fig2 divId file1 file2 o_fig spec1 = do
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file1
    { ρ: ρ2, s: s2 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file2
    let { ρ0', ρ': ρρ1' } × subfigs1 = successful (needs spec1 { ρ0, ρ: ρ <> ρ1, s: s1 })
-       ρ' × _ = splitAt 1 ρρ1' -- data selection
+       _ × ρ' = splitAt 1 ρρ1' -- data selection
        _ × subfigs2 = successful (neededBy { vars: [], o_fig, ρ' } { ρ0, ρ: ρ <> ρ2, s: s2 })
    pure [ { divId, subfigs: subfigs1 <> subfigs2 } ]
 
@@ -175,12 +175,8 @@ linkingFigs :: Partial => Aff (Array Fig)
 linkingFigs = do
    let vars = [{ var: "data", makeFig: makeEnergyTable }] :: Array VarSpec
    join <$> sequence [
-      fig "fig-5" {
-         file: File "linking/bar-chart",
-         makeSubfigs: needs { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) }
-      },
---      fig2 "fig-5" (File "linking/bar-chart") (File "linking/line-chart") makeLineChart
---           { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) },
+      fig2 "fig-5" (File "linking/bar-chart") (File "linking/line-chart") makeLineChart
+           { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) },
       fig "fig-6" {
          file: File "linking/bar-chart",
          makeSubfigs: needs { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) }
