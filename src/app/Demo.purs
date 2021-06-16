@@ -6,7 +6,6 @@ import Data.Either (Either(..))
 import Data.List (List(..), (:), singleton)
 import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
-import Data.Tuple (snd)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
@@ -111,8 +110,8 @@ type NeededSpec = {
 }
 
 type NeededResult = {
-   ρ0       :: Env 𝔹,            -- selection on ambient environment
-   ρ        :: Env 𝔹             -- selection on local environment
+   ρ0'       :: Env 𝔹,            -- selection on ambient environment
+   ρ'        :: Env 𝔹             -- selection on local environment
 }
 
 needed :: NeededSpec -> Example -> MayFail (NeededResult × Array SubFig)
@@ -120,7 +119,7 @@ needed spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
        ρ0' × ρ' = splitAt (length ρ0) ρ0ρ'
-   ({ ρ0: ρ0', ρ: ρ' } × _) <$> varFigs q spec q.ρ0ρ ρ0ρ'
+   ({ ρ0', ρ' } × _) <$> varFigs q spec q.ρ0ρ ρ0ρ'
 
 type NeededBySpec = {
    vars     :: Array VarSpec,    -- variables we want subfigs for
@@ -152,12 +151,12 @@ fig divId { file, makeSubfigs } = do
 
 fig2 :: String -> String -> NeededSpec -> String -> String -> Aff Fig
 fig2 divId1 divId2 spec file1 file2 = do
-   ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
-   let ρ0' = ρ0 <> ρ
-   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 ρ0') <$> openIn file1 ρ0'
-   { ρ: ρ2, s: s2 } <- (successful <<< splitDefs2 ρ0') <$> openIn file2 ρ0'
-   let ρ0ρ' × subfigs = successful (needed spec { ρ0, ρ: ρ1, s: s1 })
-       ρ0ρ'' = selectOnly (?_ ↦ ?_) ρ0ρ'
+   let x = "data"
+   ρ0' × ρ <- openDatasetAs "example/linking/renewables" x
+   let ρ0 = ρ0' <> ρ
+   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs2 ρ0) <$> openIn file1 ρ0
+   { ρ: ρ2, s: s2 } <- (successful <<< splitDefs2 ρ0) <$> openIn file2 ρ0
+   let { ρ0': ρ0'', ρ': ρ1' } × subfigs = successful (needed spec { ρ0, ρ: ρ1, s: s1 })
    pure { divId: divId1, subfigs }
 
 convolutionFigs :: Partial => Aff (Array Fig)
