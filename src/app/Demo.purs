@@ -56,7 +56,8 @@ type View = {
 splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail View
 splitDefs ρ0 s' = unsafePartial $ do
    let defs × s = unpack s'
-   ρ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ0
+   ρ0ρ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ0
+   let _ × ρ = splitAt (length ρ0ρ - length ρ0) ρ0ρ
    pure { ρ, s }
    where unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
          unpack (S.LetRec defs s)   = Right defs × s
