@@ -124,7 +124,7 @@ instance reflectLinePlot :: Reflect (SnocList (Bind (Val Boolean))) LinePlot whe
 instance reflectLineChart :: Reflect (SnocList (Bind (Val Boolean))) LineChart where
    from r = LineChart {
       caption: get_prim "caption" r,
-      plots: record from <$> from (get "data" r)
+      plots: record from <$> from (get "plots" r)
    }
 
 -- Hole expansion as necessary; discards list-level annotations.

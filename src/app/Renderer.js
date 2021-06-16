@@ -140,9 +140,10 @@ function drawBarChart (
 function drawLineChart (
    id, {
       caption,   // String
-      data_,     // Array BarChartRecord
+      plots,     // Array LinePlot
    }
 ) {
+   console.log(plots)
 }
 
 // https://stackoverflow.com/questions/5560248
