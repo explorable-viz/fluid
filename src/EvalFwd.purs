@@ -120,7 +120,7 @@ evalFwd ρ e _ (T.Lambda _ _) =
 evalFwd ρ e α (T.RecordLookup t xs x) =
    case expand e (RecordLookup (Hole false) x) of
       RecordLookup e' _ ->
-         case evalFwd ρ e' α t of
+         case expand (evalFwd ρ e' α t) (V.Record false (xs <#> (_ ↦ V.Hole false))) of
             V.Record _ xvs ->
                assert ((xvs <#> key) == xs) $
                successful (find x xvs)
