@@ -20,12 +20,16 @@ import Util.Parse (SParser)
 import Util.SnocList (SnocList(..), (:-))
 import Val (Env)
 
+-- Mainly serve as documentation
+newtype File = File String
+newtype Folder = Folder String
+
 -- For Wrattler integration. Should not end in "/".
 resourceServerUrl :: String
 resourceServerUrl = "."
 
-loadFile :: String -> String -> Aff String
-loadFile folder file = do
+loadFile :: Folder -> File -> Aff String
+loadFile (Folder folder) (File file) = do
    let url = resourceServerUrl <> "/" <> folder <> "/" <> file <> ".fld"
    result <- request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
@@ -35,30 +39,30 @@ loadFile folder file = do
 parse :: forall t . String -> SParser t -> MayFail t
 parse src = runParser src >>> show `bimap` identity
 
-loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
+loadModule :: File -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file ρ = do
-   src <- loadFile "fluid/lib" file
+   src <- loadFile (Folder "fluid/lib") file
    pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module ρ))
 
-parseProgram :: String -> String -> Aff (S.Expr 𝔹)
+parseProgram :: Folder -> File -> Aff (S.Expr 𝔹)
 parseProgram folder file = loadFile folder file <#> (successful <<< flip parse program)
 
-open :: String -> Aff (S.Expr 𝔹)
-open = parseProgram "fluid/example"
+open :: File -> Aff (S.Expr 𝔹)
+open = parseProgram (Folder "fluid/example")
 
 defaultImports :: Aff (Env 𝔹)
 defaultImports =
-   loadModule "prelude" primitives >>= loadModule "graphics" >>= loadModule "convolution"
+   loadModule (File "prelude") primitives >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
-openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
+openWithDefaultImports :: File -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file = do
    ρ <- defaultImports
    open file <#> (ρ × _)
 
 -- Return ambient environment used to load dataset along with new binding.
-openDatasetAs :: String -> Var -> Aff (Env 𝔹 × Env 𝔹)
+openDatasetAs :: File -> Var -> Aff (Env 𝔹 × Env 𝔹)
 openDatasetAs file x = do
-   s <- parseProgram "fluid" file
+   s <- parseProgram (Folder "fluid") file
    ρ <- defaultImports
    let _ × v = successful (desugarFwd s >>= eval ρ)
    pure (ρ × (Lin :- x ↦ v))

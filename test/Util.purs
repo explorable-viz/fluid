@@ -18,7 +18,7 @@ import Expl (Expl)
 import Expr (Expr(..)) as E
 import SExpr (Expr) as S
 import Lattice (𝔹, botOf, neg)
-import Module (loadFile, open, openDatasetAs, openWithDefaultImports)
+import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import Util (MayFail, type (×), (×), successful)
 import Util.SnocList (splitAt)
@@ -50,25 +50,25 @@ checkPretty :: forall a . Pretty a => a -> String -> Aff Unit
 checkPretty x expected = prettyP x `shouldEqual` expected
 
 -- v_opt is output slice; v_expect is expected result after round-trip
-testWithSetup :: String -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
-testWithSetup name expected v_opt setup =
+testWithSetup :: File -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
+testWithSetup (File file) expected v_opt setup =
    before setup $
-      it name \(ρ × s) -> do
+      it file \(ρ × s) -> do
          let t × v = successful (desugarEval ρ s)
              ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
              v = desugarEval_fwd ρ' s' t
          unless (isGraphical v) (checkPretty v expected)
          case v_opt of
             Nothing -> pure unit
-            Just _ -> loadFile "fluid/example" (name <> ".expect") >>= checkPretty s'
+            Just _ -> loadFile (Folder "fluid/example") (File $ file <> ".expect") >>= checkPretty s'
 
-test :: String -> String -> Test Unit
+test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
 
-testBwd :: String -> Val 𝔹 -> String -> Test Unit
-testBwd file v expected =
-   let name = "slicing/" <> file in
-   testWithSetup name expected (Just v) (openWithDefaultImports name)
+testBwd :: File -> Val 𝔹 -> String -> Test Unit
+testBwd (File file) v expected =
+   let file' = File ("slicing/" <> file) in
+   testWithSetup file' expected (Just v) (openWithDefaultImports file')
 
 type LinkConfig = {
    ρ0 :: Env 𝔹,      -- ambient env (default imports)
@@ -77,13 +77,13 @@ type LinkConfig = {
    s2 :: S.Expr 𝔹    -- view 2
 }
 
-testLink :: String -> String -> String -> Val 𝔹 -> String -> Test Unit
-testLink file1 file2 dataFile v1_sel v2_expect =
+testLink :: File -> File -> File -> Val 𝔹 -> String -> Test Unit
+testLink (File file1) (File file2) (File dataFile) v1_sel v2_expect =
    let dir = "linking/"
-       name1 × name2 = (dir <> file1) × (dir <> file2)
+       name1 × name2 = File (dir <> file1) × File (dir <> file2)
        setup = do
          -- the views share an ambient environment ρ0 as well as dataset
-         ρ0 × ρ <- openDatasetAs ("example/" <> dir <> dataFile) "data"
+         ρ0 × ρ <- openDatasetAs (File $ "example/" <> dir <> dataFile) "data"
          s1 <- open name1
          s2 <- open name2
          pure { ρ0, ρ, s1, s2 } :: Aff LinkConfig in
@@ -100,7 +100,7 @@ testLink file1 file2 dataFile v1_sel v2_expect =
              v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
          checkPretty v2' v2_expect
 
-testWithDataset :: String -> String -> Test Unit
+testWithDataset :: File -> File -> Test Unit
 testWithDataset dataset file = do
    testWithSetup file "" Nothing $ do
       ρ0 × ρ <- openDatasetAs dataset "data"

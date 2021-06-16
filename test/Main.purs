@@ -7,6 +7,7 @@ import Data.Traversable (sequence)
 import Effect (Effect)
 import DataType (cCons, cPair)
 import Lattice (𝔹)
+import Module (File(..))
 import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..), holeMatrix, insertMatrix)
 
@@ -30,16 +31,16 @@ test_scratchpad = [
 
 test_linking :: Array (Test Unit)
 test_linking = [
-   testLink "pairs-1" "pairs-2" "pairs-data"
+   testLink (File "pairs-1") (File "pairs-2") (File "pairs-data")
             (pair false hole (pair false hole (pair false (Int true 3) hole))) "(3, (_5_, _7_))",
-   testLink "convolution-1" "convolution-2" "convolution-data"
+   testLink (File "convolution-1") (File "convolution-2") (File "convolution-data")
             (Matrix true (insertMatrix 2 2 (Hole true) (holeMatrix 5 5)))
             "_18_, _12_, _13_, 9, 19,\n\
             \_20_, _11_, _24_, 9, 14,\n\
             \_15_, _13_, _20_, 11, 14,\n\
             \7, 15, 15, 8, 20,\n\
             \3, 10, 12, 3, 11",
-   testLink "bar-chart" "line-chart" "renewables"
+   testLink (File "bar-chart") (File "line-chart") (File "renewables")
             (Hole false)
             "LineChart ({\
                \caption: \"Growth in renewables for China\", \
@@ -69,77 +70,77 @@ test_linking = [
 
 test_bwd :: Array (Test Unit)
 test_bwd = [
-   testBwd "add" (Int true 8) "_8_",
-   testBwd "array-lookup" (Int true 14) "_14_",
-   testBwd "array-dims" (pair true (Int true 3) (Int true 3)) "(_3_, _3_)",
-   testBwd "conv-extend"
+   testBwd (File "add") (Int true 8) "_8_",
+   testBwd (File "array-lookup") (Int true 14) "_14_",
+   testBwd (File "array-dims") (pair true (Int true 3) (Int true 3)) "(_3_, _3_)",
+   testBwd (File "conv-extend")
            (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
             "_0_, -1, 2, 0, -1,\n\
             \0, 3, -2, 3, -2,\n\
             \-1, 1, -5, 0, 4,\n\
             \1, -1, 4, 0, -4,\n\
             \1, 0, -3, 2, 0",
-   testBwd "conv-wrap"
+   testBwd (File "conv-wrap")
            (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
            "_1_, 2, -1, 1, 5,\n\
            \-1, 1, 2, -1, 1,\n\
            \0, 0, 1, 0, 1,\n\
            \0, 1, -2, 0, 1,\n\
            \0, 3, 0, 2, 2",
-   testBwd "conv-zero"
+   testBwd (File "conv-zero")
            (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
            "_38_, 37, 28, 30, 38,\n\
            \38, 36, 46, 31, 34,\n\
            \37, 41, 54, 34, 20,\n\
            \21, 35, 31, 31, 42,\n\
            \13, 32, 35, 19, 26",
-   testBwd "divide" (Hole true) "_40.22222222222222_",
-   testBwd "map"
+   testBwd (File "divide") (Hole true) "_40.22222222222222_",
+   testBwd (File "map")
             (Constr true cCons (Hole false : (Constr true cCons (Hole false : Hole false : Nil)) : Nil)) "[5, 6]",
-   testBwd "multiply" (Int true 0) "_0_",
-   testBwd "nth" (Int true 4) "_4_"
+   testBwd (File "multiply") (Int true 0) "_0_",
+   testBwd (File "nth") (Int true 4) "_4_"
 ]
 
 test_desugaring :: Array (Test Unit)
 test_desugaring = [
-   test "desugar/list-comp-1" "[14, 12, 10, 13, 11, 9, 12, 10, 8]",
-   test "desugar/list-comp-2"
+   test (File "desugar/list-comp-1") "[14, 12, 10, 13, 11, 9, 12, 10, 8]",
+   test (File "desugar/list-comp-2")
         "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9, 9, 12, 12, 12, 10, 10, 10, 8, 8, 8]",
-   test "desugar/list-comp-3" "[9, 8]",
-   test "desugar/list-comp-4" "[5, 4, 3]",
-   test "desugar/list-comp-5" "[5, 4, 3]",
-   test "desugar/list-comp-6" "[5]",
-   test "desugar/list-comp-7" "[[]]",
-   test "desugar/list-enum" "[3, 4, 5, 6, 7]"
+   test (File "desugar/list-comp-3") "[9, 8]",
+   test (File "desugar/list-comp-4") "[5, 4, 3]",
+   test (File "desugar/list-comp-5") "[5, 4, 3]",
+   test (File "desugar/list-comp-6") "[5]",
+   test (File "desugar/list-comp-7") "[[]]",
+   test (File "desugar/list-enum") "[3, 4, 5, 6, 7]"
 ]
 
 test_misc :: Array (Test Unit)
 test_misc = [
-   test "arithmetic" "42",
-   test "array" "(1, (3, 3))",
-   test "compose" "5",
-   test "div-mod-quot-rem" "[[1, -1, -2, 2], [2, 2, 1, 1], [1, -1, -1, 1], [2, 2, -2, -2]]",
-   test "factorial" "40320",
-   test "filter" "[8, 7]",
-   test "flatten" "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]",
-   test "foldr_sumSquares" "661",
-   test "lexicalScoping" "\"6\"",
-   test "length" "2",
-   test "lookup" "Some \"sarah\"",
-   test "map" "[5, 7, 13, 15, 4, 3, -3]",
-   test "mergeSort" "[1, 2, 3]",
-   test "normalise" "(33, 66)",
-   test "pattern-match" "4",
-   test "range" "[(0, 0), (0, 1), (1, 0), (1, 1)]",
-   test "records" "{a: 5, b: 6, c: 7, d: [5], e: 7}",
-   test "reverse" "[2, 1]",
-   test "zipWith" "[[10], [12], [20]]"
+   test (File "arithmetic") "42",
+   test (File "array") "(1, (3, 3))",
+   test (File "compose") "5",
+   test (File "div-mod-quot-rem") "[[1, -1, -2, 2], [2, 2, 1, 1], [1, -1, -1, 1], [2, 2, -2, -2]]",
+   test (File "factorial") "40320",
+   test (File "filter") "[8, 7]",
+   test (File "flatten") "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]",
+   test (File "foldr_sumSquares") "661",
+   test (File "lexicalScoping") "\"6\"",
+   test (File "length") "2",
+   test (File "lookup") "Some \"sarah\"",
+   test (File "map") "[5, 7, 13, 15, 4, 3, -3]",
+   test (File "mergeSort") "[1, 2, 3]",
+   test (File "normalise") "(33, 66)",
+   test (File "pattern-match") "4",
+   test (File "range") "[(0, 0), (0, 1), (1, 0), (1, 1)]",
+   test (File "records") "{a: 5, b: 6, c: 7, d: [5], e: 7}",
+   test (File "reverse") "[2, 1]",
+   test (File "zipWith") "[[10], [12], [20]]"
 ]
 
 test_graphics :: Array (Test Unit)
 test_graphics = [
-   testWithDataset "dataset/renewables-restricted" "graphics/background",
-   testWithDataset "dataset/renewables-restricted" "graphics/grouped-bar-chart",
-   testWithDataset "dataset/renewables-restricted" "graphics/line-chart",
-   testWithDataset "dataset/renewables-restricted" "graphics/stacked-bar-chart"
+   testWithDataset (File "dataset/renewables-restricted") (File "graphics/background"),
+   testWithDataset (File "dataset/renewables-restricted") (File "graphics/grouped-bar-chart"),
+   testWithDataset (File "dataset/renewables-restricted") (File "graphics/line-chart"),
+   testWithDataset (File "dataset/renewables-restricted") (File "graphics/stacked-bar-chart")
 ]

@@ -20,7 +20,7 @@ import EvalFwd (evalFwd)
 import Expl (Expl)
 import Expr (Expr)
 import Lattice (𝔹, botOf, neg)
-import Module (open, openDatasetAs)
+import Module (File(..), open, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
@@ -127,45 +127,45 @@ selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
 type FigSpec a = {
-   file :: String,
+   file :: File,
    makeSubfigs :: Example -> MayFail (a × Array SubFig)
 }
 
 -- TODO: not every example should run in context of renewables data.
 fig :: forall a . Partial => String -> FigSpec a -> Aff (Array Fig)
 fig divId { file, makeSubfigs } = do
-   ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
+   ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure [ { divId , subfigs } ]
 
-fig2 :: String -> String -> NeededSpec -> NeededBySpec -> String -> String -> Aff (Array Fig)
+fig2 :: String -> String -> NeededSpec -> NeededBySpec -> File -> File -> Aff (Array Fig)
 fig2 divId1 divId2 spec1 spec2 file1 file2 = do
-   ρ0 × ρ <- openDatasetAs "example/linking/renewables" "data"
+   ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file1
    { ρ: ρ2, s: s2 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file2
-   let { ρ0', ρ': ρρ1' } × subfigs = successful (needed spec1 { ρ0, ρ: ρ <> ρ1, s: s1 })
-       blah = successful (neededBy spec2 { ρ0, ρ: ρρ1', s: s2 })
-   pure [ { divId: divId1, subfigs } ]
+   let { ρ0', ρ': ρρ1' } × subfigs1 = successful (needed spec1 { ρ0, ρ: ρ <> ρ1, s: s1 })
+       _ × subfigs2 = successful (neededBy spec2 { ρ0, ρ: ρρ1', s: s2 })
+   pure [ { divId: divId1, subfigs: subfigs1 }, { divId: divId2, subfigs: subfigs2 } ]
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
    let vars = [{ var: "filter", makeFig: matrixFig }, { var: "image", makeFig: matrixFig }] :: Array VarSpec
    join <$> sequence [
       fig "fig-1" {
-         file: "slicing/conv-wrap",
+         file: File "slicing/conv-wrap",
          makeSubfigs: needed { vars, o_fig: matrixFig, o': selectCell 2 1 5 5 }
       },
       fig "fig-2" {
-         file: "slicing/conv-wrap",
+         file: File "slicing/conv-wrap",
          makeSubfigs: \ex -> neededBy { vars, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ } ex
       },
       fig "fig-3" {
-         file: "slicing/conv-zero",
+         file: File "slicing/conv-zero",
          makeSubfigs: needed { vars, o_fig: matrixFig, o': selectCell 2 1 5 5 }
       },
       fig "fig-4" {
-         file: "slicing/conv-zero",
+         file: File "slicing/conv-zero",
          makeSubfigs: \ex -> neededBy { vars, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ } ex
       }
    ]
@@ -175,11 +175,11 @@ linkingFigs = do
    let vars = [{ var: "data", makeFig: makeEnergyTable }] :: Array VarSpec
    join <$> sequence [
       fig "table-1" {
-         file: "linking/bar-chart",
+         file: File "linking/bar-chart",
          makeSubfigs: needed { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) }
       },
       fig "table-2" {
-         file: "linking/bar-chart",
+         file: File "linking/bar-chart",
          makeSubfigs: needed { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) }
       }
    ]
