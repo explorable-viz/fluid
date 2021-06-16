@@ -198,9 +198,9 @@ function className (o) {
 }
 
 // Figs -> Effect Unit
-function drawFigs ({ divId, figs }) {
+function drawFig ({ divId, subfigs }) {
    return () => {
-      for (const fig of figs) {
+      for (const fig of subfigs) {
          // Bit horrible but will do for now.
          if (className(fig) == "EnergyTable") {
             drawTable(divId, fig.value0)
@@ -264,4 +264,4 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-exports.drawFigs = drawFigs
+exports.drawFig = drawFig

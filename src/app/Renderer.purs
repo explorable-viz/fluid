@@ -17,12 +17,12 @@ import Util.SnocList (SnocList)
 import Val (Array2, MatrixRep, Val)
 import Val (Val(..)) as V
 
-type Figs = {
+type Fig = {
    divId :: String,
-   figs :: Array Fig
+   subfigs :: Array SubFig
 }
 
-foreign import drawFigs :: Figs -> Effect Unit
+foreign import drawFig :: Fig -> Effect Unit
 
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
@@ -31,16 +31,16 @@ type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType
 newtype BarChart = BarChart { caption :: String × 𝔹, data_ :: Array BarChartRecord }
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
 
-data Fig =
+data SubFig =
    MatrixFig { title :: String, cellFillSelected :: String, matrix :: IntMatrix } |
    EnergyTable { title :: String, cellFillSelected :: String, table :: Array EnergyRecord } |
    LineChart { title :: String } |
    BarChartFig BarChart
 
--- Convert sliced value to appropriate Fig, discarding top-level annotations for now.
-type MakeFig = { title :: String, uv :: Slice (Val 𝔹) } -> Fig
+-- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
+type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 
-matrixFig :: MakeFig
+matrixFig :: MakeSubFig
 matrixFig { title, uv: (u × v) } =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig { title, cellFillSelected: "Yellow", matrix: matrixRep vss2 }
@@ -53,16 +53,16 @@ toArray (us × V.Constr _ c (v1 : v2 : Nil)) | c == cCons =
    case expand us (V.Constr false cCons (V.Hole false : V.Hole false : Nil)) of
       V.Constr _ _ (u1 : u2 : Nil) -> (u1 × v1) A.: toArray (u2 × v2)
 
-makeEnergyTable :: Partial => MakeFig
+makeEnergyTable :: Partial => MakeSubFig
 makeEnergyTable { title, uv: (u × v) } =
    EnergyTable { title, cellFillSelected: "Not used?", table: record energyRecord <$> toArray (u × v) }
 
-makeBarChart :: Partial => MakeFig
+makeBarChart :: Partial => MakeSubFig
 makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> BarChartFig (record from (u1 × v1))
 
-lineChart :: MakeFig
+lineChart :: MakeSubFig
 lineChart { title } = LineChart { title }
 
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
