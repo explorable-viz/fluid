@@ -8,7 +8,7 @@ import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import Data.Profunctor.Strong (first)
 import Bindings (Bindings, Bind, Var, find)
-import DataType (cBarChart, cCons, cLineChart, cNil)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cNil)
 import Effect (Effect)
 import Lattice (𝔹, expand)
 import Primitive (Slice, class ToFrom, as, match, match_fwd)
@@ -48,17 +48,9 @@ matrixFig { title, uv: (u × v) } =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig { title, matrix: matrixRep vss2 }
 
-toArray :: Partial => Slice (Val 𝔹) -> Array (Slice (Val 𝔹))
-toArray (vs × V.Constr _ c Nil) | c == cNil =
-   case expand vs (V.Constr false cNil Nil) of
-      V.Constr _ _ Nil -> []
-toArray (us × V.Constr _ c (v1 : v2 : Nil)) | c == cCons =
-   case expand us (V.Constr false cCons (V.Hole false : V.Hole false : Nil)) of
-      V.Constr _ _ (u1 : u2 : Nil) -> (u1 × v1) A.: toArray (u2 × v2)
-
 makeEnergyTable :: Partial => MakeSubFig
 makeEnergyTable { title, uv: (u × v) } =
-   EnergyTable { title, table: record energyRecord <$> toArray (u × v) }
+   EnergyTable { title, table: record energyRecord <$> from (u × v) }
 
 makeBarChart :: Partial => MakeSubFig
 makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
@@ -70,6 +62,7 @@ makeLineChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
    case expand u (V.Constr false cLineChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> LineChartFig (record from (u1 × v1))
 
+-- Assumes fields are all of primitive type.
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
 record toRecord (u × v) = toRecord (fst (match_fwd (u × v)) × fst (match v))
 
@@ -124,10 +117,15 @@ instance reflectLinePlot :: Reflect (SnocList (Bind (Val Boolean))) LinePlot whe
 instance reflectLineChart :: Reflect (SnocList (Bind (Val Boolean))) LineChart where
    from r = LineChart {
       caption: get_prim "caption" r,
-      plots: record from <$> from (get "plots" r)
+      plots: from <$> (from (get "plots" r) :: Array (Slice (Val 𝔹))) :: Array LinePlot
    }
 
--- Hole expansion as necessary; discards list-level annotations.
+instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
+   from (v × V.Constr _ c (v1 : Nil)) | c == cLinePlot =
+      case expand v (V.Constr false cLinePlot (V.Hole false : Nil)) of
+         V.Constr _ _ (u1 : Nil) -> record from (u1 × v1)
+
+-- Perform hole expansion as necessary, and discard any constructor-level annotations.
 instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean × Val Boolean)) where
    from (vs × V.Constr _ c Nil) | c == cNil =
       case expand vs (V.Constr false cNil Nil) of
