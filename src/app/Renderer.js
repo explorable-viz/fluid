@@ -139,6 +139,14 @@ function max_y (linePlot) {
    return Math.max(...linePlot.data_.map(point => point.y.value0))
 }
 
+function min_x (linePlot) {
+   return Math.min(...linePlot.data_.map(point => point.x.value0))
+}
+
+function max_x (linePlot) {
+   return Math.max(...linePlot.data_.map(point => point.x.value0))
+}
+
 function drawLineChart (
    id, {
       caption,   // String
@@ -148,7 +156,9 @@ function drawLineChart (
    const margin = {top: 15, right: 0, bottom: 30, left: 30},
          width = 200 - margin.left - margin.right,
          height = 175 - margin.top - margin.bottom,
-         y_max = Math.max(...plots.map(max_y))
+         y_max = Math.max(...plots.map(max_y)),
+         x_min = Math.min(...plots.map(min_x)),
+         x_max = Math.max(...plots.map(max_x))
 
    const svg = d3.select('#' + id)
       .append('svg')
@@ -157,16 +167,12 @@ function drawLineChart (
       .append('g')
          .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-   const x = d3.scaleLinear().domain([2000,2020]).range([0, width]),
+   const x = d3.scaleLinear().domain([x_min, x_max]).range([0, width]),
          y = d3.scaleLinear().domain([0, y_max]).range([height, 0])
 
    const line1 = d3.line()
-      .x(d => {
-         return x(d.x.value0)
-      })
-      .y(d => {
-         return y(d.y.value0)
-      })
+      .x(d => x(d.x.value0))
+      .y(d => y(d.y.value0))
 
    const line2 = d3.line()
       .x(d => x(d.x))
