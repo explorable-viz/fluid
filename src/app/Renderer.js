@@ -159,7 +159,8 @@ function drawLineChart (
          height = 175 - margin.top - margin.bottom,
          y_max = Math.max(...plots.map(max_y)),
          x_min = Math.min(...plots.map(min_x)),
-         x_max = Math.max(...plots.map(max_x))
+         x_max = Math.max(...plots.map(max_x)),
+         names = plots.map(plot => plot.name.value0)
 
    const svg = d3.select('#' + id)
       .append('svg')
@@ -175,23 +176,37 @@ function drawLineChart (
       .x(d => x(d.x.value0))
       .y(d => y(d.y.value0))
 
-   const line2 = d3.line()
-      .x(d => x(d.x))
-      .y(d => y(d.y))
+   const color = d3.scaleOrdinal(d3.schemePastel1)
 
    svg.selectAll('lines')
       .data(plots)
       .enter()
       .append('g')
       .append('path')
-      .attr('class', 'line')
-      .attr('d', d => {
-         return line1(d.data_)
+      .attr('fill', 'none')
+      .attr('stroke', d => {
+         return color(names.indexOf(d.name.value0))
       })
+      .attr('stroke-width', 1)
+      .attr('class', 'line')
+      .attr('d', d => line1(d.data_))
+
+   for (const plot of plots) {
+      svg.selectAll('markers')
+         .data(plot.data_)
+         .enter()
+         .append('g')
+         .append('circle')
+         .attr('class', 'marker')
+         .attr('r', 2)
+         .attr('cx', d => x(d.x.value0))
+         .attr('cy', d => y(d.y.value0))
+         .attr('fill', 'darkgray')
+   }
 
    svg.append('g')
       .attr('transform', "translate(0," + height + ")")
-      .call(d3.axisBottom(x).ticks(x_max - x_min))
+      .call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')))
 
    svg.append('g')
       .call(d3.axisLeft(y).tickSizeOuter(0))
