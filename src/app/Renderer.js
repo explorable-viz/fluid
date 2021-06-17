@@ -201,7 +201,7 @@ function drawLineChart (
          .attr('r', 2)
          .attr('cx', d => x(d.x.value0))
          .attr('cy', d => y(d.y.value0))
-         .attr('fill', 'darkgray')
+         .attr('fill', color(names.indexOf(plot.name.value0)))
    }
 
    svg.append('g')
