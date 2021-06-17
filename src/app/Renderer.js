@@ -112,9 +112,10 @@ function drawBarChart (
    const y = d3.scaleLinear()
       .domain([0, y_max])
       .range([ height, 0])
-   const tick_every = nearest / 2
+   const tick_every = nearest / 2,
+         ticks = Array.from(Array(y_max / tick_every + 1).keys()).map(n => n * tick_every)
    const yAxis = d3.axisLeft(y)
-      .tickValues(Array.from(Array(y_max / tick_every + 1).keys()).map(n => n * tick_every))
+      .tickValues(ticks)
    svg.append('g')
       .call(yAxis)
 
@@ -153,7 +154,7 @@ function drawLineChart (
       plots,     // Array LinePlot
    }
 ) {
-   const margin = {top: 15, right: 0, bottom: 30, left: 30},
+   const margin = {top: 15, right: 15, bottom: 30, left: 30},
          width = 200 - margin.left - margin.right,
          height = 175 - margin.top - margin.bottom,
          y_max = Math.max(...plots.map(max_y)),
@@ -190,10 +191,10 @@ function drawLineChart (
 
    svg.append('g')
       .attr('transform', "translate(0," + height + ")")
-      .call(d3.axisBottom(x))
+      .call(d3.axisBottom(x).ticks(x_max - x_min))
 
    svg.append('g')
-      .call(d3.axisLeft(y))
+      .call(d3.axisLeft(y).tickSizeOuter(0))
 }
 
 // https://stackoverflow.com/questions/5560248
