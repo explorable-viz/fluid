@@ -13,7 +13,7 @@ import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
 --tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_bwd ]
+tests = [ test_linking ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -24,20 +24,7 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-]
-
-test_linking :: Array (Test Unit)
-test_linking = [
-   testLink (File "pairs-1") (File "pairs-2") (File "pairs-data")
-            (selectPair false hole (selectPair false hole (selectPair false (Int true 3) hole))) "(3, (_5_, _7_))",
-   testLink (File "convolution-1") (File "convolution-2") (File "convolution-data")
-            (selectCell 2 2 5 5)
-            "_18_, _12_, _13_, 9, 19,\n\
-            \_20_, _11_, _24_, 9, 14,\n\
-            \_15_, _13_, _20_, 11, 14,\n\
-            \7, 15, 15, 8, 20,\n\
-            \3, 10, 12, 3, 11",
-   testLink (File "bar-chart") (File "line-chart") (File "renewables")
+   testLink (File "record-view-1") (File "record-view-2") (File "record-view-data")
             hole
             "LineChart ({\
                \caption: \"Growth in renewables for USA\", \
@@ -62,6 +49,49 @@ test_linking = [
                      \data: [{\
                         \x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 74}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}]\
                      \})\
+                  \]})"
+]
+
+test_linking :: Array (Test Unit)
+test_linking = [
+   testLink (File "pairs-1") (File "pairs-2") (File "pairs-data")
+            (selectPair false hole (selectPair false hole (selectPair false (Int true 3) hole))) "(3, (_5_, _7_))",
+   testLink (File "convolution-1") (File "convolution-2") (File "convolution-data")
+            (selectCell 2 2 5 5)
+            "_18_, _12_, _13_, 9, 19,\n\
+            \_20_, _11_, _24_, 9, 14,\n\
+            \_15_, _13_, _20_, 11, 14,\n\
+            \7, 15, 15, 8, 20,\n\
+            \3, 10, 12, 3, 11",
+   testLink (File "bar-chart") (File "line-chart") (File "renewables")
+            hole
+            "LineChart ({\
+               \caption: \"Growth in renewables for USA\", \
+               \plots: [\
+                  \LinePlot ({\
+                     \name: \"Bio\", \
+                     \data: [\
+                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 16.7}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                     \]\
+                  \}), \
+                  \LinePlot ({\
+                     \name: \"Hydro\", \
+                     \data: [\
+                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 80}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                     \]\
+                  \}), \
+                  \LinePlot ({\
+                     \name: \"Solar\", \
+                     \data: [\
+                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 26}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                     \]\
+                  \}), \
+                  \LinePlot ({\
+                     \name: \"Wind\", \
+                     \data: [\
+                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 74}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                     \]\
+                  \})\
                   \]})"
 ]
 

@@ -3,6 +3,7 @@ module Test.Util where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), elem)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Debug.Trace (trace)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
@@ -99,9 +100,10 @@ testLink (File file1) (File file2) (File dataFile) v1_sel v2_expect =
              ρ0ρ × _ × _ = evalBwd v1_sel t1
              _ × ρ' = splitAt 1 ρ0ρ
              -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
-             -- combine with the negation of the dataset environment slice
+             -- combined with the negation of the dataset environment slice
              v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
-         checkPretty v2' v2_expect
+         trace ρ' \_ ->
+            checkPretty v2' v2_expect
 
 testWithDataset :: File -> File -> Test Unit
 testWithDataset dataset file = do

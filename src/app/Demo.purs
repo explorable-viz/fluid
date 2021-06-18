@@ -109,10 +109,6 @@ neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array SubFig)
 neededBy { vars, o_fig, ρ' } { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
-       burble = unsafePartial $ makeEnergyTable {
-          title: "blah",
-          uv: successful (find "data" (neg (neg (botOf ρ0 <> ρ')))) × successful (find "data" (neg (neg (botOf ρ0 <> ρ))))
-       }
        xs = _.var <$> vars
    (unit × _) <$> varFigs q { vars, o_fig, o' } ρ ρ'
 
