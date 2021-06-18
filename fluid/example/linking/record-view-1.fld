@@ -1,1 +1,2 @@
-[ { y: sum [ data.output ] } ]
+let foldr [x] = (+) x 0 in
+foldr [ data.output ]
