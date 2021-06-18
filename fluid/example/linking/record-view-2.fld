@@ -1,5 +1,5 @@
 let usa =
-   [ row | row <- data, row.country == "USA" ];
+   [ data ];
 let series rows = [
    { x: year, y: row.output }
    | year <- [2015], row <- rows,
