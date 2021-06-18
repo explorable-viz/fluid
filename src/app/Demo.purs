@@ -73,8 +73,8 @@ evalExample { ρ0, ρ, s } = do
    pure { e, ρ0ρ, t, o }
 
 -- TODO: should the envs here be Slice (Env 𝔹)? And are they in the wrong order?
-varFigs :: ExampleEval -> NeedsSpec -> Env 𝔹 -> Env 𝔹 -> MayFail (Array SubFig)
-varFigs q { vars, o_fig, o' } ρ ρ' = do
+varFigs :: ExampleEval -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig)
+varFigs q { vars, o_fig, o' } (ρ' × ρ) = do
    let xs = _.var <$> vars
    vs <- sequence (flip find ρ <$> xs)
    vs' <- sequence (flip find ρ' <$> xs)
@@ -97,7 +97,7 @@ needs spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
-   ({ ρ0', ρ' } × _) <$> varFigs q spec q.ρ0ρ ρ0ρ'
+   ({ ρ0', ρ' } × _) <$> varFigs q spec (ρ0ρ' × q.ρ0ρ)
 
 type NeededBySpec = {
    vars     :: Array VarSpec,    -- variables we want subfigs for
@@ -110,7 +110,7 @@ neededBy { vars, o_fig, ρ' } { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
        xs = _.var <$> vars
-   (unit × _) <$> varFigs q { vars, o_fig, o' } ρ ρ'
+   (unit × _) <$> varFigs q { vars, o_fig, o' } (ρ' × ρ)
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
