@@ -12,6 +12,7 @@ import Data.String (Pattern(..), contains) as Data.String
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
+import Lattice (𝔹)
 import Parse (str)
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
@@ -58,8 +59,9 @@ hcomma = fromFoldable >>> intersperse (comma :<>: space) >>> hcat
 parens :: Endo Doc
 parens = between (text "(") (text ")")
 
-hole :: Doc
-hole = text "□"
+hole :: 𝔹 -> Doc
+hole false = text "■"
+hole true = text "□"
 
 null :: Doc
 null = empty 0 0
@@ -139,7 +141,7 @@ prettyRecord xvs =
    # S.reverse >>> hcomma >>> between (text "{") (text "}")
 
 instance prettyExpr :: Pretty (E.Expr Boolean) where
-   pretty (E.Hole α)                = hole
+   pretty (E.Hole α)                = hole α
    pretty (E.Var x)                 = text x
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
@@ -167,7 +169,7 @@ instance prettyRecordVal :: Pretty (SnocList (Bind (Val Boolean))) where
    pretty = prettyRecord
 
 instance prettyCont :: Pretty (Cont Boolean) where
-   pretty (ContHole α)  = hole
+   pretty (ContHole α)  = hole α
    pretty (ContExpr e)  = pretty e
    pretty (ContElim σ)  = pretty σ
 
@@ -175,13 +177,13 @@ instance prettyBranch :: Pretty (Ctr × Cont Boolean) where
    pretty (c × κ) = hspace [text (show c), text str.rArrow, pretty κ]
 
 instance prettyElim :: Pretty (Elim Boolean) where
-   pretty (ElimHole α)        = hole
+   pretty (ElimHole α)        = hole α
    pretty (ElimVar x κ)       = hspace [text x, text str.rArrow, pretty κ]
    pretty (ElimConstr κs)     = hcomma (pretty <$> κs) -- looks dodgy
    pretty (ElimRecord xs κ)   = error "todo"
 
 instance prettyVal :: Pretty (Val Boolean) where
-   pretty (V.Hole _)                   = hole
+   pretty (V.Hole α)                   = hole α
    pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
