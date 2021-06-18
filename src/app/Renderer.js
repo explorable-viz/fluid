@@ -192,6 +192,7 @@ function drawLineChart (
       .attr('d', d => line1(d.data_))
 
    for (const plot of plots) {
+      const col = color(names.indexOf(plot.name.value0))
       svg.selectAll('markers')
          .data(plot.data_)
          .enter()
@@ -201,7 +202,8 @@ function drawLineChart (
          .attr('r', d => d.y.value1 ? 4 : 2)
          .attr('cx', d => x(d.x.value0))
          .attr('cy', d => y(d.y.value0))
-         .attr('fill', color(names.indexOf(plot.name.value0)))
+         .attr('fill', col)
+         .attr('stroke', d.y.value1 ? colorShade(col, -30) : col)
    }
 
    svg.append('g')
