@@ -94,10 +94,9 @@ doLink { file1, file2, dataFile, v1_sel } = do
        t2 × v2 = successful (eval (ρ0 <> ρ) e2)
        ρ0ρ × _ × _ = evalBwd v1_sel t1
        _ × ρ' = splitAt 1 ρ0ρ
-       -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
-       -- combined with the negation of the dataset environment slice
-       v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
-   pure v2'
+   -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
+   -- combined with the negation of the dataset environment slice
+   pure $ neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
 
 testLink :: LinkConfig -> String -> Test Unit
 testLink config v2_expect =
