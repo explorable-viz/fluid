@@ -1,4 +1,4 @@
 let totalFor rows =
    sum [ row.output | row <- rows ]
 in
-[ { x: "USA", y: totalFor [ data ] } ]
+[ { y: totalFor [ data ] } ]
