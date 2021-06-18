@@ -1,6 +1,4 @@
-let usa =
-   [ data ];
 let series rows = [
    { x: year, y: row.output }
    | year <- [2015], row <- rows
-] in series usa
+] in series [ data ]
