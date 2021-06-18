@@ -13,7 +13,7 @@ import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
 --tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_linking ]
+tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -32,25 +32,25 @@ test_scratchpad = [
                   \LinePlot ({\
                      \name: \"Bio\", \
                      \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 16.7}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                        \{x: 2015, y: 16.7}\
                      \]\
                   \}), \
                   \LinePlot ({\
                      \name: \"Hydro\", \
                      \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 80}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                        \{x: 2015, y: 80}\
                      \]\
                   \}), \
                   \LinePlot ({\
                      \name: \"Solar\", \
                      \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 26}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                        \{x: 2015, y: 26}\
                      \]\
                   \}), \
                   \LinePlot ({\
                      \name: \"Wind\", \
                      \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 74}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                        \{x: 2015, y: 74}\
                      \]\
                   \})\
                \]\
