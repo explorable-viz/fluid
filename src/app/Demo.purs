@@ -3,7 +3,7 @@ module App.Demo where
 import Prelude hiding (absurd)
 import Data.Array (zip)
 import Data.Either (Either(..))
-import Data.List (List(..), (:), singleton)
+import Data.List (singleton)
 import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
@@ -12,7 +12,6 @@ import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart, matrixFig)
 import Bindings (Bind, Var, (↦), find, update)
-import DataType (cBarChart, cCons)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
@@ -23,22 +22,10 @@ import Lattice (𝔹, botOf, neg)
 import Module (File(..), open, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
+import Test.Util (selectBarChart_data, selectCell, selectNth, select_y)
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
-import Util.SnocList (SnocList(..), (:-), splitAt)
-import Val (Env, Val(..), holeMatrix, insertMatrix)
-
-selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
-selectCell i j i' j' = Matrix false (insertMatrix i j (Hole true) (holeMatrix i' j'))
-
-selectNth :: Int -> Val 𝔹 -> Val 𝔹
-selectNth 0 v = Constr false cCons (v : Hole false : Nil)
-selectNth n v = Constr false cCons (Hole false : selectNth (n - 1) v : Nil)
-
-select_y :: Val 𝔹
-select_y = Record false (Lin :- "x" ↦ Hole false :- "y" ↦ Hole true)
-
-select_barChart_data :: Val 𝔹 -> Val 𝔹
-select_barChart_data v = Constr false cBarChart (Record false (Lin :- "caption" ↦ Hole false :- "data" ↦ v) : Nil)
+import Util.SnocList (splitAt)
+import Val (Env, Val)
 
 type Example = {
    ρ0 :: Env 𝔹,     -- ambient env (default imports)
@@ -85,6 +72,7 @@ evalExample { ρ0, ρ, s } = do
    t × o <- eval ρ0ρ e
    pure { e, ρ0ρ, t, o }
 
+-- TODO: should the envs here be Slice (Env 𝔹)? And are they in the wrong order?
 varFigs :: ExampleEval -> NeedsSpec -> Env 𝔹 -> Env 𝔹 -> MayFail (Array SubFig)
 varFigs q { vars, o_fig, o' } ρ ρ' = do
    let xs = _.var <$> vars
@@ -121,6 +109,10 @@ neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array SubFig)
 neededBy { vars, o_fig, ρ' } { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
+       burble = unsafePartial $ makeEnergyTable {
+          title: "blah",
+          uv: successful (find "data" (neg (neg (botOf ρ0 <> ρ')))) × successful (find "data" (neg (neg (botOf ρ0 <> ρ))))
+       }
        xs = _.var <$> vars
    (unit × _) <$> varFigs q { vars, o_fig, o' } ρ ρ'
 
@@ -177,10 +169,10 @@ linkingFigs = do
    let vars = [{ var: "data", makeFig: makeEnergyTable }] :: Array VarSpec
    join <$> sequence [
       fig2 "fig-5" (File "linking/bar-chart") (File "linking/line-chart") makeLineChart
-           { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 1 (select_y)) },
+           { vars, o_fig: makeBarChart, o': selectBarChart_data (selectNth 1 (select_y)) },
       fig "fig-6" {
          file: File "linking/bar-chart",
-         makeSubfigs: needs { vars, o_fig: makeBarChart, o': select_barChart_data (selectNth 0 (select_y)) }
+         makeSubfigs: needs { vars, o_fig: makeBarChart, o': selectBarChart_data (selectNth 0 (select_y)) }
       }
    ]
 

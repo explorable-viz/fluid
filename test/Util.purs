@@ -1,14 +1,15 @@
 module Test.Util where
 
 import Prelude hiding (absurd)
-import Data.List (elem)
+import Data.List (List(..), (:), elem)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import DataType (dataTypeFor, typeName)
+import Bindings ((↦))
+import DataType (cBarChart, cCons, cPair, dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
 import Eval (eval)
@@ -21,8 +22,8 @@ import Lattice (𝔹, botOf, neg)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import Util (MayFail, type (×), (×), successful)
-import Util.SnocList (splitAt)
-import Val (Env, Val(..))
+import Util.SnocList (SnocList(..), (:-), splitAt)
+import Val (Env, Val(..), holeMatrix, insertMatrix)
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -39,7 +40,9 @@ desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 desugarEval ρ s = desugarFwd s >>= eval ρ
 
 desugarEval_bwd :: Expl 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr 𝔹
-desugarEval_bwd (t × s) v = let ρ × e × _ = evalBwd v t in ρ × desugarBwd e s
+desugarEval_bwd (t × s) v =
+   let ρ × e × _ = evalBwd v t in
+   ρ × desugarBwd e s
 
 desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
 desugarEval_fwd ρ s =
@@ -106,3 +109,20 @@ testWithDataset dataset file = do
       ρ0 × ρ <- openDatasetAs dataset "data"
       let ρ' = ρ0 <> ρ
       (ρ' × _) <$> open file
+
+-- Selection helpers.
+selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
+selectCell i j i' j' = Matrix false (insertMatrix i j (Hole true) (holeMatrix i' j'))
+
+selectNth :: Int -> Val 𝔹 -> Val 𝔹
+selectNth 0 v = Constr false cCons (v : Hole false : Nil)
+selectNth n v = Constr false cCons (Hole false : selectNth (n - 1) v : Nil)
+
+select_y :: Val 𝔹
+select_y = Record false (Lin :- "x" ↦ Hole false :- "y" ↦ Hole true)
+
+selectBarChart_data :: Val 𝔹 -> Val 𝔹
+selectBarChart_data v = Constr false cBarChart (Record false (Lin :- "caption" ↦ Hole false :- "data" ↦ v) : Nil)
+
+selectPair :: 𝔹 -> Val 𝔹 -> Val 𝔹 -> Val 𝔹
+selectPair α v1 v2 = Constr α cPair (v1 : v2 : Nil)

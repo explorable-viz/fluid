@@ -198,7 +198,7 @@ function drawLineChart (
          .append('g')
          .append('circle')
          .attr('class', 'marker')
-         .attr('r', 2)
+         .attr('r', d => d.y.value1 ? 4 : 2)
          .attr('cx', d => x(d.x.value0))
          .attr('cy', d => y(d.y.value0))
          .attr('fill', color(names.indexOf(plot.name.value0)))
