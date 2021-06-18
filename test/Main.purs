@@ -26,15 +26,10 @@ test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
    testLink (File "record-view-1") (File "record-view-2") (File "record-view-data")
             hole
-            "LineChart ({\
-               \caption: \"Growth in renewables for USA\", \
-               \plots: [\
-                  \LinePlot ({\
-                     \name: \"Bio\", \
-                     \data: [\
-                        \{x: 2015, y: 16.7}\
-                     \]\
-                  \})\
+            "LinePlot ({\
+               \name: \"Bio\", \
+               \data: [\
+                  \{x: 2015, y: 16.7}\
                \]\
             \})"
 ]
