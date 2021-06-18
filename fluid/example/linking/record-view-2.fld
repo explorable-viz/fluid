@@ -1,7 +1,7 @@
 let usa =
    [ row | row <- data, row.country == "USA" ];
-let series type rows = [
+let series rows = [
    { x: year, y: row.output }
    | year <- [2015], row <- rows,
-     row.year == year, row.energyType == type
-] in LinePlot { name: "Bio", data: series "Bio" usa }
+     row.year == year, row.energyType == "Bio"
+] in LinePlot { name: "Bio", data: series usa }
