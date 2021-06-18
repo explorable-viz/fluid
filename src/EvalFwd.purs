@@ -96,7 +96,7 @@ evalFwd ρ e α' (T.Constr _ c ts) =
 evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
    case expand e (Matrix false (Hole false) (x × y) (Hole false)) of
       Matrix α e1 _ e2 ->
-         case expand (evalFwd ρ e2 α t2) (V.Constr false cPair (V.Hole false : V.Hole false : Nil)) of
+         case expand (evalFwd ρ e2 α' t2) (V.Constr false cPair (V.Hole false : V.Hole false : Nil)) of
             V.Constr _ c (v1 : v2 : Nil) ->
                let (i'' × β) × (j'' × β') = P.match_fwd (v1 × V.Int false i') × P.match_fwd (v2 × V.Int false j')
                    vss = assert (i'' == i' && j'' == j') $ A.fromFoldable $ do
