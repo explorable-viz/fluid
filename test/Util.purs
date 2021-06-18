@@ -49,8 +49,8 @@ desugarEval_fwd ρ s =
    let _ = evalFwd (botOf ρ) (E.Hole false) false in -- sanity-check that this is defined
    evalFwd ρ (successful (desugarFwd s)) true
 
-checkPretty :: forall a . Pretty a => a -> String -> Aff Unit
-checkPretty x expected = prettyP x `shouldEqual` expected
+checkPretty :: forall a . Pretty a => String -> a -> Aff Unit
+checkPretty expected x = prettyP x `shouldEqual` expected
 
 -- v_opt is output slice; expected is expected result after round-trip.
 testWithSetup :: File -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
@@ -60,10 +60,10 @@ testWithSetup (File file) expected v_opt setup =
          let t × v = successful (desugarEval ρ s)
              ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
              v = desugarEval_fwd ρ' s' t
-         unless (isGraphical v) (checkPretty v expected)
+         unless (isGraphical v) (checkPretty expected v)
          case v_opt of
             Nothing -> pure unit
-            Just _ -> loadFile (Folder "fluid/example") (File $ file <> ".expect") >>= checkPretty s'
+            Just _ -> loadFile (Folder "fluid/example") (File $ file <> ".expect") >>= flip checkPretty s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
@@ -80,28 +80,32 @@ type LinkConfig = {
    s2 :: S.Expr 𝔹    -- view 2
 }
 
+testLink2 :: File -> File -> File -> Val 𝔹 -> Aff (Val 𝔹)
+testLink2 (File file1) (File file2) (File dataFile) v1_sel = do
+   let dir = "linking/"
+       name1 × name2 = File (dir <> file1) × File (dir <> file2)
+   -- the views share an ambient environment ρ0 as well as dataset
+   ρ0 × ρ <- openDatasetAs (File $ "example/" <> dir <> dataFile) "data"
+   s1 <- open name1
+   s2 <- open name2
+   let e1 = successful (desugarFwd s1)
+       e2 = successful (desugarFwd s2)
+       t1 × v1 = successful (eval (ρ0 <> ρ) e1)
+       t2 × v2 = successful (eval (ρ0 <> ρ) e2)
+       ρ0ρ × _ × _ = evalBwd v1_sel t1
+       _ × ρ' = splitAt 1 ρ0ρ
+       -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
+       -- combined with the negation of the dataset environment slice
+       v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
+   pure v2'
+
 testLink :: File -> File -> File -> Val 𝔹 -> String -> Test Unit
 testLink (File file1) (File file2) (File dataFile) v1_sel v2_expect =
    let dir = "linking/"
-       name1 × name2 = File (dir <> file1) × File (dir <> file2)
-       setup = do
-         -- the views share an ambient environment ρ0 as well as dataset
-         ρ0 × ρ <- openDatasetAs (File $ "example/" <> dir <> dataFile) "data"
-         s1 <- open name1
-         s2 <- open name2
-         pure { ρ0, ρ, s1, s2 } :: Aff LinkConfig in
+       setup = testLink2 (File file1) (File file2) (File dataFile) v1_sel :: Aff (Val 𝔹) in
    before setup $
-      it (dir <> file1 <> " <-> " <> file2) \{ ρ0, ρ, s1, s2 } -> do
-         let e1 = successful (desugarFwd s1)
-             e2 = successful (desugarFwd s2)
-             t1 × v1 = successful (eval (ρ0 <> ρ) e1)
-             t2 × v2 = successful (eval (ρ0 <> ρ) e2)
-             ρ0ρ × _ × _ = evalBwd v1_sel t1
-             _ × ρ' = splitAt 1 ρ0ρ
-             -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
-             -- combined with the negation of the dataset environment slice
-             v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
-         checkPretty v2' v2_expect
+      it (dir <> file1 <> " <-> " <> file2) \v2' -> do
+         checkPretty v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit
 testWithDataset dataset file = do
