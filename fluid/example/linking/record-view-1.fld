@@ -1,1 +1,1 @@
-[ { y: sum [ row.output | row <- [ data ] ] } ]
+[ { y: sum [ data.output ] } ]
