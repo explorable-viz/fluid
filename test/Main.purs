@@ -34,24 +34,6 @@ test_scratchpad = [
                      \data: [\
                         \{x: 2015, y: 16.7}\
                      \]\
-                  \}), \
-                  \LinePlot ({\
-                     \name: \"Hydro\", \
-                     \data: [\
-                        \{x: 2015, y: 80}\
-                     \]\
-                  \}), \
-                  \LinePlot ({\
-                     \name: \"Solar\", \
-                     \data: [\
-                        \{x: 2015, y: 26}\
-                     \]\
-                  \}), \
-                  \LinePlot ({\
-                     \name: \"Wind\", \
-                     \data: [\
-                        \{x: 2015, y: 74}\
-                     \]\
                   \})\
                \]\
             \})"
