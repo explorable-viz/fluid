@@ -103,7 +103,7 @@ evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
                         i <- range 1 i'
                         singleton $ A.fromFoldable $ do
                            j <- range 1 j'
-                           singleton (evalFwd (ρ :- x ↦ V.Int α i :- y ↦ V.Int α j) e1 α' (tss!(i - 1)!(j - 1)))
+                           singleton (evalFwd (ρ :- x ↦ V.Int β i :- y ↦ V.Int β' j) e1 α' (tss!(i - 1)!(j - 1)))
                in V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
             _ -> error absurd
       _ -> error absurd

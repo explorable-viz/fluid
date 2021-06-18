@@ -52,7 +52,7 @@ desugarEval_fwd ρ s =
 checkPretty :: forall a . Pretty a => a -> String -> Aff Unit
 checkPretty x expected = prettyP x `shouldEqual` expected
 
--- v_opt is output slice; v_expect is expected result after round-trip
+-- v_opt is output slice; expected is expected result after round-trip.
 testWithSetup :: File -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_opt setup =
    before setup $

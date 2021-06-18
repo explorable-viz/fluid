@@ -13,7 +13,7 @@ import Val (Val(..), holeMatrix, insertMatrix)
 
 tests :: Array (Array (Test Unit))
 --tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_linking, test_bwd ]
+tests = [ test_bwd ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -71,7 +71,7 @@ test_bwd = [
    testBwd (File "array-lookup") (Int true 14) "_14_",
    testBwd (File "array-dims") (selectPair true (Int true 3) (Int true 3)) "(_3_, _3_)",
    testBwd (File "conv-extend")
-           (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
+           (Matrix false (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
             "_0_, -1, 2, 0, -1,\n\
             \0, 3, -2, 3, -2,\n\
             \-1, 1, -5, 0, 4,\n\
