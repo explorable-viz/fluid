@@ -118,15 +118,15 @@ type FigSpec a = {
    makeSubfigs :: Example -> MayFail (a × Array SubFig)
 }
 
--- TODO: not every example should run in context of renewables data.
-fig :: forall a . Partial => String -> FigSpec a -> Aff (Array Fig)
+-- TODO: not every example should run with this dataset.
+fig :: forall a . String -> FigSpec a -> Aff Fig
 fig divId { file, makeSubfigs } = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
-   pure [ { divId , subfigs } ]
+   pure { divId , subfigs }
 
-fig2 :: String -> File -> File -> MakeSubFig -> NeedsSpec -> Aff (Array Fig)
+fig2 :: String -> File -> File -> MakeSubFig -> NeedsSpec -> Aff Fig
 fig2 divId file1 file2 o_fig spec1 = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file1
@@ -134,12 +134,12 @@ fig2 divId file1 file2 o_fig spec1 = do
    let { ρ0', ρ': ρρ1' } × subfigs1 = successful (needs spec1 { ρ0, ρ: ρ <> ρ1, s: s1 })
        ρ' × _ = splitAt 1 ρρ1' -- data selection
        _ × subfigs2 = successful (neededBy { vars: [], o_fig, ρ': ρ' <> botOf ρ2 } { ρ0, ρ: ρ <> ρ2, s: s2 })
-   pure [ { divId, subfigs: subfigs1 <> subfigs2 } ]
+   pure { divId, subfigs: subfigs1 <> subfigs2 }
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
    let vars = [{ var: "filter", makeFig: matrixFig }, { var: "image", makeFig: matrixFig }] :: Array VarSpec
-   join <$> sequence [
+   sequence [
       fig "fig-1" {
          file: File "slicing/conv-wrap",
          makeSubfigs: needs { vars, o_fig: matrixFig, o': selectCell 2 1 5 5 }
@@ -161,7 +161,7 @@ convolutionFigs = do
 linkingFigs :: Partial => Aff (Array Fig)
 linkingFigs = do
    let vars = [{ var: "data", makeFig: makeEnergyTable }] :: Array VarSpec
-   join <$> sequence [
+   sequence [
       fig2 "fig-5" (File "linking/bar-chart") (File "linking/line-chart") makeLineChart
            { vars, o_fig: makeBarChart, o': selectBarChart_data (selectNth 1 (select_y)) },
       fig "fig-6" {
