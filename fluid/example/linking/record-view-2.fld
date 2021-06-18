@@ -4,4 +4,4 @@ let series rows = [
    { x: year, y: row.output }
    | year <- [2015], row <- rows,
      row.year == year, row.energyType == "Bio"
-] in LinePlot { name: "Bio", data: series usa }
+] in series usa

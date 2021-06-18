@@ -26,12 +26,7 @@ test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
    testLink (File "record-view-1") (File "record-view-2") (File "record-view-data")
             hole
-            "LinePlot ({\
-               \name: \"Bio\", \
-               \data: [\
-                  \{x: 2015, y: 16.7}\
-               \]\
-            \})"
+            "[{x: 2015, y: 16.7}]"
 ]
 
 test_linking :: Array (Test Unit)
