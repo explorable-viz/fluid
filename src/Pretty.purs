@@ -60,8 +60,8 @@ parens :: Endo Doc
 parens = between (text "(") (text ")")
 
 hole :: 𝔹 -> Doc
-hole false = text "■"
-hole true = text "□"
+hole false = text "□"
+hole true = text "■"
 
 null :: Doc
 null = empty 0 0
