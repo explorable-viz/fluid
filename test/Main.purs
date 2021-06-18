@@ -8,12 +8,14 @@ import Effect (Effect)
 import DataType (cCons)
 import Lattice (𝔹)
 import Module (File(..))
-import Test.Util (Test, run, selectCell, selectPair, test, testBwd, testLink, testWithDataset)
+import Test.Util (
+   Test, run, selectBarChart_data, selectCell, selectNth, selectPair, select_y, test, testBwd, testLink, testWithDataset
+)
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
---tests = [ test_linking ]
+--tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_linking ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -38,32 +40,32 @@ test_linking = [
             \7, 15, 15, 8, 20,\n\
             \3, 10, 12, 3, 11",
    testLink (File "bar-chart") (File "line-chart") (File "renewables")
-            hole
+            (selectBarChart_data (selectNth 1 (select_y)))
             "LineChart ({\
                \caption: \"Growth in renewables for USA\", \
                \plots: [\
                   \LinePlot ({\
                      \name: \"Bio\", \
                      \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 16.7}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _16.7_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
                      \]\
                   \}), \
                   \LinePlot ({\
                      \name: \"Hydro\", \
                      \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 80}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _80_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
                      \]\
                   \}), \
                   \LinePlot ({\
                      \name: \"Solar\", \
                      \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 26}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _26_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
                      \]\
                   \}), \
                   \LinePlot ({\
                      \name: \"Wind\", \
                      \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: 74}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _74_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
                      \]\
                   \})\
                \]\

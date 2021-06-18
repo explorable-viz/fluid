@@ -7,7 +7,6 @@ import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
 import Data.Profunctor.Strong ((***), (&&&), first, second)
 import Data.Tuple (fst)
-import Debug.Trace (trace)
 import Bindings (Bindings, (↦), find, key, val, varAnon)
 import DataType (cPair)
 import Eval (closeDefs)
@@ -122,8 +121,7 @@ evalFwd ρ e α (T.RecordLookup t xs x) =
       RecordLookup e' _ ->
          case expand (evalFwd ρ e' α t) (V.Record false (xs <#> (_ ↦ V.Hole false))) of
             V.Record _ xvs ->
-               trace (x × successful (find x xvs)) \_ ->
-                  assert ((xvs <#> key) == xs) $ successful (find x xvs)
+               assert ((xvs <#> key) == xs) $ successful (find x xvs)
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
