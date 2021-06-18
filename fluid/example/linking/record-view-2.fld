@@ -1,4 +1,1 @@
-let series rows = [
-   { y: row.output }
-   | year <- [2015], row <- rows
-] in series [ data ]
+{ y: data.output }
