@@ -1,4 +1,1 @@
-let totalFor rows =
-   sum [ row.output | row <- rows ]
-in
-[ { y: totalFor [ data ] } ]
+[ { y: sum [ row.output | row <- [ data ] ] } ]
