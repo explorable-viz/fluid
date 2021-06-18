@@ -81,7 +81,12 @@ type LinkConfig = {
    v1_sel :: Val 𝔹
 }
 
-doLink :: LinkConfig -> Aff (Slice (Val 𝔹))
+type LinkResult = {
+   v1 :: Val 𝔹,             -- original value of view 1
+   v2 :: Slice (Val 𝔹)
+}
+
+doLink :: LinkConfig -> Aff LinkResult
 doLink { file1, file2, dataFile, v1_sel } = do
    let dir = File "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)
@@ -97,13 +102,17 @@ doLink { file1, file2, dataFile, v1_sel } = do
        _ × ρ' = splitAt 1 ρ0ρ
    -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
    -- combined with the negation of the dataset environment slice
-   pure $ neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2
+   pure {
+      v1: v1,
+      v2: neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2
+   }
 
 testLink :: LinkConfig -> String -> Test Unit
 testLink config v2_expect =
    before (doLink config) $
-      it ("linking/" <> show config.file1 <> " <-> " <> show config.file2) \(v2' × _) ->
-         checkPretty v2_expect v2'
+      it ("linking/" <> show config.file1 <> " <-> " <> show config.file2)
+         \{ v2: v2' × _ } ->
+            checkPretty v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit
 testWithDataset dataset file = do
