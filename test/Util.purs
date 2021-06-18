@@ -21,6 +21,7 @@ import SExpr (Expr) as S
 import Lattice (𝔹, botOf, neg)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
+import Primitive (Slice)
 import Util (MayFail, type (×), (×), successful)
 import Util.SnocList (SnocList(..), (:-), splitAt)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
@@ -80,7 +81,7 @@ type LinkConfig = {
    v1_sel :: Val 𝔹
 }
 
-doLink :: LinkConfig -> Aff (Val 𝔹)
+doLink :: LinkConfig -> Aff (Slice (Val 𝔹))
 doLink { file1, file2, dataFile, v1_sel } = do
    let dir = File "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)
@@ -96,12 +97,12 @@ doLink { file1, file2, dataFile, v1_sel } = do
        _ × ρ' = splitAt 1 ρ0ρ
    -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
    -- combined with the negation of the dataset environment slice
-   pure $ neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
+   pure $ neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2
 
 testLink :: LinkConfig -> String -> Test Unit
 testLink config v2_expect =
    before (doLink config) $
-      it ("linking/" <> show config.file1 <> " <-> " <> show config.file2) \v2' ->
+      it ("linking/" <> show config.file1 <> " <-> " <> show config.file2) \(v2' × _) ->
          checkPretty v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit

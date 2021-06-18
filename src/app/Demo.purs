@@ -22,7 +22,7 @@ import Lattice (𝔹, botOf, neg)
 import Module (File(..), open, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (selectBarChart_data, selectCell, selectNth, select_y)
+import Test.Util (LinkConfig, doLink, selectBarChart_data, selectCell, selectNth, select_y)
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
 import Util.SnocList (splitAt)
 import Val (Env, Val)
@@ -126,6 +126,11 @@ fig divId { file, makeSubfigs } = do
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId , subfigs }
 
+fig2' :: String -> LinkConfig -> MakeSubFig -> Aff Fig
+fig2' divId config o_fig = do
+   v2 <- doLink config
+   pure { divId, subfigs: [ o_fig { title: "output", uv: v2 } ] }
+
 fig2 :: String -> File -> File -> MakeSubFig -> NeedsSpec -> Aff Fig
 fig2 divId file1 file2 o_fig spec1 = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
@@ -162,8 +167,12 @@ linkingFigs :: Partial => Aff (Array Fig)
 linkingFigs = do
    let vars = [{ var: "data", makeFig: makeEnergyTable }] :: Array VarSpec
    sequence [
-      fig2 "fig-5" (File "linking/bar-chart") (File "linking/line-chart") makeLineChart
-           { vars, o_fig: makeBarChart, o': selectBarChart_data (selectNth 1 (select_y)) },
+      fig2' "fig-5" {
+         file1: File "bar-chart",
+         file2: File "line-chart",
+         dataFile: File "renewables",
+         v1_sel: selectBarChart_data (selectNth 1 (select_y))
+       } makeLineChart,
       fig "fig-6" {
          file: File "linking/bar-chart",
          makeSubfigs: needs { vars, o_fig: makeBarChart, o': selectBarChart_data (selectNth 0 (select_y)) }
