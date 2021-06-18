@@ -1,5 +1,4 @@
-let totalFor c rows =
-   sum [ row.output | row <- rows, row.country == c ];
-let c = "USA"
+let totalFor rows =
+   sum [ row.output | row <- rows, row.country == "USA" ]
 in
-[ { x: c, y: totalFor c data } ]
+[ { x: "USA", y: totalFor data } ]
