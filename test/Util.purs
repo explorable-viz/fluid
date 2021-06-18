@@ -100,11 +100,9 @@ testLink2 (File file1) (File file2) (File dataFile) v1_sel = do
    pure v2'
 
 testLink :: File -> File -> File -> Val 𝔹 -> String -> Test Unit
-testLink (File file1) (File file2) (File dataFile) v1_sel v2_expect =
-   let dir = "linking/"
-       setup = testLink2 (File file1) (File file2) (File dataFile) v1_sel :: Aff (Val 𝔹) in
-   before setup $
-      it (dir <> file1 <> " <-> " <> file2) \v2' -> do
+testLink file1 file2 dataFile v1_sel v2_expect =
+   before (testLink2 file1 file2 dataFile v1_sel) $
+      it ("linking/" <> show file1 <> " <-> " <> show file2) \v2' ->
          checkPretty v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit
