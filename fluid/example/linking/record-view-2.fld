@@ -1,0 +1,13 @@
+let usa =
+   [ row | row <- data, row.country == "USA" ];
+let series type rows = [
+   { x: year, y: row.output }
+   | year <- [2015], row <- rows,
+     row.year == year, row.energyType == type
+] in LineChart {
+   caption: "Growth in renewables for USA",
+   plots: [
+      LinePlot { name: type, data: series type usa }
+      | type <- ["Bio"]
+   ]
+}
