@@ -24,9 +24,6 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   testLink (File "record-view-1") (File "record-view-2") (File "record-view-data")
-            hole
-            "1"
 ]
 
 test_linking :: Array (Test Unit)
