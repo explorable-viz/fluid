@@ -25,6 +25,8 @@ newtype File = File String
 newtype Folder = Folder String
 
 derive newtype instance showFile :: Show File
+derive newtype instance semigroupFile :: Semigroup File
+derive newtype instance monoidFile :: Monoid File
 
 -- For Wrattler integration. Should not end in "/".
 resourceServerUrl :: String

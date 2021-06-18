@@ -74,18 +74,18 @@ testBwd (File file) v expected =
    testWithSetup file' expected (Just v) (openWithDefaultImports file')
 
 type LinkConfig = {
-   ρ0 :: Env 𝔹,      -- ambient env (default imports)
-   ρ :: Env 𝔹,       -- additional singleton env for dataset
-   s1 :: S.Expr 𝔹,   -- view 1
-   s2 :: S.Expr 𝔹    -- view 2
+   file1 :: File,
+   file2 :: File,
+   dataFile :: File,
+   v1_sel :: Val 𝔹
 }
 
-testLink2 :: File -> File -> File -> Val 𝔹 -> Aff (Val 𝔹)
-testLink2 (File file1) (File file2) (File dataFile) v1_sel = do
-   let dir = "linking/"
-       name1 × name2 = File (dir <> file1) × File (dir <> file2)
+doLink :: LinkConfig -> Aff (Val 𝔹)
+doLink { file1, file2, dataFile, v1_sel } = do
+   let dir = File "linking/"
+       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment ρ0 as well as dataset
-   ρ0 × ρ <- openDatasetAs (File $ "example/" <> dir <> dataFile) "data"
+   ρ0 × ρ <- openDatasetAs (File "example/" <> dir <> dataFile) "data"
    s1 <- open name1
    s2 <- open name2
    let e1 = successful (desugarFwd s1)
@@ -99,10 +99,10 @@ testLink2 (File file1) (File file2) (File dataFile) v1_sel = do
        v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
    pure v2'
 
-testLink :: File -> File -> File -> Val 𝔹 -> String -> Test Unit
-testLink file1 file2 dataFile v1_sel v2_expect =
-   before (testLink2 file1 file2 dataFile v1_sel) $
-      it ("linking/" <> show file1 <> " <-> " <> show file2) \v2' ->
+testLink :: LinkConfig -> String -> Test Unit
+testLink config v2_expect =
+   before (doLink config) $
+      it ("linking/" <> show config.file1 <> " <-> " <> show config.file2) \v2' ->
          checkPretty v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit

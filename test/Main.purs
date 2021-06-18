@@ -14,8 +14,8 @@ import Test.Util (
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_linking ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+--tests = [ test_linking ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -30,46 +30,58 @@ test_scratchpad = [
 
 test_linking :: Array (Test Unit)
 test_linking = [
-   testLink (File "pairs-1") (File "pairs-2") (File "pairs-data")
-            (selectPair false hole (selectPair false hole (selectPair false (Int true 3) hole))) "(3, (_5_, _7_))",
-   testLink (File "convolution-1") (File "convolution-2") (File "convolution-data")
-            (selectCell 2 2 5 5)
-            "_18_, _12_, _13_, 9, 19,\n\
-            \_20_, _11_, _24_, 9, 14,\n\
-            \_15_, _13_, _20_, 11, 14,\n\
-            \7, 15, 15, 8, 20,\n\
-            \3, 10, 12, 3, 11",
-   testLink (File "bar-chart") (File "line-chart") (File "renewables")
-            (selectBarChart_data (selectNth 1 (select_y)))
-            "LineChart ({\
-               \caption: \"Growth in renewables for USA\", \
-               \plots: [\
-                  \LinePlot ({\
-                     \name: \"Bio\", \
-                     \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _16.7_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
-                     \]\
-                  \}), \
-                  \LinePlot ({\
-                     \name: \"Hydro\", \
-                     \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _80_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
-                     \]\
-                  \}), \
-                  \LinePlot ({\
-                     \name: \"Solar\", \
-                     \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _26_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
-                     \]\
-                  \}), \
-                  \LinePlot ({\
-                     \name: \"Wind\", \
-                     \data: [\
-                        \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _74_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
-                     \]\
-                  \})\
+   testLink {
+      file1: File "pairs-1",
+      file2: File "pairs-2",
+      dataFile: File "pairs-data",
+      v1_sel: selectPair false hole (selectPair false hole (selectPair false (Int true 3) hole))
+   } "(3, (_5_, _7_))",
+   testLink {
+      file1: File "convolution-1",
+      file2: File "convolution-2",
+      dataFile: File "convolution-data",
+      v1_sel: selectCell 2 2 5 5
+   }
+      "_18_, _12_, _13_, 9, 19,\n\
+      \_20_, _11_, _24_, 9, 14,\n\
+      \_15_, _13_, _20_, 11, 14,\n\
+      \7, 15, 15, 8, 20,\n\
+      \3, 10, 12, 3, 11",
+   testLink {
+      file1: File "bar-chart",
+      file2: File "line-chart",
+      dataFile: File "renewables",
+      v1_sel: selectBarChart_data (selectNth 1 (select_y))
+   }
+      "LineChart ({\
+         \caption: \"Growth in renewables for USA\", \
+         \plots: [\
+            \LinePlot ({\
+               \name: \"Bio\", \
+               \data: [\
+                  \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _16.7_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
                \]\
-            \})"
+            \}), \
+            \LinePlot ({\
+               \name: \"Hydro\", \
+               \data: [\
+                  \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _80_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+               \]\
+            \}), \
+            \LinePlot ({\
+               \name: \"Solar\", \
+               \data: [\
+                  \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _26_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+               \]\
+            \}), \
+            \LinePlot ({\
+               \name: \"Wind\", \
+               \data: [\
+                  \{x: 2013, y: □}, {x: 2014, y: □}, {x: 2015, y: _74_}, {x: 2016, y: □}, {x: 2017, y: □}, {x: 2018, y: □}\
+               \]\
+            \})\
+         \]\
+      \})"
 ]
 
 test_bwd :: Array (Test Unit)
