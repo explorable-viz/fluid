@@ -203,7 +203,7 @@ function drawLineChart (
          .attr('cx', d => x(d.x.value0))
          .attr('cy', d => y(d.y.value0))
          .attr('fill', col)
-         .attr('stroke', d.y.value1 ? colorShade(col, -30) : col)
+         .attr('stroke', d => d.y.value1 ? colorShade(col, -30) : col)
    }
 
    svg.append('g')
