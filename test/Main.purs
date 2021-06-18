@@ -9,7 +9,7 @@ import DataType (cCons)
 import Lattice (𝔹)
 import Module (File(..))
 import Test.Util (Test, run, selectCell, selectPair, test, testBwd, testLink, testWithDataset)
-import Val (Val(..), holeMatrix, insertMatrix)
+import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
 --tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
@@ -71,21 +71,21 @@ test_bwd = [
    testBwd (File "array-lookup") (Int true 14) "_14_",
    testBwd (File "array-dims") (selectPair true (Int true 3) (Int true 3)) "(_3_, _3_)",
    testBwd (File "conv-extend")
-           (Matrix false (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
+           (selectCell 1 1 5 5)
             "_0_, -1, 2, 0, -1,\n\
             \0, 3, -2, 3, -2,\n\
             \-1, 1, -5, 0, 4,\n\
             \1, -1, 4, 0, -4,\n\
             \1, 0, -3, 2, 0",
    testBwd (File "conv-wrap")
-           (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
+           (selectCell 1 1 5 5)
            "_1_, 2, -1, 1, 5,\n\
            \-1, 1, 2, -1, 1,\n\
            \0, 0, 1, 0, 1,\n\
            \0, 1, -2, 0, 1,\n\
            \0, 3, 0, 2, 2",
    testBwd (File "conv-zero")
-           (Matrix true (insertMatrix 1 1 (Hole true) (holeMatrix 5 5)))
+           (selectCell 1 1 5 5)
            "_38_, 37, 28, 30, 38,\n\
            \38, 36, 46, 31, 34,\n\
            \37, 41, 54, 34, 20,\n\
