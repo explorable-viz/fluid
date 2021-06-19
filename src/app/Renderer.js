@@ -112,8 +112,8 @@ function drawBarChart (
    const y = d3.scaleLinear()
       .domain([0, y_max])
       .range([ height, 0])
-   const tick_every = nearest / 2,
-         ticks = Array.from(Array(y_max / tick_every + 1).keys()).map(n => n * tick_every)
+   const tickEvery = nearest / 2,
+         ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map(n => n * tickEvery)
    const yAxis = d3.axisLeft(y)
       .tickValues(ticks)
    svg.append('g')
@@ -222,7 +222,7 @@ function drawLineChart (
       .call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')))
 
    svg.append('g')
-      .call(d3.axisLeft(y).tickSizeOuter(0))
+      .call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))) // lots of hard-coded constants
 
    const legendLineHeight = 15,
          legendStart = width + margin.left / 2

@@ -83,7 +83,8 @@ type LinkConfig = {
 
 type LinkResult = {
    v1 :: Val 𝔹,             -- original value of view 1
-   v2 :: Slice (Val 𝔹)
+   v2 :: Slice (Val 𝔹),
+   data_sel :: Slice (Env 𝔹)
 }
 
 doLink :: LinkConfig -> Aff LinkResult
@@ -104,7 +105,8 @@ doLink { file1, file2, dataFile, v1_sel } = do
    -- combined with the negation of the dataset environment slice
    pure {
       v1: v1,
-      v2: neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2
+      v2: neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2,
+      data_sel: ρ' × ρ
    }
 
 testLink :: LinkConfig -> String -> Test Unit
