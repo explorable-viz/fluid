@@ -72,13 +72,17 @@ evalExample { ρ0, ρ, s } = do
    t × o <- eval ρ0ρ e
    pure { e, ρ0ρ, t, o }
 
+varFig' :: VarSpec -> Slice (Env 𝔹) -> MayFail SubFig
+varFig' spec (ρ' × ρ) = do
+   v <- find spec.var ρ
+   v' <- find spec.var ρ'
+   unsafePartial $ pure $ varFig (spec × (v' × v))
+
 valFigs :: ExampleEval -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig)
 valFigs q { vars, o_fig, o' } (ρ' × ρ) = do
-   let xs = _.var <$> vars
-   vs <- sequence (flip find ρ <$> xs)
-   vs' <- sequence (flip find ρ' <$> xs)
+   figs <- sequence (flip varFig' (ρ' × ρ) <$> vars)
    unsafePartial $ pure $
-      [ o_fig { title: "output", uv: o' × q.o } ] <> (varFig <$> zip vars (zip vs' vs))
+      [ o_fig { title: "output", uv: o' × q.o } ] <> figs
 
 type NeedsSpec = {
    vars  :: Array VarSpec, -- variables we want subfigs for
