@@ -164,8 +164,8 @@ function drawLineChart (
       plots,     // Array LinePlot
    }
 ) {
-   const margin = {top: 15, right: 55, bottom: 40, left: 30},
-         width = 220 - margin.left - margin.right,
+   const margin = {top: 15, right: 60, bottom: 40, left: 30},
+         width = 225 - margin.left - margin.right,
          height = 185 - margin.top - margin.bottom,
          y_max = Math.max(...plots.map(max_y)),
          x_min = Math.min(...plots.map(min_x)),
