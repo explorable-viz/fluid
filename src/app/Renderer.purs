@@ -8,7 +8,7 @@ import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import Data.Profunctor.Strong (first)
 import Bindings (Bindings, Bind, Var, find)
-import DataType (cBarChart, cCons, cNil)
+import DataType (cBarChart, cCons, cLineChart, cLinePlot, cNil)
 import Effect (Effect)
 import Lattice (𝔹, expand)
 import Primitive (Slice, class ToFrom, as, match, match_fwd)
@@ -17,7 +17,12 @@ import Util.SnocList (SnocList)
 import Val (Array2, MatrixRep, Val)
 import Val (Val(..)) as V
 
-foreign import drawFigure :: String -> Array Fig -> Effect Unit
+type Fig = {
+   divId :: String,
+   subfigs :: Array SubFig
+}
+
+foreign import drawFig :: Fig -> Effect Unit
 
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
@@ -25,41 +30,39 @@ type IntMatrix = Array2 (Int × 𝔹) × Int × Int
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
 newtype BarChart = BarChart { caption :: String × 𝔹, data_ :: Array BarChartRecord }
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
+newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
+newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
+newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹}
 
-data Fig =
-   MatrixFig { title :: String, cellFillSelected :: String, matrix :: IntMatrix } |
-   EnergyTable { title :: String, cellFillSelected :: String, table :: Array EnergyRecord } |
-   LineChart { title :: String } |
+data SubFig =
+   MatrixFig { title :: String, matrix :: IntMatrix } |
+   EnergyTable { title :: String, table :: Array EnergyRecord } |
+   LineChartFig LineChart |
    BarChartFig BarChart
 
--- Convert sliced value to appropriate Fig, discarding top-level annotations for now.
-type MakeFig = Partial => String -> String -> Slice (Val 𝔹) -> Fig
+-- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
+type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 
-matrixFig :: MakeFig
-matrixFig title cellFillSelected (u × v) =
+matrixFig :: MakeSubFig
+matrixFig { title, uv: (u × v) } =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
-   MatrixFig { title, cellFillSelected, matrix: matrixRep vss2 }
+   MatrixFig { title, matrix: matrixRep vss2 }
 
-toArray :: Partial => Slice (Val 𝔹) -> Array (Slice (Val 𝔹))
-toArray (vs × V.Constr _ c Nil) | c == cNil =
-   case expand vs (V.Constr false cNil Nil) of
-      V.Constr _ _ Nil -> []
-toArray (us × V.Constr _ c (v1 : v2 : Nil)) | c == cCons =
-   case expand us (V.Constr false cCons (V.Hole false : V.Hole false : Nil)) of
-      V.Constr _ _ (u1 : u2 : Nil) -> (u1 × v1) A.: toArray (u2 × v2)
+makeEnergyTable :: Partial => MakeSubFig
+makeEnergyTable { title, uv: (u × v) } =
+   EnergyTable { title, table: record energyRecord <$> from (u × v) }
 
-makeEnergyTable :: MakeFig
-makeEnergyTable title cellFillSelected (u × v) =
-   EnergyTable { title, cellFillSelected, table: record energyRecord <$> toArray (u × v) }
-
-makeBarChart :: MakeFig
-makeBarChart title _ (u × V.Constr _ c (v1 : Nil)) | c == cBarChart =
+makeBarChart :: Partial => MakeSubFig
+makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> BarChartFig (record from (u1 × v1))
 
-lineChart :: MakeFig
-lineChart title _ _ = LineChart { title }
+makeLineChart :: Partial => MakeSubFig
+makeLineChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
+   case expand u (V.Constr false cLineChart (V.Hole false : Nil)) of
+      V.Constr _ _ (u1 : Nil) -> LineChartFig (record from (u1 × v1))
 
+-- Assumes fields are all of primitive type.
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
 record toRecord (u × v) = toRecord (fst (match_fwd (u × v)) × fst (match v))
 
@@ -68,7 +71,7 @@ energyRecord r = {
    year: get_prim "year" r,
    country: get_prim "country" r,
    energyType: get_prim "energyType" r,
-   output: get_intNumber "output" r
+   output: get_intOrNumber "output" r
 }
 
 matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
@@ -78,8 +81,8 @@ matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
 get_prim :: forall a . ToFrom a => Var -> Slice (Bindings (Val 𝔹)) -> a × 𝔹
 get_prim x = match_fwd <<< get x
 
-get_intNumber :: Var -> Slice (Bindings (Val 𝔹)) -> Number × 𝔹
-get_intNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
+get_intOrNumber :: Var -> Slice (Bindings (Val 𝔹)) -> Number × 𝔹
+get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
 
 get :: Var -> Slice (Bindings (Val 𝔹)) -> Slice (Val 𝔹)
 get x (r × r') = successful $ find x r `lift2 (×)` find x r'
@@ -90,7 +93,7 @@ class Reflect a b where
 instance reflectBarChartRecord :: Reflect (SnocList (Bind (Val Boolean))) BarChartRecord where
    from r = BarChartRecord {
       x: get_prim "x" r,
-      y: get_intNumber "y" r
+      y: get_intOrNumber "y" r
    }
 
 instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart where
@@ -99,7 +102,30 @@ instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart whe
       data_: record from <$> from (get "data" r)
    }
 
--- Hole expansion as necessary; discards list-level annotations.
+instance reflectPoint :: Reflect (SnocList (Bind (Val Boolean))) Point where
+   from r = Point {
+      x: get_intOrNumber "x" r,
+      y: get_intOrNumber "y" r
+   }
+
+instance reflectLinePlot :: Reflect (SnocList (Bind (Val Boolean))) LinePlot where
+   from r = LinePlot {
+      name: get_prim "name" r,
+      data_: record from <$> from (get "data" r)
+   }
+
+instance reflectLineChart :: Reflect (SnocList (Bind (Val Boolean))) LineChart where
+   from r = LineChart {
+      caption: get_prim "caption" r,
+      plots: from <$> (from (get "plots" r) :: Array (Slice (Val 𝔹))) :: Array LinePlot
+   }
+
+instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
+   from (v × V.Constr _ c (v1 : Nil)) | c == cLinePlot =
+      case expand v (V.Constr false cLinePlot (V.Hole false : Nil)) of
+         V.Constr _ _ (u1 : Nil) -> record from (u1 × v1)
+
+-- Perform hole expansion as necessary, and discard any constructor-level annotations.
 instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean × Val Boolean)) where
    from (vs × V.Constr _ c Nil) | c == cNil =
       case expand vs (V.Constr false cNil Nil) of

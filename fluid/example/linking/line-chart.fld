@@ -1,13 +1,13 @@
-let china =
-   [ row | row <- data, row.country == "China" ];
-let series type rows = [
-   {x: year, y: row.output }
-   | year <- [2013..2018], row <- rows,
-     row.year == year, row.energyType == type
+let series type country = [
+   { x: year, y: row.output }
+   | year <- [2013..2018], row <- data,
+     row.year == year, row.energyType == type, row.country == country
 ] in LineChart {
-   caption: "Growth in renewables for China",
+   caption: "Output of USA relative to China",
    plots: [
-      LinePlot { name: type, data: series type china }
-      | type <- ["Bio", "Hydro", "Solar", "Wind"]
+      LinePlot { name: type, data: plot }
+      | type <- ["Bio", "Hydro", "Solar", "Wind"],
+        let plot = zipWith (fun p1 p2 -> { x: p1.x, y: p1.y / p2.y })
+                           (series type "USA") (series type "China")
    ]
 }

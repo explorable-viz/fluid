@@ -97,7 +97,7 @@ instance toFromMatrixRep :: ToFrom (Array (Array (Val Boolean)) × (Int × Boole
    constr (r × α) = Matrix α r
    constr_bwd v = match_fwd v
 
-instance toFromEnergyRecord :: ToFrom (SnocList (Bind (Val Boolean))) where
+instance toFromBindings :: ToFrom (SnocList (Bind (Val Boolean))) where
    match (Record α xvs) = xvs × α
    match v              = error ("Record expected; got " <> prettyP v)
 

@@ -2,12 +2,12 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 
-import Bindings (Bindings, (↦), find, key, val, varAnon)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (fromFoldable)
 import Data.Profunctor.Strong ((***), (&&&), first, second)
 import Data.Tuple (fst)
+import Bindings (Bindings, (↦), find, key, val, varAnon)
 import DataType (cPair)
 import Eval (closeDefs)
 import Expl (Expl(..), Match(..), VarDef(..)) as T
@@ -87,7 +87,6 @@ evalFwd ρ e α' (T.Record _ xts) =
              vs = (\(e' × t) -> evalFwd ρ e' α' t) <$> S.zip es ts in
          V.Record (α ∧ α') (S.zipWith (↦) xs vs)
       _ -> error absurd
---   pure (T.Record ρ (zipWith (↦) xs ts) × V.Record false (zipWith (↦) xs vs))
 evalFwd ρ e α' (T.Constr _ c ts) =
    case expand e (Constr false c (const (Hole false) <$> ts)) of
       Constr α _ es ->
@@ -96,14 +95,14 @@ evalFwd ρ e α' (T.Constr _ c ts) =
 evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
    case expand e (Matrix false (Hole false) (x × y) (Hole false)) of
       Matrix α e1 _ e2 ->
-         case expand (evalFwd ρ e2 α t2) (V.Constr false cPair (V.Hole false : V.Hole false : Nil)) of
+         case expand (evalFwd ρ e2 α' t2) (V.Constr false cPair (V.Hole false : V.Hole false : Nil)) of
             V.Constr _ c (v1 : v2 : Nil) ->
                let (i'' × β) × (j'' × β') = P.match_fwd (v1 × V.Int false i') × P.match_fwd (v2 × V.Int false j')
                    vss = assert (i'' == i' && j'' == j') $ A.fromFoldable $ do
                         i <- range 1 i'
                         singleton $ A.fromFoldable $ do
                            j <- range 1 j'
-                           singleton (evalFwd (ρ :- x ↦ V.Int α i :- y ↦ V.Int α j) e1 α' (tss!(i - 1)!(j - 1)))
+                           singleton (evalFwd (ρ :- x ↦ V.Int β i :- y ↦ V.Int β' j) e1 α' (tss!(i - 1)!(j - 1)))
                in V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
             _ -> error absurd
       _ -> error absurd
@@ -120,10 +119,9 @@ evalFwd ρ e _ (T.Lambda _ _) =
 evalFwd ρ e α (T.RecordLookup t xs x) =
    case expand e (RecordLookup (Hole false) x) of
       RecordLookup e' _ ->
-         case evalFwd ρ e' α t of
+         case expand (evalFwd ρ e' α t) (V.Record false (xs <#> (_ ↦ V.Hole false))) of
             V.Record _ xvs ->
-               assert ((xvs <#> key) == xs) $
-               successful (find x xvs)
+               assert ((xvs <#> key) == xs) $ successful (find x xvs)
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =

@@ -15,10 +15,10 @@ const cellFillDefault         = 'White',
 function drawMatrix (
    id, {
       title,                                                            // String
-      cellFillSelected,                                                 // String
       matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } // IntMatrix
    }
 ) {
+   const cellFillSelected = 'Yellow'
    const w = 30, h = 30
    const div = d3.select('#' + id)
    const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
@@ -75,12 +75,10 @@ function drawBarChart (
       data_,     // Array BarChartRecord
    }
 ) {
-   // set the dimensions and margins of the graph
-   const margin = {top: 15, right: 0, bottom: 30, left: 30},
+   const margin = {top: 15, right: 0, bottom: 40, left: 30},
          width = 200 - margin.left - margin.right,
-         height = 175 - margin.top - margin.bottom
+         height = 185 - margin.top - margin.bottom
 
-   // append the svg object to the body of the page
    const svg = d3.select('#' + id)
       .append('svg')
          .attr('width', width + margin.left + margin.right)
@@ -114,13 +112,14 @@ function drawBarChart (
    const y = d3.scaleLinear()
       .domain([0, y_max])
       .range([ height, 0])
-   const tick_every = nearest / 2
+   const tickEvery = nearest / 2,
+         ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map(n => n * tickEvery)
    const yAxis = d3.axisLeft(y)
-      .tickValues(Array.from(Array(y_max / tick_every + 1).keys()).map(n => n * tick_every))
+      .tickValues(ticks)
    svg.append('g')
       .call(yAxis)
 
-   // Bars
+   // bars
    const barFill = '#dcdcdc'
    svg.selectAll('rect')
       .data(data_)
@@ -135,6 +134,137 @@ function drawBarChart (
          .attr('stroke', d => d.y.value1 ? 'coral' : '')
          .on('mouseover', tip.show)
          .on('mouseout', tip.hide)
+
+   svg.append('text')
+      .text(caption.value0)
+      .attr('x', width / 2)
+      .attr('y', height + 35)
+      .attr('fill', titleTextFill)
+      .attr('font-family', fontFamily)
+      .attr('font-size', titleFontSize)
+      .attr('dominant-baseline', 'bottom')
+      .attr('text-anchor', 'middle')
+}
+
+function max_y (linePlot) {
+   return Math.max(...linePlot.data_.map(point => point.y.value0))
+}
+
+function min_x (linePlot) {
+   return Math.min(...linePlot.data_.map(point => point.x.value0))
+}
+
+function max_x (linePlot) {
+   return Math.max(...linePlot.data_.map(point => point.x.value0))
+}
+
+function drawLineChart (
+   id, {
+      caption,   // String
+      plots,     // Array LinePlot
+   }
+) {
+   const margin = {top: 15, right: 65, bottom: 40, left: 30},
+         width = 230 - margin.left - margin.right,
+         height = 185 - margin.top - margin.bottom,
+         y_max = Math.max(...plots.map(max_y)),
+         x_min = Math.min(...plots.map(min_x)),
+         x_max = Math.max(...plots.map(max_x)),
+         names = plots.map(plot => plot.name.value0)
+
+   const svg = d3.select('#' + id)
+      .append('svg')
+         .attr('width', width + margin.left + margin.right)
+         .attr('height', height + margin.top + margin.bottom)
+      .append('g')
+         .attr('transform', `translate(${margin.left}, ${margin.top})`)
+
+   const x = d3.scaleLinear().domain([x_min, x_max]).range([0, width]),
+         y = d3.scaleLinear().domain([0, y_max]).range([height, 0])
+
+   const line1 = d3.line()
+      .x(d => x(d.x.value0))
+      .y(d => y(d.y.value0))
+
+   const color = d3.scaleOrdinal(d3.schemePastel1)
+
+   svg.selectAll('lines')
+      .data(plots)
+      .enter()
+      .append('g')
+      .append('path')
+      .attr('fill', 'none')
+      .attr('stroke', d => {
+         return color(names.indexOf(d.name.value0))
+      })
+      .attr('stroke-width', 1)
+      .attr('class', 'line')
+      .attr('d', d => line1(d.data_))
+
+   const smallRadius = 2
+   for (const plot of plots) {
+      const col = color(names.indexOf(plot.name.value0))
+      svg.selectAll('markers')
+         .data(plot.data_)
+         .enter()
+         .append('g')
+         .append('circle')
+         .attr('class', 'marker')
+         .attr('r', d => d.y.value1 ? smallRadius * 2 : smallRadius)
+         .attr('cx', d => x(d.x.value0))
+         .attr('cy', d => y(d.y.value0))
+         .attr('fill', col)
+         .attr('stroke', d => d.y.value1 ? colorShade(col, -30) : col)
+   }
+
+   svg.append('g')
+      .attr('transform', `translate(0, ${height})`)
+      .call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')))
+
+   svg.append('g')
+      .call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))) // lots of hard-coded constants
+
+   const legendLineHeight = 15,
+         legendStart = width + margin.left / 2
+
+   svg.append('rect')
+      .attr('transform', `translate(${legendStart}, ${legendLineHeight * (names.length - 1) + 2})`)
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('stroke', 'lightgray')
+      .attr('fill', 'none')
+      .attr('height', legendLineHeight * names.length)
+      .attr('width', margin.right - 16)
+
+   const legend = svg.selectAll('legend')
+      .data(names)
+      .enter()
+      .append('g')
+      .attr('class', 'legend')
+      .attr('transform', (d, i) =>
+         `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
+      )
+
+   legend.append('text')
+      .text(d => d)
+      .attr('font-size', 11)
+      .attr('transform', 'translate(15, 9)') // align text with boxes
+
+   legend.append('circle')
+      .attr('fill', d => color(names.indexOf(d)))
+      .attr('r', smallRadius)
+      .attr('cx', legendLineHeight / 2 - smallRadius / 2)
+      .attr('cy', legendLineHeight / 2 - smallRadius / 2)
+
+   svg.append('text')
+      .text(caption.value0)
+      .attr('x', width / 2)
+      .attr('y', height + 35)
+      .attr('fill', titleTextFill)
+      .attr('font-family', fontFamily)
+      .attr('font-size', titleFontSize)
+      .attr('dominant-baseline', 'bottom')
+      .attr('text-anchor', 'middle')
 }
 
 // https://stackoverflow.com/questions/5560248
@@ -166,7 +296,6 @@ function isUsed (r) {
 function drawTable (
    id, {
       title,               // String
-      cellFillSelected,    // String
       table                // Array of any record type with only primitive fields
    }) {
    table = table.filter(r => isUsed(r))
@@ -197,25 +326,25 @@ function className (o) {
    return o.constructor.name
 }
 
-// String -> Array Fig -> Effect Unit
-function drawFigure (id, figs) {
+// Figs -> Effect Unit
+function drawFig ({ divId, subfigs }) {
    return () => {
-      for (const fig of figs) {
+      for (const fig of subfigs) {
          // Bit horrible but will do for now.
          if (className(fig) == "EnergyTable") {
-            drawTable(id, fig.value0)
+            drawTable(divId, fig.value0)
          }
          else
          if (className(fig) == "BarChartFig") {
-            drawBarChart(id, fig.value0)
+            drawBarChart(divId, fig.value0)
          }
          else
-         if (className(fig) == "LineChart") {
-            drawBarChart(id, fig.value0)
+         if (className(fig) == "LineChartFig") {
+            drawLineChart(divId, fig.value0)
          }
          else
          if (className(fig) == "MatrixFig") {
-            drawMatrix(id, fig.value0)
+            drawMatrix(divId, fig.value0)
          }
          else {
             throw new Error(`Figure type '${className(fig)}' not recognised.`)
@@ -264,4 +393,4 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-exports.drawFigure = curry2(drawFigure)
+exports.drawFig = drawFig
