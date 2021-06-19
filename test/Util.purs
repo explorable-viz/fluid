@@ -8,7 +8,7 @@ import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Bindings ((↦))
+import Bindings ((↦), Var)
 import DataType (cBarChart, cCons, cPair, dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
@@ -78,6 +78,7 @@ type LinkConfig = {
    file1 :: File,
    file2 :: File,
    dataFile :: File,
+   dataVar :: Var,
    v1_sel :: Val 𝔹
 }
 
