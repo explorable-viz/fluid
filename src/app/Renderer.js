@@ -164,8 +164,8 @@ function drawLineChart (
       plots,     // Array LinePlot
    }
 ) {
-   const margin = {top: 15, right: 60, bottom: 40, left: 30},
-         width = 225 - margin.left - margin.right,
+   const margin = {top: 15, right: 65, bottom: 40, left: 30},
+         width = 230 - margin.left - margin.right,
          height = 185 - margin.top - margin.bottom,
          y_max = Math.max(...plots.map(max_y)),
          x_min = Math.min(...plots.map(min_x)),
@@ -234,7 +234,7 @@ function drawLineChart (
       .attr('stroke', 'lightgray')
       .attr('fill', 'none')
       .attr('height', legendLineHeight * names.length)
-      .attr('width', margin.right)
+      .attr('width', margin.right - 16)
 
    const legend = svg.selectAll('legend')
       .data(names)
