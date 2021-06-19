@@ -75,9 +75,9 @@ function drawBarChart (
       data_,     // Array BarChartRecord
    }
 ) {
-   const margin = {top: 15, right: 0, bottom: 30, left: 30},
+   const margin = {top: 15, right: 0, bottom: 40, left: 30},
          width = 200 - margin.left - margin.right,
-         height = 175 - margin.top - margin.bottom
+         height = 185 - margin.top - margin.bottom
 
    const svg = d3.select('#' + id)
       .append('svg')
@@ -134,6 +134,16 @@ function drawBarChart (
          .attr('stroke', d => d.y.value1 ? 'coral' : '')
          .on('mouseover', tip.show)
          .on('mouseout', tip.hide)
+
+   svg.append('text')
+      .text(caption.value0)
+      .attr('x', width / 2)
+      .attr('y', height + 35)
+      .attr('fill', titleTextFill)
+      .attr('font-family', fontFamily)
+      .attr('font-size', titleFontSize)
+      .attr('dominant-baseline', 'bottom')
+      .attr('text-anchor', 'middle')
 }
 
 function max_y (linePlot) {
@@ -154,9 +164,9 @@ function drawLineChart (
       plots,     // Array LinePlot
    }
 ) {
-   const margin = {top: 15, right: 15, bottom: 30, left: 30},
+   const margin = {top: 15, right: 15, bottom: 40, left: 30},
          width = 200 - margin.left - margin.right,
-         height = 175 - margin.top - margin.bottom,
+         height = 185 - margin.top - margin.bottom,
          y_max = Math.max(...plots.map(max_y)),
          x_min = Math.min(...plots.map(min_x)),
          x_max = Math.max(...plots.map(max_x)),
@@ -212,6 +222,17 @@ function drawLineChart (
 
    svg.append('g')
       .call(d3.axisLeft(y).tickSizeOuter(0))
+
+
+   svg.append('text')
+      .text(caption.value0)
+      .attr('x', width / 2)
+      .attr('y', height + 35)
+      .attr('fill', titleTextFill)
+      .attr('font-family', fontFamily)
+      .attr('font-size', titleFontSize)
+      .attr('dominant-baseline', 'bottom')
+      .attr('text-anchor', 'middle')
 }
 
 // https://stackoverflow.com/questions/5560248
