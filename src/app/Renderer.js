@@ -164,8 +164,8 @@ function drawLineChart (
       plots,     // Array LinePlot
    }
 ) {
-   const margin = {top: 15, right: 45, bottom: 40, left: 30},
-         width = 200 - margin.left - margin.right,
+   const margin = {top: 15, right: 55, bottom: 40, left: 30},
+         width = 220 - margin.left - margin.right,
          height = 185 - margin.top - margin.bottom,
          y_max = Math.max(...plots.map(max_y)),
          x_min = Math.min(...plots.map(min_x)),
@@ -201,6 +201,7 @@ function drawLineChart (
       .attr('class', 'line')
       .attr('d', d => line1(d.data_))
 
+   const smallRadius = 2
    for (const plot of plots) {
       const col = color(names.indexOf(plot.name.value0))
       svg.selectAll('markers')
@@ -209,7 +210,7 @@ function drawLineChart (
          .append('g')
          .append('circle')
          .attr('class', 'marker')
-         .attr('r', d => d.y.value1 ? 4 : 2)
+         .attr('r', d => d.y.value1 ? smallRadius * 2 : smallRadius)
          .attr('cx', d => x(d.x.value0))
          .attr('cy', d => y(d.y.value0))
          .attr('fill', col)
@@ -223,21 +224,37 @@ function drawLineChart (
    svg.append('g')
       .call(d3.axisLeft(y).tickSizeOuter(0))
 
-   const legend = svg.selectAll("legend").data(names)
+   const legendLineHeight = 15,
+         legendStart = width + margin.left / 2
+
+   svg.append('rect')
+      .attr('transform', `translate(${legendStart}, ${legendLineHeight * (names.length - 1) + 2})`)
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('stroke', 'lightgray')
+      .attr('fill', 'none')
+      .attr('height', legendLineHeight * names.length)
+      .attr('width', margin.right)
+
+   const legend = svg.selectAll('legend')
+      .data(names)
       .enter()
       .append('g')
       .attr('class', 'legend')
-      .attr('transform', (d,i) => `translate(${width}, ${i * 15})`)
+      .attr('transform', (d, i) =>
+         `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
+      )
 
    legend.append('text')
       .text(d => d)
       .attr('font-size', 11)
-      .attr('transform', 'translate(15,9)') // align texts with boxes
+      .attr('transform', 'translate(15, 9)') // align text with boxes
 
-   legend.append('rect')
-      .attr('circle', d => color(names.indexOf(d)))
-      .attr('width', 2)
-      .attr('height', 2)
+   legend.append('circle')
+      .attr('fill', d => color(names.indexOf(d)))
+      .attr('r', smallRadius)
+      .attr('cx', legendLineHeight / 2 - smallRadius / 2)
+      .attr('cy', legendLineHeight / 2 - smallRadius / 2)
 
    svg.append('text')
       .text(caption.value0)
