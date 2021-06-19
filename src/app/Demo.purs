@@ -1,7 +1,6 @@
 module App.Demo where
 
 import Prelude hiding (absurd)
-import Data.Array (zip)
 import Data.Either (Either(..))
 import Data.List (singleton)
 import Data.Foldable (length)
@@ -130,12 +129,13 @@ fig divId { file, makeSubfigs } = do
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId , subfigs }
 
-linkFig :: String -> LinkConfig -> MakeSubFig -> MakeSubFig -> Aff Fig
-linkFig divId config o1_fig o2_fig = do
+linkFig :: String -> LinkConfig -> MakeSubFig -> MakeSubFig -> MakeSubFig -> Aff Fig
+linkFig divId config o1_fig o2_fig data_fig = do
    link <- doLink config
    pure { divId, subfigs: [
       o1_fig { title: "primary view", uv: config.v1_sel × link.v1 },
-      o2_fig { title: "linked view", uv: link.v2 }
+      o2_fig { title: "linked view", uv: link.v2 },
+      data_fig { title: "common data", uv: link.data_sel }
    ] }
 
 convolutionFigs :: Partial => Aff (Array Fig)
@@ -170,7 +170,7 @@ linkingFigs = do
          dataFile: File "renewables",
          dataVar: "data",
          v1_sel: selectBarChart_data (selectNth 1 (select_y))
-       } makeBarChart makeLineChart,
+       } makeBarChart makeLineChart makeEnergyTable,
       fig "fig-6" {
          file: File "linking/bar-chart",
          makeSubfigs: needs { vars, o_fig: makeBarChart, o': selectBarChart_data (selectNth 0 (select_y)) }
@@ -179,7 +179,7 @@ linkingFigs = do
 
 main :: Effect Unit
 main = unsafePartial $
-   flip runAff_ ((<>) <$> pure []{-convolutionFigs-} <*> linkingFigs)
+   flip runAff_ ((<>) <$> convolutionFigs <*> linkingFigs)
    case _ of
       Left err -> log $ show err
       Right figs ->

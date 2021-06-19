@@ -8,7 +8,7 @@ import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Bindings ((↦), Var)
+import Bindings ((↦), Var, find)
 import DataType (cBarChart, cCons, cPair, dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
@@ -85,15 +85,15 @@ type LinkConfig = {
 type LinkResult = {
    v1 :: Val 𝔹,             -- original value of view 1
    v2 :: Slice (Val 𝔹),
-   data_sel :: Slice (Env 𝔹)
+   data_sel :: Slice (Val 𝔹)
 }
 
 doLink :: LinkConfig -> Aff LinkResult
-doLink { file1, file2, dataFile, v1_sel } = do
+doLink { file1, file2, dataFile, dataVar: x, v1_sel } = do
    let dir = File "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment ρ0 as well as dataset
-   ρ0 × ρ <- openDatasetAs (File "example/" <> dir <> dataFile) "data"
+   ρ0 × ρ <- openDatasetAs (File "example/" <> dir <> dataFile) x
    s1 <- open name1
    s2 <- open name2
    let e1 = successful (desugarFwd s1)
@@ -102,12 +102,14 @@ doLink { file1, file2, dataFile, v1_sel } = do
        t2 × v2 = successful (eval (ρ0 <> ρ) e2)
        ρ0ρ × _ × _ = evalBwd v1_sel t1
        _ × ρ' = splitAt 1 ρ0ρ
+       v = successful (find x ρ)
+       v' = successful (find x ρ')
    -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
    -- combined with the negation of the dataset environment slice
    pure {
       v1: v1,
       v2: neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2,
-      data_sel: ρ' × ρ
+      data_sel: v' × v
    }
 
 testLink :: LinkConfig -> String -> Test Unit
