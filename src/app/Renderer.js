@@ -164,7 +164,7 @@ function drawLineChart (
       plots,     // Array LinePlot
    }
 ) {
-   const margin = {top: 15, right: 15, bottom: 40, left: 30},
+   const margin = {top: 15, right: 45, bottom: 40, left: 30},
          width = 200 - margin.left - margin.right,
          height = 185 - margin.top - margin.bottom,
          y_max = Math.max(...plots.map(max_y)),
@@ -217,12 +217,27 @@ function drawLineChart (
    }
 
    svg.append('g')
-      .attr('transform', "translate(0," + height + ")")
+      .attr('transform', `translate(0, ${height})`)
       .call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')))
 
    svg.append('g')
       .call(d3.axisLeft(y).tickSizeOuter(0))
 
+   const legend = svg.selectAll("legend").data(names)
+      .enter()
+      .append('g')
+      .attr('class', 'legend')
+      .attr('transform', (d,i) => `translate(${width}, ${i * 15})`)
+
+   legend.append('text')
+      .text(d => d)
+      .attr('font-size', 11)
+      .attr('transform', 'translate(15,9)') // align texts with boxes
+
+   legend.append('rect')
+      .attr('circle', d => color(names.indexOf(d)))
+      .attr('width', 2)
+      .attr('height', 2)
 
    svg.append('text')
       .text(caption.value0)
