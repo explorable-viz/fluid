@@ -148,7 +148,6 @@ srcFig o' file = do
        v  = successful (find "countryData" ρ0ρ)
        v' = successful (find "countryData" ρ0ρ')
    pure $ (prettyP v')
-   -- ({ ρ0', ρ' } × _) <$> valFigs q spec (ρ0ρ' × ρ0ρ)
 
 linkFig :: String -> LinkConfig -> MakeSubFig -> MakeSubFig -> MakeSubFig -> Aff Fig
 linkFig divId config o1_fig o2_fig data_fig = do

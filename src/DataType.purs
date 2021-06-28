@@ -95,6 +95,8 @@ cTrue       = Ctr "True"      :: Ctr
 cNil        = Ctr "Nil"       :: Ctr -- List
 cCons       = Ctr ":"         :: Ctr
 cPair       = Ctr "Pair"      :: Ctr -- Pair
+cEmpty      = Ctr "Empty"     :: Ctr -- Tree
+cNonEmpty   = Ctr "NonEmpty"  :: Ctr
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [

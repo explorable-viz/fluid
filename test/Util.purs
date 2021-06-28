@@ -1,27 +1,28 @@
 module Test.Util where
 
 import Prelude hiding (absurd)
+
+import Bindings ((↦), Var, find)
 import Data.List (List(..), (:), elem)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Effect (Effect)
-import Effect.Aff (Aff)
-import Test.Spec (SpecT, before, it)
-import Test.Spec.Assertions (shouldEqual)
-import Test.Spec.Mocha (runMocha)
-import Bindings ((↦), Var, find)
-import DataType (cBarChart, cCons, cPair, dataTypeFor, typeName)
+import DataType (cBarChart, cCons, cNonEmpty , cPair, dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
+import Effect (Effect)
+import Effect.Aff (Aff)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
 import Expl (Expl)
 import Expr (Expr(..)) as E
-import SExpr (Expr) as S
 import Lattice (𝔹, botOf, neg)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import Primitive (Slice)
+import SExpr (Expr) as S
+import Test.Spec (SpecT, before, it)
+import Test.Spec.Assertions (shouldEqual)
+import Test.Spec.Mocha (runMocha)
 import Util (MayFail, type (×), (×), successful)
 import Util.SnocList (SnocList(..), (:-), splitAt)
 import Val (Env, Val(..), holeMatrix, insertMatrix)
@@ -142,3 +143,9 @@ selectBarChart_data v = Constr false cBarChart (Record false (Lin :- "caption" �
 
 selectPair :: 𝔹 -> Val 𝔹 -> Val 𝔹 -> Val 𝔹
 selectPair α v1 v2 = Constr α cPair (v1 : v2 : Nil)
+
+selectTree :: List Boolean -> Val 𝔹
+selectTree (b:bs) =
+   if b then Constr false cNonEmpty (selectTree bs : Hole false : Hole false : Nil)
+        else Constr false cNonEmpty (Hole false : Hole false : selectTree bs : Nil)
+selectTree Nil = Hole true
