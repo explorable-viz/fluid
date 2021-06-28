@@ -2,7 +2,7 @@ module App.Demo where
 
 import Prelude hiding (absurd)
 import Data.Either (Either(..))
-import Data.List (singleton)
+import Data.List (List(..), (:), singleton)
 import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
@@ -21,7 +21,7 @@ import Lattice (𝔹, botOf, neg)
 import Module (File(..), open, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (LinkConfig, doLink, selectBarChart_data, selectCell, selectNth, select_y)
+import Test.Util (LinkConfig, doLink, selectBarChart_data, selectCell, selectNth, select_y, selectTree)
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
 import Util.SnocList (splitAt)
 import Val (Env, Val)
@@ -197,10 +197,22 @@ linkingFigs = do
       }
    ]
 
+testTree :: Effect Unit
+testTree = do
+   let v = selectTree ((Nil) :: List Boolean)
+   unsafePartial $
+         flip runAff_ (srcFig v (File "slicing/tree"))
+         case _ of
+            Left err -> log $ show err
+            Right str ->
+               log $ str
+
 main :: Effect Unit
-main = unsafePartial $
-   flip runAff_ ((<>) <$> convolutionFigs <*> linkingFigs)
-   case _ of
-      Left err -> log $ show err
-      Right figs ->
-         sequence_ $ drawFig <$> figs
+main = do
+   -- testTree
+   unsafePartial $
+      flip runAff_ ((<>) <$> convolutionFigs <*> linkingFigs)
+      case _ of
+         Left err -> log $ show err
+         Right figs ->
+            sequence_ $ drawFig <$> figs
