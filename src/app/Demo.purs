@@ -25,6 +25,7 @@ import Test.Util (LinkConfig, doLink, selectBarChart_data, selectCell, selectNth
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
 import Util.SnocList (splitAt)
 import Val (Env, Val)
+import Pretty (prettyP)
 
 type Example = {
    ρ0 :: Env 𝔹,     -- ambient env (default imports)
@@ -128,6 +129,26 @@ fig divId { file, makeSubfigs } = do
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId , subfigs }
+
+srcFig :: Val 𝔹 -> File -> Aff String
+srcFig o' file = do
+   -- ρ0 : Default imports, ρ : environment referred to as variable "data"
+   ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
+   -- ρ1 : Local environment of program, s1: Main body of program (without bindings)
+   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ))
+                     <$> open file -- SExpr Bool
+   -- e1 : Desugared program
+   let e = successful (desugarFwd s1)
+   -- ρ0ρ : Default imports + data imports + local environment
+   let ρ0ρ = ρ0 <> ρ <> ρ1
+   -- t1 : Trace from evaluating program, o1 : Output from evaluating program
+   let t × o = successful (eval ρ0ρ e)
+   let -- ρ0ρ' : environment from bwd slicing over trace t with selected output o'
+       ρ0ρ' × _ × _ = evalBwd o' t
+       v  = successful (find "countryData" ρ0ρ)
+       v' = successful (find "countryData" ρ0ρ')
+   pure $ (prettyP v')
+   -- ({ ρ0', ρ' } × _) <$> valFigs q spec (ρ0ρ' × ρ0ρ)
 
 linkFig :: String -> LinkConfig -> MakeSubFig -> MakeSubFig -> MakeSubFig -> Aff Fig
 linkFig divId config o1_fig o2_fig data_fig = do
