@@ -1,0 +1,2 @@
+let totalFor c rows = sum [ row.output | row <- rows, row.country == c ]
+in  [ (c, totalFor c data) | c <- ["China", "USA", "Germany"] ]

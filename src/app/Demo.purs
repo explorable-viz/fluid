@@ -10,9 +10,11 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
+import DataType
 import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart, matrixFig)
 import Bindings (Bind, Var, (↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
+import DesugarBwd (desugarBwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
@@ -22,10 +24,10 @@ import Lattice (𝔹, botOf, neg)
 import Module (File(..), open, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (LinkConfig, doLink, selectBarChart_data, selectCell, selectNth, select_y, selectTree)
+import Test.Util (LinkConfig, doLink, selectBarChart_data, selectCell, selectNthCons, selectNth, select_y, selectTree)
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
 import Util.SnocList (splitAt)
-import Val (Env, Val)
+import Val (Env, Val(..))
 import Pretty (prettyP)
 
 type Example = {
@@ -48,16 +50,15 @@ splitDefs ρ0 s = unsafePartial $ do
    let _ × ρ = splitAt (length ρ0ρ - length ρ0) ρ0ρ
    pure { ρ, s }
    where unpack :: Partial => S.Expr 𝔹 -> Maybe (List (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹)
-         unpack (S.LetRec defs s)   = do
-            case unpack s of
-               Nothing           -> Just ((Right defs:Nil) × s)
-               Just (defs' × s') -> Just (((Right defs) : defs') × s')
-         unpack (S.Let defs s) = do
-            defs'_s' <- unpack s
-            case unpack s of
-               Nothing           -> Just ((Left defs:Nil) × s)
-               Just (defs' × s') -> Just (((Left defs) : defs') × s')
-         unpack s = Nothing
+         unpack (S.LetRec defs s')   = do
+            case unpack s' of
+               Nothing           -> Just ((Right defs:Nil) × s')
+               Just (defs' × s'') -> Just (((Right defs) : defs') × s'')
+         unpack (S.Let defs s') = do
+            case unpack s' of
+               Nothing           -> Just ((Left defs:Nil) × s')
+               Just (defs' × s'') -> Just (((Left defs) : defs') × s'')
+         unpack s' = Nothing
 
 type VarSpec = {
    var :: Var,
@@ -144,20 +145,20 @@ srcFig o' file = do
    -- ρ0 : Default imports, ρ : environment referred to as variable "data"
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    -- ρ1 : Local environment of program, s1: Main body of program (without bindings)
-   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ))
-                     <$> open file -- SExpr Bool
+   s1  <- (open file) -- SExpr Bool
    -- e1 : Desugared program
    let e = successful (desugarFwd s1)
    -- pure $ (prettyP $ ρ <> ρ1)
    -- ρ0ρ : Default imports + data imports + local environment
-   let ρ0ρ = ρ0 <> ρ <> ρ1
+   let ρ0ρ = ρ0 <> ρ
    -- -- t1 : Trace from evaluating program, o1 : Output from evaluating program
    let t × o = successful (eval ρ0ρ e)
    let -- ρ0ρ' : environment from bwd slicing over trace t with selected output o'
-       ρ0ρ' × _ × _ = evalBwd o' t
-       v  = successful (find "countryData" ρ0ρ)
-       v' = successful (find "countryData" ρ0ρ')
-   pure $ (prettyP v' <> "\n" <> prettyP v)
+       ρ0ρ' × e' × _ = evalBwd o' t
+       s1' = desugarBwd e' s1
+      --  v  = successful (find "countryData" ρ0ρ)
+      --  v' = successful (find "countryData" ρ0ρ')
+   pure $ (prettyP o <> "\n" <> prettyP s1')
 
 linkFig :: String -> LinkConfig -> MakeSubFig -> MakeSubFig -> MakeSubFig -> Aff Fig
 linkFig divId config o1_fig o2_fig data_fig = do
@@ -209,16 +210,25 @@ linkingFigs = do
 
 testTree :: Effect Unit
 testTree = do
-   let o' = selectTree ((true:false:Nil) :: List Boolean)
+   let o' = selectTree ((true:Nil) :: List Boolean)
    unsafePartial $
       flip runAff_ (srcFig o' (File "slicing/tree"))
       case _ of
          Left err -> log $ show err
          Right str -> log $ str
 
+testListComp :: Effect Unit
+testListComp = do
+   let o' = selectNth 0 (Constr true (Ctr "Pair") (Str true "China":Hole false:Nil))
+   unsafePartial $
+      flip runAff_ (srcFig o' (File "slicing/list-comp"))
+      case _ of
+         Left err -> log $ show err
+         Right str -> log $ prettyP o' <> "\n" <> str
+
 main :: Effect Unit
 main = do
-   testTree
+   testListComp
    -- unsafePartial $
    --    flip runAff_ ((<>) <$> convolutionFigs <*> linkingFigs)
    --    case _ of

@@ -135,6 +135,13 @@ prettyConstr c Nil            | c == cNil    = nil
 prettyConstr c (x : y : Nil)  | c == cCons   = parens (hspace [pretty x, pretty cCons, pretty y])
 prettyConstr c xs                            = hspace (pretty c : (prettyParensOpt <$> xs))
 
+prettyConstr' :: forall a . Pretty a => Boolean -> Ctr -> List a -> Doc
+prettyConstr' α c (x : y : Nil)  | c == cPair   = (parens (hspace [pretty x, (highlightIf α (text ",")), pretty y]))
+prettyConstr' α c Nil            | c == cNil    = highlightIf α nil
+prettyConstr' α c (x : y : Nil)  | c == cCons   = parens (hspace [pretty x, highlightIf α (pretty cCons), pretty y])
+prettyConstr' α c xs    = hspace (highlightIf α (pretty c) : (prettyParensOpt <$> xs))
+
+
 prettyRecord :: forall a . Pretty a => Bindings a -> Doc
 prettyRecord xvs =
    xvs <#> (\(x ↦ v) -> hspace [text x :<>: colon, pretty v])
@@ -188,9 +195,9 @@ instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
    pretty (V.Record α xvs)             = highlightIf α (prettyRecord xvs)
-   pretty u@(V.Constr _ c vs)
-      | c == cNil || c == cCons        = prettyList (toList u) -- list values always printed using list notation
-      | otherwise                      = prettyConstr c vs
+   pretty u@(V.Constr α c vs)          = prettyConstr' α c vs
+      -- | c == cNil || c == cCons        = prettyList (toList u) -- list values always printed using list notation
+      -- | otherwise                      = prettyConstr c vs
    pretty (V.Matrix _ (vss × _ × _))   = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Closure ρ δ σ)            = text "<closure>"
    pretty (V.Primitive φ _)            = parens (pretty φ)
@@ -217,7 +224,7 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
       init = [text str.arrayLBracket, pretty e, text str.bar]
       quant = [parens (hcomma [text x, text y]), text (str.in_), pretty e', text str.arrayRBracket]
    pretty (S.Lambda bs)                = text str.fun :<>: vert semi (pretty <$> bs)
-   pretty (S.RecordLookup _ _)         = error "todo"
+   pretty (S.RecordLookup e x)         = pretty e :<>: text "." :<>: text x
    pretty (S.App s s')                 = hspace [pretty s, pretty s']
    pretty (S.BinaryApp s op s')        = parens (hspace [pretty s, text op, pretty s'])
    pretty (S.MatchAs s bs)             = atop (hspace [text str.match, pretty s, text str.as]) (vert semi (pretty <$> bs))

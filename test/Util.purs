@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Bindings ((↦), Var, find)
 import Data.List (List(..), (:), elem)
 import Data.Maybe (Maybe(..), fromMaybe)
-import DataType (cBarChart, cCons, cNonEmpty , cPair, dataTypeFor, typeName)
+import DataType (cBarChart, cCons, cPair, Ctr(..), dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
 import Effect (Effect)
@@ -131,6 +131,10 @@ testWithDataset dataset file = do
 selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
 selectCell i j i' j' = Matrix false (insertMatrix i j (Hole true) (holeMatrix i' j'))
 
+selectNthCons :: Int -> Val 𝔹
+selectNthCons 0  = Constr true cCons (Hole false : Hole false : Nil)
+selectNthCons n  = Constr false cCons (Hole false : selectNthCons (n - 1) : Nil)
+
 selectNth :: Int -> Val 𝔹 -> Val 𝔹
 selectNth 0 v = Constr false cCons (v : Hole false : Nil)
 selectNth n v = Constr false cCons (Hole false : selectNth (n - 1) v : Nil)
@@ -146,6 +150,6 @@ selectPair α v1 v2 = Constr α cPair (v1 : v2 : Nil)
 
 selectTree :: List Boolean -> Val 𝔹
 selectTree (b:bs) =
-   if b then Constr false cNonEmpty (Hole false : Hole false : selectTree bs : Nil)
-        else Constr false cNonEmpty (selectTree bs : Hole false : Hole false : Nil)
-selectTree Nil = Hole true
+   if b then Constr false (Ctr "NonEmpty") (Hole false : Hole false : selectTree bs : Nil)
+        else Constr false (Ctr "NonEmpty") (selectTree bs : Hole false : Hole false : Nil)
+selectTree Nil = Constr true (Ctr "NonEmpty") (Hole false : Hole false : Hole false : Nil)
