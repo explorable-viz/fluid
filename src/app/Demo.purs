@@ -1,17 +1,17 @@
 module App.Demo where
 
-import Prelude hiding (absurd)
+import Prelude (Unit, bind, const, flip, pure, show, unit, ($), (-), (<$>), (<<<), (<>), (>>=))
 import Data.Either (Either(..))
-import Data.List (List(..), (:), singleton)
+import Data.List (List(..), (:))
 import Data.Foldable (length)
 import Data.Maybe
-import Data.Traversable (sequence, sequence_)
+import Data.Traversable (sequence)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import DataType
-import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart, matrixFig)
+import DataType (Ctr(..))
+import App.Renderer (Fig, MakeSubFig, SubFig, makeBarChart, makeEnergyTable, makeLineChart, matrixFig)
 import Bindings (Bind, Var, (↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import DesugarBwd (desugarBwd)
@@ -24,7 +24,7 @@ import Lattice (𝔹, botOf, neg)
 import Module (File(..), open, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (LinkConfig, doLink, selectBarChart_data, selectCell, selectNthCons, selectNth, select_y, selectTree)
+import Test.Util (LinkConfig, doLink, selectBarChart_data, selectCell, selectNth, select_y, selectTree)
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
 import Util.SnocList (splitAt)
 import Val (Env, Val(..))

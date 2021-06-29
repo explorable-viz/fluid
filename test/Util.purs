@@ -131,10 +131,6 @@ testWithDataset dataset file = do
 selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
 selectCell i j i' j' = Matrix false (insertMatrix i j (Hole true) (holeMatrix i' j'))
 
-selectNthCons :: Int -> Val 𝔹
-selectNthCons 0  = Constr true cCons (Hole false : Hole false : Nil)
-selectNthCons n  = Constr false cCons (Hole false : selectNthCons (n - 1) : Nil)
-
 selectNth :: Int -> Val 𝔹 -> Val 𝔹
 selectNth 0 v = Constr false cCons (v : Hole false : Nil)
 selectNth n v = Constr false cCons (Hole false : selectNth (n - 1) v : Nil)
