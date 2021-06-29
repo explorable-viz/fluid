@@ -157,7 +157,7 @@ srcFig o' file = do
        ρ0ρ' × _ × _ = evalBwd o' t
        v  = successful (find "countryData" ρ0ρ)
        v' = successful (find "countryData" ρ0ρ')
-   pure $ (prettyP v')
+   pure $ (prettyP v' <> "\n" <> prettyP v)
 
 linkFig :: String -> LinkConfig -> MakeSubFig -> MakeSubFig -> MakeSubFig -> Aff Fig
 linkFig divId config o1_fig o2_fig data_fig = do
@@ -209,13 +209,12 @@ linkingFigs = do
 
 testTree :: Effect Unit
 testTree = do
-   let v = selectTree ((true:false:Nil) :: List Boolean)
+   let o' = selectTree ((true:false:Nil) :: List Boolean)
    unsafePartial $
-         flip runAff_ (srcFig v (File "slicing/tree"))
-         case _ of
-            Left err -> log $ show err
-            Right str ->
-               log $ str
+      flip runAff_ (srcFig o' (File "slicing/tree"))
+      case _ of
+         Left err -> log $ show err
+         Right str -> log $ str
 
 main :: Effect Unit
 main = do
