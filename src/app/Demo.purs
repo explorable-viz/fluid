@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 import Data.Either (Either(..))
 import Data.List (List(..), (:), singleton)
 import Data.Foldable (length)
+import Data.Maybe
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
@@ -41,14 +42,22 @@ type View = {
 
 -- Interpret a program as a "view" in the sense above. TODO: generalise to sequence of let/let recs, rather than one.
 splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail View
-splitDefs ρ0 s' = unsafePartial $ do
-   let defs × s = unpack s'
-   ρ0ρ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ0
+splitDefs ρ0 s = unsafePartial $ do
+   let defs × s = fromJust (unpack s)
+   ρ0ρ <- desugarModuleFwd (S.Module defs) >>= eval_module ρ0
    let _ × ρ = splitAt (length ρ0ρ - length ρ0) ρ0ρ
    pure { ρ, s }
-   where unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
-         unpack (S.LetRec defs s)   = Right defs × s
-         unpack (S.Let defs s)      = Left defs × s
+   where unpack :: Partial => S.Expr 𝔹 -> Maybe (List (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹)
+         unpack (S.LetRec defs s)   = do
+            case unpack s of
+               Nothing           -> Just ((Right defs:Nil) × s)
+               Just (defs' × s') -> Just (((Right defs) : defs') × s')
+         unpack (S.Let defs s) = do
+            defs'_s' <- unpack s
+            case unpack s of
+               Nothing           -> Just ((Left defs:Nil) × s)
+               Just (defs' × s') -> Just (((Left defs) : defs') × s')
+         unpack s = Nothing
 
 type VarSpec = {
    var :: Var,
@@ -139,9 +148,10 @@ srcFig o' file = do
                      <$> open file -- SExpr Bool
    -- e1 : Desugared program
    let e = successful (desugarFwd s1)
+   -- pure $ (prettyP $ ρ <> ρ1)
    -- ρ0ρ : Default imports + data imports + local environment
    let ρ0ρ = ρ0 <> ρ <> ρ1
-   -- t1 : Trace from evaluating program, o1 : Output from evaluating program
+   -- -- t1 : Trace from evaluating program, o1 : Output from evaluating program
    let t × o = successful (eval ρ0ρ e)
    let -- ρ0ρ' : environment from bwd slicing over trace t with selected output o'
        ρ0ρ' × _ × _ = evalBwd o' t
@@ -199,7 +209,7 @@ linkingFigs = do
 
 testTree :: Effect Unit
 testTree = do
-   let v = selectTree ((Nil) :: List Boolean)
+   let v = selectTree ((true:false:Nil) :: List Boolean)
    unsafePartial $
          flip runAff_ (srcFig v (File "slicing/tree"))
          case _ of
@@ -209,10 +219,10 @@ testTree = do
 
 main :: Effect Unit
 main = do
-   -- testTree
-   unsafePartial $
-      flip runAff_ ((<>) <$> convolutionFigs <*> linkingFigs)
-      case _ of
-         Left err -> log $ show err
-         Right figs ->
-            sequence_ $ drawFig <$> figs
+   testTree
+   -- unsafePartial $
+   --    flip runAff_ ((<>) <$> convolutionFigs <*> linkingFigs)
+   --    case _ of
+   --       Left err -> log $ show err
+   --       Right figs ->
+   --          sequence_ $ drawFig <$> figs

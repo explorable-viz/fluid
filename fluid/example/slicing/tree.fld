@@ -1,7 +1,5 @@
-let totalFor c rows =
-   sum [ row.output | row <- rows, row.country == c ];
-let countryData = [ (c, totalFor c data)
-                  | c <- ["China", "USA", "Germany"] ];
+let totalFor c rows = sum [ row.output | row <- rows, row.country == c ];
+let countryData = [ (c, totalFor c data) | c <- ["China", "USA", "Germany"] ];
 let insert (k, v) Empty = NonEmpty Empty (k, v) Empty;
     insert (k, v) (NonEmpty t1 (key, val) t2) =
       match compare (k, key) as {

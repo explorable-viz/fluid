@@ -146,6 +146,6 @@ selectPair α v1 v2 = Constr α cPair (v1 : v2 : Nil)
 
 selectTree :: List Boolean -> Val 𝔹
 selectTree (b:bs) =
-   if b then Constr false cNonEmpty (selectTree bs : Hole false : Hole false : Nil)
-        else Constr false cNonEmpty (Hole false : Hole false : selectTree bs : Nil)
+   if b then Constr false cNonEmpty (Hole false : Hole false : selectTree bs : Nil)
+        else Constr false cNonEmpty (selectTree bs : Hole false : Hole false : Nil)
 selectTree Nil = Hole true
