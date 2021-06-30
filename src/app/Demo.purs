@@ -140,25 +140,39 @@ linkFig divId config o1_fig o2_fig data_fig = do
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
-   let vars = [{ var: "image", makeFig: matrixFig "Yellow" }, { var: "filter", makeFig: matrixFig "Yellow" }] :: Array VarSpec
    sequence [
       fig "fig-1" {
          file: File "slicing/conv-wrap",
-         makeSubfigs: needs { vars, o_fig: matrixFig "LightGreen", o': selectCell 2 1 5 5 }
+         makeSubfigs: needs {
+            vars: [{ var: "image", makeFig: matrixFig "Yellow" }, { var: "filter", makeFig: matrixFig "Yellow" }],
+            o_fig: matrixFig "LightGreen",
+            o': selectCell 2 1 5 5
+         }
       },
       fig "fig-2" {
          file: File "slicing/conv-wrap",
          makeSubfigs: \ex ->
-            neededBy { vars, o_fig: matrixFig "Yellow", ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ } ex
+            neededBy {
+               vars: [{ var: "image", makeFig: matrixFig "Yellow" }, { var: "filter", makeFig: matrixFig "Green" }],
+               o_fig: matrixFig "Yellow",
+               ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ
+            } ex
       },
       fig "fig-3" {
          file: File "slicing/conv-zero",
-         makeSubfigs: needs { vars, o_fig: matrixFig "LightGreen", o': selectCell 2 1 5 5 }
+         makeSubfigs: needs {
+            vars: [{ var: "image", makeFig: matrixFig "Yellow" }, { var: "filter", makeFig: matrixFig "Yellow" }],
+            o_fig: matrixFig "LightGreen", o': selectCell 2 1 5 5
+         }
       },
       fig "fig-4" {
          file: File "slicing/conv-zero",
          makeSubfigs: \ex ->
-            neededBy { vars, o_fig: matrixFig "Yellow", ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ } ex
+            neededBy {
+               vars: [{ var: "image", makeFig: matrixFig "Yellow" }, { var: "filter", makeFig: matrixFig "Green" }],
+               o_fig: matrixFig "Yellow",
+               ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ
+            } ex
       }
    ]
 
