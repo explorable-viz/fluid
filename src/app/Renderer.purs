@@ -35,7 +35,7 @@ newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
 newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹}
 
 data SubFig =
-   MatrixFig { title :: String, matrix :: IntMatrix } |
+   MatrixFig { title :: String, selColour :: String, matrix :: IntMatrix } |
    EnergyTable { title :: String, table :: Array EnergyRecord } |
    LineChartFig LineChart |
    BarChartFig BarChart
@@ -46,7 +46,7 @@ type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 matrixFig :: MakeSubFig
 matrixFig { title, uv: (u × v) } =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
-   MatrixFig { title, matrix: matrixRep vss2 }
+   MatrixFig { title, selColour: "Yellow", matrix: matrixRep vss2 }
 
 makeEnergyTable :: Partial => MakeSubFig
 makeEnergyTable { title, uv: (u × v) } =
