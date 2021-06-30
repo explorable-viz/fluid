@@ -140,12 +140,13 @@ linkFig divId config o1_fig o2_fig data_fig = do
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
+   let userSel × systemSel = "LightGreen" × "Yellow"
    sequence [
       fig "fig-1" {
          file: File "slicing/conv-wrap",
          makeSubfigs: needs {
-            vars: [{ var: "image", makeFig: matrixFig "Yellow" }, { var: "filter", makeFig: matrixFig "Yellow" }],
-            o_fig: matrixFig "LightGreen",
+            vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
+            o_fig: matrixFig userSel,
             o': selectCell 2 1 5 5
          }
       },
@@ -153,7 +154,7 @@ convolutionFigs = do
          file: File "slicing/conv-wrap",
          makeSubfigs: \ex ->
             neededBy {
-               vars: [{ var: "image", makeFig: matrixFig "Yellow" }, { var: "filter", makeFig: matrixFig "Green" }],
+               vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig userSel }],
                o_fig: matrixFig "Yellow",
                ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ
             } ex
@@ -161,16 +162,16 @@ convolutionFigs = do
       fig "fig-3" {
          file: File "slicing/conv-zero",
          makeSubfigs: needs {
-            vars: [{ var: "image", makeFig: matrixFig "Yellow" }, { var: "filter", makeFig: matrixFig "Yellow" }],
-            o_fig: matrixFig "LightGreen", o': selectCell 2 1 5 5
+            vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
+            o_fig: matrixFig userSel, o': selectCell 2 1 5 5
          }
       },
       fig "fig-4" {
          file: File "slicing/conv-zero",
          makeSubfigs: \ex ->
             neededBy {
-               vars: [{ var: "image", makeFig: matrixFig "Yellow" }, { var: "filter", makeFig: matrixFig "Green" }],
-               o_fig: matrixFig "Yellow",
+               vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig userSel }],
+               o_fig: matrixFig systemSel,
                ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ
             } ex
       }
