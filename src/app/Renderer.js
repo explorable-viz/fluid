@@ -14,9 +14,9 @@ const cellFillDefault         = 'White',
 
 function drawMatrix (
    id, {
-      title,                                                            // String
-      selColour,                                                         // String
-      matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } // IntMatrix
+      title,                                                               // String
+      selColour,                                                           // String
+      matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }    // IntMatrix
    }
 ) {
    const w = 30, h = 30

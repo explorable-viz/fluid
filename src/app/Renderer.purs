@@ -43,10 +43,10 @@ data SubFig =
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
 type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 
-matrixFig :: MakeSubFig
-matrixFig { title, uv: (u × v) } =
+matrixFig :: String -> MakeSubFig
+matrixFig selColour { title, uv: (u × v) } =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
-   MatrixFig { title, selColour: "Yellow", matrix: matrixRep vss2 }
+   MatrixFig { title, selColour, matrix: matrixRep vss2 }
 
 makeEnergyTable :: Partial => MakeSubFig
 makeEnergyTable { title, uv: (u × v) } =
