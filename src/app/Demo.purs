@@ -81,7 +81,7 @@ valFigs :: ExampleEval -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig
 valFigs q { vars, o_fig, o' } (ρ' × ρ) = do
    figs <- sequence (flip varFig' (ρ' × ρ) <$> vars)
    unsafePartial $ pure $
-      [ o_fig { title: "output", uv: o' × q.o } ] <> figs
+      figs <> [ o_fig { title: "output", uv: o' × q.o } ]
 
 type NeedsSpec = {
    vars  :: Array VarSpec, -- variables we want subfigs for
@@ -140,7 +140,7 @@ linkFig divId config o1_fig o2_fig data_fig = do
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
-   let vars = [{ var: "filter", makeFig: matrixFig }, { var: "image", makeFig: matrixFig }] :: Array VarSpec
+   let vars = [{ var: "image", makeFig: matrixFig }, { var: "filter", makeFig: matrixFig }] :: Array VarSpec
    sequence [
       fig "fig-1" {
          file: File "slicing/conv-wrap",
