@@ -97,9 +97,11 @@ type NeedsResult = {
 needs :: NeedsSpec -> Example -> MayFail (NeedsResult × Array SubFig)
 needs spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
-   let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
+   let ρ0ρ' × e × α = evalBwd spec.o' q.t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
-   ({ ρ0', ρ' } × _) <$> valFigs q spec (ρ0ρ' × q.ρ0ρ)
+       o'' = evalFwd ρ0ρ' e α q.t
+   figs <- valFigs q spec (ρ0ρ' × q.ρ0ρ)
+   pure $ { ρ0', ρ' } × (figs <> [ spec.o_fig { title: "output'", uv: o'' × q.o } ])
 
 type NeededBySpec = {
    vars     :: Array VarSpec,    -- variables we want subfigs for
@@ -147,7 +149,7 @@ convolutionFigs = do
          makeSubfigs: needs {
             vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
             o_fig: matrixFig userSel,
-            o': selectCell 2 1 5 5
+            o': selectCell 2 2 5 5
          }
       },
       fig "fig-conv-2" {
