@@ -102,7 +102,7 @@ needs spec { ρ0, ρ, s } = do
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α q.t
    figs <- valFigs q spec (ρ0ρ' × q.ρ0ρ)
-   pure $ { ρ0', ρ' } × (figs <> [ spec.o_fig { title: "output'", uv: o'' × q.o } ])
+   pure $ { ρ0', ρ' } × (figs <> [ spec.o_fig { title: "output", uv: o'' × q.o } ])
 
 type NeededBySpec = {
    vars     :: Array VarSpec,    -- variables we want subfigs for
@@ -161,7 +161,7 @@ convolutionFigs = do
          file: File "slicing/conv-emboss",
          makeSubfigs: \ex ->
             neededBy {
-               vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig userSel }],
+               vars: [{ var: "image", makeFig: matrixFig userSel }, { var: "filter", makeFig: matrixFig userSel }],
                o_fig: matrixFig "Yellow",
                ρ': selectOnly ("filter" ↦ selectCell 1 2 3 3) ex.ρ
             } ex
