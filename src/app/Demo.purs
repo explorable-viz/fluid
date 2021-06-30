@@ -5,6 +5,7 @@ import Data.Either (Either(..))
 import Data.List (singleton)
 import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
+import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
@@ -113,7 +114,11 @@ neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array SubFig)
 neededBy { vars, o_fig, ρ' } { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
-   (unit × _) <$> valFigs q { vars, o_fig, o' } (ρ' × ρ)
+       ρ0'ρ'' = neg (fst (fst (evalBwd (neg o') q.t)))
+       ρ0' × ρ'' = splitAt (length ρ) ρ0'ρ''
+   figs <- valFigs q { vars, o_fig, o' } (ρ' × ρ)
+   figs' <- sequence (flip varFig' (ρ'' × ρ) <$> vars)
+   pure $ unit × (figs <> figs')
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
