@@ -1,0 +1,5 @@
+let edgeDetect = [[_0_, _1_, _0_], [_1_, _-4_, _1_], [_0_, _1_, _0_]];
+    filter = [| nth2 i j edgeDetect | (i, j) in (_3_, _3_) |];
+    image' = [[_15_, _13_, 6, 9, 16], [_12_, 5, 15, 4, 13], [14, 9, 20, 8, 1], [4, 10, 3, 7, 19], [3, 11, 15, 2, 9]];
+    image = [| nth2 i j image' | (i, j) in (5, 5) |]
+in convolve image filter extend

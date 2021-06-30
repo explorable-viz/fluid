@@ -160,14 +160,14 @@ convolutionFigs = do
             } ex
       },
       fig "fig-conv-3" {
-         file: File "slicing/conv-gaussian",
+         file: File "slicing/conv-emboss",
          makeSubfigs: needs {
             vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
             o_fig: matrixFig userSel, o': selectCell 2 1 5 5
          }
       },
       fig "fig-conv-4" {
-         file: File "slicing/conv-gaussian",
+         file: File "slicing/conv-emboss",
          makeSubfigs: \ex ->
             neededBy {
                vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig userSel }],
