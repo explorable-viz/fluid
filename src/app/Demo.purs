@@ -165,15 +165,6 @@ convolutionFigs = do
                o_fig: matrixFig "Yellow",
                ρ': selectOnly ("filter" ↦ selectCell 1 2 3 3) ex.ρ
             } ex
-      },
-      fig "fig-conv-3" {
-         file: File "slicing/conv-emboss",
-         makeSubfigs: \ex ->
-            neededBy {
-               vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig userSel }],
-               o_fig: matrixFig systemSel,
-               ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ
-            } ex
       }
    ]
 
