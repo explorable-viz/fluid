@@ -142,7 +142,7 @@ convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
    let userSel × systemSel = "LightGreen" × "Yellow"
    sequence [
-      fig "fig-1" {
+      fig "fig-conv-1" {
          file: File "slicing/conv-emboss",
          makeSubfigs: needs {
             vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
@@ -150,7 +150,7 @@ convolutionFigs = do
             o': selectCell 2 1 5 5
          }
       },
-      fig "fig-2" {
+      fig "fig-conv-2" {
          file: File "slicing/conv-emboss",
          makeSubfigs: \ex ->
             neededBy {
@@ -159,14 +159,14 @@ convolutionFigs = do
                ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ
             } ex
       },
-      fig "fig-3" {
+      fig "fig-conv-3" {
          file: File "slicing/conv-gaussian",
          makeSubfigs: needs {
             vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
             o_fig: matrixFig userSel, o': selectCell 2 1 5 5
          }
       },
-      fig "fig-4" {
+      fig "fig-conv-4" {
          file: File "slicing/conv-gaussian",
          makeSubfigs: \ex ->
             neededBy {
