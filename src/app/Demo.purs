@@ -143,7 +143,7 @@ convolutionFigs = do
    let userSel × systemSel = "LightGreen" × "Yellow"
    sequence [
       fig "fig-1" {
-         file: File "slicing/conv-wrap",
+         file: File "slicing/conv-emboss",
          makeSubfigs: needs {
             vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
             o_fig: matrixFig userSel,
@@ -151,7 +151,7 @@ convolutionFigs = do
          }
       },
       fig "fig-2" {
-         file: File "slicing/conv-wrap",
+         file: File "slicing/conv-emboss",
          makeSubfigs: \ex ->
             neededBy {
                vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig userSel }],
@@ -160,14 +160,14 @@ convolutionFigs = do
             } ex
       },
       fig "fig-3" {
-         file: File "slicing/conv-zero",
+         file: File "slicing/conv-gaussian",
          makeSubfigs: needs {
             vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
             o_fig: matrixFig userSel, o': selectCell 2 1 5 5
          }
       },
       fig "fig-4" {
-         file: File "slicing/conv-zero",
+         file: File "slicing/conv-gaussian",
          makeSubfigs: \ex ->
             neededBy {
                vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig userSel }],
