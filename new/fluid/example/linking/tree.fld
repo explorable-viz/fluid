@@ -1,0 +1,14 @@
+let totalFor c rows =
+   sum [ row.output | row <- rows, row.country == c ];
+let countryData = [ (c, totalFor c data)
+                  | c <- ["China", "USA", "Germany"] ];
+let insert (k, v) Empty = NonEmpty Empty (k, v) Empty;
+    insert (k, v) (NonEmpty t1 (key, val) t2) =
+      match compare (k, key) as {
+            LT -> NonEmpty (insert (k, v) t1) (key, val) t2;
+            EQ -> NonEmpty t1 (k, v) t2;
+            GT -> NonEmpty t1 (key, val) (insert (k, v) t2)
+         };
+let buildTree ((k, v):xs) tree = buildTree xs (insert (k, v) tree);
+    buildTree [] tree = tree
+in  buildTree countryData Empty

@@ -193,7 +193,7 @@ let rects colours ns =
 -- Can we use Group instead of Viewport here?
 -- Colours -> List (a, Num) -> GraphicsElement
 let stackedBar colours ns =
-   let heights = (map snd ns);
+   let heights = map snd ns;
        subtotals = scanl1 (uncurry (+)) 0 heights;
        dims = zip (0 : subtotals) heights;
        rects = map
