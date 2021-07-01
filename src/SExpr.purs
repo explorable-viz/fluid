@@ -1,7 +1,7 @@
 module SExpr where
 
 import Prelude
-import Bindings (Var)
+import Bindings (Bindings, Var)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
 import DataType (Ctr)
@@ -15,8 +15,10 @@ data Expr a =
    Float a Number |
    Str a String |
    Constr a Ctr (List (Expr a)) |
+   Record a (Bindings (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (NonEmptyList (Branch a)) |
+   RecordLookup (Expr a) Var |
    App (Expr a) (Expr a) |
    BinaryApp (Expr a) Var (Expr a) |
    MatchAs (Expr a) (NonEmptyList (Pattern × Expr a)) |
@@ -35,6 +37,7 @@ data ListRest a =
 data Pattern =
    PVar Var |
    PConstr Ctr (List Pattern) |
+   PRecord (Bindings Pattern) |
    PListEmpty |
    PListNonEmpty Pattern ListRestPattern
 

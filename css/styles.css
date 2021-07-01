@@ -142,6 +142,29 @@ span.email3:before {
     content: "roly.perera"
 }
 
+table {
+   margin-left: 4mm;
+   outline: thin dotted;
+   outline-color: lightgray;
+}
+
+.d3-tip {
+   font-size: 11px;
+}
+
+.cell-selected {
+   border: 1px solid coral;
+}
+
+th {
+   font-size: 11px;
+   border-bottom: 'thin solid';
+}
+
+td {
+   font-size: 11px;
+}
+
 nav ul {
   list-style: none;
 }

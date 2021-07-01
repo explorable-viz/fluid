@@ -1,41 +1,46 @@
 module Eval where
 
 import Prelude hiding (absurd)
+
+import Bindings (Bindings, (↦), find, key, val, varAnon, Var)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), (\\), length, range, singleton, unzip)
 import Data.Map (lookup)
 import Data.Map.Internal (keys)
+import Data.Profunctor.Strong ((&&&), second)
 import Data.Traversable (sequence, traverse)
-import Bindings (Bindings(..), (:+:), (↦), find, varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..))
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim)
 import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
+import Util.SnocList (SnocList(..), (:-), zipWith)
+import Util.SnocList (unzip) as S
 import Val (Env, PrimOp(..), Val)
 import Val (Val(..)) as V
 
+patternMismatch :: String -> String -> String
+patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
+
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
-match _ (ElimHole _) = error absurd
-match v (ElimVar x κ)
-   | x == varAnon = pure (Empty × κ × MatchVarAnon v)
-   | otherwise    = pure ((Empty :+: x ↦ v) × κ × MatchVar x)
+match _ (ElimHole _)                      = error absurd
+match v (ElimVar x κ)   | x == varAnon    = pure (Lin × κ × MatchVarAnon v)
+                        | otherwise       = pure ((Lin :- x ↦ v) × κ × MatchVar x)
 match (V.Constr _ c vs) (ElimConstr m) = do
    checkConsistent "Pattern mismatch: " c (keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
-   ρ × κ' × ws <- matchArgs c vs κ
-   pure (ρ × κ' × MatchConstr c ws (keys m \\ singleton c))
-match v (ElimConstr m) = do
-   d <- dataTypeFor (keys m)
-   report ("Pattern mismatch: " <> prettyP v <> " is not a constructor value, expected " <> show d)
+   (second (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs c vs κ
+match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
+match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs xs κ
+match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
-matchArgs _ Nil κ = pure (Empty × κ × Nil)
+matchArgs _ Nil κ = pure (Lin × κ × Nil)
 matchArgs c (v : vs) (ContElim σ) = do
    ρ  × κ'  × w  <- match v σ
    ρ' × κ'' × ws <- matchArgs c vs κ'
@@ -44,9 +49,19 @@ matchArgs c (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _ = error absurd
 
+matchRecord :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
+matchRecord Lin Lin κ = pure (Lin × κ × Lin)
+matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
+   check (x == x') (patternMismatch (show x) (show x'))
+   ρ × σ' × xws <- matchRecord xvs xs σ
+   ρ' × κ × w <- match v (asElim σ')
+   pure ((ρ <> ρ') × κ × (xws :- x ↦ w))
+matchRecord (_ :- x ↦ _) Lin _ = report (patternMismatch "end of record pattern" (show x))
+matchRecord Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
+
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
-closeDefs _ _ Empty = Empty
-closeDefs ρ δ0 (δ :+: f ↦ σ) = closeDefs ρ δ0 δ :+: f ↦ V.Closure ρ δ0 σ
+closeDefs _ _ Lin = Lin
+closeDefs ρ δ0 (δ :- f ↦ σ) = closeDefs ρ δ0 δ :- f ↦ V.Closure ρ δ0 σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -60,6 +75,10 @@ eval ρ (Op op)       = (T.Op ρ op × _) <$> find op ρ
 eval ρ (Int _ n)     = pure (T.Int ρ n × V.Int false n)
 eval ρ (Float _ n)   = pure (T.Float ρ n × V.Float false n)
 eval ρ (Str _ str)   = pure (T.Str ρ str × V.Str false str)
+eval ρ (Record _ xes) = do
+   let xs × es = xes <#> (key &&& val) # S.unzip
+   ts × vs <- traverse (eval ρ) es <#> S.unzip
+   pure (T.Record ρ (zipWith (↦) xs ts) × V.Record false (zipWith (↦) xs vs))
 eval ρ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval ρ) es <#> unzip
@@ -75,7 +94,7 @@ eval ρ (Matrix _ e (x × y) e') = do
             i <- range 1 i'
             singleton $ sequence $ do
                j <- range 1 j'
-               singleton (eval ((ρ :+: x ↦ V.Int false i) :+: y ↦ V.Int false j) e))
+               singleton (eval (ρ :- x ↦ V.Int false i :- y ↦ V.Int false j) e))
          pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false)))
       v' -> report ("Array dimensions must be pair of ints; got " <> prettyP v')
    where
@@ -86,7 +105,13 @@ eval ρ (LetRec δ e) = do
    t × v <- eval (ρ <> ρ') e
    pure (T.LetRec δ t × v)
 eval ρ (Lambda σ) =
-   pure (T.Lambda ρ σ × V.Closure ρ Empty σ)
+   pure (T.Lambda ρ σ × V.Closure ρ Lin σ)
+eval ρ (RecordLookup e x) = do
+   t × v <- eval ρ e
+   case v of
+      V.Record _ xvs ->
+         (T.RecordLookup t (xvs <#> key) x × _) <$> find x xvs
+      _ -> report "Expected record"
 eval ρ (App e e') = do
    t × v <- eval ρ e
    t' × v' <- eval ρ e'

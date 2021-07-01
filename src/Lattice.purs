@@ -2,16 +2,18 @@ module Lattice where
 
 import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
-import Data.Array (length, zipWith) as A
-import Data.Foldable (foldM)
-import Data.List (List, length, zipWith)
+import Data.Array (zipWith) as A
+import Data.Foldable (length, foldM)
+import Data.List (List, zipWith)
 import Data.Map (Map, fromFoldable, insert, lookup, toUnfoldable, update)
 import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Util (MayFail, type (×), (×), (≞), absurd, error, report, successfulWith)
+import Util (MayFail, type (×), (×), (≞), error, report, successfulWith)
+import Util.SnocList (SnocList)
+import Util.SnocList (zipWith) as S
 
 class JoinSemilattice a where
    join :: a -> a -> a
@@ -65,12 +67,24 @@ instance joinSemilatticeList :: Slices t => JoinSemilattice (List t) where
    join = definedJoin
    neg = (<$>) neg
 
+instance joinSemilatticeSnocList :: Slices t => JoinSemilattice (SnocList t) where
+   join = definedJoin
+   neg = (<$>) neg
+
 instance slicesList :: Slices t => Slices (List t) where
    maybeJoin xs ys
-      | length xs == length ys   = sequence (zipWith maybeJoin xs ys)
-      | otherwise                = report "Lists of different lengths"
+      | (length xs :: Int) == length ys   = sequence (zipWith maybeJoin xs ys)
+      | otherwise                         = report "Mismatched lengths"
+
+instance slicesSnocList :: Slices t => Slices (SnocList t) where
+   maybeJoin xs ys
+      | (length xs :: Int) == length ys   = sequence (S.zipWith maybeJoin xs ys)
+      | otherwise                         = report "Mismatched lengths"
 
 instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
+   botOf = (<$>) botOf
+
+instance boundedSlicesSnocList :: BoundedSlices t => BoundedSlices (SnocList t) where
    botOf = (<$>) botOf
 
 instance joinSemilatticeMap :: (Key k, Slices t) => JoinSemilattice (Map k t) where
@@ -102,8 +116,8 @@ instance joinSemilatticeArray :: Slices a => JoinSemilattice (Array a) where
 
 instance slicesArray :: Slices a => Slices (Array a) where
    maybeJoin xs ys
-      | A.length xs == A.length ys  = sequence (A.zipWith maybeJoin xs ys)
-      | otherwise                   = report "Arrays of different lengths"
+      | length xs == (length ys :: Int)   = sequence (A.zipWith maybeJoin xs ys)
+      | otherwise                         = report "Mismatched lengths"
 
 class Expandable a where
    -- Partial function defined iff x is above x', which expands in x any subtree prefixes which are expanded in x'
@@ -112,17 +126,22 @@ class Expandable a where
 
 instance expandableArray :: Expandable t => Expandable (Array t) where
    expand xs ys
-      | A.length xs == A.length ys  = A.zipWith expand xs ys
-      | otherwise                   = error absurd
+      | length xs == (length ys :: Int)   = A.zipWith expand xs ys
+      | otherwise                         = error "Mismatched lengths"
 
 instance expandableList :: Expandable t => Expandable (List t) where
    expand xs ys
-      | length xs == length ys   = zipWith expand xs ys
-      | otherwise                = error absurd
+      | (length xs :: Int) == length ys   = zipWith expand xs ys
+      | otherwise                         = error "Mismatched lengths"
+
+instance expandableSnocList :: Expandable t => Expandable (SnocList t) where
+   expand xs ys
+      | (length xs :: Int) == length ys   = S.zipWith expand xs ys
+      | otherwise                         = error "Mismatched lengths"
 
 instance expandableMap :: (Ord k, Expandable (t a)) => Expandable (Map k (t a)) where
    expand m m'
       | keys m == keys m'  = fromFoldable (zipWith expandValue (toUnfoldable m) (toUnfoldable m'))
       where
       expandValue (k × x) (_ × x') = k × expand x x'
-      | otherwise          = error absurd
+      | otherwise          = error "Mismatched keys"

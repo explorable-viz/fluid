@@ -8,7 +8,7 @@ import Data.HTTP.Method (Method(..))
 import Data.Bifunctor (bimap)
 import Effect.Aff (Aff)
 import Text.Parsing.Parser (runParser)
-import Bindings (Bindings(..), Var, (:+:), (↦))
+import Bindings (Var, (↦))
 import SExpr (Expr) as S
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -17,39 +17,56 @@ import Parse (module_, program)
 import Primitive.Defs (primitives)
 import Util (MayFail, type (×), (×), error, successful)
 import Util.Parse (SParser)
+import Util.SnocList (SnocList(..), (:-))
 import Val (Env)
+
+-- Mainly serve as documentation
+newtype File = File String
+newtype Folder = Folder String
+
+derive newtype instance showFile :: Show File
+derive newtype instance semigroupFile :: Semigroup File
+derive newtype instance monoidFile :: Monoid File
 
 -- For Wrattler integration. Should not end in "/".
 resourceServerUrl :: String
 resourceServerUrl = "."
 
-loadFile :: String -> String -> Aff String
-loadFile folder file = do
+loadFile :: Folder -> File -> Aff String
+loadFile (Folder folder) (File file) = do
    let url = resourceServerUrl <> "/" <> folder <> "/" <> file <> ".fld"
    result <- request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
       Left err -> error (printError err)
       Right response -> pure response.body
 
-loadModule :: String -> Env 𝔹 -> Aff (Env 𝔹)
+parse :: forall t . String -> SParser t -> MayFail t
+parse src = runParser src >>> show `bimap` identity
+
+loadModule :: File -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file ρ = do
-   src <- loadFile "fluid/lib" file
+   src <- loadFile (Folder "fluid/lib") file
    pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module ρ))
 
-openWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
+parseProgram :: Folder -> File -> Aff (S.Expr 𝔹)
+parseProgram folder file = loadFile folder file <#> (successful <<< flip parse program)
+
+open :: File -> Aff (S.Expr 𝔹)
+open = parseProgram (Folder "fluid/example")
+
+defaultImports :: Aff (Env 𝔹)
+defaultImports =
+   loadModule (File "prelude") primitives >>= loadModule (File "graphics") >>= loadModule (File "convolution")
+
+openWithDefaultImports :: File -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file = do
-   loadFile "fluid/example" file >>= parseWithDefaultImports
+   ρ <- defaultImports
+   open file <#> (ρ × _)
 
-parse :: forall t . String -> SParser t -> MayFail t
-parse src = runParser src >>> bimap show identity
-
-parseWithDefaultImports :: String -> Aff (Env 𝔹 × S.Expr 𝔹)
-parseWithDefaultImports src = do
-   (×) <$> (loadModule "prelude" primitives >>= loadModule "graphics" >>= loadModule "convolution")
-       <@> successful (parse src program)
-
-openDatasetAs :: String -> Var -> Aff (Env 𝔹)
+-- Return ambient environment used to load dataset along with new binding.
+openDatasetAs :: File -> Var -> Aff (Env 𝔹 × Env 𝔹)
 openDatasetAs file x = do
-   ρ × s <- loadFile "fluid" file >>= parseWithDefaultImports
+   s <- parseProgram (Folder "fluid") file
+   ρ <- defaultImports
    let _ × v = successful (desugarFwd s >>= eval ρ)
-   pure (Empty :+: x ↦ v)
+   pure (ρ × (Lin :- x ↦ v))

@@ -2,22 +2,26 @@ module DesugarBwd where
 
 import Prelude hiding (absurd)
 
-import Bindings (Binding, Bindings(..), (↦), (:+:), fromList)
+import Bindings (Bindings, Bind, (↦), key, val)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
-import Data.List (List(..), (:), (\\), singleton, zip)
+import Data.List (List(..), (:), (\\), reverse, singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
+import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry, fst, snd)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import DesugarFwd (elimBool, totaliseConstrFwd)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, (∨), expand)
+import Partial.Unsafe (unsafePartial)
 import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
+import Util.SnocList (SnocList(..), (:-), fromList)
+import Util.SnocList (toList, unzip, zip, zipWith) as S
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -34,13 +38,13 @@ recDefsBwd :: E.RecDefs 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
 recDefsBwd xσs xcs = join (recDefsBwd' xσs (groupBy (eq `on` fst) xcs))
 
 recDefsBwd' :: E.RecDefs 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
-recDefsBwd' Empty _                                             = error absurd
-recDefsBwd' (Empty :+: x ↦ σ) (NonEmptyList (xcs :| Nil))       = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
-recDefsBwd' (_ :+: _ :+: _) (NonEmptyList (_ :| Nil))           = error absurd
-recDefsBwd' (ρ :+: x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
+recDefsBwd' Lin _                                              = error absurd
+recDefsBwd' (Lin :- x ↦ σ) (NonEmptyList (xcs :| Nil))         = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
+recDefsBwd' (_ :- _ :- _) (NonEmptyList (_ :| Nil))            = error absurd
+recDefsBwd' (ρ :- x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
    NonEmptyList (recDefBwd (x ↦ σ) xcs1 :| toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss))))
 
-recDefBwd :: Binding Elim 𝔹 -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
+recDefBwd :: Bind (Elim 𝔹) -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
 recDefBwd (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd
 
 exprBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
@@ -64,9 +68,17 @@ exprBwd e (Str _ str) =
    case expand e (E.Str false str) of
       E.Str α _ -> Str α str
       _ -> error absurd
-exprBwd e (Constr _ c es) =
-   case expand e (E.Constr false c (const (E.Hole false) <$> es)) of
-      E.Constr α _ es' -> Constr α c (uncurry exprBwd <$> zip es' es)
+exprBwd e (Constr _ c ss) =
+   case expand e (E.Constr false c (const (E.Hole false) <$> ss)) of
+      E.Constr α _ es -> Constr α c (uncurry exprBwd <$> zip es ss)
+      _ -> error absurd
+exprBwd e (Record _ xss) =
+   case expand e (E.Record false (map (const (E.Hole false)) <$> xss)) of
+      E.Record α xes ->
+         let xs × ss = xss <#> (key &&& val) # S.unzip
+             es = xes <#> val
+             ss' = uncurry exprBwd <$> S.zip es ss in
+         Record α (S.zipWith (↦) xs ss')
       _ -> error absurd
 exprBwd e (Matrix _ s (x × y) s') =
    case expand e (E.Matrix false (E.Hole false) (x × y) (E.Hole false)) of
@@ -75,6 +87,10 @@ exprBwd e (Matrix _ s (x × y) s') =
 exprBwd e (Lambda bs) =
    case expand e (E.Lambda (ElimHole false)) of
       E.Lambda σ -> Lambda (branchesBwd_curried σ bs)
+      _ -> error absurd
+exprBwd e (RecordLookup s x) =
+   case expand e (E.RecordLookup (E.Hole false) x) of
+      E.RecordLookup e' _ -> RecordLookup (exprBwd e' s) x
       _ -> error absurd
 exprBwd e (App s1 s2) =
    case expand e (E.App (E.Hole false) (E.Hole false)) of
@@ -105,7 +121,7 @@ exprBwd e (LetRec xcs s) =
       _ -> error absurd
       where
       -- repeat enough desugaring logic to determine shape of bindings
-      recDefHole :: NonEmptyList (Clause 𝔹) -> Binding Elim 𝔹
+      recDefHole :: NonEmptyList (Clause 𝔹) -> Bind (Elim 𝔹)
       recDefHole xcs' = fst (head xcs') ↦ ElimHole false
       xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 exprBwd e (ListEmpty _) =
@@ -196,11 +212,14 @@ patternBwd (ElimHole α) (PListEmpty)            = ContHole α
 patternBwd (ElimConstr m) (PListEmpty)          = mustLookup cNil m
 patternBwd (ElimHole α) (PListNonEmpty p o)     = argsBwd (ContHole α) (Left p : Right o : Nil)
 patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
+patternBwd (ElimHole α) (PRecord xps)           = recordBwd (ContHole α) xps
+patternBwd (ElimRecord xs κ) (PRecord xps)      = recordBwd κ xps
 patternBwd _ _                                  = error absurd
 
 -- σ, o desugar_bwd κ
 listRestPatternBwd :: Elim 𝔹 -> ListRestPattern -> Cont 𝔹
 listRestPatternBwd (ElimVar _ _) _              = error absurd
+listRestPatternBwd (ElimRecord _ _) _           = error absurd
 listRestPatternBwd (ElimHole α) PEnd            = ContHole α
 listRestPatternBwd (ElimConstr m) PEnd          = mustLookup cNil m
 listRestPatternBwd (ElimHole α) (PNext p o)     = argsBwd (ContHole α) (Left p : Right o : Nil)
@@ -210,6 +229,10 @@ argsBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹
 argsBwd κ Nil              = κ
 argsBwd κ (Left p : πs)    = argsBwd (patternBwd (asElim κ) p) πs
 argsBwd κ (Right o : πs)   = argsBwd (listRestPatternBwd (asElim κ) o) πs
+
+recordBwd :: Cont 𝔹 -> Bindings Pattern -> Cont 𝔹
+recordBwd κ Lin            = κ
+recordBwd σ (xps :- x ↦ p) = recordBwd σ xps # (asElim >>> flip patternBwd p)
 
 -- σ, c desugar_bwd c
 branchBwd_curried :: Elim 𝔹 -> Endo (Branch 𝔹)
@@ -242,9 +265,18 @@ totaliseBwd κ (Left (PVar x) : πs) =
          let κ'' × α = totaliseBwd κ' πs in
          ContElim (ElimVar x κ'') × α
       _ -> error absurd
+totaliseBwd κ (Left (PRecord xps) : πs) =
+   case expand κ (ContElim (ElimRecord (xps <#> key) (ContHole false))) of
+      ContElim (ElimRecord _ κ') ->
+         let ps = xps <#> (val >>> Left) # S.toList # reverse
+             κ'' × α = totaliseBwd κ' (ps <> πs) in
+         ContElim (ElimRecord (xps <#> key) κ'') × α
+      _ -> error absurd
 totaliseBwd κ (π : πs) =
    let c × πs' = case π of
+         -- TODO: refactor so these two cases aren't necessary
          Left (PVar _)              -> error absurd
+         Left (PRecord xps)         -> error absurd
          Left (PConstr c ps)        -> c × (Left <$> ps)
          Left PListEmpty            -> cNil × Nil
          Left (PListNonEmpty p o)   -> cCons × (Left p : Right o : Nil)
@@ -261,17 +293,15 @@ totaliseBwd κ (π : πs) =
 -- Discard all synthesised branches, returning the original singleton branch for c, plus join of annotations
 -- on the empty lists used for bodies of synthesised branches.
 totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Ctr -> Cont 𝔹 × 𝔹
-totaliseConstrBwd m c =
+totaliseConstrBwd m c = unsafePartial $
    let cs = ctrs (successful (dataTypeFor c)) \\ singleton c in
    mustLookup c m × foldl (∨) false (map (bodyAnn <<< body) cs)
    where
-      body :: Ctr -> Cont 𝔹
+      body :: Partial => Ctr -> Cont 𝔹
       body c' = applyN unargument (successful (arity c')) (mustLookup c' m)
 
-      unargument :: Cont 𝔹 -> Cont 𝔹
+      unargument :: Partial => Cont 𝔹 -> Cont 𝔹
       unargument (ContElim (ElimVar _ κ)) = κ
-      unargument _                        = error absurd
 
-      bodyAnn :: Cont 𝔹 -> 𝔹
+      bodyAnn :: Partial => Cont 𝔹 -> 𝔹
       bodyAnn (ContExpr (E.Constr α c' Nil)) | c' == cNil = α
-      bodyAnn _                                           = error absurd
