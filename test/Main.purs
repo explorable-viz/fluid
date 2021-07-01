@@ -14,8 +14,8 @@ import Test.Util (
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
--- tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_scratchpad ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+-- tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -119,21 +119,21 @@ test_bwd = [
    testBwd (File "add") (Int true 8) "_8_",
    testBwd (File "array-lookup") (Int true 14) "_14_",
    testBwd (File "array-dims") (selectPair true (Int true 3) (Int true 3)) "(_3_, _3_)",
-   testBwd (File "conv-extend")
+   testBwd (File "conv-edgeDetect")
            (selectCell 1 1 5 5)
             "_0_, -1, 2, 0, -1,\n\
             \0, 3, -2, 3, -2,\n\
             \-1, 1, -5, 0, 4,\n\
             \1, -1, 4, 0, -4,\n\
             \1, 0, -3, 2, 0",
-   testBwd (File "conv-wrap")
+   testBwd (File "conv-emboss")
            (selectCell 1 1 5 5)
-           "_1_, 2, -1, 1, 5,\n\
-           \-1, 1, 2, -1, 1,\n\
-           \0, 0, 1, 0, 1,\n\
-           \0, 1, -2, 0, 1,\n\
-           \0, 3, 0, 2, 2",
-   testBwd (File "conv-zero")
+           "_5_, 4, 2, 5, 2,\n\
+           \3, 1, 2, -1, -2,\n\
+           \3, 0, 1, 0, -1,\n\
+           \2, 1, -2, 0, 0,\n\
+           \1, 0, -1, -1, -2",
+   testBwd (File "conv-gaussian")
            (selectCell 1 1 5 5)
            "_38_, 37, 28, 30, 38,\n\
            \38, 36, 46, 31, 34,\n\

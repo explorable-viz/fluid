@@ -5,6 +5,7 @@ import Data.Either (Either(..))
 import Data.List (singleton)
 import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
+import Data.Tuple (fst)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
@@ -81,7 +82,7 @@ valFigs :: ExampleEval -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig
 valFigs q { vars, o_fig, o' } (ρ' × ρ) = do
    figs <- sequence (flip varFig' (ρ' × ρ) <$> vars)
    unsafePartial $ pure $
-      [ o_fig { title: "output", uv: o' × q.o } ] <> figs
+      figs <> [ o_fig { title: "output", uv: o' × q.o } ]
 
 type NeedsSpec = {
    vars  :: Array VarSpec, -- variables we want subfigs for
@@ -97,9 +98,11 @@ type NeedsResult = {
 needs :: NeedsSpec -> Example -> MayFail (NeedsResult × Array SubFig)
 needs spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
-   let ρ0ρ' × _ × _ = evalBwd spec.o' q.t
+   let ρ0ρ' × e × α = evalBwd spec.o' q.t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
-   ({ ρ0', ρ' } × _) <$> valFigs q spec (ρ0ρ' × q.ρ0ρ)
+       o'' = evalFwd ρ0ρ' e α q.t
+   figs <- valFigs q spec (ρ0ρ' × q.ρ0ρ)
+   pure $ { ρ0', ρ' } × (figs <> [ spec.o_fig { title: "output", uv: o'' × q.o } ])
 
 type NeededBySpec = {
    vars     :: Array VarSpec,    -- variables we want subfigs for
@@ -111,7 +114,11 @@ neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array SubFig)
 neededBy { vars, o_fig, ρ' } { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
-   (unit × _) <$> valFigs q { vars, o_fig, o' } (ρ' × ρ)
+       ρ0'ρ'' = neg (fst (fst (evalBwd (neg o') q.t)))
+       ρ0' × ρ'' = splitAt (length ρ) ρ0'ρ''
+   figs <- valFigs q { vars, o_fig, o' } (ρ' × ρ)
+   figs' <- sequence (flip varFig' (ρ'' × ρ) <$> vars)
+   pure $ unit × (figs <> figs')
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
@@ -140,23 +147,24 @@ linkFig divId config o1_fig o2_fig data_fig = do
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
-   let vars = [{ var: "filter", makeFig: matrixFig }, { var: "image", makeFig: matrixFig }] :: Array VarSpec
+   let userSel × systemSel = "LightGreen" × "Yellow"
    sequence [
-      fig "fig-1" {
-         file: File "slicing/conv-wrap",
-         makeSubfigs: needs { vars, o_fig: matrixFig, o': selectCell 2 1 5 5 }
+      fig "fig-conv-1" {
+         file: File "slicing/conv-emboss",
+         makeSubfigs: needs {
+            vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
+            o_fig: matrixFig userSel,
+            o': selectCell 2 2 5 5
+         }
       },
-      fig "fig-2" {
-         file: File "slicing/conv-wrap",
-         makeSubfigs: \ex -> neededBy { vars, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ } ex
-      },
-      fig "fig-3" {
-         file: File "slicing/conv-zero",
-         makeSubfigs: needs { vars, o_fig: matrixFig, o': selectCell 2 1 5 5 }
-      },
-      fig "fig-4" {
-         file: File "slicing/conv-zero",
-         makeSubfigs: \ex -> neededBy { vars, o_fig: matrixFig, ρ': selectOnly ("filter" ↦ selectCell 1 1 3 3) ex.ρ } ex
+      fig "fig-conv-2" {
+         file: File "slicing/conv-emboss",
+         makeSubfigs: \ex ->
+            neededBy {
+               vars: [{ var: "image", makeFig: matrixFig userSel }, { var: "filter", makeFig: matrixFig userSel }],
+               o_fig: matrixFig "Yellow",
+               ρ': selectOnly ("filter" ↦ selectCell 1 2 3 3) ex.ρ
+            } ex
       }
    ]
 

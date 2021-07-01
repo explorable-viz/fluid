@@ -14,11 +14,11 @@ const cellFillDefault         = 'White',
 
 function drawMatrix (
    id, {
-      title,                                                            // String
-      matrix: { value0: { value0: nss, value1: i_max }, value1: j_max } // IntMatrix
+      title,                                                               // String
+      selColour,                                                           // String
+      matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }    // IntMatrix
    }
 ) {
-   const cellFillSelected = 'Yellow'
    const w = 30, h = 30
    const div = d3.select('#' + id)
    const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
@@ -44,7 +44,7 @@ function drawMatrix (
          .attr('x', (_, j) => w * j)
          .attr('width', w)
          .attr('height', h)
-         .attr('fill', d => d.value1 ? cellFillSelected : cellFillDefault)
+         .attr('fill', d => d.value1 ? selColour : cellFillDefault)
          .attr('stroke', cellStroke)
          .attr('stroke-width', strokeWidth)
 
