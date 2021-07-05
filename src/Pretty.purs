@@ -258,10 +258,7 @@ instance prettyEither :: (Pretty a, Pretty b) => Pretty (a + b) where
 
 instance prettyPattern :: Pretty S.Pattern where
    pretty (S.PVar x)             = text x
-   pretty p@(S.PConstr c ps)
-      | c == cNil || c == cCons  = prettyList (toList p)
-      | c == cPair               = prettyPair (toPair p)
-      | otherwise                = prettyConstr c ps
+   pretty p@(S.PConstr c ps)     = prettyConstr c ps
    pretty (S.PRecord xps)        = prettyRecord xps
    pretty (S.PListEmpty)         = nil
    pretty (S.PListNonEmpty s l)  = text str.lBracket :<>: pretty s :<>: pretty l

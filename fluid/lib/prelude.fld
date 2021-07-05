@@ -134,7 +134,7 @@ let concatMap f xs = concat (map f xs);
 
 -- List a -> a -> List a
 let intersperse [] _ = [];
-    intersperse (x : []) _ = [x];
+    intersperse [x] _ = [x];
     intersperse (x : y : ys) sep = x : sep : intersperse (y : ys) sep;
 
 -- Int -> (a -> a) -> a -> List a

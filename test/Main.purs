@@ -14,8 +14,8 @@ import Test.Util (
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
--- tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_scratchpad ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -27,8 +27,8 @@ hole = Hole false
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
    testBwd (File "intersperse")
-           (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil))
-           "[1, 0, 2, 0, 3]"
+           (Constr false cCons (hole : (Constr true cCons (Int true 0 : hole : Nil)) : Nil))
+           "[1, _0_, 2, _0_, 3]"
 ]
 
 test_linking :: Array (Test Unit)
