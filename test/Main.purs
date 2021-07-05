@@ -14,8 +14,8 @@ import Test.Util (
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
--- tests = [ test_scratchpad ]
+-- tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -26,13 +26,9 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   testLink {
-      file1: File "bar-chart",
-      file2: File "tree",
-      dataFile: File "renewables",
-      dataVar: "data",
-      v1_sel: selectBarChart_data (selectNth 1 (select_y))
-   } "NonEmpty Empty ((\"China\", 3041.1)) (NonEmpty (NonEmpty Empty ((\"Germany\", 606.6000000000001)) Empty) ((\"USA\", _1253.3999999999999_)) Empty)"
+   testBwd (File "intersperse")
+           (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil))
+           "[1, 0, 2, 0, 3]"
 ]
 
 test_linking :: Array (Test Unit)

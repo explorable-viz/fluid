@@ -133,9 +133,9 @@ let concat = foldl concat2 [];
 let concatMap f xs = concat (map f xs);
 
 -- List a -> a -> List a
-let intersperse [] sep = [];
-    intersperse (x : []) sep = [x];
-    intersperse (x : y : ys) sep = x : sep : intersperse (y : ys);
+let intersperse [] _ = [];
+    intersperse (x : []) _ = [x];
+    intersperse (x : y : ys) sep = x : sep : intersperse (y : ys) sep;
 
 -- Int -> (a -> a) -> a -> List a
 let iterate n f z =
