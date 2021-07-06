@@ -31,7 +31,7 @@ test_scratchpad = [
 --   testBwd (File "zipWith") (File "zipWith-1.expect") (selectNth 1 (Float true 25.0)) "(13.0 : (_25.0_ : (41.0 : [])))",
    testBwd (File "zipWith") (File "zipWith-2.expect")
            (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cNil Nil) : Nil)) : Nil))
-           "(6 : (12 : _[]_))"
+           "(0 : (0 : _[]_))"
 ]
 
 test_linking :: Array (Test Unit)
