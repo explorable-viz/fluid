@@ -26,6 +26,9 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
+   testBwd (File "sec-5-example") (File "sec-5-example.expect")
+           (Constr true cCons (hole : hole : Nil))
+           "(6.2 _:_ (260 : (19.9 : (91 : []))))"
 ]
 
 test_linking :: Array (Test Unit)
