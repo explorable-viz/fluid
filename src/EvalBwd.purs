@@ -21,20 +21,20 @@ import Val (Env, PrimOp(..), Val, holeMatrix)
 import Val (Val(..)) as V
 
 -- second argument contains original environment and recursive definitions
-closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹
+closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
 closeDefsBwd ρ (ρ0 × δ0) =
-   case foldBindings joinDefs (Lin × botOf ρ0 × botOf δ0) ρ of
-   δ' × ρ' × δ -> ρ' × (δ ∨ δ')
+   case foldBindings joinDefs (Lin × botOf ρ0 × botOf δ0 × false) ρ of
+   δ' × ρ' × δ × α -> ρ' × (δ ∨ δ') × α
    where
-   joinDefs :: Bind (Val 𝔹) -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹)
-   joinDefs (f ↦ v) (δ_acc × ρ' × δ) =
-      case expand v (V.Closure (botOf ρ') (botOf δ) (ElimHole false)) of
-         V.Closure ρ_f δ_f σ_f -> (δ_acc :- f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f)
+   joinDefs :: Bind (Val 𝔹) -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹)
+   joinDefs (f ↦ v) (δ_acc × ρ' × δ × α) =
+      case expand v (V.Closure (botOf ρ') (botOf δ) false (ElimHole false)) of
+         V.Closure ρ_f δ_f α_f σ_f -> (δ_acc :- f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
          _ -> error absurd
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
-matchBwd (Lin :- x ↦ v) κ α (MatchVar x') = v × ElimVar (x ≜ x') κ
-matchBwd Lin κ α (MatchVarAnon v)          = botOf v × ElimVar varAnon κ
+matchBwd (Lin :- x ↦ v) κ α (MatchVar x')    = v × ElimVar (x ≜ x') κ
+matchBwd Lin κ α (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
@@ -76,8 +76,8 @@ evalBwd v t@(T.Float ρ n) =
       V.Float α _ -> botOf ρ × Float α n × α
       _ -> error absurd
 evalBwd v t@(T.Lambda ρ σ) =
-   case expand v (V.Closure (botOf ρ) Lin (botOf σ)) of
-      V.Closure ρ' _ σ' -> ρ' × Lambda σ' × false
+   case expand v (V.Closure (botOf ρ) Lin false (botOf σ)) of
+      V.Closure ρ' _ α σ' -> ρ' × Lambda σ' × α
       _ -> error absurd
 evalBwd v t@(T.Record ρ xts) =
    case expand v (V.Record false (xts <#> map (const (V.Hole false)))) of
@@ -127,14 +127,14 @@ evalBwd v (T.RecordLookup t xs x) =
        ρ × e × α = evalBwd v' t in
    ρ × RecordLookup e x × α
 evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
-   let ρ1ρ2ρ3 × e × α = evalBwd v t3
+   let ρ1ρ2ρ3 × e × β = evalBwd v t3
        ρ1ρ2 × ρ3 = splitAt (vars w # length) ρ1ρ2ρ3
-       v' × σ = matchBwd ρ3 (ContExpr e) α w
+       v' × σ = matchBwd ρ3 (ContExpr e) β w
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
-       ρ' × e2 × α' = evalBwd v' t2
-       ρ1' × δ' = closeDefsBwd ρ2 (ρ1 × δ)
-       ρ'' × e1 × α'' = evalBwd (V.Closure (ρ1 ∨ ρ1') δ' σ) t1 in
-   (ρ' ∨ ρ'') × App e1 e2 × (α' ∨ α'')
+       ρ' × e2 × α = evalBwd v' t2
+       ρ1' × δ' × β' = closeDefsBwd ρ2 (ρ1 × δ)
+       ρ'' × e1 × α' = evalBwd (V.Closure (ρ1 ∨ ρ1') δ' (β ∨ β') σ) t1 in
+   (ρ' ∨ ρ'') × App e1 e2 × (α ∨ α')
 evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let vs' = vs <> singleton v2
        { init: vs'', last: v2' } = fromJust absurd $ unsnoc $
@@ -163,5 +163,5 @@ evalBwd v (T.Let (T.VarDef w t1) t2) =
 evalBwd v (T.LetRec δ t) =
    let ρ1ρ2 × e × α = evalBwd v t
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
-       ρ1' × δ' = closeDefsBwd ρ2 (ρ1 × δ) in
-   (ρ1 ∨ ρ1') × LetRec δ' e × α
+       ρ1' × δ' × α' = closeDefsBwd ρ2 (ρ1 × δ) in
+   (ρ1 ∨ ρ1') × LetRec δ' e × (α ∨ α')

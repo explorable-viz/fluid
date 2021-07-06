@@ -61,7 +61,7 @@ matchRecord Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
 
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs _ _ Lin = Lin
-closeDefs ρ δ0 (δ :- f ↦ σ) = closeDefs ρ δ0 δ :- f ↦ V.Closure ρ δ0 σ
+closeDefs ρ δ0 (δ :- f ↦ σ) = closeDefs ρ δ0 δ :- f ↦ V.Closure ρ δ0 false σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -105,7 +105,7 @@ eval ρ (LetRec δ e) = do
    t × v <- eval (ρ <> ρ') e
    pure (T.LetRec δ t × v)
 eval ρ (Lambda σ) =
-   pure (T.Lambda ρ σ × V.Closure ρ Lin σ)
+   pure (T.Lambda ρ σ × V.Closure ρ Lin false σ)
 eval ρ (RecordLookup e x) = do
    t × v <- eval ρ e
    case v of
@@ -117,7 +117,7 @@ eval ρ (App e e') = do
    t' × v' <- eval ρ e'
    case v of
       V.Hole _ -> error absurd
-      V.Closure ρ1 δ σ -> do
+      V.Closure ρ1 δ _ σ -> do
          let ρ2 = closeDefs ρ1 δ δ
          ρ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (ρ1 <> ρ2 <> ρ3) (asExpr e'')

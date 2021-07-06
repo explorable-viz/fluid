@@ -1,0 +1,2 @@
+let data = [{year: 2013, country: "China", energyType: "Bio", output: 6.2}, {year: 2013, country: "China", energyType: "Hydro", output: 260}, {year: 2013, country: "China", energyType: _"Solar"_, output: 19.9}, {year: 2013, country: "China", energyType: "Wind", output: 91}]
+in [row.output | type <- ["Bio", "Hydro", _"Solar"_, "Wind"], row <- data, (row.energyType == type)]
