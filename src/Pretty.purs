@@ -191,7 +191,7 @@ instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Record α xvs)             = highlightIf α (prettyRecord xvs)
    pretty (V.Constr α c vs)            = prettyConstr α c vs
    pretty (V.Matrix _ (vss × _ × _))   = vert comma (((<$>) pretty >>> hcomma) <$> vss)
-   pretty (V.Closure ρ δ σ)            = text "<closure>"
+   pretty (V.Closure _ _ _ _)          = text "<closure>"
    pretty (V.Primitive φ _)            = parens (pretty φ)
 
 instance prettyPrimOp :: Pretty PrimOp where

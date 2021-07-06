@@ -112,9 +112,9 @@ evalFwd ρ e α (T.LetRec δ t) =
          let ρ' = closeDefs ρ δ' δ' in
          evalFwd (ρ <> ρ') e' α t
       _ -> error absurd
-evalFwd ρ e _ (T.Lambda _ _) =
+evalFwd ρ e α (T.Lambda _ _) =
    case expand e (Lambda (ElimHole false)) of
-      Lambda σ -> V.Closure ρ Lin σ
+      Lambda σ -> V.Closure ρ Lin α σ
       _ -> error absurd
 evalFwd ρ e α (T.RecordLookup t xs x) =
    case expand e (RecordLookup (Hole false) x) of
@@ -127,12 +127,12 @@ evalFwd ρ e α (T.RecordLookup t xs x) =
 evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
    case expand e (App (Hole false) (Hole false)) of
       App e1 e2 ->
-         case expand (evalFwd ρ e1 α t1) (V.Closure (botOf ρ1) (botOf δ) (ElimHole false)) of
-            V.Closure ρ1' δ' σ' ->
+         case expand (evalFwd ρ e1 α t1) (V.Closure (botOf ρ1) (botOf δ) false (ElimHole false)) of
+            V.Closure ρ1' δ' β σ' ->
                let v = evalFwd ρ e2 α t2
                    ρ2 = closeDefs ρ1' δ' δ'
-                   ρ3 × e3 × β = matchFwd v σ' w in
-               evalFwd (ρ1' <> ρ2 <> ρ3) (asExpr e3) β t3
+                   ρ3 × e3 × β' = matchFwd v σ' w in
+               evalFwd (ρ1' <> ρ2 <> ρ3) (asExpr e3) (β ∧ β') t3
             _ -> error absurd
       _ -> error absurd
 evalFwd ρ e α (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
