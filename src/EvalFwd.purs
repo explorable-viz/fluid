@@ -9,10 +9,9 @@ import Data.Profunctor.Strong ((***), (&&&), first, second)
 import Data.Tuple (fst)
 import Bindings (Bindings, (↦), find, key, val, varAnon)
 import DataType (cPair)
-import Eval (closeDefs)
 import Expl (Expl(..), Match(..), VarDef(..)) as T
 import Expl (Expl, Match)
-import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), asElim, asExpr)
+import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr)
 import Lattice (𝔹, (∧), botOf, expand)
 import Primitive (match_fwd) as P
 import Util (type (×), (×), (!), absurd, assert, error, mustLookup, replicate, successful)
@@ -57,6 +56,10 @@ matchRecordFwd (xvs :- x ↦ v) σ (xws :- x' ↦ w) | x == x' =
    let ρ × σ' × α = matchRecordFwd xvs σ xws in
    (first (ρ <> _) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
 matchRecordFwd _ _ _ = error absurd
+
+closeDefsFwd :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
+closeDefsFwd _ _ Lin = Lin
+closeDefsFwd ρ δ0 (δ :- f ↦ σ) = closeDefsFwd ρ δ0 δ :- f ↦ V.Closure ρ δ0 false σ
 
 evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
 evalFwd ρ e _ (T.Var _ x) =
@@ -109,7 +112,7 @@ evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
 evalFwd ρ e α (T.LetRec δ t) =
    case expand e (LetRec (botOf δ) (Hole false)) of
       LetRec δ' e' ->
-         let ρ' = closeDefs ρ δ' δ' in
+         let ρ' = closeDefsFwd ρ δ' δ' in
          evalFwd (ρ <> ρ') e' α t
       _ -> error absurd
 evalFwd ρ e α (T.Lambda _ _) =
@@ -130,7 +133,7 @@ evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
          case expand (evalFwd ρ e1 α t1) (V.Closure (botOf ρ1) (botOf δ) false (ElimHole false)) of
             V.Closure ρ1' δ' β σ' ->
                let v = evalFwd ρ e2 α t2
-                   ρ2 = closeDefs ρ1' δ' δ'
+                   ρ2 = closeDefsFwd ρ1' δ' δ'
                    ρ3 × e3 × β' = matchFwd v σ' w in
                evalFwd (ρ1' <> ρ2 <> ρ3) (asExpr e3) (β ∧ β') t3
             _ -> error absurd
