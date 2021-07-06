@@ -137,9 +137,12 @@ test_bwd = [
    testBwd (File "intersperse") (File "intersperse-2.expect")
            (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil)) : Nil))
            "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))",
-   testBwd (File "list-comp") (File "list-comp.expect")
+   testBwd (File "list-comp") (File "list-comp-1.expect")
            (Constr false cCons (hole : Constr true cCons (hole : hole : Nil) : Nil))
            "(6.2 : (260 _:_ (19.9 : (91 : []))))",
+   testBwd (File "list-comp") (File "list-comp-2.expect")
+           (Constr false cCons (hole : Constr false cCons (hole : Constr true cCons (hole : hole : Nil) : Nil) : Nil))
+           "(6.2 : (260 : (19.9 _:_ (91 : []))))",
    testBwd (File "map") (File "map.expect")
             (Constr true cCons (Hole false : (Constr true cCons (Hole false : Hole false : Nil)) : Nil)) "(5 _:_ (6 _:_ []))",
    testBwd (File "multiply") (File "multiply.expect") (Int true 0) "_0_",
