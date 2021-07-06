@@ -95,6 +95,8 @@ cTrue       = Ctr "True"      :: Ctr
 cNil        = Ctr "Nil"       :: Ctr -- List
 cCons       = Ctr ":"         :: Ctr
 cPair       = Ctr "Pair"      :: Ctr -- Pair
+cNone       = Ctr "None"      :: Ctr -- Option
+cSome       = Ctr "Some"      :: Ctr
 
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [
@@ -108,8 +110,8 @@ dataTypes = L.fromFoldable [
       cCons × 2 -- any × List<any>
    ],
    dataType "Option" [
-      Ctr "None" × 0,
-      Ctr "Some" × 1 -- any
+      cNone × 0,
+      cSome × 1 -- any
    ],
    dataType "Ordering" [
       Ctr "GT" × 0,

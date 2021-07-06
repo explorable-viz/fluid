@@ -5,7 +5,7 @@ import Data.Array (concat)
 import Data.List (List(..), (:))
 import Data.Traversable (sequence)
 import Effect (Effect)
-import DataType (cCons)
+import DataType (cCons, cSome)
 import Lattice (𝔹)
 import Module (File(..))
 import Test.Util (
@@ -14,8 +14,8 @@ import Test.Util (
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
---tests = [ test_scratchpad ]
+--tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -26,6 +26,8 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
+--   testBwd (File "filter") (File "filter.expect") (Constr true cCons (hole : hole : Nil)) "(_8_ _:_ (7 : []))",
+   testBwd (File "lookup") (File "lookup.expect") (Constr true cSome (hole : Nil)) "_Some_ \"Germany\""
 ]
 
 test_linking :: Array (Test Unit)

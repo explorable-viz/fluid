@@ -13,11 +13,11 @@ let not True = False;
     not False = True;
 
 -- Int -> Int -> Ordering
-let compare (x, y) =
-   if x < y
-   then LT
-   else if x > y
-      then GT
+let compare x y =
+   if x > y
+   then GT
+   else if x < y
+      then LT
       else EQ;
 
 -- Num -> Num
