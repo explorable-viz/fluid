@@ -30067,7 +30067,6 @@ var PS = {};
   $PS["Pretty"] = $PS["Pretty"] || {};
   var exports = $PS["Pretty"];
   var Control_Category = $PS["Control.Category"];
-  var Data_Boolean = $PS["Data.Boolean"];
   var Data_Eq = $PS["Data.Eq"];
   var Data_Foldable = $PS["Data.Foldable"];
   var Data_Functor = $PS["Data.Functor"];
@@ -30081,24 +30080,9 @@ var PS = {};
   var Util = $PS["Util"];
   var Util_SnocList = $PS["Util.SnocList"];
   var Val = $PS["Val"];
-  var ToList = function (toList) {
-      this.toList = toList;
-  };
   var Pretty = function (pretty) {
       this.pretty = pretty;
-  };
-  var toList = function (dict) {
-      return dict.toList;
   }; 
-  var toListVal = new ToList(function (v) {
-      if (v instanceof Val.Constr && (v.value2 instanceof Data_List_Types.Cons && (v.value2.value1 instanceof Data_List_Types.Cons && (v.value2.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1)(DataType.cCons))))) {
-          return new Data_List_Types.Cons(v.value2.value0, toList(toListVal)(v.value2.value1.value0));
-      };
-      if (v instanceof Val.Constr && (v.value2 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1)(DataType.cNil))) {
-          return Data_List_Types.Nil.value;
-      };
-      return Util.error(Util.absurd);
-  });
   var space = Text_Pretty.text(" ");
   var prettyString = new Pretty(Text_Pretty.text);
   var prettyPrimOp = new Pretty(function (v) {
@@ -30108,16 +30092,16 @@ var PS = {};
       return dict.pretty;
   };    
   var prettyCtr = new Pretty((function () {
-      var $288 = pretty(prettyString);
-      var $289 = Data_Show.show(DataType.showCtr);
-      return function ($290) {
-          return $288($289($290));
+      var $289 = pretty(prettyString);
+      var $290 = Data_Show.show(DataType.showCtr);
+      return function ($291) {
+          return $289($290($291));
       };
   })());
   var prettyP = function (dictPretty) {
-      var $291 = pretty(dictPretty);
-      return function ($292) {
-          return Text_Pretty.render($291($292));
+      var $292 = pretty(dictPretty);
+      return function ($293) {
+          return Text_Pretty.render($292($293));
       };
   };
   var $$null = Text_Pretty.empty(0)(0);
@@ -30135,19 +30119,19 @@ var PS = {};
               };
               throw new Error("Failed pattern match at Pretty (line 105, column 10 - line 105, column 34): " + [ v.constructor.name ]);
           };
-          var $293 = Data_List.fromFoldable(dictFoldable);
-          return function ($294) {
-              return vert$prime($293($294));
+          var $294 = Data_List.fromFoldable(dictFoldable);
+          return function ($295) {
+              return vert$prime($294($295));
           };
       };
   };
   var nil = Text_Pretty.text(Parse.str.lBracket + Parse.str.rBracket);
   var hspace = function (dictFoldable) {
-      var $295 = Text_Pretty.hcat(Data_List_Types.foldableList);
-      var $296 = Util.intersperse(space);
-      var $297 = Data_List.fromFoldable(dictFoldable);
-      return function ($298) {
-          return $295($296($297($298)));
+      var $296 = Text_Pretty.hcat(Data_List_Types.foldableList);
+      var $297 = Util.intersperse(space);
+      var $298 = Data_List.fromFoldable(dictFoldable);
+      return function ($299) {
+          return $296($297($298($299)));
       };
   };
   var hole = function (v) {
@@ -30161,11 +30145,11 @@ var PS = {};
   };
   var comma = Text_Pretty.text(",");
   var hcomma = function (dictFoldable) {
-      var $299 = Text_Pretty.hcat(Data_List_Types.foldableList);
-      var $300 = Util.intersperse(Text_Pretty.beside(comma)(space));
-      var $301 = Data_List.fromFoldable(dictFoldable);
-      return function ($302) {
-          return $299($300($301($302)));
+      var $300 = Text_Pretty.hcat(Data_List_Types.foldableList);
+      var $301 = Util.intersperse(Text_Pretty.beside(comma)(space));
+      var $302 = Data_List.fromFoldable(dictFoldable);
+      return function ($303) {
+          return $300($301($302($303)));
       };
   };
   var colon = Text_Pretty.text(Parse.str.colon);
@@ -30174,12 +30158,6 @@ var PS = {};
           return function (doc) {
               return Text_Pretty.beside(Text_Pretty.beside(l)(doc))(r);
           };
-      };
-  };
-  var brackets = between(Text_Pretty.text(Parse.str.lBracket))(Text_Pretty.text(Parse.str.rBracket));
-  var prettyList = function (dictPretty) {
-      return function (xs) {
-          return brackets(hcomma(Data_List_Types.foldableList)(Data_Functor.map(Data_List_Types.functorList)(pretty(dictPretty))(xs)));
       };
   };
   var highlightIf = function (v) {
@@ -30203,28 +30181,30 @@ var PS = {};
       };
   };
   var prettyConstr = function (dictPretty) {
-      return function (c) {
-          return function (v) {
-              if (v instanceof Data_List_Types.Cons && (v.value1 instanceof Data_List_Types.Cons && (v.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(c)(DataType.cPair)))) {
-                  return parens(hcomma(Data_Foldable.foldableArray)([ pretty(dictPretty)(v.value0), pretty(dictPretty)(v.value1.value0) ]));
+      return function (α) {
+          return function (c) {
+              return function (v) {
+                  if (v instanceof Data_List_Types.Cons && (v.value1 instanceof Data_List_Types.Cons && (v.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(c)(DataType.cPair)))) {
+                      return highlightIf(α)(parens(hcomma(Data_Foldable.foldableArray)([ pretty(dictPretty)(v.value0), pretty(dictPretty)(v.value1.value0) ])));
+                  };
+                  if (v instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(c)(DataType.cNil)) {
+                      return highlightIf(α)(nil);
+                  };
+                  if (v instanceof Data_List_Types.Cons && (v.value1 instanceof Data_List_Types.Cons && (v.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(c)(DataType.cCons)))) {
+                      return parens(hspace(Data_Foldable.foldableArray)([ pretty(dictPretty)(v.value0), highlightIf(α)(Text_Pretty.text(":")), pretty(dictPretty)(v.value1.value0) ]));
+                  };
+                  return hspace(Data_List_Types.foldableList)(new Data_List_Types.Cons(highlightIf(α)(pretty(prettyCtr)(c)), Data_Functor.map(Data_List_Types.functorList)(prettyParensOpt(dictPretty))(v)));
               };
-              if (v instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(c)(DataType.cNil)) {
-                  return nil;
-              };
-              if (v instanceof Data_List_Types.Cons && (v.value1 instanceof Data_List_Types.Cons && (v.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(c)(DataType.cCons)))) {
-                  return parens(hspace(Data_Foldable.foldableArray)([ pretty(dictPretty)(v.value0), pretty(prettyCtr)(DataType.cCons), pretty(dictPretty)(v.value1.value0) ]));
-              };
-              return hspace(Data_List_Types.foldableList)(new Data_List_Types.Cons(pretty(prettyCtr)(c), Data_Functor.map(Data_List_Types.functorList)(prettyParensOpt(dictPretty))(v)));
           };
       };
   };
   var prettyRecord = function (dictPretty) {
       return function (xvs) {
           return (function () {
-              var $303 = between(Text_Pretty.text("{"))(Text_Pretty.text("}"));
-              var $304 = hcomma(Util_SnocList.foldableSnocList);
-              return function ($305) {
-                  return $303($304($305));
+              var $304 = between(Text_Pretty.text("{"))(Text_Pretty.text("}"));
+              var $305 = hcomma(Util_SnocList.foldableSnocList);
+              return function ($306) {
+                  return $304($305($306));
               };
           })()(Util_SnocList.reverse(Data_Functor.mapFlipped(Util_SnocList.snocListFunctor)(xvs)(function (v) {
               return hspace(Data_Foldable.foldableArray)([ Text_Pretty.beside(Text_Pretty.text(v.value0))(colon), pretty(dictPretty)(v.value1) ]);
@@ -30248,19 +30228,14 @@ var PS = {};
           return highlightIf(v.value0)(prettyRecord(prettyVal)(v.value1));
       };
       if (v instanceof Val.Constr) {
-          if (Data_Eq.eq(DataType.eqCtr)(v.value1)(DataType.cNil) || Data_Eq.eq(DataType.eqCtr)(v.value1)(DataType.cCons)) {
-              return prettyList(prettyVal)(toList(toListVal)(v));
-          };
-          if (Data_Boolean.otherwise) {
-              return prettyConstr(prettyVal)(v.value1)(v.value2);
-          };
+          return prettyConstr(prettyVal)(v.value0)(v.value1)(v.value2);
       };
       if (v instanceof Val.Matrix) {
           return vert(Data_Foldable.foldableArray)(comma)(Data_Functor.map(Data_Functor.functorArray)((function () {
-              var $306 = hcomma(Data_Foldable.foldableArray);
-              var $307 = Data_Functor.map(Data_Functor.functorArray)(pretty(prettyVal));
-              return function ($308) {
-                  return $306($307($308));
+              var $307 = hcomma(Data_Foldable.foldableArray);
+              var $308 = Data_Functor.map(Data_Functor.functorArray)(pretty(prettyVal));
+              return function ($309) {
+                  return $307($308($309));
               };
           })())(v.value1.value0.value0));
       };
@@ -30270,7 +30245,7 @@ var PS = {};
       if (v instanceof Val.Primitive) {
           return parens(pretty(prettyPrimOp)(v.value0));
       };
-      throw new Error("Failed pattern match at Pretty (line 185, column 1 - line 196, column 59): " + [ v.constructor.name ]);
+      throw new Error("Failed pattern match at Pretty (line 186, column 1 - line 195, column 59): " + [ v.constructor.name ]);
   });
   exports["prettyP"] = prettyP;
   exports["prettyVal"] = prettyVal;
