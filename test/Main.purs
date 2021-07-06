@@ -14,8 +14,8 @@ import Test.Util (
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_scratchpad ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -26,9 +26,7 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
---   testBwd (File "filter") (File "filter.expect") (Constr true cCons (hole : hole : Nil)) "(_8_ _:_ (7 : []))",
-   testBwd (File "lookup") (File "lookup.expect") (Constr true cSome (hole : Nil)) "_Some_ \"Germany\""
---   testBwd (File "zipWith") (File "zipWith-1.expect") (selectNth 1 (Float true 25.0)) "(13.0 : (_25.0_ : (41.0 : [])))",
+   testBwd (File "zipWith") (File "zipWith-1.expect") (selectNth 1 (Float true 25.0)) "(13.0 : (_25.0_ : (41.0 : [])))"
 ]
 
 test_linking :: Array (Test Unit)
@@ -131,6 +129,7 @@ test_bwd = [
            \21, 35, 31, 31, 42,\n\
            \13, 32, 35, 19, 26",
    testBwd (File "divide") (File "divide.expect") (Hole true) "_40.22222222222222_",
+   testBwd (File "filter") (File "filter.expect") (Constr true cCons (hole : hole : Nil)) "(_8_ _:_ (7 : []))",
    testBwd (File "intersperse") (File "intersperse-1.expect")
            (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil))
            "(1 : (0 _:_ (2 : (0 : (3 : [])))))",
@@ -143,6 +142,7 @@ test_bwd = [
    testBwd (File "list-comp") (File "list-comp-2.expect")
            (Constr false cCons (hole : Constr false cCons (hole : Constr true cCons (hole : hole : Nil) : Nil) : Nil))
            "(6.2 : (260 : (19.9 _:_ (91 : []))))",
+   testBwd (File "lookup") (File "lookup.expect") (Constr true cSome (hole : Nil)) "_Some_ \"Germany\"",
    testBwd (File "map") (File "map.expect")
             (Constr true cCons (Hole false : (Constr true cCons (Hole false : Hole false : Nil)) : Nil)) "(5 _:_ (6 _:_ []))",
    testBwd (File "multiply") (File "multiply.expect") (Int true 0) "_0_",
