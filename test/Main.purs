@@ -28,10 +28,10 @@ test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
 --   testBwd (File "filter") (File "filter.expect") (Constr true cCons (hole : hole : Nil)) "(_8_ _:_ (7 : []))",
 --   testBwd (File "lookup") (File "lookup.expect") (Constr true cSome (hole : Nil)) "_Some_ \"Germany\""
-   testBwd (File "zipWith") (File "zipWith-1.expect") (selectNth 1 (Float true 25.0)) "(13.0 : (_25.0_ : (41.0 : [])))",
+--   testBwd (File "zipWith") (File "zipWith-1.expect") (selectNth 1 (Float true 25.0)) "(13.0 : (_25.0_ : (41.0 : [])))",
    testBwd (File "zipWith") (File "zipWith-2.expect")
-           (Constr true cCons (hole : (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cNil Nil) : Nil)) : Nil)) : Nil))
-           "(13.0 _:_ (25.0 _:_ (41.0 : _[]_)))"
+           (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cNil Nil) : Nil)) : Nil))
+           "(6 : (12 : _[]_))"
 ]
 
 test_linking :: Array (Test Unit)
