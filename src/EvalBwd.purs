@@ -33,8 +33,8 @@ closeDefsBwd ρ (ρ0 × δ0) =
          _ -> error absurd
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
-matchBwd (Lin :- x ↦ v) κ α (MatchVar x') = v × ElimVar (x ≜ x') κ
-matchBwd Lin κ α (MatchVarAnon v)          = botOf v × ElimVar varAnon κ
+matchBwd (Lin :- x ↦ v) κ α (MatchVar x')    = v × ElimVar (x ≜ x') κ
+matchBwd Lin κ α (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
