@@ -132,9 +132,9 @@ evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
        v' × σ = matchBwd ρ3 (ContExpr e) β w
        ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
        ρ' × e2 × α = evalBwd v' t2
-       ρ1' × δ' × α' = closeDefsBwd ρ2 (ρ1 × δ)
-       ρ'' × e1 × α'' = evalBwd (V.Closure (ρ1 ∨ ρ1') δ' β σ) t1 in
-   (ρ' ∨ ρ'') × App e1 e2 × (α ∨ α' ∨ α'')
+       ρ1' × δ' × β' = closeDefsBwd ρ2 (ρ1 × δ)
+       ρ'' × e1 × α' = evalBwd (V.Closure (ρ1 ∨ ρ1') δ' (β ∨ β') σ) t1 in
+   (ρ' ∨ ρ'') × App e1 e2 × (α ∨ α')
 evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let vs' = vs <> singleton v2
        { init: vs'', last: v2' } = fromJust absurd $ unsnoc $

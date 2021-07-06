@@ -133,7 +133,7 @@ evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
          case expand (evalFwd ρ e1 α t1) (V.Closure (botOf ρ1) (botOf δ) false (ElimHole false)) of
             V.Closure ρ1' δ' β σ' ->
                let v = evalFwd ρ e2 α t2
-                   ρ2 = closeDefsFwd ρ1' δ' α δ'
+                   ρ2 = closeDefsFwd ρ1' δ' β δ'
                    ρ3 × e3 × β' = matchFwd v σ' w in
                evalFwd (ρ1' <> ρ2 <> ρ3) (asExpr e3) (β ∧ β') t3
             _ -> error absurd
