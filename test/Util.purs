@@ -3,6 +3,7 @@ module Test.Util where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:), elem)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Tuple (fst, snd)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
@@ -53,18 +54,18 @@ desugarEval_fwd ρ s =
 checkPretty :: forall a . Pretty a => String -> a -> Aff Unit
 checkPretty expected x = prettyP x `shouldEqual` expected
 
--- v_opt is output slice; expected is expected result after round-trip.
-testWithSetup :: File -> String -> Maybe (Val 𝔹) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
-testWithSetup (File file) expected v_opt setup =
+-- v_expect_opt is optional output slice + expected source slice; expected is expected result after round-trip.
+testWithSetup :: File -> String -> Maybe (Val 𝔹 × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
+testWithSetup (File file) expected v_expect_opt setup =
    before setup $
       it file \(ρ × s) -> do
          let t × v = successful (desugarEval ρ s)
-             ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v v_opt)
+             ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v (fst <$> v_expect_opt))
              v = desugarEval_fwd ρ' s' t
          unless (isGraphical v) (checkPretty expected v)
-         case v_opt of
+         case snd <$> v_expect_opt of
             Nothing -> pure unit
-            Just _ -> loadFile (Folder "fluid/example") (File $ file <> ".expect") >>= flip checkPretty s'
+            Just file_expect -> loadFile (Folder "fluid/example") file_expect >>= flip checkPretty s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
@@ -72,7 +73,7 @@ test file expected = testWithSetup file expected Nothing (openWithDefaultImports
 testBwd :: File -> Val 𝔹 -> String -> Test Unit
 testBwd (File file) v expected =
    let file' = File ("slicing/" <> file) in
-   testWithSetup file' expected (Just v) (openWithDefaultImports file')
+   testWithSetup file' expected (Just $ v × (file' <> File ".expect")) (openWithDefaultImports file')
 
 type LinkConfig = {
    file1 :: File,
