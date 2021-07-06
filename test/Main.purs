@@ -14,8 +14,8 @@ import Test.Util (
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_scratchpad ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -26,9 +26,6 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   testBwd (File "sec-5-example") (File "sec-5-example.expect")
-           (Constr true cCons (hole : hole : Nil))
-           "(6.2 _:_ (260 : (19.9 : (91 : []))))"
 ]
 
 test_linking :: Array (Test Unit)
@@ -137,6 +134,9 @@ test_bwd = [
    testBwd (File "intersperse") (File "intersperse-2.expect")
            (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil)) : Nil))
            "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))",
+   testBwd (File "list-comp") (File "list-comp.expect")
+           (Constr false cCons (hole : Constr true cCons (hole : hole : Nil) : Nil))
+           "(6.2 : (260 _:_ (19.9 : (91 : []))))",
    testBwd (File "map") (File "map.expect")
             (Constr true cCons (Hole false : (Constr true cCons (Hole false : Hole false : Nil)) : Nil)) "(5 _:_ (6 _:_ []))",
    testBwd (File "multiply") (File "multiply.expect") (Int true 0) "_0_",
