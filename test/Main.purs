@@ -14,8 +14,8 @@ import Test.Util (
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_scratchpad ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -29,9 +29,6 @@ test_scratchpad = [
 --   testBwd (File "filter") (File "filter.expect") (Constr true cCons (hole : hole : Nil)) "(_8_ _:_ (7 : []))",
 --   testBwd (File "lookup") (File "lookup.expect") (Constr true cSome (hole : Nil)) "_Some_ \"Germany\""
 --   testBwd (File "zipWith") (File "zipWith-1.expect") (selectNth 1 (Float true 25.0)) "(13.0 : (_25.0_ : (41.0 : [])))",
-   testBwd (File "zeros") (File "zeros-2.expect")
-           (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cNil Nil) : Nil)) : Nil))
-           "(0 : (0 : _[]_))"
 ]
 
 test_linking :: Array (Test Unit)
@@ -146,7 +143,13 @@ test_bwd = [
    testBwd (File "map") (File "map.expect")
             (Constr true cCons (Hole false : (Constr true cCons (Hole false : Hole false : Nil)) : Nil)) "(5 _:_ (6 _:_ []))",
    testBwd (File "multiply") (File "multiply.expect") (Int true 0) "_0_",
-   testBwd (File "nth") (File "nth.expect") (Int true 4) "_4_"
+   testBwd (File "nth") (File "nth.expect") (Int true 4) "_4_",
+   testBwd (File "zeros") (File "zeros-1.expect")
+           (Constr true cCons (hole : (Constr false cCons (hole : (Constr true cNil Nil) : Nil)) : Nil))
+           "(0 _:_ (0 : _[]_))",
+   testBwd (File "zeros") (File "zeros-2.expect")
+           (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cNil Nil) : Nil)) : Nil))
+           "(0 : (0 : _[]_))"
 ]
 
 test_desugaring :: Array (Test Unit)
