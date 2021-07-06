@@ -70,10 +70,11 @@ testWithSetup (File file) expected v_expect_opt setup =
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
 
-testBwd :: File -> Val 𝔹 -> String -> Test Unit
-testBwd (File file) v expected =
-   let file' = File ("slicing/" <> file) in
-   testWithSetup file' expected (Just $ v × (file' <> File ".expect")) (openWithDefaultImports file')
+testBwd :: File -> File ->Val 𝔹 -> String -> Test Unit
+testBwd file file_expect v expected =
+   let folder = File "slicing/"
+       file' = folder <> file in
+   testWithSetup file' expected (Just (v × (folder <> file_expect))) (openWithDefaultImports file')
 
 type LinkConfig = {
    file1 :: File,
