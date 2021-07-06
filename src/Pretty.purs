@@ -129,11 +129,12 @@ prettyParensOpt x =
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
 
-prettyConstr :: forall a . Pretty a => Ctr -> List a -> Doc
-prettyConstr c (x : y : Nil)  | c == cPair   = parens (hcomma [pretty x, pretty y])
-prettyConstr c Nil            | c == cNil    = nil
-prettyConstr c (x : y : Nil)  | c == cCons   = parens (hspace [pretty x, pretty cCons, pretty y])
-prettyConstr c xs                            = hspace (pretty c : (prettyParensOpt <$> xs))
+-- strip parens from (:)
+prettyConstr :: forall a . Pretty a => 𝔹 -> Ctr -> List a -> Doc
+prettyConstr α c (x : y : Nil)  | c == cPair   = highlightIf α $ parens (hcomma [pretty x, pretty y])
+prettyConstr α c Nil            | c == cNil    = highlightIf α nil
+prettyConstr α c (x : y : Nil)  | c == cCons   = parens (hspace [pretty x, highlightIf α $ text ":", pretty y])
+prettyConstr α c xs                            = hspace (highlightIf α (pretty c) : (prettyParensOpt <$> xs))
 
 prettyRecord :: forall a . Pretty a => Bindings a -> Doc
 prettyRecord xvs =
@@ -147,7 +148,7 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
    pretty (E.Record _ xes)          = prettyRecord xes
-   pretty (E.Constr _ c es)         = prettyConstr c es
+   pretty (E.Constr α c es)         = prettyConstr α c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]
    pretty (E.Op op)                 = parens (text op)
@@ -188,9 +189,7 @@ instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
    pretty (V.Record α xvs)             = highlightIf α (prettyRecord xvs)
-   pretty u@(V.Constr _ c vs)
-      | c == cNil || c == cCons        = prettyList (toList u) -- list values always printed using list notation
-      | otherwise                      = prettyConstr c vs
+   pretty (V.Constr α c vs)            = prettyConstr α c vs
    pretty (V.Matrix _ (vss × _ × _))   = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Closure ρ δ σ)            = text "<closure>"
    pretty (V.Primitive φ _)            = parens (pretty φ)
@@ -210,7 +209,7 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
    pretty (S.Int α n)                  = highlightIf α (text (show n))
    pretty (S.Float α n)                = highlightIf α (text (show n))
    pretty (S.Str α str)                = highlightIf α (text (show str))
-   pretty (S.Constr α c es)            = prettyConstr c es
+   pretty (S.Constr α c es)            = prettyConstr α c es
    pretty (S.Record α xes)             = prettyRecord xes
    pretty (S.Matrix α e (x × y) e')    = highlightIf α (hspace (init <> quant))
       where
@@ -258,10 +257,7 @@ instance prettyEither :: (Pretty a, Pretty b) => Pretty (a + b) where
 
 instance prettyPattern :: Pretty S.Pattern where
    pretty (S.PVar x)             = text x
-   pretty p@(S.PConstr c ps)
-      | c == cNil || c == cCons  = prettyList (toList p)
-      | c == cPair               = prettyPair (toPair p)
-      | otherwise                = prettyConstr c ps
+   pretty p@(S.PConstr c ps)     = prettyConstr false c ps
    pretty (S.PRecord xps)        = prettyRecord xps
    pretty (S.PListEmpty)         = nil
    pretty (S.PListNonEmpty s l)  = text str.lBracket :<>: pretty s :<>: pretty l

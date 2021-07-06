@@ -15,7 +15,7 @@ import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
 tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
--- tests = [ test_scratchpad ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -26,13 +26,9 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   testLink {
-      file1: File "bar-chart",
-      file2: File "tree",
-      dataFile: File "renewables",
-      dataVar: "data",
-      v1_sel: selectBarChart_data (selectNth 1 (select_y))
-   } "NonEmpty Empty ((\"China\", 3041.1)) (NonEmpty (NonEmpty Empty ((\"Germany\", 606.6000000000001)) Empty) ((\"USA\", _1253.3999999999999_)) Empty)"
+   testBwd (File "intersperse")
+           (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil))
+           "(1 : (0 _:_ (2 : (0 _:_ (3 : [])))))"
 ]
 
 test_linking :: Array (Test Unit)
@@ -65,52 +61,46 @@ test_linking = [
    }
       "LineChart ({\
          \caption: \"Output of USA relative to China\", \
-         \plots: [\
-            \LinePlot ({\
+         \plots: \
+            \(LinePlot ({\
                \name: \"Bio\", \
-               \data: [\
-                  \{x: 2013, y: 2.5483870967741935}, \
-                  \{x: 2014, y: 1.61}, \
-                  \{x: 2015, y: _1.6213592233009706_}, \
-                  \{x: 2016, y: 1.4000000000000001}, \
-                  \{x: 2017, y: 1.1208053691275166}, \
-                  \{x: 2018, y: 0.9101123595505617}\
-               \]\
-            \}), \
-            \LinePlot ({\
+               \data: \
+                  \({x: 2013, y: 2.5483870967741935} : \
+                  \({x: 2014, y: 1.61} : \
+                  \({x: 2015, y: _1.6213592233009706_} : \
+                  \({x: 2016, y: 1.4000000000000001} : \
+                  \({x: 2017, y: 1.1208053691275166} : \
+                  \({x: 2018, y: 0.9101123595505617} : []))))))\
+            \}) : \
+            \(LinePlot ({\
                \name: \"Hydro\", \
-               \data: [\
-                  \{x: 2013, y: 0.3}, \
-                  \{x: 2014, y: 0.28214285714285714}, \
-                  \{x: 2015, y: _0.8333333333333334_}, \
-                  \{x: 2016, y: 0.26229508196721313}, \
-                  \{x: 2017, y: 0.25559105431309903}, \
-                  \{x: 2018, y: 0.2484472049689441}\
-               \]\
-            \}), \
-            \LinePlot ({\
+               \data: \
+                  \({x: 2013, y: 0.3} : \
+                  \({x: 2014, y: 0.28214285714285714} : \
+                  \({x: 2015, y: _0.8333333333333334_} : \
+                  \({x: 2016, y: 0.26229508196721313} : \
+                  \({x: 2017, y: 0.25559105431309903} : \
+                  \({x: 2018, y: 0.2484472049689441} : []))))))\
+            \}) : \
+            \(LinePlot ({\
                \name: \"Solar\", \
-               \data: [\
-                  \{x: 2013, y: 0.6080402010050252}, \
-                  \{x: 2014, y: 0.6428571428571429}, \
-                  \{x: 2015, y: _0.5909090909090909_}, \
-                  \{x: 2016, y: 0.5324675324675324}, \
-                  \{x: 2017, y: 0.3893129770992366}, \
-                  \{x: 2018, y: 0.3522727272727273}\
-               \]\
-            \}), \
-            \LinePlot ({\
+               \data: \
+                  \({x: 2013, y: 0.6080402010050252} : \
+                  \({x: 2014, y: 0.6428571428571429} : \
+                  \({x: 2015, y: _0.5909090909090909_} : \
+                  \({x: 2016, y: 0.5324675324675324} : \
+                  \({x: 2017, y: 0.3893129770992366} : \
+                  \({x: 2018, y: 0.3522727272727273} : []))))))\
+            \}) : \
+            \(LinePlot ({\
                \name: \"Wind\", \
-               \data: [\
-                  \{x: 2013, y: 0.6703296703296703}, \
-                  \{x: 2014, y: 0.5739130434782609}, \
-                  \{x: 2015, y: _0.5103448275862069_}, \
-                  \{x: 2016, y: 0.48520710059171596}, \
-                  \{x: 2017, y: 0.4734042553191489}, \
-                  \{x: 2018, y: 0.45714285714285713}\
-               \]\
-            \})\
-         \]\
+               \data: ({x: 2013, y: 0.6703296703296703} : \
+                  \({x: 2014, y: 0.5739130434782609} : \
+                  \({x: 2015, y: _0.5103448275862069_} : \
+                  \({x: 2016, y: 0.48520710059171596} : \
+                  \({x: 2017, y: 0.4734042553191489} : \
+                  \({x: 2018, y: 0.45714285714285713} : []))))))\
+            \}) : []))))\
       \})"
 ]
 
@@ -118,7 +108,7 @@ test_bwd :: Array (Test Unit)
 test_bwd = [
    testBwd (File "add") (Int true 8) "_8_",
    testBwd (File "array-lookup") (Int true 14) "_14_",
-   testBwd (File "array-dims") (selectPair true (Int true 3) (Int true 3)) "(_3_, _3_)",
+   testBwd (File "array-dims") (selectPair true (Int true 3) (Int true 3)) "_(_3_, _3_)_",
    testBwd (File "conv-edgeDetect")
            (selectCell 1 1 5 5)
             "_0_, -1, 2, 0, -1,\n\
@@ -142,22 +132,23 @@ test_bwd = [
            \13, 32, 35, 19, 26",
    testBwd (File "divide") (Hole true) "_40.22222222222222_",
    testBwd (File "map")
-            (Constr true cCons (Hole false : (Constr true cCons (Hole false : Hole false : Nil)) : Nil)) "[5, 6]",
+            (Constr true cCons (Hole false : (Constr true cCons (Hole false : Hole false : Nil)) : Nil)) "(5 _:_ (6 _:_ []))",
    testBwd (File "multiply") (Int true 0) "_0_",
    testBwd (File "nth") (Int true 4) "_4_"
 ]
 
 test_desugaring :: Array (Test Unit)
 test_desugaring = [
-   test (File "desugar/list-comp-1") "[14, 12, 10, 13, 11, 9, 12, 10, 8]",
+   test (File "desugar/list-comp-1") "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))",
    test (File "desugar/list-comp-2")
-        "[14, 14, 14, 12, 12, 12, 10, 10, 10, 13, 13, 13, 11, 11, 11, 9, 9, 9, 12, 12, 12, 10, 10, 10, 8, 8, 8]",
-   test (File "desugar/list-comp-3") "[9, 8]",
-   test (File "desugar/list-comp-4") "[5, 4, 3]",
-   test (File "desugar/list-comp-5") "[5, 4, 3]",
-   test (File "desugar/list-comp-6") "[5]",
-   test (File "desugar/list-comp-7") "[[]]",
-   test (File "desugar/list-enum") "[3, 4, 5, 6, 7]"
+        "(14 : (14 : (14 : (12 : (12 : (12 : (10 : (10 : (10 : (13 : (13 : (13 : (11 : (11 : (11 : (9 : \
+        \(9 : (9 : (12 : (12 : (12 : (10 : (10 : (10 : (8 : (8 : (8 : [])))))))))))))))))))))))))))",
+   test (File "desugar/list-comp-3") "(9 : (8 : []))",
+   test (File "desugar/list-comp-4") "(5 : (4 : (3 : [])))",
+   test (File "desugar/list-comp-5") "(5 : (4 : (3 : [])))",
+   test (File "desugar/list-comp-6") "(5 : [])",
+   test (File "desugar/list-comp-7") "([] : [])",
+   test (File "desugar/list-enum") "(3 : (4 : (5 : (6 : (7 : [])))))"
 ]
 
 test_misc :: Array (Test Unit)
@@ -165,22 +156,26 @@ test_misc = [
    test (File "arithmetic") "42",
    test (File "array") "(1, (3, 3))",
    test (File "compose") "5",
-   test (File "div-mod-quot-rem") "[[1, -1, -2, 2], [2, 2, 1, 1], [1, -1, -1, 1], [2, 2, -2, -2]]",
+   test (File "div-mod-quot-rem")
+               "((1 : (-1 : (-2 : (2 : [])))) : \
+               \((2 : (2 : (1 : (1 : [])))) : \
+               \((1 : (-1 : (-1 : (1 : [])))) : \
+               \((2 : (2 : (-2 : (-2 : [])))) : []))))",
    test (File "factorial") "40320",
-   test (File "filter") "[8, 7]",
-   test (File "flatten") "[(3, \"simon\"), (4, \"john\"), (6, \"sarah\"), (7, \"claire\")]",
+   test (File "filter") "(8 : (7 : []))",
+   test (File "flatten") "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))",
    test (File "foldr_sumSquares") "661",
    test (File "lexicalScoping") "\"6\"",
    test (File "length") "2",
    test (File "lookup") "Some \"sarah\"",
-   test (File "map") "[5, 7, 13, 15, 4, 3, -3]",
-   test (File "mergeSort") "[1, 2, 3]",
+   test (File "map") "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))",
+   test (File "mergeSort") "(1 : (2 : (3 : [])))",
    test (File "normalise") "(33, 66)",
    test (File "pattern-match") "4",
-   test (File "range") "[(0, 0), (0, 1), (1, 0), (1, 1)]",
-   test (File "records") "{a: 5, b: 6, c: 7, d: [5], e: 7}",
-   test (File "reverse") "[2, 1]",
-   test (File "zipWith") "[[10], [12], [20]]"
+   test (File "range") "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))",
+   test (File "records") "{a: 5, b: 6, c: 7, d: (5 : []), e: 7}",
+   test (File "reverse") "(2 : (1 : []))",
+   test (File "zipWith") "((10 : []) : ((12 : []) : ((20 : []) : [])))"
 ]
 
 test_graphics :: Array (Test Unit)
