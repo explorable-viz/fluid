@@ -4,4 +4,5 @@ let data = [
    { year: 2013, country: "China", energyType: "Solar", output: 19.9 },
    { year: 2013, country: "China", energyType: "Wind", output: 91 }
 ] in
-[ row.output | type <- ["Bio", "Hydro", "Solar", "Wind"], row <- data, row.energyType == type ]
+[ row.output | type <- ["Bio", "Hydro", "Solar", "Wind"],
+               row <- data, row.energyType == type ]
