@@ -26,8 +26,12 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   testBwd (File "zipWith") (File "zipWith-1.expect") (selectNth 1 (Float true 25.0)) "(13.0 : (_25.0_ : (41.0 : [])))",
-   testBwd (File "length") (File "length.expect") (Hole true) "_5_"
+   testBwd (File "section-5-example") (File "section-5-example-1.expect")
+           (Constr false cCons (hole : (Constr true cCons (hole : (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil)) : Nil)) : Nil))
+           "(1 : (68 _:_ (5 : (24 _:_ []))))",
+   testBwd (File "section-5-example") (File "section-5-example-2.expect")
+           (selectNth 1 (Hole true))
+           "(_1_ : (_68_ : (_5_ : (_24_ : []))))"
 ]
 
 test_linking :: Array (Test Unit)
@@ -137,6 +141,7 @@ test_bwd = [
    testBwd (File "intersperse") (File "intersperse-2.expect")
            (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil)) : Nil))
            "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))",
+   testBwd (File "length") (File "length.expect") (Hole true) "_5_",
    testBwd (File "list-comp") (File "list-comp-1.expect")
            (Constr false cCons (hole : Constr true cCons (hole : hole : Nil) : Nil))
            "(6.2 : (260 _:_ (19.9 : (91 : []))))",
@@ -153,7 +158,8 @@ test_bwd = [
            "(0 _:_ (0 : _[]_))",
    testBwd (File "zeros") (File "zeros-2.expect")
            (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cNil Nil) : Nil)) : Nil))
-           "(0 : (0 : _[]_))"
+           "(0 : (0 : _[]_))",
+   testBwd (File "zipWith") (File "zipWith-1.expect") (selectNth 1 (Float true 25.0)) "(13.0 : (_25.0_ : (41.0 : [])))"
 ]
 
 test_desugaring :: Array (Test Unit)

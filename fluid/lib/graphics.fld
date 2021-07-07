@@ -194,7 +194,7 @@ let rects colours ns =
 -- Colours -> List (a, Num) -> GraphicsElement
 let stackedBar colours ns =
    let heights = map snd ns;
-       subtotals = scanl1 (uncurry (+)) 0 heights;
+       subtotals = scanl1 (+) 0 heights;
        dims = zip (0 : subtotals) heights;
        rects = map
           (fun ((y, height), colour) -> Rect 0 y 1 height colour)
