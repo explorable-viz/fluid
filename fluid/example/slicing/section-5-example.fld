@@ -1,13 +1,14 @@
 let map f [] = [];
     map f (x : xs) = f x : map f xs;
 let data = [
-   { year: 2013, country: "China", energyType: "Bio", output: 6.2 },
-   { year: 2013, country: "China", energyType: "Hydro", output: 260 },
-   { year: 2013, country: "China", energyType: "Solar", output: 19.9 },
-   { year: 2013, country: "China", energyType: "Wind", output: 91 }
+   { energyType: "Bio", output: 6.2 },
+   { energyType: "Hydro", output: 260 },
+   { energyType: "Solar", output: 19.9 },
+   { energyType: "Wind", output: 91 },
+   { energyType: "Geo", output: 14.4 }
 ];
    output = [
-   row.output | type <- ["Bio", "Hydro", "Solar", "Wind"],
+   row.output | type <- ["Hydro", "Solar", "Geo"],
                 row <- data, row.energyType == type
 ] in
 map (fun x -> floor (x / sum output * 100)) output

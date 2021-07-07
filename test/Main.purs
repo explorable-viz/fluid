@@ -27,11 +27,11 @@ hole = Hole false
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
    testBwd (File "section-5-example") (File "section-5-example-1.expect")
-           (Constr false cCons (hole : (Constr true cCons (hole : (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil)) : Nil)) : Nil))
-           "(1 : (68 _:_ (5 : (24 _:_ []))))",
+           (Constr true cCons (hole : (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil)) : Nil))
+           "(88 _:_ (6 : (4 _:_ [])))",
    testBwd (File "section-5-example") (File "section-5-example-2.expect")
            (selectNth 1 (Hole true))
-           "(_1_ : (_68_ : (_5_ : (_24_ : []))))"
+           "(_88_ : (_6_ : (_4_ : [])))"
 ]
 
 test_linking :: Array (Test Unit)
