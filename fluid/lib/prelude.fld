@@ -13,11 +13,11 @@ let not True = False;
     not False = True;
 
 -- Int -> Int -> Ordering
-let compare (x, y) =
-   if x < y
-   then LT
-   else if x > y
-      then GT
+let compare x y =
+   if x > y
+   then GT
+   else if x < y
+      then LT
       else EQ;
 
 -- Num -> Num
@@ -102,14 +102,14 @@ let foldr op z [] = z;
 let foldr1 op [x] = x;
     foldr1 op (x : y : xs) = op x (foldr1 op (y : xs));
 
--- ((a, b) -> a) -> a -> List b -> List a
+-- (a -> b -> a) -> a -> List b -> List a
 let scanl1 op z xs =
    let go x continue acc =
-      let next = op (acc, x) in
+      let next = op acc x in
       next : continue next in
    foldr go (const []) xs z;
 
--- ((a, b) -> a) -> a -> List b -> List a
+-- (a -> b -> a) -> a -> List b -> List a
 let scanl op z xs =
    z : scanl1 op z xs;
 

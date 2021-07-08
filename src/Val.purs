@@ -20,11 +20,11 @@ data Val a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Bindings (Val a)) |       -- always saturated
-   Constr a Ctr (List (Val a)) |       -- potentially unsaturated
+   Record a (Bindings (Val a)) |             -- always saturated
+   Constr a Ctr (List (Val a)) |             -- potentially unsaturated
    Matrix a (MatrixRep a) |
-   Primitive PrimOp (List (Val a)) |   -- never saturated
-   Closure (Env a) (RecDefs a) (Elim a)
+   Primitive PrimOp (List (Val a)) |         -- never saturated
+   Closure (Env a) (RecDefs a) a (Elim a)
 
 -- op_fwd will be provided with original (non-hole) arguments, op_bwd with original output and arguments
 newtype PrimOp = PrimOp {
@@ -59,10 +59,10 @@ instance functorVal :: Functor Val where
    map f (Str α str)                = Str (f α) str
    map f (Record α xvs)             = Record (f α) (map (map f) <$> xvs)
    map f (Constr α c vs)            = Constr (f α) c (map f <$> vs)
-   -- Purescript can't derive this case
+   -- PureScript can't derive this case
    map f (Matrix α (r × iα × jβ))   = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))
    map f (Primitive φ vs)           = Primitive φ ((map f) <$> vs)
-   map f (Closure ρ h σ)            = Closure (map (map f) <$> ρ) (map (map f) <$> h) (f <$> σ)
+   map f (Closure ρ h α σ)          = Closure (map (map f) <$> ρ) (map (map f) <$> h) (f α) (f <$> σ)
 
 instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
    join = definedJoin
@@ -84,7 +84,8 @@ instance slicesVal :: Slices (Val Boolean) where
          ((flip (×) (β ∨ β')) <$> (i ≞ i')) `lift2 (×)`
          ((flip (×) (γ ∨ γ')) <$> (j ≞ j'))
       )
-   maybeJoin (Closure ρ δ σ) (Closure ρ' δ' σ')       = Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <*> maybeJoin σ σ'
+   maybeJoin (Closure ρ δ α σ) (Closure ρ' δ' α' σ')  =
+      Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <@> α ∨ α' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ vs) (Primitive φ' vs')      = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _                                      = report "Incompatible values"
 
@@ -101,17 +102,18 @@ instance valExpandable :: Expandable (Val Boolean) where
    expand (Hole α) (Constr β c vs)              = Constr (α ⪄ β) c (expand (Hole α) <$> vs)
    expand (Hole α) (Matrix β (vss × (i × β1) × (j × β2))) =
       Matrix (α ⪄ β) ((map (expand (Hole α)) <$> vss) × (i × (α ⪄ β1)) × (j × (α ⪄ β2)))
-   expand (Hole α) (Closure ρ δ σ) =
+   expand (Hole α) (Closure ρ δ β σ) =
       Closure (expand (map (const (Hole α)) <$> ρ) ρ)
               (expand (map (const (ElimHole α)) <$> δ) δ)
+              (α ⪄ β)
               (expand (ElimHole α) σ)
-   expand (Int α n) (Int β n')                  = Int (α ⪄ β) (n ≜ n')
-   expand (Float α n) (Float β n')              = Float (α ⪄ β) (n ≜ n')
-   expand (Str α str) (Str β str')              = Str (α ⪄ β) (str ≜ str')
-   expand (Record α xvs) (Record β xvs')        = Record (α ⪄ β) (expand xvs xvs')
-   expand (Constr α c vs) (Constr β c' vs')     = Constr (α ⪄ β) (c ≜ c') (expand vs vs')
+   expand (Int α n) (Int β n')                     = Int (α ⪄ β) (n ≜ n')
+   expand (Float α n) (Float β n')                 = Float (α ⪄ β) (n ≜ n')
+   expand (Str α str) (Str β str')                 = Str (α ⪄ β) (str ≜ str')
+   expand (Record α xvs) (Record β xvs')           = Record (α ⪄ β) (expand xvs xvs')
+   expand (Constr α c vs) (Constr β c' vs')        = Constr (α ⪄ β) (c ≜ c') (expand vs vs')
    expand (Matrix α (vss × (i × β) × (j × γ))) (Matrix α' (vss' × (i' × β') × (j' × γ'))) =
       Matrix (α ⪄ α') (expand vss vss' × ((i ≜ i') × (β ⪄ β')) × ((j ≜ j') × (γ ⪄ γ')))
-   expand (Closure ρ δ σ) (Closure ρ' δ' σ')    = Closure (expand ρ ρ') (expand δ δ') (expand σ σ')
-   expand (Primitive φ vs) (Primitive φ' vs')   = Primitive φ (expand vs vs') -- TODO: require φ = φ'
-   expand _ _                                   = error absurd
+   expand (Closure ρ δ α σ) (Closure ρ' δ' β σ')   = Closure (expand ρ ρ') (expand δ δ') (α ⪄ β) (expand σ σ')
+   expand (Primitive φ vs) (Primitive φ' vs')      = Primitive φ (expand vs vs') -- TODO: require φ = φ'
+   expand _ _                                      = error absurd

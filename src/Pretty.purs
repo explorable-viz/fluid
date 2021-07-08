@@ -69,17 +69,6 @@ null = empty 0 0
 class ToList a where
    toList :: a -> List a
 
-instance toListExpr :: ToList (E.Expr Boolean) where
-   toList (E.Constr _ c (e : e' : Nil))   | c == cCons   = e : toList e'
-   toList (E.Constr _ c Nil)              | c == cNil    = Nil
-   toList e                                              = error absurd
-
--- This doesn't work if we hit a hole in the tail of the list.
-instance toListVal :: ToList (Val Boolean) where
-   toList (V.Constr _ c (v : v' : Nil)) | c == cCons  = v : toList v'
-   toList (V.Constr _ c Nil)            | c == cNil   = Nil
-   toList v                                           = error absurd
-
 class ToPair a where
    toPair :: a -> a × a
 
@@ -136,10 +125,10 @@ prettyConstr α c Nil            | c == cNil    = highlightIf α nil
 prettyConstr α c (x : y : Nil)  | c == cCons   = parens (hspace [pretty x, highlightIf α $ text ":", pretty y])
 prettyConstr α c xs                            = hspace (highlightIf α (pretty c) : (prettyParensOpt <$> xs))
 
-prettyRecord :: forall a . Pretty a => Bindings a -> Doc
-prettyRecord xvs =
+prettyRecord :: forall a . Pretty a => 𝔹 -> Bindings a -> Doc
+prettyRecord α xvs =
    xvs <#> (\(x ↦ v) -> hspace [text x :<>: colon, pretty v])
-   # S.reverse >>> hcomma >>> between (text "{") (text "}")
+   # S.reverse >>> hcomma >>> between (text "{") (text "}") >>> highlightIf α
 
 instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.Hole α)                = hole α
@@ -147,7 +136,7 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
-   pretty (E.Record _ xes)          = prettyRecord xes
+   pretty (E.Record α xes)          = prettyRecord α xes
    pretty (E.Constr α c es)         = prettyConstr α c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]
@@ -165,9 +154,6 @@ instance prettyRecDefs :: Pretty (SnocList (Bind (Elim Boolean))) where
 
 instance prettyRecDef :: Pretty (Bind (Elim Boolean)) where
    pretty (x ↦ σ) = hspace [text x, text str.equals, pretty σ]
-
-instance prettyRecordVal :: Pretty (SnocList (Bind (Val Boolean))) where
-   pretty = prettyRecord
 
 instance prettyCont :: Pretty (Cont Boolean) where
    pretty (ContHole α)  = hole α
@@ -188,10 +174,10 @@ instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
-   pretty (V.Record α xvs)             = highlightIf α (prettyRecord xvs)
+   pretty (V.Record α xvs)             = prettyRecord α xvs
    pretty (V.Constr α c vs)            = prettyConstr α c vs
    pretty (V.Matrix _ (vss × _ × _))   = vert comma (((<$>) pretty >>> hcomma) <$> vss)
-   pretty (V.Closure ρ δ σ)            = text "<closure>"
+   pretty (V.Closure _ _ _ _)          = text "<closure>"
    pretty (V.Primitive φ _)            = parens (pretty φ)
 
 instance prettyPrimOp :: Pretty PrimOp where
@@ -210,13 +196,13 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
    pretty (S.Float α n)                = highlightIf α (text (show n))
    pretty (S.Str α str)                = highlightIf α (text (show str))
    pretty (S.Constr α c es)            = prettyConstr α c es
-   pretty (S.Record α xes)             = prettyRecord xes
+   pretty (S.Record α xes)             = prettyRecord α xes
    pretty (S.Matrix α e (x × y) e')    = highlightIf α (hspace (init <> quant))
       where
       init = [text str.arrayLBracket, pretty e, text str.bar]
       quant = [parens (hcomma [text x, text y]), text (str.in_), pretty e', text str.arrayRBracket]
-   pretty (S.Lambda bs)                = text str.fun :<>: vert semi (pretty <$> bs)
-   pretty (S.RecordLookup _ _)         = error "todo"
+   pretty (S.Lambda bs)                = hspace [text str.fun, vert semi (pretty <$> bs)]
+   pretty (S.RecordLookup s x)         = pretty s :<>: text (str.dot <> x)
    pretty (S.App s s')                 = hspace [pretty s, pretty s']
    pretty (S.BinaryApp s op s')        = parens (hspace [pretty s, text op, pretty s'])
    pretty (S.MatchAs s bs)             = atop (hspace [text str.match, pretty s, text str.as]) (vert semi (pretty <$> bs))
@@ -225,7 +211,7 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
    pretty (S.ListEmpty α)              = highlightIf α nil
    pretty (S.ListNonEmpty α e l)       = highlightIf α (text str.lBracket) :<>: pretty e :<>: pretty l
    pretty (S.ListEnum s s')            = brackets (hspace [pretty s, text str.ellipsis, pretty s'])
-   pretty (S.ListComp _ s qs)          = brackets (hspace [pretty s, text str.bar, hcomma (pretty <$> qs)])
+   pretty (S.ListComp α s qs)          = highlightIf α $ brackets (hspace [pretty s, text str.bar, hcomma (pretty <$> qs)])
    pretty (S.Let ds s)                 = atop (hspace [text str.let_, vert semi (pretty <$> ds)])
                                               (hspace [text str.in_, pretty s])
    pretty (S.LetRec h s)               = atop (hspace [text str.let_, vert semi (pretty <$> h)])
@@ -258,7 +244,7 @@ instance prettyEither :: (Pretty a, Pretty b) => Pretty (a + b) where
 instance prettyPattern :: Pretty S.Pattern where
    pretty (S.PVar x)             = text x
    pretty p@(S.PConstr c ps)     = prettyConstr false c ps
-   pretty (S.PRecord xps)        = prettyRecord xps
+   pretty (S.PRecord xps)        = prettyRecord false xps
    pretty (S.PListEmpty)         = nil
    pretty (S.PListNonEmpty s l)  = text str.lBracket :<>: pretty s :<>: pretty l
 
