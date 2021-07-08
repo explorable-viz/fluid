@@ -26311,14 +26311,16 @@ var PS = {};
       return Data_Map_Internal.keys(v.value1);
   };
   var cTrue = "True";
+  var cSome = "Some";
   var cPair = "Pair";
+  var cNone = "None";
   var cNil = "Nil";
   var cLinePlot = "LinePlot";
   var cLineChart = "LineChart";
   var cFalse = "False";
   var cCons = ":";
   var cBarChart = "BarChart";
-  var dataTypes = Data_List.fromFoldable(Data_Foldable.foldableArray)([ dataType("Bool")([ new Data_Tuple.Tuple(cTrue, 0), new Data_Tuple.Tuple(cFalse, 0) ]), dataType("List")([ new Data_Tuple.Tuple(cNil, 0), new Data_Tuple.Tuple(cCons, 2) ]), dataType("Option")([ new Data_Tuple.Tuple("None", 0), new Data_Tuple.Tuple("Some", 1) ]), dataType("Ordering")([ new Data_Tuple.Tuple("GT", 0), new Data_Tuple.Tuple("LT", 0), new Data_Tuple.Tuple("EQ", 0) ]), dataType("Pair")([ new Data_Tuple.Tuple("Pair", 2) ]), dataType("Tree")([ new Data_Tuple.Tuple("Empty", 0), new Data_Tuple.Tuple("NonEmpty", 3) ]), dataType("Point")([ new Data_Tuple.Tuple("Point", 2) ]), dataType("Orient")([ new Data_Tuple.Tuple("Horiz", 0), new Data_Tuple.Tuple("Vert", 0) ]), dataType("Plot")([ new Data_Tuple.Tuple(cBarChart, 2), new Data_Tuple.Tuple(cLineChart, 2), new Data_Tuple.Tuple(cLinePlot, 2) ]), dataType("GraphicsElement")([ new Data_Tuple.Tuple("Circle", 4), new Data_Tuple.Tuple("Group", 1), new Data_Tuple.Tuple("Line", 4), new Data_Tuple.Tuple("Polyline", 3), new Data_Tuple.Tuple("Polymarkers", 2), new Data_Tuple.Tuple("Rect", 5), new Data_Tuple.Tuple("Text", 5), new Data_Tuple.Tuple("Viewport", 9) ]), dataType("Transform")([ new Data_Tuple.Tuple("Scale", 2), new Data_Tuple.Tuple("Translate", 2) ]), dataType("Marker")([ new Data_Tuple.Tuple("Arrowhead", 0) ]) ]);
+  var dataTypes = Data_List.fromFoldable(Data_Foldable.foldableArray)([ dataType("Bool")([ new Data_Tuple.Tuple(cTrue, 0), new Data_Tuple.Tuple(cFalse, 0) ]), dataType("List")([ new Data_Tuple.Tuple(cNil, 0), new Data_Tuple.Tuple(cCons, 2) ]), dataType("Option")([ new Data_Tuple.Tuple(cNone, 0), new Data_Tuple.Tuple(cSome, 1) ]), dataType("Ordering")([ new Data_Tuple.Tuple("GT", 0), new Data_Tuple.Tuple("LT", 0), new Data_Tuple.Tuple("EQ", 0) ]), dataType("Pair")([ new Data_Tuple.Tuple("Pair", 2) ]), dataType("Tree")([ new Data_Tuple.Tuple("Empty", 0), new Data_Tuple.Tuple("NonEmpty", 3) ]), dataType("Point")([ new Data_Tuple.Tuple("Point", 2) ]), dataType("Orient")([ new Data_Tuple.Tuple("Horiz", 0), new Data_Tuple.Tuple("Vert", 0) ]), dataType("Plot")([ new Data_Tuple.Tuple(cBarChart, 2), new Data_Tuple.Tuple(cLineChart, 2), new Data_Tuple.Tuple(cLinePlot, 2) ]), dataType("GraphicsElement")([ new Data_Tuple.Tuple("Circle", 4), new Data_Tuple.Tuple("Group", 1), new Data_Tuple.Tuple("Line", 4), new Data_Tuple.Tuple("Polyline", 3), new Data_Tuple.Tuple("Polymarkers", 2), new Data_Tuple.Tuple("Rect", 5), new Data_Tuple.Tuple("Text", 5), new Data_Tuple.Tuple("Viewport", 9) ]), dataType("Transform")([ new Data_Tuple.Tuple("Scale", 2), new Data_Tuple.Tuple("Translate", 2) ]), dataType("Marker")([ new Data_Tuple.Tuple("Arrowhead", 0) ]) ]);
   var ctrToDataType = Data_Map_Internal.fromFoldable(ordCtr)(Data_List_Types.foldableList)(Data_List.concat(Data_Functor.mapFlipped(Data_List_Types.functorList)(dataTypes)(function (d) {
       return Data_Functor.mapFlipped(Data_List_Types.functorList)(ctrs(d))(function (v) {
           return new Data_Tuple.Tuple(v, d);
@@ -29880,15 +29882,18 @@ var PS = {};
       return Primitive;
   })();
   var Closure = (function () {
-      function Closure(value0, value1, value2) {
+      function Closure(value0, value1, value2, value3) {
           this.value0 = value0;
           this.value1 = value1;
           this.value2 = value2;
+          this.value3 = value3;
       };
       Closure.create = function (value0) {
           return function (value1) {
               return function (value2) {
-                  return new Closure(value0, value1, value2);
+                  return function (value3) {
+                      return new Closure(value0, value1, value2, value3);
+                  };
               };
           };
       };
@@ -29921,7 +29926,7 @@ var PS = {};
               return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Lattice.expand(valExpandable)(new Hole(v.value0))))(v1.value1.value0.value0), new Data_Tuple.Tuple(v1.value1.value0.value1.value0, Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value1.value0.value1.value1))), new Data_Tuple.Tuple(v1.value1.value1.value0, Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value1.value1.value1))));
           };
           if (v instanceof Hole && v1 instanceof Closure) {
-              return new Closure(Lattice.expand(Lattice.expandableSnocList(Bindings.expandableBind(valExpandable)))(Data_Functor.map(Util_SnocList.snocListFunctor)(Data_Functor.map(Bindings.functorBind)(Data_Function["const"](new Hole(v.value0))))(v1.value0))(v1.value0), Lattice.expand(Lattice.expandableSnocList(Bindings.expandableBind(Expr.elimExpandable)))(Data_Functor.map(Util_SnocList.snocListFunctor)(Data_Functor.map(Bindings.functorBind)(Data_Function["const"](new Expr.ElimHole(v.value0))))(v1.value1))(v1.value1), Lattice.expand(Expr.elimExpandable)(new Expr.ElimHole(v.value0))(v1.value2));
+              return new Closure(Lattice.expand(Lattice.expandableSnocList(Bindings.expandableBind(valExpandable)))(Data_Functor.map(Util_SnocList.snocListFunctor)(Data_Functor.map(Bindings.functorBind)(Data_Function["const"](new Hole(v.value0))))(v1.value0))(v1.value0), Lattice.expand(Lattice.expandableSnocList(Bindings.expandableBind(Expr.elimExpandable)))(Data_Functor.map(Util_SnocList.snocListFunctor)(Data_Functor.map(Bindings.functorBind)(Data_Function["const"](new Expr.ElimHole(v.value0))))(v1.value1))(v1.value1), Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value2), Lattice.expand(Expr.elimExpandable)(new Expr.ElimHole(v.value0))(v1.value3));
           };
           if (v instanceof Int && v1 instanceof Int) {
               return new Int(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), Util.mustEq(Data_Eq.eqInt)(Data_Show.showInt)(v.value1)(v1.value1));
@@ -29942,7 +29947,7 @@ var PS = {};
               return new Matrix(Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value0)(v1.value0), new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.expand(Lattice.expandableArray(Lattice.expandableArray(valExpandable)))(v.value1.value0.value0)(v1.value1.value0.value0), new Data_Tuple.Tuple(Util.mustEq(Data_Eq.eqInt)(Data_Show.showInt)(v.value1.value0.value1.value0)(v1.value1.value0.value1.value0), Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value1.value0.value1.value1)(v1.value1.value0.value1.value1))), new Data_Tuple.Tuple(Util.mustEq(Data_Eq.eqInt)(Data_Show.showInt)(v.value1.value1.value0)(v1.value1.value1.value0), Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value1.value1.value1)(v1.value1.value1.value1))));
           };
           if (v instanceof Closure && v1 instanceof Closure) {
-              return new Closure(Lattice.expand(Lattice.expandableSnocList(Bindings.expandableBind(valExpandable)))(v.value0)(v1.value0), Lattice.expand(Lattice.expandableSnocList(Bindings.expandableBind(Expr.elimExpandable)))(v.value1)(v1.value1), Lattice.expand(Expr.elimExpandable)(v.value2)(v1.value2));
+              return new Closure(Lattice.expand(Lattice.expandableSnocList(Bindings.expandableBind(valExpandable)))(v.value0)(v1.value0), Lattice.expand(Lattice.expandableSnocList(Bindings.expandableBind(Expr.elimExpandable)))(v.value1)(v1.value1), Util.mustGeq(Data_Ord.ordBoolean)(Data_Show.showBoolean)(v.value2)(v1.value2), Lattice.expand(Expr.elimExpandable)(v.value3)(v1.value3));
           };
           if (v instanceof Primitive && v1 instanceof Primitive) {
               return new Primitive(v.value0, Lattice.expand(Lattice.expandableList(valExpandable))(v.value1)(v1.value1));
@@ -29993,9 +29998,9 @@ var PS = {};
               return new Primitive(v.value0, Data_Functor.map(Data_List_Types.functorList)(Data_Functor.map(functorVal)(f))(v.value1));
           };
           if (v instanceof Closure) {
-              return new Closure(Data_Functor.map(Util_SnocList.snocListFunctor)(Data_Functor.map(Bindings.functorBind)(Data_Functor.map(functorVal)(f)))(v.value0), Data_Functor.map(Util_SnocList.snocListFunctor)(Data_Functor.map(Bindings.functorBind)(Data_Functor.map(Expr.functorElim)(f)))(v.value1), Data_Functor.map(Expr.functorElim)(f)(v.value2));
+              return new Closure(Data_Functor.map(Util_SnocList.snocListFunctor)(Data_Functor.map(Bindings.functorBind)(Data_Functor.map(functorVal)(f)))(v.value0), Data_Functor.map(Util_SnocList.snocListFunctor)(Data_Functor.map(Bindings.functorBind)(Data_Functor.map(Expr.functorElim)(f)))(v.value1), f(v.value2), Data_Functor.map(Expr.functorElim)(f)(v.value3));
           };
-          throw new Error("Failed pattern match at Val (line 55, column 1 - line 65, column 96): " + [ f.constructor.name, v.constructor.name ]);
+          throw new Error("Failed pattern match at Val (line 55, column 1 - line 65, column 102): " + [ f.constructor.name, v.constructor.name ]);
       };
   });
   var slicesVal = new Lattice.Slices(function () {
@@ -30033,7 +30038,7 @@ var PS = {};
               return Data_Functor.map(Data_Either.functorEither)(Matrix.create(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value0)(v1.value0)))(Control_Apply.lift2(Data_Either.applyEither)(Data_Tuple.Tuple.create)(Control_Apply.lift2(Data_Either.applyEither)(Data_Tuple.Tuple.create)(Lattice.maybeJoin(Lattice.slicesArray(Lattice.slicesArray(slicesVal)))(v.value1.value0.value0)(v1.value1.value0.value0))(Data_Functor.map(Data_Either.functorEither)(Data_Function.flip(Data_Tuple.Tuple.create)(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value1.value0.value1.value1)(v1.value1.value0.value1.value1)))(Util.mayFailEq(Data_Show.showInt)(Data_Eq.eqInt)(v.value1.value0.value1.value0)(v1.value1.value0.value1.value0))))(Data_Functor.map(Data_Either.functorEither)(Data_Function.flip(Data_Tuple.Tuple.create)(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value1.value1.value1)(v1.value1.value1.value1)))(Util.mayFailEq(Data_Show.showInt)(Data_Eq.eqInt)(v.value1.value1.value0)(v1.value1.value1.value0))));
           };
           if (v instanceof Closure && v1 instanceof Closure) {
-              return Control_Apply.apply(Data_Either.applyEither)(Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Closure.create)(Lattice.maybeJoin(Lattice.slicesSnocList(Bindings.slicesBind(slicesVal)))(v.value0)(v1.value0)))(Lattice.maybeJoin(Lattice.slicesSnocList(Bindings.slicesBind(Expr.slicesElim)))(v.value1)(v1.value1)))(Lattice.maybeJoin(Expr.slicesElim)(v.value2)(v1.value2));
+              return Control_Apply.apply(Data_Either.applyEither)(Data_Functor.flap(Data_Either.functorEither)(Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Closure.create)(Lattice.maybeJoin(Lattice.slicesSnocList(Bindings.slicesBind(slicesVal)))(v.value0)(v1.value0)))(Lattice.maybeJoin(Lattice.slicesSnocList(Bindings.slicesBind(Expr.slicesElim)))(v.value1)(v1.value1)))(Lattice.join(Lattice.joinSemilatticeBoolean)(v.value2)(v1.value2)))(Lattice.maybeJoin(Expr.slicesElim)(v.value3)(v1.value3));
           };
           if (v instanceof Primitive && v1 instanceof Primitive) {
               return Data_Functor.map(Data_Either.functorEither)(Primitive.create(v.value0))(Lattice.maybeJoin(Lattice.slicesList(slicesVal))(v.value1)(v1.value1));
@@ -30092,16 +30097,16 @@ var PS = {};
       return dict.pretty;
   };    
   var prettyCtr = new Pretty((function () {
-      var $289 = pretty(prettyString);
-      var $290 = Data_Show.show(DataType.showCtr);
-      return function ($291) {
-          return $289($290($291));
+      var $266 = pretty(prettyString);
+      var $267 = Data_Show.show(DataType.showCtr);
+      return function ($268) {
+          return $266($267($268));
       };
   })());
   var prettyP = function (dictPretty) {
-      var $292 = pretty(dictPretty);
-      return function ($293) {
-          return Text_Pretty.render($292($293));
+      var $269 = pretty(dictPretty);
+      return function ($270) {
+          return Text_Pretty.render($269($270));
       };
   };
   var $$null = Text_Pretty.empty(0)(0);
@@ -30117,21 +30122,21 @@ var PS = {};
               if (v instanceof Data_List_Types.Cons && v.value1 instanceof Data_List_Types.Cons) {
                   return Text_Pretty.atop(Text_Pretty.beside(v.value0)(delim))(vert$prime(new Data_List_Types.Cons(v.value1.value0, v.value1.value1)));
               };
-              throw new Error("Failed pattern match at Pretty (line 105, column 10 - line 105, column 34): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Pretty (line 94, column 10 - line 94, column 34): " + [ v.constructor.name ]);
           };
-          var $294 = Data_List.fromFoldable(dictFoldable);
-          return function ($295) {
-              return vert$prime($294($295));
+          var $271 = Data_List.fromFoldable(dictFoldable);
+          return function ($272) {
+              return vert$prime($271($272));
           };
       };
   };
   var nil = Text_Pretty.text(Parse.str.lBracket + Parse.str.rBracket);
   var hspace = function (dictFoldable) {
-      var $296 = Text_Pretty.hcat(Data_List_Types.foldableList);
-      var $297 = Util.intersperse(space);
-      var $298 = Data_List.fromFoldable(dictFoldable);
-      return function ($299) {
-          return $296($297($298($299)));
+      var $273 = Text_Pretty.hcat(Data_List_Types.foldableList);
+      var $274 = Util.intersperse(space);
+      var $275 = Data_List.fromFoldable(dictFoldable);
+      return function ($276) {
+          return $273($274($275($276)));
       };
   };
   var hole = function (v) {
@@ -30145,11 +30150,11 @@ var PS = {};
   };
   var comma = Text_Pretty.text(",");
   var hcomma = function (dictFoldable) {
-      var $300 = Text_Pretty.hcat(Data_List_Types.foldableList);
-      var $301 = Util.intersperse(Text_Pretty.beside(comma)(space));
-      var $302 = Data_List.fromFoldable(dictFoldable);
-      return function ($303) {
-          return $300($301($302($303)));
+      var $277 = Text_Pretty.hcat(Data_List_Types.foldableList);
+      var $278 = Util.intersperse(Text_Pretty.beside(comma)(space));
+      var $279 = Data_List.fromFoldable(dictFoldable);
+      return function ($280) {
+          return $277($278($279($280)));
       };
   };
   var colon = Text_Pretty.text(Parse.str.colon);
@@ -30173,8 +30178,8 @@ var PS = {};
   var prettyParensOpt = function (dictPretty) {
       return function (x) {
           var doc = pretty(dictPretty)(x);
-          var $107 = Data_String_CodeUnits.contains(" ")(Text_Pretty.render(doc));
-          if ($107) {
+          var $83 = Data_String_CodeUnits.contains(" ")(Text_Pretty.render(doc));
+          if ($83) {
               return parens(doc);
           };
           return doc;
@@ -30199,16 +30204,19 @@ var PS = {};
       };
   };
   var prettyRecord = function (dictPretty) {
-      return function (xvs) {
-          return (function () {
-              var $304 = between(Text_Pretty.text("{"))(Text_Pretty.text("}"));
-              var $305 = hcomma(Util_SnocList.foldableSnocList);
-              return function ($306) {
-                  return $304($305($306));
-              };
-          })()(Util_SnocList.reverse(Data_Functor.mapFlipped(Util_SnocList.snocListFunctor)(xvs)(function (v) {
-              return hspace(Data_Foldable.foldableArray)([ Text_Pretty.beside(Text_Pretty.text(v.value0))(colon), pretty(dictPretty)(v.value1) ]);
-          })));
+      return function (α) {
+          return function (xvs) {
+              return (function () {
+                  var $281 = highlightIf(α);
+                  var $282 = between(Text_Pretty.text("{"))(Text_Pretty.text("}"));
+                  var $283 = hcomma(Util_SnocList.foldableSnocList);
+                  return function ($284) {
+                      return $281($282($283($284)));
+                  };
+              })()(Util_SnocList.reverse(Data_Functor.mapFlipped(Util_SnocList.snocListFunctor)(xvs)(function (v) {
+                  return hspace(Data_Foldable.foldableArray)([ Text_Pretty.beside(Text_Pretty.text(v.value0))(colon), pretty(dictPretty)(v.value1) ]);
+              })));
+          };
       };
   }; 
   var prettyVal = new Pretty(function (v) {
@@ -30225,17 +30233,17 @@ var PS = {};
           return highlightIf(v.value0)(Text_Pretty.text(Data_Show.show(Data_Show.showString)(v.value1)));
       };
       if (v instanceof Val.Record) {
-          return highlightIf(v.value0)(prettyRecord(prettyVal)(v.value1));
+          return prettyRecord(prettyVal)(v.value0)(v.value1);
       };
       if (v instanceof Val.Constr) {
           return prettyConstr(prettyVal)(v.value0)(v.value1)(v.value2);
       };
       if (v instanceof Val.Matrix) {
           return vert(Data_Foldable.foldableArray)(comma)(Data_Functor.map(Data_Functor.functorArray)((function () {
-              var $307 = hcomma(Data_Foldable.foldableArray);
-              var $308 = Data_Functor.map(Data_Functor.functorArray)(pretty(prettyVal));
-              return function ($309) {
-                  return $307($308($309));
+              var $285 = hcomma(Data_Foldable.foldableArray);
+              var $286 = Data_Functor.map(Data_Functor.functorArray)(pretty(prettyVal));
+              return function ($287) {
+                  return $285($286($287));
               };
           })())(v.value1.value0.value0));
       };
@@ -30245,7 +30253,7 @@ var PS = {};
       if (v instanceof Val.Primitive) {
           return parens(pretty(prettyPrimOp)(v.value0));
       };
-      throw new Error("Failed pattern match at Pretty (line 186, column 1 - line 195, column 59): " + [ v.constructor.name ]);
+      throw new Error("Failed pattern match at Pretty (line 172, column 1 - line 181, column 59): " + [ v.constructor.name ]);
   });
   exports["prettyP"] = prettyP;
   exports["prettyVal"] = prettyVal;
@@ -31665,9 +31673,9 @@ var PS = {};
           };
           if (v1 instanceof Expr.ElimConstr) {
               return Control_Bind.bindFlipped(Data_Either.bindEither)((function () {
-                  var $234 = patternMismatch(Pretty.prettyP(Pretty.prettyVal)(v));
-                  return function ($235) {
-                      return Util.report($234($235));
+                  var $235 = patternMismatch(Pretty.prettyP(Pretty.prettyVal)(v));
+                  return function ($236) {
+                      return Util.report($235($236));
                   };
               })())(Data_Functor.map(Data_Either.functorEither)(Data_Show.show(DataType.showDataType))(DataType.dataTypeFor(DataType.dataTypeForListCtr)(Data_Map_Internal.keys(v1.value0))));
           };
@@ -31687,7 +31695,7 @@ var PS = {};
                   return Util_SnocList.Lin.value;
               };
               if (v2 instanceof Util_SnocList.Snoc) {
-                  return new Util_SnocList.Snoc(closeDefs(v)(v1)(v2.value0), new Bindings.Bind(v2.value1.value0, new Val.Closure(v, v1, v2.value1.value1)));
+                  return new Util_SnocList.Snoc(closeDefs(v)(v1)(v2.value0), new Bindings.Bind(v2.value1.value0, new Val.Closure(v, v1, false, v2.value1.value1)));
               };
               throw new Error("Failed pattern match at Eval (line 62, column 1 - line 62, column 54): " + [ v.constructor.name, v1.constructor.name, v2.constructor.name ]);
           };
@@ -31739,9 +31747,9 @@ var PS = {};
           };
           if (v instanceof Expr.Matrix) {
               var unzipToArray = (function () {
-                  var $236 = Data_Bifunctor.bimap(Data_Tuple.bifunctorTuple)(Data_Array.fromFoldable(Data_List_Types.foldableList))(Data_Array.fromFoldable(Data_List_Types.foldableList));
-                  return function ($237) {
-                      return $236(Data_List.unzip($237));
+                  var $237 = Data_Bifunctor.bimap(Data_Tuple.bifunctorTuple)(Data_Array.fromFoldable(Data_List_Types.foldableList))(Data_Array.fromFoldable(Data_List_Types.foldableList));
+                  return function ($238) {
+                      return $237(Data_List.unzip($238));
                   };
               })();
               return Control_Bind.bind(Data_Either.bindEither)($$eval(ρ)(v.value3))(function (v1) {
@@ -31770,7 +31778,7 @@ var PS = {};
               });
           };
           if (v instanceof Expr.Lambda) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(new Expl.Lambda(ρ, v.value0), new Val.Closure(ρ, Util_SnocList.Lin.value, v.value0)));
+              return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(new Expl.Lambda(ρ, v.value0), new Val.Closure(ρ, Util_SnocList.Lin.value, false, v.value0)));
           };
           if (v instanceof Expr.RecordLookup) {
               return Control_Bind.bind(Data_Either.bindEither)($$eval(ρ)(v.value0))(function (v1) {
@@ -31790,17 +31798,17 @@ var PS = {};
                       };
                       if (v1.value1 instanceof Val.Closure) {
                           var ρ2 = closeDefs(v1.value1.value0)(v1.value1.value1)(v1.value1.value1);
-                          return Control_Bind.bind(Data_Either.bindEither)(match(v3.value1)(v1.value1.value2))(function (v4) {
+                          return Control_Bind.bind(Data_Either.bindEither)(match(v3.value1)(v1.value1.value3))(function (v4) {
                               return Control_Bind.bind(Data_Either.bindEither)($$eval(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v1.value1.value0)(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(ρ2)(v4.value0.value0)))(Expr.asExpr(v4.value0.value1)))(function (v5) {
-                                  return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(new Expl.App(new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(v1.value0, v1.value1.value0), v1.value1.value1), v1.value1.value2), v3.value0, v4.value1, v5.value0), v5.value1));
+                                  return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(new Expl.App(new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(v1.value0, v1.value1.value0), v1.value1.value1), v1.value1.value3), v3.value0, v4.value1, v5.value0), v5.value1));
                               });
                           });
                       };
                       if (v1.value1 instanceof Val.Primitive) {
                           var vs$prime = Data_Semigroup.append(Data_List_Types.semigroupList)(v1.value1.value1)(Data_List.singleton(v3.value1));
                           var v$prime$prime = (function () {
-                              var $186 = v1.value1.value0.arity > Data_List.length(vs$prime);
-                              if ($186) {
+                              var $187 = v1.value1.value0.arity > Data_List.length(vs$prime);
+                              if ($187) {
                                   return new Val.Primitive(v1.value1.value0, vs$prime);
                               };
                               return v1.value1.value0.op(vs$prime);
@@ -31846,7 +31854,6 @@ var PS = {};
           throw new Error("Failed pattern match at Eval (line 139, column 1 - line 139, column 52): " + [ ρ.constructor.name, v.constructor.name ]);
       };
   };
-  exports["closeDefs"] = closeDefs;
   exports["eval"] = $$eval;
   exports["eval_module"] = eval_module;
 })(PS);
@@ -31952,15 +31959,15 @@ var PS = {};
       return function (v) {
           var joinDefs = function (v1) {
               return function (v2) {
-                  var v4 = Lattice.expand(Val.valExpandable)(v1.value1)(new Val.Closure(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v2.value0.value1), Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Expr.boundedSlicesElim)))(v2.value1), new Expr.ElimHole(false)));
+                  var v4 = Lattice.expand(Val.valExpandable)(v1.value1)(new Val.Closure(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v2.value0.value0.value1), Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Expr.boundedSlicesElim)))(v2.value0.value1), false, new Expr.ElimHole(false)));
                   if (v4 instanceof Val.Closure) {
-                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Util_SnocList.Snoc(v2.value0.value0, new Bindings.Bind(v1.value0, v4.value2)), Lattice.join(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(v2.value0.value1)(v4.value0)), Lattice.join(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Expr.slicesElim)))(v2.value1)(v4.value1));
+                      return new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Util_SnocList.Snoc(v2.value0.value0.value0, new Bindings.Bind(v1.value0, v4.value3)), Lattice.join(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(v2.value0.value0.value1)(v4.value0)), Lattice.join(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Expr.slicesElim)))(v2.value0.value1)(v4.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(v2.value1)(v4.value2));
                   };
                   return Util.error(Util.absurd);
               };
           };
-          var v1 = Bindings.foldBindings(joinDefs)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(Util_SnocList.Lin.value, Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v.value0)), Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Expr.boundedSlicesElim)))(v.value1)))(ρ);
-          return new Data_Tuple.Tuple(v1.value0.value1, Lattice.join(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Expr.slicesElim)))(v1.value1)(v1.value0.value0));
+          var v1 = Bindings.foldBindings(joinDefs)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(Util_SnocList.Lin.value, Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v.value0)), Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Expr.boundedSlicesElim)))(v.value1)), false))(ρ);
+          return new Data_Tuple.Tuple(new Data_Tuple.Tuple(v1.value0.value0.value1, Lattice.join(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Expr.slicesElim)))(v1.value0.value1)(v1.value0.value0.value0)), v1.value1);
       };
   };
   var evalBwd = function (v) {
@@ -31993,9 +32000,9 @@ var PS = {};
               return Util.error(Util.absurd);
           };
           if (v1 instanceof Expl.Lambda) {
-              var v3 = Lattice.expand(Val.valExpandable)(v)(new Val.Closure(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v1.value0), Util_SnocList.Lin.value, Lattice.botOf(Expr.boundedSlicesElim)(v1.value1)));
+              var v3 = Lattice.expand(Val.valExpandable)(v)(new Val.Closure(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v1.value0), Util_SnocList.Lin.value, false, Lattice.botOf(Expr.boundedSlicesElim)(v1.value1)));
               if (v3 instanceof Val.Closure) {
-                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(v3.value0, new Expr.Lambda(v3.value2)), false);
+                  return new Data_Tuple.Tuple(new Data_Tuple.Tuple(v3.value0, new Expr.Lambda(v3.value3)), v3.value2);
               };
               return Util.error(Util.absurd);
           };
@@ -32072,14 +32079,14 @@ var PS = {};
               var v6 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v1.value0.value0.value1))(v4.value0);
               var v7 = evalBwd(v5.value0)(v1.value1);
               var v8 = closeDefsBwd(v6.value1)(new Data_Tuple.Tuple(v6.value0, v1.value0.value0.value1));
-              var v9 = evalBwd(new Val.Closure(Lattice.join(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(v6.value0)(v8.value0), v8.value1, v5.value1))(v1.value0.value0.value0.value0);
+              var v9 = evalBwd(new Val.Closure(Lattice.join(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(v6.value0)(v8.value0.value0), v8.value0.value1, Lattice.join(Lattice.joinSemilatticeBoolean)(v3.value1)(v8.value1), v5.value1))(v1.value0.value0.value0.value0);
               return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.join(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(v7.value0.value0)(v9.value0.value0), new Expr.App(v9.value0.value1, v7.value0.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(v7.value1)(v9.value1));
           };
           if (v1 instanceof Expl.AppPrim) {
               var vs$prime = Data_Semigroup.append(Data_List_Types.semigroupList)(v1.value0.value1)(Data_List.singleton(v1.value1.value1));
               var v3 = Util.fromJust(Util.absurd)(Data_List.unsnoc((function () {
-                  var $343 = v1.value0.value0.value1.arity > Data_Foldable.length(Data_List_Types.foldableList)(Data_Semiring.semiringInt)(vs$prime);
-                  if ($343) {
+                  var $351 = v1.value0.value0.value1.arity > Data_Foldable.length(Data_List_Types.foldableList)(Data_Semiring.semiringInt)(vs$prime);
+                  if ($351) {
                       var v4 = Lattice.expand(Val.valExpandable)(v)(new Val.Primitive(v1.value0.value0.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Function["const"](new Val.Hole(false)))(vs$prime)));
                       if (v4 instanceof Val.Primitive) {
                           return v4.value1;
@@ -32113,7 +32120,7 @@ var PS = {};
               var v3 = evalBwd(v)(v1.value1);
               var v4 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v1.value0))(v3.value0.value0);
               var v5 = closeDefsBwd(v4.value1)(new Data_Tuple.Tuple(v4.value0, v1.value0));
-              return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.join(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(v4.value0)(v5.value0), new Expr.LetRec(v5.value1, v3.value0.value1)), v3.value1);
+              return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Lattice.join(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(v4.value0)(v5.value0.value0), new Expr.LetRec(v5.value0.value1, v3.value0.value1)), Lattice.join(Lattice.joinSemilatticeBoolean)(v3.value1)(v5.value1));
           };
           throw new Error("Failed pattern match at EvalBwd (line 63, column 1 - line 63, column 49): " + [ v.constructor.name, v1.constructor.name ]);
       };
@@ -32139,7 +32146,6 @@ var PS = {};
   var Data_Semigroup = $PS["Data.Semigroup"];
   var Data_Tuple = $PS["Data.Tuple"];
   var DataType = $PS["DataType"];
-  var Eval = $PS["Eval"];
   var Expl = $PS["Expl"];
   var Expr = $PS["Expr"];
   var Lattice = $PS["Lattice"];
@@ -32204,7 +32210,7 @@ var PS = {};
                   };
                   return Util.error(Util.absurd);
               };
-              throw new Error("Failed pattern match at EvalFwd (line 24, column 1 - line 24, column 61): " + [ v.constructor.name, σ.constructor.name, v1.constructor.name ]);
+              throw new Error("Failed pattern match at EvalFwd (line 23, column 1 - line 23, column 61): " + [ v.constructor.name, σ.constructor.name, v1.constructor.name ]);
           };
       };
   };
@@ -32223,6 +32229,21 @@ var PS = {};
                   })(matchArgsFwd(v.value1)(v4.value0.value1)(v2.value1));
               };
               return Util.error(Util.absurd);
+          };
+      };
+  };
+  var closeDefsFwd = function (v) {
+      return function (v1) {
+          return function (v2) {
+              return function (v3) {
+                  if (v3 instanceof Util_SnocList.Lin) {
+                      return Util_SnocList.Lin.value;
+                  };
+                  if (v3 instanceof Util_SnocList.Snoc) {
+                      return new Util_SnocList.Snoc(closeDefsFwd(v)(v1)(v2)(v3.value0), new Bindings.Bind(v3.value1.value0, new Val.Closure(v, v1, v2, v3.value1.value1)));
+                  };
+                  throw new Error("Failed pattern match at EvalFwd (line 60, column 1 - line 60, column 62): " + [ v.constructor.name, v1.constructor.name, v2.constructor.name, v3.constructor.name ]);
+              };
           };
       };
   };
@@ -32306,7 +32327,7 @@ var PS = {};
                   if (v1 instanceof Expl.LetRec) {
                       var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.LetRec(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Expr.boundedSlicesElim)))(v1.value0), new Expr.Hole(false)));
                       if (v2 instanceof Expr.LetRec) {
-                          var ρ$prime = Eval.closeDefs(ρ)(v2.value0)(v2.value0);
+                          var ρ$prime = closeDefsFwd(ρ)(v2.value0)(v)(v2.value0);
                           return evalFwd(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(ρ)(ρ$prime))(v2.value1)(v)(v1.value1);
                       };
                       return Util.error(Util.absurd);
@@ -32314,7 +32335,7 @@ var PS = {};
                   if (v1 instanceof Expl.Lambda) {
                       var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.Lambda(new Expr.ElimHole(false)));
                       if (v2 instanceof Expr.Lambda) {
-                          return new Val.Closure(ρ, Util_SnocList.Lin.value, v2.value0);
+                          return new Val.Closure(ρ, Util_SnocList.Lin.value, v, v2.value0);
                       };
                       return Util.error(Util.absurd);
                   };
@@ -32334,12 +32355,12 @@ var PS = {};
                   if (v1 instanceof Expl.App) {
                       var v2 = Lattice.expand(Expr.exprExpandable)(e)(new Expr.App(new Expr.Hole(false), new Expr.Hole(false)));
                       if (v2 instanceof Expr.App) {
-                          var v3 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v2.value0)(v)(v1.value0.value0.value0.value0))(new Val.Closure(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v1.value0.value0.value0.value1), Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Expr.boundedSlicesElim)))(v1.value0.value0.value1), new Expr.ElimHole(false)));
+                          var v3 = Lattice.expand(Val.valExpandable)(evalFwd(ρ)(v2.value0)(v)(v1.value0.value0.value0.value0))(new Val.Closure(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v1.value0.value0.value0.value1), Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Expr.boundedSlicesElim)))(v1.value0.value0.value1), false, new Expr.ElimHole(false)));
                           if (v3 instanceof Val.Closure) {
-                              var ρ2 = Eval.closeDefs(v3.value0)(v3.value1)(v3.value1);
+                              var ρ2 = closeDefsFwd(v3.value0)(v3.value1)(v3.value2)(v3.value1);
                               var v4 = evalFwd(ρ)(v2.value1)(v)(v1.value1);
-                              var v5 = matchFwd(v4)(v3.value2)(v1.value2);
-                              return evalFwd(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v3.value0)(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(ρ2)(v5.value0.value0)))(Expr.asExpr(v5.value0.value1))(v5.value1)(v1.value3);
+                              var v5 = matchFwd(v4)(v3.value3)(v1.value2);
+                              return evalFwd(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v3.value0)(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(ρ2)(v5.value0.value0)))(Expr.asExpr(v5.value0.value1))(Lattice.meet(v3.value2)(v5.value1))(v1.value3);
                           };
                           return Util.error(Util.absurd);
                       };
@@ -32352,8 +32373,8 @@ var PS = {};
                           if (v4 instanceof Val.Primitive) {
                               var v2$prime = evalFwd(ρ)(v3.value1)(v)(v1.value1.value0);
                               var vs$prime$prime = Data_Semigroup.append(Data_List_Types.semigroupList)(Data_List.zip(v4.value1)(v1.value0.value1))(Data_List.singleton(new Data_Tuple.Tuple(v2$prime, v1.value1.value1)));
-                              var $225 = v1.value0.value0.value1.arity > Data_List.length(vs$prime$prime);
-                              if ($225) {
+                              var $238 = v1.value0.value0.value1.arity > Data_List.length(vs$prime$prime);
+                              if ($238) {
                                   return new Val.Primitive(v1.value0.value0.value1, Data_Functor.map(Data_List_Types.functorList)(Data_Tuple.fst)(vs$prime$prime));
                               };
                               return v1.value0.value0.value1.op_fwd(vs$prime$prime);
@@ -32383,7 +32404,7 @@ var PS = {};
                       };
                       return Util.error(Util.absurd);
                   };
-                  throw new Error("Failed pattern match at EvalFwd (line 61, column 1 - line 61, column 51): " + [ ρ.constructor.name, e.constructor.name, v.constructor.name, v1.constructor.name ]);
+                  throw new Error("Failed pattern match at EvalFwd (line 64, column 1 - line 64, column 51): " + [ ρ.constructor.name, e.constructor.name, v.constructor.name, v1.constructor.name ]);
               };
           };
       };
