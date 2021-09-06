@@ -49,7 +49,7 @@
 | 15 Sep 19 | Moved slicing annotations from values to traces | [204](https://github.com/rolyp/fluid/issues/204) |
 | 31 Aug 19 | Preliminary Wrattler integration | [192](https://github.com/rolyp/fluid/issues/192) |
 | 30 Aug 19 | Publish as [npm library](https://www.npmjs.com/package/@rolyp/fluid) | [192](https://github.com/rolyp/fluid/issues/192) |
-| 20 August 19 | Demo to Luke Marsden of [Dotscience](https://dotscience.com/) ||
+| 20 Aug 19 | Demo to Luke Marsden of [Dotscience](https://dotscience.com/) ||
 | 20 Aug 19 | Demo to Luke Marsden of [Dotscience](https://dotscience.com/) ||
 | 18 Jul 19 | Demo to REG interview panel ||
 | 17 Jul 19 | Demo to [Prodo](https://prodo.ai) ||
