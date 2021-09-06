@@ -9,6 +9,12 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 9 July 2021 | [POPL 2022 submission](http://arxiv.org/abs/2109.00445) | |
+| 7 July 2021 | Surface language highlighting example | [475](https://github.com/explorable-viz/fluid/issues/475) |
+| 19 June 2021 | (PureScript migration) Brushing-and-linking example | [469](https://github.com/explorable-viz/fluid/issues/469) |
+| 5 June 2021 | Records | [464](https://github.com/explorable-viz/fluid/issues/464) |
+| 13 May 2021 | Backtick syntax for infix function names | [305](https://github.com/explorable-viz/fluid/issues/305) |
+| 6 May 2021 | Convolution figures for POPL 2022 submission | [446](https://github.com/explorable-viz/fluid/issues/446) |
 | 14 Apr 2021 | (PureScript migration) Linking via negation | [436](https://github.com/explorable-viz/fluid/issues/436) |
 | 26 Mar 2021 | Matrix convolution examples | [272](https://github.com/explorable-viz/fluid/issues/272) |
 | 19 Mar 2021 | Matrices | [276](https://github.com/explorable-viz/fluid/issues/276) |
