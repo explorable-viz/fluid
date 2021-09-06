@@ -1,3 +1,0 @@
-let year = 2015 in
-caption ("Total renewables (GW) by country, " ++ numToStr year)
-   (stackedBarChart True colours1 0.2 (lookup year data))
