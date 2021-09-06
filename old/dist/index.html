@@ -20,10 +20,10 @@
 	<nav>
 	  <ul>
 	    <li>
-	        <a href="." class="active-page">Fluid</a>
+	        <a href="." class="active-page">Fluid 0.3</a>
 	    </li>
 	    <li>
-	        <a href="projects.html">Projects</a>
+	        <a href="http://f.luid.org/new">Fluid 0.4 (POPL 2022)</a>
 	    </li>
 	  </ul>
 	</nav>
@@ -45,6 +45,12 @@
 	<p>Fluid lets us explore these relationships. For example, you can express interest in the y-coordinate of a rectangle by moving your mouse towards its bottom edge. Doing so will pop up a toolship showing the value of that attribute, and as well as any attributes in the other chart that depend on the same underlying data. Visualisation libraries such as <a href="https://docs.bokeh.org/en/latest/">Bokeh</a> and spatial analytics applications like <a href="https://geodacenter.github.io/">GeoDa</a> provide limited support for this kind of linking, but usually only for specific predefined visualisations, or with a certain amount of programmer effort. Fluid takes a more foundational approach, through a <b>dependency-tracking runtime</b> that makes linking automatic and pervasive.
 
 	<p>To see the Fluid code for the above charts, open the Wrattler notebook in <a href="https://mybinder.org/v2/gh/wrattler/wrattler-examples/master?urlpath=lab/tree/examples">Binder</a>, and then open the <code>fluid-example.wrattler</code> notebook. (Warning: Binder is slow; Wrattler will take several minutes to launch even from a prebuilt image.) Fluid is open source and is available on <a href="https://github.com/rolyp/fluid">GitHub</a>, so you can also see the example code <a href="https://github.com/rolyp/fluid/tree/master/fluid/example/graphics">there</a>.
+
+   <p>Why is this a programming languages problem? Well, to implement linking in a domain-general way ultimately requires a new kind of programming language semantics – not a new kind of language, but rather a new style of semantics that relates parts of programs to parts of their outputs in a fine-grained way. Fluid builds on such an approach, called <b>Galois slicing</b>, which we are adapting to the linking problem for data visualisation. The approach involves a bidirectional dynamic analysis which (minimally) relates parts of the code and data to the parts of visualisations and other outputs that they contribute to. By round-tripping this analysis via the raw data (black arrows below), it is possible to link selections in one view to selections in another in a precise way (grey arrows):
+
+   <p><img src="image/galois-linking.png" style="width:400px">
+
+   <p>A 5-month <a href="https://www.turing.ac.uk/research/research-projects/data-science-toolkit-explorable-data-visualisations">pilot project</a> to prototype this idea was supported by The Alan Turing Institute from January to May 2019, through their AI for Science and Government programme. The project was developed and led by <a href="http://dynamicaspects.org/research/">Roly Perera</a> and <a href="http://tomasp.net/">Tomas Petricek</a>.
 
 </div>
 </div>
