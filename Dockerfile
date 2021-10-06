@@ -1,7 +1,6 @@
-FROM keymux/docker-ubuntu-nvm-yarn:0.2.0
-ENTRYPOINT ["/bin/bash", "-c"]
-SHELL ["/bin/bash", "-c"]
-RUN yarn install
-RUN yarn run bundle-tests
-RUN yarn run tests
-CMD ["/bin/bash"]
+FROM node
+WORKDIR /usr/src/app
+COPY . /usr/src/app
+RUN npm install
+CMD /bin/bash
+
