@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM keymux/docker-ubuntu-nvm-yarn:0.2.0
 ENTRYPOINT ["/bin/bash", "-c"]
 SHELL ["/bin/bash", "-c"]
 RUN yarn install
