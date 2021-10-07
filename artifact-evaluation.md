@@ -9,7 +9,7 @@ The artifact consists of an implementation, in PureScript, of the programming la
 - the bidirectional analysis described in § 3, and its De Morgan dual as described in § 4;
 - the surface language described in § 5.
 
-The specific claims supported by the artifact relate to various figures in the paper, as detailed below.
+The specific claims supported by the artifact relate to the following 4 figures in the paper.
 
 ### Figure 1
 
