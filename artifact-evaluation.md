@@ -21,11 +21,11 @@ The specific claims supported by the artifact relate to the following 4 figures 
 
 ### Figure 13
 
-[§ 4.2, paragraph 2] "**Fluid was used to generate the diagrams in Figure 13**..." The function ```convolutionFigs``` in `src\app\Demo.purs` generates 9 output images; these were combined to produce Figure. 13. See Evaluation Step 3.
+[§ 4.2, paragraph 2] "**Fluid was used to generate the diagrams in Figure 13**..." The function ```convolutionFigs``` in `src\app\Demo.purs` generates 9 output images which were combined to produce Figure. 13. See Evaluation Step 3.
 
 ### Figure 16
 
-[§ 5.1, paragraph 1] "**Figure 16 shows how the end-to-end mapping would appear to a user.**" The function ```testBwd``` of `src\test\Main.purs` runs the test `section-5-example`, which generates the raw information required for Figure 16.
+[§ 5.1, paragraph 1] "**Figure 16 shows how the end-to-end mapping would appear to a user.**" The function ```testBwd``` of `src\test\Main.purs` runs the test `section-5-example`, which generates the raw information required for Figure 16. See Evaluation Step 4.
 
 ## Download, installation, and sanity-testing
 
