@@ -2,7 +2,7 @@ FROM node
 
 WORKDIR /usr/src/app
 COPY . /usr/src/app
-RUN npm install
+# RUN npm install
 
 # Is sudo needed?
 RUN apt-get update && apt-get -y install sudo
