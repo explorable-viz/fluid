@@ -1,6 +1,6 @@
 # POPL 2022 Artifact Evaluation instructions
 
-We were unable to get VirtualBox running under macOS Big Sur, so we provide a Docker-based installation instead.
+We were unable to get a VirtualBox VM running under macOS Big Sur, so we provide a Docker-based installation instead.
 
 - `git clone https://github.com/explorable-viz/fluid.git` to get this repo
 - ensure Docker is installed and running
