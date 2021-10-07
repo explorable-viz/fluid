@@ -1,11 +1,33 @@
 # POPL 2022 Artifact Evaluation instructions
 
-We were unable to get a VirtualBox VM running under macOS Big Sur, so we provide a Docker-based installation instead.
+We were unable to get a VirtualBox VM running under macOS Big Sur, so we provide a Docker-based artifact for evaluation instead.
 
-## List of claims
+## List of supported claims
 
-- all claims made in paper, organised by paper section; reference portion of artifact supporting that claim
-- for each "claim", link to source code and corresponding step of evaluation instructions
+Our artifact consists of an implementation, in PureScript, of the programming language Fluid described in the paper. More specifically, the artifact implements:
+- the core language described in § 2;
+- the bidirectional analysis described in § 3, and its De Morgan dual as described in § 4;
+- surface language described in § 5.
+
+The specific paper claims supported by the artifact relate to various figures in the paper, as detailed in the subsections below.
+
+### Figure 1
+
+[§ 4, second sentence] "In particular [forward evaluation] can answer questions like: “what data is needed to compute this bar in a bar chart?”, and indeed **we were able to use our implementation to generate Figure 1**."
+
+### Figure 2
+
+[§ 4.1, final sentence] "This is the approach implemented in Fluid, and **we used this to generate Figure 2** in § 1.2".
+
+### Figure 13
+
+[§ 4.2, paragraph 2] "**Fluid was used to generate the diagrams in Figure 13**..."
+
+### Figure 16
+
+[§ 5.1, paragraph 1] "**Figure 16 shows how the end-to-end mapping would appear to a user.**"
+
+- link to source code and corresponding step of evaluation instructions
 
 ## Download, installation, and sanity-testing
 
