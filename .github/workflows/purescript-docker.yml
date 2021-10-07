@@ -1,0 +1,20 @@
+name: purescript-docker
+
+on:
+  push:
+    paths-ignore:
+    - 'old/**'
+    - '**/README.md'
+  pull_request:
+    paths-ignore:
+    - 'old/**'
+    - '**/README.md'
+
+jobs:
+  docker-run:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: docker-build
+      run: |
+        docker build -t fluid-webapp .
