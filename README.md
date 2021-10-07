@@ -83,8 +83,8 @@
 
 Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/current/) and install using `yarn install`. The `yarn` scripts (invoked using `yarn run`) are as follows:
 
-- `browser-test` to run tests in debug mode with Chrome
-- `test` to run tests in headless mode, retesting when files change
+- `browser-tests` to run tests in debug mode with Chrome
+- `tests` to run tests in headless mode, retesting when files change
 - `bundle` to bundle the app
 - `bundle-watch` to bundle the app, rebundling when files change
 - `continuous-test` to run `test` and `bundle-watch` in parallel
