@@ -1,4 +1,4 @@
-name: purescript
+name: purescript-docker
 
 on:
   push:
