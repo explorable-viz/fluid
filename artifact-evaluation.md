@@ -25,7 +25,7 @@ The specific claims supported by the artifact relate to various figures in the p
 
 ### Figure 16
 
-[§ 5.1, paragraph 1] "**Figure 16 shows how the end-to-end mapping would appear to a user.**" The function
+[§ 5.1, paragraph 1] "**Figure 16 shows how the end-to-end mapping would appear to a user.**" The function ```testBwd``` of `src\test\Main.purs` runs the test `section-5-example`, which generates the raw information required for Figure 16.
 
 ## Download, installation, and sanity-testing
 
@@ -34,29 +34,35 @@ The specific claims supported by the artifact relate to various figures in the p
 - git
 - Docker; we have tested with Docker Desktop 4.1.0 for macOS
 
-### Obtaining and verifying artifact
+### Obtaining the artifact
 
 Follow the following steps:
 - `git clone https://github.com/explorable-viz/fluid.git` to get this repo
 - ensure Docker service is running
 - `docker build -t fluid-webapp .` to build Docker image
 
+### How to run the artifact
+
 To run the web app and verify that everything is working:
 - `docker run -p 1234:1234 -it fluid-webapp` to start web server in Docker container
 - open a browser (preferably Chrome) at `http://localhost:1234/`.
 
-Some text will load; if everything is working correctly, the images required for Evaluation Steps 1-4 will load after about 30 seconds.
+Some text will load (including a heading saying "Fluid 0.4"); if everything is working correctly, the images required for Evaluation Steps 1-3 will load after about 30 seconds.
 
-Alternatively, to get a shell prompt from which you can explore the implementation yourself, run:
-- `docker run -it --entrypoint=/bin/bash fluid-webapp`
+Alternatively, to get a shell prompt from which you can run tests:
+- `docker run -it --entrypoint=/bin/bash fluid-webapp` to shell into the container
 
-However, running the tests (via `yarn run tests`) , or any other project target that requires a web browser, will not work in the headless Docker environment.
+Then sanity-check that the sources compile cleanly with:
+- `yarn run clean-tests`
+- `yarn build-tests`
 
-### Directory layout
+This should report 0 warnings, 0 errors, and conclude with "build suceeded". The compiled output is written to `dist/test/app.js`.
 
-### How to run the artifact
-- invoking build system; how to run the artifact on small test cases; expected output
-- what directory to run each command from, what output files it generates, and how to compare output files to paper
+Finally, verify the tests with:
+
+- `yarn run tests` to run the tests in Chrome headless mode
+
+56 tests should pass in about 4 minutes. With the exception of the test `slicing/section-5-example` (Evaluation Step 4 below), the tests do not relate to specific claims made in the paper, but serve to validate the implementation as a whole.
 
 ## Evaluation instructions
 - how to evaluate each claim in the paper that the artifact supports
@@ -69,7 +75,10 @@ However, running the tests (via `yarn run tests`) , or any other project target 
 
 ### Step 3
 
+### Step 4
+
 ## Additional artifact description
 
-- how artifact is organized, which scripts and source files correspond to which experiments and components in the paper
-- how reviewers can try their own inputs to the artifact
+The Fluid source code used for the tests and web app are found in the `fluid/example` directory. The core library is found in `lib/prelude`, with the matrix convolution functions in `lib/convolution`. The dataset used for the linking examples is in the folder `fluid/dataset`.
+
+Reviewers may wish to experiment with different Fluid source files and test expectations; we would be happy to assist with this.
