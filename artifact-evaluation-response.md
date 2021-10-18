@@ -12,4 +12,4 @@ Many thanks for your efforts in evaluating our artifact. We really appreciate th
 
 > 5. I would like to run each test and render the visualizations, as opposed to running the tests in headless mode. If I am not mistaken, this would be required to carry out Step 4 as described in the artifact-evalaution.md
 
-We have created a tag in GitHub (https://github.com/explorable-viz/fluid/tree/v0.4.0) permanently referencing the version submitted for artifact evaluation, and have update the link in `artifact-evaluation.md` accordingly.
+We have created tag `v0.4.0` in GitHub (https://github.com/explorable-viz/fluid/tree/v0.4.0) permanently referencing the version submitted for artifact evaluation, and have updated the artifact evaluation instructions accordingly.
