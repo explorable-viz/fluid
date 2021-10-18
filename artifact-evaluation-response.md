@@ -1,18 +1,20 @@
-Many thanks for your efforts in evaluating our artifact -- we really appreciate this. We respond to your questions below and have updated our artifact and instructions.
+Many thanks for your efforts in evaluating our artifact; we very much appreciate this. We respond to your questions below and have updated our artifact and instructions.
 
 > 1. The web app does not display several bar charts as mentioned in the artifact-evaluation.md under Step 1. I can only see the one corresponding to Fig.2 (I am using Chrome on Ubuntu). In fact, the web page itself does not speak about Fig.1 at all.
 
-Sorry about this. In the process of editing the final HTML, it seems we accidentally deleted the `div` tag used to insert the figure into the DOM. We have restored this; if you update your local copy of the repository and rebuild the web server, you should now see the raw images required for Fig. 1 as well.
+Sorry about this. In the process of editing the final HTML, it seems we accidentally deleted the `div` tag used to insert the figure into the DOM. We have restored this; if you update your local copy of the repository and rebuild the web server, you should now see the additional raw images required for Fig. 1.
 
-We also supplied the missing explanation of how the generated images relate to Fig.1, and added section headings (one for each figure) to make it easier to read. (The section for Fig.1 follows Fig.2 because one of the Fig.2 images is reused as part of Fig.1.)
+We also supplied the missing explanation of how the generated images relate to Fig. 1, and added section headings (one for each figure) to make it easier to read. (The section for Fig. 1 follows Fig. 2 because one of the Fig. 2 images is reused as part of Fig. 1.)
 
-We updated `artifact-evaluation.md` be more precise (that there should be three bar charts, rather than "several").
+We updated `artifact-evaluation.md` to state that there should be three bar charts, rather than "several".
 
 > 2. Are the visualizations meant to be interactive? If that is indeed the case, I am also not able to do that beyond 'hovering' over the bars. This may be related to my confusion regarding question 1 above.
 
 These figures are not intended to be interactive, although d3.js adds tooltips to the bar charts automatically. We added clarifying text to the web page to set expectations appropriately. Sorry for not being clear about this.
 
 > 3. Is it the case that the test files have .fld format and the expected outputs have .expect.fld format?
+
+Correct. We have updated the "Additional artifact description" section of `artifact-evaluation.md` accordingly.
 
 > 4. With the answer to 3 above, how do I run an individual test? The artifact-evaluation.md document often refers to the instructions above for running the test suite, but those instructions only pertain to running the entire suite, rather than individual tests.
 

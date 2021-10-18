@@ -103,4 +103,11 @@ We made the following manual changes to the images for inclusion in the paper: w
 
 The Fluid source code used for the tests and web app are found in the `fluid/example` directory. The core library is found in `lib/prelude`, with the matrix convolution functions in `lib/convolution`. The dataset used for the linking examples is in the folder `fluid/dataset`.  Fluid test files have the extension `.fld`; the examples in the `fluid/slicing` folder also come with `.expect.fld` files, which capture the expected selection state on the program that arises from a backward slice.
 
-Reviewers may wish to experiment with different Fluid source files and test expectations; we would be happy to assist with this.
+Reviewers may wish to experiment with different Fluid source files and test expectations; we would be happy to assist with this. Running an individual test is possible, but takes some manual effort; the instructions are as follows:
+
+* in `test/Main.purs`, in the first function of the file (`tests`), comment out `tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]` and
+uncomment `tests = [ test_scratchpad ]`
+* insert the code for the test you want to run into the list in `test_scratchpad`; initially that will contain a `zipWith` test, by way of an example
+* then run the whole test suite, using `yarn run tests`  as described above
+
+The effect of this is to replace the test suite by a pared-back version that only runs the individual tests specified in `test_scratchpad`.
