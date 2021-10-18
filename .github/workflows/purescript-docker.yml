@@ -4,11 +4,11 @@ on:
   push:
     paths-ignore:
     - 'old/**'
-    - '**/*.md'
+    - '**.md'
   pull_request:
     paths-ignore:
     - 'old/**'
-    - '**/*.md'
+    - '**.md'
 
 jobs:
   docker-build:
