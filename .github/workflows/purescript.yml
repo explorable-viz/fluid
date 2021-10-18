@@ -4,11 +4,11 @@ on:
   push:
     paths-ignore:
     - 'old/**'
-    - '**/README.md'
+    - '**/*.md'
   pull_request:
     paths-ignore:
     - 'old/**'
-    - '**/README.md'
+    - '**/*.md'
 
 jobs:
   test:
