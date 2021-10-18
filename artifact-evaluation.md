@@ -77,7 +77,7 @@ Running an individual test takes a small amount of manual effort: one must repla
 
 * In `test/Main.purs`, in the first function of the file, comment out `tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]` and
 uncomment `tests = [ test_scratchpad ]`.
-* Insert the code for the test you want to run into the list in `test_scratchpad`; initially that will contain a `zipWith` test, by way of an example. If you want to run a different test, you can copy specific test invocation code from any of `test_desugaring`, `test_misc`, `test_bwd`, `test_linking` and `test_graphics`. Creating your own test from scratch takes a certain understanding of the system; we would be happy to help with this.
+* Insert the code for the test you want to run into the list in `test_scratchpad`. If you want to run a specific test, you can copy the required test invocation code from any of `test_desugaring`, `test_misc`, `test_bwd`, `test_linking` and `test_graphics`. Creating your own test from scratch takes a certain understanding of the system; we would be happy to help with this.
 * Then run the whole test suite, using `yarn run tests` as described above, in order to run the test(s) in `test_scratchpad`.
 
 ## Evaluation instructions

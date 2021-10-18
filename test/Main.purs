@@ -14,8 +14,8 @@ import Test.Util (
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
---tests = [ test_scratchpad ]
+--tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -26,7 +26,12 @@ hole = Hole false
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   testBwd (File "zipWith") (File "zipWith-1.expect") (selectNth 1 (Float true 25.0)) "(13.0 : (_25.0_ : (41.0 : [])))"
+   testBwd (File "section-5-example") (File "section-5-example-1.expect")
+           (Constr true cCons (hole : (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil)) : Nil))
+           "(88 _:_ (6 : (4 _:_ [])))",
+   testBwd (File "section-5-example") (File "section-5-example-2.expect")
+           (selectNth 1 (Hole true))
+           "(_88_ : (_6_ : (_4_ : [])))"
 ]
 
 test_linking :: Array (Test Unit)
