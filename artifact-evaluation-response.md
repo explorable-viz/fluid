@@ -18,7 +18,7 @@ Correct. We have updated the "Additional artifact description" section of `artif
 
 > 4. With the answer to 3 above, how do I run an individual test? The artifact-evaluation.md document often refers to the instructions above for running the test suite, but those instructions only pertain to running the entire suite, rather than individual tests.
 
-Running individual tests is possible but requires a small amount of manual effort. We have updated `artifact-evaluation.md` to detail how to do this.
+Running individual tests is possible but requires a small amount of manual effort. We have added a new section to `artifact-evaluation.md` entitled "Running individual tests", which details how to do this.
 
 > 5. I would like to run each test and render the visualizations, as opposed to running the tests in headless mode. If I am not mistaken, this would be required to carry out Step 4 as described in the artifact-evalaution.md
 
