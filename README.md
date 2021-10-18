@@ -9,6 +9,7 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 7 Oct 21 | Artifact submitted for POPL 2022 | |
 | 28 Sep 21 | POPL paper accepted! | |
 | 9 July 21 | [POPL 2022 submission](http://arxiv.org/abs/2109.00445) | |
 | 7 July 21 | Surface language highlighting example | [475](https://github.com/explorable-viz/fluid/issues/475) |
