@@ -4,7 +4,7 @@ Many thanks for your efforts in evaluating our artifact; we very much appreciate
 
 Sorry about this. In the process of editing the final HTML, it seems we accidentally deleted the `div` tag used to insert the figure into the DOM. We have restored this; if you update your local copy of the repository and rebuild the web server, you should now see the additional raw images required for Fig. 1.
 
-We also supplied the missing explanation of how the generated images relate to Fig. 1, and added section headings (one for each figure) to make it easier to read. (The section for Fig. 1 follows Fig. 2 because one of the Fig. 2 images is reused as part of Fig. 1.)
+We also supplied the missing explanation of how the generated images relate to Fig. 1, and added section headings (one for each of figures 2, 1 and 13) to make the page easier to read. (The section for Fig. 1 follows Fig. 2 because one of the Fig. 2 images is reused as part of Fig. 1.)
 
 We updated `artifact-evaluation.md` to state that there should be three bar charts, rather than "several".
 
