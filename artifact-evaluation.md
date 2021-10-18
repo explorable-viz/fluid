@@ -73,7 +73,7 @@ Finally, verify the tests with:
 
 #### Running individual tests
 
-Running an individual test is possible, but takes some manual effort; the basic idea is to replace the top-level invocation of the test suite by a call to a predefined function called `test_scratchpad`, which only runs a list of specific tests:
+Running an individual test takes a small amount of manual effort: one must replace the top-level invocation of the test suite by a call to a predefined function called `test_scratchpad`, which runs a list of specific tests. Specifically:
 
 * in `test/Main.purs`, in the first function of the file (`tests`), comment out `tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]` and
 uncomment `tests = [ test_scratchpad ]`
