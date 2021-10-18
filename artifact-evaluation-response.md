@@ -1,5 +1,7 @@
 Many thanks for your efforts in evaluating our artifact; we very much appreciate this. We respond to your questions below and have updated our artifact and instructions. We have also created tag `v0.4.0` in GitHub (https://github.com/explorable-viz/fluid/tree/v0.4.0) permanently referencing the (corrected) version of the artifact, and updated the artifact evaluation instructions to point to this.
 
+**Note:** The Dockerfile no longer runs the `yarn` steps for building the web app. This is to allow the repository to be mounted as an external folder, when the Docker `run` command is issued (and which is therefore unavailable when the image is being built). Please follow the updated instructions for running the web and and tests provided in `artifact-evaluation.md`.
+
 > 1. The web app does not display several bar charts as mentioned in the artifact-evaluation.md under Step 1. I can only see the one corresponding to Fig.2 (I am using Chrome on Ubuntu). In fact, the web page itself does not speak about Fig.1 at all.
 
 Sorry about this. In the process of editing the final HTML, it seems we accidentally deleted the `div` tag used to insert the figure into the DOM. We have restored this; if you update your local copy of the repository to the corrected version and rebuild the web server, you should now see the additional raw images required for Fig. 1.
