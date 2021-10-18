@@ -101,6 +101,6 @@ We made the following manual changes to the images for inclusion in the paper: w
 
 ## Additional artifact description
 
-The Fluid source code used for the tests and web app are found in the `fluid/example` directory. The core library is found in `lib/prelude`, with the matrix convolution functions in `lib/convolution`. The dataset used for the linking examples is in the folder `fluid/dataset`.
+The Fluid source code used for the tests and web app are found in the `fluid/example` directory. The core library is found in `lib/prelude`, with the matrix convolution functions in `lib/convolution`. The dataset used for the linking examples is in the folder `fluid/dataset`.  Fluid test files have the extension `.fld`; the examples in the `fluid/slicing` folder also come with `.expect.fld` files, which capture the expected selection state on the program that arises from a backward slice.
 
 Reviewers may wish to experiment with different Fluid source files and test expectations; we would be happy to assist with this.
