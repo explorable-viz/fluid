@@ -38,6 +38,7 @@ The specific claims supported by the artifact relate to the following 4 figures 
 
 Follow the following steps:
 - `git clone https://github.com/explorable-viz/fluid.git` to get this repo
+- checkout tag `v0.4.0`
 - ensure Docker service is running
 - in the repository root, run `docker build -t fluid-webapp .` to build Docker image
 
