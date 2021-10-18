@@ -75,7 +75,7 @@ Finally, verify the tests with:
 
 ### Step 1
 
-The raw ingredients for Figure 1 are served by the web app as part of a web page. To verify, follow the instructions above for running the web app. The web page `http://localhost:1234/` should then display several bar charts; the first and last of these correspond to the two bar charts in Fig. 1. The two tabular views correspond to the two differently-highlighted parts of the table in the middle of Fig 1.  The relevant PureScript code is the function ```linkingFigs``` in `src/app/Demo.purs`, which loads the Fluid source code for the bar chart, shown at the bottom of Fig. 2. This can be found in `fluid/example/linking/bar-chart.fld`.
+The raw ingredients for Figure 1 are served by the web app as part of a web page. To verify, follow the instructions above for running the web app. The web page `http://localhost:1234/` should then display three bar charts; the first and penultimate of these correspond to the two bar charts in Fig. 1. The two tabular views correspond to the two differently-highlighted parts of the table in the middle of Fig 1.  The relevant PureScript code is the function ```linkingFigs``` in `src/app/Demo.purs`, which loads the Fluid source code for the bar chart, shown at the bottom of Fig. 2. This can be found in `fluid/example/linking/bar-chart.fld`.
 
 We made the following manual changes to the images for inclusion in the paper: we added the "selection 1" and "selection 2" arrows; we changed the selection color on the right-hand side from orange to blue; and we combined the two tabular views into a single table.
 

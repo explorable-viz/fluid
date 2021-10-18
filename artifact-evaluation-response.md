@@ -2,7 +2,9 @@ Many thanks for your efforts in evaluating our artifact. We really appreciate th
 
 > 1. The web app does not display several bar charts as mentioned in the artifact-evaluation.md under Step 1. I can only see the one corresponding to Fig.2 (I am using Chrome on Ubuntu). In fact, the web page itself does not speak about Fig.1 at all.
 
+Sorry about this. In the process of editing the final HTML, it seems we accidentally deleted the `div` tag used to insert the figure into the DOM. We have restored this; if you update your local copy of the repository and rebuild the web server, you should now see the raw images required for Fig. 1 as well.
 
+We also supplied the missing explanation of how the generated images relate to Fig.1, and added section headings (one for each figure) to make it easier to read.
 
 > 2. Are the visualizations meant to be interactive? If that is indeed the case, I am also not able to do that beyond 'hovering' over the bars. This may be related to my confusion regarding question 1 above.
 
