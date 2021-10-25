@@ -145,9 +145,12 @@ linkFig divId config o1_fig o2_fig data_fig = do
       data_fig { title: "common data", uv: link.data_sel }
    ] }
 
+systemCol :: String
+systemCol = "rgb(120,169,257)"
+
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
-   let userSel × systemSel = "LightGreen" × "Yellow"
+   let userSel × systemSel = "LightGreen" × systemCol
    sequence [
       fig "fig-conv-1" {
          file: File "slicing/conv-emboss",
@@ -162,7 +165,7 @@ convolutionFigs = do
          makeSubfigs: \ex ->
             neededBy {
                vars: [{ var: "image", makeFig: matrixFig userSel }, { var: "filter", makeFig: matrixFig userSel }],
-               o_fig: matrixFig "Yellow",
+               o_fig: matrixFig systemCol,
                ρ': selectOnly ("filter" ↦ selectCell 1 2 3 3) ex.ρ
             } ex
       }
