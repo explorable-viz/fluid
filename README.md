@@ -7,9 +7,15 @@ To install and run the software see the [POPL 2022 artifact evaluation instructi
 
 ### Directory structure
 
-The Fluid source code used for the tests and web app are found in the `fluid/example` directory. The core library is found in `lib/prelude`, with the matrix convolution functions in `lib/convolution`. The dataset used for the linking examples is in the folder `fluid/dataset`. Fluid test files have the extension `.fld`; the examples in the `fluid/slicing` folder also come with `.expect.fld` files, which capture the expected selection state on the program that arises from a backward slice.
+The Fluid source code used for the tests and web app are found in the `fluid/example` directory. The core library is found in `lib/prelude`, with the matrix convolution functions in `lib/convolution`. The dataset used for the linking examples is in the folder `fluid/dataset`. Fluid test files have the extension `.fld`; the examples in the `fluid/slicing` folder also come with `.expect.fld` files, which capture the expected selection state on the program that arises from a backward analysis.
 
 ### Overview of tests and test infrastructure
+
+#### Testing analyses described in paper
+
+There are test helpers (see below) for testing the backward analysis (`bestBwd`) and the composition of the backward analysis with the De Morgan dual of the forward analysis (`testLink`). There is no support yet for standalone tests of the forward analysis, for reasons given below.
+
+However, all `testBwd` tests do test the round-trip of the backward analysis followed by the forward analysis. In some cases (such as the `map` test) the output selection is preserved by the round-trip; in other cases (such as `intersperse` or `filter`) the output selection gets larger. This is the key round-tripping property for forwards-after-backwards described in the paper. Specifically, the last argument passed to `testBwd` (of type string) is the expected (prettyprinted) output after round-tripping the output selection. See `testWithSetup` in `test/Util.purs` for the implementation.
 
 #### Test helpers
 
@@ -41,4 +47,4 @@ The test suites are defined in `test/Main.purs` and is organised as follows:
 
 ### Creating your own tests
 
-Reviewers may wish to experiment with different Fluid source files and test expectations; we would be happy to assist with this.
+You may wish to experiment with different Fluid source files and test expectations; we would be happy to assist with this.
