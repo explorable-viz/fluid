@@ -1,6 +1,6 @@
 # Response to review comment @A7
 
-Many thanks again for your diligence and useful probing of our artifact. We have added a `README.md` with the information that was previously in the **Additional artifact description** section of `artifact-evaluation.md`, and where possible have placed any additional instructions there.
+Many thanks again for your diligence and useful probing of our artifact. We have added a `README.md` with the information that was previously in the **Additional artifact description** section of `artifact-evaluation.md`, and where possible have placed any additional instructions there. **Please note that in the final version of the paper, Fig. 16 is now Fig. 18, and the instructions below now refer to Fig. 18.**
 
 ## Questions pertaining to functionality of the artifact:
 
