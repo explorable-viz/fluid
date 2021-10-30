@@ -1,7 +1,7 @@
 
 ## Creating your own tests
 
-We provide instructions for creating your own linking and round-tripping tests. (Adding your own desugaring or miscellaneous tests is easier and we omit the instructions.)
+### Linking tests
 
 To create your own **linking** (`test_linking`) test, we suggest starting by copying the simple `pairs-1`/`pairs-2` example in `test_linking` and adapting it to your needs. Specific steps are:
 1. Start by removing any tests from the list of tests in `test_scratchpad`.
@@ -17,7 +17,9 @@ To create your own **linking** (`test_linking`) test, we suggest starting by cop
     - File `your-test-data.fld`, which simply contains an expression that will be bound to the value of `dataVar`.
 6. When you are happy with your new test, move it from `test_scatchpad` to the `test_linking` suite.
 
-To create your own **backwards/forwards round-tripping** (`test_bwd`) test:
+### Backward/forward round-tripping tests
+
+To create your own **backward/forward round-tripping** (`test_bwd`) test:
 1. Start by removing the existing content of `test_scratchpad`.
 2. [TODO]
 3. When you are happy with your new test, move it from `test_scatchpad` to the `test_bwd` suite.

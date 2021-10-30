@@ -47,4 +47,4 @@ The test suites are defined in [`test/Main.purs`](test/Main.purs) and is organis
 
 ### Creating your own tests
 
-See [`creating-tests.md`](creating-tests.md).
+See [`creating-tests.md`](creating-tests.md) for instructions on creating your own linking and round-tripping tests. (Adding your own desugaring or miscellaneous tests is easier and we omit the instructions.)
