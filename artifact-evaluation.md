@@ -110,7 +110,12 @@ The Fluid source code used for the tests and web app are found in the `fluid/exa
 
 ### Overview of test suite
 
+#### Test helpers
 
+`test`
+`testBwd`
+`testLink`
+`testWithDataset`
 
 ### Creating your own tests
 
