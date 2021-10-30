@@ -16,13 +16,7 @@ The implementation does support running the forward analysis independently of th
 
 > 3. Please make the fixes pertaining to (6) from @a7
 
-Thanks for spotting these inconsistencies. We have made the following fixes and clarifications:
-
-- The first test case for `section-5-example` has been fixed to agree with the LHS of the figure in the paper: it now selects only the first cons cell in the output, rather than the first and the third, and "Hydro" is the only string selected in the source program as a consequence (previously "Geo" was also selected).
-
-- The second test case for `section-5-example` is unchanged, but we have clarified that this only pertains to the _grey_ (uncoloured) highlighting on the RHS of the figure in the paper (highlighting 6 in the output, and highlighting the numbers 260, 19.9, 14.4 and 100 in the input).
-
-- We have added a third test case for `section-5-example` which accounts for the coloured highlighting on the RHS of the figure. This selects just the third cons cell in the output, and produces a program selection similar to the first case, except that "Geo" is selected, rather than "Hydro."
+Thanks for spotting these inconsistencies. We have made the necessary fixes and clarifications, and amended the Step 4 instructions in `artifact-evaluation.md`:
 
 ## Good to do for sake of clarity:
 
