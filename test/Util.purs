@@ -68,7 +68,7 @@ testWithSetup (File file) expected v_expect_opt setup =
          unless (isGraphical v) (checkPretty "Value" expected v)
          case snd <$> v_expect_opt of
             Nothing -> pure unit
-            Just file_expect -> loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source slice") s'
+            Just file_expect -> loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
