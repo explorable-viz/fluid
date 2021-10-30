@@ -3,7 +3,7 @@
 
 ### Linking tests
 
-To create your own **linking** (`test_linking`) test, we suggest starting by copying the simple `pairs-1`/`pairs-2` example in `test_linking` and adapting it to your needs. Specific steps are:
+To create your own **linking** test, we suggest starting by copying the simple `pairs-1`/`pairs-2` example in `test_linking` and adapting it to your needs. Specific steps are:
 1. Start by removing any tests from the list of tests in `test_scratchpad`.
 2. Add your new test case there, using the `testLink` helper. You will need to provide two arguments. The first is of type `LinkConfig` providing the test configuration, with the following fields:
    - `file1` and `file2` are `File` arguments pointing to Fluid source files; these will be evaluated to provide the two outputs to be linked
@@ -19,12 +19,12 @@ To create your own **linking** (`test_linking`) test, we suggest starting by cop
 
 ### Backward/forward round-tripping tests
 
-To create your own **backward/forward round-tripping** (`test_bwd`) test, we suggest starting by copying one of the simple tests from `test_bwd`, such as the `zipWith` test, and adapting it to your needs. Specific steps are:
+To create your own **backward/forward round-tripping** test, we suggest starting by copying one of the simpler tests from `test_bwd`, such as the `zipWith` test, and adapting it to your needs. Specific steps are:
 1. Start by removing any tests from the list of tests in `test_scratchpad`.
 2. Add your new test case there, using the `testBwd` helper. You will need to provide four arguments:
-    - A `File` argument pointing to `.fld` source file for the test; this will be evaluated to provide an output.
-    - A `File` argument point to a `.expect.fld` file containing the expected selection on the source program that will result from the backward analysis. This must be a regular Fluid source file, except that underscores can be used to represent the expected selection. For example in `zipWith-1.expect.fld`, the program fragment `y ** _2_` expresses that the second argument to `**` is selected.
+    - A `File` argument pointing to `.fld` source file for the test, which will be evaluated to provide an output.
+    - A `File` argument point to a `.expect.fld` file containing the expected selection on the source program that will result from the backward analysis. This should be a regular Fluid source file, except that underscores can be used to represent the expected selection. For example in `zipWith-1.expect.fld`, the program fragment `y ** _2_` expresses that the second argument to `**` is selected.
     - The output selection that will be used for the backward analysis. For this, you cannot use the underscore notation, but must instead construct a value directly representing the selection, as detailed above. For the `zipWith` example, the expression `(selectNth 1 (Float true 25.0))` selects the first element (starting from zero) of the output of the `zipWith`.
-    - The _output expectation_ for the round-trip view: the selection you expect on the output after the forward analysis has completed. This must be provided as a string, with underscores used to represent the expected selection. For the `zipWith`example, `"(13.0 : (_25.0_ : (41.0 : [])))"` represents the output where the second element has been selected. In the case of `zipWith`, this is essentially the same as the selection that was used to initiate the backward analysis; this is because the selection round-trips exactly. In general, the selection gets larger.
+    - The _output expectation_ for the round-trip view: the selection you expect on the output after the forward analysis has completed. This must be provided as a string, with underscores used to represent the expected selection. For the `zipWith`example, `"(13.0 : (_25.0_ : (41.0 : [])))"` represents the output where the second element has been selected. In the case of `zipWith`, this is essentially the same as the selection that was used to initiate the backward analysis; this is because the selection round-trips exactly. In general, the selection gets larger. Only the notation is different: one is provide as a string, the other as a PureScript expression representing a Fluid expression.
 3. Create the two files `your-test.fld` and `your-test.expect.fld` (or similar) mentioned in the `testBwd` arguments. Place these in the `fluid/example/slicing` directory with the other round-tripping tests.
 4. When you are happy with your new test, move it from `test_scatchpad` to the `test_bwd` suite.
