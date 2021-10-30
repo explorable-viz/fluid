@@ -112,7 +112,7 @@ The Fluid source code used for the tests and web app are found in the `fluid/exa
 
 #### Test helpers
 
-These are defined in `test/Util.purs`. Usage examples can be found in `test/Main.purs`.
+These are defined in `test/Util.purs`. Usage examples can be found in `test/Main.purs`. Note that most tests perform a forward and backward round-trip as a sanity-check, but only `testBwd` and `testLink` actually verify that the analysis results are as expected.
 
 - `test`: The most basic kind of test. Desugars the test program, evaluates it to obtain a trace, and performs a forward and backward analysis (over both evaluation and desugaring) to sanity-check that they execute without runtime failure. Also compares the (prettyprinted) output of the program against a supplied expected value.
 
@@ -120,7 +120,7 @@ These are defined in `test/Util.purs`. Usage examples can be found in `test/Main
 
 - `testBwd` Similar to `test`, but additionally checks that the backward analysis step produces an expected selection on the (prettyprinted) source program. The prettyprinter will add underscores to any selected expressions or values, allowing the test expectation to be provided as an additional source file (with extension `.expected.fld` in the same folder as the test) where expressions which are expected to be selected are surrounded by underscores. Note, however, that the underscore notation is not supported by the parser, and so one cannot initiate a forward analysis by adding underscores to a `.fld` source file.
 
-- `testLink` Tests the linking feature. Given two test programs and a (shared) dataset, desugars and evaluates both programs, applies a selection to the output of the first program, performs a backward analysis to produce a selection on the shared data, and then performs the De Morgan dual of the forward analysis to produce a selection on the output of the second program. Compares the (prettyprinted) output of the second program against a supplied expected value, which will use underscores to represent the expected selection.
+- `testLink` Tests the linking feature. Given two test programs and a (shared) dataset, desugars and evaluates both programs, applies a selection to the output of the first program, performs a backward analysis to produce a selection on the shared data, and then performs the De Morgan dual of the forward analysis to produce a selection on the output of the second program. Compares the (prettyprinted) output of the second program against a supplied expected value, which must use underscores to represent the expected selection.
 
 #### Test suite
 
