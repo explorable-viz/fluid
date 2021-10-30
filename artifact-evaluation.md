@@ -124,15 +124,20 @@ These are defined in `test/Util.purs`. Usage examples can be found in `test/Main
 
 #### Test suite
 
-The test cases themselves are defined in `test/Main.purs` and are organised as follows.
+The test suite is defined in `test/Main.purs` and is organised into the following test functions.
 
-##### Test scratchpad
+##### Scratchpad
 
 `test_scratchpad` is useful for running tests one at a time; see **Running individual tests** above.
 
+##### Linking tests
 
-- `test_linking`: Uses `testLink` to run the linking tests
+`test_linking` defines three linking tests, using the helper `testLink`. The source programs are in `fluid/example/linking`. There are tests for the bar chart/line chart and convolution examples in the paper, and also a simple linking test involving (nested) pairs.
+
+#### Backwards analysis tests
+
 - `test_bwd`:
+
 - `test_desugaring`:
 - `test_misc`:
 - `test_graphics`: Tests the graphics library developed for the 0.3 release (since deprecated).
