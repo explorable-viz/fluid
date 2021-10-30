@@ -57,5 +57,7 @@ To create your own **linking** test:
    - `dataVar`: the name of this shared variable which will be in scope in `file1` and `file2`
    - `v1_sel` the selection to be applied to the first view
 3. You will also need to provide the _output expectation_ for the second view: the selection you expect on its output. This must be provided as a string, with underscores used to represent the selection. For example, `"(3, (_5_, _7_))"` represents a nested pair, where the second component is a pair of integers, and each integer is selected.
+4. When you are happy with your new test, move it from `test_scatchpad` to the `test_linking` suite.
 
 To create your own **backwards/forwards round-tripping** test:
+1. [TODO]
