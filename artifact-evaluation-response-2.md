@@ -6,7 +6,7 @@ Many thanks again for your diligence and useful probing of our artifact.
 
 > 1. How do I run a test and see the output? This is question (1) from my previous comment @a7.
 
-We have changed the test runner so that every tests emits its output(s) to the console, prettyprinted where appropriate. The outputs that you can expect to see for each kind of test is described in the **Additional artifact description** section of `artifact-evaluation.md`.
+We have changed the test runner so that every tests emits its (prettyprinted) output(s) to the console. The outputs that you should expect to see for each kind of test is described in the **Additional artifact description** section of `artifact-evaluation.md`.
 
 > 2. Can I be pointed to at least one example of forward analysis among the existing benchmarks?
 
@@ -25,6 +25,8 @@ Thanks for spotting these inconsistencies. We have made the necessary fixes and 
 There is one additional linking example. This is now mentioned under `test_linking` in the **Additional artifact description** section of `artifact-evaluation.md`.
 
 > 4. I would at least like to be able to change the underscores on a test case and see that the new output now has the corresponding relevant bits highlighted. As I mentioned in question (3) in @a7, I am wondering if this is simpler than creating a new test from scratch. I believe this is important because being able to do at least this much makes your tool less opaque, and might elicit more trust in your artifact even as it relates to your existing set of benchmarks. As it stands currently, I'm locked into just witnessing the success on your specific examples with specific selections.
+
+Unfortunately this is not possible; the underscore notation is supported by the prettyprinter, but not by the parser, and so can currently only be used for testing the backward analysis. This is now documented under `testBwd` in the **Additional artifact description** section of `artifact-evaluation.md`.
 
 ### Good to do, even if outside scope of artifact that will be archived for this conference:
 
