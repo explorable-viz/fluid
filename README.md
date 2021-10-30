@@ -31,13 +31,13 @@ These are defined in [`test/Util.purs`](test/Util.purs). Usage examples can be f
 
 #### Test suites
 
-The test suites are defined in `test/Main.purs` and is organised as follows:
+The test suites are defined in [`test/Main.purs`](test/Main.purs) and is organised as follows:
 
 - `test_scratchpad` is useful for running tests one at a time; see **Running individual tests** above.
 
 - `test_linking` defines three linking tests, using the helper `testLink`. The source programs are in `fluid/example/linking`. There are tests for the bar chart/line chart and convolution examples in the paper, and also a simple linking test involving (nested) pairs.
 
-- `test_bwd` defines several tests of the backwards analysis and associated round-trip, using the `testBwd` helper. The source programs are in `fluid/example/slicing`; each `.fld` file is paired with a `.expect.fld` containing the expectation for the source program selection. For example, the `filter` test shows that if you backward analyse with just the first cons cell in the output selected, then after the round-trip, the selection grows to include the first element in the list as well. (If you retain enough information to know that the output is at least one element long, you also retain enough information to know what that element is.) The file `filter.expect.fld` shows that various source elements are selected, such as the cons constructor in in the definition of `filter`.
+- `test_bwd` defines several tests of the backwards analysis and associated round-trip, using the `testBwd` helper. The source programs are in [`fluid/example/slicing`](fluid/example/slicing); each `.fld` file is paired with a `.expect.fld` containing the expectation for the source program selection. For example, the `filter` test shows that if you backward analyse with just the first cons cell in the output selected, then after the round-trip, the selection grows to include the first element in the list as well. (If you retain enough information to know that the output is at least one element long, you also retain enough information to know what that element is.) The file [`filter.expect.fld`](fluid/example/slicing/filter.expect.fld) shows that various source elements are selected, such as the cons constructor in in the definition of `filter`.
 
 - `test_desugaring` defines several tests which exercise the desugaring, using the `test` helper. The tests only check that the program desugars and executes correctly, not that the (source) program desugars to the expected core representation. For example, `list-comp-4` shows that the list comprehension `[ x | x : xs <- [[5], [4], [3], []] ]` desugars into a program that evaluates to the list `[5, 4, 3]`.
 
