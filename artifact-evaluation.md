@@ -27,7 +27,7 @@ The specific claims supported by the artifact relate to the following 4 figures 
 
 [§ 5.1, paragraph 1] "**Figure 16 shows how the end-to-end mapping would appear to a user.**" The function ```testBwd``` of `src\test\Main.purs` runs the test `section-5-example`, which generates the raw information required for Figure 16. See Evaluation Step 4.
 
-## Download, installation, and sanity-testing
+## Download, installation, and sanity-check
 
 ### Software required
 
@@ -107,5 +107,7 @@ We made the following manual changes to the images for inclusion in the paper: w
 ## Additional artifact description
 
 The Fluid source code used for the tests and web app are found in the `fluid/example` directory. The core library is found in `lib/prelude`, with the matrix convolution functions in `lib/convolution`. The dataset used for the linking examples is in the folder `fluid/dataset`. Fluid test files have the extension `.fld`; the examples in the `fluid/slicing` folder also come with `.expect.fld` files, which capture the expected selection state on the program that arises from a backward slice.
+
+### Overview of test suite
 
 Reviewers may wish to experiment with different Fluid source files and test expectations; we would be happy to assist with this.

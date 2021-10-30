@@ -1,22 +1,27 @@
-## Remaining considerations for judging whether claims in artifact-evaluation.md support my experience with the artifact:
+# Response to review comment @A7
 
-> 1. I would like to be able to run an existing test and get an output, rather than see that the expected output has been achieved. Changing the .expect.fld file and witnessing an error seems insufficient to me.
+Many thanks again for your diligence and useful probing of our artifact.
 
+## Questions pertaining to functionality of the artifact:
 
-> 2. It seems to me from the paper that there are 'forward' and 'backward' analyses, apart from the linking feature. But I'm confused by the fact that the tests indicated in steps 1,2, and 4 all pertain to output-to-input kind of analyses. I would like to see a simple example of a forward analysis, however trivial, in order to see that the artifact can do this. In particular, what kinds of forward analysis can I do? Am I only allowed to highlight inputs, or can I also highlight fragments of the code to see what outputs depend on the fragment? It would be great if there were an example that showed both a forward and a backward analysis, demonstrating the round-tripping capability that the paper talks about.
+> 1. How do I run a test and see the output? This is question (1) from my previous comment @a7.
 
-> 3. Given (1), I would like to be able to make small changes and view the change in the output. For instance, I would like to change the part of the data highlighted and see that the output now highlights the new relevant bits (both input -> output and output -> input analyses). This may be related to (5), but perhaps this task is simpler to do than writing a new test from scratch.
+We have changed the test runner so that every tests emits its output(s) to the console, prettyprinted where appropriate. The outputs that you can expect to see for each kind of test is described in the **Additional artifact description** section of `artifact-evaluation.md`.
 
-> 4. The tests under ``tests_misc`` in ``Main.purs`` like ``factorial`` or ``flatten`` do not seem to contain underscores at all. Are these tests doing anything towards the features in the artifact, or are just tests for the code base at large? If they are the latter, which tests have the dependency analyses?
+> 2. Can I be pointed to at least one example of forward analysis among the existing benchmarks?
 
-## Advanced questions/artifact evaluation considerations:
+The implementation does support running the forward analysis independently of the backward analysis, running the forward analysis without the De Morgan dual, and forward-analysing from code selections to output selections. We agree that these would be interesting topics to explore, but we had neither the time nor space to explore these in the paper.
 
-> 5. I would like to know how to construct both forward and backward tests (very simple ones) from scratch. Walking me through an example of some transformation like the example in Step 4 would be useful (assuming that I have some knowledge of functional programming but no experience with PureScript). I have to note that this is not a stumbling block and if it were not possible to do this for someone unfamiliar with the system, I'd be fine with that.
+> 3. Please make the fixes pertaining to (6) from @a7
 
-## Notes/clarifications not relating to claims or artifact evaluation considerations:
+## Good to do for sake of clarity:
 
-> 6. The tests you have in the scratchpad array of tests for Step 4 in ``Main.purs`` do not seem to _exactly_ match the instances represented in Fig.16 in the paper (as was mentioned in the AE). For instance, the first test highlights two ``:`` constructors instead of one. While this isn't a problem for me because the outputs in the artifact itself seem to match the test case input and I believe I can roughly correspond the two, there is a disconnect with the AE text. Please fix this as it will make the artifact more usable.
+> 3. Are there any other examples of the linking feature apart from the convolutions among the existing benchmarks? Please point me to one if possible.
 
-> 7. Please provide one or two tests separately for each of the forward analysis, backward analysis, and the brushing-and-linking features as part of the artifact and mention them in the AE instruction file. While it's great to look at the nice visuals, it would also be good to have simple examples that one can execute and investigate.
+> 4. I would at least like to be able to change the underscores on a test case and see that the new output now has the corresponding relevant bits highlighted. As I mentioned in question (3) in @a7, I am wondering if this is simpler than creating a new test from scratch. I believe this is important because being able to do at least this much makes your tool less opaque, and might elicit more trust in your artifact even as it relates to your existing set of benchmarks. As it stands currently, I'm locked into just witnessing the success on your specific examples with specific selections.
 
-> 8. I understand the many of the round-tripping or linking-by-dual features I'm asking for in (2), (3), (4), or (7) are already demonstrated by the convolution example. But I am asking for an example whose intended behavior is captured not 'visually' but 'symbolically', in the sense that I can do some small list transformation or arithmetic computation and check by dumb manual symbol pushing that the data substructures corresponded by the analyses do correspond in the appropriate way.
+### Good to do, even if outside scope of artifact that will be archived for this conference:
+
+> 5. I was unable to find the source of these benchmarks/tests in the paper as well as the artifact. Did you create them yourself? If so, please include a general description of the artifacts and perhaps list the 'classes' of tests in the set of tests, with an example for each. I'm essentially asking for a profile of your benchmarks.
+
+> 6. One simple example showing how to construct a new test, with further clarification if those instructions differ for the forward, backward, and linking analyses. I must mention that this is essentially the barrier to considering the artifact reusable at any level, and if that can be achieved by a short description of a simple example that perhaps even already exists, that would be great. I presume no expertise on my part with respect to how your tool actually works, but I am wondering whether the entire artifact could be improved to the point of being reusable by simply adding a 'tutorial' file with a couple of example and short, basic instructions after which one can play around with the system to discover more features.

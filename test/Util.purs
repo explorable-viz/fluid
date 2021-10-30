@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:), elem)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (fst, snd)
+import Debug.Trace (trace)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
@@ -51,8 +52,10 @@ desugarEval_fwd ρ s =
    let _ = evalFwd (botOf ρ) (E.Hole false) false in -- sanity-check that this is defined
    evalFwd ρ (successful (desugarFwd s)) true
 
-checkPretty :: forall a . Pretty a => String -> a -> Aff Unit
-checkPretty expected x = prettyP x `shouldEqual` expected
+checkPretty :: forall a . Pretty a => String -> String -> a -> Aff Unit
+checkPretty msg expected x =
+   trace (msg <> ":\n" <> prettyP x) \_ ->
+      prettyP x `shouldEqual` expected
 
 -- v_expect_opt is optional output slice + expected source slice; expected is expected result after round-trip.
 testWithSetup :: File -> String -> Maybe (Val 𝔹 × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
@@ -62,10 +65,10 @@ testWithSetup (File file) expected v_expect_opt setup =
          let t × v = successful (desugarEval ρ s)
              ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v (fst <$> v_expect_opt))
              v = desugarEval_fwd ρ' s' t
-         unless (isGraphical v) (checkPretty expected v)
+         unless (isGraphical v) (checkPretty "Value" expected v)
          case snd <$> v_expect_opt of
             Nothing -> pure unit
-            Just file_expect -> loadFile (Folder "fluid/example") file_expect >>= flip checkPretty s'
+            Just file_expect -> loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source slice") s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
@@ -119,7 +122,7 @@ testLink config v2_expect =
    before (doLink config) $
       it ("linking/" <> show config.file1 <> " <-> " <> show config.file2)
          \{ v2: v2' × _ } ->
-            checkPretty v2_expect v2'
+            checkPretty "Linked output" v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit
 testWithDataset dataset file = do

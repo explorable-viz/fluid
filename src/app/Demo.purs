@@ -146,7 +146,7 @@ linkFig divId config o1_fig o2_fig data_fig = do
    ] }
 
 systemCol :: String
-systemCol = "rgb(120,169,257)"
+systemCol = "rgb(160,209,255)"
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
