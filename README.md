@@ -52,10 +52,10 @@ We provide instructions for creating your own linking and round-tripping tests. 
 To create your own **linking** test:
 1. Start by removing the existing content of `test_scratchpad`.
 2. Add a new test case there, using the `testLink` helper. You will need to provide an argument of type `LinkConfig` providing the test configuration, which takes the following arguments:
-  - `file1` and `file2`: two `File` arguments pointing to Fluid source programs; these will provide the two linked outputs
-  - `dataFile`: another `File` argument pointing to a Fluid source file containing an expression; this will be bound to a variable and become part of the context in which `file1` and `file2` will be evaluated
-  - `dataVar`: the name of this shared variable which will be in scope in `file1` and `file2`
-  - `v1_sel` the selection to be applied to the first view
+   - `file1` and `file2`: two `File` arguments pointing to Fluid source programs; these will provide the two linked outputs
+   - `dataFile`: another `File` argument pointing to a Fluid source file containing an expression; this will be bound to a variable and become part of the context in which `file1` and `file2` will be evaluated
+   - `dataVar`: the name of this shared variable which will be in scope in `file1` and `file2`
+   - `v1_sel` the selection to be applied to the first view
 3. You will also need to provide the _output expectation_ for the second view: the selection you expect on its output. This must be provided as a string, with underscores used to represent the selection. For example, `"(3, (_5_, _7_))"` represents a nested pair, where the second component is a pair of integers, and each integer is selected.
 
 To create your own **backwards/forwards round-tripping** test:
