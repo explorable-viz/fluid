@@ -5,6 +5,8 @@
 
 To install and run the software see the [POPL 2022 artifact evaluation instructions](artifact-evaluation.md).
 
+### Directory structure
+
 The Fluid source code used for the tests and web app are found in the `fluid/example` directory. The core library is found in `lib/prelude`, with the matrix convolution functions in `lib/convolution`. The dataset used for the linking examples is in the folder `fluid/dataset`. Fluid test files have the extension `.fld`; the examples in the `fluid/slicing` folder also come with `.expect.fld` files, which capture the expected selection state on the program that arises from a backward slice.
 
 ### Overview of tests and test infrastructure
