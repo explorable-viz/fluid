@@ -10,15 +10,7 @@ We have changed the test runner so that every tests emits its (prettyprinted) ou
 
 > 2. Can I be pointed to at least one example of forward analysis among the existing benchmarks?
 
-There are unfortunately no standalone tests of the forward analysis, for reasons given below. However, all the `testBwd` tests actually test the round-trip of the backward analysis followed by the forward analysis. In some cases (such as the `map` test) the output selection is preserved by the round-trip; in other cases (such as `intersperse` or `filter`) the output selection gets larger. This is the key round-tripping property for forwards-after-backwards described in the paper. Specifically, the last argument passed to `testBwd` (of type string) is the expected (prettyprinted) output after round-tripping the output selection. See `testWithSetup` in `test/Util.purs` for the implementation.
-
-The linking tests in `test_linking` are slightly different: they test the backward analysis followed by the De Morgan Dual of the forward analysis.
-
-These are now described in more detail in the `README.md`.
-
-The implementation does support running the forward analysis independently of the backward analysis, running the forward analysis without the De Morgan dual, and forward-analysing from code selections to output selections. However, providing a way of specifying a program or environment selection for the forward analysis will require some work. For example, to support program selections, we would either need to extend the parser to support something like the underscore notation, or provide some kind of zipper-like API that allows a test case to navigate through a program and create selections.
-
-Unfortunately we had neither the time nor space to explore these in the paper, although they are important topics that we intend to explore in the future.
+All `testBwd` tests actually test the round-trip of the backward analysis followed by the forward analysis, but there is unfortunately no support for standalone tests of the forward analysis. This way `testBwd` tests the round-trip is described in more detail in the `README.md`.
 
 > 3. Please make the fixes pertaining to (6) from @a7
 
