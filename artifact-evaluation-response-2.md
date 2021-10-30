@@ -10,9 +10,15 @@ We have changed the test runner so that every tests emits its (prettyprinted) ou
 
 > 2. Can I be pointed to at least one example of forward analysis among the existing benchmarks?
 
-The three linking tests in `test_linking` all make use of the De Morgan Dual of the forward analysis. These are now described in more detail in the **Additional artifact description** section of `artifact-evaluation.md`.
+There are unfortunately no standalone tests of the forward analysis, for reasons given below. However, all the `testBwd` tests actually test the round-trip of the backward analysis followed by the forward analysis. In some cases (such as the `map` test) the output selection is preserved by the round-trip; in other cases (such as `intersperse` or `filter`) the output selection gets larger. This is the key round-tripping property for forwards-after-backwards described in the paper. Specifically, the last argument passed to `testBwd` (of type string) is the expected (prettyprinted) output after round-tripping the output selection. See `testWithSetup` in `test/Util.purs` for the implementation.
 
-The implementation does support running the forward analysis independently of the backward analysis, running the forward analysis without the De Morgan dual, and forward-analysing from code selections to output selections. Unfortunately we had neither the time nor space to explore these in the paper, although they are important topics that we intend to explore in the future.
+The linking tests in `test_linking` are slightly different: they test the backward analysis followed by the De Morgan Dual of the forward analysis.
+
+These are now described in more detail in the **Additional artifact description** section of `artifact-evaluation.md`.
+
+The implementation does support running the forward analysis independently of the backward analysis, running the forward analysis without the De Morgan dual, and forward-analysing from code selections to output selections. However, providing a way of specifying a program or environment selection for the forward analysis will require some work. For example, to support program selections, we would either need to extend the parser to support something like the underscore notation, or provide some kind of zipper-like API that allows a test case to navigate through a program and create selections.
+
+Unfortunately we had neither the time nor space to explore these in the paper, although they are important topics that we intend to explore in the future.
 
 > 3. Please make the fixes pertaining to (6) from @a7
 
@@ -31,5 +37,7 @@ Unfortunately this is not possible; the underscore notation is supported by the 
 ### Good to do, even if outside scope of artifact that will be archived for this conference:
 
 > 5. I was unable to find the source of these benchmarks/tests in the paper as well as the artifact. Did you create them yourself? If so, please include a general description of the artifacts and perhaps list the 'classes' of tests in the set of tests, with an example for each. I'm essentially asking for a profile of your benchmarks.
+
+The different classes of test are now documented under **Test suites** in the **Additional artifact description** section of `artifact-evaluation.md`.
 
 > 6. One simple example showing how to construct a new test, with further clarification if those instructions differ for the forward, backward, and linking analyses. I must mention that this is essentially the barrier to considering the artifact reusable at any level, and if that can be achieved by a short description of a simple example that perhaps even already exists, that would be great. I presume no expertise on my part with respect to how your tool actually works, but I am wondering whether the entire artifact could be improved to the point of being reusable by simply adding a 'tutorial' file with a couple of example and short, basic instructions after which one can play around with the system to discover more features.

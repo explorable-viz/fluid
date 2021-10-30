@@ -120,7 +120,7 @@ The Fluid source code used for the tests and web app are found in the `fluid/exa
 
 These are defined in `test/Util.purs`. Usage examples can be found in `test/Main.purs`. Note that most tests perform a forward and backward round-trip as a sanity-check, but only `testBwd` and `testLink` actually verify that the analysis results are as expected.
 
-- `test`: The most basic kind of test. Desugars the test program, evaluates it to obtain a trace, and performs a forward and backward analysis (over both evaluation and desugaring) to sanity-check that they execute without runtime failure. The output of the round-trip is printed to the console, and the (prettyprinted) output is compared against a supplied expected value. (Typically there is no selection, so the comparison is of unselected values.)
+- `test`: The most basic kind of test. Desugars the test program, evaluates it to obtain a trace, and performs a forward and backward analysis (over both evaluation and desugaring) to sanity-check that they execute without runtime failure. The output of the round-trip is printed to the console, and the (prettyprinted) output is compared against a supplied expected value. (Typically there is no selection, so the comparison is of unselected values, and thus does not test the functionality of the analysis.)
 
 - `testWithDataset`: Similar to `test`, but additionally loads a dataset (also represented as a `.fld` source file) and ensures that the test runs in an environment where that dataset has been bound to a variable. Only used for the legacy graphics tests (see below).
 
@@ -136,11 +136,11 @@ The test suites are defined in `test/Main.purs` and is organised as follows:
 
 - `test_linking` defines three linking tests, using the helper `testLink`. The source programs are in `fluid/example/linking`. There are tests for the bar chart/line chart and convolution examples in the paper, and also a simple linking test involving (nested) pairs.
 
-- `test_bwd` defines several tests of the backwards analysis, using the `testBwd` helper. The source programs are in `fluid/example/slicing`; each `.fld` file is paired with a `.expect.fld` containing the expectation for the source program selection.
+- `test_bwd` defines several tests of the backwards analysis and associated round-trip, using the `testBwd` helper. The source programs are in `fluid/example/slicing`; each `.fld` file is paired with a `.expect.fld` containing the expectation for the source program selection. For example, the `filter` test shows that if you backward analyse with just the first cons cell in the output selected, then after the round-trip, the selection grows to include the first element in the list as well. (If you retain enough information to know that the output is at least one element long, you also retain enough information to know what that element is.) The file `filter.expect.fld` shows that various source elements are selected, such as the cons constructor in in the definition of `filter`.
 
-- `test_desugaring` defines several tests which exercise the desugaring, using the `test` helper. The tests only check that the program desugars and executes correctly, not that the (source) program desugars to the expected core representation.
+- `test_desugaring` defines several tests which exercise the desugaring, using the `test` helper. The tests only check that the program desugars and executes correctly, not that the (source) program desugars to the expected core representation. For example, `list-comp-4` shows that the list comprehension `[ x | x : xs <- [[5], [4], [3], []] ]` desugars into a program that evaluates to the list `[5, 4, 3]`.
 
-- `test_misc` defines several tests which verify that various primitives, library functions and data types work as expected.
+- `test_misc` defines several tests which verify that various primitives, library functions and data types work as expected. For example, `filter` and `length` test list functions from the prelude; `array` tests array construction expressions; and `div-mod-quot-rem` tests 4 related primitive operations from the prelude.
 
 - `test_graphics` tests the (now deprecated) graphics library developed for the 0.3 release.
 
