@@ -38,6 +38,8 @@ Unfortunately this is not possible; the underscore notation is supported by the 
 
 > 5. I was unable to find the source of these benchmarks/tests in the paper as well as the artifact. Did you create them yourself? If so, please include a general description of the artifacts and perhaps list the 'classes' of tests in the set of tests, with an example for each. I'm essentially asking for a profile of your benchmarks.
 
-The different classes of test are now documented under **Test suites** in the **Additional artifact description** section of `artifact-evaluation.md`.
+The different classes of test are now documented under **Test suites** in the **Additional artifact description** section of `artifact-evaluation.md`, with some examples of each.
 
 > 6. One simple example showing how to construct a new test, with further clarification if those instructions differ for the forward, backward, and linking analyses. I must mention that this is essentially the barrier to considering the artifact reusable at any level, and if that can be achieved by a short description of a simple example that perhaps even already exists, that would be great. I presume no expertise on my part with respect to how your tool actually works, but I am wondering whether the entire artifact could be improved to the point of being reusable by simply adding a 'tutorial' file with a couple of example and short, basic instructions after which one can play around with the system to discover more features.
+
+This is an excellent idea, but unfortunately something we will have to come back to in a future release.
