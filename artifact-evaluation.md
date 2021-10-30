@@ -136,9 +136,11 @@ The test suite is defined in `test/Main.purs` and is organised into the followin
 
 #### Backwards analysis tests
 
-- `test_bwd`:
+`test_bwd` defines several tests of the backwards analysis, using the `testBwd` helper. The source programs are in `fluid/example/slicing`; each `.fld` file is paired with a `.expect.fld` containing the expectation for the source program selection.
 
-- `test_desugaring`:
+#### Desugaring tests
+
+`test_desugaring` defines
 - `test_misc`:
 - `test_graphics`: Tests the graphics library developed for the 0.3 release (since deprecated).
 
