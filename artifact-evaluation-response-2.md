@@ -1,6 +1,6 @@
 # Response to review comment @A7
 
-Many thanks again for your diligence and useful probing of our artifact. We have added a `README.md` with the information that was previously in the **Additional artifact description** section of `artifact-evaluation.md`, plus additional details to address the the issues below.
+Many thanks again for your diligence and useful probing of our artifact. We have added a `README.md` with the information that was previously in the **Additional artifact description** section of `artifact-evaluation.md`, and where possible have placed any additional instructions there.
 
 ## Questions pertaining to functionality of the artifact:
 
@@ -10,11 +10,11 @@ We have changed the test runner so that every tests emits its (prettyprinted) ou
 
 > 2. Can I be pointed to at least one example of forward analysis among the existing benchmarks?
 
-All `testBwd` tests actually test the round-trip of the backward analysis followed by the forward analysis, but there is unfortunately no support for standalone tests of the forward analysis. This way `testBwd` tests the round-trip is described in more detail in the `README.md`.
+All `testBwd` tests actually test the round-trip of the backward analysis followed by the forward analysis, but there is no support for standalone tests of the forward analysis. This way `testBwd` is used to test the round-trip, and the reasons for not (yet) supporting standalone forward analysis, are described in more detail in the `README.md`.
 
 > 3. Please make the fixes pertaining to (6) from @a7
 
-Thanks for spotting these inconsistencies. We have made the necessary fixes and clarifications, and amended the Step 4 instructions in `artifact-evaluation.md`:
+Thanks for spotting these inconsistencies. We have made the necessary fixes and clarifications, and amended the instructions for Step 4 in `artifact-evaluation.md`:
 
 ## Good to do for sake of clarity:
 

@@ -112,4 +112,4 @@ We made the following manual changes to the images for inclusion in the paper: w
 
 ## Additional artifact description
 
-See `README.md` for more information about the test suites and test infrastructure.
+See [`README.md`](README.md) for more information about the test suites and test infrastructure.
