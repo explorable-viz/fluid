@@ -126,23 +126,17 @@ These are defined in `test/Util.purs`. Usage examples can be found in `test/Main
 
 The test suite is defined in `test/Main.purs` and is organised into the following test functions.
 
-##### Scratchpad
+- `test_scratchpad` is useful for running tests one at a time; see **Running individual tests** above.
 
-`test_scratchpad` is useful for running tests one at a time; see **Running individual tests** above.
+- `test_linking` defines three linking tests, using the helper `testLink`. The source programs are in `fluid/example/linking`. There are tests for the bar chart/line chart and convolution examples in the paper, and also a simple linking test involving (nested) pairs.
 
-##### Linking tests
+- `test_bwd` defines several tests of the backwards analysis, using the `testBwd` helper. The source programs are in `fluid/example/slicing`; each `.fld` file is paired with a `.expect.fld` containing the expectation for the source program selection.
 
-`test_linking` defines three linking tests, using the helper `testLink`. The source programs are in `fluid/example/linking`. There are tests for the bar chart/line chart and convolution examples in the paper, and also a simple linking test involving (nested) pairs.
+- `test_desugaring` defines several tests which exercise the desugaring, using the `test` helper. The tests only check that the program desugars and executes correctly, not that the (source) program desugars to the expected core representation.
 
-#### Backwards analysis tests
+- `test_misc` defines several tests which verify that various primitives, library functions and data types work as expected.
 
-`test_bwd` defines several tests of the backwards analysis, using the `testBwd` helper. The source programs are in `fluid/example/slicing`; each `.fld` file is paired with a `.expect.fld` containing the expectation for the source program selection.
-
-#### Desugaring tests
-
-`test_desugaring` defines
-- `test_misc`:
-- `test_graphics`: Tests the graphics library developed for the 0.3 release (since deprecated).
+- `test_graphics` tests the graphics library developed for the 0.3 release (since deprecated).
 
 ### Creating your own tests
 

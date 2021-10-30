@@ -10,11 +10,9 @@ We have changed the test runner so that every tests emits its output(s) to the c
 
 > 2. Can I be pointed to at least one example of forward analysis among the existing benchmarks?
 
-The three linking tests () all make use of the De Morgan Dual of the forward analysis.
+The three linking tests in `test_linking` all make use of the De Morgan Dual of the forward analysis. These are now described in more detail in the **Additional artifact description** section of `artifact-evaluation.md`.
 
 The implementation does support running the forward analysis independently of the backward analysis, running the forward analysis without the De Morgan dual, and forward-analysing from code selections to output selections. Unfortunately we had neither the time nor space to explore these in the paper, although they are important topics that we intend to explore in the future.
-
-
 
 > 3. Please make the fixes pertaining to (6) from @a7
 
