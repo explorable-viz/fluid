@@ -33,7 +33,7 @@ These are defined in [`test/Util.purs`](test/Util.purs). Usage examples can be f
 
 The test suites are defined in [`test/Main.purs`](test/Main.purs) and is organised as follows:
 
-- `test_scratchpad` is useful for running tests one at a time; see **Running individual tests** above.
+- `test_scratchpad` is useful for running tests one at a time; see **Running individual tests** in [`artifact-evaluation.md`](artifact-evaluation.md).
 
 - `test_linking` defines three linking tests, using the helper `testLink`. The source programs are in `fluid/example/linking`. There are tests for the bar chart/line chart and convolution examples in the paper, and also a simple linking test involving (nested) pairs.
 
