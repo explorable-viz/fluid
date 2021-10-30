@@ -112,10 +112,13 @@ The Fluid source code used for the tests and web app are found in the `fluid/exa
 
 #### Test helpers
 
-`test`
-`testBwd`
-`testLink`
-`testWithDataset`
+- `test`: This is the most basic kind of test. It desugars the test program, evaluates it to obtain a trace, and performs a forward and backward analysis (over both evaluation and desugaring) to sanity-check that the analyses execute without a runtime failure. It also compares the (prettyprinted) output of the program against a supplied expected value.
+
+- `testBwd` This works similarly to `test`, but additionally checks that the backward analysis step produces an expected selection on the (prettyprinted) source program. The prettyprinter will add underscores to any selected expressions or values, allowing the test expectation to be provided as an additional source file (with extension `.expected.fld` in the same folder as the test) where expressions which are expected to be selected are surrounded by underscores. Note, however, that the underscore notation is not supported by the parser, and so one cannot initiate a forward analysis by using the underscore notation in a `.fld` source file.
+
+- `testLink`
+
+- `testWithDataset`
 
 ### Creating your own tests
 
