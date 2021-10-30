@@ -18,6 +18,8 @@ The implementation does support running the forward analysis independently of th
 
 > 3. Are there any other examples of the linking feature apart from the convolutions among the existing benchmarks? Please point me to one if possible.
 
+There are existing linking examples, yes. We have added an overview of the test suite to the **Additional artifact description** section of `artifact-evaluation.md` to make this clear.
+
 > 4. I would at least like to be able to change the underscores on a test case and see that the new output now has the corresponding relevant bits highlighted. As I mentioned in question (3) in @a7, I am wondering if this is simpler than creating a new test from scratch. I believe this is important because being able to do at least this much makes your tool less opaque, and might elicit more trust in your artifact even as it relates to your existing set of benchmarks. As it stands currently, I'm locked into just witnessing the success on your specific examples with specific selections.
 
 ### Good to do, even if outside scope of artifact that will be archived for this conference:
