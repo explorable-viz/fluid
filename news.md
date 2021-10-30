@@ -1,8 +1,5 @@
 ## Linked visualisations via Galois dependencies
 
-![purescript](https://github.com/explorable-viz/fluid/workflows/purescript/badge.svg)
-![typescript](https://github.com/explorable-viz/fluid/workflows/typescript/badge.svg)
-
 ### Recent activity
 
 (**W** indicates a Wrattler issue.)
