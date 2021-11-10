@@ -2,6 +2,7 @@
 
 ![purescript](https://github.com/explorable-viz/fluid/workflows/purescript/badge.svg)
 ![typescript](https://github.com/explorable-viz/fluid/workflows/typescript/badge.svg)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5668384.svg)](https://doi.org/10.5281/zenodo.5668384)
 
 To install and run the software see the [POPL 2022 artifact evaluation instructions](artifact-evaluation.md).
 
