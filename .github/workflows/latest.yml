@@ -1,42 +1,39 @@
-name: typescript
+name: latest
 
 on:
   push:
     paths-ignore:
+    - 'old/**'
     - '**.md'
   pull_request:
     paths-ignore:
+    - 'old/**'
     - '**.md'
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
-      with:
-        ref: 'v0.3.1'
     - name: test
       run: |
-        sudo npm install karma -g
-        cd old
         yarn install
-        yarn run test
+        yarn run bundle-tests
+        yarn run tests
 
   deploy:
     runs-on: ubuntu-18.04
-    needs: build
+    needs: test
     if: github.ref == 'refs/heads/release'
     steps:
     - uses: actions/checkout@v2
-      with:
-        ref: 'v0.3.1'
     - name: bundle
       run: |
-        cd old
         yarn install
-        yarn run bundle
+        yarn run bundle-app
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: old/dist/
+        publish_dir: dist/app/
+        destination_dir: latest/
