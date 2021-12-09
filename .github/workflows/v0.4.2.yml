@@ -1,14 +1,8 @@
 name: v0.4.2
 
 on:
-  push:
-    paths-ignore:
-    - 'old/**'
-    - '**.md'
-  pull_request:
-    paths-ignore:
-    - 'old/**'
-    - '**.md'
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   test-and-deploy:
