@@ -1,4 +1,4 @@
-name: purescript
+name: current
 
 on:
   push:

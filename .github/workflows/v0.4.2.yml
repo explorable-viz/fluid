@@ -1,4 +1,4 @@
-name: purescript
+name: v0.4.2
 
 on:
   push:
