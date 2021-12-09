@@ -1,4 +1,4 @@
-name: typescript
+name: v0.3.1-typescript
 
 on:
   push:
