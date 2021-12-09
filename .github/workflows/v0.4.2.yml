@@ -11,7 +11,7 @@ on:
     - '**.md'
 
 jobs:
-  test:
+  test-and-deploy:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
@@ -22,22 +22,12 @@ jobs:
         yarn install
         yarn run bundle-tests
         yarn run tests
-
-  deploy:
-    runs-on: ubuntu-18.04
-    needs: test
-    if: github.ref == 'refs/heads/release'
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        ref: 'v0.4.2'
     - name: bundle
       run: |
-        yarn install
         yarn run bundle-app
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: dist/app/
-        destination_dir: new/
+        destination_dir: 0.4.2/
