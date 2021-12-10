@@ -3,7 +3,7 @@
   "scripts": {
     "build-app": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Demo --to dist/app/app.js",
     "build-tests": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/test/app.js",
-    "bundle-app": "yarn run clean-app && yarn run build-app && parcel build --no-minify -d dist/app --public-url /new/ index.html",
+    "bundle-app": "wrap () { yarn run clean-app && yarn run build-app && parcel build --no-minify -d dist/app --public-url /\"$*\"/ index.html }; wrap",
     "bundle-tests": "yarn run clean-tests && yarn run build-tests && parcel build -d dist/test tests.html",
     "clean-app": "rm -rf dist/app",
     "clean-tests": "rm -rf dist/test",
