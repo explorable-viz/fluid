@@ -1,9 +1,9 @@
 name: v0.4.2
 
 on:
+  branches:
+    - 'v0.4.2'
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
 
 jobs:
   test-and-deploy:
