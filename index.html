@@ -39,24 +39,17 @@
 </div>
 <div class="col-9-12">
 
-	<p>Digital technology is transforming the way scientists generate, evaluate and communicate knowledge. <b>Fluid</b> is a functional programming language which makes computational artefacts such as charts, figures and statistical analyses more transparent and explorable. A Fluid chart is written as a purely functional view, but the generated charts provide affordances that allow a reader to discover how views relate to each other, and to the underlying code and datasets. The current prototype allows us to <emph>link</emph> charts to other charts, so that the reader can highlight parts of one chart and have the relevant parts of the other chart be automatically highlighted, and vice versa (best viewed in Chrome):
+   Fluid utilises program analysis/data provenance techniques for connecting visualisations to data sources in a fine-grained way. For example, our proof-of-concept implementation can turn a visual selection in a bar chart into a "data selection" (a restricted view of a dataset where only relevant rows are shown, and relevant cells within that are highlighted):
 
-	<div id="app-root"></div>
+   <img width="672" alt="data-linking-merged" src="https://user-images.githubusercontent.com/121074/141984853-c69e39a3-4305-4515-8a5c-2856484f34cb.png">
 
-	<p>The left chart show total renewable energy output for bio, hydro, solar and wind (colour-coded) for China, USA and Germany in 2015. The chart on the right shows China's renewables output over time for the same four energy types, with the black line plotting the total. Dependency-wise, these two charts are "cognate": they have common data dependencies. Now consider the data for China in the left chart. How does this relate to what we can see in the other chart? Well, the chart on the left is a <emph>stacked</emph> bar chart, meaning it represents a running total. Thus, if we consider each rectangle in the stacked bar for China, starting from the bottom, the <emph>y-coordinate</emph> of each rectangle represents the <emph>sum</emph> of an increasing number of 2015 data points in the right-hand chart.
+   This data linking feature can also be used to link visualisations to other visualisations, something possible with some effort and/or restrictions with existing tools, but which our approach provides automatically:
 
-	<p>Fluid lets us explore these relationships. For example, you can express interest in the y-coordinate of a rectangle by moving your mouse towards its bottom edge. Doing so will pop up a toolship showing the value of that attribute, and as well as any attributes in the other chart that depend on the same underlying data. Visualisation libraries such as <a href="https://docs.bokeh.org/en/latest/">Bokeh</a> and spatial analytics applications like <a href="https://geodacenter.github.io/">GeoDa</a> provide limited support for this kind of linking, but usually only for specific predefined visualisations, or with a certain amount of programmer effort. Fluid takes a more foundational approach, through a <b>dependency-tracking runtime</b> that makes linking automatic and pervasive.
+   <img width="690" alt="vis-linking" src="https://user-images.githubusercontent.com/121074/141985533-43d7cd4c-798a-4c40-b9de-4372fc3fe9c8.png">
 
-   <p>Why is this a programming languages problem? Well, to implement linking in a domain-general way ultimately requires a new kind of programming language semantics – not a new kind of language, but rather a new style of semantics that relates parts of programs to parts of their outputs in a fine-grained way. Fluid builds on such an approach, called <b>Galois slicing</b>, which we are adapting to the linking problem for data visualisation. The approach involves a bidirectional dynamic analysis which (minimally) relates parts of the code and data to the parts of visualisations and other outputs that they contribute to. By round-tripping this analysis via the raw data (black arrows below), it is possible to link selections in one view to selections in another in a precise way (grey arrows):
-
-   <p><img src="image/galois-linking.png" style="width:400px">
-
-   <p>A 5-month <a href="https://www.turing.ac.uk/research/research-projects/data-science-toolkit-explorable-data-visualisations">pilot project</a> to prototype this idea was supported by The Alan Turing Institute from January to May 2019, through their AI for Science and Government programme. The project was developed and led by <a href="http://dynamicaspects.org/research/">Roly Perera</a> and <a href="http://tomasp.net/">Tomas Petricek</a>.
+   As well as offering the first fully automated (and thus potentially pervasive) solution to this well-recognised problem in data visualisation, our approach to data linking is "transparent", in that a view of the specific data elements which "explain" why the two visual elements are linked can always be made available. Over the next year we plan to extend this into a mature toolkit for authoring data-linked visualisations for use in data journalism and science publishing, enabling online articles with visual components which are connected automatically to the data sources being visualised.
 
 </div>
 </div>
-</div>
-
-<script type="text/javascript" src="/main.bundle.js"></script></body>
 
 </body></html>
