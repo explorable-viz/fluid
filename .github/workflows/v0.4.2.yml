@@ -19,7 +19,7 @@ jobs:
         yarn run tests
     - name: bundle
       run: |
-        yarn run bundle-app /new/ index.html
+        yarn run bundle-app /0.4.2/ index.html
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
