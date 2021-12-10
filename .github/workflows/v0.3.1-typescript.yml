@@ -1,0 +1,31 @@
+name: v0.3.1-typescript
+
+on:
+  push:
+    branches:
+      - 'v0.3.1'
+  workflow_dispatch:
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: 'v0.3.1'
+    - name: test
+      run: |
+        sudo npm install karma -g
+        cd old
+        yarn install
+        yarn run test
+    - name: bundle
+      run: |
+        cd old
+        yarn install
+        yarn run bundle
+    - name: gh-pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: old/dist/
