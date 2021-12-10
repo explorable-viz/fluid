@@ -1,0 +1,10 @@
+let f {fst: x, snd: []} = x;
+    f {fst: x, snd: (y: xs)} = y;
+    g {} = 7
+in {
+   a: f {fst: 5, snd: []},
+   b: f {fst: 4, snd: [6, 7]},
+   c: g {},
+   d: [ x | {fst: x, snd: []} <- [{fst: 5, snd: []}, {fst: 6, snd: [7, 8]}] ],
+   e: {a: 4, b: {c: 6, d: 7}}.b.d
+}
