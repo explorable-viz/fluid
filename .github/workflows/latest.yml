@@ -30,7 +30,7 @@ jobs:
     - name: bundle
       run: |
         yarn install
-        yarn run bundle-app new
+        yarn run bundle-app /new/ index.html
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:
