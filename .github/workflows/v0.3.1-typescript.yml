@@ -1,25 +1,23 @@
-name: typescript
+name: v0.3.1-typescript
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
-  build:
+  test-and-deploy:
     runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
+      with:
+        ref: 'v0.3.1'
     - name: test
       run: |
         sudo npm install karma -g
         cd old
         yarn install
         yarn run test
-
-  deploy:
-    runs-on: ubuntu-18.04
-    needs: build
-    if: github.ref == 'refs/heads/release'
-    steps:
-    - uses: actions/checkout@v2
     - name: bundle
       run: |
         cd old
@@ -30,3 +28,4 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: old/dist/
+        destination_dir: 0.3.1/
