@@ -1,8 +1,9 @@
 name: v0.4.2
 
 on:
-  branches:
-    - 'v0.4.2'
+  push:
+    branches:
+      - 'v0.4.2'
   workflow_dispatch:
 
 jobs:
