@@ -11,8 +11,7 @@
     "bundle-tests-watch": "yarn run build-tests --watch && parcel watch index.html",
     "browser-tests": "karma start --browsers=Chrome --singleRun=false",
     "serve-app": "yarn run clean-app && yarn run build-app && parcel serve index.html",
-    "tests": "karma start",
-    "deploy-app": "yarn run bundle-app && gh-pages --dist dist/app --dest new"
+    "tests": "karma start"
   },
   "staticFiles": {
     "staticPath": {
