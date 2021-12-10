@@ -1,0 +1,33 @@
+import { Class } from "../util/Core";
+import { ExplValue } from "../DataValue";
+import { GraphicsElement, Marker } from "../Graphics";
+import { SVG } from "./Core";
+import { ExplValueCursor } from "./Cursor";
+import { Pane } from "./Pane";
+export declare const svg: SVG;
+declare type TransformFun = ([x, y]: [number, number]) => [number, number];
+export declare class GraphicsRenderer {
+    editor: Pane.Pane;
+    root: SVGSVGElement;
+    ancestors: SVGElement[];
+    translations: TransformFun[];
+    scalings: TransformFun[];
+    showInvisible: boolean;
+    constructor(editor: Pane.Pane, root: SVGSVGElement, initialAncestor: SVGElement);
+    readonly current: SVGElement;
+    readonly transform: TransformFun;
+    readonly scale: TransformFun;
+    render(tg: ExplValue<GraphicsElement>, [w, h]: [number, number]): void;
+    renderElement(tg: ExplValueCursor): SVGElement;
+    withLocalFrame<T>(scale: TransformFun, translate: TransformFun, localRender: () => T): T;
+    circle(tg: ExplValueCursor): SVGCircleElement;
+    group(tg: ExplValueCursor): SVGGElement;
+    line(tg: ExplValueCursor): SVGLineElement;
+    polyline(tg: ExplValueCursor): SVGPolylineElement;
+    polymarkers(tg: ExplValueCursor): SVGGElement;
+    rect(tg: ExplValueCursor): SVGRectElement;
+    text(tg: ExplValueCursor): SVGTextElement;
+    viewport(tg: ExplValueCursor): SVGSVGElement;
+    setMarkerMid(el: SVGElement, C: Class<Marker>, colour: string): void;
+}
+export {};
