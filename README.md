@@ -1,10 +1,38 @@
-## Linked visualisations via Galois dependencies
+## Installation instructions
 
 ![purescript](https://github.com/explorable-viz/fluid/workflows/purescript/badge.svg)
 ![typescript](https://github.com/explorable-viz/fluid/workflows/typescript/badge.svg)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5668384.svg)](https://doi.org/10.5281/zenodo.5668384)
 
-To install and run the software see the [POPL 2022 artifact evaluation instructions](artifact-evaluation.md).
+### Software required
+
+- git
+- yarn
+
+#### Running the web app
+
+- `yarn install` to install application dependencies
+- `yarn run bundle-app` to build app
+- `yarn parcel serve index.html` to start web server
+- open a browser (preferably Chrome) at `http://localhost:1234/`.
+
+#### Running the test suite
+
+Alternatively, to run tests:
+- `yarn install` to install application dependencies (if not already done)
+- `yarn run clean-tests && yarn build-tests` to build tests
+- `yarn run tests` to run the tests in Chrome headless mode
+
+The compiled output for the tests is written to `dist/test/app.js`. The tests (there are 56)_ should pass in about 4 minutes.
+
+#### Running individual tests
+
+Running an individual test takes a small amount of manual effort: one must replace the top-level invocation of the test suite by a call to a predefined function called `test_scratchpad`, which runs a list of specific tests. Specifically:
+
+* In `test/Main.purs`, in the first function of the file, comment out `tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]` and
+uncomment `tests = [ test_scratchpad ]`.
+* Insert the code for the test you want to run into the list in `test_scratchpad`. If you want to run a specific test, you can copy the required test invocation code from any of `test_desugaring`, `test_misc`, `test_bwd`, `test_linking` and `test_graphics`. Creating your own test from scratch takes a certain understanding of the system; we would be happy to help with this.
+* Then running the whole test suite, using the instructions above, will run only the test(s) specified in `test_scratchpad`.
 
 ### Directory structure
 
@@ -12,7 +40,7 @@ The Fluid source code used for the tests and web app are found in the [`fluid/ex
 
 ### Overview of tests and test infrastructure
 
-#### Testing analyses described in paper
+#### Testing forward and backward analyses
 
 Test helpers (see below) are provided for testing the composition of the backward analysis with the forward analysis (`testBwd`) and the composition of the backward analysis with the De Morgan dual of the forward analysis (`testLink`). There is no support yet for standalone tests of the forward analysis, for reasons given below. All `testBwd` tests verify the round-trip with the forward analysis by accepting a final argument, of type string, containing the expected (prettyprinted) output after the round-trip. (See `testWithSetup` in `test/Util.purs` for the implementation.) In some cases (such as the `map` test) the output selection is preserved by the round-trip; in other cases (such as `intersperse` or `filter`) the output selection gets larger. This is the key round-tripping property for forwards-after-backwards described in the paper.
 
@@ -32,7 +60,7 @@ These are defined in [`test/Util.purs`](test/Util.purs). Usage examples can be f
 
 #### Test suites
 
-The test suites are defined in [`test/Main.purs`](test/Main.purs) and is organised as follows:
+The test suites are defined in [`test/Main.purs`](test/Main.purs) and are organised as follows:
 
 - `test_scratchpad` is useful for running tests one at a time; see **Running individual tests** in [`artifact-evaluation.md`](artifact-evaluation.md).
 
