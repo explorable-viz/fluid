@@ -10,7 +10,7 @@ module.exports = [{
    },
    output: {
       filename: "[name].bundle.js",
-      publicPath: "/"
+      publicPath: "/0.3.1/"
    },
    resolve: {
       // Add '.ts' as a resolvable extension.
