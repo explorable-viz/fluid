@@ -75,7 +75,8 @@ module.exports = [{
       filename: "[name].bundle.js",
       library: "", // avoids extra indirection; can I drop entirely?
       libraryTarget: "commonjs",
-      path: path.resolve(__dirname, "dist")
+      path: path.resolve(__dirname, "dist"),
+      publicPath: "/0.3.1/"
    },
    resolve: {
       // Add '.ts' as a resolvable extension.
