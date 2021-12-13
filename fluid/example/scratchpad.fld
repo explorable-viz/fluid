@@ -1,6 +1,0 @@
-let nth2 i j xs = nth (i - 1) (nth (j - 1) xs) in
-let xs = [[1, 4, 8],
-          [3, 2, 17],
-          [0, 14, 6]];
-    ys = [| nth2 i j xs | (i, j) in (3, 3) |]
-in ys ! (3, 2)
