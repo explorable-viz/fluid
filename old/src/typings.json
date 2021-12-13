@@ -1,7 +1,0 @@
-{
-    "name": "fluid",
-    "globalDependencies": {
-        "three": "registry:dt/three#0.0.0+20161004170959",
-        "three-trackballcontrols": "registry:dt/three-trackballcontrols#0.0.0+20160730160925"
-    }
-}
