@@ -8,7 +8,7 @@ import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import Data.Profunctor.Strong (first)
-import App.DrawMatrix (MatrixView(..), IntMatrix, drawMatrix)
+import App.MatrixView (MatrixView(..), IntMatrix, drawMatrix)
 import App.Util (HTMLId)
 import Bindings (Bindings, Bind, Var, find)
 import DataType (cBarChart, cCons, cLineChart, cLinePlot, cNil)
@@ -17,7 +17,7 @@ import Lattice (𝔹, expand)
 import Primitive (Slice, class ToFrom, as, match, match_fwd)
 import Util (type (×), (×), type (+), successful)
 import Util.SnocList (SnocList)
-import Val (Array2, MatrixRep, Val)
+import Val (MatrixRep, Val)
 import Val (Val(..)) as V
 
 type Fig = {

@@ -1,4 +1,4 @@
-module App.DrawMatrix where
+module App.MatrixView where
 
 import Prelude
 import Effect (Effect)
