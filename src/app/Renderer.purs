@@ -25,10 +25,8 @@ type Fig = {
    subfigs :: Array SubFig
 }
 
-foreign import drawFig :: Fig -> Effect Unit
-
-drawFig2 :: Fig -> Effect Unit
-drawFig2 { divId, subfigs } =
+drawFig :: Fig -> Effect Unit
+drawFig { divId, subfigs } =
    sequence_ $ drawSubFig divId <$> subfigs
 
 foreign import drawBarChart :: HTMLId -> BarChart -> Effect Unit

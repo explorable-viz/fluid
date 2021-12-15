@@ -334,33 +334,6 @@ function className (o) {
    return o.constructor.name
 }
 
-// Figs -> Effect Unit
-function drawFig ({ divId, subfigs }) {
-   return () => {
-      for (const fig of subfigs) {
-         // Bit horrible but will do for now.
-         if (className(fig) == "EnergyTableView") {
-            drawTable(divId, fig.value0)()
-         }
-         else
-         if (className(fig) == "BarChartFig") {
-            drawBarChart(divId, fig.value0)()
-         }
-         else
-         if (className(fig) == "LineChartFig") {
-            drawLineChart(divId, fig.value0)()
-         }
-         else
-         if (className(fig) == "MatrixFig") {
-            drawMatrix(divId, fig.value0)()
-         }
-         else {
-            throw new Error(`Figure type '${className(fig)}' not recognised.`)
-         }
-      }
-   }
-}
-
 // Currently unused.
 function saveImage (svg) {
    const svg_xml = (new XMLSerializer()).serializeToString(svg),
@@ -401,7 +374,6 @@ function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
 
-exports.drawFig = drawFig
 exports.drawBarChart = curry2(drawBarChart)
 exports.drawLineChart = curry2(drawLineChart)
 exports.drawMatrix = curry2(drawMatrix)
