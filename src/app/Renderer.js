@@ -3,11 +3,6 @@
 const d3 = require("d3")
 const d3tip = require("d3-tip")
 
-const fontFamily              = "Roboto, sans-serif",
-      strokeWidth             = 0.5,
-      titleTextFill           = 'Black',
-      titleFontSize           = '9pt'
-
 function drawMatrix (
    id, {
       title,                                                               // String
@@ -15,6 +10,7 @@ function drawMatrix (
    }
 ) {
    return () => {
+      const strokeWidth = 0.5
       const w = 30, h = 30
       const div = d3.select('#' + id)
       const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
@@ -56,7 +52,6 @@ function drawMatrix (
          .attr('x', hMargin / 2)
          .attr('y', vMargin / 2)
          .attr('class', 'title-text')
-         .attr('font-size', titleFontSize)
          .attr('dominant-baseline', 'middle')
          .attr('text-anchor', 'left')
    }
@@ -134,8 +129,6 @@ function drawBarChart (
          .attr('x', width / 2)
          .attr('y', height + 35)
          .attr('class', 'title-text')
-         .attr('font-family', fontFamily)
-         .attr('font-size', titleFontSize)
          .attr('dominant-baseline', 'bottom')
          .attr('text-anchor', 'middle')
    }
@@ -257,8 +250,6 @@ function drawLineChart (
          .attr('x', width / 2)
          .attr('y', height + 35)
          .attr('class', 'title-text')
-         .attr('font-family', fontFamily)
-         .attr('font-size', titleFontSize)
          .attr('dominant-baseline', 'bottom')
          .attr('text-anchor', 'middle')
    }
