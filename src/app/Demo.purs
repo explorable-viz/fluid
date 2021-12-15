@@ -10,7 +10,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart, makeSubFig)
+import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeSubFig)
 import Bindings (Bind, Var, find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -160,7 +160,7 @@ convolutionFigs = do
 
 linkingFigs :: Partial => Aff (Array Fig)
 linkingFigs = do
-   let vars = [{ var: "data", makeFig: makeEnergyTable }] :: Array VarSpec
+   let vars = [{ var: "data", makeFig: makeSubFig }] :: Array VarSpec
    sequence [
       linkFig "fig-1" {
          file1: File "bar-chart",
@@ -168,7 +168,7 @@ linkingFigs = do
          dataFile: File "renewables",
          dataVar: "data",
          v1_sel: selectBarChart_data (selectNth 1 (select_y))
-       } makeBarChart makeLineChart makeEnergyTable
+       } makeSubFig makeSubFig makeSubFig
    ]
 
 main :: Effect Unit

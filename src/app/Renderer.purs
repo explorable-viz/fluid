@@ -96,11 +96,12 @@ makeSubFig { title, uv: u × v } =
          else
          if c == cLineChart
          then makeLineChart { title, uv: u × v }
-         else error "Unsupported visualisation datatype"
+         else
+         if c == cNil || c == cCons
+         then makeEnergyTable { title, uv: u × v }
+         else error $ show c <> " is not a visualisation constructor"
       V.Matrix _ _ ->
          matrixFig { title, uv: u × v }
-      V.Record _ _ ->
-         makeEnergyTable { title, uv: u × v }
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
