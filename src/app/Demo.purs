@@ -136,13 +136,13 @@ fig divId { file, makeSubfigs } = do
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId , subfigs }
 
-linkFig :: String -> LinkConfig -> MakeSubFig -> MakeSubFig -> MakeSubFig -> Aff Fig
-linkFig divId config o1_fig o2_fig data_fig = do
+linkFig :: Partial => String -> LinkConfig -> Aff Fig
+linkFig divId config = do
    link <- doLink config
    pure { divId, subfigs: [
-      o1_fig { title: "primary view", uv: config.v1_sel × link.v1 },
-      o2_fig { title: "linked view", uv: link.v2 },
-      data_fig { title: "common data", uv: link.data_sel }
+      makeSubFig { title: "primary view", uv: config.v1_sel × link.v1 },
+      makeSubFig { title: "linked view", uv: link.v2 },
+      makeSubFig { title: "common data", uv: link.data_sel }
    ] }
 
 convolutionFigs :: Partial => Aff (Array Fig)
@@ -168,7 +168,7 @@ linkingFigs = do
          dataFile: File "renewables",
          dataVar: "data",
          v1_sel: selectBarChart_data (selectNth 1 (select_y))
-       } makeSubFig makeSubFig makeSubFig
+       }
    ]
 
 main :: Effect Unit
