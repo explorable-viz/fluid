@@ -50,12 +50,8 @@ splitDefs ρ0 s' = unsafePartial $ do
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
 
-type VarSpec = {
-   var :: Var
-}
-
-varFig :: Partial => VarSpec × Slice (Val 𝔹) -> SubFig
-varFig ({ var: x } × uv) = makeSubFig { title: x, uv }
+varFig :: Partial => Var × Slice (Val 𝔹) -> SubFig
+varFig (x × uv) = makeSubFig { title: x, uv }
 
 type ExampleEval = {
    e :: Expr 𝔹,
@@ -71,11 +67,11 @@ evalExample { ρ0, ρ, s } = do
    t × o <- eval ρ0ρ e
    pure { e, ρ0ρ, t, o }
 
-varFig' :: VarSpec -> Slice (Env 𝔹) -> MayFail SubFig
-varFig' spec (ρ' × ρ) = do
-   v <- find spec.var ρ
-   v' <- find spec.var ρ'
-   unsafePartial $ pure $ varFig (spec × (v' × v))
+varFig' :: Var -> Slice (Env 𝔹) -> MayFail SubFig
+varFig' x (ρ' × ρ) = do
+   v <- find x ρ
+   v' <- find x ρ'
+   unsafePartial $ pure $ varFig (x × (v' × v))
 
 valFigs :: ExampleEval -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig)
 valFigs q { vars, o_fig, o' } (ρ' × ρ) = do
@@ -84,7 +80,7 @@ valFigs q { vars, o_fig, o' } (ρ' × ρ) = do
       figs <> [ o_fig { title: "output", uv: o' × q.o } ]
 
 type NeedsSpec = {
-   vars  :: Array VarSpec, -- variables we want subfigs for
+   vars  :: Array Var,     -- variables we want subfigs for
    o_fig :: MakeSubFig,    -- for output
    o'    :: Val 𝔹          -- selection on output
 }
@@ -104,9 +100,9 @@ needs spec { ρ0, ρ, s } = do
    pure $ { ρ0', ρ' } × (figs <> [ makeSubFig { title: "output", uv: o'' × q.o } ])
 
 type NeededBySpec = {
-   vars     :: Array VarSpec,    -- variables we want subfigs for
-   o_fig    :: MakeSubFig,       -- for output
-   ρ'       :: Env 𝔹             -- selection on local env
+   vars     :: Array Var,    -- variables we want subfigs for
+   o_fig    :: MakeSubFig,   -- for output
+   ρ'       :: Env 𝔹         -- selection on local env
 }
 
 neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array SubFig)
@@ -150,7 +146,7 @@ convolutionFigs = do
       fig "fig-conv-1" {
          file: File "slicing/conv-emboss",
          makeSubfigs: needs {
-            vars: [{ var: "image" }, { var: "filter" }],
+            vars: ["image", "filter"],
             o_fig: makeSubFig,
             o': selectCell 2 2 5 5
          }
@@ -159,7 +155,7 @@ convolutionFigs = do
 
 linkingFigs :: Partial => Aff (Array Fig)
 linkingFigs = do
-   let vars = [{ var: "data" }] :: Array VarSpec
+   let vars = ["data"] :: Array Var
    sequence [
       linkFig "fig-1" {
          file1: File "bar-chart",
