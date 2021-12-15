@@ -10,7 +10,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart, matrixFig)
+import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart, makeSubFig)
 import Bindings (Bind, Var, find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -151,8 +151,8 @@ convolutionFigs = do
       fig "fig-conv-1" {
          file: File "slicing/conv-emboss",
          makeSubfigs: needs {
-            vars: [{ var: "image", makeFig: matrixFig }, { var: "filter", makeFig: matrixFig }],
-            o_fig: matrixFig,
+            vars: [{ var: "image", makeFig: makeSubFig }, { var: "filter", makeFig: makeSubFig }],
+            o_fig: makeSubFig,
             o': selectCell 2 2 5 5
          }
       }
