@@ -33,10 +33,11 @@ newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × �
 newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord }
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
+newtype MatrixView = MatrixView { title :: String, selColour :: String, matrix :: IntMatrix }
 newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
 
 data SubFig =
-   MatrixFig { title :: String, selColour :: String, matrix :: IntMatrix } |
+   MatrixFig MatrixView |
    EnergyTableView EnergyTable |
    LineChartFig LineChart |
    BarChartFig BarChart
@@ -47,7 +48,7 @@ type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 matrixFig :: String -> MakeSubFig
 matrixFig selColour { title, uv: (u × v) } =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
-   MatrixFig { title, selColour, matrix: matrixRep vss2 }
+   MatrixFig (MatrixView { title, selColour, matrix: matrixRep vss2 } )
 
 makeEnergyTable :: Partial => MakeSubFig
 makeEnergyTable { title, uv: (u × v) } =

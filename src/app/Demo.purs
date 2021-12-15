@@ -10,8 +10,8 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart)
-import Bindings (Bind, Var, find, update)
+import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart, matrixFig)
+import Bindings (Bind, Var, (↦), find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
@@ -22,7 +22,7 @@ import Lattice (𝔹, botOf, neg)
 import Module (File(..), open, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (LinkConfig, doLink, selectBarChart_data, selectNth, select_y)
+import Test.Util (LinkConfig, doLink, selectBarChart_data, selectCell, selectNth, select_y)
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
 import Util.SnocList (splitAt)
 import Val (Env, Val)
@@ -148,6 +148,20 @@ linkFig divId config o1_fig o2_fig data_fig = do
 systemCol :: String
 systemCol = "rgb(160,209,255)"
 
+convolutionFigs :: Partial => Aff (Array Fig)
+convolutionFigs = do
+   let userSel × systemSel = "LightGreen" × systemCol
+   sequence [
+      fig "fig-conv-1" {
+         file: File "slicing/conv-emboss",
+         makeSubfigs: needs {
+            vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
+            o_fig: matrixFig userSel,
+            o': selectCell 2 2 5 5
+         }
+      }
+   ]
+
 linkingFigs :: Partial => Aff (Array Fig)
 linkingFigs = do
    let vars = [{ var: "data", makeFig: makeEnergyTable }] :: Array VarSpec
@@ -158,16 +172,12 @@ linkingFigs = do
          dataFile: File "renewables",
          dataVar: "data",
          v1_sel: selectBarChart_data (selectNth 1 (select_y))
-       } makeBarChart makeLineChart makeEnergyTable,
-      fig "fig-6" {
-         file: File "linking/bar-chart",
-         makeSubfigs: needs { vars, o_fig: makeBarChart, o': selectBarChart_data (selectNth 0 (select_y)) }
-      }
+       } makeBarChart makeLineChart makeEnergyTable
    ]
 
 main :: Effect Unit
 main = unsafePartial $
-   flip runAff_ linkingFigs
+   flip runAff_ ((<>) <$> convolutionFigs <*> linkingFigs)
    case _ of
       Left err -> log $ show err
       Right figs ->
