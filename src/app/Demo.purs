@@ -147,13 +147,12 @@ linkFig divId config o1_fig o2_fig data_fig = do
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
-   let userSel = "LightGreen"
    sequence [
       fig "fig-conv-1" {
          file: File "slicing/conv-emboss",
          makeSubfigs: needs {
-            vars: [{ var: "image", makeFig: matrixFig userSel }, { var: "filter", makeFig: matrixFig userSel }],
-            o_fig: matrixFig userSel,
+            vars: [{ var: "image", makeFig: matrixFig }, { var: "filter", makeFig: matrixFig }],
+            o_fig: matrixFig,
             o': selectCell 2 2 5 5
          }
       }

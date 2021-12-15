@@ -4,7 +4,6 @@ import Prelude
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (zip, zipWith)
-import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import Data.Profunctor.Strong (first)
@@ -68,9 +67,10 @@ instance barChartSubFig :: SubFigC BarChart where
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
 type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 
-matrixFig :: String -> MakeSubFig
-matrixFig selColour { title, uv: (u × v) } =
-   let vss2 = fst (match_fwd (u × v)) × fst (match v) in
+matrixFig :: MakeSubFig
+matrixFig { title, uv: (u × v) } =
+   let selColour = "LightGreen"
+       vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig (MatrixView { title, selColour, matrix: matrixRep vss2 } )
 
 makeEnergyTable :: Partial => MakeSubFig
