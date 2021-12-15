@@ -1,20 +1,20 @@
 @charset "UTF-8";
 body {
-    font-size: 11pt
+   font-size: 11pt
 }
 
 .glowing,
 a {
-    transition: all .25s
+   transition: all .25s
 }
 
 .hot,
 a:hover {
-    text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0
+   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0
 }
 
 .nowrap {
-    white-space: nowrap
+   white-space: nowrap
 }
 
 code {
@@ -22,13 +22,13 @@ code {
 }
 
 body {
-    font-family: "Roboto", sans-serif;
-    font-weight: 300;
-    line-height: 1.25;
-    padding: 0;
-    margin: 0;
-    background-color: #FFFFFF; /* #181818; */
-    color: #404040
+   font-family: "Roboto", sans-serif;
+   font-weight: 300;
+   line-height: 1.25;
+   padding: 0;
+   margin: 0;
+   background-color: #FFFFFF; /* #181818; */
+   color: #404040
 }
 
 .badge,
@@ -38,72 +38,72 @@ h3.title {
 }
 
 .align-right {
-    text-align: right
+   text-align: right
 }
 
 h3.title {
-    margin-top: 10pt;
-    margin-bottom: 0;
-    color: darkblue;
-    font-size: '24px'
+   margin-top: 10pt;
+   margin-bottom: 0;
+   color: darkblue;
+   font-size: '24px'
 }
 
 .glowing {
-    transition-timing-function: ease-out
+   transition-timing-function: ease-out
 }
 
 a {
-    text-decoration: underline;
-    color: inherit;
-    transition-timing-function: ease-out
+   text-decoration: underline;
+   color: inherit;
+   transition-timing-function: ease-out
 }
 
 a.badge,
 a.not_decorated,
 a:hover {
-    text-decoration: none
+   text-decoration: none
 }
 
 ul {
-    padding-left: 0
+   padding-left: 0
 }
 
 li {
-    margin-bottom: 1ex
+   margin-bottom: 1ex
 }
 
 li:last-child {
-    margin-bottom: 0
+   margin-bottom: 0
 }
 
 .badge {
-    font-size: small;
-    background-color: #404040; /* #BFBFBF; */
-    color: #FFFFFF; /* #181818; */
-    display: inline-block;
-    min-width: 3ex;
-    text-align: center;
-    padding: 0 4px;
-    border-radius: 3px;
-    transition: all .25s;
-    transition-timing-function: ease-out
+   font-size: small;
+   background-color: #404040; /* #BFBFBF; */
+   color: #FFFFFF; /* #181818; */
+   display: inline-block;
+   min-width: 3ex;
+   text-align: center;
+   padding: 0 4px;
+   border-radius: 3px;
+   transition: all .25s;
+   transition-timing-function: ease-out
 }
 
 a.badge:hover {
-    background-color: #FFF;
-    color: #000;
-    box-shadow: 0 0 3px 2px #FFF
+   background-color: #FFF;
+   color: #000;
+   box-shadow: 0 0 3px 2px #FFF
 }
 
 .lowercase {
-    text-transform: lowercase
+   text-transform: lowercase
 }
 
 div.flags {
-    visibility: hidden;
-    position: absolute;
-    top: 0;
-    left: 0
+   visibility: hidden;
+   position: absolute;
+   top: 0;
+   left: 0
 }
 
 table {
@@ -130,20 +130,20 @@ td {
 }
 
 nav ul {
-  list-style: none;
+   list-style: none;
 }
 
 nav ul li {
-  float: left;
-  overflow: hidden;
+   float: left;
+   overflow: hidden;
 }
 
 nav ul li a {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding-right: 8px;
-  text-decoration: none;
+   display: block;
+   width: 100%;
+   text-align: left;
+   padding-right: 8px;
+   text-decoration: none;
 }
 
 nav ul li a.active-page {
