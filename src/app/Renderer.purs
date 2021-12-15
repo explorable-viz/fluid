@@ -4,6 +4,7 @@ import Prelude
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (zip, zipWith)
+import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import Data.Profunctor.Strong (first)
@@ -17,12 +18,21 @@ import Util.SnocList (SnocList)
 import Val (Array2, MatrixRep, Val)
 import Val (Val(..)) as V
 
+type HTMLId = String
+
 type Fig = {
-   divId :: String,
+   divId :: HTMLId,
    subfigs :: Array SubFig
 }
 
-foreign import drawFig :: Fig -> Effect Unit
+drawFig :: Fig -> Effect Unit
+drawFig { divId, subfigs } =
+   sequence_ $ drawSubFig divId <$> subfigs
+
+foreign import drawBarChart :: HTMLId -> BarChart -> Effect Unit
+foreign import drawLineChart :: HTMLId -> LineChart -> Effect Unit
+foreign import drawMatrix :: HTMLId -> MatrixView -> Effect Unit
+foreign import drawTable :: HTMLId -> EnergyTable -> Effect Unit
 
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
@@ -30,37 +40,38 @@ type IntMatrix = Array2 (Int × 𝔹) × Int × Int
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
 newtype BarChart = BarChart { caption :: String × 𝔹, data_ :: Array BarChartRecord }
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
+newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord }
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
-newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹}
+newtype MatrixView = MatrixView { title :: String, selColour :: String, matrix :: IntMatrix }
+newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
 
 data SubFig =
-   MatrixFig { title :: String, selColour :: String, matrix :: IntMatrix } |
-   EnergyTable { title :: String, table :: Array EnergyRecord } |
+   MatrixFig MatrixView |
+   EnergyTableView EnergyTable |
    LineChartFig LineChart |
    BarChartFig BarChart
 
+drawSubFig :: HTMLId -> SubFig -> Effect Unit
+drawSubFig divId (MatrixFig fig) = drawMatrix divId fig
+drawSubFig divId (EnergyTableView fig) = drawTable divId fig
+drawSubFig divId (LineChartFig fig) = drawLineChart divId fig
+drawSubFig divId (BarChartFig fig) = drawBarChart divId fig
+
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
-type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
-
-matrixFig :: String -> MakeSubFig
-matrixFig selColour { title, uv: (u × v) } =
-   let vss2 = fst (match_fwd (u × v)) × fst (match v) in
-   MatrixFig { title, selColour, matrix: matrixRep vss2 }
-
-makeEnergyTable :: Partial => MakeSubFig
-makeEnergyTable { title, uv: (u × v) } =
-   EnergyTable { title, table: record energyRecord <$> from (u × v) }
-
-makeBarChart :: Partial => MakeSubFig
-makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
+makeSubFig :: Partial => { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
+makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> BarChartFig (record from (u1 × v1))
-
-makeLineChart :: Partial => MakeSubFig
-makeLineChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
+makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
    case expand u (V.Constr false cLineChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> LineChartFig (record from (u1 × v1))
+makeSubFig { title, uv: u × v@(V.Constr _ c _) } | c == cNil || c == cCons =
+   EnergyTableView (EnergyTable { title, table: record energyRecord <$> from (u × v) })
+makeSubFig { title, uv: u × v@(V.Matrix _ _) } =
+   let selColour = "LightGreen"
+       vss2 = fst (match_fwd (u × v)) × fst (match v) in
+   MatrixFig (MatrixView { title, selColour, matrix: matrixRep vss2 } )
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a

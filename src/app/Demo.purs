@@ -10,8 +10,8 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart, matrixFig)
-import Bindings (Bind, Var, (↦), find, update)
+import App.Renderer (Fig, SubFig, drawFig, makeSubFig)
+import Bindings (Bind, Var, find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
@@ -50,19 +50,14 @@ splitDefs ρ0 s' = unsafePartial $ do
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
 
-type VarSpec = {
-   var :: Var,
-   makeFig :: MakeSubFig
-}
-
-varFig :: Partial => VarSpec × Slice (Val 𝔹) -> SubFig
-varFig ({ var: x, makeFig } × uv) = makeFig { title: x, uv }
+varFig :: Partial => Var × Slice (Val 𝔹) -> SubFig
+varFig (x × uv) = makeSubFig { title: x, uv }
 
 type ExampleEval = {
-   e :: Expr 𝔹,
-   ρ0ρ :: Env 𝔹,
-   t :: Expl 𝔹,
-   o :: Val 𝔹
+   e     :: Expr 𝔹,
+   ρ0ρ   :: Env 𝔹,
+   t     :: Expl 𝔹,
+   o     :: Val 𝔹
 }
 
 evalExample :: Example -> MayFail ExampleEval
@@ -72,21 +67,20 @@ evalExample { ρ0, ρ, s } = do
    t × o <- eval ρ0ρ e
    pure { e, ρ0ρ, t, o }
 
-varFig' :: VarSpec -> Slice (Env 𝔹) -> MayFail SubFig
-varFig' spec (ρ' × ρ) = do
-   v <- find spec.var ρ
-   v' <- find spec.var ρ'
-   unsafePartial $ pure $ varFig (spec × (v' × v))
+varFig' :: Var -> Slice (Env 𝔹) -> MayFail SubFig
+varFig' x (ρ' × ρ) = do
+   v <- find x ρ
+   v' <- find x ρ'
+   unsafePartial $ pure $ varFig (x × (v' × v))
 
 valFigs :: ExampleEval -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig)
-valFigs q { vars, o_fig, o' } (ρ' × ρ) = do
+valFigs q { vars, o' } (ρ' × ρ) = do
    figs <- sequence (flip varFig' (ρ' × ρ) <$> vars)
    unsafePartial $ pure $
-      figs <> [ o_fig { title: "output", uv: o' × q.o } ]
+      figs <> [ makeSubFig { title: "output", uv: o' × q.o } ]
 
 type NeedsSpec = {
-   vars  :: Array VarSpec, -- variables we want subfigs for
-   o_fig :: MakeSubFig,    -- for output
+   vars  :: Array Var,     -- variables we want subfigs for
    o'    :: Val 𝔹          -- selection on output
 }
 
@@ -95,28 +89,27 @@ type NeedsResult = {
    ρ'    :: Env 𝔹          -- selection on local environment
 }
 
-needs :: NeedsSpec -> Example -> MayFail (NeedsResult × Array SubFig)
+needs :: Partial => NeedsSpec -> Example -> MayFail (NeedsResult × Array SubFig)
 needs spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × e × α = evalBwd spec.o' q.t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α q.t
    figs <- valFigs q spec (ρ0ρ' × q.ρ0ρ)
-   pure $ { ρ0', ρ' } × (figs <> [ spec.o_fig { title: "output", uv: o'' × q.o } ])
+   pure $ { ρ0', ρ' } × (figs <> [ makeSubFig { title: "output", uv: o'' × q.o } ])
 
 type NeededBySpec = {
-   vars     :: Array VarSpec,    -- variables we want subfigs for
-   o_fig    :: MakeSubFig,       -- for output
-   ρ'       :: Env 𝔹             -- selection on local env
+   vars     :: Array Var,    -- variables we want subfigs for
+   ρ'       :: Env 𝔹         -- selection on local env
 }
 
 neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array SubFig)
-neededBy { vars, o_fig, ρ' } { ρ0, ρ, s } = do
+neededBy { vars, ρ' } { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
        ρ0'ρ'' = neg (fst (fst (evalBwd (neg o') q.t)))
        ρ0' × ρ'' = splitAt (length ρ) ρ0'ρ''
-   figs <- valFigs q { vars, o_fig, o' } (ρ' × ρ)
+   figs <- valFigs q { vars, o' } (ρ' × ρ)
    figs' <- sequence (flip varFig' (ρ'' × ρ) <$> vars)
    pure $ unit × (figs <> figs')
 
@@ -136,56 +129,38 @@ fig divId { file, makeSubfigs } = do
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId , subfigs }
 
-linkFig :: String -> LinkConfig -> MakeSubFig -> MakeSubFig -> MakeSubFig -> Aff Fig
-linkFig divId config o1_fig o2_fig data_fig = do
+linkFig :: Partial => String -> LinkConfig -> Aff Fig
+linkFig divId config = do
    link <- doLink config
    pure { divId, subfigs: [
-      o1_fig { title: "primary view", uv: config.v1_sel × link.v1 },
-      o2_fig { title: "linked view", uv: link.v2 },
-      data_fig { title: "common data", uv: link.data_sel }
+      makeSubFig { title: "primary view", uv: config.v1_sel × link.v1 },
+      makeSubFig { title: "linked view", uv: link.v2 },
+      makeSubFig { title: "common data", uv: link.data_sel }
    ] }
-
-systemCol :: String
-systemCol = "rgb(160,209,255)"
 
 convolutionFigs :: Partial => Aff (Array Fig)
 convolutionFigs = do
-   let userSel × systemSel = "LightGreen" × systemCol
    sequence [
       fig "fig-conv-1" {
          file: File "slicing/conv-emboss",
          makeSubfigs: needs {
-            vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
-            o_fig: matrixFig userSel,
+            vars: ["image", "filter"],
             o': selectCell 2 2 5 5
          }
-      },
-      fig "fig-conv-2" {
-         file: File "slicing/conv-emboss",
-         makeSubfigs: \ex ->
-            neededBy {
-               vars: [{ var: "image", makeFig: matrixFig userSel }, { var: "filter", makeFig: matrixFig userSel }],
-               o_fig: matrixFig systemCol,
-               ρ': selectOnly ("filter" ↦ selectCell 1 2 3 3) ex.ρ
-            } ex
       }
    ]
 
 linkingFigs :: Partial => Aff (Array Fig)
 linkingFigs = do
-   let vars = [{ var: "data", makeFig: makeEnergyTable }] :: Array VarSpec
+   let vars = ["data"] :: Array Var
    sequence [
-      linkFig "fig-5" {
+      linkFig "fig-1" {
          file1: File "bar-chart",
          file2: File "line-chart",
          dataFile: File "renewables",
          dataVar: "data",
          v1_sel: selectBarChart_data (selectNth 1 (select_y))
-       } makeBarChart makeLineChart makeEnergyTable,
-      fig "fig-6" {
-         file: File "linking/bar-chart",
-         makeSubfigs: needs { vars, o_fig: makeBarChart, o': selectBarChart_data (selectNth 0 (select_y)) }
-      }
+       }
    ]
 
 main :: Effect Unit
