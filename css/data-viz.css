@@ -8,8 +8,10 @@
 
 .matrix-cell-selected {
    fill: LightGreen;
+   stroke: DarkGray;
 }
 
 .matrix-cell-unselected {
    fill: White;
+   stroke: DarkGray;
 }

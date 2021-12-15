@@ -3,8 +3,7 @@
 const d3 = require("d3")
 const d3tip = require("d3-tip")
 
-const cellStroke              = 'DarkGray',
-      cellTextFill            = 'Black',
+const cellTextFill            = 'Black',
       cellFontSize            = '10pt',
       fontFamily              = "Roboto, sans-serif",
       strokeWidth             = 0.5,
@@ -44,7 +43,6 @@ function drawMatrix (
             .attr('width', w)
             .attr('height', h)
             .attr('class', d => d.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected')
-            .attr('stroke', cellStroke)
             .attr('stroke-width', strokeWidth)
 
       rect.append('text')
