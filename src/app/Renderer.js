@@ -3,8 +3,7 @@
 const d3 = require("d3")
 const d3tip = require("d3-tip")
 
-const cellTextFill            = 'Black',
-      cellFontSize            = '10pt',
+const cellFontSize            = '10pt',
       fontFamily              = "Roboto, sans-serif",
       strokeWidth             = 0.5,
       titleTextFill           = 'Black',
@@ -50,7 +49,6 @@ function drawMatrix (
             .attr('x', (_, j) => w * (j + 0.5))
             .attr('y', 0.5 * h)
             .attr('class', 'matrix-cell-text')
-            .attr('fill', cellTextFill)
             .attr('font-family', fontFamily)
             .attr('font-size', cellFontSize)
             .attr('text-anchor', 'middle')
