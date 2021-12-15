@@ -65,9 +65,7 @@ instance barChartSubFig :: SubFigC BarChart where
    drawSubfig = drawBarChart
 
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
-type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
-
-makeSubFig :: Partial => MakeSubFig
+makeSubFig :: Partial => { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> BarChartFig (record from (u1 × v1))
