@@ -106,42 +106,6 @@ div.flags {
     left: 0
 }
 
-span.email {
-    opacity: 1;
-    margin-right: 0;
-    transition: opacity .5s, margin-right .5s;
-    transition-timing-function: ease-out
-}
-
-span.email:hover {
-    opacity: 0;
-    margin-right: 50px
-}
-
-span.email1:after {
-    content: "dynamicaspects.org"
-}
-
-span.email1:before {
-    content: "roly.perera"
-}
-
-span.email2:after {
-    content: "turing.ac.uk"
-}
-
-span.email2:before {
-    content: "rperera"
-}
-
-span.email3:after {
-    content: "bristol.ac.uk"
-}
-
-span.email3:before {
-    content: "roly.perera"
-}
-
 table {
    margin-left: 4mm;
    outline: thin dotted;
