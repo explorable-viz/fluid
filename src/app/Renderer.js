@@ -3,8 +3,7 @@
 const d3 = require("d3")
 const d3tip = require("d3-tip")
 
-const cellFillDefault         = 'White',
-      cellStroke              = 'DarkGray',
+const cellStroke              = 'DarkGray',
       cellTextFill            = 'Black',
       cellFontSize            = '10pt',
       fontFamily              = "Roboto, sans-serif",
@@ -15,7 +14,6 @@ const cellFillDefault         = 'White',
 function drawMatrix (
    id, {
       title,                                                               // String
-      selColour,                                                           // String
       matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }    // IntMatrix
    }
 ) {
@@ -46,7 +44,6 @@ function drawMatrix (
             .attr('width', w)
             .attr('height', h)
             .attr('class', d => d.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected')
-            .attr('fill', d => d.value1 ? selColour : cellFillDefault)
             .attr('stroke', cellStroke)
             .attr('stroke-width', strokeWidth)
 

@@ -43,7 +43,7 @@ newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × �
 newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord }
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
-newtype MatrixView = MatrixView { title :: String, selColour :: String, matrix :: IntMatrix }
+newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
 
 data SubFig =
@@ -69,9 +69,8 @@ makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
 makeSubFig { title, uv: u × v@(V.Constr _ c _) } | c == cNil || c == cCons =
    EnergyTableView (EnergyTable { title, table: record energyRecord <$> from (u × v) })
 makeSubFig { title, uv: u × v@(V.Matrix _ _) } =
-   let selColour = "LightGreen"
-       vss2 = fst (match_fwd (u × v)) × fst (match v) in
-   MatrixFig (MatrixView { title, selColour, matrix: matrixRep vss2 } )
+   let vss2 = fst (match_fwd (u × v)) × fst (match v) in
+   MatrixFig (MatrixView { title, matrix: matrixRep vss2 } )
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
