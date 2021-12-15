@@ -8,7 +8,6 @@ a {
    transition: all .25s
 }
 
-.hot,
 a:hover {
    text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0
 }
@@ -31,7 +30,6 @@ body {
    color: #404040
 }
 
-.badge,
 h3.title {
    font-family: "Roboto", sans-serif;
    font-weight: 600;
@@ -58,7 +56,6 @@ a {
    transition-timing-function: ease-out
 }
 
-a.badge,
 a.not_decorated,
 a:hover {
    text-decoration: none
@@ -74,25 +71,6 @@ li {
 
 li:last-child {
    margin-bottom: 0
-}
-
-.badge {
-   font-size: small;
-   background-color: #404040; /* #BFBFBF; */
-   color: #FFFFFF; /* #181818; */
-   display: inline-block;
-   min-width: 3ex;
-   text-align: center;
-   padding: 0 4px;
-   border-radius: 3px;
-   transition: all .25s;
-   transition-timing-function: ease-out
-}
-
-a.badge:hover {
-   background-color: #FFF;
-   color: #000;
-   box-shadow: 0 0 3px 2px #FFF
 }
 
 .lowercase {
