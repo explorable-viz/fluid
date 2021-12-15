@@ -1,3 +1,15 @@
+.d3-tip {
+   font-size: 11px;
+}
+
 .cell-selected {
-   border: 1px solid coral;
+   border: 1px solid Coral;
+}
+
+.matrix-cell-selected {
+   fill: LightGreen;
+}
+
+.matrix-cell-unselected {
+   fill: White;
 }

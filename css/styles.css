@@ -73,18 +73,10 @@ li:last-child {
    margin-bottom: 0
 }
 
-.lowercase {
-   text-transform: lowercase
-}
-
 table {
    margin-left: 4mm;
    outline: thin dotted;
    outline-color: lightgray;
-}
-
-.d3-tip {
-   font-size: 11px;
 }
 
 th {

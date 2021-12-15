@@ -45,6 +45,7 @@ function drawMatrix (
             .attr('x', (_, j) => w * j)
             .attr('width', w)
             .attr('height', h)
+            .attr('class', d => d.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected')
             .attr('fill', d => d.value1 ? selColour : cellFillDefault)
             .attr('stroke', cellStroke)
             .attr('stroke-width', strokeWidth)
