@@ -49,20 +49,11 @@ data SubFig =
    LineChartFig LineChart |
    BarChartFig BarChart
 
-class SubFigC a where
-   drawSubfig :: HTMLId -> a -> Effect Unit
-
-instance matrixViewSubFig :: SubFigC MatrixView where
-   drawSubfig = drawMatrix
-
-instance energyTableSubFig :: SubFigC EnergyTable where
-   drawSubfig = drawTable
-
-instance lineChartSubFig :: SubFigC LineChart where
-   drawSubfig = drawLineChart
-
-instance barChartSubFig :: SubFigC BarChart where
-   drawSubfig = drawBarChart
+drawSubFig :: HTMLId -> SubFig -> Effect Unit
+drawSubFig divId (MatrixFig fig) = drawMatrix divId fig
+drawSubFig divId (EnergyTableView fig) = drawTable divId fig
+drawSubFig divId (LineChartFig fig) = drawLineChart divId fig
+drawSubFig divId (BarChartFig fig) = drawBarChart divId fig
 
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
 makeSubFig :: Partial => { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
