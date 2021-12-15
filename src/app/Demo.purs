@@ -10,7 +10,7 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeSubFig)
+import App.Renderer (Fig, SubFig, drawFig, makeSubFig)
 import Bindings (Bind, Var, find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -54,10 +54,10 @@ varFig :: Partial => Var × Slice (Val 𝔹) -> SubFig
 varFig (x × uv) = makeSubFig { title: x, uv }
 
 type ExampleEval = {
-   e :: Expr 𝔹,
-   ρ0ρ :: Env 𝔹,
-   t :: Expl 𝔹,
-   o :: Val 𝔹
+   e     :: Expr 𝔹,
+   ρ0ρ   :: Env 𝔹,
+   t     :: Expl 𝔹,
+   o     :: Val 𝔹
 }
 
 evalExample :: Example -> MayFail ExampleEval
@@ -74,14 +74,13 @@ varFig' x (ρ' × ρ) = do
    unsafePartial $ pure $ varFig (x × (v' × v))
 
 valFigs :: ExampleEval -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig)
-valFigs q { vars, o_fig, o' } (ρ' × ρ) = do
+valFigs q { vars, o' } (ρ' × ρ) = do
    figs <- sequence (flip varFig' (ρ' × ρ) <$> vars)
    unsafePartial $ pure $
-      figs <> [ o_fig { title: "output", uv: o' × q.o } ]
+      figs <> [ makeSubFig { title: "output", uv: o' × q.o } ]
 
 type NeedsSpec = {
    vars  :: Array Var,     -- variables we want subfigs for
-   o_fig :: MakeSubFig,    -- for output
    o'    :: Val 𝔹          -- selection on output
 }
 
@@ -101,17 +100,16 @@ needs spec { ρ0, ρ, s } = do
 
 type NeededBySpec = {
    vars     :: Array Var,    -- variables we want subfigs for
-   o_fig    :: MakeSubFig,   -- for output
    ρ'       :: Env 𝔹         -- selection on local env
 }
 
 neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array SubFig)
-neededBy { vars, o_fig, ρ' } { ρ0, ρ, s } = do
+neededBy { vars, ρ' } { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
        ρ0'ρ'' = neg (fst (fst (evalBwd (neg o') q.t)))
        ρ0' × ρ'' = splitAt (length ρ) ρ0'ρ''
-   figs <- valFigs q { vars, o_fig, o' } (ρ' × ρ)
+   figs <- valFigs q { vars, o' } (ρ' × ρ)
    figs' <- sequence (flip varFig' (ρ'' × ρ) <$> vars)
    pure $ unit × (figs <> figs')
 
@@ -147,7 +145,6 @@ convolutionFigs = do
          file: File "slicing/conv-emboss",
          makeSubfigs: needs {
             vars: ["image", "filter"],
-            o_fig: makeSubFig,
             o': selectCell 2 2 5 5
          }
       }
