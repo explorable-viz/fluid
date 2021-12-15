@@ -30,13 +30,14 @@ type IntMatrix = Array2 (Int × 𝔹) × Int × Int
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
 newtype BarChart = BarChart { caption :: String × 𝔹, data_ :: Array BarChartRecord }
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
+newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord }
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
-newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹}
+newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
 
 data SubFig =
    MatrixFig { title :: String, selColour :: String, matrix :: IntMatrix } |
-   EnergyTable { title :: String, table :: Array EnergyRecord } |
+   EnergyTableView EnergyTable |
    LineChartFig LineChart |
    BarChartFig BarChart
 
@@ -50,7 +51,7 @@ matrixFig selColour { title, uv: (u × v) } =
 
 makeEnergyTable :: Partial => MakeSubFig
 makeEnergyTable { title, uv: (u × v) } =
-   EnergyTable { title, table: record energyRecord <$> from (u × v) }
+   EnergyTableView (EnergyTable { title, table: record energyRecord <$> from (u × v) })
 
 makeBarChart :: Partial => MakeSubFig
 makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =

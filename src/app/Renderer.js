@@ -331,7 +331,7 @@ function drawFig ({ divId, subfigs }) {
    return () => {
       for (const fig of subfigs) {
          // Bit horrible but will do for now.
-         if (className(fig) == "EnergyTable") {
+         if (className(fig) == "EnergyTableView") {
             drawTable(divId, fig.value0)
          }
          else

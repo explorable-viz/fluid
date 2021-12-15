@@ -10,8 +10,8 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart, matrixFig)
-import Bindings (Bind, Var, (↦), find, update)
+import App.Renderer (Fig, MakeSubFig, SubFig, drawFig, makeBarChart, makeEnergyTable, makeLineChart)
+import Bindings (Bind, Var, find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
@@ -22,7 +22,7 @@ import Lattice (𝔹, botOf, neg)
 import Module (File(..), open, openDatasetAs)
 import Primitive (Slice)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (LinkConfig, doLink, selectBarChart_data, selectCell, selectNth, select_y)
+import Test.Util (LinkConfig, doLink, selectBarChart_data, selectNth, select_y)
 import Util (Endo, MayFail, type (×), (×), type (+), successful)
 import Util.SnocList (splitAt)
 import Val (Env, Val)
@@ -148,34 +148,11 @@ linkFig divId config o1_fig o2_fig data_fig = do
 systemCol :: String
 systemCol = "rgb(160,209,255)"
 
-convolutionFigs :: Partial => Aff (Array Fig)
-convolutionFigs = do
-   let userSel × systemSel = "LightGreen" × systemCol
-   sequence [
-      fig "fig-conv-1" {
-         file: File "slicing/conv-emboss",
-         makeSubfigs: needs {
-            vars: [{ var: "image", makeFig: matrixFig systemSel }, { var: "filter", makeFig: matrixFig systemSel }],
-            o_fig: matrixFig userSel,
-            o': selectCell 2 2 5 5
-         }
-      },
-      fig "fig-conv-2" {
-         file: File "slicing/conv-emboss",
-         makeSubfigs: \ex ->
-            neededBy {
-               vars: [{ var: "image", makeFig: matrixFig userSel }, { var: "filter", makeFig: matrixFig userSel }],
-               o_fig: matrixFig systemCol,
-               ρ': selectOnly ("filter" ↦ selectCell 1 2 3 3) ex.ρ
-            } ex
-      }
-   ]
-
 linkingFigs :: Partial => Aff (Array Fig)
 linkingFigs = do
    let vars = [{ var: "data", makeFig: makeEnergyTable }] :: Array VarSpec
    sequence [
-      linkFig "fig-5" {
+      linkFig "fig-1" {
          file1: File "bar-chart",
          file2: File "line-chart",
          dataFile: File "renewables",
@@ -190,7 +167,7 @@ linkingFigs = do
 
 main :: Effect Unit
 main = unsafePartial $
-   flip runAff_ ((<>) <$> convolutionFigs <*> linkingFigs)
+   flip runAff_ linkingFigs
    case _ of
       Left err -> log $ show err
       Right figs ->
