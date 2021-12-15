@@ -15,3 +15,7 @@
    fill: White;
    stroke: DarkGray;
 }
+
+.matrix-cell-text {
+   fill: Black;
+}

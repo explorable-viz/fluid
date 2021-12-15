@@ -49,6 +49,7 @@ function drawMatrix (
             .text(d => d.value0)
             .attr('x', (_, j) => w * (j + 0.5))
             .attr('y', 0.5 * h)
+            .attr('class', 'matrix-cell-text')
             .attr('fill', cellTextFill)
             .attr('font-family', fontFamily)
             .attr('font-size', cellFontSize)
