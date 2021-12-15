@@ -17,16 +17,18 @@ import Util.SnocList (SnocList)
 import Val (Array2, MatrixRep, Val)
 import Val (Val(..)) as V
 
+type HTMLId = String
+
 type Fig = {
-   divId :: String,
+   divId :: HTMLId,
    subfigs :: Array SubFig
 }
 
 foreign import drawFig :: Fig -> Effect Unit
-foreign import drawBarChart :: Fig -> Effect Unit
-foreign import drawLineChart :: Fig -> Effect Unit
-foreign import drawMatrix :: Fig -> Effect Unit
-foreign import drawTable :: Fig -> Effect Unit
+foreign import drawBarChart :: HTMLId -> BarChart -> Effect Unit
+foreign import drawLineChart :: HTMLId -> LineChart -> Effect Unit
+foreign import drawMatrix :: HTMLId -> MatrixView -> Effect Unit
+foreign import drawTable :: HTMLId -> EnergyTable -> Effect Unit
 
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
