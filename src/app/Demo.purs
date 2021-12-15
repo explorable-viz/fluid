@@ -56,7 +56,7 @@ type VarSpec = {
 }
 
 varFig :: Partial => VarSpec × Slice (Val 𝔹) -> SubFig
-varFig ({ var: x, makeFig } × uv) = makeFig { title: x, uv }
+varFig ({ var: x } × uv) = makeSubFig { title: x, uv }
 
 type ExampleEval = {
    e :: Expr 𝔹,
