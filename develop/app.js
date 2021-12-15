@@ -5875,54 +5875,56 @@ var PS = {};
         matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }    // IntMatrix
      }
   ) {
-     const w = 30, h = 30
-     const div = d3.select('#' + id)
-     const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
-     const hMargin = w / 2
-     const vMargin = h / 2
+     return () => {
+        const w = 30, h = 30
+        const div = d3.select('#' + id)
+        const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
+        const hMargin = w / 2
+        const vMargin = h / 2
 
-     const svg = div.append('svg')
-                    .attr('width', width + hMargin)
-                    .attr('height', height + vMargin)
+        const svg = div.append('svg')
+                       .attr('width', width + hMargin)
+                       .attr('height', height + vMargin)
 
-     // group for each row
-     const grp = svg.selectAll('g')
-        .data(nss)
-        .enter()
-        .append('g')
-        .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
+        // group for each row
+        const grp = svg.selectAll('g')
+           .data(nss)
+           .enter()
+           .append('g')
+           .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
 
-     const rect = grp.selectAll('rect')
-                       .data(d => d)
-                       .enter()
+        const rect = grp.selectAll('rect')
+                          .data(d => d)
+                          .enter()
 
-     rect.append('rect')
-           .attr('x', (_, j) => w * j)
-           .attr('width', w)
-           .attr('height', h)
-           .attr('fill', d => d.value1 ? selColour : cellFillDefault)
-           .attr('stroke', cellStroke)
-           .attr('stroke-width', strokeWidth)
+        rect.append('rect')
+              .attr('x', (_, j) => w * j)
+              .attr('width', w)
+              .attr('height', h)
+              .attr('fill', d => d.value1 ? selColour : cellFillDefault)
+              .attr('stroke', cellStroke)
+              .attr('stroke-width', strokeWidth)
 
-     rect.append('text')
-           .text(d => d.value0)
-           .attr('x', (_, j) => w * (j + 0.5))
-           .attr('y', 0.5 * h)
-           .attr('fill', cellTextFill)
+        rect.append('text')
+              .text(d => d.value0)
+              .attr('x', (_, j) => w * (j + 0.5))
+              .attr('y', 0.5 * h)
+              .attr('fill', cellTextFill)
+              .attr('font-family', fontFamily)
+              .attr('font-size', cellFontSize)
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+
+        svg.append('text')
+           .text(title)
+           .attr('x', hMargin / 2)
+           .attr('y', vMargin / 2)
+           .attr('fill', titleTextFill)
            .attr('font-family', fontFamily)
-           .attr('font-size', cellFontSize)
-           .attr('text-anchor', 'middle')
+           .attr('font-size', titleFontSize)
            .attr('dominant-baseline', 'middle')
-
-     svg.append('text')
-        .text(title)
-        .attr('x', hMargin / 2)
-        .attr('y', vMargin / 2)
-        .attr('fill', titleTextFill)
-        .attr('font-family', fontFamily)
-        .attr('font-size', titleFontSize)
-        .attr('dominant-baseline', 'middle')
-        .attr('text-anchor', 'left')
+           .attr('text-anchor', 'left')
+     }
   }
 
   function drawBarChart (
@@ -5931,75 +5933,77 @@ var PS = {};
         data_,     // Array BarChartRecord
      }
   ) {
-     const margin = {top: 15, right: 0, bottom: 40, left: 30},
-           width = 200 - margin.left - margin.right,
-           height = 185 - margin.top - margin.bottom
+     return () => {
+        const margin = {top: 15, right: 0, bottom: 40, left: 30},
+              width = 200 - margin.left - margin.right,
+              height = 185 - margin.top - margin.bottom
 
-     const svg = d3.select('#' + id)
-        .append('svg')
-           .attr('width', width + margin.left + margin.right)
-           .attr('height', height + margin.top + margin.bottom)
-        .append('g')
-           .attr('transform', `translate(${margin.left}, ${margin.top})`)
+        const svg = d3.select('#' + id)
+           .append('svg')
+              .attr('width', width + margin.left + margin.right)
+              .attr('height', height + margin.top + margin.bottom)
+           .append('g')
+              .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-     const tip = d3tip.default()
-        .attr('class', 'd3-tip')
-        .offset([0, 0])
-        .html((ev, d) => {
-           return d.y.value0
-        })
+        const tip = d3tip.default()
+           .attr('class', 'd3-tip')
+           .offset([0, 0])
+           .html((ev, d) => {
+              return d.y.value0
+           })
 
-     svg.call(tip)
+        svg.call(tip)
 
-     // x-axis
-     const x = d3.scaleBand()
-        .range([ 0, width ])
-        .domain(data_.map(d => d.x.value0))
-        .padding(0.2)
-     svg.append('g')
-        .attr('transform', "translate(0," + height + ")")
-        .call(d3.axisBottom(x))
-        .selectAll('text')
-           .style('text-anchor', 'middle')
+        // x-axis
+        const x = d3.scaleBand()
+           .range([ 0, width ])
+           .domain(data_.map(d => d.x.value0))
+           .padding(0.2)
+        svg.append('g')
+           .attr('transform', "translate(0," + height + ")")
+           .call(d3.axisBottom(x))
+           .selectAll('text')
+              .style('text-anchor', 'middle')
 
-     // y-axis
-     const nearest = 100,
-           y_max = Math.ceil(Math.max(...data_.map(d => d.y.value0)) / nearest) * nearest
-     const y = d3.scaleLinear()
-        .domain([0, y_max])
-        .range([ height, 0])
-     const tickEvery = nearest / 2,
-           ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map(n => n * tickEvery)
-     const yAxis = d3.axisLeft(y)
-        .tickValues(ticks)
-     svg.append('g')
-        .call(yAxis)
+        // y-axis
+        const nearest = 100,
+              y_max = Math.ceil(Math.max(...data_.map(d => d.y.value0)) / nearest) * nearest
+        const y = d3.scaleLinear()
+           .domain([0, y_max])
+           .range([ height, 0])
+        const tickEvery = nearest / 2,
+              ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map(n => n * tickEvery)
+        const yAxis = d3.axisLeft(y)
+           .tickValues(ticks)
+        svg.append('g')
+           .call(yAxis)
 
-     // bars
-     const barFill = '#dcdcdc'
-     svg.selectAll('rect')
-        .data(data_)
-        .enter()
-        .append('rect')
-           .attr('id', 'mouse-cursor')
-           .attr('x', d => x(d.x.value0))
-           .attr('y', d => y(d.y.value0 + 1))  // ouch: bars overplot x-axis!
-           .attr('width', x.bandwidth())
-           .attr('height', d => height - y(d.y.value0))
-           .attr('fill', d => d.y.value1 ? colorShade(barFill, -40) : barFill)
-           .attr('stroke', d => d.y.value1 ? 'coral' : '')
-           .on('mouseover', tip.show)
-           .on('mouseout', tip.hide)
+        // bars
+        const barFill = '#dcdcdc'
+        svg.selectAll('rect')
+           .data(data_)
+           .enter()
+           .append('rect')
+              .attr('id', 'mouse-cursor')
+              .attr('x', d => x(d.x.value0))
+              .attr('y', d => y(d.y.value0 + 1))  // ouch: bars overplot x-axis!
+              .attr('width', x.bandwidth())
+              .attr('height', d => height - y(d.y.value0))
+              .attr('fill', d => d.y.value1 ? colorShade(barFill, -40) : barFill)
+              .attr('stroke', d => d.y.value1 ? 'coral' : '')
+              .on('mouseover', tip.show)
+              .on('mouseout', tip.hide)
 
-     svg.append('text')
-        .text(caption.value0)
-        .attr('x', width / 2)
-        .attr('y', height + 35)
-        .attr('fill', titleTextFill)
-        .attr('font-family', fontFamily)
-        .attr('font-size', titleFontSize)
-        .attr('dominant-baseline', 'bottom')
-        .attr('text-anchor', 'middle')
+        svg.append('text')
+           .text(caption.value0)
+           .attr('x', width / 2)
+           .attr('y', height + 35)
+           .attr('fill', titleTextFill)
+           .attr('font-family', fontFamily)
+           .attr('font-size', titleFontSize)
+           .attr('dominant-baseline', 'bottom')
+           .attr('text-anchor', 'middle')
+     }
   }
 
   function max_y (linePlot) {
@@ -6020,107 +6024,109 @@ var PS = {};
         plots,     // Array LinePlot
      }
   ) {
-     const margin = {top: 15, right: 65, bottom: 40, left: 30},
-           width = 230 - margin.left - margin.right,
-           height = 185 - margin.top - margin.bottom,
-           y_max = Math.max(...plots.map(max_y)),
-           x_min = Math.min(...plots.map(min_x)),
-           x_max = Math.max(...plots.map(max_x)),
-           names = plots.map(plot => plot.name.value0)
+     return () => {
+        const margin = {top: 15, right: 65, bottom: 40, left: 30},
+              width = 230 - margin.left - margin.right,
+              height = 185 - margin.top - margin.bottom,
+              y_max = Math.max(...plots.map(max_y)),
+              x_min = Math.min(...plots.map(min_x)),
+              x_max = Math.max(...plots.map(max_x)),
+              names = plots.map(plot => plot.name.value0)
 
-     const svg = d3.select('#' + id)
-        .append('svg')
-           .attr('width', width + margin.left + margin.right)
-           .attr('height', height + margin.top + margin.bottom)
-        .append('g')
-           .attr('transform', `translate(${margin.left}, ${margin.top})`)
+        const svg = d3.select('#' + id)
+           .append('svg')
+              .attr('width', width + margin.left + margin.right)
+              .attr('height', height + margin.top + margin.bottom)
+           .append('g')
+              .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-     const x = d3.scaleLinear().domain([x_min, x_max]).range([0, width]),
-           y = d3.scaleLinear().domain([0, y_max]).range([height, 0])
+        const x = d3.scaleLinear().domain([x_min, x_max]).range([0, width]),
+              y = d3.scaleLinear().domain([0, y_max]).range([height, 0])
 
-     const line1 = d3.line()
-        .x(d => x(d.x.value0))
-        .y(d => y(d.y.value0))
+        const line1 = d3.line()
+           .x(d => x(d.x.value0))
+           .y(d => y(d.y.value0))
 
-     const color = d3.scaleOrdinal(d3.schemePastel1)
+        const color = d3.scaleOrdinal(d3.schemePastel1)
 
-     svg.selectAll('lines')
-        .data(plots)
-        .enter()
-        .append('g')
-        .append('path')
-        .attr('fill', 'none')
-        .attr('stroke', d => {
-           return color(names.indexOf(d.name.value0))
-        })
-        .attr('stroke-width', 1)
-        .attr('class', 'line')
-        .attr('d', d => line1(d.data_))
-
-     const smallRadius = 2
-     for (const plot of plots) {
-        const col = color(names.indexOf(plot.name.value0))
-        svg.selectAll('markers')
-           .data(plot.data_)
+        svg.selectAll('lines')
+           .data(plots)
            .enter()
            .append('g')
-           .append('circle')
-           .attr('class', 'marker')
-           .attr('r', d => d.y.value1 ? smallRadius * 2 : smallRadius)
-           .attr('cx', d => x(d.x.value0))
-           .attr('cy', d => y(d.y.value0))
-           .attr('fill', col)
-           .attr('stroke', d => d.y.value1 ? colorShade(col, -30) : col)
+           .append('path')
+           .attr('fill', 'none')
+           .attr('stroke', d => {
+              return color(names.indexOf(d.name.value0))
+           })
+           .attr('stroke-width', 1)
+           .attr('class', 'line')
+           .attr('d', d => line1(d.data_))
+
+        const smallRadius = 2
+        for (const plot of plots) {
+           const col = color(names.indexOf(plot.name.value0))
+           svg.selectAll('markers')
+              .data(plot.data_)
+              .enter()
+              .append('g')
+              .append('circle')
+              .attr('class', 'marker')
+              .attr('r', d => d.y.value1 ? smallRadius * 2 : smallRadius)
+              .attr('cx', d => x(d.x.value0))
+              .attr('cy', d => y(d.y.value0))
+              .attr('fill', col)
+              .attr('stroke', d => d.y.value1 ? colorShade(col, -30) : col)
+        }
+
+        svg.append('g')
+           .attr('transform', `translate(0, ${height})`)
+           .call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')))
+
+        svg.append('g')
+           .call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))) // lots of hard-coded constants
+
+        const legendLineHeight = 15,
+              legendStart = width + margin.left / 2
+
+        svg.append('rect')
+           .attr('transform', `translate(${legendStart}, ${legendLineHeight * (names.length - 1) + 2})`)
+           .attr('x', 0)
+           .attr('y', 0)
+           .attr('stroke', 'lightgray')
+           .attr('fill', 'none')
+           .attr('height', legendLineHeight * names.length)
+           .attr('width', margin.right - 16)
+
+        const legend = svg.selectAll('legend')
+           .data(names)
+           .enter()
+           .append('g')
+           .attr('class', 'legend')
+           .attr('transform', (d, i) =>
+              `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
+           )
+
+        legend.append('text')
+           .text(d => d)
+           .attr('font-size', 11)
+           .attr('transform', 'translate(15, 9)') // align text with boxes
+
+        legend.append('circle')
+           .attr('fill', d => color(names.indexOf(d)))
+           .attr('r', smallRadius)
+           .attr('cx', legendLineHeight / 2 - smallRadius / 2)
+           .attr('cy', legendLineHeight / 2 - smallRadius / 2)
+
+        svg.append('text')
+           .text(caption.value0)
+           .attr('x', width / 2)
+           .attr('y', height + 35)
+           .attr('fill', titleTextFill)
+           .attr('font-family', fontFamily)
+           .attr('font-size', titleFontSize)
+           .attr('dominant-baseline', 'bottom')
+           .attr('text-anchor', 'middle')
      }
-
-     svg.append('g')
-        .attr('transform', `translate(0, ${height})`)
-        .call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')))
-
-     svg.append('g')
-        .call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))) // lots of hard-coded constants
-
-     const legendLineHeight = 15,
-           legendStart = width + margin.left / 2
-
-     svg.append('rect')
-        .attr('transform', `translate(${legendStart}, ${legendLineHeight * (names.length - 1) + 2})`)
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('stroke', 'lightgray')
-        .attr('fill', 'none')
-        .attr('height', legendLineHeight * names.length)
-        .attr('width', margin.right - 16)
-
-     const legend = svg.selectAll('legend')
-        .data(names)
-        .enter()
-        .append('g')
-        .attr('class', 'legend')
-        .attr('transform', (d, i) =>
-           `translate(${legendStart}, ${height / 2 - margin.top + i * legendLineHeight})`
-        )
-
-     legend.append('text')
-        .text(d => d)
-        .attr('font-size', 11)
-        .attr('transform', 'translate(15, 9)') // align text with boxes
-
-     legend.append('circle')
-        .attr('fill', d => color(names.indexOf(d)))
-        .attr('r', smallRadius)
-        .attr('cx', legendLineHeight / 2 - smallRadius / 2)
-        .attr('cy', legendLineHeight / 2 - smallRadius / 2)
-
-     svg.append('text')
-        .text(caption.value0)
-        .attr('x', width / 2)
-        .attr('y', height + 35)
-        .attr('fill', titleTextFill)
-        .attr('font-family', fontFamily)
-        .attr('font-size', titleFontSize)
-        .attr('dominant-baseline', 'bottom')
-        .attr('text-anchor', 'middle')
   }
 
   // https://stackoverflow.com/questions/5560248
@@ -6154,59 +6160,34 @@ var PS = {};
         title,               // String
         table                // Array of any record type with only primitive fields
      }) {
-     table = table.filter(r => isUsed(r))
-     const cellFill = '#ffffff'
-     const HTMLtable = d3.select('#' + id)
-        .append('table')
-     const colNames = Object.keys(table[0])
-     HTMLtable.append('thead')
-        .append('tr')
-        .selectAll('th')
-        .data(colNames).enter()
-        .append('th')
-        .text(d => d)
-     const rows = HTMLtable.append('tbody').selectAll('tr')
-        .data(table).enter()
-        .append('tr')
-     rows.selectAll('td')
-        .data(d => colNames.map(k => { return { 'value': d[k], 'name': k } }))
-        .enter()
-        .append('td')
-        .attr('data-th', d => d.name)
-        .attr('class', d => d.value.value1 ? 'cell-selected' : null)
-        .attr('bgcolor', d => d.value.value1 ? colorShade(cellFill, -40) : cellFill)
-        .text(d => d.value.value0)
+     return () => {
+        table = table.filter(r => isUsed(r))
+        const cellFill = '#ffffff'
+        const HTMLtable = d3.select('#' + id)
+           .append('table')
+        const colNames = Object.keys(table[0])
+        HTMLtable.append('thead')
+           .append('tr')
+           .selectAll('th')
+           .data(colNames).enter()
+           .append('th')
+           .text(d => d)
+        const rows = HTMLtable.append('tbody').selectAll('tr')
+           .data(table).enter()
+           .append('tr')
+        rows.selectAll('td')
+           .data(d => colNames.map(k => { return { 'value': d[k], 'name': k } }))
+           .enter()
+           .append('td')
+           .attr('data-th', d => d.name)
+           .attr('class', d => d.value.value1 ? 'cell-selected' : null)
+           .attr('bgcolor', d => d.value.value1 ? colorShade(cellFill, -40) : cellFill)
+           .text(d => d.value.value0)
+     }
   }
 
   function className (o) {
      return o.constructor.name
-  }
-
-  // Figs -> Effect Unit
-  function drawFig ({ divId, subfigs }) {
-     return () => {
-        for (const fig of subfigs) {
-           // Bit horrible but will do for now.
-           if (className(fig) == "EnergyTable") {
-              drawTable(divId, fig.value0)
-           }
-           else
-           if (className(fig) == "BarChartFig") {
-              drawBarChart(divId, fig.value0)
-           }
-           else
-           if (className(fig) == "LineChartFig") {
-              drawLineChart(divId, fig.value0)
-           }
-           else
-           if (className(fig) == "MatrixFig") {
-              drawMatrix(divId, fig.value0)
-           }
-           else {
-              throw new Error(`Figure type '${className(fig)}' not recognised.`)
-           }
-        }
-     }
   }
 
   // Currently unused.
@@ -6249,7 +6230,10 @@ var PS = {};
      return x1 => x2 => f(x1, x2)
   }
 
-  exports.drawFig = drawFig
+  exports.drawBarChart = curry2(drawBarChart)
+  exports.drawLineChart = curry2(drawLineChart)
+  exports.drawMatrix = curry2(drawMatrix)
+  exports.drawTable = curry2(drawTable)
 })(PS["App.Renderer"] = PS["App.Renderer"] || {});
 (function($PS) {
   // Generated by purs version 0.13.6
@@ -30732,11 +30716,13 @@ var PS = {};
   var Data_Array = $PS["Data.Array"];
   var Data_Either = $PS["Data.Either"];
   var Data_Eq = $PS["Data.Eq"];
+  var Data_Foldable = $PS["Data.Foldable"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_List_Types = $PS["Data.List.Types"];
   var Data_Profunctor_Strong = $PS["Data.Profunctor.Strong"];
   var Data_Tuple = $PS["Data.Tuple"];
   var DataType = $PS["DataType"];
+  var Effect = $PS["Effect"];
   var Lattice = $PS["Lattice"];
   var Primitive = $PS["Primitive"];
   var Util = $PS["Util"];
@@ -30750,14 +30736,14 @@ var PS = {};
       };
       return MatrixFig;
   })();
-  var EnergyTable = (function () {
-      function EnergyTable(value0) {
+  var EnergyTableView = (function () {
+      function EnergyTableView(value0) {
           this.value0 = value0;
       };
-      EnergyTable.create = function (value0) {
-          return new EnergyTable(value0);
+      EnergyTableView.create = function (value0) {
+          return new EnergyTableView(value0);
       };
-      return EnergyTable;
+      return EnergyTableView;
   })();
   var LineChartFig = (function () {
       function LineChartFig(value0) {
@@ -30788,16 +30774,6 @@ var PS = {};
   var matrixRep = function (v) {
       return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Primitive.match_fwd(Primitive.toFromInt)))(Data_Array.zipWith(Data_Array.zip)(v.value0.value0.value0)(v.value1.value0.value0)), v.value1.value0.value1.value0), v.value1.value1.value0);
   };
-  var matrixFig = function (selColour) {
-      return function (v) {
-          var vss2 = new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.uv.value1)));
-          return new MatrixFig({
-              title: v.title,
-              selColour: selColour,
-              matrix: matrixRep(vss2)
-          });
-      };
-  };
   var get = function (x) {
       return function (v) {
           return Util.successful(Control_Apply.lift2(Data_Either.applyEither)(Data_Tuple.Tuple.create)(Bindings.find(x)(v.value0))(Bindings.find(x)(v.value1)));
@@ -30805,10 +30781,10 @@ var PS = {};
   };
   var get_prim = function (dictToFrom) {
       return function (x) {
-          var $162 = Primitive.match_fwd(dictToFrom);
-          var $163 = get(x);
-          return function ($164) {
-              return $162($163($164));
+          var $166 = Primitive.match_fwd(dictToFrom);
+          var $167 = get(x);
+          return function ($168) {
+              return $166($167($168));
           };
       };
   };
@@ -30843,16 +30819,16 @@ var PS = {};
               if (v1 instanceof Val.Constr && v1.value2 instanceof Data_List_Types.Nil) {
                   return [  ];
               };
-              throw new Error("Failed pattern match at App.Renderer (line 131, column 7 - line 132, column 32): " + [ v1.constructor.name ]);
+              throw new Error("Failed pattern match at App.Renderer (line 142, column 7 - line 143, column 32): " + [ v1.constructor.name ]);
           };
           if (v.value1 instanceof Val.Constr && (v.value1.value2 instanceof Data_List_Types.Cons && (v.value1.value2.value1 instanceof Data_List_Types.Cons && (v.value1.value2.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cCons))))) {
               var v3 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value))));
               if (v3 instanceof Val.Constr && (v3.value2 instanceof Data_List_Types.Cons && (v3.value2.value1 instanceof Data_List_Types.Cons && v3.value2.value1.value1 instanceof Data_List_Types.Nil))) {
                   return Data_Array.cons(new Data_Tuple.Tuple(v3.value2.value0, v.value1.value2.value0))(from(reflectArray)()(new Data_Tuple.Tuple(v3.value2.value1.value0, v.value1.value2.value1.value0)));
               };
-              throw new Error("Failed pattern match at App.Renderer (line 134, column 7 - line 135, column 70): " + [ v3.constructor.name ]);
+              throw new Error("Failed pattern match at App.Renderer (line 145, column 7 - line 146, column 70): " + [ v3.constructor.name ]);
           };
-          throw new Error("Failed pattern match at App.Renderer (line 129, column 1 - line 135, column 70): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at App.Renderer (line 140, column 1 - line 146, column 70): " + [ v.constructor.name ]);
       };
   });
   var reflectBarChart = new $$Reflect(function (dictPartial) {
@@ -30863,18 +30839,6 @@ var PS = {};
           };
       };
   });
-  var makeBarChart = function (dictPartial) {
-      return function (v) {
-          if (v.uv.value1 instanceof Val.Constr && (v.uv.value1.value2 instanceof Data_List_Types.Cons && (v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cBarChart)))) {
-              var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cBarChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
-              if (v2 instanceof Val.Constr && (v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil)) {
-                  return new BarChartFig(record(from(reflectBarChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
-              };
-              throw new Error("Failed pattern match at App.Renderer (line 57, column 4 - line 58, column 69): " + [ v2.constructor.name ]);
-          };
-          throw new Error("Failed pattern match at App.Renderer (line 55, column 1 - line 55, column 38): " + [ v.constructor.name ]);
-      };
-  };
   var reflectLinePlot = new $$Reflect(function (dictPartial) {
       return function (r) {
           return {
@@ -30890,9 +30854,9 @@ var PS = {};
               if (v2 instanceof Val.Constr && (v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil)) {
                   return record(from(reflectLinePlot)())(new Data_Tuple.Tuple(v2.value2.value0, v.value1.value2.value0));
               };
-              throw new Error("Failed pattern match at App.Renderer (line 125, column 7 - line 126, column 58): " + [ v2.constructor.name ]);
+              throw new Error("Failed pattern match at App.Renderer (line 136, column 7 - line 137, column 58): " + [ v2.constructor.name ]);
           };
-          throw new Error("Failed pattern match at App.Renderer (line 123, column 1 - line 126, column 58): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at App.Renderer (line 134, column 1 - line 137, column 58): " + [ v.constructor.name ]);
       };
   });
   var reflectLineChart = new $$Reflect(function (dictPartial) {
@@ -30903,18 +30867,6 @@ var PS = {};
           };
       };
   });
-  var makeLineChart = function (dictPartial) {
-      return function (v) {
-          if (v.uv.value1 instanceof Val.Constr && (v.uv.value1.value2 instanceof Data_List_Types.Cons && (v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cLineChart)))) {
-              var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cLineChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
-              if (v2 instanceof Val.Constr && (v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil)) {
-                  return new LineChartFig(record(from(reflectLineChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
-              };
-              throw new Error("Failed pattern match at App.Renderer (line 62, column 4 - line 63, column 70): " + [ v2.constructor.name ]);
-          };
-          throw new Error("Failed pattern match at App.Renderer (line 60, column 1 - line 60, column 39): " + [ v.constructor.name ]);
-      };
-  };
   var energyRecord = function (r) {
       return {
           year: get_prim(Primitive.toFromInt)("year")(r),
@@ -30923,19 +30875,61 @@ var PS = {};
           output: get_intOrNumber("output")(r)
       };
   };
-  var makeEnergyTable = function (dictPartial) {
+  var makeSubFig = function (dictPartial) {
       return function (v) {
-          return new EnergyTable({
-              title: v.title,
-              table: Data_Functor.map(Data_Functor.functorArray)(record(energyRecord))(from(reflectArray)()(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1)))
-          });
+          if (v.uv.value1 instanceof Val.Constr && (v.uv.value1.value2 instanceof Data_List_Types.Cons && (v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cBarChart)))) {
+              var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cBarChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
+              if (v2 instanceof Val.Constr && (v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil)) {
+                  return new BarChartFig(record(from(reflectBarChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
+              };
+              throw new Error("Failed pattern match at App.Renderer (line 64, column 4 - line 65, column 69): " + [ v2.constructor.name ]);
+          };
+          if (v.uv.value1 instanceof Val.Constr && (v.uv.value1.value2 instanceof Data_List_Types.Cons && (v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cLineChart)))) {
+              var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cLineChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
+              if (v2 instanceof Val.Constr && (v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil)) {
+                  return new LineChartFig(record(from(reflectLineChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
+              };
+              throw new Error("Failed pattern match at App.Renderer (line 67, column 4 - line 68, column 70): " + [ v2.constructor.name ]);
+          };
+          if (v.uv.value1 instanceof Val.Constr && (Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cNil) || Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cCons))) {
+              return new EnergyTableView({
+                  title: v.title,
+                  table: Data_Functor.map(Data_Functor.functorArray)(record(energyRecord))(from(reflectArray)()(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1)))
+              });
+          };
+          if (v.uv.value1 instanceof Val.Matrix) {
+              var vss2 = new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.uv.value1)));
+              return new MatrixFig({
+                  title: v.title,
+                  selColour: "LightGreen",
+                  matrix: matrixRep(vss2)
+              });
+          };
+          throw new Error("Failed pattern match at App.Renderer (line 62, column 1 - line 62, column 76): " + [ v.constructor.name ]);
       };
   };
-  exports["matrixFig"] = matrixFig;
-  exports["makeEnergyTable"] = makeEnergyTable;
-  exports["makeBarChart"] = makeBarChart;
-  exports["makeLineChart"] = makeLineChart;
-  exports["drawFig"] = $foreign.drawFig;
+  var drawSubFig = function (divId) {
+      return function (v) {
+          if (v instanceof MatrixFig) {
+              return $foreign.drawMatrix(divId)(v.value0);
+          };
+          if (v instanceof EnergyTableView) {
+              return $foreign.drawTable(divId)(v.value0);
+          };
+          if (v instanceof LineChartFig) {
+              return $foreign.drawLineChart(divId)(v.value0);
+          };
+          if (v instanceof BarChartFig) {
+              return $foreign.drawBarChart(divId)(v.value0);
+          };
+          throw new Error("Failed pattern match at App.Renderer (line 55, column 1 - line 55, column 46): " + [ divId.constructor.name, v.constructor.name ]);
+      };
+  };
+  var drawFig = function (v) {
+      return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(drawSubFig(v.divId))(v.subfigs));
+  };
+  exports["drawFig"] = drawFig;
+  exports["makeSubFig"] = makeSubFig;
 })(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
@@ -32736,17 +32730,17 @@ var PS = {};
   var Val = $PS["Val"];                
   var varFig = function (dictPartial) {
       return function (v) {
-          return v.value0.makeFig({
-              title: v["value0"]["var"],
+          return App_Renderer.makeSubFig()({
+              title: v.value0,
               uv: v.value1
           });
       };
   };
-  var varFig$prime = function (spec) {
+  var varFig$prime = function (x) {
       return function (v) {
-          return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(spec["var"])(v.value1))(function (v1) {
-              return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(spec["var"])(v.value0))(function (v$prime) {
-                  return Control_Applicative.pure(Data_Either.applicativeEither)(varFig()(new Data_Tuple.Tuple(spec, new Data_Tuple.Tuple(v$prime, v1))));
+          return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(x)(v.value1))(function (v1) {
+              return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(x)(v.value0))(function (v$prime) {
+                  return Control_Applicative.pure(Data_Either.applicativeEither)(varFig()(new Data_Tuple.Tuple(x, new Data_Tuple.Tuple(v$prime, v1))));
               });
           });
       };
@@ -32755,7 +32749,7 @@ var PS = {};
       return function (v) {
           return function (v1) {
               return Control_Bind.bind(Data_Either.bindEither)(Data_Traversable.sequence(Data_Traversable.traversableArray)(Data_Either.applicativeEither)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(varFig$prime)(new Data_Tuple.Tuple(v1.value0, v1.value1)))(v.vars)))(function (figs) {
-                  return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([ v.o_fig({
+                  return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([ App_Renderer.makeSubFig()({
                       title: "output",
                       uv: new Data_Tuple.Tuple(v["o'"], q.o)
                   }) ]));
@@ -32763,7 +32757,6 @@ var PS = {};
           };
       };
   };
-  var systemCol = "rgb(160,209,255)";
   var splitDefs = function (ρ0) {
       return function (s$prime) {
           var unpack = function (dictPartial) {
@@ -32794,38 +32787,44 @@ var PS = {};
           return Bindings.update(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(ρ))(xv);
       };
   };
-  var linkFig = function (divId) {
-      return function (config) {
-          return function (o1_fig) {
-              return function (o2_fig) {
-                  return function (data_fig) {
-                      return Control_Bind.bind(Effect_Aff.bindAff)(Test_Util.doLink(config))(function (link) {
-                          return Control_Applicative.pure(Effect_Aff.applicativeAff)({
-                              divId: divId,
-                              subfigs: [ o1_fig({
-                                  title: "primary view",
-                                  uv: new Data_Tuple.Tuple(config.v1_sel, link.v1)
-                              }), o2_fig({
-                                  title: "linked view",
-                                  uv: link.v2
-                              }), data_fig({
-                                  title: "common data",
-                                  uv: link.data_sel
-                              }) ]
-                          });
-                      });
-                  };
-              };
+  var linkFig = function (dictPartial) {
+      return function (divId) {
+          return function (config) {
+              return Control_Bind.bind(Effect_Aff.bindAff)(Test_Util.doLink(config))(function (link) {
+                  return Control_Applicative.pure(Effect_Aff.applicativeAff)({
+                      divId: divId,
+                      subfigs: [ App_Renderer.makeSubFig()({
+                          title: "primary view",
+                          uv: new Data_Tuple.Tuple(config.v1_sel, link.v1)
+                      }), App_Renderer.makeSubFig()({
+                          title: "linked view",
+                          uv: link.v2
+                      }), App_Renderer.makeSubFig()({
+                          title: "common data",
+                          uv: link.data_sel
+                      }) ]
+                  });
+              });
           };
       };
+  };
+  var linkingFigs = function (dictPartial) {
+      var vars = [ "data" ];
+      return Data_Traversable.sequence(Data_Traversable.traversableArray)(Effect_Aff.applicativeAff)([ linkFig()("fig-1")({
+          file1: "bar-chart",
+          file2: "line-chart",
+          dataFile: "renewables",
+          dataVar: "data",
+          v1_sel: Test_Util.selectBarChart_data(Test_Util.selectNth(1)(Test_Util.select_y))
+      }) ]);
   };
   var fig = function (divId) {
       return function (v) {
           return Control_Bind.bind(Effect_Aff.bindAff)(Module.openDatasetAs("example/linking/renewables")("data"))(function (v1) {
               return Control_Bind.bind(Effect_Aff.bindAff)(Data_Functor.map(Effect_Aff.functorAff)((function () {
-                  var $110 = splitDefs(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v1.value0)(v1.value1));
-                  return function ($111) {
-                      return Util.successful($110($111));
+                  var $104 = splitDefs(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v1.value0)(v1.value1));
+                  return function ($105) {
+                      return Util.successful($104($105));
                   };
               })())(Module.open(v.file)))(function (v2) {
                   var v3 = Util.successful(v.makeSubfigs({
@@ -32866,7 +32865,6 @@ var PS = {};
               var v2 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v1.ρ))(ρ0$primeρ$prime$prime);
               return Control_Bind.bind(Data_Either.bindEither)(valFigs(q)({
                   vars: v.vars,
-                  o_fig: v.o_fig,
                   "o'": o$prime
               })(new Data_Tuple.Tuple(v["\u03c1'"], v1.ρ)))(function (figs) {
                   return Control_Bind.bind(Data_Either.bindEither)(Data_Traversable.sequence(Data_Traversable.traversableArray)(Data_Either.applicativeEither)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(varFig$prime)(new Data_Tuple.Tuple(v2.value1, v1.ρ)))(v.vars)))(function (figs$prime) {
@@ -32876,78 +32874,37 @@ var PS = {};
           });
       };
   };
-  var needs = function (spec) {
-      return function (v) {
-          return Control_Bind.bind(Data_Either.bindEither)(evalExample({
-              ρ0: v.ρ0,
-              ρ: v.ρ,
-              s: v.s
-          }))(function (q) {
-              var v1 = EvalBwd.evalBwd(spec["o'"])(q.t);
-              var v2 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v.ρ))(v1.value0.value0);
-              var o$prime$prime = EvalFwd.evalFwd(v1.value0.value0)(v1.value0.value1)(v1.value1)(q.t);
-              return Control_Bind.bind(Data_Either.bindEither)(valFigs(q)(spec)(new Data_Tuple.Tuple(v1.value0.value0, q.ρ0ρ)))(function (figs) {
-                  return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple({
-                      "\u03c10'": v2.value0,
-                      "\u03c1'": v2.value1
-                  }, Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([ spec.o_fig({
-                      title: "output",
-                      uv: new Data_Tuple.Tuple(o$prime$prime, q.o)
-                  }) ])));
+  var needs = function (dictPartial) {
+      return function (spec) {
+          return function (v) {
+              return Control_Bind.bind(Data_Either.bindEither)(evalExample({
+                  ρ0: v.ρ0,
+                  ρ: v.ρ,
+                  s: v.s
+              }))(function (q) {
+                  var v1 = EvalBwd.evalBwd(spec["o'"])(q.t);
+                  var v2 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v.ρ))(v1.value0.value0);
+                  var o$prime$prime = EvalFwd.evalFwd(v1.value0.value0)(v1.value0.value1)(v1.value1)(q.t);
+                  return Control_Bind.bind(Data_Either.bindEither)(valFigs(q)(spec)(new Data_Tuple.Tuple(v1.value0.value0, q.ρ0ρ)))(function (figs) {
+                      return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple({
+                          "\u03c10'": v2.value0,
+                          "\u03c1'": v2.value1
+                      }, Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([ App_Renderer.makeSubFig()({
+                          title: "output",
+                          uv: new Data_Tuple.Tuple(o$prime$prime, q.o)
+                      }) ])));
+                  });
               });
-          });
+          };
       };
   };
-  var linkingFigs = function (dictPartial) {
-      var vars = [ {
-          "var": "data",
-          makeFig: App_Renderer.makeEnergyTable()
-      } ];
-      return Data_Traversable.sequence(Data_Traversable.traversableArray)(Effect_Aff.applicativeAff)([ linkFig("fig-5")({
-          file1: "bar-chart",
-          file2: "line-chart",
-          dataFile: "renewables",
-          dataVar: "data",
-          v1_sel: Test_Util.selectBarChart_data(Test_Util.selectNth(1)(Test_Util.select_y))
-      })(App_Renderer.makeBarChart())(App_Renderer.makeLineChart())(App_Renderer.makeEnergyTable()), fig("fig-6")({
-          file: "linking/bar-chart",
-          makeSubfigs: needs({
-              vars: vars,
-              o_fig: App_Renderer.makeBarChart(),
-              "o'": Test_Util.selectBarChart_data(Test_Util.selectNth(0)(Test_Util.select_y))
-          })
-      }) ]);
-  };
   var convolutionFigs = function (dictPartial) {
-      var v = new Data_Tuple.Tuple("LightGreen", systemCol);
       return Data_Traversable.sequence(Data_Traversable.traversableArray)(Effect_Aff.applicativeAff)([ fig("fig-conv-1")({
           file: "slicing/conv-emboss",
-          makeSubfigs: needs({
-              vars: [ {
-                  "var": "image",
-                  makeFig: App_Renderer.matrixFig(v.value1)
-              }, {
-                  "var": "filter",
-                  makeFig: App_Renderer.matrixFig(v.value1)
-              } ],
-              o_fig: App_Renderer.matrixFig(v.value0),
+          makeSubfigs: needs()({
+              vars: [ "image", "filter" ],
               "o'": Test_Util.selectCell(2)(2)(5)(5)
           })
-      }), fig("fig-conv-2")({
-          file: "slicing/conv-emboss",
-          makeSubfigs: function (ex) {
-              return neededBy({
-                  vars: [ {
-                      "var": "image",
-                      makeFig: App_Renderer.matrixFig(v.value0)
-                  }, {
-                      "var": "filter",
-                      makeFig: App_Renderer.matrixFig(v.value0)
-                  } ],
-                  o_fig: App_Renderer.matrixFig(systemCol),
-                  "\u03c1'": selectOnly(new Bindings.Bind("filter", Test_Util.selectCell(1)(2)(3)(3)))(ex.ρ)
-              })(ex);
-          }
       }) ]);
   };
   var main = Data_Function.flip(Effect_Aff.runAff_)(Control_Apply.apply(Effect_Aff.applyAff)(Data_Functor.map(Effect_Aff.functorAff)(Data_Semigroup.append(Data_Semigroup.semigroupArray))(convolutionFigs()))(linkingFigs()))(function (v) {
@@ -32957,7 +32914,7 @@ var PS = {};
       if (v instanceof Data_Either.Right) {
           return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(App_Renderer.drawFig)(v.value0));
       };
-      throw new Error("Failed pattern match at App.Demo (line 194, column 4 - line 197, column 38): " + [ v.constructor.name ]);
+      throw new Error("Failed pattern match at App.Demo (line 169, column 4 - line 172, column 38): " + [ v.constructor.name ]);
   });
   exports["splitDefs"] = splitDefs;
   exports["varFig"] = varFig;
@@ -32969,7 +32926,6 @@ var PS = {};
   exports["selectOnly"] = selectOnly;
   exports["fig"] = fig;
   exports["linkFig"] = linkFig;
-  exports["systemCol"] = systemCol;
   exports["convolutionFigs"] = convolutionFigs;
   exports["linkingFigs"] = linkingFigs;
   exports["main"] = main;

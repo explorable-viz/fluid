@@ -40423,82 +40423,86 @@ var PS = {};
         nss = _ref$matrix$value.value0,
         i_max = _ref$matrix$value.value1,
         j_max = _ref$matrix.value1;
-    var w = 30,
-        h = 30;
-    var div = d3.select('#' + id);
-    var width = w * j_max + strokeWidth,
-        height = h * i_max + strokeWidth;
-    var hMargin = w / 2;
-    var vMargin = h / 2;
-    var svg = div.append('svg').attr('width', width + hMargin).attr('height', height + vMargin); // group for each row
+    return function () {
+      var w = 30,
+          h = 30;
+      var div = d3.select('#' + id);
+      var width = w * j_max + strokeWidth,
+          height = h * i_max + strokeWidth;
+      var hMargin = w / 2;
+      var vMargin = h / 2;
+      var svg = div.append('svg').attr('width', width + hMargin).attr('height', height + vMargin); // group for each row
 
-    var grp = svg.selectAll('g').data(nss).enter().append('g').attr('transform', function (_, i) {
-      return "translate(".concat(strokeWidth / 2 + hMargin / 2, ", ").concat(h * i + strokeWidth / 2 + vMargin, ")");
-    });
-    var rect = grp.selectAll('rect').data(function (d) {
-      return d;
-    }).enter();
-    rect.append('rect').attr('x', function (_, j) {
-      return w * j;
-    }).attr('width', w).attr('height', h).attr('fill', function (d) {
-      return d.value1 ? selColour : cellFillDefault;
-    }).attr('stroke', cellStroke).attr('stroke-width', strokeWidth);
-    rect.append('text').text(function (d) {
-      return d.value0;
-    }).attr('x', function (_, j) {
-      return w * (j + 0.5);
-    }).attr('y', 0.5 * h).attr('fill', cellTextFill).attr('font-family', fontFamily).attr('font-size', cellFontSize).attr('text-anchor', 'middle').attr('dominant-baseline', 'middle');
-    svg.append('text').text(title).attr('x', hMargin / 2).attr('y', vMargin / 2).attr('fill', titleTextFill).attr('font-family', fontFamily).attr('font-size', titleFontSize).attr('dominant-baseline', 'middle').attr('text-anchor', 'left');
+      var grp = svg.selectAll('g').data(nss).enter().append('g').attr('transform', function (_, i) {
+        return "translate(".concat(strokeWidth / 2 + hMargin / 2, ", ").concat(h * i + strokeWidth / 2 + vMargin, ")");
+      });
+      var rect = grp.selectAll('rect').data(function (d) {
+        return d;
+      }).enter();
+      rect.append('rect').attr('x', function (_, j) {
+        return w * j;
+      }).attr('width', w).attr('height', h).attr('fill', function (d) {
+        return d.value1 ? selColour : cellFillDefault;
+      }).attr('stroke', cellStroke).attr('stroke-width', strokeWidth);
+      rect.append('text').text(function (d) {
+        return d.value0;
+      }).attr('x', function (_, j) {
+        return w * (j + 0.5);
+      }).attr('y', 0.5 * h).attr('fill', cellTextFill).attr('font-family', fontFamily).attr('font-size', cellFontSize).attr('text-anchor', 'middle').attr('dominant-baseline', 'middle');
+      svg.append('text').text(title).attr('x', hMargin / 2).attr('y', vMargin / 2).attr('fill', titleTextFill).attr('font-family', fontFamily).attr('font-size', titleFontSize).attr('dominant-baseline', 'middle').attr('text-anchor', 'left');
+    };
   }
 
   function drawBarChart(id, _ref2) {
     var caption = _ref2.caption,
         data_ = _ref2.data_;
-    var margin = {
-      top: 15,
-      right: 0,
-      bottom: 40,
-      left: 30
-    },
-        width = 200 - margin.left - margin.right,
-        height = 185 - margin.top - margin.bottom;
-    var svg = d3.select('#' + id).append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', "translate(".concat(margin.left, ", ").concat(margin.top, ")"));
-    var tip = d3tip.default().attr('class', 'd3-tip').offset([0, 0]).html(function (ev, d) {
-      return d.y.value0;
-    });
-    svg.call(tip); // x-axis
+    return function () {
+      var margin = {
+        top: 15,
+        right: 0,
+        bottom: 40,
+        left: 30
+      },
+          width = 200 - margin.left - margin.right,
+          height = 185 - margin.top - margin.bottom;
+      var svg = d3.select('#' + id).append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', "translate(".concat(margin.left, ", ").concat(margin.top, ")"));
+      var tip = d3tip.default().attr('class', 'd3-tip').offset([0, 0]).html(function (ev, d) {
+        return d.y.value0;
+      });
+      svg.call(tip); // x-axis
 
-    var x = d3.scaleBand().range([0, width]).domain(data_.map(function (d) {
-      return d.x.value0;
-    })).padding(0.2);
-    svg.append('g').attr('transform', "translate(0," + height + ")").call(d3.axisBottom(x)).selectAll('text').style('text-anchor', 'middle'); // y-axis
+      var x = d3.scaleBand().range([0, width]).domain(data_.map(function (d) {
+        return d.x.value0;
+      })).padding(0.2);
+      svg.append('g').attr('transform', "translate(0," + height + ")").call(d3.axisBottom(x)).selectAll('text').style('text-anchor', 'middle'); // y-axis
 
-    var nearest = 100,
-        y_max = Math.ceil(Math.max.apply(Math, _toConsumableArray(data_.map(function (d) {
-      return d.y.value0;
-    }))) / nearest) * nearest;
-    var y = d3.scaleLinear().domain([0, y_max]).range([height, 0]);
-    var tickEvery = nearest / 2,
-        ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map(function (n) {
-      return n * tickEvery;
-    });
-    var yAxis = d3.axisLeft(y).tickValues(ticks);
-    svg.append('g').call(yAxis); // bars
+      var nearest = 100,
+          y_max = Math.ceil(Math.max.apply(Math, _toConsumableArray(data_.map(function (d) {
+        return d.y.value0;
+      }))) / nearest) * nearest;
+      var y = d3.scaleLinear().domain([0, y_max]).range([height, 0]);
+      var tickEvery = nearest / 2,
+          ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map(function (n) {
+        return n * tickEvery;
+      });
+      var yAxis = d3.axisLeft(y).tickValues(ticks);
+      svg.append('g').call(yAxis); // bars
 
-    var barFill = '#dcdcdc';
-    svg.selectAll('rect').data(data_).enter().append('rect').attr('id', 'mouse-cursor').attr('x', function (d) {
-      return x(d.x.value0);
-    }).attr('y', function (d) {
-      return y(d.y.value0 + 1);
-    }) // ouch: bars overplot x-axis!
-    .attr('width', x.bandwidth()).attr('height', function (d) {
-      return height - y(d.y.value0);
-    }).attr('fill', function (d) {
-      return d.y.value1 ? colorShade(barFill, -40) : barFill;
-    }).attr('stroke', function (d) {
-      return d.y.value1 ? 'coral' : '';
-    }).on('mouseover', tip.show).on('mouseout', tip.hide);
-    svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('fill', titleTextFill).attr('font-family', fontFamily).attr('font-size', titleFontSize).attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
+      var barFill = '#dcdcdc';
+      svg.selectAll('rect').data(data_).enter().append('rect').attr('id', 'mouse-cursor').attr('x', function (d) {
+        return x(d.x.value0);
+      }).attr('y', function (d) {
+        return y(d.y.value0 + 1);
+      }) // ouch: bars overplot x-axis!
+      .attr('width', x.bandwidth()).attr('height', function (d) {
+        return height - y(d.y.value0);
+      }).attr('fill', function (d) {
+        return d.y.value1 ? colorShade(barFill, -40) : barFill;
+      }).attr('stroke', function (d) {
+        return d.y.value1 ? 'coral' : '';
+      }).on('mouseover', tip.show).on('mouseout', tip.hide);
+      svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('fill', titleTextFill).attr('font-family', fontFamily).attr('font-size', titleFontSize).attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
+    };
   }
 
   function max_y(linePlot) {
@@ -40522,80 +40526,82 @@ var PS = {};
   function drawLineChart(id, _ref3) {
     var caption = _ref3.caption,
         plots = _ref3.plots;
-    var margin = {
-      top: 15,
-      right: 65,
-      bottom: 40,
-      left: 30
-    },
-        width = 230 - margin.left - margin.right,
-        height = 185 - margin.top - margin.bottom,
-        y_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_y))),
-        x_min = Math.min.apply(Math, _toConsumableArray(plots.map(min_x))),
-        x_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_x))),
-        names = plots.map(function (plot) {
-      return plot.name.value0;
-    });
-    var svg = d3.select('#' + id).append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', "translate(".concat(margin.left, ", ").concat(margin.top, ")"));
-    var x = d3.scaleLinear().domain([x_min, x_max]).range([0, width]),
-        y = d3.scaleLinear().domain([0, y_max]).range([height, 0]);
-    var line1 = d3.line().x(function (d) {
-      return x(d.x.value0);
-    }).y(function (d) {
-      return y(d.y.value0);
-    });
-    var color = d3.scaleOrdinal(d3.schemePastel1);
-    svg.selectAll('lines').data(plots).enter().append('g').append('path').attr('fill', 'none').attr('stroke', function (d) {
-      return color(names.indexOf(d.name.value0));
-    }).attr('stroke-width', 1).attr('class', 'line').attr('d', function (d) {
-      return line1(d.data_);
-    });
-    var smallRadius = 2;
+    return function () {
+      var margin = {
+        top: 15,
+        right: 65,
+        bottom: 40,
+        left: 30
+      },
+          width = 230 - margin.left - margin.right,
+          height = 185 - margin.top - margin.bottom,
+          y_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_y))),
+          x_min = Math.min.apply(Math, _toConsumableArray(plots.map(min_x))),
+          x_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_x))),
+          names = plots.map(function (plot) {
+        return plot.name.value0;
+      });
+      var svg = d3.select('#' + id).append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', "translate(".concat(margin.left, ", ").concat(margin.top, ")"));
+      var x = d3.scaleLinear().domain([x_min, x_max]).range([0, width]),
+          y = d3.scaleLinear().domain([0, y_max]).range([height, 0]);
+      var line1 = d3.line().x(function (d) {
+        return x(d.x.value0);
+      }).y(function (d) {
+        return y(d.y.value0);
+      });
+      var color = d3.scaleOrdinal(d3.schemePastel1);
+      svg.selectAll('lines').data(plots).enter().append('g').append('path').attr('fill', 'none').attr('stroke', function (d) {
+        return color(names.indexOf(d.name.value0));
+      }).attr('stroke-width', 1).attr('class', 'line').attr('d', function (d) {
+        return line1(d.data_);
+      });
+      var smallRadius = 2;
 
-    var _iterator = _createForOfIteratorHelper(plots),
-        _step;
+      var _iterator = _createForOfIteratorHelper(plots),
+          _step;
 
-    try {
-      var _loop = function _loop() {
-        var plot = _step.value;
-        var col = color(names.indexOf(plot.name.value0));
-        svg.selectAll('markers').data(plot.data_).enter().append('g').append('circle').attr('class', 'marker').attr('r', function (d) {
-          return d.y.value1 ? smallRadius * 2 : smallRadius;
-        }).attr('cx', function (d) {
-          return x(d.x.value0);
-        }).attr('cy', function (d) {
-          return y(d.y.value0);
-        }).attr('fill', col).attr('stroke', function (d) {
-          return d.y.value1 ? colorShade(col, -30) : col;
-        });
-      };
+      try {
+        var _loop = function _loop() {
+          var plot = _step.value;
+          var col = color(names.indexOf(plot.name.value0));
+          svg.selectAll('markers').data(plot.data_).enter().append('g').append('circle').attr('class', 'marker').attr('r', function (d) {
+            return d.y.value1 ? smallRadius * 2 : smallRadius;
+          }).attr('cx', function (d) {
+            return x(d.x.value0);
+          }).attr('cy', function (d) {
+            return y(d.y.value0);
+          }).attr('fill', col).attr('stroke', function (d) {
+            return d.y.value1 ? colorShade(col, -30) : col;
+          });
+        };
 
-      for (_iterator.s(); !(_step = _iterator.n()).done;) {
-        _loop();
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          _loop();
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
       }
-    } catch (err) {
-      _iterator.e(err);
-    } finally {
-      _iterator.f();
-    }
 
-    svg.append('g').attr('transform', "translate(0, ".concat(height, ")")).call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')));
-    svg.append('g').call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))); // lots of hard-coded constants
+      svg.append('g').attr('transform', "translate(0, ".concat(height, ")")).call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')));
+      svg.append('g').call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))); // lots of hard-coded constants
 
-    var legendLineHeight = 15,
-        legendStart = width + margin.left / 2;
-    svg.append('rect').attr('transform', "translate(".concat(legendStart, ", ").concat(legendLineHeight * (names.length - 1) + 2, ")")).attr('x', 0).attr('y', 0).attr('stroke', 'lightgray').attr('fill', 'none').attr('height', legendLineHeight * names.length).attr('width', margin.right - 16);
-    var legend = svg.selectAll('legend').data(names).enter().append('g').attr('class', 'legend').attr('transform', function (d, i) {
-      return "translate(".concat(legendStart, ", ").concat(height / 2 - margin.top + i * legendLineHeight, ")");
-    });
-    legend.append('text').text(function (d) {
-      return d;
-    }).attr('font-size', 11).attr('transform', 'translate(15, 9)'); // align text with boxes
+      var legendLineHeight = 15,
+          legendStart = width + margin.left / 2;
+      svg.append('rect').attr('transform', "translate(".concat(legendStart, ", ").concat(legendLineHeight * (names.length - 1) + 2, ")")).attr('x', 0).attr('y', 0).attr('stroke', 'lightgray').attr('fill', 'none').attr('height', legendLineHeight * names.length).attr('width', margin.right - 16);
+      var legend = svg.selectAll('legend').data(names).enter().append('g').attr('class', 'legend').attr('transform', function (d, i) {
+        return "translate(".concat(legendStart, ", ").concat(height / 2 - margin.top + i * legendLineHeight, ")");
+      });
+      legend.append('text').text(function (d) {
+        return d;
+      }).attr('font-size', 11).attr('transform', 'translate(15, 9)'); // align text with boxes
 
-    legend.append('circle').attr('fill', function (d) {
-      return color(names.indexOf(d));
-    }).attr('r', smallRadius).attr('cx', legendLineHeight / 2 - smallRadius / 2).attr('cy', legendLineHeight / 2 - smallRadius / 2);
-    svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('fill', titleTextFill).attr('font-family', fontFamily).attr('font-size', titleFontSize).attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
+      legend.append('circle').attr('fill', function (d) {
+        return color(names.indexOf(d));
+      }).attr('r', smallRadius).attr('cx', legendLineHeight / 2 - smallRadius / 2).attr('cy', legendLineHeight / 2 - smallRadius / 2);
+      svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('fill', titleTextFill).attr('font-family', fontFamily).attr('font-size', titleFontSize).attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
+    };
   } // https://stackoverflow.com/questions/5560248
 
 
@@ -40633,69 +40639,38 @@ var PS = {};
   function drawTable(id, _ref5) {
     var title = _ref5.title,
         table = _ref5.table;
-    table = table.filter(function (r) {
-      return isUsed(r);
-    });
-    var cellFill = '#ffffff';
-    var HTMLtable = d3.select('#' + id).append('table');
-    var colNames = Object.keys(table[0]);
-    HTMLtable.append('thead').append('tr').selectAll('th').data(colNames).enter().append('th').text(function (d) {
-      return d;
-    });
-    var rows = HTMLtable.append('tbody').selectAll('tr').data(table).enter().append('tr');
-    rows.selectAll('td').data(function (d) {
-      return colNames.map(function (k) {
-        return {
-          'value': d[k],
-          'name': k
-        };
+    return function () {
+      table = table.filter(function (r) {
+        return isUsed(r);
       });
-    }).enter().append('td').attr('data-th', function (d) {
-      return d.name;
-    }).attr('class', function (d) {
-      return d.value.value1 ? 'cell-selected' : null;
-    }).attr('bgcolor', function (d) {
-      return d.value.value1 ? colorShade(cellFill, -40) : cellFill;
-    }).text(function (d) {
-      return d.value.value0;
-    });
+      var cellFill = '#ffffff';
+      var HTMLtable = d3.select('#' + id).append('table');
+      var colNames = Object.keys(table[0]);
+      HTMLtable.append('thead').append('tr').selectAll('th').data(colNames).enter().append('th').text(function (d) {
+        return d;
+      });
+      var rows = HTMLtable.append('tbody').selectAll('tr').data(table).enter().append('tr');
+      rows.selectAll('td').data(function (d) {
+        return colNames.map(function (k) {
+          return {
+            'value': d[k],
+            'name': k
+          };
+        });
+      }).enter().append('td').attr('data-th', function (d) {
+        return d.name;
+      }).attr('class', function (d) {
+        return d.value.value1 ? 'cell-selected' : null;
+      }).attr('bgcolor', function (d) {
+        return d.value.value1 ? colorShade(cellFill, -40) : cellFill;
+      }).text(function (d) {
+        return d.value.value0;
+      });
+    };
   }
 
   function className(o) {
     return o.constructor.name;
-  } // Figs -> Effect Unit
-
-
-  function drawFig(_ref6) {
-    var divId = _ref6.divId,
-        subfigs = _ref6.subfigs;
-    return function () {
-      var _iterator2 = _createForOfIteratorHelper(subfigs),
-          _step2;
-
-      try {
-        for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
-          var fig = _step2.value;
-
-          // Bit horrible but will do for now.
-          if (className(fig) == "EnergyTable") {
-            drawTable(divId, fig.value0);
-          } else if (className(fig) == "BarChartFig") {
-            drawBarChart(divId, fig.value0);
-          } else if (className(fig) == "LineChartFig") {
-            drawLineChart(divId, fig.value0);
-          } else if (className(fig) == "MatrixFig") {
-            drawMatrix(divId, fig.value0);
-          } else {
-            throw new Error("Figure type '".concat(className(fig), "' not recognised."));
-          }
-        }
-      } catch (err) {
-        _iterator2.e(err);
-      } finally {
-        _iterator2.f();
-      }
-    };
   } // Currently unused.
 
 
@@ -40745,7 +40720,10 @@ var PS = {};
     };
   }
 
-  exports.drawFig = drawFig;
+  exports.drawBarChart = curry2(drawBarChart);
+  exports.drawLineChart = curry2(drawLineChart);
+  exports.drawMatrix = curry2(drawMatrix);
+  exports.drawTable = curry2(drawTable);
 })(PS["App.Renderer"] = PS["App.Renderer"] || {});
 
 (function ($PS) {
@@ -67536,11 +67514,13 @@ var PS = {};
   var Data_Array = $PS["Data.Array"];
   var Data_Either = $PS["Data.Either"];
   var Data_Eq = $PS["Data.Eq"];
+  var Data_Foldable = $PS["Data.Foldable"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_List_Types = $PS["Data.List.Types"];
   var Data_Profunctor_Strong = $PS["Data.Profunctor.Strong"];
   var Data_Tuple = $PS["Data.Tuple"];
   var DataType = $PS["DataType"];
+  var Effect = $PS["Effect"];
   var Lattice = $PS["Lattice"];
   var Primitive = $PS["Primitive"];
   var Util = $PS["Util"];
@@ -67560,18 +67540,18 @@ var PS = {};
     return MatrixFig;
   }();
 
-  var EnergyTable = function () {
-    function EnergyTable(value0) {
+  var EnergyTableView = function () {
+    function EnergyTableView(value0) {
       this.value0 = value0;
     }
 
     ;
 
-    EnergyTable.create = function (value0) {
-      return new EnergyTable(value0);
+    EnergyTableView.create = function (value0) {
+      return new EnergyTableView(value0);
     };
 
-    return EnergyTable;
+    return EnergyTableView;
   }();
 
   var LineChartFig = function () {
@@ -67616,17 +67596,6 @@ var PS = {};
     return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Primitive.match_fwd(Primitive.toFromInt)))(Data_Array.zipWith(Data_Array.zip)(v.value0.value0.value0)(v.value1.value0.value0)), v.value1.value0.value1.value0), v.value1.value1.value0);
   };
 
-  var matrixFig = function matrixFig(selColour) {
-    return function (v) {
-      var vss2 = new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.uv.value1)));
-      return new MatrixFig({
-        title: v.title,
-        selColour: selColour,
-        matrix: matrixRep(vss2)
-      });
-    };
-  };
-
   var get = function get(x) {
     return function (v) {
       return Util.successful(Control_Apply.lift2(Data_Either.applyEither)(Data_Tuple.Tuple.create)(Bindings.find(x)(v.value0))(Bindings.find(x)(v.value1)));
@@ -67635,10 +67604,10 @@ var PS = {};
 
   var get_prim = function get_prim(dictToFrom) {
     return function (x) {
-      var $162 = Primitive.match_fwd(dictToFrom);
-      var $163 = get(x);
-      return function ($164) {
-        return $162($163($164));
+      var $166 = Primitive.match_fwd(dictToFrom);
+      var $167 = get(x);
+      return function ($168) {
+        return $166($167($168));
       };
     };
   };
@@ -67680,7 +67649,7 @@ var PS = {};
         }
 
         ;
-        throw new Error("Failed pattern match at App.Renderer (line 131, column 7 - line 132, column 32): " + [v1.constructor.name]);
+        throw new Error("Failed pattern match at App.Renderer (line 142, column 7 - line 143, column 32): " + [v1.constructor.name]);
       }
 
       ;
@@ -67693,11 +67662,11 @@ var PS = {};
         }
 
         ;
-        throw new Error("Failed pattern match at App.Renderer (line 134, column 7 - line 135, column 70): " + [v3.constructor.name]);
+        throw new Error("Failed pattern match at App.Renderer (line 145, column 7 - line 146, column 70): " + [v3.constructor.name]);
       }
 
       ;
-      throw new Error("Failed pattern match at App.Renderer (line 129, column 1 - line 135, column 70): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Renderer (line 140, column 1 - line 146, column 70): " + [v.constructor.name]);
     };
   });
   var reflectBarChart = new $$Reflect(function (dictPartial) {
@@ -67708,25 +67677,6 @@ var PS = {};
       };
     };
   });
-
-  var makeBarChart = function makeBarChart(dictPartial) {
-    return function (v) {
-      if (v.uv.value1 instanceof Val.Constr && v.uv.value1.value2 instanceof Data_List_Types.Cons && v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cBarChart)) {
-        var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cBarChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
-
-        if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
-          return new BarChartFig(record(from(reflectBarChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
-        }
-
-        ;
-        throw new Error("Failed pattern match at App.Renderer (line 57, column 4 - line 58, column 69): " + [v2.constructor.name]);
-      }
-
-      ;
-      throw new Error("Failed pattern match at App.Renderer (line 55, column 1 - line 55, column 38): " + [v.constructor.name]);
-    };
-  };
-
   var reflectLinePlot = new $$Reflect(function (dictPartial) {
     return function (r) {
       return {
@@ -67745,11 +67695,11 @@ var PS = {};
         }
 
         ;
-        throw new Error("Failed pattern match at App.Renderer (line 125, column 7 - line 126, column 58): " + [v2.constructor.name]);
+        throw new Error("Failed pattern match at App.Renderer (line 136, column 7 - line 137, column 58): " + [v2.constructor.name]);
       }
 
       ;
-      throw new Error("Failed pattern match at App.Renderer (line 123, column 1 - line 126, column 58): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Renderer (line 134, column 1 - line 137, column 58): " + [v.constructor.name]);
     };
   });
   var reflectLineChart = new $$Reflect(function (dictPartial) {
@@ -67761,24 +67711,6 @@ var PS = {};
     };
   });
 
-  var makeLineChart = function makeLineChart(dictPartial) {
-    return function (v) {
-      if (v.uv.value1 instanceof Val.Constr && v.uv.value1.value2 instanceof Data_List_Types.Cons && v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cLineChart)) {
-        var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cLineChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
-
-        if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
-          return new LineChartFig(record(from(reflectLineChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
-        }
-
-        ;
-        throw new Error("Failed pattern match at App.Renderer (line 62, column 4 - line 63, column 70): " + [v2.constructor.name]);
-      }
-
-      ;
-      throw new Error("Failed pattern match at App.Renderer (line 60, column 1 - line 60, column 39): " + [v.constructor.name]);
-    };
-  };
-
   var energyRecord = function energyRecord(r) {
     return {
       year: get_prim(Primitive.toFromInt)("year")(r),
@@ -67788,20 +67720,92 @@ var PS = {};
     };
   };
 
-  var makeEnergyTable = function makeEnergyTable(dictPartial) {
+  var makeSubFig = function makeSubFig(dictPartial) {
     return function (v) {
-      return new EnergyTable({
-        title: v.title,
-        table: Data_Functor.map(Data_Functor.functorArray)(record(energyRecord))(from(reflectArray)()(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1)))
-      });
+      if (v.uv.value1 instanceof Val.Constr && v.uv.value1.value2 instanceof Data_List_Types.Cons && v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cBarChart)) {
+        var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cBarChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
+
+        if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
+          return new BarChartFig(record(from(reflectBarChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
+        }
+
+        ;
+        throw new Error("Failed pattern match at App.Renderer (line 64, column 4 - line 65, column 69): " + [v2.constructor.name]);
+      }
+
+      ;
+
+      if (v.uv.value1 instanceof Val.Constr && v.uv.value1.value2 instanceof Data_List_Types.Cons && v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cLineChart)) {
+        var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cLineChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
+
+        if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
+          return new LineChartFig(record(from(reflectLineChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
+        }
+
+        ;
+        throw new Error("Failed pattern match at App.Renderer (line 67, column 4 - line 68, column 70): " + [v2.constructor.name]);
+      }
+
+      ;
+
+      if (v.uv.value1 instanceof Val.Constr && (Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cNil) || Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cCons))) {
+        return new EnergyTableView({
+          title: v.title,
+          table: Data_Functor.map(Data_Functor.functorArray)(record(energyRecord))(from(reflectArray)()(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1)))
+        });
+      }
+
+      ;
+
+      if (v.uv.value1 instanceof Val.Matrix) {
+        var vss2 = new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.uv.value1)));
+        return new MatrixFig({
+          title: v.title,
+          selColour: "LightGreen",
+          matrix: matrixRep(vss2)
+        });
+      }
+
+      ;
+      throw new Error("Failed pattern match at App.Renderer (line 62, column 1 - line 62, column 76): " + [v.constructor.name]);
     };
   };
 
-  exports["matrixFig"] = matrixFig;
-  exports["makeEnergyTable"] = makeEnergyTable;
-  exports["makeBarChart"] = makeBarChart;
-  exports["makeLineChart"] = makeLineChart;
-  exports["drawFig"] = $foreign.drawFig;
+  var drawSubFig = function drawSubFig(divId) {
+    return function (v) {
+      if (v instanceof MatrixFig) {
+        return $foreign.drawMatrix(divId)(v.value0);
+      }
+
+      ;
+
+      if (v instanceof EnergyTableView) {
+        return $foreign.drawTable(divId)(v.value0);
+      }
+
+      ;
+
+      if (v instanceof LineChartFig) {
+        return $foreign.drawLineChart(divId)(v.value0);
+      }
+
+      ;
+
+      if (v instanceof BarChartFig) {
+        return $foreign.drawBarChart(divId)(v.value0);
+      }
+
+      ;
+      throw new Error("Failed pattern match at App.Renderer (line 55, column 1 - line 55, column 46): " + [divId.constructor.name, v.constructor.name]);
+    };
+  };
+
+  var drawFig = function drawFig(v) {
+    return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(drawSubFig(v.divId))(v.subfigs));
+  };
+
+  exports["drawFig"] = drawFig;
+  exports["makeSubFig"] = makeSubFig;
 })(PS);
 
 (function ($PS) {
@@ -70342,18 +70346,18 @@ var PS = {};
 
   var varFig = function varFig(dictPartial) {
     return function (v) {
-      return v.value0.makeFig({
-        title: v["value0"]["var"],
+      return App_Renderer.makeSubFig()({
+        title: v.value0,
         uv: v.value1
       });
     };
   };
 
-  var varFig$prime = function varFig$prime(spec) {
+  var varFig$prime = function varFig$prime(x) {
     return function (v) {
-      return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(spec["var"])(v.value1))(function (v1) {
-        return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(spec["var"])(v.value0))(function (v$prime) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(varFig()(new Data_Tuple.Tuple(spec, new Data_Tuple.Tuple(v$prime, v1))));
+      return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(x)(v.value1))(function (v1) {
+        return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(x)(v.value0))(function (v$prime) {
+          return Control_Applicative.pure(Data_Either.applicativeEither)(varFig()(new Data_Tuple.Tuple(x, new Data_Tuple.Tuple(v$prime, v1))));
         });
       });
     };
@@ -70363,7 +70367,7 @@ var PS = {};
     return function (v) {
       return function (v1) {
         return Control_Bind.bind(Data_Either.bindEither)(Data_Traversable.sequence(Data_Traversable.traversableArray)(Data_Either.applicativeEither)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(varFig$prime)(new Data_Tuple.Tuple(v1.value0, v1.value1)))(v.vars)))(function (figs) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([v.o_fig({
+          return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([App_Renderer.makeSubFig()({
             title: "output",
             uv: new Data_Tuple.Tuple(v["o'"], q.o)
           })]));
@@ -70371,8 +70375,6 @@ var PS = {};
       };
     };
   };
-
-  var systemCol = "rgb(160,209,255)";
 
   var splitDefs = function splitDefs(ρ0) {
     return function (s$prime) {
@@ -70412,39 +70414,46 @@ var PS = {};
     };
   };
 
-  var linkFig = function linkFig(divId) {
-    return function (config) {
-      return function (o1_fig) {
-        return function (o2_fig) {
-          return function (data_fig) {
-            return Control_Bind.bind(Effect_Aff.bindAff)(Test_Util.doLink(config))(function (link) {
-              return Control_Applicative.pure(Effect_Aff.applicativeAff)({
-                divId: divId,
-                subfigs: [o1_fig({
-                  title: "primary view",
-                  uv: new Data_Tuple.Tuple(config.v1_sel, link.v1)
-                }), o2_fig({
-                  title: "linked view",
-                  uv: link.v2
-                }), data_fig({
-                  title: "common data",
-                  uv: link.data_sel
-                })]
-              });
-            });
-          };
-        };
+  var linkFig = function linkFig(dictPartial) {
+    return function (divId) {
+      return function (config) {
+        return Control_Bind.bind(Effect_Aff.bindAff)(Test_Util.doLink(config))(function (link) {
+          return Control_Applicative.pure(Effect_Aff.applicativeAff)({
+            divId: divId,
+            subfigs: [App_Renderer.makeSubFig()({
+              title: "primary view",
+              uv: new Data_Tuple.Tuple(config.v1_sel, link.v1)
+            }), App_Renderer.makeSubFig()({
+              title: "linked view",
+              uv: link.v2
+            }), App_Renderer.makeSubFig()({
+              title: "common data",
+              uv: link.data_sel
+            })]
+          });
+        });
       };
     };
+  };
+
+  var linkingFigs = function linkingFigs(dictPartial) {
+    var vars = ["data"];
+    return Data_Traversable.sequence(Data_Traversable.traversableArray)(Effect_Aff.applicativeAff)([linkFig()("fig-1")({
+      file1: "bar-chart",
+      file2: "line-chart",
+      dataFile: "renewables",
+      dataVar: "data",
+      v1_sel: Test_Util.selectBarChart_data(Test_Util.selectNth(1)(Test_Util.select_y))
+    })]);
   };
 
   var fig = function fig(divId) {
     return function (v) {
       return Control_Bind.bind(Effect_Aff.bindAff)(Module.openDatasetAs("example/linking/renewables")("data"))(function (v1) {
         return Control_Bind.bind(Effect_Aff.bindAff)(Data_Functor.map(Effect_Aff.functorAff)(function () {
-          var $110 = splitDefs(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v1.value0)(v1.value1));
-          return function ($111) {
-            return Util.successful($110($111));
+          var $104 = splitDefs(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v1.value0)(v1.value1));
+          return function ($105) {
+            return Util.successful($104($105));
           };
         }())(Module.open(v.file)))(function (v2) {
           var v3 = Util.successful(v.makeSubfigs({
@@ -70487,7 +70496,6 @@ var PS = {};
         var v2 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v1.ρ))(ρ0$primeρ$prime$prime);
         return Control_Bind.bind(Data_Either.bindEither)(valFigs(q)({
           vars: v.vars,
-          o_fig: v.o_fig,
           "o'": o$prime
         })(new Data_Tuple.Tuple(v["\u03C1'"], v1.ρ)))(function (figs) {
           return Control_Bind.bind(Data_Either.bindEither)(Data_Traversable.sequence(Data_Traversable.traversableArray)(Data_Either.applicativeEither)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(varFig$prime)(new Data_Tuple.Tuple(v2.value1, v1.ρ)))(v.vars)))(function (figs$prime) {
@@ -70498,80 +70506,38 @@ var PS = {};
     };
   };
 
-  var needs = function needs(spec) {
-    return function (v) {
-      return Control_Bind.bind(Data_Either.bindEither)(evalExample({
-        ρ0: v.ρ0,
-        ρ: v.ρ,
-        s: v.s
-      }))(function (q) {
-        var v1 = EvalBwd.evalBwd(spec["o'"])(q.t);
-        var v2 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v.ρ))(v1.value0.value0);
-        var o$prime$prime = EvalFwd.evalFwd(v1.value0.value0)(v1.value0.value1)(v1.value1)(q.t);
-        return Control_Bind.bind(Data_Either.bindEither)(valFigs(q)(spec)(new Data_Tuple.Tuple(v1.value0.value0, q.ρ0ρ)))(function (figs) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple({
-            "\u03C10'": v2.value0,
-            "\u03C1'": v2.value1
-          }, Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([spec.o_fig({
-            title: "output",
-            uv: new Data_Tuple.Tuple(o$prime$prime, q.o)
-          })])));
+  var needs = function needs(dictPartial) {
+    return function (spec) {
+      return function (v) {
+        return Control_Bind.bind(Data_Either.bindEither)(evalExample({
+          ρ0: v.ρ0,
+          ρ: v.ρ,
+          s: v.s
+        }))(function (q) {
+          var v1 = EvalBwd.evalBwd(spec["o'"])(q.t);
+          var v2 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v.ρ))(v1.value0.value0);
+          var o$prime$prime = EvalFwd.evalFwd(v1.value0.value0)(v1.value0.value1)(v1.value1)(q.t);
+          return Control_Bind.bind(Data_Either.bindEither)(valFigs(q)(spec)(new Data_Tuple.Tuple(v1.value0.value0, q.ρ0ρ)))(function (figs) {
+            return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple({
+              "\u03C10'": v2.value0,
+              "\u03C1'": v2.value1
+            }, Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([App_Renderer.makeSubFig()({
+              title: "output",
+              uv: new Data_Tuple.Tuple(o$prime$prime, q.o)
+            })])));
+          });
         });
-      });
+      };
     };
   };
 
-  var linkingFigs = function linkingFigs(dictPartial) {
-    var vars = [{
-      "var": "data",
-      makeFig: App_Renderer.makeEnergyTable()
-    }];
-    return Data_Traversable.sequence(Data_Traversable.traversableArray)(Effect_Aff.applicativeAff)([linkFig("fig-5")({
-      file1: "bar-chart",
-      file2: "line-chart",
-      dataFile: "renewables",
-      dataVar: "data",
-      v1_sel: Test_Util.selectBarChart_data(Test_Util.selectNth(1)(Test_Util.select_y))
-    })(App_Renderer.makeBarChart())(App_Renderer.makeLineChart())(App_Renderer.makeEnergyTable()), fig("fig-6")({
-      file: "linking/bar-chart",
-      makeSubfigs: needs({
-        vars: vars,
-        o_fig: App_Renderer.makeBarChart(),
-        "o'": Test_Util.selectBarChart_data(Test_Util.selectNth(0)(Test_Util.select_y))
-      })
-    })]);
-  };
-
   var convolutionFigs = function convolutionFigs(dictPartial) {
-    var v = new Data_Tuple.Tuple("LightGreen", systemCol);
     return Data_Traversable.sequence(Data_Traversable.traversableArray)(Effect_Aff.applicativeAff)([fig("fig-conv-1")({
       file: "slicing/conv-emboss",
-      makeSubfigs: needs({
-        vars: [{
-          "var": "image",
-          makeFig: App_Renderer.matrixFig(v.value1)
-        }, {
-          "var": "filter",
-          makeFig: App_Renderer.matrixFig(v.value1)
-        }],
-        o_fig: App_Renderer.matrixFig(v.value0),
+      makeSubfigs: needs()({
+        vars: ["image", "filter"],
         "o'": Test_Util.selectCell(2)(2)(5)(5)
       })
-    }), fig("fig-conv-2")({
-      file: "slicing/conv-emboss",
-      makeSubfigs: function makeSubfigs(ex) {
-        return neededBy({
-          vars: [{
-            "var": "image",
-            makeFig: App_Renderer.matrixFig(v.value0)
-          }, {
-            "var": "filter",
-            makeFig: App_Renderer.matrixFig(v.value0)
-          }],
-          o_fig: App_Renderer.matrixFig(systemCol),
-          "\u03C1'": selectOnly(new Bindings.Bind("filter", Test_Util.selectCell(1)(2)(3)(3)))(ex.ρ)
-        })(ex);
-      }
     })]);
   };
 
@@ -70587,7 +70553,7 @@ var PS = {};
     }
 
     ;
-    throw new Error("Failed pattern match at App.Demo (line 194, column 4 - line 197, column 38): " + [v.constructor.name]);
+    throw new Error("Failed pattern match at App.Demo (line 169, column 4 - line 172, column 38): " + [v.constructor.name]);
   });
   exports["splitDefs"] = splitDefs;
   exports["varFig"] = varFig;
@@ -70599,7 +70565,6 @@ var PS = {};
   exports["selectOnly"] = selectOnly;
   exports["fig"] = fig;
   exports["linkFig"] = linkFig;
-  exports["systemCol"] = systemCol;
   exports["convolutionFigs"] = convolutionFigs;
   exports["linkingFigs"] = linkingFigs;
   exports["main"] = main;
@@ -70607,4 +70572,4 @@ var PS = {};
 
 PS["App.Demo"].main();
 },{"d3":"BG5c","d3-tip":"TLCm","process":"g5I+"}]},{},["m8nE"], null)
-//# sourceMappingURL=/develop/app.308a4c70.js.map
+//# sourceMappingURL=/develop/app.9bece5c5.js.map
