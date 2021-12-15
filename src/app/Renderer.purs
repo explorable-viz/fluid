@@ -12,7 +12,7 @@ import DataType (cBarChart, cCons, cLineChart, cLinePlot, cNil)
 import Effect (Effect)
 import Lattice (𝔹, expand)
 import Primitive (Slice, class ToFrom, as, match, match_fwd)
-import Util (type (×), (×), type (+), successful)
+import Util (type (×), (×), type (+), error, successful)
 import Util.SnocList (SnocList)
 import Val (Array2, MatrixRep, Val)
 import Val (Val(..)) as V
@@ -68,13 +68,13 @@ instance barChartSubFig :: SubFigC BarChart where
 type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 
 matrixFig :: MakeSubFig
-matrixFig { title, uv: (u × v) } =
+matrixFig { title, uv: u × v } =
    let selColour = "LightGreen"
        vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig (MatrixView { title, selColour, matrix: matrixRep vss2 } )
 
 makeEnergyTable :: Partial => MakeSubFig
-makeEnergyTable { title, uv: (u × v) } =
+makeEnergyTable { title, uv: u × v } =
    EnergyTableView (EnergyTable { title, table: record energyRecord <$> from (u × v) })
 
 makeBarChart :: Partial => MakeSubFig
@@ -86,6 +86,21 @@ makeLineChart :: Partial => MakeSubFig
 makeLineChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
    case expand u (V.Constr false cLineChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> LineChartFig (record from (u1 × v1))
+
+makeSubFig :: Partial => MakeSubFig
+makeSubFig { title, uv: u × v } =
+   case v of
+      V.Constr _ c vs ->
+         if c == cBarChart
+         then makeBarChart { title, uv: u × v }
+         else
+         if c == cLineChart
+         then makeLineChart { title, uv: u × v }
+         else error "Unsupported visualisation datatype"
+      V.Matrix _ _ ->
+         matrixFig { title, uv: u × v }
+      V.Record _ _ ->
+         makeEnergyTable { title, uv: u × v }
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
