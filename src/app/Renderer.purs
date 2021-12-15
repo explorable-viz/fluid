@@ -12,7 +12,7 @@ import DataType (cBarChart, cCons, cLineChart, cLinePlot, cNil)
 import Effect (Effect)
 import Lattice (𝔹, expand)
 import Primitive (Slice, class ToFrom, as, match, match_fwd)
-import Util (type (×), (×), type (+), error, successful)
+import Util (type (×), (×), type (+), successful)
 import Util.SnocList (SnocList)
 import Val (Array2, MatrixRep, Val)
 import Val (Val(..)) as V
@@ -67,33 +67,19 @@ instance barChartSubFig :: SubFigC BarChart where
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
 type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 
-makeBarChart :: Partial => MakeSubFig
-makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
+makeSubFig :: Partial => MakeSubFig
+makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> BarChartFig (record from (u1 × v1))
-
-makeLineChart :: Partial => MakeSubFig
-makeLineChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
+makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
    case expand u (V.Constr false cLineChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> LineChartFig (record from (u1 × v1))
-
-makeSubFig :: Partial => MakeSubFig
-makeSubFig { title, uv: u × v } =
-   case v of
-      V.Constr _ c vs ->
-         if c == cBarChart
-         then makeBarChart { title, uv: u × v }
-         else
-         if c == cLineChart
-         then makeLineChart { title, uv: u × v }
-         else
-         if c == cNil || c == cCons
-         then EnergyTableView (EnergyTable { title, table: record energyRecord <$> from (u × v) })
-         else error $ show c <> " is not a visualisation constructor"
-      V.Matrix _ _ ->
-         let selColour = "LightGreen"
-             vss2 = fst (match_fwd (u × v)) × fst (match v) in
-         MatrixFig (MatrixView { title, selColour, matrix: matrixRep vss2 } )
+makeSubFig { title, uv: u × v@(V.Constr _ c _) } | c == cNil || c == cCons =
+   EnergyTableView (EnergyTable { title, table: record energyRecord <$> from (u × v) })
+makeSubFig { title, uv: u × v@(V.Matrix _ _) } =
+   let selColour = "LightGreen"
+       vss2 = fst (match_fwd (u × v)) × fst (match v) in
+   MatrixFig (MatrixView { title, selColour, matrix: matrixRep vss2 } )
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
