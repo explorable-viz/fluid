@@ -67,16 +67,6 @@ instance barChartSubFig :: SubFigC BarChart where
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
 type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 
-matrixFig :: MakeSubFig
-matrixFig { title, uv: u × v } =
-   let selColour = "LightGreen"
-       vss2 = fst (match_fwd (u × v)) × fst (match v) in
-   MatrixFig (MatrixView { title, selColour, matrix: matrixRep vss2 } )
-
-makeEnergyTable :: Partial => MakeSubFig
-makeEnergyTable { title, uv: u × v } =
-   EnergyTableView (EnergyTable { title, table: record energyRecord <$> from (u × v) })
-
 makeBarChart :: Partial => MakeSubFig
 makeBarChart { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
@@ -98,10 +88,12 @@ makeSubFig { title, uv: u × v } =
          then makeLineChart { title, uv: u × v }
          else
          if c == cNil || c == cCons
-         then makeEnergyTable { title, uv: u × v }
+         then EnergyTableView (EnergyTable { title, table: record energyRecord <$> from (u × v) })
          else error $ show c <> " is not a visualisation constructor"
       V.Matrix _ _ ->
-         matrixFig { title, uv: u × v }
+         let selColour = "LightGreen"
+             vss2 = fst (match_fwd (u × v)) × fst (match v) in
+         MatrixFig (MatrixView { title, selColour, matrix: matrixRep vss2 } )
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
