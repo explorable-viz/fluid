@@ -99,13 +99,6 @@ a.badge:hover {
    text-transform: lowercase
 }
 
-div.flags {
-   visibility: hidden;
-   position: absolute;
-   top: 0;
-   left: 0
-}
-
 table {
    margin-left: 4mm;
    outline: thin dotted;
