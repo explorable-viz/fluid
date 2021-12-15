@@ -394,3 +394,7 @@ function curry2 (f) {
 }
 
 exports.drawFig = drawFig
+exports.drawBarChart = curry2(drawBarChart)
+exports.drawLineChart = curry2(drawLineChart)
+exports.drawMatrix = curry2(drawMatrix)
+exports.drawTable = curry2(drawTable)

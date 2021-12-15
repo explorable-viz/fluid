@@ -23,6 +23,10 @@ type Fig = {
 }
 
 foreign import drawFig :: Fig -> Effect Unit
+foreign import drawBarChart :: Fig -> Effect Unit
+foreign import drawLineChart :: Fig -> Effect Unit
+foreign import drawMatrix :: Fig -> Effect Unit
+foreign import drawTable :: Fig -> Effect Unit
 
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
