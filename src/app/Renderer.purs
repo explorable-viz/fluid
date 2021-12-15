@@ -4,6 +4,7 @@ import Prelude
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (zip, zipWith)
+import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import Data.Profunctor.Strong (first)
@@ -25,6 +26,10 @@ type Fig = {
 }
 
 foreign import drawFig :: Fig -> Effect Unit
+
+drawFig2 :: Fig -> Effect Unit
+drawFig2 { divId, subfigs } =
+   sequence_ $ drawSubFig divId <$> subfigs
 
 foreign import drawBarChart :: HTMLId -> BarChart -> Effect Unit
 foreign import drawLineChart :: HTMLId -> LineChart -> Effect Unit
