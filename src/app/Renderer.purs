@@ -4,6 +4,7 @@ import Prelude
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.Array (zip, zipWith)
+import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import Data.Profunctor.Strong (first)
@@ -25,6 +26,7 @@ type Fig = {
 }
 
 foreign import drawFig :: Fig -> Effect Unit
+
 foreign import drawBarChart :: HTMLId -> BarChart -> Effect Unit
 foreign import drawLineChart :: HTMLId -> LineChart -> Effect Unit
 foreign import drawMatrix :: HTMLId -> MatrixView -> Effect Unit
@@ -47,6 +49,21 @@ data SubFig =
    EnergyTableView EnergyTable |
    LineChartFig LineChart |
    BarChartFig BarChart
+
+class SubFigC a where
+   drawSubfig :: HTMLId -> a -> Effect Unit
+
+instance matrixViewSubFig :: SubFigC MatrixView where
+   drawSubfig = drawMatrix
+
+instance energyTableSubFig :: SubFigC EnergyTable where
+   drawSubfig = drawTable
+
+instance lineChartSubFig :: SubFigC LineChart where
+   drawSubfig = drawLineChart
+
+instance barChartSubFig :: SubFigC BarChart where
+   drawSubfig = drawBarChart
 
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
 type MakeSubFig = { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
