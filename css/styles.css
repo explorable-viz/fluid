@@ -87,10 +87,6 @@ table {
    font-size: 11px;
 }
 
-.cell-selected {
-   border: 1px solid coral;
-}
-
 th {
    font-size: 11px;
    border-bottom: 'thin solid';
