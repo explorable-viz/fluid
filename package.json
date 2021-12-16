@@ -25,7 +25,8 @@
     "d3-tip": "^0.9.1",
     "parcel-bundler": "1.12.3",
     "purescript": "0.13.6",
-    "purescript-psa": "0.7.3"
+    "purescript-psa": "0.7.3",
+    "src": "^1.1.2"
   },
   "devDependencies": {
     "gh-pages": "^3.1.0",

@@ -3,74 +3,6 @@
 const d3 = require("d3")
 const d3tip = require("d3-tip")
 
-const cellFillDefault         = 'White',
-      cellStroke              = 'DarkGray',
-      cellTextFill            = 'Black',
-      cellFontSize            = '10pt',
-      fontFamily              = "Roboto, sans-serif",
-      strokeWidth             = 0.5,
-      titleTextFill           = 'Black',
-      titleFontSize           = '9pt'
-
-function drawMatrix (
-   id, {
-      title,                                                               // String
-      selColour,                                                           // String
-      matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }    // IntMatrix
-   }
-) {
-   return () => {
-      const w = 30, h = 30
-      const div = d3.select('#' + id)
-      const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
-      const hMargin = w / 2
-      const vMargin = h / 2
-
-      const svg = div.append('svg')
-                     .attr('width', width + hMargin)
-                     .attr('height', height + vMargin)
-
-      // group for each row
-      const grp = svg.selectAll('g')
-         .data(nss)
-         .enter()
-         .append('g')
-         .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
-
-      const rect = grp.selectAll('rect')
-                        .data(d => d)
-                        .enter()
-
-      rect.append('rect')
-            .attr('x', (_, j) => w * j)
-            .attr('width', w)
-            .attr('height', h)
-            .attr('fill', d => d.value1 ? selColour : cellFillDefault)
-            .attr('stroke', cellStroke)
-            .attr('stroke-width', strokeWidth)
-
-      rect.append('text')
-            .text(d => d.value0)
-            .attr('x', (_, j) => w * (j + 0.5))
-            .attr('y', 0.5 * h)
-            .attr('fill', cellTextFill)
-            .attr('font-family', fontFamily)
-            .attr('font-size', cellFontSize)
-            .attr('text-anchor', 'middle')
-            .attr('dominant-baseline', 'middle')
-
-      svg.append('text')
-         .text(title)
-         .attr('x', hMargin / 2)
-         .attr('y', vMargin / 2)
-         .attr('fill', titleTextFill)
-         .attr('font-family', fontFamily)
-         .attr('font-size', titleFontSize)
-         .attr('dominant-baseline', 'middle')
-         .attr('text-anchor', 'left')
-   }
-}
-
 function drawBarChart (
    id, {
       caption,   // String
@@ -142,9 +74,7 @@ function drawBarChart (
          .text(caption.value0)
          .attr('x', width / 2)
          .attr('y', height + 35)
-         .attr('fill', titleTextFill)
-         .attr('font-family', fontFamily)
-         .attr('font-size', titleFontSize)
+         .attr('class', 'title-text')
          .attr('dominant-baseline', 'bottom')
          .attr('text-anchor', 'middle')
    }
@@ -265,9 +195,7 @@ function drawLineChart (
          .text(caption.value0)
          .attr('x', width / 2)
          .attr('y', height + 35)
-         .attr('fill', titleTextFill)
-         .attr('font-family', fontFamily)
-         .attr('font-size', titleFontSize)
+         .attr('class', 'title-text')
          .attr('dominant-baseline', 'bottom')
          .attr('text-anchor', 'middle')
    }
@@ -330,10 +258,6 @@ function drawTable (
    }
 }
 
-function className (o) {
-   return o.constructor.name
-}
-
 // Currently unused.
 function saveImage (svg) {
    const svg_xml = (new XMLSerializer()).serializeToString(svg),
@@ -376,5 +300,4 @@ function curry2 (f) {
 
 exports.drawBarChart = curry2(drawBarChart)
 exports.drawLineChart = curry2(drawLineChart)
-exports.drawMatrix = curry2(drawMatrix)
 exports.drawTable = curry2(drawTable)

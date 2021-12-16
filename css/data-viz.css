@@ -1,0 +1,29 @@
+.d3-tip {
+   font-size: 11px;
+}
+
+.cell-selected {
+   border: 1px solid Coral;
+}
+
+.matrix-cell-selected {
+   fill: LightGreen;
+   stroke: DarkGray;
+}
+
+.matrix-cell-unselected {
+   fill: White;
+   stroke: DarkGray;
+}
+
+.matrix-cell-text {
+   fill: Black;
+   font-size: 10pt;
+   font-family: "Roboto", sans-serif;
+}
+
+.title-text {
+   fill: Black;
+   font-size: 9pt;
+   font-family: "Roboto", sans-serif;
+}

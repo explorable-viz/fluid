@@ -8,6 +8,8 @@ import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import Data.Profunctor.Strong (first)
+import App.MatrixView (MatrixView(..), IntMatrix, drawMatrix)
+import App.Util (HTMLId)
 import Bindings (Bindings, Bind, Var, find)
 import DataType (cBarChart, cCons, cLineChart, cLinePlot, cNil)
 import Effect (Effect)
@@ -15,10 +17,8 @@ import Lattice (𝔹, expand)
 import Primitive (Slice, class ToFrom, as, match, match_fwd)
 import Util (type (×), (×), type (+), successful)
 import Util.SnocList (SnocList)
-import Val (Array2, MatrixRep, Val)
+import Val (MatrixRep, Val)
 import Val (Val(..)) as V
-
-type HTMLId = String
 
 type Fig = {
    divId :: HTMLId,
@@ -31,19 +31,16 @@ drawFig { divId, subfigs } =
 
 foreign import drawBarChart :: HTMLId -> BarChart -> Effect Unit
 foreign import drawLineChart :: HTMLId -> LineChart -> Effect Unit
-foreign import drawMatrix :: HTMLId -> MatrixView -> Effect Unit
 foreign import drawTable :: HTMLId -> EnergyTable -> Effect Unit
 
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
-type IntMatrix = Array2 (Int × 𝔹) × Int × Int
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
 newtype BarChart = BarChart { caption :: String × 𝔹, data_ :: Array BarChartRecord }
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
 newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord }
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
-newtype MatrixView = MatrixView { title :: String, selColour :: String, matrix :: IntMatrix }
 newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
 
 data SubFig =
@@ -69,9 +66,8 @@ makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
 makeSubFig { title, uv: u × v@(V.Constr _ c _) } | c == cNil || c == cCons =
    EnergyTableView (EnergyTable { title, table: record energyRecord <$> from (u × v) })
 makeSubFig { title, uv: u × v@(V.Matrix _ _) } =
-   let selColour = "LightGreen"
-       vss2 = fst (match_fwd (u × v)) × fst (match v) in
-   MatrixFig (MatrixView { title, selColour, matrix: matrixRep vss2 } )
+   let vss2 = fst (match_fwd (u × v)) × fst (match v) in
+   MatrixFig (MatrixView { title, matrix: matrixRep vss2 } )
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
