@@ -2,6 +2,7 @@
 
 const d3 = require("d3")
 const d3tip = require("d3-tip")
+const shared = require('/src/app/Shared')
 
 function drawBarChart (
    id, {
@@ -294,10 +295,6 @@ function download (parent, dataURL, name) {
    a.remove()
  }
 
-function curry2 (f) {
-   return x1 => x2 => f(x1, x2)
-}
-
-exports.drawBarChart = curry2(drawBarChart)
-exports.drawLineChart = curry2(drawLineChart)
-exports.drawTable = curry2(drawTable)
+exports.drawBarChart = shared.curry2(drawBarChart)
+exports.drawLineChart = shared.curry2(drawLineChart)
+exports.drawTable = shared.curry2(drawTable)
