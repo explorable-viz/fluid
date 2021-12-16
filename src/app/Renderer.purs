@@ -9,6 +9,7 @@ import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import Data.Profunctor.Strong (first)
 import App.BarChart (BarChart(..), BarChartRecord(..), drawBarChart)
+import App.LineChart (LineChart(..), LinePlot(..), Point(..), drawLineChart)
 import App.MatrixView (MatrixView(..), IntMatrix, drawMatrix)
 import App.Util (HTMLId)
 import Bindings (Bindings, Bind, Var, find)
@@ -30,16 +31,12 @@ drawFig :: Fig -> Effect Unit
 drawFig { divId, subfigs } =
    sequence_ $ drawSubFig divId <$> subfigs
 
-foreign import drawLineChart :: HTMLId -> LineChart -> Effect Unit
 foreign import drawTable :: HTMLId -> EnergyTable -> Effect Unit
 
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
 newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord }
-newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
-newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
-newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
 
 data SubFig =
    MatrixFig MatrixView |
