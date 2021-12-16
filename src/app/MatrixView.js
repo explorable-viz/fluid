@@ -1,7 +1,7 @@
 "use strict"
 
 const d3 = require("d3")
-const shared = require('/src/app/Shared')
+const shared = require("/src/app/Shared")
 
 function drawMatrix (
    id, {
