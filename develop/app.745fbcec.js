@@ -32918,15 +32918,92 @@ function _default() {
 },{"d3-collection":"qqV1","d3-selection":"LZed"}],"Ad6u":[function(require,module,exports) {
 "use strict";
 
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
+
+function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
+
+function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return; var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
 function curry2(f) {
   return function (x1) {
     return function (x2) {
       return f(x1, x2);
     };
   };
+} // https://stackoverflow.com/questions/5560248
+
+
+function colorShade(col, amt) {
+  col = col.replace(/^#/, '');
+  if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2];
+
+  var _col$match = col.match(/.{2}/g),
+      _col$match2 = _slicedToArray(_col$match, 3),
+      r = _col$match2[0],
+      g = _col$match2[1],
+      b = _col$match2[2];
+
+  var _ref = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt];
+  r = _ref[0];
+  g = _ref[1];
+  b = _ref[2];
+  r = Math.max(Math.min(255, r), 0).toString(16);
+  g = Math.max(Math.min(255, g), 0).toString(16);
+  b = Math.max(Math.min(255, b), 0).toString(16);
+  var rr = (r.length < 2 ? '0' : '') + r;
+  var gg = (g.length < 2 ? '0' : '') + g;
+  var bb = (b.length < 2 ? '0' : '') + b;
+  return "#".concat(rr).concat(gg).concat(bb);
+} // Currently unused.
+
+
+function saveImage(svg) {
+  var svg_xml = new XMLSerializer().serializeToString(svg),
+      blob = new Blob([svg_xml], {
+    type: 'image/svg+xml;charset=utf-8'
+  }),
+      url = window.URL.createObjectURL(blob),
+      _svg$getBBox = svg.getBBox(),
+      width = _svg$getBBox.width,
+      height = _svg$getBBox.height;
+
+  var img = new Image();
+  img.width = width;
+  img.height = height;
+
+  img.onload = function () {
+    var canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, width, height);
+    window.URL.revokeObjectURL(url);
+    var dataURL = canvas.toDataURL('image/png');
+    download(canvas, dataURL, "image.png");
+  };
+
+  img.src = url;
 }
 
+function download(parent, dataURL, name) {
+  var a = document.createElement('a');
+  a.download = name;
+  a.style.opacity = '0';
+  parent.append(a);
+  a.href = dataURL;
+  a.click();
+  a.remove();
+}
+
+exports.colorShade = colorShade;
 exports.curry2 = curry2;
+exports.saveImage = saveImage;
 },{}],"g5I+":[function(require,module,exports) {
 
 // shim for using process in browser
@@ -33138,15 +33215,7 @@ process.umask = function () {
 };
 },{}],"m8nE":[function(require,module,exports) {
 var process = require("process");
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-
-function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return; var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
-function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
 
@@ -40418,6 +40487,8 @@ var PS = {};
 
   var d3tip = require("d3-tip");
 
+  var shared = require("/src/app/Shared");
+
   function drawBarChart(id, _ref) {
     var caption = _ref.caption,
         data_ = _ref.data_;
@@ -40462,7 +40533,7 @@ var PS = {};
       .attr('width', x.bandwidth()).attr('height', function (d) {
         return height - y(d.y.value0);
       }).attr('fill', function (d) {
-        return d.y.value1 ? colorShade(barFill, -40) : barFill;
+        return d.y.value1 ? shared.colorShade(barFill, -40) : barFill;
       }).attr('stroke', function (d) {
         return d.y.value1 ? 'coral' : '';
       }).on('mouseover', tip.show).on('mouseout', tip.hide);
@@ -40470,279 +40541,8 @@ var PS = {};
     };
   }
 
-  function max_y(linePlot) {
-    return Math.max.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
-      return point.y.value0;
-    })));
-  }
-
-  function min_x(linePlot) {
-    return Math.min.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
-      return point.x.value0;
-    })));
-  }
-
-  function max_x(linePlot) {
-    return Math.max.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
-      return point.x.value0;
-    })));
-  }
-
-  function drawLineChart(id, _ref2) {
-    var caption = _ref2.caption,
-        plots = _ref2.plots;
-    return function () {
-      var margin = {
-        top: 15,
-        right: 65,
-        bottom: 40,
-        left: 30
-      },
-          width = 230 - margin.left - margin.right,
-          height = 185 - margin.top - margin.bottom,
-          y_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_y))),
-          x_min = Math.min.apply(Math, _toConsumableArray(plots.map(min_x))),
-          x_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_x))),
-          names = plots.map(function (plot) {
-        return plot.name.value0;
-      });
-      var svg = d3.select('#' + id).append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', "translate(".concat(margin.left, ", ").concat(margin.top, ")"));
-      var x = d3.scaleLinear().domain([x_min, x_max]).range([0, width]),
-          y = d3.scaleLinear().domain([0, y_max]).range([height, 0]);
-      var line1 = d3.line().x(function (d) {
-        return x(d.x.value0);
-      }).y(function (d) {
-        return y(d.y.value0);
-      });
-      var color = d3.scaleOrdinal(d3.schemePastel1);
-      svg.selectAll('lines').data(plots).enter().append('g').append('path').attr('fill', 'none').attr('stroke', function (d) {
-        return color(names.indexOf(d.name.value0));
-      }).attr('stroke-width', 1).attr('class', 'line').attr('d', function (d) {
-        return line1(d.data_);
-      });
-      var smallRadius = 2;
-
-      var _iterator = _createForOfIteratorHelper(plots),
-          _step;
-
-      try {
-        var _loop = function _loop() {
-          var plot = _step.value;
-          var col = color(names.indexOf(plot.name.value0));
-          svg.selectAll('markers').data(plot.data_).enter().append('g').append('circle').attr('class', 'marker').attr('r', function (d) {
-            return d.y.value1 ? smallRadius * 2 : smallRadius;
-          }).attr('cx', function (d) {
-            return x(d.x.value0);
-          }).attr('cy', function (d) {
-            return y(d.y.value0);
-          }).attr('fill', col).attr('stroke', function (d) {
-            return d.y.value1 ? colorShade(col, -30) : col;
-          });
-        };
-
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          _loop();
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
-
-      svg.append('g').attr('transform', "translate(0, ".concat(height, ")")).call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')));
-      svg.append('g').call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))); // lots of hard-coded constants
-
-      var legendLineHeight = 15,
-          legendStart = width + margin.left / 2;
-      svg.append('rect').attr('transform', "translate(".concat(legendStart, ", ").concat(legendLineHeight * (names.length - 1) + 2, ")")).attr('x', 0).attr('y', 0).attr('stroke', 'lightgray').attr('fill', 'none').attr('height', legendLineHeight * names.length).attr('width', margin.right - 16);
-      var legend = svg.selectAll('legend').data(names).enter().append('g').attr('class', 'legend').attr('transform', function (d, i) {
-        return "translate(".concat(legendStart, ", ").concat(height / 2 - margin.top + i * legendLineHeight, ")");
-      });
-      legend.append('text').text(function (d) {
-        return d;
-      }).attr('font-size', 11).attr('transform', 'translate(15, 9)'); // align text with boxes
-
-      legend.append('circle').attr('fill', function (d) {
-        return color(names.indexOf(d));
-      }).attr('r', smallRadius).attr('cx', legendLineHeight / 2 - smallRadius / 2).attr('cy', legendLineHeight / 2 - smallRadius / 2);
-      svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('class', 'title-text').attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
-    };
-  } // https://stackoverflow.com/questions/5560248
-
-
-  function colorShade(col, amt) {
-    col = col.replace(/^#/, '');
-    if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2];
-
-    var _col$match = col.match(/.{2}/g),
-        _col$match2 = _slicedToArray(_col$match, 3),
-        r = _col$match2[0],
-        g = _col$match2[1],
-        b = _col$match2[2];
-
-    var _ref3 = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt];
-    r = _ref3[0];
-    g = _ref3[1];
-    b = _ref3[2];
-    r = Math.max(Math.min(255, r), 0).toString(16);
-    g = Math.max(Math.min(255, g), 0).toString(16);
-    b = Math.max(Math.min(255, b), 0).toString(16);
-    var rr = (r.length < 2 ? '0' : '') + r;
-    var gg = (g.length < 2 ? '0' : '') + g;
-    var bb = (b.length < 2 ? '0' : '') + b;
-    return "#".concat(rr).concat(gg).concat(bb);
-  } // any record type with only primitive fields -> boolean
-
-
-  function isUsed(r) {
-    return Object.keys(r).some(function (k) {
-      return r[k].value1;
-    });
-  } // Generic to all tables.
-
-
-  function drawTable(id, _ref4) {
-    var title = _ref4.title,
-        table = _ref4.table;
-    return function () {
-      table = table.filter(function (r) {
-        return isUsed(r);
-      });
-      var cellFill = '#ffffff';
-      var HTMLtable = d3.select('#' + id).append('table');
-      var colNames = Object.keys(table[0]);
-      HTMLtable.append('thead').append('tr').selectAll('th').data(colNames).enter().append('th').text(function (d) {
-        return d;
-      });
-      var rows = HTMLtable.append('tbody').selectAll('tr').data(table).enter().append('tr');
-      rows.selectAll('td').data(function (d) {
-        return colNames.map(function (k) {
-          return {
-            'value': d[k],
-            'name': k
-          };
-        });
-      }).enter().append('td').attr('data-th', function (d) {
-        return d.name;
-      }).attr('class', function (d) {
-        return d.value.value1 ? 'cell-selected' : null;
-      }).attr('bgcolor', function (d) {
-        return d.value.value1 ? colorShade(cellFill, -40) : cellFill;
-      }).text(function (d) {
-        return d.value.value0;
-      });
-    };
-  } // Currently unused.
-
-
-  function saveImage(svg) {
-    var svg_xml = new XMLSerializer().serializeToString(svg),
-        blob = new Blob([svg_xml], {
-      type: 'image/svg+xml;charset=utf-8'
-    }),
-        url = window.URL.createObjectURL(blob),
-        _svg$getBBox = svg.getBBox(),
-        width = _svg$getBBox.width,
-        height = _svg$getBBox.height;
-
-    var img = new Image();
-    img.width = width;
-    img.height = height;
-
-    img.onload = function () {
-      var canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      var ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-      window.URL.revokeObjectURL(url);
-      var dataURL = canvas.toDataURL('image/png');
-      download(canvas, dataURL, "image.png");
-    };
-
-    img.src = url;
-  }
-
-  function download(parent, dataURL, name) {
-    var a = document.createElement('a');
-    a.download = name;
-    a.style.opacity = '0';
-    parent.append(a);
-    a.href = dataURL;
-    a.click();
-    a.remove();
-  }
-
-  function curry2(f) {
-    return function (x1) {
-      return function (x2) {
-        return f(x1, x2);
-      };
-    };
-  }
-
-  exports.drawBarChart = curry2(drawBarChart);
-  exports.drawLineChart = curry2(drawLineChart);
-  exports.drawTable = curry2(drawTable);
-})(PS["App.Renderer"] = PS["App.Renderer"] || {});
-
-(function (exports) {
-  "use strict";
-
-  var d3 = require("d3");
-
-  var shared = require('/src/app/Shared');
-
-  function drawMatrix(id, _ref5) {
-    var title = _ref5.title,
-        _ref5$matrix = _ref5.matrix,
-        _ref5$matrix$value = _ref5$matrix.value0,
-        nss = _ref5$matrix$value.value0,
-        i_max = _ref5$matrix$value.value1,
-        j_max = _ref5$matrix.value1;
-    return function () {
-      var strokeWidth = 0.5;
-      var w = 30,
-          h = 30;
-      var div = d3.select('#' + id);
-      var width = w * j_max + strokeWidth,
-          height = h * i_max + strokeWidth;
-      var hMargin = w / 2;
-      var vMargin = h / 2;
-      var svg = div.append('svg').attr('width', width + hMargin).attr('height', height + vMargin); // group for each row
-
-      var grp = svg.selectAll('g').data(nss).enter().append('g').attr('transform', function (_, i) {
-        return "translate(".concat(strokeWidth / 2 + hMargin / 2, ", ").concat(h * i + strokeWidth / 2 + vMargin, ")");
-      });
-      var rect = grp.selectAll('rect').data(function (d) {
-        return d;
-      }).enter();
-      rect.append('rect').attr('x', function (_, j) {
-        return w * j;
-      }).attr('width', w).attr('height', h).attr('class', function (d) {
-        return d.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected';
-      }).attr('stroke-width', strokeWidth);
-      rect.append('text').text(function (d) {
-        return d.value0;
-      }).attr('x', function (_, j) {
-        return w * (j + 0.5);
-      }).attr('y', 0.5 * h).attr('class', 'matrix-cell-text').attr('text-anchor', 'middle').attr('dominant-baseline', 'middle');
-      svg.append('text').text(title).attr('x', hMargin / 2).attr('y', vMargin / 2).attr('class', 'title-text').attr('dominant-baseline', 'middle').attr('text-anchor', 'left');
-    };
-  }
-
-  exports.drawMatrix = shared.curry2(drawMatrix);
-})(PS["App.MatrixView"] = PS["App.MatrixView"] || {});
-
-(function ($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-
-  $PS["App.MatrixView"] = $PS["App.MatrixView"] || {};
-  var exports = $PS["App.MatrixView"];
-  var $foreign = $PS["App.MatrixView"];
-  exports["drawMatrix"] = $foreign.drawMatrix;
-})(PS);
+  exports.drawBarChart = shared.curry2(drawBarChart);
+})(PS["App.BarChart"] = PS["App.BarChart"] || {});
 
 (function ($PS) {
   // Generated by purs version 0.13.6
@@ -67524,25 +67324,459 @@ var PS = {};
   // Generated by purs version 0.13.6
   "use strict";
 
-  $PS["App.Renderer"] = $PS["App.Renderer"] || {};
-  var exports = $PS["App.Renderer"];
-  var $foreign = $PS["App.Renderer"];
-  var App_MatrixView = $PS["App.MatrixView"];
+  $PS["App.Util"] = $PS["App.Util"] || {};
+  var exports = $PS["App.Util"];
   var Bindings = $PS["Bindings"];
   var Control_Apply = $PS["Control.Apply"];
   var Data_Array = $PS["Data.Array"];
   var Data_Either = $PS["Data.Either"];
   var Data_Eq = $PS["Data.Eq"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Profunctor_Strong = $PS["Data.Profunctor.Strong"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var DataType = $PS["DataType"];
+  var Lattice = $PS["Lattice"];
+  var Primitive = $PS["Primitive"];
+  var Util = $PS["Util"];
+  var Val = $PS["Val"];
+
+  var $$Reflect = function $$Reflect(from) {
+    this.from = from;
+  };
+
+  var record = function record(toRecord) {
+    return function (v) {
+      return toRecord(new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromBindings)(new Data_Tuple.Tuple(v.value0, v.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromBindings)(v.value1))));
+    };
+  };
+
+  var get = function get(x) {
+    return function (v) {
+      return Util.successful(Control_Apply.lift2(Data_Either.applyEither)(Data_Tuple.Tuple.create)(Bindings.find(x)(v.value0))(Bindings.find(x)(v.value1)));
+    };
+  };
+
+  var get_prim = function get_prim(dictToFrom) {
+    return function (x) {
+      var $53 = Primitive.match_fwd(dictToFrom);
+      var $54 = get(x);
+      return function ($55) {
+        return $53($54($55));
+      };
+    };
+  };
+
+  var get_intOrNumber = function get_intOrNumber(x) {
+    return function (r) {
+      return Data_Profunctor_Strong.first(Data_Profunctor_Strong.strongFn)(Primitive.as(Primitive.asEither))(get_prim(Primitive.toFromIntOrNumber)(x)(r));
+    };
+  };
+
+  var from = function from(dict) {
+    return dict.from;
+  };
+
+  var reflectArray = new $$Reflect(function (dictPartial) {
+    return function (v) {
+      if (v.value1 instanceof Val.Constr && v.value1.value2 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cNil)) {
+        var v1 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cNil, Data_List_Types.Nil.value));
+
+        if (v1 instanceof Val.Constr && v1.value2 instanceof Data_List_Types.Nil) {
+          return [];
+        }
+
+        ;
+        throw new Error("Failed pattern match at App.Util (line 38, column 7 - line 39, column 32): " + [v1.constructor.name]);
+      }
+
+      ;
+
+      if (v.value1 instanceof Val.Constr && v.value1.value2 instanceof Data_List_Types.Cons && v.value1.value2.value1 instanceof Data_List_Types.Cons && v.value1.value2.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cCons)) {
+        var v3 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value))));
+
+        if (v3 instanceof Val.Constr && v3.value2 instanceof Data_List_Types.Cons && v3.value2.value1 instanceof Data_List_Types.Cons && v3.value2.value1.value1 instanceof Data_List_Types.Nil) {
+          return Data_Array.cons(new Data_Tuple.Tuple(v3.value2.value0, v.value1.value2.value0))(from(reflectArray)()(new Data_Tuple.Tuple(v3.value2.value1.value0, v.value1.value2.value1.value0)));
+        }
+
+        ;
+        throw new Error("Failed pattern match at App.Util (line 41, column 7 - line 42, column 70): " + [v3.constructor.name]);
+      }
+
+      ;
+      throw new Error("Failed pattern match at App.Util (line 36, column 1 - line 42, column 70): " + [v.constructor.name]);
+    };
+  });
+  exports["from"] = from;
+  exports["get_prim"] = get_prim;
+  exports["get_intOrNumber"] = get_intOrNumber;
+  exports["get"] = get;
+  exports["record"] = record;
+  exports["Reflect"] = $$Reflect;
+  exports["reflectArray"] = reflectArray;
+})(PS);
+
+(function ($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+
+  $PS["App.BarChart"] = $PS["App.BarChart"] || {};
+  var exports = $PS["App.BarChart"];
+  var $foreign = $PS["App.BarChart"];
+  var App_Util = $PS["App.Util"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Primitive = $PS["Primitive"];
+  var reflectBarChartRecord = new App_Util["Reflect"](function (dictPartial) {
+    return function (r) {
+      return {
+        x: App_Util.get_prim(Primitive.toFromString)("x")(r),
+        y: App_Util.get_intOrNumber("y")(r)
+      };
+    };
+  });
+  var reflectBarChart = new App_Util["Reflect"](function (dictPartial) {
+    return function (r) {
+      return {
+        caption: App_Util.get_prim(Primitive.toFromString)("caption")(r),
+        data_: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_Util.from(reflectBarChartRecord)()))(App_Util.from(App_Util.reflectArray)()(App_Util.get("data")(r)))
+      };
+    };
+  });
+  exports["reflectBarChart"] = reflectBarChart;
+  exports["drawBarChart"] = $foreign.drawBarChart;
+})(PS);
+
+(function (exports) {
+  "use strict";
+
+  var d3 = require("d3");
+
+  var shared = require("/src/app/Shared");
+
+  function max_y(linePlot) {
+    return Math.max.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
+      return point.y.value0;
+    })));
+  }
+
+  function min_x(linePlot) {
+    return Math.min.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
+      return point.x.value0;
+    })));
+  }
+
+  function max_x(linePlot) {
+    return Math.max.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
+      return point.x.value0;
+    })));
+  }
+
+  function drawLineChart(id, _ref2) {
+    var caption = _ref2.caption,
+        plots = _ref2.plots;
+    return function () {
+      var margin = {
+        top: 15,
+        right: 65,
+        bottom: 40,
+        left: 30
+      },
+          width = 230 - margin.left - margin.right,
+          height = 185 - margin.top - margin.bottom,
+          y_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_y))),
+          x_min = Math.min.apply(Math, _toConsumableArray(plots.map(min_x))),
+          x_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_x))),
+          names = plots.map(function (plot) {
+        return plot.name.value0;
+      });
+      var svg = d3.select('#' + id).append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', "translate(".concat(margin.left, ", ").concat(margin.top, ")"));
+      var x = d3.scaleLinear().domain([x_min, x_max]).range([0, width]),
+          y = d3.scaleLinear().domain([0, y_max]).range([height, 0]);
+      var line1 = d3.line().x(function (d) {
+        return x(d.x.value0);
+      }).y(function (d) {
+        return y(d.y.value0);
+      });
+      var color = d3.scaleOrdinal(d3.schemePastel1);
+      svg.selectAll('lines').data(plots).enter().append('g').append('path').attr('fill', 'none').attr('stroke', function (d) {
+        return color(names.indexOf(d.name.value0));
+      }).attr('stroke-width', 1).attr('class', 'line').attr('d', function (d) {
+        return line1(d.data_);
+      });
+      var smallRadius = 2;
+
+      var _iterator = _createForOfIteratorHelper(plots),
+          _step;
+
+      try {
+        var _loop = function _loop() {
+          var plot = _step.value;
+          var col = color(names.indexOf(plot.name.value0));
+          svg.selectAll('markers').data(plot.data_).enter().append('g').append('circle').attr('class', 'marker').attr('r', function (d) {
+            return d.y.value1 ? smallRadius * 2 : smallRadius;
+          }).attr('cx', function (d) {
+            return x(d.x.value0);
+          }).attr('cy', function (d) {
+            return y(d.y.value0);
+          }).attr('fill', col).attr('stroke', function (d) {
+            return d.y.value1 ? shared.colorShade(col, -30) : col;
+          });
+        };
+
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          _loop();
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      svg.append('g').attr('transform', "translate(0, ".concat(height, ")")).call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')));
+      svg.append('g').call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))); // lots of hard-coded constants
+
+      var legendLineHeight = 15,
+          legendStart = width + margin.left / 2;
+      svg.append('rect').attr('transform', "translate(".concat(legendStart, ", ").concat(legendLineHeight * (names.length - 1) + 2, ")")).attr('x', 0).attr('y', 0).attr('stroke', 'lightgray').attr('fill', 'none').attr('height', legendLineHeight * names.length).attr('width', margin.right - 16);
+      var legend = svg.selectAll('legend').data(names).enter().append('g').attr('class', 'legend').attr('transform', function (d, i) {
+        return "translate(".concat(legendStart, ", ").concat(height / 2 - margin.top + i * legendLineHeight, ")");
+      });
+      legend.append('text').text(function (d) {
+        return d;
+      }).attr('font-size', 11).attr('transform', 'translate(15, 9)'); // align text with boxes
+
+      legend.append('circle').attr('fill', function (d) {
+        return color(names.indexOf(d));
+      }).attr('r', smallRadius).attr('cx', legendLineHeight / 2 - smallRadius / 2).attr('cy', legendLineHeight / 2 - smallRadius / 2);
+      svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('class', 'title-text').attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
+    };
+  }
+
+  exports.drawLineChart = shared.curry2(drawLineChart);
+})(PS["App.LineChart"] = PS["App.LineChart"] || {});
+
+(function ($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+
+  $PS["App.LineChart"] = $PS["App.LineChart"] || {};
+  var exports = $PS["App.LineChart"];
+  var $foreign = $PS["App.LineChart"];
+  var App_Util = $PS["App.Util"];
+  var Data_Eq = $PS["Data.Eq"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var DataType = $PS["DataType"];
+  var Lattice = $PS["Lattice"];
+  var Primitive = $PS["Primitive"];
+  var Val = $PS["Val"];
+  var reflectPoint = new App_Util["Reflect"](function (dictPartial) {
+    return function (r) {
+      return {
+        x: App_Util.get_intOrNumber("x")(r),
+        y: App_Util.get_intOrNumber("y")(r)
+      };
+    };
+  });
+  var reflectLinePlot = new App_Util["Reflect"](function (dictPartial) {
+    return function (r) {
+      return {
+        name: App_Util.get_prim(Primitive.toFromString)("name")(r),
+        data_: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_Util.from(reflectPoint)()))(App_Util.from(App_Util.reflectArray)()(App_Util.get("data")(r)))
+      };
+    };
+  });
+  var reflectLinePlot$prime = new App_Util["Reflect"](function (dictPartial) {
+    return function (v) {
+      if (v.value1 instanceof Val.Constr && v.value1.value2 instanceof Data_List_Types.Cons && v.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cLinePlot)) {
+        var v2 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cLinePlot, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
+
+        if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
+          return App_Util.record(App_Util.from(reflectLinePlot)())(new Data_Tuple.Tuple(v2.value2.value0, v.value1.value2.value0));
+        }
+
+        ;
+        throw new Error("Failed pattern match at App.LineChart (line 42, column 7 - line 43, column 58): " + [v2.constructor.name]);
+      }
+
+      ;
+      throw new Error("Failed pattern match at App.LineChart (line 40, column 1 - line 43, column 58): " + [v.constructor.name]);
+    };
+  });
+  var reflectLineChart = new App_Util["Reflect"](function (dictPartial) {
+    return function (r) {
+      return {
+        caption: App_Util.get_prim(Primitive.toFromString)("caption")(r),
+        plots: Data_Functor.map(Data_Functor.functorArray)(App_Util.from(reflectLinePlot$prime)())(App_Util.from(App_Util.reflectArray)()(App_Util.get("plots")(r)))
+      };
+    };
+  });
+  exports["reflectLineChart"] = reflectLineChart;
+  exports["drawLineChart"] = $foreign.drawLineChart;
+})(PS);
+
+(function (exports) {
+  "use strict";
+
+  var d3 = require("d3");
+
+  var shared = require("/src/app/Shared");
+
+  function drawMatrix(id, _ref3) {
+    var title = _ref3.title,
+        _ref3$matrix = _ref3.matrix,
+        _ref3$matrix$value = _ref3$matrix.value0,
+        nss = _ref3$matrix$value.value0,
+        i_max = _ref3$matrix$value.value1,
+        j_max = _ref3$matrix.value1;
+    return function () {
+      var strokeWidth = 0.5;
+      var w = 30,
+          h = 30;
+      var div = d3.select('#' + id);
+      var width = w * j_max + strokeWidth,
+          height = h * i_max + strokeWidth;
+      var hMargin = w / 2;
+      var vMargin = h / 2;
+      var svg = div.append('svg').attr('width', width + hMargin).attr('height', height + vMargin); // group for each row
+
+      var grp = svg.selectAll('g').data(nss).enter().append('g').attr('transform', function (_, i) {
+        return "translate(".concat(strokeWidth / 2 + hMargin / 2, ", ").concat(h * i + strokeWidth / 2 + vMargin, ")");
+      });
+      var rect = grp.selectAll('rect').data(function (d) {
+        return d;
+      }).enter();
+      rect.append('rect').attr('x', function (_, j) {
+        return w * j;
+      }).attr('width', w).attr('height', h).attr('class', function (d) {
+        return d.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected';
+      }).attr('stroke-width', strokeWidth);
+      rect.append('text').text(function (d) {
+        return d.value0;
+      }).attr('x', function (_, j) {
+        return w * (j + 0.5);
+      }).attr('y', 0.5 * h).attr('class', 'matrix-cell-text').attr('text-anchor', 'middle').attr('dominant-baseline', 'middle');
+      svg.append('text').text(title).attr('x', hMargin / 2).attr('y', vMargin / 2).attr('class', 'title-text').attr('dominant-baseline', 'middle').attr('text-anchor', 'left');
+    };
+  }
+
+  exports.drawMatrix = shared.curry2(drawMatrix);
+})(PS["App.MatrixView"] = PS["App.MatrixView"] || {});
+
+(function ($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+
+  $PS["App.MatrixView"] = $PS["App.MatrixView"] || {};
+  var exports = $PS["App.MatrixView"];
+  var $foreign = $PS["App.MatrixView"];
+  var Data_Array = $PS["Data.Array"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var Primitive = $PS["Primitive"];
+
+  var matrixRep = function matrixRep(v) {
+    return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Primitive.match_fwd(Primitive.toFromInt)))(Data_Array.zipWith(Data_Array.zip)(v.value0.value0.value0)(v.value1.value0.value0)), v.value1.value0.value1.value0), v.value1.value1.value0);
+  };
+
+  exports["matrixRep"] = matrixRep;
+  exports["drawMatrix"] = $foreign.drawMatrix;
+})(PS);
+
+(function (exports) {
+  "use strict";
+
+  var d3 = require("d3");
+
+  var shared = require("/src/app/Shared"); // any record type with only primitive fields -> boolean
+
+
+  function isUsed(r) {
+    return Object.keys(r).some(function (k) {
+      return r[k].value1;
+    });
+  } // Generic to all tables.
+
+
+  function drawTable(id, _ref4) {
+    var title = _ref4.title,
+        table = _ref4.table;
+    return function () {
+      table = table.filter(function (r) {
+        return isUsed(r);
+      });
+      var cellFill = '#ffffff';
+      var HTMLtable = d3.select('#' + id).append('table');
+      var colNames = Object.keys(table[0]);
+      HTMLtable.append('thead').append('tr').selectAll('th').data(colNames).enter().append('th').text(function (d) {
+        return d;
+      });
+      var rows = HTMLtable.append('tbody').selectAll('tr').data(table).enter().append('tr');
+      rows.selectAll('td').data(function (d) {
+        return colNames.map(function (k) {
+          return {
+            'value': d[k],
+            'name': k
+          };
+        });
+      }).enter().append('td').attr('data-th', function (d) {
+        return d.name;
+      }).attr('class', function (d) {
+        return d.value.value1 ? 'cell-selected' : null;
+      }).attr('bgcolor', function (d) {
+        return d.value.value1 ? shared.colorShade(cellFill, -40) : cellFill;
+      }).text(function (d) {
+        return d.value.value0;
+      });
+    };
+  }
+
+  exports.drawTable = shared.curry2(drawTable);
+})(PS["App.TableView"] = PS["App.TableView"] || {});
+
+(function ($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+
+  $PS["App.TableView"] = $PS["App.TableView"] || {};
+  var exports = $PS["App.TableView"];
+  var $foreign = $PS["App.TableView"];
+  var App_Util = $PS["App.Util"];
+  var Primitive = $PS["Primitive"];
+
+  var energyRecord = function energyRecord(r) {
+    return {
+      year: App_Util.get_prim(Primitive.toFromInt)("year")(r),
+      country: App_Util.get_prim(Primitive.toFromString)("country")(r),
+      energyType: App_Util.get_prim(Primitive.toFromString)("energyType")(r),
+      output: App_Util.get_intOrNumber("output")(r)
+    };
+  };
+
+  exports["energyRecord"] = energyRecord;
+  exports["drawTable"] = $foreign.drawTable;
+})(PS);
+
+(function ($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+
+  $PS["App.Renderer"] = $PS["App.Renderer"] || {};
+  var exports = $PS["App.Renderer"];
+  var App_BarChart = $PS["App.BarChart"];
+  var App_LineChart = $PS["App.LineChart"];
+  var App_MatrixView = $PS["App.MatrixView"];
+  var App_TableView = $PS["App.TableView"];
+  var App_Util = $PS["App.Util"];
+  var Data_Eq = $PS["Data.Eq"];
   var Data_Foldable = $PS["Data.Foldable"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_List_Types = $PS["Data.List.Types"];
-  var Data_Profunctor_Strong = $PS["Data.Profunctor.Strong"];
   var Data_Tuple = $PS["Data.Tuple"];
   var DataType = $PS["DataType"];
   var Effect = $PS["Effect"];
   var Lattice = $PS["Lattice"];
   var Primitive = $PS["Primitive"];
-  var Util = $PS["Util"];
   var Val = $PS["Val"];
 
   var MatrixFig = function () {
@@ -67601,155 +67835,17 @@ var PS = {};
     return BarChartFig;
   }();
 
-  var $$Reflect = function $$Reflect(from) {
-    this.from = from;
-  };
-
-  var record = function record(toRecord) {
-    return function (v) {
-      return toRecord(new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromBindings)(new Data_Tuple.Tuple(v.value0, v.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromBindings)(v.value1))));
-    };
-  };
-
-  var matrixRep = function matrixRep(v) {
-    return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Primitive.match_fwd(Primitive.toFromInt)))(Data_Array.zipWith(Data_Array.zip)(v.value0.value0.value0)(v.value1.value0.value0)), v.value1.value0.value1.value0), v.value1.value1.value0);
-  };
-
-  var get = function get(x) {
-    return function (v) {
-      return Util.successful(Control_Apply.lift2(Data_Either.applyEither)(Data_Tuple.Tuple.create)(Bindings.find(x)(v.value0))(Bindings.find(x)(v.value1)));
-    };
-  };
-
-  var get_prim = function get_prim(dictToFrom) {
-    return function (x) {
-      var $166 = Primitive.match_fwd(dictToFrom);
-      var $167 = get(x);
-      return function ($168) {
-        return $166($167($168));
-      };
-    };
-  };
-
-  var get_intOrNumber = function get_intOrNumber(x) {
-    return function (r) {
-      return Data_Profunctor_Strong.first(Data_Profunctor_Strong.strongFn)(Primitive.as(Primitive.asEither))(get_prim(Primitive.toFromIntOrNumber)(x)(r));
-    };
-  };
-
-  var reflectPoint = new $$Reflect(function (dictPartial) {
-    return function (r) {
-      return {
-        x: get_intOrNumber("x")(r),
-        y: get_intOrNumber("y")(r)
-      };
-    };
-  });
-  var reflectBarChartRecord = new $$Reflect(function (dictPartial) {
-    return function (r) {
-      return {
-        x: get_prim(Primitive.toFromString)("x")(r),
-        y: get_intOrNumber("y")(r)
-      };
-    };
-  });
-
-  var from = function from(dict) {
-    return dict.from;
-  };
-
-  var reflectArray = new $$Reflect(function (dictPartial) {
-    return function (v) {
-      if (v.value1 instanceof Val.Constr && v.value1.value2 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cNil)) {
-        var v1 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cNil, Data_List_Types.Nil.value));
-
-        if (v1 instanceof Val.Constr && v1.value2 instanceof Data_List_Types.Nil) {
-          return [];
-        }
-
-        ;
-        throw new Error("Failed pattern match at App.Renderer (line 138, column 7 - line 139, column 32): " + [v1.constructor.name]);
-      }
-
-      ;
-
-      if (v.value1 instanceof Val.Constr && v.value1.value2 instanceof Data_List_Types.Cons && v.value1.value2.value1 instanceof Data_List_Types.Cons && v.value1.value2.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cCons)) {
-        var v3 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value))));
-
-        if (v3 instanceof Val.Constr && v3.value2 instanceof Data_List_Types.Cons && v3.value2.value1 instanceof Data_List_Types.Cons && v3.value2.value1.value1 instanceof Data_List_Types.Nil) {
-          return Data_Array.cons(new Data_Tuple.Tuple(v3.value2.value0, v.value1.value2.value0))(from(reflectArray)()(new Data_Tuple.Tuple(v3.value2.value1.value0, v.value1.value2.value1.value0)));
-        }
-
-        ;
-        throw new Error("Failed pattern match at App.Renderer (line 141, column 7 - line 142, column 70): " + [v3.constructor.name]);
-      }
-
-      ;
-      throw new Error("Failed pattern match at App.Renderer (line 136, column 1 - line 142, column 70): " + [v.constructor.name]);
-    };
-  });
-  var reflectBarChart = new $$Reflect(function (dictPartial) {
-    return function (r) {
-      return {
-        caption: get_prim(Primitive.toFromString)("caption")(r),
-        data_: Data_Functor.map(Data_Functor.functorArray)(record(from(reflectBarChartRecord)()))(from(reflectArray)()(get("data")(r)))
-      };
-    };
-  });
-  var reflectLinePlot = new $$Reflect(function (dictPartial) {
-    return function (r) {
-      return {
-        name: get_prim(Primitive.toFromString)("name")(r),
-        data_: Data_Functor.map(Data_Functor.functorArray)(record(from(reflectPoint)()))(from(reflectArray)()(get("data")(r)))
-      };
-    };
-  });
-  var reflectLinePlot$prime = new $$Reflect(function (dictPartial) {
-    return function (v) {
-      if (v.value1 instanceof Val.Constr && v.value1.value2 instanceof Data_List_Types.Cons && v.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cLinePlot)) {
-        var v2 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cLinePlot, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
-
-        if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
-          return record(from(reflectLinePlot)())(new Data_Tuple.Tuple(v2.value2.value0, v.value1.value2.value0));
-        }
-
-        ;
-        throw new Error("Failed pattern match at App.Renderer (line 132, column 7 - line 133, column 58): " + [v2.constructor.name]);
-      }
-
-      ;
-      throw new Error("Failed pattern match at App.Renderer (line 130, column 1 - line 133, column 58): " + [v.constructor.name]);
-    };
-  });
-  var reflectLineChart = new $$Reflect(function (dictPartial) {
-    return function (r) {
-      return {
-        caption: get_prim(Primitive.toFromString)("caption")(r),
-        plots: Data_Functor.map(Data_Functor.functorArray)(from(reflectLinePlot$prime)())(from(reflectArray)()(get("plots")(r)))
-      };
-    };
-  });
-
-  var energyRecord = function energyRecord(r) {
-    return {
-      year: get_prim(Primitive.toFromInt)("year")(r),
-      country: get_prim(Primitive.toFromString)("country")(r),
-      energyType: get_prim(Primitive.toFromString)("energyType")(r),
-      output: get_intOrNumber("output")(r)
-    };
-  };
-
   var makeSubFig = function makeSubFig(dictPartial) {
     return function (v) {
       if (v.uv.value1 instanceof Val.Constr && v.uv.value1.value2 instanceof Data_List_Types.Cons && v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cBarChart)) {
         var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cBarChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
 
         if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
-          return new BarChartFig(record(from(reflectBarChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
+          return new BarChartFig(App_Util.record(App_Util.from(App_BarChart.reflectBarChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
         }
 
         ;
-        throw new Error("Failed pattern match at App.Renderer (line 61, column 4 - line 62, column 69): " + [v2.constructor.name]);
+        throw new Error("Failed pattern match at App.Renderer (line 44, column 4 - line 45, column 69): " + [v2.constructor.name]);
       }
 
       ;
@@ -67758,11 +67854,11 @@ var PS = {};
         var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cLineChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
 
         if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
-          return new LineChartFig(record(from(reflectLineChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
+          return new LineChartFig(App_Util.record(App_Util.from(App_LineChart.reflectLineChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
         }
 
         ;
-        throw new Error("Failed pattern match at App.Renderer (line 64, column 4 - line 65, column 70): " + [v2.constructor.name]);
+        throw new Error("Failed pattern match at App.Renderer (line 47, column 4 - line 48, column 70): " + [v2.constructor.name]);
       }
 
       ;
@@ -67770,7 +67866,7 @@ var PS = {};
       if (v.uv.value1 instanceof Val.Constr && (Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cNil) || Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cCons))) {
         return new EnergyTableView({
           title: v.title,
-          table: Data_Functor.map(Data_Functor.functorArray)(record(energyRecord))(from(reflectArray)()(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1)))
+          table: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_TableView.energyRecord))(App_Util.from(App_Util.reflectArray)()(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1)))
         });
       }
 
@@ -67780,12 +67876,12 @@ var PS = {};
         var vss2 = new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.uv.value1)));
         return new MatrixFig({
           title: v.title,
-          matrix: matrixRep(vss2)
+          matrix: App_MatrixView.matrixRep(vss2)
         });
       }
 
       ;
-      throw new Error("Failed pattern match at App.Renderer (line 59, column 1 - line 59, column 76): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Renderer (line 42, column 1 - line 42, column 76): " + [v.constructor.name]);
     };
   };
 
@@ -67798,23 +67894,23 @@ var PS = {};
       ;
 
       if (v instanceof EnergyTableView) {
-        return $foreign.drawTable(divId)(v.value0);
+        return App_TableView.drawTable(divId)(v.value0);
       }
 
       ;
 
       if (v instanceof LineChartFig) {
-        return $foreign.drawLineChart(divId)(v.value0);
+        return App_LineChart.drawLineChart(divId)(v.value0);
       }
 
       ;
 
       if (v instanceof BarChartFig) {
-        return $foreign.drawBarChart(divId)(v.value0);
+        return App_BarChart.drawBarChart(divId)(v.value0);
       }
 
       ;
-      throw new Error("Failed pattern match at App.Renderer (line 52, column 1 - line 52, column 46): " + [divId.constructor.name, v.constructor.name]);
+      throw new Error("Failed pattern match at App.Renderer (line 35, column 1 - line 35, column 46): " + [divId.constructor.name, v.constructor.name]);
     };
   };
 
@@ -70590,4 +70686,4 @@ var PS = {};
 
 PS["App.Demo"].main();
 },{"d3":"BG5c","d3-tip":"TLCm","/src/app/Shared":"Ad6u","process":"g5I+"}]},{},["m8nE"], null)
-//# sourceMappingURL=/develop/app.0f145ace.js.map
+//# sourceMappingURL=/develop/app.745fbcec.js.map
