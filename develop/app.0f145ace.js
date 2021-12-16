@@ -32915,7 +32915,19 @@ function _default() {
 
   return tip;
 }
-},{"d3-collection":"qqV1","d3-selection":"LZed"}],"g5I+":[function(require,module,exports) {
+},{"d3-collection":"qqV1","d3-selection":"LZed"}],"Ad6u":[function(require,module,exports) {
+"use strict";
+
+function curry2(f) {
+  return function (x1) {
+    return function (x2) {
+      return f(x1, x2);
+    };
+  };
+}
+
+exports.curry2 = curry2;
+},{}],"g5I+":[function(require,module,exports) {
 
 // shim for using process in browser
 var process = module.exports = {}; // cached from whatever global is present so that test runners that stub it
@@ -40406,56 +40418,9 @@ var PS = {};
 
   var d3tip = require("d3-tip");
 
-  var cellFillDefault = 'White',
-      cellStroke = 'DarkGray',
-      cellTextFill = 'Black',
-      cellFontSize = '10pt',
-      fontFamily = "Roboto, sans-serif",
-      strokeWidth = 0.5,
-      titleTextFill = 'Black',
-      titleFontSize = '9pt';
-
-  function drawMatrix(id, _ref) {
-    var title = _ref.title,
-        selColour = _ref.selColour,
-        _ref$matrix = _ref.matrix,
-        _ref$matrix$value = _ref$matrix.value0,
-        nss = _ref$matrix$value.value0,
-        i_max = _ref$matrix$value.value1,
-        j_max = _ref$matrix.value1;
-    return function () {
-      var w = 30,
-          h = 30;
-      var div = d3.select('#' + id);
-      var width = w * j_max + strokeWidth,
-          height = h * i_max + strokeWidth;
-      var hMargin = w / 2;
-      var vMargin = h / 2;
-      var svg = div.append('svg').attr('width', width + hMargin).attr('height', height + vMargin); // group for each row
-
-      var grp = svg.selectAll('g').data(nss).enter().append('g').attr('transform', function (_, i) {
-        return "translate(".concat(strokeWidth / 2 + hMargin / 2, ", ").concat(h * i + strokeWidth / 2 + vMargin, ")");
-      });
-      var rect = grp.selectAll('rect').data(function (d) {
-        return d;
-      }).enter();
-      rect.append('rect').attr('x', function (_, j) {
-        return w * j;
-      }).attr('width', w).attr('height', h).attr('fill', function (d) {
-        return d.value1 ? selColour : cellFillDefault;
-      }).attr('stroke', cellStroke).attr('stroke-width', strokeWidth);
-      rect.append('text').text(function (d) {
-        return d.value0;
-      }).attr('x', function (_, j) {
-        return w * (j + 0.5);
-      }).attr('y', 0.5 * h).attr('fill', cellTextFill).attr('font-family', fontFamily).attr('font-size', cellFontSize).attr('text-anchor', 'middle').attr('dominant-baseline', 'middle');
-      svg.append('text').text(title).attr('x', hMargin / 2).attr('y', vMargin / 2).attr('fill', titleTextFill).attr('font-family', fontFamily).attr('font-size', titleFontSize).attr('dominant-baseline', 'middle').attr('text-anchor', 'left');
-    };
-  }
-
-  function drawBarChart(id, _ref2) {
-    var caption = _ref2.caption,
-        data_ = _ref2.data_;
+  function drawBarChart(id, _ref) {
+    var caption = _ref.caption,
+        data_ = _ref.data_;
     return function () {
       var margin = {
         top: 15,
@@ -40501,7 +40466,7 @@ var PS = {};
       }).attr('stroke', function (d) {
         return d.y.value1 ? 'coral' : '';
       }).on('mouseover', tip.show).on('mouseout', tip.hide);
-      svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('fill', titleTextFill).attr('font-family', fontFamily).attr('font-size', titleFontSize).attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
+      svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('class', 'title-text').attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
     };
   }
 
@@ -40523,9 +40488,9 @@ var PS = {};
     })));
   }
 
-  function drawLineChart(id, _ref3) {
-    var caption = _ref3.caption,
-        plots = _ref3.plots;
+  function drawLineChart(id, _ref2) {
+    var caption = _ref2.caption,
+        plots = _ref2.plots;
     return function () {
       var margin = {
         top: 15,
@@ -40600,7 +40565,7 @@ var PS = {};
       legend.append('circle').attr('fill', function (d) {
         return color(names.indexOf(d));
       }).attr('r', smallRadius).attr('cx', legendLineHeight / 2 - smallRadius / 2).attr('cy', legendLineHeight / 2 - smallRadius / 2);
-      svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('fill', titleTextFill).attr('font-family', fontFamily).attr('font-size', titleFontSize).attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
+      svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('class', 'title-text').attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
     };
   } // https://stackoverflow.com/questions/5560248
 
@@ -40615,10 +40580,10 @@ var PS = {};
         g = _col$match2[1],
         b = _col$match2[2];
 
-    var _ref4 = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt];
-    r = _ref4[0];
-    g = _ref4[1];
-    b = _ref4[2];
+    var _ref3 = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt];
+    r = _ref3[0];
+    g = _ref3[1];
+    b = _ref3[2];
     r = Math.max(Math.min(255, r), 0).toString(16);
     g = Math.max(Math.min(255, g), 0).toString(16);
     b = Math.max(Math.min(255, b), 0).toString(16);
@@ -40636,9 +40601,9 @@ var PS = {};
   } // Generic to all tables.
 
 
-  function drawTable(id, _ref5) {
-    var title = _ref5.title,
-        table = _ref5.table;
+  function drawTable(id, _ref4) {
+    var title = _ref4.title,
+        table = _ref4.table;
     return function () {
       table = table.filter(function (r) {
         return isUsed(r);
@@ -40667,10 +40632,6 @@ var PS = {};
         return d.value.value0;
       });
     };
-  }
-
-  function className(o) {
-    return o.constructor.name;
   } // Currently unused.
 
 
@@ -40722,9 +40683,66 @@ var PS = {};
 
   exports.drawBarChart = curry2(drawBarChart);
   exports.drawLineChart = curry2(drawLineChart);
-  exports.drawMatrix = curry2(drawMatrix);
   exports.drawTable = curry2(drawTable);
 })(PS["App.Renderer"] = PS["App.Renderer"] || {});
+
+(function (exports) {
+  "use strict";
+
+  var d3 = require("d3");
+
+  var shared = require('/src/app/Shared');
+
+  function drawMatrix(id, _ref5) {
+    var title = _ref5.title,
+        _ref5$matrix = _ref5.matrix,
+        _ref5$matrix$value = _ref5$matrix.value0,
+        nss = _ref5$matrix$value.value0,
+        i_max = _ref5$matrix$value.value1,
+        j_max = _ref5$matrix.value1;
+    return function () {
+      var strokeWidth = 0.5;
+      var w = 30,
+          h = 30;
+      var div = d3.select('#' + id);
+      var width = w * j_max + strokeWidth,
+          height = h * i_max + strokeWidth;
+      var hMargin = w / 2;
+      var vMargin = h / 2;
+      var svg = div.append('svg').attr('width', width + hMargin).attr('height', height + vMargin); // group for each row
+
+      var grp = svg.selectAll('g').data(nss).enter().append('g').attr('transform', function (_, i) {
+        return "translate(".concat(strokeWidth / 2 + hMargin / 2, ", ").concat(h * i + strokeWidth / 2 + vMargin, ")");
+      });
+      var rect = grp.selectAll('rect').data(function (d) {
+        return d;
+      }).enter();
+      rect.append('rect').attr('x', function (_, j) {
+        return w * j;
+      }).attr('width', w).attr('height', h).attr('class', function (d) {
+        return d.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected';
+      }).attr('stroke-width', strokeWidth);
+      rect.append('text').text(function (d) {
+        return d.value0;
+      }).attr('x', function (_, j) {
+        return w * (j + 0.5);
+      }).attr('y', 0.5 * h).attr('class', 'matrix-cell-text').attr('text-anchor', 'middle').attr('dominant-baseline', 'middle');
+      svg.append('text').text(title).attr('x', hMargin / 2).attr('y', vMargin / 2).attr('class', 'title-text').attr('dominant-baseline', 'middle').attr('text-anchor', 'left');
+    };
+  }
+
+  exports.drawMatrix = shared.curry2(drawMatrix);
+})(PS["App.MatrixView"] = PS["App.MatrixView"] || {});
+
+(function ($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+
+  $PS["App.MatrixView"] = $PS["App.MatrixView"] || {};
+  var exports = $PS["App.MatrixView"];
+  var $foreign = $PS["App.MatrixView"];
+  exports["drawMatrix"] = $foreign.drawMatrix;
+})(PS);
 
 (function ($PS) {
   // Generated by purs version 0.13.6
@@ -67509,6 +67527,7 @@ var PS = {};
   $PS["App.Renderer"] = $PS["App.Renderer"] || {};
   var exports = $PS["App.Renderer"];
   var $foreign = $PS["App.Renderer"];
+  var App_MatrixView = $PS["App.MatrixView"];
   var Bindings = $PS["Bindings"];
   var Control_Apply = $PS["Control.Apply"];
   var Data_Array = $PS["Data.Array"];
@@ -67649,7 +67668,7 @@ var PS = {};
         }
 
         ;
-        throw new Error("Failed pattern match at App.Renderer (line 142, column 7 - line 143, column 32): " + [v1.constructor.name]);
+        throw new Error("Failed pattern match at App.Renderer (line 138, column 7 - line 139, column 32): " + [v1.constructor.name]);
       }
 
       ;
@@ -67662,11 +67681,11 @@ var PS = {};
         }
 
         ;
-        throw new Error("Failed pattern match at App.Renderer (line 145, column 7 - line 146, column 70): " + [v3.constructor.name]);
+        throw new Error("Failed pattern match at App.Renderer (line 141, column 7 - line 142, column 70): " + [v3.constructor.name]);
       }
 
       ;
-      throw new Error("Failed pattern match at App.Renderer (line 140, column 1 - line 146, column 70): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Renderer (line 136, column 1 - line 142, column 70): " + [v.constructor.name]);
     };
   });
   var reflectBarChart = new $$Reflect(function (dictPartial) {
@@ -67695,11 +67714,11 @@ var PS = {};
         }
 
         ;
-        throw new Error("Failed pattern match at App.Renderer (line 136, column 7 - line 137, column 58): " + [v2.constructor.name]);
+        throw new Error("Failed pattern match at App.Renderer (line 132, column 7 - line 133, column 58): " + [v2.constructor.name]);
       }
 
       ;
-      throw new Error("Failed pattern match at App.Renderer (line 134, column 1 - line 137, column 58): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Renderer (line 130, column 1 - line 133, column 58): " + [v.constructor.name]);
     };
   });
   var reflectLineChart = new $$Reflect(function (dictPartial) {
@@ -67730,7 +67749,7 @@ var PS = {};
         }
 
         ;
-        throw new Error("Failed pattern match at App.Renderer (line 64, column 4 - line 65, column 69): " + [v2.constructor.name]);
+        throw new Error("Failed pattern match at App.Renderer (line 61, column 4 - line 62, column 69): " + [v2.constructor.name]);
       }
 
       ;
@@ -67743,7 +67762,7 @@ var PS = {};
         }
 
         ;
-        throw new Error("Failed pattern match at App.Renderer (line 67, column 4 - line 68, column 70): " + [v2.constructor.name]);
+        throw new Error("Failed pattern match at App.Renderer (line 64, column 4 - line 65, column 70): " + [v2.constructor.name]);
       }
 
       ;
@@ -67761,20 +67780,19 @@ var PS = {};
         var vss2 = new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.uv.value1)));
         return new MatrixFig({
           title: v.title,
-          selColour: "LightGreen",
           matrix: matrixRep(vss2)
         });
       }
 
       ;
-      throw new Error("Failed pattern match at App.Renderer (line 62, column 1 - line 62, column 76): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Renderer (line 59, column 1 - line 59, column 76): " + [v.constructor.name]);
     };
   };
 
   var drawSubFig = function drawSubFig(divId) {
     return function (v) {
       if (v instanceof MatrixFig) {
-        return $foreign.drawMatrix(divId)(v.value0);
+        return App_MatrixView.drawMatrix(divId)(v.value0);
       }
 
       ;
@@ -67796,7 +67814,7 @@ var PS = {};
       }
 
       ;
-      throw new Error("Failed pattern match at App.Renderer (line 55, column 1 - line 55, column 46): " + [divId.constructor.name, v.constructor.name]);
+      throw new Error("Failed pattern match at App.Renderer (line 52, column 1 - line 52, column 46): " + [divId.constructor.name, v.constructor.name]);
     };
   };
 
@@ -70571,5 +70589,5 @@ var PS = {};
 })(PS);
 
 PS["App.Demo"].main();
-},{"d3":"BG5c","d3-tip":"TLCm","process":"g5I+"}]},{},["m8nE"], null)
-//# sourceMappingURL=/develop/app.9bece5c5.js.map
+},{"d3":"BG5c","d3-tip":"TLCm","/src/app/Shared":"Ad6u","process":"g5I+"}]},{},["m8nE"], null)
+//# sourceMappingURL=/develop/app.0f145ace.js.map

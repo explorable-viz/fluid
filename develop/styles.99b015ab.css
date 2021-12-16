@@ -1,0 +1,113 @@
+@charset "UTF-8";
+body {
+   font-size: 11pt
+}
+
+.glowing,
+a {
+   transition: all .25s
+}
+
+a:hover {
+   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0
+}
+
+.nowrap {
+   white-space: nowrap
+}
+
+code {
+   font-size: 11pt
+}
+
+body {
+   font-family: "Roboto", sans-serif;
+   font-weight: 300;
+   line-height: 1.25;
+   padding: 0;
+   margin: 0;
+   background-color: #FFFFFF; /* #181818; */
+   color: #404040
+}
+
+h3.title {
+   font-family: "Roboto", sans-serif;
+   font-weight: 600;
+}
+
+.align-right {
+   text-align: right
+}
+
+h3.title {
+   margin-top: 10pt;
+   margin-bottom: 0;
+   color: darkblue;
+   font-size: '24px'
+}
+
+.glowing {
+   transition-timing-function: ease-out
+}
+
+a {
+   text-decoration: underline;
+   color: inherit;
+   transition-timing-function: ease-out
+}
+
+a.not_decorated,
+a:hover {
+   text-decoration: none
+}
+
+ul {
+   padding-left: 0
+}
+
+li {
+   margin-bottom: 1ex
+}
+
+li:last-child {
+   margin-bottom: 0
+}
+
+table {
+   margin-left: 4mm;
+   outline: thin dotted;
+   outline-color: lightgray;
+}
+
+th {
+   font-size: 11px;
+   border-bottom: 'thin solid';
+}
+
+td {
+   font-size: 11px;
+}
+
+nav ul {
+   list-style: none;
+}
+
+nav ul li {
+   float: left;
+   overflow: hidden;
+}
+
+nav ul li a {
+   display: block;
+   width: 100%;
+   text-align: left;
+   padding-right: 8px;
+   text-decoration: none;
+}
+
+nav ul li a.active-page {
+   text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0
+}
+
+
+/*# sourceMappingURL=/develop/styles.99b015ab.css.map */

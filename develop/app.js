@@ -5859,74 +5859,6 @@ var PS = {};
   const d3 = require("d3")
   const d3tip = require("d3-tip")
 
-  const cellFillDefault         = 'White',
-        cellStroke              = 'DarkGray',
-        cellTextFill            = 'Black',
-        cellFontSize            = '10pt',
-        fontFamily              = "Roboto, sans-serif",
-        strokeWidth             = 0.5,
-        titleTextFill           = 'Black',
-        titleFontSize           = '9pt'
-
-  function drawMatrix (
-     id, {
-        title,                                                               // String
-        selColour,                                                           // String
-        matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }    // IntMatrix
-     }
-  ) {
-     return () => {
-        const w = 30, h = 30
-        const div = d3.select('#' + id)
-        const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
-        const hMargin = w / 2
-        const vMargin = h / 2
-
-        const svg = div.append('svg')
-                       .attr('width', width + hMargin)
-                       .attr('height', height + vMargin)
-
-        // group for each row
-        const grp = svg.selectAll('g')
-           .data(nss)
-           .enter()
-           .append('g')
-           .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
-
-        const rect = grp.selectAll('rect')
-                          .data(d => d)
-                          .enter()
-
-        rect.append('rect')
-              .attr('x', (_, j) => w * j)
-              .attr('width', w)
-              .attr('height', h)
-              .attr('fill', d => d.value1 ? selColour : cellFillDefault)
-              .attr('stroke', cellStroke)
-              .attr('stroke-width', strokeWidth)
-
-        rect.append('text')
-              .text(d => d.value0)
-              .attr('x', (_, j) => w * (j + 0.5))
-              .attr('y', 0.5 * h)
-              .attr('fill', cellTextFill)
-              .attr('font-family', fontFamily)
-              .attr('font-size', cellFontSize)
-              .attr('text-anchor', 'middle')
-              .attr('dominant-baseline', 'middle')
-
-        svg.append('text')
-           .text(title)
-           .attr('x', hMargin / 2)
-           .attr('y', vMargin / 2)
-           .attr('fill', titleTextFill)
-           .attr('font-family', fontFamily)
-           .attr('font-size', titleFontSize)
-           .attr('dominant-baseline', 'middle')
-           .attr('text-anchor', 'left')
-     }
-  }
-
   function drawBarChart (
      id, {
         caption,   // String
@@ -5998,9 +5930,7 @@ var PS = {};
            .text(caption.value0)
            .attr('x', width / 2)
            .attr('y', height + 35)
-           .attr('fill', titleTextFill)
-           .attr('font-family', fontFamily)
-           .attr('font-size', titleFontSize)
+           .attr('class', 'title-text')
            .attr('dominant-baseline', 'bottom')
            .attr('text-anchor', 'middle')
      }
@@ -6121,9 +6051,7 @@ var PS = {};
            .text(caption.value0)
            .attr('x', width / 2)
            .attr('y', height + 35)
-           .attr('fill', titleTextFill)
-           .attr('font-family', fontFamily)
-           .attr('font-size', titleFontSize)
+           .attr('class', 'title-text')
            .attr('dominant-baseline', 'bottom')
            .attr('text-anchor', 'middle')
      }
@@ -6186,10 +6114,6 @@ var PS = {};
      }
   }
 
-  function className (o) {
-     return o.constructor.name
-  }
-
   // Currently unused.
   function saveImage (svg) {
      const svg_xml = (new XMLSerializer()).serializeToString(svg),
@@ -6232,9 +6156,78 @@ var PS = {};
 
   exports.drawBarChart = curry2(drawBarChart)
   exports.drawLineChart = curry2(drawLineChart)
-  exports.drawMatrix = curry2(drawMatrix)
   exports.drawTable = curry2(drawTable)
 })(PS["App.Renderer"] = PS["App.Renderer"] || {});
+(function(exports) {
+  "use strict"
+
+  const d3 = require("d3")
+  const shared = require('/src/app/Shared')
+
+  function drawMatrix (
+     id, {
+        title,                                                               // String
+        matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }    // IntMatrix
+     }
+  ) {
+     return () => {
+        const strokeWidth = 0.5
+        const w = 30, h = 30
+        const div = d3.select('#' + id)
+        const [width, height] = [w * j_max + strokeWidth, h * i_max + strokeWidth]
+        const hMargin = w / 2
+        const vMargin = h / 2
+
+        const svg = div.append('svg')
+                       .attr('width', width + hMargin)
+                       .attr('height', height + vMargin)
+
+        // group for each row
+        const grp = svg.selectAll('g')
+           .data(nss)
+           .enter()
+           .append('g')
+           .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
+
+        const rect = grp.selectAll('rect')
+                        .data(d => d)
+                        .enter()
+
+        rect.append('rect')
+            .attr('x', (_, j) => w * j)
+            .attr('width', w)
+            .attr('height', h)
+            .attr('class', d => d.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected')
+            .attr('stroke-width', strokeWidth)
+
+        rect.append('text')
+            .text(d => d.value0)
+            .attr('x', (_, j) => w * (j + 0.5))
+            .attr('y', 0.5 * h)
+            .attr('class', 'matrix-cell-text')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+
+        svg.append('text')
+           .text(title)
+           .attr('x', hMargin / 2)
+           .attr('y', vMargin / 2)
+           .attr('class', 'title-text')
+           .attr('dominant-baseline', 'middle')
+           .attr('text-anchor', 'left')
+     }
+  }
+
+  exports.drawMatrix = shared.curry2(drawMatrix)
+})(PS["App.MatrixView"] = PS["App.MatrixView"] || {});
+(function($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+  $PS["App.MatrixView"] = $PS["App.MatrixView"] || {};
+  var exports = $PS["App.MatrixView"];
+  var $foreign = $PS["App.MatrixView"];
+  exports["drawMatrix"] = $foreign.drawMatrix;
+})(PS);
 (function($PS) {
   // Generated by purs version 0.13.6
   "use strict";
@@ -30711,6 +30704,7 @@ var PS = {};
   $PS["App.Renderer"] = $PS["App.Renderer"] || {};
   var exports = $PS["App.Renderer"];
   var $foreign = $PS["App.Renderer"];
+  var App_MatrixView = $PS["App.MatrixView"];
   var Bindings = $PS["Bindings"];
   var Control_Apply = $PS["Control.Apply"];
   var Data_Array = $PS["Data.Array"];
@@ -30819,16 +30813,16 @@ var PS = {};
               if (v1 instanceof Val.Constr && v1.value2 instanceof Data_List_Types.Nil) {
                   return [  ];
               };
-              throw new Error("Failed pattern match at App.Renderer (line 142, column 7 - line 143, column 32): " + [ v1.constructor.name ]);
+              throw new Error("Failed pattern match at App.Renderer (line 138, column 7 - line 139, column 32): " + [ v1.constructor.name ]);
           };
           if (v.value1 instanceof Val.Constr && (v.value1.value2 instanceof Data_List_Types.Cons && (v.value1.value2.value1 instanceof Data_List_Types.Cons && (v.value1.value2.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cCons))))) {
               var v3 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value))));
               if (v3 instanceof Val.Constr && (v3.value2 instanceof Data_List_Types.Cons && (v3.value2.value1 instanceof Data_List_Types.Cons && v3.value2.value1.value1 instanceof Data_List_Types.Nil))) {
                   return Data_Array.cons(new Data_Tuple.Tuple(v3.value2.value0, v.value1.value2.value0))(from(reflectArray)()(new Data_Tuple.Tuple(v3.value2.value1.value0, v.value1.value2.value1.value0)));
               };
-              throw new Error("Failed pattern match at App.Renderer (line 145, column 7 - line 146, column 70): " + [ v3.constructor.name ]);
+              throw new Error("Failed pattern match at App.Renderer (line 141, column 7 - line 142, column 70): " + [ v3.constructor.name ]);
           };
-          throw new Error("Failed pattern match at App.Renderer (line 140, column 1 - line 146, column 70): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at App.Renderer (line 136, column 1 - line 142, column 70): " + [ v.constructor.name ]);
       };
   });
   var reflectBarChart = new $$Reflect(function (dictPartial) {
@@ -30854,9 +30848,9 @@ var PS = {};
               if (v2 instanceof Val.Constr && (v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil)) {
                   return record(from(reflectLinePlot)())(new Data_Tuple.Tuple(v2.value2.value0, v.value1.value2.value0));
               };
-              throw new Error("Failed pattern match at App.Renderer (line 136, column 7 - line 137, column 58): " + [ v2.constructor.name ]);
+              throw new Error("Failed pattern match at App.Renderer (line 132, column 7 - line 133, column 58): " + [ v2.constructor.name ]);
           };
-          throw new Error("Failed pattern match at App.Renderer (line 134, column 1 - line 137, column 58): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at App.Renderer (line 130, column 1 - line 133, column 58): " + [ v.constructor.name ]);
       };
   });
   var reflectLineChart = new $$Reflect(function (dictPartial) {
@@ -30882,14 +30876,14 @@ var PS = {};
               if (v2 instanceof Val.Constr && (v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil)) {
                   return new BarChartFig(record(from(reflectBarChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
               };
-              throw new Error("Failed pattern match at App.Renderer (line 64, column 4 - line 65, column 69): " + [ v2.constructor.name ]);
+              throw new Error("Failed pattern match at App.Renderer (line 61, column 4 - line 62, column 69): " + [ v2.constructor.name ]);
           };
           if (v.uv.value1 instanceof Val.Constr && (v.uv.value1.value2 instanceof Data_List_Types.Cons && (v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cLineChart)))) {
               var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cLineChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
               if (v2 instanceof Val.Constr && (v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil)) {
                   return new LineChartFig(record(from(reflectLineChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
               };
-              throw new Error("Failed pattern match at App.Renderer (line 67, column 4 - line 68, column 70): " + [ v2.constructor.name ]);
+              throw new Error("Failed pattern match at App.Renderer (line 64, column 4 - line 65, column 70): " + [ v2.constructor.name ]);
           };
           if (v.uv.value1 instanceof Val.Constr && (Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cNil) || Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cCons))) {
               return new EnergyTableView({
@@ -30901,17 +30895,16 @@ var PS = {};
               var vss2 = new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.uv.value1)));
               return new MatrixFig({
                   title: v.title,
-                  selColour: "LightGreen",
                   matrix: matrixRep(vss2)
               });
           };
-          throw new Error("Failed pattern match at App.Renderer (line 62, column 1 - line 62, column 76): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at App.Renderer (line 59, column 1 - line 59, column 76): " + [ v.constructor.name ]);
       };
   };
   var drawSubFig = function (divId) {
       return function (v) {
           if (v instanceof MatrixFig) {
-              return $foreign.drawMatrix(divId)(v.value0);
+              return App_MatrixView.drawMatrix(divId)(v.value0);
           };
           if (v instanceof EnergyTableView) {
               return $foreign.drawTable(divId)(v.value0);
@@ -30922,7 +30915,7 @@ var PS = {};
           if (v instanceof BarChartFig) {
               return $foreign.drawBarChart(divId)(v.value0);
           };
-          throw new Error("Failed pattern match at App.Renderer (line 55, column 1 - line 55, column 46): " + [ divId.constructor.name, v.constructor.name ]);
+          throw new Error("Failed pattern match at App.Renderer (line 52, column 1 - line 52, column 46): " + [ divId.constructor.name, v.constructor.name ]);
       };
   };
   var drawFig = function (v) {
