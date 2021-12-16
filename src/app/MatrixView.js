@@ -1,6 +1,7 @@
 "use strict"
 
 const d3 = require("d3")
+const shared = require('/src/app/Shared')
 
 function drawMatrix (
    id, {
@@ -53,13 +54,7 @@ function drawMatrix (
          .attr('class', 'title-text')
          .attr('dominant-baseline', 'middle')
          .attr('text-anchor', 'left')
-
-      require("fs").writeFile("demo.txt", "Foo bar!")
    }
 }
 
-function curry2 (f) {
-   return x1 => x2 => f(x1, x2)
-}
-
-exports.drawMatrix = curry2(drawMatrix)
+exports.drawMatrix = shared.curry2(drawMatrix)
