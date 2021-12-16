@@ -10,7 +10,7 @@ import Util (type (×))
 import Val (Val)
 
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
--- Record types are hardcoded to specific examples for now.
+-- Record types are hardcoded to a single specific example for now.
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
 newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord }
 
