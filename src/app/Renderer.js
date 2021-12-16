@@ -66,7 +66,7 @@ function drawBarChart (
             .attr('y', d => y(d.y.value0 + 1))  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
             .attr('height', d => height - y(d.y.value0))
-            .attr('fill', d => d.y.value1 ? colorShade(barFill, -40) : barFill)
+            .attr('fill', d => d.y.value1 ? shared.colorShade(barFill, -40) : barFill)
             .attr('stroke', d => d.y.value1 ? 'coral' : '')
             .on('mouseover', tip.show)
             .on('mouseout', tip.hide)
@@ -150,7 +150,7 @@ function drawLineChart (
             .attr('cx', d => x(d.x.value0))
             .attr('cy', d => y(d.y.value0))
             .attr('fill', col)
-            .attr('stroke', d => d.y.value1 ? colorShade(col, -30) : col)
+            .attr('stroke', d => d.y.value1 ? shared.colorShade(col, -30) : col)
       }
 
       svg.append('g')
@@ -202,26 +202,6 @@ function drawLineChart (
    }
 }
 
-// https://stackoverflow.com/questions/5560248
-function colorShade (col, amt) {
-   col = col.replace(/^#/, '')
-   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
-
-   let [r, g, b] = col.match(/.{2}/g);
-   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
-
-   r = Math.max(Math.min(255, r), 0).toString(16)
-   g = Math.max(Math.min(255, g), 0).toString(16)
-   b = Math.max(Math.min(255, b), 0).toString(16)
-
-   const rr = (r.length < 2 ? '0' : '') + r
-   const gg = (g.length < 2 ? '0' : '') + g
-   const bb = (b.length < 2 ? '0' : '') + b
-
-   return `#${rr}${gg}${bb}`
- }
-
-
 // any record type with only primitive fields -> boolean
 function isUsed (r) {
    return Object.keys(r).some(k => r[k].value1)
@@ -254,7 +234,7 @@ function drawTable (
          .append('td')
          .attr('data-th', d => d.name)
          .attr('class', d => d.value.value1 ? 'cell-selected' : null)
-         .attr('bgcolor', d => d.value.value1 ? colorShade(cellFill, -40) : cellFill)
+         .attr('bgcolor', d => d.value.value1 ? shared.colorShade(cellFill, -40) : cellFill)
          .text(d => d.value.value0)
    }
 }
