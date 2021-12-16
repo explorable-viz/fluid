@@ -1,0 +1,8 @@
+[alias]
+add-unused     = "!f() { git commit -a -m \"♻️ [add-unused]: $1\"; }; f"
+doc            = "!f() { git commit -a -m \"♻️ [doc] : $1\"; }; f"
+fix            = "!f() { git commit -a -m \"❗ [fix]: $1\"; }; f"
+modify         = "!f() { git commit -a -m \"❗ [modify]: $1\"; }; f"
+refactor       = "!f() { git commit -a -m \"♻️ [refactor]: $1\"; }; f"
+remove-unused  = "!f() { git commit -a -m \"♻️ [remove-unused]: $1\"; }; f"
+rename         = "!f() { git commit -a -m \"♻️ [rename]: $1\"; }; f"
