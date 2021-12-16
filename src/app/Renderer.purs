@@ -1,21 +1,20 @@
 module App.Renderer where
 
 import Prelude
-import Data.Array (zip, zipWith)
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
 import App.BarChart (BarChart, drawBarChart)
 import App.LineChart (LineChart, drawLineChart)
-import App.MatrixView (MatrixView(..), IntMatrix, drawMatrix)
-import App.Util (HTMLId, get_intOrNumber, get_prim, from, record)
-import Bindings (Bindings)
+import App.MatrixView (MatrixView(..), drawMatrix, matrixRep)
+import App.TableView (EnergyTable(..), drawTable, energyRecord)
+import App.Util (HTMLId, from, record)
 import DataType (cBarChart, cCons, cLineChart, cNil)
 import Effect (Effect)
 import Lattice (𝔹, expand)
 import Primitive (Slice, match, match_fwd)
-import Util (type (×), (×))
-import Val (MatrixRep, Val)
+import Util ((×))
+import Val (Val)
 import Val (Val(..)) as V
 
 type Fig = {
@@ -26,13 +25,6 @@ type Fig = {
 drawFig :: Fig -> Effect Unit
 drawFig { divId, subfigs } =
    sequence_ $ drawSubFig divId <$> subfigs
-
-foreign import drawTable :: HTMLId -> EnergyTable -> Effect Unit
-
--- For each user-level datatype of interest, a representation containing appropriate implementation types.
--- Record types are hardcoded to specific examples for now. Matrices are assumed to have element type Int.
-type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
-newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord }
 
 data SubFig =
    MatrixFig MatrixView |
@@ -59,15 +51,3 @@ makeSubFig { title, uv: u × v@(V.Constr _ c _) } | c == cNil || c == cCons =
 makeSubFig { title, uv: u × v@(V.Matrix _ _) } =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig (MatrixView { title, matrix: matrixRep vss2 } )
-
-energyRecord :: Slice (Bindings (Val 𝔹)) -> EnergyRecord
-energyRecord r = {
-   year: get_prim "year" r,
-   country: get_prim "country" r,
-   energyType: get_prim "energyType" r,
-   output: get_intOrNumber "output" r
-}
-
-matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
-matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
-   ((<$>) ((<$>) match_fwd)) (zipWith zip vss uss) × i × j

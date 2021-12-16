@@ -1,0 +1,25 @@
+module App.TableView where
+
+import Prelude
+import Effect (Effect)
+import Bindings (Bindings)
+import App.Util (HTMLId, get_intOrNumber, get_prim)
+import Lattice (𝔹)
+import Primitive (Slice)
+import Util (type (×))
+import Val (Val)
+
+-- For each user-level datatype of interest, a representation containing appropriate implementation types.
+-- Record types are hardcoded to specific examples for now.
+type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
+newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord }
+
+foreign import drawTable :: HTMLId -> EnergyTable -> Effect Unit
+
+energyRecord :: Slice (Bindings (Val 𝔹)) -> EnergyRecord
+energyRecord r = {
+   year: get_prim "year" r,
+   country: get_prim "country" r,
+   energyType: get_prim "energyType" r,
+   output: get_intOrNumber "output" r
+}
