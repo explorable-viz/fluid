@@ -258,10 +258,6 @@ function drawTable (
    }
 }
 
-function className (o) {
-   return o.constructor.name
-}
-
 // Currently unused.
 function saveImage (svg) {
    const svg_xml = (new XMLSerializer()).serializeToString(svg),
