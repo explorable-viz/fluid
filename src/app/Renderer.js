@@ -239,42 +239,6 @@ function drawTable (
    }
 }
 
-// Currently unused.
-function saveImage (svg) {
-   const svg_xml = (new XMLSerializer()).serializeToString(svg),
-         blob = new Blob([svg_xml], { type:'image/svg+xml;charset=utf-8' }),
-         url = window.URL.createObjectURL(blob),
-         { width, height } = svg.getBBox()
-
-   const img = new Image()
-   img.width = width
-   img.height = height
-
-   img.onload = function() {
-       const canvas = document.createElement('canvas')
-       canvas.width = width
-       canvas.height = height
-
-       const ctx = canvas.getContext('2d')
-       ctx.drawImage(img, 0, 0, width, height)
-
-       window.URL.revokeObjectURL(url)
-       const dataURL = canvas.toDataURL('image/png')
-       download(canvas, dataURL, "image.png")
-   }
-   img.src = url
-}
-
-function download (parent, dataURL, name) {
-   const a = document.createElement('a')
-   a.download = name
-   a.style.opacity = '0'
-   parent.append(a)
-   a.href = dataURL
-   a.click()
-   a.remove()
- }
-
 exports.drawBarChart = shared.curry2(drawBarChart)
 exports.drawLineChart = shared.curry2(drawLineChart)
 exports.drawTable = shared.curry2(drawTable)
