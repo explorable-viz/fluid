@@ -138,8 +138,8 @@ linkFig divId config = do
       makeSubFig { title: "common data", uv: link.data_sel }
    ] }
 
-convolutionFigs :: Partial => Aff Fig
-convolutionFigs = do
+convolutionFig :: Partial => Aff Fig
+convolutionFig = do
    fig "fig-conv-1" {
       file: File "slicing/conv-emboss",
       makeSubfigs: needs {
@@ -148,8 +148,8 @@ convolutionFigs = do
       }
    }
 
-linkingFigs :: Partial => Aff Fig
-linkingFigs = do
+linkingFig :: Partial => Aff Fig
+linkingFig = do
    let vars = ["data"] :: Array Var
    linkFig "fig-1" {
       file1: File "bar-chart",
@@ -161,7 +161,7 @@ linkingFigs = do
 
 main :: Effect Unit
 main = unsafePartial $
-   flip runAff_ ((\x y -> [x, y]) <$> convolutionFigs <*> linkingFigs)
+   flip runAff_ ((\x y -> [x, y]) <$> convolutionFig <*> linkingFig)
    case _ of
       Left err -> log $ show err
       Right figs ->
