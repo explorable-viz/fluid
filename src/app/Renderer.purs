@@ -38,8 +38,8 @@ data SubFig =
 
 myHandler :: Event -> Effect Unit
 myHandler ev = do
-   let BarChartRecord { x, y } = unsafeBarChartRecord (target ev)
-   log $ show (x × y)
+   let BarChartRecord xy = unsafeBarChartRecord (target ev)
+   log $ show xy
    pure unit
 
 drawSubFig :: HTMLId -> SubFig -> Effect Unit
