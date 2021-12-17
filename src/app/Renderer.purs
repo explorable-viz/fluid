@@ -3,13 +3,12 @@ module App.Renderer where
 import Prelude
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
-import Data.Newtype (unwrap)
 import Data.Tuple (fst)
 import Effect.Console (log)
-import Web.Event.Event (type_)
+import Web.Event.Event (target)
 import Web.Event.EventTarget (eventListener)
 import Web.Event.Internal.Types (Event)
-import App.BarChart (BarChart, drawBarChart)
+import App.BarChart (BarChart, BarChartRecord(..), unsafeBarChartRecord, drawBarChart)
 import App.LineChart (LineChart, drawLineChart)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord)
@@ -39,7 +38,8 @@ data SubFig =
 
 myHandler :: Event -> Effect Unit
 myHandler ev = do
-   log $ unwrap (type_ ev)
+   let BarChartRecord { x, y } = unsafeBarChartRecord (target ev)
+   log $ show (x × y)
    pure unit
 
 drawSubFig :: HTMLId -> SubFig -> Effect Unit

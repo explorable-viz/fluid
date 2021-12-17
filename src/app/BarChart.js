@@ -35,7 +35,7 @@ function drawBarChart (
 
       // x-axis
       const x = d3.scaleBand()
-         .range([ 0, width ])
+         .range([0, width])
          .domain(data_.map(d => d.x.value0))
          .padding(0.2)
       svg.append('g')
@@ -49,7 +49,7 @@ function drawBarChart (
             y_max = Math.ceil(Math.max(...data_.map(d => d.y.value0)) / nearest) * nearest
       const y = d3.scaleLinear()
          .domain([0, y_max])
-         .range([ height, 0])
+         .range([height, 0])
       const tickEvery = nearest / 2,
             ticks = Array.from(Array(y_max / tickEvery + 1).keys()).map(n => n * tickEvery)
       const yAxis = d3.axisLeft(y)
@@ -63,14 +63,15 @@ function drawBarChart (
          .data(data_)
          .enter()
          .append('rect')
-            .attr('id', 'mouse-cursor')
             .attr('x', d => x(d.x.value0))
             .attr('y', d => y(d.y.value0 + 1))  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
             .attr('height', d => height - y(d.y.value0))
             .attr('fill', d => d.y.value1 ? shared.colorShade(barFill, -40) : barFill)
             .attr('stroke', d => d.y.value1 ? 'coral' : '')
-            .on('mouseover', listener)
+            .on('mouseover', (e, d) =>
+               listener(e)
+            )
 
       svg.append('text')
          .text(caption.value0)

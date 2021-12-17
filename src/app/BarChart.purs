@@ -1,12 +1,14 @@
 module App.BarChart where
 
-import Prelude
+import Prelude hiding (absurd)
+import Data.Maybe (Maybe)
 import Effect (Effect)
-import Web.Event.EventTarget (EventListener)
+import Unsafe.Coerce (unsafeCoerce)
+import Web.Event.EventTarget (EventListener, EventTarget)
 import App.Util (HTMLId, class Reflect, from, get, get_intOrNumber, get_prim, record)
 import Bindings (Bind)
 import Lattice (𝔹)
-import Util (type (×))
+import Util (type (×), absurd, fromJust)
 import Util.SnocList (SnocList)
 import Val (Val)
 
@@ -26,3 +28,9 @@ instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart whe
       caption: get_prim "caption" r,
       data_: record from <$> from (get "data" r)
    }
+
+-- (unsafe) the datum associated with a bar chart mouse event.
+unsafeBarChartRecord :: Maybe EventTarget -> BarChartRecord
+unsafeBarChartRecord tgt_opt =
+   let tgt = fromJust absurd $ tgt_opt
+   in (unsafeCoerce tgt).__data__
