@@ -4,6 +4,9 @@ import Prelude
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
+import Effect.Console (log)
+import Web.Event.EventTarget (eventListener)
+import Web.Event.Internal.Types (Event)
 import App.BarChart (BarChart, drawBarChart)
 import App.LineChart (LineChart, drawLineChart)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixRep)
@@ -32,11 +35,16 @@ data SubFig =
    LineChartFig LineChart |
    BarChartFig BarChart
 
+myHandler :: Event -> Effect Unit
+myHandler _ = do
+   log "Hello"
+   pure unit
+
 drawSubFig :: HTMLId -> SubFig -> Effect Unit
 drawSubFig divId (MatrixFig fig) = drawMatrix divId fig
 drawSubFig divId (EnergyTableView fig) = drawTable divId fig
 drawSubFig divId (LineChartFig fig) = drawLineChart divId fig
-drawSubFig divId (BarChartFig fig) = drawBarChart divId fig
+drawSubFig divId (BarChartFig fig) = drawBarChart divId fig =<< eventListener myHandler
 
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
 makeSubFig :: Partial => { title :: String, uv :: Slice (Val 𝔹) } -> SubFig

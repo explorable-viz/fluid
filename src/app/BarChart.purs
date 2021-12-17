@@ -2,6 +2,7 @@ module App.BarChart where
 
 import Prelude
 import Effect (Effect)
+import Web.Event.EventTarget (EventListener)
 import App.Util (HTMLId, class Reflect, from, get, get_intOrNumber, get_prim, record)
 import Bindings (Bind)
 import Lattice (𝔹)
@@ -12,7 +13,7 @@ import Val (Val)
 newtype BarChart = BarChart { caption :: String × 𝔹, data_ :: Array BarChartRecord }
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
 
-foreign import drawBarChart :: HTMLId -> BarChart -> Effect Unit
+foreign import drawBarChart :: HTMLId -> BarChart -> EventListener -> Effect Unit
 
 instance reflectBarChartRecord :: Reflect (SnocList (Bind (Val Boolean))) BarChartRecord where
    from r = BarChartRecord {

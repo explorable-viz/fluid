@@ -4,7 +4,8 @@ const d3 = require("d3")
 const shared = require("/src/app/Shared")
 
 function drawMatrix (
-   id, {
+   id,
+   {
       title,                                                               // String
       matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }    // IntMatrix
    }

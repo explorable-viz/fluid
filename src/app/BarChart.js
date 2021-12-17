@@ -5,10 +5,12 @@ const d3tip = require("d3-tip")
 const shared = require("/src/app/Shared")
 
 function drawBarChart (
-   id, {
+   id,
+   {
       caption,   // String
       data_,     // Array BarChartRecord
-   }
+   },
+   listener
 ) {
    return () => {
       const margin = {top: 15, right: 0, bottom: 40, left: 30},
@@ -81,4 +83,4 @@ function drawBarChart (
    }
 }
 
-exports.drawBarChart = shared.curry2(drawBarChart)
+exports.drawBarChart = shared.curry3(drawBarChart)
