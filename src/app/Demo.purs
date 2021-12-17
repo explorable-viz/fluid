@@ -138,34 +138,30 @@ linkFig divId config = do
       makeSubFig { title: "common data", uv: link.data_sel }
    ] }
 
-convolutionFigs :: Partial => Aff (Array Fig)
+convolutionFigs :: Partial => Aff Fig
 convolutionFigs = do
-   sequence [
-      fig "fig-conv-1" {
-         file: File "slicing/conv-emboss",
-         makeSubfigs: needs {
-            vars: ["image", "filter"],
-            o': selectCell 2 2 5 5
-         }
+   fig "fig-conv-1" {
+      file: File "slicing/conv-emboss",
+      makeSubfigs: needs {
+         vars: ["image", "filter"],
+         o': selectCell 2 2 5 5
       }
-   ]
+   }
 
-linkingFigs :: Partial => Aff (Array Fig)
+linkingFigs :: Partial => Aff Fig
 linkingFigs = do
    let vars = ["data"] :: Array Var
-   sequence [
-      linkFig "fig-1" {
-         file1: File "bar-chart",
-         file2: File "line-chart",
-         dataFile: File "renewables",
-         dataVar: "data",
-         v1_sel: selectBarChart_data (selectNth 1 (select_y))
-       }
-   ]
+   linkFig "fig-1" {
+      file1: File "bar-chart",
+      file2: File "line-chart",
+      dataFile: File "renewables",
+      dataVar: "data",
+      v1_sel: selectBarChart_data (selectNth 1 (select_y))
+   }
 
 main :: Effect Unit
 main = unsafePartial $
-   flip runAff_ ((<>) <$> convolutionFigs <*> linkingFigs)
+   flip runAff_ ((\x y -> [x, y]) <$> convolutionFigs <*> linkingFigs)
    case _ of
       Left err -> log $ show err
       Right figs ->
