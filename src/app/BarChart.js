@@ -70,8 +70,7 @@ function drawBarChart (
             .attr('height', d => height - y(d.y.value0))
             .attr('fill', d => d.y.value1 ? shared.colorShade(barFill, -40) : barFill)
             .attr('stroke', d => d.y.value1 ? 'coral' : '')
-            .on('mouseover', tip.show)
-            .on('mouseout', tip.hide)
+            .on('mouseover', listener)
 
       svg.append('text')
          .text(caption.value0)

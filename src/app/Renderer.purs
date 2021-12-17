@@ -3,8 +3,10 @@ module App.Renderer where
 import Prelude
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
+import Data.Newtype (unwrap)
 import Data.Tuple (fst)
 import Effect.Console (log)
+import Web.Event.Event (type_)
 import Web.Event.EventTarget (eventListener)
 import Web.Event.Internal.Types (Event)
 import App.BarChart (BarChart, drawBarChart)
@@ -36,8 +38,8 @@ data SubFig =
    BarChartFig BarChart
 
 myHandler :: Event -> Effect Unit
-myHandler _ = do
-   log "Hello"
+myHandler ev = do
+   log $ unwrap (type_ ev)
    pure unit
 
 drawSubFig :: HTMLId -> SubFig -> Effect Unit
