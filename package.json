@@ -7,8 +7,8 @@
     "bundle-tests": "yarn run clean-tests && yarn run build-tests && parcel build -d dist/test tests.html",
     "clean-app": "rm -rf dist/app",
     "clean-tests": "rm -rf dist/test",
-    "continuous-test": "npm-run-all --parallel bundle-tests-watch browser-tests",
-    "bundle-tests-watch": "yarn run build-tests --watch && parcel watch index.html",
+    "continuous-test": "npm-run-all --parallel build-tests-watch browser-tests",
+    "build-tests-watch": "yarn run build-tests --watch && parcel watch index.html",
     "browser-tests": "karma start --browsers=Chrome --singleRun=false",
     "serve-app": "yarn run clean-app && yarn run build-app && parcel serve index.html",
     "tests": "karma start"
