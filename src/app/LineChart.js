@@ -16,7 +16,8 @@ function max_x (linePlot) {
 }
 
 function drawLineChart (
-   id, {
+   id,
+   {
       caption,   // String
       plots,     // Array LinePlot
    }

@@ -11,6 +11,7 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 import App.Renderer (Fig, SubFig, drawFig, makeSubFig)
+import App.Util (HTMLId)
 import Bindings (Bind, Var, find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -89,14 +90,14 @@ type NeedsResult = {
    ρ'    :: Env 𝔹          -- selection on local environment
 }
 
-needs :: Partial => NeedsSpec -> Example -> MayFail (NeedsResult × Array SubFig)
+needs :: Partial => NeedsSpec -> Example -> MayFail (Array SubFig)
 needs spec { ρ0, ρ, s } = do
    q <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × e × α = evalBwd spec.o' q.t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α q.t
    figs <- valFigs q spec (ρ0ρ' × q.ρ0ρ)
-   pure $ { ρ0', ρ' } × (figs <> [ makeSubFig { title: "output", uv: o'' × q.o } ])
+   pure $ figs <> [ makeSubFig { title: "output", uv: o'' × q.o } ]
 
 type NeededBySpec = {
    vars     :: Array Var,    -- variables we want subfigs for
@@ -116,21 +117,27 @@ neededBy { vars, ρ' } { ρ0, ρ, s } = do
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
-type FigSpec a = {
+type FigSpec = {
+   divId :: HTMLId,
    file :: File,
-   makeSubfigs :: Example -> MayFail (a × Array SubFig)
+   makeSubfigs :: Example -> MayFail (Array SubFig)
+}
+
+type LinkingFigSpec = {
+   divId :: HTMLId,
+   config :: LinkConfig
 }
 
 -- TODO: not every example should run with this dataset.
-fig :: forall a . String -> FigSpec a -> Aff Fig
-fig divId { file, makeSubfigs } = do
+fig :: FigSpec -> Aff Fig
+fig { divId, file, makeSubfigs } = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
-   pure { divId , subfigs }
+   let subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
+   pure { divId, subfigs }
 
-linkFig :: Partial => String -> LinkConfig -> Aff Fig
-linkFig divId config = do
+linkingFig :: Partial => LinkingFigSpec -> Aff Fig
+linkingFig { divId, config } = do
    link <- doLink config
    pure { divId, subfigs: [
       makeSubFig { title: "primary view", uv: config.v1_sel × link.v1 },
@@ -138,34 +145,31 @@ linkFig divId config = do
       makeSubFig { title: "common data", uv: link.data_sel }
    ] }
 
-convolutionFigs :: Partial => Aff (Array Fig)
-convolutionFigs = do
-   sequence [
-      fig "fig-conv-1" {
-         file: File "slicing/conv-emboss",
-         makeSubfigs: needs {
-            vars: ["image", "filter"],
-            o': selectCell 2 2 5 5
-         }
-      }
-   ]
+fig1 :: LinkingFigSpec
+fig1 = {
+   divId: "fig-1",
+   config: {
+      file1: File "bar-chart",
+      file2: File "line-chart",
+      dataFile: File "renewables",
+      dataVar: "data",
+      v1_sel: selectBarChart_data (selectNth 1 (select_y))
+   }
+}
 
-linkingFigs :: Partial => Aff (Array Fig)
-linkingFigs = do
-   let vars = ["data"] :: Array Var
-   sequence [
-      linkFig "fig-1" {
-         file1: File "bar-chart",
-         file2: File "line-chart",
-         dataFile: File "renewables",
-         dataVar: "data",
-         v1_sel: selectBarChart_data (selectNth 1 (select_y))
-       }
-   ]
+figConv1 :: Partial => FigSpec
+figConv1 = {
+   divId: "fig-conv-1",
+   file: File "slicing/conv-emboss",
+   makeSubfigs: needs {
+      vars: ["image", "filter"],
+      o': selectCell 2 2 5 5
+   }
+}
 
 main :: Effect Unit
 main = unsafePartial $
-   flip runAff_ ((<>) <$> convolutionFigs <*> linkingFigs)
+   flip runAff_ ((\x y -> [x, y]) <$> fig figConv1 <*> linkingFig fig1)
    case _ of
       Left err -> log $ show err
       Right figs ->

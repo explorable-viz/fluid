@@ -20,7 +20,9 @@ jobs:
       run: |
         yarn install
         yarn run bundle-tests
+        yarn run bundle-app-tests
         yarn run tests
+        yarn run app-tests
 
   deploy:
     runs-on: ubuntu-18.04

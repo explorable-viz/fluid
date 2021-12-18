@@ -10,10 +10,12 @@ function isUsed (r) {
 
 // Generic to all tables.
 function drawTable (
-   id, {
+   id,
+   {
       title,               // String
       table                // Array of any record type with only primitive fields
-   }) {
+   }
+) {
    return () => {
       table = table.filter(r => isUsed(r))
       const cellFill = '#ffffff'
