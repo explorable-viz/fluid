@@ -169,7 +169,7 @@ figConv1 = {
 
 main :: Effect Unit
 main = unsafePartial $
-   flip runAff_ ((\x y -> [x, y]) <$> fig figConv1 <*> linkingFig fig1)
+   flip runAff_ (sequence [fig figConv1, linkingFig fig1])
    case _ of
       Left err -> log $ show err
       Right figs ->
