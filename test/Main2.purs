@@ -5,11 +5,16 @@ import Data.Array (concat)
 import Data.List (List(..), (:))
 import Data.Traversable (sequence)
 import Effect (Effect)
+import Effect.Aff (Aff)
+import App.Renderer (Fig)
 import DataType (cCons)
 import Lattice (𝔹)
 import Module (File(..))
 import Test.Util (Test, run, selectNth, testBwd)
 import Val (Val(..))
+
+test_fig :: Aff Fig -> Test Unit
+test_fig _ = pure unit
 
 tests :: Array (Array (Test Unit))
 tests = [ test_scratchpad ]
