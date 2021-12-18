@@ -5,27 +5,24 @@ import Data.List (List(..), (:))
 import Data.Traversable (sequence)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Partial.Unsafe (unsafePartial)
 import Test.Spec (before, it)
+import App.Demo (convolutionFig)
+import App.Renderer (Fig)
 import DataType (cCons)
 import Lattice (𝔹)
-import Module (File(..), openDatasetAs)
+import Module (File(..))
 import Test.Util (Test, run, testBwd)
-import Util ((×))
 import Val (Val(..))
 
-blah :: Aff Unit
-blah = do
-   ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
-   pure unit
-
-test_fig :: Aff Unit -> Test Unit
+test_fig :: Aff Fig -> Test Unit
 test_fig setup =
    before setup $
       it "hello" \_ -> do
          pure unit
 
 tests :: Array (Test Unit)
-tests = [test_fig blah]
+tests = unsafePartial [test_fig convolutionFig]
 
 main :: Effect Unit
 main = void (sequence (run <$> tests))
