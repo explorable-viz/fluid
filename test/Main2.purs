@@ -7,7 +7,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (before, it)
-import App.Demo (convolutionFig)
+import App.Demo (convolutionFig, linkingFig)
 import App.Renderer (Fig)
 import DataType (cCons)
 import Lattice (𝔹)
@@ -22,7 +22,7 @@ test_fig setup =
          pure unit
 
 tests :: Array (Test Unit)
-tests = unsafePartial [test_fig convolutionFig]
+tests = unsafePartial [test_fig convolutionFig, test_fig linkingFig]
 
 main :: Effect Unit
 main = void (sequence (run <$> tests))
