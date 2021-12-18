@@ -16,7 +16,7 @@ module.exports = function (config) {
       },
       colors: true,
       files: [
-         "./dist/test/app.js",
+         "./dist/tests/app.js",
          {
             pattern: "./fluid/**/*.fld",
             watched: true,
