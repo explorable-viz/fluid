@@ -1,7 +1,6 @@
 module Test.Main2 where
 
 import Prelude
-import Data.Array (concat)
 import Data.List (List(..), (:))
 import Data.Traversable (sequence)
 import Effect (Effect)
@@ -16,11 +15,11 @@ import Val (Val(..))
 test_fig :: Aff Fig -> Test Unit
 test_fig _ = pure unit
 
-tests :: Array (Array (Test Unit))
-tests = [ test_scratchpad ]
+tests :: Array (Test Unit)
+tests = test_scratchpad
 
 main :: Effect Unit
-main = void (sequence (run <$> concat tests))
+main = void (sequence (run <$> tests))
 
 -- TODO: move to common location.
 hole :: Val 𝔹
