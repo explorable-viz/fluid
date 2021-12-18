@@ -101,21 +101,22 @@ doLink { file1, file2, dataFile, dataVar: x, v1_sel } = do
    ρ0 × ρ <- openDatasetAs (File "example/" <> dir <> dataFile) x
    s1 <- open name1
    s2 <- open name2
-   let e1 = successful (desugarFwd s1)
-       e2 = successful (desugarFwd s2)
-       t1 × v1 = successful (eval (ρ0 <> ρ) e1)
-       t2 × v2 = successful (eval (ρ0 <> ρ) e2)
-       ρ0ρ × _ × _ = evalBwd v1_sel t1
-       _ × ρ' = splitAt 1 ρ0ρ
-       v = successful (find x ρ)
-       v' = successful (find x ρ')
-   -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
-   -- combined with the negation of the dataset environment slice
-   pure {
-      v1: v1,
-      v2: neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2,
-      data_sel: v' × v
-   }
+   pure $ successful do
+      e1 <- desugarFwd s1
+      e2 <- desugarFwd s2
+      t1 × v1 <- eval (ρ0 <> ρ) e1
+      t2 × v2 <- eval (ρ0 <> ρ) e2
+      let ρ0ρ × _ × _ = evalBwd v1_sel t1
+          _ × ρ' = splitAt 1 ρ0ρ
+      v <- find x ρ
+      v' <- find x ρ'
+      -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
+      -- combined with the negation of the dataset environment slice
+      pure {
+         v1: v1,
+         v2: neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2,
+         data_sel: v' × v
+      }
 
 testLink :: LinkConfig -> String -> Test Unit
 testLink config v2_expect =
