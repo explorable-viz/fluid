@@ -6,7 +6,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (before, it)
-import App.Demo (convolutionFig, linkingFig)
+import App.Demo (convolutionFig, fig1, linkingFig)
 import App.Renderer (Fig)
 import Test.Util (Test, run)
 
@@ -18,7 +18,7 @@ test_fig setup =
          pure unit
 
 tests :: Array (Test Unit)
-tests = unsafePartial [test_fig convolutionFig, test_fig linkingFig]
+tests = unsafePartial [test_fig convolutionFig, test_fig (linkingFig fig1)]
 
 main :: Effect Unit
 main = void (sequence (run <$> tests))

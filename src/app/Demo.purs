@@ -122,6 +122,11 @@ type FigSpec a = {
    makeSubfigs :: Example -> MayFail (a × Array SubFig)
 }
 
+type LinkingFigSpec = {
+   divId :: HTMLId,
+   config :: LinkConfig
+}
+
 -- TODO: not every example should run with this dataset.
 fig :: forall a . HTMLId -> FigSpec a -> Aff Fig
 fig divId { file, makeSubfigs } = do
@@ -130,8 +135,20 @@ fig divId { file, makeSubfigs } = do
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId , subfigs }
 
-linkFig :: Partial => HTMLId -> LinkConfig -> Aff Fig
-linkFig divId config = do
+fig1 :: LinkingFigSpec
+fig1 = {
+   divId: "fig-1",
+   config: {
+      file1: File "bar-chart",
+      file2: File "line-chart",
+      dataFile: File "renewables",
+      dataVar: "data",
+      v1_sel: selectBarChart_data (selectNth 1 (select_y))
+   }
+}
+
+linkingFig :: Partial => LinkingFigSpec -> Aff Fig
+linkingFig { divId, config } = do
    link <- doLink config
    pure { divId, subfigs: [
       makeSubFig { title: "primary view", uv: config.v1_sel × link.v1 },
@@ -149,19 +166,9 @@ convolutionFig =
       }
    }
 
-linkingFig :: Partial => Aff Fig
-linkingFig =
-   linkFig "fig-1" {
-      file1: File "bar-chart",
-      file2: File "line-chart",
-      dataFile: File "renewables",
-      dataVar: "data",
-      v1_sel: selectBarChart_data (selectNth 1 (select_y))
-   }
-
 main :: Effect Unit
 main = unsafePartial $
-   flip runAff_ ((\x y -> [x, y]) <$> convolutionFig <*> linkingFig)
+   flip runAff_ ((\x y -> [x, y]) <$> convolutionFig <*> linkingFig fig1)
    case _ of
       Left err -> log $ show err
       Right figs ->
