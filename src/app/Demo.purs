@@ -134,7 +134,7 @@ fig { divId, file, makeSubfigs } = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
    let subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
-   pure { divId , subfigs }
+   pure { divId, subfigs }
 
 linkingFig :: Partial => LinkingFigSpec -> Aff Fig
 linkingFig { divId, config } = do

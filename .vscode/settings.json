@@ -1,4 +1,9 @@
 {
    "git.ignoreLimitWarning": true,
-   "javascript.suggestionActions.enabled": false
+   "javascript.suggestionActions.enabled": false,
+   "editor.codeLens": false,
+   "editor.renderLineHighlight": "none",
+   "editor.guides.indentation": false,
+   "editor.lineNumbers": "off",
+   "editor.occurrencesHighlight": false
 }
