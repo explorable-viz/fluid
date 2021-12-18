@@ -1,4 +1,4 @@
-module Test.Main2 where
+module Test.App.Main where
 
 import Prelude
 import Data.Traversable (sequence)
