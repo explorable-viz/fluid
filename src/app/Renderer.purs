@@ -45,7 +45,7 @@ myHandler ev = do
 drawSubFig :: HTMLId -> SubFig -> Effect Unit
 drawSubFig divId (MatrixFig fig) = drawMatrix divId fig
 drawSubFig divId (EnergyTableView fig) = drawTable divId fig
-drawSubFig divId (LineChartFig fig) = drawLineChart divId fig
+drawSubFig divId (LineChartFig fig) = drawLineChart divId fig =<< eventListener myHandler
 drawSubFig divId (BarChartFig fig) = drawBarChart divId fig =<< eventListener myHandler
 
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.

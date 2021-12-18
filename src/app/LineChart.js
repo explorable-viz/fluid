@@ -20,7 +20,8 @@ function drawLineChart (
    {
       caption,   // String
       plots,     // Array LinePlot
-   }
+   },
+   listener
 ) {
    return () => {
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
@@ -74,6 +75,9 @@ function drawLineChart (
             .attr('cy', d => y(d.y.value0))
             .attr('fill', col)
             .attr('stroke', d => d.y.value1 ? shared.colorShade(col, -30) : col)
+            .on('mouseover', (e, d) =>
+               listener(e)
+            )
       }
 
       svg.append('g')
@@ -125,4 +129,4 @@ function drawLineChart (
    }
 }
 
-exports.drawLineChart = shared.curry2(drawLineChart)
+exports.drawLineChart = shared.curry3(drawLineChart)

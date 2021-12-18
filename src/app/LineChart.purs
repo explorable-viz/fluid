@@ -3,6 +3,7 @@ module App.LineChart where
 import Prelude
 import Data.List (List(..), (:))
 import Effect (Effect)
+import Web.Event.EventTarget (EventListener)
 import App.Util (HTMLId, class Reflect, from, get, get_intOrNumber, get_prim, record)
 import Bindings (Bind)
 import DataType (cLinePlot)
@@ -17,7 +18,7 @@ newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePl
 newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
 newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
 
-foreign import drawLineChart :: HTMLId -> LineChart -> Effect Unit
+foreign import drawLineChart :: HTMLId -> LineChart -> EventListener -> Effect Unit
 
 instance reflectPoint :: Reflect (SnocList (Bind (Val Boolean))) Point where
    from r = Point {
