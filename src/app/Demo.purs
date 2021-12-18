@@ -149,8 +149,7 @@ convolutionFig =
    }
 
 linkingFig :: Partial => Aff Fig
-linkingFig = do
-   let vars = ["data"] :: Array Var
+linkingFig =
    linkFig "fig-1" {
       file1: File "bar-chart",
       file2: File "line-chart",

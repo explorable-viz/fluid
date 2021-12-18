@@ -10,10 +10,11 @@ import App.Demo (convolutionFig, linkingFig)
 import App.Renderer (Fig)
 import Test.Util (Test, run)
 
+-- For now app tests just exercise figure creation code.
 test_fig :: Aff Fig -> Test Unit
 test_fig setup =
    before setup $
-      it "hello" \_ -> do
+      it "hello" \_ ->
          pure unit
 
 tests :: Array (Test Unit)
