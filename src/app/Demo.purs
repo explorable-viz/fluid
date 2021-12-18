@@ -139,7 +139,7 @@ linkFig divId config = do
    ] }
 
 convolutionFig :: Partial => Aff Fig
-convolutionFig = do
+convolutionFig =
    fig "fig-conv-1" {
       file: File "slicing/conv-emboss",
       makeSubfigs: needs {
