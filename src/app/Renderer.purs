@@ -8,8 +8,8 @@ import Effect.Console (log)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (eventListener)
 import Web.Event.Internal.Types (Event)
-import App.BarChart (BarChart, BarChartRecord(..), unsafeBarChartRecord, drawBarChart)
-import App.LineChart (LineChart, drawLineChart)
+import App.BarChart (BarChart, BarChartRecord(..), drawBarChart, unsafeBarChartRecord)
+import App.LineChart (LineChart, Point(..), drawLineChart, unsafePoint)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord)
 import App.Util (HTMLId, from, record)
@@ -36,17 +36,23 @@ data SubFig =
    LineChartFig LineChart |
    BarChartFig BarChart
 
-myHandler :: Event -> Effect Unit
-myHandler ev = do
+barChartHandler :: Event -> Effect Unit
+barChartHandler ev = do
    let BarChartRecord xy = unsafeBarChartRecord (target ev)
+   log $ show xy
+   pure unit
+
+lineChartHandler :: Event -> Effect Unit
+lineChartHandler ev = do
+   let Point xy = unsafePoint (target ev)
    log $ show xy
    pure unit
 
 drawSubFig :: HTMLId -> SubFig -> Effect Unit
 drawSubFig divId (MatrixFig fig) = drawMatrix divId fig
 drawSubFig divId (EnergyTableView fig) = drawTable divId fig
-drawSubFig divId (LineChartFig fig) = drawLineChart divId fig =<< eventListener myHandler
-drawSubFig divId (BarChartFig fig) = drawBarChart divId fig =<< eventListener myHandler
+drawSubFig divId (LineChartFig fig) = drawLineChart divId fig =<< eventListener lineChartHandler
+drawSubFig divId (BarChartFig fig) = drawBarChart divId fig =<< eventListener barChartHandler
 
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
 makeSubFig :: Partial => { title :: String, uv :: Slice (Val 𝔹) } -> SubFig

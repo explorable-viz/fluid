@@ -1,18 +1,21 @@
 module App.LineChart where
 
-import Prelude
-import Data.List (List(..), (:))
-import Effect (Effect)
-import Web.Event.EventTarget (EventListener)
+import Prelude hiding (absurd)
+
 import App.Util (HTMLId, class Reflect, from, get, get_intOrNumber, get_prim, record)
 import Bindings (Bind)
+import Data.List (List(..), (:))
+import Data.Maybe (Maybe)
 import DataType (cLinePlot)
+import Effect (Effect)
+import Unsafe.Coerce (unsafeCoerce)
 import Lattice (𝔹, expand)
 import Primitive (Slice)
-import Util (type (×), (×))
+import Util (type (×), (×), absurd, fromJust)
 import Util.SnocList (SnocList)
-import Val (Val)
 import Val (Val(..)) as V
+import Val (Val)
+import Web.Event.EventTarget (EventListener, EventTarget)
 
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
@@ -42,3 +45,9 @@ instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
    from (v × V.Constr _ c (v1 : Nil)) | c == cLinePlot =
       case expand v (V.Constr false cLinePlot (V.Hole false : Nil)) of
          V.Constr _ _ (u1 : Nil) -> record from (u1 × v1)
+
+-- (unsafe) the datum associated with a line chart mouse event.
+unsafePoint :: Maybe EventTarget -> Point
+unsafePoint tgt_opt =
+   let tgt = fromJust absurd $ tgt_opt
+   in (unsafeCoerce tgt).__data__
