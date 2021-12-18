@@ -11,6 +11,7 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 import App.Renderer (Fig, SubFig, drawFig, makeSubFig)
+import App.Util (HTMLId)
 import Bindings (Bind, Var, find, update)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
@@ -122,14 +123,14 @@ type FigSpec a = {
 }
 
 -- TODO: not every example should run with this dataset.
-fig :: forall a . String -> FigSpec a -> Aff Fig
+fig :: forall a . HTMLId -> FigSpec a -> Aff Fig
 fig divId { file, makeSubfigs } = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
    let _ × subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId , subfigs }
 
-linkFig :: Partial => String -> LinkConfig -> Aff Fig
+linkFig :: Partial => HTMLId -> LinkConfig -> Aff Fig
 linkFig divId config = do
    link <- doLink config
    pure { divId, subfigs: [
