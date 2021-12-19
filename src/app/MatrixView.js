@@ -31,7 +31,7 @@ function drawMatrix (
          .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
 
       const rect = grp.selectAll('rect')
-                      .data(([, ns]) => [...ns.entries()])
+                      .data(([i, ns]) => [...ns.entries()].map(([j, n]) => [[i, j], n]))
                       .enter()
 
       rect.append('rect')
