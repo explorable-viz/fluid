@@ -5,12 +5,11 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import DataType (cLinePlot)
-import Effect (Effect)
 import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Event.Event (Event, target)
+import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util (class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record)
+import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record)
 import Bindings (Bind)
 import Lattice (𝔹, expand)
 import Primitive (Slice)
@@ -48,8 +47,8 @@ instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
       case expand v (V.Constr false cLinePlot (V.Hole false : Nil)) of
          V.Constr _ _ (u1 : Nil) -> record from (u1 × v1)
 
-lineChartHandler :: Event -> Effect Unit
-lineChartHandler ev = do
+lineChartHandler :: Handler
+lineChartHandler redraw ev = do
    let Point xy = unsafePoint (target ev)
    log $ show xy
    pure unit

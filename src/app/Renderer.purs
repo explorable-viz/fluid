@@ -52,8 +52,8 @@ data SubFig =
 drawSubFig :: HTMLId -> (Unit -> Effect Unit) -> Int -> SubFig -> Effect Unit
 drawSubFig divId redraw n (MatrixFig fig') = drawMatrix divId n fig' =<< eventListener (matrixViewHandler redraw)
 drawSubFig divId redraw n (EnergyTableView fig') = drawTable divId n fig' =<< eventListener (tableViewHandler redraw)
-drawSubFig divId _ n (LineChartFig fig') = drawLineChart divId n fig' =<< eventListener lineChartHandler
-drawSubFig divId _ n (BarChartFig fig') = drawBarChart divId n fig' =<< eventListener barChartHandler
+drawSubFig divId redraw n (LineChartFig fig') = drawLineChart divId n fig' =<< eventListener (lineChartHandler redraw)
+drawSubFig divId redraw n (BarChartFig fig') = drawBarChart divId n fig' =<< eventListener (barChartHandler redraw)
 
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
 -- 'from' is partial but encapsulate that here.
