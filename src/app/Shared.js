@@ -70,4 +70,5 @@ function download (parent, dataURL, name) {
 exports.colorShade = colorShade
 exports.curry2 = curry2
 exports.curry3 = curry3
+exports.curry4 = curry4
 exports.saveImage = saveImage

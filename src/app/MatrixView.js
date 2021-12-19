@@ -13,6 +13,7 @@ function drawMatrix (
    listener
 ) {
    return () => {
+      const childId = id + '.' + childIndex
       const strokeWidth = 0.5
       const w = 30, h = 30
       const div = d3.select('#' + id)
@@ -20,10 +21,11 @@ function drawMatrix (
       const hMargin = w / 2
       const vMargin = h / 2
 
-      div.selectAll('*').remove()
+      div.selectAll('#' + childId).remove()
 
       const svg = div
          .append('svg')
+         .attr('id', childId)
          .attr('width', width + hMargin)
          .attr('height', height + vMargin)
 
