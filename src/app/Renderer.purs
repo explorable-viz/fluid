@@ -59,22 +59,22 @@ drawSubFig divId redraw n (LineChartFig fig') = drawLineChart divId n fig' =<< e
 drawSubFig divId redraw n (BarChartFig fig') = drawBarChart divId n fig' =<< eventListener (barChartHandler redraw)
 
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
--- 'from' is partial but encapsulate that here.
-makeSubFig :: { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
-makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
+-- 'from' is partial; encapsulate that here.
+makeSubFig :: String -> Slice (Val 𝔹) -> SubFig
+makeSubFig _ (u × V.Constr _ c (v1 : Nil)) | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> BarChartFig (unsafePartial $ record from (u1 × v1))
       _ -> error absurd
-makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
+makeSubFig _ (u × V.Constr _ c (v1 : Nil)) | c == cLineChart =
    case expand u (V.Constr false cLineChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> LineChartFig (unsafePartial $ record from (u1 × v1))
       _ -> error absurd
-makeSubFig { title, uv: u × v@(V.Constr _ c _) } | c == cNil || c == cCons =
+makeSubFig title (u × v@(V.Constr _ c _)) | c == cNil || c == cCons =
    EnergyTableView (EnergyTable { title, table: unsafePartial $ record energyRecord <$> from (u × v) })
-makeSubFig { title, uv: u × v@(V.Matrix _ _) } =
+makeSubFig title (u × v@(V.Matrix _ _)) =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig (MatrixView { title, matrix: matrixRep vss2 } )
-makeSubFig _ = error absurd
+makeSubFig _ _ = error absurd
 
 type Example = {
    ρ0 :: Env 𝔹,     -- ambient env (default imports)
@@ -100,7 +100,7 @@ splitDefs ρ0 s' = do
          unpack (S.Let defs s)      = Left defs × s
 
 varFig :: Var × Slice (Val 𝔹) -> SubFig
-varFig (x × uv) = makeSubFig { title: x, uv }
+varFig (x × uv) = makeSubFig x uv
 
 type ExampleEval = {
    e     :: Expr 𝔹,
@@ -125,7 +125,7 @@ varFig' x (ρ' × ρ) = do
 valFigs :: Val 𝔹 -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig)
 valFigs o { vars, o' } (ρ' × ρ) = do
    figs <- sequence (flip varFig' (ρ' × ρ) <$> vars)
-   pure $ figs <> [ makeSubFig { title: "output", uv: o' × o } ]
+   pure $ figs <> [ makeSubFig "output" (o' × o) ]
 
 type NeedsSpec = {
    vars  :: Array Var,     -- variables we want subfigs for
@@ -139,7 +139,7 @@ needs spec { ρ0, ρ, s } = do
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
    figs <- valFigs o spec (ρ0ρ' × ρ0ρ)
-   pure $ figs <> [ makeSubFig { title: "output", uv: o'' × o } ]
+   pure $ figs <> [ makeSubFig "output" (o'' × o) ]
 
 type NeededBySpec = {
    vars     :: Array Var,    -- variables we want subfigs for
@@ -182,7 +182,7 @@ linkingFig :: LinkingFigSpec -> Aff Fig
 linkingFig { divId, config } = do
    link <- doLink config
    pure { divId, subfigs: [
-      makeSubFig { title: "primary view", uv: config.v1_sel × link.v1 },
-      makeSubFig { title: "linked view", uv: link.v2 },
-      makeSubFig { title: "common data", uv: link.data_sel }
+      makeSubFig "primary view" (config.v1_sel × link.v1),
+      makeSubFig "linked view" link.v2,
+      makeSubFig "common data" link.data_sel
    ] }
