@@ -25,13 +25,13 @@ function drawMatrix (
 
       // group for each row
       const grp = svg.selectAll('g')
-         .data(nss)
+         .data([...nss.entries()])
          .enter()
          .append('g')
          .attr('transform', (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`)
 
       const rect = grp.selectAll('rect')
-                      .data(ns => [...ns.entries()])
+                      .data(([, ns]) => [...ns.entries()])
                       .enter()
 
       rect.append('rect')
