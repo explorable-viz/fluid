@@ -2,8 +2,10 @@ module App.TableView where
 
 import Prelude
 import Effect (Effect)
+import Effect.Console (log)
+import Web.Event.Event (Event)
 import Bindings (Bindings)
-import App.Util (HTMLId, get_intOrNumber, get_prim)
+import App.Util (Renderer, get_intOrNumber, get_prim)
 import Lattice (𝔹)
 import Primitive (Slice)
 import Util (type (×))
@@ -14,7 +16,7 @@ import Val (Val)
 type EnergyRecord = { year :: Int × 𝔹, country :: String × 𝔹, energyType :: String × 𝔹, output :: Number × 𝔹 }
 newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord }
 
-foreign import drawTable :: HTMLId -> EnergyTable -> Effect Unit
+foreign import drawTable :: Renderer EnergyTable
 
 energyRecord :: Slice (Bindings (Val 𝔹)) -> EnergyRecord
 energyRecord r = {
@@ -23,3 +25,8 @@ energyRecord r = {
    energyType: get_prim "energyType" r,
    output: get_intOrNumber "output" r
 }
+
+tableViewHandler :: (Unit -> Effect Unit) -> Event -> Effect Unit
+tableViewHandler redraw ev = do
+   log $ show "tableViewHandler"
+   redraw unit

@@ -11,10 +11,12 @@ function isUsed (r) {
 // Generic to all tables.
 function drawTable (
    id,
+   childIndex,
    {
       title,               // String
       table                // Array of any record type with only primitive fields
-   }
+   },
+   listener
 ) {
    return () => {
       table = table.filter(r => isUsed(r))
@@ -42,4 +44,4 @@ function drawTable (
    }
 }
 
-exports.drawTable = shared.curry2(drawTable)
+exports.drawTable = shared.curry4(drawTable)

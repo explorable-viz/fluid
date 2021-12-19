@@ -14,7 +14,7 @@ import Web.Event.EventTarget (eventListener)
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
-import App.TableView (EnergyTable(..), drawTable, energyRecord)
+import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
 import App.Util (HTMLId, from, record)
 import Bindings (Bind, Var, find, update)
 import DataType (cBarChart, cCons, cLineChart, cNil)
@@ -51,7 +51,7 @@ data SubFig =
 
 drawSubFig :: HTMLId -> (Unit -> Effect Unit) -> Int -> SubFig -> Effect Unit
 drawSubFig divId redraw n (MatrixFig fig') = drawMatrix divId n fig' =<< eventListener (matrixViewHandler redraw)
-drawSubFig divId _ _ (EnergyTableView fig') = drawTable divId fig'
+drawSubFig divId redraw n (EnergyTableView fig') = drawTable divId n fig' =<< eventListener (tableViewHandler redraw)
 drawSubFig divId _ n (LineChartFig fig') = drawLineChart divId n fig' =<< eventListener lineChartHandler
 drawSubFig divId _ n (BarChartFig fig') = drawBarChart divId n fig' =<< eventListener barChartHandler
 
