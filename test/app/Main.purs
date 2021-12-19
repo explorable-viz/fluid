@@ -5,7 +5,8 @@ import Data.Traversable (sequence)
 import Effect (Effect)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (before, it)
-import App.Demo (FigSpec, LinkingFigSpec, fig, fig1, figConv1, linkingFig)
+import App.Main (fig1, figConv1)
+import App.Renderer (FigSpec, LinkingFigSpec, fig, linkingFig)
 import Test.Util (Test, run)
 
 -- For now app tests just exercise figure creation code.
