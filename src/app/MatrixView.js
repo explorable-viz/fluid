@@ -40,6 +40,9 @@ function drawMatrix (
           .attr('height', h)
           .attr('class', d => d.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected')
           .attr('stroke-width', strokeWidth)
+          .on('mouseover', (e, d) =>
+             listener(e)
+          )
 
       rect.append('text')
           .text(d => d.value0)
