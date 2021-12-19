@@ -4,6 +4,7 @@ import Prelude
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
+import Partial.Unsafe (unsafePartial)
 import Web.Event.EventTarget (eventListener)
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
@@ -14,7 +15,7 @@ import DataType (cBarChart, cCons, cLineChart, cNil)
 import Effect (Effect)
 import Lattice (𝔹, expand)
 import Primitive (Slice, match, match_fwd)
-import Util ((×))
+import Util ((×), absurd, error)
 import Val (Val)
 import Val (Val(..)) as V
 
@@ -40,15 +41,19 @@ drawSubFig divId (LineChartFig fig) = drawLineChart divId fig =<< eventListener 
 drawSubFig divId (BarChartFig fig) = drawBarChart divId fig =<< eventListener barChartHandler
 
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
-makeSubFig :: Partial => { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
+-- 'from' is partial but encapsulate that here.
+makeSubFig :: { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
 makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
-      V.Constr _ _ (u1 : Nil) -> BarChartFig (record from (u1 × v1))
+      V.Constr _ _ (u1 : Nil) -> BarChartFig (unsafePartial $ record from (u1 × v1))
+      _ -> error absurd
 makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
    case expand u (V.Constr false cLineChart (V.Hole false : Nil)) of
-      V.Constr _ _ (u1 : Nil) -> LineChartFig (record from (u1 × v1))
+      V.Constr _ _ (u1 : Nil) -> LineChartFig (unsafePartial $ record from (u1 × v1))
+      _ -> error absurd
 makeSubFig { title, uv: u × v@(V.Constr _ c _) } | c == cNil || c == cCons =
-   EnergyTableView (EnergyTable { title, table: record energyRecord <$> from (u × v) })
+   EnergyTableView (EnergyTable { title, table: unsafePartial $ record energyRecord <$> from (u × v) })
 makeSubFig { title, uv: u × v@(V.Matrix _ _) } =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig (MatrixView { title, matrix: matrixRep vss2 } )
+makeSubFig _ = error absurd

@@ -51,7 +51,7 @@ splitDefs ρ0 s' = unsafePartial $ do
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
 
-varFig :: Partial => Var × Slice (Val 𝔹) -> SubFig
+varFig :: Var × Slice (Val 𝔹) -> SubFig
 varFig (x × uv) = makeSubFig { title: x, uv }
 
 type ExampleEval = {
@@ -72,13 +72,12 @@ varFig' :: Var -> Slice (Env 𝔹) -> MayFail SubFig
 varFig' x (ρ' × ρ) = do
    v <- find x ρ
    v' <- find x ρ'
-   unsafePartial $ pure $ varFig (x × (v' × v))
+   pure $ varFig (x × (v' × v))
 
 valFigs :: Val 𝔹 -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig)
 valFigs o { vars, o' } (ρ' × ρ) = do
    figs <- sequence (flip varFig' (ρ' × ρ) <$> vars)
-   unsafePartial $ pure $
-      figs <> [ makeSubFig { title: "output", uv: o' × o } ]
+   pure $ figs <> [ makeSubFig { title: "output", uv: o' × o } ]
 
 type NeedsSpec = {
    vars  :: Array Var,     -- variables we want subfigs for
@@ -90,7 +89,7 @@ type NeedsResult = {
    ρ'    :: Env 𝔹          -- selection on local environment
 }
 
-needs :: Partial => NeedsSpec -> Example -> MayFail (Array SubFig)
+needs :: NeedsSpec -> Example -> MayFail (Array SubFig)
 needs spec { ρ0, ρ, s } = do
    { e, o, t, ρ0ρ } <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × e × α = evalBwd spec.o' t
@@ -136,7 +135,7 @@ fig { divId, file, makeSubfigs } = do
    let subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId, subfigs }
 
-linkingFig :: Partial => LinkingFigSpec -> Aff Fig
+linkingFig :: LinkingFigSpec -> Aff Fig
 linkingFig { divId, config } = do
    link <- doLink config
    pure { divId, subfigs: [
@@ -157,7 +156,7 @@ fig1 = {
    }
 }
 
-figConv1 :: Partial => FigSpec
+figConv1 :: FigSpec
 figConv1 = {
    divId: "fig-conv-1",
    file: File "slicing/conv-emboss",
