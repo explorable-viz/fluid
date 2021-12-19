@@ -8,7 +8,9 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import DataType (cLinePlot)
 import Effect (Effect)
+import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
+import Web.Event.Event (Event, target)
 import Lattice (𝔹, expand)
 import Primitive (Slice)
 import Util (type (×), (×), absurd, fromJust)
@@ -45,6 +47,12 @@ instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
    from (v × V.Constr _ c (v1 : Nil)) | c == cLinePlot =
       case expand v (V.Constr false cLinePlot (V.Hole false : Nil)) of
          V.Constr _ _ (u1 : Nil) -> record from (u1 × v1)
+
+lineChartHandler :: Event -> Effect Unit
+lineChartHandler ev = do
+   let Point xy = unsafePoint (target ev)
+   log $ show xy
+   pure unit
 
 -- (unsafe) the datum associated with a line chart mouse event.
 unsafePoint :: Maybe EventTarget -> Point

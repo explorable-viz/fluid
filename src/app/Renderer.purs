@@ -4,12 +4,9 @@ import Prelude
 import Data.Foldable (sequence_)
 import Data.List (List(..), (:))
 import Data.Tuple (fst)
-import Effect.Console (log)
-import Web.Event.Event (target)
 import Web.Event.EventTarget (eventListener)
-import Web.Event.Internal.Types (Event)
-import App.BarChart (BarChart, BarChartRecord(..), drawBarChart, unsafeBarChartRecord)
-import App.LineChart (LineChart, Point(..), drawLineChart, unsafePoint)
+import App.BarChart (BarChart, barChartHandler, drawBarChart)
+import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord)
 import App.Util (HTMLId, from, record)
@@ -35,18 +32,6 @@ data SubFig =
    EnergyTableView EnergyTable |
    LineChartFig LineChart |
    BarChartFig BarChart
-
-barChartHandler :: Event -> Effect Unit
-barChartHandler ev = do
-   let BarChartRecord xy = unsafeBarChartRecord (target ev)
-   log $ show xy
-   pure unit
-
-lineChartHandler :: Event -> Effect Unit
-lineChartHandler ev = do
-   let Point xy = unsafePoint (target ev)
-   log $ show xy
-   pure unit
 
 drawSubFig :: HTMLId -> SubFig -> Effect Unit
 drawSubFig divId (MatrixFig fig) = drawMatrix divId fig

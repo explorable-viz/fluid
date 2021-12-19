@@ -3,7 +3,9 @@ module App.BarChart where
 import Prelude hiding (absurd)
 import Data.Maybe (Maybe)
 import Effect (Effect)
+import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
+import Web.Event.Event (Event, target)
 import Web.Event.EventTarget (EventListener, EventTarget)
 import App.Util (HTMLId, class Reflect, from, get, get_intOrNumber, get_prim, record)
 import Bindings (Bind)
@@ -28,6 +30,12 @@ instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart whe
       caption: get_prim "caption" r,
       data_: record from <$> from (get "data" r)
    }
+
+barChartHandler :: Event -> Effect Unit
+barChartHandler ev = do
+   let BarChartRecord xy = unsafeBarChartRecord (target ev)
+   log $ show xy
+   pure unit
 
 -- (unsafe) the datum associated with a bar chart mouse event.
 unsafeBarChartRecord :: Maybe EventTarget -> BarChartRecord
