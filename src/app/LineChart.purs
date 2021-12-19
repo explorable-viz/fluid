@@ -51,7 +51,7 @@ lineChartHandler :: Handler
 lineChartHandler redraw ev = do
    let Point xy = unsafePoint (target ev)
    log $ show xy
-   pure unit
+   redraw unit
 
 -- (unsafe) the datum associated with a line chart mouse event.
 unsafePoint :: Maybe EventTarget -> Point

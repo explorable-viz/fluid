@@ -34,7 +34,7 @@ barChartHandler :: Handler
 barChartHandler redraw ev = do
    let BarChartRecord xy = unsafeBarChartRecord (target ev)
    log $ show xy
-   pure unit
+   redraw unit
 
 -- (unsafe) the datum associated with a bar chart mouse event.
 unsafeBarChartRecord :: Maybe EventTarget -> BarChartRecord

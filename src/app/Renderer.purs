@@ -9,6 +9,7 @@ import Data.List (List(..), (:), singleton)
 import Data.Tuple (fst, uncurry)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
 import Web.Event.EventTarget (eventListener)
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
@@ -39,9 +40,11 @@ type Fig = {
    subfigs :: Array SubFig
 }
 
-drawFig :: (Unit -> Effect Unit) -> Fig -> Effect Unit
-drawFig redraw { divId, subfigs } =
-   sequence_ $ uncurry (drawSubFig divId redraw) <$> zip (range 0 (length subfigs - 1)) subfigs
+drawFig :: Fig -> Effect Unit
+drawFig fig'@{ divId, subfigs } = do
+   log $ "Drawing " <> divId
+   sequence_ $ 
+      uncurry (drawSubFig divId (const $ drawFig fig')) <$> zip (range 0 (length subfigs - 1)) subfigs
 
 data SubFig =
    MatrixFig MatrixView |
