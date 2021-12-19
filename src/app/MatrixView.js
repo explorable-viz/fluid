@@ -8,7 +8,8 @@ function drawMatrix (
    {
       title,                                                               // String
       matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }    // IntMatrix
-   }
+   },
+   listener
 ) {
    return () => {
       const strokeWidth = 0.5
@@ -58,4 +59,4 @@ function drawMatrix (
    }
 }
 
-exports.drawMatrix = shared.curry2(drawMatrix)
+exports.drawMatrix = shared.curry3(drawMatrix)

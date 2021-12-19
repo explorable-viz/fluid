@@ -11,13 +11,13 @@ import Effect (Effect)
 import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (Event, target)
+import Web.Event.EventTarget (EventListener, EventTarget)
 import Lattice (𝔹, expand)
 import Primitive (Slice)
 import Util (type (×), (×), absurd, fromJust)
 import Util.SnocList (SnocList)
 import Val (Val(..)) as V
 import Val (Val)
-import Web.Event.EventTarget (EventListener, EventTarget)
 
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
