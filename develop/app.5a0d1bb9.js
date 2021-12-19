@@ -32946,6 +32946,18 @@ function curry3(f) {
       };
     };
   };
+}
+
+function curry4(f) {
+  return function (x1) {
+    return function (x2) {
+      return function (x3) {
+        return function (x4) {
+          return f(x1, x2, x3, x4);
+        };
+      };
+    };
+  };
 } // https://stackoverflow.com/questions/5560248
 
 
@@ -33014,6 +33026,7 @@ function download(parent, dataURL, name) {
 exports.colorShade = colorShade;
 exports.curry2 = curry2;
 exports.curry3 = curry3;
+exports.curry4 = curry4;
 exports.saveImage = saveImage;
 },{}],"g5I+":[function(require,module,exports) {
 
@@ -33226,7 +33239,15 @@ process.umask = function () {
 };
 },{}],"m8nE":[function(require,module,exports) {
 var process = require("process");
-function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e) { throw _e; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e2) { didErr = true; err = _e2; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
+function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
+
+function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+
+function _iterableToArrayLimit(arr, i) { if (typeof Symbol === "undefined" || !(Symbol.iterator in Object(arr))) return; var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
+
+function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
+
+function _createForOfIteratorHelper(o, allowArrayLike) { var it; if (typeof Symbol === "undefined" || o[Symbol.iterator] == null) { if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; var F = function F() {}; return { s: F, n: function n() { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }, e: function e(_e2) { throw _e2; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var normalCompletion = true, didErr = false, err; return { s: function s() { it = o[Symbol.iterator](); }, n: function n() { var step = it.next(); normalCompletion = step.done; return step; }, e: function e(_e3) { didErr = true; err = _e3; }, f: function f() { try { if (!normalCompletion && it.return != null) it.return(); } finally { if (didErr) throw err; } } }; }
 
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
 
@@ -40638,10 +40659,11 @@ var PS = {};
 
   var shared = require("/src/app/Shared");
 
-  function drawBarChart(id, _ref, listener) {
+  function drawBarChart(id, childIndex, _ref, listener) {
     var caption = _ref.caption,
         data_ = _ref.data_;
     return function () {
+      var childId = id + '-' + childIndex;
       var margin = {
         top: 15,
         right: 0,
@@ -40650,7 +40672,9 @@ var PS = {};
       },
           width = 200 - margin.left - margin.right,
           height = 185 - margin.top - margin.bottom;
-      var svg = d3.select('#' + id).append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', "translate(".concat(margin.left, ", ").concat(margin.top, ")"));
+      var div = d3.select('#' + id);
+      div.selectAll('#' + childId).remove();
+      var svg = div.append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).attr('id', childId).append('g').attr('transform', "translate(".concat(margin.left, ", ").concat(margin.top, ")"));
       var tip = d3tip.default().attr('class', 'd3-tip').offset([0, 0]).html(function (ev, d) {
         return d.y.value0;
       });
@@ -40692,7 +40716,7 @@ var PS = {};
     };
   }
 
-  exports.drawBarChart = shared.curry3(drawBarChart);
+  exports.drawBarChart = shared.curry4(drawBarChart);
 })(PS["App.BarChart"] = PS["App.BarChart"] || {});
 
 (function ($PS) {
@@ -67537,7 +67561,7 @@ var PS = {};
         }
 
         ;
-        throw new Error("Failed pattern match at App.Util (line 38, column 7 - line 39, column 32): " + [v1.constructor.name]);
+        throw new Error("Failed pattern match at App.Util (line 43, column 7 - line 44, column 32): " + [v1.constructor.name]);
       }
 
       ;
@@ -67550,11 +67574,11 @@ var PS = {};
         }
 
         ;
-        throw new Error("Failed pattern match at App.Util (line 41, column 7 - line 42, column 70): " + [v3.constructor.name]);
+        throw new Error("Failed pattern match at App.Util (line 46, column 7 - line 47, column 70): " + [v3.constructor.name]);
       }
 
       ;
-      throw new Error("Failed pattern match at App.Util (line 36, column 1 - line 42, column 70): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Util (line 41, column 1 - line 47, column 70): " + [v.constructor.name]);
     };
   });
   exports["from"] = from;
@@ -67564,356 +67588,6 @@ var PS = {};
   exports["record"] = record;
   exports["Reflect"] = $$Reflect;
   exports["reflectArray"] = reflectArray;
-})(PS);
-
-(function ($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-
-  $PS["App.BarChart"] = $PS["App.BarChart"] || {};
-  var exports = $PS["App.BarChart"];
-  var $foreign = $PS["App.BarChart"];
-  var App_Util = $PS["App.Util"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Primitive = $PS["Primitive"];
-  var Util = $PS["Util"];
-
-  var unsafeBarChartRecord = function unsafeBarChartRecord(tgt_opt) {
-    var tgt = Util.fromJust(Util.absurd)(tgt_opt);
-    return tgt["__data__"];
-  };
-
-  var reflectBarChartRecord = new App_Util["Reflect"](function (dictPartial) {
-    return function (r) {
-      return {
-        x: App_Util.get_prim(Primitive.toFromString)("x")(r),
-        y: App_Util.get_intOrNumber("y")(r)
-      };
-    };
-  });
-  var reflectBarChart = new App_Util["Reflect"](function (dictPartial) {
-    return function (r) {
-      return {
-        caption: App_Util.get_prim(Primitive.toFromString)("caption")(r),
-        data_: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_Util.from(reflectBarChartRecord)()))(App_Util.from(App_Util.reflectArray)()(App_Util.get("data")(r)))
-      };
-    };
-  });
-  exports["unsafeBarChartRecord"] = unsafeBarChartRecord;
-  exports["reflectBarChart"] = reflectBarChart;
-  exports["drawBarChart"] = $foreign.drawBarChart;
-})(PS);
-
-(function (exports) {
-  "use strict";
-
-  var d3 = require("d3");
-
-  var shared = require("/src/app/Shared");
-
-  function max_y(linePlot) {
-    return Math.max.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
-      return point.y.value0;
-    })));
-  }
-
-  function min_x(linePlot) {
-    return Math.min.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
-      return point.x.value0;
-    })));
-  }
-
-  function max_x(linePlot) {
-    return Math.max.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
-      return point.x.value0;
-    })));
-  }
-
-  function drawLineChart(id, _ref2) {
-    var caption = _ref2.caption,
-        plots = _ref2.plots;
-    return function () {
-      var margin = {
-        top: 15,
-        right: 65,
-        bottom: 40,
-        left: 30
-      },
-          width = 230 - margin.left - margin.right,
-          height = 185 - margin.top - margin.bottom,
-          y_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_y))),
-          x_min = Math.min.apply(Math, _toConsumableArray(plots.map(min_x))),
-          x_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_x))),
-          names = plots.map(function (plot) {
-        return plot.name.value0;
-      });
-      var svg = d3.select('#' + id).append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).append('g').attr('transform', "translate(".concat(margin.left, ", ").concat(margin.top, ")"));
-      var x = d3.scaleLinear().domain([x_min, x_max]).range([0, width]),
-          y = d3.scaleLinear().domain([0, y_max]).range([height, 0]);
-      var line1 = d3.line().x(function (d) {
-        return x(d.x.value0);
-      }).y(function (d) {
-        return y(d.y.value0);
-      });
-      var color = d3.scaleOrdinal(d3.schemePastel1);
-      svg.selectAll('lines').data(plots).enter().append('g').append('path').attr('fill', 'none').attr('stroke', function (d) {
-        return color(names.indexOf(d.name.value0));
-      }).attr('stroke-width', 1).attr('class', 'line').attr('d', function (d) {
-        return line1(d.data_);
-      });
-      var smallRadius = 2;
-
-      var _iterator = _createForOfIteratorHelper(plots),
-          _step;
-
-      try {
-        var _loop = function _loop() {
-          var plot = _step.value;
-          var col = color(names.indexOf(plot.name.value0));
-          svg.selectAll('markers').data(plot.data_).enter().append('g').append('circle').attr('class', 'marker').attr('r', function (d) {
-            return d.y.value1 ? smallRadius * 2 : smallRadius;
-          }).attr('cx', function (d) {
-            return x(d.x.value0);
-          }).attr('cy', function (d) {
-            return y(d.y.value0);
-          }).attr('fill', col).attr('stroke', function (d) {
-            return d.y.value1 ? shared.colorShade(col, -30) : col;
-          });
-        };
-
-        for (_iterator.s(); !(_step = _iterator.n()).done;) {
-          _loop();
-        }
-      } catch (err) {
-        _iterator.e(err);
-      } finally {
-        _iterator.f();
-      }
-
-      svg.append('g').attr('transform', "translate(0, ".concat(height, ")")).call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')));
-      svg.append('g').call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))); // lots of hard-coded constants
-
-      var legendLineHeight = 15,
-          legendStart = width + margin.left / 2;
-      svg.append('rect').attr('transform', "translate(".concat(legendStart, ", ").concat(legendLineHeight * (names.length - 1) + 2, ")")).attr('x', 0).attr('y', 0).attr('stroke', 'lightgray').attr('fill', 'none').attr('height', legendLineHeight * names.length).attr('width', margin.right - 16);
-      var legend = svg.selectAll('legend').data(names).enter().append('g').attr('class', 'legend').attr('transform', function (d, i) {
-        return "translate(".concat(legendStart, ", ").concat(height / 2 - margin.top + i * legendLineHeight, ")");
-      });
-      legend.append('text').text(function (d) {
-        return d;
-      }).attr('font-size', 11).attr('transform', 'translate(15, 9)'); // align text with boxes
-
-      legend.append('circle').attr('fill', function (d) {
-        return color(names.indexOf(d));
-      }).attr('r', smallRadius).attr('cx', legendLineHeight / 2 - smallRadius / 2).attr('cy', legendLineHeight / 2 - smallRadius / 2);
-      svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('class', 'title-text').attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
-    };
-  }
-
-  exports.drawLineChart = shared.curry2(drawLineChart);
-})(PS["App.LineChart"] = PS["App.LineChart"] || {});
-
-(function ($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-
-  $PS["App.LineChart"] = $PS["App.LineChart"] || {};
-  var exports = $PS["App.LineChart"];
-  var $foreign = $PS["App.LineChart"];
-  var App_Util = $PS["App.Util"];
-  var Data_Eq = $PS["Data.Eq"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_List_Types = $PS["Data.List.Types"];
-  var Data_Tuple = $PS["Data.Tuple"];
-  var DataType = $PS["DataType"];
-  var Lattice = $PS["Lattice"];
-  var Primitive = $PS["Primitive"];
-  var Val = $PS["Val"];
-  var reflectPoint = new App_Util["Reflect"](function (dictPartial) {
-    return function (r) {
-      return {
-        x: App_Util.get_intOrNumber("x")(r),
-        y: App_Util.get_intOrNumber("y")(r)
-      };
-    };
-  });
-  var reflectLinePlot = new App_Util["Reflect"](function (dictPartial) {
-    return function (r) {
-      return {
-        name: App_Util.get_prim(Primitive.toFromString)("name")(r),
-        data_: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_Util.from(reflectPoint)()))(App_Util.from(App_Util.reflectArray)()(App_Util.get("data")(r)))
-      };
-    };
-  });
-  var reflectLinePlot$prime = new App_Util["Reflect"](function (dictPartial) {
-    return function (v) {
-      if (v.value1 instanceof Val.Constr && v.value1.value2 instanceof Data_List_Types.Cons && v.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cLinePlot)) {
-        var v2 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cLinePlot, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
-
-        if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
-          return App_Util.record(App_Util.from(reflectLinePlot)())(new Data_Tuple.Tuple(v2.value2.value0, v.value1.value2.value0));
-        }
-
-        ;
-        throw new Error("Failed pattern match at App.LineChart (line 42, column 7 - line 43, column 58): " + [v2.constructor.name]);
-      }
-
-      ;
-      throw new Error("Failed pattern match at App.LineChart (line 40, column 1 - line 43, column 58): " + [v.constructor.name]);
-    };
-  });
-  var reflectLineChart = new App_Util["Reflect"](function (dictPartial) {
-    return function (r) {
-      return {
-        caption: App_Util.get_prim(Primitive.toFromString)("caption")(r),
-        plots: Data_Functor.map(Data_Functor.functorArray)(App_Util.from(reflectLinePlot$prime)())(App_Util.from(App_Util.reflectArray)()(App_Util.get("plots")(r)))
-      };
-    };
-  });
-  exports["reflectLineChart"] = reflectLineChart;
-  exports["drawLineChart"] = $foreign.drawLineChart;
-})(PS);
-
-(function (exports) {
-  "use strict";
-
-  var d3 = require("d3");
-
-  var shared = require("/src/app/Shared");
-
-  function drawMatrix(id, _ref3) {
-    var title = _ref3.title,
-        _ref3$matrix = _ref3.matrix,
-        _ref3$matrix$value = _ref3$matrix.value0,
-        nss = _ref3$matrix$value.value0,
-        i_max = _ref3$matrix$value.value1,
-        j_max = _ref3$matrix.value1;
-    return function () {
-      var strokeWidth = 0.5;
-      var w = 30,
-          h = 30;
-      var div = d3.select('#' + id);
-      var width = w * j_max + strokeWidth,
-          height = h * i_max + strokeWidth;
-      var hMargin = w / 2;
-      var vMargin = h / 2;
-      var svg = div.append('svg').attr('width', width + hMargin).attr('height', height + vMargin); // group for each row
-
-      var grp = svg.selectAll('g').data(nss).enter().append('g').attr('transform', function (_, i) {
-        return "translate(".concat(strokeWidth / 2 + hMargin / 2, ", ").concat(h * i + strokeWidth / 2 + vMargin, ")");
-      });
-      var rect = grp.selectAll('rect').data(function (d) {
-        return d;
-      }).enter();
-      rect.append('rect').attr('x', function (_, j) {
-        return w * j;
-      }).attr('width', w).attr('height', h).attr('class', function (d) {
-        return d.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected';
-      }).attr('stroke-width', strokeWidth);
-      rect.append('text').text(function (d) {
-        return d.value0;
-      }).attr('x', function (_, j) {
-        return w * (j + 0.5);
-      }).attr('y', 0.5 * h).attr('class', 'matrix-cell-text').attr('text-anchor', 'middle').attr('dominant-baseline', 'middle');
-      svg.append('text').text(title).attr('x', hMargin / 2).attr('y', vMargin / 2).attr('class', 'title-text').attr('dominant-baseline', 'middle').attr('text-anchor', 'left');
-    };
-  }
-
-  exports.drawMatrix = shared.curry2(drawMatrix);
-})(PS["App.MatrixView"] = PS["App.MatrixView"] || {});
-
-(function ($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-
-  $PS["App.MatrixView"] = $PS["App.MatrixView"] || {};
-  var exports = $PS["App.MatrixView"];
-  var $foreign = $PS["App.MatrixView"];
-  var Data_Array = $PS["Data.Array"];
-  var Data_Functor = $PS["Data.Functor"];
-  var Data_Tuple = $PS["Data.Tuple"];
-  var Primitive = $PS["Primitive"];
-
-  var matrixRep = function matrixRep(v) {
-    return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Primitive.match_fwd(Primitive.toFromInt)))(Data_Array.zipWith(Data_Array.zip)(v.value0.value0.value0)(v.value1.value0.value0)), v.value1.value0.value1.value0), v.value1.value1.value0);
-  };
-
-  exports["matrixRep"] = matrixRep;
-  exports["drawMatrix"] = $foreign.drawMatrix;
-})(PS);
-
-(function (exports) {
-  "use strict";
-
-  var d3 = require("d3");
-
-  var shared = require("/src/app/Shared"); // any record type with only primitive fields -> boolean
-
-
-  function isUsed(r) {
-    return Object.keys(r).some(function (k) {
-      return r[k].value1;
-    });
-  } // Generic to all tables.
-
-
-  function drawTable(id, _ref4) {
-    var title = _ref4.title,
-        table = _ref4.table;
-    return function () {
-      table = table.filter(function (r) {
-        return isUsed(r);
-      });
-      var cellFill = '#ffffff';
-      var HTMLtable = d3.select('#' + id).append('table');
-      var colNames = Object.keys(table[0]);
-      HTMLtable.append('thead').append('tr').selectAll('th').data(colNames).enter().append('th').text(function (d) {
-        return d;
-      });
-      var rows = HTMLtable.append('tbody').selectAll('tr').data(table).enter().append('tr');
-      rows.selectAll('td').data(function (d) {
-        return colNames.map(function (k) {
-          return {
-            'value': d[k],
-            'name': k
-          };
-        });
-      }).enter().append('td').attr('data-th', function (d) {
-        return d.name;
-      }).attr('class', function (d) {
-        return d.value.value1 ? 'cell-selected' : null;
-      }).attr('bgcolor', function (d) {
-        return d.value.value1 ? shared.colorShade(cellFill, -40) : cellFill;
-      }).text(function (d) {
-        return d.value.value0;
-      });
-    };
-  }
-
-  exports.drawTable = shared.curry2(drawTable);
-})(PS["App.TableView"] = PS["App.TableView"] || {});
-
-(function ($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-
-  $PS["App.TableView"] = $PS["App.TableView"] || {};
-  var exports = $PS["App.TableView"];
-  var $foreign = $PS["App.TableView"];
-  var App_Util = $PS["App.Util"];
-  var Primitive = $PS["Primitive"];
-
-  var energyRecord = function energyRecord(r) {
-    return {
-      year: App_Util.get_prim(Primitive.toFromInt)("year")(r),
-      country: App_Util.get_prim(Primitive.toFromString)("country")(r),
-      energyType: App_Util.get_prim(Primitive.toFromString)("energyType")(r),
-      output: App_Util.get_intOrNumber("output")(r)
-    };
-  };
-
-  exports["energyRecord"] = energyRecord;
-  exports["drawTable"] = $foreign.drawTable;
 })(PS);
 
 (function (exports) {
@@ -67961,42 +67635,188 @@ var PS = {};
   exports["target"] = target;
 })(PS);
 
-(function (exports) {
+(function ($PS) {
+  // Generated by purs version 0.13.6
   "use strict";
 
-  exports.eventListener = function (fn) {
-    return function () {
-      return function (event) {
-        return fn(event)();
+  $PS["App.BarChart"] = $PS["App.BarChart"] || {};
+  var exports = $PS["App.BarChart"];
+  var $foreign = $PS["App.BarChart"];
+  var App_Util = $PS["App.Util"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_Show = $PS["Data.Show"];
+  var Data_Symbol = $PS["Data.Symbol"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var Data_Unit = $PS["Data.Unit"];
+  var Effect_Console = $PS["Effect.Console"];
+  var Primitive = $PS["Primitive"];
+  var Util = $PS["Util"];
+  var Web_Event_Event = $PS["Web.Event.Event"];
+
+  var unsafeBarChartRecord = function unsafeBarChartRecord(tgt_opt) {
+    var tgt = Util.fromJust(Util.absurd)(tgt_opt);
+    return tgt["__data__"];
+  };
+
+  var reflectBarChartRecord = new App_Util["Reflect"](function (dictPartial) {
+    return function (r) {
+      return {
+        x: App_Util.get_prim(Primitive.toFromString)("x")(r),
+        y: App_Util.get_intOrNumber("y")(r)
+      };
+    };
+  });
+  var reflectBarChart = new App_Util["Reflect"](function (dictPartial) {
+    return function (r) {
+      return {
+        caption: App_Util.get_prim(Primitive.toFromString)("caption")(r),
+        data_: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_Util.from(reflectBarChartRecord)()))(App_Util.from(App_Util.reflectArray)()(App_Util.get("data")(r)))
+      };
+    };
+  });
+
+  var barChartHandler = function barChartHandler(redraw) {
+    return function (ev) {
+      var v = unsafeBarChartRecord(Web_Event_Event.target(ev));
+      return function __do() {
+        Effect_Console.log(Data_Show.show(Data_Show.showRecord()(Data_Show.showRecordFieldsCons(new Data_Symbol.IsSymbol(function () {
+          return "x";
+        }))(Data_Show.showRecordFieldsCons(new Data_Symbol.IsSymbol(function () {
+          return "y";
+        }))(Data_Show.showRecordFieldsNil)(Data_Tuple.showTuple(Data_Show.showNumber)(Data_Show.showBoolean)))(Data_Tuple.showTuple(Data_Show.showString)(Data_Show.showBoolean))))(v))();
+        return redraw(Data_Unit.unit)();
       };
     };
   };
-})(PS["Web.Event.EventTarget"] = PS["Web.Event.EventTarget"] || {});
 
-(function ($PS) {
-  // Generated by purs version 0.13.6
-  "use strict";
-
-  $PS["Web.Event.EventTarget"] = $PS["Web.Event.EventTarget"] || {};
-  var exports = $PS["Web.Event.EventTarget"];
-  var $foreign = $PS["Web.Event.EventTarget"];
-  exports["eventListener"] = $foreign.eventListener;
+  exports["barChartHandler"] = barChartHandler;
+  exports["reflectBarChart"] = reflectBarChart;
+  exports["drawBarChart"] = $foreign.drawBarChart;
 })(PS);
 
+(function (exports) {
+  "use strict";
+
+  var d3 = require("d3");
+
+  var shared = require("/src/app/Shared");
+
+  function max_y(linePlot) {
+    return Math.max.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
+      return point.y.value0;
+    })));
+  }
+
+  function min_x(linePlot) {
+    return Math.min.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
+      return point.x.value0;
+    })));
+  }
+
+  function max_x(linePlot) {
+    return Math.max.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
+      return point.x.value0;
+    })));
+  }
+
+  function drawLineChart(id, childIndex, _ref2, listener) {
+    var caption = _ref2.caption,
+        plots = _ref2.plots;
+    return function () {
+      var childId = id + '-' + childIndex;
+      var margin = {
+        top: 15,
+        right: 65,
+        bottom: 40,
+        left: 30
+      },
+          width = 230 - margin.left - margin.right,
+          height = 185 - margin.top - margin.bottom,
+          y_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_y))),
+          x_min = Math.min.apply(Math, _toConsumableArray(plots.map(min_x))),
+          x_max = Math.max.apply(Math, _toConsumableArray(plots.map(max_x))),
+          names = plots.map(function (plot) {
+        return plot.name.value0;
+      });
+      var div = d3.select('#' + id);
+      div.selectAll('#' + childId).remove();
+      var svg = div.append('svg').attr('width', width + margin.left + margin.right).attr('height', height + margin.top + margin.bottom).attr('id', childId).append('g').attr('transform', "translate(".concat(margin.left, ", ").concat(margin.top, ")"));
+      var x = d3.scaleLinear().domain([x_min, x_max]).range([0, width]),
+          y = d3.scaleLinear().domain([0, y_max]).range([height, 0]);
+      var line1 = d3.line().x(function (d) {
+        return x(d.x.value0);
+      }).y(function (d) {
+        return y(d.y.value0);
+      });
+      var color = d3.scaleOrdinal(d3.schemePastel1);
+      svg.selectAll('lines').data(plots).enter().append('g').append('path').attr('fill', 'none').attr('stroke', function (d) {
+        return color(names.indexOf(d.name.value0));
+      }).attr('stroke-width', 1).attr('class', 'line').attr('d', function (d) {
+        return line1(d.data_);
+      });
+      var smallRadius = 2;
+
+      var _iterator = _createForOfIteratorHelper(plots),
+          _step;
+
+      try {
+        var _loop = function _loop() {
+          var plot = _step.value;
+          var col = color(names.indexOf(plot.name.value0));
+          svg.selectAll('markers').data(plot.data_).enter().append('g').append('circle').attr('class', 'marker').attr('r', function (d) {
+            return d.y.value1 ? smallRadius * 2 : smallRadius;
+          }).attr('cx', function (d) {
+            return x(d.x.value0);
+          }).attr('cy', function (d) {
+            return y(d.y.value0);
+          }).attr('fill', col).attr('stroke', function (d) {
+            return d.y.value1 ? shared.colorShade(col, -30) : col;
+          }).on('mouseover', function (e, d) {
+            return listener(e);
+          });
+        };
+
+        for (_iterator.s(); !(_step = _iterator.n()).done;) {
+          _loop();
+        }
+      } catch (err) {
+        _iterator.e(err);
+      } finally {
+        _iterator.f();
+      }
+
+      svg.append('g').attr('transform', "translate(0, ".concat(height, ")")).call(d3.axisBottom(x).ticks(x_max - x_min).tickFormat(d3.format('d')));
+      svg.append('g').call(d3.axisLeft(y).tickSizeOuter(0).ticks(3).tickFormat(d3.format('.1f'))); // lots of hard-coded constants
+
+      var legendLineHeight = 15,
+          legendStart = width + margin.left / 2;
+      svg.append('rect').attr('transform', "translate(".concat(legendStart, ", ").concat(legendLineHeight * (names.length - 1) + 2, ")")).attr('x', 0).attr('y', 0).attr('stroke', 'lightgray').attr('fill', 'none').attr('height', legendLineHeight * names.length).attr('width', margin.right - 16);
+      var legend = svg.selectAll('legend').data(names).enter().append('g').attr('class', 'legend').attr('transform', function (d, i) {
+        return "translate(".concat(legendStart, ", ").concat(height / 2 - margin.top + i * legendLineHeight, ")");
+      });
+      legend.append('text').text(function (d) {
+        return d;
+      }).attr('font-size', 11).attr('transform', 'translate(15, 9)'); // align text with boxes
+
+      legend.append('circle').attr('fill', function (d) {
+        return color(names.indexOf(d));
+      }).attr('r', smallRadius).attr('cx', legendLineHeight / 2 - smallRadius / 2).attr('cy', legendLineHeight / 2 - smallRadius / 2);
+      svg.append('text').text(caption.value0).attr('x', width / 2).attr('y', height + 35).attr('class', 'title-text').attr('dominant-baseline', 'bottom').attr('text-anchor', 'middle');
+    };
+  }
+
+  exports.drawLineChart = shared.curry4(drawLineChart);
+})(PS["App.LineChart"] = PS["App.LineChart"] || {});
+
 (function ($PS) {
   // Generated by purs version 0.13.6
   "use strict";
 
-  $PS["App.Renderer"] = $PS["App.Renderer"] || {};
-  var exports = $PS["App.Renderer"];
-  var App_BarChart = $PS["App.BarChart"];
-  var App_LineChart = $PS["App.LineChart"];
-  var App_MatrixView = $PS["App.MatrixView"];
-  var App_TableView = $PS["App.TableView"];
+  $PS["App.LineChart"] = $PS["App.LineChart"] || {};
+  var exports = $PS["App.LineChart"];
+  var $foreign = $PS["App.LineChart"];
   var App_Util = $PS["App.Util"];
-  var Control_Bind = $PS["Control.Bind"];
   var Data_Eq = $PS["Data.Eq"];
-  var Data_Foldable = $PS["Data.Foldable"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_List_Types = $PS["Data.List.Types"];
   var Data_Show = $PS["Data.Show"];
@@ -68004,167 +67824,278 @@ var PS = {};
   var Data_Tuple = $PS["Data.Tuple"];
   var Data_Unit = $PS["Data.Unit"];
   var DataType = $PS["DataType"];
-  var Effect = $PS["Effect"];
   var Effect_Console = $PS["Effect.Console"];
   var Lattice = $PS["Lattice"];
   var Primitive = $PS["Primitive"];
+  var Util = $PS["Util"];
   var Val = $PS["Val"];
   var Web_Event_Event = $PS["Web.Event.Event"];
-  var Web_Event_EventTarget = $PS["Web.Event.EventTarget"];
 
-  var MatrixFig = function () {
-    function MatrixFig(value0) {
-      this.value0 = value0;
-    }
-
-    ;
-
-    MatrixFig.create = function (value0) {
-      return new MatrixFig(value0);
-    };
-
-    return MatrixFig;
-  }();
-
-  var EnergyTableView = function () {
-    function EnergyTableView(value0) {
-      this.value0 = value0;
-    }
-
-    ;
-
-    EnergyTableView.create = function (value0) {
-      return new EnergyTableView(value0);
-    };
-
-    return EnergyTableView;
-  }();
-
-  var LineChartFig = function () {
-    function LineChartFig(value0) {
-      this.value0 = value0;
-    }
-
-    ;
-
-    LineChartFig.create = function (value0) {
-      return new LineChartFig(value0);
-    };
-
-    return LineChartFig;
-  }();
-
-  var BarChartFig = function () {
-    function BarChartFig(value0) {
-      this.value0 = value0;
-    }
-
-    ;
-
-    BarChartFig.create = function (value0) {
-      return new BarChartFig(value0);
-    };
-
-    return BarChartFig;
-  }();
-
-  var myHandler = function myHandler(ev) {
-    var v = App_BarChart.unsafeBarChartRecord(Web_Event_Event.target(ev));
-    return function __do() {
-      Effect_Console.log(Data_Show.show(Data_Show.showRecord()(Data_Show.showRecordFieldsCons(new Data_Symbol.IsSymbol(function () {
-        return "x";
-      }))(Data_Show.showRecordFieldsCons(new Data_Symbol.IsSymbol(function () {
-        return "y";
-      }))(Data_Show.showRecordFieldsNil)(Data_Tuple.showTuple(Data_Show.showNumber)(Data_Show.showBoolean)))(Data_Tuple.showTuple(Data_Show.showString)(Data_Show.showBoolean))))(v))();
-      return Data_Unit.unit;
-    };
+  var unsafePoint = function unsafePoint(tgt_opt) {
+    var tgt = Util.fromJust(Util.absurd)(tgt_opt);
+    return tgt["__data__"];
   };
 
-  var makeSubFig = function makeSubFig(dictPartial) {
+  var reflectPoint = new App_Util["Reflect"](function (dictPartial) {
+    return function (r) {
+      return {
+        x: App_Util.get_intOrNumber("x")(r),
+        y: App_Util.get_intOrNumber("y")(r)
+      };
+    };
+  });
+  var reflectLinePlot = new App_Util["Reflect"](function (dictPartial) {
+    return function (r) {
+      return {
+        name: App_Util.get_prim(Primitive.toFromString)("name")(r),
+        data_: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_Util.from(reflectPoint)()))(App_Util.from(App_Util.reflectArray)()(App_Util.get("data")(r)))
+      };
+    };
+  });
+  var reflectLinePlot$prime = new App_Util["Reflect"](function (dictPartial) {
     return function (v) {
-      if (v.uv.value1 instanceof Val.Constr && v.uv.value1.value2 instanceof Data_List_Types.Cons && v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cBarChart)) {
-        var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cBarChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
+      if (v.value1 instanceof Val.Constr && v.value1.value2 instanceof Data_List_Types.Cons && v.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cLinePlot)) {
+        var v2 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cLinePlot, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
 
         if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
-          return new BarChartFig(App_Util.record(App_Util.from(App_BarChart.reflectBarChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
+          return App_Util.record(App_Util.from(reflectLinePlot)())(new Data_Tuple.Tuple(v2.value2.value0, v.value1.value2.value0));
         }
 
         ;
-        throw new Error("Failed pattern match at App.Renderer (line 54, column 4 - line 55, column 69): " + [v2.constructor.name]);
+        throw new Error("Failed pattern match at App.LineChart (line 47, column 7 - line 48, column 58): " + [v2.constructor.name]);
       }
 
       ;
+      throw new Error("Failed pattern match at App.LineChart (line 45, column 1 - line 48, column 58): " + [v.constructor.name]);
+    };
+  });
+  var reflectLineChart = new App_Util["Reflect"](function (dictPartial) {
+    return function (r) {
+      return {
+        caption: App_Util.get_prim(Primitive.toFromString)("caption")(r),
+        plots: Data_Functor.map(Data_Functor.functorArray)(App_Util.from(reflectLinePlot$prime)())(App_Util.from(App_Util.reflectArray)()(App_Util.get("plots")(r)))
+      };
+    };
+  });
 
-      if (v.uv.value1 instanceof Val.Constr && v.uv.value1.value2 instanceof Data_List_Types.Cons && v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cLineChart)) {
-        var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cLineChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
-
-        if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
-          return new LineChartFig(App_Util.record(App_Util.from(App_LineChart.reflectLineChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
-        }
-
-        ;
-        throw new Error("Failed pattern match at App.Renderer (line 57, column 4 - line 58, column 70): " + [v2.constructor.name]);
-      }
-
-      ;
-
-      if (v.uv.value1 instanceof Val.Constr && (Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cNil) || Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cCons))) {
-        return new EnergyTableView({
-          title: v.title,
-          table: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_TableView.energyRecord))(App_Util.from(App_Util.reflectArray)()(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1)))
-        });
-      }
-
-      ;
-
-      if (v.uv.value1 instanceof Val.Matrix) {
-        var vss2 = new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.uv.value1)));
-        return new MatrixFig({
-          title: v.title,
-          matrix: App_MatrixView.matrixRep(vss2)
-        });
-      }
-
-      ;
-      throw new Error("Failed pattern match at App.Renderer (line 52, column 1 - line 52, column 76): " + [v.constructor.name]);
+  var lineChartHandler = function lineChartHandler(redraw) {
+    return function (ev) {
+      var v = unsafePoint(Web_Event_Event.target(ev));
+      return function __do() {
+        Effect_Console.log(Data_Show.show(Data_Show.showRecord()(Data_Show.showRecordFieldsCons(new Data_Symbol.IsSymbol(function () {
+          return "x";
+        }))(Data_Show.showRecordFieldsCons(new Data_Symbol.IsSymbol(function () {
+          return "y";
+        }))(Data_Show.showRecordFieldsNil)(Data_Tuple.showTuple(Data_Show.showNumber)(Data_Show.showBoolean)))(Data_Tuple.showTuple(Data_Show.showNumber)(Data_Show.showBoolean))))(v))();
+        return redraw(Data_Unit.unit)();
+      };
     };
   };
 
-  var drawSubFig = function drawSubFig(divId) {
-    return function (v) {
-      if (v instanceof MatrixFig) {
-        return App_MatrixView.drawMatrix(divId)(v.value0);
-      }
+  exports["lineChartHandler"] = lineChartHandler;
+  exports["reflectLineChart"] = reflectLineChart;
+  exports["drawLineChart"] = $foreign.drawLineChart;
+})(PS);
 
-      ;
+(function (exports) {
+  "use strict";
 
-      if (v instanceof EnergyTableView) {
-        return App_TableView.drawTable(divId)(v.value0);
-      }
+  var d3 = require("d3");
 
-      ;
+  var shared = require("/src/app/Shared");
 
-      if (v instanceof LineChartFig) {
-        return App_LineChart.drawLineChart(divId)(v.value0);
-      }
+  function drawMatrix(id, childIndex, _ref3, listener) {
+    var title = _ref3.title,
+        _ref3$matrix = _ref3.matrix,
+        _ref3$matrix$value = _ref3$matrix.value0,
+        nss = _ref3$matrix$value.value0,
+        i_max = _ref3$matrix$value.value1,
+        j_max = _ref3$matrix.value1;
+    return function () {
+      var childId = id + '-' + childIndex;
+      var strokeWidth = 0.5;
+      var w = 30,
+          h = 30;
+      var div = d3.select('#' + id);
+      var width = w * j_max + strokeWidth,
+          height = h * i_max + strokeWidth;
+      var hMargin = w / 2;
+      var vMargin = h / 2;
+      div.selectAll('#' + childId).remove();
+      var svg = div.append('svg').attr('id', childId).attr('width', width + hMargin).attr('height', height + vMargin); // group for each row
 
-      ;
+      var grp = svg.selectAll('g').data(_toConsumableArray(nss.entries())).enter().append('g').attr('transform', function (_, i) {
+        return "translate(".concat(strokeWidth / 2 + hMargin / 2, ", ").concat(h * i + strokeWidth / 2 + vMargin, ")");
+      });
+      var rect = grp.selectAll('rect').data(function (_ref4) {
+        var _ref5 = _slicedToArray(_ref4, 2),
+            i = _ref5[0],
+            ns = _ref5[1];
 
-      if (v instanceof BarChartFig) {
-        return Control_Bind.bindFlipped(Effect.bindEffect)(App_BarChart.drawBarChart(divId)(v.value0))(Web_Event_EventTarget.eventListener(myHandler));
-      }
+        return _toConsumableArray(ns.entries()).map(function (_ref6) {
+          var _ref7 = _slicedToArray(_ref6, 2),
+              j = _ref7[0],
+              n = _ref7[1];
 
-      ;
-      throw new Error("Failed pattern match at App.Renderer (line 45, column 1 - line 45, column 46): " + [divId.constructor.name, v.constructor.name]);
+          return [[i, j], n];
+        });
+      }).enter();
+      rect.append('rect').attr('x', function (_, j) {
+        return w * j;
+      }).attr('width', w).attr('height', h).attr('class', function (_ref8) {
+        var _ref9 = _slicedToArray(_ref8, 2),
+            n = _ref9[1];
+
+        return n.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected';
+      }).attr('stroke-width', strokeWidth).on('mouseover', function (e, d) {
+        return listener(e);
+      });
+      rect.append('text').text(function (_ref10) {
+        var _ref11 = _slicedToArray(_ref10, 2),
+            n = _ref11[1];
+
+        return n.value0;
+      }).attr('x', function (_, j) {
+        return w * (j + 0.5);
+      }).attr('y', 0.5 * h).attr('class', 'matrix-cell-text').attr('text-anchor', 'middle').attr('dominant-baseline', 'middle');
+      svg.append('text').text(title).attr('x', hMargin / 2).attr('y', vMargin / 2).attr('class', 'title-text').attr('dominant-baseline', 'middle').attr('text-anchor', 'left');
+    };
+  }
+
+  exports.drawMatrix = shared.curry4(drawMatrix);
+})(PS["App.MatrixView"] = PS["App.MatrixView"] || {});
+
+(function ($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+
+  $PS["App.MatrixView"] = $PS["App.MatrixView"] || {};
+  var exports = $PS["App.MatrixView"];
+  var $foreign = $PS["App.MatrixView"];
+  var Data_Array = $PS["Data.Array"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_Show = $PS["Data.Show"];
+  var Data_Tuple = $PS["Data.Tuple"];
+  var Data_Unit = $PS["Data.Unit"];
+  var Effect_Console = $PS["Effect.Console"];
+  var Primitive = $PS["Primitive"];
+  var Util = $PS["Util"];
+  var Web_Event_Event = $PS["Web.Event.Event"];
+
+  var unsafePos = function unsafePos(tgt_opt) {
+    var tgt = Util.fromJust(Util.absurd)(tgt_opt);
+    var xy = Util.unsafeIndex(tgt["__data__"])(0);
+    return new Data_Tuple.Tuple(Util.unsafeIndex(xy)(0), Util.unsafeIndex(xy)(1));
+  };
+
+  var matrixViewHandler = function matrixViewHandler(redraw) {
+    return function (ev) {
+      return function __do() {
+        Effect_Console.log(Data_Show.show(Data_Tuple.showTuple(Data_Show.showInt)(Data_Show.showInt))(unsafePos(Web_Event_Event.target(ev))))();
+        return redraw(Data_Unit.unit)();
+      };
     };
   };
 
-  var drawFig = function drawFig(v) {
-    return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(drawSubFig(v.divId))(v.subfigs));
+  var matrixRep = function matrixRep(v) {
+    return new Data_Tuple.Tuple(new Data_Tuple.Tuple(Data_Functor.map(Data_Functor.functorArray)(Data_Functor.map(Data_Functor.functorArray)(Primitive.match_fwd(Primitive.toFromInt)))(Data_Array.zipWith(Data_Array.zip)(v.value0.value0.value0)(v.value1.value0.value0)), v.value1.value0.value1.value0), v.value1.value1.value0);
   };
 
-  exports["drawFig"] = drawFig;
-  exports["makeSubFig"] = makeSubFig;
+  exports["matrixRep"] = matrixRep;
+  exports["matrixViewHandler"] = matrixViewHandler;
+  exports["drawMatrix"] = $foreign.drawMatrix;
+})(PS);
+
+(function (exports) {
+  "use strict";
+
+  var d3 = require("d3");
+
+  var shared = require("/src/app/Shared"); // any record type with only primitive fields -> boolean
+
+
+  function isUsed(r) {
+    return Object.keys(r).some(function (k) {
+      return r[k].value1;
+    });
+  } // Generic to all tables.
+
+
+  function drawTable(id, childIndex, _ref12, listener) {
+    var title = _ref12.title,
+        table = _ref12.table;
+    return function () {
+      var childId = id + '-' + childIndex;
+      var cellFill = '#ffffff';
+      var div = d3.select('#' + id);
+      div.selectAll('#' + childId).remove();
+      var HTMLtable = div.append('table').attr('id', childId);
+      table = table.filter(function (r) {
+        return isUsed(r);
+      });
+      var colNames = Object.keys(table[0]);
+      HTMLtable.append('thead').append('tr').selectAll('th').data(colNames).enter().append('th').text(function (d) {
+        return d;
+      });
+      var rows = HTMLtable.append('tbody').selectAll('tr').data(table).enter().append('tr');
+      rows.selectAll('td').data(function (d) {
+        return colNames.map(function (k) {
+          return {
+            'value': d[k],
+            'name': k
+          };
+        });
+      }).enter().append('td').attr('data-th', function (d) {
+        return d.name;
+      }).attr('class', function (d) {
+        return d.value.value1 ? 'cell-selected' : null;
+      }).attr('bgcolor', function (d) {
+        return d.value.value1 ? shared.colorShade(cellFill, -40) : cellFill;
+      }).text(function (d) {
+        return d.value.value0;
+      }).on('mouseover', function (e, d) {
+        return listener(e);
+      });
+    };
+  }
+
+  exports.drawTable = shared.curry4(drawTable);
+})(PS["App.TableView"] = PS["App.TableView"] || {});
+
+(function ($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+
+  $PS["App.TableView"] = $PS["App.TableView"] || {};
+  var exports = $PS["App.TableView"];
+  var $foreign = $PS["App.TableView"];
+  var App_Util = $PS["App.Util"];
+  var Data_Show = $PS["Data.Show"];
+  var Data_Unit = $PS["Data.Unit"];
+  var Effect_Console = $PS["Effect.Console"];
+  var Primitive = $PS["Primitive"];
+
+  var tableViewHandler = function tableViewHandler(redraw) {
+    return function (ev) {
+      return function __do() {
+        Effect_Console.log(Data_Show.show(Data_Show.showString)("tableViewHandler"))();
+        return redraw(Data_Unit.unit)();
+      };
+    };
+  };
+
+  var energyRecord = function energyRecord(r) {
+    return {
+      year: App_Util.get_prim(Primitive.toFromInt)("year")(r),
+      country: App_Util.get_prim(Primitive.toFromString)("country")(r),
+      energyType: App_Util.get_prim(Primitive.toFromString)("energyType")(r),
+      output: App_Util.get_intOrNumber("output")(r)
+    };
+  };
+
+  exports["energyRecord"] = energyRecord;
+  exports["tableViewHandler"] = tableViewHandler;
+  exports["drawTable"] = $foreign.drawTable;
 })(PS);
 
 (function ($PS) {
@@ -70569,6 +70500,7 @@ var PS = {};
   var Bindings = $PS["Bindings"];
   var Control_Applicative = $PS["Control.Applicative"];
   var Control_Bind = $PS["Control.Bind"];
+  var Data_Either = $PS["Data.Either"];
   var Data_Function = $PS["Data.Function"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_List_Types = $PS["Data.List.Types"];
@@ -70618,19 +70550,25 @@ var PS = {};
     return Control_Bind.bind(Effect_Aff.bindAff)(Module.openDatasetAs(Data_Semigroup.append(Module.semigroupFile)("example/")(Data_Semigroup.append(Module.semigroupFile)("linking/")(v.dataFile)))(v.dataVar))(function (v2) {
       return Control_Bind.bind(Effect_Aff.bindAff)(Module.open(v1.value0))(function (s1) {
         return Control_Bind.bind(Effect_Aff.bindAff)(Module.open(v1.value1))(function (s2) {
-          var e2 = Util.successful(DesugarFwd.desugarFwd(s2));
-          var e1 = Util.successful(DesugarFwd.desugarFwd(s1));
-          var v3 = Util.successful(Eval["eval"](Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v2.value0)(v2.value1))(e1));
-          var v4 = Util.successful(Eval["eval"](Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v2.value0)(v2.value1))(e2));
-          var v5 = EvalBwd.evalBwd(v.v1_sel)(v3.value0);
-          var v6 = Util_SnocList.splitAt(1)(v5.value0.value0);
-          var v$prime = Util.successful(Bindings.find(v.dataVar)(v6.value1));
-          var v7 = Util.successful(Bindings.find(v.dataVar)(v2.value1));
-          return Control_Applicative.pure(Effect_Aff.applicativeAff)({
-            v1: v3.value1,
-            v2: new Data_Tuple.Tuple(Lattice.neg(Val.joinSemilatticeVal)(EvalFwd.evalFwd(Lattice.neg(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v2.value0))(v6.value1)))(Data_Functor.map(Expr.functorExpr)(Data_Function["const"](true))(e2))(true)(v4.value0)), v4.value1),
-            data_sel: new Data_Tuple.Tuple(v$prime, v7)
-          });
+          return Control_Applicative.pure(Effect_Aff.applicativeAff)(Util.successful(Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarFwd(s1))(function (e1) {
+            return Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarFwd(s2))(function (e2) {
+              return Control_Bind.bind(Data_Either.bindEither)(Eval["eval"](Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v2.value0)(v2.value1))(e1))(function (v3) {
+                return Control_Bind.bind(Data_Either.bindEither)(Eval["eval"](Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v2.value0)(v2.value1))(e2))(function (v4) {
+                  var v5 = EvalBwd.evalBwd(v.v1_sel)(v3.value0);
+                  var v6 = Util_SnocList.splitAt(1)(v5.value0.value0);
+                  return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.dataVar)(v2.value1))(function (v7) {
+                    return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.dataVar)(v6.value1))(function (v$prime) {
+                      return Control_Applicative.pure(Data_Either.applicativeEither)({
+                        v1: v3.value1,
+                        v2: new Data_Tuple.Tuple(Lattice.neg(Val.joinSemilatticeVal)(EvalFwd.evalFwd(Lattice.neg(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v2.value0))(v6.value1)))(Data_Functor.map(Expr.functorExpr)(Data_Function["const"](true))(e2))(true)(v4.value0)), v4.value1),
+                        data_sel: new Data_Tuple.Tuple(v$prime, v7)
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          })));
         });
       });
     });
@@ -70643,75 +70581,127 @@ var PS = {};
   exports["selectBarChart_data"] = selectBarChart_data;
 })(PS);
 
+(function (exports) {
+  "use strict";
+
+  exports.eventListener = function (fn) {
+    return function () {
+      return function (event) {
+        return fn(event)();
+      };
+    };
+  };
+})(PS["Web.Event.EventTarget"] = PS["Web.Event.EventTarget"] || {});
+
 (function ($PS) {
   // Generated by purs version 0.13.6
   "use strict";
 
-  $PS["App.Demo"] = $PS["App.Demo"] || {};
-  var exports = $PS["App.Demo"];
-  var App_Renderer = $PS["App.Renderer"];
+  $PS["Web.Event.EventTarget"] = $PS["Web.Event.EventTarget"] || {};
+  var exports = $PS["Web.Event.EventTarget"];
+  var $foreign = $PS["Web.Event.EventTarget"];
+  exports["eventListener"] = $foreign.eventListener;
+})(PS);
+
+(function ($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+
+  $PS["App.Renderer"] = $PS["App.Renderer"] || {};
+  var exports = $PS["App.Renderer"];
+  var App_BarChart = $PS["App.BarChart"];
+  var App_LineChart = $PS["App.LineChart"];
+  var App_MatrixView = $PS["App.MatrixView"];
+  var App_TableView = $PS["App.TableView"];
+  var App_Util = $PS["App.Util"];
   var Bindings = $PS["Bindings"];
   var Control_Applicative = $PS["Control.Applicative"];
   var Control_Bind = $PS["Control.Bind"];
+  var Data_Array = $PS["Data.Array"];
   var Data_Either = $PS["Data.Either"];
+  var Data_Eq = $PS["Data.Eq"];
   var Data_Foldable = $PS["Data.Foldable"];
   var Data_Function = $PS["Data.Function"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_List = $PS["Data.List"];
+  var Data_List_Types = $PS["Data.List.Types"];
   var Data_Semigroup = $PS["Data.Semigroup"];
   var Data_Semiring = $PS["Data.Semiring"];
-  var Data_Show = $PS["Data.Show"];
   var Data_Traversable = $PS["Data.Traversable"];
   var Data_Tuple = $PS["Data.Tuple"];
-  var Data_Unit = $PS["Data.Unit"];
+  var DataType = $PS["DataType"];
   var DesugarFwd = $PS["DesugarFwd"];
   var Effect = $PS["Effect"];
   var Effect_Aff = $PS["Effect.Aff"];
   var Effect_Console = $PS["Effect.Console"];
-  var Effect_Exception = $PS["Effect.Exception"];
   var Eval = $PS["Eval"];
   var EvalBwd = $PS["EvalBwd"];
   var EvalFwd = $PS["EvalFwd"];
-  var Expr = $PS["Expr"];
   var Lattice = $PS["Lattice"];
   var Module = $PS["Module"];
+  var Primitive = $PS["Primitive"];
   var SExpr = $PS["SExpr"];
   var Test_Util = $PS["Test.Util"];
   var Util = $PS["Util"];
   var Util_SnocList = $PS["Util.SnocList"];
   var Val = $PS["Val"];
+  var Web_Event_EventTarget = $PS["Web.Event.EventTarget"];
 
-  var varFig = function varFig(dictPartial) {
-    return function (v) {
-      return App_Renderer.makeSubFig()({
-        title: v.value0,
-        uv: v.value1
-      });
-    };
-  };
+  var MatrixFig = function () {
+    function MatrixFig(value0) {
+      this.value0 = value0;
+    }
 
-  var varFig$prime = function varFig$prime(x) {
-    return function (v) {
-      return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(x)(v.value1))(function (v1) {
-        return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(x)(v.value0))(function (v$prime) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(varFig()(new Data_Tuple.Tuple(x, new Data_Tuple.Tuple(v$prime, v1))));
-        });
-      });
-    };
-  };
+    ;
 
-  var valFigs = function valFigs(q) {
-    return function (v) {
-      return function (v1) {
-        return Control_Bind.bind(Data_Either.bindEither)(Data_Traversable.sequence(Data_Traversable.traversableArray)(Data_Either.applicativeEither)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(varFig$prime)(new Data_Tuple.Tuple(v1.value0, v1.value1)))(v.vars)))(function (figs) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([App_Renderer.makeSubFig()({
-            title: "output",
-            uv: new Data_Tuple.Tuple(v["o'"], q.o)
-          })]));
-        });
-      };
+    MatrixFig.create = function (value0) {
+      return new MatrixFig(value0);
     };
-  };
+
+    return MatrixFig;
+  }();
+
+  var EnergyTableView = function () {
+    function EnergyTableView(value0) {
+      this.value0 = value0;
+    }
+
+    ;
+
+    EnergyTableView.create = function (value0) {
+      return new EnergyTableView(value0);
+    };
+
+    return EnergyTableView;
+  }();
+
+  var LineChartFig = function () {
+    function LineChartFig(value0) {
+      this.value0 = value0;
+    }
+
+    ;
+
+    LineChartFig.create = function (value0) {
+      return new LineChartFig(value0);
+    };
+
+    return LineChartFig;
+  }();
+
+  var BarChartFig = function () {
+    function BarChartFig(value0) {
+      this.value0 = value0;
+    }
+
+    ;
+
+    BarChartFig.create = function (value0) {
+      return new BarChartFig(value0);
+    };
+
+    return BarChartFig;
+  }();
 
   var splitDefs = function splitDefs(ρ0) {
     return function (s$prime) {
@@ -70728,77 +70718,113 @@ var PS = {};
           }
 
           ;
-          throw new Error("Failed pattern match at App.Demo (line 50, column 10 - line 50, column 81): " + [v.constructor.name]);
+          throw new Error("Failed pattern match at App.Renderer (line 98, column 10 - line 98, column 81): " + [v.constructor.name]);
         };
       };
 
-      return function (dictPartial) {
-        var v = unpack()(s$prime);
-        return Control_Bind.bind(Data_Either.bindEither)(Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarModuleFwd(new SExpr.Module(Data_List.singleton(v.value0))))(Eval.eval_module(ρ0)))(function (ρ0ρ) {
-          var v1 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(ρ0ρ) - Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(ρ0) | 0)(ρ0ρ);
-          return Control_Applicative.pure(Data_Either.applicativeEither)({
-            ρ: v1.value1,
-            s: v.value1
-          });
-        });
-      }();
-    };
-  };
-
-  var selectOnly = function selectOnly(xv) {
-    return function (ρ) {
-      return Bindings.update(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(ρ))(xv);
-    };
-  };
-
-  var linkingFig = function linkingFig(dictPartial) {
-    return function (v) {
-      return Control_Bind.bind(Effect_Aff.bindAff)(Test_Util.doLink(v.config))(function (link) {
-        return Control_Applicative.pure(Effect_Aff.applicativeAff)({
-          divId: v.divId,
-          subfigs: [App_Renderer.makeSubFig()({
-            title: "primary view",
-            uv: new Data_Tuple.Tuple(v.config.v1_sel, link.v1)
-          }), App_Renderer.makeSubFig()({
-            title: "linked view",
-            uv: link.v2
-          }), App_Renderer.makeSubFig()({
-            title: "common data",
-            uv: link.data_sel
-          })]
+      var v = unpack()(s$prime);
+      return Control_Bind.bind(Data_Either.bindEither)(Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarModuleFwd(new SExpr.Module(Data_List.singleton(v.value0))))(Eval.eval_module(ρ0)))(function (ρ0ρ) {
+        var v1 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(ρ0ρ) - Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(ρ0) | 0)(ρ0ρ);
+        return Control_Applicative.pure(Data_Either.applicativeEither)({
+          ρ: v1.value1,
+          s: v.value1
         });
       });
     };
   };
 
-  var fig1 = {
-    divId: "fig-1",
-    config: {
-      file1: "bar-chart",
-      file2: "line-chart",
-      dataFile: "renewables",
-      dataVar: "data",
-      v1_sel: Test_Util.selectBarChart_data(Test_Util.selectNth(1)(Test_Util.select_y))
+  var makeSubFig = function makeSubFig(v) {
+    if (v.uv.value1 instanceof Val.Constr && v.uv.value1.value2 instanceof Data_List_Types.Cons && v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cBarChart)) {
+      var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cBarChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
+
+      if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
+        return new BarChartFig(App_Util.record(App_Util.from(App_BarChart.reflectBarChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
+      }
+
+      ;
+      return Util.error(Util.absurd);
     }
+
+    ;
+
+    if (v.uv.value1 instanceof Val.Constr && v.uv.value1.value2 instanceof Data_List_Types.Cons && v.uv.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cLineChart)) {
+      var v2 = Lattice.expand(Val.valExpandable)(v.uv.value0)(new Val.Constr(false, DataType.cLineChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
+
+      if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
+        return new LineChartFig(App_Util.record(App_Util.from(App_LineChart.reflectLineChart)())(new Data_Tuple.Tuple(v2.value2.value0, v.uv.value1.value2.value0)));
+      }
+
+      ;
+      return Util.error(Util.absurd);
+    }
+
+    ;
+
+    if (v.uv.value1 instanceof Val.Constr && (Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cNil) || Data_Eq.eq(DataType.eqCtr)(v.uv.value1.value1)(DataType.cCons))) {
+      return new EnergyTableView({
+        title: v.title,
+        table: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_TableView.energyRecord))(App_Util.from(App_Util.reflectArray)()(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1)))
+      });
+    }
+
+    ;
+
+    if (v.uv.value1 instanceof Val.Matrix) {
+      var vss2 = new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromMatrixRep)(new Data_Tuple.Tuple(v.uv.value0, v.uv.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromMatrixRep)(v.uv.value1)));
+      return new MatrixFig({
+        title: v.title,
+        matrix: App_MatrixView.matrixRep(vss2)
+      });
+    }
+
+    ;
+    return Util.error(Util.absurd);
   };
 
-  var fig = function fig(v) {
-    return Control_Bind.bind(Effect_Aff.bindAff)(Module.openDatasetAs("example/linking/renewables")("data"))(function (v1) {
-      return Control_Bind.bind(Effect_Aff.bindAff)(Data_Functor.map(Effect_Aff.functorAff)(function () {
-        var $103 = splitDefs(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v1.value0)(v1.value1));
-        return function ($104) {
-          return Util.successful($103($104));
-        };
-      }())(Module.open(v.file)))(function (v2) {
-        var subfigs = Util.successful(v.makeSubfigs({
-          ρ0: v1.value0,
-          ρ: Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v1.value1)(v2.ρ),
-          s: v2.s
-        }));
-        return Control_Applicative.pure(Effect_Aff.applicativeAff)({
-          divId: v.divId,
-          subfigs: subfigs
+  var varFig = function varFig(v) {
+    return makeSubFig({
+      title: v.value0,
+      uv: v.value1
+    });
+  };
+
+  var varFig$prime = function varFig$prime(x) {
+    return function (v) {
+      return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(x)(v.value1))(function (v1) {
+        return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(x)(v.value0))(function (v$prime) {
+          return Control_Applicative.pure(Data_Either.applicativeEither)(varFig(new Data_Tuple.Tuple(x, new Data_Tuple.Tuple(v$prime, v1))));
         });
+      });
+    };
+  };
+
+  var valFigs = function valFigs(o) {
+    return function (v) {
+      return function (v1) {
+        return Control_Bind.bind(Data_Either.bindEither)(Data_Traversable.sequence(Data_Traversable.traversableArray)(Data_Either.applicativeEither)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(varFig$prime)(new Data_Tuple.Tuple(v1.value0, v1.value1)))(v.vars)))(function (figs) {
+          return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([makeSubFig({
+            title: "output",
+            uv: new Data_Tuple.Tuple(v["o'"], o)
+          })]));
+        });
+      };
+    };
+  };
+
+  var linkingFig = function linkingFig(v) {
+    return Control_Bind.bind(Effect_Aff.bindAff)(Test_Util.doLink(v.config))(function (link) {
+      return Control_Applicative.pure(Effect_Aff.applicativeAff)({
+        divId: v.divId,
+        subfigs: [makeSubFig({
+          title: "primary view",
+          uv: new Data_Tuple.Tuple(v.config.v1_sel, link.v1)
+        }), makeSubFig({
+          title: "linked view",
+          uv: link.v2
+        }), makeSubFig({
+          title: "common data",
+          uv: link.data_sel
+        })]
       });
     });
   };
@@ -70817,62 +70843,129 @@ var PS = {};
     });
   };
 
-  var neededBy = function neededBy(v) {
-    return function (v1) {
+  var needs = function needs(spec) {
+    return function (v) {
       return Control_Bind.bind(Data_Either.bindEither)(evalExample({
-        ρ0: v1.ρ0,
-        ρ: v1.ρ,
-        s: v1.s
-      }))(function (q) {
-        var o$prime = Lattice.neg(Val.joinSemilatticeVal)(EvalFwd.evalFwd(Lattice.neg(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v1.ρ0))(v["\u03C1'"])))(Data_Functor.map(Expr.functorExpr)(Data_Function["const"](true))(q.e))(true)(q.t));
-        var ρ0$primeρ$prime$prime = Lattice.neg(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(Data_Tuple.fst(Data_Tuple.fst(EvalBwd.evalBwd(Lattice.neg(Val.joinSemilatticeVal)(o$prime))(q.t))));
-        var v2 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v1.ρ))(ρ0$primeρ$prime$prime);
-        return Control_Bind.bind(Data_Either.bindEither)(valFigs(q)({
-          vars: v.vars,
-          "o'": o$prime
-        })(new Data_Tuple.Tuple(v["\u03C1'"], v1.ρ)))(function (figs) {
-          return Control_Bind.bind(Data_Either.bindEither)(Data_Traversable.sequence(Data_Traversable.traversableArray)(Data_Either.applicativeEither)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(varFig$prime)(new Data_Tuple.Tuple(v2.value1, v1.ρ)))(v.vars)))(function (figs$prime) {
-            return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(Data_Unit.unit, Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)(figs$prime)));
-          });
+        ρ0: v.ρ0,
+        ρ: v.ρ,
+        s: v.s
+      }))(function (v1) {
+        var v2 = EvalBwd.evalBwd(spec["o'"])(v1.t);
+        var v3 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v.ρ))(v2.value0.value0);
+        var o$prime$prime = EvalFwd.evalFwd(v2.value0.value0)(v2.value0.value1)(v2.value1)(v1.t);
+        return Control_Bind.bind(Data_Either.bindEither)(valFigs(v1.o)(spec)(new Data_Tuple.Tuple(v2.value0.value0, v1.ρ0ρ)))(function (figs) {
+          return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([makeSubFig({
+            title: "output",
+            uv: new Data_Tuple.Tuple(o$prime$prime, v1.o)
+          })]));
         });
       });
     };
   };
 
-  var needs = function needs(dictPartial) {
-    return function (spec) {
-      return function (v) {
-        return Control_Bind.bind(Data_Either.bindEither)(evalExample({
-          ρ0: v.ρ0,
-          ρ: v.ρ,
-          s: v.s
-        }))(function (q) {
-          var v1 = EvalBwd.evalBwd(spec["o'"])(q.t);
-          var v2 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v.ρ))(v1.value0.value0);
-          var o$prime$prime = EvalFwd.evalFwd(v1.value0.value0)(v1.value0.value1)(v1.value1)(q.t);
-          return Control_Bind.bind(Data_Either.bindEither)(valFigs(q)(spec)(new Data_Tuple.Tuple(v1.value0.value0, q.ρ0ρ)))(function (figs) {
-            return Control_Applicative.pure(Data_Either.applicativeEither)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(figs)([App_Renderer.makeSubFig()({
-              title: "output",
-              uv: new Data_Tuple.Tuple(o$prime$prime, q.o)
-            })]));
-          });
+  var fig = function fig(v) {
+    return Control_Bind.bind(Effect_Aff.bindAff)(Module.openDatasetAs("example/linking/renewables")("data"))(function (v1) {
+      return Control_Bind.bind(Effect_Aff.bindAff)(Data_Functor.map(Effect_Aff.functorAff)(function () {
+        var $167 = splitDefs(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v1.value0)(v1.value1));
+        return function ($168) {
+          return Util.successful($167($168));
+        };
+      }())(Module.open(v.file)))(function (v2) {
+        var subfigs = Util.successful(needs(v.needsSpec)({
+          ρ0: v1.value0,
+          ρ: Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v1.value1)(v2.ρ),
+          s: v2.s
+        }));
+        return Control_Applicative.pure(Effect_Aff.applicativeAff)({
+          divId: v.divId,
+          subfigs: subfigs
         });
+      });
+    });
+  };
+
+  var drawSubFig = function drawSubFig(divId) {
+    return function (redraw) {
+      return function (n) {
+        return function (v) {
+          if (v instanceof MatrixFig) {
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_MatrixView.drawMatrix(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(App_MatrixView.matrixViewHandler(redraw)));
+          }
+
+          ;
+
+          if (v instanceof EnergyTableView) {
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_TableView.drawTable(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(App_TableView.tableViewHandler(redraw)));
+          }
+
+          ;
+
+          if (v instanceof LineChartFig) {
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_LineChart.drawLineChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(App_LineChart.lineChartHandler(redraw)));
+          }
+
+          ;
+
+          if (v instanceof BarChartFig) {
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_BarChart.drawBarChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(App_BarChart.barChartHandler(redraw)));
+          }
+
+          ;
+          throw new Error("Failed pattern match at App.Renderer (line 55, column 1 - line 55, column 78): " + [divId.constructor.name, redraw.constructor.name, n.constructor.name, v.constructor.name]);
+        };
       };
     };
   };
 
-  var figConv1 = function figConv1(dictPartial) {
-    return {
-      divId: "fig-conv-1",
-      file: "slicing/conv-emboss",
-      makeSubfigs: needs()({
-        vars: ["image", "filter"],
-        "o'": Test_Util.selectCell(2)(2)(5)(5)
-      })
+  var drawFig = function drawFig(v) {
+    return function __do() {
+      Effect_Console.log("Drawing " + v.divId)();
+      return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Tuple.uncurry(drawSubFig(v.divId)(Data_Function["const"](drawFig(v)))))(Data_Array.zip(Data_Array.range(0)(Data_Foldable.length(Data_Foldable.foldableArray)(Data_Semiring.semiringInt)(v.subfigs) - 1 | 0))(v.subfigs)))();
     };
   };
 
-  var main = Data_Function.flip(Effect_Aff.runAff_)(Data_Traversable.sequence(Data_Traversable.traversableArray)(Effect_Aff.applicativeAff)([fig(figConv1()), linkingFig()(fig1)]))(function (v) {
+  exports["drawFig"] = drawFig;
+  exports["fig"] = fig;
+  exports["linkingFig"] = linkingFig;
+})(PS);
+
+(function ($PS) {
+  // Generated by purs version 0.13.6
+  "use strict";
+
+  $PS["App.Main"] = $PS["App.Main"] || {};
+  var exports = $PS["App.Main"];
+  var App_Renderer = $PS["App.Renderer"];
+  var Data_Either = $PS["Data.Either"];
+  var Data_Foldable = $PS["Data.Foldable"];
+  var Data_Function = $PS["Data.Function"];
+  var Data_Functor = $PS["Data.Functor"];
+  var Data_Show = $PS["Data.Show"];
+  var Data_Traversable = $PS["Data.Traversable"];
+  var Effect = $PS["Effect"];
+  var Effect_Aff = $PS["Effect.Aff"];
+  var Effect_Console = $PS["Effect.Console"];
+  var Effect_Exception = $PS["Effect.Exception"];
+  var Test_Util = $PS["Test.Util"];
+  var linkingFig1 = {
+    divId: "fig-1",
+    config: {
+      file1: "bar-chart",
+      file2: "line-chart",
+      dataFile: "renewables",
+      dataVar: "data",
+      v1_sel: Test_Util.selectBarChart_data(Test_Util.selectNth(1)(Test_Util.select_y))
+    }
+  };
+  var fig1 = {
+    divId: "fig-conv-1",
+    file: "slicing/conv-emboss",
+    needsSpec: {
+      vars: ["image", "filter"],
+      "o'": Test_Util.selectCell(2)(2)(5)(5)
+    }
+  };
+  var main = Data_Function.flip(Effect_Aff.runAff_)(Data_Traversable.sequence(Data_Traversable.traversableArray)(Effect_Aff.applicativeAff)([App_Renderer.fig(fig1), App_Renderer.linkingFig(linkingFig1)]))(function (v) {
     if (v instanceof Data_Either.Left) {
       return Effect_Console.log(Data_Show.show(Effect_Exception.showError)(v.value0));
     }
@@ -70884,23 +70977,13 @@ var PS = {};
     }
 
     ;
-    throw new Error("Failed pattern match at App.Demo (line 173, column 4 - line 176, column 38): " + [v.constructor.name]);
+    throw new Error("Failed pattern match at App.Main (line 39, column 4 - line 41, column 49): " + [v.constructor.name]);
   });
-  exports["splitDefs"] = splitDefs;
-  exports["varFig"] = varFig;
-  exports["evalExample"] = evalExample;
-  exports["varFig'"] = varFig$prime;
-  exports["valFigs"] = valFigs;
-  exports["needs"] = needs;
-  exports["neededBy"] = neededBy;
-  exports["selectOnly"] = selectOnly;
-  exports["fig"] = fig;
-  exports["linkingFig"] = linkingFig;
+  exports["linkingFig1"] = linkingFig1;
   exports["fig1"] = fig1;
-  exports["figConv1"] = figConv1;
   exports["main"] = main;
 })(PS);
 
-PS["App.Demo"].main();
+PS["App.Main"].main();
 },{"d3":"BG5c","d3-tip":"TLCm","/src/app/Shared":"Ad6u","process":"g5I+"}]},{},["m8nE"], null)
-//# sourceMappingURL=/develop/app.a5b76090.js.map
+//# sourceMappingURL=/develop/app.5a0d1bb9.js.map
