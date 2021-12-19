@@ -74,11 +74,11 @@ varFig' x (ρ' × ρ) = do
    v' <- find x ρ'
    unsafePartial $ pure $ varFig (x × (v' × v))
 
-valFigs :: ExampleEval -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig)
-valFigs q { vars, o' } (ρ' × ρ) = do
+valFigs :: Val 𝔹 -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig)
+valFigs o { vars, o' } (ρ' × ρ) = do
    figs <- sequence (flip varFig' (ρ' × ρ) <$> vars)
    unsafePartial $ pure $
-      figs <> [ makeSubFig { title: "output", uv: o' × q.o } ]
+      figs <> [ makeSubFig { title: "output", uv: o' × o } ]
 
 type NeedsSpec = {
    vars  :: Array Var,     -- variables we want subfigs for
@@ -92,12 +92,12 @@ type NeedsResult = {
 
 needs :: Partial => NeedsSpec -> Example -> MayFail (Array SubFig)
 needs spec { ρ0, ρ, s } = do
-   q <- evalExample { ρ0, ρ, s }
-   let ρ0ρ' × e × α = evalBwd spec.o' q.t
+   { e, o, t, ρ0ρ } <- evalExample { ρ0, ρ, s }
+   let ρ0ρ' × e × α = evalBwd spec.o' t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
-       o'' = evalFwd ρ0ρ' e α q.t
-   figs <- valFigs q spec (ρ0ρ' × q.ρ0ρ)
-   pure $ figs <> [ makeSubFig { title: "output", uv: o'' × q.o } ]
+       o'' = evalFwd ρ0ρ' e α t
+   figs <- valFigs o spec (ρ0ρ' × ρ0ρ)
+   pure $ figs <> [ makeSubFig { title: "output", uv: o'' × o } ]
 
 type NeededBySpec = {
    vars     :: Array Var,    -- variables we want subfigs for
@@ -106,11 +106,11 @@ type NeededBySpec = {
 
 neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array SubFig)
 neededBy { vars, ρ' } { ρ0, ρ, s } = do
-   q <- evalExample { ρ0, ρ, s }
-   let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> q.e) true q.t)
-       ρ0'ρ'' = neg (fst (fst (evalBwd (neg o') q.t)))
+   { e, o, t, ρ0ρ } <- evalExample { ρ0, ρ, s }
+   let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e) true t)
+       ρ0'ρ'' = neg (fst (fst (evalBwd (neg o') t)))
        ρ0' × ρ'' = splitAt (length ρ) ρ0'ρ''
-   figs <- valFigs q { vars, o' } (ρ' × ρ)
+   figs <- valFigs o { vars, o' } (ρ' × ρ)
    figs' <- sequence (flip varFig' (ρ'' × ρ) <$> vars)
    pure $ unit × (figs <> figs')
 
