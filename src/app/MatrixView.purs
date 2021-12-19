@@ -11,7 +11,8 @@ import App.Util (Handler, Renderer)
 import Lattice (𝔹)
 import Primitive (Slice, match_fwd)
 import Util (type (×), (×), (!), absurd, fromJust)
-import Val (Array2, MatrixRep)
+import Test.Util (selectCell)
+import Val (Val(..), Array2, MatrixRep)
 
 --  (Rendered) matrices are required to have element type Int for now.
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int
@@ -34,3 +35,6 @@ unsafePos tgt_opt =
    let tgt = fromJust absurd $ tgt_opt in 
    let xy = (unsafeCoerce tgt).__data__!0 :: Array Int 
    in xy!0 × xy!1
+
+wurble :: Partial => Int × Int -> Val 𝔹 -> Slice (Val 𝔹)
+wurble (i × j) v@(Matrix _ (_ × (h × _) × (w × _))) = v × selectCell i j h w
