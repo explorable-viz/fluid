@@ -1,15 +1,17 @@
 module App.MatrixView where
 
-import Prelude
+import Prelude hiding (absurd)
 import Data.Array (zip, zipWith)
+import Data.Maybe (Maybe)
 import Effect (Effect)
 import Effect.Console (log)
-import Web.Event.Event (Event)
-import Web.Event.EventTarget (EventListener)
+import Unsafe.Coerce (unsafeCoerce)
+import Web.Event.Event (Event, target)
+import Web.Event.EventTarget (EventListener, EventTarget)
 import App.Util (HTMLId)
 import Lattice (𝔹)
 import Primitive (Slice, match_fwd)
-import Util (type (×), (×))
+import Util (type (×), (×), (!), absurd, fromJust)
 import Val (Array2, MatrixRep)
 
 --  (Rendered) matrices are required to have element type Int for now.
@@ -22,7 +24,14 @@ matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
 matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
    ((<$>) ((<$>) match_fwd)) (zipWith zip vss uss) × i × j
 
-matrixHandler :: Event -> Effect Unit
-matrixHandler ev = do
-   log "matrixHandler"
+matrixViewHandler :: Event -> Effect Unit
+matrixViewHandler ev = do
+   log $ show $ unsafePos $ target ev
    pure unit
+
+-- (unsafe) the datum associated with a matrix view mouse event.
+unsafePos :: Maybe EventTarget -> Int × Int
+unsafePos tgt_opt =
+   let tgt = fromJust absurd $ tgt_opt in 
+   let xy = (unsafeCoerce tgt).__data__!0 :: Array Int 
+   in xy!0 × xy!1

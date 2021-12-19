@@ -7,7 +7,7 @@ import Data.Tuple (fst)
 import Web.Event.EventTarget (eventListener)
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
-import App.MatrixView (MatrixView(..), drawMatrix, matrixHandler, matrixRep)
+import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord)
 import App.Util (HTMLId, from, record)
 import DataType (cBarChart, cCons, cLineChart, cNil)
@@ -34,7 +34,7 @@ data SubFig =
    BarChartFig BarChart
 
 drawSubFig :: HTMLId -> SubFig -> Effect Unit
-drawSubFig divId (MatrixFig fig) = drawMatrix divId fig =<< eventListener matrixHandler
+drawSubFig divId (MatrixFig fig) = drawMatrix divId fig =<< eventListener matrixViewHandler
 drawSubFig divId (EnergyTableView fig) = drawTable divId fig
 drawSubFig divId (LineChartFig fig) = drawLineChart divId fig =<< eventListener lineChartHandler
 drawSubFig divId (BarChartFig fig) = drawBarChart divId fig =<< eventListener barChartHandler
