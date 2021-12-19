@@ -12,8 +12,8 @@ import Module (File(..))
 import Test.Util (selectBarChart_data, selectCell, selectNth, select_y)
 
 
-fig1 :: LinkingFigSpec
-fig1 = {
+linkingFig1 :: LinkingFigSpec
+linkingFig1 = {
    divId: "fig-1",
    config: {
       file1: File "bar-chart",
@@ -24,8 +24,8 @@ fig1 = {
    }
 }
 
-figConv1 :: FigSpec
-figConv1 = {
+fig1 :: FigSpec
+fig1 = {
    divId: "fig-conv-1",
    file: File "slicing/conv-emboss",
    makeSubfigs: needs {
@@ -36,7 +36,7 @@ figConv1 = {
 
 main :: Effect Unit
 main = unsafePartial $
-   flip runAff_ (sequence [fig figConv1, linkingFig fig1])
+   flip runAff_ (sequence [fig fig1, linkingFig linkingFig1])
    case _ of
       Left err -> log $ show err
       Right figs -> sequence_ $ drawFig <$> figs

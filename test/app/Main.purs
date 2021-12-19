@@ -5,7 +5,7 @@ import Data.Traversable (sequence)
 import Effect (Effect)
 import Partial.Unsafe (unsafePartial)
 import Test.Spec (before, it)
-import App.Main (fig1, figConv1)
+import App.Main (fig1, linkingFig1)
 import App.Renderer (FigSpec, LinkingFigSpec, fig, linkingFig)
 import Test.Util (Test, run)
 
@@ -23,7 +23,7 @@ test_linkingFig spec =
          pure unit
 
 tests :: Array (Test Unit)
-tests = unsafePartial [test_fig figConv1, test_linkingFig fig1]
+tests = unsafePartial [test_fig fig1, test_linkingFig linkingFig1]
 
 main :: Effect Unit
 main = void (sequence (run <$> tests))
