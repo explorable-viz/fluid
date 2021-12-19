@@ -42,8 +42,8 @@ type View = {
 
 -- Interpret a program as a "view" in the sense above. TODO: generalise to sequence of let/let recs, rather than one.
 splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail View
-splitDefs ρ0 s' = unsafePartial $ do
-   let defs × s = unpack s'
+splitDefs ρ0 s' = do
+   let defs × s = unsafePartial $ unpack s'
    ρ0ρ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ0
    let _ × ρ = splitAt (length ρ0ρ - length ρ0) ρ0ρ
    pure { ρ, s }
@@ -171,5 +171,4 @@ main = unsafePartial $
    flip runAff_ (sequence [fig figConv1, linkingFig fig1])
    case _ of
       Left err -> log $ show err
-      Right figs ->
-         sequence_ $ drawFig <$> figs
+      Right figs -> sequence_ $ drawFig <$> figs
