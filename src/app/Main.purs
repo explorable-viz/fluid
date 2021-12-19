@@ -7,7 +7,7 @@ import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import App.Renderer (FigSpec, LinkingFigSpec, drawFig, fig, linkingFig, needs)
+import App.Renderer (FigSpec, LinkingFigSpec, drawFig, fig, linkingFig)
 import Module (File(..))
 import Test.Util (selectBarChart_data, selectCell, selectNth, select_y)
 
@@ -28,7 +28,7 @@ fig1 :: FigSpec
 fig1 = {
    divId: "fig-conv-1",
    file: File "slicing/conv-emboss",
-   makeSubfigs: needs {
+   needsSpec: {
       vars: ["image", "filter"],
       o': selectCell 2 2 5 5
    }

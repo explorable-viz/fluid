@@ -163,7 +163,7 @@ selectOnly xv ρ = update (botOf ρ) xv
 type FigSpec = {
    divId :: HTMLId,
    file :: File,
-   makeSubfigs :: Example -> MayFail (Array SubFig)
+   needsSpec :: NeedsSpec
 }
 
 type LinkingFigSpec = {
@@ -173,10 +173,10 @@ type LinkingFigSpec = {
 
 -- TODO: not every example should run with this dataset.
 fig :: FigSpec -> Aff Fig
-fig { divId, file, makeSubfigs } = do
+fig { divId, file, needsSpec } = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   let subfigs = successful (makeSubfigs { ρ0, ρ: ρ <> ρ1, s: s1 })
+   let subfigs = successful (needs needsSpec { ρ0, ρ: ρ <> ρ1, s: s1 })
    pure { divId, subfigs }
 
 linkingFig :: LinkingFigSpec -> Aff Fig
