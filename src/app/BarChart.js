@@ -6,6 +6,7 @@ const shared = require("/src/app/Shared")
 
 function drawBarChart (
    id,
+   childIndex,
    {
       caption,   // String
       data_,     // Array BarChartRecord
@@ -13,14 +14,19 @@ function drawBarChart (
    listener
 ) {
    return () => {
+      const childId = id + '-' + childIndex
       const margin = {top: 15, right: 0, bottom: 40, left: 30},
             width = 200 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom
+      const div = d3.select('#' + id)
 
-      const svg = d3.select('#' + id)
+      div.selectAll('#' + childId).remove()
+
+      const svg = div
          .append('svg')
             .attr('width', width + margin.left + margin.right)
             .attr('height', height + margin.top + margin.bottom)
+         .attr('id', childId)
          .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
@@ -83,4 +89,4 @@ function drawBarChart (
    }
 }
 
-exports.drawBarChart = shared.curry3(drawBarChart)
+exports.drawBarChart = shared.curry4(drawBarChart)

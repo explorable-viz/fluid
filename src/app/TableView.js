@@ -11,25 +11,37 @@ function isUsed (r) {
 // Generic to all tables.
 function drawTable (
    id,
+   childIndex,
    {
-      title,               // String
-      table                // Array of any record type with only primitive fields
-   }
+      title,   // String
+      table    // Array of any record type with only primitive fields
+   },
+   listener
 ) {
    return () => {
-      table = table.filter(r => isUsed(r))
+      const childId = id + '-' + childIndex
       const cellFill = '#ffffff'
-      const HTMLtable = d3.select('#' + id)
+      const div = d3.select('#' + id)
+      div.selectAll('#' + childId).remove()
+
+      const HTMLtable = div
          .append('table')
+         .attr('id', childId)
+      table = table.filter(r => isUsed(r))
+
       const colNames = Object.keys(table[0])
       HTMLtable.append('thead')
          .append('tr')
          .selectAll('th')
-         .data(colNames).enter()
+         .data(colNames)
+         .enter()
          .append('th')
          .text(d => d)
-      const rows = HTMLtable.append('tbody').selectAll('tr')
-         .data(table).enter()
+      const rows = HTMLtable
+         .append('tbody')
+         .selectAll('tr')
+         .data(table)
+         .enter()
          .append('tr')
       rows.selectAll('td')
          .data(d => colNames.map(k => { return { 'value': d[k], 'name': k } }))
@@ -39,7 +51,10 @@ function drawTable (
          .attr('class', d => d.value.value1 ? 'cell-selected' : null)
          .attr('bgcolor', d => d.value.value1 ? shared.colorShade(cellFill, -40) : cellFill)
          .text(d => d.value.value0)
+         .on('mouseover', (e, d) =>
+            listener(e)
+         )
    }
 }
 
-exports.drawTable = shared.curry2(drawTable)
+exports.drawTable = shared.curry4(drawTable)

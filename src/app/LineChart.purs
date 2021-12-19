@@ -1,23 +1,28 @@
 module App.LineChart where
 
-import Prelude
+import Prelude hiding (absurd)
+
 import Data.List (List(..), (:))
-import Effect (Effect)
-import App.Util (HTMLId, class Reflect, from, get, get_intOrNumber, get_prim, record)
-import Bindings (Bind)
+import Data.Maybe (Maybe)
 import DataType (cLinePlot)
+import Effect.Console (log)
+import Unsafe.Coerce (unsafeCoerce)
+import Web.Event.Event (target)
+import Web.Event.EventTarget (EventTarget)
+import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record)
+import Bindings (Bind)
 import Lattice (𝔹, expand)
 import Primitive (Slice)
-import Util (type (×), (×))
+import Util (type (×), (×), absurd, fromJust)
 import Util.SnocList (SnocList)
-import Val (Val)
 import Val (Val(..)) as V
+import Val (Val)
 
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
 newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
 
-foreign import drawLineChart :: HTMLId -> LineChart -> Effect Unit
+foreign import drawLineChart :: Renderer LineChart
 
 instance reflectPoint :: Reflect (SnocList (Bind (Val Boolean))) Point where
    from r = Point {
@@ -41,3 +46,15 @@ instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
    from (v × V.Constr _ c (v1 : Nil)) | c == cLinePlot =
       case expand v (V.Constr false cLinePlot (V.Hole false : Nil)) of
          V.Constr _ _ (u1 : Nil) -> record from (u1 × v1)
+
+lineChartHandler :: Handler
+lineChartHandler redraw ev = do
+   let Point xy = unsafePoint (target ev)
+   log $ show xy
+   redraw unit
+
+-- (unsafe) the datum associated with a line chart mouse event.
+unsafePoint :: Maybe EventTarget -> Point
+unsafePoint tgt_opt =
+   let tgt = fromJust absurd $ tgt_opt
+   in (unsafeCoerce tgt).__data__

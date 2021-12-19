@@ -8,6 +8,10 @@ function curry3 (f) {
    return x1 => x2 => x3 => f(x1, x2, x3)
 }
 
+function curry4 (f) {
+   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
+}
+
 // https://stackoverflow.com/questions/5560248
 function colorShade (col, amt) {
    col = col.replace(/^#/, '')
@@ -66,4 +70,5 @@ function download (parent, dataURL, name) {
 exports.colorShade = colorShade
 exports.curry2 = curry2
 exports.curry3 = curry3
+exports.curry4 = curry4
 exports.saveImage = saveImage
