@@ -5,6 +5,7 @@ const shared = require("/src/app/Shared")
 
 function drawMatrix (
    id,
+   childIndex,
    {
       title,                                                               // String
       matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }    // IntMatrix
@@ -72,4 +73,4 @@ function drawMatrix (
    }
 }
 
-exports.drawMatrix = shared.curry3(drawMatrix)
+exports.drawMatrix = shared.curry4(drawMatrix)

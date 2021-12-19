@@ -50,7 +50,7 @@ data SubFig =
    BarChartFig BarChart
 
 drawSubFig :: HTMLId -> (Unit -> Effect Unit) -> Int -> SubFig -> Effect Unit
-drawSubFig divId redraw _ (MatrixFig fig') = drawMatrix divId fig' =<< eventListener (matrixViewHandler redraw)
+drawSubFig divId redraw n (MatrixFig fig') = drawMatrix divId n fig' =<< eventListener (matrixViewHandler redraw)
 drawSubFig divId _ _ (EnergyTableView fig') = drawTable divId fig'
 drawSubFig divId _ _ (LineChartFig fig') = drawLineChart divId fig' =<< eventListener lineChartHandler
 drawSubFig divId _ _ (BarChartFig fig') = drawBarChart divId fig' =<< eventListener barChartHandler

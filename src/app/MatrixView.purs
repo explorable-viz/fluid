@@ -18,7 +18,7 @@ import Val (Array2, MatrixRep)
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-foreign import drawMatrix :: HTMLId -> MatrixView -> EventListener -> Effect Unit
+foreign import drawMatrix :: HTMLId -> Int -> MatrixView -> EventListener -> Effect Unit
 
 matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
 matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =

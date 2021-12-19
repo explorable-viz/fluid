@@ -8,6 +8,10 @@ function curry3 (f) {
    return x1 => x2 => x3 => f(x1, x2, x3)
 }
 
+function curry4 (f) {
+   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
+}
+
 // https://stackoverflow.com/questions/5560248
 function colorShade (col, amt) {
    col = col.replace(/^#/, '')
