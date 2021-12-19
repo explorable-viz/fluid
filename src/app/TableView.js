@@ -51,6 +51,9 @@ function drawTable (
          .attr('class', d => d.value.value1 ? 'cell-selected' : null)
          .attr('bgcolor', d => d.value.value1 ? shared.colorShade(cellFill, -40) : cellFill)
          .text(d => d.value.value0)
+         .on('mouseover', (e, d) =>
+            listener(e)
+         )
    }
 }
 

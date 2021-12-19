@@ -1,5 +1,6 @@
 [alias]
 add-unused     = "!f() { git commit -a -m \"🧩 [add-unused]: $1\"; }; f"
+consolidate    = "!f() { git commit -a -m \"🧩 [consolidate]: $1\"; }; f"
 doc            = "!f() { git commit -a -m \"🧩 [doc] : $1\"; }; f"
 fix            = "!f() { git commit -a -m \"❗ [fix]: $1\"; }; f"
 meta           = "!f() { git commit -a -m \"🔧 [meta]: $1\"; }; f"
@@ -9,5 +10,5 @@ move           = "!f() { git commit -a -m \"🧩 [move]: $1\"; }; f"
 refactor       = "!f() { git commit -a -m \"🧩 [refactor]: $1\"; }; f"
 remove-unused  = "!f() { git commit -a -m \"🧩 [remove-unused]: $1\"; }; f"
 rename         = "!f() { git commit -a -m \"🧩 [rename]: $1\"; }; f"
-simplify       = "!f() { git commit -a -m \"🧩 [simplify]: $1\"; }; f"
+unconsolidate  = "!f() { git commit -a -m \"🧩 [unconsolidate]: $1\"; }; f"
 undo-commit    = "!f() { git reset HEAD~1; }; f"

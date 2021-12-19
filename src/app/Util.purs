@@ -7,6 +7,7 @@ import Data.List (List(..), (:))
 import Data.Profunctor.Strong (first)
 import Data.Tuple (fst)
 import Effect (Effect)
+import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
 import Bindings (Bindings, Var, find)
 import DataType (cCons, cNil)
@@ -18,6 +19,7 @@ import Val (Val(..)) as V
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
+type Handler = (Unit -> Effect Unit) -> Event -> Effect Unit
 
 get_prim :: forall a . ToFrom a => Var -> Slice (Bindings (Val 𝔹)) -> a × 𝔹
 get_prim x = match_fwd <<< get x

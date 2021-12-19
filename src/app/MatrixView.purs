@@ -3,12 +3,11 @@ module App.MatrixView where
 import Prelude hiding (absurd)
 import Data.Array (zip, zipWith)
 import Data.Maybe (Maybe)
-import Effect (Effect)
 import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Event.Event (Event, target)
+import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util (Renderer)
+import App.Util (Handler, Renderer)
 import Lattice (𝔹)
 import Primitive (Slice, match_fwd)
 import Util (type (×), (×), (!), absurd, fromJust)
@@ -24,7 +23,7 @@ matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
 matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
    ((<$>) ((<$>) match_fwd)) (zipWith zip vss uss) × i × j
 
-matrixViewHandler :: (Unit -> Effect Unit) -> Event -> Effect Unit
+matrixViewHandler :: Handler
 matrixViewHandler redraw ev = do
    log $ show $ unsafePos $ target ev
    redraw unit
