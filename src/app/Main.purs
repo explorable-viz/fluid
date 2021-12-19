@@ -39,6 +39,5 @@ main = unsafePartial $
    flip runAff_ (sequence [fig fig1, linkingFig linkingFig1])
    case _ of
       Left err -> log $ show err
-      Right figs -> do
-         sequence_ $ drawFig <$> figs
-         main
+      Right figs ->
+         sequence_ $ drawFig (\_ -> main) <$> figs

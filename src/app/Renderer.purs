@@ -1,11 +1,12 @@
 module App.Renderer where
 
 import Prelude hiding (absurd)
+import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
 import Data.List (List(..), (:), singleton)
-import Data.Tuple (fst)
+import Data.Tuple (fst, uncurry)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Partial.Unsafe (unsafePartial)
@@ -38,9 +39,9 @@ type Fig = {
    subfigs :: Array SubFig
 }
 
-drawFig :: Fig -> Effect Unit
-drawFig { divId, subfigs } =
-   sequence_ $ drawSubFig divId <$> subfigs
+drawFig :: (Unit -> Effect Unit) -> Fig -> Effect Unit
+drawFig redraw { divId, subfigs } =
+   sequence_ $ uncurry (drawSubFig divId redraw) <$> zip (range 0 (length subfigs - 1)) subfigs
 
 data SubFig =
    MatrixFig MatrixView |
@@ -48,11 +49,11 @@ data SubFig =
    LineChartFig LineChart |
    BarChartFig BarChart
 
-drawSubFig :: HTMLId -> SubFig -> Effect Unit
-drawSubFig divId (MatrixFig fig') = drawMatrix divId fig' =<< eventListener matrixViewHandler
-drawSubFig divId (EnergyTableView fig') = drawTable divId fig'
-drawSubFig divId (LineChartFig fig') = drawLineChart divId fig' =<< eventListener lineChartHandler
-drawSubFig divId (BarChartFig fig') = drawBarChart divId fig' =<< eventListener barChartHandler
+drawSubFig :: HTMLId -> (Unit -> Effect Unit) -> Int -> SubFig -> Effect Unit
+drawSubFig divId redraw _ (MatrixFig fig') = drawMatrix divId fig' =<< eventListener (matrixViewHandler redraw)
+drawSubFig divId _ _ (EnergyTableView fig') = drawTable divId fig'
+drawSubFig divId _ _ (LineChartFig fig') = drawLineChart divId fig' =<< eventListener lineChartHandler
+drawSubFig divId _ _ (BarChartFig fig') = drawBarChart divId fig' =<< eventListener barChartHandler
 
 -- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
 -- 'from' is partial but encapsulate that here.

@@ -24,10 +24,10 @@ matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
 matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
    ((<$>) ((<$>) match_fwd)) (zipWith zip vss uss) × i × j
 
-matrixViewHandler :: Event -> Effect Unit
-matrixViewHandler ev = do
+matrixViewHandler :: (Unit -> Effect Unit) -> Event -> Effect Unit
+matrixViewHandler redraw ev = do
    log $ show $ unsafePos $ target ev
-   pure unit
+   redraw unit
 
 -- (unsafe) the datum associated with a matrix view mouse event.
 unsafePos :: Maybe EventTarget -> Int × Int
