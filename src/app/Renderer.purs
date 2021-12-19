@@ -128,11 +128,6 @@ type NeedsSpec = {
    o'    :: Val 𝔹          -- selection on output
 }
 
-type NeedsResult = {
-   ρ0'   :: Env 𝔹,         -- selection on ambient environment
-   ρ'    :: Env 𝔹          -- selection on local environment
-}
-
 needs :: NeedsSpec -> Example -> MayFail (Array SubFig)
 needs spec { ρ0, ρ, s } = do
    { e, o, t, ρ0ρ } <- evalExample { ρ0, ρ, s }
