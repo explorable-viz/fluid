@@ -2,8 +2,6 @@ module App.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util (HTMLId, class Reflect, from, get, get_intOrNumber, get_prim, record)
-import Bindings (Bind)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import DataType (cLinePlot)
@@ -11,7 +9,9 @@ import Effect (Effect)
 import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (Event, target)
-import Web.Event.EventTarget (EventListener, EventTarget)
+import Web.Event.EventTarget (EventTarget)
+import App.Util (class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record)
+import Bindings (Bind)
 import Lattice (𝔹, expand)
 import Primitive (Slice)
 import Util (type (×), (×), absurd, fromJust)
@@ -23,7 +23,7 @@ newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePl
 newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
 newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
 
-foreign import drawLineChart :: HTMLId -> LineChart -> EventListener -> Effect Unit
+foreign import drawLineChart :: Renderer LineChart
 
 instance reflectPoint :: Reflect (SnocList (Bind (Val Boolean))) Point where
    from r = Point {

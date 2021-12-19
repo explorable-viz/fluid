@@ -17,6 +17,7 @@ function max_x (linePlot) {
 
 function drawLineChart (
    id,
+   childIndex,
    {
       caption,   // String
       plots,     // Array LinePlot
@@ -24,6 +25,7 @@ function drawLineChart (
    listener
 ) {
    return () => {
+      const childId = id + '-' + childIndex
       const margin = {top: 15, right: 65, bottom: 40, left: 30},
             width = 230 - margin.left - margin.right,
             height = 185 - margin.top - margin.bottom,
@@ -31,11 +33,15 @@ function drawLineChart (
             x_min = Math.min(...plots.map(min_x)),
             x_max = Math.max(...plots.map(max_x)),
             names = plots.map(plot => plot.name.value0)
+      const div = d3.select('#' + id)
 
-      const svg = d3.select('#' + id)
+      div.selectAll('#' + childId).remove()
+
+      const svg = div
          .append('svg')
             .attr('width', width + margin.left + margin.right)
             .attr('height', height + margin.top + margin.bottom)
+         .attr('id', childId)
          .append('g')
             .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
@@ -129,4 +135,4 @@ function drawLineChart (
    }
 }
 
-exports.drawLineChart = shared.curry3(drawLineChart)
+exports.drawLineChart = shared.curry4(drawLineChart)
