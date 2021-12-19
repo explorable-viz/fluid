@@ -13,7 +13,7 @@ function drawMatrix (
    listener
 ) {
    return () => {
-      const childId = id + '.' + childIndex
+      const childId = id + '-' + childIndex
       const strokeWidth = 0.5
       const w = 30, h = 30
       const div = d3.select('#' + id)

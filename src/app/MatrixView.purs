@@ -7,8 +7,8 @@ import Effect (Effect)
 import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (Event, target)
-import Web.Event.EventTarget (EventListener, EventTarget)
-import App.Util (HTMLId)
+import Web.Event.EventTarget (EventTarget)
+import App.Util (Renderer)
 import Lattice (𝔹)
 import Primitive (Slice, match_fwd)
 import Util (type (×), (×), (!), absurd, fromJust)
@@ -18,7 +18,7 @@ import Val (Array2, MatrixRep)
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int
 newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
-foreign import drawMatrix :: HTMLId -> Int -> MatrixView -> EventListener -> Effect Unit
+foreign import drawMatrix :: Renderer MatrixView
 
 matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
 matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =

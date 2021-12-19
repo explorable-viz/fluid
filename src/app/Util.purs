@@ -6,6 +6,8 @@ import Data.Array ((:)) as A
 import Data.List (List(..), (:))
 import Data.Profunctor.Strong (first)
 import Data.Tuple (fst)
+import Effect (Effect)
+import Web.Event.EventTarget (EventListener)
 import Bindings (Bindings, Var, find)
 import DataType (cCons, cNil)
 import Lattice (𝔹, expand)
@@ -15,6 +17,7 @@ import Val (Val)
 import Val (Val(..)) as V
 
 type HTMLId = String
+type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
 
 get_prim :: forall a . ToFrom a => Var -> Slice (Bindings (Val 𝔹)) -> a × 𝔹
 get_prim x = match_fwd <<< get x
