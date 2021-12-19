@@ -13,25 +13,35 @@ function drawTable (
    id,
    childIndex,
    {
-      title,               // String
-      table                // Array of any record type with only primitive fields
+      title,   // String
+      table    // Array of any record type with only primitive fields
    },
    listener
 ) {
    return () => {
-      table = table.filter(r => isUsed(r))
+      const childId = id + '-' + childIndex
       const cellFill = '#ffffff'
-      const HTMLtable = d3.select('#' + id)
+      const div = d3.select('#' + id)
+      div.selectAll('#' + childId).remove()
+
+      const HTMLtable = div
          .append('table')
+         .attr('id', childId)
+      table = table.filter(r => isUsed(r))
+
       const colNames = Object.keys(table[0])
       HTMLtable.append('thead')
          .append('tr')
          .selectAll('th')
-         .data(colNames).enter()
+         .data(colNames)
+         .enter()
          .append('th')
          .text(d => d)
-      const rows = HTMLtable.append('tbody').selectAll('tr')
-         .data(table).enter()
+      const rows = HTMLtable
+         .append('tbody')
+         .selectAll('tr')
+         .data(table)
+         .enter()
          .append('tr')
       rows.selectAll('td')
          .data(d => colNames.map(k => { return { 'value': d[k], 'name': k } }))
