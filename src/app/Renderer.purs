@@ -132,7 +132,7 @@ drawFig' :: Fig' -> Val 𝔹 -> Effect Unit
 drawFig' fig o' = do
    let divId = fig.spec.divId
    log $ "Redrawing " <> divId
-   let views = successful $ needs' fig o'
+   let views = successful $ needs fig o'
    sequence_ $ 
       uncurry (drawView divId (\selector -> drawFig' fig (selector o'))) <$> 
          zip (range 0 (length views - 1)) views
@@ -159,16 +159,8 @@ valViews (o' × o) (ρ' × ρ) vars = do
    pure $ views <> [ view "output" (o' × o) ]
 
 -- For an output selection, views of corresponding input selections.
-needs :: ExampleEval -> Val 𝔹 -> Array Var -> MayFail (Array View)
-needs { ex, e, o, t } o' vars = do
-   let ρ0ρ' × e × α = evalBwd o' t
-       ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
-       o'' = evalFwd ρ0ρ' e α t
-   views <- valViews (o' × o) (ρ0ρ' × (ex.ρ0 <> ex.ρ)) vars 
-   pure $ views <> [ view "output" (o'' × o) ]
-
-needs' :: Fig' -> Val 𝔹 -> MayFail (Array View)
-needs' fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
+needs :: Fig' -> Val 𝔹 -> MayFail (Array View)
+needs fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
    let ρ0ρ' × e × α = evalBwd o' t
        ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
@@ -178,19 +170,8 @@ needs' fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
-loadFig :: FigSpec -> Aff (Fig (ex :: ExampleEval))
-loadFig { divId, file, vars } = do
-   -- TODO: not every example should run with this dataset.
-   ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
-   { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   let ex × views = successful do
-         ex <- evalExample { ρ0, ρ: ρ <> ρ1, s }
-         views <- needs ex (selectCell 2 2 5 5) vars
-         pure (ex × views)
-   pure { divId, views, ex }
-
-loadFig' :: FigSpec -> Aff Fig'
-loadFig' spec@{ divId, file, vars } = do
+loadFig :: FigSpec -> Aff Fig'
+loadFig spec@{ divId, file, vars } = do
    -- TODO: not every example should run with this dataset.
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
