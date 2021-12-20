@@ -76,20 +76,14 @@ view title (u × v@(V.Matrix _ _)) =
    MatrixFig (MatrixView { title, matrix: matrixRep vss2 } )
 view _ _ = error absurd
 
-type Example = {
-   ρ0 :: Env 𝔹,     -- ambient env (default imports)
-   ρ :: Env 𝔹,      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
-   s :: S.Expr 𝔹    -- body of example
-}
-
--- Example assumed to be of the form (let <defs> in expr).
-type LetExample = {
+-- An example of the form (let <defs> in expr) can be decomposed as follows.
+type SplitDefs = {
    ρ :: Env 𝔹,      -- local env (additional let bindings at beginning of ex)
    s :: S.Expr 𝔹    -- body of example
 }
 
--- Interpret a program as a "let" example in the sense above. TODO: generalise to sequence of let/let recs.
-splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail LetExample
+-- Decompose as above.
+splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail SplitDefs
 splitDefs ρ0 s' = do
    let defs × s = unsafePartial $ unpack s'
    ρ0ρ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ0
@@ -99,8 +93,11 @@ splitDefs ρ0 s' = do
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
 
-varView :: Var × Slice (Val 𝔹) -> View
-varView (x × uv) = view x uv
+type Example = {
+   ρ0 :: Env 𝔹,     -- ambient env (default imports)
+   ρ :: Env 𝔹,      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
+   s :: S.Expr 𝔹    -- body of example
+}
 
 type ExampleEval = {
    e :: Expr 𝔹,
@@ -114,6 +111,9 @@ evalExample { ρ0, ρ, s } = do
    let ρ0ρ = ρ0 <> ρ
    t × o <- eval ρ0ρ e
    pure { e, t, o }
+
+varView :: Var × Slice (Val 𝔹) -> View
+varView (x × uv) = view x uv
 
 varView' :: Var -> Slice (Env 𝔹) -> MayFail View
 varView' x (ρ' × ρ) = do
@@ -142,7 +142,7 @@ selectOnly xv ρ = update (botOf ρ) xv
 type FigSpec = {
    divId :: HTMLId,
    file :: File,
-   vars :: Array Var  -- variables we consider to be "inputs"
+   vars :: Array Var -- variables to be considered "inputs"
 }
 
 type LinkingFigSpec = {
@@ -150,9 +150,9 @@ type LinkingFigSpec = {
    config :: LinkConfig
 }
 
--- TODO: not every example should run with this dataset.
 loadFig :: FigSpec -> Aff Fig
 loadFig { divId, file, vars } = do
+   -- TODO: not every example should run with this dataset.
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
    let views = successful (needs (selectCell 2 2 5 5) { ρ0, ρ: ρ <> ρ1, s } vars)
