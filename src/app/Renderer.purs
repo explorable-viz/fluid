@@ -25,7 +25,7 @@ import Expr (Expr)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
-import Lattice (𝔹, botOf, expand, neg)
+import Lattice (𝔹, botOf, expand)
 import Module (File(..), open, openDatasetAs)
 import Primitive (Slice, match, match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
@@ -37,14 +37,14 @@ import Val (Val(..)) as V
 
 type Fig = {
    divId :: HTMLId,
-   subfigs :: Array View
+   views :: Array View
 }
 
 drawFig :: Fig -> Effect Unit
-drawFig fig'@{ divId, subfigs } = do
+drawFig fig'@{ divId, views } = do
    log $ "Drawing " <> divId
    sequence_ $ 
-      uncurry (drawView divId (const $ drawFig fig')) <$> zip (range 0 (length subfigs - 1)) subfigs
+      uncurry (drawView divId (const $ drawFig fig')) <$> zip (range 0 (length views - 1)) views
 
 data View =
    MatrixFig MatrixView |
@@ -127,8 +127,8 @@ valViews o { vars, o' } (ρ' × ρ) = do
    pure $ views <> [ view "output" (o' × o) ]
 
 type NeedsSpec = {
-   vars  :: Array Var,     -- variables we want views for
-   o'    :: Val 𝔹          -- selection on output
+   vars  :: Array Var,  -- variables we want views for
+   o' :: Val 𝔹          -- selection on output
 }
 
 needs :: NeedsSpec -> Example -> MayFail (Array View)
@@ -159,13 +159,13 @@ fig :: FigSpec -> Aff Fig
 fig { divId, file, needsSpec } = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   let subfigs = successful (needs needsSpec { ρ0, ρ: ρ <> ρ1, s })
-   pure { divId, subfigs }
+   let views = successful (needs needsSpec { ρ0, ρ: ρ <> ρ1, s })
+   pure { divId, views }
 
 linkingFig :: LinkingFigSpec -> Aff Fig
 linkingFig { divId, config } = do
    link <- doLink config
-   pure { divId, subfigs: [
+   pure { divId, views: [
       view "primary view" (config.v1_sel × link.v1),
       view "linked view" link.v2,
       view "common data" link.data_sel
