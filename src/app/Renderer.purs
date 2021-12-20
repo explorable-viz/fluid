@@ -126,13 +126,9 @@ valViews (o' × o) (ρ' × ρ) vars = do
    views <- sequence (flip varView' (ρ' × ρ) <$> vars)
    pure $ views <> [ view "output" (o' × o) ]
 
-type NeedsSpec = {
-   vars :: Array Var,  -- variables we want views for
-   o' :: Val 𝔹         -- selection on output
-}
-
-needs :: NeedsSpec -> Example -> MayFail (Array View)
-needs { vars, o' } { ρ0, ρ, s } = do
+-- First argument is selection on output
+needs :: Val 𝔹 -> Example -> Array Var -> MayFail (Array View)
+needs o' { ρ0, ρ, s } vars = do
    { e, o, t } <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × e × α = evalBwd o' t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
@@ -159,7 +155,7 @@ loadFig :: FigSpec -> Aff Fig
 loadFig { divId, file, vars } = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   let views = successful (needs { vars, o': selectCell 2 2 5 5 } { ρ0, ρ: ρ <> ρ1, s })
+   let views = successful (needs (selectCell 2 2 5 5) { ρ0, ρ: ρ <> ρ1, s } vars)
    pure { divId, views }
 
 loadLinkingFig :: LinkingFigSpec -> Aff Fig
