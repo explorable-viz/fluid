@@ -101,11 +101,21 @@ type Fig r = {
    | r
 }
 
+type Fig' = {
+   spec :: FigSpec,
+   ex_eval :: ExampleEval
+}
+
+type FigState = {
+   fig :: Fig',
+   views :: Array View
+}
+
 drawFig :: forall r . Fig r -> Effect Unit
 drawFig fig@{ divId, views } = do
    log $ "Drawing " <> divId
    sequence_ $ 
-      uncurry (drawView divId (const $ drawFig fig)) <$> zip (range 0 (length views - 1)) views
+      uncurry (drawView divId (\o' -> drawFig fig)) <$> zip (range 0 (length views - 1)) views
 
 evalExample :: Example -> MayFail ExampleEval
 evalExample ex@{ ρ0, ρ, s } = do
@@ -137,6 +147,14 @@ needs { ex, e, o, t } o' vars = do
    views <- valViews (o' × o) (ρ0ρ' × (ex.ρ0 <> ex.ρ)) vars 
    pure $ views <> [ view "output" (o'' × o) ]
 
+needs' :: Fig' -> Val 𝔹 -> MayFail FigState
+needs' fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
+   let ρ0ρ' × e × α = evalBwd o' t
+       ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
+       o'' = evalFwd ρ0ρ' e α t
+   views <- valViews (o' × o) (ρ0ρ' × (ex.ρ0 <> ex.ρ)) spec.vars 
+   pure $ { fig, views: views <> [ view "output" (o'' × o) ] }
+
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
@@ -161,6 +179,15 @@ loadFig { divId, file, vars } = do
          views <- needs ex (selectCell 2 2 5 5) vars
          pure (ex × views)
    pure { divId, views, ex }
+
+loadFig' :: FigSpec -> Aff FigState
+loadFig' spec@{ divId, file, vars } = do
+   -- TODO: not every example should run with this dataset.
+   ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
+   { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
+   pure $ successful do
+      ex_eval <- evalExample { ρ0, ρ: ρ <> ρ1, s }
+      needs' { spec, ex_eval } (selectCell 2 2 5 5)
 
 loadLinkingFig :: LinkingFigSpec -> Aff (Fig ())
 loadLinkingFig { divId, config } = do
