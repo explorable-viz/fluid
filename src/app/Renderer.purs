@@ -47,17 +47,6 @@ drawView divId redraw n (EnergyTableView vw) = drawTable divId n vw =<< eventLis
 drawView divId redraw n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (lineChartHandler redraw)
 drawView divId redraw n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (barChartHandler redraw)
 
-type Fig = {
-   divId :: HTMLId,
-   views :: Array View
-}
-
-drawFig :: Fig -> Effect Unit
-drawFig fig@{ divId, views } = do
-   log $ "Drawing " <> divId
-   sequence_ $ 
-      uncurry (drawView divId (const $ drawFig fig)) <$> zip (range 0 (length views - 1)) views
-
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 -- 'from' is partial; encapsulate that here.
 view :: String -> Slice (Val 𝔹) -> View
@@ -106,6 +95,18 @@ type ExampleEval = {
    o :: Val 𝔹
 }
 
+type Fig r = {
+   divId :: HTMLId,
+   views :: Array View
+   | r
+}
+
+drawFig :: forall r . Fig r -> Effect Unit
+drawFig fig@{ divId, views } = do
+   log $ "Drawing " <> divId
+   sequence_ $ 
+      uncurry (drawView divId (const $ drawFig fig)) <$> zip (range 0 (length views - 1)) views
+
 evalExample :: Example -> MayFail ExampleEval
 evalExample ex@{ ρ0, ρ, s } = do
    e <- desugarFwd s
@@ -150,17 +151,16 @@ type LinkingFigSpec = {
    config :: LinkConfig
 }
 
-loadFig :: FigSpec -> Aff Fig
+loadFig :: FigSpec -> Aff (Fig (ex :: ExampleEval))
 loadFig { divId, file, vars } = do
    -- TODO: not every example should run with this dataset.
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   let views = successful $ do
-         ex <- evalExample { ρ0, ρ: ρ <> ρ1, s }
-         needs ex (selectCell 2 2 5 5) vars
-   pure { divId, views }
+   let ex = successful $ evalExample { ρ0, ρ: ρ <> ρ1, s }
+       views = successful $ needs ex (selectCell 2 2 5 5) vars
+   pure { divId, views, ex }
 
-loadLinkingFig :: LinkingFigSpec -> Aff Fig
+loadLinkingFig :: LinkingFigSpec -> Aff (Fig ())
 loadLinkingFig { divId, config } = do
    link <- doLink config
    pure { divId, views: [
