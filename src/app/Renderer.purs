@@ -140,11 +140,6 @@ needs spec { ρ0, ρ, s } = do
    views <- valViews o spec (ρ0ρ' × (ρ0 <> ρ))
    pure $ views <> [ view "output" (o'' × o) ]
 
-type NeededBySpec = {
-   vars     :: Array Var,    -- variables we want views for
-   ρ'       :: Env 𝔹         -- selection on local env
-}
-
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
