@@ -27,4 +27,4 @@ energyRecord r = {
 tableViewHandler :: Handler
 tableViewHandler redraw ev = do
    log $ show "tableViewHandler"
-   redraw unit
+   redraw identity

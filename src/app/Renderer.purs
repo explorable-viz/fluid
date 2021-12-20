@@ -16,7 +16,7 @@ import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
-import App.Util (HTMLId, from, record)
+import App.Util (HTMLId, Redraw, from, record)
 import Bindings (Bind, Var, find, update)
 import DataType (cBarChart, cCons, cLineChart, cNil)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
@@ -25,7 +25,7 @@ import Expr (Expr)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
-import Lattice (𝔹, botOf, expand, neg)
+import Lattice (𝔹, botOf, expand)
 import Module (File(..), open, openDatasetAs)
 import Primitive (Slice, match, match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
@@ -35,61 +35,44 @@ import Util.SnocList (splitAt)
 import Val (Env, Val)
 import Val (Val(..)) as V
 
-type Fig = {
-   divId :: HTMLId,
-   subfigs :: Array SubFig
-}
-
-drawFig :: Fig -> Effect Unit
-drawFig fig'@{ divId, subfigs } = do
-   log $ "Drawing " <> divId
-   sequence_ $ 
-      uncurry (drawSubFig divId (const $ drawFig fig')) <$> zip (range 0 (length subfigs - 1)) subfigs
-
-data SubFig =
+data View =
    MatrixFig MatrixView |
    EnergyTableView EnergyTable |
    LineChartFig LineChart |
    BarChartFig BarChart
 
-drawSubFig :: HTMLId -> (Unit -> Effect Unit) -> Int -> SubFig -> Effect Unit
-drawSubFig divId redraw n (MatrixFig fig') = drawMatrix divId n fig' =<< eventListener (matrixViewHandler redraw)
-drawSubFig divId redraw n (EnergyTableView fig') = drawTable divId n fig' =<< eventListener (tableViewHandler redraw)
-drawSubFig divId redraw n (LineChartFig fig') = drawLineChart divId n fig' =<< eventListener (lineChartHandler redraw)
-drawSubFig divId redraw n (BarChartFig fig') = drawBarChart divId n fig' =<< eventListener (barChartHandler redraw)
+drawView :: HTMLId -> Redraw -> Int -> View -> Effect Unit
+drawView divId redraw n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (matrixViewHandler redraw)
+drawView divId redraw n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (tableViewHandler redraw)
+drawView divId redraw n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (lineChartHandler redraw)
+drawView divId redraw n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (barChartHandler redraw)
 
--- Convert sliced value to appropriate SubFig, discarding top-level annotations for now.
--- 'from' is partial but encapsulate that here.
-makeSubFig :: { title :: String, uv :: Slice (Val 𝔹) } -> SubFig
-makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cBarChart =
+-- Convert sliced value to appropriate View, discarding top-level annotations for now.
+-- 'from' is partial; encapsulate that here.
+view :: String -> Slice (Val 𝔹) -> View
+view _ (u × V.Constr _ c (v1 : Nil)) | c == cBarChart =
    case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> BarChartFig (unsafePartial $ record from (u1 × v1))
       _ -> error absurd
-makeSubFig { title, uv: u × V.Constr _ c (v1 : Nil) } | c == cLineChart =
+view _ (u × V.Constr _ c (v1 : Nil)) | c == cLineChart =
    case expand u (V.Constr false cLineChart (V.Hole false : Nil)) of
       V.Constr _ _ (u1 : Nil) -> LineChartFig (unsafePartial $ record from (u1 × v1))
       _ -> error absurd
-makeSubFig { title, uv: u × v@(V.Constr _ c _) } | c == cNil || c == cCons =
+view title (u × v@(V.Constr _ c _)) | c == cNil || c == cCons =
    EnergyTableView (EnergyTable { title, table: unsafePartial $ record energyRecord <$> from (u × v) })
-makeSubFig { title, uv: u × v@(V.Matrix _ _) } =
+view title (u × v@(V.Matrix _ _)) =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig (MatrixView { title, matrix: matrixRep vss2 } )
-makeSubFig _ = error absurd
+view _ _ = error absurd
 
-type Example = {
-   ρ0 :: Env 𝔹,     -- ambient env (default imports)
-   ρ :: Env 𝔹,      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
-   s :: S.Expr 𝔹    -- body of example
-}
-
--- Example assumed to be of the form (let <defs> in expr).
-type View = {
+-- An example of the form (let <defs> in expr) can be decomposed as follows.
+type SplitDefs = {
    ρ :: Env 𝔹,      -- local env (additional let bindings at beginning of ex)
    s :: S.Expr 𝔹    -- body of example
 }
 
--- Interpret a program as a "view" in the sense above. TODO: generalise to sequence of let/let recs, rather than one.
-splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail View
+-- Decompose as above.
+splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail SplitDefs
 splitDefs ρ0 s' = do
    let defs × s = unsafePartial $ unpack s'
    ρ0ρ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ0
@@ -99,70 +82,29 @@ splitDefs ρ0 s' = do
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
 
-varFig :: Var × Slice (Val 𝔹) -> SubFig
-varFig (x × uv) = makeSubFig { title: x, uv }
+type Example = {
+   ρ0 :: Env 𝔹,     -- ambient env (default imports)
+   ρ :: Env 𝔹,      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
+   s :: S.Expr 𝔹    -- body of example
+}
 
 type ExampleEval = {
-   e     :: Expr 𝔹,
-   ρ0ρ   :: Env 𝔹,
-   t     :: Expl 𝔹,
-   o     :: Val 𝔹
+   ex :: Example,
+   e :: Expr 𝔹,
+   t :: Expl 𝔹,
+   o :: Val 𝔹
 }
 
-evalExample :: Example -> MayFail ExampleEval
-evalExample { ρ0, ρ, s } = do
-   e <- desugarFwd s
-   let ρ0ρ = ρ0 <> ρ
-   t × o <- eval ρ0ρ e
-   pure { e, ρ0ρ, t, o }
-
-varFig' :: Var -> Slice (Env 𝔹) -> MayFail SubFig
-varFig' x (ρ' × ρ) = do
-   v <- find x ρ
-   v' <- find x ρ'
-   pure $ varFig (x × (v' × v))
-
-valFigs :: Val 𝔹 -> NeedsSpec -> Slice (Env 𝔹) -> MayFail (Array SubFig)
-valFigs o { vars, o' } (ρ' × ρ) = do
-   figs <- sequence (flip varFig' (ρ' × ρ) <$> vars)
-   pure $ figs <> [ makeSubFig { title: "output", uv: o' × o } ]
-
-type NeedsSpec = {
-   vars  :: Array Var,     -- variables we want subfigs for
-   o'    :: Val 𝔹          -- selection on output
+type Fig r = {
+   divId :: HTMLId,
+   views :: Array View
+   | r
 }
-
-needs :: NeedsSpec -> Example -> MayFail (Array SubFig)
-needs spec { ρ0, ρ, s } = do
-   { e, o, t, ρ0ρ } <- evalExample { ρ0, ρ, s }
-   let ρ0ρ' × e × α = evalBwd spec.o' t
-       ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
-       o'' = evalFwd ρ0ρ' e α t
-   figs <- valFigs o spec (ρ0ρ' × ρ0ρ)
-   pure $ figs <> [ makeSubFig { title: "output", uv: o'' × o } ]
-
-type NeededBySpec = {
-   vars     :: Array Var,    -- variables we want subfigs for
-   ρ'       :: Env 𝔹         -- selection on local env
-}
-
-neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array SubFig)
-neededBy { vars, ρ' } { ρ0, ρ, s } = do
-   { e, o, t, ρ0ρ } <- evalExample { ρ0, ρ, s }
-   let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e) true t)
-       ρ0'ρ'' = neg (fst (fst (evalBwd (neg o') t)))
-       ρ0' × ρ'' = splitAt (length ρ) ρ0'ρ''
-   figs <- valFigs o { vars, o' } (ρ' × ρ)
-   figs' <- sequence (flip varFig' (ρ'' × ρ) <$> vars)
-   pure $ unit × (figs <> figs')
-
-selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
-selectOnly xv ρ = update (botOf ρ) xv
 
 type FigSpec = {
    divId :: HTMLId,
    file :: File,
-   needsSpec :: NeedsSpec
+   vars :: Array Var -- variables to be considered "inputs"
 }
 
 type LinkingFigSpec = {
@@ -170,19 +112,76 @@ type LinkingFigSpec = {
    config :: LinkConfig
 }
 
--- TODO: not every example should run with this dataset.
-fig :: FigSpec -> Aff Fig
-fig { divId, file, needsSpec } = do
-   ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
-   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   let subfigs = successful (needs needsSpec { ρ0, ρ: ρ <> ρ1, s: s1 })
-   pure { divId, subfigs }
+type Fig' = {
+   spec :: FigSpec,
+   ex_eval :: ExampleEval
+}
 
-linkingFig :: LinkingFigSpec -> Aff Fig
-linkingFig { divId, config } = do
+type FigState = {
+   fig :: Fig',
+   views :: Array View
+}
+
+drawFig :: forall r . Fig r -> Effect Unit
+drawFig fig@{ divId, views } = do
+   log $ "Drawing " <> divId
+   sequence_ $ 
+      uncurry (drawView divId (\o' -> drawFig fig)) <$> zip (range 0 (length views - 1)) views
+
+drawFig' :: Fig' -> Val 𝔹 -> Effect Unit
+drawFig' fig o' = do
+   let divId = fig.spec.divId
+   log $ "Redrawing " <> divId
+   let views = successful $ needs fig o'
+   sequence_ $ 
+      uncurry (drawView divId (\selector -> drawFig' fig (selector o'))) <$> 
+         zip (range 0 (length views - 1)) views
+
+evalExample :: Example -> MayFail ExampleEval
+evalExample ex@{ ρ0, ρ, s } = do
+   e <- desugarFwd s
+   let ρ0ρ = ρ0 <> ρ
+   t × o <- eval ρ0ρ e
+   pure { ex, e, t, o }
+
+varView :: Var × Slice (Val 𝔹) -> View
+varView (x × uv) = view x uv
+
+varView' :: Var -> Slice (Env 𝔹) -> MayFail View
+varView' x (ρ' × ρ) = do
+   v <- find x ρ
+   v' <- find x ρ'
+   pure $ varView (x × (v' × v))
+
+valViews :: Slice (Val 𝔹) -> Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
+valViews (o' × o) (ρ' × ρ) vars = do
+   views <- sequence (flip varView' (ρ' × ρ) <$> vars)
+   pure $ views <> [ view "output" (o' × o) ]
+
+-- For an output selection, views of corresponding input selections.
+needs :: Fig' -> Val 𝔹 -> MayFail (Array View)
+needs fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
+   let ρ0ρ' × e × α = evalBwd o' t
+       ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
+       o'' = evalFwd ρ0ρ' e α t
+   views <- valViews (o' × o) (ρ0ρ' × (ex.ρ0 <> ex.ρ)) spec.vars 
+   pure $ views <> [ view "output" (o'' × o) ]
+
+selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
+selectOnly xv ρ = update (botOf ρ) xv
+
+loadFig :: FigSpec -> Aff Fig'
+loadFig spec@{ divId, file, vars } = do
+   -- TODO: not every example should run with this dataset.
+   ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
+   { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
+   pure { spec, ex_eval: successful $ evalExample { ρ0, ρ: ρ <> ρ1, s } }
+
+loadLinkingFig :: LinkingFigSpec -> Aff (Fig ())
+loadLinkingFig { divId, config } = do
    link <- doLink config
-   pure { divId, subfigs: [
-      makeSubFig { title: "primary view", uv: config.v1_sel × link.v1 },
-      makeSubFig { title: "linked view", uv: link.v2 },
-      makeSubFig { title: "common data", uv: link.data_sel }
+   pure { divId, views: [
+      view "primary view" (config.v1_sel × link.v1),
+      view "linked view" link.v2,
+      view "common data" link.data_sel
    ] }

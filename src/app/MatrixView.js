@@ -42,7 +42,7 @@ function drawMatrix (
 
       const rect = grp
          .selectAll('rect')
-         .data(([i, ns]) => [...ns.entries()].map(([j, n]) => [[i, j], n]))
+         .data(([i, ns]) => [...ns.entries()].map(([j, n]) => [[i + 1, j + 1], n]))
          .enter()
 
       rect
