@@ -121,8 +121,8 @@ varView' x (ρ' × ρ) = do
    v' <- find x ρ'
    pure $ varView (x × (v' × v))
 
-valViews :: Slice (Val 𝔹) -> Array Var -> Slice (Env 𝔹) -> MayFail (Array View)
-valViews (o' × o) vars (ρ' × ρ) = do
+valViews :: Slice (Val 𝔹) -> Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
+valViews (o' × o) (ρ' × ρ) vars = do
    views <- sequence (flip varView' (ρ' × ρ) <$> vars)
    pure $ views <> [ view "output" (o' × o) ]
 
@@ -137,7 +137,7 @@ needs { vars, o' } { ρ0, ρ, s } = do
    let ρ0ρ' × e × α = evalBwd o' t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
-   views <- valViews (o' × o) vars (ρ0ρ' × (ρ0 <> ρ))
+   views <- valViews (o' × o) (ρ0ρ' × (ρ0 <> ρ)) vars 
    pure $ views <> [ view "output" (o'' × o) ]
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
