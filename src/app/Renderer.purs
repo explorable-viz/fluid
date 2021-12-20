@@ -128,8 +128,8 @@ valViews (o' × o) (ρ' × ρ) vars = do
    pure $ views <> [ view "output" (o' × o) ]
 
 -- For an output selection, views of corresponding input selections.
-needs :: Val 𝔹 -> ExampleEval -> Array Var -> MayFail (Array View)
-needs o' { ex, e, o, t } vars = do
+needs :: ExampleEval -> Val 𝔹 -> Array Var -> MayFail (Array View)
+needs { ex, e, o, t } o' vars = do
    let ρ0ρ' × e × α = evalBwd o' t
        ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
@@ -157,7 +157,7 @@ loadFig { divId, file, vars } = do
    { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
    let views = successful $ do
          ex <- evalExample { ρ0, ρ: ρ <> ρ1, s }
-         needs (selectCell 2 2 5 5) ex vars
+         needs ex (selectCell 2 2 5 5) vars
    pure { divId, views }
 
 loadLinkingFig :: LinkingFigSpec -> Aff Fig
