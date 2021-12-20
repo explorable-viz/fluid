@@ -29,7 +29,7 @@ import Lattice (𝔹, botOf, expand)
 import Module (File(..), open, openDatasetAs)
 import Primitive (Slice, match, match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (LinkConfig, doLink, selectCell)
+import Test.Util (LinkConfig, doLink)
 import Util (Endo, MayFail, type (×), type (+), (×), absurd, error, successful)
 import Util.SnocList (splitAt)
 import Val (Env, Val)

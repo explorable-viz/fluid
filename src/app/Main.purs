@@ -8,7 +8,8 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import App.Renderer (Fig, Fig', FigSpec, LinkingFigSpec, drawFig, drawFig', loadFig, loadLinkingFig)
 import Module (File(..))
-import Test.Util (selectBarChart_data, selectCell, selectNth, select_y)
+import Test.Util (selectBarChart_data, selectNth, select_y)
+import Val (Val(..))
 
 linkingFig1 :: LinkingFigSpec
 linkingFig1 = {
@@ -41,7 +42,7 @@ drawFigs' loadFigs =
    flip runAff_ (sequence loadFigs)
    case _ of
       Left err -> log $ show err
-      Right figs -> sequence_ $ flip drawFig' (selectCell 2 2 5 5) <$> figs
+      Right figs -> sequence_ $ flip drawFig' (Hole false) <$> figs
 
 main :: Effect Unit
 main = do
