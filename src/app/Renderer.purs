@@ -100,17 +100,18 @@ type Example = {
 }
 
 type ExampleEval = {
+   ex :: Example,
    e :: Expr 𝔹,
    t :: Expl 𝔹,
    o :: Val 𝔹
 }
 
 evalExample :: Example -> MayFail ExampleEval
-evalExample { ρ0, ρ, s } = do
+evalExample ex@{ ρ0, ρ, s } = do
    e <- desugarFwd s
    let ρ0ρ = ρ0 <> ρ
    t × o <- eval ρ0ρ e
-   pure { e, t, o }
+   pure { ex, e, t, o }
 
 varView :: Var × Slice (Val 𝔹) -> View
 varView (x × uv) = view x uv
@@ -127,13 +128,12 @@ valViews (o' × o) (ρ' × ρ) vars = do
    pure $ views <> [ view "output" (o' × o) ]
 
 -- For an output selection, views of corresponding input selections.
-needs :: Val 𝔹 -> Example -> Array Var -> MayFail (Array View)
-needs o' { ρ0, ρ, s } vars = do
-   { e, o, t } <- evalExample { ρ0, ρ, s }
+needs :: Val 𝔹 -> ExampleEval -> Array Var -> MayFail (Array View)
+needs o' { ex, e, o, t } vars = do
    let ρ0ρ' × e × α = evalBwd o' t
-       ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
+       ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
-   views <- valViews (o' × o) (ρ0ρ' × (ρ0 <> ρ)) vars 
+   views <- valViews (o' × o) (ρ0ρ' × (ex.ρ0 <> ex.ρ)) vars 
    pure $ views <> [ view "output" (o'' × o) ]
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
@@ -155,7 +155,9 @@ loadFig { divId, file, vars } = do
    -- TODO: not every example should run with this dataset.
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   let views = successful (needs (selectCell 2 2 5 5) { ρ0, ρ: ρ <> ρ1, s } vars)
+   let views = successful $ do
+         ex <- evalExample { ρ0, ρ: ρ <> ρ1, s }
+         needs (selectCell 2 2 5 5) ex vars
    pure { divId, views }
 
 loadLinkingFig :: LinkingFigSpec -> Aff Fig
