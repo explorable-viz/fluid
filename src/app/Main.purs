@@ -8,7 +8,7 @@ import Effect.Aff (runAff_)
 import Effect.Console (log)
 import App.Renderer (FigSpec, LinkingFigSpec, drawFig, loadFig, loadLinkingFig)
 import Module (File(..))
-import Test.Util (selectBarChart_data, selectCell, selectNth, select_y)
+import Test.Util (selectBarChart_data, selectNth, select_y)
 
 
 linkingFig1 :: LinkingFigSpec
@@ -27,10 +27,7 @@ fig1 :: FigSpec
 fig1 = {
    divId: "fig-conv-1",
    file: File "slicing/conv-emboss",
-   needsSpec: {
-      vars: ["image", "filter"],
-      o': selectCell 2 2 5 5
-   }
+   vars: ["image", "filter"]
 }
 
 main :: Effect Unit

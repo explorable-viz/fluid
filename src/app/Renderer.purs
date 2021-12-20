@@ -29,7 +29,7 @@ import Lattice (𝔹, botOf, expand)
 import Module (File(..), open, openDatasetAs)
 import Primitive (Slice, match, match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (LinkConfig, doLink)
+import Test.Util (LinkConfig, doLink, selectCell)
 import Util (Endo, MayFail, type (×), type (+), (×), absurd, error, successful)
 import Util.SnocList (splitAt)
 import Val (Env, Val)
@@ -127,8 +127,8 @@ valViews o { vars, o' } (ρ' × ρ) = do
    pure $ views <> [ view "output" (o' × o) ]
 
 type NeedsSpec = {
-   vars  :: Array Var,  -- variables we want views for
-   o' :: Val 𝔹          -- selection on output
+   vars :: Array Var,  -- variables we want views for
+   o' :: Val 𝔹         -- selection on output
 }
 
 needs :: NeedsSpec -> Example -> MayFail (Array View)
@@ -146,7 +146,7 @@ selectOnly xv ρ = update (botOf ρ) xv
 type FigSpec = {
    divId :: HTMLId,
    file :: File,
-   needsSpec :: NeedsSpec
+   vars :: Array Var  -- variables we consider to be "inputs"
 }
 
 type LinkingFigSpec = {
@@ -156,10 +156,10 @@ type LinkingFigSpec = {
 
 -- TODO: not every example should run with this dataset.
 loadFig :: FigSpec -> Aff Fig
-loadFig { divId, file, needsSpec } = do
+loadFig { divId, file, vars } = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   let views = successful (needs needsSpec { ρ0, ρ: ρ <> ρ1, s })
+   let views = successful (needs { vars, o': selectCell 2 2 5 5 } { ρ0, ρ: ρ <> ρ1, s })
    pure { divId, views }
 
 loadLinkingFig :: LinkingFigSpec -> Aff Fig
