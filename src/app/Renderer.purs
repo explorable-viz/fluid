@@ -126,7 +126,7 @@ valViews (o' × o) (ρ' × ρ) vars = do
    views <- sequence (flip varView' (ρ' × ρ) <$> vars)
    pure $ views <> [ view "output" (o' × o) ]
 
--- First argument is selection on output
+-- For an output selection, views of corresponding input selections.
 needs :: Val 𝔹 -> Example -> Array Var -> MayFail (Array View)
 needs o' { ρ0, ρ, s } vars = do
    { e, o, t } <- evalExample { ρ0, ρ, s }
