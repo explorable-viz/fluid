@@ -117,6 +117,15 @@ drawFig fig@{ divId, views } = do
    sequence_ $ 
       uncurry (drawView divId (\o' -> drawFig fig)) <$> zip (range 0 (length views - 1)) views
 
+drawFig' :: Fig' -> Val 𝔹 -> Effect Unit
+drawFig' fig o' = do
+   let divId = fig.spec.divId
+   log $ "Redrawing " <> divId
+   let { views } = successful $ needs' fig o'
+   sequence_ $ 
+      uncurry (drawView divId (\selector -> drawFig' fig (selector o'))) <$> 
+         zip (range 0 (length views - 1)) views
+
 evalExample :: Example -> MayFail ExampleEval
 evalExample ex@{ ρ0, ρ, s } = do
    e <- desugarFwd s

@@ -9,7 +9,7 @@ import Web.Event.EventTarget (EventTarget)
 import App.Util (Handler, Renderer)
 import Lattice (𝔹)
 import Primitive (Slice, match_fwd)
-import Util (type (×), (×), (!), absurd, fromJust)
+import Util (type (×), (×), (!), absurd, error, fromJust)
 import Test.Util (selectCell)
 import Val (Val(..), Array2, MatrixRep)
 
@@ -36,5 +36,6 @@ matrixViewHandler redraw ev =
 
       i × j = unsafePos $ target ev
 
-      selectCell' :: Partial => Val 𝔹 -> Val 𝔹
+      selectCell' :: Val 𝔹 -> Val 𝔹
       selectCell' (Matrix _ (_ × (h × _) × (w × _))) = selectCell i j h w
+      selectCell' _ = error absurd
