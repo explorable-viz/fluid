@@ -19,7 +19,8 @@ import Val (Val(..)) as V
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
-type Handler = (Unit -> Effect Unit) -> Event -> Effect Unit
+type Redraw = Unit -> Effect Unit
+type Handler = Redraw -> Event -> Effect Unit
 
 get_prim :: forall a . ToFrom a => Var -> Slice (Bindings (Val 𝔹)) -> a × 𝔹
 get_prim x = match_fwd <<< get x
