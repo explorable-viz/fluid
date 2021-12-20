@@ -121,7 +121,7 @@ drawFig' :: Fig' -> Val 𝔹 -> Effect Unit
 drawFig' fig o' = do
    let divId = fig.spec.divId
    log $ "Redrawing " <> divId
-   let { views } = successful $ needs' fig o'
+   let views = successful $ needs' fig o'
    sequence_ $ 
       uncurry (drawView divId (\selector -> drawFig' fig (selector o'))) <$> 
          zip (range 0 (length views - 1)) views
@@ -156,13 +156,13 @@ needs { ex, e, o, t } o' vars = do
    views <- valViews (o' × o) (ρ0ρ' × (ex.ρ0 <> ex.ρ)) vars 
    pure $ views <> [ view "output" (o'' × o) ]
 
-needs' :: Fig' -> Val 𝔹 -> MayFail FigState
+needs' :: Fig' -> Val 𝔹 -> MayFail (Array View)
 needs' fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
    let ρ0ρ' × e × α = evalBwd o' t
        ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
    views <- valViews (o' × o) (ρ0ρ' × (ex.ρ0 <> ex.ρ)) spec.vars 
-   pure $ { fig, views: views <> [ view "output" (o'' × o) ] }
+   pure $ views <> [ view "output" (o'' × o) ]
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
