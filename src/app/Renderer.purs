@@ -145,16 +145,6 @@ type NeededBySpec = {
    ρ'       :: Env 𝔹         -- selection on local env
 }
 
-neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array View)
-neededBy { vars, ρ' } { ρ0, ρ, s } = do
-   { e, o, t } <- evalExample { ρ0, ρ, s }
-   let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e) true t)
-       ρ0'ρ'' = neg (fst (fst (evalBwd (neg o') t)))
-       ρ0' × ρ'' = splitAt (length ρ) ρ0'ρ''
-   views <- valViews o { vars, o' } (ρ' × ρ)
-   views' <- sequence (flip varView' (ρ'' × ρ) <$> vars)
-   pure $ unit × (views <> views')
-
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
