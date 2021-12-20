@@ -6,10 +6,9 @@ import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
-import App.Renderer (Fig, Fig', FigSpec, LinkingFigSpec, drawFig, drawFig', loadFig, loadLinkingFig)
+import App.Renderer (Fig, Fig', FigSpec, LinkingFigSpec, drawFig, drawFig', loadFig', loadLinkingFig)
 import Module (File(..))
 import Test.Util (selectBarChart_data, selectCell, selectNth, select_y)
---import Val (Val(..))
 
 linkingFig1 :: LinkingFigSpec
 linkingFig1 = {
@@ -46,6 +45,6 @@ drawFigs' loadFigs =
 
 main :: Effect Unit
 main = do
-   drawFigs [loadFig fig1]
---   drawFigs' [loadFig' fig1]
+--   drawFigs [loadFig fig1]
+   drawFigs' [loadFig' fig1]
    drawFigs [loadLinkingFig linkingFig1]
