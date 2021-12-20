@@ -103,10 +103,9 @@ varView :: Var × Slice (Val 𝔹) -> View
 varView (x × uv) = view x uv
 
 type ExampleEval = {
-   e     :: Expr 𝔹,
-   ρ0ρ   :: Env 𝔹,
-   t     :: Expl 𝔹,
-   o     :: Val 𝔹
+   e :: Expr 𝔹,
+   t :: Expl 𝔹,
+   o :: Val 𝔹
 }
 
 evalExample :: Example -> MayFail ExampleEval
@@ -114,7 +113,7 @@ evalExample { ρ0, ρ, s } = do
    e <- desugarFwd s
    let ρ0ρ = ρ0 <> ρ
    t × o <- eval ρ0ρ e
-   pure { e, ρ0ρ, t, o }
+   pure { e, t, o }
 
 varView' :: Var -> Slice (Env 𝔹) -> MayFail View
 varView' x (ρ' × ρ) = do
@@ -134,11 +133,11 @@ type NeedsSpec = {
 
 needs :: NeedsSpec -> Example -> MayFail (Array View)
 needs spec { ρ0, ρ, s } = do
-   { e, o, t, ρ0ρ } <- evalExample { ρ0, ρ, s }
+   { e, o, t } <- evalExample { ρ0, ρ, s }
    let ρ0ρ' × e × α = evalBwd spec.o' t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
-   views <- valViews o spec (ρ0ρ' × ρ0ρ)
+   views <- valViews o spec (ρ0ρ' × (ρ0 <> ρ))
    pure $ views <> [ view "output" (o'' × o) ]
 
 type NeededBySpec = {
@@ -148,7 +147,7 @@ type NeededBySpec = {
 
 neededBy :: NeededBySpec -> Example -> MayFail (Unit × Array View)
 neededBy { vars, ρ' } { ρ0, ρ, s } = do
-   { e, o, t, ρ0ρ } <- evalExample { ρ0, ρ, s }
+   { e, o, t } <- evalExample { ρ0, ρ, s }
    let o' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e) true t)
        ρ0'ρ'' = neg (fst (fst (evalBwd (neg o') t)))
        ρ0' × ρ'' = splitAt (length ρ) ρ0'ρ''
@@ -174,8 +173,8 @@ type LinkingFigSpec = {
 fig :: FigSpec -> Aff Fig
 fig { divId, file, needsSpec } = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
-   { ρ: ρ1, s: s1 } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   let subfigs = successful (needs needsSpec { ρ0, ρ: ρ <> ρ1, s: s1 })
+   { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
+   let subfigs = successful (needs needsSpec { ρ0, ρ: ρ <> ρ1, s })
    pure { divId, subfigs }
 
 linkingFig :: LinkingFigSpec -> Aff Fig
