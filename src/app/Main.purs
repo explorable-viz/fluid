@@ -6,7 +6,7 @@ import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
 import Effect.Aff (runAff_)
 import Effect.Console (log)
-import App.Renderer (FigSpec, LinkingFigSpec, drawFig, fig, linkingFig)
+import App.Renderer (FigSpec, LinkingFigSpec, drawFig, loadFig, loadLinkingFig)
 import Module (File(..))
 import Test.Util (selectBarChart_data, selectCell, selectNth, select_y)
 
@@ -35,7 +35,7 @@ fig1 = {
 
 main :: Effect Unit
 main = 
-   flip runAff_ (sequence [fig fig1, linkingFig linkingFig1])
+   flip runAff_ (sequence [loadFig fig1, loadLinkingFig linkingFig1])
    case _ of
       Left err -> log $ show err
       Right figs -> sequence_ $ drawFig <$> figs

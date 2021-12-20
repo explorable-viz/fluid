@@ -35,17 +35,6 @@ import Util.SnocList (splitAt)
 import Val (Env, Val)
 import Val (Val(..)) as V
 
-type Fig = {
-   divId :: HTMLId,
-   views :: Array View
-}
-
-drawFig :: Fig -> Effect Unit
-drawFig fig'@{ divId, views } = do
-   log $ "Drawing " <> divId
-   sequence_ $ 
-      uncurry (drawView divId (const $ drawFig fig')) <$> zip (range 0 (length views - 1)) views
-
 data View =
    MatrixFig MatrixView |
    EnergyTableView EnergyTable |
@@ -53,10 +42,21 @@ data View =
    BarChartFig BarChart
 
 drawView :: HTMLId -> (Unit -> Effect Unit) -> Int -> View -> Effect Unit
-drawView divId redraw n (MatrixFig fig') = drawMatrix divId n fig' =<< eventListener (matrixViewHandler redraw)
-drawView divId redraw n (EnergyTableView fig') = drawTable divId n fig' =<< eventListener (tableViewHandler redraw)
-drawView divId redraw n (LineChartFig fig') = drawLineChart divId n fig' =<< eventListener (lineChartHandler redraw)
-drawView divId redraw n (BarChartFig fig') = drawBarChart divId n fig' =<< eventListener (barChartHandler redraw)
+drawView divId redraw n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (matrixViewHandler redraw)
+drawView divId redraw n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (tableViewHandler redraw)
+drawView divId redraw n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (lineChartHandler redraw)
+drawView divId redraw n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (barChartHandler redraw)
+
+type Fig = {
+   divId :: HTMLId,
+   views :: Array View
+}
+
+drawFig :: Fig -> Effect Unit
+drawFig fig@{ divId, views } = do
+   log $ "Drawing " <> divId
+   sequence_ $ 
+      uncurry (drawView divId (const $ drawFig fig)) <$> zip (range 0 (length views - 1)) views
 
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 -- 'from' is partial; encapsulate that here.
@@ -155,15 +155,15 @@ type LinkingFigSpec = {
 }
 
 -- TODO: not every example should run with this dataset.
-fig :: FigSpec -> Aff Fig
-fig { divId, file, needsSpec } = do
+loadFig :: FigSpec -> Aff Fig
+loadFig { divId, file, needsSpec } = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
    let views = successful (needs needsSpec { ρ0, ρ: ρ <> ρ1, s })
    pure { divId, views }
 
-linkingFig :: LinkingFigSpec -> Aff Fig
-linkingFig { divId, config } = do
+loadLinkingFig :: LinkingFigSpec -> Aff Fig
+loadLinkingFig { divId, config } = do
    link <- doLink config
    pure { divId, views: [
       view "primary view" (config.v1_sel × link.v1),
