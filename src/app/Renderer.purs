@@ -101,6 +101,17 @@ type Fig r = {
    | r
 }
 
+type FigSpec = {
+   divId :: HTMLId,
+   file :: File,
+   vars :: Array Var -- variables to be considered "inputs"
+}
+
+type LinkingFigSpec = {
+   divId :: HTMLId,
+   config :: LinkConfig
+}
+
 type Fig' = {
    spec :: FigSpec,
    ex_eval :: ExampleEval
@@ -167,17 +178,6 @@ needs' fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
-type FigSpec = {
-   divId :: HTMLId,
-   file :: File,
-   vars :: Array Var -- variables to be considered "inputs"
-}
-
-type LinkingFigSpec = {
-   divId :: HTMLId,
-   config :: LinkConfig
-}
-
 loadFig :: FigSpec -> Aff (Fig (ex :: ExampleEval))
 loadFig { divId, file, vars } = do
    -- TODO: not every example should run with this dataset.
@@ -189,14 +189,12 @@ loadFig { divId, file, vars } = do
          pure (ex × views)
    pure { divId, views, ex }
 
-loadFig' :: FigSpec -> Aff FigState
+loadFig' :: FigSpec -> Aff Fig'
 loadFig' spec@{ divId, file, vars } = do
    -- TODO: not every example should run with this dataset.
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   pure $ successful do
-      ex_eval <- evalExample { ρ0, ρ: ρ <> ρ1, s }
-      needs' { spec, ex_eval } (selectCell 2 2 5 5)
+   pure { spec, ex_eval: successful $ evalExample { ρ0, ρ: ρ <> ρ1, s } }
 
 loadLinkingFig :: LinkingFigSpec -> Aff (Fig ())
 loadLinkingFig { divId, config } = do
