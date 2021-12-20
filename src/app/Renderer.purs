@@ -156,8 +156,10 @@ loadFig { divId, file, vars } = do
    -- TODO: not every example should run with this dataset.
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   let ex = successful $ evalExample { ρ0, ρ: ρ <> ρ1, s }
-       views = successful $ needs ex (selectCell 2 2 5 5) vars
+   let ex × views = successful do
+         ex <- evalExample { ρ0, ρ: ρ <> ρ1, s }
+         views <- needs ex (selectCell 2 2 5 5) vars
+         pure (ex × views)
    pure { divId, views, ex }
 
 loadLinkingFig :: LinkingFigSpec -> Aff (Fig ())

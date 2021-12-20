@@ -3,7 +3,6 @@ module App.MatrixView where
 import Prelude hiding (absurd)
 import Data.Array (zip, zipWith)
 import Data.Maybe (Maybe)
-import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
@@ -25,16 +24,17 @@ matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
    ((<$>) ((<$>) match_fwd)) (zipWith zip vss uss) × i × j
 
 matrixViewHandler :: Handler
-matrixViewHandler redraw ev = do
-   log $ show $ unsafePos $ target ev
-   redraw unit
+matrixViewHandler redraw ev =
+   redraw selectCell'
+   where
+      -- (unsafe) the datum associated with a matrix view mouse event.
+      unsafePos :: Maybe EventTarget -> Int × Int
+      unsafePos tgt_opt =
+         let tgt = fromJust absurd $ tgt_opt 
+             xy = (unsafeCoerce tgt).__data__!0 :: Array Int 
+         in xy!0 × xy!1
 
--- (unsafe) the datum associated with a matrix view mouse event.
-unsafePos :: Maybe EventTarget -> Int × Int
-unsafePos tgt_opt =
-   let tgt = fromJust absurd $ tgt_opt in 
-   let xy = (unsafeCoerce tgt).__data__!0 :: Array Int 
-   in xy!0 × xy!1
+      i × j = unsafePos $ target ev
 
-wurble :: Partial => Int × Int -> Val 𝔹 -> Slice (Val 𝔹)
-wurble (i × j) v@(Matrix _ (_ × (h × _) × (w × _))) = v × selectCell i j h w
+      selectCell' :: Partial => Val 𝔹 -> Val 𝔹
+      selectCell' (Matrix _ (_ × (h × _) × (w × _))) = selectCell i j h w
