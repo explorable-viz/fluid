@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
+import Data.Tuple (fst)
 import DataType (cLinePlot)
 import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
@@ -51,7 +52,7 @@ lineChartHandler :: Handler
 lineChartHandler redraw ev = do
    let Point xy = unsafePoint (target ev)
    log $ show xy
-   redraw identity
+   redraw fst
 
 -- (unsafe) the datum associated with a line chart mouse event.
 unsafePoint :: Maybe EventTarget -> Point

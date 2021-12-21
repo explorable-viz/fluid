@@ -1,6 +1,7 @@
 module App.TableView where
 
 import Prelude
+import Data.Tuple (fst)
 import Effect.Console (log)
 import Bindings (Bindings)
 import App.Util (Handler, Renderer, get_intOrNumber, get_prim)
@@ -27,4 +28,4 @@ energyRecord r = {
 tableViewHandler :: Handler
 tableViewHandler redraw ev = do
    log $ show "tableViewHandler"
-   redraw identity
+   redraw fst
