@@ -67643,7 +67643,6 @@ var PS = {};
   var exports = $PS["App.BarChart"];
   var $foreign = $PS["App.BarChart"];
   var App_Util = $PS["App.Util"];
-  var Control_Category = $PS["Control.Category"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_Show = $PS["Data.Show"];
   var Data_Symbol = $PS["Data.Symbol"];
@@ -67684,7 +67683,7 @@ var PS = {};
         }))(Data_Show.showRecordFieldsCons(new Data_Symbol.IsSymbol(function () {
           return "y";
         }))(Data_Show.showRecordFieldsNil)(Data_Tuple.showTuple(Data_Show.showNumber)(Data_Show.showBoolean)))(Data_Tuple.showTuple(Data_Show.showString)(Data_Show.showBoolean))))(v))();
-        return redraw(Control_Category.identity(Control_Category.categoryFn))();
+        return redraw(Data_Tuple.fst)();
       };
     };
   };
@@ -67816,7 +67815,6 @@ var PS = {};
   var exports = $PS["App.LineChart"];
   var $foreign = $PS["App.LineChart"];
   var App_Util = $PS["App.Util"];
-  var Control_Category = $PS["Control.Category"];
   var Data_Eq = $PS["Data.Eq"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_List_Types = $PS["Data.List.Types"];
@@ -67862,11 +67860,11 @@ var PS = {};
         }
 
         ;
-        throw new Error("Failed pattern match at App.LineChart (line 47, column 7 - line 48, column 58): " + [v2.constructor.name]);
+        throw new Error("Failed pattern match at App.LineChart (line 48, column 7 - line 49, column 58): " + [v2.constructor.name]);
       }
 
       ;
-      throw new Error("Failed pattern match at App.LineChart (line 45, column 1 - line 48, column 58): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.LineChart (line 46, column 1 - line 49, column 58): " + [v.constructor.name]);
     };
   });
   var reflectLineChart = new App_Util["Reflect"](function (dictPartial) {
@@ -67887,7 +67885,7 @@ var PS = {};
         }))(Data_Show.showRecordFieldsCons(new Data_Symbol.IsSymbol(function () {
           return "y";
         }))(Data_Show.showRecordFieldsNil)(Data_Tuple.showTuple(Data_Show.showNumber)(Data_Show.showBoolean)))(Data_Tuple.showTuple(Data_Show.showNumber)(Data_Show.showBoolean))))(v))();
-        return redraw(Control_Category.identity(Control_Category.categoryFn))();
+        return redraw(Data_Tuple.fst)();
       };
     };
   };
@@ -67947,9 +67945,7 @@ var PS = {};
             n = _ref9[1];
 
         return n.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected';
-      }).attr('stroke-width', strokeWidth).on('mouseover', function (e, d) {
-        return listener(e);
-      });
+      }).attr('stroke-width', strokeWidth);
       rect.append('text').text(function (_ref10) {
         var _ref11 = _slicedToArray(_ref10, 2),
             n = _ref11[1];
@@ -67957,8 +67953,12 @@ var PS = {};
         return n.value0;
       }).attr('x', function (_, j) {
         return w * (j + 0.5);
-      }).attr('y', 0.5 * h).attr('class', 'matrix-cell-text').attr('text-anchor', 'middle').attr('dominant-baseline', 'middle');
+      }).attr('y', 0.5 * h).attr('class', 'matrix-cell-text').attr('text-anchor', 'middle').attr('dominant-baseline', 'middle').attr('pointer-events', 'none');
       svg.append('text').text(title).attr('x', hMargin / 2).attr('y', vMargin / 2).attr('class', 'title-text').attr('dominant-baseline', 'middle').attr('text-anchor', 'left');
+      svg.selectAll('rect').on('mousedown', function (e, d) {
+        console.log("mousedown ".concat(d));
+        listener(e);
+      });
     };
   }
 
@@ -70457,7 +70457,9 @@ var PS = {};
   var $foreign = $PS["App.MatrixView"];
   var Data_Array = $PS["Data.Array"];
   var Data_Functor = $PS["Data.Functor"];
+  var Data_Show = $PS["Data.Show"];
   var Data_Tuple = $PS["Data.Tuple"];
+  var Effect_Console = $PS["Effect.Console"];
   var Primitive = $PS["Primitive"];
   var Test_Util = $PS["Test.Util"];
   var Util = $PS["Util"];
@@ -70475,15 +70477,18 @@ var PS = {};
       var v = unsafePos(Web_Event_Event.target(ev));
 
       var selectCell$prime = function selectCell$prime(v1) {
-        if (v1 instanceof Val.Matrix) {
-          return Test_Util.selectCell(v.value0)(v.value1)(v1.value1.value0.value1.value0)(v1.value1.value1.value0);
+        if (v1.value1 instanceof Val.Matrix) {
+          return Test_Util.selectCell(v.value0)(v.value1)(v1.value1.value1.value0.value1.value0)(v1.value1.value1.value1.value0);
         }
 
         ;
         return Util.error(Util.absurd);
       };
 
-      return redraw(selectCell$prime);
+      return function __do() {
+        Effect_Console.log("Selecting cell " + (Data_Show.show(Data_Show.showInt)(v.value0) + (", " + Data_Show.show(Data_Show.showInt)(v.value1))))();
+        return redraw(selectCell$prime)();
+      };
     };
   };
 
@@ -70560,8 +70565,8 @@ var PS = {};
   var exports = $PS["App.TableView"];
   var $foreign = $PS["App.TableView"];
   var App_Util = $PS["App.Util"];
-  var Control_Category = $PS["Control.Category"];
   var Data_Show = $PS["Data.Show"];
+  var Data_Tuple = $PS["Data.Tuple"];
   var Effect_Console = $PS["Effect.Console"];
   var Primitive = $PS["Primitive"];
 
@@ -70569,7 +70574,7 @@ var PS = {};
     return function (ev) {
       return function __do() {
         Effect_Console.log(Data_Show.show(Data_Show.showString)("tableViewHandler"))();
-        return redraw(Control_Category.identity(Control_Category.categoryFn))();
+        return redraw(Data_Tuple.fst)();
       };
     };
   };
@@ -70907,7 +70912,7 @@ var PS = {};
         Effect_Console.log("Redrawing " + fig.spec.divId)();
         var views = Util.successful(needs(fig)(o$prime));
         return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Tuple.uncurry(drawView(fig.spec.divId)(function (selector) {
-          return drawFig$prime(fig)(selector(o$prime));
+          return drawFig$prime(fig)(selector(new Data_Tuple.Tuple(o$prime, fig.ex_eval.o)));
         })))(Data_Array.zip(Data_Array.range(0)(Data_Foldable.length(Data_Foldable.foldableArray)(Data_Semiring.semiringInt)(views) - 1 | 0))(views)))();
       };
     };
@@ -71011,4 +71016,4 @@ var PS = {};
 
 PS["App.Main"].main();
 },{"d3":"BG5c","d3-tip":"TLCm","/src/app/Shared":"Ad6u","process":"g5I+"}]},{},["m8nE"], null)
-//# sourceMappingURL=/develop/app.272f00f9.js.map
+//# sourceMappingURL=/develop/app.bafd7588.js.map
