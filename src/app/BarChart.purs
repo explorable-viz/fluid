@@ -2,6 +2,7 @@ module App.BarChart where
 
 import Prelude hiding (absurd)
 import Data.Maybe (Maybe)
+import Data.Tuple (fst)
 import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
@@ -34,7 +35,7 @@ barChartHandler :: Handler
 barChartHandler redraw ev = do
    let BarChartRecord xy = unsafeBarChartRecord (target ev)
    log $ show xy
-   redraw identity
+   redraw fst
 
 -- (unsafe) the datum associated with a bar chart mouse event.
 unsafeBarChartRecord :: Maybe EventTarget -> BarChartRecord

@@ -134,7 +134,7 @@ drawFig' fig o' = do
    log $ "Redrawing " <> divId
    let views = successful $ needs fig o'
    sequence_ $ 
-      uncurry (drawView divId (\selector -> drawFig' fig (selector o'))) <$> 
+      uncurry (drawView divId (\selector -> drawFig' fig (selector (o' × fig.ex_eval.o)))) <$> 
          zip (range 0 (length views - 1)) views
 
 evalExample :: Example -> MayFail ExampleEval

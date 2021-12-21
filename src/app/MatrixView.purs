@@ -36,6 +36,6 @@ matrixViewHandler redraw ev =
 
       i × j = unsafePos $ target ev
 
-      selectCell' :: Val 𝔹 -> Val 𝔹
-      selectCell' (Matrix _ (_ × (h × _) × (w × _))) = selectCell i j h w
+      selectCell' :: Slice (Val 𝔹) -> Val 𝔹
+      selectCell' (_ × Matrix _ (_ × (h × _) × (w × _))) = selectCell i j h w
       selectCell' _ = error absurd
