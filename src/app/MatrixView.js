@@ -52,10 +52,7 @@ function drawMatrix (
          .attr('height', h)
          .attr('class', ([, n]) => n.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected')
          .attr('stroke-width', strokeWidth)
-         .on('mouseover', (e, d) =>
-            listener(e)
-         )
-
+         
       rect
          .append('text')
          .text(([, n]) => n.value0)
@@ -64,6 +61,7 @@ function drawMatrix (
          .attr('class', 'matrix-cell-text')
          .attr('text-anchor', 'middle')
          .attr('dominant-baseline', 'middle')
+         .attr('pointer-events', 'none')
 
       svg.append('text')
          .text(title)
@@ -72,6 +70,12 @@ function drawMatrix (
          .attr('class', 'title-text')
          .attr('dominant-baseline', 'middle')
          .attr('text-anchor', 'left')
+
+      svg.selectAll('rect')
+         .on('mousedown', (e, d) => {
+            console.log(`mousedown ${d}`)
+            listener(e)
+         })
    }
 }
 

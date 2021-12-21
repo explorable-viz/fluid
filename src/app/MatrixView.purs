@@ -3,6 +3,7 @@ module App.MatrixView where
 import Prelude hiding (absurd)
 import Data.Array (zip, zipWith)
 import Data.Maybe (Maybe)
+import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
@@ -24,7 +25,8 @@ matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
    ((<$>) ((<$>) match_fwd)) (zipWith zip vss uss) × i × j
 
 matrixViewHandler :: Handler
-matrixViewHandler redraw ev =
+matrixViewHandler redraw ev = do
+   log $ "Selecting cell " <> show i <> ", " <> show j
    redraw selectCell'
    where
       -- (unsafe) the datum associated with a matrix view mouse event.
