@@ -11,7 +11,6 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
 import Partial.Unsafe (unsafePartial)
-import Web.Event.Event (Event)
 import Web.Event.EventTarget (eventListener)
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
@@ -44,7 +43,7 @@ data View =
 
 drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
 drawView divId redraw n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (redraw <<< matrixViewHandler)
-drawView divId redraw n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (tableViewHandler redraw)
+drawView divId redraw n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (redraw <<< tableViewHandler)
 drawView divId redraw n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (lineChartHandler redraw)
 drawView divId redraw n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (barChartHandler redraw)
 
