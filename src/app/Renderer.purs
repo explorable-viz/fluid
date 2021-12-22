@@ -16,7 +16,7 @@ import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
-import App.Util (HTMLId, OnSel, from, record)
+import App.Util (HTMLId, OnSel, doNothing, from, record)
 import Bindings (Bind, Var, find, update)
 import DataType (cBarChart, cCons, cLineChart, cNil)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
@@ -132,19 +132,19 @@ drawFig' :: Fig' -> Val 𝔹 -> Effect Unit
 drawFig' fig o' = do
    let divId = fig.spec.divId
    log $ "Redrawing " <> divId
-   let views = successful $ needs fig o'
+   let o_view × i_views = successful $ needs fig o'
    sequence_ $ 
-      uncurry (drawView divId (\selector -> drawFig' fig (selector (o' × fig.ex_eval.o)))) <$> 
-         zip (range 0 (length views - 1)) views
+      uncurry (drawView divId doNothing) <$> zip (range 0 (length i_views - 1)) i_views
+   drawView divId (\selector -> drawFig' fig (selector (o' × fig.ex_eval.o))) (length i_views) o_view
 
 -- For an output selection, views of corresponding input selections.
-needs :: Fig' -> Val 𝔹 -> MayFail (Array View)
+needs :: Fig' -> Val 𝔹 -> MayFail (View × Array View)
 needs fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
    let ρ0ρ' × e × α = evalBwd o' t
        ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
    views <- valViews (ρ0ρ' × (ex.ρ0 <> ex.ρ)) spec.vars 
-   pure $ views <> [ view "output" (o'' × o) ]
+   pure $ view "output" (o'' × o) × views
 
 evalExample :: Example -> MayFail ExampleEval
 evalExample ex@{ ρ0, ρ, s } = do
