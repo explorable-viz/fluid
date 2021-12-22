@@ -64,7 +64,7 @@ function drawBarChart (
       // bars
       const barFill = '#dcdcdc'
       svg.selectAll('rect')
-         .data([...data_.entries()])
+         .data([...data_.entries()].map(([i, ns]) => [i + 1, ns]))
          .enter()
          .append('rect')
             .attr('x', ([, d]) => x(d.x.value0))
