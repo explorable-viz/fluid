@@ -32,7 +32,7 @@ function drawMatrix (
       // group for each row
       const grp = svg
          .selectAll('g')
-         .data([...nss.entries()])
+         .data([...nss.entries()].map(([i, ns]) => [i + 1, ns]))
          .enter()
          .append('g')
          .attr(
@@ -42,7 +42,7 @@ function drawMatrix (
 
       const rect = grp
          .selectAll('rect')
-         .data(([i, ns]) => [...ns.entries()].map(([j, n]) => [[i + 1, j + 1], n]))
+         .data(([i, ns]) => [...ns.entries()].map(([j, n]) => [[i, j + 1], n]))
          .enter()
 
       rect
