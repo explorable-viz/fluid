@@ -10,7 +10,7 @@ import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Bindings (Var, find)
+import App.Renderer (LinkingConfig, doLink)
 import DataType (dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
@@ -20,11 +20,10 @@ import EvalFwd (evalFwd)
 import Expl (Expl)
 import Expr (Expr(..)) as E
 import SExpr (Expr) as S
-import Lattice (Slice, 𝔹, botOf, neg)
+import Lattice (𝔹, botOf)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import Util (MayFail, type (×), (×), successful)
-import Util.SnocList (splitAt)
 import Val (Env, Val(..))
 
 -- Don't enforce expected values for graphics tests (values too complex).
@@ -78,46 +77,7 @@ testBwd file file_expect v expected =
        file' = folder <> file in
    testWithSetup file' expected (Just (v × (folder <> file_expect))) (openWithDefaultImports file')
 
-type LinkConfig = {
-   file1 :: File,
-   file2 :: File,
-   dataFile :: File,
-   dataVar :: Var,
-   v1_sel :: Val 𝔹
-}
-
-type LinkResult = {
-   v1 :: Val 𝔹,             -- original value of view 1
-   v2 :: Slice (Val 𝔹),
-   data_sel :: Slice (Val 𝔹)
-}
-
-doLink :: LinkConfig -> Aff LinkResult
-doLink { file1, file2, dataFile, dataVar: x, v1_sel } = do
-   let dir = File "linking/"
-       name1 × name2 = (dir <> file1) × (dir <> file2)
-   -- the views share an ambient environment ρ0 as well as dataset
-   ρ0 × ρ <- openDatasetAs (File "example/" <> dir <> dataFile) x
-   s1 <- open name1
-   s2 <- open name2
-   pure $ successful do
-      e1 <- desugarFwd s1
-      e2 <- desugarFwd s2
-      t1 × v1 <- eval (ρ0 <> ρ) e1
-      t2 × v2 <- eval (ρ0 <> ρ) e2
-      let ρ0ρ × _ × _ = evalBwd v1_sel t1
-          _ × ρ' = splitAt 1 ρ0ρ
-      v <- find x ρ
-      v' <- find x ρ'
-      -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
-      -- combined with the negation of the dataset environment slice
-      pure {
-         v1: v1,
-         v2: neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2,
-         data_sel: v' × v
-      }
-
-testLink :: LinkConfig -> String -> Test Unit
+testLink :: LinkingConfig -> String -> Test Unit
 testLink config v2_expect =
    before (doLink config) $
       it ("linking/" <> show config.file1 <> " <-> " <> show config.file2)

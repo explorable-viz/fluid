@@ -17,7 +17,7 @@ import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
 import App.Util (HTMLId, OnSel, doNothing, from, record)
-import Bindings (Bind, Var, find, update)
+import Bindings (Var, find)
 import DataType (cBarChart, cCons, cLineChart, cNil)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Expl (Expl)
@@ -25,11 +25,10 @@ import Expr (Expr)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
-import Lattice (Slice, 𝔹, botOf, expand)
+import Lattice (Slice, 𝔹, botOf, neg, expand)
 import Module (File(..), open, openDatasetAs)
 import Primitive (match, match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Test.Util (LinkConfig, doLink)
 import Util (Endo, MayFail, type (×), type (+), (×), absurd, error, successful)
 import Util.SnocList (splitAt)
 import Val (Env, Val)
@@ -101,9 +100,17 @@ type FigSpec = {
    vars :: Array Var -- variables to be considered "inputs"
 }
 
+type LinkingConfig = {
+   file1 :: File,
+   file2 :: File,
+   dataFile :: File,
+   dataVar :: Var,
+   v1_sel :: Val 𝔹
+}
+
 type LinkingFigSpec = {
    divId :: HTMLId,
-   config :: LinkConfig
+   config :: LinkingConfig
 }
 
 type Fig = {
@@ -123,7 +130,7 @@ type FigState = {
 
 drawLinkingFig :: LinkingFig -> Effect Unit
 drawLinkingFig fig@{ divId, views } = do
-   log $ "Drawing " <> divId
+   log $ "Redrawing " <> divId
    sequence_ $ 
       uncurry (drawView divId (\o' -> drawLinkingFig fig)) <$> zip (range 0 (length views - 1)) views
 
@@ -164,8 +171,39 @@ varView' x (ρ' × ρ) = do
 valViews :: Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
 valViews (ρ' × ρ) vars = sequence (flip varView' (ρ' × ρ) <$> vars)
 
-selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
-selectOnly xv ρ = update (botOf ρ) xv
+-- selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
+-- selectOnly xv ρ = update (botOf ρ) xv
+
+type LinkingResult = {
+   v1 :: Val 𝔹,             -- original value of view 1
+   v2 :: Slice (Val 𝔹),
+   data_sel :: Slice (Val 𝔹)
+}
+
+doLink :: LinkingConfig -> Aff LinkingResult
+doLink { file1, file2, dataFile, dataVar: x, v1_sel } = do
+   let dir = File "linking/"
+       name1 × name2 = (dir <> file1) × (dir <> file2)
+   -- the views share an ambient environment ρ0 as well as dataset
+   ρ0 × ρ <- openDatasetAs (File "example/" <> dir <> dataFile) x
+   s1 <- open name1
+   s2 <- open name2
+   pure $ successful do
+      e1 <- desugarFwd s1
+      e2 <- desugarFwd s2
+      t1 × v1 <- eval (ρ0 <> ρ) e1
+      t2 × v2 <- eval (ρ0 <> ρ) e2
+      let ρ0ρ × _ × _ = evalBwd v1_sel t1
+          _ × ρ' = splitAt 1 ρ0ρ
+      v <- find x ρ
+      v' <- find x ρ'
+      -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
+      -- combined with the negation of the dataset environment slice
+      pure {
+         v1: v1,
+         v2: neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2,
+         data_sel: v' × v
+      }
 
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ divId, file, vars } = do
