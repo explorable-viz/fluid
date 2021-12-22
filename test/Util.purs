@@ -20,10 +20,9 @@ import EvalFwd (evalFwd)
 import Expl (Expl)
 import Expr (Expr(..)) as E
 import SExpr (Expr) as S
-import Lattice (𝔹, botOf, neg)
+import Lattice (Slice, 𝔹, botOf, neg)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
-import Primitive (Slice)
 import Util (MayFail, type (×), (×), successful)
 import Util.SnocList (splitAt)
 import Val (Env, Val(..))

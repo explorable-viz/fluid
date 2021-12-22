@@ -9,26 +9,22 @@ import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import Bindings (Bind)
 import DataType (cFalse, cPair, cTrue)
-import Lattice (𝔹, (∧), expand)
+import Lattice (Slice, 𝔹, (∧), expand)
 import Pretty (prettyP)
 import Util (Endo, type (×), (×), type (+), error)
 import Util.SnocList (SnocList)
 import Val (PrimOp(..), Val(..))
 
--- A pair used idiomatically to represent a slice. First component is actual slice; second is original (unsliced)
--- value to allow for hole-expansion.
-type Slice a = a × a
-
 -- Mediates between Val and underlying data, analogously to pattern-matching and construction for data types.
 class ToFrom a where
    constr :: a × 𝔹 -> Val 𝔹
-   constr_bwd :: Val 𝔹 × Val 𝔹 -> a × 𝔹   -- equivalent to match_fwd (except at Val)
+   constr_bwd :: Slice(Val 𝔹) -> a × 𝔹    -- equivalent to match_fwd (except at Val)
    match :: Val 𝔹 -> a × 𝔹                -- only defined for non-holes (except at Val)
 
 unwrap :: forall a . ToFrom a => Val 𝔹 -> a
 unwrap = match >>> fst
 
-match_fwd :: forall a . ToFrom a => Val 𝔹 × Val 𝔹 -> a × 𝔹
+match_fwd :: forall a . ToFrom a => Slice (Val 𝔹) -> a × 𝔹
 match_fwd (v × v') = match (expand v v')
 
 match_bwd :: forall a . ToFrom a => a × 𝔹 -> Val 𝔹

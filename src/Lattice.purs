@@ -145,3 +145,7 @@ instance expandableMap :: (Ord k, Expandable (t a)) => Expandable (Map k (t a)) 
       where
       expandValue (k × x) (_ × x') = k × expand x x'
       | otherwise          = error "Mismatched keys"
+
+-- A pair used idiomatically to represent a slice. First component is actual slice; second is original (unsliced)
+-- value to allow for hole-expansion.
+type Slice a = a × a
