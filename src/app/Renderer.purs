@@ -81,15 +81,11 @@ splitDefs ρ0 s' = do
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
 
-type Example = {
+type ExampleEval = {
    ρ0 :: Env 𝔹,     -- ambient env (default imports)
    ρ :: Env 𝔹,      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
-   s :: S.Expr 𝔹    -- body of example
-}
-
-type ExampleEval = {
-   ex :: Example,
-   e :: Expr 𝔹,
+   s :: S.Expr 𝔹,   -- body of example
+   e :: Expr 𝔹,     -- desugared s
    t :: Expl 𝔹,
    o :: Val 𝔹
 }
@@ -145,11 +141,11 @@ drawFig fig o' = do
 
 -- For an output selection, views of corresponding input selections.
 needs :: Fig -> Val 𝔹 -> MayFail (View × Array View)
-needs fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
+needs fig@{ spec, ex_eval: { ρ0, ρ, e, o, t } } o' = do
    let ρ0ρ' × e × α = evalBwd o' t
-       ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
+       ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
-   views <- valViews (ρ0ρ' × (ex.ρ0 <> ex.ρ)) spec.vars 
+   views <- valViews (ρ0ρ' × (ρ0 <> ρ)) spec.vars 
    pure $ view "output" (o'' × o) × views
 
 varView :: Var × Slice (Val 𝔹) -> View
@@ -205,7 +201,7 @@ loadFig spec@{ divId, file, vars } = do
          e <- desugarFwd s
          let ρ0ρ = ρ0 <> ρ <> ρ1
          t × o <- eval ρ0ρ e
-         pure { ex: { ρ0, ρ: ρ <> ρ1, s }, e, t, o }
+         pure { ρ0, ρ: ρ <> ρ1, s, e, t, o }
       pure { spec, ex_eval }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
