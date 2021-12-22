@@ -6,7 +6,7 @@ import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
-import App.Renderer (Fig, Fig', FigSpec, LinkingFigSpec, drawFig, drawFig', loadFig, loadLinkingFig)
+import App.Renderer (Fig, FigSpec, LinkingFig, LinkingFigSpec, drawFig, drawLinkingFig, loadFig, loadLinkingFig)
 import App.Util (selectBarChart_data, selectNth, select_y)
 import Module (File(..))
 import Val (Val(..))
@@ -30,21 +30,21 @@ fig1 = {
    vars: ["image", "filter"]
 }
 
-drawFigs :: forall r . Array (Aff (Fig r)) -> Effect Unit
+drawLinkingFigs :: Array (Aff LinkingFig) -> Effect Unit
+drawLinkingFigs loadFigs =
+   flip runAff_ (sequence loadFigs)
+   case _ of
+      Left err -> log $ show err
+      Right figs -> sequence_ $ drawLinkingFig <$> figs
+
+drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =
    flip runAff_ (sequence loadFigs)
    case _ of
       Left err -> log $ show err
-      Right figs -> sequence_ $ drawFig <$> figs
-
-drawFigs' :: Array (Aff Fig') -> Effect Unit
-drawFigs' loadFigs =
-   flip runAff_ (sequence loadFigs)
-   case _ of
-      Left err -> log $ show err
-      Right figs -> sequence_ $ flip drawFig' (Hole false) <$> figs
+      Right figs -> sequence_ $ flip drawFig (Hole false) <$> figs
 
 main :: Effect Unit
 main = do
-   drawFigs' [loadFig fig1]
-   drawFigs [loadLinkingFig linkingFig1]
+   drawFigs [loadFig fig1]
+   drawLinkingFigs [loadLinkingFig linkingFig1]

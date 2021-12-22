@@ -106,39 +106,38 @@ type LinkingFigSpec = {
    config :: LinkConfig
 }
 
-type Fig' = {
+type Fig = {
    spec :: FigSpec,
    ex_eval :: ExampleEval
 }
 
-type Fig r = {
+type LinkingFig = {
    divId :: HTMLId,
    views :: Array View
-   | r
 }
 
 type FigState = {
-   fig :: Fig',
+   fig :: Fig,
    views :: Array View
 }
 
-drawFig :: forall r . Fig r -> Effect Unit
-drawFig fig@{ divId, views } = do
+drawLinkingFig :: LinkingFig -> Effect Unit
+drawLinkingFig fig@{ divId, views } = do
    log $ "Drawing " <> divId
    sequence_ $ 
-      uncurry (drawView divId (\o' -> drawFig fig)) <$> zip (range 0 (length views - 1)) views
+      uncurry (drawView divId (\o' -> drawLinkingFig fig)) <$> zip (range 0 (length views - 1)) views
 
-drawFig' :: Fig' -> Val 𝔹 -> Effect Unit
-drawFig' fig o' = do
+drawFig :: Fig -> Val 𝔹 -> Effect Unit
+drawFig fig o' = do
    let divId = fig.spec.divId
    log $ "Redrawing " <> divId
    let o_view × i_views = successful $ needs fig o'
    sequence_ $ 
       uncurry (drawView divId doNothing) <$> zip (range 0 (length i_views - 1)) i_views
-   drawView divId (\selector -> drawFig' fig (selector (o' × fig.ex_eval.o))) (length i_views) o_view
+   drawView divId (\selector -> drawFig fig (selector (o' × fig.ex_eval.o))) (length i_views) o_view
 
 -- For an output selection, views of corresponding input selections.
-needs :: Fig' -> Val 𝔹 -> MayFail (View × Array View)
+needs :: Fig -> Val 𝔹 -> MayFail (View × Array View)
 needs fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
    let ρ0ρ' × e × α = evalBwd o' t
        ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
@@ -168,7 +167,7 @@ valViews (ρ' × ρ) vars = sequence (flip varView' (ρ' × ρ) <$> vars)
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
 
-loadFig :: FigSpec -> Aff Fig'
+loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ divId, file, vars } = do
    -- TODO: not every example should run with this dataset.
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
@@ -177,7 +176,7 @@ loadFig spec@{ divId, file, vars } = do
       ex_eval <- evalExample { ρ0, ρ: ρ <> ρ1, s }
       pure { spec, ex_eval }
 
-loadLinkingFig :: LinkingFigSpec -> Aff (Fig ())
+loadLinkingFig :: LinkingFigSpec -> Aff LinkingFig
 loadLinkingFig { divId, config } = do
    link <- doLink config
    pure { divId, views: [
