@@ -81,7 +81,18 @@ splitDefs ρ0 s' = do
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
 
-type ExampleEval = {
+type FigSpec = {
+   divId :: HTMLId,
+   file :: File,
+   vars :: Array Var -- variables to be considered "inputs"
+}
+
+type Fig = {
+   spec :: FigSpec,
+   ex_eval :: FigEval
+}
+
+type FigEval = {
    ρ0 :: Env 𝔹,     -- ambient env (default imports)
    ρ :: Env 𝔹,      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
    s :: S.Expr 𝔹,   -- body of example
@@ -90,10 +101,9 @@ type ExampleEval = {
    o :: Val 𝔹
 }
 
-type FigSpec = {
-   divId :: HTMLId,
-   file :: File,
-   vars :: Array Var -- variables to be considered "inputs"
+type FigState = {
+   fig :: Fig,
+   views :: Array View
 }
 
 type LinkConfig = {
@@ -109,18 +119,8 @@ type LinkFigSpec = {
    config :: LinkConfig
 }
 
-type Fig = {
-   spec :: FigSpec,
-   ex_eval :: ExampleEval
-}
-
 type LinkFig = {
    divId :: HTMLId,
-   views :: Array View
-}
-
-type FigState = {
-   fig :: Fig,
    views :: Array View
 }
 
