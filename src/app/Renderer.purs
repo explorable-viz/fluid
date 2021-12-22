@@ -152,13 +152,6 @@ needs fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
    views <- valViews (ρ0ρ' × (ex.ρ0 <> ex.ρ)) spec.vars 
    pure $ view "output" (o'' × o) × views
 
-evalExample :: Example -> MayFail ExampleEval
-evalExample ex@{ ρ0, ρ, s } = do
-   e <- desugarFwd s
-   let ρ0ρ = ρ0 <> ρ
-   t × o <- eval ρ0ρ e
-   pure { ex, e, t, o }
-
 varView :: Var × Slice (Val 𝔹) -> View
 varView (x × uv) = view x uv
 
@@ -206,9 +199,13 @@ loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ divId, file, vars } = do
    -- TODO: not every example should run with this dataset.
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
-   open file <#> \e -> successful do
-      { ρ: ρ1, s } <- splitDefs (ρ0 <> ρ) e
-      ex_eval <- evalExample { ρ0, ρ: ρ <> ρ1, s }
+   open file <#> \s' -> successful do
+      { ρ: ρ1, s } <- splitDefs (ρ0 <> ρ) s'
+      ex_eval <- do
+         e <- desugarFwd s
+         let ρ0ρ = ρ0 <> ρ <> ρ1
+         t × o <- eval ρ0ρ e
+         pure { ex: { ρ0, ρ: ρ <> ρ1, s }, e, t, o }
       pure { spec, ex_eval }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
