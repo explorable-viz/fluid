@@ -7,11 +7,10 @@ import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util (Handler, Renderer)
+import App.Util (Handler, Renderer, selectCell)
 import Lattice (𝔹)
 import Primitive (Slice, match_fwd)
 import Util (type (×), (×), (!), absurd, error, fromJust)
-import Test.Util (selectCell)
 import Val (Val(..), Array2, MatrixRep)
 
 --  (Rendered) matrices are required to have element type Int for now.

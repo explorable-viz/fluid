@@ -4,13 +4,12 @@ import Prelude
 import Data.Array (concat)
 import Data.List (List(..), (:))
 import Data.Traversable (sequence)
+import App.Util (selectBarChart_data, selectCell, selectNth, selectPair, select_y)
 import Effect (Effect)
 import DataType (cCons, cNil, cSome)
 import Lattice (𝔹)
 import Module (File(..))
-import Test.Util (
-   Test, run, selectBarChart_data, selectCell, selectNth, selectPair, select_y, test, testBwd, testLink, testWithDataset
-)
+import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))

@@ -7,8 +7,8 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import App.Renderer (Fig, Fig', FigSpec, LinkingFigSpec, drawFig, drawFig', loadFig, loadLinkingFig)
+import App.Util (selectBarChart_data, selectNth, select_y)
 import Module (File(..))
-import Test.Util (selectBarChart_data, selectNth, select_y)
 import Val (Val(..))
 
 linkingFig1 :: LinkingFigSpec
