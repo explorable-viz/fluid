@@ -1,7 +1,7 @@
 module Test.Util where
 
 import Prelude hiding (absurd)
-import Data.List (List(..), (:), elem)
+import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (fst, snd)
 import Debug.Trace (trace)
@@ -10,8 +10,8 @@ import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Bindings ((↦), Var, find)
-import DataType (cBarChart, cCons, cPair, dataTypeFor, typeName)
+import Bindings (Var, find)
+import DataType (dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
 import Eval (eval)
@@ -20,13 +20,12 @@ import EvalFwd (evalFwd)
 import Expl (Expl)
 import Expr (Expr(..)) as E
 import SExpr (Expr) as S
-import Lattice (𝔹, botOf, neg)
+import Lattice (Slice, 𝔹, botOf, neg)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
-import Primitive (Slice)
 import Util (MayFail, type (×), (×), successful)
-import Util.SnocList (SnocList(..), (:-), splitAt)
-import Val (Env, Val(..), holeMatrix, insertMatrix)
+import Util.SnocList (splitAt)
+import Val (Env, Val(..))
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -131,20 +130,3 @@ testWithDataset dataset file = do
       ρ0 × ρ <- openDatasetAs dataset "data"
       let ρ' = ρ0 <> ρ
       (ρ' × _) <$> open file
-
--- Selection helpers.
-selectCell :: Int -> Int -> Int -> Int -> Val 𝔹
-selectCell i j i' j' = Matrix false (insertMatrix i j (Hole true) (holeMatrix i' j'))
-
-selectNth :: Int -> Val 𝔹 -> Val 𝔹
-selectNth 0 v = Constr false cCons (v : Hole false : Nil)
-selectNth n v = Constr false cCons (Hole false : selectNth (n - 1) v : Nil)
-
-select_y :: Val 𝔹
-select_y = Record false (Lin :- "x" ↦ Hole false :- "y" ↦ Hole true)
-
-selectBarChart_data :: Val 𝔹 -> Val 𝔹
-selectBarChart_data v = Constr false cBarChart (Record false (Lin :- "caption" ↦ Hole false :- "data" ↦ v) : Nil)
-
-selectPair :: 𝔹 -> Val 𝔹 -> Val 𝔹 -> Val 𝔹
-selectPair α v1 v2 = Constr α cPair (v1 : v2 : Nil)

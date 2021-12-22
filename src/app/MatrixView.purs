@@ -3,16 +3,14 @@ module App.MatrixView where
 import Prelude hiding (absurd)
 import Data.Array (zip, zipWith)
 import Data.Maybe (Maybe)
-import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 import App.Util (Handler, Renderer)
-import Lattice (𝔹)
-import Primitive (Slice, match_fwd)
+import Lattice (Slice, 𝔹, expand, neg)
+import Primitive (match_fwd)
 import Util (type (×), (×), (!), absurd, error, fromJust)
-import Test.Util (selectCell)
-import Val (Val(..), Array2, MatrixRep)
+import Val (Val(..), Array2, MatrixRep, holeMatrix, insertMatrix)
 
 --  (Rendered) matrices are required to have element type Int for now.
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int
@@ -25,9 +23,11 @@ matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
    ((<$>) ((<$>) match_fwd)) (zipWith zip vss uss) × i × j
 
 matrixViewHandler :: Handler
-matrixViewHandler redraw ev = do
-   log $ "Selecting cell " <> show i <> ", " <> show j
-   redraw selectCell'
+matrixViewHandler ev (u × Matrix _ (_ × (i' × _) × (j' × _))) = 
+   case expand u (Matrix false (holeMatrix i' j')) of
+      Matrix α (vss × (_ × β) × (_ × β')) ->
+         Matrix α (insertMatrix i j (neg vss!(i - 1)!(j - 1)) (vss × (i' × β) × (j' × β')))
+      _ -> error absurd
    where
       -- (unsafe) the datum associated with a matrix view mouse event.
       unsafePos :: Maybe EventTarget -> Int × Int
@@ -37,7 +37,4 @@ matrixViewHandler redraw ev = do
          in xy!0 × xy!1
 
       i × j = unsafePos $ target ev
-
-      selectCell' :: Slice (Val 𝔹) -> Val 𝔹
-      selectCell' (_ × Matrix _ (_ × (h × _) × (w × _))) = selectCell i j h w
-      selectCell' _ = error absurd
+matrixViewHandler _ _ = error absurd

@@ -8,7 +8,7 @@ import Bindings (Bindings)
 import DataType (Ctr)
 import Expr (Elim(..), RecDefs)
 import Lattice (
-   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices,
+   class BoundedSlices, class Expandable, class JoinSemilattice, Slice, class Slices,
    𝔹, (∨), bot, definedJoin, expand, maybeJoin, neg
 )
 import Util (Endo, type (×), (×), (⪄), (≞), (≜), (!), absurd, error, report, unsafeUpdateAt)
@@ -30,8 +30,8 @@ data Val a =
 newtype PrimOp = PrimOp {
    arity :: Int,
    op :: List (Val 𝔹) -> Val 𝔹,
-   op_fwd :: List (Val 𝔹 × Val 𝔹) -> Val 𝔹,
-   op_bwd :: Val 𝔹 × Val 𝔹 -> Endo (List (Val 𝔹))
+   op_fwd :: List (Slice (Val 𝔹)) -> Val 𝔹,
+   op_bwd :: Slice (Val 𝔹) -> Endo (List (Val 𝔹))
 }
 
 type Env a = Bindings (Val a)

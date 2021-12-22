@@ -6,14 +6,11 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import Data.Tuple (fst)
 import DataType (cLinePlot)
-import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record)
 import Bindings (Bind)
-import Lattice (𝔹, expand)
-import Primitive (Slice)
+import Lattice (Slice, 𝔹, expand)
 import Util (type (×), (×), absurd, fromJust)
 import Util.SnocList (SnocList)
 import Val (Val(..)) as V
@@ -49,10 +46,7 @@ instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
          V.Constr _ _ (u1 : Nil) -> record from (u1 × v1)
 
 lineChartHandler :: Handler
-lineChartHandler redraw ev = do
-   let Point xy = unsafePoint (target ev)
-   log $ show xy
-   redraw fst
+lineChartHandler = const fst
 
 -- (unsafe) the datum associated with a line chart mouse event.
 unsafePoint :: Maybe EventTarget -> Point

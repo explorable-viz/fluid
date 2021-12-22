@@ -16,7 +16,7 @@ import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
-import App.Util (HTMLId, Redraw, from, record)
+import App.Util (HTMLId, OnSel, doNothing, from, record)
 import Bindings (Bind, Var, find, update)
 import DataType (cBarChart, cCons, cLineChart, cNil)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
@@ -25,9 +25,9 @@ import Expr (Expr)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
-import Lattice (𝔹, botOf, expand)
+import Lattice (Slice, 𝔹, botOf, expand)
 import Module (File(..), open, openDatasetAs)
-import Primitive (Slice, match, match_fwd)
+import Primitive (match, match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Test.Util (LinkConfig, doLink)
 import Util (Endo, MayFail, type (×), type (+), (×), absurd, error, successful)
@@ -41,11 +41,11 @@ data View =
    LineChartFig LineChart |
    BarChartFig BarChart
 
-drawView :: HTMLId -> Redraw -> Int -> View -> Effect Unit
-drawView divId redraw n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (matrixViewHandler redraw)
-drawView divId redraw n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (tableViewHandler redraw)
-drawView divId redraw n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (lineChartHandler redraw)
-drawView divId redraw n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (barChartHandler redraw)
+drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
+drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
+drawView divId onSel n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
+drawView divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
+drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
 
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 -- 'from' is partial; encapsulate that here.
@@ -95,12 +95,6 @@ type ExampleEval = {
    o :: Val 𝔹
 }
 
-type Fig r = {
-   divId :: HTMLId,
-   views :: Array View
-   | r
-}
-
 type FigSpec = {
    divId :: HTMLId,
    file :: File,
@@ -115,6 +109,12 @@ type LinkingFigSpec = {
 type Fig' = {
    spec :: FigSpec,
    ex_eval :: ExampleEval
+}
+
+type Fig r = {
+   divId :: HTMLId,
+   views :: Array View
+   | r
 }
 
 type FigState = {
@@ -132,10 +132,19 @@ drawFig' :: Fig' -> Val 𝔹 -> Effect Unit
 drawFig' fig o' = do
    let divId = fig.spec.divId
    log $ "Redrawing " <> divId
-   let views = successful $ needs fig o'
+   let o_view × i_views = successful $ needs fig o'
    sequence_ $ 
-      uncurry (drawView divId (\selector -> drawFig' fig (selector (o' × fig.ex_eval.o)))) <$> 
-         zip (range 0 (length views - 1)) views
+      uncurry (drawView divId doNothing) <$> zip (range 0 (length i_views - 1)) i_views
+   drawView divId (\selector -> drawFig' fig (selector (o' × fig.ex_eval.o))) (length i_views) o_view
+
+-- For an output selection, views of corresponding input selections.
+needs :: Fig' -> Val 𝔹 -> MayFail (View × Array View)
+needs fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
+   let ρ0ρ' × e × α = evalBwd o' t
+       ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
+       o'' = evalFwd ρ0ρ' e α t
+   views <- valViews (ρ0ρ' × (ex.ρ0 <> ex.ρ)) spec.vars 
+   pure $ view "output" (o'' × o) × views
 
 evalExample :: Example -> MayFail ExampleEval
 evalExample ex@{ ρ0, ρ, s } = do
@@ -153,19 +162,8 @@ varView' x (ρ' × ρ) = do
    v' <- find x ρ'
    pure $ varView (x × (v' × v))
 
-valViews :: Slice (Val 𝔹) -> Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
-valViews (o' × o) (ρ' × ρ) vars = do
-   views <- sequence (flip varView' (ρ' × ρ) <$> vars)
-   pure $ views <> [ view "output" (o' × o) ]
-
--- For an output selection, views of corresponding input selections.
-needs :: Fig' -> Val 𝔹 -> MayFail (Array View)
-needs fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
-   let ρ0ρ' × e × α = evalBwd o' t
-       ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
-       o'' = evalFwd ρ0ρ' e α t
-   views <- valViews (o' × o) (ρ0ρ' × (ex.ρ0 <> ex.ρ)) spec.vars 
-   pure $ views <> [ view "output" (o'' × o) ]
+valViews :: Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
+valViews (ρ' × ρ) vars = sequence (flip varView' (ρ' × ρ) <$> vars)
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
@@ -174,8 +172,10 @@ loadFig :: FigSpec -> Aff Fig'
 loadFig spec@{ divId, file, vars } = do
    -- TODO: not every example should run with this dataset.
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
-   { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   pure { spec, ex_eval: successful $ evalExample { ρ0, ρ: ρ <> ρ1, s } }
+   open file <#> \e -> successful do
+      { ρ: ρ1, s } <- splitDefs (ρ0 <> ρ) e
+      ex_eval <- evalExample { ρ0, ρ: ρ <> ρ1, s }
+      pure { spec, ex_eval }
 
 loadLinkingFig :: LinkingFigSpec -> Aff (Fig ())
 loadLinkingFig { divId, config } = do
