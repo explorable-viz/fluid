@@ -29,7 +29,7 @@ import Lattice (Slice, 𝔹, botOf, neg, expand)
 import Module (File(..), open, openDatasetAs)
 import Primitive (match, match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
-import Util (Endo, MayFail, type (×), type (+), (×), absurd, error, successful)
+import Util (MayFail, type (×), type (+), (×), absurd, error, successful)
 import Util.SnocList (splitAt)
 import Val (Env, Val)
 import Val (Val(..)) as V
@@ -100,7 +100,7 @@ type FigSpec = {
    vars :: Array Var -- variables to be considered "inputs"
 }
 
-type LinkingConfig = {
+type LinkConfig = {
    file1 :: File,
    file2 :: File,
    dataFile :: File,
@@ -108,9 +108,9 @@ type LinkingConfig = {
    v1_sel :: Val 𝔹
 }
 
-type LinkingFigSpec = {
+type LinkFigSpec = {
    divId :: HTMLId,
-   config :: LinkingConfig
+   config :: LinkConfig
 }
 
 type Fig = {
@@ -118,7 +118,7 @@ type Fig = {
    ex_eval :: ExampleEval
 }
 
-type LinkingFig = {
+type LinkFig = {
    divId :: HTMLId,
    views :: Array View
 }
@@ -128,11 +128,11 @@ type FigState = {
    views :: Array View
 }
 
-drawLinkingFig :: LinkingFig -> Effect Unit
-drawLinkingFig fig@{ divId, views } = do
+drawLinkFig :: LinkFig -> Effect Unit
+drawLinkFig fig@{ divId, views } = do
    log $ "Redrawing " <> divId
    sequence_ $ 
-      uncurry (drawView divId (\o' -> drawLinkingFig fig)) <$> zip (range 0 (length views - 1)) views
+      uncurry (drawView divId (\o' -> drawLinkFig fig)) <$> zip (range 0 (length views - 1)) views
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
 drawFig fig o' = do
@@ -171,16 +171,13 @@ varView' x (ρ' × ρ) = do
 valViews :: Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
 valViews (ρ' × ρ) vars = sequence (flip varView' (ρ' × ρ) <$> vars)
 
--- selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
--- selectOnly xv ρ = update (botOf ρ) xv
-
-type LinkingResult = {
+type LinkResult = {
    v1 :: Val 𝔹,             -- original value of view 1
    v2 :: Slice (Val 𝔹),
    data_sel :: Slice (Val 𝔹)
 }
 
-doLink :: LinkingConfig -> Aff LinkingResult
+doLink :: LinkConfig -> Aff LinkResult
 doLink { file1, file2, dataFile, dataVar: x, v1_sel } = do
    let dir = File "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)
@@ -214,8 +211,8 @@ loadFig spec@{ divId, file, vars } = do
       ex_eval <- evalExample { ρ0, ρ: ρ <> ρ1, s }
       pure { spec, ex_eval }
 
-loadLinkingFig :: LinkingFigSpec -> Aff LinkingFig
-loadLinkingFig { divId, config } = do
+loadLinkFig :: LinkFigSpec -> Aff LinkFig
+loadLinkFig { divId, config } = do
    link <- doLink config
    pure { divId, views: [
       view "primary view" (config.v1_sel × link.v1),

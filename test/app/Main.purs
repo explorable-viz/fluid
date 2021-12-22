@@ -5,7 +5,7 @@ import Data.Traversable (sequence)
 import Effect (Effect)
 import Test.Spec (before, it)
 import App.Main (fig1, linkingFig1)
-import App.Renderer (FigSpec, LinkingFigSpec, loadFig, loadLinkingFig)
+import App.Renderer (FigSpec, LinkFigSpec, loadFig, loadLinkFig)
 import Test.Util (Test, run)
 
 -- For now app tests just exercise figure creation code.
@@ -15,9 +15,9 @@ test_fig spec =
       it spec.divId \_ ->
          pure unit
 
-test_linkingFig :: LinkingFigSpec -> Test Unit
+test_linkingFig :: LinkFigSpec -> Test Unit
 test_linkingFig spec =
-   before (loadLinkingFig spec) $
+   before (loadLinkFig spec) $
       it spec.divId \_ ->
          pure unit
 

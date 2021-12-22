@@ -10,7 +10,7 @@ import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import App.Renderer (LinkingConfig, doLink)
+import App.Renderer (LinkConfig, doLink)
 import DataType (dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
@@ -77,7 +77,7 @@ testBwd file file_expect v expected =
        file' = folder <> file in
    testWithSetup file' expected (Just (v × (folder <> file_expect))) (openWithDefaultImports file')
 
-testLink :: LinkingConfig -> String -> Test Unit
+testLink :: LinkConfig -> String -> Test Unit
 testLink config v2_expect =
    before (doLink config) $
       it ("linking/" <> show config.file1 <> " <-> " <> show config.file2)
