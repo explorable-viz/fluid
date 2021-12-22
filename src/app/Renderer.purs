@@ -95,12 +95,6 @@ type ExampleEval = {
    o :: Val 𝔹
 }
 
-type Fig r = {
-   divId :: HTMLId,
-   views :: Array View
-   | r
-}
-
 type FigSpec = {
    divId :: HTMLId,
    file :: File,
@@ -115,6 +109,12 @@ type LinkingFigSpec = {
 type Fig' = {
    spec :: FigSpec,
    ex_eval :: ExampleEval
+}
+
+type Fig r = {
+   divId :: HTMLId,
+   views :: Array View
+   | r
 }
 
 type FigState = {
@@ -172,8 +172,10 @@ loadFig :: FigSpec -> Aff Fig'
 loadFig spec@{ divId, file, vars } = do
    -- TODO: not every example should run with this dataset.
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
-   { ρ: ρ1, s } <- (successful <<< splitDefs (ρ0 <> ρ)) <$> open file
-   pure { spec, ex_eval: successful $ evalExample { ρ0, ρ: ρ <> ρ1, s } }
+   open file <#> \e -> successful do
+      { ρ: ρ1, s } <- splitDefs (ρ0 <> ρ) e
+      ex_eval <- evalExample { ρ0, ρ: ρ <> ρ1, s }
+      pure { spec, ex_eval }
 
 loadLinkingFig :: LinkingFigSpec -> Aff (Fig ())
 loadLinkingFig { divId, config } = do
