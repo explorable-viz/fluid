@@ -97,9 +97,6 @@ type Fig = {
    o :: Val 𝔹
 }
 
-type FigEval = {
-}
-
 type FigState = {
    fig :: Fig,
    views :: Array View
@@ -116,6 +113,20 @@ type LinkConfig = {
 type LinkFigSpec = {
    divId :: HTMLId,
    config :: LinkConfig
+}
+
+type LinkFig' = {
+   spec :: LinkFigSpec,
+   ρ0 :: Env 𝔹,      -- ambient environment (default imports)
+   ρ :: Env 𝔹,       -- local env (loaded dataset)
+   s1 :: S.Expr 𝔹,
+   s2 :: S.Expr 𝔹,
+   e1 :: Expr 𝔹,
+   e2 :: Expr 𝔹,
+   t1 :: Expl 𝔹,
+   t2 :: Expl 𝔹,
+   v1 :: Val 𝔹,      -- TODO: consolidate naming conventions with Fig
+   v2 :: Val 𝔹
 }
 
 type LinkFig = {
@@ -164,6 +175,27 @@ varView' x (ρ' × ρ) = do
 
 valViews :: Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
 valViews (ρ' × ρ) vars = sequence (flip varView' (ρ' × ρ) <$> vars)
+
+loadLinkFig' :: LinkFigSpec -> Aff LinkFig'
+loadLinkFig' spec@{ config: { file1, file2, dataFile, dataVar: x, v1_sel } } = do
+   let dir = File "linking/"
+       name1 × name2 = (dir <> file1) × (dir <> file2)
+   -- the views share an ambient environment ρ0 as well as dataset
+   ρ0 × ρ <- openDatasetAs (File "example/" <> dir <> dataFile) x
+   s1 <- open name1
+   s2 <- open name2
+   pure $ successful do
+      e1 <- desugarFwd s1
+      e2 <- desugarFwd s2
+      t1 × v1 <- eval (ρ0 <> ρ) e1
+      t2 × v2 <- eval (ρ0 <> ρ) e2
+      let ρ0ρ × _ × _ = evalBwd v1_sel t1
+          _ × ρ' = splitAt 1 ρ0ρ
+      v <- find x ρ
+      v' <- find x ρ'
+      -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
+      -- combined with the negation of the dataset environment slice
+      pure { spec, ρ0, ρ, s1, s2, e1, e2, t1, t2, v1, v2 }
 
 doLink :: LinkConfig -> Aff LinkResult
 doLink { file1, file2, dataFile, dataVar: x, v1_sel } = do
