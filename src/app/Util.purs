@@ -20,8 +20,9 @@ import Val (Val(..), holeMatrix, insertMatrix)
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
 type OnSel = (Slice (Val 𝔹) -> Val 𝔹) -> Effect Unit -- redraw based on modified output selection
+type Selector = (Slice (Val 𝔹) -> Val 𝔹)
 type Handler = OnSel -> Event -> Effect Unit
-type Handler2 = Event -> Slice (Val 𝔹) -> Val 𝔹
+type Handler2 = Event -> Selector
 
 get_prim :: forall a . ToFrom a => Var -> Slice (Bindings (Val 𝔹)) -> a × 𝔹
 get_prim x = match_fwd <<< get x
