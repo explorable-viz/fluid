@@ -29,7 +29,7 @@ matrixViewHandler ev (u × Matrix _ (_ × (i' × _) × (j' × _))) =
          Matrix α (insertMatrix i j (neg vss!(i - 1)!(j - 1)) (vss × (i' × β) × (j' × β')))
       _ -> error absurd
    where
-      -- (unsafe) the datum associated with a matrix view mouse event.
+      -- (unsafe) datum associated with matrix view mouse event; indices of selected cell
       unsafePos :: Maybe EventTarget -> Int × Int
       unsafePos tgt_opt =
          let tgt = fromJust absurd $ tgt_opt 

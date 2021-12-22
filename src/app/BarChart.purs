@@ -32,8 +32,8 @@ instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart whe
 barChartHandler :: Handler
 barChartHandler = const fst
 
--- (unsafe) the datum associated with a bar chart mouse event.
-unsafeBarChartRecord :: Maybe EventTarget -> BarChartRecord
+-- (unsafe) datum associated with bar chart mouse event; the 0-based index of the selected bar
+unsafeBarChartRecord :: Maybe EventTarget -> Int
 unsafeBarChartRecord tgt_opt =
    let tgt = fromJust absurd $ tgt_opt
-   in (unsafeCoerce tgt).__data__
+   in (unsafeCoerce tgt).__data__[0]
