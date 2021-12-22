@@ -33,9 +33,7 @@ function drawBarChart (
       const tip = d3tip.default()
          .attr('class', 'd3-tip')
          .offset([0, 0])
-         .html((ev, d) => {
-            return d.y.value0
-         })
+         .html((_, d) => d.y.value0)
 
       svg.call(tip)
 
