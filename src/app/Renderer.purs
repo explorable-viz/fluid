@@ -137,6 +137,15 @@ drawFig' fig o' = do
       uncurry (drawView divId (\selector -> drawFig' fig (selector (o' × fig.ex_eval.o)))) <$> 
          zip (range 0 (length views - 1)) views
 
+-- For an output selection, views of corresponding input selections.
+needs :: Fig' -> Val 𝔹 -> MayFail (Array View)
+needs fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
+   let ρ0ρ' × e × α = evalBwd o' t
+       ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
+       o'' = evalFwd ρ0ρ' e α t
+   views <- valViews (ρ0ρ' × (ex.ρ0 <> ex.ρ)) spec.vars 
+   pure $ views <> [ view "output" (o'' × o) ]
+
 evalExample :: Example -> MayFail ExampleEval
 evalExample ex@{ ρ0, ρ, s } = do
    e <- desugarFwd s
@@ -155,15 +164,6 @@ varView' x (ρ' × ρ) = do
 
 valViews :: Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
 valViews (ρ' × ρ) vars = sequence (flip varView' (ρ' × ρ) <$> vars)
-
--- For an output selection, views of corresponding input selections.
-needs :: Fig' -> Val 𝔹 -> MayFail (Array View)
-needs fig@{ spec, ex_eval: { ex, e, o, t } } o' = do
-   let ρ0ρ' × e × α = evalBwd o' t
-       ρ0' × ρ' = splitAt (length ex.ρ) ρ0ρ'
-       o'' = evalFwd ρ0ρ' e α t
-   views <- valViews (ρ0ρ' × (ex.ρ0 <> ex.ρ)) spec.vars 
-   pure $ views <> [ view "output" (o'' × o) ]
 
 selectOnly :: Bind (Val 𝔹) -> Endo (Env 𝔹)
 selectOnly xv ρ = update (botOf ρ) xv
