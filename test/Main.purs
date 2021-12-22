@@ -50,7 +50,7 @@ test_linking = [
       file2: File "convolution-2",
       dataFile: File "convolution-data",
       dataVar: "data",
-      v1_sel: selectCell 2 2 5 5
+      v1_sel: selectCell true 2 2 5 5
    }
       "_18_, _12_, _13_, 9, 19,\n\
       \_20_, _11_, _24_, 9, 14,\n\
@@ -115,21 +115,21 @@ test_bwd = [
    testBwd (File "array-lookup") (File "array-lookup.expect") (Int true 14) "_14_",
    testBwd (File "array-dims") (File "array-dims.expect") (selectPair true (Int true 3) (Int true 3)) "_(_3_, _3_)_",
    testBwd (File "conv-edgeDetect") (File "conv-edgeDetect.expect")
-           (selectCell 1 1 5 5)
+           (selectCell true 1 1 5 5)
             "_0_, -1, 2, 0, -1,\n\
             \0, 3, -2, 3, -2,\n\
             \-1, 1, -5, 0, 4,\n\
             \1, -1, 4, 0, -4,\n\
             \1, 0, -3, 2, 0",
    testBwd (File "conv-emboss") (File "conv-emboss.expect")
-           (selectCell 1 1 5 5)
+           (selectCell true 1 1 5 5)
            "_5_, 4, 2, 5, 2,\n\
            \3, 1, 2, -1, -2,\n\
            \3, 0, 1, 0, -1,\n\
            \2, 1, -2, 0, 0,\n\
            \1, 0, -1, -1, -2",
    testBwd (File "conv-gaussian") (File "conv-gaussian.expect")
-           (selectCell 1 1 5 5)
+           (selectCell true 1 1 5 5)
            "_38_, 37, 28, 30, 38,\n\
            \38, 36, 46, 31, 34,\n\
            \37, 41, 54, 34, 20,\n\

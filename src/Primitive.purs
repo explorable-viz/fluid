@@ -18,7 +18,7 @@ import Val (PrimOp(..), Val(..))
 -- Mediates between Val and underlying data, analogously to pattern-matching and construction for data types.
 class ToFrom a where
    constr :: a × 𝔹 -> Val 𝔹
-   constr_bwd :: Slice(Val 𝔹) -> a × 𝔹    -- equivalent to match_fwd (except at Val)
+   constr_bwd :: Slice (Val 𝔹) -> a × 𝔹   -- equivalent to match_fwd (except at Val)
    match :: Val 𝔹 -> a × 𝔹                -- only defined for non-holes (except at Val)
 
 unwrap :: forall a . ToFrom a => Val 𝔹 -> a
