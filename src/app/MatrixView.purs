@@ -6,7 +6,7 @@ import Data.Maybe (Maybe)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util (Handler2, Renderer)
+import App.Util (Handler, Renderer)
 import Lattice (Slice, 𝔹, expand, neg)
 import Primitive (match_fwd)
 import Util (type (×), (×), (!), absurd, error, fromJust)
@@ -22,7 +22,7 @@ matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
 matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
    ((<$>) ((<$>) match_fwd)) (zipWith zip vss uss) × i × j
 
-matrixViewHandler :: Handler2
+matrixViewHandler :: Handler
 matrixViewHandler ev (u × Matrix _ (_ × (i' × _) × (j' × _))) = 
    case expand u (Matrix false (holeMatrix i' j')) of
       Matrix α (vss × (_ × β) × (_ × β')) ->

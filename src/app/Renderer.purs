@@ -42,10 +42,10 @@ data View =
    BarChartFig BarChart
 
 drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
-drawView divId redraw n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (redraw <<< matrixViewHandler)
-drawView divId redraw n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (redraw <<< tableViewHandler)
-drawView divId redraw n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (redraw <<< lineChartHandler)
-drawView divId redraw n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (redraw <<< barChartHandler)
+drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
+drawView divId onSel n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
+drawView divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
+drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
 
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 -- 'from' is partial; encapsulate that here.

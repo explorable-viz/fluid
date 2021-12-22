@@ -3,11 +3,9 @@ module App.BarChart where
 import Prelude hiding (absurd)
 import Data.Maybe (Maybe)
 import Data.Tuple (fst)
-import Effect.Console (log)
 import Unsafe.Coerce (unsafeCoerce)
-import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util (Handler2, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record)
+import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record)
 import Bindings (Bind)
 import Lattice (𝔹)
 import Util (type (×), absurd, fromJust)
@@ -31,7 +29,7 @@ instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart whe
       data_: record from <$> from (get "data" r)
    }
 
-barChartHandler :: Handler2
+barChartHandler :: Handler
 barChartHandler = const fst
 
 -- (unsafe) the datum associated with a bar chart mouse event.
