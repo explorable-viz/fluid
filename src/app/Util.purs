@@ -78,14 +78,11 @@ toggleCell i j (u × Matrix _ (_ × (i' × _) × (j' × _))) =
 toggleCell _ _ _ = error absurd
 
 toggleNth :: Int -> Slice (Val 𝔹) -> Val 𝔹
-toggleNth 0 (u × Constr false c _) | c == cCons =
-   case expand u (Constr false cCons (Hole false : Hole false : Nil)) of
-      Constr α _ (u1 : u2 : Nil) -> 
-         Constr α cCons (neg u1 : u2 : Nil)
-      _ -> error absurd
 toggleNth n (u × Constr false c (v1 : v2 : Nil)) | c == cCons =
    case expand u (Constr false cCons (Hole false : Hole false : Nil)) of
-      Constr α _ (u1 : u2 : Nil) -> 
-         Constr α cCons (u1 : toggleNth (n - 1) (u1 × v1) : Nil)
+      Constr α _ (u1 : u2 : Nil) ->
+         case n of 
+            0 -> Constr α cCons (neg u1 : u2 : Nil)
+            _ -> Constr α cCons (u1 : toggleNth (n - 1) (u1 × v1) : Nil)
       _ -> error absurd
 toggleNth _ _ = error absurd
