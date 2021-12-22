@@ -89,16 +89,15 @@ type FigSpec = {
 
 type Fig = {
    spec :: FigSpec,
-   ex_eval :: FigEval
-}
-
-type FigEval = {
    ρ0 :: Env 𝔹,     -- ambient env (default imports)
    ρ :: Env 𝔹,      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
    s :: S.Expr 𝔹,   -- body of example
    e :: Expr 𝔹,     -- desugared s
    t :: Expl 𝔹,
    o :: Val 𝔹
+}
+
+type FigEval = {
 }
 
 type FigState = {
@@ -124,6 +123,12 @@ type LinkFig = {
    views :: Array View
 }
 
+type LinkResult = {
+   v1 :: Val 𝔹,             -- original value of view 1
+   v2 :: Slice (Val 𝔹),
+   data_sel :: Slice (Val 𝔹)
+}
+
 drawLinkFig :: LinkFig -> Effect Unit
 drawLinkFig fig@{ divId, views } = do
    log $ "Redrawing " <> divId
@@ -137,11 +142,11 @@ drawFig fig o' = do
    let o_view × i_views = successful $ needs fig o'
    sequence_ $ 
       uncurry (drawView divId doNothing) <$> zip (range 0 (length i_views - 1)) i_views
-   drawView divId (\selector -> drawFig fig (selector (o' × fig.ex_eval.o))) (length i_views) o_view
+   drawView divId (\selector -> drawFig fig (selector (o' × fig.o))) (length i_views) o_view
 
 -- For an output selection, views of corresponding input selections.
 needs :: Fig -> Val 𝔹 -> MayFail (View × Array View)
-needs fig@{ spec, ex_eval: { ρ0, ρ, e, o, t } } o' = do
+needs fig@{ spec, ρ0, ρ, e, o, t } o' = do
    let ρ0ρ' × e × α = evalBwd o' t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
@@ -159,12 +164,6 @@ varView' x (ρ' × ρ) = do
 
 valViews :: Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
 valViews (ρ' × ρ) vars = sequence (flip varView' (ρ' × ρ) <$> vars)
-
-type LinkResult = {
-   v1 :: Val 𝔹,             -- original value of view 1
-   v2 :: Slice (Val 𝔹),
-   data_sel :: Slice (Val 𝔹)
-}
 
 doLink :: LinkConfig -> Aff LinkResult
 doLink { file1, file2, dataFile, dataVar: x, v1_sel } = do
@@ -197,12 +196,10 @@ loadFig spec@{ divId, file, vars } = do
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    open file <#> \s' -> successful do
       { ρ: ρ1, s } <- splitDefs (ρ0 <> ρ) s'
-      ex_eval <- do
-         e <- desugarFwd s
-         let ρ0ρ = ρ0 <> ρ <> ρ1
-         t × o <- eval ρ0ρ e
-         pure { ρ0, ρ: ρ <> ρ1, s, e, t, o }
-      pure { spec, ex_eval }
+      e <- desugarFwd s
+      let ρ0ρ = ρ0 <> ρ <> ρ1
+      t × o <- eval ρ0ρ e
+      pure { spec, ρ0, ρ: ρ <> ρ1, s, e, t, o }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
 loadLinkFig { divId, config } = do
