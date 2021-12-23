@@ -106,7 +106,7 @@ type LinkFigSpec = {
    v1_sel :: Val 𝔹
 }
 
-type LinkFig' = {
+type LinkFig = {
    spec :: LinkFigSpec,
    ρ0 :: Env 𝔹,      -- ambient environment (default imports)
    ρ :: Env 𝔹,       -- local env (loaded dataset)
@@ -120,11 +120,6 @@ type LinkFig' = {
    v2 :: Val 𝔹
 }
 
-type LinkFig = {
-   divId :: HTMLId,
-   views :: Array View
-}
-
 type LinkResult = {
    v1 :: Val 𝔹,             -- original value of view 1
    v2 :: Slice (Val 𝔹),
@@ -132,7 +127,7 @@ type LinkResult = {
 }
 
 -- TODO: these two need some consolidation.
-drawLinkFig :: LinkFig' -> Val 𝔹 -> Effect Unit
+drawLinkFig :: LinkFig -> Val 𝔹 -> Effect Unit
 drawLinkFig fig@{ spec: { divId }, v1 } v1' = do
    log $ "Redrawing " <> divId
    let v1_view × views = successful $ linkFigViews fig v1'
@@ -163,13 +158,13 @@ figViews fig@{ spec, ρ0, ρ, e, o, t } o' = do
    views <- valViews (ρ0ρ' × (ρ0 <> ρ)) spec.vars 
    pure $ view "output" (o'' × o) × views
 
-linkFigViews :: LinkFig' -> Val 𝔹 -> MayFail (View × Array View)
+linkFigViews :: LinkFig -> Val 𝔹 -> MayFail (View × Array View)
 linkFigViews fig@{ v1 } v1' = do
    link <- linkResult fig v1'
    pure $ view "primary view" (v1' × v1) × 
           [view "linked view" link.v2, view "common data" link.data_sel]
 
-linkResult :: LinkFig' -> Val 𝔹 -> MayFail LinkResult
+linkResult :: LinkFig -> Val 𝔹 -> MayFail LinkResult
 linkResult { spec, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
    let ρ0ρ × _ × _ = evalBwd v1_sel t1
        _ × ρ' = splitAt 1 ρ0ρ
@@ -200,7 +195,7 @@ loadFig spec@{ divId, file, vars } = do
       t × o <- eval ρ0ρ e
       pure { spec, ρ0, ρ: ρ <> ρ1, s, e, t, o }
 
-loadLinkFig :: LinkFigSpec -> Aff LinkFig'
+loadLinkFig :: LinkFigSpec -> Aff LinkFig
 loadLinkFig spec@{ file1, file2, dataFile, dataVar: x, v1_sel } = do
    let dir = File "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)

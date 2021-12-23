@@ -6,7 +6,7 @@ import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
-import App.Fig (Fig, FigSpec, LinkFig', LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
+import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
 import App.Util (selectBarChart_data, selectNth, select_y)
 import Module (File(..))
 import Val (Val(..))
@@ -28,7 +28,7 @@ fig1 = {
    vars: ["image", "filter"]
 }
 
-drawLinkFigs :: Array (Aff LinkFig') -> Effect Unit
+drawLinkFigs :: Array (Aff LinkFig) -> Effect Unit
 drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)
    case _ of
