@@ -156,12 +156,9 @@ drawFig fig o' = do
       uncurry (drawView divId doNothing) <$> zip (range 0 (length i_views - 1)) i_views
    drawView divId (\selector -> drawFig fig (selector (o' × fig.o))) (length i_views) o_view
 
-varView :: Var × Slice (Val 𝔹) -> View
-varView (x × uv) = view x uv
-
 varView' :: Var -> Slice (Env 𝔹) -> MayFail View
 varView' x (ρ' × ρ) =
-   (\v' v -> varView (x × (v' × v))) <$> find x ρ' <*> find x ρ 
+   (\v' v -> view x (v' × v)) <$> find x ρ' <*> find x ρ 
 
 valViews :: Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
 valViews (ρ' × ρ) vars = sequence (flip varView' (ρ' × ρ) <$> vars)
