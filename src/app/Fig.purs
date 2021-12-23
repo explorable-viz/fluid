@@ -131,11 +131,11 @@ type LinkResult = {
    data_sel :: Slice (Val 𝔹)
 }
 
-drawLinkFig :: LinkFig -> Either (Val 𝔹) (Val 𝔹) -> Effect Unit
-drawLinkFig fig@{ divId, views } either_o' = do
+drawLinkFig :: LinkFig -> Val 𝔹 -> Effect Unit
+drawLinkFig fig@{ divId, views } v1' = do
    log $ "Redrawing " <> divId
    sequence_ $ 
-      uncurry (drawView divId (\_ -> drawLinkFig fig either_o')) <$> zip (range 0 (length views - 1)) views
+      uncurry (drawView divId (\_ -> drawLinkFig fig v1')) <$> zip (range 0 (length views - 1)) views
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
 drawFig fig@{ spec: { divId }, o } o' = do
