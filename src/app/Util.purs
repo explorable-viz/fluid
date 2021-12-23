@@ -1,6 +1,6 @@
 module App.Util where
 
-import Prelude
+import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:))
@@ -9,11 +9,11 @@ import Data.Tuple (fst)
 import Effect (Effect)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
-import Bindings (Bindings, Var, (↦), find)
+import Bindings (Bindings, Var, (↦), find, update)
 import DataType (cBarChart, cCons, cNil, cPair)
-import Lattice (Slice, 𝔹, expand)
+import Lattice (Slice, 𝔹, expand, neg)
 import Primitive (class ToFrom, as, match, match_fwd)
-import Util (type (×), type (+), (×), successful)
+import Util (type (×), type (+), (×), (!), absurd, error, successful)
 import Util.SnocList (SnocList(..), (:-))
 import Val (Val(..), holeMatrix, insertMatrix)
 
@@ -33,7 +33,7 @@ get_intOrNumber :: Var -> Slice (Bindings (Val 𝔹)) -> Number × 𝔹
 get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
 
 get :: Var -> Slice (Bindings (Val 𝔹)) -> Slice (Val 𝔹)
-get x (r × r') = successful $ find x r `lift2 (×)` find x r'
+get x (r' × r) = successful $ find x r' `lift2 (×)` find x r
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (Slice (Bindings (Val 𝔹)) -> a) -> Slice (Val 𝔹) -> a
@@ -67,3 +67,29 @@ selectBarChart_data v = Constr false cBarChart (Record false (Lin :- "caption" �
 
 selectPair :: 𝔹 -> Val 𝔹 -> Val 𝔹 -> Val 𝔹
 selectPair α v1 v2 = Constr α cPair (v1 : v2 : Nil)
+
+-- Togglers.
+toggleCell :: Int -> Int -> Selector
+toggleCell i j (u × Matrix _ (_ × (i' × _) × (j' × _))) = 
+   case expand u (Matrix false (holeMatrix i' j')) of
+      Matrix α (vss × (_ × β) × (_ × β')) ->
+         Matrix α (insertMatrix i j (neg vss!(i - 1)!(j - 1)) (vss × (i' × β) × (j' × β')))
+      _ -> error absurd
+toggleCell _ _ _ = error absurd
+
+toggleNth :: Int -> Selector
+toggleNth n (u × Constr _ c (v1 : v2 : Nil)) | c == cCons =
+   case expand u (Constr false cCons (Hole false : Hole false : Nil)) of
+      Constr α _ (u1 : u2 : Nil) ->
+         case n of 
+            0 -> Constr α cCons (neg u1 : u2 : Nil)
+            _ -> Constr α cCons (u1 : toggleNth (n - 1) (u2 × v2) : Nil)
+      _ -> error absurd
+toggleNth _ _ = error absurd
+
+toggleField :: Var -> Selector -> Selector
+toggleField f selector (u × Record _ xvs) = 
+   case expand u (Record false (map (const (Hole false)) <$> xvs)) of
+      Record α xus -> Record α (update xus (f ↦ selector (get f (xus × xvs))))
+      _ -> error absurd
+toggleField _ _ _ = error absurd

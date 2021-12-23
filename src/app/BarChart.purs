@@ -1,16 +1,18 @@
 module App.BarChart where
 
 import Prelude hiding (absurd)
+import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Tuple (fst)
 import Unsafe.Coerce (unsafeCoerce)
+import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record)
+import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record, toggleField, toggleNth)
 import Bindings (Bind)
-import Lattice (𝔹)
-import Util (type (×), absurd, fromJust)
+import DataType (cBarChart)
+import Lattice (𝔹, expand)
+import Util (type (×), (×), (!), absurd, error, fromJust)
 import Util.SnocList (SnocList)
-import Val (Val)
+import Val (Val(..))
 
 newtype BarChart = BarChart { caption :: String × 𝔹, data_ :: Array BarChartRecord }
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
@@ -30,10 +32,17 @@ instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart whe
    }
 
 barChartHandler :: Handler
-barChartHandler = const fst
+barChartHandler ev (u × Constr _ c (v1 : Nil)) | c == cBarChart =
+   let i = unsafeBarChartRecord (target ev) in
+   case expand u (Constr false cBarChart (Hole false : Nil)) of
+      Constr α _ (u1 : Nil) ->
+         Constr α cBarChart (toggleField "data" (toggleNth i) (u1 × v1) : Nil)
+      _ -> error absurd
+   where
+   -- (unsafe) datum associated with bar chart mouse event; 0-based index of selected bar
+   unsafeBarChartRecord :: Maybe EventTarget -> Int
+   unsafeBarChartRecord tgt_opt =
+      let tgt = fromJust absurd $ tgt_opt
+      in (unsafeCoerce tgt).__data__!0
 
--- (unsafe) the datum associated with a bar chart mouse event.
-unsafeBarChartRecord :: Maybe EventTarget -> BarChartRecord
-unsafeBarChartRecord tgt_opt =
-   let tgt = fromJust absurd $ tgt_opt
-   in (unsafeCoerce tgt).__data__
+barChartHandler _ _ = error absurd

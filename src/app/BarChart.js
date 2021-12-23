@@ -8,8 +8,8 @@ function drawBarChart (
    id,
    childIndex,
    {
-      caption,   // String
-      data_,     // Array BarChartRecord
+      caption,    // String
+      data_,        // Array BarChartRecord
    },
    listener
 ) {
@@ -33,9 +33,7 @@ function drawBarChart (
       const tip = d3tip.default()
          .attr('class', 'd3-tip')
          .offset([0, 0])
-         .html((ev, d) => {
-            return d.y.value0
-         })
+         .html((_, d) => d.y.value0)
 
       svg.call(tip)
 
@@ -66,18 +64,19 @@ function drawBarChart (
       // bars
       const barFill = '#dcdcdc'
       svg.selectAll('rect')
-         .data(data_)
+         .data([...data_.entries()])
          .enter()
          .append('rect')
-            .attr('x', d => x(d.x.value0))
-            .attr('y', d => y(d.y.value0 + 1))  // ouch: bars overplot x-axis!
+            .attr('x', ([, d]) => x(d.x.value0))
+            .attr('y', ([, d]) => y(d.y.value0 + 1))  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
-            .attr('height', d => height - y(d.y.value0))
-            .attr('fill', d => d.y.value1 ? shared.colorShade(barFill, -40) : barFill)
-            .attr('stroke', d => d.y.value1 ? 'coral' : '')
-            .on('mouseover', (e, d) =>
+            .attr('height', ([, d]) => height - y(d.y.value0))
+            .attr('fill', ([, d]) => d.y.value1 ? shared.colorShade(barFill, -40) : barFill)
+            .attr('stroke', ([, d]) => d.y.value1 ? 'coral' : '')
+            .on('mousedown', (e, d) => {
+               console.log(`mousedown ${d[0]}`)
                listener(e)
-            )
+            })
 
       svg.append('text')
          .text(caption.value0)

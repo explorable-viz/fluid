@@ -54,7 +54,6 @@ instance slicesBind :: Slices a => Slices (Bind a) where
 instance boundedSlicesBind :: BoundedSlices a => BoundedSlices (Bind a) where
    botOf = (<$>) botOf
 
--- Could simplify these now but not high priority.
 find :: forall a . Var -> Bindings a -> MayFail a
 find x Lin  = report ("variable " <> x <> " not found")
 find x (ρ :- x' ↦ v)
