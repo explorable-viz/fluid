@@ -136,9 +136,9 @@ dataTypes = L.fromFoldable [
    ],
 
    dataType "Plot" [
-      cBarChart × 2,   -- Record<caption: Str, List<Record<x: Str, y: Float>>>
-      cLineChart × 2,  -- Record<caption: Str, List<LinePlot>>
-      cLinePlot × 2    -- Record<name: Str, List<Record<x: Float, y: Float>>>
+      cBarChart × 2,   -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
+      cLineChart × 2,  -- Record<caption: Str, data: List<LinePlot>>
+      cLinePlot × 2    -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
    ],
 
    dataType "GraphicsElement" [
@@ -148,7 +148,7 @@ dataTypes = L.fromFoldable [
       Ctr "Polyline" × 3,     -- List<Point> (points), Str (stroke), Float (strokeWidth)
       Ctr "Polymarkers" × 2,  -- List<Point> (points), List<GraphicsElement> (markers),
       Ctr "Rect" × 5,         -- Float (x), Float (y), Float (width), Float (height), Str (fill)
-      -- these are SVG text-anchor and alignment-baseline properties
+      -- SVG text-anchor and alignment-baseline properties
       Ctr "Text" × 5,         -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
       -- margin is in *parent* reference frame; scaling applies to translated coordinates
       Ctr "Viewport" × 9      -- Float (x), Float (y), Float (width), Float (height), Str (fill),

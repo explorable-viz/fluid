@@ -6,11 +6,11 @@ import Data.Maybe (Maybe)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record, toggleNth)
+import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record, toggleField, toggleNth)
 import Bindings (Bind)
 import DataType (cBarChart)
 import Lattice (𝔹, expand)
-import Util (type (×), (×), absurd, error, fromJust)
+import Util (type (×), (×), (!), absurd, error, fromJust)
 import Util.SnocList (SnocList)
 import Val (Val(..))
 
@@ -33,16 +33,16 @@ instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart whe
 
 barChartHandler :: Handler
 barChartHandler ev (u × Constr _ c (v1 : Nil)) | c == cBarChart =
+   let i = unsafeBarChartRecord (target ev) in
    case expand u (Constr false cBarChart (Hole false : Nil)) of
       Constr α _ (u1 : Nil) ->
-         let i = unsafeBarChartRecord (target ev) in
-         Constr α cBarChart (toggleNth i (u1 × v1) : Nil)
+         Constr α cBarChart (toggleField "data" (toggleNth i) (u1 × v1) : Nil)
       _ -> error absurd
    where
    -- (unsafe) datum associated with bar chart mouse event; 0-based index of selected bar
    unsafeBarChartRecord :: Maybe EventTarget -> Int
    unsafeBarChartRecord tgt_opt =
       let tgt = fromJust absurd $ tgt_opt
-      in (unsafeCoerce tgt).__data__[0]
+      in (unsafeCoerce tgt).__data__!0
 
 barChartHandler _ _ = error absurd

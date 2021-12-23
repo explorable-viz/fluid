@@ -142,9 +142,9 @@ drawLinkFig' :: LinkFig' -> Val 𝔹 -> Effect Unit
 drawLinkFig' fig@{ spec: { divId }, v1 } v1' = do
    log $ "Redrawing " <> divId
    let v1_view × views = successful $ linkFigViews fig v1'
+   drawView divId (\selector -> drawLinkFig' fig (selector (v1' × v1))) (length views) v1_view
    sequence_ $ 
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (\selector -> drawLinkFig' fig (selector (v1' × v1))) (length views) v1_view
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
 drawFig fig@{ spec: { divId }, o } o' = do
