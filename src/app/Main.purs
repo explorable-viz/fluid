@@ -33,7 +33,7 @@ drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)
    case _ of
       Left err -> log $ show err
-      Right figs -> sequence_ $ drawLinkFig <$> figs
+      Right figs -> sequence_ $ flip drawLinkFig (Left $ Hole false) <$> figs
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =

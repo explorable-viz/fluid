@@ -131,20 +131,19 @@ type LinkResult = {
    data_sel :: Slice (Val 𝔹)
 }
 
-drawLinkFig :: LinkFig -> Effect Unit
-drawLinkFig fig@{ divId, views } = do
+drawLinkFig :: LinkFig -> Either (Val 𝔹) (Val 𝔹) -> Effect Unit
+drawLinkFig fig@{ divId, views } either_o' = do
    log $ "Redrawing " <> divId
    sequence_ $ 
-      uncurry (drawView divId (\o' -> drawLinkFig fig)) <$> zip (range 0 (length views - 1)) views
+      uncurry (drawView divId (\_ -> drawLinkFig fig either_o')) <$> zip (range 0 (length views - 1)) views
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
-drawFig fig o' = do
-   let divId = fig.spec.divId
+drawFig fig@{ spec: { divId }, o } o' = do
    log $ "Redrawing " <> divId
    let o_view × i_views = successful $ figViews fig o'
    sequence_ $ 
       uncurry (drawView divId doNothing) <$> zip (range 0 (length i_views - 1)) i_views
-   drawView divId (\selector -> drawFig fig (selector (o' × fig.o))) (length i_views) o_view
+   drawView divId (\selector -> drawFig fig (selector (o' × o))) (length i_views) o_view
 
 varView :: Var -> Slice (Env 𝔹) -> MayFail View
 varView x (ρ' × ρ) =
