@@ -192,7 +192,7 @@ linkResult { spec, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
 
 doLink :: LinkFigSpec -> Aff LinkResult
 doLink spec@{ file1, file2, dataFile, dataVar: x, v1_sel } = do
-   fig <- loadLinkFig' spec
+   fig <- loadLinkFig spec
    pure $ successful $ linkResult fig v1_sel
 
 loadFig :: FigSpec -> Aff Fig
@@ -206,8 +206,8 @@ loadFig spec@{ divId, file, vars } = do
       t × o <- eval ρ0ρ e
       pure { spec, ρ0, ρ: ρ <> ρ1, s, e, t, o }
 
-loadLinkFig' :: LinkFigSpec -> Aff LinkFig'
-loadLinkFig' spec@{ file1, file2, dataFile, dataVar: x, v1_sel } = do
+loadLinkFig :: LinkFigSpec -> Aff LinkFig'
+loadLinkFig spec@{ file1, file2, dataFile, dataVar: x, v1_sel } = do
    let dir = File "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment ρ0 as well as dataset
@@ -226,12 +226,3 @@ loadLinkFig' spec@{ file1, file2, dataFile, dataVar: x, v1_sel } = do
       -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
       -- combined with the negation of the dataset environment slice
       pure { spec, ρ0, ρ, s1, s2, e1, e2, t1, t2, v1, v2 }
-
-loadLinkFig :: LinkFigSpec -> Aff LinkFig
-loadLinkFig spec@{ divId } = do
-   link <- doLink spec
-   pure { divId, views: [
-      view "primary view" (spec.v1_sel × link.v1),
-      view "linked view" link.v2,
-      view "common data" link.data_sel
-   ] }
