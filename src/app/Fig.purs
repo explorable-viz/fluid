@@ -1,4 +1,4 @@
-module App.Renderer where
+module App.Fig where
 
 import Prelude hiding (absurd)
 import Data.Array (range, zip)
