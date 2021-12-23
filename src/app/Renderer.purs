@@ -97,11 +97,6 @@ type Fig = {
    o :: Val 𝔹
 }
 
-type FigState = {
-   fig :: Fig,
-   views :: Array View
-}
-
 type LinkFigSpec = {
    divId :: HTMLId,
    file1 :: File,
@@ -127,11 +122,6 @@ type LinkFig' = {
 
 type LinkFig = {
    divId :: HTMLId,
-   views :: Array View
-}
-
-type LinkFigState = {
-   fig :: LinkFig,
    views :: Array View
 }
 
