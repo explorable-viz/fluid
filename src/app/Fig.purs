@@ -178,19 +178,8 @@ linkResult { spec, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
 
 doLink :: LinkFigSpec -> Aff LinkResult
 doLink spec@{ file1, file2, dataFile, dataVar: x, v1_sel } = do
-   { ρ0, ρ, e2, t1, t2, v1, v2 } <- loadLinkFig' spec
-   let ρ0ρ × _ × _ = evalBwd v1_sel t1
-       _ × ρ' = splitAt 1 ρ0ρ
-   pure $ successful do
-      v <- find x ρ
-      v' <- find x ρ'
-      -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
-      -- combined with the negation of the dataset environment slice
-      pure {
-         v1: v1,
-         v2: neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2,
-         data_sel: v' × v
-      }
+   fig <- loadLinkFig' spec
+   pure $ successful $ linkResult fig v1_sel
 
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ divId, file, vars } = do
