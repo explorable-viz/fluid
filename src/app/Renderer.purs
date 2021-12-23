@@ -102,17 +102,13 @@ type FigState = {
    views :: Array View
 }
 
-type LinkConfig = {
+type LinkFigSpec = {
+   divId :: HTMLId,
    file1 :: File,
    file2 :: File,
    dataFile :: File,
    dataVar :: Var,
    v1_sel :: Val 𝔹
-}
-
-type LinkFigSpec = {
-   divId :: HTMLId,
-   config :: LinkConfig
 }
 
 type LinkFig' = {
@@ -125,7 +121,7 @@ type LinkFig' = {
    e2 :: Expr 𝔹,
    t1 :: Expl 𝔹,
    t2 :: Expl 𝔹,
-   v1 :: Val 𝔹,      -- TODO: consolidate naming conventions with Fig
+   v1 :: Val 𝔹,      -- TODO: align naming conventions with Fig
    v2 :: Val 𝔹
 }
 
@@ -176,11 +172,11 @@ needs fig@{ spec, ρ0, ρ, e, o, t } o' = do
    views <- valViews (ρ0ρ' × (ρ0 <> ρ)) spec.vars 
    pure $ view "output" (o'' × o) × views
 
-doLink' :: LinkFig' -> Val 𝔹 -> MayFail LinkResult
-doLink' { spec, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
+linkResult :: LinkFig' -> Val 𝔹 -> MayFail LinkResult
+linkResult { spec, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
    let ρ0ρ × _ × _ = evalBwd v1_sel t1
        _ × ρ' = splitAt 1 ρ0ρ
-       x = spec.config.dataVar
+       x = spec.dataVar
    v <- find x ρ
    v' <- find x ρ'
    -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
@@ -191,7 +187,7 @@ doLink' { spec, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
       data_sel: v' × v
    }
 
-doLink :: LinkConfig -> Aff LinkResult
+doLink :: LinkFigSpec -> Aff LinkResult
 doLink { file1, file2, dataFile, dataVar: x, v1_sel } = do
    let dir = File "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)
@@ -228,7 +224,7 @@ loadFig spec@{ divId, file, vars } = do
       pure { spec, ρ0, ρ: ρ <> ρ1, s, e, t, o }
 
 loadLinkFig' :: LinkFigSpec -> Aff LinkFig'
-loadLinkFig' spec@{ config: { file1, file2, dataFile, dataVar: x, v1_sel } } = do
+loadLinkFig' spec@{ file1, file2, dataFile, dataVar: x, v1_sel } = do
    let dir = File "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment ρ0 as well as dataset
@@ -249,10 +245,10 @@ loadLinkFig' spec@{ config: { file1, file2, dataFile, dataVar: x, v1_sel } } = d
       pure { spec, ρ0, ρ, s1, s2, e1, e2, t1, t2, v1, v2 }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
-loadLinkFig { divId, config } = do
-   link <- doLink config
+loadLinkFig spec@{ divId } = do
+   link <- doLink spec
    pure { divId, views: [
-      view "primary view" (config.v1_sel × link.v1),
+      view "primary view" (spec.v1_sel × link.v1),
       view "linked view" link.v2,
       view "common data" link.data_sel
    ] }

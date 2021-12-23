@@ -39,6 +39,7 @@ test_scratchpad = [
 test_linking :: Array (Test Unit)
 test_linking = [
    testLink {
+      divId: "",
       file1: File "pairs-1",
       file2: File "pairs-2",
       dataFile: File "pairs-data",
@@ -46,6 +47,7 @@ test_linking = [
       v1_sel: selectPair false hole (selectPair false hole (selectPair false (Int true 3) hole))
    } "(3, (_5_, _7_))",
    testLink {
+      divId: "",
       file1: File "convolution-1",
       file2: File "convolution-2",
       dataFile: File "convolution-data",
@@ -58,6 +60,7 @@ test_linking = [
       \7, 15, 15, 8, 20,\n\
       \3, 10, 12, 3, 11",
    testLink {
+      divId: "",
       file1: File "bar-chart",
       file2: File "line-chart",
       dataFile: File "renewables",

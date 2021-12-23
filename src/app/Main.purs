@@ -14,13 +14,11 @@ import Val (Val(..))
 linkingFig1 :: LinkFigSpec
 linkingFig1 = {
    divId: "fig-1",
-   config: {
-      file1: File "bar-chart",
-      file2: File "line-chart",
-      dataFile: File "renewables",
-      dataVar: "data",
-      v1_sel: selectBarChart_data (selectNth 1 (select_y))
-   }
+   file1: File "bar-chart",
+   file2: File "line-chart",
+   dataFile: File "renewables",
+   dataVar: "data",
+   v1_sel: selectBarChart_data (selectNth 1 (select_y))
 }
 
 fig1 :: FigSpec
