@@ -130,6 +130,11 @@ type LinkFig = {
    views :: Array View
 }
 
+type LinkFigState = {
+   fig :: LinkFig,
+   views :: Array View
+}
+
 type LinkResult = {
    v1 :: Val 𝔹,             -- original value of view 1
    v2 :: Slice (Val 𝔹),
@@ -146,7 +151,7 @@ drawFig :: Fig -> Val 𝔹 -> Effect Unit
 drawFig fig o' = do
    let divId = fig.spec.divId
    log $ "Redrawing " <> divId
-   let o_view × i_views = successful $ needs fig o'
+   let o_view × i_views = successful $ figViews fig o'
    sequence_ $ 
       uncurry (drawView divId doNothing) <$> zip (range 0 (length i_views - 1)) i_views
    drawView divId (\selector -> drawFig fig (selector (o' × fig.o))) (length i_views) o_view
@@ -164,8 +169,8 @@ valViews :: Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
 valViews (ρ' × ρ) vars = sequence (flip varView' (ρ' × ρ) <$> vars)
 
 -- For an output selection, views of corresponding input selections.
-needs :: Fig -> Val 𝔹 -> MayFail (View × Array View)
-needs fig@{ spec, ρ0, ρ, e, o, t } o' = do
+figViews :: Fig -> Val 𝔹 -> MayFail (View × Array View)
+figViews fig@{ spec, ρ0, ρ, e, o, t } o' = do
    let ρ0ρ' × e × α = evalBwd o' t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
