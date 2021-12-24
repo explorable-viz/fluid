@@ -33,7 +33,7 @@ drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)
    case _ of
       Left err -> log $ show err
-      Right figs -> sequence_ $ flip drawLinkFig (selectBarChart_data (selectNth 1 (select_y))) <$> figs
+      Right figs -> sequence_ $ flip drawLinkFig (Hole false) <$> figs
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =
