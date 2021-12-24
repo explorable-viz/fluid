@@ -3,7 +3,7 @@ module App.Util where
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.Array ((:)) as A
-import Data.List (List(..), (:))
+import Data.List (List(..), (:), (!!), updateAt)
 import Data.Profunctor.Strong (first)
 import Data.Tuple (fst)
 import Data.Unfoldable (replicate)
@@ -14,7 +14,7 @@ import Bindings (Bindings, Var, (↦), find, update)
 import DataType (Ctr, arity, cBarChart, cCons, cNil, cPair, f_caption, f_data, f_x, f_y)
 import Lattice (Slice, 𝔹, expand, neg)
 import Primitive (class ToFrom, as, match, match_fwd)
-import Util (type (×), type (+), (×), (!), absurd, error, successful)
+import Util (type (×), type (+), (×), (!), absurd, error, fromJust, successful)
 import Util.SnocList (SnocList(..), (:-))
 import Val (Val(..), holeMatrix, insertMatrix)
 
@@ -98,7 +98,10 @@ toggleField _ _ _ = error absurd
 toggleConstrArg :: Ctr -> Int -> Selector -> Selector
 toggleConstrArg c n selector (u × Constr _ c' vs) | c == c' =
    case expand u (Constr false c (replicate (successful $ arity c) (Hole false))) of
-      Constr α _ us ->
-         Constr α c us
+      Constr α _ us -> fromJust absurd $ do
+         u1 <- us !! n
+         v1 <- vs !! n
+         us' <- updateAt n (selector (u1 × v1)) us
+         pure $ Constr α c us'
       _ -> error absurd
 toggleConstrArg _ _ _ _ = error absurd

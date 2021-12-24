@@ -15,7 +15,7 @@ import App.Util (
 import Bindings (Bind)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Lattice (Slice, 𝔹, expand, neg)
-import Util (type (×), (×), (!), absurd, error, fromJust)
+import Util (type (×), (×), (!), absurd, fromJust)
 import Util.SnocList (SnocList)
 import Val (Val(..))
 
@@ -53,12 +53,13 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
    where
    togglePoint :: Int × Int -> Selector
    togglePoint (i × j) =
-      toggleConstrArg cLineChart 0
-         (toggleField f_plots
-            (toggleNth i
-               (toggleConstrArg cLinePlot 0
-                  (toggleField f_data
-                     (toggleNth j (fst >>> neg))))))
+      toggleConstrArg cLineChart 0 $
+      toggleField f_plots $
+      toggleNth i $
+      toggleConstrArg cLinePlot 0 $
+      toggleField f_data $
+      toggleNth j $
+      fst >>> neg
 
    -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
    -- within line plot.
