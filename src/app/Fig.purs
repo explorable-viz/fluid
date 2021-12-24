@@ -121,30 +121,23 @@ type LinkFig = {
 }
 
 type LinkResult = {
-   v2' :: Val 𝔹,
-   v0' :: Val 𝔹
-}
-
-type LinkResult2 = {
    v' :: Val 𝔹,      -- will represent either v1' or v2'
    v0' :: Val 𝔹
 }
 
-drawLinkFig :: LinkFig -> Val 𝔹 -> Effect Unit
-drawLinkFig fig= Left >>> drawLinkFig2 fig
-
-drawLinkFig2 :: LinkFig -> Either (Val 𝔹) (Val 𝔹) -> Effect Unit
-drawLinkFig2 fig@{ spec: { divId }, v1, v2 } (Left v1') = do
+-- TODO: consolidate.
+drawLinkFig :: LinkFig -> Either (Val 𝔹) (Val 𝔹) -> Effect Unit
+drawLinkFig fig@{ spec: { divId }, v1, v2 } (Left v1') = do
    log $ "Redrawing " <> divId
    let v1_view × v2_view × v0_view = successful $ fst (linkFigViews fig) v1'
-   drawView divId (\selector -> drawLinkFig2 fig (Left $ selector (v1' × v1))) 2 v1_view
-   drawView divId (\selector -> drawLinkFig2 fig (Right $ selector (Hole false × v2))) 0 v2_view
+   drawView divId (\selector -> drawLinkFig fig (Left $ selector (v1' × v1))) 2 v1_view
+   drawView divId (\selector -> drawLinkFig fig (Right $ selector (Hole false × v2))) 0 v2_view
    drawView divId doNothing 1 v0_view
-drawLinkFig2 fig@{ spec: { divId }, v1, v2 } (Right v2') = do
+drawLinkFig fig@{ spec: { divId }, v1, v2 } (Right v2') = do
    log $ "Redrawing " <> divId
    let v1_view × v2_view × v0_view = successful $ snd (linkFigViews fig) v2'
-   drawView divId (\selector -> drawLinkFig2 fig (Left $ selector (Hole false × v1))) 2 v1_view
-   drawView divId (\selector -> drawLinkFig2 fig (Right $ selector (v2' × v2))) 0 v2_view
+   drawView divId (\selector -> drawLinkFig fig (Left $ selector (Hole false × v1))) 2 v1_view
+   drawView divId (\selector -> drawLinkFig fig (Right $ selector (v2' × v2))) 0 v2_view
    drawView divId doNothing 1 v0_view
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
@@ -170,6 +163,7 @@ figViews { spec: { xs }, ρ0, ρ, e, t, v } v' = do
    views <- valViews (ρ0ρ' × (ρ0 <> ρ)) xs
    pure $ view "output" (v'' × v) × views
 
+-- TODO: consolidate.
 linkFigViews :: LinkFig -> (Val 𝔹 -> MayFail (View × View × View)) × (Val 𝔹 -> MayFail (View × View × View))
 linkFigViews fig@{ v1, v2, v0 } =
    (\v1' -> do
@@ -180,8 +174,8 @@ linkFigViews fig@{ v1, v2, v0 } =
       { v': v1', v0' } <- snd (linkResult fig) v2'
       pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0))
 
--- TODO: consolidate the two branches here.
-linkResult :: LinkFig -> (Val 𝔹 -> MayFail LinkResult2) × (Val 𝔹 -> MayFail LinkResult2)
+-- TODO: consolidate.
+linkResult :: LinkFig -> (Val 𝔹 -> MayFail LinkResult) × (Val 𝔹 -> MayFail LinkResult)
 linkResult { spec: { x }, ρ0, ρ, e1, e2, t1, t2, v1, v2 } =
    (\v1' -> do
       let ρ0ρ × _ × _ = evalBwd v1' t1
