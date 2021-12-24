@@ -70,7 +70,7 @@ function drawLineChart (
          const [i, plot] = n_plot,
                col = color(names.indexOf(plot.name.value0))
          svg.selectAll('markers')
-            .data([...plot.data.entries()].map(([j, ns]) => [j, ns]))
+            .data([...plot.data.entries()].map(([j, ns]) => [[i, j], ns]))
             .enter()
             .append('g')
             .append('circle')
