@@ -6,7 +6,7 @@ import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
 import Data.List (List(..), (:), singleton)
-import Data.Tuple (fst, uncurry)
+import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
@@ -167,6 +167,16 @@ linkFigViews :: LinkFig -> Val 𝔹 -> MayFail (View × View × View)
 linkFigViews fig@{ v1, v2, v0 } v1' = do
    { v2', v0' } <- linkResult fig v1'
    pure $ view "primary view" (v1' × v1) × view "linked view" (v2' × v2) × view "common data" (v0' × v0)
+
+linkFigViews2 :: LinkFig -> (Val 𝔹 -> MayFail (View × View × View)) × (Val 𝔹 -> MayFail (View × View × View))
+linkFigViews2 fig@{ v1, v2, v0 } =
+   (\v1' -> do
+      { v': v2', v0' } <- fst (linkResult2 fig) v1'
+      pure $ view "primary view" (v1' × v1) × view "linked view" (v2' × v2) × view "common data" (v0' × v0))
+   ×
+   (\v2' -> do
+      { v': v1', v0' } <- snd (linkResult2 fig) v2'
+      pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0))
 
 linkResult :: LinkFig -> Val 𝔹 -> MayFail LinkResult
 linkResult fig v1' = do
