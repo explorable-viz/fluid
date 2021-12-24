@@ -126,14 +126,19 @@ type LinkResult = {
    v0' :: Val 𝔹
 }
 
+type LinkResult2 = {
+   v' :: Val 𝔹,      -- will represent either v1' or v2'
+   v0' :: Val 𝔹
+}
+
 -- TODO: consolidate these two.
 drawLinkFig :: LinkFig -> Val 𝔹 -> Effect Unit
 drawLinkFig fig@{ spec: { divId }, v1 } v1' = do
    log $ "Redrawing " <> divId
-   let v1_view × views = successful $ linkFigViews fig v1'
-   drawView divId (\selector -> drawLinkFig fig (selector (v1' × v1))) (length views) v1_view
-   sequence_ $
-      uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
+   let v1_view × v2_view × v0_view = successful $ linkFigViews fig v1'
+   drawView divId (\selector -> drawLinkFig fig (selector (v1' × v1))) 2 v1_view
+   drawView divId doNothing 0 v2_view
+   drawView divId doNothing 1 v0_view
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
 drawFig fig@{ spec: { divId }, v } v' = do
@@ -158,11 +163,10 @@ figViews { spec: { xs }, ρ0, ρ, e, t, v } v' = do
    views <- valViews (ρ0ρ' × (ρ0 <> ρ)) xs
    pure $ view "output" (v'' × v) × views
 
-linkFigViews :: LinkFig -> Val 𝔹 -> MayFail (View × Array View)
+linkFigViews :: LinkFig -> Val 𝔹 -> MayFail (View × View × View)
 linkFigViews fig@{ v1, v2, v0 } v1' = do
    { v2', v0' } <- linkResult fig v1'
-   pure $ view "primary view" (v1' × v1) ×
-          [view "linked view" (v2' × v2), view "common data" (v0' × v0)]
+   pure $ view "primary view" (v1' × v1) × view "linked view" (v2' × v2) × view "common data" (v0' × v0)
 
 linkResult :: LinkFig -> Val 𝔹 -> MayFail LinkResult
 linkResult { spec: { x }, ρ0, ρ, e2, t1, t2, v1, v2 } v1' = do
@@ -173,6 +177,26 @@ linkResult { spec: { x }, ρ0, ρ, e2, t1, t2, v1, v2 } v1' = do
    -- combined with the negation of the dataset environment slice
    let v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
    pure { v2', v0' }
+
+linkResult2 :: LinkFig -> (Val 𝔹 -> MayFail LinkResult2) × (Val 𝔹 -> MayFail LinkResult2)
+linkResult2 { spec: { x }, ρ0, ρ, e1, e2, t1, t2, v1, v2 } =
+   (\v1' -> do
+      let ρ0ρ × _ × _ = evalBwd v1' t1
+          _ × ρ' = splitAt 1 ρ0ρ
+      v0' <- find x ρ'
+      -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
+      -- combined with the negation of the dataset environment slice
+      let v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
+      pure { v': v2', v0' })
+   ×
+   (\v2' -> do
+      let ρ0ρ × _ × _ = evalBwd v2' t1
+          _ × ρ' = splitAt 1 ρ0ρ
+      v0' <- find x ρ'
+      -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
+      -- combined with the negation of the dataset environment slice
+      let v1' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
+      pure { v': v1', v0' })
 
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ file } = do
