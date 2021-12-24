@@ -81,7 +81,7 @@ testLink :: LinkFigSpec -> String -> Test Unit
 testLink spec v2_expect =
    before (doLink spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
-         \{ v2: v2' × _ } ->
+         \{ v2' } ->
             checkPretty "Linked output" v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit

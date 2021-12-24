@@ -40,6 +40,7 @@ data View =
    LineChartFig LineChart |
    BarChartFig BarChart
 
+-- Want a nicer way to do this.
 drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
 drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
 drawView divId onSel n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
@@ -121,8 +122,7 @@ type LinkFig = {
 }
 
 type LinkResult = {
-   v1 :: Val 𝔹,             -- original value of view 1
-   v2 :: Slice (Val 𝔹),
+   v2' :: Val 𝔹,
    data_sel :: Slice (Val 𝔹)
 }
 
@@ -132,19 +132,19 @@ drawLinkFig fig@{ spec: { divId }, v1 } v1' = do
    log $ "Redrawing " <> divId
    let v1_view × views = successful $ linkFigViews fig v1'
    drawView divId (\selector -> drawLinkFig fig (selector (v1' × v1))) (length views) v1_view
-   sequence_ $ 
+   sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
 drawFig fig@{ spec: { divId }, o } o' = do
    log $ "Redrawing " <> divId
    let o_view × i_views = successful $ figViews fig o'
-   sequence_ $ 
+   sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length i_views - 1)) i_views
    drawView divId (\selector -> drawFig fig (selector (o' × o))) (length i_views) o_view
 
 varView :: Var -> Slice (Env 𝔹) -> MayFail View
-varView x (ρ' × ρ) = (\v' v -> view x (v' × v)) <$> find x ρ' <*> find x ρ 
+varView x (ρ' × ρ) = (\v' v -> view x (v' × v)) <$> find x ρ' <*> find x ρ
 
 valViews :: Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
 valViews (ρ' × ρ) vars = sequence (flip varView (ρ' × ρ) <$> vars)
@@ -155,14 +155,14 @@ figViews fig@{ spec, ρ0, ρ, e, o, t } o' = do
    let ρ0ρ' × e × α = evalBwd o' t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        o'' = evalFwd ρ0ρ' e α t
-   views <- valViews (ρ0ρ' × (ρ0 <> ρ)) spec.vars 
+   views <- valViews (ρ0ρ' × (ρ0 <> ρ)) spec.vars
    pure $ view "output" (o'' × o) × views
 
 linkFigViews :: LinkFig -> Val 𝔹 -> MayFail (View × Array View)
-linkFigViews fig@{ v1 } v1' = do
+linkFigViews fig@{ v1, v2 } v1' = do
    link <- linkResult fig v1'
-   pure $ view "primary view" (v1' × v1) × 
-          [view "linked view" link.v2, view "common data" link.data_sel]
+   pure $ view "primary view" (v1' × v1) ×
+          [view "linked view" (link.v2' × v2), view "common data" link.data_sel]
 
 linkResult :: LinkFig -> Val 𝔹 -> MayFail LinkResult
 linkResult { spec, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
@@ -174,8 +174,7 @@ linkResult { spec, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
    -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
    -- combined with the negation of the dataset environment slice
    pure {
-      v1,
-      v2: neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2) × v2,
+      v2': neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2),
       data_sel: v' × v
    }
 
