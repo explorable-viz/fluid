@@ -65,6 +65,15 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
          _ -> error absurd
    togglePoint _ _ = error absurd
 
+   togglePoint2 :: Int × Int -> Selector
+   togglePoint2 (i × j) =
+      toggleConstrArg cLineChart 0
+         (toggleField f_plots
+            (toggleNth i
+               (toggleConstrArg cLinePlot 0
+                  (toggleField f_data
+                     (toggleNth j (fst >>> neg))))))
+
    -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
    -- within line plot.
    unsafePos :: Maybe EventTarget -> Int × Int
