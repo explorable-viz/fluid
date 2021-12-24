@@ -2,6 +2,14 @@
    font-size: 11px;
 }
 
+.bar-selected {
+   stroke: Coral;
+}
+
+.bar-unselected {
+   stroke: unset;
+}
+
 .cell-selected {
    border: 1px solid Coral;
 }

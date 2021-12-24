@@ -4,15 +4,15 @@ const d3 = require("d3")
 const shared = require("/src/app/Shared")
 
 function max_y (linePlot) {
-   return Math.max(...linePlot.data_.map(point => point.y.value0))
+   return Math.max(...linePlot.data.map(point => point.y.value0))
 }
 
 function min_x (linePlot) {
-   return Math.min(...linePlot.data_.map(point => point.x.value0))
+   return Math.min(...linePlot.data.map(point => point.x.value0))
 }
 
 function max_x (linePlot) {
-   return Math.max(...linePlot.data_.map(point => point.x.value0))
+   return Math.max(...linePlot.data.map(point => point.x.value0))
 }
 
 function drawLineChart (
@@ -65,13 +65,13 @@ function drawLineChart (
          })
          .attr('stroke-width', 1)
          .attr('class', 'line')
-         .attr('d', d => line1(d.data_))
+         .attr('d', d => line1(d.data))
 
       const smallRadius = 2
       for (const plot of plots) {
          const col = color(names.indexOf(plot.name.value0))
          svg.selectAll('markers')
-            .data(plot.data_)
+            .data(plot.data)
             .enter()
             .append('g')
             .append('circle')

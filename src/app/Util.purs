@@ -10,7 +10,7 @@ import Effect (Effect)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
 import Bindings (Bindings, Var, (↦), find, update)
-import DataType (cBarChart, cCons, cNil, cPair)
+import DataType (cBarChart, cCons, cNil, cPair, f_caption, f_data, f_x, f_y)
 import Lattice (Slice, 𝔹, expand, neg)
 import Primitive (class ToFrom, as, match, match_fwd)
 import Util (type (×), type (+), (×), (!), absurd, error, successful)
@@ -60,17 +60,17 @@ selectNth 0 v = Constr false cCons (v : Hole false : Nil)
 selectNth n v = Constr false cCons (Hole false : selectNth (n - 1) v : Nil)
 
 select_y :: Val 𝔹
-select_y = Record false (Lin :- "x" ↦ Hole false :- "y" ↦ Hole true)
+select_y = Record false (Lin :- f_x ↦ Hole false :- f_y ↦ Hole true)
 
 selectBarChart_data :: Val 𝔹 -> Val 𝔹
-selectBarChart_data v = Constr false cBarChart (Record false (Lin :- "caption" ↦ Hole false :- "data" ↦ v) : Nil)
+selectBarChart_data v = Constr false cBarChart (Record false (Lin :- f_caption ↦ Hole false :- f_data ↦ v) : Nil)
 
 selectPair :: 𝔹 -> Val 𝔹 -> Val 𝔹 -> Val 𝔹
 selectPair α v1 v2 = Constr α cPair (v1 : v2 : Nil)
 
 -- Togglers.
 toggleCell :: Int -> Int -> Selector
-toggleCell i j (u × Matrix _ (_ × (i' × _) × (j' × _))) = 
+toggleCell i j (u × Matrix _ (_ × (i' × _) × (j' × _))) =
    case expand u (Matrix false (holeMatrix i' j')) of
       Matrix α (vss × (_ × β) × (_ × β')) ->
          Matrix α (insertMatrix i j (neg vss!(i - 1)!(j - 1)) (vss × (i' × β) × (j' × β')))
@@ -81,14 +81,14 @@ toggleNth :: Int -> Selector
 toggleNth n (u × Constr _ c (v1 : v2 : Nil)) | c == cCons =
    case expand u (Constr false cCons (Hole false : Hole false : Nil)) of
       Constr α _ (u1 : u2 : Nil) ->
-         case n of 
+         case n of
             0 -> Constr α cCons (neg u1 : u2 : Nil)
             _ -> Constr α cCons (u1 : toggleNth (n - 1) (u2 × v2) : Nil)
       _ -> error absurd
 toggleNth _ _ = error absurd
 
 toggleField :: Var -> Selector -> Selector
-toggleField f selector (u × Record _ xvs) = 
+toggleField f selector (u × Record _ xvs) =
    case expand u (Record false (map (const (Hole false)) <$> xvs)) of
       Record α xus -> Record α (update xus (f ↦ selector (get f (xus × xvs))))
       _ -> error absurd

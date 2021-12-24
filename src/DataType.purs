@@ -98,6 +98,14 @@ cPair       = Ctr "Pair"      :: Ctr -- Pair
 cNone       = Ctr "None"      :: Ctr -- Option
 cSome       = Ctr "Some"      :: Ctr
 
+-- Field names used internally by rendering layer.
+f_caption   = "caption" :: FieldName
+f_data      = "data"    :: FieldName
+f_name      = "name"    :: FieldName
+f_plots     = "plots"   :: FieldName
+f_x         = "x"       :: FieldName
+f_y         = "y"       :: FieldName
+
 dataTypes :: List DataType
 dataTypes = L.fromFoldable [
    -- Core
