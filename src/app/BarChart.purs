@@ -3,6 +3,7 @@ module App.BarChart where
 import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
+import Data.Tuple (fst)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
@@ -11,7 +12,7 @@ import App.Util (
 )
 import Bindings (Bind)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
-import Lattice (𝔹, expand)
+import Lattice (𝔹, expand, neg)
 import Util (type (×), (×), (!), absurd, error, fromJust)
 import Util.SnocList (SnocList)
 import Val (Val(..))
@@ -40,7 +41,7 @@ barChartHandler ev = toggleBar $ unsafeBarIndex (target ev)
    toggleBar i (u × Constr _ c (v1 : Nil)) | c == cBarChart =
       case expand u (Constr false c (Hole false : Nil)) of
          Constr α _ (u1 : Nil) ->
-            Constr α c (toggleField f_data (toggleNth i) (u1 × v1) : Nil)
+            Constr α c (toggleField f_data (toggleNth i (fst >>> neg)) (u1 × v1) : Nil)
          _ -> error absurd
    toggleBar _ _ = error absurd
 
