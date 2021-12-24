@@ -138,7 +138,7 @@ drawLinkFig2 fig@{ spec: { divId }, v1, v2 } (Left v1') = do
    log $ "Redrawing " <> divId
    let v1_view × v2_view × v0_view = successful $ fst (linkFigViews2 fig) v1'
    drawView divId (\selector -> drawLinkFig2 fig (Left $ selector (v1' × v1))) 2 v1_view
-   drawView divId doNothing 0 v2_view
+   drawView divId doNothing 0 v2_view -- (\selector -> drawLinkFig2 fig (Right $ selector (Hole false × v2)))
    drawView divId doNothing 1 v0_view
 drawLinkFig2 fig@{ spec: { divId }, v1, v2 } (Right v2') = do
    log $ "Redrawing " <> divId
@@ -202,7 +202,7 @@ linkResult2 { spec: { x }, ρ0, ρ, e1, e2, t1, t2, v1, v2 } =
       pure { v': v2', v0' })
    ×
    (\v2' -> do
-      let ρ0ρ × _ × _ = evalBwd v2' t1
+      let ρ0ρ × _ × _ = evalBwd v2' t2
           _ × ρ' = splitAt 1 ρ0ρ
       v0' <- find x ρ'
       -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
