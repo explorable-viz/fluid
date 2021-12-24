@@ -9,7 +9,7 @@ function drawBarChart (
    childIndex,
    {
       caption,    // String
-      data_,        // Array BarChartRecord
+      data,       // Array BarChartRecord
    },
    listener
 ) {
@@ -40,7 +40,7 @@ function drawBarChart (
       // x-axis
       const x = d3.scaleBand()
          .range([0, width])
-         .domain(data_.map(d => d.x.value0))
+         .domain(data.map(d => d.x.value0))
          .padding(0.2)
       svg.append('g')
          .attr('transform', "translate(0," + height + ")")
@@ -50,7 +50,7 @@ function drawBarChart (
 
       // y-axis
       const nearest = 100,
-            y_max = Math.ceil(Math.max(...data_.map(d => d.y.value0)) / nearest) * nearest
+            y_max = Math.ceil(Math.max(...data.map(d => d.y.value0)) / nearest) * nearest
       const y = d3.scaleLinear()
          .domain([0, y_max])
          .range([height, 0])
@@ -64,7 +64,7 @@ function drawBarChart (
       // bars
       const barFill = '#dcdcdc'
       svg.selectAll('rect')
-         .data([...data_.entries()])
+         .data([...data.entries()])
          .enter()
          .append('rect')
             .attr('x', ([, d]) => x(d.x.value0))

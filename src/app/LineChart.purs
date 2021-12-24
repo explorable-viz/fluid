@@ -17,7 +17,7 @@ import Val (Val(..)) as V
 import Val (Val)
 
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
-newtype LinePlot = LinePlot { name :: String × 𝔹, data_ :: Array Point }
+newtype LinePlot = LinePlot { name :: String × 𝔹, data :: Array Point }
 newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
 
 foreign import drawLineChart :: Renderer LineChart
@@ -31,7 +31,7 @@ instance reflectPoint :: Reflect (SnocList (Bind (Val Boolean))) Point where
 instance reflectLinePlot :: Reflect (SnocList (Bind (Val Boolean))) LinePlot where
    from r = LinePlot {
       name: get_prim f_name r,
-      data_: record from <$> from (get f_data r)
+      data: record from <$> from (get f_data r)
    }
 
 instance reflectLineChart :: Reflect (SnocList (Bind (Val Boolean))) LineChart where
@@ -52,4 +52,4 @@ lineChartHandler = const fst
 unsafePoint :: Maybe EventTarget -> Point
 unsafePoint tgt_opt =
    let tgt = fromJust absurd $ tgt_opt
-   in (unsafeCoerce tgt).__data__
+   in (unsafeCoerce tgt).__data_

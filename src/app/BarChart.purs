@@ -14,7 +14,7 @@ import Util (type (×), (×), (!), absurd, error, fromJust)
 import Util.SnocList (SnocList)
 import Val (Val(..))
 
-newtype BarChart = BarChart { caption :: String × 𝔹, data_ :: Array BarChartRecord }
+newtype BarChart = BarChart { caption :: String × 𝔹, data :: Array BarChartRecord }
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }
 
 foreign import drawBarChart :: Renderer BarChart
@@ -28,7 +28,7 @@ instance reflectBarChartRecord :: Reflect (SnocList (Bind (Val Boolean))) BarCha
 instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart where
    from r = BarChart {
       caption: get_prim f_caption r,
-      data_: record from <$> from (get f_data r)
+      data: record from <$> from (get f_data r)
    }
 
 barChartHandler :: Handler
@@ -43,6 +43,6 @@ barChartHandler ev (u × Constr _ c (v1 : Nil)) | c == cBarChart =
    unsafeBarChartRecord :: Maybe EventTarget -> Int
    unsafeBarChartRecord tgt_opt =
       let tgt = fromJust absurd $ tgt_opt
-      in (unsafeCoerce tgt).__data__!0
+      in (unsafeCoerce tgt).__data_!0
 
 barChartHandler _ _ = error absurd
