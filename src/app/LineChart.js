@@ -55,15 +55,15 @@ function drawLineChart (
       const color = d3.scaleOrdinal(d3.schemePastel1)
 
       svg.selectAll('lines')
-         .data(plots)
+         .data([...plots.entries()])
          .enter()
          .append('g')
          .append('path')
          .attr('fill', 'none')
-         .attr('stroke', d => color(names.indexOf(d.name.value0)))
+         .attr('stroke', ([, d]) => color(names.indexOf(d.name.value0)))
          .attr('stroke-width', 1)
          .attr('class', 'line')
-         .attr('d', d => line1(d.data))
+         .attr('d', ([_, d]) => line1(d.data))
 
       const smallRadius = 2
       for (const plot of plots) {
