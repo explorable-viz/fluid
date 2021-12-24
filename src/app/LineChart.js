@@ -67,10 +67,10 @@ function drawLineChart (
 
       const smallRadius = 2
       for (const n_plot of plots.entries()) {
-         const [n, plot] = n_plot,
+         const [i, plot] = n_plot,
                col = color(names.indexOf(plot.name.value0))
          svg.selectAll('markers')
-            .data([...plot.data.entries()])
+            .data([...plot.data.entries()].map(([j, ns]) => [j, ns]))
             .enter()
             .append('g')
             .append('circle')
