@@ -8,7 +8,9 @@ import Data.Tuple (fst, uncurry)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util (Handler, class Reflect, Renderer, Selector, from, get, get_intOrNumber, get_prim, record, toggleField)
+import App.Util (
+   Handler, class Reflect, Renderer, Selector, from, get, get_intOrNumber, get_prim, record, toggleField, toggleNth
+)
 import Bindings (Bind)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Lattice (Slice, 𝔹, expand)
@@ -52,7 +54,7 @@ lineChartHandler ev = uncurry (\i j -> fst) $ unsafePos $ target ev
    togglePoint (i × j) (u × Constr _ c (v1 : Nil)) | c == cLineChart =
       case expand u (Constr false c (Hole false : Nil)) of
          Constr α _ (u1 : Nil) ->
-            Constr α c (toggleField f_data fst (u1 × v1) : Nil)
+            Constr α c (toggleField f_data (toggleNth i fst) (u1 × v1) : Nil)
          _ -> error absurd
    togglePoint _ _ = error absurd
 
