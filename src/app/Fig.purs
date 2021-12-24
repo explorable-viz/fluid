@@ -124,7 +124,7 @@ type LinkFig = {
 
 type LinkResult = {
    v2' :: Val 𝔹,
-   data_sel :: Val 𝔹
+   v0' :: Val 𝔹
 }
 
 -- TODO: these two need some consolidation.
@@ -163,19 +163,19 @@ linkFigViews :: LinkFig -> Val 𝔹 -> MayFail (View × Array View)
 linkFigViews fig@{ v1, v2, v0 } v1' = do
    link <- linkResult fig v1'
    pure $ view "primary view" (v1' × v1) ×
-          [view "linked view" (link.v2' × v2), view "common data" (link.data_sel × v0)]
+          [view "linked view" (link.v2' × v2), view "common data" (link.v0' × v0)]
 
 linkResult :: LinkFig -> Val 𝔹 -> MayFail LinkResult
 linkResult { spec, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
    let ρ0ρ × _ × _ = evalBwd v1_sel t1
        _ × ρ' = splitAt 1 ρ0ρ
        x = spec.dataVar
-   v' <- find x ρ'
+   v0' <- find x ρ'
    -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
    -- combined with the negation of the dataset environment slice
    pure {
       v2': neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2),
-      data_sel: v'
+      v0'
    }
 
 doLink :: LinkFigSpec -> Aff LinkResult
