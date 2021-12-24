@@ -187,7 +187,7 @@ loadFig spec@{ divId, file, vars } = do
       pure { spec, ρ0, ρ: ρ <> ρ1, s, e, t, v }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
-loadLinkFig spec@{ file1, file2, dataFile, x, v1_sel } = do
+loadLinkFig spec@{ file1, file2, dataFile, x } = do
    let dir = File "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment ρ0 as well as dataset

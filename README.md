@@ -1,8 +1,9 @@
-## Installation instructions
+## Fluid: functional interactive dataflow
 
-![purescript](https://github.com/explorable-viz/fluid/workflows/purescript/badge.svg)
-![typescript](https://github.com/explorable-viz/fluid/workflows/typescript/badge.svg)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5668384.svg)](https://doi.org/10.5281/zenodo.5668384)
+[![develop](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml)
+[![GitHub pages](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment)
+[![v0.3.1-typescript](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml)
+[![v0.4.2](https://github.com/explorable-viz/fluid/actions/workflows/v0.4.2.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/v0.4.2.yml)
 
 ### Software required
 
@@ -12,68 +13,5 @@
 #### Running the web app
 
 - `yarn install` to install application dependencies
-- `yarn run bundle-app` to build app
-- `yarn parcel serve index.html` to start web server
+- `yarn run serve-app` to build and serve app
 - open a browser (preferably Chrome) at `http://localhost:1234/`.
-
-#### Running the test suite
-
-Alternatively, to run tests:
-- `yarn install` to install application dependencies (if not already done)
-- `yarn run clean-tests && yarn build-tests` to build tests
-- `yarn run tests` to run the tests in Chrome headless mode
-
-The compiled output for the tests is written to `dist/test/app.js`. The tests (there are 56)_ should pass in about 4 minutes.
-
-#### Running individual tests
-
-Running an individual test takes a small amount of manual effort: one must replace the top-level invocation of the test suite by a call to a predefined function called `test_scratchpad`, which runs a list of specific tests. Specifically:
-
-* In `test/Main.purs`, in the first function of the file, comment out `tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]` and
-uncomment `tests = [ test_scratchpad ]`.
-* Insert the code for the test you want to run into the list in `test_scratchpad`. If you want to run a specific test, you can copy the required test invocation code from any of `test_desugaring`, `test_misc`, `test_bwd`, `test_linking` and `test_graphics`. Creating your own test from scratch takes a certain understanding of the system; we would be happy to help with this.
-* Then running the whole test suite, using the instructions above, will run only the test(s) specified in `test_scratchpad`.
-
-### Directory structure
-
-The Fluid source code used for the tests and web app are found in the [`fluid/example`](fluid/example) directory. The core library is found in [`fluid/lib/prelude`](fluid/lib/prelude), with the matrix convolution functions in [`fluid/lib/convolution`](fluid/lib/convolution). The dataset used for the linking examples is in the folder [`fluid/dataset`](fluid/lib/convolution). Fluid test files have the extension `.fld`; the examples in the [`fluid/slicing`](fluid/slicing) folder also come with `.expect.fld` files, which capture the expected selection state on the program that arises from a backward analysis.
-
-### Overview of tests and test infrastructure
-
-#### Testing forward and backward analyses
-
-Test helpers (see below) are provided for testing the composition of the backward analysis with the forward analysis (`testBwd`) and the composition of the backward analysis with the De Morgan dual of the forward analysis (`testLink`). There is no support yet for standalone tests of the forward analysis, for reasons given below. All `testBwd` tests verify the round-trip with the forward analysis by accepting a final argument, of type string, containing the expected (prettyprinted) output after the round-trip. (See `testWithSetup` in `test/Util.purs` for the implementation.) In some cases (such as the `map` test) the output selection is preserved by the round-trip; in other cases (such as `intersperse` or `filter`) the output selection gets larger. This is the key round-tripping property for forwards-after-backwards described in the paper.
-
-The implementation **does** support running the forward analysis independently of the backward analysis, running the forward analysis without the De Morgan dual, and forward-analysing from code selections to output selections. However, providing test infrastructure that makes it easy to specifying a program or environment selection as input to the forward analysis will require additional work. For example, to support program selections, we would either need to extend the parser to support something like the underscore notation, or provide some kind of zipper-like API that allows a test case to navigate through a program and create selections. We do intend to explore this in the future.
-
-#### Test helpers
-
-These are defined in [`test/Util.purs`](test/Util.purs). Usage examples can be found in [`test/Main.purs`](test/Main.purs). Most test helpers perform a forward and backward round-trip as a sanity-check, but only `testBwd` and `testLink` actually verify that the analysis results are as expected.
-
-- `test`: The most basic kind of test. Desugars the test program, evaluates it to obtain a trace, and performs a forward and backward analysis (over both evaluation and desugaring) to sanity-check that they execute without runtime failure. The output of the round-trip is printed to the console, and the (prettyprinted) output is compared against a supplied expected value. (Typically there is no selection, so the comparison is of unselected values, and thus does not test the functionality of the analysis.)
-
-- `testWithDataset`: Similar to `test`, but additionally loads a dataset (also represented as a `.fld` source file) and ensures that the test runs in an environment where that dataset has been bound to a variable. Only used for the legacy graphics tests (see below).
-
-- `testBwd` Similar to `test`, but additionally checks that the backward analysis step produces an expected selection on the (prettyprinted) source program. The emitted source selection is printed to the console along with the result of the round-trip, which will now contain selection information. The prettyprinter will add underscores to selected expressions and values, allowing the expected source program selection to be provided as an additional source file (with extension `.expected.fld` in the same folder as the test) where selected expressions are demarked by underscores. As mentioned above, the underscore notation is not supported by the parser, and so one cannot initiate a forward analysis by adding underscores to a `.fld` source file.
-
-- `testLink` Tests the linking feature. Given two test programs and a (shared) dataset, desugars and evaluates both programs, applies a selection to the output of the first program, performs a backward analysis to produce a selection on the shared data, and then performs the De Morgan dual of the forward analysis to produce a selection on the output of the second program. The output of the second program is printed to the console, and the (prettyprinted) output is compared against a supplied expected value, which must use underscores to represent the expected selection.
-
-#### Test suites
-
-The test suites are defined in [`test/Main.purs`](test/Main.purs) and are organised as follows:
-
-- `test_scratchpad` is useful for running tests one at a time; see **Running individual tests** in [`artifact-evaluation.md`](artifact-evaluation.md).
-
-- `test_linking` defines three linking tests, using the helper `testLink`. The source programs are in `fluid/example/linking`. There are tests for the bar chart/line chart and convolution examples in the paper, and also a simple linking test involving (nested) pairs.
-
-- `test_bwd` defines several tests of the backwards analysis and associated round-trip, using the `testBwd` helper. The source programs are in [`fluid/example/slicing`](fluid/example/slicing); each `.fld` file is paired with a `.expect.fld` containing the expectation for the source program selection. For example, the `filter` test shows that if you backward analyse with just the first cons cell in the output selected, then after the round-trip, the selection grows to include the first element in the list as well. (If you retain enough information to know that the output is at least one element long, you also retain enough information to know what that element is.) The file [`filter.expect.fld`](fluid/example/slicing/filter.expect.fld) shows that various source elements are selected, such as the cons constructor in in the definition of `filter`.
-
-- `test_desugaring` defines several tests which exercise the desugaring, using the `test` helper. The tests only check that the program desugars and executes correctly, not that the (source) program desugars to the expected core representation. For example, `list-comp-4` shows that the list comprehension `[ x | x : xs <- [[5], [4], [3], []] ]` desugars into a program that evaluates to the list `[5, 4, 3]`.
-
-- `test_misc` defines several tests which verify that various primitives, library functions and data types work as expected. For example, `filter` and `length` test list functions from the prelude; `array` tests array construction expressions; and `div-mod-quot-rem` tests 4 related primitive operations from the prelude.
-
-- `test_graphics` tests the (now deprecated) graphics library developed for the 0.3 release.
-
-### Creating your own tests
-
-See [`creating-tests.md`](creating-tests.md) for instructions on creating your own linking and round-tripping tests. (Adding your own desugaring or miscellaneous tests is easier and we omit the instructions.)
