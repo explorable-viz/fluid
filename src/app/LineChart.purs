@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Tuple (fst, uncurry)
+import Data.Tuple (fst)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
@@ -13,7 +13,7 @@ import App.Util (
 )
 import Bindings (Bind)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
-import Lattice (Slice, 𝔹, expand)
+import Lattice (Slice, 𝔹, expand, neg)
 import Util (type (×), (×), (!), absurd, error, fromJust)
 import Util.SnocList (SnocList)
 import Val (Val(..))
@@ -48,16 +48,16 @@ instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
          Constr _ _ (u1 : Nil) -> record from (u1 × v1)
 
 lineChartHandler :: Handler
-lineChartHandler ev = uncurry (\i j -> fst) $ unsafePos $ target ev
+lineChartHandler ev = togglePoint $ unsafePos $ target ev
    where
    togglePoint :: Int × Int -> Selector
    togglePoint (i × j) (u × Constr _ c (v1 : Nil)) | c == cLineChart =
       case expand u (Constr false c (Hole false : Nil)) of
          Constr α _ (u1 : Nil) ->
-            Constr α c (toggleField f_data (toggleNth i fst) (u1 × v1) : Nil)
+            let u1' = toggleField f_data (toggleNth i (toggleField f_data (toggleNth j (fst >>> neg)))) (u1 × v1)
+            in Constr α c (u1' : Nil)
          _ -> error absurd
    togglePoint _ _ = error absurd
-
 
    -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
    -- within line plot.
