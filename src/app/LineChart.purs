@@ -4,14 +4,15 @@ import Prelude hiding (absurd)
 
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Tuple (fst)
+import Data.Tuple (fst, uncurry)
 import Unsafe.Coerce (unsafeCoerce)
+import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record)
 import Bindings (Bind)
 import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Lattice (Slice, 𝔹, expand)
-import Util (type (×), (×), absurd, fromJust)
+import Util (type (×), (×), (!), absurd, fromJust)
 import Util.SnocList (SnocList)
 import Val (Val(..)) as V
 import Val (Val)
@@ -46,10 +47,12 @@ instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
          V.Constr _ _ (u1 : Nil) -> record from (u1 × v1)
 
 lineChartHandler :: Handler
-lineChartHandler = const fst
-
--- (unsafe) the datum associated with a line chart mouse event.
-unsafePoint :: Maybe EventTarget -> Point
-unsafePoint tgt_opt =
-   let tgt = fromJust absurd $ tgt_opt
-   in (unsafeCoerce tgt).__data_
+lineChartHandler ev = uncurry (\i j -> fst) $ unsafePos $ target ev
+   where
+   -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
+   -- within line plot.
+   unsafePos :: Maybe EventTarget -> Int × Int
+   unsafePos tgt_opt =
+      let tgt = fromJust absurd $ tgt_opt
+          xy = (unsafeCoerce tgt).__data_!0 :: Array Int
+      in xy!0 × xy!1

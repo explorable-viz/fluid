@@ -33,15 +33,15 @@ instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart whe
 
 barChartHandler :: Handler
 barChartHandler ev (u × Constr _ c (v1 : Nil)) | c == cBarChart =
-   let i = unsafeBarChartRecord (target ev) in
+   let i = unsafeBarIndex (target ev) in
    case expand u (Constr false cBarChart (Hole false : Nil)) of
       Constr α _ (u1 : Nil) ->
          Constr α cBarChart (toggleField f_data (toggleNth i) (u1 × v1) : Nil)
       _ -> error absurd
    where
-   -- (unsafe) datum associated with bar chart mouse event; 0-based index of selected bar
-   unsafeBarChartRecord :: Maybe EventTarget -> Int
-   unsafeBarChartRecord tgt_opt =
+   -- [Unsafe] Datum associated with bar chart mouse event; 0-based index of selected bar.
+   unsafeBarIndex :: Maybe EventTarget -> Int
+   unsafeBarIndex tgt_opt =
       let tgt = fromJust absurd $ tgt_opt
       in (unsafeCoerce tgt).__data_!0
 

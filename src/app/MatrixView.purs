@@ -26,7 +26,7 @@ matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
 matrixViewHandler :: Handler
 matrixViewHandler ev = uncurry toggleCell $ unsafePos $ target ev
    where
-   -- (unsafe) datum associated with matrix view mouse event; 1-based indices of selected cell
+   -- [Unsafe] Datum associated with matrix view mouse event; 1-based indices of selected cell.
    unsafePos :: Maybe EventTarget -> Int × Int
    unsafePos tgt_opt =
       let tgt = fromJust absurd $ tgt_opt
