@@ -17,7 +17,7 @@ linkingFig1 = {
    file1: File "bar-chart",
    file2: File "line-chart",
    dataFile: File "renewables",
-   dataVar: "data",
+   x: "data",
    v1_sel: selectBarChart_data (selectNth 1 (select_y))
 }
 

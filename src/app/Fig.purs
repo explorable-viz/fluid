@@ -103,7 +103,7 @@ type LinkFigSpec = {
    file1 :: File,
    file2 :: File,
    dataFile :: File,
-   dataVar :: Var,
+   x :: Var,
    v1_sel :: Val 𝔹
 }
 
@@ -119,7 +119,7 @@ type LinkFig = {
    t2 :: Expl 𝔹,
    v1 :: Val 𝔹,      -- TODO: align naming conventions with Fig
    v2 :: Val 𝔹,
-   v0 :: Val 𝔹       -- common data named by spec.dataVar
+   v0 :: Val 𝔹       -- common data named by spec.x
 }
 
 type LinkResult = {
@@ -166,10 +166,9 @@ linkFigViews fig@{ v1, v2, v0 } v1' = do
           [view "linked view" (link.v2' × v2), view "common data" (link.v0' × v0)]
 
 linkResult :: LinkFig -> Val 𝔹 -> MayFail LinkResult
-linkResult { spec, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
+linkResult { spec: { x }, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
    let ρ0ρ × _ × _ = evalBwd v1_sel t1
        _ × ρ' = splitAt 1 ρ0ρ
-       x = spec.dataVar
    v0' <- find x ρ'
    -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
    -- combined with the negation of the dataset environment slice
@@ -179,7 +178,7 @@ linkResult { spec, ρ0, ρ, e2, t1, t2, v1, v2 } v1_sel = do
    }
 
 doLink :: LinkFigSpec -> Aff LinkResult
-doLink spec@{ file1, file2, dataFile, dataVar: x, v1_sel } = do
+doLink spec@{ file1, file2, dataFile, x, v1_sel } = do
    fig <- loadLinkFig spec
    pure $ successful $ linkResult fig v1_sel
 
@@ -195,7 +194,7 @@ loadFig spec@{ divId, file, vars } = do
       pure { spec, ρ0, ρ: ρ <> ρ1, s, e, t, o }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
-loadLinkFig spec@{ file1, file2, dataFile, dataVar: x, v1_sel } = do
+loadLinkFig spec@{ file1, file2, dataFile, x, v1_sel } = do
    let dir = File "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment ρ0 as well as dataset

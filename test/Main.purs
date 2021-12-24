@@ -43,7 +43,7 @@ test_linking = [
       file1: File "pairs-1",
       file2: File "pairs-2",
       dataFile: File "pairs-data",
-      dataVar: "data",
+      x: "data",
       v1_sel: selectPair false hole (selectPair false hole (selectPair false (Int true 3) hole))
    } "(3, (_5_, _7_))",
    testLink {
@@ -51,7 +51,7 @@ test_linking = [
       file1: File "convolution-1",
       file2: File "convolution-2",
       dataFile: File "convolution-data",
-      dataVar: "data",
+      x: "data",
       v1_sel: selectCell true 2 2 5 5
    }
       "_18_, _12_, _13_, 9, 19,\n\
@@ -64,7 +64,7 @@ test_linking = [
       file1: File "bar-chart",
       file2: File "line-chart",
       dataFile: File "renewables",
-      dataVar: "data",
+      x: "data",
       v1_sel: selectBarChart_data (selectNth 1 (select_y))
    }
       "LineChart ({\
