@@ -72,7 +72,7 @@ function drawBarChart (
             .attr('width', x.bandwidth())
             .attr('height', ([, d]) => height - y(d.y.value0))
             .attr('fill', ([, d]) => d.y.value1 ? shared.colorShade(barFill, -40) : barFill)
-            .attr('stroke', ([, d]) => d.y.value1 ? 'coral' : '')
+            .attr('class', ([, d]) => d.y.value1 ? 'bar-selected' : 'bar-unselected')
             .on('mousedown', (e, d) => {
                console.log(`mousedown ${d[0]}`)
                listener(e)
