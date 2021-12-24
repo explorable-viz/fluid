@@ -40533,7 +40533,7 @@ var PS = {};
 
   function drawBarChart(id, childIndex, _ref, listener) {
     var caption = _ref.caption,
-        data_ = _ref.data_;
+        data = _ref.data;
     return function () {
       var childId = id + '-' + childIndex;
       var margin = {
@@ -40552,13 +40552,13 @@ var PS = {};
       });
       svg.call(tip); // x-axis
 
-      var x = d3.scaleBand().range([0, width]).domain(data_.map(function (d) {
+      var x = d3.scaleBand().range([0, width]).domain(data.map(function (d) {
         return d.x.value0;
       })).padding(0.2);
       svg.append('g').attr('transform', "translate(0," + height + ")").call(d3.axisBottom(x)).selectAll('text').style('text-anchor', 'middle'); // y-axis
 
       var nearest = 100,
-          y_max = Math.ceil(Math.max.apply(Math, _toConsumableArray(data_.map(function (d) {
+          y_max = Math.ceil(Math.max.apply(Math, _toConsumableArray(data.map(function (d) {
         return d.y.value0;
       }))) / nearest) * nearest;
       var y = d3.scaleLinear().domain([0, y_max]).range([height, 0]);
@@ -40570,7 +40570,7 @@ var PS = {};
       svg.append('g').call(yAxis); // bars
 
       var barFill = '#dcdcdc';
-      svg.selectAll('rect').data(_toConsumableArray(data_.entries())).enter().append('rect').attr('x', function (_ref2) {
+      svg.selectAll('rect').data(_toConsumableArray(data.entries())).enter().append('rect').attr('x', function (_ref2) {
         var _ref3 = _slicedToArray(_ref2, 2),
             d = _ref3[1];
 
@@ -40591,11 +40591,11 @@ var PS = {};
             d = _ref9[1];
 
         return d.y.value1 ? shared.colorShade(barFill, -40) : barFill;
-      }).attr('stroke', function (_ref10) {
+      }).attr('class', function (_ref10) {
         var _ref11 = _slicedToArray(_ref10, 2),
             d = _ref11[1];
 
-        return d.y.value1 ? 'coral' : '';
+        return d.y.value1 ? 'bar-selected' : 'bar-unselected';
       }).on('mousedown', function (e, d) {
         console.log("mousedown ".concat(d[0]));
         listener(e);
@@ -61485,6 +61485,12 @@ var PS = {};
 
     return show$prime(Data_Newtype.unwrap(newtypeCtr)(c));
   });
+  var f_y = "y";
+  var f_x = "x";
+  var f_plots = "plots";
+  var f_name = "name";
+  var f_data = "data";
+  var f_caption = "caption";
   var eqDataType = new Data_Eq.Eq(Data_Function.on(Data_Eq.eq(Data_Eq.eqString))(typeName));
   var eqCtr = new Data_Eq.Eq(function (x) {
     return function (y) {
@@ -61589,6 +61595,12 @@ var PS = {};
   exports["cNil"] = cNil;
   exports["cCons"] = cCons;
   exports["cPair"] = cPair;
+  exports["f_caption"] = f_caption;
+  exports["f_data"] = f_data;
+  exports["f_name"] = f_name;
+  exports["f_plots"] = f_plots;
+  exports["f_x"] = f_x;
+  exports["f_y"] = f_y;
   exports["eqCtr"] = eqCtr;
   exports["ordCtr"] = ordCtr;
   exports["showCtr"] = showCtr;
@@ -67457,23 +67469,6 @@ var PS = {};
     };
   };
 
-  var select_y = new Val.Record(false, new Util_SnocList.Snoc(new Util_SnocList.Snoc(Util_SnocList.Lin.value, new Bindings.Bind("x", new Val.Hole(false))), new Bindings.Bind("y", new Val.Hole(true))));
-
-  var selectNth = function selectNth(v) {
-    return function (v1) {
-      if (v === 0) {
-        return new Val.Constr(false, DataType.cCons, new Data_List_Types.Cons(v1, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
-      }
-
-      ;
-      return new Val.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(selectNth(v - 1 | 0)(v1), Data_List_Types.Nil.value)));
-    };
-  };
-
-  var selectBarChart_data = function selectBarChart_data(v) {
-    return new Val.Constr(false, DataType.cBarChart, new Data_List_Types.Cons(new Val.Record(false, new Util_SnocList.Snoc(new Util_SnocList.Snoc(Util_SnocList.Lin.value, new Bindings.Bind("caption", new Val.Hole(false))), new Bindings.Bind("data", v))), Data_List_Types.Nil.value));
-  };
-
   var record = function record(toRecord) {
     return function (v) {
       return toRecord(new Data_Tuple.Tuple(Data_Tuple.fst(Primitive.match_fwd(Primitive.toFromBindings)(new Data_Tuple.Tuple(v.value0, v.value1))), Data_Tuple.fst(Primitive.match(Primitive.toFromBindings)(v.value1))));
@@ -67564,9 +67559,6 @@ var PS = {};
   exports["get"] = get;
   exports["record"] = record;
   exports["Reflect"] = $$Reflect;
-  exports["selectNth"] = selectNth;
-  exports["select_y"] = select_y;
-  exports["selectBarChart_data"] = selectBarChart_data;
   exports["toggleCell"] = toggleCell;
   exports["toggleNth"] = toggleNth;
   exports["toggleField"] = toggleField;
@@ -67618,16 +67610,16 @@ var PS = {};
   var reflectBarChartRecord = new App_Util["Reflect"](function (dictPartial) {
     return function (r) {
       return {
-        x: App_Util.get_prim(Primitive.toFromString)("x")(r),
-        y: App_Util.get_intOrNumber("y")(r)
+        x: App_Util.get_prim(Primitive.toFromString)(DataType.f_x)(r),
+        y: App_Util.get_intOrNumber(DataType.f_y)(r)
       };
     };
   });
   var reflectBarChart = new App_Util["Reflect"](function (dictPartial) {
     return function (r) {
       return {
-        caption: App_Util.get_prim(Primitive.toFromString)("caption")(r),
-        data_: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_Util.from(reflectBarChartRecord)()))(App_Util.from(App_Util.reflectArray)()(App_Util.get("data")(r)))
+        caption: App_Util.get_prim(Primitive.toFromString)(DataType.f_caption)(r),
+        data: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_Util.from(reflectBarChartRecord)()))(App_Util.from(App_Util.reflectArray)()(App_Util.get(DataType.f_data)(r)))
       };
     };
   });
@@ -67637,14 +67629,14 @@ var PS = {};
       if (v1.value1 instanceof Val.Constr && v1.value1.value2 instanceof Data_List_Types.Cons && v1.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v1.value1.value1)(DataType.cBarChart)) {
         var unsafeBarChartRecord = function unsafeBarChartRecord(tgt_opt) {
           var tgt = Util.fromJust(Util.absurd)(tgt_opt);
-          return Util.unsafeIndex(tgt["__data__"])(0);
+          return Util.unsafeIndex(tgt["__data_"])(0);
         };
 
         var i = unsafeBarChartRecord(Web_Event_Event.target(v));
         var v2 = Lattice.expand(Val.valExpandable)(v1.value0)(new Val.Constr(false, DataType.cBarChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
 
         if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
-          return new Val.Constr(v2.value0, DataType.cBarChart, new Data_List_Types.Cons(App_Util.toggleField("data")(App_Util.toggleNth(i))(new Data_Tuple.Tuple(v2.value2.value0, v1.value1.value2.value0)), Data_List_Types.Nil.value));
+          return new Val.Constr(v2.value0, DataType.cBarChart, new Data_List_Types.Cons(App_Util.toggleField(DataType.f_data)(App_Util.toggleNth(i))(new Data_Tuple.Tuple(v2.value2.value0, v1.value1.value2.value0)), Data_List_Types.Nil.value));
         }
 
         ;
@@ -67669,19 +67661,19 @@ var PS = {};
   var shared = require("/src/app/Shared");
 
   function max_y(linePlot) {
-    return Math.max.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
+    return Math.max.apply(Math, _toConsumableArray(linePlot.data.map(function (point) {
       return point.y.value0;
     })));
   }
 
   function min_x(linePlot) {
-    return Math.min.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
+    return Math.min.apply(Math, _toConsumableArray(linePlot.data.map(function (point) {
       return point.x.value0;
     })));
   }
 
   function max_x(linePlot) {
-    return Math.max.apply(Math, _toConsumableArray(linePlot.data_.map(function (point) {
+    return Math.max.apply(Math, _toConsumableArray(linePlot.data.map(function (point) {
       return point.x.value0;
     })));
   }
@@ -67719,7 +67711,7 @@ var PS = {};
       svg.selectAll('lines').data(plots).enter().append('g').append('path').attr('fill', 'none').attr('stroke', function (d) {
         return color(names.indexOf(d.name.value0));
       }).attr('stroke-width', 1).attr('class', 'line').attr('d', function (d) {
-        return line1(d.data_);
+        return line1(d.data);
       });
       var smallRadius = 2;
 
@@ -67730,7 +67722,7 @@ var PS = {};
         var _loop = function _loop() {
           var plot = _step.value;
           var col = color(names.indexOf(plot.name.value0));
-          svg.selectAll('markers').data(plot.data_).enter().append('g').append('circle').attr('class', 'marker').attr('r', function (d) {
+          svg.selectAll('markers').data(plot.data).enter().append('g').append('circle').attr('class', 'marker').attr('r', function (d) {
             return d.y.value1 ? smallRadius * 2 : smallRadius;
           }).attr('cx', function (d) {
             return x(d.x.value0);
@@ -67795,16 +67787,16 @@ var PS = {};
   var reflectPoint = new App_Util["Reflect"](function (dictPartial) {
     return function (r) {
       return {
-        x: App_Util.get_intOrNumber("x")(r),
-        y: App_Util.get_intOrNumber("y")(r)
+        x: App_Util.get_intOrNumber(DataType.f_x)(r),
+        y: App_Util.get_intOrNumber(DataType.f_y)(r)
       };
     };
   });
   var reflectLinePlot = new App_Util["Reflect"](function (dictPartial) {
     return function (r) {
       return {
-        name: App_Util.get_prim(Primitive.toFromString)("name")(r),
-        data_: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_Util.from(reflectPoint)()))(App_Util.from(App_Util.reflectArray)()(App_Util.get("data")(r)))
+        name: App_Util.get_prim(Primitive.toFromString)(DataType.f_name)(r),
+        data: Data_Functor.map(Data_Functor.functorArray)(App_Util.record(App_Util.from(reflectPoint)()))(App_Util.from(App_Util.reflectArray)()(App_Util.get(DataType.f_data)(r)))
       };
     };
   });
@@ -67828,8 +67820,8 @@ var PS = {};
   var reflectLineChart = new App_Util["Reflect"](function (dictPartial) {
     return function (r) {
       return {
-        caption: App_Util.get_prim(Primitive.toFromString)("caption")(r),
-        plots: Data_Functor.map(Data_Functor.functorArray)(App_Util.from(reflectLinePlot$prime)())(App_Util.from(App_Util.reflectArray)()(App_Util.get("plots")(r)))
+        caption: App_Util.get_prim(Primitive.toFromString)(DataType.f_caption)(r),
+        plots: Data_Functor.map(Data_Functor.functorArray)(App_Util.from(reflectLinePlot$prime)())(App_Util.from(App_Util.reflectArray)()(App_Util.get(DataType.f_plots)(r)))
       };
     };
   });
@@ -67933,7 +67925,7 @@ var PS = {};
   var matrixViewHandler = function matrixViewHandler(ev) {
     var unsafePos = function unsafePos(tgt_opt) {
       var tgt = Util.fromJust(Util.absurd)(tgt_opt);
-      var xy = Util.unsafeIndex(tgt["__data__"])(0);
+      var xy = Util.unsafeIndex(tgt["__data_"])(0);
       return new Data_Tuple.Tuple(Util.unsafeIndex(xy)(0), Util.unsafeIndex(xy)(1));
     };
 
@@ -67972,33 +67964,36 @@ var PS = {};
       var cellFill = '#ffffff';
       var div = d3.select('#' + id);
       div.selectAll('#' + childId).remove();
-      var HTMLtable = div.append('table').attr('id', childId);
       table = table.filter(function (r) {
         return isUsed(r);
       });
-      var colNames = Object.keys(table[0]);
-      HTMLtable.append('thead').append('tr').selectAll('th').data(colNames).enter().append('th').text(function (d) {
-        return d;
-      });
-      var rows = HTMLtable.append('tbody').selectAll('tr').data(table).enter().append('tr');
-      rows.selectAll('td').data(function (d) {
-        return colNames.map(function (k) {
-          return {
-            'value': d[k],
-            'name': k
-          };
+
+      if (table.length > 0) {
+        var HTMLtable = div.append('table').attr('id', childId);
+        var colNames = Object.keys(table[0]);
+        HTMLtable.append('thead').append('tr').selectAll('th').data(colNames).enter().append('th').text(function (d) {
+          return d;
         });
-      }).enter().append('td').attr('data-th', function (d) {
-        return d.name;
-      }).attr('class', function (d) {
-        return d.value.value1 ? 'cell-selected' : null;
-      }).attr('bgcolor', function (d) {
-        return d.value.value1 ? shared.colorShade(cellFill, -40) : cellFill;
-      }).text(function (d) {
-        return d.value.value0;
-      }).on('mouseover', function (e, d) {
-        return listener(e);
-      });
+        var rows = HTMLtable.append('tbody').selectAll('tr').data(table).enter().append('tr');
+        rows.selectAll('td').data(function (d) {
+          return colNames.map(function (k) {
+            return {
+              'value': d[k],
+              'name': k
+            };
+          });
+        }).enter().append('td').attr('data-th', function (d) {
+          return d.name;
+        }).attr('class', function (d) {
+          return d.value.value1 ? 'cell-selected' : null;
+        }).attr('bgcolor', function (d) {
+          return d.value.value1 ? shared.colorShade(cellFill, -40) : cellFill;
+        }).text(function (d) {
+          return d.value.value0;
+        }).on('mouseover', function (e, d) {
+          return listener(e);
+        });
+      }
     };
   }
 
@@ -70630,8 +70625,8 @@ var PS = {};
   };
 
   var valViews = function valViews(v) {
-    return function (vars) {
-      return Data_Traversable.sequence(Data_Traversable.traversableArray)(Data_Either.applicativeEither)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(varView)(new Data_Tuple.Tuple(v.value0, v.value1)))(vars));
+    return function (xs) {
+      return Data_Traversable.sequence(Data_Traversable.traversableArray)(Data_Either.applicativeEither)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(varView)(new Data_Tuple.Tuple(v.value0, v.value1)))(xs));
     };
   };
 
@@ -70650,7 +70645,7 @@ var PS = {};
           }
 
           ;
-          throw new Error("Failed pattern match at App.Fig (line 80, column 10 - line 80, column 81): " + [v.constructor.name]);
+          throw new Error("Failed pattern match at App.Fig (line 81, column 10 - line 81, column 81): " + [v.constructor.name]);
         };
       };
 
@@ -70667,30 +70662,27 @@ var PS = {};
 
   var loadLinkFig = function loadLinkFig(v) {
     var v1 = new Data_Tuple.Tuple(Data_Semigroup.append(Module.semigroupFile)("linking/")(v.file1), Data_Semigroup.append(Module.semigroupFile)("linking/")(v.file2));
-    return Control_Bind.bind(Effect_Aff.bindAff)(Module.openDatasetAs(Data_Semigroup.append(Module.semigroupFile)("example/")(Data_Semigroup.append(Module.semigroupFile)("linking/")(v.dataFile)))(v.dataVar))(function (v2) {
+    return Control_Bind.bind(Effect_Aff.bindAff)(Module.openDatasetAs(Data_Semigroup.append(Module.semigroupFile)("example/")(Data_Semigroup.append(Module.semigroupFile)("linking/")(v.dataFile)))(v.x))(function (v2) {
       return Control_Bind.bind(Effect_Aff.bindAff)(Module.open(v1.value0))(function (s1) {
         return Control_Bind.bind(Effect_Aff.bindAff)(Module.open(v1.value1))(function (s2) {
           return Control_Applicative.pure(Effect_Aff.applicativeAff)(Util.successful(Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarFwd(s1))(function (e1) {
             return Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarFwd(s2))(function (e2) {
               return Control_Bind.bind(Data_Either.bindEither)(Eval["eval"](Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v2.value0)(v2.value1))(e1))(function (v3) {
                 return Control_Bind.bind(Data_Either.bindEither)(Eval["eval"](Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v2.value0)(v2.value1))(e2))(function (v4) {
-                  var v5 = EvalBwd.evalBwd(v.v1_sel)(v3.value0);
-                  var v6 = Util_SnocList.splitAt(1)(v5.value0.value0);
-                  return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.dataVar)(v2.value1))(function (v7) {
-                    return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.dataVar)(v6.value1))(function (v$prime) {
-                      return Control_Applicative.pure(Data_Either.applicativeEither)({
-                        spec: v,
-                        ρ0: v2.value0,
-                        ρ: v2.value1,
-                        s1: s1,
-                        s2: s2,
-                        e1: e1,
-                        e2: e2,
-                        t1: v3.value0,
-                        t2: v4.value0,
-                        v1: v3.value1,
-                        v2: v4.value1
-                      });
+                  return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.x)(v2.value1))(function (v0) {
+                    return Control_Applicative.pure(Data_Either.applicativeEither)({
+                      spec: v,
+                      ρ0: v2.value0,
+                      ρ: v2.value1,
+                      s1: s1,
+                      s2: s2,
+                      e1: e1,
+                      e2: e2,
+                      t1: v3.value0,
+                      t2: v4.value0,
+                      v1: v3.value1,
+                      v2: v4.value1,
+                      v0: v0
                     });
                   });
                 });
@@ -70716,7 +70708,7 @@ var PS = {};
                 s: v2.s,
                 e: e,
                 t: v3.value0,
-                o: v3.value1
+                v: v3.value1
               });
             });
           });
@@ -70726,16 +70718,14 @@ var PS = {};
   };
 
   var linkResult = function linkResult(v) {
-    return function (v1_sel) {
-      var v3 = EvalBwd.evalBwd(v1_sel)(v.t1);
+    return function (v1$prime) {
+      var v3 = EvalBwd.evalBwd(v1$prime)(v.t1);
       var v4 = Util_SnocList.splitAt(1)(v3.value0.value0);
-      return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.spec.dataVar)(v.ρ))(function (v5) {
-        return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.spec.dataVar)(v4.value1))(function (v$prime) {
-          return Control_Applicative.pure(Data_Either.applicativeEither)({
-            v1: v.v1,
-            v2: new Data_Tuple.Tuple(Lattice.neg(Val.joinSemilatticeVal)(EvalFwd.evalFwd(Lattice.neg(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v.ρ0))(v4.value1)))(Data_Functor.map(Expr.functorExpr)(Data_Function["const"](true))(v.e2))(true)(v.t2)), v.v2),
-            data_sel: new Data_Tuple.Tuple(v$prime, v5)
-          });
+      return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.spec.x)(v4.value1))(function (v0$prime) {
+        var v2$prime = Lattice.neg(Val.joinSemilatticeVal)(EvalFwd.evalFwd(Lattice.neg(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v.ρ0))(v4.value1)))(Data_Functor.map(Expr.functorExpr)(Data_Function["const"](true))(v.e2))(true)(v.t2));
+        return Control_Applicative.pure(Data_Either.applicativeEither)({
+          "v2'": v2$prime,
+          "v0'": v0$prime
         });
       });
     };
@@ -70743,19 +70733,19 @@ var PS = {};
 
   var linkFigViews = function linkFigViews(v) {
     return function (v1$prime) {
-      return Control_Bind.bind(Data_Either.bindEither)(linkResult(v)(v1$prime))(function (link) {
-        return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(view("primary view")(new Data_Tuple.Tuple(v1$prime, v.v1)), [view("linked view")(link.v2), view("common data")(link.data_sel)]));
+      return Control_Bind.bind(Data_Either.bindEither)(linkResult(v)(v1$prime))(function (v3) {
+        return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(view("primary view")(new Data_Tuple.Tuple(v1$prime, v.v1)), [view("linked view")(new Data_Tuple.Tuple(v3["v2'"], v.v2)), view("common data")(new Data_Tuple.Tuple(v3["v0'"], v.v0))]));
       });
     };
   };
 
   var figViews = function figViews(v) {
-    return function (o$prime) {
-      var v1 = EvalBwd.evalBwd(o$prime)(v.t);
-      var v2 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v.ρ))(v1.value0.value0);
-      var o$prime$prime = EvalFwd.evalFwd(v1.value0.value0)(v1.value0.value1)(v1.value1)(v.t);
-      return Control_Bind.bind(Data_Either.bindEither)(valViews(new Data_Tuple.Tuple(v1.value0.value0, Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v.ρ0)(v.ρ)))(v.spec.vars))(function (views) {
-        return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(view("output")(new Data_Tuple.Tuple(o$prime$prime, v.o)), views));
+    return function (v$prime) {
+      var v2 = EvalBwd.evalBwd(v$prime)(v.t);
+      var v3 = Util_SnocList.splitAt(Data_Foldable.length(Util_SnocList.foldableSnocList)(Data_Semiring.semiringInt)(v.ρ))(v2.value0.value0);
+      var v$prime$prime = EvalFwd.evalFwd(v2.value0.value0)(v2.value0.value1)(v2.value1)(v.t);
+      return Control_Bind.bind(Data_Either.bindEither)(valViews(new Data_Tuple.Tuple(v2.value0.value0, Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v.ρ0)(v.ρ)))(v.spec.xs))(function (views) {
+        return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(view("output")(new Data_Tuple.Tuple(v$prime$prime, v.v)), views));
       });
     };
   };
@@ -70765,37 +70755,37 @@ var PS = {};
       return function (n) {
         return function (v) {
           if (v instanceof MatrixFig) {
-            return Control_Bind.bindFlipped(Effect.bindEffect)(App_MatrixView.drawMatrix(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($203) {
-              return onSel(App_MatrixView.matrixViewHandler($203));
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_MatrixView.drawMatrix(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($191) {
+              return onSel(App_MatrixView.matrixViewHandler($191));
             }));
           }
 
           ;
 
           if (v instanceof EnergyTableView) {
-            return Control_Bind.bindFlipped(Effect.bindEffect)(App_TableView.drawTable(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($204) {
-              return onSel(App_TableView.tableViewHandler($204));
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_TableView.drawTable(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($192) {
+              return onSel(App_TableView.tableViewHandler($192));
             }));
           }
 
           ;
 
           if (v instanceof LineChartFig) {
-            return Control_Bind.bindFlipped(Effect.bindEffect)(App_LineChart.drawLineChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($205) {
-              return onSel(App_LineChart.lineChartHandler($205));
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_LineChart.drawLineChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($193) {
+              return onSel(App_LineChart.lineChartHandler($193));
             }));
           }
 
           ;
 
           if (v instanceof BarChartFig) {
-            return Control_Bind.bindFlipped(Effect.bindEffect)(App_BarChart.drawBarChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($206) {
-              return onSel(App_BarChart.barChartHandler($206));
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_BarChart.drawBarChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($194) {
+              return onSel(App_BarChart.barChartHandler($194));
             }));
           }
 
           ;
-          throw new Error("Failed pattern match at App.Fig (line 43, column 1 - line 43, column 58): " + [divId.constructor.name, onSel.constructor.name, n.constructor.name, v.constructor.name]);
+          throw new Error("Failed pattern match at App.Fig (line 44, column 1 - line 44, column 58): " + [divId.constructor.name, onSel.constructor.name, n.constructor.name, v.constructor.name]);
         };
       };
     };
@@ -70815,14 +70805,14 @@ var PS = {};
   };
 
   var drawFig = function drawFig(v) {
-    return function (o$prime) {
+    return function (v$prime) {
       return function __do() {
         Effect_Console.log("Redrawing " + v.spec.divId)();
-        var v1 = Util.successful(figViews(v)(o$prime));
-        Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Tuple.uncurry(drawView(v.spec.divId)(App_Util.doNothing)))(Data_Array.zip(Data_Array.range(0)(Data_Foldable.length(Data_Foldable.foldableArray)(Data_Semiring.semiringInt)(v1.value1) - 1 | 0))(v1.value1)))();
+        var v2 = Util.successful(figViews(v)(v$prime));
+        Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Tuple.uncurry(drawView(v.spec.divId)(App_Util.doNothing)))(Data_Array.zip(Data_Array.range(0)(Data_Foldable.length(Data_Foldable.foldableArray)(Data_Semiring.semiringInt)(v2.value1) - 1 | 0))(v2.value1)))();
         return drawView(v.spec.divId)(function (selector) {
-          return drawFig(v)(selector(new Data_Tuple.Tuple(o$prime, v.o)));
-        })(Data_Foldable.length(Data_Foldable.foldableArray)(Data_Semiring.semiringInt)(v1.value1))(v1.value0)();
+          return drawFig(v)(selector(new Data_Tuple.Tuple(v$prime, v.v)));
+        })(Data_Foldable.length(Data_Foldable.foldableArray)(Data_Semiring.semiringInt)(v2.value1))(v2.value0)();
       };
     };
   };
@@ -70840,7 +70830,6 @@ var PS = {};
   $PS["App.Main"] = $PS["App.Main"] || {};
   var exports = $PS["App.Main"];
   var App_Fig = $PS["App.Fig"];
-  var App_Util = $PS["App.Util"];
   var Data_Either = $PS["Data.Either"];
   var Data_Foldable = $PS["Data.Foldable"];
   var Data_Function = $PS["Data.Function"];
@@ -70857,13 +70846,12 @@ var PS = {};
     file1: "bar-chart",
     file2: "line-chart",
     dataFile: "renewables",
-    dataVar: "data",
-    v1_sel: App_Util.selectBarChart_data(App_Util.selectNth(1)(App_Util.select_y))
+    x: "data"
   };
   var fig1 = {
     divId: "fig-conv-1",
     file: "slicing/conv-emboss",
-    vars: ["image", "filter"]
+    xs: ["image", "filter"]
   };
 
   var drawLinkFigs = function drawLinkFigs(loadFigs) {
@@ -70875,11 +70863,11 @@ var PS = {};
       ;
 
       if (v instanceof Data_Either.Right) {
-        return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(App_Fig.drawLinkFig)(App_Util.selectBarChart_data(App_Util.selectNth(1)(App_Util.select_y))))(v.value0));
+        return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(App_Fig.drawLinkFig)(new Val.Hole(false)))(v.value0));
       }
 
       ;
-      throw new Error("Failed pattern match at App.Main (line 34, column 4 - line 36, column 105): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Main (line 33, column 4 - line 35, column 71): " + [v.constructor.name]);
     });
   };
 
@@ -70896,7 +70884,7 @@ var PS = {};
       }
 
       ;
-      throw new Error("Failed pattern match at App.Main (line 41, column 4 - line 43, column 67): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Main (line 40, column 4 - line 42, column 67): " + [v.constructor.name]);
     });
   };
 
@@ -70914,4 +70902,4 @@ var PS = {};
 
 PS["App.Main"].main();
 },{"d3":"BG5c","d3-tip":"TLCm","/src/app/Shared":"Ad6u","process":"g5I+"}]},{},["m8nE"], null)
-//# sourceMappingURL=/develop/app.4e029ab4.js.map
+//# sourceMappingURL=/develop/app.92f4d044.js.map

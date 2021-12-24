@@ -2,6 +2,14 @@
    font-size: 11px;
 }
 
+.bar-selected {
+   stroke: Coral;
+}
+
+.bar-unselected {
+   stroke: unset;
+}
+
 .cell-selected {
    border: 1px solid Coral;
 }
@@ -29,4 +37,4 @@
 }
 
 
-/*# sourceMappingURL=/develop/data-viz.7c5c2d84.css.map */
+/*# sourceMappingURL=/develop/data-viz.1c215f22.css.map */
