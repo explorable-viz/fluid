@@ -145,7 +145,7 @@ dataTypes = L.fromFoldable [
 
    dataType "Plot" [
       cBarChart × 2,   -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
-      cLineChart × 2,  -- Record<caption: Str, data: List<LinePlot>>
+      cLineChart × 2,  -- Record<caption: Str, plots: List<LinePlot>>
       cLinePlot × 2    -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
    ],
 

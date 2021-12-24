@@ -54,7 +54,7 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
    togglePoint (i × j) (u × Constr _ c (v1 : Nil)) | c == cLineChart =
       case expand u (Constr false c (Hole false : Nil)) of
          Constr α _ (u1 : Nil) ->
-            let u1' = toggleField f_data (toggleNth i (toggleField f_data (toggleNth j (fst >>> neg)))) (u1 × v1)
+            let u1' = toggleField f_plots (toggleNth i (toggleField f_data (toggleNth j (fst >>> neg)))) (u1 × v1)
             in Constr α c (u1' : Nil)
          _ -> error absurd
    togglePoint _ _ = error absurd
