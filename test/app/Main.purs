@@ -18,7 +18,7 @@ test_fig spec =
 test_linkingFig :: LinkFigSpec -> Test Unit
 test_linkingFig spec =
    before (loadLinkFig spec) $
-      it spec.divId \_ ->
+      it spec.divId \fig ->
          pure unit
 
 tests :: Array (Test Unit)

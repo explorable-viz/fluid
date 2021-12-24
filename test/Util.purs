@@ -10,7 +10,7 @@ import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import App.Fig (LinkFigSpec, doLink)
+import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import DataType (dataTypeFor, typeName)
 import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
@@ -79,9 +79,10 @@ testBwd file file_expect v expected =
 
 testLink :: LinkFigSpec -> String -> Test Unit
 testLink spec v2_expect =
-   before (doLink spec) $
+   before (loadLinkFig spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
-         \{ v2' } ->
+         \fig ->
+            let { v2' } = successful $ linkResult fig spec.v1_sel in
             checkPretty "Linked output" v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit
