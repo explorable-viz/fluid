@@ -54,5 +54,5 @@ lineChartHandler ev = uncurry (\i j -> fst) $ unsafePos $ target ev
    unsafePos :: Maybe EventTarget -> Int × Int
    unsafePos tgt_opt =
       let tgt = fromJust absurd $ tgt_opt
-          xy = (unsafeCoerce tgt).__data_!0 :: Array Int
+          xy = (unsafeCoerce tgt).__data__!0 :: Array Int
       in xy!0 × xy!1

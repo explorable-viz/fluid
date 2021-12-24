@@ -43,6 +43,6 @@ barChartHandler ev (u × Constr _ c (v1 : Nil)) | c == cBarChart =
    unsafeBarIndex :: Maybe EventTarget -> Int
    unsafeBarIndex tgt_opt =
       let tgt = fromJust absurd $ tgt_opt
-      in (unsafeCoerce tgt).__data_!0
+      in (unsafeCoerce tgt).__data__!0
 
 barChartHandler _ _ = error absurd
