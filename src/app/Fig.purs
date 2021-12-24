@@ -169,14 +169,9 @@ linkFigViews fig@{ v1, v2, v0 } v1' = do
    pure $ view "primary view" (v1' × v1) × view "linked view" (v2' × v2) × view "common data" (v0' × v0)
 
 linkResult :: LinkFig -> Val 𝔹 -> MayFail LinkResult
-linkResult { spec: { x }, ρ0, ρ, e2, t1, t2, v1, v2 } v1' = do
-   let ρ0ρ × _ × _ = evalBwd v1' t1
-       _ × ρ' = splitAt 1 ρ0ρ
-   v0' <- find x ρ'
-   -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
-   -- combined with the negation of the dataset environment slice
-   let v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
-   pure { v2', v0' }
+linkResult fig v1' = do
+   { v', v0' } <- fst (linkResult2 fig) v1'
+   pure { v2': v', v0' }
 
 linkResult2 :: LinkFig -> (Val 𝔹 -> MayFail LinkResult2) × (Val 𝔹 -> MayFail LinkResult2)
 linkResult2 { spec: { x }, ρ0, ρ, e1, e2, t1, t2, v1, v2 } =
