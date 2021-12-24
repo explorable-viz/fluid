@@ -207,7 +207,7 @@ linkResult2 { spec: { x }, ρ0, ρ, e1, e2, t1, t2, v1, v2 } =
       v0' <- find x ρ'
       -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
       -- combined with the negation of the dataset environment slice
-      let v1' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
+      let v1' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e1) true t1)
       pure { v': v1', v0' })
 
 loadFig :: FigSpec -> Aff Fig
