@@ -95,7 +95,7 @@ type Fig = {
    s :: S.Expr 𝔹,   -- body of example
    e :: Expr 𝔹,     -- desugared s
    t :: Expl 𝔹,
-   o :: Val 𝔹
+   v :: Val 𝔹
 }
 
 type LinkFigSpec = {
@@ -137,12 +137,12 @@ drawLinkFig fig@{ spec: { divId }, v1 } v1' = do
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
-drawFig fig@{ spec: { divId }, o } o' = do
+drawFig fig@{ spec: { divId }, v } v' = do
    log $ "Redrawing " <> divId
-   let o_view × i_views = successful $ figViews fig o'
+   let v_view × views = successful $ figViews fig v'
    sequence_ $
-      uncurry (drawView divId doNothing) <$> zip (range 0 (length i_views - 1)) i_views
-   drawView divId (\selector -> drawFig fig (selector (o' × o))) (length i_views) o_view
+      uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
+   drawView divId (\selector -> drawFig fig (selector (v' × v))) (length views) v_view
 
 varView :: Var -> Slice (Env 𝔹) -> MayFail View
 varView x (ρ' × ρ) = (\v' v -> view x (v' × v)) <$> find x ρ' <*> find x ρ
@@ -152,12 +152,12 @@ valViews (ρ' × ρ) vars = sequence (flip varView (ρ' × ρ) <$> vars)
 
 -- For an output selection, views of corresponding input selections.
 figViews :: Fig -> Val 𝔹 -> MayFail (View × Array View)
-figViews fig@{ spec, ρ0, ρ, e, o, t } o' = do
+figViews fig@{ spec, ρ0, ρ, e, t, v } o' = do
    let ρ0ρ' × e × α = evalBwd o' t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
-       o'' = evalFwd ρ0ρ' e α t
+       v'' = evalFwd ρ0ρ' e α t
    views <- valViews (ρ0ρ' × (ρ0 <> ρ)) spec.vars
-   pure $ view "output" (o'' × o) × views
+   pure $ view "output" (v'' × v) × views
 
 linkFigViews :: LinkFig -> Val 𝔹 -> MayFail (View × Array View)
 linkFigViews fig@{ v1, v2, v0 } v1' = do
@@ -190,8 +190,8 @@ loadFig spec@{ divId, file, vars } = do
       { ρ: ρ1, s } <- splitDefs (ρ0 <> ρ) s'
       e <- desugarFwd s
       let ρ0ρ = ρ0 <> ρ <> ρ1
-      t × o <- eval ρ0ρ e
-      pure { spec, ρ0, ρ: ρ <> ρ1, s, e, t, o }
+      t × v <- eval ρ0ρ e
+      pure { spec, ρ0, ρ: ρ <> ρ1, s, e, t, v }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
 loadLinkFig spec@{ file1, file2, dataFile, x, v1_sel } = do
