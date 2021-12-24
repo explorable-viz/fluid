@@ -5,11 +5,11 @@ import Prelude hiding (absurd)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import Data.Tuple (fst)
-import DataType (cLinePlot)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.EventTarget (EventTarget)
 import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record)
 import Bindings (Bind)
+import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Lattice (Slice, 𝔹, expand)
 import Util (type (×), (×), absurd, fromJust)
 import Util.SnocList (SnocList)
@@ -24,20 +24,20 @@ foreign import drawLineChart :: Renderer LineChart
 
 instance reflectPoint :: Reflect (SnocList (Bind (Val Boolean))) Point where
    from r = Point {
-      x: get_intOrNumber "x" r,
-      y: get_intOrNumber "y" r
+      x: get_intOrNumber f_x r,
+      y: get_intOrNumber f_y r
    }
 
 instance reflectLinePlot :: Reflect (SnocList (Bind (Val Boolean))) LinePlot where
    from r = LinePlot {
-      name: get_prim "name" r,
-      data_: record from <$> from (get "data" r)
+      name: get_prim f_name r,
+      data_: record from <$> from (get f_data r)
    }
 
 instance reflectLineChart :: Reflect (SnocList (Bind (Val Boolean))) LineChart where
    from r = LineChart {
-      caption: get_prim "caption" r,
-      plots: from <$> (from (get "plots" r) :: Array (Slice (Val 𝔹))) :: Array LinePlot
+      caption: get_prim f_caption r,
+      plots: from <$> (from (get f_plots r) :: Array (Slice (Val 𝔹))) :: Array LinePlot
    }
 
 instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
