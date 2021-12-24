@@ -45,10 +45,10 @@ class Reflect a b where
 -- Perform hole expansion as necessary, and discard any constructor-level annotations.
 instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean × Val Boolean)) where
    from (vs × Constr _ c Nil) | c == cNil =
-      case expand vs (Constr false cNil Nil) of
+      case expand vs (Constr false c Nil) of
          Constr _ _ Nil -> []
    from (us × Constr _ c (v1 : v2 : Nil)) | c == cCons =
-      case expand us (Constr false cCons (Hole false : Hole false : Nil)) of
+      case expand us (Constr false c (Hole false : Hole false : Nil)) of
          Constr _ _ (u1 : u2 : Nil) -> (u1 × v1) A.: from (u2 × v2)
 
 -- Selection helpers.
@@ -79,13 +79,23 @@ toggleCell _ _ _ = error absurd
 
 toggleNth :: Int -> Selector
 toggleNth n (u × Constr _ c (v1 : v2 : Nil)) | c == cCons =
-   case expand u (Constr false cCons (Hole false : Hole false : Nil)) of
+   case expand u (Constr false c (Hole false : Hole false : Nil)) of
       Constr α _ (u1 : u2 : Nil) ->
          case n of
             0 -> Constr α cCons (neg u1 : u2 : Nil)
             _ -> Constr α cCons (u1 : toggleNth (n - 1) (u2 × v2) : Nil)
       _ -> error absurd
 toggleNth _ _ = error absurd
+
+toggleNth' :: Int -> Selector -> Selector
+toggleNth' n selector (u × Constr _ c (v1 : v2 : Nil)) | c == cCons =
+   case expand u (Constr false c (Hole false : Hole false : Nil)) of
+      Constr α _ (u1 : u2 : Nil) ->
+         case n of
+            0 -> Constr α cCons (selector (u1 × v1) : u2 : Nil)
+            _ -> Constr α cCons (u1 : toggleNth' (n - 1) selector (u2 × v2) : Nil)
+      _ -> error absurd
+toggleNth' _ _ _ = error absurd
 
 toggleField :: Var -> Selector -> Selector
 toggleField f selector (u × Record _ xvs) =

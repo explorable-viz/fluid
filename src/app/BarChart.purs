@@ -38,9 +38,9 @@ barChartHandler ev = toggleBar $ unsafeBarIndex (target ev)
    where
    toggleBar :: Int -> Selector
    toggleBar i (u × Constr _ c (v1 : Nil)) | c == cBarChart =
-      case expand u (Constr false cBarChart (Hole false : Nil)) of
+      case expand u (Constr false c (Hole false : Nil)) of
          Constr α _ (u1 : Nil) ->
-            Constr α cBarChart (toggleField f_data (toggleNth i) (u1 × v1) : Nil)
+            Constr α c (toggleField f_data (toggleNth i) (u1 × v1) : Nil)
          _ -> error absurd
    toggleBar _ _ = error absurd
 
