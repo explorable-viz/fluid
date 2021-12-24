@@ -23,9 +23,10 @@ fig1 :: FigSpec
 fig1 = {
    divId: "fig-conv-1",
    file: File "slicing/conv-emboss",
-   vars: ["image", "filter"]
+   xs: ["image", "filter"]
 }
 
+-- TODO: consolidate these two.
 drawLinkFigs :: Array (Aff LinkFig) -> Effect Unit
 drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)

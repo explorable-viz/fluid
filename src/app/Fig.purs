@@ -85,7 +85,7 @@ splitDefs ρ0 s' = do
 type FigSpec = {
    divId :: HTMLId,
    file :: File,
-   vars :: Array Var -- variables to be considered "inputs"
+   xs :: Array Var -- variables to be considered "inputs"
 }
 
 type Fig = {
@@ -116,7 +116,7 @@ type LinkFig = {
    e2 :: Expr 𝔹,
    t1 :: Expl 𝔹,
    t2 :: Expl 𝔹,
-   v1 :: Val 𝔹,      -- TODO: align naming conventions with Fig
+   v1 :: Val 𝔹,
    v2 :: Val 𝔹,
    v0 :: Val 𝔹       -- common data named by spec.x
 }
@@ -126,7 +126,7 @@ type LinkResult = {
    v0' :: Val 𝔹
 }
 
--- TODO: these two need some consolidation.
+-- TODO: consolidate these two.
 drawLinkFig :: LinkFig -> Val 𝔹 -> Effect Unit
 drawLinkFig fig@{ spec: { divId }, v1 } v1' = do
    log $ "Redrawing " <> divId
@@ -147,22 +147,22 @@ varView :: Var -> Slice (Env 𝔹) -> MayFail View
 varView x (ρ' × ρ) = (\v' v -> view x (v' × v)) <$> find x ρ' <*> find x ρ
 
 valViews :: Slice (Env 𝔹) -> Array Var -> MayFail (Array View)
-valViews (ρ' × ρ) vars = sequence (flip varView (ρ' × ρ) <$> vars)
+valViews (ρ' × ρ) xs = sequence (flip varView (ρ' × ρ) <$> xs)
 
 -- For an output selection, views of corresponding input selections.
 figViews :: Fig -> Val 𝔹 -> MayFail (View × Array View)
-figViews fig@{ spec, ρ0, ρ, e, t, v } o' = do
-   let ρ0ρ' × e × α = evalBwd o' t
+figViews { spec: { xs }, ρ0, ρ, e, t, v } v' = do
+   let ρ0ρ' × e × α = evalBwd v' t
        ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        v'' = evalFwd ρ0ρ' e α t
-   views <- valViews (ρ0ρ' × (ρ0 <> ρ)) spec.vars
+   views <- valViews (ρ0ρ' × (ρ0 <> ρ)) xs
    pure $ view "output" (v'' × v) × views
 
 linkFigViews :: LinkFig -> Val 𝔹 -> MayFail (View × Array View)
 linkFigViews fig@{ v1, v2, v0 } v1' = do
-   link <- linkResult fig v1'
+   { v2', v0' } <- linkResult fig v1'
    pure $ view "primary view" (v1' × v1) ×
-          [view "linked view" (link.v2' × v2), view "common data" (link.v0' × v0)]
+          [view "linked view" (v2' × v2), view "common data" (v0' × v0)]
 
 linkResult :: LinkFig -> Val 𝔹 -> MayFail LinkResult
 linkResult { spec: { x }, ρ0, ρ, e2, t1, t2, v1, v2 } v1' = do
@@ -175,7 +175,7 @@ linkResult { spec: { x }, ρ0, ρ, e2, t1, t2, v1, v2 } v1' = do
    pure { v2', v0' }
 
 loadFig :: FigSpec -> Aff Fig
-loadFig spec@{ divId, file, vars } = do
+loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
    ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
    open file <#> \s' -> successful do
