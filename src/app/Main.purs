@@ -16,8 +16,7 @@ linkingFig1 = {
    file1: File "bar-chart",
    file2: File "line-chart",
    dataFile: File "renewables",
-   x: "data",
-   v1_sel: Hole false
+   x: "data"
 }
 
 fig1 :: FigSpec

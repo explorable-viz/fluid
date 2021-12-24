@@ -103,8 +103,7 @@ type LinkFigSpec = {
    file1 :: File,
    file2 :: File,
    dataFile :: File,
-   x :: Var,
-   v1_sel :: Val 𝔹
+   x :: Var
 }
 
 type LinkFig = {
