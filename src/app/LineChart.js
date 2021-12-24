@@ -66,8 +66,9 @@ function drawLineChart (
          .attr('d', ([_, d]) => line1(d.data))
 
       const smallRadius = 2
-      for (const plot of plots) {
-         const col = color(names.indexOf(plot.name.value0))
+      for (const n_plot of plots.entries()) {
+         const [n, plot] = n_plot,
+               col = color(names.indexOf(plot.name.value0))
          svg.selectAll('markers')
             .data([...plot.data.entries()])
             .enter()
