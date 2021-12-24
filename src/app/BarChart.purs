@@ -6,7 +6,9 @@ import Data.Maybe (Maybe)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record, toggleField, toggleNth)
+import App.Util (
+   Handler, class Reflect, Renderer, Selector, from, get, get_intOrNumber, get_prim, record, toggleField, toggleNth
+)
 import Bindings (Bind)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
 import Lattice (𝔹, expand)
@@ -32,17 +34,18 @@ instance reflectBarChart :: Reflect (SnocList (Bind (Val Boolean))) BarChart whe
    }
 
 barChartHandler :: Handler
-barChartHandler ev (u × Constr _ c (v1 : Nil)) | c == cBarChart =
-   let i = unsafeBarIndex (target ev) in
-   case expand u (Constr false cBarChart (Hole false : Nil)) of
-      Constr α _ (u1 : Nil) ->
-         Constr α cBarChart (toggleField f_data (toggleNth i) (u1 × v1) : Nil)
-      _ -> error absurd
+barChartHandler ev = toggleBar $ unsafeBarIndex (target ev)
    where
+   toggleBar :: Int -> Selector
+   toggleBar i (u × Constr _ c (v1 : Nil)) | c == cBarChart =
+      case expand u (Constr false cBarChart (Hole false : Nil)) of
+         Constr α _ (u1 : Nil) ->
+            Constr α cBarChart (toggleField f_data (toggleNth i) (u1 × v1) : Nil)
+         _ -> error absurd
+   toggleBar _ _ = error absurd
+
    -- [Unsafe] Datum associated with bar chart mouse event; 0-based index of selected bar.
    unsafeBarIndex :: Maybe EventTarget -> Int
    unsafeBarIndex tgt_opt =
       let tgt = fromJust absurd $ tgt_opt
       in (unsafeCoerce tgt).__data__!0
-
-barChartHandler _ _ = error absurd
