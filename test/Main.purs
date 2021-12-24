@@ -39,34 +39,38 @@ test_scratchpad = [
 test_linking :: Array (Test Unit)
 test_linking = [
    testLink {
-      divId: "",
-      file1: File "pairs-1",
-      file2: File "pairs-2",
-      dataFile: File "pairs-data",
-      x: "data",
-      v1_sel: selectPair false hole (selectPair false hole (selectPair false (Int true 3) hole))
-   } "(3, (_5_, _7_))",
+         divId: "",
+         file1: File "pairs-1",
+         file2: File "pairs-2",
+         dataFile: File "pairs-data",
+         x: "data",
+         v1_sel: hole
+      }
+      (selectPair false hole (selectPair false hole (selectPair false (Int true 3) hole)))
+      "(3, (_5_, _7_))",
    testLink {
-      divId: "",
-      file1: File "convolution-1",
-      file2: File "convolution-2",
-      dataFile: File "convolution-data",
-      x: "data",
-      v1_sel: selectCell true 2 2 5 5
-   }
+         divId: "",
+         file1: File "convolution-1",
+         file2: File "convolution-2",
+         dataFile: File "convolution-data",
+         x: "data",
+         v1_sel: hole
+      }
+      (selectCell true 2 2 5 5)
       "_18_, _12_, _13_, 9, 19,\n\
       \_20_, _11_, _24_, 9, 14,\n\
       \_15_, _13_, _20_, 11, 14,\n\
       \7, 15, 15, 8, 20,\n\
       \3, 10, 12, 3, 11",
    testLink {
-      divId: "",
-      file1: File "bar-chart",
-      file2: File "line-chart",
-      dataFile: File "renewables",
-      x: "data",
-      v1_sel: selectBarChart_data (selectNth 1 (select_y))
-   }
+         divId: "",
+         file1: File "bar-chart",
+         file2: File "line-chart",
+         dataFile: File "renewables",
+         x: "data",
+         v1_sel: hole
+      }
+      (selectBarChart_data (selectNth 1 (select_y)))
       "LineChart ({\
          \caption: \"Output of USA relative to China\", \
          \plots: \

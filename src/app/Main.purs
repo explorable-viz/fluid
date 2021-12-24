@@ -7,7 +7,6 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
-import App.Util (selectBarChart_data, selectNth, select_y)
 import Module (File(..))
 import Val (Val(..))
 
@@ -18,7 +17,7 @@ linkingFig1 = {
    file2: File "line-chart",
    dataFile: File "renewables",
    x: "data",
-   v1_sel: selectBarChart_data (selectNth 1 (select_y))
+   v1_sel: Hole false
 }
 
 fig1 :: FigSpec
