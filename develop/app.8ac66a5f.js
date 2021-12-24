@@ -37755,6 +37755,28 @@ var PS = {};
   var Data_Ordering = $PS["Data.Ordering"];
   var Data_Tuple = $PS["Data.Tuple"];
   var Data_Unfoldable = $PS["Data.Unfoldable"];
+
+  var updateAt = function updateAt(v) {
+    return function (v1) {
+      return function (v2) {
+        if (v === 0 && v2 instanceof Data_List_Types.Cons) {
+          return new Data_Maybe.Just(new Data_List_Types.Cons(v1, v2.value1));
+        }
+
+        ;
+
+        if (v2 instanceof Data_List_Types.Cons) {
+          return Data_Functor.map(Data_Maybe.functorMaybe)(function (v3) {
+            return new Data_List_Types.Cons(v2.value0, v3);
+          })(updateAt(v - 1 | 0)(v1)(v2.value1));
+        }
+
+        ;
+        return Data_Maybe.Nothing.value;
+      };
+    };
+  };
+
   var unzip = Data_Foldable.foldr(Data_List_Types.foldableList)(function (v) {
     return function (v1) {
       return new Data_Tuple.Tuple(new Data_List_Types.Cons(v.value0, v1.value0), new Data_List_Types.Cons(v.value1, v1.value1));
@@ -38324,6 +38346,48 @@ var PS = {};
     })(unsnoc(lst));
   };
 
+  var index = function index($copy_v) {
+    return function ($copy_v1) {
+      var $tco_var_v = $copy_v;
+      var $tco_done = false;
+      var $tco_result;
+
+      function $tco_loop(v, v1) {
+        if (v instanceof Data_List_Types.Nil) {
+          $tco_done = true;
+          return Data_Maybe.Nothing.value;
+        }
+
+        ;
+
+        if (v instanceof Data_List_Types.Cons && v1 === 0) {
+          $tco_done = true;
+          return new Data_Maybe.Just(v.value0);
+        }
+
+        ;
+
+        if (v instanceof Data_List_Types.Cons) {
+          $tco_var_v = v.value1;
+          $copy_v1 = v1 - 1 | 0;
+          return;
+        }
+
+        ;
+        throw new Error("Failed pattern match at Data.List (line 281, column 1 - line 281, column 44): " + [v.constructor.name, v1.constructor.name]);
+      }
+
+      ;
+
+      while (!$tco_done) {
+        $tco_result = $tco_loop($tco_var_v, $copy_v1);
+      }
+
+      ;
+      return $tco_result;
+    };
+  };
+
   var head = function head(v) {
     if (v instanceof Data_List_Types.Nil) {
       return Data_Maybe.Nothing.value;
@@ -38450,6 +38514,8 @@ var PS = {};
   exports["snoc"] = snoc;
   exports["head"] = head;
   exports["unsnoc"] = unsnoc;
+  exports["index"] = index;
+  exports["updateAt"] = updateAt;
   exports["reverse"] = reverse;
   exports["concat"] = concat;
   exports["sortBy"] = sortBy;
@@ -61532,7 +61598,7 @@ var PS = {};
   var cFalse = "False";
   var cCons = ":";
   var cBarChart = "BarChart";
-  var dataTypes = Data_List.fromFoldable(Data_Foldable.foldableArray)([dataType("Bool")([new Data_Tuple.Tuple(cTrue, 0), new Data_Tuple.Tuple(cFalse, 0)]), dataType("List")([new Data_Tuple.Tuple(cNil, 0), new Data_Tuple.Tuple(cCons, 2)]), dataType("Option")([new Data_Tuple.Tuple(cNone, 0), new Data_Tuple.Tuple(cSome, 1)]), dataType("Ordering")([new Data_Tuple.Tuple("GT", 0), new Data_Tuple.Tuple("LT", 0), new Data_Tuple.Tuple("EQ", 0)]), dataType("Pair")([new Data_Tuple.Tuple("Pair", 2)]), dataType("Tree")([new Data_Tuple.Tuple("Empty", 0), new Data_Tuple.Tuple("NonEmpty", 3)]), dataType("Point")([new Data_Tuple.Tuple("Point", 2)]), dataType("Orient")([new Data_Tuple.Tuple("Horiz", 0), new Data_Tuple.Tuple("Vert", 0)]), dataType("Plot")([new Data_Tuple.Tuple(cBarChart, 2), new Data_Tuple.Tuple(cLineChart, 2), new Data_Tuple.Tuple(cLinePlot, 2)]), dataType("GraphicsElement")([new Data_Tuple.Tuple("Circle", 4), new Data_Tuple.Tuple("Group", 1), new Data_Tuple.Tuple("Line", 4), new Data_Tuple.Tuple("Polyline", 3), new Data_Tuple.Tuple("Polymarkers", 2), new Data_Tuple.Tuple("Rect", 5), new Data_Tuple.Tuple("Text", 5), new Data_Tuple.Tuple("Viewport", 9)]), dataType("Transform")([new Data_Tuple.Tuple("Scale", 2), new Data_Tuple.Tuple("Translate", 2)]), dataType("Marker")([new Data_Tuple.Tuple("Arrowhead", 0)])]);
+  var dataTypes = Data_List.fromFoldable(Data_Foldable.foldableArray)([dataType("Bool")([new Data_Tuple.Tuple(cTrue, 0), new Data_Tuple.Tuple(cFalse, 0)]), dataType("List")([new Data_Tuple.Tuple(cNil, 0), new Data_Tuple.Tuple(cCons, 2)]), dataType("Option")([new Data_Tuple.Tuple(cNone, 0), new Data_Tuple.Tuple(cSome, 1)]), dataType("Ordering")([new Data_Tuple.Tuple("GT", 0), new Data_Tuple.Tuple("LT", 0), new Data_Tuple.Tuple("EQ", 0)]), dataType("Pair")([new Data_Tuple.Tuple("Pair", 2)]), dataType("Tree")([new Data_Tuple.Tuple("Empty", 0), new Data_Tuple.Tuple("NonEmpty", 3)]), dataType("Point")([new Data_Tuple.Tuple("Point", 2)]), dataType("Orient")([new Data_Tuple.Tuple("Horiz", 0), new Data_Tuple.Tuple("Vert", 0)]), dataType("Plot")([new Data_Tuple.Tuple(cBarChart, 1), new Data_Tuple.Tuple(cLineChart, 1), new Data_Tuple.Tuple(cLinePlot, 1)]), dataType("GraphicsElement")([new Data_Tuple.Tuple("Circle", 4), new Data_Tuple.Tuple("Group", 1), new Data_Tuple.Tuple("Line", 4), new Data_Tuple.Tuple("Polyline", 3), new Data_Tuple.Tuple("Polymarkers", 2), new Data_Tuple.Tuple("Rect", 5), new Data_Tuple.Tuple("Text", 5), new Data_Tuple.Tuple("Viewport", 9)]), dataType("Transform")([new Data_Tuple.Tuple("Scale", 2), new Data_Tuple.Tuple("Translate", 2)]), dataType("Marker")([new Data_Tuple.Tuple("Arrowhead", 0)])]);
   var ctrToDataType = Data_Map_Internal.fromFoldable(ordCtr)(Data_List_Types.foldableList)(Data_List.concat(Data_Functor.mapFlipped(Data_List_Types.functorList)(dataTypes)(function (d) {
     return Data_Functor.mapFlipped(Data_List_Types.functorList)(ctrs(d))(function (v) {
       return new Data_Tuple.Tuple(v, d);
@@ -67405,14 +67471,18 @@ var PS = {};
   var Bindings = $PS["Bindings"];
   var Control_Applicative = $PS["Control.Applicative"];
   var Control_Apply = $PS["Control.Apply"];
+  var Control_Bind = $PS["Control.Bind"];
   var Data_Array = $PS["Data.Array"];
   var Data_Either = $PS["Data.Either"];
   var Data_Eq = $PS["Data.Eq"];
   var Data_Function = $PS["Data.Function"];
   var Data_Functor = $PS["Data.Functor"];
+  var Data_List = $PS["Data.List"];
   var Data_List_Types = $PS["Data.List.Types"];
+  var Data_Maybe = $PS["Data.Maybe"];
   var Data_Profunctor_Strong = $PS["Data.Profunctor.Strong"];
   var Data_Tuple = $PS["Data.Tuple"];
+  var Data_Unfoldable = $PS["Data.Unfoldable"];
   var Data_Unit = $PS["Data.Unit"];
   var DataType = $PS["DataType"];
   var Effect = $PS["Effect"];
@@ -67428,24 +67498,54 @@ var PS = {};
 
   var toggleNth = function toggleNth(v) {
     return function (v1) {
-      if (v1.value1 instanceof Val.Constr && v1.value1.value2 instanceof Data_List_Types.Cons && v1.value1.value2.value1 instanceof Data_List_Types.Cons && v1.value1.value2.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v1.value1.value1)(DataType.cCons)) {
-        var v3 = Lattice.expand(Val.valExpandable)(v1.value0)(new Val.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value))));
+      return function (v2) {
+        if (v2.value1 instanceof Val.Constr && v2.value1.value2 instanceof Data_List_Types.Cons && v2.value1.value2.value1 instanceof Data_List_Types.Cons && v2.value1.value2.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v2.value1.value1)(DataType.cCons)) {
+          var v3 = Lattice.expand(Val.valExpandable)(v2.value0)(new Val.Constr(false, v2.value1.value1, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value))));
 
-        if (v3 instanceof Val.Constr && v3.value2 instanceof Data_List_Types.Cons && v3.value2.value1 instanceof Data_List_Types.Cons && v3.value2.value1.value1 instanceof Data_List_Types.Nil) {
-          if (v === 0) {
-            return new Val.Constr(v3.value0, DataType.cCons, new Data_List_Types.Cons(Lattice.neg(Val.joinSemilatticeVal)(v3.value2.value0), new Data_List_Types.Cons(v3.value2.value1.value0, Data_List_Types.Nil.value)));
+          if (v3 instanceof Val.Constr && v3.value2 instanceof Data_List_Types.Cons && v3.value2.value1 instanceof Data_List_Types.Cons && v3.value2.value1.value1 instanceof Data_List_Types.Nil) {
+            if (v === 0) {
+              return new Val.Constr(v3.value0, v2.value1.value1, new Data_List_Types.Cons(v1(new Data_Tuple.Tuple(v3.value2.value0, v2.value1.value2.value0)), new Data_List_Types.Cons(v3.value2.value1.value0, Data_List_Types.Nil.value)));
+            }
+
+            ;
+            return new Val.Constr(v3.value0, v2.value1.value1, new Data_List_Types.Cons(v3.value2.value0, new Data_List_Types.Cons(toggleNth(v - 1 | 0)(v1)(new Data_Tuple.Tuple(v3.value2.value1.value0, v2.value1.value2.value1.value0)), Data_List_Types.Nil.value)));
           }
 
           ;
-          return new Val.Constr(v3.value0, DataType.cCons, new Data_List_Types.Cons(v3.value2.value0, new Data_List_Types.Cons(toggleNth(v - 1 | 0)(new Data_Tuple.Tuple(v3.value2.value1.value0, v1.value1.value2.value1.value0)), Data_List_Types.Nil.value)));
+          return Util.error(Util.absurd);
         }
 
         ;
         return Util.error(Util.absurd);
-      }
+      };
+    };
+  };
 
-      ;
-      return Util.error(Util.absurd);
+  var toggleConstrArg = function toggleConstrArg(v) {
+    return function (v1) {
+      return function (v2) {
+        return function (v3) {
+          if (v3.value1 instanceof Val.Constr && Data_Eq.eq(DataType.eqCtr)(v)(v3.value1.value1)) {
+            var v4 = Lattice.expand(Val.valExpandable)(v3.value0)(new Val.Constr(false, v, Data_Unfoldable.replicate(Data_List_Types.unfoldableList)(Util.successful(DataType.arity(v)))(new Val.Hole(false))));
+
+            if (v4 instanceof Val.Constr) {
+              return Util.fromJust(Util.absurd)(Control_Bind.bind(Data_Maybe.bindMaybe)(Data_List.index(v4.value2)(v1))(function (u1) {
+                return Control_Bind.bind(Data_Maybe.bindMaybe)(Data_List.index(v3.value1.value2)(v1))(function (v11) {
+                  return Control_Bind.bind(Data_Maybe.bindMaybe)(Data_List.updateAt(v1)(v2(new Data_Tuple.Tuple(u1, v11)))(v4.value2))(function (us$prime) {
+                    return Control_Applicative.pure(Data_Maybe.applicativeMaybe)(new Val.Constr(v4.value0, v, us$prime));
+                  });
+                });
+              }));
+            }
+
+            ;
+            return Util.error(Util.absurd);
+          }
+
+          ;
+          return Util.error(Util.absurd);
+        };
+      };
     };
   };
 
@@ -67483,10 +67583,10 @@ var PS = {};
 
   var get_prim = function get_prim(dictToFrom) {
     return function (x) {
-      var $123 = Primitive.match_fwd(dictToFrom);
-      var $124 = get(x);
-      return function ($125) {
-        return $123($124($125));
+      var $143 = Primitive.match_fwd(dictToFrom);
+      var $144 = get(x);
+      return function ($145) {
+        return $143($144($145));
       };
     };
   };
@@ -67524,31 +67624,31 @@ var PS = {};
   var reflectArray = new $$Reflect(function (dictPartial) {
     return function (v) {
       if (v.value1 instanceof Val.Constr && v.value1.value2 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cNil)) {
-        var v1 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cNil, Data_List_Types.Nil.value));
+        var v1 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, v.value1.value1, Data_List_Types.Nil.value));
 
         if (v1 instanceof Val.Constr && v1.value2 instanceof Data_List_Types.Nil) {
           return [];
         }
 
         ;
-        throw new Error("Failed pattern match at App.Util (line 48, column 7 - line 49, column 30): " + [v1.constructor.name]);
+        throw new Error("Failed pattern match at App.Util (line 49, column 7 - line 50, column 30): " + [v1.constructor.name]);
       }
 
       ;
 
       if (v.value1 instanceof Val.Constr && v.value1.value2 instanceof Data_List_Types.Cons && v.value1.value2.value1 instanceof Data_List_Types.Cons && v.value1.value2.value1.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cCons)) {
-        var v3 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cCons, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value))));
+        var v3 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, v.value1.value1, new Data_List_Types.Cons(new Val.Hole(false), new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value))));
 
         if (v3 instanceof Val.Constr && v3.value2 instanceof Data_List_Types.Cons && v3.value2.value1 instanceof Data_List_Types.Cons && v3.value2.value1.value1 instanceof Data_List_Types.Nil) {
           return Data_Array.cons(new Data_Tuple.Tuple(v3.value2.value0, v.value1.value2.value0))(from(reflectArray)()(new Data_Tuple.Tuple(v3.value2.value1.value0, v.value1.value2.value1.value0)));
         }
 
         ;
-        throw new Error("Failed pattern match at App.Util (line 51, column 7 - line 52, column 68): " + [v3.constructor.name]);
+        throw new Error("Failed pattern match at App.Util (line 52, column 7 - line 53, column 68): " + [v3.constructor.name]);
       }
 
       ;
-      throw new Error("Failed pattern match at App.Util (line 46, column 1 - line 52, column 68): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Util (line 47, column 1 - line 53, column 68): " + [v.constructor.name]);
     };
   });
   var doNothing = Data_Function["const"](Control_Applicative.pure(Effect.applicativeEffect)(Data_Unit.unit));
@@ -67562,6 +67662,7 @@ var PS = {};
   exports["toggleCell"] = toggleCell;
   exports["toggleNth"] = toggleNth;
   exports["toggleField"] = toggleField;
+  exports["toggleConstrArg"] = toggleConstrArg;
   exports["reflectArray"] = reflectArray;
 })(PS);
 
@@ -67597,9 +67698,7 @@ var PS = {};
   var exports = $PS["App.BarChart"];
   var $foreign = $PS["App.BarChart"];
   var App_Util = $PS["App.Util"];
-  var Data_Eq = $PS["Data.Eq"];
   var Data_Functor = $PS["Data.Functor"];
-  var Data_List_Types = $PS["Data.List.Types"];
   var Data_Tuple = $PS["Data.Tuple"];
   var DataType = $PS["DataType"];
   var Lattice = $PS["Lattice"];
@@ -67624,28 +67723,22 @@ var PS = {};
     };
   });
 
-  var barChartHandler = function barChartHandler(v) {
-    return function (v1) {
-      if (v1.value1 instanceof Val.Constr && v1.value1.value2 instanceof Data_List_Types.Cons && v1.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v1.value1.value1)(DataType.cBarChart)) {
-        var unsafeBarChartRecord = function unsafeBarChartRecord(tgt_opt) {
-          var tgt = Util.fromJust(Util.absurd)(tgt_opt);
-          return Util.unsafeIndex(tgt["__data_"])(0);
-        };
-
-        var i = unsafeBarChartRecord(Web_Event_Event.target(v));
-        var v2 = Lattice.expand(Val.valExpandable)(v1.value0)(new Val.Constr(false, DataType.cBarChart, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
-
-        if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
-          return new Val.Constr(v2.value0, DataType.cBarChart, new Data_List_Types.Cons(App_Util.toggleField(DataType.f_data)(App_Util.toggleNth(i))(new Data_Tuple.Tuple(v2.value2.value0, v1.value1.value2.value0)), Data_List_Types.Nil.value));
-        }
-
-        ;
-        return Util.error(Util.absurd);
-      }
-
-      ;
-      return Util.error(Util.absurd);
+  var barChartHandler = function barChartHandler(ev) {
+    var unsafeBarIndex = function unsafeBarIndex(tgt_opt) {
+      var tgt = Util.fromJust(Util.absurd)(tgt_opt);
+      return Util.unsafeIndex(tgt["__data__"])(0);
     };
+
+    var toggleBar = function toggleBar(i) {
+      return App_Util.toggleConstrArg(DataType.cBarChart)(0)(App_Util.toggleField(DataType.f_data)(App_Util.toggleNth(i)(function () {
+        var $2 = Lattice.neg(Val.joinSemilatticeVal);
+        return function ($3) {
+          return $2(Data_Tuple.fst($3));
+        };
+      }())));
+    };
+
+    return toggleBar(unsafeBarIndex(Web_Event_Event.target(ev)));
   };
 
   exports["barChartHandler"] = barChartHandler;
@@ -67708,30 +67801,61 @@ var PS = {};
         return y(d.y.value0);
       });
       var color = d3.scaleOrdinal(d3.schemePastel1);
-      svg.selectAll('lines').data(plots).enter().append('g').append('path').attr('fill', 'none').attr('stroke', function (d) {
+      svg.selectAll('lines').data(_toConsumableArray(plots.entries())).enter().append('g').append('path').attr('fill', 'none').attr('stroke', function (_ref13) {
+        var _ref14 = _slicedToArray(_ref13, 2),
+            d = _ref14[1];
+
         return color(names.indexOf(d.name.value0));
-      }).attr('stroke-width', 1).attr('class', 'line').attr('d', function (d) {
+      }).attr('stroke-width', 1).attr('class', 'line').attr('d', function (_ref15) {
+        var _ref16 = _slicedToArray(_ref15, 2),
+            _ = _ref16[0],
+            d = _ref16[1];
+
         return line1(d.data);
       });
       var smallRadius = 2;
 
-      var _iterator = _createForOfIteratorHelper(plots),
+      var _iterator = _createForOfIteratorHelper(plots.entries()),
           _step;
 
       try {
         var _loop = function _loop() {
-          var plot = _step.value;
-          var col = color(names.indexOf(plot.name.value0));
-          svg.selectAll('markers').data(plot.data).enter().append('g').append('circle').attr('class', 'marker').attr('r', function (d) {
+          var n_plot = _step.value;
+
+          var _n_plot = _slicedToArray(n_plot, 2),
+              i = _n_plot[0],
+              plot = _n_plot[1],
+              col = color(names.indexOf(plot.name.value0));
+
+          svg.selectAll('markers').data(_toConsumableArray(plot.data.entries()).map(function (_ref17) {
+            var _ref18 = _slicedToArray(_ref17, 2),
+                j = _ref18[0],
+                ns = _ref18[1];
+
+            return [[i, j], ns];
+          })).enter().append('g').append('circle').attr('class', 'marker').attr('r', function (_ref19) {
+            var _ref20 = _slicedToArray(_ref19, 2),
+                d = _ref20[1];
+
             return d.y.value1 ? smallRadius * 2 : smallRadius;
-          }).attr('cx', function (d) {
+          }).attr('cx', function (_ref21) {
+            var _ref22 = _slicedToArray(_ref21, 2),
+                d = _ref22[1];
+
             return x(d.x.value0);
-          }).attr('cy', function (d) {
+          }).attr('cy', function (_ref23) {
+            var _ref24 = _slicedToArray(_ref23, 2),
+                d = _ref24[1];
+
             return y(d.y.value0);
-          }).attr('fill', col).attr('stroke', function (d) {
+          }).attr('fill', col).attr('stroke', function (_ref25) {
+            var _ref26 = _slicedToArray(_ref25, 2),
+                d = _ref26[1];
+
             return d.y.value1 ? shared.colorShade(col, -30) : col;
-          }).on('mouseover', function (e, d) {
-            return listener(e);
+          }).on('mousedown', function (e, d) {
+            console.log("mousedown ".concat(d[0]));
+            listener(e);
           });
         };
 
@@ -67776,14 +67900,15 @@ var PS = {};
   var $foreign = $PS["App.LineChart"];
   var App_Util = $PS["App.Util"];
   var Data_Eq = $PS["Data.Eq"];
-  var Data_Function = $PS["Data.Function"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_List_Types = $PS["Data.List.Types"];
   var Data_Tuple = $PS["Data.Tuple"];
   var DataType = $PS["DataType"];
   var Lattice = $PS["Lattice"];
   var Primitive = $PS["Primitive"];
+  var Util = $PS["Util"];
   var Val = $PS["Val"];
+  var Web_Event_Event = $PS["Web.Event.Event"];
   var reflectPoint = new App_Util["Reflect"](function (dictPartial) {
     return function (r) {
       return {
@@ -67803,18 +67928,18 @@ var PS = {};
   var reflectLinePlot$prime = new App_Util["Reflect"](function (dictPartial) {
     return function (v) {
       if (v.value1 instanceof Val.Constr && v.value1.value2 instanceof Data_List_Types.Cons && v.value1.value2.value1 instanceof Data_List_Types.Nil && Data_Eq.eq(DataType.eqCtr)(v.value1.value1)(DataType.cLinePlot)) {
-        var v2 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, DataType.cLinePlot, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
+        var v2 = Lattice.expand(Val.valExpandable)(v.value0)(new Val.Constr(false, v.value1.value1, new Data_List_Types.Cons(new Val.Hole(false), Data_List_Types.Nil.value)));
 
         if (v2 instanceof Val.Constr && v2.value2 instanceof Data_List_Types.Cons && v2.value2.value1 instanceof Data_List_Types.Nil) {
           return App_Util.record(App_Util.from(reflectLinePlot)())(new Data_Tuple.Tuple(v2.value2.value0, v.value1.value2.value0));
         }
 
         ;
-        throw new Error("Failed pattern match at App.LineChart (line 45, column 7 - line 46, column 58): " + [v2.constructor.name]);
+        throw new Error("Failed pattern match at App.LineChart (line 48, column 7 - line 49, column 56): " + [v2.constructor.name]);
       }
 
       ;
-      throw new Error("Failed pattern match at App.LineChart (line 43, column 1 - line 46, column 58): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.LineChart (line 46, column 1 - line 49, column 56): " + [v.constructor.name]);
     };
   });
   var reflectLineChart = new App_Util["Reflect"](function (dictPartial) {
@@ -67825,7 +67950,26 @@ var PS = {};
       };
     };
   });
-  var lineChartHandler = Data_Function["const"](Data_Tuple.fst);
+
+  var lineChartHandler = function lineChartHandler(ev) {
+    var unsafePos = function unsafePos(tgt_opt) {
+      var tgt = Util.fromJust(Util.absurd)(tgt_opt);
+      var xy = Util.unsafeIndex(tgt["__data__"])(0);
+      return new Data_Tuple.Tuple(Util.unsafeIndex(xy)(0), Util.unsafeIndex(xy)(1));
+    };
+
+    var togglePoint = function togglePoint(v) {
+      return App_Util.toggleConstrArg(DataType.cLineChart)(0)(App_Util.toggleField(DataType.f_plots)(App_Util.toggleNth(v.value0)(App_Util.toggleConstrArg(DataType.cLinePlot)(0)(App_Util.toggleField(DataType.f_data)(App_Util.toggleNth(v.value1)(function () {
+        var $31 = Lattice.neg(Val.joinSemilatticeVal);
+        return function ($32) {
+          return $31(Data_Tuple.fst($32));
+        };
+      }()))))));
+    };
+
+    return togglePoint(unsafePos(Web_Event_Event.target(ev)));
+  };
+
   exports["lineChartHandler"] = lineChartHandler;
   exports["reflectLineChart"] = reflectLineChart;
   exports["drawLineChart"] = $foreign.drawLineChart;
@@ -67838,13 +67982,13 @@ var PS = {};
 
   var shared = require("/src/app/Shared");
 
-  function drawMatrix(id, childIndex, _ref13, listener) {
-    var title = _ref13.title,
-        _ref13$matrix = _ref13.matrix,
-        _ref13$matrix$value = _ref13$matrix.value0,
-        nss = _ref13$matrix$value.value0,
-        i_max = _ref13$matrix$value.value1,
-        j_max = _ref13$matrix.value1;
+  function drawMatrix(id, childIndex, _ref27, listener) {
+    var title = _ref27.title,
+        _ref27$matrix = _ref27.matrix,
+        _ref27$matrix$value = _ref27$matrix.value0,
+        nss = _ref27$matrix$value.value0,
+        i_max = _ref27$matrix$value.value1,
+        j_max = _ref27$matrix.value1;
     return function () {
       var childId = id + '-' + childIndex;
       var strokeWidth = 0.5;
@@ -67858,39 +68002,39 @@ var PS = {};
       div.selectAll('#' + childId).remove();
       var svg = div.append('svg').attr('id', childId).attr('width', width + hMargin).attr('height', height + vMargin); // group for each row
 
-      var grp = svg.selectAll('g').data(_toConsumableArray(nss.entries()).map(function (_ref14) {
-        var _ref15 = _slicedToArray(_ref14, 2),
-            i = _ref15[0],
-            ns = _ref15[1];
+      var grp = svg.selectAll('g').data(_toConsumableArray(nss.entries()).map(function (_ref28) {
+        var _ref29 = _slicedToArray(_ref28, 2),
+            i = _ref29[0],
+            ns = _ref29[1];
 
         return [i + 1, ns];
       })).enter().append('g').attr('transform', function (_, i) {
         return "translate(".concat(strokeWidth / 2 + hMargin / 2, ", ").concat(h * i + strokeWidth / 2 + vMargin, ")");
       });
-      var rect = grp.selectAll('rect').data(function (_ref16) {
-        var _ref17 = _slicedToArray(_ref16, 2),
-            i = _ref17[0],
-            ns = _ref17[1];
+      var rect = grp.selectAll('rect').data(function (_ref30) {
+        var _ref31 = _slicedToArray(_ref30, 2),
+            i = _ref31[0],
+            ns = _ref31[1];
 
-        return _toConsumableArray(ns.entries()).map(function (_ref18) {
-          var _ref19 = _slicedToArray(_ref18, 2),
-              j = _ref19[0],
-              n = _ref19[1];
+        return _toConsumableArray(ns.entries()).map(function (_ref32) {
+          var _ref33 = _slicedToArray(_ref32, 2),
+              j = _ref33[0],
+              n = _ref33[1];
 
           return [[i, j + 1], n];
         });
       }).enter();
       rect.append('rect').attr('x', function (_, j) {
         return w * j;
-      }).attr('width', w).attr('height', h).attr('class', function (_ref20) {
-        var _ref21 = _slicedToArray(_ref20, 2),
-            n = _ref21[1];
+      }).attr('width', w).attr('height', h).attr('class', function (_ref34) {
+        var _ref35 = _slicedToArray(_ref34, 2),
+            n = _ref35[1];
 
         return n.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected';
       }).attr('stroke-width', strokeWidth);
-      rect.append('text').text(function (_ref22) {
-        var _ref23 = _slicedToArray(_ref22, 2),
-            n = _ref23[1];
+      rect.append('text').text(function (_ref36) {
+        var _ref37 = _slicedToArray(_ref36, 2),
+            n = _ref37[1];
 
         return n.value0;
       }).attr('x', function (_, j) {
@@ -67925,7 +68069,7 @@ var PS = {};
   var matrixViewHandler = function matrixViewHandler(ev) {
     var unsafePos = function unsafePos(tgt_opt) {
       var tgt = Util.fromJust(Util.absurd)(tgt_opt);
-      var xy = Util.unsafeIndex(tgt["__data_"])(0);
+      var xy = Util.unsafeIndex(tgt["__data__"])(0);
       return new Data_Tuple.Tuple(Util.unsafeIndex(xy)(0), Util.unsafeIndex(xy)(1));
     };
 
@@ -67956,9 +68100,9 @@ var PS = {};
   } // Generic to all tables.
 
 
-  function drawTable(id, childIndex, _ref24, listener) {
-    var title = _ref24.title,
-        table = _ref24.table;
+  function drawTable(id, childIndex, _ref38, listener) {
+    var title = _ref38.title,
+        table = _ref38.table;
     return function () {
       var childId = id + '-' + childIndex;
       var cellFill = '#ffffff';
@@ -70645,7 +70789,7 @@ var PS = {};
           }
 
           ;
-          throw new Error("Failed pattern match at App.Fig (line 81, column 10 - line 81, column 81): " + [v.constructor.name]);
+          throw new Error("Failed pattern match at App.Fig (line 80, column 10 - line 80, column 81): " + [v.constructor.name]);
         };
       };
 
@@ -70718,25 +70862,39 @@ var PS = {};
   };
 
   var linkResult = function linkResult(v) {
-    return function (v1$prime) {
+    return new Data_Tuple.Tuple(function (v1$prime) {
       var v3 = EvalBwd.evalBwd(v1$prime)(v.t1);
       var v4 = Util_SnocList.splitAt(1)(v3.value0.value0);
       return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.spec.x)(v4.value1))(function (v0$prime) {
         var v2$prime = Lattice.neg(Val.joinSemilatticeVal)(EvalFwd.evalFwd(Lattice.neg(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v.ρ0))(v4.value1)))(Data_Functor.map(Expr.functorExpr)(Data_Function["const"](true))(v.e2))(true)(v.t2));
         return Control_Applicative.pure(Data_Either.applicativeEither)({
-          "v2'": v2$prime,
+          "v'": v2$prime,
           "v0'": v0$prime
         });
       });
-    };
+    }, function (v2$prime) {
+      var v3 = EvalBwd.evalBwd(v2$prime)(v.t2);
+      var v4 = Util_SnocList.splitAt(1)(v3.value0.value0);
+      return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.spec.x)(v4.value1))(function (v0$prime) {
+        var v1$prime = Lattice.neg(Val.joinSemilatticeVal)(EvalFwd.evalFwd(Lattice.neg(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v.ρ0))(v4.value1)))(Data_Functor.map(Expr.functorExpr)(Data_Function["const"](true))(v.e1))(true)(v.t1));
+        return Control_Applicative.pure(Data_Either.applicativeEither)({
+          "v'": v1$prime,
+          "v0'": v0$prime
+        });
+      });
+    });
   };
 
   var linkFigViews = function linkFigViews(v) {
-    return function (v1$prime) {
-      return Control_Bind.bind(Data_Either.bindEither)(linkResult(v)(v1$prime))(function (v3) {
-        return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(view("primary view")(new Data_Tuple.Tuple(v1$prime, v.v1)), [view("linked view")(new Data_Tuple.Tuple(v3["v2'"], v.v2)), view("common data")(new Data_Tuple.Tuple(v3["v0'"], v.v0))]));
+    return new Data_Tuple.Tuple(function (v1$prime) {
+      return Control_Bind.bind(Data_Either.bindEither)(Data_Tuple.fst(linkResult(v))(v1$prime))(function (v3) {
+        return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(view("primary view")(new Data_Tuple.Tuple(v1$prime, v.v1)), view("linked view")(new Data_Tuple.Tuple(v3["v'"], v.v2))), view("common data")(new Data_Tuple.Tuple(v3["v0'"], v.v0))));
       });
-    };
+    }, function (v2$prime) {
+      return Control_Bind.bind(Data_Either.bindEither)(Data_Tuple.snd(linkResult(v))(v2$prime))(function (v3) {
+        return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(view("linked view")(new Data_Tuple.Tuple(v3["v'"], v.v1)), view("primary view")(new Data_Tuple.Tuple(v2$prime, v.v2))), view("common data")(new Data_Tuple.Tuple(v3["v0'"], v.v0))));
+      });
+    });
   };
 
   var figViews = function figViews(v) {
@@ -70755,52 +70913,76 @@ var PS = {};
       return function (n) {
         return function (v) {
           if (v instanceof MatrixFig) {
-            return Control_Bind.bindFlipped(Effect.bindEffect)(App_MatrixView.drawMatrix(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($191) {
-              return onSel(App_MatrixView.matrixViewHandler($191));
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_MatrixView.drawMatrix(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($220) {
+              return onSel(App_MatrixView.matrixViewHandler($220));
             }));
           }
 
           ;
 
           if (v instanceof EnergyTableView) {
-            return Control_Bind.bindFlipped(Effect.bindEffect)(App_TableView.drawTable(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($192) {
-              return onSel(App_TableView.tableViewHandler($192));
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_TableView.drawTable(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($221) {
+              return onSel(App_TableView.tableViewHandler($221));
             }));
           }
 
           ;
 
           if (v instanceof LineChartFig) {
-            return Control_Bind.bindFlipped(Effect.bindEffect)(App_LineChart.drawLineChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($193) {
-              return onSel(App_LineChart.lineChartHandler($193));
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_LineChart.drawLineChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($222) {
+              return onSel(App_LineChart.lineChartHandler($222));
             }));
           }
 
           ;
 
           if (v instanceof BarChartFig) {
-            return Control_Bind.bindFlipped(Effect.bindEffect)(App_BarChart.drawBarChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($194) {
-              return onSel(App_BarChart.barChartHandler($194));
+            return Control_Bind.bindFlipped(Effect.bindEffect)(App_BarChart.drawBarChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($223) {
+              return onSel(App_BarChart.barChartHandler($223));
             }));
           }
 
           ;
-          throw new Error("Failed pattern match at App.Fig (line 44, column 1 - line 44, column 58): " + [divId.constructor.name, onSel.constructor.name, n.constructor.name, v.constructor.name]);
+          throw new Error("Failed pattern match at App.Fig (line 43, column 1 - line 43, column 58): " + [divId.constructor.name, onSel.constructor.name, n.constructor.name, v.constructor.name]);
         };
       };
     };
   };
 
   var drawLinkFig = function drawLinkFig(v) {
-    return function (v1$prime) {
-      return function __do() {
-        Effect_Console.log("Redrawing " + v.spec.divId)();
-        var v2 = Util.successful(linkFigViews(v)(v1$prime));
-        drawView(v.spec.divId)(function (selector) {
-          return drawLinkFig(v)(selector(new Data_Tuple.Tuple(v1$prime, v.v1)));
-        })(Data_Foldable.length(Data_Foldable.foldableArray)(Data_Semiring.semiringInt)(v2.value1))(v2.value0)();
-        return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Tuple.uncurry(drawView(v.spec.divId)(App_Util.doNothing)))(Data_Array.zip(Data_Array.range(0)(Data_Foldable.length(Data_Foldable.foldableArray)(Data_Semiring.semiringInt)(v2.value1) - 1 | 0))(v2.value1)))();
-      };
+    return function (v1) {
+      if (v1 instanceof Data_Either.Left) {
+        return function __do() {
+          Effect_Console.log("Redrawing " + v.spec.divId)();
+          var v3 = Util.successful(Data_Tuple.fst(linkFigViews(v))(v1.value0));
+          drawView(v.spec.divId)(function (selector) {
+            return drawLinkFig(v)(Data_Either.Left.create(selector(new Data_Tuple.Tuple(v1.value0, v.v1))));
+          })(2)(v3.value0.value0)();
+          drawView(v.spec.divId)(function (selector) {
+            return drawLinkFig(v)(Data_Either.Right.create(selector(new Data_Tuple.Tuple(new Val.Hole(false), v.v2))));
+          })(0)(v3.value0.value1)();
+          return drawView(v.spec.divId)(App_Util.doNothing)(1)(v3.value1)();
+        };
+      }
+
+      ;
+
+      if (v1 instanceof Data_Either.Right) {
+        return function __do() {
+          Effect_Console.log("Redrawing " + v.spec.divId)();
+          var v3 = Util.successful(Data_Tuple.snd(linkFigViews(v))(v1.value0));
+          drawView(v.spec.divId)(function (selector) {
+            return drawLinkFig(v)(Data_Either.Left.create(selector(new Data_Tuple.Tuple(new Val.Hole(false), v.v1))));
+          })(2)(v3.value0.value0)();
+          drawView(v.spec.divId)(function (selector) {
+            return drawLinkFig(v)(Data_Either.Right.create(selector(new Data_Tuple.Tuple(v1.value0, v.v2))));
+          })(0)(v3.value0.value1)();
+          return drawView(v.spec.divId)(App_Util.doNothing)(1)(v3.value1)();
+        };
+      }
+
+      ;
+      throw new Error("Failed pattern match at App.Fig (line 129, column 1 - line 129, column 64): " + [v.constructor.name, v1.constructor.name]);
     };
   };
 
@@ -70863,11 +71045,11 @@ var PS = {};
       ;
 
       if (v instanceof Data_Either.Right) {
-        return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(App_Fig.drawLinkFig)(new Val.Hole(false)))(v.value0));
+        return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(App_Fig.drawLinkFig)(Data_Either.Left.create(new Val.Hole(false))))(v.value0));
       }
 
       ;
-      throw new Error("Failed pattern match at App.Main (line 33, column 4 - line 35, column 71): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Main (line 33, column 4 - line 35, column 78): " + [v.constructor.name]);
     });
   };
 
@@ -70902,4 +71084,4 @@ var PS = {};
 
 PS["App.Main"].main();
 },{"d3":"BG5c","d3-tip":"TLCm","/src/app/Shared":"Ad6u","process":"g5I+"}]},{},["m8nE"], null)
-//# sourceMappingURL=/develop/app.92f4d044.js.map
+//# sourceMappingURL=/develop/app.8ac66a5f.js.map
