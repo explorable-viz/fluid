@@ -60,9 +60,7 @@ function drawLineChart (
          .append('g')
          .append('path')
          .attr('fill', 'none')
-         .attr('stroke', d => {
-            return color(names.indexOf(d.name.value0))
-         })
+         .attr('stroke', d => color(names.indexOf(d.name.value0)))
          .attr('stroke-width', 1)
          .attr('class', 'line')
          .attr('d', d => line1(d.data))
@@ -81,7 +79,7 @@ function drawLineChart (
             .attr('cy', d => y(d.y.value0))
             .attr('fill', col)
             .attr('stroke', d => d.y.value1 ? shared.colorShade(col, -30) : col)
-            .on('mouseover', (e, d) =>
+            .on('mousedown', (e, d) =>
                listener(e)
             )
       }
