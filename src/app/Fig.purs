@@ -6,7 +6,7 @@ import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
 import Data.List (List(..), (:), singleton)
-import Data.Tuple (fst, uncurry)
+import Data.Tuple (fst, snd, uncurry)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
@@ -31,8 +31,7 @@ import Primitive (match, match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Util (MayFail, type (×), type (+), (×), absurd, error, successful)
 import Util.SnocList (splitAt)
-import Val (Env, Val)
-import Val (Val(..)) as V
+import Val (Env, Val(..))
 
 data View =
    MatrixFig MatrixView |
@@ -50,17 +49,17 @@ drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListe
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 -- 'from' is partial; encapsulate that here.
 view :: String -> Slice (Val 𝔹) -> View
-view _ (u × V.Constr _ c (v1 : Nil)) | c == cBarChart =
-   case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
-      V.Constr _ _ (u1 : Nil) -> BarChartFig (unsafePartial $ record from (u1 × v1))
+view _ (u × Constr _ c (v1 : Nil)) | c == cBarChart =
+   case expand u (Constr false cBarChart (Hole false : Nil)) of
+      Constr _ _ (u1 : Nil) -> BarChartFig (unsafePartial $ record from (u1 × v1))
       _ -> error absurd
-view _ (u × V.Constr _ c (v1 : Nil)) | c == cLineChart =
-   case expand u (V.Constr false cLineChart (V.Hole false : Nil)) of
-      V.Constr _ _ (u1 : Nil) -> LineChartFig (unsafePartial $ record from (u1 × v1))
+view _ (u × Constr _ c (v1 : Nil)) | c == cLineChart =
+   case expand u (Constr false cLineChart (Hole false : Nil)) of
+      Constr _ _ (u1 : Nil) -> LineChartFig (unsafePartial $ record from (u1 × v1))
       _ -> error absurd
-view title (u × v@(V.Constr _ c _)) | c == cNil || c == cCons =
+view title (u × v@(Constr _ c _)) | c == cNil || c == cCons =
    EnergyTableView (EnergyTable { title, table: unsafePartial $ record energyRecord <$> from (u × v) })
-view title (u × v@(V.Matrix _ _)) =
+view title (u × v@(Matrix _ _)) =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig (MatrixView { title, matrix: matrixRep vss2 } )
 view _ _ = error absurd
@@ -122,18 +121,24 @@ type LinkFig = {
 }
 
 type LinkResult = {
-   v2' :: Val 𝔹,
+   v' :: Val 𝔹,      -- will represent either v1' or v2'
    v0' :: Val 𝔹
 }
 
--- TODO: consolidate these two.
-drawLinkFig :: LinkFig -> Val 𝔹 -> Effect Unit
-drawLinkFig fig@{ spec: { divId }, v1 } v1' = do
+-- TODO: consolidate.
+drawLinkFig :: LinkFig -> Either (Val 𝔹) (Val 𝔹) -> Effect Unit
+drawLinkFig fig@{ spec: { divId }, v1, v2 } (Left v1') = do
    log $ "Redrawing " <> divId
-   let v1_view × views = successful $ linkFigViews fig v1'
-   drawView divId (\selector -> drawLinkFig fig (selector (v1' × v1))) (length views) v1_view
-   sequence_ $
-      uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
+   let v1_view × v2_view × v0_view = successful $ fst (linkFigViews fig) v1'
+   drawView divId (\selector -> drawLinkFig fig (Left $ selector (v1' × v1))) 2 v1_view
+   drawView divId (\selector -> drawLinkFig fig (Right $ selector (Hole false × v2))) 0 v2_view
+   drawView divId doNothing 1 v0_view
+drawLinkFig fig@{ spec: { divId }, v1, v2 } (Right v2') = do
+   log $ "Redrawing " <> divId
+   let v1_view × v2_view × v0_view = successful $ snd (linkFigViews fig) v2'
+   drawView divId (\selector -> drawLinkFig fig (Left $ selector (Hole false × v1))) 2 v1_view
+   drawView divId (\selector -> drawLinkFig fig (Right $ selector (v2' × v2))) 0 v2_view
+   drawView divId doNothing 1 v0_view
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
 drawFig fig@{ spec: { divId }, v } v' = do
@@ -158,21 +163,37 @@ figViews { spec: { xs }, ρ0, ρ, e, t, v } v' = do
    views <- valViews (ρ0ρ' × (ρ0 <> ρ)) xs
    pure $ view "output" (v'' × v) × views
 
-linkFigViews :: LinkFig -> Val 𝔹 -> MayFail (View × Array View)
-linkFigViews fig@{ v1, v2, v0 } v1' = do
-   { v2', v0' } <- linkResult fig v1'
-   pure $ view "primary view" (v1' × v1) ×
-          [view "linked view" (v2' × v2), view "common data" (v0' × v0)]
+-- TODO: consolidate.
+linkFigViews :: LinkFig -> (Val 𝔹 -> MayFail (View × View × View)) × (Val 𝔹 -> MayFail (View × View × View))
+linkFigViews fig@{ v1, v2, v0 } =
+   (\v1' -> do
+      { v': v2', v0' } <- fst (linkResult fig) v1'
+      pure $ view "primary view" (v1' × v1) × view "linked view" (v2' × v2) × view "common data" (v0' × v0))
+   ×
+   (\v2' -> do
+      { v': v1', v0' } <- snd (linkResult fig) v2'
+      pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0))
 
-linkResult :: LinkFig -> Val 𝔹 -> MayFail LinkResult
-linkResult { spec: { x }, ρ0, ρ, e2, t1, t2, v1, v2 } v1' = do
-   let ρ0ρ × _ × _ = evalBwd v1' t1
-       _ × ρ' = splitAt 1 ρ0ρ
-   v0' <- find x ρ'
-   -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
-   -- combined with the negation of the dataset environment slice
-   let v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
-   pure { v2', v0' }
+-- TODO: consolidate.
+linkResult :: LinkFig -> (Val 𝔹 -> MayFail LinkResult) × (Val 𝔹 -> MayFail LinkResult)
+linkResult { spec: { x }, ρ0, ρ, e1, e2, t1, t2, v1, v2 } =
+   (\v1' -> do
+      let ρ0ρ × _ × _ = evalBwd v1' t1
+          _ × ρ' = splitAt 1 ρ0ρ
+      v0' <- find x ρ'
+      -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
+      -- combined with the negation of the dataset environment slice
+      let v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
+      pure { v': v2', v0' })
+   ×
+   (\v2' -> do
+      let ρ0ρ × _ × _ = evalBwd v2' t2
+          _ × ρ' = splitAt 1 ρ0ρ
+      v0' <- find x ρ'
+      -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
+      -- combined with the negation of the dataset environment slice
+      let v1' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e1) true t1)
+      pure { v': v1', v0' })
 
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ file } = do

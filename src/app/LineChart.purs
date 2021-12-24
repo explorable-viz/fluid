@@ -6,15 +6,18 @@ import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import Data.Tuple (fst)
 import Unsafe.Coerce (unsafeCoerce)
+import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util (Handler, class Reflect, Renderer, from, get, get_intOrNumber, get_prim, record)
+import App.Util (
+   Handler, class Reflect, Renderer, Selector,
+   from, get, get_intOrNumber, get_prim, record, toggleConstrArg, toggleField, toggleNth
+)
 import Bindings (Bind)
-import DataType (cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
-import Lattice (Slice, 𝔹, expand)
-import Util (type (×), (×), absurd, fromJust)
+import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
+import Lattice (Slice, 𝔹, expand, neg)
+import Util (type (×), (×), (!), absurd, fromJust)
 import Util.SnocList (SnocList)
-import Val (Val(..)) as V
-import Val (Val)
+import Val (Val(..))
 
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data :: Array Point }
@@ -41,15 +44,27 @@ instance reflectLineChart :: Reflect (SnocList (Bind (Val Boolean))) LineChart w
    }
 
 instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
-   from (v × V.Constr _ c (v1 : Nil)) | c == cLinePlot =
-      case expand v (V.Constr false cLinePlot (V.Hole false : Nil)) of
-         V.Constr _ _ (u1 : Nil) -> record from (u1 × v1)
+   from (v × Constr _ c (v1 : Nil)) | c == cLinePlot =
+      case expand v (Constr false c (Hole false : Nil)) of
+         Constr _ _ (u1 : Nil) -> record from (u1 × v1)
 
 lineChartHandler :: Handler
-lineChartHandler = const fst
+lineChartHandler ev = togglePoint $ unsafePos $ target ev
+   where
+   togglePoint :: Int × Int -> Selector
+   togglePoint (i × j) =
+      toggleConstrArg cLineChart 0 $
+      toggleField f_plots $
+      toggleNth i $
+      toggleConstrArg cLinePlot 0 $
+      toggleField f_data $
+      toggleNth j $
+      fst >>> neg
 
--- (unsafe) the datum associated with a line chart mouse event.
-unsafePoint :: Maybe EventTarget -> Point
-unsafePoint tgt_opt =
-   let tgt = fromJust absurd $ tgt_opt
-   in (unsafeCoerce tgt).__data_
+   -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
+   -- within line plot.
+   unsafePos :: Maybe EventTarget -> Int × Int
+   unsafePos tgt_opt =
+      let tgt = fromJust absurd $ tgt_opt
+          xy = (unsafeCoerce tgt).__data__!0 :: Array Int
+      in xy!0 × xy!1
