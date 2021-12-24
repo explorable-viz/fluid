@@ -31,8 +31,7 @@ import Primitive (match, match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Util (MayFail, type (×), type (+), (×), absurd, error, successful)
 import Util.SnocList (splitAt)
-import Val (Env, Val)
-import Val (Val(..)) as V
+import Val (Env, Val(..))
 
 data View =
    MatrixFig MatrixView |
@@ -50,17 +49,17 @@ drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListe
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 -- 'from' is partial; encapsulate that here.
 view :: String -> Slice (Val 𝔹) -> View
-view _ (u × V.Constr _ c (v1 : Nil)) | c == cBarChart =
-   case expand u (V.Constr false cBarChart (V.Hole false : Nil)) of
-      V.Constr _ _ (u1 : Nil) -> BarChartFig (unsafePartial $ record from (u1 × v1))
+view _ (u × Constr _ c (v1 : Nil)) | c == cBarChart =
+   case expand u (Constr false cBarChart (Hole false : Nil)) of
+      Constr _ _ (u1 : Nil) -> BarChartFig (unsafePartial $ record from (u1 × v1))
       _ -> error absurd
-view _ (u × V.Constr _ c (v1 : Nil)) | c == cLineChart =
-   case expand u (V.Constr false cLineChart (V.Hole false : Nil)) of
-      V.Constr _ _ (u1 : Nil) -> LineChartFig (unsafePartial $ record from (u1 × v1))
+view _ (u × Constr _ c (v1 : Nil)) | c == cLineChart =
+   case expand u (Constr false cLineChart (Hole false : Nil)) of
+      Constr _ _ (u1 : Nil) -> LineChartFig (unsafePartial $ record from (u1 × v1))
       _ -> error absurd
-view title (u × v@(V.Constr _ c _)) | c == cNil || c == cCons =
+view title (u × v@(Constr _ c _)) | c == cNil || c == cCons =
    EnergyTableView (EnergyTable { title, table: unsafePartial $ record energyRecord <$> from (u × v) })
-view title (u × v@(V.Matrix _ _)) =
+view title (u × v@(Matrix _ _)) =
    let vss2 = fst (match_fwd (u × v)) × fst (match v) in
    MatrixFig (MatrixView { title, matrix: matrixRep vss2 } )
 view _ _ = error absurd
@@ -138,6 +137,20 @@ drawLinkFig fig@{ spec: { divId }, v1 } v1' = do
    let v1_view × v2_view × v0_view = successful $ linkFigViews fig v1'
    drawView divId (\selector -> drawLinkFig fig (selector (v1' × v1))) 2 v1_view
    drawView divId doNothing 0 v2_view
+   drawView divId doNothing 1 v0_view
+
+drawLinkFig2 :: LinkFig -> Either (Val 𝔹) (Val 𝔹) -> Effect Unit
+drawLinkFig2 fig@{ spec: { divId }, v1, v2 } (Left v1') = do
+   log $ "Redrawing " <> divId
+   let v1_view × v2_view × v0_view = successful $ fst (linkFigViews2 fig) v1'
+   drawView divId (\selector -> drawLinkFig2 fig (Left $ selector (v1' × v1))) 2 v1_view
+   drawView divId (\selector -> drawLinkFig2 fig (Right $ selector (Hole false × v2))) 0 v2_view
+   drawView divId doNothing 1 v0_view
+drawLinkFig2 fig@{ spec: { divId }, v1, v2 } (Right v2') = do
+   log $ "Redrawing " <> divId
+   let v1_view × v2_view × v0_view = successful $ snd (linkFigViews2 fig) v2'
+   drawView divId (\selector -> drawLinkFig2 fig (Left $ selector (Hole false × v1))) 2 v1_view
+   drawView divId (\selector -> drawLinkFig2 fig (Right $ selector (v2' × v2))) 0 v2_view
    drawView divId doNothing 1 v0_view
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
