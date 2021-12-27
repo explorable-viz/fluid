@@ -1,5 +1,5 @@
 let series type country = [
-   { x: year, y: row.output }
+   { x: row.year, y: row.output }
    | year <- [2013..2018], row <- data,
      row.year == year, row.energyType == type, row.country == country
 ] in LineChart {

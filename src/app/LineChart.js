@@ -74,7 +74,6 @@ function drawLineChart (
             .enter()
             .append('g')
             .append('circle')
-            .attr('class', 'marker')
             .attr('r', ([, d]) => d.y.value1 ? smallRadius * 2 : smallRadius)
             .attr('cx', ([, d]) => x(d.x.value0))
             .attr('cy', ([, d]) => y(d.y.value0))
