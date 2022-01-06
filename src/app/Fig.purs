@@ -167,15 +167,15 @@ figViews { spec: { xs }, ρ0, ρ, e, t, v } v' = do
 linkFigViews :: LinkFig -> (Val 𝔹 -> MayFail (View × View × View)) × (Val 𝔹 -> MayFail (View × View × View))
 linkFigViews fig@{ spec: { x }, ρ0, e1, e2, t1, t2, v1, v2, v0 } =
    (\v1' -> do
-      { v': v2', v0' } <- linkResult' x ρ0 e2 t1 t2 v1'
+      { v': v2', v0' } <- linkResult x ρ0 e2 t1 t2 v1'
       pure $ view "primary view" (v1' × v1) × view "linked view" (v2' × v2) × view "common data" (v0' × v0))
    ×
    (\v2' -> do
-      { v': v1', v0' } <- linkResult' x ρ0 e1 t2 t1 v2'
+      { v': v1', v0' } <- linkResult x ρ0 e1 t2 t1 v2'
       pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0))
 
-linkResult' :: Var -> Env 𝔹 -> Expr 𝔹 -> Expl 𝔹 -> Expl 𝔹 -> Val 𝔹 -> MayFail LinkResult
-linkResult' x ρ0 e2 t1 t2 v1' = do
+linkResult :: Var -> Env 𝔹 -> Expr 𝔹 -> Expl 𝔹 -> Expl 𝔹 -> Val 𝔹 -> MayFail LinkResult
+linkResult x ρ0 e2 t1 t2 v1' = do
    let ρ0ρ × _ × _ = evalBwd v1' t1
        _ × ρ' = splitAt 1 ρ0ρ
    v0' <- find x ρ'
