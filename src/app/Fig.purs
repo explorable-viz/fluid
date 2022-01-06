@@ -212,11 +212,9 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
        name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment ρ0 as well as dataset
    ρ0 × ρ <- openDatasetAs (File "example/" <> dir <> dataFile) x
-   s1 <- open name1
-   s2 <- open name2
+   s1 × s2 <- (×) <$> open name1 <*> open name2
    pure $ successful do
-      e1 <- desugarFwd s1
-      e2 <- desugarFwd s2
+      e1 × e2 <- (×) <$> desugarFwd s1 <*> desugarFwd s2
       t1 × v1 <- eval (ρ0 <> ρ) e1
       t2 × v2 <- eval (ρ0 <> ρ) e2
       v0 <- find x ρ
