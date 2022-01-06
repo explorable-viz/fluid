@@ -125,7 +125,6 @@ type LinkResult = {
    v0' :: Val 𝔹
 }
 
--- TODO: consolidate.
 drawLinkFig :: LinkFig -> Either (Val 𝔹) (Val 𝔹) -> Effect Unit
 drawLinkFig fig@{ spec: { x, divId }, ρ0, e1, e2, t1, t2, v1, v2, v0 } v' = do
    log $ "Redrawing " <> divId
