@@ -129,21 +129,16 @@ type LinkResult = {
 drawLinkFig :: LinkFig -> Either (Val 𝔹) (Val 𝔹) -> Effect Unit
 drawLinkFig fig@{ spec: { x, divId }, ρ0, e1, e2, t1, t2, v1, v2, v0 } v' = do
    log $ "Redrawing " <> divId
-   case v' of
-      Left v1' -> do
-         let v1_view × v2_view × v0_view × v1'' × v2'' = successful do
-               { v': v2', v0' } <- linkResult x ρ0 e2 t1 t2 v1'
-               pure $ view "primary view" (v1' × v1) × view "linked view" (v2' × v2) × view "common data" (v0' × v0) × v1' × Hole false
-         drawView divId (\selector -> drawLinkFig fig (Left $ selector (v1'' × v1))) 2 v1_view
-         drawView divId (\selector -> drawLinkFig fig (Right $ selector (v2'' × v2))) 0 v2_view
-         drawView divId doNothing 1 v0_view
-      Right v2' -> do
-         let v1_view × v2_view × v0_view × v1'' × v2'' = successful do
-               { v': v1', v0' } <- linkResult x ρ0 e1 t2 t1 v2'
-               pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0) × Hole false × v2'
-         drawView divId (\selector -> drawLinkFig fig (Left $ selector (v1'' × v1))) 2 v1_view
-         drawView divId (\selector -> drawLinkFig fig (Right $ selector (v2'' × v2))) 0 v2_view
-         drawView divId doNothing 1 v0_view
+   let v1_view × v2_view × v0_view × v1'' × v2'' = successful case v' of
+         Left v1' -> do
+            { v': v2', v0' } <- linkResult x ρ0 e2 t1 t2 v1'
+            pure $ view "primary view" (v1' × v1) × view "linked view" (v2' × v2) × view "common data" (v0' × v0) × v1' × Hole false
+         Right v2' -> do
+            { v': v1', v0' } <- linkResult x ρ0 e1 t2 t1 v2'
+            pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0) × Hole false × v2'
+   drawView divId (\selector -> drawLinkFig fig (Left $ selector (v1'' × v1))) 2 v1_view
+   drawView divId (\selector -> drawLinkFig fig (Right $ selector (v2'' × v2))) 0 v2_view
+   drawView divId doNothing 1 v0_view
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
 drawFig fig@{ spec: { divId }, v } v' = do
