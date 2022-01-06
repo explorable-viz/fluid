@@ -5508,6 +5508,7 @@ var PS = {};
   exports["runAff_"] = runAff_;
   exports["nonCanceler"] = nonCanceler;
   exports["functorAff"] = functorAff;
+  exports["applyAff"] = applyAff;
   exports["applicativeAff"] = applicativeAff;
   exports["bindAff"] = bindAff;
   exports["monadErrorAff"] = monadErrorAff;
@@ -30785,7 +30786,6 @@ var PS = {};
               .enter()
               .append('g')
               .append('circle')
-              .attr('class', 'marker')
               .attr('r', ([, d]) => d.y.value1 ? smallRadius * 2 : smallRadius)
               .attr('cx', ([, d]) => x(d.x.value0))
               .attr('cy', ([, d]) => y(d.y.value0))
@@ -32979,33 +32979,29 @@ var PS = {};
   var loadLinkFig = function (v) {
       var v1 = new Data_Tuple.Tuple(Data_Semigroup.append(Module.semigroupFile)("linking/")(v.file1), Data_Semigroup.append(Module.semigroupFile)("linking/")(v.file2));
       return Control_Bind.bind(Effect_Aff.bindAff)(Module.openDatasetAs(Data_Semigroup.append(Module.semigroupFile)("example/")(Data_Semigroup.append(Module.semigroupFile)("linking/")(v.dataFile)))(v.x))(function (v2) {
-          return Control_Bind.bind(Effect_Aff.bindAff)(Module.open(v1.value0))(function (s1) {
-              return Control_Bind.bind(Effect_Aff.bindAff)(Module.open(v1.value1))(function (s2) {
-                  return Control_Applicative.pure(Effect_Aff.applicativeAff)(Util.successful(Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarFwd(s1))(function (e1) {
-                      return Control_Bind.bind(Data_Either.bindEither)(DesugarFwd.desugarFwd(s2))(function (e2) {
-                          return Control_Bind.bind(Data_Either.bindEither)(Eval["eval"](Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v2.value0)(v2.value1))(e1))(function (v3) {
-                              return Control_Bind.bind(Data_Either.bindEither)(Eval["eval"](Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v2.value0)(v2.value1))(e2))(function (v4) {
-                                  return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.x)(v2.value1))(function (v0) {
-                                      return Control_Applicative.pure(Data_Either.applicativeEither)({
-                                          spec: v,
-                                          ρ0: v2.value0,
-                                          ρ: v2.value1,
-                                          s1: s1,
-                                          s2: s2,
-                                          e1: e1,
-                                          e2: e2,
-                                          t1: v3.value0,
-                                          t2: v4.value0,
-                                          v1: v3.value1,
-                                          v2: v4.value1,
-                                          v0: v0
-                                      });
-                                  });
+          return Control_Bind.bind(Effect_Aff.bindAff)(Control_Apply.apply(Effect_Aff.applyAff)(Data_Functor.map(Effect_Aff.functorAff)(Data_Tuple.Tuple.create)(Module.open(v1.value0)))(Module.open(v1.value1)))(function (v3) {
+              return Control_Applicative.pure(Effect_Aff.applicativeAff)(Util.successful(Control_Bind.bind(Data_Either.bindEither)(Control_Apply.apply(Data_Either.applyEither)(Data_Functor.map(Data_Either.functorEither)(Data_Tuple.Tuple.create)(DesugarFwd.desugarFwd(v3.value0)))(DesugarFwd.desugarFwd(v3.value1)))(function (v4) {
+                  return Control_Bind.bind(Data_Either.bindEither)(Eval["eval"](Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v2.value0)(v2.value1))(v4.value0))(function (v5) {
+                      return Control_Bind.bind(Data_Either.bindEither)(Eval["eval"](Data_Semigroup.append(Util_SnocList.semigroupSnocList)(v2.value0)(v2.value1))(v4.value1))(function (v6) {
+                          return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.x)(v2.value1))(function (v0) {
+                              return Control_Applicative.pure(Data_Either.applicativeEither)({
+                                  spec: v,
+                                  ρ0: v2.value0,
+                                  ρ: v2.value1,
+                                  s1: v3.value0,
+                                  s2: v3.value1,
+                                  e1: v4.value0,
+                                  e2: v4.value1,
+                                  t1: v5.value0,
+                                  t2: v6.value0,
+                                  v1: v5.value1,
+                                  v2: v6.value1,
+                                  v0: v0
                               });
                           });
                       });
-                  })));
-              });
+                  });
+              })));
           });
       });
   };
@@ -33031,39 +33027,26 @@ var PS = {};
           });
       });
   };
-  var linkResult = function (v) {
-      return new Data_Tuple.Tuple(function (v1$prime) {
-          var v3 = EvalBwd.evalBwd(v1$prime)(v.t1);
-          var v4 = Util_SnocList.splitAt(1)(v3.value0.value0);
-          return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.spec.x)(v4.value1))(function (v0$prime) {
-              var v2$prime = Lattice.neg(Val.joinSemilatticeVal)(EvalFwd.evalFwd(Lattice.neg(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v.ρ0))(v4.value1)))(Data_Functor.map(Expr.functorExpr)(Data_Function["const"](true))(v.e2))(true)(v.t2));
-              return Control_Applicative.pure(Data_Either.applicativeEither)({
-                  "v'": v2$prime,
-                  "v0'": v0$prime
-              });
-          });
-      }, function (v2$prime) {
-          var v3 = EvalBwd.evalBwd(v2$prime)(v.t2);
-          var v4 = Util_SnocList.splitAt(1)(v3.value0.value0);
-          return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(v.spec.x)(v4.value1))(function (v0$prime) {
-              var v1$prime = Lattice.neg(Val.joinSemilatticeVal)(EvalFwd.evalFwd(Lattice.neg(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(v.ρ0))(v4.value1)))(Data_Functor.map(Expr.functorExpr)(Data_Function["const"](true))(v.e1))(true)(v.t1));
-              return Control_Applicative.pure(Data_Either.applicativeEither)({
-                  "v'": v1$prime,
-                  "v0'": v0$prime
-              });
-          });
-      });
-  };
-  var linkFigViews = function (v) {
-      return new Data_Tuple.Tuple(function (v1$prime) {
-          return Control_Bind.bind(Data_Either.bindEither)(Data_Tuple.fst(linkResult(v))(v1$prime))(function (v3) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(view("primary view")(new Data_Tuple.Tuple(v1$prime, v.v1)), view("linked view")(new Data_Tuple.Tuple(v3["v'"], v.v2))), view("common data")(new Data_Tuple.Tuple(v3["v0'"], v.v0))));
-          });
-      }, function (v2$prime) {
-          return Control_Bind.bind(Data_Either.bindEither)(Data_Tuple.snd(linkResult(v))(v2$prime))(function (v3) {
-              return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(view("linked view")(new Data_Tuple.Tuple(v3["v'"], v.v1)), view("primary view")(new Data_Tuple.Tuple(v2$prime, v.v2))), view("common data")(new Data_Tuple.Tuple(v3["v0'"], v.v0))));
-          });
-      });
+  var linkResult = function (x) {
+      return function (ρ0) {
+          return function (e2) {
+              return function (t1) {
+                  return function (t2) {
+                      return function (v1$prime) {
+                          var v = EvalBwd.evalBwd(v1$prime)(t1);
+                          var v1 = Util_SnocList.splitAt(1)(v.value0.value0);
+                          return Control_Bind.bind(Data_Either.bindEither)(Bindings.find(x)(v1.value1))(function (v0$prime) {
+                              var v2$prime = Lattice.neg(Val.joinSemilatticeVal)(EvalFwd.evalFwd(Lattice.neg(Lattice.joinSemilatticeSnocList(Bindings.slicesBind(Val.slicesVal)))(Data_Semigroup.append(Util_SnocList.semigroupSnocList)(Lattice.botOf(Lattice.boundedSlicesSnocList(Bindings.boundedSlicesBind(Val.boundedSlices)))(ρ0))(v1.value1)))(Data_Functor.map(Expr.functorExpr)(Data_Function["const"](true))(e2))(true)(t2));
+                              return Control_Applicative.pure(Data_Either.applicativeEither)({
+                                  "v'": v2$prime,
+                                  "v0'": v0$prime
+                              });
+                          });
+                      };
+                  };
+              };
+          };
+      };
   };
   var figViews = function (v) {
       return function (v$prime) {
@@ -33080,23 +33063,23 @@ var PS = {};
           return function (n) {
               return function (v) {
                   if (v instanceof MatrixFig) {
-                      return Control_Bind.bindFlipped(Effect.bindEffect)(App_MatrixView.drawMatrix(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($220) {
-                          return onSel(App_MatrixView.matrixViewHandler($220));
+                      return Control_Bind.bindFlipped(Effect.bindEffect)(App_MatrixView.drawMatrix(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($202) {
+                          return onSel(App_MatrixView.matrixViewHandler($202));
                       }));
                   };
                   if (v instanceof EnergyTableView) {
-                      return Control_Bind.bindFlipped(Effect.bindEffect)(App_TableView.drawTable(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($221) {
-                          return onSel(App_TableView.tableViewHandler($221));
+                      return Control_Bind.bindFlipped(Effect.bindEffect)(App_TableView.drawTable(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($203) {
+                          return onSel(App_TableView.tableViewHandler($203));
                       }));
                   };
                   if (v instanceof LineChartFig) {
-                      return Control_Bind.bindFlipped(Effect.bindEffect)(App_LineChart.drawLineChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($222) {
-                          return onSel(App_LineChart.lineChartHandler($222));
+                      return Control_Bind.bindFlipped(Effect.bindEffect)(App_LineChart.drawLineChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($204) {
+                          return onSel(App_LineChart.lineChartHandler($204));
                       }));
                   };
                   if (v instanceof BarChartFig) {
-                      return Control_Bind.bindFlipped(Effect.bindEffect)(App_BarChart.drawBarChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($223) {
-                          return onSel(App_BarChart.barChartHandler($223));
+                      return Control_Bind.bindFlipped(Effect.bindEffect)(App_BarChart.drawBarChart(divId)(n)(v.value0))(Web_Event_EventTarget.eventListener(function ($205) {
+                          return onSel(App_BarChart.barChartHandler($205));
                       }));
                   };
                   throw new Error("Failed pattern match at App.Fig (line 43, column 1 - line 43, column 58): " + [ divId.constructor.name, onSel.constructor.name, n.constructor.name, v.constructor.name ]);
@@ -33105,34 +33088,30 @@ var PS = {};
       };
   };
   var drawLinkFig = function (v) {
-      return function (v1) {
-          if (v1 instanceof Data_Either.Left) {
-              return function __do() {
-                  Effect_Console.log("Redrawing " + v.spec.divId)();
-                  var v3 = Util.successful(Data_Tuple.fst(linkFigViews(v))(v1.value0));
-                  drawView(v.spec.divId)(function (selector) {
-                      return drawLinkFig(v)(Data_Either.Left.create(selector(new Data_Tuple.Tuple(v1.value0, v.v1))));
-                  })(2)(v3.value0.value0)();
-                  drawView(v.spec.divId)(function (selector) {
-                      return drawLinkFig(v)(Data_Either.Right.create(selector(new Data_Tuple.Tuple(new Val.Hole(false), v.v2))));
-                  })(0)(v3.value0.value1)();
-                  return drawView(v.spec.divId)(App_Util.doNothing)(1)(v3.value1)();
-              };
+      return function (v$prime) {
+          return function __do() {
+              Effect_Console.log("Redrawing " + v.spec.divId)();
+              var v3 = Util.successful((function () {
+                  if (v$prime instanceof Data_Either.Left) {
+                      return Control_Bind.bind(Data_Either.bindEither)(linkResult(v.spec.x)(v.ρ0)(v.e2)(v.t1)(v.t2)(v$prime.value0))(function (v4) {
+                          return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(v$prime.value0, v4["v'"]), v$prime.value0), new Val.Hole(false)), v4["v0'"]));
+                      });
+                  };
+                  if (v$prime instanceof Data_Either.Right) {
+                      return Control_Bind.bind(Data_Either.bindEither)(linkResult(v.spec.x)(v.ρ0)(v.e1)(v.t2)(v.t1)(v$prime.value0))(function (v4) {
+                          return Control_Applicative.pure(Data_Either.applicativeEither)(new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(new Data_Tuple.Tuple(v4["v'"], v$prime.value0), new Val.Hole(false)), v$prime.value0), v4["v0'"]));
+                      });
+                  };
+                  throw new Error("Failed pattern match at App.Fig (line 131, column 51 - line 137, column 53): " + [ v$prime.constructor.name ]);
+              })());
+              drawView(v.spec.divId)(function (selector) {
+                  return drawLinkFig(v)(Data_Either.Left.create(selector(new Data_Tuple.Tuple(v3.value0.value0.value1, v.v1))));
+              })(2)(view("linked view")(new Data_Tuple.Tuple(v3.value0.value0.value0.value0, v.v1)))();
+              drawView(v.spec.divId)(function (selector) {
+                  return drawLinkFig(v)(Data_Either.Right.create(selector(new Data_Tuple.Tuple(v3.value0.value1, v.v2))));
+              })(0)(view("primary view")(new Data_Tuple.Tuple(v3.value0.value0.value0.value1, v.v2)))();
+              return drawView(v.spec.divId)(App_Util.doNothing)(1)(view("common data")(new Data_Tuple.Tuple(v3.value1, v.v0)))();
           };
-          if (v1 instanceof Data_Either.Right) {
-              return function __do() {
-                  Effect_Console.log("Redrawing " + v.spec.divId)();
-                  var v3 = Util.successful(Data_Tuple.snd(linkFigViews(v))(v1.value0));
-                  drawView(v.spec.divId)(function (selector) {
-                      return drawLinkFig(v)(Data_Either.Left.create(selector(new Data_Tuple.Tuple(new Val.Hole(false), v.v1))));
-                  })(2)(v3.value0.value0)();
-                  drawView(v.spec.divId)(function (selector) {
-                      return drawLinkFig(v)(Data_Either.Right.create(selector(new Data_Tuple.Tuple(v1.value0, v.v2))));
-                  })(0)(v3.value0.value1)();
-                  return drawView(v.spec.divId)(App_Util.doNothing)(1)(v3.value1)();
-              };
-          };
-          throw new Error("Failed pattern match at App.Fig (line 129, column 1 - line 129, column 64): " + [ v.constructor.name, v1.constructor.name ]);
       };
   };
   var drawFig = function (v) {
