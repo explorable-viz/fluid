@@ -165,7 +165,7 @@ figViews { spec: { xs }, ρ0, ρ, e, t, v } v' = do
 
 -- TODO: consolidate.
 linkFigViews :: LinkFig -> (Val 𝔹 -> MayFail (View × View × View)) × (Val 𝔹 -> MayFail (View × View × View))
-linkFigViews fig@{ v1, v2, v0 } =
+linkFigViews fig@{ spec: { x }, ρ0, e1, e2, t1, t2, v1, v2, v0 } =
    (\v1' -> do
       { v': v2', v0' } <- fst (linkResult fig) v1'
       pure $ view "primary view" (v1' × v1) × view "linked view" (v2' × v2) × view "common data" (v0' × v0))
@@ -174,7 +174,6 @@ linkFigViews fig@{ v1, v2, v0 } =
       { v': v1', v0' } <- snd (linkResult fig) v2'
       pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0))
 
--- TODO: consolidate.
 linkResult :: LinkFig -> (Val 𝔹 -> MayFail LinkResult) × (Val 𝔹 -> MayFail LinkResult)
 linkResult { spec: { x }, ρ0, e1, e2, t1, t2, v1, v2 } =
    linkResult' x ρ0 e2 t1 t2 × linkResult' x ρ0 e1 t2 t1
