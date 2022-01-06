@@ -138,11 +138,11 @@ drawLinkFig fig@{ spec: { x, divId }, ρ0, e1, e2, t1, t2, v1, v2, v0 } v' = do
          drawView divId (\selector -> drawLinkFig fig (Right $ selector (v2'' × v2))) 0 v2_view
          drawView divId doNothing 1 v0_view
       Right v2' -> do
-         let v1_view × v2_view × v0_view = successful do
+         let v1_view × v2_view × v0_view × v1'' × v2'' = successful do
                { v': v1', v0' } <- linkResult x ρ0 e1 t2 t1 v2'
-               pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0)
-         drawView divId (\selector -> drawLinkFig fig (Left $ selector (Hole false × v1))) 2 v1_view
-         drawView divId (\selector -> drawLinkFig fig (Right $ selector (v2' × v2))) 0 v2_view
+               pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0) × Hole false × v2'
+         drawView divId (\selector -> drawLinkFig fig (Left $ selector (v1'' × v1))) 2 v1_view
+         drawView divId (\selector -> drawLinkFig fig (Right $ selector (v2'' × v2))) 0 v2_view
          drawView divId doNothing 1 v0_view
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
