@@ -176,24 +176,18 @@ linkFigViews fig@{ v1, v2, v0 } =
 
 -- TODO: consolidate.
 linkResult :: LinkFig -> (Val 𝔹 -> MayFail LinkResult) × (Val 𝔹 -> MayFail LinkResult)
-linkResult { spec: { x }, ρ0, ρ, e1, e2, t1, t2, v1, v2 } =
-   (\v1' -> do
-      let ρ0ρ × _ × _ = evalBwd v1' t1
-          _ × ρ' = splitAt 1 ρ0ρ
-      v0' <- find x ρ'
-      -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
-      -- combined with the negation of the dataset environment slice
-      let v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
-      pure { v': v2', v0' })
-   ×
-   (\v2' -> do
-      let ρ0ρ × _ × _ = evalBwd v2' t2
-          _ × ρ' = splitAt 1 ρ0ρ
-      v0' <- find x ρ'
-      -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
-      -- combined with the negation of the dataset environment slice
-      let v1' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e1) true t1)
-      pure { v': v1', v0' })
+linkResult { spec: { x }, ρ0, e1, e2, t1, t2, v1, v2 } =
+   linkResult' x ρ0 e2 t1 t2 × linkResult' x ρ0 e1 t2 t1
+
+linkResult' :: Var -> Env 𝔹 -> Expr 𝔹 -> Expl 𝔹 -> Expl 𝔹 -> Val 𝔹 -> MayFail LinkResult
+linkResult' x ρ0 e2 t1 t2 v1' = do
+   let ρ0ρ × _ × _ = evalBwd v1' t1
+       _ × ρ' = splitAt 1 ρ0ρ
+   v0' <- find x ρ'
+   -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
+   -- combined with the negation of the dataset environment slice
+   let v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
+   pure { v': v2', v0' }
 
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ file } = do
