@@ -6,7 +6,7 @@ import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
 import Data.List (List(..), (:), singleton)
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (fst, uncurry)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
@@ -127,15 +127,19 @@ type LinkResult = {
 
 -- TODO: consolidate.
 drawLinkFig :: LinkFig -> Either (Val 𝔹) (Val 𝔹) -> Effect Unit
-drawLinkFig fig@{ spec: { divId }, v1, v2 } (Left v1') = do
+drawLinkFig fig@{ spec: { x, divId }, ρ0, e2, t1, t2, v1, v2, v0 } (Left v1') = do
    log $ "Redrawing " <> divId
-   let v1_view × v2_view × v0_view = successful $ fst (linkFigViews fig) v1'
+   let v1_view × v2_view × v0_view = successful do
+         { v': v2', v0' } <- linkResult x ρ0 e2 t1 t2 v1'
+         pure $ view "primary view" (v1' × v1) × view "linked view" (v2' × v2) × view "common data" (v0' × v0)
    drawView divId (\selector -> drawLinkFig fig (Left $ selector (v1' × v1))) 2 v1_view
    drawView divId (\selector -> drawLinkFig fig (Right $ selector (Hole false × v2))) 0 v2_view
    drawView divId doNothing 1 v0_view
-drawLinkFig fig@{ spec: { divId }, v1, v2 } (Right v2') = do
+drawLinkFig fig@{ spec: { x, divId }, ρ0, e1, t1, t2, v1, v2, v0 } (Right v2') = do
    log $ "Redrawing " <> divId
-   let v1_view × v2_view × v0_view = successful $ snd (linkFigViews fig) v2'
+   let v1_view × v2_view × v0_view = successful do
+         { v': v1', v0' } <- linkResult x ρ0 e1 t2 t1 v2'
+         pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0)
    drawView divId (\selector -> drawLinkFig fig (Left $ selector (Hole false × v1))) 2 v1_view
    drawView divId (\selector -> drawLinkFig fig (Right $ selector (v2' × v2))) 0 v2_view
    drawView divId doNothing 1 v0_view
@@ -162,17 +166,6 @@ figViews { spec: { xs }, ρ0, ρ, e, t, v } v' = do
        v'' = evalFwd ρ0ρ' e α t
    views <- valViews (ρ0ρ' × (ρ0 <> ρ)) xs
    pure $ view "output" (v'' × v) × views
-
--- TODO: consolidate.
-linkFigViews :: LinkFig -> (Val 𝔹 -> MayFail (View × View × View)) × (Val 𝔹 -> MayFail (View × View × View))
-linkFigViews fig@{ spec: { x }, ρ0, e1, e2, t1, t2, v1, v2, v0 } =
-   (\v1' -> do
-      { v': v2', v0' } <- linkResult x ρ0 e2 t1 t2 v1'
-      pure $ view "primary view" (v1' × v1) × view "linked view" (v2' × v2) × view "common data" (v0' × v0))
-   ×
-   (\v2' -> do
-      { v': v1', v0' } <- linkResult x ρ0 e1 t2 t1 v2'
-      pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0))
 
 linkResult :: Var -> Env 𝔹 -> Expr 𝔹 -> Expl 𝔹 -> Expl 𝔹 -> Val 𝔹 -> MayFail LinkResult
 linkResult x ρ0 e2 t1 t2 v1' = do
