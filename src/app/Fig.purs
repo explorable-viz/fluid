@@ -174,10 +174,6 @@ linkFigViews fig@{ spec: { x }, ρ0, e1, e2, t1, t2, v1, v2, v0 } =
       { v': v1', v0' } <- linkResult' x ρ0 e1 t2 t1 v2'
       pure $ view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0))
 
-linkResult :: LinkFig -> (Val 𝔹 -> MayFail LinkResult) × (Val 𝔹 -> MayFail LinkResult)
-linkResult { spec: { x }, ρ0, e1, e2, t1, t2, v1, v2 } =
-   linkResult' x ρ0 e2 t1 t2 × linkResult' x ρ0 e1 t2 t1
-
 linkResult' :: Var -> Env 𝔹 -> Expr 𝔹 -> Expl 𝔹 -> Expl 𝔹 -> Val 𝔹 -> MayFail LinkResult
 linkResult' x ρ0 e2 t1 t2 v1' = do
    let ρ0ρ × _ × _ = evalBwd v1' t1
