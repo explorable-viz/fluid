@@ -131,16 +131,14 @@ drawLinkFig fig@{ spec: { x, divId }, ρ0, e1, e2, t1, t2, v1, v2, v0 } v' = do
    log $ "Redrawing " <> divId
    let v1' × v2' × v1'' × v2'' × v0' = successful case v' of
          Left v1' -> do
-            { v': v2', v0' } <- linkResult x ρ0 e2 t1 t2 v1'
-            pure $ v1' × v2' × v1' × Hole false × v0'
+            { v', v0' } <- linkResult x ρ0 e2 t1 t2 v1'
+            pure $ v1' × v' × v1' × Hole false × v0'
          Right v2' -> do
-            { v': v1', v0' } <- linkResult x ρ0 e1 t2 t1 v2'
-            pure $ v1' × v2' × Hole false × v2' × v0'
-   let v1_view × v2_view × v0_view =
-         view "linked view" (v1' × v1) × view "primary view" (v2' × v2) × view "common data" (v0' × v0)
-   drawView divId (\selector -> drawLinkFig fig (Left $ selector (v1'' × v1))) 2 v1_view
-   drawView divId (\selector -> drawLinkFig fig (Right $ selector (v2'' × v2))) 0 v2_view
-   drawView divId doNothing 1 v0_view
+            { v', v0' } <- linkResult x ρ0 e1 t2 t1 v2'
+            pure $ v' × v2' × Hole false × v2' × v0'
+   drawView divId (\selector -> drawLinkFig fig (Left $ selector (v1'' × v1))) 2 $ view "linked view" (v1' × v1)
+   drawView divId (\selector -> drawLinkFig fig (Right $ selector (v2'' × v2))) 0 $ view "primary view" (v2' × v2)
+   drawView divId doNothing 1 $ view "common data" (v0' × v0)
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
 drawFig fig@{ spec: { divId }, v } v' = do
