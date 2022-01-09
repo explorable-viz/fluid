@@ -26,6 +26,13 @@ fig1 = {
    xs: ["image", "filter"]
 }
 
+fig2 :: FigSpec
+fig2 = {
+   divId: "fig-conv-2",
+   file: File "slicing/conv-emboss-wrap",
+   xs: ["image", "filter"]
+}
+
 -- TODO: consolidate these two.
 drawLinkFigs :: Array (Aff LinkFig) -> Effect Unit
 drawLinkFigs loadFigs =
@@ -43,5 +50,5 @@ drawFigs loadFigs =
 
 main :: Effect Unit
 main = do
-   drawFigs [loadFig fig1]
+   drawFigs [loadFig fig1, loadFig fig2]
    drawLinkFigs [loadLinkFig linkingFig1]
