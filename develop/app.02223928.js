@@ -71009,6 +71009,11 @@ var PS = {};
     dataFile: "renewables",
     x: "data"
   };
+  var fig2 = {
+    divId: "fig-conv-2",
+    file: "slicing/conv-emboss-wrap",
+    xs: ["image", "filter"]
+  };
   var fig1 = {
     divId: "fig-conv-1",
     file: "slicing/conv-emboss",
@@ -71028,7 +71033,7 @@ var PS = {};
       }
 
       ;
-      throw new Error("Failed pattern match at App.Main (line 33, column 4 - line 35, column 78): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Main (line 40, column 4 - line 42, column 78): " + [v.constructor.name]);
     });
   };
 
@@ -71045,17 +71050,18 @@ var PS = {};
       }
 
       ;
-      throw new Error("Failed pattern match at App.Main (line 40, column 4 - line 42, column 67): " + [v.constructor.name]);
+      throw new Error("Failed pattern match at App.Main (line 47, column 4 - line 49, column 67): " + [v.constructor.name]);
     });
   };
 
   var main = function __do() {
-    drawFigs([App_Fig.loadFig(fig1)])();
+    drawFigs([App_Fig.loadFig(fig1), App_Fig.loadFig(fig2)])();
     return drawLinkFigs([App_Fig.loadLinkFig(linkingFig1)])();
   };
 
   exports["linkingFig1"] = linkingFig1;
   exports["fig1"] = fig1;
+  exports["fig2"] = fig2;
   exports["drawLinkFigs"] = drawLinkFigs;
   exports["drawFigs"] = drawFigs;
   exports["main"] = main;
@@ -71063,4 +71069,4 @@ var PS = {};
 
 PS["App.Main"].main();
 },{"d3":"BG5c","d3-tip":"TLCm","/src/app/Shared":"Ad6u","process":"g5I+"}]},{},["m8nE"], null)
-//# sourceMappingURL=/develop/app.27b807cc.js.map
+//# sourceMappingURL=/develop/app.02223928.js.map

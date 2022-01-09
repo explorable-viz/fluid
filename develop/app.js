@@ -33155,6 +33155,11 @@ var PS = {};
       dataFile: "renewables",
       x: "data"
   };
+  var fig2 = {
+      divId: "fig-conv-2",
+      file: "slicing/conv-emboss-wrap",
+      xs: [ "image", "filter" ]
+  };
   var fig1 = {
       divId: "fig-conv-1",
       file: "slicing/conv-emboss",
@@ -33168,7 +33173,7 @@ var PS = {};
           if (v instanceof Data_Either.Right) {
               return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(App_Fig.drawLinkFig)(Data_Either.Left.create(new Val.Hole(false))))(v.value0));
           };
-          throw new Error("Failed pattern match at App.Main (line 33, column 4 - line 35, column 78): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at App.Main (line 40, column 4 - line 42, column 78): " + [ v.constructor.name ]);
       });
   };
   var drawFigs = function (loadFigs) {
@@ -33179,15 +33184,16 @@ var PS = {};
           if (v instanceof Data_Either.Right) {
               return Data_Foldable.sequence_(Effect.applicativeEffect)(Data_Foldable.foldableArray)(Data_Functor.map(Data_Functor.functorArray)(Data_Function.flip(App_Fig.drawFig)(new Val.Hole(false)))(v.value0));
           };
-          throw new Error("Failed pattern match at App.Main (line 40, column 4 - line 42, column 67): " + [ v.constructor.name ]);
+          throw new Error("Failed pattern match at App.Main (line 47, column 4 - line 49, column 67): " + [ v.constructor.name ]);
       });
   };
   var main = function __do() {
-      drawFigs([ App_Fig.loadFig(fig1) ])();
+      drawFigs([ App_Fig.loadFig(fig1), App_Fig.loadFig(fig2) ])();
       return drawLinkFigs([ App_Fig.loadLinkFig(linkingFig1) ])();
   };
   exports["linkingFig1"] = linkingFig1;
   exports["fig1"] = fig1;
+  exports["fig2"] = fig2;
   exports["drawLinkFigs"] = drawLinkFigs;
   exports["drawFigs"] = drawFigs;
   exports["main"] = main;
