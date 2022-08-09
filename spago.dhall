@@ -22,6 +22,7 @@ You can edit this file as you like.
   , "result"
   , "spec"
   , "spec-mocha"
+  , "strings"
   , "tuples"
   , "web-events"
   ]

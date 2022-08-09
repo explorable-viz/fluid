@@ -116,37 +116,23 @@ let additions =
   }
 -------------------------------
 -}
-
-
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.13.6-20200404/packages.dhall sha256:f239f2e215d0cbd5c203307701748581938f74c4c78f4aeffa32c11c131ef7b6
+      https://github.com/purescript/package-sets/releases/download/psc-0.14.7-20220418/packages.dhall sha256:2523a5659d0f3b198ffa2f800da147e0120578842e492a7148e4b44f357848b3
 
 let overrides = {=}
 
 let additions =
-  { spec-mocha =
-      { dependencies =
-          [ "exceptions"
-          , "console"
-          , "foldable-traversable"
-          , "spec"
-          ]
-      , repo =
-          "https://github.com/purescript-spec/purescript-spec-mocha"
-      , version =
-          "v4.0.0"
-      },
-    pprint =
-      { dependencies =
-          [ "arrays"
-          , "unfoldable"
-          , "strings"
-          ]
-      , repo =
-          "https://github.com/paf31/purescript-pprint"
-      , version =
-          "v5.0.0"
+      { spec-mocha =
+        { dependencies =
+          [ "exceptions", "console", "foldable-traversable", "spec" ]
+        , repo = "https://github.com/purescript-spec/purescript-spec-mocha"
+        , version = "v4.0.0"
+        }
+      , pprint =
+        { dependencies = [ "arrays", "unfoldable", "strings" ]
+        , repo = "https://github.com/paf31/purescript-pprint"
+        , version = "v5.0.0"
+        }
       }
-  }
 
 in  upstream // overrides // additions
