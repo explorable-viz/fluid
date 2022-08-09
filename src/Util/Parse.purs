@@ -8,15 +8,11 @@ import Data.List.NonEmpty (NonEmptyList(..), fromList, toList)
 import Data.NonEmpty ((:|))
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (try)
-import Text.Parsing.Parser.Combinators (sepBy1) as P
 import Util (absurd, fromJust)
 
 type SParser = Parser String
 
 -- helpers (could generalise further)
-sepBy1 :: forall a sep . SParser a -> SParser sep -> SParser (NonEmptyList a)
-sepBy1 p sep = fromJust absurd <$> (fromList <$> P.sepBy1 p sep)
-
 sepBy_try :: forall a sep . SParser a -> SParser sep -> SParser (List a)
 sepBy_try p sep = (sepBy1_try p sep <#> toList) <|> pure Nil
 
