@@ -70,9 +70,9 @@ instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
 
 instance slicesElim :: Slices (Elim Boolean) where
    maybeJoin (ElimHole false) σ                    = pure σ
-   maybeJoin (ElimHole true) σ                     = pure (ElimHole true)
+   maybeJoin (ElimHole true) _                     = pure (ElimHole true)
    maybeJoin σ (ElimHole false)                    = pure σ
-   maybeJoin σ (ElimHole true)                     = pure (ElimHole true)
+   maybeJoin _ (ElimHole true)                     = pure (ElimHole true)
    maybeJoin (ElimVar x κ) (ElimVar x' κ')         = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')      = ElimConstr <$> maybeJoin κs κs'
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
