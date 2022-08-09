@@ -6,6 +6,11 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 25 Apr 22 | [Invited talk](https://arxiv.org/abs/2203.04608), University of Kent | |
+| 20 Jan 22 | [POPL presentation](https://youtu.be/Ov1HOMKn8t4) | |
+| 6 Jan 22 | Select point in line chart | [503](https://github.com/explorable-viz/fluid/issues/503) |
+| 24 Dec 21 | Select bar in bar chart | [487](https://github.com/explorable-viz/fluid/issues/487) |
+| 22 Dec 21 | Select cell in matrix view | [488](https://github.com/explorable-viz/fluid/issues/488) |
 | 7 Oct 21 | Artifact submitted for POPL 2022 | |
 | 28 Sep 21 | POPL paper accepted! | |
 | 9 July 21 | [POPL 2022 submission](http://arxiv.org/abs/2109.00445) | |
@@ -38,10 +43,10 @@
 | 30 Jan 20 | Display image in Wrattler output pane | [W222](https://github.com/wrattler/wrattler/issues/222) |
 | 21 Jan 20 | Initial meeting with Meng Wang and Minh Nguyen at Bristol ||
 | 26 Nov 19 | Demo for Wrattler workshop for DSTL ||
-| 25 Nov 19 | First pass over nested coordinate frames and “domain units” | [183](https://github.com/rolyp/fluid/issues/183), [121](https://github.com/rolyp/fluid/issues/121), [180](https://github.com/rolyp/fluid/issues/180), [112](https://github.com/rolyp/fluid/issues/112) |
+| 25 Nov 19 | First pass over nested coordinate frames and "domain units" | [183](https://github.com/rolyp/fluid/issues/183), [121](https://github.com/rolyp/fluid/issues/121), [180](https://github.com/rolyp/fluid/issues/180), [112](https://github.com/rolyp/fluid/issues/112) |
 | 19 Nov 19 | Stacked bar, grouped bar and multiline chart examples | [110](https://github.com/rolyp/fluid/issues/110), [250](https://github.com/rolyp/fluid/issues/250) |
 | 4 Nov 19 | Merge with Wrattler `develop` | [247](https://github.com/rolyp/fluid/issues/247) |
-| 25 Oct 19 | “Swap node” proof-of-concept | [237](https://github.com/rolyp/fluid/issues/237) |
+| 25 Oct 19 | "Swap node" proof-of-concept | [237](https://github.com/rolyp/fluid/issues/237) |
 | 21 Oct 19 | Basic delta-visualisation for IC 2019 presentation | [220](https://github.com/rolyp/fluid/issues/220), [225](https://github.com/rolyp/fluid/issues/225), [230](https://github.com/rolyp/fluid/issues/230), [232](https://github.com/rolyp/fluid/issues/232), [235](https://github.com/rolyp/fluid/issues/235), [238](https://github.com/rolyp/fluid/issues/238) |
 | 5 Oct 19 | Reinstate execution indexing | [213](https://github.com/rolyp/fluid/issues/213), [214](https://github.com/rolyp/fluid/issues/214) |
 | 20 Sep 19 | Import data from another Wrattler cell | [193](https://github.com/rolyp/fluid/issues/193) |
