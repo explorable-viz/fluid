@@ -67,8 +67,8 @@ function download (parent, dataURL, name) {
    a.remove()
 }
 
-exports.colorShade = colorShade
-exports.curry2 = curry2
-exports.curry3 = curry3
-exports.curry4 = curry4
-exports.saveImage = saveImage
+export {colorShade};
+export {curry2};
+export {curry3};
+export {curry4};
+export {saveImage};

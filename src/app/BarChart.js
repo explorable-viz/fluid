@@ -1,8 +1,8 @@
 "use strict"
 
-const d3 = require("d3")
-const d3tip = require("d3-tip")
-const shared = require("/src/app/Shared")
+import d3 from "d3";
+import d3tip from "d3-tip";
+import shared from "/src/app/Shared";
 
 function drawBarChart (
    id,
@@ -88,4 +88,4 @@ function drawBarChart (
    }
 }
 
-exports.drawBarChart = shared.curry4(drawBarChart)
+export var drawBarChart = shared.curry4(drawBarChart);

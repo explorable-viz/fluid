@@ -1,7 +1,7 @@
 "use strict"
 
-const d3 = require("d3")
-const shared = require("/src/app/Shared")
+import d3 from "d3";
+import shared from "/src/app/Shared";
 
 function drawMatrix (
    id,
@@ -79,4 +79,4 @@ function drawMatrix (
    }
 }
 
-exports.drawMatrix = shared.curry4(drawMatrix)
+export var drawMatrix = shared.curry4(drawMatrix);

@@ -1,7 +1,7 @@
 "use strict"
 
-const d3 = require("d3")
-const shared = require("/src/app/Shared")
+import d3 from "d3";
+import shared from "/src/app/Shared";
 
 function max_y (linePlot) {
    return Math.max(...linePlot.data.map(point => point.y.value0))
@@ -134,4 +134,4 @@ function drawLineChart (
    }
 }
 
-exports.drawLineChart = shared.curry4(drawLineChart)
+export var drawLineChart = shared.curry4(drawLineChart);

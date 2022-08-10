@@ -1,7 +1,7 @@
 "use strict"
 
-const d3 = require("d3")
-const shared = require("/src/app/Shared")
+import d3 from "d3";
+import shared from "/src/app/Shared";
 
 // any record type with only primitive fields -> boolean
 function isUsed (r) {
@@ -62,4 +62,4 @@ function drawTable (
    }
 }
 
-exports.drawTable = shared.curry4(drawTable)
+export var drawTable = shared.curry4(drawTable);
