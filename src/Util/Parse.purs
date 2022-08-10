@@ -6,8 +6,8 @@ import Data.List (List(..))
 import Data.List (many, some) as L
 import Data.List.NonEmpty (NonEmptyList(..), fromList, toList)
 import Data.NonEmpty ((:|))
-import Text.Parsing.Parser (Parser)
-import Text.Parsing.Parser.Combinators (try)
+import Parsing (Parser)
+import Parsing.Combinators (try)
 import Util (absurd, fromJust)
 
 type SParser = Parser String

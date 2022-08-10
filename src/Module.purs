@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.Bifunctor (bimap)
 import Effect.Aff (Aff)
-import Text.Parsing.Parser (runParser)
+import Parsing (runParser)
 import Bindings (Var, (↦))
 import SExpr (Expr) as S
 import DesugarFwd (desugarFwd, desugarModuleFwd)

@@ -15,6 +15,7 @@ You can edit this file as you like.
   , "fork"
   , "lists"
   , "node-fs"
+  , "numbers"
   , "parsing"
   , "pprint"
   , "profunctor"

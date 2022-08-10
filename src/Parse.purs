@@ -15,11 +15,11 @@ import Data.Map (values)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
-import Text.Parsing.Parser.Combinators (between, sepBy, sepBy1, try)
-import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
-import Text.Parsing.Parser.Language (emptyDef)
-import Text.Parsing.Parser.String (char, eof, oneOf)
-import Text.Parsing.Parser.Token (
+import Parsing.Combinators (between, sepBy, sepBy1, try)
+import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
+import Parsing.Language (emptyDef)
+import Parsing.String (char, eof, oneOf)
+import Parsing.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Bind, Var, (↦))

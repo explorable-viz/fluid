@@ -6,8 +6,8 @@ import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..))
+import Data.Number (log, pow) as M
 import Debug (trace)
-import Math (log, pow) as M
 import Bindings ((↦))
 import DataType (cCons)
 import Lattice (𝔹)

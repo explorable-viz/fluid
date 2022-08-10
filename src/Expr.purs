@@ -172,7 +172,7 @@ instance elimExpandable :: Expandable (Elim Boolean) where
    expand (ElimHole α) (ElimConstr m)           = ElimConstr (expand (ContHole α) <$> m)
    expand (ElimHole α) (ElimRecord xs κ)        = ElimRecord xs (expand (ContHole α) κ)
    expand (ElimVar x κ) (ElimVar x' κ')         = ElimVar (x ⪂ x') (expand κ κ')
-   expand (ElimConstr _) (ElimConstr _)         = ?_ -- ElimConstr (expand m m')
+   expand (ElimConstr m) (ElimConstr m')        = ElimConstr (expand m m')
    expand (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord (xs ⪄ ys) (expand κ κ')
    expand _ _                                   = error absurd
 

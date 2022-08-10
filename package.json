@@ -24,7 +24,7 @@
   "dependencies": {
     "d3": "^6.7.0",
     "d3-tip": "^0.9.1",
-    "purescript": "0.13.6",
+    "purescript": "^0.14.9",
     "purescript-psa": "0.7.3",
     "src": "^1.1.2"
   },
