@@ -122,13 +122,7 @@ let upstream =
 let overrides = {=}
 
 let additions =
-      { spec-mocha =
-        { dependencies =
-          [ "exceptions", "console", "foldable-traversable", "spec" ]
-        , repo = "https://github.com/purescript-spec/purescript-spec-mocha"
-        , version = "v4.0.0"
-        }
-      , pprint =
+      { pprint =
         { dependencies = [ "arrays", "unfoldable", "strings" ]
         , repo = "https://github.com/paf31/purescript-pprint"
         , version = "v5.0.0"

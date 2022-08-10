@@ -23,7 +23,6 @@ You can edit this file as you like.
   , "psci-support"
   , "result"
   , "spec"
-  , "spec-mocha"
   , "strings"
   , "tuples"
   , "web-events"
