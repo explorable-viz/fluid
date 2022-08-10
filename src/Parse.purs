@@ -18,7 +18,8 @@ import Data.Profunctor.Choice ((|||))
 import Parsing.Combinators (between, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
-import Parsing.String (char, eof, oneOf)
+import Parsing.String (char, eof)
+import Parsing.String.Basic (oneOf)
 import Parsing.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )

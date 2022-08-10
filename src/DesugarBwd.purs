@@ -27,9 +27,9 @@ desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
 
 varDefsBwd :: E.Expr 𝔹 -> VarDefs 𝔹 × Expr 𝔹 -> VarDefs 𝔹 × Expr 𝔹
-varDefsBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) =
+varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) =
    NonEmptyList (VarDef π (exprBwd e1 s1) :| Nil) × exprBwd e2 s2
-varDefsBwd (E.Let (E.VarDef σ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × s2) =
+varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × s2) =
    let NonEmptyList (d' :| ds') × s2' = varDefsBwd e2 (NonEmptyList (d :| ds) × s2) in
    NonEmptyList (VarDef π (exprBwd e1 s1) :| d' : ds') × s2'
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
@@ -141,7 +141,7 @@ exprBwd e (ListEnum s1 s2) =
 -- list-comp-done
 exprBwd e (ListComp _ s_body (NonEmptyList (Guard (Constr _ c Nil) :| Nil))) | c == cTrue =
    case expand e (E.Constr false cCons (E.Hole false : E.Constr false cNil Nil : Nil)) of
-      E.Constr α2 cCons' (e' : E.Constr α1 _ Nil : Nil) ->
+      E.Constr α2 _ (e' : E.Constr α1 _ Nil : Nil) ->
          ListComp (α1 ∨ α2) (exprBwd e' s_body)
                            (NonEmptyList (Guard (Constr (α1 ∨ α2) cTrue Nil) :| Nil))
       _ -> error absurd
@@ -183,13 +183,13 @@ exprBwd e (ListComp α s2 (NonEmptyList (Generator p s1 :| q : qs))) =
 
 -- e, l desugar_bwd l
 listRestBwd :: E.Expr 𝔹 -> Endo (ListRest 𝔹)
-listRestBwd e l@(End _) =
+listRestBwd e (End _) =
    case expand e (E.Constr false cNil Nil) of
       E.Constr α _ _ -> End α
       _              -> error absurd
-listRestBwd e l@(Next _ s l') =
+listRestBwd e (Next _ s l) =
    case expand e (E.Constr false cCons (E.Hole false : E.Hole false : Nil)) of
-      E.Constr α _ (e1 : e2 : Nil)  -> Next α (exprBwd e1 s) (listRestBwd e2 l')
+      E.Constr α _ (e1 : e2 : Nil)  -> Next α (exprBwd e1 s) (listRestBwd e2 l)
       _                             -> error absurd
 
 -- σ, ps desugar_bwd e
@@ -204,16 +204,16 @@ patternsBwd σ (NonEmptyList (p :| p' : ps))  = patternsBwd_rest (asExpr (patter
 
 -- σ, p desugar_bwd κ
 patternBwd :: Elim 𝔹 -> Pattern -> Cont 𝔹
-patternBwd (ElimVar x κ) (PVar _)               = κ
+patternBwd (ElimVar _ κ) (PVar _)               = κ
 patternBwd (ElimHole α) (PVar _)                = ContHole α
-patternBwd (ElimHole α) (PConstr c ps)          = argsBwd (ContHole α) (Left <$> ps)
+patternBwd (ElimHole α) (PConstr _ ps)          = argsBwd (ContHole α) (Left <$> ps)
 patternBwd (ElimConstr m) (PConstr c ps)        = argsBwd (mustLookup c m) (Left <$> ps)
 patternBwd (ElimHole α) (PListEmpty)            = ContHole α
 patternBwd (ElimConstr m) (PListEmpty)          = mustLookup cNil m
 patternBwd (ElimHole α) (PListNonEmpty p o)     = argsBwd (ContHole α) (Left p : Right o : Nil)
 patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
 patternBwd (ElimHole α) (PRecord xps)           = recordBwd (ContHole α) xps
-patternBwd (ElimRecord xs κ) (PRecord xps)      = recordBwd κ xps
+patternBwd (ElimRecord _ κ) (PRecord xps)       = recordBwd κ xps
 patternBwd _ _                                  = error absurd
 
 -- σ, o desugar_bwd κ
@@ -232,7 +232,7 @@ argsBwd κ (Right o : πs)   = argsBwd (listRestPatternBwd (asElim κ) o) πs
 
 recordBwd :: Cont 𝔹 -> Bindings Pattern -> Cont 𝔹
 recordBwd κ Lin            = κ
-recordBwd σ (xps :- x ↦ p) = recordBwd σ xps # (asElim >>> flip patternBwd p)
+recordBwd σ (xps :- _ ↦ p) = recordBwd σ xps # (asElim >>> flip patternBwd p)
 
 -- σ, c desugar_bwd c
 branchBwd_curried :: Elim 𝔹 -> Endo (Branch 𝔹)
@@ -276,7 +276,7 @@ totaliseBwd κ (π : πs) =
    let c × πs' = case π of
          -- TODO: refactor so these two cases aren't necessary
          Left (PVar _)              -> error absurd
-         Left (PRecord xps)         -> error absurd
+         Left (PRecord _)           -> error absurd
          Left (PConstr c ps)        -> c × (Left <$> ps)
          Left PListEmpty            -> cNil × Nil
          Left (PListNonEmpty p o)   -> cCons × (Left p : Right o : Nil)

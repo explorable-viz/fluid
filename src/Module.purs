@@ -1,7 +1,7 @@
 module Module where
 
 import Prelude
-import Affjax (defaultRequest, printError, request)
+import Affjax.Web (defaultRequest, printError, request)
 import Affjax.ResponseFormat (string)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))

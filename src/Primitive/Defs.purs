@@ -6,7 +6,7 @@ import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..))
-import Data.Number (log, pow) as M
+import Data.Number (log, pow) as N
 import Debug (trace)
 import Bindings ((↦))
 import DataType (cCons)
@@ -85,7 +85,7 @@ times = (*) `union` (*)
 
 -- PureScript's / and pow aren't defined at Int -> Int -> Number, so roll our own
 pow :: Int + Number -> Endo (Int + Number)
-pow = (\x y -> toNumber x `M.pow` toNumber y) `union` M.pow
+pow = (\x y -> toNumber x `N.pow` toNumber y) `union` N.pow
 
 divide :: Int + Number -> Endo (Int + Number)
 divide = (\x y -> toNumber x / toNumber y)  `union` (/)
@@ -128,4 +128,4 @@ numToStr :: Int + Number -> String
 numToStr = show `union1` show
 
 log :: Int + Number -> Number
-log = (toNumber >>> M.log) `union1` M.log
+log = (toNumber >>> N.log) `union1` N.log

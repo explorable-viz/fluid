@@ -1,0 +1,6 @@
+- "Installation and General Use" doesn't really give instructions, but a mixture of (private?) implementation details and side-observations
+- how to invoke "PureScript: Build"
+- how to tell whether "Restart/Reconnect purs IDE server" has succeeded
+- after "PureScript: Build", even resolved identifiers say "No definition found"
+- what is "PureScript IDE" vs "PureScript Language Support"? Installing one seems to install the other.
+- 
