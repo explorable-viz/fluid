@@ -70,9 +70,9 @@ instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
 
 instance slicesElim :: Slices (Elim Boolean) where
    maybeJoin (ElimHole false) σ                    = pure σ
-   maybeJoin (ElimHole true) σ                     = pure (ElimHole true)
+   maybeJoin (ElimHole true) _                     = pure (ElimHole true)
    maybeJoin σ (ElimHole false)                    = pure σ
-   maybeJoin σ (ElimHole true)                     = pure (ElimHole true)
+   maybeJoin _ (ElimHole true)                     = pure (ElimHole true)
    maybeJoin (ElimVar x κ) (ElimVar x' κ')         = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')      = ElimConstr <$> maybeJoin κs κs'
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
@@ -87,9 +87,9 @@ instance joinSemilatticeCont :: JoinSemilattice (Cont Boolean) where
 
 instance slicesCont :: Slices (Cont Boolean) where
    maybeJoin (ContHole false) κ           = pure κ
-   maybeJoin (ContHole true) κ            = pure (ContHole true)
+   maybeJoin (ContHole true) _            = pure (ContHole true)
    maybeJoin κ (ContHole false)           = pure κ
-   maybeJoin κ (ContHole true)            = pure (ContHole true)
+   maybeJoin _ (ContHole true)            = pure (ContHole true)
    maybeJoin (ContExpr e) (ContExpr e')   = ContExpr <$> maybeJoin e e'
    maybeJoin (ContElim σ) (ContElim σ')   = ContElim <$> maybeJoin σ σ'
    maybeJoin _ _                          = report "Incompatible continuations"
@@ -113,9 +113,9 @@ instance joinSemilatticeExpr :: JoinSemilattice (Expr Boolean) where
 
 instance slicesExpr :: Slices (Expr Boolean) where
    maybeJoin (Hole false) e                                    = pure e
-   maybeJoin (Hole true) e                                     = pure (Hole true)
+   maybeJoin (Hole true) _                                     = pure (Hole true)
    maybeJoin e (Hole false)                                    = pure e
-   maybeJoin e (Hole true)                                     = pure (Hole true)
+   maybeJoin _ (Hole true)                                     = pure (Hole true)
    maybeJoin (Var x) (Var x')                                  = Var <$> (x ≞ x')
    maybeJoin (Op op) (Op op')                                  = Op <$> (op ≞ op')
    maybeJoin (Int α n) (Int α' n')                             = Int (α ∨ α') <$> (n ≞ n')
@@ -134,11 +134,11 @@ instance slicesExpr :: Slices (Expr Boolean) where
 
 instance exprExpandable :: Expandable (Expr Boolean) where
    expand e (Hole false)                        = e
-   expand (Hole _) e@(Var x)                    = e
-   expand (Hole _) e@(Op op)                    = e
-   expand (Hole α) e@(Int β n)                  = Int (α ⪄ β) n
-   expand (Hole α) e@(Float β n)                = Float (α ⪄ β) n
-   expand (Hole α) e@(Str β str)                = Str (α ⪄ β) str
+   expand (Hole _) e@(Var _)                    = e
+   expand (Hole _) e@(Op _)                     = e
+   expand (Hole α) (Int β n)                    = Int (α ⪄ β) n
+   expand (Hole α) (Float β n)                  = Float (α ⪄ β) n
+   expand (Hole α) (Str β str)                  = Str (α ⪄ β) str
    expand (Hole α) (Record β xes)               = Record (α ⪄ β) (expand (map (const (Hole α)) <$> xes) xes)
    expand (Hole α) (Constr β c es)              = Constr (α ⪄ β) c (expand (Hole α) <$> es)
    expand (Hole α) (Matrix β e1 (x × y) e2)     = Matrix (α ⪄ β) (expand (Hole α) e1) (x × y) (expand (Hole α) e2)

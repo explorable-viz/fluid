@@ -70,15 +70,15 @@ evalFwd ρ e _ (T.Op _ op) =
    case expand e (Op op) of
       Op _ -> successful (find op ρ)
       _ -> error absurd
-evalFwd ρ e α' (T.Int _ n) =
+evalFwd _ e α' (T.Int _ n) =
    case expand e (Int false n) of
       Int α _ -> V.Int (α ∧ α') n
       _ -> error absurd
-evalFwd ρ e α' (T.Float _ n) =
+evalFwd _ e α' (T.Float _ n) =
    case expand e (Float false n) of
       Float α _ -> V.Float (α ∧ α') n
       _ -> error absurd
-evalFwd ρ e α' (T.Str _ str) =
+evalFwd _ e α' (T.Str _ str) =
    case expand e (Str false str) of
       Str α _ -> V.Str (α ∧ α') str
       _ -> error absurd
@@ -99,7 +99,7 @@ evalFwd ρ e α' (T.Matrix tss (x × y) (i' × j') t2) =
    case expand e (Matrix false (Hole false) (x × y) (Hole false)) of
       Matrix α e1 _ e2 ->
          case expand (evalFwd ρ e2 α' t2) (V.Constr false cPair (V.Hole false : V.Hole false : Nil)) of
-            V.Constr _ c (v1 : v2 : Nil) ->
+            V.Constr _ _ (v1 : v2 : Nil) ->
                let (i'' × β) × (j'' × β') = P.match_fwd (v1 × V.Int false i') × P.match_fwd (v2 × V.Int false j')
                    vss = assert (i'' == i' && j'' == j') $ A.fromFoldable $ do
                         i <- range 1 i'
@@ -127,7 +127,7 @@ evalFwd ρ e α (T.RecordLookup t xs x) =
                assert ((xvs <#> key) == xs) $ successful (find x xvs)
             _ -> error absurd
       _ -> error absurd
-evalFwd ρ e α (T.App (t1 × ρ1 × δ × σ) t2 w t3) =
+evalFwd ρ e α (T.App (t1 × ρ1 × δ × _) t2 w t3) =
    case expand e (App (Hole false) (Hole false)) of
       App e1 e2 ->
          case expand (evalFwd ρ e1 α t1) (V.Closure (botOf ρ1) (botOf δ) false (ElimHole false)) of

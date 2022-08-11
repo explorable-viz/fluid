@@ -1,0 +1,7 @@
+- "Installation and General Use" doesn't really give instructions, but a mixture of (private?) implementation details and side-observations
+- how to invoke "PureScript: Build"
+- how to tell whether "Restart/Reconnect purs IDE server" has succeeded
+- after "PureScript: Build", even resolved identifiers say "No definition found"
+- what is "PureScript IDE" vs "PureScript Language Support"? Installing one seems to install the other.
+- VSCode settings points to /usr/local/bin/purs, which agrees with "which purs" (which reports version 0.15.4). But when I build, complains "installed `purs` version: 0.14.9, minimum package-set version: 0.15.0" (Elsewhere have seen "Ensure project is built with the same purs version as the IDE server is using", does this provide a clue?)
+- Do I need to `npm install --global purescript-language-server`? (When I run this it simply says "changed 11 packages, and audited 12 packages" each time, with no indication of whether this is success or failure.)

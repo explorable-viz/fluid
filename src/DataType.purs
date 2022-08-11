@@ -1,7 +1,7 @@
 module DataType where
 
 import Prelude hiding (absurd)
-import Data.Char.Unicode (isUpper)
+import Data.CodePoint.Unicode (isUpper)
 import Data.Either (note)
 import Data.Function (on)
 import Data.List (fromFoldable) as L
@@ -10,6 +10,7 @@ import Data.Map (Map, lookup)
 import Data.Map (fromFoldable) as M
 import Data.Map.Internal (keys)
 import Data.Newtype (class Newtype, unwrap)
+import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
 import Lattice (class Key)
@@ -27,7 +28,7 @@ derive instance ordCtr :: Ord Ctr
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
 isCtrName ∷ String → Boolean
-isCtrName str = isUpper $ fromJust absurd $ charAt 0 str
+isCtrName str = isUpper $ codePointFromChar $ fromJust absurd $ charAt 0 str
 
 isCtrOp :: String -> Boolean
 isCtrOp str = ':' == (fromJust absurd $ charAt 0 str)

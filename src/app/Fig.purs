@@ -155,9 +155,8 @@ valViews (ρ' × ρ) xs = sequence (flip varView (ρ' × ρ) <$> xs)
 
 -- For an output selection, views of corresponding input selections.
 figViews :: Fig -> Val 𝔹 -> MayFail (View × Array View)
-figViews { spec: { xs }, ρ0, ρ, e, t, v } v' = do
+figViews { spec: { xs }, ρ0, ρ, t, v } v' = do
    let ρ0ρ' × e × α = evalBwd v' t
-       ρ0' × ρ' = splitAt (length ρ) ρ0ρ'
        v'' = evalFwd ρ0ρ' e α t
    views <- valViews (ρ0ρ' × (ρ0 <> ρ)) xs
    pure $ view "output" (v'' × v) × views

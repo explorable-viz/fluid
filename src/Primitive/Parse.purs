@@ -1,7 +1,7 @@
 module Primitive.Parse where
 
 import Data.Map (Map, fromFoldable)
-import Text.Parsing.Parser.Expr (Assoc(..))
+import Parsing.Expr (Assoc(..))
 import Bindings (Var)
 import Util (type (×), (×))
 

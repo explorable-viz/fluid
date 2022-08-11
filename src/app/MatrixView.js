@@ -1,7 +1,38 @@
 "use strict"
 
-const d3 = require("d3")
-const shared = require("/src/app/Shared")
+import * as d3 from "d3";
+
+// This prelude currently duplicated across all FFI implementations.
+function curry2(f) {
+   return x1 => x2 => f(x1, x2)
+}
+
+function curry3(f) {
+   return x1 => x2 => x3 => f(x1, x2, x3)
+}
+
+function curry4(f) {
+   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
+}
+
+// https://stackoverflow.com/questions/5560248
+function colorShade(col, amt) {
+   col = col.replace(/^#/, '')
+   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
+
+   let [r, g, b] = col.match(/.{2}/g);
+   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
+
+   r = Math.max(Math.min(255, r), 0).toString(16)
+   g = Math.max(Math.min(255, g), 0).toString(16)
+   b = Math.max(Math.min(255, b), 0).toString(16)
+
+   const rr = (r.length < 2 ? '0' : '') + r
+   const gg = (g.length < 2 ? '0' : '') + g
+   const bb = (b.length < 2 ? '0' : '') + b
+
+   return `#${rr}${gg}${bb}`
+}
 
 function drawMatrix (
    id,
@@ -36,7 +67,7 @@ function drawMatrix (
          .enter()
          .append('g')
          .attr(
-            'transform', 
+            'transform',
             (_, i) => `translate(${strokeWidth / 2 + hMargin / 2}, ${h * i + strokeWidth / 2 + vMargin})`
          )
 
@@ -52,7 +83,7 @@ function drawMatrix (
          .attr('height', h)
          .attr('class', ([, n]) => n.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected')
          .attr('stroke-width', strokeWidth)
-         
+
       rect
          .append('text')
          .text(([, n]) => n.value0)
@@ -79,4 +110,4 @@ function drawMatrix (
    }
 }
 
-exports.drawMatrix = shared.curry4(drawMatrix)
+export var drawMatrix = curry4(drawMatrix);

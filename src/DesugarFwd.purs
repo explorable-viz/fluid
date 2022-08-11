@@ -90,7 +90,7 @@ exprFwd (ListEmpty α)            = pure (enil α)
 exprFwd (ListNonEmpty α s l)     = econs α <$> exprFwd s <*> listRestFwd l
 exprFwd (ListEnum s1 s2)         = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd s1) <*> exprFwd s2
 -- | List-comp-done
-exprFwd (ListComp α s_body (NonEmptyList (Guard (Constr α2 c Nil) :| Nil))) | c == cTrue = do
+exprFwd (ListComp _ s_body (NonEmptyList (Guard (Constr α2 c Nil) :| Nil))) | c == cTrue =
    econs α2 <$> exprFwd s_body <@> enil α2
 -- | List-comp-last
 exprFwd (ListComp α s_body (NonEmptyList (q :| Nil))) =
@@ -143,7 +143,7 @@ argPatternFwd (Right o : πs) κ  = ContElim <$> (argPatternFwd πs κ >>= listR
 
 recordPatternFwd :: Bindings Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
 recordPatternFwd Lin κ              = pure κ
-recordPatternFwd (xps :- x ↦ p) κ   = patternFwd p κ >>= ContElim >>> recordPatternFwd xps
+recordPatternFwd (xps :- _ ↦ p) κ   = patternFwd p κ >>= ContElim >>> recordPatternFwd xps
 
 branchFwd_uncurried :: Pattern -> Expr 𝔹 -> MayFail (Elim 𝔹)
 branchFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= patternFwd p

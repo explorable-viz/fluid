@@ -69,7 +69,7 @@ checkArity c n = do
    check (n' >= n) (show c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
-eval ρ (Hole _)      = error absurd
+eval _ (Hole _)      = error absurd
 eval ρ (Var x)       = (T.Var ρ x × _) <$> find x ρ
 eval ρ (Op op)       = (T.Op ρ op × _) <$> find op ρ
 eval ρ (Int _ n)     = pure (T.Int ρ n × V.Int false n)
@@ -140,7 +140,7 @@ eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
 eval_module ρ (Module Nil) = pure ρ
 eval_module ρ (Module (Left (VarDef σ e) : ds)) = do
    _  × v <- eval ρ e
-   ρ' × _ × w  <- match v σ
+   ρ' × _ × _  <- match v σ
    eval_module (ρ <> ρ') (Module ds)
 eval_module ρ (Module (Right δ : ds)) =
    eval_module (ρ <> closeDefs ρ δ δ) (Module ds)

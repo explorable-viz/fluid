@@ -74,11 +74,11 @@ class ToPair a where
 
 instance toPairExpr :: ToPair (E.Expr Boolean) where
    toPair (E.Constr _ c (e : e' : Nil))   | c == cPair   = e × e'
-   toPair e                                              = error absurd
+   toPair _                                              = error absurd
 
 instance toPairVal :: ToPair (Val Boolean) where
    toPair (V.Constr _ c (v : v' : Nil))   | c == cPair   = v × v'
-   toPair v                                              = error absurd
+   toPair _                                              = error absurd
 
 class Pretty p where
    pretty :: p -> Doc
@@ -95,14 +95,6 @@ vert delim = fromFoldable >>> vert'
          vert' Nil          = null
          vert' (x : Nil)    = x
          vert' (x : y : xs) = atop (x :<>: delim) (vert' (y : xs))
-
--- Render a user-level list reflected as a PureScript list.
-prettyList :: forall a . Pretty a => List a -> Doc
-prettyList xs = brackets (hcomma (pretty <$> xs))
-
--- Render a user-level pair reflected as a PureScript pair.
-prettyPair :: forall a . Pretty a => a × a -> Doc
-prettyPair (x × y) = parens (hcomma [pretty x, pretty y])
 
 instance prettyCtr :: Pretty Ctr where
    pretty = show >>> pretty
@@ -144,7 +136,7 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.Let (E.VarDef σ e) e') = atop (hspace [text str.let_, pretty σ, text str.equals, pretty e, text str.in_])
                                            (pretty e')
    pretty (E.LetRec δ e)            = atop (hspace [text str.let_, pretty δ, text str.in_]) (pretty e)
-   pretty (E.RecordLookup e x)      = error "todo"
+   pretty (E.RecordLookup _ _)      = error "todo"
    pretty (E.App e e')              = hspace [pretty e, pretty e']
 
 instance prettyRecDefs :: Pretty (SnocList (Bind (Elim Boolean))) where
@@ -167,7 +159,7 @@ instance prettyElim :: Pretty (Elim Boolean) where
    pretty (ElimHole α)        = hole α
    pretty (ElimVar x κ)       = hspace [text x, text str.rArrow, pretty κ]
    pretty (ElimConstr κs)     = hcomma (pretty <$> κs) -- looks dodgy
-   pretty (ElimRecord xs κ)   = error "todo"
+   pretty (ElimRecord _ _)    = error "todo"
 
 instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Hole α)                   = hole α
@@ -243,7 +235,7 @@ instance prettyEither :: (Pretty a, Pretty b) => Pretty (a + b) where
 
 instance prettyPattern :: Pretty S.Pattern where
    pretty (S.PVar x)             = text x
-   pretty p@(S.PConstr c ps)     = prettyConstr false c ps
+   pretty (S.PConstr c ps)       = prettyConstr false c ps
    pretty (S.PRecord xps)        = prettyRecord false xps
    pretty (S.PListEmpty)         = nil
    pretty (S.PListNonEmpty s l)  = text str.lBracket :<>: pretty s :<>: pretty l

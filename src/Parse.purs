@@ -15,11 +15,12 @@ import Data.Map (values)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
-import Text.Parsing.Parser.Combinators (between, sepBy, try)
-import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
-import Text.Parsing.Parser.Language (emptyDef)
-import Text.Parsing.Parser.String (char, eof, oneOf)
-import Text.Parsing.Parser.Token (
+import Parsing.Combinators (between, sepBy, sepBy1, try)
+import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
+import Parsing.Language (emptyDef)
+import Parsing.String (char, eof)
+import Parsing.String.Basic (oneOf)
+import Parsing.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
 import Bindings (Bind, Var, (↦))
@@ -31,7 +32,7 @@ import SExpr (
    RecDefs, VarDef(..), VarDefs
 )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
-import Util.Parse (SParser, sepBy_try, sepBy1, sepBy1_try, some)
+import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 import Util.SnocList (fromList)
 
 -- Initial selection state.

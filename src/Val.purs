@@ -70,9 +70,9 @@ instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
 
 instance slicesVal :: Slices (Val Boolean) where
    maybeJoin (Hole false) v                           = pure v
-   maybeJoin (Hole true) v                            = pure (Hole true)
+   maybeJoin (Hole true) _                            = pure (Hole true)
    maybeJoin v (Hole false)                           = pure v
-   maybeJoin v (Hole true)                            = pure (Hole true)
+   maybeJoin _ (Hole true)                            = pure (Hole true)
    maybeJoin (Int α n) (Int α' n')                    = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Float α n) (Float α' n')                = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α str) (Str α' str')                = Str (α ∨ α') <$> (str ≞ str')
@@ -86,7 +86,7 @@ instance slicesVal :: Slices (Val Boolean) where
       )
    maybeJoin (Closure ρ δ α σ) (Closure ρ' δ' α' σ')  =
       Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <@> α ∨ α' <*> maybeJoin σ σ'
-   maybeJoin (Primitive φ vs) (Primitive φ' vs')      = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
+   maybeJoin (Primitive φ vs) (Primitive _ vs')       = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _                                      = report "Incompatible values"
 
 instance boundedSlices :: BoundedSlices (Val Boolean) where
@@ -115,5 +115,5 @@ instance valExpandable :: Expandable (Val Boolean) where
    expand (Matrix α (vss × (i × β) × (j × γ))) (Matrix α' (vss' × (i' × β') × (j' × γ'))) =
       Matrix (α ⪄ α') (expand vss vss' × ((i ≜ i') × (β ⪄ β')) × ((j ≜ j') × (γ ⪄ γ')))
    expand (Closure ρ δ α σ) (Closure ρ' δ' β σ')   = Closure (expand ρ ρ') (expand δ δ') (α ⪄ β) (expand σ σ')
-   expand (Primitive φ vs) (Primitive φ' vs')      = Primitive φ (expand vs vs') -- TODO: require φ = φ'
+   expand (Primitive φ vs) (Primitive _ vs')       = Primitive φ (expand vs vs') -- TODO: require φ = φ'
    expand _ _                                      = error absurd
