@@ -1,9 +1,9 @@
 "use strict"
 
-import d3 from "d3";
+import * as d3 from "d3";
 import d3tip from "d3-tip";
 
-// This prelude currently duplicated across all FFI implementations. 
+// This prelude currently duplicated across all FFI implementations.
 function curry2 (f) {
    return x1 => x2 => f(x1, x2)
 }
