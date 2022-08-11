@@ -5,7 +5,7 @@
     "build-app": "yarn run clean-app && yarn run copy-fluid-files && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Main --to dist/app/app.js",
     "build-tests": "yarn run clean-tests && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/tests/app.js",
     "build-app-tests": "yarn run clean-app-tests && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.App.Main --to dist/app-tests/app.js",
-    "bundle-app": "spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && esbuild --platform=browser --format=iife --bundle output/App.Main/index.js --outfile=dist/app/app.js",
+    "bundle-app": "spago build --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Main && esbuild --platform=browser --format=iife --bundle output/App.Main/index.js --outfile=dist/app/app.js",
     "clean-app": "rm -rf dist/app",
     "clean-tests": "rm -rf dist/tests",
     "clean-app-tests": "rm -rf dist/app-tests",
