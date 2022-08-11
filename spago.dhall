@@ -30,7 +30,6 @@ You can edit this file as you like.
   , "pprint"
   , "prelude"
   , "profunctor"
-  , "psci-support"
   , "spec"
   , "strings"
   , "tuples"
