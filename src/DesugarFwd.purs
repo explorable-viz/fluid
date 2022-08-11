@@ -143,7 +143,7 @@ argPatternFwd (Right o : πs) κ  = ContElim <$> (argPatternFwd πs κ >>= listR
 
 recordPatternFwd :: Bindings Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
 recordPatternFwd Lin κ              = pure κ
-recordPatternFwd (xps :- x ↦ p) κ   = patternFwd p κ >>= ContElim >>> recordPatternFwd xps
+recordPatternFwd (xps :- _ ↦ p) κ   = patternFwd p κ >>= ContElim >>> recordPatternFwd xps
 
 branchFwd_uncurried :: Pattern -> Expr 𝔹 -> MayFail (Elim 𝔹)
 branchFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= patternFwd p

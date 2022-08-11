@@ -33,8 +33,8 @@ closeDefsBwd ρ (ρ0 × δ0) =
          _ -> error absurd
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
-matchBwd (Lin :- x ↦ v) κ α (MatchVar x')    = v × ElimVar (x ≜ x') κ
-matchBwd Lin κ α (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
+matchBwd (Lin :- x ↦ v) κ _ (MatchVar x')    = v × ElimVar (x ≜ x') κ
+matchBwd Lin κ _ (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
 matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
          cκs = c × κ' : ((_ × ContHole false) <$> cs)
@@ -44,8 +44,8 @@ matchBwd ρ κ α (MatchRecord xws)             = V.Record α xvs × ElimRecord 
 matchBwd _ _ _ _                             = error absurd
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgsBwd Lin κ α Lin       = Nil × κ
-matchArgsBwd (_ :- _) κ α Lin   = error absurd
+matchArgsBwd Lin κ _ Lin       = Nil × κ
+matchArgsBwd (_ :- _) _ _ Lin  = error absurd
 matchArgsBwd ρρ' κ α (ws :- w) =
    let ρ × ρ'  = splitAt (vars w # length) ρρ'
        v × σ   = matchBwd ρ' κ α w
@@ -53,8 +53,8 @@ matchArgsBwd ρρ' κ α (ws :- w) =
    (vs <> v : Nil) × κ'
 
 matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings (Match 𝔹) -> Bindings (Val 𝔹) × Cont 𝔹
-matchRecordBwd Lin κ α Lin         = Lin × κ
-matchRecordBwd (_ :- _) κ α Lin    = error absurd
+matchRecordBwd Lin κ _ Lin         = Lin × κ
+matchRecordBwd (_ :- _) _ _ Lin    = error absurd
 matchRecordBwd ρρ' κ α (xws :- x ↦ w) =
    let ρ × ρ'  = splitAt (vars w # length) ρρ'
        v × σ   = matchBwd ρ' κ α w in
@@ -63,23 +63,23 @@ matchRecordBwd ρρ' κ α (xws :- x ↦ w) =
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var ρ x) = (botOf ρ ◃ x ↦ v) × Var x × false
 evalBwd v (T.Op ρ op) = (botOf ρ ◃ op ↦ v) × Op op × false
-evalBwd v t@(T.Str ρ str) =
+evalBwd v (T.Str ρ str) =
    case expand v (V.Str false str) of
       V.Str α _ -> botOf ρ × Str α str × α
       _ -> error absurd
-evalBwd v t@(T.Int ρ n) =
+evalBwd v (T.Int ρ n) =
    case expand v (V.Int false n) of
       V.Int α _ -> botOf ρ × Int α n × α
       _ -> error absurd
-evalBwd v t@(T.Float ρ n) =
+evalBwd v (T.Float ρ n) =
    case expand v (V.Float false n) of
       V.Float α _ -> botOf ρ × Float α n × α
       _ -> error absurd
-evalBwd v t@(T.Lambda ρ σ) =
+evalBwd v (T.Lambda ρ σ) =
    case expand v (V.Closure (botOf ρ) Lin false (botOf σ)) of
       V.Closure ρ' _ α σ' -> ρ' × Lambda σ' × α
       _ -> error absurd
-evalBwd v t@(T.Record ρ xts) =
+evalBwd v (T.Record ρ xts) =
    case expand v (V.Record false (xts <#> map (const (V.Hole false)))) of
       V.Record α xvs ->
          let xs × ts = xts <#> (key &&& val) # S.unzip
@@ -91,7 +91,7 @@ evalBwd v t@(T.Record ρ xts) =
              ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Lin × α) (S.zip vs ts) in
          ρ' × Record α (S.zipWith (↦) xs es) × α'
       _ -> error absurd
-evalBwd v t@(T.Constr ρ c ts) =
+evalBwd v (T.Constr ρ c ts) =
    case expand v (V.Constr false c (ts <#> const (V.Hole false))) of
       V.Constr α _ vs ->
          let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
@@ -100,7 +100,7 @@ evalBwd v t@(T.Constr ρ c ts) =
              ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Nil × α) (zip vs ts) in
          ρ' × Constr α c es × α'
       _ -> error absurd
-evalBwd v t@(T.Matrix tss (x × y) (i' × j') t') =
+evalBwd v (T.Matrix tss (x × y) (i' × j') t') =
    case expand v (V.Matrix false (holeMatrix i' j')) of
       V.Matrix α (vss × (_ × β) × (_ × β')) ->
          let NonEmptyList ijs = nonEmpty $ do
@@ -146,7 +146,7 @@ evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
        ρ × e × α = evalBwd (V.Primitive (PrimOp φ) vs'') t1
        ρ' × e' × α' = evalBwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
-evalBwd v t@(T.AppConstr (t1 × c × n) t2) =
+evalBwd v (T.AppConstr (t1 × c × n) t2) =
    case expand v (V.Constr false c (replicate (n + 1) (V.Hole false))) of
       V.Constr β _ vs ->
          let { init: vs', last: v2 } = fromJust absurd (unsnoc vs)
