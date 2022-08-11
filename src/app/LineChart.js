@@ -1,7 +1,38 @@
 "use strict"
 
 import d3 from "d3";
-import shared from "/src/app/Shared";
+
+// This prelude currently duplicated across all FFI implementations.
+function curry2(f) {
+   return x1 => x2 => f(x1, x2)
+}
+
+function curry3(f) {
+   return x1 => x2 => x3 => f(x1, x2, x3)
+}
+
+function curry4(f) {
+   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
+}
+
+// https://stackoverflow.com/questions/5560248
+function colorShade(col, amt) {
+   col = col.replace(/^#/, '')
+   if (col.length === 3) col = col[0] + col[0] + col[1] + col[1] + col[2] + col[2]
+
+   let [r, g, b] = col.match(/.{2}/g);
+   ([r, g, b] = [parseInt(r, 16) + amt, parseInt(g, 16) + amt, parseInt(b, 16) + amt])
+
+   r = Math.max(Math.min(255, r), 0).toString(16)
+   g = Math.max(Math.min(255, g), 0).toString(16)
+   b = Math.max(Math.min(255, b), 0).toString(16)
+
+   const rr = (r.length < 2 ? '0' : '') + r
+   const gg = (g.length < 2 ? '0' : '') + g
+   const bb = (b.length < 2 ? '0' : '') + b
+
+   return `#${rr}${gg}${bb}`
+}
 
 function max_y (linePlot) {
    return Math.max(...linePlot.data.map(point => point.y.value0))
@@ -78,7 +109,7 @@ function drawLineChart (
             .attr('cx', ([, d]) => x(d.x.value0))
             .attr('cy', ([, d]) => y(d.y.value0))
             .attr('fill', col)
-            .attr('stroke', ([, d]) => d.y.value1 ? shared.colorShade(col, -30) : col)
+            .attr('stroke', ([, d]) => d.y.value1 ? colorShade(col, -30) : col)
             .on('mousedown', (e, d) => {
                console.log(`mousedown ${d[0]}`)
                listener(e)
@@ -134,4 +165,4 @@ function drawLineChart (
    }
 }
 
-export var drawLineChart = shared.curry4(drawLineChart);
+export var drawLineChart = curry4(drawLineChart);
