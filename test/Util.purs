@@ -62,8 +62,8 @@ testWithSetup (File file) expected v_expect_opt setup =
       it file \(ρ × s) -> do
          let t × v = successful (desugarEval ρ s)
              ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v (fst <$> v_expect_opt))
-             v = desugarEval_fwd ρ' s' t
-         unless (isGraphical v) (checkPretty "Value" expected v)
+             v' = desugarEval_fwd ρ' s' t
+         unless (isGraphical v') (checkPretty "Value" expected v')
          case snd <$> v_expect_opt of
             Nothing -> pure unit
             Just file_expect -> loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
@@ -81,7 +81,7 @@ testLink :: LinkFigSpec -> Val 𝔹 -> String -> Test Unit
 testLink spec@{ x } v1' v2_expect =
    before (loadLinkFig spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
-         \fig@{ ρ0, e2, t1, t2 } ->
+         \{ ρ0, e2, t1, t2 } ->
             let { v': v2' } = successful $ linkResult x ρ0 e2 t1 t2 v1' in
             checkPretty "Linked output" v2_expect v2'
 
