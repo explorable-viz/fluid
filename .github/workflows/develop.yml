@@ -12,16 +12,16 @@ on:
   workflow_dispatch:
 
 jobs:
-#  test:
-#    runs-on: ubuntu-18.04
-#    steps:
-#    - uses: actions/checkout@v2
-#    - name: test
-#      run: |
-#        yarn install
-#        yarn bundle-tests
+  test:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: test
+      run: |
+        yarn install
+        yarn build-tests
+        yarn tests
 #        yarn bundle-app-tests
-#        yarn tests
 #        yarn app-tests
 
   deploy:
