@@ -13,7 +13,7 @@ on:
 
 jobs:
   test:
-    runs-on: macos-12 # ubuntu-22.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v2
     - name: test
@@ -25,7 +25,7 @@ jobs:
         yarn app-tests
 
   deploy:
-    runs-on: macos-12 # ubuntu-22.04
+    runs-on: ubuntu-22.04
     needs: test
     if: github.ref == 'refs/heads/develop'
     steps:
