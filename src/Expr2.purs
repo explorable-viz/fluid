@@ -4,6 +4,7 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
+import Data.Set (Set)
 import Bindings (Bindings, Var)
 import DataType (Ctr)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
@@ -49,6 +50,9 @@ asExpr (ContExpr e)  = e
 
 data Module a = Module (List (VarDef a + RecDefs a))
 
+class FV a where
+   fv :: a -> Set Var
+
 -- ======================
 -- boilerplate
 -- ======================
@@ -57,45 +61,45 @@ derive instance functorExpr :: Functor Expr
 derive instance functorCont :: Functor Cont
 derive instance functorElim :: Functor Elim
 
-instance joinSemilatticeElim :: JoinSemilattice (Elim Boolean) where
+instance JoinSemilattice (Elim Boolean) where
    join = definedJoin
    neg = (<$>) neg
 
-instance slicesElim :: Slices (Elim Boolean) where
+instance Slices (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ')         = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
    maybeJoin (ElimConstr κs) (ElimConstr κs')      = ElimConstr <$> maybeJoin κs κs'
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
    maybeJoin _ _                                   = report "Incompatible eliminators"
 
-instance boundedSlicesElim :: BoundedSlices (Elim Boolean) where
+instance BoundedSlices (Elim Boolean) where
    botOf (ElimVar x κ) = ElimVar x (botOf κ)
    botOf (ElimConstr κs) = ElimConstr (botOf <$> κs)
    botOf (ElimRecord xs κ) = ElimRecord xs (botOf κ)
 
-instance joinSemilatticeCont :: JoinSemilattice (Cont Boolean) where
+instance JoinSemilattice (Cont Boolean) where
    join = definedJoin
    neg = (<$>) neg
 
-instance slicesCont :: Slices (Cont Boolean) where
+instance Slices (Cont Boolean) where
    maybeJoin (ContExpr e) (ContExpr e')   = ContExpr <$> maybeJoin e e'
    maybeJoin (ContElim σ) (ContElim σ')   = ContElim <$> maybeJoin σ σ'
    maybeJoin _ _                          = report "Incompatible continuations"
 
-instance boundedSlicesCont :: BoundedSlices (Cont Boolean) where
+instance BoundedSlices (Cont Boolean) where
    botOf (ContExpr e)   = ContExpr (botOf e)
    botOf (ContElim σ)   = ContElim (botOf σ)
 
-instance joinSemilatticeVarDef :: JoinSemilattice (VarDef Boolean) where
+instance JoinSemilattice (VarDef Boolean) where
    join = definedJoin
    neg = (<$>) neg
 
-instance slicesVarDef :: Slices (VarDef Boolean) where
+instance Slices (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
 
-instance boundedSlicesVarDef :: BoundedSlices (VarDef Boolean) where
+instance BoundedSlices (VarDef Boolean) where
    botOf (VarDef σ e) = VarDef (botOf σ) (botOf e)
 
-instance boundedSlicesExpr :: BoundedSlices (Expr Boolean) where
+instance BoundedSlices (Expr Boolean) where
    botOf (Var x)                    = Var x
    botOf (Op op)                    = Op op
    botOf (Int _ n)                  = Int bot n
@@ -110,11 +114,11 @@ instance boundedSlicesExpr :: BoundedSlices (Expr Boolean) where
    botOf (Let def e)                = Let (botOf def) (botOf e)
    botOf (LetRec δ e)               = LetRec (botOf δ) (botOf e)
 
-instance joinSemilatticeExpr :: JoinSemilattice (Expr Boolean) where
+instance JoinSemilattice (Expr Boolean) where
    join = definedJoin
    neg = (<$>) neg
 
-instance slicesExpr :: Slices (Expr Boolean) where
+instance Slices (Expr Boolean) where
    maybeJoin (Var x) (Var x')                                  = Var <$> (x ≞ x')
    maybeJoin (Op op) (Op op')                                  = Op <$> (op ≞ op')
    maybeJoin (Int α n) (Int α' n')                             = Int (α ∨ α') <$> (n ≞ n')
