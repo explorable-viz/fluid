@@ -3,6 +3,10 @@ module.exports = function (config) {
       autoWatch: true,
       basePath: "",
       browsers: ["ChromeHeadlessNoSandbox"],
+      flags: [
+         '--disable-gpu',
+         '--no-sandbox'
+      ],
       customLaunchers: {
          ChromeHeadlessNoSandbox: {
            base: 'ChromeHeadless',
