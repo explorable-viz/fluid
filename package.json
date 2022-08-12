@@ -5,13 +5,11 @@
     "copy-dist-files-app": "mkdir -p dist/app && cp -r fluid dist/app && cp index.html dist/app && cp -r css dist/app",
     "build-app": "yarn clean-app && yarn copy-dist-files-app && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Main --to dist/app/app.js",
     "serve-app": "yarn build-app && npx http-serve dist/app -a 127.0.0.1",
-
     "clean-tests": "rm -rf dist/tests",
     "bundle-tests": "yarn run build-tests && parcel build -d dist/tests tests.html",
     "copy-dist-files-tests": "mkdir -p dist/tests && cp tests.html dist/tests",
     "build-tests": "yarn run clean-tests && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/tests/app.js",
     "tests": "karma start karma.conf.tests.js",
-
     "build-app-tests": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.App.Main --to dist/app-tests/app.js",
     "tests-continuous": "npm-run-all --parallel build-tests-watch tests-browser",
     "app-tests-continuous": "npm-run-all --parallel build-app-tests-watch app-tests-browser",
@@ -31,11 +29,11 @@
   },
   "devDependencies": {
     "gh-pages": "^3.1.0",
-    "karma": "5.1.0",
-    "karma-chrome-launcher": "3.1.0",
+    "karma": "6.4.0",
+    "karma-chrome-launcher": "3.1.1",
     "karma-mocha": "2.0.1",
     "karma-mocha-reporter": "2.2.5",
-    "mocha": "7.1.2",
+    "mocha": "10.0.0",
     "npm-run-all": "4.1.5",
     "parcel-bundler": "1.12.3",
     "spago": "0.20.9"
