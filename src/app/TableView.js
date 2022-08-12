@@ -40,7 +40,7 @@ function isUsed (r) {
 }
 
 // Generic to all tables.
-function drawTable (
+function drawTable_ (
    id,
    childIndex,
    {
@@ -93,4 +93,4 @@ function drawTable (
    }
 }
 
-export var drawTable = curry4(drawTable);
+export var drawTable = curry4(drawTable_);

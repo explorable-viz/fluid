@@ -35,7 +35,7 @@ function colorShade (col, amt) {
    return `#${rr}${gg}${bb}`
 }
 
-function drawBarChart (
+function drawBarChart_ (
    id,
    childIndex,
    {
@@ -119,4 +119,4 @@ function drawBarChart (
    }
 }
 
-export var drawBarChart = curry4(drawBarChart);
+export var drawBarChart = curry4(drawBarChart_);

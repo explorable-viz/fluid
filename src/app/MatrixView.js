@@ -34,7 +34,7 @@ function colorShade(col, amt) {
    return `#${rr}${gg}${bb}`
 }
 
-function drawMatrix (
+function drawMatrix_ (
    id,
    childIndex,
    {
@@ -110,4 +110,4 @@ function drawMatrix (
    }
 }
 
-export var drawMatrix = curry4(drawMatrix);
+export var drawMatrix = curry4(drawMatrix_);
