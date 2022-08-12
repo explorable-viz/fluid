@@ -21,8 +21,8 @@ jobs:
         yarn install
         yarn build-tests
         yarn tests
-#        yarn bundle-app-tests
-#        yarn app-tests
+        yarn build-app-tests
+        yarn app-tests
 
   deploy:
     runs-on: ubuntu-18.04
