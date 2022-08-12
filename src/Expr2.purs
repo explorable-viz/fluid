@@ -4,8 +4,8 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
-import Data.Set (Set)
-import Bindings (Bindings, Var)
+import Data.Set (Set, empty, singleton, union, unions)
+import Bindings (Bindings, Var, val)
 import DataType (Ctr)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
 import Util (type (×), (×), type (+), (≞), error, report)
@@ -53,13 +53,31 @@ data Module a = Module (List (VarDef a + RecDefs a))
 class FV a where
    fv :: a -> Set Var
 
+instance FV (Expr a) where
+   fv (Var x)              = singleton x
+   fv (Op _)               = empty
+   fv (Int _ _)            = empty
+   fv (Float _ _)          = empty
+   fv (Str _ _)            = empty
+   fv (Record _ xes)       = unions (fv <$> val <$> xes)
+   fv (Constr _ _ es)      = unions (fv <$> es)
+   fv (Matrix _ e1 _ e2)   = union (fv e1) (fv e2)
+   fv (Lambda σ)           = fv σ
+   fv (RecordLookup e _)   = fv e
+   fv (App e1 e2)          = union (fv e1) (fv e2)
+   fv (Let _ _)            = empty -- TODO
+   fv (LetRec δ e)         = union (unions (fv <$> val <$> δ)) (fv e)
+
+instance FV (Elim a) where
+   fv _ = empty
+
 -- ======================
 -- boilerplate
 -- ======================
-derive instance functorVarDef :: Functor VarDef
-derive instance functorExpr :: Functor Expr
-derive instance functorCont :: Functor Cont
-derive instance functorElim :: Functor Elim
+derive instance Functor VarDef
+derive instance Functor Expr
+derive instance Functor Cont
+derive instance Functor Elim
 
 instance JoinSemilattice (Elim Boolean) where
    join = definedJoin
