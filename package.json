@@ -7,7 +7,6 @@
     "build-tests": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/tests/app.js",
     "build-app-tests": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.App.Main --to dist/app-tests/app.js",
     "bundle-app": "yarn build-app && parcel build --no-minify -d dist/app --public-url",
-    "bundle-app-2": "spago build --purs-args '--strict --censor-codes=UserDefinedWarning src/app/Main.purs' && esbuild --platform=browser --format=iife --bundle output/App.Main/index.js --outfile=dist/app/app.js",
     "tests-continuous": "npm-run-all --parallel build-tests-watch tests-browser",
     "app-tests-continuous": "npm-run-all --parallel build-app-tests-watch app-tests-browser",
     "build-tests-watch": "yarn build-tests --watch && parcel watch tests.html",
@@ -16,7 +15,7 @@
     "app-tests-browser": "karma start karma.conf.app-tests.js --browsers=Chrome --singleRun=false",
     "tests": "karma start karma.conf.tests.js",
     "app-tests": "karma start karma.conf.app-tests.js",
-    "serve-app": "yarn build-app && parcel serve -d dist/app index.html"
+    "serve-app": "yarn build-app && npx http-serve dist/app -a 127.0.0.1"
   },
   "dependencies": {
     "d3": "^6.7.0",
