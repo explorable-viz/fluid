@@ -26,8 +26,8 @@ jobs:
 
   deploy:
     runs-on: ubuntu-18.04
-#    needs: test
-#    if: github.ref == 'refs/heads/develop'
+    needs: test
+    if: github.ref == 'refs/heads/develop'
     steps:
     - uses: actions/checkout@v2
     - name: build
