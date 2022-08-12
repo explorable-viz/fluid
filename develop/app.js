@@ -4627,7 +4627,7 @@
     const bb = (b.length < 2 ? "0" : "") + b;
     return `#${rr}${gg}${bb}`;
   }
-  function drawBarChart(id3, childIndex, {
+  function drawBarChart_(id3, childIndex, {
     caption,
     data
   }, listener) {
@@ -4654,7 +4654,7 @@
       svg.append("text").text(caption.value0).attr("x", width / 2).attr("y", height + 35).attr("class", "title-text").attr("dominant-baseline", "bottom").attr("text-anchor", "middle");
     };
   }
-  var drawBarChart = curry4(drawBarChart);
+  var drawBarChart = curry4(drawBarChart_);
 
   // output/Control.Semigroupoid/index.js
   var semigroupoidFn = {
@@ -37230,7 +37230,7 @@
   function max_x(linePlot) {
     return Math.max(...linePlot.data.map((point2) => point2.x.value0));
   }
-  function drawLineChart(id3, childIndex, {
+  function drawLineChart_(id3, childIndex, {
     caption,
     plots
   }, listener) {
@@ -37265,7 +37265,7 @@
       svg.append("text").text(caption.value0).attr("x", width / 2).attr("y", height + 35).attr("class", "title-text").attr("dominant-baseline", "bottom").attr("text-anchor", "middle");
     };
   }
-  var drawLineChart = curry42(drawLineChart);
+  var drawLineChart = curry42(drawLineChart_);
 
   // output/App.LineChart/index.js
   var get_prim3 = /* @__PURE__ */ get_prim(toFromString);
@@ -37341,7 +37341,7 @@
   function curry43(f) {
     return (x1) => (x2) => (x3) => (x4) => f(x1, x2, x3, x4);
   }
-  function drawMatrix(id3, childIndex, {
+  function drawMatrix_(id3, childIndex, {
     title: title2,
     matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }
   }, listener) {
@@ -37369,7 +37369,7 @@
       });
     };
   }
-  var drawMatrix = curry43(drawMatrix);
+  var drawMatrix = curry43(drawMatrix_);
 
   // output/App.MatrixView/index.js
   var map37 = /* @__PURE__ */ map3(functorArray);
@@ -37407,7 +37407,7 @@
   function isUsed(r) {
     return Object.keys(r).some((k) => r[k].value1);
   }
-  function drawTable(id3, childIndex, {
+  function drawTable_(id3, childIndex, {
     title: title2,
     table
   }, listener) {
@@ -37431,7 +37431,7 @@
       }
     };
   }
-  var drawTable = curry44(drawTable);
+  var drawTable = curry44(drawTable_);
 
   // output/App.TableView/index.js
   var get_prim4 = /* @__PURE__ */ get_prim(toFromInt);
