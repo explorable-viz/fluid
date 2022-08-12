@@ -27,7 +27,7 @@ module.exports = function (config) {
       ],
       frameworks: ["mocha"],
       proxies: {
-         "/fluid/": "/base/fluid/"
+         "/fluid/": "/fluid/"
       },
       reporters: ["mocha"],
       singleRun: true
