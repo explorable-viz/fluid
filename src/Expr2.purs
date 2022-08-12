@@ -4,12 +4,10 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
-import Bindings (Bindings, Var, (⪂))
+import Bindings (Bindings, Var)
 import DataType (Ctr)
-import Lattice (
-   class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, expand, maybeJoin, neg
-)
-import Util (type (×), (×), type (+), (≞), (≜), (⪄), absurd, error, report)
+import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
+import Util (type (×), (×), type (+), (≞), error, report)
 import Util.SnocList (SnocList)
 
 data Expr a =
@@ -70,7 +68,9 @@ instance slicesElim :: Slices (Elim Boolean) where
    maybeJoin _ _                                   = report "Incompatible eliminators"
 
 instance boundedSlicesElim :: BoundedSlices (Elim Boolean) where
-   botOf = ?_
+   botOf (ElimVar x κ) = ElimVar x (botOf κ)
+   botOf (ElimConstr κs) = ElimConstr (botOf <$> κs)
+   botOf (ElimRecord xs κ) = ElimRecord xs (botOf κ)
 
 instance joinSemilatticeCont :: JoinSemilattice (Cont Boolean) where
    join = definedJoin
@@ -82,7 +82,8 @@ instance slicesCont :: Slices (Cont Boolean) where
    maybeJoin _ _                          = report "Incompatible continuations"
 
 instance boundedSlicesCont :: BoundedSlices (Cont Boolean) where
-   botOf = ?_
+   botOf (ContExpr e)   = ContExpr (botOf e)
+   botOf (ContElim σ)   = ContElim (botOf σ)
 
 instance joinSemilatticeVarDef :: JoinSemilattice (VarDef Boolean) where
    join = definedJoin
@@ -90,6 +91,9 @@ instance joinSemilatticeVarDef :: JoinSemilattice (VarDef Boolean) where
 
 instance slicesVarDef :: Slices (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
+
+instance boundedSlicesVarDef :: BoundedSlices (VarDef Boolean) where
+   botOf (VarDef σ e) = VarDef (botOf σ) (botOf e)
 
 instance boundedSlicesExpr :: BoundedSlices (Expr Boolean) where
    botOf (Var x)                    = Var x
