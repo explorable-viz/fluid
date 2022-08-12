@@ -3,7 +3,6 @@ module.exports = function (config) {
       autoWatch: true,
       basePath: "",
       browsers: ["ChromeHeadlessNoSandbox"],
-      browserDisconnectTimeout: 10000,
       customLaunchers: {
          ChromeHeadlessNoSandbox: {
            base: 'ChromeHeadless',
