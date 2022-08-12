@@ -1,25 +1,21 @@
 {
   "license": "MIT",
   "scripts": {
-    "copy-fluid-files": "mkdir -p dist/app && cp -r fluid dist/app",
-    "build-app": "yarn run clean-app && yarn run copy-fluid-files && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Main --to dist/app/app.js",
-    "build-tests": "yarn run clean-tests && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/tests/app.js",
-    "build-app-tests": "yarn run clean-app-tests && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.App.Main --to dist/app-tests/app.js",
-    "bundle-app": "yarn run build-app && parcel build --no-minify -d dist/app --public-url",
-    "bundle-tests": "yarn run build-tests && parcel build -d dist/tests tests.html",
-    "bundle-app-tests": "yarn run build-app-tests && parcel build -d dist/app-tests app-tests.html",
-    "clean-app": "rm -rf dist/app",
-    "clean-tests": "rm -rf dist/tests",
-    "clean-app-tests": "rm -rf dist/app-tests",
-    "tests-continuous": "npm-run-all --parallel build-tests-watch tests-browser",
-    "app-tests-continuous": "npm-run-all --parallel build-app-tests-watch app-tests-browser",
-    "build-tests-watch": "yarn run build-tests --watch && parcel watch tests.html",
-    "build-app-tests-watch": "yarn run build-app-tests --watch && parcel watch app-tests.html",
-    "tests-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
-    "app-tests-browser": "karma start karma.conf.app-tests.js --browsers=Chrome --singleRun=false",
+    "clean-app": "rm -rf dist/app && mkdir dist/app && cp -r fluid dist/app && cp index.html dist/app && cp -r css dist/app",
+    "build-app": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Main --to dist/app/app.js",
+    "serve-app": "yarn build-app && npx http-serve dist/app -a 127.0.0.1",
+    "clean-tests": "rm -rf dist/tests && mkdir dist/tests && cp tests.html dist/tests",
+    "build-tests": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/tests/app.js",
+    "build-tests-watch": "yarn build-tests --watch",
     "tests": "karma start karma.conf.tests.js",
+    "tests-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
+    "tests-continuous": "npm-run-all --parallel yarn build-tests --watch tests-browser",
+    "clean-app-tests": "rm -rf dist/app-tests && mkdir dist/app-tests && cp tests.html dist/app-tests",
+    "build-app-tests": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.App.Main --to dist/app-tests/app.js",
+    "build-app-tests-watch": "yarn build-app-tests --watch",
     "app-tests": "karma start karma.conf.app-tests.js",
-    "serve-app": "yarn run build-app && parcel serve -d dist/app index.html"
+    "app-tests-browser": "karma start karma.conf.app-tests.js --browsers=Chrome --singleRun=false",
+    "app-tests-continuous": "npm-run-all --parallel build-app-tests-watch app-tests-browser"
   },
   "dependencies": {
     "d3": "^6.7.0",
@@ -31,13 +27,12 @@
   },
   "devDependencies": {
     "gh-pages": "^3.1.0",
-    "karma": "5.1.0",
-    "karma-chrome-launcher": "3.1.0",
+    "karma": "6.4.0",
+    "karma-chrome-launcher": "3.1.1",
     "karma-mocha": "2.0.1",
     "karma-mocha-reporter": "2.2.5",
-    "mocha": "7.1.2",
+    "mocha": "10.0.0",
     "npm-run-all": "4.1.5",
-    "parcel-bundler": "1.12.3",
     "spago": "0.20.9"
   }
 }

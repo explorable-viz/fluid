@@ -3,10 +3,14 @@ module.exports = function (config) {
       autoWatch: true,
       basePath: "",
       browsers: ["ChromeHeadlessNoSandbox"],
+      browserDisconnectTolerance: 3,
       customLaunchers: {
          ChromeHeadlessNoSandbox: {
            base: 'ChromeHeadless',
-           flags: ['--no-sandbox']
+            flags: [
+               '--disable-gpu',
+               '--no-sandbox'
+            ]
          }
       },
       client: {

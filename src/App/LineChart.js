@@ -46,7 +46,7 @@ function max_x (linePlot) {
    return Math.max(...linePlot.data.map(point => point.x.value0))
 }
 
-function drawLineChart (
+function drawLineChart_ (
    id,
    childIndex,
    {
@@ -165,4 +165,4 @@ function drawLineChart (
    }
 }
 
-export var drawLineChart = curry4(drawLineChart);
+export var drawLineChart = curry4(drawLineChart_);

@@ -19,10 +19,10 @@ jobs:
     - name: test
       run: |
         yarn install
-        yarn run bundle-tests
-        yarn run bundle-app-tests
-        yarn run tests
-        yarn run app-tests
+        yarn build-tests
+        yarn tests
+        yarn build-app-tests
+        yarn app-tests
 
   deploy:
     runs-on: ubuntu-18.04
@@ -30,10 +30,10 @@ jobs:
     if: github.ref == 'refs/heads/develop'
     steps:
     - uses: actions/checkout@v2
-    - name: bundle
+    - name: build
       run: |
         yarn install
-        yarn run bundle-app /develop/ index.html
+        yarn build-app
     - name: gh-pages
       uses: peaceiris/actions-gh-pages@v3
       with:

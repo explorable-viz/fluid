@@ -1,7 +1,7 @@
 "use strict"
 
 import * as d3 from "d3";
-import d3tip from "d3-tip";
+import * as d3tip from "d3-tip";
 
 // This prelude currently duplicated across all FFI implementations.
 function curry2 (f) {
@@ -35,7 +35,7 @@ function colorShade (col, amt) {
    return `#${rr}${gg}${bb}`
 }
 
-function drawBarChart (
+function drawBarChart_ (
    id,
    childIndex,
    {
@@ -119,4 +119,4 @@ function drawBarChart (
    }
 }
 
-export var drawBarChart = curry4(drawBarChart);
+export var drawBarChart = curry4(drawBarChart_);
