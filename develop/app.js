@@ -4637,7 +4637,7 @@
       const div4 = select_default2("#" + id3);
       div4.selectAll("#" + childId).remove();
       const svg = div4.append("svg").attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom).attr("id", childId).append("g").attr("transform", `translate(${margin.left}, ${margin.top})`);
-      const tip = d3_tip_default.default().attr("class", "d3-tip").offset([0, 0]).html((_, d) => d.y.value0);
+      const tip = d3_tip_default().attr("class", "d3-tip").offset([0, 0]).html((_, d) => d.y.value0);
       svg.call(tip);
       const x2 = band().range([0, width]).domain(data.map((d) => d.x.value0)).padding(0.2);
       svg.append("g").attr("transform", "translate(0," + height + ")").call(axisBottom(x2)).selectAll("text").style("text-anchor", "middle");
