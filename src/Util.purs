@@ -6,9 +6,9 @@ import Control.MonadPlus (class MonadPlus, empty)
 import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), intercalate)
+import Data.List (List(..), (:), head, intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (Map, lookup, unionWith)
+import Data.Map (Map, lookup, size, toUnfoldable, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
@@ -44,6 +44,9 @@ fromJust msg Nothing  = error msg
 
 mustLookup :: forall k v . Ord k => k -> Map k v -> v
 mustLookup k = fromJust absurd <<< lookup k
+
+asSingletonMap :: forall k v . Map k v -> k × v
+asSingletonMap m = assert (size m == 1) (fromJust "Not a singleton map" (head (toUnfoldable m)))
 
 onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
 onlyIf true    = pure

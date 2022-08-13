@@ -4,11 +4,12 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
-import Data.Set (Set, empty, singleton, union, unions)
+import Data.Set (Set, difference, empty, singleton, union, unions)
+import Data.Tuple (snd)
 import Bindings (Bindings, Var, val)
 import DataType (Ctr)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
-import Util (type (×), (×), type (+), (≞), error, report)
+import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
 import Util.SnocList (SnocList)
 
 data Expr a =
@@ -26,7 +27,7 @@ data Expr a =
    Let (VarDef a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
 
--- eliminator in var def is always singleton, with an empty terminal continuation represented by hole
+-- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs a = Bindings (Elim a)
 
@@ -37,16 +38,17 @@ data Elim a =
 
 -- Continuation of an eliminator branch.
 data Cont a =
+   ContNone |           -- null continuation, used in let bindings/module variable bindings
    ContExpr (Expr a) |
    ContElim (Elim a)
 
 asElim :: forall a . Cont a -> Elim a
 asElim (ContElim σ)  = σ
-asElim (ContExpr _)  = error "Eliminator expected"
+asElim _             = error "Eliminator expected"
 
 asExpr :: forall a . Cont a -> Expr a
-asExpr (ContElim _)  = error "Expression expected"
 asExpr (ContExpr e)  = e
+asExpr _             = error "Expression expected"
 
 data Module a = Module (List (VarDef a + RecDefs a))
 
@@ -64,12 +66,32 @@ instance FV (Expr a) where
    fv (Matrix _ e1 _ e2)   = union (fv e1) (fv e2)
    fv (Lambda σ)           = fv σ
    fv (RecordLookup e _)   = fv e
-   fv (App e1 e2)          = union (fv e1) (fv e2)
-   fv (Let _ _)            = empty -- TODO
-   fv (LetRec δ e)         = union (unions (fv <$> val <$> δ)) (fv e)
+   fv (App e1 e2)          = fv e1 `union` fv e2
+   fv (Let def e)          = fv def `union` (fv e `difference` bv def)
+   fv (LetRec δ e)         = unions (fv <$> val <$> δ) `union` fv e
 
 instance FV (Elim a) where
-   fv _ = empty
+   fv _ = empty -- TODO
+
+instance FV (VarDef a) where
+   fv (VarDef _ e) = fv e
+
+class BV a where
+   bv :: a -> Set Var
+
+-- Bound variables, defined only for singleton eliminators.
+instance BV (Elim a) where
+   bv (ElimVar x κ)     = singleton x `union` bv κ
+   bv (ElimConstr m)    = bv (snd (asSingletonMap m))
+   bv (ElimRecord _ κ) = bv κ
+
+instance BV (VarDef a) where
+   bv (VarDef σ _) = bv σ
+
+instance BV (Cont a) where
+   bv ContNone       = empty
+   bv (ContElim σ)   = bv σ
+   bv (ContExpr _)   = empty
 
 -- ======================
 -- boilerplate
@@ -104,6 +126,7 @@ instance Slices (Cont Boolean) where
    maybeJoin _ _                          = report "Incompatible continuations"
 
 instance BoundedSlices (Cont Boolean) where
+   botOf ContNone       = ContNone
    botOf (ContExpr e)   = ContExpr (botOf e)
    botOf (ContElim σ)   = ContElim (botOf σ)
 

@@ -7,9 +7,9 @@ import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), length)
-import Data.List (head, singleton) as L
+import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
-import Data.Map (Map, fromFoldable, singleton, size, toUnfoldable)
+import Data.Map (Map, fromFoldable, singleton)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
@@ -18,7 +18,7 @@ import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, maybeJoin)
 import SExpr (Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..))
-import Util (MayFail, type (+), type (×), (×), absurd, assert, error, fromJust, successful)
+import Util (MayFail, type (+), type (×), (×), absurd, asSingletonMap, error, successful)
 import Util.SnocList (SnocList(..), (:-), fromList)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
@@ -164,7 +164,7 @@ totaliseFwd (ContHole _) _                   = error absurd
 totaliseFwd (ContExpr e) _                   = ContExpr e
 totaliseFwd (ContElim (ElimHole _)) _        = error absurd
 totaliseFwd (ContElim (ElimConstr m)) α      = ContElim (ElimConstr (totaliseConstrFwd (c × totaliseFwd κ α) α))
-   where c × κ = assert (size m == 1) (fromJust absurd (L.head (toUnfoldable m)))
+   where c × κ = asSingletonMap m
 totaliseFwd (ContElim (ElimRecord xs κ)) α   = ContElim (ElimRecord xs (totaliseFwd κ α))
 totaliseFwd (ContElim (ElimVar x κ)) α       = ContElim (ElimVar x (totaliseFwd κ α))
 
