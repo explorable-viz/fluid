@@ -12,8 +12,8 @@ import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
 import Util2 (MayFail, type (×), (×), (≞), report, successfulWith)
-import Util.SnocList (SnocList)
-import Util.SnocList (zipWith) as S
+import Util2.SnocList2 (SnocList)
+import Util2.SnocList2 (zipWith) as S
 
 class JoinSemilattice a where
    join :: a -> a -> a
