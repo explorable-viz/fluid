@@ -3,7 +3,7 @@ module Bindings2 where
 import Prelude
 import Data.Foldable (class Foldable, foldMapDefaultL, foldrDefault)
 import Data.Traversable (class Traversable, sequenceDefault)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
+import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
 import Util (Endo, MayFail, (≞), fromJust, report, whenever)
 import Util.SnocList (SnocList(..), (:-))
 

@@ -13,7 +13,7 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
-import Lattice (class Key)
+import Lattice2 (class Key)
 import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, with)
 
 type TypeName = String
