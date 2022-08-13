@@ -1,4 +1,4 @@
-module Util2.Parse2 where
+module Util.Parse2 where
 
 import Prelude hiding (absurd)
 import Control.Alt ((<|>))

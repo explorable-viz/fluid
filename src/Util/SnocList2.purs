@@ -1,4 +1,4 @@
-module Util2.SnocList2 where
+module Util.SnocList2 where
 
 import Prelude
 import Data.Foldable (class Foldable, foldl, foldMap, foldr)

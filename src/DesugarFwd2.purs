@@ -19,7 +19,7 @@ import Expr2 (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice2 (𝔹, maybeJoin)
 import SExpr2 (Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..))
 import Util2 (MayFail, type (+), type (×), (×), absurd, asSingletonMap, error, successful)
-import Util2.SnocList2 (SnocList(..), (:-), fromList)
+import Util.SnocList2 (SnocList(..), (:-), fromList)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd

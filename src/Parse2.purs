@@ -26,14 +26,14 @@ import Parsing.Token (
 import Bindings2 (Bind, Var, (↦))
 import DataType2 (Ctr(..), cPair, isCtrName, isCtrOp)
 import Lattice2 (𝔹)
-import Primitive.Parse (OpDef, opDefs)
+import Primitive.Parse2 (OpDef, opDefs)
 import SExpr2 (
    Branch, Clause, Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..),
    RecDefs, VarDef(..), VarDefs
 )
 import Util2 (Endo, type (×), (×), type (+), error, onlyIf)
-import Util2.Parse2 (SParser, sepBy_try, sepBy1_try, some)
-import Util2.SnocList2 (fromList)
+import Util.Parse2 (SParser, sepBy_try, sepBy1_try, some)
+import Util.SnocList2 (fromList)
 
 -- Initial selection state.
 selState :: 𝔹
