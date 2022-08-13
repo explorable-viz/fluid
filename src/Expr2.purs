@@ -6,11 +6,11 @@ import Data.List (List)
 import Data.Map (Map)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Tuple (snd)
-import Bindings (Bindings, Var, val)
-import DataType (Ctr)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
-import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
-import Util.SnocList (SnocList)
+import Bindings2 (Bindings, Var, val)
+import DataType2 (Ctr)
+import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
+import Util2 (type (×), (×), type (+), (≞), asSingletonMap, error, report)
+import Util2.SnocList2 (SnocList)
 
 data Expr a =
    Var Var |
