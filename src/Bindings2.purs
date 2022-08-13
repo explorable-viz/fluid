@@ -4,7 +4,7 @@ import Prelude
 import Data.Foldable (class Foldable, foldMapDefaultL, foldrDefault)
 import Data.Traversable (class Traversable, sequenceDefault)
 import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
-import Util (Endo, MayFail, (≞), fromJust, report, whenever)
+import Util2 (Endo, MayFail, (≞), fromJust, report, whenever)
 import Util.SnocList (SnocList(..), (:-))
 
 type Var = String -- newtype?

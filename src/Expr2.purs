@@ -9,7 +9,7 @@ import Data.Tuple (snd)
 import Bindings2 (Bindings, Var, val)
 import DataType2 (Ctr)
 import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
-import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
+import Util2 (type (×), (×), type (+), (≞), asSingletonMap, error, report)
 import Util.SnocList (SnocList)
 
 data Expr a =

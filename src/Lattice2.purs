@@ -11,7 +11,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Util (MayFail, type (×), (×), (≞), report, successfulWith)
+import Util2 (MayFail, type (×), (×), (≞), report, successfulWith)
 import Util.SnocList (SnocList)
 import Util.SnocList (zipWith) as S
 
