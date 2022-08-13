@@ -71,7 +71,14 @@ instance FV (Expr a) where
    fv (LetRec δ e)         = unions (fv <$> val <$> δ) `union` fv e
 
 instance FV (Elim a) where
-   fv _ = empty -- TODO
+   fv (ElimVar x κ)     = fv κ `difference` singleton x
+   fv (ElimConstr m)    = unions (fv <$> m)
+   fv (ElimRecord _ κ)  = fv κ
+
+instance FV (Cont a) where
+   fv ContNone       = empty
+   fv (ContElim σ)   = fv σ
+   fv (ContExpr e)   = fv e
 
 instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
