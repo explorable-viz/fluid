@@ -48,7 +48,7 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
 
 -- Selection helpers.
 selectCell :: 𝔹 -> Int -> Int -> Int -> Int -> Val 𝔹
-selectCell α i j i' j' = Matrix false (insertMatrix i j (error unimplemented) (error unimplemented))
+selectCell _ i j _ _ = Matrix false (insertMatrix i j (error unimplemented) (error unimplemented))
 
 selectNth :: Int -> Val 𝔹 -> Val 𝔹
 selectNth 0 v = Constr false cCons (v : error unimplemented : Nil)

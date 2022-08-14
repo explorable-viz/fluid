@@ -27,7 +27,7 @@ import EvalBwd2 (evalBwd)
 import EvalFwd2 (evalFwd)
 import Lattice2 (𝔹, botOf, neg)
 import Module2 (File(..), open, openDatasetAs)
-import Primitive2 (match, match_fwd)
+import Primitive2 (match_fwd)
 import SExpr2 (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Util2 (MayFail, type (×), type (+), (×), absurd, error, successful, unimplemented)
 import Util.SnocList2 (splitAt)
