@@ -12,7 +12,7 @@ import DataType2 (cFalse, cPair, cTrue)
 import Lattice2 (𝔹, (∧))
 import Pretty2 (prettyP)
 import Util2 (Endo, type (×), (×), type (+), error)
-import Util2.SnocList2 (SnocList)
+import Util.SnocList2 (SnocList)
 import Val2 (PrimOp(..), Val(..))
 
 -- Mediates between Val and underlying data, analogously to pattern-matching and construction for data types.

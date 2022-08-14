@@ -10,7 +10,7 @@ import Bindings2 (Bindings, Var, val)
 import DataType2 (Ctr)
 import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
 import Util2 (type (×), (×), type (+), (≞), asSingletonMap, error, report)
-import Util2.SnocList2 (SnocList)
+import Util.SnocList2 (SnocList)
 
 data Expr a =
    Var Var |

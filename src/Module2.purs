@@ -13,11 +13,11 @@ import DesugarFwd2 (desugarFwd, desugarModuleFwd)
 import Eval2 (eval, eval_module)
 import Lattice2 (𝔹)
 import Parse2 (module_, program)
-import Primitive2.Defs2 (primitives)
+import Primitive.Defs2 (primitives)
 import SExpr2 (Expr) as S
 import Util2 (MayFail, type (×), (×), error, successful)
-import Util2.Parse2 (SParser)
-import Util2.SnocList2 (SnocList(..), (:-))
+import Util.Parse2 (SParser)
+import Util.SnocList2 (SnocList(..), (:-))
 import Val2 (Env)
 
 -- Mainly serve as documentation

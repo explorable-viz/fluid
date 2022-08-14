@@ -6,7 +6,7 @@ import Bindings2 (Bindings, Var, val)
 import DataType2 (Ctr)
 import Expr2 (Elim, RecDefs)
 import Util2 (type (×))
-import Util2.SnocList2 (SnocList, toList, reverse)
+import Util.SnocList2 (SnocList, toList, reverse)
 import Val2 (Array2, Env, PrimOp, Val)
 
 data VarDef a = VarDef (Match a) (Expl a)

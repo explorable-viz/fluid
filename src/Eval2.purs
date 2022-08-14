@@ -19,8 +19,8 @@ import Lattice2 (𝔹, checkConsistent)
 import Pretty2 (prettyP)
 import Primitive2 (match) as P
 import Util2 (MayFail, type (×), (×), absurd, check, error, report, successful)
-import Util2.SnocList2 (SnocList(..), (:-), zipWith)
-import Util2.SnocList2 (unzip) as S
+import Util.SnocList2 (SnocList(..), (:-), zipWith)
+import Util.SnocList2 (unzip) as S
 import Val2 (Env, PrimOp(..), Val)
 import Val2 (Val(..)) as V
 
