@@ -4,12 +4,12 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List(..), (:))
 import Data.Map (Map)
-import Data.Set (Set, difference, empty, isEmpty, member, singleton, toUnfoldable, union, unions)
+import Data.Set (Set, difference, empty, intersection, isEmpty, member, singleton, toUnfoldable, union, unions)
 import Data.Tuple (snd)
-import Bindings2 (Bindings, Var, dom, val)
+import Bindings2 (Bindings, Var, dom, find, val)
 import DataType2 (Ctr)
 import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
-import Util2 (type (×), (×), type (+), (≞), asSingletonMap, error, report)
+import Util2 (type (×), (×), type (+), (≞), asSingletonMap, error, report, successful)
 import Util.SnocList2 (SnocList)
 
 data Expr a =
@@ -32,12 +32,16 @@ data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs a = Bindings (Elim a)
 
 reaches :: forall a . RecDefs a -> Set Var
-reaches ρ = go (toUnfoldable $ dom ρ) empty
+reaches ρ = go (toUnfoldable xs) empty
    where
+   xs = dom ρ
    go :: List Var -> Set Var -> Set Var
    go Nil acc        = acc
    go (x : xs') acc | x `member` acc   = go xs' acc
-   go (x : xs') acc | otherwise        = ?_
+   go (x : xs') acc | otherwise        =
+      let σ = successful $ find x ρ in
+      go (toUnfoldable (fv σ `intersection` xs) <> xs')
+         (singleton x `union` acc)
 
 data Elim a =
    ElimVar Var (Cont a) |
