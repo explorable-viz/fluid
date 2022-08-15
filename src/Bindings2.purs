@@ -4,8 +4,9 @@ import Prelude
 import Data.Foldable (class Foldable, foldMapDefaultL, foldrDefault)
 import Data.Set (Set, empty, singleton, union)
 import Data.Traversable (class Traversable, sequenceDefault)
+import Data.Unfoldable (class Unfoldable, class Unfoldable1)
 import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
-import Util2 (Endo, MayFail, (≞), fromJust, report, whenever)
+import Util2 (Endo, MayFail, (≞), error, fromJust, report, unimplemented, whenever)
 import Util.SnocList2 (SnocList(..), (:-))
 
 type Var = String -- newtype?
@@ -19,7 +20,7 @@ mustGeq x y = fromJust "Must be greater" (whenever (x == y) x)
 data Bind a = Bind Var a
 type Bindings a = SnocList (Bind a)
 
-derive instance functorBind :: Functor Bind
+derive instance Functor Bind
 
 key :: forall a . Bind a -> Var
 key (x ↦ _) = x
@@ -31,27 +32,33 @@ dom :: forall a . Bindings a -> Set Var
 dom Lin           = empty
 dom (ρ :- x ↦ _)  = singleton x `union` dom ρ
 
-instance foldableBind :: Foldable Bind where
+instance Foldable Bind where
    foldl f b (_ ↦ v) = f b v
    foldr x = foldrDefault x
    foldMap = foldMapDefaultL
 
-instance traversableBind :: Traversable Bind where
+instance Traversable Bind where
    traverse f (x ↦ v) = (x ↦ _) <$> f v
    sequence = sequenceDefault
+
+instance Unfoldable1 Bind where
+   unfoldr1 = error unimplemented
+
+instance Unfoldable Bind where
+   unfoldr = error unimplemented
 
 infix 7 Bind as ↦
 infixl 5 update as ◃
 infixl 4 mustGeq as ⪂
 
-instance joinSemilatticeBind :: Slices a => JoinSemilattice (Bind a) where
+instance Slices a => JoinSemilattice (Bind a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance slicesBind :: Slices a => Slices (Bind a) where
+instance Slices a => Slices (Bind a) where
    maybeJoin (x ↦ v) (y ↦ v') = (↦) <$> (x ≞ y) <*> maybeJoin v v'
 
-instance boundedSlicesBind :: BoundedSlices a => BoundedSlices (Bind a) where
+instance BoundedSlices a => BoundedSlices (Bind a) where
    botOf = (<$>) botOf
 
 find :: forall a . Var -> Bindings a -> MayFail a
