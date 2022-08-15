@@ -46,7 +46,7 @@ insertMatrix i j v (vss × h × w) =
 -- ======================
 -- boilerplate
 -- ======================
-instance functorVal :: Functor Val where
+instance Functor Val where
    map f (Int α n)                  = Int (f α) n
    map f (Float α n)                = Float (f α) n
    map f (Str α str)                = Str (f α) str
@@ -57,11 +57,11 @@ instance functorVal :: Functor Val where
    map f (Primitive φ vs)           = Primitive φ ((map f) <$> vs)
    map f (Closure ρ h α σ)          = Closure (map (map f) <$> ρ) (map (map f) <$> h) (f α) (f <$> σ)
 
-instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
+instance JoinSemilattice (Val Boolean) where
    join = definedJoin
    neg = (<$>) neg
 
-instance slicesVal :: Slices (Val Boolean) where
+instance Slices (Val Boolean) where
    maybeJoin (Int α n) (Int α' n')                    = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Float α n) (Float α' n')                = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α str) (Str α' str')                = Str (α ∨ α') <$> (str ≞ str')
@@ -78,7 +78,7 @@ instance slicesVal :: Slices (Val Boolean) where
    maybeJoin (Primitive φ vs) (Primitive _ vs')       = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _                                      = report "Incompatible values"
 
-instance boundedSlices :: BoundedSlices (Val Boolean) where
+instance BoundedSlices (Val Boolean) where
    botOf (Int _ n)                  = Int bot n
    botOf (Float _ n)                = Float bot n
    botOf (Str _ str)                = Str bot str

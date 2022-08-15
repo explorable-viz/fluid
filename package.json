@@ -1,11 +1,11 @@
 {
   "license": "MIT",
   "scripts": {
-    "clean-app": "rm -rf dist/app && mkdir dist/app && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app",
+    "clean-app": "rm -rf output && rm -rf dist/app && mkdir dist/app && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app",
     "build-app": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Main --to dist/app/app.js",
     "serve-app": "yarn build-app && npx http-serve dist/app -a 127.0.0.1",
     "clean-tests": "rm -rf dist/tests && mkdir dist/tests && cp web/tests.html dist/tests",
-    "build-tests": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/tests/app.js",
+    "build-tests": "yarn clean-app && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/tests/app.js",
     "build-tests-watch": "yarn build-tests --watch",
     "tests": "yarn build-tests && karma start karma.conf.tests.js",
     "tests-browser": "yarn build-tests && karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
