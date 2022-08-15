@@ -25,4 +25,4 @@ update' γ Lin                          = γ
 update' γ (γ' :- x ↦ NonEmptyList us)  =
    let NonEmptyList (_ :| vs) × γ'' = fromJust (x <> " not found") $ pop x γ
        v = unsafePartial (\(y :| Nil) -> y) us
-   in insert x (NonEmptyList $ v :| vs) (γ'' `update'` γ')
+   in insert x (NonEmptyList $ v :| vs) (update' γ'' γ')
