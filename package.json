@@ -1,7 +1,7 @@
 {
   "license": "MIT",
   "scripts": {
-    "clean-app": "rm -rf output && rm -rf dist/app && mkdir dist/app && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app",
+    "clean-app": "rm -rf output && rm -rf dist/app && mkdir dist && mkdir dist/app && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app",
     "build-app": "spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Main --to dist/app/app.js",
     "serve-app": "yarn build-app && npx http-serve dist/app -a 127.0.0.1",
     "clean-tests": "rm -rf dist/tests && mkdir dist/tests && cp web/tests.html dist/tests",
