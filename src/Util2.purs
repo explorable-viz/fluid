@@ -38,6 +38,7 @@ whenever :: forall a . Boolean -> a -> Maybe a
 whenever false = const Nothing
 whenever true  = Just
 
+-- TODO: rename to "definitely"?
 fromJust :: forall a . String -> Maybe a -> a
 fromJust _ (Just a) = a
 fromJust msg Nothing  = error msg
