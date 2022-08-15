@@ -41,12 +41,6 @@ instance Traversable Bind where
    traverse f (x ↦ v) = (x ↦ _) <$> f v
    sequence = sequenceDefault
 
-instance Unfoldable1 Bind where
-   unfoldr1 = error unimplemented
-
-instance Unfoldable Bind where
-   unfoldr = error unimplemented
-
 infix 7 Bind as ↦
 infixl 5 update as ◃
 infixl 4 mustGeq as ⪂
