@@ -2,9 +2,9 @@ module Expr2 where
 
 import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
-import Data.List (List)
+import Data.List (List(..), (:))
 import Data.Map (Map)
-import Data.Set (Set, difference, empty, singleton, union, unions)
+import Data.Set (Set, difference, empty, isEmpty, singleton, toUnfoldable, union, unions)
 import Data.Tuple (snd)
 import Bindings2 (Bindings, Var, val)
 import DataType2 (Ctr)
@@ -30,6 +30,13 @@ data Expr a =
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs a = Bindings (Elim a)
+
+reaches :: forall a . RecDefs a -> Set Var -> Set Var
+reaches ρ xs = reaches' (toUnfoldable xs) empty
+   where
+   reaches' :: List Var -> Set Var -> Set Var
+   reaches' Nil acc        = acc
+   reaches' (x : xs') acc  = ?_
 
 data Elim a =
    ElimVar Var (Cont a) |
