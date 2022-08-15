@@ -2,6 +2,7 @@ module Env2 where
 
 import Data.List (List)
 import Bindings2New (Bindings2)
+import Util2 (error, unimplemented)
 import Val2 (Val)
 
 type Env2 a = Bindings2 (List (Val a))
@@ -9,4 +10,4 @@ type Env2 a = Bindings2 (List (Val a))
 
 -- second arg is a singleton
 update :: forall a . Bindings2 a -> Bindings2 a -> Bindings2 a
-update γ γ' = ?_
+update _ _ = error unimplemented
