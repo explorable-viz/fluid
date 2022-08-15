@@ -21,10 +21,8 @@ update :: forall a . Env2 a -> Endo (Env2 a)
 update γ γ' = update' γ (uncurry Bind <$> toUnfoldable γ')
 
 update' :: forall a . Env2 a -> Bindings (NonEmptyList (Val a)) -> Env2 a
-update' γ Lin              = γ
-update' γ (γ' :- x ↦ us)   =
+update' γ Lin                          = γ
+update' γ (γ' :- x ↦ NonEmptyList us)  =
    let NonEmptyList (_ :| vs) × γ'' = fromJust (x <> " not found") $ pop x γ
-   in unsafePartial $ insert x (NonEmptyList $ fromSingleton us :| vs) (γ'' `update'` γ')
-
-fromSingleton :: Partial => forall a . NonEmptyList a -> a
-fromSingleton (NonEmptyList (x :| Nil)) = x
+       v = unsafePartial (\(y :| Nil) -> y) us
+   in insert x (NonEmptyList $ v :| vs) (γ'' `update'` γ')
