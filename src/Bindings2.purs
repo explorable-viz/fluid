@@ -2,6 +2,7 @@ module Bindings2 where
 
 import Prelude
 import Data.Foldable (class Foldable, foldMapDefaultL, foldrDefault)
+import Data.Set (Set, empty, singleton, union)
 import Data.Traversable (class Traversable, sequenceDefault)
 import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
 import Util2 (Endo, MayFail, (≞), fromJust, report, whenever)
@@ -25,6 +26,10 @@ key (x ↦ _) = x
 
 val :: forall a . Bind a -> a
 val (_ ↦ v) = v
+
+dom :: forall a . Bindings a -> Set Var
+dom Lin           = empty
+dom (ρ :- x ↦ v)  = singleton x `union` dom ρ
 
 instance foldableBind :: Foldable Bind where
    foldl f b (_ ↦ v) = f b v

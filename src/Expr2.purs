@@ -4,9 +4,9 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List(..), (:))
 import Data.Map (Map)
-import Data.Set (Set, difference, empty, isEmpty, singleton, toUnfoldable, union, unions)
+import Data.Set (Set, difference, empty, isEmpty, member, singleton, toUnfoldable, union, unions)
 import Data.Tuple (snd)
-import Bindings2 (Bindings, Var, val)
+import Bindings2 (Bindings, Var, dom, val)
 import DataType2 (Ctr)
 import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
 import Util2 (type (×), (×), type (+), (≞), asSingletonMap, error, report)
@@ -31,12 +31,13 @@ data Expr a =
 data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs a = Bindings (Elim a)
 
-reaches :: forall a . RecDefs a -> Set Var -> Set Var
-reaches ρ xs = reaches' (toUnfoldable xs) empty
+reaches :: forall a . RecDefs a -> Set Var
+reaches ρ = go (toUnfoldable $ dom ρ) empty
    where
-   reaches' :: List Var -> Set Var -> Set Var
-   reaches' Nil acc        = acc
-   reaches' (x : xs') acc  = ?_
+   go :: List Var -> Set Var -> Set Var
+   go Nil acc        = acc
+   go (x : xs') acc | x `member` acc   = go xs' acc
+   go (x : xs') acc | otherwise        = ?_
 
 data Elim a =
    ElimVar Var (Cont a) |
