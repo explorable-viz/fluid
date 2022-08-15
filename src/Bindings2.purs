@@ -29,7 +29,7 @@ val (_ ↦ v) = v
 
 dom :: forall a . Bindings a -> Set Var
 dom Lin           = empty
-dom (ρ :- x ↦ v)  = singleton x `union` dom ρ
+dom (ρ :- x ↦ _)  = singleton x `union` dom ρ
 
 instance foldableBind :: Foldable Bind where
    foldl f b (_ ↦ v) = f b v

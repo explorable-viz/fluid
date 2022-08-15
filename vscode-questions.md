@@ -6,3 +6,4 @@
 - VSCode settings points to /usr/local/bin/purs, which agrees with "which purs" (which reports version 0.15.4). But when I build, complains "installed `purs` version: 0.14.9, minimum package-set version: 0.15.0" (Elsewhere have seen "Ensure project is built with the same purs version as the IDE server is using", does this provide a clue?)
 - Do I need to `npm install --global purescript-language-server`? (When I run this it simply says "changed 11 packages, and audited 12 packages" each time, with no indication of whether this is success or failure.)
 - constantly building whenever I touch a file, even if I don't save
+- sometimes reports unused variables, sometimes doesn't
