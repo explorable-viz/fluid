@@ -5,3 +5,8 @@ import Bindings2New (Bindings2)
 import Val2 (Val)
 
 type Env2 a = Bindings2 (List (Val a))
+-- a "singleton" env is one where every variable is mapped to a singleton list
+
+-- second arg is a singleton
+update :: forall a . Bindings a2 -> Bindings2 a -> Bindings2 a
+update γ γ' = ?_
