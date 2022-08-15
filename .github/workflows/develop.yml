@@ -19,10 +19,7 @@ jobs:
     - name: test
       run: |
         yarn install
-        yarn build-tests
-        yarn tests
-        yarn build-app-tests
-        yarn app-tests
+        yarn test-all
 
   deploy:
     runs-on: ubuntu-22.04
