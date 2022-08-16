@@ -13,18 +13,17 @@ import Data.Profunctor.Strong ((&&&), second)
 import Data.Set (union)
 import Data.Traversable (sequence, traverse)
 import Bindings2 (Bindings, (↦), find, key, val, varAnon, Var)
-import Bindings2New (disjUnion)
 import DataType2 (Ctr, arity, cPair, dataTypeFor)
 import Expl2 (Expl(..), VarDef(..)) as T
 import Expl2 (Expl, Match(..))
-import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim, fv)
+import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim, for, fv)
 import Lattice2 (𝔹, checkConsistent)
 import Pretty2 (prettyP)
 import Primitive2 (match) as P
 import Util2 (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Util.SnocList2 (SnocList(..), (:-), zipWith)
 import Util.SnocList2 (unzip) as S
-import Val2 (Env, Env2, PrimOp(..), SingletonEnv, Val, restrict)
+import Val2 (Env, Env2, PrimOp(..), SingletonEnv, Val, disjUnion, restrict)
 import Val2 (Val(..)) as V
 
 patternMismatch :: String -> String -> String
@@ -99,7 +98,7 @@ closeDefs ρ δ0 (δ :- f ↦ σ) = closeDefs ρ δ0 δ :- f ↦ V.Closure ρ δ
 closeDefs2 :: Env2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> SingletonEnv 𝔹
 closeDefs2 _ _ Lin = empty
 closeDefs2 γ ρ0 (ρ :- f ↦ σ) =
-   let xs = fv ρ0 `union` fv σ -- TODO: needs to be ρ0 `restrict` σ
+   let xs = fv (ρ0 `for` σ) `union` fv σ
    in closeDefs2 γ ρ0 ρ # insert f (V.Closure2 false (γ `restrict` xs) ρ0 σ)
 
 checkArity :: Ctr -> Int -> MayFail Unit
