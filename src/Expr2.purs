@@ -9,7 +9,7 @@ import Data.Tuple (snd)
 import Bindings2 (Bindings, Var, dom, find, val)
 import DataType2 (Ctr)
 import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
-import Util2 (type (×), (×), type (+), (≞), asSingletonMap, error, report, successful)
+import Util2 (Endo, type (×), (×), type (+), (≞), asSingletonMap, error, report, successful)
 import Util.SnocList2 (SnocList)
 
 data Expr a =
@@ -31,16 +31,16 @@ data Expr a =
 data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs a = Bindings (Elim a)
 
-reaches :: forall a . RecDefs a -> Set Var
-reaches ρ = go (toUnfoldable xs) empty
+reaches :: forall a . RecDefs a -> Endo (Set Var)
+reaches ρ xs = go (toUnfoldable xs) empty
    where
-   xs = dom ρ
-   go :: List Var -> Set Var -> Set Var
-   go Nil acc        = acc
+   dom_ρ = dom ρ
+   go :: List Var -> Endo (Set Var)
+   go Nil acc                          = acc
    go (x : xs') acc | x `member` acc   = go xs' acc
    go (x : xs') acc | otherwise        =
       let σ = successful $ find x ρ in
-      go (toUnfoldable (fv σ `intersection` xs) <> xs')
+      go (toUnfoldable (fv σ `intersection` dom_ρ) <> xs')
          (singleton x `union` acc)
 
 data Elim a =
