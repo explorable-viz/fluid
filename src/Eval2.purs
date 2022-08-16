@@ -6,25 +6,25 @@ import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), (\\), length, range, singleton, unzip)
-import Data.Map (empty, lookup)
+import Data.Map (empty, insert, lookup)
 import Data.Map (singleton) as M
 import Data.Map.Internal (keys)
 import Data.Profunctor.Strong ((&&&), second)
+import Data.Set (union)
 import Data.Traversable (sequence, traverse)
 import Bindings2 (Bindings, (↦), find, key, val, varAnon, Var)
 import Bindings2New (disjUnion)
 import DataType2 (Ctr, arity, cPair, dataTypeFor)
-import Env2 (SingletonEnv)
 import Expl2 (Expl(..), VarDef(..)) as T
 import Expl2 (Expl, Match(..))
-import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim)
+import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim, fv)
 import Lattice2 (𝔹, checkConsistent)
 import Pretty2 (prettyP)
 import Primitive2 (match) as P
 import Util2 (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Util.SnocList2 (SnocList(..), (:-), zipWith)
 import Util.SnocList2 (unzip) as S
-import Val2 (Env, PrimOp(..), Val)
+import Val2 (Env, Env2, PrimOp(..), SingletonEnv, Val, restrict)
 import Val2 (Val(..)) as V
 
 patternMismatch :: String -> String -> String
@@ -95,6 +95,12 @@ matchRecord2 Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs _ _ Lin = Lin
 closeDefs ρ δ0 (δ :- f ↦ σ) = closeDefs ρ δ0 δ :- f ↦ V.Closure ρ δ0 false σ
+
+closeDefs2 :: Env2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> SingletonEnv 𝔹
+closeDefs2 _ _ Lin = empty
+closeDefs2 γ ρ0 (ρ :- f ↦ σ) =
+   let xs = fv ρ0 `union` fv σ -- TODO: needs to be ρ0 `restrict` σ
+   in closeDefs2 γ ρ0 ρ # insert f (V.Closure2 false (γ `restrict` xs) ρ0 σ)
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
