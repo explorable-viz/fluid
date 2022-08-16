@@ -10,7 +10,7 @@ import Web.Event.EventTarget (EventTarget)
 import App.Util (Handler, Renderer, toggleCell)
 import Lattice (Slice, 𝔹)
 import Primitive (match_fwd)
-import Util (type (×), (×), (!), absurd, definitely)
+import Util (type (×), (×), (!), definitely')
 import Val (Array2, MatrixRep)
 
 --  (Rendered) matrices are required to have element type Int for now.

@@ -15,7 +15,7 @@ import App.Util (
 import Bindings (Bind)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Lattice (Slice, 𝔹, expand, neg)
-import Util (type (×), (×), (!), absurd, definitely)
+import Util (type (×), (×), (!), definitely')
 import Util.SnocList (SnocList)
 import Val (Val(..))
 

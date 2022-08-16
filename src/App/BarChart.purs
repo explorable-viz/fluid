@@ -13,7 +13,7 @@ import App.Util (
 import Bindings (Bind)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
 import Lattice (𝔹, neg)
-import Util (type (×), (!), absurd, definitely)
+import Util (type (×), (!), definitely')
 import Util.SnocList (SnocList)
 import Val (Val)
 

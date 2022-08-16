@@ -14,7 +14,7 @@ import Bindings (Bindings, Var, (↦), find, update)
 import DataType (Ctr, arity, cBarChart, cCons, cNil, cPair, f_caption, f_data, f_x, f_y)
 import Lattice (Slice, 𝔹, expand, neg)
 import Primitive (class ToFrom, as, match, match_fwd)
-import Util (type (×), type (+), (×), (!), absurd, error, definitely, successful)
+import Util (type (×), type (+), (×), (!), absurd, error, definitely', successful)
 import Util.SnocList (SnocList(..), (:-))
 import Val (Val(..), holeMatrix, insertMatrix)
 
