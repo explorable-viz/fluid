@@ -12,7 +12,7 @@ import App.Util2 (
 import Bindings2 (Bind)
 import DataType2 (cBarChart, f_caption, f_data, f_x, f_y)
 import Lattice2 (𝔹, neg)
-import Util2 (type (×), (!), absurd, fromJust)
+import Util2 (type (×), (!), definitely')
 import Util.SnocList2 (SnocList)
 import Val2 (Val)
 
@@ -46,5 +46,5 @@ barChartHandler ev = toggleBar $ unsafeBarIndex $ target ev
    -- [Unsafe] Datum associated with bar chart mouse event; 0-based index of selected bar.
    unsafeBarIndex :: Maybe EventTarget -> Int
    unsafeBarIndex tgt_opt =
-      let tgt = fromJust absurd $ tgt_opt
+      let tgt = definitely' $ tgt_opt
       in (unsafeCoerce tgt).__data__!0

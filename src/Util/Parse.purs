@@ -8,7 +8,7 @@ import Data.List.NonEmpty (NonEmptyList(..), fromList, toList)
 import Data.NonEmpty ((:|))
 import Parsing (Parser)
 import Parsing.Combinators (try)
-import Util (absurd, fromJust)
+import Util (definitely')
 
 type SParser = Parser String
 
@@ -23,4 +23,4 @@ sepBy1_try p sep = do
    pure $ NonEmptyList $ x :| xs
 
 some :: forall a . SParser a → SParser (NonEmptyList a)
-some p = fromJust absurd <$> (fromList <$> L.some p)
+some p = definitely' <$> fromList <$> L.some p

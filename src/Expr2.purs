@@ -95,6 +95,9 @@ instance FV (Cont a) where
 instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
 
+instance FV (RecDefs a) where
+   fv ρ = unions $ val <$> ((<$>) fv) <$> ρ
+
 class BV a where
    bv :: a -> Set Var
 

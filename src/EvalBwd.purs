@@ -14,7 +14,7 @@ import Expl (Expl(..), VarDef(..)) as T
 import Expl (Expl, Match(..), vars)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice (𝔹, (∨), botOf, expand)
-import Util (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, replicate)
+import Util (Endo, type (×), (×), (≜), (!), absurd, error, definitely', nonEmpty, replicate)
 import Util.SnocList (SnocList(..), (:-), fromList, splitAt)
 import Util.SnocList (unzip, zip, zipWith) as S
 import Val (Env, PrimOp(..), Val, holeMatrix)
@@ -137,7 +137,7 @@ evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
    (ρ' ∨ ρ'') × App e1 e2 × (α ∨ α')
 evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let vs' = vs <> singleton v2
-       { init: vs'', last: v2' } = fromJust absurd $ unsnoc $
+       { init: vs'', last: v2' } = definitely' $ unsnoc $
          if φ.arity > length vs'
          then case expand v (V.Primitive (PrimOp φ) (const (V.Hole false) <$> vs')) of
             V.Primitive _ vs'' -> vs''
@@ -149,7 +149,7 @@ evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
 evalBwd v (T.AppConstr (t1 × c × n) t2) =
    case expand v (V.Constr false c (replicate (n + 1) (V.Hole false))) of
       V.Constr β _ vs ->
-         let { init: vs', last: v2 } = fromJust absurd (unsnoc vs)
+         let { init: vs', last: v2 } = definitely' (unsnoc vs)
              ρ × e × α = evalBwd (V.Constr β c vs') t1
              ρ' × e' × α' = evalBwd v2 t2 in
          (ρ ∨ ρ') × App e e' × (α ∨ α')

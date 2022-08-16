@@ -5,7 +5,7 @@ import Data.Foldable (class Foldable, foldMapDefaultL, foldrDefault)
 import Data.Set (Set, empty, singleton, union)
 import Data.Traversable (class Traversable, sequenceDefault)
 import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
-import Util2 (Endo, MayFail, (≞), fromJust, report, whenever)
+import Util2 (Endo, MayFail, (≞), definitely, report, whenever)
 import Util.SnocList2 (SnocList(..), (:-))
 
 type Var = String -- newtype?
@@ -14,7 +14,7 @@ varAnon = "_" :: Var
 
 -- Discrete partial order for variables.
 mustGeq :: Var -> Var -> Var
-mustGeq x y = fromJust "Must be greater" (whenever (x == y) x)
+mustGeq x y = definitely "greater" (whenever (x == y) x)
 
 data Bind a = Bind Var a
 type Bindings a = SnocList (Bind a)

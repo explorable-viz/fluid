@@ -12,7 +12,7 @@ import Bindings2 (Bindings, Var, (↦), find, update)
 import DataType2 (Ctr, cBarChart, cCons, cNil, cPair, f_caption, f_data, f_x, f_y)
 import Lattice2 (𝔹, neg)
 import Primitive2 (class ToFrom, as, match_fwd)
-import Util2 (type (×), type (+), (×), (!), absurd, error, fromJust, successful, unimplemented)
+import Util2 (type (×), type (+), (×), (!), absurd, error, definitely', successful, unimplemented)
 import Util.SnocList2 (SnocList(..), (:-))
 import Val2 (Val(..), insertMatrix)
 
@@ -84,7 +84,7 @@ toggleField _ _ _ = error absurd
 
 toggleConstrArg :: Ctr -> Int -> Selector -> Selector
 toggleConstrArg c n selector (Constr α c' us) | c == c' =
-   fromJust absurd $ do
+   definitely' $ do
       u1 <- us !! n
       us' <- updateAt n (selector u1) us
       pure $ Constr α c us'

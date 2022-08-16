@@ -22,18 +22,18 @@ class JoinSemilattice a where
 class JoinSemilattice a <= BoundedJoinSemilattice a where
    bot :: a
 
-instance joinSemilatticeBoolean :: JoinSemilattice Boolean where
+instance JoinSemilattice Boolean where
    join = (||)
    neg = not
 
-instance boundedJoinSemilatticeBoolean :: BoundedJoinSemilattice Boolean where
+instance BoundedJoinSemilattice Boolean where
    bot = false
 
-instance joinSemilatticeUnit :: JoinSemilattice Unit where
+instance JoinSemilattice Unit where
    join _ = identity
    neg = identity
 
-instance boundedJoinSemilatticeUnit :: BoundedJoinSemilattice Unit where
+instance BoundedJoinSemilattice Unit where
    bot = unit
 
 -- Sometimes convenient to assume join defined even if it may not be.
@@ -56,48 +56,51 @@ type 𝔹 = Boolean
 meet :: Boolean -> Boolean -> Boolean
 meet = (&&)
 
-instance joinSemilatticeTuple :: (Eq k, Show k, Slices t) => JoinSemilattice (Tuple k t) where
+instance (Eq k, Show k, Slices t) => JoinSemilattice (Tuple k t) where
    join = definedJoin
    neg = second neg
 
-instance slicesTuple :: (Eq k, Show k, Slices t) => Slices (Tuple k t) where
+instance (Eq k, Show k, Slices t) => Slices (Tuple k t) where
    maybeJoin (k × v) (k' × v') = (k ≞ k') `lift2 (×)` maybeJoin v v'
 
-instance joinSemilatticeList :: Slices t => JoinSemilattice (List t) where
+instance Slices t => JoinSemilattice (List t) where
    join = definedJoin
    neg = (<$>) neg
 
-instance joinSemilatticeSnocList :: Slices t => JoinSemilattice (SnocList t) where
+instance Slices t => JoinSemilattice (SnocList t) where
    join = definedJoin
    neg = (<$>) neg
 
-instance slicesList :: Slices t => Slices (List t) where
+instance Slices t => Slices (List t) where
    maybeJoin xs ys
       | (length xs :: Int) == length ys   = sequence (zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
 
-instance slicesSnocList :: Slices t => Slices (SnocList t) where
+instance Slices t => Slices (SnocList t) where
    maybeJoin xs ys
       | (length xs :: Int) == length ys   = sequence (S.zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
 
-instance boundedSlicesList :: BoundedSlices t => BoundedSlices (List t) where
+instance BoundedSlices t => BoundedSlices (List t) where
    botOf = (<$>) botOf
 
-instance boundedSlicesSnocList :: BoundedSlices t => BoundedSlices (SnocList t) where
+instance BoundedSlices t => BoundedSlices (SnocList t) where
    botOf = (<$>) botOf
 
-instance joinSemilatticeMap :: (Key k, Slices t) => JoinSemilattice (Map k t) where
+instance (Key k, Slices t) => JoinSemilattice (Map k t) where
    join = definedJoin
    neg = (<$>) neg
 
 class Ord k <= Key k where
    checkConsistent :: String -> k -> List k -> MayFail Unit
 
+instance Key String where
+   checkConsistent _ _ _ = pure unit
+
 -- This is more general than we technically need for slicing, in that one can merge maps with distinct keys, as long as
--- the values are mergable for overlapping keys. I think this is harmless, and it allows use to reuse the join operator
+-- the values are mergable for overlapping keys. I think this is harmless, and it allows us to reuse the join operator
 -- here for merging branches of function definitions.
-instance slicesMap :: (Key k, Slices t) => Slices (Map k t) where
+instance (Key k, Slices t) => Slices (Map k t) where
    maybeJoin m m' =
       foldM mayFailUpdate m (toUnfoldable m' :: List (k × t))
 
@@ -110,11 +113,11 @@ mayFailUpdate m (k × v) =
       Just v' ->
          update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
 
-instance joinSemilatticeArray :: Slices a => JoinSemilattice (Array a) where
+instance Slices a => JoinSemilattice (Array a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance slicesArray :: Slices a => Slices (Array a) where
+instance Slices a => Slices (Array a) where
    maybeJoin xs ys
       | length xs == (length ys :: Int)   = sequence (A.zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"

@@ -14,33 +14,33 @@ import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
 import Lattice2 (class Key)
-import Util2 (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, with)
+import Util2 (MayFail, type (×), (×), (=<<<), (≞), absurd, error, definitely', with)
 
 type TypeName = String
 type FieldName = String
 
 -- A Ctr is a purely syntactic notion. There may be no constructor with such a name.
 newtype Ctr = Ctr String
-derive instance newtypeCtr :: Newtype Ctr _
-derive instance eqCtr :: Eq Ctr
-derive instance ordCtr :: Ord Ctr
+derive instance Newtype Ctr _
+derive instance Eq Ctr
+derive instance Ord Ctr
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
 isCtrName ∷ String → Boolean
-isCtrName str = isUpper $ codePointFromChar $ fromJust absurd $ charAt 0 str
+isCtrName str = isUpper $ codePointFromChar $ definitely' $ charAt 0 str
 
 isCtrOp :: String -> Boolean
-isCtrOp str = ':' == (fromJust absurd $ charAt 0 str)
+isCtrOp str = ':' == (definitely' $ charAt 0 str)
 
-instance showCtr :: Show Ctr where
+instance Show Ctr where
    -- assume binary infix if not constructor name
    show c = show' $ unwrap c where
       show' str | isCtrName str  = str
                 | isCtrOp str    = "(" <> str <> ")"
                 | otherwise      = error absurd
 
-instance keyCtr :: Key Ctr where
+instance Key Ctr where
    checkConsistent msg c cs = void $ do
       d <- dataTypeFor c
       d' <- dataTypeFor cs
@@ -53,10 +53,10 @@ type CtrSig = Int
 typeName :: DataType -> TypeName
 typeName (DataType name _) = name
 
-instance eqDataType :: Eq (DataType' Int) where
+instance Eq (DataType' Int) where
    eq = eq `on` typeName
 
-instance showDataType :: Show (DataType' Int) where
+instance Show (DataType' Int) where
    show = typeName
 
 dataType :: TypeName -> Array (Ctr × CtrSig) -> DataType
@@ -68,10 +68,10 @@ ctrToDataType = M.fromFoldable (concat (dataTypes <#> (\d -> ctrs d <#> (_ × d)
 class DataTypeFor a where
    dataTypeFor :: a -> MayFail DataType
 
-instance dataTypeForCtr :: DataTypeFor Ctr where
+instance DataTypeFor Ctr where
    dataTypeFor c = note ("Unknown constructor " <> show c) (lookup c ctrToDataType)
 
-instance dataTypeForListCtr :: DataTypeFor (List Ctr) where
+instance DataTypeFor (List Ctr) where
    dataTypeFor Nil     = error absurd
    dataTypeFor (c : _) = dataTypeFor c
 

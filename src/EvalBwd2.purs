@@ -13,7 +13,7 @@ import Expl2 (Expl(..), VarDef(..)) as T
 import Expl2 (Expl, Match(..), vars)
 import Expr2 (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
 import Lattice2 (𝔹, (∨), botOf)
-import Util2 (Endo, type (×), (×), (≜), (!), absurd, error, fromJust, nonEmpty, unimplemented)
+import Util2 (Endo, type (×), (×), (≜), (!), absurd, error, definitely', nonEmpty, unimplemented)
 import Util.SnocList2 (SnocList(..), (:-), fromList, splitAt)
 import Util.SnocList2 (unzip, zip, zipWith) as S
 import Val2 (Env, PrimOp(..), Val)
@@ -111,7 +111,7 @@ evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
    (ρ' ∨ ρ'') × App e1 e2 × (α ∨ α')
 evalBwd v@(V.Primitive _ vs'') (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let vs' = vs <> singleton v2
-       { init: vs'', last: v2' } = fromJust absurd $ unsnoc $
+       { init: vs'', last: v2' } = definitely' $ unsnoc $
          if φ.arity > length vs'
          then vs''
          else φ.op_bwd v vs'
@@ -119,7 +119,7 @@ evalBwd v@(V.Primitive _ vs'') (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
        ρ' × e' × α' = evalBwd v2' t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')
 evalBwd (V.Constr β _ vs) (T.AppConstr (t1 × c × _) t2) =
-   let { init: vs', last: v2 } = fromJust absurd (unsnoc vs)
+   let { init: vs', last: v2 } = definitely' (unsnoc vs)
        ρ × e × α = evalBwd (V.Constr β c vs') t1
        ρ' × e' × α' = evalBwd v2 t2 in
    (ρ ∨ ρ') × App e e' × (α ∨ α')

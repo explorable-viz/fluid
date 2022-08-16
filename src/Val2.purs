@@ -3,13 +3,19 @@ module Val2 where
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.List (List)
-import Bindings2 (Bindings)
+import Data.List.NonEmpty (NonEmptyList, cons, cons', head, singleton, tail)
+import Data.Map (Map, filterKeys, insert, pop, toUnfoldable)
+import Data.Maybe (Maybe(..))
+import Data.Set (Set, member)
+import Data.Tuple (uncurry)
+import Bindings2 (Bind(..), Bindings, Var, (↦))
 import DataType2 (Ctr)
 import Expr2 (Elim, RecDefs)
 import Lattice2 (
    class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), bot, botOf, definedJoin, maybeJoin, neg
 )
-import Util2 (Endo, type (×), (×), (≞), (!), report, unsafeUpdateAt)
+import Util2 (Endo, type (×), (×), (≞), (!), definitely, report, unsafeUpdateAt)
+import Util.SnocList2 (SnocList(..), (:-))
 
 type Op a = a × 𝔹 -> Val 𝔹
 
@@ -21,7 +27,8 @@ data Val a =
    Constr a Ctr (List (Val a)) |             -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |         -- never saturated
-   Closure (Env a) (RecDefs a) a (Elim a)
+   Closure (Env a) (RecDefs a) a (Elim a) |
+   Closure2 a (SingletonEnv a) (RecDefs a) (Elim a)
 
 -- op_fwd will be provided with original arguments, op_bwd with original output and arguments
 newtype PrimOp = PrimOp {
@@ -31,7 +38,32 @@ newtype PrimOp = PrimOp {
    op_bwd :: Val 𝔹 -> Endo (List (Val 𝔹))
 }
 
+-- Environments.
 type Env a = Bindings (Val a)
+type Env2 a = Map Var (NonEmptyList (Val a))
+type SingletonEnv a = Map Var (Val a)
+
+update :: forall a . Env2 a -> SingletonEnv a -> Env2 a
+update γ γ' = update' γ (uncurry Bind <$> toUnfoldable γ')
+
+update' :: forall a . Env2 a -> Bindings (Val a) -> Env2 a
+update' γ Lin              = γ
+update' γ (γ' :- x ↦ v)    =
+   let vs × γ'' = pop x γ # definitely ("contains " <> x)
+   in update' γ'' γ' # insert x (cons' v $ tail vs)
+
+concat :: forall a . Env2 a -> SingletonEnv a -> Env2 a
+concat γ γ' = concat' γ (uncurry Bind <$> toUnfoldable γ')
+
+concat' :: forall a . Env2 a -> Bindings (Val a) -> Env2 a
+concat' γ Lin            = γ
+concat' γ (γ' :- x ↦ v)  =
+   case pop x γ of
+   Nothing -> concat' γ γ' # insert x (singleton v)
+   Just (vs × γ'') -> concat' γ'' γ' # insert x (v `cons` vs)
+
+restrict :: forall a . Env2 a -> Set Var -> SingletonEnv a
+restrict γ xs = filterKeys (_ `member` xs) γ <#> head
 
 -- Matrices.
 type Array2 a = Array (Array a)
@@ -56,6 +88,7 @@ instance Functor Val where
    map f (Matrix α (r × iα × jβ))   = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))
    map f (Primitive φ vs)           = Primitive φ ((map f) <$> vs)
    map f (Closure ρ h α σ)          = Closure (map (map f) <$> ρ) (map (map f) <$> h) (f α) (f <$> σ)
+   map f (Closure2 α γ ρ σ)         = Closure2 (f α) (map f <$> γ) (map (map f) <$> ρ) (f <$> σ)
 
 instance JoinSemilattice (Val Boolean) where
    join = definedJoin
@@ -75,6 +108,8 @@ instance Slices (Val Boolean) where
       )
    maybeJoin (Closure ρ δ α σ) (Closure ρ' δ' α' σ')  =
       Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <@> α ∨ α' <*> maybeJoin σ σ'
+   maybeJoin (Closure2 α γ ρ σ) (Closure2 α' γ' ρ' σ')  =
+      Closure2 (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ vs) (Primitive _ vs')       = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _                                      = report "Incompatible values"
 
@@ -88,3 +123,4 @@ instance BoundedSlices (Val Boolean) where
    botOf (Matrix _ (r × (i × _) × (j × _))) = Matrix bot ((((<$>) botOf) <$> r) × (i × bot) × (j × bot))
    botOf (Primitive φ vs)           = Primitive φ (botOf <$> vs)
    botOf (Closure γ ρ _ σ)          = Closure (botOf <$> γ) (botOf <$> ρ) bot (botOf σ)
+   botOf (Closure2 _ γ ρ σ)         = Closure2 bot (botOf <$> γ) (botOf <$> ρ) (botOf σ)
