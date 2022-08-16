@@ -17,7 +17,6 @@ import DataType2 (Ctr, arity, cPair, dataTypeFor)
 import Expl2 (Expl(..), VarDef(..)) as T
 import Expl2 (Expl, Match(..))
 import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim, for, fv)
-import Expr2 (restrict) as E
 import Lattice2 (𝔹, checkConsistent)
 import Pretty2 (prettyP)
 import Primitive2 (match) as P
