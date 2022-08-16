@@ -75,7 +75,7 @@ evalFwd ρ (RecordLookup e' _) α (T.RecordLookup t xs x) =
    case evalFwd ρ e' α t of
       V.Record _ xvs -> assert ((xvs <#> key) == xs) $ successful (find x xvs)
       _ -> error absurd
-evalFwd ρ (App e1 e2) α (T.App (t1 × _ × _ × _) t2 w t3) =
+evalFwd ρ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
    case evalFwd ρ e1 α t1 of
       V.Closure ρ1 δ β σ' ->
          let v = evalFwd ρ e2 α t2

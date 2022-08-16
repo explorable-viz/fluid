@@ -5,16 +5,16 @@ import Data.Array (concat)
 import Data.List (List(..), (:))
 import Data.Traversable (sequence)
 import Effect (Effect)
-import App.Util2 (selectBarChart_data, selectCell, selectNth, selectPair, select_y)
+import App.Util2 ({-selectBarChart_data, -}selectCell, selectNth, selectPair{-, select_y-})
 import DataType2 (cCons, cNil, cSome)
 import Lattice2 (𝔹)
 import Module2 (File(..))
-import Test.Util2 (Test, run, test, testBwd, testLink, testWithDataset)
+import Test.Util2 (Test, run, test, testBwd, {-testLink, -}testWithDataset)
 import Util2 (error, unimplemented)
 import Val2 (Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_desugaring, test_misc, test_bwd, {-test_linking, -}test_graphics ]
 --tests = [ test_scratchpad ]
 
 main :: Effect Unit
@@ -40,6 +40,7 @@ test_scratchpad = [
            "(88 : (6 : (4 _:_ [])))"
 ]
 
+{-
 test_linking :: Array (Test Unit)
 test_linking = [
    testLink {
@@ -116,6 +117,7 @@ test_linking = [
             \}) : []))))\
       \})"
 ]
+-}
 
 test_bwd :: Array (Test Unit)
 test_bwd = [

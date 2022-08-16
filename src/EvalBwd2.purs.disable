@@ -100,7 +100,7 @@ evalBwd v (T.RecordLookup t xs x) =
    let v' = V.Record false (update (xs <#> (_ ↦ error unimplemented)) (x ↦ v))
        ρ × e × α = evalBwd v' t in
    ρ × RecordLookup e x × α
-evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
+evalBwd v (T.App (t1 × δ × _) t2 w t3) =
    let ρ1ρ2ρ3 × e × β = evalBwd v t3
        ρ1ρ2 × ρ3 = splitAt (vars w # length) ρ1ρ2ρ3
        v' × σ = matchBwd ρ3 (ContExpr e) β w
