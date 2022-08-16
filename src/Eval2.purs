@@ -13,7 +13,6 @@ import Data.Profunctor.Strong ((&&&), second)
 import Data.Set (union)
 import Data.Traversable (sequence, traverse)
 import Bindings2 (Bindings, (↦), find, key, val, varAnon, Var)
-import Bindings2New (disjUnion)
 import DataType2 (Ctr, arity, cPair, dataTypeFor)
 import Expl2 (Expl(..), VarDef(..)) as T
 import Expl2 (Expl, Match(..))
@@ -24,7 +23,7 @@ import Primitive2 (match) as P
 import Util2 (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Util.SnocList2 (SnocList(..), (:-), zipWith)
 import Util.SnocList2 (unzip) as S
-import Val2 (Env, Env2, PrimOp(..), SingletonEnv, Val, restrict)
+import Val2 (Env, Env2, PrimOp(..), SingletonEnv, Val, disjUnion, restrict)
 import Val2 (Val(..)) as V
 
 patternMismatch :: String -> String -> String

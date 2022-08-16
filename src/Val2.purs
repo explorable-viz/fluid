@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList, cons, cons', head, singleton, tail)
-import Data.Map (Map, filterKeys, insert, pop, toUnfoldable)
+import Data.Map (Map, filterKeys, keys, insert, pop, toUnfoldable, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, member)
 import Data.Tuple (uncurry)
@@ -14,7 +14,7 @@ import Expr2 (Elim, RecDefs)
 import Lattice2 (
    class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), bot, botOf, definedJoin, maybeJoin, neg
 )
-import Util2 (Endo, type (×), (×), (≞), (!), definitely, report, unsafeUpdateAt)
+import Util2 (Endo, type (×), (×), (≞), (!), definitely, error, report, unsafeUpdateAt)
 import Util.SnocList2 (SnocList(..), (:-))
 
 type Op a = a × 𝔹 -> Val 𝔹
@@ -42,6 +42,12 @@ newtype PrimOp = PrimOp {
 type Env a = Bindings (Val a)
 type Env2 a = Map Var (NonEmptyList (Val a))
 type SingletonEnv a = Map Var (Val a)
+
+dom :: forall a . Map Var a -> Set Var
+dom = keys
+
+disjUnion :: forall a . Map Var a -> Endo (Map Var a)
+disjUnion = unionWith (const $ const $ error "not disjoint")
 
 update :: forall a . Env2 a -> SingletonEnv a -> Env2 a
 update γ γ' = update' γ (uncurry Bind <$> toUnfoldable γ')
