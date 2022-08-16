@@ -22,9 +22,12 @@ update' γ (γ' :- x ↦ v)    =
    let vs × γ'' = pop x γ # definitely ("contains " <> x)
    in update' γ'' γ' # insert x (cons' v $ tail vs)
 
-concat :: forall a . Env2 a -> Bindings (Val a) -> Env2 a
-concat γ Lin            = γ
-concat γ (γ' :- x ↦ v)  =
+concat :: forall a . Env2 a -> SingletonEnv a -> Env2 a
+concat γ γ' = concat' γ (uncurry Bind <$> toUnfoldable γ')
+
+concat' :: forall a . Env2 a -> Bindings (Val a) -> Env2 a
+concat' γ Lin            = γ
+concat' γ (γ' :- x ↦ v)  =
    case pop x γ of
-   Nothing -> concat γ γ' # insert x (singleton v)
-   Just (vs × γ'') -> concat γ'' γ' # insert x (v `cons` vs)
+   Nothing -> concat' γ γ' # insert x (singleton v)
+   Just (vs × γ'') -> concat' γ'' γ' # insert x (v `cons` vs)
