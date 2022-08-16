@@ -6,11 +6,11 @@ import Data.List (List(..), (:))
 import Data.Map (Map)
 import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union, unions)
 import Data.Tuple (snd)
-import Bindings2 (Bindings, Var, dom, find, val)
+import Bindings2 (Bindings, Var, (↦), dom, find, val)
 import DataType2 (Ctr)
 import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
 import Util2 (Endo, type (×), (×), type (+), (≞), asSingletonMap, error, report, successful)
-import Util.SnocList2 (SnocList)
+import Util.SnocList2 (SnocList(..))
 
 data Expr a =
    Var Var |
@@ -42,6 +42,14 @@ reaches ρ xs = go (toUnfoldable xs) empty
       let σ = successful $ find x ρ in
       go (toUnfoldable (fv σ `intersection` dom_ρ) <> xs')
          (singleton x `union` acc)
+
+restrict :: forall a . RecDefs a -> Set Var -> RecDefs a
+restrict Lin _                                  = Lin
+restrict (Snoc ρ (x ↦ σ)) xs  | x `member` xs   = Snoc (restrict ρ xs) (x ↦ σ)
+restrict (Snoc ρ _) xs        | otherwise       = restrict ρ xs
+
+for :: forall a . RecDefs a -> Elim a -> RecDefs a
+for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` dom ρ)
 
 data Elim a =
    ElimVar Var (Cont a) |
