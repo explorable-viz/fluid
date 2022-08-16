@@ -14,7 +14,7 @@ import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
 import Lattice (class Key)
-import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, fromJust, with)
+import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, definitely', with)
 
 type TypeName = String
 type FieldName = String
@@ -28,10 +28,10 @@ derive instance ordCtr :: Ord Ctr
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
 isCtrName ∷ String → Boolean
-isCtrName str = isUpper $ codePointFromChar $ fromJust absurd $ charAt 0 str
+isCtrName str = isUpper $ codePointFromChar $ definitely' $ charAt 0 str
 
 isCtrOp :: String -> Boolean
-isCtrOp str = ':' == (fromJust absurd $ charAt 0 str)
+isCtrOp str = ':' == (definitely' $ charAt 0 str)
 
 instance showCtr :: Show Ctr where
    -- assume binary infix if not constructor name

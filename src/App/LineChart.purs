@@ -15,7 +15,7 @@ import App.Util (
 import Bindings (Bind)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Lattice (Slice, 𝔹, expand, neg)
-import Util (type (×), (×), (!), absurd, fromJust)
+import Util (type (×), (×), (!), absurd, definitely)
 import Util.SnocList (SnocList)
 import Val (Val(..))
 
@@ -65,6 +65,6 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
    -- within line plot.
    unsafePos :: Maybe EventTarget -> Int × Int
    unsafePos tgt_opt =
-      let tgt = fromJust absurd $ tgt_opt
+      let tgt = definitely' $ tgt_opt
           xy = (unsafeCoerce tgt).__data__!0 :: Array Int
       in xy!0 × xy!1

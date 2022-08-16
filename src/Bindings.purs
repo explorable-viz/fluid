@@ -6,7 +6,7 @@ import Data.Traversable (class Traversable, sequenceDefault)
 import Lattice (
    class BoundedSlices, class Expandable, class JoinSemilattice, class Slices, botOf, definedJoin, expand, maybeJoin, neg
 )
-import Util (Endo, MayFail, (≜), (≞), fromJust, report, whenever)
+import Util (Endo, MayFail, (≜), (≞), definitely, report, whenever)
 import Util.SnocList (SnocList(..), (:-))
 
 type Var = String -- newtype?
@@ -15,7 +15,7 @@ varAnon = "_" :: Var
 
 -- Discrete partial order for variables.
 mustGeq :: Var -> Var -> Var
-mustGeq x y = fromJust "Must be greater" (whenever (x == y) x)
+mustGeq x y = definitely "greater" (whenever (x == y) x)
 
 data Bind a = Bind Var a
 type Bindings a = SnocList (Bind a)

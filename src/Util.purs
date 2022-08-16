@@ -38,15 +38,18 @@ whenever :: forall a . Boolean -> a -> Maybe a
 whenever false = const Nothing
 whenever true  = Just
 
-fromJust :: forall a . String -> Maybe a -> a
-fromJust _ (Just a) = a
-fromJust msg Nothing  = error msg
+definitely :: forall a . String -> Maybe a -> a
+definitely _ (Just a) = a
+definitely msg Nothing  = error msg
+
+definitely' :: forall a . Maybe a -> a
+definitely' = definitely absurd
 
 mustLookup :: forall k v . Ord k => k -> Map k v -> v
-mustLookup k = fromJust absurd <<< lookup k
+mustLookup k = definitely' <<< lookup k
 
 asSingletonMap :: forall k v . Map k v -> k × v
-asSingletonMap m = assert (size m == 1) (fromJust "Not a singleton map" (head (toUnfoldable m)))
+asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
 
 onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
 onlyIf true    = pure
@@ -84,10 +87,10 @@ mayEq :: forall a . Eq a => a -> a -> Maybe a
 mayEq x x' = whenever (x == x') x
 
 mustEq :: forall a . Eq a => Show a => a -> a -> a
-mustEq x x' = fromJust (show x <> " must be equal to " <> show x') (x ≟ x')
+mustEq x x' = definitely (show x <> " equal to " <> show x') (x ≟ x')
 
 mustGeq :: forall a . Ord a => Show a => a -> a -> a
-mustGeq x x' = fromJust (show x <> " must be greater than " <> show x') (whenever (x >= x') x)
+mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >= x') x)
 
 unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
@@ -116,10 +119,10 @@ type Endo a = a -> a
 
 -- version of this in Data.Array uses unsafePartial
 unsafeIndex :: forall a . Array a -> Int -> a
-unsafeIndex xs i = fromJust "Array index out of bounds" (xs !! i)
+unsafeIndex xs i = definitely "index within bounds" (xs !! i)
 
 unsafeUpdateAt :: forall a . Int -> a -> Endo (Array a)
-unsafeUpdateAt i x = updateAt i x >>> fromJust "Array index out of bounds"
+unsafeUpdateAt i x = updateAt i x >>> definitely "index within bounds"
 
 infixl 8 unsafeIndex as !
 
