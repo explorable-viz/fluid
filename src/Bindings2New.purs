@@ -1,7 +1,7 @@
 module Bindings2New where
 
-import Data.Map (Map, filterKeys, keys, unionWith)
-import Data.Set (Set, member)
+import Data.Map (Map, keys, unionWith)
+import Data.Set (Set)
 import Bindings2 (Var)
 import Util2 (Endo, error)
 
