@@ -6,12 +6,15 @@ import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), (\\), length, range, singleton, unzip)
-import Data.Map (lookup)
+import Data.Map (empty, lookup)
+import Data.Map (singleton) as M
 import Data.Map.Internal (keys)
 import Data.Profunctor.Strong ((&&&), second)
 import Data.Traversable (sequence, traverse)
 import Bindings2 (Bindings, (↦), find, key, val, varAnon, Var)
+import Bindings2New (disjUnion)
 import DataType2 (Ctr, arity, cPair, dataTypeFor)
+import Env2 (SingletonEnv)
 import Expl2 (Expl(..), VarDef(..)) as T
 import Expl2 (Expl, Match(..))
 import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim)
@@ -38,6 +41,17 @@ match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP
 match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs xs κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
+match2 :: Val 𝔹 -> Elim 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × Match 𝔹)
+match2 v (ElimVar x κ)  | x == varAnon    = pure (empty × κ × MatchVarAnon v)
+                        | otherwise       = pure (M.singleton x v × κ × MatchVar x)
+match2 (V.Constr _ c vs) (ElimConstr m) = do
+   checkConsistent "Pattern mismatch: " c (keys m)
+   κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
+   (second (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs2 c vs κ
+match2 v (ElimConstr m)                    = (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
+match2 (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord2 xvs xs κ
+match2 v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
+
 matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchArgs _ Nil κ = pure (Lin × κ × Nil)
 matchArgs c (v : vs) (ContElim σ) = do
@@ -48,6 +62,16 @@ matchArgs c (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _ = error absurd
 
+matchArgs2 :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × List (Match 𝔹))
+matchArgs2 _ Nil κ = pure (empty × κ × Nil)
+matchArgs2 c (v : vs) (ContElim σ) = do
+   γ  × κ'  × w  <- match2 v σ
+   γ' × κ'' × ws <- matchArgs2 c vs κ'
+   pure ((γ `disjUnion` γ') × κ'' × (w : ws))
+matchArgs2 c (_ : vs) (ContExpr _) = report $
+   show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
+matchArgs2 _ _ _ = error absurd
+
 matchRecord :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
 matchRecord Lin Lin κ = pure (Lin × κ × Lin)
 matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
@@ -57,6 +81,16 @@ matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
    pure ((ρ <> ρ') × κ × (xws :- x ↦ w))
 matchRecord (_ :- x ↦ _) Lin _ = report (patternMismatch "end of record pattern" (show x))
 matchRecord Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
+
+matchRecord2 :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
+matchRecord2 Lin Lin κ = pure (empty × κ × Lin)
+matchRecord2 (xvs :- x ↦ v) (xs :- x') σ = do
+   check (x == x') (patternMismatch (show x) (show x'))
+   γ × σ' × xws <- matchRecord2 xvs xs σ
+   γ' × κ × w <- match2 v (asElim σ')
+   pure ((γ `disjUnion` γ') × κ × (xws :- x ↦ w))
+matchRecord2 (_ :- x ↦ _) Lin _ = report (patternMismatch "end of record pattern" (show x))
+matchRecord2 Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
 
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs _ _ Lin = Lin
