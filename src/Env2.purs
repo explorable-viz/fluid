@@ -2,17 +2,16 @@ module Env2 where
 
 import Prelude
 import Data.List.NonEmpty (NonEmptyList, cons, cons', singleton, tail)
-import Data.Map (insert, pop, toUnfoldable)
+import Data.Map (Map, insert, pop, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Tuple (uncurry)
-import Bindings2 (Bind(..), Bindings, (↦))
-import Bindings2New (Bindings2)
+import Bindings2 (Bind(..), Bindings, (↦), Var)
 import Util2 ((×), definitely)
 import Util.SnocList2 (SnocList(..), (:-))
 import Val2 (Val)
 
-type Env2 a = Bindings2 (NonEmptyList (Val a))
-type SingletonEnv a = Bindings2 (Val a)
+type Env2 a = Map Var (NonEmptyList (Val a))
+type SingletonEnv a = Map Var (Val a)
 
 update :: forall a . Env2 a -> SingletonEnv a -> Env2 a
 update γ γ' = update' γ (uncurry Bind <$> toUnfoldable γ')
