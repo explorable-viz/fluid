@@ -7,21 +7,21 @@ import DataType (Ctr)
 import Expr (Elim, RecDefs)
 import Util (type (×))
 import Util.SnocList (SnocList, toList, reverse)
-import Val (Array2, Env2, PrimOp, Val)
+import Val (Array2, Env, PrimOp, Val)
 
 data VarDef a = VarDef (Match a) (Expl a)
 
 -- We record "raw" (unannotated) values in some cases; represent as values annotated with false.
 data Expl a =
-   Var (Env2 a) Var |
-   Op (Env2 a) Var |
-   Int (Env2 a) Int |
-   Float (Env2 a) Number |
-   Str (Env2 a) String |
-   Record (Env2 a) (Bindings (Expl a)) |
-   Constr (Env2 a) Ctr (List (Expl a)) |
+   Var (Env a) Var |
+   Op (Env a) Var |
+   Int (Env a) Int |
+   Float (Env a) Number |
+   Str (Env a) String |
+   Record (Env a) (Bindings (Expl a)) |
+   Constr (Env a) Ctr (List (Expl a)) |
    Matrix (Array2 (Expl a)) (Var × Var) (Int × Int) (Expl a) |
-   Lambda (Env2 a) (Elim a) |
+   Lambda (Env a) (Elim a) |
    RecordLookup (Expl a) (SnocList Var) Var |
    App (Expl a × RecDefs a × Elim a) (Expl a) (Match a) (Expl a) |
    AppPrim (Expl a × PrimOp × List (Val a)) (Expl a × Val a) | -- record prior arguments

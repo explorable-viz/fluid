@@ -24,7 +24,7 @@ import Primitive (match) as P
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Util.SnocList (SnocList(..), (:-), zipWith)
 import Util.SnocList (unzip) as S
-import Val (Env2, PrimOp(..), SingletonEnv, Val, concat, disjUnion, lookup', restrict)
+import Val (Env, PrimOp(..), SingletonEnv, Val, concat, disjUnion, lookup', restrict)
 import Val (Val(..)) as V
 
 patternMismatch :: String -> String -> String
@@ -61,7 +61,7 @@ matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
 matchRecord (_ :- x ↦ _) Lin _ = report (patternMismatch "end of record pattern" (show x))
 matchRecord Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
 
-closeDefs :: Env2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> SingletonEnv 𝔹
+closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> SingletonEnv 𝔹
 closeDefs _ _ Lin = empty
 closeDefs γ ρ0 (ρ :- f ↦ σ) =
    let xs = fv (ρ0 `for` σ) `union` fv σ
@@ -72,7 +72,7 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (show c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-eval :: Env2 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
+eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
 eval γ (Var x)       = (T.Var γ x × _) <$> lookup' x γ
 eval γ (Op op)       = (T.Op γ op × _) <$> lookup' op γ
 eval γ (Int _ n)     = pure (T.Int γ n × V.Int false n)
@@ -139,7 +139,7 @@ eval γ (Let (VarDef σ e) e') = do
    t' × v' <- eval (γ `concat` γ') e'
    pure (T.Let (T.VarDef w t) t' × v')
 
-eval_module :: Env2 𝔹 -> Module 𝔹 -> MayFail (Env2 𝔹)
+eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
 eval_module γ (Module Nil) = pure γ
 eval_module γ (Module (Left (VarDef σ e) : ds)) = do
    _  × v <- eval γ e

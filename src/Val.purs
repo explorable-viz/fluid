@@ -38,14 +38,13 @@ newtype PrimOp = PrimOp {
 }
 
 -- Environments.
-type Env a = Bindings (Val a)
-type Env2 a = Map Var (NonEmptyList (Val a))
+type Env a = Map Var (NonEmptyList (Val a))
 type SingletonEnv a = Map Var (Val a)
 
 dom :: forall a . Map Var a -> Set Var
 dom = keys
 
-lookup' :: forall a . Var -> Env2 a -> MayFail (Val a)
+lookup' :: forall a . Var -> Env a -> MayFail (Val a)
 lookup' x γ = case lookup x γ of
    Nothing -> report ("variable " <> x <> " not found")
    Just vs -> pure $ head vs
@@ -53,26 +52,26 @@ lookup' x γ = case lookup x γ of
 disjUnion :: forall a . Map Var a -> Endo (Map Var a)
 disjUnion = unionWith (\_ _ -> error "not disjoint")
 
-update :: forall a . Env2 a -> SingletonEnv a -> Env2 a
+update :: forall a . Env a -> SingletonEnv a -> Env a
 update γ γ' = update' γ (uncurry Bind <$> toUnfoldable γ')
 
-update' :: forall a . Env2 a -> Bindings (Val a) -> Env2 a
+update' :: forall a . Env a -> Bindings (Val a) -> Env a
 update' γ Lin              = γ
 update' γ (γ' :- x ↦ v)    =
    let vs × γ'' = pop x γ # definitely ("contains " <> x)
    in update' γ'' γ' # insert x (cons' v $ tail vs)
 
-concat :: forall a . Env2 a -> SingletonEnv a -> Env2 a
+concat :: forall a . Env a -> SingletonEnv a -> Env a
 concat γ γ' = concat' γ (uncurry Bind <$> toUnfoldable γ')
 
-concat' :: forall a . Env2 a -> Bindings (Val a) -> Env2 a
+concat' :: forall a . Env a -> Bindings (Val a) -> Env a
 concat' γ Lin            = γ
 concat' γ (γ' :- x ↦ v)  =
    case pop x γ of
    Nothing -> concat' γ γ' # insert x (singleton v)
    Just (vs × γ'') -> concat' γ'' γ' # insert x (v `cons` vs)
 
-restrict :: forall a . Env2 a -> Set Var -> SingletonEnv a
+restrict :: forall a . Env a -> Set Var -> SingletonEnv a
 restrict γ xs = filterKeys (_ `member` xs) γ <#> head
 
 -- Matrices.

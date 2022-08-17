@@ -18,7 +18,7 @@ import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import Util (MayFail, type (×), (×), error, successful)
 import Util.Parse (SParser)
-import Val (Env2, SingletonEnv)
+import Val (Env, SingletonEnv)
 
 -- Mainly serve as documentation
 newtype File = File String
@@ -43,7 +43,7 @@ loadFile (Folder folder) (File file) = do
 parse :: forall t . String -> SParser t -> MayFail t
 parse src = runParser src >>> show `bimap` identity
 
-loadModule :: File -> Env2 𝔹 -> Aff (Env2 𝔹)
+loadModule :: File -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file γ = do
    src <- loadFile (Folder "fluid/lib") file
    pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module γ))
@@ -54,17 +54,17 @@ parseProgram folder file = loadFile folder file <#> (successful <<< flip parse p
 open :: File -> Aff (S.Expr 𝔹)
 open = parseProgram (Folder "fluid/example")
 
-defaultImports :: Aff (Env2 𝔹)
+defaultImports :: Aff (Env 𝔹)
 defaultImports =
    loadModule (File "prelude") primitives >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
-openWithDefaultImports :: File -> Aff (Env2 𝔹 × S.Expr 𝔹)
+openWithDefaultImports :: File -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file = do
    γ <- defaultImports
    open file <#> (γ × _)
 
 -- Return ambient environment used to load dataset along with new binding.
-openDatasetAs :: File -> Var -> Aff (Env2 𝔹 × SingletonEnv 𝔹)
+openDatasetAs :: File -> Var -> Aff (Env 𝔹 × SingletonEnv 𝔹)
 openDatasetAs file x = do
    s <- parseProgram (Folder "fluid") file
    γ <- defaultImports

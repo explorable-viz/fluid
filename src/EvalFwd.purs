@@ -17,7 +17,7 @@ import Primitive (match_fwd) as P
 import Util (type (×), (×), (!), absurd, assert, error, mustLookup, successful)
 import Util.SnocList (SnocList(..), (:-))
 import Util.SnocList (unzip, zip, zipWith) as S
-import Val (Env2, PrimOp(..), SingletonEnv, Val, concat, disjUnion, lookup', restrict)
+import Val (Env, PrimOp(..), SingletonEnv, Val, concat, disjUnion, lookup', restrict)
 import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> SingletonEnv 𝔹 × Cont 𝔹 × 𝔹
@@ -43,13 +43,13 @@ matchRecordFwd (xvs :- x ↦ v) σ (xws :- x' ↦ w) | x == x' =
    (first (ρ `disjUnion` _) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
 matchRecordFwd _ _ _ = error absurd
 
-closeDefsFwd :: Env2 𝔹 -> RecDefs 𝔹 -> 𝔹 -> RecDefs 𝔹 -> SingletonEnv 𝔹
+closeDefsFwd :: Env 𝔹 -> RecDefs 𝔹 -> 𝔹 -> RecDefs 𝔹 -> SingletonEnv 𝔹
 closeDefsFwd _ _ _ Lin = empty
 closeDefsFwd γ ρ0 α (ρ :- f ↦ σ) =
    let xs = fv (ρ0 `for` σ) `union` fv σ
    in closeDefsFwd γ ρ0 α ρ # insert f (V.Closure α (γ `restrict` xs) ρ0 σ)
 
-evalFwd :: Env2 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
+evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
 evalFwd γ (Var _) _ (T.Var _ x) = successful (lookup' x γ)
 evalFwd γ (Op _) _ (T.Op _ op) = successful (lookup' op γ)
 evalFwd _ (Int α _) α' (T.Int _ n) = V.Int (α ∧ α') n

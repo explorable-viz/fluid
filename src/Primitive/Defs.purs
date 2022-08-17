@@ -13,9 +13,9 @@ import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
-import Val (Env2, MatrixRep, Val(..), updateMatrix)
+import Val (Env, MatrixRep, Val(..), updateMatrix)
 
-primitives :: Env2 𝔹
+primitives :: Env 𝔹
 primitives = singleton <$> fromFoldable [
    ":"         × Constr false cCons Nil,
 
