@@ -3,6 +3,7 @@
 import Prelude hiding (absurd)
 import Data.List (elem)
 import Data.Maybe (Maybe(..){-, fromMaybe-})
+import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Tuple ({-fst, -}snd)
 import Debug (trace)
 import Effect (Effect)
@@ -75,9 +76,10 @@ test file expected = testWithSetup file expected Nothing (openWithDefaultImports
 
 testBwd :: File -> File -> Selector -> String -> Test Unit
 testBwd file file_expect δv expected =
-   let folder = File "slicing/"
+   let expected' = replaceAll (Pattern "_") (Replacement "") expected
+       folder = File "slicing/"
        file' = folder <> file in
-   testWithSetup file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
+   testWithSetup file' expected' (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
 
 {-
 testLink :: LinkFigSpec -> Val 𝔹 -> String -> Test Unit
