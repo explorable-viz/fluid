@@ -10,7 +10,7 @@ import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
 import Bindings2 (Bindings, Var, (↦), find, update)
 import DataType2 (Ctr, cBarChart, cCons, cNil, cPair, f_caption, f_data, f_x, f_y)
-import Lattice2 (𝔹, neg)
+import Lattice2 (𝔹, botOf, neg)
 import Primitive2 (class ToFrom, as, match_fwd)
 import Util2 (type (×), type (+), (×), (!), absurd, error, definitely', successful, unimplemented)
 import Util.SnocList2 (SnocList(..), (:-))
@@ -53,6 +53,22 @@ selectCell _ i j _ _ = Matrix false (insertMatrix i j (error unimplemented) (err
 selectNth :: Int -> Val 𝔹 -> Val 𝔹
 selectNth 0 v = Constr false cCons (v : error unimplemented : Nil)
 selectNth n v = Constr false cCons (error unimplemented : selectNth (n - 1) v : Nil)
+
+selectNth2 :: Int -> Selector -> Selector
+selectNth2 0 δv (Constr _ c (v : v' : Nil)) | c == cCons =
+   Constr false cCons (δv v : botOf v' : Nil)
+selectNth2 n δv (Constr _ c (v : v' : Nil)) | c == cCons =
+   Constr false cCons (botOf v : selectNth2 (n - 1) δv v' : Nil)
+selectNth2 _ _ _ = error absurd
+
+selectNthNode :: Int -> Selector
+selectNthNode 0 (Constr _ c Nil) | c == cNil =
+   Constr true cNil Nil
+selectNthNode 0 (Constr _ c (v : v' : Nil)) | c == cCons =
+   Constr true cCons (botOf v : botOf v' : Nil)
+selectNthNode n (Constr _ c (v : v' : Nil)) | c == cCons =
+   Constr false cCons (botOf v : selectNthNode (n - 1) v' : Nil)
+selectNthNode _ _ = error absurd
 
 select_y :: Val 𝔹
 select_y = Record false (Lin :- f_x ↦ error unimplemented :- f_y ↦ error unimplemented)

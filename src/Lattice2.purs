@@ -11,13 +11,13 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Util2 (MayFail, type (×), (×), (≞), report, successfulWith)
+import Util2 (Endo, MayFail, type (×), (×), (≞), report, successfulWith)
 import Util.SnocList2 (SnocList)
 import Util.SnocList2 (zipWith) as S
 
 class JoinSemilattice a where
    join :: a -> a -> a
-   neg :: a -> a
+   neg :: Endo a
 
 class JoinSemilattice a <= BoundedJoinSemilattice a where
    bot :: a
@@ -44,7 +44,10 @@ definedJoin :: forall a . Slices a => a -> a -> a
 definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
 
 class Slices a <= BoundedSlices a where
-   botOf :: a -> a
+   botOf :: Endo a
+
+topOf :: forall a . BoundedSlices a => Endo a
+topOf = botOf >>> neg
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
@@ -97,9 +100,9 @@ class Ord k <= Key k where
 instance Key String where
    checkConsistent _ _ _ = pure unit
 
--- This is more general than we technically need for slicing, in that one can merge maps with distinct keys, as long as
--- the values are mergable for overlapping keys. I think this is harmless, and it allows us to reuse the join operator
--- here for merging branches of function definitions.
+-- This is more general than we technically need for slicing, in that we can join maps with distinct keys as long as
+-- join is defined for any overlapping keys. This is harmless, and it allows us to reuse the join operator
+-- here for merging branches of piecewise function definitions.
 instance (Key k, Slices t) => Slices (Map k t) where
    maybeJoin m m' =
       foldM mayFailUpdate m (toUnfoldable m' :: List (k × t))

@@ -52,7 +52,7 @@ lookup' x γ = case lookup x γ of
    Just vs -> pure $ head vs
 
 disjUnion :: forall a . Map Var a -> Endo (Map Var a)
-disjUnion = unionWith (const $ const $ error "not disjoint")
+disjUnion = unionWith (\_ _ -> error "not disjoint")
 
 update :: forall a . Env2 a -> SingletonEnv a -> Env2 a
 update γ γ' = update' γ (uncurry Bind <$> toUnfoldable γ')
