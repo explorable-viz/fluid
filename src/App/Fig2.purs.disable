@@ -123,15 +123,15 @@ type LinkResult = {
 drawLinkFig :: LinkFig -> Either (Val 𝔹) (Val 𝔹) -> Effect Unit
 drawLinkFig fig@{ spec: { x, divId }, ρ0, e1, e2, t1, t2 } v = do
    log $ "Redrawing " <> divId
-   let v1 × v2 × v1' × v2' × v0 = successful case v of
+   let v1 × v2 × δv1 × δv2 × v0 = successful case v of
          Left v1 -> do
             { v', v0' } <- linkResult x ρ0 e2 t1 t2 v1
-            pure $ v1 × v' × v1 × error unimplemented {-Hole false-} × v0'
+            pure $ v1 × v' × identity × botOf × v0'
          Right v2 -> do
             { v', v0' } <- linkResult x ρ0 e1 t2 t1 v2
-            pure $ v' × v2 × error unimplemented {-Hole false-} × v2 × v0'
-   drawView divId (\selector -> drawLinkFig fig (Left $ selector v1')) 2 $ view "linked view" v1
-   drawView divId (\selector -> drawLinkFig fig (Right $ selector v2')) 0 $ view "primary view" v2
+            pure $ v' × v2 × botOf × identity × v0'
+   drawView divId (\selector -> drawLinkFig fig (Left $ δv1 >>> selector)) 2 $ view "linked view" v1
+   drawView divId (\selector -> drawLinkFig fig (Right $ δv2 >>> selector)) 0 $ view "primary view" v2
    drawView divId doNothing 1 $ view "common data" v0
 
 drawFig :: Fig -> Val 𝔹 -> Effect Unit
