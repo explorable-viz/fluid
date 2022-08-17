@@ -1,12 +1,12 @@
-module Test.App.Main2 where
+module Test.App.Main where
 
 import Prelude
 import Data.Traversable (sequence)
 import Effect (Effect)
 --import Test.Spec (before, it)
---import App.Main2 (fig1, linkingFig1)
---import App.Fig2 (FigSpec, LinkFigSpec, loadFig, loadLinkFig)
-import Test.Util2 (Test, run)
+--import App.Main (fig1, linkingFig1)
+--import App.Fig (FigSpec, LinkFigSpec, loadFig, loadLinkFig)
+import Test.Util (Test, run)
 
 -- For now app tests just exercise figure creation code.
 {-

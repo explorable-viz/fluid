@@ -1,4 +1,4 @@
-module Util.SnocList2 where
+module Util.SnocList where
 
 import Prelude
 import Data.Foldable (class Foldable, foldl, foldMap, foldr)
@@ -10,7 +10,7 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (curry, uncurry)
-import Util2 (type (×), (×))
+import Util (type (×), (×))
 
 -- Snoc lists. Could reformuate Bindings as SnocList Binding.
 data SnocList a =

@@ -1,11 +1,11 @@
-module SExpr2 where
+module SExpr where
 
 import Prelude
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
-import Bindings2 (Bindings, Var)
-import DataType2 (Ctr)
-import Util2 (type (×), type (+))
+import Bindings (Bindings, Var)
+import DataType (Ctr)
+import Util (type (×), type (+))
 
 -- Surface language expressions.
 data Expr a =

@@ -1,4 +1,4 @@
-module Primitive.Defs2 where
+module Primitive.Defs where
 
 import Prelude hiding (absurd, div, mod)
 import Prelude (div, mod) as P
@@ -9,11 +9,11 @@ import Data.List.NonEmpty (singleton)
 import Data.Map (fromFoldable)
 import Data.Number (log, pow) as N
 import Debug (trace)
-import DataType2 (cCons)
-import Lattice2 (𝔹)
-import Primitive2 (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
-import Util2 (Endo, type (×), (×), type (+), (!), error)
-import Val2 (Env2, MatrixRep, Val(..), updateMatrix)
+import DataType (cCons)
+import Lattice (𝔹)
+import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
+import Util (Endo, type (×), (×), type (+), (!), error)
+import Val (Env2, MatrixRep, Val(..), updateMatrix)
 
 primitives :: Env2 𝔹
 primitives = singleton <$> fromFoldable [

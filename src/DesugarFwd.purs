@@ -1,4 +1,4 @@
-module DesugarFwd2 where
+module DesugarFwd where
 
 import Prelude hiding (absurd,otherwise)
 
@@ -12,14 +12,14 @@ import Data.Map (Map, fromFoldable, singleton)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings2 (Bindings, Bind, (↦), key, varAnon)
-import DataType2 (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
-import Expr2 (Cont(..), Elim(..), asElim)
-import Expr2 (Expr(..), Module(..), RecDefs, VarDef(..)) as E
-import Lattice2 (𝔹, maybeJoin)
-import SExpr2 (Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..))
-import Util2 (MayFail, type (+), type (×), (×), absurd, asSingletonMap, error, successful)
-import Util.SnocList2 (SnocList(..), (:-), fromList)
+import Bindings (Bindings, Bind, (↦), key, varAnon)
+import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
+import Expr (Cont(..), Elim(..), asElim)
+import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
+import Lattice (𝔹, maybeJoin)
+import SExpr (Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..))
+import Util (MayFail, type (+), type (×), (×), absurd, asSingletonMap, error, successful)
+import Util.SnocList (SnocList(..), (:-), fromList)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd

@@ -1,20 +1,20 @@
-module EvalFwd2 where
+module EvalFwd where
 
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Profunctor.Strong ((***), (&&&), first, second)
-import Bindings2 (Bindings, (↦), find, key, val)
-import Expl2 (Expl(..), Match(..), VarDef(..)) as T
-import Expl2 (Expl, Match)
-import Expr2 (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr)
-import Lattice2 (𝔹, (∧))
-import Primitive2 (match_fwd) as P
-import Util2 (type (×), (×), (!), absurd, assert, error, mustLookup, successful)
-import Util.SnocList2 (SnocList(..), (:-))
-import Util.SnocList2 (unzip, zip, zipWith) as S
-import Val2 (Env, PrimOp(..), Val)
-import Val2 (Val(..)) as V
+import Bindings (Bindings, (↦), find, key, val)
+import Expl (Expl(..), Match(..), VarDef(..)) as T
+import Expl (Expl, Match)
+import Expr (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr)
+import Lattice (𝔹, (∧))
+import Primitive (match_fwd) as P
+import Util (type (×), (×), (!), absurd, assert, error, mustLookup, successful)
+import Util.SnocList (SnocList(..), (:-))
+import Util.SnocList (unzip, zip, zipWith) as S
+import Val (Env, PrimOp(..), Val)
+import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchFwd v (ElimVar _ κ) (T.MatchVar x) = (Lin :- x ↦ v) × κ × true

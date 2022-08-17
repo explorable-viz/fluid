@@ -1,4 +1,4 @@
-module EvalBwd2 where
+module EvalBwd where
 
 import Prelude hiding (absurd)
 import Data.Foldable (length)
@@ -7,17 +7,17 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong ((&&&), first)
-import Bindings2 (Bindings, Bind, (↦), (◃), foldBindings, key, update, val, varAnon)
-import DataType2 (cPair)
-import Expl2 (Expl(..), VarDef(..)) as T
-import Expl2 (Expl, Match(..), vars)
-import Expr2 (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
-import Lattice2 (𝔹, (∨), botOf)
-import Util2 (Endo, type (×), (×), (≜), (!), absurd, error, definitely', nonEmpty, unimplemented)
-import Util.SnocList2 (SnocList(..), (:-), fromList, splitAt)
-import Util.SnocList2 (unzip, zip, zipWith) as S
-import Val2 (Env, PrimOp(..), Val)
-import Val2 (Val(..)) as V
+import Bindings (Bindings, Bind, (↦), (◃), foldBindings, key, update, val, varAnon)
+import DataType (cPair)
+import Expl (Expl(..), VarDef(..)) as T
+import Expl (Expl, Match(..), vars)
+import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
+import Lattice (𝔹, (∨), botOf)
+import Util (Endo, type (×), (×), (≜), (!), absurd, error, definitely', nonEmpty, unimplemented)
+import Util.SnocList (SnocList(..), (:-), fromList, splitAt)
+import Util.SnocList (unzip, zip, zipWith) as S
+import Val (Env, PrimOp(..), Val)
+import Val (Val(..)) as V
 
 -- second argument contains original environment and recursive definitions
 closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹

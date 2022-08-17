@@ -1,12 +1,12 @@
-module Bindings2 where
+module Bindings where
 
 import Prelude
 import Data.Foldable (class Foldable, foldMapDefaultL, foldrDefault)
 import Data.Set (Set, empty, singleton, union)
 import Data.Traversable (class Traversable, sequenceDefault)
-import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
-import Util2 (Endo, MayFail, (≞), definitely, report, whenever)
-import Util.SnocList2 (SnocList(..), (:-))
+import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
+import Util (Endo, MayFail, (≞), definitely, report, whenever)
+import Util.SnocList (SnocList(..), (:-))
 
 type Var = String -- newtype?
 

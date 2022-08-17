@@ -1,13 +1,13 @@
-module Expl2 where
+module Expl where
 
 import Prelude
 import Data.List (List(..), singleton)
-import Bindings2 (Bindings, Var, val)
-import DataType2 (Ctr)
-import Expr2 (Elim, RecDefs)
-import Util2 (type (×))
-import Util.SnocList2 (SnocList, toList, reverse)
-import Val2 (Array2, Env2, PrimOp, Val)
+import Bindings (Bindings, Var, val)
+import DataType (Ctr)
+import Expr (Elim, RecDefs)
+import Util (type (×))
+import Util.SnocList (SnocList, toList, reverse)
+import Val (Array2, Env2, PrimOp, Val)
 
 data VarDef a = VarDef (Match a) (Expl a)
 

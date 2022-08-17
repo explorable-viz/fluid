@@ -1,4 +1,4 @@
-module Expr2 where
+module Expr where
 
 import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
@@ -6,11 +6,11 @@ import Data.List (List(..), (:))
 import Data.Map (Map)
 import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union, unions)
 import Data.Tuple (snd)
-import Bindings2 (Bindings, Var, (↦), dom, find, val)
-import DataType2 (Ctr)
-import Lattice2 (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
-import Util2 (Endo, type (×), (×), type (+), (≞), asSingletonMap, error, report, successful)
-import Util.SnocList2 (SnocList(..))
+import Bindings (Bindings, Var, (↦), dom, find, val)
+import DataType (Ctr)
+import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
+import Util (Endo, type (×), (×), type (+), (≞), asSingletonMap, error, report, successful)
+import Util.SnocList (SnocList(..))
 
 data Expr a =
    Var Var |

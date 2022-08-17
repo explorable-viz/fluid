@@ -1,4 +1,4 @@
-module Parse2 where
+module Parse where
 
 import Prelude hiding (absurd, add, between, join)
 import Control.Alt ((<|>))
@@ -23,17 +23,17 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (
   GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
 )
-import Bindings2 (Bind, Var, (↦))
-import DataType2 (Ctr(..), cPair, isCtrName, isCtrOp)
-import Lattice2 (𝔹)
-import Primitive.Parse2 (OpDef, opDefs)
-import SExpr2 (
+import Bindings (Bind, Var, (↦))
+import DataType (Ctr(..), cPair, isCtrName, isCtrOp)
+import Lattice (𝔹)
+import Primitive.Parse (OpDef, opDefs)
+import SExpr (
    Branch, Clause, Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..),
    RecDefs, VarDef(..), VarDefs
 )
-import Util2 (Endo, type (×), (×), type (+), error, onlyIf)
-import Util.Parse2 (SParser, sepBy_try, sepBy1_try, some)
-import Util.SnocList2 (fromList)
+import Util (Endo, type (×), (×), type (+), error, onlyIf)
+import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
+import Util.SnocList (fromList)
 
 -- Initial selection state.
 selState :: 𝔹

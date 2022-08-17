@@ -1,4 +1,4 @@
-module App.MatrixView2 where
+module App.MatrixView where
 
 import Prelude hiding (absurd)
 import Data.Maybe (Maybe)
@@ -6,11 +6,11 @@ import Data.Tuple (uncurry)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util2 (Handler, Renderer, toggleCell)
-import Lattice2 (𝔹)
-import Primitive2 (match_fwd)
-import Util2 (type (×), (×), (!), definitely')
-import Val2 (Array2, MatrixRep)
+import App.Util (Handler, Renderer, toggleCell)
+import Lattice (𝔹)
+import Primitive (match_fwd)
+import Util (type (×), (×), (!), definitely')
+import Val (Array2, MatrixRep)
 
 --  (Rendered) matrices are required to have element type Int for now.
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int

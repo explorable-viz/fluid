@@ -1,11 +1,11 @@
-module App.TableView2 where
+module App.TableView where
 
 import Prelude
-import Bindings2 (Bindings)
-import App.Util2 (Handler, Renderer, get_intOrNumber, get_prim)
-import Lattice2 (𝔹)
-import Util2 (type (×))
-import Val2 (Val)
+import Bindings (Bindings)
+import App.Util (Handler, Renderer, get_intOrNumber, get_prim)
+import Lattice (𝔹)
+import Util (type (×))
+import Val (Val)
 
 -- For each user-level datatype of interest, a representation containing appropriate implementation types.
 -- Record types are hardcoded to a single specific example for now.

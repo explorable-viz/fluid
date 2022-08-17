@@ -1,4 +1,4 @@
-module Module2 where
+module Module where
 
 import Prelude
 import Affjax.Web (defaultRequest, printError, request)
@@ -9,16 +9,16 @@ import Data.HTTP.Method (Method(..))
 import Data.Map (singleton)
 import Effect.Aff (Aff)
 import Parsing (runParser)
-import Bindings2 (Var)
-import DesugarFwd2 (desugarFwd, desugarModuleFwd)
-import Eval2 (eval, eval_module)
-import Lattice2 (𝔹)
-import Parse2 (module_, program)
-import Primitive.Defs2 (primitives)
-import SExpr2 (Expr) as S
-import Util2 (MayFail, type (×), (×), error, successful)
-import Util.Parse2 (SParser)
-import Val2 (Env2, SingletonEnv)
+import Bindings (Var)
+import DesugarFwd (desugarFwd, desugarModuleFwd)
+import Eval (eval, eval_module)
+import Lattice (𝔹)
+import Parse (module_, program)
+import Primitive.Defs (primitives)
+import SExpr (Expr) as S
+import Util (MayFail, type (×), (×), error, successful)
+import Util.Parse (SParser)
+import Val (Env2, SingletonEnv)
 
 -- Mainly serve as documentation
 newtype File = File String

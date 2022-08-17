@@ -3,14 +3,14 @@
   "scripts": {
     "test-all": "rm -rf output && yarn build-tests && yarn tests && yarn build-app-tests && yarn app-tests",
     "clean-app": "rm -rf dist/app && mkdir -p dist/app && cp -r fluid dist/app && cp web/index.html dist/app && cp -r web/css dist/app",
-    "build-app": "yarn clean-app && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Main2 --to dist/app/app.js",
+    "build-app": "yarn clean-app && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main App.Main --to dist/app/app.js",
     "serve-app": "yarn build-app && npx http-serve dist/app -a 127.0.0.1",
     "clean-tests": "rm -rf dist/tests && mkdir -p dist/tests && cp web/tests.html dist/tests",
-    "build-tests": "yarn clean-tests && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main2 --to dist/tests/app.js",
+    "build-tests": "yarn clean-tests && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.Main --to dist/tests/app.js",
     "tests": "karma start karma.conf.tests.js",
     "tests-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
     "clean-app-tests": "rm -rf dist/app-tests && mkdir -p dist/app-tests && cp web/tests.html dist/app-tests",
-    "build-app-tests": "yarn clean-app-tests && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.App.Main2 --to dist/app-tests/app.js",
+    "build-app-tests": "yarn clean-app-tests && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.App.Main --to dist/app-tests/app.js",
     "app-tests": "karma start karma.conf.app-tests.js",
     "app-tests-browser": "karma start karma.conf.app-tests.js --browsers=Chrome --singleRun=false"
   },

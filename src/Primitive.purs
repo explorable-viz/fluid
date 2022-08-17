@@ -1,4 +1,4 @@
-module Primitive2 where
+module Primitive where
 
 import Partial.Unsafe (unsafePartial)
 import Prelude hiding (absurd, apply, div)
@@ -7,13 +7,13 @@ import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
-import Bindings2 (Bind)
-import DataType2 (cFalse, cPair, cTrue)
-import Lattice2 (𝔹, (∧))
-import Pretty2 (prettyP)
-import Util2 (Endo, type (×), (×), type (+), error)
-import Util.SnocList2 (SnocList)
-import Val2 (PrimOp(..), Val(..))
+import Bindings (Bind)
+import DataType (cFalse, cPair, cTrue)
+import Lattice (𝔹, (∧))
+import Pretty (prettyP)
+import Util (Endo, type (×), (×), type (+), error)
+import Util.SnocList (SnocList)
+import Val (PrimOp(..), Val(..))
 
 -- Mediates between Val and underlying data, analogously to pattern-matching and construction for data types.
 class ToFrom a where

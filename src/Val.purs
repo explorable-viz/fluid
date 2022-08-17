@@ -1,4 +1,4 @@
-module Val2 where
+module Val where
 
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
@@ -8,14 +8,14 @@ import Data.Map (Map, filterKeys, keys, insert, lookup, pop, toUnfoldable, union
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, member)
 import Data.Tuple (uncurry)
-import Bindings2 (Bind(..), Bindings, Var, (↦))
-import DataType2 (Ctr)
-import Expr2 (Elim, RecDefs)
-import Lattice2 (
+import Bindings (Bind(..), Bindings, Var, (↦))
+import DataType (Ctr)
+import Expr (Elim, RecDefs)
+import Lattice (
    class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), bot, botOf, definedJoin, maybeJoin, neg
 )
-import Util2 (Endo, MayFail, type (×), (×), (≞), (!), definitely, error, report, unsafeUpdateAt)
-import Util.SnocList2 (SnocList(..), (:-))
+import Util (Endo, MayFail, type (×), (×), (≞), (!), definitely, error, report, unsafeUpdateAt)
+import Util.SnocList (SnocList(..), (:-))
 
 type Op a = a × 𝔹 -> Val 𝔹
 

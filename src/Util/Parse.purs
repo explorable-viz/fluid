@@ -1,4 +1,4 @@
-module Util.Parse2 where
+module Util.Parse where
 
 import Prelude hiding (absurd)
 import Control.Alt ((<|>))
@@ -7,7 +7,7 @@ import Data.List (many, some) as L
 import Data.List.NonEmpty (NonEmptyList, cons', fromList, toList)
 import Parsing (Parser)
 import Parsing.Combinators (try)
-import Util2 (definitely')
+import Util (definitely')
 
 type SParser = Parser String
 

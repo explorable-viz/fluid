@@ -1,20 +1,20 @@
-module App.BarChart2 where
+module App.BarChart where
 
 import Prelude hiding (absurd)
 import Data.Maybe (Maybe)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
-import App.Util2 (
+import App.Util (
    Handler, class Reflect, Renderer, Selector,
    from, get, get_intOrNumber, get_prim, record, toggleConstrArg, toggleField, toggleNth
 )
-import Bindings2 (Bind)
-import DataType2 (cBarChart, f_caption, f_data, f_x, f_y)
-import Lattice2 (𝔹, neg)
-import Util2 (type (×), (!), definitely')
-import Util.SnocList2 (SnocList)
-import Val2 (Val)
+import Bindings (Bind)
+import DataType (cBarChart, f_caption, f_data, f_x, f_y)
+import Lattice (𝔹, neg)
+import Util (type (×), (!), definitely')
+import Util.SnocList (SnocList)
+import Val (Val)
 
 newtype BarChart = BarChart { caption :: String × 𝔹, data :: Array BarChartRecord }
 newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × 𝔹 }

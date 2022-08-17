@@ -1,4 +1,4 @@
-module DesugarBwd2 where
+module DesugarBwd where
 
 import Prelude hiding (absurd)
 
@@ -12,15 +12,18 @@ import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry, fst, snd)
 import Partial.Unsafe (unsafePartial)
-import Bindings2 (Bindings, Bind, (↦), key, val)
-import DataType2 (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
-import Expr2 (Cont(..), Elim(..), asElim, asExpr)
-import Expr2 (Expr(..), RecDefs, VarDef(..)) as E
-import Lattice2 (𝔹, (∨))
-import SExpr2 (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util2 (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
-import Util.SnocList2 (SnocList(..), (:-))
-import Util.SnocList2 (toList, unzip, zip, zipWith) as S
+import Bindings (Bindings, Bind, (↦), key, val)
+import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
+import Expr (Cont(..), Elim(..), asElim, asExpr)
+import Expr (Expr(..), RecDefs, VarDef(..)) as E
+import Lattice (𝔹, (∨))
+import SExpr (
+      Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..),
+      VarDefs
+   )
+import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
+import Util.SnocList (SnocList(..), (:-))
+import Util.SnocList (toList, unzip, zip, zipWith) as S
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd

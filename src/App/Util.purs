@@ -1,4 +1,4 @@
-module App.Util2 where
+module App.Util where
 
 import Prelude hiding (absurd)
 import Data.Array ((:)) as A
@@ -8,13 +8,13 @@ import Data.Tuple (fst)
 import Effect (Effect)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
-import Bindings2 (Bindings, Var, (↦), find, update)
-import DataType2 (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_caption, f_data, f_x, f_y)
-import Lattice2 (𝔹, botOf, neg)
-import Primitive2 (class ToFrom, as, match_fwd)
-import Util2 (Endo, type (×), type (+), (×), absurd, error, definitely', successful, unimplemented)
-import Util.SnocList2 (SnocList(..), (:-))
-import Val2 (Val(..), updateMatrix)
+import Bindings (Bindings, Var, (↦), find, update)
+import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_caption, f_data, f_x, f_y)
+import Lattice (𝔹, botOf, neg)
+import Primitive (class ToFrom, as, match_fwd)
+import Util (Endo, type (×), type (+), (×), absurd, error, definitely', successful, unimplemented)
+import Util.SnocList (SnocList(..), (:-))
+import Val (Val(..), updateMatrix)
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit

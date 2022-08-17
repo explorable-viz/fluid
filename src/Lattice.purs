@@ -1,4 +1,4 @@
-module Lattice2 where
+module Lattice where
 
 import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
@@ -11,9 +11,9 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Util2 (Endo, MayFail, type (×), (×), (≞), report, successfulWith)
-import Util.SnocList2 (SnocList)
-import Util.SnocList2 (zipWith) as S
+import Util (Endo, MayFail, type (×), (×), (≞), report, successfulWith)
+import Util.SnocList (SnocList)
+import Util.SnocList (zipWith) as S
 
 class JoinSemilattice a where
    join :: a -> a -> a

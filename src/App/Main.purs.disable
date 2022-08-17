@@ -1,4 +1,4 @@
-module App.Main2 where
+module App.Main where
 
 import Prelude hiding (absurd)
 import Data.Either (Either(..))
@@ -6,9 +6,9 @@ import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
-import App.Fig2 (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
-import Module2 (File(..))
-import Util2 (error, unimplemented)
+import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
+import Module (File(..))
+import Util (error, unimplemented)
 
 linkingFig1 :: LinkFigSpec
 linkingFig1 = {

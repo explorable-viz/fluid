@@ -1,4 +1,4 @@
- module Test.Util2 where
+ module Test.Util where
 
 import Prelude hiding (absurd)
 import Data.List (elem)
@@ -11,21 +11,21 @@ import Effect.Aff (Aff)
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.Mocha (runMocha)
---import App.Fig2 (LinkFigSpec, linkResult, loadLinkFig)
-import App.Util2 (Selector)
-import DataType2 (dataTypeFor, typeName)
---import DesugarBwd2 (desugarBwd)
-import DesugarFwd2 (desugarFwd)
-import Eval2 (eval)
---import EvalBwd2 (evalBwd)
---import EvalFwd2 (evalFwd)
-import Expl2 (Expl)
-import SExpr2 (Expr) as S
-import Lattice2 (𝔹)
-import Module2 (File(..), {-Folder(..), loadFile, -}open, openDatasetAs, openWithDefaultImports)
-import Pretty2 (class Pretty, prettyP)
-import Util2 (MayFail, type (×), (×), successful)
-import Val2 (Env2, Val(..), concat)
+--import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
+import App.Util (Selector)
+import DataType (dataTypeFor, typeName)
+--import DesugarBwd (desugarBwd)
+import DesugarFwd (desugarFwd)
+import Eval (eval)
+--import EvalBwd (evalBwd)
+--import EvalFwd (evalFwd)
+import Expl (Expl)
+import SExpr (Expr) as S
+import Lattice (𝔹)
+import Module (File(..), {-Folder(..), loadFile, -}open, openDatasetAs, openWithDefaultImports)
+import Pretty (class Pretty, prettyP)
+import Util (MayFail, type (×), (×), successful)
+import Val (Env2, Val(..), concat)
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean

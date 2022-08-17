@@ -1,14 +1,14 @@
-module Test.Main2 where
+module Test.Main where
 
 import Prelude
 import Data.Array (concat)
 import Data.Traversable (sequence)
 import Effect (Effect)
-import App.Util2 ({-selectBarChart_data, -}selectCell, selectNth, selectNthNode{-, select_y-}, selectSome)
-import Lattice2 (botOf, neg, topOf)
-import Module2 (File(..))
-import Test.Util2 (Test, run, test, testBwd, {-testLink, -}testWithDataset)
-import Val2 (Val(..))
+import App.Util ({-selectBarChart_data, -}selectCell, selectNth, selectNthNode{-, select_y-}, selectSome)
+import Lattice (botOf, neg, topOf)
+import Module (File(..))
+import Test.Util (Test, run, test, testBwd, {-testLink, -}testWithDataset)
+import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
 tests = [ test_desugaring, test_misc, test_bwd, {-test_linking, -}test_graphics ]

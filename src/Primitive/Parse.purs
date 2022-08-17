@@ -1,9 +1,9 @@
-module Primitive.Parse2 where
+module Primitive.Parse where
 
 import Data.Map (Map, fromFoldable)
 import Parsing.Expr (Assoc(..))
-import Bindings2 (Var)
-import Util2 (type (×), (×))
+import Bindings (Var)
+import Util (type (×), (×))
 
 -- name in user land, precedence 0 from 9 (similar to Haskell 98), associativity
 type OpDef = {

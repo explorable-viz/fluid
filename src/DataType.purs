@@ -1,4 +1,4 @@
-module DataType2 where
+module DataType where
 
 import Prelude hiding (absurd)
 import Data.CodePoint.Unicode (isUpper)
@@ -13,8 +13,8 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
-import Lattice2 (class Key)
-import Util2 (MayFail, type (×), (×), (=<<<), (≞), absurd, error, definitely', with)
+import Lattice (class Key)
+import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, definitely', with)
 
 type TypeName = String
 type FieldName = String

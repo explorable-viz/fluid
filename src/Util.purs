@@ -1,4 +1,4 @@
-module Util2 where
+module Util where
 
 import Prelude hiding (absurd)
 import Control.Apply (lift2)

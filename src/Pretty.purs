@@ -1,4 +1,4 @@
-module Pretty2 (class Pretty, class ToList, pretty, prettyP, toList, module P) where
+module Pretty (class Pretty, class ToList, pretty, prettyP, toList, module P) where
 
 import Prelude hiding (absurd,between)
 import Data.Foldable (class Foldable)
@@ -9,18 +9,18 @@ import Data.Profunctor.Choice ((|||))
 import Data.String (Pattern(..), contains) as Data.String
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
-import Bindings2 (Bindings, Bind, (↦))
-import DataType2 (Ctr, cCons, cNil, cPair)
-import Expr2 (Cont(..), Elim(..))
-import Expr2 (Expr(..), VarDef(..)) as E
-import Lattice2 (𝔹)
-import Parse2 (str)
-import SExpr2 (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
-import Util2 (Endo, type (×), (×), type (+), absurd, error, intersperse)
-import Util.SnocList2 (SnocList(..), (:-))
-import Util.SnocList2 (reverse) as S
-import Val2 (PrimOp, Val)
-import Val2 (Val(..)) as V
+import Bindings (Bindings, Bind, (↦))
+import DataType (Ctr, cCons, cNil, cPair)
+import Expr (Cont(..), Elim(..))
+import Expr (Expr(..), VarDef(..)) as E
+import Lattice (𝔹)
+import Parse (str)
+import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
+import Util (Endo, type (×), (×), type (+), absurd, error, intersperse)
+import Util.SnocList (SnocList(..), (:-))
+import Util.SnocList (reverse) as S
+import Val (PrimOp, Val)
+import Val (Val(..)) as V
 
 infixl 5 beside as :<>:
 
