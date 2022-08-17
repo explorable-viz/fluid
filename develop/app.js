@@ -36100,13 +36100,14 @@
       };
     }
   };
-  var insertMatrix = function(i) {
+  var updateMatrix = function(i) {
     return function(j) {
-      return function(v) {
-        return function(v1) {
-          var vs_i = unsafeIndex2(v1.value0.value0)(i - 1 | 0);
-          var vss$prime = unsafeUpdateAt(i - 1 | 0)(unsafeUpdateAt(j - 1 | 0)(v)(vs_i))(v1.value0.value0);
-          return new Tuple(new Tuple(vss$prime, v1.value0.value1), v1.value1);
+      return function(\u03B4v) {
+        return function(v) {
+          var vs_i = unsafeIndex2(v.value0.value0)(i - 1 | 0);
+          var v_j = unsafeIndex2(vs_i)(j - 1 | 0);
+          var vss$prime = unsafeUpdateAt(i - 1 | 0)(unsafeUpdateAt(j - 1 | 0)(\u03B4v(v_j))(vs_i))(v.value0.value0);
+          return new Tuple(new Tuple(vss$prime, v.value0.value1), v.value1);
         };
       };
     };
@@ -36155,7 +36156,7 @@
           return new Closure(map112(map28(map3(functorVal)(f)))(v.value0), map112(map28(map53(f)))(v.value1), f(v.value2), map53(f)(v.value3));
         }
         ;
-        throw new Error("Failed pattern match at Val (line 55, column 1 - line 65, column 102): " + [f.constructor.name, v.constructor.name]);
+        throw new Error("Failed pattern match at Val (line 56, column 1 - line 66, column 102): " + [f.constructor.name, v.constructor.name]);
       };
     }
   };
@@ -36223,7 +36224,7 @@
       neg: map3(functorVal)(neg(joinSemilatticeBoolean))
     };
   });
-  var joinSemilatticeVal = /* @__PURE__ */ $lazy_joinSemilatticeVal(67);
+  var joinSemilatticeVal = /* @__PURE__ */ $lazy_joinSemilatticeVal(68);
   var boundedSlices = /* @__PURE__ */ function() {
     return {
       botOf: $$const(new Hole2(bot(boundedJoinSemilatticeBoolean))),
@@ -37005,7 +37006,7 @@
   var replicate5 = /* @__PURE__ */ replicate2(unfoldableList);
   var bind9 = /* @__PURE__ */ bind(bindMaybe);
   var pure15 = /* @__PURE__ */ pure(applicativeMaybe);
-  var neg3 = /* @__PURE__ */ neg(/* @__PURE__ */ joinSemilatticeArray(/* @__PURE__ */ slicesArray(slicesVal)));
+  var neg3 = /* @__PURE__ */ neg(joinSemilatticeVal);
   var match_fwd2 = /* @__PURE__ */ match_fwd(toFromBindings);
   var match4 = /* @__PURE__ */ match3(toFromBindings);
   var lift25 = /* @__PURE__ */ lift2(applyEither);
@@ -37063,7 +37064,7 @@
         if (v2.value1 instanceof Matrix3) {
           var v3 = expand4(v2.value0)(new Matrix3(false, holeMatrix(v2.value1.value1.value0.value1.value0)(v2.value1.value1.value1.value0)));
           if (v3 instanceof Matrix3) {
-            return new Matrix3(v3.value0, insertMatrix(v)(v1)(unsafeIndex2(unsafeIndex2(neg3(v3.value1.value0.value0))(v - 1 | 0))(v1 - 1 | 0))(new Tuple(new Tuple(v3.value1.value0.value0, new Tuple(v2.value1.value1.value0.value1.value0, v3.value1.value0.value1.value1)), new Tuple(v2.value1.value1.value1.value0, v3.value1.value1.value1))));
+            return new Matrix3(v3.value0, updateMatrix(v)(v1)(neg3)(new Tuple(new Tuple(v3.value1.value0.value0, new Tuple(v2.value1.value1.value0.value1.value0, v3.value1.value0.value1.value1)), new Tuple(v2.value1.value1.value1.value0, v3.value1.value1.value1))));
           }
           ;
           return error2(absurd2);
@@ -37086,9 +37087,9 @@
   var get_prim = function(dictToFrom) {
     var match_fwd1 = match_fwd(dictToFrom);
     return function(x2) {
-      var $154 = get3(x2);
-      return function($155) {
-        return match_fwd1($154($155));
+      var $152 = get3(x2);
+      return function($153) {
+        return match_fwd1($152($153));
       };
     };
   };
@@ -41319,7 +41320,7 @@
     };
     var bwd = function(v) {
       return function(v1) {
-        return new Tuple(insertMatrix(v1.value1.value0.value0)(v1.value1.value1.value0)(v)(new Tuple(new Tuple(v1.value0.value0.value0, new Tuple(v1.value0.value0.value1.value0, false)), new Tuple(v1.value0.value1.value0, false))), new Tuple(new Tuple(v1.value1.value0.value0, false), new Tuple(v1.value1.value1.value0, false)));
+        return new Tuple(updateMatrix(v1.value1.value0.value0)(v1.value1.value1.value0)($$const(v))(new Tuple(new Tuple(v1.value0.value0.value0, new Tuple(v1.value0.value0.value1.value0, false)), new Tuple(v1.value0.value1.value0, false))), new Tuple(new Tuple(v1.value1.value0.value0, false), new Tuple(v1.value1.value1.value0, false)));
       };
     };
     return {
