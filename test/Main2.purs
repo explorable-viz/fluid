@@ -2,11 +2,9 @@ module Test.Main2 where
 
 import Prelude
 import Data.Array (concat)
-import Data.List (List(..), (:))
 import Data.Traversable (sequence)
 import Effect (Effect)
 import App.Util2 ({-selectBarChart_data, -}selectCell, selectNth, selectNthNode, selectPair{-, select_y-}, selectSome)
-import DataType2 (cCons, cNil)
 import Lattice2 (𝔹, botOf, neg, topOf)
 import Module2 (File(..))
 import Test.Util2 (Test, run, test, testBwd, testBwd2, {-testLink, -}testWithDataset)
@@ -19,13 +17,6 @@ tests = [ test_desugaring, test_misc, test_bwd, {-test_linking, -}test_graphics 
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
-
--- TODO: move to common location.
-hole :: Val 𝔹
-hole = error unimplemented
-
-hole_true :: Val 𝔹
-hole_true = error unimplemented
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
