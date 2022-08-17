@@ -77,7 +77,7 @@ class FV a where
 
 instance FV (Expr a) where
    fv (Var x)              = singleton x
-   fv (Op _)               = empty
+   fv (Op op)              = singleton op
    fv (Int _ _)            = empty
    fv (Float _ _)          = empty
    fv (Str _ _)            = empty

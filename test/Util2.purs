@@ -55,24 +55,8 @@ checkPretty msg expected x =
       prettyP x `shouldEqual` expected
 
 -- v_expect_opt is optional output slice + expected source slice; expected is expected result after round-trip.
-testWithSetup :: File -> String -> Maybe (Val 𝔹 × File) -> Aff (Env2 𝔹 × S.Expr 𝔹) -> Test Unit
+testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env2 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =
-   before setup $
-      it file \(ρ × s) -> do
-         let _ × v = successful (desugarEval ρ s)
-             --ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v (fst <$> v_expect_opt))
-             --v' = desugarEval_fwd ρ' s' t
-         --unless (isGraphical v') (checkPretty "Value" expected v')
-         unless (isGraphical v) (checkPretty "Value" expected v)
-         case snd <$> v_expect_opt of
-            Nothing -> pure unit
-            Just _{-file_expect-} ->
-               pure unit
-               --loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
-
--- v_expect_opt is optional output slice + expected source slice; expected is expected result after round-trip.
-testWithSetup2 :: File -> String -> Maybe (Selector × File) -> Aff (Env2 𝔹 × S.Expr 𝔹) -> Test Unit
-testWithSetup2 (File file) expected v_expect_opt setup =
    before setup $
       it file \(ρ × s) -> do
          let _ × v = successful (desugarEval ρ s)
@@ -93,7 +77,7 @@ testBwd :: File -> File -> Selector -> String -> Test Unit
 testBwd file file_expect δv expected =
    let folder = File "slicing/"
        file' = folder <> file in
-   testWithSetup2 file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
+   testWithSetup file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
 
 {-
 testLink :: LinkFigSpec -> Val 𝔹 -> String -> Test Unit
