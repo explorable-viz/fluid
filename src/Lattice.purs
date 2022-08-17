@@ -5,6 +5,8 @@ import Control.Apply (lift2)
 import Data.Array (zipWith) as A
 import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
+import Data.List.NonEmpty (NonEmptyList)
+import Data.List.NonEmpty (zipWith) as NEL
 import Data.Map (Map, insert, lookup, toUnfoldable, update)
 import Data.Map.Internal (keys)
 import Data.Maybe (Maybe(..))
@@ -74,6 +76,10 @@ instance Slices t => JoinSemilattice (SnocList t) where
    join = definedJoin
    neg = (<$>) neg
 
+instance Slices t => JoinSemilattice (NonEmptyList t) where
+   join = definedJoin
+   neg = (<$>) neg
+
 instance Slices t => Slices (List t) where
    maybeJoin xs ys
       | (length xs :: Int) == length ys   = sequence (zipWith maybeJoin xs ys)
@@ -84,10 +90,18 @@ instance Slices t => Slices (SnocList t) where
       | (length xs :: Int) == length ys   = sequence (S.zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
 
+instance Slices t => Slices (NonEmptyList t) where
+   maybeJoin xs ys
+      | (length xs :: Int) == length ys   = sequence (NEL.zipWith maybeJoin xs ys)
+      | otherwise                         = report "Mismatched lengths"
+
 instance BoundedSlices t => BoundedSlices (List t) where
    botOf = (<$>) botOf
 
 instance BoundedSlices t => BoundedSlices (SnocList t) where
+   botOf = (<$>) botOf
+
+instance BoundedSlices t => BoundedSlices (NonEmptyList t) where
    botOf = (<$>) botOf
 
 instance (Key k, Slices t) => JoinSemilattice (Map k t) where

@@ -2,6 +2,7 @@ module EvalBwd where
 
 import Prelude hiding (absurd)
 import Data.Foldable (length)
+import Data.FoldableWithIndex (foldlWithIndex)
 import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (fromFoldable)
@@ -16,9 +17,16 @@ import Lattice (𝔹, (∨), botOf)
 import Util (Endo, type (×), (×), (≜), (!), absurd, error, definitely', nonEmpty, unimplemented)
 import Util.SnocList (SnocList(..), (:-), fromList, splitAt)
 import Util.SnocList (unzip, zip, zipWith) as S
-import Val (Env, PrimOp(..), Val)
+import Val (Env, PrimOp(..), SingletonEnv, Val)
 import Val (Val(..)) as V
 
+-- second argument contains original environment and recursive definitions
+closeDefsBwd :: SingletonEnv 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
+closeDefsBwd γ (γ0 × ρ0) =
+   case foldlWithIndex ?_ (Lin × botOf γ0 × botOf ρ0 × false) γ of
+   ρ' × γ' × ρ × α -> γ' × (ρ ∨ ρ') × α
+
+{-
 -- second argument contains original environment and recursive definitions
 closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
 closeDefsBwd ρ (ρ0 × δ0) =
@@ -135,3 +143,4 @@ evalBwd v (T.LetRec δ t) =
        ρ1' × δ' × α' = closeDefsBwd ρ2 (ρ1 × δ) in
    (ρ1 ∨ ρ1') × LetRec δ' e × (α ∨ α')
 evalBwd _ _ = error absurd
+-}
