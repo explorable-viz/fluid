@@ -40,8 +40,8 @@ type Env a = Bindings (Val a)
 type Array2 a = Array (Array a)
 type MatrixRep a = Array2 (Val a) × (Int × a) × (Int × a)
 
-insertMatrix :: Int -> Int -> Val 𝔹 -> Endo (MatrixRep 𝔹)
-insertMatrix i j v (vss × h × w) =
+updateMatrix :: Int -> Int -> Val 𝔹 -> Endo (MatrixRep 𝔹)
+updateMatrix i j v (vss × h × w) =
    let vs_i = vss!(i - 1)
        vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss
    in  vss' × h × w

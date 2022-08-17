@@ -14,7 +14,7 @@ import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
 import Util.SnocList (SnocList(..), (:-))
-import Val (Env, MatrixRep, Val(..), insertMatrix)
+import Val (Env, MatrixRep, Val(..), updateMatrix)
 
 primitives :: Env 𝔹
 primitives = foldl (:-) Lin [
@@ -72,7 +72,7 @@ matrixLookup = { fwd, bwd }
 
    bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-       insertMatrix i j v (vss × (i' × false) × (j' × false)) × ((i × false) × (j × false))
+       updateMatrix i j v (vss × (i' × false) × (j' × false)) × ((i × false) × (j × false))
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
