@@ -18,7 +18,7 @@ import DataType (dataTypeFor, typeName)
 import DesugarFwd (desugarFwd)
 import Eval (eval)
 --import EvalBwd (evalBwd)
---import EvalFwd (evalFwd)
+import EvalFwd (evalFwd)
 import Expl (Expl)
 import SExpr (Expr) as S
 import Lattice (𝔹)
@@ -45,10 +45,10 @@ desugarEval_bwd :: Expl 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr �
 desugarEval_bwd (t × s) v =
    let ρ × e × _ = evalBwd v t in
    ρ × desugarBwd e s
-
-desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
-desugarEval_fwd ρ s = evalFwd ρ (successful (desugarFwd s)) true
 -}
+
+desugarEval_fwd :: Env2 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
+desugarEval_fwd ρ s = evalFwd ρ (successful (desugarFwd s)) true
 
 checkPretty :: forall a . Pretty a => String -> String -> a -> Aff Unit
 checkPretty msg expected x =
@@ -60,11 +60,11 @@ testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env2 𝔹 ×
 testWithSetup (File file) expected v_expect_opt setup =
    before setup $
       it file \(ρ × s) -> do
-         let _ × v = successful (desugarEval ρ s)
+         let t × _ = successful (desugarEval ρ s)
              --ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v (fst <$> v_expect_opt))
              --v' = desugarEval_fwd ρ' s' t
-         --unless (isGraphical v') (checkPretty "Value" expected v')
-         unless (isGraphical v) (checkPretty "Value" expected v)
+             v' = desugarEval_fwd ρ s t
+         unless (isGraphical v') (checkPretty "Value" expected v')
          case snd <$> v_expect_opt of
             Nothing -> pure unit
             Just _{-file_expect-} ->

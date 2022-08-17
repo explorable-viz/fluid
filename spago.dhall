@@ -9,7 +9,6 @@ You can edit this file as you like.
   , "affjax-web"
   , "arrays"
   , "bifunctors"
-  , "console"
   , "control"
   , "debug"
   , "effect"

@@ -162,7 +162,7 @@ instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Constr α c vs)            = prettyConstr α c vs
    pretty (V.Matrix _ (vss × _ × _))   = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Closure _ _ _ _)          = text "<closure>"
-   pretty (V.Closure2 _ _ _ _)         = text "<closure>"
+   pretty (V.Closure _ _ _ _)         = text "<closure>"
    pretty (V.Primitive φ _)            = parens (pretty φ)
 
 instance prettyPrimOp :: Pretty PrimOp where

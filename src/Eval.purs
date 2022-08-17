@@ -24,15 +24,15 @@ import Primitive (match) as P
 import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
 import Util.SnocList (SnocList(..), (:-), zipWith)
 import Util.SnocList (unzip) as S
-import Val (Env, Env2, PrimOp(..), SingletonEnv, Val, concat, disjUnion, lookup', restrict)
+import Val (Env2, PrimOp(..), SingletonEnv, Val, concat, disjUnion, lookup', restrict)
 import Val (Val(..)) as V
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
-match v (ElimVar x κ)   | x == varAnon    = pure (Lin × κ × MatchVarAnon v)
-                        | otherwise       = pure ((Lin :- x ↦ v) × κ × MatchVar x)
+match :: Val 𝔹 -> Elim 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × Match 𝔹)
+match v (ElimVar x κ)  | x == varAnon    = pure (empty × κ × MatchVarAnon v)
+                       | otherwise       = pure (M.singleton x v × κ × MatchVar x)
 match (V.Constr _ c vs) (ElimConstr m) = do
    checkConsistent "Pattern mismatch: " c (keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
@@ -41,66 +41,31 @@ match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP
 match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs xs κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
-match2 :: Val 𝔹 -> Elim 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × Match 𝔹)
-match2 v (ElimVar x κ)  | x == varAnon    = pure (empty × κ × MatchVarAnon v)
-                        | otherwise       = pure (M.singleton x v × κ × MatchVar x)
-match2 (V.Constr _ c vs) (ElimConstr m) = do
-   checkConsistent "Pattern mismatch: " c (keys m)
-   κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
-   (second (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs2 c vs κ
-match2 v (ElimConstr m)                    = (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
-match2 (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord2 xvs xs κ
-match2 v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
-
-matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
-matchArgs _ Nil κ = pure (Lin × κ × Nil)
+matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × List (Match 𝔹))
+matchArgs _ Nil κ = pure (empty × κ × Nil)
 matchArgs c (v : vs) (ContElim σ) = do
-   ρ  × κ'  × w  <- match v σ
-   ρ' × κ'' × ws <- matchArgs c vs κ'
-   pure ((ρ <> ρ') × κ'' × (w : ws))
+   γ  × κ'  × w  <- match v σ
+   γ' × κ'' × ws <- matchArgs c vs κ'
+   pure ((γ `disjUnion` γ') × κ'' × (w : ws))
 matchArgs c (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _ = error absurd
 
-matchArgs2 :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × List (Match 𝔹))
-matchArgs2 _ Nil κ = pure (empty × κ × Nil)
-matchArgs2 c (v : vs) (ContElim σ) = do
-   γ  × κ'  × w  <- match2 v σ
-   γ' × κ'' × ws <- matchArgs2 c vs κ'
-   pure ((γ `disjUnion` γ') × κ'' × (w : ws))
-matchArgs2 c (_ : vs) (ContExpr _) = report $
-   show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
-matchArgs2 _ _ _ = error absurd
-
-matchRecord :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
-matchRecord Lin Lin κ = pure (Lin × κ × Lin)
+matchRecord :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
+matchRecord Lin Lin κ = pure (empty × κ × Lin)
 matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
    check (x == x') (patternMismatch (show x) (show x'))
-   ρ × σ' × xws <- matchRecord xvs xs σ
-   ρ' × κ × w <- match v (asElim σ')
-   pure ((ρ <> ρ') × κ × (xws :- x ↦ w))
+   γ × σ' × xws <- matchRecord xvs xs σ
+   γ' × κ × w <- match v (asElim σ')
+   pure ((γ `disjUnion` γ') × κ × (xws :- x ↦ w))
 matchRecord (_ :- x ↦ _) Lin _ = report (patternMismatch "end of record pattern" (show x))
 matchRecord Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
 
-matchRecord2 :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
-matchRecord2 Lin Lin κ = pure (empty × κ × Lin)
-matchRecord2 (xvs :- x ↦ v) (xs :- x') σ = do
-   check (x == x') (patternMismatch (show x) (show x'))
-   γ × σ' × xws <- matchRecord2 xvs xs σ
-   γ' × κ × w <- match2 v (asElim σ')
-   pure ((γ `disjUnion` γ') × κ × (xws :- x ↦ w))
-matchRecord2 (_ :- x ↦ _) Lin _ = report (patternMismatch "end of record pattern" (show x))
-matchRecord2 Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
-
-closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> Env 𝔹
-closeDefs _ _ Lin = Lin
-closeDefs ρ δ0 (δ :- f ↦ σ) = closeDefs ρ δ0 δ :- f ↦ V.Closure ρ δ0 false σ
-
-closeDefs2 :: Env2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> SingletonEnv 𝔹
-closeDefs2 _ _ Lin = empty
-closeDefs2 γ ρ0 (ρ :- f ↦ σ) =
+closeDefs :: Env2 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> SingletonEnv 𝔹
+closeDefs _ _ Lin = empty
+closeDefs γ ρ0 (ρ :- f ↦ σ) =
    let xs = fv (ρ0 `for` σ) `union` fv σ
-   in closeDefs2 γ ρ0 ρ # insert f (V.Closure2 false (γ `restrict` xs) ρ0 σ)
+   in closeDefs γ ρ0 ρ # insert f (V.Closure false (γ `restrict` xs) ρ0 σ)
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -139,11 +104,11 @@ eval γ (Matrix _ e (x × y) e') = do
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable
 eval γ (LetRec ρ e) = do
-   let γ' = closeDefs2 γ ρ ρ
+   let γ' = closeDefs γ ρ ρ
    t × v <- eval (γ `concat` γ') e
    pure (T.LetRec ρ t × v)
 eval γ (Lambda σ) =
-   pure (T.Lambda γ σ × V.Closure2 false (γ `restrict` fv σ) Lin σ)
+   pure (T.Lambda γ σ × V.Closure false (γ `restrict` fv σ) Lin σ)
 eval γ (RecordLookup e x) = do
    t × v <- eval γ e
    case v of
@@ -154,10 +119,10 @@ eval γ (App e e') = do
    t × v <- eval γ e
    t' × v' <- eval γ e'
    case v of
-      V.Closure2 _ γ1 ρ σ -> do
+      V.Closure _ γ1 ρ σ -> do
          let γ1' = γ1 <#> NE.singleton
-             γ2 = closeDefs2 γ1' ρ ρ
-         γ3 × e'' × w <- match2 v' σ
+             γ2 = closeDefs γ1' ρ ρ
+         γ3 × e'' × w <- match v' σ
          t'' × v'' <- eval ((γ1' `concat` γ2) `concat` γ3) (asExpr e'')
          pure (T.App (t × ρ × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
@@ -170,7 +135,7 @@ eval γ (App e e') = do
       _ -> report "Expected closure, operator or unsaturated constructor"
 eval γ (Let (VarDef σ e) e') = do
    t × v <- eval γ e
-   γ' × _ × w <- match2 v σ -- terminal meta-type of eliminator is meta-unit
+   γ' × _ × w <- match v σ -- terminal meta-type of eliminator is meta-unit
    t' × v' <- eval (γ `concat` γ') e'
    pure (T.Let (T.VarDef w t) t' × v')
 
@@ -178,7 +143,7 @@ eval_module :: Env2 𝔹 -> Module 𝔹 -> MayFail (Env2 𝔹)
 eval_module γ (Module Nil) = pure γ
 eval_module γ (Module (Left (VarDef σ e) : ds)) = do
    _  × v <- eval γ e
-   γ' × _ × _  <- match2 v σ
+   γ' × _ × _  <- match v σ
    eval_module (γ `concat` γ') (Module ds)
 eval_module γ (Module (Right ρ : ds)) =
-   eval_module (γ `concat` closeDefs2 γ ρ ρ) (Module ds)
+   eval_module (γ `concat` closeDefs γ ρ ρ) (Module ds)
