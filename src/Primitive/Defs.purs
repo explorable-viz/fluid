@@ -72,7 +72,7 @@ matrixLookup = { fwd, bwd }
 
    bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-       updateMatrix i j v (vss × (i' × false) × (j' × false)) × ((i × false) × (j × false))
+       updateMatrix i j (const v) (vss × (i' × false) × (j' × false)) × ((i × false) × (j × false))
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

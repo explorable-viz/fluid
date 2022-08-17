@@ -14,7 +14,7 @@ import Bindings (Bindings, Var, (↦), find, update)
 import DataType (Ctr, arity, cBarChart, cCons, cNil, cPair, f_caption, f_data, f_x, f_y)
 import Lattice (Slice, 𝔹, expand, neg)
 import Primitive (class ToFrom, as, match, match_fwd)
-import Util (type (×), type (+), (×), (!), absurd, error, definitely', successful)
+import Util (type (×), type (+), (×), absurd, error, definitely', successful)
 import Util.SnocList (SnocList(..), (:-))
 import Val (Val(..), holeMatrix, updateMatrix)
 
@@ -54,7 +54,7 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean × Val Boolea
 
 -- Selection helpers.
 selectCell :: 𝔹 -> Int -> Int -> Int -> Int -> Val 𝔹
-selectCell α i j i' j' = Matrix false (updateMatrix i j (Hole α) (holeMatrix i' j'))
+selectCell α i j i' j' = Matrix false (updateMatrix i j (const $ Hole α) (holeMatrix i' j'))
 
 selectNth :: Int -> Val 𝔹 -> Val 𝔹
 selectNth 0 v = Constr false cCons (v : Hole false : Nil)
@@ -74,7 +74,7 @@ toggleCell :: Int -> Int -> Selector
 toggleCell i j (u × Matrix _ (_ × (i' × _) × (j' × _))) =
    case expand u (Matrix false (holeMatrix i' j')) of
       Matrix α (vss × (_ × β) × (_ × β')) ->
-         Matrix α (updateMatrix i j (neg vss!(i - 1)!(j - 1)) (vss × (i' × β) × (j' × β')))
+         Matrix α (updateMatrix i j neg (vss × (i' × β) × (j' × β')))
       _ -> error absurd
 toggleCell _ _ _ = error absurd
 

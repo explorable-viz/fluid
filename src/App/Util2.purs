@@ -12,7 +12,7 @@ import Bindings2 (Bindings, Var, (↦), find, update)
 import DataType2 (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_caption, f_data, f_x, f_y)
 import Lattice2 (𝔹, botOf, neg)
 import Primitive2 (class ToFrom, as, match_fwd)
-import Util2 (type (×), type (+), (×), (!), absurd, error, definitely', successful, unimplemented)
+import Util2 (Endo, type (×), type (+), (×), absurd, error, definitely', successful, unimplemented)
 import Util.SnocList2 (SnocList(..), (:-))
 import Val2 (Val(..), updateMatrix)
 
@@ -47,23 +47,20 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
    from (Constr _ c (u1 : u2 : Nil)) | c == cCons = u1 A.: from u2
 
 -- Selection helpers.
-selectCell :: 𝔹 -> Int -> Int -> Int -> Int -> Val 𝔹
-selectCell _ i j _ _ = Matrix false (updateMatrix i j (error unimplemented) (error unimplemented))
+selectCell :: Int -> Int -> Endo Selector
+selectCell i j δv (Matrix α r)  = Matrix α $ updateMatrix i j δv r
+selectCell _ _ _ _              = error absurd
 
---selectCell2 :: 𝔹 -> Int -> Int -> Selector
---selectCell2 α i j (Matrix _ (vss × (i' × β) × (j' × β')))   = Matrix false $ updateMatrix i j ?_ ?_
---selectCell2 _ _ _ _                                         = error absurd
-
-selectNth :: Int -> Selector -> Selector
-selectNth 0 δv (Constr _ c (v : v' : Nil)) | c == cCons  = Constr false cCons (δv v : botOf v' : Nil)
-selectNth n δv (Constr _ c (v : v' : Nil)) | c == cCons  = Constr false cCons (botOf v : selectNth (n - 1) δv v' : Nil)
+selectNth :: Int -> Endo Selector
+selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons  = Constr α cCons (δv v : v' : Nil)
+selectNth n δv (Constr α c (v : v' : Nil)) | c == cCons  = Constr α cCons (v : selectNth (n - 1) δv v' : Nil)
 selectNth _ _ _                                          = error absurd
 
-selectNthNode :: Int -> Selector
-selectNthNode 0 (Constr _ c Nil) | c == cNil             = Constr true cNil Nil
-selectNthNode 0 (Constr _ c (v : v' : Nil)) | c == cCons = Constr true cCons (botOf v : botOf v' : Nil)
-selectNthNode n (Constr _ c (v : v' : Nil)) | c == cCons = Constr false cCons (botOf v : selectNthNode (n - 1) v' : Nil)
-selectNthNode _ _                                        = error absurd
+selectNthNode :: Int -> Endo 𝔹 -> Selector
+selectNthNode 0 δα (Constr α c Nil) | c == cNil             = Constr (δα α) cNil Nil
+selectNthNode 0 δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) cCons (v : v' : Nil)
+selectNthNode n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) cCons (v : selectNthNode (n - 1) δα v' : Nil)
+selectNthNode _ _ _                                         = error absurd
 
 selectSome :: Selector
 selectSome (Constr _ c v) | c == cSome = Constr true cSome (botOf v)
@@ -82,7 +79,7 @@ selectPair α v1 v2 = Constr α cPair (v1 : v2 : Nil)
 -- Togglers.
 toggleCell :: Int -> Int -> Selector
 toggleCell i j (Matrix α (vss × (i' × β) × (j' × β'))) =
-   Matrix α (updateMatrix i j (neg vss!(i - 1)!(j - 1)) (vss × (i' × β) × (j' × β')))
+   Matrix α (updateMatrix i j neg (vss × (i' × β) × (j' × β')))
 toggleCell _ _ _ = error absurd
 
 toggleNth :: Int -> Selector -> Selector

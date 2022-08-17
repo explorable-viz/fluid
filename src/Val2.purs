@@ -80,11 +80,12 @@ restrict γ xs = filterKeys (_ `member` xs) γ <#> head
 type Array2 a = Array (Array a)
 type MatrixRep a = Array2 (Val a) × (Int × a) × (Int × a)
 
-updateMatrix :: Int -> Int -> Val 𝔹 -> Endo (MatrixRep 𝔹)
-updateMatrix i j v (vss × h × w) =
+updateMatrix :: Int -> Int -> Endo (Val 𝔹) -> Endo (MatrixRep 𝔹)
+updateMatrix i j δv (vss × h × w) =
    let vs_i = vss!(i - 1)
-       vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss
-   in  vss' × h × w
+       v_j = vs_i!(j - 1)
+       vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) (δv v_j) vs_i) vss
+   in vss' × h × w
 
 -- ======================
 -- boilerplate
