@@ -67,21 +67,21 @@ class ToList a where
 class ToPair a where
    toPair :: a -> a × a
 
-instance toPairExpr :: ToPair (E.Expr Boolean) where
+instance ToPair (E.Expr Boolean) where
    toPair (E.Constr _ c (e : e' : Nil))   | c == cPair   = e × e'
    toPair _                                              = error absurd
 
-instance toPairVal :: ToPair (Val Boolean) where
+instance ToPair (Val Boolean) where
    toPair (V.Constr _ c (v : v' : Nil))   | c == cPair   = v × v'
    toPair _                                              = error absurd
 
 class Pretty p where
    pretty :: p -> Doc
 
-instance prettyString :: Pretty String where
+instance Pretty String where
    pretty = text
 
-instance prettyBool :: Pretty Boolean where
+instance Pretty Boolean where
    pretty = show >>> pretty
 
 vert :: forall f . Foldable f => Doc -> f Doc -> Doc
@@ -91,7 +91,7 @@ vert delim = fromFoldable >>> vert'
          vert' (x : Nil)    = x
          vert' (x : y : xs) = atop (x :<>: delim) (vert' (y : xs))
 
-instance prettyCtr :: Pretty Ctr where
+instance Pretty Ctr where
    pretty = show >>> pretty
 
 -- Cheap hack; revisit.
@@ -117,7 +117,7 @@ prettyRecord α xvs =
    xvs <#> (\(x ↦ v) -> hspace [text x :<>: colon, pretty v])
    # S.reverse >>> hcomma >>> between (text "{") (text "}") >>> highlightIf α
 
-instance prettyExpr :: Pretty (E.Expr Boolean) where
+instance Pretty (E.Expr Boolean) where
    pretty (E.Var x)                 = text x
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
@@ -133,28 +133,28 @@ instance prettyExpr :: Pretty (E.Expr Boolean) where
    pretty (E.RecordLookup _ _)      = error "todo"
    pretty (E.App e e')              = hspace [pretty e, pretty e']
 
-instance prettyRecDefs :: Pretty (SnocList (Bind (Elim Boolean))) where
+instance Pretty (SnocList (Bind (Elim Boolean))) where
    pretty Lin          = error absurd -- non-empty
    pretty (Lin :- xσ)  = pretty xσ
    pretty (δ :- xσ)    = atop (pretty δ :<>: semi) (pretty xσ)
 
-instance prettyRecDef :: Pretty (Bind (Elim Boolean)) where
+instance Pretty (Bind (Elim Boolean)) where
    pretty (x ↦ σ) = hspace [text x, text str.equals, pretty σ]
 
-instance prettyCont :: Pretty (Cont Boolean) where
+instance Pretty (Cont Boolean) where
    pretty ContNone      = null
    pretty (ContExpr e)  = pretty e
    pretty (ContElim σ)  = pretty σ
 
-instance prettyBranch :: Pretty (Ctr × Cont Boolean) where
+instance Pretty (Ctr × Cont Boolean) where
    pretty (c × κ) = hspace [text (show c), text str.rArrow, pretty κ]
 
-instance prettyElim :: Pretty (Elim Boolean) where
+instance Pretty (Elim Boolean) where
    pretty (ElimVar x κ)       = hspace [text x, text str.rArrow, pretty κ]
    pretty (ElimConstr κs)     = hcomma (pretty <$> κs) -- looks dodgy
    pretty (ElimRecord _ _)    = error "todo"
 
-instance prettyVal :: Pretty (Val Boolean) where
+instance Pretty (Val Boolean) where
    pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
@@ -162,19 +162,18 @@ instance prettyVal :: Pretty (Val Boolean) where
    pretty (V.Constr α c vs)            = prettyConstr α c vs
    pretty (V.Matrix _ (vss × _ × _))   = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Closure _ _ _ _)          = text "<closure>"
-   pretty (V.Closure _ _ _ _)         = text "<closure>"
    pretty (V.Primitive φ _)            = parens (pretty φ)
 
-instance prettyPrimOp :: Pretty PrimOp where
+instance Pretty PrimOp where
    pretty _ = text "<prim op>" -- TODO
 
 -- Surface language
 
-instance toPairSExpr :: ToPair (S.Expr Boolean) where
+instance ToPair (S.Expr Boolean) where
    toPair (S.Constr _ c (s : s' : Nil))   | c == cPair   = s × s'
    toPair s                                              = error ("Not a pair: " <> prettyP s)
 
-instance prettySExpr :: Pretty (S.Expr Boolean) where
+instance Pretty (S.Expr Boolean) where
    pretty (S.Var x)                    = text x
    pretty (S.Op op)                    = parens (text op)
    pretty (S.Int α n)                  = highlightIf α (text (show n))
@@ -202,46 +201,46 @@ instance prettySExpr :: Pretty (S.Expr Boolean) where
    pretty (S.LetRec h s)               = atop (hspace [text str.let_, vert semi (pretty <$> h)])
                                               (hspace [text str.in_, pretty s])
 
-instance prettyListRest :: Pretty (S.ListRest Boolean) where
+instance Pretty (S.ListRest Boolean) where
    pretty (S.End α)        = highlightIf α (text str.rBracket)
    pretty (S.Next α s l)   = hspace [highlightIf α comma, pretty s :<>: pretty l]
 
-instance prettyClause :: Pretty (String × (NonEmptyList S.Pattern × S.Expr Boolean)) where
+instance Pretty (String × (NonEmptyList S.Pattern × S.Expr Boolean)) where
    pretty (x × b) = hspace [text x, pretty b]
 
-instance prettySBranch :: Pretty (NonEmptyList S.Pattern × S.Expr Boolean) where
+instance Pretty (NonEmptyList S.Pattern × S.Expr Boolean) where
    pretty (ps × s) = hspace ((pretty <$> NEL.toList ps) <> (text str.equals : pretty s : Nil))
 
-instance prettySVarDef :: Pretty (S.VarDef Boolean) where
+instance Pretty (S.VarDef Boolean) where
    pretty (S.VarDef p s) = hspace [pretty p, text str.equals, pretty s]
 
-instance prettyPatternExpr :: Pretty (S.Pattern × S.Expr Boolean) where
+instance Pretty (S.Pattern × S.Expr Boolean) where
    pretty (p × s) = pretty p :<>: text str.lArrow :<>: pretty s
 
-instance prettyQualifier :: Pretty (S.Qualifier Boolean) where
+instance Pretty (S.Qualifier Boolean) where
    pretty (S.Guard e)                     = pretty e
    pretty (S.Generator p e)               = hspace [pretty p, text str.lArrow, pretty e]
    pretty (S.Declaration (S.VarDef p e))  = hspace [text str.let_, pretty p, text str.equals, pretty e]
 
-instance prettyEither :: (Pretty a, Pretty b) => Pretty (a + b) where
+instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty
 
-instance prettyPattern :: Pretty S.Pattern where
+instance Pretty S.Pattern where
    pretty (S.PVar x)             = text x
    pretty (S.PConstr c ps)       = prettyConstr false c ps
    pretty (S.PRecord xps)        = prettyRecord false xps
    pretty (S.PListEmpty)         = nil
    pretty (S.PListNonEmpty s l)  = text str.lBracket :<>: pretty s :<>: pretty l
 
-instance toListPattern :: ToList S.Pattern  where
+instance ToList S.Pattern  where
    toList (S.PConstr c (p : p' : Nil)) | c == cCons   = p : toList p'
    toList (S.PConstr c Nil)            | c == cNil    = Nil
    toList _                                           = error absurd
 
-instance toPairPattern :: ToPair S.Pattern where
+instance ToPair S.Pattern where
    toPair (S.PConstr c (p : p' : Nil)) | c == cPair   = p × p'
    toPair _                                           = error absurd
 
-instance prettyListPatternRest :: Pretty S.ListRestPattern where
+instance Pretty S.ListRestPattern where
    pretty S.PEnd        = text str.rBracket
    pretty (S.PNext s l) = hspace [comma, pretty s :<>: pretty l]
