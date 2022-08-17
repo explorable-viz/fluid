@@ -1,71 +1,67 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
-import Data.Foldable (length)
+--import Data.Foldable (length)
 import Data.FoldableWithIndex (foldlWithIndex)
-import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
-import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (fromFoldable)
-import Data.NonEmpty (foldl1)
-import Data.Profunctor.Strong ((&&&), first)
-import Bindings (Bindings, Bind, (↦), (◃), foldBindings, key, update, val, varAnon)
-import DataType (cPair)
-import Expl (Expl(..), VarDef(..)) as T
-import Expl (Expl, Match(..), vars)
-import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
+import Data.List (List(..), (:), {-foldr, range, -}reverse{-, singleton, unsnoc, zip-})
+--import Data.List.NonEmpty (NonEmptyList(..))
+import Data.List.NonEmpty (singleton) as NEL
+import Data.Map ({-empty, -}fromFoldable, isEmpty)
+--import Data.NonEmpty (foldl1)
+import Data.Profunctor.Strong ({-(&&&), -}first)
+import Data.Set (singleton)
+import Bindings (Bindings, {-Bind, -}Var, (↦){-, (◃), foldBindings-}, key{-, update, val-}, varAnon)
+--import DataType (cPair)
+--import Expl (Expl(..), VarDef(..)) as T
+import Expl ({-Expl, -}Match(..))
+import Expr (Cont(..), Elim(..), {-Expr(..), VarDef(..), -}RecDefs, bv)
 import Lattice (𝔹, (∨), botOf)
-import Util (Endo, type (×), (×), (≜), (!), absurd, error, definitely', nonEmpty, unimplemented)
-import Util.SnocList (SnocList(..), (:-), fromList, splitAt)
-import Util.SnocList (unzip, zip, zipWith) as S
-import Val (Env, PrimOp(..), SingletonEnv, Val)
+import Util ({-Endo, -}type (×), (×){-, (!)-}, absurd, error{-, definitely'-}, mustLookup{- nonEmpty-}, splitOn, unimplemented)
+import Util.SnocList (SnocList(..), (:-), fromList)
+--import Util.SnocList (unzip, zip, zipWith) as S
+import Val (Env{-, PrimOp(..)-}, SingletonEnv, Val, dom)
 import Val (Val(..)) as V
 
 -- second argument contains original environment and recursive definitions
 closeDefsBwd :: SingletonEnv 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
 closeDefsBwd γ (γ0 × ρ0) =
-   case foldlWithIndex ?_ (Lin × botOf γ0 × botOf ρ0 × false) γ of
+   case foldlWithIndex joinDefs (Lin × botOf γ0 × botOf ρ0 × false) γ of
    ρ' × γ' × ρ × α -> γ' × (ρ ∨ ρ') × α
-
-{-
--- second argument contains original environment and recursive definitions
-closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
-closeDefsBwd ρ (ρ0 × δ0) =
-   case foldBindings joinDefs (Lin × botOf ρ0 × botOf δ0 × false) ρ of
-   δ' × ρ' × δ × α -> ρ' × (δ ∨ δ') × α
    where
-   joinDefs :: Bind (Val 𝔹) -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹)
-   joinDefs (f ↦ V.Closure ρ_f δ_f α_f σ_f) (δ_acc × ρ' × δ × α) =
-      (δ_acc :- f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
-   joinDefs _ _ = error absurd
+   joinDefs :: Var -> RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹 -> Val 𝔹 -> RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹
+   joinDefs f (ρ_acc × γ' × ρ × α) (V.Closure α_f γ_f ρ_f σ_f) =
+      (ρ_acc :- f ↦ σ_f) × (γ' ∨ (γ_f <#> NEL.singleton)) × (ρ ∨ ρ_f) × (α ∨ α_f)
+   joinDefs _ _ _ = error absurd
 
-matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
-matchBwd (Lin :- x ↦ v) κ _ (MatchVar x')    = v × ElimVar (x ≜ x') κ
-matchBwd Lin κ _ (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
-matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
+matchBwd :: SingletonEnv 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
+matchBwd γ κ _ (MatchVar x) | dom γ == singleton x = mustLookup x γ × ElimVar x κ
+matchBwd γ κ _ (MatchVarAnon v) | isEmpty γ        = botOf v × ElimVar varAnon κ
+matchBwd ρ κ α (MatchConstr c ws cs)               = V.Constr α c vs × ElimConstr (fromFoldable cκs)
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
          cκs = c × κ' : ((_ × error unimplemented) <$> cs)
-matchBwd ρ κ α (MatchRecord xws)             = V.Record α xvs × ElimRecord xs κ'
+matchBwd ρ κ α (MatchRecord xws)                   = V.Record α xvs × ElimRecord xs κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
          xs = key <$> xws
-matchBwd _ _ _ _                             = error absurd
+matchBwd _ _ _ _                                   = error absurd
 
-matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgsBwd Lin κ _ Lin       = Nil × κ
-matchArgsBwd (_ :- _) _ _ Lin  = error absurd
-matchArgsBwd ρρ' κ α (ws :- w) =
-   let ρ × ρ'  = splitAt (vars w # length) ρρ'
-       v × σ   = matchBwd ρ' κ α w
-       vs × κ' = matchArgsBwd ρ (ContElim σ) α ws in
+matchArgsBwd :: SingletonEnv 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
+matchArgsBwd γ κ _ Lin  | isEmpty γ = Nil × κ
+                        | otherwise = error absurd
+matchArgsBwd γγ' κ α (ws :- w) =
+   let γ × γ'  = splitOn (bv w) γγ'
+       v × σ   = matchBwd γ κ α w
+       vs × κ' = matchArgsBwd γ' (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
 
-matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings (Match 𝔹) -> Bindings (Val 𝔹) × Cont 𝔹
-matchRecordBwd Lin κ _ Lin         = Lin × κ
-matchRecordBwd (_ :- _) _ _ Lin    = error absurd
-matchRecordBwd ρρ' κ α (xws :- x ↦ w) =
-   let ρ × ρ'  = splitAt (vars w # length) ρρ'
-       v × σ   = matchBwd ρ' κ α w in
-   (first (_ :- x ↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
+matchRecordBwd :: SingletonEnv 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings (Match 𝔹) -> Bindings (Val 𝔹) × Cont 𝔹
+matchRecordBwd γ κ _ Lin | isEmpty γ   = Lin × κ
+                         | otherwise   = error absurd
+matchRecordBwd γγ' κ α (xws :- x ↦ w)  =
+   let γ × γ'  = splitOn (bv w) γγ'
+       v × σ   = matchBwd γ κ α w in
+   (first (_ :- x ↦ v)) (matchRecordBwd γ' (ContElim σ) α xws)
 
+{-
 evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var ρ x) = (botOf ρ ◃ x ↦ v) × Var x × false
 evalBwd v (T.Op ρ op) = (botOf ρ ◃ op ↦ v) × Op op × false

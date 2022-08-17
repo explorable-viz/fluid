@@ -8,10 +8,11 @@ import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), head, intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (Map, lookup, size, toUnfoldable, unionWith)
+import Data.Map (Map, filterKeys, lookup, size, toUnfoldable, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
+import Data.Set (Set, member)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
@@ -50,6 +51,9 @@ mustLookup k = definitely' <<< lookup k
 
 asSingletonMap :: forall k v . Map k v -> k × v
 asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
+
+splitOn :: forall k v . Ord k => Set k -> Map k v -> Map k v × Map k v
+splitOn ks m = filterKeys (_ `member` ks) m × filterKeys (_ `not <<< member` ks) m
 
 onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
 onlyIf true    = pure

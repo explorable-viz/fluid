@@ -6,7 +6,7 @@ import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), (\\), length, range, singleton, unzip)
-import Data.List.NonEmpty (singleton) as NE
+import Data.List.NonEmpty (singleton) as NEL
 import Data.Map (empty, insert, lookup)
 import Data.Map (singleton) as M
 import Data.Map.Internal (keys)
@@ -120,7 +120,7 @@ eval γ (App e e') = do
    t' × v' <- eval γ e'
    case v of
       V.Closure _ γ1 ρ σ -> do
-         let γ1' = γ1 <#> NE.singleton
+         let γ1' = γ1 <#> NEL.singleton
              γ2 = closeDefs γ1' ρ ρ
          γ3 × e'' × w <- match v' σ
          t'' × v'' <- eval ((γ1' `concat` γ2) `concat` γ3) (asExpr e'')

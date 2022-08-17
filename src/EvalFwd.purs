@@ -3,7 +3,7 @@ module EvalFwd where
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
-import Data.List.NonEmpty (singleton) as NE
+import Data.List.NonEmpty (singleton) as NEL
 import Data.Map (empty, insert)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), (&&&), first, second)
@@ -86,7 +86,7 @@ evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
    case evalFwd γ e1 α t1 of
       V.Closure β γ1 δ σ' ->
          let v = evalFwd γ e2 α t2
-             γ1' = γ1 <#> NE.singleton
+             γ1' = γ1 <#> NEL.singleton
              γ2 = closeDefsFwd γ1' δ β δ
              γ3 × e3 × β' = matchFwd v σ' w in
          evalFwd ((γ1' `concat` γ2) `concat` γ3) (asExpr e3) (β ∧ β') t3

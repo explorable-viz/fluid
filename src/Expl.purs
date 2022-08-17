@@ -1,12 +1,13 @@
 module Expl where
 
 import Prelude
-import Data.List (List(..), singleton)
+import Data.List (List)
+import Data.Set (empty, singleton, unions)
 import Bindings (Bindings, Var, val)
 import DataType (Ctr)
-import Expr (Elim, RecDefs)
+import Expr (class BV, Elim, RecDefs, bv)
 import Util (type (×))
-import Util.SnocList (SnocList, toList, reverse)
+import Util.SnocList (SnocList)
 import Val (Array2, Env, PrimOp, Val)
 
 data VarDef a = VarDef (Match a) (Expl a)
@@ -36,10 +37,8 @@ data Match a =
    MatchConstr Ctr (List (Match a)) (List Ctr) |
    MatchRecord (Bindings (Match a))
 
--- TODO: unify with bv
-vars :: forall a . Match a -> List Var
-vars (MatchVar x)          = singleton x
-vars (MatchVarAnon _)      = Nil
-vars (MatchConstr _ ws _)  = ws <#> vars # join
-vars (MatchRecord xws)     = ws <#> vars # join
-   where ws = xws # (reverse >>> toList) <#> val
+instance BV (Match a) where
+   bv (MatchVar x)          = singleton x
+   bv (MatchVarAnon _)      = empty
+   bv (MatchConstr _ ws _)  = unions (bv <$> ws)
+   bv (MatchRecord xws)     = unions (bv <$> val <$> xws)

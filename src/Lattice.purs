@@ -130,6 +130,9 @@ mayFailUpdate m (k × v) =
       Just v' ->
          update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
 
+instance (Key k, BoundedSlices t) => BoundedSlices (Map k t) where
+   botOf = (<$>) botOf
+
 instance Slices a => JoinSemilattice (Array a) where
    join = definedJoin
    neg = (<$>) neg
