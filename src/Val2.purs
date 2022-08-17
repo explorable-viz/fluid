@@ -80,8 +80,8 @@ restrict γ xs = filterKeys (_ `member` xs) γ <#> head
 type Array2 a = Array (Array a)
 type MatrixRep a = Array2 (Val a) × (Int × a) × (Int × a)
 
-insertMatrix :: Int -> Int -> Val 𝔹 -> Endo (MatrixRep 𝔹)
-insertMatrix i j v (vss × h × w) =
+updateMatrix :: Int -> Int -> Val 𝔹 -> Endo (MatrixRep 𝔹)
+updateMatrix i j v (vss × h × w) =
    let vs_i = vss!(i - 1)
        vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) v vs_i) vss
    in  vss' × h × w
@@ -111,11 +111,11 @@ instance Slices (Val Boolean) where
    maybeJoin (Str α str) (Str α' str')                = Str (α ∨ α') <$> (str ≞ str')
    maybeJoin (Record α xvs) (Record α' xvs')          = Record (α ∨ α') <$> maybeJoin xvs xvs'
    maybeJoin (Constr α c vs) (Constr α' c' us)        = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
-   maybeJoin (Matrix α (vss × (i × β) × (j × γ))) (Matrix α' (vss' × (i' × β') × (j' × γ'))) =
+   maybeJoin (Matrix α (vss × (i × βi) × (j × βj))) (Matrix α' (vss' × (i' × βi') × (j' × βj'))) =
       Matrix (α ∨ α') <$> (
          maybeJoin vss vss' `lift2 (×)`
-         ((flip (×) (β ∨ β')) <$> (i ≞ i')) `lift2 (×)`
-         ((flip (×) (γ ∨ γ')) <$> (j ≞ j'))
+         ((flip (×) (βi ∨ βi')) <$> (i ≞ i')) `lift2 (×)`
+         ((flip (×) (βj ∨ βj')) <$> (j ≞ j'))
       )
    maybeJoin (Closure ρ δ α σ) (Closure ρ' δ' α' σ')  =
       Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <@> α ∨ α' <*> maybeJoin σ σ'

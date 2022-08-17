@@ -13,7 +13,7 @@ import DataType2 (cCons)
 import Lattice2 (𝔹)
 import Primitive2 (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
 import Util2 (Endo, type (×), (×), type (+), (!), error)
-import Val2 (Env2, MatrixRep, Val(..), insertMatrix)
+import Val2 (Env2, MatrixRep, Val(..), updateMatrix)
 
 primitives :: Env2 𝔹
 primitives = singleton <$> fromFoldable [
@@ -71,7 +71,7 @@ matrixLookup = { fwd, bwd }
 
    bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-       insertMatrix i j v (vss × (i' × false) × (j' × false)) × ((i × false) × (j × false))
+       updateMatrix i j v (vss × (i' × false) × (j' × false)) × ((i × false) × (j × false))
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

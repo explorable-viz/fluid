@@ -9,12 +9,12 @@ import Effect (Effect)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
 import Bindings2 (Bindings, Var, (↦), find, update)
-import DataType2 (Ctr, cBarChart, cCons, cNil, cPair, f_caption, f_data, f_x, f_y)
+import DataType2 (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_caption, f_data, f_x, f_y)
 import Lattice2 (𝔹, botOf, neg)
 import Primitive2 (class ToFrom, as, match_fwd)
 import Util2 (type (×), type (+), (×), (!), absurd, error, definitely', successful, unimplemented)
 import Util.SnocList2 (SnocList(..), (:-))
-import Val2 (Val(..), insertMatrix)
+import Val2 (Val(..), updateMatrix)
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
@@ -48,27 +48,26 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
 
 -- Selection helpers.
 selectCell :: 𝔹 -> Int -> Int -> Int -> Int -> Val 𝔹
-selectCell _ i j _ _ = Matrix false (insertMatrix i j (error unimplemented) (error unimplemented))
+selectCell _ i j _ _ = Matrix false (updateMatrix i j (error unimplemented) (error unimplemented))
 
-selectNth :: Int -> Val 𝔹 -> Val 𝔹
-selectNth 0 v = Constr false cCons (v : error unimplemented : Nil)
-selectNth n v = Constr false cCons (error unimplemented : selectNth (n - 1) v : Nil)
+--selectCell2 :: 𝔹 -> Int -> Int -> Selector
+--selectCell2 α i j (Matrix _ (vss × (i' × β) × (j' × β')))   = Matrix false $ updateMatrix i j ?_ ?_
+--selectCell2 _ _ _ _                                         = error absurd
 
-selectNth2 :: Int -> Selector -> Selector
-selectNth2 0 δv (Constr _ c (v : v' : Nil)) | c == cCons =
-   Constr false cCons (δv v : botOf v' : Nil)
-selectNth2 n δv (Constr _ c (v : v' : Nil)) | c == cCons =
-   Constr false cCons (botOf v : selectNth2 (n - 1) δv v' : Nil)
-selectNth2 _ _ _ = error absurd
+selectNth :: Int -> Selector -> Selector
+selectNth 0 δv (Constr _ c (v : v' : Nil)) | c == cCons  = Constr false cCons (δv v : botOf v' : Nil)
+selectNth n δv (Constr _ c (v : v' : Nil)) | c == cCons  = Constr false cCons (botOf v : selectNth (n - 1) δv v' : Nil)
+selectNth _ _ _                                          = error absurd
 
 selectNthNode :: Int -> Selector
-selectNthNode 0 (Constr _ c Nil) | c == cNil =
-   Constr true cNil Nil
-selectNthNode 0 (Constr _ c (v : v' : Nil)) | c == cCons =
-   Constr true cCons (botOf v : botOf v' : Nil)
-selectNthNode n (Constr _ c (v : v' : Nil)) | c == cCons =
-   Constr false cCons (botOf v : selectNthNode (n - 1) v' : Nil)
-selectNthNode _ _ = error absurd
+selectNthNode 0 (Constr _ c Nil) | c == cNil             = Constr true cNil Nil
+selectNthNode 0 (Constr _ c (v : v' : Nil)) | c == cCons = Constr true cCons (botOf v : botOf v' : Nil)
+selectNthNode n (Constr _ c (v : v' : Nil)) | c == cCons = Constr false cCons (botOf v : selectNthNode (n - 1) v' : Nil)
+selectNthNode _ _                                        = error absurd
+
+selectSome :: Selector
+selectSome (Constr _ c v) | c == cSome = Constr true cSome (botOf v)
+selectSome _                           = error absurd
 
 select_y :: Val 𝔹
 select_y = Record false (Lin :- f_x ↦ error unimplemented :- f_y ↦ error unimplemented)
@@ -83,7 +82,7 @@ selectPair α v1 v2 = Constr α cPair (v1 : v2 : Nil)
 -- Togglers.
 toggleCell :: Int -> Int -> Selector
 toggleCell i j (Matrix α (vss × (i' × β) × (j' × β'))) =
-   Matrix α (insertMatrix i j (neg vss!(i - 1)!(j - 1)) (vss × (i' × β) × (j' × β')))
+   Matrix α (updateMatrix i j (neg vss!(i - 1)!(j - 1)) (vss × (i' × β) × (j' × β')))
 toggleCell _ _ _ = error absurd
 
 toggleNth :: Int -> Selector -> Selector
