@@ -10,7 +10,7 @@
     "tests": "karma start karma.conf.tests.js",
     "tests-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
     "clean-app-tests": "rm -rf dist/app-tests && mkdir -p dist/app-tests && cp web/tests.html dist/app-tests",
-    "build-app-tests": "yarn clean-app-tests && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.App.Main --to dist/app-tests/app.js",
+    "build-app-tests": "yarn clean-app-tests && spago bundle-app --purs-args '--strict --censor-codes=UserDefinedWarning' --main Test.App.Main2 --to dist/app-tests/app.js",
     "app-tests": "karma start karma.conf.app-tests.js",
     "app-tests-browser": "karma start karma.conf.app-tests.js --browsers=Chrome --singleRun=false"
   },
