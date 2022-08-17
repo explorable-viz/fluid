@@ -1,4 +1,4 @@
-module Test.Util2 where
+ module Test.Util2 where
 
 import Prelude hiding (absurd)
 import Data.List (elem)
@@ -89,14 +89,8 @@ testWithSetup2 (File file) expected v_expect_opt setup =
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
 
-testBwd :: File -> File -> Val 𝔹 -> String -> Test Unit
-testBwd file file_expect v expected =
-   let folder = File "slicing/"
-       file' = folder <> file in
-   testWithSetup file' expected (Just (v × (folder <> file_expect))) (openWithDefaultImports file')
-
-testBwd2 :: File -> File -> Selector -> String -> Test Unit
-testBwd2 file file_expect δv expected =
+testBwd :: File -> File -> Selector -> String -> Test Unit
+testBwd file file_expect δv expected =
    let folder = File "slicing/"
        file' = folder <> file in
    testWithSetup2 file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')

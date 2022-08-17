@@ -73,8 +73,9 @@ selectBarChart_data :: Val 𝔹 -> Val 𝔹
 selectBarChart_data v =
    Constr false cBarChart (Record false (Lin :- f_caption ↦ error unimplemented :- f_data ↦ v) : Nil)
 
-selectPair :: 𝔹 -> Val 𝔹 -> Val 𝔹 -> Val 𝔹
-selectPair α v1 v2 = Constr α cPair (v1 : v2 : Nil)
+selectPair :: Endo 𝔹 -> Selector -> Selector -> Selector
+selectPair δα δv1 δv2 (Constr α c (v1 : v2 : Nil)) | c == cPair = Constr (δα α) cPair (δv1 v1 : δv2 v2 : Nil)
+selectPair _ _ _ _ = error absurd
 
 -- Togglers.
 toggleCell :: Int -> Int -> Selector
