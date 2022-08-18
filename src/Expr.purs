@@ -22,7 +22,7 @@ data Expr a =
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
-   RecordLookup (Expr a) Var |
+   Project (Expr a) Var |
    App (Expr a) (Expr a) |
    Let (VarDef a) (Expr a) |
    LetRec (RecDefs a) (Expr a)
@@ -85,7 +85,7 @@ instance FV (Expr a) where
    fv (Constr _ _ es)      = unions (fv <$> es)
    fv (Matrix _ e1 _ e2)   = union (fv e1) (fv e2)
    fv (Lambda σ)           = fv σ
-   fv (RecordLookup e _)   = fv e
+   fv (Project e _)   = fv e
    fv (App e1 e2)          = fv e1 `union` fv e2
    fv (Let def e)          = fv def `union` (fv e `difference` bv def)
    fv (LetRec δ e)         = unions (fv <$> val <$> δ) `union` fv e
@@ -180,7 +180,7 @@ instance BoundedSlices (Expr Boolean) where
    botOf (Constr _ c es)            = Constr bot c (botOf es)
    botOf (Matrix _ e1 (x × y) e2)   = Matrix bot (botOf e1) (x × y) (botOf e2)
    botOf (Lambda σ)                 = Lambda (botOf σ)
-   botOf (RecordLookup e x)         = RecordLookup (botOf e) x
+   botOf (Project e x)              = Project (botOf e) x
    botOf (App e1 e2)                = App (botOf e1) (botOf e2)
    botOf (Let def e)                = Let (botOf def) (botOf e)
    botOf (LetRec δ e)               = LetRec (botOf δ) (botOf e)
@@ -200,7 +200,7 @@ instance Slices (Expr Boolean) where
    maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
       Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≞ x') `lift2 (×)` (y ≞ y')) <*> maybeJoin e2 e2'
    maybeJoin (Lambda σ) (Lambda σ')                            = Lambda <$> maybeJoin σ σ'
-   maybeJoin (RecordLookup e x) (RecordLookup e' x')            = RecordLookup <$> maybeJoin e e' <*> (x ≞ x')
+   maybeJoin (Project e x) (Project e' x')                     = Project <$> maybeJoin e e' <*> (x ≞ x')
    maybeJoin (App e1 e2) (App e1' e2')                         = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Let def e) (Let def' e')                         = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec δ e) (LetRec δ' e')                       = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'

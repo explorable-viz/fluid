@@ -2,11 +2,13 @@ module Val where
 
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
+import Data.Foldable (length)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList, cons, cons', head, singleton, tail)
-import Data.Map (Map, filterKeys, keys, insert, lookup, pop, toUnfoldable, unionWith)
+import Data.Map (Map, filterKeys, keys, insert, lookup, pop, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, member)
+import Data.Traversable (sequence)
 import Data.Tuple (uncurry)
 import Bindings (Bind(..), Bindings, Var, (↦))
 import DataType (Ctr)
@@ -14,7 +16,7 @@ import Expr (Elim, RecDefs)
 import Lattice (
    class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), bot, botOf, definedJoin, maybeJoin, neg
 )
-import Util (Endo, MayFail, type (×), (×), (≞), (!), definitely, error, report, unsafeUpdateAt)
+import Util (Endo, MayFail, type (×), (×), (≞), (!), definitely, error, unimplemented, report, unsafeUpdateAt)
 import Util.SnocList (SnocList(..), (:-))
 
 type Op a = a × 𝔹 -> Val 𝔹
@@ -41,6 +43,13 @@ newtype PrimOp = PrimOp {
 type Env a = Map Var (NonEmptyList (Val a))
 type SingletonEnv a = Map Var (Val a)
 
+asSingleton :: forall a . Env a -> Maybe (SingletonEnv a)
+asSingleton γ = sequence $ γ <#> uniqueElement
+   where
+   uniqueElement :: forall b . NonEmptyList b -> Maybe b
+   uniqueElement xs | length xs == 1   = Just $ head xs
+                    | otherwise        = Nothing
+
 dom :: forall a . Map Var a -> Set Var
 dom = keys
 
@@ -48,9 +57,6 @@ lookup' :: forall a . Var -> Env a -> MayFail (Val a)
 lookup' x γ = case lookup x γ of
    Nothing -> report ("variable " <> x <> " not found")
    Just vs -> pure $ head vs
-
-disjUnion :: forall a . Map Var a -> Endo (Map Var a)
-disjUnion = unionWith (\_ _ -> error "not disjoint")
 
 update :: forall a . Env a -> SingletonEnv a -> Env a
 update γ γ' = update' γ (uncurry Bind <$> toUnfoldable γ')
@@ -70,6 +76,9 @@ concat' γ (γ' :- x ↦ v)  =
    case pop x γ of
    Nothing -> concat' γ γ' # insert x (singleton v)
    Just (vs × γ'') -> concat' γ'' γ' # insert x (v `cons` vs)
+
+concat_inv :: forall a . Set Var -> Env a -> Env a × SingletonEnv a
+concat_inv _ _ = error unimplemented
 
 restrict :: forall a . Env a -> Set Var -> SingletonEnv a
 restrict γ xs = filterKeys (_ `member` xs) γ <#> head

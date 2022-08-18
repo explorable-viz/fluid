@@ -130,7 +130,7 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.Let (E.VarDef σ e) e') = atop (hspace [text str.let_, pretty σ, text str.equals, pretty e, text str.in_])
                                            (pretty e')
    pretty (E.LetRec δ e)            = atop (hspace [text str.let_, pretty δ, text str.in_]) (pretty e)
-   pretty (E.RecordLookup _ _)      = error "todo"
+   pretty (E.Project _ _)      = error "todo"
    pretty (E.App e e')              = hspace [pretty e, pretty e']
 
 instance Pretty (SnocList (Bind (Elim Boolean))) where
@@ -186,7 +186,7 @@ instance Pretty (S.Expr Boolean) where
       init = [text str.arrayLBracket, pretty e, text str.bar]
       quant = [parens (hcomma [text x, text y]), text (str.in_), pretty e', text str.arrayRBracket]
    pretty (S.Lambda bs)                = hspace [text str.fun, vert semi (pretty <$> bs)]
-   pretty (S.RecordLookup s x)         = pretty s :<>: text (str.dot <> x)
+   pretty (S.Project s x)         = pretty s :<>: text (str.dot <> x)
    pretty (S.App s s')                 = hspace [pretty s, pretty s']
    pretty (S.BinaryApp s op s')        = parens (hspace [pretty s, text op, pretty s'])
    pretty (S.MatchAs s bs)             = atop (hspace [text str.match, pretty s, text str.as]) (vert semi (pretty <$> bs))

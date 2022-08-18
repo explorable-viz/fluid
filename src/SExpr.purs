@@ -18,7 +18,7 @@ data Expr a =
    Record a (Bindings (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (NonEmptyList (Branch a)) |
-   RecordLookup (Expr a) Var |
+   Project (Expr a) Var |
    App (Expr a) (Expr a) |
    BinaryApp (Expr a) Var (Expr a) |
    MatchAs (Expr a) (NonEmptyList (Pattern × Expr a)) |

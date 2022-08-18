@@ -64,7 +64,7 @@ exprBwd (E.Record α xes) (Record _ xss) =
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s (x × y) s') =
    Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
 exprBwd (E.Lambda σ) (Lambda bs) = Lambda (branchesBwd_curried σ bs)
-exprBwd (E.RecordLookup e _) (RecordLookup s x) = RecordLookup (exprBwd e s) x
+exprBwd (E.Project e _) (Project s x) = Project (exprBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (exprBwd e1 s1) (exprBwd e2 s2)
 exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
    MatchAs (exprBwd e s) (branchesBwd_uncurried σ bs)

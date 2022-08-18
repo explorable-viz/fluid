@@ -14,10 +14,10 @@ import Expl (Expl, Match)
 import Expr (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr, for, fv)
 import Lattice (𝔹, (∧))
 import Primitive (match_fwd) as P
-import Util (type (×), (×), (!), absurd, assert, error, mustLookup, successful)
+import Util (type (×), (×), (!), absurd, assert, disjUnion, error, mustLookup, successful)
 import Util.SnocList (SnocList(..), (:-))
 import Util.SnocList (unzip, zip, zipWith) as S
-import Val (Env, PrimOp(..), SingletonEnv, Val, concat, disjUnion, lookup', restrict)
+import Val (Env, PrimOp(..), SingletonEnv, Val, concat, lookup', restrict)
 import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> SingletonEnv 𝔹 × Cont 𝔹 × 𝔹
@@ -74,13 +74,10 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
                    singleton (evalFwd (γ `concat` γ') e1 α' (tss!(i - 1)!(j - 1)))
          in V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
       _ -> error absurd
-evalFwd γ (LetRec ρ e') α (T.LetRec _ t) =
-   let γ' = closeDefsFwd γ ρ α ρ in
-   evalFwd (γ `concat` γ') e' α t
 evalFwd γ (Lambda σ) α (T.Lambda _ _) = V.Closure α (γ `restrict` fv σ) Lin σ
-evalFwd γ (RecordLookup e' _) α (T.RecordLookup t xs x) =
+evalFwd γ (Project e' _) α (T.Project t xvs' x) =
    case evalFwd γ e' α t of
-      V.Record _ xvs -> assert ((xvs <#> key) == xs) $ successful (find x xvs)
+      V.Record _ xvs -> assert ((xvs <#> key) == (xvs' <#> key)) $ successful (find x xvs)
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
    case evalFwd γ e1 α t1 of
@@ -108,4 +105,7 @@ evalFwd γ (Let (VarDef σ e1) e2) α (T.Let (T.VarDef w t1) t2) =
    let v = evalFwd γ e1 α t1
        γ' × _ × α' = matchFwd v σ w in
    evalFwd (γ `concat` γ') e2 α' t2
+evalFwd γ (LetRec ρ e') α (T.LetRec _ t) =
+   let γ' = closeDefsFwd γ ρ α ρ in
+   evalFwd (γ `concat` γ') e' α t
 evalFwd _ _ _ _ = error absurd

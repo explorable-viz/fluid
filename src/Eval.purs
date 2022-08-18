@@ -21,10 +21,10 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asEx
 import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
-import Util (MayFail, type (×), (×), absurd, check, error, report, successful)
+import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
 import Util.SnocList (SnocList(..), (:-), zipWith)
 import Util.SnocList (unzip) as S
-import Val (Env, PrimOp(..), SingletonEnv, Val, concat, disjUnion, lookup', restrict)
+import Val (Env, PrimOp(..), SingletonEnv, Val, concat, lookup', restrict)
 import Val (Val(..)) as V
 
 patternMismatch :: String -> String -> String
@@ -103,17 +103,12 @@ eval γ (Matrix _ e (x × y) e') = do
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable
-eval γ (LetRec ρ e) = do
-   let γ' = closeDefs γ ρ ρ
-   t × v <- eval (γ `concat` γ') e
-   pure (T.LetRec ρ t × v)
 eval γ (Lambda σ) =
    pure (T.Lambda γ σ × V.Closure false (γ `restrict` fv σ) Lin σ)
-eval γ (RecordLookup e x) = do
+eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
-      V.Record _ xvs ->
-         (T.RecordLookup t (xvs <#> key) x × _) <$> find x xvs
+      V.Record _ xvs -> (T.Project t xvs x × _) <$> find x xvs
       _ -> report "Expected record"
 eval γ (App e e') = do
    t × v <- eval γ e
@@ -138,6 +133,10 @@ eval γ (Let (VarDef σ e) e') = do
    γ' × _ × w <- match v σ -- terminal meta-type of eliminator is meta-unit
    t' × v' <- eval (γ `concat` γ') e'
    pure (T.Let (T.VarDef w t) t' × v')
+eval γ (LetRec ρ e) = do
+   let γ' = closeDefs γ ρ ρ
+   t × v <- eval (γ `concat` γ') e
+   pure (T.LetRec ρ t × v)
 
 eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
 eval_module γ (Module Nil) = pure γ

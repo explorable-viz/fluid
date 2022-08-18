@@ -52,8 +52,11 @@ mustLookup k = definitely' <<< lookup k
 asSingletonMap :: forall k v . Map k v -> k × v
 asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
 
-splitOn :: forall k v . Ord k => Set k -> Map k v -> Map k v × Map k v
-splitOn ks m = filterKeys (_ `member` ks) m × filterKeys (_ `not <<< member` ks) m
+disjUnion :: forall k v . Ord k => Map k v -> Endo (Map k v)
+disjUnion = unionWith (\_ _ -> error "not disjoint")
+
+disjUnion_inv :: forall k v . Ord k => Set k -> Map k v -> Map k v × Map k v
+disjUnion_inv ks m = filterKeys (_ `member` ks) m × filterKeys (_ `not <<< member` ks) m
 
 onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
 onlyIf true    = pure
