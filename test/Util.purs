@@ -2,9 +2,9 @@
 
 import Prelude hiding (absurd)
 import Data.List (elem)
-import Data.Maybe (Maybe(..){-, fromMaybe-})
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
-import Data.Tuple ({-fst, -}snd)
+import Data.Tuple (fst, snd)
 import Debug (trace)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -14,10 +14,10 @@ import Test.Spec.Mocha (runMocha)
 --import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
 import DataType (dataTypeFor, typeName)
---import DesugarBwd (desugarBwd)
+import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
 import Eval (eval)
---import EvalBwd (evalBwd)
+import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
 import Lattice (𝔹)
 import Module (File(..), {-Folder(..), loadFile, -}open, openDatasetAs, openWithDefaultImports)
@@ -40,12 +40,10 @@ run = runMocha -- no reason at all to see the word "Mocha"
 desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Trace 𝔹 × Val 𝔹)
 desugarEval ρ s = desugarFwd s >>= eval ρ
 
-{-
 desugarEval_bwd :: Trace 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr 𝔹
 desugarEval_bwd (t × s) v =
    let ρ × e × _ = evalBwd v t in
    ρ × desugarBwd e s
--}
 
 desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Trace 𝔹 -> Val 𝔹
 desugarEval_fwd ρ s = evalFwd ρ (successful (desugarFwd s)) true
@@ -60,8 +58,8 @@ testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × 
 testWithSetup (File file) expected v_expect_opt setup =
    before setup $
       it file \(ρ × s) -> do
-         let t × _ = successful (desugarEval ρ s)
-             --ρ' × s' = desugarEval_bwd (t × s) (fromMaybe v (fst <$> v_expect_opt))
+         let t × v = successful (desugarEval ρ s)
+             _{-ρ' × s'-} = desugarEval_bwd (t × s) (fromMaybe identity (fst <$> v_expect_opt) v)
              --v' = desugarEval_fwd ρ' s' t
              v' = desugarEval_fwd ρ s t
          unless (isGraphical v') (checkPretty "Value" expected v')

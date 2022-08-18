@@ -118,11 +118,11 @@ evalBwd v (T.App (t1 × δ × _) t2 w t3) =
        γ1'' = definitely' $ asSingleton γ1 `lift2 (∨)` asSingleton γ1'
        γ'' × e1 × α' = evalBwd (V.Closure (β ∨ β') γ1'' δ' σ) t1 in
    (γ' ∨ γ'') × App e1 e2 × (α ∨ α')
-evalBwd v@(V.Primitive _ vs'') (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
+evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let vs' = vs <> L.singleton v2
        { init: vs'', last: v2' } = definitely' $ unsnoc $
          if φ.arity > length vs'
-         then vs''
+         then unsafePartial $ let V.Primitive _ vs'' = v in vs''
          else φ.op_bwd v vs'
        γ × e × α = evalBwd (V.Primitive (PrimOp φ) vs'') t1
        γ' × e' × α' = evalBwd v2' t2 in
