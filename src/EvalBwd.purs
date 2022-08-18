@@ -8,7 +8,7 @@ import Data.List (List(..), (:), range, reverse, unsnoc, zip)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.List.NonEmpty (singleton) as NEL
-import Data.Map (fromFoldable, isEmpty)
+import Data.Map (insert, isEmpty)
 import Data.Map (singleton) as M
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong ((&&&), first)
@@ -21,7 +21,7 @@ import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, bv)
 import Lattice (𝔹, (∨), botOf)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion_inv, mustLookup, nonEmpty, unimplemented)
+import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion_inv, mustLookup, nonEmpty)
 import Util.SnocList (SnocList(..), (:-), fromList)
 import Util.SnocList (unzip, zip, zipWith) as S
 import Val (Env, PrimOp(..), SingletonEnv, Val, asSingleton, concat_inv, dom, update)
@@ -41,12 +41,10 @@ closeDefsBwd γ (γ0 × ρ0) =
 matchBwd :: SingletonEnv 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 matchBwd γ κ _ (MatchVar x) | dom γ == singleton x = mustLookup x γ × ElimVar x κ
 matchBwd γ κ _ (MatchVarAnon v) | isEmpty γ        = botOf v × ElimVar varAnon κ
-matchBwd ρ κ α (MatchConstr c ws cs)               = V.Constr α c vs × ElimConstr (fromFoldable cκs)
+matchBwd ρ κ α (MatchConstr c ws cκs)              = V.Constr α c vs × ElimConstr (insert c κ' $ (botOf <$> cκs))
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
-         cκs = c × κ' : ((_ × error unimplemented) <$> cs)
-matchBwd ρ κ α (MatchRecord xws)                   = V.Record α xvs × ElimRecord xs κ'
+matchBwd ρ κ α (MatchRecord xws)                   = V.Record α xvs × ElimRecord (key <$> xws) κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
-         xs = key <$> xws
 matchBwd _ _ _ _                                   = error absurd
 
 matchArgsBwd :: SingletonEnv 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹

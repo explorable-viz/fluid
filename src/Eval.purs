@@ -5,9 +5,9 @@ import Prelude hiding (absurd)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), (\\), length, range, singleton, unzip)
+import Data.List (List(..), (:), length, range, singleton, unzip)
 import Data.List.NonEmpty (singleton) as NEL
-import Data.Map (empty, insert, lookup)
+import Data.Map (empty, filterKeys, insert, lookup)
 import Data.Map (singleton) as M
 import Data.Map.Internal (keys)
 import Data.Profunctor.Strong ((&&&), second)
@@ -36,7 +36,7 @@ match v (ElimVar x κ)  | x == varAnon    = pure (empty × κ × MatchVarAnon v)
 match (V.Constr _ c vs) (ElimConstr m) = do
    checkConsistent "Pattern mismatch: " c (keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
-   (second (\ws -> MatchConstr c ws (keys m \\ singleton c))) <$> matchArgs c vs κ
+   (second (\ws -> MatchConstr c ws (filterKeys ((/=) c) m))) <$> matchArgs c vs κ
 match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP v)) =<< show <$> dataTypeFor (keys m)
 match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs xs κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
