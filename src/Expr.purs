@@ -151,6 +151,7 @@ instance JoinSemilattice (Cont Boolean) where
    neg = (<$>) neg
 
 instance Slices (Cont Boolean) where
+   maybeJoin ContNone ContNone            = pure ContNone
    maybeJoin (ContExpr e) (ContExpr e')   = ContExpr <$> maybeJoin e e'
    maybeJoin (ContElim σ) (ContElim σ')   = ContElim <$> maybeJoin σ σ'
    maybeJoin _ _                          = report "Incompatible continuations"
