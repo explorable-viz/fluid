@@ -14,6 +14,7 @@ You can edit this file as you like.
   , "effect"
   , "either"
   , "exceptions"
+  , "filterable"
   , "foldable-traversable"
   , "http-methods"
   , "identity"

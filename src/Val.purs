@@ -2,9 +2,10 @@ module Val where
 
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
+import Data.Filterable (filterMap)
 import Data.Foldable (length)
 import Data.List (List)
-import Data.List.NonEmpty (NonEmptyList, cons, cons', head, singleton, tail)
+import Data.List.NonEmpty (NonEmptyList, cons, cons', fromList, head, singleton, tail)
 import Data.Map (Map, filterKeys, keys, insert, lookup, pop, toUnfoldable)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, member)
@@ -16,7 +17,7 @@ import Expr (Elim, RecDefs)
 import Lattice (
    class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), bot, botOf, definedJoin, maybeJoin, neg
 )
-import Util (Endo, MayFail, type (×), (×), (≞), (!), definitely, error, unimplemented, report, unsafeUpdateAt)
+import Util (Endo, MayFail, type (×), (×), (≞), (!), definitely, disjUnion, report, unsafeUpdateAt)
 import Util.SnocList (SnocList(..), (:-))
 
 type Op a = a × 𝔹 -> Val 𝔹
@@ -68,7 +69,7 @@ update' γ (γ' :- x ↦ v)    =
    in update' γ'' γ' # insert x (cons' v $ tail vs)
 
 concat :: forall a . Env a -> SingletonEnv a -> Env a
-concat γ γ' = concat' γ (uncurry Bind <$> toUnfoldable γ')
+concat γ γ' = toUnfoldable γ' <#> uncurry Bind # concat' γ
 
 concat' :: forall a . Env a -> Bindings (Val a) -> Env a
 concat' γ Lin            = γ
@@ -78,7 +79,10 @@ concat' γ (γ' :- x ↦ v)  =
    Just (vs × γ'') -> concat' γ'' γ' # insert x (v `cons` vs)
 
 concat_inv :: forall a . Set Var -> Env a -> Env a × SingletonEnv a
-concat_inv _ _ = error unimplemented
+concat_inv xs γ =
+   let γ' = (filterKeys (_ `member` xs) γ <#> tail) # filterMap fromList
+       γ'' = filterKeys (_ `not <<< member` xs) γ
+   in γ' `disjUnion` γ'' × restrict γ xs
 
 restrict :: forall a . Env a -> Set Var -> SingletonEnv a
 restrict γ xs = filterKeys (_ `member` xs) γ <#> head

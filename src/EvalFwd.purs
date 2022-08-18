@@ -9,11 +9,11 @@ import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), (&&&), first, second)
 import Data.Set (union)
 import Bindings (Bindings, (↦), find, key, val)
-import Expl (Expl(..), Match(..), VarDef(..)) as T
-import Expl (Expl, Match)
 import Expr (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr, for, fv)
 import Lattice (𝔹, (∧))
 import Primitive (match_fwd) as P
+import Trace (Trace(..), Match(..), VarDef(..)) as T
+import Trace (Trace, Match)
 import Util (type (×), (×), (!), absurd, assert, disjUnion, error, mustLookup, successful)
 import Util.SnocList (SnocList(..), (:-))
 import Util.SnocList (unzip, zip, zipWith) as S
@@ -49,7 +49,7 @@ closeDefsFwd γ ρ0 α (ρ :- f ↦ σ) =
    let xs = fv (ρ0 `for` σ) `union` fv σ
    in closeDefsFwd γ ρ0 α ρ # insert f (V.Closure α (γ `restrict` xs) ρ0 σ)
 
-evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Expl 𝔹 -> Val 𝔹
+evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Trace 𝔹 -> Val 𝔹
 evalFwd γ (Var _) _ (T.Var _ x) = successful (lookup' x γ)
 evalFwd γ (Op _) _ (T.Op _ op) = successful (lookup' op γ)
 evalFwd _ (Int α _) α' (T.Int _ n) = V.Int (α ∧ α') n

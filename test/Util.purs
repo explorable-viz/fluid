@@ -19,11 +19,11 @@ import DesugarFwd (desugarFwd)
 import Eval (eval)
 --import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
-import Expl (Expl)
-import SExpr (Expr) as S
 import Lattice (𝔹)
 import Module (File(..), {-Folder(..), loadFile, -}open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
+import SExpr (Expr) as S
+import Trace (Trace)
 import Util (MayFail, type (×), (×), successful)
 import Val (Env, Val(..), concat)
 
@@ -37,17 +37,17 @@ type Test a = SpecT Aff Unit Effect a
 run :: forall a . Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
-desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
+desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Trace 𝔹 × Val 𝔹)
 desugarEval ρ s = desugarFwd s >>= eval ρ
 
 {-
-desugarEval_bwd :: Expl 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr 𝔹
+desugarEval_bwd :: Trace 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr 𝔹
 desugarEval_bwd (t × s) v =
    let ρ × e × _ = evalBwd v t in
    ρ × desugarBwd e s
 -}
 
-desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Expl 𝔹 -> Val 𝔹
+desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Trace 𝔹 -> Val 𝔹
 desugarEval_fwd ρ s = evalFwd ρ (successful (desugarFwd s)) true
 
 checkPretty :: forall a . Pretty a => String -> String -> a -> Aff Unit

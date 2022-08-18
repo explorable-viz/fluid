@@ -15,12 +15,12 @@ import Data.Set (union)
 import Data.Traversable (sequence, traverse)
 import Bindings (Bindings, (↦), find, key, val, varAnon, Var)
 import DataType (Ctr, arity, cPair, dataTypeFor)
-import Expl (Expl(..), VarDef(..)) as T
-import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim, for, fv)
 import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
+import Trace (Trace(..), VarDef(..)) as T
+import Trace (Trace, Match(..))
 import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
 import Util.SnocList (SnocList(..), (:-), zipWith)
 import Util.SnocList (unzip) as S
@@ -72,7 +72,7 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (show c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Expl 𝔹 × Val 𝔹)
+eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Trace 𝔹 × Val 𝔹)
 eval γ (Var x)       = (T.Var γ x × _) <$> lookup' x γ
 eval γ (Op op)       = (T.Op γ op × _) <$> lookup' op γ
 eval γ (Int _ n)     = pure (T.Int γ n × V.Int false n)

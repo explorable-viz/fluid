@@ -17,10 +17,10 @@ import Partial.Unsafe (unsafePartial)
 import Bindings (Bindings, Var, (↦), (◃), key, val, varAnon)
 import Bindings (dom) as B
 import DataType (cPair)
-import Expl (Expl(..), VarDef(..)) as T
-import Expl (Expl, Match(..))
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, bv)
 import Lattice (𝔹, (∨), botOf)
+import Trace (Trace(..), VarDef(..)) as T
+import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion_inv, mustLookup, nonEmpty, unimplemented)
 import Util.SnocList (SnocList(..), (:-), fromList)
 import Util.SnocList (unzip, zip, zipWith) as S
@@ -66,7 +66,7 @@ matchRecordBwd γγ' κ α (xws :- x ↦ w)  =
        v × σ   = matchBwd γ κ α w in
    (first (_ :- x ↦ v)) (matchRecordBwd γ' (ContElim σ) α xws)
 
-evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
+evalBwd :: Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var γ x) = (botOf γ `update` M.singleton x v) × Var x × false
 evalBwd v (T.Op γ op) = (botOf γ `update` M.singleton op v) × Op op × false
 evalBwd (V.Str α _) (T.Str γ str) = botOf γ × Str α str × α
@@ -77,13 +77,13 @@ evalBwd (V.Record α xvs) (T.Record γ xts) =
    let xs × ts = xts <#> (key &&& val) # S.unzip
        vs = xvs <#> val
        -- Could unify with similar function in constructor case
-       evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × SnocList (Expr 𝔹) × 𝔹)
+       evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × SnocList (Expr 𝔹) × 𝔹)
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (es :- e) × (α' ∨ α'')
          where γ'' × e × α'' = evalBwd v' t'
        γ' × es × α' = foldr evalArg_bwd (botOf γ × Lin × α) (S.zip vs ts) in
    γ' × Record α (S.zipWith (↦) xs es) × α'
 evalBwd (V.Constr α _ vs) (T.Constr γ c ts) =
-   let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
+   let evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
           where γ'' × e × α'' = evalBwd v' t'
        γ' × es × α' = foldr evalArg_bwd (botOf γ × Nil × α) (zip vs ts) in
