@@ -3,7 +3,6 @@ module EvalBwd where
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Data.Foldable (foldr, length)
-import Data.FoldableWithIndex (foldlWithIndex)
 import Data.List (List(..), (:), range, reverse, unsnoc, zip)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
@@ -13,7 +12,7 @@ import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Set (singleton, union)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bind, Bindings, Var, (↦), key, val, varAnon)
+import Bindings (Bind, Bindings, (↦), key, val, varAnon)
 import Bindings (dom, update) as B
 import DataType (cPair)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, bv)
