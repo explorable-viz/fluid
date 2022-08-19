@@ -110,7 +110,7 @@ infixl 4 mayFailEq as ≞
 infixl 4 mustEq as ≜
 infixl 4 mustGeq as ⪄
 
--- Could be more efficient
+-- could be more efficient
 intersperse :: forall a . a -> Endo (List a)
 intersperse x xs = intercalate (pure x) (pure <$> xs)
 

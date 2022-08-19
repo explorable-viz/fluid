@@ -1,5 +1,6 @@
 let f {fst: x, snd: []} = x;
     f {fst: x, snd: (y: xs)} = y;
+
     g {} = 7
 in {
    a: f {fst: 5, snd: []},

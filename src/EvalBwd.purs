@@ -13,7 +13,7 @@ import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Set (singleton, union)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bindings, Var, (↦), key, val, varAnon)
+import Bindings (Bind, Bindings, Var, (↦), key, val, varAnon)
 import Bindings (dom, update) as B
 import DataType (cPair)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, bv)
@@ -29,14 +29,16 @@ import Val (Val(..)) as V
 -- second argument contains original environment and recursive definitions
 closeDefsBwd :: SingletonEnv 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
 closeDefsBwd γ (γ0 × ρ0) =
-   case foldlWithIndex joinDefs (Lin × γ0' × ρ0' × false) γ of
+   case foldr joinDefs (Lin × γ0' × ρ0' × false) ρ0 of
    ρ' × γ' × ρ × α -> γ' × (ρ ∨ ρ') × α
    where
    γ0' × ρ0' = botOf γ0 × botOf ρ0
-   joinDefs :: Var -> RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹 -> Val 𝔹 -> RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹
-   joinDefs f (ρ_acc × γ' × ρ × α) (V.Closure α_f γ_f ρ_f σ_f) =
-      (ρ_acc :- f ↦ σ_f) × (γ' ∨ (γ0' `update` γ_f)) × (ρ ∨ (ρ0' `B.update` ρ_f)) × (α ∨ α_f)
-   joinDefs _ _ _ = error absurd
+   joinDefs :: Bind (Elim 𝔹) -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹)
+   joinDefs (f ↦ _) (ρ_acc × γ' × ρ × α) =
+      case mustLookup f γ of
+         V.Closure α_f γ_f ρ_f σ_f ->
+            (ρ_acc :- f ↦ σ_f) × (γ' ∨ (γ0' `update` γ_f)) × (ρ ∨ (ρ0' `B.update` ρ_f)) × (α ∨ α_f)
+         _ -> error absurd
 
 matchBwd :: SingletonEnv 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 matchBwd γ κ _ (MatchVar x) | dom γ == singleton x = mustLookup x γ × ElimVar x κ

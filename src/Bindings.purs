@@ -59,11 +59,6 @@ find x (ρ :- x' ↦ v)
    | x == x'   = pure v
    | otherwise = find x ρ
 
--- Replace by SnocList fold?
-foldBindings :: forall a b . (Bind a -> Endo b) -> b -> Bindings a -> b
-foldBindings f z (ρ :- x)  = f x (foldBindings f z ρ)
-foldBindings _ z Lin       = z
-
 -- In recursive definitions (which in the new design will be the only use of bindings),
 -- keys are always unique (there is no hiding, since the definitions are simultaneous).
 update :: forall a . Bindings a -> Endo (Bindings a)
