@@ -13,7 +13,7 @@ import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_caption, f_data, f
 import Lattice (𝔹, botOf, neg)
 import Primitive (class ToFrom, as, match_fwd)
 import Util (Endo, type (×), type (+), (×), absurd, error, definitely', successful, unimplemented)
-import Util.SnocList (SnocList(..), (:-))
+import Util.SnocList (SnocList(..), (:-), singleton)
 import Val (Val(..), updateMatrix)
 
 type HTMLId = String
@@ -92,7 +92,7 @@ toggleNth _ _ _ = error absurd
 
 toggleField :: Var -> Selector -> Selector
 toggleField f selector (Record α xus) =
-   Record α (update xus (f ↦ selector (get f xus)))
+   Record α (update xus (singleton $ f ↦ selector (get f xus)))
 toggleField _ _ _ = error absurd
 
 toggleConstrArg :: Ctr -> Int -> Selector -> Selector

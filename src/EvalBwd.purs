@@ -7,15 +7,14 @@ import Data.FoldableWithIndex (foldlWithIndex)
 import Data.List (List(..), (:), range, reverse, unsnoc, zip)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.List.NonEmpty (singleton) as NEL
 import Data.Map (insert, isEmpty)
 import Data.Map (singleton) as M
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Set (singleton, union)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bindings, Var, (↦), (◃), key, val, varAnon)
-import Bindings (dom) as B
+import Bindings (Bindings, Var, (↦), key, val, varAnon)
+import Bindings (dom, update) as B
 import DataType (cPair)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, bv)
 import Lattice (𝔹, (∨), botOf)
@@ -23,19 +22,20 @@ import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion_inv, mustLookup, nonEmpty)
 import Util.SnocList (SnocList(..), (:-), fromList)
-import Util.SnocList (unzip, zip, zipWith) as S
+import Util.SnocList (singleton, unzip, zip, zipWith) as S
 import Val (Env, PrimOp(..), SingletonEnv, Val, asSingleton, concat_inv, dom, update)
 import Val (Val(..)) as V
 
 -- second argument contains original environment and recursive definitions
 closeDefsBwd :: SingletonEnv 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
 closeDefsBwd γ (γ0 × ρ0) =
-   case foldlWithIndex joinDefs (Lin × botOf γ0 × botOf ρ0 × false) γ of
+   case foldlWithIndex joinDefs (Lin × γ0' × ρ0' × false) γ of
    ρ' × γ' × ρ × α -> γ' × (ρ ∨ ρ') × α
    where
+   γ0' × ρ0' = botOf γ0 × botOf ρ0
    joinDefs :: Var -> RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹 -> Val 𝔹 -> RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹
    joinDefs f (ρ_acc × γ' × ρ × α) (V.Closure α_f γ_f ρ_f σ_f) =
-      (ρ_acc :- f ↦ σ_f) × (γ' ∨ (γ_f <#> NEL.singleton)) × (ρ ∨ ρ_f) × (α ∨ α_f)
+      (ρ_acc :- f ↦ σ_f) × (γ' ∨ (γ0' `update` γ_f)) × (ρ ∨ (ρ0' `B.update` ρ_f)) × (α ∨ α_f)
    joinDefs _ _ _ = error absurd
 
 matchBwd :: SingletonEnv 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
@@ -105,7 +105,7 @@ evalBwd (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (
        γ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t' in
     (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
 evalBwd v (T.Project t xvs x) =
-   let v' = V.Record false $ (xvs <#> botOf) ◃ (x ↦ v)
+   let v' = V.Record false $ (xvs <#> botOf) `B.update` (S.singleton $ x ↦ v)
        ρ × e × α = evalBwd v' t in
    ρ × Project e x × α
 evalBwd v (T.App (t1 × δ × _) t2 w t3) =

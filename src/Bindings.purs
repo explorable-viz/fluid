@@ -5,7 +5,7 @@ import Data.Foldable (class Foldable, foldMapDefaultL, foldrDefault)
 import Data.Set (Set, empty, singleton, union)
 import Data.Traversable (class Traversable, sequenceDefault)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
-import Util (Endo, MayFail, (≞), definitely, report, whenever)
+import Util (Endo, MayFail, (≞), definitely, error, report, whenever)
 import Util.SnocList (SnocList(..), (:-))
 
 type Var = String -- newtype?
@@ -41,7 +41,6 @@ instance Traversable Bind where
    sequence = sequenceDefault
 
 infix 7 Bind as ↦
-infixl 5 update as ◃
 infixl 4 mustGeq as ⪂
 
 instance Slices a => JoinSemilattice (Bind a) where
@@ -65,8 +64,11 @@ foldBindings :: forall a b . (Bind a -> Endo b) -> b -> Bindings a -> b
 foldBindings f z (ρ :- x)  = f x (foldBindings f z ρ)
 foldBindings _ z Lin       = z
 
-update :: forall a . Bindings a -> Bind a -> Bindings a
-update Lin _ = Lin
-update (ρ :- x ↦ v) (x' ↦ v')
-   | x == x'    = ρ :- x' ↦ v'
-   | otherwise  = update ρ (x' ↦ v') :- x ↦ v
+-- In recursive definitions (which in the new design will be the only use of bindings),
+-- keys are always unique (there is no hiding, since the definitions are simultaneous).
+update :: forall a . Bindings a -> Endo (Bindings a)
+update ρ Lin = ρ
+update Lin _ = error "Expected order-preserving subsequence."
+update (ρ :- x ↦ v) (ρ' :- y ↦ u)
+   | x == y    = update ρ ρ' :- x ↦ u
+   | otherwise = update ρ (ρ' :- y ↦ u) :- x ↦ v
