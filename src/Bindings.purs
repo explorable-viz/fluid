@@ -2,13 +2,14 @@ module Bindings where
 
 import Prelude
 import Data.Foldable (class Foldable, foldMapDefaultL, foldrDefault)
+import Data.Map (Map, fromFoldable)
 import Data.Set (Set, empty, singleton, union)
 import Data.Traversable (class Traversable, sequenceDefault)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
-import Util (Endo, MayFail, (≞), definitely, error, report, whenever)
+import Util (MayFail, (≞), (×), definitely, report, whenever)
 import Util.SnocList (SnocList(..), (:-))
 
-type Var = String -- newtype?
+type Var = String
 
 varAnon = "_" :: Var
 
@@ -30,6 +31,9 @@ val (_ ↦ v) = v
 dom :: forall a . Bindings a -> Set Var
 dom Lin           = empty
 dom (ρ :- x ↦ _)  = singleton x `union` dom ρ
+
+asMap :: forall a . Bindings a -> Map Var a
+asMap ρ = ρ <#> (\(x ↦ σ) -> x × σ) # fromFoldable
 
 instance Foldable Bind where
    foldl f b (_ ↦ v) = f b v
@@ -58,12 +62,3 @@ find x Lin  = report ("variable " <> x <> " not found")
 find x (ρ :- x' ↦ v)
    | x == x'   = pure v
    | otherwise = find x ρ
-
--- In recursive definitions (which in the new design will be the only use of bindings),
--- keys are always unique (there is no hiding, since the definitions are simultaneous).
-update :: forall a . Bindings a -> Endo (Bindings a)
-update ρ Lin = ρ
-update Lin _ = error "Expected order-preserving subsequence."
-update (ρ :- x ↦ v) (ρ' :- y ↦ u)
-   | x == y    = update ρ ρ' :- x ↦ u
-   | otherwise = update ρ (ρ' :- y ↦ u) :- x ↦ v

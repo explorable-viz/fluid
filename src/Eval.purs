@@ -6,16 +6,15 @@ import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, range, singleton, unzip)
-import Data.List.NonEmpty (singleton) as NEL
-import Data.Map (empty, filterKeys, insert, lookup)
+import Data.Map (empty, filterKeys, lookup)
 import Data.Map (singleton) as M
 import Data.Map.Internal (keys)
 import Data.Profunctor.Strong ((&&&), second)
 import Data.Set (union)
 import Data.Traversable (sequence, traverse)
-import Bindings (Bindings, (↦), find, key, val, varAnon, Var)
+import Bindings (Bindings, (↦), asMap, find, key, val, varAnon, Var)
 import DataType (Ctr, arity, cPair, dataTypeFor)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, asElim, for, fv)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), VarDef(..), asExpr, asElim, fv)
 import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
@@ -24,15 +23,15 @@ import Trace (Trace, Match(..))
 import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
 import Util.SnocList (SnocList(..), (:-), zipWith)
 import Util.SnocList (unzip) as S
-import Val (Env, PrimOp(..), SingletonEnv, Val, concat, lookup', restrict)
+import Val (Env, FunEnv, PrimOp(..), Val, concat, dom, for, lookup', restrict)
 import Val (Val(..)) as V
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: Val 𝔹 -> Elim 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × Match 𝔹)
+match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match v (ElimVar x κ)  | x == varAnon    = pure (empty × κ × MatchVarAnon v)
-                       | otherwise       = pure (M.singleton x v × κ × MatchVar x)
+                       | otherwise       = pure (M.singleton x v × κ × MatchVar x v)
 match (V.Constr _ c vs) (ElimConstr m) = do
    checkConsistent "Pattern mismatch: " c (keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
@@ -41,7 +40,7 @@ match v (ElimConstr m)                    = (report <<< patternMismatch (prettyP
 match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs xs κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
-matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × List (Match 𝔹))
+matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchArgs _ Nil κ = pure (empty × κ × Nil)
 matchArgs c (v : vs) (ContElim σ) = do
    γ  × κ'  × w  <- match v σ
@@ -51,7 +50,7 @@ matchArgs c (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
 matchArgs _ _ _ = error absurd
 
-matchRecord :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (SingletonEnv 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
+matchRecord :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
 matchRecord Lin Lin κ = pure (empty × κ × Lin)
 matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
    check (x == x') (patternMismatch (show x) (show x'))
@@ -61,11 +60,10 @@ matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
 matchRecord (_ :- x ↦ _) Lin _ = report (patternMismatch "end of record pattern" (show x))
 matchRecord Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
 
-closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹 -> SingletonEnv 𝔹
-closeDefs _ _ Lin = empty
-closeDefs γ ρ0 (ρ :- f ↦ σ) =
-   let xs = fv (ρ0 `for` σ) `union` fv σ
-   in closeDefs γ ρ0 ρ # insert f (V.Closure false (γ `restrict` xs) ρ0 σ)
+closeDefs :: Env 𝔹 -> FunEnv 𝔹 -> Env 𝔹
+closeDefs γ ρ = ρ <#> \σ ->
+   let xs = fv (ρ `for` σ) `union` fv σ
+   in V.Closure false (γ `restrict` xs) ρ σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -73,11 +71,11 @@ checkArity c n = do
    check (n' >= n) (show c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Trace 𝔹 × Val 𝔹)
-eval γ (Var x)       = (T.Var γ x × _) <$> lookup' x γ
-eval γ (Op op)       = (T.Op γ op × _) <$> lookup' op γ
-eval γ (Int _ n)     = pure (T.Int γ n × V.Int false n)
-eval γ (Float _ n)   = pure (T.Float γ n × V.Float false n)
-eval γ (Str _ str)   = pure (T.Str γ str × V.Str false str)
+eval γ (Var x)       = (T.Var x × _) <$> lookup' x γ
+eval γ (Op op)       = (T.Op op × _) <$> lookup' op γ
+eval _ (Int _ n)     = pure (T.Int n × V.Int false n)
+eval _ (Float _ n)   = pure (T.Float n × V.Float false n)
+eval _ (Str _ str)   = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
    let xs × es = xes <#> (key &&& val) # S.unzip
    ts × vs <- traverse (eval γ) es <#> S.unzip
@@ -104,7 +102,7 @@ eval γ (Matrix _ e (x × y) e') = do
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap fromFoldable fromFoldable
 eval γ (Lambda σ) =
-   pure (T.Lambda γ σ × V.Closure false (γ `restrict` fv σ) Lin σ)
+   pure (T.Lambda σ × V.Closure false (γ `restrict` fv σ) empty σ)
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
@@ -115,11 +113,10 @@ eval γ (App e e') = do
    t' × v' <- eval γ e'
    case v of
       V.Closure _ γ1 ρ σ -> do
-         let γ1' = γ1 <#> NEL.singleton
-             γ2 = closeDefs γ1' ρ ρ
+         let γ2 = closeDefs γ1 ρ
          γ3 × e'' × w <- match v' σ
-         t'' × v'' <- eval ((γ1' `concat` γ2) `concat` γ3) (asExpr e'')
-         pure (T.App (t × ρ × σ) t' w t'' × v'')
+         t'' × v'' <- eval (γ1 `concat` γ2 `concat` γ3) (asExpr e'')
+         pure (T.App (t × dom ρ × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
          let vs' = vs <> singleton v'
              v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs' in
@@ -133,10 +130,10 @@ eval γ (Let (VarDef σ e) e') = do
    γ' × _ × w <- match v σ -- terminal meta-type of eliminator is meta-unit
    t' × v' <- eval (γ `concat` γ') e'
    pure (T.Let (T.VarDef w t) t' × v')
-eval γ (LetRec ρ e) = do
-   let γ' = closeDefs γ ρ ρ
+eval γ (LetRec xσs e) = do
+   let γ' = closeDefs γ (asMap xσs)
    t × v <- eval (γ `concat` γ') e
-   pure (T.LetRec ρ t × v)
+   pure (T.LetRec xσs t × v)
 
 eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
 eval_module γ (Module Nil) = pure γ
@@ -144,5 +141,5 @@ eval_module γ (Module (Left (VarDef σ e) : ds)) = do
    _  × v <- eval γ e
    γ' × _ × _  <- match v σ
    eval_module (γ `concat` γ') (Module ds)
-eval_module γ (Module (Right ρ : ds)) =
-   eval_module (γ `concat` closeDefs γ ρ ρ) (Module ds)
+eval_module γ (Module (Right xσs : ds)) =
+   eval_module (γ `concat` closeDefs γ (asMap xσs)) (Module ds)

@@ -3,18 +3,19 @@ module App.Util where
 import Prelude hiding (absurd)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:), (!!), updateAt)
+import Data.Map (singleton)
 import Data.Profunctor.Strong (first)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
-import Bindings (Bindings, Var, (↦), find, update)
+import Bindings (Bindings, Var, (↦), find)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_caption, f_data, f_x, f_y)
 import Lattice (𝔹, botOf, neg)
 import Primitive (class ToFrom, as, match_fwd)
 import Util (Endo, type (×), type (+), (×), absurd, error, definitely', successful, unimplemented)
-import Util.SnocList (SnocList(..), (:-), singleton)
-import Val (Val(..), updateMatrix)
+import Util.SnocList (SnocList(..), (:-))
+import Val (Val(..), update, updateMatrix)
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
@@ -92,7 +93,7 @@ toggleNth _ _ _ = error absurd
 
 toggleField :: Var -> Selector -> Selector
 toggleField f selector (Record α xus) =
-   Record α (update xus (singleton $ f ↦ selector (get f xus)))
+   Record α (xus `update` singleton f (selector (get f xus)))
 toggleField _ _ _ = error absurd
 
 toggleConstrArg :: Ctr -> Int -> Selector -> Selector

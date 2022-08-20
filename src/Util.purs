@@ -64,9 +64,9 @@ onlyIf false   = const empty
 
 type MayFail a = String + a
 
-otherwise :: forall a . String -> Maybe a -> MayFail a
-otherwise msg Nothing  = Left msg
-otherwise _ (Just x)   = Right x
+orElse :: forall a . String -> Maybe a -> MayFail a
+orElse msg Nothing  = Left msg
+orElse _ (Just x)   = Right x
 
 ignoreMessage :: forall a . MayFail a -> Maybe a
 ignoreMessage (Left _)   = Nothing

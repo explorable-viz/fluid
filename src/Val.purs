@@ -2,22 +2,20 @@ module Val where
 
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
-import Data.Filterable (filterMap)
-import Data.Foldable (length)
-import Data.List (List)
-import Data.List.NonEmpty (NonEmptyList, cons, cons', fromList, head, singleton, tail)
-import Data.Map (Map, filterKeys, keys, insert, lookup, pop, toUnfoldable)
+import Data.List (List(..), (:))
+import Data.Map (Map, filterKeys, keys, isEmpty, lookup, pop, unionWith)
 import Data.Maybe (Maybe(..))
-import Data.Set (Set, member)
-import Data.Traversable (sequence)
-import Data.Tuple (uncurry)
-import Bindings (Bind(..), Bindings, Var, (↦))
+import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union)
+import Bindings (Bindings, Var, (↦))
 import DataType (Ctr)
-import Expr (Elim, RecDefs)
+import Expr (Elim, fv)
 import Lattice (
    class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), bot, botOf, definedJoin, maybeJoin, neg
 )
-import Util (Endo, MayFail, type (×), (×), (≞), (!), definitely, disjUnion, report, unsafeUpdateAt)
+import Util (
+   Endo, MayFail, type (×), (×), (≞), (!),
+   absurd, disjUnion, error, mustLookup, orElse, report, unsafeUpdateAt
+)
 import Util.SnocList (SnocList(..), (:-))
 
 type Op a = a × 𝔹 -> Val 𝔹
@@ -30,7 +28,7 @@ data Val a =
    Constr a Ctr (List (Val a)) |             -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |         -- never saturated
-   Closure a (SingletonEnv a) (RecDefs a) (Elim a)
+   Closure a (Env a) (FunEnv a) (Elim a)
 
 -- op_fwd will be provided with original arguments, op_bwd with original output and arguments
 newtype PrimOp = PrimOp {
@@ -41,51 +39,57 @@ newtype PrimOp = PrimOp {
 }
 
 -- Environments.
-type Env a = Map Var (NonEmptyList (Val a))
-type SingletonEnv a = Map Var (Val a)
-
-asSingleton :: forall a . Env a -> Maybe (SingletonEnv a)
-asSingleton γ = sequence $ γ <#> uniqueElement
-   where
-   uniqueElement :: forall b . NonEmptyList b -> Maybe b
-   uniqueElement xs | length xs == 1   = Just $ head xs
-                    | otherwise        = Nothing
+type Env a = Map Var (Val a)
+type FunEnv a = Map Var (Elim a)
 
 dom :: forall a . Map Var a -> Set Var
 dom = keys
 
 lookup' :: forall a . Var -> Env a -> MayFail (Val a)
-lookup' x γ = case lookup x γ of
-   Nothing -> report ("variable " <> x <> " not found")
-   Just vs -> pure $ head vs
+lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
 
-update :: forall a . Env a -> SingletonEnv a -> Env a
-update γ γ' = update' γ (uncurry Bind <$> toUnfoldable γ')
-
-update' :: forall a . Env a -> Bindings (Val a) -> Env a
-update' γ Lin              = γ
-update' γ (γ' :- x ↦ v)    =
-   let vs × γ'' = pop x γ # definitely ("contains " <> x)
-   in update' γ'' γ' # insert x (cons' v $ tail vs)
-
-concat :: forall a . Env a -> SingletonEnv a -> Env a
-concat γ γ' = toUnfoldable γ' <#> uncurry Bind # concat' γ
-
-concat' :: forall a . Env a -> Bindings (Val a) -> Env a
-concat' γ Lin            = γ
-concat' γ (γ' :- x ↦ v)  =
+update :: forall a . Bindings a -> Map Var a -> Bindings a
+update Lin γ   | isEmpty γ = Lin
+               | otherwise = error absurd
+update (xvs :- x ↦ v) γ =
    case pop x γ of
-   Nothing -> concat' γ γ' # insert x (singleton v)
-   Just (vs × γ'') -> concat' γ'' γ' # insert x (v `cons` vs)
+      Just (u × γ')  -> update xvs γ' :- x ↦ u
+      Nothing        -> update xvs γ :- x ↦ v
 
-concat_inv :: forall a . Set Var -> Env a -> Env a × SingletonEnv a
-concat_inv xs γ =
-   let γ' = (filterKeys (_ `member` xs) γ <#> tail) # filterMap fromList
-       γ'' = filterKeys (_ `not <<< member` xs) γ
-   in γ' `disjUnion` γ'' × restrict γ xs
+concat :: forall a . Env a -> Endo (Env a)
+concat = unionWith (const identity)
 
-restrict :: forall a . Env a -> Set Var -> SingletonEnv a
-restrict γ xs = filterKeys (_ `member` xs) γ <#> head
+concat_inv :: forall a . Set Var -> Env a -> Env a × Env a
+concat_inv xs γ = filterKeys (_ `not <<< member` xs) γ × restrict γ xs
+
+restrict :: forall a . Map Var a -> Set Var -> Map Var a
+restrict γ xs = filterKeys (_ `member` xs) γ
+
+reaches :: forall a . FunEnv a -> Endo (Set Var)
+reaches ρ xs = go (toUnfoldable xs) empty
+   where
+   dom_ρ = dom ρ
+   go :: List Var -> Endo (Set Var)
+   go Nil acc                          = acc
+   go (x : xs') acc | x `member` acc   = go xs' acc
+   go (x : xs') acc | otherwise        =
+      let σ = mustLookup x ρ in
+      go (toUnfoldable (fv σ `intersection` dom_ρ) <> xs')
+         (singleton x `union` acc)
+
+for :: forall a . FunEnv a -> Elim a -> FunEnv a
+for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` dom ρ)
+
+weakJoin :: forall a . Slices a => Map Var a -> Endo (Map Var a)
+weakJoin m m' =
+   let dom_m × dom_m' = dom m × dom m' in
+   (m `restrict` (dom_m `difference` dom_m'))
+   `disjUnion`
+   (m `restrict` (dom_m `intersection` dom_m') ∨ m' `restrict` (dom_m `intersection` dom_m'))
+   `disjUnion`
+   (m' `restrict` (dom_m' `difference` dom_m))
+
+infixl 6 weakJoin as ∨∨
 
 -- Matrices.
 type Array2 a = Array (Array a)
@@ -110,7 +114,7 @@ instance Functor Val where
    -- PureScript can't derive this case
    map f (Matrix α (r × iα × jβ))   = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))
    map f (Primitive φ vs)           = Primitive φ ((map f) <$> vs)
-   map f (Closure α γ ρ σ)         = Closure (f α) (map f <$> γ) (map (map f) <$> ρ) (f <$> σ)
+   map f (Closure α γ ρ σ)          = Closure (f α) (map f <$> γ) (map f <$> ρ) (f <$> σ)
 
 instance JoinSemilattice (Val Boolean) where
    join = definedJoin

@@ -2,15 +2,15 @@ module Expr where
 
 import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
-import Data.List (List(..), (:))
-import Data.Map (Map)
-import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union, unions)
+import Data.List (List)
+import Data.Map (Map, keys)
+import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Tuple (snd)
-import Bindings (Bindings, Var, (↦), dom, find, val)
+import Bindings (Bindings, Var, val)
 import DataType (Ctr)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
-import Util (Endo, type (×), (×), type (+), (≞), asSingletonMap, error, report, successful)
-import Util.SnocList (SnocList(..))
+import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
+import Util.SnocList (SnocList)
 
 data Expr a =
    Var Var |
@@ -30,26 +30,6 @@ data Expr a =
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs a = Bindings (Elim a)
-
-reaches :: forall a . RecDefs a -> Endo (Set Var)
-reaches ρ xs = go (toUnfoldable xs) empty
-   where
-   dom_ρ = dom ρ
-   go :: List Var -> Endo (Set Var)
-   go Nil acc                          = acc
-   go (x : xs') acc | x `member` acc   = go xs' acc
-   go (x : xs') acc | otherwise        =
-      let σ = successful $ find x ρ in
-      go (toUnfoldable (fv σ `intersection` dom_ρ) <> xs')
-         (singleton x `union` acc)
-
-restrict :: forall a . RecDefs a -> Set Var -> RecDefs a
-restrict Lin _                                  = Lin
-restrict (Snoc ρ (x ↦ σ)) xs  | x `member` xs   = Snoc (restrict ρ xs) (x ↦ σ)
-restrict (Snoc ρ _) xs        | otherwise       = restrict ρ xs
-
-for :: forall a . RecDefs a -> Elim a -> RecDefs a
-for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` dom ρ)
 
 data Elim a =
    ElimVar Var (Cont a) |
@@ -103,8 +83,8 @@ instance FV (Cont a) where
 instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
 
-instance FV (RecDefs a) where
-   fv ρ = (unions $ val <$> ((<$>) fv) <$> ρ) `difference` dom ρ
+instance FV a => FV (Map Var a) where
+   fv ρ = (unions $ (fv <$> ρ)) `difference` keys ρ
 
 class BV a where
    bv :: a -> Set Var

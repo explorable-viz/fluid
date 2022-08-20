@@ -18,7 +18,7 @@ import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import Util (MayFail, type (×), (×), error, successful)
 import Util.Parse (SParser)
-import Val (Env, SingletonEnv)
+import Val (Env)
 
 -- Mainly serve as documentation
 newtype File = File String
@@ -64,7 +64,7 @@ openWithDefaultImports file = do
    open file <#> (γ × _)
 
 -- Return ambient environment used to load dataset along with new binding.
-openDatasetAs :: File -> Var -> Aff (Env 𝔹 × SingletonEnv 𝔹)
+openDatasetAs :: File -> Var -> Aff (Env 𝔹 × Env 𝔹)
 openDatasetAs file x = do
    s <- parseProgram (Folder "fluid") file
    γ <- defaultImports

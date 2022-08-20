@@ -5,7 +5,6 @@ import Prelude (div, mod) as P
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..))
-import Data.List.NonEmpty (singleton)
 import Data.Map (fromFoldable)
 import Data.Number (log, pow) as N
 import Debug (trace)
@@ -16,7 +15,7 @@ import Util (Endo, type (×), (×), type (+), (!), error)
 import Val (Env, MatrixRep, Val(..), updateMatrix)
 
 primitives :: Env 𝔹
-primitives = singleton <$> fromFoldable [
+primitives = fromFoldable [
    ":"         × Constr false cCons Nil,
 
    "+"         × binary (withInverse2 plus),
