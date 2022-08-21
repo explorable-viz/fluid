@@ -60,7 +60,7 @@ selectNth _ _ _                                          = error absurd
 selectNthNode :: Int -> Endo 𝔹 -> Selector
 selectNthNode 0 δα (Constr α c Nil) | c == cNil             = Constr (δα α) cNil Nil
 selectNthNode 0 δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) cCons (v : v' : Nil)
-selectNthNode n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) cCons (v : selectNthNode (n - 1) δα v' : Nil)
+selectNthNode n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α cCons (v : selectNthNode (n - 1) δα v' : Nil)
 selectNthNode _ _ _                                         = error absurd
 
 selectSome :: Selector

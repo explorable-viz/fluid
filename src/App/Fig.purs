@@ -6,6 +6,9 @@ import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
 import Data.List (List(..), (:), singleton)
+import Data.Map (lookup)
+import Data.Set (difference)
+import Data.Set (singleton) as S
 import Data.Tuple (fst, uncurry)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -16,8 +19,8 @@ import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
-import App.Util (HTMLId, OnSel, doNothing, from, record)
-import Bindings (Var, find)
+import App.Util (HTMLId, OnSel, Selector, doNothing, from, record)
+import Bindings (Var)
 import DataType (cBarChart, cCons, cLineChart, cNil)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Expr (Expr)
@@ -29,9 +32,8 @@ import Module (File(..), open, openDatasetAs)
 import Primitive (match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Trace (Trace)
-import Util (MayFail, type (×), type (+), (×), absurd, error, successful, unimplemented)
-import Util.SnocList (splitAt)
-import Val (Env, Val(..))
+import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
+import Val (Env, Val(..), concat, concat_inv, dom)
 
 data View =
    MatrixFig MatrixView |
@@ -61,17 +63,17 @@ view _ _ = error absurd
 
 -- An example of the form (let <defs> in expr) can be decomposed as follows.
 type SplitDefs = {
-   ρ :: Env 𝔹,      -- local env (additional let bindings at beginning of ex)
+   γ :: Env 𝔹,      -- local env (additional let bindings at beginning of ex)
    s :: S.Expr 𝔹    -- body of example
 }
 
 -- Decompose as above.
 splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail SplitDefs
-splitDefs ρ0 s' = do
+splitDefs γ0 s' = do
    let defs × s = unsafePartial $ unpack s'
-   ρ0ρ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module ρ0
-   let _ × ρ = splitAt (length ρ0ρ - length ρ0) ρ0ρ
-   pure { ρ, s }
+   γ0γ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module γ0
+   let _ × γ = concat_inv (dom γ0γ `difference` dom γ0) γ0γ
+   pure { γ, s }
    where unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
          unpack (S.LetRec defs s)   = Right defs × s
          unpack (S.Let defs s)      = Left defs × s
@@ -84,8 +86,8 @@ type FigSpec = {
 
 type Fig = {
    spec :: FigSpec,
-   ρ0 :: Env 𝔹,     -- ambient env (default imports)
-   ρ :: Env 𝔹,      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
+   γ0 :: Env 𝔹,     -- ambient env (default imports)
+   γ :: Env 𝔹,      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
    s :: S.Expr 𝔹,   -- body of example
    e :: Expr 𝔹,     -- desugared s
    t :: Trace 𝔹,
@@ -102,8 +104,8 @@ type LinkFigSpec = {
 
 type LinkFig = {
    spec :: LinkFigSpec,
-   ρ0 :: Env 𝔹,      -- ambient environment (default imports)
-   ρ :: Env 𝔹,       -- local env (loaded dataset)
+   γ0 :: Env 𝔹,      -- ambient environment (default imports)
+   γ :: Env 𝔹,       -- local env (loaded dataset)
    s1 :: S.Expr 𝔹,
    s2 :: S.Expr 𝔹,
    e1 :: Expr 𝔹,
@@ -120,73 +122,75 @@ type LinkResult = {
    v0' :: Val 𝔹
 }
 
-drawLinkFig :: LinkFig -> Either (Val 𝔹) (Val 𝔹) -> Effect Unit
-drawLinkFig fig@{ spec: { x, divId }, ρ0, e1, e2, t1, t2 } v = do
+drawLinkFig :: LinkFig -> Either Selector Selector -> Effect Unit
+drawLinkFig fig@{ spec: { x, divId }, γ0, e1, e2, t1, t2, v1, v2 } δv = do
    log $ "Redrawing " <> divId
-   let v1 × v2 × δv1 × δv2 × v0 = successful case v of
-         Left v1 -> do
-            { v', v0' } <- linkResult x ρ0 e2 t1 t2 v1
+   let v1 × v2 × δv1 × δv2 × v0 = successful case δv of
+         Left δv1 -> do
+            let v1' = δv1 v1
+            { v', v0' } <- linkResult x γ0 e2 t1 t2 v1'
             pure $ v1 × v' × identity × botOf × v0'
-         Right v2 -> do
-            { v', v0' } <- linkResult x ρ0 e1 t2 t1 v2
+         Right δv2 -> do
+            let v2' = δv2 v2
+            { v', v0' } <- linkResult x γ0 e1 t2 t1 v2'
             pure $ v' × v2 × botOf × identity × v0'
    drawView divId (\selector -> drawLinkFig fig (Left $ δv1 >>> selector)) 2 $ view "linked view" v1
    drawView divId (\selector -> drawLinkFig fig (Right $ δv2 >>> selector)) 0 $ view "primary view" v2
    drawView divId doNothing 1 $ view "common data" v0
 
-drawFig :: Fig -> Val 𝔹 -> Effect Unit
-drawFig fig@{ spec: { divId } } v = do
+drawFig :: Fig -> Selector -> Effect Unit
+drawFig fig@{ spec: { divId } } δv = do
    log $ "Redrawing " <> divId
-   let v_view × views = successful $ figViews fig v
+   let v_view × views = successful $ figViews fig δv
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (\selector -> drawFig fig (selector v)) (length views) v_view
+   drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
 
 varView :: Var -> Env 𝔹 -> MayFail View
-varView x ρ = view x <$> find x ρ
+varView x γ = view x <$> (lookup x γ # orElse absurd)
 
 valViews :: Env 𝔹 -> Array Var -> MayFail (Array View)
-valViews ρ xs = sequence (flip varView ρ <$> xs)
+valViews γ xs = sequence (flip varView γ <$> xs)
 
 -- For an output selection, views of corresponding input selections.
-figViews :: Fig -> Val 𝔹 -> MayFail (View × Array View)
-figViews { spec: { xs }, t } v' = do
-   let ρ0ρ × e × α = evalBwd v' t
-       v = evalFwd ρ0ρ e α t
-   views <- valViews ρ0ρ xs
-   pure $ view "output" v × views
+figViews :: Fig -> Selector -> MayFail (View × Array View)
+figViews { spec: { xs }, t, v } δv = do
+   let γ0γ × e × α = evalBwd (δv v) t
+       v' = evalFwd γ0γ e α t
+   views <- valViews γ0γ xs
+   pure $ view "output" v' × views
 
 linkResult :: Var -> Env 𝔹 -> Expr 𝔹 -> Trace 𝔹 -> Trace 𝔹 -> Val 𝔹 -> MayFail LinkResult
-linkResult x ρ0 e2 t1 t2 v1 = do
-   let ρ0ρ × _ × _ = evalBwd v1 t1
-       _ × ρ' = splitAt 1 ρ0ρ
-   v0' <- find x ρ'
-   -- make ρ0 and e2 fully available; ρ0 is too big to operate on, so we use (topOf ρ0)
-   -- combined with the negation of the dataset environment slice
-   let v2' = neg (evalFwd (neg (botOf ρ0 <> ρ')) (const true <$> e2) true t2)
+linkResult x γ0 e2 t1 t2 v1 = do
+   let γ0γ × _ × _ = evalBwd v1 t1
+       _ × γ' = concat_inv (S.singleton x) γ0γ
+   v0' <- lookup x γ' # orElse absurd
+   -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use
+   -- (topOf γ0) combined with negation of the dataset environment slice
+   let v2' = neg (evalFwd (neg (botOf γ0 `concat` γ')) (const true <$> e2) true t2)
    pure { v': v2', v0' }
 
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
-   ρ0 × ρ <- openDatasetAs (File "example/linking/renewables") "data"
+   γ0 × γ <- openDatasetAs (File "example/linking/renewables") "data"
    open file <#> \s' -> successful do
-      { ρ: ρ1, s } <- splitDefs (ρ0 <> ρ) s'
+      { γ: γ1, s } <- splitDefs (γ0 `concat` γ) s'
       e <- desugarFwd s
-      let ρ0ρ = ρ0 <> ρ <> ρ1
-      t × v <- eval ρ0ρ e
-      pure { spec, ρ0, ρ: ρ <> ρ1, s, e, t, v }
+      let γ0γ = γ0 `concat` γ `concat` γ1
+      t × v <- eval γ0γ e
+      pure { spec, γ0, γ: γ `concat` γ1, s, e, t, v }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
 loadLinkFig spec@{ file1, file2, dataFile, x } = do
    let dir = File "linking/"
        name1 × name2 = (dir <> file1) × (dir <> file2)
-   -- the views share an ambient environment ρ0 as well as dataset
-   ρ0 × ρ <- openDatasetAs (File "example/" <> dir <> dataFile) x
+   -- the views share an ambient environment γ0 as well as dataset
+   γ0 × γ <- openDatasetAs (File "example/" <> dir <> dataFile) x
    s1 × s2 <- (×) <$> open name1 <*> open name2
    pure $ successful do
       e1 × e2 <- (×) <$> desugarFwd s1 <*> desugarFwd s2
-      t1 × v1 <- eval (ρ0 <> ρ) e1
-      t2 × v2 <- eval (ρ0 <> ρ) e2
-      v0 <- find x ρ
-      pure { spec, ρ0, ρ, s1, s2, e1, e2, t1, t2, v1, v2, v0 }
+      t1 × v1 <- eval (γ0 `concat` γ) e1
+      t2 × v2 <- eval (γ0 `concat` γ) e2
+      v0 <- lookup x γ # orElse absurd
+      pure { spec, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0 }
