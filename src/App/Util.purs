@@ -67,12 +67,15 @@ selectSome :: Selector
 selectSome (Constr _ c v) | c == cSome = Constr true cSome (botOf v)
 selectSome _                           = error absurd
 
-select_y :: Val 𝔹
-select_y = Record false (Lin :- f_x ↦ error unimplemented :- f_y ↦ error unimplemented)
+select_y :: Selector -> Selector
+select_y δv (Record α (Lin :- f_x ↦ u :- f_y ↦ v)) =
+   Record α (Lin :- f_x ↦ u :- f_y ↦ δv v)
+select_y _ _ = error absurd
 
-selectBarChart_data :: Val 𝔹 -> Val 𝔹
-selectBarChart_data v =
-   Constr false cBarChart (Record false (Lin :- f_caption ↦ error unimplemented :- f_data ↦ v) : Nil)
+selectBarChart_data :: Endo Selector
+selectBarChart_data δv (Constr α c (Record β (Lin :- f_caption ↦ u :- f_data ↦ v) : Nil)) =
+   Constr α cBarChart (Record β (Lin :- f_caption ↦ u :- f_data ↦ δv v) : Nil)
+selectBarChart_data _ _ = error absurd
 
 selectPair :: Endo 𝔹 -> Selector -> Selector -> Selector
 selectPair δα δv1 δv2 (Constr α c (v1 : v2 : Nil)) | c == cPair = Constr (δα α) cPair (δv1 v1 : δv2 v2 : Nil)

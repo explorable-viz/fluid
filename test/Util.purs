@@ -75,12 +75,12 @@ testBwd file file_expect δv expected =
        file' = folder <> file in
    testWithSetup file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
 
-testLink :: LinkFigSpec -> Val 𝔹 -> String -> Test Unit
-testLink spec@{ x } v1' v2_expect =
+testLink :: LinkFigSpec -> Selector -> String -> Test Unit
+testLink spec@{ x } δv1 v2_expect =
    before (loadLinkFig spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
-         \{ γ0, e2, t1, t2 } ->
-            let { v': v2' } = successful $ linkResult x γ0 e2 t1 t2 v1' in
+         \{ γ0, e2, t1, t2, v1 } ->
+            let { v': v2' } = successful $ linkResult x γ0 e2 t1 t2 (δv1 v1) in
             checkPretty "Linked output" v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit

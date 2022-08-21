@@ -4,10 +4,10 @@ import Prelude
 import Data.Array (concat)
 import Data.Traversable (sequence)
 import Effect (Effect)
-import App.Util ({-selectBarChart_data, -}selectCell, selectNth, selectNthNode{-, select_y-}, selectSome)
+import App.Util (selectBarChart_data, selectCell, selectNth, selectNthNode, selectPair, select_y, selectSome)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
-import Test.Util (Test, run, test, testBwd, {-testLink, -}testWithDataset)
+import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
@@ -30,7 +30,6 @@ test_scratchpad = [
            "(88 : (6 : (4 _:_ [])))"
 ]
 
-{-
 test_linking :: Array (Test Unit)
 test_linking = [
    testLink {
@@ -40,7 +39,9 @@ test_linking = [
          dataFile: File "pairs-data",
          x: "data"
       }
-      (selectPair false hole (selectPair false hole (selectPair false (Int true 3) hole)))
+      (selectPair (const false) botOf
+                  (selectPair (const false) botOf
+                              (selectPair (const false) (const $ Int true 3) botOf)))
       "(3, (_5_, _7_))",
    testLink {
          divId: "",
@@ -49,7 +50,7 @@ test_linking = [
          dataFile: File "convolution-data",
          x: "data"
       }
-      (selectCell true 2 2 5 5)
+      (botOf >>> selectCell 2 2 topOf)
       "_18_, _12_, _13_, 9, 19,\n\
       \_20_, _11_, _24_, 9, 14,\n\
       \_15_, _13_, _20_, 11, 14,\n\
@@ -62,7 +63,7 @@ test_linking = [
          dataFile: File "renewables",
          x: "data"
       }
-      (selectBarChart_data (selectNth 1 (select_y)))
+      (botOf >>> selectBarChart_data (selectNth 1 (select_y topOf)))
       "LineChart ({\
          \caption: \"Output of USA relative to China\", \
          \plots: \
@@ -107,7 +108,6 @@ test_linking = [
             \}) : []))))\
       \})"
 ]
--}
 
 test_bwd :: Array (Test Unit)
 test_bwd = [
