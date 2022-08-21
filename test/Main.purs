@@ -11,7 +11,7 @@ import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, {-test_linking, -}test_graphics ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
 --tests = [ test_scratchpad ]
 
 main :: Effect Unit
