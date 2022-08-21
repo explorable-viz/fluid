@@ -2,12 +2,10 @@ module Test.Main where
 
 import Prelude
 import Data.Array (concat)
-import Data.List (List(..), (:))
 import Data.Traversable (sequence)
-import App.Util (selectBarChart_data, selectCell, selectNth, selectPair, select_y)
 import Effect (Effect)
-import DataType (cCons, cNil, cSome)
-import Lattice (𝔹)
+import App.Util (selectBarChart_data, selectCell, selectNth, selectNthNode, selectPair, select_y, selectSome)
+import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..))
@@ -19,21 +17,8 @@ tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
--- TODO: move to common location.
-hole :: Val 𝔹
-hole = Hole false
-
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   testBwd (File "section-5-example") (File "section-5-example-1.expect")
-           (Constr true cCons (hole : (Constr false cCons (hole : (Constr false cCons (hole : hole : Nil)) : Nil)) : Nil))
-           "(88 _:_ (6 : (4 : [])))",
-   testBwd (File "section-5-example") (File "section-5-example-2.expect")
-           (selectNth 1 (Hole true))
-           "(_88_ : (_6_ : (_4_ : [])))",
-   testBwd (File "section-5-example") (File "section-5-example-3.expect")
-           (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil)) : Nil))
-           "(88 : (6 : (4 _:_ [])))"
 ]
 
 test_linking :: Array (Test Unit)
@@ -45,7 +30,9 @@ test_linking = [
          dataFile: File "pairs-data",
          x: "data"
       }
-      (selectPair false hole (selectPair false hole (selectPair false (Int true 3) hole)))
+      (selectPair (const false) botOf
+                  (selectPair (const false) botOf
+                              (selectPair (const false) (const $ Int true 3) botOf)))
       "(3, (_5_, _7_))",
    testLink {
          divId: "",
@@ -54,7 +41,7 @@ test_linking = [
          dataFile: File "convolution-data",
          x: "data"
       }
-      (selectCell true 2 2 5 5)
+      (botOf >>> selectCell 2 2 topOf)
       "_18_, _12_, _13_, 9, 19,\n\
       \_20_, _11_, _24_, 9, 14,\n\
       \_15_, _13_, _20_, 11, 14,\n\
@@ -67,7 +54,7 @@ test_linking = [
          dataFile: File "renewables",
          x: "data"
       }
-      (selectBarChart_data (selectNth 1 (select_y)))
+      (botOf >>> selectBarChart_data (selectNth 1 (select_y topOf)))
       "LineChart ({\
          \caption: \"Output of USA relative to China\", \
          \plots: \
@@ -115,66 +102,57 @@ test_linking = [
 
 test_bwd :: Array (Test Unit)
 test_bwd = [
-   testBwd (File "add") (File "add.expect") (Int true 8) "_8_",
-   testBwd (File "array-lookup") (File "array-lookup.expect") (Int true 14) "_14_",
-   testBwd (File "array-dims") (File "array-dims.expect") (selectPair true (Int true 3) (Int true 3)) "_(_3_, _3_)_",
+   testBwd (File "add") (File "add.expect") (const $ Int true 8) "_8_",
+   testBwd (File "array-lookup") (File "array-lookup.expect") (const $ Int true 14) "_14_",
+   testBwd (File "array-dims") (File "array-dims.expect") topOf "_(_3_, _3_)_",
    testBwd (File "conv-edgeDetect") (File "conv-edgeDetect.expect")
-           (selectCell true 1 1 5 5)
-            "_0_, -1, 2, 0, -1,\n\
-            \0, 3, -2, 3, -2,\n\
-            \-1, 1, -5, 0, 4,\n\
-            \1, -1, 4, 0, -4,\n\
-            \1, 0, -3, 2, 0",
+           (botOf >>> selectCell 1 1 topOf)
+           "_0_, -1, 2, 0, -1,\n\
+           \0, 3, -2, 3, -2,\n\
+           \-1, 1, -5, 0, 4,\n\
+           \1, -1, 4, 0, -4,\n\
+           \1, 0, -3, 2, 0",
    testBwd (File "conv-emboss") (File "conv-emboss.expect")
-           (selectCell true 1 1 5 5)
+           (botOf >>> selectCell 1 1 topOf)
            "_5_, 4, 2, 5, 2,\n\
            \3, 1, 2, -1, -2,\n\
            \3, 0, 1, 0, -1,\n\
            \2, 1, -2, 0, 0,\n\
            \1, 0, -1, -1, -2",
    testBwd (File "conv-gaussian") (File "conv-gaussian.expect")
-           (selectCell true 1 1 5 5)
+           (botOf >>> selectCell 1 1 topOf)
            "_38_, 37, 28, 30, 38,\n\
            \38, 36, 46, 31, 34,\n\
            \37, 41, 54, 34, 20,\n\
            \21, 35, 31, 31, 42,\n\
            \13, 32, 35, 19, 26",
-   testBwd (File "divide") (File "divide.expect") (Hole true) "_40.22222222222222_",
-   testBwd (File "filter") (File "filter.expect") (Constr true cCons (hole : hole : Nil)) "(_8_ _:_ (7 : []))",
-   testBwd (File "intersperse") (File "intersperse-1.expect")
-           (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil))
+   testBwd (File "divide") (File "divide.expect") topOf "_40.22222222222222_",
+   testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))",
+   testBwd (File "intersperse") (File "intersperse-1.expect") (botOf >>> selectNthNode 1 neg)
            "(1 : (0 _:_ (2 : (0 : (3 : [])))))",
-   testBwd (File "intersperse") (File "intersperse-2.expect")
-           (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil)) : Nil))
+   testBwd (File "intersperse") (File "intersperse-2.expect") (botOf >>> selectNthNode 2 neg)
            "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))",
-   testBwd (File "length") (File "length.expect") (Hole true) "_5_",
-   testBwd (File "list-comp") (File "list-comp-1.expect")
-           (Constr false cCons (hole : Constr true cCons (hole : hole : Nil) : Nil))
+   testBwd (File "length") (File "length.expect") topOf "_5_",
+   testBwd (File "list-comp") (File "list-comp-1.expect") (botOf >>> selectNthNode 1 neg)
            "(6.2 : (260 _:_ (19.9 : (91 : []))))",
-   testBwd (File "list-comp") (File "list-comp-2.expect")
-           (Constr false cCons (hole : Constr false cCons (hole : Constr true cCons (hole : hole : Nil) : Nil) : Nil))
+   testBwd (File "list-comp") (File "list-comp-2.expect") (botOf >>> selectNthNode 2 neg)
            "(6.2 : (260 : (19.9 _:_ (91 : []))))",
-   testBwd (File "lookup") (File "lookup.expect") (Constr true cSome (hole : Nil)) "_Some_ \"Germany\"",
-   testBwd (File "map") (File "map.expect")
-            (Constr true cCons (Hole false : (Constr true cCons (Hole false : Hole false : Nil)) : Nil)) "(5 _:_ (6 _:_ []))",
-   testBwd (File "multiply") (File "multiply.expect") (Int true 0) "_0_",
-   testBwd (File "nth") (File "nth.expect") (Int true 4) "_4_",
-   testBwd (File "section-5-example") (File "section-5-example-1.expect")
-           (Constr true cCons (hole : (Constr false cCons (hole : (Constr false cCons (hole : hole : Nil)) : Nil)) : Nil))
+   testBwd (File "lookup") (File "lookup.expect") selectSome "_Some_ \"Germany\"",
+   testBwd (File "map") (File "map.expect") (botOf >>> selectNthNode 0 neg >>> selectNthNode 1 neg)
+           "(5 _:_ (6 _:_ []))",
+   testBwd (File "multiply") (File "multiply.expect") (const $ Int true 0) "_0_",
+   testBwd (File "nth") (File "nth.expect") (const $ Int true 4) "_4_",
+   testBwd (File "section-5-example") (File "section-5-example-1.expect") (botOf >>> selectNthNode 0 neg)
            "(88 _:_ (6 : (4 : [])))",
-   testBwd (File "section-5-example") (File "section-5-example-2.expect")
-           (selectNth 1 (Hole true))
+   testBwd (File "section-5-example") (File "section-5-example-2.expect") (botOf >>> selectNth 1 topOf)
            "(_88_ : (_6_ : (_4_ : [])))",
-   testBwd (File "section-5-example") (File "section-5-example-3.expect")
-           (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cCons (hole : hole : Nil)) : Nil)) : Nil))
+   testBwd (File "section-5-example") (File "section-5-example-3.expect") (botOf >>> selectNthNode 2 neg)
            "(88 : (6 : (4 _:_ [])))",
-   testBwd (File "zeros") (File "zeros-1.expect")
-           (Constr true cCons (hole : (Constr false cCons (hole : (Constr true cNil Nil) : Nil)) : Nil))
+   testBwd (File "zeros") (File "zeros-1.expect") (botOf >>> selectNthNode 0 neg >>> selectNthNode 2 neg)
            "(0 _:_ (0 : _[]_))",
-   testBwd (File "zeros") (File "zeros-2.expect")
-           (Constr false cCons (hole : (Constr false cCons (hole : (Constr true cNil Nil) : Nil)) : Nil))
-           "(0 : (0 : _[]_))",
-   testBwd (File "zipWith") (File "zipWith-1.expect") (selectNth 1 (Float true 25.0)) "(13.0 : (_25.0_ : (41.0 : [])))"
+   testBwd (File "zeros") (File "zeros-2.expect") (botOf >>> selectNthNode 2 neg) "(0 : (0 : _[]_))",
+   testBwd (File "zipWith") (File "zipWith-1.expect")
+           (botOf >>> selectNth 1 (const $ Float true 25.0)) "(13.0 : (_25.0_ : (41.0 : [])))"
 ]
 
 test_desugaring :: Array (Test Unit)

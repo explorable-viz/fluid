@@ -4,7 +4,6 @@ import Prelude hiding (absurd)
 
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Data.Tuple (fst)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
@@ -14,7 +13,7 @@ import App.Util (
 )
 import Bindings (Bind)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
-import Lattice (Slice, 𝔹, expand, neg)
+import Lattice (𝔹, neg)
 import Util (type (×), (×), (!), definitely')
 import Util.SnocList (SnocList)
 import Val (Val(..))
@@ -40,13 +39,11 @@ instance reflectLinePlot :: Reflect (SnocList (Bind (Val Boolean))) LinePlot whe
 instance reflectLineChart :: Reflect (SnocList (Bind (Val Boolean))) LineChart where
    from r = LineChart {
       caption: get_prim f_caption r,
-      plots: from <$> (from (get f_plots r) :: Array (Slice (Val 𝔹))) :: Array LinePlot
+      plots: from <$> (from (get f_plots r) :: Array (Val 𝔹)) :: Array LinePlot
    }
 
 instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
-   from (v × Constr _ c (v1 : Nil)) | c == cLinePlot =
-      case expand v (Constr false c (Hole false : Nil)) of
-         Constr _ _ (u1 : Nil) -> record from (u1 × v1)
+   from (Constr _ c (u1 : Nil)) | c == cLinePlot = record from u1
 
 lineChartHandler :: Handler
 lineChartHandler ev = togglePoint $ unsafePos $ target ev
@@ -59,7 +56,7 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
       toggleConstrArg cLinePlot 0 $
       toggleField f_data $
       toggleNth j $
-      fst >>> neg
+      neg
 
    -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
    -- within line plot.

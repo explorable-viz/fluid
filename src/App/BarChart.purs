@@ -2,7 +2,6 @@ module App.BarChart where
 
 import Prelude hiding (absurd)
 import Data.Maybe (Maybe)
-import Data.Tuple (fst)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
@@ -42,7 +41,7 @@ barChartHandler ev = toggleBar $ unsafeBarIndex $ target ev
       toggleConstrArg cBarChart 0 $
       toggleField f_data $
       toggleNth i $
-      fst >>> neg
+      neg
 
    -- [Unsafe] Datum associated with bar chart mouse event; 0-based index of selected bar.
    unsafeBarIndex :: Maybe EventTarget -> Int

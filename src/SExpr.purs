@@ -1,9 +1,9 @@
 module SExpr where
 
 import Prelude
-import Bindings (Bindings, Var)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
+import Bindings (Bindings, Var)
 import DataType (Ctr)
 import Util (type (×), type (+))
 
@@ -18,7 +18,7 @@ data Expr a =
    Record a (Bindings (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (NonEmptyList (Branch a)) |
-   RecordLookup (Expr a) Var |
+   Project (Expr a) Var |
    App (Expr a) (Expr a) |
    BinaryApp (Expr a) Var (Expr a) |
    MatchAs (Expr a) (NonEmptyList (Pattern × Expr a)) |

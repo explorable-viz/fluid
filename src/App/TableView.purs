@@ -1,10 +1,9 @@
 module App.TableView where
 
 import Prelude
-import Data.Tuple (fst)
 import Bindings (Bindings)
 import App.Util (Handler, Renderer, get_intOrNumber, get_prim)
-import Lattice (Slice, 𝔹)
+import Lattice (𝔹)
 import Util (type (×))
 import Val (Val)
 
@@ -15,7 +14,7 @@ newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord
 
 foreign import drawTable :: Renderer EnergyTable
 
-energyRecord :: Slice (Bindings (Val 𝔹)) -> EnergyRecord
+energyRecord :: Bindings (Val 𝔹) -> EnergyRecord
 energyRecord r = {
    year: get_prim "year" r,
    country: get_prim "country" r,
@@ -24,4 +23,4 @@ energyRecord r = {
 }
 
 tableViewHandler :: Handler
-tableViewHandler = const fst
+tableViewHandler = const identity

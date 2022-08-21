@@ -7,8 +7,8 @@ import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
+import Lattice (botOf)
 import Module (File(..))
-import Val (Val(..))
 
 linkingFig1 :: LinkFigSpec
 linkingFig1 = {
@@ -39,14 +39,14 @@ drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)
    case _ of
       Left err -> log $ show err
-      Right figs -> sequence_ $ flip drawLinkFig (Left $ Hole false) <$> figs
+      Right figs -> sequence_ $ flip drawLinkFig (Left $ botOf) <$> figs
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =
    flip runAff_ (sequence loadFigs)
    case _ of
       Left err -> log $ show err
-      Right figs -> sequence_ $ flip drawFig (Hole false) <$> figs
+      Right figs -> sequence_ $ flip drawFig botOf <$> figs
 
 main :: Effect Unit
 main = do

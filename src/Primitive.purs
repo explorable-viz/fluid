@@ -9,7 +9,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import Bindings (Bind)
 import DataType (cFalse, cPair, cTrue)
-import Lattice (Slice, 𝔹, (∧), expand)
+import Lattice (𝔹, (∧))
 import Pretty (prettyP)
 import Util (Endo, type (×), (×), type (+), error)
 import Util.SnocList (SnocList)
@@ -18,23 +18,24 @@ import Val (PrimOp(..), Val(..))
 -- Mediates between Val and underlying data, analogously to pattern-matching and construction for data types.
 class ToFrom a where
    constr :: a × 𝔹 -> Val 𝔹
-   constr_bwd :: Slice (Val 𝔹) -> a × 𝔹   -- equivalent to match_fwd (except at Val)
-   match :: Val 𝔹 -> a × 𝔹                -- only defined for non-holes (except at Val)
+   constr_bwd :: Val 𝔹 -> a × 𝔹   -- equivalent to match_fwd (except at Val)
+   match :: Val 𝔹 -> a × 𝔹        -- only defined for non-holes (except at Val)
 
 unwrap :: forall a . ToFrom a => Val 𝔹 -> a
 unwrap = match >>> fst
 
-match_fwd :: forall a . ToFrom a => Slice (Val 𝔹) -> a × 𝔹
-match_fwd (v × v') = match (expand v v')
+-- TODO: inline these two?
+match_fwd :: forall a . ToFrom a => Val 𝔹 -> a × 𝔹
+match_fwd = match
 
 match_bwd :: forall a . ToFrom a => a × 𝔹 -> Val 𝔹
 match_bwd = constr
 
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
 instance toFromVal :: ToFrom (Val Boolean) where
-   constr = fst                        -- construction rights not required
-   constr_bwd (v × _) = (v × false)    -- return unit of disjunction rather than conjunction
-   match = (_ × true)                  -- construction rights are always provided
+   constr = fst                  -- construction rights not required
+   constr_bwd v = (v × false)    -- return unit of disjunction rather than conjunction
+   match = (_ × true)            -- construction rights are always provided
 
 instance toFromInt :: ToFrom Int where
    match (Int α n)   = n × α
@@ -161,12 +162,11 @@ unary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply :: Partial => List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
    apply (v : Nil) = constr (fwd (match v))
 
-   apply_fwd :: Partial => List (Slice (Val 𝔹)) {-[(a, a)]-} -> Val 𝔹 {-b-}
-   apply_fwd (v × u : Nil) = constr (fwd (match_fwd (v × u)))
+   apply_fwd :: Partial => List (Val 𝔹) {-[(a, a)]-} -> Val 𝔹 {-b-}
+   apply_fwd (v : Nil) = constr (fwd (match_fwd v))
 
-   apply_bwd :: Partial => Slice (Val 𝔹) {-(b, b)-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
-   apply_bwd (v × u) (u1 : Nil) = match_bwd v1 : Nil
-      where v1 = bwd (constr_bwd (v × u)) (unwrap u1)
+   apply_bwd :: Partial => Val 𝔹 {-(b, b)-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
+   apply_bwd v (u1 : Nil) = match_bwd (bwd (constr_bwd v) (unwrap u1)) : Nil
 
 binary_ :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySlicer a b c -> Val 𝔹
 binary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
@@ -179,12 +179,12 @@ binary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    apply :: Partial => List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
    apply (v : v' : Nil) = constr (fwd (match v) (match v'))
 
-   apply_fwd :: Partial => List (Slice (Val 𝔹)) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
-   apply_fwd (v1 × u1 : v2 × u2 : Nil) = constr (fwd (match_fwd (v1 × u1)) (match_fwd (v2 × u2)))
+   apply_fwd :: Partial => List (Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
+   apply_fwd (v1 : v2 : Nil) = constr (fwd (match_fwd v1) (match_fwd v2))
 
-   apply_bwd :: Partial => Slice (Val 𝔹) {-(c, c)-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
-   apply_bwd (v × u) (u1 : u2 : Nil) = match_bwd v1 : match_bwd v2 : Nil
-      where v1 × v2 = bwd (constr_bwd (v × u)) (unwrap u1 × unwrap u2)
+   apply_bwd :: Partial => Val 𝔹 {-(c, c)-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
+   apply_bwd v (u1 : u2 : Nil) = match_bwd v1 : match_bwd v2 : Nil
+      where v1 × v2 = bwd (constr_bwd v) (unwrap u1 × unwrap u2)
 
 withInverse1 :: forall a b . (a -> b) -> Unary a b
 withInverse1 fwd = { fwd, bwd: const identity }

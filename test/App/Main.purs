@@ -4,7 +4,7 @@ import Prelude
 import Data.Traversable (sequence)
 import Effect (Effect)
 import Test.Spec (before, it)
-import App.Main (fig1, linkingFig1)
+import App.Main (fig1, fig2, linkingFig1)
 import App.Fig (FigSpec, LinkFigSpec, loadFig, loadLinkFig)
 import Test.Util (Test, run)
 
@@ -22,7 +22,7 @@ test_linkingFig spec =
          pure unit
 
 tests :: Array (Test Unit)
-tests = [test_fig fig1, test_linkingFig linkingFig1]
+tests = [test_fig fig1, test_fig fig2, test_linkingFig linkingFig1]
 
 main :: Effect Unit
 main = void (sequence (run <$> tests))

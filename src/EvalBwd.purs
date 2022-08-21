@@ -1,167 +1,147 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
-
-import Data.Foldable (length)
-import Data.List (List(..), (:), foldr, range, reverse, singleton, unsnoc, zip)
+import Data.Foldable (foldr, length)
+import Data.FoldableWithIndex (foldrWithIndex)
+import Data.List (List(..), (:), range, reverse, unsnoc, zip)
+import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (fromFoldable)
+import Data.Map (empty, insert, isEmpty)
+import Data.Map (singleton) as M
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong ((&&&), first)
-import Bindings (Bindings, Bind, (↦), (◃), foldBindings, key, update, val, varAnon)
+import Data.Set (singleton, union)
+import Partial.Unsafe (unsafePartial)
+import Bindings (Bindings, Var, (↦), key, val, varAnon)
+import Bindings (dom) as B
 import DataType (cPair)
-import Expl (Expl(..), VarDef(..)) as T
-import Expl (Expl, Match(..), vars)
-import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs)
-import Lattice (𝔹, (∨), botOf, expand)
-import Util (Endo, type (×), (×), (≜), (!), absurd, error, definitely', nonEmpty, replicate)
-import Util.SnocList (SnocList(..), (:-), fromList, splitAt)
+import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), bv)
+import Lattice (𝔹, (∨), bot, botOf)
+import Trace (Trace(..), VarDef(..)) as T
+import Trace (Trace, Match(..))
+import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, mustLookup, nonEmpty)
+import Util.SnocList (SnocList(..), (:-), fromList)
 import Util.SnocList (unzip, zip, zipWith) as S
-import Val (Env, PrimOp(..), Val, holeMatrix)
+import Val (Env, FunEnv, PrimOp(..), Val, (∨∨), concat, concat_inv, dom, update)
 import Val (Val(..)) as V
 
--- second argument contains original environment and recursive definitions
-closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
-closeDefsBwd ρ (ρ0 × δ0) =
-   case foldBindings joinDefs (Lin × botOf ρ0 × botOf δ0 × false) ρ of
-   δ' × ρ' × δ × α -> ρ' × (δ ∨ δ') × α
+closeDefsBwd :: Env 𝔹 -> Env 𝔹 × FunEnv 𝔹 × 𝔹
+closeDefsBwd γ =
+   case foldrWithIndex joinDefs (empty × empty × empty × false) γ of
+   ρ' × γ' × ρ × α -> γ' × (ρ ∨ ρ') × α
    where
-   joinDefs :: Bind (Val 𝔹) -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹)
-   joinDefs (f ↦ v) (δ_acc × ρ' × δ × α) =
-      case expand v (V.Closure (botOf ρ') (botOf δ) false (ElimHole false)) of
-         V.Closure ρ_f δ_f α_f σ_f -> (δ_acc :- f ↦ σ_f) × (ρ' ∨ ρ_f) × (δ ∨ δ_f) × (α ∨ α_f)
+   joinDefs :: Var -> Val 𝔹 -> Endo (FunEnv 𝔹 × Env 𝔹 × FunEnv 𝔹 × 𝔹)
+   joinDefs f _ (ρ_acc × γ' × ρ × α) =
+      case mustLookup f γ of
+         V.Closure α_f γ_f ρ_f σ_f ->
+            (ρ_acc # insert f σ_f) × (γ' ∨∨ γ_f) × (ρ ∨∨ ρ_f) × (α ∨ α_f)
          _ -> error absurd
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
-matchBwd (Lin :- x ↦ v) κ _ (MatchVar x')    = v × ElimVar (x ≜ x') κ
-matchBwd Lin κ _ (MatchVarAnon v)            = botOf v × ElimVar varAnon κ
-matchBwd ρ κ α (MatchConstr c ws cs)         = V.Constr α c vs × ElimConstr (fromFoldable cκs)
+matchBwd γ κ _ (MatchVar x v)
+   | dom γ == singleton x  = mustLookup x γ × ElimVar x κ
+   | otherwise             = botOf v × ElimVar x κ
+matchBwd γ κ _ (MatchVarAnon v) | isEmpty γ        = botOf v × ElimVar varAnon κ
+matchBwd ρ κ α (MatchConstr c ws cκs)              = V.Constr α c vs × ElimConstr (insert c κ' $ (botOf <$> cκs))
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
-         cκs = c × κ' : ((_ × ContHole false) <$> cs)
-matchBwd ρ κ α (MatchRecord xws)             = V.Record α xvs × ElimRecord xs κ'
+matchBwd ρ κ α (MatchRecord xws)                   = V.Record α xvs × ElimRecord (key <$> xws) κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
-         xs = key <$> xws
-matchBwd _ _ _ _                             = error absurd
+matchBwd _ _ _ _                                   = error absurd
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgsBwd Lin κ _ Lin       = Nil × κ
-matchArgsBwd (_ :- _) _ _ Lin  = error absurd
-matchArgsBwd ρρ' κ α (ws :- w) =
-   let ρ × ρ'  = splitAt (vars w # length) ρρ'
-       v × σ   = matchBwd ρ' κ α w
-       vs × κ' = matchArgsBwd ρ (ContElim σ) α ws in
+matchArgsBwd γ κ _ Lin  | isEmpty γ = Nil × κ
+                        | otherwise = error absurd
+matchArgsBwd γγ' κ α (ws :- w) =
+   let γ × γ'  = disjUnion_inv (bv w) γγ'
+       v × σ   = matchBwd γ κ α w
+       vs × κ' = matchArgsBwd γ' (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
 
 matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings (Match 𝔹) -> Bindings (Val 𝔹) × Cont 𝔹
-matchRecordBwd Lin κ _ Lin         = Lin × κ
-matchRecordBwd (_ :- _) _ _ Lin    = error absurd
-matchRecordBwd ρρ' κ α (xws :- x ↦ w) =
-   let ρ × ρ'  = splitAt (vars w # length) ρρ'
-       v × σ   = matchBwd ρ' κ α w in
-   (first (_ :- x ↦ v)) (matchRecordBwd ρ (ContElim σ) α xws)
+matchRecordBwd γ κ _ Lin | isEmpty γ   = Lin × κ
+                         | otherwise   = error absurd
+matchRecordBwd γγ' κ α (xws :- x ↦ w)  =
+   let γ × γ'  = disjUnion_inv (bv w) γγ'
+       v × σ   = matchBwd γ κ α w in
+   (first (_ :- x ↦ v)) (matchRecordBwd γ' (ContElim σ) α xws)
 
-evalBwd :: Val 𝔹 -> Expl 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
-evalBwd v (T.Var ρ x) = (botOf ρ ◃ x ↦ v) × Var x × false
-evalBwd v (T.Op ρ op) = (botOf ρ ◃ op ↦ v) × Op op × false
-evalBwd v (T.Str ρ str) =
-   case expand v (V.Str false str) of
-      V.Str α _ -> botOf ρ × Str α str × α
-      _ -> error absurd
-evalBwd v (T.Int ρ n) =
-   case expand v (V.Int false n) of
-      V.Int α _ -> botOf ρ × Int α n × α
-      _ -> error absurd
-evalBwd v (T.Float ρ n) =
-   case expand v (V.Float false n) of
-      V.Float α _ -> botOf ρ × Float α n × α
-      _ -> error absurd
-evalBwd v (T.Lambda ρ σ) =
-   case expand v (V.Closure (botOf ρ) Lin false (botOf σ)) of
-      V.Closure ρ' _ α σ' -> ρ' × Lambda σ' × α
-      _ -> error absurd
-evalBwd v (T.Record ρ xts) =
-   case expand v (V.Record false (xts <#> map (const (V.Hole false)))) of
-      V.Record α xvs ->
-         let xs × ts = xts <#> (key &&& val) # S.unzip
-             vs = xvs <#> val
-         -- Could unify with similar function in constructor case
-             evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × SnocList (Expr 𝔹) × 𝔹)
-             evalArg_bwd (v' × t') (ρ' × es × α') = (ρ' ∨ ρ'') × (es :- e) × (α' ∨ α'')
-               where ρ'' × e × α'' = evalBwd v' t'
-             ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Lin × α) (S.zip vs ts) in
-         ρ' × Record α (S.zipWith (↦) xs es) × α'
-      _ -> error absurd
-evalBwd v (T.Constr ρ c ts) =
-   case expand v (V.Constr false c (ts <#> const (V.Hole false))) of
-      V.Constr α _ vs ->
-         let evalArg_bwd :: Val 𝔹 × Expl 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
-             evalArg_bwd (v' × t') (ρ' × es × α') = (ρ' ∨ ρ'') × (e : es) × (α' ∨ α'')
-               where ρ'' × e × α'' = evalBwd v' t'
-             ρ' × es × α' = foldr evalArg_bwd (botOf ρ × Nil × α) (zip vs ts) in
-         ρ' × Constr α c es × α'
-      _ -> error absurd
-evalBwd v (T.Matrix tss (x × y) (i' × j') t') =
-   case expand v (V.Matrix false (holeMatrix i' j')) of
-      V.Matrix α (vss × (_ × β) × (_ × β')) ->
-         let NonEmptyList ijs = nonEmpty $ do
-                  i <- range 1 i'
-                  j <- range 1 j'
-                  singleton (i × j)
-             evalBwd_elem :: (Int × Int) -> Env 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
-             evalBwd_elem (i × j) =
-                case evalBwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
-                   (ρ :- _ ↦ v1 :- _ ↦ v2) × e × α' ->
-                      case expand v1 (V.Int false i) × expand v2 (V.Int false j) of
-                         V.Int γ _ × V.Int γ' _ -> ρ × e × α' × γ × γ'
-                         _ -> error absurd
-                   _ -> error absurd
-             ρ × e × α' × γ × γ' = foldl1
-                (\(ρ1 × e1 × α1 × γ1 × γ1') (ρ2 × e2 × α2 × γ2 × γ2') ->
-                   ((ρ1 ∨ ρ2) × (e1 ∨ e2) × (α1 ∨ α2) × (γ1 ∨ γ2) × (γ1' ∨ γ2')))
-                (evalBwd_elem <$> ijs)
-             ρ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (γ ∨ β) i' : V.Int (γ' ∨ β') j' : Nil)) t' in
-          (ρ ∨ ρ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
-      _ -> error absurd
-evalBwd v (T.RecordLookup t xs x) =
-   let v' = V.Record false (update (xs <#> (_ ↦ V.Hole false)) (x ↦ v))
+evalBwd :: Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
+evalBwd v (T.Var x) = M.singleton x v × Var x × false
+evalBwd v (T.Op op) = M.singleton op v × Op op × false
+evalBwd (V.Str α _) (T.Str str) = empty × Str α str × α
+evalBwd (V.Int α _) (T.Int n) = empty × Int α n × α
+evalBwd (V.Float α _) (T.Float n) = empty × Float α n × α
+evalBwd (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
+evalBwd (V.Record α xvs) (T.Record γ xts) =
+   let xs × ts = xts <#> (key &&& val) # S.unzip
+       vs = xvs <#> val
+       -- Could unify with similar function in constructor case
+       evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × SnocList (Expr 𝔹) × 𝔹)
+       evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (es :- e) × (α' ∨ α'')
+         where γ'' × e × α'' = evalBwd v' t'
+       γ' × es × α' = foldr evalArg_bwd (botOf γ × Lin × α) (S.zip vs ts) in
+   γ' × Record α (S.zipWith (↦) xs es) × α'
+evalBwd (V.Constr α _ vs) (T.Constr γ c ts) =
+   let evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
+       evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
+          where γ'' × e × α'' = evalBwd v' t'
+       γ' × es × α' = foldr evalArg_bwd (botOf γ × Nil × α) (zip vs ts) in
+   γ' × Constr α c es × α'
+evalBwd (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (i' × j') t') =
+   let NonEmptyList ijs = nonEmpty $ do
+            i <- range 1 i'
+            j <- range 1 j'
+            L.singleton (i × j)
+       evalBwd_elem :: (Int × Int) -> Env 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
+       evalBwd_elem (i × j) =
+          case evalBwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
+             γ'' × e × α' ->
+               let γ × γ' = concat_inv (singleton x `union` singleton y) γ''
+                   γ0 = (M.singleton x (V.Int bot i') `disjUnion` M.singleton y (V.Int bot j')) `concat` γ'
+               in unsafePartial $ let V.Int β _ × V.Int β' _ = mustLookup x γ0 × mustLookup x γ0
+               in γ × e × α' × β × β'
+       γ × e × α' × β × β' = foldl1
+          (\(γ1 × e1 × α1 × β1 × β1') (γ2 × e2 × α2 × β2 × β2') ->
+             ((γ1 ∨ γ2) × (e1 ∨ e2) × (α1 ∨ α2) × (β1 ∨ β2) × (β1' ∨ β2')))
+          (evalBwd_elem <$> ijs)
+       γ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t' in
+    (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
+evalBwd v (T.Project t xvs x) =
+   let v' = V.Record false $ (xvs <#> botOf) `update` M.singleton x v
        ρ × e × α = evalBwd v' t in
-   ρ × RecordLookup e x × α
-evalBwd v (T.App (t1 × _ × δ × _) t2 w t3) =
-   let ρ1ρ2ρ3 × e × β = evalBwd v t3
-       ρ1ρ2 × ρ3 = splitAt (vars w # length) ρ1ρ2ρ3
-       v' × σ = matchBwd ρ3 (ContExpr e) β w
-       ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
-       ρ' × e2 × α = evalBwd v' t2
-       ρ1' × δ' × β' = closeDefsBwd ρ2 (ρ1 × δ)
-       ρ'' × e1 × α' = evalBwd (V.Closure (ρ1 ∨ ρ1') δ' (β ∨ β') σ) t1 in
-   (ρ' ∨ ρ'') × App e1 e2 × (α ∨ α')
+   ρ × Project e x × α
+evalBwd v (T.App (t1 × xs × _) t2 w t3) =
+   let γ1γ2γ3 × e × β = evalBwd v t3
+       γ1γ2 × γ3 = concat_inv (bv w) γ1γ2γ3
+       v' × σ = matchBwd γ3 (ContExpr e) β w
+       γ1 × γ2 = concat_inv xs γ1γ2
+       γ' × e2 × α = evalBwd v' t2
+       γ1' × δ' × β' = closeDefsBwd γ2
+       γ'' × e1 × α' = evalBwd (V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ) t1 in
+   (γ' ∨ γ'') × App e1 e2 × (α ∨ α')
 evalBwd v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
-   let vs' = vs <> singleton v2
+   let vs' = vs <> L.singleton v2
        { init: vs'', last: v2' } = definitely' $ unsnoc $
          if φ.arity > length vs'
-         then case expand v (V.Primitive (PrimOp φ) (const (V.Hole false) <$> vs')) of
-            V.Primitive _ vs'' -> vs''
-            _ -> error absurd
-         else φ.op_bwd (v × φ.op vs') vs'
-       ρ × e × α = evalBwd (V.Primitive (PrimOp φ) vs'') t1
-       ρ' × e' × α' = evalBwd v2' t2 in
-   (ρ ∨ ρ') × App e e' × (α ∨ α')
-evalBwd v (T.AppConstr (t1 × c × n) t2) =
-   case expand v (V.Constr false c (replicate (n + 1) (V.Hole false))) of
-      V.Constr β _ vs ->
-         let { init: vs', last: v2 } = definitely' (unsnoc vs)
-             ρ × e × α = evalBwd (V.Constr β c vs') t1
-             ρ' × e' × α' = evalBwd v2 t2 in
-         (ρ ∨ ρ') × App e e' × (α ∨ α')
-      _ -> error absurd
+         then unsafePartial $ let V.Primitive _ vs'' = v in vs''
+         else φ.op_bwd v vs'
+       γ × e × α = evalBwd (V.Primitive (PrimOp φ) vs'') t1
+       γ' × e' × α' = evalBwd v2' t2 in
+   (γ ∨ γ') × App e e' × (α ∨ α')
+evalBwd (V.Constr β _ vs) (T.AppConstr (t1 × c × _) t2) =
+   let { init: vs', last: v2 } = definitely' (unsnoc vs)
+       γ × e × α = evalBwd (V.Constr β c vs') t1
+       γ' × e' × α' = evalBwd v2 t2 in
+   (γ ∨ γ') × App e e' × (α ∨ α')
 evalBwd v (T.Let (T.VarDef w t1) t2) =
-   let ρ1ρ2 × e2 × α2 = evalBwd v t2
-       ρ1 × ρ2 = splitAt (vars w # length) ρ1ρ2
-       v' × σ = matchBwd ρ2 (ContHole false) α2 w
-       ρ1' × e1 × α1 = evalBwd v' t1 in
-   (ρ1 ∨ ρ1') × Let (VarDef σ e1) e2 × (α1 ∨ α2)
-evalBwd v (T.LetRec δ t) =
-   let ρ1ρ2 × e × α = evalBwd v t
-       ρ1 × ρ2 = splitAt (length δ) ρ1ρ2
-       ρ1' × δ' × α' = closeDefsBwd ρ2 (ρ1 × δ) in
-   (ρ1 ∨ ρ1') × LetRec δ' e × (α ∨ α')
+   let γ1γ2 × e2 × α2 = evalBwd v t2
+       γ1 × γ2 = concat_inv (bv w) γ1γ2
+       v' × σ = matchBwd γ2 ContNone α2 w
+       γ1' × e1 × α1 = evalBwd v' t1 in
+   (γ1 ∨ γ1') × Let (VarDef σ e1) e2 × (α1 ∨ α2)
+evalBwd v (T.LetRec xσs t) =
+   let γ1γ2 × e × α = evalBwd v t
+       γ1 × γ2 = concat_inv (B.dom xσs) γ1γ2
+       γ1' × ρ' × α' = closeDefsBwd γ2 in
+   (γ1 ∨ γ1') × LetRec (botOf xσs `update` ρ') e × (α ∨ α')
+evalBwd _ _ = error absurd

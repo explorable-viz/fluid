@@ -19,6 +19,7 @@ module.exports = function (config) {
          }
       },
       colors: true,
+      failOnEmptyTestSuite: false,
       files: [
          "./dist/tests/app.js",
          {

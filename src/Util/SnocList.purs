@@ -2,9 +2,11 @@ module Util.SnocList where
 
 import Prelude
 import Data.Foldable (class Foldable, foldl, foldMap, foldr)
+import Data.Unfoldable (class Unfoldable, class Unfoldable1)
 import Data.Function (on)
 import Data.List (List(..), (:), take, drop)
 import Data.List (reverse, unzip, zip, zipWith) as L
+import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (curry, uncurry)
@@ -15,7 +17,7 @@ data SnocList a =
    Lin |
    Snoc (SnocList a) a
 
-derive instance snocListFunctor :: Functor SnocList
+derive instance Functor SnocList
 
 infixl 6 Snoc as :-
 
@@ -34,27 +36,45 @@ fromList (x : xs) = fromList xs :- x
 reverse :: SnocList ~> SnocList
 reverse = toList >>> L.reverse >>> fromList
 
-instance showSnocList :: Show a => Show (SnocList a) where
+instance Show a => Show (SnocList a) where
    show = toList >>> show
 
-instance eqSnocList :: Eq a => Eq (SnocList a) where
+instance Eq a => Eq (SnocList a) where
    eq = eq `on` toList
 
-instance ordSnocList :: Ord a => Ord (SnocList a) where
+instance Ord a => Ord (SnocList a) where
    compare = compare `on` toList
 
 zipWith :: forall a b c. (a -> b -> c) -> SnocList a -> SnocList b -> SnocList c
 zipWith f = curry $ (toList *** toList) >>> uncurry (L.zipWith f) >>> fromList
 
-instance foldableSnocList :: Foldable SnocList where
+instance Foldable SnocList where
    foldr f b = toList >>> foldr f b
    foldl f b = toList >>> foldl f b
    foldMap f = toList >>> foldMap f
 
 -- Adapted from PureScript prelude.
-instance traversableSnocList :: Traversable SnocList where
+instance Traversable SnocList where
   traverse f xs = fromList <$> traverse f (toList xs)
   sequence = traverse identity
+
+instance Unfoldable1 SnocList where
+   unfoldr1 :: forall a b. (b -> a × Maybe b) -> b -> SnocList a
+   unfoldr1 f b = go b Lin
+      where
+      go :: b -> SnocList a -> SnocList a
+      go source memo = case f source of
+         one × Just rest -> go rest (memo :- one)
+         one × Nothing -> foldl (:-) Lin (memo :- one)
+
+instance Unfoldable SnocList where
+   unfoldr :: forall a b. (b -> Maybe (a × b)) -> b -> SnocList a
+   unfoldr f b = go b Lin
+      where
+      go :: b -> SnocList a -> SnocList a
+      go source memo = case f source of
+         Nothing -> foldl (:-) Lin memo
+         Just (one × rest :: a × b) -> go rest (memo :- one)
 
 unzip :: forall a b . SnocList (a × b) -> SnocList a × SnocList b
 unzip = toList >>> L.unzip >>> (fromList *** fromList)
@@ -62,11 +82,11 @@ unzip = toList >>> L.unzip >>> (fromList *** fromList)
 zip :: forall a b . SnocList a -> SnocList b -> SnocList (a × b)
 zip = curry ((toList *** toList) >>> uncurry L.zip >>> fromList)
 
-instance semigroupSnocList :: Semigroup (SnocList a) where
+instance Semigroup (SnocList a) where
    -- The flip is crucial -- see https://stackoverflow.com/questions/13034856.
    append = curry $ (toList *** toList) >>> uncurry (flip append) >>> fromList
 
-instance monoidSnocList :: Monoid (SnocList a) where
+instance Monoid (SnocList a) where
    mempty = Lin
 
 splitAt :: forall a . Int -> SnocList a -> SnocList a × SnocList a

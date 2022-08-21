@@ -3,30 +3,30 @@ module Module where
 import Prelude
 import Affjax.Web (defaultRequest, printError, request)
 import Affjax.ResponseFormat (string)
+import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
-import Data.Bifunctor (bimap)
+import Data.Map (singleton)
 import Effect.Aff (Aff)
 import Parsing (runParser)
-import Bindings (Var, (↦))
-import SExpr (Expr) as S
+import Bindings (Var)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Eval (eval, eval_module)
 import Lattice (𝔹)
 import Parse (module_, program)
 import Primitive.Defs (primitives)
+import SExpr (Expr) as S
 import Util (MayFail, type (×), (×), error, successful)
 import Util.Parse (SParser)
-import Util.SnocList (SnocList(..), (:-))
-import Val (Env)
+import Val (Env, concat)
 
 -- Mainly serve as documentation
 newtype File = File String
 newtype Folder = Folder String
 
-derive newtype instance showFile :: Show File
-derive newtype instance semigroupFile :: Semigroup File
-derive newtype instance monoidFile :: Monoid File
+derive newtype instance Show File
+derive newtype instance Semigroup File
+derive newtype instance Monoid File
 
 -- For Wrattler integration. Should not end in "/".
 resourceServerUrl :: String
@@ -44,9 +44,10 @@ parse :: forall t . String -> SParser t -> MayFail t
 parse src = runParser src >>> show `bimap` identity
 
 loadModule :: File -> Env 𝔹 -> Aff (Env 𝔹)
-loadModule file ρ = do
+loadModule file γ = do
    src <- loadFile (Folder "fluid/lib") file
-   pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module ρ))
+   pure $ successful $
+      (parse src module_ >>= desugarModuleFwd >>= eval_module γ) <#> (γ `concat` _)
 
 parseProgram :: Folder -> File -> Aff (S.Expr 𝔹)
 parseProgram folder file = loadFile folder file <#> (successful <<< flip parse program)
@@ -60,13 +61,13 @@ defaultImports =
 
 openWithDefaultImports :: File -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file = do
-   ρ <- defaultImports
-   open file <#> (ρ × _)
+   γ <- defaultImports
+   open file <#> (γ × _)
 
 -- Return ambient environment used to load dataset along with new binding.
 openDatasetAs :: File -> Var -> Aff (Env 𝔹 × Env 𝔹)
 openDatasetAs file x = do
    s <- parseProgram (Folder "fluid") file
-   ρ <- defaultImports
-   let _ × v = successful (desugarFwd s >>= eval ρ)
-   pure (ρ × (Lin :- x ↦ v))
+   γ <- defaultImports
+   let _ × v = successful (desugarFwd s >>= eval γ)
+   pure (γ × singleton x v)

@@ -2,7 +2,6 @@ module DesugarFwd where
 
 import Prelude hiding (absurd,otherwise)
 
-import Bindings (Bindings, Bind, (↦), key, varAnon)
 import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Function (applyN, on)
@@ -13,6 +12,7 @@ import Data.Map (Map, fromFoldable, singleton)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
+import Bindings (Bindings, Bind, (↦), key, varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
@@ -49,7 +49,7 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarD
    desugarDefs (Right δ)   = pure (Right δ)
 
 varDefFwd :: VarDef 𝔹 -> MayFail (E.VarDef 𝔹)
-varDefFwd (VarDef π s) = E.VarDef <$> patternFwd π (ContHole false :: Cont 𝔹) <*> exprFwd s
+varDefFwd (VarDef π s) = E.VarDef <$> patternFwd π (ContNone :: Cont 𝔹) <*> exprFwd s
 
 varDefsFwd :: VarDefs 𝔹 × Expr 𝔹 -> MayFail (E.Expr 𝔹)
 varDefsFwd (NonEmptyList (d :| Nil) × s) =
@@ -78,7 +78,7 @@ exprFwd (Constr α c ss)          = E.Constr α c <$> traverse exprFwd ss
 exprFwd (Record α xss)           = E.Record α <$> traverse (traverse exprFwd) xss
 exprFwd (Matrix α s (x × y) s')  = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
 exprFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
-exprFwd (RecordLookup s x)       = E.RecordLookup <$> exprFwd s <@> x
+exprFwd (Project s x)       = E.Project <$> exprFwd s <@> x
 exprFwd (App s1 s2)              = E.App <$> exprFwd s1 <*> exprFwd s2
 exprFwd (BinaryApp s1 op s2)     = E.App <$> (E.App (E.Op op) <$> exprFwd s1) <*> exprFwd s2
 exprFwd (MatchAs s bs)           = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> exprFwd s
@@ -158,11 +158,9 @@ branchesFwd_uncurried bs = do
    NonEmptyList (σ :| σs) <- traverse (uncurry branchFwd_uncurried) bs
    foldM maybeJoin σ σs
 
--- holes used to represent var defs, but otherwise surface programs never contain holes
 totaliseFwd :: Cont 𝔹 -> 𝔹 -> Cont 𝔹
-totaliseFwd (ContHole _) _                   = error absurd
+totaliseFwd ContNone _                       = error absurd
 totaliseFwd (ContExpr e) _                   = ContExpr e
-totaliseFwd (ContElim (ElimHole _)) _        = error absurd
 totaliseFwd (ContElim (ElimConstr m)) α      = ContElim (ElimConstr (totaliseConstrFwd (c × totaliseFwd κ α) α))
    where c × κ = asSingletonMap m
 totaliseFwd (ContElim (ElimRecord xs κ)) α   = ContElim (ElimRecord xs (totaliseFwd κ α))

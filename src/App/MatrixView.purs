@@ -1,14 +1,13 @@
 module App.MatrixView where
 
 import Prelude hiding (absurd)
-import Data.Array (zip, zipWith)
 import Data.Maybe (Maybe)
 import Data.Tuple (uncurry)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 import App.Util (Handler, Renderer, toggleCell)
-import Lattice (Slice, 𝔹)
+import Lattice (𝔹)
 import Primitive (match_fwd)
 import Util (type (×), (×), (!), definitely')
 import Val (Array2, MatrixRep)
@@ -19,9 +18,9 @@ newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 foreign import drawMatrix :: Renderer MatrixView
 
-matrixRep :: Slice (MatrixRep 𝔹) -> IntMatrix
-matrixRep ((vss × _ × _) × (uss × (i × _) × (j × _))) =
-   ((<$>) ((<$>) match_fwd)) (zipWith zip vss uss) × i × j
+matrixRep :: MatrixRep 𝔹 -> IntMatrix
+matrixRep ((vss × (i × _) × (j × _))) =
+   ((<$>) ((<$>) match_fwd)) vss × i × j
 
 matrixViewHandler :: Handler
 matrixViewHandler ev = uncurry toggleCell $ unsafePos $ target ev

@@ -2,49 +2,47 @@ module Primitive.Defs where
 
 import Prelude hiding (absurd, div, mod)
 import Prelude (div, mod) as P
-import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..))
+import Data.Map (fromFoldable)
 import Data.Number (log, pow) as N
 import Debug (trace)
-import Bindings ((↦))
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
-import Util.SnocList (SnocList(..), (:-))
 import Val (Env, MatrixRep, Val(..), updateMatrix)
 
 primitives :: Env 𝔹
-primitives = foldl (:-) Lin [
-   ":"         ↦ Constr false cCons Nil,
+primitives = fromFoldable [
+   ":"         × Constr false cCons Nil,
 
-   "+"         ↦ binary (withInverse2 plus),
-   "-"         ↦ binary (withInverse2 minus),
-   "*"         ↦ binaryZero (withInverse2 times),
-   "**"        ↦ binaryZero (withInverse2 pow),
-   "/"         ↦ binaryZero (withInverse2 divide),
-   "=="        ↦ binary (withInverse2 equals),
-   "/="        ↦ binary (withInverse2 notEquals),
-   "<"         ↦ binary (withInverse2 lessThan),
-   ">"         ↦ binary (withInverse2 greaterThan),
-   "<="        ↦ binary (withInverse2 lessThanEquals),
-   ">="        ↦ binary (withInverse2 greaterThanEquals),
-   "++"        ↦ binary (withInverse2 concat),
-   "!"         ↦ binary matrixLookup,
-   "div"       ↦ binaryZero (withInverse2 div),
-   "mod"       ↦ binaryZero (withInverse2 mod),
-   "quot"      ↦ binaryZero (withInverse2 quot),
-   "rem"       ↦ binaryZero (withInverse2 rem),
+   "+"         × binary (withInverse2 plus),
+   "-"         × binary (withInverse2 minus),
+   "*"         × binaryZero (withInverse2 times),
+   "**"        × binaryZero (withInverse2 pow),
+   "/"         × binaryZero (withInverse2 divide),
+   "=="        × binary (withInverse2 equals),
+   "/="        × binary (withInverse2 notEquals),
+   "<"         × binary (withInverse2 lessThan),
+   ">"         × binary (withInverse2 greaterThan),
+   "<="        × binary (withInverse2 lessThanEquals),
+   ">="        × binary (withInverse2 greaterThanEquals),
+   "++"        × binary (withInverse2 concat),
+   "!"         × binary matrixLookup,
+   "div"       × binaryZero (withInverse2 div),
+   "mod"       × binaryZero (withInverse2 mod),
+   "quot"      × binaryZero (withInverse2 quot),
+   "rem"       × binaryZero (withInverse2 rem),
 
-   "ceiling"   ↦ unary (withInverse1 ceil),
-   "debugLog"  ↦ unary (withInverse1 debugLog),
-   "dims"      ↦ unary dims,
-   "error"     ↦ unary (withInverse1 error_),
-   "floor"     ↦ unary (withInverse1 floor),
-   "log"       ↦ unary (withInverse1 log),
-   "numToStr"  ↦ unary (withInverse1 numToStr)
+   "ceiling"   × unary (withInverse1 ceil),
+   "debugLog"  × unary (withInverse1 debugLog),
+   "dims"      × unary dims,
+   "error"     × unary (withInverse1 error_),
+   "floor"     × unary (withInverse1 floor),
+   "log"       × unary (withInverse1 log),
+   "numToStr"  × unary (withInverse1 numToStr)
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹

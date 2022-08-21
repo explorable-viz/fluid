@@ -263,7 +263,7 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
       onlyIf (op == op') $
          if op == str.dot
          then \e e' -> case e' of
-            Var x -> RecordLookup e x
+            Var x -> Project e x
             _ -> error "Field names are not first class."
          else
             if isCtrOp op'

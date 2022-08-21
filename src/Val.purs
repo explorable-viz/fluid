@@ -2,21 +2,25 @@ module Val where
 
 import Prelude hiding (absurd)
 import Control.Apply (lift2)
-import Data.Array (replicate)
-import Data.List (List)
-import Bindings (Bindings)
+import Data.List (List(..), (:))
+import Data.Map (Map, filterKeys, keys, isEmpty, lookup, pop, unionWith)
+import Data.Maybe (Maybe(..))
+import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union)
+import Bindings (Bindings, Var, (↦))
 import DataType (Ctr)
-import Expr (Elim(..), RecDefs)
+import Expr (Elim, fv)
 import Lattice (
-   class BoundedSlices, class Expandable, class JoinSemilattice, Slice, class Slices,
-   𝔹, (∨), bot, definedJoin, expand, maybeJoin, neg
+   class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), bot, botOf, definedJoin, maybeJoin, neg
 )
-import Util (Endo, type (×), (×), (⪄), (≞), (≜), (!), absurd, error, report, unsafeUpdateAt)
+import Util (
+   Endo, MayFail, type (×), (×), (≞), (!),
+   absurd, disjUnion, error, mustLookup, orElse, report, unsafeUpdateAt
+)
+import Util.SnocList (SnocList(..), (:-))
 
 type Op a = a × 𝔹 -> Val 𝔹
 
 data Val a =
-   Hole a |
    Int a Int |
    Float a Number |
    Str a String |
@@ -24,17 +28,68 @@ data Val a =
    Constr a Ctr (List (Val a)) |             -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |         -- never saturated
-   Closure (Env a) (RecDefs a) a (Elim a)
+   Closure a (Env a) (FunEnv a) (Elim a)
 
--- op_fwd will be provided with original (non-hole) arguments, op_bwd with original output and arguments
+-- op_fwd will be provided with original arguments, op_bwd with original output and arguments
 newtype PrimOp = PrimOp {
    arity :: Int,
    op :: List (Val 𝔹) -> Val 𝔹,
-   op_fwd :: List (Slice (Val 𝔹)) -> Val 𝔹,
-   op_bwd :: Slice (Val 𝔹) -> Endo (List (Val 𝔹))
+   op_fwd :: List (Val 𝔹) -> Val 𝔹,
+   op_bwd :: Val 𝔹 -> Endo (List (Val 𝔹))
 }
 
-type Env a = Bindings (Val a)
+-- Environments.
+type Env a = Map Var (Val a)
+type FunEnv a = Map Var (Elim a)
+
+dom :: forall a . Map Var a -> Set Var
+dom = keys
+
+lookup' :: forall a . Var -> Env a -> MayFail (Val a)
+lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
+
+update :: forall a . Bindings a -> Map Var a -> Bindings a
+update Lin γ   | isEmpty γ = Lin
+               | otherwise = error absurd
+update (xvs :- x ↦ v) γ =
+   case pop x γ of
+      Just (u × γ')  -> update xvs γ' :- x ↦ u
+      Nothing        -> update xvs γ :- x ↦ v
+
+concat :: forall a . Env a -> Endo (Env a)
+concat = unionWith (const identity)
+
+concat_inv :: forall a . Set Var -> Env a -> Env a × Env a
+concat_inv xs γ = filterKeys (_ `not <<< member` xs) γ × restrict γ xs
+
+restrict :: forall a . Map Var a -> Set Var -> Map Var a
+restrict γ xs = filterKeys (_ `member` xs) γ
+
+reaches :: forall a . FunEnv a -> Endo (Set Var)
+reaches ρ xs = go (toUnfoldable xs) empty
+   where
+   dom_ρ = dom ρ
+   go :: List Var -> Endo (Set Var)
+   go Nil acc                          = acc
+   go (x : xs') acc | x `member` acc   = go xs' acc
+   go (x : xs') acc | otherwise        =
+      let σ = mustLookup x ρ in
+      go (toUnfoldable (fv σ `intersection` dom_ρ) <> xs')
+         (singleton x `union` acc)
+
+for :: forall a . FunEnv a -> Elim a -> FunEnv a
+for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` dom ρ)
+
+weakJoin :: forall a . Slices a => Map Var a -> Endo (Map Var a)
+weakJoin m m' =
+   let dom_m × dom_m' = dom m × dom m' in
+   (m `restrict` (dom_m `difference` dom_m'))
+   `disjUnion`
+   (m `restrict` (dom_m `intersection` dom_m') ∨ m' `restrict` (dom_m `intersection` dom_m'))
+   `disjUnion`
+   (m' `restrict` (dom_m' `difference` dom_m))
+
+infixl 6 weakJoin as ∨∨
 
 -- Matrices.
 type Array2 a = Array (Array a)
@@ -47,14 +102,10 @@ updateMatrix i j δv (vss × h × w) =
        vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) (δv v_j) vs_i) vss
    in vss' × h × w
 
-holeMatrix :: Int -> Int -> MatrixRep 𝔹
-holeMatrix i j = replicate i (replicate j (Hole false)) × (i × false) × (j × false)
-
 -- ======================
 -- boilerplate
 -- ======================
-instance functorVal :: Functor Val where
-   map f (Hole α)                   = Hole (f α)
+instance Functor Val where
    map f (Int α n)                  = Int (f α) n
    map f (Float α n)                = Float (f α) n
    map f (Str α str)                = Str (f α) str
@@ -63,58 +114,36 @@ instance functorVal :: Functor Val where
    -- PureScript can't derive this case
    map f (Matrix α (r × iα × jβ))   = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))
    map f (Primitive φ vs)           = Primitive φ ((map f) <$> vs)
-   map f (Closure ρ h α σ)          = Closure (map (map f) <$> ρ) (map (map f) <$> h) (f α) (f <$> σ)
+   map f (Closure α γ ρ σ)          = Closure (f α) (map f <$> γ) (map f <$> ρ) (f <$> σ)
 
-instance joinSemilatticeVal :: JoinSemilattice (Val Boolean) where
+instance JoinSemilattice (Val Boolean) where
    join = definedJoin
    neg = (<$>) neg
 
-instance slicesVal :: Slices (Val Boolean) where
-   maybeJoin (Hole false) v                           = pure v
-   maybeJoin (Hole true) _                            = pure (Hole true)
-   maybeJoin v (Hole false)                           = pure v
-   maybeJoin _ (Hole true)                            = pure (Hole true)
+instance Slices (Val Boolean) where
    maybeJoin (Int α n) (Int α' n')                    = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Float α n) (Float α' n')                = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α str) (Str α' str')                = Str (α ∨ α') <$> (str ≞ str')
    maybeJoin (Record α xvs) (Record α' xvs')          = Record (α ∨ α') <$> maybeJoin xvs xvs'
    maybeJoin (Constr α c vs) (Constr α' c' us)        = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
-   maybeJoin (Matrix α (vss × (i × β) × (j × γ))) (Matrix α' (vss' × (i' × β') × (j' × γ'))) =
+   maybeJoin (Matrix α (vss × (i × βi) × (j × βj))) (Matrix α' (vss' × (i' × βi') × (j' × βj'))) =
       Matrix (α ∨ α') <$> (
          maybeJoin vss vss' `lift2 (×)`
-         ((flip (×) (β ∨ β')) <$> (i ≞ i')) `lift2 (×)`
-         ((flip (×) (γ ∨ γ')) <$> (j ≞ j'))
+         ((flip (×) (βi ∨ βi')) <$> (i ≞ i')) `lift2 (×)`
+         ((flip (×) (βj ∨ βj')) <$> (j ≞ j'))
       )
-   maybeJoin (Closure ρ δ α σ) (Closure ρ' δ' α' σ')  =
-      Closure <$> maybeJoin ρ ρ' <*> maybeJoin δ δ' <@> α ∨ α' <*> maybeJoin σ σ'
+   maybeJoin (Closure α γ ρ σ) (Closure α' γ' ρ' σ')  =
+      Closure (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ vs) (Primitive _ vs')       = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _                                      = report "Incompatible values"
 
-instance boundedSlices :: BoundedSlices (Val Boolean) where
-   botOf = const (Hole bot)
-
-instance valExpandable :: Expandable (Val Boolean) where
-   expand v (Hole false)                        = v
-   expand (Hole α) (Int β n)                    = Int (α ⪄ β) n
-   expand (Hole α) (Float β n)                  = Float (α ⪄ β) n
-   expand (Hole α) (Str β str)                  = Str (α ⪄ β) str
-   expand (Hole α) (Primitive φ vs)             = Primitive φ (expand (Hole α) <$> vs)
-   expand (Hole α) (Record β xvs)               = Record (α ⪄ β) (expand (map (const (Hole α)) <$> xvs) xvs)
-   expand (Hole α) (Constr β c vs)              = Constr (α ⪄ β) c (expand (Hole α) <$> vs)
-   expand (Hole α) (Matrix β (vss × (i × β1) × (j × β2))) =
-      Matrix (α ⪄ β) ((map (expand (Hole α)) <$> vss) × (i × (α ⪄ β1)) × (j × (α ⪄ β2)))
-   expand (Hole α) (Closure ρ δ β σ) =
-      Closure (expand (map (const (Hole α)) <$> ρ) ρ)
-              (expand (map (const (ElimHole α)) <$> δ) δ)
-              (α ⪄ β)
-              (expand (ElimHole α) σ)
-   expand (Int α n) (Int β n')                     = Int (α ⪄ β) (n ≜ n')
-   expand (Float α n) (Float β n')                 = Float (α ⪄ β) (n ≜ n')
-   expand (Str α str) (Str β str')                 = Str (α ⪄ β) (str ≜ str')
-   expand (Record α xvs) (Record β xvs')           = Record (α ⪄ β) (expand xvs xvs')
-   expand (Constr α c vs) (Constr β c' vs')        = Constr (α ⪄ β) (c ≜ c') (expand vs vs')
-   expand (Matrix α (vss × (i × β) × (j × γ))) (Matrix α' (vss' × (i' × β') × (j' × γ'))) =
-      Matrix (α ⪄ α') (expand vss vss' × ((i ≜ i') × (β ⪄ β')) × ((j ≜ j') × (γ ⪄ γ')))
-   expand (Closure ρ δ α σ) (Closure ρ' δ' β σ')   = Closure (expand ρ ρ') (expand δ δ') (α ⪄ β) (expand σ σ')
-   expand (Primitive φ vs) (Primitive _ vs')       = Primitive φ (expand vs vs') -- TODO: require φ = φ'
-   expand _ _                                      = error absurd
+instance BoundedSlices (Val Boolean) where
+   botOf (Int _ n)                  = Int bot n
+   botOf (Float _ n)                = Float bot n
+   botOf (Str _ str)                = Str bot str
+   botOf (Record _ xvs)             = Record bot (botOf <$> xvs)
+   botOf (Constr _ c vs)            = Constr bot c (botOf <$> vs)
+   -- PureScript can't derive this case
+   botOf (Matrix _ (r × (i × _) × (j × _))) = Matrix bot ((((<$>) botOf) <$> r) × (i × bot) × (j × bot))
+   botOf (Primitive φ vs)           = Primitive φ (botOf <$> vs)
+   botOf (Closure _ γ ρ σ)         = Closure bot (botOf <$> γ) (botOf <$> ρ) (botOf σ)
