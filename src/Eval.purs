@@ -136,10 +136,13 @@ eval γ (LetRec xσs e) = do
    pure (T.LetRec xσs t × v)
 
 eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
-eval_module γ (Module Nil) = pure γ
-eval_module γ (Module (Left (VarDef σ e) : ds)) = do
-   _  × v <- eval γ e
-   γ' × _ × _  <- match v σ
-   eval_module (γ `concat` γ') (Module ds)
-eval_module γ (Module (Right xσs : ds)) =
-   eval_module (γ `concat` closeDefs γ (asMap xσs)) (Module ds)
+eval_module γ = go empty
+   where
+   go :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
+   go γ' (Module Nil) = pure γ'
+   go y' (Module (Left (VarDef σ e) : ds)) = do
+      _  × v <- eval (γ `concat` y') e
+      γ'' × _ × _  <- match v σ
+      go (y' `concat` γ'') (Module ds)
+   go γ' (Module (Right xσs : ds)) =
+      go (γ' `concat` closeDefs (γ `concat` γ') (asMap xσs)) (Module ds)

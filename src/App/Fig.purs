@@ -7,7 +7,6 @@ import Data.Foldable (length)
 import Data.Traversable (sequence, sequence_)
 import Data.List (List(..), (:), singleton)
 import Data.Map (lookup)
-import Data.Set (difference)
 import Data.Set (singleton) as S
 import Data.Tuple (fst, uncurry)
 import Effect (Effect)
@@ -33,7 +32,7 @@ import Primitive (match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
-import Val (Env, Val(..), concat, concat_inv, dom)
+import Val (Env, Val(..), concat, concat_inv)
 
 data View =
    MatrixFig MatrixView |
@@ -71,8 +70,7 @@ type SplitDefs = {
 splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail SplitDefs
 splitDefs γ0 s' = do
    let defs × s = unsafePartial $ unpack s'
-   γ0γ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module γ0
-   let _ × γ = concat_inv (dom γ0γ `difference` dom γ0) γ0γ
+   γ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module γ0
    pure { γ, s }
    where unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
          unpack (S.LetRec defs s)   = Right defs × s

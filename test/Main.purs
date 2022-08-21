@@ -19,15 +19,6 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   testBwd (File "section-5-example") (File "section-5-example-1.expect")
-           (botOf >>> selectNthNode 0 neg)
-           "(88 _:_ (6 : (4 : [])))",
-   testBwd (File "section-5-example") (File "section-5-example-2.expect")
-           (botOf >>> selectNth 1 topOf)
-           "(_88_ : (_6_ : (_4_ : [])))",
-   testBwd (File "section-5-example") (File "section-5-example-3.expect")
-           (botOf >>> selectNthNode 2 neg)
-           "(88 : (6 : (4 _:_ [])))"
 ]
 
 test_linking :: Array (Test Unit)

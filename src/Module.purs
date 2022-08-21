@@ -18,7 +18,7 @@ import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import Util (MayFail, type (×), (×), error, successful)
 import Util.Parse (SParser)
-import Val (Env)
+import Val (Env, concat)
 
 -- Mainly serve as documentation
 newtype File = File String
@@ -46,7 +46,8 @@ parse src = runParser src >>> show `bimap` identity
 loadModule :: File -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file γ = do
    src <- loadFile (Folder "fluid/lib") file
-   pure (successful (parse src module_ >>= desugarModuleFwd >>= eval_module γ))
+   pure $ successful $
+      (parse src module_ >>= desugarModuleFwd >>= eval_module γ) <#> (γ `concat` _)
 
 parseProgram :: Folder -> File -> Aff (S.Expr 𝔹)
 parseProgram folder file = loadFile folder file <#> (successful <<< flip parse program)
