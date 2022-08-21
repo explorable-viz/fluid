@@ -1,6 +1,6 @@
 module Val where
 
-import Prelude hiding (absurd)
+import Prelude hiding (absurd, append)
 import Control.Apply (lift2)
 import Data.List (List(..), (:))
 import Data.Map (Map, filterKeys, keys, isEmpty, lookup, pop, unionWith)
@@ -56,11 +56,14 @@ update (xvs :- x ↦ v) γ =
       Just (u × γ')  -> update xvs γ' :- x ↦ u
       Nothing        -> update xvs γ :- x ↦ v
 
-concat :: forall a . Env a -> Endo (Env a)
-concat = unionWith (const identity)
+-- Want a monoid instance but needs a newtype
+append :: forall a . Env a -> Endo (Env a)
+append = unionWith (const identity)
 
-concat_inv :: forall a . Set Var -> Env a -> Env a × Env a
-concat_inv xs γ = filterKeys (_ `not <<< member` xs) γ × restrict γ xs
+infixl 5 append as <+>
+
+append_inv :: forall a . Set Var -> Env a -> Env a × Env a
+append_inv xs γ = filterKeys (_ `not <<< member` xs) γ × restrict γ xs
 
 restrict :: forall a . Map Var a -> Set Var -> Map Var a
 restrict γ xs = filterKeys (_ `member` xs) γ

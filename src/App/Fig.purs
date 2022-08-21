@@ -32,7 +32,7 @@ import Primitive (match_fwd)
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
-import Val (Env, Val(..), concat, concat_inv)
+import Val (Env, Val(..), (<+>), append_inv)
 
 data View =
    MatrixFig MatrixView |
@@ -161,11 +161,11 @@ figViews { spec: { xs }, t, v } δv = do
 linkResult :: Var -> Env 𝔹 -> Expr 𝔹 -> Trace 𝔹 -> Trace 𝔹 -> Val 𝔹 -> MayFail LinkResult
 linkResult x γ0 e2 t1 t2 v1 = do
    let γ0γ × _ × _ = evalBwd v1 t1
-       _ × γ' = concat_inv (S.singleton x) γ0γ
+       _ × γ' = append_inv (S.singleton x) γ0γ
    v0' <- lookup x γ' # orElse absurd
    -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use
    -- (topOf γ0) combined with negation of the dataset environment slice
-   let v2' = neg (evalFwd (neg (botOf γ0 `concat` γ')) (const true <$> e2) true t2)
+   let v2' = neg (evalFwd (neg (botOf γ0 <+> γ')) (const true <$> e2) true t2)
    pure { v': v2', v0' }
 
 loadFig :: FigSpec -> Aff Fig
@@ -173,11 +173,11 @@ loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
    γ0 × γ <- openDatasetAs (File "example/linking/renewables") "data"
    open file <#> \s' -> successful do
-      { γ: γ1, s } <- splitDefs (γ0 `concat` γ) s'
+      { γ: γ1, s } <- splitDefs (γ0 <+> γ) s'
       e <- desugarFwd s
-      let γ0γ = γ0 `concat` γ `concat` γ1
+      let γ0γ = γ0 <+> γ <+> γ1
       t × v <- eval γ0γ e
-      pure { spec, γ0, γ: γ `concat` γ1, s, e, t, v }
+      pure { spec, γ0, γ: γ <+> γ1, s, e, t, v }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
 loadLinkFig spec@{ file1, file2, dataFile, x } = do
@@ -188,7 +188,7 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
    s1 × s2 <- (×) <$> open name1 <*> open name2
    pure $ successful do
       e1 × e2 <- (×) <$> desugarFwd s1 <*> desugarFwd s2
-      t1 × v1 <- eval (γ0 `concat` γ) e1
-      t2 × v2 <- eval (γ0 `concat` γ) e2
+      t1 × v1 <- eval (γ0 <+> γ) e1
+      t2 × v2 <- eval (γ0 <+> γ) e2
       v0 <- lookup x γ # orElse absurd
       pure { spec, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0 }

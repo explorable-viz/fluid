@@ -24,7 +24,7 @@ import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as S
 import Trace (Trace)
 import Util (MayFail, type (×), (×), successful)
-import Val (Env, Val(..), concat)
+import Val (Env, Val(..), (<+>))
 
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a . Val a -> Boolean
@@ -87,4 +87,4 @@ testWithDataset :: File -> File -> Test Unit
 testWithDataset dataset file = do
    testWithSetup file "" Nothing $ do
       γ0 × γ <- openDatasetAs dataset "data"
-      (γ0 `concat` γ × _) <$> open file
+      ((γ0 <+> γ) × _) <$> open file

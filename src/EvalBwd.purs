@@ -22,7 +22,7 @@ import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, mustLookup, nonEmpty)
 import Util.SnocList (SnocList(..), (:-), fromList)
 import Util.SnocList (unzip, zip, zipWith) as S
-import Val (Env, FunEnv, PrimOp(..), Val, (∨∨), concat, concat_inv, dom, update)
+import Val (Env, FunEnv, PrimOp(..), (<+>), Val, (∨∨), append_inv, dom, update)
 import Val (Val(..)) as V
 
 closeDefsBwd :: Env 𝔹 -> Env 𝔹 × FunEnv 𝔹 × 𝔹
@@ -96,8 +96,8 @@ evalBwd (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (
        evalBwd_elem (i × j) =
           case evalBwd (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
              γ'' × e × α' ->
-               let γ × γ' = concat_inv (singleton x `union` singleton y) γ''
-                   γ0 = (M.singleton x (V.Int bot i') `disjUnion` M.singleton y (V.Int bot j')) `concat` γ'
+               let γ × γ' = append_inv (singleton x `union` singleton y) γ''
+                   γ0 = (M.singleton x (V.Int bot i') `disjUnion` M.singleton y (V.Int bot j')) <+> γ'
                in unsafePartial $ let V.Int β _ × V.Int β' _ = mustLookup x γ0 × mustLookup x γ0
                in γ × e × α' × β × β'
        γ × e × α' × β × β' = foldl1
@@ -112,9 +112,9 @@ evalBwd v (T.Project t xvs x) =
    ρ × Project e x × α
 evalBwd v (T.App (t1 × xs × _) t2 w t3) =
    let γ1γ2γ3 × e × β = evalBwd v t3
-       γ1γ2 × γ3 = concat_inv (bv w) γ1γ2γ3
+       γ1γ2 × γ3 = append_inv (bv w) γ1γ2γ3
        v' × σ = matchBwd γ3 (ContExpr e) β w
-       γ1 × γ2 = concat_inv xs γ1γ2
+       γ1 × γ2 = append_inv xs γ1γ2
        γ' × e2 × α = evalBwd v' t2
        γ1' × δ' × β' = closeDefsBwd γ2
        γ'' × e1 × α' = evalBwd (V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ) t1 in
@@ -135,13 +135,13 @@ evalBwd (V.Constr β _ vs) (T.AppConstr (t1 × c × _) t2) =
    (γ ∨ γ') × App e e' × (α ∨ α')
 evalBwd v (T.Let (T.VarDef w t1) t2) =
    let γ1γ2 × e2 × α2 = evalBwd v t2
-       γ1 × γ2 = concat_inv (bv w) γ1γ2
+       γ1 × γ2 = append_inv (bv w) γ1γ2
        v' × σ = matchBwd γ2 ContNone α2 w
        γ1' × e1 × α1 = evalBwd v' t1 in
    (γ1 ∨ γ1') × Let (VarDef σ e1) e2 × (α1 ∨ α2)
 evalBwd v (T.LetRec xσs t) =
    let γ1γ2 × e × α = evalBwd v t
-       γ1 × γ2 = concat_inv (B.dom xσs) γ1γ2
+       γ1 × γ2 = append_inv (B.dom xσs) γ1γ2
        γ1' × ρ' × α' = closeDefsBwd γ2 in
    (γ1 ∨ γ1') × LetRec (botOf xσs `update` ρ') e × (α ∨ α')
 evalBwd _ _ = error absurd
