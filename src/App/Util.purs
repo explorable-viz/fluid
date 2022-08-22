@@ -87,13 +87,6 @@ toggleCell i j (Matrix α (vss × (i' × β) × (j' × β'))) =
    Matrix α (updateMatrix i j neg (vss × (i' × β) × (j' × β')))
 toggleCell _ _ _ = error absurd
 
-toggleNth :: Int -> Selector -> Selector
-toggleNth n selector (Constr α c (u1 : u2 : Nil)) | c == cCons =
-   case n of
-      0 -> Constr α c (selector u1 : u2 : Nil)
-      _ -> Constr α c (u1 : toggleNth (n - 1) selector u2 : Nil)
-toggleNth _ _ _ = error absurd
-
 toggleField :: Var -> Selector -> Selector
 toggleField f selector (Record α xus) =
    Record α (xus `update` singleton f (selector (get f xus)))

@@ -9,7 +9,7 @@ import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 import App.Util (
    Handler, class Reflect, Renderer, Selector,
-   from, get, get_intOrNumber, get_prim, record, toggleConstrArg, toggleField, toggleNth
+   from, get, get_intOrNumber, get_prim, record, selectNth, toggleConstrArg, toggleField
 )
 import Bindings (Bind)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
@@ -52,10 +52,10 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
    togglePoint (i × j) =
       toggleConstrArg cLineChart 0 $
       toggleField f_plots $
-      toggleNth i $
+      selectNth i $
       toggleConstrArg cLinePlot 0 $
       toggleField f_data $
-      toggleNth j $
+      selectNth j $
       neg
 
    -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
