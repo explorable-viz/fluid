@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v2
+      with:
+        ref: 'v0.5.0'
     - name: test
       run: |
         yarn install
@@ -23,4 +25,4 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: dist/app/
-        destination_dir: develop/
+        destination_dir: 0.5.0/
