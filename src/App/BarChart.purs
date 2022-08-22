@@ -7,7 +7,7 @@ import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 import App.Util (
    Handler, class Reflect, Renderer, Selector,
-   from, get, get_intOrNumber, get_prim, record, toggleConstrArg, toggleField, toggleNth
+   from, get, get_intOrNumber, get_prim, record, selectNth, toggleConstrArg, toggleField
 )
 import Bindings (Bind)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
@@ -40,7 +40,7 @@ barChartHandler ev = toggleBar $ unsafeBarIndex $ target ev
    toggleBar i =
       toggleConstrArg cBarChart 0 $
       toggleField f_data $
-      toggleNth i $
+      selectNth i $
       neg
 
    -- [Unsafe] Datum associated with bar chart mouse event; 0-based index of selected bar.

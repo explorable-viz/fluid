@@ -23,7 +23,7 @@ import Trace (Trace, Match(..))
 import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
 import Util.SnocList (SnocList(..), (:-), zipWith)
 import Util.SnocList (unzip) as S
-import Val (Env, FunEnv, PrimOp(..), Val, concat, dom, for, lookup', restrict)
+import Val (Env, FunEnv, PrimOp(..), (<+>), Val, dom, for, lookup', restrict)
 import Val (Val(..)) as V
 
 patternMismatch :: String -> String -> String
@@ -95,7 +95,7 @@ eval γ (Matrix _ e (x × y) e') = do
             singleton $ sequence $ do
                j <- range 1 j'
                let γ' = M.singleton x (V.Int false i) `disjUnion` (M.singleton y (V.Int false j))
-               singleton (eval (γ `concat` γ') e))
+               singleton (eval (γ <+> γ') e))
          pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false)))
       v' -> report ("Array dimensions must be pair of ints; got " <> prettyP v')
    where
@@ -115,7 +115,7 @@ eval γ (App e e') = do
       V.Closure _ γ1 ρ σ -> do
          let γ2 = closeDefs γ1 ρ
          γ3 × e'' × w <- match v' σ
-         t'' × v'' <- eval (γ1 `concat` γ2 `concat` γ3) (asExpr e'')
+         t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'')
          pure (T.App (t × dom ρ × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
          let vs' = vs <> singleton v'
@@ -128,11 +128,11 @@ eval γ (App e e') = do
 eval γ (Let (VarDef σ e) e') = do
    t × v <- eval γ e
    γ' × _ × w <- match v σ -- terminal meta-type of eliminator is meta-unit
-   t' × v' <- eval (γ `concat` γ') e'
+   t' × v' <- eval (γ <+> γ') e'
    pure (T.Let (T.VarDef w t) t' × v')
 eval γ (LetRec xσs e) = do
    let γ' = closeDefs γ (asMap xσs)
-   t × v <- eval (γ `concat` γ') e
+   t × v <- eval (γ <+> γ') e
    pure (T.LetRec xσs t × v)
 
 eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
@@ -141,8 +141,8 @@ eval_module γ = go empty
    go :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
    go γ' (Module Nil) = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) = do
-      _  × v <- eval (γ `concat` y') e
+      _  × v <- eval (γ <+> y') e
       γ'' × _ × _  <- match v σ
-      go (y' `concat` γ'') (Module ds)
+      go (y' <+> γ'') (Module ds)
    go γ' (Module (Right xσs : ds)) =
-      go (γ' `concat` closeDefs (γ `concat` γ') (asMap xσs)) (Module ds)
+      go (γ' <+> closeDefs (γ <+> γ') (asMap xσs)) (Module ds)

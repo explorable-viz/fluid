@@ -16,7 +16,7 @@ import Trace (Trace, Match)
 import Util (type (×), (×), (!), absurd, assert, disjUnion, error, mustLookup, successful)
 import Util.SnocList (SnocList(..), (:-))
 import Util.SnocList (unzip, zip, zipWith) as S
-import Val (Env, FunEnv, PrimOp(..), Val, concat, for, lookup', restrict)
+import Val (Env, FunEnv, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
@@ -69,7 +69,7 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
                 singleton $ A.fromFoldable $ do
                    j <- range 1 j'
                    let γ' = M.singleton x (V.Int β i) `disjUnion` (M.singleton y (V.Int β' j))
-                   singleton (evalFwd (γ `concat` γ') e1 α' (tss!(i - 1)!(j - 1)))
+                   singleton (evalFwd (γ <+> γ') e1 α' (tss!(i - 1)!(j - 1)))
          in V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
       _ -> error absurd
 evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
@@ -83,7 +83,7 @@ evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
          let v = evalFwd γ e2 α t2
              γ2 = closeDefsFwd γ1 δ β
              γ3 × e3 × β' = matchFwd v σ' w in
-         evalFwd (γ1 `concat` γ2 `concat` γ3) (asExpr e3) (β ∧ β') t3
+         evalFwd (γ1 <+> γ2 <+> γ3) (asExpr e3) (β ∧ β') t3
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.AppPrim (t1 × PrimOp φ × _) (t2 × _)) =
    case evalFwd γ e1 α t1 of
@@ -101,8 +101,8 @@ evalFwd γ (App e1 e2) α (T.AppConstr (t1 × c × _) t2) =
 evalFwd γ (Let (VarDef σ e1) e2) α (T.Let (T.VarDef w t1) t2) =
    let v = evalFwd γ e1 α t1
        γ' × _ × α' = matchFwd v σ w in
-   evalFwd (γ `concat` γ') e2 α' t2
+   evalFwd (γ <+> γ') e2 α' t2
 evalFwd γ (LetRec xσs e') α (T.LetRec _ t) =
    let γ' = closeDefsFwd γ (asMap xσs) α in
-   evalFwd (γ `concat` γ') e' α t
+   evalFwd (γ <+> γ') e' α t
 evalFwd _ _ _ _ = error absurd
