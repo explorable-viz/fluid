@@ -127,11 +127,11 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, e1, e2, t1, t2, v1, v2 } δv = do
          Left δv1 -> do
             let v1' = δv1 v1
             { v', v0' } <- linkResult x γ0 e2 t1 t2 v1'
-            pure $ v1 × v' × identity × botOf × v0'
+            pure $ v1 × v' × const v1' × botOf × v0'
          Right δv2 -> do
             let v2' = δv2 v2
             { v', v0' } <- linkResult x γ0 e1 t2 t1 v2'
-            pure $ v' × v2 × botOf × identity × v0'
+            pure $ v' × v2 × botOf × const v2' × v0'
    drawView divId (\selector -> drawLinkFig fig (Left $ δv1 >>> selector)) 2 $ view "linked view" v1
    drawView divId (\selector -> drawLinkFig fig (Right $ δv2 >>> selector)) 0 $ view "primary view" v2
    drawView divId doNothing 1 $ view "common data" v0
