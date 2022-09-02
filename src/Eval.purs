@@ -35,22 +35,22 @@ match v (ElimVar x κ)  | x == varAnon    = pure (empty × κ × MatchVarAnon v)
 match (V.Constr _ c vs) (ElimConstr m) = do
    checkConsistent "Pattern mismatch: " c (keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
-   second (MatchConstr c) <$> matchArgs c vs κ
+   second (MatchConstr c) <$> matchMany vs κ
 match v (ElimConstr m) = do
    d <- dataTypeFor (keys m)
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs xs κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
-matchArgs :: Ctr -> List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
-matchArgs _ Nil κ = pure (empty × κ × Nil)
-matchArgs c (v : vs) (ContElim σ) = do
+matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
+matchMany Nil κ = pure (empty × κ × Nil)
+matchMany (v : vs) (ContElim σ) = do
    γ  × κ'  × w  <- match v σ
-   γ' × κ'' × ws <- matchArgs c vs κ'
+   γ' × κ'' × ws <- matchMany vs κ'
    pure ((γ `disjUnion` γ') × κ'' × (w : ws))
-matchArgs c (_ : vs) (ContExpr _) = report $
-   show (length vs + 1) <> " extra argument(s) to " <> show c <> "; did you forget parentheses in lambda pattern?"
-matchArgs _ _ _ = error absurd
+matchMany (_ : vs) (ContExpr _) = report $
+   show (length vs + 1) <> " extra argument(s) to constructor; did you forget parentheses in lambda pattern?"
+matchMany _ _ = error absurd
 
 matchRecord :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
 matchRecord Lin Lin κ = pure (empty × κ × Lin)
