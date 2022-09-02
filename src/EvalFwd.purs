@@ -2,7 +2,7 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
-import Data.List (List(..), (:), length, range, reverse, singleton, zip, unzip, zipWith)
+import Data.List (List(..), (:), length, range, singleton, zip, unzip, zipWith)
 import Data.Map (empty)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), (&&&), first, second)
@@ -23,7 +23,7 @@ matchFwd v (ElimVar _ κ) (T.MatchVar x _) = M.singleton x v × κ × true
 matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
    second (_ ∧ α) (matchManyFwd vs (mustLookup c m) ws)
 matchFwd (V.Record α xvs) (ElimRecord _ κ) (T.MatchRecord xws) =
-   second (_ ∧ α) (matchManyFwd (reverse xvs <#> val) κ (xws <#> val))
+   second (_ ∧ α) (matchManyFwd (xvs <#> val) κ (xws <#> val))
 matchFwd _ _ _ = error absurd
 
 matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹

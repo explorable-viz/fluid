@@ -113,7 +113,7 @@ prettyConstr α c xs                            = hspace (highlightIf α (pretty
 prettyRecord :: forall a . Pretty a => 𝔹 -> List (Bind a) -> Doc
 prettyRecord α xvs =
    xvs <#> (\(x ↦ v) -> hspace [text x :<>: colon, pretty v])
-   # reverse >>> hcomma >>> between (text "{") (text "}") >>> highlightIf α
+   # hcomma >>> between (text "{") (text "}") >>> highlightIf α
 
 instance Pretty (E.Expr Boolean) where
    pretty (E.Var x)                 = text x

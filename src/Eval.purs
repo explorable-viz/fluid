@@ -38,8 +38,8 @@ match v (ElimConstr m) = do
    d <- dataTypeFor (keys m)
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record _ xvs) (ElimRecord xs κ)  = do
-   check (xs == (xvs <#> key)) (patternMismatch (show $ xvs <#> key) (show xs))
-   second (zipWith (↦) (reverse xs) >>> MatchRecord) <$> matchMany (reverse xvs <#> val) κ
+   check (reverse xs == (xvs <#> key)) (patternMismatch (show $ xvs <#> key) (show $ reverse xs))
+   second (zipWith (↦) (reverse xs) >>> MatchRecord) <$> matchMany (xvs <#> val) κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
