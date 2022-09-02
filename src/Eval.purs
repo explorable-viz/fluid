@@ -5,16 +5,16 @@ import Prelude hiding (absurd)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, range, singleton, unzip, zipWith)
+import Data.List (List(..), (:), length, range, reverse, singleton, unzip, zipWith)
 import Data.Map (empty, lookup)
 import Data.Map (singleton) as M
 import Data.Map.Internal (keys)
 import Data.Profunctor.Strong ((&&&), second)
 import Data.Set (union)
 import Data.Traversable (sequence, traverse)
-import Bindings (Bind, (↦), asMap, find, key, val, varAnon, Var)
+import Bindings ((↦), asMap, find, key, val, varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), VarDef(..), asExpr, asElim, fv)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), VarDef(..), asExpr, fv)
 import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
@@ -37,28 +37,20 @@ match (V.Constr _ c vs) (ElimConstr m) = do
 match v (ElimConstr m) = do
    d <- dataTypeFor (keys m)
    report $ patternMismatch (prettyP v) (show d)
-match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs xs κ
-match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
+match (V.Record _ xvs) (ElimRecord xs κ)  = do
+   check (xs == (xvs <#> key)) (patternMismatch (show $ xvs <#> key) (show xs))
+   second (zipWith (↦) (reverse xs) >>> reverse >>> MatchRecord) <$> matchMany (reverse xvs <#> val) κ
+match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchMany Nil κ = pure (empty × κ × Nil)
 matchMany (v : vs) (ContElim σ) = do
    γ  × κ'  × w  <- match v σ
    γ' × κ'' × ws <- matchMany vs κ'
-   pure ((γ `disjUnion` γ') × κ'' × (w : ws))
+   pure $ γ `disjUnion` γ' × κ'' × (w : ws)
 matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
-
-matchRecord :: List (Bind (Val 𝔹)) -> List Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Bind (Match 𝔹)))
-matchRecord Nil Nil κ = pure (empty × κ × Nil)
-matchRecord (x ↦ v : xvs) (x' : xs) σ = do
-   check (x == x') (patternMismatch (show x) (show x'))
-   γ × σ' × xws <- matchRecord xvs xs σ
-   γ' × κ × w <- match v (asElim σ')
-   pure ((γ `disjUnion` γ') × κ × (x ↦ w : xws))
-matchRecord (x ↦ _ : _) Nil _ = report (patternMismatch "end of record pattern" (show x))
-matchRecord Nil (x : _) _ = report (patternMismatch "end of record" (show x))
 
 closeDefs :: Env 𝔹 -> FunEnv 𝔹 -> Env 𝔹
 closeDefs γ ρ = ρ <#> \σ ->
