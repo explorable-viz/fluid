@@ -233,7 +233,7 @@ instance (Pretty a, Pretty b) => Pretty (a + b) where
 instance Pretty S.Pattern where
    pretty (S.PVar x)             = text x
    pretty (S.PConstr c ps)       = prettyConstr false c ps
-   pretty (S.PRecord xps)        = prettyRecord false xps
+   pretty (S.PRecord xps)        = prettyRecord' false xps
    pretty (S.PListEmpty)         = nil
    pretty (S.PListNonEmpty s l)  = text str.lBracket :<>: pretty s :<>: pretty l
 

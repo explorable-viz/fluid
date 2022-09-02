@@ -136,7 +136,7 @@ patternBwd (ElimVar _ κ) (PVar _)               = κ
 patternBwd (ElimConstr m) (PConstr c ps)        = argsBwd (mustLookup c m) (Left <$> ps)
 patternBwd (ElimConstr m) (PListEmpty)          = mustLookup cNil m
 patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
-patternBwd (ElimRecord _ κ) (PRecord xps)       = recordBwd κ xps
+patternBwd (ElimRecord _ κ) (PRecord xps)       = recordBwd κ (S.fromList xps)
 patternBwd _ _                                  = error absurd
 
 -- σ, o desugar_bwd κ
@@ -185,9 +185,9 @@ totaliseBwd (ContElim (ElimVar _ κ')) (Left (PVar x) : πs) =
    let κ'' × α = totaliseBwd κ' πs in
    ContElim (ElimVar x κ'') × α
 totaliseBwd (ContElim (ElimRecord _ κ')) (Left (PRecord xps) : πs) =
-   let ps = xps <#> (val >>> Left) # S.toList # reverse
+   let ps = xps <#> (val >>> Left) # reverse
        κ'' × α = totaliseBwd κ' (ps <> πs) in
-   ContElim (ElimRecord (xps <#> key) κ'') × α
+   ContElim (ElimRecord (xps <#> key # S.fromList) κ'') × α
 totaliseBwd (ContElim (ElimConstr m)) (π : πs) =
    let c × πs' = case π of
          -- TODO: refactor so these two cases aren't necessary

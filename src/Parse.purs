@@ -183,7 +183,7 @@ simplePattern pattern' =
    record :: SParser Pattern
    record =
       sepBy (field pattern') token.comma
-      <#> (reverse >>> fromList >>> PRecord)
+      <#> (reverse >>> PRecord)
       # token.braces
 
    -- TODO: anonymous variables

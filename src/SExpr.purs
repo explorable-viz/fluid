@@ -3,7 +3,7 @@ module SExpr where
 import Prelude
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
-import Bindings (Bind, Bindings, Var)
+import Bindings (Bind, Var)
 import DataType (Ctr)
 import Util (type (×), type (+))
 
@@ -37,7 +37,7 @@ data ListRest a =
 data Pattern =
    PVar Var |
    PConstr Ctr (List Pattern) |
-   PRecord (Bindings Pattern) |
+   PRecord (List (Bind Pattern)) |
    PListEmpty |
    PListNonEmpty Pattern ListRestPattern
 
