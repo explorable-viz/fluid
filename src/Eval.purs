@@ -39,7 +39,7 @@ match v (ElimConstr m) = do
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record _ xvs) (ElimRecord xs κ)  = do
    check (xs == (xvs <#> key)) (patternMismatch (show $ xvs <#> key) (show xs))
-   second (zipWith (↦) (reverse xs) >>> reverse >>> MatchRecord) <$> matchMany (reverse xvs <#> val) κ
+   second (zipWith (↦) (reverse xs) >>> MatchRecord) <$> matchMany (reverse xvs <#> val) κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))

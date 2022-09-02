@@ -44,8 +44,9 @@ matchBwd γ κ _ (MatchVarAnon v)
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws)
-matchBwd ρ κ α (MatchRecord xws)    = V.Record α xvs × ElimRecord (xws <#> key) κ'
-   where xvs × κ' = matchRecordBwd ρ κ α xws
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α xvs × ElimRecord (xws' <#> key) κ'
+   where xws' = reverse xws
+         xvs × κ' = matchRecordBwd ρ κ α xws'
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
 matchArgsBwd γ κ _ Nil  | isEmpty γ = Nil × κ

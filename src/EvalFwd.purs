@@ -7,7 +7,7 @@ import Data.Map (empty)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), (&&&), first, second)
 import Data.Set (union)
-import Bindings (Bind, (↦), asMap, find, key, val)
+import Bindings ((↦), asMap, find, key, val)
 import Expr (Cont, Elim(..), Expr(..), VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))
 import Primitive (match_fwd) as P
@@ -23,7 +23,7 @@ matchFwd v (ElimVar _ κ) (T.MatchVar x _) = M.singleton x v × κ × true
 matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
    second (_ ∧ α) (matchManyFwd vs (mustLookup c m) ws)
 matchFwd (V.Record α xvs) (ElimRecord _ κ) (T.MatchRecord xws) =
-   second (_ ∧ α) (matchManyFwd (reverse xvs <#> val) κ (reverse xws <#> val))
+   second (_ ∧ α) (matchManyFwd (reverse xvs <#> val) κ (xws <#> val))
 matchFwd _ _ _ = error absurd
 
 matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
@@ -32,13 +32,6 @@ matchManyFwd (v : vs) σ (w : ws) =
    let ρ × κ × α = matchFwd v (asElim σ) w in
    (first (ρ `disjUnion` _) *** (_ ∧ α)) (matchManyFwd vs κ ws)
 matchManyFwd _ _ _ = error absurd
-
-matchRecordFwd :: List (Bind (Val 𝔹)) -> Cont 𝔹 -> List (Bind (Match 𝔹)) -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchRecordFwd Nil κ Nil = empty × κ × true
-matchRecordFwd (x ↦ v : xvs) σ (x' ↦ w : xws) | x == x' =
-   let ρ × σ' × α = matchRecordFwd xvs σ xws in
-   (first (ρ `disjUnion` _) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
-matchRecordFwd _ _ _ = error absurd
 
 closeDefsFwd :: Env 𝔹 -> FunEnv 𝔹 -> 𝔹 -> Env 𝔹
 closeDefsFwd γ ρ α = ρ <#> \σ ->
