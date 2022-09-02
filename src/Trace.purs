@@ -2,11 +2,10 @@ module Trace where
 
 import Prelude
 import Data.List (List)
-import Data.Map (Map)
 import Data.Set (Set, empty, singleton, unions)
 import Bindings (Bindings, Var, val)
 import DataType (Ctr)
-import Expr (class BV, Cont, Elim, RecDefs, bv)
+import Expr (class BV, Elim, RecDefs, bv)
 import Util (type (×))
 import Val (Array2, Env, PrimOp, Val)
 
@@ -33,12 +32,11 @@ data Trace a =
 data Match a =
    MatchVar Var (Val a) |
    MatchVarAnon (Val a) |
-   -- list of matches should be a snoc list
-   MatchConstr Ctr (List (Match a)) (Map Ctr (Cont a)) |
+   MatchConstr Ctr (List (Match a)) |
    MatchRecord (Bindings (Match a))
 
 instance BV (Match a) where
-   bv (MatchVar x _)        = singleton x
-   bv (MatchVarAnon _)      = empty
-   bv (MatchConstr _ ws _)  = unions (bv <$> ws)
-   bv (MatchRecord xws)     = unions (bv <$> val <$> xws)
+   bv (MatchVar x _)       = singleton x
+   bv (MatchVarAnon _)     = empty
+   bv (MatchConstr _ ws)   = unions (bv <$> ws)
+   bv (MatchRecord xws)    = unions (bv <$> val <$> xws)

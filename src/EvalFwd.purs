@@ -22,7 +22,7 @@ import Val (Val(..)) as V
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchFwd _ (ElimVar _ κ) (T.MatchVarAnon _) = empty × κ × true
 matchFwd v (ElimVar _ κ) (T.MatchVar x _) = M.singleton x v × κ × true
-matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws _) =
+matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
    second (_ ∧ α) (matchArgsFwd vs (mustLookup c m) ws)
 matchFwd (V.Record α xvs) (ElimRecord _ κ) (T.MatchRecord xws) =
    second (_ ∧ α) (matchRecordFwd xvs κ xws)

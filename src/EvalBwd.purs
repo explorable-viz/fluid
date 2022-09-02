@@ -42,7 +42,7 @@ matchBwd γ κ _ (MatchVar x v)
    | dom γ == singleton x  = mustLookup x γ × ElimVar x κ
    | otherwise             = botOf v × ElimVar x κ
 matchBwd γ κ _ (MatchVarAnon v) | isEmpty γ        = botOf v × ElimVar varAnon κ
-matchBwd ρ κ α (MatchConstr c ws cκs)              = V.Constr α c vs × ElimConstr (insert c κ' $ (botOf <$> cκs))
+matchBwd ρ κ α (MatchConstr c ws)                  = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
 matchBwd ρ κ α (MatchRecord xws)                   = V.Record α xvs × ElimRecord (key <$> xws) κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
