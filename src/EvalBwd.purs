@@ -46,7 +46,7 @@ matchBwd γ κ _ (MatchVarAnon v)
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
-matchBwd ρ κ α (MatchRecord xws)    = V.Record α xvs × ElimRecord (xws <#> key # S.toList) κ'
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α (S.toList xvs) × ElimRecord (xws <#> key # S.toList) κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
@@ -80,7 +80,7 @@ evalBwd (V.Record α xvs) (T.Record γ xts) =
        evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × SnocList (Expr 𝔹) × 𝔹)
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (es :- e) × (α' ∨ α'')
          where γ'' × e × α'' = evalBwd v' t'
-       γ' × es × α' = foldr evalArg_bwd (botOf γ × Lin × α) (zip (S.toList vs) ts) in
+       γ' × es × α' = foldr evalArg_bwd (botOf γ × Lin × α) (zip vs ts) in
    γ' × Record α (zipWith (↦) xs (S.toList es)) × α'
 evalBwd (V.Constr α _ vs) (T.Constr γ c ts) =
    let evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
@@ -108,7 +108,7 @@ evalBwd (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (
        γ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t' in
     (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
 evalBwd v (T.Project t xvs x) =
-   let v' = V.Record false $ (xvs <#> botOf) `update` M.singleton x v
+   let v' = V.Record false $ (xvs <#> botOf) `update` M.singleton x v # S.toList
        ρ × e × α = evalBwd v' t in
    ρ × Project e x × α
 evalBwd v (T.App (t1 × xs × _) t2 w t3) =

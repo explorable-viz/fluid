@@ -12,7 +12,6 @@ import DataType (cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
 import Pretty (prettyP)
 import Util (Endo, type (×), (×), type (+), error)
-import Util.SnocList (SnocList)
 import Val (PrimOp(..), Val(..))
 
 -- Mediates between Val and underlying data, analogously to pattern-matching and construction for data types.
@@ -32,33 +31,33 @@ match_bwd :: forall a . ToFrom a => a × 𝔹 -> Val 𝔹
 match_bwd = constr
 
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
-instance toFromVal :: ToFrom (Val Boolean) where
+instance ToFrom (Val Boolean) where
    constr = fst                  -- construction rights not required
    constr_bwd v = (v × false)    -- return unit of disjunction rather than conjunction
    match = (_ × true)            -- construction rights are always provided
 
-instance toFromInt :: ToFrom Int where
+instance ToFrom Int where
    match (Int α n)   = n × α
    match v           = error ("Int expected; got " <> prettyP v)
 
    constr (n × α) = Int α n
    constr_bwd v = match_fwd v
 
-instance toFromNumber :: ToFrom Number where
+instance ToFrom Number where
    match (Float α n) = n × α
    match v           = error ("Float expected; got " <> prettyP v)
 
    constr (n × α) = Float α n
    constr_bwd v = match_fwd v
 
-instance toFromString :: ToFrom String where
+instance ToFrom String where
    match (Str α str) = str × α
    match v           = error ("Str expected; got " <> prettyP v)
 
    constr (str × α) = Str α str
    constr_bwd v = match_fwd v
 
-instance toFromIntOrNumber :: ToFrom (Int + Number) where
+instance ToFrom (Int + Number) where
    constr (Left n × α)   = Int α n
    constr (Right n × α)  = Float α n
 
@@ -68,7 +67,7 @@ instance toFromIntOrNumber :: ToFrom (Int + Number) where
    match (Float α n)  = Right n × α
    match v            = error ("Int or Float expected; got " <> prettyP v)
 
-instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String) where
+instance ToFrom (Either (Either Int Number) String) where
    constr (Left (Left n) × α)  = Int α n
    constr (Left (Right n) × α) = Float α n
    constr (Right str × α)      = Str α str
@@ -80,35 +79,35 @@ instance toFromIntOrNumberOrString :: ToFrom (Either (Either Int Number) String)
    match (Str α str) = Right str × α
    match v           = error ("Int, Float or Str expected; got " <> prettyP v)
 
-instance toFromIntAndInt :: ToFrom ((Int × Boolean) × (Int × Boolean)) where
+instance ToFrom ((Int × Boolean) × (Int × Boolean)) where
    constr (nβ × mβ' × α) = Constr α cPair (constr nβ : constr mβ' : Nil)
    constr_bwd v = match_fwd v
 
    match (Constr α c (v : v' : Nil)) | c == cPair  = match v × match v' × α
    match v                                         = error ("Pair expected; got " <> prettyP v)
 
-instance toFromMatrixRep :: ToFrom (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
+instance ToFrom (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
    match (Matrix α r) = r × α
    match v            = error ("Matrix expected; got " <> prettyP v)
 
    constr (r × α) = Matrix α r
    constr_bwd v = match_fwd v
 
-instance toFromBindings :: ToFrom (SnocList (Bind (Val Boolean))) where
+instance ToFrom (List (Bind (Val Boolean))) where
    match (Record α xvs) = xvs × α
    match v              = error ("Record expected; got " <> prettyP v)
 
    constr (xvs × α) = Record α xvs
    constr_bwd v = match_fwd v
 
-instance toFromValAndVal :: ToFrom (Val Boolean × Val Boolean) where
+instance ToFrom (Val Boolean × Val Boolean) where
    constr (v × v' × α) = Constr α cPair (v : v' : Nil)
    constr_bwd v = match_fwd v
 
    match (Constr α c (v : v' : Nil)) | c == cPair   = v × v' × α
    match v                                          = error ("Pair expected; got " <> prettyP v)
 
-instance toFromBoolean :: ToFrom Boolean where
+instance ToFrom Boolean where
    match (Constr α c Nil)
       | c == cTrue   = true × α
       | c == cFalse  = false × α
@@ -122,13 +121,13 @@ instance toFromBoolean :: ToFrom Boolean where
 class IsZero a where
    isZero :: a -> Boolean
 
-instance isZeroInt :: IsZero Int where
+instance IsZero Int where
    isZero = ((==) 0)
 
-instance isZeroNumber :: IsZero Number where
+instance IsZero Number where
    isZero = ((==) 0.0)
 
-instance isZeroEither :: (IsZero a, IsZero b) => IsZero (a + b) where
+instance (IsZero a, IsZero b) => IsZero (a + b) where
    isZero = isZero ||| isZero
 
 type Unary a b = {

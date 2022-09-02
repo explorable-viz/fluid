@@ -9,7 +9,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.String (Pattern(..), contains) as Data.String
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
-import Bindings (Bindings, Bind, (↦))
+import Bindings (Bind, (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
@@ -18,7 +18,6 @@ import Parse (str)
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
 import Util (Endo, type (×), (×), type (+), absurd, error, intersperse)
 import Util.SnocList (SnocList(..), (:-))
-import Util.SnocList (reverse) as S
 import Val (PrimOp, Val)
 import Val (Val(..)) as V
 
@@ -112,13 +111,8 @@ prettyConstr α c Nil            | c == cNil    = highlightIf α nil
 prettyConstr α c (x : y : Nil)  | c == cCons   = parens (hspace [pretty x, highlightIf α $ text ":", pretty y])
 prettyConstr α c xs                            = hspace (highlightIf α (pretty c) : (prettyParensOpt <$> xs))
 
-prettyRecord :: forall a . Pretty a => 𝔹 -> Bindings a -> Doc
+prettyRecord :: forall a . Pretty a => 𝔹 -> List (Bind a) -> Doc
 prettyRecord α xvs =
-   xvs <#> (\(x ↦ v) -> hspace [text x :<>: colon, pretty v])
-   # S.reverse >>> hcomma >>> between (text "{") (text "}") >>> highlightIf α
-
-prettyRecord' :: forall a . Pretty a => 𝔹 -> List (Bind a) -> Doc
-prettyRecord' α xvs =
    xvs <#> (\(x ↦ v) -> hspace [text x :<>: colon, pretty v])
    # reverse >>> hcomma >>> between (text "{") (text "}") >>> highlightIf α
 
@@ -127,7 +121,7 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
-   pretty (E.Record α xes)          = prettyRecord' α xes
+   pretty (E.Record α xes)          = prettyRecord α xes
    pretty (E.Constr α c es)         = prettyConstr α c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]
@@ -185,7 +179,7 @@ instance Pretty (S.Expr Boolean) where
    pretty (S.Float α n)                = highlightIf α (text (show n))
    pretty (S.Str α str)                = highlightIf α (text (show str))
    pretty (S.Constr α c es)            = prettyConstr α c es
-   pretty (S.Record α xes)             = prettyRecord' α xes
+   pretty (S.Record α xes)             = prettyRecord α xes
    pretty (S.Matrix α e (x × y) e')    = highlightIf α (hspace (init <> quant))
       where
       init = [text str.arrayLBracket, pretty e, text str.bar]
@@ -233,7 +227,7 @@ instance (Pretty a, Pretty b) => Pretty (a + b) where
 instance Pretty S.Pattern where
    pretty (S.PVar x)             = text x
    pretty (S.PConstr c ps)       = prettyConstr false c ps
-   pretty (S.PRecord xps)        = prettyRecord' false xps
+   pretty (S.PRecord xps)        = prettyRecord false xps
    pretty (S.PListEmpty)         = nil
    pretty (S.PListNonEmpty s l)  = text str.lBracket :<>: pretty s :<>: pretty l
 

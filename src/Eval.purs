@@ -22,7 +22,7 @@ import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
 import Util.SnocList (SnocList(..), (:-))
-import Util.SnocList (fromList, unzip, zipWith) as S
+import Util.SnocList (fromList) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, dom, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -39,7 +39,7 @@ match (V.Constr _ c vs) (ElimConstr m) = do
 match v (ElimConstr m) = do
    d <- dataTypeFor (keys m)
    report $ patternMismatch (prettyP v) (show d)
-match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs (S.fromList xs) κ
+match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord (S.fromList xvs) (S.fromList xs) κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -81,8 +81,7 @@ eval _ (Str _ str)   = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
    let xs × es = xes <#> (key &&& val) # unzip
    ts × vs <- traverse (eval γ) es <#> unzip
-   pure (T.Record γ (zipWith (↦) xs ts) ×
-         V.Record false (S.zipWith (↦) (S.fromList xs) (S.fromList vs)))
+   pure (T.Record γ (zipWith (↦) xs ts) × V.Record false (zipWith (↦) xs vs))
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip
@@ -109,7 +108,7 @@ eval γ (Lambda σ) =
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
-      V.Record _ xvs -> (T.Project t xvs x × _) <$> find x xvs
+      V.Record _ xvs -> (T.Project t (S.fromList xvs) x × _) <$> find x (S.fromList xvs)
       _ -> report "Expected record"
 eval γ (App e e') = do
    t × v <- eval γ e

@@ -9,13 +9,12 @@ import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 import App.Util (
    Handler, class Reflect, Renderer, Selector,
-   from, get, get_intOrNumber, get_prim, record, selectNth, toggleConstrArg, toggleField
+   from, get', get_intOrNumber', get_prim', record, selectNth, toggleConstrArg, toggleField
 )
 import Bindings (Bind)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Lattice (𝔹, neg)
 import Util (type (×), (×), (!), definitely')
-import Util.SnocList (SnocList)
 import Val (Val(..))
 
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
@@ -24,25 +23,25 @@ newtype Point = Point { x :: Number × 𝔹, y :: Number × 𝔹 }
 
 foreign import drawLineChart :: Renderer LineChart
 
-instance reflectPoint :: Reflect (SnocList (Bind (Val Boolean))) Point where
+instance Reflect (List (Bind (Val Boolean))) Point where
    from r = Point {
-      x: get_intOrNumber f_x r,
-      y: get_intOrNumber f_y r
+      x: get_intOrNumber' f_x r,
+      y: get_intOrNumber' f_y r
    }
 
-instance reflectLinePlot :: Reflect (SnocList (Bind (Val Boolean))) LinePlot where
+instance Reflect (List (Bind (Val Boolean))) LinePlot where
    from r = LinePlot {
-      name: get_prim f_name r,
-      data: record from <$> from (get f_data r)
+      name: get_prim' f_name r,
+      data: record from <$> from (get' f_data r)
    }
 
-instance reflectLineChart :: Reflect (SnocList (Bind (Val Boolean))) LineChart where
+instance Reflect (List (Bind (Val Boolean))) LineChart where
    from r = LineChart {
-      caption: get_prim f_caption r,
-      plots: from <$> (from (get f_plots r) :: Array (Val 𝔹)) :: Array LinePlot
+      caption: get_prim' f_caption r,
+      plots: from <$> (from (get' f_plots r) :: Array (Val 𝔹)) :: Array LinePlot
    }
 
-instance reflectLinePlot' :: Reflect (Val Boolean) LinePlot where
+instance Reflect (Val Boolean) LinePlot where
    from (Constr _ c (u1 : Nil)) | c == cLinePlot = record from u1
 
 lineChartHandler :: Handler

@@ -15,7 +15,7 @@ import Trace (Trace(..), Match(..), VarDef(..)) as T
 import Trace (Trace, Match)
 import Util (type (×), (×), (!), absurd, assert, disjUnion, error, mustLookup, successful)
 import Util.SnocList (SnocList(..), (:-))
-import Util.SnocList (fromList, unzip, zip, zipWith) as S
+import Util.SnocList (fromList) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -25,7 +25,7 @@ matchFwd v (ElimVar _ κ) (T.MatchVar x _) = M.singleton x v × κ × true
 matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
    second (_ ∧ α) (matchArgsFwd vs (mustLookup c m) ws)
 matchFwd (V.Record α xvs) (ElimRecord _ κ) (T.MatchRecord xws) =
-   second (_ ∧ α) (matchRecordFwd xvs κ xws)
+   second (_ ∧ α) (matchRecordFwd (S.fromList xvs) κ xws)
 matchFwd _ _ _ = error absurd
 
 matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
@@ -57,7 +57,7 @@ evalFwd γ (Record α xes) α' (T.Record _ xts) =
    let xs × ts = xts <#> (key &&& val) # unzip
        es = xes <#> val
        vs = (\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts in
-   V.Record (α ∧ α') (zipWith (↦) xs vs # S.fromList)
+   V.Record (α ∧ α') (zipWith (↦) xs vs)
 evalFwd γ (Constr α _ es) α' (T.Constr _ c ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)
 evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
@@ -75,7 +75,7 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
 evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
 evalFwd γ (Project e' _) α (T.Project t xvs' x) =
    case evalFwd γ e' α t of
-      V.Record _ xvs -> assert ((xvs <#> key) == (xvs' <#> key)) $ successful (find x xvs)
+      V.Record _ xvs -> assert ((xvs <#> key # S.fromList) == (xvs' <#> key)) $ successful (find x $ S.fromList xvs)
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
    case evalFwd γ e1 α t1 of

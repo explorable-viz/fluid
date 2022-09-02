@@ -6,7 +6,7 @@ import Data.List (List(..), (:))
 import Data.Map (Map, filterKeys, keys, isEmpty, lookup, pop, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union)
-import Bindings (Bindings, Var, (↦))
+import Bindings (Bind, Bindings, Var, (↦))
 import DataType (Ctr)
 import Expr (Elim, fv)
 import Lattice (
@@ -24,7 +24,7 @@ data Val a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Bindings (Val a)) |             -- always saturated
+   Record a (List (Bind (Val a))) |          -- always saturated
    Constr a Ctr (List (Val a)) |             -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |         -- never saturated

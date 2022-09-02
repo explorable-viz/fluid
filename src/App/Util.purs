@@ -9,12 +9,12 @@ import Data.Tuple (fst)
 import Effect (Effect)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
-import Bindings (Bindings, Var, (↦), find)
+import Bindings (Bind, Bindings, Var, (↦), find)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome)
 import Lattice (𝔹, botOf, neg)
 import Primitive (class ToFrom, as, match_fwd)
 import Util (Endo, type (×), type (+), (×), absurd, error, definitely', successful)
-import Util.SnocList (SnocList(..), (:-))
+import Util.SnocList (fromList, toList) as S
 import Val (Val(..), update, updateMatrix)
 
 type HTMLId = String
@@ -29,14 +29,23 @@ doNothing = const $ pure unit
 get_prim :: forall a . ToFrom a => Var -> Bindings (Val 𝔹) -> a × 𝔹
 get_prim x = match_fwd <<< get x
 
+get_prim' :: forall a . ToFrom a => Var -> List (Bind (Val 𝔹)) -> a × 𝔹
+get_prim' x = match_fwd <<< get' x
+
 get_intOrNumber :: Var -> Bindings (Val 𝔹) -> Number × 𝔹
 get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
+
+get_intOrNumber' :: Var -> List (Bind (Val 𝔹)) -> Number × 𝔹
+get_intOrNumber' x r = first as (get_prim' x r :: (Int + Number) × 𝔹)
 
 get :: Var -> Bindings (Val 𝔹) -> Val 𝔹
 get x r = successful $ find x r
 
+get' :: Var -> List (Bind (Val 𝔹)) -> Val 𝔹
+get' x r = successful $ find x $ S.fromList r
+
 -- Assumes fields are all of primitive type.
-record :: forall a . (Bindings (Val 𝔹) -> a) -> Val 𝔹 -> a
+record :: forall a . (List (Bind (Val 𝔹)) -> a) -> Val 𝔹 -> a
 record toRecord u = toRecord (fst (match_fwd u))
 
 class Reflect a b where
@@ -68,13 +77,13 @@ selectSome (Constr _ c v) | c == cSome = Constr true c (botOf v)
 selectSome _                           = error absurd
 
 select_y :: Selector -> Selector
-select_y δv (Record α (Lin :- f_x ↦ u :- f_y ↦ v)) =
-   Record α (Lin :- f_x ↦ u :- f_y ↦ δv v)
+select_y δv (Record α (f_y ↦ v : f_x ↦ u : Nil)) =
+   Record α (f_y ↦ δv v : f_x ↦ u : Nil)
 select_y _ _ = error absurd
 
 selectBarChart_data :: Endo Selector
-selectBarChart_data δv (Constr α c (Record β (Lin :- f_caption ↦ u :- f_data ↦ v) : Nil)) | c == cBarChart =
-   Constr α c (Record β (Lin :- f_caption ↦ u :- f_data ↦ δv v) : Nil)
+selectBarChart_data δv (Constr α c (Record β (f_data ↦ v : f_caption ↦ u : Nil) : Nil)) | c == cBarChart =
+   Constr α c (Record β (f_data ↦ δv v : f_caption ↦ u : Nil) : Nil)
 selectBarChart_data _ _ = error absurd
 
 selectPair :: Endo 𝔹 -> Selector -> Selector -> Selector
@@ -89,7 +98,7 @@ toggleCell _ _ _ = error absurd
 
 toggleField :: Var -> Selector -> Selector
 toggleField f selector (Record α xus) =
-   Record α (xus `update` singleton f (selector (get f xus)))
+   Record α $ ((S.fromList xus) `update` singleton f (selector (get f (S.fromList xus)))) # S.toList
 toggleField _ _ _ = error absurd
 
 toggleConstrArg :: Ctr -> Int -> Selector -> Selector
