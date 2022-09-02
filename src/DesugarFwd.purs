@@ -5,7 +5,7 @@ import Prelude hiding (absurd,otherwise)
 import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Function (applyN, on)
-import Data.List (List(..), (:), (\\), length)
+import Data.List (List(..), (:), (\\), length, reverse)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Map (Map, fromFoldable, singleton)
@@ -126,7 +126,7 @@ patternFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 patternFwd (PVar x) κ            = pure (ElimVar x κ)
 patternFwd (PConstr c ps) κ      =
    checkArity c (length ps) *> (ElimConstr <$> singleton c <$> argPatternFwd (Left <$> ps) κ)
-patternFwd (PRecord xps) κ       = ElimRecord (xps <#> key) <$> recordPatternFwd xps κ
+patternFwd (PRecord xps) κ       = ElimRecord (reverse xps <#> key) <$> recordPatternFwd (reverse xps) κ
 patternFwd PListEmpty κ          = pure (ElimConstr (singleton cNil κ))
 patternFwd (PListNonEmpty p o) κ = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 

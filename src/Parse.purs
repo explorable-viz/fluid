@@ -180,10 +180,7 @@ simplePattern pattern' =
    constr = PConstr <$> ctr <@> Nil
 
    record :: SParser Pattern
-   record =
-      sepBy (field pattern') token.comma
-      <#> (reverse >>> PRecord)
-      # token.braces
+   record = sepBy (field pattern') token.comma <#> PRecord # token.braces
 
    -- TODO: anonymous variables
    var :: SParser Pattern
