@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, range, reverse, singleton, unzip, zipWith)
+import Data.List (List(..), (:), length, range, singleton, unzip, zipWith)
 import Data.Map (empty, lookup)
 import Data.Map (singleton) as M
 import Data.Map.Internal (keys)
@@ -38,8 +38,8 @@ match v (ElimConstr m) = do
    d <- dataTypeFor (keys m)
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record _ xvs) (ElimRecord xs κ)  = do
-   check (reverse xs == (xvs <#> key)) (patternMismatch (show $ xvs <#> key) (show $ reverse xs))
-   second (zipWith (↦) (reverse xs) >>> MatchRecord) <$> matchMany (xvs <#> val) κ
+   check (xs == (xvs <#> key)) (patternMismatch (show $ xvs <#> key) (show xs))
+   second (zipWith (↦) xs >>> MatchRecord) <$> matchMany (xvs <#> val) κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))

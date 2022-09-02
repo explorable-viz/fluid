@@ -185,7 +185,7 @@ totaliseBwd (ContElim (ElimVar _ κ')) (Left (PVar x) : πs) =
 totaliseBwd (ContElim (ElimRecord _ κ')) (Left (PRecord xps) : πs) =
    let ps = xps <#> (val >>> Left)
        κ'' × α = totaliseBwd κ' (ps <> πs) in
-   ContElim (ElimRecord (reverse xps <#> key) κ'') × α
+   ContElim (ElimRecord (xps <#> key) κ'') × α
 totaliseBwd (ContElim (ElimConstr m)) (π : πs) =
    let c × πs' = case π of
          -- TODO: refactor so these two cases aren't necessary

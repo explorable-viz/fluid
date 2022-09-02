@@ -44,7 +44,7 @@ matchBwd γ κ _ (MatchVarAnon v)
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchManyBwd ρ κ α (reverse ws)
-matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zipWith (↦) (xws <#> key) vs) × ElimRecord (reverse xws <#> key) κ'
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zipWith (↦) (xws <#> key) vs) × ElimRecord (xws <#> key) κ'
    where vs × κ' = matchManyBwd ρ κ α (reverse xws <#> val)
 
 matchManyBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹

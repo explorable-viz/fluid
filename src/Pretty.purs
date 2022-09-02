@@ -2,7 +2,7 @@ module Pretty (class Pretty, class ToList, pretty, prettyP, toList, module P) wh
 
 import Prelude hiding (absurd,between)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), (:), fromFoldable, reverse)
+import Data.List (List(..), (:), fromFoldable)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
 import Data.Profunctor.Choice ((|||))
