@@ -12,7 +12,7 @@ import Data.Map.Internal (keys)
 import Data.Profunctor.Strong ((&&&), second)
 import Data.Set (union)
 import Data.Traversable (sequence, traverse)
-import Bindings (Bindings, (↦), asMap, find, key, val, varAnon, Var)
+import Bindings (Bind, Bindings, (↦), asMap, find, key, val, varAnon, Var)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), VarDef(..), asExpr, asElim, fv)
 import Lattice (𝔹, checkConsistent)
@@ -39,7 +39,7 @@ match (V.Constr _ c vs) (ElimConstr m) = do
 match v (ElimConstr m) = do
    d <- dataTypeFor (keys m)
    report $ patternMismatch (prettyP v) (show d)
-match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord (S.fromList xvs) (S.fromList xs) κ
+match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs xs κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -52,15 +52,15 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
 
-matchRecord :: Bindings (Val 𝔹) -> SnocList Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
-matchRecord Lin Lin κ = pure (empty × κ × Lin)
-matchRecord (xvs :- x ↦ v) (xs :- x') σ = do
+matchRecord :: List (Bind (Val 𝔹)) -> List Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
+matchRecord Nil Nil κ = pure (empty × κ × Lin)
+matchRecord (x ↦ v : xvs) (x' : xs) σ = do
    check (x == x') (patternMismatch (show x) (show x'))
    γ × σ' × xws <- matchRecord xvs xs σ
    γ' × κ × w <- match v (asElim σ')
    pure ((γ `disjUnion` γ') × κ × (xws :- x ↦ w))
-matchRecord (_ :- x ↦ _) Lin _ = report (patternMismatch "end of record pattern" (show x))
-matchRecord Lin (_ :- x) _ = report (patternMismatch "end of record" (show x))
+matchRecord (x ↦ _ : _) Nil _ = report (patternMismatch "end of record pattern" (show x))
+matchRecord Nil (x : _) _ = report (patternMismatch "end of record" (show x))
 
 closeDefs :: Env 𝔹 -> FunEnv 𝔹 -> Env 𝔹
 closeDefs γ ρ = ρ <#> \σ ->
