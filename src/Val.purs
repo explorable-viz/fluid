@@ -16,7 +16,6 @@ import Util (
    Endo, MayFail, type (×), (×), (≞), (!),
    absurd, disjUnion, error, mustLookup, orElse, report, unsafeUpdateAt
 )
-import Util.SnocList (SnocList(..), (:-))
 
 type Op a = a × 𝔹 -> Val 𝔹
 

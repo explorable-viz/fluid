@@ -107,7 +107,7 @@ eval γ (Lambda σ) =
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
-      V.Record _ xvs -> (T.Project t xvs x × _) <$> find x (S.fromList xvs)
+      V.Record _ xvs -> (T.Project t xvs x × _) <$> find x xvs
       _ -> report "Expected record"
 eval γ (App e e') = do
    t × v <- eval γ e
@@ -132,7 +132,7 @@ eval γ (Let (VarDef σ e) e') = do
    t' × v' <- eval (γ <+> γ') e'
    pure (T.Let (T.VarDef w t) t' × v')
 eval γ (LetRec xσs e) = do
-   let γ' = closeDefs γ (asMap $ S.fromList xσs)
+   let γ' = closeDefs γ (asMap xσs)
    t × v <- eval (γ <+> γ') e
    pure (T.LetRec xσs t × v)
 
@@ -146,4 +146,4 @@ eval_module γ = go empty
       γ'' × _ × _  <- match v σ
       go (y' <+> γ'') (Module ds)
    go γ' (Module (Right xσs : ds)) =
-      go (γ' <+> closeDefs (γ <+> γ') (asMap $ S.fromList xσs)) (Module ds)
+      go (γ' <+> closeDefs (γ <+> γ') (asMap xσs)) (Module ds)

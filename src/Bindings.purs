@@ -2,12 +2,12 @@ module Bindings where
 
 import Prelude
 import Data.Foldable (class Foldable, foldMapDefaultL, foldrDefault)
+import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Data.Set (Set, empty, singleton, union)
 import Data.Traversable (class Traversable, sequenceDefault)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
 import Util (MayFail, (≞), (×), definitely, report, whenever)
-import Util.SnocList (SnocList(..), (:-))
 
 type Var = String
 
@@ -18,7 +18,6 @@ mustGeq :: Var -> Var -> Var
 mustGeq x y = definitely "greater" (whenever (x == y) x)
 
 data Bind a = Bind Var a
-type Bindings a = SnocList (Bind a)
 
 derive instance Functor Bind
 
@@ -28,11 +27,11 @@ key (x ↦ _) = x
 val :: forall a . Bind a -> a
 val (_ ↦ v) = v
 
-dom :: forall a . Bindings a -> Set Var
-dom Lin           = empty
-dom (ρ :- x ↦ _)  = singleton x `union` dom ρ
+dom :: forall a . List (Bind a) -> Set Var
+dom Nil           = empty
+dom (x ↦ _ : ρ)   = singleton x `union` dom ρ
 
-asMap :: forall a . Bindings a -> Map Var a
+asMap :: forall a . List (Bind a) -> Map Var a
 asMap ρ = ρ <#> (\(x ↦ σ) -> x × σ) # fromFoldable
 
 instance Foldable Bind where
@@ -57,8 +56,8 @@ instance Slices a => Slices (Bind a) where
 instance BoundedSlices a => BoundedSlices (Bind a) where
    botOf = (<$>) botOf
 
-find :: forall a . Var -> Bindings a -> MayFail a
-find x Lin  = report ("variable " <> x <> " not found")
-find x (ρ :- x' ↦ v)
+find :: forall a . Var -> List (Bind a) -> MayFail a
+find x Nil  = report ("variable " <> x <> " not found")
+find x (x' ↦ v : ρ)
    | x == x'   = pure v
    | otherwise = find x ρ

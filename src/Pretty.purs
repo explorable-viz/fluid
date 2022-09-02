@@ -17,7 +17,6 @@ import Lattice (𝔹)
 import Parse (str)
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
 import Util (Endo, type (×), (×), type (+), absurd, error, intersperse)
-import Util.SnocList (SnocList(..), (:-))
 import Val (PrimOp, Val)
 import Val (Val(..)) as V
 

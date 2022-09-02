@@ -14,7 +14,6 @@ import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome)
 import Lattice (𝔹, botOf, neg)
 import Primitive (class ToFrom, as, match_fwd)
 import Util (Endo, type (×), type (+), (×), absurd, error, definitely', successful)
-import Util.SnocList (fromList) as S
 import Val (Val(..), update, updateMatrix)
 
 type HTMLId = String
@@ -33,7 +32,7 @@ get_intOrNumber :: Var -> List (Bind (Val 𝔹)) -> Number × 𝔹
 get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
 
 get :: Var -> List (Bind (Val 𝔹)) -> Val 𝔹
-get x r = successful $ find x $ S.fromList r
+get x = successful <<< find x
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (List (Bind (Val 𝔹)) -> a) -> Val 𝔹 -> a

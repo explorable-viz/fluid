@@ -14,7 +14,6 @@ import Primitive (match_fwd) as P
 import Trace (Trace(..), Match(..), VarDef(..)) as T
 import Trace (Trace, Match)
 import Util (type (×), (×), (!), absurd, assert, disjUnion, error, mustLookup, successful)
-import Util.SnocList (fromList) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -74,7 +73,7 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
 evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
 evalFwd γ (Project e' _) α (T.Project t xvs' x) =
    case evalFwd γ e' α t of
-      V.Record _ xvs -> assert ((xvs <#> key) == (xvs' <#> key)) $ successful (find x $ S.fromList xvs)
+      V.Record _ xvs -> assert ((xvs <#> key) == (xvs' <#> key)) $ successful (find x xvs)
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
    case evalFwd γ e1 α t1 of
@@ -102,6 +101,6 @@ evalFwd γ (Let (VarDef σ e1) e2) α (T.Let (T.VarDef w t1) t2) =
        γ' × _ × α' = matchFwd v σ w in
    evalFwd (γ <+> γ') e2 α' t2
 evalFwd γ (LetRec xσs e') α (T.LetRec _ t) =
-   let γ' = closeDefsFwd γ (asMap $ S.fromList xσs) α in
+   let γ' = closeDefsFwd γ (asMap xσs) α in
    evalFwd (γ <+> γ') e' α t
 evalFwd _ _ _ _ = error absurd
