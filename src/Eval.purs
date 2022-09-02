@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, range, singleton, unzip)
+import Data.List (List(..), (:), length, range, singleton, unzip, zipWith)
 import Data.Map (empty, lookup)
 import Data.Map (singleton) as M
 import Data.Map.Internal (keys)
@@ -21,8 +21,8 @@ import Primitive (match) as P
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
-import Util.SnocList (SnocList(..), (:-), zipWith)
-import Util.SnocList (fromList, unzip) as S
+import Util.SnocList (SnocList(..), (:-))
+import Util.SnocList (fromList, unzip, zipWith) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, dom, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -81,8 +81,8 @@ eval _ (Str _ str)   = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
    let xs × es = xes <#> (key &&& val) # unzip
    ts × vs <- traverse (eval γ) es <#> unzip
-   pure (T.Record γ (zipWith (↦) (S.fromList xs) (S.fromList ts)) ×
-         V.Record false (zipWith (↦) (S.fromList xs) (S.fromList vs)))
+   pure (T.Record γ (zipWith (↦) xs ts) ×
+         V.Record false (S.zipWith (↦) (S.fromList xs) (S.fromList vs)))
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip

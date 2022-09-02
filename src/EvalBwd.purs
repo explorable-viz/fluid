@@ -3,7 +3,7 @@ module EvalBwd where
 import Prelude hiding (absurd)
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
-import Data.List (List(..), (:), range, reverse, unsnoc, zip, zipWith)
+import Data.List (List(..), (:), range, reverse, unsnoc, unzip, zip, zipWith)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (empty, insert, isEmpty)
@@ -74,14 +74,14 @@ evalBwd (V.Int α _) (T.Int n) = empty × Int α n × α
 evalBwd (V.Float α _) (T.Float n) = empty × Float α n × α
 evalBwd (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
 evalBwd (V.Record α xvs) (T.Record γ xts) =
-   let xs × ts = xts <#> (key &&& val) # S.unzip
+   let xs × ts = xts <#> (key &&& val) # unzip
        vs = xvs <#> val
        -- Could unify with similar function in constructor case
        evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × SnocList (Expr 𝔹) × 𝔹)
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (es :- e) × (α' ∨ α'')
          where γ'' × e × α'' = evalBwd v' t'
-       γ' × es × α' = foldr evalArg_bwd (botOf γ × Lin × α) (S.zip vs ts) in
-   γ' × Record α (zipWith (↦) (S.toList xs) (S.toList es)) × α'
+       γ' × es × α' = foldr evalArg_bwd (botOf γ × Lin × α) (zip (S.toList vs) ts) in
+   γ' × Record α (zipWith (↦) xs (S.toList es)) × α'
 evalBwd (V.Constr α _ vs) (T.Constr γ c ts) =
    let evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')

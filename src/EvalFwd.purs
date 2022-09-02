@@ -2,7 +2,7 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
-import Data.List (List(..), (:), length, range, singleton, zip)
+import Data.List (List(..), (:), length, range, singleton, zip, unzip, zipWith)
 import Data.Map (empty)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), (&&&), first, second)
@@ -54,10 +54,10 @@ evalFwd _ (Int α _) α' (T.Int n) = V.Int (α ∧ α') n
 evalFwd _ (Float α _) α' (T.Float n) = V.Float (α ∧ α') n
 evalFwd _ (Str α _) α' (T.Str str) = V.Str (α ∧ α') str
 evalFwd γ (Record α xes) α' (T.Record _ xts) =
-   let xs × ts = xts <#> (key &&& val) # S.unzip
+   let xs × ts = xts <#> (key &&& val) # unzip
        es = xes <#> val
-       vs = (\(e' × t) -> evalFwd γ e' α' t) <$> S.zip (S.fromList es) ts in
-   V.Record (α ∧ α') (S.zipWith (↦) xs vs)
+       vs = (\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts in
+   V.Record (α ∧ α') (zipWith (↦) xs vs # S.fromList)
 evalFwd γ (Constr α _ es) α' (T.Constr _ c ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)
 evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =

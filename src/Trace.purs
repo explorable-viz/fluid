@@ -3,7 +3,7 @@ module Trace where
 import Prelude
 import Data.List (List)
 import Data.Set (Set, empty, singleton, unions)
-import Bindings (Bindings, Var, val)
+import Bindings (Bind, Bindings, Var, val)
 import DataType (Ctr)
 import Expr (class BV, Elim, RecDefs, bv)
 import Util (type (×))
@@ -18,7 +18,7 @@ data Trace a =
    Int Int |
    Float Number |
    Str String |
-   Record (Env a) (Bindings (Trace a)) |
+   Record (Env a) (List (Bind (Trace a))) |
    Constr (Env a) Ctr (List (Trace a)) |
    Matrix (Array2 (Trace a)) (Var × Var) (Int × Int) (Trace a) |
    Lambda (Elim a) |
