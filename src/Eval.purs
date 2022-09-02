@@ -22,7 +22,7 @@ import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
 import Util.SnocList (SnocList(..), (:-), zipWith)
-import Util.SnocList (unzip) as S
+import Util.SnocList (fromList, unzip) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, dom, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -39,7 +39,7 @@ match (V.Constr _ c vs) (ElimConstr m) = do
 match v (ElimConstr m) = do
    d <- dataTypeFor (keys m)
    report $ patternMismatch (prettyP v) (show d)
-match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs xs κ
+match (V.Record _ xvs) (ElimRecord xs κ)  = second MatchRecord <$> matchRecord xvs (S.fromList xs) κ
 match v (ElimRecord xs _)                 = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))

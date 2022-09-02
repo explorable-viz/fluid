@@ -10,7 +10,6 @@ import Bindings (Bindings, Var, val)
 import DataType (Ctr)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
 import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
-import Util.SnocList (SnocList)
 
 data Expr a =
    Var Var |
@@ -34,7 +33,7 @@ type RecDefs a = Bindings (Elim a)
 data Elim a =
    ElimVar Var (Cont a) |
    ElimConstr (Map Ctr (Cont a)) |
-   ElimRecord (SnocList Var) (Cont a)
+   ElimRecord (List Var) (Cont a)
 
 -- Continuation of an eliminator branch.
 data Cont a =

@@ -21,7 +21,7 @@ import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, mustLookup, nonEmpty)
 import Util.SnocList (SnocList(..), (:-), fromList)
-import Util.SnocList (unzip, zip, zipWith) as S
+import Util.SnocList (toList, unzip, zip, zipWith) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, (∨∨), append_inv, dom, update)
 import Val (Val(..)) as V
 
@@ -46,7 +46,7 @@ matchBwd γ κ _ (MatchVarAnon v)
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
-matchBwd ρ κ α (MatchRecord xws)    = V.Record α xvs × ElimRecord (key <$> xws) κ'
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α xvs × ElimRecord (xws <#> key # S.toList) κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
