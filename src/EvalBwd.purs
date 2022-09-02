@@ -20,8 +20,6 @@ import Lattice (𝔹, (∨), bot, botOf)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, mustLookup, nonEmpty)
-import Util.SnocList (SnocList(..), (:-), fromList)
-import Util.SnocList (toList) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, (∨∨), append_inv, dom, update)
 import Val (Val(..)) as V
 
@@ -45,14 +43,14 @@ matchBwd γ κ _ (MatchVarAnon v)
    | isEmpty γ                      = botOf v × ElimVar varAnon κ
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
-   where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
+   where vs × κ' = matchArgsBwd ρ κ α (reverse ws)
 matchBwd ρ κ α (MatchRecord xws)    = V.Record α xvs × ElimRecord (xws <#> key) κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
 
-matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgsBwd γ κ _ Lin  | isEmpty γ = Nil × κ
+matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
+matchArgsBwd γ κ _ Nil  | isEmpty γ = Nil × κ
                         | otherwise = error absurd
-matchArgsBwd γγ' κ α (ws :- w) =
+matchArgsBwd γγ' κ α (w : ws) =
    let γ × γ'  = disjUnion_inv (bv w) γγ'
        v × σ   = matchBwd γ κ α w
        vs × κ' = matchArgsBwd γ' (ContElim σ) α ws in
@@ -77,11 +75,11 @@ evalBwd (V.Record α xvs) (T.Record γ xts) =
    let xs × ts = xts <#> (key &&& val) # unzip
        vs = xvs <#> val
        -- Could unify with similar function in constructor case
-       evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × SnocList (Expr 𝔹) × 𝔹)
-       evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (es :- e) × (α' ∨ α'')
+       evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
+       evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
          where γ'' × e × α'' = evalBwd v' t'
-       γ' × es × α' = foldr evalArg_bwd (botOf γ × Lin × α) (zip vs ts) in
-   γ' × Record α (zipWith (↦) xs (S.toList es)) × α'
+       γ' × es × α' = foldr evalArg_bwd (botOf γ × Nil × α) (zip vs ts) in
+   γ' × Record α (zipWith (↦) xs es) × α'
 evalBwd (V.Constr α _ vs) (T.Constr γ c ts) =
    let evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
