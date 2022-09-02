@@ -2,7 +2,7 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
-import Data.List (List(..), (:), length, range, singleton, zip, unzip, zipWith)
+import Data.List (List(..), (:), length, range, reverse, singleton, zip, unzip, zipWith)
 import Data.Map (empty)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), (&&&), first, second)
@@ -21,17 +21,17 @@ matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchFwd _ (ElimVar _ κ) (T.MatchVarAnon _) = empty × κ × true
 matchFwd v (ElimVar _ κ) (T.MatchVar x _) = M.singleton x v × κ × true
 matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
-   second (_ ∧ α) (matchArgsFwd vs (mustLookup c m) ws)
+   second (_ ∧ α) (matchManyFwd vs (mustLookup c m) ws)
 matchFwd (V.Record α xvs) (ElimRecord _ κ) (T.MatchRecord xws) =
-   second (_ ∧ α) (matchRecordFwd xvs κ xws)
+   second (_ ∧ α) (matchManyFwd (reverse xvs <#> val) κ (reverse xws <#> val))
 matchFwd _ _ _ = error absurd
 
-matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchArgsFwd Nil κ Nil = empty × κ × true
-matchArgsFwd (v : vs) σ (w : ws) =
+matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchManyFwd Nil κ Nil = empty × κ × true
+matchManyFwd (v : vs) σ (w : ws) =
    let ρ × κ × α = matchFwd v (asElim σ) w in
-   (first (ρ `disjUnion` _) *** (_ ∧ α)) (matchArgsFwd vs κ ws)
-matchArgsFwd _ _ _ = error absurd
+   (first (ρ `disjUnion` _) *** (_ ∧ α)) (matchManyFwd vs κ ws)
+matchManyFwd _ _ _ = error absurd
 
 matchRecordFwd :: List (Bind (Val 𝔹)) -> Cont 𝔹 -> List (Bind (Match 𝔹)) -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchRecordFwd Nil κ Nil = empty × κ × true
