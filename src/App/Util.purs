@@ -67,13 +67,13 @@ selectSome (Constr _ c v) | c == cSome = Constr true c (botOf v)
 selectSome _                           = error absurd
 
 select_y :: Selector -> Selector
-select_y δv (Record α (f_y ↦ v : f_x ↦ u : Nil)) =
-   Record α (f_y ↦ δv v : f_x ↦ u : Nil)
+select_y δv (Record α (f_x ↦ u : f_y ↦ v : Nil)) =
+   Record α (f_x ↦ u : f_y ↦ δv v : Nil)
 select_y _ _ = error absurd
 
 selectBarChart_data :: Endo Selector
-selectBarChart_data δv (Constr α c (Record β (f_data ↦ v : f_caption ↦ u : Nil) : Nil)) | c == cBarChart =
-   Constr α c (Record β (f_data ↦ δv v : f_caption ↦ u : Nil) : Nil)
+selectBarChart_data δv (Constr α c (Record β (f_caption ↦ u : f_data ↦ v : Nil) : Nil)) | c == cBarChart =
+   Constr α c (Record β (f_caption ↦ u : f_data ↦ δv v : Nil) : Nil)
 selectBarChart_data _ _ = error absurd
 
 selectPair :: Endo 𝔹 -> Selector -> Selector -> Selector

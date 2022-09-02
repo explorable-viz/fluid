@@ -11,15 +11,65 @@ import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
---tests = [ test_scratchpad ]
+--tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   test (File "records") "{a: 5, b: 6, c: 7, d: (5 : []), e: 7}"
+   testLink {
+         divId: "",
+         file1: File "bar-chart",
+         file2: File "line-chart",
+         dataFile: File "renewables",
+         x: "data"
+      }
+      (botOf >>> selectBarChart_data (selectNth 1 (select_y topOf)))
+      "LineChart ({\
+         \caption: \"Output of USA relative to China\", \
+         \plots: \
+            \(LinePlot ({\
+               \name: \"Bio\", \
+               \data: \
+                  \({x: 2013, y: 2.5483870967741935} : \
+                  \({x: 2014, y: 1.61} : \
+                  \({x: 2015, y: _1.6213592233009706_} : \
+                  \({x: 2016, y: 1.4000000000000001} : \
+                  \({x: 2017, y: 1.1208053691275166} : \
+                  \({x: 2018, y: 0.9101123595505617} : []))))))\
+            \}) : \
+            \(LinePlot ({\
+               \name: \"Hydro\", \
+               \data: \
+                  \({x: 2013, y: 0.3} : \
+                  \({x: 2014, y: 0.28214285714285714} : \
+                  \({x: 2015, y: _0.8333333333333334_} : \
+                  \({x: 2016, y: 0.26229508196721313} : \
+                  \({x: 2017, y: 0.25559105431309903} : \
+                  \({x: 2018, y: 0.2484472049689441} : []))))))\
+            \}) : \
+            \(LinePlot ({\
+               \name: \"Solar\", \
+               \data: \
+                  \({x: 2013, y: 0.6080402010050252} : \
+                  \({x: 2014, y: 0.6428571428571429} : \
+                  \({x: 2015, y: _0.5909090909090909_} : \
+                  \({x: 2016, y: 0.5324675324675324} : \
+                  \({x: 2017, y: 0.3893129770992366} : \
+                  \({x: 2018, y: 0.3522727272727273} : []))))))\
+            \}) : \
+            \(LinePlot ({\
+               \name: \"Wind\", \
+               \data: ({x: 2013, y: 0.6703296703296703} : \
+                  \({x: 2014, y: 0.5739130434782609} : \
+                  \({x: 2015, y: _0.5103448275862069_} : \
+                  \({x: 2016, y: 0.48520710059171596} : \
+                  \({x: 2017, y: 0.4734042553191489} : \
+                  \({x: 2018, y: 0.45714285714285713} : []))))))\
+            \}) : []))))\
+      \})"
 ]
 
 test_linking :: Array (Test Unit)
