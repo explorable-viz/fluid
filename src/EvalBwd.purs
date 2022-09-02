@@ -43,18 +43,18 @@ matchBwd γ κ _ (MatchVarAnon v)
    | isEmpty γ                      = botOf v × ElimVar varAnon κ
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
-   where vs × κ' = matchArgsBwd ρ κ α (reverse ws)
+   where vs × κ' = matchManyBwd ρ κ α (reverse ws)
 matchBwd ρ κ α (MatchRecord xws)    = V.Record α (reverse $ zipWith (↦) (xws <#> key) vs) ×
                                       ElimRecord (reverse xws <#> key) κ'
-   where vs × κ' = matchArgsBwd ρ κ α (reverse xws <#> val)
+   where vs × κ' = matchManyBwd ρ κ α (reverse xws <#> val)
 
-matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgsBwd γ κ _ Nil  | isEmpty γ = Nil × κ
+matchManyBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
+matchManyBwd γ κ _ Nil  | isEmpty γ = Nil × κ
                         | otherwise = error absurd
-matchArgsBwd γγ' κ α (w : ws) =
+matchManyBwd γγ' κ α (w : ws) =
    let γ × γ'  = disjUnion_inv (bv w) γγ'
        v × σ   = matchBwd γ κ α w
-       vs × κ' = matchArgsBwd γ' (ContElim σ) α ws in
+       vs × κ' = matchManyBwd γ' (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
 
 evalBwd :: Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
