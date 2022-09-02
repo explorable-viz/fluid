@@ -9,10 +9,10 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (empty, insert, isEmpty)
 import Data.Map (singleton) as M
 import Data.NonEmpty (foldl1)
-import Data.Profunctor.Strong ((&&&), first)
+import Data.Profunctor.Strong ((&&&))
 import Data.Set (singleton, union)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bind, Var, (↦), key, val, varAnon)
+import Bindings (Var, (↦), key, val, varAnon)
 import Bindings (dom) as B
 import DataType (cPair)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), bv)
@@ -44,9 +44,9 @@ matchBwd γ κ _ (MatchVarAnon v)
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws)
-matchBwd ρ κ α (MatchRecord xws)    = V.Record α xvs × ElimRecord (xws' <#> key) κ'
-   where xws' = reverse xws
-         xvs × κ' = matchRecordBwd ρ κ α xws'
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α (reverse $ zipWith (↦) (xws <#> key) vs) ×
+                                      ElimRecord (reverse xws <#> key) κ'
+   where vs × κ' = matchArgsBwd ρ κ α (reverse xws <#> val)
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
 matchArgsBwd γ κ _ Nil  | isEmpty γ = Nil × κ
@@ -56,14 +56,6 @@ matchArgsBwd γγ' κ α (w : ws) =
        v × σ   = matchBwd γ κ α w
        vs × κ' = matchArgsBwd γ' (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
-
-matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Bind (Match 𝔹)) -> List (Bind (Val 𝔹)) × Cont 𝔹
-matchRecordBwd γ κ _ Nil | isEmpty γ   = Nil × κ
-                         | otherwise   = error absurd
-matchRecordBwd γγ' κ α (x ↦ w : xws)  =
-   let γ × γ'  = disjUnion_inv (bv w) γγ'
-       v × σ   = matchBwd γ κ α w in
-   (first (x ↦ v : _)) (matchRecordBwd γ' (ContElim σ) α xws)
 
 evalBwd :: Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var x) = M.singleton x v × Var x × false
