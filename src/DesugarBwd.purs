@@ -23,7 +23,7 @@ import SExpr (
    )
 import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
 import Util.SnocList (SnocList(..), (:-))
-import Util.SnocList (fromList, toList, unzip, zip, zipWith) as S
+import Util.SnocList (fromList) as S
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -59,7 +59,7 @@ exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry exprBwd <$> zi
 exprBwd (E.Record α xes) (Record _ xss) =
    let xs × ss = xss <#> (key &&& val) # unzip
        es = xes <#> val
-       ss' = uncurry exprBwd <$> zip (S.toList es) ss in
+       ss' = uncurry exprBwd <$> zip es ss in
    Record α (zipWith (↦) xs ss')
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s (x × y) s') =
    Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')

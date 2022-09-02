@@ -6,7 +6,7 @@ import Data.List (List)
 import Data.Map (Map, keys)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Tuple (snd)
-import Bindings (Bindings, Var, val)
+import Bindings (Bind, Bindings, Var, val)
 import DataType (Ctr)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
 import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
@@ -17,7 +17,7 @@ data Expr a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Bindings (Expr a)) |
+   Record a (List (Bind (Expr a))) |
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |

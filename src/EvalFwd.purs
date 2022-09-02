@@ -15,7 +15,7 @@ import Trace (Trace(..), Match(..), VarDef(..)) as T
 import Trace (Trace, Match)
 import Util (type (×), (×), (!), absurd, assert, disjUnion, error, mustLookup, successful)
 import Util.SnocList (SnocList(..), (:-))
-import Util.SnocList (unzip, zip, zipWith) as S
+import Util.SnocList (fromList, unzip, zip, zipWith) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -56,7 +56,7 @@ evalFwd _ (Str α _) α' (T.Str str) = V.Str (α ∧ α') str
 evalFwd γ (Record α xes) α' (T.Record _ xts) =
    let xs × ts = xts <#> (key &&& val) # S.unzip
        es = xes <#> val
-       vs = (\(e' × t) -> evalFwd γ e' α' t) <$> S.zip es ts in
+       vs = (\(e' × t) -> evalFwd γ e' α' t) <$> S.zip (S.fromList es) ts in
    V.Record (α ∧ α') (S.zipWith (↦) xs vs)
 evalFwd γ (Constr α _ es) α' (T.Constr _ c ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)

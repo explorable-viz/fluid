@@ -79,9 +79,10 @@ eval _ (Int _ n)     = pure (T.Int n × V.Int false n)
 eval _ (Float _ n)   = pure (T.Float n × V.Float false n)
 eval _ (Str _ str)   = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
-   let xs × es = xes <#> (key &&& val) # S.unzip
-   ts × vs <- traverse (eval γ) es <#> S.unzip
-   pure (T.Record γ (zipWith (↦) xs ts) × V.Record false (zipWith (↦) xs vs))
+   let xs × es = xes <#> (key &&& val) # unzip
+   ts × vs <- traverse (eval γ) es <#> unzip
+   pure (T.Record γ (zipWith (↦) (S.fromList xs) (S.fromList ts)) ×
+         V.Record false (zipWith (↦) (S.fromList xs) (S.fromList vs)))
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip

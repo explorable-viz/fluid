@@ -3,7 +3,7 @@ module EvalBwd where
 import Prelude hiding (absurd)
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
-import Data.List (List(..), (:), range, reverse, unsnoc, zip)
+import Data.List (List(..), (:), range, reverse, unsnoc, zip, zipWith)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (empty, insert, isEmpty)
@@ -81,7 +81,7 @@ evalBwd (V.Record α xvs) (T.Record γ xts) =
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (es :- e) × (α' ∨ α'')
          where γ'' × e × α'' = evalBwd v' t'
        γ' × es × α' = foldr evalArg_bwd (botOf γ × Lin × α) (S.zip vs ts) in
-   γ' × Record α (S.zipWith (↦) xs es) × α'
+   γ' × Record α (zipWith (↦) (S.toList xs) (S.toList es)) × α'
 evalBwd (V.Constr α _ vs) (T.Constr γ c ts) =
    let evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
