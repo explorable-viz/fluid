@@ -6,7 +6,7 @@ import Data.List (List(..), (:))
 import Data.Map (Map, filterKeys, keys, isEmpty, lookup, pop, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union)
-import Bindings (Bind, Bindings, Var, (↦))
+import Bindings (Bind, Var, (↦))
 import DataType (Ctr)
 import Expr (Elim, fv)
 import Lattice (
@@ -48,21 +48,13 @@ dom = keys
 lookup' :: forall a . Var -> Env a -> MayFail (Val a)
 lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
 
-update :: forall a . Bindings a -> Map Var a -> Bindings a
-update Lin γ   | isEmpty γ = Lin
+update :: forall a . List (Bind a) -> Map Var a -> List (Bind a)
+update Nil γ  | isEmpty γ = Nil
                | otherwise = error absurd
-update (xvs :- x ↦ v) γ =
+update (x ↦ v: xvs) γ =
    case pop x γ of
-      Just (u × γ')  -> update xvs γ' :- x ↦ u
-      Nothing        -> update xvs γ :- x ↦ v
-
-update' :: forall a . List (Bind a) -> Map Var a -> List (Bind a)
-update' Nil γ  | isEmpty γ = Nil
-               | otherwise = error absurd
-update' (x ↦ v: xvs) γ =
-   case pop x γ of
-      Just (u × γ')  -> x ↦ u : update' xvs γ'
-      Nothing        -> x ↦ v : update' xvs γ
+      Just (u × γ')  -> x ↦ u : update xvs γ'
+      Nothing        -> x ↦ v : update xvs γ
 
 -- Want a monoid instance but needs a newtype
 append :: forall a . Env a -> Endo (Env a)

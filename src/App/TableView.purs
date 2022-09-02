@@ -3,7 +3,7 @@ module App.TableView where
 import Prelude
 import Data.List (List)
 import Bindings (Bind)
-import App.Util (Handler, Renderer, get_intOrNumber', get_prim')
+import App.Util (Handler, Renderer, get_intOrNumber, get_prim)
 import Lattice (𝔹)
 import Util (type (×))
 import Val (Val)
@@ -17,10 +17,10 @@ foreign import drawTable :: Renderer EnergyTable
 
 energyRecord :: List (Bind (Val 𝔹)) -> EnergyRecord
 energyRecord r = {
-   year: get_prim' "year" r,
-   country: get_prim' "country" r,
-   energyType: get_prim' "energyType" r,
-   output: get_intOrNumber' "output" r
+   year: get_prim "year" r,
+   country: get_prim "country" r,
+   energyType: get_prim "energyType" r,
+   output: get_intOrNumber "output" r
 }
 
 tableViewHandler :: Handler

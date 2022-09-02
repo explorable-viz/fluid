@@ -132,10 +132,10 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.Project _ _)      = error "todo"
    pretty (E.App e e')              = hspace [pretty e, pretty e']
 
-instance Pretty (SnocList (Bind (Elim Boolean))) where
-   pretty Lin          = error absurd -- non-empty
-   pretty (Lin :- xσ)  = pretty xσ
-   pretty (δ :- xσ)    = atop (pretty δ :<>: semi) (pretty xσ)
+instance Pretty (List (Bind (Elim Boolean))) where
+   pretty Nil        = error absurd -- non-empty
+   pretty (xσ : Nil) = pretty xσ
+   pretty (xσ : δ)   = atop (pretty δ :<>: semi) (pretty xσ)
 
 instance Pretty (Bind (Elim Boolean)) where
    pretty (x ↦ σ) = hspace [text x, text str.equals, pretty σ]

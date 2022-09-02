@@ -22,7 +22,6 @@ import SExpr (
       VarDefs
    )
 import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
-import Util.SnocList (SnocList(..), (:-))
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -39,10 +38,10 @@ recDefsBwd :: E.RecDefs 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
 recDefsBwd xσs xcs = join (recDefsBwd' xσs (groupBy (eq `on` fst) xcs))
 
 recDefsBwd' :: E.RecDefs 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
-recDefsBwd' Lin _                                              = error absurd
-recDefsBwd' (Lin :- x ↦ σ) (NonEmptyList (xcs :| Nil))         = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
-recDefsBwd' (_ :- _ :- _) (NonEmptyList (_ :| Nil))            = error absurd
-recDefsBwd' (ρ :- x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
+recDefsBwd' Nil _                                              = error absurd
+recDefsBwd' (x ↦ σ : Nil) (NonEmptyList (xcs :| Nil))          = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
+recDefsBwd' (_ : _ : _) (NonEmptyList (_ :| Nil))              = error absurd
+recDefsBwd' (x ↦ σ : ρ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
    NonEmptyList (recDefBwd (x ↦ σ) xcs1 :| toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss))))
 
 recDefBwd :: Bind (Elim 𝔹) -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)

@@ -102,6 +102,6 @@ evalFwd γ (Let (VarDef σ e1) e2) α (T.Let (T.VarDef w t1) t2) =
        γ' × _ × α' = matchFwd v σ w in
    evalFwd (γ <+> γ') e2 α' t2
 evalFwd γ (LetRec xσs e') α (T.LetRec _ t) =
-   let γ' = closeDefsFwd γ (asMap xσs) α in
+   let γ' = closeDefsFwd γ (asMap $ S.fromList xσs) α in
    evalFwd (γ <+> γ') e' α t
 evalFwd _ _ _ _ = error absurd

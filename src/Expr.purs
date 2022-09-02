@@ -6,7 +6,7 @@ import Data.List (List)
 import Data.Map (Map, keys)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Tuple (snd)
-import Bindings (Bind, Bindings, Var, val)
+import Bindings (Bind, Var, val)
 import DataType (Ctr)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
 import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
@@ -28,7 +28,7 @@ data Expr a =
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
-type RecDefs a = Bindings (Elim a)
+type RecDefs a = List (Bind (Elim a))
 
 data Elim a =
    ElimVar Var (Cont a) |

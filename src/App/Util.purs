@@ -9,12 +9,12 @@ import Data.Tuple (fst)
 import Effect (Effect)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
-import Bindings (Bind, Bindings, Var, (↦), find)
+import Bindings (Bind, Var, (↦), find)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome)
 import Lattice (𝔹, botOf, neg)
 import Primitive (class ToFrom, as, match_fwd)
 import Util (Endo, type (×), type (+), (×), absurd, error, definitely', successful)
-import Util.SnocList (fromList, toList) as S
+import Util.SnocList (fromList) as S
 import Val (Val(..), update, updateMatrix)
 
 type HTMLId = String
@@ -26,23 +26,14 @@ type Handler = Event -> Selector
 doNothing :: OnSel
 doNothing = const $ pure unit
 
-get_prim :: forall a . ToFrom a => Var -> Bindings (Val 𝔹) -> a × 𝔹
+get_prim :: forall a . ToFrom a => Var -> List (Bind (Val 𝔹)) -> a × 𝔹
 get_prim x = match_fwd <<< get x
 
-get_prim' :: forall a . ToFrom a => Var -> List (Bind (Val 𝔹)) -> a × 𝔹
-get_prim' x = match_fwd <<< get' x
-
-get_intOrNumber :: Var -> Bindings (Val 𝔹) -> Number × 𝔹
+get_intOrNumber :: Var -> List (Bind (Val 𝔹)) -> Number × 𝔹
 get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
 
-get_intOrNumber' :: Var -> List (Bind (Val 𝔹)) -> Number × 𝔹
-get_intOrNumber' x r = first as (get_prim' x r :: (Int + Number) × 𝔹)
-
-get :: Var -> Bindings (Val 𝔹) -> Val 𝔹
-get x r = successful $ find x r
-
-get' :: Var -> List (Bind (Val 𝔹)) -> Val 𝔹
-get' x r = successful $ find x $ S.fromList r
+get :: Var -> List (Bind (Val 𝔹)) -> Val 𝔹
+get x r = successful $ find x $ S.fromList r
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (List (Bind (Val 𝔹)) -> a) -> Val 𝔹 -> a
@@ -98,7 +89,7 @@ toggleCell _ _ _ = error absurd
 
 toggleField :: Var -> Selector -> Selector
 toggleField f selector (Record α xus) =
-   Record α $ ((S.fromList xus) `update` singleton f (selector (get f (S.fromList xus)))) # S.toList
+   Record α $ xus `update` singleton f (selector (get f xus))
 toggleField _ _ _ = error absurd
 
 toggleConstrArg :: Ctr -> Int -> Selector -> Selector

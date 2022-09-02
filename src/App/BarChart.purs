@@ -8,7 +8,7 @@ import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 import App.Util (
    Handler, class Reflect, Renderer, Selector,
-   from, get', get_intOrNumber', get_prim', record, selectNth, toggleConstrArg, toggleField
+   from, get, get_intOrNumber, get_prim, record, selectNth, toggleConstrArg, toggleField
 )
 import Bindings (Bind)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
@@ -23,14 +23,14 @@ foreign import drawBarChart :: Renderer BarChart
 
 instance Reflect (List (Bind (Val Boolean))) BarChartRecord where
    from r = BarChartRecord {
-      x: get_prim' f_x r,
-      y: get_intOrNumber' f_y r
+      x: get_prim f_x r,
+      y: get_intOrNumber f_y r
    }
 
 instance Reflect (List (Bind (Val Boolean))) BarChart where
    from r = BarChart {
-      caption: get_prim' f_caption r,
-      data: record from <$> from (get' f_data r)
+      caption: get_prim f_caption r,
+      data: record from <$> from (get f_data r)
    }
 
 barChartHandler :: Handler
