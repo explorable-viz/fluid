@@ -346,7 +346,7 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
          record :: SParser (Expr 𝔹)
          record =
             sepBy (field expr') token.comma
-            <#> (reverse >>> fromList >>> Record selState)
+            <#> (reverse >>> Record selState)
             # token.braces
 
          variable :: SParser (Expr 𝔹)

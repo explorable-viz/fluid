@@ -3,7 +3,7 @@ module SExpr where
 import Prelude
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
-import Bindings (Bindings, Var)
+import Bindings (Bind, Bindings, Var)
 import DataType (Ctr)
 import Util (type (×), type (+))
 
@@ -15,7 +15,7 @@ data Expr a =
    Float a Number |
    Str a String |
    Constr a Ctr (List (Expr a)) |
-   Record a (Bindings (Expr a)) |
+   Record a (List (Bind (Expr a))) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (NonEmptyList (Branch a)) |
    Project (Expr a) Var |

@@ -2,7 +2,7 @@ module Pretty (class Pretty, class ToList, pretty, prettyP, toList, module P) wh
 
 import Prelude hiding (absurd,between)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), (:), fromFoldable)
+import Data.List (List(..), (:), fromFoldable, reverse)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
 import Data.Profunctor.Choice ((|||))
@@ -117,6 +117,11 @@ prettyRecord α xvs =
    xvs <#> (\(x ↦ v) -> hspace [text x :<>: colon, pretty v])
    # S.reverse >>> hcomma >>> between (text "{") (text "}") >>> highlightIf α
 
+prettyRecord' :: forall a . Pretty a => 𝔹 -> List (Bind a) -> Doc
+prettyRecord' α xvs =
+   xvs <#> (\(x ↦ v) -> hspace [text x :<>: colon, pretty v])
+   # reverse >>> hcomma >>> between (text "{") (text "}") >>> highlightIf α
+
 instance Pretty (E.Expr Boolean) where
    pretty (E.Var x)                 = text x
    pretty (E.Int α n)               = highlightIf α (text (show n))
@@ -180,7 +185,7 @@ instance Pretty (S.Expr Boolean) where
    pretty (S.Float α n)                = highlightIf α (text (show n))
    pretty (S.Str α str)                = highlightIf α (text (show str))
    pretty (S.Constr α c es)            = prettyConstr α c es
-   pretty (S.Record α xes)             = prettyRecord α xes
+   pretty (S.Record α xes)             = prettyRecord' α xes
    pretty (S.Matrix α e (x × y) e')    = highlightIf α (hspace (init <> quant))
       where
       init = [text str.arrayLBracket, pretty e, text str.bar]
