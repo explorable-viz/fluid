@@ -56,6 +56,14 @@ update (xvs :- x ↦ v) γ =
       Just (u × γ')  -> update xvs γ' :- x ↦ u
       Nothing        -> update xvs γ :- x ↦ v
 
+update' :: forall a . List (Bind a) -> Map Var a -> List (Bind a)
+update' Nil γ  | isEmpty γ = Nil
+               | otherwise = error absurd
+update' (x ↦ v: xvs) γ =
+   case pop x γ of
+      Just (u × γ')  -> x ↦ u : update' xvs γ'
+      Nothing        -> x ↦ v : update' xvs γ
+
 -- Want a monoid instance but needs a newtype
 append :: forall a . Env a -> Endo (Env a)
 append = unionWith (const identity)

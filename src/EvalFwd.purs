@@ -7,14 +7,13 @@ import Data.Map (empty)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), (&&&), first, second)
 import Data.Set (union)
-import Bindings (Bindings, (↦), asMap, find, key, val)
+import Bindings (Bind, (↦), asMap, find, key, val)
 import Expr (Cont, Elim(..), Expr(..), VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))
 import Primitive (match_fwd) as P
 import Trace (Trace(..), Match(..), VarDef(..)) as T
 import Trace (Trace, Match)
 import Util (type (×), (×), (!), absurd, assert, disjUnion, error, mustLookup, successful)
-import Util.SnocList (SnocList(..), (:-))
 import Util.SnocList (fromList) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
@@ -25,7 +24,7 @@ matchFwd v (ElimVar _ κ) (T.MatchVar x _) = M.singleton x v × κ × true
 matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
    second (_ ∧ α) (matchArgsFwd vs (mustLookup c m) ws)
 matchFwd (V.Record α xvs) (ElimRecord _ κ) (T.MatchRecord xws) =
-   second (_ ∧ α) (matchRecordFwd (S.fromList xvs) κ xws)
+   second (_ ∧ α) (matchRecordFwd xvs κ xws)
 matchFwd _ _ _ = error absurd
 
 matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
@@ -35,9 +34,9 @@ matchArgsFwd (v : vs) σ (w : ws) =
    (first (ρ `disjUnion` _) *** (_ ∧ α)) (matchArgsFwd vs κ ws)
 matchArgsFwd _ _ _ = error absurd
 
-matchRecordFwd :: Bindings (Val 𝔹) -> Cont 𝔹 -> Bindings (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchRecordFwd Lin κ Lin = empty × κ × true
-matchRecordFwd (xvs :- x ↦ v) σ (xws :- x' ↦ w) | x == x' =
+matchRecordFwd :: List (Bind (Val 𝔹)) -> Cont 𝔹 -> List (Bind (Match 𝔹)) -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchRecordFwd Nil κ Nil = empty × κ × true
+matchRecordFwd (x ↦ v : xvs) σ (x' ↦ w : xws) | x == x' =
    let ρ × σ' × α = matchRecordFwd xvs σ xws in
    (first (ρ `disjUnion` _) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
 matchRecordFwd _ _ _ = error absurd
@@ -75,7 +74,7 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
 evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
 evalFwd γ (Project e' _) α (T.Project t xvs' x) =
    case evalFwd γ e' α t of
-      V.Record _ xvs -> assert ((xvs <#> key # S.fromList) == (xvs' <#> key)) $ successful (find x $ S.fromList xvs)
+      V.Record _ xvs -> assert ((xvs <#> key) == (xvs' <#> key)) $ successful (find x $ S.fromList xvs)
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
    case evalFwd γ e1 α t1 of

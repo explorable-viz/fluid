@@ -12,7 +12,7 @@ import Data.Map.Internal (keys)
 import Data.Profunctor.Strong ((&&&), second)
 import Data.Set (union)
 import Data.Traversable (sequence, traverse)
-import Bindings (Bind, Bindings, (↦), asMap, find, key, val, varAnon, Var)
+import Bindings (Bind, (↦), asMap, find, key, val, varAnon, Var)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), VarDef(..), asExpr, asElim, fv)
 import Lattice (𝔹, checkConsistent)
@@ -21,7 +21,6 @@ import Primitive (match) as P
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
-import Util.SnocList (SnocList(..), (:-))
 import Util.SnocList (fromList) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, dom, for, lookup', restrict)
 import Val (Val(..)) as V
@@ -52,13 +51,13 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
 
-matchRecord :: List (Bind (Val 𝔹)) -> List Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Bindings (Match 𝔹))
-matchRecord Nil Nil κ = pure (empty × κ × Lin)
+matchRecord :: List (Bind (Val 𝔹)) -> List Var -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Bind (Match 𝔹)))
+matchRecord Nil Nil κ = pure (empty × κ × Nil)
 matchRecord (x ↦ v : xvs) (x' : xs) σ = do
    check (x == x') (patternMismatch (show x) (show x'))
    γ × σ' × xws <- matchRecord xvs xs σ
    γ' × κ × w <- match v (asElim σ')
-   pure ((γ `disjUnion` γ') × κ × (xws :- x ↦ w))
+   pure ((γ `disjUnion` γ') × κ × (x ↦ w : xws))
 matchRecord (x ↦ _ : _) Nil _ = report (patternMismatch "end of record pattern" (show x))
 matchRecord Nil (x : _) _ = report (patternMismatch "end of record" (show x))
 
@@ -108,7 +107,7 @@ eval γ (Lambda σ) =
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
-      V.Record _ xvs -> (T.Project t (S.fromList xvs) x × _) <$> find x (S.fromList xvs)
+      V.Record _ xvs -> (T.Project t xvs x × _) <$> find x (S.fromList xvs)
       _ -> report "Expected record"
 eval γ (App e e') = do
    t × v <- eval γ e

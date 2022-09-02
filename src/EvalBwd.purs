@@ -12,7 +12,7 @@ import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong ((&&&), first)
 import Data.Set (singleton, union)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bindings, Var, (↦), key, val, varAnon)
+import Bindings (Bind, Var, (↦), key, val, varAnon)
 import Bindings (dom) as B
 import DataType (cPair)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), bv)
@@ -21,8 +21,8 @@ import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, mustLookup, nonEmpty)
 import Util.SnocList (SnocList(..), (:-), fromList)
-import Util.SnocList (toList, unzip, zip, zipWith) as S
-import Val (Env, FunEnv, PrimOp(..), (<+>), Val, (∨∨), append_inv, dom, update)
+import Util.SnocList (toList) as S
+import Val (Env, FunEnv, PrimOp(..), (<+>), Val, (∨∨), append_inv, dom, update, update')
 import Val (Val(..)) as V
 
 closeDefsBwd :: Env 𝔹 -> Env 𝔹 × FunEnv 𝔹 × 𝔹
@@ -46,7 +46,7 @@ matchBwd γ κ _ (MatchVarAnon v)
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
-matchBwd ρ κ α (MatchRecord xws)    = V.Record α (S.toList xvs) × ElimRecord (xws <#> key # S.toList) κ'
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α xvs × ElimRecord (xws <#> key) κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
@@ -58,13 +58,13 @@ matchArgsBwd γγ' κ α (ws :- w) =
        vs × κ' = matchArgsBwd γ' (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
 
-matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings (Match 𝔹) -> Bindings (Val 𝔹) × Cont 𝔹
-matchRecordBwd γ κ _ Lin | isEmpty γ   = Lin × κ
+matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Bind (Match 𝔹)) -> List (Bind (Val 𝔹)) × Cont 𝔹
+matchRecordBwd γ κ _ Nil | isEmpty γ   = Nil × κ
                          | otherwise   = error absurd
-matchRecordBwd γγ' κ α (xws :- x ↦ w)  =
+matchRecordBwd γγ' κ α (x ↦ w : xws)  =
    let γ × γ'  = disjUnion_inv (bv w) γγ'
        v × σ   = matchBwd γ κ α w in
-   (first (_ :- x ↦ v)) (matchRecordBwd γ' (ContElim σ) α xws)
+   (first (x ↦ v : _)) (matchRecordBwd γ' (ContElim σ) α xws)
 
 evalBwd :: Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var x) = M.singleton x v × Var x × false
@@ -108,7 +108,7 @@ evalBwd (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (
        γ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t' in
     (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
 evalBwd v (T.Project t xvs x) =
-   let v' = V.Record false $ (xvs <#> botOf) `update` M.singleton x v # S.toList
+   let v' = V.Record false $ (xvs <#> botOf) `update'` M.singleton x v
        ρ × e × α = evalBwd v' t in
    ρ × Project e x × α
 evalBwd v (T.App (t1 × xs × _) t2 w t3) =

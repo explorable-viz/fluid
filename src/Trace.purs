@@ -3,7 +3,7 @@ module Trace where
 import Prelude
 import Data.List (List)
 import Data.Set (Set, empty, singleton, unions)
-import Bindings (Bind, Bindings, Var, val)
+import Bindings (Bind, Var, val)
 import DataType (Ctr)
 import Expr (class BV, Elim, RecDefs, bv)
 import Util (type (×))
@@ -22,7 +22,7 @@ data Trace a =
    Constr (Env a) Ctr (List (Trace a)) |
    Matrix (Array2 (Trace a)) (Var × Var) (Int × Int) (Trace a) |
    Lambda (Elim a) |
-   Project (Trace a) (Bindings (Val a)) Var |
+   Project (Trace a) (List (Bind (Val a))) Var |
    App (Trace a × Set Var × Elim a) (Trace a) (Match a) (Trace a) |
    AppPrim (Trace a × PrimOp × List (Val a)) (Trace a × Val a) | -- record prior arguments
    AppConstr (Trace a × Ctr × Int) (Trace a) |                   -- record number of prior arguments
@@ -33,7 +33,7 @@ data Match a =
    MatchVar Var (Val a) |
    MatchVarAnon (Val a) |
    MatchConstr Ctr (List (Match a)) |
-   MatchRecord (Bindings (Match a))
+   MatchRecord (List (Bind (Match a)))
 
 instance BV (Match a) where
    bv (MatchVar x _)       = singleton x
