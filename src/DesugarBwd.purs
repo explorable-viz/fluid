@@ -12,7 +12,7 @@ import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry, fst, snd)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bindings, Bind, (↦), key, val)
+import Bindings (Bind, (↦), key, val)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
@@ -23,7 +23,6 @@ import SExpr (
    )
 import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
 import Util.SnocList (SnocList(..), (:-))
-import Util.SnocList (fromList) as S
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -136,7 +135,7 @@ patternBwd (ElimVar _ κ) (PVar _)               = κ
 patternBwd (ElimConstr m) (PConstr c ps)        = argsBwd (mustLookup c m) (Left <$> ps)
 patternBwd (ElimConstr m) (PListEmpty)          = mustLookup cNil m
 patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
-patternBwd (ElimRecord _ κ) (PRecord xps)       = recordBwd κ (S.fromList xps)
+patternBwd (ElimRecord _ κ) (PRecord xps)       = recordBwd κ xps
 patternBwd _ _                                  = error absurd
 
 -- σ, o desugar_bwd κ
@@ -151,9 +150,9 @@ argsBwd κ Nil              = κ
 argsBwd κ (Left p : πs)    = argsBwd (patternBwd (asElim κ) p) πs
 argsBwd κ (Right o : πs)   = argsBwd (listRestPatternBwd (asElim κ) o) πs
 
-recordBwd :: Cont 𝔹 -> Bindings Pattern -> Cont 𝔹
-recordBwd κ Lin            = κ
-recordBwd σ (xps :- _ ↦ p) = recordBwd σ xps # (asElim >>> flip patternBwd p)
+recordBwd :: Cont 𝔹 -> List (Bind Pattern) -> Cont 𝔹
+recordBwd κ Nil            = κ
+recordBwd σ (_ ↦ p : xps) = recordBwd σ xps # (asElim >>> flip patternBwd p)
 
 -- σ, c desugar_bwd c
 branchBwd_curried :: Elim 𝔹 -> Endo (Branch 𝔹)

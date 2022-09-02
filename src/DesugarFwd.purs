@@ -12,14 +12,14 @@ import Data.Map (Map, fromFoldable, singleton)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings (Bindings, Bind, (↦), key, varAnon)
+import Bindings (Bind, (↦), key, varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, maybeJoin)
 import SExpr (Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..))
 import Util (MayFail, type (+), type (×), (×), absurd, asSingletonMap, error, successful)
-import Util.SnocList (SnocList(..), (:-), fromList)
+import Util.SnocList (fromList)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd
@@ -127,7 +127,7 @@ patternFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 patternFwd (PVar x) κ            = pure (ElimVar x κ)
 patternFwd (PConstr c ps) κ      =
    checkArity c (length ps) *> (ElimConstr <$> singleton c <$> argPatternFwd (Left <$> ps) κ)
-patternFwd (PRecord xps) κ       = ElimRecord (xps <#> key) <$> recordPatternFwd (fromList xps) κ
+patternFwd (PRecord xps) κ       = ElimRecord (xps <#> key) <$> recordPatternFwd xps κ
 patternFwd PListEmpty κ          = pure (ElimConstr (singleton cNil κ))
 patternFwd (PListNonEmpty p o) κ = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
@@ -141,9 +141,9 @@ argPatternFwd Nil κ             = pure κ
 argPatternFwd (Left p : πs) κ   = ContElim <$> (argPatternFwd πs κ >>= patternFwd p)
 argPatternFwd (Right o : πs) κ  = ContElim <$> (argPatternFwd πs κ >>= listRestPatternFwd o)
 
-recordPatternFwd :: Bindings Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
-recordPatternFwd Lin κ              = pure κ
-recordPatternFwd (xps :- _ ↦ p) κ   = patternFwd p κ >>= ContElim >>> recordPatternFwd xps
+recordPatternFwd :: List (Bind Pattern) -> Cont 𝔹 -> MayFail (Cont 𝔹)
+recordPatternFwd Nil κ           = pure κ
+recordPatternFwd (_ ↦ p : xps) κ = patternFwd p κ >>= ContElim >>> recordPatternFwd xps
 
 branchFwd_uncurried :: Pattern -> Expr 𝔹 -> MayFail (Elim 𝔹)
 branchFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= patternFwd p
