@@ -39,14 +39,15 @@ closeDefsBwd γ =
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 matchBwd γ κ _ (MatchVar x v)
-   | dom γ == singleton x  = mustLookup x γ × ElimVar x κ
-   | otherwise             = botOf v × ElimVar x κ
-matchBwd γ κ _ (MatchVarAnon v) | isEmpty γ        = botOf v × ElimVar varAnon κ
-matchBwd ρ κ α (MatchConstr c ws)                  = V.Constr α c vs × ElimConstr (M.singleton c κ')
+   | dom γ == singleton x           = mustLookup x γ × ElimVar x κ
+   | otherwise                      = botOf v × ElimVar x κ
+matchBwd γ κ _ (MatchVarAnon v)
+   | isEmpty γ                      = botOf v × ElimVar varAnon κ
+   | otherwise                      = error absurd
+matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
-matchBwd ρ κ α (MatchRecord xws)                   = V.Record α xvs × ElimRecord (key <$> xws) κ'
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α xvs × ElimRecord (key <$> xws) κ'
    where xvs × κ' = matchRecordBwd ρ κ α xws
-matchBwd _ _ _ _                                   = error absurd
 
 matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
 matchArgsBwd γ κ _ Lin  | isEmpty γ = Nil × κ
