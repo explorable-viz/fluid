@@ -33,7 +33,6 @@ import SExpr (
 )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
-import Util.SnocList (fromList)
 
 -- Initial selection state.
 selState :: 𝔹
