@@ -17,7 +17,7 @@ data Expr a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (List (Bind (Expr a))) |
+   Record a (Map Var (Expr a)) |
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
@@ -60,7 +60,7 @@ instance FV (Expr a) where
    fv (Int _ _)            = empty
    fv (Float _ _)          = empty
    fv (Str _ _)            = empty
-   fv (Record _ xes)       = unions (fv <$> val <$> xes)
+   fv (Record _ xes)       = unions (fv <$> xes)
    fv (Constr _ _ es)      = unions (fv <$> es)
    fv (Matrix _ e1 _ e2)   = union (fv e1) (fv e2)
    fv (Lambda σ)           = fv σ

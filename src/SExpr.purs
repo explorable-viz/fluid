@@ -5,7 +5,8 @@ import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
 import Bindings (Bind, Var)
 import DataType (Ctr)
-import Util (type (×), type (+))
+import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, bot, definedJoin, neg)
+import Util (type (×), type (+), error, unimplemented)
 
 -- Surface language expressions.
 data Expr a =
@@ -69,3 +70,13 @@ derive instance functorExpr :: Functor Expr
 derive instance functorListRest :: Functor ListRest
 derive instance functorVarDef :: Functor VarDef
 derive instance functorQualifier :: Functor Qualifier
+
+instance JoinSemilattice (Expr Boolean) where
+   join = definedJoin
+   neg = (<$>) neg
+
+instance Slices (Expr Boolean) where
+   maybeJoin _ = error unimplemented
+
+instance BoundedSlices (Expr Boolean) where
+   botOf = (<$>) (const bot)

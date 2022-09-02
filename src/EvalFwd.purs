@@ -3,10 +3,11 @@ module EvalFwd where
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip, unzip, zipWith)
-import Data.Map (empty)
+import Data.Map (empty, toUnfoldable)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), (&&&), first, second)
 import Data.Set (union)
+import Data.Tuple (snd)
 import Bindings ((↦), asMap, find, key, val)
 import Expr (Cont, Elim(..), Expr(..), VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))
@@ -46,7 +47,7 @@ evalFwd _ (Float α _) α' (T.Float n) = V.Float (α ∧ α') n
 evalFwd _ (Str α _) α' (T.Str str) = V.Str (α ∧ α') str
 evalFwd γ (Record α xes) α' (T.Record _ xts) =
    let xs × ts = xts <#> (key &&& val) # unzip
-       es = xes <#> val
+       es = toUnfoldable xes <#> snd
        vs = (\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts in
    V.Record (α ∧ α') (zipWith (↦) xs vs)
 evalFwd γ (Constr α _ es) α' (T.Constr _ c ts) =

@@ -6,10 +6,10 @@ import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, range, singleton, unzip, zipWith)
-import Data.Map (empty, lookup)
+import Data.Map (empty, lookup, toUnfoldable)
 import Data.Map (singleton) as M
 import Data.Map.Internal (keys)
-import Data.Profunctor.Strong ((&&&), second)
+import Data.Profunctor.Strong (second)
 import Data.Set (union)
 import Data.Traversable (sequence, traverse)
 import Bindings ((↦), asMap, find, key, val, varAnon)
@@ -69,7 +69,7 @@ eval _ (Int _ n)     = pure (T.Int n × V.Int false n)
 eval _ (Float _ n)   = pure (T.Float n × V.Float false n)
 eval _ (Str _ str)   = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
-   let xs × es = xes <#> (key &&& val) # unzip
+   let xs × es = toUnfoldable xes # unzip
    ts × vs <- traverse (eval γ) es <#> unzip
    pure (T.Record γ (zipWith (↦) xs ts) × V.Record false (zipWith (↦) xs vs))
 eval γ (Constr _ c es) = do

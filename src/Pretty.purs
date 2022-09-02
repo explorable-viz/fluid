@@ -5,8 +5,10 @@ import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), fromFoldable)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
+import Data.Map (toUnfoldable)
 import Data.Profunctor.Choice ((|||))
 import Data.String (Pattern(..), contains) as Data.String
+import Data.Tuple (uncurry)
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
 import Bindings (Bind, (↦))
@@ -120,7 +122,7 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
-   pretty (E.Record α xes)          = prettyRecord α xes
+   pretty (E.Record α xes)          = prettyRecord α (toUnfoldable xes <#> uncurry (↦))
    pretty (E.Constr α c es)         = prettyConstr α c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]
