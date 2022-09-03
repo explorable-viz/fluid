@@ -3,6 +3,7 @@ module App.Util where
 import Prelude hiding (absurd)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:), (!!), updateAt)
+import Data.Map (toUnfoldable)
 import Data.Map (update) as M
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
@@ -37,7 +38,7 @@ get x = successful <<< find x
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (List (Bind (Val 𝔹)) -> a) -> Val 𝔹 -> a
-record toRecord u = toRecord (fst (match_fwd u))
+record toRecord u = toRecord (toUnfoldable (fst (match_fwd u)))
 
 class Reflect a b where
    from :: Partial => a -> b

@@ -5,10 +5,10 @@ import Prelude hiding (absurd, apply, div)
 import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
-import Data.Map (fromFoldable, toUnfoldable)
+import Data.Map (Map)
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
-import Bindings (Bind)
+import Bindings (Var)
 import DataType (cFalse, cPair, cTrue)
 import Lattice (𝔹, (∧))
 import Pretty (prettyP)
@@ -94,11 +94,11 @@ instance ToFrom (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Bool
    constr (r × α) = Matrix α r
    constr_bwd v = match_fwd v
 
-instance ToFrom (List (Bind (Val Boolean))) where
-   match (Record α xvs) = (xvs # toUnfoldable) × α
+instance ToFrom (Map Var (Val Boolean)) where
+   match (Record α xvs) = xvs × α
    match v              = error ("Record expected; got " <> prettyP v)
 
-   constr (xvs × α) = Record α (xvs # fromFoldable)
+   constr (xvs × α) = Record α xvs
    constr_bwd v = match_fwd v
 
 instance ToFrom (Val Boolean × Val Boolean) where
