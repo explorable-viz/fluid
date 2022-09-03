@@ -64,7 +64,7 @@ evalBwd (V.Int α _) (T.Int n) = empty × Int α n × α
 evalBwd (V.Float α _) (T.Float n) = empty × Float α n × α
 evalBwd (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
 evalBwd (V.Record α xvs) (T.Record γ xts) =
-   let xvts = intersectionWith (×) (xvs <#> (\(x ↦ v) -> x × v) # fromFoldable) xts
+   let xvts = intersectionWith (×) (xvs # fromFoldable) xts
        xγeαs = xvts <#> uncurry evalBwd
        γ' = foldr (∨) (botOf γ) (xγeαs <#> (fst >>> fst)) in
    γ' × Record α (xγeαs <#> (fst >>> snd)) × (foldr (∨) α (xγeαs <#> snd))

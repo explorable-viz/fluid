@@ -4,7 +4,7 @@ import Prelude
 import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Data.Set (Set, empty, singleton, union)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), fst, snd)
 import Util (MayFail, type (×), (×), definitely, report, whenever)
 
 type Var = String
@@ -18,17 +18,17 @@ mustGeq x y = definitely "greater" (whenever (x == y) x)
 type Bind a = Var × a
 
 key :: forall a . Bind a -> Var
-key (x ↦ _) = x
+key = fst
 
 val :: forall a . Bind a -> a
-val (_ ↦ v) = v
+val = snd
 
 dom :: forall a . List (Bind a) -> Set Var
 dom Nil           = empty
 dom (x ↦ _ : ρ)   = singleton x `union` dom ρ
 
 asMap :: forall a . List (Bind a) -> Map Var a
-asMap ρ = ρ <#> (\(x ↦ σ) -> x × σ) # fromFoldable
+asMap = fromFoldable
 
 infix 7 Tuple as ↦
 infixl 4 mustGeq as ⪂
