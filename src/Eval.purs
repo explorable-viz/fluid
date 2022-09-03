@@ -7,13 +7,13 @@ import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
 import Data.Map (empty, lookup, toUnfoldable)
-import Data.Map (singleton) as M
+import Data.Map (fromFoldable, singleton) as M
 import Data.Map.Internal (keys)
 import Data.Profunctor.Strong (second)
 import Data.Set (union)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
-import Bindings (asMap, find, key, val, varAnon)
+import Bindings (find, key, val, varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), VarDef(..), asExpr, fv)
 import Lattice (𝔹, checkConsistent)
@@ -123,7 +123,7 @@ eval γ (Let (VarDef σ e) e') = do
    t' × v' <- eval (γ <+> γ') e'
    pure (T.Let (T.VarDef w t) t' × v')
 eval γ (LetRec xσs e) = do
-   let γ' = closeDefs γ (asMap xσs)
+   let γ' = closeDefs γ (M.fromFoldable xσs)
    t × v <- eval (γ <+> γ') e
    pure (T.LetRec xσs t × v)
 
@@ -137,4 +137,4 @@ eval_module γ = go empty
       γ'' × _ × _  <- match v σ
       go (y' <+> γ'') (Module ds)
    go γ' (Module (Right xσs : ds)) =
-      go (γ' <+> closeDefs (γ <+> γ') (asMap xσs)) (Module ds)
+      go (γ' <+> closeDefs (γ <+> γ') (M.fromFoldable xσs)) (Module ds)

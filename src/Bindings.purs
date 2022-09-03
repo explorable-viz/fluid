@@ -5,7 +5,7 @@ import Data.List (List(..), (:))
 import Data.Map (Map, fromFoldable)
 import Data.Set (Set, empty, singleton, union)
 import Data.Tuple (Tuple(..), fst, snd)
-import Util (MayFail, type (×), (×), definitely, report, whenever)
+import Util (MayFail, type (×), definitely, report, whenever)
 
 type Var = String
 
@@ -26,9 +26,6 @@ val = snd
 dom :: forall a . List (Bind a) -> Set Var
 dom Nil           = empty
 dom (x ↦ _ : ρ)   = singleton x `union` dom ρ
-
-asMap :: forall a . List (Bind a) -> Map Var a
-asMap = fromFoldable
 
 infix 7 Tuple as ↦
 infixl 4 mustGeq as ⪂

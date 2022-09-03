@@ -12,7 +12,7 @@ import Data.NonEmpty (foldl1)
 import Data.Set (singleton, union)
 import Data.Tuple (fst, snd, uncurry)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Var, (↦), key, val, varAnon)
+import Bindings (Var, key, val, varAnon)
 import Bindings (dom) as B
 import DataType (cPair)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), bv)
