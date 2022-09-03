@@ -3,7 +3,7 @@ module App.Util where
 import Prelude hiding (absurd)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:), (!!), updateAt)
-import Data.Map (toUnfoldable)
+import Data.Map (Map)
 import Data.Map (update) as M
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
@@ -11,11 +11,11 @@ import Data.Tuple (fst)
 import Effect (Effect)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
-import Bindings (Bind, Var, find)
+import Bindings (Var)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Lattice (𝔹, botOf, neg)
 import Primitive (class ToFrom, as, match_fwd)
-import Util (Endo, type (×), type (+), (×), absurd, error, definitely', successful)
+import Util (Endo, type (×), type (+), (×), absurd, error, definitely', mustLookup)
 import Val (Val(..), updateMatrix)
 
 type HTMLId = String
@@ -27,18 +27,18 @@ type Handler = Event -> Selector
 doNothing :: OnSel
 doNothing = const $ pure unit
 
-get_prim :: forall a . ToFrom a => Var -> List (Bind (Val 𝔹)) -> a × 𝔹
+get_prim :: forall a . ToFrom a => Var -> Map Var (Val 𝔹) -> a × 𝔹
 get_prim x = match_fwd <<< get x
 
-get_intOrNumber :: Var -> List (Bind (Val 𝔹)) -> Number × 𝔹
+get_intOrNumber :: Var -> Map Var (Val 𝔹) -> Number × 𝔹
 get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
 
-get :: Var -> List (Bind (Val 𝔹)) -> Val 𝔹
-get x = successful <<< find x
+get :: Var -> Map Var (Val 𝔹) -> Val 𝔹
+get = mustLookup
 
 -- Assumes fields are all of primitive type.
-record :: forall a . (List (Bind (Val 𝔹)) -> a) -> Val 𝔹 -> a
-record toRecord u = toRecord (toUnfoldable (fst (match_fwd u)))
+record :: forall a . (Map Var (Val 𝔹) -> a) -> Val 𝔹 -> a
+record toRecord u = toRecord (fst (match_fwd u))
 
 class Reflect a b where
    from :: Partial => a -> b
