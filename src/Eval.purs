@@ -12,6 +12,7 @@ import Data.Map.Internal (keys)
 import Data.Profunctor.Strong (second)
 import Data.Set (union)
 import Data.Traversable (sequence, traverse)
+import Data.Tuple (fst, snd, uncurry)
 import Bindings ((↦), asMap, find, key, val, varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), VarDef(..), asExpr, fv)
@@ -69,9 +70,8 @@ eval _ (Int _ n)     = pure (T.Int n × V.Int false n)
 eval _ (Float _ n)   = pure (T.Float n × V.Float false n)
 eval _ (Str _ str)   = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
-   let xs × es = toUnfoldable xes # unzip
-   ts × vs <- traverse (eval γ) es <#> unzip
-   pure (T.Record γ (zipWith (↦) xs ts # asMap) × V.Record false (zipWith (↦) xs vs))
+   xtvs <- traverse (eval γ) xes
+   pure $ (T.Record γ $ xtvs <#> fst) × V.Record false ((xtvs <#> snd # toUnfoldable) <#> uncurry (↦))
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip
