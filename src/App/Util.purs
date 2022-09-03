@@ -87,8 +87,7 @@ toggleCell i j (Matrix α (vss × (i' × β) × (j' × β'))) =
 toggleCell _ _ _ = error absurd
 
 toggleField :: Var -> Selector -> Selector
-toggleField f selector (Record α r) =
-   Record α $ M.update (selector >>> Just) f r
+toggleField f selector (Record α r) = Record α $ M.update (selector >>> Just) f r
 toggleField _ _ _ = error absurd
 
 toggleConstrArg :: Ctr -> Int -> Selector -> Selector
