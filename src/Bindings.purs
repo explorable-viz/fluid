@@ -2,7 +2,6 @@ module Bindings where
 
 import Prelude
 import Data.List (List(..), (:))
-import Data.Map (Map, fromFoldable)
 import Data.Set (Set, empty, singleton, union)
 import Data.Tuple (Tuple(..), fst, snd)
 import Util (MayFail, type (×), definitely, report, whenever)
