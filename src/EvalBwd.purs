@@ -94,7 +94,7 @@ evalBwd (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (
        γ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t' in
     (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
 evalBwd v (T.Project t xvs x) =
-   let v' = V.Record false ((xvs <#> botOf) `update` M.singleton x v # fromFoldable)
+   let v' = V.Record false (xvs # fromFoldable <#> botOf # insert x v)
        ρ × e × α = evalBwd v' t in
    ρ × Project e x × α
 evalBwd v (T.App (t1 × xs × _) t2 w t3) =
