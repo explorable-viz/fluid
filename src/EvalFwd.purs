@@ -3,7 +3,7 @@ module EvalFwd where
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip, unzip, zipWith)
-import Data.Map (empty, toUnfoldable)
+import Data.Map (empty, intersectionWith, toUnfoldable)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), (&&&), first, second)
 import Data.Set (union)
@@ -46,10 +46,8 @@ evalFwd _ (Int α _) α' (T.Int n) = V.Int (α ∧ α') n
 evalFwd _ (Float α _) α' (T.Float n) = V.Float (α ∧ α') n
 evalFwd _ (Str α _) α' (T.Str str) = V.Str (α ∧ α') str
 evalFwd γ (Record α xes) α' (T.Record _ xts) =
-   let xs × ts = xts # toUnfoldable <#> (uncurry (↦)) <#> (key &&& val) # unzip
-       es = toUnfoldable xes <#> snd
-       vs = (\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts in
-   V.Record (α ∧ α') (zipWith (↦) xs vs)
+   let xvs = intersectionWith (×) xes xts <#> (\(e × t) -> evalFwd γ e α' t)
+   in V.Record (α ∧ α') (toUnfoldable xvs <#> uncurry (↦))
 evalFwd γ (Constr α _ es) α' (T.Constr _ c ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)
 evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
