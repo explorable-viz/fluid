@@ -8,7 +8,6 @@ import Data.List.NonEmpty (toList) as NEL
 import Data.Map (toUnfoldable)
 import Data.Profunctor.Choice ((|||))
 import Data.String (Pattern(..), contains) as Data.String
-import Data.Tuple (uncurry)
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
 import Bindings (Bind, (↦))

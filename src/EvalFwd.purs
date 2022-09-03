@@ -7,8 +7,7 @@ import Data.Map (empty, intersectionWith, toUnfoldable)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), first, second)
 import Data.Set (union)
-import Data.Tuple (uncurry)
-import Bindings ((↦), asMap, find, key, val)
+import Bindings (asMap, find, key, val)
 import Expr (Cont, Elim(..), Expr(..), VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))
 import Primitive (match_fwd) as P
