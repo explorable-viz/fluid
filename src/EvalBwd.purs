@@ -6,12 +6,12 @@ import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), (:), range, reverse, unsnoc, unzip, zip, zipWith)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (empty, fromFoldable, insert, isEmpty, toUnfoldable)
+import Data.Map (empty, fromFoldable, insert, intersectionWith, isEmpty, toUnfoldable)
 import Data.Map (singleton) as M
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong ((&&&))
 import Data.Set (singleton, union)
-import Data.Tuple (uncurry)
+import Data.Tuple (fst, snd, uncurry)
 import Partial.Unsafe (unsafePartial)
 import Bindings (Var, (↦), key, val, varAnon)
 import Bindings (dom) as B
@@ -65,14 +65,10 @@ evalBwd (V.Int α _) (T.Int n) = empty × Int α n × α
 evalBwd (V.Float α _) (T.Float n) = empty × Float α n × α
 evalBwd (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
 evalBwd (V.Record α xvs) (T.Record γ xts) =
-   let xs × ts = xts # toUnfoldable <#> (uncurry (↦)) <#> (key &&& val) # unzip
-       vs = xvs <#> val
-       -- Could unify with similar function in constructor case
-       evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
-       evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
-         where γ'' × e × α'' = evalBwd v' t'
-       γ' × es × α' = foldr evalArg_bwd (botOf γ × Nil × α) (zip vs ts) in
-   γ' × Record α (fromFoldable $ zip xs es) × α'
+   let xvts = intersectionWith (×) (xvs <#> (\(x ↦ v) -> x × v) # fromFoldable) xts
+       xγeαs = xvts <#> uncurry evalBwd
+       γ' = foldr (∨) (botOf γ) (xγeαs <#> (fst >>> fst)) in
+   γ' × Record α (xγeαs <#> (fst >>> snd)) × (foldr (∨) α (xγeαs <#> snd))
 evalBwd (V.Constr α _ vs) (T.Constr γ c ts) =
    let evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
