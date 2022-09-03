@@ -3,18 +3,19 @@ module App.Util where
 import Prelude hiding (absurd)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:), (!!), updateAt)
-import Data.Map (singleton)
+import Data.Map (update) as M
+import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
 import Data.Tuple (fst)
 import Effect (Effect)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
-import Bindings (Bind, Var, (↦), find)
-import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome)
+import Bindings (Bind, Var, find)
+import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Lattice (𝔹, botOf, neg)
 import Primitive (class ToFrom, as, match_fwd)
 import Util (Endo, type (×), type (+), (×), absurd, error, definitely', successful)
-import Val (Val(..), update, updateMatrix)
+import Val (Val(..), updateMatrix)
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
@@ -67,13 +68,12 @@ selectSome (Constr _ c v) | c == cSome = Constr true c (botOf v)
 selectSome _                           = error absurd
 
 select_y :: Selector -> Selector
-select_y δv (Record α (f_x ↦ u : f_y ↦ v : Nil)) =
-   Record α (f_x ↦ u : f_y ↦ δv v : Nil)
+select_y δv (Record α r) = Record α $ M.update (δv >>> Just) f_y r
 select_y _ _ = error absurd
 
 selectBarChart_data :: Endo Selector
-selectBarChart_data δv (Constr α c (Record β (f_caption ↦ u : f_data ↦ v : Nil) : Nil)) | c == cBarChart =
-   Constr α c (Record β (f_caption ↦ u : f_data ↦ δv v : Nil) : Nil)
+selectBarChart_data δv (Constr α c (Record β r : Nil)) | c == cBarChart =
+   Constr α c (Record β (M.update (δv >>> Just) f_data r) : Nil)
 selectBarChart_data _ _ = error absurd
 
 selectPair :: Endo 𝔹 -> Selector -> Selector -> Selector
@@ -87,8 +87,8 @@ toggleCell i j (Matrix α (vss × (i' × β) × (j' × β'))) =
 toggleCell _ _ _ = error absurd
 
 toggleField :: Var -> Selector -> Selector
-toggleField f selector (Record α xus) =
-   Record α $ xus `update` singleton f (selector (get f xus))
+toggleField f selector (Record α r) =
+   Record α $ M.update (selector >>> Just) f r
 toggleField _ _ _ = error absurd
 
 toggleConstrArg :: Ctr -> Int -> Selector -> Selector

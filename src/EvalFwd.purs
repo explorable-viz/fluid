@@ -3,7 +3,7 @@ module EvalFwd where
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
-import Data.Map (empty, fromFoldable, intersectionWith, toUnfoldable)
+import Data.Map (empty, fromFoldable, intersectionWith, keys, toUnfoldable)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), first, second)
 import Data.Set (union)
@@ -23,7 +23,7 @@ matchFwd v (ElimVar _ κ) (T.MatchVar x _) = M.singleton x v × κ × true
 matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
    second (_ ∧ α) (matchManyFwd vs (mustLookup c m) ws)
 matchFwd (V.Record α xvs) (ElimRecord _ κ) (T.MatchRecord xws) =
-   second (_ ∧ α) (matchManyFwd (xvs <#> val) κ (xws <#> val))
+   second (_ ∧ α) (matchManyFwd (xvs # toUnfoldable <#> val) κ (xws <#> val))
 matchFwd _ _ _ = error absurd
 
 matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
@@ -46,7 +46,7 @@ evalFwd _ (Float α _) α' (T.Float n) = V.Float (α ∧ α') n
 evalFwd _ (Str α _) α' (T.Str str) = V.Str (α ∧ α') str
 evalFwd γ (Record α xes) α' (T.Record _ xts) =
    let xvs = intersectionWith (×) xes xts <#> (\(e × t) -> evalFwd γ e α' t)
-   in V.Record (α ∧ α') (toUnfoldable xvs)
+   in V.Record (α ∧ α') xvs
 evalFwd γ (Constr α _ es) α' (T.Constr _ c ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)
 evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
@@ -64,7 +64,7 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
 evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
 evalFwd γ (Project e' _) α (T.Project t xvs' x) =
    case evalFwd γ e' α t of
-      V.Record _ xvs -> assert ((xvs <#> key) == (xvs' <#> key)) $ successful (find x xvs)
+      V.Record _ xvs -> assert (keys xvs == keys (xvs' # fromFoldable)) $ successful (find x (xvs # toUnfoldable))
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
    case evalFwd γ e1 α t1 of

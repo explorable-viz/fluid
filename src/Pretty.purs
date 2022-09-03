@@ -157,7 +157,7 @@ instance Pretty (Val Boolean) where
    pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
-   pretty (V.Record α xvs)             = prettyRecord α xvs
+   pretty (V.Record α xvs)             = prettyRecord α (xvs # toUnfoldable)
    pretty (V.Constr α c vs)            = prettyConstr α c vs
    pretty (V.Matrix _ (vss × _ × _))   = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Closure _ _ _ _)          = text "<closure>"

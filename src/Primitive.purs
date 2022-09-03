@@ -5,6 +5,7 @@ import Prelude hiding (absurd, apply, div)
 import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
+import Data.Map (fromFoldable, toUnfoldable)
 import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import Bindings (Bind)
@@ -94,10 +95,10 @@ instance ToFrom (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Bool
    constr_bwd v = match_fwd v
 
 instance ToFrom (List (Bind (Val Boolean))) where
-   match (Record α xvs) = xvs × α
+   match (Record α xvs) = (xvs # toUnfoldable) × α
    match v              = error ("Record expected; got " <> prettyP v)
 
-   constr (xvs × α) = Record α xvs
+   constr (xvs × α) = Record α (xvs # fromFoldable)
    constr_bwd v = match_fwd v
 
 instance ToFrom (Val Boolean × Val Boolean) where

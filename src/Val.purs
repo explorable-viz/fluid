@@ -23,7 +23,7 @@ data Val a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (List (Bind (Val a))) |          -- always saturated
+   Record a (Map Var (Val a)) |              -- always saturated
    Constr a Ctr (List (Val a)) |             -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |         -- never saturated
@@ -111,7 +111,7 @@ instance Functor Val where
    map f (Int α n)                  = Int (f α) n
    map f (Float α n)                = Float (f α) n
    map f (Str α str)                = Str (f α) str
-   map f (Record α xvs)             = Record (f α) (map (map f) <$> xvs)
+   map f (Record α xvs)             = Record (f α) (map f <$> xvs)
    map f (Constr α c vs)            = Constr (f α) c (map f <$> vs)
    -- PureScript can't derive this case
    map f (Matrix α (r × iα × jβ))   = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))

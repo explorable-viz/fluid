@@ -44,7 +44,7 @@ matchBwd γ κ _ (MatchVarAnon v)
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchManyBwd ρ κ α (reverse ws)
-matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zip (xws <#> key) vs) × ElimRecord (xws <#> key) κ'
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zip (xws <#> key) vs # fromFoldable) × ElimRecord (xws <#> key) κ'
    where vs × κ' = matchManyBwd ρ κ α (reverse xws <#> val)
 
 matchManyBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
@@ -64,7 +64,7 @@ evalBwd (V.Int α _) (T.Int n) = empty × Int α n × α
 evalBwd (V.Float α _) (T.Float n) = empty × Float α n × α
 evalBwd (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
 evalBwd (V.Record α xvs) (T.Record γ xts) =
-   let xvts = intersectionWith (×) (xvs # fromFoldable) xts
+   let xvts = intersectionWith (×) xvs xts
        xγeαs = xvts <#> uncurry evalBwd
        γ' = foldr (∨) (botOf γ) (xγeαs <#> (fst >>> fst)) in
    γ' × Record α (xγeαs <#> (fst >>> snd)) × (foldr (∨) α (xγeαs <#> snd))
@@ -94,7 +94,7 @@ evalBwd (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (
        γ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t' in
     (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
 evalBwd v (T.Project t xvs x) =
-   let v' = V.Record false $ (xvs <#> botOf) `update` M.singleton x v
+   let v' = V.Record false ((xvs <#> botOf) `update` M.singleton x v # fromFoldable)
        ρ × e × α = evalBwd v' t in
    ρ × Project e x × α
 evalBwd v (T.App (t1 × xs × _) t2 w t3) =
