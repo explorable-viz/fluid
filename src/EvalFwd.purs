@@ -64,7 +64,7 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
 evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
 evalFwd γ (Project e' _) α (T.Project t xvs' x) =
    case evalFwd γ e' α t of
-      V.Record _ xvs -> assert (keys xvs == keys (xvs' # fromFoldable)) $ successful (find x (xvs # toUnfoldable))
+      V.Record _ xvs -> assert (keys xvs == keys (xvs' # fromFoldable)) $ mustLookup x xvs
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
    case evalFwd γ e1 α t1 of
