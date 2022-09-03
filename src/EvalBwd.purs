@@ -6,11 +6,12 @@ import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), (:), range, reverse, unsnoc, unzip, zip, zipWith)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (empty, fromFoldable, insert, isEmpty)
+import Data.Map (empty, fromFoldable, insert, isEmpty, toUnfoldable)
 import Data.Map (singleton) as M
 import Data.NonEmpty (foldl1)
 import Data.Profunctor.Strong ((&&&))
 import Data.Set (singleton, union)
+import Data.Tuple (uncurry)
 import Partial.Unsafe (unsafePartial)
 import Bindings (Var, (↦), key, val, varAnon)
 import Bindings (dom) as B
@@ -64,7 +65,7 @@ evalBwd (V.Int α _) (T.Int n) = empty × Int α n × α
 evalBwd (V.Float α _) (T.Float n) = empty × Float α n × α
 evalBwd (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
 evalBwd (V.Record α xvs) (T.Record γ xts) =
-   let xs × ts = xts <#> (key &&& val) # unzip
+   let xs × ts = xts # toUnfoldable <#> (uncurry (↦)) <#> (key &&& val) # unzip
        vs = xvs <#> val
        -- Could unify with similar function in constructor case
        evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)

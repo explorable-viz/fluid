@@ -71,7 +71,7 @@ eval _ (Str _ str)   = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
    let xs × es = toUnfoldable xes # unzip
    ts × vs <- traverse (eval γ) es <#> unzip
-   pure (T.Record γ (zipWith (↦) xs ts) × V.Record false (zipWith (↦) xs vs))
+   pure (T.Record γ (zipWith (↦) xs ts # asMap) × V.Record false (zipWith (↦) xs vs))
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip
