@@ -122,7 +122,7 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
-   pretty (E.Record α xes)          = prettyRecord α (toUnfoldable xes <#> uncurry (↦))
+   pretty (E.Record α xes)          = prettyRecord α (toUnfoldable xes)
    pretty (E.Constr α c es)         = prettyConstr α c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]

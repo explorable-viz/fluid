@@ -66,6 +66,9 @@ instance (Eq k, Show k, Slices t) => JoinSemilattice (Tuple k t) where
 instance (Eq k, Show k, Slices t) => Slices (Tuple k t) where
    maybeJoin (k × v) (k' × v') = (k ≞ k') `lift2 (×)` maybeJoin v v'
 
+instance (Eq k, Show k, BoundedSlices t) => BoundedSlices (Tuple k t) where
+   botOf = (<$>) botOf
+
 instance Slices t => JoinSemilattice (List t) where
    join = definedJoin
    neg = (<$>) neg

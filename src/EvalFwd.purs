@@ -47,7 +47,7 @@ evalFwd _ (Float α _) α' (T.Float n) = V.Float (α ∧ α') n
 evalFwd _ (Str α _) α' (T.Str str) = V.Str (α ∧ α') str
 evalFwd γ (Record α xes) α' (T.Record _ xts) =
    let xvs = intersectionWith (×) xes xts <#> (\(e × t) -> evalFwd γ e α' t)
-   in V.Record (α ∧ α') (toUnfoldable xvs <#> uncurry (↦))
+   in V.Record (α ∧ α') (toUnfoldable xvs)
 evalFwd γ (Constr α _ es) α' (T.Constr _ c ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)
 evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =

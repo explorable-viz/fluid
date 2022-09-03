@@ -3,7 +3,7 @@ module EvalBwd where
 import Prelude hiding (absurd)
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
-import Data.List (List(..), (:), range, reverse, unsnoc, zip, zipWith)
+import Data.List (List(..), (:), range, reverse, unsnoc, zip)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (empty, fromFoldable, insert, intersectionWith, isEmpty)
@@ -44,7 +44,7 @@ matchBwd γ κ _ (MatchVarAnon v)
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchManyBwd ρ κ α (reverse ws)
-matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zipWith (↦) (xws <#> key) vs) × ElimRecord (xws <#> key) κ'
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zip (xws <#> key) vs) × ElimRecord (xws <#> key) κ'
    where vs × κ' = matchManyBwd ρ κ α (reverse xws <#> val)
 
 matchManyBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
