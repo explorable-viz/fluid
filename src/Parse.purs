@@ -9,7 +9,7 @@ import Data.Array (cons, elem, fromFoldable)
 import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
-import Data.List (List(..), (:), concat, foldr, groupBy, reverse, singleton, snoc, sortBy)
+import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy)
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Map (values)
 import Data.NonEmpty ((:|))
@@ -33,7 +33,6 @@ import SExpr (
 )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
-import Util.SnocList (fromList)
 
 -- Initial selection state.
 selState :: 𝔹
@@ -181,10 +180,7 @@ simplePattern pattern' =
    constr = PConstr <$> ctr <@> Nil
 
    record :: SParser Pattern
-   record =
-      sepBy (field pattern') token.comma
-      <#> (reverse >>> fromList >>> PRecord)
-      # token.braces
+   record = sepBy (field pattern') token.comma <#> PRecord # token.braces
 
    -- TODO: anonymous variables
    var :: SParser Pattern
@@ -344,10 +340,7 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
          constr = Constr selState <$> ctr <@> empty
 
          record :: SParser (Expr 𝔹)
-         record =
-            sepBy (field expr') token.comma
-            <#> (reverse >>> fromList >>> Record selState)
-            # token.braces
+         record = sepBy (field expr') token.comma <#> Record selState # token.braces
 
          variable :: SParser (Expr 𝔹)
          variable = ident <#> Var

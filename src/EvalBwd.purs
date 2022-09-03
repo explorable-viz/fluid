@@ -6,13 +6,13 @@ import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), (:), range, reverse, unsnoc, zip)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (empty, insert, isEmpty)
+import Data.Map (empty, fromFoldable, insert, intersectionWith, isEmpty)
 import Data.Map (singleton) as M
 import Data.NonEmpty (foldl1)
-import Data.Profunctor.Strong ((&&&), first)
 import Data.Set (singleton, union)
+import Data.Tuple (fst, snd, uncurry)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bindings, Var, (↦), key, val, varAnon)
+import Bindings (Var, key, val, varAnon)
 import Bindings (dom) as B
 import DataType (cPair)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), bv)
@@ -20,8 +20,6 @@ import Lattice (𝔹, (∨), bot, botOf)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, mustLookup, nonEmpty)
-import Util.SnocList (SnocList(..), (:-), fromList)
-import Util.SnocList (unzip, zip, zipWith) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, (∨∨), append_inv, dom, update)
 import Val (Val(..)) as V
 
@@ -39,31 +37,24 @@ closeDefsBwd γ =
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 matchBwd γ κ _ (MatchVar x v)
-   | dom γ == singleton x  = mustLookup x γ × ElimVar x κ
-   | otherwise             = botOf v × ElimVar x κ
-matchBwd γ κ _ (MatchVarAnon v) | isEmpty γ        = botOf v × ElimVar varAnon κ
-matchBwd ρ κ α (MatchConstr c ws cκs)              = V.Constr α c vs × ElimConstr (insert c κ' $ (botOf <$> cκs))
-   where vs × κ' = matchArgsBwd ρ κ α (reverse ws # fromList)
-matchBwd ρ κ α (MatchRecord xws)                   = V.Record α xvs × ElimRecord (key <$> xws) κ'
-   where xvs × κ' = matchRecordBwd ρ κ α xws
-matchBwd _ _ _ _                                   = error absurd
+   | dom γ == singleton x           = mustLookup x γ × ElimVar x κ
+   | otherwise                      = botOf v × ElimVar x κ
+matchBwd γ κ _ (MatchVarAnon v)
+   | isEmpty γ                      = botOf v × ElimVar varAnon κ
+   | otherwise                      = error absurd
+matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
+   where vs × κ' = matchManyBwd ρ κ α (reverse ws)
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zip (xws <#> key) vs # fromFoldable) × ElimRecord (xws <#> key) κ'
+   where vs × κ' = matchManyBwd ρ κ α (reverse xws <#> val)
 
-matchArgsBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> SnocList (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
-matchArgsBwd γ κ _ Lin  | isEmpty γ = Nil × κ
+matchManyBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
+matchManyBwd γ κ _ Nil  | isEmpty γ = Nil × κ
                         | otherwise = error absurd
-matchArgsBwd γγ' κ α (ws :- w) =
+matchManyBwd γγ' κ α (w : ws) =
    let γ × γ'  = disjUnion_inv (bv w) γγ'
        v × σ   = matchBwd γ κ α w
-       vs × κ' = matchArgsBwd γ' (ContElim σ) α ws in
+       vs × κ' = matchManyBwd γ' (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
-
-matchRecordBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Bindings (Match 𝔹) -> Bindings (Val 𝔹) × Cont 𝔹
-matchRecordBwd γ κ _ Lin | isEmpty γ   = Lin × κ
-                         | otherwise   = error absurd
-matchRecordBwd γγ' κ α (xws :- x ↦ w)  =
-   let γ × γ'  = disjUnion_inv (bv w) γγ'
-       v × σ   = matchBwd γ κ α w in
-   (first (_ :- x ↦ v)) (matchRecordBwd γ' (ContElim σ) α xws)
 
 evalBwd :: Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
 evalBwd v (T.Var x) = M.singleton x v × Var x × false
@@ -73,14 +64,10 @@ evalBwd (V.Int α _) (T.Int n) = empty × Int α n × α
 evalBwd (V.Float α _) (T.Float n) = empty × Float α n × α
 evalBwd (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
 evalBwd (V.Record α xvs) (T.Record γ xts) =
-   let xs × ts = xts <#> (key &&& val) # S.unzip
-       vs = xvs <#> val
-       -- Could unify with similar function in constructor case
-       evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × SnocList (Expr 𝔹) × 𝔹)
-       evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (es :- e) × (α' ∨ α'')
-         where γ'' × e × α'' = evalBwd v' t'
-       γ' × es × α' = foldr evalArg_bwd (botOf γ × Lin × α) (S.zip vs ts) in
-   γ' × Record α (S.zipWith (↦) xs es) × α'
+   let xvts = intersectionWith (×) xvs xts
+       xγeαs = xvts <#> uncurry evalBwd
+       γ' = foldr (∨) (botOf γ) (xγeαs <#> (fst >>> fst)) in
+   γ' × Record α (xγeαs <#> (fst >>> snd)) × (foldr (∨) α (xγeαs <#> snd))
 evalBwd (V.Constr α _ vs) (T.Constr γ c ts) =
    let evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
@@ -107,7 +94,7 @@ evalBwd (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (
        γ' × e' × α'' = evalBwd (V.Constr false cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t' in
     (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
 evalBwd v (T.Project t xvs x) =
-   let v' = V.Record false $ (xvs <#> botOf) `update` M.singleton x v
+   let v' = V.Record false (xvs # fromFoldable <#> botOf # insert x v)
        ρ × e × α = evalBwd v' t in
    ρ × Project e x × α
 evalBwd v (T.App (t1 × xs × _) t2 w t3) =

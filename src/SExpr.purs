@@ -3,9 +3,10 @@ module SExpr where
 import Prelude
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
-import Bindings (Bindings, Var)
+import Bindings (Bind, Var)
 import DataType (Ctr)
-import Util (type (×), type (+))
+import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, bot, definedJoin, neg)
+import Util (type (×), type (+), error, unimplemented)
 
 -- Surface language expressions.
 data Expr a =
@@ -15,7 +16,7 @@ data Expr a =
    Float a Number |
    Str a String |
    Constr a Ctr (List (Expr a)) |
-   Record a (Bindings (Expr a)) |
+   Record a (List (Bind (Expr a))) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (NonEmptyList (Branch a)) |
    Project (Expr a) Var |
@@ -37,7 +38,7 @@ data ListRest a =
 data Pattern =
    PVar Var |
    PConstr Ctr (List Pattern) |
-   PRecord (Bindings Pattern) |
+   PRecord (List (Bind Pattern)) |
    PListEmpty |
    PListNonEmpty Pattern ListRestPattern
 
@@ -69,3 +70,13 @@ derive instance functorExpr :: Functor Expr
 derive instance functorListRest :: Functor ListRest
 derive instance functorVarDef :: Functor VarDef
 derive instance functorQualifier :: Functor Qualifier
+
+instance JoinSemilattice (Expr Boolean) where
+   join = definedJoin
+   neg = (<$>) neg
+
+instance Slices (Expr Boolean) where
+   maybeJoin _ = error unimplemented
+
+instance BoundedSlices (Expr Boolean) where
+   botOf = (<$>) (const bot)

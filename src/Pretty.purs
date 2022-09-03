@@ -5,11 +5,12 @@ import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), fromFoldable)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
+import Data.Map (toUnfoldable)
 import Data.Profunctor.Choice ((|||))
 import Data.String (Pattern(..), contains) as Data.String
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
-import Bindings (Bindings, Bind, (↦))
+import Bindings (Bind, (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
@@ -17,8 +18,6 @@ import Lattice (𝔹)
 import Parse (str)
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
 import Util (Endo, type (×), (×), type (+), absurd, error, intersperse)
-import Util.SnocList (SnocList(..), (:-))
-import Util.SnocList (reverse) as S
 import Val (PrimOp, Val)
 import Val (Val(..)) as V
 
@@ -112,17 +111,17 @@ prettyConstr α c Nil            | c == cNil    = highlightIf α nil
 prettyConstr α c (x : y : Nil)  | c == cCons   = parens (hspace [pretty x, highlightIf α $ text ":", pretty y])
 prettyConstr α c xs                            = hspace (highlightIf α (pretty c) : (prettyParensOpt <$> xs))
 
-prettyRecord :: forall a . Pretty a => 𝔹 -> Bindings a -> Doc
+prettyRecord :: forall a . Pretty a => 𝔹 -> List (Bind a) -> Doc
 prettyRecord α xvs =
    xvs <#> (\(x ↦ v) -> hspace [text x :<>: colon, pretty v])
-   # S.reverse >>> hcomma >>> between (text "{") (text "}") >>> highlightIf α
+   # hcomma >>> between (text "{") (text "}") >>> highlightIf α
 
 instance Pretty (E.Expr Boolean) where
    pretty (E.Var x)                 = text x
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
-   pretty (E.Record α xes)          = prettyRecord α xes
+   pretty (E.Record α xes)          = prettyRecord α (toUnfoldable xes)
    pretty (E.Constr α c es)         = prettyConstr α c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]
@@ -133,10 +132,10 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.Project _ _)      = error "todo"
    pretty (E.App e e')              = hspace [pretty e, pretty e']
 
-instance Pretty (SnocList (Bind (Elim Boolean))) where
-   pretty Lin          = error absurd -- non-empty
-   pretty (Lin :- xσ)  = pretty xσ
-   pretty (δ :- xσ)    = atop (pretty δ :<>: semi) (pretty xσ)
+instance Pretty (List (Bind (Elim Boolean))) where
+   pretty Nil        = error absurd -- non-empty
+   pretty (xσ : Nil) = pretty xσ
+   pretty (xσ : δ)   = atop (pretty δ :<>: semi) (pretty xσ)
 
 instance Pretty (Bind (Elim Boolean)) where
    pretty (x ↦ σ) = hspace [text x, text str.equals, pretty σ]
@@ -158,7 +157,7 @@ instance Pretty (Val Boolean) where
    pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
-   pretty (V.Record α xvs)             = prettyRecord α xvs
+   pretty (V.Record α xvs)             = prettyRecord α (xvs # toUnfoldable)
    pretty (V.Constr α c vs)            = prettyConstr α c vs
    pretty (V.Matrix _ (vss × _ × _))   = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Closure _ _ _ _)          = text "<closure>"

@@ -3,44 +3,35 @@ module EvalFwd where
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
-import Data.Map (empty)
+import Data.Map (empty, fromFoldable, intersectionWith, keys, toUnfoldable)
 import Data.Map (singleton) as M
-import Data.Profunctor.Strong ((***), (&&&), first, second)
+import Data.Profunctor.Strong ((***), first, second)
 import Data.Set (union)
-import Bindings (Bindings, (↦), asMap, find, key, val)
+import Bindings (val)
 import Expr (Cont, Elim(..), Expr(..), VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))
 import Primitive (match_fwd) as P
 import Trace (Trace(..), Match(..), VarDef(..)) as T
 import Trace (Trace, Match)
 import Util (type (×), (×), (!), absurd, assert, disjUnion, error, mustLookup, successful)
-import Util.SnocList (SnocList(..), (:-))
-import Util.SnocList (unzip, zip, zipWith) as S
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchFwd _ (ElimVar _ κ) (T.MatchVarAnon _) = empty × κ × true
 matchFwd v (ElimVar _ κ) (T.MatchVar x _) = M.singleton x v × κ × true
-matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws _) =
-   second (_ ∧ α) (matchArgsFwd vs (mustLookup c m) ws)
+matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
+   second (_ ∧ α) (matchManyFwd vs (mustLookup c m) ws)
 matchFwd (V.Record α xvs) (ElimRecord _ κ) (T.MatchRecord xws) =
-   second (_ ∧ α) (matchRecordFwd xvs κ xws)
+   second (_ ∧ α) (matchManyFwd (xvs # toUnfoldable <#> val) κ (xws <#> val))
 matchFwd _ _ _ = error absurd
 
-matchArgsFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchArgsFwd Nil κ Nil = empty × κ × true
-matchArgsFwd (v : vs) σ (w : ws) =
+matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchManyFwd Nil κ Nil = empty × κ × true
+matchManyFwd (v : vs) σ (w : ws) =
    let ρ × κ × α = matchFwd v (asElim σ) w in
-   (first (ρ `disjUnion` _) *** (_ ∧ α)) (matchArgsFwd vs κ ws)
-matchArgsFwd _ _ _ = error absurd
-
-matchRecordFwd :: Bindings (Val 𝔹) -> Cont 𝔹 -> Bindings (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchRecordFwd Lin κ Lin = empty × κ × true
-matchRecordFwd (xvs :- x ↦ v) σ (xws :- x' ↦ w) | x == x' =
-   let ρ × σ' × α = matchRecordFwd xvs σ xws in
-   (first (ρ `disjUnion` _) *** (_ ∧ α)) (matchFwd v (asElim σ') w)
-matchRecordFwd _ _ _ = error absurd
+   (first (ρ `disjUnion` _) *** (_ ∧ α)) (matchManyFwd vs κ ws)
+matchManyFwd _ _ _ = error absurd
 
 closeDefsFwd :: Env 𝔹 -> FunEnv 𝔹 -> 𝔹 -> Env 𝔹
 closeDefsFwd γ ρ α = ρ <#> \σ ->
@@ -54,10 +45,8 @@ evalFwd _ (Int α _) α' (T.Int n) = V.Int (α ∧ α') n
 evalFwd _ (Float α _) α' (T.Float n) = V.Float (α ∧ α') n
 evalFwd _ (Str α _) α' (T.Str str) = V.Str (α ∧ α') str
 evalFwd γ (Record α xes) α' (T.Record _ xts) =
-   let xs × ts = xts <#> (key &&& val) # S.unzip
-       es = xes <#> val
-       vs = (\(e' × t) -> evalFwd γ e' α' t) <$> S.zip es ts in
-   V.Record (α ∧ α') (S.zipWith (↦) xs vs)
+   let xvs = intersectionWith (×) xes xts <#> (\(e × t) -> evalFwd γ e α' t)
+   in V.Record (α ∧ α') xvs
 evalFwd γ (Constr α _ es) α' (T.Constr _ c ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)
 evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
@@ -75,7 +64,7 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
 evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
 evalFwd γ (Project e' _) α (T.Project t xvs' x) =
    case evalFwd γ e' α t of
-      V.Record _ xvs -> assert ((xvs <#> key) == (xvs' <#> key)) $ successful (find x xvs)
+      V.Record _ xvs -> assert (keys xvs == keys (xvs' # fromFoldable)) $ mustLookup x xvs
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
    case evalFwd γ e1 α t1 of
@@ -103,6 +92,6 @@ evalFwd γ (Let (VarDef σ e1) e2) α (T.Let (T.VarDef w t1) t2) =
        γ' × _ × α' = matchFwd v σ w in
    evalFwd (γ <+> γ') e2 α' t2
 evalFwd γ (LetRec xσs e') α (T.LetRec _ t) =
-   let γ' = closeDefsFwd γ (asMap xσs) α in
+   let γ' = closeDefsFwd γ (fromFoldable xσs) α in
    evalFwd (γ <+> γ') e' α t
 evalFwd _ _ _ _ = error absurd

@@ -5,21 +5,20 @@ import Prelude hiding (absurd,otherwise)
 import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Function (applyN, on)
-import Data.List (List(..), (:), (\\), length)
+import Data.List (List(..), (:), (\\), length, reverse)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Map (Map, fromFoldable, singleton)
 import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings (Bindings, Bind, (↦), key, varAnon)
+import Bindings (Bind, (↦), key, varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, maybeJoin)
 import SExpr (Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..))
 import Util (MayFail, type (+), type (×), (×), absurd, asSingletonMap, error, successful)
-import Util.SnocList (SnocList(..), (:-), fromList)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd
@@ -60,7 +59,7 @@ varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
 -- In the formalism, "group by name" is part of the syntax.
 -- cs desugar_fwd σ
 recDefsFwd :: RecDefs 𝔹 -> MayFail (E.RecDefs 𝔹)
-recDefsFwd xcs = fromList <$> toList <$> traverse recDefFwd xcss
+recDefsFwd xcs = toList <$> traverse recDefFwd xcss
    where
    xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 
@@ -75,7 +74,7 @@ exprFwd (Int α n)                = pure (E.Int α n)
 exprFwd (Float α n)              = pure (E.Float α n)
 exprFwd (Str α s)                = pure (E.Str α s)
 exprFwd (Constr α c ss)          = E.Constr α c <$> traverse exprFwd ss
-exprFwd (Record α xss)           = E.Record α <$> traverse (traverse exprFwd) xss
+exprFwd (Record α xss)           = E.Record α <$> fromFoldable <$> traverse (traverse exprFwd) xss
 exprFwd (Matrix α s (x × y) s')  = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
 exprFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
 exprFwd (Project s x)       = E.Project <$> exprFwd s <@> x
@@ -127,7 +126,7 @@ patternFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 patternFwd (PVar x) κ            = pure (ElimVar x κ)
 patternFwd (PConstr c ps) κ      =
    checkArity c (length ps) *> (ElimConstr <$> singleton c <$> argPatternFwd (Left <$> ps) κ)
-patternFwd (PRecord xps) κ       = ElimRecord (xps <#> key) <$> recordPatternFwd xps κ
+patternFwd (PRecord xps) κ       = ElimRecord (xps <#> key) <$> recordPatternFwd (reverse xps) κ
 patternFwd PListEmpty κ          = pure (ElimConstr (singleton cNil κ))
 patternFwd (PListNonEmpty p o) κ = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
@@ -141,9 +140,9 @@ argPatternFwd Nil κ             = pure κ
 argPatternFwd (Left p : πs) κ   = ContElim <$> (argPatternFwd πs κ >>= patternFwd p)
 argPatternFwd (Right o : πs) κ  = ContElim <$> (argPatternFwd πs κ >>= listRestPatternFwd o)
 
-recordPatternFwd :: Bindings Pattern -> Cont 𝔹 -> MayFail (Cont 𝔹)
-recordPatternFwd Lin κ              = pure κ
-recordPatternFwd (xps :- _ ↦ p) κ   = patternFwd p κ >>= ContElim >>> recordPatternFwd xps
+recordPatternFwd :: List (Bind Pattern) -> Cont 𝔹 -> MayFail (Cont 𝔹)
+recordPatternFwd Nil κ           = pure κ
+recordPatternFwd (_ ↦ p : xps) κ = patternFwd p κ >>= ContElim >>> recordPatternFwd xps
 
 branchFwd_uncurried :: Pattern -> Expr 𝔹 -> MayFail (Elim 𝔹)
 branchFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= patternFwd p

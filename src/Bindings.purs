@@ -1,13 +1,10 @@
 module Bindings where
 
 import Prelude
-import Data.Foldable (class Foldable, foldMapDefaultL, foldrDefault)
-import Data.Map (Map, fromFoldable)
+import Data.List (List(..), (:))
 import Data.Set (Set, empty, singleton, union)
-import Data.Traversable (class Traversable, sequenceDefault)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, botOf, definedJoin, maybeJoin, neg)
-import Util (MayFail, (≞), (×), definitely, report, whenever)
-import Util.SnocList (SnocList(..), (:-))
+import Data.Tuple (Tuple(..), fst, snd)
+import Util (MayFail, type (×), definitely, report, whenever)
 
 type Var = String
 
@@ -17,48 +14,23 @@ varAnon = "_" :: Var
 mustGeq :: Var -> Var -> Var
 mustGeq x y = definitely "greater" (whenever (x == y) x)
 
-data Bind a = Bind Var a
-type Bindings a = SnocList (Bind a)
-
-derive instance Functor Bind
+type Bind a = Var × a
 
 key :: forall a . Bind a -> Var
-key (x ↦ _) = x
+key = fst
 
 val :: forall a . Bind a -> a
-val (_ ↦ v) = v
+val = snd
 
-dom :: forall a . Bindings a -> Set Var
-dom Lin           = empty
-dom (ρ :- x ↦ _)  = singleton x `union` dom ρ
+dom :: forall a . List (Bind a) -> Set Var
+dom Nil           = empty
+dom (x ↦ _ : ρ)   = singleton x `union` dom ρ
 
-asMap :: forall a . Bindings a -> Map Var a
-asMap ρ = ρ <#> (\(x ↦ σ) -> x × σ) # fromFoldable
-
-instance Foldable Bind where
-   foldl f b (_ ↦ v) = f b v
-   foldr x = foldrDefault x
-   foldMap = foldMapDefaultL
-
-instance Traversable Bind where
-   traverse f (x ↦ v) = (x ↦ _) <$> f v
-   sequence = sequenceDefault
-
-infix 7 Bind as ↦
+infix 7 Tuple as ↦
 infixl 4 mustGeq as ⪂
 
-instance Slices a => JoinSemilattice (Bind a) where
-   join = definedJoin
-   neg = (<$>) neg
-
-instance Slices a => Slices (Bind a) where
-   maybeJoin (x ↦ v) (y ↦ v') = (↦) <$> (x ≞ y) <*> maybeJoin v v'
-
-instance BoundedSlices a => BoundedSlices (Bind a) where
-   botOf = (<$>) botOf
-
-find :: forall a . Var -> Bindings a -> MayFail a
-find x Lin  = report ("variable " <> x <> " not found")
-find x (ρ :- x' ↦ v)
+find :: forall a . Var -> List (Bind a) -> MayFail a
+find x Nil  = report ("variable " <> x <> " not found")
+find x (x' ↦ v : ρ)
    | x == x'   = pure v
    | otherwise = find x ρ

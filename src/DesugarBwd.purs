@@ -7,23 +7,21 @@ import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), reverse, singleton, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList)
-import Data.Map (Map, fromFoldable)
+import Data.Map (Map, fromFoldable, lookup)
+import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
-import Data.Profunctor.Strong ((&&&))
 import Data.Tuple (uncurry, fst, snd)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bindings, Bind, (↦), key, val)
+import Bindings (Bind, (↦), key, val)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
-import Lattice (𝔹, (∨))
+import Lattice (𝔹, (∨), botOf)
 import SExpr (
       Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..),
       VarDefs
    )
 import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
-import Util.SnocList (SnocList(..), (:-))
-import Util.SnocList (toList, unzip, zip, zipWith) as S
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -40,10 +38,10 @@ recDefsBwd :: E.RecDefs 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
 recDefsBwd xσs xcs = join (recDefsBwd' xσs (groupBy (eq `on` fst) xcs))
 
 recDefsBwd' :: E.RecDefs 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
-recDefsBwd' Lin _                                              = error absurd
-recDefsBwd' (Lin :- x ↦ σ) (NonEmptyList (xcs :| Nil))         = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
-recDefsBwd' (_ :- _ :- _) (NonEmptyList (_ :| Nil))            = error absurd
-recDefsBwd' (ρ :- x ↦ σ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
+recDefsBwd' Nil _                                              = error absurd
+recDefsBwd' (x ↦ σ : Nil) (NonEmptyList (xcs :| Nil))          = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
+recDefsBwd' (_ : _ : _) (NonEmptyList (_ :| Nil))              = error absurd
+recDefsBwd' (x ↦ σ : ρ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
    NonEmptyList (recDefBwd (x ↦ σ) xcs1 :| toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss))))
 
 recDefBwd :: Bind (Elim 𝔹) -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
@@ -57,10 +55,9 @@ exprBwd (E.Float α _) (Float _ n) = Float α n
 exprBwd (E.Str α _) (Str _ str) = Str α str
 exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry exprBwd <$> zip es ss)
 exprBwd (E.Record α xes) (Record _ xss) =
-   let xs × ss = xss <#> (key &&& val) # S.unzip
-       es = xes <#> val
-       ss' = uncurry exprBwd <$> S.zip es ss in
-   Record α (S.zipWith (↦) xs ss')
+   Record α $ xss <#> \(x ↦ s) -> x ↦ case lookup x xes of
+      Nothing -> botOf s
+      Just e -> exprBwd e s
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s (x × y) s') =
    Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
 exprBwd (E.Lambda σ) (Lambda bs) = Lambda (branchesBwd_curried σ bs)
@@ -136,7 +133,7 @@ patternBwd (ElimVar _ κ) (PVar _)               = κ
 patternBwd (ElimConstr m) (PConstr c ps)        = argsBwd (mustLookup c m) (Left <$> ps)
 patternBwd (ElimConstr m) (PListEmpty)          = mustLookup cNil m
 patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
-patternBwd (ElimRecord _ κ) (PRecord xps)       = recordBwd κ xps
+patternBwd (ElimRecord _ κ) (PRecord xps)       = recordBwd κ (reverse xps)
 patternBwd _ _                                  = error absurd
 
 -- σ, o desugar_bwd κ
@@ -151,9 +148,9 @@ argsBwd κ Nil              = κ
 argsBwd κ (Left p : πs)    = argsBwd (patternBwd (asElim κ) p) πs
 argsBwd κ (Right o : πs)   = argsBwd (listRestPatternBwd (asElim κ) o) πs
 
-recordBwd :: Cont 𝔹 -> Bindings Pattern -> Cont 𝔹
-recordBwd κ Lin            = κ
-recordBwd σ (xps :- _ ↦ p) = recordBwd σ xps # (asElim >>> flip patternBwd p)
+recordBwd :: Cont 𝔹 -> List (Bind Pattern) -> Cont 𝔹
+recordBwd κ Nil            = κ
+recordBwd σ (_ ↦ p : xps) = recordBwd σ xps # (asElim >>> flip patternBwd p)
 
 -- σ, c desugar_bwd c
 branchBwd_curried :: Elim 𝔹 -> Endo (Branch 𝔹)
@@ -185,7 +182,7 @@ totaliseBwd (ContElim (ElimVar _ κ')) (Left (PVar x) : πs) =
    let κ'' × α = totaliseBwd κ' πs in
    ContElim (ElimVar x κ'') × α
 totaliseBwd (ContElim (ElimRecord _ κ')) (Left (PRecord xps) : πs) =
-   let ps = xps <#> (val >>> Left) # S.toList # reverse
+   let ps = xps <#> (val >>> Left)
        κ'' × α = totaliseBwd κ' (ps <> πs) in
    ContElim (ElimRecord (xps <#> key) κ'') × α
 totaliseBwd (ContElim (ElimConstr m)) (π : πs) =

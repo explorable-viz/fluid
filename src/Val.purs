@@ -6,7 +6,7 @@ import Data.List (List(..), (:))
 import Data.Map (Map, filterKeys, keys, isEmpty, lookup, pop, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union)
-import Bindings (Bindings, Var, (↦))
+import Bindings (Bind, Var, (↦))
 import DataType (Ctr)
 import Expr (Elim, fv)
 import Lattice (
@@ -16,7 +16,6 @@ import Util (
    Endo, MayFail, type (×), (×), (≞), (!),
    absurd, disjUnion, error, mustLookup, orElse, report, unsafeUpdateAt
 )
-import Util.SnocList (SnocList(..), (:-))
 
 type Op a = a × 𝔹 -> Val 𝔹
 
@@ -24,7 +23,7 @@ data Val a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Bindings (Val a)) |             -- always saturated
+   Record a (Map Var (Val a)) |              -- always saturated
    Constr a Ctr (List (Val a)) |             -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |         -- never saturated
@@ -48,13 +47,13 @@ dom = keys
 lookup' :: forall a . Var -> Env a -> MayFail (Val a)
 lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
 
-update :: forall a . Bindings a -> Map Var a -> Bindings a
-update Lin γ   | isEmpty γ = Lin
+update :: forall a . List (Bind a) -> Map Var a -> List (Bind a)
+update Nil γ  | isEmpty γ = Nil
                | otherwise = error absurd
-update (xvs :- x ↦ v) γ =
+update (x ↦ v: xvs) γ =
    case pop x γ of
-      Just (u × γ')  -> update xvs γ' :- x ↦ u
-      Nothing        -> update xvs γ :- x ↦ v
+      Just (u × γ')  -> x ↦ u : update xvs γ'
+      Nothing        -> x ↦ v : update xvs γ
 
 -- Want a monoid instance but needs a newtype
 append :: forall a . Env a -> Endo (Env a)
@@ -112,7 +111,7 @@ instance Functor Val where
    map f (Int α n)                  = Int (f α) n
    map f (Float α n)                = Float (f α) n
    map f (Str α str)                = Str (f α) str
-   map f (Record α xvs)             = Record (f α) (map (map f) <$> xvs)
+   map f (Record α xvs)             = Record (f α) (map f <$> xvs)
    map f (Constr α c vs)            = Constr (f α) c (map f <$> vs)
    -- PureScript can't derive this case
    map f (Matrix α (r × iα × jβ))   = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))

@@ -14,8 +14,6 @@ import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
 import Util (Endo, MayFail, type (×), (×), (≞), report, successfulWith)
-import Util.SnocList (SnocList)
-import Util.SnocList (zipWith) as S
 
 class JoinSemilattice a where
    join :: a -> a -> a
@@ -68,11 +66,10 @@ instance (Eq k, Show k, Slices t) => JoinSemilattice (Tuple k t) where
 instance (Eq k, Show k, Slices t) => Slices (Tuple k t) where
    maybeJoin (k × v) (k' × v') = (k ≞ k') `lift2 (×)` maybeJoin v v'
 
-instance Slices t => JoinSemilattice (List t) where
-   join = definedJoin
-   neg = (<$>) neg
+instance (Eq k, Show k, BoundedSlices t) => BoundedSlices (Tuple k t) where
+   botOf = (<$>) botOf
 
-instance Slices t => JoinSemilattice (SnocList t) where
+instance Slices t => JoinSemilattice (List t) where
    join = definedJoin
    neg = (<$>) neg
 
@@ -85,20 +82,12 @@ instance Slices t => Slices (List t) where
       | (length xs :: Int) == length ys   = sequence (zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
 
-instance Slices t => Slices (SnocList t) where
-   maybeJoin xs ys
-      | (length xs :: Int) == length ys   = sequence (S.zipWith maybeJoin xs ys)
-      | otherwise                         = report "Mismatched lengths"
-
 instance Slices t => Slices (NonEmptyList t) where
    maybeJoin xs ys
       | (length xs :: Int) == length ys   = sequence (NEL.zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
 
 instance BoundedSlices t => BoundedSlices (List t) where
-   botOf = (<$>) botOf
-
-instance BoundedSlices t => BoundedSlices (SnocList t) where
    botOf = (<$>) botOf
 
 instance BoundedSlices t => BoundedSlices (NonEmptyList t) where

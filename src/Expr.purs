@@ -6,11 +6,10 @@ import Data.List (List)
 import Data.Map (Map, keys)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Tuple (snd)
-import Bindings (Bindings, Var, val)
+import Bindings (Bind, Var, val)
 import DataType (Ctr)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
 import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
-import Util.SnocList (SnocList)
 
 data Expr a =
    Var Var |
@@ -18,7 +17,7 @@ data Expr a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Bindings (Expr a)) |
+   Record a (Map Var (Expr a)) |
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
@@ -29,12 +28,12 @@ data Expr a =
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
-type RecDefs a = Bindings (Elim a)
+type RecDefs a = List (Bind (Elim a))
 
 data Elim a =
    ElimVar Var (Cont a) |
    ElimConstr (Map Ctr (Cont a)) |
-   ElimRecord (SnocList Var) (Cont a)
+   ElimRecord (List Var) (Cont a)
 
 -- Continuation of an eliminator branch.
 data Cont a =
@@ -61,7 +60,7 @@ instance FV (Expr a) where
    fv (Int _ _)            = empty
    fv (Float _ _)          = empty
    fv (Str _ _)            = empty
-   fv (Record _ xes)       = unions (fv <$> val <$> xes)
+   fv (Record _ xes)       = unions (fv <$> xes)
    fv (Constr _ _ es)      = unions (fv <$> es)
    fv (Matrix _ e1 _ e2)   = union (fv e1) (fv e2)
    fv (Lambda σ)           = fv σ
