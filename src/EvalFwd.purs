@@ -2,12 +2,12 @@ module EvalFwd where
 
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
-import Data.List (List(..), (:), length, range, singleton, zip, unzip, zipWith)
+import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Map (empty, intersectionWith, toUnfoldable)
 import Data.Map (singleton) as M
-import Data.Profunctor.Strong ((***), (&&&), first, second)
+import Data.Profunctor.Strong ((***), first, second)
 import Data.Set (union)
-import Data.Tuple (snd, uncurry)
+import Data.Tuple (uncurry)
 import Bindings ((↦), asMap, find, key, val)
 import Expr (Cont, Elim(..), Expr(..), VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))

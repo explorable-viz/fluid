@@ -3,13 +3,12 @@ module EvalBwd where
 import Prelude hiding (absurd)
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
-import Data.List (List(..), (:), range, reverse, unsnoc, unzip, zip, zipWith)
+import Data.List (List(..), (:), range, reverse, unsnoc, zip, zipWith)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (empty, fromFoldable, insert, intersectionWith, isEmpty, toUnfoldable)
+import Data.Map (empty, fromFoldable, insert, intersectionWith, isEmpty)
 import Data.Map (singleton) as M
 import Data.NonEmpty (foldl1)
-import Data.Profunctor.Strong ((&&&))
 import Data.Set (singleton, union)
 import Data.Tuple (fst, snd, uncurry)
 import Partial.Unsafe (unsafePartial)
