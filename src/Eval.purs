@@ -13,7 +13,7 @@ import Data.Profunctor.Strong (second)
 import Data.Set (union)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
-import Bindings (find, val, varAnon)
+import Bindings (find, varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), VarDef(..), asExpr, fv)
 import Lattice (𝔹, checkConsistent)
@@ -21,7 +21,7 @@ import Pretty (prettyP)
 import Primitive (match) as P
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
+import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, orElse, report, successful)
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, dom, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -39,8 +39,8 @@ match v (ElimConstr m) = do
    d <- dataTypeFor (keys m)
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record _ xvs) (ElimRecord xs κ)  = do
-   check (xs == keys xvs) (patternMismatch (show (keys xvs)) (show xs))
-   second (zip xs >>> MatchRecord) <$> matchMany (xvs # toUnfoldable <#> val) κ
+   vs <- xs # traverse (flip lookup xvs) # orElse (patternMismatch (show (keys xvs)) (show xs))
+   second (zip xs >>> MatchRecord) <$> matchMany vs κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -50,7 +50,7 @@ matchMany (v : vs) (ContElim σ) = do
    γ' × κ'' × ws <- matchMany vs κ'
    pure $ γ `disjUnion` γ' × κ'' × (w : ws)
 matchMany (_ : vs) (ContExpr _) = report $
-   show (length vs + 1) <> " extra argument(s) to constructor; did you forget parentheses in lambda pattern?"
+   show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
 
 closeDefs :: Env 𝔹 -> FunEnv 𝔹 -> Env 𝔹

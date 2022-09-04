@@ -11,14 +11,15 @@ import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
---tests = [ test_bwd ]
+--tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
+   test (File "records") "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
 ]
 
 test_linking :: Array (Test Unit)
