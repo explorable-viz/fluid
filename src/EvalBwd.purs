@@ -3,16 +3,16 @@ module EvalBwd where
 import Prelude hiding (absurd)
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
-import Data.List (List(..), (:), range, reverse, unsnoc, zip)
+import Data.List (List(..), (:), range, reverse, unsnoc, unzip, zip)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (empty, fromFoldable, insert, intersectionWith, isEmpty)
+import Data.Map (empty, fromFoldable, keys, insert, intersectionWith, isEmpty, toUnfoldable)
 import Data.Map (singleton) as M
 import Data.NonEmpty (foldl1)
 import Data.Set (singleton, union)
 import Data.Tuple (fst, snd, uncurry)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Var, key, val, varAnon)
+import Bindings (Var, varAnon)
 import Bindings (dom) as B
 import DataType (cPair)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), bv)
@@ -44,8 +44,9 @@ matchBwd γ κ _ (MatchVarAnon v)
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchManyBwd ρ κ α (reverse ws)
-matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zip (xws <#> key) vs # fromFoldable) × ElimRecord (xws <#> key) κ'
-   where vs × κ' = matchManyBwd ρ κ α (reverse xws <#> val)
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zip xs vs # fromFoldable) × ElimRecord (keys xws) κ'
+   where xs × ws = xws # toUnfoldable # unzip
+         vs × κ' = matchManyBwd ρ κ α (ws # reverse)
 
 matchManyBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
 matchManyBwd γ κ _ Nil  | isEmpty γ = Nil × κ

@@ -6,10 +6,10 @@ import Data.Either (note)
 import Data.Function (on)
 import Data.List (fromFoldable) as L
 import Data.List (List(..), (:), concat)
-import Data.Map (Map, lookup)
+import Data.Map (Map, lookup, keys)
 import Data.Map (fromFoldable) as M
-import Data.Map.Internal (keys)
 import Data.Newtype (class Newtype, unwrap)
+import Data.Set (Set, toUnfoldable)
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
@@ -63,7 +63,8 @@ dataType :: TypeName -> Array (Ctr × CtrSig) -> DataType
 dataType name = map (uncurry (×)) >>> M.fromFoldable >>> DataType name
 
 ctrToDataType :: Map Ctr DataType
-ctrToDataType = M.fromFoldable (concat (dataTypes <#> (\d -> ctrs d <#> (_ × d))))
+ctrToDataType =
+   dataTypes <#> (\d -> ctrs d # toUnfoldable <#> (_ × d)) # concat # M.fromFoldable
 
 class DataTypeFor a where
    dataTypeFor :: a -> MayFail DataType
@@ -71,11 +72,12 @@ class DataTypeFor a where
 instance DataTypeFor Ctr where
    dataTypeFor c = note ("Unknown constructor " <> show c) (lookup c ctrToDataType)
 
-instance DataTypeFor (List Ctr) where
-   dataTypeFor Nil     = error absurd
-   dataTypeFor (c : _) = dataTypeFor c
+instance DataTypeFor (Set Ctr) where
+   dataTypeFor cs = case toUnfoldable cs of
+      Nil   -> error absurd
+      c : _ -> dataTypeFor c
 
-ctrs :: DataType -> List Ctr
+ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs
 
 arity :: Ctr -> MayFail Int

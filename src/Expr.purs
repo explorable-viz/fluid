@@ -33,7 +33,7 @@ type RecDefs a = List (Bind (Elim a))
 data Elim a =
    ElimVar Var (Cont a) |
    ElimConstr (Map Ctr (Cont a)) |
-   ElimRecord (List Var) (Cont a)
+   ElimRecord (Set Var) (Cont a)
 
 -- Continuation of an eliminator branch.
 data Cont a =

@@ -5,14 +5,15 @@ import Prelude hiding (absurd,otherwise)
 import Data.Either (Either(..))
 import Data.Foldable (foldM)
 import Data.Function (applyN, on)
-import Data.List (List(..), (:), (\\), length, reverse)
+import Data.List (List(..), (:), (\\), length, sortBy)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Map (Map, fromFoldable, singleton)
 import Data.NonEmpty ((:|))
+import Data.Set (toUnfoldable) as S
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings (Bind, (↦), key, varAnon)
+import Bindings (Bind, (↦), dom, varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
@@ -77,7 +78,7 @@ exprFwd (Constr α c ss)          = E.Constr α c <$> traverse exprFwd ss
 exprFwd (Record α xss)           = E.Record α <$> fromFoldable <$> traverse (traverse exprFwd) xss
 exprFwd (Matrix α s (x × y) s')  = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
 exprFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
-exprFwd (Project s x)       = E.Project <$> exprFwd s <@> x
+exprFwd (Project s x)            = E.Project <$> exprFwd s <@> x
 exprFwd (App s1 s2)              = E.App <$> exprFwd s1 <*> exprFwd s2
 exprFwd (BinaryApp s1 op s2)     = E.App <$> (E.App (E.Op op) <$> exprFwd s1) <*> exprFwd s2
 exprFwd (MatchAs s bs)           = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> exprFwd s
@@ -126,7 +127,7 @@ patternFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 patternFwd (PVar x) κ            = pure (ElimVar x κ)
 patternFwd (PConstr c ps) κ      =
    checkArity c (length ps) *> (ElimConstr <$> singleton c <$> argPatternFwd (Left <$> ps) κ)
-patternFwd (PRecord xps) κ       = ElimRecord (xps <#> key) <$> recordPatternFwd (reverse xps) κ
+patternFwd (PRecord xps) κ       = ElimRecord (dom xps) <$> recordPatternFwd (sortBy (flip compare `on` fst) xps) κ
 patternFwd PListEmpty κ          = pure (ElimConstr (singleton cNil κ))
 patternFwd (PListNonEmpty p o) κ = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
@@ -170,5 +171,5 @@ totaliseFwd (ContElim (ElimVar x κ)) α       = ContElim (ElimVar x (totaliseFw
 totaliseConstrFwd :: Ctr × Cont 𝔹 -> 𝔹 -> Map Ctr (Cont 𝔹)
 totaliseConstrFwd (c × κ) α =
    let defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
-       cκs = defaultBranch <$> (ctrs (successful (dataTypeFor c)) \\ L.singleton c)
+       cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
    in fromFoldable (c × κ : cκs)

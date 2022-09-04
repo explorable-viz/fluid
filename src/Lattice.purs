@@ -7,10 +7,10 @@ import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (zipWith) as NEL
-import Data.Map (Map, insert, lookup, toUnfoldable, update)
-import Data.Map.Internal (keys)
+import Data.Map (Map, insert, keys, lookup, toUnfoldable, update)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
+import Data.Set (Set)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
 import Util (Endo, MayFail, type (×), (×), (≞), report, successfulWith)
@@ -98,7 +98,7 @@ instance (Key k, Slices t) => JoinSemilattice (Map k t) where
    neg = (<$>) neg
 
 class Ord k <= Key k where
-   checkConsistent :: String -> k -> List k -> MayFail Unit
+   checkConsistent :: String -> k -> Set k -> MayFail Unit
 
 instance Key String where
    checkConsistent _ _ _ = pure unit
