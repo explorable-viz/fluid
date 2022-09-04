@@ -11,8 +11,8 @@ import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_scratchpad ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -192,7 +192,7 @@ test_misc = [
    test (File "normalise") "(33, 66)",
    test (File "pattern-match") "4",
    test (File "range") "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))",
-   test (File "records") "{a: 5, b: 6, c: 7, d: (5 : []), e: 7}",
+   test (File "records") "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}",
    test (File "reverse") "(2 : (1 : []))",
    test (File "zipWith") "((10 : []) : ((12 : []) : ((20 : []) : [])))"
 ]

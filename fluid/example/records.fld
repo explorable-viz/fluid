@@ -4,7 +4,7 @@ let f {fst: x, snd: []} = x;
     g {} = 7
 in {
    a: f {snd: [], fst: 2},
-   b: f {fst: 4, thd: "hello", snd: [6, 7]},
+   b: f {fst: 4, snd: [6, 7]},
    c: g {},
    d: [ x | {fst: x, snd: []} <- [{fst: 5, snd: []}, {fst: 6, snd: [7, 8]}] ],
    e: {a: 4, b: {c: 6, d: 7}}.b.d

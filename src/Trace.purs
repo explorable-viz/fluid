@@ -4,7 +4,7 @@ import Prelude
 import Data.List (List)
 import Data.Map (Map)
 import Data.Set (Set, empty, singleton, unions)
-import Bindings (Bind, Var, val)
+import Bindings (Bind, Var)
 import DataType (Ctr)
 import Expr (class BV, Elim, RecDefs, bv)
 import Util (type (×))
@@ -34,10 +34,10 @@ data Match a =
    MatchVar Var (Val a) |
    MatchVarAnon (Val a) |
    MatchConstr Ctr (List (Match a)) |
-   MatchRecord (List (Bind (Match a)))
+   MatchRecord (Map Var (Match a))
 
 instance BV (Match a) where
    bv (MatchVar x _)       = singleton x
    bv (MatchVarAnon _)     = empty
    bv (MatchConstr _ ws)   = unions (bv <$> ws)
-   bv (MatchRecord xws)    = unions (bv <$> val <$> xws)
+   bv (MatchRecord xws)    = unions (bv <$> xws)

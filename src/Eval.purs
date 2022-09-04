@@ -6,11 +6,10 @@ import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
-import Data.Map (empty, lookup, toUnfoldable)
+import Data.Map (empty, keys, lookup, toUnfoldable)
 import Data.Map (fromFoldable, singleton) as M
-import Data.Map.Internal (keys)
 import Data.Profunctor.Strong (second)
-import Data.Set (union)
+import Data.Set (union, subset)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import Bindings (find, varAnon)
@@ -21,7 +20,7 @@ import Pretty (prettyP)
 import Primitive (match) as P
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, orElse, report, successful)
+import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, dom, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -39,8 +38,9 @@ match v (ElimConstr m) = do
    d <- dataTypeFor (keys m)
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record _ xvs) (ElimRecord xs κ)  = do
-   vs <- xs # traverse (flip lookup xvs) # orElse (patternMismatch (show (keys xvs)) (show xs))
-   second (zip xs >>> MatchRecord) <$> matchMany vs κ
+   check (subset xs (keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
+   let xs × vs = xvs # toUnfoldable # unzip
+   second (zip xs >>> M.fromFoldable >>> MatchRecord) <$> matchMany vs κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))

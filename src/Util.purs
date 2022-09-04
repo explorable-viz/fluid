@@ -65,8 +65,7 @@ onlyIf false   = const empty
 type MayFail a = String + a
 
 orElse :: forall a . String -> Maybe a -> MayFail a
-orElse msg Nothing  = Left msg
-orElse _ (Just x)   = Right x
+orElse = note
 
 ignoreMessage :: forall a . MayFail a -> Maybe a
 ignoreMessage (Left _)   = Nothing
@@ -103,7 +102,7 @@ unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a 
 unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
 
 mayFailEq :: forall a . Show a => Eq a => a -> a -> MayFail a
-mayFailEq x x' = note (show x <> " ≠ " <> show x') (x ≟ x')
+mayFailEq x x' = x ≟ x' # orElse (show x <> " ≠ " <> show x')
 
 infixl 4 mayEq as ≟
 infixl 4 mayFailEq as ≞

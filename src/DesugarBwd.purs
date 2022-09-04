@@ -5,14 +5,15 @@ import Prelude hiding (absurd)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
-import Data.List (List(..), (:), (\\), reverse, singleton, zip)
+import Data.List (List(..), (:), (\\), singleton, sortBy, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList)
 import Data.Map (Map, fromFoldable, lookup)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
+import Data.Set (toUnfoldable) as S
 import Data.Tuple (uncurry, fst, snd)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bind, (↦), key, val)
+import Bindings (Bind, (↦), dom)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
@@ -133,7 +134,7 @@ patternBwd (ElimVar _ κ) (PVar _)               = κ
 patternBwd (ElimConstr m) (PConstr c ps)        = argsBwd (mustLookup c m) (Left <$> ps)
 patternBwd (ElimConstr m) (PListEmpty)          = mustLookup cNil m
 patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
-patternBwd (ElimRecord _ κ) (PRecord xps)       = recordBwd κ (reverse xps)
+patternBwd (ElimRecord _ κ) (PRecord xps)       = recordBwd κ (sortBy (flip compare `on` fst) xps)
 patternBwd _ _                                  = error absurd
 
 -- σ, o desugar_bwd κ
@@ -182,9 +183,9 @@ totaliseBwd (ContElim (ElimVar _ κ')) (Left (PVar x) : πs) =
    let κ'' × α = totaliseBwd κ' πs in
    ContElim (ElimVar x κ'') × α
 totaliseBwd (ContElim (ElimRecord _ κ')) (Left (PRecord xps) : πs) =
-   let ps = xps <#> (val >>> Left)
+   let ps = xps <#> (snd >>> Left)
        κ'' × α = totaliseBwd κ' (ps <> πs) in
-   ContElim (ElimRecord (xps <#> key) κ'') × α
+   ContElim (ElimRecord (dom xps) κ'') × α
 totaliseBwd (ContElim (ElimConstr m)) (π : πs) =
    let c × πs' = case π of
          -- TODO: refactor so these two cases aren't necessary
@@ -206,7 +207,7 @@ totaliseBwd _ _ = error absurd
 -- on the empty lists used for bodies of synthesised branches.
 totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Ctr -> Cont 𝔹 × 𝔹
 totaliseConstrBwd m c = unsafePartial $
-   let cs = ctrs (successful (dataTypeFor c)) \\ singleton c in
+   let cs = (ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c in
    mustLookup c m × foldl (∨) false (map (bodyAnn <<< body) cs)
    where
       body :: Partial => Ctr -> Cont 𝔹
