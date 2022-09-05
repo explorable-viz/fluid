@@ -66,13 +66,13 @@ evalBwd (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
 evalBwd (V.Record α xvs) (T.Record γ xts) =
    let xvts = intersectionWith (×) xvs xts
        xγeαs = xvts <#> uncurry evalBwd
-       γ' = foldr (∨) (botOf γ) (xγeαs <#> (fst >>> fst)) in
+       γ' = foldr (∨) (botOf <$> γ) (xγeαs <#> (fst >>> fst)) in
    γ' × Record α (xγeαs <#> (fst >>> snd)) × (foldr (∨) α (xγeαs <#> snd))
 evalBwd (V.Constr α _ vs) (T.Constr γ c ts) =
    let evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
           where γ'' × e × α'' = evalBwd v' t'
-       γ' × es × α' = foldr evalArg_bwd (botOf γ × Nil × α) (zip vs ts) in
+       γ' × es × α' = foldr evalArg_bwd ((botOf <$> γ) × Nil × α) (zip vs ts) in
    γ' × Constr α c es × α'
 evalBwd (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (i' × j') t') =
    let NonEmptyList ijs = nonEmpty $ do

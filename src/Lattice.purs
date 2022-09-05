@@ -43,11 +43,11 @@ class JoinSemilattice a <= Slices a where
 definedJoin :: forall a . Slices a => a -> a -> a
 definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
 
-class Slices a <= BoundedSlices a where
-   botOf :: Endo a
+botOf :: forall t a . Functor t => BoundedJoinSemilattice a => Endo (t a)
+botOf = (<$>) (const bot)
 
-topOf :: forall a . BoundedSlices a => Endo a
-topOf = botOf >>> neg
+topOf :: forall t a . Functor t => BoundedJoinSemilattice a => Endo (t a)
+topOf = (<$>) (const bot >>> neg)
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
@@ -66,9 +66,6 @@ instance (Eq k, Show k, Slices t) => JoinSemilattice (Tuple k t) where
 instance (Eq k, Show k, Slices t) => Slices (Tuple k t) where
    maybeJoin (k × v) (k' × v') = (k ≞ k') `lift2 (×)` maybeJoin v v'
 
-instance (Eq k, Show k, BoundedSlices t) => BoundedSlices (Tuple k t) where
-   botOf = (<$>) botOf
-
 instance Slices t => JoinSemilattice (List t) where
    join = definedJoin
    neg = (<$>) neg
@@ -86,12 +83,6 @@ instance Slices t => Slices (NonEmptyList t) where
    maybeJoin xs ys
       | (length xs :: Int) == length ys   = sequence (NEL.zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
-
-instance BoundedSlices t => BoundedSlices (List t) where
-   botOf = (<$>) botOf
-
-instance BoundedSlices t => BoundedSlices (NonEmptyList t) where
-   botOf = (<$>) botOf
 
 instance (Key k, Slices t) => JoinSemilattice (Map k t) where
    join = definedJoin
@@ -114,9 +105,6 @@ mayFailUpdate m (k × v) =
          pure (insert k v m)
       Just v' ->
          update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
-
-instance (Key k, BoundedSlices t) => BoundedSlices (Map k t) where
-   botOf = (<$>) botOf
 
 instance Slices a => JoinSemilattice (Array a) where
    join = definedJoin

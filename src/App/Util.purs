@@ -62,8 +62,8 @@ selectNthNode n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v 
 selectNthNode _ _ _                                         = error absurd
 
 selectSome :: Selector
-selectSome (Constr _ c v) | c == cSome = Constr true c (botOf v)
-selectSome _                           = error absurd
+selectSome (Constr _ c vs) | c == cSome   = Constr true c (botOf <$> vs)
+selectSome _                              = error absurd
 
 select_y :: Selector -> Selector
 select_y δv (Record α r) = Record α $ M.update (δv >>> Just) f_y r

@@ -165,7 +165,7 @@ linkResult x γ0 e2 t1 t2 v1 = do
    v0' <- lookup x γ' # orElse absurd
    -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use
    -- (topOf γ0) combined with negation of the dataset environment slice
-   let v2' = neg (evalFwd (neg (botOf γ0 <+> γ')) (const true <$> e2) true t2)
+   let v2' = neg (evalFwd (neg ((botOf <$> γ0) <+> γ')) (const true <$> e2) true t2)
    pure { v': v2', v0' }
 
 loadFig :: FigSpec -> Aff Fig

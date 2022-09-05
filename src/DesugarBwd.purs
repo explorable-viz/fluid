@@ -155,24 +155,24 @@ argsBwd κ (Right o : πs)   = argsBwd (listRestPatternBwd (asElim κ) o) πs
 
 recordBwd :: Cont 𝔹 -> List (Bind Pattern) -> Cont 𝔹
 recordBwd κ Nil            = κ
-recordBwd σ (_ ↦ p : xps) = recordBwd σ xps # (asElim >>> flip patternBwd p)
+recordBwd σ (_ ↦ p : xps)  = recordBwd σ xps # (asElim >>> flip patternBwd p)
 
--- σ, c desugar_bwd c
+-- σ, c desugar_bwd c'
 branchBwd_curried :: Elim 𝔹 -> Endo (Branch 𝔹)
 branchBwd_curried σ (πs × s) = πs × exprBwd (patternsBwd σ πs) s
 
--- σ, c desugar_bwd c
+-- σ, c desugar_bwd c'
 branchBwd_uncurried :: Elim 𝔹 -> Endo (Pattern × Expr 𝔹)
 branchBwd_uncurried σ (p × s) = p × exprBwd (asExpr (patternBwd σ p)) s
 
--- σ, cs desugar_bwd cs
+-- σ, cs desugar_bwd cs'
 branchesBwd_curried :: Elim 𝔹 -> Endo (NonEmptyList (Branch 𝔹))
 branchesBwd_curried σ (NonEmptyList (b1 :| b2 : bs)) =
    NonEmptyList (branchBwd_curried σ b1 :| toList (branchesBwd_curried σ (NonEmptyList (b2 :| bs))))
 branchesBwd_curried σ (NonEmptyList (b :| Nil)) =
    NonEmptyList (branchBwd_curried σ b :| Nil)
 
--- σ, cs desugar_bwd cs
+-- σ, cs desugar_bwd cs'
 branchesBwd_uncurried :: Elim 𝔹 -> Endo (NonEmptyList (Pattern × Expr 𝔹))
 branchesBwd_uncurried σ (NonEmptyList (b1 :| b2 : bs)) =
    NonEmptyList (branchBwd_uncurried σ b1 :| toList (branchesBwd_uncurried σ (NonEmptyList (b2 :| bs))))

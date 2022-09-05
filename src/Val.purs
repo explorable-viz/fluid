@@ -9,9 +9,7 @@ import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfo
 import Bindings (Bind, Var, (↦))
 import DataType (Ctr)
 import Expr (Elim, fv)
-import Lattice (
-   class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), bot, botOf, definedJoin, maybeJoin, neg
-)
+import Lattice (class JoinSemilattice, class Slices, 𝔹, (∨), bot, botOf, definedJoin, maybeJoin, neg)
 import Util (
    Endo, MayFail, type (×), (×), (≞), (!),
    absurd, disjUnion, error, get, orElse, report, unsafeUpdateAt
@@ -138,14 +136,3 @@ instance Slices (Val Boolean) where
       Closure (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ vs) (Primitive _ vs')       = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _                                      = report "Incompatible values"
-
-instance BoundedSlices (Val Boolean) where
-   botOf (Int _ n)                  = Int bot n
-   botOf (Float _ n)                = Float bot n
-   botOf (Str _ str)                = Str bot str
-   botOf (Record _ xvs)             = Record bot (botOf <$> xvs)
-   botOf (Constr _ c vs)            = Constr bot c (botOf <$> vs)
-   -- PureScript can't derive this case
-   botOf (Matrix _ (r × (i × _) × (j × _))) = Matrix bot ((((<$>) botOf) <$> r) × (i × bot) × (j × bot))
-   botOf (Primitive φ vs)           = Primitive φ (botOf <$> vs)
-   botOf (Closure _ γ ρ σ)         = Closure bot (botOf <$> γ) (botOf <$> ρ) (botOf σ)

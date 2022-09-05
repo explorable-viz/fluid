@@ -8,7 +8,7 @@ import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Tuple (snd)
 import Bindings (Var)
 import DataType (Ctr)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
+import Lattice (class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
 import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
 
 data Expr a =
@@ -120,11 +120,6 @@ instance Slices (Elim Boolean) where
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
    maybeJoin _ _                                   = report "Incompatible eliminators"
 
-instance BoundedSlices (Elim Boolean) where
-   botOf (ElimVar x κ) = ElimVar x (botOf κ)
-   botOf (ElimConstr κs) = ElimConstr (botOf <$> κs)
-   botOf (ElimRecord xs κ) = ElimRecord xs (botOf κ)
-
 instance JoinSemilattice (Cont Boolean) where
    join = definedJoin
    neg = (<$>) neg
@@ -135,35 +130,12 @@ instance Slices (Cont Boolean) where
    maybeJoin (ContElim σ) (ContElim σ')   = ContElim <$> maybeJoin σ σ'
    maybeJoin _ _                          = report "Incompatible continuations"
 
-instance BoundedSlices (Cont Boolean) where
-   botOf ContNone       = ContNone
-   botOf (ContExpr e)   = ContExpr (botOf e)
-   botOf (ContElim σ)   = ContElim (botOf σ)
-
 instance JoinSemilattice (VarDef Boolean) where
    join = definedJoin
    neg = (<$>) neg
 
 instance Slices (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
-
-instance BoundedSlices (VarDef Boolean) where
-   botOf (VarDef σ e) = VarDef (botOf σ) (botOf e)
-
-instance BoundedSlices (Expr Boolean) where
-   botOf (Var x)                    = Var x
-   botOf (Op op)                    = Op op
-   botOf (Int _ n)                  = Int bot n
-   botOf (Str _ str)                = Str bot str
-   botOf (Float _ n)                = Float bot n
-   botOf (Record _ xes)             = Record bot (botOf xes)
-   botOf (Constr _ c es)            = Constr bot c (botOf es)
-   botOf (Matrix _ e1 (x × y) e2)   = Matrix bot (botOf e1) (x × y) (botOf e2)
-   botOf (Lambda σ)                 = Lambda (botOf σ)
-   botOf (Project e x)              = Project (botOf e) x
-   botOf (App e1 e2)                = App (botOf e1) (botOf e2)
-   botOf (Let def e)                = Let (botOf def) (botOf e)
-   botOf (LetRec δ e)               = LetRec (botOf δ) (botOf e)
 
 instance JoinSemilattice (Expr Boolean) where
    join = definedJoin
