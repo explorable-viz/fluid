@@ -39,12 +39,12 @@ recDefsBwd :: E.RecDefs 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
 recDefsBwd ρ xcs = join (recDefsBwd' ρ (groupBy (eq `on` fst) xcs))
 
 recDefsBwd' :: E.RecDefs 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
-recDefsBwd' ρ (NonEmptyList (xcs :| Nil)) =
-   let x = fst (head xcs) in
-   NonEmptyList (recDefBwd (x ↦ mustLookup x ρ) xcs :| Nil)
-recDefsBwd' ρ (NonEmptyList (xcs1 :| xcs2 : xcss))  =
-   let x = fst (head xcs1) in
-   NonEmptyList (recDefBwd (x ↦ mustLookup x ρ) xcs1 :| toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss))))
+recDefsBwd' ρ (NonEmptyList (xcs :| xcss)) =
+   let x = fst (head xcs)
+       xcss' = case xcss of
+         Nil -> Nil
+         xcs2 : xcss'' -> toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss''))) in
+   NonEmptyList (recDefBwd (x ↦ mustLookup x ρ) xcs :| xcss')
 
 recDefBwd :: Bind (Elim 𝔹) -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
 recDefBwd (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd
