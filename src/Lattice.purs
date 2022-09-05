@@ -103,12 +103,8 @@ class Ord k <= Key k where
 instance Key String where
    checkConsistent _ _ _ = pure unit
 
--- This is more general than we technically need for slicing, in that we can join maps with distinct keys as long as
--- join is defined for any overlapping keys. This is harmless, and it allows us to reuse the join operator
--- here for merging branches of piecewise function definitions.
 instance (Key k, Slices t) => Slices (Map k t) where
-   maybeJoin m m' =
-      foldM mayFailUpdate m (toUnfoldable m' :: List (k × t))
+   maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (k × t))
 
 mayFailUpdate :: forall k t . Key k => Slices t => Map k t -> k × t -> MayFail (Map k t)
 mayFailUpdate m (k × v) =
