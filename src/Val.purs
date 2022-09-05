@@ -2,16 +2,17 @@ module Val where
 
 import Prelude hiding (absurd, append)
 import Control.Apply (lift2)
-import Data.List (List(..), (:))
+import Data.List (List(..), (:), zip)
 import Data.Map (Map, filterKeys, keys, isEmpty, lookup, pop, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union)
+import Data.Tuple (uncurry)
 import Bindings (Bind, Var, (↦))
 import DataType (Ctr)
 import Expr (Elim, fv)
-import Lattice (class JoinSemilattice, class Slices, 𝔹, (∨), bot, botOf, definedJoin, maybeJoin, neg)
+import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
 import Util (
-   Endo, MayFail, type (×), (×), (≞), (!),
+   Endo, MayFail, type (×), (×), (≞), (≜), (!),
    absurd, disjUnion, error, get, orElse, report, unsafeUpdateAt
 )
 
@@ -136,3 +137,11 @@ instance Slices (Val Boolean) where
       Closure (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ vs) (Primitive _ vs')       = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _                                      = report "Incompatible values"
+
+instance Expandable (Val Boolean) where
+   expand (Int α n) (Int α' n')              = Int (α ≜ α') (n ≜ n')
+   expand (Float α n) (Float α' n')          = Float (α ≜ α') (n ≜ n')
+   expand (Str α str) (Str α' str')          = Str (α ≜ α') (str ≜ str')
+   expand (Record α xvs) (Record α' xvs')    = Record (α ≜ α') (expand xvs xvs')
+   expand (Constr α c vs) (Constr α' c' us)  = Constr (α ≜ α') (c ≜ c') (uncurry expand <$> zip vs us)
+   expand _ _ = error "Incompatible values"

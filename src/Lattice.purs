@@ -7,13 +7,13 @@ import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (zipWith) as NEL
-import Data.Map (Map, insert, keys, lookup, toUnfoldable, update)
+import Data.Map (Map, difference, insert, keys, lookup, toUnfoldable, union, update)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
-import Data.Set (Set)
+import Data.Set (Set, subset)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Util (Endo, MayFail, type (×), (×), (≞), report, successfulWith)
+import Util (Endo, MayFail, type (×), (×), (≞), assert, report, successfulWith)
 
 class JoinSemilattice a where
    join :: a -> a -> a
@@ -114,3 +114,11 @@ instance Slices a => Slices (Array a) where
    maybeJoin xs ys
       | length xs == (length ys :: Int)   = sequence (A.zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
+
+class Expandable a where
+   expand :: a -> a -> a
+
+instance (Key k, Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expandable (Map k (t a)) where
+   expand kvs kvs' =
+      assert (keys kvs `subset` keys kvs') $
+      kvs `union` ((kvs' `difference` kvs) <#> botOf)
