@@ -6,7 +6,7 @@ import Data.List (List)
 import Data.Map (Map, keys)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Tuple (snd)
-import Bindings (Bind, Var, val)
+import Bindings (Var)
 import DataType (Ctr)
 import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
 import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
@@ -28,7 +28,7 @@ data Expr a =
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
-type RecDefs a = List (Bind (Elim a))
+type RecDefs a = Map Var (Elim a)
 
 data Elim a =
    ElimVar Var (Cont a) |
@@ -67,7 +67,7 @@ instance FV (Expr a) where
    fv (Project e _)   = fv e
    fv (App e1 e2)          = fv e1 `union` fv e2
    fv (Let def e)          = fv def `union` (fv e `difference` bv def)
-   fv (LetRec δ e)         = unions (fv <$> val <$> δ) `union` fv e
+   fv (LetRec δ e)         = unions (fv <$> δ) `union` fv e
 
 instance FV (Elim a) where
    fv (ElimVar x κ)     = fv κ `difference` singleton x

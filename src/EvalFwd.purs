@@ -3,7 +3,7 @@ module EvalFwd where
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
-import Data.Map (empty, fromFoldable, intersectionWith, keys, toUnfoldable)
+import Data.Map (empty, intersectionWith, toUnfoldable)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), first, second)
 import Data.Set (union)
@@ -91,7 +91,7 @@ evalFwd γ (Let (VarDef σ e1) e2) α (T.Let (T.VarDef w t1) t2) =
    let v = evalFwd γ e1 α t1
        γ' × _ × α' = matchFwd v σ w in
    evalFwd (γ <+> γ') e2 α' t2
-evalFwd γ (LetRec xσs e') α (T.LetRec _ t) =
-   let γ' = closeDefsFwd γ (fromFoldable xσs) α in
+evalFwd γ (LetRec ρ e') α (T.LetRec _ t) =
+   let γ' = closeDefsFwd γ ρ α in
    evalFwd (γ <+> γ') e' α t
 evalFwd _ _ _ _ = error absurd

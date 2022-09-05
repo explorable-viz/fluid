@@ -6,7 +6,7 @@ import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), singleton, sortBy, zip)
-import Data.List.NonEmpty (NonEmptyList(..), groupBy, toList)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Map (Map, fromFoldable, lookup)
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
@@ -36,14 +36,15 @@ varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × 
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
 recDefsBwd :: E.RecDefs 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
-recDefsBwd xσs xcs = join (recDefsBwd' xσs (groupBy (eq `on` fst) xcs))
+recDefsBwd ρ xcs = join (recDefsBwd' ρ (groupBy (eq `on` fst) xcs))
 
 recDefsBwd' :: E.RecDefs 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
-recDefsBwd' Nil _                                              = error absurd
-recDefsBwd' (x ↦ σ : Nil) (NonEmptyList (xcs :| Nil))          = NonEmptyList (recDefBwd (x ↦ σ) xcs :| Nil)
-recDefsBwd' (_ : _ : _) (NonEmptyList (_ :| Nil))              = error absurd
-recDefsBwd' (x ↦ σ : ρ) (NonEmptyList (xcs1 :| xcs2 : xcss))  =
-   NonEmptyList (recDefBwd (x ↦ σ) xcs1 :| toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss))))
+recDefsBwd' ρ (NonEmptyList (xcs :| Nil)) =
+   let x = fst (head xcs) in
+   NonEmptyList (recDefBwd (x ↦ mustLookup x ρ) xcs :| Nil)
+recDefsBwd' ρ (NonEmptyList (xcs1 :| xcs2 : xcss))  =
+   let x = fst (head xcs1) in
+   NonEmptyList (recDefBwd (x ↦ mustLookup x ρ) xcs1 :| toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss))))
 
 recDefBwd :: Bind (Elim 𝔹) -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
 recDefBwd (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd

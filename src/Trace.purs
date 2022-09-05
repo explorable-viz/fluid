@@ -4,7 +4,7 @@ import Prelude
 import Data.List (List)
 import Data.Map (Map)
 import Data.Set (Set, empty, singleton, unions)
-import Bindings (Bind, Var)
+import Bindings (Var)
 import DataType (Ctr)
 import Expr (class BV, Elim, RecDefs, bv)
 import Util (type (×))

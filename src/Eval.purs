@@ -122,10 +122,10 @@ eval γ (Let (VarDef σ e) e') = do
    γ' × _ × w <- match v σ -- terminal meta-type of eliminator is meta-unit
    t' × v' <- eval (γ <+> γ') e'
    pure (T.Let (T.VarDef w t) t' × v')
-eval γ (LetRec xσs e) = do
-   let γ' = closeDefs γ (M.fromFoldable xσs)
+eval γ (LetRec ρ e) = do
+   let γ' = closeDefs γ ρ
    t × v <- eval (γ <+> γ') e
-   pure (T.LetRec xσs t × v)
+   pure (T.LetRec ρ t × v)
 
 eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
 eval_module γ = go empty
@@ -136,5 +136,5 @@ eval_module γ = go empty
       _  × v <- eval (γ <+> y') e
       γ'' × _ × _  <- match v σ
       go (y' <+> γ'') (Module ds)
-   go γ' (Module (Right xσs : ds)) =
-      go (γ' <+> closeDefs (γ <+> γ') (M.fromFoldable xσs)) (Module ds)
+   go γ' (Module (Right ρ : ds)) =
+      go (γ' <+> closeDefs (γ <+> γ') ρ) (Module ds)

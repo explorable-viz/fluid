@@ -13,7 +13,6 @@ import Data.Set (singleton, union)
 import Data.Tuple (fst, snd, uncurry)
 import Partial.Unsafe (unsafePartial)
 import Bindings (Var, varAnon)
-import Bindings (dom) as B
 import DataType (cPair)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), bv)
 import Lattice (𝔹, (∨), bot, botOf)
@@ -127,9 +126,9 @@ evalBwd v (T.Let (T.VarDef w t1) t2) =
        v' × σ = matchBwd γ2 ContNone α2 w
        γ1' × e1 × α1 = evalBwd v' t1 in
    (γ1 ∨ γ1') × Let (VarDef σ e1) e2 × (α1 ∨ α2)
-evalBwd v (T.LetRec xσs t) =
+evalBwd v (T.LetRec ρ t) =
    let γ1γ2 × e × α = evalBwd v t
-       γ1 × γ2 = append_inv (B.dom xσs) γ1γ2
+       γ1 × γ2 = append_inv (keys ρ) γ1γ2
        γ1' × ρ' × α' = closeDefsBwd γ2 in
-   (γ1 ∨ γ1') × LetRec (botOf xσs `update` ρ') e × (α ∨ α')
+   (γ1 ∨ γ1') × LetRec ((botOf ρ # toUnfoldable) `update` ρ' # fromFoldable) e × (α ∨ α')
 evalBwd _ _ = error absurd

@@ -5,12 +5,12 @@ import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), fromFoldable)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
-import Data.Map (toUnfoldable)
+import Data.Map (Map, toUnfoldable)
 import Data.Profunctor.Choice ((|||))
 import Data.String (Pattern(..), contains) as Data.String
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
-import Bindings (Bind, (↦))
+import Bindings (Bind, Var, (↦))
 import DataType (Ctr, cCons, cNil, cPair)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
@@ -129,13 +129,15 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.Let (E.VarDef σ e) e') = atop (hspace [text str.let_, pretty σ, text str.equals, pretty e, text str.in_])
                                            (pretty e')
    pretty (E.LetRec δ e)            = atop (hspace [text str.let_, pretty δ, text str.in_]) (pretty e)
-   pretty (E.Project _ _)      = error "todo"
+   pretty (E.Project _ _)           = error "todo"
    pretty (E.App e e')              = hspace [pretty e, pretty e']
 
-instance Pretty (List (Bind (Elim Boolean))) where
-   pretty Nil        = error absurd -- non-empty
-   pretty (xσ : Nil) = pretty xσ
-   pretty (xσ : δ)   = atop (pretty δ :<>: semi) (pretty xσ)
+instance Pretty (Map Var (Elim Boolean)) where
+   pretty = toUnfoldable >>> go
+      where go :: List (Var × Elim 𝔹) -> Doc
+            go Nil         = error absurd -- non-empty
+            go (xσ : Nil)  = pretty xσ
+            go (xσ : δ)    = atop (go δ :<>: semi) (pretty xσ)
 
 instance Pretty (Bind (Elim Boolean)) where
    pretty (x ↦ σ) = hspace [text x, text str.equals, pretty σ]
