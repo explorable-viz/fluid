@@ -98,7 +98,7 @@ eval γ (Lambda σ) =
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
-      V.Record _ xvs -> (T.Project t x × _) <$> lookup x xvs # orElse ("Field " <> x <> " not found")
+      V.Record _ xvs -> (T.Project t x × _) <$> lookup' x xvs
       _ -> report "Expected record"
 eval γ (App e e') = do
    t × v <- eval γ e

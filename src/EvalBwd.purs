@@ -18,7 +18,7 @@ import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), bv)
 import Lattice (𝔹, (∨), bot, botOf)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, mustLookup, nonEmpty)
+import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, get, nonEmpty)
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, (∨∨), append_inv, dom, update)
 import Val (Val(..)) as V
 
@@ -29,14 +29,14 @@ closeDefsBwd γ =
    where
    joinDefs :: Var -> Val 𝔹 -> Endo (FunEnv 𝔹 × Env 𝔹 × FunEnv 𝔹 × 𝔹)
    joinDefs f _ (ρ_acc × γ' × ρ × α) =
-      case mustLookup f γ of
+      case get f γ of
          V.Closure α_f γ_f ρ_f σ_f ->
             (ρ_acc # insert f σ_f) × (γ' ∨∨ γ_f) × (ρ ∨∨ ρ_f) × (α ∨ α_f)
          _ -> error absurd
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 matchBwd γ κ _ (MatchVar x v)
-   | dom γ == singleton x           = mustLookup x γ × ElimVar x κ
+   | dom γ == singleton x           = get x γ × ElimVar x κ
    | otherwise                      = botOf v × ElimVar x κ
 matchBwd γ κ _ (MatchVarAnon v)
    | isEmpty γ                      = botOf v × ElimVar varAnon κ
@@ -85,7 +85,7 @@ evalBwd (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (
              γ'' × e × α' ->
                let γ × γ' = append_inv (singleton x `union` singleton y) γ''
                    γ0 = (M.singleton x (V.Int bot i') `disjUnion` M.singleton y (V.Int bot j')) <+> γ'
-               in unsafePartial $ let V.Int β _ × V.Int β' _ = mustLookup x γ0 × mustLookup x γ0
+               in unsafePartial $ let V.Int β _ × V.Int β' _ = get x γ0 × get x γ0
                in γ × e × α' × β × β'
        γ × e × α' × β × β' = foldl1
           (\(γ1 × e1 × α1 × β1 × β1') (γ2 × e2 × α2 × β2 × β2') ->
@@ -130,5 +130,5 @@ evalBwd v (T.LetRec ρ t) =
    let γ1γ2 × e × α = evalBwd v t
        γ1 × γ2 = append_inv (keys ρ) γ1γ2
        γ1' × ρ' × α' = closeDefsBwd γ2 in
-   (γ1 ∨ γ1') × LetRec ((botOf ρ # toUnfoldable) `update` ρ' # fromFoldable) e × (α ∨ α')
+   (γ1 ∨ γ1') × LetRec ρ' e × (α ∨ α')
 evalBwd _ _ = error absurd

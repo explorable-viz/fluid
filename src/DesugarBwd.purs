@@ -23,7 +23,7 @@ import SExpr (
       Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..),
       VarDefs
    )
-import Util (Endo, type (+), type (×), (×), absurd, error, mustLookup, successful)
+import Util (Endo, type (+), type (×), (×), absurd, error, get, successful)
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -72,8 +72,8 @@ exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
    MatchAs (exprBwd e s) (branchesBwd_uncurried σ bs)
 exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (exprBwd e1 s1)
-            (exprBwd (asExpr (mustLookup cTrue m)) s2)
-            (exprBwd (asExpr (mustLookup cFalse m)) s3)
+            (exprBwd (asExpr (get cTrue m)) s2)
+            (exprBwd (asExpr (get cFalse m)) s3)
 exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
    BinaryApp (exprBwd e1 s1) op (exprBwd e2 s2)
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
@@ -96,8 +96,8 @@ exprBwd e (ListComp α s (NonEmptyList (q :| Nil))) =
       _ -> error absurd
 -- list-comp-guard
 exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp α0 s1 (NonEmptyList (Guard s2 :| q : qs))) =
-   case exprBwd (asExpr (mustLookup cTrue m)) (ListComp α0 s1 (NonEmptyList (q :| qs))) ×
-         exprBwd (asExpr (mustLookup cFalse m)) (Constr true cNil Nil) of
+   case exprBwd (asExpr (get cTrue m)) (ListComp α0 s1 (NonEmptyList (q :| qs))) ×
+         exprBwd (asExpr (get cFalse m)) (Constr true cNil Nil) of
       ListComp β s1' (NonEmptyList (q' :| qs')) × Constr α c Nil | c == cNil ->
          ListComp (α ∨ β) s1' (NonEmptyList (Guard (exprBwd e2 s2) :| q' : qs'))
       _ × _ -> error absurd
@@ -135,9 +135,9 @@ patternsBwd σ (NonEmptyList (p :| p' : ps))  = patternsBwd_rest (asExpr (patter
 -- σ, p desugar_bwd κ
 patternBwd :: Elim 𝔹 -> Pattern -> Cont 𝔹
 patternBwd (ElimVar _ κ) (PVar _)               = κ
-patternBwd (ElimConstr m) (PConstr c ps)        = argsBwd (mustLookup c m) (Left <$> ps)
-patternBwd (ElimConstr m) (PListEmpty)          = mustLookup cNil m
-patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
+patternBwd (ElimConstr m) (PConstr c ps)        = argsBwd (get c m) (Left <$> ps)
+patternBwd (ElimConstr m) (PListEmpty)          = get cNil m
+patternBwd (ElimConstr m) (PListNonEmpty p o)   = argsBwd (get cCons m) (Left p : Right o : Nil)
 patternBwd (ElimRecord _ κ) (PRecord xps)       = recordBwd κ (sortBy (flip compare `on` fst) xps)
 patternBwd _ _                                  = error absurd
 
@@ -145,8 +145,8 @@ patternBwd _ _                                  = error absurd
 listRestPatternBwd :: Elim 𝔹 -> ListRestPattern -> Cont 𝔹
 listRestPatternBwd (ElimVar _ _) _              = error absurd
 listRestPatternBwd (ElimRecord _ _) _           = error absurd
-listRestPatternBwd (ElimConstr m) PEnd          = mustLookup cNil m
-listRestPatternBwd (ElimConstr m) (PNext p o)   = argsBwd (mustLookup cCons m) (Left p : Right o : Nil)
+listRestPatternBwd (ElimConstr m) PEnd          = get cNil m
+listRestPatternBwd (ElimConstr m) (PNext p o)   = argsBwd (get cCons m) (Left p : Right o : Nil)
 
 argsBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹
 argsBwd κ Nil              = κ
@@ -210,10 +210,10 @@ totaliseBwd _ _ = error absurd
 totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Ctr -> Cont 𝔹 × 𝔹
 totaliseConstrBwd m c = unsafePartial $
    let cs = (ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c in
-   mustLookup c m × foldl (∨) false (map (bodyAnn <<< body) cs)
+   get c m × foldl (∨) false (map (bodyAnn <<< body) cs)
    where
       body :: Partial => Ctr -> Cont 𝔹
-      body c' = applyN unargument (successful (arity c')) (mustLookup c' m)
+      body c' = applyN unargument (successful (arity c')) (get c' m)
 
       unargument :: Partial => Cont 𝔹 -> Cont 𝔹
       unargument (ContElim (ElimVar _ κ)) = κ

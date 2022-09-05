@@ -14,7 +14,7 @@ import Lattice (
 )
 import Util (
    Endo, MayFail, type (×), (×), (≞), (!),
-   absurd, disjUnion, error, mustLookup, orElse, report, unsafeUpdateAt
+   absurd, disjUnion, error, get, orElse, report, unsafeUpdateAt
 )
 
 type Op a = a × 𝔹 -> Val 𝔹
@@ -75,7 +75,7 @@ reaches ρ xs = go (toUnfoldable xs) empty
    go Nil acc                          = acc
    go (x : xs') acc | x `member` acc   = go xs' acc
    go (x : xs') acc | otherwise        =
-      let σ = mustLookup x ρ in
+      let σ = get x ρ in
       go (toUnfoldable (fv σ `intersection` dom_ρ) <> xs')
          (singleton x `union` acc)
 
