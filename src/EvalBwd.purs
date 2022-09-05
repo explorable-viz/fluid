@@ -19,7 +19,7 @@ import Lattice (𝔹, (∨), bot, botOf)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, get, nonEmpty)
-import Val (Env, FunEnv, PrimOp(..), (<+>), Val, (∨∨), append_inv, dom, update)
+import Val (Env, FunEnv, PrimOp(..), (<+>), Val, (∨∨), append_inv, dom)
 import Val (Val(..)) as V
 
 closeDefsBwd :: Env 𝔹 -> Env 𝔹 × FunEnv 𝔹 × 𝔹

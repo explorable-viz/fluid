@@ -13,8 +13,8 @@ import Lattice (𝔹, (∧))
 import Primitive (match_fwd) as P
 import Trace (Trace(..), Match(..), VarDef(..)) as T
 import Trace (Trace, Match)
-import Util (type (×), (×), (!), absurd, assert, disjUnion, error, get, successful)
-import Val (Env, FunEnv, PrimOp(..), (<+>), Val, for, lookup', restrict)
+import Util (type (×), (×), (!), absurd, assert, disjUnion, error, get)
+import Val (Env, FunEnv, PrimOp(..), (<+>), Val, for, restrict)
 import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
