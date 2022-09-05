@@ -23,7 +23,7 @@ data Trace a =
    Constr (Env a) Ctr (List (Trace a)) |
    Matrix (Array2 (Trace a)) (Var × Var) (Int × Int) (Trace a) |
    Lambda (Elim a) |
-   Project (Trace a) (List (Bind (Val a))) Var |
+   Project (Trace a) Var |
    App (Trace a × Set Var × Elim a) (Trace a) (Match a) (Trace a) |
    AppPrim (Trace a × PrimOp × List (Val a)) (Trace a × Val a) | -- record prior arguments
    AppConstr (Trace a × Ctr × Int) (Trace a) |                   -- record number of prior arguments

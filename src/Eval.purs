@@ -12,7 +12,7 @@ import Data.Profunctor.Strong (second)
 import Data.Set (union, subset)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
-import Bindings (find, varAnon)
+import Bindings (varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), VarDef(..), asExpr, fv)
 import Lattice (𝔹, checkConsistent)
@@ -20,7 +20,7 @@ import Pretty (prettyP)
 import Primitive (match) as P
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
+import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, orElse, report, successful)
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, dom, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -98,7 +98,7 @@ eval γ (Lambda σ) =
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
-      V.Record _ xvs -> (T.Project t (xvs # toUnfoldable) x × _) <$> find x (xvs # toUnfoldable)
+      V.Record _ xvs -> (T.Project t x × _) <$> lookup x xvs # orElse ("Field " <> x <> " not found")
       _ -> report "Expected record"
 eval γ (App e e') = do
    t × v <- eval γ e
