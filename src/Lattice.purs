@@ -122,3 +122,9 @@ instance (Key k, Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expan
    expand kvs kvs' =
       assert (keys kvs `subset` keys kvs') $
       kvs `union` ((kvs' `difference` kvs) <#> botOf)
+
+instance Expandable a => Expandable (List a) where
+   expand xs ys = zipWith expand xs ys
+
+instance Expandable a => Expandable (Array a) where
+   expand xs ys = A.zipWith expand xs ys

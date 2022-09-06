@@ -2,11 +2,10 @@ module Val where
 
 import Prelude hiding (absurd, append)
 import Control.Apply (lift2)
-import Data.List (List(..), (:), zip)
+import Data.List (List(..), (:))
 import Data.Map (Map, filterKeys, keys, isEmpty, lookup, pop, unionWith)
 import Data.Maybe (Maybe(..))
 import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union)
-import Data.Tuple (uncurry)
 import Bindings (Bind, Var, (↦))
 import DataType (Ctr)
 import Expr (Elim, fv)
@@ -143,5 +142,10 @@ instance Expandable (Val Boolean) where
    expand (Float α n) (Float α' n')          = Float (α ≜ α') (n ≜ n')
    expand (Str α str) (Str α' str')          = Str (α ≜ α') (str ≜ str')
    expand (Record α xvs) (Record α' xvs')    = Record (α ≜ α') (expand xvs xvs')
-   expand (Constr α c vs) (Constr α' c' us)  = Constr (α ≜ α') (c ≜ c') (uncurry expand <$> zip vs us)
+   expand (Constr α c vs) (Constr α' c' us)  = Constr (α ≜ α') (c ≜ c') (expand vs us)
+   expand (Matrix α (vss × i × j)) (Matrix α' (vss' × i' × j')) =
+      Matrix (α ≜ α') (expand vss vss' × (i ≜ i') × (j ≜ j'))
+   expand (Closure α γ ρ σ) (Closure α' γ' ρ' σ') =
+      Closure (α ≜ α') (expand γ γ') (expand ρ ρ') (expand σ σ')
+   expand (Primitive φ vs) (Primitive _ vs') = Primitive φ (expand vs vs') -- TODO: require φ == φ'
    expand _ _ = error "Incompatible values"

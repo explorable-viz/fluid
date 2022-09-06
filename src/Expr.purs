@@ -8,8 +8,8 @@ import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Tuple (snd)
 import Bindings (Var)
 import DataType (Ctr)
-import Lattice (class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
-import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
+import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
+import Util (type (×), (×), type (+), (≜), (≞), asSingletonMap, error, report)
 
 data Expr a =
    Var Var |
@@ -116,9 +116,15 @@ instance JoinSemilattice (Elim Boolean) where
 
 instance Slices (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ')         = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr κs) (ElimConstr κs')      = ElimConstr <$> maybeJoin κs κs'
+   maybeJoin (ElimConstr cκs) (ElimConstr cκs')    = ElimConstr <$> maybeJoin cκs cκs'
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
    maybeJoin _ _                                   = report "Incompatible eliminators"
+
+instance Expandable (Elim Boolean) where
+   expand (ElimVar x κ) (ElimVar x' κ')         = ElimVar (x ≜ x') (expand κ κ')
+   expand (ElimConstr cκs) (ElimConstr cκs')    = ElimConstr (expand cκs cκs')
+   expand (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord (xs ≜ ys) (expand κ κ')
+   expand _ _                                   = error "Incompatible eliminators"
 
 instance JoinSemilattice (Cont Boolean) where
    join = definedJoin
@@ -130,12 +136,21 @@ instance Slices (Cont Boolean) where
    maybeJoin (ContElim σ) (ContElim σ')   = ContElim <$> maybeJoin σ σ'
    maybeJoin _ _                          = report "Incompatible continuations"
 
+instance Expandable (Cont Boolean) where
+   expand ContNone ContNone            = ContNone
+   expand (ContExpr e) (ContExpr e')   = ContExpr (expand e e')
+   expand (ContElim σ) (ContElim σ')   = ContElim (expand σ σ')
+   expand _ _                          = error "Incompatible continuations"
+
 instance JoinSemilattice (VarDef Boolean) where
    join = definedJoin
    neg = (<$>) neg
 
 instance Slices (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
+
+instance Expandable (VarDef Boolean) where
+   expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
 
 instance JoinSemilattice (Expr Boolean) where
    join = definedJoin
@@ -157,3 +172,20 @@ instance Slices (Expr Boolean) where
    maybeJoin (Let def e) (Let def' e')                         = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec δ e) (LetRec δ' e')                       = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'
    maybeJoin _ _                                               = report "Incompatible expressions"
+
+instance Expandable (Expr Boolean) where
+   expand (Var x) (Var x')                                  = Var (x ≜ x')
+   expand (Op op) (Op op')                                  = Op (op ≜ op')
+   expand (Int α n) (Int α' n')                             = Int (α ∨ α') (n ≜ n')
+   expand (Str α str) (Str α' str')                         = Str (α ∨ α') (str ≜ str')
+   expand (Float α n) (Float α' n')                         = Float (α ∨ α') (n ≜ n')
+   expand (Record α xes) (Record α' xes')                   = Record (α ∨ α') (expand xes xes')
+   expand (Constr α c es) (Constr α' c' es')                = Constr (α ∨ α') (c ≜ c') (expand es es')
+   expand (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
+      Matrix (α ∨ α') (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
+   expand (Lambda σ) (Lambda σ')                            = Lambda (expand σ σ')
+   expand (Project e x) (Project e' x')                     = Project (expand e e') (x ≜ x')
+   expand (App e1 e2) (App e1' e2')                         = App (expand e1 e1') (expand e2 e2')
+   expand (Let def e) (Let def' e')                         = Let (expand def def') (expand e e')
+   expand (LetRec δ e) (LetRec δ' e')                       = LetRec (expand δ δ') (expand e e')
+   expand _ _                                               = error "Incompatible expressions"
