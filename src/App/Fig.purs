@@ -121,16 +121,16 @@ type LinkResult = {
 }
 
 drawLinkFig :: LinkFig -> Either Selector Selector -> Effect Unit
-drawLinkFig fig@{ spec: { x, divId }, γ0, e1, e2, t1, t2, v1, v2 } δv = do
+drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } δv = do
    log $ "Redrawing " <> divId
    let v1' × v2' × δv1 × δv2 × v0 = successful case δv of
          Left δv1 -> do
             let v1' = δv1 v1
-            { v', v0' } <- linkResult x γ0 e2 t1 t2 v1'
+            { v', v0' } <- linkResult x γ0 γ e1 e2 t1 t2 v1'
             pure $ v1' × v' × const v1' × identity × v0'
          Right δv2 -> do
             let v2' = δv2 v2
-            { v', v0' } <- linkResult x γ0 e1 t2 t1 v2'
+            { v', v0' } <- linkResult x γ0 γ e2 e1 t2 t1 v2'
             pure $ v' × v2' × identity × const v2' × v0'
    drawView divId (\selector -> drawLinkFig fig (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
    drawView divId (\selector -> drawLinkFig fig (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
@@ -152,15 +152,15 @@ valViews γ xs = sequence (flip varView γ <$> xs)
 
 -- For an output selection, views of corresponding input selections.
 figViews :: Fig -> Selector -> MayFail (View × Array View)
-figViews { spec: { xs }, t, v } δv = do
-   let γ0γ × e × α = evalBwd (δv v) t
-       v' = evalFwd γ0γ e α t
+figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
+   let γ0γ × e' × α = evalBwd (γ0 <+> γ) e (δv v) t
+       v' = evalFwd γ0γ e' α t
    views <- valViews γ0γ xs
    pure $ view "output" v' × views
 
-linkResult :: Var -> Env 𝔹 -> Expr 𝔹 -> Trace 𝔹 -> Trace 𝔹 -> Val 𝔹 -> MayFail LinkResult
-linkResult x γ0 e2 t1 t2 v1 = do
-   let γ0γ × _ × _ = evalBwd v1 t1
+linkResult :: Var -> Env 𝔹 -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace 𝔹 -> Trace 𝔹 -> Val 𝔹 -> MayFail LinkResult
+linkResult x γ0 γ e1 e2 t1 t2 v1 = do
+   let γ0γ × _ × _ = evalBwd (γ0 <+> γ) e1 v1 t1
        _ × γ' = append_inv (S.singleton x) γ0γ
    v0' <- lookup x γ' # orElse absurd
    -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use

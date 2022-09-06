@@ -22,8 +22,7 @@ import Lattice (𝔹)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as S
-import Trace (Trace)
-import Util (MayFail, type (×), (×), successful)
+import Util (type (×), (×), successful)
 import Val (Env, Val(..), (<+>))
 
 -- Don't enforce expected values for graphics tests (values too complex).
@@ -49,7 +48,7 @@ testWithSetup (File file) expected v_expect_opt setup =
          let e = successful (desugarFwd s)
              t × v = successful (eval γ e)
              v' = fromMaybe identity (fst <$> v_expect_opt) v
-             γ' × e' × _ = evalBwd v' t
+             γ' × e' × _ = evalBwd γ e v' t
              s' = desugarBwd e' s
              v'' = evalFwd γ' (successful (desugarFwd s')) true t
          unless (isGraphical v'') (checkPretty "Value" expected v'')
@@ -71,8 +70,8 @@ testLink :: LinkFigSpec -> Selector -> String -> Test Unit
 testLink spec@{ x } δv1 v2_expect =
    before (loadLinkFig spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
-         \{ γ0, e2, t1, t2, v1 } ->
-            let { v': v2' } = successful $ linkResult x γ0 e2 t1 t2 (δv1 v1) in
+         \{ γ0, γ, e1, e2, t1, t2, v1 } ->
+            let { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1) in
             checkPretty "Linked output" v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit
