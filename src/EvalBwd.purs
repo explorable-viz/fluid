@@ -57,9 +57,9 @@ matchManyBwd γγ' κ α (w : ws) =
    (vs <> v : Nil) × κ'
 
 evalBwd :: Env 𝔹 -> Expr 𝔹 -> Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
-evalBwd _ _ v t = evalBwd' v t
---   let γ' × e' × α = evalBwd' v t
---   in expand γ' γ × expand e e' × α
+evalBwd γ e v t =
+   let γ' × e' × α = evalBwd' v t
+   in expand γ' γ × expand e' e × α
 
 -- Computes a partial slice which evalBwd expands to a full slice.
 evalBwd' :: Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹

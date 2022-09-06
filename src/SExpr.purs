@@ -5,7 +5,7 @@ import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
 import Bindings (Bind, Var)
 import DataType (Ctr)
-import Lattice (class JoinSemilattice, class Slices, bot, definedJoin, neg)
+import Lattice (class JoinSemilattice, class Slices, definedJoin, neg)
 import Util (type (×), type (+), error, unimplemented)
 
 -- Surface language expressions.

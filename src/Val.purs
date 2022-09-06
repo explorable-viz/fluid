@@ -138,14 +138,14 @@ instance Slices (Val Boolean) where
    maybeJoin _ _                                      = report "Incompatible values"
 
 instance Expandable (Val Boolean) where
-   expand (Int α n) (Int α' n')              = Int (α ≜ α') (n ≜ n')
-   expand (Float α n) (Float α' n')          = Float (α ≜ α') (n ≜ n')
-   expand (Str α str) (Str α' str')          = Str (α ≜ α') (str ≜ str')
-   expand (Record α xvs) (Record α' xvs')    = Record (α ≜ α') (expand xvs xvs')
-   expand (Constr α c vs) (Constr α' c' us)  = Constr (α ≜ α') (c ≜ c') (expand vs us)
-   expand (Matrix α (vss × i × j)) (Matrix α' (vss' × i' × j')) =
-      Matrix (α ≜ α') (expand vss vss' × (i ≜ i') × (j ≜ j'))
-   expand (Closure α γ ρ σ) (Closure α' γ' ρ' σ') =
-      Closure (α ≜ α') (expand γ γ') (expand ρ ρ') (expand σ σ')
+   expand (Int α n) (Int _ n')              = Int α (n ≜ n')
+   expand (Float α n) (Float _ n')          = Float α (n ≜ n')
+   expand (Str α str) (Str _ str')          = Str α (str ≜ str')
+   expand (Record α xvs) (Record _ xvs')    = Record α (expand xvs xvs')
+   expand (Constr α c vs) (Constr _ c' us)  = Constr α (c ≜ c') (expand vs us)
+   expand (Matrix α (vss × i × j)) (Matrix _ (vss' × i' × j')) =
+      Matrix α (expand vss vss' × (i ≜ i') × (j ≜ j'))
+   expand (Closure α γ ρ σ) (Closure _ γ' ρ' σ') =
+      Closure α (expand γ γ') (expand ρ ρ') (expand σ σ')
    expand (Primitive φ vs) (Primitive _ vs') = Primitive φ (expand vs vs') -- TODO: require φ == φ'
    expand _ _ = error "Incompatible values"

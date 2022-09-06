@@ -176,13 +176,13 @@ instance Slices (Expr Boolean) where
 instance Expandable (Expr Boolean) where
    expand (Var x) (Var x')                                  = Var (x ≜ x')
    expand (Op op) (Op op')                                  = Op (op ≜ op')
-   expand (Int α n) (Int α' n')                             = Int (α ∨ α') (n ≜ n')
-   expand (Str α str) (Str α' str')                         = Str (α ∨ α') (str ≜ str')
-   expand (Float α n) (Float α' n')                         = Float (α ∨ α') (n ≜ n')
-   expand (Record α xes) (Record α' xes')                   = Record (α ∨ α') (expand xes xes')
-   expand (Constr α c es) (Constr α' c' es')                = Constr (α ∨ α') (c ≜ c') (expand es es')
-   expand (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
-      Matrix (α ∨ α') (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
+   expand (Int α n) (Int _ n')                              = Int α (n ≜ n')
+   expand (Str α str) (Str _ str')                          = Str α (str ≜ str')
+   expand (Float α n) (Float _ n')                          = Float α (n ≜ n')
+   expand (Record α xes) (Record _ xes')                    = Record α (expand xes xes')
+   expand (Constr α c es) (Constr _ c' es')                 = Constr α (c ≜ c') (expand es es')
+   expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
+      Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
    expand (Lambda σ) (Lambda σ')                            = Lambda (expand σ σ')
    expand (Project e x) (Project e' x')                     = Project (expand e e') (x ≜ x')
    expand (App e1 e2) (App e1' e2')                         = App (expand e1 e1') (expand e2 e2')
