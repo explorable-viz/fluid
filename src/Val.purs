@@ -143,8 +143,8 @@ instance Expandable (Val Boolean) where
    expand (Str α str) (Str _ str')          = Str α (str ≜ str')
    expand (Record α xvs) (Record _ xvs')    = Record α (expand xvs xvs')
    expand (Constr α c vs) (Constr _ c' us)  = Constr α (c ≜ c') (expand vs us)
-   expand (Matrix α (vss × i × j)) (Matrix _ (vss' × i' × j')) =
-      Matrix α (expand vss vss' × (i ≜ i') × (j ≜ j'))
+   expand (Matrix α (vss × (i × βi) × (j × βj))) (Matrix _ (vss' × (i' × _) × (j' × _))) =
+      Matrix α (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
    expand (Closure α γ ρ σ) (Closure _ γ' ρ' σ') =
       Closure α (expand γ γ') (expand ρ ρ') (expand σ σ')
    expand (Primitive φ vs) (Primitive _ vs') = Primitive φ (expand vs vs') -- TODO: require φ == φ'
