@@ -56,7 +56,8 @@ testWithSetup (File file) expected v_expect_opt setup =
       it file \(γ × s) -> do
          let e = successful (desugarFwd s)
              t × v = successful (eval γ e)
-             γ' × s' = desugarEval_bwd (t × s) (fromMaybe identity (fst <$> v_expect_opt) v)
+             v' = fromMaybe identity (fst <$> v_expect_opt) v
+             γ' × s' = desugarEval_bwd (t × s) v'
              v'' = desugarEval_fwd γ' s' t
          unless (isGraphical v'') (checkPretty "Value" expected v'')
          case snd <$> v_expect_opt of
