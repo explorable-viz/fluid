@@ -54,7 +54,8 @@ testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × 
 testWithSetup (File file) expected v_expect_opt setup =
    before setup $
       it file \(γ × s) -> do
-         let t × v = successful (desugarFwd s >>= eval γ)
+         let e = successful (desugarFwd s)
+             t × v = successful (eval γ e)
              γ' × s' = desugarEval_bwd (t × s) (fromMaybe identity (fst <$> v_expect_opt) v)
              v' = desugarEval_fwd γ' s' t
          unless (isGraphical v') (checkPretty "Value" expected v')
