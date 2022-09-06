@@ -7,6 +7,7 @@ import Data.Map (empty, intersectionWith, toUnfoldable)
 import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), first, second)
 import Data.Set (union)
+import Data.Set (toUnfoldable) as S
 import Data.Tuple (snd)
 import Expr (Cont, Elim(..), Expr(..), VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))
@@ -22,8 +23,8 @@ matchFwd _ (ElimVar _ κ) (T.MatchVarAnon _) = empty × κ × true
 matchFwd v (ElimVar _ κ) (T.MatchVar x _) = M.singleton x v × κ × true
 matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
    second (_ ∧ α) (matchManyFwd vs (get c m) ws)
-matchFwd (V.Record α xvs) (ElimRecord _ κ) (T.MatchRecord xws) =
-   second (_ ∧ α) (matchManyFwd (xvs # toUnfoldable <#> snd) κ (xws # toUnfoldable <#> snd))
+matchFwd (V.Record α xvs) (ElimRecord xs κ) (T.MatchRecord xws) =
+   second (_ ∧ α) (matchManyFwd (xs # S.toUnfoldable <#> flip get xvs) κ (xws # toUnfoldable <#> snd))
 matchFwd _ _ _ = error absurd
 
 matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
