@@ -67,7 +67,7 @@ instance FV (Expr a) where
    fv (Project e _)   = fv e
    fv (App e1 e2)          = fv e1 `union` fv e2
    fv (Let def e)          = fv def `union` (fv e `difference` bv def)
-   fv (LetRec δ e)         = unions (fv <$> δ) `union` fv e
+   fv (LetRec ρ e)         = unions (fv <$> ρ) `union` fv e
 
 instance FV (Elim a) where
    fv (ElimVar x κ)     = fv κ `difference` singleton x
@@ -170,7 +170,7 @@ instance Slices (Expr Boolean) where
    maybeJoin (Project e x) (Project e' x')                     = Project <$> maybeJoin e e' <*> (x ≞ x')
    maybeJoin (App e1 e2) (App e1' e2')                         = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Let def e) (Let def' e')                         = Let <$> maybeJoin def def' <*> maybeJoin e e'
-   maybeJoin (LetRec δ e) (LetRec δ' e')                       = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'
+   maybeJoin (LetRec ρ e) (LetRec ρ' e')                       = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
    maybeJoin _ _                                               = report "Incompatible expressions"
 
 instance Expandable (Expr Boolean) where
@@ -187,5 +187,5 @@ instance Expandable (Expr Boolean) where
    expand (Project e x) (Project e' x')                     = Project (expand e e') (x ≜ x')
    expand (App e1 e2) (App e1' e2')                         = App (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e')                         = Let (expand def def') (expand e e')
-   expand (LetRec δ e) (LetRec δ' e')                       = LetRec (expand δ δ') (expand e e')
+   expand (LetRec ρ e) (LetRec ρ' e')                       = LetRec (expand ρ ρ') (expand e e')
    expand _ _                                               = error "Incompatible expressions"

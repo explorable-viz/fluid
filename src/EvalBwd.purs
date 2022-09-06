@@ -69,16 +69,16 @@ evalBwd' (V.Str α _) (T.Str str) = empty × Str α str × α
 evalBwd' (V.Int α _) (T.Int n) = empty × Int α n × α
 evalBwd' (V.Float α _) (T.Float n) = empty × Float α n × α
 evalBwd' (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
-evalBwd' (V.Record α xvs) (T.Record γ xts) =
+evalBwd' (V.Record α xvs) (T.Record xts) =
    let xvts = intersectionWith (×) xvs xts
        xγeαs = xvts <#> uncurry evalBwd'
-       γ' = foldr (∨) (botOf <$> γ) (xγeαs <#> (fst >>> fst)) in
+       γ' = foldr (∨) empty (xγeαs <#> (fst >>> fst)) in
    γ' × Record α (xγeαs <#> (fst >>> snd)) × (foldr (∨) α (xγeαs <#> snd))
-evalBwd' (V.Constr α _ vs) (T.Constr γ c ts) =
+evalBwd' (V.Constr α _ vs) (T.Constr c ts) =
    let evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
        evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
           where γ'' × e × α'' = evalBwd' v' t'
-       γ' × es × α' = foldr evalArg_bwd ((botOf <$> γ) × Nil × α) (zip vs ts) in
+       γ' × es × α' = foldr evalArg_bwd (empty × Nil × α) (zip vs ts) in
    γ' × Constr α c es × α'
 evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (i' × j') t') =
    let NonEmptyList ijs = nonEmpty $ do
@@ -100,8 +100,7 @@ evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) 
        γ' × e' × α'' = evalBwd' (V.Constr false cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t' in
     (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
 evalBwd' v (T.Project t x) =
-   let v' = V.Record false (M.singleton x v)
-       ρ × e × α = evalBwd' v' t in
+   let ρ × e × α = evalBwd' (V.Record false (M.singleton x v)) t in
    ρ × Project e x × α
 evalBwd' v (T.App (t1 × xs × _) t2 w t3) =
    let γ1γ2γ3 × e × β = evalBwd' v t3

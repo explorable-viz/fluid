@@ -71,11 +71,11 @@ eval _ (Float _ n)   = pure (T.Float n × V.Float false n)
 eval _ (Str _ str)   = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
    xtvs <- traverse (eval γ) xes
-   pure $ (T.Record γ $ xtvs <#> fst) × V.Record false (xtvs <#> snd)
+   pure $ (T.Record $ xtvs <#> fst) × V.Record false (xtvs <#> snd)
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip
-   pure (T.Constr γ c ts × V.Constr false c vs)
+   pure (T.Constr c ts × V.Constr false c vs)
 eval γ (Matrix _ e (x × y) e') = do
    t × v <- eval γ e'
    case v of

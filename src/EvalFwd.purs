@@ -44,10 +44,10 @@ evalFwd γ (Op _) _ (T.Op op) = get op γ
 evalFwd _ (Int α _) α' (T.Int n) = V.Int (α ∧ α') n
 evalFwd _ (Float α _) α' (T.Float n) = V.Float (α ∧ α') n
 evalFwd _ (Str α _) α' (T.Str str) = V.Str (α ∧ α') str
-evalFwd γ (Record α xes) α' (T.Record _ xts) =
+evalFwd γ (Record α xes) α' (T.Record xts) =
    let xvs = intersectionWith (×) xes xts <#> (\(e × t) -> evalFwd γ e α' t)
    in V.Record (α ∧ α') xvs
-evalFwd γ (Constr α _ es) α' (T.Constr _ c ts) =
+evalFwd γ (Constr α _ es) α' (T.Constr c ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)
 evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
    case evalFwd γ e2 α' t2 of

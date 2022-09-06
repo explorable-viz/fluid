@@ -7,7 +7,7 @@ import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (zipWith) as NEL
-import Data.Map (Map, difference, insert, keys, lookup, toUnfoldable, union, update)
+import Data.Map (Map, difference, insert, intersectionWith, keys, lookup, toUnfoldable, union, update)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Data.Set (Set, subset)
@@ -121,7 +121,7 @@ class Expandable a where
 instance (Key k, Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expandable (Map k (t a)) where
    expand kvs kvs' =
       assert (keys kvs `subset` keys kvs') $
-      kvs `union` ((kvs' `difference` kvs) <#> botOf)
+      (kvs `intersectionWith expand` kvs') `union` ((kvs' `difference` kvs) <#> botOf)
 
 instance Expandable a => Expandable (List a) where
    expand xs ys = zipWith expand xs ys

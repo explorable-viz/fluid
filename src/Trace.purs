@@ -8,7 +8,7 @@ import Bindings (Var)
 import DataType (Ctr)
 import Expr (class BV, Elim, RecDefs, bv)
 import Util (type (×))
-import Val (Array2, Env, PrimOp, Val)
+import Val (Array2, PrimOp, Val)
 
 data VarDef a = VarDef (Match a) (Trace a)
 
@@ -19,8 +19,8 @@ data Trace a =
    Int Int |
    Float Number |
    Str String |
-   Record (Env a) (Map Var (Trace a)) |
-   Constr (Env a) Ctr (List (Trace a)) |
+   Record (Map Var (Trace a)) |
+   Constr Ctr (List (Trace a)) |
    Matrix (Array2 (Trace a)) (Var × Var) (Int × Int) (Trace a) |
    Lambda (Elim a) |
    Project (Trace a) Var |

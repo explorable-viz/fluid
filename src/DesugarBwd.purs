@@ -57,6 +57,8 @@ exprBwd (E.Float α _) (Float _ n) = Float α n
 exprBwd (E.Str α _) (Str _ str) = Str α str
 exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry exprBwd <$> zip es ss)
 exprBwd (E.Record α xes) (Record _ xss) =
+--   trace (((keys xes # S.toUnfoldable) <> (dom xss # S.toUnfoldable) :: List _) # show) \_ ->
+--   Record α $ xss <#> \(x ↦ s) -> x ↦ exprBwd (get x xes) s
    Record α $ xss <#> \(x ↦ s) -> x ↦ case lookup x xes of
       Nothing -> botOf s
       Just e -> exprBwd e s
