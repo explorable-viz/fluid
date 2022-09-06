@@ -36,11 +36,6 @@ type Test a = SpecT Aff Unit Effect a
 run :: forall a . Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
-desugarEval_bwd :: Trace 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr 𝔹
-desugarEval_bwd (t × s) v =
-   let γ × e × _ = evalBwd v t in
-   γ × desugarBwd e s
-
 desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Trace 𝔹 -> Val 𝔹
 desugarEval_fwd γ s = evalFwd γ (successful (desugarFwd s)) true
 
@@ -57,7 +52,8 @@ testWithSetup (File file) expected v_expect_opt setup =
          let e = successful (desugarFwd s)
              t × v = successful (eval γ e)
              v' = fromMaybe identity (fst <$> v_expect_opt) v
-             γ' × s' = desugarEval_bwd (t × s) v'
+             γ' × e' × _ = evalBwd v' t
+             s' = desugarBwd e' s
              v'' = desugarEval_fwd γ' s' t
          unless (isGraphical v'') (checkPretty "Value" expected v'')
          case snd <$> v_expect_opt of
