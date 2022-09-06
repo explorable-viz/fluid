@@ -6,13 +6,14 @@ import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
-import Data.Map (empty, keys, lookup, toUnfoldable)
+import Data.Map (empty, keys, lookup)
 import Data.Map (fromFoldable, singleton) as M
 import Data.Profunctor.Strong (second)
 import Data.Set (union, subset)
+import Data.Set (toUnfoldable) as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
-import Bindings (find, varAnon)
+import Bindings (varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), VarDef(..), asExpr, fv)
 import Lattice (𝔹, checkConsistent)
@@ -20,7 +21,7 @@ import Pretty (prettyP)
 import Primitive (match) as P
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, report, successful)
+import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, get, report, successful)
 import Val (Env, FunEnv, PrimOp(..), (<+>), Val, dom, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -39,8 +40,8 @@ match v (ElimConstr m) = do
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record _ xvs) (ElimRecord xs κ)  = do
    check (subset xs (keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
-   let xs × vs = xvs # toUnfoldable # unzip
-   second (zip xs >>> M.fromFoldable >>> MatchRecord) <$> matchMany vs κ
+   let xs' = xs # S.toUnfoldable
+   second (zip xs' >>> M.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get xvs) κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -71,11 +72,11 @@ eval _ (Float _ n)   = pure (T.Float n × V.Float false n)
 eval _ (Str _ str)   = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
    xtvs <- traverse (eval γ) xes
-   pure $ (T.Record γ $ xtvs <#> fst) × V.Record false (xtvs <#> snd)
+   pure $ (T.Record $ xtvs <#> fst) × V.Record false (xtvs <#> snd)
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip
-   pure (T.Constr γ c ts × V.Constr false c vs)
+   pure (T.Constr c ts × V.Constr false c vs)
 eval γ (Matrix _ e (x × y) e') = do
    t × v <- eval γ e'
    case v of
@@ -98,7 +99,7 @@ eval γ (Lambda σ) =
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
-      V.Record _ xvs -> (T.Project t (xvs # toUnfoldable) x × _) <$> find x (xvs # toUnfoldable)
+      V.Record _ xvs -> (T.Project t x × _) <$> lookup' x xvs
       _ -> report "Expected record"
 eval γ (App e e') = do
    t × v <- eval γ e
@@ -122,10 +123,10 @@ eval γ (Let (VarDef σ e) e') = do
    γ' × _ × w <- match v σ -- terminal meta-type of eliminator is meta-unit
    t' × v' <- eval (γ <+> γ') e'
    pure (T.Let (T.VarDef w t) t' × v')
-eval γ (LetRec xσs e) = do
-   let γ' = closeDefs γ (M.fromFoldable xσs)
+eval γ (LetRec ρ e) = do
+   let γ' = closeDefs γ ρ
    t × v <- eval (γ <+> γ') e
-   pure (T.LetRec xσs t × v)
+   pure (T.LetRec ρ t × v)
 
 eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
 eval_module γ = go empty
@@ -136,5 +137,5 @@ eval_module γ = go empty
       _  × v <- eval (γ <+> y') e
       γ'' × _ × _  <- match v σ
       go (y' <+> γ'') (Module ds)
-   go γ' (Module (Right xσs : ds)) =
-      go (γ' <+> closeDefs (γ <+> γ') (M.fromFoldable xσs)) (Module ds)
+   go γ' (Module (Right ρ : ds)) =
+      go (γ' <+> closeDefs (γ <+> γ') ρ) (Module ds)

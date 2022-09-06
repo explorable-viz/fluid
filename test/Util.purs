@@ -22,8 +22,7 @@ import Lattice (𝔹)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as S
-import Trace (Trace)
-import Util (MayFail, type (×), (×), successful)
+import Util (type (×), (×), successful)
 import Val (Env, Val(..), (<+>))
 
 -- Don't enforce expected values for graphics tests (values too complex).
@@ -36,17 +35,6 @@ type Test a = SpecT Aff Unit Effect a
 run :: forall a . Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
-desugarEval :: Env 𝔹 -> S.Expr 𝔹 -> MayFail (Trace 𝔹 × Val 𝔹)
-desugarEval γ s = desugarFwd s >>= eval γ
-
-desugarEval_bwd :: Trace 𝔹 × S.Expr 𝔹 -> Val 𝔹 -> Env 𝔹 × S.Expr 𝔹
-desugarEval_bwd (t × s) v =
-   let γ × e × _ = evalBwd v t in
-   γ × desugarBwd e s
-
-desugarEval_fwd :: Env 𝔹 -> S.Expr 𝔹 -> Trace 𝔹 -> Val 𝔹
-desugarEval_fwd γ s = evalFwd γ (successful (desugarFwd s)) true
-
 checkPretty :: forall a . Pretty a => String -> String -> a -> Aff Unit
 checkPretty msg expected x =
    trace (msg <> ":\n" <> prettyP x) \_ ->
@@ -57,10 +45,13 @@ testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × 
 testWithSetup (File file) expected v_expect_opt setup =
    before setup $
       it file \(γ × s) -> do
-         let t × v = successful (desugarEval γ s)
-             γ' × s' = desugarEval_bwd (t × s) (fromMaybe identity (fst <$> v_expect_opt) v)
-             v' = desugarEval_fwd γ' s' t
-         unless (isGraphical v') (checkPretty "Value" expected v')
+         let e = successful (desugarFwd s)
+             t × v = successful (eval γ e)
+             v' = fromMaybe identity (fst <$> v_expect_opt) v
+             γ' × e' × _ = evalBwd γ e v' t
+             s' = desugarBwd e' s
+             v'' = evalFwd γ' (successful (desugarFwd s')) true t
+         unless (isGraphical v'') (checkPretty "Value" expected v'')
          case snd <$> v_expect_opt of
             Nothing -> pure unit
             Just file_expect ->
@@ -79,8 +70,8 @@ testLink :: LinkFigSpec -> Selector -> String -> Test Unit
 testLink spec@{ x } δv1 v2_expect =
    before (loadLinkFig spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
-         \{ γ0, e2, t1, t2, v1 } ->
-            let { v': v2' } = successful $ linkResult x γ0 e2 t1 t2 (δv1 v1) in
+         \{ γ0, γ, e1, e2, t1, t2, v1 } ->
+            let { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1) in
             checkPretty "Linked output" v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit

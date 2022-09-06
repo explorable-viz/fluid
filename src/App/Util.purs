@@ -15,7 +15,7 @@ import Bindings (Var)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Lattice (𝔹, botOf, neg)
 import Primitive (class ToFrom, as, match_fwd)
-import Util (Endo, type (×), type (+), (×), absurd, error, definitely', mustLookup)
+import Util (Endo, type (×), type (+), (×), absurd, error, definitely', get)
 import Val (Val(..), updateMatrix)
 
 type HTMLId = String
@@ -32,9 +32,6 @@ get_prim x = match_fwd <<< get x
 
 get_intOrNumber :: Var -> Map Var (Val 𝔹) -> Number × 𝔹
 get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
-
-get :: Var -> Map Var (Val 𝔹) -> Val 𝔹
-get = mustLookup
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (Map Var (Val 𝔹) -> a) -> Val 𝔹 -> a
@@ -65,8 +62,8 @@ selectNthNode n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v 
 selectNthNode _ _ _                                         = error absurd
 
 selectSome :: Selector
-selectSome (Constr _ c v) | c == cSome = Constr true c (botOf v)
-selectSome _                           = error absurd
+selectSome (Constr _ c vs) | c == cSome   = Constr true c (botOf <$> vs)
+selectSome _                              = error absurd
 
 select_y :: Selector -> Selector
 select_y δv (Record α r) = Record α $ M.update (δv >>> Just) f_y r

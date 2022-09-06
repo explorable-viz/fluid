@@ -60,7 +60,7 @@ varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
 -- In the formalism, "group by name" is part of the syntax.
 -- cs desugar_fwd σ
 recDefsFwd :: RecDefs 𝔹 -> MayFail (E.RecDefs 𝔹)
-recDefsFwd xcs = toList <$> traverse recDefFwd xcss
+recDefsFwd xcs = fromFoldable <$> traverse recDefFwd xcss
    where
    xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 

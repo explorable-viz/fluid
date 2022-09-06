@@ -4,11 +4,11 @@ import Prelude
 import Data.List (List)
 import Data.Map (Map)
 import Data.Set (Set, empty, singleton, unions)
-import Bindings (Bind, Var)
+import Bindings (Var)
 import DataType (Ctr)
 import Expr (class BV, Elim, RecDefs, bv)
 import Util (type (×))
-import Val (Array2, Env, PrimOp, Val)
+import Val (Array2, PrimOp, Val)
 
 data VarDef a = VarDef (Match a) (Trace a)
 
@@ -19,11 +19,11 @@ data Trace a =
    Int Int |
    Float Number |
    Str String |
-   Record (Env a) (Map Var (Trace a)) |
-   Constr (Env a) Ctr (List (Trace a)) |
+   Record (Map Var (Trace a)) |
+   Constr Ctr (List (Trace a)) |
    Matrix (Array2 (Trace a)) (Var × Var) (Int × Int) (Trace a) |
    Lambda (Elim a) |
-   Project (Trace a) (List (Bind (Val a))) Var |
+   Project (Trace a) Var |
    App (Trace a × Set Var × Elim a) (Trace a) (Match a) (Trace a) |
    AppPrim (Trace a × PrimOp × List (Val a)) (Trace a × Val a) | -- record prior arguments
    AppConstr (Trace a × Ctr × Int) (Trace a) |                   -- record number of prior arguments

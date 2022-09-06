@@ -8,12 +8,12 @@ import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 import App.Util (
    Handler, class Reflect, Renderer, Selector,
-   from, get, get_intOrNumber, get_prim, record, selectNth, toggleConstrArg, toggleField
+   from, get_intOrNumber, get_prim, record, selectNth, toggleConstrArg, toggleField
 )
 import Bindings (Var)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
 import Lattice (𝔹, neg)
-import Util (type (×), (!), definitely')
+import Util (type (×), (!), definitely', get)
 import Val (Val)
 
 newtype BarChart = BarChart { caption :: String × 𝔹, data :: Array BarChartRecord }

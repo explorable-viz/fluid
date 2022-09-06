@@ -9,12 +9,10 @@ import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfo
 import Bindings (Bind, Var, (↦))
 import DataType (Ctr)
 import Expr (Elim, fv)
-import Lattice (
-   class BoundedSlices, class JoinSemilattice, class Slices, 𝔹, (∨), bot, botOf, definedJoin, maybeJoin, neg
-)
+import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
 import Util (
-   Endo, MayFail, type (×), (×), (≞), (!),
-   absurd, disjUnion, error, mustLookup, orElse, report, unsafeUpdateAt
+   Endo, MayFail, type (×), (×), (≞), (≜), (!),
+   absurd, disjUnion, error, get, orElse, report, unsafeUpdateAt
 )
 
 type Op a = a × 𝔹 -> Val 𝔹
@@ -75,7 +73,7 @@ reaches ρ xs = go (toUnfoldable xs) empty
    go Nil acc                          = acc
    go (x : xs') acc | x `member` acc   = go xs' acc
    go (x : xs') acc | otherwise        =
-      let σ = mustLookup x ρ in
+      let σ = get x ρ in
       go (toUnfoldable (fv σ `intersection` dom_ρ) <> xs')
          (singleton x `union` acc)
 
@@ -139,13 +137,15 @@ instance Slices (Val Boolean) where
    maybeJoin (Primitive φ vs) (Primitive _ vs')       = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _                                      = report "Incompatible values"
 
-instance BoundedSlices (Val Boolean) where
-   botOf (Int _ n)                  = Int bot n
-   botOf (Float _ n)                = Float bot n
-   botOf (Str _ str)                = Str bot str
-   botOf (Record _ xvs)             = Record bot (botOf <$> xvs)
-   botOf (Constr _ c vs)            = Constr bot c (botOf <$> vs)
-   -- PureScript can't derive this case
-   botOf (Matrix _ (r × (i × _) × (j × _))) = Matrix bot ((((<$>) botOf) <$> r) × (i × bot) × (j × bot))
-   botOf (Primitive φ vs)           = Primitive φ (botOf <$> vs)
-   botOf (Closure _ γ ρ σ)         = Closure bot (botOf <$> γ) (botOf <$> ρ) (botOf σ)
+instance Expandable (Val Boolean) where
+   expand (Int α n) (Int _ n')              = Int α (n ≜ n')
+   expand (Float α n) (Float _ n')          = Float α (n ≜ n')
+   expand (Str α str) (Str _ str')          = Str α (str ≜ str')
+   expand (Record α xvs) (Record _ xvs')    = Record α (expand xvs xvs')
+   expand (Constr α c vs) (Constr _ c' us)  = Constr α (c ≜ c') (expand vs us)
+   expand (Matrix α (vss × (i × βi) × (j × βj))) (Matrix _ (vss' × (i' × _) × (j' × _))) =
+      Matrix α (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
+   expand (Closure α γ ρ σ) (Closure _ γ' ρ' σ') =
+      Closure α (expand γ γ') (expand ρ ρ') (expand σ σ')
+   expand (Primitive φ vs) (Primitive _ vs') = Primitive φ (expand vs vs') -- TODO: require φ == φ'
+   expand _ _ = error "Incompatible values"

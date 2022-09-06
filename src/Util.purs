@@ -46,8 +46,8 @@ definitely msg Nothing  = error msg
 definitely' :: forall a . Maybe a -> a
 definitely' = definitely absurd
 
-mustLookup :: forall k v . Ord k => k -> Map k v -> v
-mustLookup k = definitely' <<< lookup k
+get :: forall k v . Ord k => k -> Map k v -> v
+get k = definitely' <<< lookup k
 
 asSingletonMap :: forall k v . Map k v -> k × v
 asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))

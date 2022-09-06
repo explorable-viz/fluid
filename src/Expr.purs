@@ -6,10 +6,10 @@ import Data.List (List)
 import Data.Map (Map, keys)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Tuple (snd)
-import Bindings (Bind, Var, val)
+import Bindings (Var)
 import DataType (Ctr)
-import Lattice (class BoundedSlices, class JoinSemilattice, class Slices, (∨), bot, botOf, definedJoin, maybeJoin, neg)
-import Util (type (×), (×), type (+), (≞), asSingletonMap, error, report)
+import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
+import Util (type (×), (×), type (+), (≜), (≞), asSingletonMap, error, report)
 
 data Expr a =
    Var Var |
@@ -28,7 +28,7 @@ data Expr a =
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
-type RecDefs a = List (Bind (Elim a))
+type RecDefs a = Map Var (Elim a)
 
 data Elim a =
    ElimVar Var (Cont a) |
@@ -67,7 +67,7 @@ instance FV (Expr a) where
    fv (Project e _)   = fv e
    fv (App e1 e2)          = fv e1 `union` fv e2
    fv (Let def e)          = fv def `union` (fv e `difference` bv def)
-   fv (LetRec δ e)         = unions (fv <$> val <$> δ) `union` fv e
+   fv (LetRec ρ e)         = unions (fv <$> ρ) `union` fv e
 
 instance FV (Elim a) where
    fv (ElimVar x κ)     = fv κ `difference` singleton x
@@ -116,14 +116,15 @@ instance JoinSemilattice (Elim Boolean) where
 
 instance Slices (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ')         = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr κs) (ElimConstr κs')      = ElimConstr <$> maybeJoin κs κs'
+   maybeJoin (ElimConstr cκs) (ElimConstr cκs')    = ElimConstr <$> maybeJoin cκs cκs'
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
    maybeJoin _ _                                   = report "Incompatible eliminators"
 
-instance BoundedSlices (Elim Boolean) where
-   botOf (ElimVar x κ) = ElimVar x (botOf κ)
-   botOf (ElimConstr κs) = ElimConstr (botOf <$> κs)
-   botOf (ElimRecord xs κ) = ElimRecord xs (botOf κ)
+instance Expandable (Elim Boolean) where
+   expand (ElimVar x κ) (ElimVar x' κ')         = ElimVar (x ≜ x') (expand κ κ')
+   expand (ElimConstr cκs) (ElimConstr cκs')    = ElimConstr (expand cκs cκs')
+   expand (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord (xs ≜ ys) (expand κ κ')
+   expand _ _                                   = error "Incompatible eliminators"
 
 instance JoinSemilattice (Cont Boolean) where
    join = definedJoin
@@ -135,10 +136,11 @@ instance Slices (Cont Boolean) where
    maybeJoin (ContElim σ) (ContElim σ')   = ContElim <$> maybeJoin σ σ'
    maybeJoin _ _                          = report "Incompatible continuations"
 
-instance BoundedSlices (Cont Boolean) where
-   botOf ContNone       = ContNone
-   botOf (ContExpr e)   = ContExpr (botOf e)
-   botOf (ContElim σ)   = ContElim (botOf σ)
+instance Expandable (Cont Boolean) where
+   expand ContNone ContNone            = ContNone
+   expand (ContExpr e) (ContExpr e')   = ContExpr (expand e e')
+   expand (ContElim σ) (ContElim σ')   = ContElim (expand σ σ')
+   expand _ _                          = error "Incompatible continuations"
 
 instance JoinSemilattice (VarDef Boolean) where
    join = definedJoin
@@ -147,23 +149,8 @@ instance JoinSemilattice (VarDef Boolean) where
 instance Slices (VarDef Boolean) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
 
-instance BoundedSlices (VarDef Boolean) where
-   botOf (VarDef σ e) = VarDef (botOf σ) (botOf e)
-
-instance BoundedSlices (Expr Boolean) where
-   botOf (Var x)                    = Var x
-   botOf (Op op)                    = Op op
-   botOf (Int _ n)                  = Int bot n
-   botOf (Str _ str)                = Str bot str
-   botOf (Float _ n)                = Float bot n
-   botOf (Record _ xes)             = Record bot (botOf xes)
-   botOf (Constr _ c es)            = Constr bot c (botOf es)
-   botOf (Matrix _ e1 (x × y) e2)   = Matrix bot (botOf e1) (x × y) (botOf e2)
-   botOf (Lambda σ)                 = Lambda (botOf σ)
-   botOf (Project e x)              = Project (botOf e) x
-   botOf (App e1 e2)                = App (botOf e1) (botOf e2)
-   botOf (Let def e)                = Let (botOf def) (botOf e)
-   botOf (LetRec δ e)               = LetRec (botOf δ) (botOf e)
+instance Expandable (VarDef Boolean) where
+   expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
 
 instance JoinSemilattice (Expr Boolean) where
    join = definedJoin
@@ -183,5 +170,22 @@ instance Slices (Expr Boolean) where
    maybeJoin (Project e x) (Project e' x')                     = Project <$> maybeJoin e e' <*> (x ≞ x')
    maybeJoin (App e1 e2) (App e1' e2')                         = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Let def e) (Let def' e')                         = Let <$> maybeJoin def def' <*> maybeJoin e e'
-   maybeJoin (LetRec δ e) (LetRec δ' e')                       = LetRec <$> maybeJoin δ δ' <*> maybeJoin e e'
+   maybeJoin (LetRec ρ e) (LetRec ρ' e')                       = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
    maybeJoin _ _                                               = report "Incompatible expressions"
+
+instance Expandable (Expr Boolean) where
+   expand (Var x) (Var x')                                  = Var (x ≜ x')
+   expand (Op op) (Op op')                                  = Op (op ≜ op')
+   expand (Int α n) (Int _ n')                              = Int α (n ≜ n')
+   expand (Str α str) (Str _ str')                          = Str α (str ≜ str')
+   expand (Float α n) (Float _ n')                          = Float α (n ≜ n')
+   expand (Record α xes) (Record _ xes')                    = Record α (expand xes xes')
+   expand (Constr α c es) (Constr _ c' es')                 = Constr α (c ≜ c') (expand es es')
+   expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
+      Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
+   expand (Lambda σ) (Lambda σ')                            = Lambda (expand σ σ')
+   expand (Project e x) (Project e' x')                     = Project (expand e e') (x ≜ x')
+   expand (App e1 e2) (App e1' e2')                         = App (expand e1 e1') (expand e2 e2')
+   expand (Let def e) (Let def' e')                         = Let (expand def def') (expand e e')
+   expand (LetRec ρ e) (LetRec ρ' e')                       = LetRec (expand ρ ρ') (expand e e')
+   expand _ _                                               = error "Incompatible expressions"

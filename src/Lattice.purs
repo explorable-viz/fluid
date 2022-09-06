@@ -7,13 +7,13 @@ import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (zipWith) as NEL
-import Data.Map (Map, insert, keys, lookup, toUnfoldable, update)
+import Data.Map (Map, difference, insert, intersectionWith, keys, lookup, toUnfoldable, union, update)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
-import Data.Set (Set)
+import Data.Set (Set, subset)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Util (Endo, MayFail, type (×), (×), (≞), report, successfulWith)
+import Util (Endo, MayFail, type (×), (×), (≞), assert, report, successfulWith)
 
 class JoinSemilattice a where
    join :: a -> a -> a
@@ -43,11 +43,11 @@ class JoinSemilattice a <= Slices a where
 definedJoin :: forall a . Slices a => a -> a -> a
 definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
 
-class Slices a <= BoundedSlices a where
-   botOf :: Endo a
+botOf :: forall t a . Functor t => BoundedJoinSemilattice a => Endo (t a)
+botOf = (<$>) (const bot)
 
-topOf :: forall a . BoundedSlices a => Endo a
-topOf = botOf >>> neg
+topOf :: forall t a . Functor t => BoundedJoinSemilattice a => Endo (t a)
+topOf = (<$>) (const bot >>> neg)
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
@@ -65,9 +65,6 @@ instance (Eq k, Show k, Slices t) => JoinSemilattice (Tuple k t) where
 
 instance (Eq k, Show k, Slices t) => Slices (Tuple k t) where
    maybeJoin (k × v) (k' × v') = (k ≞ k') `lift2 (×)` maybeJoin v v'
-
-instance (Eq k, Show k, BoundedSlices t) => BoundedSlices (Tuple k t) where
-   botOf = (<$>) botOf
 
 instance Slices t => JoinSemilattice (List t) where
    join = definedJoin
@@ -87,12 +84,6 @@ instance Slices t => Slices (NonEmptyList t) where
       | (length xs :: Int) == length ys   = sequence (NEL.zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
 
-instance BoundedSlices t => BoundedSlices (List t) where
-   botOf = (<$>) botOf
-
-instance BoundedSlices t => BoundedSlices (NonEmptyList t) where
-   botOf = (<$>) botOf
-
 instance (Key k, Slices t) => JoinSemilattice (Map k t) where
    join = definedJoin
    neg = (<$>) neg
@@ -103,12 +94,8 @@ class Ord k <= Key k where
 instance Key String where
    checkConsistent _ _ _ = pure unit
 
--- This is more general than we technically need for slicing, in that we can join maps with distinct keys as long as
--- join is defined for any overlapping keys. This is harmless, and it allows us to reuse the join operator
--- here for merging branches of piecewise function definitions.
 instance (Key k, Slices t) => Slices (Map k t) where
-   maybeJoin m m' =
-      foldM mayFailUpdate m (toUnfoldable m' :: List (k × t))
+   maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (k × t))
 
 mayFailUpdate :: forall k t . Key k => Slices t => Map k t -> k × t -> MayFail (Map k t)
 mayFailUpdate m (k × v) =
@@ -119,9 +106,6 @@ mayFailUpdate m (k × v) =
       Just v' ->
          update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
 
-instance (Key k, BoundedSlices t) => BoundedSlices (Map k t) where
-   botOf = (<$>) botOf
-
 instance Slices a => JoinSemilattice (Array a) where
    join = definedJoin
    neg = (<$>) neg
@@ -130,3 +114,17 @@ instance Slices a => Slices (Array a) where
    maybeJoin xs ys
       | length xs == (length ys :: Int)   = sequence (A.zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
+
+class Expandable a where
+   expand :: a -> a -> a
+
+instance (Key k, Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expandable (Map k (t a)) where
+   expand kvs kvs' =
+      assert (keys kvs `subset` keys kvs') $
+      (kvs `intersectionWith expand` kvs') `union` ((kvs' `difference` kvs) <#> botOf)
+
+instance Expandable a => Expandable (List a) where
+   expand xs ys = zipWith expand xs ys
+
+instance Expandable a => Expandable (Array a) where
+   expand xs ys = A.zipWith expand xs ys
