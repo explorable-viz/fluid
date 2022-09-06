@@ -7,8 +7,7 @@ import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), singleton, sortBy, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
-import Data.Map (Map, fromFoldable, lookup)
-import Data.Maybe (Maybe(..))
+import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
 import Data.Tuple (uncurry, fst, snd)
@@ -17,7 +16,7 @@ import Bindings (Bind, (↦), dom)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
-import Lattice (𝔹, (∨), botOf)
+import Lattice (𝔹, (∨))
 import SExpr (
       Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..),
       VarDefs
@@ -57,11 +56,7 @@ exprBwd (E.Float α _) (Float _ n) = Float α n
 exprBwd (E.Str α _) (Str _ str) = Str α str
 exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry exprBwd <$> zip es ss)
 exprBwd (E.Record α xes) (Record _ xss) =
---   trace (((keys xes # S.toUnfoldable) <> (dom xss # S.toUnfoldable) :: List _) # show) \_ ->
---   Record α $ xss <#> \(x ↦ s) -> x ↦ exprBwd (get x xes) s
-   Record α $ xss <#> \(x ↦ s) -> x ↦ case lookup x xes of
-      Nothing -> botOf s
-      Just e -> exprBwd e s
+   Record α $ xss <#> \(x ↦ s) -> x ↦ exprBwd (get x xes) s
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s (x × y) s') =
    Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
 exprBwd (E.Lambda σ) (Lambda bs) = Lambda (branchesBwd_curried σ bs)
