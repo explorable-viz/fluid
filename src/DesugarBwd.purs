@@ -8,14 +8,13 @@ import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), singleton, sortBy, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.Map (Map, fromFoldable, lookup)
-import Data.Maybe (Maybe(..), fromMaybe')
+import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
 import Data.Tuple (uncurry, fst, snd)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bind, (↦), dom, val)
+import Bindings (Bind, (↦), dom)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
-import DesugarFwd (recDefFwd)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, (∨), botOf)
@@ -42,12 +41,10 @@ recDefsBwd ρ xcs = join (recDefsBwd' ρ (groupBy (eq `on` fst) xcs))
 recDefsBwd' :: E.RecDefs 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
 recDefsBwd' ρ (NonEmptyList (xcs :| xcss)) =
    let x = fst (head xcs)
-       -- use recDefFwd to reconstruct original σ if not found in ρ
-       σ = lookup x ρ `flip fromMaybe'` (\_ -> recDefFwd xcs # successful # val # botOf)
        xcss' = case xcss of
          Nil -> Nil
          xcs2 : xcss'' -> toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss''))) in
-   NonEmptyList (recDefBwd (x ↦ σ) xcs :| xcss')
+   NonEmptyList (recDefBwd (x ↦ get x ρ) xcs :| xcss')
 
 recDefBwd :: Bind (Elim 𝔹) -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
 recDefBwd (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd
