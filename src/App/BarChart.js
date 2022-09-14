@@ -64,14 +64,14 @@ function drawBarChart_ (
       const tip = d3tip.default()
          .attr('class', 'd3-tip')
          .offset([0, 0])
-         .html((_, d) => d.y.value0)
+         .html((_, d) => d.y._1)
 
       svg.call(tip)
 
       // x-axis
       const x = d3.scaleBand()
          .range([0, width])
-         .domain(data.map(d => d.x.value0))
+         .domain(data.map(d => d.x._1))
          .padding(0.2)
       svg.append('g')
          .attr('transform', "translate(0," + height + ")")
@@ -81,7 +81,7 @@ function drawBarChart_ (
 
       // y-axis
       const nearest = 100,
-            y_max = Math.ceil(Math.max(...data.map(d => d.y.value0)) / nearest) * nearest
+            y_max = Math.ceil(Math.max(...data.map(d => d.y._1)) / nearest) * nearest
       const y = d3.scaleLinear()
          .domain([0, y_max])
          .range([height, 0])
@@ -98,19 +98,19 @@ function drawBarChart_ (
          .data([...data.entries()])
          .enter()
          .append('rect')
-            .attr('x', ([, d]) => x(d.x.value0))
-            .attr('y', ([, d]) => y(d.y.value0 + 1))  // ouch: bars overplot x-axis!
+            .attr('x', ([, d]) => x(d.x._1))
+            .attr('y', ([, d]) => y(d.y._1 + 1))  // ouch: bars overplot x-axis!
             .attr('width', x.bandwidth())
-            .attr('height', ([, d]) => height - y(d.y.value0))
-            .attr('fill', ([, d]) => d.y.value1 ? colorShade(barFill, -40) : barFill)
-            .attr('class', ([, d]) => d.y.value1 ? 'bar-selected' : 'bar-unselected')
+            .attr('height', ([, d]) => height - y(d.y._1))
+            .attr('fill', ([, d]) => d.y._2 ? colorShade(barFill, -40) : barFill)
+            .attr('class', ([, d]) => d.y._2 ? 'bar-selected' : 'bar-unselected')
             .on('mousedown', (e, d) => {
                console.log(`mousedown ${d[0]}`)
                listener(e)
             })
 
       svg.append('text')
-         .text(caption.value0)
+         .text(caption._1)
          .attr('x', width / 2)
          .attr('y', height + 35)
          .attr('class', 'title-text')

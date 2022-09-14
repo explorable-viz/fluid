@@ -38,8 +38,8 @@ function drawMatrix_ (
    id,
    childIndex,
    {
-      title,                                                               // String
-      matrix: { value0: { value0: nss, value1: i_max }, value1: j_max }    // IntMatrix
+      title,                                                   // String
+      matrix: { _1: { _1: nss, _2: i_max }, _2: j_max }    // IntMatrix
    },
    listener
 ) {
@@ -81,12 +81,12 @@ function drawMatrix_ (
          .attr('x', (_, j) => w * j)
          .attr('width', w)
          .attr('height', h)
-         .attr('class', ([, n]) => n.value1 ? 'matrix-cell-selected' : 'matrix-cell-unselected')
+         .attr('class', ([, n]) => n._2 ? 'matrix-cell-selected' : 'matrix-cell-unselected')
          .attr('stroke-width', strokeWidth)
 
       rect
          .append('text')
-         .text(([, n]) => n.value0)
+         .text(([, n]) => n._1)
          .attr('x', (_, j) => w * (j + 0.5))
          .attr('y', 0.5 * h)
          .attr('class', 'matrix-cell-text')

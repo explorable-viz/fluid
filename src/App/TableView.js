@@ -36,7 +36,7 @@ function colorShade(col, amt) {
 
 // any record type with only primitive fields -> boolean
 function isUsed (r) {
-   return Object.keys(r).some(k => r[k].value1)
+   return Object.keys(r).some(k => r[k]._2)
 }
 
 // Generic to all tables.
@@ -83,9 +83,9 @@ function drawTable_ (
             .enter()
             .append('td')
             .attr('data-th', d => d.name)
-            .attr('class', d => d.value.value1 ? 'cell-selected' : null)
-            .attr('bgcolor', d => d.value.value1 ? colorShade(cellFill, -40) : cellFill)
-            .text(d => d.value.value0)
+            .attr('class', d => d.value._2 ? 'cell-selected' : null)
+            .attr('bgcolor', d => d.value._2 ? colorShade(cellFill, -40) : cellFill)
+            .text(d => d.value._1)
             .on('mouseover', (e, d) =>
                listener(e)
             )
