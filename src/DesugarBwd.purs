@@ -12,7 +12,7 @@ import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
 import Data.Tuple (uncurry, fst, snd)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bind, (↦), dom)
+import Bindings (Bind, (↦), keys)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
@@ -183,7 +183,7 @@ totaliseBwd (ContElim (ElimVar _ κ')) (Left (PVar x) : πs) =
 totaliseBwd (ContElim (ElimRecord _ κ')) (Left (PRecord xps) : πs) =
    let ps = xps <#> (snd >>> Left)
        κ'' × α = totaliseBwd κ' (ps <> πs) in
-   ContElim (ElimRecord (dom xps) κ'') × α
+   ContElim (ElimRecord (keys xps) κ'') × α
 totaliseBwd (ContElim (ElimConstr m)) (π : πs) =
    let c × πs' = case π of
          -- TODO: refactor so these two cases aren't necessary

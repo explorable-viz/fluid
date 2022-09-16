@@ -39,9 +39,6 @@ newtype PrimOp = PrimOp {
 type Env a = Map Var (Val a)
 type FunEnv a = Map Var (Elim a)
 
-dom :: forall a . Map Var a -> Set Var
-dom = keys
-
 lookup' :: forall a . Var -> Env a -> MayFail (Val a)
 lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
 
@@ -68,7 +65,7 @@ restrict γ xs = filterKeys (_ `member` xs) γ
 reaches :: forall a . FunEnv a -> Endo (Set Var)
 reaches ρ xs = go (toUnfoldable xs) empty
    where
-   dom_ρ = dom ρ
+   dom_ρ = keys ρ
    go :: List Var -> Endo (Set Var)
    go Nil acc                          = acc
    go (x : xs') acc | x `member` acc   = go xs' acc
@@ -78,11 +75,11 @@ reaches ρ xs = go (toUnfoldable xs) empty
          (singleton x `union` acc)
 
 for :: forall a . FunEnv a -> Elim a -> FunEnv a
-for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` dom ρ)
+for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` keys ρ)
 
 weakJoin :: forall a . Slices a => Map Var a -> Endo (Map Var a)
 weakJoin m m' =
-   let dom_m × dom_m' = dom m × dom m' in
+   let dom_m × dom_m' = keys m × keys m' in
    (m `restrict` (dom_m `difference` dom_m'))
    `disjUnion`
    (m `restrict` (dom_m `intersection` dom_m') ∨ m' `restrict` (dom_m `intersection` dom_m'))

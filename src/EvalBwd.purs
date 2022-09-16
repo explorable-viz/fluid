@@ -19,7 +19,7 @@ import Lattice (𝔹, (∨), bot, botOf, expand)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, get, nonEmpty)
-import Val (Env, FunEnv, PrimOp(..), (<+>), Val, (∨∨), append_inv, dom)
+import Val (Env, FunEnv, PrimOp(..), (<+>), Val, (∨∨), append_inv)
 import Val (Val(..)) as V
 
 closeDefsBwd :: Env 𝔹 -> Env 𝔹 × FunEnv 𝔹 × 𝔹
@@ -36,7 +36,7 @@ closeDefsBwd γ =
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 matchBwd γ κ _ (MatchVar x v)
-   | dom γ == singleton x           = get x γ × ElimVar x κ
+   | keys γ == singleton x          = get x γ × ElimVar x κ
    | otherwise                      = botOf v × ElimVar x κ
 matchBwd γ κ _ (MatchVarAnon v)
    | isEmpty γ                      = botOf v × ElimVar varAnon κ
