@@ -7,7 +7,7 @@ import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
 import Data.Profunctor.Choice ((|||))
 import Data.String (Pattern(..), contains) as Data.String
-import Foreign.Object (toUnfoldable)
+import Foreign.Object (toAscUnfoldable)
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
 import Bindings (Bind, Dict, Var, (↦))
@@ -121,7 +121,7 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
-   pretty (E.Record α xes)          = prettyRecord α (xes # toUnfoldable)
+   pretty (E.Record α xes)          = prettyRecord α (xes # toAscUnfoldable)
    pretty (E.Constr α c es)         = prettyConstr α c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]
@@ -133,7 +133,7 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.App e e')              = hspace [pretty e, pretty e']
 
 instance Pretty (Dict (Elim Boolean)) where
-   pretty = toUnfoldable >>> go
+   pretty = toAscUnfoldable >>> go
       where go :: List (Var × Elim 𝔹) -> Doc
             go Nil         = error absurd -- non-empty
             go (xσ : Nil)  = pretty xσ
@@ -159,7 +159,7 @@ instance Pretty (Val Boolean) where
    pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
-   pretty (V.Record α xvs)             = prettyRecord α (xvs # toUnfoldable)
+   pretty (V.Record α xvs)             = prettyRecord α (xvs # toAscUnfoldable)
    pretty (V.Constr α c vs)            = prettyConstr α c vs
    pretty (V.Matrix _ (vss × _ × _))   = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Closure _ _ _ _)          = text "<closure>"

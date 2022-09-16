@@ -18,8 +18,7 @@ import Data.Set (Set, member)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
-import Foreign.Object (Object, delete, filterKeys, keys, lookup, insert, toAscUnfoldable, unionWith)
-import Foreign.Object (empty) as O
+import Foreign.Object (Object, delete, filterKeys, keys, lookup, unionWith)
 
 infixl 7 type Tuple as ×
 infixl 7 Tuple as ×
@@ -156,6 +155,7 @@ replicate n a
 unzip :: forall t a b . Functor t => t (a × b) -> t a × t b
 unzip = (<$>) fst &&& (<$>) snd
 
+{-
 -- Unfortunately Foreign.Object doesn't define these, so just adapt the Data.Map implementations.
 -- Could probably be given much faster native implementation.
 intersectionWith :: forall a b c . (a -> b -> c) -> Object a -> Object b -> Object c
@@ -169,6 +169,8 @@ intersectionWith f m1 m2 =
          LT -> go ass bs m
          EQ -> go ass bss (insert k1 (f a b) m)
          GT -> go as bss m
+-}
+foreign import intersectionWith :: forall a b c . (a -> b -> c) -> Object a -> Object b -> Object c
 
 difference :: forall v w. Object v -> Object w -> Object v
 difference m1 m2 = foldl (flip delete) m1 (keys m2)
