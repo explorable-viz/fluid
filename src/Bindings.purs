@@ -4,9 +4,11 @@ import Prelude
 import Data.List (List(..), (:))
 import Data.Set (Set, empty, singleton, union)
 import Data.Tuple (Tuple(..), fst, snd)
+import Foreign.Object (Object)
 import Util (type (×), definitely, whenever)
 
 type Var = String
+type Dict a = Object a
 
 varAnon = "_" :: Var
 

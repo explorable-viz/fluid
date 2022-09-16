@@ -16,6 +16,7 @@ You can edit this file as you like.
   , "either"
   , "exceptions"
   , "foldable-traversable"
+  , "foreign-object"
   , "http-methods"
   , "identity"
   , "integers"

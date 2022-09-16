@@ -3,16 +3,15 @@ module Val where
 import Prelude hiding (absurd, append)
 import Control.Apply (lift2)
 import Data.List (List(..), (:))
-import Data.Map (Map, filterKeys, keys, isEmpty, lookup, pop, unionWith)
-import Data.Maybe (Maybe(..))
+import Data.Map (Map, filterKeys, keys, lookup, unionWith)
 import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union)
-import Bindings (Bind, Var, (↦))
+import Bindings (Var)
 import DataType (Ctr)
 import Expr (Elim, fv)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
 import Util (
    Endo, MayFail, type (×), (×), (≞), (≜), (!),
-   absurd, disjUnion, error, get, orElse, report, unsafeUpdateAt
+   disjUnion, error, get, orElse, report, unsafeUpdateAt
 )
 
 type Op a = a × 𝔹 -> Val 𝔹
@@ -41,14 +40,6 @@ type FunEnv a = Map Var (Elim a)
 
 lookup' :: forall a . Var -> Env a -> MayFail (Val a)
 lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
-
-update :: forall a . List (Bind a) -> Map Var a -> List (Bind a)
-update Nil γ  | isEmpty γ = Nil
-               | otherwise = error absurd
-update (x ↦ v: xvs) γ =
-   case pop x γ of
-      Just (u × γ')  -> x ↦ u : update xvs γ'
-      Nothing        -> x ↦ v : update xvs γ
 
 -- Want a monoid instance but needs a newtype
 append :: forall a . Env a -> Endo (Env a)
