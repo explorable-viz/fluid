@@ -155,21 +155,7 @@ replicate n a
 unzip :: forall t a b . Functor t => t (a × b) -> t a × t b
 unzip = (<$>) fst &&& (<$>) snd
 
-{-
--- Unfortunately Foreign.Object doesn't define these, so just adapt the Data.Map implementations.
--- Could probably be given much faster native implementation.
-intersectionWith :: forall a b c . (a -> b -> c) -> Object a -> Object b -> Object c
-intersectionWith f m1 m2 =
-   go (toAscUnfoldable m1 :: List (String × a)) (toAscUnfoldable m2 :: List (String × b)) O.empty
-   where
-   go Nil _ m = m
-   go _ Nil m = m
-   go as@((k1 × a) : ass) bs@((k2 × b) : bss) m =
-      case compare k1 k2 of
-         LT -> go ass bs m
-         EQ -> go ass bss (insert k1 (f a b) m)
-         GT -> go as bss m
--}
+-- Unfortunately Foreign.Object doesn't define this; could implement using Foreign.Object.ST instead.
 foreign import intersectionWith :: forall a b c . (a -> b -> c) -> Object a -> Object b -> Object c
 
 difference :: forall v w. Object v -> Object w -> Object v
