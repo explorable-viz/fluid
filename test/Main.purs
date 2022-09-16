@@ -19,7 +19,7 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad = [
-   test (File "records") "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
+   test (File "desugar/list-comp-1") "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
 ]
 
 test_linking :: Array (Test Unit)

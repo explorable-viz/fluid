@@ -6,9 +6,11 @@ import Control.MonadPlus (class MonadPlus, empty)
 import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
+import Data.Foldable (foldl)
 import Data.List (List(..), (:), head, intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (Map, filterKeys, lookup, size, toUnfoldable, unionWith)
+import Data.Map (Map)
+import Data.Map (lookup, size, toUnfoldable, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
@@ -16,6 +18,8 @@ import Data.Set (Set, member)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
+import Foreign.Object (Object, delete, filterKeys, keys, lookup, insert, toAscUnfoldable, unionWith)
+import Foreign.Object (empty) as O
 
 infixl 7 type Tuple as ×
 infixl 7 Tuple as ×
@@ -46,16 +50,19 @@ definitely msg Nothing  = error msg
 definitely' :: forall a . Maybe a -> a
 definitely' = definitely absurd
 
-get :: forall k v . Ord k => k -> Map k v -> v
+get :: forall v . String -> Object v -> v
 get k = definitely' <<< lookup k
 
-asSingletonMap :: forall k v . Map k v -> k × v
-asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
+get' :: forall k v . Ord k => k -> Map k v -> v
+get' k = definitely' <<< M.lookup k
 
-disjUnion :: forall k v . Ord k => Map k v -> Endo (Map k v)
+asSingletonMap :: forall k v . Map k v -> k × v
+asSingletonMap m = assert (M.size m == 1) (definitely "singleton map" (head (M.toUnfoldable m)))
+
+disjUnion :: forall v . Object v -> Endo (Object v)
 disjUnion = unionWith (\_ _ -> error "not disjoint")
 
-disjUnion_inv :: forall k v . Ord k => Set k -> Map k v -> Map k v × Map k v
+disjUnion_inv :: forall v . Set String -> Object v -> Object v × Object v
 disjUnion_inv ks m = filterKeys (_ `member` ks) m × filterKeys (_ `not <<< member` ks) m
 
 onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
@@ -99,7 +106,7 @@ mustGeq :: forall a . Ord a => Show a => a -> a -> a
 mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >= x') x)
 
 unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
-unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
+unionWithMaybe f m m' = M.unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
 
 mayFailEq :: forall a . Show a => Eq a => a -> a -> MayFail a
 mayFailEq x x' = x ≟ x' # orElse (show x <> " ≠ " <> show x')
@@ -148,3 +155,20 @@ replicate n a
 
 unzip :: forall t a b . Functor t => t (a × b) -> t a × t b
 unzip = (<$>) fst &&& (<$>) snd
+
+-- Unfortunately Foreign.Object doesn't define these, so just adapt the Data.Map implementations.
+-- Could probably be given much faster native implementation.
+intersectionWith :: forall a b c . (a -> b -> c) -> Object a -> Object b -> Object c
+intersectionWith f m1 m2 =
+   go (toAscUnfoldable m1 :: List (String × a)) (toAscUnfoldable m2 :: List (String × b)) O.empty
+   where
+   go Nil _ m = m
+   go _ Nil m = m
+   go as@((k1 × a) : ass) bs@((k2 × b) : bss) m =
+      case compare k1 k2 of
+         LT -> go ass bs m
+         EQ -> go ass bss (insert k1 (f a b) m)
+         GT -> go as bss m
+
+difference :: forall v w. Object v -> Object w -> Object v
+difference m1 m2 = foldl (flip delete) m1 (keys m2)

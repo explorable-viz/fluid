@@ -15,7 +15,7 @@ import App.Util (
 import Bindings (Var)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Lattice (𝔹, neg)
-import Util (type (×), (×), (!), definitely', get)
+import Util (type (×), (×), (!), definitely', get')
 import Val (Val(..))
 
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
@@ -33,13 +33,13 @@ instance Reflect (Map Var (Val Boolean)) Point where
 instance Reflect (Map Var (Val Boolean)) LinePlot where
    from r = LinePlot {
       name: get_prim f_name r,
-      data: record from <$> from (get f_data r)
+      data: record from <$> from (get' f_data r)
    }
 
 instance Reflect (Map Var (Val Boolean)) LineChart where
    from r = LineChart {
       caption: get_prim f_caption r,
-      plots: from <$> (from (get f_plots r) :: Array (Val 𝔹)) :: Array LinePlot
+      plots: from <$> (from (get' f_plots r) :: Array (Val 𝔹)) :: Array LinePlot
    }
 
 instance Reflect (Val Boolean) LinePlot where

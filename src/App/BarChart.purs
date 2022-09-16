@@ -13,7 +13,7 @@ import App.Util (
 import Bindings (Var)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
 import Lattice (𝔹, neg)
-import Util (type (×), (!), definitely', get)
+import Util (type (×), (!), definitely', get')
 import Val (Val)
 
 newtype BarChart = BarChart { caption :: String × 𝔹, data :: Array BarChartRecord }
@@ -30,7 +30,7 @@ instance Reflect (Map Var (Val Boolean)) BarChartRecord where
 instance Reflect (Map Var (Val Boolean)) BarChart where
    from r = BarChart {
       caption: get_prim f_caption r,
-      data: record from <$> from (get f_data r)
+      data: record from <$> from (get' f_data r)
    }
 
 barChartHandler :: Handler

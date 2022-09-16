@@ -3,10 +3,12 @@ module Expr where
 import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
-import Data.Map (Map, keys)
-import Data.Set (Set, difference, empty, singleton, union, unions)
+import Data.Map (Map)
+import Data.Map (keys) as M
+import Data.Set (Set, difference, empty, fromFoldable, singleton, union, unions)
 import Data.Tuple (snd)
-import Bindings (Var)
+import Foreign.Object (keys)
+import Bindings (Dict, Var)
 import DataType (Ctr)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
 import Util (type (×), (×), type (+), (≜), (≞), asSingletonMap, error, report)
@@ -28,7 +30,7 @@ data Expr a =
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
-type RecDefs a = Map Var (Elim a)
+type RecDefs a = Dict (Elim a)
 
 data Elim a =
    ElimVar Var (Cont a) |
@@ -83,7 +85,10 @@ instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
 
 instance FV a => FV (Map Var a) where
-   fv ρ = (unions $ (fv <$> ρ)) `difference` keys ρ
+   fv ρ = (unions $ (fv <$> ρ)) `difference` M.keys ρ
+
+instance FV a => FV (Dict a) where
+   fv ρ = (unions $ (fv <$> ρ)) `difference` (fromFoldable $ keys ρ)
 
 class BV a where
    bv :: a -> Set Var

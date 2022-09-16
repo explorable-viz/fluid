@@ -8,11 +8,13 @@ import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), length, sortBy)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
-import Data.Map (Map, fromFoldable, singleton)
+import Data.Map (Map)
+import Data.Map (fromFoldable, singleton) as M
 import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
+import Foreign.Object (fromFoldable)
 import Bindings (Bind, (↦), keys, varAnon)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
@@ -34,7 +36,7 @@ econs :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 econs α e e' = E.Constr α cCons (e : e' : Nil)
 
 elimBool :: Cont 𝔹 -> Cont 𝔹 -> Elim 𝔹
-elimBool κ κ' = ElimConstr (fromFoldable [cTrue × κ, cFalse × κ'])
+elimBool κ κ' = ElimConstr (M.fromFoldable [cTrue × κ, cFalse × κ'])
 
 -- Surface language supports "blocks" of variable declarations; core does not.
 moduleFwd :: Module 𝔹 -> MayFail (E.Module 𝔹)
@@ -75,7 +77,7 @@ exprFwd (Int α n)                = pure (E.Int α n)
 exprFwd (Float α n)              = pure (E.Float α n)
 exprFwd (Str α s)                = pure (E.Str α s)
 exprFwd (Constr α c ss)          = E.Constr α c <$> traverse exprFwd ss
-exprFwd (Record α xss)           = E.Record α <$> fromFoldable <$> traverse (traverse exprFwd) xss
+exprFwd (Record α xss)           = E.Record α <$> M.fromFoldable <$> traverse (traverse exprFwd) xss
 exprFwd (Matrix α s (x × y) s')  = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
 exprFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
 exprFwd (Project s x)            = E.Project <$> exprFwd s <@> x
@@ -126,15 +128,15 @@ patternsFwd (NonEmptyList (p :| p' : ps) × e) =
 patternFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 patternFwd (PVar x) κ            = pure (ElimVar x κ)
 patternFwd (PConstr c ps) κ      =
-   checkArity c (length ps) *> (ElimConstr <$> singleton c <$> argPatternFwd (Left <$> ps) κ)
+   checkArity c (length ps) *> (ElimConstr <$> M.singleton c <$> argPatternFwd (Left <$> ps) κ)
 patternFwd (PRecord xps) κ       = ElimRecord (keys xps) <$> recordPatternFwd (sortBy (flip compare `on` fst) xps) κ
-patternFwd PListEmpty κ          = pure (ElimConstr (singleton cNil κ))
-patternFwd (PListNonEmpty p o) κ = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
+patternFwd PListEmpty κ          = pure (ElimConstr (M.singleton cNil κ))
+patternFwd (PListNonEmpty p o) κ = ElimConstr <$> M.singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
 -- o, κ desugar_fwd σ
 listRestPatternFwd :: ListRestPattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
-listRestPatternFwd PEnd κ          = pure (ElimConstr (singleton cNil κ))
-listRestPatternFwd (PNext p o) κ   = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
+listRestPatternFwd PEnd κ          = pure (ElimConstr (M.singleton cNil κ))
+listRestPatternFwd (PNext p o) κ   = ElimConstr <$> M.singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
 argPatternFwd :: List (Pattern + ListRestPattern) -> Cont 𝔹 -> MayFail (Cont 𝔹)
 argPatternFwd Nil κ             = pure κ
@@ -172,4 +174,4 @@ totaliseConstrFwd :: Ctr × Cont 𝔹 -> 𝔹 -> Map Ctr (Cont 𝔹)
 totaliseConstrFwd (c × κ) α =
    let defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
        cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
-   in fromFoldable (c × κ : cκs)
+   in M.fromFoldable (c × κ : cκs)

@@ -6,23 +6,25 @@ import Data.Array (fromFoldable)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
-import Data.Map (empty, keys, lookup)
-import Data.Map (fromFoldable, singleton) as M
+import Data.Map (keys, lookup)
+import Data.Map (fromFoldable) as M
 import Data.Profunctor.Strong (second)
 import Data.Set (union, subset)
-import Data.Set (toUnfoldable) as S
+import Data.Set (fromFoldable, toUnfoldable) as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
+import Foreign.Object (empty)
+import Foreign.Object (keys, singleton) as O
 import Bindings (varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
-import Expr (Cont(..), Elim(..), Expr(..), Module(..), VarDef(..), asExpr, fv)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
 import Lattice (𝔹, checkConsistent)
 import Pretty (prettyP)
 import Primitive (match) as P
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, get, report, successful)
-import Val (Env, FunEnv, PrimOp(..), (<+>), Val, for, lookup', restrict)
+import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, get', report, successful)
+import Val (Env, PrimOp(..), (<+>), Val, for, lookup', lookup'', restrict)
 import Val (Val(..)) as V
 
 patternMismatch :: String -> String -> String
@@ -30,7 +32,7 @@ patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match v (ElimVar x κ)  | x == varAnon    = pure (empty × κ × MatchVarAnon v)
-                       | otherwise       = pure (M.singleton x v × κ × MatchVar x v)
+                       | otherwise       = pure (O.singleton x v × κ × MatchVar x v)
 match (V.Constr _ c vs) (ElimConstr m) = do
    checkConsistent "Pattern mismatch: " c (keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
@@ -41,7 +43,7 @@ match v (ElimConstr m) = do
 match (V.Record _ xvs) (ElimRecord xs κ)  = do
    check (subset xs (keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # S.toUnfoldable
-   second (zip xs' >>> M.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get xvs) κ
+   second (zip xs' >>> M.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get' xvs) κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -54,7 +56,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
 
-closeDefs :: Env 𝔹 -> FunEnv 𝔹 -> Env 𝔹
+closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs γ ρ = ρ <#> \σ ->
    let xs = fv (ρ `for` σ) `union` fv σ
    in V.Closure false (γ `restrict` xs) ρ σ
@@ -87,7 +89,7 @@ eval γ (Matrix _ e (x × y) e') = do
             i <- range 1 i'
             singleton $ sequence $ do
                j <- range 1 j'
-               let γ' = M.singleton x (V.Int false i) `disjUnion` (M.singleton y (V.Int false j))
+               let γ' = O.singleton x (V.Int false i) `disjUnion` (O.singleton y (V.Int false j))
                singleton (eval (γ <+> γ') e))
          pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false)))
       v' -> report ("Array dimensions must be pair of ints; got " <> prettyP v')
@@ -99,7 +101,7 @@ eval γ (Lambda σ) =
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
-      V.Record _ xvs -> (T.Project t x × _) <$> lookup' x xvs
+      V.Record _ xvs -> (T.Project t x × _) <$> lookup'' x xvs
       _ -> report "Expected record"
 eval γ (App e e') = do
    t × v <- eval γ e
@@ -109,7 +111,7 @@ eval γ (App e e') = do
          let γ2 = closeDefs γ1 ρ
          γ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'')
-         pure (T.App (t × keys ρ × σ) t' w t'' × v'')
+         pure (T.App (t × S.fromFoldable (O.keys ρ) × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
          let vs' = vs <> singleton v'
              v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs' in

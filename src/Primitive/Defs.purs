@@ -5,9 +5,9 @@ import Prelude (div, mod) as P
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..))
-import Data.Map (fromFoldable)
 import Data.Number (log, pow) as N
 import Debug (trace)
+import Foreign.Object (fromFoldable)
 import DataType (cCons)
 import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)

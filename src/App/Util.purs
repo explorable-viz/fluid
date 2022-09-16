@@ -15,7 +15,7 @@ import Bindings (Var)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Lattice (𝔹, botOf, neg)
 import Primitive (class ToFrom, as, match_fwd)
-import Util (Endo, type (×), type (+), (×), absurd, error, definitely', get)
+import Util (Endo, type (×), type (+), (×), absurd, error, definitely', get')
 import Val (Val(..), updateMatrix)
 
 type HTMLId = String
@@ -28,7 +28,7 @@ doNothing :: OnSel
 doNothing = const $ pure unit
 
 get_prim :: forall a . ToFrom a => Var -> Map Var (Val 𝔹) -> a × 𝔹
-get_prim x = match_fwd <<< get x
+get_prim x = match_fwd <<< get' x
 
 get_intOrNumber :: Var -> Map Var (Val 𝔹) -> Number × 𝔹
 get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
