@@ -2,19 +2,19 @@ module Eval where
 
 import Prelude hiding (absurd)
 
-import Data.Array (fromFoldable)
+import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
-import Data.Map (keys, lookup)
-import Data.Map (fromFoldable) as M
+import Data.Map (lookup)
+import Data.Map (keys) as M
 import Data.Profunctor.Strong (second)
 import Data.Set (union, subset)
 import Data.Set (fromFoldable, toUnfoldable) as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
-import Foreign.Object (empty)
-import Foreign.Object (keys, singleton) as O
+import Foreign.Object (empty, keys)
+import Foreign.Object (fromFoldable, singleton) as O
 import Bindings (varAnon)
 import DataType (Ctr, arity, cPair, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
@@ -23,8 +23,8 @@ import Pretty (prettyP)
 import Primitive (match) as P
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, get', report, successful)
-import Val (Env, PrimOp(..), (<+>), Val, for, lookup', lookup'', restrict)
+import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, get, report, successful)
+import Val (Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
 
 patternMismatch :: String -> String -> String
@@ -34,16 +34,16 @@ match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match v (ElimVar x κ)  | x == varAnon    = pure (empty × κ × MatchVarAnon v)
                        | otherwise       = pure (O.singleton x v × κ × MatchVar x v)
 match (V.Constr _ c vs) (ElimConstr m) = do
-   checkConsistent "Pattern mismatch: " c (keys m)
+   checkConsistent "Pattern mismatch: " c (M.keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
    second (MatchConstr c) <$> matchMany vs κ
 match v (ElimConstr m) = do
-   d <- dataTypeFor (keys m)
+   d <- dataTypeFor (M.keys m)
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record _ xvs) (ElimRecord xs κ)  = do
-   check (subset xs (keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
+   check (subset xs (S.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # S.toUnfoldable
-   second (zip xs' >>> M.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get' xvs) κ
+   second (zip xs' >>> O.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get xvs) κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -95,13 +95,13 @@ eval γ (Matrix _ e (x × y) e') = do
       v' -> report ("Array dimensions must be pair of ints; got " <> prettyP v')
    where
    unzipToArray :: forall a b . List (a × b) -> Array a × Array b
-   unzipToArray = unzip >>> bimap fromFoldable fromFoldable
+   unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
 eval γ (Lambda σ) =
    pure (T.Lambda σ × V.Closure false (γ `restrict` fv σ) empty σ)
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
-      V.Record _ xvs -> (T.Project t x × _) <$> lookup'' x xvs
+      V.Record _ xvs -> (T.Project t x × _) <$> lookup' x xvs
       _ -> report "Expected record"
 eval γ (App e e') = do
    t × v <- eval γ e
@@ -111,7 +111,7 @@ eval γ (App e e') = do
          let γ2 = closeDefs γ1 ρ
          γ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'')
-         pure (T.App (t × S.fromFoldable (O.keys ρ) × σ) t' w t'' × v'')
+         pure (T.App (t × S.fromFoldable (keys ρ) × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
          let vs' = vs <> singleton v'
              v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs' in

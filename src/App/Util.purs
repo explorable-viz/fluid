@@ -3,19 +3,18 @@ module App.Util where
 import Prelude hiding (absurd)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:), (!!), updateAt)
-import Data.Map (Map)
-import Data.Map (update) as M
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
 import Data.Tuple (fst)
 import Effect (Effect)
+import Foreign.Object (update)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
-import Bindings (Var)
+import Bindings (Dict, Var)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Lattice (𝔹, botOf, neg)
 import Primitive (class ToFrom, as, match_fwd)
-import Util (Endo, type (×), type (+), (×), absurd, error, definitely', get')
+import Util (Endo, type (×), type (+), (×), absurd, error, definitely', get)
 import Val (Val(..), updateMatrix)
 
 type HTMLId = String
@@ -27,14 +26,14 @@ type Handler = Event -> Selector
 doNothing :: OnSel
 doNothing = const $ pure unit
 
-get_prim :: forall a . ToFrom a => Var -> Map Var (Val 𝔹) -> a × 𝔹
-get_prim x = match_fwd <<< get' x
+get_prim :: forall a . ToFrom a => Var -> Dict (Val 𝔹) -> a × 𝔹
+get_prim x = match_fwd <<< get x
 
-get_intOrNumber :: Var -> Map Var (Val 𝔹) -> Number × 𝔹
+get_intOrNumber :: Var -> Dict (Val 𝔹) -> Number × 𝔹
 get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
 
 -- Assumes fields are all of primitive type.
-record :: forall a . (Map Var (Val 𝔹) -> a) -> Val 𝔹 -> a
+record :: forall a . (Dict (Val 𝔹) -> a) -> Val 𝔹 -> a
 record toRecord u = toRecord (fst (match_fwd u))
 
 class Reflect a b where
@@ -66,12 +65,12 @@ selectSome (Constr _ c vs) | c == cSome   = Constr true c (botOf <$> vs)
 selectSome _                              = error absurd
 
 select_y :: Selector -> Selector
-select_y δv (Record α r) = Record α $ M.update (δv >>> Just) f_y r
+select_y δv (Record α r) = Record α $ update (δv >>> Just) f_y r
 select_y _ _ = error absurd
 
 selectBarChart_data :: Endo Selector
 selectBarChart_data δv (Constr α c (Record β r : Nil)) | c == cBarChart =
-   Constr α c (Record β (M.update (δv >>> Just) f_data r) : Nil)
+   Constr α c (Record β (update (δv >>> Just) f_data r) : Nil)
 selectBarChart_data _ _ = error absurd
 
 selectPair :: Endo 𝔹 -> Selector -> Selector -> Selector
@@ -85,7 +84,7 @@ toggleCell i j (Matrix α (vss × (i' × β) × (j' × β'))) =
 toggleCell _ _ _ = error absurd
 
 toggleField :: Var -> Selector -> Selector
-toggleField f selector (Record α r) = Record α $ M.update (selector >>> Just) f r
+toggleField f selector (Record α r) = Record α $ update (selector >>> Just) f r
 toggleField _ _ _ = error absurd
 
 toggleConstrArg :: Ctr -> Int -> Selector -> Selector

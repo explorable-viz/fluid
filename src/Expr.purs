@@ -4,7 +4,6 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
-import Data.Map (keys) as M
 import Data.Set (Set, difference, empty, fromFoldable, singleton, union, unions)
 import Data.Tuple (snd)
 import Foreign.Object (keys)
@@ -19,7 +18,7 @@ data Expr a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Map Var (Expr a)) |
+   Record a (Dict (Expr a)) |
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
@@ -83,9 +82,6 @@ instance FV (Cont a) where
 
 instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
-
-instance FV a => FV (Map Var a) where
-   fv ρ = (unions $ (fv <$> ρ)) `difference` M.keys ρ
 
 instance FV a => FV (Dict a) where
    fv ρ = (unions $ (fv <$> ρ)) `difference` (fromFoldable $ keys ρ)

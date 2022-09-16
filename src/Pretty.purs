@@ -5,8 +5,6 @@ import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), fromFoldable)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
-import Data.Map (Map)
-import Data.Map (toUnfoldable) as M
 import Data.Profunctor.Choice ((|||))
 import Data.String (Pattern(..), contains) as Data.String
 import Foreign.Object (toUnfoldable)
@@ -123,7 +121,7 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.Int α n)               = highlightIf α (text (show n))
    pretty (E.Float _ n)             = text (show n)
    pretty (E.Str _ str)             = text (show str)
-   pretty (E.Record α xes)          = prettyRecord α (M.toUnfoldable xes)
+   pretty (E.Record α xes)          = prettyRecord α (xes # toUnfoldable)
    pretty (E.Constr α c es)         = prettyConstr α c es
    pretty (E.Matrix _ _ _ _)        = error "todo"
    pretty (E.Lambda σ)              = hspace [text str.fun, pretty σ]
@@ -133,13 +131,6 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.LetRec δ e)            = atop (hspace [text str.let_, pretty δ, text str.in_]) (pretty e)
    pretty (E.Project _ _)           = error "todo"
    pretty (E.App e e')              = hspace [pretty e, pretty e']
-
-instance Pretty (Map Var (Elim Boolean)) where
-   pretty = M.toUnfoldable >>> go
-      where go :: List (Var × Elim 𝔹) -> Doc
-            go Nil         = error absurd -- non-empty
-            go (xσ : Nil)  = pretty xσ
-            go (xσ : δ)    = atop (go δ :<>: semi) (pretty xσ)
 
 instance Pretty (Dict (Elim Boolean)) where
    pretty = toUnfoldable >>> go
@@ -168,7 +159,7 @@ instance Pretty (Val Boolean) where
    pretty (V.Int α n)                  = highlightIf α (text (show n))
    pretty (V.Float α n)                = highlightIf α (text (show n))
    pretty (V.Str α str)                = highlightIf α (text (show str))
-   pretty (V.Record α xvs)             = prettyRecord α (xvs # M.toUnfoldable)
+   pretty (V.Record α xvs)             = prettyRecord α (xvs # toUnfoldable)
    pretty (V.Constr α c vs)            = prettyConstr α c vs
    pretty (V.Matrix _ (vss × _ × _))   = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Closure _ _ _ _)          = text "<closure>"

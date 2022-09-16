@@ -1,7 +1,6 @@
 module App.BarChart where
 
 import Prelude hiding (absurd)
-import Data.Map (Map)
 import Data.Maybe (Maybe)
 import Unsafe.Coerce (unsafeCoerce)
 import Web.Event.Event (target)
@@ -10,10 +9,10 @@ import App.Util (
    Handler, class Reflect, Renderer, Selector,
    from, get_intOrNumber, get_prim, record, selectNth, toggleConstrArg, toggleField
 )
-import Bindings (Var)
+import Bindings (Dict)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
 import Lattice (𝔹, neg)
-import Util (type (×), (!), definitely', get')
+import Util (type (×), (!), definitely', get)
 import Val (Val)
 
 newtype BarChart = BarChart { caption :: String × 𝔹, data :: Array BarChartRecord }
@@ -21,16 +20,16 @@ newtype BarChartRecord = BarChartRecord { x :: String × 𝔹, y :: Number × �
 
 foreign import drawBarChart :: Renderer BarChart
 
-instance Reflect (Map Var (Val Boolean)) BarChartRecord where
+instance Reflect (Dict (Val Boolean)) BarChartRecord where
    from r = BarChartRecord {
       x: get_prim f_x r,
       y: get_intOrNumber f_y r
    }
 
-instance Reflect (Map Var (Val Boolean)) BarChart where
+instance Reflect (Dict (Val Boolean)) BarChart where
    from r = BarChart {
       caption: get_prim f_caption r,
-      data: record from <$> from (get' f_data r)
+      data: record from <$> from (get f_data r)
    }
 
 barChartHandler :: Handler

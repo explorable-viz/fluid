@@ -56,7 +56,7 @@ exprBwd (E.Float α _) (Float _ n) = Float α n
 exprBwd (E.Str α _) (Str _ str) = Str α str
 exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry exprBwd <$> zip es ss)
 exprBwd (E.Record α xes) (Record _ xss) =
-   Record α $ xss <#> \(x ↦ s) -> x ↦ exprBwd (get' x xes) s
+   Record α $ xss <#> \(x ↦ s) -> x ↦ exprBwd (get x xes) s
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s (x × y) s') =
    Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
 exprBwd (E.Lambda σ) (Lambda bs) = Lambda (branchesBwd_curried σ bs)

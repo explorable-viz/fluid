@@ -3,19 +3,18 @@ module EvalFwd where
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
-import Data.Map (intersectionWith, toUnfoldable)
 import Data.Profunctor.Strong ((***), first, second)
 import Data.Set (union)
 import Data.Set (toUnfoldable) as S
 import Data.Tuple (snd)
 import Foreign.Object (empty)
-import Foreign.Object (singleton) as O
+import Foreign.Object (singleton, toUnfoldable) as O
 import Expr (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))
 import Primitive (match_fwd) as P
 import Trace (Trace(..), Match(..), VarDef(..)) as T
 import Trace (Trace, Match)
-import Util (type (×), (×), (!), absurd, assert, disjUnion, error, get, get')
+import Util (type (×), (×), (!), absurd, assert, disjUnion, error, get, get', intersectionWith)
 import Val (Env, PrimOp(..), (<+>), Val, for, restrict)
 import Val (Val(..)) as V
 
@@ -25,7 +24,7 @@ matchFwd v (ElimVar _ κ) (T.MatchVar x _) = O.singleton x v × κ × true
 matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
    second (_ ∧ α) (matchManyFwd vs (get' c m) ws)
 matchFwd (V.Record α xvs) (ElimRecord xs κ) (T.MatchRecord xws) =
-   second (_ ∧ α) (matchManyFwd (xs # S.toUnfoldable <#> flip get' xvs) κ (xws # toUnfoldable <#> snd))
+   second (_ ∧ α) (matchManyFwd (xs # S.toUnfoldable <#> flip get xvs) κ (xws # O.toUnfoldable <#> snd))
 matchFwd _ _ _ = error absurd
 
 matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
@@ -66,7 +65,7 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
 evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
 evalFwd γ (Project e' _) α (T.Project t x) =
    case evalFwd γ e' α t of
-      V.Record _ xvs -> get' x xvs
+      V.Record _ xvs -> get x xvs
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
    case evalFwd γ e1 α t1 of

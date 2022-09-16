@@ -1,18 +1,18 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
-import Data.Array ((\\))
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), (:), range, reverse, unsnoc, unzip, zip)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (fromFoldable, keys, intersectionWith, singleton, toUnfoldable) as M
+import Data.Map (singleton) as M
 import Data.NonEmpty (foldl1)
-import Data.Set (fromFoldable, union)
-import Data.Set (singleton) as S
+import Data.Set (union)
+import Data.Set (fromFoldable, singleton) as S
 import Data.Tuple (fst, snd, uncurry)
-import Foreign.Object (empty, insert, isEmpty, keys, singleton)
+import Foreign.Object (empty, insert, isEmpty, keys)
+import Foreign.Object (fromFoldable, singleton, toUnfoldable) as O
 import Partial.Unsafe (unsafePartial)
 import Bindings (Var, varAnon)
 import DataType (cPair)
@@ -20,7 +20,9 @@ import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
 import Lattice (𝔹, (∨), bot, botOf, expand)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, get, nonEmpty)
+import Util (
+   Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, get, intersectionWith, nonEmpty
+)
 import Val (Env, PrimOp(..), (<+>), Val, (∨∨), append_inv)
 import Val (Val(..)) as V
 
@@ -45,8 +47,9 @@ matchBwd γ κ _ (MatchVarAnon v)
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
    where vs × κ' = matchManyBwd ρ κ α (reverse ws)
-matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zip xs vs # M.fromFoldable) × ElimRecord (M.keys xws) κ'
-   where xs × ws = xws # M.toUnfoldable # unzip
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zip xs vs # O.fromFoldable) ×
+                                      ElimRecord (S.fromFoldable $ keys xws) κ'
+   where xs × ws = xws # O.toUnfoldable # unzip
          vs × κ' = matchManyBwd ρ κ α (ws # reverse)
 
 matchManyBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
@@ -65,14 +68,14 @@ evalBwd γ e v t =
 
 -- Computes a partial slice which evalBwd expands to a full slice.
 evalBwd' :: Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
-evalBwd' v (T.Var x) = singleton x v × Var x × false
-evalBwd' v (T.Op op) = singleton op v × Op op × false
+evalBwd' v (T.Var x) = O.singleton x v × Var x × false
+evalBwd' v (T.Op op) = O.singleton op v × Op op × false
 evalBwd' (V.Str α _) (T.Str str) = empty × Str α str × α
 evalBwd' (V.Int α _) (T.Int n) = empty × Int α n × α
 evalBwd' (V.Float α _) (T.Float n) = empty × Float α n × α
 evalBwd' (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
 evalBwd' (V.Record α xvs) (T.Record xts) =
-   let xvts = M.intersectionWith (×) xvs xts
+   let xvts = intersectionWith (×) xvs xts
        xγeαs = xvts <#> uncurry evalBwd'
        γ' = foldr (∨) empty (xγeαs <#> (fst >>> fst)) in
    γ' × Record α (xγeαs <#> (fst >>> snd)) × (foldr (∨) α (xγeαs <#> snd))
@@ -92,7 +95,7 @@ evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) 
           case evalBwd' (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
              γ'' × e × α' ->
                let γ × γ' = append_inv (S.singleton x `union` S.singleton y) γ''
-                   γ0 = (singleton x (V.Int bot i') `disjUnion` singleton y (V.Int bot j')) <+> γ'
+                   γ0 = (O.singleton x (V.Int bot i') `disjUnion` O.singleton y (V.Int bot j')) <+> γ'
                in unsafePartial $ let V.Int β _ × V.Int β' _ = get x γ0 × get x γ0
                in γ × e × α' × β × β'
        γ × e × α' × β × β' = foldl1
@@ -102,7 +105,7 @@ evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) 
        γ' × e' × α'' = evalBwd' (V.Constr false cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t' in
     (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
 evalBwd' v (T.Project t x) =
-   let ρ × e × α = evalBwd' (V.Record false (M.singleton x v)) t in
+   let ρ × e × α = evalBwd' (V.Record false (O.singleton x v)) t in
    ρ × Project e x × α
 evalBwd' v (T.App (t1 × xs × _) t2 w t3) =
    let γ1γ2γ3 × e × β = evalBwd' v t3
@@ -135,7 +138,7 @@ evalBwd' v (T.Let (T.VarDef w t1) t2) =
    (γ1 ∨ γ1') × Let (VarDef σ e1) e2 × (α1 ∨ α2)
 evalBwd' v (T.LetRec ρ t) =
    let γ1γ2 × e × α = evalBwd' v t
-       γ1 × γ2 = append_inv (fromFoldable $ keys ρ) γ1γ2
+       γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2
        γ1' × ρ' × α' = closeDefsBwd γ2 in
    (γ1 ∨ γ1') × LetRec ρ' e × (α ∨ α')
 evalBwd' _ _ = error absurd

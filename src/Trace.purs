@@ -2,9 +2,8 @@ module Trace where
 
 import Prelude
 import Data.List (List)
-import Data.Map (Map)
 import Data.Set (Set, empty, singleton, unions)
-import Bindings (Var)
+import Bindings (Dict, Var)
 import DataType (Ctr)
 import Expr (class BV, Elim, RecDefs, bv)
 import Util (type (×))
@@ -19,7 +18,7 @@ data Trace a =
    Int Int |
    Float Number |
    Str String |
-   Record (Map Var (Trace a)) |
+   Record (Dict (Trace a)) |
    Constr Ctr (List (Trace a)) |
    Matrix (Array2 (Trace a)) (Var × Var) (Int × Int) (Trace a) |
    Lambda (Elim a) |
@@ -34,7 +33,7 @@ data Match a =
    MatchVar Var (Val a) |
    MatchVarAnon (Val a) |
    MatchConstr Ctr (List (Match a)) |
-   MatchRecord (Map Var (Match a))
+   MatchRecord (Dict (Match a))
 
 instance BV (Match a) where
    bv (MatchVar x _)       = singleton x

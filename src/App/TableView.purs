@@ -1,8 +1,7 @@
 module App.TableView where
 
 import Prelude
-import Data.Map (Map)
-import Bindings (Var)
+import Bindings (Dict)
 import App.Util (Handler, Renderer, get_intOrNumber, get_prim)
 import Lattice (𝔹)
 import Util (type (×))
@@ -15,7 +14,7 @@ newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord
 
 foreign import drawTable :: Renderer EnergyTable
 
-energyRecord :: Map Var (Val 𝔹) -> EnergyRecord
+energyRecord :: Dict (Val 𝔹) -> EnergyRecord
 energyRecord r = {
    year: get_prim "year" r,
    country: get_prim "country" r,

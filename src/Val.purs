@@ -23,7 +23,7 @@ data Val a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Map Var (Val a)) |              -- always saturated
+   Record a (Dict (Val a)) |                 -- always saturated
    Constr a Ctr (List (Val a)) |             -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |         -- never saturated
