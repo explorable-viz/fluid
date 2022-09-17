@@ -6,19 +6,16 @@ import Control.MonadPlus (class MonadPlus, empty)
 import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.Foldable (foldl)
-import Data.List (List(..), (:), head, intercalate)
+import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map)
-import Data.Map (lookup, size, toUnfoldable, unionWith) as M
+import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
-import Data.Set (Set, member)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
-import Foreign.Object (Object, filterKeys, keys, lookup, unionWith)
 
 infixl 7 type Tuple as ×
 infixl 7 Tuple as ×

@@ -6,11 +6,8 @@ import Data.Either (note)
 import Data.Function (on)
 import Data.List (fromFoldable) as L
 import Data.List (List, concat, (:))
-import Data.List.NonEmpty (head)
 import Data.Set (Set)
 import Data.Set (map, fromFoldable, toUnfoldable) as S
-import Data.Set.NonEmpty (NonEmptySet, fromSet)
-import Data.Set.NonEmpty (toUnfoldable1) as NES
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
