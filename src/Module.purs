@@ -7,10 +7,10 @@ import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
-import Foreign.Object (singleton)
 import Parsing (runParser)
 import Bindings (Var)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
+import Dict (singleton) as D
 import Eval (eval, eval_module)
 import Lattice (𝔹)
 import Parse (module_, program)
@@ -70,4 +70,4 @@ openDatasetAs file x = do
    s <- parseProgram (Folder "fluid") file
    γ <- defaultImports
    let _ × v = successful (desugarFwd s >>= eval γ)
-   pure (γ × singleton x v)
+   pure (γ × D.singleton x v)

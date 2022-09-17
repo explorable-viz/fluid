@@ -8,7 +8,8 @@ module Dict (
    disjointUnion_inv,
    get,
    intersectionWith,
-   keys
+   keys,
+   toUnfoldable
 ) where
 
 import Prelude
@@ -16,11 +17,12 @@ import Data.Foldable (foldl)
 import Data.List (head)
 import Data.Set (Set, member)
 import Data.Set (fromFoldable) as S
+import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (
-   delete, empty, filterKeys, fromFoldable, insert, isEmpty, lookup, singleton, size, toUnfoldable, union,
+   delete, empty, filterKeys, fromFoldable, insert, isEmpty, lookup, singleton, size, union,
    unionWith, update
 )
-import Foreign.Object (Object, keys) as O
+import Foreign.Object (Object, keys, toAscUnfoldable) as O
 import Util (Endo, type (×), (×), assert, definitely, definitely', error)
 
 type Dict a = O.Object a
@@ -45,3 +47,6 @@ disjointUnion = unionWith (\_ _ -> error "not disjoint")
 
 disjointUnion_inv :: forall a . Set String -> Dict a -> Dict a × Dict a
 disjointUnion_inv ks m = filterKeys (_ `member` ks) m × filterKeys (_ `not <<< member` ks) m
+
+toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
+toUnfoldable = O.toAscUnfoldable

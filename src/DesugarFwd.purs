@@ -12,7 +12,6 @@ import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Foreign.Object (fromFoldable)
 import Bindings (Bind, (↦), keys, varAnon)
 import Dict (Dict, asSingletonMap)
 import Dict (fromFoldable, singleton) as D
@@ -62,7 +61,7 @@ varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
 -- In the formalism, "group by name" is part of the syntax.
 -- cs desugar_fwd σ
 recDefsFwd :: RecDefs 𝔹 -> MayFail (E.RecDefs 𝔹)
-recDefsFwd xcs = fromFoldable <$> traverse recDefFwd xcss
+recDefsFwd xcs = D.fromFoldable <$> traverse recDefFwd xcss
    where
    xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 
@@ -77,7 +76,7 @@ exprFwd (Int α n)                = pure (E.Int α n)
 exprFwd (Float α n)              = pure (E.Float α n)
 exprFwd (Str α s)                = pure (E.Str α s)
 exprFwd (Constr α c ss)          = E.Constr α c <$> traverse exprFwd ss
-exprFwd (Record α xss)           = E.Record α <$> fromFoldable <$> traverse (traverse exprFwd) xss
+exprFwd (Record α xss)           = E.Record α <$> D.fromFoldable <$> traverse (traverse exprFwd) xss
 exprFwd (Matrix α s (x × y) s')  = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
 exprFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
 exprFwd (Project s x)            = E.Project <$> exprFwd s <@> x

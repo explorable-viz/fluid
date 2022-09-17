@@ -2,17 +2,14 @@ module Lattice where
 
 import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
-import Data.Array (null, (\\))
 import Data.Array (zipWith) as A
 import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (zipWith) as NEL
-import Data.Map (Map)
-import Data.Map (difference, insert, intersectionWith, keys, lookup, toUnfoldable, union, update) as M
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
-import Data.Set (Set, subset)
+import Data.Set (subset)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
 import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, update)
@@ -88,28 +85,15 @@ instance Slices t => Slices (NonEmptyList t) where
       | (length xs :: Int) == length ys   = sequence (NEL.zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
 
-instance (Ord k, Slices t) => JoinSemilattice (Map k t) where
-   join = definedJoin
-   neg = (<$>) neg
-
 instance Slices t => JoinSemilattice (Dict t) where
    join = definedJoin
    neg = (<$>) neg
 
-instance (Ord k, Slices t) => Slices (Map k t) where
-   maybeJoin m m' = foldM mayFailUpdate m (M.toUnfoldable m' :: List (k × t))
-
 instance Slices t => Slices (Dict t) where
-   maybeJoin m m' = foldM mayFailUpdate' m (toUnfoldable m' :: List (Var × t))
+   maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × t))
 
-mayFailUpdate :: forall k t . Ord k => Slices t => Map k t -> k × t -> MayFail (Map k t)
+mayFailUpdate :: forall t . Slices t => Dict t -> Var × t -> MayFail (Dict t)
 mayFailUpdate m (k × v) =
-   case M.lookup k m of
-      Nothing -> pure (M.insert k v m)
-      Just v' -> M.update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
-
-mayFailUpdate' :: forall t . Slices t => Dict t -> Var × t -> MayFail (Dict t)
-mayFailUpdate' m (k × v) =
    case lookup k m of
       Nothing -> pure (insert k v m)
       Just v' -> update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
@@ -125,11 +109,6 @@ instance Slices a => Slices (Array a) where
 
 class Expandable a where
    expand :: a -> a -> a
-
-instance (Ord k, Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expandable (Map k (t a)) where
-   expand kvs kvs' =
-      assert (M.keys kvs `subset` M.keys kvs') $
-      (kvs `M.intersectionWith expand` kvs') `M.union` ((kvs' `M.difference` kvs) <#> botOf)
 
 instance (Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expandable (Dict (t a)) where
    expand kvs kvs' =

@@ -33,6 +33,7 @@ You can edit this file as you like.
   , "spec"
   , "strings"
   , "tuples"
+  , "unfoldable"
   , "unicode"
   , "unsafe-coerce"
   , "web-events"

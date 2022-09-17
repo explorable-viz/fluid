@@ -10,12 +10,11 @@ import Data.NonEmpty (foldl1)
 import Data.Set (union)
 import Data.Set (fromFoldable, singleton) as S
 import Data.Tuple (fst, snd, uncurry)
-import Foreign.Object (fromFoldable, singleton, toUnfoldable) as O
 import Partial.Unsafe (unsafePartial)
 import Bindings (Var, varAnon)
 import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
-import Dict (singleton) as D
+import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
 import Lattice (𝔹, (∨), bot, botOf, expand)
 import Trace (Trace(..), VarDef(..)) as T
@@ -45,9 +44,9 @@ matchBwd γ κ _ (MatchVarAnon v)
    | otherwise                      = error absurd
 matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (D.singleton c κ')
    where vs × κ' = matchManyBwd ρ κ α (reverse ws)
-matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zip xs vs # O.fromFoldable) ×
+matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zip xs vs # D.fromFoldable) ×
                                       ElimRecord (S.fromFoldable $ keys xws) κ'
-   where xs × ws = xws # O.toUnfoldable # unzip
+   where xs × ws = xws # D.toUnfoldable # unzip
          vs × κ' = matchManyBwd ρ κ α (ws # reverse)
 
 matchManyBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
@@ -66,8 +65,8 @@ evalBwd γ e v t =
 
 -- Computes a partial slice which evalBwd expands to a full slice.
 evalBwd' :: Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
-evalBwd' v (T.Var x) = O.singleton x v × Var x × false
-evalBwd' v (T.Op op) = O.singleton op v × Op op × false
+evalBwd' v (T.Var x) = D.singleton x v × Var x × false
+evalBwd' v (T.Op op) = D.singleton op v × Op op × false
 evalBwd' (V.Str α _) (T.Str str) = empty × Str α str × α
 evalBwd' (V.Int α _) (T.Int n) = empty × Int α n × α
 evalBwd' (V.Float α _) (T.Float n) = empty × Float α n × α
@@ -93,7 +92,7 @@ evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) 
           case evalBwd' (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
              γ'' × e × α' ->
                let γ × γ' = append_inv (S.singleton x `union` S.singleton y) γ''
-                   γ0 = (O.singleton x (V.Int bot i') `disjointUnion` O.singleton y (V.Int bot j')) <+> γ'
+                   γ0 = (D.singleton x (V.Int bot i') `disjointUnion` D.singleton y (V.Int bot j')) <+> γ'
                in unsafePartial $ let V.Int β _ × V.Int β' _ = get x γ0 × get x γ0
                in γ × e × α' × β × β'
        γ × e × α' × β × β' = foldl1
@@ -103,7 +102,7 @@ evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) 
        γ' × e' × α'' = evalBwd' (V.Constr false cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t' in
     (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
 evalBwd' v (T.Project t x) =
-   let ρ × e × α = evalBwd' (V.Record false (O.singleton x v)) t in
+   let ρ × e × α = evalBwd' (V.Record false (D.singleton x v)) t in
    ρ × Project e x × α
 evalBwd' v (T.App (t1 × xs × _) t2 w t3) =
    let γ1γ2γ3 × e × β = evalBwd' v t3
