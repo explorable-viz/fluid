@@ -1,4 +1,4 @@
-## Linked visualisations via Galois dependencies
+## Fluid news
 
 ### Recent activity
 
