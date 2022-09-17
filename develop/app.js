@@ -8650,6 +8650,7 @@
     const $0 = foldlArray((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2);
     return (x2) => $0(keys(x2));
   })();
+  var intersection2 = /* @__PURE__ */ intersectionWith($$const);
   var disjointUnion_inv = (ks) => (m) => $Tuple(
     filterWithKey((x2) => {
       const $3 = lookup(ordString)(x2)(ks);
@@ -10036,8 +10037,8 @@
   var maybeJoin = /* @__PURE__ */ (() => slicesDict(slicesElimBoolean).maybeJoin)();
   var expand = /* @__PURE__ */ (() => expandableDict(functorElim)(boundedJoinSemilatticeBoo)(expandableElimBoolean).expand)();
   var fromFoldable5 = /* @__PURE__ */ foldlArray((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2);
-  var intersection2 = /* @__PURE__ */ intersection(ordString);
   var toUnfoldable8 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
+  var intersection3 = /* @__PURE__ */ intersection(ordString);
   var Int2 = (value0) => (value1) => $Val("Int", value0, value1);
   var Float2 = (value0) => (value1) => $Val("Float", value0, value1);
   var Str2 = (value0) => (value1) => $Val("Str", value0, value1);
@@ -10313,6 +10314,10 @@
       return unsafePerformEffect(throwException(error("Incompatible values")));
     }
   };
+  var weakJoin = (dictSlices) => {
+    const join12 = joinSemilatticeDict(dictSlices).join;
+    return (m) => (m$p) => unionWith((v) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(unionWith((v) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(difference3(m)(m$p))(join12(intersection2(m)(m$p))(intersection2(m$p)(m))))(difference3(m$p)(m));
+  };
   var updateMatrix = (i) => (j) => (\u03B4v) => (v) => {
     const vs_i = definitely("index within bounds")(index2(v._1._1)(i - 1 | 0));
     return $Tuple(
@@ -10336,14 +10341,6 @@
     })();
     return (v) => $4;
   })(\u03B3);
-  var weakJoin = (dictSlices) => {
-    const join12 = joinSemilatticeDict(dictSlices).join;
-    return (m) => (m$p) => {
-      const $4 = fromFoldable5(keys(m));
-      const $5 = fromFoldable5(keys(m$p));
-      return unionWith((v) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(unionWith((v) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(restrict(m)(difference2(ordString)($4)($5)))(join12(restrict(m)(intersection2($4)($5)))(restrict(m$p)(intersection2($4)($5)))))(restrict(m$p)(difference2(ordString)($5)($4)));
-    };
-  };
   var reaches = (\u03C1) => (xs) => {
     const dom_\u03C1 = fromFoldable5(keys(\u03C1));
     const go = (go$a0$copy) => (go$a1$copy) => {
@@ -10370,7 +10367,7 @@
             go$a1 = acc;
             continue;
           }
-          go$a0 = foldableList.foldr(Cons)(v._2)(toUnfoldable8(intersection2(fVElim.fv(definitely("absurd")(_lookup(
+          go$a0 = foldableList.foldr(Cons)(v._2)(toUnfoldable8(intersection3(fVElim.fv(definitely("absurd")(_lookup(
             Nothing,
             Just,
             v._1,
@@ -10403,7 +10400,7 @@
     }
     fail();
   };
-  var $$for = (\u03C1) => (\u03C3) => restrict(\u03C1)(reaches(\u03C1)(intersection2(fVElim.fv(\u03C3))(fromFoldable5(keys(\u03C1)))));
+  var $$for = (\u03C1) => (\u03C3) => restrict(\u03C1)(reaches(\u03C1)(intersection3(fVElim.fv(\u03C3))(fromFoldable5(keys(\u03C1)))));
   var append_inv = (xs) => (\u03B3) => $Tuple(
     filterWithKey((x2) => {
       const $3 = lookup(ordString)(x2)(xs);
