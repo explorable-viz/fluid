@@ -10,13 +10,13 @@ import Data.Map (lookup)
 import Data.Map (keys) as M
 import Data.Profunctor.Strong (second)
 import Data.Set (union, subset)
-import Data.Set (fromFoldable, singleton, toUnfoldable) as S
+import Data.Set (fromFoldable, toUnfoldable) as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import Foreign.Object (empty, keys)
 import Foreign.Object (fromFoldable, singleton) as O
 import Bindings (varAnon)
-import DataType (Ctr, arity, consistentCtrs, cPair, dataTypeFor)
+import DataType (Ctr, arity, consistentCtrs, cPair, dataTypeFor, showCtr)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
 import Lattice (𝔹)
 import Pretty (prettyP)
@@ -34,11 +34,11 @@ match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match v (ElimVar x κ)  | x == varAnon    = pure (empty × κ × MatchVarAnon v)
                        | otherwise       = pure (O.singleton x v × κ × MatchVar x v)
 match (V.Constr _ c vs) (ElimConstr m) = do
-   with "Pattern mismatch" $ consistentCtrs (S.singleton c) (M.keys m)
-   κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
+   with "Pattern mismatch" $ consistentCtrs [c] (S.toUnfoldable $ M.keys m)
+   κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (lookup c m)
    second (MatchConstr c) <$> matchMany vs κ
 match v (ElimConstr m) = do
-   d <- dataTypeFor (M.keys m)
+   d <- dataTypeFor (S.toUnfoldable $ M.keys m :: Array Ctr)
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record _ xvs) (ElimRecord xs κ)  = do
    check (subset xs (S.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
@@ -64,7 +64,7 @@ closeDefs γ ρ = ρ <#> \σ ->
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
    n' <- arity c
-   check (n' >= n) (show c <> " got " <> show n <> " argument(s), expects at most " <> show n')
+   check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Trace 𝔹 × Val 𝔹)
 eval γ (Var x)       = (T.Var x × _) <$> lookup' x γ
@@ -117,7 +117,7 @@ eval γ (App e e') = do
              v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs' in
          pure (T.AppPrim (t × PrimOp φ × vs) (t' × v') × v'')
       V.Constr _ c vs -> do
-         check (successful (arity c) > length vs) ("Too many arguments to " <> show c)
+         check (successful (arity c) > length vs) ("Too many arguments to " <> showCtr c)
          pure (T.AppConstr (t × c × length vs) t' × V.Constr false c (vs <> singleton v'))
       _ -> report "Expected closure, operator or unsaturated constructor"
 eval γ (Let (VarDef σ e) e') = do

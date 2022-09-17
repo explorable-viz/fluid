@@ -11,7 +11,7 @@ import Foreign.Object (toAscUnfoldable)
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
 import Bindings (Bind, Dict, Var, (↦))
-import DataType (Ctr, cCons, cNil, cPair)
+import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
 import Lattice (𝔹)
@@ -91,7 +91,7 @@ vert delim = fromFoldable >>> vert'
          vert' (x : y : xs) = atop (x :<>: delim) (vert' (y : xs))
 
 instance Pretty Ctr where
-   pretty = show >>> pretty
+   pretty = showCtr >>> pretty
 
 -- Cheap hack; revisit.
 prettyParensOpt :: forall a . Pretty a => a -> Doc
@@ -148,7 +148,7 @@ instance Pretty (Cont Boolean) where
    pretty (ContElim σ)  = pretty σ
 
 instance Pretty (Ctr × Cont Boolean) where
-   pretty (c × κ) = hspace [text (show c), text str.rArrow, pretty κ]
+   pretty (c × κ) = hspace [text (showCtr c), text str.rArrow, pretty κ]
 
 instance Pretty (Elim Boolean) where
    pretty (ElimVar x κ)       = hspace [text x, text str.rArrow, pretty κ]
