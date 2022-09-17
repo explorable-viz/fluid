@@ -4,11 +4,12 @@ import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Map (Map)
+import Data.Map (keys) as M
 import Data.Set (Set, difference, empty, fromFoldable, singleton, union, unions)
 import Data.Tuple (snd)
 import Foreign.Object (keys)
 import Bindings (Dict, Var)
-import DataType (Ctr)
+import DataType (Ctr, consistentCtrs)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
 import Util (type (×), (×), type (+), (≜), (≞), asSingletonMap, error, report)
 
@@ -117,7 +118,8 @@ instance JoinSemilattice (Elim Boolean) where
 
 instance Slices (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ')         = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr cκs) (ElimConstr cκs')    = ElimConstr <$> maybeJoin cκs cκs'
+   maybeJoin (ElimConstr cκs) (ElimConstr cκs')    =
+      ElimConstr <$> (consistentCtrs (M.keys cκs) (M.keys cκs') *> maybeJoin cκs cκs')
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
    maybeJoin _ _                                   = report "Incompatible eliminators"
 

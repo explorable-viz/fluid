@@ -10,20 +10,20 @@ import Data.Map (lookup)
 import Data.Map (keys) as M
 import Data.Profunctor.Strong (second)
 import Data.Set (union, subset)
-import Data.Set (fromFoldable, toUnfoldable) as S
+import Data.Set (fromFoldable, singleton, toUnfoldable) as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import Foreign.Object (empty, keys)
 import Foreign.Object (fromFoldable, singleton) as O
 import Bindings (varAnon)
-import DataType (Ctr, arity, cPair, dataTypeFor)
+import DataType (Ctr, arity, consistentCtrs, cPair, dataTypeFor)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
-import Lattice (𝔹, checkConsistent)
+import Lattice (𝔹)
 import Pretty (prettyP)
 import Primitive (match) as P
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, get, report, successful)
+import Util (MayFail, type (×), (×), absurd, check, disjUnion, error, get, report, successful, with)
 import Val (Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -34,7 +34,7 @@ match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match v (ElimVar x κ)  | x == varAnon    = pure (empty × κ × MatchVarAnon v)
                        | otherwise       = pure (O.singleton x v × κ × MatchVar x v)
 match (V.Constr _ c vs) (ElimConstr m) = do
-   checkConsistent "Pattern mismatch: " c (M.keys m)
+   with "Pattern mismatch" $ consistentCtrs (S.singleton c) (M.keys m)
    κ <- note ("Incomplete patterns: no branch for " <> show c) (lookup c m)
    second (MatchConstr c) <$> matchMany vs κ
 match v (ElimConstr m) = do

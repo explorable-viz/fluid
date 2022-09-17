@@ -13,7 +13,6 @@ import Data.Set (Set, toUnfoldable)
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
-import Lattice (class Key)
 import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, definitely', with)
 
 type TypeName = String
@@ -40,11 +39,13 @@ instance Show Ctr where
                 | isCtrOp str    = "(" <> str <> ")"
                 | otherwise      = error absurd
 
-instance Key Ctr where
-   checkConsistent msg c cs = void $ do
-      d <- dataTypeFor c
-      d' <- dataTypeFor cs
-      with (msg <> show c <> " is not a constructor of " <> show d') (d ≞ d')
+-- Check that two non-empty sets of identifiers (each assumed to contain constructors of a unique datatype),
+-- contain constructors from the same datatype.
+consistentCtrs :: Set Ctr -> Set Ctr -> MayFail Unit
+consistentCtrs cs cs' = void $ do
+   d <- dataTypeFor cs
+   d' <- dataTypeFor cs'
+   with ("constructors of " <> show d' <> " do not include " <> show cs) (d ≞ d')
 
 data DataType' a = DataType TypeName (Map Ctr a)
 type DataType = DataType' CtrSig
