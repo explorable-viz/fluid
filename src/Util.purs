@@ -18,7 +18,7 @@ import Data.Set (Set, member)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
-import Foreign.Object (Object, delete, filterKeys, keys, lookup, unionWith)
+import Foreign.Object (Object, filterKeys, keys, lookup, unionWith)
 
 infixl 7 type Tuple as ×
 infixl 7 Tuple as ×
@@ -49,20 +49,8 @@ definitely msg Nothing  = error msg
 definitely' :: forall a . Maybe a -> a
 definitely' = definitely absurd
 
-get :: forall v . String -> Object v -> v
-get k = definitely' <<< lookup k
-
-get' :: forall k v . Ord k => k -> Map k v -> v
-get' k = definitely' <<< M.lookup k
-
-asSingletonMap :: forall k v . Map k v -> k × v
-asSingletonMap m = assert (M.size m == 1) (definitely "singleton map" (head (M.toUnfoldable m)))
-
-disjUnion :: forall v . Object v -> Endo (Object v)
-disjUnion = unionWith (\_ _ -> error "not disjoint")
-
-disjUnion_inv :: forall v . Set String -> Object v -> Object v × Object v
-disjUnion_inv ks m = filterKeys (_ `member` ks) m × filterKeys (_ `not <<< member` ks) m
+get :: forall k v . Ord k => k -> Map k v -> v
+get k = definitely' <<< M.lookup k
 
 onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
 onlyIf true    = pure
@@ -154,9 +142,3 @@ replicate n a
 
 unzip :: forall t a b . Functor t => t (a × b) -> t a × t b
 unzip = (<$>) fst &&& (<$>) snd
-
--- Unfortunately Foreign.Object doesn't define this; could implement using Foreign.Object.ST instead.
-foreign import intersectionWith :: forall a b c . (a -> b -> c) -> Object a -> Object b -> Object c
-
-difference :: forall v w. Object v -> Object w -> Object v
-difference m1 m2 = foldl (flip delete) m1 (keys m2)

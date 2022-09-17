@@ -6,23 +6,21 @@ import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), (:), range, reverse, unsnoc, unzip, zip)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (singleton) as M
 import Data.NonEmpty (foldl1)
 import Data.Set (union)
 import Data.Set (fromFoldable, singleton) as S
 import Data.Tuple (fst, snd, uncurry)
-import Foreign.Object (empty, insert, isEmpty, keys)
 import Foreign.Object (fromFoldable, singleton, toUnfoldable) as O
 import Partial.Unsafe (unsafePartial)
 import Bindings (Var, varAnon)
 import DataType (cPair)
+import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
+import Dict (singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
 import Lattice (𝔹, (∨), bot, botOf, expand)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (
-   Endo, type (×), (×), (!), absurd, error, definitely', disjUnion, disjUnion_inv, get, intersectionWith, nonEmpty
-)
+import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
 import Val (Env, PrimOp(..), (<+>), Val, (∨∨), append_inv)
 import Val (Val(..)) as V
 
@@ -40,12 +38,12 @@ closeDefsBwd γ =
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
 matchBwd γ κ _ (MatchVar x v)
-   | keys γ == [x]                  = get x γ × ElimVar x κ
+   | keys γ == S.singleton x        = get x γ × ElimVar x κ
    | otherwise                      = botOf v × ElimVar x κ
 matchBwd γ κ _ (MatchVarAnon v)
    | isEmpty γ                      = botOf v × ElimVar varAnon κ
    | otherwise                      = error absurd
-matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (M.singleton c κ')
+matchBwd ρ κ α (MatchConstr c ws)   = V.Constr α c vs × ElimConstr (D.singleton c κ')
    where vs × κ' = matchManyBwd ρ κ α (reverse ws)
 matchBwd ρ κ α (MatchRecord xws)    = V.Record α (zip xs vs # O.fromFoldable) ×
                                       ElimRecord (S.fromFoldable $ keys xws) κ'
@@ -56,7 +54,7 @@ matchManyBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 
 matchManyBwd γ κ _ Nil  | isEmpty γ = Nil × κ
                         | otherwise = error absurd
 matchManyBwd γγ' κ α (w : ws) =
-   let γ × γ'  = disjUnion_inv (bv w) γγ'
+   let γ × γ'  = disjointUnion_inv (bv w) γγ'
        v × σ   = matchBwd γ κ α w
        vs × κ' = matchManyBwd γ' (ContElim σ) α ws in
    (vs <> v : Nil) × κ'
@@ -95,7 +93,7 @@ evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) 
           case evalBwd' (vss!(i - 1)!(j - 1)) (tss!(i - 1)!(j - 1)) of
              γ'' × e × α' ->
                let γ × γ' = append_inv (S.singleton x `union` S.singleton y) γ''
-                   γ0 = (O.singleton x (V.Int bot i') `disjUnion` O.singleton y (V.Int bot j')) <+> γ'
+                   γ0 = (O.singleton x (V.Int bot i') `disjointUnion` O.singleton y (V.Int bot j')) <+> γ'
                in unsafePartial $ let V.Int β _ × V.Int β' _ = get x γ0 × get x γ0
                in γ × e × α' × β × β'
        γ × e × α' × β × β' = foldl1

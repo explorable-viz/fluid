@@ -8,14 +8,12 @@ import Data.Map (lookup) as M
 import Data.Set (Set, difference, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Bindings (Dict, Var)
+import Bindings (Var)
+import Dict (Dict, disjointUnion, get)
 import DataType (Ctr)
 import Expr (Elim, RecDefs, fv)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
-import Util (
-   Endo, MayFail, type (×), (×), (≞), (≜), (!),
-   disjUnion, error, get, orElse, report, unsafeUpdateAt
-)
+import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
 type Op a = a × 𝔹 -> Val 𝔹
 
@@ -77,9 +75,9 @@ weakJoin :: forall a . Slices a => Dict a -> Endo (Dict a)
 weakJoin m m' =
    let dom_m × dom_m' = fromFoldable (O.keys m) × fromFoldable (O.keys m') :: Set Var × Set Var in
    (m `restrict` (dom_m `difference` dom_m'))
-   `disjUnion`
+   `disjointUnion`
    (m `restrict` (dom_m `intersection` dom_m') ∨ m' `restrict` (dom_m `intersection` dom_m'))
-   `disjUnion`
+   `disjointUnion`
    (m' `restrict` (dom_m' `difference` dom_m))
 
 infixl 6 weakJoin as ∨∨

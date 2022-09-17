@@ -3,16 +3,14 @@ module Expr where
 import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
-import Data.Map (Map)
-import Data.Map (keys) as M
 import Data.Set (Set, difference, empty, singleton, union, unions)
-import Data.Set (fromFoldable, toUnfoldable) as S
+import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
-import Foreign.Object (keys)
-import Bindings (Dict, Var)
-import DataType (Ctr, consistentCtrs)
+import Dict (Dict, keys, asSingletonMap)
+import Bindings (Var)
+import DataType (Ctr, consistentWith)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
-import Util (type (×), (×), type (+), (≜), (≞), asSingletonMap, error, report)
+import Util (type (×), (×), type (+), (≜), (≞), error, report)
 
 data Expr a =
    Var Var |
@@ -35,7 +33,7 @@ type RecDefs a = Dict (Elim a)
 
 data Elim a =
    ElimVar Var (Cont a) |
-   ElimConstr (Map Ctr (Cont a)) |
+   ElimConstr (Dict (Cont a)) |
    ElimRecord (Set Var) (Cont a)
 
 -- Continuation of an eliminator branch.
@@ -95,7 +93,7 @@ class BV a where
 instance BV (Elim a) where
    bv (ElimVar x κ)     = singleton x `union` bv κ
    bv (ElimConstr m)    = bv (snd (asSingletonMap m))
-   bv (ElimRecord _ κ) = bv κ
+   bv (ElimRecord _ κ)  = bv κ
 
 instance BV (VarDef a) where
    bv (VarDef σ _) = bv σ
@@ -120,8 +118,7 @@ instance JoinSemilattice (Elim Boolean) where
 instance Slices (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ')         = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
    maybeJoin (ElimConstr cκs) (ElimConstr cκs')    =
-      ElimConstr <$> (consistentCtrs (S.toUnfoldable $ M.keys cκs) (S.toUnfoldable $ M.keys cκs')
-                     *> maybeJoin cκs cκs')
+      ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
    maybeJoin _ _                                   = report "Incompatible eliminators"
 

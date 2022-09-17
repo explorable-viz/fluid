@@ -11,10 +11,10 @@ import App.Util (
    Handler, class Reflect, Renderer, Selector,
    from, get_intOrNumber, get_prim, record, selectNth, toggleConstrArg, toggleField
 )
-import Bindings (Dict)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
+import Dict (Dict, get)
 import Lattice (𝔹, neg)
-import Util (type (×), (×), (!), definitely', get)
+import Util (type (×), (×), (!), definitely')
 import Val (Val(..))
 
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }

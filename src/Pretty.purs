@@ -10,8 +10,9 @@ import Data.String (Pattern(..), contains) as Data.String
 import Foreign.Object (toAscUnfoldable)
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
-import Bindings (Bind, Dict, Var, (↦))
+import Bindings (Bind, Var, (↦))
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
+import Dict (Dict)
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
 import Lattice (𝔹)

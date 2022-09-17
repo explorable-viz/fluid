@@ -15,9 +15,9 @@ import Data.Profunctor.Strong (second)
 import Data.Set (Set, subset)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Foreign.Object (lookup, insert, keys, toUnfoldable, union, update)
-import Bindings (Dict, Var)
-import Util (Endo, MayFail, type (×), (×), (≞), assert, difference, intersectionWith, report, successfulWith)
+import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, update)
+import Bindings (Var)
+import Util (Endo, MayFail, type (×), (×), (≞), assert, report, successfulWith)
 
 class JoinSemilattice a where
    join :: a -> a -> a
@@ -133,7 +133,7 @@ instance (Ord k, Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expan
 
 instance (Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expandable (Dict (t a)) where
    expand kvs kvs' =
-      assert (null $ keys kvs \\ keys kvs') $
+      assert (keys kvs `subset` keys kvs') $
       (kvs `intersectionWith expand` kvs') `union` ((kvs' `difference` kvs) <#> botOf)
 
 instance Expandable a => Expandable (List a) where

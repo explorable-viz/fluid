@@ -3,7 +3,8 @@ module Trace where
 import Prelude
 import Data.List (List)
 import Data.Set (Set, empty, singleton, unions)
-import Bindings (Dict, Var)
+import Dict (Dict)
+import Bindings (Var)
 import DataType (Ctr)
 import Expr (class BV, Elim, RecDefs, bv)
 import Util (type (×))

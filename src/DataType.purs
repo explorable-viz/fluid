@@ -1,20 +1,22 @@
 module DataType where
 
 import Prelude hiding (absurd)
-import Data.Array (head)
 import Data.CodePoint.Unicode (isUpper)
 import Data.Either (note)
 import Data.Function (on)
 import Data.List (fromFoldable) as L
-import Data.List (List, concat)
-import Data.Map (Map, lookup, keys)
-import Data.Map (fromFoldable) as M
-import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, unwrap)
-import Data.Set (Set, toUnfoldable)
+import Data.List (List, concat, (:))
+import Data.List.NonEmpty (head)
+import Data.Set (Set)
+import Data.Set (map, fromFoldable, toUnfoldable) as S
+import Data.Set.NonEmpty (NonEmptySet, fromSet)
+import Data.Set.NonEmpty (toUnfoldable1) as NES
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
+import Partial.Unsafe (unsafePartial)
+import Dict (Dict, keys, lookup)
+import Dict (fromFoldable) as O
 import Bindings (Var)
 import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, definitely', with)
 
@@ -35,15 +37,7 @@ showCtr c | isCtrName c = c
           | isCtrOp c   = "(" <> c <> ")"
           | otherwise   = error absurd
 
--- Check that two non-empty sets of identifiers (each assumed to contain constructors of a unique datatype),
--- contain constructors from the same datatype.
-consistentCtrs :: Array Ctr -> Array Ctr -> MayFail Unit
-consistentCtrs cs cs' = void $ do
-   d <- dataTypeFor cs
-   d' <- dataTypeFor cs'
-   with ("constructors of " <> show d' <> " do not include " <> (show (cs <#> showCtr))) (d ≞ d')
-
-data DataType' a = DataType TypeName (Map Ctr a)
+data DataType' a = DataType TypeName (Dict a)
 type DataType = DataType' CtrSig
 type CtrSig = Int
 
@@ -57,11 +51,11 @@ instance Show (DataType' Int) where
    show = typeName
 
 dataType :: TypeName -> Array (Ctr × CtrSig) -> DataType
-dataType name = map (uncurry (×)) >>> M.fromFoldable >>> DataType name
+dataType name = map (uncurry (×)) >>> O.fromFoldable >>> DataType name
 
-ctrToDataType :: Map Ctr DataType
+ctrToDataType :: Dict DataType
 ctrToDataType =
-   dataTypes <#> (\d -> ctrs d # toUnfoldable <#> (_ × d)) # concat # M.fromFoldable
+   dataTypes <#> (\d -> ctrs d # S.toUnfoldable <#> (_ × d)) # concat # O.fromFoldable
 
 class DataTypeFor a where
    dataTypeFor :: a -> MayFail DataType
@@ -69,13 +63,18 @@ class DataTypeFor a where
 instance DataTypeFor Ctr where
    dataTypeFor c = note ("Unknown constructor " <> showCtr c) (lookup c ctrToDataType)
 
-instance DataTypeFor (Array Ctr) where
-   dataTypeFor cs = case head cs of
-      Nothing  -> error absurd
-      Just c   -> dataTypeFor c
+instance DataTypeFor (Set Ctr) where
+   dataTypeFor cs = unsafePartial $ case S.toUnfoldable cs of c : _ -> dataTypeFor c
+
+-- Sets must be non-empty, but this is a more convenient signature.
+consistentWith :: Set Ctr -> Set Ctr -> MayFail Unit
+consistentWith cs cs' = void $ do
+   d <- dataTypeFor cs'
+   d' <- dataTypeFor cs'
+   with ("constructors of " <> show d' <> " do not include " <> (show (S.map showCtr cs))) (d ≞ d')
 
 ctrs :: DataType -> Set Ctr
-ctrs (DataType _ sigs) = keys sigs
+ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
 arity :: Ctr -> MayFail Int
 arity c = do

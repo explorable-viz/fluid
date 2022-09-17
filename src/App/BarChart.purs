@@ -9,10 +9,10 @@ import App.Util (
    Handler, class Reflect, Renderer, Selector,
    from, get_intOrNumber, get_prim, record, selectNth, toggleConstrArg, toggleField
 )
-import Bindings (Dict)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
+import Dict (Dict, get)
 import Lattice (𝔹, neg)
-import Util (type (×), (!), definitely', get)
+import Util (type (×), (!), definitely')
 import Val (Val)
 
 newtype BarChart = BarChart { caption :: String × 𝔹, data :: Array BarChartRecord }

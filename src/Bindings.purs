@@ -8,7 +8,6 @@ import Foreign.Object (Object)
 import Util (type (×), definitely, whenever)
 
 type Var = String
-type Dict a = Object a
 
 varAnon = "_" :: Var
 

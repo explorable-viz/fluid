@@ -1,8 +1,8 @@
 module App.TableView where
 
 import Prelude
-import Bindings (Dict)
 import App.Util (Handler, Renderer, get_intOrNumber, get_prim)
+import Dict (Dict)
 import Lattice (𝔹)
 import Util (type (×))
 import Val (Val)

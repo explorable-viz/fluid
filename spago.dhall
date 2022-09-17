@@ -22,7 +22,6 @@ You can edit this file as you like.
   , "integers"
   , "lists"
   , "maybe"
-  , "newtype"
   , "nonempty"
   , "numbers"
   , "ordered-collections"
