@@ -5,11 +5,12 @@ import Control.Apply (lift2)
 import Data.List (List(..), (:))
 import Data.Map (Map)
 import Data.Map (lookup) as M
-import Data.Set (Set, difference, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
+import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Bindings (Var)
-import Dict (Dict, disjointUnion, get)
+import Dict (Dict, (\\), disjointUnion, get)
+import Dict (intersection) as D
 import DataType (Ctr)
 import Expr (Elim, RecDefs, fv)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
@@ -73,12 +74,7 @@ for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.key
 
 weakJoin :: forall a . Slices a => Dict a -> Endo (Dict a)
 weakJoin m m' =
-   let dom_m × dom_m' = fromFoldable (O.keys m) × fromFoldable (O.keys m') :: Set Var × Set Var in
-   (m `restrict` (dom_m `difference` dom_m'))
-   `disjointUnion`
-   (m `restrict` (dom_m `intersection` dom_m') ∨ m' `restrict` (dom_m `intersection` dom_m'))
-   `disjointUnion`
-   (m' `restrict` (dom_m' `difference` dom_m))
+   (m \\ m') `disjointUnion` ((m `D.intersection` m') ∨ (m' `D.intersection` m)) `disjointUnion` (m' \\ m)
 
 infixl 6 weakJoin as ∨∨
 

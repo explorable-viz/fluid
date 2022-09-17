@@ -2,11 +2,13 @@
 module Dict (
    module Foreign.Object,
    Dict,
+   (\\),
    asSingletonMap,
    difference,
    disjointUnion,
    disjointUnion_inv,
    get,
+   intersection,
    intersectionWith,
    keys,
    toUnfoldable
@@ -30,8 +32,13 @@ type Dict a = O.Object a
 -- Unfortunately Foreign.Object doesn't define this; could implement using Foreign.Object.ST instead.
 foreign import intersectionWith :: forall a b c . (a -> b -> c) -> Dict a -> Dict b -> Dict c
 
+intersection :: forall a b . Dict a -> Dict b -> Dict a
+intersection = intersectionWith const
+
 difference :: forall a b. Dict a -> Dict b -> Dict a
 difference m1 m2 = foldl (flip delete) m1 (O.keys m2)
+
+infix 5 difference as \\
 
 keys :: forall a . Dict a -> Set String
 keys = O.keys >>> S.fromFoldable
