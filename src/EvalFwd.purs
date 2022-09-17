@@ -3,38 +3,38 @@ module EvalFwd where
 import Prelude hiding (absurd)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton, zip)
-import Data.Map (empty, intersectionWith, toUnfoldable)
-import Data.Map (singleton) as M
 import Data.Profunctor.Strong ((***), first, second)
 import Data.Set (union)
 import Data.Set (toUnfoldable) as S
 import Data.Tuple (snd)
-import Expr (Cont, Elim(..), Expr(..), VarDef(..), asElim, asExpr, fv)
+import Dict (disjointUnion, empty, get, intersectionWith)
+import Dict (singleton, toUnfoldable) as O
+import Expr (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))
 import Primitive (match_fwd) as P
 import Trace (Trace(..), Match(..), VarDef(..)) as T
 import Trace (Trace, Match)
-import Util (type (×), (×), (!), absurd, assert, disjUnion, error, get)
-import Val (Env, FunEnv, PrimOp(..), (<+>), Val, for, restrict)
+import Util (type (×), (×), (!), absurd, assert, error)
+import Val (Env, PrimOp(..), (<+>), Val, for, restrict)
 import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchFwd _ (ElimVar _ κ) (T.MatchVarAnon _) = empty × κ × true
-matchFwd v (ElimVar _ κ) (T.MatchVar x _) = M.singleton x v × κ × true
+matchFwd v (ElimVar _ κ) (T.MatchVar x _) = O.singleton x v × κ × true
 matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
    second (_ ∧ α) (matchManyFwd vs (get c m) ws)
 matchFwd (V.Record α xvs) (ElimRecord xs κ) (T.MatchRecord xws) =
-   second (_ ∧ α) (matchManyFwd (xs # S.toUnfoldable <#> flip get xvs) κ (xws # toUnfoldable <#> snd))
+   second (_ ∧ α) (matchManyFwd (xs # S.toUnfoldable <#> flip get xvs) κ (xws # O.toUnfoldable <#> snd))
 matchFwd _ _ _ = error absurd
 
 matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchManyFwd Nil κ Nil = empty × κ × true
 matchManyFwd (v : vs) σ (w : ws) =
    let ρ × κ × α = matchFwd v (asElim σ) w in
-   (first (ρ `disjUnion` _) *** (_ ∧ α)) (matchManyFwd vs κ ws)
+   (first (ρ `disjointUnion` _) *** (_ ∧ α)) (matchManyFwd vs κ ws)
 matchManyFwd _ _ _ = error absurd
 
-closeDefsFwd :: Env 𝔹 -> FunEnv 𝔹 -> 𝔹 -> Env 𝔹
+closeDefsFwd :: Env 𝔹 -> RecDefs 𝔹 -> 𝔹 -> Env 𝔹
 closeDefsFwd γ ρ α = ρ <#> \σ ->
    let xs = fv (ρ `for` σ) `union` fv σ
    in V.Closure α (γ `restrict` xs) ρ σ
@@ -58,7 +58,7 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
                 i <- range 1 i'
                 singleton $ A.fromFoldable $ do
                    j <- range 1 j'
-                   let γ' = M.singleton x (V.Int β i) `disjUnion` (M.singleton y (V.Int β' j))
+                   let γ' = O.singleton x (V.Int β i) `disjointUnion` (O.singleton y (V.Int β' j))
                    singleton (evalFwd (γ <+> γ') e1 α' (tss!(i - 1)!(j - 1)))
          in V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
       _ -> error absurd

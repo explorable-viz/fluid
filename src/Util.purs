@@ -6,13 +6,13 @@ import Control.MonadPlus (class MonadPlus, empty)
 import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.List (List(..), (:), head, intercalate)
+import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Map (Map, filterKeys, lookup, size, toUnfoldable, unionWith)
+import Data.Map (Map)
+import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
-import Data.Set (Set, member)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
@@ -47,16 +47,7 @@ definitely' :: forall a . Maybe a -> a
 definitely' = definitely absurd
 
 get :: forall k v . Ord k => k -> Map k v -> v
-get k = definitely' <<< lookup k
-
-asSingletonMap :: forall k v . Map k v -> k × v
-asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
-
-disjUnion :: forall k v . Ord k => Map k v -> Endo (Map k v)
-disjUnion = unionWith (\_ _ -> error "not disjoint")
-
-disjUnion_inv :: forall k v . Ord k => Set k -> Map k v -> Map k v × Map k v
-disjUnion_inv ks m = filterKeys (_ `member` ks) m × filterKeys (_ `not <<< member` ks) m
+get k = definitely' <<< M.lookup k
 
 onlyIf :: Boolean -> forall m a . MonadPlus m => a -> m a
 onlyIf true    = pure
@@ -99,7 +90,7 @@ mustGeq :: forall a . Ord a => Show a => a -> a -> a
 mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >= x') x)
 
 unionWithMaybe :: forall a b . Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
-unionWithMaybe f m m' = unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
+unionWithMaybe f m m' = M.unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
 
 mayFailEq :: forall a . Show a => Eq a => a -> a -> MayFail a
 mayFailEq x x' = x ≟ x' # orElse (show x <> " ≠ " <> show x')

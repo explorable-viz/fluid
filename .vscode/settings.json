@@ -5,5 +5,6 @@
    "editor.renderLineHighlight": "none",
    "editor.guides.indentation": false,
    "editor.lineNumbers": "off",
-   "editor.occurrencesHighlight": false
+   "editor.occurrencesHighlight": false,
+   "editor.selectionHighlight": false
 }

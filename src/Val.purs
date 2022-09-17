@@ -3,17 +3,17 @@ module Val where
 import Prelude hiding (absurd, append)
 import Control.Apply (lift2)
 import Data.List (List(..), (:))
-import Data.Map (Map, filterKeys, keys, isEmpty, lookup, pop, unionWith)
-import Data.Maybe (Maybe(..))
-import Data.Set (Set, difference, empty, intersection, member, singleton, toUnfoldable, union)
-import Bindings (Bind, Var, (↦))
+import Data.Map (Map)
+import Data.Map (lookup) as M
+import Data.Set (Set, difference, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
+import Foreign.Object (filterKeys, lookup, unionWith)
+import Foreign.Object (keys) as O
+import Bindings (Var)
+import Dict (Dict, disjointUnion, get)
 import DataType (Ctr)
-import Expr (Elim, fv)
+import Expr (Elim, RecDefs, fv)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
-import Util (
-   Endo, MayFail, type (×), (×), (≞), (≜), (!),
-   absurd, disjUnion, error, get, orElse, report, unsafeUpdateAt
-)
+import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
 type Op a = a × 𝔹 -> Val 𝔹
 
@@ -21,11 +21,11 @@ data Val a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Map Var (Val a)) |              -- always saturated
+   Record a (Dict (Val a)) |                 -- always saturated
    Constr a Ctr (List (Val a)) |             -- potentially unsaturated
    Matrix a (MatrixRep a) |
    Primitive PrimOp (List (Val a)) |         -- never saturated
-   Closure a (Env a) (FunEnv a) (Elim a)
+   Closure a (Env a) (RecDefs a) (Elim a)
 
 -- op_fwd will be provided with original arguments, op_bwd with original output and arguments
 newtype PrimOp = PrimOp {
@@ -36,22 +36,13 @@ newtype PrimOp = PrimOp {
 }
 
 -- Environments.
-type Env a = Map Var (Val a)
-type FunEnv a = Map Var (Elim a)
+type Env a = Dict (Val a)
 
-dom :: forall a . Map Var a -> Set Var
-dom = keys
-
-lookup' :: forall a . Var -> Env a -> MayFail (Val a)
+lookup' :: forall a . Var -> Dict a -> MayFail a
 lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
 
-update :: forall a . List (Bind a) -> Map Var a -> List (Bind a)
-update Nil γ  | isEmpty γ = Nil
-               | otherwise = error absurd
-update (x ↦ v: xvs) γ =
-   case pop x γ of
-      Just (u × γ')  -> x ↦ u : update xvs γ'
-      Nothing        -> x ↦ v : update xvs γ
+lookup'' :: forall a . Var -> Map Var a -> MayFail a
+lookup'' x γ = M.lookup x γ # (orElse $ "variable " <> x <> " not found")
 
 -- Want a monoid instance but needs a newtype
 append :: forall a . Env a -> Endo (Env a)
@@ -62,13 +53,13 @@ infixl 5 append as <+>
 append_inv :: forall a . Set Var -> Env a -> Env a × Env a
 append_inv xs γ = filterKeys (_ `not <<< member` xs) γ × restrict γ xs
 
-restrict :: forall a . Map Var a -> Set Var -> Map Var a
+restrict :: forall a . Dict a -> Set Var -> Dict a
 restrict γ xs = filterKeys (_ `member` xs) γ
 
-reaches :: forall a . FunEnv a -> Endo (Set Var)
+reaches :: forall a . RecDefs a -> Endo (Set Var)
 reaches ρ xs = go (toUnfoldable xs) empty
    where
-   dom_ρ = dom ρ
+   dom_ρ = fromFoldable $ O.keys ρ
    go :: List Var -> Endo (Set Var)
    go Nil acc                          = acc
    go (x : xs') acc | x `member` acc   = go xs' acc
@@ -77,16 +68,16 @@ reaches ρ xs = go (toUnfoldable xs) empty
       go (toUnfoldable (fv σ `intersection` dom_ρ) <> xs')
          (singleton x `union` acc)
 
-for :: forall a . FunEnv a -> Elim a -> FunEnv a
-for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` dom ρ)
+for :: forall a . RecDefs a -> Elim a -> RecDefs a
+for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.keys ρ))
 
-weakJoin :: forall a . Slices a => Map Var a -> Endo (Map Var a)
+weakJoin :: forall a . Slices a => Dict a -> Endo (Dict a)
 weakJoin m m' =
-   let dom_m × dom_m' = dom m × dom m' in
+   let dom_m × dom_m' = fromFoldable (O.keys m) × fromFoldable (O.keys m') :: Set Var × Set Var in
    (m `restrict` (dom_m `difference` dom_m'))
-   `disjUnion`
+   `disjointUnion`
    (m `restrict` (dom_m `intersection` dom_m') ∨ m' `restrict` (dom_m `intersection` dom_m'))
-   `disjUnion`
+   `disjointUnion`
    (m' `restrict` (dom_m' `difference` dom_m))
 
 infixl 6 weakJoin as ∨∨

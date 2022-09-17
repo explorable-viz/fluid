@@ -8,18 +8,19 @@ import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), length, sortBy)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
-import Data.Map (Map, fromFoldable, singleton)
 import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
-import Bindings (Bind, (↦), dom, varAnon)
+import Bindings (Bind, (↦), keys, varAnon)
+import Dict (Dict, asSingletonMap)
+import Dict (fromFoldable, singleton) as D
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, maybeJoin)
 import SExpr (Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..))
-import Util (MayFail, type (+), type (×), (×), absurd, asSingletonMap, error, successful)
+import Util (MayFail, type (+), type (×), (×), absurd, error, successful)
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd
@@ -34,7 +35,7 @@ econs :: 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹 -> E.Expr 𝔹
 econs α e e' = E.Constr α cCons (e : e' : Nil)
 
 elimBool :: Cont 𝔹 -> Cont 𝔹 -> Elim 𝔹
-elimBool κ κ' = ElimConstr (fromFoldable [cTrue × κ, cFalse × κ'])
+elimBool κ κ' = ElimConstr (D.fromFoldable [cTrue × κ, cFalse × κ'])
 
 -- Surface language supports "blocks" of variable declarations; core does not.
 moduleFwd :: Module 𝔹 -> MayFail (E.Module 𝔹)
@@ -60,7 +61,7 @@ varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
 -- In the formalism, "group by name" is part of the syntax.
 -- cs desugar_fwd σ
 recDefsFwd :: RecDefs 𝔹 -> MayFail (E.RecDefs 𝔹)
-recDefsFwd xcs = fromFoldable <$> traverse recDefFwd xcss
+recDefsFwd xcs = D.fromFoldable <$> traverse recDefFwd xcss
    where
    xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause 𝔹))
 
@@ -75,7 +76,7 @@ exprFwd (Int α n)                = pure (E.Int α n)
 exprFwd (Float α n)              = pure (E.Float α n)
 exprFwd (Str α s)                = pure (E.Str α s)
 exprFwd (Constr α c ss)          = E.Constr α c <$> traverse exprFwd ss
-exprFwd (Record α xss)           = E.Record α <$> fromFoldable <$> traverse (traverse exprFwd) xss
+exprFwd (Record α xss)           = E.Record α <$> D.fromFoldable <$> traverse (traverse exprFwd) xss
 exprFwd (Matrix α s (x × y) s')  = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
 exprFwd (Lambda bs)              = E.Lambda <$> branchesFwd_curried bs
 exprFwd (Project s x)            = E.Project <$> exprFwd s <@> x
@@ -126,15 +127,15 @@ patternsFwd (NonEmptyList (p :| p' : ps) × e) =
 patternFwd :: Pattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
 patternFwd (PVar x) κ            = pure (ElimVar x κ)
 patternFwd (PConstr c ps) κ      =
-   checkArity c (length ps) *> (ElimConstr <$> singleton c <$> argPatternFwd (Left <$> ps) κ)
-patternFwd (PRecord xps) κ       = ElimRecord (dom xps) <$> recordPatternFwd (sortBy (flip compare `on` fst) xps) κ
-patternFwd PListEmpty κ          = pure (ElimConstr (singleton cNil κ))
-patternFwd (PListNonEmpty p o) κ = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
+   checkArity c (length ps) *> (ElimConstr <$> D.singleton c <$> argPatternFwd (Left <$> ps) κ)
+patternFwd (PRecord xps) κ       = ElimRecord (keys xps) <$> recordPatternFwd (sortBy (flip compare `on` fst) xps) κ
+patternFwd PListEmpty κ          = pure (ElimConstr (D.singleton cNil κ))
+patternFwd (PListNonEmpty p o) κ = ElimConstr <$> D.singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
 -- o, κ desugar_fwd σ
 listRestPatternFwd :: ListRestPattern -> Cont 𝔹 -> MayFail (Elim 𝔹)
-listRestPatternFwd PEnd κ          = pure (ElimConstr (singleton cNil κ))
-listRestPatternFwd (PNext p o) κ   = ElimConstr <$> singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
+listRestPatternFwd PEnd κ          = pure (ElimConstr (D.singleton cNil κ))
+listRestPatternFwd (PNext p o) κ   = ElimConstr <$> D.singleton cCons <$> argPatternFwd (Left p : Right o : Nil) κ
 
 argPatternFwd :: List (Pattern + ListRestPattern) -> Cont 𝔹 -> MayFail (Cont 𝔹)
 argPatternFwd Nil κ             = pure κ
@@ -168,8 +169,8 @@ totaliseFwd (ContElim (ElimVar x κ)) α       = ContElim (ElimVar x (totaliseFw
 
 -- Extend singleton branch to set of branches where any missing constructors have been mapped to the empty list,
 -- using anonymous variables in any generated patterns.
-totaliseConstrFwd :: Ctr × Cont 𝔹 -> 𝔹 -> Map Ctr (Cont 𝔹)
+totaliseConstrFwd :: Ctr × Cont 𝔹 -> 𝔹 -> Dict (Cont 𝔹)
 totaliseConstrFwd (c × κ) α =
    let defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
        cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
-   in fromFoldable (c × κ : cκs)
+   in D.fromFoldable (c × κ : cκs)

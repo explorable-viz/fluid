@@ -7,12 +7,13 @@ import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), singleton, sortBy, zip)
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
-import Data.Map (Map, fromFoldable)
 import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
 import Data.Tuple (uncurry, fst, snd)
 import Partial.Unsafe (unsafePartial)
-import Bindings (Bind, (↦), dom)
+import Bindings (Bind, (↦), keys)
+import Dict (Dict, get)
+import Dict (fromFoldable) as D
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
@@ -21,7 +22,7 @@ import SExpr (
       Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..),
       VarDefs
    )
-import Util (Endo, type (+), type (×), (×), absurd, error, get, successful)
+import Util (Endo, type (+), type (×), (×), absurd, error, successful)
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -183,7 +184,7 @@ totaliseBwd (ContElim (ElimVar _ κ')) (Left (PVar x) : πs) =
 totaliseBwd (ContElim (ElimRecord _ κ')) (Left (PRecord xps) : πs) =
    let ps = xps <#> (snd >>> Left)
        κ'' × α = totaliseBwd κ' (ps <> πs) in
-   ContElim (ElimRecord (dom xps) κ'') × α
+   ContElim (ElimRecord (keys xps) κ'') × α
 totaliseBwd (ContElim (ElimConstr m)) (π : πs) =
    let c × πs' = case π of
          -- TODO: refactor so these two cases aren't necessary
@@ -196,12 +197,12 @@ totaliseBwd (ContElim (ElimConstr m)) (π : πs) =
          Right (PNext p o)          -> cCons × (Left p : Right o : Nil)
        κ' × α = totaliseConstrBwd m c
        κ'' × β = totaliseBwd κ' (πs' <> πs) in
-   ContElim (ElimConstr (fromFoldable (singleton (c × κ'')))) × (α ∨ β)
+   ContElim (ElimConstr (D.fromFoldable (singleton (c × κ'')))) × (α ∨ β)
 totaliseBwd _ _ = error absurd
 
 -- Discard all synthesised branches, returning the original singleton branch for c, plus join of annotations
 -- on the empty lists used for bodies of synthesised branches.
-totaliseConstrBwd :: Map Ctr (Cont 𝔹) -> Ctr -> Cont 𝔹 × 𝔹
+totaliseConstrBwd :: Dict (Cont 𝔹) -> Ctr -> Cont 𝔹 × 𝔹
 totaliseConstrBwd m c = unsafePartial $
    let cs = (ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c in
    get c m × foldl (∨) false (map (bodyAnn <<< body) cs)
@@ -214,4 +215,3 @@ totaliseConstrBwd m c = unsafePartial $
 
       bodyAnn :: Partial => Cont 𝔹 -> 𝔹
       bodyAnn (ContExpr (E.Constr α c' Nil)) | c' == cNil = α
-

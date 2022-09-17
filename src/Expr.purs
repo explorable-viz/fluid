@@ -3,13 +3,14 @@ module Expr where
 import Prelude hiding (absurd, top)
 import Control.Apply (lift2)
 import Data.List (List)
-import Data.Map (Map, keys)
 import Data.Set (Set, difference, empty, singleton, union, unions)
+import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
+import Dict (Dict, keys, asSingletonMap)
 import Bindings (Var)
-import DataType (Ctr)
+import DataType (Ctr, consistentWith)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
-import Util (type (×), (×), type (+), (≜), (≞), asSingletonMap, error, report)
+import Util (type (×), (×), type (+), (≜), (≞), error, report)
 
 data Expr a =
    Var Var |
@@ -17,7 +18,7 @@ data Expr a =
    Int a Int |
    Float a Number |
    Str a String |
-   Record a (Map Var (Expr a)) |
+   Record a (Dict (Expr a)) |
    Constr a Ctr (List (Expr a)) |
    Matrix a (Expr a) (Var × Var) (Expr a) |
    Lambda (Elim a) |
@@ -28,11 +29,11 @@ data Expr a =
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
-type RecDefs a = Map Var (Elim a)
+type RecDefs a = Dict (Elim a)
 
 data Elim a =
    ElimVar Var (Cont a) |
-   ElimConstr (Map Ctr (Cont a)) |
+   ElimConstr (Dict (Cont a)) |
    ElimRecord (Set Var) (Cont a)
 
 -- Continuation of an eliminator branch.
@@ -82,8 +83,8 @@ instance FV (Cont a) where
 instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
 
-instance FV a => FV (Map Var a) where
-   fv ρ = (unions $ (fv <$> ρ)) `difference` keys ρ
+instance FV a => FV (Dict a) where
+   fv ρ = (unions $ (fv <$> ρ)) `difference` (S.fromFoldable $ keys ρ)
 
 class BV a where
    bv :: a -> Set Var
@@ -92,7 +93,7 @@ class BV a where
 instance BV (Elim a) where
    bv (ElimVar x κ)     = singleton x `union` bv κ
    bv (ElimConstr m)    = bv (snd (asSingletonMap m))
-   bv (ElimRecord _ κ) = bv κ
+   bv (ElimRecord _ κ)  = bv κ
 
 instance BV (VarDef a) where
    bv (VarDef σ _) = bv σ
@@ -116,7 +117,8 @@ instance JoinSemilattice (Elim Boolean) where
 
 instance Slices (Elim Boolean) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ')         = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
-   maybeJoin (ElimConstr cκs) (ElimConstr cκs')    = ElimConstr <$> maybeJoin cκs cκs'
+   maybeJoin (ElimConstr cκs) (ElimConstr cκs')    =
+      ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ')  = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
    maybeJoin _ _                                   = report "Incompatible eliminators"
 

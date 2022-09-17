@@ -5,48 +5,36 @@ import Data.CodePoint.Unicode (isUpper)
 import Data.Either (note)
 import Data.Function (on)
 import Data.List (fromFoldable) as L
-import Data.List (List(..), (:), concat)
-import Data.Map (Map, lookup, keys)
-import Data.Map (fromFoldable) as M
-import Data.Newtype (class Newtype, unwrap)
-import Data.Set (Set, toUnfoldable)
+import Data.List (List, concat, (:))
+import Data.Set (Set)
+import Data.Set (map, fromFoldable, toUnfoldable) as S
 import Data.String.CodePoints (codePointFromChar)
 import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
-import Lattice (class Key)
+import Partial.Unsafe (unsafePartial)
+import Dict (Dict, keys, lookup)
+import Dict (fromFoldable) as O
+import Bindings (Var)
 import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, definitely', with)
 
 type TypeName = String
 type FieldName = String
-
--- A Ctr is a purely syntactic notion. There may be no constructor with such a name.
-newtype Ctr = Ctr String
-derive instance Newtype Ctr _
-derive instance Eq Ctr
-derive instance Ord Ctr
+type Ctr = String -- newtype would be nicer but JS maps are also nice
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
-isCtrName ∷ String → Boolean
+isCtrName ∷ Var → Boolean
 isCtrName str = isUpper $ codePointFromChar $ definitely' $ charAt 0 str
 
 isCtrOp :: String -> Boolean
 isCtrOp str = ':' == (definitely' $ charAt 0 str)
 
-instance Show Ctr where
-   -- assume binary infix if not constructor name
-   show c = show' $ unwrap c where
-      show' str | isCtrName str  = str
-                | isCtrOp str    = "(" <> str <> ")"
-                | otherwise      = error absurd
+showCtr :: Ctr -> String
+showCtr c | isCtrName c = c
+          | isCtrOp c   = "(" <> c <> ")"
+          | otherwise   = error absurd
 
-instance Key Ctr where
-   checkConsistent msg c cs = void $ do
-      d <- dataTypeFor c
-      d' <- dataTypeFor cs
-      with (msg <> show c <> " is not a constructor of " <> show d') (d ≞ d')
-
-data DataType' a = DataType TypeName (Map Ctr a)
+data DataType' a = DataType TypeName (Dict a)
 type DataType = DataType' CtrSig
 type CtrSig = Int
 
@@ -60,25 +48,30 @@ instance Show (DataType' Int) where
    show = typeName
 
 dataType :: TypeName -> Array (Ctr × CtrSig) -> DataType
-dataType name = map (uncurry (×)) >>> M.fromFoldable >>> DataType name
+dataType name = map (uncurry (×)) >>> O.fromFoldable >>> DataType name
 
-ctrToDataType :: Map Ctr DataType
+ctrToDataType :: Dict DataType
 ctrToDataType =
-   dataTypes <#> (\d -> ctrs d # toUnfoldable <#> (_ × d)) # concat # M.fromFoldable
+   dataTypes <#> (\d -> ctrs d # S.toUnfoldable <#> (_ × d)) # concat # O.fromFoldable
 
 class DataTypeFor a where
    dataTypeFor :: a -> MayFail DataType
 
 instance DataTypeFor Ctr where
-   dataTypeFor c = note ("Unknown constructor " <> show c) (lookup c ctrToDataType)
+   dataTypeFor c = note ("Unknown constructor " <> showCtr c) (lookup c ctrToDataType)
 
 instance DataTypeFor (Set Ctr) where
-   dataTypeFor cs = case toUnfoldable cs of
-      Nil   -> error absurd
-      c : _ -> dataTypeFor c
+   dataTypeFor cs = unsafePartial $ case S.toUnfoldable cs of c : _ -> dataTypeFor c
+
+-- Sets must be non-empty, but this is a more convenient signature.
+consistentWith :: Set Ctr -> Set Ctr -> MayFail Unit
+consistentWith cs cs' = void $ do
+   d <- dataTypeFor cs'
+   d' <- dataTypeFor cs'
+   with ("constructors of " <> show d' <> " do not include " <> (show (S.map showCtr cs))) (d ≞ d')
 
 ctrs :: DataType -> Set Ctr
-ctrs (DataType _ sigs) = keys sigs
+ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
 arity :: Ctr -> MayFail Int
 arity c = do
@@ -87,19 +80,19 @@ arity c = do
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = void $
-   with ("Checking arity of " <> show c) (arity c `(=<<<) (≞)` pure n)
+   with ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
 
 -- Used internally by primitives, desugaring or rendering layer.
-cBarChart   = Ctr "BarChart"  :: Ctr -- Plot
-cLineChart  = Ctr "LineChart" :: Ctr
-cLinePlot   = Ctr "LinePlot"  :: Ctr
-cFalse      = Ctr "False"     :: Ctr -- Bool
-cTrue       = Ctr "True"      :: Ctr
-cNil        = Ctr "Nil"       :: Ctr -- List
-cCons       = Ctr ":"         :: Ctr
-cPair       = Ctr "Pair"      :: Ctr -- Pair
-cNone       = Ctr "None"      :: Ctr -- Option
-cSome       = Ctr "Some"      :: Ctr
+cBarChart   = "BarChart"  :: Ctr -- Plot
+cLineChart  = "LineChart" :: Ctr
+cLinePlot   = "LinePlot"  :: Ctr
+cFalse      = "False"     :: Ctr -- Bool
+cTrue       = "True"      :: Ctr
+cNil        = "Nil"       :: Ctr -- List
+cCons       = ":"         :: Ctr
+cPair       = "Pair"      :: Ctr -- Pair
+cNone       = "None"      :: Ctr -- Option
+cSome       = "Some"      :: Ctr
 
 -- Field names used internally by rendering layer.
 f_caption   = "caption" :: FieldName
@@ -125,25 +118,25 @@ dataTypes = L.fromFoldable [
       cSome × 1 -- any
    ],
    dataType "Ordering" [
-      Ctr "GT" × 0,
-      Ctr "LT" × 0,
-      Ctr "EQ" × 0
+      "GT" × 0,
+      "LT" × 0,
+      "EQ" × 0
    ],
    dataType "Pair" [
-      Ctr "Pair" × 2 -- any × any
+      "Pair" × 2 -- any × any
    ],
    dataType "Tree" [
-      Ctr "Empty" × 0,
-      Ctr "NonEmpty" × 3 -- Tree<any> × any × Tree<any>
+      "Empty" × 0,
+      "NonEmpty" × 3 -- Tree<any> × any × Tree<any>
    ],
    -- Graphics
    dataType "Point" [
-      Ctr "Point" × 2 -- Float × Float
+      "Point" × 2 -- Float × Float
    ],
 
    dataType "Orient" [  -- iso to Bool
-      Ctr "Horiz" × 0,
-      Ctr "Vert"  × 0
+      "Horiz" × 0,
+      "Vert"  × 0
    ],
 
    dataType "Plot" [
@@ -153,25 +146,25 @@ dataTypes = L.fromFoldable [
    ],
 
    dataType "GraphicsElement" [
-      Ctr "Circle" × 4,       -- Float (x), Float (y), Float (radius), Str (fill),
-      Ctr "Group" × 1,        -- List<GraphicsElement>,
-      Ctr "Line" × 4,         -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth),
-      Ctr "Polyline" × 3,     -- List<Point> (points), Str (stroke), Float (strokeWidth)
-      Ctr "Polymarkers" × 2,  -- List<Point> (points), List<GraphicsElement> (markers),
-      Ctr "Rect" × 5,         -- Float (x), Float (y), Float (width), Float (height), Str (fill)
+      "Circle" × 4,       -- Float (x), Float (y), Float (radius), Str (fill),
+      "Group" × 1,        -- List<GraphicsElement>,
+      "Line" × 4,         -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth),
+      "Polyline" × 3,     -- List<Point> (points), Str (stroke), Float (strokeWidth)
+      "Polymarkers" × 2,  -- List<Point> (points), List<GraphicsElement> (markers),
+      "Rect" × 5,         -- Float (x), Float (y), Float (width), Float (height), Str (fill)
       -- SVG text-anchor and alignment-baseline properties
-      Ctr "Text" × 5,         -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
+      "Text" × 5,         -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
       -- margin is in *parent* reference frame; scaling applies to translated coordinates
-      Ctr "Viewport" × 9      -- Float (x), Float (y), Float (width), Float (height), Str (fill),
-                              -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
+      "Viewport" × 9      -- Float (x), Float (y), Float (width), Float (height), Str (fill),
+                          -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
    ],
 
    dataType "Transform" [
-      Ctr "Scale" × 2, -- Float (x), Float (y)
-      Ctr "Translate" × 2 -- Float (x), Float (y)
+      "Scale" × 2, -- Float (x), Float (y)
+      "Translate" × 2 -- Float (x), Float (y)
    ],
 
    dataType "Marker" [
-      Ctr "Arrowhead" × 0
+      "Arrowhead" × 0
    ]
 ]

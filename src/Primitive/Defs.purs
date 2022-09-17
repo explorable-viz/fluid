@@ -5,17 +5,17 @@ import Prelude (div, mod) as P
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..))
-import Data.Map (fromFoldable)
 import Data.Number (log, pow) as N
 import Debug (trace)
 import DataType (cCons)
+import Dict (fromFoldable) as D
 import Lattice (𝔹)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
 import Val (Env, MatrixRep, Val(..), updateMatrix)
 
 primitives :: Env 𝔹
-primitives = fromFoldable [
+primitives = D.fromFoldable [
    ":"         × Constr false cCons Nil,
 
    "+"         × binary (withInverse2 plus),

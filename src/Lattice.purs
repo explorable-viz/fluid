@@ -7,12 +7,13 @@ import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (zipWith) as NEL
-import Data.Map (Map, difference, insert, intersectionWith, keys, lookup, toUnfoldable, union, update)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
-import Data.Set (Set, subset)
+import Data.Set (subset)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
+import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, update)
+import Bindings (Var)
 import Util (Endo, MayFail, type (×), (×), (≞), assert, report, successfulWith)
 
 class JoinSemilattice a where
@@ -36,7 +37,7 @@ instance JoinSemilattice Unit where
 instance BoundedJoinSemilattice Unit where
    bot = unit
 
--- Sometimes convenient to assume join defined even if it may not be.
+-- Need "soft failure" for joining incompatible eliminators so we can use it to desugar function clauses.
 class JoinSemilattice a <= Slices a where
    maybeJoin :: a -> a -> MayFail a
 
@@ -84,27 +85,18 @@ instance Slices t => Slices (NonEmptyList t) where
       | (length xs :: Int) == length ys   = sequence (NEL.zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
 
-instance (Key k, Slices t) => JoinSemilattice (Map k t) where
+instance Slices t => JoinSemilattice (Dict t) where
    join = definedJoin
    neg = (<$>) neg
 
-class Ord k <= Key k where
-   checkConsistent :: String -> k -> Set k -> MayFail Unit
+instance Slices t => Slices (Dict t) where
+   maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × t))
 
-instance Key String where
-   checkConsistent _ _ _ = pure unit
-
-instance (Key k, Slices t) => Slices (Map k t) where
-   maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (k × t))
-
-mayFailUpdate :: forall k t . Key k => Slices t => Map k t -> k × t -> MayFail (Map k t)
+mayFailUpdate :: forall t . Slices t => Dict t -> Var × t -> MayFail (Dict t)
 mayFailUpdate m (k × v) =
    case lookup k m of
-      Nothing -> do
-         checkConsistent "Inconsistent keys: " k (keys m)
-         pure (insert k v m)
-      Just v' ->
-         update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
+      Nothing -> pure (insert k v m)
+      Just v' -> update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
 
 instance Slices a => JoinSemilattice (Array a) where
    join = definedJoin
@@ -118,7 +110,7 @@ instance Slices a => Slices (Array a) where
 class Expandable a where
    expand :: a -> a -> a
 
-instance (Key k, Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expandable (Map k (t a)) where
+instance (Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expandable (Dict (t a)) where
    expand kvs kvs' =
       assert (keys kvs `subset` keys kvs') $
       (kvs `intersectionWith expand` kvs') `union` ((kvs' `difference` kvs) <#> botOf)
