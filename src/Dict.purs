@@ -2,6 +2,7 @@
 module Dict (
    module Foreign.Object,
    Dict,
+   (\\),
    asSingletonMap,
    difference,
    disjointUnion,
@@ -36,6 +37,8 @@ intersection = intersectionWith const
 
 difference :: forall a b. Dict a -> Dict b -> Dict a
 difference m1 m2 = foldl (flip delete) m1 (O.keys m2)
+
+infix 5 difference as \\
 
 keys :: forall a . Dict a -> Set String
 keys = O.keys >>> S.fromFoldable
