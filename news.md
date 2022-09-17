@@ -6,6 +6,10 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 17 Sep 22 | Migrate to optimised backend; native JS representation of maps | [546](https://github.com/explorable-viz/fluid/issues/546) |
+| 6 Sep 22 | Partial environments, records and eliminators | [543](https://github.com/explorable-viz/fluid/issues/543), [540](https://github.com/explorable-viz/fluid/issues/540), [543](https://github.com/explorable-viz/fluid/issues/543), [537](https://github.com/explorable-viz/fluid/issues/537) |
+| 22 Aug 22 | Drop holes for significant performance boost | [509](https://github.com/explorable-viz/fluid/issues/509) |
+| 11 Aug 22 | Migrate to PureScript 0.15 | [510](https://github.com/explorable-viz/fluid/issues/510) |
 | 25 Apr 22 | [Invited talk](https://arxiv.org/abs/2203.04608), University of Kent | |
 | 20 Jan 22 | [POPL presentation](https://youtu.be/Ov1HOMKn8t4) | |
 | 6 Jan 22 | Select point in line chart | [503](https://github.com/explorable-viz/fluid/issues/503) |
