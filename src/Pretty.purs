@@ -90,8 +90,8 @@ vert delim = fromFoldable >>> vert'
          vert' (x : Nil)    = x
          vert' (x : y : xs) = atop (x :<>: delim) (vert' (y : xs))
 
-instance Pretty Ctr where
-   pretty = showCtr >>> pretty
+prettyCtr :: Ctr -> Doc
+prettyCtr = showCtr >>> text
 
 -- Cheap hack; revisit.
 prettyParensOpt :: forall a . Pretty a => a -> Doc
@@ -109,7 +109,7 @@ prettyConstr :: forall a . Pretty a => 𝔹 -> Ctr -> List a -> Doc
 prettyConstr α c (x : y : Nil)  | c == cPair   = highlightIf α $ parens (hcomma [pretty x, pretty y])
 prettyConstr α c Nil            | c == cNil    = highlightIf α nil
 prettyConstr α c (x : y : Nil)  | c == cCons   = parens (hspace [pretty x, highlightIf α $ text ":", pretty y])
-prettyConstr α c xs                            = hspace (highlightIf α (pretty c) : (prettyParensOpt <$> xs))
+prettyConstr α c xs                            = hspace (highlightIf α (prettyCtr c) : (prettyParensOpt <$> xs))
 
 prettyRecord :: forall a . Pretty a => 𝔹 -> List (Bind a) -> Doc
 prettyRecord α xvs =

@@ -148,7 +148,7 @@ ident = do
 ctr :: SParser Ctr
 ctr = do
    x <- token.identifier
-   onlyIf (isCtrName x) $ Ctr x
+   onlyIf (isCtrName x) x
 
 field :: forall a . SParser a -> SParser (Bind a)
 field p = ident `lift2 (↦)` (token.colon *> p)
@@ -263,7 +263,7 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
             _ -> error "Field names are not first class."
          else
             if isCtrOp op'
-            then \e e' -> Constr selState (Ctr op') (e : e' : empty)
+            then \e e' -> Constr selState op' (e : e' : empty)
             else \e e' -> BinaryApp e op e'
 
    -- Left-associative tree of applications of one or more simple terms.
@@ -412,7 +412,7 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    infixCtr :: String -> SParser (Pattern -> Pattern -> Pattern)
    infixCtr op = do
       op' <- token.operator
-      onlyIf (isCtrOp op' && op == op') \π π' -> PConstr (Ctr op') (π : π' : Nil)
+      onlyIf (isCtrOp op' && op == op') \π π' -> PConstr op' (π : π' : Nil)
 
 topLevel :: forall a . Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof

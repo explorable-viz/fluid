@@ -20,12 +20,7 @@ import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, definitely'
 
 type TypeName = String
 type FieldName = String
-
--- A Ctr is a purely syntactic notion. There may be no constructor with such a name.
-newtype Ctr = Ctr String
-derive instance Newtype Ctr _
-derive instance Eq Ctr
-derive instance Ord Ctr
+type Ctr = String -- newtype would be nicer but JS maps are also nice
 
 -- Distinguish constructors from identifiers syntactically, a la Haskell. In particular this is useful
 -- for distinguishing pattern variables from nullary constructors when parsing patterns.
@@ -35,17 +30,10 @@ isCtrName str = isUpper $ codePointFromChar $ definitely' $ charAt 0 str
 isCtrOp :: String -> Boolean
 isCtrOp str = ':' == (definitely' $ charAt 0 str)
 
-instance Show Ctr where
-   -- assume binary infix if not constructor name
-   show c = show' $ unwrap c where
-      show' str | isCtrName str  = str
-                | isCtrOp str    = "(" <> str <> ")"
-                | otherwise      = error absurd
-
 showCtr :: Ctr -> String
-showCtr c | isCtrName (unwrap c) = unwrap c
-          | isCtrOp (unwrap c)   = "(" <> unwrap c <> ")"
-          | otherwise            = error absurd
+showCtr c | isCtrName c = c
+          | isCtrOp c   = "(" <> c <> ")"
+          | otherwise   = error absurd
 
 -- Check that two non-empty sets of identifiers (each assumed to contain constructors of a unique datatype),
 -- contain constructors from the same datatype.
@@ -99,16 +87,16 @@ checkArity c n = void $
    with ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
 
 -- Used internally by primitives, desugaring or rendering layer.
-cBarChart   = Ctr "BarChart"  :: Ctr -- Plot
-cLineChart  = Ctr "LineChart" :: Ctr
-cLinePlot   = Ctr "LinePlot"  :: Ctr
-cFalse      = Ctr "False"     :: Ctr -- Bool
-cTrue       = Ctr "True"      :: Ctr
-cNil        = Ctr "Nil"       :: Ctr -- List
-cCons       = Ctr ":"         :: Ctr
-cPair       = Ctr "Pair"      :: Ctr -- Pair
-cNone       = Ctr "None"      :: Ctr -- Option
-cSome       = Ctr "Some"      :: Ctr
+cBarChart   = "BarChart"  :: Ctr -- Plot
+cLineChart  = "LineChart" :: Ctr
+cLinePlot   = "LinePlot"  :: Ctr
+cFalse      = "False"     :: Ctr -- Bool
+cTrue       = "True"      :: Ctr
+cNil        = "Nil"       :: Ctr -- List
+cCons       = ":"         :: Ctr
+cPair       = "Pair"      :: Ctr -- Pair
+cNone       = "None"      :: Ctr -- Option
+cSome       = "Some"      :: Ctr
 
 -- Field names used internally by rendering layer.
 f_caption   = "caption" :: FieldName
@@ -134,25 +122,25 @@ dataTypes = L.fromFoldable [
       cSome × 1 -- any
    ],
    dataType "Ordering" [
-      Ctr "GT" × 0,
-      Ctr "LT" × 0,
-      Ctr "EQ" × 0
+      "GT" × 0,
+      "LT" × 0,
+      "EQ" × 0
    ],
    dataType "Pair" [
-      Ctr "Pair" × 2 -- any × any
+      "Pair" × 2 -- any × any
    ],
    dataType "Tree" [
-      Ctr "Empty" × 0,
-      Ctr "NonEmpty" × 3 -- Tree<any> × any × Tree<any>
+      "Empty" × 0,
+      "NonEmpty" × 3 -- Tree<any> × any × Tree<any>
    ],
    -- Graphics
    dataType "Point" [
-      Ctr "Point" × 2 -- Float × Float
+      "Point" × 2 -- Float × Float
    ],
 
    dataType "Orient" [  -- iso to Bool
-      Ctr "Horiz" × 0,
-      Ctr "Vert"  × 0
+      "Horiz" × 0,
+      "Vert"  × 0
    ],
 
    dataType "Plot" [
@@ -162,25 +150,25 @@ dataTypes = L.fromFoldable [
    ],
 
    dataType "GraphicsElement" [
-      Ctr "Circle" × 4,       -- Float (x), Float (y), Float (radius), Str (fill),
-      Ctr "Group" × 1,        -- List<GraphicsElement>,
-      Ctr "Line" × 4,         -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth),
-      Ctr "Polyline" × 3,     -- List<Point> (points), Str (stroke), Float (strokeWidth)
-      Ctr "Polymarkers" × 2,  -- List<Point> (points), List<GraphicsElement> (markers),
-      Ctr "Rect" × 5,         -- Float (x), Float (y), Float (width), Float (height), Str (fill)
+      "Circle" × 4,       -- Float (x), Float (y), Float (radius), Str (fill),
+      "Group" × 1,        -- List<GraphicsElement>,
+      "Line" × 4,         -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth),
+      "Polyline" × 3,     -- List<Point> (points), Str (stroke), Float (strokeWidth)
+      "Polymarkers" × 2,  -- List<Point> (points), List<GraphicsElement> (markers),
+      "Rect" × 5,         -- Float (x), Float (y), Float (width), Float (height), Str (fill)
       -- SVG text-anchor and alignment-baseline properties
-      Ctr "Text" × 5,         -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
+      "Text" × 5,         -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
       -- margin is in *parent* reference frame; scaling applies to translated coordinates
-      Ctr "Viewport" × 9      -- Float (x), Float (y), Float (width), Float (height), Str (fill),
-                              -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
+      "Viewport" × 9      -- Float (x), Float (y), Float (width), Float (height), Str (fill),
+                          -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
    ],
 
    dataType "Transform" [
-      Ctr "Scale" × 2, -- Float (x), Float (y)
-      Ctr "Translate" × 2 -- Float (x), Float (y)
+      "Scale" × 2, -- Float (x), Float (y)
+      "Translate" × 2 -- Float (x), Float (y)
    ],
 
    dataType "Marker" [
-      Ctr "Arrowhead" × 0
+      "Arrowhead" × 0
    ]
 ]
