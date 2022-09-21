@@ -39,12 +39,13 @@
    <div class="col-9-12">
       <p>Fluid is a new programming language which utilises program analysis/data provenance techniques to connect visualisations to data sources in a fine-grained way. For example, the Fluid runtime will link a visual selection in a bar chart to the smallest &#8220;data selection&#8221; containing the data needed to compute that bar. (A data selection is a restricted view of a dataset where only relevant rows are shown, and relevant cells within that are highlighted.) This data linking feature can also be used to link visualisations to other visualisations, such as the line chart on the right:
       <details open>
-         <summary>Linked charts</summary>
+         <summary><Linked charts</summary>
          <div id="fig-1"></div>
-         <p>Hand-crafting a view like this would involve manually tracking the dependencies between input and output, something which Fluid does automatically. The programmer simply expresses the bar chart as a pure function of data:
-            <script src="https://gist.github.com/rolyp/7d4c2240e6a588d9b3844c025b7db920.js"></script>
-            <p>and similarly for the line chart:
-            <script src="https://gist.github.com/rolyp/a2bed1325ef0ace335d8fa0fd304acd5.js"></script>
+         <p>Hand-crafting a view like this would involve manually tracking the dependencies between input and output, something which Fluid does automatically. The programmer simply expresses the bar chart and line chart as pure functions of some common data:
+      </details>
+      <details><summary>bar-chart.fld and line-chart.fld</summary>
+         <script src="https://gist.github.com/rolyp/7d4c2240e6a588d9b3844c025b7db920.js"></script>
+         <script src="https://gist.github.com/rolyp/a2bed1325ef0ace335d8fa0fd304acd5.js"></script>
       </details>
       <p>As well as offering the first fully automated (and thus potentially pervasive) solution to this well-recognised problem in data visualisation, our approach to data linking is &#8220;transparent&#8221;, in that a view of the specific data elements which &#8220;explain&#8221; why the two visual elements are linked can always be made available.
       <details>
