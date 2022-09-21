@@ -51,6 +51,7 @@ h3.title {
 }
 
 a {
+   text-decoration: none;
    color: inherit;
    transition-timing-function: ease-out
 }
