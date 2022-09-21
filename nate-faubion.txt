@@ -1,5 +1,0 @@
-- is it necessary to generate _2, _3 etc for fields which are not used by that constructor?
-- _1, _2 vs. value0, value1, etc
-- ubiquitous memoisation/hash-consing
-- compile in the browser?
-- generating CoreFn
