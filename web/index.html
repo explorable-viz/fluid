@@ -40,7 +40,7 @@
       <h3 class="title lowercase">fluid:<br>language-integrated<br>data provenance</h3>
    </div>
    <div class="col-9-12">
-      <p>Fluid is a new programming language which utilises program analysis/data provenance techniques to connect outputs to data sources in a fine-grained way. For example, selecting a particular bar in a bar chart computed from a table of data can automatically present a view of the underlying table containing only the data needed to compute the selected bar. We call the resulting view a <b>data selection</b>: a restricted view of a dataset where only relevant rows are shown and relevant cells within those rows are highlighted.
+      <p>Fluid is a new programming language which utilises bidirectional program analysis/data provenance techniques to connect outputs to data sources in a fine-grained way. For example, selecting a particular bar in a bar chart computed from a table of data can automatically present a view of the underlying table containing only the data needed to compute the selected bar. We call the resulting view a <b>data selection</b>: a restricted view of a dataset where only relevant rows are shown and relevant cells within those rows are highlighted.
    </div>
 
    <div class="col-3-12 align-right">
@@ -49,13 +49,14 @@
    <div class="col-9-12">
       <p></p>Try this out by selecting the bar for Germany in the left-hand chart, or one of the data points for year 2018 in the right-hand chart. (Try zooming in if it's hard to select points in the line chart.) The relationship between output selections and inputs selections is <b>monotonic</b>: the more output you select, the more input is selected.
       <p><div id="fig-1"></div></p>
-      <p>Hand-crafting visualisations like this would involve manually tracking the dependencies between input and output. Fluid does automatically, allowing the programmer to simply express the bar chart and line chart as pure functions, using standard functional programming features such as higher-order functions and list comprehensions. The language runtime takes care of tracking dependencies and linking selections between inputs and outputs. Input and output selections and their relationships are described by Galois connections between Boolean algebras; see our <a href="https://dl.acm.org/doi/10.1145/3498668">paper</a> for more information.
+      <p>Hand-crafting visualisations like this would involve manually tracking the dependencies between input and output. Fluid does automatically, allowing the programmer to simply express the bar chart and line chart as pure functions, using standard functional programming features such as higher-order functions and list comprehensions. Take a look at the source code below:
       <details><summary>bar-chart.fld and line-chart.fld</summary>
          <script src="https://gist.github.com/rolyp/7d4c2240e6a588d9b3844c025b7db920.js"></script>
          <script src="https://gist.github.com/rolyp/a2bed1325ef0ace335d8fa0fd304acd5.js"></script>
       </details>
+      <p>The Fluid runtime takes care of tracking dependencies and linking selections between inputs and outputs; the mathematics of this is described by Galois connections between Boolean algebras. See our <a href="https://dl.acm.org/doi/10.1145/3498668">paper</a> for more information.
 
-      <p>As well as offering the first fully automated (and thus potentially pervasive) solution to this well-recognised problem in data visualisation, our approach to data linking is &#8220;transparent&#8221;, in that a view of the specific data elements which &#8220;explain&#8221; why the two visual elements are linked can always be made available.
+      <p>One of the more interesting things about the mathematical setting is that Galois connections have a (contravariant) De Morgan dual, which allows the dependency analysis to be inverted. As well as offering the first fully automated (and thus potentially pervasive) solution to this well-recognised problem in data visualisation, our approach to data linking is &#8220;transparent&#8221;, in that a view of the specific data elements which &#8220;explain&#8221; why the two visual elements are linked can always be made available.
    </div>
 
    <div class="col-3-12 align-right">
