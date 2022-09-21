@@ -25,7 +25,7 @@
                <a href="." class="active-page">Latest</a>
             </li>
             <li>
-            <a href="http://f.luid.org/0.3.1">v0.3.1</a>
+            <a href="https://f.luid.org/0.3.1">v0.3.1</a>
             </li>
          </ul>
       </nav>
@@ -34,32 +34,41 @@
 
 <div id="FLUID" class="grid grid-pad">
    <div class="col-3-12 align-right">
+      <h3 class="title lowercase">fluid<br>functional interactive dataflow</h3>
+   </div>
+   <div class="col-9-12">
+      <p>Fluid is a new programming language which utilises program analysis/data provenance techniques to connect outputs to data sources in a fine-grained way.
+   </div>
+
+   <div class="col-3-12 align-right">
       <h3 class="title lowercase">data-linked visualisations</h3>
    </div>
    <div class="col-9-12">
-      <p>Fluid is a new programming language which utilises program analysis/data provenance techniques to connect visualisations to data sources in a fine-grained way. For example, the Fluid runtime will link a visual selection in a bar chart to the smallest &#8220;data selection&#8221; containing the data needed to compute that bar. (A data selection is a restricted view of a dataset where only relevant rows are shown, and relevant cells within that are highlighted.) This data linking feature can also be used to link visualisations to other visualisations, such as the line chart on the right:
-      <details open>
-         <summary>Linked charts</summary>
-         <div id="fig-1"></div>
-         <p>Hand-crafting a view like this would involve manually tracking the dependencies between input and output, something which Fluid does automatically. The programmer simply expresses the bar chart and line chart as pure functions of some common data:
-         <details><summary>bar-chart.fld and line-chart.fld</summary>
-            <script src="https://gist.github.com/rolyp/7d4c2240e6a588d9b3844c025b7db920.js"></script>
-            <script src="https://gist.github.com/rolyp/a2bed1325ef0ace335d8fa0fd304acd5.js"></script>
-         </details>
-         </details>
-      <p>As well as offering the first fully automated (and thus potentially pervasive) solution to this well-recognised problem in data visualisation, our approach to data linking is &#8220;transparent&#8221;, in that a view of the specific data elements which &#8220;explain&#8221; why the two visual elements are linked can always be made available.
-      <details>
-         <summary>Matrix convolution (zero-padded)</summary>
-         <p><div id="fig-conv-1"></div>
-         <p>Contrast the above with the following implementation of matrix convolution which used wrap rather than padding with zeros:
-         <p><div id="fig-conv-2"></div>
-         <p>As before, the source code is a pure function:
-         <details><summary>convolution.fld and conv-emboss-wrap.fld</summary>
-            <script src="https://gist.github.com/rolyp/64b04a6a6fc73164d7fbbd1b82365b67.js"></script>
-            <script src="https://gist.github.com/rolyp/2bd783007d919d97e64ba66a6ede8c3a.js"></script>
-         </details>
+      For example, the Fluid runtime will link a visual selection in a bar chart to the smallest &#8220;data selection&#8221; containing the data needed to compute that bar. (A data selection is a restricted view of a dataset where only relevant rows are shown, and relevant cells within that are highlighted.) This data linking feature can also be used to link visualisations to other visualisations, such as the line chart on the right:
+      <p><div id="fig-1"></div></p>
+      <p>Hand-crafting a view like this would involve manually tracking the dependencies between input and output, something which Fluid does automatically. The programmer simply expresses the bar chart and line chart as pure functions of some common data:
+      <details><summary>bar-chart.fld and line-chart.fld</summary>
+         <script src="https://gist.github.com/rolyp/7d4c2240e6a588d9b3844c025b7db920.js"></script>
+         <script src="https://gist.github.com/rolyp/a2bed1325ef0ace335d8fa0fd304acd5.js"></script>
       </details>
-</div>
+
+      <p>As well as offering the first fully automated (and thus potentially pervasive) solution to this well-recognised problem in data visualisation, our approach to data linking is &#8220;transparent&#8221;, in that a view of the specific data elements which &#8220;explain&#8221; why the two visual elements are linked can always be made available.
+   </div>
+
+   <div class="col-3-12 align-right">
+      <h3 class="title lowercase">infrastructure for <br>explorable explanations</h3>
+   </div>
+   <div class="col-9-12">
+      <p>Matrix convolution (zero-padded):
+      <p><div id="fig-conv-1"></div>
+      <p>Contrast the above with the following implementation of matrix convolution which used wrap rather than padding with zeros:
+      <p><div id="fig-conv-2"></div>
+      <p>As before, the source code is a pure function:
+      <details><summary>convolution.fld and conv-emboss-wrap.fld</summary>
+         <script src="https://gist.github.com/rolyp/64b04a6a6fc73164d7fbbd1b82365b67.js"></script>
+         <script src="https://gist.github.com/rolyp/2bd783007d919d97e64ba66a6ede8c3a.js"></script>
+      </details>
+   </div>
 </div>
 
 </body>
