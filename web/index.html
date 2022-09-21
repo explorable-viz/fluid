@@ -20,16 +20,10 @@
       <nav>
          <ul>
             <li>
-            <a href="http://f.luid.org/">Home</a>
+               <a href="." class="active-page">Latest</a>
             </li>
             <li>
             <a href="http://f.luid.org/0.3.1">v0.3.1</a>
-            </li>
-            <li>
-            <a href="http://f.luid.org/0.4.2">v0.4.2</a>
-            </li>
-            <li>
-            <a href="." class="active-page">develop</a>
             </li>
          </ul>
       </nav>
@@ -41,12 +35,12 @@
       <h3 class="title lowercase">data-linked visualisations</h3>
    </div>
    <div class="col-9-12">
-      <p>Development branch of data-linked visualisations.
+      <p>Fluid is a new programming language which utilises program analysis/data provenance techniques to connect visualisations to data sources in a fine-grained way. For example, our proof-of-concept implementation can turn a visual selection in a bar chart into a &#8220;data selection&#8221; (a restricted view of a dataset where only relevant rows are shown, and relevant cells within that are highlighted). This data linking feature can also be used to link visualisations to other visualisations, something possible with some effort and/or restrictions with existing tools, but which our approach provides automatically:
       <details open>
          <summary>Linked charts</summary>
          <div id="fig-1"></div>
       </details>
-      <p>
+      <p>As well as offering the first fully automated (and thus potentially pervasive) solution to this well-recognised problem in data visualisation, our approach to data linking is "transparent", in that a view of the specific data elements which "explain" why the two visual elements are linked can always be made available. Over the next year we plan to extend this into a mature toolkit for authoring data-linked visualisations for use in data journalism and science publishing, enabling online articles with visual components which are connected automatically to the data sources being visualised.
       <details>
          <summary>Matrix convolution (zero-padded)</summary>
          <p><div id="fig-conv-1"></div>
