@@ -28,7 +28,10 @@
             <a href="https://f.luid.org/0.3.1">v0.3.1</a>
             </li>
          </ul>
-      </nav>
+      </nav><br>
+      <p><a href="https://github.com/explorable-viz/fluid">GitHub</a>
+      <p><a href="https://dl.acm.org/doi/10.1145/3498668">POPL 2022 paper</a>
+      <p><a href="https://www.youtube.com/watch?v=M_ePrtD9axk">POPL talk</a>
    </div>
 </div>
 
@@ -37,14 +40,14 @@
       <h3 class="title lowercase">fluid<br>functional interactive dataflow</h3>
    </div>
    <div class="col-9-12">
-      <p>Fluid is a new programming language which utilises program analysis/data provenance techniques to connect outputs to data sources in a fine-grained way.
+      <p>Fluid is a new programming language which utilises program analysis/data provenance techniques to connect outputs to data sources in a fine-grained way. For example, selecting a particular bar in a bar chart generated from an underlying table will automatically present a view of the table containing only the data needed to compute that bar. The resulting <b>data selection</b> is a restricted view of a dataset where only relevant rows are shown, and the relevant cells within those rows are highlighted.
    </div>
 
    <div class="col-3-12 align-right">
       <h3 class="title lowercase">data-linked visualisations</h3>
    </div>
    <div class="col-9-12">
-      For example, the Fluid runtime will link a visual selection in a bar chart to the smallest &#8220;data selection&#8221; containing the data needed to compute that bar. (A data selection is a restricted view of a dataset where only relevant rows are shown, and relevant cells within that are highlighted.) This data linking feature can also be used to link visualisations to other visualisations, such as the line chart on the right:
+      Try this out by selecting the bar for Germany in the left-hand chart, or one of the data points for year 2018 in the right-hand chart:
       <p><div id="fig-1"></div></p>
       <p>Hand-crafting a view like this would involve manually tracking the dependencies between input and output, something which Fluid does automatically. The programmer simply expresses the bar chart and line chart as pure functions of some common data:
       <details><summary>bar-chart.fld and line-chart.fld</summary>
