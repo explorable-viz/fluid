@@ -56,8 +56,8 @@ matchMany _ _ = error absurd
 
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs γ ρ = ρ <#> \σ ->
-   let xs = fv (ρ `for` σ) `union` fv σ
-   in V.Closure false (γ `restrict` xs) ρ σ
+   let ρ' = ρ `for` σ
+   in V.Closure false (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
