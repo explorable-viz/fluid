@@ -30,6 +30,16 @@ body {
    color: #404040
 }
 
+.parent {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.center {
+   height: 100%;
+}
+
 h3.title {
    font-family: "Roboto", sans-serif;
    font-weight: 600;
