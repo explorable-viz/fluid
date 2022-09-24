@@ -46,6 +46,11 @@ h3.title {
    font-size: '24px'
 }
 
+h4.title {
+   margin-top: 10pt;
+   margin-bottom: 0;
+}
+
 .glowing {
    transition-timing-function: ease-out
 }
