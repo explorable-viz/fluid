@@ -73,8 +73,10 @@
       <h3 class="title lowercase">infrastructure for <br>explorable explanations</h3>
    </div>
    <div class="col-9-12">
-      <p>Another use case we are interested in is explorable explanations. A key piece of language infrastructure will be to make it possible for an end-user to drill down into a computed artefact such as an image, and explore the relationships between the various stages of the computational pipeline using features such as those illustrated above.
-      <p>Matrix convolution (zero-padded):
+      <p>Another use case we are interested in is explorable explanations. A key piece of language infrastructure will be a runtime which allows the user to drill down into a computed artefact such as an image, and explore the relationships between the various stages of the computational pipeline using features such as those illustrated above. The following gives a hint of how this might work, using an implementation of <a href="https://en.wikipedia.org/wiki/Kernel_(image_processing)#Convolution">matrix convolution</a>, which transforms an input matrix using a small matrix called a filter (or a kernel) to apply effects like blurring.
+
+      <p>Trying selecting a cell in the output (the matrix on right) to see how it demands cells in the input array and filter. In particular notice how parts of the input are being ignored. Can these be attributed to the zeros in the filter? Also notice how the demand varies at the boundary: because this implementation of convolution treats the images as though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation of cells nears the edge of the output. This could be made a lot more useful if we could show the actual computation involved, but even this simple extensional view already reveals interesting things about the implementation.
+
       <p><div id="fig-conv-1"></div>
       <p>Contrast the above with the following implementation of matrix convolution which used wrap rather than padding with zeros:
       <p><div id="fig-conv-2"></div>
