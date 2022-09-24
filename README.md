@@ -1,4 +1,4 @@
-## Fluid: functional interactive dataflow
+## Fluid: Language-integrated data provenance
 
 Fluid is an experimental programming language which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. Fluid is implemented in PureScript and runs in the browser.
 
