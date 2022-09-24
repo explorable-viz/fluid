@@ -48,6 +48,7 @@ h3.title {
 
 h4.title {
    margin-top: 10pt;
+   margin-block-start: 0em;
    margin-bottom: 0;
 }
 
