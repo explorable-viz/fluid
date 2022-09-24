@@ -41,14 +41,14 @@
       <h3 class="title lowercase">Fluid</h3>
    </div>
    <div class="col-9-12">
-      <p>Fluid is an experimental programming language which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. If the user selects a bar in a bar chart computed from a table of data, we can automatically provide a view of the underlying table containing only the data needed to compute the selected bar. We call the resulting view a <b>data selection</b>: a restricted view of a dataset where only relevant rows are shown and relevant cells within those rows are highlighted. Although our user interface does not currently support this, we can also ask the question in the other direction: given an input selection, what parts of the output do we have sufficient data for?
+      <p>Understanding charts, diagrams and other visual information means understanding what visual elements <b>represent</b>. At a minimum,this means understanding how specific visual elements relate to the data they were computed from. <b>Fluid</b> is an experimental programming language which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way, making it easy for a user to explore connections between data and chart for themselves. If they select a bar in a bar chart computed from a table of data, we can automatically provide a view of the underlying table containing only the data needed to compute the selected bar. Although the examples below do not not currently support this, our approach also allows us ask the question in the other direction: given an input selection, what parts of the output do we have sufficient data for?
    </div>
 
    <div class="col-3-12 align-right">
       <h3 class="title lowercase">data-linked visualisations</h3>
    </div>
    <div class="col-9-12">
-      <p></p>Try this out by selecting the bar for Germany in the left-hand chart, or one of the data points for year 2018 in the right-hand chart. (Try zooming in if it's hard to select points in the line chart.) The relationship between output selections and inputs selections is <b>monotonic</b>: the more output you select, the more input is selected.
+      <p></p>Try this out by selecting the bar for Germany in the left-hand chart, or one of the data points for year 2018 in the right-hand chart. (Try zooming in if it's hard to select points in the line chart.) When a view selection is active, underneath we present what we call a <b>data selection</b>: a restricted view of a dataset where only relevant rows are shown and relevant cells within those rows are highlighted. The relationship between output selections and inputs selections is <b>monotonic</b>: the more output you select, the more input is selected.
       <p><div id="fig-1"></div></p>
       <p>Hand-crafting visualisations like this would involve manually tracking the dependencies between input and output. Fluid does automatically, allowing the programmer to simply express the bar chart and line chart as pure functions, using standard functional programming features such as higher-order functions and list comprehensions. Take a look at the source code below:
       <details><summary>bar-chart.fld and line-chart.fld</summary>
