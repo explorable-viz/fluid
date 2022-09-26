@@ -18,4 +18,4 @@ For the latest developments, see [news](news.md).
 
 - `yarn install` to install application dependencies
 - `yarn run serve-app` to build and serve app
-- open a browser (preferably Chrome) at the served URL (usually `http://127.0.0.1:8080`).
+- open a browser (preferably Chrome) at the served URL (usually `127.0.0.1:8080`).
