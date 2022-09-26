@@ -97,9 +97,9 @@
          <script src="https://gist.github.com/rolyp/8fc7054973476fdcbbc5f1e0b854913d.js"></script>
       </details>
 
-      <p>The library function <code>convolve</code> implements the convolution algorithm itself, and the helper functions <code>zero</code>, <code>wrap</code> and <code>extend</code> are specific policies (&#8220;methods&#8221;) for dealing with the boundary.
+      <p>The library function <code>convolve</code> implements the convolution algorithm itself, and helper functions <code>zero</code>, <code>wrap</code> and <code>extend</code> implement specific policies (&#8220;methods&#8221;) for dealing with the boundary.
 
-      <p>Contrast the behaviour above with an implementation which uses <code>wrap</code> rather than <code>zero</code> as the boundary method. Here, selecting an output cell near the edge has a quite different outcome: instead of some of the filter elements becoming irrelevant, we can see visually that the input image behaves as though opposite sides were connected. By making the input-output relationships &#8220;fine-grained&#8221; rather than monolithic, we can gain quite a lot insight into what the computation actually does.
+      <p>Contrast the example above, which uses <code>zero</code> as the boundary method, with an implementation which uses <code>wrap</code> instead. Then selecting an output cell near the edge has a quite different outcome: instead of some of the filter elements becoming irrelevant, we can see visually that the input image behaves as though opposite sides were connected. By making the input-output relationships &#8220;fine-grained&#8221; rather than monolithic, we can gain quite a lot insight into what the computation actually does.
       <p><div class="parent"><div class="center" id="fig-conv-2"></div></div>
       <details><summary>emboss-wrap.fld</summary>
          <script src="https://gist.github.com/rolyp/2bd783007d919d97e64ba66a6ede8c3a.js"></script>
