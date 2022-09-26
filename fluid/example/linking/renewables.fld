@@ -34,7 +34,7 @@
    { year: 2014, country: "Germany", energyType: "Solar", output: 38 },
    { year: 2014, country: "Germany", energyType: "Wind", output: 39 },
 
-   -- http://www.ren21.net/gsr-2016/00-Reference-Tables.php
+   -- https://www.ren21.net/gsr-2016/00-Reference-Tables.php
    { year: 2015, country: "China", energyType: "Bio", output: 10.3 },
    { year: 2015, country: "China", energyType: "Hydro", output: 96 },
    { year: 2015, country: "China", energyType: "Solar", output: 44 },
@@ -50,7 +50,7 @@
    { year: 2015, country: "Germany", energyType: "Solar", output: 40 },
    { year: 2015, country: "Germany", energyType: "Wind", output: 45 },
 
-   -- http://www.ren21.net/gsr-2017/pages/tables/tables/#table-R2
+   -- https://www.ren21.net/gsr-2017/pages/tables/tables/#table-R2
    { year: 2016, country: "China", energyType: "Bio", output: 12 },
    { year: 2016, country: "China", energyType: "Hydro", output: 305 },
    { year: 2016, country: "China", energyType: "Solar", output: 77 },
@@ -66,7 +66,7 @@
    { year: 2016, country: "Germany", energyType: "Solar", output: 41 },
    { year: 2016, country: "Germany", energyType: "Wind", output: 50 },
 
-   -- http://www.ren21.net/gsr-2018/pages/tables/tables/#Table_R2
+   -- https://www.ren21.net/gsr-2018/pages/tables/tables/#Table_R2
    { year: 2017, country: "China", energyType: "Bio", output: 14.9 },
    { year: 2017, country: "China", energyType: "Hydro", output: 313 },
    { year: 2017, country: "China", energyType: "Solar", output: 131 },

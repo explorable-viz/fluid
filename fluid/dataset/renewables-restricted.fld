@@ -52,7 +52,7 @@
       ("Wind", 39)
    ])
 ]),
--- http://www.ren21.net/gsr-2016/00-Reference-Tables.php
+-- https://www.ren21.net/gsr-2016/00-Reference-Tables.php
 (2015, [
    ("China", [
       ("Bio", 10.3),
@@ -73,7 +73,7 @@
       ("Wind", 45)
    ])
 ]),
--- http://www.ren21.net/gsr-2017/pages/tables/tables/#table-R2
+-- https://www.ren21.net/gsr-2017/pages/tables/tables/#table-R2
 (2016, [
    ("China", [
       ("Bio", 12),
@@ -94,7 +94,7 @@
       ("Wind", 50)
    ])
 ]),
--- http://www.ren21.net/gsr-2018/pages/tables/tables/#Table_R2
+-- https://www.ren21.net/gsr-2018/pages/tables/tables/#Table_R2
 (2017, [
    ("China", [
       ("Bio", 14.9),

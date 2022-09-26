@@ -17,7 +17,7 @@
 | 22 Dec 21 | Select cell in matrix view | [488](https://github.com/explorable-viz/fluid/issues/488) |
 | 7 Oct 21 | Artifact submitted for POPL 2022 | |
 | 28 Sep 21 | POPL paper accepted! | |
-| 9 July 21 | [POPL 2022 submission](http://arxiv.org/abs/2109.00445) | |
+| 9 July 21 | [POPL 2022 submission](https://arxiv.org/abs/2109.00445) | |
 | 7 July 21 | Surface language highlighting example | [475](https://github.com/explorable-viz/fluid/issues/475) |
 | 19 June 21 | (PureScript migration) Brushing-and-linking example | [469](https://github.com/explorable-viz/fluid/issues/469) |
 | 5 June 21 | Records | [464](https://github.com/explorable-viz/fluid/issues/464) |
@@ -38,12 +38,12 @@
 | 2 Jul 20 | (PureScript migration) First-class constructors | [49](https://github.com/explorable-viz/fluid/issues/49) |
 | 18 Jun 20 | (PureScript migration) Piecewise function definitions | [356](https://github.com/explorable-viz/fluid/issues/356) |
 | 4 Jun 20 | (PureScript migration) Structured `let` syntax | [171](https://github.com/explorable-viz/fluid/issues/171) |
-| 15 May 20 | Update [f.luid.org](http://f.luid.org) | [289](https://github.com/explorable-viz/fluid/issues/289) |
+| 15 May 20 | Update [f.luid.org](https://f.luid.org) | [289](https://github.com/explorable-viz/fluid/issues/289) |
 | 13 May 20 | (PureScript migration) First-class binary operations | [139](https://github.com/explorable-viz/fluid/issues/139) |
 | 2 Apr 20 | Fluid plugin running in Binder | [W279](https://github.com/rolyp/wrattler/wrattler/issues/279) |
 | 10 Mar 20 | Start on PureScript migration | [279](https://github.com/rolyp/lambdacalc/issues/279) |
 | 22 Feb 20 | Make repository public |
-| 17 Feb 20 | Host demo online at [f.luid.org](http://f.luid.org) | [127](https://github.com/rolyp/lambdacalc/issues/127) |
+| 17 Feb 20 | Host demo online at [f.luid.org](https://f.luid.org) | [127](https://github.com/rolyp/lambdacalc/issues/127) |
 | 30 Jan 20 | Display image in Wrattler output pane | [W222](https://github.com/wrattler/wrattler/issues/222) |
 | 21 Jan 20 | Initial meeting with Meng Wang and Minh Nguyen at Bristol ||
 | 26 Nov 19 | Demo for Wrattler workshop for DSTL ||
@@ -96,4 +96,4 @@ Ensure you have a recent version of [nodejs](https://nodejs.org/en/download/curr
 - `bundle-watch` to bundle the app, rebundling when files change
 - `continuous-test` to run `test` and `bundle-watch` in parallel
 
-![LambdaCalc](http://i.imgur.com/ERSxpE0.png "LambdaCalc")
+![LambdaCalc](https://i.imgur.com/ERSxpE0.png "LambdaCalc")
