@@ -82,11 +82,13 @@
    <div class="col-9-12">
       <p>Another future application is language infrastructure for <i>explorable explanations</i>, interactive web essays that explains challenging technical ideas. How might programming languages make it easier to create explorable explanations? One idea would be to provide a fully open runtime which allows a user to drill down into a computed artefact such as an image, and explore the relationships between the stages of the computational pipeline using interactions like the ones above.
 
-      <p>Consider the following implementation of <a href="https://en.wikipedia.org/wiki/Kernel_(image_processing)#Convolution">matrix convolution</a>, an image processing technique which transforms an input matrix using a small matrix called a filter (or a kernel) to apply effects like blurring or embossing. Trying selecting different cells in the output (the matrix on right) to see how they demands cells in the input array and filter:
+      <p>Consider the following implementation of <a href="https://en.wikipedia.org/wiki/Kernel_(image_processing)#Convolution">matrix convolution</a>, an image processing technique which transforms an input matrix using a small matrix called a filter (or a kernel) to apply effects like blurring or embossing. Trying selecting different cells in the output (the matrix on right) to see how they demand cells in the input array and filter:
 
       <p><div class="parent"><div class="center" id="fig-conv-1"></div></div>
 
-      <p>In particular, notice how only certain parts of the input are relevant. Can some of the irrelevant input cells be attributed to zeros in the filter? Also notice how the demand varies as we approach the edge of the output image: because this implementation of convolution treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation of output cells near the edge. This could be made more useful if we could show the actual computation involved, but even this simple extensional view already reveals interesting things about the implementation. Here is the pure functional code here:
+      <p>In particular, notice how only certain parts of the input are relevant. Can some of the irrelevant input cells be attributed to zeros in the filter? Also notice how the demand varies as we approach the edge of the output image: because this implementation of convolution treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation of output cells near the edge. (As mentioned above, it is not yet possible to select input elements and have the output selection be derived automatically.)
+
+      This could be made more useful if we could show the actual computation involved, but even this simple extensional view already reveals interesting things about the implementation. Here is the pure functional code here:
 
       <details><summary>convolution.fld</summary>
          <script src="https://gist.github.com/rolyp/64b04a6a6fc73164d7fbbd1b82365b67.js"></script>
