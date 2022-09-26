@@ -30,6 +30,16 @@ body {
    color: #404040
 }
 
+.parent {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.center {
+   height: 100%;
+}
+
 h3.title {
    font-family: "Roboto", sans-serif;
    font-weight: 600;
@@ -46,12 +56,18 @@ h3.title {
    font-size: '24px'
 }
 
+h4.title {
+   margin-top: 10pt;
+   margin-block-start: 1em;
+   margin-bottom: 0;
+}
+
 .glowing {
    transition-timing-function: ease-out
 }
 
 a {
-   text-decoration: underline;
+   text-decoration: none;
    color: inherit;
    transition-timing-function: ease-out
 }

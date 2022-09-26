@@ -15,46 +15,82 @@
 
 <div class="grid grid-pad">
    <div class="col-3-12 align-right">
+      <img src="https://i.ytimg.com/vi/IjS2sVPR2Zc/maxresdefault.jpg" width="80%">
+      <img src="https://i.ibb.co/zNqHKg7/University-of-Bristol-logo.png" width="80%">
    </div>
    <div class="col-9-12">
       <nav>
          <ul>
             <li>
-            <a href="http://f.luid.org/">Home</a>
+               <a href="." class="active-page">Latest</a>
             </li>
             <li>
-            <a href="http://f.luid.org/0.3.1">v0.3.1</a>
-            </li>
-            <li>
-            <a href="http://f.luid.org/0.4.2">v0.4.2</a>
-            </li>
-            <li>
-            <a href="." class="active-page">develop</a>
+            <a href="https://f.luid.org/0.3.1">v0.3.1</a>
             </li>
          </ul>
-      </nav>
+      </nav><br>
+      <p><a href="https://github.com/explorable-viz/fluid">GitHub</a> &#183;
+      <a href="https://dl.acm.org/doi/10.1145/3498668">POPL 2022 paper</a> &#183;
+      <a href="https://www.youtube.com/watch?v=M_ePrtD9axk">POPL talk</a>
+      <h2>Fluid: language-integrated data provenance</h2>
    </div>
 </div>
 
 <div id="FLUID" class="grid grid-pad">
    <div class="col-3-12 align-right">
+      <h3 class="title lowercase">fluid</h3>
+   </div>
+   <div class="col-9-12">
+      <p>Understanding charts, diagrams and other visual information means understanding what visual elements <b>represent</b>: how specific visual elements relate to the data they were computed from. <b>Fluid</b> is an experimental programming language, implemented in <a href="https://www.purescript.org/">PureScript</a>, which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. The user can explore connections between data and chart without the programmer having had to anticipate this need in advance. If the user selects a bar in a bar chart computed from a table of data, we can automatically provide a view of the underlying table containing only the data needed to compute the selected bar. Our approach also allows us ask these questions in the other direction: given an input selection, what parts of the output do we have sufficient data for?
+   </div>
+
+   <div class="col-3-12 align-right">
       <h3 class="title lowercase">data-linked visualisations</h3>
    </div>
    <div class="col-9-12">
-      <p>Development branch of data-linked visualisations.
-      <details open>
-         <summary>Linked charts</summary>
-         <div id="fig-1"></div>
-      </details>
-      <p>
-      <details>
-         <summary>Matrix convolution (zero-padded)</summary>
-         <p><div id="fig-conv-1"></div>
-      </details>
-      <p>
-      <details>
-         <summary>Matrix convolution (with wrap)</summary>
-         <p><div id="fig-conv-2"></div>
+      <p></p>Try the data linking by selecting (clicking on) the bar for Germany in the left-hand chart below. Then try one of the data points for the year 2018 in the right-hand chart. (Zoom in if it's hard to select points in the line chart.) When a view selection is active, we automatically provide what we call a <b>data selection</b>: a restricted view of a dataset where only relevant rows are shown and relevant cells within those rows are highlighted. The relationship between the output selection and the resulting inputs selection is monotonic: the more output you select, the more input is selected. (The UI doesn't support this yet, but it is also meaningful to select input and have the output selection be derived automatically.)
+
+      <p><div class="parent"><div class="center" id="fig-1"></div></div></p>
+
+      <p>Hand-crafting transparency features like these would involve manually tracking the dependencies between input and output. Fluid does this automatically, allowing the programmer to simply express the bar chart and line chart as pure functions, using standard functional programming features such as higher-order functions and list comprehensions. Take a look at the source code below:
+         <details><summary>bar-chart.fld</summary>
+            <script src="https://gist.github.com/rolyp/7d4c2240e6a588d9b3844c025b7db920.js"></script>
+         </details>
+         <details><summary>line-chart.fld</summary>
+            <script src="https://gist.github.com/rolyp/a2bed1325ef0ace335d8fa0fd304acd5.js"></script>
+         </details>
+         <details><summary>dataset.fld</summary>
+            <script src="https://gist.github.com/rolyp/367c33ce1c61eea77fe3dc37eb690f2c.js"></script>
+         </details>
+      <p>The mathematics of the bidirectional analysis is described by a <b>Galois connection</b>. This establishes that the forward and backward components -- the so-called upper and lower <i>adjoints</i>, respectively -- round-trip: the data selection computed by the backwards analysis for a given view selection, if fed into the forward analysis, will suffice for (at least) the original view selection. Similarly, the view selection computed by the forwards analysis, if fed into the backwards analysis, will require (no more than) the original data selection. (&#8220;Require no more, promise no less&#8221; is an apt slogan.) See our <a href="https://dl.acm.org/doi/10.1145/3498668">paper</a> for more on the formal setting.
+   </div>
+
+   <div class="col-3-12 align-right">
+      <h4 class="title lowercase">brushing and linking</h4>
+   </div>
+   <div class="col-9-12">
+      <p>One of the more interesting things about the mathematical setting is that the Galois connections have a (contravariant) De Morgan dual, which arises because selections can be <b>negated</b>. This allows the bidirectional dependency analysis to be inverted, by transposing the roles of the upper and lower adjoints. Why invert something that is already bidirectional? Well, the De Morgan dual also changes the meaning of the analyses: under the dual interpretation, the backwards analysis propagates the absence of demand, rather than demand, and the forwards analysis propagates the absence of resource availability, rather than availability.
+
+      <p>It turns out we can use this to link two outputs generated from the same input, a feature sometimes called <b>brushing and linking</b>. Go back to the example above and select the bar for USA or China in the left-hand chart: you will see that all the points relating to 2015 are automatically selected on the right. These are the parts of the right-hand chart which &#8220;compete for resources&#8221; with the selection on the left, the sense that the data they demand intersects in a non-empty way with the data demanded by the original selection. We compute the selection on the right not with the backwards analysis, which points in the wrong direction, nor with the forwards analysis, which computes the sufficiency relation, but instead with the De Morgan dual of the forwards analysis, which tells us the output on the right that we <i>wouldn't</i> be able to compute if the data demanded by the selection on the left were <i>unavailable</i>: in other words, what the data selection is <i>necessary</i> for, rather than what it is <i>sufficient</i> for. You can play this game in the other direction by selecting any point from 2015 on the right, which will highlight both USA and China on the left: again, because these bars both consume data which is also needed for the original point. (We could making this clearer in the UI by showing the data selection induced by USA and China, perhaps greyed out, and highlighting how it overlaps with the data needed by the original point.)
+
+      <p>Brushing and linking is a common feature in data visualisation, but existing approaches are ad hoc and limited. Building brushing and linking into a language has the potential to make it pervasive and robust. Moreover, we can always provide a view of the specific data elements which explain <i>why</i> the two visual elements are linked, providing another level of transparency.
+   </div>
+
+   <div class="col-3-12 align-right">
+      <h3 class="title lowercase">infrastructure for <br>explorable explanations</h3>
+   </div>
+   <div class="col-9-12">
+      <p>Another application we are interested in is language infrastructure for explorable explanations. A key component will be a runtime which allows the user to drill down into a computed artefact such as an image, and explore the relationships between the various stages of the computational pipeline using features such as those illustrated above. The following gives the flavour of how this might work, using an implementation of <a href="https://en.wikipedia.org/wiki/Kernel_(image_processing)#Convolution">matrix convolution</a>. Convolution is a common algorithm which transforms an input matrix using a small matrix called a filter (or a kernel) to apply effects like blurring.
+
+      <p>Trying selecting a cell in the output (the matrix on right) to see how it demands cells in the input array and filter. In particular notice how only certain parts of the input are relevant. Can some of the irrelevant input cells be attributed to zeros in the filter? Also notice how the demand varies as we approach the edge of the output image: because this implementation of convolution treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation of cells nears the edge of the output. This could be made more useful if we could show the actual computation involved, but even this simple extensional view already reveals interesting things about the implementation.
+
+      <p><div class="parent"><div class="center" id="fig-conv-1"></div></div>
+      <p>Contrast the above with the following implementation of matrix convolution which used wrap rather than padding with zeros:
+      <p><div class="parent"><div class="center" id="fig-conv-2"></div></div>
+      <p>As before, the source code is a pure function:
+      <details><summary>convolution.fld and conv-emboss-wrap.fld</summary>
+         <script src="https://gist.github.com/rolyp/64b04a6a6fc73164d7fbbd1b82365b67.js"></script>
+         <script src="https://gist.github.com/rolyp/2bd783007d919d97e64ba66a6ede8c3a.js"></script>
       </details>
    </div>
 </div>

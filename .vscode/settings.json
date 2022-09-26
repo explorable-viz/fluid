@@ -2,9 +2,11 @@
    "git.ignoreLimitWarning": true,
    "javascript.suggestionActions.enabled": false,
    "editor.codeLens": false,
-   "editor.renderLineHighlight": "none",
+   "editor.fontFamily": "Fira Code",
+   "editor.fontLigatures": true,
    "editor.guides.indentation": false,
    "editor.lineNumbers": "off",
    "editor.occurrencesHighlight": false,
+   "editor.renderLineHighlight": "none",
    "editor.selectionHighlight": false
-}
+  }
