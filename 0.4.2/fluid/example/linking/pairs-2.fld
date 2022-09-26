@@ -1,1 +1,0 @@
-(fun (w, (x, (y, z))) -> (w + x, (x + y, y + z))) data
