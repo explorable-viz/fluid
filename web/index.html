@@ -41,7 +41,7 @@
       <h3 class="title lowercase">fluid</h3>
    </div>
    <div class="col-9-12">
-      <p>Understanding charts, diagrams and other visual information means understanding what visual elements <b>represent</b>: how specific visual elements relate to the data they were computed from. <b>Fluid</b> is an experimental programming language, implemented in <a href="https://www.purescript.org/">PureScript</a>, which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. The user can explore connections between data and chart without the programmer having had to anticipate this need in advance. If the user selects a bar in a bar chart computed from a table of data, we can automatically provide a view of the underlying table containing only the data needed to compute the selected bar. Our approach also allows us ask these questions in the other direction: given an input selection, what parts of the output do we have sufficient data for?
+      <p>Understanding charts, diagrams and other visual information means understanding what visual elements <i>represent</i>: how specific visual elements relate to the data they were computed from. <b>Fluid</b> is an experimental programming language, implemented in <a href="https://www.purescript.org/">PureScript</a>, which integrates a bidirectional dynamic analysis to connect outputs to data sources in a fine-grained way. A Fluid program is a plain ol' functional program, but instead of producing a plain ol' <i>value</i>, it produces a value equipped with an account of how that value was computed from data. The user can those explores those connections without the programmer having had to anticipate that need in advance. If the user selects a bar in a bar chart computed from a table of data, we can automatically provide a view of the underlying table containing only the data needed to compute the selected bar. Our approach also allows us ask these questions in the other direction: given an input selection, what parts of the output do we have sufficient data for?
    </div>
 
    <div class="col-3-12 align-right">
@@ -80,17 +80,22 @@
       <h3 class="title lowercase">infrastructure for <br>explorable explanations</h3>
    </div>
    <div class="col-9-12">
-      <p>Another future application is language infrastructure for explorable explanations. A key component of this will be a runtime which allows a user to drill down into a computed artefact such as an image, and explore the relationships between the various stages of the computational pipeline. Consider the following implementation of <a href="https://en.wikipedia.org/wiki/Kernel_(image_processing)#Convolution">matrix convolution</a>, an image processing technique which transforms an input matrix using a small matrix called a filter (or a kernel) to apply effects like blurring. Trying selecting different cells in the output (the matrix on right) to see how they demands cells in the input array and filter:
+      <p>Another future application is language infrastructure for explorable explanations. A key component of this will be a runtime which allows a user to drill down into a computed artefact such as an image, and explore the relationships between the various stages of the computational pipeline. Consider the following implementation of <a href="https://en.wikipedia.org/wiki/Kernel_(image_processing)#Convolution">matrix convolution</a>, an image processing technique which transforms an input matrix using a small matrix called a filter (or a kernel) to apply effects like blurring or embossing. Trying selecting different cells in the output (the matrix on right) to see how they demands cells in the input array and filter:
 
       <p><div class="parent"><div class="center" id="fig-conv-1"></div></div>
 
-      <p>In particular, notice how only certain parts of the input are relevant. Can some of the irrelevant input cells be attributed to zeros in the filter? Also notice how the demand varies as we approach the edge of the output image: because this implementation of convolution treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation of output cells nears the edge. This could be made more useful if we could show the actual computation involved, but even this simple extensional view already reveals interesting things about the implementation.
+      <p>In particular, notice how only certain parts of the input are relevant. Can some of the irrelevant input cells be attributed to zeros in the filter? Also notice how the demand varies as we approach the edge of the output image: because this implementation of convolution treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation of output cells nears the edge. This could be made more useful if we could show the actual computation involved, but even this simple extensional view already reveals interesting things about the implementation. Browse the code here:
 
-      <p>Contrast the above with an implementation which uses wrap rather than padding with zeros:
-      <p><div class="parent"><div class="center" id="fig-conv-2"></div></div>
-      <p>As before, the source code is a pure function:
-      <details><summary>convolution.fld and conv-emboss-wrap.fld</summary>
+      <details><summary>convolution.fld</summary>
          <script src="https://gist.github.com/rolyp/64b04a6a6fc73164d7fbbd1b82365b67.js"></script>
+      </details>
+      <details><summary>emboss-zero-pad.fld</summary>
+         <script src="https://gist.github.com/rolyp/8fc7054973476fdcbbc5f1e0b854913d.js"></script>
+      </details>
+
+      <p>Contrast the above with an implementation which uses `wrap` rather than `zero` as the boundary method:
+      <p><div class="parent"><div class="center" id="fig-conv-2"></div></div>
+      <details><summary>emboss-wrap.fld</summary>
          <script src="https://gist.github.com/rolyp/2bd783007d919d97e64ba66a6ede8c3a.js"></script>
       </details>
    </div>
