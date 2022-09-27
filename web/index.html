@@ -41,7 +41,7 @@
       <h3 class="title lowercase">fluid</h3>
    </div>
    <div class="col-9-12">
-      <p>Understanding charts, diagrams and other visual information means understanding what visual elements <i>represent</i>: how specific visual elements relate to the data they were computed from. <b>Fluid</b> is an experimental programming language, implemented in <a href="https://www.purescript.org/">PureScript</a>, which integrates a bidirectional dynamic analysis into its runtime. A Fluid program is a plain ol' functional program, but instead of producing a plain ol' value, it produces a value equipped with an account of how parts of the output are connected to data sources in a fine-grained way. We can use that information to provide additional UI affordances automatically, so user can those explores those connections without the programmer having had to anticipate that need in advance. For example if the user selects a bar in a bar chart computed from a table of data, we can automatically provide a view of the underlying table containing only the data needed to compute the selected bar.
+      <p>Understanding charts, diagrams and other visual information means understanding what visual elements <i>represent</i>: how specific visual elements relate to the data they were computed from. <b>Fluid</b> is an experimental programming language, implemented in <a href="https://www.purescript.org/">PureScript</a>, which produces outputs which are linked to inputs in a fine-grained way. A Fluid program is a plain ol' functional program, but instead of producing an opaque value, Fluid uses a bidirectional dynamic analysis to equip that value with information about how its parts relate to specific parts of the input. We can use that information to automatically provide additional UI affordances, allowing users to explores those connections without the programmer having had to anticipate that need in advance. For example if the user selects a bar in a bar chart computed from a table of data, we can automatically provide a view of the underlying table containing only the data needed to compute the selected bar.
    </div>
 
    <div class="col-3-12 align-right">
@@ -105,10 +105,10 @@
    </div>
 
    <div class="col-3-12 align-right">
-      <h3 class="title lowercase">what next?</h3>
+      <h3 class="title lowercase">project details</h3>
    </div>
    <div class="col-9-12">
-      <p>Fluid is an early-stage project and is some way from being a practical tool. Follow us on <a href="https://github.com/explorable-viz/fluid">GitHub</a> to stay abreast of developments. Some of the things we have planned include: source code views, so that intermediate values (such as <code>image</code> and <code>filter</code> above) can be rendered alongside the code responsible for computing them.
+      <p>Fluid is led by <a href="https://dynamicaspects.org/research/">Roly Perera</a>, Department of Computer Science, University of Bristol, with contributions by <a href="https://tomasp.net/">Tomas Petricek</a>, <a href="https://min-nguyen.github.io/">Minh Nguyen</a> and <a href="https://mengwangoxf.github.io/">Meng Wang</a>. Our <a href="https://f.luid.org/0.3.1">pilot project</a> was funded by The Alan Turing Institute's AI for Science and Government programme. Follow us on <a href="https://github.com/explorable-viz/fluid">GitHub</a> to stay abreast of developments, or make contact by <a href = "mailto:roly.perera@bristol.ac.uk">email</a>.
    </div>
 </div>
 
