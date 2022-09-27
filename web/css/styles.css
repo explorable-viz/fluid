@@ -1,7 +1,4 @@
 @charset "UTF-8";
-body {
-   font-size: 11pt
-}
 
 .glowing,
 a {
@@ -21,6 +18,7 @@ code {
 }
 
 body {
+   font-size: 11pt;
    font-family: "Roboto", sans-serif;
    font-weight: 300;
    line-height: 1.25;
