@@ -25,7 +25,8 @@ body {
    padding: 0;
    margin: 0;
    background-color: #FFFFFF; /* #181818; */
-   color: #404040
+   color: #404040;
+   margin-bottom: 10em;
 }
 
 .parent {
@@ -38,23 +39,23 @@ body {
    height: 100%;
 }
 
-h3.title {
-   font-family: "Roboto", sans-serif;
-   font-weight: 600;
-}
-
 .align-right {
    text-align: right
 }
 
-h3.title {
+.title {
+   color: rgb(5, 208, 201);
+}
+
+h3 {
+   font-family: "Roboto", sans-serif;
+   font-weight: 600;
    margin-top: 10pt;
    margin-bottom: 0;
-   color: darkblue;
    font-size: '24px'
 }
 
-h4.title {
+h4 {
    margin-top: 10pt;
    margin-block-start: 1em;
    margin-bottom: 0;

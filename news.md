@@ -2,10 +2,9 @@
 
 ### Recent activity
 
-(**W** indicates a Wrattler issue.)
-
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 27 Sep 22 | Explanatory text for examples at [f.luid.org]() | [548](https://github.com/explorable-viz/fluid/issues/548) |
 | 17 Sep 22 | Migrate to optimised backend; native JS representation of maps | [546](https://github.com/explorable-viz/fluid/issues/546) |
 | 6 Sep 22 | Partial environments, records and eliminators | [543](https://github.com/explorable-viz/fluid/issues/543), [540](https://github.com/explorable-viz/fluid/issues/540), [543](https://github.com/explorable-viz/fluid/issues/543), [537](https://github.com/explorable-viz/fluid/issues/537) |
 | 22 Aug 22 | Drop holes for significant performance boost | [509](https://github.com/explorable-viz/fluid/issues/509) |
@@ -65,26 +64,7 @@
 | 18 Jun 19 | Preliminary design for linking visualisations | [164](https://github.com/rolyp/fluid/issues/164), [188](https://github.com/rolyp/fluid/issues/188) |
 | 10 Jun 19 | Library code for axes | [53](https://github.com/rolyp/fluid/issues/53), [111](https://github.com/rolyp/fluid/issues/111) |
 
-### In progress/forthcoming
-
-| When | Feature/change | Issue(s) |
-| --- | --- | --- |
-
-### Possible submissions
-
-| Deadline    | Venue            |
-| --- | --- |
-| <s>2 Aug 2019</s> | <s>LIVE 2019</s> |
-| 2 Aug 2019 | IC 2019 :heavy_check_mark: |
-| <s>5 Dec 2019</s> | <s>Eurovis 2020</s> |
-| <s>3 Mar 2020</s> | <s>ICFP 2020</s> |
-| <s>15 May 2020</s> | <s>OOPSLA 2020</s> |
-| <s>9 Jul 2020</s> | <s>POPL 2021</s> |
-| <s>20 Nov 2020</s> | <s>PLDI 2021</s> |
-| <s>2 Mar 2021</s> | <s>ICFP 2021</s> |
-| <s>16 Apr 2021</s> | <s>OOPSLA 2021</s> |
-| <s>8 Jul 2021</s> | POPL 2022 :heavy_check_mark: |
-| ? Feb 2022 | ICFP 2022 |
+(**W** indicates a Wrattler issue.)
 
 ### Installation
 
