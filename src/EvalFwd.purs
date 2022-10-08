@@ -11,7 +11,7 @@ import Dict (disjointUnion, empty, get, intersectionWith)
 import Dict (singleton, toUnfoldable) as O
 import Expr (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))
-import Primitive (match_fwd) as P
+import Primitive (match) as P
 import Trace (Trace(..), Match(..), VarDef(..)) as T
 import Trace (Trace, Match)
 import Util (type (×), (×), (!), absurd, assert, error)
@@ -53,7 +53,7 @@ evalFwd γ (Constr α _ es) α' (T.Constr c ts) =
 evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
    case evalFwd γ e2 α' t2 of
       V.Constr _ _ (v1 : v2 : Nil) ->
-         let (i'' × β) × (j'' × β') = P.match_fwd v1 × P.match_fwd v2
+         let (i'' × β) × (j'' × β') = P.match v1 × P.match v2
              vss = assert (i'' == i' && j'' == j') $ A.fromFoldable $ do
                 i <- range 1 i'
                 singleton $ A.fromFoldable $ do

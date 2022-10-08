@@ -14,7 +14,7 @@ import Bindings (Var)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Dict (Dict, get)
 import Lattice (𝔹, botOf, neg)
-import Primitive (class ToFrom, as, match_fwd)
+import Primitive (class ToFrom, as, match)
 import Util (Endo, type (×), type (+), (×), absurd, error, definitely')
 import Val (Val(..), updateMatrix)
 
@@ -28,14 +28,14 @@ doNothing :: OnSel
 doNothing = const $ pure unit
 
 get_prim :: forall a . ToFrom a => Var -> Dict (Val 𝔹) -> a × 𝔹
-get_prim x = match_fwd <<< get x
+get_prim x = match <<< get x
 
 get_intOrNumber :: Var -> Dict (Val 𝔹) -> Number × 𝔹
 get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
 
 -- Assumes fields are all of primitive type.
 record :: forall a . (Dict (Val 𝔹) -> a) -> Val 𝔹 -> a
-record toRecord u = toRecord (fst (match_fwd u))
+record toRecord u = toRecord (fst (match u))
 
 class Reflect a b where
    from :: Partial => a -> b
