@@ -26,29 +26,29 @@ unwrap = match >>> fst
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
 instance ToFrom (Val Boolean) where
    constr = fst                  -- construction rights not required
-   constr_bwd = _ × false        -- return unit of disjunction rather than conjunction
-   match = _ × true              -- construction rights are always provided
+   constr_bwd = (_ × false)      -- return unit of disjunction rather than conjunction
+   match = (_ × true)            -- construction rights always provided
 
 instance ToFrom Int where
-   match (Int α n)   = n × α
-   match v           = error ("Int expected; got " <> prettyP v)
-
    constr (n × α) = Int α n
    constr_bwd v = match v
 
-instance ToFrom Number where
-   match (Float α n) = n × α
-   match v           = error ("Float expected; got " <> prettyP v)
+   match (Int α n)   = n × α
+   match v           = error ("Int expected; got " <> prettyP v)
 
+instance ToFrom Number where
    constr (n × α) = Float α n
    constr_bwd v = match v
 
-instance ToFrom String where
-   match (Str α str) = str × α
-   match v           = error ("Str expected; got " <> prettyP v)
+   match (Float α n) = n × α
+   match v           = error ("Float expected; got " <> prettyP v)
 
+instance ToFrom String where
    constr (str × α) = Str α str
    constr_bwd v = match v
+
+   match (Str α str) = str × α
+   match v           = error ("Str expected; got " <> prettyP v)
 
 instance ToFrom (Int + Number) where
    constr (Left n × α)   = Int α n
@@ -80,18 +80,18 @@ instance ToFrom ((Int × Boolean) × (Int × Boolean)) where
    match v                                         = error ("Pair expected; got " <> prettyP v)
 
 instance ToFrom (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
-   match (Matrix α r) = r × α
-   match v            = error ("Matrix expected; got " <> prettyP v)
-
    constr (r × α) = Matrix α r
    constr_bwd v = match v
 
-instance ToFrom (Dict (Val Boolean)) where
-   match (Record α xvs) = xvs × α
-   match v              = error ("Record expected; got " <> prettyP v)
+   match (Matrix α r) = r × α
+   match v            = error ("Matrix expected; got " <> prettyP v)
 
+instance ToFrom (Dict (Val Boolean)) where
    constr (xvs × α) = Record α xvs
    constr_bwd v = match v
+
+   match (Record α xvs) = xvs × α
+   match v              = error ("Record expected; got " <> prettyP v)
 
 instance ToFrom (Val Boolean × Val Boolean) where
    constr (v × v' × α) = Constr α cPair (v : v' : Nil)
@@ -101,15 +101,22 @@ instance ToFrom (Val Boolean × Val Boolean) where
    match v                                          = error ("Pair expected; got " <> prettyP v)
 
 instance ToFrom Boolean where
+   constr (true × α)   = Constr α cTrue Nil
+   constr (false × α)  = Constr α cFalse Nil
+
+   constr_bwd v = match v
+
    match (Constr α c Nil)
       | c == cTrue   = true × α
       | c == cFalse  = false × α
    match v = error ("Boolean expected; got " <> prettyP v)
 
-   constr (true × α)   = Constr α cTrue Nil
-   constr (false × α)  = Constr α cFalse Nil
+instance ToFrom (Val Boolean -> Val Boolean) where
+   constr (_ × _) = error "TODO"
+   constr_bwd = error "TODO"
 
-   constr_bwd v = match v
+   match (Closure α _ _ _) = error "TODO" × α
+   match v                 = error ("Closure expected; got " <> prettyP v)
 
 class IsZero a where
    isZero :: a -> Boolean
@@ -147,15 +154,12 @@ unary_ :: forall a b . ToFrom a => ToFrom b => UnarySlicer a b -> Val 𝔹
 unary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 1,
    op: unsafePartial apply,
-   op_fwd: unsafePartial apply_fwd,
+   op_fwd: unsafePartial apply,
    op_bwd: unsafePartial apply_bwd
 }
    where
    apply :: Partial => List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
    apply (v : Nil) = constr (fwd (match v))
-
-   apply_fwd :: Partial => List (Val 𝔹) {-[(a, a)]-} -> Val 𝔹 {-b-}
-   apply_fwd (v : Nil) = constr (fwd (match v))
 
    apply_bwd :: Partial => Val 𝔹 {-(b, b)-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
    apply_bwd v (u1 : Nil) = constr (bwd (constr_bwd v) (unwrap u1)) : Nil
@@ -164,15 +168,12 @@ binary_ :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySlicer a b c
 binary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 2,
    op: unsafePartial apply,
-   op_fwd: unsafePartial apply_fwd,
+   op_fwd: unsafePartial apply,
    op_bwd: unsafePartial apply_bwd
 }
    where
    apply :: Partial => List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
    apply (v : v' : Nil) = constr (fwd (match v) (match v'))
-
-   apply_fwd :: Partial => List (Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
-   apply_fwd (v1 : v2 : Nil) = constr (fwd (match v1) (match v2))
 
    apply_bwd :: Partial => Val 𝔹 {-(c, c)-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
    apply_bwd v (u1 : u2 : Nil) = constr v1 : constr v2 : Nil

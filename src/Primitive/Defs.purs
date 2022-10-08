@@ -18,6 +18,14 @@ primitives :: Env 𝔹
 primitives = D.fromFoldable [
    ":"         × Constr false cCons Nil,
 
+   "ceiling"   × unary (withInverse1 ceil),
+   "debugLog"  × unary (withInverse1 debugLog),
+   "dims"      × unary dims,
+   "error"     × unary (withInverse1 error_),
+   "floor"     × unary (withInverse1 floor),
+   "log"       × unary (withInverse1 log),
+   "numToStr"  × unary (withInverse1 numToStr),
+
    "+"         × binary (withInverse2 plus),
    "-"         × binary (withInverse2 minus),
    "*"         × binaryZero (withInverse2 times),
@@ -34,15 +42,9 @@ primitives = D.fromFoldable [
    "div"       × binaryZero (withInverse2 div),
    "mod"       × binaryZero (withInverse2 mod),
    "quot"      × binaryZero (withInverse2 quot),
-   "rem"       × binaryZero (withInverse2 rem),
+   "rem"       × binaryZero (withInverse2 rem)
 
-   "ceiling"   × unary (withInverse1 ceil),
-   "debugLog"  × unary (withInverse1 debugLog),
-   "dims"      × unary dims,
-   "error"     × unary (withInverse1 error_),
-   "floor"     × unary (withInverse1 floor),
-   "log"       × unary (withInverse1 log),
-   "numToStr"  × unary (withInverse1 numToStr)
+--   "map"       × binary (withInverse2 dict_map)
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹
@@ -127,3 +129,6 @@ numToStr = show `union1` show
 
 log :: Int + Number -> Number
 log = (toNumber >>> N.log) `union1` N.log
+
+dict_map :: forall a . (Val a -> Val a) -> Endo Int
+dict_map = error "TODO"

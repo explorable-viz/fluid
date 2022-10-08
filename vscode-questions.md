@@ -1,9 +1,11 @@
 - "Installation and General Use" doesn't really give instructions, but a mixture of (private?) implementation details and side-observations
-- how to invoke "PureScript: Build"
-- how to tell whether "Restart/Reconnect purs IDE server" has succeeded
+- how to tell whether "Restart/Reconnect purs IDE server" has succeeded.
+- does running "PureScript: Build" imply starting the purs IDE server?
+- what are "PSC packages"?
 - after "PureScript: Build", even resolved identifiers say "No definition found"
 - what is "PureScript IDE" vs "PureScript Language Support"? Installing one seems to install the other.
 - VSCode settings points to /usr/local/bin/purs, which agrees with "which purs" (which reports version 0.15.4). But when I build, complains "installed `purs` version: 0.14.9, minimum package-set version: 0.15.0" (Elsewhere have seen "Ensure project is built with the same purs version as the IDE server is using", does this provide a clue?)
 - Do I need to `npm install --global purescript-language-server`? (When I run this it simply says "changed 11 packages, and audited 12 packages" each time, with no indication of whether this is success or failure.)
-- constantly building whenever I touch a file, even if I don't save
-- sometimes reports unused variables, sometimes doesn't
+- I'm confused by the VSCode suggestion to use "spago build --purs-args --json-errors", since purs doesn't seem to accept --json-errors
+-- I can put gibberish into "Location of Purs executable" but "PureScript: Build" works fine, so what is this setting for?
+-- "Psc Idelog Level" seems to make no difference
