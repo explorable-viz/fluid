@@ -111,13 +111,6 @@ instance ToFrom Boolean where
       | c == cFalse  = false × α
    match v = error ("Boolean expected; got " <> prettyP v)
 
-instance ToFrom (Val Boolean -> Val Boolean) where
-   constr (_ × _) = error "TODO"
-   constr_bwd = error "TODO"
-
-   match (Closure α _ _ _) = error "TODO" × α
-   match v                 = error ("Closure expected; got " <> prettyP v)
-
 class IsZero a where
    isZero :: a -> Boolean
 

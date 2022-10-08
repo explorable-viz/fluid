@@ -43,8 +43,6 @@ primitives = D.fromFoldable [
    "mod"       × binaryZero (withInverse2 mod),
    "quot"      × binaryZero (withInverse2 quot),
    "rem"       × binaryZero (withInverse2 rem)
-
---   "map"       × binary (withInverse2 dict_map)
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹
@@ -129,6 +127,3 @@ numToStr = show `union1` show
 
 log :: Int + Number -> Number
 log = (toNumber >>> N.log) `union1` N.log
-
-dict_map :: forall a . (Val a -> Val a) -> Endo Int
-dict_map = error "TODO"
