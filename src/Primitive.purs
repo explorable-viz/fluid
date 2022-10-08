@@ -26,8 +26,8 @@ unwrap = match >>> fst
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
 instance ToFrom (Val Boolean) where
    constr = fst                  -- construction rights not required
-   constr_bwd v = (v × false)    -- return unit of disjunction rather than conjunction
-   match = (_ × true)            -- construction rights are always provided
+   constr_bwd = _ × false        -- return unit of disjunction rather than conjunction
+   match = _ × true              -- construction rights are always provided
 
 instance ToFrom Int where
    match (Int α n)   = n × α
