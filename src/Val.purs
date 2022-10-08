@@ -3,8 +3,6 @@ module Val where
 import Prelude hiding (absurd, append)
 import Control.Apply (lift2)
 import Data.List (List(..), (:))
-import Data.Map (Map)
-import Data.Map (lookup) as M
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
@@ -40,9 +38,6 @@ type Env a = Dict (Val a)
 
 lookup' :: forall a . Var -> Dict a -> MayFail a
 lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
-
-lookup'' :: forall a . Var -> Map Var a -> MayFail a
-lookup'' x γ = M.lookup x γ # (orElse $ "variable " <> x <> " not found")
 
 -- Want a monoid instance but needs a newtype
 append :: forall a . Env a -> Endo (Env a)
