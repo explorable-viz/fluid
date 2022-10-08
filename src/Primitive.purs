@@ -154,7 +154,6 @@ unary_ :: forall a b . ToFrom a => ToFrom b => UnarySlicer a b -> Val 𝔹
 unary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 1,
    op: unsafePartial apply,
-   op_fwd: unsafePartial apply,
    op_bwd: unsafePartial apply_bwd
 }
    where
@@ -168,7 +167,6 @@ binary_ :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySlicer a b c
 binary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 2,
    op: unsafePartial apply,
-   op_fwd: unsafePartial apply,
    op_bwd: unsafePartial apply_bwd
 }
    where

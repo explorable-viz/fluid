@@ -80,7 +80,7 @@ evalFwd γ (App e1 e2) α (T.AppPrim (t1 × PrimOp φ × _) (t2 × _)) =
       V.Primitive _ vs' ->
          let v2' = evalFwd γ e2 α t2
              vs'' = vs' <> singleton v2' in
-         if φ.arity > length vs'' then V.Primitive (PrimOp φ) vs'' else φ.op_fwd vs''
+         if φ.arity > length vs'' then V.Primitive (PrimOp φ) vs'' else φ.op vs''
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.AppConstr (t1 × c × _) t2) =
    case evalFwd γ e1 α t1 of

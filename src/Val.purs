@@ -28,11 +28,10 @@ data Val a =
    Primitive PrimOp (List (Val a)) |         -- never saturated
    Closure a (Env a) (RecDefs a) (Elim a)
 
--- op_fwd will be provided with original arguments, op_bwd with original output and arguments
+-- op_bwd will be provided with original output and arguments
 newtype PrimOp = PrimOp {
    arity :: Int,
    op :: List (Val 𝔹) -> Val 𝔹,
-   op_fwd :: List (Val 𝔹) -> Val 𝔹,
    op_bwd :: Val 𝔹 -> Endo (List (Val 𝔹))
 }
 
