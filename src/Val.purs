@@ -66,11 +66,6 @@ reaches ρ xs = go (toUnfoldable xs) empty
 for :: forall a . RecDefs a -> Elim a -> RecDefs a
 for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.keys ρ))
 
-weakJoin :: forall a . Slices a => Dict a -> Endo (Dict a)
-weakJoin = D.unionWith (∨)
-
-infixl 6 weakJoin as ∨∨
-
 -- Matrices.
 type Array2 a = Array (Array a)
 type MatrixRep a = Array2 (Val a) × (Int × a) × (Int × a)

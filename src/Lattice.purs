@@ -12,7 +12,7 @@ import Data.Profunctor.Strong (second)
 import Data.Set (subset)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple)
-import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, update)
+import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, unionWith, update)
 import Bindings (Var)
 import Util (Endo, MayFail, type (×), (×), (≞), assert, report, successfulWith)
 
@@ -86,8 +86,13 @@ instance Slices a => Slices (NonEmptyList a) where
       | otherwise                         = report "Mismatched lengths"
 
 instance Slices a => JoinSemilattice (Dict a) where
-   join = definedJoin
+   join = weakJoin
    neg = (<$>) neg
+
+weakJoin :: forall a . Slices a => Dict a -> Endo (Dict a)
+weakJoin = unionWith (∨)
+
+infixl 6 weakJoin as ∨∨
 
 instance Slices a => Slices (Dict a) where
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))

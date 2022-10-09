@@ -16,11 +16,11 @@ import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
-import Lattice (𝔹, (∨), bot, botOf, expand)
+import Lattice (𝔹, (∨), (∨∨), bot, botOf, expand)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
-import Val (Env, PrimOp(..), (<+>), Val, (∨∨), append_inv)
+import Val (Env, PrimOp(..), (<+>), Val, append_inv)
 import Val (Val(..)) as V
 
 closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
