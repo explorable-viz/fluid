@@ -71,28 +71,14 @@ instance Slices a => JoinSemilattice (List a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices a => JoinSemilattice (NonEmptyList a) where
-   join = definedJoin
-   neg = (<$>) neg
-
 instance Slices a => Slices (List a) where
    maybeJoin xs ys
       | (length xs :: Int) == length ys   = sequence (zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
 
-instance Slices a => Slices (NonEmptyList a) where
-   maybeJoin xs ys
-      | (length xs :: Int) == length ys   = sequence (NEL.zipWith maybeJoin xs ys)
-      | otherwise                         = report "Mismatched lengths"
-
 instance Slices a => JoinSemilattice (Dict a) where
-   join = weakJoin
+   join = unionWith (∨) -- faster than definedJoin
    neg = (<$>) neg
-
-weakJoin :: forall a . Slices a => Dict a -> Endo (Dict a)
-weakJoin = unionWith (∨)
-
-infixl 6 weakJoin as ∨∨
 
 instance Slices a => Slices (Dict a) where
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
