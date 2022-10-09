@@ -60,39 +60,39 @@ type 𝔹 = Boolean
 meet :: Boolean -> Boolean -> Boolean
 meet = (&&)
 
-instance (Eq k, Show k, Slices t) => JoinSemilattice (Tuple k t) where
+instance (Eq k, Show k, Slices a) => JoinSemilattice (Tuple k a) where
    join = definedJoin
    neg = second neg
 
-instance (Eq k, Show k, Slices t) => Slices (Tuple k t) where
+instance (Eq k, Show k, Slices a) => Slices (Tuple k a) where
    maybeJoin (k × v) (k' × v') = (k ≞ k') `lift2 (×)` maybeJoin v v'
 
-instance Slices t => JoinSemilattice (List t) where
+instance Slices a => JoinSemilattice (List a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices t => JoinSemilattice (NonEmptyList t) where
+instance Slices a => JoinSemilattice (NonEmptyList a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices t => Slices (List t) where
+instance Slices a => Slices (List a) where
    maybeJoin xs ys
       | (length xs :: Int) == length ys   = sequence (zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
 
-instance Slices t => Slices (NonEmptyList t) where
+instance Slices a => Slices (NonEmptyList a) where
    maybeJoin xs ys
       | (length xs :: Int) == length ys   = sequence (NEL.zipWith maybeJoin xs ys)
       | otherwise                         = report "Mismatched lengths"
 
-instance Slices t => JoinSemilattice (Dict t) where
+instance Slices a => JoinSemilattice (Dict a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices t => Slices (Dict t) where
-   maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × t))
+instance Slices a => Slices (Dict a) where
+   maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
 
-mayFailUpdate :: forall t . Slices t => Dict t -> Var × t -> MayFail (Dict t)
+mayFailUpdate :: forall a . Slices a => Dict a -> Var × a -> MayFail (Dict a)
 mayFailUpdate m (k × v) =
    case lookup k m of
       Nothing -> pure (insert k v m)
