@@ -7,8 +7,7 @@ import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUn
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Bindings (Var)
-import Dict (Dict, (\\), disjointUnion, get)
-import Dict (unionWith) as D
+import Dict (Dict, get)
 import DataType (Ctr)
 import Expr (Elim, RecDefs, fv)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
