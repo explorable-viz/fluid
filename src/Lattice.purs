@@ -5,8 +5,6 @@ import Control.Apply (lift2)
 import Data.Array (zipWith) as A
 import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
-import Data.List.NonEmpty (NonEmptyList)
-import Data.List.NonEmpty (zipWith) as NEL
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (second)
 import Data.Set (subset)
@@ -16,6 +14,8 @@ import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfolda
 import Bindings (Var)
 import Util (Endo, MayFail, type (×), (×), (≞), assert, report, successfulWith)
 
+-- Revisit name of type class (given neg). The join operation here is actually the more general "weak join" operation
+-- of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
    join :: a -> a -> a
    neg :: Endo a
