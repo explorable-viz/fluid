@@ -16,7 +16,7 @@ import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
-import Lattice (𝔹, (∨), (∨∨), bot, botOf, expand)
+import Lattice (𝔹, (∨), bot, botOf, expand)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
@@ -32,7 +32,7 @@ closeDefsBwd γ =
    joinDefs f _ (ρ_acc × γ' × ρ × α) =
       case get f γ of
          V.Closure α_f γ_f ρ_f σ_f ->
-            (ρ_acc # insert f σ_f) × (γ' ∨∨ γ_f) × (ρ ∨∨ ρ_f) × (α ∨ α_f)
+            (ρ_acc # insert f σ_f) × (γ' ∨ γ_f) × (ρ ∨ ρ_f) × (α ∨ α_f)
          _ -> error absurd
 
 matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
