@@ -8,7 +8,7 @@ import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Bindings (Var)
 import Dict (Dict, (\\), disjointUnion, get)
-import Dict (intersection) as D
+import Dict (unionWith) as D
 import DataType (Ctr)
 import Expr (Elim, RecDefs, fv)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
@@ -67,8 +67,7 @@ for :: forall a . RecDefs a -> Elim a -> RecDefs a
 for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.keys ρ))
 
 weakJoin :: forall a . Slices a => Dict a -> Endo (Dict a)
-weakJoin m m' =
-   (m \\ m') `disjointUnion` ((m `D.intersection` m') ∨ (m' `D.intersection` m)) `disjointUnion` (m' \\ m)
+weakJoin = D.unionWith (∨)
 
 infixl 6 weakJoin as ∨∨
 
