@@ -8650,7 +8650,6 @@
     const $0 = foldlArray((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2);
     return (x2) => $0(keys(x2));
   })();
-  var intersection2 = /* @__PURE__ */ intersectionWith($$const);
   var disjointUnion_inv = (ks) => (m) => $Tuple(
     filterWithKey((x2) => {
       const $3 = lookup(ordString)(x2)(ks);
@@ -9210,22 +9209,8 @@
     }
   };
 
-  // output-es/Data.List.NonEmpty/index.js
-  var wrappedOperation = (name2) => (f) => (v) => {
-    const v1 = f($List("Cons", v._1, v._2));
-    if (v1.tag === "Cons") {
-      return $NonEmpty(v1._1, v1._2);
-    }
-    if (v1.tag === "Nil") {
-      return _crashWith("Impossible: empty list in NonEmptyList " + name2);
-    }
-    fail();
-  };
-
   // output-es/Lattice/index.js
-  var length4 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
-  var sequence = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity6))();
-  var foldM3 = (f) => (b0) => {
+  var foldM2 = (f) => (b0) => {
     const go = (go$a0$copy) => (go$a1$copy) => {
       let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
       while (go$c) {
@@ -9248,6 +9233,8 @@
     return go($Either("Right", b0));
   };
   var toUnfoldable7 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
+  var length4 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
+  var sequence = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity6))();
   var sequence1 = /* @__PURE__ */ (() => traversableList.traverse(applicativeEither)(identity3))();
   var joinSemilatticeBoolean = { join: boolDisj, neg: boolNot };
   var boundedJoinSemilatticeBoo = { bot: false, JoinSemilattice0: () => joinSemilatticeBoolean };
@@ -9268,6 +9255,14 @@
     }
     fail();
   };
+  var joinSemilatticeDict = (dictSlices) => {
+    const JoinSemilattice0 = dictSlices.JoinSemilattice0();
+    return { join: unionWith(JoinSemilattice0.join), neg: functorObject.map(JoinSemilattice0.neg) };
+  };
+  var slicesDict = (dictSlices) => {
+    const joinSemilatticeDict1 = joinSemilatticeDict(dictSlices);
+    return { maybeJoin: (m) => (m$p) => foldM2(mayFailUpdate(dictSlices))(m)(toUnfoldable7(m$p)), JoinSemilattice0: () => joinSemilatticeDict1 };
+  };
   var definedJoin = (dictSlices) => (x2) => {
     const $2 = dictSlices.maybeJoin(x2);
     return (x$1) => successful($$with("Join undefined")($2(x$1)));
@@ -9282,8 +9277,6 @@
     JoinSemilattice0: () => joinSemilatticeArray(dictSlices)
   });
   var joinSemilatticeArray = (dictSlices) => ({ join: definedJoin(slicesArray(dictSlices)), neg: arrayMap(dictSlices.JoinSemilattice0().neg) });
-  var slicesDict = (dictSlices) => ({ maybeJoin: (m) => (m$p) => foldM3(mayFailUpdate(dictSlices))(m)(toUnfoldable7(m$p)), JoinSemilattice0: () => joinSemilatticeDict(dictSlices) });
-  var joinSemilatticeDict = (dictSlices) => ({ join: definedJoin(slicesDict(dictSlices)), neg: functorObject.map(dictSlices.JoinSemilattice0().neg) });
   var slicesList = (dictSlices) => ({
     maybeJoin: (xs) => (ys) => {
       if ((() => {
@@ -10038,7 +10031,7 @@
   var expand = /* @__PURE__ */ (() => expandableDict(functorElim)(boundedJoinSemilatticeBoo)(expandableElimBoolean).expand)();
   var fromFoldable5 = /* @__PURE__ */ foldlArray((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2);
   var toUnfoldable8 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
-  var intersection3 = /* @__PURE__ */ intersection(ordString);
+  var intersection2 = /* @__PURE__ */ intersection(ordString);
   var Int2 = (value0) => (value1) => $Val("Int", value0, value1);
   var Float2 = (value0) => (value1) => $Val("Float", value0, value1);
   var Str2 = (value0) => (value1) => $Val("Str", value0, value1);
@@ -10314,10 +10307,6 @@
       return unsafePerformEffect(throwException(error("Incompatible values")));
     }
   };
-  var weakJoin = (dictSlices) => {
-    const join12 = joinSemilatticeDict(dictSlices).join;
-    return (m) => (m$p) => unionWith((v) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(unionWith((v) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(difference3(m)(m$p))(join12(intersection2(m)(m$p))(intersection2(m$p)(m))))(difference3(m$p)(m));
-  };
   var updateMatrix = (i) => (j) => (\u03B4v) => (v) => {
     const vs_i = definitely("index within bounds")(index2(v._1._1)(i - 1 | 0));
     return $Tuple(
@@ -10367,7 +10356,7 @@
             go$a1 = acc;
             continue;
           }
-          go$a0 = foldableList.foldr(Cons)(v._2)(toUnfoldable8(intersection3(fVElim.fv(definitely("absurd")(_lookup(
+          go$a0 = foldableList.foldr(Cons)(v._2)(toUnfoldable8(intersection2(fVElim.fv(definitely("absurd")(_lookup(
             Nothing,
             Just,
             v._1,
@@ -10400,7 +10389,7 @@
     }
     fail();
   };
-  var $$for = (\u03C1) => (\u03C3) => restrict(\u03C1)(reaches(\u03C1)(intersection3(fVElim.fv(\u03C3))(fromFoldable5(keys(\u03C1)))));
+  var $$for = (\u03C1) => (\u03C3) => restrict(\u03C1)(reaches(\u03C1)(intersection2(fVElim.fv(\u03C3))(fromFoldable5(keys(\u03C1)))));
   var append_inv = (xs) => (\u03B3) => $Tuple(
     filterWithKey((x2) => {
       const $3 = lookup(ordString)(x2)(xs);
@@ -10425,16 +10414,26 @@
   var isZeroNumber = { isZero: ($0) => 0 === $0 };
   var isZeroInt = { isZero: ($0) => 0 === $0 };
   var toFromArrayArrayValBoolea = {
+    constr: (v) => $Val("Matrix", v._2, v._1),
+    constr_bwd: (v) => toFromArrayArrayValBoolea.match(v),
     match: (v) => {
       if (v.tag === "Matrix") {
         return $Tuple(v._2, v._1);
       }
       return unsafePerformEffect(throwException(error("Matrix expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    },
-    constr: (v) => $Val("Matrix", v._2, v._1),
-    constr_bwd: (v) => toFromArrayArrayValBoolea.match(v)
+    }
   };
   var toFromBoolean = {
+    constr: (v) => {
+      if (v._1) {
+        return $Val("Constr", v._2, "True", Nil);
+      }
+      if (!v._1) {
+        return $Val("Constr", v._2, "False", Nil);
+      }
+      fail();
+    },
+    constr_bwd: (v) => toFromBoolean.match(v),
     match: (v) => {
       if (v.tag === "Constr") {
         if (v._3.tag === "Nil") {
@@ -10449,27 +10448,17 @@
         return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
       }
       return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    },
-    constr: (v) => {
-      if (v._1) {
-        return $Val("Constr", v._2, "True", Nil);
-      }
-      if (!v._1) {
-        return $Val("Constr", v._2, "False", Nil);
-      }
-      fail();
-    },
-    constr_bwd: (v) => toFromBoolean.match(v)
+    }
   };
   var toFromDictValBoolean = {
+    constr: (v) => $Val("Record", v._2, v._1),
+    constr_bwd: (v) => toFromDictValBoolean.match(v),
     match: (v) => {
       if (v.tag === "Record") {
         return $Tuple(v._2, v._1);
       }
       return unsafePerformEffect(throwException(error("Record expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    },
-    constr: (v) => $Val("Record", v._2, v._1),
-    constr_bwd: (v) => toFromDictValBoolean.match(v)
+    }
   };
   var toFromEitherEitherIntNumb = {
     constr: (v) => {
@@ -10502,14 +10491,14 @@
     }
   };
   var toFromInt = {
+    constr: (v) => $Val("Int", v._2, v._1),
+    constr_bwd: (v) => toFromInt.match(v),
     match: (v) => {
       if (v.tag === "Int") {
         return $Tuple(v._2, v._1);
       }
       return unsafePerformEffect(throwException(error("Int expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    },
-    constr: (v) => $Val("Int", v._2, v._1),
-    constr_bwd: (v) => toFromInt.match(v)
+    }
   };
   var toFromInt$x43Number = {
     constr: (v) => {
@@ -10533,39 +10522,30 @@
     }
   };
   var toFromNumber = {
+    constr: (v) => $Val("Float", v._2, v._1),
+    constr_bwd: (v) => toFromNumber.match(v),
     match: (v) => {
       if (v.tag === "Float") {
         return $Tuple(v._2, v._1);
       }
       return unsafePerformEffect(throwException(error("Float expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    },
-    constr: (v) => $Val("Float", v._2, v._1),
-    constr_bwd: (v) => toFromNumber.match(v)
+    }
   };
   var toFromString = {
+    constr: (v) => $Val("Str", v._2, v._1),
+    constr_bwd: (v) => toFromString.match(v),
     match: (v) => {
       if (v.tag === "Str") {
         return $Tuple(v._2, v._1);
       }
       return unsafePerformEffect(throwException(error("Str expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    },
-    constr: (v) => $Val("Str", v._2, v._1),
-    constr_bwd: (v) => toFromString.match(v)
+    }
   };
   var unary_ = (dictToFrom) => (dictToFrom1) => (v) => $Val(
     "Primitive",
     {
       arity: 1,
       op: (v1) => {
-        if (v1.tag === "Cons") {
-          if (v1._2.tag === "Nil") {
-            return dictToFrom1.constr(v.fwd(dictToFrom.match(v1._1)));
-          }
-          fail();
-        }
-        fail();
-      },
-      op_fwd: (v1) => {
         if (v1.tag === "Cons") {
           if (v1._2.tag === "Nil") {
             return dictToFrom1.constr(v.fwd(dictToFrom.match(v1._1)));
@@ -10633,18 +10613,6 @@
         }
         fail();
       },
-      op_fwd: (v1) => {
-        if (v1.tag === "Cons") {
-          if (v1._2.tag === "Cons") {
-            if (v1._2._2.tag === "Nil") {
-              return dictToFrom2.constr(v.fwd(dictToFrom.match(v1._1))(dictToFrom1.match(v1._2._1)));
-            }
-            fail();
-          }
-          fail();
-        }
-        fail();
-      },
       op_bwd: (v1) => (v2) => {
         if (v2.tag === "Cons") {
           if (v2._2.tag === "Cons") {
@@ -10697,7 +10665,7 @@
   var asIntNumber = { as: toNumber };
   var asIntIntOrNumber = { as: Left };
   var asBooleanBoolean = { as: identity12 };
-  var union4 = (dictAs) => (dictAs1) => (dictAs2) => (dictAs3) => (v) => (v1) => (v2) => (v3) => {
+  var union3 = (dictAs) => (dictAs1) => (dictAs2) => (dictAs3) => (v) => (v1) => (v2) => (v3) => {
     if (v2.tag === "Left") {
       if (v3.tag === "Left") {
         return dictAs.as(v(v2._1)(v3._1));
@@ -10718,7 +10686,7 @@
     }
     fail();
   };
-  var unionStr = (dictAs) => (dictAs1) => union4(dictAs)(dictAs)(dictAs1)(dictAs1);
+  var unionStr = (dictAs) => (dictAs1) => union3(dictAs)(dictAs)(dictAs1)(dictAs1);
 
   // output-es/App.Util/index.js
   var toggleField = (v) => (v1) => (v2) => {
@@ -11305,13 +11273,13 @@
   }
 
   // node_modules/d3-selection/src/selection/selectChildren.js
-  var filter4 = Array.prototype.filter;
+  var filter3 = Array.prototype.filter;
   function children() {
     return this.children;
   }
   function childrenFilter(match4) {
     return function() {
-      return filter4.call(this.children, match4);
+      return filter3.call(this.children, match4);
     };
   }
   function selectChildren_default(match4) {
@@ -15769,6 +15737,18 @@
     fail();
   };
 
+  // output-es/Data.List.NonEmpty/index.js
+  var wrappedOperation = (name2) => (f) => (v) => {
+    const v1 = f($List("Cons", v._1, v._2));
+    if (v1.tag === "Cons") {
+      return $NonEmpty(v1._1, v1._2);
+    }
+    if (v1.tag === "Nil") {
+      return _crashWith("Impossible: empty list in NonEmptyList " + name2);
+    }
+    fail();
+  };
+
   // output-es/SExpr/index.js
   var $Expr2 = (tag, _1, _2, _3, _4) => ({ tag, _1, _2, _3, _4 });
   var $ListRest = (tag, _1, _2, _3) => ({ tag, _1, _2, _3 });
@@ -16970,7 +16950,7 @@
           return canceler;
         };
       }
-      function join(cb) {
+      function join2(cb) {
         return function() {
           var canceler = onComplete({
             rethrow: false,
@@ -16984,7 +16964,7 @@
       }
       return {
         kill,
-        join,
+        join: join2,
         onComplete,
         isSuspended: function() {
           return status === SUSPENDED;
@@ -17068,7 +17048,7 @@
         }
         return kills2;
       }
-      function join(result, head, tail) {
+      function join2(result, head, tail) {
         var fail4, step, lhs, rhs, tmp, kid;
         if (util2.isLeft(result)) {
           fail4 = result;
@@ -17115,9 +17095,9 @@
                       if (tmp) {
                         tmp = false;
                       } else if (tail === null) {
-                        join(fail4, null, null);
+                        join2(fail4, null, null);
                       } else {
-                        join(fail4, tail._1, tail._2);
+                        join2(fail4, tail._1, tail._2);
                       }
                     };
                   });
@@ -17152,9 +17132,9 @@
                       if (tmp) {
                         tmp = false;
                       } else if (tail === null) {
-                        join(step, null, null);
+                        join2(step, null, null);
                       } else {
-                        join(step, tail._1, tail._2);
+                        join2(step, tail._1, tail._2);
                       }
                     };
                   });
@@ -17178,7 +17158,7 @@
           return function() {
             delete fibers[fiber._1];
             fiber._3 = result;
-            join(result, fiber._2._1, fiber._2._2);
+            join2(result, fiber._2._1, fiber._2._2);
           };
         };
       }
@@ -17957,10 +17937,8 @@
   var toUnfoldable11 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
   var fromFoldable8 = /* @__PURE__ */ fromFoldable(foldableList);
   var fromFoldable15 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2))();
-  var weakJoin2 = /* @__PURE__ */ weakJoin(slicesValBoolean);
-  var weakJoin1 = /* @__PURE__ */ weakJoin(slicesElimBoolean);
+  var join = /* @__PURE__ */ (() => joinSemilatticeDict(slicesValBoolean).join)();
   var join1 = /* @__PURE__ */ (() => joinSemilatticeDict(slicesElimBoolean).join)();
-  var join2 = /* @__PURE__ */ (() => joinSemilatticeDict(slicesValBoolean).join)();
   var foldl1 = /* @__PURE__ */ (() => foldable1NonEmpty(foldableList).foldl1)();
   var map4 = /* @__PURE__ */ (() => functorNonEmpty(functorList).map)();
   var expand2 = /* @__PURE__ */ (() => expandableDict(functorVal)(boundedJoinSemilatticeBoo)(expandableValBoolean).expand)();
@@ -18014,7 +17992,7 @@
       const v22 = definitely("absurd")(_lookup(Nothing, Just, f, \u03B3));
       if (v22.tag === "Closure") {
         return $Tuple(
-          $Tuple($Tuple(mutate(poke2(f)(v22._4))(v1._1._1._1), weakJoin2(v1._1._1._2)(v22._2)), weakJoin1(v1._1._2)(v22._3)),
+          $Tuple($Tuple(mutate(poke2(f)(v22._4))(v1._1._1._1), join(v1._1._1._2)(v22._2)), join1(v1._1._2)(v22._3)),
           v1._2 || v22._1
         );
       }
@@ -18050,8 +18028,8 @@
         const v6 = append_inv(v1._1._1._2)(v4._1);
         const v7 = evalBwd$p(v5._1)(v1._2);
         const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join2(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join2(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
+        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
+        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
       }
       if (v1.tag === "AppPrim") {
         const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
@@ -18087,20 +18065,20 @@
         })()));
         const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
         const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join2(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
       }
       if (v1.tag === "Let") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
         const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
         const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join2(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
+        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
       }
       if (v1.tag === "LetRec") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
         const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join2(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
       }
       return unsafePerformEffect(throwException(error("absurd")));
     }
@@ -18119,8 +18097,8 @@
         const v6 = append_inv(v1._1._1._2)(v4._1);
         const v7 = evalBwd$p(v5._1)(v1._2);
         const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join2(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join2(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
+        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
+        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
       }
       if (v1.tag === "AppPrim") {
         const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
@@ -18156,20 +18134,20 @@
         })()));
         const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
         const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join2(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
       }
       if (v1.tag === "Let") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
         const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
         const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join2(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
+        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
       }
       if (v1.tag === "LetRec") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
         const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join2(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
       }
       return unsafePerformEffect(throwException(error("absurd")));
     }
@@ -18188,8 +18166,8 @@
         const v6 = append_inv(v1._1._1._2)(v4._1);
         const v7 = evalBwd$p(v5._1)(v1._2);
         const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join2(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join2(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
+        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
+        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
       }
       if (v1.tag === "AppPrim") {
         const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
@@ -18225,20 +18203,20 @@
         })()));
         const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
         const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join2(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
       }
       if (v1.tag === "Let") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
         const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
         const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join2(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
+        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
       }
       if (v1.tag === "LetRec") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
         const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join2(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
       }
       return unsafePerformEffect(throwException(error("absurd")));
     }
@@ -18257,8 +18235,8 @@
         const v6 = append_inv(v1._1._1._2)(v4._1);
         const v7 = evalBwd$p(v5._1)(v1._2);
         const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join2(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join2(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
+        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
+        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
       }
       if (v1.tag === "AppPrim") {
         const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
@@ -18294,20 +18272,20 @@
         })()));
         const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
         const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join2(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
       }
       if (v1.tag === "Let") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
         const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
         const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join2(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
+        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
       }
       if (v1.tag === "LetRec") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
         const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join2(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
       }
       return unsafePerformEffect(throwException(error("absurd")));
     }
@@ -18316,7 +18294,7 @@
         const x\u03B3e\u03B1s = _fmapObject(intersectionWith(Tuple)(v._2)(v1._1), (v$1) => evalBwd$p(v$1._1)(v$1._2));
         return $Tuple(
           $Tuple(
-            foldrArray(join2)(empty)(values(_fmapObject(x\u03B3e\u03B1s, (x2) => x2._1._1))),
+            foldrArray(join)(empty)(values(_fmapObject(x\u03B3e\u03B1s, (x2) => x2._1._1))),
             $Expr("Record", v._1, _fmapObject(x\u03B3e\u03B1s, (x2) => x2._1._2))
           ),
           foldrArray(boolDisj)(v._1)(values(_fmapObject(x\u03B3e\u03B1s, snd)))
@@ -18333,8 +18311,8 @@
         const v6 = append_inv(v1._1._1._2)(v4._1);
         const v7 = evalBwd$p(v5._1)(v1._2);
         const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join2(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join2(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
+        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
+        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
       }
       if (v1.tag === "AppPrim") {
         const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
@@ -18370,20 +18348,20 @@
         })()));
         const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
         const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join2(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
       }
       if (v1.tag === "Let") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
         const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
         const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join2(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
+        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
       }
       if (v1.tag === "LetRec") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
         const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join2(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
       }
       return unsafePerformEffect(throwException(error("absurd")));
     }
@@ -18391,7 +18369,7 @@
       if (v1.tag === "Constr") {
         const v2 = foldableList.foldr((v22) => (v3) => {
           const v4 = evalBwd$p(v22._1)(v22._2);
-          return $Tuple($Tuple(join2(v3._1._1)(v4._1._1), $List("Cons", v4._1._2, v3._1._2)), v3._2 || v4._2);
+          return $Tuple($Tuple(join(v3._1._1)(v4._1._1), $List("Cons", v4._1._2, v3._1._2)), v3._2 || v4._2);
         })($Tuple($Tuple(empty, Nil), v._1))(zipWith(Tuple)(v._3)(v1._2));
         return $Tuple($Tuple(v2._1._1, $Expr("Constr", v._1, v1._1, v2._1._2)), v2._2);
       }
@@ -18406,8 +18384,8 @@
         const v6 = append_inv(v1._1._1._2)(v4._1);
         const v7 = evalBwd$p(v5._1)(v1._2);
         const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join2(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join2(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
+        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
+        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
       }
       if (v1.tag === "AppPrim") {
         const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
@@ -18443,26 +18421,26 @@
         })()));
         const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
         const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join2(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
       }
       if (v1.tag === "AppConstr") {
         const v2 = definitely("absurd")(unsnoc(v._3));
         const v3 = evalBwd$p($Val("Constr", v._1, v1._1._1._2, v2.init))(v1._1._1._1);
         const v4 = evalBwd$p(v2.last)(v1._2);
-        return $Tuple($Tuple(join2(v3._1._1)(v4._1._1), $Expr("App", v3._1._2, v4._1._2)), v3._2 || v4._2);
+        return $Tuple($Tuple(join(v3._1._1)(v4._1._1), $Expr("App", v3._1._2, v4._1._2)), v3._2 || v4._2);
       }
       if (v1.tag === "Let") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
         const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
         const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join2(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
+        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
       }
       if (v1.tag === "LetRec") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
         const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join2(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
       }
       return unsafePerformEffect(throwException(error("absurd")));
     }
@@ -18471,7 +18449,7 @@
         const v3 = foldl1((v42) => (v5) => $Tuple(
           $Tuple(
             $Tuple(
-              $Tuple(join2(v42._1._1._1._1)(v5._1._1._1._1), definedJoin(slicesExprBoolean)(v42._1._1._1._2)(v5._1._1._1._2)),
+              $Tuple(join(v42._1._1._1._1)(v5._1._1._1._1), definedJoin(slicesExprBoolean)(v42._1._1._1._2)(v5._1._1._1._2)),
               v42._1._1._2 || v5._1._1._2
             ),
             v42._1._2 || v5._1._2
@@ -18516,7 +18494,7 @@
           )
         ))(v1._4);
         return $Tuple(
-          $Tuple(join2(v3._1._1._1._1)(v4._1._1), $Expr("Matrix", v._1, v3._1._1._1._2, $Tuple(v1._2._1, v1._2._2), v4._1._2)),
+          $Tuple(join(v3._1._1._1._1)(v4._1._1), $Expr("Matrix", v._1, v3._1._1._1._2, $Tuple(v1._2._1, v1._2._2), v4._1._2)),
           v._1 || v3._1._1._2 || v4._2
         );
       }
@@ -18531,8 +18509,8 @@
         const v6 = append_inv(v1._1._1._2)(v4._1);
         const v7 = evalBwd$p(v5._1)(v1._2);
         const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join2(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join2(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
+        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
+        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
       }
       if (v1.tag === "AppPrim") {
         const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
@@ -18568,20 +18546,20 @@
         })()));
         const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
         const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join2(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
       }
       if (v1.tag === "Let") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
         const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
         const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join2(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
+        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
       }
       if (v1.tag === "LetRec") {
         const v3 = evalBwd$p(v)(v1._2);
         const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
         const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join2(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
+        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
       }
       return unsafePerformEffect(throwException(error("absurd")));
     }
@@ -18596,8 +18574,8 @@
       const v6 = append_inv(v1._1._1._2)(v4._1);
       const v7 = evalBwd$p(v5._1)(v1._2);
       const v8 = closeDefsBwd(v6._2);
-      const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join2(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-      return $Tuple($Tuple(join2(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
+      const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
+      return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
     }
     if (v1.tag === "AppPrim") {
       const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
@@ -18633,20 +18611,20 @@
       })()));
       const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
       const v5 = evalBwd$p(v3.last)(v1._2._1);
-      return $Tuple($Tuple(join2(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
+      return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
     }
     if (v1.tag === "Let") {
       const v3 = evalBwd$p(v)(v1._2);
       const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
       const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
       const v6 = evalBwd$p(v5._1)(v1._1._2);
-      return $Tuple($Tuple(join2(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
+      return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
     }
     if (v1.tag === "LetRec") {
       const v3 = evalBwd$p(v)(v1._2);
       const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
       const v5 = closeDefsBwd(v4._2);
-      return $Tuple($Tuple(join2(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
+      return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
     }
     return unsafePerformEffect(throwException(error("absurd")));
   };
@@ -18879,7 +18857,7 @@
           })()) {
             return $Val("Primitive", v3._1._1._2, vs$p$p);
           }
-          return v3._1._1._2.op_fwd(vs$p$p);
+          return v3._1._1._2.op(vs$p$p);
         }
         return unsafePerformEffect(throwException(error("absurd")));
       }
@@ -22140,7 +22118,7 @@
   }();
 
   // output-es/Primitive.Defs/index.js
-  var pow3 = /* @__PURE__ */ union4(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => pow(toNumber(x2))(toNumber(y2)))(pow);
+  var pow3 = /* @__PURE__ */ union3(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => pow(toNumber(x2))(toNumber(y2)))(pow);
   var numToStr = (v2) => {
     if (v2.tag === "Left") {
       return showIntImpl(v2._1);
@@ -22150,7 +22128,7 @@
     }
     fail();
   };
-  var notEquals = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((x2) => (y2) => x2 !== y2)((x2) => (y2) => x2 !== y2))((x2) => (y2) => x2 !== y2);
+  var notEquals = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((x2) => (y2) => x2 !== y2)((x2) => (y2) => x2 !== y2))((x2) => (y2) => x2 !== y2);
   var matrixLookup = {
     fwd: (v) => (v1) => definitely("index within bounds")(index2(definitely("index within bounds")(index2(v._1._1)(v1._1._1 - 1 | 0)))(v1._2._1 - 1 | 0)),
     bwd: (v) => (v1) => $Tuple(
@@ -22170,33 +22148,40 @@
     }
     fail();
   };
-  var lessThanEquals = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 <= a2)((a1) => (a2) => a1 <= a2))((a1) => (a2) => a1 <= a2);
-  var lessThan = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 < a2)((a1) => (a2) => a1 < a2))((a1) => (a2) => a1 < a2);
-  var greaterThanEquals = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 >= a2)((a1) => (a2) => a1 >= a2))((a1) => (a2) => a1 >= a2);
-  var greaterThan = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 > a2)((a1) => (a2) => a1 > a2))((a1) => (a2) => a1 > a2);
-  var divide = /* @__PURE__ */ union4(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => toNumber(x2) / toNumber(y2))(numDiv);
+  var lessThanEquals = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 <= a2)((a1) => (a2) => a1 <= a2))((a1) => (a2) => a1 <= a2);
+  var lessThan = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 < a2)((a1) => (a2) => a1 < a2))((a1) => (a2) => a1 < a2);
+  var greaterThanEquals = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 >= a2)((a1) => (a2) => a1 >= a2))((a1) => (a2) => a1 >= a2);
+  var greaterThan = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 > a2)((a1) => (a2) => a1 > a2))((a1) => (a2) => a1 > a2);
+  var divide = /* @__PURE__ */ union3(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => toNumber(x2) / toNumber(y2))(numDiv);
   var dims = { fwd: (v) => $Tuple(v._1._2, v._2), bwd: (v) => (v1) => $Tuple($Tuple(v1._1._1, v._1), v._2) };
   var debugLog = (x2) => _trace(x2, (v) => x2);
   var primitives = /* @__PURE__ */ (() => fromFoldable(foldableArray)([
     $Tuple(":", $Val("Constr", false, ":", Nil)),
+    $Tuple("ceiling", unary(toFromNumber)(toFromInt)({ fwd: ceil2, bwd: (v) => identity12 })),
+    $Tuple("debugLog", unary(toFromValBoolean)(toFromValBoolean)({ fwd: debugLog, bwd: (v) => identity12 })),
+    $Tuple("dims", unary(toFromArrayArrayValBoolea)(toFromInt$x215Boolean$x215Int$x215Boo)(dims)),
+    $Tuple("error", unary(toFromString)(toFromValBoolean)({ fwd: error2, bwd: (v) => identity12 })),
+    $Tuple("floor", unary(toFromNumber)(toFromInt)({ fwd: floor2, bwd: (v) => identity12 })),
+    $Tuple("log", unary(toFromInt$x43Number)(toFromNumber)({ fwd: log3, bwd: (v) => identity12 })),
+    $Tuple("numToStr", unary(toFromInt$x43Number)(toFromString)({ fwd: numToStr, bwd: (v) => identity12 })),
     $Tuple(
       "+",
       binary(toFromInt$x43Number)(toFromInt$x43Number)(toFromInt$x43Number)({
-        fwd: union4(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intAdd)(numAdd),
+        fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intAdd)(numAdd),
         bwd: (v) => identity12
       })
     ),
     $Tuple(
       "-",
       binary(toFromInt$x43Number)(toFromInt$x43Number)(toFromInt$x43Number)({
-        fwd: union4(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intSub)(numSub),
+        fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intSub)(numSub),
         bwd: (v) => identity12
       })
     ),
     $Tuple(
       "*",
       binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })(toFromInt$x43Number)(toFromInt$x43Number)({
-        fwd: union4(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intMul)(numMul),
+        fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intMul)(numMul),
         bwd: (v) => identity12
       })
     ),
@@ -22217,7 +22202,7 @@
     $Tuple(
       "==",
       binary(toFromEitherEitherIntNumb)(toFromEitherEitherIntNumb)(toFromBoolean)({
-        fwd: unionStr(asBooleanBoolean)(asIntOrNumberString)(union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)(eqIntImpl)(eqNumberImpl))(eqStringImpl),
+        fwd: unionStr(asBooleanBoolean)(asIntOrNumberString)(union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)(eqIntImpl)(eqNumberImpl))(eqStringImpl),
         bwd: (v) => identity12
       })
     ),
@@ -22249,14 +22234,7 @@
     $Tuple("div", binaryZero(isZeroInt)(toFromInt)(toFromInt)({ fwd: intDiv, bwd: (v) => identity12 })),
     $Tuple("mod", binaryZero(isZeroInt)(toFromInt)(toFromInt)({ fwd: intMod, bwd: (v) => identity12 })),
     $Tuple("quot", binaryZero(isZeroInt)(toFromInt)(toFromInt)({ fwd: quot, bwd: (v) => identity12 })),
-    $Tuple("rem", binaryZero(isZeroInt)(toFromInt)(toFromInt)({ fwd: rem, bwd: (v) => identity12 })),
-    $Tuple("ceiling", unary(toFromNumber)(toFromInt)({ fwd: ceil2, bwd: (v) => identity12 })),
-    $Tuple("debugLog", unary(toFromValBoolean)(toFromValBoolean)({ fwd: debugLog, bwd: (v) => identity12 })),
-    $Tuple("dims", unary(toFromArrayArrayValBoolea)(toFromInt$x215Boolean$x215Int$x215Boo)(dims)),
-    $Tuple("error", unary(toFromString)(toFromValBoolean)({ fwd: error2, bwd: (v) => identity12 })),
-    $Tuple("floor", unary(toFromNumber)(toFromInt)({ fwd: floor2, bwd: (v) => identity12 })),
-    $Tuple("log", unary(toFromInt$x43Number)(toFromNumber)({ fwd: log3, bwd: (v) => identity12 })),
-    $Tuple("numToStr", unary(toFromInt$x43Number)(toFromString)({ fwd: numToStr, bwd: (v) => identity12 }))
+    $Tuple("rem", binaryZero(isZeroInt)(toFromInt)(toFromInt)({ fwd: rem, bwd: (v) => identity12 }))
   ]))();
 
   // output-es/Module/index.js
