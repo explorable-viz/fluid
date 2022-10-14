@@ -18,6 +18,14 @@ primitives :: Env 𝔹
 primitives = D.fromFoldable [
    ":"         × Constr false cCons Nil,
 
+   "ceiling"   × unary (withInverse1 ceil),
+   "debugLog"  × unary (withInverse1 debugLog),
+   "dims"      × unary dims,
+   "error"     × unary (withInverse1 error_),
+   "floor"     × unary (withInverse1 floor),
+   "log"       × unary (withInverse1 log),
+   "numToStr"  × unary (withInverse1 numToStr),
+
    "+"         × binary (withInverse2 plus),
    "-"         × binary (withInverse2 minus),
    "*"         × binaryZero (withInverse2 times),
@@ -34,15 +42,7 @@ primitives = D.fromFoldable [
    "div"       × binaryZero (withInverse2 div),
    "mod"       × binaryZero (withInverse2 mod),
    "quot"      × binaryZero (withInverse2 quot),
-   "rem"       × binaryZero (withInverse2 rem),
-
-   "ceiling"   × unary (withInverse1 ceil),
-   "debugLog"  × unary (withInverse1 debugLog),
-   "dims"      × unary dims,
-   "error"     × unary (withInverse1 error_),
-   "floor"     × unary (withInverse1 floor),
-   "log"       × unary (withInverse1 log),
-   "numToStr"  × unary (withInverse1 numToStr)
+   "rem"       × binaryZero (withInverse2 rem)
 ]
 
 debugLog :: Val 𝔹 -> Val 𝔹

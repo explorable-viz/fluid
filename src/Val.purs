@@ -3,14 +3,11 @@ module Val where
 import Prelude hiding (absurd, append)
 import Control.Apply (lift2)
 import Data.List (List(..), (:))
-import Data.Map (Map)
-import Data.Map (lookup) as M
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Bindings (Var)
-import Dict (Dict, (\\), disjointUnion, get)
-import Dict (intersection) as D
+import Dict (Dict, get)
 import DataType (Ctr)
 import Expr (Elim, RecDefs, fv)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
@@ -28,11 +25,10 @@ data Val a =
    Primitive PrimOp (List (Val a)) |         -- never saturated
    Closure a (Env a) (RecDefs a) (Elim a)
 
--- op_fwd will be provided with original arguments, op_bwd with original output and arguments
+-- op_bwd will be provided with original output and arguments
 newtype PrimOp = PrimOp {
    arity :: Int,
    op :: List (Val 𝔹) -> Val 𝔹,
-   op_fwd :: List (Val 𝔹) -> Val 𝔹,
    op_bwd :: Val 𝔹 -> Endo (List (Val 𝔹))
 }
 
@@ -41,9 +37,6 @@ type Env a = Dict (Val a)
 
 lookup' :: forall a . Var -> Dict a -> MayFail a
 lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
-
-lookup'' :: forall a . Var -> Map Var a -> MayFail a
-lookup'' x γ = M.lookup x γ # (orElse $ "variable " <> x <> " not found")
 
 -- Want a monoid instance but needs a newtype
 append :: forall a . Env a -> Endo (Env a)
@@ -71,12 +64,6 @@ reaches ρ xs = go (toUnfoldable xs) empty
 
 for :: forall a . RecDefs a -> Elim a -> RecDefs a
 for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.keys ρ))
-
-weakJoin :: forall a . Slices a => Dict a -> Endo (Dict a)
-weakJoin m m' =
-   (m \\ m') `disjointUnion` ((m `D.intersection` m') ∨ (m' `D.intersection` m)) `disjointUnion` (m' \\ m)
-
-infixl 6 weakJoin as ∨∨
 
 -- Matrices.
 type Array2 a = Array (Array a)

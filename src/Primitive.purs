@@ -17,51 +17,44 @@ import Val (PrimOp(..), Val(..))
 -- Mediates between Val and underlying data, analogously to pattern-matching and construction for data types.
 class ToFrom a where
    constr :: a × 𝔹 -> Val 𝔹
-   constr_bwd :: Val 𝔹 -> a × 𝔹   -- equivalent to match_fwd (except at Val)
+   constr_bwd :: Val 𝔹 -> a × 𝔹   -- equivalent to match (except at Val)
    match :: Val 𝔹 -> a × 𝔹        -- only defined for non-holes (except at Val)
 
 unwrap :: forall a . ToFrom a => Val 𝔹 -> a
 unwrap = match >>> fst
 
--- TODO: inline these two?
-match_fwd :: forall a . ToFrom a => Val 𝔹 -> a × 𝔹
-match_fwd = match
-
-match_bwd :: forall a . ToFrom a => a × 𝔹 -> Val 𝔹
-match_bwd = constr
-
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
 instance ToFrom (Val Boolean) where
    constr = fst                  -- construction rights not required
-   constr_bwd v = (v × false)    -- return unit of disjunction rather than conjunction
-   match = (_ × true)            -- construction rights are always provided
+   constr_bwd = (_ × false)      -- return unit of disjunction rather than conjunction
+   match = (_ × true)            -- construction rights always provided
 
 instance ToFrom Int where
+   constr (n × α) = Int α n
+   constr_bwd v = match v
+
    match (Int α n)   = n × α
    match v           = error ("Int expected; got " <> prettyP v)
 
-   constr (n × α) = Int α n
-   constr_bwd v = match_fwd v
-
 instance ToFrom Number where
+   constr (n × α) = Float α n
+   constr_bwd v = match v
+
    match (Float α n) = n × α
    match v           = error ("Float expected; got " <> prettyP v)
 
-   constr (n × α) = Float α n
-   constr_bwd v = match_fwd v
-
 instance ToFrom String where
+   constr (str × α) = Str α str
+   constr_bwd v = match v
+
    match (Str α str) = str × α
    match v           = error ("Str expected; got " <> prettyP v)
-
-   constr (str × α) = Str α str
-   constr_bwd v = match_fwd v
 
 instance ToFrom (Int + Number) where
    constr (Left n × α)   = Int α n
    constr (Right n × α)  = Float α n
 
-   constr_bwd v = match_fwd v
+   constr_bwd v = match v
 
    match (Int α n)    = Left n × α
    match (Float α n)  = Right n × α
@@ -72,7 +65,7 @@ instance ToFrom (Either (Either Int Number) String) where
    constr (Left (Right n) × α) = Float α n
    constr (Right str × α)      = Str α str
 
-   constr_bwd v = match_fwd v
+   constr_bwd v = match v
 
    match (Int α n)   = Left (Left n) × α
    match (Float α n) = Left (Right n) × α
@@ -81,42 +74,42 @@ instance ToFrom (Either (Either Int Number) String) where
 
 instance ToFrom ((Int × Boolean) × (Int × Boolean)) where
    constr (nβ × mβ' × α) = Constr α cPair (constr nβ : constr mβ' : Nil)
-   constr_bwd v = match_fwd v
+   constr_bwd v = match v
 
    match (Constr α c (v : v' : Nil)) | c == cPair  = match v × match v' × α
    match v                                         = error ("Pair expected; got " <> prettyP v)
 
 instance ToFrom (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
+   constr (r × α) = Matrix α r
+   constr_bwd v = match v
+
    match (Matrix α r) = r × α
    match v            = error ("Matrix expected; got " <> prettyP v)
 
-   constr (r × α) = Matrix α r
-   constr_bwd v = match_fwd v
-
 instance ToFrom (Dict (Val Boolean)) where
+   constr (xvs × α) = Record α xvs
+   constr_bwd v = match v
+
    match (Record α xvs) = xvs × α
    match v              = error ("Record expected; got " <> prettyP v)
 
-   constr (xvs × α) = Record α xvs
-   constr_bwd v = match_fwd v
-
 instance ToFrom (Val Boolean × Val Boolean) where
    constr (v × v' × α) = Constr α cPair (v : v' : Nil)
-   constr_bwd v = match_fwd v
+   constr_bwd v = match v
 
    match (Constr α c (v : v' : Nil)) | c == cPair   = v × v' × α
    match v                                          = error ("Pair expected; got " <> prettyP v)
 
 instance ToFrom Boolean where
+   constr (true × α)   = Constr α cTrue Nil
+   constr (false × α)  = Constr α cFalse Nil
+
+   constr_bwd v = match v
+
    match (Constr α c Nil)
       | c == cTrue   = true × α
       | c == cFalse  = false × α
    match v = error ("Boolean expected; got " <> prettyP v)
-
-   constr (true × α)   = Constr α cTrue Nil
-   constr (false × α)  = Constr α cFalse Nil
-
-   constr_bwd v = match_fwd v
 
 class IsZero a where
    isZero :: a -> Boolean
@@ -154,35 +147,27 @@ unary_ :: forall a b . ToFrom a => ToFrom b => UnarySlicer a b -> Val 𝔹
 unary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 1,
    op: unsafePartial apply,
-   op_fwd: unsafePartial apply_fwd,
    op_bwd: unsafePartial apply_bwd
 }
    where
    apply :: Partial => List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
    apply (v : Nil) = constr (fwd (match v))
 
-   apply_fwd :: Partial => List (Val 𝔹) {-[(a, a)]-} -> Val 𝔹 {-b-}
-   apply_fwd (v : Nil) = constr (fwd (match_fwd v))
-
    apply_bwd :: Partial => Val 𝔹 {-(b, b)-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
-   apply_bwd v (u1 : Nil) = match_bwd (bwd (constr_bwd v) (unwrap u1)) : Nil
+   apply_bwd v (u1 : Nil) = constr (bwd (constr_bwd v) (unwrap u1)) : Nil
 
 binary_ :: forall a b c . ToFrom a => ToFrom b => ToFrom c => BinarySlicer a b c -> Val 𝔹
 binary_ { fwd, bwd } = flip Primitive Nil $ PrimOp {
    arity: 2,
    op: unsafePartial apply,
-   op_fwd: unsafePartial apply_fwd,
    op_bwd: unsafePartial apply_bwd
 }
    where
    apply :: Partial => List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
    apply (v : v' : Nil) = constr (fwd (match v) (match v'))
 
-   apply_fwd :: Partial => List (Val 𝔹) {-[(a, a), (b, b)]-} -> Val 𝔹 {-c-}
-   apply_fwd (v1 : v2 : Nil) = constr (fwd (match_fwd v1) (match_fwd v2))
-
    apply_bwd :: Partial => Val 𝔹 {-(c, c)-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
-   apply_bwd v (u1 : u2 : Nil) = match_bwd v1 : match_bwd v2 : Nil
+   apply_bwd v (u1 : u2 : Nil) = constr v1 : constr v2 : Nil
       where v1 × v2 = bwd (constr_bwd v) (unwrap u1 × unwrap u2)
 
 withInverse1 :: forall a b . (a -> b) -> Unary a b
