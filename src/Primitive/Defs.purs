@@ -15,35 +15,33 @@ import Util (Endo, type (×), (×), type (+), (!), error)
 import Val (Env, MatrixRep, Val(..), updateMatrix)
 
 primitives :: Env 𝔹
-primitives = D.fromFoldable [
-   ":"         × Constr false cCons Nil,
-
-   "ceiling"   × unary (withInverse1 ceil),
-   "debugLog"  × unary (withInverse1 debugLog),
-   "dims"      × unary dims,
-   "error"     × unary (withInverse1 error_),
-   "floor"     × unary (withInverse1 floor),
-   "log"       × unary (withInverse1 log),
-   "numToStr"  × unary (withInverse1 numToStr),
-
-   "+"         × binary (withInverse2 plus),
-   "-"         × binary (withInverse2 minus),
-   "*"         × binaryZero (withInverse2 times),
-   "**"        × binaryZero (withInverse2 pow),
-   "/"         × binaryZero (withInverse2 divide),
-   "=="        × binary (withInverse2 equals),
-   "/="        × binary (withInverse2 notEquals),
-   "<"         × binary (withInverse2 lessThan),
-   ">"         × binary (withInverse2 greaterThan),
-   "<="        × binary (withInverse2 lessThanEquals),
-   ">="        × binary (withInverse2 greaterThanEquals),
-   "++"        × binary (withInverse2 concat),
-   "!"         × binary matrixLookup,
-   "div"       × binaryZero (withInverse2 div),
-   "mod"       × binaryZero (withInverse2 mod),
-   "quot"      × binaryZero (withInverse2 quot),
-   "rem"       × binaryZero (withInverse2 rem)
-]
+primitives = D.fromFoldable
+   [ ":" × Constr false cCons Nil
+   , "ceiling" × unary (withInverse1 ceil)
+   , "debugLog" × unary (withInverse1 debugLog)
+   , "dims" × unary dims
+   , "error" × unary (withInverse1 error_)
+   , "floor" × unary (withInverse1 floor)
+   , "log" × unary (withInverse1 log)
+   , "numToStr" × unary (withInverse1 numToStr)
+   , "+" × binary (withInverse2 plus)
+   , "-" × binary (withInverse2 minus)
+   , "*" × binaryZero (withInverse2 times)
+   , "**" × binaryZero (withInverse2 pow)
+   , "/" × binaryZero (withInverse2 divide)
+   , "==" × binary (withInverse2 equals)
+   , "/=" × binary (withInverse2 notEquals)
+   , "<" × binary (withInverse2 lessThan)
+   , ">" × binary (withInverse2 greaterThan)
+   , "<=" × binary (withInverse2 lessThanEquals)
+   , ">=" × binary (withInverse2 greaterThanEquals)
+   , "++" × binary (withInverse2 concat)
+   , "!" × binary matrixLookup
+   , "div" × binaryZero (withInverse2 div)
+   , "mod" × binaryZero (withInverse2 mod)
+   , "quot" × binaryZero (withInverse2 quot)
+   , "rem" × binaryZero (withInverse2 rem)
+   ]
 
 debugLog :: Val 𝔹 -> Val 𝔹
 debugLog x = trace x (const x)
@@ -66,11 +64,11 @@ matrixLookup :: Binary (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val �
 matrixLookup = { fwd, bwd }
    where
    fwd :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
-   fwd (vss × _ × _) ((i × _) × (j × _)) = vss!(i - 1)!(j - 1)
+   fwd (vss × _ × _) ((i × _) × (j × _)) = vss ! (i - 1) ! (j - 1)
 
    bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-       updateMatrix i j (const v) (vss × (i' × false) × (j' × false)) × ((i × false) × (j × false))
+      updateMatrix i j (const v) (vss × (i' × false) × (j' × false)) × ((i × false) × (j × false))
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
@@ -86,7 +84,7 @@ pow :: Int + Number -> Endo (Int + Number)
 pow = (\x y -> toNumber x `N.pow` toNumber y) `union` N.pow
 
 divide :: Int + Number -> Endo (Int + Number)
-divide = (\x y -> toNumber x / toNumber y)  `union` (/)
+divide = (\x y -> toNumber x / toNumber y) `union` (/)
 
 -- See T-, F- and E-definitions discussed at https://github.com/purescript/purescript-prelude/issues/161
 div :: Int -> Endo Int
@@ -108,10 +106,10 @@ notEquals :: Int + Number + String -> Int + Number + String -> Boolean
 notEquals = (/=) `union` (/=) `unionStr` (/=)
 
 lessThan :: Int + Number + String -> Int + Number + String -> Boolean
-lessThan = (<)  `union` (<)  `unionStr` (<)
+lessThan = (<) `union` (<) `unionStr` (<)
 
 greaterThan :: Int + Number + String -> Int + Number + String -> Boolean
-greaterThan = (>)  `union` (>)  `unionStr` (>)
+greaterThan = (>) `union` (>) `unionStr` (>)
 
 lessThanEquals :: Int + Number + String -> Int + Number + String -> Boolean
 lessThanEquals = (<=) `union` (<=) `unionStr` (<=)

@@ -41,13 +41,13 @@ instance BoundedJoinSemilattice Unit where
 class JoinSemilattice a <= Slices a where
    maybeJoin :: a -> a -> MayFail a
 
-definedJoin :: forall a . Slices a => a -> a -> a
+definedJoin :: forall a. Slices a => a -> a -> a
 definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
 
-botOf :: forall t a . Functor t => BoundedJoinSemilattice a => Endo (t a)
+botOf :: forall t a. Functor t => BoundedJoinSemilattice a => Endo (t a)
 botOf = (<$>) (const bot)
 
-topOf :: forall t a . Functor t => BoundedJoinSemilattice a => Endo (t a)
+topOf :: forall t a. Functor t => BoundedJoinSemilattice a => Endo (t a)
 topOf = (<$>) (const bot >>> neg)
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
@@ -73,8 +73,8 @@ instance Slices a => JoinSemilattice (List a) where
 
 instance Slices a => Slices (List a) where
    maybeJoin xs ys
-      | (length xs :: Int) == length ys   = sequence (zipWith maybeJoin xs ys)
-      | otherwise                         = report "Mismatched lengths"
+      | (length xs :: Int) == length ys = sequence (zipWith maybeJoin xs ys)
+      | otherwise = report "Mismatched lengths"
 
 instance Slices a => JoinSemilattice (Dict a) where
    join = unionWith (∨) -- faster than definedJoin
@@ -83,7 +83,7 @@ instance Slices a => JoinSemilattice (Dict a) where
 instance Slices a => Slices (Dict a) where
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
 
-mayFailUpdate :: forall a . Slices a => Dict a -> Var × a -> MayFail (Dict a)
+mayFailUpdate :: forall a. Slices a => Dict a -> Var × a -> MayFail (Dict a)
 mayFailUpdate m (k × v) =
    case lookup k m of
       Nothing -> pure (insert k v m)
@@ -95,8 +95,8 @@ instance Slices a => JoinSemilattice (Array a) where
 
 instance Slices a => Slices (Array a) where
    maybeJoin xs ys
-      | length xs == (length ys :: Int)   = sequence (A.zipWith maybeJoin xs ys)
-      | otherwise                         = report "Mismatched lengths"
+      | length xs == (length ys :: Int) = sequence (A.zipWith maybeJoin xs ys)
+      | otherwise = report "Mismatched lengths"
 
 class Expandable a where
    expand :: a -> a -> a
@@ -104,7 +104,7 @@ class Expandable a where
 instance (Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expandable (Dict (t a)) where
    expand kvs kvs' =
       assert (keys kvs `subset` keys kvs') $
-      (kvs `intersectionWith expand` kvs') `union` ((kvs' `difference` kvs) <#> botOf)
+         (kvs `intersectionWith expand` kvs') `union` ((kvs' `difference` kvs) <#> botOf)
 
 instance Expandable a => Expandable (List a) where
    expand xs ys = zipWith expand xs ys

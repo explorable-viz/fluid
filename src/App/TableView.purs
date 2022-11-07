@@ -15,12 +15,12 @@ newtype EnergyTable = EnergyTable { title :: String, table :: Array EnergyRecord
 foreign import drawTable :: Renderer EnergyTable
 
 energyRecord :: Dict (Val 𝔹) -> EnergyRecord
-energyRecord r = {
-   year: get_prim "year" r,
-   country: get_prim "country" r,
-   energyType: get_prim "energyType" r,
-   output: get_intOrNumber "output" r
-}
+energyRecord r =
+   { year: get_prim "year" r
+   , country: get_prim "country" r
+   , energyType: get_prim "energyType" r
+   , output: get_intOrNumber "output" r
+   }
 
 tableViewHandler :: Handler
 tableViewHandler = const identity

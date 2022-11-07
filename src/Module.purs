@@ -40,7 +40,7 @@ loadFile (Folder folder) (File file) = do
       Left err -> error (printError err)
       Right response -> pure response.body
 
-parse :: forall t . String -> SParser t -> MayFail t
+parse :: forall t. String -> SParser t -> MayFail t
 parse src = runParser src >>> show `bimap` identity
 
 loadModule :: File -> Env 𝔹 -> Aff (Env 𝔹)

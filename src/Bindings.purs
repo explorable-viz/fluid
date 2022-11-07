@@ -16,15 +16,15 @@ mustGeq x y = definitely "greater" (whenever (x == y) x)
 
 type Bind a = Var × a
 
-key :: forall a . Bind a -> Var
+key :: forall a. Bind a -> Var
 key = fst
 
-val :: forall a . Bind a -> a
+val :: forall a. Bind a -> a
 val = snd
 
-keys :: forall a . List (Bind a) -> Set Var
-keys Nil           = empty
-keys (x ↦ _ : ρ)   = singleton x `union` keys ρ
+keys :: forall a. List (Bind a) -> Set Var
+keys Nil = empty
+keys (x ↦ _ : ρ) = singleton x `union` keys ρ
 
 infix 7 Tuple as ↦
 infixl 4 mustGeq as ⪂

@@ -27,14 +27,14 @@ type Handler = Event -> Selector
 doNothing :: OnSel
 doNothing = const $ pure unit
 
-get_prim :: forall a . ToFrom a => Var -> Dict (Val 𝔹) -> a × 𝔹
+get_prim :: forall a. ToFrom a => Var -> Dict (Val 𝔹) -> a × 𝔹
 get_prim x = match <<< get x
 
 get_intOrNumber :: Var -> Dict (Val 𝔹) -> Number × 𝔹
 get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
 
 -- Assumes fields are all of primitive type.
-record :: forall a . (Dict (Val 𝔹) -> a) -> Val 𝔹 -> a
+record :: forall a. (Dict (Val 𝔹) -> a) -> Val 𝔹 -> a
 record toRecord u = toRecord (fst (match u))
 
 class Reflect a b where
@@ -47,23 +47,23 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
 
 -- Selection helpers.
 selectCell :: Int -> Int -> Endo Selector
-selectCell i j δv (Matrix α r)  = Matrix α $ updateMatrix i j δv r
-selectCell _ _ _ _              = error absurd
+selectCell i j δv (Matrix α r) = Matrix α $ updateMatrix i j δv r
+selectCell _ _ _ _ = error absurd
 
 selectNth :: Int -> Endo Selector
-selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons  = Constr α c (δv v : v' : Nil)
-selectNth n δv (Constr α c (v : v' : Nil)) | c == cCons  = Constr α c (v : selectNth (n - 1) δv v' : Nil)
-selectNth _ _ _                                          = error absurd
+selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v : v' : Nil)
+selectNth n δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNth (n - 1) δv v' : Nil)
+selectNth _ _ _ = error absurd
 
 selectNthNode :: Int -> Endo 𝔹 -> Selector
-selectNthNode 0 δα (Constr α c Nil) | c == cNil             = Constr (δα α) c Nil
+selectNthNode 0 δα (Constr α c Nil) | c == cNil = Constr (δα α) c Nil
 selectNthNode 0 δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) c (v : v' : Nil)
 selectNthNode n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNthNode (n - 1) δα v' : Nil)
-selectNthNode _ _ _                                         = error absurd
+selectNthNode _ _ _ = error absurd
 
 selectSome :: Selector
-selectSome (Constr _ c vs) | c == cSome   = Constr true c (botOf <$> vs)
-selectSome _                              = error absurd
+selectSome (Constr _ c vs) | c == cSome = Constr true c (botOf <$> vs)
+selectSome _ = error absurd
 
 select_y :: Selector -> Selector
 select_y δv (Record α r) = Record α $ update (δv >>> Just) f_y r
