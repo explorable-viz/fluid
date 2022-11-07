@@ -22,7 +22,7 @@ test_linkingFig spec =
          pure unit
 
 tests :: Array (Test Unit)
-tests = [test_fig fig1, test_fig fig2, test_linkingFig linkingFig1]
+tests = [ test_fig fig1, test_fig fig2, test_linkingFig linkingFig1 ]
 
 main :: Effect Unit
 main = void (sequence (run <$> tests))
