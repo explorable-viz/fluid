@@ -19,14 +19,11 @@ data Val a
    = Int a Int
    | Float a Number
    | Str a String
-   | Record a (Dict (Val a))
-   | -- always saturated
-     Constr a Ctr (List (Val a))
-   | -- potentially unsaturated
-     Matrix a (MatrixRep a)
-   | Primitive PrimOp (List (Val a))
-   | -- never saturated
-     Closure a (Env a) (RecDefs a) (Elim a)
+   | Record a (Dict (Val a)) -- always saturated
+   | Constr a Ctr (List (Val a)) -- potentially unsaturated
+   | Matrix a (MatrixRep a)
+   | Primitive PrimOp (List (Val a)) -- never saturated
+   | Closure a (Env a) (RecDefs a) (Elim a)
 
 -- op_bwd will be provided with original output and arguments
 newtype PrimOp = PrimOp
@@ -62,11 +59,10 @@ reaches ρ xs = go (toUnfoldable xs) empty
    go Nil acc = acc
    go (x : xs') acc | x `member` acc = go xs' acc
    go (x : xs') acc | otherwise =
-      let
-         σ = get x ρ
-      in
-         go (toUnfoldable (fv σ `intersection` dom_ρ) <> xs')
-            (singleton x `union` acc)
+      go (toUnfoldable (fv σ `intersection` dom_ρ) <> xs')
+         (singleton x `union` acc)
+      where
+      σ = get x ρ
 
 for :: forall a. RecDefs a -> Elim a -> RecDefs a
 for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.keys ρ))
@@ -77,12 +73,11 @@ type MatrixRep a = Array2 (Val a) × (Int × a) × (Int × a)
 
 updateMatrix :: Int -> Int -> Endo (Val 𝔹) -> Endo (MatrixRep 𝔹)
 updateMatrix i j δv (vss × h × w) =
-   let
-      vs_i = vss ! (i - 1)
-      v_j = vs_i ! (j - 1)
-      vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) (δv v_j) vs_i) vss
-   in
-      vss' × h × w
+   vss' × h × w
+   where
+   vs_i = vss ! (i - 1)
+   v_j = vs_i ! (j - 1)
+   vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) (δv v_j) vs_i) vss
 
 -- ======================
 -- boilerplate
