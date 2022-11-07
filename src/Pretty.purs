@@ -98,11 +98,9 @@ prettyCtr = showCtr >>> text
 -- Cheap hack; revisit.
 prettyParensOpt :: forall a. Pretty a => a -> Doc
 prettyParensOpt x =
-   let
-      doc = pretty x
-   in
-      if Data.String.contains (Data.String.Pattern " ") (render doc) then parens doc
-      else doc
+   if Data.String.contains (Data.String.Pattern " ") (render doc) then parens doc
+   else doc
+   where doc = pretty x
 
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)

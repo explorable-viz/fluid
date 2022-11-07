@@ -195,8 +195,7 @@ simplePattern pattern' =
       <|> try record
       <|> try var
       <|> try (token.parens pattern')
-      <|>
-         pair
+      <|> pair
 
    where
    listEmpty :: SParser Pattern
@@ -314,10 +313,9 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser (Expr 𝔹)
       simpleExpr =
+         -- matrix before list
          matrix
-            <|> -- before list
-
-               try nil
+            <|> try nil
             <|> listNonEmpty
             <|> listComp
             <|> listEnum
@@ -325,17 +323,15 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
             <|> record
             <|> try variable
             <|> try float
-            <|> try int
-            <|> -- int may start with +/-
-               string
+            <|> try int -- int may start with +/-
+            <|> string
             <|> defsExpr
             <|> matchAs
             <|> try (token.parens expr')
             <|> try parensOp
             <|> pair
             <|> lambda
-            <|>
-               ifElse
+            <|> ifElse
 
          where
          matrix :: SParser (Expr 𝔹)
@@ -344,8 +340,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
                Matrix selState
                   <$> (expr' <* bar)
                   <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
-                  <*>
-                     (keyword str.in_ *> expr')
+                  <*> (keyword str.in_ *> expr')
 
          nil :: SParser (Expr 𝔹)
          nil = token.brackets $ pure (ListEmpty selState)
@@ -369,8 +364,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
             qualifier =
                Generator <$> pattern <* lArrow <*> expr'
                   <|> Declaration <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
-                  <|>
-                     Guard <$> expr'
+                  <|> Guard <$> expr'
 
          listEnum :: SParser (Expr 𝔹)
          listEnum = token.brackets $
@@ -423,7 +417,12 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
          lambda = Lambda <$> (keyword str.fun *> branches expr' branch_curried)
 
          ifElse :: SParser (Expr 𝔹)
-         ifElse = pure IfElse <*> (keyword str.if_ *> expr') <* keyword str.then_ <*> expr' <* keyword str.else_ <*> expr'
+         ifElse = pure IfElse
+            <*> (keyword str.if_ *> expr')
+            <* keyword str.then_
+            <*> expr'
+            <* keyword str.else_
+            <*> expr'
 
 -- each element of the top-level list opDefs corresponds to a precedence level
 operators :: forall a. (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
