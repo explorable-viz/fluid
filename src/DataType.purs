@@ -149,21 +149,21 @@ dataTypes = L.fromFoldable
           cLinePlot × 1 -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
         ]
    , dataType "GraphicsElement"
-        [ "Circle" × 4      -- Float (x), Float (y), Float (radius), Str (fill)
-        , "Group" × 1       -- List<GraphicsElement>
-        , "Line" × 4        -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth)
-        , "Polyline" × 3    -- List<Point> (points), Str (stroke), Float (strokeWidth)
+        [ "Circle" × 4 -- Float (x), Float (y), Float (radius), Str (fill)
+        , "Group" × 1 -- List<GraphicsElement>
+        , "Line" × 4 -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth)
+        , "Polyline" × 3 -- List<Point> (points), Str (stroke), Float (strokeWidth)
         , "Polymarkers" × 2 -- List<Point> (points), List<GraphicsElement> (markers)
-        , "Rect" × 5        -- Float (x), Float (y), Float (width), Float (height), Str (fill)
-          -- SVG text-anchor and alignment-baseline properties
-        , "Text" × 5        -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
-          -- margin is in *parent* reference frame; scaling applies to translated coordinates
-        , "Viewport" × 9    -- Float (x), Float (y), Float (width), Float (height), Str (fill),
-                            -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
+        , "Rect" × 5 -- Float (x), Float (y), Float (width), Float (height), Str (fill)
+        -- SVG text-anchor and alignment-baseline properties
+        , "Text" × 5 -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
+        -- margin is in *parent* reference frame; scaling applies to translated coordinates
+        , "Viewport" × 9 -- Float (x), Float (y), Float (width), Float (height), Str (fill),
+        -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
         ]
    , dataType "Transform"
-        [ "Scale" × 2       -- Float (x), Float (y)
-        , "Translate" × 2   -- Float (x), Float (y)
+        [ "Scale" × 2 -- Float (x), Float (y)
+        , "Translate" × 2 -- Float (x), Float (y)
         ]
    , dataType "Marker"
         [ "Arrowhead" × 0

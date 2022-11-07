@@ -62,8 +62,8 @@ view _ _ = error absurd
 
 -- An example of the form (let <defs> in expr) can be decomposed as follows.
 type SplitDefs =
-   { γ :: Env 𝔹      -- local env (additional let bindings at beginning of ex)
-   , s :: S.Expr 𝔹   -- body of example
+   { γ :: Env 𝔹 -- local env (additional let bindings at beginning of ex)
+   , s :: S.Expr 𝔹 -- body of example
    }
 
 -- Decompose as above.
@@ -85,10 +85,10 @@ type FigSpec =
 
 type Fig =
    { spec :: FigSpec
-   , γ0 :: Env 𝔹     -- ambient env (default imports)
-   , γ :: Env 𝔹      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
-   , s :: S.Expr 𝔹   -- body of example
-   , e :: Expr 𝔹     -- desugared s
+   , γ0 :: Env 𝔹 -- ambient env (default imports)
+   , γ :: Env 𝔹 -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
+   , s :: S.Expr 𝔹 -- body of example
+   , e :: Expr 𝔹 -- desugared s
    , t :: Trace 𝔹
    , v :: Val 𝔹
    }
@@ -103,8 +103,8 @@ type LinkFigSpec =
 
 type LinkFig =
    { spec :: LinkFigSpec
-   , γ0 :: Env 𝔹     -- ambient environment (default imports)
-   , γ :: Env 𝔹      -- local env (loaded dataset)
+   , γ0 :: Env 𝔹 -- ambient environment (default imports)
+   , γ :: Env 𝔹 -- local env (loaded dataset)
    , s1 :: S.Expr 𝔹
    , s2 :: S.Expr 𝔹
    , e1 :: Expr 𝔹
@@ -117,7 +117,7 @@ type LinkFig =
    }
 
 type LinkResult =
-   { v' :: Val 𝔹  -- will represent either v1' or v2'
+   { v' :: Val 𝔹 -- will represent either v1' or v2'
    , v0' :: Val 𝔹
    }
 
