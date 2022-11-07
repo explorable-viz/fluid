@@ -142,11 +142,9 @@ dataTypes = L.fromFoldable
         , "Vert" × 0
         ]
    , dataType "Plot"
-        [ cBarChart × 1
-        , -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
-          cLineChart × 1
-        , -- Record<caption: Str, plots: List<LinePlot>>
-          cLinePlot × 1 -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
+        [ cBarChart × 1 -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
+        , cLineChart × 1 -- Record<caption: Str, plots: List<LinePlot>>
+        , cLinePlot × 1 -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
         ]
    , dataType "GraphicsElement"
         [ "Circle" × 4 -- Float (x), Float (y), Float (radius), Str (fill)

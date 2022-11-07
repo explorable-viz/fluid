@@ -30,18 +30,16 @@ matchFwd _ _ _ = error absurd
 matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchManyFwd Nil κ Nil = empty × κ × true
 matchManyFwd (v : vs) σ (w : ws) =
-   let
-      ρ × κ × α = matchFwd v (asElim σ) w
-   in
-      (first (ρ `disjointUnion` _) *** (_ ∧ α)) (matchManyFwd vs κ ws)
+   (first (ρ `disjointUnion` _) *** (_ ∧ α)) (matchManyFwd vs κ ws)
+   where
+   ρ × κ × α = matchFwd v (asElim σ) w
 matchManyFwd _ _ _ = error absurd
 
 closeDefsFwd :: Env 𝔹 -> RecDefs 𝔹 -> 𝔹 -> Env 𝔹
 closeDefsFwd γ ρ α = ρ <#> \σ ->
-   let
-      ρ' = ρ `for` σ
-   in
-      V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
+   V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
+   where
+   ρ' = ρ `for` σ
 
 evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Trace 𝔹 -> Val 𝔹
 evalFwd γ (Var _) _ (T.Var x) = get x γ
@@ -50,16 +48,16 @@ evalFwd _ (Int α _) α' (T.Int n) = V.Int (α ∧ α') n
 evalFwd _ (Float α _) α' (T.Float n) = V.Float (α ∧ α') n
 evalFwd _ (Str α _) α' (T.Str str) = V.Str (α ∧ α') str
 evalFwd γ (Record α xes) α' (T.Record xts) =
-   let
-      xvs = intersectionWith (×) xes xts <#> (\(e × t) -> evalFwd γ e α' t)
-   in
-      V.Record (α ∧ α') xvs
+   V.Record (α ∧ α') xvs
+   where
+   xvs = intersectionWith (×) xes xts <#> (\(e × t) -> evalFwd γ e α' t)
 evalFwd γ (Constr α _ es) α' (T.Constr c ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)
 evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
    case evalFwd γ e2 α' t2 of
       V.Constr _ _ (v1 : v2 : Nil) ->
-         let
+         V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
+         where
             (i'' × β) × (j'' × β') = P.match v1 × P.match v2
             vss = assert (i'' == i' && j'' == j') $ A.fromFoldable $ do
                i <- range 1 i'
@@ -67,8 +65,6 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
                   j <- range 1 j'
                   let γ' = O.singleton x (V.Int β i) `disjointUnion` (O.singleton y (V.Int β' j))
                   singleton (evalFwd (γ <+> γ') e1 α' (tss ! (i - 1) ! (j - 1)))
-         in
-            V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
       _ -> error absurd
 evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
 evalFwd γ (Project e' _) α (T.Project t x) =
