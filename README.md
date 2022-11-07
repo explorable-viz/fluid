@@ -7,7 +7,6 @@ For the latest developments, see [news](news.md).
 [![develop](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/develop.yml)
 [![GitHub pages](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/pages/pages-build-deployment)
 [![v0.3.1-typescript](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/v0.3.1-typescript.yml)
-[![v0.4.2](https://github.com/explorable-viz/fluid/actions/workflows/v0.4.2.yml/badge.svg)](https://github.com/explorable-viz/fluid/actions/workflows/v0.4.2.yml)
 
 ### Software required
 
