@@ -58,13 +58,13 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
       V.Constr _ _ (v1 : v2 : Nil) ->
          V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
          where
-            (i'' × β) × (j'' × β') = P.match v1 × P.match v2
-            vss = assert (i'' == i' && j'' == j') $ A.fromFoldable $ do
-               i <- range 1 i'
-               singleton $ A.fromFoldable $ do
-                  j <- range 1 j'
-                  let γ' = O.singleton x (V.Int β i) `disjointUnion` (O.singleton y (V.Int β' j))
-                  singleton (evalFwd (γ <+> γ') e1 α' (tss ! (i - 1) ! (j - 1)))
+         (i'' × β) × (j'' × β') = P.match v1 × P.match v2
+         vss = assert (i'' == i' && j'' == j') $ A.fromFoldable $ do
+            i <- range 1 i'
+            singleton $ A.fromFoldable $ do
+               j <- range 1 j'
+               let γ' = O.singleton x (V.Int β i) `disjointUnion` (O.singleton y (V.Int β' j))
+               singleton (evalFwd (γ <+> γ') e1 α' (tss ! (i - 1) ! (j - 1)))
       _ -> error absurd
 evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
 evalFwd γ (Project e' _) α (T.Project t x) =
@@ -74,39 +74,34 @@ evalFwd γ (Project e' _) α (T.Project t x) =
 evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
    case evalFwd γ e1 α t1 of
       V.Closure β γ1 δ σ' ->
-         let
-            v = evalFwd γ e2 α t2
-            γ2 = closeDefsFwd γ1 δ β
-            γ3 × e3 × β' = matchFwd v σ' w
-         in
-            evalFwd (γ1 <+> γ2 <+> γ3) (asExpr e3) (β ∧ β') t3
+         evalFwd (γ1 <+> γ2 <+> γ3) (asExpr e3) (β ∧ β') t3
+         where
+         v = evalFwd γ e2 α t2
+         γ2 = closeDefsFwd γ1 δ β
+         γ3 × e3 × β' = matchFwd v σ' w
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.AppPrim (t1 × PrimOp φ × _) (t2 × _)) =
    case evalFwd γ e1 α t1 of
       V.Primitive _ vs' ->
-         let
-            v2' = evalFwd γ e2 α t2
-            vs'' = vs' <> singleton v2'
-         in
-            if φ.arity > length vs'' then V.Primitive (PrimOp φ) vs'' else φ.op vs''
+         if φ.arity > length vs'' then V.Primitive (PrimOp φ) vs'' else φ.op vs''
+         where
+         v2' = evalFwd γ e2 α t2
+         vs'' = vs' <> singleton v2'
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.AppConstr (t1 × c × _) t2) =
    case evalFwd γ e1 α t1 of
       V.Constr α' _ vs' ->
-         let
-            v = evalFwd γ e2 α t2
-         in
-            V.Constr (α ∧ α') c (vs' <> singleton v)
+         V.Constr (α ∧ α') c (vs' <> singleton v)
+         where
+         v = evalFwd γ e2 α t2
       _ -> error absurd
 evalFwd γ (Let (VarDef σ e1) e2) α (T.Let (T.VarDef w t1) t2) =
-   let
-      v = evalFwd γ e1 α t1
-      γ' × _ × α' = matchFwd v σ w
-   in
-      evalFwd (γ <+> γ') e2 α' t2
+   evalFwd (γ <+> γ') e2 α' t2
+   where
+   v = evalFwd γ e1 α t1
+   γ' × _ × α' = matchFwd v σ w
 evalFwd γ (LetRec ρ e') α (T.LetRec _ t) =
-   let
-      γ' = closeDefsFwd γ ρ α
-   in
-      evalFwd (γ <+> γ') e' α t
+   evalFwd (γ <+> γ') e' α t
+   where
+   γ' = closeDefsFwd γ ρ α
 evalFwd _ _ _ _ = error absurd
