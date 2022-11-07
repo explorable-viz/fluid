@@ -128,16 +128,15 @@ evalBwd' v (T.Project t x) =
    in
       ρ × Project e x × α
 evalBwd' v (T.App (t1 × xs × _) t2 w t3) =
-   let
-      γ1γ2γ3 × e × β = evalBwd' v t3
-      γ1γ2 × γ3 = append_inv (bv w) γ1γ2γ3
-      v' × σ = matchBwd γ3 (ContExpr e) β w
-      γ1 × γ2 = append_inv xs γ1γ2
-      γ' × e2 × α = evalBwd' v' t2
-      γ1' × δ' × β' = closeDefsBwd γ2
-      γ'' × e1 × α' = evalBwd' (V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ) t1
-   in
-      (γ' ∨ γ'') × App e1 e2 × (α ∨ α')
+   (γ' ∨ γ'') × App e1 e2 × (α ∨ α')
+   where
+   γ1γ2γ3 × e × β = evalBwd' v t3
+   γ1γ2 × γ3 = append_inv (bv w) γ1γ2γ3
+   v' × σ = matchBwd γ3 (ContExpr e) β w
+   γ1 × γ2 = append_inv xs γ1γ2
+   γ' × e2 × α = evalBwd' v' t2
+   γ1' × δ' × β' = closeDefsBwd γ2
+   γ'' × e1 × α' = evalBwd' (V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ) t1
 evalBwd' v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    let
       vs' = vs <> L.singleton v2
