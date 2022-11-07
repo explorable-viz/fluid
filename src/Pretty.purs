@@ -100,7 +100,8 @@ prettyParensOpt :: forall a. Pretty a => a -> Doc
 prettyParensOpt x =
    if Data.String.contains (Data.String.Pattern " ") (render doc) then parens doc
    else doc
-   where doc = pretty x
+   where
+   doc = pretty x
 
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)

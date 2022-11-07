@@ -25,11 +25,9 @@ data Trace a
    | Lambda (Elim a)
    | Project (Trace a) Var
    | App (Trace a × Set Var × Elim a) (Trace a) (Match a) (Trace a)
-   | AppPrim (Trace a × PrimOp × List (Val a)) (Trace a × Val a)
-   | -- record prior arguments
-     AppConstr (Trace a × Ctr × Int) (Trace a)
-   | -- record number of prior arguments
-     Let (VarDef a) (Trace a)
+   | AppPrim (Trace a × PrimOp × List (Val a)) (Trace a × Val a) -- record prior arguments
+   | AppConstr (Trace a × Ctr × Int) (Trace a) -- record number of prior arguments
+   | Let (VarDef a) (Trace a)
    | LetRec (RecDefs a) (Trace a)
 
 data Match a

@@ -201,7 +201,10 @@ binaryZero { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
 
    bwd' :: b × 𝔹 -> a × a -> (a × 𝔹) × (a × 𝔹)
    bwd' (z × α) (x × y) =
-      if isZero x then (x' × α) × (y' × false) else if isZero y then (x' × false) × (y' × α) else (x' × α) × (y' × α)
+      if isZero x then (x' × α) × (y' × false)
+      else if isZero y then (x' × false) × (y' × α)
+      else
+         (x' × α) × (y' × α)
       where
       x' × y' = bwd z (x × y)
 
