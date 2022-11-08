@@ -106,8 +106,11 @@ evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) 
                γ × γ' = append_inv (S.singleton x `union` S.singleton y) γ''
                γ0 = (D.singleton x (V.Int bot i') `disjointUnion` D.singleton y (V.Int bot j')) <+> γ'
             in
-               unsafePartial $ let V.Int β _ × V.Int β' _ = get x γ0 × get x γ0 in
-               γ × e × α' × β × β'
+               unsafePartial $
+                  let
+                     V.Int β _ × V.Int β' _ = get x γ0 × get x γ0
+                  in
+                     γ × e × α' × β × β'
    γ × e × α' × β × β' = foldl1
       ( \(γ1 × e1 × α1 × β1 × β1') (γ2 × e2 × α2 × β2 × β2') ->
            ((γ1 ∨ γ2) × (e1 ∨ e2) × (α1 ∨ α2) × (β1 ∨ β2) × (β1' ∨ β2'))
