@@ -19,7 +19,7 @@ jobs:
     - name: test
       run: |
         yarn install
-        yarn test-all
+        . script/git/hooks/pre-push
 
   deploy:
     runs-on: ubuntu-22.04

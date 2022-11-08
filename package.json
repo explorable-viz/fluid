@@ -12,7 +12,8 @@
     "clean-app-tests": "rm -rf dist/app-tests && mkdir -p dist/app-tests && cp web/tests.html dist/app-tests",
     "build-app-tests": "yarn clean-app-tests && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.App.Main --to dist/app-tests/app.js",
     "app-tests": "karma start karma.conf.app-tests.js",
-    "app-tests-browser": "karma start karma.conf.app-tests.js --browsers=Chrome --singleRun=false"
+    "app-tests-browser": "karma start karma.conf.app-tests.js --browsers=Chrome --singleRun=false",
+    "tidy": "yarn purs-tidy format-in-place src/**/*.purs test/**/*.purs"
   },
   "dependencies": {
     "d3": "6.7.0",

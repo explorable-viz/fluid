@@ -1,4 +1,4 @@
 #!/bin/sh
 
-yarn purs-tidy format-in-place src/**/*.purs test/**/*.purs
+yarn purs-tidy check src/**/*.purs test/**/*.purs
 yarn test-all
