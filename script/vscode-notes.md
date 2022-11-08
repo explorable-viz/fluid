@@ -1,4 +1,2 @@
 - notification icon (bell in bottom-right corner) can give clues if things aren't working
-- npm install -g [purs/spago/purescript-language-server] otherwise things won't work properly
-- npm install -g [purs-tidy/purescript-psa] for formatting, better error reporting
-- spago and purs need to be at same version as given in package.json
+- ensure "Add NPM Path" is selected in VS Code PureScript settings (to add ./node_modules/.bin to path)
