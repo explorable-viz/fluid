@@ -48,7 +48,7 @@ evalFwd _ (Str α _) α' (T.Str str) = V.Str (α ∧ α') str
 evalFwd γ (Record α xes) α' (T.Record xts) =
    V.Record (α ∧ α') xvs
    where
-      xvs = intersectionWith (×) xes xts <#> (\(e × t) -> evalFwd γ e α' t)
+   xvs = intersectionWith (×) xes xts <#> (\(e × t) -> evalFwd γ e α' t)
 evalFwd γ (Constr α _ es) α' (T.Constr c ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)
 evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
