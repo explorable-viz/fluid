@@ -1,4 +1,5 @@
 #!/bin/sh
 
+ls -la src/**/*.purs
 yarn purs-tidy check src/**/*.purs test/**/*.purs
 yarn test-all
