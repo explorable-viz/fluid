@@ -187,7 +187,7 @@ test_misc =
    , test (File "factorial") "40320"
    , test (File "filter") "(8 : (7 : []))"
    , test (File "flatten") "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
-   , test (File "foldr_sumSquares") "661"
+     , test (File "foldr_sumSquares") "661"
    , test (File "lexicalScoping") "\"6\""
    , test (File "length") "2"
    , test (File "lookup") "Some \"sarah\""
