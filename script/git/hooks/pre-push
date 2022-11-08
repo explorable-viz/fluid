@@ -1,4 +1,4 @@
 #!/bin/sh
 
-npx purs-tidy format-in-place --indent 3 ./**/*.purs
+purs-tidy format-in-place src/**/*.purs test/**/*.purs
 yarn test-all
