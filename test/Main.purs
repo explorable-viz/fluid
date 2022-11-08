@@ -190,7 +190,7 @@ test_misc =
    , test (File "foldr_sumSquares") "661"
    , test (File "lexicalScoping") "\"6\""
    , test (File "length") "2"
-     , test (File "lookup") "Some \"sarah\""
+   , test (File "lookup") "Some \"sarah\""
    , test (File "map") "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
    , test (File "mergeSort") "(1 : (2 : (3 : [])))"
    , test (File "normalise") "(33, 66)"
