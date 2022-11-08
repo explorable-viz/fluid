@@ -1,0 +1,3 @@
+- notification icon (bell in bottom-right corner) can give clues if things aren't working
+- npm install -g [purs/spago/purs-tidy/purescript-language-server] otherwise things won't work properly
+- spago and purs need to be at same version as given in package.json
