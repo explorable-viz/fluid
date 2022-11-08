@@ -73,9 +73,10 @@ testLink spec@{ x } δv1 v2_expect =
    before (loadLinkFig spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
          \{ γ0, γ, e1, e2, t1, t2, v1 } ->
-            checkPretty "Linked output" v2_expect v2'
-   where
-   { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
+            let
+               { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
+            in
+               checkPretty "Linked output" v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit
 testWithDataset dataset file = do

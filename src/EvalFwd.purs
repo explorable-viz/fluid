@@ -37,9 +37,7 @@ matchManyFwd _ _ _ = error absurd
 
 closeDefsFwd :: Env 𝔹 -> RecDefs 𝔹 -> 𝔹 -> Env 𝔹
 closeDefsFwd γ ρ α = ρ <#> \σ ->
-   V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
-   where
-   ρ' = ρ `for` σ
+   let ρ' = ρ `for` σ in V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
 evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Trace 𝔹 -> Val 𝔹
 evalFwd γ (Var _) _ (T.Var x) = get x γ
