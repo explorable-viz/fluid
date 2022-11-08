@@ -34,11 +34,11 @@ import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
 import Val (Env, Val(..), (<+>), append_inv)
 
-data View =
-   MatrixFig MatrixView |
-   EnergyTableView EnergyTable |
-   LineChartFig LineChart |
-   BarChartFig BarChart
+data View
+   = MatrixFig MatrixView
+   | EnergyTableView EnergyTable
+   | LineChartFig LineChart
+   | BarChartFig BarChart
 
 -- Want a nicer way to do this.
 drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
@@ -57,14 +57,14 @@ view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
 view title u@(Constr _ c _) | c == cNil || c == cCons =
    EnergyTableView (EnergyTable { title, table: unsafePartial $ record energyRecord <$> from u })
 view title u@(Matrix _ _) =
-   MatrixFig (MatrixView { title, matrix: matrixRep $ fst (match u) } )
+   MatrixFig (MatrixView { title, matrix: matrixRep $ fst (match u) })
 view _ _ = error absurd
 
 -- An example of the form (let <defs> in expr) can be decomposed as follows.
-type SplitDefs = {
-   γ :: Env 𝔹,      -- local env (additional let bindings at beginning of ex)
-   s :: S.Expr 𝔹    -- body of example
-}
+type SplitDefs =
+   { γ :: Env 𝔹 -- local env (additional let bindings at beginning of ex)
+   , s :: S.Expr 𝔹 -- body of example
+   }
 
 -- Decompose as above.
 splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail SplitDefs
@@ -72,58 +72,60 @@ splitDefs γ0 s' = do
    let defs × s = unsafePartial $ unpack s'
    γ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module γ0
    pure { γ, s }
-   where unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
-         unpack (S.LetRec defs s)   = Right defs × s
-         unpack (S.Let defs s)      = Left defs × s
+   where
+   unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
+   unpack (S.LetRec defs s) = Right defs × s
+   unpack (S.Let defs s) = Left defs × s
 
-type FigSpec = {
-   divId :: HTMLId,
-   file :: File,
-   xs :: Array Var -- variables to be considered "inputs"
-}
+type FigSpec =
+   { divId :: HTMLId
+   , file :: File
+   , xs :: Array Var -- variables to be considered "inputs"
+   }
 
-type Fig = {
-   spec :: FigSpec,
-   γ0 :: Env 𝔹,     -- ambient env (default imports)
-   γ :: Env 𝔹,      -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
-   s :: S.Expr 𝔹,   -- body of example
-   e :: Expr 𝔹,     -- desugared s
-   t :: Trace 𝔹,
-   v :: Val 𝔹
-}
+type Fig =
+   { spec :: FigSpec
+   , γ0 :: Env 𝔹 -- ambient env (default imports)
+   , γ :: Env 𝔹 -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
+   , s :: S.Expr 𝔹 -- body of example
+   , e :: Expr 𝔹 -- desugared s
+   , t :: Trace 𝔹
+   , v :: Val 𝔹
+   }
 
-type LinkFigSpec = {
-   divId :: HTMLId,
-   file1 :: File,
-   file2 :: File,
-   dataFile :: File,
-   x :: Var
-}
+type LinkFigSpec =
+   { divId :: HTMLId
+   , file1 :: File
+   , file2 :: File
+   , dataFile :: File
+   , x :: Var
+   }
 
-type LinkFig = {
-   spec :: LinkFigSpec,
-   γ0 :: Env 𝔹,      -- ambient environment (default imports)
-   γ :: Env 𝔹,       -- local env (loaded dataset)
-   s1 :: S.Expr 𝔹,
-   s2 :: S.Expr 𝔹,
-   e1 :: Expr 𝔹,
-   e2 :: Expr 𝔹,
-   t1 :: Trace 𝔹,
-   t2 :: Trace 𝔹,
-   v1 :: Val 𝔹,
-   v2 :: Val 𝔹,
-   v0 :: Val 𝔹       -- common data named by spec.x
-}
+type LinkFig =
+   { spec :: LinkFigSpec
+   , γ0 :: Env 𝔹 -- ambient environment (default imports)
+   , γ :: Env 𝔹 -- local env (loaded dataset)
+   , s1 :: S.Expr 𝔹
+   , s2 :: S.Expr 𝔹
+   , e1 :: Expr 𝔹
+   , e2 :: Expr 𝔹
+   , t1 :: Trace 𝔹
+   , t2 :: Trace 𝔹
+   , v1 :: Val 𝔹
+   , v2 :: Val 𝔹
+   , v0 :: Val 𝔹 -- common data named by spec.x
+   }
 
-type LinkResult = {
-   v' :: Val 𝔹,      -- will represent either v1' or v2'
-   v0' :: Val 𝔹
-}
+type LinkResult =
+   { v' :: Val 𝔹 -- will represent either v1' or v2'
+   , v0' :: Val 𝔹
+   }
 
 drawLinkFig :: LinkFig -> Either Selector Selector -> Effect Unit
 drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } δv = do
    log $ "Redrawing " <> divId
-   let v1' × v2' × δv1 × δv2 × v0 = successful case δv of
+   let
+      v1' × v2' × δv1 × δv2 × v0 = successful case δv of
          Left δv1 -> do
             let v1' = δv1 v1
             { v', v0' } <- linkResult x γ0 γ e1 e2 t1 t2 v1'
@@ -153,15 +155,17 @@ valViews γ xs = sequence (flip varView γ <$> xs)
 -- For an output selection, views of corresponding input selections.
 figViews :: Fig -> Selector -> MayFail (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
-   let γ0γ × e' × α = evalBwd (γ0 <+> γ) e (δv v) t
-       v' = evalFwd γ0γ e' α t
+   let
+      γ0γ × e' × α = evalBwd (γ0 <+> γ) e (δv v) t
+      v' = evalFwd γ0γ e' α t
    views <- valViews γ0γ xs
    pure $ view "output" v' × views
 
 linkResult :: Var -> Env 𝔹 -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace 𝔹 -> Trace 𝔹 -> Val 𝔹 -> MayFail LinkResult
 linkResult x γ0 γ e1 e2 t1 t2 v1 = do
-   let γ0γ × _ × _ = evalBwd (γ0 <+> γ) e1 v1 t1
-       _ × γ' = append_inv (S.singleton x) γ0γ
+   let
+      γ0γ × _ × _ = evalBwd (γ0 <+> γ) e1 v1 t1
+      _ × γ' = append_inv (S.singleton x) γ0γ
    v0' <- lookup x γ' # orElse absurd
    -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use
    -- (topOf γ0) combined with negation of the dataset environment slice
@@ -181,8 +185,9 @@ loadFig spec@{ file } = do
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
 loadLinkFig spec@{ file1, file2, dataFile, x } = do
-   let dir = File "linking/"
-       name1 × name2 = (dir <> file1) × (dir <> file2)
+   let
+      dir = File "linking/"
+      name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment γ0 as well as dataset
    γ0 × γ <- openDatasetAs (File "example/" <> dir <> dataFile) x
    s1 × s2 <- (×) <$> open name1 <*> open name2

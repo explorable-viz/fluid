@@ -1,7 +1,7 @@
-module Test.Spec.Mocha (
-  runMocha,
-  MOCHA()
-  ) where
+module Test.Spec.Mocha
+   ( runMocha
+   , MOCHA()
+   ) where
 
 import Prelude
 
@@ -16,11 +16,12 @@ import Test.Spec.Tree (Item(..), Tree(..))
 foreign import data MOCHA :: Type
 
 foreign import itAsync
-  :: Boolean
-  -> String
-   -> (Effect Unit
-       -> (Error -> Effect Unit)
-       -> Effect Unit)
+   :: Boolean
+   -> String
+   -> ( Effect Unit
+        -> (Error -> Effect Unit)
+        -> Effect Unit
+      )
    -> Effect Unit
 
 foreign import itPending
@@ -28,30 +29,30 @@ foreign import itPending
    -> Effect Unit
 
 foreign import describe
-  :: Boolean
-  -> String
-  -> Effect Unit
-  -> Effect Unit
+   :: Boolean
+   -> String
+   -> Effect Unit
+   -> Effect Unit
 
 registerGroup
-  :: ∀ m
-   . Tree m (Item Aff Unit)
-  -> Effect Unit
+   :: ∀ m
+    . Tree m (Item Aff Unit)
+   -> Effect Unit
 registerGroup tree =
-  case tree of
-    Leaf name (Just (Item { isFocused, example })) ->
-        itAsync isFocused name cb
-        where
-          cb onSuccess onError =
+   case tree of
+      Leaf name (Just (Item { isFocused, example })) ->
+         itAsync isFocused name cb
+         where
+         cb onSuccess onError =
             runAff_ (either onError (const onSuccess)) (example (\a -> a unit))
-    Leaf name Nothing ->
-      itPending name
-    Node _ t ->
-      traverse_ registerGroup t
+      Leaf name Nothing ->
+         itPending name
+      Node _ t ->
+         traverse_ registerGroup t
 
 runMocha
-  :: ∀ a
-   . SpecT Aff Unit Effect a
-  -> Effect Unit
+   :: ∀ a
+    . SpecT Aff Unit Effect a
+   -> Effect Unit
 runMocha spec =
    traverse_ registerGroup =<< collect spec

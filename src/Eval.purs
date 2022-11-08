@@ -29,8 +29,9 @@ patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
-match v (ElimVar x κ)  | x == varAnon    = pure (empty × κ × MatchVarAnon v)
-                       | otherwise       = pure (O.singleton x v × κ × MatchVar x v)
+match v (ElimVar x κ)
+   | x == varAnon = pure (empty × κ × MatchVarAnon v)
+   | otherwise = pure (O.singleton x v × κ × MatchVar x v)
 match (V.Constr _ c vs) (ElimConstr m) = do
    with "Pattern mismatch" $ S.singleton c `consistentWith` keys m
    κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (lookup c m)
@@ -38,7 +39,7 @@ match (V.Constr _ c vs) (ElimConstr m) = do
 match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
    report $ patternMismatch (prettyP v) (show d)
-match (V.Record _ xvs) (ElimRecord xs κ)  = do
+match (V.Record _ xvs) (ElimRecord xs κ) = do
    check (subset xs (S.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # S.toUnfoldable
    second (zip xs' >>> O.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get xvs) κ
@@ -47,7 +48,7 @@ match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
 matchMany Nil κ = pure (empty × κ × Nil)
 matchMany (v : vs) (ContElim σ) = do
-   γ  × κ'  × w  <- match v σ
+   γ × κ' × w <- match v σ
    γ' × κ'' × ws <- matchMany vs κ'
    pure $ γ `disjointUnion` γ' × κ'' × (w : ws)
 matchMany (_ : vs) (ContExpr _) = report $
@@ -56,8 +57,10 @@ matchMany _ _ = error absurd
 
 closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> Env 𝔹
 closeDefs γ ρ = ρ <#> \σ ->
-   let ρ' = ρ `for` σ
-   in V.Closure false (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
+   let
+      ρ' = ρ `for` σ
+   in
+      V.Closure false (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -65,11 +68,11 @@ checkArity c n = do
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
 eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Trace 𝔹 × Val 𝔹)
-eval γ (Var x)       = (T.Var x × _) <$> lookup' x γ
-eval γ (Op op)       = (T.Op op × _) <$> lookup' op γ
-eval _ (Int _ n)     = pure (T.Int n × V.Int false n)
-eval _ (Float _ n)   = pure (T.Float n × V.Float false n)
-eval _ (Str _ str)   = pure (T.Str str × V.Str false str)
+eval γ (Var x) = (T.Var x × _) <$> lookup' x γ
+eval γ (Op op) = (T.Op op × _) <$> lookup' op γ
+eval _ (Int _ n) = pure (T.Int n × V.Int false n)
+eval _ (Float _ n) = pure (T.Float n × V.Float false n)
+eval _ (Str _ str) = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
    xtvs <- traverse (eval γ) xes
    pure $ (T.Record $ xtvs <#> fst) × V.Record false (xtvs <#> snd)
@@ -83,16 +86,18 @@ eval γ (Matrix _ e (x × y) e') = do
       V.Constr _ c (v1 : v2 : Nil) | c == cPair -> do
          let (i' × _) × (j' × _) = P.match v1 × P.match v2
          check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
-         tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$> (sequence $ do
-            i <- range 1 i'
-            singleton $ sequence $ do
-               j <- range 1 j'
-               let γ' = O.singleton x (V.Int false i) `disjointUnion` (O.singleton y (V.Int false j))
-               singleton (eval (γ <+> γ') e))
+         tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
+            ( sequence $ do
+                 i <- range 1 i'
+                 singleton $ sequence $ do
+                    j <- range 1 j'
+                    let γ' = O.singleton x (V.Int false i) `disjointUnion` (O.singleton y (V.Int false j))
+                    singleton (eval (γ <+> γ') e)
+            )
          pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false)))
       v' -> report ("Array dimensions must be pair of ints; got " <> prettyP v')
    where
-   unzipToArray :: forall a b . List (a × b) -> Array a × Array b
+   unzipToArray :: forall a b. List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
 eval γ (Lambda σ) =
    pure (T.Lambda σ × V.Closure false (γ `restrict` fv σ) empty σ)
@@ -111,9 +116,11 @@ eval γ (App e e') = do
          t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'')
          pure (T.App (t × S.fromFoldable (keys ρ) × σ) t' w t'' × v'')
       V.Primitive (PrimOp φ) vs ->
-         let vs' = vs <> singleton v'
-             v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs' in
-         pure (T.AppPrim (t × PrimOp φ × vs) (t' × v') × v'')
+         let
+            vs' = vs <> singleton v'
+            v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs'
+         in
+            pure (T.AppPrim (t × PrimOp φ × vs) (t' × v') × v'')
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> showCtr c)
          pure (T.AppConstr (t × c × length vs) t' × V.Constr false c (vs <> singleton v'))
@@ -134,8 +141,8 @@ eval_module γ = go empty
    go :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
    go γ' (Module Nil) = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) = do
-      _  × v <- eval (γ <+> y') e
-      γ'' × _ × _  <- match v σ
+      _ × v <- eval (γ <+> y') e
+      γ'' × _ × _ <- match v σ
       go (y' <+> γ'') (Module ds)
    go γ' (Module (Right ρ : ds)) =
       go (γ' <+> closeDefs (γ <+> γ') ρ) (Module ds)

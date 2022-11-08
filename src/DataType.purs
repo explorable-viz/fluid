@@ -30,9 +30,10 @@ isCtrOp :: String -> Boolean
 isCtrOp str = ':' == (definitely' $ charAt 0 str)
 
 showCtr :: Ctr -> String
-showCtr c | isCtrName c = c
-          | isCtrOp c   = "(" <> c <> ")"
-          | otherwise   = error absurd
+showCtr c
+   | isCtrName c = c
+   | isCtrOp c = "(" <> c <> ")"
+   | otherwise = error absurd
 
 data DataType' a = DataType TypeName (Dict a)
 type DataType = DataType' CtrSig
@@ -83,88 +84,86 @@ checkArity c n = void $
    with ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
 
 -- Used internally by primitives, desugaring or rendering layer.
-cBarChart   = "BarChart"  :: Ctr -- Plot
-cLineChart  = "LineChart" :: Ctr
-cLinePlot   = "LinePlot"  :: Ctr
-cFalse      = "False"     :: Ctr -- Bool
-cTrue       = "True"      :: Ctr
-cNil        = "Nil"       :: Ctr -- List
-cCons       = ":"         :: Ctr
-cPair       = "Pair"      :: Ctr -- Pair
-cNone       = "None"      :: Ctr -- Option
-cSome       = "Some"      :: Ctr
+cBarChart = "BarChart" :: Ctr -- Plot
+cLineChart = "LineChart" :: Ctr
+cLinePlot = "LinePlot" :: Ctr
+cFalse = "False" :: Ctr -- Bool
+cTrue = "True" :: Ctr
+cNil = "Nil" :: Ctr -- List
+cCons = ":" :: Ctr
+cPair = "Pair" :: Ctr -- Pair
+cNone = "None" :: Ctr -- Option
+cSome = "Some" :: Ctr
 
 -- Field names used internally by rendering layer.
-f_caption   = "caption" :: FieldName
-f_data      = "data"    :: FieldName
-f_name      = "name"    :: FieldName
-f_plots     = "plots"   :: FieldName
-f_x         = "x"       :: FieldName
-f_y         = "y"       :: FieldName
+f_caption = "caption" :: FieldName
+f_data = "data" :: FieldName
+f_name = "name" :: FieldName
+f_plots = "plots" :: FieldName
+f_x = "x" :: FieldName
+f_y = "y" :: FieldName
 
 dataTypes :: List DataType
-dataTypes = L.fromFoldable [
-   -- Core
-   dataType "Bool" [
-      cTrue × 0,
-      cFalse × 0
-   ],
-   dataType "List" [
-      cNil × 0,
-      cCons × 2 -- any × List<any>
-   ],
-   dataType "Option" [
-      cNone × 0,
-      cSome × 1 -- any
-   ],
-   dataType "Ordering" [
-      "GT" × 0,
-      "LT" × 0,
-      "EQ" × 0
-   ],
-   dataType "Pair" [
-      "Pair" × 2 -- any × any
-   ],
-   dataType "Tree" [
-      "Empty" × 0,
-      "NonEmpty" × 3 -- Tree<any> × any × Tree<any>
-   ],
-   -- Graphics
-   dataType "Point" [
-      "Point" × 2 -- Float × Float
-   ],
-
-   dataType "Orient" [  -- iso to Bool
-      "Horiz" × 0,
-      "Vert"  × 0
-   ],
-
-   dataType "Plot" [
-      cBarChart × 1,   -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
-      cLineChart × 1,  -- Record<caption: Str, plots: List<LinePlot>>
-      cLinePlot × 1    -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
-   ],
-
-   dataType "GraphicsElement" [
-      "Circle" × 4,       -- Float (x), Float (y), Float (radius), Str (fill),
-      "Group" × 1,        -- List<GraphicsElement>,
-      "Line" × 4,         -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth),
-      "Polyline" × 3,     -- List<Point> (points), Str (stroke), Float (strokeWidth)
-      "Polymarkers" × 2,  -- List<Point> (points), List<GraphicsElement> (markers),
-      "Rect" × 5,         -- Float (x), Float (y), Float (width), Float (height), Str (fill)
-      -- SVG text-anchor and alignment-baseline properties
-      "Text" × 5,         -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
-      -- margin is in *parent* reference frame; scaling applies to translated coordinates
-      "Viewport" × 9      -- Float (x), Float (y), Float (width), Float (height), Str (fill),
-                          -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
-   ],
-
-   dataType "Transform" [
-      "Scale" × 2, -- Float (x), Float (y)
-      "Translate" × 2 -- Float (x), Float (y)
-   ],
-
-   dataType "Marker" [
-      "Arrowhead" × 0
+dataTypes = L.fromFoldable
+   [
+     -- Core
+     dataType "Bool"
+        [ cTrue × 0
+        , cFalse × 0
+        ]
+   , dataType "List"
+        [ cNil × 0
+        , cCons × 2 -- any × List<any>
+        ]
+   , dataType "Option"
+        [ cNone × 0
+        , cSome × 1 -- any
+        ]
+   , dataType "Ordering"
+        [ "GT" × 0
+        , "LT" × 0
+        , "EQ" × 0
+        ]
+   , dataType "Pair"
+        [ "Pair" × 2 -- any × any
+        ]
+   , dataType "Tree"
+        [ "Empty" × 0
+        , "NonEmpty" × 3 -- Tree<any> × any × Tree<any>
+        ]
+   ,
+     -- Graphics
+     dataType "Point"
+        [ "Point" × 2 -- Float × Float
+        ]
+   , dataType "Orient"
+        [ -- iso to Bool
+          "Horiz" × 0
+        , "Vert" × 0
+        ]
+   , dataType "Plot"
+        [ cBarChart × 1 -- Record<caption: Str, data: List<Record<x: Str, y: Float>>>
+        , cLineChart × 1 -- Record<caption: Str, plots: List<LinePlot>>
+        , cLinePlot × 1 -- Record<name: Str, data: List<Record<x: Float, y: Float>>>
+        ]
+   , dataType "GraphicsElement"
+        [ "Circle" × 4 -- Float (x), Float (y), Float (radius), Str (fill)
+        , "Group" × 1 -- List<GraphicsElement>
+        , "Line" × 4 -- Float (p1), Float (p2), Str (stroke), Float (strokeWidth)
+        , "Polyline" × 3 -- List<Point> (points), Str (stroke), Float (strokeWidth)
+        , "Polymarkers" × 2 -- List<Point> (points), List<GraphicsElement> (markers)
+        , "Rect" × 5 -- Float (x), Float (y), Float (width), Float (height), Str (fill)
+        -- SVG text-anchor and alignment-baseline properties
+        , "Text" × 5 -- Float (x), Float (y), Str (str), Str (anchor), Str(baseline)
+        -- margin is in *parent* reference frame; scaling applies to translated coordinates
+        , "Viewport" × 9 -- Float (x), Float (y), Float (width), Float (height), Str (fill),
+        -- Float (margin), Transform (scale), Transform (translate), GraphicsElement (g)
+        ]
+   , dataType "Transform"
+        [ "Scale" × 2 -- Float (x), Float (y)
+        , "Translate" × 2 -- Float (x), Float (y)
+        ]
+   , dataType "Marker"
+        [ "Arrowhead" × 0
+        ]
    ]
-]

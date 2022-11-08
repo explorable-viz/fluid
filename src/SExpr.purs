@@ -9,42 +9,42 @@ import Lattice (class JoinSemilattice, class Slices, definedJoin, neg)
 import Util (type (×), type (+), error, unimplemented)
 
 -- Surface language expressions.
-data Expr a =
-   Var Var |
-   Op Var |
-   Int a Int |
-   Float a Number |
-   Str a String |
-   Constr a Ctr (List (Expr a)) |
-   Record a (List (Bind (Expr a))) |
-   Matrix a (Expr a) (Var × Var) (Expr a) |
-   Lambda (NonEmptyList (Branch a)) |
-   Project (Expr a) Var |
-   App (Expr a) (Expr a) |
-   BinaryApp (Expr a) Var (Expr a) |
-   MatchAs (Expr a) (NonEmptyList (Pattern × Expr a)) |
-   IfElse (Expr a) (Expr a) (Expr a) |
-   ListEmpty a | -- called [] in the paper
-   ListNonEmpty a (Expr a) (ListRest a) |
-   ListEnum (Expr a) (Expr a) |
-   ListComp a (Expr a) (NonEmptyList (Qualifier a)) |
-   Let (VarDefs a) (Expr a) |
-   LetRec (RecDefs a) (Expr a)
+data Expr a
+   = Var Var
+   | Op Var
+   | Int a Int
+   | Float a Number
+   | Str a String
+   | Constr a Ctr (List (Expr a))
+   | Record a (List (Bind (Expr a)))
+   | Matrix a (Expr a) (Var × Var) (Expr a)
+   | Lambda (NonEmptyList (Branch a))
+   | Project (Expr a) Var
+   | App (Expr a) (Expr a)
+   | BinaryApp (Expr a) Var (Expr a)
+   | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
+   | IfElse (Expr a) (Expr a) (Expr a)
+   | ListEmpty a -- called [] in the paper
+   | ListNonEmpty a (Expr a) (ListRest a)
+   | ListEnum (Expr a) (Expr a)
+   | ListComp a (Expr a) (NonEmptyList (Qualifier a))
+   | Let (VarDefs a) (Expr a)
+   | LetRec (RecDefs a) (Expr a)
 
-data ListRest a =
-   End a |
-   Next a (Expr a) (ListRest a)
+data ListRest a
+   = End a
+   | Next a (Expr a) (ListRest a)
 
-data Pattern =
-   PVar Var |
-   PConstr Ctr (List Pattern) |
-   PRecord (List (Bind Pattern)) |
-   PListEmpty |
-   PListNonEmpty Pattern ListRestPattern
+data Pattern
+   = PVar Var
+   | PConstr Ctr (List Pattern)
+   | PRecord (List (Bind Pattern))
+   | PListEmpty
+   | PListNonEmpty Pattern ListRestPattern
 
-data ListRestPattern =
-   PEnd |
-   PNext Pattern ListRestPattern
+data ListRestPattern
+   = PEnd
+   | PNext Pattern ListRestPattern
 
 -- in the spec, "clause" doesn't include the function name
 type Branch a = NonEmptyList Pattern × Expr a
@@ -56,10 +56,10 @@ type RecDefs a = NonEmptyList (Clause a)
 data VarDef a = VarDef Pattern (Expr a)
 type VarDefs a = NonEmptyList (VarDef a)
 
-data Qualifier a =
-   Guard (Expr a) |
-   Generator Pattern (Expr a) |
-   Declaration (VarDef a) -- could allow VarDefs instead
+data Qualifier a
+   = Guard (Expr a)
+   | Generator Pattern (Expr a)
+   | Declaration (VarDef a) -- could allow VarDefs instead
 
 data Module a = Module (List (VarDefs a + RecDefs a))
 

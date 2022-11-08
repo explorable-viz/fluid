@@ -20,17 +20,32 @@ import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
 import Parsing.String (char, eof)
 import Parsing.String.Basic (oneOf)
-import Parsing.Token (
-  GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef
-)
+import Parsing.Token
+   ( GenLanguageDef(..)
+   , LanguageDef
+   , TokenParser
+   , alphaNum
+   , letter
+   , makeTokenParser
+   , unGenLanguageDef
+   )
 import Bindings (Bind, Var, (↦))
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Lattice (𝔹)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (
-   Branch, Clause, Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..),
-   RecDefs, VarDef(..), VarDefs
-)
+import SExpr
+   ( Branch
+   , Clause
+   , Expr(..)
+   , ListRest(..)
+   , ListRestPattern(..)
+   , Module(..)
+   , Pattern(..)
+   , Qualifier(..)
+   , RecDefs
+   , VarDef(..)
+   , VarDefs
+   )
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -39,72 +54,92 @@ selState :: 𝔹
 selState = false
 
 -- Constants (should also be used by prettyprinter). Haven't found a way to avoid the type definition.
-str :: {
-   arrayLBracket  :: String,
-   arrayRBracket  :: String,
-   as             :: String,
-   backslash      :: String,
-   backtick       :: String,
-   bar            :: String,
-   colon          :: String,
-   dot            :: String,
-   ellipsis       :: String,
-   else_          :: String,
-   equals         :: String,
-   fun            :: String,
-   if_            :: String,
-   in_            :: String,
-   lArrow         :: String,
-   lBracket       :: String,
-   let_           :: String,
-   match          :: String,
-   rArrow         :: String,
-   rBracket       :: String,
-   then_          :: String
-}
+str
+   :: { arrayLBracket :: String
+      , arrayRBracket :: String
+      , as :: String
+      , backslash :: String
+      , backtick :: String
+      , bar :: String
+      , colon :: String
+      , dot :: String
+      , ellipsis :: String
+      , else_ :: String
+      , equals :: String
+      , fun :: String
+      , if_ :: String
+      , in_ :: String
+      , lArrow :: String
+      , lBracket :: String
+      , let_ :: String
+      , match :: String
+      , rArrow :: String
+      , rBracket :: String
+      , then_ :: String
+      }
 
-str = {
-   arrayLBracket: "[|",
-   arrayRBracket: "|]",
-   as:            "as",
-   backslash:     "\\",
-   backtick:      "`",
-   bar:           "|",
-   colon:         ":",
-   dot:           ".",
-   ellipsis:      "..",
-   else_:         "else",
-   equals:        "=",
-   fun:           "fun",
-   if_:           "if",
-   in_:           "in",
-   lArrow:        "<-",
-   lBracket:      "[",
-   let_:          "let",
-   match:         "match",
-   rArrow:        "->",
-   rBracket:      "]",
-   then_:         "then"
-}
+str =
+   { arrayLBracket: "[|"
+   , arrayRBracket: "|]"
+   , as: "as"
+   , backslash: "\\"
+   , backtick: "`"
+   , bar: "|"
+   , colon: ":"
+   , dot: "."
+   , ellipsis: ".."
+   , else_: "else"
+   , equals: "="
+   , fun: "fun"
+   , if_: "if"
+   , in_: "in"
+   , lArrow: "<-"
+   , lBracket: "["
+   , let_: "let"
+   , match: "match"
+   , rArrow: "->"
+   , rBracket: "]"
+   , then_: "then"
+   }
 
 languageDef :: LanguageDef
-languageDef = LanguageDef (unGenLanguageDef emptyDef) {
-   commentStart = "{-",
-   commentEnd = "-}",
-   commentLine = "--",
-   nestedComments = true,
-   identStart = letter <|> char '_',
-   identLetter = alphaNum <|> oneOf ['_', '\''],
-   opStart = opChar,
-   opLetter = opChar,
-   reservedOpNames = [str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow],
-   reservedNames = [str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_],
-   caseSensitive = true
-} where
+languageDef = LanguageDef (unGenLanguageDef emptyDef)
+   { commentStart = "{-"
+   , commentEnd = "-}"
+   , commentLine = "--"
+   , nestedComments = true
+   , identStart = letter <|> char '_'
+   , identLetter = alphaNum <|> oneOf [ '_', '\'' ]
+   , opStart = opChar
+   , opLetter = opChar
+   , reservedOpNames = [ str.bar, str.ellipsis, str.equals, str.lArrow, str.rArrow ]
+   , reservedNames = [ str.as, str.else_, str.fun, str.if_, str.in_, str.let_, str.match, str.then_ ]
+   , caseSensitive = true
+   }
+   where
    opChar :: SParser Char
-   opChar = oneOf [
-      ':', '!', '#', '$', '%', '&', '*', '+', '.', '/', '<', '=', '>', '?', '@', '\\', '^', '|', '-', '~'
-   ]
+   opChar = oneOf
+      [ ':'
+      , '!'
+      , '#'
+      , '$'
+      , '%'
+      , '&'
+      , '*'
+      , '+'
+      , '.'
+      , '/'
+      , '<'
+      , '='
+      , '>'
+      , '?'
+      , '@'
+      , '\\'
+      , '^'
+      , '|'
+      , '-'
+      , '~'
+      ]
 
 token :: TokenParser
 token = makeTokenParser languageDef
@@ -136,8 +171,7 @@ rArrow = token.reservedOp str.rArrow
 -- 'reserved' parser only checks that str isn't a prefix of a valid identifier, not that it's in reservedNames.
 keyword ∷ String → SParser Unit
 keyword str' =
-   if str' `elem` (unGenLanguageDef languageDef).reservedNames
-   then token.reserved str'
+   if str' `elem` (unGenLanguageDef languageDef).reservedNames then token.reserved str'
    else error $ str' <> " is not a reserved word"
 
 ident ∷ SParser Var
@@ -150,18 +184,18 @@ ctr = do
    x <- token.identifier
    onlyIf (isCtrName x) x
 
-field :: forall a . SParser a -> SParser (Bind a)
+field :: forall a. SParser a -> SParser (Bind a)
 field p = ident `lift2 (↦)` (token.colon *> p)
 
 simplePattern :: Endo (SParser Pattern)
 simplePattern pattern' =
-   try listEmpty <|>
-   listNonEmpty <|>
-   try constr <|>
-   try record <|>
-   try var <|>
-   try (token.parens pattern') <|>
-   pair
+   try listEmpty
+      <|> listNonEmpty
+      <|> try constr
+      <|> try record
+      <|> try var
+      <|> try (token.parens pattern')
+      <|> pair
 
    where
    listEmpty :: SParser Pattern
@@ -173,7 +207,7 @@ simplePattern pattern' =
       listRest :: Endo (SParser ListRestPattern)
       listRest listRest' =
          rBracket *> pure PEnd <|>
-         token.comma *> (PNext <$> pattern' <*> listRest')
+            token.comma *> (PNext <$> pattern' <*> listRest')
 
    -- Constructor name as a nullary constructor pattern.
    constr :: SParser Pattern
@@ -199,9 +233,9 @@ patternDelim = rArrow <|> equals
 -- "curried" controls whether nested functions are permitted in this context
 branch :: Boolean -> SParser (Expr 𝔹) -> SParser Unit -> SParser (Branch 𝔹)
 branch curried expr' delim = do
-   πs <- if curried
-         then some $ simplePattern pattern
-         else NonEmptyList <$> pattern `lift2 (:|)` pure Nil
+   πs <-
+      if curried then some $ simplePattern pattern
+      else NonEmptyList <$> pattern `lift2 (:|)` pure Nil
    e <- delim *> expr'
    pure $ πs × e
 
@@ -213,12 +247,14 @@ branch_uncurried :: SParser (Expr 𝔹) -> SParser Unit -> SParser (Pattern × E
 branch_uncurried expr' delim =
    pattern `lift2 (×)` (delim *> expr')
 
-branchMany :: forall b . SParser (Expr 𝔹) ->
-              (SParser (Expr 𝔹) -> SParser Unit -> SParser b) ->
-              SParser (NonEmptyList b)
+branchMany
+   :: forall b
+    . SParser (Expr 𝔹)
+   -> (SParser (Expr 𝔹) -> SParser Unit -> SParser b)
+   -> SParser (NonEmptyList b)
 branchMany expr' branch_ = token.braces $ sepBy1 (branch_ expr' rArrow) token.semi
 
-branches :: forall b . SParser (Expr 𝔹) -> (SParser (Expr 𝔹) -> SParser Unit -> SParser b) -> SParser (NonEmptyList b)
+branches :: forall b. SParser (Expr 𝔹) -> (SParser (Expr 𝔹) -> SParser Unit -> SParser b) -> SParser (NonEmptyList b)
 branches expr' branch_ =
    (pure <$> branch_ expr' patternDelim) <|> branchMany expr' branch_
 
@@ -240,7 +276,7 @@ defs expr' = singleton <$> choose (try $ varDefs expr') (recDefs expr')
 
 -- Tree whose branches are binary primitives and whose leaves are application chains.
 expr_ :: SParser (Expr 𝔹)
-expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binaryOp)
+expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators binaryOp)
    where
    -- Pushing this to front of operator table to give it higher precedence than any other binary op.
    -- (Reasonable approximation to Haskell, where backticked functions have default precedence 9.)
@@ -257,14 +293,11 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
    binaryOp op = do
       op' <- token.operator
       onlyIf (op == op') $
-         if op == str.dot
-         then \e e' -> case e' of
+         if op == str.dot then \e e' -> case e' of
             Var x -> Project e x
             _ -> error "Field names are not first class."
-         else
-            if isCtrOp op'
-            then \e e' -> Constr selState op' (e : e' : empty)
-            else \e e' -> BinaryApp e op e'
+         else if isCtrOp op' then \e e' -> Constr selState op' (e : e' : empty)
+         else \e e' -> BinaryApp e op e'
 
    -- Left-associative tree of applications of one or more simple terms.
    appChain :: Endo (SParser (Expr 𝔹))
@@ -280,33 +313,34 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
       -- Any expression other than an operator tree or an application chain.
       simpleExpr :: SParser (Expr 𝔹)
       simpleExpr =
-         matrix <|> -- before list
-         try nil <|>
-         listNonEmpty <|>
-         listComp <|>
-         listEnum <|>
-         try constr <|>
-         record <|>
-         try variable <|>
-         try float <|>
-         try int <|> -- int may start with +/-
-         string <|>
-         defsExpr <|>
-         matchAs <|>
-         try (token.parens expr') <|>
-         try parensOp <|>
-         pair <|>
-         lambda <|>
-         ifElse
+         -- matrix before list
+         matrix
+            <|> try nil
+            <|> listNonEmpty
+            <|> listComp
+            <|> listEnum
+            <|> try constr
+            <|> record
+            <|> try variable
+            <|> try float
+            <|> try int -- int may start with +/-
+            <|> string
+            <|> defsExpr
+            <|> matchAs
+            <|> try (token.parens expr')
+            <|> try parensOp
+            <|> pair
+            <|> lambda
+            <|> ifElse
 
          where
          matrix :: SParser (Expr 𝔹)
          matrix =
             between (token.symbol str.arrayLBracket) (token.symbol str.arrayRBracket) $
-               Matrix selState <$>
-                  (expr' <* bar) <*>
-                  token.parens (ident `lift2 (×)` (token.comma *> ident)) <*>
-                  (keyword str.in_ *> expr')
+               Matrix selState
+                  <$> (expr' <* bar)
+                  <*> token.parens (ident `lift2 (×)` (token.comma *> ident))
+                  <*> (keyword str.in_ *> expr')
 
          nil :: SParser (Expr 𝔹)
          nil = token.brackets $ pure (ListEmpty selState)
@@ -319,7 +353,7 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
             listRest :: Endo (SParser (ListRest 𝔹))
             listRest listRest' =
                rBracket *> pure (End selState) <|>
-               token.comma *> (Next selState <$> expr' <*> listRest')
+                  token.comma *> (Next selState <$> expr' <*> listRest')
 
          listComp :: SParser (Expr 𝔹)
          listComp = token.brackets $
@@ -328,9 +362,9 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
             where
             qualifier :: SParser (Qualifier 𝔹)
             qualifier =
-               Generator <$> pattern <* lArrow <*> expr' <|>
-               Declaration <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr') <|>
-               Guard <$> expr'
+               Generator <$> pattern <* lArrow <*> expr'
+                  <|> Declaration <$> (VarDef <$> (keyword str.let_ *> pattern <* equals) <*> expr')
+                  <|> Guard <$> expr'
 
          listEnum :: SParser (Expr 𝔹)
          listEnum = token.brackets $
@@ -345,7 +379,7 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
          variable :: SParser (Expr 𝔹)
          variable = ident <#> Var
 
-         signOpt :: ∀ a . Ring a => SParser (a -> a)
+         signOpt :: ∀ a. Ring a => SParser (a -> a)
          signOpt = (char '-' $> negate) <|> (char '+' $> identity) <|> pure identity
 
          -- built-in integer/float parsers don't seem to allow leading signs.
@@ -383,15 +417,22 @@ expr_ = fix $ appChain >>> buildExprParser ([backtickOp] `cons` operators binary
          lambda = Lambda <$> (keyword str.fun *> branches expr' branch_curried)
 
          ifElse :: SParser (Expr 𝔹)
-         ifElse = pure IfElse <*> (keyword str.if_ *> expr') <* keyword str.then_ <*> expr' <* keyword str.else_ <*> expr'
+         ifElse = pure IfElse
+            <*> (keyword str.if_ *> expr')
+            <* keyword str.then_
+            <*> expr'
+            <* keyword str.else_
+            <*> expr'
 
 -- each element of the top-level list opDefs corresponds to a precedence level
-operators :: forall a . (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
+operators :: forall a. (String -> SParser (a -> a -> a)) -> OperatorTable Identity String a
 operators binaryOp =
-   fromFoldable $ fromFoldable <$>
-   ops <#> (<$>) (\({ op, assoc }) -> Infix (try (binaryOp op)) assoc)
-   where ops :: List (NonEmptyList OpDef)
-         ops = groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) (values opDefs))
+   fromFoldable $
+      fromFoldable <$>
+         ops <#> (<$>) (\({ op, assoc }) -> Infix (try (binaryOp op)) assoc)
+   where
+   ops :: List (NonEmptyList OpDef)
+   ops = groupBy (eq `on` _.prec) (sortBy (\x -> comparing _.prec x >>> invert) (values opDefs))
 
 -- Pattern with no continuation.
 pattern :: SParser Pattern
@@ -402,19 +443,19 @@ pattern = fix $ appChain_pattern >>> buildExprParser (operators infixCtr)
    appChain_pattern :: Endo (SParser Pattern)
    appChain_pattern pattern' = simplePattern pattern' >>= rest
       where
-         rest ∷ Pattern -> SParser Pattern
-         rest π@(PConstr c πs) = ctrArgs <|> pure π
-            where
-            ctrArgs :: SParser Pattern
-            ctrArgs = simplePattern pattern' >>= \π' -> rest $ PConstr c (πs `snoc` π')
-         rest π = pure π
+      rest ∷ Pattern -> SParser Pattern
+      rest π@(PConstr c πs) = ctrArgs <|> pure π
+         where
+         ctrArgs :: SParser Pattern
+         ctrArgs = simplePattern pattern' >>= \π' -> rest $ PConstr c (πs `snoc` π')
+      rest π = pure π
 
    infixCtr :: String -> SParser (Pattern -> Pattern -> Pattern)
    infixCtr op = do
       op' <- token.operator
       onlyIf (isCtrOp op' && op == op') \π π' -> PConstr op' (π : π' : Nil)
 
-topLevel :: forall a . Endo (SParser a)
+topLevel :: forall a. Endo (SParser a)
 topLevel p = token.whiteSpace *> p <* eof
 
 program ∷ SParser (Expr 𝔹)
