@@ -113,16 +113,16 @@ prettyConstr α c Nil | c == cNil = highlightIf α nil
 prettyConstr α c (x : y : Nil) | c == cCons = parens (hspace [ pretty x, highlightIf α $ text ":", pretty y ])
 prettyConstr α c xs = hspace (highlightIf α (prettyCtr c) : (prettyParensOpt <$> xs))
 
-prettyRecordOrDict :: forall a. Pretty a => Endo Doc -> 𝔹 -> List (Bind a) -> Doc
-prettyRecordOrDict bracify α xvs =
-   xvs <#> (\(x ↦ v) -> hspace [ text x :<>: colon, pretty v ])
+prettyRecordOrDict :: forall a. Pretty a => (String -> Doc) -> Endo Doc -> 𝔹 -> List (Bind a) -> Doc
+prettyRecordOrDict prettyKey bracify α xvs =
+   xvs <#> (\(x ↦ v) -> hspace [ prettyKey x :<>: colon, pretty v ])
       # hcomma >>> bracify >>> highlightIf α
 
 prettyDict :: forall a. Pretty a => 𝔹 -> List (Bind a) -> Doc
-prettyDict = prettyRecordOrDict $ between (text "{|") (text "|}")
+prettyDict = prettyRecordOrDict (text <<< show) $ between (text "{|") (text "|}")
 
 prettyRecord :: forall a. Pretty a => 𝔹 -> List (Bind a) -> Doc
-prettyRecord = prettyRecordOrDict $ between (text "{") (text "}")
+prettyRecord = prettyRecordOrDict text $ between (text "{") (text "}")
 
 instance Pretty (E.Expr Boolean) where
    pretty (E.Var x) = text x
