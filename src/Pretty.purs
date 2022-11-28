@@ -125,7 +125,7 @@ prettyRecordOrDict bracify α xvs =
    xvs <#> (\(x × v) -> hspace [ x :<>: colon, pretty v ])
       # hcomma >>> bracify >>> highlightIf α
 
-prettyDict :: forall a b. Pretty a => (b -> Doc) ->𝔹 -> List (b × a) -> Doc
+prettyDict :: forall a b. Pretty a => (b -> Doc) -> 𝔹 -> List (b × a) -> Doc
 prettyDict prettyKey α xvs = xvs <#> first prettyKey # prettyRecordOrDict dictBrackets α
 
 prettyRecord :: forall a b. Pretty a => (b -> Doc) -> 𝔹 -> List (b × a) -> Doc
