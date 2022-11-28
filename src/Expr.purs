@@ -6,7 +6,8 @@ import Data.List (List)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
-import Dict (Dict, keys, asSingletonMap)
+import Dict (keys, asSingletonMap)
+import Dict (Dict) as D
 import Bindings (Var)
 import DataType (Ctr, consistentWith)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
@@ -18,7 +19,7 @@ data Expr a
    | Int a Int
    | Float a Number
    | Str a String
-   | Record a (Dict (Expr a))
+   | Record a (D.Dict (Expr a))
    | Constr a Ctr (List (Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda (Elim a)
@@ -29,11 +30,11 @@ data Expr a
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
-type RecDefs a = Dict (Elim a)
+type RecDefs a = D.Dict (Elim a)
 
 data Elim a
    = ElimVar Var (Cont a)
-   | ElimConstr (Dict (Cont a))
+   | ElimConstr (D.Dict (Cont a))
    | ElimRecord (Set Var) (Cont a)
 
 -- Continuation of an eliminator branch.
@@ -84,7 +85,7 @@ instance FV (Cont a) where
 instance FV (VarDef a) where
    fv (VarDef _ e) = fv e
 
-instance FV a => FV (Dict a) where
+instance FV a => FV (D.Dict a) where
    fv ρ = (unions $ (fv <$> ρ)) `difference` (S.fromFoldable $ keys ρ)
 
 class BV a where
