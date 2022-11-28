@@ -2,16 +2,16 @@ module Eval where
 
 import Prelude hiding (absurd)
 
+import Bindings (varAnon)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
 import Data.Profunctor.Strong (second)
-import Data.Set (union, subset)
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
+import Data.Set (union, subset)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
-import Bindings (varAnon)
 import DataType (Ctr, arity, consistentWith, cPair, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton) as O
@@ -21,7 +21,7 @@ import Pretty (prettyP)
 import Primitive (match) as P
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (MayFail, type (×), (×), absurd, check, error, report, successful, with)
+import Util (type (×), MayFail, absurd, check, error, report, successful, unimplemented, with, (×))
 import Val (Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -76,6 +76,7 @@ eval _ (Str _ str) = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
    xtvs <- traverse (eval γ) xes
    pure $ (T.Record $ xtvs <#> fst) × V.Record false (xtvs <#> snd)
+eval _ (Dictionary _ _) = error unimplemented
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip

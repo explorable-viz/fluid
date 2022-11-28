@@ -7,8 +7,7 @@ import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUn
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Bindings (Var)
-import Dict (get)
-import Dict (Dict) as D
+import Dict (Dict, get)
 import DataType (Ctr)
 import Expr (Elim, RecDefs, fv)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
@@ -20,8 +19,8 @@ data Val a
    = Int a Int
    | Float a Number
    | Str a String
-   | Record a (D.Dict (Val a)) -- always saturated
-   | Dict a (D.Dict (Val a)) -- always saturated
+   | Record a (Dict (Val a)) -- always saturated
+   | Dictionary a (Dict (Val a)) -- always saturated
    | Constr a Ctr (List (Val a)) -- potentially unsaturated
    | Matrix a (MatrixRep a)
    | Primitive PrimOp (List (Val a)) -- never saturated
@@ -35,9 +34,9 @@ newtype PrimOp = PrimOp
    }
 
 -- Environments.
-type Env a = D.Dict (Val a)
+type Env a = Dict (Val a)
 
-lookup' :: forall a. Var -> D.Dict a -> MayFail a
+lookup' :: forall a. Var -> Dict a -> MayFail a
 lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
 
 -- Want a monoid instance but needs a newtype
@@ -49,7 +48,7 @@ infixl 5 append as <+>
 append_inv :: forall a. Set Var -> Env a -> Env a × Env a
 append_inv xs γ = filterKeys (_ `not <<< member` xs) γ × restrict γ xs
 
-restrict :: forall a. D.Dict a -> Set Var -> D.Dict a
+restrict :: forall a. Dict a -> Set Var -> Dict a
 restrict γ xs = filterKeys (_ `member` xs) γ
 
 reaches :: forall a. RecDefs a -> Endo (Set Var)
@@ -89,7 +88,7 @@ instance Functor Val where
    map f (Float α n) = Float (f α) n
    map f (Str α s) = Str (f α) s
    map f (Record α xvs) = Record (f α) (map f <$> xvs)
-   map f (Dict α svs) = Record (f α) (map f <$> svs)
+   map f (Dictionary α svs) = Dictionary (f α) (map f <$> svs)
    map f (Constr α c vs) = Constr (f α) c (map f <$> vs)
    -- PureScript can't derive this case
    map f (Matrix α (r × iα × jβ)) = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))
@@ -105,7 +104,7 @@ instance Slices (Val Boolean) where
    maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α s) (Str α' s') = Str (α ∨ α') <$> (s ≞ s')
    maybeJoin (Record α xvs) (Record α' xvs') = Record (α ∨ α') <$> maybeJoin xvs xvs'
-   maybeJoin (Dict α svs) (Dict α' svs') = Dict (α ∨ α') <$> maybeJoin svs svs'
+   maybeJoin (Dictionary α svs) (Dictionary α' svs') = Dictionary (α ∨ α') <$> maybeJoin svs svs'
    maybeJoin (Constr α c vs) (Constr α' c' us) = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
    maybeJoin (Matrix α (vss × (i × βi) × (j × βj))) (Matrix α' (vss' × (i' × βi') × (j' × βj'))) =
       Matrix (α ∨ α') <$>
@@ -124,7 +123,7 @@ instance Expandable (Val Boolean) where
    expand (Float α n) (Float _ n') = Float α (n ≜ n')
    expand (Str α s) (Str _ s') = Str α (s ≜ s')
    expand (Record α xvs) (Record _ xvs') = Record α (expand xvs xvs')
-   expand (Dict α svs) (Dict _ svs') = Dict α (expand svs svs')
+   expand (Dictionary α svs) (Dictionary _ svs') = Dictionary α (expand svs svs')
    expand (Constr α c vs) (Constr _ c' us) = Constr α (c ≜ c') (expand vs us)
    expand (Matrix α (vss × (i × βi) × (j × βj))) (Matrix _ (vss' × (i' × _) × (j' × _))) =
       Matrix α (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
