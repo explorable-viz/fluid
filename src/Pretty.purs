@@ -19,7 +19,7 @@ import Expr (Expr(..), VarDef(..)) as E
 import Lattice (𝔹)
 import Parse (str)
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
-import Util (Endo, type (×), (×), type (+), absurd, error, intersperse)
+import Util (Endo, type (×), (×), type (+), absurd, error, toTuple, intersperse)
 import Val (PrimOp, Val)
 import Val (Val(..)) as V
 
@@ -198,8 +198,9 @@ instance Pretty (S.Expr Boolean) where
    pretty (S.Int α n) = highlightIf α (text (show n))
    pretty (S.Float α n) = highlightIf α (text (show n))
    pretty (S.Str α str) = highlightIf α (text (show str))
-   pretty (S.Constr α c es) = prettyConstr α c es
-   pretty (S.Record α xes) = prettyRecord text α xes
+   pretty (S.Constr α c ss) = prettyConstr α c ss
+   pretty (S.Record α xss) = prettyRecord text α xss
+   pretty (S.Dictionary α sss) = prettyDict pretty α (sss <#> toTuple)
    pretty (S.Matrix α e (x × y) e') = highlightIf α (hspace (init <> quant))
       where
       init = [ text str.arrayLBracket, pretty e, text str.bar ]

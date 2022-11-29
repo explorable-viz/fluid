@@ -20,6 +20,15 @@ import Effect.Unsafe (unsafePerformEffect)
 infixl 7 type Tuple as ×
 infixl 7 Tuple as ×
 
+-- a |-> a × a can't derive a functor instance, so use this
+data Pair a = Pair a a
+
+instance Functor Pair where
+   map f (Pair x y) = Pair (f x) (f y)
+
+toTuple :: forall a. Pair a -> a × a
+toTuple (Pair x y) = x × y
+
 infixl 6 type Either as +
 
 error :: String -> ∀ a. a
