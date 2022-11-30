@@ -89,11 +89,11 @@ eval γ (Matrix _ e (x × y) e') = do
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
       ( sequence $ do
-            i <- range 1 i'
-            singleton $ sequence $ do
-               j <- range 1 j'
-               let γ' = D.singleton x (V.Int false i) `disjointUnion` (D.singleton y (V.Int false j))
-               singleton (eval (γ <+> γ') e)
+           i <- range 1 i'
+           singleton $ sequence $ do
+              j <- range 1 j'
+              let γ' = D.singleton x (V.Int false i) `disjointUnion` (D.singleton y (V.Int false j))
+              singleton (eval (γ <+> γ') e)
       )
    pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false))
    where

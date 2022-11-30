@@ -20,8 +20,8 @@ import Val (Val(..)) as V
 
 matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchFwd _ (ElimVar _ κ) (T.MatchVarAnon _) = empty × κ × true
-matchFwd v (ElimVar _ κ) (T.MatchVar x _) = O.singleton x v × κ × true
-matchFwd (V.Constr α _ vs) (ElimConstr m) (T.MatchConstr c ws) =
+matchFwd v (ElimVar x κ) (T.MatchVar _ _) = O.singleton x v × κ × true
+matchFwd (V.Constr α c vs) (ElimConstr m) (T.MatchConstr _ ws) =
    second (_ ∧ α) (matchManyFwd vs (get c m) ws)
 matchFwd (V.Record α xvs) (ElimRecord xs κ) (T.MatchRecord xws) =
    second (_ ∧ α) (matchManyFwd (xs # S.toUnfoldable <#> flip get xvs) κ (xws # O.toUnfoldable <#> snd))
@@ -40,11 +40,11 @@ closeDefsFwd γ ρ α = ρ <#> \σ ->
    let ρ' = ρ `for` σ in V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
 evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Trace 𝔹 -> Val 𝔹
-evalFwd γ (Var _) _ (T.Var x) = get x γ
-evalFwd γ (Op _) _ (T.Op op) = get op γ
-evalFwd _ (Int α _) α' (T.Int n) = V.Int (α ∧ α') n
-evalFwd _ (Float α _) α' (T.Float n) = V.Float (α ∧ α') n
-evalFwd _ (Str α _) α' (T.Str str) = V.Str (α ∧ α') str
+evalFwd γ (Var x) _ (T.Var _) = get x γ
+evalFwd γ (Op op) _ (T.Op _) = get op γ
+evalFwd _ (Int α n) α' (T.Int _) = V.Int (α ∧ α') n
+evalFwd _ (Float α n) α' (T.Float _) = V.Float (α ∧ α') n
+evalFwd _ (Str α s) α' (T.Str _) = V.Str (α ∧ α') s
 evalFwd γ (Record α xes) α' (T.Record xts) =
    V.Record (α ∧ α') xvs
    where
@@ -65,7 +65,7 @@ evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
                singleton (evalFwd (γ <+> γ') e1 α' (tss ! (i - 1) ! (j - 1)))
       _ -> error absurd
 evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
-evalFwd γ (Project e' _) α (T.Project t x) =
+evalFwd γ (Project e' x) α (T.Project t _) =
    case evalFwd γ e' α t of
       V.Record _ xvs -> get x xvs
       _ -> error absurd
