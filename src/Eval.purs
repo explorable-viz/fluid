@@ -11,10 +11,9 @@ import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
 import Data.Set (union, subset)
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (fst, snd)
 import DataType (Ctr, arity, consistentWith, cPair, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
-import Dict (fromFoldable, singleton) as O
+import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
 import Lattice (𝔹)
 import Pretty (prettyP)
@@ -31,7 +30,7 @@ patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × MatchVarAnon v)
-   | otherwise = pure (O.singleton x v × κ × MatchVar x v)
+   | otherwise = pure (D.singleton x v × κ × MatchVar x v)
 match (V.Constr _ c vs) (ElimConstr m) = do
    with "Pattern mismatch" $ S.singleton c `consistentWith` keys m
    κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (lookup c m)
@@ -42,7 +41,7 @@ match v (ElimConstr m) = do
 match (V.Record _ xvs) (ElimRecord xs κ) = do
    check (subset xs (S.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # S.toUnfoldable
-   second (zip xs' >>> O.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get xvs) κ
+   second (zip xs' >>> D.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get xvs) κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
@@ -74,8 +73,8 @@ eval _ (Int _ n) = pure (T.Int n × V.Int false n)
 eval _ (Float _ n) = pure (T.Float n × V.Float false n)
 eval _ (Str _ str) = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
-   xtvs <- traverse (eval γ) xes
-   pure $ (T.Record $ xtvs <#> fst) × V.Record false (xtvs <#> snd)
+   xts × xvs <- traverse (eval γ) xes <#> D.unzip
+   pure $ (T.Record xts) × V.Record false xvs
 eval _ (Dictionary _ _) = error unimplemented
 eval γ (Constr _ c es) = do
    checkArity c (length es)
@@ -92,7 +91,7 @@ eval γ (Matrix _ e (x × y) e') = do
                  i <- range 1 i'
                  singleton $ sequence $ do
                     j <- range 1 j'
-                    let γ' = O.singleton x (V.Int false i) `disjointUnion` (O.singleton y (V.Int false j))
+                    let γ' = D.singleton x (V.Int false i) `disjointUnion` (D.singleton y (V.Int false j))
                     singleton (eval (γ <+> γ') e)
             )
          pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false)))

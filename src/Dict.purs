@@ -12,29 +12,19 @@ module Dict
    , intersectionWith
    , keys
    , toUnfoldable
+   , unzip
    ) where
 
 import Prelude
+
 import Data.Foldable (foldl)
 import Data.List (head)
 import Data.Set (Set, member)
 import Data.Set (fromFoldable) as S
+import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
-import Foreign.Object
-   ( delete
-   , empty
-   , filterKeys
-   , fromFoldable
-   , insert
-   , isEmpty
-   , lookup
-   , singleton
-   , size
-   , union
-   , unionWith
-   , update
-   )
 import Foreign.Object (Object, keys, toAscUnfoldable) as O
+import Foreign.Object (delete, empty, filterKeys, fromFoldable, insert, isEmpty, lookup, singleton, size, union, unionWith, update)
 import Util (Endo, type (×), (×), assert, definitely, definitely', error)
 
 type Dict a = O.Object a
@@ -67,3 +57,6 @@ disjointUnion_inv ks m = filterKeys (_ `member` ks) m × filterKeys (_ `not <<< 
 
 toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
 toUnfoldable = O.toAscUnfoldable
+
+unzip :: forall a b. Dict (a × b) -> Dict a × Dict b
+unzip kvs = (kvs <#> fst) × (kvs <#> snd)
