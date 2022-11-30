@@ -2,6 +2,7 @@ module DesugarBwd where
 
 import Prelude hiding (absurd)
 
+import Bindings (Bind, (↦), keys)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
@@ -10,27 +11,15 @@ import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
 import Data.Tuple (uncurry, fst, snd)
-import Partial.Unsafe (unsafePartial)
-import Bindings (Bind, (↦), keys)
+import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import Dict (Dict, get)
 import Dict (fromFoldable) as D
-import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, (∨))
-import SExpr
-   ( Branch
-   , Clause
-   , Expr(..)
-   , ListRest(..)
-   , Pattern(..)
-   , ListRestPattern(..)
-   , Qualifier(..)
-   , RecDefs
-   , VarDef(..)
-   , VarDefs
-   )
-import Util (Endo, type (+), type (×), (×), absurd, error, successful)
+import Partial.Unsafe (unsafePartial)
+import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import Util (type (+), type (×), Endo, Pair(..), absurd, error, successful, (×))
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -70,6 +59,8 @@ exprBwd (E.Str α _) (Str _ str) = Str α str
 exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry exprBwd <$> zip es ss)
 exprBwd (E.Record α xes) (Record _ xss) =
    Record α $ xss <#> \(x ↦ s) -> x ↦ exprBwd (get x xes) s
+exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
+   Dictionary α $ (zip ees sss) <#> (\(Pair e e' × Pair s s') -> Pair (exprBwd e s) (exprBwd e' s'))
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s (x × y) s') =
    Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
 exprBwd (E.Lambda σ) (Lambda bs) = Lambda (branchesBwd_curried σ bs)

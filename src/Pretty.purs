@@ -137,7 +137,7 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.Float _ n) = text (show n)
    pretty (E.Str _ str) = text (show str)
    pretty (E.Record α xes) = prettyRecord text α (xes # D.toUnfoldable)
-   pretty (E.Dictionary α ees) = prettyDict pretty α ees
+   pretty (E.Dictionary α ees) = prettyDict pretty α (ees <#> toTuple)
    pretty (E.Constr α c es) = prettyConstr α c es
    pretty (E.Matrix _ _ _ _) = error "todo"
    pretty (E.Lambda σ) = hspace [ text str.fun, pretty σ ]

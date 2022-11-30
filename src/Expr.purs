@@ -1,17 +1,18 @@
 module Expr where
 
 import Prelude hiding (absurd, top)
+
+import Bindings (Var)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
-import Dict (Dict, keys, asSingletonMap)
-import Bindings (Var)
 import DataType (Ctr, consistentWith)
+import Dict (Dict, keys, asSingletonMap)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
-import Util (type (×), (×), type (+), (≜), (≞), error, report)
+import Util (type (+), type (×), Pair, error, report, toTuple, (×), (≜), (≞))
 
 data Expr a
    = Var Var
@@ -20,7 +21,7 @@ data Expr a
    | Float a Number
    | Str a String
    | Record a (Dict (Expr a))
-   | Dictionary a (List (Expr a × Expr a)) -- constructor name Dict borks (import of same name)
+   | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
    | Constr a Ctr (List (Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda (Elim a)
@@ -67,7 +68,7 @@ instance FV (Expr a) where
    fv (Float _ _) = empty
    fv (Str _ _) = empty
    fv (Record _ xes) = unions (fv <$> xes)
-   fv (Dictionary _ ees) = unions ((unions <<< (fv *** fv)) <$> ees)
+   fv (Dictionary _ ees) = unions ((unions <<< (fv *** fv) <<< toTuple) <$> ees)
    fv (Constr _ _ es) = unions (fv <$> es)
    fv (Matrix _ e1 _ e2) = union (fv e1) (fv e2)
    fv (Lambda σ) = fv σ
@@ -115,22 +116,7 @@ instance BV (Cont a) where
 derive instance Functor VarDef
 derive instance Functor Cont
 derive instance Functor Elim
-
-instance Functor Expr where
-   map _ (Var x) = Var x
-   map _ (Op f) = Op f
-   map f (Int α n) = Int (f α) n
-   map f (Float α n) = Float (f α) n
-   map f (Str α s) = Str (f α) s
-   map f (Record α xes) = Record (f α) (map f <$> xes)
-   map f (Dictionary α ees) = Dictionary (f α) ((map f *** map f) <$> ees) -- can't derive this case
-   map f (Constr α c es) = Constr (f α) c (map f <$> es)
-   map f (Matrix α e (i × j) e') = Matrix (f α) (f <$> e) (i × j) (f <$> e')
-   map f (Lambda σ) = Lambda (f <$> σ)
-   map f (Project e x) = Project (f <$> e) x
-   map f (App e e') = App (f <$> e) (f <$> e')
-   map f (Let def e) = Let (f <$> def) (f <$> e)
-   map f (LetRec ρ e) = LetRec (map f <$> ρ) (f <$> e)
+derive instance Functor Expr
 
 instance JoinSemilattice (Elim Boolean) where
    join = definedJoin

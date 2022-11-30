@@ -26,6 +26,12 @@ data Pair a = Pair a a
 instance Functor Pair where
    map f (Pair x y) = Pair (f x) (f y)
 
+instance Apply Pair where
+   apply (Pair f g) (Pair x y) = Pair (f x) (g y)
+
+instance Applicative Pair where
+   pure x = Pair x x
+
 toTuple :: forall a. Pair a -> a × a
 toTuple (Pair x y) = x × y
 
