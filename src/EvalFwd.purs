@@ -6,34 +6,34 @@ import Data.List (List(..), (:), length, range, singleton, zip)
 import Data.Profunctor.Strong ((***), first, second)
 import Data.Set (union)
 import Data.Set (toUnfoldable) as S
-import Data.Tuple (snd)
+import Bindings (varAnon)
 import Dict (disjointUnion, empty, get, intersectionWith)
-import Dict (singleton, toUnfoldable) as O
+import Dict (singleton) as O
 import Expr (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))
 import Primitive (match) as P
-import Trace (Trace(..), Match(..), VarDef(..)) as T
-import Trace (Trace, Match)
+import Trace (Trace(..), VarDef(..)) as T
+import Trace (Trace)
 import Util (type (×), (×), (!), absurd, assert, error)
 import Val (Env, PrimOp(..), (<+>), Val, for, restrict)
 import Val (Val(..)) as V
 
-matchFwd :: Val 𝔹 -> Elim 𝔹 -> Match 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchFwd _ (ElimVar _ κ) (T.MatchVarAnon _) = empty × κ × true
-matchFwd v (ElimVar x κ) (T.MatchVar _ _) = O.singleton x v × κ × true
-matchFwd (V.Constr α c vs) (ElimConstr m) (T.MatchConstr _ ws) =
-   second (_ ∧ α) (matchManyFwd vs (get c m) ws)
-matchFwd (V.Record α xvs) (ElimRecord xs κ) (T.MatchRecord xws) =
-   second (_ ∧ α) (matchManyFwd (xs # S.toUnfoldable <#> flip get xvs) κ (xws # O.toUnfoldable <#> snd))
-matchFwd _ _ _ = error absurd
+matchFwd :: Val 𝔹 -> Elim 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchFwd v (ElimVar x κ)
+   | x == varAnon = empty × κ × true
+   | otherwise = O.singleton x v × κ × true
+matchFwd (V.Constr α c vs) (ElimConstr m)  =
+   second (_ ∧ α) (matchManyFwd vs (get c m))
+matchFwd (V.Record α xvs) (ElimRecord xs κ) =
+   second (_ ∧ α) (matchManyFwd (xs # S.toUnfoldable <#> flip get xvs) κ)
+matchFwd _ _ = error absurd
 
-matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> List (Match 𝔹) -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchManyFwd Nil κ Nil = empty × κ × true
-matchManyFwd (v : vs) σ (w : ws) =
-   (first (ρ `disjointUnion` _) *** (_ ∧ α)) (matchManyFwd vs κ ws)
+matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchManyFwd Nil κ = empty × κ × true
+matchManyFwd (v : vs) σ =
+   (first (ρ `disjointUnion` _) *** (_ ∧ α)) (matchManyFwd vs κ)
    where
-   ρ × κ × α = matchFwd v (asElim σ) w
-matchManyFwd _ _ _ = error absurd
+   ρ × κ × α = matchFwd v (asElim σ)
 
 closeDefsFwd :: Env 𝔹 -> RecDefs 𝔹 -> 𝔹 -> Env 𝔹
 closeDefsFwd γ ρ α = ρ <#> \σ ->
@@ -69,14 +69,14 @@ evalFwd γ (Project e' x) α (T.Project t _) =
    case evalFwd γ e' α t of
       V.Record _ xvs -> get x xvs
       _ -> error absurd
-evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 w t3) =
+evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 _ t3) =
    case evalFwd γ e1 α t1 of
       V.Closure β γ1 δ σ' ->
          evalFwd (γ1 <+> γ2 <+> γ3) (asExpr e3) (β ∧ β') t3
          where
          v = evalFwd γ e2 α t2
          γ2 = closeDefsFwd γ1 δ β
-         γ3 × e3 × β' = matchFwd v σ' w
+         γ3 × e3 × β' = matchFwd v σ'
       _ -> error absurd
 evalFwd γ (App e1 e2) α (T.AppPrim (t1 × PrimOp φ × _) (t2 × _)) =
    case evalFwd γ e1 α t1 of
@@ -93,11 +93,11 @@ evalFwd γ (App e1 e2) α (T.AppConstr (t1 × c × _) t2) =
          where
          v = evalFwd γ e2 α t2
       _ -> error absurd
-evalFwd γ (Let (VarDef σ e1) e2) α (T.Let (T.VarDef w t1) t2) =
+evalFwd γ (Let (VarDef σ e1) e2) α (T.Let (T.VarDef _ t1) t2) =
    evalFwd (γ <+> γ') e2 α' t2
    where
    v = evalFwd γ e1 α t1
-   γ' × _ × α' = matchFwd v σ w
+   γ' × _ × α' = matchFwd v σ
 evalFwd γ (LetRec ρ e') α (T.LetRec _ t) =
    evalFwd (γ <+> γ') e' α t
    where
