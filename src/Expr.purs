@@ -12,7 +12,8 @@ import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
-import Util (type (+), type (×), Pair, error, report, toTuple, (×), (≜), (≞))
+import Util (type (+), type (×), error, report, (×), (≜), (≞))
+import Util.Pair (Pair, toTuple)
 
 data Expr a
    = Var Var

@@ -7,7 +7,8 @@ import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
 import DataType (Ctr)
 import Lattice (class JoinSemilattice, class Slices, definedJoin, neg)
-import Util (Pair, type (×), type (+), error, unimplemented)
+import Util (type (×), type (+), error, unimplemented)
+import Util.Pair (Pair)
 
 -- Surface language expressions.
 data Expr a

@@ -14,37 +14,12 @@ import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&))
-import Data.Traversable (class Foldable, class Traversable, foldMapDefaultL, foldrDefault, sequenceDefault)
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 
 infixl 7 type Tuple as ×
 infixl 7 Tuple as ×
-
--- a |-> a × a can't derive a functor instance, so use this
-data Pair a = Pair a a
-
-instance Functor Pair where
-   map f (Pair x y) = Pair (f x) (f y)
-
-instance Apply Pair where
-   apply (Pair f g) (Pair x y) = Pair (f x) (g y)
-
-instance Applicative Pair where
-   pure x = Pair x x
-
-instance Foldable Pair where
-   foldl f z (Pair x y) = f (f z x) y
-   foldr f = foldrDefault f
-   foldMap f = foldMapDefaultL f
-
-instance Traversable Pair where
-   traverse f (Pair x y) = Pair <$> f x <*> f y
-   sequence = sequenceDefault
-
-toTuple :: forall a. Pair a -> a × a
-toTuple (Pair x y) = x × y
 
 infixl 6 type Either as +
 

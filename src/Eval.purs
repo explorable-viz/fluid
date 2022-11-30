@@ -11,16 +11,17 @@ import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
 import Data.Set (union, subset)
 import Data.Traversable (sequence, traverse)
-import DataType (Ctr, arity, consistentWith, cPair, dataTypeFor, showCtr)
+import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
 import Lattice (𝔹)
 import Pretty (prettyP)
-import Primitive (match) as P
+import Primitive (unwrap)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (type (×), MayFail, absurd, check, error, report, successful, unimplemented, with, (×))
+import Util (type (×), MayFail, absurd, check, error, report, successful, with, (×))
+import Util.Pair (unzip, zip) as P
 import Val (Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
 
@@ -74,33 +75,34 @@ eval _ (Float _ n) = pure (T.Float n × V.Float false n)
 eval _ (Str _ str) = pure (T.Str str × V.Str false str)
 eval γ (Record _ xes) = do
    xts × xvs <- traverse (eval γ) xes <#> D.unzip
-   pure $ (T.Record xts) × V.Record false xvs
-eval _ (Dictionary _ _) = error unimplemented
+   pure $ T.Record xts × V.Record false xvs
+eval γ (Dictionary _ ees) = do
+   tvs × tus <- traverse (traverse (eval γ)) ees <#> P.unzip
+   let ts × vs = unzip tvs
+       ts' × us = unzip tus
+   pure $ T.Dictionary (P.zip ts ts') × V.Dictionary false (D.fromFoldable $ zip (vs <#> unwrap) us)
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip
    pure (T.Constr c ts × V.Constr false c vs)
 eval γ (Matrix _ e (x × y) e') = do
    t × v <- eval γ e'
-   case v of
-      V.Constr _ c (v1 : v2 : Nil) | c == cPair -> do
-         let (i' × _) × (j' × _) = P.match v1 × P.match v2
-         check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
-         tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
-            ( sequence $ do
-                 i <- range 1 i'
-                 singleton $ sequence $ do
-                    j <- range 1 j'
-                    let γ' = D.singleton x (V.Int false i) `disjointUnion` (D.singleton y (V.Int false j))
-                    singleton (eval (γ <+> γ') e)
-            )
-         pure (T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false)))
-      v' -> report ("Array dimensions must be pair of ints; got " <> prettyP v')
+   let (i' × (_ :: 𝔹)) × (j' × (_ :: 𝔹)) = unwrap v
+   check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
+   tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
+      ( sequence $ do
+            i <- range 1 i'
+            singleton $ sequence $ do
+               j <- range 1 j'
+               let γ' = D.singleton x (V.Int false i) `disjointUnion` (D.singleton y (V.Int false j))
+               singleton (eval (γ <+> γ') e)
+      )
+   pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false))
    where
    unzipToArray :: forall a b. List (a × b) -> Array a × Array b
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
 eval γ (Lambda σ) =
-   pure (T.Lambda σ × V.Closure false (γ `restrict` fv σ) empty σ)
+   pure $ T.Lambda σ × V.Closure false (γ `restrict` fv σ) empty σ
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
@@ -114,26 +116,26 @@ eval γ (App e e') = do
          let γ2 = closeDefs γ1 ρ
          γ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'')
-         pure (T.App (t × S.fromFoldable (keys ρ) × σ) t' w t'' × v'')
+         pure $ T.App (t × S.fromFoldable (keys ρ) × σ) t' w t'' × v''
       V.Primitive (PrimOp φ) vs ->
          let
             vs' = vs <> singleton v'
             v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs'
          in
-            pure (T.AppPrim (t × PrimOp φ × vs) (t' × v') × v'')
+            pure $ T.AppPrim (t × PrimOp φ × vs) (t' × v') × v''
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> showCtr c)
-         pure (T.AppConstr (t × c × length vs) t' × V.Constr false c (vs <> singleton v'))
+         pure $ T.AppConstr (t × c × length vs) t' × V.Constr false c (vs <> singleton v')
       _ -> report "Expected closure, operator or unsaturated constructor"
 eval γ (Let (VarDef σ e) e') = do
    t × v <- eval γ e
    γ' × _ × w <- match v σ -- terminal meta-type of eliminator is meta-unit
    t' × v' <- eval (γ <+> γ') e'
-   pure (T.Let (T.VarDef w t) t' × v')
+   pure $ T.Let (T.VarDef w t) t' × v'
 eval γ (LetRec ρ e) = do
    let γ' = closeDefs γ ρ
    t × v <- eval (γ <+> γ') e
-   pure (T.LetRec ρ t × v)
+   pure $ T.LetRec ρ t × v
 
 eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
 eval_module γ = go empty

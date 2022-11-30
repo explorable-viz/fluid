@@ -7,6 +7,7 @@ module Dict
    , difference
    , disjointUnion
    , disjointUnion_inv
+   , fromFoldable
    , get
    , intersection
    , intersectionWith
@@ -17,14 +18,14 @@ module Dict
 
 import Prelude
 
-import Data.Foldable (foldl)
+import Data.Foldable (class Foldable, foldl)
 import Data.List (head)
 import Data.Set (Set, member)
 import Data.Set (fromFoldable) as S
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
-import Foreign.Object (Object, keys, toAscUnfoldable) as O
-import Foreign.Object (delete, empty, filterKeys, fromFoldable, insert, isEmpty, lookup, singleton, size, union, unionWith, update)
+import Foreign.Object (Object, fromFoldable, keys, toAscUnfoldable) as O
+import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, lookup, singleton, size, union, unionWith, update)
 import Util (Endo, type (×), (×), assert, definitely, definitely', error)
 
 type Dict a = O.Object a
@@ -57,6 +58,9 @@ disjointUnion_inv ks m = filterKeys (_ `member` ks) m × filterKeys (_ `not <<< 
 
 toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
 toUnfoldable = O.toAscUnfoldable
+
+fromFoldable :: forall a f. Foldable f => f (String × a) -> Dict a
+fromFoldable = O.fromFoldable
 
 unzip :: forall a b. Dict (a × b) -> Dict a × Dict b
 unzip kvs = (kvs <#> fst) × (kvs <#> snd)

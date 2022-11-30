@@ -20,7 +20,8 @@ import Parse (str)
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
-import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, toTuple, (×))
+import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
+import Util.Pair (toTuple)
 import Val (PrimOp, Val)
 import Val (Val(..)) as V
 
