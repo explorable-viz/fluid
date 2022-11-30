@@ -20,7 +20,7 @@ import Pretty (prettyP)
 import Primitive (unwrap)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
-import Util (type (×), MayFail, absurd, check, error, report, successful, with, (×))
+import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip, zip) as P
 import Val (Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
@@ -77,9 +77,7 @@ eval γ (Record _ xes) = do
    xts × xvs <- traverse (eval γ) xes <#> D.unzip
    pure $ T.Record xts × V.Record false xvs
 eval γ (Dictionary _ ees) = do
-   tvs × tus <- traverse (traverse (eval γ)) ees <#> P.unzip
-   let ts × vs = unzip tvs
-       ts' × us = unzip tus
+   (ts × vs) × (ts' × us) <- traverse (traverse (eval γ)) ees <#> (P.unzip >>> (unzip # both))
    pure $ T.Dictionary (P.zip ts ts') × V.Dictionary false (D.fromFoldable $ zip (vs <#> unwrap) us)
 eval γ (Constr _ c es) = do
    checkArity c (length es)

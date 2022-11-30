@@ -5,14 +5,13 @@ import Prelude hiding (absurd, top)
 import Bindings (Var)
 import Control.Apply (lift2)
 import Data.List (List)
-import Data.Profunctor.Strong ((***))
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
 import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
-import Util (type (+), type (×), error, report, (×), (≜), (≞))
+import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
 data Expr a
@@ -69,7 +68,7 @@ instance FV (Expr a) where
    fv (Float _ _) = empty
    fv (Str _ _) = empty
    fv (Record _ xes) = unions (fv <$> xes)
-   fv (Dictionary _ ees) = unions ((unions <<< (fv *** fv) <<< toTuple) <$> ees)
+   fv (Dictionary _ ees) = unions ((unions <<< (fv # both) <<< toTuple) <$> ees)
    fv (Constr _ _ es) = unions (fv <$> es)
    fv (Matrix _ e1 _ e2) = union (fv e1) (fv e2)
    fv (Lambda σ) = fv σ

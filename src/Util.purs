@@ -13,7 +13,7 @@ import Data.Map (Map)
 import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
-import Data.Profunctor.Strong ((&&&))
+import Data.Profunctor.Strong ((&&&), (***))
 import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
@@ -139,4 +139,7 @@ replicate n a
    | true = a : replicate (n - 1) a
 
 unzip :: forall t a b. Functor t => t (a × b) -> t a × t b
-unzip = (<$>) fst &&& (<$>) snd
+unzip = map fst &&& map snd
+
+both :: forall a b. (a -> b) -> a × a -> b × b
+both f = f *** f
