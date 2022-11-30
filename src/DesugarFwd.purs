@@ -20,7 +20,7 @@ import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, maybeJoin)
 import SExpr (Branch, Clause, Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, Qualifier(..))
-import Util (type (+), type (×), MayFail, absurd, error, successful, unimplemented, (×))
+import Util (type (+), type (×), MayFail, absurd, error, successful, (×))
 
 desugarFwd :: Expr 𝔹 -> MayFail (E.Expr 𝔹)
 desugarFwd = exprFwd
@@ -77,7 +77,7 @@ exprFwd (Float α n) = pure (E.Float α n)
 exprFwd (Str α s) = pure (E.Str α s)
 exprFwd (Constr α c ss) = E.Constr α c <$> traverse exprFwd ss
 exprFwd (Record α xss) = E.Record α <$> D.fromFoldable <$> traverse (traverse exprFwd) xss
-exprFwd (Dictionary _ _) = error unimplemented
+exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse exprFwd) sss
 exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
 exprFwd (Lambda bs) = E.Lambda <$> branchesFwd_curried bs
 exprFwd (Project s x) = E.Project <$> exprFwd s <@> x

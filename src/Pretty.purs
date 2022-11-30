@@ -1,16 +1,15 @@
 module Pretty (class Pretty, class ToList, pretty, prettyP, toList, module P) where
 
 import Prelude hiding (absurd, between)
+
+import Bindings (Bind, Var, (↦))
 import Data.Foldable (class Foldable)
-import Data.List (List(..), (:), fromFoldable)
+import Data.List (List(..), (:), fromFoldable, null)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
 import Data.String (Pattern(..), contains) as Data.String
-import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
-import Text.Pretty (render) as P
-import Bindings (Bind, Var, (↦))
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
 import Dict (toUnfoldable) as D
@@ -19,7 +18,9 @@ import Expr (Expr(..), VarDef(..)) as E
 import Lattice (𝔹)
 import Parse (str)
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
-import Util (Endo, type (×), (×), type (+), absurd, error, toTuple, intersperse)
+import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
+import Text.Pretty (render) as P
+import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, toTuple, (×))
 import Val (PrimOp, Val)
 import Val (Val(..)) as V
 
@@ -59,8 +60,8 @@ hcomma = fromFoldable >>> intersperse (comma :<>: space) >>> hcat
 parens :: Endo Doc
 parens = between (text "(") (text ")")
 
-null :: Doc
-null = empty 0 0
+emptyDoc :: Doc
+emptyDoc = empty 0 0
 
 class ToList a where
    toList :: a -> List a
@@ -89,7 +90,7 @@ vert :: forall f. Foldable f => Doc -> f Doc -> Doc
 vert delim = fromFoldable >>> vert'
    where
    vert' :: List Doc -> Doc
-   vert' Nil = null
+   vert' Nil = emptyDoc
    vert' (x : Nil) = x
    vert' (x : y : xs) = atop (x :<>: delim) (vert' (y : xs))
 
@@ -107,11 +108,13 @@ prettyParensOpt x =
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
 
--- strip parens from (:)
 prettyConstr :: forall a. Pretty a => 𝔹 -> Ctr -> List a -> Doc
-prettyConstr α c (x : y : Nil) | c == cPair = highlightIf α $ parens (hcomma [ pretty x, pretty y ])
-prettyConstr α c Nil | c == cNil = highlightIf α nil
-prettyConstr α c (x : y : Nil) | c == cCons = parens (hspace [ pretty x, highlightIf α $ text ":", pretty y ])
+prettyConstr α c (x : y : ys)
+   | c == cPair = assert (null ys) $ highlightIf α $ parens (hcomma [ pretty x, pretty y ])
+prettyConstr α c ys
+   | c == cNil = assert (null ys) $ highlightIf α nil
+prettyConstr α c (x : y : ys)
+   | c == cCons = assert (null ys) $ parens (hspace [ pretty x, highlightIf α $ text ":", pretty y ])
 prettyConstr α c xs = hspace (highlightIf α (prettyCtr c) : (prettyParensOpt <$> xs))
 
 prettyRecordOrDict :: forall a b. Pretty a => Endo Doc -> (b -> Doc) -> 𝔹 -> List (b × a) -> Doc
@@ -154,7 +157,7 @@ instance Pretty (Bind (Elim Boolean)) where
    pretty (x ↦ σ) = hspace [ text x, text str.equals, pretty σ ]
 
 instance Pretty (Cont Boolean) where
-   pretty ContNone = null
+   pretty ContNone = emptyDoc
    pretty (ContExpr e) = pretty e
    pretty (ContElim σ) = pretty σ
 

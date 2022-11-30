@@ -3,10 +3,11 @@ module DesugarBwd where
 import Prelude hiding (absurd)
 
 import Bindings (Bind, (↦), keys)
+import Control.Apply (lift2)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
-import Data.List (List(..), (:), (\\), singleton, sortBy, zip)
+import Data.List (List(..), singleton, sortBy, zip, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
@@ -19,7 +20,7 @@ import Expr (Expr(..), RecDefs, VarDef(..)) as E
 import Lattice (𝔹, (∨))
 import Partial.Unsafe (unsafePartial)
 import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (type (+), type (×), Endo, Pair(..), absurd, error, successful, (×))
+import Util (type (+), type (×), Endo, absurd, error, successful, (×))
 
 desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
 desugarBwd = exprBwd
@@ -60,7 +61,7 @@ exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry exprBwd <$> zi
 exprBwd (E.Record α xes) (Record _ xss) =
    Record α $ xss <#> \(x ↦ s) -> x ↦ exprBwd (get x xes) s
 exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
-   Dictionary α $ (zip ees sss) <#> (\(ee × ss) -> exprBwd <$> ee <*> ss)
+   Dictionary α $ lift2 exprBwd <$> ees <*> sss
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s (x × y) s') =
    Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
 exprBwd (E.Lambda σ) (Lambda bs) = Lambda (branchesBwd_curried σ bs)
