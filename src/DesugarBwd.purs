@@ -60,7 +60,7 @@ exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry exprBwd <$> zi
 exprBwd (E.Record α xes) (Record _ xss) =
    Record α $ xss <#> \(x ↦ s) -> x ↦ exprBwd (get x xes) s
 exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
-   Dictionary α $ (zip ees sss) <#> (\(Pair e e' × Pair s s') -> Pair (exprBwd e s) (exprBwd e' s'))
+   Dictionary α $ (zip ees sss) <#> (\(ee × ss) -> exprBwd <$> ee <*> ss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s (x × y) s') =
    Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
 exprBwd (E.Lambda σ) (Lambda bs) = Lambda (branchesBwd_curried σ bs)
