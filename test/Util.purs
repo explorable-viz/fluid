@@ -51,7 +51,7 @@ testWithSetup (File file) expected v_expect_opt setup =
             v' = fromMaybe identity (fst <$> v_expect_opt) v
             γ' × e' × _ = evalBwd γ e v' t
             s' = desugarBwd e' s
-            v'' = evalFwd γ' (successful (desugarFwd s')) true t
+            v'' = evalFwd γ' (successful (desugarFwd s')) true
          unless (isGraphical v'') (checkPretty "Value" expected v'')
          case snd <$> v_expect_opt of
             Nothing -> pure unit

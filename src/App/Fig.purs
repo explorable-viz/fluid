@@ -157,19 +157,19 @@ figViews :: Fig -> Selector -> MayFail (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
       γ0γ × e' × α = evalBwd (γ0 <+> γ) e (δv v) t
-      v' = evalFwd γ0γ e' α t
+      v' = evalFwd γ0γ e' α
    views <- valViews γ0γ xs
    pure $ view "output" v' × views
 
 linkResult :: Var -> Env 𝔹 -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace 𝔹 -> Trace 𝔹 -> Val 𝔹 -> MayFail LinkResult
-linkResult x γ0 γ e1 e2 t1 t2 v1 = do
+linkResult x γ0 γ e1 e2 t1 _ v1 = do
    let
       γ0γ × _ × _ = evalBwd (γ0 <+> γ) e1 v1 t1
       _ × γ' = append_inv (S.singleton x) γ0γ
    v0' <- lookup x γ' # orElse absurd
    -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use
    -- (topOf γ0) combined with negation of the dataset environment slice
-   let v2' = neg (evalFwd (neg ((botOf <$> γ0) <+> γ')) (const true <$> e2) true t2)
+   let v2' = neg (evalFwd (neg ((botOf <$> γ0) <+> γ')) (const true <$> e2) true)
    pure { v': v2', v0' }
 
 loadFig :: FigSpec -> Aff Fig
