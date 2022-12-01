@@ -51,16 +51,18 @@ evalFwd γ (Record α xes) α' (T.Record xts) =
    xvs = intersectionWith (×) xes xts <#> (\(e × t) -> evalFwd γ e α' t)
 evalFwd γ (Constr α c es) α' (T.Constr _ ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)
-   -- here
+-- here
 evalFwd γ (Matrix α e1 (x × y) e2) α' (T.Matrix tss _ _ t2) =
-   let (i' × β) × (j' × β') = unwrap $ evalFwd γ e2 α' t2
-       vss = A.fromFoldable $ do
-          i <- range 1 i'
-          singleton $ A.fromFoldable $ do
-             j <- range 1 j'
-             let γ' = O.singleton x (V.Int β i) `disjointUnion` (O.singleton y (V.Int β' j))
-             singleton (evalFwd (γ <+> γ') e1 α' (tss ! (i - 1) ! (j - 1))) in
-   V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
+   let
+      (i' × β) × (j' × β') = unwrap $ evalFwd γ e2 α' t2
+      vss = A.fromFoldable $ do
+         i <- range 1 i'
+         singleton $ A.fromFoldable $ do
+            j <- range 1 j'
+            let γ' = O.singleton x (V.Int β i) `disjointUnion` (O.singleton y (V.Int β' j))
+            singleton (evalFwd (γ <+> γ') e1 α' (tss ! (i - 1) ! (j - 1)))
+   in
+      V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
 evalFwd γ (Lambda σ) α _ = V.Closure α (γ `restrict` fv σ) empty σ
 evalFwd γ (Project e' x) α (T.Project t _) =
    case evalFwd γ e' α t of
@@ -75,17 +77,17 @@ evalFwd γ (App e1 e2) α (T.App (t1 × _ × _) t2 _ t3) =
          γ2 = closeDefsFwd γ1 δ β
          γ3 × e3 × β' = matchFwd v σ'
       _ -> error absurd
-evalFwd γ (App e1 e2) α (T.AppPrim (t1 × PrimOp φ × _) (t2 × _)) =
+evalFwd γ (App e1 e2) α (T.AppPrim (t1 × _ × _) (t2 × _)) =
    case evalFwd γ e1 α t1 of
-      V.Primitive _ vs' ->
+      V.Primitive (PrimOp φ) vs' ->
          if φ.arity > length vs'' then V.Primitive (PrimOp φ) vs'' else φ.op vs''
          where
          v2' = evalFwd γ e2 α t2
          vs'' = vs' <> singleton v2'
       _ -> error absurd
-evalFwd γ (App e1 e2) α (T.AppConstr (t1 × c × _) t2) =
+evalFwd γ (App e1 e2) α (T.AppConstr (t1 × _ × _) t2) =
    case evalFwd γ e1 α t1 of
-      V.Constr α' _ vs' ->
+      V.Constr α' c vs' ->
          V.Constr (α ∧ α') c (vs' <> singleton v)
          where
          v = evalFwd γ e2 α t2
