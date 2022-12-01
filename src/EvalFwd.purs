@@ -11,10 +11,10 @@ import Dict (disjointUnion, empty, get, intersectionWith)
 import Dict (singleton) as O
 import Expr (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr, fv)
 import Lattice (𝔹, (∧))
-import Primitive (match) as P
+import Primitive (unwrap)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace)
-import Util (type (×), (×), (!), absurd, assert, error)
+import Util (type (×), (×), (!), absurd, error)
 import Val (Env, PrimOp(..), (<+>), Val, for, restrict)
 import Val (Val(..)) as V
 
@@ -22,7 +22,7 @@ matchFwd :: Val 𝔹 -> Elim 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
 matchFwd v (ElimVar x κ)
    | x == varAnon = empty × κ × true
    | otherwise = O.singleton x v × κ × true
-matchFwd (V.Constr α c vs) (ElimConstr m)  =
+matchFwd (V.Constr α c vs) (ElimConstr m) =
    second (_ ∧ α) (matchManyFwd vs (get c m))
 matchFwd (V.Record α xvs) (ElimRecord xs κ) =
    second (_ ∧ α) (matchManyFwd (xs # S.toUnfoldable <#> flip get xvs) κ)
@@ -40,31 +40,28 @@ closeDefsFwd γ ρ α = ρ <#> \σ ->
    let ρ' = ρ `for` σ in V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
 evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Trace 𝔹 -> Val 𝔹
-evalFwd γ (Var x) _ (T.Var _) = get x γ
-evalFwd γ (Op op) _ (T.Op _) = get op γ
-evalFwd _ (Int α n) α' (T.Int _) = V.Int (α ∧ α') n
-evalFwd _ (Float α n) α' (T.Float _) = V.Float (α ∧ α') n
-evalFwd _ (Str α s) α' (T.Str _) = V.Str (α ∧ α') s
+evalFwd γ (Var x) _ _ = get x γ
+evalFwd γ (Op op) _ _ = get op γ
+evalFwd _ (Int α n) α' _ = V.Int (α ∧ α') n
+evalFwd _ (Float α n) α' _ = V.Float (α ∧ α') n
+evalFwd _ (Str α s) α' _ = V.Str (α ∧ α') s
 evalFwd γ (Record α xes) α' (T.Record xts) =
    V.Record (α ∧ α') xvs
    where
    xvs = intersectionWith (×) xes xts <#> (\(e × t) -> evalFwd γ e α' t)
-evalFwd γ (Constr α _ es) α' (T.Constr c ts) =
+evalFwd γ (Constr α c es) α' (T.Constr _ ts) =
    V.Constr (α ∧ α') c ((\(e' × t) -> evalFwd γ e' α' t) <$> zip es ts)
-evalFwd γ (Matrix α e1 _ e2) α' (T.Matrix tss (x × y) (i' × j') t2) =
-   case evalFwd γ e2 α' t2 of
-      V.Constr _ _ (v1 : v2 : Nil) ->
-         V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
-         where
-         (i'' × β) × (j'' × β') = P.match v1 × P.match v2
-         vss = assert (i'' == i' && j'' == j') $ A.fromFoldable $ do
-            i <- range 1 i'
-            singleton $ A.fromFoldable $ do
-               j <- range 1 j'
-               let γ' = O.singleton x (V.Int β i) `disjointUnion` (O.singleton y (V.Int β' j))
-               singleton (evalFwd (γ <+> γ') e1 α' (tss ! (i - 1) ! (j - 1)))
-      _ -> error absurd
-evalFwd γ (Lambda σ) α (T.Lambda _) = V.Closure α (γ `restrict` fv σ) empty σ
+   -- here
+evalFwd γ (Matrix α e1 (x × y) e2) α' (T.Matrix tss _ _ t2) =
+   let (i' × β) × (j' × β') = unwrap $ evalFwd γ e2 α' t2
+       vss = A.fromFoldable $ do
+          i <- range 1 i'
+          singleton $ A.fromFoldable $ do
+             j <- range 1 j'
+             let γ' = O.singleton x (V.Int β i) `disjointUnion` (O.singleton y (V.Int β' j))
+             singleton (evalFwd (γ <+> γ') e1 α' (tss ! (i - 1) ! (j - 1))) in
+   V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
+evalFwd γ (Lambda σ) α _ = V.Closure α (γ `restrict` fv σ) empty σ
 evalFwd γ (Project e' x) α (T.Project t _) =
    case evalFwd γ e' α t of
       V.Record _ xvs -> get x xvs
