@@ -36,9 +36,12 @@ between l r doc = l :<>: doc :<>: r
 brackets :: Endo Doc
 brackets = between (text str.lBracket) (text str.rBracket)
 
-highlightIf :: Boolean -> Endo Doc
-highlightIf false = identity
-highlightIf true = between (text "_") (text "_")
+class Highlightable a where
+   highlightIf :: a -> Endo Doc
+
+instance Highlightable Boolean where
+   highlightIf false = identity
+   highlightIf true = between (text "_") (text "_")
 
 colon :: Doc
 colon = text str.colon
@@ -83,9 +86,6 @@ class Pretty p where
 
 instance Pretty String where
    pretty = text
-
-instance Pretty Boolean where
-   pretty = show >>> pretty
 
 vert :: forall f. Foldable f => Doc -> f Doc -> Doc
 vert delim = fromFoldable >>> vert'
