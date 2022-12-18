@@ -109,7 +109,7 @@ prettyParensOpt x =
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
 
-prettyConstr :: forall a. Pretty a => 𝔹 -> Ctr -> List a -> Doc
+prettyConstr :: forall d a. Pretty d => Highlightable a => a -> Ctr -> List d -> Doc
 prettyConstr α c (x : y : ys)
    | c == cPair = assert (null ys) $ highlightIf α $ parens (hcomma [ pretty x, pretty y ])
 prettyConstr α c ys
@@ -118,15 +118,15 @@ prettyConstr α c (x : y : ys)
    | c == cCons = assert (null ys) $ parens (hspace [ pretty x, highlightIf α $ text ":", pretty y ])
 prettyConstr α c xs = hspace (highlightIf α (prettyCtr c) : (prettyParensOpt <$> xs))
 
-prettyRecordOrDict :: forall a b. Pretty a => Endo Doc -> (b -> Doc) -> 𝔹 -> List (b × a) -> Doc
+prettyRecordOrDict :: forall d b. Pretty d => Endo Doc -> (b -> Doc) -> 𝔹 -> List (b × d) -> Doc
 prettyRecordOrDict bracify prettyKey α xvs =
    xvs <#> first prettyKey <#> (\(x × v) -> hspace [ x :<>: colon, pretty v ])
       # hcomma >>> bracify >>> highlightIf α
 
-prettyDict :: forall a b. Pretty a => (b -> Doc) -> 𝔹 -> List (b × a) -> Doc
+prettyDict :: forall d b. Pretty d => (b -> Doc) -> 𝔹 -> List (b × d) -> Doc
 prettyDict = between (text "{|") (text "|}") # prettyRecordOrDict
 
-prettyRecord :: forall a b. Pretty a => (b -> Doc) -> 𝔹 -> List (b × a) -> Doc
+prettyRecord :: forall d b. Pretty d => (b -> Doc) -> 𝔹 -> List (b × d) -> Doc
 prettyRecord = between (text "{") (text "}") # prettyRecordOrDict
 
 instance Pretty (E.Expr Boolean) where
