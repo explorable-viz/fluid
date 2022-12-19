@@ -181,7 +181,10 @@ withInverse2 fwd = { fwd, bwd: const identity }
 unary :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => Unary d1 d2 -> Val a
 unary { fwd, bwd } = unary_ { fwd: fwd', bwd: bwd' }
    where
+   fwd' :: d1 × a -> d2 × a
    fwd' (x × α) = fwd x × α
+
+   bwd' :: d2 × a -> d1 -> d1 × a
    bwd' (y × α) x = bwd y x × α
 
 binary :: forall d1 d2 d3 a. ToFrom d1 a => ToFrom d2 a => MeetSemilattice a => ToFrom d3 a => Binary d1 d2 d3 -> Val a
