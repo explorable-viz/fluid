@@ -71,6 +71,7 @@ infixl 7 meet as ∧
 infixl 6 join as ∨
 
 type 𝔹 = Boolean
+type Raw (c :: Type -> Type) = c Unit
 
 instance (Eq k, Show k, PartialJoinSemilattice a) => JoinSemilattice (Tuple k a) where
    join = definedJoin
