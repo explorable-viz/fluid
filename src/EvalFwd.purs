@@ -1,43 +1,45 @@
 module EvalFwd where
 
-import Prelude hiding (absurd)
+import Prelude hiding (absurd, top)
+
+import Bindings (varAnon)
 import Data.Array (fromFoldable) as A
 import Data.List (List(..), (:), length, range, singleton)
 import Data.Profunctor.Strong ((***), first, second)
-import Data.Set (union)
 import Data.Set (toUnfoldable) as S
-import Bindings (varAnon)
+import Data.Set (union)
 import Dict (disjointUnion, empty, get)
 import Dict (singleton) as O
 import Expr (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr, fv)
-import Lattice (𝔹, (∧))
+import Lattice (class BoundedMeetSemilattice, (∧), top)
+import Pretty (class Highlightable)
 import Primitive (unwrap)
 import Util (type (×), (×), absurd, error)
 import Val (Env, PrimOp(..), (<+>), Val, for, restrict)
 import Val (Val(..)) as V
 
-matchFwd :: Val 𝔹 -> Elim 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
+matchFwd :: forall a. BoundedMeetSemilattice a => Val a -> Elim a -> Env a × Cont a × a
 matchFwd v (ElimVar x κ)
-   | x == varAnon = empty × κ × true
-   | otherwise = O.singleton x v × κ × true
+   | x == varAnon = empty × κ × top
+   | otherwise = O.singleton x v × κ × top
 matchFwd (V.Constr α c vs) (ElimConstr m) =
    second (_ ∧ α) (matchManyFwd vs (get c m))
 matchFwd (V.Record α xvs) (ElimRecord xs κ) =
    second (_ ∧ α) (matchManyFwd (xs # S.toUnfoldable <#> flip get xvs) κ)
 matchFwd _ _ = error absurd
 
-matchManyFwd :: List (Val 𝔹) -> Cont 𝔹 -> Env 𝔹 × Cont 𝔹 × 𝔹
-matchManyFwd Nil κ = empty × κ × true
+matchManyFwd :: forall a. BoundedMeetSemilattice a => List (Val a) -> Cont a -> Env a × Cont a × a
+matchManyFwd Nil κ = empty × κ × top
 matchManyFwd (v : vs) σ =
    (first (ρ `disjointUnion` _) *** (_ ∧ α)) (matchManyFwd vs κ)
    where
    ρ × κ × α = matchFwd v (asElim σ)
 
-closeDefsFwd :: Env 𝔹 -> RecDefs 𝔹 -> 𝔹 -> Env 𝔹
+closeDefsFwd :: forall a. Env a -> RecDefs a -> a -> Env a
 closeDefsFwd γ ρ α = ρ <#> \σ ->
    let ρ' = ρ `for` σ in V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
-evalFwd :: Env 𝔹 -> Expr 𝔹 -> 𝔹 -> Val 𝔹
+evalFwd :: forall a. BoundedMeetSemilattice a => Highlightable a => Env a -> Expr a -> a -> Val a
 evalFwd γ (Var x) _ = get x γ
 evalFwd γ (Op op) _ = get op γ
 evalFwd _ (Int α n) α' = V.Int (α ∧ α') n
