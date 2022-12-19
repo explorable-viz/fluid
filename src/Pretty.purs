@@ -73,11 +73,11 @@ class ToList a where
 class ToPair a where
    toPair :: a -> a × a
 
-instance ToPair (E.Expr Boolean) where
+instance ToPair (E.Expr a) where
    toPair (E.Constr _ c (e : e' : Nil)) | c == cPair = e × e'
    toPair _ = error absurd
 
-instance ToPair (Val Boolean) where
+instance ToPair (Val a) where
    toPair (V.Constr _ c (v : v' : Nil)) | c == cPair = v × v'
    toPair _ = error absurd
 
