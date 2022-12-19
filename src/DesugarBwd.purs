@@ -1,6 +1,6 @@
 module DesugarBwd where
 
-import Prelude hiding (absurd)
+import Prelude hiding (absurd, top)
 
 import Bindings (Bind, (↦), keys)
 import Control.Apply (lift2)
@@ -17,15 +17,15 @@ import Dict (Dict, get)
 import Dict (fromFoldable) as D
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
-import Lattice (𝔹, (∨))
+import Lattice (class BoundedJoinSemilattice, (∨), bot)
 import Partial.Unsafe (unsafePartial)
 import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (type (+), type (×), Endo, absurd, error, successful, (×))
 
-desugarBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
+desugarBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Expr a -> Expr a
 desugarBwd = exprBwd
 
-varDefsBwd :: E.Expr 𝔹 -> VarDefs 𝔹 × Expr 𝔹 -> VarDefs 𝔹 × Expr 𝔹
+varDefsBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> VarDefs a × Expr a -> VarDefs a × Expr a
 varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) =
    NonEmptyList (VarDef π (exprBwd e1 s1) :| Nil) × exprBwd e2 s2
 varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × s2) =
@@ -35,10 +35,10 @@ varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × 
       NonEmptyList (VarDef π (exprBwd e1 s1) :| d' : ds') × s2'
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
-recDefsBwd :: E.RecDefs 𝔹 -> RecDefs 𝔹 -> RecDefs 𝔹
+recDefsBwd :: forall a. BoundedJoinSemilattice a => E.RecDefs a -> RecDefs a -> RecDefs a
 recDefsBwd ρ xcs = join (recDefsBwd' ρ (groupBy (eq `on` fst) xcs))
 
-recDefsBwd' :: E.RecDefs 𝔹 -> NonEmptyList (RecDefs 𝔹) -> NonEmptyList (RecDefs 𝔹)
+recDefsBwd' :: forall a. BoundedJoinSemilattice a => E.RecDefs a -> NonEmptyList (RecDefs a) -> NonEmptyList (RecDefs a)
 recDefsBwd' ρ (NonEmptyList (xcs :| xcss)) =
    let
       x = fst (head xcs)
@@ -48,10 +48,10 @@ recDefsBwd' ρ (NonEmptyList (xcs :| xcss)) =
    in
       NonEmptyList (recDefBwd (x ↦ get x ρ) xcs :| xcss')
 
-recDefBwd :: Bind (Elim 𝔹) -> NonEmptyList (Clause 𝔹) -> NonEmptyList (Clause 𝔹)
+recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> NonEmptyList (Clause a) -> NonEmptyList (Clause a)
 recDefBwd (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd
 
-exprBwd :: E.Expr 𝔹 -> Expr 𝔹 -> Expr 𝔹
+exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Expr a -> Expr a
 exprBwd (E.Var _) (Var x) = Var x
 exprBwd (E.Op _) (Op op) = Op op
 exprBwd (E.Int α _) (Int _ n) = Int α n
@@ -88,7 +88,7 @@ exprBwd (E.Constr α2 _ (e' : E.Constr α1 _ Nil : Nil)) (ListComp _ s_body (Non
       (NonEmptyList (Guard (Constr (α1 ∨ α2) cTrue Nil) :| Nil))
 -- list-comp-last
 exprBwd e (ListComp α s (NonEmptyList (q :| Nil))) =
-   case exprBwd e (ListComp α s (NonEmptyList (q :| Guard (Constr true cTrue Nil) : Nil))) of
+   case exprBwd e (ListComp α s (NonEmptyList (q :| Guard (Constr bot cTrue Nil) : Nil))) of
       ListComp β s' (NonEmptyList (q' :| (Guard (Constr _ c Nil)) : Nil)) | c == cTrue ->
          (ListComp β s' (NonEmptyList (q' :| Nil)))
       _ -> error absurd
@@ -96,7 +96,7 @@ exprBwd e (ListComp α s (NonEmptyList (q :| Nil))) =
 exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp α0 s1 (NonEmptyList (Guard s2 :| q : qs))) =
    case
       exprBwd (asExpr (get cTrue m)) (ListComp α0 s1 (NonEmptyList (q :| qs))) ×
-         exprBwd (asExpr (get cFalse m)) (Constr true cNil Nil)
+         exprBwd (asExpr (get cFalse m)) (Constr bot cNil Nil)
       of
       ListComp β s1' (NonEmptyList (q' :| qs')) × Constr α c Nil | c == cNil ->
          ListComp (α ∨ β) s1' (NonEmptyList (Guard (exprBwd e2 s2) :| q' : qs'))
@@ -121,14 +121,14 @@ exprBwd
 exprBwd _ _ = error absurd
 
 -- e, l desugar_bwd l
-listRestBwd :: E.Expr 𝔹 -> Endo (ListRest 𝔹)
+listRestBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Endo (ListRest a)
 listRestBwd (E.Constr α _ _) (End _) = End α
 listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
    Next α (exprBwd e1 s) (listRestBwd e2 l)
 listRestBwd _ _ = error absurd
 
 -- σ, ps desugar_bwd e
-patternsBwd :: Elim 𝔹 -> NonEmptyList Pattern -> E.Expr 𝔹
+patternsBwd :: forall a. Elim a -> NonEmptyList Pattern -> E.Expr a
 patternsBwd σ (NonEmptyList (p :| Nil)) = asExpr (patternBwd σ p)
 patternsBwd σ (NonEmptyList (p :| p' : ps)) = patternsBwd_rest (asExpr (patternBwd σ p))
    where
@@ -136,7 +136,7 @@ patternsBwd σ (NonEmptyList (p :| p' : ps)) = patternsBwd_rest (asExpr (pattern
    patternsBwd_rest _ = error absurd
 
 -- σ, p desugar_bwd κ
-patternBwd :: Elim 𝔹 -> Pattern -> Cont 𝔹
+patternBwd :: forall a. Elim a -> Pattern -> Cont a
 patternBwd (ElimVar _ κ) (PVar _) = κ
 patternBwd (ElimConstr m) (PConstr c ps) = argsBwd (get c m) (Left <$> ps)
 patternBwd (ElimConstr m) (PListEmpty) = get cNil m
@@ -145,46 +145,46 @@ patternBwd (ElimRecord _ κ) (PRecord xps) = recordBwd κ (sortBy (flip compare 
 patternBwd _ _ = error absurd
 
 -- σ, o desugar_bwd κ
-listRestPatternBwd :: Elim 𝔹 -> ListRestPattern -> Cont 𝔹
+listRestPatternBwd :: forall a. Elim a -> ListRestPattern -> Cont a
 listRestPatternBwd (ElimVar _ _) _ = error absurd
 listRestPatternBwd (ElimRecord _ _) _ = error absurd
 listRestPatternBwd (ElimConstr m) PEnd = get cNil m
 listRestPatternBwd (ElimConstr m) (PNext p o) = argsBwd (get cCons m) (Left p : Right o : Nil)
 
-argsBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹
+argsBwd :: forall a. Cont a -> List (Pattern + ListRestPattern) -> Cont a
 argsBwd κ Nil = κ
 argsBwd κ (Left p : πs) = argsBwd (patternBwd (asElim κ) p) πs
 argsBwd κ (Right o : πs) = argsBwd (listRestPatternBwd (asElim κ) o) πs
 
-recordBwd :: Cont 𝔹 -> List (Bind Pattern) -> Cont 𝔹
+recordBwd :: forall a. Cont a -> List (Bind Pattern) -> Cont a
 recordBwd κ Nil = κ
 recordBwd σ (_ ↦ p : xps) = recordBwd σ xps # (asElim >>> flip patternBwd p)
 
 -- σ, c desugar_bwd c'
-branchBwd_curried :: Elim 𝔹 -> Endo (Branch 𝔹)
+branchBwd_curried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (Branch a)
 branchBwd_curried σ (πs × s) = πs × exprBwd (patternsBwd σ πs) s
 
 -- σ, c desugar_bwd c'
-branchBwd_uncurried :: Elim 𝔹 -> Endo (Pattern × Expr 𝔹)
+branchBwd_uncurried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (Pattern × Expr a)
 branchBwd_uncurried σ (p × s) = p × exprBwd (asExpr (patternBwd σ p)) s
 
 -- σ, cs desugar_bwd cs'
-branchesBwd_curried :: Elim 𝔹 -> Endo (NonEmptyList (Branch 𝔹))
+branchesBwd_curried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (NonEmptyList (Branch a))
 branchesBwd_curried σ (NonEmptyList (b1 :| b2 : bs)) =
    NonEmptyList (branchBwd_curried σ b1 :| toList (branchesBwd_curried σ (NonEmptyList (b2 :| bs))))
 branchesBwd_curried σ (NonEmptyList (b :| Nil)) =
    NonEmptyList (branchBwd_curried σ b :| Nil)
 
 -- σ, cs desugar_bwd cs'
-branchesBwd_uncurried :: Elim 𝔹 -> Endo (NonEmptyList (Pattern × Expr 𝔹))
+branchesBwd_uncurried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (NonEmptyList (Pattern × Expr a))
 branchesBwd_uncurried σ (NonEmptyList (b1 :| b2 : bs)) =
    NonEmptyList (branchBwd_uncurried σ b1 :| toList (branchesBwd_uncurried σ (NonEmptyList (b2 :| bs))))
 branchesBwd_uncurried σ (NonEmptyList (b :| Nil)) =
    NonEmptyList (branchBwd_uncurried σ b :| Nil)
 
 -- κ, πs totalise_bwd κ', α
-totaliseBwd :: Cont 𝔹 -> List (Pattern + ListRestPattern) -> Cont 𝔹 × 𝔹
-totaliseBwd κ Nil = κ × false
+totaliseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
+totaliseBwd κ Nil = κ × bot
 totaliseBwd ContNone _ = error absurd
 totaliseBwd (ContElim (ElimVar _ κ')) (Left (PVar x) : πs) =
    let
@@ -216,18 +216,18 @@ totaliseBwd _ _ = error absurd
 
 -- Discard all synthesised branches, returning the original singleton branch for c, plus join of annotations
 -- on the empty lists used for bodies of synthesised branches.
-totaliseConstrBwd :: Dict (Cont 𝔹) -> Ctr -> Cont 𝔹 × 𝔹
+totaliseConstrBwd :: forall a. BoundedJoinSemilattice a => Dict (Cont a) -> Ctr -> Cont a × a
 totaliseConstrBwd m c = unsafePartial $
    let
       cs = (ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c
    in
-      get c m × foldl (∨) false (map (bodyAnn <<< body) cs)
+      get c m × foldl (∨) bot (map (bodyAnn <<< body) cs)
    where
-   body :: Partial => Ctr -> Cont 𝔹
+   body :: Partial => Ctr -> Cont a
    body c' = applyN unargument (successful (arity c')) (get c' m)
 
-   unargument :: Partial => Cont 𝔹 -> Cont 𝔹
+   unargument :: Partial => Cont a -> Cont a
    unargument (ContElim (ElimVar _ κ)) = κ
 
-   bodyAnn :: Partial => Cont 𝔹 -> 𝔹
+   bodyAnn :: Partial => Cont a -> a
    bodyAnn (ContExpr (E.Constr α c' Nil)) | c' == cNil = α
