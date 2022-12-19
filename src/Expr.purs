@@ -10,7 +10,7 @@ import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
-import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
 import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
@@ -129,7 +129,7 @@ instance JoinSemilattice a => Slices (Elim a) where
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
    maybeJoin _ _ = report "Incompatible eliminators"
 
-instance Expandable (Elim Boolean) where
+instance BoundedJoinSemilattice a => Expandable (Elim a) where
    expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
    expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
    expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
@@ -145,7 +145,7 @@ instance JoinSemilattice a => Slices (Cont a) where
    maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
    maybeJoin _ _ = report "Incompatible continuations"
 
-instance Expandable (Cont Boolean) where
+instance BoundedJoinSemilattice a => Expandable (Cont a) where
    expand ContNone ContNone = ContNone
    expand (ContExpr e) (ContExpr e') = ContExpr (expand e e')
    expand (ContElim σ) (ContElim σ') = ContElim (expand σ σ')
@@ -158,7 +158,7 @@ instance JoinSemilattice a => JoinSemilattice (VarDef a) where
 instance JoinSemilattice a => Slices (VarDef a) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
 
-instance Expandable (VarDef Boolean) where
+instance BoundedJoinSemilattice a => Expandable (VarDef a) where
    expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
@@ -182,7 +182,7 @@ instance JoinSemilattice a => Slices (Expr a) where
    maybeJoin (LetRec ρ e) (LetRec ρ' e') = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
    maybeJoin _ _ = report "Incompatible expressions"
 
-instance Expandable (Expr Boolean) where
+instance BoundedJoinSemilattice a => Expandable (Expr a) where
    expand (Var x) (Var x') = Var (x ≜ x')
    expand (Op op) (Op op') = Op (op ≜ op')
    expand (Int α n) (Int _ n') = Int α (n ≜ n')

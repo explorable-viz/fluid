@@ -16,7 +16,7 @@ import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
-import Lattice (class BoundedJoinSemilattice, 𝔹, bot, botOf, expand, (∨))
+import Lattice (class BoundedJoinSemilattice, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
@@ -63,7 +63,7 @@ matchManyBwd γγ' κ α (w : ws) =
    v × σ = matchBwd γ κ α w
    vs × κ' = matchManyBwd γ' (ContElim σ) α ws
 
-evalBwd :: Env 𝔹 -> Expr 𝔹 -> Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
+evalBwd :: forall a. BoundedJoinSemilattice a => Env a -> Expr a -> Val a -> Trace a -> Env a × Expr a × a
 evalBwd γ e v t =
    expand γ' γ × expand e' e × α
    where

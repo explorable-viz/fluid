@@ -11,7 +11,7 @@ import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
@@ -123,7 +123,7 @@ instance JoinSemilattice a => Slices (Val a) where
    maybeJoin (Primitive φ vs) (Primitive _ vs') = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _ = report "Incompatible values"
 
-instance Expandable (Val Boolean) where
+instance BoundedJoinSemilattice a => Expandable (Val a) where
    expand (Int α n) (Int _ n') = Int α (n ≜ n')
    expand (Float α n) (Float _ n') = Float α (n ≜ n')
    expand (Str α s) (Str _ s') = Str α (s ≜ s')
