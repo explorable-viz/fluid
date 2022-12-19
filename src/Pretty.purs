@@ -15,7 +15,6 @@ import Dict (Dict)
 import Dict (toUnfoldable) as D
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
-import Lattice (𝔹)
 import Parse (str)
 import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
@@ -129,7 +128,7 @@ prettyDict = between (text "{|") (text "|}") # prettyRecordOrDict
 prettyRecord :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
 prettyRecord = between (text "{") (text "}") # prettyRecordOrDict
 
-instance Pretty (E.Expr Boolean) where
+instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
    pretty (E.Int α n) = highlightIf α (text (show n))
    pretty (E.Float _ n) = text (show n)
@@ -146,31 +145,31 @@ instance Pretty (E.Expr Boolean) where
    pretty (E.Project _ _) = error "todo"
    pretty (E.App e e') = hspace [ pretty e, pretty e' ]
 
-instance Pretty (Dict (Elim Boolean)) where
+instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty = D.toUnfoldable >>> go
       where
-      go :: List (Var × Elim 𝔹) -> Doc
+      go :: List (Var × Elim a) -> Doc
       go Nil = error absurd -- non-empty
       go (xσ : Nil) = pretty xσ
       go (xσ : δ) = atop (go δ :<>: semi) (pretty xσ)
 
-instance Pretty (Bind (Elim Boolean)) where
+instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) = hspace [ text x, text str.equals, pretty σ ]
 
-instance Pretty (Cont Boolean) where
+instance Highlightable a => Pretty (Cont a) where
    pretty ContNone = emptyDoc
    pretty (ContExpr e) = pretty e
    pretty (ContElim σ) = pretty σ
 
-instance Pretty (Ctr × Cont Boolean) where
+instance Highlightable a => Pretty (Ctr × Cont a) where
    pretty (c × κ) = hspace [ text (showCtr c), text str.rArrow, pretty κ ]
 
-instance Pretty (Elim Boolean) where
+instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hspace [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
    pretty (ElimRecord _ _) = error "todo"
 
-instance Pretty (Val Boolean) where
+instance Highlightable a => Pretty (Val a) where
    pretty (V.Int α n) = highlightIf α (text (show n))
    pretty (V.Float α n) = highlightIf α (text (show n))
    pretty (V.Str α str) = highlightIf α (text (show str))
