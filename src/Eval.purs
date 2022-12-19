@@ -15,8 +15,8 @@ import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
-import Lattice (𝔹)
-import Pretty (prettyP)
+import Lattice (class BoundedJoinSemilattice, 𝔹, bot)
+import Pretty (class Highlightable, prettyP)
 import Primitive (unwrap)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
@@ -28,7 +28,7 @@ import Val (Val(..)) as V
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: Val 𝔹 -> Elim 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × Match 𝔹)
+match :: forall a. Highlightable a => Val a -> Elim a -> MayFail (Env a × Cont a × Match a)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × MatchVarAnon v)
    | otherwise = pure (D.singleton x v × κ × MatchVar x v)
@@ -45,7 +45,7 @@ match (V.Record _ xvs) (ElimRecord xs κ) = do
    second (zip xs' >>> D.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get xvs) κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
-matchMany :: List (Val 𝔹) -> Cont 𝔹 -> MayFail (Env 𝔹 × Cont 𝔹 × List (Match 𝔹))
+matchMany :: forall a. Highlightable a => List (Val a) -> Cont a -> MayFail (Env a × Cont a × List (Match a))
 matchMany Nil κ = pure (empty × κ × Nil)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ' × w <- match v σ
@@ -55,52 +55,52 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
 
-closeDefs :: Env 𝔹 -> RecDefs 𝔹 -> Env 𝔹
+closeDefs :: forall a. BoundedJoinSemilattice a => Env a -> RecDefs a -> Env a
 closeDefs γ ρ = ρ <#> \σ ->
    let
       ρ' = ρ `for` σ
    in
-      V.Closure false (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
+      V.Closure bot (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-eval :: Env 𝔹 -> Expr 𝔹 -> MayFail (Trace 𝔹 × Val 𝔹)
+eval :: forall a. BoundedJoinSemilattice a => Highlightable a => Env a -> Expr a -> MayFail (Trace a × Val a)
 eval γ (Var x) = (T.Var x × _) <$> lookup' x γ
 eval γ (Op op) = (T.Op op × _) <$> lookup' op γ
-eval _ (Int _ n) = pure (T.Int n × V.Int false n)
-eval _ (Float _ n) = pure (T.Float n × V.Float false n)
-eval _ (Str _ str) = pure (T.Str str × V.Str false str)
+eval _ (Int _ n) = pure (T.Int n × V.Int bot n)
+eval _ (Float _ n) = pure (T.Float n × V.Float bot n)
+eval _ (Str _ str) = pure (T.Str str × V.Str bot str)
 eval γ (Record _ xes) = do
    xts × xvs <- traverse (eval γ) xes <#> D.unzip
-   pure $ T.Record xts × V.Record false xvs
+   pure $ T.Record xts × V.Record bot xvs
 eval γ (Dictionary _ ees) = do
    (ts × vs) × (ts' × us) <- traverse (traverse (eval γ)) ees <#> (P.unzip >>> (unzip # both))
-   pure $ T.Dictionary (P.zip ts ts') × V.Dictionary false (D.fromFoldable $ zip (vs <#> unwrap) us)
+   pure $ T.Dictionary (P.zip ts ts') × V.Dictionary bot (D.fromFoldable $ zip (vs <#> unwrap) us)
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip
-   pure (T.Constr c ts × V.Constr false c vs)
+   pure (T.Constr c ts × V.Constr bot c vs)
 eval γ (Matrix _ e (x × y) e') = do
    t × v <- eval γ e'
-   let (i' × (_ :: 𝔹)) × (j' × (_ :: 𝔹)) = unwrap v
+   let (i' × (_ :: a)) × (j' × (_ :: a)) = unwrap v
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
       ( sequence $ do
            i <- range 1 i'
            singleton $ sequence $ do
               j <- range 1 j'
-              let γ' = D.singleton x (V.Int false i) `disjointUnion` (D.singleton y (V.Int false j))
+              let γ' = D.singleton x (V.Int bot i) `disjointUnion` (D.singleton y (V.Int bot j))
               singleton (eval (γ <+> γ') e)
       )
-   pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix false (vss × (i' × false) × (j' × false))
+   pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix bot (vss × (i' × bot) × (j' × bot))
    where
-   unzipToArray :: forall a b. List (a × b) -> Array a × Array b
+   unzipToArray :: forall b c. List (b × c) -> Array b × Array c
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
 eval γ (Lambda σ) =
-   pure $ T.Lambda σ × V.Closure false (γ `restrict` fv σ) empty σ
+   pure $ T.Lambda σ × V.Closure bot (γ `restrict` fv σ) empty σ
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
@@ -123,7 +123,7 @@ eval γ (App e e') = do
             pure $ T.AppPrim (t × PrimOp φ × vs) (t' × v') × v''
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> showCtr c)
-         pure $ T.AppConstr (t × c × length vs) t' × V.Constr false c (vs <> singleton v')
+         pure $ T.AppConstr (t × c × length vs) t' × V.Constr bot c (vs <> singleton v')
       _ -> report "Expected closure, operator or unsaturated constructor"
 eval γ (Let (VarDef σ e) e') = do
    t × v <- eval γ e
