@@ -10,7 +10,7 @@ import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
-import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, (∨), definedJoin, expand, maybeJoin, neg)
 import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
@@ -122,7 +122,7 @@ instance JoinSemilattice a => JoinSemilattice (Elim a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance JoinSemilattice a => Slices (Elim a) where
+instance JoinSemilattice a => PartialJoinSemilattice (Elim a) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
    maybeJoin (ElimConstr cκs) (ElimConstr cκs') =
       ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
@@ -139,7 +139,7 @@ instance JoinSemilattice a => JoinSemilattice (Cont a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance JoinSemilattice a => Slices (Cont a) where
+instance JoinSemilattice a => PartialJoinSemilattice (Cont a) where
    maybeJoin ContNone ContNone = pure ContNone
    maybeJoin (ContExpr e) (ContExpr e') = ContExpr <$> maybeJoin e e'
    maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
@@ -155,7 +155,7 @@ instance JoinSemilattice a => JoinSemilattice (VarDef a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance JoinSemilattice a => Slices (VarDef a) where
+instance JoinSemilattice a => PartialJoinSemilattice (VarDef a) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
 
 instance BoundedJoinSemilattice a => Expandable (VarDef a) where
@@ -165,7 +165,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance JoinSemilattice a => Slices (Expr a) where
+instance JoinSemilattice a => PartialJoinSemilattice (Expr a) where
    maybeJoin (Var x) (Var x') = Var <$> (x ≞ x')
    maybeJoin (Op op) (Op op') = Op <$> (op ≞ op')
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')

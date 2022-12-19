@@ -6,7 +6,7 @@ import Bindings (Bind, Var)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
 import DataType (Ctr)
-import Lattice (class JoinSemilattice, class Slices, definedJoin, neg)
+import Lattice (class JoinSemilattice, class PartialJoinSemilattice, definedJoin, neg)
 import Util (type (×), type (+), error, unimplemented)
 import Util.Pair (Pair)
 
@@ -78,5 +78,5 @@ instance JoinSemilattice (Expr Boolean) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices (Expr Boolean) where
+instance PartialJoinSemilattice (Expr Boolean) where
    maybeJoin _ = error unimplemented

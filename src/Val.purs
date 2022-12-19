@@ -11,7 +11,7 @@ import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
@@ -104,7 +104,7 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance JoinSemilattice a => Slices (Val a) where
+instance JoinSemilattice a => PartialJoinSemilattice (Val a) where
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α s) (Str α' s') = Str (α ∨ α') <$> (s ≞ s')
