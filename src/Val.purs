@@ -1,16 +1,18 @@
 module Val where
 
 import Prelude hiding (absurd, append)
+
+import Bindings (Var)
 import Control.Apply (lift2)
 import Data.List (List(..), (:))
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
+import DataType (Ctr)
+import Dict (Dict, get)
+import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Bindings (Var)
-import Dict (Dict, get)
-import DataType (Ctr)
-import Expr (Elim, RecDefs, fv)
-import Lattice (class Expandable, class JoinSemilattice, class Slices, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
+import Unsafe.Coerce (unsafeCoerce)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
 type Op a = a × 𝔹 -> Val 𝔹
@@ -20,16 +22,17 @@ data Val a
    | Float a Number
    | Str a String
    | Record a (Dict (Val a)) -- always saturated
+   | Dictionary a (Dict (Val a)) -- always saturated
    | Constr a Ctr (List (Val a)) -- potentially unsaturated
    | Matrix a (MatrixRep a)
-   | Primitive PrimOp (List (Val a)) -- never saturated
+   | Primitive (PrimOp a) (List (Val a)) -- never saturated
    | Closure a (Env a) (RecDefs a) (Elim a)
 
 -- op_bwd will be provided with original output and arguments
-newtype PrimOp = PrimOp
+newtype PrimOp a = PrimOp
    { arity :: Int
-   , op :: List (Val 𝔹) -> Val 𝔹
-   , op_bwd :: Val 𝔹 -> Endo (List (Val 𝔹))
+   , op :: List (Val a) -> Val a
+   , op_bwd :: Val a -> Endo (List (Val a))
    }
 
 -- Environments.
@@ -71,7 +74,7 @@ for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.key
 type Array2 a = Array (Array a)
 type MatrixRep a = Array2 (Val a) × (Int × a) × (Int × a)
 
-updateMatrix :: Int -> Int -> Endo (Val 𝔹) -> Endo (MatrixRep 𝔹)
+updateMatrix :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
 updateMatrix i j δv (vss × h × w) =
    vss' × h × w
    where
@@ -82,26 +85,31 @@ updateMatrix i j δv (vss × h × w) =
 -- ======================
 -- boilerplate
 -- ======================
+instance Functor PrimOp where
+   map _ φ = unsafeCoerce φ -- ew
+
 instance Functor Val where
    map f (Int α n) = Int (f α) n
    map f (Float α n) = Float (f α) n
-   map f (Str α str) = Str (f α) str
+   map f (Str α s) = Str (f α) s
    map f (Record α xvs) = Record (f α) (map f <$> xvs)
+   map f (Dictionary α svs) = Dictionary (f α) (map f <$> svs)
    map f (Constr α c vs) = Constr (f α) c (map f <$> vs)
    -- PureScript can't derive this case
    map f (Matrix α (r × iα × jβ)) = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))
-   map f (Primitive φ vs) = Primitive φ ((map f) <$> vs)
+   map f (Primitive φ vs) = Primitive (f <$> φ) ((map f) <$> vs)
    map f (Closure α γ ρ σ) = Closure (f α) (map f <$> γ) (map f <$> ρ) (f <$> σ)
 
-instance JoinSemilattice (Val Boolean) where
+instance JoinSemilattice a => JoinSemilattice (Val a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices (Val Boolean) where
+instance JoinSemilattice a => PartialJoinSemilattice (Val a) where
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
-   maybeJoin (Str α str) (Str α' str') = Str (α ∨ α') <$> (str ≞ str')
+   maybeJoin (Str α s) (Str α' s') = Str (α ∨ α') <$> (s ≞ s')
    maybeJoin (Record α xvs) (Record α' xvs') = Record (α ∨ α') <$> maybeJoin xvs xvs'
+   maybeJoin (Dictionary α svs) (Dictionary α' svs') = Dictionary (α ∨ α') <$> maybeJoin svs svs'
    maybeJoin (Constr α c vs) (Constr α' c' us) = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
    maybeJoin (Matrix α (vss × (i × βi) × (j × βj))) (Matrix α' (vss' × (i' × βi') × (j' × βj'))) =
       Matrix (α ∨ α') <$>
@@ -115,11 +123,12 @@ instance Slices (Val Boolean) where
    maybeJoin (Primitive φ vs) (Primitive _ vs') = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _ = report "Incompatible values"
 
-instance Expandable (Val Boolean) where
+instance BoundedJoinSemilattice a => Expandable (Val a) where
    expand (Int α n) (Int _ n') = Int α (n ≜ n')
    expand (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand (Str α str) (Str _ str') = Str α (str ≜ str')
+   expand (Str α s) (Str _ s') = Str α (s ≜ s')
    expand (Record α xvs) (Record _ xvs') = Record α (expand xvs xvs')
+   expand (Dictionary α svs) (Dictionary _ svs') = Dictionary α (expand svs svs')
    expand (Constr α c vs) (Constr _ c' us) = Constr α (c ≜ c') (expand vs us)
    expand (Matrix α (vss × (i × βi) × (j × βj))) (Matrix _ (vss' × (i' × _) × (j' × _))) =
       Matrix α (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))

@@ -8,6 +8,7 @@ import Bindings (Var)
 import DataType (Ctr)
 import Expr (class BV, Elim, RecDefs, bv)
 import Util (type (×))
+import Util.Pair (Pair)
 import Val (Array2, PrimOp, Val)
 
 data VarDef a = VarDef (Match a) (Trace a)
@@ -20,12 +21,13 @@ data Trace a
    | Float Number
    | Str String
    | Record (Dict (Trace a))
+   | Dictionary (List (Pair (Trace a)))
    | Constr Ctr (List (Trace a))
    | Matrix (Array2 (Trace a)) (Var × Var) (Int × Int) (Trace a)
    | Lambda (Elim a)
    | Project (Trace a) Var
    | App (Trace a × Set Var × Elim a) (Trace a) (Match a) (Trace a)
-   | AppPrim (Trace a × PrimOp × List (Val a)) (Trace a × Val a) -- record prior arguments
+   | AppPrim (Trace a × PrimOp a × List (Val a)) (Trace a × Val a) -- record prior arguments
    | AppConstr (Trace a × Ctr × Int) (Trace a) -- record number of prior arguments
    | Let (VarDef a) (Trace a)
    | LetRec (RecDefs a) (Trace a)

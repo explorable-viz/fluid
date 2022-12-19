@@ -1,7 +1,7 @@
 module Primitive where
 
 import Partial.Unsafe (unsafePartial)
-import Prelude hiding (absurd, apply, div)
+import Prelude hiding (absurd, apply, div, top)
 import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
@@ -9,48 +9,48 @@ import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Lattice (𝔹, (∧))
-import Pretty (prettyP)
+import Lattice (class BoundedLattice, class MeetSemilattice, (∧), bot, top)
+import Pretty (class Highlightable, prettyP)
 import Util (Endo, type (×), (×), type (+), error)
 import Val (PrimOp(..), Val(..))
 
 -- Mediates between Val and underlying data, analogously to pattern-matching and construction for data types.
-class ToFrom a where
-   constr :: a × 𝔹 -> Val 𝔹
-   constr_bwd :: Val 𝔹 -> a × 𝔹 -- equivalent to match (except at Val)
-   match :: Val 𝔹 -> a × 𝔹 -- only defined for non-holes (except at Val)
+class ToFrom d a where
+   constr :: d × a -> Val a
+   constr_bwd :: Val a -> d × a -- equivalent to match (except at Val)
+   match :: Val a -> d × a -- only defined for non-holes (except at Val)
 
-unwrap :: forall a. ToFrom a => Val 𝔹 -> a
+unwrap :: forall d a. ToFrom d a => Val a -> d
 unwrap = match >>> fst
 
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
-instance ToFrom (Val Boolean) where
+instance BoundedLattice a => ToFrom (Val a) a where
    constr = fst -- construction rights not required
-   constr_bwd = (_ × false) -- return unit of disjunction rather than conjunction
-   match = (_ × true) -- construction rights always provided
+   constr_bwd = (_ × bot) -- return unit of disjunction rather than conjunction
+   match = (_ × top) -- construction rights always provided
 
-instance ToFrom Int where
+instance Highlightable a => ToFrom Int a where
    constr (n × α) = Int α n
    constr_bwd v = match v
 
    match (Int α n) = n × α
    match v = error ("Int expected; got " <> prettyP v)
 
-instance ToFrom Number where
+instance Highlightable a => ToFrom Number a where
    constr (n × α) = Float α n
    constr_bwd v = match v
 
    match (Float α n) = n × α
    match v = error ("Float expected; got " <> prettyP v)
 
-instance ToFrom String where
+instance Highlightable a => ToFrom String a where
    constr (str × α) = Str α str
    constr_bwd v = match v
 
    match (Str α str) = str × α
    match v = error ("Str expected; got " <> prettyP v)
 
-instance ToFrom (Int + Number) where
+instance Highlightable a => ToFrom (Int + Number) a where
    constr (Left n × α) = Int α n
    constr (Right n × α) = Float α n
 
@@ -60,7 +60,7 @@ instance ToFrom (Int + Number) where
    match (Float α n) = Right n × α
    match v = error ("Int or Float expected; got " <> prettyP v)
 
-instance ToFrom (Either (Either Int Number) String) where
+instance Highlightable a => ToFrom (Either (Either Int Number) String) a where
    constr (Left (Left n) × α) = Int α n
    constr (Left (Right n) × α) = Float α n
    constr (Right str × α) = Str α str
@@ -72,35 +72,35 @@ instance ToFrom (Either (Either Int Number) String) where
    match (Str α str) = Right str × α
    match v = error ("Int, Float or Str expected; got " <> prettyP v)
 
-instance ToFrom ((Int × Boolean) × (Int × Boolean)) where
+instance Highlightable a => ToFrom ((Int × a) × (Int × a)) a where
    constr (nβ × mβ' × α) = Constr α cPair (constr nβ : constr mβ' : Nil)
    constr_bwd v = match v
 
    match (Constr α c (v : v' : Nil)) | c == cPair = match v × match v' × α
    match v = error ("Pair expected; got " <> prettyP v)
 
-instance ToFrom (Array (Array (Val Boolean)) × (Int × Boolean) × (Int × Boolean)) where
+instance Highlightable a => ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a where
    constr (r × α) = Matrix α r
    constr_bwd v = match v
 
    match (Matrix α r) = r × α
    match v = error ("Matrix expected; got " <> prettyP v)
 
-instance ToFrom (Dict (Val Boolean)) where
+instance Highlightable a => ToFrom (Dict (Val a)) a where
    constr (xvs × α) = Record α xvs
    constr_bwd v = match v
 
    match (Record α xvs) = xvs × α
    match v = error ("Record expected; got " <> prettyP v)
 
-instance ToFrom (Val Boolean × Val Boolean) where
+instance Highlightable a => ToFrom (Val a × Val a) a where
    constr (v × v' × α) = Constr α cPair (v : v' : Nil)
    constr_bwd v = match v
 
    match (Constr α c (v : v' : Nil)) | c == cPair = v × v' × α
    match v = error ("Pair expected; got " <> prettyP v)
 
-instance ToFrom Boolean where
+instance Highlightable a => ToFrom Boolean a where
    constr (true × α) = Constr α cTrue Nil
    constr (false × α) = Constr α cFalse Nil
 
@@ -123,67 +123,67 @@ instance IsZero Number where
 instance (IsZero a, IsZero b) => IsZero (a + b) where
    isZero = isZero ||| isZero
 
-type Unary a b =
-   { fwd :: a -> b
-   , bwd :: b -> Endo a
+type Unary d1 d2 =
+   { fwd :: d1 -> d2
+   , bwd :: d2 -> Endo d1
    }
 
-type UnarySlicer a b =
-   { fwd :: a × 𝔹 -> b × 𝔹
-   , bwd :: b × 𝔹 -> a -> a × 𝔹
+type UnarySlicer d1 d2 a =
+   { fwd :: d1 × a -> d2 × a
+   , bwd :: d2 × a -> d1 -> d1 × a
    }
 
-type Binary a b c =
-   { fwd :: a -> b -> c
-   , bwd :: c -> Endo (a × b)
+type Binary d1 d2 d3 =
+   { fwd :: d1 -> d2 -> d3
+   , bwd :: d3 -> Endo (d1 × d2)
    }
 
-type BinarySlicer a b c =
-   { fwd :: a × 𝔹 -> b × 𝔹 -> c × 𝔹
-   , bwd :: c × 𝔹 -> a × b -> (a × 𝔹) × (b × 𝔹)
+type BinarySlicer d1 d2 d3 a =
+   { fwd :: d1 × a -> d2 × a -> d3 × a
+   , bwd :: d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
    }
 
-unary_ :: forall a b. ToFrom a => ToFrom b => UnarySlicer a b -> Val 𝔹
+unary_ :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => UnarySlicer d1 d2 a -> Val a
 unary_ { fwd, bwd } = flip Primitive Nil $ PrimOp
    { arity: 1
    , op: unsafePartial apply
    , op_bwd: unsafePartial apply_bwd
    }
    where
-   apply :: Partial => List (Val 𝔹) {-[a]-} -> Val 𝔹 {-b-}
+   apply :: Partial => List (Val a) {-[d1]-} -> Val a {-d2-}
    apply (v : Nil) = constr (fwd (match v))
 
-   apply_bwd :: Partial => Val 𝔹 {-(b, b)-} -> List (Val 𝔹) {-[a]-} -> List (Val 𝔹) {-[a]-}
+   apply_bwd :: Partial => Val a {-(d2, d2)-} -> List (Val a) {-[d1]-} -> List (Val a) {-[d1]-}
    apply_bwd v (u1 : Nil) = constr (bwd (constr_bwd v) (unwrap u1)) : Nil
 
-binary_ :: forall a b c. ToFrom a => ToFrom b => ToFrom c => BinarySlicer a b c -> Val 𝔹
+binary_ :: forall d1 d2 d3 a. ToFrom d1 a => ToFrom d2 a => ToFrom d3 a => BinarySlicer d1 d2 d3 a -> Val a
 binary_ { fwd, bwd } = flip Primitive Nil $ PrimOp
    { arity: 2
    , op: unsafePartial apply
    , op_bwd: unsafePartial apply_bwd
    }
    where
-   apply :: Partial => List (Val 𝔹) {-[a, b]-} -> Val 𝔹 {-c-}
+   apply :: Partial => List (Val a) {-[d1, d2]-} -> Val a {-d3-}
    apply (v : v' : Nil) = constr (fwd (match v) (match v'))
 
-   apply_bwd :: Partial => Val 𝔹 {-(c, c)-} -> List (Val 𝔹) {-[a, b]-} -> List (Val 𝔹) {-[a, b]-}
+   apply_bwd :: Partial => Val a {-(d3, d3)-} -> List (Val a) {-[d1, d2]-} -> List (Val a) {-[d1, d2]-}
    apply_bwd v (u1 : u2 : Nil) = constr v1 : constr v2 : Nil
       where
       v1 × v2 = bwd (constr_bwd v) (unwrap u1 × unwrap u2)
 
-withInverse1 :: forall a b. (a -> b) -> Unary a b
+withInverse1 :: forall d1 d2. (d1 -> d2) -> Unary d1 d2
 withInverse1 fwd = { fwd, bwd: const identity }
 
-withInverse2 :: forall a b c. (a -> b -> c) -> Binary a b c
+withInverse2 :: forall d1 d2 d3. (d1 -> d2 -> d3) -> Binary d1 d2 d3
 withInverse2 fwd = { fwd, bwd: const identity }
 
-unary :: forall a b. ToFrom a => ToFrom b => Unary a b -> Val 𝔹
+unary :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => Unary d1 d2 -> Val a
 unary { fwd, bwd } = unary_ { fwd: fwd', bwd: bwd' }
    where
    fwd' (x × α) = fwd x × α
    bwd' (y × α) x = bwd y x × α
 
-binary :: forall a b c. ToFrom a => ToFrom b => ToFrom c => Binary a b c -> Val 𝔹
+binary :: forall d1 d2 d3 a. ToFrom d1 a => ToFrom d2 a => MeetSemilattice a => ToFrom d3 a => Binary d1 d2 d3 -> Val a
 binary { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
    where
    fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
@@ -192,17 +192,17 @@ binary { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
       x' × y' = bwd z (x × y)
 
 -- If both are zero, depend only on the first.
-binaryZero :: forall a b. IsZero a => ToFrom a => ToFrom b => Binary a a b -> Val 𝔹
+binaryZero :: forall d1 d2 a. IsZero d1 => BoundedLattice a => ToFrom d1 a => ToFrom d2 a => Binary d1 d1 d2 -> Val a
 binaryZero { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
    where
-   fwd' :: a × 𝔹 -> a × 𝔹 -> b × 𝔹
+   fwd' :: d1 × a -> d1 × a -> d2 × a
    fwd' (x × α) (y × β) =
       fwd x y × if isZero x then α else if isZero y then β else α ∧ β
 
-   bwd' :: b × 𝔹 -> a × a -> (a × 𝔹) × (a × 𝔹)
+   bwd' :: d2 × a -> d1 × d1 -> (d1 × a) × (d1 × a)
    bwd' (z × α) (x × y) =
-      if isZero x then (x' × α) × (y' × false)
-      else if isZero y then (x' × false) × (y' × α)
+      if isZero x then (x' × α) × (y' × bot)
+      else if isZero y then (x' × bot) × (y' × α)
       else
          (x' × α) × (y' × α)
       where

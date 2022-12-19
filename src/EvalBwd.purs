@@ -1,41 +1,42 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
+
+import Bindings (Var, varAnon)
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), (:), range, reverse, unsnoc, unzip, zip)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.NonEmpty (foldl1)
-import Data.Set (union)
 import Data.Set (fromFoldable, singleton) as S
+import Data.Set (union)
 import Data.Tuple (fst, snd, uncurry)
-import Partial.Unsafe (unsafePartial)
-import Bindings (Var, varAnon)
 import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
-import Lattice (𝔹, (∨), bot, botOf, expand)
+import Lattice (class BoundedJoinSemilattice, bot, botOf, expand, (∨))
+import Partial.Unsafe (unsafePartial)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
 import Val (Env, PrimOp(..), (<+>), Val, append_inv)
 import Val (Val(..)) as V
 
-closeDefsBwd :: Env 𝔹 -> Env 𝔹 × RecDefs 𝔹 × 𝔹
+closeDefsBwd :: forall a. BoundedJoinSemilattice a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
-   case foldrWithIndex joinDefs (empty × empty × empty × false) γ of
+   case foldrWithIndex joinDefs (empty × empty × empty × bot) γ of
       ρ' × γ' × ρ × α -> γ' × (ρ ∨ ρ') × α
    where
-   joinDefs :: Var -> Val 𝔹 -> Endo (RecDefs 𝔹 × Env 𝔹 × RecDefs 𝔹 × 𝔹)
+   joinDefs :: Var -> Val a -> Endo (RecDefs a × Env a × RecDefs a × a)
    joinDefs f _ (ρ_acc × γ' × ρ × α) =
       case get f γ of
          V.Closure α_f γ_f ρ_f σ_f ->
             (ρ_acc # insert f σ_f) × (γ' ∨ γ_f) × (ρ ∨ ρ_f) × (α ∨ α_f)
          _ -> error absurd
 
-matchBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> Match 𝔹 -> Val 𝔹 × Elim 𝔹
+matchBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> Match a -> Val a × Elim a
 matchBwd γ κ _ (MatchVar x v)
    | keys γ == S.singleton x = get x γ × ElimVar x κ
    | otherwise = botOf v × ElimVar x κ
@@ -51,7 +52,7 @@ matchBwd ρ κ α (MatchRecord xws) = V.Record α (zip xs vs # D.fromFoldable) �
    xs × ws = xws # D.toUnfoldable # unzip
    vs × κ' = matchManyBwd ρ κ α (ws # reverse)
 
-matchManyBwd :: Env 𝔹 -> Cont 𝔹 -> 𝔹 -> List (Match 𝔹) -> List (Val 𝔹) × Cont 𝔹
+matchManyBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> List (Match a) -> List (Val a) × Cont a
 matchManyBwd γ κ _ Nil
    | isEmpty γ = Nil × κ
    | otherwise = error absurd
@@ -62,16 +63,16 @@ matchManyBwd γγ' κ α (w : ws) =
    v × σ = matchBwd γ κ α w
    vs × κ' = matchManyBwd γ' (ContElim σ) α ws
 
-evalBwd :: Env 𝔹 -> Expr 𝔹 -> Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
+evalBwd :: forall a. BoundedJoinSemilattice a => Env a -> Expr a -> Val a -> Trace a -> Env a × Expr a × a
 evalBwd γ e v t =
    expand γ' γ × expand e' e × α
    where
    γ' × e' × α = evalBwd' v t
 
 -- Computes a partial slice which evalBwd expands to a full slice.
-evalBwd' :: Val 𝔹 -> Trace 𝔹 -> Env 𝔹 × Expr 𝔹 × 𝔹
-evalBwd' v (T.Var x) = D.singleton x v × Var x × false
-evalBwd' v (T.Op op) = D.singleton op v × Op op × false
+evalBwd' :: forall a. BoundedJoinSemilattice a => Val a -> Trace a -> Env a × Expr a × a
+evalBwd' v (T.Var x) = D.singleton x v × Var x × bot
+evalBwd' v (T.Op op) = D.singleton op v × Op op × bot
 evalBwd' (V.Str α _) (T.Str str) = empty × Str α str × α
 evalBwd' (V.Int α _) (T.Int n) = empty × Int α n × α
 evalBwd' (V.Float α _) (T.Float n) = empty × Float α n × α
@@ -85,7 +86,7 @@ evalBwd' (V.Record α xvs) (T.Record xts) =
 evalBwd' (V.Constr α _ vs) (T.Constr c ts) =
    γ' × Constr α c es × α'
    where
-   evalArg_bwd :: Val 𝔹 × Trace 𝔹 -> Endo (Env 𝔹 × List (Expr 𝔹) × 𝔹)
+   evalArg_bwd :: Val a × Trace a -> Endo (Env a × List (Expr a) × a)
    evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
       where
       γ'' × e × α'' = evalBwd' v' t'
@@ -98,7 +99,7 @@ evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) 
       j <- range 1 j'
       L.singleton (i × j)
 
-   evalBwd_elem :: (Int × Int) -> Env 𝔹 × Expr 𝔹 × 𝔹 × 𝔹 × 𝔹
+   evalBwd_elem :: (Int × Int) -> Env a × Expr a × a × a × a
    evalBwd_elem (i × j) =
       case evalBwd' (vss ! (i - 1) ! (j - 1)) (tss ! (i - 1) ! (j - 1)) of
          γ'' × e × α' ->
@@ -116,11 +117,11 @@ evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) 
            ((γ1 ∨ γ2) × (e1 ∨ e2) × (α1 ∨ α2) × (β1 ∨ β2) × (β1' ∨ β2'))
       )
       (evalBwd_elem <$> ijs)
-   γ' × e' × α'' = evalBwd' (V.Constr false cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t'
+   γ' × e' × α'' = evalBwd' (V.Constr bot cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t'
 evalBwd' v (T.Project t x) =
    ρ × Project e x × α
    where
-   ρ × e × α = evalBwd' (V.Record false (D.singleton x v)) t
+   ρ × e × α = evalBwd' (V.Record bot (D.singleton x v)) t
 evalBwd' v (T.App (t1 × xs × _) t2 w t3) =
    (γ' ∨ γ'') × App e1 e2 × (α ∨ α')
    where

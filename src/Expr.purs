@@ -1,16 +1,18 @@
 module Expr where
 
 import Prelude hiding (absurd, top)
+
+import Bindings (Var)
 import Control.Apply (lift2)
 import Data.List (List)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
-import Dict (Dict, keys, asSingletonMap)
-import Bindings (Var)
 import DataType (Ctr, consistentWith)
-import Lattice (class Expandable, class JoinSemilattice, class Slices, (∨), definedJoin, expand, maybeJoin, neg)
-import Util (type (×), (×), type (+), (≜), (≞), error, report)
+import Dict (Dict, keys, asSingletonMap)
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, (∨), definedJoin, expand, maybeJoin, neg)
+import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
+import Util.Pair (Pair, toTuple)
 
 data Expr a
    = Var Var
@@ -19,6 +21,7 @@ data Expr a
    | Float a Number
    | Str a String
    | Record a (Dict (Expr a))
+   | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
    | Constr a Ctr (List (Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda (Elim a)
@@ -26,6 +29,8 @@ data Expr a
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
+
+data Wibble a = Wibble (Expr a × Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -63,6 +68,7 @@ instance FV (Expr a) where
    fv (Float _ _) = empty
    fv (Str _ _) = empty
    fv (Record _ xes) = unions (fv <$> xes)
+   fv (Dictionary _ ees) = unions ((unions <<< (fv # both) <<< toTuple) <$> ees)
    fv (Constr _ _ es) = unions (fv <$> es)
    fv (Matrix _ e1 _ e2) = union (fv e1) (fv e2)
    fv (Lambda σ) = fv σ
@@ -108,58 +114,58 @@ instance BV (Cont a) where
 -- boilerplate
 -- ======================
 derive instance Functor VarDef
-derive instance Functor Expr
 derive instance Functor Cont
 derive instance Functor Elim
+derive instance Functor Expr
 
-instance JoinSemilattice (Elim Boolean) where
+instance JoinSemilattice a => JoinSemilattice (Elim a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices (Elim Boolean) where
+instance JoinSemilattice a => PartialJoinSemilattice (Elim a) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
    maybeJoin (ElimConstr cκs) (ElimConstr cκs') =
       ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
    maybeJoin _ _ = report "Incompatible eliminators"
 
-instance Expandable (Elim Boolean) where
+instance BoundedJoinSemilattice a => Expandable (Elim a) where
    expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
    expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
    expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
    expand _ _ = error "Incompatible eliminators"
 
-instance JoinSemilattice (Cont Boolean) where
+instance JoinSemilattice a => JoinSemilattice (Cont a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices (Cont Boolean) where
+instance JoinSemilattice a => PartialJoinSemilattice (Cont a) where
    maybeJoin ContNone ContNone = pure ContNone
    maybeJoin (ContExpr e) (ContExpr e') = ContExpr <$> maybeJoin e e'
    maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
    maybeJoin _ _ = report "Incompatible continuations"
 
-instance Expandable (Cont Boolean) where
+instance BoundedJoinSemilattice a => Expandable (Cont a) where
    expand ContNone ContNone = ContNone
    expand (ContExpr e) (ContExpr e') = ContExpr (expand e e')
    expand (ContElim σ) (ContElim σ') = ContElim (expand σ σ')
    expand _ _ = error "Incompatible continuations"
 
-instance JoinSemilattice (VarDef Boolean) where
+instance JoinSemilattice a => JoinSemilattice (VarDef a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices (VarDef Boolean) where
+instance JoinSemilattice a => PartialJoinSemilattice (VarDef a) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
 
-instance Expandable (VarDef Boolean) where
+instance BoundedJoinSemilattice a => Expandable (VarDef a) where
    expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
 
-instance JoinSemilattice (Expr Boolean) where
+instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices (Expr Boolean) where
+instance JoinSemilattice a => PartialJoinSemilattice (Expr a) where
    maybeJoin (Var x) (Var x') = Var <$> (x ≞ x')
    maybeJoin (Op op) (Op op') = Op <$> (op ≞ op')
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
@@ -176,7 +182,7 @@ instance Slices (Expr Boolean) where
    maybeJoin (LetRec ρ e) (LetRec ρ' e') = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
    maybeJoin _ _ = report "Incompatible expressions"
 
-instance Expandable (Expr Boolean) where
+instance BoundedJoinSemilattice a => Expandable (Expr a) where
    expand (Var x) (Var x') = Var (x ≜ x')
    expand (Op op) (Op op') = Op (op ≜ op')
    expand (Int α n) (Int _ n') = Int α (n ≜ n')

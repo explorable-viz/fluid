@@ -1,12 +1,14 @@
 module SExpr where
 
 import Prelude
+
+import Bindings (Bind, Var)
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
-import Bindings (Bind, Var)
 import DataType (Ctr)
-import Lattice (class JoinSemilattice, class Slices, definedJoin, neg)
+import Lattice (class JoinSemilattice, class PartialJoinSemilattice, definedJoin, neg)
 import Util (type (×), type (+), error, unimplemented)
+import Util.Pair (Pair)
 
 -- Surface language expressions.
 data Expr a
@@ -17,6 +19,7 @@ data Expr a
    | Str a String
    | Constr a Ctr (List (Expr a))
    | Record a (List (Bind (Expr a)))
+   | Dictionary a (List (Pair (Expr a)))
    | Matrix a (Expr a) (Var × Var) (Expr a)
    | Lambda (NonEmptyList (Branch a))
    | Project (Expr a) Var
@@ -66,14 +69,14 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 -- ======================
 -- boilerplate
 -- ======================
-derive instance functorExpr :: Functor Expr
-derive instance functorListRest :: Functor ListRest
-derive instance functorVarDef :: Functor VarDef
-derive instance functorQualifier :: Functor Qualifier
+derive instance Functor Expr
+derive instance Functor ListRest
+derive instance Functor VarDef
+derive instance Functor Qualifier
 
 instance JoinSemilattice (Expr Boolean) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices (Expr Boolean) where
+instance PartialJoinSemilattice (Expr Boolean) where
    maybeJoin _ = error unimplemented

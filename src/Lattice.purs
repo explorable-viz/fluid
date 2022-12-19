@@ -1,6 +1,6 @@
 module Lattice where
 
-import Prelude hiding (absurd, join, top)
+import Prelude hiding (absurd, join)
 import Control.Apply (lift2)
 import Data.Array (zipWith) as A
 import Data.Foldable (length, foldM)
@@ -14,21 +14,33 @@ import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfolda
 import Bindings (Var)
 import Util (Endo, MayFail, type (×), (×), (≞), assert, report, successfulWith)
 
--- Revisit name of type class (given neg). The join operation here is actually the more general "weak join" operation
--- of the formalism, which operates on maps using unionWith.
+-- TODO: move 'neg' out of here.
+-- Join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
    join :: a -> a -> a
    neg :: Endo a
 
+class MeetSemilattice a where
+   meet :: a -> a -> a
+
 class JoinSemilattice a <= BoundedJoinSemilattice a where
    bot :: a
+
+class MeetSemilattice a <= BoundedMeetSemilattice a where
+   top :: a
 
 instance JoinSemilattice Boolean where
    join = (||)
    neg = not
 
+instance MeetSemilattice Boolean where
+   meet = (&&)
+
 instance BoundedJoinSemilattice Boolean where
    bot = false
+
+instance BoundedMeetSemilattice Boolean where
+   top = true
 
 instance JoinSemilattice Unit where
    join _ = identity
@@ -37,11 +49,15 @@ instance JoinSemilattice Unit where
 instance BoundedJoinSemilattice Unit where
    bot = unit
 
+class (BoundedJoinSemilattice a, BoundedMeetSemilattice a) <= BoundedLattice a
+
+instance BoundedLattice Boolean
+
 -- Need "soft failure" for joining incompatible eliminators so we can use it to desugar function clauses.
-class JoinSemilattice a <= Slices a where
+class JoinSemilattice a <= PartialJoinSemilattice a where
    maybeJoin :: a -> a -> MayFail a
 
-definedJoin :: forall a. Slices a => a -> a -> a
+definedJoin :: forall a. PartialJoinSemilattice a => a -> a -> a
 definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
 
 botOf :: forall t a. Functor t => BoundedJoinSemilattice a => Endo (t a)
@@ -56,44 +72,40 @@ infixl 6 join as ∨
 
 type 𝔹 = Boolean
 
--- don't need a meet semilattice typeclass just yet
-meet :: Boolean -> Boolean -> Boolean
-meet = (&&)
-
-instance (Eq k, Show k, Slices a) => JoinSemilattice (Tuple k a) where
+instance (Eq k, Show k, PartialJoinSemilattice a) => JoinSemilattice (Tuple k a) where
    join = definedJoin
    neg = second neg
 
-instance (Eq k, Show k, Slices a) => Slices (Tuple k a) where
+instance (Eq k, Show k, PartialJoinSemilattice a) => PartialJoinSemilattice (Tuple k a) where
    maybeJoin (k × v) (k' × v') = (k ≞ k') `lift2 (×)` maybeJoin v v'
 
-instance Slices a => JoinSemilattice (List a) where
+instance PartialJoinSemilattice a => JoinSemilattice (List a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices a => Slices (List a) where
+instance PartialJoinSemilattice a => PartialJoinSemilattice (List a) where
    maybeJoin xs ys
       | (length xs :: Int) == length ys = sequence (zipWith maybeJoin xs ys)
       | otherwise = report "Mismatched lengths"
 
-instance Slices a => JoinSemilattice (Dict a) where
+instance PartialJoinSemilattice a => JoinSemilattice (Dict a) where
    join = unionWith (∨) -- faster than definedJoin
    neg = (<$>) neg
 
-instance Slices a => Slices (Dict a) where
+instance PartialJoinSemilattice a => PartialJoinSemilattice (Dict a) where
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
 
-mayFailUpdate :: forall a. Slices a => Dict a -> Var × a -> MayFail (Dict a)
+mayFailUpdate :: forall a. PartialJoinSemilattice a => Dict a -> Var × a -> MayFail (Dict a)
 mayFailUpdate m (k × v) =
    case lookup k m of
       Nothing -> pure (insert k v m)
       Just v' -> update <$> (const <$> Just <$> maybeJoin v' v) <@> k <@> m
 
-instance Slices a => JoinSemilattice (Array a) where
+instance PartialJoinSemilattice a => JoinSemilattice (Array a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices a => Slices (Array a) where
+instance PartialJoinSemilattice a => PartialJoinSemilattice (Array a) where
    maybeJoin xs ys
       | length xs == (length ys :: Int) = sequence (A.zipWith maybeJoin xs ys)
       | otherwise = report "Mismatched lengths"

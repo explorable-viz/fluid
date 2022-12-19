@@ -27,7 +27,7 @@ type Handler = Event -> Selector
 doNothing :: OnSel
 doNothing = const $ pure unit
 
-get_prim :: forall a. ToFrom a => Var -> Dict (Val 𝔹) -> a × 𝔹
+get_prim :: forall d. ToFrom d 𝔹 => Var -> Dict (Val 𝔹) -> d × 𝔹
 get_prim x = match <<< get x
 
 get_intOrNumber :: Var -> Dict (Val 𝔹) -> Number × 𝔹
