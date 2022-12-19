@@ -118,11 +118,11 @@ derive instance Functor Cont
 derive instance Functor Elim
 derive instance Functor Expr
 
-instance JoinSemilattice (Elim Boolean) where
+instance JoinSemilattice a => JoinSemilattice (Elim a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices (Elim Boolean) where
+instance JoinSemilattice a => Slices (Elim a) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
    maybeJoin (ElimConstr cκs) (ElimConstr cκs') =
       ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
@@ -135,11 +135,11 @@ instance Expandable (Elim Boolean) where
    expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
    expand _ _ = error "Incompatible eliminators"
 
-instance JoinSemilattice (Cont Boolean) where
+instance JoinSemilattice a => JoinSemilattice (Cont a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices (Cont Boolean) where
+instance JoinSemilattice a => Slices (Cont a) where
    maybeJoin ContNone ContNone = pure ContNone
    maybeJoin (ContExpr e) (ContExpr e') = ContExpr <$> maybeJoin e e'
    maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
@@ -151,21 +151,21 @@ instance Expandable (Cont Boolean) where
    expand (ContElim σ) (ContElim σ') = ContElim (expand σ σ')
    expand _ _ = error "Incompatible continuations"
 
-instance JoinSemilattice (VarDef Boolean) where
+instance JoinSemilattice a => JoinSemilattice (VarDef a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices (VarDef Boolean) where
+instance JoinSemilattice a => Slices (VarDef a) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
 
 instance Expandable (VarDef Boolean) where
    expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
 
-instance JoinSemilattice (Expr Boolean) where
+instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance Slices (Expr Boolean) where
+instance JoinSemilattice a => Slices (Expr a) where
    maybeJoin (Var x) (Var x') = Var <$> (x ≞ x')
    maybeJoin (Op op) (Op op') = Op <$> (op ≞ op')
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')

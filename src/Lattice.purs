@@ -1,6 +1,6 @@
 module Lattice where
 
-import Prelude hiding (absurd, join, top)
+import Prelude hiding (absurd, join)
 import Control.Apply (lift2)
 import Data.Array (zipWith) as A
 import Data.Foldable (length, foldM)
@@ -14,21 +14,33 @@ import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfolda
 import Bindings (Var)
 import Util (Endo, MayFail, type (×), (×), (≞), assert, report, successfulWith)
 
--- Revisit name of type class (given neg). The join operation here is actually the more general "weak join" operation
--- of the formalism, which operates on maps using unionWith.
+-- TODO: move 'neg' out of here.
+-- Join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
    join :: a -> a -> a
    neg :: Endo a
 
+class MeetSemilattice a where
+   meet :: a -> a -> a
+
 class JoinSemilattice a <= BoundedJoinSemilattice a where
    bot :: a
+
+class MeetSemilattice a <= BoundedMeetSemilattice a where
+   top :: a
 
 instance JoinSemilattice Boolean where
    join = (||)
    neg = not
 
+instance MeetSemilattice Boolean where
+   meet = (&&)
+
 instance BoundedJoinSemilattice Boolean where
    bot = false
+
+instance BoundedMeetSemilattice Boolean where
+   top = true
 
 instance JoinSemilattice Unit where
    join _ = identity
@@ -37,7 +49,12 @@ instance JoinSemilattice Unit where
 instance BoundedJoinSemilattice Unit where
    bot = unit
 
+class (BoundedJoinSemilattice a, BoundedMeetSemilattice a) <= BoundedLattice a
+
+instance BoundedLattice Boolean
+
 -- Need "soft failure" for joining incompatible eliminators so we can use it to desugar function clauses.
+-- TODO: rename to PartialJoinSemilattice
 class JoinSemilattice a <= Slices a where
    maybeJoin :: a -> a -> MayFail a
 
@@ -55,10 +72,6 @@ infixl 7 meet as ∧
 infixl 6 join as ∨
 
 type 𝔹 = Boolean
-
--- don't need a meet semilattice typeclass just yet
-meet :: Boolean -> Boolean -> Boolean
-meet = (&&)
 
 instance (Eq k, Show k, Slices a) => JoinSemilattice (Tuple k a) where
    join = definedJoin

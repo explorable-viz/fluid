@@ -180,7 +180,7 @@ instance Highlightable a => Pretty (Val a) where
    pretty (V.Closure _ _ _ _) = text "<closure>"
    pretty (V.Primitive φ _) = parens (pretty φ)
 
-instance Pretty PrimOp where
+instance Pretty (PrimOp a) where
    pretty _ = text "<prim op>" -- TODO
 
 -- Surface language
