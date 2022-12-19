@@ -28,6 +28,11 @@
   var $$Proxy = /* @__PURE__ */ $Proxy();
 
   // output-es/Data.HeytingAlgebra/foreign.js
+  var boolConj = function(b1) {
+    return function(b2) {
+      return b1 && b2;
+    };
+  };
   var boolDisj = function(b1) {
     return function(b2) {
       return b1 || b2;
@@ -1442,6 +1447,10 @@
 
   // output-es/Data.Foldable/index.js
   var identity5 = (x2) => x2;
+  var monoidEndo = /* @__PURE__ */ (() => {
+    const semigroupEndo1 = { append: (v) => (v1) => (x2) => v(v1(x2)) };
+    return { mempty: (x2) => x2, Semigroup0: () => semigroupEndo1 };
+  })();
   var traverse_ = (dictApplicative) => {
     const $1 = dictApplicative.Apply0();
     const map5 = $1.Functor0().map;
@@ -1458,6 +1467,10 @@
       const append = dictMonoid.Semigroup0().append;
       return (f) => foldableArray.foldr((x2) => (acc) => append(f(x2))(acc))(dictMonoid.mempty);
     }
+  };
+  var foldrDefault = (dictFoldable) => {
+    const foldMap2 = dictFoldable.foldMap(monoidEndo);
+    return (c) => (u) => (xs) => foldMap2((x2) => c(x2))(xs)(u);
   };
 
   // output-es/Data.Eq/foreign.js
@@ -2169,6 +2182,9 @@
     right: functorEither.map,
     Profunctor0: () => profunctorFn
   }))();
+
+  // output-es/Data.Profunctor.Strong/index.js
+  var strongFn = /* @__PURE__ */ (() => ({ first: (a2b) => (v) => $Tuple(a2b(v._1), v._2), second: functorTuple.map, Profunctor0: () => profunctorFn }))();
 
   // output-es/Data.String.Unsafe/foreign.js
   var charAt = function(i) {
@@ -9078,18 +9094,51 @@
   var monoidColumns = { mempty: /* @__PURE__ */ empty2(0)(0), Semigroup0: () => semigroupColumns };
   var atop = (v) => (v1) => ({ width: max2(v.width)(v1.width), height: v.height + v1.height | 0, lines: concatArray(v.lines)(v1.lines) });
 
+  // output-es/Util.Pair/index.js
+  var $Pair = (_1, _2) => ({ tag: "Pair", _1, _2 });
+  var Pair = (value0) => (value1) => $Pair(value0, value1);
+  var functorPair = { map: (f) => (v) => $Pair(f(v._1), f(v._2)) };
+  var foldablePair = {
+    foldl: (f) => (z) => (v) => f(f(z)(v._1))(v._2),
+    foldr: (f) => foldrDefault(foldablePair)(f),
+    foldMap: (dictMonoid) => (f) => {
+      const append = dictMonoid.Semigroup0().append;
+      return foldablePair.foldl((acc) => (x2) => append(acc)(f(x2)))(dictMonoid.mempty);
+    }
+  };
+  var traversablePair = {
+    traverse: (dictApplicative) => {
+      const Apply0 = dictApplicative.Apply0();
+      const map5 = Apply0.Functor0().map;
+      return (f) => (v) => Apply0.apply(map5(Pair)(f(v._1)))(f(v._2));
+    },
+    sequence: (dictApplicative) => traversablePair.traverse(dictApplicative)(identity6),
+    Functor0: () => functorPair,
+    Foldable1: () => foldablePair
+  };
+  var toTuple = (v) => $Tuple(v._1, v._2);
+  var fromTuple = (v) => $Pair(v._1, v._2);
+
   // output-es/Pretty/index.js
   var hcat = /* @__PURE__ */ (() => foldableList.foldMap(monoidColumns)(unsafeCoerce))();
-  var identity11 = (x2) => x2;
   var toUnfoldable6 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
+  var identity11 = (x2) => x2;
   var space = /* @__PURE__ */ text(" ");
-  var $$null = /* @__PURE__ */ empty2(0)(0);
+  var prettyP = (dictPretty) => (x2) => intercalate3("\n")(dictPretty.pretty(x2).lines);
+  var nil2 = /* @__PURE__ */ text("[]");
+  var hspace = (dictFoldable) => {
+    const $1 = dictFoldable.foldr(Cons)(Nil);
+    return (x2) => hcat(intercalate2($List("Cons", space, Nil))(listMap(applicativeList.pure)($1(x2))));
+  };
+  var hspace1 = /* @__PURE__ */ hspace(foldableArray);
+  var hspace2 = /* @__PURE__ */ hspace(foldableList);
+  var emptyDoc = /* @__PURE__ */ empty2(0)(0);
   var vert = (dictFoldable) => {
     const fromFoldable11 = dictFoldable.foldr(Cons)(Nil);
     return (delim) => {
       const vert$p = (v) => {
         if (v.tag === "Nil") {
-          return $$null;
+          return emptyDoc;
         }
         if (v.tag === "Cons") {
           if (v._2.tag === "Nil") {
@@ -9105,33 +9154,21 @@
       return (x2) => vert$p(fromFoldable11(x2));
     };
   };
-  var vert2 = /* @__PURE__ */ vert(foldableArray);
-  var nil2 = /* @__PURE__ */ text("[]");
-  var hspace = (dictFoldable) => {
-    const $1 = dictFoldable.foldr(Cons)(Nil);
-    return (x2) => hcat(intercalate2($List("Cons", space, Nil))(listMap(applicativeList.pure)($1(x2))));
-  };
-  var hspace1 = /* @__PURE__ */ hspace(foldableArray);
-  var hspace2 = /* @__PURE__ */ hspace(foldableList);
+  var vert1 = /* @__PURE__ */ vert(foldableArray);
   var comma = /* @__PURE__ */ text(",");
   var hcomma = (dictFoldable) => {
     const $1 = dictFoldable.foldr(Cons)(Nil);
     const $2 = intersperse(beside(comma)(space));
     return (x2) => hcat($2($1(x2)));
   };
-  var hcomma1 = /* @__PURE__ */ hcomma(foldableArray);
-  var hcomma2 = /* @__PURE__ */ hcomma(foldableList);
+  var hcomma1 = /* @__PURE__ */ hcomma(foldableList);
+  var hcomma2 = /* @__PURE__ */ hcomma(foldableArray);
   var colon = /* @__PURE__ */ text(":");
+  var prettyRecordOrDict = (dictPretty) => (dictHighlightable) => (bracify) => (prettyKey) => (\u03B1) => (xvs) => dictHighlightable.highlightIf(\u03B1)(bracify(hcomma1(listMap((v) => hspace1([
+    beside(v._1)(colon),
+    dictPretty.pretty(v._2)
+  ]))(listMap(strongFn.first(prettyKey))(xvs)))));
   var between = (l) => (r) => (doc) => beside(beside(l)(doc))(r);
-  var highlightIf = (v) => {
-    if (!v) {
-      return identity11;
-    }
-    if (v) {
-      return between(text("_"))(text("_"));
-    }
-    fail();
-  };
   var prettyParensOpt = (dictPretty) => (x2) => {
     const doc = dictPretty.pretty(x2);
     if (contains(" ")(intercalate3("\n")(doc.lines))) {
@@ -9139,64 +9176,90 @@
     }
     return doc;
   };
-  var prettyConstr = (dictPretty) => (\u03B1) => (c) => (v) => {
-    const $4 = (c1, xs, \u03B11) => hspace2($List(
+  var prettyConstr = (dictPretty) => (dictHighlightable) => (\u03B1) => (c) => (v) => {
+    const $5 = (c1, xs, \u03B11) => hspace2($List(
       "Cons",
-      highlightIf(\u03B11)(text(showCtr(c1))),
+      dictHighlightable.highlightIf(\u03B11)(text(showCtr(c1))),
       listMap(prettyParensOpt(dictPretty))(xs)
     ));
     if (v.tag === "Cons") {
       if (v._2.tag === "Cons") {
-        if (v._2._2.tag === "Nil") {
-          if (c === "Pair") {
-            return highlightIf(\u03B1)(beside(beside(text("("))(hcomma1([dictPretty.pretty(v._1), dictPretty.pretty(v._2._1)])))(text(")")));
-          }
-          if (c === ":") {
-            return beside(beside(text("("))(hspace1([
-              dictPretty.pretty(v._1),
-              highlightIf(\u03B1)(text(":")),
-              dictPretty.pretty(v._2._1)
-            ])))(text(")"));
-          }
-          return $4(c, v, \u03B1);
+        if (c === "Pair") {
+          return (() => {
+            if (v._2._2.tag === "Nil") {
+              return identity10;
+            }
+            return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
+          })()(dictHighlightable.highlightIf(\u03B1)(beside(beside(text("("))(hcomma2([dictPretty.pretty(v._1), dictPretty.pretty(v._2._1)])))(text(")"))));
         }
-        return $4(c, v, \u03B1);
+        if (c === "Nil") {
+          return (() => {
+            if (v.tag === "Nil") {
+              return identity10;
+            }
+            return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
+          })()(dictHighlightable.highlightIf(\u03B1)(nil2));
+        }
+        if (c === ":") {
+          return (() => {
+            if (v._2._2.tag === "Nil") {
+              return identity10;
+            }
+            return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
+          })()(beside(beside(text("("))(hspace1([
+            dictPretty.pretty(v._1),
+            dictHighlightable.highlightIf(\u03B1)(text(":")),
+            dictPretty.pretty(v._2._1)
+          ])))(text(")")));
+        }
+        return $5(c, v, \u03B1);
       }
-      return $4(c, v, \u03B1);
-    }
-    if (v.tag === "Nil") {
       if (c === "Nil") {
-        return highlightIf(\u03B1)(nil2);
+        return (() => {
+          if (v.tag === "Nil") {
+            return identity10;
+          }
+          return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
+        })()(dictHighlightable.highlightIf(\u03B1)(nil2));
       }
-      return $4(c, v, \u03B1);
+      return $5(c, v, \u03B1);
     }
-    return $4(c, v, \u03B1);
+    if (c === "Nil") {
+      return (() => {
+        if (v.tag === "Nil") {
+          return identity10;
+        }
+        return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
+      })()(dictHighlightable.highlightIf(\u03B1)(nil2));
+    }
+    return $5(c, v, \u03B1);
   };
-  var prettyRecord = (dictPretty) => (\u03B1) => (xvs) => highlightIf(\u03B1)(beside(beside(text("{"))(hcomma2(listMap((v) => hspace1([
-    beside(text(v._1))(colon),
-    dictPretty.pretty(v._2)
-  ]))(xvs))))(text("}")));
-  var prettyValBoolean = {
+  var prettyDict = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(between(text("{|"))(text("|}")));
+  var prettyRecord = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(between(text("{"))(text("}")));
+  var prettyVal = (dictHighlightable) => ({
     pretty: (v) => {
       if (v.tag === "Int") {
-        return highlightIf(v._1)(text(showIntImpl(v._2)));
+        return dictHighlightable.highlightIf(v._1)(text(showIntImpl(v._2)));
       }
       if (v.tag === "Float") {
-        return highlightIf(v._1)(text(showNumberImpl(v._2)));
+        return dictHighlightable.highlightIf(v._1)(text(showNumberImpl(v._2)));
       }
       if (v.tag === "Str") {
-        return highlightIf(v._1)(text(showStringImpl(v._2)));
+        return dictHighlightable.highlightIf(v._1)(text(showStringImpl(v._2)));
       }
       if (v.tag === "Record") {
-        return prettyRecord(prettyValBoolean)(v._1)(toUnfoldable6(v._2));
+        return prettyRecord(prettyVal(dictHighlightable))(dictHighlightable)(text)(v._1)(toUnfoldable6(v._2));
+      }
+      if (v.tag === "Dictionary") {
+        return prettyDict(prettyVal(dictHighlightable))(dictHighlightable)((x2) => text(showStringImpl(x2)))(v._1)(toUnfoldable6(v._2));
       }
       if (v.tag === "Constr") {
-        return prettyConstr(prettyValBoolean)(v._1)(v._2)(v._3);
+        return prettyConstr(prettyVal(dictHighlightable))(dictHighlightable)(v._1)(v._2)(v._3);
       }
       if (v.tag === "Matrix") {
-        return vert2(comma)(arrayMap((() => {
-          const $1 = arrayMap(prettyValBoolean.pretty);
-          return (x2) => hcomma1($1(x2));
+        return vert1(comma)(arrayMap((() => {
+          const $2 = arrayMap(prettyVal(dictHighlightable).pretty);
+          return (x2) => hcomma2($2(x2));
         })())(v._2._1._1));
       }
       if (v.tag === "Closure") {
@@ -9204,6 +9267,17 @@
       }
       if (v.tag === "Primitive") {
         return beside(beside(text("("))(text("<prim op>")))(text(")"));
+      }
+      fail();
+    }
+  });
+  var highlightableBoolean = {
+    highlightIf: (v) => {
+      if (!v) {
+        return identity11;
+      }
+      if (v) {
+        return between(text("_"))(text("_"));
       }
       fail();
     }
@@ -9236,15 +9310,18 @@
   var length4 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
   var sequence = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity6))();
   var sequence1 = /* @__PURE__ */ (() => traversableList.traverse(applicativeEither)(identity3))();
+  var meetSemilatticeBoolean = { meet: boolConj };
   var joinSemilatticeBoolean = { join: boolDisj, neg: boolNot };
+  var boundedMeetSemilatticeBoo = { top: true, MeetSemilattice0: () => meetSemilatticeBoolean };
   var boundedJoinSemilatticeBoo = { bot: false, JoinSemilattice0: () => joinSemilatticeBoolean };
-  var mayFailUpdate = (dictSlices) => (m) => (v) => {
+  var boundedLatticeBoolean = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeBoo, BoundedMeetSemilattice1: () => boundedMeetSemilatticeBoo };
+  var mayFailUpdate = (dictPartialJoinSemilattice) => (m) => (v) => {
     const v2 = _lookup(Nothing, Just, v._1, m);
     if (v2.tag === "Nothing") {
       return $Either("Right", mutate(poke2(v._1)(v._2))(m));
     }
     if (v2.tag === "Just") {
-      const $4 = dictSlices.maybeJoin(v2._1)(v._2);
+      const $4 = dictPartialJoinSemilattice.maybeJoin(v2._1)(v._2);
       if ($4.tag === "Left") {
         return $Either("Left", $4._1);
       }
@@ -9255,29 +9332,29 @@
     }
     fail();
   };
-  var joinSemilatticeDict = (dictSlices) => {
-    const JoinSemilattice0 = dictSlices.JoinSemilattice0();
+  var joinSemilatticeDict = (dictPartialJoinSemilattice) => {
+    const JoinSemilattice0 = dictPartialJoinSemilattice.JoinSemilattice0();
     return { join: unionWith(JoinSemilattice0.join), neg: functorObject.map(JoinSemilattice0.neg) };
   };
-  var slicesDict = (dictSlices) => {
-    const joinSemilatticeDict1 = joinSemilatticeDict(dictSlices);
-    return { maybeJoin: (m) => (m$p) => foldM2(mayFailUpdate(dictSlices))(m)(toUnfoldable7(m$p)), JoinSemilattice0: () => joinSemilatticeDict1 };
+  var partialJoinSemilatticeDic = (dictPartialJoinSemilattice) => {
+    const joinSemilatticeDict1 = joinSemilatticeDict(dictPartialJoinSemilattice);
+    return { maybeJoin: (m) => (m$p) => foldM2(mayFailUpdate(dictPartialJoinSemilattice))(m)(toUnfoldable7(m$p)), JoinSemilattice0: () => joinSemilatticeDict1 };
   };
-  var definedJoin = (dictSlices) => (x2) => {
-    const $2 = dictSlices.maybeJoin(x2);
+  var definedJoin = (dictPartialJoinSemilattice) => (x2) => {
+    const $2 = dictPartialJoinSemilattice.maybeJoin(x2);
     return (x$1) => successful($$with("Join undefined")($2(x$1)));
   };
-  var slicesArray = (dictSlices) => ({
+  var partialJoinSemilatticeArr = (dictPartialJoinSemilattice) => ({
     maybeJoin: (xs) => (ys) => {
       if (length4(xs) === length4(ys)) {
-        return sequence(zipWith2(dictSlices.maybeJoin)(xs)(ys));
+        return sequence(zipWith2(dictPartialJoinSemilattice.maybeJoin)(xs)(ys));
       }
       return $Either("Left", "Mismatched lengths");
     },
-    JoinSemilattice0: () => joinSemilatticeArray(dictSlices)
+    JoinSemilattice0: () => joinSemilatticeArray(dictPartialJoinSemilattice)
   });
-  var joinSemilatticeArray = (dictSlices) => ({ join: definedJoin(slicesArray(dictSlices)), neg: arrayMap(dictSlices.JoinSemilattice0().neg) });
-  var slicesList = (dictSlices) => ({
+  var joinSemilatticeArray = (dictPartialJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeArr(dictPartialJoinSemilattice)), neg: arrayMap(dictPartialJoinSemilattice.JoinSemilattice0().neg) });
+  var partialJoinSemilatticeLis = (dictPartialJoinSemilattice) => ({
     maybeJoin: (xs) => (ys) => {
       if ((() => {
         const go = (go$a0$copy) => (go$a1$copy) => {
@@ -9320,13 +9397,13 @@
         };
         return go(0)(xs) === go$1(0)(ys);
       })()) {
-        return sequence1(zipWith(dictSlices.maybeJoin)(xs)(ys));
+        return sequence1(zipWith(dictPartialJoinSemilattice.maybeJoin)(xs)(ys));
       }
       return $Either("Left", "Mismatched lengths");
     },
-    JoinSemilattice0: () => joinSemilatticeList(dictSlices)
+    JoinSemilattice0: () => joinSemilatticeList(dictPartialJoinSemilattice)
   });
-  var joinSemilatticeList = (dictSlices) => ({ join: definedJoin(slicesList(dictSlices)), neg: listMap(dictSlices.JoinSemilattice0().neg) });
+  var joinSemilatticeList = (dictPartialJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeLis(dictPartialJoinSemilattice)), neg: listMap(dictPartialJoinSemilattice.JoinSemilattice0().neg) });
   var expandableDict = (dictFunctor) => (dictBoundedJoinSemilattice) => {
     const botOf22 = dictFunctor.map((v) => dictBoundedJoinSemilattice.bot);
     return (dictExpandable) => ({
@@ -9379,6 +9456,7 @@
   var Float = (value0) => (value1) => $Expr("Float", value0, value1);
   var Str = (value0) => (value1) => $Expr("Str", value0, value1);
   var Record = (value0) => (value1) => $Expr("Record", value0, value1);
+  var Dictionary = (value0) => (value1) => $Expr("Dictionary", value0, value1);
   var Constr = (value0) => (value1) => (value2) => $Expr("Constr", value0, value1, value2);
   var Matrix = (value0) => (value1) => (value2) => (value3) => $Expr("Matrix", value0, value1, value2, value3);
   var Project = (value0) => (value1) => $Expr("Project", value0, value1);
@@ -9408,6 +9486,9 @@
       }
       if (m.tag === "Record") {
         return $Expr("Record", f(m._1), _fmapObject(m._2, functorExpr.map(f)));
+      }
+      if (m.tag === "Dictionary") {
+        return $Expr("Dictionary", f(m._1), listMap(functorPair.map(functorExpr.map(f)))(m._2));
       }
       if (m.tag === "Constr") {
         return $Expr("Constr", f(m._1), m._2, listMap(functorExpr.map(f))(m._3));
@@ -9461,32 +9542,29 @@
       fail();
     }
   };
-  var expandableDict2 = /* @__PURE__ */ expandableDict(functorExpr)(boundedJoinSemilatticeBoo);
-  var expandableDict1 = /* @__PURE__ */ expandableDict(functorElim)(boundedJoinSemilatticeBoo);
-  var expandableDict22 = /* @__PURE__ */ expandableDict(functorCont)(boundedJoinSemilatticeBoo);
-  var slicesVarDefBoolean = {
+  var partialJoinSemilatticeVar = (dictJoinSemilattice) => ({
     maybeJoin: (v) => (v1) => applyEither.apply((() => {
-      const $2 = slicesElimBoolean.maybeJoin(v._1)(v1._1);
-      if ($2.tag === "Left") {
-        return $Either("Left", $2._1);
+      const $3 = partialJoinSemilatticeEli(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
+      if ($3.tag === "Left") {
+        return $Either("Left", $3._1);
       }
-      if ($2.tag === "Right") {
-        return $Either("Right", VarDef($2._1));
+      if ($3.tag === "Right") {
+        return $Either("Right", VarDef($3._1));
       }
       fail();
-    })())(slicesExprBoolean.maybeJoin(v._2)(v1._2)),
-    JoinSemilattice0: () => joinSemilatticeVarDefBool$lazy()
-  };
-  var slicesExprBoolean = {
+    })())(partialJoinSemilatticeExp(dictJoinSemilattice).maybeJoin(v._2)(v1._2)),
+    JoinSemilattice0: () => joinSemilatticeVarDef(dictJoinSemilattice)
+  });
+  var partialJoinSemilatticeExp = (dictJoinSemilattice) => ({
     maybeJoin: (v) => (v1) => {
       if (v.tag === "Var") {
         if (v1.tag === "Var") {
-          const $2 = mayFailEq(showString)(eqString)(v._1)(v1._1);
-          if ($2.tag === "Left") {
-            return $Either("Left", $2._1);
+          const $3 = mayFailEq(showString)(eqString)(v._1)(v1._1);
+          if ($3.tag === "Left") {
+            return $Either("Left", $3._1);
           }
-          if ($2.tag === "Right") {
-            return $Either("Right", $Expr("Var", $2._1));
+          if ($3.tag === "Right") {
+            return $Either("Right", $Expr("Var", $3._1));
           }
           fail();
         }
@@ -9494,12 +9572,12 @@
       }
       if (v.tag === "Op") {
         if (v1.tag === "Op") {
-          const $2 = mayFailEq(showString)(eqString)(v._1)(v1._1);
-          if ($2.tag === "Left") {
-            return $Either("Left", $2._1);
+          const $3 = mayFailEq(showString)(eqString)(v._1)(v1._1);
+          if ($3.tag === "Left") {
+            return $Either("Left", $3._1);
           }
-          if ($2.tag === "Right") {
-            return $Either("Right", $Expr("Op", $2._1));
+          if ($3.tag === "Right") {
+            return $Either("Right", $Expr("Op", $3._1));
           }
           fail();
         }
@@ -9507,13 +9585,13 @@
       }
       if (v.tag === "Int") {
         if (v1.tag === "Int") {
-          const $2 = Int(v._1 || v1._1);
-          const $3 = mayFailEq(showInt)(eqInt)(v._2)(v1._2);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
+          const $3 = Int(dictJoinSemilattice.join(v._1)(v1._1));
+          const $4 = mayFailEq(showInt)(eqInt)(v._2)(v1._2);
+          if ($4.tag === "Left") {
+            return $Either("Left", $4._1);
           }
-          if ($3.tag === "Right") {
-            return $Either("Right", $2($3._1));
+          if ($4.tag === "Right") {
+            return $Either("Right", $3($4._1));
           }
           fail();
         }
@@ -9521,13 +9599,13 @@
       }
       if (v.tag === "Str") {
         if (v1.tag === "Str") {
-          const $2 = Str(v._1 || v1._1);
-          const $3 = mayFailEq(showString)(eqString)(v._2)(v1._2);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
+          const $3 = Str(dictJoinSemilattice.join(v._1)(v1._1));
+          const $4 = mayFailEq(showString)(eqString)(v._2)(v1._2);
+          if ($4.tag === "Left") {
+            return $Either("Left", $4._1);
           }
-          if ($3.tag === "Right") {
-            return $Either("Right", $2($3._1));
+          if ($4.tag === "Right") {
+            return $Either("Right", $3($4._1));
           }
           fail();
         }
@@ -9535,13 +9613,13 @@
       }
       if (v.tag === "Float") {
         if (v1.tag === "Float") {
-          const $2 = Float(v._1 || v1._1);
-          const $3 = mayFailEq(showNumber)(eqNumber)(v._2)(v1._2);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
+          const $3 = Float(dictJoinSemilattice.join(v._1)(v1._1));
+          const $4 = mayFailEq(showNumber)(eqNumber)(v._2)(v1._2);
+          if ($4.tag === "Left") {
+            return $Either("Left", $4._1);
           }
-          if ($3.tag === "Right") {
-            return $Either("Right", $2($3._1));
+          if ($4.tag === "Right") {
+            return $Either("Right", $3($4._1));
           }
           fail();
         }
@@ -9549,13 +9627,13 @@
       }
       if (v.tag === "Record") {
         if (v1.tag === "Record") {
-          const $2 = Record(v._1 || v1._1);
-          const $3 = slicesDict(slicesExprBoolean).maybeJoin(v._2)(v1._2);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
+          const $3 = Record(dictJoinSemilattice.join(v._1)(v1._1));
+          const $4 = partialJoinSemilatticeDic(partialJoinSemilatticeExp(dictJoinSemilattice)).maybeJoin(v._2)(v1._2);
+          if ($4.tag === "Left") {
+            return $Either("Left", $4._1);
           }
-          if ($3.tag === "Right") {
-            return $Either("Right", $2($3._1));
+          if ($4.tag === "Right") {
+            return $Either("Right", $3($4._1));
           }
           fail();
         }
@@ -9564,54 +9642,54 @@
       if (v.tag === "Constr") {
         if (v1.tag === "Constr") {
           return applyEither.apply((() => {
-            const $2 = Constr(v._1 || v1._1);
-            const $3 = mayFailEq(showString)(eqString)(v._2)(v1._2);
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
+            const $3 = Constr(dictJoinSemilattice.join(v._1)(v1._1));
+            const $4 = mayFailEq(showString)(eqString)(v._2)(v1._2);
+            if ($4.tag === "Left") {
+              return $Either("Left", $4._1);
             }
-            if ($3.tag === "Right") {
-              return $Either("Right", $2($3._1));
+            if ($4.tag === "Right") {
+              return $Either("Right", $3($4._1));
             }
             fail();
-          })())(slicesList(slicesExprBoolean).maybeJoin(v._3)(v1._3));
+          })())(partialJoinSemilatticeLis(partialJoinSemilatticeExp(dictJoinSemilattice)).maybeJoin(v._3)(v1._3));
         }
         return $Either("Left", "Incompatible expressions");
       }
       if (v.tag === "Matrix") {
         if (v1.tag === "Matrix") {
           return applyEither.apply(applyEither.apply((() => {
-            const $2 = Matrix(v._1 || v1._1);
-            const $3 = slicesExprBoolean.maybeJoin(v._2)(v1._2);
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
+            const $3 = Matrix(dictJoinSemilattice.join(v._1)(v1._1));
+            const $4 = partialJoinSemilatticeExp(dictJoinSemilattice).maybeJoin(v._2)(v1._2);
+            if ($4.tag === "Left") {
+              return $Either("Left", $4._1);
             }
-            if ($3.tag === "Right") {
-              return $Either("Right", $2($3._1));
+            if ($4.tag === "Right") {
+              return $Either("Right", $3($4._1));
             }
             fail();
           })())((() => {
-            const $2 = mayFailEq(showString)(eqString)(v._3._1)(v1._3._1);
+            const $3 = mayFailEq(showString)(eqString)(v._3._1)(v1._3._1);
             return applyEither.apply((() => {
-              if ($2.tag === "Left") {
-                return $Either("Left", $2._1);
+              if ($3.tag === "Left") {
+                return $Either("Left", $3._1);
               }
-              if ($2.tag === "Right") {
-                return $Either("Right", Tuple($2._1));
+              if ($3.tag === "Right") {
+                return $Either("Right", Tuple($3._1));
               }
               fail();
             })())(mayFailEq(showString)(eqString)(v._3._2)(v1._3._2));
-          })()))(slicesExprBoolean.maybeJoin(v._4)(v1._4));
+          })()))(partialJoinSemilatticeExp(dictJoinSemilattice).maybeJoin(v._4)(v1._4));
         }
         return $Either("Left", "Incompatible expressions");
       }
       if (v.tag === "Lambda") {
         if (v1.tag === "Lambda") {
-          const $2 = slicesElimBoolean.maybeJoin(v._1)(v1._1);
-          if ($2.tag === "Left") {
-            return $Either("Left", $2._1);
+          const $3 = partialJoinSemilatticeEli(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
+          if ($3.tag === "Left") {
+            return $Either("Left", $3._1);
           }
-          if ($2.tag === "Right") {
-            return $Either("Right", $Expr("Lambda", $2._1));
+          if ($3.tag === "Right") {
+            return $Either("Right", $Expr("Lambda", $3._1));
           }
           fail();
         }
@@ -9620,12 +9698,12 @@
       if (v.tag === "Project") {
         if (v1.tag === "Project") {
           return applyEither.apply((() => {
-            const $2 = slicesExprBoolean.maybeJoin(v._1)(v1._1);
-            if ($2.tag === "Left") {
-              return $Either("Left", $2._1);
+            const $3 = partialJoinSemilatticeExp(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
+            if ($3.tag === "Left") {
+              return $Either("Left", $3._1);
             }
-            if ($2.tag === "Right") {
-              return $Either("Right", Project($2._1));
+            if ($3.tag === "Right") {
+              return $Either("Right", Project($3._1));
             }
             fail();
           })())(mayFailEq(showString)(eqString)(v._2)(v1._2));
@@ -9635,86 +9713,86 @@
       if (v.tag === "App") {
         if (v1.tag === "App") {
           return applyEither.apply((() => {
-            const $2 = slicesExprBoolean.maybeJoin(v._1)(v1._1);
-            if ($2.tag === "Left") {
-              return $Either("Left", $2._1);
+            const $3 = partialJoinSemilatticeExp(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
+            if ($3.tag === "Left") {
+              return $Either("Left", $3._1);
             }
-            if ($2.tag === "Right") {
-              return $Either("Right", App2($2._1));
+            if ($3.tag === "Right") {
+              return $Either("Right", App2($3._1));
             }
             fail();
-          })())(slicesExprBoolean.maybeJoin(v._2)(v1._2));
+          })())(partialJoinSemilatticeExp(dictJoinSemilattice).maybeJoin(v._2)(v1._2));
         }
         return $Either("Left", "Incompatible expressions");
       }
       if (v.tag === "Let") {
         if (v1.tag === "Let") {
           return applyEither.apply((() => {
-            const $2 = slicesVarDefBoolean.maybeJoin(v._1)(v1._1);
-            if ($2.tag === "Left") {
-              return $Either("Left", $2._1);
+            const $3 = partialJoinSemilatticeVar(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
+            if ($3.tag === "Left") {
+              return $Either("Left", $3._1);
             }
-            if ($2.tag === "Right") {
-              return $Either("Right", Let($2._1));
+            if ($3.tag === "Right") {
+              return $Either("Right", Let($3._1));
             }
             fail();
-          })())(slicesExprBoolean.maybeJoin(v._2)(v1._2));
+          })())(partialJoinSemilatticeExp(dictJoinSemilattice).maybeJoin(v._2)(v1._2));
         }
         return $Either("Left", "Incompatible expressions");
       }
       if (v.tag === "LetRec") {
         if (v1.tag === "LetRec") {
           return applyEither.apply((() => {
-            const $2 = slicesDict(slicesElimBoolean).maybeJoin(v._1)(v1._1);
-            if ($2.tag === "Left") {
-              return $Either("Left", $2._1);
+            const $3 = partialJoinSemilatticeDic(partialJoinSemilatticeEli(dictJoinSemilattice)).maybeJoin(v._1)(v1._1);
+            if ($3.tag === "Left") {
+              return $Either("Left", $3._1);
             }
-            if ($2.tag === "Right") {
-              return $Either("Right", LetRec($2._1));
+            if ($3.tag === "Right") {
+              return $Either("Right", LetRec($3._1));
             }
             fail();
-          })())(slicesExprBoolean.maybeJoin(v._2)(v1._2));
+          })())(partialJoinSemilatticeExp(dictJoinSemilattice).maybeJoin(v._2)(v1._2));
         }
         return $Either("Left", "Incompatible expressions");
       }
       return $Either("Left", "Incompatible expressions");
     },
-    JoinSemilattice0: () => joinSemilatticeExprBoolea$lazy()
-  };
-  var slicesElimBoolean = {
+    JoinSemilattice0: () => joinSemilatticeExpr(dictJoinSemilattice)
+  });
+  var partialJoinSemilatticeEli = (dictJoinSemilattice) => ({
     maybeJoin: (v) => (v1) => {
       if (v.tag === "ElimVar") {
         if (v1.tag === "ElimVar") {
           return applyEither.apply((() => {
-            const $2 = mayFailEq(showString)(eqString)(v._1)(v1._1);
-            if ($2.tag === "Left") {
-              return $Either("Left", $2._1);
+            const $3 = mayFailEq(showString)(eqString)(v._1)(v1._1);
+            if ($3.tag === "Left") {
+              return $Either("Left", $3._1);
             }
-            if ($2.tag === "Right") {
-              return $Either("Right", ElimVar($2._1));
+            if ($3.tag === "Right") {
+              return $Either("Right", ElimVar($3._1));
             }
             fail();
-          })())(slicesContBoolean.maybeJoin(v._2)(v1._2));
+          })())(partialJoinSemilatticeCon(dictJoinSemilattice).maybeJoin(v._2)(v1._2));
         }
         return $Either("Left", "Incompatible eliminators");
       }
       if (v.tag === "ElimConstr") {
         if (v1.tag === "ElimConstr") {
-          const $2 = consistentWith(keys2(v._1))(keys2(v1._1));
-          const $3 = applyEither.apply((() => {
-            if ($2.tag === "Left") {
-              return $Either("Left", $2._1);
+          const $3 = consistentWith(keys2(v._1))(keys2(v1._1));
+          const $4 = applyEither.apply((() => {
+            if ($3.tag === "Left") {
+              return $Either("Left", $3._1);
             }
-            if ($2.tag === "Right") {
+            if ($3.tag === "Right") {
               return $Either("Right", identity);
             }
             fail();
-          })())(slicesDict(slicesContBoolean).maybeJoin(v._1)(v1._1));
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
+          })())(partialJoinSemilatticeDic(partialJoinSemilatticeCon(dictJoinSemilattice)).maybeJoin(v._1)(v1._1));
+          if ($4.tag === "Left") {
+            return $Either("Left", $4._1);
           }
-          if ($3.tag === "Right") {
-            return $Either("Right", $Elim("ElimConstr", $3._1));
+          if ($4.tag === "Right") {
+            return $Either("Right", $Elim("ElimConstr", $4._1));
           }
           fail();
         }
@@ -9723,23 +9801,23 @@
       if (v.tag === "ElimRecord") {
         if (v1.tag === "ElimRecord") {
           return applyEither.apply((() => {
-            const $2 = mayFailEq(showSet2)(eqSet)(v._1)(v1._1);
-            if ($2.tag === "Left") {
-              return $Either("Left", $2._1);
+            const $3 = mayFailEq(showSet2)(eqSet)(v._1)(v1._1);
+            if ($3.tag === "Left") {
+              return $Either("Left", $3._1);
             }
-            if ($2.tag === "Right") {
-              return $Either("Right", ElimRecord($2._1));
+            if ($3.tag === "Right") {
+              return $Either("Right", ElimRecord($3._1));
             }
             fail();
-          })())(slicesContBoolean.maybeJoin(v._2)(v1._2));
+          })())(partialJoinSemilatticeCon(dictJoinSemilattice).maybeJoin(v._2)(v1._2));
         }
         return $Either("Left", "Incompatible eliminators");
       }
       return $Either("Left", "Incompatible eliminators");
     },
-    JoinSemilattice0: () => joinSemilatticeElimBoolea$lazy()
-  };
-  var slicesContBoolean = {
+    JoinSemilattice0: () => joinSemilatticeElim(dictJoinSemilattice)
+  });
+  var partialJoinSemilatticeCon = (dictJoinSemilattice) => ({
     maybeJoin: (v) => (v1) => {
       if (v.tag === "ContNone") {
         if (v1.tag === "ContNone") {
@@ -9749,12 +9827,12 @@
       }
       if (v.tag === "ContExpr") {
         if (v1.tag === "ContExpr") {
-          const $2 = slicesExprBoolean.maybeJoin(v._1)(v1._1);
-          if ($2.tag === "Left") {
-            return $Either("Left", $2._1);
+          const $3 = partialJoinSemilatticeExp(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
+          if ($3.tag === "Left") {
+            return $Either("Left", $3._1);
           }
-          if ($2.tag === "Right") {
-            return $Either("Right", $Cont("ContExpr", $2._1));
+          if ($3.tag === "Right") {
+            return $Either("Right", $Cont("ContExpr", $3._1));
           }
           fail();
         }
@@ -9762,12 +9840,12 @@
       }
       if (v.tag === "ContElim") {
         if (v1.tag === "ContElim") {
-          const $2 = slicesElimBoolean.maybeJoin(v._1)(v1._1);
-          if ($2.tag === "Left") {
-            return $Either("Left", $2._1);
+          const $3 = partialJoinSemilatticeEli(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
+          if ($3.tag === "Left") {
+            return $Either("Left", $3._1);
           }
-          if ($2.tag === "Right") {
-            return $Either("Right", $Cont("ContElim", $2._1));
+          if ($3.tag === "Right") {
+            return $Either("Right", $Cont("ContElim", $3._1));
           }
           fail();
         }
@@ -9775,126 +9853,138 @@
       }
       return $Either("Left", "Incompatible continuations");
     },
-    JoinSemilattice0: () => joinSemilatticeContBoolea$lazy()
+    JoinSemilattice0: () => joinSemilatticeCont(dictJoinSemilattice)
+  });
+  var joinSemilatticeVarDef = (dictJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeVar(dictJoinSemilattice)), neg: functorVarDef.map(dictJoinSemilattice.neg) });
+  var joinSemilatticeExpr = (dictJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeExp(dictJoinSemilattice)), neg: functorExpr.map(dictJoinSemilattice.neg) });
+  var joinSemilatticeElim = (dictJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeEli(dictJoinSemilattice)), neg: functorElim.map(dictJoinSemilattice.neg) });
+  var joinSemilatticeCont = (dictJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeCon(dictJoinSemilattice)), neg: functorCont.map(dictJoinSemilattice.neg) });
+  var expandableVarDef = (dictBoundedJoinSemilattice) => ({ expand: (v) => (v1) => $VarDef(expandableElim(dictBoundedJoinSemilattice).expand(v._1)(v1._1), expandableExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2)) });
+  var expandableExpr = (dictBoundedJoinSemilattice) => {
+    const expandableDict3 = expandableDict(functorExpr)(dictBoundedJoinSemilattice);
+    const expandableDict4 = expandableDict(functorElim)(dictBoundedJoinSemilattice);
+    return {
+      expand: (v) => (v1) => {
+        if (v.tag === "Var") {
+          if (v1.tag === "Var") {
+            return $Expr("Var", mustEq(eqString)(showString)(v._1)(v1._1));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "Op") {
+          if (v1.tag === "Op") {
+            return $Expr("Op", mustEq(eqString)(showString)(v._1)(v1._1));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "Int") {
+          if (v1.tag === "Int") {
+            return $Expr("Int", v._1, mustEq(eqInt)(showInt)(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "Str") {
+          if (v1.tag === "Str") {
+            return $Expr("Str", v._1, mustEq(eqString)(showString)(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "Float") {
+          if (v1.tag === "Float") {
+            return $Expr("Float", v._1, mustEq(eqNumber)(showNumber)(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "Record") {
+          if (v1.tag === "Record") {
+            return $Expr("Record", v._1, expandableDict3(expandableExpr(dictBoundedJoinSemilattice)).expand(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "Constr") {
+          if (v1.tag === "Constr") {
+            return $Expr(
+              "Constr",
+              v._1,
+              mustEq(eqString)(showString)(v._2)(v1._2),
+              zipWith(expandableExpr(dictBoundedJoinSemilattice).expand)(v._3)(v1._3)
+            );
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "Matrix") {
+          if (v1.tag === "Matrix") {
+            return $Expr(
+              "Matrix",
+              v._1,
+              expandableExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2),
+              $Tuple(mustEq(eqString)(showString)(v._3._1)(v1._3._1), mustEq(eqString)(showString)(v._3._2)(v1._3._2)),
+              expandableExpr(dictBoundedJoinSemilattice).expand(v._4)(v1._4)
+            );
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "Lambda") {
+          if (v1.tag === "Lambda") {
+            return $Expr("Lambda", expandableElim(dictBoundedJoinSemilattice).expand(v._1)(v1._1));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "Project") {
+          if (v1.tag === "Project") {
+            return $Expr("Project", expandableExpr(dictBoundedJoinSemilattice).expand(v._1)(v1._1), mustEq(eqString)(showString)(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "App") {
+          if (v1.tag === "App") {
+            return $Expr("App", expandableExpr(dictBoundedJoinSemilattice).expand(v._1)(v1._1), expandableExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "Let") {
+          if (v1.tag === "Let") {
+            return $Expr("Let", expandableVarDef(dictBoundedJoinSemilattice).expand(v._1)(v1._1), expandableExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        if (v.tag === "LetRec") {
+          if (v1.tag === "LetRec") {
+            return $Expr("LetRec", expandableDict4(expandableElim(dictBoundedJoinSemilattice)).expand(v._1)(v1._1), expandableExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible expressions")));
+        }
+        return unsafePerformEffect(throwException(error("Incompatible expressions")));
+      }
+    };
   };
-  var joinSemilatticeVarDefBool$lazy = /* @__PURE__ */ binding(() => ({ join: definedJoin(slicesVarDefBoolean), neg: functorVarDef.map(boolNot) }));
-  var joinSemilatticeExprBoolea$lazy = /* @__PURE__ */ binding(() => ({ join: definedJoin(slicesExprBoolean), neg: functorExpr.map(boolNot) }));
-  var joinSemilatticeElimBoolea$lazy = /* @__PURE__ */ binding(() => ({ join: definedJoin(slicesElimBoolean), neg: functorElim.map(boolNot) }));
-  var joinSemilatticeContBoolea$lazy = /* @__PURE__ */ binding(() => ({ join: definedJoin(slicesContBoolean), neg: functorCont.map(boolNot) }));
-  var expandableVarDefBoolean = { expand: (v) => (v1) => $VarDef(expandableElimBoolean.expand(v._1)(v1._1), expandableExprBoolean.expand(v._2)(v1._2)) };
-  var expandableExprBoolean = {
-    expand: (v) => (v1) => {
-      if (v.tag === "Var") {
-        if (v1.tag === "Var") {
-          return $Expr("Var", mustEq(eqString)(showString)(v._1)(v1._1));
+  var expandableElim = (dictBoundedJoinSemilattice) => {
+    const expandableDict3 = expandableDict(functorCont)(dictBoundedJoinSemilattice);
+    return {
+      expand: (v) => (v1) => {
+        if (v.tag === "ElimVar") {
+          if (v1.tag === "ElimVar") {
+            return $Elim("ElimVar", mustEq(eqString)(showString)(v._1)(v1._1), expandableCont(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible eliminators")));
         }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "Op") {
-        if (v1.tag === "Op") {
-          return $Expr("Op", mustEq(eqString)(showString)(v._1)(v1._1));
+        if (v.tag === "ElimConstr") {
+          if (v1.tag === "ElimConstr") {
+            return $Elim("ElimConstr", expandableDict3(expandableCont(dictBoundedJoinSemilattice)).expand(v._1)(v1._1));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible eliminators")));
         }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "Int") {
-        if (v1.tag === "Int") {
-          return $Expr("Int", v._1, mustEq(eqInt)(showInt)(v._2)(v1._2));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "Str") {
-        if (v1.tag === "Str") {
-          return $Expr("Str", v._1, mustEq(eqString)(showString)(v._2)(v1._2));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "Float") {
-        if (v1.tag === "Float") {
-          return $Expr("Float", v._1, mustEq(eqNumber)(showNumber)(v._2)(v1._2));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "Record") {
-        if (v1.tag === "Record") {
-          return $Expr("Record", v._1, expandableDict2(expandableExprBoolean).expand(v._2)(v1._2));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "Constr") {
-        if (v1.tag === "Constr") {
-          return $Expr("Constr", v._1, mustEq(eqString)(showString)(v._2)(v1._2), zipWith(expandableExprBoolean.expand)(v._3)(v1._3));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "Matrix") {
-        if (v1.tag === "Matrix") {
-          return $Expr(
-            "Matrix",
-            v._1,
-            expandableExprBoolean.expand(v._2)(v1._2),
-            $Tuple(mustEq(eqString)(showString)(v._3._1)(v1._3._1), mustEq(eqString)(showString)(v._3._2)(v1._3._2)),
-            expandableExprBoolean.expand(v._4)(v1._4)
-          );
-        }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "Lambda") {
-        if (v1.tag === "Lambda") {
-          return $Expr("Lambda", expandableElimBoolean.expand(v._1)(v1._1));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "Project") {
-        if (v1.tag === "Project") {
-          return $Expr("Project", expandableExprBoolean.expand(v._1)(v1._1), mustEq(eqString)(showString)(v._2)(v1._2));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "App") {
-        if (v1.tag === "App") {
-          return $Expr("App", expandableExprBoolean.expand(v._1)(v1._1), expandableExprBoolean.expand(v._2)(v1._2));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "Let") {
-        if (v1.tag === "Let") {
-          return $Expr("Let", expandableVarDefBoolean.expand(v._1)(v1._1), expandableExprBoolean.expand(v._2)(v1._2));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      if (v.tag === "LetRec") {
-        if (v1.tag === "LetRec") {
-          return $Expr("LetRec", expandableDict1(expandableElimBoolean).expand(v._1)(v1._1), expandableExprBoolean.expand(v._2)(v1._2));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible expressions")));
-      }
-      return unsafePerformEffect(throwException(error("Incompatible expressions")));
-    }
-  };
-  var expandableElimBoolean = {
-    expand: (v) => (v1) => {
-      if (v.tag === "ElimVar") {
-        if (v1.tag === "ElimVar") {
-          return $Elim("ElimVar", mustEq(eqString)(showString)(v._1)(v1._1), expandableContBoolean.expand(v._2)(v1._2));
+        if (v.tag === "ElimRecord") {
+          if (v1.tag === "ElimRecord") {
+            return $Elim("ElimRecord", mustEq(eqSet)(showSet2)(v._1)(v1._1), expandableCont(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible eliminators")));
         }
         return unsafePerformEffect(throwException(error("Incompatible eliminators")));
       }
-      if (v.tag === "ElimConstr") {
-        if (v1.tag === "ElimConstr") {
-          return $Elim("ElimConstr", expandableDict22(expandableContBoolean).expand(v._1)(v1._1));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible eliminators")));
-      }
-      if (v.tag === "ElimRecord") {
-        if (v1.tag === "ElimRecord") {
-          return $Elim("ElimRecord", mustEq(eqSet)(showSet2)(v._1)(v1._1), expandableContBoolean.expand(v._2)(v1._2));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible eliminators")));
-      }
-      return unsafePerformEffect(throwException(error("Incompatible eliminators")));
-    }
+    };
   };
-  var expandableContBoolean = {
+  var expandableCont = (dictBoundedJoinSemilattice) => ({
     expand: (v) => (v1) => {
       if (v.tag === "ContNone") {
         if (v1.tag === "ContNone") {
@@ -9904,19 +9994,19 @@
       }
       if (v.tag === "ContExpr") {
         if (v1.tag === "ContExpr") {
-          return $Cont("ContExpr", expandableExprBoolean.expand(v._1)(v1._1));
+          return $Cont("ContExpr", expandableExpr(dictBoundedJoinSemilattice).expand(v._1)(v1._1));
         }
         return unsafePerformEffect(throwException(error("Incompatible continuations")));
       }
       if (v.tag === "ContElim") {
         if (v1.tag === "ContElim") {
-          return $Cont("ContElim", expandableElimBoolean.expand(v._1)(v1._1));
+          return $Cont("ContElim", expandableElim(dictBoundedJoinSemilattice).expand(v._1)(v1._1));
         }
         return unsafePerformEffect(throwException(error("Incompatible continuations")));
       }
       return unsafePerformEffect(throwException(error("Incompatible continuations")));
     }
-  };
+  });
   var fVDict = (dictFV) => ({ fv: (\u03C1) => difference2(ordString)(unions(_fmapObject(\u03C1, dictFV.fv)))(fromFoldable4(keys2(\u03C1))) });
   var bVElim = {
     bv: (v) => {
@@ -9971,6 +10061,9 @@
       }
       if (v.tag === "Record") {
         return unions(_fmapObject(v._2, fVExpr.fv));
+      }
+      if (v.tag === "Dictionary") {
+        return unions1(listMap((x2) => unionWith2(ordString)($$const)(Leaf2)(fVExpr.fv(x2._2)))(v._2));
       }
       if (v.tag === "Constr") {
         return unions1(listMap(fVExpr.fv)(v._3));
@@ -10027,8 +10120,6 @@
 
   // output-es/Val/index.js
   var $Val = (tag, _1, _2, _3, _4) => ({ tag, _1, _2, _3, _4 });
-  var maybeJoin = /* @__PURE__ */ (() => slicesDict(slicesElimBoolean).maybeJoin)();
-  var expand = /* @__PURE__ */ (() => expandableDict(functorElim)(boundedJoinSemilatticeBoo)(expandableElimBoolean).expand)();
   var fromFoldable5 = /* @__PURE__ */ foldlArray((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2);
   var toUnfoldable8 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
   var intersection2 = /* @__PURE__ */ intersection(ordString);
@@ -10036,6 +10127,7 @@
   var Float2 = (value0) => (value1) => $Val("Float", value0, value1);
   var Str2 = (value0) => (value1) => $Val("Str", value0, value1);
   var Record2 = (value0) => (value1) => $Val("Record", value0, value1);
+  var Dictionary2 = (value0) => (value1) => $Val("Dictionary", value0, value1);
   var Constr2 = (value0) => (value1) => (value2) => $Val("Constr", value0, value1, value2);
   var Matrix2 = (value0) => (value1) => $Val("Matrix", value0, value1);
   var Primitive = (value0) => (value1) => $Val("Primitive", value0, value1);
@@ -10053,6 +10145,9 @@
       }
       if (v.tag === "Record") {
         return $Val("Record", f(v._1), _fmapObject(v._2, functorVal.map(f)));
+      }
+      if (v.tag === "Dictionary") {
+        return $Val("Dictionary", f(v._1), _fmapObject(v._2, functorVal.map(f)));
       }
       if (v.tag === "Constr") {
         return $Val("Constr", f(v._1), v._2, listMap(functorVal.map(f))(v._3));
@@ -10082,230 +10177,266 @@
       fail();
     }
   };
-  var expandableDict3 = /* @__PURE__ */ expandableDict(functorVal)(boundedJoinSemilatticeBoo);
-  var slicesValBoolean = {
-    maybeJoin: (v) => (v1) => {
-      if (v.tag === "Int") {
-        if (v1.tag === "Int") {
-          const $2 = Int2(v._1 || v1._1);
-          const $3 = mayFailEq(showInt)(eqInt)(v._2)(v1._2);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
-          }
-          if ($3.tag === "Right") {
-            return $Either("Right", $2($3._1));
-          }
-          fail();
-        }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Float") {
-        if (v1.tag === "Float") {
-          const $2 = Float2(v._1 || v1._1);
-          const $3 = mayFailEq(showNumber)(eqNumber)(v._2)(v1._2);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
-          }
-          if ($3.tag === "Right") {
-            return $Either("Right", $2($3._1));
-          }
-          fail();
-        }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Str") {
-        if (v1.tag === "Str") {
-          const $2 = Str2(v._1 || v1._1);
-          const $3 = mayFailEq(showString)(eqString)(v._2)(v1._2);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
-          }
-          if ($3.tag === "Right") {
-            return $Either("Right", $2($3._1));
-          }
-          fail();
-        }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Record") {
-        if (v1.tag === "Record") {
-          const $2 = Record2(v._1 || v1._1);
-          const $3 = slicesDict(slicesValBoolean).maybeJoin(v._2)(v1._2);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
-          }
-          if ($3.tag === "Right") {
-            return $Either("Right", $2($3._1));
-          }
-          fail();
-        }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Constr") {
-        if (v1.tag === "Constr") {
-          return applyEither.apply((() => {
-            const $2 = Constr2(v._1 || v1._1);
-            const $3 = mayFailEq(showString)(eqString)(v._2)(v1._2);
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
-            }
-            if ($3.tag === "Right") {
-              return $Either("Right", $2($3._1));
-            }
-            fail();
-          })())(slicesList(slicesValBoolean).maybeJoin(v._3)(v1._3));
-        }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Matrix") {
-        if (v1.tag === "Matrix") {
-          const $2 = Matrix2(v._1 || v1._1);
-          const $3 = slicesArray(slicesArray(slicesValBoolean)).maybeJoin(v._2._1._1)(v1._2._1._1);
-          const $4 = v._2._1._2._2 || v1._2._1._2._2;
-          const $5 = mayFailEq(showInt)(eqInt)(v._2._1._2._1)(v1._2._1._2._1);
-          const $6 = applyEither.apply((() => {
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
-            }
-            if ($3.tag === "Right") {
-              return $Either("Right", Tuple($3._1));
-            }
-            fail();
-          })())((() => {
-            if ($5.tag === "Left") {
-              return $Either("Left", $5._1);
-            }
-            if ($5.tag === "Right") {
-              return $Either("Right", $Tuple($5._1, $4));
-            }
-            fail();
-          })());
-          const $7 = v._2._2._2 || v1._2._2._2;
-          const $8 = mayFailEq(showInt)(eqInt)(v._2._2._1)(v1._2._2._1);
-          const $9 = applyEither.apply((() => {
+  var partialJoinSemilatticeVal = (dictJoinSemilattice) => {
+    const partialJoinSemilatticeEli2 = partialJoinSemilatticeEli(dictJoinSemilattice);
+    const maybeJoin2 = partialJoinSemilatticeDic(partialJoinSemilatticeEli2).maybeJoin;
+    return {
+      maybeJoin: (v) => (v1) => {
+        if (v.tag === "Int") {
+          if (v1.tag === "Int") {
+            const $5 = Int2(dictJoinSemilattice.join(v._1)(v1._1));
+            const $6 = mayFailEq(showInt)(eqInt)(v._2)(v1._2);
             if ($6.tag === "Left") {
               return $Either("Left", $6._1);
             }
             if ($6.tag === "Right") {
-              return $Either("Right", Tuple($6._1));
+              return $Either("Right", $5($6._1));
             }
             fail();
-          })())((() => {
-            if ($8.tag === "Left") {
-              return $Either("Left", $8._1);
+          }
+          return $Either("Left", "Incompatible values");
+        }
+        if (v.tag === "Float") {
+          if (v1.tag === "Float") {
+            const $5 = Float2(dictJoinSemilattice.join(v._1)(v1._1));
+            const $6 = mayFailEq(showNumber)(eqNumber)(v._2)(v1._2);
+            if ($6.tag === "Left") {
+              return $Either("Left", $6._1);
             }
-            if ($8.tag === "Right") {
-              return $Either("Right", $Tuple($8._1, $7));
+            if ($6.tag === "Right") {
+              return $Either("Right", $5($6._1));
             }
             fail();
-          })());
-          if ($9.tag === "Left") {
-            return $Either("Left", $9._1);
           }
-          if ($9.tag === "Right") {
-            return $Either("Right", $2($9._1));
-          }
-          fail();
+          return $Either("Left", "Incompatible values");
         }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Closure") {
-        if (v1.tag === "Closure") {
-          return applyEither.apply(applyEither.apply((() => {
-            const $2 = Closure(v._1 || v1._1);
-            const $3 = slicesDict(slicesValBoolean).maybeJoin(v._2)(v1._2);
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
+        if (v.tag === "Str") {
+          if (v1.tag === "Str") {
+            const $5 = Str2(dictJoinSemilattice.join(v._1)(v1._1));
+            const $6 = mayFailEq(showString)(eqString)(v._2)(v1._2);
+            if ($6.tag === "Left") {
+              return $Either("Left", $6._1);
             }
-            if ($3.tag === "Right") {
-              return $Either("Right", $2($3._1));
+            if ($6.tag === "Right") {
+              return $Either("Right", $5($6._1));
             }
             fail();
-          })())(maybeJoin(v._3)(v1._3)))(slicesElimBoolean.maybeJoin(v._4)(v1._4));
+          }
+          return $Either("Left", "Incompatible values");
+        }
+        if (v.tag === "Record") {
+          if (v1.tag === "Record") {
+            const $5 = Record2(dictJoinSemilattice.join(v._1)(v1._1));
+            const $6 = partialJoinSemilatticeDic(partialJoinSemilatticeVal(dictJoinSemilattice)).maybeJoin(v._2)(v1._2);
+            if ($6.tag === "Left") {
+              return $Either("Left", $6._1);
+            }
+            if ($6.tag === "Right") {
+              return $Either("Right", $5($6._1));
+            }
+            fail();
+          }
+          return $Either("Left", "Incompatible values");
+        }
+        if (v.tag === "Dictionary") {
+          if (v1.tag === "Dictionary") {
+            const $5 = Dictionary2(dictJoinSemilattice.join(v._1)(v1._1));
+            const $6 = partialJoinSemilatticeDic(partialJoinSemilatticeVal(dictJoinSemilattice)).maybeJoin(v._2)(v1._2);
+            if ($6.tag === "Left") {
+              return $Either("Left", $6._1);
+            }
+            if ($6.tag === "Right") {
+              return $Either("Right", $5($6._1));
+            }
+            fail();
+          }
+          return $Either("Left", "Incompatible values");
+        }
+        if (v.tag === "Constr") {
+          if (v1.tag === "Constr") {
+            return applyEither.apply((() => {
+              const $5 = Constr2(dictJoinSemilattice.join(v._1)(v1._1));
+              const $6 = mayFailEq(showString)(eqString)(v._2)(v1._2);
+              if ($6.tag === "Left") {
+                return $Either("Left", $6._1);
+              }
+              if ($6.tag === "Right") {
+                return $Either("Right", $5($6._1));
+              }
+              fail();
+            })())(partialJoinSemilatticeLis(partialJoinSemilatticeVal(dictJoinSemilattice)).maybeJoin(v._3)(v1._3));
+          }
+          return $Either("Left", "Incompatible values");
+        }
+        if (v.tag === "Matrix") {
+          if (v1.tag === "Matrix") {
+            const $5 = Matrix2(dictJoinSemilattice.join(v._1)(v1._1));
+            const $6 = partialJoinSemilatticeArr(partialJoinSemilatticeArr(partialJoinSemilatticeVal(dictJoinSemilattice))).maybeJoin(v._2._1._1)(v1._2._1._1);
+            const $7 = dictJoinSemilattice.join(v._2._1._2._2)(v1._2._1._2._2);
+            const $8 = mayFailEq(showInt)(eqInt)(v._2._1._2._1)(v1._2._1._2._1);
+            const $9 = applyEither.apply((() => {
+              if ($6.tag === "Left") {
+                return $Either("Left", $6._1);
+              }
+              if ($6.tag === "Right") {
+                return $Either("Right", Tuple($6._1));
+              }
+              fail();
+            })())((() => {
+              if ($8.tag === "Left") {
+                return $Either("Left", $8._1);
+              }
+              if ($8.tag === "Right") {
+                return $Either("Right", $Tuple($8._1, $7));
+              }
+              fail();
+            })());
+            const $10 = dictJoinSemilattice.join(v._2._2._2)(v1._2._2._2);
+            const $11 = mayFailEq(showInt)(eqInt)(v._2._2._1)(v1._2._2._1);
+            const $12 = applyEither.apply((() => {
+              if ($9.tag === "Left") {
+                return $Either("Left", $9._1);
+              }
+              if ($9.tag === "Right") {
+                return $Either("Right", Tuple($9._1));
+              }
+              fail();
+            })())((() => {
+              if ($11.tag === "Left") {
+                return $Either("Left", $11._1);
+              }
+              if ($11.tag === "Right") {
+                return $Either("Right", $Tuple($11._1, $10));
+              }
+              fail();
+            })());
+            if ($12.tag === "Left") {
+              return $Either("Left", $12._1);
+            }
+            if ($12.tag === "Right") {
+              return $Either("Right", $5($12._1));
+            }
+            fail();
+          }
+          return $Either("Left", "Incompatible values");
+        }
+        if (v.tag === "Closure") {
+          if (v1.tag === "Closure") {
+            return applyEither.apply(applyEither.apply((() => {
+              const $5 = Closure(dictJoinSemilattice.join(v._1)(v1._1));
+              const $6 = partialJoinSemilatticeDic(partialJoinSemilatticeVal(dictJoinSemilattice)).maybeJoin(v._2)(v1._2);
+              if ($6.tag === "Left") {
+                return $Either("Left", $6._1);
+              }
+              if ($6.tag === "Right") {
+                return $Either("Right", $5($6._1));
+              }
+              fail();
+            })())(maybeJoin2(v._3)(v1._3)))(partialJoinSemilatticeEli2.maybeJoin(v._4)(v1._4));
+          }
+          return $Either("Left", "Incompatible values");
+        }
+        if (v.tag === "Primitive") {
+          if (v1.tag === "Primitive") {
+            const $5 = Primitive(v._1);
+            const $6 = partialJoinSemilatticeLis(partialJoinSemilatticeVal(dictJoinSemilattice)).maybeJoin(v._2)(v1._2);
+            if ($6.tag === "Left") {
+              return $Either("Left", $6._1);
+            }
+            if ($6.tag === "Right") {
+              return $Either("Right", $5($6._1));
+            }
+            fail();
+          }
+          return $Either("Left", "Incompatible values");
         }
         return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Primitive") {
-        if (v1.tag === "Primitive") {
-          const $2 = Primitive(v._1);
-          const $3 = slicesList(slicesValBoolean).maybeJoin(v._2)(v1._2);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
-          }
-          if ($3.tag === "Right") {
-            return $Either("Right", $2($3._1));
-          }
-          fail();
-        }
-        return $Either("Left", "Incompatible values");
-      }
-      return $Either("Left", "Incompatible values");
-    },
-    JoinSemilattice0: () => joinSemilatticeValBoolean$lazy()
+      },
+      JoinSemilattice0: () => joinSemilatticeVal(dictJoinSemilattice)
+    };
   };
-  var joinSemilatticeValBoolean$lazy = /* @__PURE__ */ binding(() => ({ join: definedJoin(slicesValBoolean), neg: functorVal.map(boolNot) }));
-  var expandableValBoolean = {
-    expand: (v) => (v1) => {
-      if (v.tag === "Int") {
-        if (v1.tag === "Int") {
-          return $Val("Int", v._1, mustEq(eqInt)(showInt)(v._2)(v1._2));
+  var joinSemilatticeVal = (dictJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeVal(dictJoinSemilattice)), neg: functorVal.map(dictJoinSemilattice.neg) });
+  var expandableVal = (dictBoundedJoinSemilattice) => {
+    const expandableDict2 = expandableDict(functorVal)(dictBoundedJoinSemilattice);
+    const expandableElim2 = expandableElim(dictBoundedJoinSemilattice);
+    const expand = expandableDict(functorElim)(dictBoundedJoinSemilattice)(expandableElim2).expand;
+    return {
+      expand: (v) => (v1) => {
+        if (v.tag === "Int") {
+          if (v1.tag === "Int") {
+            return $Val("Int", v._1, mustEq(eqInt)(showInt)(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible values")));
         }
-        return unsafePerformEffect(throwException(error("Incompatible values")));
-      }
-      if (v.tag === "Float") {
-        if (v1.tag === "Float") {
-          return $Val("Float", v._1, mustEq(eqNumber)(showNumber)(v._2)(v1._2));
+        if (v.tag === "Float") {
+          if (v1.tag === "Float") {
+            return $Val("Float", v._1, mustEq(eqNumber)(showNumber)(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible values")));
         }
-        return unsafePerformEffect(throwException(error("Incompatible values")));
-      }
-      if (v.tag === "Str") {
-        if (v1.tag === "Str") {
-          return $Val("Str", v._1, mustEq(eqString)(showString)(v._2)(v1._2));
+        if (v.tag === "Str") {
+          if (v1.tag === "Str") {
+            return $Val("Str", v._1, mustEq(eqString)(showString)(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible values")));
         }
-        return unsafePerformEffect(throwException(error("Incompatible values")));
-      }
-      if (v.tag === "Record") {
-        if (v1.tag === "Record") {
-          return $Val("Record", v._1, expandableDict3(expandableValBoolean).expand(v._2)(v1._2));
+        if (v.tag === "Record") {
+          if (v1.tag === "Record") {
+            return $Val("Record", v._1, expandableDict2(expandableVal(dictBoundedJoinSemilattice)).expand(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible values")));
         }
-        return unsafePerformEffect(throwException(error("Incompatible values")));
-      }
-      if (v.tag === "Constr") {
-        if (v1.tag === "Constr") {
-          return $Val("Constr", v._1, mustEq(eqString)(showString)(v._2)(v1._2), zipWith(expandableValBoolean.expand)(v._3)(v1._3));
+        if (v.tag === "Dictionary") {
+          if (v1.tag === "Dictionary") {
+            return $Val("Dictionary", v._1, expandableDict2(expandableVal(dictBoundedJoinSemilattice)).expand(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible values")));
         }
-        return unsafePerformEffect(throwException(error("Incompatible values")));
-      }
-      if (v.tag === "Matrix") {
-        if (v1.tag === "Matrix") {
-          return $Val(
-            "Matrix",
-            v._1,
-            $Tuple(
+        if (v.tag === "Constr") {
+          if (v1.tag === "Constr") {
+            return $Val(
+              "Constr",
+              v._1,
+              mustEq(eqString)(showString)(v._2)(v1._2),
+              zipWith(expandableVal(dictBoundedJoinSemilattice).expand)(v._3)(v1._3)
+            );
+          }
+          return unsafePerformEffect(throwException(error("Incompatible values")));
+        }
+        if (v.tag === "Matrix") {
+          if (v1.tag === "Matrix") {
+            return $Val(
+              "Matrix",
+              v._1,
               $Tuple(
-                zipWith2((xs) => (ys) => zipWith2(expandableValBoolean.expand)(xs)(ys))(v._2._1._1)(v1._2._1._1),
-                $Tuple(mustEq(eqInt)(showInt)(v._2._1._2._1)(v1._2._1._2._1), v._2._1._2._2)
-              ),
-              $Tuple(mustEq(eqInt)(showInt)(v._2._2._1)(v1._2._2._1), v._2._2._2)
-            )
-          );
+                $Tuple(
+                  (() => {
+                    const $6 = expandableVal(dictBoundedJoinSemilattice);
+                    return zipWith2((xs) => (ys) => zipWith2($6.expand)(xs)(ys))(v._2._1._1)(v1._2._1._1);
+                  })(),
+                  $Tuple(mustEq(eqInt)(showInt)(v._2._1._2._1)(v1._2._1._2._1), v._2._1._2._2)
+                ),
+                $Tuple(mustEq(eqInt)(showInt)(v._2._2._1)(v1._2._2._1), v._2._2._2)
+              )
+            );
+          }
+          return unsafePerformEffect(throwException(error("Incompatible values")));
+        }
+        if (v.tag === "Closure") {
+          if (v1.tag === "Closure") {
+            return $Val("Closure", v._1, expandableDict2(expandableVal(dictBoundedJoinSemilattice)).expand(v._2)(v1._2), expand(v._3)(v1._3), expandableElim2.expand(v._4)(v1._4));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible values")));
+        }
+        if (v.tag === "Primitive") {
+          if (v1.tag === "Primitive") {
+            return $Val("Primitive", v._1, zipWith(expandableVal(dictBoundedJoinSemilattice).expand)(v._2)(v1._2));
+          }
+          return unsafePerformEffect(throwException(error("Incompatible values")));
         }
         return unsafePerformEffect(throwException(error("Incompatible values")));
       }
-      if (v.tag === "Closure") {
-        if (v1.tag === "Closure") {
-          return $Val("Closure", v._1, expandableDict3(expandableValBoolean).expand(v._2)(v1._2), expand(v._3)(v1._3), expandableElimBoolean.expand(v._4)(v1._4));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible values")));
-      }
-      if (v.tag === "Primitive") {
-        if (v1.tag === "Primitive") {
-          return $Val("Primitive", v._1, zipWith(expandableValBoolean.expand)(v._2)(v1._2));
-        }
-        return unsafePerformEffect(throwException(error("Incompatible values")));
-      }
-      return unsafePerformEffect(throwException(error("Incompatible values")));
-    }
+    };
   };
   var updateMatrix = (i) => (j) => (\u03B4v) => (v) => {
     const vs_i = definitely("index within bounds")(index2(v._1._1)(i - 1 | 0));
@@ -10410,136 +10541,164 @@
   // output-es/Primitive/index.js
   var identity12 = (x2) => x2;
   var fanin2 = /* @__PURE__ */ fanin(categoryFn)(choiceFn);
-  var toFromValBoolean = { constr: fst, constr_bwd: (v) => $Tuple(v, false), match: (v) => $Tuple(v, true) };
+  var toFromVal = (dictBoundedLattice) => {
+    const bot = dictBoundedLattice.BoundedJoinSemilattice0().bot;
+    const top2 = dictBoundedLattice.BoundedMeetSemilattice1().top;
+    return { constr: fst, constr_bwd: (v) => $Tuple(v, bot), match: (v) => $Tuple(v, top2) };
+  };
   var isZeroNumber = { isZero: ($0) => 0 === $0 };
   var isZeroInt = { isZero: ($0) => 0 === $0 };
-  var toFromArrayArrayValBoolea = {
-    constr: (v) => $Val("Matrix", v._2, v._1),
-    constr_bwd: (v) => toFromArrayArrayValBoolea.match(v),
-    match: (v) => {
-      if (v.tag === "Matrix") {
-        return $Tuple(v._2, v._1);
-      }
-      return unsafePerformEffect(throwException(error("Matrix expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    }
-  };
-  var toFromBoolean = {
-    constr: (v) => {
-      if (v._1) {
-        return $Val("Constr", v._2, "True", Nil);
-      }
-      if (!v._1) {
-        return $Val("Constr", v._2, "False", Nil);
-      }
-      fail();
-    },
-    constr_bwd: (v) => toFromBoolean.match(v),
-    match: (v) => {
-      if (v.tag === "Constr") {
-        if (v._3.tag === "Nil") {
-          if (v._2 === "True") {
-            return $Tuple(true, v._1);
-          }
-          if (v._2 === "False") {
-            return $Tuple(false, v._1);
-          }
-          return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
+  var toFromArrayArrayVal$x215Int$x215$x215 = (dictHighlightable) => {
+    const prettyP2 = prettyP(prettyVal(dictHighlightable));
+    return {
+      constr: (v) => $Val("Matrix", v._2, v._1),
+      constr_bwd: (v) => toFromArrayArrayVal$x215Int$x215$x215(dictHighlightable).match(v),
+      match: (v) => {
+        if (v.tag === "Matrix") {
+          return $Tuple(v._2, v._1);
         }
-        return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
+        return unsafePerformEffect(throwException(error("Matrix expected; got " + prettyP2(v))));
       }
-      return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    }
+    };
   };
-  var toFromDictValBoolean = {
-    constr: (v) => $Val("Record", v._2, v._1),
-    constr_bwd: (v) => toFromDictValBoolean.match(v),
-    match: (v) => {
-      if (v.tag === "Record") {
-        return $Tuple(v._2, v._1);
-      }
-      return unsafePerformEffect(throwException(error("Record expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    }
-  };
-  var toFromEitherEitherIntNumb = {
-    constr: (v) => {
-      if (v._1.tag === "Left") {
-        if (v._1._1.tag === "Left") {
-          return $Val("Int", v._2, v._1._1._1);
+  var toFromBoolean = (dictHighlightable) => {
+    const prettyP2 = prettyP(prettyVal(dictHighlightable));
+    return {
+      constr: (v) => {
+        if (v._1) {
+          return $Val("Constr", v._2, "True", Nil);
         }
-        if (v._1._1.tag === "Right") {
-          return $Val("Float", v._2, v._1._1._1);
+        if (!v._1) {
+          return $Val("Constr", v._2, "False", Nil);
         }
         fail();
+      },
+      constr_bwd: (v) => toFromBoolean(dictHighlightable).match(v),
+      match: (v) => {
+        if (v.tag === "Constr") {
+          if (v._3.tag === "Nil") {
+            if (v._2 === "True") {
+              return $Tuple(true, v._1);
+            }
+            if (v._2 === "False") {
+              return $Tuple(false, v._1);
+            }
+            return unsafePerformEffect(throwException(error("Boolean expected; got " + prettyP2(v))));
+          }
+          return unsafePerformEffect(throwException(error("Boolean expected; got " + prettyP2(v))));
+        }
+        return unsafePerformEffect(throwException(error("Boolean expected; got " + prettyP2(v))));
       }
-      if (v._1.tag === "Right") {
-        return $Val("Str", v._2, v._1._1);
-      }
-      fail();
-    },
-    constr_bwd: (v) => toFromEitherEitherIntNumb.match(v),
-    match: (v) => {
-      if (v.tag === "Int") {
-        return $Tuple($Either("Left", $Either("Left", v._2)), v._1);
-      }
-      if (v.tag === "Float") {
-        return $Tuple($Either("Left", $Either("Right", v._2)), v._1);
-      }
-      if (v.tag === "Str") {
-        return $Tuple($Either("Right", v._2), v._1);
-      }
-      return unsafePerformEffect(throwException(error("Int, Float or Str expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    }
+    };
   };
-  var toFromInt = {
-    constr: (v) => $Val("Int", v._2, v._1),
-    constr_bwd: (v) => toFromInt.match(v),
-    match: (v) => {
-      if (v.tag === "Int") {
-        return $Tuple(v._2, v._1);
+  var toFromDictVal = (dictHighlightable) => {
+    const prettyP2 = prettyP(prettyVal(dictHighlightable));
+    return {
+      constr: (v) => $Val("Record", v._2, v._1),
+      constr_bwd: (v) => toFromDictVal(dictHighlightable).match(v),
+      match: (v) => {
+        if (v.tag === "Record") {
+          return $Tuple(v._2, v._1);
+        }
+        return unsafePerformEffect(throwException(error("Record expected; got " + prettyP2(v))));
       }
-      return unsafePerformEffect(throwException(error("Int expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    }
+    };
   };
-  var toFromInt$x43Number = {
-    constr: (v) => {
-      if (v._1.tag === "Left") {
-        return $Val("Int", v._2, v._1._1);
+  var toFromEitherEitherIntNumb = (dictHighlightable) => {
+    const prettyP2 = prettyP(prettyVal(dictHighlightable));
+    return {
+      constr: (v) => {
+        if (v._1.tag === "Left") {
+          if (v._1._1.tag === "Left") {
+            return $Val("Int", v._2, v._1._1._1);
+          }
+          if (v._1._1.tag === "Right") {
+            return $Val("Float", v._2, v._1._1._1);
+          }
+          fail();
+        }
+        if (v._1.tag === "Right") {
+          return $Val("Str", v._2, v._1._1);
+        }
+        fail();
+      },
+      constr_bwd: (v) => toFromEitherEitherIntNumb(dictHighlightable).match(v),
+      match: (v) => {
+        if (v.tag === "Int") {
+          return $Tuple($Either("Left", $Either("Left", v._2)), v._1);
+        }
+        if (v.tag === "Float") {
+          return $Tuple($Either("Left", $Either("Right", v._2)), v._1);
+        }
+        if (v.tag === "Str") {
+          return $Tuple($Either("Right", v._2), v._1);
+        }
+        return unsafePerformEffect(throwException(error("Int, Float or Str expected; got " + prettyP2(v))));
       }
-      if (v._1.tag === "Right") {
-        return $Val("Float", v._2, v._1._1);
-      }
-      fail();
-    },
-    constr_bwd: (v) => toFromInt$x43Number.match(v),
-    match: (v) => {
-      if (v.tag === "Int") {
-        return $Tuple($Either("Left", v._2), v._1);
-      }
-      if (v.tag === "Float") {
-        return $Tuple($Either("Right", v._2), v._1);
-      }
-      return unsafePerformEffect(throwException(error("Int or Float expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    }
+    };
   };
-  var toFromNumber = {
-    constr: (v) => $Val("Float", v._2, v._1),
-    constr_bwd: (v) => toFromNumber.match(v),
-    match: (v) => {
-      if (v.tag === "Float") {
-        return $Tuple(v._2, v._1);
+  var toFromInt = (dictHighlightable) => {
+    const prettyP2 = prettyP(prettyVal(dictHighlightable));
+    return {
+      constr: (v) => $Val("Int", v._2, v._1),
+      constr_bwd: (v) => toFromInt(dictHighlightable).match(v),
+      match: (v) => {
+        if (v.tag === "Int") {
+          return $Tuple(v._2, v._1);
+        }
+        return unsafePerformEffect(throwException(error("Int expected; got " + prettyP2(v))));
       }
-      return unsafePerformEffect(throwException(error("Float expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    }
+    };
   };
-  var toFromString = {
-    constr: (v) => $Val("Str", v._2, v._1),
-    constr_bwd: (v) => toFromString.match(v),
-    match: (v) => {
-      if (v.tag === "Str") {
-        return $Tuple(v._2, v._1);
+  var toFromInt$x43Number = (dictHighlightable) => {
+    const prettyP2 = prettyP(prettyVal(dictHighlightable));
+    return {
+      constr: (v) => {
+        if (v._1.tag === "Left") {
+          return $Val("Int", v._2, v._1._1);
+        }
+        if (v._1.tag === "Right") {
+          return $Val("Float", v._2, v._1._1);
+        }
+        fail();
+      },
+      constr_bwd: (v) => toFromInt$x43Number(dictHighlightable).match(v),
+      match: (v) => {
+        if (v.tag === "Int") {
+          return $Tuple($Either("Left", v._2), v._1);
+        }
+        if (v.tag === "Float") {
+          return $Tuple($Either("Right", v._2), v._1);
+        }
+        return unsafePerformEffect(throwException(error("Int or Float expected; got " + prettyP2(v))));
       }
-      return unsafePerformEffect(throwException(error("Str expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    }
+    };
+  };
+  var toFromNumber = (dictHighlightable) => {
+    const prettyP2 = prettyP(prettyVal(dictHighlightable));
+    return {
+      constr: (v) => $Val("Float", v._2, v._1),
+      constr_bwd: (v) => toFromNumber(dictHighlightable).match(v),
+      match: (v) => {
+        if (v.tag === "Float") {
+          return $Tuple(v._2, v._1);
+        }
+        return unsafePerformEffect(throwException(error("Float expected; got " + prettyP2(v))));
+      }
+    };
+  };
+  var toFromString = (dictHighlightable) => {
+    const prettyP2 = prettyP(prettyVal(dictHighlightable));
+    return {
+      constr: (v) => $Val("Str", v._2, v._1),
+      constr_bwd: (v) => toFromString(dictHighlightable).match(v),
+      match: (v) => {
+        if (v.tag === "Str") {
+          return $Tuple(v._2, v._1);
+        }
+        return unsafePerformEffect(throwException(error("Str expected; got " + prettyP2(v))));
+      }
+    };
   };
   var unary_ = (dictToFrom) => (dictToFrom1) => (v) => $Val(
     "Primitive",
@@ -10570,32 +10729,36 @@
     fwd: (v1) => $Tuple(v.fwd(v1._1), v1._2),
     bwd: (v1) => (x2) => $Tuple(v.bwd(v1._1)(x2), v1._2)
   });
-  var toFromInt$x215Boolean$x215Int$x215Boo = {
-    constr: (v) => $Val(
-      "Constr",
-      v._2,
-      "Pair",
-      $List("Cons", $Val("Int", v._1._1._2, v._1._1._1), $List("Cons", $Val("Int", v._1._2._2, v._1._2._1), Nil))
-    ),
-    constr_bwd: (v) => toFromInt$x215Boolean$x215Int$x215Boo.match(v),
-    match: (v) => {
-      if (v.tag === "Constr") {
-        if (v._3.tag === "Cons") {
-          if (v._3._2.tag === "Cons") {
-            if (v._3._2._2.tag === "Nil") {
-              if (v._2 === "Pair") {
-                return $Tuple($Tuple(toFromInt.match(v._3._1), toFromInt.match(v._3._2._1)), v._1);
+  var toFromInt$x215$x215Int$x215 = (dictHighlightable) => {
+    const toFromInt1 = toFromInt(dictHighlightable);
+    const prettyP2 = prettyP(prettyVal(dictHighlightable));
+    return {
+      constr: (v) => $Val(
+        "Constr",
+        v._2,
+        "Pair",
+        $List("Cons", toFromInt1.constr(v._1._1), $List("Cons", toFromInt1.constr(v._1._2), Nil))
+      ),
+      constr_bwd: (v) => toFromInt$x215$x215Int$x215(dictHighlightable).match(v),
+      match: (v) => {
+        if (v.tag === "Constr") {
+          if (v._3.tag === "Cons") {
+            if (v._3._2.tag === "Cons") {
+              if (v._3._2._2.tag === "Nil") {
+                if (v._2 === "Pair") {
+                  return $Tuple($Tuple(toFromInt1.match(v._3._1), toFromInt1.match(v._3._2._1)), v._1);
+                }
+                return unsafePerformEffect(throwException(error("Pair expected; got " + prettyP2(v))));
               }
-              return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
+              return unsafePerformEffect(throwException(error("Pair expected; got " + prettyP2(v))));
             }
-            return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
+            return unsafePerformEffect(throwException(error("Pair expected; got " + prettyP2(v))));
           }
-          return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
+          return unsafePerformEffect(throwException(error("Pair expected; got " + prettyP2(v))));
         }
-        return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
+        return unsafePerformEffect(throwException(error("Pair expected; got " + prettyP2(v))));
       }
-      return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate3("\n")(prettyValBoolean.pretty(v).lines))));
-    }
+    };
   };
   var binary_ = (dictToFrom) => (dictToFrom1) => (dictToFrom2) => (v) => $Val(
     "Primitive",
@@ -10629,32 +10792,36 @@
     },
     Nil
   );
-  var binaryZero = (dictIsZero) => (dictToFrom) => (dictToFrom1) => (v) => binary_(dictToFrom)(dictToFrom)(dictToFrom1)({
-    fwd: (v1) => (v2) => $Tuple(
-      v.fwd(v1._1)(v2._1),
-      (() => {
-        if (dictIsZero.isZero(v1._1)) {
-          return v1._2;
-        }
+  var binaryZero = (dictIsZero) => (dictBoundedLattice) => {
+    const meet = dictBoundedLattice.BoundedMeetSemilattice1().MeetSemilattice0().meet;
+    const bot = dictBoundedLattice.BoundedJoinSemilattice0().bot;
+    return (dictToFrom) => (dictToFrom1) => (v) => binary_(dictToFrom)(dictToFrom)(dictToFrom1)({
+      fwd: (v1) => (v2) => $Tuple(
+        v.fwd(v1._1)(v2._1),
+        (() => {
+          if (dictIsZero.isZero(v1._1)) {
+            return v1._2;
+          }
+          if (dictIsZero.isZero(v2._1)) {
+            return v2._2;
+          }
+          return meet(v1._2)(v2._2);
+        })()
+      ),
+      bwd: (v1) => (v2) => {
+        const v3 = v.bwd(v1._1)($Tuple(v2._1, v2._2));
         if (dictIsZero.isZero(v2._1)) {
-          return v2._2;
+          return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, bot));
         }
-        return v1._2 && v2._2;
-      })()
-    ),
-    bwd: (v1) => (v2) => {
-      const v3 = v.bwd(v1._1)($Tuple(v2._1, v2._2));
-      if (dictIsZero.isZero(v2._1)) {
-        return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, false));
+        if (dictIsZero.isZero(v2._2)) {
+          return $Tuple($Tuple(v3._1, bot), $Tuple(v3._2, v1._2));
+        }
+        return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, v1._2));
       }
-      if (dictIsZero.isZero(v2._2)) {
-        return $Tuple($Tuple(v3._1, false), $Tuple(v3._2, v1._2));
-      }
-      return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, v1._2));
-    }
-  });
-  var binary = (dictToFrom) => (dictToFrom1) => (dictToFrom2) => (v) => binary_(dictToFrom)(dictToFrom1)(dictToFrom2)({
-    fwd: (v1) => (v2) => $Tuple(v.fwd(v1._1)(v2._1), v1._2 && v2._2),
+    });
+  };
+  var binary = (dictToFrom) => (dictToFrom1) => (dictMeetSemilattice) => (dictToFrom2) => (v) => binary_(dictToFrom)(dictToFrom1)(dictToFrom2)({
+    fwd: (v1) => (v2) => $Tuple(v.fwd(v1._1)(v2._1), dictMeetSemilattice.meet(v1._2)(v2._2)),
     bwd: (v1) => (v2) => {
       const v3 = v.bwd(v1._1)($Tuple(v2._1, v2._2));
       return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, v1._2));
@@ -10689,6 +10856,7 @@
   var unionStr = (dictAs) => (dictAs1) => union3(dictAs)(dictAs)(dictAs1)(dictAs1);
 
   // output-es/App.Util/index.js
+  var match = /* @__PURE__ */ (() => toFromDictVal(highlightableBoolean).match)();
   var toggleField = (v) => (v1) => (v2) => {
     if (v2.tag === "Record") {
       return $Val("Record", v2._1, update((x2) => $Maybe("Just", v1(x2)))(v)(v2._2));
@@ -10770,9 +10938,9 @@
     }
     return unsafePerformEffect(throwException(error("absurd")));
   };
-  var record = (toRecord) => (u) => toRecord(toFromDictValBoolean.match(u)._1);
+  var record = (toRecord) => (u) => toRecord(match(u)._1);
   var get_intOrNumber = (x2) => (r) => {
-    const $2 = toFromInt$x43Number.match(definitely("absurd")(_lookup(Nothing, Just, x2, r)));
+    const $2 = toFromInt$x43Number(highlightableBoolean).match(definitely("absurd")(_lookup(Nothing, Just, x2, r)));
     return $Tuple(
       (() => {
         if ($2._1.tag === "Left") {
@@ -11260,16 +11428,16 @@
 
   // node_modules/d3-selection/src/selection/selectChild.js
   var find = Array.prototype.find;
-  function childFind(match4) {
+  function childFind(match7) {
     return function() {
-      return find.call(this.children, match4);
+      return find.call(this.children, match7);
     };
   }
   function childFirst() {
     return this.firstElementChild;
   }
-  function selectChild_default(match4) {
-    return this.select(match4 == null ? childFirst : childFind(typeof match4 === "function" ? match4 : childMatcher(match4)));
+  function selectChild_default(match7) {
+    return this.select(match7 == null ? childFirst : childFind(typeof match7 === "function" ? match7 : childMatcher(match7)));
   }
 
   // node_modules/d3-selection/src/selection/selectChildren.js
@@ -11277,22 +11445,22 @@
   function children() {
     return this.children;
   }
-  function childrenFilter(match4) {
+  function childrenFilter(match7) {
     return function() {
-      return filter3.call(this.children, match4);
+      return filter3.call(this.children, match7);
     };
   }
-  function selectChildren_default(match4) {
-    return this.selectAll(match4 == null ? children : childrenFilter(typeof match4 === "function" ? match4 : childMatcher(match4)));
+  function selectChildren_default(match7) {
+    return this.selectAll(match7 == null ? children : childrenFilter(typeof match7 === "function" ? match7 : childMatcher(match7)));
   }
 
   // node_modules/d3-selection/src/selection/filter.js
-  function filter_default(match4) {
-    if (typeof match4 !== "function")
-      match4 = matcher_default(match4);
+  function filter_default(match7) {
+    if (typeof match7 !== "function")
+      match7 = matcher_default(match7);
     for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
       for (var group2 = groups[j], n = group2.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) {
-        if ((node = group2[i]) && match4.call(node, node.__data__, i, group2)) {
+        if ((node = group2[i]) && match7.call(node, node.__data__, i, group2)) {
           subgroup.push(node);
         }
       }
@@ -13125,12 +13293,12 @@
   }
 
   // node_modules/d3-transition/src/transition/filter.js
-  function filter_default2(match4) {
-    if (typeof match4 !== "function")
-      match4 = matcher_default(match4);
+  function filter_default2(match7) {
+    if (typeof match7 !== "function")
+      match7 = matcher_default(match7);
     for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
       for (var group2 = groups[j], n = group2.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) {
-        if ((node = group2[i]) && match4.call(node, node.__data__, i, group2)) {
+        if ((node = group2[i]) && match7.call(node, node.__data__, i, group2)) {
           subgroup.push(node);
         }
       }
@@ -13652,20 +13820,20 @@
   // node_modules/d3-format/src/formatSpecifier.js
   var re = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
   function formatSpecifier(specifier) {
-    if (!(match4 = re.exec(specifier)))
+    if (!(match7 = re.exec(specifier)))
       throw new Error("invalid format: " + specifier);
-    var match4;
+    var match7;
     return new FormatSpecifier({
-      fill: match4[1],
-      align: match4[2],
-      sign: match4[3],
-      symbol: match4[4],
-      zero: match4[5],
-      width: match4[6],
-      comma: match4[7],
-      precision: match4[8] && match4[8].slice(1),
-      trim: match4[9],
-      type: match4[10]
+      fill: match7[1],
+      align: match7[2],
+      sign: match7[3],
+      symbol: match7[4],
+      zero: match7[5],
+      width: match7[6],
+      comma: match7[7],
+      precision: match7[8] && match7[8].slice(1),
+      trim: match7[9],
+      type: match7[10]
     });
   }
   formatSpecifier.prototype = FormatSpecifier.prototype;
@@ -14534,12 +14702,12 @@
   }
 
   // node_modules/d3-tip/node_modules/d3-selection/src/selection/filter.js
-  function filter_default3(match4) {
-    if (typeof match4 !== "function")
-      match4 = matcher_default2(match4);
+  function filter_default3(match7) {
+    if (typeof match7 !== "function")
+      match7 = matcher_default2(match7);
     for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
       for (var group2 = groups[j], n = group2.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) {
-        if ((node = group2[i]) && match4.call(node, node.__data__, i, group2)) {
+        if ((node = group2[i]) && match7.call(node, node.__data__, i, group2)) {
           subgroup.push(node);
         }
       }
@@ -15487,11 +15655,14 @@
 
   // output-es/App.BarChart/index.js
   var reflectDictValBooleanBarC = {
-    from: () => (r) => ({ x: toFromString.match(definitely("absurd")(_lookup(Nothing, Just, "x", r))), y: get_intOrNumber("y")(r) })
+    from: () => (r) => ({
+      x: toFromString(highlightableBoolean).match(definitely("absurd")(_lookup(Nothing, Just, "x", r))),
+      y: get_intOrNumber("y")(r)
+    })
   };
   var reflectDictValBooleanBarC1 = {
     from: () => (r) => ({
-      caption: toFromString.match(definitely("absurd")(_lookup(Nothing, Just, "caption", r))),
+      caption: toFromString(highlightableBoolean).match(definitely("absurd")(_lookup(Nothing, Just, "caption", r))),
       data: arrayMap(record(reflectDictValBooleanBarC.from()))(reflectArray.from()(definitely("absurd")(_lookup(
         Nothing,
         Just,
@@ -15574,7 +15745,7 @@
   var reflectDictValBooleanPoin = { from: () => (r) => ({ x: get_intOrNumber("x")(r), y: get_intOrNumber("y")(r) }) };
   var reflectDictValBooleanLine = {
     from: () => (r) => ({
-      name: toFromString.match(definitely("absurd")(_lookup(Nothing, Just, "name", r))),
+      name: toFromString(highlightableBoolean).match(definitely("absurd")(_lookup(Nothing, Just, "name", r))),
       data: arrayMap(record(reflectDictValBooleanPoin.from()))(reflectArray.from()(definitely("absurd")(_lookup(
         Nothing,
         Just,
@@ -15589,7 +15760,7 @@
         if (v._3.tag === "Cons") {
           if (v._3._2.tag === "Nil") {
             if (v._2 === "LinePlot") {
-              return reflectDictValBooleanLine.from()(toFromDictValBoolean.match(v._3._1)._1);
+              return reflectDictValBooleanLine.from()(match(v._3._1)._1);
             }
             fail();
           }
@@ -15602,7 +15773,7 @@
   };
   var reflectDictValBooleanLine1 = {
     from: () => (r) => ({
-      caption: toFromString.match(definitely("absurd")(_lookup(Nothing, Just, "caption", r))),
+      caption: toFromString(highlightableBoolean).match(definitely("absurd")(_lookup(Nothing, Just, "caption", r))),
       plots: arrayMap(reflectValBooleanLinePlot.from())(reflectArray.from()(definitely("absurd")(_lookup(
         Nothing,
         Just,
@@ -15655,6 +15826,7 @@
   var drawMatrix = curry43(drawMatrix_);
 
   // output-es/App.MatrixView/index.js
+  var match2 = /* @__PURE__ */ (() => toFromInt(highlightableBoolean).match)();
   var matrixViewHandler = (ev) => {
     const xy = definitely("index within bounds")(index2(definitely("absurd")(nullable(
       _target(ev),
@@ -15663,7 +15835,7 @@
     )).__data__)(0));
     return toggleCell(definitely("index within bounds")(index2(xy)(0)))(definitely("index within bounds")(index2(xy)(1)));
   };
-  var matrixRep = (v) => $Tuple($Tuple(arrayMap(arrayMap(toFromInt.match))(v._1._1), v._1._2._1), v._2._1);
+  var matrixRep = (v) => $Tuple($Tuple(arrayMap(arrayMap(match2))(v._1._1), v._1._2._1), v._2._1);
 
   // output-es/App.TableView/foreign.js
   function curry44(f) {
@@ -15714,9 +15886,9 @@
 
   // output-es/App.TableView/index.js
   var energyRecord = (r) => ({
-    year: toFromInt.match(definitely("absurd")(_lookup(Nothing, Just, "year", r))),
-    country: toFromString.match(definitely("absurd")(_lookup(Nothing, Just, "country", r))),
-    energyType: toFromString.match(definitely("absurd")(_lookup(Nothing, Just, "energyType", r))),
+    year: toFromInt(highlightableBoolean).match(definitely("absurd")(_lookup(Nothing, Just, "year", r))),
+    country: toFromString(highlightableBoolean).match(definitely("absurd")(_lookup(Nothing, Just, "country", r))),
+    energyType: toFromString(highlightableBoolean).match(definitely("absurd")(_lookup(Nothing, Just, "energyType", r))),
     output: get_intOrNumber("output")(r)
   });
 
@@ -15789,6 +15961,7 @@
   var traverse = /* @__PURE__ */ (() => traversableNonEmptyList.traverse(applicativeEither))();
   var traverse1 = /* @__PURE__ */ (() => traversableList.traverse(applicativeEither))();
   var traverse2 = /* @__PURE__ */ (() => traversableTuple.traverse(applicativeEither))();
+  var traverse3 = /* @__PURE__ */ (() => traversablePair.traverse(applicativeEither))();
   var foldM4 = (f) => (b0) => {
     const go = (go$a0$copy) => (go$a1$copy) => {
       let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
@@ -15811,6 +15984,7 @@
     };
     return go($Either("Right", b0));
   };
+  var maybeJoin = /* @__PURE__ */ (() => partialJoinSemilatticeEli(joinSemilatticeBoolean).maybeJoin)();
   var totaliseConstrFwd = (v) => (\u03B1) => fromFoldable6($List(
     "Cons",
     $Tuple(v._1, v._2),
@@ -16148,6 +16322,17 @@
       }
       fail();
     }
+    if (v.tag === "Dictionary") {
+      const $1 = Dictionary(v._1);
+      const $2 = traverse1(traverse3(exprFwd))(v._2);
+      if ($2.tag === "Left") {
+        return $Either("Left", $2._1);
+      }
+      if ($2.tag === "Right") {
+        return $Either("Right", $1($2._1));
+      }
+      fail();
+    }
     if (v.tag === "Matrix") {
       return applyEither.apply((() => {
         const $1 = Matrix(v._1);
@@ -16418,8 +16603,8 @@
     }
     fail();
   };
-  var branchesFwd_uncurried = (bs) => bindEither.bind(traverse((v) => branchFwd_uncurried(v._1)(v._2))(bs))((v) => foldM4(slicesElimBoolean.maybeJoin)(v._1)(v._2));
-  var branchesFwd_curried = (bs) => bindEither.bind(traverse(patternsFwd)(bs))((v) => foldM4(slicesElimBoolean.maybeJoin)(v._1)(v._2));
+  var branchesFwd_uncurried = (bs) => bindEither.bind(traverse((v) => branchFwd_uncurried(v._1)(v._2))(bs))((v) => foldM4(maybeJoin)(v._1)(v._2));
+  var branchesFwd_curried = (bs) => bindEither.bind(traverse(patternsFwd)(bs))((v) => foldM4(maybeJoin)(v._1)(v._2));
   var branchFwd_uncurried = (p) => (s) => bindEither.bind((() => {
     const $2 = exprFwd(s);
     if ($2.tag === "Left") {
@@ -16885,17 +17070,17 @@
           }
         }
       }
-      function onComplete(join3) {
+      function onComplete(join2) {
         return function() {
           if (status === COMPLETED) {
-            rethrow = rethrow && join3.rethrow;
-            join3.handler(step)();
+            rethrow = rethrow && join2.rethrow;
+            join2.handler(step)();
             return function() {
             };
           }
           var jid = joinId++;
           joins = joins || {};
-          joins[jid] = join3;
+          joins[jid] = join2;
           return function() {
             if (joins !== null) {
               delete joins[jid];
@@ -16950,7 +17135,7 @@
           return canceler;
         };
       }
-      function join2(cb) {
+      function join(cb) {
         return function() {
           var canceler = onComplete({
             rethrow: false,
@@ -16964,7 +17149,7 @@
       }
       return {
         kill,
-        join: join2,
+        join,
         onComplete,
         isSuspended: function() {
           return status === SUSPENDED;
@@ -17048,7 +17233,7 @@
         }
         return kills2;
       }
-      function join2(result, head, tail) {
+      function join(result, head, tail) {
         var fail4, step, lhs, rhs, tmp, kid;
         if (util2.isLeft(result)) {
           fail4 = result;
@@ -17095,9 +17280,9 @@
                       if (tmp) {
                         tmp = false;
                       } else if (tail === null) {
-                        join2(fail4, null, null);
+                        join(fail4, null, null);
                       } else {
-                        join2(fail4, tail._1, tail._2);
+                        join(fail4, tail._1, tail._2);
                       }
                     };
                   });
@@ -17132,9 +17317,9 @@
                       if (tmp) {
                         tmp = false;
                       } else if (tail === null) {
-                        join2(step, null, null);
+                        join(step, null, null);
                       } else {
-                        join2(step, tail._1, tail._2);
+                        join(step, tail._1, tail._2);
                       }
                     };
                   });
@@ -17158,7 +17343,7 @@
           return function() {
             delete fibers[fiber._1];
             fiber._3 = result;
-            join2(result, fiber._2._1, fiber._2._2);
+            join(result, fiber._2._1, fiber._2._2);
           };
         };
       }
@@ -17473,11 +17658,12 @@
   var toUnfoldable10 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
   var fromFoldable14 = /* @__PURE__ */ fromFoldable(foldableList);
   var fv = /* @__PURE__ */ (() => fVDict(fVElim).fv)();
-  var traverse3 = /* @__PURE__ */ (() => {
+  var traverse4 = /* @__PURE__ */ (() => {
     const $0 = traversableWithIndexObject.traverseWithIndex(applicativeEither);
     return (x2) => $0((v) => x2);
   })();
   var traverse12 = /* @__PURE__ */ (() => traversableList.traverse(applicativeEither))();
+  var traverse22 = /* @__PURE__ */ (() => traversablePair.traverse(applicativeEither))();
   var fromFoldable23 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
   var greaterThanOrEq1 = /* @__PURE__ */ (() => {
     const $0 = ordTuple(ordInt)(ordInt);
@@ -17485,13 +17671,13 @@
   })();
   var show3 = (v) => "(Tuple " + (showIntImpl(v._1) + (" " + (showIntImpl(v._2) + ")")));
   var sequence2 = /* @__PURE__ */ (() => traversableList.traverse(applicativeEither)(identity3))();
-  var matchMany = (v) => (v1) => {
+  var matchMany = (dictHighlightable) => (v) => (v1) => {
     if (v.tag === "Nil") {
       return $Either("Right", $Tuple($Tuple(empty, v1), Nil));
     }
     if (v.tag === "Cons") {
       if (v1.tag === "ContElim") {
-        return bindEither.bind(match(v._1)(v1._1))((v3) => bindEither.bind(matchMany(v._2)(v3._1._2))((v4) => $Either(
+        return bindEither.bind(match3(dictHighlightable)(v._1)(v1._1))((v3) => bindEither.bind(matchMany(dictHighlightable)(v._2)(v3._1._2))((v4) => $Either(
           "Right",
           $Tuple(
             $Tuple(
@@ -17533,86 +17719,96 @@
     }
     return unsafePerformEffect(throwException(error("absurd")));
   };
-  var match = (v) => (v1) => {
-    if (v1.tag === "ElimVar") {
-      if (v1._1 === "_") {
-        return $Either("Right", $Tuple($Tuple(empty, v1._2), $Match("MatchVarAnon", v)));
-      }
-      return $Either(
-        "Right",
-        $Tuple(
-          $Tuple(runST(bind_(newImpl)(poke2(v1._1)(v))), v1._2),
-          $Match("MatchVar", v1._1, v)
-        )
-      );
-    }
-    if (v1.tag === "ElimConstr") {
-      if (v.tag === "Constr") {
-        return bindEither.bind($$with("Pattern mismatch")(consistentWith($Map(
-          "Two",
-          Leaf2,
-          v._2,
-          unit,
-          Leaf2
-        ))(keys2(v1._1))))(() => bindEither.bind((() => {
-          const $3 = "Incomplete patterns: no branch for " + showCtr(v._2);
-          const $4 = _lookup(Nothing, Just, v._2, v1._1);
-          if ($4.tag === "Nothing") {
-            return $Either("Left", $3);
-          }
-          if ($4.tag === "Just") {
-            return $Either("Right", $4._1);
-          }
-          fail();
-        })())((\u03BA) => {
-          const $4 = functorTuple.map(MatchConstr(v._2));
-          const $5 = matchMany(v._3)(\u03BA);
-          if ($5.tag === "Left") {
-            return $Either("Left", $5._1);
-          }
-          if ($5.tag === "Right") {
-            return $Either("Right", $4($5._1));
-          }
-          fail();
-        }));
-      }
-      return bindEither.bind((() => {
-        const v$1 = toUnfoldable5(keys2(v1._1));
-        if (v$1.tag === "Cons") {
-          return dataTypeForCtr.dataTypeFor(v$1._1);
+  var match3 = (dictHighlightable) => {
+    const prettyP2 = prettyP(prettyVal(dictHighlightable));
+    return (v) => (v1) => {
+      if (v1.tag === "ElimVar") {
+        if (v1._1 === "_") {
+          return $Either("Right", $Tuple($Tuple(empty, v1._2), $Match("MatchVarAnon", v)));
         }
-        fail();
-      })())((d) => $Either("Left", "Pattern mismatch: found " + (intercalate3("\n")(prettyValBoolean.pretty(v).lines) + (", expected " + d._1))));
-    }
-    if (v1.tag === "ElimRecord") {
-      if (v.tag === "Record") {
+        return $Either(
+          "Right",
+          $Tuple(
+            $Tuple(runST(bind_(newImpl)(poke2(v1._1)(v))), v1._2),
+            $Match("MatchVar", v1._1, v)
+          )
+        );
+      }
+      if (v1.tag === "ElimConstr") {
+        if (v.tag === "Constr") {
+          return bindEither.bind($$with("Pattern mismatch")(consistentWith($Map(
+            "Two",
+            Leaf2,
+            v._2,
+            unit,
+            Leaf2
+          ))(keys2(v1._1))))(() => bindEither.bind((() => {
+            const $5 = "Incomplete patterns: no branch for " + showCtr(v._2);
+            const $6 = _lookup(Nothing, Just, v._2, v1._1);
+            if ($6.tag === "Nothing") {
+              return $Either("Left", $5);
+            }
+            if ($6.tag === "Just") {
+              return $Either("Right", $6._1);
+            }
+            fail();
+          })())((\u03BA) => {
+            const $6 = functorTuple.map(MatchConstr(v._2));
+            const $7 = matchMany(dictHighlightable)(v._3)(\u03BA);
+            if ($7.tag === "Left") {
+              return $Either("Left", $7._1);
+            }
+            if ($7.tag === "Right") {
+              return $Either("Right", $6($7._1));
+            }
+            fail();
+          }));
+        }
         return bindEither.bind((() => {
-          const $2 = "Pattern mismatch: found " + (show2(keys2(v._2)) + (", expected " + show2(v1._1)));
-          if (difference2(ordString)(v1._1)(fromFoldable7(keys2(v._2))).tag === "Leaf") {
-            return $Either("Right", unit);
-          }
-          return $Either("Left", $2);
-        })())(() => {
-          const xs$p = toUnfoldable10(v1._1);
-          const $4 = matchMany(listMap((a) => definitely("absurd")(_lookup(Nothing, Just, a, v._2)))(xs$p))(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
-          }
-          if ($4.tag === "Right") {
-            return $Either("Right", $Tuple($4._1._1, $Match("MatchRecord", fromFoldable14(zipWith(Tuple)(xs$p)($4._1._2)))));
+          const v$1 = toUnfoldable5(keys2(v1._1));
+          if (v$1.tag === "Cons") {
+            return dataTypeForCtr.dataTypeFor(v$1._1);
           }
           fail();
-        });
+        })())((d) => $Either("Left", "Pattern mismatch: found " + (prettyP2(v) + (", expected " + d._1))));
       }
-      return $Either("Left", "Pattern mismatch: found " + (intercalate3("\n")(prettyValBoolean.pretty(v).lines) + (", expected " + show2(v1._1))));
-    }
-    fail();
+      if (v1.tag === "ElimRecord") {
+        if (v.tag === "Record") {
+          return bindEither.bind((() => {
+            const $4 = "Pattern mismatch: found " + (show2(keys2(v._2)) + (", expected " + show2(v1._1)));
+            if (difference2(ordString)(v1._1)(fromFoldable7(keys2(v._2))).tag === "Leaf") {
+              return $Either("Right", unit);
+            }
+            return $Either("Left", $4);
+          })())(() => {
+            const xs$p = toUnfoldable10(v1._1);
+            const $6 = matchMany(dictHighlightable)(listMap((a) => definitely("absurd")(_lookup(Nothing, Just, a, v._2)))(xs$p))(v1._2);
+            if ($6.tag === "Left") {
+              return $Either("Left", $6._1);
+            }
+            if ($6.tag === "Right") {
+              return $Either("Right", $Tuple($6._1._1, $Match("MatchRecord", fromFoldable14(zipWith(Tuple)(xs$p)($6._1._2)))));
+            }
+            fail();
+          });
+        }
+        return $Either("Left", "Pattern mismatch: found " + (prettyP2(v) + (", expected " + show2(v1._1))));
+      }
+      fail();
+    };
   };
-  var closeDefs = (\u03B3) => (\u03C1) => _fmapObject(
+  var match1 = /* @__PURE__ */ match3(highlightableBoolean);
+  var closeDefs = (dictBoundedJoinSemilattice) => (\u03B3) => (\u03C1) => _fmapObject(
     \u03C1,
     (\u03C3) => {
       const \u03C1$p = $$for(\u03C1)(\u03C3);
-      return $Val("Closure", false, restrict(\u03B3)(unionWith2(ordString)($$const)(fv(\u03C1$p))(fVElim.fv(\u03C3))), \u03C1$p, \u03C3);
+      return $Val(
+        "Closure",
+        dictBoundedJoinSemilattice.bot,
+        restrict(\u03B3)(unionWith2(ordString)($$const)(fv(\u03C1$p))(fVElim.fv(\u03C3))),
+        \u03C1$p,
+        \u03C3
+      );
     }
   );
   var checkArity2 = (c) => (n) => bindEither.bind(arity(c))((n$p) => {
@@ -17622,214 +17818,900 @@
     }
     return $Either("Left", $3);
   });
-  var $$eval = (v) => (v1) => {
-    if (v1.tag === "Var") {
-      const $2 = lookup$p(v1._1)(v);
-      if ($2.tag === "Left") {
-        return $Either("Left", $2._1);
+  var $$eval = (dictBoundedJoinSemilattice) => (dictHighlightable) => {
+    const $2 = toFromString(dictHighlightable);
+    const $3 = toFromInt$x215$x215Int$x215(dictHighlightable);
+    const match22 = match3(dictHighlightable);
+    return (v) => (v1) => {
+      if (v1.tag === "Var") {
+        const $7 = lookup$p(v1._1)(v);
+        if ($7.tag === "Left") {
+          return $Either("Left", $7._1);
+        }
+        if ($7.tag === "Right") {
+          return $Either("Right", $Tuple($Trace("Var", v1._1), $7._1));
+        }
+        fail();
       }
-      if ($2.tag === "Right") {
-        return $Either("Right", $Tuple($Trace("Var", v1._1), $2._1));
+      if (v1.tag === "Op") {
+        const $7 = lookup$p(v1._1)(v);
+        if ($7.tag === "Left") {
+          return $Either("Left", $7._1);
+        }
+        if ($7.tag === "Right") {
+          return $Either("Right", $Tuple($Trace("Op", v1._1), $7._1));
+        }
+        fail();
       }
-      fail();
-    }
-    if (v1.tag === "Op") {
-      const $2 = lookup$p(v1._1)(v);
-      if ($2.tag === "Left") {
-        return $Either("Left", $2._1);
+      if (v1.tag === "Int") {
+        return $Either("Right", $Tuple($Trace("Int", v1._2), $Val("Int", dictBoundedJoinSemilattice.bot, v1._2)));
       }
-      if ($2.tag === "Right") {
-        return $Either("Right", $Tuple($Trace("Op", v1._1), $2._1));
+      if (v1.tag === "Float") {
+        return $Either("Right", $Tuple($Trace("Float", v1._2), $Val("Float", dictBoundedJoinSemilattice.bot, v1._2)));
       }
-      fail();
-    }
-    if (v1.tag === "Int") {
-      return $Either("Right", $Tuple($Trace("Int", v1._2), $Val("Int", false, v1._2)));
-    }
-    if (v1.tag === "Float") {
-      return $Either("Right", $Tuple($Trace("Float", v1._2), $Val("Float", false, v1._2)));
-    }
-    if (v1.tag === "Str") {
-      return $Either("Right", $Tuple($Trace("Str", v1._2), $Val("Str", false, v1._2)));
-    }
-    if (v1.tag === "Record") {
-      return bindEither.bind(traverse3($$eval(v))(v1._2))((xtvs) => $Either(
-        "Right",
-        $Tuple($Trace("Record", _fmapObject(xtvs, fst)), $Val("Record", false, _fmapObject(xtvs, snd)))
-      ));
-    }
-    if (v1.tag === "Constr") {
-      return bindEither.bind(checkArity2(v1._2)((() => {
-        const go = (go$a0$copy) => (go$a1$copy) => {
-          let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-          while (go$c) {
-            const b = go$a0, v$1 = go$a1;
-            if (v$1.tag === "Nil") {
-              go$c = false;
-              go$r = b;
-              continue;
+      if (v1.tag === "Str") {
+        return $Either("Right", $Tuple($Trace("Str", v1._2), $Val("Str", dictBoundedJoinSemilattice.bot, v1._2)));
+      }
+      if (v1.tag === "Record") {
+        return bindEither.bind((() => {
+          const $7 = traverse4($$eval(dictBoundedJoinSemilattice)(dictHighlightable)(v))(v1._2);
+          if ($7.tag === "Left") {
+            return $Either("Left", $7._1);
+          }
+          if ($7.tag === "Right") {
+            return $Either("Right", $Tuple(_fmapObject($7._1, fst), _fmapObject($7._1, snd)));
+          }
+          fail();
+        })())((v2) => $Either("Right", $Tuple($Trace("Record", v2._1), $Val("Record", dictBoundedJoinSemilattice.bot, v2._2))));
+      }
+      if (v1.tag === "Dictionary") {
+        return bindEither.bind((() => {
+          const $7 = traverse12(traverse22($$eval(dictBoundedJoinSemilattice)(dictHighlightable)(v)))(v1._2);
+          if ($7.tag === "Left") {
+            return $Either("Left", $7._1);
+          }
+          if ($7.tag === "Right") {
+            return $Either(
+              "Right",
+              (() => {
+                const $8 = unzip(listMap(toTuple)($7._1));
+                return $Tuple(unzip($8._1), unzip($8._2));
+              })()
+            );
+          }
+          fail();
+        })())((v2) => $Either(
+          "Right",
+          $Tuple(
+            $Trace("Dictionary", listMap(fromTuple)(zipWith(Tuple)(v2._1._1)(v2._2._1))),
+            $Val(
+              "Dictionary",
+              dictBoundedJoinSemilattice.bot,
+              fromFoldable14(zipWith(Tuple)(listMap((x2) => $2.match(x2)._1)(v2._1._2))(v2._2._2))
+            )
+          )
+        ));
+      }
+      if (v1.tag === "Constr") {
+        return bindEither.bind(checkArity2(v1._2)((() => {
+          const go = (go$a0$copy) => (go$a1$copy) => {
+            let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+            while (go$c) {
+              const b = go$a0, v$1 = go$a1;
+              if (v$1.tag === "Nil") {
+                go$c = false;
+                go$r = b;
+                continue;
+              }
+              if (v$1.tag === "Cons") {
+                go$a0 = b + 1 | 0;
+                go$a1 = v$1._2;
+                continue;
+              }
+              fail();
             }
-            if (v$1.tag === "Cons") {
-              go$a0 = b + 1 | 0;
-              go$a1 = v$1._2;
-              continue;
+            ;
+            return go$r;
+          };
+          return go(0)(v1._3);
+        })()))(() => bindEither.bind((() => {
+          const $8 = traverse12($$eval(dictBoundedJoinSemilattice)(dictHighlightable)(v))(v1._3);
+          if ($8.tag === "Left") {
+            return $Either("Left", $8._1);
+          }
+          if ($8.tag === "Right") {
+            return $Either("Right", unzip($8._1));
+          }
+          fail();
+        })())((v2) => $Either("Right", $Tuple($Trace("Constr", v1._2, v2._1), $Val("Constr", dictBoundedJoinSemilattice.bot, v1._2, v2._2)))));
+      }
+      if (v1.tag === "Matrix") {
+        return bindEither.bind($$eval(dictBoundedJoinSemilattice)(dictHighlightable)(v)(v1._4))((v2) => {
+          const v4 = $3.match(v2._2)._1;
+          return bindEither.bind((() => {
+            const $9 = "array must be at least (" + (show3($Tuple(1, 1)) + ("); got (" + (show3($Tuple(v4._1._1, v4._2._1)) + ")")));
+            if (greaterThanOrEq1($Tuple(v4._1._1, v4._2._1))($Tuple(1, 1))) {
+              return $Either("Right", unit);
+            }
+            return $Either("Left", $9);
+          })())(() => bindEither.bind((() => {
+            const $10 = listMap((x2) => {
+              const $112 = unzip(x2);
+              return $Tuple(fromFoldable23($112._1), fromFoldable23($112._2));
+            });
+            const $11 = sequence2(bindList.bind(range(1)(v4._1._1))((i) => $List(
+              "Cons",
+              sequence2(bindList.bind(range(1)(v4._2._1))((j) => $List(
+                "Cons",
+                $$eval(dictBoundedJoinSemilattice)(dictHighlightable)(unionWith((v$1) => (x2) => x2)(v)(unionWith((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke2(v1._3._1)($Val(
+                  "Int",
+                  dictBoundedJoinSemilattice.bot,
+                  i
+                )))))(runST(bind_(newImpl)(poke2(v1._3._2)($Val(
+                  "Int",
+                  dictBoundedJoinSemilattice.bot,
+                  j
+                )))))))(v1._2),
+                Nil
+              ))),
+              Nil
+            )));
+            if ($11.tag === "Left") {
+              return $Either("Left", $11._1);
+            }
+            if ($11.tag === "Right") {
+              return $Either(
+                "Right",
+                (() => {
+                  const $12 = unzip($10($11._1));
+                  return $Tuple(fromFoldable23($12._1), fromFoldable23($12._2));
+                })()
+              );
+            }
+            fail();
+          })())((v5) => $Either(
+            "Right",
+            $Tuple(
+              $Trace("Matrix", v5._1, $Tuple(v1._3._1, v1._3._2), $Tuple(v4._1._1, v4._2._1), v2._1),
+              $Val(
+                "Matrix",
+                dictBoundedJoinSemilattice.bot,
+                $Tuple(
+                  $Tuple(v5._2, $Tuple(v4._1._1, dictBoundedJoinSemilattice.bot)),
+                  $Tuple(v4._2._1, dictBoundedJoinSemilattice.bot)
+                )
+              )
+            )
+          )));
+        });
+      }
+      if (v1.tag === "Lambda") {
+        return $Either(
+          "Right",
+          $Tuple($Trace("Lambda", v1._1), $Val("Closure", dictBoundedJoinSemilattice.bot, restrict(v)(fVElim.fv(v1._1)), empty, v1._1))
+        );
+      }
+      if (v1.tag === "Project") {
+        return bindEither.bind($$eval(dictBoundedJoinSemilattice)(dictHighlightable)(v)(v1._1))((v2) => {
+          if (v2._2.tag === "Record") {
+            const $8 = lookup$p(v1._2)(v2._2._2);
+            if ($8.tag === "Left") {
+              return $Either("Left", $8._1);
+            }
+            if ($8.tag === "Right") {
+              return $Either("Right", $Tuple($Trace("Project", v2._1, v1._2), $8._1));
             }
             fail();
           }
-          ;
-          return go$r;
-        };
-        return go(0)(v1._3);
-      })()))(() => bindEither.bind((() => {
-        const $3 = traverse12($$eval(v))(v1._3);
-        if ($3.tag === "Left") {
-          return $Either("Left", $3._1);
-        }
-        if ($3.tag === "Right") {
-          return $Either("Right", unzip($3._1));
-        }
-        fail();
-      })())((v2) => $Either("Right", $Tuple($Trace("Constr", v1._2, v2._1), $Val("Constr", false, v1._2, v2._2)))));
-    }
-    if (v1.tag === "Matrix") {
-      return bindEither.bind($$eval(v)(v1._4))((v2) => {
-        if (v2._2.tag === "Constr") {
-          if (v2._2._3.tag === "Cons") {
-            if (v2._2._3._2.tag === "Cons") {
-              if (v2._2._3._2._2.tag === "Nil") {
-                if (v2._2._2 === "Pair") {
-                  const $3 = toFromInt.match(v2._2._3._1);
-                  const $4 = toFromInt.match(v2._2._3._2._1);
-                  return bindEither.bind((() => {
-                    const $5 = "array must be at least (" + (show3($Tuple(1, 1)) + ("); got (" + (show3($Tuple($3._1, $4._1)) + ")")));
-                    if (greaterThanOrEq1($Tuple($3._1, $4._1))($Tuple(1, 1))) {
-                      return $Either("Right", unit);
+          return $Either("Left", "Expected record");
+        });
+      }
+      if (v1.tag === "App") {
+        return bindEither.bind($$eval(dictBoundedJoinSemilattice)(dictHighlightable)(v)(v1._1))((v2) => bindEither.bind($$eval(dictBoundedJoinSemilattice)(dictHighlightable)(v)(v1._2))((v4) => {
+          if (v2._2.tag === "Closure") {
+            const \u03B32 = closeDefs(dictBoundedJoinSemilattice)(v2._2._2)(v2._2._3);
+            return bindEither.bind(match22(v4._2)(v2._2._4))((v5) => bindEither.bind($$eval(dictBoundedJoinSemilattice)(dictHighlightable)(unionWith((v$1) => (x2) => x2)(unionWith((v$1) => (x2) => x2)(v2._2._2)(\u03B32))(v5._1._1))((() => {
+              if (v5._1._2.tag === "ContExpr") {
+                return v5._1._2._1;
+              }
+              return unsafePerformEffect(throwException(error("Expression expected")));
+            })()))((v6) => $Either(
+              "Right",
+              $Tuple($Trace("App", $Tuple($Tuple(v2._1, fromFoldable7(keys2(v2._2._3))), v2._2._4), v4._1, v5._2, v6._1), v6._2)
+            )));
+          }
+          if (v2._2.tag === "Primitive") {
+            const vs$p = foldableList.foldr(Cons)($List("Cons", v4._2, Nil))(v2._2._2);
+            return $Either(
+              "Right",
+              $Tuple(
+                $Trace("AppPrim", $Tuple($Tuple(v2._1, v2._2._1), v2._2._2), $Tuple(v4._1, v4._2)),
+                (() => {
+                  if ((() => {
+                    const go = (go$a0$copy) => (go$a1$copy) => {
+                      let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+                      while (go$c) {
+                        const b = go$a0, v$1 = go$a1;
+                        if (v$1.tag === "Nil") {
+                          go$c = false;
+                          go$r = b;
+                          continue;
+                        }
+                        if (v$1.tag === "Cons") {
+                          go$a0 = b + 1 | 0;
+                          go$a1 = v$1._2;
+                          continue;
+                        }
+                        fail();
+                      }
+                      ;
+                      return go$r;
+                    };
+                    return v2._2._1.arity > go(0)(vs$p);
+                  })()) {
+                    return $Val("Primitive", v2._2._1, vs$p);
+                  }
+                  return v2._2._1.op(vs$p);
+                })()
+              )
+            );
+          }
+          if (v2._2.tag === "Constr") {
+            return bindEither.bind((() => {
+              const $9 = "Too many arguments to " + showCtr(v2._2._2);
+              if ((() => {
+                const go = (go$a0$copy) => (go$a1$copy) => {
+                  let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+                  while (go$c) {
+                    const b = go$a0, v$1 = go$a1;
+                    if (v$1.tag === "Nil") {
+                      go$c = false;
+                      go$r = b;
+                      continue;
                     }
-                    return $Either("Left", $5);
-                  })())(() => bindEither.bind((() => {
-                    const $6 = listMap((x2) => {
-                      const $72 = unzip(x2);
-                      return $Tuple(fromFoldable23($72._1), fromFoldable23($72._2));
-                    });
-                    const $7 = sequence2(bindList.bind(range(1)($3._1))((i) => $List(
-                      "Cons",
-                      sequence2(bindList.bind(range(1)($4._1))((j) => $List(
-                        "Cons",
-                        $$eval(unionWith((v$1) => (x2) => x2)(v)(unionWith((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke2(v1._3._1)($Val(
-                          "Int",
-                          false,
-                          i
-                        )))))(runST(bind_(newImpl)(poke2(v1._3._2)($Val("Int", false, j)))))))(v1._2),
-                        Nil
-                      ))),
-                      Nil
-                    )));
-                    if ($7.tag === "Left") {
-                      return $Either("Left", $7._1);
-                    }
-                    if ($7.tag === "Right") {
-                      return $Either(
-                        "Right",
-                        (() => {
-                          const $8 = unzip($6($7._1));
-                          return $Tuple(fromFoldable23($8._1), fromFoldable23($8._2));
-                        })()
-                      );
+                    if (v$1.tag === "Cons") {
+                      go$a0 = b + 1 | 0;
+                      go$a1 = v$1._2;
+                      continue;
                     }
                     fail();
-                  })())((v5) => $Either(
-                    "Right",
-                    $Tuple(
-                      $Trace("Matrix", v5._1, $Tuple(v1._3._1, v1._3._2), $Tuple($3._1, $4._1), v2._1),
-                      $Val("Matrix", false, $Tuple($Tuple(v5._2, $Tuple($3._1, false)), $Tuple($4._1, false)))
-                    )
-                  )));
-                }
-                return $Either("Left", "Array dimensions must be pair of ints; got " + intercalate3("\n")(prettyValBoolean.pretty(v2._2).lines));
+                  }
+                  ;
+                  return go$r;
+                };
+                return successful(arity(v2._2._2)) > go(0)(v2._2._3);
+              })()) {
+                return $Either("Right", unit);
               }
-              return $Either("Left", "Array dimensions must be pair of ints; got " + intercalate3("\n")(prettyValBoolean.pretty(v2._2).lines));
-            }
-            return $Either("Left", "Array dimensions must be pair of ints; got " + intercalate3("\n")(prettyValBoolean.pretty(v2._2).lines));
+              return $Either("Left", $9);
+            })())(() => $Either(
+              "Right",
+              $Tuple(
+                $Trace(
+                  "AppConstr",
+                  $Tuple(
+                    $Tuple(v2._1, v2._2._2),
+                    (() => {
+                      const go = (go$a0$copy) => (go$a1$copy) => {
+                        let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+                        while (go$c) {
+                          const b = go$a0, v$1 = go$a1;
+                          if (v$1.tag === "Nil") {
+                            go$c = false;
+                            go$r = b;
+                            continue;
+                          }
+                          if (v$1.tag === "Cons") {
+                            go$a0 = b + 1 | 0;
+                            go$a1 = v$1._2;
+                            continue;
+                          }
+                          fail();
+                        }
+                        ;
+                        return go$r;
+                      };
+                      return go(0)(v2._2._3);
+                    })()
+                  ),
+                  v4._1
+                ),
+                $Val(
+                  "Constr",
+                  dictBoundedJoinSemilattice.bot,
+                  v2._2._2,
+                  foldableList.foldr(Cons)($List("Cons", v4._2, Nil))(v2._2._3)
+                )
+              )
+            ));
           }
-          return $Either("Left", "Array dimensions must be pair of ints; got " + intercalate3("\n")(prettyValBoolean.pretty(v2._2).lines));
+          return $Either("Left", "Expected closure, operator or unsaturated constructor");
+        }));
+      }
+      if (v1.tag === "Let") {
+        return bindEither.bind($$eval(dictBoundedJoinSemilattice)(dictHighlightable)(v)(v1._1._2))((v2) => bindEither.bind(match22(v2._2)(v1._1._1))((v4) => bindEither.bind($$eval(dictBoundedJoinSemilattice)(dictHighlightable)(unionWith((v$1) => (x2) => x2)(v)(v4._1._1))(v1._2))((v5) => $Either(
+          "Right",
+          $Tuple($Trace("Let", $VarDef3(v4._2, v2._1), v5._1), v5._2)
+        ))));
+      }
+      if (v1.tag === "LetRec") {
+        return bindEither.bind($$eval(dictBoundedJoinSemilattice)(dictHighlightable)(unionWith((v$1) => (x2) => x2)(v)(closeDefs(dictBoundedJoinSemilattice)(v)(v1._1)))(v1._2))((v2) => $Either(
+          "Right",
+          $Tuple($Trace("LetRec", v1._1, v2._1), v2._2)
+        ));
+      }
+      fail();
+    };
+  };
+  var eval1 = /* @__PURE__ */ $$eval(boundedJoinSemilatticeBoo)(highlightableBoolean);
+  var eval_module = (\u03B3) => {
+    const go = (v) => (v1) => {
+      if (v1._1.tag === "Nil") {
+        return $Either("Right", v);
+      }
+      if (v1._1.tag === "Cons") {
+        if (v1._1._1.tag === "Left") {
+          return bindEither.bind(eval1(unionWith((v$1) => (x2) => x2)(\u03B3)(v))(v1._1._1._1._2))((v2) => bindEither.bind(match1(v2._2)(v1._1._1._1._1))((v4) => go(unionWith((v$1) => (x2) => x2)(v)(v4._1._1))($Module(v1._1._2))));
         }
-        return $Either("Left", "Array dimensions must be pair of ints; got " + intercalate3("\n")(prettyValBoolean.pretty(v2._2).lines));
-      });
+        if (v1._1._1.tag === "Right") {
+          return go(unionWith((v$1) => (x2) => x2)(v)(closeDefs(boundedJoinSemilatticeBoo)(unionWith((v$1) => (x2) => x2)(\u03B3)(v))(v1._1._1._1)))($Module(v1._1._2));
+        }
+        fail();
+      }
+      fail();
+    };
+    return go(empty);
+  };
+
+  // output-es/EvalBwd/index.js
+  var eq = /* @__PURE__ */ (() => eqMap(eqString)(eqUnit).eq)();
+  var toUnfoldable11 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
+  var fromFoldable8 = /* @__PURE__ */ fromFoldable(foldableList);
+  var fromFoldable15 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2))();
+  var foldl1 = /* @__PURE__ */ (() => foldable1NonEmpty(foldableList).foldl1)();
+  var map4 = /* @__PURE__ */ (() => functorNonEmpty(functorList).map)();
+  var matchManyBwd = (dictBoundedJoinSemilattice) => (v) => (\u03BA) => (v1) => (v2) => {
+    if (v2.tag === "Nil") {
+      if (isEmpty(v)) {
+        return $Tuple(Nil, \u03BA);
+      }
+      return unsafePerformEffect(throwException(error("absurd")));
     }
-    if (v1.tag === "Lambda") {
-      return $Either(
-        "Right",
-        $Tuple($Trace("Lambda", v1._1), $Val("Closure", false, restrict(v)(fVElim.fv(v1._1)), empty, v1._1))
+    if (v2.tag === "Cons") {
+      const v3 = disjointUnion_inv(bVMatch.bv(v2._1))(v);
+      const v4 = matchBwd(dictBoundedJoinSemilattice)(v3._1)(\u03BA)(v1)(v2._1);
+      const v6 = matchManyBwd(dictBoundedJoinSemilattice)(v3._2)($Cont("ContElim", v4._2))(v1)(v2._2);
+      return $Tuple(foldableList.foldr(Cons)($List("Cons", v4._1, Nil))(v6._1), v6._2);
+    }
+    fail();
+  };
+  var matchBwd = (dictBoundedJoinSemilattice) => (v) => (\u03BA) => (v1) => (v2) => {
+    if (v2.tag === "MatchVar") {
+      if (eq(keys2(v))($Map("Two", Leaf2, v2._1, unit, Leaf2))) {
+        return $Tuple(definitely("absurd")(_lookup(Nothing, Just, v2._1, v)), $Elim("ElimVar", v2._1, \u03BA));
+      }
+      return $Tuple(functorVal.map((v$1) => dictBoundedJoinSemilattice.bot)(v2._2), $Elim("ElimVar", v2._1, \u03BA));
+    }
+    if (v2.tag === "MatchVarAnon") {
+      if (isEmpty(v)) {
+        return $Tuple(functorVal.map((v$1) => dictBoundedJoinSemilattice.bot)(v2._1), $Elim("ElimVar", "_", \u03BA));
+      }
+      return unsafePerformEffect(throwException(error("absurd")));
+    }
+    if (v2.tag === "MatchConstr") {
+      const v3 = matchManyBwd(dictBoundedJoinSemilattice)(v)(\u03BA)(v1)(reverse(v2._2));
+      return $Tuple(
+        $Val("Constr", v1, v2._1, v3._1),
+        $Elim("ElimConstr", runST(bind_(newImpl)(poke2(v2._1)(v3._2))))
       );
     }
-    if (v1.tag === "Project") {
-      return bindEither.bind($$eval(v)(v1._1))((v2) => {
-        if (v2._2.tag === "Record") {
-          const $3 = lookup$p(v1._2)(v2._2._2);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
-          }
-          if ($3.tag === "Right") {
-            return $Either("Right", $Tuple($Trace("Project", v2._1, v1._2), $3._1));
-          }
-          fail();
-        }
-        return $Either("Left", "Expected record");
-      });
+    if (v2.tag === "MatchRecord") {
+      const v3 = unzip(toUnfoldable11(v2._1));
+      const v4 = matchManyBwd(dictBoundedJoinSemilattice)(v)(\u03BA)(v1)(reverse(v3._2));
+      return $Tuple(
+        $Val("Record", v1, fromFoldable8(zipWith(Tuple)(v3._1)(v4._1))),
+        $Elim("ElimRecord", fromFoldable15(keys2(v2._1)), v4._2)
+      );
     }
-    if (v1.tag === "App") {
-      return bindEither.bind($$eval(v)(v1._1))((v2) => bindEither.bind($$eval(v)(v1._2))((v4) => {
-        if (v2._2.tag === "Closure") {
-          const \u03B32 = closeDefs(v2._2._2)(v2._2._3);
-          return bindEither.bind(match(v4._2)(v2._2._4))((v5) => bindEither.bind($$eval(unionWith((v$1) => (x2) => x2)(unionWith((v$1) => (x2) => x2)(v2._2._2)(\u03B32))(v5._1._1))((() => {
-            if (v5._1._2.tag === "ContExpr") {
-              return v5._1._2._1;
-            }
-            return unsafePerformEffect(throwException(error("Expression expected")));
-          })()))((v6) => $Either(
-            "Right",
-            $Tuple($Trace("App", $Tuple($Tuple(v2._1, fromFoldable7(keys2(v2._2._3))), v2._2._4), v4._1, v5._2, v6._1), v6._2)
-          )));
+    fail();
+  };
+  var closeDefsBwd = (dictBoundedJoinSemilattice) => {
+    const JoinSemilattice0 = dictBoundedJoinSemilattice.JoinSemilattice0();
+    const join = joinSemilatticeDict(partialJoinSemilatticeVal(JoinSemilattice0)).join;
+    const join1 = joinSemilatticeDict(partialJoinSemilatticeEli(JoinSemilattice0)).join;
+    return (\u03B3) => {
+      const v = foldableWithIndexObject.foldrWithIndex((f) => (v2) => (v1) => {
+        const v22 = definitely("absurd")(_lookup(Nothing, Just, f, \u03B3));
+        if (v22.tag === "Closure") {
+          return $Tuple(
+            $Tuple($Tuple(mutate(poke2(f)(v22._4))(v1._1._1._1), join(v1._1._1._2)(v22._2)), join1(v1._1._2)(v22._3)),
+            JoinSemilattice0.join(v1._2)(v22._1)
+          );
         }
-        if (v2._2.tag === "Primitive") {
-          const vs$p = foldableList.foldr(Cons)($List("Cons", v4._2, Nil))(v2._2._2);
-          return $Either(
-            "Right",
-            $Tuple(
-              $Trace("AppPrim", $Tuple($Tuple(v2._1, v2._2._1), v2._2._2), $Tuple(v4._1, v4._2)),
-              (() => {
-                if ((() => {
-                  const go = (go$a0$copy) => (go$a1$copy) => {
-                    let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-                    while (go$c) {
-                      const b = go$a0, v$1 = go$a1;
-                      if (v$1.tag === "Nil") {
-                        go$c = false;
-                        go$r = b;
-                        continue;
-                      }
-                      if (v$1.tag === "Cons") {
-                        go$a0 = b + 1 | 0;
-                        go$a1 = v$1._2;
-                        continue;
-                      }
-                      fail();
-                    }
-                    ;
-                    return go$r;
-                  };
-                  return v2._2._1.arity > go(0)(vs$p);
-                })()) {
-                  return $Val("Primitive", v2._2._1, vs$p);
+        return unsafePerformEffect(throwException(error("absurd")));
+      })($Tuple($Tuple($Tuple(empty, empty), empty), dictBoundedJoinSemilattice.bot))(\u03B3);
+      return $Tuple($Tuple(v._1._1._2, join1(v._1._2)(v._1._1._1)), v._2);
+    };
+  };
+  var evalBwd$p = (dictBoundedJoinSemilattice) => {
+    const JoinSemilattice0 = dictBoundedJoinSemilattice.JoinSemilattice0();
+    const join = joinSemilatticeDict(partialJoinSemilatticeVal(JoinSemilattice0)).join;
+    const join2 = definedJoin(partialJoinSemilatticeExp(JoinSemilattice0));
+    const closeDefsBwd1 = closeDefsBwd(dictBoundedJoinSemilattice);
+    return (v) => (v1) => {
+      const $7 = (t, v2, x2) => {
+        const v3 = evalBwd$p(dictBoundedJoinSemilattice)($Val(
+          "Record",
+          dictBoundedJoinSemilattice.bot,
+          runST(bind_(newImpl)(poke2(x2)(v2)))
+        ))(t);
+        return $Tuple($Tuple(v3._1._1, $Expr("Project", v3._1._2, x2)), v3._2);
+      };
+      const $8 = (t1, t2, t3, v2, w, xs) => {
+        const v3 = evalBwd$p(dictBoundedJoinSemilattice)(v2)(t3);
+        const v4 = append_inv(bVMatch.bv(w))(v3._1._1);
+        const v5 = matchBwd(dictBoundedJoinSemilattice)(v4._2)($Cont("ContExpr", v3._1._2))(v3._2)(w);
+        const v6 = append_inv(xs)(v4._1);
+        const v7 = evalBwd$p(dictBoundedJoinSemilattice)(v5._1)(t2);
+        const v8 = closeDefsBwd1(v6._2);
+        const v9 = evalBwd$p(dictBoundedJoinSemilattice)($Val("Closure", JoinSemilattice0.join(v3._2)(v8._2), join(v6._1)(v8._1._1), v8._1._2, v5._2))(t1);
+        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), JoinSemilattice0.join(v7._2)(v9._2));
+      };
+      const $9 = (t1, t2, v2, v21, vs, \u03C6) => {
+        const vs$p = foldableList.foldr(Cons)($List("Cons", v21, Nil))(vs);
+        const v3 = definitely("absurd")(unsnoc((() => {
+          if ((() => {
+            const go = (go$a0$copy) => (go$a1$copy) => {
+              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+              while (go$c) {
+                const b = go$a0, v$1 = go$a1;
+                if (v$1.tag === "Nil") {
+                  go$c = false;
+                  go$r = b;
+                  continue;
                 }
-                return v2._2._1.op(vs$p);
-              })()
+                if (v$1.tag === "Cons") {
+                  go$a0 = 1 + b | 0;
+                  go$a1 = v$1._2;
+                  continue;
+                }
+                fail();
+              }
+              ;
+              return go$r;
+            };
+            return \u03C6.arity > go(0)(vs$p);
+          })()) {
+            if (v2.tag === "Primitive") {
+              return v2._2;
+            }
+            fail();
+          }
+          return \u03C6.op_bwd(v2)(vs$p);
+        })()));
+        const v4 = evalBwd$p(dictBoundedJoinSemilattice)($Val("Primitive", \u03C6, v3.init))(t1);
+        const v5 = evalBwd$p(dictBoundedJoinSemilattice)(v3.last)(t2);
+        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), JoinSemilattice0.join(v4._2)(v5._2));
+      };
+      const $10 = (t1, t2, v2, w) => {
+        const v3 = evalBwd$p(dictBoundedJoinSemilattice)(v2)(t2);
+        const v4 = append_inv(bVMatch.bv(w))(v3._1._1);
+        const v5 = matchBwd(dictBoundedJoinSemilattice)(v4._2)(ContNone)(v3._2)(w);
+        const v6 = evalBwd$p(dictBoundedJoinSemilattice)(v5._1)(t1);
+        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), JoinSemilattice0.join(v6._2)(v3._2));
+      };
+      const $11 = (t, v2, \u03C1) => {
+        const v3 = evalBwd$p(dictBoundedJoinSemilattice)(v2)(t);
+        const v4 = append_inv(fromFoldable15(keys2(\u03C1)))(v3._1._1);
+        const v5 = closeDefsBwd1(v4._2);
+        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), JoinSemilattice0.join(v3._2)(v5._2));
+      };
+      if (v1.tag === "Var") {
+        return $Tuple(
+          $Tuple(runST(bind_(newImpl)(poke2(v1._1)(v))), $Expr("Var", v1._1)),
+          dictBoundedJoinSemilattice.bot
+        );
+      }
+      if (v1.tag === "Op") {
+        return $Tuple(
+          $Tuple(runST(bind_(newImpl)(poke2(v1._1)(v))), $Expr("Op", v1._1)),
+          dictBoundedJoinSemilattice.bot
+        );
+      }
+      if (v.tag === "Str") {
+        if (v1.tag === "Str") {
+          return $Tuple($Tuple(empty, $Expr("Str", v._1, v1._1)), v._1);
+        }
+        if (v1.tag === "Project") {
+          return $7(v1._1, v, v1._2);
+        }
+        if (v1.tag === "App") {
+          return $8(v1._1._1._1, v1._2, v1._4, v, v1._3, v1._1._1._2);
+        }
+        if (v1.tag === "AppPrim") {
+          return $9(v1._1._1._1, v1._2._1, v, v1._2._2, v1._1._2, v1._1._1._2);
+        }
+        if (v1.tag === "Let") {
+          return $10(v1._1._2, v1._2, v, v1._1._1);
+        }
+        if (v1.tag === "LetRec") {
+          return $11(v1._2, v, v1._1);
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
+      }
+      if (v.tag === "Int") {
+        if (v1.tag === "Int") {
+          return $Tuple($Tuple(empty, $Expr("Int", v._1, v1._1)), v._1);
+        }
+        if (v1.tag === "Project") {
+          return $7(v1._1, v, v1._2);
+        }
+        if (v1.tag === "App") {
+          return $8(v1._1._1._1, v1._2, v1._4, v, v1._3, v1._1._1._2);
+        }
+        if (v1.tag === "AppPrim") {
+          return $9(v1._1._1._1, v1._2._1, v, v1._2._2, v1._1._2, v1._1._1._2);
+        }
+        if (v1.tag === "Let") {
+          return $10(v1._1._2, v1._2, v, v1._1._1);
+        }
+        if (v1.tag === "LetRec") {
+          return $11(v1._2, v, v1._1);
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
+      }
+      if (v.tag === "Float") {
+        if (v1.tag === "Float") {
+          return $Tuple($Tuple(empty, $Expr("Float", v._1, v1._1)), v._1);
+        }
+        if (v1.tag === "Project") {
+          return $7(v1._1, v, v1._2);
+        }
+        if (v1.tag === "App") {
+          return $8(v1._1._1._1, v1._2, v1._4, v, v1._3, v1._1._1._2);
+        }
+        if (v1.tag === "AppPrim") {
+          return $9(v1._1._1._1, v1._2._1, v, v1._2._2, v1._1._2, v1._1._1._2);
+        }
+        if (v1.tag === "Let") {
+          return $10(v1._1._2, v1._2, v, v1._1._1);
+        }
+        if (v1.tag === "LetRec") {
+          return $11(v1._2, v, v1._1);
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
+      }
+      if (v.tag === "Closure") {
+        if (v1.tag === "Lambda") {
+          return $Tuple($Tuple(v._2, $Expr("Lambda", v._4)), v._1);
+        }
+        if (v1.tag === "Project") {
+          return $7(v1._1, v, v1._2);
+        }
+        if (v1.tag === "App") {
+          return $8(v1._1._1._1, v1._2, v1._4, v, v1._3, v1._1._1._2);
+        }
+        if (v1.tag === "AppPrim") {
+          return $9(v1._1._1._1, v1._2._1, v, v1._2._2, v1._1._2, v1._1._1._2);
+        }
+        if (v1.tag === "Let") {
+          return $10(v1._1._2, v1._2, v, v1._1._1);
+        }
+        if (v1.tag === "LetRec") {
+          return $11(v1._2, v, v1._1);
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
+      }
+      if (v.tag === "Record") {
+        if (v1.tag === "Record") {
+          const $12 = evalBwd$p(dictBoundedJoinSemilattice);
+          const x\u03B3e\u03B1s = _fmapObject(intersectionWith(Tuple)(v._2)(v1._1), (v$1) => $12(v$1._1)(v$1._2));
+          return $Tuple(
+            $Tuple(
+              foldrArray(join)(empty)(values(_fmapObject(x\u03B3e\u03B1s, (x2) => x2._1._1))),
+              $Expr("Record", v._1, _fmapObject(x\u03B3e\u03B1s, (x2) => x2._1._2))
+            ),
+            foldrArray(JoinSemilattice0.join)(v._1)(values(_fmapObject(x\u03B3e\u03B1s, snd)))
+          );
+        }
+        if (v1.tag === "Project") {
+          return $7(v1._1, v, v1._2);
+        }
+        if (v1.tag === "App") {
+          return $8(v1._1._1._1, v1._2, v1._4, v, v1._3, v1._1._1._2);
+        }
+        if (v1.tag === "AppPrim") {
+          return $9(v1._1._1._1, v1._2._1, v, v1._2._2, v1._1._2, v1._1._1._2);
+        }
+        if (v1.tag === "Let") {
+          return $10(v1._1._2, v1._2, v, v1._1._1);
+        }
+        if (v1.tag === "LetRec") {
+          return $11(v1._2, v, v1._1);
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
+      }
+      if (v.tag === "Constr") {
+        if (v1.tag === "Constr") {
+          const v2 = foldableList.foldr((v22) => (v3) => {
+            const v4 = evalBwd$p(dictBoundedJoinSemilattice)(v22._1)(v22._2);
+            return $Tuple($Tuple(join(v3._1._1)(v4._1._1), $List("Cons", v4._1._2, v3._1._2)), JoinSemilattice0.join(v3._2)(v4._2));
+          })($Tuple($Tuple(empty, Nil), v._1))(zipWith(Tuple)(v._3)(v1._2));
+          return $Tuple($Tuple(v2._1._1, $Expr("Constr", v._1, v1._1, v2._1._2)), v2._2);
+        }
+        if (v1.tag === "Project") {
+          return $7(v1._1, v, v1._2);
+        }
+        if (v1.tag === "App") {
+          return $8(v1._1._1._1, v1._2, v1._4, v, v1._3, v1._1._1._2);
+        }
+        if (v1.tag === "AppPrim") {
+          return $9(v1._1._1._1, v1._2._1, v, v1._2._2, v1._1._2, v1._1._1._2);
+        }
+        if (v1.tag === "AppConstr") {
+          const v2 = definitely("absurd")(unsnoc(v._3));
+          const v3 = evalBwd$p(dictBoundedJoinSemilattice)($Val("Constr", v._1, v1._1._1._2, v2.init))(v1._1._1._1);
+          const v4 = evalBwd$p(dictBoundedJoinSemilattice)(v2.last)(v1._2);
+          return $Tuple($Tuple(join(v3._1._1)(v4._1._1), $Expr("App", v3._1._2, v4._1._2)), JoinSemilattice0.join(v3._2)(v4._2));
+        }
+        if (v1.tag === "Let") {
+          return $10(v1._1._2, v1._2, v, v1._1._1);
+        }
+        if (v1.tag === "LetRec") {
+          return $11(v1._2, v, v1._1);
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
+      }
+      if (v.tag === "Matrix") {
+        if (v1.tag === "Matrix") {
+          const v3 = foldl1((v42) => (v5) => $Tuple(
+            $Tuple(
+              $Tuple($Tuple(join(v42._1._1._1._1)(v5._1._1._1._1), join2(v42._1._1._1._2)(v5._1._1._1._2)), JoinSemilattice0.join(v42._1._1._2)(v5._1._1._2)),
+              JoinSemilattice0.join(v42._1._2)(v5._1._2)
+            ),
+            JoinSemilattice0.join(v42._2)(v5._2)
+          ))(map4((v32) => {
+            const v42 = evalBwd$p(dictBoundedJoinSemilattice)(definitely("index within bounds")(index2(definitely("index within bounds")(index2(v._2._1._1)(v32._1 - 1 | 0)))(v32._2 - 1 | 0)))(definitely("index within bounds")(index2(definitely("index within bounds")(index2(v1._1)(v32._1 - 1 | 0)))(v32._2 - 1 | 0)));
+            const v5 = append_inv(unionWith2(ordString)($$const)($Map(
+              "Two",
+              Leaf2,
+              v1._2._1,
+              unit,
+              Leaf2
+            ))($Map("Two", Leaf2, v1._2._2, unit, Leaf2)))(v42._1._1);
+            const \u03B30 = unionWith((v$1) => (x2) => x2)(unionWith((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke2(v1._2._1)($Val(
+              "Int",
+              dictBoundedJoinSemilattice.bot,
+              v1._3._1
+            )))))(runST(bind_(newImpl)(poke2(v1._2._2)($Val(
+              "Int",
+              dictBoundedJoinSemilattice.bot,
+              v1._3._2
+            ))))))(v5._2);
+            const $16 = definitely("absurd")(_lookup(Nothing, Just, v1._2._1, \u03B30));
+            const $17 = definitely("absurd")(_lookup(Nothing, Just, v1._2._1, \u03B30));
+            if ($16.tag === "Int") {
+              if ($17.tag === "Int") {
+                return $Tuple($Tuple($Tuple($Tuple(v5._1, v42._1._2), v42._2), $16._1), $17._1);
+              }
+              fail();
+            }
+            fail();
+          })(nonEmpty(bindList.bind(range(1)(v1._3._1))((i) => bindList.bind(range(1)(v1._3._2))((j) => $List(
+            "Cons",
+            $Tuple(i, j),
+            Nil
+          ))))));
+          const v4 = evalBwd$p(dictBoundedJoinSemilattice)($Val(
+            "Constr",
+            dictBoundedJoinSemilattice.bot,
+            "Pair",
+            $List(
+              "Cons",
+              $Val("Int", JoinSemilattice0.join(v3._1._2)(v._2._1._2._2), v1._3._1),
+              $List("Cons", $Val("Int", JoinSemilattice0.join(v3._2)(v._2._2._2), v1._3._2), Nil)
+            )
+          ))(v1._4);
+          return $Tuple(
+            $Tuple(join(v3._1._1._1._1)(v4._1._1), $Expr("Matrix", v._1, v3._1._1._1._2, $Tuple(v1._2._1, v1._2._2), v4._1._2)),
+            JoinSemilattice0.join(JoinSemilattice0.join(v._1)(v3._1._1._2))(v4._2)
+          );
+        }
+        if (v1.tag === "Project") {
+          return $7(v1._1, v, v1._2);
+        }
+        if (v1.tag === "App") {
+          return $8(v1._1._1._1, v1._2, v1._4, v, v1._3, v1._1._1._2);
+        }
+        if (v1.tag === "AppPrim") {
+          return $9(v1._1._1._1, v1._2._1, v, v1._2._2, v1._1._2, v1._1._1._2);
+        }
+        if (v1.tag === "Let") {
+          return $10(v1._1._2, v1._2, v, v1._1._1);
+        }
+        if (v1.tag === "LetRec") {
+          return $11(v1._2, v, v1._1);
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
+      }
+      if (v1.tag === "Project") {
+        return $7(v1._1, v, v1._2);
+      }
+      if (v1.tag === "App") {
+        return $8(v1._1._1._1, v1._2, v1._4, v, v1._3, v1._1._1._2);
+      }
+      if (v1.tag === "AppPrim") {
+        return $9(v1._1._1._1, v1._2._1, v, v1._2._2, v1._1._2, v1._1._1._2);
+      }
+      if (v1.tag === "Let") {
+        return $10(v1._1._2, v1._2, v, v1._1._1);
+      }
+      if (v1.tag === "LetRec") {
+        return $11(v1._2, v, v1._1);
+      }
+      return unsafePerformEffect(throwException(error("absurd")));
+    };
+  };
+  var evalBwd = (dictBoundedJoinSemilattice) => {
+    const evalBwd$p1 = evalBwd$p(dictBoundedJoinSemilattice);
+    const expand = expandableDict(functorVal)(dictBoundedJoinSemilattice)(expandableVal(dictBoundedJoinSemilattice)).expand;
+    const expand1 = expandableExpr(dictBoundedJoinSemilattice).expand;
+    return (\u03B3) => (e) => (v) => (t) => {
+      const v1 = evalBwd$p1(v)(t);
+      return $Tuple($Tuple(expand(v1._1._1)(\u03B3), expand1(v1._1._2)(e)), v1._2);
+    };
+  };
+
+  // output-es/EvalFwd/index.js
+  var toUnfoldable13 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
+  var fv2 = /* @__PURE__ */ (() => fVDict(fVElim).fv)();
+  var fromFoldable9 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
+  var matchManyFwd = (dictBoundedMeetSemilattice) => {
+    const meet = dictBoundedMeetSemilattice.MeetSemilattice0().meet;
+    return (v) => (v1) => {
+      if (v.tag === "Nil") {
+        return $Tuple($Tuple(empty, v1), dictBoundedMeetSemilattice.top);
+      }
+      if (v.tag === "Cons") {
+        const v3 = matchFwd(dictBoundedMeetSemilattice)(v._1)((() => {
+          if (v1.tag === "ContElim") {
+            return v1._1;
+          }
+          return unsafePerformEffect(throwException(error("Eliminator expected")));
+        })());
+        const $5 = matchManyFwd(dictBoundedMeetSemilattice)(v._2)(v3._1._2);
+        return $Tuple(
+          $Tuple(
+            unionWith((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(v3._1._1)($5._1._1),
+            $5._1._2
+          ),
+          meet($5._2)(v3._2)
+        );
+      }
+      fail();
+    };
+  };
+  var matchFwd = (dictBoundedMeetSemilattice) => {
+    const meet = dictBoundedMeetSemilattice.MeetSemilattice0().meet;
+    return (v) => (v1) => {
+      if (v1.tag === "ElimVar") {
+        if (v1._1 === "_") {
+          return $Tuple($Tuple(empty, v1._2), dictBoundedMeetSemilattice.top);
+        }
+        return $Tuple(
+          $Tuple(runST(bind_(newImpl)(poke2(v1._1)(v))), v1._2),
+          dictBoundedMeetSemilattice.top
+        );
+      }
+      if (v.tag === "Constr") {
+        if (v1.tag === "ElimConstr") {
+          const $4 = matchManyFwd(dictBoundedMeetSemilattice)(v._3)(definitely("absurd")(_lookup(Nothing, Just, v._2, v1._1)));
+          return $Tuple($4._1, meet($4._2)(v._1));
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
+      }
+      if (v.tag === "Record") {
+        if (v1.tag === "ElimRecord") {
+          const $4 = matchManyFwd(dictBoundedMeetSemilattice)(listMap((a) => definitely("absurd")(_lookup(
+            Nothing,
+            Just,
+            a,
+            v._2
+          )))(toUnfoldable13(v1._1)))(v1._2);
+          return $Tuple($4._1, meet($4._2)(v._1));
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
+      }
+      return unsafePerformEffect(throwException(error("absurd")));
+    };
+  };
+  var closeDefsFwd = (\u03B3) => (\u03C1) => (\u03B1) => _fmapObject(
+    \u03C1,
+    (\u03C3) => {
+      const \u03C1$p = $$for(\u03C1)(\u03C3);
+      return $Val("Closure", \u03B1, restrict(\u03B3)(unionWith2(ordString)($$const)(fv2(\u03C1$p))(fVElim.fv(\u03C3))), \u03C1$p, \u03C3);
+    }
+  );
+  var evalFwd = (dictBoundedMeetSemilattice) => {
+    const meet = dictBoundedMeetSemilattice.MeetSemilattice0().meet;
+    const matchFwd1 = matchFwd(dictBoundedMeetSemilattice);
+    return (dictHighlightable) => {
+      const $4 = toFromInt$x215$x215Int$x215(dictHighlightable);
+      return (v) => (v1) => (v2) => {
+        if (v1.tag === "Var") {
+          return definitely("absurd")(_lookup(Nothing, Just, v1._1, v));
+        }
+        if (v1.tag === "Op") {
+          return definitely("absurd")(_lookup(Nothing, Just, v1._1, v));
+        }
+        if (v1.tag === "Int") {
+          return $Val("Int", meet(v1._1)(v2), v1._2);
+        }
+        if (v1.tag === "Float") {
+          return $Val("Float", meet(v1._1)(v2), v1._2);
+        }
+        if (v1.tag === "Str") {
+          return $Val("Str", meet(v1._1)(v2), v1._2);
+        }
+        if (v1.tag === "Record") {
+          return $Val("Record", meet(v1._1)(v2), _fmapObject(v1._2, (e) => evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(v)(e)(v2)));
+        }
+        if (v1.tag === "Constr") {
+          return $Val("Constr", meet(v1._1)(v2), v1._2, listMap((e$p) => evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(v)(e$p)(v2))(v1._3));
+        }
+        if (v1.tag === "Matrix") {
+          const v3 = $4.match(evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(v)(v1._4)(v2))._1;
+          return $Val(
+            "Matrix",
+            meet(v1._1)(v2),
+            $Tuple(
+              $Tuple(
+                fromFoldable9(bindList.bind(range(1)(v3._1._1))((i) => $List(
+                  "Cons",
+                  fromFoldable9(bindList.bind(range(1)(v3._2._1))((j) => $List(
+                    "Cons",
+                    evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(unionWith((v$1) => (x2) => x2)(v)(unionWith((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke2(v1._3._1)($Val(
+                      "Int",
+                      v3._1._2,
+                      i
+                    )))))(runST(bind_(newImpl)(poke2(v1._3._2)($Val("Int", v3._2._2, j)))))))(v1._2)(v2),
+                    Nil
+                  ))),
+                  Nil
+                ))),
+                $Tuple(v3._1._1, v3._1._2)
+              ),
+              $Tuple(v3._2._1, v3._2._2)
             )
           );
         }
-        if (v2._2.tag === "Constr") {
-          return bindEither.bind((() => {
-            const $4 = "Too many arguments to " + showCtr(v2._2._2);
+        if (v1.tag === "Lambda") {
+          return $Val("Closure", v2, restrict(v)(fVElim.fv(v1._1)), empty, v1._1);
+        }
+        if (v1.tag === "Project") {
+          const v3 = evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(v)(v1._1)(v2);
+          if (v3.tag === "Record") {
+            return definitely("absurd")(_lookup(Nothing, Just, v1._2, v3._2));
+          }
+          return unsafePerformEffect(throwException(error("absurd")));
+        }
+        if (v1.tag === "App") {
+          const v3 = evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(v)(v1._1)(v2);
+          if (v3.tag === "Closure") {
+            const v5 = matchFwd1(evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(v)(v1._2)(v2))(v3._4);
+            return evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(unionWith((v$1) => (x2) => x2)(unionWith((v$1) => (x2) => x2)(v3._2)(closeDefsFwd(v3._2)(v3._3)(v3._1)))(v5._1._1))((() => {
+              if (v5._1._2.tag === "ContExpr") {
+                return v5._1._2._1;
+              }
+              return unsafePerformEffect(throwException(error("Expression expected")));
+            })())(meet(v3._1)(v5._2));
+          }
+          if (v3.tag === "Primitive") {
+            const vs$p$p = foldableList.foldr(Cons)($List(
+              "Cons",
+              evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(v)(v1._2)(v2),
+              Nil
+            ))(v3._2);
             if ((() => {
               const go = (go$a0$copy) => (go$a1$copy) => {
                 let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
@@ -17850,1045 +18732,36 @@
                 ;
                 return go$r;
               };
-              return successful(arity(v2._2._2)) > go(0)(v2._2._3);
+              return v3._1.arity > go(0)(vs$p$p);
             })()) {
-              return $Either("Right", unit);
+              return $Val("Primitive", v3._1, vs$p$p);
             }
-            return $Either("Left", $4);
-          })())(() => $Either(
-            "Right",
-            $Tuple(
-              $Trace(
-                "AppConstr",
-                $Tuple(
-                  $Tuple(v2._1, v2._2._2),
-                  (() => {
-                    const go = (go$a0$copy) => (go$a1$copy) => {
-                      let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-                      while (go$c) {
-                        const b = go$a0, v$1 = go$a1;
-                        if (v$1.tag === "Nil") {
-                          go$c = false;
-                          go$r = b;
-                          continue;
-                        }
-                        if (v$1.tag === "Cons") {
-                          go$a0 = b + 1 | 0;
-                          go$a1 = v$1._2;
-                          continue;
-                        }
-                        fail();
-                      }
-                      ;
-                      return go$r;
-                    };
-                    return go(0)(v2._2._3);
-                  })()
-                ),
-                v4._1
-              ),
-              $Val(
-                "Constr",
-                false,
-                v2._2._2,
-                foldableList.foldr(Cons)($List("Cons", v4._2, Nil))(v2._2._3)
-              )
-            )
-          ));
-        }
-        return $Either("Left", "Expected closure, operator or unsaturated constructor");
-      }));
-    }
-    if (v1.tag === "Let") {
-      return bindEither.bind($$eval(v)(v1._1._2))((v2) => bindEither.bind(match(v2._2)(v1._1._1))((v4) => bindEither.bind($$eval(unionWith((v$1) => (x2) => x2)(v)(v4._1._1))(v1._2))((v5) => $Either(
-        "Right",
-        $Tuple($Trace("Let", $VarDef3(v4._2, v2._1), v5._1), v5._2)
-      ))));
-    }
-    if (v1.tag === "LetRec") {
-      return bindEither.bind($$eval(unionWith((v$1) => (x2) => x2)(v)(closeDefs(v)(v1._1)))(v1._2))((v2) => $Either(
-        "Right",
-        $Tuple($Trace("LetRec", v1._1, v2._1), v2._2)
-      ));
-    }
-    fail();
-  };
-  var eval_module = (\u03B3) => {
-    const go = (v) => (v1) => {
-      if (v1._1.tag === "Nil") {
-        return $Either("Right", v);
-      }
-      if (v1._1.tag === "Cons") {
-        if (v1._1._1.tag === "Left") {
-          return bindEither.bind($$eval(unionWith((v$1) => (x2) => x2)(\u03B3)(v))(v1._1._1._1._2))((v2) => bindEither.bind(match(v2._2)(v1._1._1._1._1))((v4) => go(unionWith((v$1) => (x2) => x2)(v)(v4._1._1))($Module(v1._1._2))));
-        }
-        if (v1._1._1.tag === "Right") {
-          return go(unionWith((v$1) => (x2) => x2)(v)(closeDefs(unionWith((v$1) => (x2) => x2)(\u03B3)(v))(v1._1._1._1)))($Module(v1._1._2));
-        }
-        fail();
-      }
-      fail();
-    };
-    return go(empty);
-  };
-
-  // output-es/EvalBwd/index.js
-  var eq = /* @__PURE__ */ (() => eqMap(eqString)(eqUnit).eq)();
-  var toUnfoldable11 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
-  var fromFoldable8 = /* @__PURE__ */ fromFoldable(foldableList);
-  var fromFoldable15 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2))();
-  var join = /* @__PURE__ */ (() => joinSemilatticeDict(slicesValBoolean).join)();
-  var join1 = /* @__PURE__ */ (() => joinSemilatticeDict(slicesElimBoolean).join)();
-  var foldl1 = /* @__PURE__ */ (() => foldable1NonEmpty(foldableList).foldl1)();
-  var map4 = /* @__PURE__ */ (() => functorNonEmpty(functorList).map)();
-  var expand2 = /* @__PURE__ */ (() => expandableDict(functorVal)(boundedJoinSemilatticeBoo)(expandableValBoolean).expand)();
-  var matchManyBwd = (v) => (\u03BA) => (v1) => (v2) => {
-    if (v2.tag === "Nil") {
-      if (isEmpty(v)) {
-        return $Tuple(Nil, \u03BA);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v2.tag === "Cons") {
-      const v3 = disjointUnion_inv(bVMatch.bv(v2._1))(v);
-      const v4 = matchBwd(v3._1)(\u03BA)(v1)(v2._1);
-      const v6 = matchManyBwd(v3._2)($Cont("ContElim", v4._2))(v1)(v2._2);
-      return $Tuple(foldableList.foldr(Cons)($List("Cons", v4._1, Nil))(v6._1), v6._2);
-    }
-    fail();
-  };
-  var matchBwd = (v) => (\u03BA) => (v1) => (v2) => {
-    if (v2.tag === "MatchVar") {
-      if (eq(keys2(v))($Map("Two", Leaf2, v2._1, unit, Leaf2))) {
-        return $Tuple(definitely("absurd")(_lookup(Nothing, Just, v2._1, v)), $Elim("ElimVar", v2._1, \u03BA));
-      }
-      return $Tuple(functorVal.map((v$1) => false)(v2._2), $Elim("ElimVar", v2._1, \u03BA));
-    }
-    if (v2.tag === "MatchVarAnon") {
-      if (isEmpty(v)) {
-        return $Tuple(functorVal.map((v$1) => false)(v2._1), $Elim("ElimVar", "_", \u03BA));
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v2.tag === "MatchConstr") {
-      const v3 = matchManyBwd(v)(\u03BA)(v1)(reverse(v2._2));
-      return $Tuple(
-        $Val("Constr", v1, v2._1, v3._1),
-        $Elim("ElimConstr", runST(bind_(newImpl)(poke2(v2._1)(v3._2))))
-      );
-    }
-    if (v2.tag === "MatchRecord") {
-      const v3 = unzip(toUnfoldable11(v2._1));
-      const v4 = matchManyBwd(v)(\u03BA)(v1)(reverse(v3._2));
-      return $Tuple(
-        $Val("Record", v1, fromFoldable8(zipWith(Tuple)(v3._1)(v4._1))),
-        $Elim("ElimRecord", fromFoldable15(keys2(v2._1)), v4._2)
-      );
-    }
-    fail();
-  };
-  var closeDefsBwd = (\u03B3) => {
-    const v = foldableWithIndexObject.foldrWithIndex((f) => (v2) => (v1) => {
-      const v22 = definitely("absurd")(_lookup(Nothing, Just, f, \u03B3));
-      if (v22.tag === "Closure") {
-        return $Tuple(
-          $Tuple($Tuple(mutate(poke2(f)(v22._4))(v1._1._1._1), join(v1._1._1._2)(v22._2)), join1(v1._1._2)(v22._3)),
-          v1._2 || v22._1
-        );
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    })($Tuple($Tuple($Tuple(empty, empty), empty), false))(\u03B3);
-    return $Tuple($Tuple(v._1._1._2, join1(v._1._2)(v._1._1._1)), v._2);
-  };
-  var evalBwd$p = (v) => (v1) => {
-    if (v1.tag === "Var") {
-      return $Tuple(
-        $Tuple(runST(bind_(newImpl)(poke2(v1._1)(v))), $Expr("Var", v1._1)),
-        false
-      );
-    }
-    if (v1.tag === "Op") {
-      return $Tuple(
-        $Tuple(runST(bind_(newImpl)(poke2(v1._1)(v))), $Expr("Op", v1._1)),
-        false
-      );
-    }
-    if (v.tag === "Str") {
-      if (v1.tag === "Str") {
-        return $Tuple($Tuple(empty, $Expr("Str", v._1, v1._1)), v._1);
-      }
-      if (v1.tag === "Project") {
-        const v3 = evalBwd$p($Val("Record", false, runST(bind_(newImpl)(poke2(v1._2)(v)))))(v1._1);
-        return $Tuple($Tuple(v3._1._1, $Expr("Project", v3._1._2, v1._2)), v3._2);
-      }
-      if (v1.tag === "App") {
-        const v3 = evalBwd$p(v)(v1._4);
-        const v4 = append_inv(bVMatch.bv(v1._3))(v3._1._1);
-        const v5 = matchBwd(v4._2)($Cont("ContExpr", v3._1._2))(v3._2)(v1._3);
-        const v6 = append_inv(v1._1._1._2)(v4._1);
-        const v7 = evalBwd$p(v5._1)(v1._2);
-        const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
-      }
-      if (v1.tag === "AppPrim") {
-        const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
-        const v3 = definitely("absurd")(unsnoc((() => {
-          if ((() => {
-            const go = (go$a0$copy) => (go$a1$copy) => {
-              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-              while (go$c) {
-                const b = go$a0, v$1 = go$a1;
-                if (v$1.tag === "Nil") {
-                  go$c = false;
-                  go$r = b;
-                  continue;
-                }
-                if (v$1.tag === "Cons") {
-                  go$a0 = 1 + b | 0;
-                  go$a1 = v$1._2;
-                  continue;
-                }
-                fail();
-              }
-              ;
-              return go$r;
-            };
-            return v1._1._1._2.arity > go(0)(vs$p);
-          })()) {
-            if (v.tag === "Primitive") {
-              return v._2;
-            }
-            fail();
+            return v3._1.op(vs$p$p);
           }
-          return v1._1._1._2.op_bwd(v)(vs$p);
-        })()));
-        const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
-        const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
-      }
-      if (v1.tag === "Let") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
-        const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
-        const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
-      }
-      if (v1.tag === "LetRec") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
-        const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v.tag === "Int") {
-      if (v1.tag === "Int") {
-        return $Tuple($Tuple(empty, $Expr("Int", v._1, v1._1)), v._1);
-      }
-      if (v1.tag === "Project") {
-        const v3 = evalBwd$p($Val("Record", false, runST(bind_(newImpl)(poke2(v1._2)(v)))))(v1._1);
-        return $Tuple($Tuple(v3._1._1, $Expr("Project", v3._1._2, v1._2)), v3._2);
-      }
-      if (v1.tag === "App") {
-        const v3 = evalBwd$p(v)(v1._4);
-        const v4 = append_inv(bVMatch.bv(v1._3))(v3._1._1);
-        const v5 = matchBwd(v4._2)($Cont("ContExpr", v3._1._2))(v3._2)(v1._3);
-        const v6 = append_inv(v1._1._1._2)(v4._1);
-        const v7 = evalBwd$p(v5._1)(v1._2);
-        const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
-      }
-      if (v1.tag === "AppPrim") {
-        const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
-        const v3 = definitely("absurd")(unsnoc((() => {
-          if ((() => {
-            const go = (go$a0$copy) => (go$a1$copy) => {
-              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-              while (go$c) {
-                const b = go$a0, v$1 = go$a1;
-                if (v$1.tag === "Nil") {
-                  go$c = false;
-                  go$r = b;
-                  continue;
-                }
-                if (v$1.tag === "Cons") {
-                  go$a0 = 1 + b | 0;
-                  go$a1 = v$1._2;
-                  continue;
-                }
-                fail();
-              }
-              ;
-              return go$r;
-            };
-            return v1._1._1._2.arity > go(0)(vs$p);
-          })()) {
-            if (v.tag === "Primitive") {
-              return v._2;
-            }
-            fail();
-          }
-          return v1._1._1._2.op_bwd(v)(vs$p);
-        })()));
-        const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
-        const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
-      }
-      if (v1.tag === "Let") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
-        const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
-        const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
-      }
-      if (v1.tag === "LetRec") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
-        const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v.tag === "Float") {
-      if (v1.tag === "Float") {
-        return $Tuple($Tuple(empty, $Expr("Float", v._1, v1._1)), v._1);
-      }
-      if (v1.tag === "Project") {
-        const v3 = evalBwd$p($Val("Record", false, runST(bind_(newImpl)(poke2(v1._2)(v)))))(v1._1);
-        return $Tuple($Tuple(v3._1._1, $Expr("Project", v3._1._2, v1._2)), v3._2);
-      }
-      if (v1.tag === "App") {
-        const v3 = evalBwd$p(v)(v1._4);
-        const v4 = append_inv(bVMatch.bv(v1._3))(v3._1._1);
-        const v5 = matchBwd(v4._2)($Cont("ContExpr", v3._1._2))(v3._2)(v1._3);
-        const v6 = append_inv(v1._1._1._2)(v4._1);
-        const v7 = evalBwd$p(v5._1)(v1._2);
-        const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
-      }
-      if (v1.tag === "AppPrim") {
-        const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
-        const v3 = definitely("absurd")(unsnoc((() => {
-          if ((() => {
-            const go = (go$a0$copy) => (go$a1$copy) => {
-              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-              while (go$c) {
-                const b = go$a0, v$1 = go$a1;
-                if (v$1.tag === "Nil") {
-                  go$c = false;
-                  go$r = b;
-                  continue;
-                }
-                if (v$1.tag === "Cons") {
-                  go$a0 = 1 + b | 0;
-                  go$a1 = v$1._2;
-                  continue;
-                }
-                fail();
-              }
-              ;
-              return go$r;
-            };
-            return v1._1._1._2.arity > go(0)(vs$p);
-          })()) {
-            if (v.tag === "Primitive") {
-              return v._2;
-            }
-            fail();
-          }
-          return v1._1._1._2.op_bwd(v)(vs$p);
-        })()));
-        const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
-        const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
-      }
-      if (v1.tag === "Let") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
-        const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
-        const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
-      }
-      if (v1.tag === "LetRec") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
-        const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v.tag === "Closure") {
-      if (v1.tag === "Lambda") {
-        return $Tuple($Tuple(v._2, $Expr("Lambda", v._4)), v._1);
-      }
-      if (v1.tag === "Project") {
-        const v3 = evalBwd$p($Val("Record", false, runST(bind_(newImpl)(poke2(v1._2)(v)))))(v1._1);
-        return $Tuple($Tuple(v3._1._1, $Expr("Project", v3._1._2, v1._2)), v3._2);
-      }
-      if (v1.tag === "App") {
-        const v3 = evalBwd$p(v)(v1._4);
-        const v4 = append_inv(bVMatch.bv(v1._3))(v3._1._1);
-        const v5 = matchBwd(v4._2)($Cont("ContExpr", v3._1._2))(v3._2)(v1._3);
-        const v6 = append_inv(v1._1._1._2)(v4._1);
-        const v7 = evalBwd$p(v5._1)(v1._2);
-        const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
-      }
-      if (v1.tag === "AppPrim") {
-        const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
-        const v3 = definitely("absurd")(unsnoc((() => {
-          if ((() => {
-            const go = (go$a0$copy) => (go$a1$copy) => {
-              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-              while (go$c) {
-                const b = go$a0, v$1 = go$a1;
-                if (v$1.tag === "Nil") {
-                  go$c = false;
-                  go$r = b;
-                  continue;
-                }
-                if (v$1.tag === "Cons") {
-                  go$a0 = 1 + b | 0;
-                  go$a1 = v$1._2;
-                  continue;
-                }
-                fail();
-              }
-              ;
-              return go$r;
-            };
-            return v1._1._1._2.arity > go(0)(vs$p);
-          })()) {
-            if (v.tag === "Primitive") {
-              return v._2;
-            }
-            fail();
-          }
-          return v1._1._1._2.op_bwd(v)(vs$p);
-        })()));
-        const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
-        const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
-      }
-      if (v1.tag === "Let") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
-        const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
-        const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
-      }
-      if (v1.tag === "LetRec") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
-        const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v.tag === "Record") {
-      if (v1.tag === "Record") {
-        const x\u03B3e\u03B1s = _fmapObject(intersectionWith(Tuple)(v._2)(v1._1), (v$1) => evalBwd$p(v$1._1)(v$1._2));
-        return $Tuple(
-          $Tuple(
-            foldrArray(join)(empty)(values(_fmapObject(x\u03B3e\u03B1s, (x2) => x2._1._1))),
-            $Expr("Record", v._1, _fmapObject(x\u03B3e\u03B1s, (x2) => x2._1._2))
-          ),
-          foldrArray(boolDisj)(v._1)(values(_fmapObject(x\u03B3e\u03B1s, snd)))
-        );
-      }
-      if (v1.tag === "Project") {
-        const v3 = evalBwd$p($Val("Record", false, runST(bind_(newImpl)(poke2(v1._2)(v)))))(v1._1);
-        return $Tuple($Tuple(v3._1._1, $Expr("Project", v3._1._2, v1._2)), v3._2);
-      }
-      if (v1.tag === "App") {
-        const v3 = evalBwd$p(v)(v1._4);
-        const v4 = append_inv(bVMatch.bv(v1._3))(v3._1._1);
-        const v5 = matchBwd(v4._2)($Cont("ContExpr", v3._1._2))(v3._2)(v1._3);
-        const v6 = append_inv(v1._1._1._2)(v4._1);
-        const v7 = evalBwd$p(v5._1)(v1._2);
-        const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
-      }
-      if (v1.tag === "AppPrim") {
-        const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
-        const v3 = definitely("absurd")(unsnoc((() => {
-          if ((() => {
-            const go = (go$a0$copy) => (go$a1$copy) => {
-              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-              while (go$c) {
-                const b = go$a0, v$1 = go$a1;
-                if (v$1.tag === "Nil") {
-                  go$c = false;
-                  go$r = b;
-                  continue;
-                }
-                if (v$1.tag === "Cons") {
-                  go$a0 = 1 + b | 0;
-                  go$a1 = v$1._2;
-                  continue;
-                }
-                fail();
-              }
-              ;
-              return go$r;
-            };
-            return v1._1._1._2.arity > go(0)(vs$p);
-          })()) {
-            if (v.tag === "Primitive") {
-              return v._2;
-            }
-            fail();
-          }
-          return v1._1._1._2.op_bwd(v)(vs$p);
-        })()));
-        const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
-        const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
-      }
-      if (v1.tag === "Let") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
-        const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
-        const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
-      }
-      if (v1.tag === "LetRec") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
-        const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v.tag === "Constr") {
-      if (v1.tag === "Constr") {
-        const v2 = foldableList.foldr((v22) => (v3) => {
-          const v4 = evalBwd$p(v22._1)(v22._2);
-          return $Tuple($Tuple(join(v3._1._1)(v4._1._1), $List("Cons", v4._1._2, v3._1._2)), v3._2 || v4._2);
-        })($Tuple($Tuple(empty, Nil), v._1))(zipWith(Tuple)(v._3)(v1._2));
-        return $Tuple($Tuple(v2._1._1, $Expr("Constr", v._1, v1._1, v2._1._2)), v2._2);
-      }
-      if (v1.tag === "Project") {
-        const v3 = evalBwd$p($Val("Record", false, runST(bind_(newImpl)(poke2(v1._2)(v)))))(v1._1);
-        return $Tuple($Tuple(v3._1._1, $Expr("Project", v3._1._2, v1._2)), v3._2);
-      }
-      if (v1.tag === "App") {
-        const v3 = evalBwd$p(v)(v1._4);
-        const v4 = append_inv(bVMatch.bv(v1._3))(v3._1._1);
-        const v5 = matchBwd(v4._2)($Cont("ContExpr", v3._1._2))(v3._2)(v1._3);
-        const v6 = append_inv(v1._1._1._2)(v4._1);
-        const v7 = evalBwd$p(v5._1)(v1._2);
-        const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
-      }
-      if (v1.tag === "AppPrim") {
-        const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
-        const v3 = definitely("absurd")(unsnoc((() => {
-          if ((() => {
-            const go = (go$a0$copy) => (go$a1$copy) => {
-              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-              while (go$c) {
-                const b = go$a0, v$1 = go$a1;
-                if (v$1.tag === "Nil") {
-                  go$c = false;
-                  go$r = b;
-                  continue;
-                }
-                if (v$1.tag === "Cons") {
-                  go$a0 = 1 + b | 0;
-                  go$a1 = v$1._2;
-                  continue;
-                }
-                fail();
-              }
-              ;
-              return go$r;
-            };
-            return v1._1._1._2.arity > go(0)(vs$p);
-          })()) {
-            if (v.tag === "Primitive") {
-              return v._2;
-            }
-            fail();
-          }
-          return v1._1._1._2.op_bwd(v)(vs$p);
-        })()));
-        const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
-        const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
-      }
-      if (v1.tag === "AppConstr") {
-        const v2 = definitely("absurd")(unsnoc(v._3));
-        const v3 = evalBwd$p($Val("Constr", v._1, v1._1._1._2, v2.init))(v1._1._1._1);
-        const v4 = evalBwd$p(v2.last)(v1._2);
-        return $Tuple($Tuple(join(v3._1._1)(v4._1._1), $Expr("App", v3._1._2, v4._1._2)), v3._2 || v4._2);
-      }
-      if (v1.tag === "Let") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
-        const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
-        const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
-      }
-      if (v1.tag === "LetRec") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
-        const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v.tag === "Matrix") {
-      if (v1.tag === "Matrix") {
-        const v3 = foldl1((v42) => (v5) => $Tuple(
-          $Tuple(
-            $Tuple(
-              $Tuple(join(v42._1._1._1._1)(v5._1._1._1._1), definedJoin(slicesExprBoolean)(v42._1._1._1._2)(v5._1._1._1._2)),
-              v42._1._1._2 || v5._1._1._2
-            ),
-            v42._1._2 || v5._1._2
-          ),
-          v42._2 || v5._2
-        ))(map4((v32) => {
-          const v42 = evalBwd$p(definitely("index within bounds")(index2(definitely("index within bounds")(index2(v._2._1._1)(v32._1 - 1 | 0)))(v32._2 - 1 | 0)))(definitely("index within bounds")(index2(definitely("index within bounds")(index2(v1._1)(v32._1 - 1 | 0)))(v32._2 - 1 | 0)));
-          const v5 = append_inv(unionWith2(ordString)($$const)($Map(
-            "Two",
-            Leaf2,
-            v1._2._1,
-            unit,
-            Leaf2
-          ))($Map("Two", Leaf2, v1._2._2, unit, Leaf2)))(v42._1._1);
-          const \u03B30 = unionWith((v$1) => (x2) => x2)(unionWith((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke2(v1._2._1)($Val(
-            "Int",
-            false,
-            v1._3._1
-          )))))(runST(bind_(newImpl)(poke2(v1._2._2)($Val("Int", false, v1._3._2))))))(v5._2);
-          const $6 = definitely("absurd")(_lookup(Nothing, Just, v1._2._1, \u03B30));
-          const $7 = definitely("absurd")(_lookup(Nothing, Just, v1._2._1, \u03B30));
-          if ($6.tag === "Int") {
-            if ($7.tag === "Int") {
-              return $Tuple($Tuple($Tuple($Tuple(v5._1, v42._1._2), v42._2), $6._1), $7._1);
-            }
-            fail();
-          }
-          fail();
-        })(nonEmpty(bindList.bind(range(1)(v1._3._1))((i) => bindList.bind(range(1)(v1._3._2))((j) => $List(
-          "Cons",
-          $Tuple(i, j),
-          Nil
-        ))))));
-        const v4 = evalBwd$p($Val(
-          "Constr",
-          false,
-          "Pair",
-          $List(
-            "Cons",
-            $Val("Int", v3._1._2 || v._2._1._2._2, v1._3._1),
-            $List("Cons", $Val("Int", v3._2 || v._2._2._2, v1._3._2), Nil)
-          )
-        ))(v1._4);
-        return $Tuple(
-          $Tuple(join(v3._1._1._1._1)(v4._1._1), $Expr("Matrix", v._1, v3._1._1._1._2, $Tuple(v1._2._1, v1._2._2), v4._1._2)),
-          v._1 || v3._1._1._2 || v4._2
-        );
-      }
-      if (v1.tag === "Project") {
-        const v3 = evalBwd$p($Val("Record", false, runST(bind_(newImpl)(poke2(v1._2)(v)))))(v1._1);
-        return $Tuple($Tuple(v3._1._1, $Expr("Project", v3._1._2, v1._2)), v3._2);
-      }
-      if (v1.tag === "App") {
-        const v3 = evalBwd$p(v)(v1._4);
-        const v4 = append_inv(bVMatch.bv(v1._3))(v3._1._1);
-        const v5 = matchBwd(v4._2)($Cont("ContExpr", v3._1._2))(v3._2)(v1._3);
-        const v6 = append_inv(v1._1._1._2)(v4._1);
-        const v7 = evalBwd$p(v5._1)(v1._2);
-        const v8 = closeDefsBwd(v6._2);
-        const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
-      }
-      if (v1.tag === "AppPrim") {
-        const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
-        const v3 = definitely("absurd")(unsnoc((() => {
-          if ((() => {
-            const go = (go$a0$copy) => (go$a1$copy) => {
-              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-              while (go$c) {
-                const b = go$a0, v$1 = go$a1;
-                if (v$1.tag === "Nil") {
-                  go$c = false;
-                  go$r = b;
-                  continue;
-                }
-                if (v$1.tag === "Cons") {
-                  go$a0 = 1 + b | 0;
-                  go$a1 = v$1._2;
-                  continue;
-                }
-                fail();
-              }
-              ;
-              return go$r;
-            };
-            return v1._1._1._2.arity > go(0)(vs$p);
-          })()) {
-            if (v.tag === "Primitive") {
-              return v._2;
-            }
-            fail();
-          }
-          return v1._1._1._2.op_bwd(v)(vs$p);
-        })()));
-        const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
-        const v5 = evalBwd$p(v3.last)(v1._2._1);
-        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
-      }
-      if (v1.tag === "Let") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
-        const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
-        const v6 = evalBwd$p(v5._1)(v1._1._2);
-        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
-      }
-      if (v1.tag === "LetRec") {
-        const v3 = evalBwd$p(v)(v1._2);
-        const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
-        const v5 = closeDefsBwd(v4._2);
-        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "Project") {
-      const v3 = evalBwd$p($Val("Record", false, runST(bind_(newImpl)(poke2(v1._2)(v)))))(v1._1);
-      return $Tuple($Tuple(v3._1._1, $Expr("Project", v3._1._2, v1._2)), v3._2);
-    }
-    if (v1.tag === "App") {
-      const v3 = evalBwd$p(v)(v1._4);
-      const v4 = append_inv(bVMatch.bv(v1._3))(v3._1._1);
-      const v5 = matchBwd(v4._2)($Cont("ContExpr", v3._1._2))(v3._2)(v1._3);
-      const v6 = append_inv(v1._1._1._2)(v4._1);
-      const v7 = evalBwd$p(v5._1)(v1._2);
-      const v8 = closeDefsBwd(v6._2);
-      const v9 = evalBwd$p($Val("Closure", v3._2 || v8._2, join(v6._1)(v8._1._1), v8._1._2, v5._2))(v1._1._1._1);
-      return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), v7._2 || v9._2);
-    }
-    if (v1.tag === "AppPrim") {
-      const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2._2, Nil))(v1._1._2);
-      const v3 = definitely("absurd")(unsnoc((() => {
-        if ((() => {
-          const go = (go$a0$copy) => (go$a1$copy) => {
-            let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-            while (go$c) {
-              const b = go$a0, v$1 = go$a1;
-              if (v$1.tag === "Nil") {
-                go$c = false;
-                go$r = b;
-                continue;
-              }
-              if (v$1.tag === "Cons") {
-                go$a0 = 1 + b | 0;
-                go$a1 = v$1._2;
-                continue;
-              }
-              fail();
-            }
-            ;
-            return go$r;
-          };
-          return v1._1._1._2.arity > go(0)(vs$p);
-        })()) {
-          if (v.tag === "Primitive") {
-            return v._2;
-          }
-          fail();
-        }
-        return v1._1._1._2.op_bwd(v)(vs$p);
-      })()));
-      const v4 = evalBwd$p($Val("Primitive", v1._1._1._2, v3.init))(v1._1._1._1);
-      const v5 = evalBwd$p(v3.last)(v1._2._1);
-      return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), v4._2 || v5._2);
-    }
-    if (v1.tag === "Let") {
-      const v3 = evalBwd$p(v)(v1._2);
-      const v4 = append_inv(bVMatch.bv(v1._1._1))(v3._1._1);
-      const v5 = matchBwd(v4._2)(ContNone)(v3._2)(v1._1._1);
-      const v6 = evalBwd$p(v5._1)(v1._1._2);
-      return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), v6._2 || v3._2);
-    }
-    if (v1.tag === "LetRec") {
-      const v3 = evalBwd$p(v)(v1._2);
-      const v4 = append_inv(fromFoldable15(keys2(v1._1)))(v3._1._1);
-      const v5 = closeDefsBwd(v4._2);
-      return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), v3._2 || v5._2);
-    }
-    return unsafePerformEffect(throwException(error("absurd")));
-  };
-  var evalBwd = (\u03B3) => (e) => (v) => (t) => {
-    const v1 = evalBwd$p(v)(t);
-    return $Tuple($Tuple(expand2(v1._1._1)(\u03B3), expandableExprBoolean.expand(v1._1._2)(e)), v1._2);
-  };
-
-  // output-es/EvalFwd/index.js
-  var toUnfoldable13 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
-  var toUnfoldable14 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
-  var fv2 = /* @__PURE__ */ (() => fVDict(fVElim).fv)();
-  var fromFoldable9 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
-  var matchManyFwd = (v) => (v1) => (v2) => {
-    if (v.tag === "Nil") {
-      if (v2.tag === "Nil") {
-        return $Tuple($Tuple(empty, v1), true);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v.tag === "Cons") {
-      if (v2.tag === "Cons") {
-        const v4 = matchFwd(v._1)((() => {
-          if (v1.tag === "ContElim") {
-            return v1._1;
-          }
-          return unsafePerformEffect(throwException(error("Eliminator expected")));
-        })())(v2._1);
-        const $4 = matchManyFwd(v._2)(v4._1._2)(v2._2);
-        return $Tuple(
-          $Tuple(
-            unionWith((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(v4._1._1)($4._1._1),
-            $4._1._2
-          ),
-          $4._2 && v4._2
-        );
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    return unsafePerformEffect(throwException(error("absurd")));
-  };
-  var matchFwd = (v) => (v1) => (v2) => {
-    if (v1.tag === "ElimVar") {
-      if (v2.tag === "MatchVarAnon") {
-        return $Tuple($Tuple(empty, v1._2), true);
-      }
-      if (v2.tag === "MatchVar") {
-        return $Tuple(
-          $Tuple(runST(bind_(newImpl)(poke2(v2._1)(v))), v1._2),
-          true
-        );
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v.tag === "Constr") {
-      if (v1.tag === "ElimConstr") {
-        if (v2.tag === "MatchConstr") {
-          const $3 = matchManyFwd(v._3)(definitely("absurd")(_lookup(Nothing, Just, v2._1, v1._1)))(v2._2);
-          return $Tuple($3._1, $3._2 && v._1);
-        }
-        return unsafePerformEffect(throwException(error("absurd")));
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v.tag === "Record") {
-      if (v1.tag === "ElimRecord") {
-        if (v2.tag === "MatchRecord") {
-          const $3 = matchManyFwd(listMap((a) => definitely("absurd")(_lookup(Nothing, Just, a, v._2)))(toUnfoldable13(v1._1)))(v1._2)(listMap(snd)(toUnfoldable14(v2._1)));
-          return $Tuple($3._1, $3._2 && v._1);
-        }
-        return unsafePerformEffect(throwException(error("absurd")));
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    return unsafePerformEffect(throwException(error("absurd")));
-  };
-  var closeDefsFwd = (\u03B3) => (\u03C1) => (\u03B1) => _fmapObject(
-    \u03C1,
-    (\u03C3) => {
-      const \u03C1$p = $$for(\u03C1)(\u03C3);
-      return $Val("Closure", \u03B1, restrict(\u03B3)(unionWith2(ordString)($$const)(fv2(\u03C1$p))(fVElim.fv(\u03C3))), \u03C1$p, \u03C3);
-    }
-  );
-  var evalFwd = (v) => (v1) => (v2) => (v3) => {
-    if (v1.tag === "Var") {
-      if (v3.tag === "Var") {
-        return definitely("absurd")(_lookup(Nothing, Just, v3._1, v));
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "Op") {
-      if (v3.tag === "Op") {
-        return definitely("absurd")(_lookup(Nothing, Just, v3._1, v));
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "Int") {
-      if (v3.tag === "Int") {
-        return $Val("Int", v1._1 && v2, v3._1);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "Float") {
-      if (v3.tag === "Float") {
-        return $Val("Float", v1._1 && v2, v3._1);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "Str") {
-      if (v3.tag === "Str") {
-        return $Val("Str", v1._1 && v2, v3._1);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "Record") {
-      if (v3.tag === "Record") {
-        return $Val("Record", v1._1 && v2, _fmapObject(intersectionWith(Tuple)(v1._2)(v3._1), (v4) => evalFwd(v)(v4._1)(v2)(v4._2)));
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "Constr") {
-      if (v3.tag === "Constr") {
-        return $Val("Constr", v1._1 && v2, v3._1, listMap((v4) => evalFwd(v)(v4._1)(v2)(v4._2))(zipWith(Tuple)(v1._3)(v3._2)));
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "Matrix") {
-      if (v3.tag === "Matrix") {
-        const v4 = evalFwd(v)(v1._4)(v2)(v3._4);
-        if (v4.tag === "Constr") {
-          if (v4._3.tag === "Cons") {
-            if (v4._3._2.tag === "Cons") {
-              if (v4._3._2._2.tag === "Nil") {
-                const $5 = toFromInt.match(v4._3._1);
-                const $6 = toFromInt.match(v4._3._2._1);
-                return $Val(
-                  "Matrix",
-                  v1._1 && v2,
-                  $Tuple(
-                    $Tuple(
-                      (() => {
-                        if ($5._1 === v3._3._1 && $6._1 === v3._3._2) {
-                          return identity10;
-                        }
-                        return (v1$1) => unsafePerformEffect(throwException(error("Assertion failure")));
-                      })()(fromFoldable9(bindList.bind(range(1)(v3._3._1))((i) => $List(
-                        "Cons",
-                        fromFoldable9(bindList.bind(range(1)(v3._3._2))((j) => $List(
-                          "Cons",
-                          evalFwd(unionWith((v$1) => (x2) => x2)(v)(unionWith((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke2(v3._2._1)($Val(
-                            "Int",
-                            $5._2,
-                            i
-                          )))))(runST(bind_(newImpl)(poke2(v3._2._2)($Val("Int", $6._2, j)))))))(v1._2)(v2)(definitely("index within bounds")(index2(definitely("index within bounds")(index2(v3._1)(i - 1 | 0)))(j - 1 | 0))),
-                          Nil
-                        ))),
-                        Nil
-                      )))),
-                      $Tuple(v3._3._1, $5._2)
-                    ),
-                    $Tuple(v3._3._2, $6._2)
-                  )
-                );
-              }
-              return unsafePerformEffect(throwException(error("absurd")));
-            }
-            return unsafePerformEffect(throwException(error("absurd")));
+          if (v3.tag === "Constr") {
+            return $Val(
+              "Constr",
+              meet(v2)(v3._1),
+              v3._2,
+              foldableList.foldr(Cons)($List(
+                "Cons",
+                evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(v)(v1._2)(v2),
+                Nil
+              ))(v3._3)
+            );
           }
           return unsafePerformEffect(throwException(error("absurd")));
         }
-        return unsafePerformEffect(throwException(error("absurd")));
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "Lambda") {
-      if (v3.tag === "Lambda") {
-        return $Val("Closure", v2, restrict(v)(fVElim.fv(v1._1)), empty, v1._1);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "Project") {
-      if (v3.tag === "Project") {
-        const v4 = evalFwd(v)(v1._1)(v2)(v3._1);
-        if (v4.tag === "Record") {
-          return definitely("absurd")(_lookup(Nothing, Just, v3._2, v4._2));
+        if (v1.tag === "Let") {
+          const v4 = matchFwd1(evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(v)(v1._1._2)(v2))(v1._1._1);
+          return evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(unionWith((v$1) => (x2) => x2)(v)(v4._1._1))(v1._2)(v4._2);
+        }
+        if (v1.tag === "LetRec") {
+          return evalFwd(dictBoundedMeetSemilattice)(dictHighlightable)(unionWith((v$1) => (x2) => x2)(v)(closeDefsFwd(v)(v1._1)(v2)))(v1._2)(v2);
         }
         return unsafePerformEffect(throwException(error("absurd")));
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "App") {
-      if (v3.tag === "App") {
-        const v4 = evalFwd(v)(v1._1)(v2)(v3._1._1._1);
-        if (v4.tag === "Closure") {
-          const v6 = matchFwd(evalFwd(v)(v1._2)(v2)(v3._2))(v4._4)(v3._3);
-          return evalFwd(unionWith((v$1) => (x2) => x2)(unionWith((v$1) => (x2) => x2)(v4._2)(closeDefsFwd(v4._2)(v4._3)(v4._1)))(v6._1._1))((() => {
-            if (v6._1._2.tag === "ContExpr") {
-              return v6._1._2._1;
-            }
-            return unsafePerformEffect(throwException(error("Expression expected")));
-          })())(v4._1 && v6._2)(v3._4);
-        }
-        return unsafePerformEffect(throwException(error("absurd")));
-      }
-      if (v3.tag === "AppPrim") {
-        const v4 = evalFwd(v)(v1._1)(v2)(v3._1._1._1);
-        if (v4.tag === "Primitive") {
-          const vs$p$p = foldableList.foldr(Cons)($List("Cons", evalFwd(v)(v1._2)(v2)(v3._2._1), Nil))(v4._2);
-          if ((() => {
-            const go = (go$a0$copy) => (go$a1$copy) => {
-              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-              while (go$c) {
-                const b = go$a0, v$1 = go$a1;
-                if (v$1.tag === "Nil") {
-                  go$c = false;
-                  go$r = b;
-                  continue;
-                }
-                if (v$1.tag === "Cons") {
-                  go$a0 = b + 1 | 0;
-                  go$a1 = v$1._2;
-                  continue;
-                }
-                fail();
-              }
-              ;
-              return go$r;
-            };
-            return v3._1._1._2.arity > go(0)(vs$p$p);
-          })()) {
-            return $Val("Primitive", v3._1._1._2, vs$p$p);
-          }
-          return v3._1._1._2.op(vs$p$p);
-        }
-        return unsafePerformEffect(throwException(error("absurd")));
-      }
-      if (v3.tag === "AppConstr") {
-        const v4 = evalFwd(v)(v1._1)(v2)(v3._1._1._1);
-        if (v4.tag === "Constr") {
-          return $Val(
-            "Constr",
-            v2 && v4._1,
-            v3._1._1._2,
-            foldableList.foldr(Cons)($List("Cons", evalFwd(v)(v1._2)(v2)(v3._2), Nil))(v4._3)
-          );
-        }
-        return unsafePerformEffect(throwException(error("absurd")));
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "Let") {
-      if (v3.tag === "Let") {
-        const v5 = matchFwd(evalFwd(v)(v1._1._2)(v2)(v3._1._2))(v1._1._1)(v3._1._1);
-        return evalFwd(unionWith((v$1) => (x2) => x2)(v)(v5._1._1))(v1._2)(v5._2)(v3._2);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    if (v1.tag === "LetRec") {
-      if (v3.tag === "LetRec") {
-        return evalFwd(unionWith((v$1) => (x2) => x2)(v)(closeDefsFwd(v)(v1._1)(v2)))(v1._2)(v2)(v3._2);
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
-    }
-    return unsafePerformEffect(throwException(error("absurd")));
+      };
+    };
   };
 
   // output-es/Affjax.RequestHeader/index.js
@@ -19010,10 +18883,10 @@
   };
 
   // output-es/Data.FormURLEncoded/index.js
-  var traverse4 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeMaybe))();
+  var traverse5 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeMaybe))();
   var encode2 = /* @__PURE__ */ (() => {
     const $0 = functorMaybe.map(joinWith("&"));
-    const $1 = traverse4((v) => {
+    const $1 = traverse5((v) => {
       if (v._2.tag === "Nothing") {
         return _encodeFormURLComponent((v$1) => Nothing, Just, v._1);
       }
@@ -20093,7 +19966,7 @@
   var some3 = /* @__PURE__ */ some2(alternativeParserT)(lazyParserT);
   var choice3 = /* @__PURE__ */ choice(foldableArray);
   var many1 = /* @__PURE__ */ many(alternativeParserT)(lazyParserT);
-  var toUnfoldable15 = /* @__PURE__ */ toUnfoldable(unfoldableArray);
+  var toUnfoldable14 = /* @__PURE__ */ toUnfoldable(unfoldableArray);
   var theReservedNames = (v) => {
     if (v.caseSensitive) {
       return sortBy2(ordString.compare)(v.reservedNames);
@@ -20888,7 +20761,7 @@
             $$throw,
             (state2, a) => more((v2) => done(
               state2,
-              fromCharArray(toUnfoldable15(foldableList.foldr((v1$1) => (chars) => {
+              fromCharArray(toUnfoldable14(foldableList.foldr((v1$1) => (chars) => {
                 if (v1$1.tag === "Nothing") {
                   return chars;
                 }
@@ -22118,6 +21991,16 @@
   }();
 
   // output-es/Primitive.Defs/index.js
+  var toFromNumber2 = /* @__PURE__ */ toFromNumber(highlightableBoolean);
+  var toFromInt2 = /* @__PURE__ */ toFromInt(highlightableBoolean);
+  var toFromVal2 = /* @__PURE__ */ toFromVal(boundedLatticeBoolean);
+  var toFromArrayArrayVal$x215Int$x215$x2152 = /* @__PURE__ */ toFromArrayArrayVal$x215Int$x215$x215(highlightableBoolean);
+  var toFromInt$x215$x215Int$x2152 = /* @__PURE__ */ toFromInt$x215$x215Int$x215(highlightableBoolean);
+  var toFromString2 = /* @__PURE__ */ toFromString(highlightableBoolean);
+  var toFromInt$x43Number2 = /* @__PURE__ */ toFromInt$x43Number(highlightableBoolean);
+  var binaryZero2 = /* @__PURE__ */ (() => binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })(boundedLatticeBoolean)(toFromInt$x43Number2)(toFromInt$x43Number2))();
+  var toFromEitherEitherIntNumb2 = /* @__PURE__ */ toFromEitherEitherIntNumb(highlightableBoolean);
+  var binaryZero1 = /* @__PURE__ */ binaryZero(isZeroInt)(boundedLatticeBoolean)(toFromInt2)(toFromInt2);
   var pow3 = /* @__PURE__ */ union3(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => pow(toNumber(x2))(toNumber(y2)))(pow);
   var numToStr = (v2) => {
     if (v2.tag === "Left") {
@@ -22155,90 +22038,97 @@
   var divide = /* @__PURE__ */ union3(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => toNumber(x2) / toNumber(y2))(numDiv);
   var dims = { fwd: (v) => $Tuple(v._1._2, v._2), bwd: (v) => (v1) => $Tuple($Tuple(v1._1._1, v._1), v._2) };
   var debugLog = (x2) => _trace(x2, (v) => x2);
-  var primitives = /* @__PURE__ */ (() => fromFoldable(foldableArray)([
-    $Tuple(":", $Val("Constr", false, ":", Nil)),
-    $Tuple("ceiling", unary(toFromNumber)(toFromInt)({ fwd: ceil2, bwd: (v) => identity12 })),
-    $Tuple("debugLog", unary(toFromValBoolean)(toFromValBoolean)({ fwd: debugLog, bwd: (v) => identity12 })),
-    $Tuple("dims", unary(toFromArrayArrayValBoolea)(toFromInt$x215Boolean$x215Int$x215Boo)(dims)),
-    $Tuple("error", unary(toFromString)(toFromValBoolean)({ fwd: error2, bwd: (v) => identity12 })),
-    $Tuple("floor", unary(toFromNumber)(toFromInt)({ fwd: floor2, bwd: (v) => identity12 })),
-    $Tuple("log", unary(toFromInt$x43Number)(toFromNumber)({ fwd: log3, bwd: (v) => identity12 })),
-    $Tuple("numToStr", unary(toFromInt$x43Number)(toFromString)({ fwd: numToStr, bwd: (v) => identity12 })),
-    $Tuple(
+  var primitives = /* @__PURE__ */ fromFoldable(foldableArray)([
+    /* @__PURE__ */ $Tuple(":", /* @__PURE__ */ $Val("Constr", false, ":", Nil)),
+    /* @__PURE__ */ $Tuple("ceiling", /* @__PURE__ */ unary(toFromNumber2)(toFromInt2)({ fwd: ceil2, bwd: (v) => identity12 })),
+    /* @__PURE__ */ $Tuple("debugLog", /* @__PURE__ */ unary(toFromVal2)(toFromVal2)({ fwd: debugLog, bwd: (v) => identity12 })),
+    /* @__PURE__ */ $Tuple("dims", /* @__PURE__ */ unary(toFromArrayArrayVal$x215Int$x215$x2152)(toFromInt$x215$x215Int$x2152)(dims)),
+    /* @__PURE__ */ $Tuple("error", /* @__PURE__ */ unary(toFromString2)(toFromVal2)({ fwd: error2, bwd: (v) => identity12 })),
+    /* @__PURE__ */ $Tuple("floor", /* @__PURE__ */ unary(toFromNumber2)(toFromInt2)({ fwd: floor2, bwd: (v) => identity12 })),
+    /* @__PURE__ */ $Tuple("log", /* @__PURE__ */ unary(toFromInt$x43Number2)(toFromNumber2)({ fwd: log3, bwd: (v) => identity12 })),
+    /* @__PURE__ */ $Tuple("numToStr", /* @__PURE__ */ unary(toFromInt$x43Number2)(toFromString2)({ fwd: numToStr, bwd: (v) => identity12 })),
+    /* @__PURE__ */ $Tuple(
       "+",
-      binary(toFromInt$x43Number)(toFromInt$x43Number)(toFromInt$x43Number)({
-        fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intAdd)(numAdd),
+      /* @__PURE__ */ binary(toFromInt$x43Number2)(toFromInt$x43Number2)(meetSemilatticeBoolean)(toFromInt$x43Number2)({
+        fwd: /* @__PURE__ */ union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intAdd)(numAdd),
         bwd: (v) => identity12
       })
     ),
-    $Tuple(
+    /* @__PURE__ */ $Tuple(
       "-",
-      binary(toFromInt$x43Number)(toFromInt$x43Number)(toFromInt$x43Number)({
-        fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intSub)(numSub),
+      /* @__PURE__ */ binary(toFromInt$x43Number2)(toFromInt$x43Number2)(meetSemilatticeBoolean)(toFromInt$x43Number2)({
+        fwd: /* @__PURE__ */ union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intSub)(numSub),
         bwd: (v) => identity12
       })
     ),
-    $Tuple(
+    /* @__PURE__ */ $Tuple(
       "*",
-      binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })(toFromInt$x43Number)(toFromInt$x43Number)({
-        fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intMul)(numMul),
+      /* @__PURE__ */ binaryZero2({
+        fwd: /* @__PURE__ */ union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intMul)(numMul),
         bwd: (v) => identity12
       })
     ),
-    $Tuple(
-      "**",
-      binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })(toFromInt$x43Number)(toFromInt$x43Number)({
-        fwd: pow3,
-        bwd: (v) => identity12
-      })
-    ),
-    $Tuple(
-      "/",
-      binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })(toFromInt$x43Number)(toFromInt$x43Number)({
-        fwd: divide,
-        bwd: (v) => identity12
-      })
-    ),
-    $Tuple(
+    /* @__PURE__ */ $Tuple("**", /* @__PURE__ */ binaryZero2({ fwd: pow3, bwd: (v) => identity12 })),
+    /* @__PURE__ */ $Tuple("/", /* @__PURE__ */ binaryZero2({ fwd: divide, bwd: (v) => identity12 })),
+    /* @__PURE__ */ $Tuple(
       "==",
-      binary(toFromEitherEitherIntNumb)(toFromEitherEitherIntNumb)(toFromBoolean)({
-        fwd: unionStr(asBooleanBoolean)(asIntOrNumberString)(union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)(eqIntImpl)(eqNumberImpl))(eqStringImpl),
+      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
+        fwd: /* @__PURE__ */ unionStr(asBooleanBoolean)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)(eqIntImpl)(eqNumberImpl))(eqStringImpl),
         bwd: (v) => identity12
       })
     ),
-    $Tuple(
+    /* @__PURE__ */ $Tuple(
       "/=",
-      binary(toFromEitherEitherIntNumb)(toFromEitherEitherIntNumb)(toFromBoolean)({ fwd: notEquals, bwd: (v) => identity12 })
+      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
+        fwd: notEquals,
+        bwd: (v) => identity12
+      })
     ),
-    $Tuple(
+    /* @__PURE__ */ $Tuple(
       "<",
-      binary(toFromEitherEitherIntNumb)(toFromEitherEitherIntNumb)(toFromBoolean)({ fwd: lessThan, bwd: (v) => identity12 })
+      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
+        fwd: lessThan,
+        bwd: (v) => identity12
+      })
     ),
-    $Tuple(
+    /* @__PURE__ */ $Tuple(
       ">",
-      binary(toFromEitherEitherIntNumb)(toFromEitherEitherIntNumb)(toFromBoolean)({ fwd: greaterThan, bwd: (v) => identity12 })
+      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
+        fwd: greaterThan,
+        bwd: (v) => identity12
+      })
     ),
-    $Tuple(
+    /* @__PURE__ */ $Tuple(
       "<=",
-      binary(toFromEitherEitherIntNumb)(toFromEitherEitherIntNumb)(toFromBoolean)({ fwd: lessThanEquals, bwd: (v) => identity12 })
+      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
+        fwd: lessThanEquals,
+        bwd: (v) => identity12
+      })
     ),
-    $Tuple(
+    /* @__PURE__ */ $Tuple(
       ">=",
-      binary(toFromEitherEitherIntNumb)(toFromEitherEitherIntNumb)(toFromBoolean)({ fwd: greaterThanEquals, bwd: (v) => identity12 })
+      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
+        fwd: greaterThanEquals,
+        bwd: (v) => identity12
+      })
     ),
-    $Tuple(
+    /* @__PURE__ */ $Tuple(
       "++",
-      binary(toFromString)(toFromString)(toFromString)({ fwd: concatString, bwd: (v) => identity12 })
+      /* @__PURE__ */ binary(toFromString2)(toFromString2)(meetSemilatticeBoolean)(toFromString2)({ fwd: concatString, bwd: (v) => identity12 })
     ),
-    $Tuple("!", binary(toFromArrayArrayValBoolea)(toFromInt$x215Boolean$x215Int$x215Boo)(toFromValBoolean)(matrixLookup)),
-    $Tuple("div", binaryZero(isZeroInt)(toFromInt)(toFromInt)({ fwd: intDiv, bwd: (v) => identity12 })),
-    $Tuple("mod", binaryZero(isZeroInt)(toFromInt)(toFromInt)({ fwd: intMod, bwd: (v) => identity12 })),
-    $Tuple("quot", binaryZero(isZeroInt)(toFromInt)(toFromInt)({ fwd: quot, bwd: (v) => identity12 })),
-    $Tuple("rem", binaryZero(isZeroInt)(toFromInt)(toFromInt)({ fwd: rem, bwd: (v) => identity12 }))
-  ]))();
+    /* @__PURE__ */ $Tuple(
+      "!",
+      /* @__PURE__ */ binary(toFromArrayArrayVal$x215Int$x215$x2152)(toFromInt$x215$x215Int$x2152)(meetSemilatticeBoolean)(toFromVal2)(matrixLookup)
+    ),
+    /* @__PURE__ */ $Tuple("div", /* @__PURE__ */ binaryZero1({ fwd: intDiv, bwd: (v) => identity12 })),
+    /* @__PURE__ */ $Tuple("mod", /* @__PURE__ */ binaryZero1({ fwd: intMod, bwd: (v) => identity12 })),
+    /* @__PURE__ */ $Tuple("quot", /* @__PURE__ */ binaryZero1({ fwd: quot, bwd: (v) => identity12 })),
+    /* @__PURE__ */ $Tuple("rem", /* @__PURE__ */ binaryZero1({ fwd: rem, bwd: (v) => identity12 }))
+  ]);
 
   // output-es/Module/index.js
   var identity21 = (x2) => x2;
+  var $$eval2 = /* @__PURE__ */ $$eval(boundedJoinSemilatticeBoo)(highlightableBoolean);
   var parse = (src) => {
     const $1 = runParserT1(src);
     return (x2) => bifunctorEither.bimap(showParseError.show)(identity21)($1(x2));
@@ -22276,7 +22166,7 @@
   var defaultImports = /* @__PURE__ */ _bind(/* @__PURE__ */ _bind(/* @__PURE__ */ loadModule("prelude")(primitives))(/* @__PURE__ */ loadModule("graphics")))(/* @__PURE__ */ loadModule("convolution"));
   var openDatasetAs = (file) => (x2) => _bind(parseProgram("fluid")(file))((s) => _bind(defaultImports)((\u03B3) => _pure($Tuple(
     \u03B3,
-    runST(bind_(newImpl)(poke2(x2)(successful(bindEither.bind(exprFwd(s))($$eval(\u03B3)))._2)))
+    runST(bind_(newImpl)(poke2(x2)(successful(bindEither.bind(exprFwd(s))($$eval2(\u03B3)))._2)))
   ))));
 
   // output-es/Web.Event.EventTarget/foreign.js
@@ -22290,8 +22180,12 @@
 
   // output-es/App.Fig/index.js
   var $View = (tag, _1) => ({ tag, _1 });
+  var match6 = /* @__PURE__ */ (() => toFromArrayArrayVal$x215Int$x215$x215(highlightableBoolean).match)();
   var sequence3 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity6))();
-  var neg1 = /* @__PURE__ */ (() => joinSemilatticeDict(slicesValBoolean).neg)();
+  var $$eval3 = /* @__PURE__ */ $$eval(boundedJoinSemilatticeBoo)(highlightableBoolean);
+  var evalBwd2 = /* @__PURE__ */ evalBwd(boundedJoinSemilatticeBoo);
+  var evalFwd2 = /* @__PURE__ */ evalFwd(boundedMeetSemilatticeBoo)(highlightableBoolean);
+  var neg1 = /* @__PURE__ */ (() => joinSemilatticeDict(partialJoinSemilatticeVal(joinSemilatticeBoolean)).neg)();
   var botOf = /* @__PURE__ */ (() => functorVal.map((v) => false))();
   var identity22 = (x2) => x2;
   var sequence_ = /* @__PURE__ */ traverse_(applicativeEffect)(foldableArray)(identity5);
@@ -22301,10 +22195,10 @@
       if (v1._3.tag === "Cons") {
         if (v1._3._2.tag === "Nil") {
           if (v1._2 === "BarChart") {
-            return $View("BarChartFig", reflectDictValBooleanBarC1.from()(toFromDictValBoolean.match(v1._3._1)._1));
+            return $View("BarChartFig", reflectDictValBooleanBarC1.from()(match(v1._3._1)._1));
           }
           if (v1._2 === "LineChart") {
-            return $View("LineChartFig", reflectDictValBooleanLine1.from()(toFromDictValBoolean.match(v1._3._1)._1));
+            return $View("LineChartFig", reflectDictValBooleanLine1.from()(match(v1._3._1)._1));
           }
           if (v1._2 === "Nil" || v1._2 === ":") {
             return $View("EnergyTableView", { title: v, table: arrayMap(record(energyRecord))(reflectArray.from()(v1)) });
@@ -22322,7 +22216,7 @@
       return unsafePerformEffect(throwException(error("absurd")));
     }
     if (v1.tag === "Matrix") {
-      return $View("MatrixFig", { title: v, matrix: matrixRep(toFromArrayArrayValBoolea.match(v1)._1) });
+      return $View("MatrixFig", { title: v, matrix: matrixRep(match6(v1)._1) });
     }
     return unsafePerformEffect(throwException(error("absurd")));
   };
@@ -22365,7 +22259,7 @@
         return $Either("Right", Tuple($5._1));
       }
       fail();
-    })())(exprFwd(v3._2)))((v4) => bindEither.bind($$eval(unionWith((v$1) => (x2) => x2)(v2._1)(v2._2))(v4._1))((v5) => bindEither.bind($$eval(unionWith((v$1) => (x2) => x2)(v2._1)(v2._2))(v4._2))((v6) => bindEither.bind((() => {
+    })())(exprFwd(v3._2)))((v4) => bindEither.bind($$eval3(unionWith((v$1) => (x2) => x2)(v2._1)(v2._2))(v4._1))((v5) => bindEither.bind($$eval3(unionWith((v$1) => (x2) => x2)(v2._1)(v2._2))(v4._2))((v6) => bindEither.bind((() => {
       const $8 = _lookup(Nothing, Just, v.x, v2._2);
       if ($8.tag === "Nothing") {
         return $Either("Left", "absurd");
@@ -22376,9 +22270,9 @@
       fail();
     })())((v0) => $Either("Right", { spec: v, "\u03B30": v2._1, "\u03B3": v2._2, s1: v3._1, s2: v3._2, e1: v4._1, e2: v4._2, t1: v5._1, t2: v6._1, v1: v5._2, v2: v6._2, v0 })))))))));
   };
-  var loadFig = (v) => _bind(openDatasetAs("example/linking/renewables")("data"))((v1) => _map((s$p) => successful(bindEither.bind(splitDefs(unionWith((v$1) => (x2) => x2)(v1._1)(v1._2))(s$p))((v2) => bindEither.bind(exprFwd(v2.s))((e) => bindEither.bind($$eval(unionWith((v$1) => (x2) => x2)(unionWith((v$1) => (x2) => x2)(v1._1)(v1._2))(v2["\u03B3"]))(e))((v3) => $Either("Right", { spec: v, "\u03B30": v1._1, "\u03B3": unionWith((v$1) => (x2) => x2)(v1._2)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file)));
-  var linkResult = (x2) => (\u03B30) => (\u03B3) => (e1) => (e22) => (t1) => (t2) => (v1) => {
-    const $8 = append_inv($Map("Two", Leaf2, x2, unit, Leaf2))(evalBwd(unionWith((v) => (x$1) => x$1)(\u03B30)(\u03B3))(e1)(v1)(t1)._1._1)._2;
+  var loadFig = (v) => _bind(openDatasetAs("example/linking/renewables")("data"))((v1) => _map((s$p) => successful(bindEither.bind(splitDefs(unionWith((v$1) => (x2) => x2)(v1._1)(v1._2))(s$p))((v2) => bindEither.bind(exprFwd(v2.s))((e) => bindEither.bind($$eval3(unionWith((v$1) => (x2) => x2)(unionWith((v$1) => (x2) => x2)(v1._1)(v1._2))(v2["\u03B3"]))(e))((v3) => $Either("Right", { spec: v, "\u03B30": v1._1, "\u03B3": unionWith((v$1) => (x2) => x2)(v1._2)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file)));
+  var linkResult = (x2) => (\u03B30) => (\u03B3) => (e1) => (e22) => (t1) => (v) => (v1) => {
+    const $8 = append_inv($Map("Two", Leaf2, x2, unit, Leaf2))(evalBwd2(unionWith((v$1) => (x$1) => x$1)(\u03B30)(\u03B3))(e1)(v1)(t1)._1._1)._2;
     return bindEither.bind((() => {
       const $9 = _lookup(Nothing, Just, x2, $8);
       if ($9.tag === "Nothing") {
@@ -22391,14 +22285,14 @@
     })())((v0$p) => $Either(
       "Right",
       {
-        "v'": functorVal.map(boolNot)(evalFwd(neg1(unionWith((v) => (x$1) => x$1)(_fmapObject(\u03B30, botOf))($8)))(functorExpr.map((v) => true)(e22))(true)(t2)),
+        "v'": functorVal.map(boolNot)(evalFwd2(neg1(unionWith((v$1) => (x$1) => x$1)(_fmapObject(\u03B30, botOf))($8)))(functorExpr.map((v$1) => true)(e22))(true)),
         "v0'": v0$p
       }
     ));
   };
   var figViews = (v) => (\u03B4v) => {
-    const v2 = evalBwd(unionWith((v$1) => (x2) => x2)(v["\u03B30"])(v["\u03B3"]))(v.e)(\u03B4v(v.v))(v.t);
-    const v$p = evalFwd(v2._1._1)(v2._1._2)(v2._2)(v.t);
+    const v2 = evalBwd2(unionWith((v$1) => (x2) => x2)(v["\u03B30"])(v["\u03B3"]))(v.e)(\u03B4v(v.v))(v.t);
+    const v$p = evalFwd2(v2._1._1)(v2._1._2)(v2._2);
     return bindEither.bind(sequence3(arrayMap((a) => varView(a)(v2._1._1))(v.spec.xs)))((views) => $Either(
       "Right",
       $Tuple(view("output")(v$p), views)
