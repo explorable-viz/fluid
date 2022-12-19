@@ -46,12 +46,19 @@ instance JoinSemilattice Unit where
    join _ = identity
    neg = identity
 
+instance MeetSemilattice Unit where
+   meet _ = identity
+
 instance BoundedJoinSemilattice Unit where
    bot = unit
+
+instance BoundedMeetSemilattice Unit where
+   top = unit
 
 class (BoundedJoinSemilattice a, BoundedMeetSemilattice a) <= BoundedLattice a
 
 instance BoundedLattice Boolean
+instance BoundedLattice Unit
 
 -- Need "soft failure" for joining incompatible eliminators so we can use it to desugar function clauses.
 class JoinSemilattice a <= PartialJoinSemilattice a where
