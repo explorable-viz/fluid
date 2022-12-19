@@ -1,4 +1,4 @@
-module Pretty (class Pretty, class ToList, pretty, prettyP, toList, module P) where
+module Pretty (class Highlightable, class Pretty, class ToList, highlightIf, pretty, prettyP, toList, module P) where
 
 import Prelude hiding (absurd, between)
 
@@ -27,7 +27,7 @@ import Val (Val(..)) as V
 
 infixl 5 beside as :<>:
 
-prettyP :: forall a. Pretty a => a -> String
+prettyP :: forall d. Pretty d => d -> String
 prettyP = pretty >>> render
 
 between :: Doc -> Doc -> Endo Doc
@@ -118,15 +118,15 @@ prettyConstr α c (x : y : ys)
    | c == cCons = assert (null ys) $ parens (hspace [ pretty x, highlightIf α $ text ":", pretty y ])
 prettyConstr α c xs = hspace (highlightIf α (prettyCtr c) : (prettyParensOpt <$> xs))
 
-prettyRecordOrDict :: forall d b. Pretty d => Endo Doc -> (b -> Doc) -> 𝔹 -> List (b × d) -> Doc
+prettyRecordOrDict :: forall d b a. Pretty d => Highlightable a => Endo Doc -> (b -> Doc) -> a -> List (b × d) -> Doc
 prettyRecordOrDict bracify prettyKey α xvs =
    xvs <#> first prettyKey <#> (\(x × v) -> hspace [ x :<>: colon, pretty v ])
       # hcomma >>> bracify >>> highlightIf α
 
-prettyDict :: forall d b. Pretty d => (b -> Doc) -> 𝔹 -> List (b × d) -> Doc
+prettyDict :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
 prettyDict = between (text "{|") (text "|}") # prettyRecordOrDict
 
-prettyRecord :: forall d b. Pretty d => (b -> Doc) -> 𝔹 -> List (b × d) -> Doc
+prettyRecord :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
 prettyRecord = between (text "{") (text "}") # prettyRecordOrDict
 
 instance Pretty (E.Expr Boolean) where
@@ -186,11 +186,11 @@ instance Pretty PrimOp where
 
 -- Surface language
 
-instance ToPair (S.Expr Boolean) where
+instance Highlightable a => ToPair (S.Expr a) where
    toPair (S.Constr _ c (s : s' : Nil)) | c == cPair = s × s'
    toPair s = error ("Not a pair: " <> prettyP s)
 
-instance Pretty (S.Expr Boolean) where
+instance Highlightable a => Pretty (S.Expr a) where
    pretty (S.Var x) = text x
    pretty (S.Op op) = parens (text op)
    pretty (S.Int α n) = highlightIf α (text (show n))
@@ -219,23 +219,23 @@ instance Pretty (S.Expr Boolean) where
    pretty (S.LetRec h s) = atop (hspace [ text str.let_, vert semi (pretty <$> h) ])
       (hspace [ text str.in_, pretty s ])
 
-instance Pretty (S.ListRest Boolean) where
+instance Highlightable a => Pretty (S.ListRest a) where
    pretty (S.End α) = highlightIf α (text str.rBracket)
    pretty (S.Next α s l) = hspace [ highlightIf α comma, pretty s :<>: pretty l ]
 
-instance Pretty (String × (NonEmptyList S.Pattern × S.Expr Boolean)) where
+instance Highlightable a => Pretty (String × (NonEmptyList S.Pattern × S.Expr a)) where
    pretty (x × b) = hspace [ text x, pretty b ]
 
-instance Pretty (NonEmptyList S.Pattern × S.Expr Boolean) where
+instance Highlightable a => Pretty (NonEmptyList S.Pattern × S.Expr a) where
    pretty (ps × s) = hspace ((pretty <$> NEL.toList ps) <> (text str.equals : pretty s : Nil))
 
-instance Pretty (S.VarDef Boolean) where
+instance Highlightable a => Pretty (S.VarDef a) where
    pretty (S.VarDef p s) = hspace [ pretty p, text str.equals, pretty s ]
 
-instance Pretty (S.Pattern × S.Expr Boolean) where
+instance Highlightable a => Pretty (S.Pattern × S.Expr a) where
    pretty (p × s) = pretty p :<>: text str.lArrow :<>: pretty s
 
-instance Pretty (S.Qualifier Boolean) where
+instance Highlightable a => Pretty (S.Qualifier a) where
    pretty (S.Guard e) = pretty e
    pretty (S.Generator p e) = hspace [ pretty p, text str.lArrow, pretty e ]
    pretty (S.Declaration (S.VarDef p e)) = hspace [ text str.let_, pretty p, text str.equals, pretty e ]
