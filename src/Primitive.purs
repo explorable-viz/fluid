@@ -14,11 +14,12 @@ import Pretty (class Highlightable, prettyP)
 import Util (Endo, type (×), (×), type (+), error)
 import Val (PrimOp(..), Val(..))
 
--- Mediates between Val and underlying data, analogously to pattern-matching and construction for data types.
+-- Mediates between an annotated value and underlying data, analogously to pattern-matching and construction for
+-- data types.
 class ToFrom d a where
    constr :: d × a -> Val a
    constr_bwd :: Val a -> d × a -- equivalent to match (except at Val)
-   match :: Val a -> d × a -- only defined for non-holes (except at Val)
+   match :: Val a -> d × a
 
 unwrap :: forall d a. ToFrom d a => Val a -> d
 unwrap = match >>> fst
