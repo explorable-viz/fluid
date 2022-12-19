@@ -190,7 +190,10 @@ unary { fwd, bwd } = unary_ { fwd: fwd', bwd: bwd' }
 binary :: forall d1 d2 d3 a. ToFrom d1 a => ToFrom d2 a => MeetSemilattice a => ToFrom d3 a => Binary d1 d2 d3 -> Val a
 binary { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
    where
+   fwd' :: d1 × a -> d2 × a -> d3 × a
    fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
+
+   bwd' :: d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
    bwd' (z × α) (x × y) = (x' × α) × (y' × α)
       where
       x' × y' = bwd z (x × y)
