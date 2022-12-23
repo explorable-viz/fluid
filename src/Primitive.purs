@@ -129,9 +129,9 @@ type Unary d1 d2 =
    , bwd :: d2 -> Endo d1
    }
 
-type UnarySlicer d1 d2 =
-   { fwd :: forall a. d1 × a -> d2 × a
-   , bwd :: forall a. d2 × a -> d1 -> d1 × a
+type UnarySlicer d1 d2 a =
+   { fwd :: d1 × a -> d2 × a
+   , bwd :: d2 × a -> d1 -> d1 × a
    }
 
 type Binary d1 d2 d3 =
@@ -144,7 +144,7 @@ type BinarySlicer d1 d2 d3 a =
    , bwd :: d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
    }
 
-unary_ :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => UnarySlicer d1 d2 -> Val a
+unary_ :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => UnarySlicer d1 d2 a -> Val a
 unary_ { fwd, bwd } = flip Primitive Nil $ PrimOp
    { arity: 1
    , op: unsafePartial apply
