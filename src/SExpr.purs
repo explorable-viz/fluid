@@ -3,11 +3,12 @@ module SExpr where
 import Prelude
 
 import Bindings (Bind, Var)
+import Data.Either (Either(..))
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
 import DataType (Ctr)
 import Lattice (class JoinSemilattice, class PartialJoinSemilattice, definedJoin, neg)
-import Util (type (×), type (+), error, unimplemented)
+import Util (type (×), (×), type (+), error, unimplemented)
 import Util.Pair (Pair)
 
 -- Surface language expressions.
@@ -74,9 +75,16 @@ derive instance Functor ListRest
 derive instance Functor VarDef
 derive instance Functor Qualifier
 
-instance JoinSemilattice (Expr Boolean) where
+instance Functor Module where
+   map f (Module defs) = Module (mapDefs f <$> defs)
+      where
+      mapDefs :: forall a b. (a -> b) -> VarDefs a + RecDefs a -> VarDefs b + RecDefs b
+      mapDefs g (Left ds) = Left $ map g <$> ds
+      mapDefs g (Right ds) = Right $ (\(x × (ps × s)) -> x × (ps × (g <$> s))) <$> ds
+
+instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join = definedJoin
    neg = (<$>) neg
 
-instance PartialJoinSemilattice (Expr Boolean) where
+instance JoinSemilattice a => PartialJoinSemilattice (Expr a) where
    maybeJoin _ = error unimplemented
