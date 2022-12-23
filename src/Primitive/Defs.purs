@@ -9,18 +9,19 @@ import Data.Number (log, pow) as N
 import Debug (trace)
 import DataType (cCons)
 import Dict (fromFoldable) as D
-import Lattice (𝔹)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, bot)
+import Pretty (class Highlightable)
 import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
 import Val (Env, MatrixRep, Val(..), updateMatrix)
 
-primitives :: Env 𝔹
+primitives :: forall a. Highlightable a => BoundedLattice a => Env a
 primitives = D.fromFoldable
-   [ ":" × Constr false cCons Nil
+   [ ":" × Constr bot cCons Nil
    , "ceiling" × unary (withInverse1 ceil)
-   , "debugLog" × unary (withInverse1 debugLog)
-   , "dims" × unary dims
-   , "error" × unary (withInverse1 error_)
+   , "debugLog" × unary (withInverse1 (debugLog :: Val a -> Val a))
+   , "dims" × unary (dims :: Unary (MatrixRep a) ((Int × a) × (Int × a)))
+   , "error" × unary (withInverse1 (error_ :: String -> Val a))
    , "floor" × unary (withInverse1 floor)
    , "log" × unary (withInverse1 log)
    , "numToStr" × unary (withInverse1 numToStr)
@@ -36,39 +37,39 @@ primitives = D.fromFoldable
    , "<=" × binary (withInverse2 lessThanEquals)
    , ">=" × binary (withInverse2 greaterThanEquals)
    , "++" × binary (withInverse2 concat)
-   , "!" × binary matrixLookup
+   , "!" × binary (matrixLookup :: Binary (MatrixRep a) ((Int × a) × (Int × a)) (Val a))
    , "div" × binaryZero (withInverse2 div)
    , "mod" × binaryZero (withInverse2 mod)
    , "quot" × binaryZero (withInverse2 quot)
    , "rem" × binaryZero (withInverse2 rem)
    ]
 
-debugLog :: Val 𝔹 -> Val 𝔹
+debugLog :: forall a. Val a -> Val a
 debugLog x = trace x (const x)
 
-error_ :: String -> Val 𝔹
+error_ :: forall a. String -> Val a
 error_ = error
 
-dims :: Unary (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹))
+dims :: forall a. Unary (MatrixRep a) ((Int × a) × (Int × a))
 dims = { fwd, bwd }
    where
-   fwd :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹)
+   fwd :: MatrixRep a -> (Int × a) × (Int × a)
    fwd (_ × i × j) = i × j
 
-   bwd :: (Int × 𝔹) × (Int × 𝔹) -> Endo (MatrixRep 𝔹)
+   bwd :: (Int × a) × (Int × a) -> Endo (MatrixRep a)
    bwd (i × j) (vss × _ × _) = vss × i × j
 
 -- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
 -- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.
-matrixLookup :: Binary (MatrixRep 𝔹) ((Int × 𝔹) × (Int × 𝔹)) (Val 𝔹)
+matrixLookup :: forall a. BoundedJoinSemilattice a => Binary (MatrixRep a) ((Int × a) × (Int × a)) (Val a)
 matrixLookup = { fwd, bwd }
    where
-   fwd :: MatrixRep 𝔹 -> (Int × 𝔹) × (Int × 𝔹) -> Val 𝔹
+   fwd :: MatrixRep a -> (Int × a) × (Int × a) -> Val a
    fwd (vss × _ × _) ((i × _) × (j × _)) = vss ! (i - 1) ! (j - 1)
 
-   bwd :: Val 𝔹 -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹)) -> MatrixRep 𝔹 × ((Int × 𝔹) × (Int × 𝔹))
+   bwd :: Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-      updateMatrix i j (const v) (vss × (i' × false) × (j' × false)) × ((i × false) × (j × false))
+      updateMatrix i j (const v) (vss × (i' × bot) × (j' × bot)) × ((i × bot) × (j × bot))
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
