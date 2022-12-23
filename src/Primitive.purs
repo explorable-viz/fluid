@@ -14,8 +14,8 @@ import Pretty (class Highlightable, prettyP)
 import Util (Endo, type (×), (×), type (+), error)
 import Val (PrimOp(..), Val(..))
 
--- Mediates between an annotated value and underlying data, analogously to pattern-matching and construction for
--- data types.
+-- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to pattern-matching
+-- and construction for data types.
 class ToFrom d a where
    constr :: d × a -> Val a
    constr_bwd :: Val a -> d × a -- equivalent to match (except at Val)
@@ -61,7 +61,7 @@ instance Highlightable a => ToFrom (Int + Number) a where
    match (Float α n) = Right n × α
    match v = error ("Int or Float expected; got " <> prettyP v)
 
-instance Highlightable a => ToFrom (Either (Either Int Number) String) a where
+instance Highlightable a => ToFrom (Int + Number + String) a where
    constr (Left (Left n) × α) = Int α n
    constr (Left (Right n) × α) = Float α n
    constr (Right str × α) = Str α str
