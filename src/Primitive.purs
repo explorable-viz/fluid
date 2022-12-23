@@ -14,11 +14,12 @@ import Pretty (class Highlightable, prettyP)
 import Util (Endo, type (×), (×), type (+), error)
 import Val (PrimOp(..), Val(..))
 
--- Mediates between Val and underlying data, analogously to pattern-matching and construction for data types.
+-- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to pattern-matching
+-- and construction for data types.
 class ToFrom d a where
    constr :: d × a -> Val a
    constr_bwd :: Val a -> d × a -- equivalent to match (except at Val)
-   match :: Val a -> d × a -- only defined for non-holes (except at Val)
+   match :: Val a -> d × a
 
 unwrap :: forall d a. ToFrom d a => Val a -> d
 unwrap = match >>> fst
@@ -60,7 +61,7 @@ instance Highlightable a => ToFrom (Int + Number) a where
    match (Float α n) = Right n × α
    match v = error ("Int or Float expected; got " <> prettyP v)
 
-instance Highlightable a => ToFrom (Either (Either Int Number) String) a where
+instance Highlightable a => ToFrom (Int + Number + String) a where
    constr (Left (Left n) × α) = Int α n
    constr (Left (Right n) × α) = Float α n
    constr (Right str × α) = Str α str
@@ -177,16 +178,22 @@ withInverse1 fwd = { fwd, bwd: const identity }
 withInverse2 :: forall d1 d2 d3. (d1 -> d2 -> d3) -> Binary d1 d2 d3
 withInverse2 fwd = { fwd, bwd: const identity }
 
-unary :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => Unary d1 d2 -> Val a
+unary :: forall d1 d2 a'. ToFrom d1 a' => ToFrom d2 a' => Unary d1 d2 -> Val a'
 unary { fwd, bwd } = unary_ { fwd: fwd', bwd: bwd' }
    where
+   fwd' :: forall a. d1 × a -> d2 × a
    fwd' (x × α) = fwd x × α
+
+   bwd' :: forall a. d2 × a -> d1 -> d1 × a
    bwd' (y × α) x = bwd y x × α
 
 binary :: forall d1 d2 d3 a. ToFrom d1 a => ToFrom d2 a => MeetSemilattice a => ToFrom d3 a => Binary d1 d2 d3 -> Val a
 binary { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
    where
+   fwd' :: d1 × a -> d2 × a -> d3 × a
    fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
+
+   bwd' :: d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
    bwd' (z × α) (x × y) = (x' × α) × (y' × α)
       where
       x' × y' = bwd z (x × y)

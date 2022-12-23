@@ -4,6 +4,9 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 23 Dec 22 | Parser now builds unannotated (raw) terms | [532](https://github.com/explorable-viz/fluid/issues/532) |
+| 19 Dec 22 | Parameterise dependency analyses on type of annotations | [557](https://github.com/explorable-viz/fluid/issues/557) |
+| 8 Nov 22 | Standardise on `purty` for source code formatting | [514](https://github.com/explorable-viz/fluid/issues/514) |
 | 27 Sep 22 | Explanatory text for examples at [f.luid.org]() | [548](https://github.com/explorable-viz/fluid/issues/548) |
 | 17 Sep 22 | Migrate to optimised backend; native JS representation of maps | [546](https://github.com/explorable-viz/fluid/issues/546) |
 | 6 Sep 22 | Partial environments, records and eliminators | [543](https://github.com/explorable-viz/fluid/issues/543), [540](https://github.com/explorable-viz/fluid/issues/540), [543](https://github.com/explorable-viz/fluid/issues/543), [537](https://github.com/explorable-viz/fluid/issues/537) |
