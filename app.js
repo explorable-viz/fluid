@@ -9134,7 +9134,7 @@
   var hspace2 = /* @__PURE__ */ hspace(foldableList);
   var emptyDoc = /* @__PURE__ */ empty2(0)(0);
   var vert = (dictFoldable) => {
-    const fromFoldable11 = dictFoldable.foldr(Cons)(Nil);
+    const fromFoldable17 = dictFoldable.foldr(Cons)(Nil);
     return (delim) => {
       const vert$p = (v) => {
         if (v.tag === "Nil") {
@@ -9151,7 +9151,7 @@
         }
         fail();
       };
-      return (x2) => vert$p(fromFoldable11(x2));
+      return (x2) => vert$p(fromFoldable17(x2));
     };
   };
   var vert1 = /* @__PURE__ */ vert(foldableArray);
@@ -10179,7 +10179,7 @@
   };
   var partialJoinSemilatticeVal = (dictJoinSemilattice) => {
     const partialJoinSemilatticeEli2 = partialJoinSemilatticeEli(dictJoinSemilattice);
-    const maybeJoin2 = partialJoinSemilatticeDic(partialJoinSemilatticeEli2).maybeJoin;
+    const maybeJoin = partialJoinSemilatticeDic(partialJoinSemilatticeEli2).maybeJoin;
     return {
       maybeJoin: (v) => (v1) => {
         if (v.tag === "Int") {
@@ -10332,7 +10332,7 @@
                 return $Either("Right", $5($6._1));
               }
               fail();
-            })())(maybeJoin2(v._3)(v1._3)))(partialJoinSemilatticeEli2.maybeJoin(v._4)(v1._4));
+            })())(maybeJoin(v._3)(v1._3)))(partialJoinSemilatticeEli2.maybeJoin(v._4)(v1._4));
           }
           return $Either("Left", "Incompatible values");
         }
@@ -10604,39 +10604,6 @@
       }
     };
   };
-  var toFromEitherEitherIntNumb = (dictHighlightable) => {
-    const prettyP2 = prettyP(prettyVal(dictHighlightable));
-    return {
-      constr: (v) => {
-        if (v._1.tag === "Left") {
-          if (v._1._1.tag === "Left") {
-            return $Val("Int", v._2, v._1._1._1);
-          }
-          if (v._1._1.tag === "Right") {
-            return $Val("Float", v._2, v._1._1._1);
-          }
-          fail();
-        }
-        if (v._1.tag === "Right") {
-          return $Val("Str", v._2, v._1._1);
-        }
-        fail();
-      },
-      constr_bwd: (v) => toFromEitherEitherIntNumb(dictHighlightable).match(v),
-      match: (v) => {
-        if (v.tag === "Int") {
-          return $Tuple($Either("Left", $Either("Left", v._2)), v._1);
-        }
-        if (v.tag === "Float") {
-          return $Tuple($Either("Left", $Either("Right", v._2)), v._1);
-        }
-        if (v.tag === "Str") {
-          return $Tuple($Either("Right", v._2), v._1);
-        }
-        return unsafePerformEffect(throwException(error("Int, Float or Str expected; got " + prettyP2(v))));
-      }
-    };
-  };
   var toFromInt = (dictHighlightable) => {
     const prettyP2 = prettyP(prettyVal(dictHighlightable));
     return {
@@ -10671,6 +10638,39 @@
           return $Tuple($Either("Right", v._2), v._1);
         }
         return unsafePerformEffect(throwException(error("Int or Float expected; got " + prettyP2(v))));
+      }
+    };
+  };
+  var toFromInt$x43Number$x43String = (dictHighlightable) => {
+    const prettyP2 = prettyP(prettyVal(dictHighlightable));
+    return {
+      constr: (v) => {
+        if (v._1.tag === "Left") {
+          if (v._1._1.tag === "Left") {
+            return $Val("Int", v._2, v._1._1._1);
+          }
+          if (v._1._1.tag === "Right") {
+            return $Val("Float", v._2, v._1._1._1);
+          }
+          fail();
+        }
+        if (v._1.tag === "Right") {
+          return $Val("Str", v._2, v._1._1);
+        }
+        fail();
+      },
+      constr_bwd: (v) => toFromInt$x43Number$x43String(dictHighlightable).match(v),
+      match: (v) => {
+        if (v.tag === "Int") {
+          return $Tuple($Either("Left", $Either("Left", v._2)), v._1);
+        }
+        if (v.tag === "Float") {
+          return $Tuple($Either("Left", $Either("Right", v._2)), v._1);
+        }
+        if (v.tag === "Str") {
+          return $Tuple($Either("Right", v._2), v._1);
+        }
+        return unsafePerformEffect(throwException(error("Int, Float or Str expected; got " + prettyP2(v))));
       }
     };
   };
@@ -15951,6 +15951,118 @@
   var Next = (value0) => (value1) => (value2) => $ListRest("Next", value0, value1, value2);
   var $$Generator = (value0) => (value1) => $Qualifier("Generator", value0, value1);
   var VarDef2 = (value0) => (value1) => $VarDef2(value0, value1);
+  var functorVarDef2 = { map: (f) => (m) => $VarDef2(m._1, functorExpr2.map(f)(m._2)) };
+  var functorQualifier = {
+    map: (f) => (m) => {
+      if (m.tag === "Guard") {
+        return $Qualifier("Guard", functorExpr2.map(f)(m._1));
+      }
+      if (m.tag === "Generator") {
+        return $Qualifier("Generator", m._1, functorExpr2.map(f)(m._2));
+      }
+      if (m.tag === "Declaration") {
+        return $Qualifier("Declaration", $VarDef2(m._1._1, functorExpr2.map(f)(m._1._2)));
+      }
+      fail();
+    }
+  };
+  var functorListRest = {
+    map: (f) => (m) => {
+      if (m.tag === "End") {
+        return $ListRest("End", f(m._1));
+      }
+      if (m.tag === "Next") {
+        return $ListRest("Next", f(m._1), functorExpr2.map(f)(m._2), functorListRest.map(f)(m._3));
+      }
+      fail();
+    }
+  };
+  var functorExpr2 = {
+    map: (f) => (m) => {
+      if (m.tag === "Var") {
+        return $Expr2("Var", m._1);
+      }
+      if (m.tag === "Op") {
+        return $Expr2("Op", m._1);
+      }
+      if (m.tag === "Int") {
+        return $Expr2("Int", f(m._1), m._2);
+      }
+      if (m.tag === "Float") {
+        return $Expr2("Float", f(m._1), m._2);
+      }
+      if (m.tag === "Str") {
+        return $Expr2("Str", f(m._1), m._2);
+      }
+      if (m.tag === "Constr") {
+        return $Expr2("Constr", f(m._1), m._2, listMap(functorExpr2.map(f))(m._3));
+      }
+      if (m.tag === "Record") {
+        return $Expr2("Record", f(m._1), listMap(functorTuple.map(functorExpr2.map(f)))(m._2));
+      }
+      if (m.tag === "Dictionary") {
+        return $Expr2("Dictionary", f(m._1), listMap(functorPair.map(functorExpr2.map(f)))(m._2));
+      }
+      if (m.tag === "Matrix") {
+        return $Expr2("Matrix", f(m._1), functorExpr2.map(f)(m._2), m._3, functorExpr2.map(f)(m._4));
+      }
+      if (m.tag === "Lambda") {
+        return $Expr2("Lambda", functorNonEmptyList.map(functorTuple.map(functorExpr2.map(f)))(m._1));
+      }
+      if (m.tag === "Project") {
+        return $Expr2("Project", functorExpr2.map(f)(m._1), m._2);
+      }
+      if (m.tag === "App") {
+        return $Expr2("App", functorExpr2.map(f)(m._1), functorExpr2.map(f)(m._2));
+      }
+      if (m.tag === "BinaryApp") {
+        return $Expr2("BinaryApp", functorExpr2.map(f)(m._1), m._2, functorExpr2.map(f)(m._3));
+      }
+      if (m.tag === "MatchAs") {
+        return $Expr2("MatchAs", functorExpr2.map(f)(m._1), functorNonEmptyList.map(functorTuple.map(functorExpr2.map(f)))(m._2));
+      }
+      if (m.tag === "IfElse") {
+        return $Expr2("IfElse", functorExpr2.map(f)(m._1), functorExpr2.map(f)(m._2), functorExpr2.map(f)(m._3));
+      }
+      if (m.tag === "ListEmpty") {
+        return $Expr2("ListEmpty", f(m._1));
+      }
+      if (m.tag === "ListNonEmpty") {
+        return $Expr2("ListNonEmpty", f(m._1), functorExpr2.map(f)(m._2), functorListRest.map(f)(m._3));
+      }
+      if (m.tag === "ListEnum") {
+        return $Expr2("ListEnum", functorExpr2.map(f)(m._1), functorExpr2.map(f)(m._2));
+      }
+      if (m.tag === "ListComp") {
+        return $Expr2("ListComp", f(m._1), functorExpr2.map(f)(m._2), functorNonEmptyList.map(functorQualifier.map(f))(m._3));
+      }
+      if (m.tag === "Let") {
+        return $Expr2("Let", functorNonEmptyList.map(functorVarDef2.map(f))(m._1), functorExpr2.map(f)(m._2));
+      }
+      if (m.tag === "LetRec") {
+        return $Expr2(
+          "LetRec",
+          functorNonEmptyList.map(functorTuple.map(functorTuple.map(functorExpr2.map(f))))(m._1),
+          functorExpr2.map(f)(m._2)
+        );
+      }
+      fail();
+    }
+  };
+  var functorModule = {
+    map: (f) => (v) => $Module2(listMap((v1) => {
+      if (v1.tag === "Left") {
+        return $Either("Left", functorNonEmptyList.map(functorVarDef2.map(f))(v1._1));
+      }
+      if (v1.tag === "Right") {
+        return $Either(
+          "Right",
+          functorNonEmptyList.map((v2) => $Tuple(v2._1, $Tuple(v2._2._1, functorExpr2.map(f)(v2._2._2))))(v1._1)
+        );
+      }
+      fail();
+    })(v._1))
+  };
 
   // output-es/DesugarFwd/index.js
   var difference4 = /* @__PURE__ */ difference(eqString);
@@ -15984,7 +16096,6 @@
     };
     return go($Either("Right", b0));
   };
-  var maybeJoin = /* @__PURE__ */ (() => partialJoinSemilatticeEli(joinSemilatticeBoolean).maybeJoin)();
   var totaliseConstrFwd = (v) => (\u03B1) => fromFoldable6($List(
     "Cons",
     $Tuple(v._1, v._2),
@@ -16191,100 +16302,106 @@
     }
     fail();
   };
-  var varDefsFwd = (v) => {
+  var varDefsFwd = (dictJoinSemilattice) => (v) => {
     if (v._1._2.tag === "Nil") {
       return applyEither.apply((() => {
-        const $1 = varDefFwd(v._1._1);
-        if ($1.tag === "Left") {
-          return $Either("Left", $1._1);
+        const $2 = varDefFwd(dictJoinSemilattice)(v._1._1);
+        if ($2.tag === "Left") {
+          return $Either("Left", $2._1);
         }
-        if ($1.tag === "Right") {
-          return $Either("Right", Let($1._1));
+        if ($2.tag === "Right") {
+          return $Either("Right", Let($2._1));
         }
         fail();
-      })())(exprFwd(v._2));
+      })())(exprFwd(dictJoinSemilattice)(v._2));
     }
     if (v._1._2.tag === "Cons") {
       return applyEither.apply((() => {
-        const $1 = varDefFwd(v._1._1);
-        if ($1.tag === "Left") {
-          return $Either("Left", $1._1);
+        const $2 = varDefFwd(dictJoinSemilattice)(v._1._1);
+        if ($2.tag === "Left") {
+          return $Either("Left", $2._1);
         }
-        if ($1.tag === "Right") {
-          return $Either("Right", Let($1._1));
+        if ($2.tag === "Right") {
+          return $Either("Right", Let($2._1));
         }
         fail();
-      })())(varDefsFwd($Tuple($NonEmpty(v._1._2._1, v._1._2._2), v._2)));
+      })())(varDefsFwd(dictJoinSemilattice)($Tuple($NonEmpty(v._1._2._1, v._1._2._2), v._2)));
     }
     fail();
   };
-  var varDefFwd = (v) => applyEither.apply((() => {
-    const $1 = patternFwd(v._1)(ContNone);
-    if ($1.tag === "Left") {
-      return $Either("Left", $1._1);
+  var varDefFwd = (dictJoinSemilattice) => (v) => applyEither.apply((() => {
+    const $2 = patternFwd(v._1)(ContNone);
+    if ($2.tag === "Left") {
+      return $Either("Left", $2._1);
     }
-    if ($1.tag === "Right") {
-      return $Either("Right", VarDef($1._1));
-    }
-    fail();
-  })())(exprFwd(v._2));
-  var recDefsFwd = (xcs) => {
-    const $1 = traverse(recDefFwd)(wrappedOperation("groupBy")(groupBy((x2) => (y2) => x2._1 === y2._1))(xcs));
-    if ($1.tag === "Left") {
-      return $Either("Left", $1._1);
-    }
-    if ($1.tag === "Right") {
-      return $Either("Right", fromFoldable22($1._1));
+    if ($2.tag === "Right") {
+      return $Either("Right", VarDef($2._1));
     }
     fail();
-  };
-  var recDefFwd = (xcs) => {
-    const $1 = branchesFwd_curried(functorNonEmptyList.map(snd)(xcs));
-    if ($1.tag === "Left") {
-      return $Either("Left", $1._1);
+  })())(exprFwd(dictJoinSemilattice)(v._2));
+  var recDefsFwd = (dictJoinSemilattice) => (xcs) => {
+    const $2 = traverse(recDefFwd(dictJoinSemilattice))(wrappedOperation("groupBy")(groupBy((x2) => (y2) => x2._1 === y2._1))(xcs));
+    if ($2.tag === "Left") {
+      return $Either("Left", $2._1);
     }
-    if ($1.tag === "Right") {
-      return $Either("Right", $Tuple(xcs._1._1, $1._1));
+    if ($2.tag === "Right") {
+      return $Either("Right", fromFoldable22($2._1));
     }
     fail();
   };
-  var patternsFwd = (v) => {
+  var recDefFwd = (dictJoinSemilattice) => (xcs) => {
+    const $2 = branchesFwd_curried(dictJoinSemilattice)(functorNonEmptyList.map(snd)(xcs));
+    if ($2.tag === "Left") {
+      return $Either("Left", $2._1);
+    }
+    if ($2.tag === "Right") {
+      return $Either("Right", $Tuple(xcs._1._1, $2._1));
+    }
+    fail();
+  };
+  var patternsFwd = (dictJoinSemilattice) => (v) => {
     if (v._1._2.tag === "Nil") {
-      return branchFwd_uncurried(v._1._1)(v._2);
+      return branchFwd_uncurried(dictJoinSemilattice)(v._1._1)(v._2);
     }
     if (v._1._2.tag === "Cons") {
       return bindEither.bind((() => {
-        const $1 = patternsFwd($Tuple($NonEmpty(v._1._2._1, v._1._2._2), v._2));
-        if ($1.tag === "Left") {
-          return $Either("Left", $1._1);
+        const $2 = patternsFwd(dictJoinSemilattice)($Tuple($NonEmpty(v._1._2._1, v._1._2._2), v._2));
+        if ($2.tag === "Left") {
+          return $Either("Left", $2._1);
         }
-        if ($1.tag === "Right") {
-          return $Either("Right", $Cont("ContExpr", $Expr("Lambda", $1._1)));
+        if ($2.tag === "Right") {
+          return $Either("Right", $Cont("ContExpr", $Expr("Lambda", $2._1)));
         }
         fail();
       })())(patternFwd(v._1._1));
     }
     fail();
   };
-  var listRestFwd = (v) => {
+  var listRestFwd = (dictJoinSemilattice) => (v) => {
     if (v.tag === "End") {
       return $Either("Right", $Expr("Constr", v._1, "Nil", Nil));
     }
     if (v.tag === "Next") {
       return applyEither.apply((() => {
-        const $1 = exprFwd(v._2);
-        if ($1.tag === "Left") {
-          return $Either("Left", $1._1);
+        const $2 = exprFwd(dictJoinSemilattice)(v._2);
+        if ($2.tag === "Left") {
+          return $Either("Left", $2._1);
         }
-        if ($1.tag === "Right") {
-          return $Either("Right", econs(v._1)($1._1));
+        if ($2.tag === "Right") {
+          return $Either("Right", econs(v._1)($2._1));
         }
         fail();
-      })())(listRestFwd(v._3));
+      })())(listRestFwd(dictJoinSemilattice)(v._3));
     }
     fail();
   };
-  var exprFwd = (v) => {
+  var exprFwd = (dictJoinSemilattice) => (v) => {
+    const $2 = (q, s_body, \u03B1) => exprFwd(dictJoinSemilattice)($Expr2(
+      "ListComp",
+      \u03B1,
+      s_body,
+      $NonEmpty(q, $List("Cons", $Qualifier("Guard", $Expr2("Constr", \u03B1, "True", Nil)), Nil))
+    ));
     if (v.tag === "Var") {
       return $Either("Right", $Expr("Var", v._1));
     }
@@ -16301,120 +16418,120 @@
       return $Either("Right", $Expr("Str", v._1, v._2));
     }
     if (v.tag === "Constr") {
-      const $1 = Constr(v._1)(v._2);
-      const $2 = traverse1(exprFwd)(v._3);
-      if ($2.tag === "Left") {
-        return $Either("Left", $2._1);
+      const $3 = Constr(v._1)(v._2);
+      const $4 = traverse1(exprFwd(dictJoinSemilattice))(v._3);
+      if ($4.tag === "Left") {
+        return $Either("Left", $4._1);
       }
-      if ($2.tag === "Right") {
-        return $Either("Right", $1($2._1));
+      if ($4.tag === "Right") {
+        return $Either("Right", $3($4._1));
       }
       fail();
     }
     if (v.tag === "Record") {
-      const $1 = Record(v._1);
-      const $2 = traverse1(traverse2(exprFwd))(v._2);
-      if ($2.tag === "Left") {
-        return $Either("Left", $2._1);
+      const $3 = Record(v._1);
+      const $4 = traverse1(traverse2(exprFwd(dictJoinSemilattice)))(v._2);
+      if ($4.tag === "Left") {
+        return $Either("Left", $4._1);
       }
-      if ($2.tag === "Right") {
-        return $Either("Right", $1(fromFoldable6($2._1)));
+      if ($4.tag === "Right") {
+        return $Either("Right", $3(fromFoldable6($4._1)));
       }
       fail();
     }
     if (v.tag === "Dictionary") {
-      const $1 = Dictionary(v._1);
-      const $2 = traverse1(traverse3(exprFwd))(v._2);
-      if ($2.tag === "Left") {
-        return $Either("Left", $2._1);
+      const $3 = Dictionary(v._1);
+      const $4 = traverse1(traverse3(exprFwd(dictJoinSemilattice)))(v._2);
+      if ($4.tag === "Left") {
+        return $Either("Left", $4._1);
       }
-      if ($2.tag === "Right") {
-        return $Either("Right", $1($2._1));
+      if ($4.tag === "Right") {
+        return $Either("Right", $3($4._1));
       }
       fail();
     }
     if (v.tag === "Matrix") {
       return applyEither.apply((() => {
-        const $1 = Matrix(v._1);
-        const $2 = exprFwd(v._2);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
+        const $3 = Matrix(v._1);
+        const $4 = exprFwd(dictJoinSemilattice)(v._2);
+        if ($4.tag === "Left") {
+          return $Either("Left", $4._1);
         }
-        if ($2.tag === "Right") {
-          return $Either("Right", $1($2._1)($Tuple(v._3._1, v._3._2)));
+        if ($4.tag === "Right") {
+          return $Either("Right", $3($4._1)($Tuple(v._3._1, v._3._2)));
         }
         fail();
-      })())(exprFwd(v._4));
+      })())(exprFwd(dictJoinSemilattice)(v._4));
     }
     if (v.tag === "Lambda") {
-      const $1 = branchesFwd_curried(v._1);
-      if ($1.tag === "Left") {
-        return $Either("Left", $1._1);
+      const $3 = branchesFwd_curried(dictJoinSemilattice)(v._1);
+      if ($3.tag === "Left") {
+        return $Either("Left", $3._1);
       }
-      if ($1.tag === "Right") {
-        return $Either("Right", $Expr("Lambda", $1._1));
+      if ($3.tag === "Right") {
+        return $Either("Right", $Expr("Lambda", $3._1));
       }
       fail();
     }
     if (v.tag === "Project") {
-      const $1 = exprFwd(v._1);
-      if ($1.tag === "Left") {
-        return $Either("Left", $1._1);
+      const $3 = exprFwd(dictJoinSemilattice)(v._1);
+      if ($3.tag === "Left") {
+        return $Either("Left", $3._1);
       }
-      if ($1.tag === "Right") {
-        return $Either("Right", $Expr("Project", $1._1, v._2));
+      if ($3.tag === "Right") {
+        return $Either("Right", $Expr("Project", $3._1, v._2));
       }
       fail();
     }
     if (v.tag === "App") {
       return applyEither.apply((() => {
-        const $1 = exprFwd(v._1);
-        if ($1.tag === "Left") {
-          return $Either("Left", $1._1);
+        const $3 = exprFwd(dictJoinSemilattice)(v._1);
+        if ($3.tag === "Left") {
+          return $Either("Left", $3._1);
         }
-        if ($1.tag === "Right") {
-          return $Either("Right", App2($1._1));
+        if ($3.tag === "Right") {
+          return $Either("Right", App2($3._1));
         }
         fail();
-      })())(exprFwd(v._2));
+      })())(exprFwd(dictJoinSemilattice)(v._2));
     }
     if (v.tag === "BinaryApp") {
       return applyEither.apply((() => {
-        const $1 = App2($Expr("Op", v._2));
-        const $2 = exprFwd(v._1);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", App2($1($2._1)));
-        }
-        fail();
-      })())(exprFwd(v._3));
-    }
-    if (v.tag === "MatchAs") {
-      return applyEither.apply((() => {
-        const $1 = branchesFwd_uncurried(v._2);
-        if ($1.tag === "Left") {
-          return $Either("Left", $1._1);
-        }
-        if ($1.tag === "Right") {
-          return $Either("Right", App2($Expr("Lambda", $1._1)));
-        }
-        fail();
-      })())(exprFwd(v._1));
-    }
-    if (v.tag === "IfElse") {
-      return bindEither.bind(exprFwd(v._2))((e22) => bindEither.bind(exprFwd(v._3))((e3) => {
-        const $3 = App2($Expr(
-          "Lambda",
-          $Elim("ElimConstr", fromFoldable13([$Tuple("True", $Cont("ContExpr", e22)), $Tuple("False", $Cont("ContExpr", e3))]))
-        ));
-        const $4 = exprFwd(v._1);
+        const $3 = App2($Expr("Op", v._2));
+        const $4 = exprFwd(dictJoinSemilattice)(v._1);
         if ($4.tag === "Left") {
           return $Either("Left", $4._1);
         }
         if ($4.tag === "Right") {
-          return $Either("Right", $3($4._1));
+          return $Either("Right", App2($3($4._1)));
+        }
+        fail();
+      })())(exprFwd(dictJoinSemilattice)(v._3));
+    }
+    if (v.tag === "MatchAs") {
+      return applyEither.apply((() => {
+        const $3 = branchesFwd_uncurried(dictJoinSemilattice)(v._2);
+        if ($3.tag === "Left") {
+          return $Either("Left", $3._1);
+        }
+        if ($3.tag === "Right") {
+          return $Either("Right", App2($Expr("Lambda", $3._1)));
+        }
+        fail();
+      })())(exprFwd(dictJoinSemilattice)(v._1));
+    }
+    if (v.tag === "IfElse") {
+      return bindEither.bind(exprFwd(dictJoinSemilattice)(v._2))((e22) => bindEither.bind(exprFwd(dictJoinSemilattice)(v._3))((e3) => {
+        const $5 = App2($Expr(
+          "Lambda",
+          $Elim("ElimConstr", fromFoldable13([$Tuple("True", $Cont("ContExpr", e22)), $Tuple("False", $Cont("ContExpr", e3))]))
+        ));
+        const $6 = exprFwd(dictJoinSemilattice)(v._1);
+        if ($6.tag === "Left") {
+          return $Either("Left", $6._1);
+        }
+        if ($6.tag === "Right") {
+          return $Either("Right", $5($6._1));
         }
         fail();
       }));
@@ -16424,28 +16541,28 @@
     }
     if (v.tag === "ListNonEmpty") {
       return applyEither.apply((() => {
-        const $1 = exprFwd(v._2);
-        if ($1.tag === "Left") {
-          return $Either("Left", $1._1);
+        const $3 = exprFwd(dictJoinSemilattice)(v._2);
+        if ($3.tag === "Left") {
+          return $Either("Left", $3._1);
         }
-        if ($1.tag === "Right") {
-          return $Either("Right", econs(v._1)($1._1));
+        if ($3.tag === "Right") {
+          return $Either("Right", econs(v._1)($3._1));
         }
         fail();
-      })())(listRestFwd(v._3));
+      })())(listRestFwd(dictJoinSemilattice)(v._3));
     }
     if (v.tag === "ListEnum") {
       return applyEither.apply((() => {
-        const $1 = App2($Expr("Var", "enumFromTo"));
-        const $2 = exprFwd(v._1);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
+        const $3 = App2($Expr("Var", "enumFromTo"));
+        const $4 = exprFwd(dictJoinSemilattice)(v._1);
+        if ($4.tag === "Left") {
+          return $Either("Left", $4._1);
         }
-        if ($2.tag === "Right") {
-          return $Either("Right", App2($1($2._1)));
+        if ($4.tag === "Right") {
+          return $Either("Right", App2($3($4._1)));
         }
         fail();
-      })())(exprFwd(v._2));
+      })())(exprFwd(dictJoinSemilattice)(v._2));
     }
     if (v.tag === "ListComp") {
       if (v._3._2.tag === "Nil") {
@@ -16453,11 +16570,11 @@
           if (v._3._1._1.tag === "Constr") {
             if (v._3._1._1._3.tag === "Nil") {
               if (v._3._1._1._2 === "True") {
-                const $1 = exprFwd(v._2);
-                if ($1.tag === "Left") {
-                  return $Either("Left", $1._1);
+                const $3 = exprFwd(dictJoinSemilattice)(v._2);
+                if ($3.tag === "Left") {
+                  return $Either("Left", $3._1);
                 }
-                if ($1.tag === "Right") {
+                if ($3.tag === "Right") {
                   return $Either(
                     "Right",
                     $Expr(
@@ -16466,7 +16583,7 @@
                       ":",
                       $List(
                         "Cons",
-                        $1._1,
+                        $3._1,
                         $List("Cons", $Expr("Constr", v._3._1._1._1, "Nil", Nil), Nil)
                       )
                     )
@@ -16474,50 +16591,18 @@
                 }
                 fail();
               }
-              return exprFwd($Expr2(
-                "ListComp",
-                v._1,
-                v._2,
-                $NonEmpty(
-                  v._3._1,
-                  $List("Cons", $Qualifier("Guard", $Expr2("Constr", v._1, "True", Nil)), Nil)
-                )
-              ));
+              return $2(v._3._1, v._2, v._1);
             }
-            return exprFwd($Expr2(
-              "ListComp",
-              v._1,
-              v._2,
-              $NonEmpty(
-                v._3._1,
-                $List("Cons", $Qualifier("Guard", $Expr2("Constr", v._1, "True", Nil)), Nil)
-              )
-            ));
+            return $2(v._3._1, v._2, v._1);
           }
-          return exprFwd($Expr2(
-            "ListComp",
-            v._1,
-            v._2,
-            $NonEmpty(
-              v._3._1,
-              $List("Cons", $Qualifier("Guard", $Expr2("Constr", v._1, "True", Nil)), Nil)
-            )
-          ));
+          return $2(v._3._1, v._2, v._1);
         }
-        return exprFwd($Expr2(
-          "ListComp",
-          v._1,
-          v._2,
-          $NonEmpty(
-            v._3._1,
-            $List("Cons", $Qualifier("Guard", $Expr2("Constr", v._1, "True", Nil)), Nil)
-          )
-        ));
+        return $2(v._3._1, v._2, v._1);
       }
       if (v._3._2.tag === "Cons") {
         if (v._3._1.tag === "Guard") {
-          return bindEither.bind(exprFwd($Expr2("ListComp", v._1, v._2, $NonEmpty(v._3._2._1, v._3._2._2))))((e) => {
-            const $2 = App2($Expr(
+          return bindEither.bind(exprFwd(dictJoinSemilattice)($Expr2("ListComp", v._1, v._2, $NonEmpty(v._3._2._1, v._3._2._2))))((e) => {
+            const $4 = App2($Expr(
               "Lambda",
               $Elim(
                 "ElimConstr",
@@ -16527,57 +16612,57 @@
                 ])
               )
             ));
-            const $3 = exprFwd(v._3._1._1);
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
+            const $5 = exprFwd(dictJoinSemilattice)(v._3._1._1);
+            if ($5.tag === "Left") {
+              return $Either("Left", $5._1);
             }
-            if ($3.tag === "Right") {
-              return $Either("Right", $2($3._1));
+            if ($5.tag === "Right") {
+              return $Either("Right", $4($5._1));
             }
             fail();
           });
         }
         if (v._3._1.tag === "Declaration") {
-          return bindEither.bind(exprFwd($Expr2("ListComp", v._1, v._2, $NonEmpty(v._3._2._1, v._3._2._2))))((e) => bindEither.bind(patternFwd(v._3._1._1._1)($Cont(
+          return bindEither.bind(exprFwd(dictJoinSemilattice)($Expr2("ListComp", v._1, v._2, $NonEmpty(v._3._2._1, v._3._2._2))))((e) => bindEither.bind(patternFwd(v._3._1._1._1)($Cont(
             "ContExpr",
             e
           )))((\u03C3) => {
-            const $3 = App2($Expr("Lambda", \u03C3));
-            const $4 = exprFwd(v._3._1._1._2);
-            if ($4.tag === "Left") {
-              return $Either("Left", $4._1);
+            const $5 = App2($Expr("Lambda", \u03C3));
+            const $6 = exprFwd(dictJoinSemilattice)(v._3._1._1._2);
+            if ($6.tag === "Left") {
+              return $Either("Left", $6._1);
             }
-            if ($4.tag === "Right") {
-              return $Either("Right", $3($4._1));
+            if ($6.tag === "Right") {
+              return $Either("Right", $5($6._1));
             }
             fail();
           }));
         }
         if (v._3._1.tag === "Generator") {
-          return bindEither.bind(exprFwd($Expr2("ListComp", v._1, v._2, $NonEmpty(v._3._2._1, v._3._2._2))))((e) => bindEither.bind(patternFwd(v._3._1._1)($Cont(
+          return bindEither.bind(exprFwd(dictJoinSemilattice)($Expr2("ListComp", v._1, v._2, $NonEmpty(v._3._2._1, v._3._2._2))))((e) => bindEither.bind(patternFwd(v._3._1._1)($Cont(
             "ContExpr",
             e
           )))((\u03C3) => {
-            const $3 = App2($Expr(
+            const $5 = App2($Expr(
               "App",
               $Expr("Var", "concatMap"),
               $Expr(
                 "Lambda",
                 (() => {
-                  const $32 = totaliseFwd($Cont("ContElim", \u03C3))(v._1);
-                  if ($32.tag === "ContElim") {
-                    return $32._1;
+                  const $52 = totaliseFwd($Cont("ContElim", \u03C3))(v._1);
+                  if ($52.tag === "ContElim") {
+                    return $52._1;
                   }
                   return unsafePerformEffect(throwException(error("Eliminator expected")));
                 })()
               )
             ));
-            const $4 = exprFwd(v._3._1._2);
-            if ($4.tag === "Left") {
-              return $Either("Left", $4._1);
+            const $6 = exprFwd(dictJoinSemilattice)(v._3._1._2);
+            if ($6.tag === "Left") {
+              return $Either("Left", $6._1);
             }
-            if ($4.tag === "Right") {
-              return $Either("Right", $3($4._1));
+            if ($6.tag === "Right") {
+              return $Either("Right", $5($6._1));
             }
             fail();
           }));
@@ -16587,53 +16672,62 @@
       fail();
     }
     if (v.tag === "Let") {
-      return varDefsFwd($Tuple(v._1, v._2));
+      return varDefsFwd(dictJoinSemilattice)($Tuple(v._1, v._2));
     }
     if (v.tag === "LetRec") {
       return applyEither.apply((() => {
-        const $1 = recDefsFwd(v._1);
-        if ($1.tag === "Left") {
-          return $Either("Left", $1._1);
+        const $3 = recDefsFwd(dictJoinSemilattice)(v._1);
+        if ($3.tag === "Left") {
+          return $Either("Left", $3._1);
         }
-        if ($1.tag === "Right") {
-          return $Either("Right", LetRec($1._1));
+        if ($3.tag === "Right") {
+          return $Either("Right", LetRec($3._1));
         }
         fail();
-      })())(exprFwd(v._2));
+      })())(exprFwd(dictJoinSemilattice)(v._2));
     }
     fail();
   };
-  var branchesFwd_uncurried = (bs) => bindEither.bind(traverse((v) => branchFwd_uncurried(v._1)(v._2))(bs))((v) => foldM4(maybeJoin)(v._1)(v._2));
-  var branchesFwd_curried = (bs) => bindEither.bind(traverse(patternsFwd)(bs))((v) => foldM4(maybeJoin)(v._1)(v._2));
-  var branchFwd_uncurried = (p) => (s) => bindEither.bind((() => {
-    const $2 = exprFwd(s);
-    if ($2.tag === "Left") {
-      return $Either("Left", $2._1);
+  var branchesFwd_uncurried = (dictJoinSemilattice) => {
+    const maybeJoin = partialJoinSemilatticeEli(dictJoinSemilattice).maybeJoin;
+    return (bs) => bindEither.bind(traverse((() => {
+      const $3 = branchFwd_uncurried(dictJoinSemilattice);
+      return (v) => $3(v._1)(v._2);
+    })())(bs))((v) => foldM4(maybeJoin)(v._1)(v._2));
+  };
+  var branchesFwd_curried = (dictJoinSemilattice) => {
+    const maybeJoin = partialJoinSemilatticeEli(dictJoinSemilattice).maybeJoin;
+    return (bs) => bindEither.bind(traverse(patternsFwd(dictJoinSemilattice))(bs))((v) => foldM4(maybeJoin)(v._1)(v._2));
+  };
+  var branchFwd_uncurried = (dictJoinSemilattice) => (p) => (s) => bindEither.bind((() => {
+    const $3 = exprFwd(dictJoinSemilattice)(s);
+    if ($3.tag === "Left") {
+      return $Either("Left", $3._1);
     }
-    if ($2.tag === "Right") {
-      return $Either("Right", $Cont("ContExpr", $2._1));
+    if ($3.tag === "Right") {
+      return $Either("Right", $Cont("ContExpr", $3._1));
     }
     fail();
   })())(patternFwd(p));
-  var moduleFwd = (v) => {
-    const $1 = traverse1((v1) => {
+  var moduleFwd = (dictJoinSemilattice) => (v) => {
+    const $2 = traverse1((v1) => {
       if (v1.tag === "Left") {
-        const $2 = varDefFwd(v1._1);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
+        const $3 = varDefFwd(dictJoinSemilattice)(v1._1);
+        if ($3.tag === "Left") {
+          return $Either("Left", $3._1);
         }
-        if ($2.tag === "Right") {
-          return $Either("Right", $Either("Left", $2._1));
+        if ($3.tag === "Right") {
+          return $Either("Right", $Either("Left", $3._1));
         }
         fail();
       }
       if (v1.tag === "Right") {
-        const $2 = recDefsFwd(v1._1);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
+        const $3 = recDefsFwd(dictJoinSemilattice)(v1._1);
+        if ($3.tag === "Left") {
+          return $Either("Left", $3._1);
         }
-        if ($2.tag === "Right") {
-          return $Either("Right", $Either("Right", $2._1));
+        if ($3.tag === "Right") {
+          return $Either("Right", $Either("Right", $3._1));
         }
         fail();
       }
@@ -16647,14 +16741,15 @@
       }
       fail();
     })(v._1))(identity2));
-    if ($1.tag === "Left") {
-      return $Either("Left", $1._1);
+    if ($2.tag === "Left") {
+      return $Either("Left", $2._1);
     }
-    if ($1.tag === "Right") {
-      return $Either("Right", $Module($1._1));
+    if ($2.tag === "Right") {
+      return $Either("Right", $Module($2._1));
     }
     fail();
   };
+  var desugarModuleFwd = (dictJoinSemilattice) => moduleFwd(dictJoinSemilattice);
 
   // output-es/Control.Monad.Error.Class/index.js
   var $$try = (dictMonadError) => {
@@ -21486,14 +21581,14 @@
           };
         }
         if (":" === definitely("absurd")(charAt2(0)(a))) {
-          return (e) => (e$p) => $Expr2("Constr", false, a, $List("Cons", e, $List("Cons", e$p, Nil)));
+          return (e) => (e$p) => $Expr2("Constr", unit, a, $List("Cons", e, $List("Cons", e$p, Nil)));
         }
         return (e) => (e$p) => $Expr2("BinaryApp", e, op, e$p);
       })())(state2, more, lift1, $$throw, done))
     )))));
     const go$lazy = binding(() => lazyParserT.defer((v) => $0((() => {
       const simpleExpr = altParserT.alt(between2(token.symbol("[|"))(token.symbol("|]"))((() => {
-        const $3 = Matrix3(false);
+        const $3 = Matrix3(unit);
         const $4 = token.parens((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => ident(
           state1,
           more,
@@ -21542,17 +21637,17 @@
             }))
           )))
         ))))));
-      })()))(altParserT.alt($$try4(token.brackets((state1, v$1, v1, v2, done) => done(state1, $Expr2("ListEmpty", false)))))(altParserT.alt((() => {
-        const $3 = ListNonEmpty(false);
+      })()))(altParserT.alt($$try4(token.brackets((state1, v$1, v1, v2, done) => done(state1, $Expr2("ListEmpty", unit)))))(altParserT.alt((() => {
+        const $3 = ListNonEmpty(unit);
         const $4 = (() => {
           const go$1$lazy = binding(() => lazyParserT.defer((v$1) => altParserT.alt((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => rBracket(
             state1,
             more,
             lift1,
             $$throw,
-            (state2, a) => more((v2$1) => more((v3) => more((v4) => done(state2, $ListRest("End", false)))))
+            (state2, a) => more((v2$1) => more((v3) => more((v4) => done(state2, $ListRest("End", unit)))))
           ))))((() => {
-            const $6 = Next(false);
+            const $6 = Next(unit);
             return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => token.comma(
               state1,
               more,
@@ -21608,7 +21703,7 @@
           )))))
         )));
       })())(altParserT.alt(token.brackets((() => {
-        const $3 = ListComp(false);
+        const $3 = ListComp(unit);
         const $4 = sepBy1(altParserT.alt((state1, more, lift1, $$throw, done) => more((v2) => more((v2$1) => more((v1) => more((v1$1) => pattern(
           state1,
           more,
@@ -21690,7 +21785,7 @@
           )));
         })
       ))))))))(altParserT.alt($$try4((() => {
-        const $3 = Constr3(false);
+        const $3 = Constr3(unit);
         return (state1, more, lift1, $$throw, done) => more((v1) => more((v1$1) => ctr(
           state1,
           more,
@@ -21702,7 +21797,7 @@
           })
         )));
       })()))(altParserT.alt(token.braces((() => {
-        const $3 = Record3(false);
+        const $3 = Record3(unit);
         return (state1, more, lift1, $$throw, done) => more((v1) => sepBy(field(go$lazy()))(token.comma)(
           state1,
           more,
@@ -21736,7 +21831,7 @@
           lift1,
           $$throw,
           (state2, a) => more((v2) => {
-            const $13 = Float3(false);
+            const $13 = Float3(unit);
             return more((v1$1) => token.float(state2, more, lift1, $$throw, (state2$1, a$1) => more((v2$1) => done(state2$1, $13(a(a$1))))));
           })
         ));
@@ -21760,12 +21855,12 @@
           lift1,
           $$throw,
           (state2, a) => more((v2) => {
-            const $13 = Int3(false);
+            const $13 = Int3(unit);
             return more((v1$1) => token.natural(state2, more, lift1, $$throw, (state2$1, a$1) => more((v2$1) => done(state2$1, $13(a(a$1))))));
           })
         ));
       })()))(altParserT.alt((() => {
-        const $3 = Str3(false);
+        const $3 = Str3(unit);
         return (state1, more, lift1, $$throw, done) => more((v1) => token.stringLiteral(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, $3(a)))));
       })())(altParserT.alt((() => {
         const $3 = sepBy1(defs(go$lazy()))(token.semi);
@@ -21843,7 +21938,7 @@
             $$throw,
             (state3$1, a$2) => more((v4$2) => done(
               state3$1,
-              $Expr2("Constr", false, "Pair", $List("Cons", a, $List("Cons", a$2, Nil)))
+              $Expr2("Constr", unit, "Pair", $List("Cons", a, $List("Cons", a$2, Nil)))
             ))
           ))))
         )))
@@ -21991,16 +22086,7 @@
   }();
 
   // output-es/Primitive.Defs/index.js
-  var toFromNumber2 = /* @__PURE__ */ toFromNumber(highlightableBoolean);
-  var toFromInt2 = /* @__PURE__ */ toFromInt(highlightableBoolean);
-  var toFromVal2 = /* @__PURE__ */ toFromVal(boundedLatticeBoolean);
-  var toFromArrayArrayVal$x215Int$x215$x2152 = /* @__PURE__ */ toFromArrayArrayVal$x215Int$x215$x215(highlightableBoolean);
-  var toFromInt$x215$x215Int$x2152 = /* @__PURE__ */ toFromInt$x215$x215Int$x215(highlightableBoolean);
-  var toFromString2 = /* @__PURE__ */ toFromString(highlightableBoolean);
-  var toFromInt$x43Number2 = /* @__PURE__ */ toFromInt$x43Number(highlightableBoolean);
-  var binaryZero2 = /* @__PURE__ */ (() => binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })(boundedLatticeBoolean)(toFromInt$x43Number2)(toFromInt$x43Number2))();
-  var toFromEitherEitherIntNumb2 = /* @__PURE__ */ toFromEitherEitherIntNumb(highlightableBoolean);
-  var binaryZero1 = /* @__PURE__ */ binaryZero(isZeroInt)(boundedLatticeBoolean)(toFromInt2)(toFromInt2);
+  var fromFoldable11 = /* @__PURE__ */ fromFoldable(foldableArray);
   var pow3 = /* @__PURE__ */ union3(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => pow(toNumber(x2))(toNumber(y2)))(pow);
   var numToStr = (v2) => {
     if (v2.tag === "Left") {
@@ -22012,16 +22098,16 @@
     fail();
   };
   var notEquals = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((x2) => (y2) => x2 !== y2)((x2) => (y2) => x2 !== y2))((x2) => (y2) => x2 !== y2);
-  var matrixLookup = {
+  var matrixLookup = (dictBoundedJoinSemilattice) => ({
     fwd: (v) => (v1) => definitely("index within bounds")(index2(definitely("index within bounds")(index2(v._1._1)(v1._1._1 - 1 | 0)))(v1._2._1 - 1 | 0)),
     bwd: (v) => (v1) => $Tuple(
       updateMatrix(v1._2._1._1)(v1._2._2._1)((v$1) => v)($Tuple(
-        $Tuple(v1._1._1._1, $Tuple(v1._1._1._2._1, false)),
-        $Tuple(v1._1._2._1, false)
+        $Tuple(v1._1._1._1, $Tuple(v1._1._1._2._1, dictBoundedJoinSemilattice.bot)),
+        $Tuple(v1._1._2._1, dictBoundedJoinSemilattice.bot)
       )),
-      $Tuple($Tuple(v1._2._1._1, false), $Tuple(v1._2._2._1, false))
+      $Tuple($Tuple(v1._2._1._1, dictBoundedJoinSemilattice.bot), $Tuple(v1._2._2._1, dictBoundedJoinSemilattice.bot))
     )
-  };
+  });
   var log3 = (v2) => {
     if (v2.tag === "Left") {
       return log(toNumber(v2._1));
@@ -22038,93 +22124,92 @@
   var divide = /* @__PURE__ */ union3(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => toNumber(x2) / toNumber(y2))(numDiv);
   var dims = { fwd: (v) => $Tuple(v._1._2, v._2), bwd: (v) => (v1) => $Tuple($Tuple(v1._1._1, v._1), v._2) };
   var debugLog = (x2) => _trace(x2, (v) => x2);
-  var primitives = /* @__PURE__ */ fromFoldable(foldableArray)([
-    /* @__PURE__ */ $Tuple(":", /* @__PURE__ */ $Val("Constr", false, ":", Nil)),
-    /* @__PURE__ */ $Tuple("ceiling", /* @__PURE__ */ unary(toFromNumber2)(toFromInt2)({ fwd: ceil2, bwd: (v) => identity12 })),
-    /* @__PURE__ */ $Tuple("debugLog", /* @__PURE__ */ unary(toFromVal2)(toFromVal2)({ fwd: debugLog, bwd: (v) => identity12 })),
-    /* @__PURE__ */ $Tuple("dims", /* @__PURE__ */ unary(toFromArrayArrayVal$x215Int$x215$x2152)(toFromInt$x215$x215Int$x2152)(dims)),
-    /* @__PURE__ */ $Tuple("error", /* @__PURE__ */ unary(toFromString2)(toFromVal2)({ fwd: error2, bwd: (v) => identity12 })),
-    /* @__PURE__ */ $Tuple("floor", /* @__PURE__ */ unary(toFromNumber2)(toFromInt2)({ fwd: floor2, bwd: (v) => identity12 })),
-    /* @__PURE__ */ $Tuple("log", /* @__PURE__ */ unary(toFromInt$x43Number2)(toFromNumber2)({ fwd: log3, bwd: (v) => identity12 })),
-    /* @__PURE__ */ $Tuple("numToStr", /* @__PURE__ */ unary(toFromInt$x43Number2)(toFromString2)({ fwd: numToStr, bwd: (v) => identity12 })),
-    /* @__PURE__ */ $Tuple(
-      "+",
-      /* @__PURE__ */ binary(toFromInt$x43Number2)(toFromInt$x43Number2)(meetSemilatticeBoolean)(toFromInt$x43Number2)({
-        fwd: /* @__PURE__ */ union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intAdd)(numAdd),
-        bwd: (v) => identity12
-      })
-    ),
-    /* @__PURE__ */ $Tuple(
-      "-",
-      /* @__PURE__ */ binary(toFromInt$x43Number2)(toFromInt$x43Number2)(meetSemilatticeBoolean)(toFromInt$x43Number2)({
-        fwd: /* @__PURE__ */ union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intSub)(numSub),
-        bwd: (v) => identity12
-      })
-    ),
-    /* @__PURE__ */ $Tuple(
-      "*",
-      /* @__PURE__ */ binaryZero2({
-        fwd: /* @__PURE__ */ union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intMul)(numMul),
-        bwd: (v) => identity12
-      })
-    ),
-    /* @__PURE__ */ $Tuple("**", /* @__PURE__ */ binaryZero2({ fwd: pow3, bwd: (v) => identity12 })),
-    /* @__PURE__ */ $Tuple("/", /* @__PURE__ */ binaryZero2({ fwd: divide, bwd: (v) => identity12 })),
-    /* @__PURE__ */ $Tuple(
-      "==",
-      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
-        fwd: /* @__PURE__ */ unionStr(asBooleanBoolean)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)(eqIntImpl)(eqNumberImpl))(eqStringImpl),
-        bwd: (v) => identity12
-      })
-    ),
-    /* @__PURE__ */ $Tuple(
-      "/=",
-      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
-        fwd: notEquals,
-        bwd: (v) => identity12
-      })
-    ),
-    /* @__PURE__ */ $Tuple(
-      "<",
-      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
-        fwd: lessThan,
-        bwd: (v) => identity12
-      })
-    ),
-    /* @__PURE__ */ $Tuple(
-      ">",
-      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
-        fwd: greaterThan,
-        bwd: (v) => identity12
-      })
-    ),
-    /* @__PURE__ */ $Tuple(
-      "<=",
-      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
-        fwd: lessThanEquals,
-        bwd: (v) => identity12
-      })
-    ),
-    /* @__PURE__ */ $Tuple(
-      ">=",
-      /* @__PURE__ */ binary(toFromEitherEitherIntNumb2)(toFromEitherEitherIntNumb2)(meetSemilatticeBoolean)(/* @__PURE__ */ toFromBoolean(highlightableBoolean))({
-        fwd: greaterThanEquals,
-        bwd: (v) => identity12
-      })
-    ),
-    /* @__PURE__ */ $Tuple(
-      "++",
-      /* @__PURE__ */ binary(toFromString2)(toFromString2)(meetSemilatticeBoolean)(toFromString2)({ fwd: concatString, bwd: (v) => identity12 })
-    ),
-    /* @__PURE__ */ $Tuple(
-      "!",
-      /* @__PURE__ */ binary(toFromArrayArrayVal$x215Int$x215$x2152)(toFromInt$x215$x215Int$x2152)(meetSemilatticeBoolean)(toFromVal2)(matrixLookup)
-    ),
-    /* @__PURE__ */ $Tuple("div", /* @__PURE__ */ binaryZero1({ fwd: intDiv, bwd: (v) => identity12 })),
-    /* @__PURE__ */ $Tuple("mod", /* @__PURE__ */ binaryZero1({ fwd: intMod, bwd: (v) => identity12 })),
-    /* @__PURE__ */ $Tuple("quot", /* @__PURE__ */ binaryZero1({ fwd: quot, bwd: (v) => identity12 })),
-    /* @__PURE__ */ $Tuple("rem", /* @__PURE__ */ binaryZero1({ fwd: rem, bwd: (v) => identity12 }))
-  ]);
+  var primitives = (dictHighlightable) => {
+    const toFromNumber2 = toFromNumber(dictHighlightable);
+    const toFromInt2 = toFromInt(dictHighlightable);
+    const toFromArrayArrayVal$x215Int$x215$x2152 = toFromArrayArrayVal$x215Int$x215$x215(dictHighlightable);
+    const toFromInt$x215$x215Int$x2152 = toFromInt$x215$x215Int$x215(dictHighlightable);
+    const toFromString2 = toFromString(dictHighlightable);
+    const toFromInt$x43Number2 = toFromInt$x43Number(dictHighlightable);
+    const toFromInt$x43Number$x43String2 = toFromInt$x43Number$x43String(dictHighlightable);
+    const toFromBoolean2 = toFromBoolean(dictHighlightable);
+    return (dictBoundedLattice) => {
+      const BoundedJoinSemilattice0 = dictBoundedLattice.BoundedJoinSemilattice0();
+      const toFromVal2 = toFromVal(dictBoundedLattice);
+      const MeetSemilattice0 = dictBoundedLattice.BoundedMeetSemilattice1().MeetSemilattice0();
+      const binaryZero2 = binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })(dictBoundedLattice)(toFromInt$x43Number2)(toFromInt$x43Number2);
+      const binaryZero3 = binaryZero(isZeroInt)(dictBoundedLattice)(toFromInt2)(toFromInt2);
+      return fromFoldable11([
+        $Tuple(":", $Val("Constr", BoundedJoinSemilattice0.bot, ":", Nil)),
+        $Tuple("ceiling", unary(toFromNumber2)(toFromInt2)({ fwd: ceil2, bwd: (v) => identity12 })),
+        $Tuple("debugLog", unary(toFromVal2)(toFromVal2)({ fwd: debugLog, bwd: (v) => identity12 })),
+        $Tuple("dims", unary(toFromArrayArrayVal$x215Int$x215$x2152)(toFromInt$x215$x215Int$x2152)(dims)),
+        $Tuple("error", unary(toFromString2)(toFromVal2)({ fwd: error2, bwd: (v) => identity12 })),
+        $Tuple("floor", unary(toFromNumber2)(toFromInt2)({ fwd: floor2, bwd: (v) => identity12 })),
+        $Tuple("log", unary(toFromInt$x43Number2)(toFromNumber2)({ fwd: log3, bwd: (v) => identity12 })),
+        $Tuple("numToStr", unary(toFromInt$x43Number2)(toFromString2)({ fwd: numToStr, bwd: (v) => identity12 })),
+        $Tuple(
+          "+",
+          binary(toFromInt$x43Number2)(toFromInt$x43Number2)(MeetSemilattice0)(toFromInt$x43Number2)({
+            fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intAdd)(numAdd),
+            bwd: (v) => identity12
+          })
+        ),
+        $Tuple(
+          "-",
+          binary(toFromInt$x43Number2)(toFromInt$x43Number2)(MeetSemilattice0)(toFromInt$x43Number2)({
+            fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intSub)(numSub),
+            bwd: (v) => identity12
+          })
+        ),
+        $Tuple(
+          "*",
+          binaryZero2({
+            fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intMul)(numMul),
+            bwd: (v) => identity12
+          })
+        ),
+        $Tuple("**", binaryZero2({ fwd: pow3, bwd: (v) => identity12 })),
+        $Tuple("/", binaryZero2({ fwd: divide, bwd: (v) => identity12 })),
+        $Tuple(
+          "==",
+          binary(toFromInt$x43Number$x43String2)(toFromInt$x43Number$x43String2)(MeetSemilattice0)(toFromBoolean2)({
+            fwd: unionStr(asBooleanBoolean)(asIntOrNumberString)(union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)(eqIntImpl)(eqNumberImpl))(eqStringImpl),
+            bwd: (v) => identity12
+          })
+        ),
+        $Tuple(
+          "/=",
+          binary(toFromInt$x43Number$x43String2)(toFromInt$x43Number$x43String2)(MeetSemilattice0)(toFromBoolean2)({ fwd: notEquals, bwd: (v) => identity12 })
+        ),
+        $Tuple(
+          "<",
+          binary(toFromInt$x43Number$x43String2)(toFromInt$x43Number$x43String2)(MeetSemilattice0)(toFromBoolean2)({ fwd: lessThan, bwd: (v) => identity12 })
+        ),
+        $Tuple(
+          ">",
+          binary(toFromInt$x43Number$x43String2)(toFromInt$x43Number$x43String2)(MeetSemilattice0)(toFromBoolean2)({ fwd: greaterThan, bwd: (v) => identity12 })
+        ),
+        $Tuple(
+          "<=",
+          binary(toFromInt$x43Number$x43String2)(toFromInt$x43Number$x43String2)(MeetSemilattice0)(toFromBoolean2)({ fwd: lessThanEquals, bwd: (v) => identity12 })
+        ),
+        $Tuple(
+          ">=",
+          binary(toFromInt$x43Number$x43String2)(toFromInt$x43Number$x43String2)(MeetSemilattice0)(toFromBoolean2)({ fwd: greaterThanEquals, bwd: (v) => identity12 })
+        ),
+        $Tuple("++", binary(toFromString2)(toFromString2)(MeetSemilattice0)(toFromString2)({ fwd: concatString, bwd: (v) => identity12 })),
+        $Tuple(
+          "!",
+          binary(toFromArrayArrayVal$x215Int$x215$x2152)(toFromInt$x215$x215Int$x2152)(MeetSemilattice0)(toFromVal2)(matrixLookup(BoundedJoinSemilattice0))
+        ),
+        $Tuple("div", binaryZero3({ fwd: intDiv, bwd: (v) => identity12 })),
+        $Tuple("mod", binaryZero3({ fwd: intMod, bwd: (v) => identity12 })),
+        $Tuple("quot", binaryZero3({ fwd: quot, bwd: (v) => identity12 })),
+        $Tuple("rem", binaryZero3({ fwd: rem, bwd: (v) => identity12 }))
+      ]);
+    };
+  };
 
   // output-es/Module/index.js
   var identity21 = (x2) => x2;
@@ -22153,7 +22238,13 @@
     fail();
   });
   var loadModule = (file) => (\u03B3) => _bind(loadFile("fluid/lib")(file))((src) => _pure(successful((() => {
-    const $3 = bindEither.bind(bindEither.bind(parse(src)(module_))(moduleFwd))(eval_module(\u03B3));
+    const $3 = bindEither.bind(bindEither.bind(parse(src)((state1, more, lift1, $$throw, done) => more((v1) => module_(
+      state1,
+      more,
+      lift1,
+      $$throw,
+      (state2, a) => more((v2) => done(state2, functorModule.map((v) => false)(a)))
+    ))))(desugarModuleFwd(joinSemilatticeBoolean)))(eval_module(\u03B3));
     if ($3.tag === "Left") {
       return $Either("Left", $3._1);
     }
@@ -22162,11 +22253,17 @@
     }
     fail();
   })())));
-  var parseProgram = (folder) => (file) => _map((x2) => successful(parse(x2)(topLevel(expr_))))(loadFile(folder)(file));
-  var defaultImports = /* @__PURE__ */ _bind(/* @__PURE__ */ _bind(/* @__PURE__ */ loadModule("prelude")(primitives))(/* @__PURE__ */ loadModule("graphics")))(/* @__PURE__ */ loadModule("convolution"));
+  var parseProgram = (folder) => (file) => _map((x2) => successful(parse(x2)((state1, more, lift1, $$throw, done) => more((v1) => topLevel(expr_)(
+    state1,
+    more,
+    lift1,
+    $$throw,
+    (state2, a) => more((v2) => done(state2, functorExpr2.map((v) => false)(a)))
+  )))))(loadFile(folder)(file));
+  var defaultImports = /* @__PURE__ */ _bind(/* @__PURE__ */ _bind(/* @__PURE__ */ loadModule("prelude")(/* @__PURE__ */ primitives(highlightableBoolean)(boundedLatticeBoolean)))(/* @__PURE__ */ loadModule("graphics")))(/* @__PURE__ */ loadModule("convolution"));
   var openDatasetAs = (file) => (x2) => _bind(parseProgram("fluid")(file))((s) => _bind(defaultImports)((\u03B3) => _pure($Tuple(
     \u03B3,
-    runST(bind_(newImpl)(poke2(x2)(successful(bindEither.bind(exprFwd(s))($$eval2(\u03B3)))._2)))
+    runST(bind_(newImpl)(poke2(x2)(successful(bindEither.bind(exprFwd(joinSemilatticeBoolean)(s))($$eval2(\u03B3)))._2)))
   ))));
 
   // output-es/Web.Event.EventTarget/foreign.js
@@ -22232,14 +22329,14 @@
   };
   var splitDefs = (\u03B30) => (s$p) => {
     if (s$p.tag === "LetRec") {
-      return bindEither.bind(bindEither.bind(moduleFwd($Module2($List(
+      return bindEither.bind(bindEither.bind(moduleFwd(joinSemilatticeBoolean)($Module2($List(
         "Cons",
         $Either("Right", s$p._1),
         Nil
       ))))(eval_module(\u03B30)))((\u03B3) => $Either("Right", { "\u03B3": \u03B3, s: s$p._2 }));
     }
     if (s$p.tag === "Let") {
-      return bindEither.bind(bindEither.bind(moduleFwd($Module2($List(
+      return bindEither.bind(bindEither.bind(moduleFwd(joinSemilatticeBoolean)($Module2($List(
         "Cons",
         $Either("Left", s$p._1),
         Nil
@@ -22251,7 +22348,7 @@
     const $1 = "linking/" + v.file1;
     const $2 = "linking/" + v.file2;
     return _bind(openDatasetAs("example/linking/" + v.dataFile)(v.x))((v2) => _bind(applyAff.apply(_map(Tuple)(parseProgram("fluid/example")($1)))(parseProgram("fluid/example")($2)))((v3) => _pure(successful(bindEither.bind(applyEither.apply((() => {
-      const $5 = exprFwd(v3._1);
+      const $5 = exprFwd(joinSemilatticeBoolean)(v3._1);
       if ($5.tag === "Left") {
         return $Either("Left", $5._1);
       }
@@ -22259,7 +22356,7 @@
         return $Either("Right", Tuple($5._1));
       }
       fail();
-    })())(exprFwd(v3._2)))((v4) => bindEither.bind($$eval3(unionWith((v$1) => (x2) => x2)(v2._1)(v2._2))(v4._1))((v5) => bindEither.bind($$eval3(unionWith((v$1) => (x2) => x2)(v2._1)(v2._2))(v4._2))((v6) => bindEither.bind((() => {
+    })())(exprFwd(joinSemilatticeBoolean)(v3._2)))((v4) => bindEither.bind($$eval3(unionWith((v$1) => (x2) => x2)(v2._1)(v2._2))(v4._1))((v5) => bindEither.bind($$eval3(unionWith((v$1) => (x2) => x2)(v2._1)(v2._2))(v4._2))((v6) => bindEither.bind((() => {
       const $8 = _lookup(Nothing, Just, v.x, v2._2);
       if ($8.tag === "Nothing") {
         return $Either("Left", "absurd");
@@ -22270,7 +22367,7 @@
       fail();
     })())((v0) => $Either("Right", { spec: v, "\u03B30": v2._1, "\u03B3": v2._2, s1: v3._1, s2: v3._2, e1: v4._1, e2: v4._2, t1: v5._1, t2: v6._1, v1: v5._2, v2: v6._2, v0 })))))))));
   };
-  var loadFig = (v) => _bind(openDatasetAs("example/linking/renewables")("data"))((v1) => _map((s$p) => successful(bindEither.bind(splitDefs(unionWith((v$1) => (x2) => x2)(v1._1)(v1._2))(s$p))((v2) => bindEither.bind(exprFwd(v2.s))((e) => bindEither.bind($$eval3(unionWith((v$1) => (x2) => x2)(unionWith((v$1) => (x2) => x2)(v1._1)(v1._2))(v2["\u03B3"]))(e))((v3) => $Either("Right", { spec: v, "\u03B30": v1._1, "\u03B3": unionWith((v$1) => (x2) => x2)(v1._2)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file)));
+  var loadFig = (v) => _bind(openDatasetAs("example/linking/renewables")("data"))((v1) => _map((s$p) => successful(bindEither.bind(splitDefs(unionWith((v$1) => (x2) => x2)(v1._1)(v1._2))(s$p))((v2) => bindEither.bind(exprFwd(joinSemilatticeBoolean)(v2.s))((e) => bindEither.bind($$eval3(unionWith((v$1) => (x2) => x2)(unionWith((v$1) => (x2) => x2)(v1._1)(v1._2))(v2["\u03B3"]))(e))((v3) => $Either("Right", { spec: v, "\u03B30": v1._1, "\u03B3": unionWith((v$1) => (x2) => x2)(v1._2)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file)));
   var linkResult = (x2) => (\u03B30) => (\u03B3) => (e1) => (e22) => (t1) => (v) => (v1) => {
     const $8 = append_inv($Map("Two", Leaf2, x2, unit, Leaf2))(evalBwd2(unionWith((v$1) => (x$1) => x$1)(\u03B30)(\u03B3))(e1)(v1)(t1)._1._1)._2;
     return bindEither.bind((() => {
