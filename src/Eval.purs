@@ -15,7 +15,7 @@ import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
-import Lattice (class BoundedJoinSemilattice, 𝔹, bot)
+import Lattice (class BoundedJoinSemilattice, bot)
 import Pretty (class Highlightable, prettyP)
 import Primitive (unwrap)
 import Trace (Trace(..), VarDef(..)) as T
@@ -135,10 +135,10 @@ eval γ (LetRec ρ e) = do
    t × v <- eval (γ <+> γ') e
    pure $ T.LetRec ρ t × v
 
-eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
+eval_module :: forall a. Highlightable a => BoundedJoinSemilattice a => Env a -> Module a -> MayFail (Env a)
 eval_module γ = go empty
    where
-   go :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
+   go :: Env a -> Module a -> MayFail (Env a)
    go γ' (Module Nil) = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) = do
       _ × v <- eval (γ <+> y') e
