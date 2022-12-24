@@ -28,7 +28,7 @@ data Trace a
    | AppPrim (Trace a × PrimOp a × List (Val a)) (Trace a × Val a) -- record prior arguments
    | AppConstr (Trace a × Ctr × Int) (Trace a) -- record number of prior arguments
    | Let (VarDef a) (Trace a)
-   | LetRec (RecDefs a) (Trace a)
+   | LetRec (Raw RecDefs) (Trace a)
 
 data Match
    = MatchVar Var (Raw Val)

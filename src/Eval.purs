@@ -133,7 +133,7 @@ eval γ (Let (VarDef σ e) e') = do
 eval γ (LetRec ρ e) = do
    let γ' = closeDefs γ ρ
    t × v <- eval (γ <+> γ') e
-   pure $ T.LetRec ρ t × v
+   pure $ T.LetRec (botOf <$> ρ) t × v
 
 eval_module :: forall a. Highlightable a => BoundedJoinSemilattice a => Env a -> Module a -> MayFail (Env a)
 eval_module γ = go empty
