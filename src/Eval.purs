@@ -70,9 +70,9 @@ checkArity c n = do
 eval :: forall a. BoundedJoinSemilattice a => Highlightable a => Env a -> Expr a -> MayFail (Trace a × Val a)
 eval γ (Var x) = (T.Var x × _) <$> lookup' x γ
 eval γ (Op op) = (T.Op op × _) <$> lookup' op γ
-eval _ (Int _ n) = pure (T.Int n × V.Int bot n)
-eval _ (Float _ n) = pure (T.Float n × V.Float bot n)
-eval _ (Str _ str) = pure (T.Str str × V.Str bot str)
+eval _ (Int _ n) = pure (T.Const × V.Int bot n)
+eval _ (Float _ n) = pure (T.Const × V.Float bot n)
+eval _ (Str _ str) = pure (T.Const × V.Str bot str)
 eval γ (Record _ xes) = do
    xts × xvs <- traverse (eval γ) xes <#> D.unzip
    pure $ T.Record xts × V.Record bot xvs
@@ -100,7 +100,7 @@ eval γ (Matrix _ e (x × y) e') = do
    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
 eval γ (Lambda σ) =
-   pure $ T.Lambda σ × V.Closure bot (γ `restrict` fv σ) empty σ
+   pure $ T.Const × V.Closure bot (γ `restrict` fv σ) empty σ
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
@@ -114,7 +114,7 @@ eval γ (App e e') = do
          let γ2 = closeDefs γ1 ρ
          γ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'')
-         pure $ T.App (t × S.fromFoldable (keys ρ) × σ) t' w t'' × v''
+         pure $ T.App (t × S.fromFoldable (keys ρ)) t' w t'' × v''
       V.Primitive (PrimOp φ) vs ->
          let
             vs' = vs <> singleton v'

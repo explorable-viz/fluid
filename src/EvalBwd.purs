@@ -73,10 +73,10 @@ evalBwd γ e v t =
 evalBwd' :: forall a. BoundedJoinSemilattice a => Val a -> Trace a -> Env a × Expr a × a
 evalBwd' v (T.Var x) = D.singleton x v × Var x × bot
 evalBwd' v (T.Op op) = D.singleton op v × Op op × bot
-evalBwd' (V.Str α _) (T.Str str) = empty × Str α str × α
-evalBwd' (V.Int α _) (T.Int n) = empty × Int α n × α
-evalBwd' (V.Float α _) (T.Float n) = empty × Float α n × α
-evalBwd' (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
+evalBwd' (V.Str α str) T.Const = empty × Str α str × α
+evalBwd' (V.Int α n) T.Const = empty × Int α n × α
+evalBwd' (V.Float α n) T.Const = empty × Float α n × α
+evalBwd' (V.Closure α γ _ σ) T.Const = γ × Lambda σ × α
 evalBwd' (V.Record α xvs) (T.Record xts) =
    γ' × Record α (xγeαs <#> (fst >>> snd)) × (foldr (∨) α (xγeαs <#> snd))
    where
@@ -122,7 +122,7 @@ evalBwd' v (T.Project t x) =
    ρ × Project e x × α
    where
    ρ × e × α = evalBwd' (V.Record bot (D.singleton x v)) t
-evalBwd' v (T.App (t1 × xs × _) t2 w t3) =
+evalBwd' v (T.App (t1 × xs) t2 w t3) =
    (γ' ∨ γ'') × App e1 e2 × (α ∨ α')
    where
    γ1γ2γ3 × e × β = evalBwd' v t3
