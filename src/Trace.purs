@@ -12,8 +12,6 @@ import Util (type (×))
 import Util.Pair (Pair)
 import Val (Array2, PrimOp, Val)
 
-data VarDef a = VarDef Match (Trace a)
-
 -- We record "raw" (unannotated) values in some cases; represent as values annotated with false.
 data Trace a
    = Var Var
@@ -29,6 +27,8 @@ data Trace a
    | AppConstr (Trace a × Ctr × Int) (Trace a) -- record number of prior arguments
    | Let (VarDef a) (Trace a)
    | LetRec (Raw RecDefs) (Trace a)
+
+data VarDef a = VarDef Match (Trace a)
 
 data Match
    = MatchVar Var (Raw Val)
