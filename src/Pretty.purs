@@ -38,6 +38,9 @@ brackets = between (text str.lBracket) (text str.rBracket)
 class Highlightable a where
    highlightIf :: a -> Endo Doc
 
+instance Highlightable Unit where
+   highlightIf _ = identity
+
 instance Highlightable Boolean where
    highlightIf false = identity
    highlightIf true = between (text "_") (text "_")
