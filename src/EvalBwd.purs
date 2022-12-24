@@ -63,14 +63,14 @@ matchManyBwd γγ' κ α (w : ws) =
    v × σ = matchBwd γ κ α w
    vs × κ' = matchManyBwd γ' (ContElim σ) α ws
 
-evalBwd :: forall a. BoundedJoinSemilattice a => Env a -> Expr a -> Val a -> Trace a -> Env a × Expr a × a
+evalBwd :: forall a. BoundedJoinSemilattice a => Env a -> Expr a -> Val a -> Trace -> Env a × Expr a × a
 evalBwd γ e v t =
    expand γ' γ × expand e' e × α
    where
    γ' × e' × α = evalBwd' v t
 
 -- Computes a partial slice which evalBwd expands to a full slice.
-evalBwd' :: forall a. BoundedJoinSemilattice a => Val a -> Trace a -> Env a × Expr a × a
+evalBwd' :: forall a. BoundedJoinSemilattice a => Val a -> Trace -> Env a × Expr a × a
 evalBwd' v (T.Var x) = D.singleton x v × Var x × bot
 evalBwd' v (T.Op op) = D.singleton op v × Op op × bot
 evalBwd' (V.Str α str) T.Const = empty × Str α str × α
@@ -86,7 +86,7 @@ evalBwd' (V.Record α xvs) (T.Record xts) =
 evalBwd' (V.Constr α _ vs) (T.Constr c ts) =
    γ' × Constr α c es × α'
    where
-   evalArg_bwd :: Val a × Trace a -> Endo (Env a × List (Expr a) × a)
+   evalArg_bwd :: Val a × Trace -> Endo (Env a × List (Expr a) × a)
    evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
       where
       γ'' × e × α'' = evalBwd' v' t'
@@ -135,11 +135,12 @@ evalBwd' v (T.App (t1 × xs) t2 w t3) =
 evalBwd' v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    (γ ∨ γ') × App e e' × (α ∨ α')
    where
+   PrimOp φ' = botOf (PrimOp φ)
    vs' = vs <> L.singleton v2
    { init: vs'', last: v2' } = definitely' $ unsnoc $
       if φ.arity > length vs' then unsafePartial $ let V.Primitive _ vs'' = v in vs''
-      else φ.op_bwd v vs'
-   γ × e × α = evalBwd' (V.Primitive (PrimOp φ) vs'') t1
+      else  φ'.op_bwd v (botOf <$> vs')
+   γ × e × α = evalBwd' (V.Primitive (PrimOp φ') vs'') t1
    γ' × e' × α' = evalBwd' v2' t2
 evalBwd' (V.Constr β _ vs) (T.AppConstr (t1 × c × _) t2) =
    (γ ∨ γ') × App e e' × (α ∨ α')

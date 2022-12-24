@@ -67,7 +67,7 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-eval :: forall a. BoundedJoinSemilattice a => Highlightable a => Env a -> Expr a -> MayFail (Trace a × Val a)
+eval :: forall a. BoundedJoinSemilattice a => Highlightable a => Env a -> Expr a -> MayFail (Trace × Val a)
 eval γ (Var x) = (T.Var x × _) <$> lookup' x γ
 eval γ (Op op) = (T.Op op × _) <$> lookup' op γ
 eval _ (Int _ n) = pure (T.Const × V.Int bot n)
@@ -120,7 +120,7 @@ eval γ (App e e') = do
             vs' = vs <> singleton v'
             v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs'
          in
-            pure $ T.AppPrim (t × PrimOp φ × vs) (t' × v') × v''
+            pure $ T.AppPrim (t × botOf (PrimOp φ) × (botOf <$> vs)) (t' × botOf v') × v''
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> showCtr c)
          pure $ T.AppConstr (t × c × length vs) t' × V.Constr bot c (vs <> singleton v')

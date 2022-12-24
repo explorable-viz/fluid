@@ -89,7 +89,7 @@ type Fig =
    , γ :: Env 𝔹 -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
    , s :: S.Expr 𝔹 -- body of example
    , e :: Expr 𝔹 -- desugared s
-   , t :: Trace 𝔹
+   , t :: Trace
    , v :: Val 𝔹
    }
 
@@ -109,8 +109,8 @@ type LinkFig =
    , s2 :: S.Expr 𝔹
    , e1 :: Expr 𝔹
    , e2 :: Expr 𝔹
-   , t1 :: Trace 𝔹
-   , t2 :: Trace 𝔹
+   , t1 :: Trace
+   , t2 :: Trace
    , v1 :: Val 𝔹
    , v2 :: Val 𝔹
    , v0 :: Val 𝔹 -- common data named by spec.x
@@ -161,7 +161,7 @@ figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    views <- valViews γ0γ xs
    pure $ view "output" v' × views
 
-linkResult :: Var -> Env 𝔹 -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace 𝔹 -> Trace 𝔹 -> Val 𝔹 -> MayFail LinkResult
+linkResult :: Var -> Env 𝔹 -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> MayFail LinkResult
 linkResult x γ0 γ e1 e2 t1 _ v1 = do
    let
       γ0γ × _ × _ = evalBwd (γ0 <+> γ) e1 v1 t1
