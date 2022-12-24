@@ -14,8 +14,8 @@ import Pretty (class Highlightable, prettyP)
 import Util (Endo, type (×), (×), type (+), error)
 import Val (PrimOp(..), Val(..))
 
--- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to pattern-matching
--- and construction for data types.
+-- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to
+-- pattern-matching and construction for data types.
 class ToFrom d a where
    constr :: d × a -> Val a
    constr_bwd :: Val a -> d × a -- equivalent to match (except at Val)
