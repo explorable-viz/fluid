@@ -15,7 +15,7 @@ import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
-import Lattice (class BoundedJoinSemilattice, bot)
+import Lattice (class BoundedJoinSemilattice, bot, botOf)
 import Pretty (class Highlightable, prettyP)
 import Primitive (unwrap)
 import Trace (Trace(..), VarDef(..)) as T
@@ -28,10 +28,10 @@ import Val (Val(..)) as V
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall a. Highlightable a => Val a -> Elim a -> MayFail (Env a × Cont a × Match a)
+match :: forall a. Highlightable a => BoundedJoinSemilattice a => Val a -> Elim a -> MayFail (Env a × Cont a × Match)
 match v (ElimVar x κ)
-   | x == varAnon = pure (empty × κ × MatchVarAnon v)
-   | otherwise = pure (D.singleton x v × κ × MatchVar x v)
+   | x == varAnon = pure (empty × κ × MatchVarAnon (botOf v))
+   | otherwise = pure (D.singleton x v × κ × MatchVar x (botOf v))
 match (V.Constr _ c vs) (ElimConstr m) = do
    with "Pattern mismatch" $ S.singleton c `consistentWith` keys m
    κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (lookup c m)
@@ -45,7 +45,7 @@ match (V.Record _ xvs) (ElimRecord xs κ) = do
    second (zip xs' >>> D.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get xvs) κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall a. Highlightable a => List (Val a) -> Cont a -> MayFail (Env a × Cont a × List (Match a))
+matchMany :: forall a. Highlightable a => BoundedJoinSemilattice a => List (Val a) -> Cont a -> MayFail (Env a × Cont a × List Match)
 matchMany Nil κ = pure (empty × κ × Nil)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ' × w <- match v σ

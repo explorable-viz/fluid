@@ -36,7 +36,7 @@ closeDefsBwd γ =
             (ρ_acc # insert f σ_f) × (γ' ∨ γ_f) × (ρ ∨ ρ_f) × (α ∨ α_f)
          _ -> error absurd
 
-matchBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> Match a -> Val a × Elim a
+matchBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> Match -> Val a × Elim a
 matchBwd γ κ _ (MatchVar x v)
    | keys γ == S.singleton x = get x γ × ElimVar x κ
    | otherwise = botOf v × ElimVar x κ
@@ -52,7 +52,7 @@ matchBwd ρ κ α (MatchRecord xws) = V.Record α (zip xs vs # D.fromFoldable) �
    xs × ws = xws # D.toUnfoldable # unzip
    vs × κ' = matchManyBwd ρ κ α (ws # reverse)
 
-matchManyBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> List (Match a) -> List (Val a) × Cont a
+matchManyBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> List Match -> List (Val a) × Cont a
 matchManyBwd γ κ _ Nil
    | isEmpty γ = Nil × κ
    | otherwise = error absurd
