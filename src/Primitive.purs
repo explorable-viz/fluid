@@ -82,6 +82,15 @@ instance Highlightable a => ToFrom String a where
    match (Str α str) = str × α
    match v = error ("Str expected; got " <> prettyP v)
 
+toFromString :: forall a. ToFrom2 String a
+toFromString =
+   { constr: \(str × α) -> Str α str
+   , constr_bwd: \v -> match v
+   , match: case _ of
+      Str α str -> str × α
+      v -> error ("Str expected; got " <> prettyP v)
+   }
+
 instance Highlightable a => ToFrom (Int + Number) a where
    constr (Left n × α) = Int α n
    constr (Right n × α) = Float α n
