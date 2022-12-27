@@ -139,7 +139,7 @@ evalBwd' v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
    vs' = vs <> L.singleton v2
    { init: vs'', last: v2' } = definitely' $ unsnoc $
       if φ.arity > length vs' then unsafePartial $ let V.Primitive _ vs'' = v in vs''
-      else φ'.op_bwd v (botOf <$> vs')
+      else φ'.op_bwd v vs'
    γ × e × α = evalBwd' (V.Primitive (PrimOp φ') vs'') t1
    γ' × e' × α' = evalBwd' v2' t2
 evalBwd' (V.Constr β _ vs) (T.AppConstr (t1 × c × _) t2) =
