@@ -9,7 +9,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class MeetSemilattice, (∧), bot, top)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class MeetSemilattice, (∧), bot, top)
 import Pretty (class Highlightable, prettyP)
 import Util (Endo, type (×), (×), type (+), error)
 import Val (PrimOp(..), Val(..))
@@ -140,7 +140,7 @@ type Binary d1 d2 d3 =
    }
 
 type BinarySlicer d1 d2 d3 =
-   { fwd :: forall a. MeetSemilattice a => d1 × a -> d2 × a -> d3 × a
+   { fwd :: forall a. BoundedMeetSemilattice a => d1 × a -> d2 × a -> d3 × a
    , bwd :: forall a. BoundedJoinSemilattice a => d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
    }
 
@@ -164,7 +164,7 @@ binary_ { fwd, bwd } = flip Primitive Nil $ PrimOp
    , op_bwd: unsafePartial apply_bwd
    }
    where
-   apply :: Partial => MeetSemilattice a => List (Val a) {-[d1, d2]-} -> Val a {-d3-}
+   apply :: Partial => BoundedMeetSemilattice a => List (Val a) {-[d1, d2]-} -> Val a {-d3-}
    apply (v : v' : Nil) = constr (fwd (match v) (match v'))
 
    apply_bwd :: Partial => BoundedJoinSemilattice a => Val a {-(d3, d3)-} -> List (Val a) {-[d1, d2]-} -> List (Val a) {-[d1, d2]-}
