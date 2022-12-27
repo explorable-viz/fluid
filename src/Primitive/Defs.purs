@@ -11,7 +11,7 @@ import Debug (trace)
 import Dict (fromFoldable) as D
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class MeetSemilattice, (∧), bot)
 import Prelude (div, mod) as P
-import Primitive (Binary, BinarySlicer, Unary, binary, binary_, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
+import Primitive (BinarySlicer, Unary, binary, binary_, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
 import Val (class Highlightable, Env, MatrixRep, Val(..), updateMatrix)
 
@@ -37,7 +37,7 @@ primitives = D.fromFoldable
    , "<=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 lessThanEquals)
    , ">=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 greaterThanEquals)
    , "++" × binary (string × string × string × withInverse2 concat)
-   , "!" × binary_ matrixLookup2
+   , "!" × binary_ matrixLookup
    , "div" × binaryZero (int × int × withInverse2 div)
    , "mod" × binaryZero (int × int × withInverse2 mod)
    , "quot" × binaryZero (int × int × withInverse2 quot)
@@ -61,18 +61,8 @@ dims = { fwd, bwd }
 
 -- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
 -- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.
-matrixLookup :: forall a. BoundedJoinSemilattice a => Binary (MatrixRep a) ((Int × a) × (Int × a)) (Val a)
-matrixLookup = { fwd, bwd }
-   where
-   fwd :: MatrixRep a -> (Int × a) × (Int × a) -> Val a
-   fwd (vss × _ × _) ((i × _) × (j × _)) = vss ! (i - 1) ! (j - 1)
-
-   bwd :: Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
-   bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-      updateMatrix i j (const v) (vss × (i' × bot) × (j' × bot)) × ((i × bot) × (j × bot))
-
-matrixLookup2 :: forall a. BoundedJoinSemilattice a => BinarySlicer (MatrixRep a) ((Int × a) × (Int × a)) (Val a) a
-matrixLookup2 = { d1: matrixRep, d2: intPair, d3: val, fwd: fwd', bwd: bwd' }
+matrixLookup :: forall a. BoundedJoinSemilattice a => BinarySlicer (MatrixRep a) ((Int × a) × (Int × a)) (Val a) a
+matrixLookup = { d1: matrixRep, d2: intPair, d3: val, fwd: fwd', bwd: bwd' }
    where
    fwd :: MatrixRep a -> (Int × a) × (Int × a) -> Val a
    fwd (vss × _ × _) ((i × _) × (j × _)) = vss ! (i - 1) ! (j - 1)

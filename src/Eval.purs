@@ -11,19 +11,20 @@ import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
 import Data.Set (union, subset)
 import Data.Traversable (sequence, traverse)
+import Data.Tuple (fst)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
 import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, bot, botOf)
 import Pretty (prettyP)
-import Primitive (unwrap)
+import Primitive (intPair, unwrap)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip, zip) as P
-import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
+import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -86,7 +87,7 @@ eval γ (Constr _ c es) = do
    pure (T.Constr c ts × V.Constr bot c vs)
 eval γ (Matrix _ e (x × y) e') = do
    t × v <- eval γ e'
-   let (i' × (_ :: a)) × (j' × (_ :: a)) = unwrap v
+   let (i' × (_ :: a)) × (j' × (_ :: a)) = fst (intPair.match v)
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
       ( sequence $ do

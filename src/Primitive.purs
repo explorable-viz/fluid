@@ -1,7 +1,7 @@
 module Primitive where
 
-import Partial.Unsafe (unsafePartial)
 import Prelude hiding (absurd, apply, div, top)
+
 import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
@@ -10,6 +10,7 @@ import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class MeetSemilattice, (∧), bot, top)
+import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (Endo, type (×), (×), type (+), error)
 import Val (class Highlightable, PrimOp(..), Val(..))
@@ -26,7 +27,7 @@ unwrap = match >>> fst
 
 type ToFrom2 d a =
    { constr :: Highlightable a => d × a -> Val a
-   , constr_bwd :: Highlightable a => BoundedJoinSemilattice a => Val a -> d × a -- equivalent to match (except at Val)
+   , constr_bwd :: Highlightable a => BoundedLattice a => Val a -> d × a -- equivalent to match (except at Val)
    , match :: Highlightable a => BoundedMeetSemilattice a => Val a -> d × a
    }
 
@@ -43,37 +44,27 @@ val =
    , match: (_ × top) -- construction rights always provided
    }
 
-instance Highlightable a => ToFrom Int a where
-   constr (n × α) = Int α n
-   constr_bwd v = match v
-
-   match (Int α n) = n × α
-   match v = error ("Int expected; got " <> prettyP v)
-
 int :: forall a. ToFrom2 Int a
 int =
    { constr: \(n × α) -> Int α n
-   , constr_bwd: \v -> match v
-   , match: case _ of
-        Int α n -> n × α
-        v -> error ("Int expected; got " <> prettyP v)
+   , constr_bwd: match'
+   , match: match'
    }
-
-instance Highlightable a => ToFrom Number a where
-   constr (n × α) = Float α n
-   constr_bwd v = match v
-
-   match (Float α n) = n × α
-   match v = error ("Float expected; got " <> prettyP v)
+   where
+   match' :: Highlightable a => _
+   match' (Int α n) = n × α
+   match' v = error ("Int expected; got " <> prettyP v)
 
 number :: forall a. ToFrom2 Number a
 number =
    { constr: \(n × α) -> Float α n
-   , constr_bwd: \v -> match v
-   , match: case _ of
-        Float α n -> n × α
-        v -> error ("Float expected; got " <> prettyP v)
+   , constr_bwd: match'
+   , match: match'
    }
+   where
+   match' :: Highlightable a => _
+   match' (Float α n) = n × α
+   match' v = error ("Float expected; got " <> prettyP v)
 
 instance Highlightable a => ToFrom String a where
    constr (str × α) = Str α str
@@ -139,21 +130,16 @@ intOrNumberOrString =
       v -> error ("Int, Float or Str expected; got " <> prettyP v)
    }
 
-instance Highlightable a => ToFrom ((Int × a) × (Int × a)) a where
-   constr (nβ × mβ' × α) = Constr α cPair (constr nβ : constr mβ' : Nil)
-   constr_bwd v = match v
-
-   match (Constr α c (v : v' : Nil)) | c == cPair = match v × match v' × α
-   match v = error ("Pair expected; got " <> prettyP v)
-
 intPair :: forall a. ToFrom2 ((Int × a) × (Int × a)) a
 intPair =
-   { constr: \(nβ × mβ' × α) -> Constr α cPair (constr nβ : constr mβ' : Nil)
-   , constr_bwd: \v -> match v
-   , match: case _ of
-        Constr α c (v : v' : Nil) | c == cPair -> match v × match v' × α
-        v -> error ("Pair expected; got " <> prettyP v)
+   { constr: \(nβ × mβ' × α) -> Constr α cPair (int.constr nβ : int.constr mβ' : Nil)
+   , constr_bwd: match'
+   , match: match'
    }
+   where
+   match' :: Highlightable a => BoundedMeetSemilattice a => Val a -> ((Int × a) × (Int × a)) × a
+   match' (Constr α c (v : v' : Nil)) | c == cPair = int.match v × int.match v' × α
+   match' v = error ("Pair expected; got " <> prettyP v)
 
 instance Highlightable a => ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a where
    constr (r × α) = Matrix α r

@@ -8,7 +8,7 @@ import Web.Event.Event (target)
 import Web.Event.EventTarget (EventTarget)
 import App.Util (Handler, Renderer, toggleCell)
 import Lattice (𝔹)
-import Primitive (match)
+import Primitive (int)
 import Util (type (×), (×), (!), definitely')
 import Val (Array2, MatrixRep)
 
@@ -20,7 +20,7 @@ foreign import drawMatrix :: Renderer MatrixView
 
 matrixRep :: MatrixRep 𝔹 -> IntMatrix
 matrixRep ((vss × (i × _) × (j × _))) =
-   ((<$>) ((<$>) match)) vss × i × j
+   ((<$>) ((<$>) (\x -> int.match x))) vss × i × j
 
 matrixViewHandler :: Handler
 matrixViewHandler ev = uncurry toggleCell $ unsafePos $ target ev
