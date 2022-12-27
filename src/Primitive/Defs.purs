@@ -22,7 +22,7 @@ primitives = D.fromFoldable
    , "debugLog" × unary (withInverse1 (debugLog :: Val a -> Val a))
    , "dims" × unary (dims :: Unary (MatrixRep a) ((Int × a) × (Int × a)))
    , "error" × unary (withInverse1 (error_ :: String -> Val a))
-   , "floor" × unary2 toFromNumber toFromInt (withInverse1 floor)
+   , "floor" × unary2 (toFromNumber × toFromInt × withInverse1 floor)
    , "log" × unary (withInverse1 log)
    , "numToStr" × unary (withInverse1 numToStr)
    , "+" × binary (withInverse2 plus)
