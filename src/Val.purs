@@ -12,6 +12,7 @@ import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
+import Text.Pretty (Doc, beside, text)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
@@ -31,9 +32,19 @@ data Val a
 -- op_bwd will be provided with original output and arguments
 newtype PrimOp a = PrimOp
    { arity :: Int
-   , op :: BoundedMeetSemilattice a => List (Val a) -> Val a
-   , op_bwd :: BoundedJoinSemilattice a => Val a -> Endo (List (Val a))
+   , op :: Highlightable a => BoundedMeetSemilattice a => List (Val a) -> Val a
+   , op_bwd :: Highlightable a => BoundedJoinSemilattice a => Val a -> Endo (List (Val a))
    }
+
+class Highlightable a where
+   highlightIf :: a -> Endo Doc
+
+instance Highlightable Unit where
+   highlightIf _ = identity
+
+instance Highlightable Boolean where
+   highlightIf false = identity
+   highlightIf true = \doc -> text "_" `beside` doc `beside` text "_"
 
 -- Environments.
 type Env a = Dict (Val a)

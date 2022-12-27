@@ -10,9 +10,9 @@ import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class MeetSemilattice, (∧), bot, top)
-import Pretty (class Highlightable, prettyP)
+import Pretty (prettyP)
 import Util (Endo, type (×), (×), type (+), error)
-import Val (PrimOp(..), Val(..))
+import Val (class Highlightable, PrimOp(..), Val(..))
 
 -- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types.
@@ -25,9 +25,9 @@ unwrap :: forall d a. ToFrom d a => Val a -> d
 unwrap = match >>> fst
 
 type ToFrom2 d a =
-   { constr :: d × a -> Val a
-   , constr_bwd :: Val a -> d × a -- equivalent to match (except at Val)
-   , match :: Val a -> d × a
+   { constr :: Highlightable a => d × a -> Val a
+   , constr_bwd :: Highlightable a => Val a -> d × a -- equivalent to match (except at Val)
+   , match :: Highlightable a => Val a -> d × a
    }
 
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
@@ -43,6 +43,15 @@ instance Highlightable a => ToFrom Int a where
    match (Int α n) = n × α
    match v = error ("Int expected; got " <> prettyP v)
 
+toFromInt :: forall a. ToFrom2 Int a
+toFromInt =
+   { constr: \(n × α) -> Int α n
+   , constr_bwd: \v -> match v
+   , match: case _ of
+      Int α n -> n × α
+      v -> error ("Int expected; got " <> prettyP v)
+   }
+
 instance Highlightable a => ToFrom Number a where
    constr (n × α) = Float α n
    constr_bwd v = match v
@@ -50,7 +59,7 @@ instance Highlightable a => ToFrom Number a where
    match (Float α n) = n × α
    match v = error ("Float expected; got " <> prettyP v)
 
-toFromNumber :: forall a. Highlightable a => ToFrom2 Number a
+toFromNumber :: forall a. ToFrom2 Number a
 toFromNumber =
    { constr: \(n × α) -> Float α n
    , constr_bwd: \v -> match v
@@ -173,10 +182,10 @@ unary2_ s = flip Primitive Nil $ PrimOp
    , op_bwd: unsafePartial (apply1_bwd s)
    }
 
-apply1 :: forall d1 d2 a. Partial => BoundedMeetSemilattice a => UnarySlicer2 d1 d2 -> List (Val a) {-[d1]-} -> Val a {-d2-}
+apply1 :: forall d1 d2 a. Partial => Highlightable a => BoundedMeetSemilattice a => UnarySlicer2 d1 d2 -> List (Val a) {-[d1]-} -> Val a {-d2-}
 apply1 s (v : Nil) = s.d2.constr (s.fwd (s.d1.match v))
 
-apply1_bwd :: forall d1 d2 a. Partial => BoundedJoinSemilattice a => UnarySlicer2 d1 d2 -> Val a {-(d2, d2)-} -> List (Val a) {-[d1]-} -> List (Val a) {-[d1]-}
+apply1_bwd :: forall d1 d2 a. Partial => Highlightable a => BoundedJoinSemilattice a => UnarySlicer2 d1 d2 -> Val a {-(d2, d2)-} -> List (Val a) {-[d1]-} -> List (Val a) {-[d1]-}
 apply1_bwd s v (u1 : Nil) = s.d1.constr (s.bwd (s.d2.constr_bwd v) (fst (s.d1.match u1))) : Nil
 
 unary_ :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => UnarySlicer d1 d2 -> Val a

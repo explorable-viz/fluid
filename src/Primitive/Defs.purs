@@ -1,19 +1,19 @@
 module Primitive.Defs where
 
 import Prelude hiding (absurd, div, mod)
-import Prelude (div, mod) as P
+
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..))
 import Data.Number (log, pow) as N
-import Debug (trace)
 import DataType (cCons)
+import Debug (trace)
 import Dict (fromFoldable) as D
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, bot)
-import Pretty (class Highlightable)
-import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
+import Prelude (div, mod) as P
+import Primitive (Binary, Unary, binary, binaryZero, toFromInt, toFromNumber, unary, unary2, union, union1, unionStr, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
-import Val (Env, MatrixRep, Val(..), updateMatrix)
+import Val (class Highlightable, Env, MatrixRep, Val(..), updateMatrix)
 
 primitives :: forall a. Highlightable a => BoundedLattice a => Env a
 primitives = D.fromFoldable
@@ -22,7 +22,7 @@ primitives = D.fromFoldable
    , "debugLog" × unary (withInverse1 (debugLog :: Val a -> Val a))
    , "dims" × unary (dims :: Unary (MatrixRep a) ((Int × a) × (Int × a)))
    , "error" × unary (withInverse1 (error_ :: String -> Val a))
-   , "floor" × unary (withInverse1 floor)
+   , "floor" × unary2 toFromNumber toFromInt (withInverse1 floor)
    , "log" × unary (withInverse1 log)
    , "numToStr" × unary (withInverse1 numToStr)
    , "+" × binary (withInverse2 plus)

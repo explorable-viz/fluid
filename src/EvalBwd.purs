@@ -21,7 +21,7 @@ import Partial.Unsafe (unsafePartial)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
-import Val (Env, PrimOp(..), (<+>), Val, append_inv)
+import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, append_inv)
 import Val (Val(..)) as V
 
 closeDefsBwd :: forall a. BoundedJoinSemilattice a => Env a -> Env a × RecDefs a × a
@@ -63,14 +63,14 @@ matchManyBwd γγ' κ α (w : ws) =
    v × σ = matchBwd γ κ α w
    vs × κ' = matchManyBwd γ' (ContElim σ) α ws
 
-evalBwd :: forall a. BoundedJoinSemilattice a => Env a -> Expr a -> Val a -> Trace -> Env a × Expr a × a
+evalBwd :: forall a. Highlightable a => BoundedJoinSemilattice a => Env a -> Expr a -> Val a -> Trace -> Env a × Expr a × a
 evalBwd γ e v t =
    expand γ' γ × expand e' e × α
    where
    γ' × e' × α = evalBwd' v t
 
 -- Computes a partial slice which evalBwd expands to a full slice.
-evalBwd' :: forall a. BoundedJoinSemilattice a => Val a -> Trace -> Env a × Expr a × a
+evalBwd' :: forall a. Highlightable a => BoundedJoinSemilattice a => Val a -> Trace -> Env a × Expr a × a
 evalBwd' v (T.Var x) = D.singleton x v × Var x × bot
 evalBwd' v (T.Op op) = D.singleton op v × Op op × bot
 evalBwd' (V.Str α str) T.Const = empty × Str α str × α

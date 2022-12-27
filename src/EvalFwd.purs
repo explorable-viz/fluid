@@ -12,10 +12,9 @@ import Dict (disjointUnion, empty, get)
 import Dict (singleton) as O
 import Expr (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr, fv)
 import Lattice (class BoundedMeetSemilattice, (∧), top)
-import Pretty (class Highlightable)
 import Primitive (unwrap)
 import Util (type (×), (×), absurd, error)
-import Val (Env, PrimOp(..), (<+>), Val, for, restrict)
+import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, for, restrict)
 import Val (Val(..)) as V
 
 matchFwd :: forall a. BoundedMeetSemilattice a => Val a -> Elim a -> Env a × Cont a × a

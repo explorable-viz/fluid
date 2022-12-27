@@ -16,13 +16,13 @@ import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
 import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, bot, botOf)
-import Pretty (class Highlightable, prettyP)
+import Pretty (prettyP)
 import Primitive (unwrap)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip, zip) as P
-import Val (Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
+import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
 
 patternMismatch :: String -> String -> String
