@@ -86,31 +86,21 @@ intOrNumber =
    match' (Float α n) = Right n × α
    match' v = error ("Int or Float expected; got " <> prettyP v)
 
-instance Highlightable a => ToFrom (Int + Number + String) a where
-   constr (Left (Left n) × α) = Int α n
-   constr (Left (Right n) × α) = Float α n
-   constr (Right str × α) = Str α str
-
-   constr_bwd v = match v
-
-   match (Int α n) = Left (Left n) × α
-   match (Float α n) = Left (Right n) × α
-   match (Str α str) = Right str × α
-   match v = error ("Int, Float or Str expected; got " <> prettyP v)
-
 intOrNumberOrString :: forall a. ToFrom2 (Int + Number + String) a
 intOrNumberOrString =
    { constr: case _ of
       Left (Left n) × α -> Int α n
       Left (Right n) × α -> Float α n
       Right str × α -> Str α str
-   , constr_bwd: \v -> match v
-   , match: case _ of
-      Int α n -> Left (Left n) × α
-      Float α n -> Left (Right n) × α
-      Str α str -> Right str × α
-      v -> error ("Int, Float or Str expected; got " <> prettyP v)
+   , constr_bwd: match'
+   , match: match'
    }
+   where
+   match' :: Highlightable a => Val a -> (Int + Number + String) × a
+   match' (Int α n) = Left (Left n) × α
+   match' (Float α n) = Left (Right n) × α
+   match' (Str α str) = Right str × α
+   match' v = error ("Int, Float or Str expected; got " <> prettyP v)
 
 intPair :: forall a. ToFrom2 ((Int × a) × (Int × a)) a
 intPair =
