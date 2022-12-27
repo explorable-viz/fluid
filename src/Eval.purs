@@ -18,7 +18,7 @@ import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
 import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, bot, botOf)
 import Pretty (prettyP)
-import Primitive (intPair, unwrap)
+import Primitive (intPair, string)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
@@ -80,7 +80,8 @@ eval γ (Record _ xes) = do
    pure $ T.Record xts × V.Record bot xvs
 eval γ (Dictionary _ ees) = do
    (ts × vs) × (ts' × us) <- traverse (traverse (eval γ)) ees <#> (P.unzip >>> (unzip # both))
-   pure $ T.Dictionary (P.zip ts ts') × V.Dictionary bot (D.fromFoldable $ zip (vs <#> unwrap) us)
+   pure $ T.Dictionary (P.zip ts ts') ×
+          V.Dictionary bot (D.fromFoldable $ zip (vs <#> \u -> fst (string.match u)) us)
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip

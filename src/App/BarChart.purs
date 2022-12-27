@@ -12,7 +12,6 @@ import App.Util
    , Selector
    , from
    , get_intOrNumber
-   , get_prim
    , record
    , selectNth
    , toggleConstrArg
@@ -21,6 +20,7 @@ import App.Util
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
 import Dict (Dict, get)
 import Lattice (𝔹, neg)
+import Primitive (string)
 import Util (type (×), (!), definitely')
 import Val (Val)
 
@@ -31,13 +31,13 @@ foreign import drawBarChart :: Renderer BarChart
 
 instance Reflect (Dict (Val Boolean)) BarChartRecord where
    from r = BarChartRecord
-      { x: get_prim f_x r
+      { x: string.match (get f_x r)
       , y: get_intOrNumber f_y r
       }
 
 instance Reflect (Dict (Val Boolean)) BarChart where
    from r = BarChart
-      { caption: get_prim f_caption r
+      { caption: string.match (get f_caption r)
       , data: record from <$> from (get f_data r)
       }
 
