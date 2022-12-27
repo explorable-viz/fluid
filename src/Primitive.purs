@@ -9,7 +9,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class MeetSemilattice, (∧), bot, top)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class MeetSemilattice, Raw, (∧), bot, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (Endo, type (×), (×), type (+), error)
@@ -68,8 +68,8 @@ string =
 intOrNumber :: forall a. ToFrom (Int + Number) a
 intOrNumber =
    { constr: case _ of
-        Left n × α -> Int α n
-        Right n × α -> Float α n
+      Left n × α -> Int α n
+      Right n × α -> Float α n
    , constr_bwd: match'
    , match: match'
    }
@@ -82,9 +82,9 @@ intOrNumber =
 intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
    { constr: case _ of
-        Left (Left n) × α -> Int α n
-        Left (Right n) × α -> Float α n
-        Right str × α -> Str α str
+      Left (Left n) × α -> Int α n
+      Left (Right n) × α -> Float α n
+      Right str × α -> Str α str
    , constr_bwd: match'
    , match: match'
    }
@@ -131,8 +131,8 @@ record =
 boolean :: forall a. ToFrom Boolean a
 boolean =
    { constr: case _ of
-        true × α -> Constr α cTrue Nil
-        false × α -> Constr α cFalse Nil
+      true × α -> Constr α cTrue Nil
+      false × α -> Constr α cFalse Nil
    , constr_bwd: match'
    , match: match'
    }
@@ -190,7 +190,7 @@ unary_ s = flip Primitive Nil $ PrimOp
 apply1 :: forall d1 d2 a. Partial => Highlightable a => BoundedMeetSemilattice a => UnarySlicer d1 d2 a -> List (Val a) {-[d1]-} -> Val a {-d2-}
 apply1 s (v : Nil) = s.d2.constr (s.fwd (s.d1.match v))
 
-apply1_bwd :: forall d1 d2 a. Partial => Highlightable a => BoundedLattice a => UnarySlicer d1 d2 a -> Val a {-(d2, d2)-} -> List (Val a) {-[d1]-} -> List (Val a) {-[d1]-}
+apply1_bwd :: forall d1 d2 a'. Partial => Highlightable a' => BoundedLattice a' => (forall a. UnarySlicer d1 d2 a) -> Val a' {-(d2, d2)-} -> List (Raw Val) {-[d1]-} -> List (Val a') {-[d1]-}
 apply1_bwd s v (u1 : Nil) = s.d1.constr (s.bwd (s.d2.constr_bwd v) (fst (s.d1.match u1))) : Nil
 
 binary_ :: forall d1 d2 d3 a'. (forall a. BinarySlicer d1 d2 d3 a) -> Val a'
@@ -203,7 +203,7 @@ binary_ s = flip Primitive Nil $ PrimOp
 apply2 :: forall d1 d2 d3 a. Partial => Highlightable a => BoundedMeetSemilattice a => BinarySlicer d1 d2 d3 a -> List (Val a) {-[d1, d2]-} -> Val a {-d3-}
 apply2 s (v : v' : Nil) = s.d3.constr (s.fwd (s.d1.match v) (s.d2.match v'))
 
-apply2_bwd :: forall d1 d2 d3 a. Partial => Highlightable a => BoundedLattice a => BinarySlicer d1 d2 d3 a -> Val a {-(d3, d3)-} -> List (Val a) {-[d1, d2]-} -> List (Val a) {-[d1, d2]-}
+apply2_bwd :: forall d1 d2 d3 a'. Partial => Highlightable a' => BoundedLattice a' => (forall a. BinarySlicer d1 d2 d3 a) -> Val a' {-(d3, d3)-} -> List (Raw Val) {-[d1, d2]-} -> List (Val a') {-[d1, d2]-}
 apply2_bwd s v (u1 : u2 : Nil) = s.d1.constr v1 : s.d2.constr v2 : Nil
    where
    v1 × v2 = s.bwd (s.d3.constr_bwd v) (fst (s.d1.match u1) × fst (s.d2.match u2))
