@@ -128,29 +128,20 @@ instance Highlightable a => ToFrom (Dict (Val a)) a where
    match (Record α xvs) = xvs × α
    match v = error ("Record expected; got " <> prettyP v)
 
-instance Highlightable a => ToFrom Boolean a where
-   constr (true × α) = Constr α cTrue Nil
-   constr (false × α) = Constr α cFalse Nil
-
-   constr_bwd v = match v
-
-   match (Constr α c Nil)
-      | c == cTrue = true × α
-      | c == cFalse = false × α
-   match v = error ("Boolean expected; got " <> prettyP v)
-
 boolean :: forall a. ToFrom2 Boolean a
 boolean =
    { constr: case _ of
       true × α -> Constr α cTrue Nil
       false × α -> Constr α cFalse Nil
-   , constr_bwd: \v -> match v
-   , match: case _ of
-      Constr α c Nil
-         | c == cTrue -> true × α
-         | c == cFalse -> false × α
-      v -> error ("Boolean expected; got " <> prettyP v)
+   , constr_bwd: match'
+   , match: match'
    }
+   where
+   match' :: Highlightable a => Val a -> Boolean × a
+   match' (Constr α c Nil)
+      | c == cTrue = true × α
+      | c == cFalse = false × α
+   match' v = error ("Boolean expected; got " <> prettyP v)
 
 class IsZero a where
    isZero :: a -> Boolean
