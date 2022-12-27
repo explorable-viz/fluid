@@ -24,6 +24,12 @@ class ToFrom d a where
 unwrap :: forall d a. ToFrom d a => Val a -> d
 unwrap = match >>> fst
 
+type ToFrom2 d a =
+   { constr :: d × a -> Val a
+   , constr_bwd :: Val a -> d × a -- equivalent to match (except at Val)
+   , match :: Val a -> d × a
+   }
+
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
 instance BoundedLattice a => ToFrom (Val a) a where
    constr = fst -- construction rights not required
@@ -134,6 +140,13 @@ type UnarySlicer d1 d2 =
    , bwd :: forall a. BoundedJoinSemilattice a => d2 × a -> d1 -> d1 × a
    }
 
+type UnarySlicer2 d1 d2 =
+   { d1 :: forall a. ToFrom2 d1 a,
+     d2 :: forall a. ToFrom2 d2 a,
+     fwd :: forall a. BoundedMeetSemilattice a => d1 × a -> d2 × a
+   , bwd :: forall a. BoundedJoinSemilattice a => d2 × a -> d1 -> d1 × a
+   }
+
 type Binary d1 d2 d3 =
    { fwd :: d1 -> d2 -> d3
    , bwd :: d3 -> Endo (d1 × d2)
@@ -143,6 +156,19 @@ type BinarySlicer d1 d2 d3 =
    { fwd :: forall a. BoundedMeetSemilattice a => d1 × a -> d2 × a -> d3 × a
    , bwd :: forall a. BoundedJoinSemilattice a => d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
    }
+
+unary2_ :: forall d1 d2 a. UnarySlicer2 d1 d2 -> Val a
+unary2_ s = flip Primitive Nil $ PrimOp
+   { arity: 1
+   , op: unsafePartial (apply1 s)
+   , op_bwd: unsafePartial (apply1_bwd s)
+   }
+
+apply1 :: forall d1 d2 a. Partial => BoundedMeetSemilattice a => UnarySlicer2 d1 d2 -> List (Val a) {-[d1]-} -> Val a {-d2-}
+apply1 s (v : Nil) = s.d2.constr (s.fwd (s.d1.match v))
+
+apply1_bwd :: forall d1 d2 a. Partial => BoundedJoinSemilattice a => UnarySlicer2 d1 d2 -> Val a {-(d2, d2)-} -> List (Val a) {-[d1]-} -> List (Val a) {-[d1]-}
+apply1_bwd s v (u1 : Nil) = s.d1.constr (s.bwd (s.d2.constr_bwd v) (fst (s.d1.match u1))) : Nil
 
 unary_ :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => UnarySlicer d1 d2 -> Val a
 unary_ { fwd, bwd } = flip Primitive Nil $ PrimOp
@@ -177,6 +203,15 @@ withInverse1 fwd = { fwd, bwd: const identity }
 
 withInverse2 :: forall d1 d2 d3. (d1 -> d2 -> d3) -> Binary d1 d2 d3
 withInverse2 fwd = { fwd, bwd: const identity }
+
+unary2 :: forall d1 d2 a'. (forall a. ToFrom2 d1 a) -> (forall a. ToFrom2 d2 a) -> Unary d1 d2 -> Val a'
+unary2 d1 d2 { fwd, bwd } = unary2_ { d1, d2, fwd: fwd', bwd: bwd' }
+   where
+   fwd' :: forall a. d1 × a -> d2 × a
+   fwd' (x × α) = fwd x × α
+
+   bwd' :: forall a. d2 × a -> d1 -> d1 × a
+   bwd' (y × α) x = bwd y x × α
 
 unary :: forall d1 d2 a'. ToFrom d1 a' => ToFrom d2 a' => Unary d1 d2 -> Val a'
 unary { fwd, bwd } = unary_ { fwd: fwd', bwd: bwd' }
