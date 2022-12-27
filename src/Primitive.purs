@@ -55,8 +55,8 @@ toFromInt =
    { constr: \(n × α) -> Int α n
    , constr_bwd: \v -> match v
    , match: case _ of
-      Int α n -> n × α
-      v -> error ("Int expected; got " <> prettyP v)
+        Int α n -> n × α
+        v -> error ("Int expected; got " <> prettyP v)
    }
 
 instance Highlightable a => ToFrom Number a where
@@ -71,8 +71,8 @@ toFromNumber =
    { constr: \(n × α) -> Float α n
    , constr_bwd: \v -> match v
    , match: case _ of
-      Float α n -> n × α
-      v -> error ("Float expected; got " <> prettyP v)
+        Float α n -> n × α
+        v -> error ("Float expected; got " <> prettyP v)
    }
 
 instance Highlightable a => ToFrom String a where
@@ -166,9 +166,9 @@ type UnarySlicer d1 d2 =
    }
 
 type UnarySlicer2 d1 d2 a =
-   { d1 :: ToFrom2 d1 a,
-     d2 :: ToFrom2 d2 a,
-     fwd :: BoundedMeetSemilattice a => d1 × a -> d2 × a
+   { d1 :: ToFrom2 d1 a
+   , d2 :: ToFrom2 d2 a
+   , fwd :: BoundedMeetSemilattice a => d1 × a -> d2 × a
    , bwd :: BoundedJoinSemilattice a => d2 × a -> d1 -> d1 × a
    }
 

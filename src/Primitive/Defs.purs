@@ -18,7 +18,7 @@ import Val (class Highlightable, Env, MatrixRep, Val(..), updateMatrix)
 primitives :: forall a. Highlightable a => BoundedLattice a => Env a
 primitives = D.fromFoldable
    [ ":" × Constr bot cCons Nil
-   , "ceiling" × unary (withInverse1 ceil)
+   , "ceiling" × unary2 (toFromNumber × toFromInt × withInverse1 ceil)
    , "debugLog" × unary2 (toFromVal × toFromVal × withInverse1 debugLog)
    , "dims" × unary (dims :: Unary (MatrixRep a) ((Int × a) × (Int × a)))
    , "error" × unary (withInverse1 (error_ :: String -> Val a))
