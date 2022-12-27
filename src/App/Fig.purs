@@ -28,7 +28,7 @@ import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
 import Lattice (𝔹, botOf, neg)
 import Module (File(..), open, openDatasetAs)
-import Primitive (match)
+import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
@@ -57,7 +57,7 @@ view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
 view title u@(Constr _ c _) | c == cNil || c == cCons =
    EnergyTableView (EnergyTable { title, table: unsafePartial $ record energyRecord <$> from u })
 view title u@(Matrix _ _) =
-   MatrixFig (MatrixView { title, matrix: matrixRep $ fst (match u) })
+   MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.match u) })
 view _ _ = error absurd
 
 -- An example of the form (let <defs> in expr) can be decomposed as follows.

@@ -13,7 +13,7 @@ import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Bounde
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (Endo, type (×), (×), type (+), error)
-import Val (class Highlightable, PrimOp(..), Val(..))
+import Val (class Highlightable, MatrixRep, PrimOp(..), Val(..))
 
 -- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types.
@@ -110,21 +110,16 @@ intPair =
    match' (Constr α c (v : v' : Nil)) | c == cPair = int.match v × int.match v' × α
    match' v = error ("Pair expected; got " <> prettyP v)
 
-instance Highlightable a => ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a where
-   constr (r × α) = Matrix α r
-   constr_bwd v = match v
-
-   match (Matrix α r) = r × α
-   match v = error ("Matrix expected; got " <> prettyP v)
-
 matrixRep :: forall a. ToFrom2 (Array (Array (Val a)) × (Int × a) × (Int × a)) a
 matrixRep =
    { constr: \(r × α) -> Matrix α r
-   , constr_bwd: \v -> match v
-   , match: case _ of
-        Matrix α r -> r × α
-        v -> error ("Matrix expected; got " <> prettyP v)
+   , constr_bwd: match'
+   , match: match'
    }
+   where
+   match' :: Highlightable a => Val a -> MatrixRep a × a
+   match' (Matrix α r) = r × α
+   match' v = error ("Matrix expected; got " <> prettyP v)
 
 instance Highlightable a => ToFrom (Dict (Val a)) a where
    constr (xvs × α) = Record α xvs
