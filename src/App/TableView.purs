@@ -1,9 +1,10 @@
 module App.TableView where
 
 import Prelude
-import App.Util (Handler, Renderer, get_intOrNumber, get_prim)
-import Dict (Dict)
+import App.Util (Handler, Renderer, get_intOrNumber)
+import Dict (Dict, get)
 import Lattice (𝔹)
+import Primitive (int, string)
 import Util (type (×))
 import Val (Val)
 
@@ -16,9 +17,9 @@ foreign import drawTable :: Renderer EnergyTable
 
 energyRecord :: Dict (Val 𝔹) -> EnergyRecord
 energyRecord r =
-   { year: get_prim "year" r
-   , country: get_prim "country" r
-   , energyType: get_prim "energyType" r
+   { year: int.match (get "year" r)
+   , country: string.match (get "country" r)
+   , energyType: string.match (get "energyType" r)
    , output: get_intOrNumber "output" r
    }
 

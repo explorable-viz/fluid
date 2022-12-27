@@ -1,4 +1,4 @@
-module Pretty (class Highlightable, class Pretty, class ToList, highlightIf, pretty, prettyP, toList, module P) where
+module Pretty (class Pretty, class ToList, pretty, prettyP, toList, module P) where
 
 import Prelude hiding (absurd, between)
 
@@ -21,7 +21,7 @@ import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
 import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
 import Util.Pair (toTuple)
-import Val (PrimOp, Val)
+import Val (class Highlightable, PrimOp, Val, highlightIf)
 import Val (Val(..)) as V
 
 infixl 5 beside as :<>:
@@ -34,13 +34,6 @@ between l r doc = l :<>: doc :<>: r
 
 brackets :: Endo Doc
 brackets = between (text str.lBracket) (text str.rBracket)
-
-class Highlightable a where
-   highlightIf :: a -> Endo Doc
-
-instance Highlightable Boolean where
-   highlightIf false = identity
-   highlightIf true = between (text "_") (text "_")
 
 colon :: Doc
 colon = text str.colon
@@ -180,7 +173,7 @@ instance Highlightable a => Pretty (Val a) where
    pretty (V.Closure _ _ _ _) = text "<closure>"
    pretty (V.Primitive φ _) = parens (pretty φ)
 
-instance Pretty (PrimOp a) where
+instance Pretty PrimOp where
    pretty _ = text "<prim op>" -- TODO
 
 -- Surface language

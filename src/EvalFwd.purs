@@ -8,15 +8,15 @@ import Data.List (List(..), (:), length, range, singleton)
 import Data.Profunctor.Strong ((***), first, second)
 import Data.Set (toUnfoldable) as S
 import Data.Set (union)
+import Data.Tuple (fst)
 import Dict (disjointUnion, empty, get)
 import Dict (singleton) as O
 import Expr (Cont, Elim(..), Expr(..), RecDefs, VarDef(..), asElim, asExpr, fv)
 import Lattice (class BoundedMeetSemilattice, (∧), top)
-import Pretty (class Highlightable)
-import Primitive (unwrap)
+import Primitive (intPair)
 import Util (type (×), (×), absurd, error)
-import Val (Env, PrimOp(..), (<+>), Val, for, restrict)
 import Val (Val(..)) as V
+import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, for, restrict)
 
 matchFwd :: forall a. BoundedMeetSemilattice a => Val a -> Elim a -> Env a × Cont a × a
 matchFwd v (ElimVar x κ)
@@ -51,10 +51,9 @@ evalFwd γ (Record α xes) α' =
    xvs = xes <#> (\e -> evalFwd γ e α')
 evalFwd γ (Constr α c es) α' =
    V.Constr (α ∧ α') c ((\e' -> evalFwd γ e' α') <$> es)
--- here
 evalFwd γ (Matrix α e1 (x × y) e2) α' =
    let
-      (i' × β) × (j' × β') = unwrap $ evalFwd γ e2 α'
+      (i' × β) × (j' × β') = fst (intPair.match (evalFwd γ e2 α'))
       vss = A.fromFoldable $ do
          i <- range 1 i'
          singleton $ A.fromFoldable $ do

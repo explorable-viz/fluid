@@ -14,7 +14,6 @@ import App.Util
    , Selector
    , from
    , get_intOrNumber
-   , get_prim
    , record
    , selectNth
    , toggleConstrArg
@@ -23,6 +22,7 @@ import App.Util
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict, get)
 import Lattice (𝔹, neg)
+import Primitive (string)
 import Util (type (×), (×), (!), definitely')
 import Val (Val(..))
 
@@ -40,13 +40,13 @@ instance Reflect (Dict (Val Boolean)) Point where
 
 instance Reflect (Dict (Val Boolean)) LinePlot where
    from r = LinePlot
-      { name: get_prim f_name r
+      { name: string.match (get f_name r)
       , data: record from <$> from (get f_data r)
       }
 
 instance Reflect (Dict (Val Boolean)) LineChart where
    from r = LineChart
-      { caption: get_prim f_caption r
+      { caption: string.match (get f_caption r)
       , plots: from <$> (from (get f_plots r) :: Array (Val 𝔹)) :: Array LinePlot
       }
 

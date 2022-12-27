@@ -1,47 +1,47 @@
 module Primitive.Defs where
 
 import Prelude hiding (absurd, div, mod)
-import Prelude (div, mod) as P
+
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..))
 import Data.Number (log, pow) as N
-import Debug (trace)
 import DataType (cCons)
+import Debug (trace)
 import Dict (fromFoldable) as D
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, bot)
-import Pretty (class Highlightable)
-import Primitive (Binary, Unary, binary, binaryZero, unary, union, union1, unionStr, withInverse1, withInverse2)
+import Lattice (class BoundedJoinSemilattice, class MeetSemilattice, Raw, (∧), bot)
+import Prelude (div, mod) as P
+import Primitive (BinarySlicer, Unary, binary, binary_, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
 import Val (Env, MatrixRep, Val(..), updateMatrix)
 
-primitives :: forall a. Highlightable a => BoundedLattice a => Env a
+primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Constr bot cCons Nil
-   , "ceiling" × unary (withInverse1 ceil)
-   , "debugLog" × unary (withInverse1 (debugLog :: Val a -> Val a))
-   , "dims" × unary (dims :: Unary (MatrixRep a) ((Int × a) × (Int × a)))
-   , "error" × unary (withInverse1 (error_ :: String -> Val a))
-   , "floor" × unary (withInverse1 floor)
-   , "log" × unary (withInverse1 log)
-   , "numToStr" × unary (withInverse1 numToStr)
-   , "+" × binary (withInverse2 plus)
-   , "-" × binary (withInverse2 minus)
-   , "*" × binaryZero (withInverse2 times)
-   , "**" × binaryZero (withInverse2 pow)
-   , "/" × binaryZero (withInverse2 divide)
-   , "==" × binary (withInverse2 equals)
-   , "/=" × binary (withInverse2 notEquals)
-   , "<" × binary (withInverse2 lessThan)
-   , ">" × binary (withInverse2 greaterThan)
-   , "<=" × binary (withInverse2 lessThanEquals)
-   , ">=" × binary (withInverse2 greaterThanEquals)
-   , "++" × binary (withInverse2 concat)
-   , "!" × binary (matrixLookup :: Binary (MatrixRep a) ((Int × a) × (Int × a)) (Val a))
-   , "div" × binaryZero (withInverse2 div)
-   , "mod" × binaryZero (withInverse2 mod)
-   , "quot" × binaryZero (withInverse2 quot)
-   , "rem" × binaryZero (withInverse2 rem)
+   , "ceiling" × unary (number × int × withInverse1 ceil)
+   , "debugLog" × unary (val × val × withInverse1 debugLog)
+   , "dims" × unary (matrixRep × intPair × dims)
+   , "error" × unary (string × val × withInverse1 error_)
+   , "floor" × unary (number × int × withInverse1 floor)
+   , "log" × unary (intOrNumber × number × withInverse1 log)
+   , "numToStr" × unary (intOrNumber × string × withInverse1 numToStr)
+   , "+" × binary (intOrNumber × intOrNumber × intOrNumber × withInverse2 plus)
+   , "-" × binary (intOrNumber × intOrNumber × intOrNumber × withInverse2 minus)
+   , "*" × binaryZero (intOrNumber × intOrNumber × withInverse2 times)
+   , "**" × binaryZero (intOrNumber × intOrNumber × withInverse2 pow)
+   , "/" × binaryZero (intOrNumber × intOrNumber × withInverse2 divide)
+   , "==" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 equals)
+   , "/=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 notEquals)
+   , "<" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 lessThan)
+   , ">" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 greaterThan)
+   , "<=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 lessThanEquals)
+   , ">=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 greaterThanEquals)
+   , "++" × binary (string × string × string × withInverse2 concat)
+   , "!" × binary_ matrixLookup
+   , "div" × binaryZero (int × int × withInverse2 div)
+   , "mod" × binaryZero (int × int × withInverse2 mod)
+   , "quot" × binaryZero (int × int × withInverse2 quot)
+   , "rem" × binaryZero (int × int × withInverse2 rem)
    ]
 
 debugLog :: forall a. Val a -> Val a
@@ -61,15 +61,23 @@ dims = { fwd, bwd }
 
 -- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
 -- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.
-matrixLookup :: forall a. BoundedJoinSemilattice a => Binary (MatrixRep a) ((Int × a) × (Int × a)) (Val a)
-matrixLookup = { fwd, bwd }
+matrixLookup :: forall a. BinarySlicer (MatrixRep a) ((Int × a) × (Int × a)) (Val a) a
+matrixLookup = { d1: matrixRep, d2: intPair, d3: val, fwd: fwd', bwd: bwd' }
    where
    fwd :: MatrixRep a -> (Int × a) × (Int × a) -> Val a
    fwd (vss × _ × _) ((i × _) × (j × _)) = vss ! (i - 1) ! (j - 1)
 
-   bwd :: Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
+   bwd :: BoundedJoinSemilattice a => Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
       updateMatrix i j (const v) (vss × (i' × bot) × (j' × bot)) × ((i × bot) × (j × bot))
+
+   fwd' :: MeetSemilattice a => MatrixRep a × a -> ((Int × a) × (Int × a)) × a -> Val a × a
+   fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
+
+   bwd' :: BoundedJoinSemilattice a => Val a × a -> MatrixRep a × ((Int × a) × (Int × a)) -> (MatrixRep a × a) × ((Int × a) × (Int × a) × a)
+   bwd' (z × α) (x × y) = (x' × α) × (y' × α)
+      where
+      x' × y' = bwd z (x × y)
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

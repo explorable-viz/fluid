@@ -6,39 +6,37 @@ import Data.Set (Set, empty, singleton, unions)
 import Dict (Dict)
 import Bindings (Var)
 import DataType (Ctr)
-import Expr (class BV, Elim, RecDefs, bv)
+import Expr (class BV, RecDefs, bv)
+import Lattice (Raw)
 import Util (type (×))
 import Util.Pair (Pair)
 import Val (Array2, PrimOp, Val)
 
-data VarDef a = VarDef (Match a) (Trace a)
-
 -- We record "raw" (unannotated) values in some cases; represent as values annotated with false.
-data Trace a
+data Trace
    = Var Var
    | Op Var
-   | Int Int
-   | Float Number
-   | Str String
-   | Record (Dict (Trace a))
-   | Dictionary (List (Pair (Trace a)))
-   | Constr Ctr (List (Trace a))
-   | Matrix (Array2 (Trace a)) (Var × Var) (Int × Int) (Trace a)
-   | Lambda (Elim a)
-   | Project (Trace a) Var
-   | App (Trace a × Set Var × Elim a) (Trace a) (Match a) (Trace a)
-   | AppPrim (Trace a × PrimOp a × List (Val a)) (Trace a × Val a) -- record prior arguments
-   | AppConstr (Trace a × Ctr × Int) (Trace a) -- record number of prior arguments
-   | Let (VarDef a) (Trace a)
-   | LetRec (RecDefs a) (Trace a)
+   | Const
+   | Record (Dict Trace)
+   | Dictionary (List (Pair Trace))
+   | Constr Ctr (List Trace)
+   | Matrix (Array2 Trace) (Var × Var) (Int × Int) Trace
+   | Project Trace Var
+   | App (Trace × Set Var) Trace Match Trace
+   | AppPrim (Trace × PrimOp × List (Raw Val)) (Trace × Raw Val) -- record prior arguments
+   | AppConstr (Trace × Ctr × Int) Trace -- record number of prior arguments
+   | Let VarDef Trace
+   | LetRec (Raw RecDefs) Trace
 
-data Match a
-   = MatchVar Var (Val a)
-   | MatchVarAnon (Val a)
-   | MatchConstr Ctr (List (Match a))
-   | MatchRecord (Dict (Match a))
+data VarDef = VarDef Match Trace
 
-instance BV (Match a) where
+data Match
+   = MatchVar Var (Raw Val)
+   | MatchVarAnon (Raw Val)
+   | MatchConstr Ctr (List Match)
+   | MatchRecord (Dict Match)
+
+instance BV Match where
    bv (MatchVar x _) = singleton x
    bv (MatchVarAnon _) = empty
    bv (MatchConstr _ ws) = unions (bv <$> ws)

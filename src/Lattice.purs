@@ -67,10 +67,10 @@ class JoinSemilattice a <= PartialJoinSemilattice a where
 definedJoin :: forall a. PartialJoinSemilattice a => a -> a -> a
 definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
 
-botOf :: forall t a. Functor t => BoundedJoinSemilattice a => Endo (t a)
+botOf :: forall t a a'. Functor t => BoundedJoinSemilattice a => BoundedJoinSemilattice a' => t a -> t a'
 botOf = (<$>) (const bot)
 
-topOf :: forall t a. Functor t => BoundedJoinSemilattice a => Endo (t a)
+topOf :: forall t a a'. Functor t => BoundedJoinSemilattice a => BoundedJoinSemilattice a' => t a -> t a'
 topOf = (<$>) (const bot >>> neg)
 
 -- Give ∧ and ∨ same associativity and precedence as * and +

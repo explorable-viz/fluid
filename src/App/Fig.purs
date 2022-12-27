@@ -28,7 +28,7 @@ import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
 import Lattice (𝔹, botOf, neg)
 import Module (File(..), open, openDatasetAs)
-import Primitive (match)
+import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
@@ -57,7 +57,7 @@ view _ (Constr _ c (u1 : Nil)) | c == cLineChart =
 view title u@(Constr _ c _) | c == cNil || c == cCons =
    EnergyTableView (EnergyTable { title, table: unsafePartial $ record energyRecord <$> from u })
 view title u@(Matrix _ _) =
-   MatrixFig (MatrixView { title, matrix: matrixRep $ fst (match u) })
+   MatrixFig (MatrixView { title, matrix: matrixRep $ fst (P.matrixRep.match u) })
 view _ _ = error absurd
 
 -- An example of the form (let <defs> in expr) can be decomposed as follows.
@@ -89,7 +89,7 @@ type Fig =
    , γ :: Env 𝔹 -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
    , s :: S.Expr 𝔹 -- body of example
    , e :: Expr 𝔹 -- desugared s
-   , t :: Trace 𝔹
+   , t :: Trace
    , v :: Val 𝔹
    }
 
@@ -109,8 +109,8 @@ type LinkFig =
    , s2 :: S.Expr 𝔹
    , e1 :: Expr 𝔹
    , e2 :: Expr 𝔹
-   , t1 :: Trace 𝔹
-   , t2 :: Trace 𝔹
+   , t1 :: Trace
+   , t2 :: Trace
    , v1 :: Val 𝔹
    , v2 :: Val 𝔹
    , v0 :: Val 𝔹 -- common data named by spec.x
@@ -161,7 +161,7 @@ figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    views <- valViews γ0γ xs
    pure $ view "output" v' × views
 
-linkResult :: Var -> Env 𝔹 -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace 𝔹 -> Trace 𝔹 -> Val 𝔹 -> MayFail LinkResult
+linkResult :: Var -> Env 𝔹 -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> MayFail LinkResult
 linkResult x γ0 γ e1 e2 t1 _ v1 = do
    let
       γ0γ × _ × _ = evalBwd (γ0 <+> γ) e1 v1 t1

@@ -11,27 +11,28 @@ import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
 import Data.Set (union, subset)
 import Data.Traversable (sequence, traverse)
+import Data.Tuple (fst)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
-import Lattice (class BoundedJoinSemilattice, 𝔹, bot)
-import Pretty (class Highlightable, prettyP)
-import Primitive (unwrap)
+import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, bot, botOf)
+import Pretty (prettyP)
+import Primitive (intPair, string)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip, zip) as P
-import Val (Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 import Val (Val(..)) as V
+import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall a. Highlightable a => Val a -> Elim a -> MayFail (Env a × Cont a × Match a)
+match :: forall a. Highlightable a => BoundedJoinSemilattice a => Val a -> Elim a -> MayFail (Env a × Cont a × Match)
 match v (ElimVar x κ)
-   | x == varAnon = pure (empty × κ × MatchVarAnon v)
-   | otherwise = pure (D.singleton x v × κ × MatchVar x v)
+   | x == varAnon = pure (empty × κ × MatchVarAnon (botOf v))
+   | otherwise = pure (D.singleton x v × κ × MatchVar x (botOf v))
 match (V.Constr _ c vs) (ElimConstr m) = do
    with "Pattern mismatch" $ S.singleton c `consistentWith` keys m
    κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (lookup c m)
@@ -45,7 +46,7 @@ match (V.Record _ xvs) (ElimRecord xs κ) = do
    second (zip xs' >>> D.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get xvs) κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall a. Highlightable a => List (Val a) -> Cont a -> MayFail (Env a × Cont a × List (Match a))
+matchMany :: forall a. Highlightable a => BoundedJoinSemilattice a => List (Val a) -> Cont a -> MayFail (Env a × Cont a × List Match)
 matchMany Nil κ = pure (empty × κ × Nil)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ' × w <- match v σ
@@ -67,25 +68,27 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-eval :: forall a. BoundedJoinSemilattice a => Highlightable a => Env a -> Expr a -> MayFail (Trace a × Val a)
+-- TODO: after merge of eval/evalFwd, BoundedJoinSemilattice instance should no longer be required
+eval :: forall a. BoundedJoinSemilattice a => BoundedMeetSemilattice a => Highlightable a => Env a -> Expr a -> MayFail (Trace × Val a)
 eval γ (Var x) = (T.Var x × _) <$> lookup' x γ
 eval γ (Op op) = (T.Op op × _) <$> lookup' op γ
-eval _ (Int _ n) = pure (T.Int n × V.Int bot n)
-eval _ (Float _ n) = pure (T.Float n × V.Float bot n)
-eval _ (Str _ str) = pure (T.Str str × V.Str bot str)
+eval _ (Int _ n) = pure (T.Const × V.Int bot n)
+eval _ (Float _ n) = pure (T.Const × V.Float bot n)
+eval _ (Str _ str) = pure (T.Const × V.Str bot str)
 eval γ (Record _ xes) = do
    xts × xvs <- traverse (eval γ) xes <#> D.unzip
    pure $ T.Record xts × V.Record bot xvs
 eval γ (Dictionary _ ees) = do
    (ts × vs) × (ts' × us) <- traverse (traverse (eval γ)) ees <#> (P.unzip >>> (unzip # both))
-   pure $ T.Dictionary (P.zip ts ts') × V.Dictionary bot (D.fromFoldable $ zip (vs <#> unwrap) us)
+   pure $ T.Dictionary (P.zip ts ts') ×
+      V.Dictionary bot (D.fromFoldable $ zip (vs <#> \u -> fst (string.match u)) us)
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip
    pure (T.Constr c ts × V.Constr bot c vs)
 eval γ (Matrix _ e (x × y) e') = do
    t × v <- eval γ e'
-   let (i' × (_ :: a)) × (j' × (_ :: a)) = unwrap v
+   let (i' × (_ :: a)) × (j' × (_ :: a)) = fst (intPair.match v)
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
       ( sequence $ do
@@ -100,7 +103,7 @@ eval γ (Matrix _ e (x × y) e') = do
    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
 eval γ (Lambda σ) =
-   pure $ T.Lambda σ × V.Closure bot (γ `restrict` fv σ) empty σ
+   pure $ T.Const × V.Closure bot (γ `restrict` fv σ) empty σ
 eval γ (Project e x) = do
    t × v <- eval γ e
    case v of
@@ -114,13 +117,13 @@ eval γ (App e e') = do
          let γ2 = closeDefs γ1 ρ
          γ3 × e'' × w <- match v' σ
          t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'')
-         pure $ T.App (t × S.fromFoldable (keys ρ) × σ) t' w t'' × v''
+         pure $ T.App (t × S.fromFoldable (keys ρ)) t' w t'' × v''
       V.Primitive (PrimOp φ) vs ->
          let
             vs' = vs <> singleton v'
             v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs'
          in
-            pure $ T.AppPrim (t × PrimOp φ × vs) (t' × v') × v''
+            pure $ T.AppPrim (t × (PrimOp φ) × (botOf <$> vs)) (t' × botOf v') × v''
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> showCtr c)
          pure $ T.AppConstr (t × c × length vs) t' × V.Constr bot c (vs <> singleton v')
@@ -133,12 +136,12 @@ eval γ (Let (VarDef σ e) e') = do
 eval γ (LetRec ρ e) = do
    let γ' = closeDefs γ ρ
    t × v <- eval (γ <+> γ') e
-   pure $ T.LetRec ρ t × v
+   pure $ T.LetRec (botOf <$> ρ) t × v
 
-eval_module :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
+eval_module :: forall a. Highlightable a => BoundedJoinSemilattice a => BoundedMeetSemilattice a => Env a -> Module a -> MayFail (Env a)
 eval_module γ = go empty
    where
-   go :: Env 𝔹 -> Module 𝔹 -> MayFail (Env 𝔹)
+   go :: Env a -> Module a -> MayFail (Env a)
    go γ' (Module Nil) = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) = do
       _ × v <- eval (γ <+> y') e

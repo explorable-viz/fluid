@@ -16,12 +16,12 @@ import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
-import Lattice (class BoundedJoinSemilattice, bot, botOf, expand, (∨))
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
-import Val (Env, PrimOp(..), (<+>), Val, append_inv)
+import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, append_inv)
 import Val (Val(..)) as V
 
 closeDefsBwd :: forall a. BoundedJoinSemilattice a => Env a -> Env a × RecDefs a × a
@@ -36,7 +36,7 @@ closeDefsBwd γ =
             (ρ_acc # insert f σ_f) × (γ' ∨ γ_f) × (ρ ∨ ρ_f) × (α ∨ α_f)
          _ -> error absurd
 
-matchBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> Match a -> Val a × Elim a
+matchBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> Match -> Val a × Elim a
 matchBwd γ κ _ (MatchVar x v)
    | keys γ == S.singleton x = get x γ × ElimVar x κ
    | otherwise = botOf v × ElimVar x κ
@@ -52,7 +52,7 @@ matchBwd ρ κ α (MatchRecord xws) = V.Record α (zip xs vs # D.fromFoldable) �
    xs × ws = xws # D.toUnfoldable # unzip
    vs × κ' = matchManyBwd ρ κ α (ws # reverse)
 
-matchManyBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> List (Match a) -> List (Val a) × Cont a
+matchManyBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> List Match -> List (Val a) × Cont a
 matchManyBwd γ κ _ Nil
    | isEmpty γ = Nil × κ
    | otherwise = error absurd
@@ -63,20 +63,20 @@ matchManyBwd γγ' κ α (w : ws) =
    v × σ = matchBwd γ κ α w
    vs × κ' = matchManyBwd γ' (ContElim σ) α ws
 
-evalBwd :: forall a. BoundedJoinSemilattice a => Env a -> Expr a -> Val a -> Trace a -> Env a × Expr a × a
+evalBwd :: forall a. Highlightable a => BoundedLattice a => Env a -> Expr a -> Val a -> Trace -> Env a × Expr a × a
 evalBwd γ e v t =
    expand γ' γ × expand e' e × α
    where
    γ' × e' × α = evalBwd' v t
 
 -- Computes a partial slice which evalBwd expands to a full slice.
-evalBwd' :: forall a. BoundedJoinSemilattice a => Val a -> Trace a -> Env a × Expr a × a
+evalBwd' :: forall a. Highlightable a => BoundedLattice a => Val a -> Trace -> Env a × Expr a × a
 evalBwd' v (T.Var x) = D.singleton x v × Var x × bot
 evalBwd' v (T.Op op) = D.singleton op v × Op op × bot
-evalBwd' (V.Str α _) (T.Str str) = empty × Str α str × α
-evalBwd' (V.Int α _) (T.Int n) = empty × Int α n × α
-evalBwd' (V.Float α _) (T.Float n) = empty × Float α n × α
-evalBwd' (V.Closure α γ _ σ) (T.Lambda _) = γ × Lambda σ × α
+evalBwd' (V.Str α str) T.Const = empty × Str α str × α
+evalBwd' (V.Int α n) T.Const = empty × Int α n × α
+evalBwd' (V.Float α n) T.Const = empty × Float α n × α
+evalBwd' (V.Closure α γ _ σ) T.Const = γ × Lambda σ × α
 evalBwd' (V.Record α xvs) (T.Record xts) =
    γ' × Record α (xγeαs <#> (fst >>> snd)) × (foldr (∨) α (xγeαs <#> snd))
    where
@@ -86,7 +86,7 @@ evalBwd' (V.Record α xvs) (T.Record xts) =
 evalBwd' (V.Constr α _ vs) (T.Constr c ts) =
    γ' × Constr α c es × α'
    where
-   evalArg_bwd :: Val a × Trace a -> Endo (Env a × List (Expr a) × a)
+   evalArg_bwd :: Val a × Trace -> Endo (Env a × List (Expr a) × a)
    evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
       where
       γ'' × e × α'' = evalBwd' v' t'
@@ -122,7 +122,7 @@ evalBwd' v (T.Project t x) =
    ρ × Project e x × α
    where
    ρ × e × α = evalBwd' (V.Record bot (D.singleton x v)) t
-evalBwd' v (T.App (t1 × xs × _) t2 w t3) =
+evalBwd' v (T.App (t1 × xs) t2 w t3) =
    (γ' ∨ γ'') × App e1 e2 × (α ∨ α')
    where
    γ1γ2γ3 × e × β = evalBwd' v t3
