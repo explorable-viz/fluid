@@ -9,39 +9,39 @@ import Data.Number (log, pow) as N
 import DataType (cCons)
 import Debug (trace)
 import Dict (fromFoldable) as D
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, bot)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class MeetSemilattice, (∧), bot)
 import Prelude (div, mod) as P
-import Primitive (Binary, Unary, binary, binaryZero, toFromInt, toFromIntOrNumber, toFromIntPair, toFromMatrixRep, toFromNumber, toFromString, toFromVal, unary2, union, union1, unionStr, withInverse1, withInverse2)
+import Primitive (Binary, BinarySlicer, Unary, binary, binary_, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
 import Val (class Highlightable, Env, MatrixRep, Val(..), updateMatrix)
 
 primitives :: forall a. Highlightable a => BoundedLattice a => Env a
 primitives = D.fromFoldable
    [ ":" × Constr bot cCons Nil
-   , "ceiling" × unary2 (toFromNumber × toFromInt × withInverse1 ceil)
-   , "debugLog" × unary2 (toFromVal × toFromVal × withInverse1 debugLog)
-   , "dims" × unary2 (toFromMatrixRep × toFromIntPair × dims)
-   , "error" × unary2 (toFromString × toFromVal × withInverse1 error_)
-   , "floor" × unary2 (toFromNumber × toFromInt × withInverse1 floor)
-   , "log" × unary2 (toFromIntOrNumber × toFromNumber × withInverse1 log)
-   , "numToStr" × unary2 (toFromIntOrNumber × toFromString × withInverse1 numToStr)
-   , "+" × binary (withInverse2 plus)
-   , "-" × binary (withInverse2 minus)
-   , "*" × binaryZero (withInverse2 times)
-   , "**" × binaryZero (withInverse2 pow)
-   , "/" × binaryZero (withInverse2 divide)
-   , "==" × binary (withInverse2 equals)
-   , "/=" × binary (withInverse2 notEquals)
-   , "<" × binary (withInverse2 lessThan)
-   , ">" × binary (withInverse2 greaterThan)
-   , "<=" × binary (withInverse2 lessThanEquals)
-   , ">=" × binary (withInverse2 greaterThanEquals)
-   , "++" × binary (withInverse2 concat)
-   , "!" × binary (matrixLookup :: Binary (MatrixRep a) ((Int × a) × (Int × a)) (Val a))
-   , "div" × binaryZero (withInverse2 div)
-   , "mod" × binaryZero (withInverse2 mod)
-   , "quot" × binaryZero (withInverse2 quot)
-   , "rem" × binaryZero (withInverse2 rem)
+   , "ceiling" × unary (number × int × withInverse1 ceil)
+   , "debugLog" × unary (val × val × withInverse1 debugLog)
+   , "dims" × unary (matrixRep × intPair × dims)
+   , "error" × unary (string × val × withInverse1 error_)
+   , "floor" × unary (number × int × withInverse1 floor)
+   , "log" × unary (intOrNumber × number × withInverse1 log)
+   , "numToStr" × unary (intOrNumber × string × withInverse1 numToStr)
+   , "+" × binary (intOrNumber × intOrNumber × intOrNumber × withInverse2 plus)
+   , "-" × binary (intOrNumber × intOrNumber × intOrNumber × withInverse2 minus)
+   , "*" × binaryZero (intOrNumber × intOrNumber × withInverse2 times)
+   , "**" × binaryZero (intOrNumber × intOrNumber × withInverse2 pow)
+   , "/" × binaryZero (intOrNumber × intOrNumber × withInverse2 divide)
+   , "==" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 equals)
+   , "/=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 notEquals)
+   , "<" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 lessThan)
+   , ">" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 greaterThan)
+   , "<=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 lessThanEquals)
+   , ">=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 greaterThanEquals)
+   , "++" × binary (string × string × string × withInverse2 concat)
+   , "!" × binary_ matrixLookup2
+   , "div" × binaryZero (int × int × withInverse2 div)
+   , "mod" × binaryZero (int × int × withInverse2 mod)
+   , "quot" × binaryZero (int × int × withInverse2 quot)
+   , "rem" × binaryZero (int × int × withInverse2 rem)
    ]
 
 debugLog :: forall a. Val a -> Val a
@@ -70,6 +70,24 @@ matrixLookup = { fwd, bwd }
    bwd :: Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
       updateMatrix i j (const v) (vss × (i' × bot) × (j' × bot)) × ((i × bot) × (j × bot))
+
+matrixLookup2 :: forall a. BoundedJoinSemilattice a => BinarySlicer (MatrixRep a) ((Int × a) × (Int × a)) (Val a) a
+matrixLookup2 = { d1: matrixRep, d2: intPair, d3: val, fwd: fwd', bwd: bwd' }
+   where
+   fwd :: MatrixRep a -> (Int × a) × (Int × a) -> Val a
+   fwd (vss × _ × _) ((i × _) × (j × _)) = vss ! (i - 1) ! (j - 1)
+
+   bwd :: BoundedJoinSemilattice a => Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
+   bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
+      updateMatrix i j (const v) (vss × (i' × bot) × (j' × bot)) × ((i × bot) × (j × bot))
+
+   fwd' :: MeetSemilattice a => MatrixRep a × a -> ((Int × a) × (Int × a)) × a -> Val a × a
+   fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
+
+   bwd' :: BoundedJoinSemilattice a => Val a × a -> MatrixRep a × ((Int × a) × (Int × a)) -> (MatrixRep a × a) × ((Int × a) × (Int × a) × a)
+   bwd' (z × α) (x × y) = (x' × α) × (y' × α)
+      where
+      x' × y' = bwd z (x × y)
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
