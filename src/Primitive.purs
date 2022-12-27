@@ -26,8 +26,8 @@ unwrap = match >>> fst
 
 type ToFrom2 d a =
    { constr :: Highlightable a => d × a -> Val a
-   , constr_bwd :: Highlightable a => Val a -> d × a -- equivalent to match (except at Val)
-   , match :: Highlightable a => Val a -> d × a
+   , constr_bwd :: Highlightable a => BoundedJoinSemilattice a => Val a -> d × a -- equivalent to match (except at Val)
+   , match :: Highlightable a => BoundedMeetSemilattice a => Val a -> d × a
    }
 
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
@@ -35,6 +35,13 @@ instance BoundedLattice a => ToFrom (Val a) a where
    constr = fst -- construction rights not required
    constr_bwd = (_ × bot) -- return unit of disjunction rather than conjunction
    match = (_ × top) -- construction rights always provided
+
+toFromVal :: forall a. ToFrom2 (Val a) a
+toFromVal =
+   { constr: fst -- construction rights not required
+   , constr_bwd: (_ × bot) -- return unit of disjunction rather than conjunction
+   , match: (_ × top) -- construction rights always provided
+   }
 
 instance Highlightable a => ToFrom Int a where
    constr (n × α) = Int α n
@@ -185,7 +192,7 @@ unary2_ s = flip Primitive Nil $ PrimOp
 apply1 :: forall d1 d2 a. Partial => Highlightable a => BoundedMeetSemilattice a => UnarySlicer2 d1 d2 a -> List (Val a) {-[d1]-} -> Val a {-d2-}
 apply1 s (v : Nil) = s.d2.constr (s.fwd (s.d1.match v))
 
-apply1_bwd :: forall d1 d2 a. Partial => Highlightable a => BoundedJoinSemilattice a => UnarySlicer2 d1 d2 a -> Val a {-(d2, d2)-} -> List (Val a) {-[d1]-} -> List (Val a) {-[d1]-}
+apply1_bwd :: forall d1 d2 a. Partial => Highlightable a => BoundedLattice a => UnarySlicer2 d1 d2 a -> Val a {-(d2, d2)-} -> List (Val a) {-[d1]-} -> List (Val a) {-[d1]-}
 apply1_bwd s v (u1 : Nil) = s.d1.constr (s.bwd (s.d2.constr_bwd v) (fst (s.d1.match u1))) : Nil
 
 unary_ :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => UnarySlicer d1 d2 -> Val a

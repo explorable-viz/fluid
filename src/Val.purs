@@ -11,7 +11,7 @@ import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, (∨), definedJoin, expand, maybeJoin, neg)
 import Text.Pretty (Doc, beside, text)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
@@ -33,7 +33,7 @@ data Val a
 newtype PrimOp a = PrimOp
    { arity :: Int
    , op :: Highlightable a => BoundedMeetSemilattice a => List (Val a) -> Val a
-   , op_bwd :: Highlightable a => BoundedJoinSemilattice a => Val a -> Endo (List (Val a))
+   , op_bwd :: Highlightable a => BoundedLattice a => Val a -> Endo (List (Val a))
    }
 
 class Highlightable a where
