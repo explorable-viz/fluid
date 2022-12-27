@@ -32,11 +32,6 @@ type ToFrom2 d a =
    }
 
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
-instance BoundedLattice a => ToFrom (Val a) a where
-   constr = fst -- construction rights not required
-   constr_bwd = (_ × bot) -- return unit of disjunction rather than conjunction
-   match = (_ × top) -- construction rights always provided
-
 val :: forall a. ToFrom2 (Val a) a
 val =
    { constr: fst -- construction rights not required
