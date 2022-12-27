@@ -101,6 +101,18 @@ instance Highlightable a => ToFrom (Int + Number) a where
    match (Float α n) = Right n × α
    match v = error ("Int or Float expected; got " <> prettyP v)
 
+toFromIntOrNumber :: forall a. ToFrom2 (Int + Number) a
+toFromIntOrNumber =
+   { constr: case _ of
+      Left n × α -> Int α n
+      Right n × α -> Float α n
+   , constr_bwd: \v -> match v
+   , match: case _ of
+      Int α n -> Left n × α
+      Float α n -> Right n × α
+      v -> error ("Int or Float expected; got " <> prettyP v)
+   }
+
 instance Highlightable a => ToFrom (Int + Number + String) a where
    constr (Left (Left n) × α) = Int α n
    constr (Left (Right n) × α) = Float α n
@@ -258,15 +270,6 @@ withInverse2 fwd = { fwd, bwd: const identity }
 
 unary2 :: forall d1 d2 a'. (forall a. ToFrom2 d1 a × ToFrom2 d2 a × Unary d1 d2) -> Val a'
 unary2 (d1 × d2 × { fwd, bwd }) = unary2_ { d1, d2, fwd: fwd', bwd: bwd' }
-   where
-   fwd' :: forall a. d1 × a -> d2 × a
-   fwd' (x × α) = fwd x × α
-
-   bwd' :: forall a. d2 × a -> d1 -> d1 × a
-   bwd' (y × α) x = bwd y x × α
-
-unary :: forall d1 d2 a'. ToFrom d1 a' => ToFrom d2 a' => Unary d1 d2 -> Val a'
-unary { fwd, bwd } = unary_ { fwd: fwd', bwd: bwd' }
    where
    fwd' :: forall a. d1 × a -> d2 × a
    fwd' (x × α) = fwd x × α
