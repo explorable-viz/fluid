@@ -22,9 +22,6 @@ class ToFrom d a where
    constr_bwd :: Val a -> d × a -- equivalent to match (except at Val)
    match :: Val a -> d × a
 
-unwrap :: forall d a. ToFrom d a => Val a -> d
-unwrap = match >>> fst
-
 type ToFrom2 d a =
    { constr :: Highlightable a => d × a -> Val a
    , constr_bwd :: Highlightable a => BoundedLattice a => Val a -> d × a -- equivalent to match (except at Val)
