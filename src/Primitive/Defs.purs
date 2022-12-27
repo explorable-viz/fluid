@@ -11,7 +11,7 @@ import Debug (trace)
 import Dict (fromFoldable) as D
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, bot)
 import Prelude (div, mod) as P
-import Primitive (Binary, Unary, binary, binaryZero, toFromInt, toFromNumber, toFromVal, unary, unary2, union, union1, unionStr, withInverse1, withInverse2)
+import Primitive (Binary, Unary, binary, binaryZero, toFromInt, toFromIntPair, toFromMatrixRep, toFromNumber, toFromVal, unary, unary2, union, union1, unionStr, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
 import Val (class Highlightable, Env, MatrixRep, Val(..), updateMatrix)
 
@@ -20,7 +20,7 @@ primitives = D.fromFoldable
    [ ":" × Constr bot cCons Nil
    , "ceiling" × unary2 (toFromNumber × toFromInt × withInverse1 ceil)
    , "debugLog" × unary2 (toFromVal × toFromVal × withInverse1 debugLog)
-   , "dims" × unary (dims :: Unary (MatrixRep a) ((Int × a) × (Int × a)))
+   , "dims" × unary2 (toFromMatrixRep × toFromIntPair × dims)
    , "error" × unary (withInverse1 (error_ :: String -> Val a))
    , "floor" × unary2 (toFromNumber × toFromInt × withInverse1 floor)
    , "log" × unary (withInverse1 log)

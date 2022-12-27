@@ -111,12 +111,30 @@ instance Highlightable a => ToFrom ((Int × a) × (Int × a)) a where
    match (Constr α c (v : v' : Nil)) | c == cPair = match v × match v' × α
    match v = error ("Pair expected; got " <> prettyP v)
 
+toFromIntPair :: forall a. ToFrom2 ((Int × a) × (Int × a)) a
+toFromIntPair =
+   { constr: \(nβ × mβ' × α) -> Constr α cPair (constr nβ : constr mβ' : Nil)
+   , constr_bwd: \v -> match v
+   , match: case _ of
+      Constr α c (v : v' : Nil) | c == cPair -> match v × match v' × α
+      v -> error ("Pair expected; got " <> prettyP v)
+   }
+
 instance Highlightable a => ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a where
    constr (r × α) = Matrix α r
    constr_bwd v = match v
 
    match (Matrix α r) = r × α
    match v = error ("Matrix expected; got " <> prettyP v)
+
+toFromMatrixRep :: forall a. ToFrom2 (Array (Array (Val a)) × (Int × a) × (Int × a)) a
+toFromMatrixRep =
+   { constr: \(r × α) -> Matrix α r
+   , constr_bwd: \v -> match v
+   , match: case _ of
+      Matrix α r -> r × α
+      v -> error ("Matrix expected; got " <> prettyP v)
+   }
 
 instance Highlightable a => ToFrom (Dict (Val a)) a where
    constr (xvs × α) = Record α xvs
