@@ -57,7 +57,7 @@ open = parseProgram (Folder "fluid/example")
 
 defaultImports :: Aff (Env 𝔹)
 defaultImports =
-   loadModule (File "prelude") primitives >>= loadModule (File "graphics") >>= loadModule (File "convolution")
+   loadModule (File "prelude") (primitives <#> botOf) >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
 openWithDefaultImports :: File -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file = do

@@ -9,13 +9,13 @@ import Data.Number (log, pow) as N
 import DataType (cCons)
 import Debug (trace)
 import Dict (fromFoldable) as D
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class MeetSemilattice, (∧), bot)
+import Lattice (class BoundedJoinSemilattice, class MeetSemilattice, Raw, (∧), bot)
 import Prelude (div, mod) as P
 import Primitive (BinarySlicer, Unary, binary, binary_, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
-import Val (class Highlightable, Env, MatrixRep, Val(..), updateMatrix)
+import Val (Env, MatrixRep, Val(..), updateMatrix)
 
-primitives :: forall a. Highlightable a => BoundedLattice a => Env a
+primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Constr bot cCons Nil
    , "ceiling" × unary (number × int × withInverse1 ceil)
