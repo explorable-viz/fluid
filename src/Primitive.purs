@@ -87,8 +87,8 @@ toFromString =
    { constr: \(str × α) -> Str α str
    , constr_bwd: \v -> match v
    , match: case _ of
-      Str α str -> str × α
-      v -> error ("Str expected; got " <> prettyP v)
+        Str α str -> str × α
+        v -> error ("Str expected; got " <> prettyP v)
    }
 
 instance Highlightable a => ToFrom (Int + Number) a where
@@ -125,8 +125,8 @@ toFromIntPair =
    { constr: \(nβ × mβ' × α) -> Constr α cPair (constr nβ : constr mβ' : Nil)
    , constr_bwd: \v -> match v
    , match: case _ of
-      Constr α c (v : v' : Nil) | c == cPair -> match v × match v' × α
-      v -> error ("Pair expected; got " <> prettyP v)
+        Constr α c (v : v' : Nil) | c == cPair -> match v × match v' × α
+        v -> error ("Pair expected; got " <> prettyP v)
    }
 
 instance Highlightable a => ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a where
@@ -141,8 +141,8 @@ toFromMatrixRep =
    { constr: \(r × α) -> Matrix α r
    , constr_bwd: \v -> match v
    , match: case _ of
-      Matrix α r -> r × α
-      v -> error ("Matrix expected; got " <> prettyP v)
+        Matrix α r -> r × α
+        v -> error ("Matrix expected; got " <> prettyP v)
    }
 
 instance Highlightable a => ToFrom (Dict (Val a)) a where
