@@ -9,7 +9,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Lattice (class BoundedLattice, class MeetSemilattice, (∧), bot, top)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class MeetSemilattice, (∧), bot, top)
 import Pretty (class Highlightable, prettyP)
 import Util (Endo, type (×), (×), type (+), error)
 import Val (PrimOp(..), Val(..))
@@ -139,9 +139,9 @@ type Binary d1 d2 d3 =
    , bwd :: d3 -> Endo (d1 × d2)
    }
 
-type BinarySlicer d1 d2 d3 a =
-   { fwd :: d1 × a -> d2 × a -> d3 × a
-   , bwd :: d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
+type BinarySlicer d1 d2 d3 =
+   { fwd :: forall a. MeetSemilattice a => d1 × a -> d2 × a -> d3 × a
+   , bwd :: forall a. BoundedJoinSemilattice a => d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
    }
 
 unary_ :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => UnarySlicer d1 d2 a -> Val a
@@ -157,17 +157,17 @@ unary_ { fwd, bwd } = flip Primitive Nil $ PrimOp
    apply_bwd :: Partial => Val a {-(d2, d2)-} -> List (Val a) {-[d1]-} -> List (Val a) {-[d1]-}
    apply_bwd v (u1 : Nil) = constr (bwd (constr_bwd v) (unwrap u1)) : Nil
 
-binary_ :: forall d1 d2 d3 a. ToFrom d1 a => ToFrom d2 a => ToFrom d3 a => BinarySlicer d1 d2 d3 a -> Val a
+binary_ :: forall d1 d2 d3 a. ToFrom d1 a => ToFrom d2 a => ToFrom d3 a => BinarySlicer d1 d2 d3 -> Val a
 binary_ { fwd, bwd } = flip Primitive Nil $ PrimOp
    { arity: 2
    , op: unsafePartial apply
    , op_bwd: unsafePartial apply_bwd
    }
    where
-   apply :: Partial => List (Val a) {-[d1, d2]-} -> Val a {-d3-}
+   apply :: Partial => MeetSemilattice a => List (Val a) {-[d1, d2]-} -> Val a {-d3-}
    apply (v : v' : Nil) = constr (fwd (match v) (match v'))
 
-   apply_bwd :: Partial => Val a {-(d3, d3)-} -> List (Val a) {-[d1, d2]-} -> List (Val a) {-[d1, d2]-}
+   apply_bwd :: Partial => BoundedJoinSemilattice a => Val a {-(d3, d3)-} -> List (Val a) {-[d1, d2]-} -> List (Val a) {-[d1, d2]-}
    apply_bwd v (u1 : u2 : Nil) = constr v1 : constr v2 : Nil
       where
       v1 × v2 = bwd (constr_bwd v) (unwrap u1 × unwrap u2)
@@ -190,10 +190,10 @@ unary { fwd, bwd } = unary_ { fwd: fwd', bwd: bwd' }
 binary :: forall d1 d2 d3 a. ToFrom d1 a => ToFrom d2 a => MeetSemilattice a => ToFrom d3 a => Binary d1 d2 d3 -> Val a
 binary { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
    where
-   fwd' :: d1 × a -> d2 × a -> d3 × a
+   fwd' :: forall a'. MeetSemilattice a' => d1 × a' -> d2 × a' -> d3 × a'
    fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
 
-   bwd' :: d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
+   bwd' :: forall a'. d3 × a' -> d1 × d2 -> (d1 × a') × (d2 × a')
    bwd' (z × α) (x × y) = (x' × α) × (y' × α)
       where
       x' × y' = bwd z (x × y)
@@ -202,11 +202,11 @@ binary { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
 binaryZero :: forall d1 d2 a. IsZero d1 => BoundedLattice a => ToFrom d1 a => ToFrom d2 a => Binary d1 d1 d2 -> Val a
 binaryZero { fwd, bwd } = binary_ { fwd: fwd', bwd: bwd' }
    where
-   fwd' :: d1 × a -> d1 × a -> d2 × a
+   fwd' :: forall a'. MeetSemilattice a' => d1 × a' -> d1 × a' -> d2 × a'
    fwd' (x × α) (y × β) =
       fwd x y × if isZero x then α else if isZero y then β else α ∧ β
 
-   bwd' :: d2 × a -> d1 × d1 -> (d1 × a) × (d1 × a)
+   bwd' :: forall a'. BoundedJoinSemilattice a' => d2 × a' -> d1 × d1 -> (d1 × a') × (d1 × a')
    bwd' (z × α) (x × y) =
       if isZero x then (x' × α) × (y' × bot)
       else if isZero y then (x' × bot) × (y' × α)

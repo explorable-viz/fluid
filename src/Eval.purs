@@ -15,7 +15,7 @@ import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
-import Lattice (class BoundedJoinSemilattice, bot, botOf)
+import Lattice (class BoundedJoinSemilattice, class MeetSemilattice, bot, botOf)
 import Pretty (class Highlightable, prettyP)
 import Primitive (unwrap)
 import Trace (Trace(..), VarDef(..)) as T
@@ -67,7 +67,7 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-eval :: forall a. BoundedJoinSemilattice a => Highlightable a => Env a -> Expr a -> MayFail (Trace × Val a)
+eval :: forall a. BoundedJoinSemilattice a => MeetSemilattice a => Highlightable a => Env a -> Expr a -> MayFail (Trace × Val a)
 eval γ (Var x) = (T.Var x × _) <$> lookup' x γ
 eval γ (Op op) = (T.Op op × _) <$> lookup' op γ
 eval _ (Int _ n) = pure (T.Const × V.Int bot n)
@@ -135,7 +135,7 @@ eval γ (LetRec ρ e) = do
    t × v <- eval (γ <+> γ') e
    pure $ T.LetRec (botOf <$> ρ) t × v
 
-eval_module :: forall a. Highlightable a => BoundedJoinSemilattice a => Env a -> Module a -> MayFail (Env a)
+eval_module :: forall a. Highlightable a => BoundedJoinSemilattice a => MeetSemilattice a => Env a -> Module a -> MayFail (Env a)
 eval_module γ = go empty
    where
    go :: Env a -> Module a -> MayFail (Env a)
