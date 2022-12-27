@@ -14,8 +14,8 @@ import Bindings (Var)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Dict (Dict, get)
 import Lattice (𝔹, botOf, neg)
-import Primitive (class ToFrom, as, match)
-import Util (Endo, type (×), type (+), (×), absurd, error, definitely')
+import Primitive (class ToFrom, as, intOrNumber, match)
+import Util (Endo, type (×), (×), absurd, error, definitely')
 import Val (Val(..), updateMatrix)
 
 type HTMLId = String
@@ -32,7 +32,7 @@ get_prim :: forall d. ToFrom d 𝔹 => Var -> Dict (Val 𝔹) -> d × 𝔹
 get_prim x = match <<< get x
 
 get_intOrNumber :: Var -> Dict (Val 𝔹) -> Number × 𝔹
-get_intOrNumber x r = first as (get_prim x r :: (Int + Number) × 𝔹)
+get_intOrNumber x r = first as (intOrNumber.match (get x r))
 
 -- Assumes fields are all of primitive type.
 record :: forall a. (Dict (Val 𝔹) -> a) -> Val 𝔹 -> a

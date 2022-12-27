@@ -72,27 +72,19 @@ string =
    match' (Str α str) = str × α
    match' v = error ("Str expected; got " <> prettyP v)
 
-instance Highlightable a => ToFrom (Int + Number) a where
-   constr (Left n × α) = Int α n
-   constr (Right n × α) = Float α n
-
-   constr_bwd v = match v
-
-   match (Int α n) = Left n × α
-   match (Float α n) = Right n × α
-   match v = error ("Int or Float expected; got " <> prettyP v)
-
 intOrNumber :: forall a. ToFrom2 (Int + Number) a
 intOrNumber =
    { constr: case _ of
       Left n × α -> Int α n
       Right n × α -> Float α n
-   , constr_bwd: \v -> match v
-   , match: case _ of
-      Int α n -> Left n × α
-      Float α n -> Right n × α
-      v -> error ("Int or Float expected; got " <> prettyP v)
+   , constr_bwd: match'
+   , match: match'
    }
+   where
+   match' :: Highlightable a => Val a -> (Int + Number) × a
+   match' (Int α n) = Left n × α
+   match' (Float α n) = Right n × α
+   match' v = error ("Int or Float expected; got " <> prettyP v)
 
 instance Highlightable a => ToFrom (Int + Number + String) a where
    constr (Left (Left n) × α) = Int α n
