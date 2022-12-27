@@ -23,7 +23,7 @@ data Trace
    | Matrix (Array2 Trace) (Var × Var) (Int × Int) Trace
    | Project Trace Var
    | App (Trace × Set Var) Trace Match Trace
-   | AppPrim (Trace × Raw PrimOp × List (Raw Val)) (Trace × Raw Val) -- record prior arguments
+   | AppPrim (Trace × PrimOp × List (Raw Val)) (Trace × Raw Val) -- record prior arguments
    | AppConstr (Trace × Ctr × Int) Trace -- record number of prior arguments
    | Let VarDef Trace
    | LetRec (Raw RecDefs) Trace

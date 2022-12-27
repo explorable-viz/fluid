@@ -123,7 +123,7 @@ eval γ (App e e') = do
             vs' = vs <> singleton v'
             v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs'
          in
-            pure $ T.AppPrim (t × botOf (PrimOp φ) × (botOf <$> vs)) (t' × botOf v') × v''
+            pure $ T.AppPrim (t × (PrimOp φ) × (botOf <$> vs)) (t' × botOf v') × v''
       V.Constr _ c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> showCtr c)
          pure $ T.AppConstr (t × c × length vs) t' × V.Constr bot c (vs <> singleton v')

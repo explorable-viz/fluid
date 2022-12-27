@@ -13,7 +13,6 @@ import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Text.Pretty (Doc, beside, text)
-import Unsafe.Coerce (unsafeCoerce)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
 type Op a = a × 𝔹 -> Val 𝔹
@@ -26,14 +25,14 @@ data Val a
    | Dictionary a (Dict (Val a)) -- always saturated
    | Constr a Ctr (List (Val a)) -- potentially unsaturated
    | Matrix a (MatrixRep a)
-   | Primitive (PrimOp a) (List (Val a)) -- never saturated
+   | Primitive PrimOp (List (Val a)) -- never saturated
    | Closure a (Env a) (RecDefs a) (Elim a)
 
 -- op_bwd will be provided with original output and arguments
-newtype PrimOp a = PrimOp
+newtype PrimOp = PrimOp
    { arity :: Int
-   , op :: Highlightable a => BoundedMeetSemilattice a => List (Val a) -> Val a
-   , op_bwd :: Highlightable a => BoundedLattice a => Val a -> List (Raw Val) -> List (Val a)
+   , op :: forall a. Highlightable a => BoundedMeetSemilattice a => List (Val a) -> Val a
+   , op_bwd :: forall a. Highlightable a => BoundedLattice a => Val a -> List (Raw Val) -> List (Val a)
    }
 
 class Highlightable a where
@@ -96,9 +95,6 @@ updateMatrix i j δv (vss × h × w) =
 -- ======================
 -- boilerplate
 -- ======================
-instance Functor PrimOp where
-   map _ φ = unsafeCoerce φ -- ew
-
 instance Functor Val where
    map f (Int α n) = Int (f α) n
    map f (Float α n) = Float (f α) n
@@ -108,7 +104,7 @@ instance Functor Val where
    map f (Constr α c vs) = Constr (f α) c (map f <$> vs)
    -- PureScript can't derive this case
    map f (Matrix α (r × iα × jβ)) = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))
-   map f (Primitive φ vs) = Primitive (f <$> φ) ((map f) <$> vs)
+   map f (Primitive φ vs) = Primitive φ ((map f) <$> vs)
    map f (Closure α γ ρ σ) = Closure (f α) (map f <$> γ) (map f <$> ρ) (f <$> σ)
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
