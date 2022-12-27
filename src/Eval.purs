@@ -81,7 +81,7 @@ eval γ (Record _ xes) = do
 eval γ (Dictionary _ ees) = do
    (ts × vs) × (ts' × us) <- traverse (traverse (eval γ)) ees <#> (P.unzip >>> (unzip # both))
    pure $ T.Dictionary (P.zip ts ts') ×
-          V.Dictionary bot (D.fromFoldable $ zip (vs <#> \u -> fst (string.match u)) us)
+      V.Dictionary bot (D.fromFoldable $ zip (vs <#> \u -> fst (string.match u)) us)
 eval γ (Constr _ c es) = do
    checkArity c (length es)
    ts × vs <- traverse (eval γ) es <#> unzip

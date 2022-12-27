@@ -68,8 +68,8 @@ string =
 intOrNumber :: forall a. ToFrom (Int + Number) a
 intOrNumber =
    { constr: case _ of
-      Left n × α -> Int α n
-      Right n × α -> Float α n
+        Left n × α -> Int α n
+        Right n × α -> Float α n
    , constr_bwd: match'
    , match: match'
    }
@@ -82,9 +82,9 @@ intOrNumber =
 intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
    { constr: case _ of
-      Left (Left n) × α -> Int α n
-      Left (Right n) × α -> Float α n
-      Right str × α -> Str α str
+        Left (Left n) × α -> Int α n
+        Left (Right n) × α -> Float α n
+        Right str × α -> Str α str
    , constr_bwd: match'
    , match: match'
    }
@@ -131,8 +131,8 @@ record =
 boolean :: forall a. ToFrom Boolean a
 boolean =
    { constr: case _ of
-      true × α -> Constr α cTrue Nil
-      false × α -> Constr α cFalse Nil
+        true × α -> Constr α cTrue Nil
+        false × α -> Constr α cFalse Nil
    , constr_bwd: match'
    , match: match'
    }
