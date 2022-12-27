@@ -128,13 +128,6 @@ instance Highlightable a => ToFrom (Dict (Val a)) a where
    match (Record α xvs) = xvs × α
    match v = error ("Record expected; got " <> prettyP v)
 
-instance Highlightable a => ToFrom (Val a × Val a) a where
-   constr (v × v' × α) = Constr α cPair (v : v' : Nil)
-   constr_bwd v = match v
-
-   match (Constr α c (v : v' : Nil)) | c == cPair = v × v' × α
-   match v = error ("Pair expected; got " <> prettyP v)
-
 instance Highlightable a => ToFrom Boolean a where
    constr (true × α) = Constr α cTrue Nil
    constr (false × α) = Constr α cFalse Nil
