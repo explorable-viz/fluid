@@ -14,7 +14,8 @@ import Bindings (Var)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Dict (Dict, get)
 import Lattice (𝔹, botOf, neg)
-import Primitive (as, intOrNumber, match)
+import Primitive (as, intOrNumber)
+import Primitive (record) as P
 import Util (Endo, type (×), (×), absurd, error, definitely')
 import Val (Val(..), updateMatrix)
 
@@ -32,7 +33,7 @@ get_intOrNumber x r = first as (intOrNumber.match (get x r))
 
 -- Assumes fields are all of primitive type.
 record :: forall a. (Dict (Val 𝔹) -> a) -> Val 𝔹 -> a
-record toRecord u = toRecord (fst (match u))
+record toRecord u = toRecord (fst (P.record.match u))
 
 class Reflect a b where
    from :: Partial => a -> b

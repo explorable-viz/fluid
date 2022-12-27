@@ -121,12 +121,16 @@ matrixRep =
    match' (Matrix α r) = r × α
    match' v = error ("Matrix expected; got " <> prettyP v)
 
-instance Highlightable a => ToFrom (Dict (Val a)) a where
-   constr (xvs × α) = Record α xvs
-   constr_bwd v = match v
-
-   match (Record α xvs) = xvs × α
-   match v = error ("Record expected; got " <> prettyP v)
+record :: forall a. ToFrom2 (Dict (Val a)) a
+record =
+   { constr: \(xvs × α) -> Record α xvs
+   , constr_bwd: match'
+   , match: match'
+   }
+   where
+   match' :: Highlightable a => _
+   match' (Record α xvs) = xvs × α
+   match' v = error ("Record expected; got " <> prettyP v)
 
 boolean :: forall a. ToFrom2 Boolean a
 boolean =
