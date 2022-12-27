@@ -129,9 +129,9 @@ type Unary d1 d2 =
    , bwd :: d2 -> Endo d1
    }
 
-type UnarySlicer d1 d2 a =
-   { fwd :: d1 × a -> d2 × a
-   , bwd :: d2 × a -> d1 -> d1 × a
+type UnarySlicer d1 d2 =
+   { fwd :: forall a. BoundedMeetSemilattice a => d1 × a -> d2 × a
+   , bwd :: forall a. BoundedJoinSemilattice a => d2 × a -> d1 -> d1 × a
    }
 
 type Binary d1 d2 d3 =
@@ -144,17 +144,17 @@ type BinarySlicer d1 d2 d3 =
    , bwd :: forall a. BoundedJoinSemilattice a => d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
    }
 
-unary_ :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => UnarySlicer d1 d2 a -> Val a
+unary_ :: forall d1 d2 a. ToFrom d1 a => ToFrom d2 a => UnarySlicer d1 d2 -> Val a
 unary_ { fwd, bwd } = flip Primitive Nil $ PrimOp
    { arity: 1
    , op: unsafePartial apply
    , op_bwd: unsafePartial apply_bwd
    }
    where
-   apply :: Partial => List (Val a) {-[d1]-} -> Val a {-d2-}
+   apply :: Partial => BoundedMeetSemilattice a => List (Val a) {-[d1]-} -> Val a {-d2-}
    apply (v : Nil) = constr (fwd (match v))
 
-   apply_bwd :: Partial => Val a {-(d2, d2)-} -> List (Val a) {-[d1]-} -> List (Val a) {-[d1]-}
+   apply_bwd :: Partial => BoundedJoinSemilattice a => Val a {-(d2, d2)-} -> List (Val a) {-[d1]-} -> List (Val a) {-[d1]-}
    apply_bwd v (u1 : Nil) = constr (bwd (constr_bwd v) (unwrap u1)) : Nil
 
 binary_ :: forall d1 d2 d3 a. ToFrom d1 a => ToFrom d2 a => ToFrom d3 a => BinarySlicer d1 d2 d3 -> Val a
