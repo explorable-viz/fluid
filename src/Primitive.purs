@@ -180,7 +180,7 @@ type BinarySlicer d1 d2 d3 a =
    , bwd :: BoundedJoinSemilattice a => d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
    }
 
-unary_ :: forall d1 d2 a. UnarySlicer d1 d2 a -> Val a
+unary_ :: forall d1 d2 a'. (forall a. UnarySlicer d1 d2 a) -> Val a'
 unary_ s = flip Primitive Nil $ PrimOp
    { arity: 1
    , op: unsafePartial (apply1 s)
@@ -193,7 +193,7 @@ apply1 s (v : Nil) = s.d2.constr (s.fwd (s.d1.match v))
 apply1_bwd :: forall d1 d2 a. Partial => Highlightable a => BoundedLattice a => UnarySlicer d1 d2 a -> Val a {-(d2, d2)-} -> List (Val a) {-[d1]-} -> List (Val a) {-[d1]-}
 apply1_bwd s v (u1 : Nil) = s.d1.constr (s.bwd (s.d2.constr_bwd v) (fst (s.d1.match u1))) : Nil
 
-binary_ :: forall d1 d2 d3 a. BinarySlicer d1 d2 d3 a -> Val a
+binary_ :: forall d1 d2 d3 a'. (forall a. BinarySlicer d1 d2 d3 a) -> Val a'
 binary_ s = flip Primitive Nil $ PrimOp
    { arity: 2
    , op: unsafePartial (apply2 s)

@@ -61,7 +61,7 @@ dims = { fwd, bwd }
 
 -- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
 -- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.
-matrixLookup :: forall a. BoundedJoinSemilattice a => BinarySlicer (MatrixRep a) ((Int × a) × (Int × a)) (Val a) a
+matrixLookup :: forall a. BinarySlicer (MatrixRep a) ((Int × a) × (Int × a)) (Val a) a
 matrixLookup = { d1: matrixRep, d2: intPair, d3: val, fwd: fwd', bwd: bwd' }
    where
    fwd :: MatrixRep a -> (Int × a) × (Int × a) -> Val a
