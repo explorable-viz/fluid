@@ -16,27 +16,23 @@ import Util (Endo, type (×), (×), type (+), error)
 import Val (class Highlightable, MatrixRep, PrimOp(..), Val(..))
 
 -- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to
--- pattern-matching and construction for data types.
-class ToFrom d a where
-   constr :: d × a -> Val a
-   constr_bwd :: Val a -> d × a -- equivalent to match (except at Val)
-   match :: Val a -> d × a
-
-type ToFrom2 d a =
+-- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
+-- work with the required higher-rank polymorphism.
+type ToFrom d a =
    { constr :: Highlightable a => d × a -> Val a
    , constr_bwd :: Highlightable a => BoundedLattice a => Val a -> d × a -- equivalent to match (except at Val)
    , match :: Highlightable a => BoundedMeetSemilattice a => Val a -> d × a
    }
 
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
-val :: forall a. ToFrom2 (Val a) a
+val :: forall a. ToFrom (Val a) a
 val =
    { constr: fst -- construction rights not required
    , constr_bwd: (_ × bot) -- return unit of disjunction rather than conjunction
    , match: (_ × top) -- construction rights always provided
    }
 
-int :: forall a. ToFrom2 Int a
+int :: forall a. ToFrom Int a
 int =
    { constr: \(n × α) -> Int α n
    , constr_bwd: match'
@@ -47,7 +43,7 @@ int =
    match' (Int α n) = n × α
    match' v = error ("Int expected; got " <> prettyP v)
 
-number :: forall a. ToFrom2 Number a
+number :: forall a. ToFrom Number a
 number =
    { constr: \(n × α) -> Float α n
    , constr_bwd: match'
@@ -58,7 +54,7 @@ number =
    match' (Float α n) = n × α
    match' v = error ("Float expected; got " <> prettyP v)
 
-string :: forall a. ToFrom2 String a
+string :: forall a. ToFrom String a
 string =
    { constr: \(str × α) -> Str α str
    , constr_bwd: match'
@@ -69,7 +65,7 @@ string =
    match' (Str α str) = str × α
    match' v = error ("Str expected; got " <> prettyP v)
 
-intOrNumber :: forall a. ToFrom2 (Int + Number) a
+intOrNumber :: forall a. ToFrom (Int + Number) a
 intOrNumber =
    { constr: case _ of
       Left n × α -> Int α n
@@ -83,7 +79,7 @@ intOrNumber =
    match' (Float α n) = Right n × α
    match' v = error ("Int or Float expected; got " <> prettyP v)
 
-intOrNumberOrString :: forall a. ToFrom2 (Int + Number + String) a
+intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
    { constr: case _ of
       Left (Left n) × α -> Int α n
@@ -99,7 +95,7 @@ intOrNumberOrString =
    match' (Str α str) = Right str × α
    match' v = error ("Int, Float or Str expected; got " <> prettyP v)
 
-intPair :: forall a. ToFrom2 ((Int × a) × (Int × a)) a
+intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
    { constr: \(nβ × mβ' × α) -> Constr α cPair (int.constr nβ : int.constr mβ' : Nil)
    , constr_bwd: match'
@@ -110,7 +106,7 @@ intPair =
    match' (Constr α c (v : v' : Nil)) | c == cPair = int.match v × int.match v' × α
    match' v = error ("Pair expected; got " <> prettyP v)
 
-matrixRep :: forall a. ToFrom2 (Array (Array (Val a)) × (Int × a) × (Int × a)) a
+matrixRep :: forall a. ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a
 matrixRep =
    { constr: \(r × α) -> Matrix α r
    , constr_bwd: match'
@@ -121,7 +117,7 @@ matrixRep =
    match' (Matrix α r) = r × α
    match' v = error ("Matrix expected; got " <> prettyP v)
 
-record :: forall a. ToFrom2 (Dict (Val a)) a
+record :: forall a. ToFrom (Dict (Val a)) a
 record =
    { constr: \(xvs × α) -> Record α xvs
    , constr_bwd: match'
@@ -132,7 +128,7 @@ record =
    match' (Record α xvs) = xvs × α
    match' v = error ("Record expected; got " <> prettyP v)
 
-boolean :: forall a. ToFrom2 Boolean a
+boolean :: forall a. ToFrom Boolean a
 boolean =
    { constr: case _ of
       true × α -> Constr α cTrue Nil
@@ -165,8 +161,8 @@ type Unary d1 d2 =
    }
 
 type UnarySlicer d1 d2 a =
-   { d1 :: ToFrom2 d1 a
-   , d2 :: ToFrom2 d2 a
+   { d1 :: ToFrom d1 a
+   , d2 :: ToFrom d2 a
    , fwd :: BoundedMeetSemilattice a => d1 × a -> d2 × a
    , bwd :: BoundedJoinSemilattice a => d2 × a -> d1 -> d1 × a
    }
@@ -177,9 +173,9 @@ type Binary d1 d2 d3 =
    }
 
 type BinarySlicer d1 d2 d3 a =
-   { d1 :: ToFrom2 d1 a
-   , d2 :: ToFrom2 d2 a
-   , d3 :: ToFrom2 d3 a
+   { d1 :: ToFrom d1 a
+   , d2 :: ToFrom d2 a
+   , d3 :: ToFrom d3 a
    , fwd :: BoundedMeetSemilattice a => d1 × a -> d2 × a -> d3 × a
    , bwd :: BoundedJoinSemilattice a => d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
    }
@@ -218,7 +214,7 @@ withInverse1 fwd = { fwd, bwd: const identity }
 withInverse2 :: forall d1 d2 d3. (d1 -> d2 -> d3) -> Binary d1 d2 d3
 withInverse2 fwd = { fwd, bwd: const identity }
 
-unary :: forall d1 d2 a'. (forall a. ToFrom2 d1 a × ToFrom2 d2 a × Unary d1 d2) -> Val a'
+unary :: forall d1 d2 a'. (forall a. ToFrom d1 a × ToFrom d2 a × Unary d1 d2) -> Val a'
 unary (d1 × d2 × { fwd, bwd }) = unary_ { d1, d2, fwd: fwd', bwd: bwd' }
    where
    fwd' :: forall a. d1 × a -> d2 × a
@@ -227,7 +223,7 @@ unary (d1 × d2 × { fwd, bwd }) = unary_ { d1, d2, fwd: fwd', bwd: bwd' }
    bwd' :: forall a. d2 × a -> d1 -> d1 × a
    bwd' (y × α) x = bwd y x × α
 
-binary :: forall d1 d2 d3 a'. (forall a. ToFrom2 d1 a × ToFrom2 d2 a × ToFrom2 d3 a × Binary d1 d2 d3) -> Val a'
+binary :: forall d1 d2 d3 a'. (forall a. ToFrom d1 a × ToFrom d2 a × ToFrom d3 a × Binary d1 d2 d3) -> Val a'
 binary (d1 × d2 × d3 × { fwd, bwd }) = binary_ { d1, d2, d3, fwd: fwd', bwd: bwd' }
    where
    fwd' :: forall a. MeetSemilattice a => d1 × a -> d2 × a -> d3 × a
@@ -239,7 +235,7 @@ binary (d1 × d2 × d3 × { fwd, bwd }) = binary_ { d1, d2, d3, fwd: fwd', bwd: 
       x' × y' = bwd z (x × y)
 
 -- If both are zero, depend only on the first.
-binaryZero :: forall d1 d2 a'. IsZero d1 => (forall a. ToFrom2 d1 a × ToFrom2 d2 a × Binary d1 d1 d2) -> Val a'
+binaryZero :: forall d1 d2 a'. IsZero d1 => (forall a. ToFrom d1 a × ToFrom d2 a × Binary d1 d1 d2) -> Val a'
 binaryZero (d1 × d2 × { fwd, bwd }) = binary_ { d1, d2: d1, d3: d2, fwd: fwd', bwd: bwd' }
    where
    fwd' :: forall a. MeetSemilattice a => d1 × a -> d1 × a -> d2 × a
