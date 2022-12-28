@@ -64,8 +64,11 @@ class JoinSemilattice a <= PartialJoinSemilattice a where
 definedJoin :: forall a. PartialJoinSemilattice a => a -> a -> a
 definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
 
-botOf :: forall t a a'. Functor t => BoundedJoinSemilattice a => BoundedJoinSemilattice a' => t a -> t a'
-botOf = (<$>) (const bot)
+class BotOf t u | t -> u where
+   botOf :: t -> u
+
+instance (Functor t, BoundedJoinSemilattice a, BoundedJoinSemilattice a') => BotOf (t a) (t a') where
+   botOf = (<$>) (const bot)
 
 topOf :: forall t a a'. Functor t => BoundedJoinSemilattice a => BoundedJoinSemilattice a' => t a -> t a'
 topOf = (<$>) (const bot >>> neg)
@@ -116,6 +119,7 @@ instance PartialJoinSemilattice a => PartialJoinSemilattice (Array a) where
 class Expandable t u | t -> u where
    expand :: t -> u -> t
 
+-- Expandable t u => Expandable (Dict t) (Dict u) nicer but requires analogous treatment of botOf
 instance (Functor t, BoundedJoinSemilattice a, Expandable (t a) (Raw t)) => Expandable (Dict (t a)) (Dict (Raw t)) where
    expand kvs kvs' =
       assert (keys kvs `subset` keys kvs') $

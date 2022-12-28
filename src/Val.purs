@@ -22,28 +22,25 @@ data Val a
    | Float a Number
    | Str a String
    | Record a (Dict (Val a)) -- always saturated
-   | Dictionary a (Dict (Val a)) -- always saturated
+   | Dictionary a (Dict (Val a))
    | Constr a Ctr (List (Val a)) -- potentially unsaturated
    | Matrix a (MatrixRep a)
    | Primitive PrimOp (List (Val a)) -- never saturated
    | Closure a (Env a) (RecDefs a) (Elim a)
 
+-- shenanigans
+{-
+newtype KeyedVal a = KeyedVal (a × Val a)
+
+instance Functor KeyedVal where
+   map f (KeyedVal (a × v)) = KeyedVal (f a × (f <$> v))
+-}
 -- op_bwd will be provided with original output and arguments
 newtype PrimOp = PrimOp
    { arity :: Int
    , op :: forall a. Highlightable a => BoundedMeetSemilattice a => List (Val a) -> Val a
    , op_bwd :: forall a. Highlightable a => BoundedLattice a => Val a -> List (Raw Val) -> List (Val a)
    }
-
-class Highlightable a where
-   highlightIf :: a -> Endo Doc
-
-instance Highlightable Unit where
-   highlightIf _ = identity
-
-instance Highlightable Boolean where
-   highlightIf false = identity
-   highlightIf true = \doc -> text "_" `beside` doc `beside` text "_"
 
 -- Environments.
 type Env a = Dict (Val a)
@@ -91,6 +88,16 @@ updateMatrix i j δv (vss × h × w) =
    vs_i = vss ! (i - 1)
    v_j = vs_i ! (j - 1)
    vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) (δv v_j) vs_i) vss
+
+class Highlightable a where
+   highlightIf :: a -> Endo Doc
+
+instance Highlightable Unit where
+   highlightIf _ = identity
+
+instance Highlightable Boolean where
+   highlightIf false = identity
+   highlightIf true = \doc -> text "_" `beside` doc `beside` text "_"
 
 -- ======================
 -- boilerplate
