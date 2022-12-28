@@ -40,7 +40,7 @@ newtype PrimOp = PrimOp
 type Env a = Dict (Val a)
 
 lookup' :: forall a. Var -> Dict a -> MayFail a
-lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
+lookup' x γ = lookup x γ # orElse ("variable " <> x <> " not found")
 
 -- Want a monoid instance but needs a newtype
 append :: forall a. Env a -> Endo (Env a)
