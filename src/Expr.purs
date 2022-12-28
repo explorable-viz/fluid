@@ -10,7 +10,7 @@ import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
-import Lattice (class BoundedJoinSemilattice, class Expandable2, class JoinSemilattice, class PartialJoinSemilattice, Raw, (∨), definedJoin, expand2, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
@@ -127,11 +127,11 @@ instance JoinSemilattice a => PartialJoinSemilattice (Elim a) where
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
    maybeJoin _ _ = report "Incompatible eliminators"
 
-instance BoundedJoinSemilattice a => Expandable2 (Elim a) (Raw Elim) where
-   expand2 (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand2 κ κ')
-   expand2 (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand2 cκs cκs')
-   expand2 (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand2 κ κ')
-   expand2 _ _ = error "Incompatible eliminators"
+instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
+   expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
+   expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
+   expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
+   expand _ _ = error "Incompatible eliminators"
 
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
    join = definedJoin
@@ -143,11 +143,11 @@ instance JoinSemilattice a => PartialJoinSemilattice (Cont a) where
    maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
    maybeJoin _ _ = report "Incompatible continuations"
 
-instance BoundedJoinSemilattice a => Expandable2 (Cont a) (Raw Cont) where
-   expand2 ContNone ContNone = ContNone
-   expand2 (ContExpr e) (ContExpr e') = ContExpr (expand2 e e')
-   expand2 (ContElim σ) (ContElim σ') = ContElim (expand2 σ σ')
-   expand2 _ _ = error "Incompatible continuations"
+instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
+   expand ContNone ContNone = ContNone
+   expand (ContExpr e) (ContExpr e') = ContExpr (expand e e')
+   expand (ContElim σ) (ContElim σ') = ContElim (expand σ σ')
+   expand _ _ = error "Incompatible continuations"
 
 instance JoinSemilattice a => JoinSemilattice (VarDef a) where
    join = definedJoin
@@ -156,8 +156,8 @@ instance JoinSemilattice a => JoinSemilattice (VarDef a) where
 instance JoinSemilattice a => PartialJoinSemilattice (VarDef a) where
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
 
-instance BoundedJoinSemilattice a => Expandable2 (VarDef a) (Raw VarDef) where
-   expand2 (VarDef σ e) (VarDef σ' e') = VarDef (expand2 σ σ') (expand2 e e')
+instance BoundedJoinSemilattice a => Expandable (VarDef a) (Raw VarDef) where
+   expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join = definedJoin
@@ -180,19 +180,19 @@ instance JoinSemilattice a => PartialJoinSemilattice (Expr a) where
    maybeJoin (LetRec ρ e) (LetRec ρ' e') = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
    maybeJoin _ _ = report "Incompatible expressions"
 
-instance BoundedJoinSemilattice a => Expandable2 (Expr a) (Raw Expr) where
-   expand2 (Var x) (Var x') = Var (x ≜ x')
-   expand2 (Op op) (Op op') = Op (op ≜ op')
-   expand2 (Int α n) (Int _ n') = Int α (n ≜ n')
-   expand2 (Str α str) (Str _ str') = Str α (str ≜ str')
-   expand2 (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand2 (Record α xes) (Record _ xes') = Record α (expand2 xes xes')
-   expand2 (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand2 es es')
-   expand2 (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
-      Matrix α (expand2 e1 e1') ((x ≜ x') × (y ≜ y')) (expand2 e2 e2')
-   expand2 (Lambda σ) (Lambda σ') = Lambda (expand2 σ σ')
-   expand2 (Project e x) (Project e' x') = Project (expand2 e e') (x ≜ x')
-   expand2 (App e1 e2) (App e1' e2') = App (expand2 e1 e1') (expand2 e2 e2')
-   expand2 (Let def e) (Let def' e') = Let (expand2 def def') (expand2 e e')
-   expand2 (LetRec ρ e) (LetRec ρ' e') = LetRec (expand2 ρ ρ') (expand2 e e')
-   expand2 _ _ = error "Incompatible expressions"
+instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
+   expand (Var x) (Var x') = Var (x ≜ x')
+   expand (Op op) (Op op') = Op (op ≜ op')
+   expand (Int α n) (Int _ n') = Int α (n ≜ n')
+   expand (Str α str) (Str _ str') = Str α (str ≜ str')
+   expand (Float α n) (Float _ n') = Float α (n ≜ n')
+   expand (Record α xes) (Record _ xes') = Record α (expand xes xes')
+   expand (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand es es')
+   expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
+      Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
+   expand (Lambda σ) (Lambda σ') = Lambda (expand σ σ')
+   expand (Project e x) (Project e' x') = Project (expand e e') (x ≜ x')
+   expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
+   expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
+   expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
+   expand _ _ = error "Incompatible expressions"
