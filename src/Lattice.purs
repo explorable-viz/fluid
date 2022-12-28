@@ -67,11 +67,14 @@ definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
 class BotOf t u | t -> u where
    botOf :: t -> u
 
+class TopOf t u | t -> u where
+   topOf :: t -> u
+
 instance (Functor t, BoundedJoinSemilattice a, BoundedJoinSemilattice a') => BotOf (t a) (t a') where
    botOf = (<$>) (const bot)
 
-topOf :: forall t a a'. Functor t => BoundedJoinSemilattice a => BoundedJoinSemilattice a' => t a -> t a'
-topOf = (<$>) (const bot >>> neg)
+instance (Functor t, BoundedJoinSemilattice a, BoundedJoinSemilattice a') => TopOf (t a) (t a') where
+   topOf = (<$>) (const bot >>> neg)
 
 -- Specialises botOf and topOf but omits the lattice constraint.
 erase :: forall t a. Functor t => t a -> Raw t
