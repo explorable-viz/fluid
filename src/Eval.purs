@@ -58,12 +58,9 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
 
-closeDefs :: forall a. BoundedJoinSemilattice a => Env a -> RecDefs a -> Env a
-closeDefs γ ρ = ρ <#> \σ ->
-   let
-      ρ' = ρ `for` σ
-   in
-      V.Closure bot (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
+closeDefs :: forall a. BoundedJoinSemilattice a => Env a -> RecDefs a -> a -> Env a
+closeDefs γ ρ α = ρ <#> \σ ->
+   let ρ' = ρ `for` σ in V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -116,7 +113,7 @@ eval γ (App e e') = do
    t' × v' <- eval γ e'
    case v of
       V.Closure _ γ1 ρ σ -> do
-         let γ2 = closeDefs γ1 ρ
+         let γ2 = closeDefs γ1 ρ bot
          γ3 × e'' × _ × w <- match v' σ
          t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'')
          pure $ T.App (t × S.fromFoldable (keys ρ)) t' w t'' × v''
@@ -136,7 +133,7 @@ eval γ (Let (VarDef σ e) e') = do
    t' × v' <- eval (γ <+> γ') e'
    pure $ T.Let (T.VarDef w t) t' × v'
 eval γ (LetRec ρ e) = do
-   let γ' = closeDefs γ ρ
+   let γ' = closeDefs γ ρ bot
    t × v <- eval (γ <+> γ') e
    pure $ T.LetRec (erase <$> ρ) t × v
 
@@ -150,4 +147,4 @@ eval_module γ = go empty
       γ'' × _ × _ × _ <- match v σ
       go (y' <+> γ'') (Module ds)
    go γ' (Module (Right ρ : ds)) =
-      go (γ' <+> closeDefs (γ <+> γ') ρ) (Module ds)
+      go (γ' <+> closeDefs (γ <+> γ') ρ bot) (Module ds)
