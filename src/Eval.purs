@@ -130,7 +130,7 @@ eval γ (App e e') α = do
    t' × v' <- eval γ e' α
    case v of
       V.Closure β γ1 ρ σ -> do
-         let γ2 = closeDefs γ1 ρ α
+         let γ2 = closeDefs γ1 ρ β
          γ3 × e'' × β' × w <- match v' σ
          t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
          pure $ T.App (t × S.fromFoldable (keys ρ)) t' w t'' × v''
