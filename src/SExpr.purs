@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
 import DataType (Ctr)
-import Lattice (class JoinSemilattice, class PartialJoinSemilattice, definedJoin, neg)
+import Lattice (class JoinSemilattice, definedJoin, neg)
 import Util (type (×), (×), type (+), error, unimplemented)
 import Util.Pair (Pair)
 
@@ -83,8 +83,6 @@ instance Functor Module where
       mapDefs g (Right ds) = Right $ (\(x × (ps × s)) -> x × (ps × (g <$> s))) <$> ds
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
-   join = definedJoin
-   neg = (<$>) neg
-
-instance JoinSemilattice a => PartialJoinSemilattice (Expr a) where
+   join s = definedJoin s
    maybeJoin _ = error unimplemented
+   neg = (<$>) neg

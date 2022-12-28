@@ -5,13 +5,14 @@ import Prelude hiding (absurd, append)
 import Bindings (Var)
 import Control.Apply (lift2)
 import Data.List (List(..), (:))
+import Data.Bifunctor (bimap)
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
 import DataType (Ctr)
 import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, 𝔹, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Text.Pretty (Doc, beside, text)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
@@ -22,7 +23,7 @@ data Val a
    | Float a Number
    | Str a String
    | Record a (Dict (Val a)) -- always saturated
-   | Dictionary a (Dict (Val a)) -- always saturated
+   | Dictionary a (Dict (a × Val a))
    | Constr a Ctr (List (Val a)) -- potentially unsaturated
    | Matrix a (MatrixRep a)
    | Primitive PrimOp (List (Val a)) -- never saturated
@@ -35,21 +36,11 @@ newtype PrimOp = PrimOp
    , op_bwd :: forall a. Highlightable a => BoundedLattice a => Val a -> List (Raw Val) -> List (Val a)
    }
 
-class Highlightable a where
-   highlightIf :: a -> Endo Doc
-
-instance Highlightable Unit where
-   highlightIf _ = identity
-
-instance Highlightable Boolean where
-   highlightIf false = identity
-   highlightIf true = \doc -> text "_" `beside` doc `beside` text "_"
-
 -- Environments.
 type Env a = Dict (Val a)
 
 lookup' :: forall a. Var -> Dict a -> MayFail a
-lookup' x γ = lookup x γ # (orElse $ "variable " <> x <> " not found")
+lookup' x γ = lookup x γ # orElse ("variable " <> x <> " not found")
 
 -- Want a monoid instance but needs a newtype
 append :: forall a. Env a -> Endo (Env a)
@@ -92,6 +83,16 @@ updateMatrix i j δv (vss × h × w) =
    v_j = vs_i ! (j - 1)
    vss' = unsafeUpdateAt (i - 1) (unsafeUpdateAt (j - 1) (δv v_j) vs_i) vss
 
+class Highlightable a where
+   highlightIf :: a -> Endo Doc
+
+instance Highlightable Unit where
+   highlightIf _ = identity
+
+instance Highlightable Boolean where
+   highlightIf false = identity
+   highlightIf true = \doc -> text "_" `beside` doc `beside` text "_"
+
 -- ======================
 -- boilerplate
 -- ======================
@@ -100,7 +101,7 @@ instance Functor Val where
    map f (Float α n) = Float (f α) n
    map f (Str α s) = Str (f α) s
    map f (Record α xvs) = Record (f α) (map f <$> xvs)
-   map f (Dictionary α svs) = Dictionary (f α) (map f <$> svs)
+   map f (Dictionary α svs) = Dictionary (f α) (bimap f (map f) <$> svs)
    map f (Constr α c vs) = Constr (f α) c (map f <$> vs)
    -- PureScript can't derive this case
    map f (Matrix α (r × iα × jβ)) = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))
@@ -108,10 +109,6 @@ instance Functor Val where
    map f (Closure α γ ρ σ) = Closure (f α) (map f <$> γ) (map f <$> ρ) (f <$> σ)
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
-   join = definedJoin
-   neg = (<$>) neg
-
-instance JoinSemilattice a => PartialJoinSemilattice (Val a) where
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α s) (Str α' s') = Str (α ∨ α') <$> (s ≞ s')
@@ -129,6 +126,9 @@ instance JoinSemilattice a => PartialJoinSemilattice (Val a) where
       Closure (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ vs) (Primitive _ vs') = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _ = report "Incompatible values"
+
+   join v = definedJoin v
+   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
    expand (Int α n) (Int _ n') = Int α (n ≜ n')
