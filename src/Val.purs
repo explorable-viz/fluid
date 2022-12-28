@@ -11,7 +11,7 @@ import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class Expandable2, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, Raw, (∨), definedJoin, expand, expand2, maybeJoin, neg)
 import Text.Pretty (Doc, beside, text)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
@@ -143,3 +143,17 @@ instance BoundedJoinSemilattice a => Expandable (Val a) where
       Closure α (expand γ γ') (expand ρ ρ') (expand σ σ')
    expand (Primitive φ vs) (Primitive _ vs') = Primitive φ (expand vs vs') -- TODO: require φ == φ'
    expand _ _ = error "Incompatible values"
+
+instance BoundedJoinSemilattice a => Expandable2 (Val a) (Raw Val) where
+   expand2 (Int α n) (Int _ n') = Int α (n ≜ n')
+   expand2 (Float α n) (Float _ n') = Float α (n ≜ n')
+   expand2 (Str α s) (Str _ s') = Str α (s ≜ s')
+--   expand2 (Record α xvs) (Record _ xvs') = Record α (expand2 xvs xvs')
+--   expand2 (Dictionary α svs) (Dictionary _ svs') = Dictionary α (expand2 svs svs')
+   expand2 (Constr α c vs) (Constr _ c' us) = Constr α (c ≜ c') (expand2 vs us)
+   expand2 (Matrix α (vss × (i × βi) × (j × βj))) (Matrix _ (vss' × (i' × _) × (j' × _))) =
+      Matrix α (expand2 vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
+   expand2 (Closure α γ ρ σ) (Closure _ γ' ρ' σ') =
+      Closure α (expand2 γ γ') (expand2 ρ ρ') (expand2 σ σ')
+   expand2 (Primitive φ vs) (Primitive _ vs') = Primitive φ (expand2 vs vs') -- TODO: require φ == φ'
+   expand2 _ _ = error "Incompatible values"
