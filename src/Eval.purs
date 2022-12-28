@@ -7,7 +7,6 @@ import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
-import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
 import Data.Set (union, subset)
 import Data.Traversable (sequence, traverse)
@@ -39,17 +38,19 @@ match
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × top × MatchVarAnon (erase v))
    | otherwise = pure (D.singleton x v × κ × top × MatchVar x (erase v))
-match (V.Constr _ c vs) (ElimConstr m) = do
+match (V.Constr α c vs) (ElimConstr m) = do
    with "Pattern mismatch" $ S.singleton c `consistentWith` keys m
    κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (lookup c m)
-   second (MatchConstr c) <$> matchMany vs κ
+   γ × κ' × α' × ws <- matchMany vs κ
+   pure (γ × κ' × (α ∧ α') × MatchConstr c ws)
 match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
    report $ patternMismatch (prettyP v) (show d)
-match (V.Record _ xvs) (ElimRecord xs κ) = do
+match (V.Record α xvs) (ElimRecord xs κ) = do
    check (subset xs (S.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # S.toUnfoldable
-   second (zip xs' >>> D.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get xvs) κ
+   γ × κ' × α' × ws <- matchMany (xs' <#> flip get xvs) κ
+   pure (γ × κ' × (α ∧ α') × MatchRecord (D.fromFoldable (zip xs' ws)))
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany
