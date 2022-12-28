@@ -30,8 +30,6 @@ data Expr a
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
-data Wibble a = Wibble (Expr a × Expr a)
-
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs a = Dict (Elim a)
