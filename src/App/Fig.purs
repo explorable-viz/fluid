@@ -25,7 +25,7 @@ import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Expr (Expr)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
-import Lattice (𝔹, bot, botOf, neg, topOf)
+import Lattice (𝔹, bot, botOf, erase, neg, topOf)
 import Module (File(..), open, openDatasetAs)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
@@ -155,7 +155,7 @@ valViews γ xs = sequence (flip varView γ <$> xs)
 figViews :: Fig -> Selector -> MayFail (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
-      γ0γ × e' × α = evalBwd (γ0 <+> γ) e (δv v) t
+      γ0γ × e' × α = evalBwd (erase <$> (γ0 <+> γ)) (erase e) (δv v) t
    _ × v' <- eval γ0γ e' α
    views <- valViews γ0γ xs
    pure $ view "output" v' × views
@@ -163,7 +163,7 @@ figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
 linkResult :: Var -> Env 𝔹 -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> MayFail LinkResult
 linkResult x γ0 γ e1 e2 t1 _ v1 = do
    let
-      γ0γ × _ × _ = evalBwd (γ0 <+> γ) e1 v1 t1
+      γ0γ × _ × _ = evalBwd (erase <$> (γ0 <+> γ)) (erase e1) v1 t1
       _ × γ' = append_inv (S.singleton x) γ0γ
    v0' <- lookup x γ' # orElse absurd
    -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use

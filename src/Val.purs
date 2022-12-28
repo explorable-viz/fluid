@@ -148,8 +148,8 @@ instance BoundedJoinSemilattice a => Expandable2 (Val a) (Raw Val) where
    expand2 (Int α n) (Int _ n') = Int α (n ≜ n')
    expand2 (Float α n) (Float _ n') = Float α (n ≜ n')
    expand2 (Str α s) (Str _ s') = Str α (s ≜ s')
---   expand2 (Record α xvs) (Record _ xvs') = Record α (expand2 xvs xvs')
---   expand2 (Dictionary α svs) (Dictionary _ svs') = Dictionary α (expand2 svs svs')
+   expand2 (Record α xvs) (Record _ xvs') = Record α (expand2 xvs xvs')
+   expand2 (Dictionary α svs) (Dictionary _ svs') = Dictionary α (expand2 svs svs')
    expand2 (Constr α c vs) (Constr _ c' us) = Constr α (c ≜ c') (expand2 vs us)
    expand2 (Matrix α (vss × (i × βi) × (j × βj))) (Matrix _ (vss' × (i' × _) × (j' × _))) =
       Matrix α (expand2 vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
