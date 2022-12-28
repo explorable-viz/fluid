@@ -3617,7 +3617,7 @@
     JoinSemilattice0: () => joinSemilatticeList(dictPartialJoinSemilattice)
   });
   var joinSemilatticeList = (dictPartialJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeLis(dictPartialJoinSemilattice)), neg: listMap(dictPartialJoinSemilattice.JoinSemilattice0().neg) });
-  var expandableDict = (dictFunctor) => (dictBoundedJoinSemilattice) => {
+  var expandableDictDictRaw = (dictFunctor) => (dictBoundedJoinSemilattice) => {
     const botOf22 = dictFunctor.map((v) => dictBoundedJoinSemilattice.bot);
     return (dictExpandable) => ({
       expand: (kvs) => (kvs$p) => (() => {
@@ -9253,7 +9253,6 @@
     Foldable1: () => foldablePair
   };
   var toTuple = (v) => $Tuple(v._1, v._2);
-  var fromTuple = (v) => $Pair(v._1, v._2);
 
   // output-es/Expr/index.js
   var $Cont = (tag, _1) => ({ tag, _1 });
@@ -9698,10 +9697,10 @@
   var joinSemilatticeExpr = (dictJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeExp(dictJoinSemilattice)), neg: functorExpr.map(dictJoinSemilattice.neg) });
   var joinSemilatticeElim = (dictJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeEli(dictJoinSemilattice)), neg: functorElim.map(dictJoinSemilattice.neg) });
   var joinSemilatticeCont = (dictJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeCon(dictJoinSemilattice)), neg: functorCont.map(dictJoinSemilattice.neg) });
-  var expandableVarDef = (dictBoundedJoinSemilattice) => ({ expand: (v) => (v1) => $VarDef(expandableElim(dictBoundedJoinSemilattice).expand(v._1)(v1._1), expandableExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2)) });
-  var expandableExpr = (dictBoundedJoinSemilattice) => {
-    const expandableDict3 = expandableDict(functorExpr)(dictBoundedJoinSemilattice);
-    const expandableDict4 = expandableDict(functorElim)(dictBoundedJoinSemilattice);
+  var expandableVarDefRawVarDef = (dictBoundedJoinSemilattice) => ({ expand: (v) => (v1) => $VarDef(expandableElimRawElim(dictBoundedJoinSemilattice).expand(v._1)(v1._1), expandableExprRawExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2)) });
+  var expandableExprRawExpr = (dictBoundedJoinSemilattice) => {
+    const expandableDictDictRaw3 = expandableDictDictRaw(functorExpr)(dictBoundedJoinSemilattice);
+    const expandableDictDictRaw4 = expandableDictDictRaw(functorElim)(dictBoundedJoinSemilattice);
     return {
       expand: (v) => (v1) => {
         if (v.tag === "Var") {
@@ -9736,7 +9735,7 @@
         }
         if (v.tag === "Record") {
           if (v1.tag === "Record") {
-            return $Expr("Record", v._1, expandableDict3(expandableExpr(dictBoundedJoinSemilattice)).expand(v._2)(v1._2));
+            return $Expr("Record", v._1, expandableDictDictRaw3(expandableExprRawExpr(dictBoundedJoinSemilattice)).expand(v._2)(v1._2));
           }
           return unsafePerformEffect(throwException(error("Incompatible expressions")));
         }
@@ -9746,7 +9745,7 @@
               "Constr",
               v._1,
               mustEq(eqString)(showString)(v._2)(v1._2),
-              zipWith(expandableExpr(dictBoundedJoinSemilattice).expand)(v._3)(v1._3)
+              zipWith(expandableExprRawExpr(dictBoundedJoinSemilattice).expand)(v._3)(v1._3)
             );
           }
           return unsafePerformEffect(throwException(error("Incompatible expressions")));
@@ -9756,40 +9755,44 @@
             return $Expr(
               "Matrix",
               v._1,
-              expandableExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2),
+              expandableExprRawExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2),
               $Tuple(mustEq(eqString)(showString)(v._3._1)(v1._3._1), mustEq(eqString)(showString)(v._3._2)(v1._3._2)),
-              expandableExpr(dictBoundedJoinSemilattice).expand(v._4)(v1._4)
+              expandableExprRawExpr(dictBoundedJoinSemilattice).expand(v._4)(v1._4)
             );
           }
           return unsafePerformEffect(throwException(error("Incompatible expressions")));
         }
         if (v.tag === "Lambda") {
           if (v1.tag === "Lambda") {
-            return $Expr("Lambda", expandableElim(dictBoundedJoinSemilattice).expand(v._1)(v1._1));
+            return $Expr("Lambda", expandableElimRawElim(dictBoundedJoinSemilattice).expand(v._1)(v1._1));
           }
           return unsafePerformEffect(throwException(error("Incompatible expressions")));
         }
         if (v.tag === "Project") {
           if (v1.tag === "Project") {
-            return $Expr("Project", expandableExpr(dictBoundedJoinSemilattice).expand(v._1)(v1._1), mustEq(eqString)(showString)(v._2)(v1._2));
+            return $Expr("Project", expandableExprRawExpr(dictBoundedJoinSemilattice).expand(v._1)(v1._1), mustEq(eqString)(showString)(v._2)(v1._2));
           }
           return unsafePerformEffect(throwException(error("Incompatible expressions")));
         }
         if (v.tag === "App") {
           if (v1.tag === "App") {
-            return $Expr("App", expandableExpr(dictBoundedJoinSemilattice).expand(v._1)(v1._1), expandableExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+            return $Expr("App", expandableExprRawExpr(dictBoundedJoinSemilattice).expand(v._1)(v1._1), expandableExprRawExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
           }
           return unsafePerformEffect(throwException(error("Incompatible expressions")));
         }
         if (v.tag === "Let") {
           if (v1.tag === "Let") {
-            return $Expr("Let", expandableVarDef(dictBoundedJoinSemilattice).expand(v._1)(v1._1), expandableExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+            return $Expr("Let", expandableVarDefRawVarDef(dictBoundedJoinSemilattice).expand(v._1)(v1._1), expandableExprRawExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
           }
           return unsafePerformEffect(throwException(error("Incompatible expressions")));
         }
         if (v.tag === "LetRec") {
           if (v1.tag === "LetRec") {
-            return $Expr("LetRec", expandableDict4(expandableElim(dictBoundedJoinSemilattice)).expand(v._1)(v1._1), expandableExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+            return $Expr(
+              "LetRec",
+              expandableDictDictRaw4(expandableElimRawElim(dictBoundedJoinSemilattice)).expand(v._1)(v1._1),
+              expandableExprRawExpr(dictBoundedJoinSemilattice).expand(v._2)(v1._2)
+            );
           }
           return unsafePerformEffect(throwException(error("Incompatible expressions")));
         }
@@ -9797,25 +9800,25 @@
       }
     };
   };
-  var expandableElim = (dictBoundedJoinSemilattice) => {
-    const expandableDict3 = expandableDict(functorCont)(dictBoundedJoinSemilattice);
+  var expandableElimRawElim = (dictBoundedJoinSemilattice) => {
+    const expandableDictDictRaw3 = expandableDictDictRaw(functorCont)(dictBoundedJoinSemilattice);
     return {
       expand: (v) => (v1) => {
         if (v.tag === "ElimVar") {
           if (v1.tag === "ElimVar") {
-            return $Elim("ElimVar", mustEq(eqString)(showString)(v._1)(v1._1), expandableCont(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+            return $Elim("ElimVar", mustEq(eqString)(showString)(v._1)(v1._1), expandableContRawCont(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
           }
           return unsafePerformEffect(throwException(error("Incompatible eliminators")));
         }
         if (v.tag === "ElimConstr") {
           if (v1.tag === "ElimConstr") {
-            return $Elim("ElimConstr", expandableDict3(expandableCont(dictBoundedJoinSemilattice)).expand(v._1)(v1._1));
+            return $Elim("ElimConstr", expandableDictDictRaw3(expandableContRawCont(dictBoundedJoinSemilattice)).expand(v._1)(v1._1));
           }
           return unsafePerformEffect(throwException(error("Incompatible eliminators")));
         }
         if (v.tag === "ElimRecord") {
           if (v1.tag === "ElimRecord") {
-            return $Elim("ElimRecord", mustEq(eqSet)(showSet2)(v._1)(v1._1), expandableCont(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+            return $Elim("ElimRecord", mustEq(eqSet)(showSet2)(v._1)(v1._1), expandableContRawCont(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
           }
           return unsafePerformEffect(throwException(error("Incompatible eliminators")));
         }
@@ -9823,7 +9826,7 @@
       }
     };
   };
-  var expandableCont = (dictBoundedJoinSemilattice) => ({
+  var expandableContRawCont = (dictBoundedJoinSemilattice) => ({
     expand: (v) => (v1) => {
       if (v.tag === "ContNone") {
         if (v1.tag === "ContNone") {
@@ -9833,13 +9836,13 @@
       }
       if (v.tag === "ContExpr") {
         if (v1.tag === "ContExpr") {
-          return $Cont("ContExpr", expandableExpr(dictBoundedJoinSemilattice).expand(v._1)(v1._1));
+          return $Cont("ContExpr", expandableExprRawExpr(dictBoundedJoinSemilattice).expand(v._1)(v1._1));
         }
         return unsafePerformEffect(throwException(error("Incompatible continuations")));
       }
       if (v.tag === "ContElim") {
         if (v1.tag === "ContElim") {
-          return $Cont("ContElim", expandableElim(dictBoundedJoinSemilattice).expand(v._1)(v1._1));
+          return $Cont("ContElim", expandableElimRawElim(dictBoundedJoinSemilattice).expand(v._1)(v1._1));
         }
         return unsafePerformEffect(throwException(error("Incompatible continuations")));
       }
@@ -10208,10 +10211,10 @@
     };
   };
   var joinSemilatticeVal = (dictJoinSemilattice) => ({ join: definedJoin(partialJoinSemilatticeVal(dictJoinSemilattice)), neg: functorVal.map(dictJoinSemilattice.neg) });
-  var expandableVal = (dictBoundedJoinSemilattice) => {
-    const expandableDict2 = expandableDict(functorVal)(dictBoundedJoinSemilattice);
-    const expandableElim2 = expandableElim(dictBoundedJoinSemilattice);
-    const expand = expandableDict(functorElim)(dictBoundedJoinSemilattice)(expandableElim2).expand;
+  var expandableValRawVal = (dictBoundedJoinSemilattice) => {
+    const expandableDictDictRaw2 = expandableDictDictRaw(functorVal)(dictBoundedJoinSemilattice);
+    const expandableElimRawElim2 = expandableElimRawElim(dictBoundedJoinSemilattice);
+    const expand = expandableDictDictRaw(functorElim)(dictBoundedJoinSemilattice)(expandableElimRawElim2).expand;
     return {
       expand: (v) => (v1) => {
         if (v.tag === "Int") {
@@ -10234,13 +10237,13 @@
         }
         if (v.tag === "Record") {
           if (v1.tag === "Record") {
-            return $Val("Record", v._1, expandableDict2(expandableVal(dictBoundedJoinSemilattice)).expand(v._2)(v1._2));
+            return $Val("Record", v._1, expandableDictDictRaw2(expandableValRawVal(dictBoundedJoinSemilattice)).expand(v._2)(v1._2));
           }
           return unsafePerformEffect(throwException(error("Incompatible values")));
         }
         if (v.tag === "Dictionary") {
           if (v1.tag === "Dictionary") {
-            return $Val("Dictionary", v._1, expandableDict2(expandableVal(dictBoundedJoinSemilattice)).expand(v._2)(v1._2));
+            return $Val("Dictionary", v._1, expandableDictDictRaw2(expandableValRawVal(dictBoundedJoinSemilattice)).expand(v._2)(v1._2));
           }
           return unsafePerformEffect(throwException(error("Incompatible values")));
         }
@@ -10250,7 +10253,7 @@
               "Constr",
               v._1,
               mustEq(eqString)(showString)(v._2)(v1._2),
-              zipWith(expandableVal(dictBoundedJoinSemilattice).expand)(v._3)(v1._3)
+              zipWith(expandableValRawVal(dictBoundedJoinSemilattice).expand)(v._3)(v1._3)
             );
           }
           return unsafePerformEffect(throwException(error("Incompatible values")));
@@ -10263,7 +10266,7 @@
               $Tuple(
                 $Tuple(
                   (() => {
-                    const $6 = expandableVal(dictBoundedJoinSemilattice);
+                    const $6 = expandableValRawVal(dictBoundedJoinSemilattice);
                     return zipWith2((xs) => (ys) => zipWith2($6.expand)(xs)(ys))(v._2._1._1)(v1._2._1._1);
                   })(),
                   $Tuple(mustEq(eqInt)(showInt)(v._2._1._2._1)(v1._2._1._2._1), v._2._1._2._2)
@@ -10276,13 +10279,19 @@
         }
         if (v.tag === "Closure") {
           if (v1.tag === "Closure") {
-            return $Val("Closure", v._1, expandableDict2(expandableVal(dictBoundedJoinSemilattice)).expand(v._2)(v1._2), expand(v._3)(v1._3), expandableElim2.expand(v._4)(v1._4));
+            return $Val(
+              "Closure",
+              v._1,
+              expandableDictDictRaw2(expandableValRawVal(dictBoundedJoinSemilattice)).expand(v._2)(v1._2),
+              expand(v._3)(v1._3),
+              expandableElimRawElim2.expand(v._4)(v1._4)
+            );
           }
           return unsafePerformEffect(throwException(error("Incompatible values")));
         }
         if (v.tag === "Primitive") {
           if (v1.tag === "Primitive") {
-            return $Val("Primitive", v._1, zipWith(expandableVal(dictBoundedJoinSemilattice).expand)(v._2)(v1._2));
+            return $Val("Primitive", v._1, zipWith(expandableValRawVal(dictBoundedJoinSemilattice).expand)(v._2)(v1._2));
           }
           return unsafePerformEffect(throwException(error("Incompatible values")));
         }
@@ -18140,13 +18149,16 @@
               );
             }
             fail();
-          })())((v3) => $Either(
-            "Right",
-            $Tuple(
-              $Trace("Dictionary", listMap(fromTuple)(zipWith(Tuple)(v3._1._1)(v3._2._1))),
-              $Val("Dictionary", meet(v1._1)(v2), fromFoldable14(zipWith(Tuple)(listMap((u) => match42(u)._1)(v3._1._2))(v3._2._2)))
-            )
-          ));
+          })())((v3) => {
+            const ss = listMap((u) => match42(u)._1)(v3._1._2);
+            return $Either(
+              "Right",
+              $Tuple(
+                $Trace("Dictionary", fromFoldable14(zipWith(Tuple)(ss)(v3._1._1)), fromFoldable14(zipWith(Tuple)(ss)(v3._2._1))),
+                $Val("Dictionary", meet(v1._1)(v2), fromFoldable14(zipWith(Tuple)(ss)(v3._2._2)))
+              )
+            );
+          });
         }
         if (v1.tag === "Constr") {
           return bindEither.bind(checkArity2(v1._2)((() => {
@@ -18744,8 +18756,8 @@
   var evalBwd = (dictHighlightable) => (dictBoundedLattice) => {
     const evalBwd$p2 = evalBwd$p(dictHighlightable)(dictBoundedLattice);
     const BoundedJoinSemilattice0 = dictBoundedLattice.BoundedJoinSemilattice0();
-    const expand = expandableDict(functorVal)(BoundedJoinSemilattice0)(expandableVal(BoundedJoinSemilattice0)).expand;
-    const expand1 = expandableExpr(BoundedJoinSemilattice0).expand;
+    const expand = expandableDictDictRaw(functorVal)(BoundedJoinSemilattice0)(expandableValRawVal(BoundedJoinSemilattice0)).expand;
+    const expand1 = expandableExprRawExpr(BoundedJoinSemilattice0).expand;
     return (\u03B3) => (e) => (v) => (t) => {
       const v1 = evalBwd$p2(v)(t);
       return $Tuple($Tuple(expand(v1._1._1)(\u03B3), expand1(v1._1._2)(e)), v1._2);
@@ -22230,6 +22242,7 @@
   var eval_module3 = /* @__PURE__ */ eval_module(highlightableBoolean)(boundedMeetSemilatticeBoo);
   var $$eval3 = /* @__PURE__ */ $$eval(highlightableBoolean)(boundedMeetSemilatticeBoo);
   var evalBwd2 = /* @__PURE__ */ evalBwd(highlightableBoolean)(boundedLatticeBoolean);
+  var erase2 = /* @__PURE__ */ (() => functorVal.map((v) => unit))();
   var neg = /* @__PURE__ */ (() => joinSemilatticeDict(partialJoinSemilatticeVal(joinSemilatticeBoolean)).neg)();
   var botOf = /* @__PURE__ */ (() => functorVal.map((v) => false))();
   var identity23 = (x2) => x2;
@@ -22323,7 +22336,10 @@
   };
   var loadFig = (v) => _bind(openDatasetAs("example/linking/renewables")("data"))((v1) => _map((s$p) => successful(bindEither.bind(splitDefs(unionWith((v$1) => identity12)(v1._1)(v1._2))(s$p))((v2) => bindEither.bind(exprFwd(joinSemilatticeBoolean)(v2.s))((e) => bindEither.bind($$eval3(unionWith((v$1) => identity12)(unionWith((v$1) => identity12)(v1._1)(v1._2))(v2["\u03B3"]))(e)(false))((v3) => $Either("Right", { spec: v, "\u03B30": v1._1, "\u03B3": unionWith((v$1) => identity12)(v1._2)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file)));
   var linkResult = (x2) => (\u03B30) => (\u03B3) => (e1) => (e22) => (t1) => (v) => (v1) => {
-    const $8 = append_inv($Map("Two", Leaf2, x2, unit, Leaf2))(evalBwd2(unionWith((v$1) => identity12)(\u03B30)(\u03B3))(e1)(v1)(t1)._1._1)._2;
+    const $8 = append_inv($Map("Two", Leaf2, x2, unit, Leaf2))(evalBwd2(_fmapObject(
+      unionWith((v$1) => identity12)(\u03B30)(\u03B3),
+      erase2
+    ))(functorExpr.map((v$1) => unit)(e1))(v1)(t1)._1._1)._2;
     return bindEither.bind((() => {
       const $9 = _lookup(Nothing, Just, x2, $8);
       if ($9.tag === "Nothing") {
@@ -22339,7 +22355,7 @@
     )));
   };
   var figViews = (v) => (\u03B4v) => {
-    const v2 = evalBwd2(unionWith((v$1) => identity12)(v["\u03B30"])(v["\u03B3"]))(v.e)(\u03B4v(v.v))(v.t);
+    const v2 = evalBwd2(_fmapObject(unionWith((v$1) => identity12)(v["\u03B30"])(v["\u03B3"]), erase2))(functorExpr.map((v$1) => unit)(v.e))(\u03B4v(v.v))(v.t);
     return bindEither.bind($$eval3(v2._1._1)(v2._1._2)(v2._2))((v3) => bindEither.bind(sequence3(arrayMap((a) => varView(a)(v2._1._1))(v.spec.xs)))((views) => $Either(
       "Right",
       $Tuple(view("output")(v3._2), views)
