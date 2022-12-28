@@ -5,13 +5,14 @@ import Prelude hiding (absurd, append)
 import Bindings (Var)
 import Control.Apply (lift2)
 import Data.List (List(..), (:))
+import Data.Bifunctor (bimap)
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
 import DataType (Ctr)
 import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, 𝔹, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Text.Pretty (Doc, beside, text)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
@@ -22,19 +23,12 @@ data Val a
    | Float a Number
    | Str a String
    | Record a (Dict (Val a)) -- always saturated
-   | Dictionary a (Dict (Val a))
+   | Dictionary a (Dict (a × Val a))
    | Constr a Ctr (List (Val a)) -- potentially unsaturated
    | Matrix a (MatrixRep a)
    | Primitive PrimOp (List (Val a)) -- never saturated
    | Closure a (Env a) (RecDefs a) (Elim a)
 
--- shenanigans
-{-
-newtype KeyedVal a = KeyedVal (a × Val a)
-
-instance Functor KeyedVal where
-   map f (KeyedVal (a × v)) = KeyedVal (f a × (f <$> v))
--}
 -- op_bwd will be provided with original output and arguments
 newtype PrimOp = PrimOp
    { arity :: Int
@@ -107,7 +101,7 @@ instance Functor Val where
    map f (Float α n) = Float (f α) n
    map f (Str α s) = Str (f α) s
    map f (Record α xvs) = Record (f α) (map f <$> xvs)
-   map f (Dictionary α svs) = Dictionary (f α) (map f <$> svs)
+   map f (Dictionary α svs) = Dictionary (f α) (bimap f (map f) <$> svs)
    map f (Constr α c vs) = Constr (f α) c (map f <$> vs)
    -- PureScript can't derive this case
    map f (Matrix α (r × iα × jβ)) = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))
@@ -115,10 +109,6 @@ instance Functor Val where
    map f (Closure α γ ρ σ) = Closure (f α) (map f <$> γ) (map f <$> ρ) (f <$> σ)
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
-   join = definedJoin
-   neg = (<$>) neg
-
-instance JoinSemilattice a => PartialJoinSemilattice (Val a) where
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α s) (Str α' s') = Str (α ∨ α') <$> (s ≞ s')
@@ -136,6 +126,9 @@ instance JoinSemilattice a => PartialJoinSemilattice (Val a) where
       Closure (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ vs) (Primitive _ vs') = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _ = report "Incompatible values"
+
+   join v = definedJoin v
+   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
    expand (Int α n) (Int _ n') = Int α (n ≜ n')

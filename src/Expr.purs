@@ -10,7 +10,7 @@ import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
-import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, class PartialJoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
@@ -117,15 +117,14 @@ derive instance Functor Elim
 derive instance Functor Expr
 
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
-   join = definedJoin
-   neg = (<$>) neg
-
-instance JoinSemilattice a => PartialJoinSemilattice (Elim a) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
    maybeJoin (ElimConstr cκs) (ElimConstr cκs') =
       ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
    maybeJoin _ _ = report "Incompatible eliminators"
+
+   join σ = definedJoin σ
+   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
@@ -134,14 +133,13 @@ instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand _ _ = error "Incompatible eliminators"
 
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
-   join = definedJoin
-   neg = (<$>) neg
-
-instance JoinSemilattice a => PartialJoinSemilattice (Cont a) where
    maybeJoin ContNone ContNone = pure ContNone
    maybeJoin (ContExpr e) (ContExpr e') = ContExpr <$> maybeJoin e e'
    maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
    maybeJoin _ _ = report "Incompatible continuations"
+
+   join κ = definedJoin κ
+   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
    expand ContNone ContNone = ContNone
@@ -150,20 +148,14 @@ instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
    expand _ _ = error "Incompatible continuations"
 
 instance JoinSemilattice a => JoinSemilattice (VarDef a) where
-   join = definedJoin
-   neg = (<$>) neg
-
-instance JoinSemilattice a => PartialJoinSemilattice (VarDef a) where
+   join def = definedJoin def
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
+   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (VarDef a) (Raw VarDef) where
    expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
-   join = definedJoin
-   neg = (<$>) neg
-
-instance JoinSemilattice a => PartialJoinSemilattice (Expr a) where
    maybeJoin (Var x) (Var x') = Var <$> (x ≞ x')
    maybeJoin (Op op) (Op op') = Op <$> (op ≞ op')
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
@@ -179,6 +171,9 @@ instance JoinSemilattice a => PartialJoinSemilattice (Expr a) where
    maybeJoin (Let def e) (Let def' e') = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec ρ e) (LetRec ρ' e') = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
    maybeJoin _ _ = report "Incompatible expressions"
+
+   join e = definedJoin e
+   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Var x) (Var x') = Var (x ≜ x')

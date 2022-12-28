@@ -167,7 +167,10 @@ instance Highlightable a => Pretty (Val a) where
    pretty (V.Float α n) = highlightIf α (text (show n))
    pretty (V.Str α str) = highlightIf α (text (show str))
    pretty (V.Record α xvs) = prettyRecord text α (xvs # D.toUnfoldable)
-   pretty (V.Dictionary α svs) = prettyDict (text <<< show) α (svs # D.toUnfoldable)
+   pretty (V.Dictionary α svs) = prettyDict
+      (\(s × β) -> highlightIf β (text (show s)))
+      α
+      (svs # D.toUnfoldable <#> \(s × (β × v)) -> (s × β) × v)
    pretty (V.Constr α c vs) = prettyConstr α c vs
    pretty (V.Matrix _ (vss × _ × _)) = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Closure _ _ _ _) = text "<closure>"
