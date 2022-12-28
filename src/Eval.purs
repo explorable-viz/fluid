@@ -16,7 +16,7 @@ import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
-import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, (∧), bot, erase, top)
+import Lattice (class BoundedMeetSemilattice, (∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (Trace(..), VarDef(..)) as T
@@ -29,8 +29,13 @@ import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, for, lookup', rest
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall a. Highlightable a => BoundedMeetSemilattice a =>
-   Val a -> Elim a -> MayFail (Env a × Cont a × a × Match)
+match
+   :: forall a
+    . Highlightable a
+   => BoundedMeetSemilattice a
+   => Val a
+   -> Elim a
+   -> MayFail (Env a × Cont a × a × Match)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × top × MatchVarAnon (erase v))
    | otherwise = pure (D.singleton x v × κ × top × MatchVar x (erase v))
@@ -47,8 +52,13 @@ match (V.Record _ xvs) (ElimRecord xs κ) = do
    second (zip xs' >>> D.fromFoldable >>> MatchRecord) <$> matchMany (xs' <#> flip get xvs) κ
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall a. Highlightable a => BoundedMeetSemilattice a =>
-   List (Val a) -> Cont a -> MayFail (Env a × Cont a × a × List Match)
+matchMany
+   :: forall a
+    . Highlightable a
+   => BoundedMeetSemilattice a
+   => List (Val a)
+   -> Cont a
+   -> MayFail (Env a × Cont a × a × List Match)
 matchMany Nil κ = pure (empty × κ × top × Nil)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ' × α × w <- match v σ
@@ -58,7 +68,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
 
-closeDefs :: forall a. BoundedJoinSemilattice a => Env a -> RecDefs a -> a -> Env a
+closeDefs :: forall a. Env a -> RecDefs a -> a -> Env a
 closeDefs γ ρ α = ρ <#> \σ ->
    let ρ' = ρ `for` σ in V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
@@ -67,9 +77,14 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
--- TODO: after merge of eval/evalFwd, BoundedJoinSemilattice instance should no longer be required
-eval :: forall a. Highlightable a => BoundedJoinSemilattice a => BoundedMeetSemilattice a =>
-   Env a -> Expr a -> a -> MayFail (Trace × Val a)
+eval
+   :: forall a
+    . Highlightable a
+   => BoundedMeetSemilattice a
+   => Env a
+   -> Expr a
+   -> a
+   -> MayFail (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
 eval γ (Op op) _ = (T.Op op × _) <$> lookup' op γ
 eval _ (Int α n) α' = pure (T.Const × V.Int (α ∧ α') n)
@@ -88,17 +103,17 @@ eval γ (Constr α c es) α' = do
    pure (T.Constr c ts × V.Constr (α ∧ α') c vs)
 eval γ (Matrix α e (x × y) e') α' = do
    t × v <- eval γ e' α'
-   let (i' × (_ :: a)) × (j' × (_ :: a)) = fst (intPair.match v)
+   let (i' × β) × (j' × β') = fst (intPair.match v)
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
       ( sequence $ do
            i <- range 1 i'
            singleton $ sequence $ do
               j <- range 1 j'
-              let γ' = D.singleton x (V.Int bot i) `disjointUnion` (D.singleton y (V.Int bot j))
+              let γ' = D.singleton x (V.Int β i) `disjointUnion` (D.singleton y (V.Int β' j))
               singleton (eval (γ <+> γ') e α')
       )
-   pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix (α ∧ α') (vss × (i' × bot) × (j' × bot))
+   pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
    where
    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
@@ -138,8 +153,14 @@ eval γ (LetRec ρ e) α = do
    t × v <- eval (γ <+> γ') e α
    pure $ T.LetRec (erase <$> ρ) t × v
 
-eval_module :: forall a. Highlightable a => BoundedJoinSemilattice a => BoundedMeetSemilattice a =>
-   Env a -> Module a -> a -> MayFail (Env a)
+eval_module
+   :: forall a
+    . Highlightable a
+   => BoundedMeetSemilattice a
+   => Env a
+   -> Module a
+   -> a
+   -> MayFail (Env a)
 eval_module γ = go empty
    where
    go :: Env a -> Module a -> a -> MayFail (Env a)

@@ -25,8 +25,7 @@ import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Expr (Expr)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
-import EvalFwd (evalFwd)
-import Lattice (𝔹, bot, botOf, neg)
+import Lattice (𝔹, bot, botOf, neg, topOf)
 import Module (File(..), open, openDatasetAs)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
@@ -157,7 +156,7 @@ figViews :: Fig -> Selector -> MayFail (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
       γ0γ × e' × α = evalBwd (γ0 <+> γ) e (δv v) t
-      v' = evalFwd γ0γ e' α
+   _ × v' <- eval γ0γ e' α
    views <- valViews γ0γ xs
    pure $ view "output" v' × views
 
@@ -169,8 +168,8 @@ linkResult x γ0 γ e1 e2 t1 _ v1 = do
    v0' <- lookup x γ' # orElse absurd
    -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use
    -- (topOf γ0) combined with negation of the dataset environment slice
-   let v2' = neg (evalFwd (neg ((botOf <$> γ0) <+> γ')) (const true <$> e2) true)
-   pure { v': v2', v0' }
+   _ × v2' <- eval (neg ((botOf <$> γ0) <+> γ')) (topOf e2) true
+   pure { v': neg v2', v0' }
 
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ file } = do
