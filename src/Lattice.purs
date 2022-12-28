@@ -119,8 +119,7 @@ instance PartialJoinSemilattice a => PartialJoinSemilattice (Array a) where
 class Expandable t u | t -> u where
    expand :: t -> u -> t
 
--- Expandable t u => Expandable (Dict t) (Dict u) nicer but requires analogous treatment of botOf
-instance (Functor t, BoundedJoinSemilattice a, Expandable (t a) (Raw t)) => Expandable (Dict (t a)) (Dict (Raw t)) where
+instance (BotOf u t, Expandable t u) => Expandable (Dict t) (Dict u) where
    expand kvs kvs' =
       assert (keys kvs `subset` keys kvs') $
          (kvs `intersectionWith expand` kvs') `union` ((kvs' `difference` kvs) <#> botOf)
