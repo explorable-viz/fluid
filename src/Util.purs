@@ -132,12 +132,6 @@ nonEmpty (x : xs) = NonEmptyList (x :| xs)
 dup :: forall a. a -> a × a
 dup x = x × x
 
--- Can't find this in the prelude.
-replicate :: forall a. Int -> a -> List a
-replicate n a
-   | n == 0 = Nil
-   | true = a : replicate (n - 1) a
-
 unzip :: forall t a b. Functor t => t (a × b) -> t a × t b
 unzip = map fst &&& map snd
 
