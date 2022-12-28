@@ -16,13 +16,13 @@ import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, bot, botOf, expand, (∨))
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
-import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, append_inv)
 import Val (Val(..)) as V
+import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, append_inv)
 
 closeDefsBwd :: forall a. BoundedJoinSemilattice a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
@@ -63,7 +63,7 @@ matchManyBwd γγ' κ α (w : ws) =
    v × σ = matchBwd γ κ α w
    vs × κ' = matchManyBwd γ' (ContElim σ) α ws
 
-evalBwd :: forall a. Highlightable a => BoundedLattice a => Env a -> Expr a -> Val a -> Trace -> Env a × Expr a × a
+evalBwd :: forall a. Highlightable a => BoundedLattice a => Raw Env -> Raw Expr -> Val a -> Trace -> Env a × Expr a × a
 evalBwd γ e v t =
    expand γ' γ × expand e' e × α
    where

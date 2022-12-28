@@ -21,7 +21,7 @@ import Primitive (intPair, string)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
-import Util.Pair (unzip, zip) as P
+import Util.Pair (unzip) as P
 import Val (Val(..)) as V
 import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 
@@ -96,8 +96,9 @@ eval γ (Record α xes) α' = do
    pure $ T.Record xts × V.Record (α ∧ α') xvs
 eval γ (Dictionary α ees) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
-   pure $ T.Dictionary (P.zip ts ts') ×
-      V.Dictionary (α ∧ α') (D.fromFoldable $ zip (vs <#> \u -> fst (string.match u)) us)
+   let ss = vs <#> \u -> fst (string.match u)
+   pure $ T.Dictionary (D.fromFoldable $ zip ss ts) (D.fromFoldable $ zip ss ts') ×
+      V.Dictionary (α ∧ α') (D.fromFoldable $ zip ss us)
 eval γ (Constr α c es) α' = do
    checkArity c (length es)
    ts × vs <- traverse (flip (eval γ) α') es <#> unzip

@@ -17,7 +17,7 @@ import DesugarBwd (desugarBwd)
 import DesugarFwd (desugarFwd)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import Lattice (𝔹, bot)
+import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as S
@@ -48,7 +48,7 @@ testWithSetup (File file) expected v_expect_opt setup =
             e = successful (desugarFwd s)
             t × v = successful (eval γ e bot)
             v' = fromMaybe identity (fst <$> v_expect_opt) v
-            γ' × e' × _ = evalBwd γ e v' t
+            γ' × e' × _ = evalBwd (erase <$> γ) (erase e) v' t
             s' = desugarBwd e' s
             _ × v'' = successful (eval γ' (successful (desugarFwd s')) true)
          unless (isGraphical v'') (checkPretty "Value" expected v'')

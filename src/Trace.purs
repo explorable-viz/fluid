@@ -9,16 +9,14 @@ import DataType (Ctr)
 import Expr (class BV, RecDefs, bv)
 import Lattice (Raw)
 import Util (type (×))
-import Util.Pair (Pair)
 import Val (Array2, PrimOp, Val)
 
--- We record "raw" (unannotated) values in some cases; represent as values annotated with false.
 data Trace
    = Var Var
    | Op Var
    | Const
    | Record (Dict Trace)
-   | Dictionary (List (Pair Trace))
+   | Dictionary (Dict Trace) (Dict Trace)
    | Constr Ctr (List Trace)
    | Matrix (Array2 Trace) (Var × Var) (Int × Int) Trace
    | Project Trace Var

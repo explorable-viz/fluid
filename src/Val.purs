@@ -130,7 +130,7 @@ instance JoinSemilattice a => PartialJoinSemilattice (Val a) where
    maybeJoin (Primitive φ vs) (Primitive _ vs') = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _ = report "Incompatible values"
 
-instance BoundedJoinSemilattice a => Expandable (Val a) where
+instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
    expand (Int α n) (Int _ n') = Int α (n ≜ n')
    expand (Float α n) (Float _ n') = Float α (n ≜ n')
    expand (Str α s) (Str _ s') = Str α (s ≜ s')
