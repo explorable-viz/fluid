@@ -12,7 +12,6 @@ import Util (type (×))
 import Util.Pair (Pair)
 import Val (Array2, PrimOp, Val)
 
--- We record "raw" (unannotated) values in some cases; represent as values annotated with false.
 data Trace
    = Var Var
    | Op Var

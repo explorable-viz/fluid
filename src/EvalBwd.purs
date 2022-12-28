@@ -21,8 +21,8 @@ import Partial.Unsafe (unsafePartial)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
-import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, append_inv)
 import Val (Val(..)) as V
+import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, append_inv)
 
 closeDefsBwd :: forall a. BoundedJoinSemilattice a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
