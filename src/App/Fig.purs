@@ -26,7 +26,7 @@ import Expr (Expr)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
-import Lattice (𝔹, botOf, neg)
+import Lattice (𝔹, bot, botOf, neg)
 import Module (File(..), open, openDatasetAs)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
@@ -70,7 +70,7 @@ type SplitDefs =
 splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail SplitDefs
 splitDefs γ0 s' = do
    let defs × s = unsafePartial $ unpack s'
-   γ <- desugarModuleFwd (S.Module (singleton defs)) >>= eval_module γ0
+   γ <- desugarModuleFwd (S.Module (singleton defs)) >>= flip (eval_module γ0) bot
    pure { γ, s }
    where
    unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
@@ -180,7 +180,7 @@ loadFig spec@{ file } = do
       { γ: γ1, s } <- splitDefs (γ0 <+> γ) s'
       e <- desugarFwd s
       let γ0γ = γ0 <+> γ <+> γ1
-      t × v <- eval γ0γ e
+      t × v <- eval γ0γ e bot
       pure { spec, γ0, γ: γ <+> γ1, s, e, t, v }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
@@ -193,7 +193,7 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
    s1 × s2 <- (×) <$> open name1 <*> open name2
    pure $ successful do
       e1 × e2 <- (×) <$> desugarFwd s1 <*> desugarFwd s2
-      t1 × v1 <- eval (γ0 <+> γ) e1
-      t2 × v2 <- eval (γ0 <+> γ) e2
+      t1 × v1 <- eval (γ0 <+> γ) e1 bot
+      t2 × v2 <- eval (γ0 <+> γ) e2 bot
       v0 <- lookup x γ # orElse absurd
       pure { spec, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0 }

@@ -18,7 +18,7 @@ import DesugarFwd (desugarFwd)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import EvalFwd (evalFwd)
-import Lattice (𝔹)
+import Lattice (𝔹, bot)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as S
@@ -47,7 +47,7 @@ testWithSetup (File file) expected v_expect_opt setup =
       it file \(γ × s) -> do
          let
             e = successful (desugarFwd s)
-            t × v = successful (eval γ e)
+            t × v = successful (eval γ e bot)
             v' = fromMaybe identity (fst <$> v_expect_opt) v
             γ' × e' × _ = evalBwd γ e v' t
             s' = desugarBwd e' s

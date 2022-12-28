@@ -12,7 +12,7 @@ import Bindings (Var)
 import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Dict (singleton) as D
 import Eval (eval, eval_module)
-import Lattice (𝔹, botOf)
+import Lattice (𝔹, bot, botOf)
 import Parse (module_, program)
 import Primitive.Defs (primitives)
 import SExpr (Expr) as S
@@ -47,7 +47,7 @@ loadModule :: File -> Env 𝔹 -> Aff (Env 𝔹)
 loadModule file γ = do
    src <- loadFile (Folder "fluid/lib") file
    pure $ successful $
-      (parse src (module_ <#> botOf) >>= desugarModuleFwd >>= eval_module γ) <#> (γ <+> _)
+      (parse src (module_ <#> botOf) >>= desugarModuleFwd >>= flip (eval_module γ) bot) <#> (γ <+> _)
 
 parseProgram :: Folder -> File -> Aff (S.Expr 𝔹)
 parseProgram folder file = loadFile folder file <#> (successful <<< flip parse (program <#> botOf))
@@ -69,5 +69,5 @@ openDatasetAs :: File -> Var -> Aff (Env 𝔹 × Env 𝔹)
 openDatasetAs file x = do
    s <- parseProgram (Folder "fluid") file
    γ <- defaultImports
-   let _ × v = successful (desugarFwd s >>= eval γ)
+   let _ × v = successful (desugarFwd s >>= flip (eval γ) bot)
    pure (γ × D.singleton x v)
