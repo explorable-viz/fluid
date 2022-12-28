@@ -73,6 +73,10 @@ botOf = (<$>) (const bot)
 topOf :: forall t a a'. Functor t => BoundedJoinSemilattice a => BoundedJoinSemilattice a' => t a -> t a'
 topOf = (<$>) (const bot >>> neg)
 
+-- Specialises botOf and topOf but omits the lattice constraint.
+erase :: forall t a. Functor t => t a -> Raw t
+erase = (<$>) (const unit)
+
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
 infixl 6 join as ∨
