@@ -1,18 +1,15 @@
 module Lattice where
 
 import Prelude hiding (absurd, join)
-import Control.Apply (lift2)
 import Data.Array (zipWith) as A
 import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
 import Data.Maybe (Maybe(..))
-import Data.Profunctor.Strong (second)
 import Data.Set (subset)
 import Data.Traversable (sequence)
-import Data.Tuple (Tuple)
 import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, unionWith, update)
 import Bindings (Var)
-import Util (Endo, MayFail, type (×), (×), (≞), assert, report, successfulWith)
+import Util (Endo, MayFail, type (×), (×), assert, report, successfulWith)
 
 -- TODO: move 'neg' out of here.
 -- Join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
@@ -83,13 +80,6 @@ infixl 6 join as ∨
 
 type 𝔹 = Boolean
 type Raw (c :: Type -> Type) = c Unit
-
-instance (Eq k, Show k, PartialJoinSemilattice a) => JoinSemilattice (Tuple k a) where
-   join = definedJoin
-   neg = second neg
-
-instance (Eq k, Show k, PartialJoinSemilattice a) => PartialJoinSemilattice (Tuple k a) where
-   maybeJoin (k × v) (k' × v') = (k ≞ k') `lift2 (×)` maybeJoin v v'
 
 instance PartialJoinSemilattice a => JoinSemilattice (List a) where
    join = definedJoin
