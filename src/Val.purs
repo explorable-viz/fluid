@@ -11,7 +11,7 @@ import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class Expandable2, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, Raw, (∨), definedJoin, expand, expand2, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable2, class JoinSemilattice, class PartialJoinSemilattice, 𝔹, Raw, (∨), definedJoin, expand2, maybeJoin, neg)
 import Text.Pretty (Doc, beside, text)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
@@ -129,20 +129,6 @@ instance JoinSemilattice a => PartialJoinSemilattice (Val a) where
       Closure (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ vs) (Primitive _ vs') = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin _ _ = report "Incompatible values"
-
-instance BoundedJoinSemilattice a => Expandable (Val a) where
-   expand (Int α n) (Int _ n') = Int α (n ≜ n')
-   expand (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand (Str α s) (Str _ s') = Str α (s ≜ s')
-   expand (Record α xvs) (Record _ xvs') = Record α (expand xvs xvs')
-   expand (Dictionary α svs) (Dictionary _ svs') = Dictionary α (expand svs svs')
-   expand (Constr α c vs) (Constr _ c' us) = Constr α (c ≜ c') (expand vs us)
-   expand (Matrix α (vss × (i × βi) × (j × βj))) (Matrix _ (vss' × (i' × _) × (j' × _))) =
-      Matrix α (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
-   expand (Closure α γ ρ σ) (Closure _ γ' ρ' σ') =
-      Closure α (expand γ γ') (expand ρ ρ') (expand σ σ')
-   expand (Primitive φ vs) (Primitive _ vs') = Primitive φ (expand vs vs') -- TODO: require φ == φ'
-   expand _ _ = error "Incompatible values"
 
 instance BoundedJoinSemilattice a => Expandable2 (Val a) (Raw Val) where
    expand2 (Int α n) (Int _ n') = Int α (n ≜ n')

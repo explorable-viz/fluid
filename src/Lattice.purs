@@ -122,31 +122,17 @@ instance PartialJoinSemilattice a => PartialJoinSemilattice (Array a) where
       | length xs == (length ys :: Int) = sequence (A.zipWith maybeJoin xs ys)
       | otherwise = report "Mismatched lengths"
 
-class Expandable a where
-   expand :: a -> a -> a
-
 -- To express as Expandable (t :: Type -> Type) requires functor composition..
 class Expandable2 t u | t -> u where
    expand2 :: t -> u -> t
-
-instance (Functor t, BoundedJoinSemilattice a, Expandable (t a)) => Expandable (Dict (t a)) where
-   expand kvs kvs' =
-      assert (keys kvs `subset` keys kvs') $
-         (kvs `intersectionWith expand` kvs') `union` ((kvs' `difference` kvs) <#> botOf)
 
 instance (Functor t, BoundedJoinSemilattice a, Expandable2 (t a) (Raw t)) => Expandable2 (Dict (t a)) (Dict (Raw t)) where
    expand2 kvs kvs' =
       assert (keys kvs `subset` keys kvs') $
          (kvs `intersectionWith expand2` kvs') `union` ((kvs' `difference` kvs) <#> botOf)
 
-instance Expandable a => Expandable (List a) where
-   expand xs ys = zipWith expand xs ys
-
 instance Expandable2 t u => Expandable2 (List t) (List u) where
    expand2 xs ys = zipWith expand2 xs ys
-
-instance Expandable a => Expandable (Array a) where
-   expand xs ys = A.zipWith expand xs ys
 
 instance Expandable2 t u => Expandable2 (Array t) (Array u) where
    expand2 xs ys = A.zipWith expand2 xs ys
