@@ -40,6 +40,7 @@ str
       , backtick :: String
       , bar :: String
       , colon :: String
+      , colonEq :: String
       , dictLBracket :: String
       , dictRBracket :: String
       , dot :: String
@@ -66,6 +67,7 @@ str =
    , backtick: "`"
    , bar: "|"
    , colon: ":"
+   , colonEq: ":="
    , dictLBracket: "{|"
    , dictRBracket: "|}"
    , dot: "."
@@ -137,6 +139,9 @@ backtick = void (token.symbol str.backtick)
 
 bar :: SParser Unit
 bar = token.reservedOp str.bar
+
+colonEq :: SParser Unit
+colonEq = token.reservedOp str.colonEq
 
 ellipsis :: SParser Unit
 ellipsis = token.reservedOp str.ellipsis
@@ -357,7 +362,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
          constr = Constr unit <$> ctr <@> empty
 
          dict :: SParser (Raw Expr)
-         dict = sepBy (field expr' <#> (\(_ ↦ e) -> Pair e e)) token.comma <#> Dictionary unit #
+         dict = sepBy (Pair <$> (expr' <* colonEq) <*> expr') token.comma <#> Dictionary unit #
             between (token.symbol str.dictLBracket) (token.symbol str.dictRBracket)
 
          record :: SParser (Raw Expr)

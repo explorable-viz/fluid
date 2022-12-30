@@ -19,7 +19,7 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ test (File "dicts") "{d: {||}, e: {|\"5\": \"5\"|}}"
+   [ test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"b\": 6|}}"
    ]
 
 test_linking :: Array (Test Unit)
