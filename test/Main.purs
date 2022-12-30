@@ -24,9 +24,9 @@ test_scratchpad :: Array (Test Unit)
 test_scratchpad =
    [ testBwd (File "dict") (File "dict.expect")
           (const $ Dictionary false $ fromFoldable [
-               "a" ↦ (true × Int true 5),
-               "ab" ↦ (false × Int true 6)
-          ]) "{|_\"a\"_: _5_, \"ab\": _6_|}"
+               "a" ↦ (false × Int false 5),
+               "ab" ↦ (true × Int false 6)
+          ]) "{|\"a\": 5, _\"ab\"_: 6|}"
    ]
 
 test_linking :: Array (Test Unit)
