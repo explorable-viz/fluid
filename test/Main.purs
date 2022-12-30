@@ -5,6 +5,7 @@ import Data.Array (concat)
 import Data.Traversable (sequence)
 import Effect (Effect)
 import App.Util (selectBarChart_data, selectCell, selectNth, selectNthNode, selectPair, select_y, selectSome)
+import Bindings ((↦))
 import Dict (fromFoldable)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
@@ -22,7 +23,10 @@ main = void (sequence (run <$> concat tests))
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
    [ testBwd (File "dict") (File "dict.expect")
-          (const $ Dictionary false $ fromFoldable ["a" × (true × (Int true 5))]) ""
+          (const $ Dictionary false $ fromFoldable [
+               "a" ↦ (true × Int true 5),
+               "ab" ↦ (false × Int true 6)
+          ]) "{|_\"a\"_: _5_, \"ab\": _6_|}"
    ]
 
 test_linking :: Array (Test Unit)
