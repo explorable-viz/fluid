@@ -28,6 +28,7 @@ import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, le
 import Primitive.Parse (OpDef, opDefs)
 import SExpr (Branch, Clause, Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
+import Util.Pair (Pair(..))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
 -- Constants (should also be used by prettyprinter). Haven't found a way to avoid the type definition.
@@ -39,6 +40,8 @@ str
       , backtick :: String
       , bar :: String
       , colon :: String
+      , dictLBracket :: String
+      , dictRBracket :: String
       , dot :: String
       , ellipsis :: String
       , else_ :: String
@@ -63,6 +66,8 @@ str =
    , backtick: "`"
    , bar: "|"
    , colon: ":"
+   , dictLBracket: "{|"
+   , dictRBracket: "|}"
    , dot: "."
    , ellipsis: ".."
    , else_: "else"
@@ -297,6 +302,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
             <|> listComp
             <|> listEnum
             <|> try constr
+            <|> dict
             <|> record
             <|> try variable
             <|> try float
@@ -334,7 +340,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
 
          listComp :: SParser (Raw Expr)
          listComp = token.brackets $
-            pure (ListComp unit) <*> expr' <* bar <*> sepBy1 qualifier (token.comma)
+            pure (ListComp unit) <*> expr' <* bar <*> sepBy1 qualifier token.comma
 
             where
             qualifier :: SParser (Raw Qualifier)
@@ -349,6 +355,10 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
 
          constr :: SParser (Raw Expr)
          constr = Constr unit <$> ctr <@> empty
+
+         dict :: SParser (Raw Expr)
+         dict = sepBy (Pair <$> expr' <*> (token.colon *> expr')) token.comma <#> Dictionary unit #
+            between (token.symbol str.dictLBracket) (token.symbol str.dictRBracket)
 
          record :: SParser (Raw Expr)
          record = sepBy (field expr') token.comma <#> Record unit # token.braces
