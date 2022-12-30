@@ -12,6 +12,7 @@ import Data.Traversable (sequence)
 import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, unionWith, update)
 import Bindings (Var)
 import Util (Endo, MayFail, type (×), (×), assert, report, successfulWith)
+import Util.Pair (Pair(..))
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
@@ -96,6 +97,11 @@ instance (JoinSemilattice a, JoinSemilattice b) => JoinSemilattice (a × b) wher
    maybeJoin (a × a') (b × b') = maybeJoin a b `lift2 (×)` maybeJoin a' b'
    neg = (<$>) neg
 
+instance JoinSemilattice a => JoinSemilattice (Pair a) where
+   join ab = definedJoin ab
+   maybeJoin (Pair a1 a1') (Pair a2 a2') = Pair <$> maybeJoin a1 a2 <*> maybeJoin a1' a2'
+   neg = (<$>) neg
+
 instance JoinSemilattice a => JoinSemilattice (List a) where
    join xs = definedJoin xs
    maybeJoin xs ys
@@ -127,6 +133,9 @@ class Expandable t u | t -> u where
 
 instance Expandable (t a) (Raw t) => Expandable (a × t a) (Unit × Raw t) where
    expand (α × a) (_ × a') = α × expand a a'
+
+instance Expandable t u => Expandable (Pair t) (Pair u) where
+   expand (Pair x x') (Pair y y') = Pair (expand x y) (expand x' y')
 
 instance (BotOf u t, Expandable t u) => Expandable (Dict t) (Dict u) where
    expand kvs kvs' =
