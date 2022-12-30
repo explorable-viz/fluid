@@ -357,7 +357,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
          constr = Constr unit <$> ctr <@> empty
 
          dict :: SParser (Raw Expr)
-         dict = sepBy (Pair <$> expr' <*> (token.colon *> expr')) token.comma <#> Dictionary unit #
+         dict = sepBy (field expr' <#> (\(_ ↦ e) -> Pair e e)) token.comma <#> Dictionary unit #
             between (token.symbol str.dictLBracket) (token.symbol str.dictRBracket)
 
          record :: SParser (Raw Expr)
