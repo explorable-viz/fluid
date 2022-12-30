@@ -26,7 +26,7 @@ import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (Object, fromFoldable, keys, toAscUnfoldable) as O
 import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, lookup, singleton, size, union, unionWith, update)
-import Util (Endo, type (×), (×), assert, definitely, definitely', error)
+import Util (Endo, type (×), (×), assert, definitely, error)
 
 type Dict a = O.Object a
 
@@ -48,7 +48,7 @@ asSingletonMap :: forall a. Dict a -> String × a
 asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))
 
 get :: forall a. String -> Dict a -> a
-get k = definitely' <<< lookup k
+get k = definitely ("Key \"" <> k <> "\" exists in dictionary") <<< lookup k
 
 disjointUnion :: forall a. Dict a -> Endo (Dict a)
 disjointUnion = unionWith (\_ _ -> error "not disjoint")

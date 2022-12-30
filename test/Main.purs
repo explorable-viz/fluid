@@ -5,9 +5,11 @@ import Data.Array (concat)
 import Data.Traversable (sequence)
 import Effect (Effect)
 import App.Util (selectBarChart_data, selectCell, selectNth, selectNthNode, selectPair, select_y, selectSome)
+import Dict (fromFoldable)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
+import Util ((×))
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
@@ -19,7 +21,8 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}}"
+   [ testBwd (File "dict") (File "dict.expect")
+          (const $ Dictionary false $ fromFoldable ["a" × (true × (Int true 5))]) ""
    ]
 
 test_linking :: Array (Test Unit)
@@ -178,6 +181,7 @@ test_misc =
    [ test (File "arithmetic") "42"
    , test (File "array") "(1, (3, 3))"
    , test (File "compose") "5"
+   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}}"
    , test (File "div-mod-quot-rem")
         "((1 : (-1 : (-2 : (2 : [])))) : \
         \((2 : (2 : (1 : (1 : [])))) : \
