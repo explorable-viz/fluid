@@ -66,16 +66,16 @@ matchManyBwd γγ' κ α (w : ws) =
    vs × κ' = matchManyBwd γ' (ContElim σ) α ws
 
 type EvalBwdResult a =
-   { γ :: Env a,
-     e :: Expr a,
-     α :: a
+   { γ :: Env a
+   , e :: Expr a
+   , α :: a
    }
 
 evalBwd :: forall a. Highlightable a => BoundedLattice a => Raw Env -> Raw Expr -> Val a -> Trace -> EvalBwdResult a
 evalBwd γ e v t =
-   {γ: expand γ' γ, e: expand e' e, α }
+   { γ: expand γ' γ, e: expand e' e, α }
    where
-   {γ: γ', e: e', α } = evalBwd' v t
+   { γ: γ', e: e', α } = evalBwd' v t
 
 -- Computes a partial slice which evalBwd expands to a full slice.
 evalBwd' :: forall a. Highlightable a => BoundedLattice a => Val a -> Trace -> EvalBwdResult a
@@ -91,9 +91,9 @@ evalBwd' (V.Record α xvs) (T.Record xts) =
    xvts = intersectionWith (×) xvs xts
    xγeαs = xvts <#> uncurry evalBwd'
 evalBwd' (V.Dictionary α sαvs) (T.Dictionary stts) =
-   { γ: foldr (∨) empty ((γeαs <#> _.γ) <> (γeαs' <#> _.γ)),
-     e: Dictionary α ((γeαs <#> _.e) `P.zip` (γeαs' <#> _.e)),
-     α: foldr (∨) α ((γeαs <#> _.α) <> (γeαs' <#> _.α))
+   { γ: foldr (∨) empty ((γeαs <#> _.γ) <> (γeαs' <#> _.γ))
+   , e: Dictionary α ((γeαs <#> _.e) `P.zip` (γeαs' <#> _.e))
+   , α: foldr (∨) α ((γeαs <#> _.α) <> (γeαs' <#> _.α))
    }
    where
    γeαs = stts <#> \(s × Pair t _) -> evalBwd' (V.Str (fst (get s sαvs)) s) t

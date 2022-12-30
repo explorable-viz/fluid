@@ -23,10 +23,12 @@ main = void (sequence (run <$> concat tests))
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
    [ testBwd (File "dict") (File "dict.expect")
-          (const $ Dictionary false $ fromFoldable [
-               "a" ↦ (false × Int false 5),
-               "ab" ↦ (true × Int false 6)
-          ]) "{|\"a\": 5, _\"ab\"_: 6|}"
+        ( const $ Dictionary false $ fromFoldable
+             [ "a" ↦ (false × Int false 5)
+             , "ab" ↦ (true × Int false 6)
+             ]
+        )
+        "{|\"a\": 5, _\"ab\"_: 6|}"
    ]
 
 test_linking :: Array (Test Unit)
