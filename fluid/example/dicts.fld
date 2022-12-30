@@ -1,2 +1,4 @@
 let d = {||}
-in d
+in {
+   x: d
+}
