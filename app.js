@@ -1209,201 +1209,6 @@
     };
   };
 
-  // output-es/Effect.Exception/foreign.js
-  function showErrorImpl(err) {
-    return err.stack || err.toString();
-  }
-  function error(msg) {
-    return new Error(msg);
-  }
-  function message(e) {
-    return e.message;
-  }
-  function throwException(e) {
-    return function() {
-      throw e;
-    };
-  }
-
-  // output-es/Effect.Unsafe/foreign.js
-  var unsafePerformEffect = function(f) {
-    return f();
-  };
-
-  // output-es/Control.Monad.ST.Internal/foreign.js
-  var map_ = function(f) {
-    return function(a) {
-      return function() {
-        return f(a());
-      };
-    };
-  };
-  var pure_ = function(a) {
-    return function() {
-      return a;
-    };
-  };
-  var bind_ = function(a) {
-    return function(f) {
-      return function() {
-        return f(a())();
-      };
-    };
-  };
-  var run = function(f) {
-    return f();
-  };
-  function whileST(f) {
-    return function(a) {
-      return function() {
-        while (f()) {
-          a();
-        }
-      };
-    };
-  }
-  var foreach = function(as) {
-    return function(f) {
-      return function() {
-        for (var i = 0, l = as.length; i < l; i++) {
-          f(as[i])();
-        }
-      };
-    };
-  };
-  function newSTRef(val2) {
-    return function() {
-      return { value: val2 };
-    };
-  }
-
-  // output-es/Control.Monad.ST.Internal/index.js
-  var functorST = { map: map_ };
-  var monadST = { Applicative0: () => applicativeST, Bind1: () => bindST };
-  var bindST = { bind: bind_, Apply0: () => applyST };
-  var applyST = {
-    apply: (f) => (a) => () => {
-      const f$p = f();
-      const a$p = a();
-      return applicativeST.pure(f$p(a$p))();
-    },
-    Functor0: () => functorST
-  };
-  var applicativeST = { pure: pure_, Apply0: () => applyST };
-  var monadRecST = {
-    tailRecM: (f) => (a) => {
-      const $2 = bind_(f(a))(newSTRef);
-      return () => {
-        const r = $2();
-        whileST(() => {
-          const $4 = r.value;
-          return $4.tag === "Loop";
-        })(() => {
-          const v = r.value;
-          if (v.tag === "Loop") {
-            const e = f(v._1)();
-            r.value = e;
-            return unit;
-          }
-          if (v.tag === "Done") {
-            return unit;
-          }
-          fail();
-        })();
-        const $5 = r.value;
-        return (() => {
-          if ($5.tag === "Done") {
-            return $5._1;
-          }
-          fail();
-        })();
-      };
-    },
-    Monad0: () => monadST
-  };
-
-  // output-es/Data.Array.ST/foreign.js
-  function newSTArray() {
-    return [];
-  }
-  var pushAll = function(as) {
-    return function(xs) {
-      return function() {
-        return xs.push.apply(xs, as);
-      };
-    };
-  };
-  var unsafeFreeze = function(xs) {
-    return function() {
-      return xs;
-    };
-  };
-  function copyImpl(xs) {
-    return function() {
-      return xs.slice();
-    };
-  }
-  var thaw = copyImpl;
-  var sortByImpl = function() {
-    function mergeFromTo(compare, fromOrdering, xs1, xs2, from, to) {
-      var mid;
-      var i;
-      var j;
-      var k;
-      var x2;
-      var y2;
-      var c;
-      mid = from + (to - from >> 1);
-      if (mid - from > 1)
-        mergeFromTo(compare, fromOrdering, xs2, xs1, from, mid);
-      if (to - mid > 1)
-        mergeFromTo(compare, fromOrdering, xs2, xs1, mid, to);
-      i = from;
-      j = mid;
-      k = from;
-      while (i < mid && j < to) {
-        x2 = xs2[i];
-        y2 = xs2[j];
-        c = fromOrdering(compare(x2)(y2));
-        if (c > 0) {
-          xs1[k++] = y2;
-          ++j;
-        } else {
-          xs1[k++] = x2;
-          ++i;
-        }
-      }
-      while (i < mid) {
-        xs1[k++] = xs2[i++];
-      }
-      while (j < to) {
-        xs1[k++] = xs2[j++];
-      }
-    }
-    return function(compare) {
-      return function(fromOrdering) {
-        return function(xs) {
-          return function() {
-            if (xs.length < 2)
-              return xs;
-            mergeFromTo(compare, fromOrdering, xs, xs.slice(0), 0, xs.length);
-            return xs;
-          };
-        };
-      };
-    };
-  }();
-
-  // output-es/Data.Array.ST/index.js
-  var withArray = (f) => (xs) => {
-    const $2 = thaw(xs);
-    return () => {
-      const result = $2();
-      f(result)();
-      return unsafeFreeze(result)();
-    };
-  };
-
   // output-es/Data.Foldable/foreign.js
   var foldrArray = function(f) {
     return function(init2) {
@@ -1489,6 +1294,21 @@
   var eqInt = { eq: eqIntImpl };
   var eqChar = { eq: eqCharImpl };
 
+  // output-es/Data.Lazy/foreign.js
+  var defer = function(thunk) {
+    var v = null;
+    return function() {
+      if (thunk === void 0)
+        return v;
+      v = thunk();
+      thunk = void 0;
+      return v;
+    };
+  };
+  var force = function(l) {
+    return l();
+  };
+
   // output-es/Data.Ord/foreign.js
   var unsafeCompareImpl = function(lt) {
     return function(eq2) {
@@ -1507,333 +1327,6 @@
   // output-es/Data.Ord/index.js
   var ordString = { compare: /* @__PURE__ */ ordStringImpl(LT)(EQ)(GT), Eq0: () => eqString };
   var ordInt = { compare: /* @__PURE__ */ ordIntImpl(LT)(EQ)(GT), Eq0: () => eqInt };
-
-  // output-es/Unsafe.Coerce/foreign.js
-  var unsafeCoerce = function(x2) {
-    return x2;
-  };
-
-  // output-es/Data.Bifunctor/index.js
-  var bifunctorTuple = { bimap: (f) => (g) => (v) => $Tuple(f(v._1), g(v._2)) };
-  var bifunctorEither = {
-    bimap: (v) => (v1) => (v2) => {
-      if (v2.tag === "Left") {
-        return $Either("Left", v(v2._1));
-      }
-      if (v2.tag === "Right") {
-        return $Either("Right", v1(v2._1));
-      }
-      fail();
-    }
-  };
-
-  // output-es/Data.Traversable/foreign.js
-  var traverseArrayImpl = function() {
-    function array1(a) {
-      return [a];
-    }
-    function array2(a) {
-      return function(b) {
-        return [a, b];
-      };
-    }
-    function array3(a) {
-      return function(b) {
-        return function(c) {
-          return [a, b, c];
-        };
-      };
-    }
-    function concat2(xs) {
-      return function(ys) {
-        return xs.concat(ys);
-      };
-    }
-    return function(apply) {
-      return function(map5) {
-        return function(pure2) {
-          return function(f) {
-            return function(array) {
-              function go(bot, top2) {
-                switch (top2 - bot) {
-                  case 0:
-                    return pure2([]);
-                  case 1:
-                    return map5(array1)(f(array[bot]));
-                  case 2:
-                    return apply(map5(array2)(f(array[bot])))(f(array[bot + 1]));
-                  case 3:
-                    return apply(apply(map5(array3)(f(array[bot])))(f(array[bot + 1])))(f(array[bot + 2]));
-                  default:
-                    var pivot = bot + Math.floor((top2 - bot) / 4) * 2;
-                    return apply(map5(concat2)(go(bot, pivot)))(go(pivot, top2));
-                }
-              }
-              return go(0, array.length);
-            };
-          };
-        };
-      };
-    };
-  }();
-
-  // output-es/Data.Traversable/index.js
-  var identity6 = (x2) => x2;
-  var traversableTuple = {
-    traverse: (dictApplicative) => {
-      const map5 = dictApplicative.Apply0().Functor0().map;
-      return (f) => (v) => map5(Tuple(v._1))(f(v._2));
-    },
-    sequence: (dictApplicative) => {
-      const map5 = dictApplicative.Apply0().Functor0().map;
-      return (v) => map5(Tuple(v._1))(v._2);
-    },
-    Functor0: () => functorTuple,
-    Foldable1: () => foldableTuple
-  };
-  var traversableArray = {
-    traverse: (dictApplicative) => {
-      const Apply0 = dictApplicative.Apply0();
-      return traverseArrayImpl(Apply0.apply)(Apply0.Functor0().map)(dictApplicative.pure);
-    },
-    sequence: (dictApplicative) => traversableArray.traverse(dictApplicative)(identity6),
-    Functor0: () => functorArray,
-    Foldable1: () => foldableArray
-  };
-
-  // output-es/Data.Array/foreign.js
-  var range2 = function(start2) {
-    return function(end) {
-      var step = start2 > end ? -1 : 1;
-      var result = new Array(step * (end - start2) + 1);
-      var i = start2, n = 0;
-      while (i !== end) {
-        result[n++] = i;
-        i += step;
-      }
-      result[n] = i;
-      return result;
-    };
-  };
-  var replicateFill = function(count) {
-    return function(value) {
-      if (count < 1) {
-        return [];
-      }
-      var result = new Array(count);
-      return result.fill(value);
-    };
-  };
-  var replicatePolyfill = function(count) {
-    return function(value) {
-      var result = [];
-      var n = 0;
-      for (var i = 0; i < count; i++) {
-        result[n++] = value;
-      }
-      return result;
-    };
-  };
-  var replicate = typeof Array.prototype.fill === "function" ? replicateFill : replicatePolyfill;
-  var fromFoldableImpl = function() {
-    function Cons2(head, tail) {
-      this.head = head;
-      this.tail = tail;
-    }
-    var emptyList = {};
-    function curryCons(head) {
-      return function(tail) {
-        return new Cons2(head, tail);
-      };
-    }
-    function listToArray(list) {
-      var result = [];
-      var count = 0;
-      var xs = list;
-      while (xs !== emptyList) {
-        result[count++] = xs.head;
-        xs = xs.tail;
-      }
-      return result;
-    }
-    return function(foldr) {
-      return function(xs) {
-        return listToArray(foldr(curryCons)(emptyList)(xs));
-      };
-    };
-  }();
-  var unconsImpl = function(empty5) {
-    return function(next) {
-      return function(xs) {
-        return xs.length === 0 ? empty5({}) : next(xs[0])(xs.slice(1));
-      };
-    };
-  };
-  var indexImpl = function(just) {
-    return function(nothing) {
-      return function(xs) {
-        return function(i) {
-          return i < 0 || i >= xs.length ? nothing : just(xs[i]);
-        };
-      };
-    };
-  };
-  var findIndexImpl = function(just) {
-    return function(nothing) {
-      return function(f) {
-        return function(xs) {
-          for (var i = 0, l = xs.length; i < l; i++) {
-            if (f(xs[i]))
-              return just(i);
-          }
-          return nothing;
-        };
-      };
-    };
-  };
-  var _updateAt = function(just) {
-    return function(nothing) {
-      return function(i) {
-        return function(a) {
-          return function(l) {
-            if (i < 0 || i >= l.length)
-              return nothing;
-            var l1 = l.slice();
-            l1[i] = a;
-            return just(l1);
-          };
-        };
-      };
-    };
-  };
-  var sortByImpl2 = function() {
-    function mergeFromTo(compare, fromOrdering, xs1, xs2, from, to) {
-      var mid;
-      var i;
-      var j;
-      var k;
-      var x2;
-      var y2;
-      var c;
-      mid = from + (to - from >> 1);
-      if (mid - from > 1)
-        mergeFromTo(compare, fromOrdering, xs2, xs1, from, mid);
-      if (to - mid > 1)
-        mergeFromTo(compare, fromOrdering, xs2, xs1, mid, to);
-      i = from;
-      j = mid;
-      k = from;
-      while (i < mid && j < to) {
-        x2 = xs2[i];
-        y2 = xs2[j];
-        c = fromOrdering(compare(x2)(y2));
-        if (c > 0) {
-          xs1[k++] = y2;
-          ++j;
-        } else {
-          xs1[k++] = x2;
-          ++i;
-        }
-      }
-      while (i < mid) {
-        xs1[k++] = xs2[i++];
-      }
-      while (j < to) {
-        xs1[k++] = xs2[j++];
-      }
-    }
-    return function(compare) {
-      return function(fromOrdering) {
-        return function(xs) {
-          var out;
-          if (xs.length < 2)
-            return xs;
-          out = xs.slice(0);
-          mergeFromTo(compare, fromOrdering, out, xs.slice(0), 0, xs.length);
-          return out;
-        };
-      };
-    };
-  }();
-  var slice = function(s) {
-    return function(e) {
-      return function(l) {
-        return l.slice(s, e);
-      };
-    };
-  };
-  var zipWith2 = function(f) {
-    return function(xs) {
-      return function(ys) {
-        var l = xs.length < ys.length ? xs.length : ys.length;
-        var result = new Array(l);
-        for (var i = 0; i < l; i++) {
-          result[i] = f(xs[i])(ys[i]);
-        }
-        return result;
-      };
-    };
-  };
-
-  // output-es/Data.Array/index.js
-  var zip = /* @__PURE__ */ zipWith2(Tuple);
-  var updateAt2 = /* @__PURE__ */ _updateAt(Just)(Nothing);
-  var uncons = /* @__PURE__ */ unconsImpl((v) => Nothing)((x2) => (xs) => $Maybe("Just", { head: x2, tail: xs }));
-  var toUnfoldable2 = (dictUnfoldable) => (xs) => {
-    const len = xs.length;
-    return dictUnfoldable.unfoldr((i) => {
-      if (i < len) {
-        return $Maybe("Just", $Tuple(xs[i], i + 1 | 0));
-      }
-      return Nothing;
-    })(0);
-  };
-  var sortBy2 = (comp) => sortByImpl2(comp)((v) => {
-    if (v.tag === "GT") {
-      return 1;
-    }
-    if (v.tag === "EQ") {
-      return 0;
-    }
-    if (v.tag === "LT") {
-      return -1;
-    }
-    fail();
-  });
-  var sortWith = (dictOrd) => (f) => sortBy2((x2) => (y2) => dictOrd.compare(f(x2))(f(y2)));
-  var index2 = /* @__PURE__ */ indexImpl(Just)(Nothing);
-  var findIndex = /* @__PURE__ */ findIndexImpl(Just)(Nothing);
-  var notElem = (dictEq) => (a) => (arr) => {
-    const $3 = findIndex((v) => dictEq.eq(v)(a))(arr);
-    if ($3.tag === "Nothing") {
-      return true;
-    }
-    if ($3.tag === "Just") {
-      return false;
-    }
-    fail();
-  };
-  var elem = (dictEq) => (a) => (arr) => {
-    const $3 = findIndex((v) => dictEq.eq(v)(a))(arr);
-    if ($3.tag === "Nothing") {
-      return false;
-    }
-    if ($3.tag === "Just") {
-      return true;
-    }
-    fail();
-  };
-  var cons2 = (x2) => (xs) => concatArray([x2])(xs);
-  var some2 = (dictAlternative) => {
-    const apply1 = dictAlternative.Applicative0().Apply0().apply;
-    const map32 = dictAlternative.Plus1().Alt0().Functor0().map;
-    return (dictLazy) => (v) => apply1(map32(cons2)(v))(dictLazy.defer((v1) => many2(dictAlternative)(dictLazy)(v)));
-  };
-  var many2 = (dictAlternative) => {
-    const alt2 = dictAlternative.Plus1().Alt0().alt;
-    const pure1 = dictAlternative.Applicative0().pure;
-    return (dictLazy) => (v) => alt2(some2(dictAlternative)(dictLazy)(v))(pure1([]));
-  };
 
   // output-es/Data.Unfoldable1/foreign.js
   var unfoldr1ArrayImpl = function(isNothing2) {
@@ -1903,263 +1396,12 @@
     unfoldr: /* @__PURE__ */ unfoldrArrayImpl(isNothing)(fromJust2)(fst)(snd),
     Unfoldable10: () => unfoldable1Array
   };
-  var replicate2 = (dictUnfoldable) => (n) => (v) => dictUnfoldable.unfoldr((i) => {
+  var replicate = (dictUnfoldable) => (n) => (v) => dictUnfoldable.unfoldr((i) => {
     if (i <= 0) {
       return Nothing;
     }
     return $Maybe("Just", $Tuple(v, i - 1 | 0));
   })(n);
-
-  // output-es/Foreign.Object.ST/foreign.js
-  var newImpl = function() {
-    return {};
-  };
-  function poke2(k) {
-    return function(v) {
-      return function(m) {
-        return function() {
-          m[k] = v;
-          return m;
-        };
-      };
-    };
-  }
-  var deleteImpl = function(k) {
-    return function(m) {
-      return function() {
-        delete m[k];
-        return m;
-      };
-    };
-  };
-
-  // output-es/Foreign.Object/foreign.js
-  function _copyST(m) {
-    return function() {
-      var r = {};
-      for (var k in m) {
-        if (hasOwnProperty.call(m, k)) {
-          r[k] = m[k];
-        }
-      }
-      return r;
-    };
-  }
-  var empty = {};
-  function runST(f) {
-    return f();
-  }
-  function _fmapObject(m0, f) {
-    var m = {};
-    for (var k in m0) {
-      if (hasOwnProperty.call(m0, k)) {
-        m[k] = f(m0[k]);
-      }
-    }
-    return m;
-  }
-  function _mapWithKey(m0, f) {
-    var m = {};
-    for (var k in m0) {
-      if (hasOwnProperty.call(m0, k)) {
-        m[k] = f(k)(m0[k]);
-      }
-    }
-    return m;
-  }
-  function _foldM(bind) {
-    return function(f) {
-      return function(mz) {
-        return function(m) {
-          var acc = mz;
-          function g(k2) {
-            return function(z) {
-              return f(z)(k2)(m[k2]);
-            };
-          }
-          for (var k in m) {
-            if (hasOwnProperty.call(m, k)) {
-              acc = bind(acc)(g(k));
-            }
-          }
-          return acc;
-        };
-      };
-    };
-  }
-  function all2(f) {
-    return function(m) {
-      for (var k in m) {
-        if (hasOwnProperty.call(m, k) && !f(k)(m[k]))
-          return false;
-      }
-      return true;
-    };
-  }
-  function size(m) {
-    var s = 0;
-    for (var k in m) {
-      if (hasOwnProperty.call(m, k)) {
-        ++s;
-      }
-    }
-    return s;
-  }
-  function _lookup(no, yes, k, m) {
-    return k in m ? yes(m[k]) : no;
-  }
-  function toArrayWithKey(f) {
-    return function(m) {
-      var r = [];
-      for (var k in m) {
-        if (hasOwnProperty.call(m, k)) {
-          r.push(f(k)(m[k]));
-        }
-      }
-      return r;
-    };
-  }
-  var keys = Object.keys || toArrayWithKey(function(k) {
-    return function() {
-      return k;
-    };
-  });
-
-  // output-es/Foreign.Object/index.js
-  var identity7 = (x2) => x2;
-  var values = /* @__PURE__ */ toArrayWithKey((v) => (v1) => v1);
-  var toAscUnfoldable = (dictUnfoldable) => {
-    const $1 = sortWith(ordString)(fst);
-    const $2 = toArrayWithKey(Tuple);
-    return (x2) => toUnfoldable2(dictUnfoldable)($1($2(x2)));
-  };
-  var mutate = (f) => (m) => runST((() => {
-    const $2 = _copyST(m);
-    return () => {
-      const s = $2();
-      f(s)();
-      return s;
-    };
-  })());
-  var mapWithKey = (f) => (m) => _mapWithKey(m, f);
-  var isEmpty = /* @__PURE__ */ all2((v) => (v1) => false);
-  var functorObject = { map: (f) => (m) => _fmapObject(m, f) };
-  var functorWithIndexObject = { mapWithIndex: mapWithKey, Functor0: () => functorObject };
-  var fromFoldable = (dictFoldable) => {
-    const fromFoldable17 = fromFoldableImpl(dictFoldable.foldr);
-    return (l) => runST(() => {
-      const s = newImpl();
-      foreach(fromFoldable17(l))((v) => () => {
-        poke2(v._1)(v._2)(s)();
-        return unit;
-      })();
-      return s;
-    });
-  };
-  var foldM = (dictMonad) => {
-    const bind1 = dictMonad.Bind1().bind;
-    const pure1 = dictMonad.Applicative0().pure;
-    return (f) => (z) => _foldM(bind1)(f)(pure1(z));
-  };
-  var foldM1 = /* @__PURE__ */ foldM(monadST);
-  var union = (m) => mutate((s) => foldM1((s$p) => (k) => (v) => poke2(k)(v)(s$p))(s)(m));
-  var unionWith = (f) => (m1) => (m2) => mutate((s1) => foldM1((s2) => (k) => (v1) => poke2(k)(_lookup(v1, (v2) => f(v1)(v2), k, m2))(s2))(s1)(m1))(m2);
-  var fold = /* @__PURE__ */ _foldM(applyFlipped);
-  var foldMap = (dictMonoid) => {
-    const append1 = dictMonoid.Semigroup0().append;
-    return (f) => fold((acc) => (k) => (v) => append1(acc)(f(k)(v)))(dictMonoid.mempty);
-  };
-  var foldableObject = {
-    foldl: (f) => fold((z) => (v) => f(z)),
-    foldr: (f) => (z) => (m) => foldrArray(f)(z)(values(m)),
-    foldMap: (dictMonoid) => {
-      const foldMap1 = foldMap(dictMonoid);
-      return (f) => foldMap1((v) => f);
-    }
-  };
-  var foldableWithIndexObject = {
-    foldlWithIndex: (f) => fold((b) => (a) => f(a)(b)),
-    foldrWithIndex: (f) => (z) => (m) => foldrArray((v) => f(v._1)(v._2))(z)(toArrayWithKey(Tuple)(m)),
-    foldMapWithIndex: (dictMonoid) => foldMap(dictMonoid),
-    Foldable0: () => foldableObject
-  };
-  var traversableWithIndexObject = {
-    traverseWithIndex: (dictApplicative) => {
-      const Apply0 = dictApplicative.Apply0();
-      const map5 = Apply0.Functor0().map;
-      return (f) => (ms) => fold((acc) => (k) => (v) => Apply0.apply(map5((b) => (a) => mutate(poke2(k)(a))(b))(acc))(f(k)(v)))(dictApplicative.pure(empty))(ms);
-    },
-    FunctorWithIndex0: () => functorWithIndexObject,
-    FoldableWithIndex1: () => foldableWithIndexObject,
-    Traversable2: () => traversableObject
-  };
-  var traversableObject = {
-    traverse: (dictApplicative) => {
-      const $1 = traversableWithIndexObject.traverseWithIndex(dictApplicative);
-      return (x2) => $1((v) => x2);
-    },
-    sequence: (dictApplicative) => traversableObject.traverse(dictApplicative)(identity7),
-    Functor0: () => functorObject,
-    Foldable1: () => foldableObject
-  };
-  var filterWithKey = (predicate) => (m) => runST(() => {
-    const m$p = newImpl();
-    return foldM1((acc) => (k) => (v) => {
-      if (predicate(k)(v)) {
-        return poke2(k)(v)(acc);
-      }
-      return () => acc;
-    })(m$p)(m)();
-  });
-  var alter = (f) => (k) => (m) => {
-    const v = f(_lookup(Nothing, Just, k, m));
-    if (v.tag === "Nothing") {
-      return mutate(deleteImpl(k))(m);
-    }
-    if (v.tag === "Just") {
-      return mutate(poke2(k)(v._1))(m);
-    }
-    fail();
-  };
-  var update = (f) => (k) => (m) => alter((v2) => {
-    if (v2.tag === "Nothing") {
-      return Nothing;
-    }
-    if (v2.tag === "Just") {
-      return f(v2._1);
-    }
-    fail();
-  })(k)(m);
-
-  // output-es/Data.HeytingAlgebra/foreign.js
-  var boolConj = function(b1) {
-    return function(b2) {
-      return b1 && b2;
-    };
-  };
-  var boolDisj = function(b1) {
-    return function(b2) {
-      return b1 || b2;
-    };
-  };
-  var boolNot = function(b) {
-    return !b;
-  };
-
-  // output-es/Data.Lazy/foreign.js
-  var defer = function(thunk) {
-    var v = null;
-    return function() {
-      if (thunk === void 0)
-        return v;
-      v = thunk();
-      thunk = void 0;
-      return v;
-    };
-  };
-  var force = function(l) {
-    return l();
-  };
 
   // output-es/Partial/foreign.js
   var _crashWith = function(msg) {
@@ -2171,7 +1413,7 @@
   var $Map = (tag, _1, _2, _3, _4, _5, _6, _7) => ({ tag, _1, _2, _3, _4, _5, _6, _7 });
   var $TreeContext = (tag, _1, _2, _3, _4, _5, _6) => ({ tag, _1, _2, _3, _4, _5, _6 });
   var Leaf2 = /* @__PURE__ */ $Map("Leaf");
-  var toUnfoldable3 = (dictUnfoldable) => (m) => {
+  var toUnfoldable2 = (dictUnfoldable) => (m) => {
     const go = (go$a0$copy) => {
       let go$a0 = go$a0$copy, go$c = true, go$r;
       while (go$c) {
@@ -3178,9 +2420,9 @@
   };
   var eqMap = (dictEq) => (dictEq1) => {
     const eq1 = eqArrayImpl((x2) => (y2) => dictEq.eq(x2._1)(y2._1) && dictEq1.eq(x2._2)(y2._2));
-    return { eq: (m1) => (m2) => eq1(toUnfoldable3(unfoldableArray)(m1))(toUnfoldable3(unfoldableArray)(m2)) };
+    return { eq: (m1) => (m2) => eq1(toUnfoldable2(unfoldableArray)(m1))(toUnfoldable2(unfoldableArray)(m2)) };
   };
-  var fromFoldable2 = (dictOrd) => (dictFoldable) => dictFoldable.foldl((m) => (v) => insert(dictOrd)(v._1)(v._2)(m))(Leaf2);
+  var fromFoldable = (dictOrd) => (dictFoldable) => dictFoldable.foldl((m) => (v) => insert(dictOrd)(v._1)(v._2)(m))(Leaf2);
   var $$delete = (dictOrd) => (k) => (m) => {
     const $3 = pop(dictOrd)(k)(m);
     if ($3.tag === "Nothing") {
@@ -3191,7 +2433,7 @@
     }
     fail();
   };
-  var alter2 = (dictOrd) => (f) => (k) => (m) => {
+  var alter = (dictOrd) => (f) => (k) => (m) => {
     const v = f(lookup(dictOrd)(k)(m));
     if (v.tag === "Nothing") {
       return $$delete(dictOrd)(k)(m);
@@ -3201,7 +2443,7 @@
     }
     fail();
   };
-  var unionWith2 = (dictOrd) => (f) => (m1) => (m2) => foldableWithIndexMap.foldlWithIndex((k) => (m) => (v) => alter2(dictOrd)((() => {
+  var unionWith = (dictOrd) => (f) => (m1) => (m2) => foldableWithIndexMap.foldlWithIndex((k) => (m) => (v) => alter(dictOrd)((() => {
     const $7 = f(v);
     return (x2) => $Maybe(
       "Just",
@@ -3217,111 +2459,748 @@
     );
   })())(k)(m))(m2)(m1);
 
-  // output-es/Data.Set/index.js
-  var fromFoldable1 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
-  var tailRecM2 = (f) => (a) => (b) => monadRecST.tailRecM((o) => f(o.a)(o.b))({ a, b });
-  var union2 = (dictOrd) => (v) => (v1) => unionWith2(dictOrd)($$const)(v)(v1);
-  var toUnfoldable4 = (dictUnfoldable) => {
-    const $1 = toUnfoldable(dictUnfoldable);
-    return (x2) => $1(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x2));
+  // output-es/Effect.Exception/foreign.js
+  function showErrorImpl(err) {
+    return err.stack || err.toString();
+  }
+  function error(msg) {
+    return new Error(msg);
+  }
+  function message(e) {
+    return e.message;
+  }
+  function throwException(e) {
+    return function() {
+      throw e;
+    };
+  }
+
+  // output-es/Effect.Unsafe/foreign.js
+  var unsafePerformEffect = function(f) {
+    return f();
   };
-  var toUnfoldable1 = /* @__PURE__ */ toUnfoldable4(unfoldableArray);
-  var showSet = (dictShow) => {
-    const show4 = showArrayImpl(dictShow.show);
-    return { show: (s) => "(fromFoldable " + (show4(toUnfoldable1(s)) + ")") };
+
+  // output-es/Control.Monad.ST.Internal/foreign.js
+  var map_ = function(f) {
+    return function(a) {
+      return function() {
+        return f(a());
+      };
+    };
   };
-  var foldableSet = {
-    foldMap: (dictMonoid) => {
-      const foldMap1 = foldableList.foldMap(dictMonoid);
-      return (f) => {
-        const $3 = foldMap1(f);
-        return (x2) => $3(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x2));
+  var pure_ = function(a) {
+    return function() {
+      return a;
+    };
+  };
+  var bind_ = function(a) {
+    return function(f) {
+      return function() {
+        return f(a())();
+      };
+    };
+  };
+  var run = function(f) {
+    return f();
+  };
+  function whileST(f) {
+    return function(a) {
+      return function() {
+        while (f()) {
+          a();
+        }
+      };
+    };
+  }
+  var foreach = function(as) {
+    return function(f) {
+      return function() {
+        for (var i = 0, l = as.length; i < l; i++) {
+          f(as[i])();
+        }
+      };
+    };
+  };
+  function newSTRef(val2) {
+    return function() {
+      return { value: val2 };
+    };
+  }
+
+  // output-es/Control.Monad.ST.Internal/index.js
+  var functorST = { map: map_ };
+  var monadST = { Applicative0: () => applicativeST, Bind1: () => bindST };
+  var bindST = { bind: bind_, Apply0: () => applyST };
+  var applyST = {
+    apply: (f) => (a) => () => {
+      const f$p = f();
+      const a$p = a();
+      return applicativeST.pure(f$p(a$p))();
+    },
+    Functor0: () => functorST
+  };
+  var applicativeST = { pure: pure_, Apply0: () => applyST };
+  var monadRecST = {
+    tailRecM: (f) => (a) => {
+      const $2 = bind_(f(a))(newSTRef);
+      return () => {
+        const r = $2();
+        whileST(() => {
+          const $4 = r.value;
+          return $4.tag === "Loop";
+        })(() => {
+          const v = r.value;
+          if (v.tag === "Loop") {
+            const e = f(v._1)();
+            r.value = e;
+            return unit;
+          }
+          if (v.tag === "Done") {
+            return unit;
+          }
+          fail();
+        })();
+        const $5 = r.value;
+        return (() => {
+          if ($5.tag === "Done") {
+            return $5._1;
+          }
+          fail();
+        })();
       };
     },
-    foldl: (f) => (x2) => {
-      const $2 = (() => {
-        const go = (go$a0$copy) => (go$a1$copy) => {
-          let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-          while (go$c) {
-            const b = go$a0, v = go$a1;
-            if (v.tag === "Nil") {
-              go$c = false;
-              go$r = b;
-              continue;
-            }
-            if (v.tag === "Cons") {
-              go$a0 = f(b)(v._1);
-              go$a1 = v._2;
-              continue;
-            }
-            fail();
-          }
-          ;
-          return go$r;
+    Monad0: () => monadST
+  };
+
+  // output-es/Data.Array.ST/foreign.js
+  function newSTArray() {
+    return [];
+  }
+  var pushAll = function(as) {
+    return function(xs) {
+      return function() {
+        return xs.push.apply(xs, as);
+      };
+    };
+  };
+  var unsafeFreeze = function(xs) {
+    return function() {
+      return xs;
+    };
+  };
+  function copyImpl(xs) {
+    return function() {
+      return xs.slice();
+    };
+  }
+  var thaw = copyImpl;
+  var sortByImpl = function() {
+    function mergeFromTo(compare, fromOrdering, xs1, xs2, from, to) {
+      var mid;
+      var i;
+      var j;
+      var k;
+      var x2;
+      var y2;
+      var c;
+      mid = from + (to - from >> 1);
+      if (mid - from > 1)
+        mergeFromTo(compare, fromOrdering, xs2, xs1, from, mid);
+      if (to - mid > 1)
+        mergeFromTo(compare, fromOrdering, xs2, xs1, mid, to);
+      i = from;
+      j = mid;
+      k = from;
+      while (i < mid && j < to) {
+        x2 = xs2[i];
+        y2 = xs2[j];
+        c = fromOrdering(compare(x2)(y2));
+        if (c > 0) {
+          xs1[k++] = y2;
+          ++j;
+        } else {
+          xs1[k++] = x2;
+          ++i;
+        }
+      }
+      while (i < mid) {
+        xs1[k++] = xs2[i++];
+      }
+      while (j < to) {
+        xs1[k++] = xs2[j++];
+      }
+    }
+    return function(compare) {
+      return function(fromOrdering) {
+        return function(xs) {
+          return function() {
+            if (xs.length < 2)
+              return xs;
+            mergeFromTo(compare, fromOrdering, xs, xs.slice(0), 0, xs.length);
+            return xs;
+          };
         };
-        return go(x2);
-      })();
-      return (x$1) => $2(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x$1));
-    },
-    foldr: (f) => (x2) => {
-      const $2 = foldableList.foldr(f)(x2);
-      return (x$1) => $2(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x$1));
+      };
+    };
+  }();
+
+  // output-es/Data.Array.ST/index.js
+  var withArray = (f) => (xs) => {
+    const $2 = thaw(xs);
+    return () => {
+      const result = $2();
+      f(result)();
+      return unsafeFreeze(result)();
+    };
+  };
+
+  // output-es/Unsafe.Coerce/foreign.js
+  var unsafeCoerce = function(x2) {
+    return x2;
+  };
+
+  // output-es/Data.Bifunctor/index.js
+  var bifunctorTuple = { bimap: (f) => (g) => (v) => $Tuple(f(v._1), g(v._2)) };
+  var bifunctorEither = {
+    bimap: (v) => (v1) => (v2) => {
+      if (v2.tag === "Left") {
+        return $Either("Left", v(v2._1));
+      }
+      if (v2.tag === "Right") {
+        return $Either("Right", v1(v2._1));
+      }
+      fail();
     }
   };
-  var intersection = (dictOrd) => {
-    const fromFoldable32 = foldlArray((m) => (a) => insert(dictOrd)(a)(unit)(m))(Leaf2);
-    return (s1) => (s2) => {
-      const rs = fromFoldable1(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s2));
-      const rl = rs.length;
-      const ls = fromFoldable1(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s1));
-      const ll = ls.length;
-      return fromFoldable32(run(bind_(() => {
-        const acc = newSTArray();
-        return tailRecM2((l) => (r) => {
-          if (l < ll && r < rl) {
-            const v = dictOrd.compare(ls[l])(rs[r]);
-            if (v.tag === "EQ") {
-              return () => {
-                pushAll([ls[l]])(acc)();
-                return $Step("Loop", { a: l + 1 | 0, b: r + 1 | 0 });
-              };
-            }
-            if (v.tag === "LT") {
-              return () => $Step("Loop", { a: l + 1 | 0, b: r });
-            }
-            if (v.tag === "GT") {
-              return () => $Step("Loop", { a: l, b: r + 1 | 0 });
-            }
-            fail();
-          }
-          return () => $Step("Done", acc);
-        })(0)(0)();
-      })(unsafeFreeze)));
+
+  // output-es/Data.Traversable/foreign.js
+  var traverseArrayImpl = function() {
+    function array1(a) {
+      return [a];
+    }
+    function array2(a) {
+      return function(b) {
+        return [a, b];
+      };
+    }
+    function array3(a) {
+      return function(b) {
+        return function(c) {
+          return [a, b, c];
+        };
+      };
+    }
+    function concat2(xs) {
+      return function(ys) {
+        return xs.concat(ys);
+      };
+    }
+    return function(apply) {
+      return function(map5) {
+        return function(pure2) {
+          return function(f) {
+            return function(array) {
+              function go(bot, top2) {
+                switch (top2 - bot) {
+                  case 0:
+                    return pure2([]);
+                  case 1:
+                    return map5(array1)(f(array[bot]));
+                  case 2:
+                    return apply(map5(array2)(f(array[bot])))(f(array[bot + 1]));
+                  case 3:
+                    return apply(apply(map5(array3)(f(array[bot])))(f(array[bot + 1])))(f(array[bot + 2]));
+                  default:
+                    var pivot = bot + Math.floor((top2 - bot) / 4) * 2;
+                    return apply(map5(concat2)(go(bot, pivot)))(go(pivot, top2));
+                }
+              }
+              return go(0, array.length);
+            };
+          };
+        };
+      };
     };
+  }();
+
+  // output-es/Data.Traversable/index.js
+  var identity7 = (x2) => x2;
+  var traversableTuple = {
+    traverse: (dictApplicative) => {
+      const map5 = dictApplicative.Apply0().Functor0().map;
+      return (f) => (v) => map5(Tuple(v._1))(f(v._2));
+    },
+    sequence: (dictApplicative) => {
+      const map5 = dictApplicative.Apply0().Functor0().map;
+      return (v) => map5(Tuple(v._1))(v._2);
+    },
+    Functor0: () => functorTuple,
+    Foldable1: () => foldableTuple
   };
-  var map = (dictOrd) => (f) => foldableSet.foldl((m) => (a) => insert(dictOrd)(f(a))(unit)(m))(Leaf2);
-  var difference2 = (dictOrd) => (s1) => (s2) => {
-    const go = (go$a0$copy) => (go$a1$copy) => {
-      let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-      while (go$c) {
-        const b = go$a0, v = go$a1;
-        if (v.tag === "Nil") {
-          go$c = false;
-          go$r = b;
-          continue;
-        }
-        if (v.tag === "Cons") {
-          go$a0 = $$delete(dictOrd)(v._1)(b);
-          go$a1 = v._2;
-          continue;
-        }
-        fail();
+  var traversableArray = {
+    traverse: (dictApplicative) => {
+      const Apply0 = dictApplicative.Apply0();
+      return traverseArrayImpl(Apply0.apply)(Apply0.Functor0().map)(dictApplicative.pure);
+    },
+    sequence: (dictApplicative) => traversableArray.traverse(dictApplicative)(identity7),
+    Functor0: () => functorArray,
+    Foldable1: () => foldableArray
+  };
+
+  // output-es/Data.Array/foreign.js
+  var range2 = function(start2) {
+    return function(end) {
+      var step = start2 > end ? -1 : 1;
+      var result = new Array(step * (end - start2) + 1);
+      var i = start2, n = 0;
+      while (i !== end) {
+        result[n++] = i;
+        i += step;
       }
-      ;
-      return go$r;
+      result[n] = i;
+      return result;
     };
-    return go(s1)(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s2));
   };
+  var replicateFill = function(count) {
+    return function(value) {
+      if (count < 1) {
+        return [];
+      }
+      var result = new Array(count);
+      return result.fill(value);
+    };
+  };
+  var replicatePolyfill = function(count) {
+    return function(value) {
+      var result = [];
+      var n = 0;
+      for (var i = 0; i < count; i++) {
+        result[n++] = value;
+      }
+      return result;
+    };
+  };
+  var replicate2 = typeof Array.prototype.fill === "function" ? replicateFill : replicatePolyfill;
+  var fromFoldableImpl = function() {
+    function Cons2(head, tail) {
+      this.head = head;
+      this.tail = tail;
+    }
+    var emptyList = {};
+    function curryCons(head) {
+      return function(tail) {
+        return new Cons2(head, tail);
+      };
+    }
+    function listToArray(list) {
+      var result = [];
+      var count = 0;
+      var xs = list;
+      while (xs !== emptyList) {
+        result[count++] = xs.head;
+        xs = xs.tail;
+      }
+      return result;
+    }
+    return function(foldr) {
+      return function(xs) {
+        return listToArray(foldr(curryCons)(emptyList)(xs));
+      };
+    };
+  }();
+  var unconsImpl = function(empty5) {
+    return function(next) {
+      return function(xs) {
+        return xs.length === 0 ? empty5({}) : next(xs[0])(xs.slice(1));
+      };
+    };
+  };
+  var indexImpl = function(just) {
+    return function(nothing) {
+      return function(xs) {
+        return function(i) {
+          return i < 0 || i >= xs.length ? nothing : just(xs[i]);
+        };
+      };
+    };
+  };
+  var findIndexImpl = function(just) {
+    return function(nothing) {
+      return function(f) {
+        return function(xs) {
+          for (var i = 0, l = xs.length; i < l; i++) {
+            if (f(xs[i]))
+              return just(i);
+          }
+          return nothing;
+        };
+      };
+    };
+  };
+  var _updateAt = function(just) {
+    return function(nothing) {
+      return function(i) {
+        return function(a) {
+          return function(l) {
+            if (i < 0 || i >= l.length)
+              return nothing;
+            var l1 = l.slice();
+            l1[i] = a;
+            return just(l1);
+          };
+        };
+      };
+    };
+  };
+  var sortByImpl2 = function() {
+    function mergeFromTo(compare, fromOrdering, xs1, xs2, from, to) {
+      var mid;
+      var i;
+      var j;
+      var k;
+      var x2;
+      var y2;
+      var c;
+      mid = from + (to - from >> 1);
+      if (mid - from > 1)
+        mergeFromTo(compare, fromOrdering, xs2, xs1, from, mid);
+      if (to - mid > 1)
+        mergeFromTo(compare, fromOrdering, xs2, xs1, mid, to);
+      i = from;
+      j = mid;
+      k = from;
+      while (i < mid && j < to) {
+        x2 = xs2[i];
+        y2 = xs2[j];
+        c = fromOrdering(compare(x2)(y2));
+        if (c > 0) {
+          xs1[k++] = y2;
+          ++j;
+        } else {
+          xs1[k++] = x2;
+          ++i;
+        }
+      }
+      while (i < mid) {
+        xs1[k++] = xs2[i++];
+      }
+      while (j < to) {
+        xs1[k++] = xs2[j++];
+      }
+    }
+    return function(compare) {
+      return function(fromOrdering) {
+        return function(xs) {
+          var out;
+          if (xs.length < 2)
+            return xs;
+          out = xs.slice(0);
+          mergeFromTo(compare, fromOrdering, out, xs.slice(0), 0, xs.length);
+          return out;
+        };
+      };
+    };
+  }();
+  var slice = function(s) {
+    return function(e) {
+      return function(l) {
+        return l.slice(s, e);
+      };
+    };
+  };
+  var zipWith2 = function(f) {
+    return function(xs) {
+      return function(ys) {
+        var l = xs.length < ys.length ? xs.length : ys.length;
+        var result = new Array(l);
+        for (var i = 0; i < l; i++) {
+          result[i] = f(xs[i])(ys[i]);
+        }
+        return result;
+      };
+    };
+  };
+
+  // output-es/Data.Array/index.js
+  var zip = /* @__PURE__ */ zipWith2(Tuple);
+  var updateAt2 = /* @__PURE__ */ _updateAt(Just)(Nothing);
+  var uncons = /* @__PURE__ */ unconsImpl((v) => Nothing)((x2) => (xs) => $Maybe("Just", { head: x2, tail: xs }));
+  var toUnfoldable3 = (dictUnfoldable) => (xs) => {
+    const len = xs.length;
+    return dictUnfoldable.unfoldr((i) => {
+      if (i < len) {
+        return $Maybe("Just", $Tuple(xs[i], i + 1 | 0));
+      }
+      return Nothing;
+    })(0);
+  };
+  var sortBy2 = (comp) => sortByImpl2(comp)((v) => {
+    if (v.tag === "GT") {
+      return 1;
+    }
+    if (v.tag === "EQ") {
+      return 0;
+    }
+    if (v.tag === "LT") {
+      return -1;
+    }
+    fail();
+  });
+  var sortWith = (dictOrd) => (f) => sortBy2((x2) => (y2) => dictOrd.compare(f(x2))(f(y2)));
+  var index2 = /* @__PURE__ */ indexImpl(Just)(Nothing);
+  var findIndex = /* @__PURE__ */ findIndexImpl(Just)(Nothing);
+  var notElem = (dictEq) => (a) => (arr) => {
+    const $3 = findIndex((v) => dictEq.eq(v)(a))(arr);
+    if ($3.tag === "Nothing") {
+      return true;
+    }
+    if ($3.tag === "Just") {
+      return false;
+    }
+    fail();
+  };
+  var elem = (dictEq) => (a) => (arr) => {
+    const $3 = findIndex((v) => dictEq.eq(v)(a))(arr);
+    if ($3.tag === "Nothing") {
+      return false;
+    }
+    if ($3.tag === "Just") {
+      return true;
+    }
+    fail();
+  };
+  var cons3 = (x2) => (xs) => concatArray([x2])(xs);
+  var some2 = (dictAlternative) => {
+    const apply1 = dictAlternative.Applicative0().Apply0().apply;
+    const map32 = dictAlternative.Plus1().Alt0().Functor0().map;
+    return (dictLazy) => (v) => apply1(map32(cons3)(v))(dictLazy.defer((v1) => many2(dictAlternative)(dictLazy)(v)));
+  };
+  var many2 = (dictAlternative) => {
+    const alt2 = dictAlternative.Plus1().Alt0().alt;
+    const pure1 = dictAlternative.Applicative0().pure;
+    return (dictLazy) => (v) => alt2(some2(dictAlternative)(dictLazy)(v))(pure1([]));
+  };
+
+  // output-es/Foreign.Object.ST/foreign.js
+  var newImpl = function() {
+    return {};
+  };
+  function poke2(k) {
+    return function(v) {
+      return function(m) {
+        return function() {
+          m[k] = v;
+          return m;
+        };
+      };
+    };
+  }
+  var deleteImpl = function(k) {
+    return function(m) {
+      return function() {
+        delete m[k];
+        return m;
+      };
+    };
+  };
+
+  // output-es/Foreign.Object/foreign.js
+  function _copyST(m) {
+    return function() {
+      var r = {};
+      for (var k in m) {
+        if (hasOwnProperty.call(m, k)) {
+          r[k] = m[k];
+        }
+      }
+      return r;
+    };
+  }
+  var empty = {};
+  function runST(f) {
+    return f();
+  }
+  function _fmapObject(m0, f) {
+    var m = {};
+    for (var k in m0) {
+      if (hasOwnProperty.call(m0, k)) {
+        m[k] = f(m0[k]);
+      }
+    }
+    return m;
+  }
+  function _mapWithKey(m0, f) {
+    var m = {};
+    for (var k in m0) {
+      if (hasOwnProperty.call(m0, k)) {
+        m[k] = f(k)(m0[k]);
+      }
+    }
+    return m;
+  }
+  function _foldM(bind) {
+    return function(f) {
+      return function(mz) {
+        return function(m) {
+          var acc = mz;
+          function g(k2) {
+            return function(z) {
+              return f(z)(k2)(m[k2]);
+            };
+          }
+          for (var k in m) {
+            if (hasOwnProperty.call(m, k)) {
+              acc = bind(acc)(g(k));
+            }
+          }
+          return acc;
+        };
+      };
+    };
+  }
+  function all2(f) {
+    return function(m) {
+      for (var k in m) {
+        if (hasOwnProperty.call(m, k) && !f(k)(m[k]))
+          return false;
+      }
+      return true;
+    };
+  }
+  function size(m) {
+    var s = 0;
+    for (var k in m) {
+      if (hasOwnProperty.call(m, k)) {
+        ++s;
+      }
+    }
+    return s;
+  }
+  function _lookup(no, yes, k, m) {
+    return k in m ? yes(m[k]) : no;
+  }
+  function toArrayWithKey(f) {
+    return function(m) {
+      var r = [];
+      for (var k in m) {
+        if (hasOwnProperty.call(m, k)) {
+          r.push(f(k)(m[k]));
+        }
+      }
+      return r;
+    };
+  }
+  var keys = Object.keys || toArrayWithKey(function(k) {
+    return function() {
+      return k;
+    };
+  });
+
+  // output-es/Foreign.Object/index.js
+  var identity8 = (x2) => x2;
+  var values = /* @__PURE__ */ toArrayWithKey((v) => (v1) => v1);
+  var toAscUnfoldable = (dictUnfoldable) => {
+    const $1 = sortWith(ordString)(fst);
+    const $2 = toArrayWithKey(Tuple);
+    return (x2) => toUnfoldable3(dictUnfoldable)($1($2(x2)));
+  };
+  var mutate = (f) => (m) => runST((() => {
+    const $2 = _copyST(m);
+    return () => {
+      const s = $2();
+      f(s)();
+      return s;
+    };
+  })());
+  var mapWithKey = (f) => (m) => _mapWithKey(m, f);
+  var isEmpty = /* @__PURE__ */ all2((v) => (v1) => false);
+  var functorObject = { map: (f) => (m) => _fmapObject(m, f) };
+  var functorWithIndexObject = { mapWithIndex: mapWithKey, Functor0: () => functorObject };
+  var fromFoldable2 = (dictFoldable) => {
+    const fromFoldable17 = fromFoldableImpl(dictFoldable.foldr);
+    return (l) => runST(() => {
+      const s = newImpl();
+      foreach(fromFoldable17(l))((v) => () => {
+        poke2(v._1)(v._2)(s)();
+        return unit;
+      })();
+      return s;
+    });
+  };
+  var foldM = (dictMonad) => {
+    const bind1 = dictMonad.Bind1().bind;
+    const pure1 = dictMonad.Applicative0().pure;
+    return (f) => (z) => _foldM(bind1)(f)(pure1(z));
+  };
+  var foldM1 = /* @__PURE__ */ foldM(monadST);
+  var union = (m) => mutate((s) => foldM1((s$p) => (k) => (v) => poke2(k)(v)(s$p))(s)(m));
+  var unionWith2 = (f) => (m1) => (m2) => mutate((s1) => foldM1((s2) => (k) => (v1) => poke2(k)(_lookup(v1, (v2) => f(v1)(v2), k, m2))(s2))(s1)(m1))(m2);
+  var fold = /* @__PURE__ */ _foldM(applyFlipped);
+  var foldMap = (dictMonoid) => {
+    const append1 = dictMonoid.Semigroup0().append;
+    return (f) => fold((acc) => (k) => (v) => append1(acc)(f(k)(v)))(dictMonoid.mempty);
+  };
+  var foldableObject = {
+    foldl: (f) => fold((z) => (v) => f(z)),
+    foldr: (f) => (z) => (m) => foldrArray(f)(z)(values(m)),
+    foldMap: (dictMonoid) => {
+      const foldMap1 = foldMap(dictMonoid);
+      return (f) => foldMap1((v) => f);
+    }
+  };
+  var foldableWithIndexObject = {
+    foldlWithIndex: (f) => fold((b) => (a) => f(a)(b)),
+    foldrWithIndex: (f) => (z) => (m) => foldrArray((v) => f(v._1)(v._2))(z)(toArrayWithKey(Tuple)(m)),
+    foldMapWithIndex: (dictMonoid) => foldMap(dictMonoid),
+    Foldable0: () => foldableObject
+  };
+  var traversableWithIndexObject = {
+    traverseWithIndex: (dictApplicative) => {
+      const Apply0 = dictApplicative.Apply0();
+      const map5 = Apply0.Functor0().map;
+      return (f) => (ms) => fold((acc) => (k) => (v) => Apply0.apply(map5((b) => (a) => mutate(poke2(k)(a))(b))(acc))(f(k)(v)))(dictApplicative.pure(empty))(ms);
+    },
+    FunctorWithIndex0: () => functorWithIndexObject,
+    FoldableWithIndex1: () => foldableWithIndexObject,
+    Traversable2: () => traversableObject
+  };
+  var traversableObject = {
+    traverse: (dictApplicative) => {
+      const $1 = traversableWithIndexObject.traverseWithIndex(dictApplicative);
+      return (x2) => $1((v) => x2);
+    },
+    sequence: (dictApplicative) => traversableObject.traverse(dictApplicative)(identity8),
+    Functor0: () => functorObject,
+    Foldable1: () => foldableObject
+  };
+  var filterWithKey = (predicate) => (m) => runST(() => {
+    const m$p = newImpl();
+    return foldM1((acc) => (k) => (v) => {
+      if (predicate(k)(v)) {
+        return poke2(k)(v)(acc);
+      }
+      return () => acc;
+    })(m$p)(m)();
+  });
+  var alter2 = (f) => (k) => (m) => {
+    const v = f(_lookup(Nothing, Just, k, m));
+    if (v.tag === "Nothing") {
+      return mutate(deleteImpl(k))(m);
+    }
+    if (v.tag === "Just") {
+      return mutate(poke2(k)(v._1))(m);
+    }
+    fail();
+  };
+  var update = (f) => (k) => (m) => alter2((v2) => {
+    if (v2.tag === "Nothing") {
+      return Nothing;
+    }
+    if (v2.tag === "Just") {
+      return f(v2._1);
+    }
+    fail();
+  })(k)(m);
 
   // output-es/Control.Category/index.js
   var categoryFn = { identity: (x2) => x2, Semigroupoid0: () => semigroupoidFn };
@@ -3444,11 +3323,15 @@
   }
 
   // output-es/Dict/index.js
-  var toUnfoldable12 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
+  var toUnfoldable1 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
   var keys2 = /* @__PURE__ */ (() => {
     const $0 = foldlArray((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2);
     return (x2) => $0(keys(x2));
   })();
+  var $$get = (k) => {
+    const $1 = definitely('Key "' + (k + '" exists in dictionary'));
+    return (x2) => $1(_lookup(Nothing, Just, k, x2));
+  };
   var disjointUnion_inv = (ks) => (m) => $Tuple(
     filterWithKey((x2) => {
       const $3 = lookup(ordString)(x2)(ks);
@@ -3477,14 +3360,14 @@
       return (v) => $4;
     })(m)
   );
-  var difference3 = (m1) => (m2) => foldlArray((b) => (a) => mutate(deleteImpl(a))(b))(m1)(keys(m2));
+  var difference2 = (m1) => (m2) => foldlArray((b) => (a) => mutate(deleteImpl(a))(b))(m1)(keys(m2));
   var asSingletonMap = (m) => (() => {
     if (size(m) === 1) {
       return identity9;
     }
     return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
   })()(definitely("singleton map")((() => {
-    const $1 = toUnfoldable12(m);
+    const $1 = toUnfoldable1(m);
     if ($1.tag === "Nil") {
       return Nothing;
     }
@@ -3493,6 +3376,152 @@
     }
     fail();
   })()));
+
+  // output-es/Data.HeytingAlgebra/foreign.js
+  var boolConj = function(b1) {
+    return function(b2) {
+      return b1 && b2;
+    };
+  };
+  var boolDisj = function(b1) {
+    return function(b2) {
+      return b1 || b2;
+    };
+  };
+  var boolNot = function(b) {
+    return !b;
+  };
+
+  // output-es/Data.Set/index.js
+  var fromFoldable1 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
+  var tailRecM2 = (f) => (a) => (b) => monadRecST.tailRecM((o) => f(o.a)(o.b))({ a, b });
+  var union2 = (dictOrd) => (v) => (v1) => unionWith(dictOrd)($$const)(v)(v1);
+  var toUnfoldable4 = (dictUnfoldable) => {
+    const $1 = toUnfoldable(dictUnfoldable);
+    return (x2) => $1(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x2));
+  };
+  var toUnfoldable12 = /* @__PURE__ */ toUnfoldable4(unfoldableArray);
+  var showSet = (dictShow) => {
+    const show4 = showArrayImpl(dictShow.show);
+    return { show: (s) => "(fromFoldable " + (show4(toUnfoldable12(s)) + ")") };
+  };
+  var foldableSet = {
+    foldMap: (dictMonoid) => {
+      const foldMap1 = foldableList.foldMap(dictMonoid);
+      return (f) => {
+        const $3 = foldMap1(f);
+        return (x2) => $3(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x2));
+      };
+    },
+    foldl: (f) => (x2) => {
+      const $2 = (() => {
+        const go = (go$a0$copy) => (go$a1$copy) => {
+          let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+          while (go$c) {
+            const b = go$a0, v = go$a1;
+            if (v.tag === "Nil") {
+              go$c = false;
+              go$r = b;
+              continue;
+            }
+            if (v.tag === "Cons") {
+              go$a0 = f(b)(v._1);
+              go$a1 = v._2;
+              continue;
+            }
+            fail();
+          }
+          ;
+          return go$r;
+        };
+        return go(x2);
+      })();
+      return (x$1) => $2(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x$1));
+    },
+    foldr: (f) => (x2) => {
+      const $2 = foldableList.foldr(f)(x2);
+      return (x$1) => $2(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x$1));
+    }
+  };
+  var intersection = (dictOrd) => {
+    const fromFoldable32 = foldlArray((m) => (a) => insert(dictOrd)(a)(unit)(m))(Leaf2);
+    return (s1) => (s2) => {
+      const rs = fromFoldable1(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s2));
+      const rl = rs.length;
+      const ls = fromFoldable1(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s1));
+      const ll = ls.length;
+      return fromFoldable32(run(bind_(() => {
+        const acc = newSTArray();
+        return tailRecM2((l) => (r) => {
+          if (l < ll && r < rl) {
+            const v = dictOrd.compare(ls[l])(rs[r]);
+            if (v.tag === "EQ") {
+              return () => {
+                pushAll([ls[l]])(acc)();
+                return $Step("Loop", { a: l + 1 | 0, b: r + 1 | 0 });
+              };
+            }
+            if (v.tag === "LT") {
+              return () => $Step("Loop", { a: l + 1 | 0, b: r });
+            }
+            if (v.tag === "GT") {
+              return () => $Step("Loop", { a: l, b: r + 1 | 0 });
+            }
+            fail();
+          }
+          return () => $Step("Done", acc);
+        })(0)(0)();
+      })(unsafeFreeze)));
+    };
+  };
+  var map = (dictOrd) => (f) => foldableSet.foldl((m) => (a) => insert(dictOrd)(f(a))(unit)(m))(Leaf2);
+  var difference3 = (dictOrd) => (s1) => (s2) => {
+    const go = (go$a0$copy) => (go$a1$copy) => {
+      let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+      while (go$c) {
+        const b = go$a0, v = go$a1;
+        if (v.tag === "Nil") {
+          go$c = false;
+          go$r = b;
+          continue;
+        }
+        if (v.tag === "Cons") {
+          go$a0 = $$delete(dictOrd)(v._1)(b);
+          go$a1 = v._2;
+          continue;
+        }
+        fail();
+      }
+      ;
+      return go$r;
+    };
+    return go(s1)(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s2));
+  };
+
+  // output-es/Util.Pair/index.js
+  var $Pair = (_1, _2) => ({ tag: "Pair", _1, _2 });
+  var Pair = (value0) => (value1) => $Pair(value0, value1);
+  var functorPair = { map: (f) => (v) => $Pair(f(v._1), f(v._2)) };
+  var foldablePair = {
+    foldl: (f) => (z) => (v) => f(f(z)(v._1))(v._2),
+    foldr: (f) => foldrDefault(foldablePair)(f),
+    foldMap: (dictMonoid) => (f) => {
+      const append = dictMonoid.Semigroup0().append;
+      return foldablePair.foldl((acc) => (x2) => append(acc)(f(x2)))(dictMonoid.mempty);
+    }
+  };
+  var traversablePair = {
+    traverse: (dictApplicative) => {
+      const Apply0 = dictApplicative.Apply0();
+      const map5 = Apply0.Functor0().map;
+      return (f) => (v) => Apply0.apply(map5(Pair)(f(v._1)))(f(v._2));
+    },
+    sequence: (dictApplicative) => traversablePair.traverse(dictApplicative)(identity7),
+    Functor0: () => functorPair,
+    Foldable1: () => foldablePair
+  };
+  var toTuple = (v) => $Tuple(v._1, v._2);
+  var fromTuple = (v) => $Pair(v._1, v._2);
 
   // output-es/Lattice/index.js
   var identity10 = (x2) => x2;
@@ -3520,7 +3549,7 @@
   };
   var toUnfoldable5 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
   var length2 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
-  var sequence = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity6))();
+  var sequence = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity7))();
   var sequence1 = /* @__PURE__ */ (() => traversableList.traverse(applicativeEither)(identity3))();
   var meetSemilatticeUnit = { meet: (v) => identity10 };
   var meetSemilatticeBoolean = { meet: boolConj };
@@ -3551,10 +3580,11 @@
   var boundedJoinSemilatticeBoo = { bot: false, JoinSemilattice0: () => joinSemilatticeBoolean };
   var boundedLatticeBoolean = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeBoo, BoundedMeetSemilattice1: () => boundedMeetSemilatticeBoo };
   var joinSemilatticeDict = (dictJoinSemilattice) => ({
-    join: unionWith(dictJoinSemilattice.join),
+    join: unionWith2(dictJoinSemilattice.join),
     maybeJoin: (m) => (m$p) => foldM2(mayFailUpdate(dictJoinSemilattice))(m)(toUnfoldable5(m$p)),
     neg: functorObject.map(dictJoinSemilattice.neg)
   });
+  var expandablePairPair = (dictExpandable) => ({ expand: (v) => (v1) => $Pair(dictExpandable.expand(v._1)(v1._1), dictExpandable.expand(v._2)(v1._2)) });
   var definedJoin = (dictJoinSemilattice) => (x2) => {
     const $2 = dictJoinSemilattice.maybeJoin(x2);
     return (x$1) => successful($$with("Join undefined")($2(x$1)));
@@ -3619,6 +3649,20 @@
     },
     neg: listMap(dictJoinSemilattice.neg)
   });
+  var joinSemilatticePair = (dictJoinSemilattice) => ({
+    join: (ab) => definedJoin(joinSemilatticePair(dictJoinSemilattice))(ab),
+    maybeJoin: (v) => (v1) => applyEither.apply((() => {
+      const $3 = dictJoinSemilattice.maybeJoin(v._1)(v1._1);
+      if ($3.tag === "Left") {
+        return $Either("Left", $3._1);
+      }
+      if ($3.tag === "Right") {
+        return $Either("Right", Pair($3._1));
+      }
+      fail();
+    })())(dictJoinSemilattice.maybeJoin(v._2)(v1._2)),
+    neg: functorPair.map(dictJoinSemilattice.neg)
+  });
   var joinSemilattice$x215 = (dictJoinSemilattice) => (dictJoinSemilattice1) => ({
     join: (ab) => definedJoin(joinSemilattice$x215(dictJoinSemilattice)(dictJoinSemilattice1))(ab),
     maybeJoin: (v) => (v1) => {
@@ -3637,11 +3681,11 @@
   });
   var expandableDictDict = (dictBotOf) => (dictExpandable) => ({
     expand: (kvs) => (kvs$p) => (() => {
-      if (difference2(ordString)(keys2(kvs))(keys2(kvs$p)).tag === "Leaf") {
+      if (difference3(ordString)(keys2(kvs))(keys2(kvs$p)).tag === "Leaf") {
         return identity9;
       }
       return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
-    })()(union(intersectionWith(dictExpandable.expand)(kvs)(kvs$p))(_fmapObject(difference3(kvs$p)(kvs), dictBotOf.botOf)))
+    })()(union(intersectionWith(dictExpandable.expand)(kvs)(kvs$p))(_fmapObject(difference2(kvs$p)(kvs), dictBotOf.botOf)))
   });
   var botOfUnit$x215Raw$x215 = (dictFunctor) => (dictBoundedJoinSemilattice) => ({
     botOf: (() => {
@@ -8870,7 +8914,7 @@
 
   // output-es/DataType/index.js
   var $DataType$p = (_1, _2) => ({ tag: "DataType", _1, _2 });
-  var fromFoldable3 = /* @__PURE__ */ fromFoldable(foldableArray);
+  var fromFoldable3 = /* @__PURE__ */ fromFoldable2(foldableArray);
   var fromFoldable12 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2))();
   var toUnfoldable6 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
   var show = /* @__PURE__ */ (() => showSet(showString).show)();
@@ -8921,7 +8965,7 @@
     /* @__PURE__ */ dataType("Transform")([/* @__PURE__ */ $Tuple("Scale", 2), /* @__PURE__ */ $Tuple("Translate", 2)]),
     /* @__PURE__ */ dataType("Marker")([/* @__PURE__ */ $Tuple("Arrowhead", 0)])
   ]);
-  var ctrToDataType = /* @__PURE__ */ (() => fromFoldable(foldableList)(bindList.bind(listMap((d) => listMap((v) => $Tuple(
+  var ctrToDataType = /* @__PURE__ */ (() => fromFoldable2(foldableList)(bindList.bind(listMap((d) => listMap((v) => $Tuple(
     v,
     d
   ))(toUnfoldable6(fromFoldable12(keys2(d._2)))))(dataTypes))(identity4)))();
@@ -9234,12 +9278,12 @@
   });
   var beside = (v) => (v1) => {
     const height_ = max2(v.height)(v1.height);
-    const adjust = (d) => concatArray(d.lines)(replicate2(unfoldableArray)(height_ - d.height | 0)(fromCharArray(replicate2(unfoldableArray)(d.width)(" "))));
+    const adjust = (d) => concatArray(d.lines)(replicate(unfoldableArray)(height_ - d.height | 0)(fromCharArray(replicate(unfoldableArray)(d.width)(" "))));
     return {
       width: v.width + v1.width | 0,
       height: height_,
       lines: (() => {
-        const $4 = zipWith2(concatString)(arrayMap((s) => s + fromCharArray(replicate2(unfoldableArray)(v.width - toCodePointArray(s).length | 0)(" ")))(adjust(v)))(adjust(v1));
+        const $4 = zipWith2(concatString)(arrayMap((s) => s + fromCharArray(replicate(unfoldableArray)(v.width - toCodePointArray(s).length | 0)(" ")))(adjust(v)))(adjust(v1));
         if (height_ < 1) {
           return [];
         }
@@ -9250,30 +9294,6 @@
   var semigroupColumns = { append: (v) => (v1) => beside(v)(v1) };
   var monoidColumns = { mempty: /* @__PURE__ */ empty2(0)(0), Semigroup0: () => semigroupColumns };
   var atop = (v) => (v1) => ({ width: max2(v.width)(v1.width), height: v.height + v1.height | 0, lines: concatArray(v.lines)(v1.lines) });
-
-  // output-es/Util.Pair/index.js
-  var $Pair = (_1, _2) => ({ tag: "Pair", _1, _2 });
-  var Pair = (value0) => (value1) => $Pair(value0, value1);
-  var functorPair = { map: (f) => (v) => $Pair(f(v._1), f(v._2)) };
-  var foldablePair = {
-    foldl: (f) => (z) => (v) => f(f(z)(v._1))(v._2),
-    foldr: (f) => foldrDefault(foldablePair)(f),
-    foldMap: (dictMonoid) => (f) => {
-      const append = dictMonoid.Semigroup0().append;
-      return foldablePair.foldl((acc) => (x2) => append(acc)(f(x2)))(dictMonoid.mempty);
-    }
-  };
-  var traversablePair = {
-    traverse: (dictApplicative) => {
-      const Apply0 = dictApplicative.Apply0();
-      const map5 = Apply0.Functor0().map;
-      return (f) => (v) => Apply0.apply(map5(Pair)(f(v._1)))(f(v._2));
-    },
-    sequence: (dictApplicative) => traversablePair.traverse(dictApplicative)(identity6),
-    Functor0: () => functorPair,
-    Foldable1: () => foldablePair
-  };
-  var toTuple = (v) => $Tuple(v._1, v._2);
 
   // output-es/Expr/index.js
   var $Cont = (tag, _1) => ({ tag, _1 });
@@ -9299,7 +9319,7 @@
           continue;
         }
         if (v.tag === "Cons") {
-          go$a0 = unionWith2(ordString)($$const)(b)(v._1);
+          go$a0 = unionWith(ordString)($$const)(b)(v._1);
           go$a1 = v._2;
           continue;
         }
@@ -9489,6 +9509,20 @@
         if (v1.tag === "Record") {
           const $3 = Record(dictJoinSemilattice.join(v._1)(v1._1));
           const $4 = joinSemilatticeDict(joinSemilatticeExpr(dictJoinSemilattice)).maybeJoin(v._2)(v1._2);
+          if ($4.tag === "Left") {
+            return $Either("Left", $4._1);
+          }
+          if ($4.tag === "Right") {
+            return $Either("Right", $3($4._1));
+          }
+          fail();
+        }
+        return $Either("Left", "Incompatible expressions");
+      }
+      if (v.tag === "Dictionary") {
+        if (v1.tag === "Dictionary") {
+          const $3 = Dictionary(dictJoinSemilattice.join(v._1)(v1._1));
+          const $4 = joinSemilatticeList(joinSemilatticePair(joinSemilatticeExpr(dictJoinSemilattice))).maybeJoin(v._2)(v1._2);
           if ($4.tag === "Left") {
             return $Either("Left", $4._1);
           }
@@ -9761,6 +9795,12 @@
         }
         return unsafePerformEffect(throwException(error("Incompatible expressions")));
       }
+      if (v.tag === "Dictionary") {
+        if (v1.tag === "Dictionary") {
+          return $Expr("Dictionary", v._1, zipWith(expandablePairPair(expandableExprRawExpr(dictBoundedJoinSemilattice)).expand)(v._2)(v1._2));
+        }
+        return unsafePerformEffect(throwException(error("Incompatible expressions")));
+      }
       if (v.tag === "Constr") {
         if (v1.tag === "Constr") {
           return $Expr(
@@ -9870,11 +9910,11 @@
       return unsafePerformEffect(throwException(error("Incompatible continuations")));
     }
   });
-  var fVDict = (dictFV) => ({ fv: (\u03C1) => difference2(ordString)(unions(_fmapObject(\u03C1, dictFV.fv)))(fromFoldable4(keys2(\u03C1))) });
+  var fVDict = (dictFV) => ({ fv: (\u03C1) => difference3(ordString)(unions(_fmapObject(\u03C1, dictFV.fv)))(fromFoldable4(keys2(\u03C1))) });
   var bVElim = {
     bv: (v) => {
       if (v.tag === "ElimVar") {
-        return unionWith2(ordString)($$const)($Map(
+        return unionWith(ordString)($$const)($Map(
           "Two",
           Leaf2,
           v._1,
@@ -9926,13 +9966,13 @@
         return unions(_fmapObject(v._2, fVExpr.fv));
       }
       if (v.tag === "Dictionary") {
-        return unions1(listMap((x2) => unionWith2(ordString)($$const)(Leaf2)(fVExpr.fv(x2._2)))(v._2));
+        return unions1(listMap((x2) => unionWith(ordString)($$const)(Leaf2)(fVExpr.fv(x2._2)))(v._2));
       }
       if (v.tag === "Constr") {
         return unions1(listMap(fVExpr.fv)(v._3));
       }
       if (v.tag === "Matrix") {
-        return unionWith2(ordString)($$const)(fVExpr.fv(v._2))(fVExpr.fv(v._4));
+        return unionWith(ordString)($$const)(fVExpr.fv(v._2))(fVExpr.fv(v._4));
       }
       if (v.tag === "Lambda") {
         return fVElim.fv(v._1);
@@ -9941,13 +9981,13 @@
         return fVExpr.fv(v._1);
       }
       if (v.tag === "App") {
-        return unionWith2(ordString)($$const)(fVExpr.fv(v._1))(fVExpr.fv(v._2));
+        return unionWith(ordString)($$const)(fVExpr.fv(v._1))(fVExpr.fv(v._2));
       }
       if (v.tag === "Let") {
-        return unionWith2(ordString)($$const)(fVExpr.fv(v._1._2))(difference2(ordString)(fVExpr.fv(v._2))(bVElim.bv(v._1._1)));
+        return unionWith(ordString)($$const)(fVExpr.fv(v._1._2))(difference3(ordString)(fVExpr.fv(v._2))(bVElim.bv(v._1._1)));
       }
       if (v.tag === "LetRec") {
-        return unionWith2(ordString)($$const)(unions(_fmapObject(v._1, fVElim.fv)))(fVExpr.fv(v._2));
+        return unionWith(ordString)($$const)(unions(_fmapObject(v._1, fVElim.fv)))(fVExpr.fv(v._2));
       }
       fail();
     }
@@ -9955,7 +9995,7 @@
   var fVElim = {
     fv: (v) => {
       if (v.tag === "ElimVar") {
-        return difference2(ordString)(fVCont.fv(v._2))($Map("Two", Leaf2, v._1, unit, Leaf2));
+        return difference3(ordString)(fVCont.fv(v._2))($Map("Two", Leaf2, v._1, unit, Leaf2));
       }
       if (v.tag === "ElimConstr") {
         return unions(_fmapObject(v._1, fVCont.fv));
@@ -10377,13 +10417,8 @@
             go$a1 = acc;
             continue;
           }
-          go$a0 = foldableList.foldr(Cons)(v._2)(toUnfoldable7(intersection2(fVElim.fv(definitely("absurd")(_lookup(
-            Nothing,
-            Just,
-            v._1,
-            \u03C1
-          ))))(dom_\u03C1)));
-          go$a1 = unionWith2(ordString)($$const)($Map(
+          go$a0 = foldableList.foldr(Cons)(v._2)(toUnfoldable7(intersection2(fVElim.fv($$get(v._1)(\u03C1)))(dom_\u03C1)));
+          go$a1 = unionWith(ordString)($$const)($Map(
             "Two",
             Leaf2,
             v._1,
@@ -11122,7 +11157,7 @@
   };
   var record2 = (toRecord) => (u) => toRecord(match(u)._1);
   var get_intOrNumber = (x2) => (r) => {
-    const $2 = match1(definitely("absurd")(_lookup(Nothing, Just, x2, r)));
+    const $2 = match1($$get(x2)(r));
     return $Tuple(
       (() => {
         if ($2._1.tag === "Left") {
@@ -15838,19 +15873,9 @@
   // output-es/App.BarChart/index.js
   var match2 = /* @__PURE__ */ (() => string.match(highlightableBoolean)(boundedMeetSemilatticeBoo))();
   var neg2 = /* @__PURE__ */ (() => joinSemilatticeVal(joinSemilatticeBoolean).neg)();
-  var reflectDictValBooleanBarC = {
-    from: () => (r) => ({ x: match2(definitely("absurd")(_lookup(Nothing, Just, "x", r))), y: get_intOrNumber("y")(r) })
-  };
+  var reflectDictValBooleanBarC = { from: () => (r) => ({ x: match2($$get("x")(r)), y: get_intOrNumber("y")(r) }) };
   var reflectDictValBooleanBarC1 = {
-    from: () => (r) => ({
-      caption: match2(definitely("absurd")(_lookup(Nothing, Just, "caption", r))),
-      data: arrayMap(record2(reflectDictValBooleanBarC.from()))(reflectArray.from()(definitely("absurd")(_lookup(
-        Nothing,
-        Just,
-        "data",
-        r
-      ))))
-    })
+    from: () => (r) => ({ caption: match2($$get("caption")(r)), data: arrayMap(record2(reflectDictValBooleanBarC.from()))(reflectArray.from()($$get("data")(r))) })
   };
   var barChartHandler = (ev) => toggleConstrArg("BarChart")(0)(toggleField("data")(selectNth(definitely("index within bounds")(index2(definitely("absurd")(nullable(
     _target(ev),
@@ -15927,15 +15952,7 @@
   var neg3 = /* @__PURE__ */ (() => joinSemilatticeVal(joinSemilatticeBoolean).neg)();
   var reflectDictValBooleanPoin = { from: () => (r) => ({ x: get_intOrNumber("x")(r), y: get_intOrNumber("y")(r) }) };
   var reflectDictValBooleanLine = {
-    from: () => (r) => ({
-      name: match3(definitely("absurd")(_lookup(Nothing, Just, "name", r))),
-      data: arrayMap(record2(reflectDictValBooleanPoin.from()))(reflectArray.from()(definitely("absurd")(_lookup(
-        Nothing,
-        Just,
-        "data",
-        r
-      ))))
-    })
+    from: () => (r) => ({ name: match3($$get("name")(r)), data: arrayMap(record2(reflectDictValBooleanPoin.from()))(reflectArray.from()($$get("data")(r))) })
   };
   var reflectValBooleanLinePlot = {
     from: () => (v) => {
@@ -15955,15 +15972,7 @@
     }
   };
   var reflectDictValBooleanLine1 = {
-    from: () => (r) => ({
-      caption: match3(definitely("absurd")(_lookup(Nothing, Just, "caption", r))),
-      plots: arrayMap(reflectValBooleanLinePlot.from())(reflectArray.from()(definitely("absurd")(_lookup(
-        Nothing,
-        Just,
-        "plots",
-        r
-      ))))
-    })
+    from: () => (r) => ({ caption: match3($$get("caption")(r)), plots: arrayMap(reflectValBooleanLinePlot.from())(reflectArray.from()($$get("plots")(r))) })
   };
   var lineChartHandler = (ev) => {
     const xy = definitely("index within bounds")(index2(definitely("absurd")(nullable(
@@ -16070,12 +16079,7 @@
   // output-es/App.TableView/index.js
   var match5 = /* @__PURE__ */ (() => $$int.match(highlightableBoolean)(boundedMeetSemilatticeBoo))();
   var match12 = /* @__PURE__ */ (() => string.match(highlightableBoolean)(boundedMeetSemilatticeBoo))();
-  var energyRecord = (r) => ({
-    year: match5(definitely("absurd")(_lookup(Nothing, Just, "year", r))),
-    country: match12(definitely("absurd")(_lookup(Nothing, Just, "country", r))),
-    energyType: match12(definitely("absurd")(_lookup(Nothing, Just, "energyType", r))),
-    output: get_intOrNumber("output")(r)
-  });
+  var energyRecord = (r) => ({ year: match5($$get("year")(r)), country: match12($$get("country")(r)), energyType: match12($$get("energyType")(r)), output: get_intOrNumber("output")(r) });
 
   // output-es/Bindings/index.js
   var keys3 = (v) => {
@@ -16083,7 +16087,7 @@
       return Leaf2;
     }
     if (v.tag === "Cons") {
-      return unionWith2(ordString)($$const)($Map(
+      return unionWith(ordString)($$const)($Map(
         "Two",
         Leaf2,
         v._1._1,
@@ -16124,6 +16128,7 @@
   var Str3 = (value0) => (value1) => $Expr2("Str", value0, value1);
   var Constr3 = (value0) => (value1) => (value2) => $Expr2("Constr", value0, value1, value2);
   var Record3 = (value0) => (value1) => $Expr2("Record", value0, value1);
+  var Dictionary3 = (value0) => (value1) => $Expr2("Dictionary", value0, value1);
   var Matrix3 = (value0) => (value1) => (value2) => (value3) => $Expr2("Matrix", value0, value1, value2, value3);
   var App3 = (value0) => (value1) => $Expr2("App", value0, value1);
   var MatchAs = (value0) => (value1) => $Expr2("MatchAs", value0, value1);
@@ -16252,9 +16257,9 @@
   // output-es/DesugarFwd/index.js
   var difference4 = /* @__PURE__ */ difference(eqString);
   var toUnfoldable9 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
-  var fromFoldable6 = /* @__PURE__ */ fromFoldable(foldableList);
-  var fromFoldable13 = /* @__PURE__ */ fromFoldable(foldableArray);
-  var fromFoldable22 = /* @__PURE__ */ fromFoldable(foldableNonEmptyList);
+  var fromFoldable6 = /* @__PURE__ */ fromFoldable2(foldableList);
+  var fromFoldable13 = /* @__PURE__ */ fromFoldable2(foldableArray);
+  var fromFoldable22 = /* @__PURE__ */ fromFoldable2(foldableNonEmptyList);
   var traverse = /* @__PURE__ */ (() => traversableNonEmptyList.traverse(applicativeEither))();
   var traverse1 = /* @__PURE__ */ (() => traversableList.traverse(applicativeEither))();
   var traverse2 = /* @__PURE__ */ (() => traversableTuple.traverse(applicativeEither))();
@@ -17901,7 +17906,7 @@
           continue;
         }
         if (v.tag === "Cons") {
-          go$a0 = unionWith2(ordString)($$const)(b)(v._1);
+          go$a0 = unionWith(ordString)($$const)(b)(v._1);
           go$a1 = v._2;
           continue;
         }
@@ -17937,7 +17942,7 @@
   var fromFoldable7 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2))();
   var show2 = /* @__PURE__ */ (() => showSet(showString).show)();
   var toUnfoldable10 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
-  var fromFoldable14 = /* @__PURE__ */ fromFoldable(foldableList);
+  var fromFoldable14 = /* @__PURE__ */ fromFoldable2(foldableList);
   var fv = /* @__PURE__ */ (() => fVDict(fVElim).fv)();
   var traverse4 = /* @__PURE__ */ (() => {
     const $0 = traversableWithIndexObject.traverseWithIndex(applicativeEither);
@@ -17969,7 +17974,7 @@
             $Tuple(
               $Tuple(
                 $Tuple(
-                  unionWith((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(v3._1._1._1)(v4._1._1._1),
+                  unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(v3._1._1._1)(v4._1._1._1),
                   v4._1._1._2
                 ),
                 meet(v3._1._2)(v4._1._2)
@@ -18071,18 +18076,13 @@
           if (v.tag === "Record") {
             return bindEither.bind((() => {
               const $6 = "Pattern mismatch: found " + (show2(keys2(v._2)) + (", expected " + show2(v1._1)));
-              if (difference2(ordString)(v1._1)(fromFoldable7(keys2(v._2))).tag === "Leaf") {
+              if (difference3(ordString)(v1._1)(fromFoldable7(keys2(v._2))).tag === "Leaf") {
                 return $Either("Right", unit);
               }
               return $Either("Left", $6);
             })())(() => {
               const xs$p = toUnfoldable10(v1._1);
-              return bindEither.bind(matchMany(dictHighlightable)(dictBoundedMeetSemilattice)(listMap((a) => definitely("absurd")(_lookup(
-                Nothing,
-                Just,
-                a,
-                v._2
-              )))(xs$p))(v1._2))((v2) => $Either(
+              return bindEither.bind(matchMany(dictHighlightable)(dictBoundedMeetSemilattice)(listMap((a) => $$get(a)(v._2))(xs$p))(v1._2))((v2) => $Either(
                 "Right",
                 $Tuple(
                   $Tuple($Tuple(v2._1._1._1, v2._1._1._2), meet(v._1)(v2._1._2)),
@@ -18101,7 +18101,7 @@
     \u03C1,
     (\u03C3) => {
       const \u03C1$p = $$for(\u03C1)(\u03C3);
-      return $Val("Closure", \u03B1, restrict(\u03B3)(unionWith2(ordString)($$const)(fv(\u03C1$p))(fVElim.fv(\u03C3))), \u03C1$p, \u03C3);
+      return $Val("Closure", \u03B1, restrict(\u03B3)(unionWith(ordString)($$const)(fv(\u03C1$p))(fVElim.fv(\u03C3))), \u03C1$p, \u03C3);
     }
   );
   var checkArity2 = (c) => (n) => bindEither.bind(arity(c))((n$p) => {
@@ -18191,8 +18191,7 @@
               $Tuple(
                 $Trace(
                   "Dictionary",
-                  fromFoldable14(zipWith(Tuple)(v4._1)(v3._1._1)),
-                  fromFoldable14(zipWith(Tuple)(v4._1)(v3._2._1))
+                  zipWith(Tuple)(v4._1)(listMap(fromTuple)(zipWith(Tuple)(v3._1._1)(v3._2._1)))
                 ),
                 $Val("Dictionary", meet(v1._1)(v2), fromFoldable14(zipWith(Tuple)(v4._1)(zipWith(Tuple)(v4._2)(v3._2._2))))
               )
@@ -18253,7 +18252,7 @@
                 "Cons",
                 sequence2(bindList.bind(range(1)(v5._2._1))((j) => $List(
                   "Cons",
-                  $$eval(dictHighlightable)(dictBoundedMeetSemilattice)(unionWith((v$1) => identity12)(v)(unionWith((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke2(v1._3._1)($Val(
+                  $$eval(dictHighlightable)(dictBoundedMeetSemilattice)(unionWith2((v$1) => identity12)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke2(v1._3._1)($Val(
                     "Int",
                     v5._1._2,
                     i
@@ -18306,7 +18305,7 @@
           return bindEither.bind($$eval(dictHighlightable)(dictBoundedMeetSemilattice)(v)(v1._1)(v2))((v3) => bindEither.bind($$eval(dictHighlightable)(dictBoundedMeetSemilattice)(v)(v1._2)(v2))((v5) => {
             if (v3._2.tag === "Closure") {
               const \u03B32 = closeDefs(v3._2._2)(v3._2._3)(v3._2._1);
-              return bindEither.bind(match62(v5._2)(v3._2._4))((v6) => bindEither.bind($$eval(dictHighlightable)(dictBoundedMeetSemilattice)(unionWith((v$1) => identity12)(unionWith((v$1) => identity12)(v3._2._2)(\u03B32))(v6._1._1._1))((() => {
+              return bindEither.bind(match62(v5._2)(v3._2._4))((v6) => bindEither.bind($$eval(dictHighlightable)(dictBoundedMeetSemilattice)(unionWith2((v$1) => identity12)(unionWith2((v$1) => identity12)(v3._2._2)(\u03B32))(v6._1._1._1))((() => {
                 if (v6._1._1._2.tag === "ContExpr") {
                   return v6._1._1._2._1;
                 }
@@ -18429,13 +18428,13 @@
           }));
         }
         if (v1.tag === "Let") {
-          return bindEither.bind($$eval(dictHighlightable)(dictBoundedMeetSemilattice)(v)(v1._1._2)(v2))((v3) => bindEither.bind(match62(v3._2)(v1._1._1))((v5) => bindEither.bind($$eval(dictHighlightable)(dictBoundedMeetSemilattice)(unionWith((v$1) => identity12)(v)(v5._1._1._1))(v1._2)(v5._1._2))((v6) => $Either(
+          return bindEither.bind($$eval(dictHighlightable)(dictBoundedMeetSemilattice)(v)(v1._1._2)(v2))((v3) => bindEither.bind(match62(v3._2)(v1._1._1))((v5) => bindEither.bind($$eval(dictHighlightable)(dictBoundedMeetSemilattice)(unionWith2((v$1) => identity12)(v)(v5._1._1._1))(v1._2)(v5._1._2))((v6) => $Either(
             "Right",
             $Tuple($Trace("Let", $VarDef3(v5._2, v3._1), v6._1), v6._2)
           ))));
         }
         if (v1.tag === "LetRec") {
-          return bindEither.bind($$eval(dictHighlightable)(dictBoundedMeetSemilattice)(unionWith((v$1) => identity12)(v)(closeDefs(v)(v1._1)(v2)))(v1._2)(v2))((v3) => $Either(
+          return bindEither.bind($$eval(dictHighlightable)(dictBoundedMeetSemilattice)(unionWith2((v$1) => identity12)(v)(closeDefs(v)(v1._1)(v2)))(v1._2)(v2))((v3) => $Either(
             "Right",
             $Tuple($Trace("LetRec", _fmapObject(v1._1, erase1), v3._1), v3._2)
           ));
@@ -18457,10 +18456,10 @@
           }
           if (v1._1.tag === "Cons") {
             if (v1._1._1.tag === "Left") {
-              return bindEither.bind(eval2(unionWith((v$1) => identity12)(\u03B3)(v))(v1._1._1._1._2)(v2))((v3) => bindEither.bind(match22(v3._2)(v1._1._1._1._1))((v5) => go(unionWith((v$1) => identity12)(v)(v5._1._1._1))($Module(v1._1._2))(v5._1._2)));
+              return bindEither.bind(eval2(unionWith2((v$1) => identity12)(\u03B3)(v))(v1._1._1._1._2)(v2))((v3) => bindEither.bind(match22(v3._2)(v1._1._1._1._1))((v5) => go(unionWith2((v$1) => identity12)(v)(v5._1._1._1))($Module(v1._1._2))(v5._1._2)));
             }
             if (v1._1._1.tag === "Right") {
-              return go(unionWith((v$1) => identity12)(v)(closeDefs(unionWith((v$1) => identity12)(\u03B3)(v))(v1._1._1._1)(v2)))($Module(v1._1._2))(v2);
+              return go(unionWith2((v$1) => identity12)(v)(closeDefs(unionWith2((v$1) => identity12)(\u03B3)(v))(v1._1._1._1)(v2)))($Module(v1._1._2))(v2);
             }
             fail();
           }
@@ -18474,7 +18473,7 @@
   // output-es/EvalBwd/index.js
   var eq = /* @__PURE__ */ (() => eqMap(eqString)(eqUnit).eq)();
   var toUnfoldable11 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
-  var fromFoldable8 = /* @__PURE__ */ fromFoldable(foldableList);
+  var fromFoldable8 = /* @__PURE__ */ fromFoldable2(foldableList);
   var fromFoldable15 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert(ordString)(a)(unit)(m))(Leaf2))();
   var foldl1 = /* @__PURE__ */ (() => foldable1NonEmpty(foldableList).foldl1)();
   var map4 = /* @__PURE__ */ (() => functorNonEmpty(functorList).map)();
@@ -18498,7 +18497,7 @@
     return (v) => (\u03BA) => (v1) => (v2) => {
       if (v2.tag === "MatchVar") {
         if (eq(keys2(v))($Map("Two", Leaf2, v2._1, unit, Leaf2))) {
-          return $Tuple(definitely("absurd")(_lookup(Nothing, Just, v2._1, v)), $Elim("ElimVar", v2._1, \u03BA));
+          return $Tuple($$get(v2._1)(v), $Elim("ElimVar", v2._1, \u03BA));
         }
         return $Tuple(botOf3(v2._2), $Elim("ElimVar", v2._1, \u03BA));
       }
@@ -18532,7 +18531,7 @@
     const join1 = joinSemilatticeDict(joinSemilatticeElim(JoinSemilattice0)).join;
     return (\u03B3) => {
       const v = foldableWithIndexObject.foldrWithIndex((f) => (v2) => (v1) => {
-        const v22 = definitely("absurd")(_lookup(Nothing, Just, f, \u03B3));
+        const v22 = $$get(f)(\u03B3);
         if (v22.tag === "Closure") {
           return $Tuple(
             $Tuple($Tuple(mutate(poke2(f)(v22._4))(v1._1._1._1), join(v1._1._1._2)(v22._2)), join1(v1._1._2)(v22._3)),
@@ -18558,17 +18557,17 @@
           BoundedJoinSemilattice0.bot,
           runST(bind_(newImpl)(poke2(x2)(v2)))
         ))(t);
-        return $Tuple($Tuple(v3._1._1, $Expr("Project", v3._1._2, x2)), v3._2);
+        return { "\u03B3": v3["\u03B3"], e: $Expr("Project", v3.e, x2), "\u03B1": v3["\u03B1"] };
       };
       const $11 = (t1, t2, t3, v2, w, xs) => {
         const v3 = evalBwd$p(dictHighlightable)(dictBoundedLattice)(v2)(t3);
-        const v4 = append_inv(bVMatch.bv(w))(v3._1._1);
-        const v5 = matchBwd1(v4._2)($Cont("ContExpr", v3._1._2))(v3._2)(w);
+        const v4 = append_inv(bVMatch.bv(w))(v3["\u03B3"]);
+        const v5 = matchBwd1(v4._2)($Cont("ContExpr", v3.e))(v3["\u03B1"])(w);
         const v6 = append_inv(xs)(v4._1);
         const v7 = evalBwd$p(dictHighlightable)(dictBoundedLattice)(v5._1)(t2);
         const v8 = closeDefsBwd1(v6._2);
-        const v9 = evalBwd$p(dictHighlightable)(dictBoundedLattice)($Val("Closure", JoinSemilattice0.join(v3._2)(v8._2), join(v6._1)(v8._1._1), v8._1._2, v5._2))(t1);
-        return $Tuple($Tuple(join(v7._1._1)(v9._1._1), $Expr("App", v9._1._2, v7._1._2)), JoinSemilattice0.join(v7._2)(v9._2));
+        const v9 = evalBwd$p(dictHighlightable)(dictBoundedLattice)($Val("Closure", JoinSemilattice0.join(v3["\u03B1"])(v8._2), join(v6._1)(v8._1._1), v8._1._2, v5._2))(t1);
+        return { "\u03B3": join(v7["\u03B3"])(v9["\u03B3"]), e: $Expr("App", v9.e, v7.e), "\u03B1": JoinSemilattice0.join(v7["\u03B1"])(v9["\u03B1"]) };
       };
       const $12 = (t1, t2, v2, v21, vs, \u03C6) => {
         const vs$p = foldableList.foldr(Cons)($List("Cons", v21, Nil))(vs);
@@ -18604,45 +18603,47 @@
         })()));
         const v4 = evalBwd$p(dictHighlightable)(dictBoundedLattice)($Val("Primitive", \u03C6, v3.init))(t1);
         const v5 = evalBwd$p(dictHighlightable)(dictBoundedLattice)(v3.last)(t2);
-        return $Tuple($Tuple(join(v4._1._1)(v5._1._1), $Expr("App", v4._1._2, v5._1._2)), JoinSemilattice0.join(v4._2)(v5._2));
+        return { "\u03B3": join(v4["\u03B3"])(v5["\u03B3"]), e: $Expr("App", v4.e, v5.e), "\u03B1": JoinSemilattice0.join(v4["\u03B1"])(v5["\u03B1"]) };
       };
       const $13 = (t1, t2, v2, w) => {
         const v3 = evalBwd$p(dictHighlightable)(dictBoundedLattice)(v2)(t2);
-        const v4 = append_inv(bVMatch.bv(w))(v3._1._1);
-        const v5 = matchBwd1(v4._2)(ContNone)(v3._2)(w);
+        const v4 = append_inv(bVMatch.bv(w))(v3["\u03B3"]);
+        const v5 = matchBwd1(v4._2)(ContNone)(v3["\u03B1"])(w);
         const v6 = evalBwd$p(dictHighlightable)(dictBoundedLattice)(v5._1)(t1);
-        return $Tuple($Tuple(join(v4._1)(v6._1._1), $Expr("Let", $VarDef(v5._2, v6._1._2), v3._1._2)), JoinSemilattice0.join(v6._2)(v3._2));
+        return { "\u03B3": join(v4._1)(v6["\u03B3"]), e: $Expr("Let", $VarDef(v5._2, v6.e), v3.e), "\u03B1": JoinSemilattice0.join(v6["\u03B1"])(v3["\u03B1"]) };
       };
       const $14 = (t, v2, \u03C1) => {
         const v3 = evalBwd$p(dictHighlightable)(dictBoundedLattice)(v2)(t);
-        const v4 = append_inv(fromFoldable15(keys2(\u03C1)))(v3._1._1);
+        const v4 = append_inv(fromFoldable15(keys2(\u03C1)))(v3["\u03B3"]);
         const v5 = closeDefsBwd1(v4._2);
-        return $Tuple($Tuple(join(v4._1)(v5._1._1), $Expr("LetRec", v5._1._2, v3._1._2)), JoinSemilattice0.join(v3._2)(v5._2));
+        return { "\u03B3": join(v4._1)(v5._1._1), e: $Expr("LetRec", v5._1._2, v3.e), "\u03B1": JoinSemilattice0.join(v3["\u03B1"])(v5._2) };
       };
       if (v1.tag === "Var") {
-        return $Tuple(
-          $Tuple(runST(bind_(newImpl)(poke2(v1._1)(v))), $Expr("Var", v1._1)),
-          BoundedJoinSemilattice0.bot
-        );
+        return {
+          "\u03B3": runST(bind_(newImpl)(poke2(v1._1)(v))),
+          e: $Expr("Var", v1._1),
+          "\u03B1": BoundedJoinSemilattice0.bot
+        };
       }
       if (v1.tag === "Op") {
-        return $Tuple(
-          $Tuple(runST(bind_(newImpl)(poke2(v1._1)(v))), $Expr("Op", v1._1)),
-          BoundedJoinSemilattice0.bot
-        );
+        return {
+          "\u03B3": runST(bind_(newImpl)(poke2(v1._1)(v))),
+          e: $Expr("Op", v1._1),
+          "\u03B1": BoundedJoinSemilattice0.bot
+        };
       }
       if (v1.tag === "Const") {
         if (v.tag === "Str") {
-          return $Tuple($Tuple(empty, $Expr("Str", v._1, v._2)), v._1);
+          return { "\u03B3": empty, e: $Expr("Str", v._1, v._2), "\u03B1": v._1 };
         }
         if (v.tag === "Int") {
-          return $Tuple($Tuple(empty, $Expr("Int", v._1, v._2)), v._1);
+          return { "\u03B3": empty, e: $Expr("Int", v._1, v._2), "\u03B1": v._1 };
         }
         if (v.tag === "Float") {
-          return $Tuple($Tuple(empty, $Expr("Float", v._1, v._2)), v._1);
+          return { "\u03B3": empty, e: $Expr("Float", v._1, v._2), "\u03B1": v._1 };
         }
         if (v.tag === "Closure") {
-          return $Tuple($Tuple(v._2, $Expr("Lambda", v._4)), v._1);
+          return { "\u03B3": v._2, e: $Expr("Lambda", v._4), "\u03B1": v._1 };
         }
         return unsafePerformEffect(throwException(error("absurd")));
       }
@@ -18650,13 +18651,42 @@
         if (v1.tag === "Record") {
           const $15 = evalBwd$p(dictHighlightable)(dictBoundedLattice);
           const x\u03B3e\u03B1s = _fmapObject(intersectionWith(Tuple)(v._2)(v1._1), (v$1) => $15(v$1._1)(v$1._2));
-          return $Tuple(
-            $Tuple(
-              foldrArray(join)(empty)(values(_fmapObject(x\u03B3e\u03B1s, (x2) => x2._1._1))),
-              $Expr("Record", v._1, _fmapObject(x\u03B3e\u03B1s, (x2) => x2._1._2))
+          return {
+            "\u03B3": foldrArray(join)(empty)(values(_fmapObject(x\u03B3e\u03B1s, (v2) => v2["\u03B3"]))),
+            e: $Expr("Record", v._1, _fmapObject(x\u03B3e\u03B1s, (v2) => v2.e)),
+            "\u03B1": foldrArray(JoinSemilattice0.join)(v._1)(values(_fmapObject(x\u03B3e\u03B1s, (v2) => v2["\u03B1"])))
+          };
+        }
+        if (v1.tag === "Project") {
+          return $10(v1._1, v, v1._2);
+        }
+        if (v1.tag === "App") {
+          return $11(v1._1._1, v1._2, v1._4, v, v1._3, v1._1._2);
+        }
+        if (v1.tag === "AppPrim") {
+          return $12(v1._1._1._1, v1._2._1, v, v1._2._2, v1._1._2, v1._1._1._2);
+        }
+        if (v1.tag === "Let") {
+          return $13(v1._1._2, v1._2, v, v1._1._1);
+        }
+        if (v1.tag === "LetRec") {
+          return $14(v1._2, v, v1._1);
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
+      }
+      if (v.tag === "Dictionary") {
+        if (v1.tag === "Dictionary") {
+          const \u03B3e\u03B1s$p = listMap((v2) => evalBwd$p(dictHighlightable)(dictBoundedLattice)($$get(v2._1)(v._2)._2)(v2._2._2))(v1._1);
+          const \u03B3e\u03B1s = listMap((v2) => evalBwd$p(dictHighlightable)(dictBoundedLattice)($Val("Str", $$get(v2._1)(v._2)._1, v2._1))(v2._2._1))(v1._1);
+          return {
+            "\u03B3": foldableList.foldr(join)(empty)(foldableList.foldr(Cons)(listMap((v2) => v2["\u03B3"])(\u03B3e\u03B1s$p))(listMap((v2) => v2["\u03B3"])(\u03B3e\u03B1s))),
+            e: $Expr(
+              "Dictionary",
+              v._1,
+              listMap(fromTuple)(zipWith(Tuple)(listMap((v2) => v2.e)(\u03B3e\u03B1s))(listMap((v2) => v2.e)(\u03B3e\u03B1s$p)))
             ),
-            foldrArray(JoinSemilattice0.join)(v._1)(values(_fmapObject(x\u03B3e\u03B1s, snd)))
-          );
+            "\u03B1": foldableList.foldr(JoinSemilattice0.join)(v._1)(foldableList.foldr(Cons)(listMap((v2) => v2["\u03B1"])(\u03B3e\u03B1s$p))(listMap((v2) => v2["\u03B1"])(\u03B3e\u03B1s)))
+          };
         }
         if (v1.tag === "Project") {
           return $10(v1._1, v, v1._2);
@@ -18679,9 +18709,9 @@
         if (v1.tag === "Constr") {
           const v2 = foldableList.foldr((v22) => (v3) => {
             const v4 = evalBwd$p(dictHighlightable)(dictBoundedLattice)(v22._1)(v22._2);
-            return $Tuple($Tuple(join(v3._1._1)(v4._1._1), $List("Cons", v4._1._2, v3._1._2)), JoinSemilattice0.join(v3._2)(v4._2));
+            return $Tuple($Tuple(join(v3._1._1)(v4["\u03B3"]), $List("Cons", v4.e, v3._1._2)), JoinSemilattice0.join(v3._2)(v4["\u03B1"]));
           })($Tuple($Tuple(empty, Nil), v._1))(zipWith(Tuple)(v._3)(v1._2));
-          return $Tuple($Tuple(v2._1._1, $Expr("Constr", v._1, v1._1, v2._1._2)), v2._2);
+          return { "\u03B3": v2._1._1, e: $Expr("Constr", v._1, v1._1, v2._1._2), "\u03B1": v2._2 };
         }
         if (v1.tag === "Project") {
           return $10(v1._1, v, v1._2);
@@ -18696,7 +18726,7 @@
           const v2 = definitely("absurd")(unsnoc(v._3));
           const v3 = evalBwd$p(dictHighlightable)(dictBoundedLattice)($Val("Constr", v._1, v1._1._1._2, v2.init))(v1._1._1._1);
           const v4 = evalBwd$p(dictHighlightable)(dictBoundedLattice)(v2.last)(v1._2);
-          return $Tuple($Tuple(join(v3._1._1)(v4._1._1), $Expr("App", v3._1._2, v4._1._2)), JoinSemilattice0.join(v3._2)(v4._2));
+          return { "\u03B3": join(v3["\u03B3"])(v4["\u03B3"]), e: $Expr("App", v3.e, v4.e), "\u03B1": JoinSemilattice0.join(v3["\u03B1"])(v4["\u03B1"]) };
         }
         if (v1.tag === "Let") {
           return $13(v1._1._2, v1._2, v, v1._1._1);
@@ -18716,14 +18746,14 @@
             JoinSemilattice0.join(v42._2)(v5._2)
           ))(map4((v32) => {
             const v42 = evalBwd$p(dictHighlightable)(dictBoundedLattice)(definitely("index within bounds")(index2(definitely("index within bounds")(index2(v._2._1._1)(v32._1 - 1 | 0)))(v32._2 - 1 | 0)))(definitely("index within bounds")(index2(definitely("index within bounds")(index2(v1._1)(v32._1 - 1 | 0)))(v32._2 - 1 | 0)));
-            const v5 = append_inv(unionWith2(ordString)($$const)($Map(
+            const v5 = append_inv(unionWith(ordString)($$const)($Map(
               "Two",
               Leaf2,
               v1._2._1,
               unit,
               Leaf2
-            ))($Map("Two", Leaf2, v1._2._2, unit, Leaf2)))(v42._1._1);
-            const \u03B30 = unionWith((v$1) => identity12)(unionWith((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke2(v1._2._1)($Val(
+            ))($Map("Two", Leaf2, v1._2._2, unit, Leaf2)))(v42["\u03B3"]);
+            const \u03B30 = unionWith2((v$1) => identity12)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke2(v1._2._1)($Val(
               "Int",
               BoundedJoinSemilattice0.bot,
               v1._3._1
@@ -18732,11 +18762,11 @@
               BoundedJoinSemilattice0.bot,
               v1._3._2
             ))))))(v5._2);
-            const $19 = definitely("absurd")(_lookup(Nothing, Just, v1._2._1, \u03B30));
-            const $20 = definitely("absurd")(_lookup(Nothing, Just, v1._2._1, \u03B30));
+            const $19 = $$get(v1._2._1)(\u03B30);
+            const $20 = $$get(v1._2._1)(\u03B30);
             if ($19.tag === "Int") {
               if ($20.tag === "Int") {
-                return $Tuple($Tuple($Tuple($Tuple(v5._1, v42._1._2), v42._2), $19._1), $20._1);
+                return $Tuple($Tuple($Tuple($Tuple(v5._1, v42.e), v42["\u03B1"]), $19._1), $20._1);
               }
               fail();
             }
@@ -18756,10 +18786,11 @@
               $List("Cons", $Val("Int", JoinSemilattice0.join(v3._2)(v._2._2._2), v1._3._2), Nil)
             )
           ))(v1._4);
-          return $Tuple(
-            $Tuple(join(v3._1._1._1._1)(v4._1._1), $Expr("Matrix", v._1, v3._1._1._1._2, $Tuple(v1._2._1, v1._2._2), v4._1._2)),
-            JoinSemilattice0.join(JoinSemilattice0.join(v._1)(v3._1._1._2))(v4._2)
-          );
+          return {
+            "\u03B3": join(v3._1._1._1._1)(v4["\u03B3"]),
+            e: $Expr("Matrix", v._1, v3._1._1._1._2, $Tuple(v1._2._1, v1._2._2), v4.e),
+            "\u03B1": JoinSemilattice0.join(JoinSemilattice0.join(v._1)(v3._1._1._2))(v4["\u03B1"])
+          };
         }
         if (v1.tag === "Project") {
           return $10(v1._1, v, v1._2);
@@ -18803,7 +18834,7 @@
     const expand1 = expandableExprRawExpr(BoundedJoinSemilattice0).expand;
     return (\u03B3) => (e) => (v) => (t) => {
       const v1 = evalBwd$p2(v)(t);
-      return $Tuple($Tuple(expand(v1._1._1)(\u03B3), expand1(v1._1._2)(e)), v1._2);
+      return { "\u03B3": expand(v1["\u03B3"])(\u03B3), e: expand1(v1.e)(e), "\u03B1": v1["\u03B1"] };
     };
   };
 
@@ -21061,7 +21092,7 @@
   };
 
   // output-es/Primitive.Parse/index.js
-  var opDefs = /* @__PURE__ */ fromFoldable2(ordString)(foldableArray)([
+  var opDefs = /* @__PURE__ */ fromFoldable(ordString)(foldableArray)([
     /* @__PURE__ */ $Tuple(".", { op: ".", prec: 8, assoc: AssocLeft }),
     /* @__PURE__ */ $Tuple("!", { op: "!", prec: 8, assoc: AssocLeft }),
     /* @__PURE__ */ $Tuple("**", { op: "**", prec: 8, assoc: AssocRight }),
@@ -21411,6 +21442,7 @@
       (state2, a) => more((v2$1) => more((v3) => $2(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
     )));
   };
+  var colonEq = /* @__PURE__ */ (() => token.reservedOp(":="))();
   var branch_uncurried = (expr$p) => (delim) => (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => pattern(
     state1,
     more,
@@ -21744,6 +21776,25 @@
             return more((v2$1) => done(state2, $14(Nil)));
           })
         )));
+      })()))(altParserT.alt(between2(token.symbol("{|"))(token.symbol("|}"))((() => {
+        const $3 = sepBy((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => go$lazy()(
+          state1,
+          more,
+          lift1,
+          $$throw,
+          (state2, a) => more((v2$2) => more((v3) => colonEq(
+            state2,
+            more,
+            lift1,
+            $$throw,
+            (state3, a$1) => more((v4) => more((v2$3) => {
+              const $20 = Pair(a);
+              return more((v3$1) => go$lazy()(state3, more, lift1, $$throw, (state3$1, a$2) => more((v4$1) => done(state3$1, $20(a$2)))));
+            }))
+          )))
+        ))))))(token.comma);
+        const $4 = Dictionary3(unit);
+        return (state1, more, lift1, $$throw, done) => more((v1) => $3(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, $4(a)))));
       })()))(altParserT.alt(token.braces((() => {
         const $3 = Record3(unit);
         return (state1, more, lift1, $$throw, done) => more((v1) => sepBy(field(go$lazy()))(token.comma)(
@@ -21946,7 +21997,7 @@
             }))
           )))
         )))))))))));
-      })())))))))))))))))));
+      })()))))))))))))))))));
       const rest = (v$1) => {
         if (v$1.tag === "Constr") {
           return altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => simpleExpr(
@@ -22080,7 +22131,7 @@
   var divide = /* @__PURE__ */ union3(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => toNumber(x2) / toNumber(y2))(numDiv);
   var dims = { fwd: (v) => $Tuple(v._1._2, v._2), bwd: (v) => (v1) => $Tuple($Tuple(v1._1._1, v._1), v._2) };
   var debugLog = (x2) => _trace(x2, (v) => x2);
-  var primitives = /* @__PURE__ */ (() => fromFoldable(foldableArray)([
+  var primitives = /* @__PURE__ */ (() => fromFoldable2(foldableArray)([
     $Tuple(":", $Val("Constr", unit, ":", Nil)),
     $Tuple("ceiling", unary($Tuple($Tuple(number, $$int), { fwd: ceil2, bwd: (v) => identity13 }))),
     $Tuple("debugLog", unary($Tuple($Tuple(val, val), { fwd: debugLog, bwd: (v) => identity13 }))),
@@ -22246,7 +22297,7 @@
       return $Either("Left", $3._1);
     }
     if ($3.tag === "Right") {
-      return $Either("Right", unionWith((v) => identity12)(\u03B3)($3._1));
+      return $Either("Right", unionWith2((v) => identity12)(\u03B3)($3._1));
     }
     fail();
   })())));
@@ -22281,7 +22332,7 @@
   // output-es/App.Fig/index.js
   var $View = (tag, _1) => ({ tag, _1 });
   var match9 = /* @__PURE__ */ (() => matrixRep.match(highlightableBoolean)(boundedMeetSemilatticeBoo))();
-  var sequence3 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity6))();
+  var sequence3 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity7))();
   var eval_module3 = /* @__PURE__ */ eval_module(highlightableBoolean)(boundedMeetSemilatticeBoo);
   var $$eval3 = /* @__PURE__ */ $$eval(highlightableBoolean)(boundedMeetSemilatticeBoo);
   var evalBwd2 = /* @__PURE__ */ evalBwd(highlightableBoolean)(boundedLatticeBoolean);
@@ -22367,7 +22418,7 @@
         return $Either("Right", Tuple($5._1));
       }
       fail();
-    })())(exprFwd(joinSemilatticeBoolean)(v3._2)))((v4) => bindEither.bind($$eval3(unionWith((v$1) => identity12)(v2._1)(v2._2))(v4._1)(false))((v5) => bindEither.bind($$eval3(unionWith((v$1) => identity12)(v2._1)(v2._2))(v4._2)(false))((v6) => bindEither.bind((() => {
+    })())(exprFwd(joinSemilatticeBoolean)(v3._2)))((v4) => bindEither.bind($$eval3(unionWith2((v$1) => identity12)(v2._1)(v2._2))(v4._1)(false))((v5) => bindEither.bind($$eval3(unionWith2((v$1) => identity12)(v2._1)(v2._2))(v4._2)(false))((v6) => bindEither.bind((() => {
       const $8 = _lookup(Nothing, Just, v.x, v2._2);
       if ($8.tag === "Nothing") {
         return $Either("Left", "absurd");
@@ -22378,12 +22429,12 @@
       fail();
     })())((v0) => $Either("Right", { spec: v, "\u03B30": v2._1, "\u03B3": v2._2, s1: v3._1, s2: v3._2, e1: v4._1, e2: v4._2, t1: v5._1, t2: v6._1, v1: v5._2, v2: v6._2, v0 })))))))));
   };
-  var loadFig = (v) => _bind(openDatasetAs("example/linking/renewables")("data"))((v1) => _map((s$p) => successful(bindEither.bind(splitDefs(unionWith((v$1) => identity12)(v1._1)(v1._2))(s$p))((v2) => bindEither.bind(exprFwd(joinSemilatticeBoolean)(v2.s))((e) => bindEither.bind($$eval3(unionWith((v$1) => identity12)(unionWith((v$1) => identity12)(v1._1)(v1._2))(v2["\u03B3"]))(e)(false))((v3) => $Either("Right", { spec: v, "\u03B30": v1._1, "\u03B3": unionWith((v$1) => identity12)(v1._2)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file)));
+  var loadFig = (v) => _bind(openDatasetAs("example/linking/renewables")("data"))((v1) => _map((s$p) => successful(bindEither.bind(splitDefs(unionWith2((v$1) => identity12)(v1._1)(v1._2))(s$p))((v2) => bindEither.bind(exprFwd(joinSemilatticeBoolean)(v2.s))((e) => bindEither.bind($$eval3(unionWith2((v$1) => identity12)(unionWith2((v$1) => identity12)(v1._1)(v1._2))(v2["\u03B3"]))(e)(false))((v3) => $Either("Right", { spec: v, "\u03B30": v1._1, "\u03B3": unionWith2((v$1) => identity12)(v1._2)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file)));
   var linkResult = (x2) => (\u03B30) => (\u03B3) => (e1) => (e22) => (t1) => (v) => (v1) => {
     const $8 = append_inv($Map("Two", Leaf2, x2, unit, Leaf2))(evalBwd2(_fmapObject(
-      unionWith((v$1) => identity12)(\u03B30)(\u03B3),
+      unionWith2((v$1) => identity12)(\u03B30)(\u03B3),
       erase2
-    ))(functorExpr.map((v$1) => unit)(e1))(v1)(t1)._1._1)._2;
+    ))(functorExpr.map((v$1) => unit)(e1))(v1)(t1)["\u03B3"])._2;
     return bindEither.bind((() => {
       const $9 = _lookup(Nothing, Just, x2, $8);
       if ($9.tag === "Nothing") {
@@ -22393,14 +22444,14 @@
         return $Either("Right", $9._1);
       }
       fail();
-    })())((v0$p) => bindEither.bind($$eval3(neg4(unionWith((v$1) => identity12)(_fmapObject(\u03B30, botOf))($8)))(functorExpr.map((x$1) => true)(e22))(true))((v4) => $Either(
+    })())((v0$p) => bindEither.bind($$eval3(neg4(unionWith2((v$1) => identity12)(_fmapObject(\u03B30, botOf))($8)))(functorExpr.map((x$1) => true)(e22))(true))((v4) => $Either(
       "Right",
       { "v'": joinSemilatticeVal2.neg(v4._2), "v0'": v0$p }
     )));
   };
   var figViews = (v) => (\u03B4v) => {
-    const v2 = evalBwd2(_fmapObject(unionWith((v$1) => identity12)(v["\u03B30"])(v["\u03B3"]), erase2))(functorExpr.map((v$1) => unit)(v.e))(\u03B4v(v.v))(v.t);
-    return bindEither.bind($$eval3(v2._1._1)(v2._1._2)(v2._2))((v3) => bindEither.bind(sequence3(arrayMap((a) => varView(a)(v2._1._1))(v.spec.xs)))((views) => $Either(
+    const v2 = evalBwd2(_fmapObject(unionWith2((v$1) => identity12)(v["\u03B30"])(v["\u03B3"]), erase2))(functorExpr.map((v$1) => unit)(v.e))(\u03B4v(v.v))(v.t);
+    return bindEither.bind($$eval3(v2["\u03B3"])(v2.e)(v2["\u03B1"]))((v3) => bindEither.bind(sequence3(arrayMap((a) => varView(a)(v2["\u03B3"]))(v.spec.xs)))((views) => $Either(
       "Right",
       $Tuple(view("output")(v3._2), views)
     )));
@@ -22457,7 +22508,7 @@
   };
 
   // output-es/App.Main/index.js
-  var sequence4 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeAff)(identity6))();
+  var sequence4 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeAff)(identity7))();
   var sequence_2 = /* @__PURE__ */ traverse_(applicativeEffect)(foldableArray)(identity5);
   var botOf2 = /* @__PURE__ */ (() => functorVal.map((v) => false))();
   var linkingFig1 = { divId: "fig-1", file1: "bar-chart", file2: "line-chart", dataFile: "renewables", x: "data" };
