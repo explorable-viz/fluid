@@ -5,22 +5,30 @@ import Data.Array (concat)
 import Data.Traversable (sequence)
 import Effect (Effect)
 import App.Util (selectBarChart_data, selectCell, selectNth, selectNthNode, selectPair, select_y, selectSome)
+import Bindings ((↦))
+import Dict (fromFoldable)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
+import Util ((×))
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-
---tests = [ test_scratchpad ]
+--tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ test (File "array") "(1, (3, 3))"
+   [ testBwd (File "dict") (File "dict.expect")
+        ( const $ Dictionary false $ fromFoldable
+             [ "a" ↦ (false × Int false 5)
+             , "ab" ↦ (true × Int false 6)
+             ]
+        )
+        "{|\"a\": 5, _\"ab\"_: 6|}"
    ]
 
 test_linking :: Array (Test Unit)
@@ -179,6 +187,7 @@ test_misc =
    [ test (File "arithmetic") "42"
    , test (File "array") "(1, (3, 3))"
    , test (File "compose") "5"
+   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}}"
    , test (File "div-mod-quot-rem")
         "((1 : (-1 : (-2 : (2 : [])))) : \
         \((2 : (2 : (1 : (1 : [])))) : \

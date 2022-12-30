@@ -162,6 +162,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    maybeJoin (Str α str) (Str α' str') = Str (α ∨ α') <$> (str ≞ str')
    maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Record α xes) (Record α' xes') = Record (α ∨ α') <$> maybeJoin xes xes'
+   maybeJoin (Dictionary α ees) (Dictionary α' ees') = Dictionary (α ∨ α') <$> maybeJoin ees ees'
    maybeJoin (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin es es'
    maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
       Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≞ x') `lift2 (×)` (y ≞ y')) <*> maybeJoin e2 e2'
@@ -182,6 +183,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Str α str) (Str _ str') = Str α (str ≜ str')
    expand (Float α n) (Float _ n') = Float α (n ≜ n')
    expand (Record α xes) (Record _ xes') = Record α (expand xes xes')
+   expand (Dictionary α ees) (Dictionary _ ees') = Dictionary α (expand ees ees')
    expand (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand es es')
    expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
       Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')

@@ -21,6 +21,8 @@ import Partial.Unsafe (unsafePartial)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
+import Util.Pair (Pair(..))
+import Util.Pair (zip) as P
 import Val (Val(..)) as V
 import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, append_inv)
 
@@ -63,36 +65,49 @@ matchManyBwd γγ' κ α (w : ws) =
    v × σ = matchBwd γ κ α w
    vs × κ' = matchManyBwd γ' (ContElim σ) α ws
 
-evalBwd :: forall a. Highlightable a => BoundedLattice a => Raw Env -> Raw Expr -> Val a -> Trace -> Env a × Expr a × a
+type EvalBwdResult a =
+   { γ :: Env a
+   , e :: Expr a
+   , α :: a
+   }
+
+evalBwd :: forall a. Highlightable a => BoundedLattice a => Raw Env -> Raw Expr -> Val a -> Trace -> EvalBwdResult a
 evalBwd γ e v t =
-   expand γ' γ × expand e' e × α
+   { γ: expand γ' γ, e: expand e' e, α }
    where
-   γ' × e' × α = evalBwd' v t
+   { γ: γ', e: e', α } = evalBwd' v t
 
 -- Computes a partial slice which evalBwd expands to a full slice.
-evalBwd' :: forall a. Highlightable a => BoundedLattice a => Val a -> Trace -> Env a × Expr a × a
-evalBwd' v (T.Var x) = D.singleton x v × Var x × bot
-evalBwd' v (T.Op op) = D.singleton op v × Op op × bot
-evalBwd' (V.Str α str) T.Const = empty × Str α str × α
-evalBwd' (V.Int α n) T.Const = empty × Int α n × α
-evalBwd' (V.Float α n) T.Const = empty × Float α n × α
-evalBwd' (V.Closure α γ _ σ) T.Const = γ × Lambda σ × α
+evalBwd' :: forall a. Highlightable a => BoundedLattice a => Val a -> Trace -> EvalBwdResult a
+evalBwd' v (T.Var x) = { γ: D.singleton x v, e: Var x, α: bot }
+evalBwd' v (T.Op op) = { γ: D.singleton op v, e: Op op, α: bot }
+evalBwd' (V.Str α str) T.Const = { γ: empty, e: Str α str, α }
+evalBwd' (V.Int α n) T.Const = { γ: empty, e: Int α n, α }
+evalBwd' (V.Float α n) T.Const = { γ: empty, e: Float α n, α }
+evalBwd' (V.Closure α γ _ σ) T.Const = { γ, e: Lambda σ, α }
 evalBwd' (V.Record α xvs) (T.Record xts) =
-   γ' × Record α (xγeαs <#> (fst >>> snd)) × (foldr (∨) α (xγeαs <#> snd))
+   { γ: foldr (∨) empty (xγeαs <#> _.γ), e: Record α (xγeαs <#> _.e), α: foldr (∨) α (xγeαs <#> _.α) }
    where
    xvts = intersectionWith (×) xvs xts
    xγeαs = xvts <#> uncurry evalBwd'
-   γ' = foldr (∨) empty (xγeαs <#> (fst >>> fst))
+evalBwd' (V.Dictionary α sαvs) (T.Dictionary stts) =
+   { γ: foldr (∨) empty ((γeαs <#> _.γ) <> (γeαs' <#> _.γ))
+   , e: Dictionary α ((γeαs <#> _.e) `P.zip` (γeαs' <#> _.e))
+   , α: foldr (∨) α ((γeαs <#> _.α) <> (γeαs' <#> _.α))
+   }
+   where
+   γeαs = stts <#> \(s × Pair t _) -> evalBwd' (V.Str (fst (get s sαvs)) s) t
+   γeαs' = stts <#> \(s × Pair _ t) -> evalBwd' (snd (get s sαvs)) t
 evalBwd' (V.Constr α _ vs) (T.Constr c ts) =
-   γ' × Constr α c es × α'
+   { γ: γ', e: Constr α c es, α: α' }
    where
    evalArg_bwd :: Val a × Trace -> Endo (Env a × List (Expr a) × a)
    evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
       where
-      γ'' × e × α'' = evalBwd' v' t'
+      { γ: γ'', e, α: α'' } = evalBwd' v' t'
    γ' × es × α' = foldr evalArg_bwd (empty × Nil × α) (zip vs ts)
 evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (i' × j') t') =
-   (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
+   { γ: γ ∨ γ', e: Matrix α e (x × y) e', α: α ∨ α' ∨ α'' }
    where
    NonEmptyList ijs = nonEmpty $ do
       i <- range 1 i'
@@ -102,7 +117,7 @@ evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) 
    evalBwd_elem :: (Int × Int) -> Env a × Expr a × a × a × a
    evalBwd_elem (i × j) =
       case evalBwd' (vss ! (i - 1) ! (j - 1)) (tss ! (i - 1) ! (j - 1)) of
-         γ'' × e × α' ->
+         { γ: γ'', e, α: α' } ->
             let
                γ × γ' = append_inv (S.singleton x `union` S.singleton y) γ''
                γ0 = (D.singleton x (V.Int bot i') `disjointUnion` D.singleton y (V.Int bot j')) <+> γ'
@@ -117,47 +132,48 @@ evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) 
            ((γ1 ∨ γ2) × (e1 ∨ e2) × (α1 ∨ α2) × (β1 ∨ β2) × (β1' ∨ β2'))
       )
       (evalBwd_elem <$> ijs)
-   γ' × e' × α'' = evalBwd' (V.Constr bot cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t'
+   { γ: γ', e: e', α: α'' } =
+      evalBwd' (V.Constr bot cPair (V.Int (β ∨ βi) i' : V.Int (β' ∨ βj) j' : Nil)) t'
 evalBwd' v (T.Project t x) =
-   ρ × Project e x × α
+   { γ, e: Project e x, α }
    where
-   ρ × e × α = evalBwd' (V.Record bot (D.singleton x v)) t
+   { γ, e, α } = evalBwd' (V.Record bot (D.singleton x v)) t
 evalBwd' v (T.App (t1 × xs) t2 w t3) =
-   (γ' ∨ γ'') × App e1 e2 × (α ∨ α')
+   { γ: γ' ∨ γ'', e: App e1 e2, α: α ∨ α' }
    where
-   γ1γ2γ3 × e × β = evalBwd' v t3
+   { γ: γ1γ2γ3, e, α: β } = evalBwd' v t3
    γ1γ2 × γ3 = append_inv (bv w) γ1γ2γ3
    v' × σ = matchBwd γ3 (ContExpr e) β w
    γ1 × γ2 = append_inv xs γ1γ2
-   γ' × e2 × α = evalBwd' v' t2
+   { γ: γ', e: e2, α } = evalBwd' v' t2
    γ1' × δ' × β' = closeDefsBwd γ2
-   γ'' × e1 × α' = evalBwd' (V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ) t1
+   { γ: γ'', e: e1, α: α' } = evalBwd' (V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ) t1
 evalBwd' v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
-   (γ ∨ γ') × App e e' × (α ∨ α')
+   { γ: γ ∨ γ', e: App e e', α: α ∨ α' }
    where
    vs' = vs <> L.singleton v2
    { init: vs'', last: v2' } = definitely' $ unsnoc $
       if φ.arity > length vs' then unsafePartial $ let V.Primitive _ vs'' = v in vs''
       else φ.op_bwd v vs'
-   γ × e × α = evalBwd' (V.Primitive (PrimOp φ) vs'') t1
-   γ' × e' × α' = evalBwd' v2' t2
+   { γ, e, α } = evalBwd' (V.Primitive (PrimOp φ) vs'') t1
+   { γ: γ', e: e', α: α' } = evalBwd' v2' t2
 evalBwd' (V.Constr β _ vs) (T.AppConstr (t1 × c × _) t2) =
-   (γ ∨ γ') × App e e' × (α ∨ α')
+   { γ: γ ∨ γ', e: App e e', α: α ∨ α' }
    where
    { init: vs', last: v2 } = definitely' (unsnoc vs)
-   γ × e × α = evalBwd' (V.Constr β c vs') t1
-   γ' × e' × α' = evalBwd' v2 t2
+   { γ, e, α } = evalBwd' (V.Constr β c vs') t1
+   { γ: γ', e: e', α: α' } = evalBwd' v2 t2
 evalBwd' v (T.Let (T.VarDef w t1) t2) =
-   (γ1 ∨ γ1') × Let (VarDef σ e1) e2 × (α1 ∨ α2)
+   { γ: γ1 ∨ γ1', e: Let (VarDef σ e1) e2, α: α1 ∨ α2 }
    where
-   γ1γ2 × e2 × α2 = evalBwd' v t2
+   { γ: γ1γ2, e: e2, α: α2 } = evalBwd' v t2
    γ1 × γ2 = append_inv (bv w) γ1γ2
    v' × σ = matchBwd γ2 ContNone α2 w
-   γ1' × e1 × α1 = evalBwd' v' t1
+   { γ: γ1', e: e1, α: α1 } = evalBwd' v' t1
 evalBwd' v (T.LetRec ρ t) =
-   (γ1 ∨ γ1') × LetRec ρ' e × (α ∨ α')
+   { γ: γ1 ∨ γ1', e: LetRec ρ' e, α: α ∨ α' }
    where
-   γ1γ2 × e × α = evalBwd' v t
+   { γ: γ1γ2, e, α } = evalBwd' v t
    γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
