@@ -116,7 +116,7 @@ prettyRecordOrDict bracify prettyKey α xvs =
       # hcomma >>> bracify >>> highlightIf α
 
 prettyDict :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
-prettyDict = between (text "{|") (text "|}") # prettyRecordOrDict
+prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict
 
 prettyRecord :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
 prettyRecord = between (text "{") (text "}") # prettyRecordOrDict
