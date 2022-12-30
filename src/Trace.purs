@@ -9,6 +9,7 @@ import DataType (Ctr)
 import Expr (class BV, RecDefs, bv)
 import Lattice (Raw)
 import Util (type (×))
+import Util.Pair (Pair)
 import Val (Array2, PrimOp, Val)
 
 data Trace
@@ -16,7 +17,7 @@ data Trace
    | Op Var
    | Const
    | Record (Dict Trace)
-   | Dictionary (Dict Trace) (Dict Trace)
+   | Dictionary (List (String × Pair Trace))
    | Constr Ctr (List Trace)
    | Matrix (Array2 Trace) (Var × Var) (Int × Int) Trace
    | Project Trace Var
