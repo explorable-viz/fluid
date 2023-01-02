@@ -82,7 +82,13 @@ matrixLookup = { i1: matrixRep, i2: intPair, o: val, fwd: fwd', bwd: bwd' }
       x' × y' = bwd z (x × y)
 
 get :: forall a. Binary String (Dict (a × Val a)) (Val a)
-get = error "To do"
+get = { fwd, bwd }
+   where
+   fwd :: String -> Dict (a × Val a) -> Val a
+   fwd = error "todo"
+
+   bwd :: Val a -> Endo (String × Dict (a × Val a))
+   bwd = error "todo"
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
