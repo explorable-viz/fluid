@@ -155,9 +155,9 @@ instance IsZero Number where
 instance (IsZero a, IsZero b) => IsZero (a + b) where
    isZero = isZero ||| isZero
 
-type Unary d1 d2 =
-   { fwd :: d1 -> d2
-   , bwd :: d2 -> Endo d1
+type Unary i o =
+   { fwd :: i -> o
+   , bwd :: o -> Endo i
    }
 
 type UnarySlicer i o a =
@@ -167,17 +167,17 @@ type UnarySlicer i o a =
    , bwd :: BoundedJoinSemilattice a => o × a -> i -> i × a
    }
 
-type Binary d1 d2 d3 =
-   { fwd :: d1 -> d2 -> d3
-   , bwd :: d3 -> Endo (d1 × d2)
+type Binary i1 i2 o =
+   { fwd :: i1 -> i2 -> o
+   , bwd :: o -> Endo (i1 × i2)
    }
 
-type BinarySlicer d1 d2 d3 a =
-   { d1 :: ToFrom d1 a
-   , d2 :: ToFrom d2 a
-   , d3 :: ToFrom d3 a
-   , fwd :: BoundedMeetSemilattice a => d1 × a -> d2 × a -> d3 × a
-   , bwd :: BoundedJoinSemilattice a => d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
+type BinarySlicer i1 i2 o a =
+   { i1 :: ToFrom i1 a
+   , i2 :: ToFrom i2 a
+   , o :: ToFrom o a
+   , fwd :: BoundedMeetSemilattice a => i1 × a -> i2 × a -> o × a
+   , bwd :: BoundedJoinSemilattice a => o × a -> i1 × i2 -> (i1 × a) × (i2 × a)
    }
 
 unary_ :: forall i o a'. (forall a. UnarySlicer i o a) -> Val a'
@@ -191,22 +191,22 @@ unary_ s = flip Primitive Nil $ PrimOp
    apply (v : Nil) = s.o.constr (s.fwd (s.i.match v))
 
    apply_bwd :: forall a. Partial => Highlightable a => BoundedLattice a => Val a -> List (Raw Val) -> List (Val a)
-   apply_bwd v (u1 : Nil) = s.i.constr (s.bwd (s.o.constr_bwd v) (fst (s.i.match u1))) : Nil
+   apply_bwd v (u : Nil) = s.i.constr (s.bwd (s.o.constr_bwd v) (fst (s.i.match u))) : Nil
 
-binary_ :: forall d1 d2 d3 a'. (forall a. BinarySlicer d1 d2 d3 a) -> Val a'
+binary_ :: forall i1 i2 o a'. (forall a. BinarySlicer i1 i2 o a) -> Val a'
 binary_ s = flip Primitive Nil $ PrimOp
    { arity: 2
-   , op: unsafePartial (apply2 s)
-   , op_bwd: unsafePartial (apply2_bwd s)
+   , op: unsafePartial apply
+   , op_bwd: unsafePartial apply_bwd
    }
-
-apply2 :: forall d1 d2 d3 a. Partial => Highlightable a => BoundedMeetSemilattice a => BinarySlicer d1 d2 d3 a -> List (Val a) {-[d1, d2]-} -> Val a {-d3-}
-apply2 s (v : v' : Nil) = s.d3.constr (s.fwd (s.d1.match v) (s.d2.match v'))
-
-apply2_bwd :: forall d1 d2 d3 a'. Partial => Highlightable a' => BoundedLattice a' => (forall a. BinarySlicer d1 d2 d3 a) -> Val a' {-(d3, d3)-} -> List (Raw Val) {-[d1, d2]-} -> List (Val a') {-[d1, d2]-}
-apply2_bwd s v (u1 : u2 : Nil) = s.d1.constr v1 : s.d2.constr v2 : Nil
    where
-   v1 × v2 = s.bwd (s.d3.constr_bwd v) (fst (s.d1.match u1) × fst (s.d2.match u2))
+   apply :: forall a. Partial => Highlightable a => BoundedMeetSemilattice a => List (Val a) -> Val a
+   apply (v1 : v2 : Nil) = s.o.constr (s.fwd (s.i1.match v1) (s.i2.match v2))
+
+   apply_bwd :: forall a. Partial => Highlightable a => BoundedLattice a => Val a -> List (Raw Val) -> List (Val a)
+   apply_bwd v (u1 : u2 : Nil) = s.i1.constr v1 : s.i2.constr v2 : Nil
+      where
+      v1 × v2 = s.bwd (s.o.constr_bwd v) (fst (s.i1.match u1) × fst (s.i2.match u2))
 
 withInverse1 :: forall d1 d2. (d1 -> d2) -> Unary d1 d2
 withInverse1 fwd = { fwd, bwd: const identity }
@@ -223,26 +223,26 @@ unary (i × o × { fwd, bwd }) = unary_ { i, o, fwd: fwd', bwd: bwd' }
    bwd' :: forall a. o × a -> i -> i × a
    bwd' (y × α) x = bwd y x × α
 
-binary :: forall d1 d2 d3 a'. (forall a. ToFrom d1 a × ToFrom d2 a × ToFrom d3 a × Binary d1 d2 d3) -> Val a'
-binary (d1 × d2 × d3 × { fwd, bwd }) = binary_ { d1, d2, d3, fwd: fwd', bwd: bwd' }
+binary :: forall i1 i2 o a'. (forall a. ToFrom i1 a × ToFrom i2 a × ToFrom o a × Binary i1 i2 o) -> Val a'
+binary (i1 × i2 × o × { fwd, bwd }) = binary_ { i1, i2, o, fwd: fwd', bwd: bwd' }
    where
-   fwd' :: forall a. MeetSemilattice a => d1 × a -> d2 × a -> d3 × a
+   fwd' :: forall a. MeetSemilattice a => i1 × a -> i2 × a -> o × a
    fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
 
-   bwd' :: forall a. d3 × a -> d1 × d2 -> (d1 × a) × (d2 × a)
+   bwd' :: forall a. o × a -> i1 × i2 -> (i1 × a) × (i2 × a)
    bwd' (z × α) (x × y) = (x' × α) × (y' × α)
       where
       x' × y' = bwd z (x × y)
 
 -- If both are zero, depend only on the first.
-binaryZero :: forall d1 d2 a'. IsZero d1 => (forall a. ToFrom d1 a × ToFrom d2 a × Binary d1 d1 d2) -> Val a'
-binaryZero (d1 × d2 × { fwd, bwd }) = binary_ { d1, d2: d1, d3: d2, fwd: fwd', bwd: bwd' }
+binaryZero :: forall i o a'. IsZero i => (forall a. ToFrom i a × ToFrom o a × Binary i i o) -> Val a'
+binaryZero (i × o × { fwd, bwd }) = binary_ { i1: i, i2: i, o, fwd: fwd', bwd: bwd' }
    where
-   fwd' :: forall a. MeetSemilattice a => d1 × a -> d1 × a -> d2 × a
+   fwd' :: forall a. MeetSemilattice a => i × a -> i × a -> o × a
    fwd' (x × α) (y × β) =
       fwd x y × if isZero x then α else if isZero y then β else α ∧ β
 
-   bwd' :: forall a. BoundedJoinSemilattice a => d2 × a -> d1 × d1 -> (d1 × a) × (d1 × a)
+   bwd' :: forall a. BoundedJoinSemilattice a => o × a -> i × i -> (i × a) × (i × a)
    bwd' (z × α) (x × y) =
       if isZero x then (x' × α) × (y' × bot)
       else if isZero y then (x' × bot) × (y' × α)
