@@ -9,11 +9,11 @@ import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class MeetSemilattice, Raw, (∧), bot, top)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class MeetSemilattice, (∧), bot, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (Endo, type (×), (×), type (+), error)
-import Val (class Highlightable, MatrixRep, PrimOp(..), Val(..))
+import Val (class Highlightable, MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..))
 
 -- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
@@ -183,28 +183,28 @@ type BinarySlicer i1 i2 o a =
 unary_ :: forall i o a'. (forall a. UnarySlicer i o a) -> Val a'
 unary_ s = flip Primitive Nil $ PrimOp
    { arity: 1
-   , op: unsafePartial apply
-   , op_bwd: unsafePartial apply_bwd
+   , op: unsafePartial op
+   , op_bwd: unsafePartial op_bwd
    }
    where
-   apply :: forall a. Partial => Highlightable a => BoundedMeetSemilattice a => List (Val a) -> Val a
-   apply (v : Nil) = s.o.constr (s.fwd (s.i.match v))
+   op :: Partial => OpFwd
+   op (v : Nil) = s.o.constr (s.fwd (s.i.match v))
 
-   apply_bwd :: forall a. Partial => Highlightable a => BoundedLattice a => Val a -> List (Raw Val) -> List (Val a)
-   apply_bwd v (u : Nil) = s.i.constr (s.bwd (s.o.constr_bwd v) (fst (s.i.match u))) : Nil
+   op_bwd :: Partial => OpBwd
+   op_bwd v (u : Nil) = s.i.constr (s.bwd (s.o.constr_bwd v) (fst (s.i.match u))) : Nil
 
 binary_ :: forall i1 i2 o a'. (forall a. BinarySlicer i1 i2 o a) -> Val a'
 binary_ s = flip Primitive Nil $ PrimOp
    { arity: 2
-   , op: unsafePartial apply
-   , op_bwd: unsafePartial apply_bwd
+   , op: unsafePartial op
+   , op_bwd: unsafePartial op_bwd
    }
    where
-   apply :: forall a. Partial => Highlightable a => BoundedMeetSemilattice a => List (Val a) -> Val a
-   apply (v1 : v2 : Nil) = s.o.constr (s.fwd (s.i1.match v1) (s.i2.match v2))
+   op :: Partial => OpFwd
+   op (v1 : v2 : Nil) = s.o.constr (s.fwd (s.i1.match v1) (s.i2.match v2))
 
-   apply_bwd :: forall a. Partial => Highlightable a => BoundedLattice a => Val a -> List (Raw Val) -> List (Val a)
-   apply_bwd v (u1 : u2 : Nil) = s.i1.constr v1 : s.i2.constr v2 : Nil
+   op_bwd :: Partial => OpBwd
+   op_bwd v (u1 : u2 : Nil) = s.i1.constr v1 : s.i2.constr v2 : Nil
       where
       v1 × v2 = s.bwd (s.o.constr_bwd v) (fst (s.i1.match u1) × fst (s.i2.match u2))
 

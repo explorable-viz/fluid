@@ -54,10 +54,10 @@ dims :: forall a. Unary (MatrixRep a) ((Int × a) × (Int × a))
 dims = { fwd, bwd }
    where
    fwd :: MatrixRep a -> (Int × a) × (Int × a)
-   fwd (_ × i × j) = i × j
+   fwd (_ × iα × jβ) = iα × jβ
 
    bwd :: (Int × a) × (Int × a) -> Endo (MatrixRep a)
-   bwd (i × j) (vss × _ × _) = vss × i × j
+   bwd (iα × jβ) (vss × _ × _) = vss × iα × jβ
 
 -- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
 -- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.
