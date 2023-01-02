@@ -25,7 +25,7 @@ test_scratchpad :: Array (Test Unit)
 test_scratchpad =
    [ testBwd (File "dict-get") (File "dict-get.expect")
         (selectPair (const false) (const $ Int true 0) (const $ Int true 6))
-        "(_30_, _6_)"
+        "(_0_, _6_)"
    , testBwd (File "dict-create") (File "dict-create.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (false × Int false 5)
