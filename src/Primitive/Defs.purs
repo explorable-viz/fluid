@@ -1,18 +1,18 @@
 module Primitive.Defs where
 
-import Prelude hiding (absurd, div, mod)
-
+import Prelude hiding (absurd, div, mod, top)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..))
 import Data.Number (log, pow) as N
+import Data.Tuple (snd)
 import DataType (cCons)
 import Debug (trace)
 import Dict (Dict)
-import Dict (fromFoldable) as D
-import Lattice (class BoundedJoinSemilattice, class MeetSemilattice, Raw, (∧), bot)
+import Dict (fromFoldable, get) as D
+import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class MeetSemilattice, Raw, (∧), bot, top)
 import Prelude (div, mod) as P
-import Primitive (Binary, BinarySlicer, Unary, binary, binary_, binaryZero, boolean, dict, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
+import Primitive (BinarySlicer, Unary, binary, binary_, binaryZero, boolean, dict, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
 import Val (Env, MatrixRep, Val(..), updateMatrix)
 
@@ -40,7 +40,7 @@ primitives = D.fromFoldable
    , "++" × binary (string × string × string × withInverse2 concat)
    , "!" × binary_ matrixLookup
    , "div" × binaryZero (int × int × withInverse2 div)
-   , "get" × binary (string × dict × val × get)
+   , "get" × binary_ get
    , "mod" × binaryZero (int × int × withInverse2 mod)
    , "quot" × binaryZero (int × int × withInverse2 quot)
    , "rem" × binaryZero (int × int × withInverse2 rem)
@@ -81,13 +81,13 @@ matrixLookup = { i1: matrixRep, i2: intPair, o: val, fwd: fwd', bwd: bwd' }
       where
       x' × y' = bwd z (x × y)
 
-get :: forall a. Binary String (Dict (a × Val a)) (Val a)
-get = { fwd, bwd }
+get :: forall a. BinarySlicer String (Dict (a × Val a)) (Val a) a
+get = { i1: string, i2: dict, o: val, fwd, bwd }
    where
-   fwd :: String -> Dict (a × Val a) -> Val a
-   fwd = error "todo"
+   fwd :: BoundedMeetSemilattice a => String × a -> Dict (a × Val a) × a -> Val a × a
+   fwd (k × _) (d × _) = snd (D.get k d) × top
 
-   bwd :: Val a -> Endo (String × Dict (a × Val a))
+   bwd :: Val a × a -> String × Dict (a × Val a) -> (String × a) × (Dict (a × Val a) × a)
    bwd = error "todo"
 
 plus :: Int + Number -> Endo (Int + Number)
