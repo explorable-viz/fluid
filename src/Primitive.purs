@@ -160,11 +160,11 @@ type Unary d1 d2 =
    , bwd :: d2 -> Endo d1
    }
 
-type UnarySlicer d1 d2 a =
-   { d1 :: ToFrom d1 a
-   , d2 :: ToFrom d2 a
-   , fwd :: BoundedMeetSemilattice a => d1 × a -> d2 × a
-   , bwd :: BoundedJoinSemilattice a => d2 × a -> d1 -> d1 × a
+type UnarySlicer i o a =
+   { i :: ToFrom i a
+   , o :: ToFrom o a
+   , fwd :: BoundedMeetSemilattice a => i × a -> o × a
+   , bwd :: BoundedJoinSemilattice a => o × a -> i -> i × a
    }
 
 type Binary d1 d2 d3 =
@@ -188,10 +188,10 @@ unary_ s = flip Primitive Nil $ PrimOp
    }
 
 apply1 :: forall d1 d2 a. Partial => Highlightable a => BoundedMeetSemilattice a => UnarySlicer d1 d2 a -> List (Val a) {-[d1]-} -> Val a {-d2-}
-apply1 s (v : Nil) = s.d2.constr (s.fwd (s.d1.match v))
+apply1 s (v : Nil) = s.o.constr (s.fwd (s.i.match v))
 
 apply1_bwd :: forall d1 d2 a'. Partial => Highlightable a' => BoundedLattice a' => (forall a. UnarySlicer d1 d2 a) -> Val a' {-(d2, d2)-} -> List (Raw Val) {-[d1]-} -> List (Val a') {-[d1]-}
-apply1_bwd s v (u1 : Nil) = s.d1.constr (s.bwd (s.d2.constr_bwd v) (fst (s.d1.match u1))) : Nil
+apply1_bwd s v (u1 : Nil) = s.i.constr (s.bwd (s.o.constr_bwd v) (fst (s.i.match u1))) : Nil
 
 binary_ :: forall d1 d2 d3 a'. (forall a. BinarySlicer d1 d2 d3 a) -> Val a'
 binary_ s = flip Primitive Nil $ PrimOp
@@ -214,13 +214,13 @@ withInverse1 fwd = { fwd, bwd: const identity }
 withInverse2 :: forall d1 d2 d3. (d1 -> d2 -> d3) -> Binary d1 d2 d3
 withInverse2 fwd = { fwd, bwd: const identity }
 
-unary :: forall d1 d2 a'. (forall a. ToFrom d1 a × ToFrom d2 a × Unary d1 d2) -> Val a'
-unary (d1 × d2 × { fwd, bwd }) = unary_ { d1, d2, fwd: fwd', bwd: bwd' }
+unary :: forall i o a'. (forall a. ToFrom i a × ToFrom o a × Unary i o) -> Val a'
+unary (i × o × { fwd, bwd }) = unary_ { i, o, fwd: fwd', bwd: bwd' }
    where
-   fwd' :: forall a. d1 × a -> d2 × a
+   fwd' :: forall a. i × a -> o × a
    fwd' (x × α) = fwd x × α
 
-   bwd' :: forall a. d2 × a -> d1 -> d1 × a
+   bwd' :: forall a. o × a -> i -> i × a
    bwd' (y × α) x = bwd y x × α
 
 binary :: forall d1 d2 d3 a'. (forall a. ToFrom d1 a × ToFrom d2 a × ToFrom d3 a × Binary d1 d2 d3) -> Val a'
