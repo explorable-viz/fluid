@@ -8,10 +8,11 @@ import Data.List (List(..))
 import Data.Number (log, pow) as N
 import DataType (cCons)
 import Debug (trace)
+import Dict (Dict)
 import Dict (fromFoldable) as D
 import Lattice (class BoundedJoinSemilattice, class MeetSemilattice, Raw, (∧), bot)
 import Prelude (div, mod) as P
-import Primitive (BinarySlicer, Unary, binary, binary_, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
+import Primitive (Binary, BinarySlicer, Unary, binary, binary_, binaryZero, boolean, dict, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error)
 import Val (Env, MatrixRep, Val(..), updateMatrix)
 
@@ -39,6 +40,7 @@ primitives = D.fromFoldable
    , "++" × binary (string × string × string × withInverse2 concat)
    , "!" × binary_ matrixLookup
    , "div" × binaryZero (int × int × withInverse2 div)
+   , "get" × binary (string × dict × val × get)
    , "mod" × binaryZero (int × int × withInverse2 mod)
    , "quot" × binaryZero (int × int × withInverse2 quot)
    , "rem" × binaryZero (int × int × withInverse2 rem)
@@ -78,6 +80,9 @@ matrixLookup = { i1: matrixRep, i2: intPair, o: val, fwd: fwd', bwd: bwd' }
    bwd' (z × α) (x × y) = (x' × α) × (y' × α)
       where
       x' × y' = bwd z (x × y)
+
+get :: forall a. Binary String (Dict (a × Val a)) (Val a)
+get = error "To do"
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

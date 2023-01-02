@@ -128,6 +128,17 @@ record =
    match' (Record α xvs) = xvs × α
    match' v = error ("Record expected; got " <> prettyP v)
 
+dict :: forall a. ToFrom (Dict (a × Val a)) a
+dict =
+   { constr: \(svs × α) -> Dictionary α svs
+   , constr_bwd: match'
+   , match: match'
+   }
+   where
+   match' :: Highlightable a => _
+   match' (Dictionary α svs) = svs × α
+   match' v = error ("Dictionary expected; got " <> prettyP v)
+
 boolean :: forall a. ToFrom Boolean a
 boolean =
    { constr: case _ of
