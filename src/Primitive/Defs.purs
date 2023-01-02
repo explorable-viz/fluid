@@ -9,12 +9,34 @@ import Data.Tuple (snd)
 import DataType (cCons)
 import Debug (trace)
 import Dict (Dict)
-import Dict (fromFoldable, get) as D
-import Lattice (class BoundedJoinSemilattice, class BoundedMeetSemilattice, class MeetSemilattice, Raw, (∧), bot, top)
+import Dict (fromFoldable, get, singleton) as D
+import Lattice (Raw, (∧), bot, top)
 import Prelude (div, mod) as P
-import Primitive (BinarySlicer, Unary, binary, binary_, binaryZero, boolean, dict, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
+import Primitive
+   ( BinarySlicer
+   , Unary
+   , binary
+   , binary_
+   , binaryZero
+   , boolean
+   , dict
+   , int
+   , intOrNumber
+   , intOrNumberOrString
+   , intPair
+   , matrixRep
+   , number
+   , string
+   , unary
+   , union
+   , union1
+   , unionStr
+   , val
+   , withInverse1
+   , withInverse2
+   )
 import Util (Endo, type (×), (×), type (+), (!), error)
-import Val (Env, MatrixRep, Val(..), updateMatrix)
+import Val (class Ann, Env, MatrixRep, Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
@@ -69,14 +91,14 @@ matrixLookup = { i1: matrixRep, i2: intPair, o: val, fwd: fwd', bwd: bwd' }
    fwd :: MatrixRep a -> (Int × a) × (Int × a) -> Val a
    fwd (vss × _ × _) ((i × _) × (j × _)) = vss ! (i - 1) ! (j - 1)
 
-   bwd :: BoundedJoinSemilattice a => Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
+   bwd :: Ann a => Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
       updateMatrix i j (const v) (vss × (i' × bot) × (j' × bot)) × ((i × bot) × (j × bot))
 
-   fwd' :: MeetSemilattice a => MatrixRep a × a -> ((Int × a) × (Int × a)) × a -> Val a × a
+   fwd' :: Ann a => MatrixRep a × a -> ((Int × a) × (Int × a)) × a -> Val a × a
    fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
 
-   bwd' :: BoundedJoinSemilattice a => Val a × a -> MatrixRep a × ((Int × a) × (Int × a)) -> (MatrixRep a × a) × ((Int × a) × (Int × a) × a)
+   bwd' :: Ann a => Val a × a -> MatrixRep a × ((Int × a) × (Int × a)) -> (MatrixRep a × a) × ((Int × a) × (Int × a) × a)
    bwd' (z × α) (x × y) = (x' × α) × (y' × α)
       where
       x' × y' = bwd z (x × y)
@@ -84,11 +106,11 @@ matrixLookup = { i1: matrixRep, i2: intPair, o: val, fwd: fwd', bwd: bwd' }
 get :: forall a. BinarySlicer String (Dict (a × Val a)) (Val a) a
 get = { i1: string, i2: dict, o: val, fwd, bwd }
    where
-   fwd :: BoundedMeetSemilattice a => String × a -> Dict (a × Val a) × a -> Val a × a
+   fwd :: Ann a => String × a -> Dict (a × Val a) × a -> Val a × a
    fwd (k × _) (d × _) = snd (D.get k d) × top
 
-   bwd :: Val a × a -> String × Dict (a × Val a) -> (String × a) × (Dict (a × Val a) × a)
-   bwd = error "todo"
+   bwd :: Ann a => Val a × a -> String × Dict (a × Val a) -> (String × a) × (Dict (a × Val a) × a)
+   bwd (v × _) (k × _) = (k × bot) × (D.singleton k (bot × v) × bot)
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

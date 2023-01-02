@@ -15,7 +15,7 @@ import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
-import Lattice (class BoundedMeetSemilattice, (∧), erase, top)
+import Lattice ((∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (Trace(..), VarDef(..)) as T
@@ -23,18 +23,12 @@ import Trace (Trace, Match(..))
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip, zip) as P
 import Val (Val(..)) as V
-import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
+import Val (class Ann, Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match
-   :: forall a
-    . Highlightable a
-   => BoundedMeetSemilattice a
-   => Val a
-   -> Elim a
-   -> MayFail (Env a × Cont a × a × Match)
+match :: forall a. Ann a => Val a -> Elim a -> MayFail (Env a × Cont a × a × Match)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × top × MatchVarAnon (erase v))
    | otherwise = pure (D.singleton x v × κ × top × MatchVar x (erase v))
@@ -53,13 +47,7 @@ match (V.Record α xvs) (ElimRecord xs κ) = do
    pure (γ × κ' × (α ∧ α') × MatchRecord (D.fromFoldable (zip xs' ws)))
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
-matchMany
-   :: forall a
-    . Highlightable a
-   => BoundedMeetSemilattice a
-   => List (Val a)
-   -> Cont a
-   -> MayFail (Env a × Cont a × a × List Match)
+matchMany :: forall a. Ann a => List (Val a) -> Cont a -> MayFail (Env a × Cont a × a × List Match)
 matchMany Nil κ = pure (empty × κ × top × Nil)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ' × α × w <- match v σ
@@ -78,14 +66,7 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-eval
-   :: forall a
-    . Highlightable a
-   => BoundedMeetSemilattice a
-   => Env a
-   -> Expr a
-   -> a
-   -> MayFail (Trace × Val a)
+eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
 eval γ (Op op) _ = (T.Op op × _) <$> lookup' op γ
 eval _ (Int α n) α' = pure (T.Const × V.Int (α ∧ α') n)
@@ -154,14 +135,7 @@ eval γ (LetRec ρ e) α = do
    t × v <- eval (γ <+> γ') e α
    pure $ T.LetRec (erase <$> ρ) t × v
 
-eval_module
-   :: forall a
-    . Highlightable a
-   => BoundedMeetSemilattice a
-   => Env a
-   -> Module a
-   -> a
-   -> MayFail (Env a)
+eval_module :: forall a. Ann a => Env a -> Module a -> a -> MayFail (Env a)
 eval_module γ = go empty
    where
    go :: Env a -> Module a -> a -> MayFail (Env a)

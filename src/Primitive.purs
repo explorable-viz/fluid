@@ -9,19 +9,19 @@ import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class MeetSemilattice, (∧), bot, top)
+import Lattice ((∧), bot, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (Endo, type (×), (×), type (+), error)
-import Val (class Highlightable, MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..))
+import Val (class Ann, MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..))
 
 -- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
 -- work with the required higher-rank polymorphism.
 type ToFrom d a =
-   { constr :: Highlightable a => d × a -> Val a
-   , constr_bwd :: Highlightable a => BoundedLattice a => Val a -> d × a -- equivalent to match (except at Val)
-   , match :: Highlightable a => BoundedMeetSemilattice a => Val a -> d × a
+   { constr :: Ann a => d × a -> Val a
+   , constr_bwd :: Ann a => Val a -> d × a -- equivalent to match (except at Val)
+   , match :: Ann a => Val a -> d × a
    }
 
 -- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
@@ -39,7 +39,7 @@ int =
    , match: match'
    }
    where
-   match' :: Highlightable a => _
+   match' :: Ann a => _
    match' (Int α n) = n × α
    match' v = error ("Int expected; got " <> prettyP v)
 
@@ -50,7 +50,7 @@ number =
    , match: match'
    }
    where
-   match' :: Highlightable a => _
+   match' :: Ann a => _
    match' (Float α n) = n × α
    match' v = error ("Float expected; got " <> prettyP v)
 
@@ -61,7 +61,7 @@ string =
    , match: match'
    }
    where
-   match' :: Highlightable a => _
+   match' :: Ann a => _
    match' (Str α str) = str × α
    match' v = error ("Str expected; got " <> prettyP v)
 
@@ -74,7 +74,7 @@ intOrNumber =
    , match: match'
    }
    where
-   match' :: Highlightable a => Val a -> (Int + Number) × a
+   match' :: Ann a => Val a -> (Int + Number) × a
    match' (Int α n) = Left n × α
    match' (Float α n) = Right n × α
    match' v = error ("Int or Float expected; got " <> prettyP v)
@@ -89,7 +89,7 @@ intOrNumberOrString =
    , match: match'
    }
    where
-   match' :: Highlightable a => Val a -> (Int + Number + String) × a
+   match' :: Ann a => Val a -> (Int + Number + String) × a
    match' (Int α n) = Left (Left n) × α
    match' (Float α n) = Left (Right n) × α
    match' (Str α str) = Right str × α
@@ -102,7 +102,7 @@ intPair =
    , match: match'
    }
    where
-   match' :: Highlightable a => BoundedMeetSemilattice a => Val a -> ((Int × a) × (Int × a)) × a
+   match' :: Ann a => Val a -> ((Int × a) × (Int × a)) × a
    match' (Constr α c (v : v' : Nil)) | c == cPair = int.match v × int.match v' × α
    match' v = error ("Pair expected; got " <> prettyP v)
 
@@ -113,7 +113,7 @@ matrixRep =
    , match: match'
    }
    where
-   match' :: Highlightable a => Val a -> MatrixRep a × a
+   match' :: Ann a => Val a -> MatrixRep a × a
    match' (Matrix α r) = r × α
    match' v = error ("Matrix expected; got " <> prettyP v)
 
@@ -124,7 +124,7 @@ record =
    , match: match'
    }
    where
-   match' :: Highlightable a => _
+   match' :: Ann a => _
    match' (Record α xvs) = xvs × α
    match' v = error ("Record expected; got " <> prettyP v)
 
@@ -135,7 +135,7 @@ dict =
    , match: match'
    }
    where
-   match' :: Highlightable a => _
+   match' :: Ann a => _
    match' (Dictionary α svs) = svs × α
    match' v = error ("Dictionary expected; got " <> prettyP v)
 
@@ -148,7 +148,7 @@ boolean =
    , match: match'
    }
    where
-   match' :: Highlightable a => Val a -> Boolean × a
+   match' :: Ann a => Val a -> Boolean × a
    match' (Constr α c Nil)
       | c == cTrue = true × α
       | c == cFalse = false × α
@@ -174,8 +174,8 @@ type Unary i o =
 type UnarySlicer i o a =
    { i :: ToFrom i a
    , o :: ToFrom o a
-   , fwd :: BoundedMeetSemilattice a => i × a -> o × a
-   , bwd :: BoundedJoinSemilattice a => o × a -> i -> i × a
+   , fwd :: Ann a => i × a -> o × a
+   , bwd :: Ann a => o × a -> i -> i × a
    }
 
 type Binary i1 i2 o =
@@ -187,8 +187,8 @@ type BinarySlicer i1 i2 o a =
    { i1 :: ToFrom i1 a
    , i2 :: ToFrom i2 a
    , o :: ToFrom o a
-   , fwd :: BoundedMeetSemilattice a => i1 × a -> i2 × a -> o × a
-   , bwd :: BoundedJoinSemilattice a => o × a -> i1 × i2 -> (i1 × a) × (i2 × a)
+   , fwd :: Ann a => i1 × a -> i2 × a -> o × a
+   , bwd :: Ann a => o × a -> i1 × i2 -> (i1 × a) × (i2 × a)
    }
 
 unary_ :: forall i o a'. (forall a. UnarySlicer i o a) -> Val a'
@@ -231,7 +231,7 @@ unary (i × o × { fwd, bwd }) = unary_ { i, o, fwd: fwd', bwd: bwd' }
 binary :: forall i1 i2 o a'. (forall a. ToFrom i1 a × ToFrom i2 a × ToFrom o a × Binary i1 i2 o) -> Val a'
 binary (i1 × i2 × o × { fwd, bwd }) = binary_ { i1, i2, o, fwd: fwd', bwd: bwd' }
    where
-   fwd' :: forall a. MeetSemilattice a => i1 × a -> i2 × a -> o × a
+   fwd' :: forall a. Ann a => i1 × a -> i2 × a -> o × a
    fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
 
    bwd' :: forall a. o × a -> i1 × i2 -> (i1 × a) × (i2 × a)
@@ -243,11 +243,11 @@ binary (i1 × i2 × o × { fwd, bwd }) = binary_ { i1, i2, o, fwd: fwd', bwd: bw
 binaryZero :: forall i o a'. IsZero i => (forall a. ToFrom i a × ToFrom o a × Binary i i o) -> Val a'
 binaryZero (i × o × { fwd, bwd }) = binary_ { i1: i, i2: i, o, fwd: fwd', bwd: bwd' }
    where
-   fwd' :: forall a. MeetSemilattice a => i × a -> i × a -> o × a
+   fwd' :: forall a. Ann a => i × a -> i × a -> o × a
    fwd' (x × α) (y × β) =
       fwd x y × if isZero x then α else if isZero y then β else α ∧ β
 
-   bwd' :: forall a. BoundedJoinSemilattice a => o × a -> i × i -> (i × a) × (i × a)
+   bwd' :: forall a. Ann a => o × a -> i × i -> (i × a) × (i × a)
    bwd' (z × α) (x × y) =
       if isZero x then (x' × α) × (y' × bot)
       else if isZero y then (x' × bot) × (y' × α)
