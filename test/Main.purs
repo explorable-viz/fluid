@@ -189,7 +189,7 @@ test_misc =
    [ test (File "arithmetic") "42"
    , test (File "array") "(1, (3, 3))"
    , test (File "compose") "5"
-   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}}"
+   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}, e_ab: 6}"
    , test (File "div-mod-quot-rem")
         "((1 : (-1 : (-2 : (2 : [])))) : \
         \((2 : (2 : (1 : (1 : [])))) : \

@@ -1,19 +1,42 @@
 module Primitive.Defs where
 
-import Prelude hiding (absurd, div, mod)
-
+import Prelude hiding (absurd, div, mod, top)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..))
 import Data.Number (log, pow) as N
+import Data.Tuple (snd)
 import DataType (cCons)
 import Debug (trace)
-import Dict (fromFoldable) as D
-import Lattice (class BoundedJoinSemilattice, class MeetSemilattice, Raw, (∧), bot)
+import Dict (Dict)
+import Dict (fromFoldable, get, singleton) as D
+import Lattice (Raw, (∧), bot, top)
 import Prelude (div, mod) as P
-import Primitive (BinarySlicer, Unary, binary, binary_, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
+import Primitive
+   ( BinarySlicer
+   , Unary
+   , binary
+   , binary_
+   , binaryZero
+   , boolean
+   , dict
+   , int
+   , intOrNumber
+   , intOrNumberOrString
+   , intPair
+   , matrixRep
+   , number
+   , string
+   , unary
+   , union
+   , union1
+   , unionStr
+   , val
+   , withInverse1
+   , withInverse2
+   )
 import Util (Endo, type (×), (×), type (+), (!), error)
-import Val (Env, MatrixRep, Val(..), updateMatrix)
+import Val (class Ann, Env, MatrixRep, Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
@@ -39,6 +62,7 @@ primitives = D.fromFoldable
    , "++" × binary (string × string × string × withInverse2 concat)
    , "!" × binary_ matrixLookup
    , "div" × binaryZero (int × int × withInverse2 div)
+   , "get" × binary_ get
    , "mod" × binaryZero (int × int × withInverse2 mod)
    , "quot" × binaryZero (int × int × withInverse2 quot)
    , "rem" × binaryZero (int × int × withInverse2 rem)
@@ -54,10 +78,10 @@ dims :: forall a. Unary (MatrixRep a) ((Int × a) × (Int × a))
 dims = { fwd, bwd }
    where
    fwd :: MatrixRep a -> (Int × a) × (Int × a)
-   fwd (_ × i × j) = i × j
+   fwd (_ × iα × jβ) = iα × jβ
 
    bwd :: (Int × a) × (Int × a) -> Endo (MatrixRep a)
-   bwd (i × j) (vss × _ × _) = vss × i × j
+   bwd (iα × jβ) (vss × _ × _) = vss × iα × jβ
 
 -- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
 -- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.
@@ -67,17 +91,26 @@ matrixLookup = { i1: matrixRep, i2: intPair, o: val, fwd: fwd', bwd: bwd' }
    fwd :: MatrixRep a -> (Int × a) × (Int × a) -> Val a
    fwd (vss × _ × _) ((i × _) × (j × _)) = vss ! (i - 1) ! (j - 1)
 
-   bwd :: BoundedJoinSemilattice a => Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
+   bwd :: Ann a => Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
    bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
       updateMatrix i j (const v) (vss × (i' × bot) × (j' × bot)) × ((i × bot) × (j × bot))
 
-   fwd' :: MeetSemilattice a => MatrixRep a × a -> ((Int × a) × (Int × a)) × a -> Val a × a
+   fwd' :: Ann a => MatrixRep a × a -> ((Int × a) × (Int × a)) × a -> Val a × a
    fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
 
-   bwd' :: BoundedJoinSemilattice a => Val a × a -> MatrixRep a × ((Int × a) × (Int × a)) -> (MatrixRep a × a) × ((Int × a) × (Int × a) × a)
+   bwd' :: Ann a => Val a × a -> MatrixRep a × ((Int × a) × (Int × a)) -> (MatrixRep a × a) × ((Int × a) × (Int × a) × a)
    bwd' (z × α) (x × y) = (x' × α) × (y' × α)
       where
       x' × y' = bwd z (x × y)
+
+get :: forall a. BinarySlicer String (Dict (a × Val a)) (Val a) a
+get = { i1: string, i2: dict, o: val, fwd, bwd }
+   where
+   fwd :: Ann a => String × a -> Dict (a × Val a) × a -> Val a × a
+   fwd (k × _) (d × _) = snd (D.get k d) × top
+
+   bwd :: Ann a => Val a × a -> String × Dict (a × Val a) -> (String × a) × (Dict (a × Val a) × a)
+   bwd (v × _) (k × _) = (k × bot) × (D.singleton k (bot × v) × bot)
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

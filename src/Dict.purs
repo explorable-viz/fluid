@@ -20,12 +20,12 @@ import Prelude
 
 import Data.Foldable (class Foldable, foldl)
 import Data.List (head)
-import Data.Set (Set, member)
-import Data.Set (fromFoldable) as S
+import Data.Set (Set)
+import Data.Set (fromFoldable, member) as S
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (Object, fromFoldable, keys, toAscUnfoldable) as O
-import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, lookup, singleton, size, union, unionWith, update)
+import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, lookup, member, singleton, size, union, unionWith, update)
 import Util (Endo, type (×), (×), assert, definitely, error)
 
 type Dict a = O.Object a
@@ -54,7 +54,7 @@ disjointUnion :: forall a. Dict a -> Endo (Dict a)
 disjointUnion = unionWith (\_ _ -> error "not disjoint")
 
 disjointUnion_inv :: forall a. Set String -> Dict a -> Dict a × Dict a
-disjointUnion_inv ks m = filterKeys (_ `member` ks) m × filterKeys (_ `not <<< member` ks) m
+disjointUnion_inv ks m = filterKeys (_ `S.member` ks) m × filterKeys (_ `not <<< S.member` ks) m
 
 toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
 toUnfoldable = O.toAscUnfoldable

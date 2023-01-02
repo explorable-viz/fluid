@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Bindings (Var, varAnon)
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
-import Data.List (List(..), (:), range, reverse, unsnoc, unzip, zip)
+import Data.List (List(..), range, reverse, unsnoc, unzip, zip, (:))
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.NonEmpty (foldl1)
@@ -16,17 +16,16 @@ import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, Raw, bot, botOf, expand, (∨))
+import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
-import Util.Pair (Pair(..))
 import Util.Pair (zip) as P
 import Val (Val(..)) as V
-import Val (class Highlightable, Env, PrimOp(..), (<+>), Val, append_inv)
+import Val (class Ann, Env, PrimOp(..), (<+>), Val, append_inv)
 
-closeDefsBwd :: forall a. BoundedJoinSemilattice a => Env a -> Env a × RecDefs a × a
+closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
    case foldrWithIndex joinDefs (empty × empty × empty × bot) γ of
       ρ' × γ' × ρ × α -> γ' × (ρ ∨ ρ') × α
@@ -38,7 +37,7 @@ closeDefsBwd γ =
             (ρ_acc # insert f σ_f) × (γ' ∨ γ_f) × (ρ ∨ ρ_f) × (α ∨ α_f)
          _ -> error absurd
 
-matchBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> Match -> Val a × Elim a
+matchBwd :: forall a. Ann a => Env a -> Cont a -> a -> Match -> Val a × Elim a
 matchBwd γ κ _ (MatchVar x v)
    | keys γ == S.singleton x = get x γ × ElimVar x κ
    | otherwise = botOf v × ElimVar x κ
@@ -54,7 +53,7 @@ matchBwd ρ κ α (MatchRecord xws) = V.Record α (zip xs vs # D.fromFoldable) �
    xs × ws = xws # D.toUnfoldable # unzip
    vs × κ' = matchManyBwd ρ κ α (ws # reverse)
 
-matchManyBwd :: forall a. BoundedJoinSemilattice a => Env a -> Cont a -> a -> List Match -> List (Val a) × Cont a
+matchManyBwd :: forall a. Ann a => Env a -> Cont a -> a -> List Match -> List (Val a) × Cont a
 matchManyBwd γ κ _ Nil
    | isEmpty γ = Nil × κ
    | otherwise = error absurd
@@ -71,14 +70,14 @@ type EvalBwdResult a =
    , α :: a
    }
 
-evalBwd :: forall a. Highlightable a => BoundedLattice a => Raw Env -> Raw Expr -> Val a -> Trace -> EvalBwdResult a
+evalBwd :: forall a. Ann a => Raw Env -> Raw Expr -> Val a -> Trace -> EvalBwdResult a
 evalBwd γ e v t =
    { γ: expand γ' γ, e: expand e' e, α }
    where
    { γ: γ', e: e', α } = evalBwd' v t
 
 -- Computes a partial slice which evalBwd expands to a full slice.
-evalBwd' :: forall a. Highlightable a => BoundedLattice a => Val a -> Trace -> EvalBwdResult a
+evalBwd' :: forall a. Ann a => Val a -> Trace -> EvalBwdResult a
 evalBwd' v (T.Var x) = { γ: D.singleton x v, e: Var x, α: bot }
 evalBwd' v (T.Op op) = { γ: D.singleton op v, e: Op op, α: bot }
 evalBwd' (V.Str α str) T.Const = { γ: empty, e: Str α str, α }
@@ -90,14 +89,15 @@ evalBwd' (V.Record α xvs) (T.Record xts) =
    where
    xvts = intersectionWith (×) xvs xts
    xγeαs = xvts <#> uncurry evalBwd'
-evalBwd' (V.Dictionary α sαvs) (T.Dictionary stts) =
+evalBwd' (V.Dictionary α sαvs) (T.Dictionary stts sus) =
    { γ: foldr (∨) empty ((γeαs <#> _.γ) <> (γeαs' <#> _.γ))
    , e: Dictionary α ((γeαs <#> _.e) `P.zip` (γeαs' <#> _.e))
    , α: foldr (∨) α ((γeαs <#> _.α) <> (γeαs' <#> _.α))
    }
    where
-   γeαs = stts <#> \(s × Pair t _) -> evalBwd' (V.Str (fst (get s sαvs)) s) t
-   γeαs' = stts <#> \(s × Pair _ t) -> evalBwd' (snd (get s sαvs)) t
+   sαvs' = expand sαvs (sus <#> (bot × _))
+   γeαs = stts <#> \(s × t × _) -> evalBwd' (V.Str (fst (get s sαvs')) s) t
+   γeαs' = stts <#> \(s × _ × t) -> evalBwd' (snd (get s sαvs')) t
 evalBwd' (V.Constr α _ vs) (T.Constr c ts) =
    { γ: γ', e: Constr α c es, α: α' }
    where

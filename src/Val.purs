@@ -12,7 +12,7 @@ import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class BoundedMeetSemilattice, class Expandable, class JoinSemilattice, 𝔹, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, 𝔹, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Text.Pretty (Doc, beside, text)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
@@ -29,11 +29,18 @@ data Val a
    | Primitive PrimOp (List (Val a)) -- never saturated
    | Closure a (Env a) (RecDefs a) (Elim a)
 
--- op_bwd will be provided with original output and arguments
+class (Highlightable a, BoundedLattice a) <= Ann a
+
+instance Ann Boolean
+instance Ann Unit
+
+type OpFwd = forall a. Ann a => List (Val a) -> Val a
+type OpBwd = forall a. Ann a => Val a -> List (Raw Val) -> List (Val a)
+
 newtype PrimOp = PrimOp
    { arity :: Int
-   , op :: forall a. Highlightable a => BoundedMeetSemilattice a => List (Val a) -> Val a
-   , op_bwd :: forall a. Highlightable a => BoundedLattice a => Val a -> List (Raw Val) -> List (Val a)
+   , op :: OpFwd
+   , op_bwd :: OpBwd -- provided with original inputs
    }
 
 -- Environments.
