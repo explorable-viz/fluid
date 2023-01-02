@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Bindings (Var, varAnon)
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
-import Data.List (List(..), (:), range, reverse, unsnoc, unzip, zip)
+import Data.List (List(..), range, reverse, unsnoc, unzip, zip, (:))
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.NonEmpty (foldl1)
@@ -21,7 +21,6 @@ import Partial.Unsafe (unsafePartial)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
-import Util.Pair (Pair(..))
 import Util.Pair (zip) as P
 import Val (Val(..)) as V
 import Val (class Ann, Env, PrimOp(..), (<+>), Val, append_inv)
@@ -90,14 +89,15 @@ evalBwd' (V.Record α xvs) (T.Record xts) =
    where
    xvts = intersectionWith (×) xvs xts
    xγeαs = xvts <#> uncurry evalBwd'
-evalBwd' (V.Dictionary α sαvs) (T.Dictionary stts) =
+evalBwd' (V.Dictionary α sαvs) (T.Dictionary stts sus) =
    { γ: foldr (∨) empty ((γeαs <#> _.γ) <> (γeαs' <#> _.γ))
    , e: Dictionary α ((γeαs <#> _.e) `P.zip` (γeαs' <#> _.e))
    , α: foldr (∨) α ((γeαs <#> _.α) <> (γeαs' <#> _.α))
    }
    where
-   γeαs = stts <#> \(s × Pair t _) -> evalBwd' (V.Str (fst (get s sαvs)) s) t
-   γeαs' = stts <#> \(s × Pair _ t) -> evalBwd' (snd (get s sαvs)) t
+   sαvs' = expand sαvs (sus <#> (bot × _))
+   γeαs = stts <#> \(s × t × _) -> evalBwd' (V.Str (fst (get s sαvs')) s) t
+   γeαs' = stts <#> \(s × _ × t) -> evalBwd' (snd (get s sαvs')) t
 evalBwd' (V.Constr α _ vs) (T.Constr c ts) =
    { γ: γ', e: Constr α c es, α: α' }
    where

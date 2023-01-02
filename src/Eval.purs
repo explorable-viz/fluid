@@ -10,7 +10,7 @@ import Data.List (List(..), (:), length, range, singleton, unzip, zip)
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
 import Data.Set (union, subset)
 import Data.Traversable (sequence, traverse)
-import Data.Tuple (fst)
+import Data.Tuple (fst, snd)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
@@ -21,7 +21,7 @@ import Primitive (intPair, string)
 import Trace (Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
-import Util.Pair (unzip, zip) as P
+import Util.Pair (unzip) as P
 import Val (Val(..)) as V
 import Val (class Ann, Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
 
@@ -78,7 +78,8 @@ eval γ (Record α xes) α' = do
 eval γ (Dictionary α ees) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
    let ss × αs = (vs <#> \u -> string.match u) # unzip
-   pure $ T.Dictionary (zip ss (P.zip ts ts')) × V.Dictionary (α ∧ α') (D.fromFoldable $ zip ss (zip αs us))
+       d = D.fromFoldable $ zip ss (zip αs us)
+   pure $ T.Dictionary (zip (zip ss ts) ts') (d <#> snd >>> erase) × V.Dictionary (α ∧ α') d
 eval γ (Constr α c es) α' = do
    checkArity c (length es)
    ts × vs <- traverse (flip (eval γ) α') es <#> unzip

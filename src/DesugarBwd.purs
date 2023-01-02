@@ -221,7 +221,7 @@ totaliseConstrBwd m c = unsafePartial $
    let
       cs = (ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ singleton c
    in
-      get c m × foldl (∨) bot (map (bodyAnn <<< body) cs)
+      get c m × foldl (∨) bot ((bodyAnn <<< body) <$> cs)
    where
    body :: Partial => Ctr -> Cont a
    body c' = applyN unargument (successful (arity c')) (get c' m)
