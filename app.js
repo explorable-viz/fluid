@@ -10631,6 +10631,56 @@
     },
     match: (dictHighlightable) => (dictBoundedMeetSemilattice) => (v) => $Tuple(v, dictBoundedMeetSemilattice.top)
   };
+  var unary_ = (s) => {
+    const match10 = s.i.match(highlightableUnit)(boundedMeetSemilatticeUni);
+    return $Val(
+      "Primitive",
+      {
+        arity: 1,
+        op: (dictHighlightable) => {
+          const constr = s.o.constr(dictHighlightable);
+          const match13 = s.i.match(dictHighlightable);
+          return (dictBoundedMeetSemilattice) => {
+            const fwd = s.fwd(dictBoundedMeetSemilattice);
+            const match22 = match13(dictBoundedMeetSemilattice);
+            return (v) => {
+              if (v.tag === "Cons") {
+                if (v._2.tag === "Nil") {
+                  return constr(fwd(match22(v._1)));
+                }
+                fail();
+              }
+              fail();
+            };
+          };
+        },
+        op_bwd: (dictHighlightable) => {
+          const constr = s.i.constr(dictHighlightable);
+          const constr_bwd = s.o.constr_bwd(dictHighlightable);
+          return (dictBoundedLattice) => {
+            const bwd = s.bwd(dictBoundedLattice.BoundedJoinSemilattice0());
+            const constr_bwd1 = constr_bwd(dictBoundedLattice);
+            return (v) => (v1) => {
+              if (v1.tag === "Cons") {
+                if (v1._2.tag === "Nil") {
+                  return $List("Cons", constr(bwd(constr_bwd1(v))(match10(v1._1)._1)), Nil);
+                }
+                fail();
+              }
+              fail();
+            };
+          };
+        }
+      },
+      Nil
+    );
+  };
+  var unary = (v) => unary_({
+    i: v._1._1,
+    o: v._1._2,
+    fwd: (dictBoundedMeetSemilattice) => (v1) => $Tuple(v._2.fwd(v1._1), v1._2),
+    bwd: (dictBoundedJoinSemilattice) => (v1) => (x2) => $Tuple(v._2.bwd(v1._1)(x2), v1._2)
+  });
   var string = {
     constr: (dictHighlightable) => (v) => $Val("Str", v._2, v._1),
     constr_bwd: (dictHighlightable) => {
@@ -10923,6 +10973,98 @@
       };
     }
   };
+  var binary_ = (s) => {
+    const match10 = s.i1.match(highlightableUnit)(boundedMeetSemilatticeUni);
+    const match13 = s.i2.match(highlightableUnit)(boundedMeetSemilatticeUni);
+    return $Val(
+      "Primitive",
+      {
+        arity: 2,
+        op: (dictHighlightable) => {
+          const constr = s.o.constr(dictHighlightable);
+          const match22 = s.i1.match(dictHighlightable);
+          const match32 = s.i2.match(dictHighlightable);
+          return (dictBoundedMeetSemilattice) => {
+            const fwd = s.fwd(dictBoundedMeetSemilattice);
+            const match42 = match22(dictBoundedMeetSemilattice);
+            const match52 = match32(dictBoundedMeetSemilattice);
+            return (v) => {
+              if (v.tag === "Cons") {
+                if (v._2.tag === "Cons") {
+                  if (v._2._2.tag === "Nil") {
+                    return constr(fwd(match42(v._1))(match52(v._2._1)));
+                  }
+                  fail();
+                }
+                fail();
+              }
+              fail();
+            };
+          };
+        },
+        op_bwd: (dictHighlightable) => {
+          const constr_bwd = s.o.constr_bwd(dictHighlightable);
+          const constr = s.i1.constr(dictHighlightable);
+          const constr1 = s.i2.constr(dictHighlightable);
+          return (dictBoundedLattice) => {
+            const bwd = s.bwd(dictBoundedLattice.BoundedJoinSemilattice0());
+            const constr_bwd1 = constr_bwd(dictBoundedLattice);
+            return (v) => (v1) => {
+              if (v1.tag === "Cons") {
+                if (v1._2.tag === "Cons") {
+                  if (v1._2._2.tag === "Nil") {
+                    const v3 = bwd(constr_bwd1(v))($Tuple(match10(v1._1)._1, match13(v1._2._1)._1));
+                    return $List("Cons", constr(v3._1), $List("Cons", constr1(v3._2), Nil));
+                  }
+                  fail();
+                }
+                fail();
+              }
+              fail();
+            };
+          };
+        }
+      },
+      Nil
+    );
+  };
+  var binaryZero = (dictIsZero) => (v) => binary_({
+    i1: v._1._1,
+    i2: v._1._1,
+    o: v._1._2,
+    fwd: (dictBoundedMeetSemilattice) => (v1) => (v2) => $Tuple(
+      v._2.fwd(v1._1)(v2._1),
+      (() => {
+        if (dictIsZero.isZero(v1._1)) {
+          return v1._2;
+        }
+        if (dictIsZero.isZero(v2._1)) {
+          return v2._2;
+        }
+        return dictBoundedMeetSemilattice.MeetSemilattice0().meet(v1._2)(v2._2);
+      })()
+    ),
+    bwd: (dictBoundedJoinSemilattice) => (v1) => (v2) => {
+      const v3 = v._2.bwd(v1._1)($Tuple(v2._1, v2._2));
+      if (dictIsZero.isZero(v2._1)) {
+        return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, dictBoundedJoinSemilattice.bot));
+      }
+      if (dictIsZero.isZero(v2._2)) {
+        return $Tuple($Tuple(v3._1, dictBoundedJoinSemilattice.bot), $Tuple(v3._2, v1._2));
+      }
+      return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, v1._2));
+    }
+  });
+  var binary = (v) => binary_({
+    i1: v._1._1._1,
+    i2: v._1._1._2,
+    o: v._1._2,
+    fwd: (dictBoundedMeetSemilattice) => (v1) => (v2) => $Tuple(v._2.fwd(v1._1)(v2._1), dictBoundedMeetSemilattice.MeetSemilattice0().meet(v1._2)(v2._2)),
+    bwd: (dictBoundedJoinSemilattice) => (v1) => (v2) => {
+      const v3 = v._2.bwd(v1._1)($Tuple(v2._1, v2._2));
+      return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, v1._2));
+    }
+  });
   var asNumberIntOrNumber = { as: Right };
   var asIntOrNumberString = { as: (v) => unsafePerformEffect(throwException(error("Non-uniform argument types"))) };
   var asIntNumber = { as: toNumber };
@@ -10950,125 +11092,6 @@
     fail();
   };
   var unionStr = (dictAs) => (dictAs1) => union3(dictAs)(dictAs)(dictAs1)(dictAs1);
-  var apply2_bwd = () => (dictHighlightable) => (dictBoundedLattice) => {
-    const BoundedJoinSemilattice0 = dictBoundedLattice.BoundedJoinSemilattice0();
-    return (s) => (v) => (v1) => {
-      if (v1.tag === "Cons") {
-        if (v1._2.tag === "Cons") {
-          if (v1._2._2.tag === "Nil") {
-            const v3 = s.bwd(BoundedJoinSemilattice0)(s.d3.constr_bwd(dictHighlightable)(dictBoundedLattice)(v))($Tuple(
-              s.d1.match(highlightableUnit)(boundedMeetSemilatticeUni)(v1._1)._1,
-              s.d2.match(highlightableUnit)(boundedMeetSemilatticeUni)(v1._2._1)._1
-            ));
-            return $List(
-              "Cons",
-              s.d1.constr(dictHighlightable)(v3._1),
-              $List("Cons", s.d2.constr(dictHighlightable)(v3._2), Nil)
-            );
-          }
-          fail();
-        }
-        fail();
-      }
-      fail();
-    };
-  };
-  var binary_ = (s) => $Val(
-    "Primitive",
-    {
-      arity: 2,
-      op: (dictHighlightable) => (dictBoundedMeetSemilattice) => (v) => {
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Cons") {
-            if (v._2._2.tag === "Nil") {
-              return s.d3.constr(dictHighlightable)(s.fwd(dictBoundedMeetSemilattice)(s.d1.match(dictHighlightable)(dictBoundedMeetSemilattice)(v._1))(s.d2.match(dictHighlightable)(dictBoundedMeetSemilattice)(v._2._1)));
-            }
-            fail();
-          }
-          fail();
-        }
-        fail();
-      },
-      op_bwd: (dictHighlightable) => (dictBoundedLattice) => apply2_bwd()(dictHighlightable)(dictBoundedLattice)(s)
-    },
-    Nil
-  );
-  var binary = (v) => binary_({
-    d1: v._1._1._1,
-    d2: v._1._1._2,
-    d3: v._1._2,
-    fwd: (dictBoundedMeetSemilattice) => (v1) => (v2) => $Tuple(v._2.fwd(v1._1)(v2._1), dictBoundedMeetSemilattice.MeetSemilattice0().meet(v1._2)(v2._2)),
-    bwd: (dictBoundedJoinSemilattice) => (v1) => (v2) => {
-      const v3 = v._2.bwd(v1._1)($Tuple(v2._1, v2._2));
-      return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, v1._2));
-    }
-  });
-  var binaryZero = (dictIsZero) => (v) => binary_({
-    d1: v._1._1,
-    d2: v._1._1,
-    d3: v._1._2,
-    fwd: (dictBoundedMeetSemilattice) => (v1) => (v2) => $Tuple(
-      v._2.fwd(v1._1)(v2._1),
-      (() => {
-        if (dictIsZero.isZero(v1._1)) {
-          return v1._2;
-        }
-        if (dictIsZero.isZero(v2._1)) {
-          return v2._2;
-        }
-        return dictBoundedMeetSemilattice.MeetSemilattice0().meet(v1._2)(v2._2);
-      })()
-    ),
-    bwd: (dictBoundedJoinSemilattice) => (v1) => (v2) => {
-      const v3 = v._2.bwd(v1._1)($Tuple(v2._1, v2._2));
-      if (dictIsZero.isZero(v2._1)) {
-        return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, dictBoundedJoinSemilattice.bot));
-      }
-      if (dictIsZero.isZero(v2._2)) {
-        return $Tuple($Tuple(v3._1, dictBoundedJoinSemilattice.bot), $Tuple(v3._2, v1._2));
-      }
-      return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, v1._2));
-    }
-  });
-  var apply1_bwd = () => (dictHighlightable) => (dictBoundedLattice) => {
-    const BoundedJoinSemilattice0 = dictBoundedLattice.BoundedJoinSemilattice0();
-    return (s) => (v) => (v1) => {
-      if (v1.tag === "Cons") {
-        if (v1._2.tag === "Nil") {
-          return $List(
-            "Cons",
-            s.d1.constr(dictHighlightable)(s.bwd(BoundedJoinSemilattice0)(s.d2.constr_bwd(dictHighlightable)(dictBoundedLattice)(v))(s.d1.match(highlightableUnit)(boundedMeetSemilatticeUni)(v1._1)._1)),
-            Nil
-          );
-        }
-        fail();
-      }
-      fail();
-    };
-  };
-  var unary_ = (s) => $Val(
-    "Primitive",
-    {
-      arity: 1,
-      op: (dictHighlightable) => (dictBoundedMeetSemilattice) => (v) => {
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Nil") {
-            return s.d2.constr(dictHighlightable)(s.fwd(dictBoundedMeetSemilattice)(s.d1.match(dictHighlightable)(dictBoundedMeetSemilattice)(v._1)));
-          }
-          fail();
-        }
-        fail();
-      },
-      op_bwd: (dictHighlightable) => (dictBoundedLattice) => apply1_bwd()(dictHighlightable)(dictBoundedLattice)(s)
-    },
-    Nil
-  );
-  var unary = (v) => unary_({
-    d1: v._1._1,
-    d2: v._1._2,
-    fwd: (dictBoundedMeetSemilattice) => (v1) => $Tuple(v._2.fwd(v1._1), v1._2),
-    bwd: (dictBoundedJoinSemilattice) => (v1) => (x2) => $Tuple(v._2.bwd(v1._1)(x2), v1._2)
-  });
 
   // output-es/App.Util/index.js
   var neg = /* @__PURE__ */ (() => joinSemilatticeVal(joinSemilatticeBoolean).neg)();
@@ -22097,9 +22120,9 @@
   };
   var notEquals = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((x2) => (y2) => x2 !== y2)((x2) => (y2) => x2 !== y2))((x2) => (y2) => x2 !== y2);
   var matrixLookup = {
-    d1: matrixRep,
-    d2: intPair,
-    d3: val,
+    i1: matrixRep,
+    i2: intPair,
+    o: val,
     fwd: (dictBoundedMeetSemilattice) => (v) => (v1) => $Tuple(
       definitely("index within bounds")(index2(definitely("index within bounds")(index2(v._1._1._1)(v1._1._1._1 - 1 | 0)))(v1._1._2._1 - 1 | 0)),
       dictBoundedMeetSemilattice.MeetSemilattice0().meet(v._2)(v1._2)
