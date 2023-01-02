@@ -181,11 +181,7 @@ type BinarySlicer i1 i2 o a =
    }
 
 unary_ :: forall i o a'. (forall a. UnarySlicer i o a) -> Val a'
-unary_ s = flip Primitive Nil $ PrimOp
-   { arity: 1
-   , op: unsafePartial op
-   , op_bwd: unsafePartial op_bwd
-   }
+unary_ s = flip Primitive Nil $ PrimOp { arity: 1, op: unsafePartial op, op_bwd: unsafePartial op_bwd }
    where
    op :: Partial => OpFwd
    op (v : Nil) = s.o.constr (s.fwd (s.i.match v))
@@ -194,11 +190,7 @@ unary_ s = flip Primitive Nil $ PrimOp
    op_bwd v (u : Nil) = s.i.constr (s.bwd (s.o.constr_bwd v) (fst (s.i.match u))) : Nil
 
 binary_ :: forall i1 i2 o a'. (forall a. BinarySlicer i1 i2 o a) -> Val a'
-binary_ s = flip Primitive Nil $ PrimOp
-   { arity: 2
-   , op: unsafePartial op
-   , op_bwd: unsafePartial op_bwd
-   }
+binary_ s = flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial op, op_bwd: unsafePartial op_bwd }
    where
    op :: Partial => OpFwd
    op (v1 : v2 : Nil) = s.o.constr (s.fwd (s.i1.match v1) (s.i2.match v2))
@@ -208,10 +200,10 @@ binary_ s = flip Primitive Nil $ PrimOp
       where
       v1 × v2 = s.bwd (s.o.constr_bwd v) (fst (s.i1.match u1) × fst (s.i2.match u2))
 
-withInverse1 :: forall d1 d2. (d1 -> d2) -> Unary d1 d2
+withInverse1 :: forall i o. (i -> o) -> Unary i o
 withInverse1 fwd = { fwd, bwd: const identity }
 
-withInverse2 :: forall d1 d2 d3. (d1 -> d2 -> d3) -> Binary d1 d2 d3
+withInverse2 :: forall i1 i2 o. (i1 -> i2 -> o) -> Binary i1 i2 o
 withInverse2 fwd = { fwd, bwd: const identity }
 
 unary :: forall i o a'. (forall a. ToFrom i a × ToFrom o a × Unary i o) -> Val a'
