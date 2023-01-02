@@ -14,21 +14,16 @@ import Util ((×))
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
-tests = [ test_scratchpad ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ testBwd (File "dict") (File "dict.expect")
-        ( const $ Dictionary false $ fromFoldable
-             [ "a" ↦ (false × Int false 5)
-             , "ab" ↦ (true × Int false 6)
-             ]
-        )
-        "{|\"a\": 5, _\"ab\"_: 6|}"
+   [
    ]
 
 test_linking :: Array (Test Unit)
@@ -138,6 +133,13 @@ test_bwd =
         \37, 41, 54, 34, 20,\n\
         \21, 35, 31, 31, 42,\n\
         \13, 32, 35, 19, 26"
+   , testBwd (File "dict") (File "dict.expect")
+        ( const $ Dictionary false $ fromFoldable
+             [ "a" ↦ (false × Int false 5)
+             , "ab" ↦ (true × Int false 6)
+             ]
+        )
+        "{|\"a\": 5, _\"ab\"_: 6|}"
    , testBwd (File "divide") (File "divide.expect") topOf "_40.22222222222222_"
    , testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
    , testBwd (File "intersperse") (File "intersperse-1.expect") (botOf >>> selectNthNode 1 neg)
