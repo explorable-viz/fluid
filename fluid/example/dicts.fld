@@ -2,5 +2,6 @@ let d = {||};
     e = {| "a" := 5, "a" ++ "b" := 6 |}
 in {
    d: d,
-   e: e
+   e: e,
+   e_ab: get "ab" e
 }
