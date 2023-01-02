@@ -1,2 +1,2 @@
-let d = {| "a" := 5, "a" ++ "b" := 6 |}
-in get "a" d * get "ab" d
+let d = {|"a": _5_, ("a" ++ "b"): _6_|}
+in ((get "a" d * get "ab" d), _6_)
