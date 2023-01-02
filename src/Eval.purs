@@ -77,8 +77,9 @@ eval γ (Record α xes) α' = do
    pure $ T.Record xts × V.Record (α ∧ α') xvs
 eval γ (Dictionary α ees) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
-   let ss × αs = (vs <#> \u -> string.match u) # unzip
-       d = D.fromFoldable $ zip ss (zip αs us)
+   let
+      ss × αs = (vs <#> \u -> string.match u) # unzip
+      d = D.fromFoldable $ zip ss (zip αs us)
    pure $ T.Dictionary (zip (zip ss ts) ts') (d <#> snd >>> erase) × V.Dictionary (α ∧ α') d
 eval γ (Constr α c es) α' = do
    checkArity c (length es)
