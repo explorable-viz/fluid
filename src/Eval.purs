@@ -19,7 +19,7 @@ import Lattice ((∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (Trace, Match(..))
+import Trace (AppTrace, Trace, Match(..))
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Val(..)) as V
@@ -66,14 +66,20 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-{-
-apply :: Val a -> Val a -> MayFail (Val a)
+apply :: forall a. Ann a => Val a -> Val a -> MayFail (AppTrace × Val a)
 apply (V.Closure β γ1 ρ σ) v = do
    let γ2 = closeDefs γ1 ρ β
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
-   pure $ T.App (t × S.fromFoldable (keys ρ)) t' w t'' × v''
--}
+   pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
+apply (V.Primitive (PrimOp φ) vs) v =
+   let
+      vs' = vs <> singleton v
+      v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs'
+   in
+      pure $ T.AppPrimitive (PrimOp φ × (erase <$> vs)) (erase v) × v''
+apply _ _ = report "Expected closure, operator or unsaturated constructor"
+
 eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
 eval γ (Op op) _ = (T.Op op × _) <$> lookup' op γ
