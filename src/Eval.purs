@@ -1,6 +1,6 @@
 module Eval where
 
-import Prelude hiding (absurd, top)
+import Prelude hiding (absurd, apply, top)
 
 import Bindings (varAnon)
 import Data.Array (fromFoldable) as A
@@ -128,22 +128,8 @@ eval γ (Project e x) α = do
 eval γ (App e e') α = do
    t × v <- eval γ e α
    t' × v' <- eval γ e' α
-   case v of
-      V.Closure β γ1 ρ σ -> do
-         let γ2 = closeDefs γ1 ρ β
-         γ3 × e'' × β' × w <- match v' σ
-         t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
-         pure $ T.App t t' (T.AppClosure (S.fromFoldable (keys ρ)) w t'') × v''
-      V.Primitive (PrimOp φ) vs ->
-         let
-            vs' = vs <> singleton v'
-            v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs'
-         in
-            pure $ T.App t t' (T.AppPrimitive (PrimOp φ × (erase <$> vs)) (erase v')) × v''
-      V.Constr α' c vs -> do
-         check (successful (arity c) > length vs) ("Too many arguments to " <> showCtr c)
-         pure $ T.App t t' (T.AppConstr (c × length vs)) × V.Constr (α ∧ α') c (vs <> singleton v')
-      _ -> report "Expected closure, operator or unsaturated constructor"
+   t'' × v'' <- apply v v'
+   pure $ T.App t t' t'' × v''
 eval γ (Let (VarDef σ e) e') α = do
    t × v <- eval γ e α
    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
