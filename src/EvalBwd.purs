@@ -18,7 +18,7 @@ import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
-import Trace (Trace(..), VarDef(..)) as T
+import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
 import Util.Pair (zip) as P
@@ -138,7 +138,7 @@ evalBwd' v (T.Project t x) =
    { γ, e: Project e x, α }
    where
    { γ, e, α } = evalBwd' (V.Record bot (D.singleton x v)) t
-evalBwd' v (T.App (t1 × xs) t2 w t3) =
+evalBwd' v (T.App t1 t2 (T.AppClosure xs w t3)) =
    { γ: γ' ∨ γ'', e: App e1 e2, α: α ∨ α' }
    where
    { γ: γ1γ2γ3, e, α: β } = evalBwd' v t3
@@ -148,7 +148,7 @@ evalBwd' v (T.App (t1 × xs) t2 w t3) =
    { γ: γ', e: e2, α } = evalBwd' v' t2
    γ1' × δ' × β' = closeDefsBwd γ2
    { γ: γ'', e: e1, α: α' } = evalBwd' (V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ) t1
-evalBwd' v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
+evalBwd' v (T.App t1 t2 (T.AppPrimitive (PrimOp φ × vs) v2)) =
    { γ: γ ∨ γ', e: App e e', α: α ∨ α' }
    where
    vs' = vs <> L.singleton v2
@@ -157,7 +157,7 @@ evalBwd' v (T.AppPrim (t1 × PrimOp φ × vs) (t2 × v2)) =
       else φ.op_bwd v vs'
    { γ, e, α } = evalBwd' (V.Primitive (PrimOp φ) vs'') t1
    { γ: γ', e: e', α: α' } = evalBwd' v2' t2
-evalBwd' (V.Constr β _ vs) (T.AppConstr (t1 × c × _) t2) =
+evalBwd' (V.Constr β _ vs) (T.App t1 t2 (T.AppConstr (c × _))) =
    { γ: γ ∨ γ', e: App e e', α: α ∨ α' }
    where
    { init: vs', last: v2 } = definitely' (unsnoc vs)

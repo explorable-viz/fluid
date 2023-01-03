@@ -18,7 +18,7 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asEx
 import Lattice ((∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string)
-import Trace (Trace(..), VarDef(..)) as T
+import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
@@ -66,6 +66,14 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
+{-
+apply :: Val a -> Val a -> MayFail (Val a)
+apply (V.Closure β γ1 ρ σ) v = do
+   let γ2 = closeDefs γ1 ρ β
+   γ3 × e'' × β' × w <- match v σ
+   t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
+   pure $ T.App (t × S.fromFoldable (keys ρ)) t' w t'' × v''
+-}
 eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
 eval γ (Op op) _ = (T.Op op × _) <$> lookup' op γ
@@ -116,16 +124,16 @@ eval γ (App e e') α = do
          let γ2 = closeDefs γ1 ρ β
          γ3 × e'' × β' × w <- match v' σ
          t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
-         pure $ T.App (t × S.fromFoldable (keys ρ)) t' w t'' × v''
+         pure $ T.App t t' (T.AppClosure (S.fromFoldable (keys ρ)) w t'') × v''
       V.Primitive (PrimOp φ) vs ->
          let
             vs' = vs <> singleton v'
             v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs'
          in
-            pure $ T.AppPrim (t × (PrimOp φ) × (erase <$> vs)) (t' × erase v') × v''
+            pure $ T.App t t' (T.AppPrimitive (PrimOp φ × (erase <$> vs)) (erase v')) × v''
       V.Constr α' c vs -> do
          check (successful (arity c) > length vs) ("Too many arguments to " <> showCtr c)
-         pure $ T.AppConstr (t × c × length vs) t' × V.Constr (α ∧ α') c (vs <> singleton v')
+         pure $ T.App t t' (T.AppConstr (c × length vs)) × V.Constr (α ∧ α') c (vs <> singleton v')
       _ -> report "Expected closure, operator or unsaturated constructor"
 eval γ (Let (VarDef σ e) e') α = do
    t × v <- eval γ e α
