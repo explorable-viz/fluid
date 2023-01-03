@@ -154,6 +154,17 @@ boolean =
       | c == cFalse = false × α
    match' v = error ("Boolean expected; got " <> prettyP v)
 
+function :: forall a. ToFrom (PrimOp × List (Val a)) a
+function =
+   { constr: \(φ × vs × _) -> Primitive φ vs,
+     constr_bwd: match',
+     match: match'
+   }
+   where
+   match' :: Ann a => Val a -> (PrimOp × List (Val a)) × a
+   match' (Primitive φ vs) = φ × vs × bot
+   match' v = error ("PrimOp expected; got " <> prettyP v)
+
 class IsZero a where
    isZero :: a -> Boolean
 
