@@ -22,12 +22,16 @@ data Val a
    = Int a Int
    | Float a Number
    | Str a String
+   | Constr a Ctr (List (Val a)) -- always saturated
    | Record a (Dict (Val a)) -- always saturated
    | Dictionary a (Dict (a × Val a))
-   | Constr a Ctr (List (Val a)) -- potentially unsaturated
    | Matrix a (MatrixRep a)
+   | Fun (Fun a)
+
+data Fun a
+   = Closure a (Env a) (RecDefs a) (Elim a)
    | Primitive PrimOp (List (Val a)) -- never saturated
-   | Closure a (Env a) (RecDefs a) (Elim a)
+   | PartialConstr a Ctr (List (Val a)) -- never saturated
 
 class (Highlightable a, BoundedLattice a) <= Ann a
 
@@ -112,8 +116,9 @@ instance Functor Val where
    map f (Constr α c vs) = Constr (f α) c (map f <$> vs)
    -- PureScript can't derive this case
    map f (Matrix α (r × iα × jβ)) = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))
-   map f (Primitive φ vs) = Primitive φ ((map f) <$> vs)
-   map f (Closure α γ ρ σ) = Closure (f α) (map f <$> γ) (map f <$> ρ) (f <$> σ)
+   map f (Fun φ) = Fun (f <$> φ)
+
+derive instance Functor Fun
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
@@ -129,10 +134,19 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
               `lift2 (×)`
                  ((flip (×) (βj ∨ βj')) <$> (j ≞ j'))
          )
+   maybeJoin (Fun φ) (Fun φ') = Fun <$> maybeJoin φ φ'
+   maybeJoin _ _ = report "Incompatible values"
+
+   join v = definedJoin v
+   neg = (<$>) neg
+
+instance JoinSemilattice a => JoinSemilattice (Fun a) where
    maybeJoin (Closure α γ ρ σ) (Closure α' γ' ρ' σ') =
       Closure (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ vs) (Primitive _ vs') = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
-   maybeJoin _ _ = report "Incompatible values"
+   maybeJoin (PartialConstr α c vs) (PartialConstr α' c' us) =
+      PartialConstr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
+   maybeJoin _ _ = report "Incompatible functions"
 
    join v = definedJoin v
    neg = (<$>) neg
@@ -146,7 +160,12 @@ instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
    expand (Constr α c vs) (Constr _ c' us) = Constr α (c ≜ c') (expand vs us)
    expand (Matrix α (vss × (i × βi) × (j × βj))) (Matrix _ (vss' × (i' × _) × (j' × _))) =
       Matrix α (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
+   expand (Fun φ) (Fun φ') = Fun (expand φ φ')
+   expand _ _ = error "Incompatible values"
+
+instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
    expand (Closure α γ ρ σ) (Closure _ γ' ρ' σ') =
       Closure α (expand γ γ') (expand ρ ρ') (expand σ σ')
    expand (Primitive φ vs) (Primitive _ vs') = Primitive φ (expand vs vs') -- TODO: require φ == φ'
+   expand (PartialConstr α c vs) (PartialConstr _ c' us) = PartialConstr α (c ≜ c') (expand vs us)
    expand _ _ = error "Incompatible values"

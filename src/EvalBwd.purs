@@ -22,7 +22,7 @@ import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
 import Util.Pair (zip) as P
-import Val (Val(..)) as V
+import Val (Fun(..), Val(..)) as V
 import Val (class Ann, Env, PrimOp(..), (<+>), Val, append_inv)
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
@@ -33,7 +33,7 @@ closeDefsBwd γ =
    joinDefs :: Var -> Val a -> Endo (RecDefs a × Env a × RecDefs a × a)
    joinDefs f _ (ρ_acc × γ' × ρ × α) =
       case get f γ of
-         V.Closure α_f γ_f ρ_f σ_f ->
+         V.Fun (V.Closure α_f γ_f ρ_f σ_f) ->
             (ρ_acc # insert f σ_f) × (γ' ∨ γ_f) × (ρ ∨ ρ_f) × (α ∨ α_f)
          _ -> error absurd
 
@@ -83,7 +83,7 @@ evalBwd' v (T.Op op) = { γ: D.singleton op v, e: Op op, α: bot }
 evalBwd' (V.Str α str) T.Const = { γ: empty, e: Str α str, α }
 evalBwd' (V.Int α n) T.Const = { γ: empty, e: Int α n, α }
 evalBwd' (V.Float α n) T.Const = { γ: empty, e: Float α n, α }
-evalBwd' (V.Closure α γ _ σ) T.Const = { γ, e: Lambda σ, α }
+evalBwd' (V.Fun (V.Closure α γ _ σ)) T.Const = { γ, e: Lambda σ, α }
 evalBwd' (V.Record α xvs) (T.Record xts) =
    { γ: foldr (∨) empty (xγeαs <#> _.γ), e: Record α (xγeαs <#> _.e), α: foldr (∨) α (xγeαs <#> _.α) }
    where
@@ -147,15 +147,15 @@ evalBwd' v (T.App t1 t2 (T.AppClosure xs w t3)) =
    γ1 × γ2 = append_inv xs γ1γ2
    { γ: γ', e: e2, α } = evalBwd' v' t2
    γ1' × δ' × β' = closeDefsBwd γ2
-   { γ: γ'', e: e1, α: α' } = evalBwd' (V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ) t1
+   { γ: γ'', e: e1, α: α' } = evalBwd' (V.Fun (V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ)) t1
 evalBwd' v (T.App t1 t2 (T.AppPrimitive (PrimOp φ × vs) v2)) =
    { γ: γ ∨ γ', e: App e e', α: α ∨ α' }
    where
    vs' = vs <> L.singleton v2
    { init: vs'', last: v2' } = definitely' $ unsnoc $
-      if φ.arity > length vs' then unsafePartial $ let V.Primitive _ vs'' = v in vs''
+      if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Primitive _ vs'') = v in vs''
       else φ.op_bwd v vs'
-   { γ, e, α } = evalBwd' (V.Primitive (PrimOp φ) vs'') t1
+   { γ, e, α } = evalBwd' (V.Fun (V.Primitive (PrimOp φ) vs'')) t1
    { γ: γ', e: e', α: α' } = evalBwd' v2' t2
 evalBwd' (V.Constr β _ vs) (T.App t1 t2 (T.AppConstr (c × _))) =
    { γ: γ ∨ γ', e: App e e', α: α ∨ α' }
