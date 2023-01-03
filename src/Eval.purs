@@ -78,6 +78,9 @@ apply (V.Primitive (PrimOp φ) vs) v =
       v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs'
    in
       pure $ T.AppPrimitive (PrimOp φ × (erase <$> vs)) (erase v) × v''
+apply (V.Constr α c vs) v = do
+   check (successful (arity c) > length vs) ("Too many arguments to " <> showCtr c)
+   pure $ T.AppConstr (c × length vs) × V.Constr α c (vs <> singleton v)
 apply _ _ = report "Expected closure, operator or unsaturated constructor"
 
 eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
