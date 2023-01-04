@@ -79,8 +79,9 @@ applyBwd v (T.AppClosure xs w t3) =
    γ1 × γ2 = append_inv xs γ1γ2
    γ1' × δ' × β' = closeDefsBwd γ2
    v' × σ = matchBwd γ3 (ContExpr e) β w
-applyBwd v (T.AppPrimitive (PrimOp φ × vs) v2) = ?_
-applyBwd v (T.AppConstr (c × _)) = ?_
+applyBwd _ _ = error "todo"
+--applyBwd v (T.AppPrimitive (PrimOp φ × vs) v2) = ?_
+--applyBwd v (T.AppConstr (c × _)) = ?_
 
 evalBwd :: forall a. Ann a => Raw Env -> Raw Expr -> Val a -> Trace -> EvalBwdResult a
 evalBwd γ e v t =
@@ -153,13 +154,9 @@ evalBwd' v (T.Project t x) =
 evalBwd' v (T.App t1 t2 (T.AppClosure xs w t3)) =
    { γ: γ' ∨ γ'', e: App e1 e2, α: α ∨ α' }
    where
-   { γ: γ1γ2γ3, e, α: β } = evalBwd' v t3
-   γ1γ2 × γ3 = append_inv (bv w) γ1γ2γ3
-   v' × σ = matchBwd γ3 (ContExpr e) β w
-   γ1 × γ2 = append_inv xs γ1γ2
+   φ × v' = applyBwd v (T.AppClosure xs w t3)
    { γ: γ', e: e2, α } = evalBwd' v' t2
-   γ1' × δ' × β' = closeDefsBwd γ2
-   { γ: γ'', e: e1, α: α' } = evalBwd' (V.Fun (V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ)) t1
+   { γ: γ'', e: e1, α: α' } = evalBwd' (V.Fun φ) t1
 evalBwd' v (T.App t1 t2 (T.AppPrimitive (PrimOp φ × vs) v2)) =
    { γ: γ ∨ γ', e: App e e', α: α ∨ α' }
    where
