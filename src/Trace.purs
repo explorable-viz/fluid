@@ -20,11 +20,14 @@ data Trace
    | Constr Ctr (List Trace)
    | Matrix (Array2 Trace) (Var × Var) (Int × Int) Trace
    | Project Trace Var
-   | App (Trace × Set Var) Trace Match Trace
-   | AppPrim (Trace × PrimOp × List (Raw Val)) (Trace × Raw Val) -- record prior arguments
-   | AppConstr (Trace × Ctr × Int) Trace -- record number of prior arguments
+   | App Trace Trace AppTrace
    | Let VarDef Trace
    | LetRec (Raw RecDefs) Trace
+
+data AppTrace
+   = AppClosure (Set Var) Match Trace
+   | AppPrimitive (PrimOp × List (Raw Val)) (Raw Val) -- prior arguments
+   | AppConstr (Ctr × Int) -- number of prior arguments
 
 data VarDef = VarDef Match Trace
 

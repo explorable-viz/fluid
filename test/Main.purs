@@ -16,14 +16,14 @@ import Val (Val(..))
 tests :: Array (Array (Test Unit))
 tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
 
---tests = [ test_scratchpad ]
+-- tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [
+   [ test (File "zipWith") "((10 : []) : ((12 : []) : ((20 : []) : [])))"
    ]
 
 test_linking :: Array (Test Unit)
@@ -133,7 +133,10 @@ test_bwd =
         \37, 41, 54, 34, 20,\n\
         \21, 35, 31, 31, 42,\n\
         \13, 32, 35, 19, 26"
-   , testBwd (File "dict") (File "dict.expect")
+   , testBwd (File "dict-get") (File "dict-get.expect")
+        (const $ Int true 0)
+        "_0_"
+   , testBwd (File "dict-create") (File "dict-create.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              , "ab" ↦ (true × Int false 6)
@@ -197,6 +200,7 @@ test_misc =
         \((2 : (2 : (-2 : (-2 : [])))) : []))))"
    , test (File "factorial") "40320"
    , test (File "filter") "(8 : (7 : []))"
+   , test (File "first-class-constr") "((10 : []) : ((12 : []) : ((20 : []) : [])))"
    , test (File "flatten") "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
    , test (File "foldr_sumSquares") "661"
    , test (File "lexicalScoping") "\"6\""
@@ -209,7 +213,6 @@ test_misc =
    , test (File "range") "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))"
    , test (File "records") "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
    , test (File "reverse") "(2 : (1 : []))"
-   , test (File "zipWith") "((10 : []) : ((12 : []) : ((20 : []) : [])))"
    ]
 
 test_graphics :: Array (Test Unit)

@@ -1,6 +1,6 @@
 module Eval where
 
-import Prelude hiding (absurd, top)
+import Prelude hiding (absurd, apply, top)
 
 import Bindings (varAnon)
 import Data.Array (fromFoldable) as A
@@ -18,12 +18,12 @@ import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asEx
 import Lattice ((∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string)
-import Trace (Trace(..), VarDef(..)) as T
-import Trace (Trace, Match(..))
+import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
+import Trace (AppTrace, Trace, Match(..))
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
-import Val (Val(..)) as V
-import Val (class Ann, Env, PrimOp(..), (<+>), Val, for, lookup', restrict)
+import Val (Fun(..), Val(..)) as V
+import Val (class Ann, Env, Fun, PrimOp(..), (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -59,12 +59,33 @@ matchMany _ _ = error absurd
 
 closeDefs :: forall a. Env a -> RecDefs a -> a -> Env a
 closeDefs γ ρ α = ρ <#> \σ ->
-   let ρ' = ρ `for` σ in V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
+   let ρ' = ρ `for` σ in V.Fun $ V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
+
+apply :: forall a. Ann a => Fun a -> Val a -> MayFail (AppTrace × Val a)
+apply (V.Closure β γ1 ρ σ) v = do
+   let γ2 = closeDefs γ1 ρ β
+   γ3 × e'' × β' × w <- match v σ
+   t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
+   pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
+apply (V.Primitive (PrimOp φ) vs) v =
+   let
+      vs' = vs <> singleton v
+      v'' = if φ.arity > length vs' then V.Fun $ V.Primitive (PrimOp φ) vs' else φ.op vs'
+   in
+      pure $ T.AppPrimitive (PrimOp φ × (erase <$> vs)) (erase v) × v''
+apply (V.PartialConstr α c vs) v = do
+   let n = successful (arity c)
+   check (length vs < n) ("Too many arguments to " <> showCtr c)
+   let
+      v' =
+         if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> singleton v)
+         else V.Constr α c (vs <> singleton v)
+   pure $ T.AppConstr (c × length vs) × v'
 
 eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
@@ -102,31 +123,20 @@ eval γ (Matrix α e (x × y) e') α' = do
    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
 eval γ (Lambda σ) α =
-   pure $ T.Const × V.Closure α (γ `restrict` fv σ) empty σ
+   pure $ T.Const × V.Fun (V.Closure α (γ `restrict` fv σ) empty σ)
 eval γ (Project e x) α = do
    t × v <- eval γ e α
    case v of
       V.Record _ xvs -> (T.Project t x × _) <$> lookup' x xvs
-      _ -> report "Expected record"
+      _ -> report $ "Found " <> prettyP v <> ", expected record"
 eval γ (App e e') α = do
    t × v <- eval γ e α
    t' × v' <- eval γ e' α
    case v of
-      V.Closure β γ1 ρ σ -> do
-         let γ2 = closeDefs γ1 ρ β
-         γ3 × e'' × β' × w <- match v' σ
-         t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
-         pure $ T.App (t × S.fromFoldable (keys ρ)) t' w t'' × v''
-      V.Primitive (PrimOp φ) vs ->
-         let
-            vs' = vs <> singleton v'
-            v'' = if φ.arity > length vs' then V.Primitive (PrimOp φ) vs' else φ.op vs'
-         in
-            pure $ T.AppPrim (t × (PrimOp φ) × (erase <$> vs)) (t' × erase v') × v''
-      V.Constr α' c vs -> do
-         check (successful (arity c) > length vs) ("Too many arguments to " <> showCtr c)
-         pure $ T.AppConstr (t × c × length vs) t' × V.Constr (α ∧ α') c (vs <> singleton v')
-      _ -> report "Expected closure, operator or unsaturated constructor"
+      V.Fun φ -> do
+         t'' × v'' <- apply φ v'
+         pure $ T.App t t' t'' × v''
+      _ -> report $ "Found " <> prettyP v <> ", expected function"
 eval γ (Let (VarDef σ e) e') α = do
    t × v <- eval γ e α
    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
