@@ -71,7 +71,9 @@ type EvalBwdResult a =
    }
 
 applyBwd :: forall a. Ann a => AppTrace -> Val a -> Fun a × Val a
-applyBwd = ?_
+applyBwd (T.AppClosure xs w t3) = ?_
+applyBwd (T.AppPrimitive (PrimOp φ × vs) v2) = ?_
+applyBwd (T.AppConstr (c × _)) = ?_
 
 evalBwd :: forall a. Ann a => Raw Env -> Raw Expr -> Val a -> Trace -> EvalBwdResult a
 evalBwd γ e v t =
