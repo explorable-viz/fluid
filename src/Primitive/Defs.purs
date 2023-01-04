@@ -20,6 +20,7 @@ import Primitive
    , binaryZero
    , boolean
    , dict
+   , function
    , int
    , intOrNumber
    , intOrNumberOrString
@@ -111,6 +112,15 @@ get = { i1: string, i2: dict, o: val, fwd, bwd }
 
    bwd :: Ann a => Val a × a -> String × Dict (a × Val a) -> (String × a) × (Dict (a × Val a) × a)
    bwd (v × _) (k × _) = (k × bot) × (D.singleton k (bot × v) × bot)
+
+map :: forall a. BinarySlicer (Fun a) (Dict (a × Val a)) (Dict (a × Val a)) a
+map = { i1: function, i2: dict, o: dict, fwd, bwd }
+   where
+   fwd :: Ann a => _
+   fwd = error "todo"
+
+   bwd :: Ann a => _
+   bwd = error "todo"
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
