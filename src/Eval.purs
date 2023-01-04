@@ -128,7 +128,7 @@ eval γ (Project e x) α = do
    t × v <- eval γ e α
    case v of
       V.Record _ xvs -> (T.Project t x × _) <$> lookup' x xvs
-      _ -> report $ "Found " <> prettyP v <>", expected record"
+      _ -> report $ "Found " <> prettyP v <> ", expected record"
 eval γ (App e e') α = do
    t × v <- eval γ e α
    t' × v' <- eval γ e' α
@@ -136,7 +136,7 @@ eval γ (App e e') α = do
       V.Fun φ -> do
          t'' × v'' <- apply φ v'
          pure $ T.App t t' t'' × v''
-      _ -> report $ "Found " <> prettyP v <>", expected function"
+      _ -> report $ "Found " <> prettyP v <> ", expected function"
 eval γ (Let (VarDef σ e) e') α = do
    t × v <- eval γ e α
    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
