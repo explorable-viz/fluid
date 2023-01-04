@@ -200,6 +200,7 @@ test_misc =
         \((2 : (2 : (-2 : (-2 : [])))) : []))))"
    , test (File "factorial") "40320"
    , test (File "filter") "(8 : (7 : []))"
+   , test (File "first-class-constr") "((10 : []) : ((12 : []) : ((20 : []) : [])))"
    , test (File "flatten") "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
    , test (File "foldr_sumSquares") "661"
    , test (File "lexicalScoping") "\"6\""
@@ -212,7 +213,6 @@ test_misc =
    , test (File "range") "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))"
    , test (File "records") "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
    , test (File "reverse") "(2 : (1 : []))"
-   , test (File "zipWith") "((10 : []) : ((12 : []) : ((20 : []) : [])))"
    ]
 
 test_graphics :: Array (Test Unit)
