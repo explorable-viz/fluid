@@ -86,8 +86,14 @@ applyBwd v (T.AppPrimitive (PrimOp φ × vs) v2) =
    { init: vs'', last: v2' } = definitely' $ unsnoc $
       if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Primitive _ vs'') = v in vs''
       else φ.op_bwd v vs'
-applyBwd _ _ = error "todo"
---applyBwd v (T.AppConstr (c × _)) = ?_
+applyBwd v (T.AppConstr (c × _)) =
+   V.PartialConstr β c vs' × v2
+   where
+   vs × β = case v of
+      V.Constr β _ vs -> vs × β
+      V.Fun (V.PartialConstr β _ vs) -> vs × β
+      _ -> error absurd
+   { init: vs', last: v2 } = definitely' (unsnoc vs)
 
 evalBwd :: forall a. Ann a => Raw Env -> Raw Expr -> Val a -> Trace -> EvalBwdResult a
 evalBwd γ e v t =
