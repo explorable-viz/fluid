@@ -156,9 +156,9 @@ boolean =
 
 function :: forall a. ToFrom (Fun a) a
 function =
-   { constr: \(φ × _) -> Fun φ,
-     constr_bwd: match',
-     match: match'
+   { constr: \(φ × _) -> Fun φ
+   , constr_bwd: match'
+   , match: match'
    }
    where
    match' :: Ann a => Val a -> Fun a × a

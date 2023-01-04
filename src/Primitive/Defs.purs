@@ -36,11 +36,11 @@ import Primitive
    , withInverse2
    )
 import Util (Endo, type (×), (×), type (+), (!), error)
-import Val (class Ann, Env, MatrixRep, Val(..), updateMatrix)
+import Val (class Ann, Env, Fun(..), MatrixRep, Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
-   [ ":" × Constr bot cCons Nil
+   [ ":" × Fun (PartialConstr bot cCons Nil)
    , "ceiling" × unary (number × int × withInverse1 ceil)
    , "debugLog" × unary (val × val × withInverse1 debugLog)
    , "dims" × unary (matrixRep × intPair × dims)

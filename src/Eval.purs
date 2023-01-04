@@ -80,10 +80,11 @@ apply (V.Primitive (PrimOp φ) vs) v =
       pure $ T.AppPrimitive (PrimOp φ × (erase <$> vs)) (erase v) × v''
 apply (V.PartialConstr α c vs) v = do
    let n = successful (arity c)
-   check (n > length vs) ("Too many arguments to " <> showCtr c)
-   let v' = if n == length vs - 1
-            then V.Constr α c (vs <> singleton v)
-            else V.Fun $ V.PartialConstr α c (vs <> singleton v)
+   check (length vs < n) ("Too many arguments to " <> showCtr c)
+   let
+      v' =
+         if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> singleton v)
+         else V.Constr α c (vs <> singleton v)
    pure $ T.AppConstr (c × length vs) × v'
 
 eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
@@ -127,7 +128,7 @@ eval γ (Project e x) α = do
    t × v <- eval γ e α
    case v of
       V.Record _ xvs -> (T.Project t x × _) <$> lookup' x xvs
-      _ -> report "Expected record"
+      _ -> report $ "Found " <> prettyP v <>", expected record"
 eval γ (App e e') α = do
    t × v <- eval γ e α
    t' × v' <- eval γ e' α
@@ -135,7 +136,7 @@ eval γ (App e e') α = do
       V.Fun φ -> do
          t'' × v'' <- apply φ v'
          pure $ T.App t t' t'' × v''
-      _ -> report "Expected function"
+      _ -> report $ "Found " <> prettyP v <>", expected function"
 eval γ (Let (VarDef σ e) e') α = do
    t × v <- eval γ e α
    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
