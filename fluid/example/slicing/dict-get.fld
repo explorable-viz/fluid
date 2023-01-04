@@ -1,0 +1,2 @@
+let d = {| "a" := 5, "a" ++ "b" := {fst: 6, snd: 0} |}
+in get "a" d * (get "ab" d).snd
