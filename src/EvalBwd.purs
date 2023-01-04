@@ -163,22 +163,10 @@ evalBwd' v (T.Project t x) =
    { γ, e: Project e x, α }
    where
    { γ, e, α } = evalBwd' (V.Record bot (D.singleton x v)) t
-evalBwd' v (T.App t1 t2 (T.AppClosure xs w t3)) =
-   { γ: γ' ∨ γ'', e: App e1 e2, α: α ∨ α' }
-   where
-   φ × v' = applyBwd v (T.AppClosure xs w t3)
-   { γ: γ', e: e2, α } = evalBwd' v' t2
-   { γ: γ'', e: e1, α: α' } = evalBwd' (V.Fun φ) t1
-evalBwd' v (T.App t1 t2 (T.AppPrimitive (PrimOp φ × vs) v2)) =
+evalBwd' v (T.App t1 t2 t3) =
    { γ: γ ∨ γ', e: App e e', α: α ∨ α' }
    where
-   φ × v2' = applyBwd v (T.AppPrimitive (PrimOp φ × vs) v2)
-   { γ, e, α } = evalBwd' (V.Fun φ) t1
-   { γ: γ', e: e', α: α' } = evalBwd' v2' t2
-evalBwd' v (T.App t1 t2 (T.AppConstr (c × n))) =
-   { γ: γ ∨ γ', e: App e e', α: α ∨ α' }
-   where
-   φ × v2 = applyBwd v (T.AppConstr (c × n))
+   φ × v2 = applyBwd v t3
    { γ, e, α } = evalBwd' (V.Fun φ) t1
    { γ: γ', e: e', α: α' } = evalBwd' v2 t2
 evalBwd' v (T.Let (T.VarDef w t1) t2) =
