@@ -19,11 +19,11 @@ import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (Trace, Match(..))
+import Trace (AppTrace, Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, PrimOp(..), (<+>), Val, append_inv)
+import Val (class Ann, Env, Fun, PrimOp(..), (<+>), Val, append_inv)
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
@@ -69,6 +69,9 @@ type EvalBwdResult a =
    , e :: Expr a
    , α :: a
    }
+
+applyBwd :: forall a. Ann a => AppTrace -> Val a -> Fun a × Val a
+applyBwd = ?_
 
 evalBwd :: forall a. Ann a => Raw Env -> Raw Expr -> Val a -> Trace -> EvalBwdResult a
 evalBwd γ e v t =
