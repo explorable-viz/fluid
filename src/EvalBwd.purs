@@ -175,15 +175,11 @@ evalBwd' v (T.App t1 t2 (T.AppPrimitive (PrimOp φ × vs) v2)) =
    φ × v2' = applyBwd v (T.AppPrimitive (PrimOp φ × vs) v2)
    { γ, e, α } = evalBwd' (V.Fun φ) t1
    { γ: γ', e: e', α: α' } = evalBwd' v2' t2
-evalBwd' v (T.App t1 t2 (T.AppConstr (c × _))) =
+evalBwd' v (T.App t1 t2 (T.AppConstr (c × n))) =
    { γ: γ ∨ γ', e: App e e', α: α ∨ α' }
    where
-   vs × β = case v of
-      V.Constr β _ vs -> vs × β
-      V.Fun (V.PartialConstr β _ vs) -> vs × β
-      _ -> error absurd
-   { init: vs', last: v2 } = definitely' (unsnoc vs)
-   { γ, e, α } = evalBwd' (V.Fun (V.PartialConstr β c vs')) t1
+   φ × v2 = applyBwd v (T.AppConstr (c × n))
+   { γ, e, α } = evalBwd' (V.Fun φ) t1
    { γ: γ', e: e', α: α' } = evalBwd' v2 t2
 evalBwd' v (T.Let (T.VarDef w t1) t2) =
    { γ: γ1 ∨ γ1', e: Let (VarDef σ e1) e2, α: α1 ∨ α2 }
