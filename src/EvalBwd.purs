@@ -70,10 +70,17 @@ type EvalBwdResult a =
    , α :: a
    }
 
-applyBwd :: forall a. Ann a => AppTrace -> Val a -> Fun a × Val a
-applyBwd (T.AppClosure xs w t3) = ?_
-applyBwd (T.AppPrimitive (PrimOp φ × vs) v2) = ?_
-applyBwd (T.AppConstr (c × _)) = ?_
+applyBwd :: forall a. Ann a => Val a -> AppTrace -> Fun a × Val a
+applyBwd v (T.AppClosure xs w t3) =
+   V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ × v'
+   where
+   { γ: γ1γ2γ3, e, α: β } = evalBwd' v t3
+   γ1γ2 × γ3 = append_inv (bv w) γ1γ2γ3
+   γ1 × γ2 = append_inv xs γ1γ2
+   γ1' × δ' × β' = closeDefsBwd γ2
+   v' × σ = matchBwd γ3 (ContExpr e) β w
+applyBwd v (T.AppPrimitive (PrimOp φ × vs) v2) = ?_
+applyBwd v (T.AppConstr (c × _)) = ?_
 
 evalBwd :: forall a. Ann a => Raw Env -> Raw Expr -> Val a -> Trace -> EvalBwdResult a
 evalBwd γ e v t =
