@@ -10711,7 +10711,6 @@
   });
 
   // output-es/Primitive/index.js
-  var identity13 = (x2) => x2;
   var fanin2 = /* @__PURE__ */ fanin(categoryFn)(choiceFn);
   var isZeroNumber = { isZero: ($0) => 0 === $0 };
   var isZeroInt = { isZero: ($0) => 0 === $0 };
@@ -10726,8 +10725,8 @@
       return (v) => $Tuple(v, top2);
     }
   };
-  var unary_ = (s) => {
-    const match10 = s.i.match(annUnit);
+  var unary = (op) => {
+    const match10 = op.i.match(annUnit);
     return $Val(
       "Fun",
       $Fun(
@@ -10735,13 +10734,13 @@
         {
           arity: 1,
           op: (dictAnn) => {
-            const constr = s.o.constr(dictAnn);
-            const fwd = s.fwd(dictAnn);
-            const match13 = s.i.match(dictAnn);
+            const match13 = op.i.match(dictAnn);
+            const constr = op.o.constr(dictAnn);
             return (v) => {
               if (v.tag === "Cons") {
                 if (v._2.tag === "Nil") {
-                  return constr(fwd(match13(v._1)));
+                  const v2 = match13(v._1);
+                  return constr($Tuple(op.fwd(v2._1), v2._2));
                 }
                 fail();
               }
@@ -10749,13 +10748,12 @@
             };
           },
           op_bwd: (dictAnn) => {
-            const constr = s.i.constr(dictAnn);
-            const bwd = s.bwd(dictAnn);
-            const constr_bwd = s.o.constr_bwd(dictAnn);
+            const constr_bwd = op.o.constr_bwd(dictAnn);
+            const constr = op.i.constr(dictAnn);
             return (v) => (v1) => {
               if (v1.tag === "Cons") {
                 if (v1._2.tag === "Nil") {
-                  return $List("Cons", constr(bwd(constr_bwd(v))(match10(v1._1)._1)), Nil);
+                  return $List("Cons", constr($Tuple(match10(v1._1)._1, constr_bwd(v)._2)), Nil);
                 }
                 fail();
               }
@@ -10767,12 +10765,6 @@
       )
     );
   };
-  var unary = (v) => unary_({
-    i: v._1._1,
-    o: v._1._2,
-    fwd: (dictAnn) => (v1) => $Tuple(v._2.fwd(v1._1), v1._2),
-    bwd: (dictAnn) => (v1) => (x2) => $Tuple(v._2.bwd(v1._1)(x2), v1._2)
-  });
   var string = {
     constr: (dictAnn) => (v) => $Val("Str", v._2, v._1),
     constr_bwd: (dictAnn) => {
@@ -11012,27 +11004,6 @@
       };
     }
   };
-  var dict = {
-    constr: (dictAnn) => (v) => $Val("Dictionary", v._2, v._1),
-    constr_bwd: (dictAnn) => {
-      const prettyP2 = prettyP(prettyVal(dictAnn.Highlightable0()));
-      return (v) => {
-        if (v.tag === "Dictionary") {
-          return $Tuple(v._2, v._1);
-        }
-        return unsafePerformEffect(throwException(error("Dictionary expected; got " + prettyP2(v))));
-      };
-    },
-    match: (dictAnn) => {
-      const prettyP2 = prettyP(prettyVal(dictAnn.Highlightable0()));
-      return (v) => {
-        if (v.tag === "Dictionary") {
-          return $Tuple(v._2, v._1);
-        }
-        return unsafePerformEffect(throwException(error("Dictionary expected; got " + prettyP2(v))));
-      };
-    }
-  };
   var $$boolean = {
     constr: (dictAnn) => (v) => {
       if (v._1) {
@@ -11080,9 +11051,8 @@
       };
     }
   };
-  var binary_ = (s) => {
-    const match10 = s.i1.match(annUnit);
-    const match13 = s.i2.match(annUnit);
+  var binaryZero = (dictIsZero) => (op) => {
+    const match10 = op.i.match(annUnit);
     return $Val(
       "Fun",
       $Fun(
@@ -11090,15 +11060,27 @@
         {
           arity: 2,
           op: (dictAnn) => {
-            const constr = s.o.constr(dictAnn);
-            const fwd = s.fwd(dictAnn);
-            const match22 = s.i1.match(dictAnn);
-            const match32 = s.i2.match(dictAnn);
+            const match13 = op.i.match(dictAnn);
+            const constr = op.o.constr(dictAnn);
+            const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
             return (v) => {
               if (v.tag === "Cons") {
                 if (v._2.tag === "Cons") {
                   if (v._2._2.tag === "Nil") {
-                    return constr(fwd(match22(v._1))(match32(v._2._1)));
+                    const $8 = match13(v._1);
+                    const $9 = match13(v._2._1);
+                    return constr($Tuple(
+                      op.fwd($8._1)($9._1),
+                      (() => {
+                        if (dictIsZero.isZero($8._1)) {
+                          return $8._2;
+                        }
+                        if (dictIsZero.isZero($9._1)) {
+                          return $9._2;
+                        }
+                        return meet($8._2)($9._2);
+                      })()
+                    ));
                   }
                   fail();
                 }
@@ -11108,16 +11090,35 @@
             };
           },
           op_bwd: (dictAnn) => {
-            const bwd = s.bwd(dictAnn);
-            const constr_bwd = s.o.constr_bwd(dictAnn);
-            const constr = s.i1.constr(dictAnn);
-            const constr1 = s.i2.constr(dictAnn);
+            const constr_bwd = op.o.constr_bwd(dictAnn);
+            const bot = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().bot;
+            const constr = op.i.constr(dictAnn);
             return (v) => (v1) => {
               if (v1.tag === "Cons") {
                 if (v1._2.tag === "Cons") {
                   if (v1._2._2.tag === "Nil") {
-                    const v3 = bwd(constr_bwd(v))($Tuple(match10(v1._1)._1, match13(v1._2._1)._1));
-                    return $List("Cons", constr(v3._1), $List("Cons", constr1(v3._2), Nil));
+                    const $9 = constr_bwd(v)._2;
+                    const $10 = match10(v1._1);
+                    const $11 = match10(v1._2._1);
+                    if (dictIsZero.isZero($10._1)) {
+                      return $List(
+                        "Cons",
+                        constr($Tuple($10._1, $9)),
+                        $List("Cons", constr($Tuple($11._1, bot)), Nil)
+                      );
+                    }
+                    if (dictIsZero.isZero($11._1)) {
+                      return $List(
+                        "Cons",
+                        constr($Tuple($10._1, bot)),
+                        $List("Cons", constr($Tuple($11._1, $9)), Nil)
+                      );
+                    }
+                    return $List(
+                      "Cons",
+                      constr($Tuple($10._1, $9)),
+                      $List("Cons", constr($Tuple($11._1, $9)), Nil)
+                    );
                   }
                   fail();
                 }
@@ -11131,57 +11132,67 @@
       )
     );
   };
-  var binaryZero = (dictIsZero) => (v) => binary_({
-    i1: v._1._1,
-    i2: v._1._1,
-    o: v._1._2,
-    fwd: (dictAnn) => {
-      const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-      return (v1) => (v2) => $Tuple(
-        v._2.fwd(v1._1)(v2._1),
-        (() => {
-          if (dictIsZero.isZero(v1._1)) {
-            return v1._2;
+  var binary = (op) => {
+    const match10 = op.i1.match(annUnit);
+    const match13 = op.i2.match(annUnit);
+    return $Val(
+      "Fun",
+      $Fun(
+        "Primitive",
+        {
+          arity: 2,
+          op: (dictAnn) => {
+            const match22 = op.i1.match(dictAnn);
+            const match32 = op.i2.match(dictAnn);
+            const constr = op.o.constr(dictAnn);
+            const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
+            return (v) => {
+              if (v.tag === "Cons") {
+                if (v._2.tag === "Cons") {
+                  if (v._2._2.tag === "Nil") {
+                    const $9 = match22(v._1);
+                    const $10 = match32(v._2._1);
+                    return constr($Tuple(op.fwd($9._1)($10._1), meet($9._2)($10._2)));
+                  }
+                  fail();
+                }
+                fail();
+              }
+              fail();
+            };
+          },
+          op_bwd: (dictAnn) => {
+            const constr_bwd = op.o.constr_bwd(dictAnn);
+            const constr = op.i1.constr(dictAnn);
+            const constr1 = op.i2.constr(dictAnn);
+            return (v) => (v1) => {
+              if (v1.tag === "Cons") {
+                if (v1._2.tag === "Cons") {
+                  if (v1._2._2.tag === "Nil") {
+                    const $9 = constr_bwd(v)._2;
+                    return $List(
+                      "Cons",
+                      constr($Tuple(match10(v1._1)._1, $9)),
+                      $List("Cons", constr1($Tuple(match13(v1._2._1)._1, $9)), Nil)
+                    );
+                  }
+                  fail();
+                }
+                fail();
+              }
+              fail();
+            };
           }
-          if (dictIsZero.isZero(v2._1)) {
-            return v2._2;
-          }
-          return meet(v1._2)(v2._2);
-        })()
-      );
-    },
-    bwd: (dictAnn) => {
-      const bot = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().bot;
-      return (v1) => (v2) => {
-        const v3 = v._2.bwd(v1._1)($Tuple(v2._1, v2._2));
-        if (dictIsZero.isZero(v2._1)) {
-          return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, bot));
-        }
-        if (dictIsZero.isZero(v2._2)) {
-          return $Tuple($Tuple(v3._1, bot), $Tuple(v3._2, v1._2));
-        }
-        return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, v1._2));
-      };
-    }
-  });
-  var binary = (v) => binary_({
-    i1: v._1._1._1,
-    i2: v._1._1._2,
-    o: v._1._2,
-    fwd: (dictAnn) => {
-      const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-      return (v1) => (v2) => $Tuple(v._2.fwd(v1._1)(v2._1), meet(v1._2)(v2._2));
-    },
-    bwd: (dictAnn) => (v1) => (v2) => {
-      const v3 = v._2.bwd(v1._1)($Tuple(v2._1, v2._2));
-      return $Tuple($Tuple(v3._1, v1._2), $Tuple(v3._2, v1._2));
-    }
-  });
+        },
+        Nil
+      )
+    );
+  };
   var asNumberIntOrNumber = { as: Right };
   var asIntOrNumberString = { as: (v) => unsafePerformEffect(throwException(error("Non-uniform argument types"))) };
   var asIntNumber = { as: toNumber };
   var asIntIntOrNumber = { as: Left };
-  var asBooleanBoolean = { as: identity13 };
+  var asBooleanBoolean = { as: (x2) => x2 };
   var union3 = (dictAs) => (dictAs1) => (dictAs2) => (dictAs3) => (v) => (v1) => (v2) => (v3) => {
     if (v2.tag === "Left") {
       if (v3.tag === "Left") {
@@ -13042,7 +13053,7 @@
 
   // node_modules/d3-interpolate/src/transform/decompose.js
   var degrees = 180 / Math.PI;
-  var identity14 = {
+  var identity13 = {
     translateX: 0,
     translateY: 0,
     rotate: 0,
@@ -13074,16 +13085,16 @@
   var svgNode;
   function parseCss(value) {
     const m = new (typeof DOMMatrix === "function" ? DOMMatrix : WebKitCSSMatrix)(value + "");
-    return m.isIdentity ? identity14 : decompose_default(m.a, m.b, m.c, m.d, m.e, m.f);
+    return m.isIdentity ? identity13 : decompose_default(m.a, m.b, m.c, m.d, m.e, m.f);
   }
   function parseSvg(value) {
     if (value == null)
-      return identity14;
+      return identity13;
     if (!svgNode)
       svgNode = document.createElementNS("http://www.w3.org/2000/svg", "g");
     svgNode.setAttribute("transform", value);
     if (!(value = svgNode.transform.baseVal.consolidate()))
-      return identity14;
+      return identity13;
     value = value.matrix;
     return decompose_default(value.a, value.b, value.c, value.d, value.e, value.f);
   }
@@ -14504,7 +14515,7 @@
 
   // node_modules/d3-scale/src/continuous.js
   var unit2 = [0, 1];
-  function identity15(x2) {
+  function identity14(x2) {
     return x2;
   }
   function normalize(a, b) {
@@ -14549,10 +14560,10 @@
     return target.domain(source2.domain()).range(source2.range()).interpolate(source2.interpolate()).clamp(source2.clamp()).unknown(source2.unknown());
   }
   function transformer() {
-    var domain = unit2, range3 = unit2, interpolate = value_default, transform2, untransform, unknown, clamp = identity15, piecewise, output, input;
+    var domain = unit2, range3 = unit2, interpolate = value_default, transform2, untransform, unknown, clamp = identity14, piecewise, output, input;
     function rescale() {
       var n = Math.min(domain.length, range3.length);
-      if (clamp !== identity15)
+      if (clamp !== identity14)
         clamp = clamper(domain[0], domain[n - 1]);
       piecewise = n > 2 ? polymap : bimap;
       output = input = null;
@@ -14574,7 +14585,7 @@
       return range3 = Array.from(_), interpolate = round_default, rescale();
     };
     scale.clamp = function(_) {
-      return arguments.length ? (clamp = _ ? true : identity15, rescale()) : clamp !== identity15;
+      return arguments.length ? (clamp = _ ? true : identity14, rescale()) : clamp !== identity14;
     };
     scale.interpolate = function(_) {
       return arguments.length ? (interpolate = _, rescale()) : interpolate;
@@ -14588,7 +14599,7 @@
     };
   }
   function continuous() {
-    return transformer()(identity15, identity15);
+    return transformer()(identity14, identity14);
   }
 
   // node_modules/d3-scale/src/tickFormat.js
@@ -14829,12 +14840,12 @@
       return "translate(" + this.x + "," + this.y + ") scale(" + this.k + ")";
     }
   };
-  var identity16 = new Transform(1, 0, 0);
+  var identity15 = new Transform(1, 0, 0);
   transform.prototype = Transform.prototype;
   function transform(node) {
     while (!node.__zoom)
       if (!(node = node.parentNode))
-        return identity16;
+        return identity15;
     return node.__zoom;
   }
 
@@ -19042,7 +19053,7 @@
 
   // output-es/Affjax.ResponseFormat/index.js
   var $ResponseFormat = (tag, _1) => ({ tag, _1 });
-  var identity18 = (x2) => x2;
+  var identity17 = (x2) => x2;
 
   // output-es/Affjax.ResponseHeader/index.js
   var $ResponseHeader = (_1, _2) => ({ tag: "ResponseHeader", _1, _2 });
@@ -19955,7 +19966,7 @@
   var $Assoc = (tag) => ({ tag });
   var $Operator = (tag, _1, _2) => ({ tag, _1, _2 });
   var choice2 = /* @__PURE__ */ choice(foldableList);
-  var identity19 = (x2) => x2;
+  var identity18 = (x2) => x2;
   var AssocNone = /* @__PURE__ */ $Assoc("AssocNone");
   var AssocLeft = /* @__PURE__ */ $Assoc("AssocLeft");
   var AssocRight = /* @__PURE__ */ $Assoc("AssocRight");
@@ -20079,8 +20090,8 @@
     const postfixOp = withErrorMessage(choice2(accum.postfix))("");
     const prefixOp = withErrorMessage(choice2(accum.prefix))("");
     const rassocOp = choice2(accum.rassoc);
-    const $8 = altParserT.alt(prefixOp)((state1, v, v1, v2, done) => done(state1, identity19));
-    const $9 = altParserT.alt(postfixOp)((state1, v, v1, v2, done) => done(state1, identity19));
+    const $8 = altParserT.alt(prefixOp)((state1, v, v1, v2, done) => done(state1, identity18));
+    const $9 = altParserT.alt(postfixOp)((state1, v, v1, v2, done) => done(state1, identity18));
     return (state1, more, lift1, $$throw, done) => more((v1) => more((v1$1) => $8(
       state1,
       more,
@@ -20098,10 +20109,10 @@
           $$throw,
           (state2$2, a$2) => more((v2$2) => {
             const $28 = a$2(a(a$1));
-            return more((v2$3) => altParserT.alt(rassocP($28)(rassocOp)(altParserT.alt(prefixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity19)))(term)(altParserT.alt(postfixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity19))))(altParserT.alt(lassocP($28)(lassocOp)(altParserT.alt(prefixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(
+            return more((v2$3) => altParserT.alt(rassocP($28)(rassocOp)(altParserT.alt(prefixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity18)))(term)(altParserT.alt(postfixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity18))))(altParserT.alt(lassocP($28)(lassocOp)(altParserT.alt(prefixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(
               state1$1,
-              identity19
-            )))(term)(altParserT.alt(postfixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity19))))(altParserT.alt(nassocP($28)(nassocOp)(altParserT.alt(prefixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity19)))(term)(altParserT.alt(postfixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity19))))(withErrorMessage((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, $28))("operator"))))(state2$2, more, lift1, $$throw, done));
+              identity18
+            )))(term)(altParserT.alt(postfixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity18))))(altParserT.alt(nassocP($28)(nassocOp)(altParserT.alt(prefixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity18)))(term)(altParserT.alt(postfixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity18))))(withErrorMessage((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, $28))("operator"))))(state2$2, more, lift1, $$throw, done));
           })
         )))
       )))
@@ -20234,7 +20245,7 @@
   var toUpperSimple = /* @__PURE__ */ convert(uTowupper);
 
   // output-es/Parsing.Token/index.js
-  var identity20 = (x2) => x2;
+  var identity19 = (x2) => x2;
   var many3 = /* @__PURE__ */ many2(alternativeParserT)(lazyParserT);
   var some3 = /* @__PURE__ */ some2(alternativeParserT)(lazyParserT);
   var choice3 = /* @__PURE__ */ choice(foldableArray);
@@ -20387,8 +20398,8 @@
       more,
       lift1,
       $$throw,
-      (state2, a) => more((v2) => done(state2, identity20))
-    )))((state1, v$1, v1, v2, done) => done(state1, identity20)));
+      (state2, a) => more((v2) => done(state2, identity19))
+    )))((state1, v$1, v1, v2, done) => done(state1, identity19)));
     const $2 = some3(withErrorMessage(satisfyCP(isOctDigit))("oct digit"));
     const octal = (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => oneOf(["o", "O"])(
       state1,
@@ -21358,7 +21369,7 @@
   var fromFoldable9 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
   var fromFoldable16 = /* @__PURE__ */ (() => fromFoldableImpl(foldableNonEmptyList.foldr))();
   var choose2 = /* @__PURE__ */ choose(altParserT);
-  var identity21 = (x2) => x2;
+  var identity20 = (x2) => x2;
   var fanin3 = /* @__PURE__ */ fanin(categoryFn)(choiceFn);
   var operators = (binaryOp) => fromFoldable9(listMap(arrayMap((v) => $Operator("Infix", $$try4(binaryOp(v.op)), v.assoc)))(listMap(fromFoldable16)(groupBy((x2) => (y2) => x2.prec === y2.prec)(sortBy((x2) => (x$1) => {
     const $3 = ordInt.compare(x2.prec)(x$1.prec);
@@ -22021,8 +22032,8 @@
           more,
           lift1,
           $$throw,
-          (state2, a) => more((v2) => done(state2, identity21))
-        )))((state1, v$1, v1, v2, done) => done(state1, identity21)));
+          (state2, a) => more((v2) => done(state2, identity20))
+        )))((state1, v$1, v1, v2, done) => done(state1, identity20)));
         return (state1, more, lift1, $$throw, done) => more((v1) => $3(
           state1,
           more,
@@ -22045,8 +22056,8 @@
           more,
           lift1,
           $$throw,
-          (state2, a) => more((v2) => done(state2, identity21))
-        )))((state1, v$1, v1, v2, done) => done(state1, identity21)));
+          (state2, a) => more((v2) => done(state2, identity20))
+        )))((state1, v$1, v1, v2, done) => done(state1, identity20)));
         return (state1, more, lift1, $$throw, done) => more((v1) => $3(
           state1,
           more,
@@ -22296,28 +22307,108 @@
   };
   var notEquals = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((x2) => (y2) => x2 !== y2)((x2) => (y2) => x2 !== y2))((x2) => (y2) => x2 !== y2);
   var matrixLookup = {
-    i1: matrixRep,
-    i2: intPair,
-    o: val,
-    fwd: (dictAnn) => {
-      const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-      return (v) => (v1) => $Tuple(
-        definitely("index within bounds")(index2(definitely("index within bounds")(index2(v._1._1._1)(v1._1._1._1 - 1 | 0)))(v1._1._2._1 - 1 | 0)),
-        meet(v._2)(v1._2)
-      );
+    arity: 2,
+    op: (dictAnn) => (v) => {
+      if (v.tag === "Cons") {
+        if (v._1.tag === "Matrix") {
+          if (v._2.tag === "Cons") {
+            if (v._2._1.tag === "Constr") {
+              if (v._2._1._3.tag === "Cons") {
+                if (v._2._1._3._1.tag === "Int") {
+                  if (v._2._1._3._2.tag === "Cons") {
+                    if (v._2._1._3._2._1.tag === "Int") {
+                      if (v._2._1._3._2._2.tag === "Nil") {
+                        if (v._2._2.tag === "Nil") {
+                          if (v._2._1._2 === "Pair") {
+                            return definitely("index within bounds")(index2(definitely("index within bounds")(index2(v._1._2._1._1)(v._2._1._3._1._2 - 1 | 0)))(v._2._1._3._2._1._2 - 1 | 0));
+                          }
+                          fail();
+                        }
+                        fail();
+                      }
+                      fail();
+                    }
+                    fail();
+                  }
+                  fail();
+                }
+                fail();
+              }
+              fail();
+            }
+            fail();
+          }
+          fail();
+        }
+        fail();
+      }
+      fail();
     },
-    bwd: (dictAnn) => {
-      const bot = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().bot;
-      return (v) => (v1) => $Tuple(
-        $Tuple(
-          updateMatrix(v1._2._1._1)(v1._2._2._1)((v$1) => v._1)($Tuple(
-            $Tuple(v1._1._1._1, $Tuple(v1._1._1._2._1, bot)),
-            $Tuple(v1._1._2._1, bot)
-          )),
-          v._2
-        ),
-        $Tuple($Tuple($Tuple(v1._2._1._1, bot), $Tuple(v1._2._2._1, bot)), v._2)
-      );
+    op_bwd: (dictAnn) => {
+      const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
+      return (v) => (v1) => {
+        if (v1.tag === "Cons") {
+          if (v1._1.tag === "Matrix") {
+            if (v1._2.tag === "Cons") {
+              if (v1._2._1.tag === "Constr") {
+                if (v1._2._1._3.tag === "Cons") {
+                  if (v1._2._1._3._1.tag === "Int") {
+                    if (v1._2._1._3._2.tag === "Cons") {
+                      if (v1._2._1._3._2._1.tag === "Int") {
+                        if (v1._2._1._3._2._2.tag === "Nil") {
+                          if (v1._2._2.tag === "Nil") {
+                            if (v1._2._1._2 === "Pair") {
+                              return $List(
+                                "Cons",
+                                $Val(
+                                  "Matrix",
+                                  BoundedJoinSemilattice0.bot,
+                                  updateMatrix(v1._2._1._3._1._2)(v1._2._1._3._2._1._2)((v$1) => v)($Tuple(
+                                    $Tuple(
+                                      arrayMap(arrayMap(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)))(v1._1._2._1._1),
+                                      $Tuple(v1._1._2._1._2._1, BoundedJoinSemilattice0.bot)
+                                    ),
+                                    $Tuple(v1._1._2._2._1, BoundedJoinSemilattice0.bot)
+                                  ))
+                                ),
+                                $List(
+                                  "Cons",
+                                  $Val(
+                                    "Constr",
+                                    BoundedJoinSemilattice0.bot,
+                                    "Pair",
+                                    $List(
+                                      "Cons",
+                                      $Val("Int", BoundedJoinSemilattice0.bot, v1._2._1._3._1._2),
+                                      $List("Cons", $Val("Int", BoundedJoinSemilattice0.bot, v1._2._1._3._2._1._2), Nil)
+                                    )
+                                  ),
+                                  Nil
+                                )
+                              );
+                            }
+                            fail();
+                          }
+                          fail();
+                        }
+                        fail();
+                      }
+                      fail();
+                    }
+                    fail();
+                  }
+                  fail();
+                }
+                fail();
+              }
+              fail();
+            }
+            fail();
+          }
+          fail();
+        }
+        fail();
+      };
     }
   };
   var log3 = (v2) => {
@@ -22334,156 +22425,208 @@
   var greaterThanEquals = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 >= a2)((a1) => (a2) => a1 >= a2))((a1) => (a2) => a1 >= a2);
   var greaterThan = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 > a2)((a1) => (a2) => a1 > a2))((a1) => (a2) => a1 > a2);
   var $$get3 = {
-    i1: string,
-    i2: dict,
-    o: val,
-    fwd: (dictAnn) => {
-      const top2 = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().top;
-      return (v) => (v1) => $Tuple($$get(v._1)(v1._1)._2, top2);
+    arity: 2,
+    op: (dictAnn) => (v) => {
+      if (v.tag === "Cons") {
+        if (v._1.tag === "Str") {
+          if (v._2.tag === "Cons") {
+            if (v._2._1.tag === "Dictionary") {
+              if (v._2._2.tag === "Nil") {
+                return $$get(v._1._2)(v._2._1._2)._2;
+              }
+              fail();
+            }
+            fail();
+          }
+          fail();
+        }
+        fail();
+      }
+      fail();
     },
-    bwd: (dictAnn) => {
+    op_bwd: (dictAnn) => {
       const bot = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().bot;
-      return (v) => (v1) => $Tuple(
-        $Tuple(v1._1, bot),
-        $Tuple(runST(bind_(newImpl)(poke2(v1._1)($Tuple(bot, v._1)))), bot)
-      );
+      return (v) => (v1) => {
+        if (v1.tag === "Cons") {
+          if (v1._1.tag === "Str") {
+            if (v1._2.tag === "Cons") {
+              if (v1._2._1.tag === "Dictionary") {
+                if (v1._2._2.tag === "Nil") {
+                  return $List(
+                    "Cons",
+                    $Val("Str", bot, v1._1._2),
+                    $List(
+                      "Cons",
+                      $Val(
+                        "Dictionary",
+                        bot,
+                        runST(bind_(newImpl)(poke2(v1._1._2)($Tuple(bot, v))))
+                      ),
+                      Nil
+                    )
+                  );
+                }
+                fail();
+              }
+              fail();
+            }
+            fail();
+          }
+          fail();
+        }
+        fail();
+      };
     }
   };
   var divide = /* @__PURE__ */ union3(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => toNumber(x2) / toNumber(y2))(numDiv);
-  var dims = { fwd: (v) => $Tuple(v._1._2, v._2), bwd: (v) => (v1) => $Tuple($Tuple(v1._1._1, v._1), v._2) };
+  var dims = {
+    arity: 1,
+    op: (dictAnn) => (v) => {
+      if (v.tag === "Cons") {
+        if (v._1.tag === "Matrix") {
+          if (v._2.tag === "Nil") {
+            return $Val(
+              "Constr",
+              v._1._1,
+              "Pair",
+              $List(
+                "Cons",
+                $Val("Int", v._1._2._1._2._2, v._1._2._1._2._1),
+                $List("Cons", $Val("Int", v._1._2._2._2, v._1._2._2._1), Nil)
+              )
+            );
+          }
+          fail();
+        }
+        fail();
+      }
+      fail();
+    },
+    op_bwd: (dictAnn) => {
+      const $1 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
+      return (v) => (v1) => {
+        if (v.tag === "Constr") {
+          if (v._3.tag === "Cons") {
+            if (v._3._1.tag === "Int") {
+              if (v._3._2.tag === "Cons") {
+                if (v._3._2._1.tag === "Int") {
+                  if (v._3._2._2.tag === "Nil") {
+                    if (v1.tag === "Cons") {
+                      if (v1._1.tag === "Matrix") {
+                        if (v1._2.tag === "Nil") {
+                          if (v._2 === "Pair") {
+                            return $List(
+                              "Cons",
+                              $Val(
+                                "Matrix",
+                                v._1,
+                                $Tuple(
+                                  $Tuple(
+                                    arrayMap(arrayMap(functorVal.map((v$1) => $1.bot)))(v1._1._2._1._1),
+                                    $Tuple(v._3._1._2, v._3._1._1)
+                                  ),
+                                  $Tuple(v._3._2._1._2, v._3._2._1._1)
+                                )
+                              ),
+                              Nil
+                            );
+                          }
+                          fail();
+                        }
+                        fail();
+                      }
+                      fail();
+                    }
+                    fail();
+                  }
+                  fail();
+                }
+                fail();
+              }
+              fail();
+            }
+            fail();
+          }
+          fail();
+        }
+        fail();
+      };
+    }
+  };
   var debugLog = (x2) => _trace(x2, (v) => x2);
   var primitives = /* @__PURE__ */ (() => fromFoldable2(foldableArray)([
     $Tuple(":", $Val("Fun", $Fun("PartialConstr", unit, ":", Nil))),
-    $Tuple("ceiling", unary($Tuple($Tuple(number, $$int), { fwd: ceil2, bwd: (v) => identity13 }))),
-    $Tuple("debugLog", unary($Tuple($Tuple(val, val), { fwd: debugLog, bwd: (v) => identity13 }))),
-    $Tuple("dims", unary($Tuple($Tuple(matrixRep, intPair), dims))),
-    $Tuple("error", unary($Tuple($Tuple(string, val), { fwd: error2, bwd: (v) => identity13 }))),
-    $Tuple("floor", unary($Tuple($Tuple(number, $$int), { fwd: floor2, bwd: (v) => identity13 }))),
-    $Tuple("log", unary($Tuple($Tuple(intOrNumber, number), { fwd: log3, bwd: (v) => identity13 }))),
-    $Tuple("numToStr", unary($Tuple($Tuple(intOrNumber, string), { fwd: numToStr, bwd: (v) => identity13 }))),
+    $Tuple("ceiling", unary({ i: number, o: $$int, fwd: ceil2 })),
+    $Tuple("debugLog", unary({ i: val, o: val, fwd: debugLog })),
+    $Tuple("dims", $Val("Fun", $Fun("Primitive", dims, Nil))),
+    $Tuple("error", unary({ i: string, o: val, fwd: error2 })),
+    $Tuple("floor", unary({ i: number, o: $$int, fwd: floor2 })),
+    $Tuple("log", unary({ i: intOrNumber, o: number, fwd: log3 })),
+    $Tuple("numToStr", unary({ i: intOrNumber, o: string, fwd: numToStr })),
     $Tuple(
       "+",
-      binary($Tuple(
-        $Tuple($Tuple(intOrNumber, intOrNumber), intOrNumber),
-        {
-          fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intAdd)(numAdd),
-          bwd: (v) => identity13
-        }
-      ))
+      binary({
+        i1: intOrNumber,
+        i2: intOrNumber,
+        o: intOrNumber,
+        fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intAdd)(numAdd)
+      })
     ),
     $Tuple(
       "-",
-      binary($Tuple(
-        $Tuple($Tuple(intOrNumber, intOrNumber), intOrNumber),
-        {
-          fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intSub)(numSub),
-          bwd: (v) => identity13
-        }
-      ))
+      binary({
+        i1: intOrNumber,
+        i2: intOrNumber,
+        o: intOrNumber,
+        fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intSub)(numSub)
+      })
     ),
     $Tuple(
       "*",
-      binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })($Tuple(
-        $Tuple(intOrNumber, intOrNumber),
-        {
-          fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intMul)(numMul),
-          bwd: (v) => identity13
-        }
-      ))
+      binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })({
+        i: intOrNumber,
+        o: intOrNumber,
+        fwd: union3(asIntIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)(intMul)(numMul)
+      })
     ),
     $Tuple(
       "**",
-      binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })($Tuple(
-        $Tuple(intOrNumber, intOrNumber),
-        { fwd: pow3, bwd: (v) => identity13 }
-      ))
+      binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })({ i: intOrNumber, o: intOrNumber, fwd: pow3 })
     ),
     $Tuple(
       "/",
-      binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })($Tuple(
-        $Tuple(intOrNumber, intOrNumber),
-        { fwd: divide, bwd: (v) => identity13 }
-      ))
+      binaryZero({ isZero: fanin2(isZeroInt.isZero)(isZeroNumber.isZero) })({ i: intOrNumber, o: intOrNumber, fwd: divide })
     ),
     $Tuple(
       "==",
-      binary($Tuple(
-        $Tuple($Tuple(intOrNumberOrString, intOrNumberOrString), $$boolean),
-        {
-          fwd: unionStr(asBooleanBoolean)(asIntOrNumberString)(union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)(eqIntImpl)(eqNumberImpl))(eqStringImpl),
-          bwd: (v) => identity13
-        }
-      ))
+      binary({
+        i1: intOrNumberOrString,
+        i2: intOrNumberOrString,
+        o: $$boolean,
+        fwd: unionStr(asBooleanBoolean)(asIntOrNumberString)(union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)(eqIntImpl)(eqNumberImpl))(eqStringImpl)
+      })
     ),
-    $Tuple(
-      "/=",
-      binary($Tuple(
-        $Tuple($Tuple(intOrNumberOrString, intOrNumberOrString), $$boolean),
-        { fwd: notEquals, bwd: (v) => identity13 }
-      ))
-    ),
-    $Tuple(
-      "<",
-      binary($Tuple(
-        $Tuple($Tuple(intOrNumberOrString, intOrNumberOrString), $$boolean),
-        { fwd: lessThan, bwd: (v) => identity13 }
-      ))
-    ),
-    $Tuple(
-      ">",
-      binary($Tuple(
-        $Tuple($Tuple(intOrNumberOrString, intOrNumberOrString), $$boolean),
-        { fwd: greaterThan, bwd: (v) => identity13 }
-      ))
-    ),
-    $Tuple(
-      "<=",
-      binary($Tuple(
-        $Tuple($Tuple(intOrNumberOrString, intOrNumberOrString), $$boolean),
-        { fwd: lessThanEquals, bwd: (v) => identity13 }
-      ))
-    ),
-    $Tuple(
-      ">=",
-      binary($Tuple(
-        $Tuple($Tuple(intOrNumberOrString, intOrNumberOrString), $$boolean),
-        { fwd: greaterThanEquals, bwd: (v) => identity13 }
-      ))
-    ),
-    $Tuple(
-      "++",
-      binary($Tuple(
-        $Tuple($Tuple(string, string), string),
-        { fwd: concatString, bwd: (v) => identity13 }
-      ))
-    ),
-    $Tuple("!", binary_(matrixLookup)),
-    $Tuple(
-      "div",
-      binaryZero(isZeroInt)($Tuple($Tuple($$int, $$int), { fwd: intDiv, bwd: (v) => identity13 }))
-    ),
-    $Tuple("get", binary_($$get3)),
-    $Tuple(
-      "mod",
-      binaryZero(isZeroInt)($Tuple($Tuple($$int, $$int), { fwd: intMod, bwd: (v) => identity13 }))
-    ),
-    $Tuple(
-      "quot",
-      binaryZero(isZeroInt)($Tuple($Tuple($$int, $$int), { fwd: quot, bwd: (v) => identity13 }))
-    ),
-    $Tuple(
-      "rem",
-      binaryZero(isZeroInt)($Tuple($Tuple($$int, $$int), { fwd: rem, bwd: (v) => identity13 }))
-    )
+    $Tuple("/=", binary({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: notEquals })),
+    $Tuple("<", binary({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: lessThan })),
+    $Tuple(">", binary({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: greaterThan })),
+    $Tuple("<=", binary({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: lessThanEquals })),
+    $Tuple(">=", binary({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: greaterThanEquals })),
+    $Tuple("++", binary({ i1: string, i2: string, o: string, fwd: concatString })),
+    $Tuple("!", $Val("Fun", $Fun("Primitive", matrixLookup, Nil))),
+    $Tuple("div", binaryZero(isZeroInt)({ i: $$int, o: $$int, fwd: intDiv })),
+    $Tuple("get", $Val("Fun", $Fun("Primitive", $$get3, Nil))),
+    $Tuple("mod", binaryZero(isZeroInt)({ i: $$int, o: $$int, fwd: intMod })),
+    $Tuple("quot", binaryZero(isZeroInt)({ i: $$int, o: $$int, fwd: quot })),
+    $Tuple("rem", binaryZero(isZeroInt)({ i: $$int, o: $$int, fwd: rem }))
   ]))();
 
   // output-es/Module/index.js
-  var identity22 = (x2) => x2;
+  var identity21 = (x2) => x2;
   var eval_module2 = /* @__PURE__ */ eval_module(annBoolean);
   var $$eval2 = /* @__PURE__ */ $$eval(annBoolean);
   var parse = (src) => {
     const $1 = runParserT1(src);
-    return (x2) => bifunctorEither.bimap(showParseError.show)(identity22)($1(x2));
+    return (x2) => bifunctorEither.bimap(showParseError.show)(identity21)($1(x2));
   };
   var loadFile = (v) => (v1) => _bind(request(driver)({
     method: $Either("Left", GET),
@@ -22493,7 +22636,7 @@
     username: Nothing,
     password: Nothing,
     withCredentials: false,
-    responseFormat: $ResponseFormat("String", identity18),
+    responseFormat: $ResponseFormat("String", identity17),
     timeout: Nothing
   }))((result) => {
     if (result.tag === "Left") {
@@ -22562,7 +22705,7 @@
   var joinSemilatticeVal2 = /* @__PURE__ */ joinSemilatticeVal(joinSemilatticeBoolean);
   var neg4 = /* @__PURE__ */ (() => joinSemilatticeDict(joinSemilatticeVal2).neg)();
   var botOf = /* @__PURE__ */ (() => functorVal.map((v) => false))();
-  var identity23 = (x2) => x2;
+  var identity22 = (x2) => x2;
   var sequence_ = /* @__PURE__ */ traverse_(applicativeEffect)(foldableArray)(identity5);
   var length5 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
   var view = (v) => (v1) => {
@@ -22702,14 +22845,14 @@
           const v1$p = \u03B4v._1(v.v1);
           return bindEither.bind(linkResult(v.spec.x)(v["\u03B30"])(v["\u03B3"])(v.e1)(v.e2)(v.t1)(v.t2)(v1$p))((v4) => $Either(
             "Right",
-            $Tuple($Tuple($Tuple($Tuple(v1$p, v4["v'"]), (v$1) => v1$p), identity23), v4["v0'"])
+            $Tuple($Tuple($Tuple($Tuple(v1$p, v4["v'"]), (v$1) => v1$p), identity22), v4["v0'"])
           ));
         }
         if (\u03B4v.tag === "Right") {
           const v2$p = \u03B4v._1(v.v2);
           return bindEither.bind(linkResult(v.spec.x)(v["\u03B30"])(v["\u03B3"])(v.e2)(v.e1)(v.t2)(v.t1)(v2$p))((v4) => $Either(
             "Right",
-            $Tuple($Tuple($Tuple($Tuple(v4["v'"], v2$p), identity23), (v$1) => v2$p), v4["v0'"])
+            $Tuple($Tuple($Tuple($Tuple(v4["v'"], v2$p), identity22), (v$1) => v2$p), v4["v0'"])
           ));
         }
         fail();
