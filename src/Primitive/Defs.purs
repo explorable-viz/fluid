@@ -15,7 +15,7 @@ import Eval (apply)
 import Lattice (Raw, bot, botOf, top)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (BinarySlicer, Unary, binary, binaryZero, binary_, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, unary', union, union1, unionStr, val, withInverse1)
+import Primitive (BinarySlicer, Unary, binary, binaryZero, binary_, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, unary', union, union1, unionStr, val)
 import Util (Endo, type (×), (×), type (+), (!), error, successful)
 import Val (class Ann, Env, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
 
@@ -25,7 +25,7 @@ primitives = D.fromFoldable
    , "ceiling" × unary' { i: number, o: int, fwd: ceil }
    , "debugLog" × unary' { i: val, o: val, fwd: debugLog }
    , "dims" × unary (matrixRep × intPair × dims)
-   , "error" × unary (string × val × withInverse1 error_)
+   , "error" × unary' { i: string, o: val, fwd: error_ }
    , "floor" × unary' { i: number, o: int, fwd: floor }
    , "log" × unary' { i: intOrNumber, o: number, fwd: log }
    , "numToStr" × unary' { i: intOrNumber, o: string, fwd: numToStr }
