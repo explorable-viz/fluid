@@ -12,7 +12,7 @@ import Dict (Dict)
 import Lattice ((∧), bot, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Util (Endo, type (×), (×), type (+), error)
+import Util (type (+), type (×), Endo, absurd, error, (×))
 import Val (class Ann, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..))
 
 -- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to
@@ -204,25 +204,29 @@ type BinarySlicer i1 i2 o a =
 
 unary_ :: forall i o a'. (forall a. UnarySlicer i o a) -> Val a'
 unary_ s =
-   Fun $ flip Primitive Nil $ PrimOp { arity: 1, op: unsafePartial op, op_bwd: unsafePartial op_bwd }
+   Fun $ Primitive (PrimOp { arity: 1, op, op_bwd }) Nil
    where
-   op :: Partial => OpFwd
+   op :: OpFwd
    op (v : Nil) = s.o.constr (s.fwd (s.i.match v))
+   op _ = error absurd
 
-   op_bwd :: Partial => OpBwd
+   op_bwd :: OpBwd
    op_bwd v (u : Nil) = s.i.constr (s.bwd (s.o.constr_bwd v) (fst (s.i.match u))) : Nil
+   op_bwd _ _ = error absurd
 
 binary_ :: forall i1 i2 o a'. (forall a. BinarySlicer i1 i2 o a) -> Val a'
 binary_ s =
-   Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial op, op_bwd: unsafePartial op_bwd }
+   Fun $ Primitive (PrimOp { arity: 2, op, op_bwd }) Nil
    where
-   op :: Partial => OpFwd
+   op :: OpFwd
    op (v1 : v2 : Nil) = s.o.constr (s.fwd (s.i1.match v1) (s.i2.match v2))
+   op _ = error absurd
 
-   op_bwd :: Partial => OpBwd
+   op_bwd :: OpBwd
    op_bwd v (u1 : u2 : Nil) = s.i1.constr v1 : s.i2.constr v2 : Nil
       where
       v1 × v2 = s.bwd (s.o.constr_bwd v) (fst (s.i1.match u1) × fst (s.i2.match u2))
+   op_bwd _ _ = error absurd
 
 withInverse1 :: forall i o. (i -> o) -> Unary i o
 withInverse1 fwd = { fwd, bwd: const identity }

@@ -1,6 +1,6 @@
 module Primitive.Defs where
 
-import Prelude hiding (absurd, div, mod, top)
+import Prelude hiding (absurd, apply, div, mod, top)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..))
@@ -10,6 +10,7 @@ import DataType (cCons)
 import Debug (trace)
 import Dict (Dict)
 import Dict (fromFoldable, get, singleton) as D
+import Eval (apply)
 import Lattice (Raw, (∧), bot, top)
 import Prelude (div, mod) as P
 import Primitive
@@ -36,7 +37,7 @@ import Primitive
    , withInverse1
    , withInverse2
    )
-import Util (Endo, type (×), (×), type (+), (!), error)
+import Util (Endo, type (×), (×), type (+), (!), error, successful)
 import Val (class Ann, Env, Fun(..), MatrixRep, Val(..), updateMatrix)
 
 primitives :: Raw Env
@@ -116,8 +117,8 @@ get = { i1: string, i2: dict, o: val, fwd, bwd }
 map :: forall a. BinarySlicer (Fun a) (Dict (a × Val a)) (Dict (a × Val a)) a
 map = { i1: function, i2: dict, o: dict, fwd, bwd }
    where
-   fwd :: Ann a => _
-   fwd = error "todo"
+   fwd :: Ann a => Fun a × a -> Dict (a × Val a) × a -> Dict (a × Val a) × a
+   fwd (φ × _) (d × α) = (d <#> (\(β × v) -> β × snd (successful (apply φ v)))) × α
 
    bwd :: Ann a => _
    bwd = error "todo"
