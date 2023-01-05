@@ -160,6 +160,13 @@ type Unary i o a =
    , fwd :: i -> o
 }
 
+type Binary i1 i2 o a =
+   { i1 :: ToFrom i1 a
+   , i2 :: ToFrom i2 a
+   , o :: ToFrom o a
+   , fwd :: i1 -> i2 -> o
+}
+
 unary
    :: forall i o a'
     . (forall a. Unary i o a)
@@ -180,25 +187,22 @@ unary op =
 
 binary
    :: forall i1 i2 o a'
-    . (forall a. ToFrom i1 a)
-   -> (forall a. ToFrom i2 a)
-   -> (forall a. ToFrom o a)
-   -> (i1 -> i2 -> o)
+    . (forall a. Binary i1 i2 o a)
    -> Val a'
-binary i1 i2 o op =
+binary op =
    Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
-   fwd (v1 : v2 : Nil) = o.constr (op x y × (α ∧ β))
+   fwd (v1 : v2 : Nil) = op.o.constr (op.fwd x y × (α ∧ β))
       where
-      x × α = i1.match v1
-      y × β = i2.match v2
+      x × α = op.i1.match v1
+      y × β = op.i2.match v2
 
    bwd :: Partial => OpBwd
-   bwd v (u1 : u2 : Nil) = i1.constr (x × α) : i2.constr (y × α) : Nil
+   bwd v (u1 : u2 : Nil) = op.i1.constr (x × α) : op.i2.constr (y × α) : Nil
       where
-      _ × α = o.constr_bwd v
-      (x × _) × (y × _) = i1.match u1 × i2.match u2
+      _ × α = op.o.constr_bwd v
+      (x × _) × (y × _) = op.i1.match u1 × op.i2.match u2
 
 -- If both are zero, depend only on the first.
 binaryZero

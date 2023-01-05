@@ -28,18 +28,18 @@ primitives = D.fromFoldable
    , "floor" × unary { i: number, o: int, fwd: floor }
    , "log" × unary { i: intOrNumber, o: number, fwd: log }
    , "numToStr" × unary { i: intOrNumber, o: string, fwd: numToStr }
-   , "+" × binary intOrNumber intOrNumber intOrNumber plus
-   , "-" × binary intOrNumber intOrNumber intOrNumber minus
+   , "+" × binary { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: plus }
+   , "-" × binary { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: minus }
    , "*" × binaryZero intOrNumber intOrNumber times
    , "**" × binaryZero intOrNumber intOrNumber pow
    , "/" × binaryZero intOrNumber intOrNumber divide
-   , "==" × binary intOrNumberOrString intOrNumberOrString boolean equals
-   , "/=" × binary intOrNumberOrString intOrNumberOrString boolean notEquals
-   , "<" × binary intOrNumberOrString intOrNumberOrString boolean lessThan
-   , ">" × binary intOrNumberOrString intOrNumberOrString boolean greaterThan
-   , "<=" × binary intOrNumberOrString intOrNumberOrString boolean lessThanEquals
-   , ">=" × binary intOrNumberOrString intOrNumberOrString boolean greaterThanEquals
-   , "++" × binary string string string concat
+   , "==" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: equals }
+   , "/=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: notEquals }
+   , "<" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThan }
+   , ">" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThan }
+   , "<=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThanEquals }
+   , ">=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
+   , "++" × binary { i1: string, i2: string, o: string , fwd: concat }
    , "!" × Fun (Primitive matrixLookup Nil)
    , "div" × binaryZero int int div
    , "get" × Fun (Primitive get Nil)
