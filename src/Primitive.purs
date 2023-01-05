@@ -173,10 +173,7 @@ type BinaryZero i o a =
    , fwd :: i -> i -> o
    }
 
-unary
-   :: forall i o a'
-    . (forall a. Unary i o a)
-   -> Val a'
+unary :: forall i o a'. (forall a. Unary i o a) -> Val a'
 unary op =
    Fun $ flip Primitive Nil $ PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
@@ -191,10 +188,7 @@ unary op =
       _ × α = op.o.constr_bwd v
       (x × _) = op.i.match u
 
-binary
-   :: forall i1 i2 o a'
-    . (forall a. Binary i1 i2 o a)
-   -> Val a'
+binary :: forall i1 i2 o a'. (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
    Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
@@ -210,11 +204,7 @@ binary op =
       (x × _) × (y × _) = op.i1.match u1 × op.i2.match u2
 
 -- If both are zero, depend only on the first.
-binaryZero
-   :: forall i o a'
-    . IsZero i
-   => (forall a. BinaryZero i o a)
-   -> Val a'
+binaryZero :: forall i o a'. IsZero i => (forall a. BinaryZero i o a) -> Val a'
 binaryZero op =
    Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
