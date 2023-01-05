@@ -6,17 +6,16 @@ import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
-import Data.Profunctor.Strong (second)
 import Data.Tuple (snd)
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict)
 import Dict (fromFoldable, get, singleton) as D
 import Eval (apply)
-import Lattice (Raw, (∧), bot, botOf, top)
+import Lattice (Raw, bot, botOf, top)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (BinarySlicer, ToFrom, Unary, binary, binaryZero, binary_, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
+import Primitive (BinarySlicer, Unary, binary, binaryZero, binary_, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error, successful)
 import Val (class Ann, Env, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
 
@@ -30,18 +29,18 @@ primitives = D.fromFoldable
    , "floor" × unary (number × int × withInverse1 floor)
    , "log" × unary (intOrNumber × number × withInverse1 log)
    , "numToStr" × unary (intOrNumber × string × withInverse1 numToStr)
-   , "+" × bin intOrNumber intOrNumber intOrNumber plus
-   , "-" × bin intOrNumber intOrNumber intOrNumber minus
+   , "+" × binary intOrNumber intOrNumber intOrNumber plus
+   , "-" × binary intOrNumber intOrNumber intOrNumber minus
    , "*" × binaryZero (intOrNumber × intOrNumber × withInverse2 times)
    , "**" × binaryZero (intOrNumber × intOrNumber × withInverse2 pow)
    , "/" × binaryZero (intOrNumber × intOrNumber × withInverse2 divide)
-   , "==" × bin intOrNumberOrString intOrNumberOrString boolean equals
-   , "/=" × bin intOrNumberOrString intOrNumberOrString boolean notEquals
-   , "<" × bin intOrNumberOrString intOrNumberOrString boolean lessThan
-   , ">" × bin intOrNumberOrString intOrNumberOrString boolean greaterThan
-   , "<=" × bin intOrNumberOrString intOrNumberOrString boolean lessThanEquals
-   , ">=" × bin intOrNumberOrString intOrNumberOrString boolean greaterThanEquals
-   , "++" × binary (string × string × string × withInverse2 concat)
+   , "==" × binary intOrNumberOrString intOrNumberOrString boolean equals
+   , "/=" × binary intOrNumberOrString intOrNumberOrString boolean notEquals
+   , "<" × binary intOrNumberOrString intOrNumberOrString boolean lessThan
+   , ">" × binary intOrNumberOrString intOrNumberOrString boolean greaterThan
+   , "<=" × binary intOrNumberOrString intOrNumberOrString boolean lessThanEquals
+   , ">=" × binary intOrNumberOrString intOrNumberOrString boolean greaterThanEquals
+   , "++" × binary string string string concat
    , "!" × Fun (Primitive matrixLookup Nil)
    , "div" × binaryZero (int × int × withInverse2 div)
    , "get" × binary_ get
@@ -96,29 +95,6 @@ map = { i1: function, i2: dict, o: dict, fwd, bwd }
 
    bwd :: Ann a => _
    bwd = error "todo"
-
-bin
-   :: forall i1 i2 o a'
-    . (forall a. ToFrom i1 a)
-   -> (forall a. ToFrom i2 a)
-   -> (forall a. ToFrom o a)
-   -> (i1 -> i2 -> o)
-   -> Val a'
-bin i1 i2 o op = Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
-   where
-   fwd :: Partial => OpFwd
-   fwd (v1 : v2 : Nil) =
-      let
-         n × α = i1.match v1
-         m × β = i2.match v2
-      in
-         o.constr ((n `op` m) × (α ∧ β))
-
-   bwd :: Partial => OpBwd
-   bwd v (u1 : u2 : Nil) = i1.constr v1 : i2.constr v2 : Nil
-      where
-      _ × α = o.constr_bwd v
-      v1 × v2 = second (const α) (i1.match u1) × (second (const α) (i2.match u2))
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

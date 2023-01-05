@@ -6,10 +6,12 @@ import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Profunctor.Choice ((|||))
+import Data.Profunctor.Strong (second)
 import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
 import Lattice ((∧), bot, top)
+import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), Endo, absurd, error, (×))
 import Val (class Ann, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..))
@@ -242,16 +244,57 @@ unary (i × o × { fwd, bwd }) = unary_ { i, o, fwd: fwd', bwd: bwd' }
    bwd' :: forall a. o × a -> i -> i × a
    bwd' (y × α) x = bwd y x × α
 
-binary :: forall i1 i2 o a'. (forall a. ToFrom i1 a × ToFrom i2 a × ToFrom o a × Binary i1 i2 o) -> Val a'
-binary (i1 × i2 × o × { fwd, bwd }) = binary_ { i1, i2, o, fwd: fwd', bwd: bwd' }
+binary
+   :: forall i1 i2 o a'
+    . (forall a. ToFrom i1 a)
+   -> (forall a. ToFrom i2 a)
+   -> (forall a. ToFrom o a)
+   -> (i1 -> i2 -> o)
+   -> Val a'
+binary i1 i2 o op =
+   Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd' :: forall a. Ann a => i1 × a -> i2 × a -> o × a
-   fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
+   fwd :: Partial => OpFwd
+   fwd (v1 : v2 : Nil) =
+      let
+         x × α = i1.match v1
+         y × β = i2.match v2
+      in
+         o.constr ((x `op` y) × (α ∧ β))
 
-   bwd' :: forall a. o × a -> i1 × i2 -> (i1 × a) × (i2 × a)
-   bwd' (z × α) (x × y) = (x' × α) × (y' × α)
+   bwd :: Partial => OpBwd
+   bwd v (u1 : u2 : Nil) = i1.constr v1 : i2.constr v2 : Nil
       where
-      x' × y' = bwd z (x × y)
+      _ × α = o.constr_bwd v
+      v1 × v2 = second (const α) (i1.match u1) × (second (const α) (i2.match u2))
+
+-- If both are zero, depend only on the first.
+binaryZero'
+   :: forall i o a'
+    . IsZero i
+   => (forall a. ToFrom i a)
+   -> (forall a. ToFrom o a)
+   -> (i -> i -> o)
+   -> Val a'
+binaryZero' i o op =
+   Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: Partial => OpFwd
+   fwd (v1 : v2 : Nil) =
+      let
+         x × α = i.match v1
+         y × β = i.match v2
+      in
+         o.constr ((x `op` y) × (if isZero x then α else if isZero y then β else α ∧ β))
+
+   bwd :: Partial => OpBwd
+   bwd v (u1 : u2 : Nil) = i.constr (x × β1) : i.constr (y × β2) : Nil
+      where
+      _ × α = o.constr_bwd v
+      (x × _) × (y × _) = i.match u1 × i.match u2
+      β1 × β2 = if isZero x then α × bot
+                else if isZero y then bot × α
+                else α × α
 
 -- If both are zero, depend only on the first.
 binaryZero :: forall i o a'. IsZero i => (forall a. ToFrom i a × ToFrom o a × Binary i i o) -> Val a'
