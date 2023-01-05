@@ -30,8 +30,8 @@ primitives = D.fromFoldable
    , "floor" × unary (number × int × withInverse1 floor)
    , "log" × unary (intOrNumber × number × withInverse1 log)
    , "numToStr" × unary (intOrNumber × string × withInverse1 numToStr)
-   , "+" × Fun (Primitive plus' Nil)
-   , "-" × binary (intOrNumber × intOrNumber × intOrNumber × withInverse2 minus)
+   , "+" × Fun (Primitive (bin ((+) `union` (+))) Nil)
+   , "-" × Fun (Primitive (bin ((-) `union` (-))) Nil)
    , "*" × binaryZero (intOrNumber × intOrNumber × withInverse2 times)
    , "**" × binaryZero (intOrNumber × intOrNumber × withInverse2 pow)
    , "/" × binaryZero (intOrNumber × intOrNumber × withInverse2 divide)
@@ -97,26 +97,20 @@ map = { i1: function, i2: dict, o: dict, fwd, bwd }
    bwd :: Ann a => _
    bwd = error "todo"
 
-plus' :: PrimOp
-plus' = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+bin :: (Int + Number -> Endo (Int + Number)) -> PrimOp
+bin op = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
    fwd (v1 : v2 : Nil) =
       let n × α = intOrNumber.match v1
           m × β = intOrNumber.match v2 in
-      intOrNumber.constr ((n `plus` m) × (α ∧ β))
+      intOrNumber.constr ((n `op` m) × (α ∧ β))
 
    bwd :: Partial => OpBwd
    bwd v (u1 : u2 : Nil) = intOrNumber.constr v1 : intOrNumber.constr v2 : Nil
       where
       _ × α = intOrNumber.constr_bwd v
       v1 × v2 = second (const α) (intOrNumber.match u1) × (second (const α) (intOrNumber.match u2))
-
-plus :: Int + Number -> Endo (Int + Number)
-plus = (+) `union` (+)
-
-minus :: Int + Number -> Endo (Int + Number)
-minus = (-) `union` (-)
 
 times :: Int + Number -> Endo (Int + Number)
 times = (*) `union` (*)
