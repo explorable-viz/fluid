@@ -39,13 +39,13 @@ primitives = D.fromFoldable
    , ">" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThan }
    , "<=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThanEquals }
    , ">=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
-   , "++" × binary { i1: string, i2: string, o: string , fwd: concat }
+   , "++" × binary { i1: string, i2: string, o: string, fwd: concat }
    , "!" × Fun (Primitive matrixLookup Nil)
    , "div" × binaryZero { i: int, o: int, fwd: div }
    , "get" × Fun (Primitive get Nil)
    , "mod" × binaryZero { i: int, o: int, fwd: mod }
    , "quot" × binaryZero { i: int, o: int, fwd: quot }
-   , "rem" × binaryZero {i: int, o: int, fwd: rem }
+   , "rem" × binaryZero { i: int, o: int, fwd: rem }
    ]
 
 debugLog :: forall a. Val a -> Val a
