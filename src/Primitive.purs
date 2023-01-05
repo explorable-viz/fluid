@@ -12,11 +12,9 @@ import Dict (Dict)
 import Lattice ((∧), bot, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Util (type (+), type (×), Endo, absurd, error, (×))
+import Util (type (+), type (×), Endo, error, (×))
 import Val (class Ann, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..))
 
--- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to
--- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
 -- work with the required higher-rank polymorphism.
 type ToFrom d a =
    { constr :: Ann a => d × a -> Val a
@@ -196,30 +194,6 @@ type BinarySlicer i1 i2 o a =
    , fwd :: Ann a => i1 × a -> i2 × a -> o × a
    , bwd :: Ann a => o × a -> i1 × i2 -> (i1 × a) × (i2 × a)
    }
-
-unary_ :: forall i o a'. (forall a. UnarySlicer i o a) -> Val a'
-unary_ s =
-   Fun $ Primitive (PrimOp { arity: 1, op, op_bwd }) Nil
-   where
-   op :: OpFwd
-   op (v : Nil) = s.o.constr (s.fwd (s.i.match v))
-   op _ = error absurd
-
-   op_bwd :: OpBwd
-   op_bwd v (u : Nil) = s.i.constr (s.bwd (s.o.constr_bwd v) (fst (s.i.match u))) : Nil
-   op_bwd _ _ = error absurd
-
-withInverse1 :: forall i o. (i -> o) -> Unary i o
-withInverse1 fwd = { fwd, bwd: const identity }
-
-unary :: forall i o a'. (forall a. ToFrom i a × ToFrom o a × Unary i o) -> Val a'
-unary (i × o × { fwd, bwd }) = unary_ { i, o, fwd: fwd', bwd: bwd' }
-   where
-   fwd' :: forall a. i × a -> o × a
-   fwd' (x × α) = fwd x × α
-
-   bwd' :: forall a. o × a -> i -> i × a
-   bwd' (y × α) x = bwd y x × α
 
 type Unary' i o a =
    { i :: ToFrom i a
