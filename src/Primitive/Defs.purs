@@ -22,13 +22,13 @@ import Val (class Ann, Env, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..
 primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Fun (PartialConstr bot cCons Nil)
-   , "ceiling" × unary' number int ceil
-   , "debugLog" × unary (val × val × withInverse1 debugLog)
+   , "ceiling" × unary' { i: number, o: int, fwd: ceil }
+   , "debugLog" × unary' { i: val, o: val, fwd: debugLog }
    , "dims" × unary (matrixRep × intPair × dims)
    , "error" × unary (string × val × withInverse1 error_)
-   , "floor" × unary' number int floor
-   , "log" × unary' intOrNumber number log
-   , "numToStr" × unary' intOrNumber string numToStr
+   , "floor" × unary' { i: number, o: int, fwd: floor }
+   , "log" × unary' { i: intOrNumber, o: number, fwd: log }
+   , "numToStr" × unary' { i: intOrNumber, o: string, fwd: numToStr }
    , "+" × binary intOrNumber intOrNumber intOrNumber plus
    , "-" × binary intOrNumber intOrNumber intOrNumber minus
    , "*" × binaryZero intOrNumber intOrNumber times

@@ -235,25 +235,29 @@ unary (i × o × { fwd, bwd }) = unary_ { i, o, fwd: fwd', bwd: bwd' }
    bwd' :: forall a. o × a -> i -> i × a
    bwd' (y × α) x = bwd y x × α
 
+type Unary' i o a =
+   { i :: ToFrom i a
+   , o :: ToFrom o a
+   , fwd :: i -> o
+}
+
 unary'
    :: forall i o a'
-    . (forall a. ToFrom i a)
-   -> (forall a. ToFrom o a)
-   -> (i -> o)
+    . (forall a. Unary' i o a)
    -> Val a'
-unary' i o op =
+unary' op =
    Fun $ flip Primitive Nil $ PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
-   fwd (v : Nil) = o.constr (op x × α)
+   fwd (v : Nil) = op.o.constr (op.fwd x × α)
       where
-      x × α = i.match v
+      x × α = op.i.match v
 
    bwd :: Partial => OpBwd
-   bwd v (u : Nil) = i.constr (x × α) : Nil
+   bwd v (u : Nil) = op.i.constr (x × α) : Nil
       where
-      _ × α = o.constr_bwd v
-      (x × _) = i.match u
+      _ × α = op.o.constr_bwd v
+      (x × _) = op.i.match u
 
 binary
    :: forall i1 i2 o a'
