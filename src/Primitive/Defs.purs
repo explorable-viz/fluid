@@ -15,7 +15,7 @@ import Eval (apply)
 import Lattice (Raw, bot, botOf)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (BinarySlicer, Unary, binary, binaryZero, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, unary', union, union1, unionStr, val)
+import Primitive (BinarySlicer, Unary, binary, binaryZero, boolean, dict, function, int, intOrNumber, intOrNumberOrString, number, string, unary', union, union1, unionStr, val)
 import Util (Endo, type (×), (×), type (+), (!), error, successful)
 import Val (class Ann, Env, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
 
@@ -24,7 +24,7 @@ primitives = D.fromFoldable
    [ ":" × Fun (PartialConstr bot cCons Nil)
    , "ceiling" × unary' { i: number, o: int, fwd: ceil }
    , "debugLog" × unary' { i: val, o: val, fwd: debugLog }
-   , "dims" × unary (matrixRep × intPair × dims)
+   , "dims" × Fun (Primitive dims' Nil)
    , "error" × unary' { i: string, o: val, fwd: error_ }
    , "floor" × unary' { i: number, o: int, fwd: floor }
    , "log" × unary' { i: intOrNumber, o: number, fwd: log }
@@ -64,6 +64,16 @@ dims = { fwd, bwd }
    bwd :: (Int × a) × (Int × a) -> Endo (MatrixRep a)
    bwd (iα × jβ) (vss × _ × _) = vss × iα × jβ
 
+dims' :: PrimOp
+dims' = PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: Partial => OpFwd
+   fwd (Matrix α (_ × (i × β1) × (j × β2)) : Nil) = Constr α cPair (Int β1 i : Int β2 j : Nil)
+
+   bwd :: Partial => OpBwd
+   bwd (Constr α c (Int β1 i : Int β2 j : Nil)) (Matrix _ (vss × _ × _) : Nil) | c == cPair =
+      Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
+
 matrixLookup :: PrimOp
 matrixLookup = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
@@ -74,7 +84,7 @@ matrixLookup = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial b
    bwd :: Partial => OpBwd
    bwd v (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair =
-           Matrix bot (updateMatrix i j (const v) ((((<$>) botOf) <$> vss) × (i' × bot) × (j' × bot)))
+           Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
               : Constr bot cPair (Int bot i : Int bot j : Nil)
               : Nil
 
