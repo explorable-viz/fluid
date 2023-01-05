@@ -126,17 +126,6 @@ record =
    match' (Record α xvs) = xvs × α
    match' v = error ("Record expected; got " <> prettyP v)
 
-dict :: forall a. ToFrom (Dict (a × Val a)) a
-dict =
-   { constr: \(svs × α) -> Dictionary α svs
-   , constr_bwd: match'
-   , match: match'
-   }
-   where
-   match' :: Ann a => _
-   match' (Dictionary α svs) = svs × α
-   match' v = error ("Dictionary expected; got " <> prettyP v)
-
 boolean :: forall a. ToFrom Boolean a
 boolean =
    { constr: case _ of
@@ -151,17 +140,6 @@ boolean =
       | c == cTrue = true × α
       | c == cFalse = false × α
    match' v = error ("Boolean expected; got " <> prettyP v)
-
-function :: forall a. ToFrom (Fun a) a
-function =
-   { constr: \(φ × _) -> Fun φ
-   , constr_bwd: match'
-   , match: match'
-   }
-   where
-   match' :: Ann a => Val a -> Fun a × a
-   match' (Fun φ) = φ × bot
-   match' v = error ("Function expected; got " <> prettyP v)
 
 class IsZero a where
    isZero :: a -> Boolean
