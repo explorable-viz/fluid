@@ -30,17 +30,17 @@ primitives = D.fromFoldable
    , "floor" × unary (number × int × withInverse1 floor)
    , "log" × unary (intOrNumber × number × withInverse1 log)
    , "numToStr" × unary (intOrNumber × string × withInverse1 numToStr)
-   , "+" × Fun (Primitive (bin intOrNumber intOrNumber intOrNumber plus) Nil)
-   , "-" × Fun (Primitive (bin intOrNumber intOrNumber intOrNumber minus) Nil)
+   , "+" × bin intOrNumber intOrNumber intOrNumber plus
+   , "-" × bin intOrNumber intOrNumber intOrNumber minus
    , "*" × binaryZero (intOrNumber × intOrNumber × withInverse2 times)
    , "**" × binaryZero (intOrNumber × intOrNumber × withInverse2 pow)
    , "/" × binaryZero (intOrNumber × intOrNumber × withInverse2 divide)
-   , "==" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 equals)
-   , "/=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 notEquals)
-   , "<" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 lessThan)
-   , ">" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 greaterThan)
-   , "<=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 lessThanEquals)
-   , ">=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 greaterThanEquals)
+   , "==" × bin intOrNumberOrString intOrNumberOrString boolean equals
+   , "/=" × bin intOrNumberOrString intOrNumberOrString boolean notEquals
+   , "<" × bin intOrNumberOrString intOrNumberOrString boolean lessThan
+   , ">" × bin intOrNumberOrString intOrNumberOrString boolean greaterThan
+   , "<=" × bin intOrNumberOrString intOrNumberOrString boolean lessThanEquals
+   , ">=" × bin intOrNumberOrString intOrNumberOrString boolean greaterThanEquals
    , "++" × binary (string × string × string × withInverse2 concat)
    , "!" × Fun (Primitive matrixLookup Nil)
    , "div" × binaryZero (int × int × withInverse2 div)
@@ -98,13 +98,13 @@ map = { i1: function, i2: dict, o: dict, fwd, bwd }
    bwd = error "todo"
 
 bin
-   :: forall i1 i2 o
+   :: forall i1 i2 o a'
     . (forall a. ToFrom i1 a)
    -> (forall a. ToFrom i2 a)
    -> (forall a. ToFrom o a)
    -> (i1 -> i2 -> o)
-   -> PrimOp
-bin i1 i2 o op = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   -> Val a'
+bin i1 i2 o op = Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
    fwd (v1 : v2 : Nil) =
