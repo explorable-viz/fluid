@@ -158,20 +158,20 @@ type Unary i o a =
    { i :: ToFrom i a
    , o :: ToFrom o a
    , fwd :: i -> o
-}
+   }
 
 type Binary i1 i2 o a =
    { i1 :: ToFrom i1 a
    , i2 :: ToFrom i2 a
    , o :: ToFrom o a
    , fwd :: i1 -> i2 -> o
-}
+   }
 
 type BinaryZero i o a =
    { i :: ToFrom i a
    , o :: ToFrom o a
    , fwd :: i -> i -> o
-}
+   }
 
 unary
    :: forall i o a'
@@ -229,9 +229,10 @@ binaryZero op =
       where
       _ × α = op.o.constr_bwd v
       (x × _) × (y × _) = op.i.match u1 × op.i.match u2
-      β1 × β2 = if isZero x then α × bot
-                else if isZero y then bot × α
-                else α × α
+      β1 × β2 =
+         if isZero x then α × bot
+         else if isZero y then bot × α
+         else α × α
 
 class As a b where
    as :: a -> b
