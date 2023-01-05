@@ -73,8 +73,8 @@ matrixLookup = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial b
    fwd :: Partial => OpFwd
    fwd (Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = orElse "Index out of bounds" $ do
-         vs <- vss !! (i - 1)
-         vs !! (j - 1)
+           vs <- vss !! (i - 1)
+           vs !! (j - 1)
 
    bwd :: Partial => OpBwd
    bwd v (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
