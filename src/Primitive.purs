@@ -167,6 +167,12 @@ type Binary i1 i2 o a =
    , fwd :: i1 -> i2 -> o
 }
 
+type BinaryZero i o a =
+   { i :: ToFrom i a
+   , o :: ToFrom o a
+   , fwd :: i -> i -> o
+}
+
 unary
    :: forall i o a'
     . (forall a. Unary i o a)
@@ -195,8 +201,7 @@ binary op =
    fwd :: Partial => OpFwd
    fwd (v1 : v2 : Nil) = op.o.constr (op.fwd x y × (α ∧ β))
       where
-      x × α = op.i1.match v1
-      y × β = op.i2.match v2
+      (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
 
    bwd :: Partial => OpBwd
    bwd v (u1 : u2 : Nil) = op.i1.constr (x × α) : op.i2.constr (y × α) : Nil
@@ -208,26 +213,22 @@ binary op =
 binaryZero
    :: forall i o a'
     . IsZero i
-   => (forall a. ToFrom i a)
-   -> (forall a. ToFrom o a)
-   -> (i -> i -> o)
+   => (forall a. BinaryZero i o a)
    -> Val a'
-binaryZero i o op =
+binaryZero op =
    Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
    fwd (v1 : v2 : Nil) =
-      let
-         x × α = i.match v1
-         y × β = i.match v2
-      in
-         o.constr ((x `op` y) × (if isZero x then α else if isZero y then β else α ∧ β))
+      op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
+      where
+      (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 
    bwd :: Partial => OpBwd
-   bwd v (u1 : u2 : Nil) = i.constr (x × β1) : i.constr (y × β2) : Nil
+   bwd v (u1 : u2 : Nil) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
       where
-      _ × α = o.constr_bwd v
-      (x × _) × (y × _) = i.match u1 × i.match u2
+      _ × α = op.o.constr_bwd v
+      (x × _) × (y × _) = op.i.match u1 × op.i.match u2
       β1 × β2 = if isZero x then α × bot
                 else if isZero y then bot × α
                 else α × α

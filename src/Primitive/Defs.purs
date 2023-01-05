@@ -30,9 +30,9 @@ primitives = D.fromFoldable
    , "numToStr" × unary { i: intOrNumber, o: string, fwd: numToStr }
    , "+" × binary { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: plus }
    , "-" × binary { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: minus }
-   , "*" × binaryZero intOrNumber intOrNumber times
-   , "**" × binaryZero intOrNumber intOrNumber pow
-   , "/" × binaryZero intOrNumber intOrNumber divide
+   , "*" × binaryZero { i: intOrNumber, o: intOrNumber, fwd: times }
+   , "**" × binaryZero { i: intOrNumber, o: intOrNumber, fwd: pow }
+   , "/" × binaryZero { i: intOrNumber, o: intOrNumber, fwd: divide }
    , "==" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: equals }
    , "/=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: notEquals }
    , "<" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThan }
@@ -41,11 +41,11 @@ primitives = D.fromFoldable
    , ">=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
    , "++" × binary { i1: string, i2: string, o: string , fwd: concat }
    , "!" × Fun (Primitive matrixLookup Nil)
-   , "div" × binaryZero int int div
+   , "div" × binaryZero { i: int, o: int, fwd: div }
    , "get" × Fun (Primitive get Nil)
-   , "mod" × binaryZero int int mod
-   , "quot" × binaryZero int int quot
-   , "rem" × binaryZero int int rem
+   , "mod" × binaryZero { i: int, o: int, fwd: mod }
+   , "quot" × binaryZero { i: int, o: int, fwd: quot }
+   , "rem" × binaryZero {i: int, o: int, fwd: rem }
    ]
 
 debugLog :: forall a. Val a -> Val a
