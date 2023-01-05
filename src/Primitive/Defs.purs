@@ -6,6 +6,7 @@ import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
+import Data.Profunctor.Strong (second)
 import Data.Tuple (snd)
 import DataType (cCons, cPair)
 import Debug (trace)
@@ -15,9 +16,9 @@ import Eval (apply)
 import Lattice (Raw, (∧), bot, botOf, top)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (BinarySlicer, Unary, binary, binary_, binaryZero, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
+import Primitive (BinarySlicer, Unary, binary, binaryZero, binary_, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error, successful)
-import Val (class Ann, Env, Fun(..), MatrixRep, PrimOp(..), Val(..), updateMatrix)
+import Val (class Ann, Env, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
@@ -29,7 +30,7 @@ primitives = D.fromFoldable
    , "floor" × unary (number × int × withInverse1 floor)
    , "log" × unary (intOrNumber × number × withInverse1 log)
    , "numToStr" × unary (intOrNumber × string × withInverse1 numToStr)
-   , "+" × binary (intOrNumber × intOrNumber × intOrNumber × withInverse2 plus)
+   , "+" × Fun (Primitive plus' Nil)
    , "-" × binary (intOrNumber × intOrNumber × intOrNumber × withInverse2 minus)
    , "*" × binaryZero (intOrNumber × intOrNumber × withInverse2 times)
    , "**" × binaryZero (intOrNumber × intOrNumber × withInverse2 pow)
@@ -67,11 +68,11 @@ dims = { fwd, bwd }
 matrixLookup :: PrimOp
 matrixLookup = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: forall a. Partial => List (Val a) -> Val a
+   fwd :: Partial => OpFwd
    fwd (Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = vss ! (i - 1) ! (j - 1)
 
-   bwd :: forall a. Partial => Ann a => Val a -> List (Raw Val) -> List (Val a)
+   bwd :: Partial => OpBwd
    bwd v (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair =
          Matrix bot (updateMatrix i j (const v) ((((<$>) botOf) <$> vss) × (i' × bot) × (j' × bot)))
@@ -95,6 +96,21 @@ map = { i1: function, i2: dict, o: dict, fwd, bwd }
 
    bwd :: Ann a => _
    bwd = error "todo"
+
+plus' :: PrimOp
+plus' = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: Partial => OpFwd
+   fwd (v1 : v2 : Nil) =
+      let n × α = intOrNumber.match v1
+          m × β = intOrNumber.match v2 in
+      intOrNumber.constr ((n `plus` m) × (α ∧ β))
+
+   bwd :: Partial => OpBwd
+   bwd v (u1 : u2 : Nil) = intOrNumber.constr v1 : intOrNumber.constr v2 : Nil
+      where
+      _ × α = intOrNumber.constr_bwd v
+      v1 × v2 = second (const α) (intOrNumber.match u1) × (second (const α) (intOrNumber.match u2))
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
