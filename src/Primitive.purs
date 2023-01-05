@@ -178,7 +178,7 @@ unary op =
    Fun $ flip Primitive Nil $ PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
-   fwd (v : Nil) = op.o.constr (op.fwd x × α)
+   fwd (v : Nil) = pure $ op.o.constr (op.fwd x × α)
       where
       x × α = op.i.match v
 
@@ -193,7 +193,7 @@ binary op =
    Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
-   fwd (v1 : v2 : Nil) = op.o.constr (op.fwd x y × (α ∧ β))
+   fwd (v1 : v2 : Nil) = pure $ op.o.constr (op.fwd x y × (α ∧ β))
       where
       (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
 
@@ -210,7 +210,7 @@ binaryZero op =
    where
    fwd :: Partial => OpFwd
    fwd (v1 : v2 : Nil) =
-      op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
+      pure $ op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
       where
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 

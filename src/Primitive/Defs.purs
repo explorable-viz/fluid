@@ -2,20 +2,22 @@ module Primitive.Defs where
 
 import Prelude hiding (absurd, apply, div, mod, top)
 
+import Data.Array ((!!))
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
+import Data.Traversable (traverse)
 import Data.Tuple (snd)
 import DataType (cCons, cPair)
 import Debug (trace)
-import Dict (fromFoldable, get, singleton) as D
+import Dict (fromFoldable, lookup, singleton) as D
 import Eval (apply)
 import Lattice (Raw, bot, botOf)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
-import Util (Endo, (×), type (+), (!), error, successful)
+import Util (Endo, (×), type (+), error, orElse)
 import Val (Env, Fun(..), OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
@@ -58,7 +60,8 @@ dims :: PrimOp
 dims = PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
-   fwd (Matrix α (_ × (i × β1) × (j × β2)) : Nil) = Constr α cPair (Int β1 i : Int β2 j : Nil)
+   fwd (Matrix α (_ × (i × β1) × (j × β2)) : Nil) =
+      pure $ Constr α cPair (Int β1 i : Int β2 j : Nil)
 
    bwd :: Partial => OpBwd
    bwd (Constr α c (Int β1 i : Int β2 j : Nil)) (Matrix _ (vss × _ × _) : Nil) | c == cPair =
@@ -69,7 +72,9 @@ matrixLookup = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial b
    where
    fwd :: Partial => OpFwd
    fwd (Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
-      | c == cPair = vss ! (i - 1) ! (j - 1)
+      | c == cPair = orElse "Index out of bounds" $ do
+         vs <- vss !! (i - 1)
+         vs !! (j - 1)
 
    bwd :: Partial => OpBwd
    bwd v (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
@@ -82,16 +87,19 @@ get :: PrimOp
 get = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
-   fwd (Str _ k : Dictionary _ d : Nil) = snd (D.get k d)
+   fwd (Str _ k : Dictionary _ d : Nil) =
+      snd <$> (D.lookup k d # orElse ("Key \"" <> k <> "\" not found"))
 
    bwd :: Partial => OpBwd
-   bwd v (Str _ k : Dictionary _ _ : Nil) = (Str bot k) : Dictionary bot (D.singleton k (bot × v)) : Nil
+   bwd v (Str _ k : Dictionary _ _ : Nil) =
+      (Str bot k) : Dictionary bot (D.singleton k (bot × v)) : Nil
 
 map :: PrimOp
 map = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
-   fwd (Fun φ : Dictionary α d : Nil) = Dictionary α $ d <#> (\(β × v) -> β × snd (successful (apply φ v)))
+   fwd (Fun φ : Dictionary α d : Nil) =
+      Dictionary α <$> traverse (\(β × v) -> ((β × _) <<< snd) <$> apply φ v) d
 
    bwd :: Partial => OpBwd
    bwd = error "todo"

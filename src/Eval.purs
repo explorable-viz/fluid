@@ -72,12 +72,10 @@ apply (V.Closure β γ1 ρ σ) v = do
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
-apply (V.Primitive (PrimOp φ) vs) v =
-   let
-      vs' = vs <> singleton v
-      v'' = if φ.arity > length vs' then V.Fun $ V.Primitive (PrimOp φ) vs' else φ.op vs'
-   in
-      pure $ T.AppPrimitive (PrimOp φ × (erase <$> vs)) (erase v) × v''
+apply (V.Primitive (PrimOp φ) vs) v = do
+   let vs' = vs <> singleton v
+   v'' <- if φ.arity > length vs' then pure $ V.Fun $ V.Primitive (PrimOp φ) vs' else φ.op vs'
+   pure $ T.AppPrimitive (PrimOp φ × (erase <$> vs)) (erase v) × v''
 apply (V.PartialConstr α c vs) v = do
    let n = successful (arity c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)

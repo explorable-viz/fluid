@@ -38,7 +38,7 @@ class (Highlightable a, BoundedLattice a) <= Ann a
 instance Ann Boolean
 instance Ann Unit
 
-type OpFwd = forall a. Ann a => List (Val a) -> Val a
+type OpFwd = forall a. Ann a => List (Val a) -> MayFail (Val a)
 type OpBwd = forall a. Ann a => Val a -> List (Raw Val) -> List (Val a)
 
 newtype PrimOp = PrimOp
