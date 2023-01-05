@@ -15,7 +15,7 @@ import Eval (apply)
 import Lattice (Raw, bot, botOf, top)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (BinarySlicer, Unary, binary, binaryZero, binary_, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
+import Primitive (BinarySlicer, Unary, binary, binaryZero, binary_, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1)
 import Util (Endo, type (×), (×), type (+), (!), error, successful)
 import Val (class Ann, Env, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
 
@@ -31,9 +31,9 @@ primitives = D.fromFoldable
    , "numToStr" × unary (intOrNumber × string × withInverse1 numToStr)
    , "+" × binary intOrNumber intOrNumber intOrNumber plus
    , "-" × binary intOrNumber intOrNumber intOrNumber minus
-   , "*" × binaryZero (intOrNumber × intOrNumber × withInverse2 times)
-   , "**" × binaryZero (intOrNumber × intOrNumber × withInverse2 pow)
-   , "/" × binaryZero (intOrNumber × intOrNumber × withInverse2 divide)
+   , "*" × binaryZero intOrNumber intOrNumber times
+   , "**" × binaryZero intOrNumber intOrNumber pow
+   , "/" × binaryZero intOrNumber intOrNumber divide
    , "==" × binary intOrNumberOrString intOrNumberOrString boolean equals
    , "/=" × binary intOrNumberOrString intOrNumberOrString boolean notEquals
    , "<" × binary intOrNumberOrString intOrNumberOrString boolean lessThan
@@ -42,11 +42,11 @@ primitives = D.fromFoldable
    , ">=" × binary intOrNumberOrString intOrNumberOrString boolean greaterThanEquals
    , "++" × binary string string string concat
    , "!" × Fun (Primitive matrixLookup Nil)
-   , "div" × binaryZero (int × int × withInverse2 div)
+   , "div" × binaryZero int int div
    , "get" × binary_ get
-   , "mod" × binaryZero (int × int × withInverse2 mod)
-   , "quot" × binaryZero (int × int × withInverse2 quot)
-   , "rem" × binaryZero (int × int × withInverse2 rem)
+   , "mod" × binaryZero int int mod
+   , "quot" × binaryZero int int quot
+   , "rem" × binaryZero int int rem
    ]
 
 debugLog :: forall a. Val a -> Val a

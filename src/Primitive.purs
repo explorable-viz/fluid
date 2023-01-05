@@ -6,7 +6,6 @@ import Data.Either (Either(..))
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Profunctor.Choice ((|||))
-import Data.Profunctor.Strong (second)
 import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
@@ -190,11 +189,6 @@ type UnarySlicer i o a =
    , bwd :: Ann a => o × a -> i -> i × a
    }
 
-type Binary i1 i2 o =
-   { fwd :: i1 -> i2 -> o
-   , bwd :: o -> Endo (i1 × i2)
-   }
-
 type BinarySlicer i1 i2 o a =
    { i1 :: ToFrom i1 a
    , i2 :: ToFrom i2 a
@@ -232,9 +226,6 @@ binary_ s =
 withInverse1 :: forall i o. (i -> o) -> Unary i o
 withInverse1 fwd = { fwd, bwd: const identity }
 
-withInverse2 :: forall i1 i2 o. (i1 -> i2 -> o) -> Binary i1 i2 o
-withInverse2 fwd = { fwd, bwd: const identity }
-
 unary :: forall i o a'. (forall a. ToFrom i a × ToFrom o a × Unary i o) -> Val a'
 unary (i × o × { fwd, bwd }) = unary_ { i, o, fwd: fwd', bwd: bwd' }
    where
@@ -263,20 +254,20 @@ binary i1 i2 o op =
          o.constr ((x `op` y) × (α ∧ β))
 
    bwd :: Partial => OpBwd
-   bwd v (u1 : u2 : Nil) = i1.constr v1 : i2.constr v2 : Nil
+   bwd v (u1 : u2 : Nil) = i1.constr (x × α) : i2.constr (y × α) : Nil
       where
       _ × α = o.constr_bwd v
-      v1 × v2 = second (const α) (i1.match u1) × (second (const α) (i2.match u2))
+      (x × _) × (y × _) = i1.match u1 × i2.match u2
 
 -- If both are zero, depend only on the first.
-binaryZero'
+binaryZero
    :: forall i o a'
     . IsZero i
    => (forall a. ToFrom i a)
    -> (forall a. ToFrom o a)
    -> (i -> i -> o)
    -> Val a'
-binaryZero' i o op =
+binaryZero i o op =
    Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
@@ -295,23 +286,6 @@ binaryZero' i o op =
       β1 × β2 = if isZero x then α × bot
                 else if isZero y then bot × α
                 else α × α
-
--- If both are zero, depend only on the first.
-binaryZero :: forall i o a'. IsZero i => (forall a. ToFrom i a × ToFrom o a × Binary i i o) -> Val a'
-binaryZero (i × o × { fwd, bwd }) = binary_ { i1: i, i2: i, o, fwd: fwd', bwd: bwd' }
-   where
-   fwd' :: forall a. Ann a => i × a -> i × a -> o × a
-   fwd' (x × α) (y × β) =
-      fwd x y × if isZero x then α else if isZero y then β else α ∧ β
-
-   bwd' :: forall a. Ann a => o × a -> i × i -> (i × a) × (i × a)
-   bwd' (z × α) (x × y) =
-      if isZero x then (x' × α) × (y' × bot)
-      else if isZero y then (x' × bot) × (y' × α)
-      else
-         (x' × α) × (y' × α)
-      where
-      x' × y' = bwd z (x × y)
 
 class As a b where
    as :: a -> b
