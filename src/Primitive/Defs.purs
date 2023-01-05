@@ -30,8 +30,8 @@ primitives = D.fromFoldable
    , "floor" × unary (number × int × withInverse1 floor)
    , "log" × unary (intOrNumber × number × withInverse1 log)
    , "numToStr" × unary (intOrNumber × string × withInverse1 numToStr)
-   , "+" × Fun (Primitive (bin intOrNumber intOrNumber plus) Nil)
-   , "-" × Fun (Primitive (bin intOrNumber intOrNumber minus) Nil)
+   , "+" × Fun (Primitive (bin intOrNumber intOrNumber intOrNumber plus) Nil)
+   , "-" × Fun (Primitive (bin intOrNumber intOrNumber intOrNumber minus) Nil)
    , "*" × binaryZero (intOrNumber × intOrNumber × withInverse2 times)
    , "**" × binaryZero (intOrNumber × intOrNumber × withInverse2 pow)
    , "/" × binaryZero (intOrNumber × intOrNumber × withInverse2 divide)
@@ -75,9 +75,9 @@ matrixLookup = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial b
    bwd :: Partial => OpBwd
    bwd v (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair =
-         Matrix bot (updateMatrix i j (const v) ((((<$>) botOf) <$> vss) × (i' × bot) × (j' × bot)))
-            : Constr bot cPair (Int bot i : Int bot j : Nil)
-            : Nil
+           Matrix bot (updateMatrix i j (const v) ((((<$>) botOf) <$> vss) × (i' × bot) × (j' × bot)))
+              : Constr bot cPair (Int bot i : Int bot j : Nil)
+              : Nil
 
 get :: forall a. BinarySlicer String (Dict (a × Val a)) (Val a) a
 get = { i1: string, i2: dict, o: val, fwd, bwd }
@@ -97,19 +97,27 @@ map = { i1: function, i2: dict, o: dict, fwd, bwd }
    bwd :: Ann a => _
    bwd = error "todo"
 
-bin :: forall i1 i2. (forall a. ToFrom i1 a) -> (forall a. ToFrom i2 a) -> (i1 -> i2 -> Int + Number) -> PrimOp
-bin i1 i2 op = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+bin
+   :: forall i1 i2 o
+    . (forall a. ToFrom i1 a)
+   -> (forall a. ToFrom i2 a)
+   -> (forall a. ToFrom o a)
+   -> (i1 -> i2 -> o)
+   -> PrimOp
+bin i1 i2 o op = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
    fwd (v1 : v2 : Nil) =
-      let n × α = i1.match v1
-          m × β = i2.match v2 in
-      intOrNumber.constr ((n `op` m) × (α ∧ β))
+      let
+         n × α = i1.match v1
+         m × β = i2.match v2
+      in
+         o.constr ((n `op` m) × (α ∧ β))
 
    bwd :: Partial => OpBwd
    bwd v (u1 : u2 : Nil) = i1.constr v1 : i2.constr v2 : Nil
       where
-      _ × α = intOrNumber.constr_bwd v
+      _ × α = o.constr_bwd v
       v1 × v2 = second (const α) (i1.match u1) × (second (const α) (i2.match u2))
 
 plus :: Int + Number -> Endo (Int + Number)
