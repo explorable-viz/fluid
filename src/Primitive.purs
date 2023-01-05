@@ -209,20 +209,6 @@ unary_ s =
    op_bwd v (u : Nil) = s.i.constr (s.bwd (s.o.constr_bwd v) (fst (s.i.match u))) : Nil
    op_bwd _ _ = error absurd
 
-binary_ :: forall i1 i2 o a'. (forall a. BinarySlicer i1 i2 o a) -> Val a'
-binary_ s =
-   Fun $ Primitive (PrimOp { arity: 2, op, op_bwd }) Nil
-   where
-   op :: OpFwd
-   op (v1 : v2 : Nil) = s.o.constr (s.fwd (s.i1.match v1) (s.i2.match v2))
-   op _ = error absurd
-
-   op_bwd :: OpBwd
-   op_bwd v (u1 : u2 : Nil) = s.i1.constr v1 : s.i2.constr v2 : Nil
-      where
-      v1 × v2 = s.bwd (s.o.constr_bwd v) (fst (s.i1.match u1) × fst (s.i2.match u2))
-   op_bwd _ _ = error absurd
-
 withInverse1 :: forall i o. (i -> o) -> Unary i o
 withInverse1 fwd = { fwd, bwd: const identity }
 

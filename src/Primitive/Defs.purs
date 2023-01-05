@@ -12,10 +12,10 @@ import Debug (trace)
 import Dict (Dict)
 import Dict (fromFoldable, get, singleton) as D
 import Eval (apply)
-import Lattice (Raw, bot, botOf, top)
+import Lattice (Raw, bot, botOf)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (BinarySlicer, Unary, binary, binaryZero, binary_, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, unary', union, union1, unionStr, val)
+import Primitive (BinarySlicer, Unary, binary, binaryZero, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, unary', union, union1, unionStr, val)
 import Util (Endo, type (×), (×), type (+), (!), error, successful)
 import Val (class Ann, Env, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
 
@@ -43,7 +43,7 @@ primitives = D.fromFoldable
    , "++" × binary string string string concat
    , "!" × Fun (Primitive matrixLookup Nil)
    , "div" × binaryZero int int div
-   , "get" × binary_ get
+   , "get" × Fun (Primitive get Nil)
    , "mod" × binaryZero int int mod
    , "quot" × binaryZero int int quot
    , "rem" × binaryZero int int rem
@@ -78,14 +78,14 @@ matrixLookup = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial b
               : Constr bot cPair (Int bot i : Int bot j : Nil)
               : Nil
 
-get :: forall a. BinarySlicer String (Dict (a × Val a)) (Val a) a
-get = { i1: string, i2: dict, o: val, fwd, bwd }
+get :: PrimOp
+get = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Ann a => String × a -> Dict (a × Val a) × a -> Val a × a
-   fwd (k × _) (d × _) = snd (D.get k d) × top
+   fwd :: Partial => OpFwd
+   fwd (Str _ k : Dictionary _ d : Nil) = snd (D.get k d)
 
-   bwd :: Ann a => Val a × a -> String × Dict (a × Val a) -> (String × a) × (Dict (a × Val a) × a)
-   bwd (v × _) (k × _) = (k × bot) × (D.singleton k (bot × v) × bot)
+   bwd :: Partial => OpBwd
+   bwd v (Str _ k : Dictionary _ _ : Nil) = (Str bot k) : Dictionary bot (D.singleton k (bot × v)) : Nil
 
 map :: forall a. BinarySlicer (Fun a) (Dict (a × Val a)) (Dict (a × Val a)) a
 map = { i1: function, i2: dict, o: dict, fwd, bwd }
