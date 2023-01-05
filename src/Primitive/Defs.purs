@@ -1,6 +1,7 @@
 module Primitive.Defs where
 
 import Prelude hiding (absurd, apply, div, mod, top)
+
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
@@ -12,33 +13,11 @@ import Dict (Dict)
 import Dict (fromFoldable, get, singleton) as D
 import Eval (apply)
 import Lattice (Raw, (∧), bot, botOf, top)
+import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive
-   ( BinarySlicer
-   , Unary
-   , binary
-   , binary_
-   , binaryZero
-   , boolean
-   , dict
-   , function
-   , int
-   , intOrNumber
-   , intOrNumberOrString
-   , intPair
-   , matrixRep
-   , number
-   , string
-   , unary
-   , union
-   , union1
-   , unionStr
-   , val
-   , withInverse1
-   , withInverse2
-   )
+import Primitive (BinarySlicer, Unary, binary, binary_, binaryZero, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1, withInverse2)
 import Util (Endo, type (×), (×), type (+), (!), error, successful)
-import Val (class Ann, Env, Fun(..), MatrixRep, Val(..), updateMatrix)
+import Val (class Ann, Env, Fun(..), MatrixRep, PrimOp(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
@@ -85,16 +64,19 @@ dims = { fwd, bwd }
    bwd :: (Int × a) × (Int × a) -> Endo (MatrixRep a)
    bwd (iα × jβ) (vss × _ × _) = vss × iα × jβ
 
-lookup_fwd :: forall a. Partial => List (Val a) -> Val a
-lookup_fwd (Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
-   | c == cPair = vss ! (i - 1) ! (j - 1)
+matrixLookup' :: PrimOp
+matrixLookup' = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: forall a. Partial => List (Val a) -> Val a
+   fwd (Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+      | c == cPair = vss ! (i - 1) ! (j - 1)
 
-lookup_bwd :: forall a. Partial => Ann a => Val a -> List (Raw Val) -> List (Val a)
-lookup_bwd v (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
-   | c == cPair =
-        Matrix bot (updateMatrix i j (const v) ((((<$>) botOf) <$> vss) × (i' × bot) × (j' × bot)))
-           : Constr bot cPair (Int bot i : Int bot j : Nil)
-           : Nil
+   bwd :: forall a. Partial => Ann a => Val a -> List (Raw Val) -> List (Val a)
+   bwd v (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+      | c == cPair =
+         Matrix bot (updateMatrix i j (const v) ((((<$>) botOf) <$> vss) × (i' × bot) × (j' × bot)))
+            : Constr bot cPair (Int bot i : Int bot j : Nil)
+            : Nil
 
 -- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
 -- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.
