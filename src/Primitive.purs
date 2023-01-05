@@ -12,7 +12,7 @@ import Dict (Dict)
 import Lattice ((∧), bot, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Util (type (+), type (×), Endo, error, (×))
+import Util (type (+), type (×), error, (×))
 import Val (class Ann, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..))
 
 -- work with the required higher-rank polymorphism.
@@ -175,18 +175,6 @@ instance IsZero Number where
 instance (IsZero a, IsZero b) => IsZero (a + b) where
    isZero = isZero ||| isZero
 
-type Unary i o =
-   { fwd :: i -> o
-   , bwd :: o -> Endo i
-   }
-
-type UnarySlicer i o a =
-   { i :: ToFrom i a
-   , o :: ToFrom o a
-   , fwd :: Ann a => i × a -> o × a
-   , bwd :: Ann a => o × a -> i -> i × a
-   }
-
 type BinarySlicer i1 i2 o a =
    { i1 :: ToFrom i1 a
    , i2 :: ToFrom i2 a
@@ -201,11 +189,11 @@ type Unary' i o a =
    , fwd :: i -> o
 }
 
-unary'
+unary
    :: forall i o a'
     . (forall a. Unary' i o a)
    -> Val a'
-unary' op =
+unary op =
    Fun $ flip Primitive Nil $ PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
