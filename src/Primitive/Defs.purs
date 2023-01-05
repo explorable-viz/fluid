@@ -15,20 +15,20 @@ import Eval (apply)
 import Lattice (Raw, bot, botOf, top)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (BinarySlicer, Unary, binary, binaryZero, binary_, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, union, union1, unionStr, val, withInverse1)
+import Primitive (BinarySlicer, Unary, binary, binaryZero, binary_, boolean, dict, function, int, intOrNumber, intOrNumberOrString, intPair, matrixRep, number, string, unary, unary', union, union1, unionStr, val, withInverse1)
 import Util (Endo, type (×), (×), type (+), (!), error, successful)
 import Val (class Ann, Env, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Fun (PartialConstr bot cCons Nil)
-   , "ceiling" × unary (number × int × withInverse1 ceil)
+   , "ceiling" × unary' number int ceil
    , "debugLog" × unary (val × val × withInverse1 debugLog)
    , "dims" × unary (matrixRep × intPair × dims)
    , "error" × unary (string × val × withInverse1 error_)
-   , "floor" × unary (number × int × withInverse1 floor)
-   , "log" × unary (intOrNumber × number × withInverse1 log)
-   , "numToStr" × unary (intOrNumber × string × withInverse1 numToStr)
+   , "floor" × unary' number int floor
+   , "log" × unary' intOrNumber number log
+   , "numToStr" × unary' intOrNumber string numToStr
    , "+" × binary intOrNumber intOrNumber intOrNumber plus
    , "-" × binary intOrNumber intOrNumber intOrNumber minus
    , "*" × binaryZero intOrNumber intOrNumber times
