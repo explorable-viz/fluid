@@ -41,7 +41,7 @@ primitives = D.fromFoldable
    , "<=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 lessThanEquals)
    , ">=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 greaterThanEquals)
    , "++" × binary (string × string × string × withInverse2 concat)
-   , "!" × binary_ matrixLookup
+   , "!" × Fun (Primitive matrixLookup Nil)
    , "div" × binaryZero (int × int × withInverse2 div)
    , "get" × binary_ get
    , "mod" × binaryZero (int × int × withInverse2 mod)
@@ -64,8 +64,8 @@ dims = { fwd, bwd }
    bwd :: (Int × a) × (Int × a) -> Endo (MatrixRep a)
    bwd (iα × jβ) (vss × _ × _) = vss × iα × jβ
 
-matrixLookup' :: PrimOp
-matrixLookup' = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+matrixLookup :: PrimOp
+matrixLookup = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: forall a. Partial => List (Val a) -> Val a
    fwd (Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
@@ -77,26 +77,6 @@ matrixLookup' = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial 
          Matrix bot (updateMatrix i j (const v) ((((<$>) botOf) <$> vss) × (i' × bot) × (j' × bot)))
             : Constr bot cPair (Int bot i : Int bot j : Nil)
             : Nil
-
--- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
--- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.
-matrixLookup :: forall a. BinarySlicer (MatrixRep a) ((Int × a) × (Int × a)) (Val a) a
-matrixLookup = { i1: matrixRep, i2: intPair, o: val, fwd: fwd', bwd: bwd' }
-   where
-   fwd :: MatrixRep a -> (Int × a) × (Int × a) -> Val a
-   fwd (vss × _ × _) ((i × _) × (j × _)) = vss ! (i - 1) ! (j - 1)
-
-   bwd :: Ann a => Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
-   bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-      updateMatrix i j (const v) (vss × (i' × bot) × (j' × bot)) × ((i × bot) × (j × bot))
-
-   fwd' :: Ann a => MatrixRep a × a -> ((Int × a) × (Int × a)) × a -> Val a × a
-   fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
-
-   bwd' :: Ann a => Val a × a -> MatrixRep a × ((Int × a) × (Int × a)) -> (MatrixRep a × a) × ((Int × a) × (Int × a) × a)
-   bwd' (z × α) (x × y) = (x' × α) × (y' × α)
-      where
-      x' × y' = bwd z (x × y)
 
 get :: forall a. BinarySlicer String (Dict (a × Val a)) (Val a) a
 get = { i1: string, i2: dict, o: val, fwd, bwd }
