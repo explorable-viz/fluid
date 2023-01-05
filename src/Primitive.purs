@@ -175,15 +175,8 @@ instance IsZero Number where
 instance (IsZero a, IsZero b) => IsZero (a + b) where
    isZero = isZero ||| isZero
 
-type BinarySlicer i1 i2 o a =
-   { i1 :: ToFrom i1 a
-   , i2 :: ToFrom i2 a
-   , o :: ToFrom o a
-   , fwd :: Ann a => i1 × a -> i2 × a -> o × a
-   , bwd :: Ann a => o × a -> i1 × i2 -> (i1 × a) × (i2 × a)
-   }
-
-type Unary' i o a =
+-- Need to be careful about type variables escaping higher-rank quantification.
+type Unary i o a =
    { i :: ToFrom i a
    , o :: ToFrom o a
    , fwd :: i -> o
@@ -191,7 +184,7 @@ type Unary' i o a =
 
 unary
    :: forall i o a'
-    . (forall a. Unary' i o a)
+    . (forall a. Unary i o a)
    -> Val a'
 unary op =
    Fun $ flip Primitive Nil $ PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }

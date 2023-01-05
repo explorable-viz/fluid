@@ -9,15 +9,14 @@ import Data.Number (log, pow) as N
 import Data.Tuple (snd)
 import DataType (cCons, cPair)
 import Debug (trace)
-import Dict (Dict)
 import Dict (fromFoldable, get, singleton) as D
 import Eval (apply)
 import Lattice (Raw, bot, botOf)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (BinarySlicer, binary, binaryZero, boolean, dict, function, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
-import Util (Endo, type (×), (×), type (+), (!), error, successful)
-import Val (class Ann, Env, Fun(..), OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
+import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
+import Util (Endo, (×), type (+), (!), error, successful)
+import Val (Env, Fun(..), OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
@@ -88,13 +87,13 @@ get = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    bwd :: Partial => OpBwd
    bwd v (Str _ k : Dictionary _ _ : Nil) = (Str bot k) : Dictionary bot (D.singleton k (bot × v)) : Nil
 
-map :: forall a. BinarySlicer (Fun a) (Dict (a × Val a)) (Dict (a × Val a)) a
-map = { i1: function, i2: dict, o: dict, fwd, bwd }
+map :: PrimOp
+map = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Ann a => Fun a × a -> Dict (a × Val a) × a -> Dict (a × Val a) × a
-   fwd (φ × _) (d × α) = (d <#> (\(β × v) -> β × snd (successful (apply φ v)))) × α
+   fwd :: Partial => OpFwd
+   fwd (Fun φ : Dictionary α d : Nil) = Dictionary α $ d <#> (\(β × v) -> β × snd (successful (apply φ v)))
 
-   bwd :: Ann a => _
+   bwd :: Partial => OpBwd
    bwd = error "todo"
 
 plus :: Int + Number -> Endo (Int + Number)
