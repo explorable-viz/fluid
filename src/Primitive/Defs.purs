@@ -1,71 +1,51 @@
 module Primitive.Defs where
 
-import Prelude hiding (absurd, div, mod, top)
+import Prelude hiding (absurd, apply, div, mod, top)
+
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
-import Data.List (List(..))
+import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Tuple (snd)
-import DataType (cCons)
+import DataType (cCons, cPair)
 import Debug (trace)
-import Dict (Dict)
 import Dict (fromFoldable, get, singleton) as D
-import Lattice (Raw, (∧), bot, top)
+import Eval (apply)
+import Lattice (Raw, bot, botOf)
+import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive
-   ( BinarySlicer
-   , Unary
-   , binary
-   , binary_
-   , binaryZero
-   , boolean
-   , dict
-   , int
-   , intOrNumber
-   , intOrNumberOrString
-   , intPair
-   , matrixRep
-   , number
-   , string
-   , unary
-   , union
-   , union1
-   , unionStr
-   , val
-   , withInverse1
-   , withInverse2
-   )
-import Util (Endo, type (×), (×), type (+), (!), error)
-import Val (class Ann, Env, Fun(..), MatrixRep, Val(..), updateMatrix)
+import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
+import Util (Endo, (×), type (+), (!), error, successful)
+import Val (Env, Fun(..), OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Fun (PartialConstr bot cCons Nil)
-   , "ceiling" × unary (number × int × withInverse1 ceil)
-   , "debugLog" × unary (val × val × withInverse1 debugLog)
-   , "dims" × unary (matrixRep × intPair × dims)
-   , "error" × unary (string × val × withInverse1 error_)
-   , "floor" × unary (number × int × withInverse1 floor)
-   , "log" × unary (intOrNumber × number × withInverse1 log)
-   , "numToStr" × unary (intOrNumber × string × withInverse1 numToStr)
-   , "+" × binary (intOrNumber × intOrNumber × intOrNumber × withInverse2 plus)
-   , "-" × binary (intOrNumber × intOrNumber × intOrNumber × withInverse2 minus)
-   , "*" × binaryZero (intOrNumber × intOrNumber × withInverse2 times)
-   , "**" × binaryZero (intOrNumber × intOrNumber × withInverse2 pow)
-   , "/" × binaryZero (intOrNumber × intOrNumber × withInverse2 divide)
-   , "==" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 equals)
-   , "/=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 notEquals)
-   , "<" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 lessThan)
-   , ">" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 greaterThan)
-   , "<=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 lessThanEquals)
-   , ">=" × binary (intOrNumberOrString × intOrNumberOrString × boolean × withInverse2 greaterThanEquals)
-   , "++" × binary (string × string × string × withInverse2 concat)
-   , "!" × binary_ matrixLookup
-   , "div" × binaryZero (int × int × withInverse2 div)
-   , "get" × binary_ get
-   , "mod" × binaryZero (int × int × withInverse2 mod)
-   , "quot" × binaryZero (int × int × withInverse2 quot)
-   , "rem" × binaryZero (int × int × withInverse2 rem)
+   , "ceiling" × unary { i: number, o: int, fwd: ceil }
+   , "debugLog" × unary { i: val, o: val, fwd: debugLog }
+   , "dims" × Fun (Primitive dims Nil)
+   , "error" × unary { i: string, o: val, fwd: error_ }
+   , "floor" × unary { i: number, o: int, fwd: floor }
+   , "log" × unary { i: intOrNumber, o: number, fwd: log }
+   , "numToStr" × unary { i: intOrNumber, o: string, fwd: numToStr }
+   , "+" × binary { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: plus }
+   , "-" × binary { i1: intOrNumber, i2: intOrNumber, o: intOrNumber, fwd: minus }
+   , "*" × binaryZero { i: intOrNumber, o: intOrNumber, fwd: times }
+   , "**" × binaryZero { i: intOrNumber, o: intOrNumber, fwd: pow }
+   , "/" × binaryZero { i: intOrNumber, o: intOrNumber, fwd: divide }
+   , "==" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: equals }
+   , "/=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: notEquals }
+   , "<" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThan }
+   , ">" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThan }
+   , "<=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThanEquals }
+   , ">=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
+   , "++" × binary { i1: string, i2: string, o: string, fwd: concat }
+   , "!" × Fun (Primitive matrixLookup Nil)
+   , "div" × binaryZero { i: int, o: int, fwd: div }
+   , "get" × Fun (Primitive get Nil)
+   , "mod" × binaryZero { i: int, o: int, fwd: mod }
+   , "quot" × binaryZero { i: int, o: int, fwd: quot }
+   , "rem" × binaryZero { i: int, o: int, fwd: rem }
    ]
 
 debugLog :: forall a. Val a -> Val a
@@ -74,43 +54,47 @@ debugLog x = trace x (const x)
 error_ :: forall a. String -> Val a
 error_ = error
 
-dims :: forall a. Unary (MatrixRep a) ((Int × a) × (Int × a))
-dims = { fwd, bwd }
+dims :: PrimOp
+dims = PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: MatrixRep a -> (Int × a) × (Int × a)
-   fwd (_ × iα × jβ) = iα × jβ
+   fwd :: Partial => OpFwd
+   fwd (Matrix α (_ × (i × β1) × (j × β2)) : Nil) = Constr α cPair (Int β1 i : Int β2 j : Nil)
 
-   bwd :: (Int × a) × (Int × a) -> Endo (MatrixRep a)
-   bwd (iα × jβ) (vss × _ × _) = vss × iα × jβ
+   bwd :: Partial => OpBwd
+   bwd (Constr α c (Int β1 i : Int β2 j : Nil)) (Matrix _ (vss × _ × _) : Nil) | c == cPair =
+      Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
 
--- Unfortunately the primitives infrastructure doesn't generalise to "deep" pattern-matching/construction. Here
--- non-neededness of matrix bounds/indices should arise automtically because construction rights are not required.
-matrixLookup :: forall a. BinarySlicer (MatrixRep a) ((Int × a) × (Int × a)) (Val a) a
-matrixLookup = { i1: matrixRep, i2: intPair, o: val, fwd: fwd', bwd: bwd' }
+matrixLookup :: PrimOp
+matrixLookup = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: MatrixRep a -> (Int × a) × (Int × a) -> Val a
-   fwd (vss × _ × _) ((i × _) × (j × _)) = vss ! (i - 1) ! (j - 1)
+   fwd :: Partial => OpFwd
+   fwd (Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+      | c == cPair = vss ! (i - 1) ! (j - 1)
 
-   bwd :: Ann a => Val a -> MatrixRep a × ((Int × a) × (Int × a)) -> MatrixRep a × ((Int × a) × (Int × a))
-   bwd v (vss × (i' × _) × (j' × _) × ((i × _) × (j × _))) =
-      updateMatrix i j (const v) (vss × (i' × bot) × (j' × bot)) × ((i × bot) × (j × bot))
+   bwd :: Partial => OpBwd
+   bwd v (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+      | c == cPair =
+           Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
+              : Constr bot cPair (Int bot i : Int bot j : Nil)
+              : Nil
 
-   fwd' :: Ann a => MatrixRep a × a -> ((Int × a) × (Int × a)) × a -> Val a × a
-   fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
-
-   bwd' :: Ann a => Val a × a -> MatrixRep a × ((Int × a) × (Int × a)) -> (MatrixRep a × a) × ((Int × a) × (Int × a) × a)
-   bwd' (z × α) (x × y) = (x' × α) × (y' × α)
-      where
-      x' × y' = bwd z (x × y)
-
-get :: forall a. BinarySlicer String (Dict (a × Val a)) (Val a) a
-get = { i1: string, i2: dict, o: val, fwd, bwd }
+get :: PrimOp
+get = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Ann a => String × a -> Dict (a × Val a) × a -> Val a × a
-   fwd (k × _) (d × _) = snd (D.get k d) × top
+   fwd :: Partial => OpFwd
+   fwd (Str _ k : Dictionary _ d : Nil) = snd (D.get k d)
 
-   bwd :: Ann a => Val a × a -> String × Dict (a × Val a) -> (String × a) × (Dict (a × Val a) × a)
-   bwd (v × _) (k × _) = (k × bot) × (D.singleton k (bot × v) × bot)
+   bwd :: Partial => OpBwd
+   bwd v (Str _ k : Dictionary _ _ : Nil) = (Str bot k) : Dictionary bot (D.singleton k (bot × v)) : Nil
+
+map :: PrimOp
+map = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: Partial => OpFwd
+   fwd (Fun φ : Dictionary α d : Nil) = Dictionary α $ d <#> (\(β × v) -> β × snd (successful (apply φ v)))
+
+   bwd :: Partial => OpBwd
+   bwd = error "todo"
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

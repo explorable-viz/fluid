@@ -12,11 +12,9 @@ import Dict (Dict)
 import Lattice ((∧), bot, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Util (Endo, type (×), (×), type (+), error)
+import Util (type (+), type (×), error, (×))
 import Val (class Ann, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..))
 
--- Mediates between values of annotation type a and (potential) underlying datatype d, analogous to
--- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
 -- work with the required higher-rank polymorphism.
 type ToFrom d a =
    { constr :: Ann a => d × a -> Val a
@@ -128,17 +126,6 @@ record =
    match' (Record α xvs) = xvs × α
    match' v = error ("Record expected; got " <> prettyP v)
 
-dict :: forall a. ToFrom (Dict (a × Val a)) a
-dict =
-   { constr: \(svs × α) -> Dictionary α svs
-   , constr_bwd: match'
-   , match: match'
-   }
-   where
-   match' :: Ann a => _
-   match' (Dictionary α svs) = svs × α
-   match' v = error ("Dictionary expected; got " <> prettyP v)
-
 boolean :: forall a. ToFrom Boolean a
 boolean =
    { constr: case _ of
@@ -154,17 +141,6 @@ boolean =
       | c == cFalse = false × α
    match' v = error ("Boolean expected; got " <> prettyP v)
 
-function :: forall a. ToFrom (Fun a) a
-function =
-   { constr: \(φ × _) -> Fun φ
-   , constr_bwd: match'
-   , match: match'
-   }
-   where
-   match' :: Ann a => Val a -> Fun a × a
-   match' (Fun φ) = φ × bot
-   match' v = error ("Function expected; got " <> prettyP v)
-
 class IsZero a where
    isZero :: a -> Boolean
 
@@ -177,95 +153,86 @@ instance IsZero Number where
 instance (IsZero a, IsZero b) => IsZero (a + b) where
    isZero = isZero ||| isZero
 
-type Unary i o =
-   { fwd :: i -> o
-   , bwd :: o -> Endo i
-   }
-
-type UnarySlicer i o a =
+-- Need to be careful about type variables escaping higher-rank quantification.
+type Unary i o a =
    { i :: ToFrom i a
    , o :: ToFrom o a
-   , fwd :: Ann a => i × a -> o × a
-   , bwd :: Ann a => o × a -> i -> i × a
+   , fwd :: i -> o
    }
 
-type Binary i1 i2 o =
-   { fwd :: i1 -> i2 -> o
-   , bwd :: o -> Endo (i1 × i2)
-   }
-
-type BinarySlicer i1 i2 o a =
+type Binary i1 i2 o a =
    { i1 :: ToFrom i1 a
    , i2 :: ToFrom i2 a
    , o :: ToFrom o a
-   , fwd :: Ann a => i1 × a -> i2 × a -> o × a
-   , bwd :: Ann a => o × a -> i1 × i2 -> (i1 × a) × (i2 × a)
+   , fwd :: i1 -> i2 -> o
    }
 
-unary_ :: forall i o a'. (forall a. UnarySlicer i o a) -> Val a'
-unary_ s =
-   Fun $ flip Primitive Nil $ PrimOp { arity: 1, op: unsafePartial op, op_bwd: unsafePartial op_bwd }
+type BinaryZero i o a =
+   { i :: ToFrom i a
+   , o :: ToFrom o a
+   , fwd :: i -> i -> o
+   }
+
+unary
+   :: forall i o a'
+    . (forall a. Unary i o a)
+   -> Val a'
+unary op =
+   Fun $ flip Primitive Nil $ PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   op :: Partial => OpFwd
-   op (v : Nil) = s.o.constr (s.fwd (s.i.match v))
-
-   op_bwd :: Partial => OpBwd
-   op_bwd v (u : Nil) = s.i.constr (s.bwd (s.o.constr_bwd v) (fst (s.i.match u))) : Nil
-
-binary_ :: forall i1 i2 o a'. (forall a. BinarySlicer i1 i2 o a) -> Val a'
-binary_ s =
-   Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial op, op_bwd: unsafePartial op_bwd }
-   where
-   op :: Partial => OpFwd
-   op (v1 : v2 : Nil) = s.o.constr (s.fwd (s.i1.match v1) (s.i2.match v2))
-
-   op_bwd :: Partial => OpBwd
-   op_bwd v (u1 : u2 : Nil) = s.i1.constr v1 : s.i2.constr v2 : Nil
+   fwd :: Partial => OpFwd
+   fwd (v : Nil) = op.o.constr (op.fwd x × α)
       where
-      v1 × v2 = s.bwd (s.o.constr_bwd v) (fst (s.i1.match u1) × fst (s.i2.match u2))
+      x × α = op.i.match v
 
-withInverse1 :: forall i o. (i -> o) -> Unary i o
-withInverse1 fwd = { fwd, bwd: const identity }
-
-withInverse2 :: forall i1 i2 o. (i1 -> i2 -> o) -> Binary i1 i2 o
-withInverse2 fwd = { fwd, bwd: const identity }
-
-unary :: forall i o a'. (forall a. ToFrom i a × ToFrom o a × Unary i o) -> Val a'
-unary (i × o × { fwd, bwd }) = unary_ { i, o, fwd: fwd', bwd: bwd' }
-   where
-   fwd' :: forall a. i × a -> o × a
-   fwd' (x × α) = fwd x × α
-
-   bwd' :: forall a. o × a -> i -> i × a
-   bwd' (y × α) x = bwd y x × α
-
-binary :: forall i1 i2 o a'. (forall a. ToFrom i1 a × ToFrom i2 a × ToFrom o a × Binary i1 i2 o) -> Val a'
-binary (i1 × i2 × o × { fwd, bwd }) = binary_ { i1, i2, o, fwd: fwd', bwd: bwd' }
-   where
-   fwd' :: forall a. Ann a => i1 × a -> i2 × a -> o × a
-   fwd' (x × α) (y × β) = fwd x y × (α ∧ β)
-
-   bwd' :: forall a. o × a -> i1 × i2 -> (i1 × a) × (i2 × a)
-   bwd' (z × α) (x × y) = (x' × α) × (y' × α)
+   bwd :: Partial => OpBwd
+   bwd v (u : Nil) = op.i.constr (x × α) : Nil
       where
-      x' × y' = bwd z (x × y)
+      _ × α = op.o.constr_bwd v
+      (x × _) = op.i.match u
+
+binary
+   :: forall i1 i2 o a'
+    . (forall a. Binary i1 i2 o a)
+   -> Val a'
+binary op =
+   Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: Partial => OpFwd
+   fwd (v1 : v2 : Nil) = op.o.constr (op.fwd x y × (α ∧ β))
+      where
+      (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
+
+   bwd :: Partial => OpBwd
+   bwd v (u1 : u2 : Nil) = op.i1.constr (x × α) : op.i2.constr (y × α) : Nil
+      where
+      _ × α = op.o.constr_bwd v
+      (x × _) × (y × _) = op.i1.match u1 × op.i2.match u2
 
 -- If both are zero, depend only on the first.
-binaryZero :: forall i o a'. IsZero i => (forall a. ToFrom i a × ToFrom o a × Binary i i o) -> Val a'
-binaryZero (i × o × { fwd, bwd }) = binary_ { i1: i, i2: i, o, fwd: fwd', bwd: bwd' }
+binaryZero
+   :: forall i o a'
+    . IsZero i
+   => (forall a. BinaryZero i o a)
+   -> Val a'
+binaryZero op =
+   Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd' :: forall a. Ann a => i × a -> i × a -> o × a
-   fwd' (x × α) (y × β) =
-      fwd x y × if isZero x then α else if isZero y then β else α ∧ β
-
-   bwd' :: forall a. Ann a => o × a -> i × i -> (i × a) × (i × a)
-   bwd' (z × α) (x × y) =
-      if isZero x then (x' × α) × (y' × bot)
-      else if isZero y then (x' × bot) × (y' × α)
-      else
-         (x' × α) × (y' × α)
+   fwd :: Partial => OpFwd
+   fwd (v1 : v2 : Nil) =
+      op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
       where
-      x' × y' = bwd z (x × y)
+      (x × α) × (y × β) = op.i.match v1 × op.i.match v2
+
+   bwd :: Partial => OpBwd
+   bwd v (u1 : u2 : Nil) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
+      where
+      _ × α = op.o.constr_bwd v
+      (x × _) × (y × _) = op.i.match u1 × op.i.match u2
+      β1 × β2 =
+         if isZero x then α × bot
+         else if isZero y then bot × α
+         else α × α
 
 class As a b where
    as :: a -> b
