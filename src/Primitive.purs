@@ -15,6 +15,8 @@ import Pretty (prettyP)
 import Util (type (+), type (×), error, (×))
 import Val (class Ann, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..))
 
+-- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
+-- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
 -- work with the required higher-rank polymorphism.
 type ToFrom d a =
    { constr :: Ann a => d × a -> Val a
