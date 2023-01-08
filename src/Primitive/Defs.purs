@@ -11,13 +11,15 @@ import Data.Traversable (traverse)
 import Data.Tuple (snd)
 import DataType (cCons, cPair)
 import Debug (trace)
-import Dict (fromFoldable, lookup, singleton) as D
+import Dict (Dict)
+import Dict (fromFoldable, intersectionWith, lookup, singleton) as D
 import Eval (apply)
+import EvalBwd (applyBwd)
 import Lattice (Raw, bot, botOf)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
-import Util (Endo, (×), type (+), error, orElse)
+import Util (Endo, type (×), (×), type (+), error, orElse)
 import Val (Env, Fun(..), OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
@@ -99,10 +101,13 @@ map = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd
    fwd (Fun φ : Dictionary α d : Nil) =
-      Dictionary α <$> traverse (\(β × v) -> ((β × _) <<< snd) <$> apply φ v) d
+      Dictionary α <$> traverse (\(β × v) -> (snd >>> (β × _)) <$> apply φ v) d
 
    bwd :: Partial => OpBwd
-   bwd = error "todo"
+   bwd (Dictionary α d') (Fun φ : Dictionary _ d : Nil) =
+      let d'' = D.intersectionWith (\(_ × u) (β × v) -> applyBwd v ?_) d d'
+                :: Dict (Fun _ × Val _) in
+      error "todo"
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
