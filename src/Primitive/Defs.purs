@@ -9,14 +9,14 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Traversable (traverse)
-import Data.Tuple (snd)
+import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict)
 import Dict (fromFoldable, intersectionWith, lookup, singleton) as D
 import Eval (apply)
 import EvalBwd (applyBwd)
-import Lattice (Raw, bot, botOf)
+import Lattice (Raw, (∨), bot, botOf)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
@@ -108,7 +108,9 @@ map = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    bwd (Dictionary α d') (Fun φ : Dictionary _ d : Nil) =
       let d'' = D.intersectionWith (\(_ × u) (β × v) -> β × applyBwd v ?_) d d'
                 :: Dict (_ × (Fun _ × Val _)) in
-      Fun (foldl ?_ (botOf φ) d'') : Dictionary ?_ ?_ : Nil
+      Fun (foldl (∨) (botOf φ) (d'' <#> (snd >>> fst))) :
+      Dictionary ?_ ?_ :
+      Nil
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
