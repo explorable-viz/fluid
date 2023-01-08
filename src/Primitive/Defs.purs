@@ -3,6 +3,7 @@ module Primitive.Defs where
 import Prelude hiding (absurd, apply, div, mod, top)
 
 import Data.Array ((!!))
+import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
@@ -105,9 +106,9 @@ map = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
 
    bwd :: Partial => OpBwd
    bwd (Dictionary α d') (Fun φ : Dictionary _ d : Nil) =
-      let d'' = D.intersectionWith (\(_ × u) (β × v) -> applyBwd v ?_) d d'
-                :: Dict (Fun _ × Val _) in
-      error "todo"
+      let d'' = D.intersectionWith (\(_ × u) (β × v) -> β × applyBwd v ?_) d d'
+                :: Dict (_ × (Fun _ × Val _)) in
+      Fun (foldl ?_ (botOf φ) d'') : Dictionary ?_ ?_ : Nil
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
