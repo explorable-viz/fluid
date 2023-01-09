@@ -1,0 +1,3 @@
+let d = {|"a": [_5_, 6], "b": [_9_, 10]|};
+    d' = dict_map head d
+in (dict_get "a" d' + dict_get "b" d')
