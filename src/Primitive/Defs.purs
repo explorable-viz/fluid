@@ -3,6 +3,7 @@ module Primitive.Defs where
 import Prelude hiding (absurd, apply, div, mod, top)
 
 import Data.Array ((!!))
+import Data.Exists (mkExists)
 import Data.Foldable (foldl)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
@@ -14,15 +15,16 @@ import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict)
-import Dict (fromFoldable, intersectionWith, lookup, singleton) as D
+import Dict (fromFoldable, intersectionWith, lookup, singleton, unzip) as D
 import Eval (apply)
 import EvalBwd (applyBwd)
 import Lattice (Raw, (∨), bot, botOf)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
-import Util (Endo, type (×), (×), type (+), error, orElse)
-import Val (Env, Fun(..), OpBwd, OpFwd, PrimOp(..), Val(..), updateMatrix)
+import Trace (AppTrace)
+import Util (Endo, type (×), (×), type (+), MayFail, error, orElse)
+import Val (Env, Fun(..), OpBwd, OpBwd2, OpFwd, OpFwd2, PrimOp(..), PrimOp2, PrimOp2'(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
@@ -112,6 +114,17 @@ map = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
       d'' =
          D.intersectionWith (\(_ × _) (β × v) -> β × applyBwd v (error "TODO")) d d'
             :: Dict (_ × (Fun _ × Val _))
+
+map2 :: PrimOp2
+map2 = mkExists $ PrimOp2' 2 (unsafePartial fwd) (unsafePartial bwd)
+   where
+   fwd :: Partial => OpFwd2 (Dict AppTrace)
+   fwd (Fun φ : Dictionary α d : Nil) = do
+      ts × vs <- D.unzip <$> traverse (\(β × v) -> second (β × _) <$> apply φ v) d
+      pure $ ts × Dictionary α vs
+
+   bwd :: Partial => OpBwd2 (Dict AppTrace)
+   bwd = ?_
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

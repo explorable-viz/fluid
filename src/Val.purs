@@ -4,6 +4,7 @@ import Prelude hiding (absurd, append)
 
 import Bindings (Var)
 import Control.Apply (lift2)
+import Data.Exists (Exists)
 import Data.List (List(..), (:))
 import Data.Bifunctor (bimap)
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
@@ -46,6 +47,13 @@ newtype PrimOp = PrimOp
    , op :: OpFwd
    , op_bwd :: OpBwd -- provided with original inputs
    }
+
+-- similar to an isomorphism lens with complement t
+type OpFwd2 t = forall a. Ann a => List (Val a) -> MayFail (t × Val a)
+type OpBwd2 t = forall a. Ann a => t × Val a -> List (Raw Val) -> List (Val a)
+
+data PrimOp2' t = PrimOp2' Int (OpFwd2 t) (OpBwd2 t)
+type PrimOp2 = Exists PrimOp2'
 
 -- Environments.
 type Env a = Dict (Val a)
