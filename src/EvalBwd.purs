@@ -3,6 +3,7 @@ module EvalBwd where
 import Prelude hiding (absurd)
 
 import Bindings (Var, varAnon)
+import Data.Exists (runExists)
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), range, reverse, unsnoc, unzip, zip, (:))
@@ -23,7 +24,7 @@ import Trace (AppTrace, Trace, Match(..))
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, Fun, PrimOp(..), (<+>), Val, append_inv)
+import Val (class Ann, Env, Fun, PrimOp(..), PrimOp2'(..), (<+>), Val, append_inv)
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
@@ -86,6 +87,17 @@ applyBwd v (T.AppPrimitive (PrimOp φ) vs v2) =
    { init: vs'', last: v2' } = definitely' $ unsnoc $
       if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Primitive _ vs'') = v in vs''
       else φ.op_bwd v vs'
+applyBwd v (T.AppPrimitive2 φ vs v2) =
+   V.Primitive2 φ vs'' × v2'
+   where
+   vs' = vs <> L.singleton v2
+   { init: vs'', last: v2' } = definitely' $ unsnoc $ runExists applyBwd' φ
+      where
+      applyBwd' :: forall t. PrimOp2' t -> List (Val _)
+      applyBwd' (PrimOp2' φ) =
+         if φ.arity > length vs'
+         then unsafePartial $ let V.Fun (V.Primitive2 _ vs'') = v in vs''
+         else φ.op_bwd (?_ × v) vs'
 applyBwd v (T.AppConstr c _) =
    V.PartialConstr β c vs' × v2
    where

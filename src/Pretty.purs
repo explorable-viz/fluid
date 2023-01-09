@@ -23,7 +23,7 @@ import Text.Pretty (render) as P
 import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
 import Util.Pair (toTuple)
 import Val (Fun(..), Val(..)) as V
-import Val (class Highlightable, Fun, PrimOp, PrimOp2'(..), Val, highlightIf)
+import Val (class Highlightable, Fun, PrimOp, PrimOp2', Val, highlightIf)
 
 infixl 5 beside as :<>:
 
