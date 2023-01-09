@@ -179,7 +179,8 @@ type BinaryZero i o a =
 unary :: forall i o a'. (forall a. Unary i o a) -> Val a'
 unary op =
    Fun $ flip Extern Nil
-       $ mkExists $ ExternOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ mkExists
+      $ ExternOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd Unit
    fwd (v : Nil) = pure $ unit × op.o.constr (op.fwd x × α)
@@ -195,7 +196,8 @@ unary op =
 binary :: forall i1 i2 o a'. (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
    Fun $ flip Extern Nil
-       $ mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ mkExists
+      $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd Unit
    fwd (v1 : v2 : Nil) = pure $ unit × op.o.constr (op.fwd x y × (α ∧ β))
@@ -212,7 +214,8 @@ binary op =
 binaryZero :: forall i o a'. IsZero i => (forall a. BinaryZero i o a) -> Val a'
 binaryZero op =
    Fun $ flip Extern Nil
-       $ mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ mkExists
+      $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd Unit
    fwd (v1 : v2 : Nil) =
