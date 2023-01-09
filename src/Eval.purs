@@ -26,7 +26,7 @@ import Trace (AppTrace, Match(..), PrimOpTrace, PrimOpTrace'(..), Trace)
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, Fun, PrimOp(..), PrimOp2'(..), (<+>), Val, for, lookup', restrict)
+import Val (class Ann, Env, Fun, PrimOp2'(..), (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -75,10 +75,6 @@ apply (V.Closure β γ1 ρ σ) v = do
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
-apply (V.Primitive (PrimOp φ) vs) v = do
-   let vs' = vs <> singleton v
-   v'' <- if φ.arity > length vs' then pure $ V.Fun $ V.Primitive (PrimOp φ) vs' else φ.op vs'
-   pure $ T.AppPrimitive (PrimOp φ) (erase <$> vs) (erase v) × v''
 apply (V.Primitive2 φ vs) v = do
    let vs' = vs <> singleton v
    let

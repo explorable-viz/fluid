@@ -31,7 +31,6 @@ data Val a
 
 data Fun a
    = Closure a (Env a) (RecDefs a) (Elim a)
-   | Primitive PrimOp (List (Val a)) -- never saturated
    | Primitive2 PrimOp2 (List (Val a)) -- never saturated
    | PartialConstr a Ctr (List (Val a)) -- never saturated
 
@@ -39,15 +38,6 @@ class (Highlightable a, BoundedLattice a) <= Ann a
 
 instance Ann Boolean
 instance Ann Unit
-
-type OpFwd = forall a. Ann a => List (Val a) -> MayFail (Val a)
-type OpBwd = forall a. Ann a => Val a -> List (Raw Val) -> List (Val a)
-
-newtype PrimOp = PrimOp
-   { arity :: Int
-   , op :: OpFwd
-   , op_bwd :: OpBwd -- provided with original inputs
-   }
 
 -- similar to an isomorphism lens with complement t
 type OpFwd2 t = forall a. Ann a => List (Val a) -> MayFail (t × Val a)
@@ -157,7 +147,6 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
 instance JoinSemilattice a => JoinSemilattice (Fun a) where
    maybeJoin (Closure α γ ρ σ) (Closure α' γ' ρ' σ') =
       Closure (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
-   maybeJoin (Primitive φ vs) (Primitive _ vs') = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin (Primitive2 φ vs) (Primitive2 _ vs') = Primitive2 φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin (PartialConstr α c vs) (PartialConstr α' c' us) =
       PartialConstr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
@@ -181,7 +170,6 @@ instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
 instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
    expand (Closure α γ ρ σ) (Closure _ γ' ρ' σ') =
       Closure α (expand γ γ') (expand ρ ρ') (expand σ σ')
-   expand (Primitive φ vs) (Primitive _ vs') = Primitive φ (expand vs vs') -- TODO: require φ == φ'
    expand (Primitive2 φ vs) (Primitive2 _ vs') = Primitive2 φ (expand vs vs') -- TODO: require φ == φ'
    expand (PartialConstr α c vs) (PartialConstr _ c' us) = PartialConstr α (c ≜ c') (expand vs us)
    expand _ _ = error "Incompatible values"
