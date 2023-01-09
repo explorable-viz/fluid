@@ -6,6 +6,7 @@ import Bindings (varAnon)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
+import Data.Exists (runExists)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
 import Data.Set (union, subset)
@@ -23,7 +24,7 @@ import Trace (AppTrace, Trace, Match(..))
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, Fun, PrimOp(..), (<+>), Val, for, lookup', restrict)
+import Val (class Ann, Env, Fun, PrimOp(..), PrimOp2'(..), (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -76,6 +77,12 @@ apply (V.Primitive (PrimOp φ) vs) v = do
    let vs' = vs <> singleton v
    v'' <- if φ.arity > length vs' then pure $ V.Fun $ V.Primitive (PrimOp φ) vs' else φ.op vs'
    pure $ T.AppPrimitive (PrimOp φ) (erase <$> vs) (erase v) × v''
+apply (V.Primitive2 φ vs) v = do
+   let vs' = vs <> singleton v
+   let blah :: forall t. PrimOp2' t -> MayFail (Val _)
+       blah (PrimOp2' φ') = if φ'.arity > length vs' then ?_ else snd <$> φ'.op vs'
+   v'' <- runExists blah φ
+   pure $ T.AppPrimitive2 φ (erase <$> vs) (erase v) × v''
 apply (V.PartialConstr α c vs) v = do
    let n = successful (arity c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)

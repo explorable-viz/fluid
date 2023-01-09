@@ -32,6 +32,7 @@ data Val a
 data Fun a
    = Closure a (Env a) (RecDefs a) (Elim a)
    | Primitive PrimOp (List (Val a)) -- never saturated
+   | Primitive2 PrimOp2 (List (Val a)) -- never saturated
    | PartialConstr a Ctr (List (Val a)) -- never saturated
 
 class (Highlightable a, BoundedLattice a) <= Ann a
