@@ -10025,6 +10025,7 @@
   };
 
   // output-es/Val/index.js
+  var $ExternOp$p = (_1) => ({ tag: "ExternOp'", _1 });
   var $Fun = (tag, _1, _2, _3, _4) => ({ tag, _1, _2, _3, _4 });
   var $Val = (tag, _1, _2, _3) => ({ tag, _1, _2, _3 });
   var identity12 = (x2) => x2;
@@ -10039,7 +10040,7 @@
   var Dictionary2 = (value0) => (value1) => $Val("Dictionary", value0, value1);
   var Matrix2 = (value0) => (value1) => $Val("Matrix", value0, value1);
   var Closure = (value0) => (value1) => (value2) => (value3) => $Fun("Closure", value0, value1, value2, value3);
-  var Primitive = (value0) => (value1) => $Fun("Primitive", value0, value1);
+  var Extern = (value0) => (value1) => $Fun("Extern", value0, value1);
   var PartialConstr = (value0) => (value1) => (value2) => $Fun("PartialConstr", value0, value1, value2);
   var highlightableUnit = { highlightIf: (v) => identity12 };
   var highlightableBoolean = {
@@ -10100,8 +10101,8 @@
           functorElim.map(f)(m._4)
         );
       }
-      if (m.tag === "Primitive") {
-        return $Fun("Primitive", m._1, listMap(functorVal.map(f))(m._2));
+      if (m.tag === "Extern") {
+        return $Fun("Extern", m._1, listMap(functorVal.map(f))(m._2));
       }
       if (m.tag === "PartialConstr") {
         return $Fun("PartialConstr", f(m._1), m._2, listMap(functorVal.map(f))(m._3));
@@ -10288,9 +10289,9 @@
           }
           return $Either("Left", "Incompatible functions");
         }
-        if (v.tag === "Primitive") {
-          if (v1.tag === "Primitive") {
-            const $5 = Primitive(v._1);
+        if (v.tag === "Extern") {
+          if (v1.tag === "Extern") {
+            const $5 = Extern(v._1);
             const $6 = joinSemilatticeList(joinSemilatticeVal(dictJoinSemilattice)).maybeJoin(v._2)(v1._2);
             if ($6.tag === "Left") {
               return $Either("Left", $6._1);
@@ -10426,9 +10427,9 @@
           }
           return unsafePerformEffect(throwException(error("Incompatible values")));
         }
-        if (v.tag === "Primitive") {
-          if (v1.tag === "Primitive") {
-            return $Fun("Primitive", v._1, zipWith(expandableValRawVal(dictBoundedJoinSemilattice).expand)(v._2)(v1._2));
+        if (v.tag === "Extern") {
+          if (v1.tag === "Extern") {
+            return $Fun("Extern", v._1, zipWith(expandableValRawVal(dictBoundedJoinSemilattice).expand)(v._2)(v1._2));
           }
           return unsafePerformEffect(throwException(error("Incompatible values")));
         }
@@ -10700,8 +10701,8 @@
       if (v.tag === "Closure") {
         return text("<closure>");
       }
-      if (v.tag === "Primitive") {
-        return beside(beside(text("("))(text("<prim op>")))(text(")"));
+      if (v.tag === "Extern") {
+        return beside(beside(text("("))(text("<extern op>")))(text(")"));
       }
       if (v.tag === "PartialConstr") {
         return prettyConstr(prettyVal(dictHighlightable))(dictHighlightable)(v._1)(v._2)(v._3);
@@ -10730,8 +10731,8 @@
     return $Val(
       "Fun",
       $Fun(
-        "Primitive",
-        {
+        "Extern",
+        $ExternOp$p({
           arity: 1,
           op: (dictAnn) => {
             const match13 = op.i.match(dictAnn);
@@ -10740,7 +10741,7 @@
               if (v.tag === "Cons") {
                 if (v._2.tag === "Nil") {
                   const v2 = match13(v._1);
-                  return constr($Tuple(op.fwd(v2._1), v2._2));
+                  return $Either("Right", $Tuple(unit, constr($Tuple(op.fwd(v2._1), v2._2))));
                 }
                 fail();
               }
@@ -10753,14 +10754,14 @@
             return (v) => (v1) => {
               if (v1.tag === "Cons") {
                 if (v1._2.tag === "Nil") {
-                  return $List("Cons", constr($Tuple(match10(v1._1)._1, constr_bwd(v)._2)), Nil);
+                  return $List("Cons", constr($Tuple(match10(v1._1)._1, constr_bwd(v._2)._2)), Nil);
                 }
                 fail();
               }
               fail();
             };
           }
-        },
+        }),
         Nil
       )
     );
@@ -11056,8 +11057,8 @@
     return $Val(
       "Fun",
       $Fun(
-        "Primitive",
-        {
+        "Extern",
+        $ExternOp$p({
           arity: 2,
           op: (dictAnn) => {
             const match13 = op.i.match(dictAnn);
@@ -11069,18 +11070,24 @@
                   if (v._2._2.tag === "Nil") {
                     const $8 = match13(v._1);
                     const $9 = match13(v._2._1);
-                    return constr($Tuple(
-                      op.fwd($8._1)($9._1),
-                      (() => {
-                        if (dictIsZero.isZero($8._1)) {
-                          return $8._2;
-                        }
-                        if (dictIsZero.isZero($9._1)) {
-                          return $9._2;
-                        }
-                        return meet($8._2)($9._2);
-                      })()
-                    ));
+                    return $Either(
+                      "Right",
+                      $Tuple(
+                        unit,
+                        constr($Tuple(
+                          op.fwd($8._1)($9._1),
+                          (() => {
+                            if (dictIsZero.isZero($8._1)) {
+                              return $8._2;
+                            }
+                            if (dictIsZero.isZero($9._1)) {
+                              return $9._2;
+                            }
+                            return meet($8._2)($9._2);
+                          })()
+                        ))
+                      )
+                    );
                   }
                   fail();
                 }
@@ -11097,7 +11104,7 @@
               if (v1.tag === "Cons") {
                 if (v1._2.tag === "Cons") {
                   if (v1._2._2.tag === "Nil") {
-                    const $9 = constr_bwd(v)._2;
+                    const $9 = constr_bwd(v._2)._2;
                     const $10 = match10(v1._1);
                     const $11 = match10(v1._2._1);
                     if (dictIsZero.isZero($10._1)) {
@@ -11127,7 +11134,7 @@
               fail();
             };
           }
-        },
+        }),
         Nil
       )
     );
@@ -11138,8 +11145,8 @@
     return $Val(
       "Fun",
       $Fun(
-        "Primitive",
-        {
+        "Extern",
+        $ExternOp$p({
           arity: 2,
           op: (dictAnn) => {
             const match22 = op.i1.match(dictAnn);
@@ -11152,7 +11159,7 @@
                   if (v._2._2.tag === "Nil") {
                     const $9 = match22(v._1);
                     const $10 = match32(v._2._1);
-                    return constr($Tuple(op.fwd($9._1)($10._1), meet($9._2)($10._2)));
+                    return $Either("Right", $Tuple(unit, constr($Tuple(op.fwd($9._1)($10._1), meet($9._2)($10._2)))));
                   }
                   fail();
                 }
@@ -11169,7 +11176,7 @@
               if (v1.tag === "Cons") {
                 if (v1._2.tag === "Cons") {
                   if (v1._2._2.tag === "Nil") {
-                    const $9 = constr_bwd(v)._2;
+                    const $9 = constr_bwd(v._2)._2;
                     return $List(
                       "Cons",
                       constr($Tuple(match10(v1._1)._1, $9)),
@@ -11183,7 +11190,7 @@
               fail();
             };
           }
-        },
+        }),
         Nil
       )
     );
@@ -18039,6 +18046,7 @@
 
   // output-es/Trace/index.js
   var $AppTrace = (tag, _1, _2, _3) => ({ tag, _1, _2, _3 });
+  var $ExternTrace$p = (_1, _2) => ({ tag: "ExternTrace'", _1, _2 });
   var $Match = (tag, _1, _2) => ({ tag, _1, _2 });
   var $Trace = (tag, _1, _2, _3, _4) => ({ tag, _1, _2, _3, _4 });
   var $VarDef3 = (_1, _2) => ({ tag: "VarDef", _1, _2 });
@@ -18489,41 +18497,45 @@
           return unsafePerformEffect(throwException(error("Expression expected")));
         })())(meet(v._1)(v3._1._2)))((v4) => $Either("Right", $Tuple($AppTrace("AppClosure", fromFoldable7(keys2(v._3)), v3._2, v4._1), v4._2))));
       }
-      if (v.tag === "Primitive") {
+      if (v.tag === "Extern") {
         const vs$p = foldableList.foldr(Cons)($List("Cons", v1, Nil))(v._2);
-        return $Either(
-          "Right",
-          $Tuple(
-            $AppTrace("AppPrimitive", $Tuple(v._1, listMap(erase)(v._2)), functorVal.map((v$1) => unit)(v1)),
-            (() => {
-              if ((() => {
-                const go = (go$a0$copy) => (go$a1$copy) => {
-                  let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-                  while (go$c) {
-                    const b = go$a0, v$1 = go$a1;
-                    if (v$1.tag === "Nil") {
-                      go$c = false;
-                      go$r = b;
-                      continue;
-                    }
-                    if (v$1.tag === "Cons") {
-                      go$a0 = b + 1 | 0;
-                      go$a1 = v$1._2;
-                      continue;
-                    }
-                    fail();
-                  }
-                  ;
-                  return go$r;
-                };
-                return v._1.arity > go(0)(vs$p);
-              })()) {
-                return $Val("Fun", $Fun("Primitive", v._1, vs$p));
+        return bindEither.bind(bindEither.bind((() => {
+          if ((() => {
+            const go = (go$a0$copy) => (go$a1$copy) => {
+              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+              while (go$c) {
+                const b = go$a0, v$1 = go$a1;
+                if (v$1.tag === "Nil") {
+                  go$c = false;
+                  go$r = b;
+                  continue;
+                }
+                if (v$1.tag === "Cons") {
+                  go$a0 = b + 1 | 0;
+                  go$a1 = v$1._2;
+                  continue;
+                }
+                fail();
               }
-              return v._1.op(dictAnn)(vs$p);
-            })()
-          )
-        );
+              ;
+              return go$r;
+            };
+            return v._1._1.arity > go(0)(vs$p);
+          })()) {
+            return $Either("Right", $Tuple(Nothing, $Val("Fun", $Fun("Extern", v._1, vs$p))));
+          }
+          const $6 = v._1._1.op(dictAnn)(vs$p);
+          if ($6.tag === "Left") {
+            return $Either("Left", $6._1);
+          }
+          if ($6.tag === "Right") {
+            return $Either("Right", $Tuple($Maybe("Just", $6._1._1), $6._1._2));
+          }
+          fail();
+        })())((v4) => $Either("Right", $Tuple($ExternTrace$p($ExternOp$p(v._1._1), v4._1), v4._2))))((v3) => $Either(
+          "Right",
+          $Tuple($AppTrace("AppExtern", listMap(erase)(v._2), functorVal.map((v$1) => unit)(v1), v3._1), v3._2)
+        ));
       }
       if (v.tag === "PartialConstr") {
         const n = successful(arity(v._2));
@@ -18559,31 +18571,29 @@
           $Tuple(
             $AppTrace(
               "AppConstr",
-              $Tuple(
-                v._2,
-                (() => {
-                  const go = (go$a0$copy) => (go$a1$copy) => {
-                    let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-                    while (go$c) {
-                      const b = go$a0, v$1 = go$a1;
-                      if (v$1.tag === "Nil") {
-                        go$c = false;
-                        go$r = b;
-                        continue;
-                      }
-                      if (v$1.tag === "Cons") {
-                        go$a0 = b + 1 | 0;
-                        go$a1 = v$1._2;
-                        continue;
-                      }
-                      fail();
+              v._2,
+              (() => {
+                const go = (go$a0$copy) => (go$a1$copy) => {
+                  let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+                  while (go$c) {
+                    const b = go$a0, v$1 = go$a1;
+                    if (v$1.tag === "Nil") {
+                      go$c = false;
+                      go$r = b;
+                      continue;
                     }
-                    ;
-                    return go$r;
-                  };
-                  return go(0)(v._3);
-                })()
-              )
+                    if (v$1.tag === "Cons") {
+                      go$a0 = b + 1 | 0;
+                      go$a1 = v$1._2;
+                      continue;
+                    }
+                    fail();
+                  }
+                  ;
+                  return go$r;
+                };
+                return go(0)(v._3);
+              })()
             ),
             (() => {
               if ((() => {
@@ -18975,9 +18985,9 @@
         const v7 = matchBwd1(v4._2)($Cont("ContExpr", v3.e))(v3["\u03B1"])(v1._2);
         return $Tuple($Fun("Closure", JoinSemilattice0.join(v3["\u03B1"])(v6._2), join1(v5._1)(v6._1._1), v6._1._2, v7._2), v7._1);
       }
-      if (v1.tag === "AppPrimitive") {
-        const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2, Nil))(v1._1._2);
-        const v3 = definitely("absurd")(unsnoc((() => {
+      if (v1.tag === "AppExtern") {
+        const vs$p = foldableList.foldr(Cons)($List("Cons", v1._2, Nil))(v1._1);
+        const $8 = definitely("absurd")(unsnoc((() => {
           if ((() => {
             const go = (go$a0$copy) => (go$a1$copy) => {
               let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
@@ -18998,39 +19008,39 @@
               ;
               return go$r;
             };
-            return v1._1._1.arity > go(0)(vs$p);
+            return v1._3._1._1.arity > go(0)(vs$p);
           })()) {
             if (v.tag === "Fun") {
-              if (v._1.tag === "Primitive") {
+              if (v._1.tag === "Extern") {
                 return v._1._2;
               }
               fail();
             }
             fail();
           }
-          return v1._1._1.op_bwd(dictAnn)(v)(vs$p);
+          return v1._3._1._1.op_bwd(dictAnn)($Tuple(definitely("absurd")(v1._3._2), v))(vs$p);
         })()));
-        return $Tuple($Fun("Primitive", v1._1._1, v3.init), v3.last);
+        return $Tuple($Fun("Extern", $ExternOp$p(v1._3._1._1), $8.init), $8.last);
       }
       if (v1.tag === "AppConstr") {
         if (v.tag === "Constr") {
           const v42 = definitely("absurd")(unsnoc(v._3));
-          return $Tuple($Fun("PartialConstr", v._1, v1._1._1, v42.init), v42.last);
+          return $Tuple($Fun("PartialConstr", v._1, v1._1, v42.init), v42.last);
         }
         if (v.tag === "Fun") {
           if (v._1.tag === "PartialConstr") {
             const v43 = definitely("absurd")(unsnoc(v._1._3));
-            return $Tuple($Fun("PartialConstr", v._1._1, v1._1._1, v43.init), v43.last);
+            return $Tuple($Fun("PartialConstr", v._1._1, v1._1, v43.init), v43.last);
           }
           const v42 = definitely("absurd")(unsnoc(unsafePerformEffect(throwException(error("absurd")))._1));
           return $Tuple(
-            $Fun("PartialConstr", unsafePerformEffect(throwException(error("absurd")))._2, v1._1._1, v42.init),
+            $Fun("PartialConstr", unsafePerformEffect(throwException(error("absurd")))._2, v1._1, v42.init),
             v42.last
           );
         }
         const v4 = definitely("absurd")(unsnoc(unsafePerformEffect(throwException(error("absurd")))._1));
         return $Tuple(
-          $Fun("PartialConstr", unsafePerformEffect(throwException(error("absurd")))._2, v1._1._1, v4.init),
+          $Fun("PartialConstr", unsafePerformEffect(throwException(error("absurd")))._2, v1._1, v4.init),
           v4.last
         );
       }
@@ -22295,6 +22305,10 @@
   }();
 
   // output-es/Primitive.Defs/index.js
+  var traverse6 = /* @__PURE__ */ (() => {
+    const $0 = traversableWithIndexObject.traverseWithIndex(applicativeEither);
+    return (x2) => $0((v) => x2);
+  })();
   var pow3 = /* @__PURE__ */ union3(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => pow(toNumber(x2))(toNumber(y2)))(pow);
   var numToStr = (v2) => {
     if (v2.tag === "Left") {
@@ -22306,7 +22320,7 @@
     fail();
   };
   var notEquals = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((x2) => (y2) => x2 !== y2)((x2) => (y2) => x2 !== y2))((x2) => (y2) => x2 !== y2);
-  var matrixLookup = {
+  var matrixLookup = /* @__PURE__ */ $ExternOp$p({
     arity: 2,
     op: (dictAnn) => (v) => {
       if (v.tag === "Cons") {
@@ -22320,7 +22334,25 @@
                       if (v._2._1._3._2._2.tag === "Nil") {
                         if (v._2._2.tag === "Nil") {
                           if (v._2._1._2 === "Pair") {
-                            return definitely("index within bounds")(index2(definitely("index within bounds")(index2(v._1._2._1._1)(v._2._1._3._1._2 - 1 | 0)))(v._2._1._3._2._1._2 - 1 | 0));
+                            return bindEither.bind((() => {
+                              const $2 = index2(v._1._2._1._1)(v._2._1._3._1._2 - 1 | 0);
+                              const $3 = (() => {
+                                if ($2.tag === "Just") {
+                                  return index2($2._1)(v._2._1._3._2._1._2 - 1 | 0);
+                                }
+                                if ($2.tag === "Nothing") {
+                                  return Nothing;
+                                }
+                                fail();
+                              })();
+                              if ($3.tag === "Nothing") {
+                                return $Either("Left", "Index out of bounds");
+                              }
+                              if ($3.tag === "Just") {
+                                return $Either("Right", $3._1);
+                              }
+                              fail();
+                            })())((v1) => $Either("Right", $Tuple(unit, v1)));
                           }
                           fail();
                         }
@@ -22363,7 +22395,7 @@
                                 $Val(
                                   "Matrix",
                                   BoundedJoinSemilattice0.bot,
-                                  updateMatrix(v1._2._1._3._1._2)(v1._2._1._3._2._1._2)((v$1) => v)($Tuple(
+                                  updateMatrix(v1._2._1._3._1._2)(v1._2._1._3._2._1._2)((v$1) => v._2)($Tuple(
                                     $Tuple(
                                       arrayMap(arrayMap(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)))(v1._1._2._1._1),
                                       $Tuple(v1._1._2._1._2._1, BoundedJoinSemilattice0.bot)
@@ -22410,7 +22442,7 @@
         fail();
       };
     }
-  };
+  });
   var log3 = (v2) => {
     if (v2.tag === "Left") {
       return log(toNumber(v2._1));
@@ -22424,7 +22456,170 @@
   var lessThan = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 < a2)((a1) => (a2) => a1 < a2))((a1) => (a2) => a1 < a2);
   var greaterThanEquals = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 >= a2)((a1) => (a2) => a1 >= a2))((a1) => (a2) => a1 >= a2);
   var greaterThan = /* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntOrNumberString)(asIntOrNumberString)(/* @__PURE__ */ union3(asBooleanBoolean)(asBooleanBoolean)(asIntNumber)(asIntNumber)((a1) => (a2) => a1 > a2)((a1) => (a2) => a1 > a2))((a1) => (a2) => a1 > a2);
-  var $$get3 = {
+  var divide = /* @__PURE__ */ union3(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => toNumber(x2) / toNumber(y2))(numDiv);
+  var dims = /* @__PURE__ */ $ExternOp$p({
+    arity: 1,
+    op: (dictAnn) => (v) => {
+      if (v.tag === "Cons") {
+        if (v._1.tag === "Matrix") {
+          if (v._2.tag === "Nil") {
+            return $Either(
+              "Right",
+              $Tuple(
+                unit,
+                $Val(
+                  "Constr",
+                  v._1._1,
+                  "Pair",
+                  $List(
+                    "Cons",
+                    $Val("Int", v._1._2._1._2._2, v._1._2._1._2._1),
+                    $List("Cons", $Val("Int", v._1._2._2._2, v._1._2._2._1), Nil)
+                  )
+                )
+              )
+            );
+          }
+          fail();
+        }
+        fail();
+      }
+      fail();
+    },
+    op_bwd: (dictAnn) => {
+      const $1 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
+      return (v) => (v1) => {
+        if (v._2.tag === "Constr") {
+          if (v._2._3.tag === "Cons") {
+            if (v._2._3._1.tag === "Int") {
+              if (v._2._3._2.tag === "Cons") {
+                if (v._2._3._2._1.tag === "Int") {
+                  if (v._2._3._2._2.tag === "Nil") {
+                    if (v1.tag === "Cons") {
+                      if (v1._1.tag === "Matrix") {
+                        if (v1._2.tag === "Nil") {
+                          if (v._2._2 === "Pair") {
+                            return $List(
+                              "Cons",
+                              $Val(
+                                "Matrix",
+                                v._2._1,
+                                $Tuple(
+                                  $Tuple(
+                                    arrayMap(arrayMap(functorVal.map((v$1) => $1.bot)))(v1._1._2._1._1),
+                                    $Tuple(v._2._3._1._2, v._2._3._1._1)
+                                  ),
+                                  $Tuple(v._2._3._2._1._2, v._2._3._2._1._1)
+                                )
+                              ),
+                              Nil
+                            );
+                          }
+                          fail();
+                        }
+                        fail();
+                      }
+                      fail();
+                    }
+                    fail();
+                  }
+                  fail();
+                }
+                fail();
+              }
+              fail();
+            }
+            fail();
+          }
+          fail();
+        }
+        fail();
+      };
+    }
+  });
+  var dict_map = /* @__PURE__ */ $ExternOp$p({
+    arity: 2,
+    op: (dictAnn) => {
+      const apply2 = apply(dictAnn);
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Fun") {
+            if (v._2.tag === "Cons") {
+              if (v._2._1.tag === "Dictionary") {
+                if (v._2._2.tag === "Nil") {
+                  return bindEither.bind((() => {
+                    const $3 = traverse6((v1) => {
+                      const $4 = apply2(v._1._1)(v1._2);
+                      if ($4.tag === "Left") {
+                        return $Either("Left", $4._1);
+                      }
+                      if ($4.tag === "Right") {
+                        return $Either("Right", $Tuple($4._1._1, $Tuple(v1._1, $4._1._2)));
+                      }
+                      fail();
+                    })(v._2._1._2);
+                    if ($3.tag === "Left") {
+                      return $Either("Left", $3._1);
+                    }
+                    if ($3.tag === "Right") {
+                      return $Either(
+                        "Right",
+                        $Tuple(_fmapObject($3._1, fst), _fmapObject($3._1, snd))
+                      );
+                    }
+                    fail();
+                  })())((v1) => $Either("Right", $Tuple(v1._1, $Val("Dictionary", v._2._1._1, v1._2))));
+                }
+                fail();
+              }
+              fail();
+            }
+            fail();
+          }
+          fail();
+        }
+        fail();
+      };
+    },
+    op_bwd: (dictAnn) => {
+      const applyBwd2 = applyBwd(dictAnn);
+      const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
+      const join = joinSemilatticeFun(BoundedJoinSemilattice0.JoinSemilattice0()).join;
+      return (v) => (v1) => {
+        if (v._2.tag === "Dictionary") {
+          if (v1.tag === "Cons") {
+            if (v1._1.tag === "Fun") {
+              if (v1._2.tag === "Cons") {
+                if (v1._2._1.tag === "Dictionary") {
+                  if (v1._2._2.tag === "Nil") {
+                    const $6 = intersectionWith((t) => (v3) => {
+                      const $8 = applyBwd2(v3._2)(t);
+                      return $Tuple($8._1, $Tuple(v3._1, $8._2));
+                    })(v._1)(v._2._2);
+                    return $List(
+                      "Cons",
+                      $Val(
+                        "Fun",
+                        fold((z) => (v$1) => join(z))(functorFun.map((v$1) => BoundedJoinSemilattice0.bot)(v1._1._1))(_fmapObject($6, fst))
+                      ),
+                      $List("Cons", $Val("Dictionary", v._2._1, _fmapObject($6, snd)), Nil)
+                    );
+                  }
+                  fail();
+                }
+                fail();
+              }
+              fail();
+            }
+            fail();
+          }
+          fail();
+        }
+        fail();
+      };
+    }
+  });
+  var dict_get = /* @__PURE__ */ $ExternOp$p({
     arity: 2,
     op: (dictAnn) => (v) => {
       if (v.tag === "Cons") {
@@ -22432,7 +22627,14 @@
           if (v._2.tag === "Cons") {
             if (v._2._1.tag === "Dictionary") {
               if (v._2._2.tag === "Nil") {
-                return $$get(v._1._2)(v._2._1._2)._2;
+                return bindEither.bind((() => {
+                  const $2 = 'Key "' + (v._1._2 + '" not found');
+                  const $3 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
+                  if ($3.tag === "Just") {
+                    return $Either("Right", $3._1._2);
+                  }
+                  return $Either("Left", $2);
+                })())((v1) => $Either("Right", $Tuple(unit, v1)));
               }
               fail();
             }
@@ -22460,7 +22662,7 @@
                       $Val(
                         "Dictionary",
                         bot,
-                        runST(bind_(newImpl)(poke2(v1._1._2)($Tuple(bot, v))))
+                        runST(bind_(newImpl)(poke2(v1._1._2)($Tuple(bot, v._2))))
                       ),
                       Nil
                     )
@@ -22477,88 +22679,13 @@
         fail();
       };
     }
-  };
-  var divide = /* @__PURE__ */ union3(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => toNumber(x2) / toNumber(y2))(numDiv);
-  var dims = {
-    arity: 1,
-    op: (dictAnn) => (v) => {
-      if (v.tag === "Cons") {
-        if (v._1.tag === "Matrix") {
-          if (v._2.tag === "Nil") {
-            return $Val(
-              "Constr",
-              v._1._1,
-              "Pair",
-              $List(
-                "Cons",
-                $Val("Int", v._1._2._1._2._2, v._1._2._1._2._1),
-                $List("Cons", $Val("Int", v._1._2._2._2, v._1._2._2._1), Nil)
-              )
-            );
-          }
-          fail();
-        }
-        fail();
-      }
-      fail();
-    },
-    op_bwd: (dictAnn) => {
-      const $1 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
-      return (v) => (v1) => {
-        if (v.tag === "Constr") {
-          if (v._3.tag === "Cons") {
-            if (v._3._1.tag === "Int") {
-              if (v._3._2.tag === "Cons") {
-                if (v._3._2._1.tag === "Int") {
-                  if (v._3._2._2.tag === "Nil") {
-                    if (v1.tag === "Cons") {
-                      if (v1._1.tag === "Matrix") {
-                        if (v1._2.tag === "Nil") {
-                          if (v._2 === "Pair") {
-                            return $List(
-                              "Cons",
-                              $Val(
-                                "Matrix",
-                                v._1,
-                                $Tuple(
-                                  $Tuple(
-                                    arrayMap(arrayMap(functorVal.map((v$1) => $1.bot)))(v1._1._2._1._1),
-                                    $Tuple(v._3._1._2, v._3._1._1)
-                                  ),
-                                  $Tuple(v._3._2._1._2, v._3._2._1._1)
-                                )
-                              ),
-                              Nil
-                            );
-                          }
-                          fail();
-                        }
-                        fail();
-                      }
-                      fail();
-                    }
-                    fail();
-                  }
-                  fail();
-                }
-                fail();
-              }
-              fail();
-            }
-            fail();
-          }
-          fail();
-        }
-        fail();
-      };
-    }
-  };
+  });
   var debugLog = (x2) => _trace(x2, (v) => x2);
   var primitives = /* @__PURE__ */ (() => fromFoldable2(foldableArray)([
     $Tuple(":", $Val("Fun", $Fun("PartialConstr", unit, ":", Nil))),
     $Tuple("ceiling", unary({ i: number, o: $$int, fwd: ceil2 })),
     $Tuple("debugLog", unary({ i: val, o: val, fwd: debugLog })),
-    $Tuple("dims", $Val("Fun", $Fun("Primitive", dims, Nil))),
+    $Tuple("dims", $Val("Fun", $Fun("Extern", dims, Nil))),
     $Tuple("error", unary({ i: string, o: val, fwd: error2 })),
     $Tuple("floor", unary({ i: number, o: $$int, fwd: floor2 })),
     $Tuple("log", unary({ i: intOrNumber, o: number, fwd: log3 })),
@@ -22612,9 +22739,10 @@
     $Tuple("<=", binary({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: lessThanEquals })),
     $Tuple(">=", binary({ i1: intOrNumberOrString, i2: intOrNumberOrString, o: $$boolean, fwd: greaterThanEquals })),
     $Tuple("++", binary({ i1: string, i2: string, o: string, fwd: concatString })),
-    $Tuple("!", $Val("Fun", $Fun("Primitive", matrixLookup, Nil))),
+    $Tuple("!", $Val("Fun", $Fun("Extern", matrixLookup, Nil))),
+    $Tuple("dict_get", $Val("Fun", $Fun("Extern", dict_get, Nil))),
+    $Tuple("dict_map", $Val("Fun", $Fun("Extern", dict_map, Nil))),
     $Tuple("div", binaryZero(isZeroInt)({ i: $$int, o: $$int, fwd: intDiv })),
-    $Tuple("get", $Val("Fun", $Fun("Primitive", $$get3, Nil))),
     $Tuple("mod", binaryZero(isZeroInt)({ i: $$int, o: $$int, fwd: intMod })),
     $Tuple("quot", binaryZero(isZeroInt)({ i: $$int, o: $$int, fwd: quot })),
     $Tuple("rem", binaryZero(isZeroInt)({ i: $$int, o: $$int, fwd: rem }))

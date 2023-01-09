@@ -1,0 +1,4 @@
+let incHead = let x = 3 in fun xs -> head xs + x;
+    d = {| "a" := [5, 6], "b" := [9, 10] |};
+    d' = dict_map incHead d
+in dict_get "a" d' + dict_get "b" d'
