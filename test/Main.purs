@@ -14,20 +14,16 @@ import Util ((×))
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
 
-tests = [ test_scratchpad ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}, e_ab: 6, f: {|\"a\": 6, \"ab\": 7|}}"
-   , testBwd (File "dict-map") (File "dict-map.expect")
-        (const $ Int true 20)
-        "_20_"
-   ]
+   [ ]
 
 test_linking :: Array (Test Unit)
 test_linking =
@@ -136,9 +132,6 @@ test_bwd =
         \37, 41, 54, 34, 20,\n\
         \21, 35, 31, 31, 42,\n\
         \13, 32, 35, 19, 26"
-   , testBwd (File "dict-get") (File "dict-get.expect")
-        (const $ Int true 0)
-        "_0_"
    , testBwd (File "dict-create") (File "dict-create.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (false × Int false 5)
@@ -146,6 +139,12 @@ test_bwd =
              ]
         )
         "{|\"a\": 5, _\"ab\"_: 6|}"
+   , testBwd (File "dict-get") (File "dict-get.expect")
+        (const $ Int true 0)
+        "_0_"
+   , testBwd (File "dict-map") (File "dict-map.expect")
+        (const $ Int true 20)
+        "_20_"
    , testBwd (File "divide") (File "divide.expect") topOf "_40.22222222222222_"
    , testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
    , testBwd (File "intersperse") (File "intersperse-1.expect") (botOf >>> selectNthNode 1 neg)
@@ -195,7 +194,7 @@ test_misc =
    [ test (File "arithmetic") "42"
    , test (File "array") "(1, (3, 3))"
    , test (File "compose") "5"
-   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}, e_ab: 6}"
+   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}, e_ab: 6, f: {|\"a\": 6, \"ab\": 7|}}"
    , test (File "div-mod-quot-rem")
         "((1 : (-1 : (-2 : (2 : [])))) : \
         \((2 : (2 : (1 : (1 : [])))) : \
