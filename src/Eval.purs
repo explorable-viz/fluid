@@ -79,9 +79,10 @@ apply (V.Primitive (PrimOp φ) vs) v = do
    pure $ T.AppPrimitive (PrimOp φ) (erase <$> vs) (erase v) × v''
 apply (V.Primitive2 φ vs) v = do
    let vs' = vs <> singleton v
-   let blah :: forall t. PrimOp2' t -> MayFail (Val _)
-       blah (PrimOp2' φ') = if φ'.arity > length vs' then ?_ else snd <$> φ'.op vs'
-   v'' <- runExists blah φ
+   let apply' :: forall t. PrimOp2' t -> MayFail (Val _)
+       apply' (PrimOp2' φ') =
+         if φ'.arity > length vs' then pure $ V.Fun $ V.Primitive2 φ vs' else snd <$> φ'.op vs'
+   v'' <- runExists apply' φ
    pure $ T.AppPrimitive2 φ (erase <$> vs) (erase v) × v''
 apply (V.PartialConstr α c vs) v = do
    let n = successful (arity c)
