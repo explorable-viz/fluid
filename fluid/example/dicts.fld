@@ -3,5 +3,5 @@ let d = {||};
 in {
    d: d,
    e: e,
-   e_ab: get "ab" e
+   e_ab: dict_get "ab" e
 }

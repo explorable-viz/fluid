@@ -49,8 +49,9 @@ primitives = D.fromFoldable
    , ">=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
    , "++" × binary { i1: string, i2: string, o: string, fwd: concat }
    , "!" × Fun (Primitive2 matrixLookup Nil)
+   , "dict_get" × Fun (Primitive2 dict_get Nil)
+   , "dict_map" × Fun (Primitive2 dict_map Nil)
    , "div" × binaryZero { i: int, o: int, fwd: div }
-   , "get" × Fun (Primitive2 get Nil)
    , "mod" × binaryZero { i: int, o: int, fwd: mod }
    , "quot" × binaryZero { i: int, o: int, fwd: quot }
    , "rem" × binaryZero { i: int, o: int, fwd: rem }
@@ -91,8 +92,8 @@ matrixLookup = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: un
               : Constr bot cPair (Int bot i : Int bot j : Nil)
               : Nil
 
-get :: PrimOp2
-get = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dict_get :: PrimOp2
+dict_get = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd2 Unit
    fwd (Str _ k : Dictionary _ d : Nil) = do
@@ -103,8 +104,8 @@ get = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafeParti
    bwd (_ × v) (Str _ k : Dictionary _ _ : Nil) =
       (Str bot k) : Dictionary bot (D.singleton k (bot × v)) : Nil
 
-map :: PrimOp2
-map = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dict_map :: PrimOp2
+dict_map = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd2 (Dict AppTrace)
    fwd (Fun φ : Dictionary α βvs : Nil) = do
