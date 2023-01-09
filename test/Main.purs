@@ -23,8 +23,7 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [
-     testBwd (File "dict-difference") (File "dict-difference.expect")
+   [ testBwd (File "dict-difference") (File "dict-difference.expect")
         ( const $ Dictionary true $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              ]
