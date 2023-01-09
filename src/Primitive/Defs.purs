@@ -119,12 +119,13 @@ map2 :: PrimOp2
 map2 = mkExists $ PrimOp2' 2 (unsafePartial fwd) (unsafePartial bwd)
    where
    fwd :: Partial => OpFwd2 (Dict AppTrace)
-   fwd (Fun φ : Dictionary α d : Nil) = do
-      ts × vs <- D.unzip <$> traverse (\(β × v) -> second (β × _) <$> apply φ v) d
-      pure $ ts × Dictionary α vs
+   fwd (Fun φ : Dictionary α βvs : Nil) = do
+      ts × βus <- D.unzip <$> traverse (\(β × v) -> second (β × _) <$> apply φ v) βvs
+      pure $ ts × Dictionary α βus
 
    bwd :: Partial => OpBwd2 (Dict AppTrace)
-   bwd = ?_
+   bwd (ts × Dictionary α βus) (Fun φ : Dictionary _ βvs : Nil) =
+      ?_
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
