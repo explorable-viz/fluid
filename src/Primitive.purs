@@ -14,7 +14,7 @@ import Lattice ((∧), bot, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), error, (×))
-import Val (class Ann, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp'(..), Val(..))
+import Val (class Ann, ExternOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
@@ -178,8 +178,8 @@ type BinaryZero i o a =
 
 unary :: forall i o a'. (forall a. Unary i o a) -> Val a'
 unary op =
-   Fun $ flip Primitive Nil
-       $ mkExists $ PrimOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   Fun $ flip Extern Nil
+       $ mkExists $ ExternOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd Unit
    fwd (v : Nil) = pure $ unit × op.o.constr (op.fwd x × α)
@@ -194,8 +194,8 @@ unary op =
 
 binary :: forall i1 i2 o a'. (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
-   Fun $ flip Primitive Nil
-       $ mkExists $ PrimOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   Fun $ flip Extern Nil
+       $ mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd Unit
    fwd (v1 : v2 : Nil) = pure $ unit × op.o.constr (op.fwd x y × (α ∧ β))
@@ -211,8 +211,8 @@ binary op =
 -- If both are zero, depend only on the first.
 binaryZero :: forall i o a'. IsZero i => (forall a. BinaryZero i o a) -> Val a'
 binaryZero op =
-   Fun $ flip Primitive Nil
-       $ mkExists $ PrimOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   Fun $ flip Extern Nil
+       $ mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd Unit
    fwd (v1 : v2 : Nil) =

@@ -12,7 +12,7 @@ import Dict (Dict)
 import Expr (class BV, RecDefs, bv)
 import Lattice (Raw)
 import Util (type (×))
-import Val (Array2, PrimOp', Val)
+import Val (Array2, ExternOp', Val)
 
 data Trace
    = Var Var
@@ -30,11 +30,11 @@ data Trace
 data AppTrace
    = AppClosure (Set Var) Match Trace
    -- Don't use NonEmptyList here; we always have a final element, not initial element
-   | AppPrimitive (List (Raw Val)) (Raw Val) PrimOpTrace -- original arguments
+   | AppExtern (List (Raw Val)) (Raw Val) ExternTrace -- original arguments
    | AppConstr Ctr Int -- number of original arguments (unsaturated)
 
-data PrimOpTrace' t = PrimOpTrace' (PrimOp' t) (Maybe t)
-type PrimOpTrace = Exists PrimOpTrace'
+data ExternTrace' t = ExternTrace' (ExternOp' t) (Maybe t)
+type ExternTrace = Exists ExternTrace'
 
 data VarDef = VarDef Match Trace
 

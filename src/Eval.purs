@@ -22,11 +22,11 @@ import Lattice ((∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (AppTrace, Match(..), PrimOpTrace, PrimOpTrace'(..), Trace)
+import Trace (AppTrace, ExternTrace, ExternTrace'(..), Match(..), Trace)
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, Fun, PrimOp'(..), (<+>), Val, for, lookup', restrict)
+import Val (class Ann, Env, ExternOp'(..), Fun, (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -75,17 +75,17 @@ apply (V.Closure β γ1 ρ σ) v = do
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
-apply (V.Primitive φ vs) v = do
+apply (V.Extern φ vs) v = do
    let vs' = vs <> singleton v
    let
-      apply' :: forall t. PrimOp' t -> MayFail (PrimOpTrace × Val _)
-      apply' (PrimOp' φ') = do
+      apply' :: forall t. ExternOp' t -> MayFail (ExternTrace × Val _)
+      apply' (ExternOp' φ') = do
          t × v'' <- do
-            if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Primitive φ vs')
+            if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Extern φ vs')
             else first Just <$> φ'.op vs'
-         pure $ mkExists (PrimOpTrace' (PrimOp' φ') t) × v''
+         pure $ mkExists (ExternTrace' (ExternOp' φ') t) × v''
    t × v'' <- runExists apply' φ
-   pure $ T.AppPrimitive (erase <$> vs) (erase v) t × v''
+   pure $ T.AppExtern (erase <$> vs) (erase v) t × v''
 apply (V.PartialConstr α c vs) v = do
    let n = successful (arity c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)
