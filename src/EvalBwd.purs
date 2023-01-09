@@ -20,7 +20,7 @@ import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (AppTrace, Trace, Match(..))
+import Trace (AppTrace, Match(..), PrimOpTrace'(..), Trace)
 import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
@@ -87,14 +87,14 @@ applyBwd v (T.AppPrimitive (PrimOp φ) vs v2) =
    { init: vs'', last: v2' } = definitely' $ unsnoc $
       if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Primitive _ vs'') = v in vs''
       else φ.op_bwd v vs'
-applyBwd v (T.AppPrimitive2 φ vs v2 t) =
-   V.Primitive2 φ vs'' × v2'
+applyBwd v (T.AppPrimitive2 vs v2 t) =
+   V.Primitive2 (error "TODO") vs'' × v2'
    where
    vs' = vs <> L.singleton v2
-   { init: vs'', last: v2' } = definitely' $ unsnoc $ runExists applyBwd' φ
+   { init: vs'', last: v2' } = definitely' $ unsnoc $ runExists applyBwd' t
       where
-      applyBwd' :: forall t. PrimOp2' t -> List (Val _)
-      applyBwd' (PrimOp2' φ) =
+      applyBwd' :: forall t. PrimOpTrace' t -> List (Val _)
+      applyBwd' (PrimOpTrace' (PrimOp2' φ) _) =
          if φ.arity > length vs'
          then unsafePartial $ let V.Fun (V.Primitive2 _ vs'') = v in vs''
          else φ.op_bwd (error "TODO" × v) vs'
