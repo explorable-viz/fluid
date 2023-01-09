@@ -3,13 +3,14 @@ module EvalBwd where
 import Prelude hiding (absurd)
 
 import Bindings (Var, varAnon)
-import Data.Exists (runExists)
+import Data.Exists (mkExists, runExists)
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), range, reverse, unsnoc, unzip, zip, (:))
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.NonEmpty (foldl1)
+import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable, singleton) as S
 import Data.Set (union)
 import Data.Tuple (fst, snd, uncurry)
@@ -21,10 +22,10 @@ import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, Match(..), PrimOpTrace'(..), Trace)
-import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
+import Util (type (×), Endo, absurd, definitely', error, nonEmpty, (!), (×))
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, Fun, PrimOp(..), PrimOp2'(..), (<+>), Val, append_inv)
+import Val (class Ann, Env, Fun, PrimOp(..), PrimOp2'(..), Val, PrimOp2, append_inv, (<+>))
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
@@ -88,16 +89,17 @@ applyBwd v (T.AppPrimitive (PrimOp φ) vs v2) =
       if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Primitive _ vs'') = v in vs''
       else φ.op_bwd v vs'
 applyBwd v (T.AppPrimitive2 vs v2 t) =
-   V.Primitive2 (error "TODO") vs'' × v2'
+   V.Primitive2 φ vs'' × v2'
    where
    vs' = vs <> L.singleton v2
-   { init: vs'', last: v2' } = definitely' $ unsnoc $ runExists applyBwd' t
+   φ × { init: vs'', last: v2' } = second (definitely' <<< unsnoc) $ runExists applyBwd' t
       where
-      applyBwd' :: forall t. PrimOpTrace' t -> List (Val _)
-      applyBwd' (PrimOpTrace' (PrimOp2' φ) _) =
+      applyBwd' :: forall t. PrimOpTrace' t -> PrimOp2 × List (Val _)
+      applyBwd' (PrimOpTrace' (PrimOp2' φ) t') =
+         mkExists (PrimOp2' φ) ×
          if φ.arity > length vs'
          then unsafePartial $ let V.Fun (V.Primitive2 _ vs'') = v in vs''
-         else φ.op_bwd (error "TODO" × v) vs'
+         else φ.op_bwd (definitely' t' × v) vs'
 applyBwd v (T.AppConstr c _) =
    V.PartialConstr β c vs' × v2
    where
