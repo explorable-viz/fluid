@@ -15,10 +15,10 @@ import Data.Tuple (snd)
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict)
-import Dict (fromFoldable, intersectionWith, lookup, singleton, unzip) as D
+import Dict (difference, fromFoldable, intersectionWith, lookup, singleton, unzip) as D
 import Eval (apply)
 import EvalBwd (applyBwd)
-import Lattice (Raw, (∨), bot, botOf)
+import Lattice (Raw, (∨), (∧), bot, botOf)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
@@ -91,6 +91,17 @@ matrixLookup = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: u
            Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
               : Constr bot cPair (Int bot i : Int bot j : Nil)
               : Nil
+
+dict_difference :: ExternOp
+dict_difference = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: Partial => OpFwd Unit
+   fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
+      pure $ unit × Dictionary (α1 ∧ α2) (D.difference d1 d2)
+
+   bwd :: Partial => OpBwd Unit
+   bwd (_ × Dictionary _ d) (Dictionary _ d1 : Dictionary _ d2 : Nil) =
+      ?_
 
 dict_get :: ExternOp
 dict_get = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
