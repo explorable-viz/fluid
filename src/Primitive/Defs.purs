@@ -24,14 +24,14 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
 import Util (Endo, (×), type (+), error, orElse)
-import Val (Env, Fun(..), OpBwd, OpBwd2, OpFwd, OpFwd2, PrimOp(..), PrimOp2, PrimOp2'(..), Val(..), updateMatrix)
+import Val (Env, Fun(..), OpBwd2, OpFwd2, PrimOp2, PrimOp2'(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Fun (PartialConstr bot cCons Nil)
    , "ceiling" × unary { i: number, o: int, fwd: ceil }
    , "debugLog" × unary { i: val, o: val, fwd: debugLog }
-   , "dims" × Fun (Primitive dims Nil)
+   , "dims" × Fun (Primitive2 dims Nil)
    , "error" × unary { i: string, o: val, fwd: error_ }
    , "floor" × unary { i: number, o: int, fwd: floor }
    , "log" × unary { i: intOrNumber, o: number, fwd: log }
@@ -63,15 +63,15 @@ debugLog x = trace x (const x)
 error_ :: forall a. String -> Val a
 error_ = error
 
-dims :: PrimOp
-dims = PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dims :: PrimOp2
+dims = mkExists $ PrimOp2' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd
+   fwd :: Partial => OpFwd2 Unit
    fwd (Matrix α (_ × (i × β1) × (j × β2)) : Nil) =
-      pure $ Constr α cPair (Int β1 i : Int β2 j : Nil)
+      pure $ unit × Constr α cPair (Int β1 i : Int β2 j : Nil)
 
-   bwd :: Partial => OpBwd
-   bwd (Constr α c (Int β1 i : Int β2 j : Nil)) (Matrix _ (vss × _ × _) : Nil) | c == cPair =
+   bwd :: Partial => OpBwd2 Unit
+   bwd (_ × Constr α c (Int β1 i : Int β2 j : Nil)) (Matrix _ (vss × _ × _) : Nil) | c == cPair =
       Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
 
 matrixLookup :: PrimOp2
