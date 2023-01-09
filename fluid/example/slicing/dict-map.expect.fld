@@ -1,3 +1,5 @@
-let d = {|"a": [_5_, 6], "b": [_9_, 10]|};
-    d' = dict_map head d
+let incHead = let x = _3_              ;
+              in fun xs = (head xs + x) 
+    d = {|"a": [_5_, 6], "b": [_9_, 10]|};
+    d' = dict_map incHead d
 in (dict_get "a" d' + dict_get "b" d')

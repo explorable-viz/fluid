@@ -25,8 +25,8 @@ test_scratchpad :: Array (Test Unit)
 test_scratchpad =
    [ test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}, e_ab: 6, f: {|\"a\": 6, \"ab\": 7|}}"
    , testBwd (File "dict-map") (File "dict-map.expect")
-        (const $ Int true 14)
-        "_14_"
+        (const $ Int true 20)
+        "_20_"
    ]
 
 test_linking :: Array (Test Unit)
