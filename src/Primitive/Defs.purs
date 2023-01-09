@@ -125,9 +125,9 @@ map2 = mkExists $ PrimOp2' 2 (unsafePartial fwd) (unsafePartial bwd)
 
    bwd :: Partial => OpBwd2 (Dict AppTrace)
    bwd (ts × Dictionary α βus) (Fun φ : Dictionary _ _ : Nil) =
-      Fun (foldl (∨) (botOf φ) (φvs <#> (snd >>> fst))) : Dictionary α (φvs <#> second snd) : Nil
+      Fun (foldl (∨) (botOf φ) (φvs <#> fst)) : Dictionary α (φvs <#> snd) : Nil
       where
-      φvs = D.intersectionWith (\t (β × u) -> β × applyBwd u t) ts βus
+      φvs = D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd u t) ts βus :: Dict (Fun _ × (_ × Val _))
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
