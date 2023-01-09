@@ -3,12 +3,14 @@ module EvalBwd where
 import Prelude hiding (absurd)
 
 import Bindings (Var, varAnon)
+import Data.Exists (mkExists, runExists)
 import Data.Foldable (foldr, length)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), range, reverse, unsnoc, unzip, zip, (:))
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.NonEmpty (foldl1)
+import Data.Profunctor.Strong (second)
 import Data.Set (fromFoldable, singleton) as S
 import Data.Set (union)
 import Data.Tuple (fst, snd, uncurry)
@@ -19,11 +21,11 @@ import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (AppTrace, Trace, Match(..))
-import Util (Endo, type (×), (×), (!), absurd, error, definitely', nonEmpty)
+import Trace (AppTrace, ExternTrace'(..), Match(..), Trace)
+import Util (type (×), Endo, absurd, definitely', error, nonEmpty, (!), (×))
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, Fun, PrimOp(..), (<+>), Val, append_inv)
+import Val (class Ann, Env, ExternOp, ExternOp'(..), Fun, Val, append_inv, (<+>))
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
@@ -79,14 +81,18 @@ applyBwd v (T.AppClosure xs w t3) =
    γ1 × γ2 = append_inv xs γ1γ2
    γ1' × δ' × β' = closeDefsBwd γ2
    v' × σ = matchBwd γ3 (ContExpr e) β w
-applyBwd v (T.AppPrimitive (PrimOp φ × vs) v2) =
-   V.Primitive (PrimOp φ) vs'' × v2'
+applyBwd v (T.AppExtern vs v2 t) =
+   V.Extern φ vs'' × v2'
    where
    vs' = vs <> L.singleton v2
-   { init: vs'', last: v2' } = definitely' $ unsnoc $
-      if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Primitive _ vs'') = v in vs''
-      else φ.op_bwd v vs'
-applyBwd v (T.AppConstr (c × _)) =
+   φ × { init: vs'', last: v2' } = second (definitely' <<< unsnoc) $ runExists applyBwd' t
+      where
+      applyBwd' :: forall t. ExternTrace' t -> ExternOp × List (Val _)
+      applyBwd' (ExternTrace' (ExternOp' φ) t') =
+         mkExists (ExternOp' φ) ×
+            if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Extern _ vs'') = v in vs''
+            else φ.op_bwd (definitely' t' × v) vs'
+applyBwd v (T.AppConstr c _) =
    V.PartialConstr β c vs' × v2
    where
    vs × β = case v of

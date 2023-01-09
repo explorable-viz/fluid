@@ -3,6 +3,7 @@ module Primitive where
 import Prelude hiding (absurd, apply, div, top)
 
 import Data.Either (Either(..))
+import Data.Exists (mkExists)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Profunctor.Choice ((|||))
@@ -13,8 +14,10 @@ import Lattice ((∧), bot, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), error, (×))
-import Val (class Ann, Fun(..), MatrixRep, OpBwd, OpFwd, PrimOp(..), Val(..))
+import Val (class Ann, ExternOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, Val(..))
 
+-- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
+-- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
 -- work with the required higher-rank polymorphism.
 type ToFrom d a =
    { constr :: Ann a => d × a -> Val a
@@ -173,59 +176,55 @@ type BinaryZero i o a =
    , fwd :: i -> i -> o
    }
 
-unary
-   :: forall i o a'
-    . (forall a. Unary i o a)
-   -> Val a'
+unary :: forall i o a'. (forall a. Unary i o a) -> Val a'
 unary op =
-   Fun $ flip Primitive Nil $ PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   Fun $ flip Extern Nil
+      $ mkExists
+      $ ExternOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd
-   fwd (v : Nil) = op.o.constr (op.fwd x × α)
+   fwd :: Partial => OpFwd Unit
+   fwd (v : Nil) = pure $ unit × op.o.constr (op.fwd x × α)
       where
       x × α = op.i.match v
 
-   bwd :: Partial => OpBwd
-   bwd v (u : Nil) = op.i.constr (x × α) : Nil
+   bwd :: Partial => OpBwd Unit
+   bwd (_ × v) (u : Nil) = op.i.constr (x × α) : Nil
       where
       _ × α = op.o.constr_bwd v
       (x × _) = op.i.match u
 
-binary
-   :: forall i1 i2 o a'
-    . (forall a. Binary i1 i2 o a)
-   -> Val a'
+binary :: forall i1 i2 o a'. (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
-   Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   Fun $ flip Extern Nil
+      $ mkExists
+      $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd
-   fwd (v1 : v2 : Nil) = op.o.constr (op.fwd x y × (α ∧ β))
+   fwd :: Partial => OpFwd Unit
+   fwd (v1 : v2 : Nil) = pure $ unit × op.o.constr (op.fwd x y × (α ∧ β))
       where
       (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
 
-   bwd :: Partial => OpBwd
-   bwd v (u1 : u2 : Nil) = op.i1.constr (x × α) : op.i2.constr (y × α) : Nil
+   bwd :: Partial => OpBwd Unit
+   bwd (_ × v) (u1 : u2 : Nil) = op.i1.constr (x × α) : op.i2.constr (y × α) : Nil
       where
       _ × α = op.o.constr_bwd v
       (x × _) × (y × _) = op.i1.match u1 × op.i2.match u2
 
 -- If both are zero, depend only on the first.
-binaryZero
-   :: forall i o a'
-    . IsZero i
-   => (forall a. BinaryZero i o a)
-   -> Val a'
+binaryZero :: forall i o a'. IsZero i => (forall a. BinaryZero i o a) -> Val a'
 binaryZero op =
-   Fun $ flip Primitive Nil $ PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   Fun $ flip Extern Nil
+      $ mkExists
+      $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd
+   fwd :: Partial => OpFwd Unit
    fwd (v1 : v2 : Nil) =
-      op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
+      pure $ unit × op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
       where
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 
-   bwd :: Partial => OpBwd
-   bwd v (u1 : u2 : Nil) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
+   bwd :: Partial => OpBwd Unit
+   bwd (_ × v) (u1 : u2 : Nil) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
       where
       _ × α = op.o.constr_bwd v
       (x × _) × (y × _) = op.i.match u1 × op.i.match u2

@@ -6,7 +6,10 @@ import Bindings (varAnon)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
+import Data.Exists (mkExists, runExists)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
+import Data.Maybe (Maybe(..))
+import Data.Profunctor.Strong (first)
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
 import Data.Set (union, subset)
 import Data.Traversable (sequence, traverse)
@@ -19,11 +22,11 @@ import Lattice ((∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (AppTrace, Trace, Match(..))
+import Trace (AppTrace, ExternTrace, ExternTrace'(..), Match(..), Trace)
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, Fun, PrimOp(..), (<+>), Val, for, lookup', restrict)
+import Val (class Ann, Env, ExternOp'(..), Fun, (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -72,12 +75,17 @@ apply (V.Closure β γ1 ρ σ) v = do
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
-apply (V.Primitive (PrimOp φ) vs) v =
+apply (V.Extern φ vs) v = do
+   let vs' = vs <> singleton v
    let
-      vs' = vs <> singleton v
-      v'' = if φ.arity > length vs' then V.Fun $ V.Primitive (PrimOp φ) vs' else φ.op vs'
-   in
-      pure $ T.AppPrimitive (PrimOp φ × (erase <$> vs)) (erase v) × v''
+      apply' :: forall t. ExternOp' t -> MayFail (ExternTrace × Val _)
+      apply' (ExternOp' φ') = do
+         t × v'' <- do
+            if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Extern φ vs')
+            else first Just <$> φ'.op vs'
+         pure $ mkExists (ExternTrace' (ExternOp' φ') t) × v''
+   t × v'' <- runExists apply' φ
+   pure $ T.AppExtern (erase <$> vs) (erase v) t × v''
 apply (V.PartialConstr α c vs) v = do
    let n = successful (arity c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)
@@ -85,7 +93,7 @@ apply (V.PartialConstr α c vs) v = do
       v' =
          if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> singleton v)
          else V.Constr α c (vs <> singleton v)
-   pure $ T.AppConstr (c × length vs) × v'
+   pure $ T.AppConstr c (length vs) × v'
 
 eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ

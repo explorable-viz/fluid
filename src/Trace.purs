@@ -1,15 +1,18 @@
 module Trace where
 
 import Prelude
-import Data.List (List)
-import Data.Set (Set, empty, singleton, unions)
-import Dict (Dict)
+
 import Bindings (Var)
+import Data.Exists (Exists)
+import Data.List (List)
+import Data.Maybe (Maybe)
+import Data.Set (Set, empty, singleton, unions)
 import DataType (Ctr)
+import Dict (Dict)
 import Expr (class BV, RecDefs, bv)
 import Lattice (Raw)
 import Util (type (×))
-import Val (Array2, PrimOp, Val)
+import Val (Array2, ExternOp', Val)
 
 data Trace
    = Var Var
@@ -26,8 +29,12 @@ data Trace
 
 data AppTrace
    = AppClosure (Set Var) Match Trace
-   | AppPrimitive (PrimOp × List (Raw Val)) (Raw Val) -- prior arguments
-   | AppConstr (Ctr × Int) -- number of prior arguments
+   -- Don't use NonEmptyList here; we always have a final element, not initial element
+   | AppExtern (List (Raw Val)) (Raw Val) ExternTrace -- original arguments
+   | AppConstr Ctr Int -- number of original arguments (unsaturated)
+
+data ExternTrace' t = ExternTrace' (ExternOp' t) (Maybe t)
+type ExternTrace = Exists ExternTrace'
 
 data VarDef = VarDef Match Trace
 
