@@ -23,7 +23,7 @@ import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
-import Util (Endo, type (×), (×), type (+), MayFail, error, orElse)
+import Util (Endo, type (×), (×), type (+), error, orElse)
 import Val (Env, Fun(..), OpBwd, OpBwd2, OpFwd, OpFwd2, PrimOp(..), PrimOp2, PrimOp2'(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
