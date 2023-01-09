@@ -11,7 +11,7 @@ import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (second)
 import Data.Traversable (traverse)
-import Data.Tuple (fst, snd)
+import Data.Tuple (snd)
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict)
@@ -23,7 +23,7 @@ import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
-import Util (Endo, type (×), (×), type (+), error, orElse)
+import Util (Endo, (×), type (+), error, orElse)
 import Val (Env, Fun(..), OpBwd, OpBwd2, OpFwd, OpFwd2, PrimOp(..), PrimOp2, PrimOp2'(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
@@ -48,7 +48,7 @@ primitives = D.fromFoldable
    , "<=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThanEquals }
    , ">=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
    , "++" × binary { i1: string, i2: string, o: string, fwd: concat }
-   , "!" × Fun (Primitive matrixLookup Nil)
+   , "!" × Fun (Primitive2 matrixLookup Nil)
    , "div" × binaryZero { i: int, o: int, fwd: div }
    , "get" × Fun (Primitive2 get Nil)
    , "mod" × binaryZero { i: int, o: int, fwd: mod }
@@ -73,17 +73,19 @@ dims = PrimOp { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    bwd (Constr α c (Int β1 i : Int β2 j : Nil)) (Matrix _ (vss × _ × _) : Nil) | c == cPair =
       Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
 
-matrixLookup :: PrimOp
-matrixLookup = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+matrixLookup :: PrimOp2
+matrixLookup = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd
+   fwd :: Partial => OpFwd2 Unit
    fwd (Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
-      | c == cPair = orElse "Index out of bounds" $ do
-           vs <- vss !! (i - 1)
-           vs !! (j - 1)
+      | c == cPair = do
+         v <- orElse "Index out of bounds" $ do
+            vs <- vss !! (i - 1)
+            vs !! (j - 1)
+         pure $ unit × v
 
-   bwd :: Partial => OpBwd
-   bwd v (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+   bwd :: Partial => OpBwd2 Unit
+   bwd (_ × v) (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair =
            Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
               : Constr bot cPair (Int bot i : Int bot j : Nil)
@@ -101,23 +103,8 @@ get = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafeParti
    bwd (_ × v) (Str _ k : Dictionary _ _ : Nil) =
       (Str bot k) : Dictionary bot (D.singleton k (bot × v)) : Nil
 
-map :: PrimOp
-map = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
-   where
-   fwd :: Partial => OpFwd
-   fwd (Fun φ : Dictionary α d : Nil) =
-      Dictionary α <$> traverse (\(β × v) -> (snd >>> (β × _)) <$> apply φ v) d
-
-   bwd :: Partial => OpBwd
-   bwd (Dictionary α d') (Fun φ : Dictionary _ d : Nil) =
-      Fun (foldl (∨) (botOf φ) (d'' <#> (snd >>> fst))) : Dictionary α (d'' <#> second snd) : Nil
-      where
-      d'' =
-         D.intersectionWith (\(_ × _) (β × v) -> β × applyBwd v (error "TODO")) d d'
-            :: Dict (_ × (Fun _ × Val _))
-
-map2 :: PrimOp2
-map2 = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+map :: PrimOp2
+map = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd2 (Dict AppTrace)
    fwd (Fun φ : Dictionary α βvs : Nil) = do
