@@ -97,9 +97,8 @@ applyBwd v (T.AppPrimitive2 vs v2 t) =
       applyBwd' :: forall t. PrimOpTrace' t -> PrimOp2 × List (Val _)
       applyBwd' (PrimOpTrace' (PrimOp2' φ) t') =
          mkExists (PrimOp2' φ) ×
-         if φ.arity > length vs'
-         then unsafePartial $ let V.Fun (V.Primitive2 _ vs'') = v in vs''
-         else φ.op_bwd (definitely' t' × v) vs'
+            if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Primitive2 _ vs'') = v in vs''
+            else φ.op_bwd (definitely' t' × v) vs'
 applyBwd v (T.AppConstr c _) =
    V.PartialConstr β c vs' × v2
    where

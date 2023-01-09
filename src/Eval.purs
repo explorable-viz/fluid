@@ -81,11 +81,11 @@ apply (V.Primitive (PrimOp φ) vs) v = do
    pure $ T.AppPrimitive (PrimOp φ) (erase <$> vs) (erase v) × v''
 apply (V.Primitive2 φ vs) v = do
    let vs' = vs <> singleton v
-   let apply' :: forall t. PrimOp2' t -> MayFail (PrimOpTrace × Val _)
-       apply' (PrimOp2' φ') = do
+   let
+      apply' :: forall t. PrimOp2' t -> MayFail (PrimOpTrace × Val _)
+      apply' (PrimOp2' φ') = do
          t × v'' <- do
-            if φ'.arity > length vs'
-            then pure $ Nothing × V.Fun (V.Primitive2 φ vs')
+            if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Primitive2 φ vs')
             else first Just <$> φ'.op vs'
          pure $ mkExists (PrimOpTrace' (PrimOp2' φ') t) × v''
    t × v'' <- runExists apply' φ

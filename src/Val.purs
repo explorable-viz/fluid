@@ -58,6 +58,7 @@ data PrimOp2' t = PrimOp2'
    , op :: OpFwd2 t
    , op_bwd :: OpBwd2 t -- provided with original inputs
    }
+
 type PrimOp2 = Exists PrimOp2'
 
 -- Environments.
