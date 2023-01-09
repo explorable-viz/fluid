@@ -6,8 +6,9 @@ import Bindings (varAnon)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..), note)
-import Data.Exists (runExists)
+import Data.Exists (mkExists, runExists)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
+import Data.Maybe (Maybe(..))
 import Data.Set (fromFoldable, toUnfoldable, singleton) as S
 import Data.Set (union, subset)
 import Data.Traversable (sequence, traverse)
@@ -20,7 +21,7 @@ import Lattice ((∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (AppTrace, Trace, Match(..))
+import Trace (AppTrace, Match(..), PrimOpTrace, PrimOpTrace'(..), Trace)
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
@@ -79,11 +80,15 @@ apply (V.Primitive (PrimOp φ) vs) v = do
    pure $ T.AppPrimitive (PrimOp φ) (erase <$> vs) (erase v) × v''
 apply (V.Primitive2 φ vs) v = do
    let vs' = vs <> singleton v
-   let apply' :: forall t. PrimOp2' t -> MayFail (Val _)
+   let apply' :: forall t. PrimOp2' t -> MayFail (Maybe PrimOpTrace × Val _)
        apply' (PrimOp2' φ') =
-         if φ'.arity > length vs' then pure $ V.Fun $ V.Primitive2 φ vs' else snd <$> φ'.op vs'
-   v'' <- runExists apply' φ
-   pure $ T.AppPrimitive2 φ (erase <$> vs) (erase v) × v''
+         if φ'.arity > length vs'
+         then pure $ Nothing × V.Fun (V.Primitive2 φ vs')
+         else do
+            t × v'' <- φ'.op vs'
+            pure $ Just (mkExists $ PrimOpTrace' t) × v''
+   t × v'' <- runExists apply' φ
+   pure $ T.AppPrimitive2 φ (erase <$> vs) (erase v) t × v''
 apply (V.PartialConstr α c vs) v = do
    let n = successful (arity c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)

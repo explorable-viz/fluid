@@ -87,7 +87,7 @@ applyBwd v (T.AppPrimitive (PrimOp φ) vs v2) =
    { init: vs'', last: v2' } = definitely' $ unsnoc $
       if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Primitive _ vs'') = v in vs''
       else φ.op_bwd v vs'
-applyBwd v (T.AppPrimitive2 φ vs v2) =
+applyBwd v (T.AppPrimitive2 φ vs v2 t) =
    V.Primitive2 φ vs'' × v2'
    where
    vs' = vs <> L.singleton v2
@@ -97,7 +97,7 @@ applyBwd v (T.AppPrimitive2 φ vs v2) =
       applyBwd' (PrimOp2' φ) =
          if φ.arity > length vs'
          then unsafePartial $ let V.Fun (V.Primitive2 _ vs'') = v in vs''
-         else φ.op_bwd (?_ × v) vs'
+         else φ.op_bwd (error "TODO" × v) vs'
 applyBwd v (T.AppConstr c _) =
    V.PartialConstr β c vs' × v2
    where
