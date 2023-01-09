@@ -80,10 +80,10 @@ matrixLookup = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: un
    fwd :: Partial => OpFwd2 Unit
    fwd (Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = do
-         v <- orElse "Index out of bounds" $ do
-            vs <- vss !! (i - 1)
-            vs !! (j - 1)
-         pure $ unit × v
+           v <- orElse "Index out of bounds" $ do
+              vs <- vss !! (i - 1)
+              vs !! (j - 1)
+           pure $ unit × v
 
    bwd :: Partial => OpBwd2 Unit
    bwd (_ × v) (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
