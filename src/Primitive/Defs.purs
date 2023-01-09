@@ -24,14 +24,14 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
 import Util (Endo, (×), type (+), error, orElse)
-import Val (Env, Fun(..), OpBwd2, OpFwd2, PrimOp2, PrimOp2'(..), Val(..), updateMatrix)
+import Val (Env, Fun(..), OpBwd, OpFwd, PrimOp, PrimOp'(..), Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Fun (PartialConstr bot cCons Nil)
    , "ceiling" × unary { i: number, o: int, fwd: ceil }
    , "debugLog" × unary { i: val, o: val, fwd: debugLog }
-   , "dims" × Fun (Primitive2 dims Nil)
+   , "dims" × Fun (Primitive dims Nil)
    , "error" × unary { i: string, o: val, fwd: error_ }
    , "floor" × unary { i: number, o: int, fwd: floor }
    , "log" × unary { i: intOrNumber, o: number, fwd: log }
@@ -48,9 +48,9 @@ primitives = D.fromFoldable
    , "<=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThanEquals }
    , ">=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
    , "++" × binary { i1: string, i2: string, o: string, fwd: concat }
-   , "!" × Fun (Primitive2 matrixLookup Nil)
-   , "dict_get" × Fun (Primitive2 dict_get Nil)
-   , "dict_map" × Fun (Primitive2 dict_map Nil)
+   , "!" × Fun (Primitive matrixLookup Nil)
+   , "dict_get" × Fun (Primitive dict_get Nil)
+   , "dict_map" × Fun (Primitive dict_map Nil)
    , "div" × binaryZero { i: int, o: int, fwd: div }
    , "mod" × binaryZero { i: int, o: int, fwd: mod }
    , "quot" × binaryZero { i: int, o: int, fwd: quot }
@@ -63,21 +63,21 @@ debugLog x = trace x (const x)
 error_ :: forall a. String -> Val a
 error_ = error
 
-dims :: PrimOp2
-dims = mkExists $ PrimOp2' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dims :: PrimOp
+dims = mkExists $ PrimOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd2 Unit
+   fwd :: Partial => OpFwd Unit
    fwd (Matrix α (_ × (i × β1) × (j × β2)) : Nil) =
       pure $ unit × Constr α cPair (Int β1 i : Int β2 j : Nil)
 
-   bwd :: Partial => OpBwd2 Unit
+   bwd :: Partial => OpBwd Unit
    bwd (_ × Constr α c (Int β1 i : Int β2 j : Nil)) (Matrix _ (vss × _ × _) : Nil) | c == cPair =
       Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
 
-matrixLookup :: PrimOp2
-matrixLookup = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+matrixLookup :: PrimOp
+matrixLookup = mkExists $ PrimOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd2 Unit
+   fwd :: Partial => OpFwd Unit
    fwd (Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = do
            v <- orElse "Index out of bounds" $ do
@@ -85,34 +85,34 @@ matrixLookup = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: un
               vs !! (j - 1)
            pure $ unit × v
 
-   bwd :: Partial => OpBwd2 Unit
+   bwd :: Partial => OpBwd Unit
    bwd (_ × v) (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair =
            Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
               : Constr bot cPair (Int bot i : Int bot j : Nil)
               : Nil
 
-dict_get :: PrimOp2
-dict_get = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dict_get :: PrimOp
+dict_get = mkExists $ PrimOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd2 Unit
+   fwd :: Partial => OpFwd Unit
    fwd (Str _ k : Dictionary _ d : Nil) = do
       v <- snd <$> D.lookup k d # orElse ("Key \"" <> k <> "\" not found")
       pure $ unit × v
 
-   bwd :: Partial => OpBwd2 Unit
+   bwd :: Partial => OpBwd Unit
    bwd (_ × v) (Str _ k : Dictionary _ _ : Nil) =
       (Str bot k) : Dictionary bot (D.singleton k (bot × v)) : Nil
 
-dict_map :: PrimOp2
-dict_map = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dict_map :: PrimOp
+dict_map = mkExists $ PrimOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd2 (Dict AppTrace)
+   fwd :: Partial => OpFwd (Dict AppTrace)
    fwd (Fun φ : Dictionary α βvs : Nil) = do
       ts × βus <- D.unzip <$> traverse (\(β × v) -> second (β × _) <$> apply φ v) βvs
       pure $ ts × Dictionary α βus
 
-   bwd :: Partial => OpBwd2 (Dict AppTrace)
+   bwd :: Partial => OpBwd (Dict AppTrace)
    bwd (ts × Dictionary α βus) (Fun φ : Dictionary _ _ : Nil) =
       Fun (foldl (∨) (botOf φ) φs) : Dictionary α βvs : Nil
       where

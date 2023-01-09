@@ -25,7 +25,7 @@ import Trace (AppTrace, Match(..), PrimOpTrace'(..), Trace)
 import Util (type (×), Endo, absurd, definitely', error, nonEmpty, (!), (×))
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, Fun, PrimOp2'(..), Val, PrimOp2, append_inv, (<+>))
+import Val (class Ann, Env, Fun, PrimOp, PrimOp'(..), Val, append_inv, (<+>))
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
@@ -81,16 +81,16 @@ applyBwd v (T.AppClosure xs w t3) =
    γ1 × γ2 = append_inv xs γ1γ2
    γ1' × δ' × β' = closeDefsBwd γ2
    v' × σ = matchBwd γ3 (ContExpr e) β w
-applyBwd v (T.AppPrimitive2 vs v2 t) =
-   V.Primitive2 φ vs'' × v2'
+applyBwd v (T.AppPrimitive vs v2 t) =
+   V.Primitive φ vs'' × v2'
    where
    vs' = vs <> L.singleton v2
    φ × { init: vs'', last: v2' } = second (definitely' <<< unsnoc) $ runExists applyBwd' t
       where
-      applyBwd' :: forall t. PrimOpTrace' t -> PrimOp2 × List (Val _)
-      applyBwd' (PrimOpTrace' (PrimOp2' φ) t') =
-         mkExists (PrimOp2' φ) ×
-            if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Primitive2 _ vs'') = v in vs''
+      applyBwd' :: forall t. PrimOpTrace' t -> PrimOp × List (Val _)
+      applyBwd' (PrimOpTrace' (PrimOp' φ) t') =
+         mkExists (PrimOp' φ) ×
+            if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Primitive _ vs'') = v in vs''
             else φ.op_bwd (definitely' t' × v) vs'
 applyBwd v (T.AppConstr c _) =
    V.PartialConstr β c vs' × v2

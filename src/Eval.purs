@@ -26,7 +26,7 @@ import Trace (AppTrace, Match(..), PrimOpTrace, PrimOpTrace'(..), Trace)
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, Fun, PrimOp2'(..), (<+>), Val, for, lookup', restrict)
+import Val (class Ann, Env, Fun, PrimOp'(..), (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -75,17 +75,17 @@ apply (V.Closure β γ1 ρ σ) v = do
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
-apply (V.Primitive2 φ vs) v = do
+apply (V.Primitive φ vs) v = do
    let vs' = vs <> singleton v
    let
-      apply' :: forall t. PrimOp2' t -> MayFail (PrimOpTrace × Val _)
-      apply' (PrimOp2' φ') = do
+      apply' :: forall t. PrimOp' t -> MayFail (PrimOpTrace × Val _)
+      apply' (PrimOp' φ') = do
          t × v'' <- do
-            if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Primitive2 φ vs')
+            if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Primitive φ vs')
             else first Just <$> φ'.op vs'
-         pure $ mkExists (PrimOpTrace' (PrimOp2' φ') t) × v''
+         pure $ mkExists (PrimOpTrace' (PrimOp' φ') t) × v''
    t × v'' <- runExists apply' φ
-   pure $ T.AppPrimitive2 (erase <$> vs) (erase v) t × v''
+   pure $ T.AppPrimitive (erase <$> vs) (erase v) t × v''
 apply (V.PartialConstr α c vs) v = do
    let n = successful (arity c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)
