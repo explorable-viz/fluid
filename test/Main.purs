@@ -23,7 +23,8 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   []
+   [
+   ]
 
 test_linking :: Array (Test Unit)
 test_linking =
@@ -194,7 +195,7 @@ test_misc =
    [ test (File "arithmetic") "42"
    , test (File "array") "(1, (3, 3))"
    , test (File "compose") "5"
-   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}, e_ab: 6, f: {|\"a\": 6, \"ab\": 7|}}"
+   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}, e_ab: 6, f: {|\"a\": 6, \"ab\": 7|}, g: {|\"a\": 5|}}"
    , test (File "div-mod-quot-rem")
         "((1 : (-1 : (-2 : (2 : [])))) : \
         \((2 : (2 : (1 : (1 : [])))) : \

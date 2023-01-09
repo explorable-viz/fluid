@@ -15,7 +15,7 @@ import Data.Tuple (snd)
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict)
-import Dict (difference, fromFoldable, intersectionWith, lookup, singleton, unzip) as D
+import Dict (difference, empty, fromFoldable, intersectionWith, lookup, singleton, unzip) as D
 import Eval (apply)
 import EvalBwd (applyBwd)
 import Lattice (Raw, (∨), (∧), bot, botOf)
@@ -49,6 +49,7 @@ primitives = D.fromFoldable
    , ">=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
    , "++" × binary { i1: string, i2: string, o: string, fwd: concat }
    , "!" × Fun (Extern matrixLookup Nil)
+   , "dict_difference" × Fun (Extern dict_difference Nil)
    , "dict_get" × Fun (Extern dict_get Nil)
    , "dict_map" × Fun (Extern dict_map Nil)
    , "div" × binaryZero { i: int, o: int, fwd: div }
@@ -100,8 +101,8 @@ dict_difference = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd
       pure $ unit × Dictionary (α1 ∧ α2) (D.difference d1 d2)
 
    bwd :: Partial => OpBwd Unit
-   bwd (_ × Dictionary _ d) (Dictionary _ d1 : Dictionary _ d2 : Nil) =
-      ?_
+   bwd (_ × Dictionary α d) (Dictionary _ _ : Dictionary _ _ : Nil) =
+      Dictionary α d : Dictionary α D.empty : Nil
 
 dict_get :: ExternOp
 dict_get = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
@@ -113,7 +114,7 @@ dict_get = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsaf
 
    bwd :: Partial => OpBwd Unit
    bwd (_ × v) (Str _ k : Dictionary _ _ : Nil) =
-      (Str bot k) : Dictionary bot (D.singleton k (bot × v)) : Nil
+      Str bot k : Dictionary bot (D.singleton k (bot × v)) : Nil
 
 dict_map :: ExternOp
 dict_map = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
