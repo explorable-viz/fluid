@@ -15,6 +15,7 @@ You can edit this file as you like.
   , "effect"
   , "either"
   , "exceptions"
+  , "exists"
   , "foldable-traversable"
   , "foreign-object"
   , "http-methods"
