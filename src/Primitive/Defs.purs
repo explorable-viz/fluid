@@ -116,7 +116,7 @@ map = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
             :: Dict (_ × (Fun _ × Val _))
 
 map2 :: PrimOp2
-map2 = mkExists $ PrimOp2' 2 (unsafePartial fwd) (unsafePartial bwd)
+map2 = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd2 (Dict AppTrace)
    fwd (Fun φ : Dictionary α βvs : Nil) = do

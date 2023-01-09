@@ -52,7 +52,11 @@ newtype PrimOp = PrimOp
 type OpFwd2 t = forall a. Ann a => List (Val a) -> MayFail (t × Val a)
 type OpBwd2 t = forall a. Ann a => t × Val a -> List (Raw Val) -> List (Val a)
 
-data PrimOp2' t = PrimOp2' Int (OpFwd2 t) (OpBwd2 t)
+data PrimOp2' t = PrimOp2'
+   { arity :: Int
+   , op :: OpFwd2 t
+   , op_bwd :: OpBwd2 t -- provided with original inputs
+   }
 type PrimOp2 = Exists PrimOp2'
 
 -- Environments.
