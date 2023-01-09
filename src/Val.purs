@@ -157,6 +157,7 @@ instance JoinSemilattice a => JoinSemilattice (Fun a) where
    maybeJoin (Closure α γ ρ σ) (Closure α' γ' ρ' σ') =
       Closure (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
    maybeJoin (Primitive φ vs) (Primitive _ vs') = Primitive φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
+   maybeJoin (Primitive2 φ vs) (Primitive2 _ vs') = Primitive2 φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin (PartialConstr α c vs) (PartialConstr α' c' us) =
       PartialConstr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
    maybeJoin _ _ = report "Incompatible functions"
@@ -180,5 +181,6 @@ instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
    expand (Closure α γ ρ σ) (Closure _ γ' ρ' σ') =
       Closure α (expand γ γ') (expand ρ ρ') (expand σ σ')
    expand (Primitive φ vs) (Primitive _ vs') = Primitive φ (expand vs vs') -- TODO: require φ == φ'
+   expand (Primitive2 φ vs) (Primitive2 _ vs') = Primitive2 φ (expand vs vs') -- TODO: require φ == φ'
    expand (PartialConstr α c vs) (PartialConstr _ c' us) = PartialConstr α (c ≜ c') (expand vs us)
    expand _ _ = error "Incompatible values"

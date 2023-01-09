@@ -50,7 +50,7 @@ primitives = D.fromFoldable
    , "++" × binary { i1: string, i2: string, o: string, fwd: concat }
    , "!" × Fun (Primitive matrixLookup Nil)
    , "div" × binaryZero { i: int, o: int, fwd: div }
-   , "get" × Fun (Primitive get Nil)
+   , "get" × Fun (Primitive2 get Nil)
    , "mod" × binaryZero { i: int, o: int, fwd: mod }
    , "quot" × binaryZero { i: int, o: int, fwd: quot }
    , "rem" × binaryZero { i: int, o: int, fwd: rem }
@@ -89,15 +89,16 @@ matrixLookup = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial b
               : Constr bot cPair (Int bot i : Int bot j : Nil)
               : Nil
 
-get :: PrimOp
-get = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+get :: PrimOp2
+get = mkExists $ PrimOp2' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd
-   fwd (Str _ k : Dictionary _ d : Nil) =
-      snd <$> (D.lookup k d # orElse ("Key \"" <> k <> "\" not found"))
+   fwd :: Partial => OpFwd2 Unit
+   fwd (Str _ k : Dictionary _ d : Nil) = do
+      v <- snd <$> D.lookup k d # orElse ("Key \"" <> k <> "\" not found")
+      pure $ unit × v
 
-   bwd :: Partial => OpBwd
-   bwd v (Str _ k : Dictionary _ _ : Nil) =
+   bwd :: Partial => OpBwd2 Unit
+   bwd (_ × v) (Str _ k : Dictionary _ _ : Nil) =
       (Str bot k) : Dictionary bot (D.singleton k (bot × v)) : Nil
 
 map :: PrimOp
