@@ -27,8 +27,8 @@ data Trace
 data AppTrace
    = AppClosure (Set Var) Match Trace
    -- Don't use NonEmptyList here; we always have a final element, not initial element
-   | AppPrimitive (PrimOp × List (Raw Val)) (Raw Val) -- original arguments
-   | AppConstr (Ctr × Int) -- number of original arguments (unsaturated)
+   | AppPrimitive PrimOp (List (Raw Val)) (Raw Val) -- original arguments
+   | AppConstr Ctr Int -- number of original arguments (unsaturated)
 
 data VarDef = VarDef Match Trace
 

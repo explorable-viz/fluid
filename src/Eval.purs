@@ -75,7 +75,7 @@ apply (V.Closure β γ1 ρ σ) v = do
 apply (V.Primitive (PrimOp φ) vs) v = do
    let vs' = vs <> singleton v
    v'' <- if φ.arity > length vs' then pure $ V.Fun $ V.Primitive (PrimOp φ) vs' else φ.op vs'
-   pure $ T.AppPrimitive (PrimOp φ × (erase <$> vs)) (erase v) × v''
+   pure $ T.AppPrimitive (PrimOp φ) (erase <$> vs) (erase v) × v''
 apply (V.PartialConstr α c vs) v = do
    let n = successful (arity c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)
@@ -83,7 +83,7 @@ apply (V.PartialConstr α c vs) v = do
       v' =
          if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> singleton v)
          else V.Constr α c (vs <> singleton v)
-   pure $ T.AppConstr (c × length vs) × v'
+   pure $ T.AppConstr c (length vs) × v'
 
 eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ

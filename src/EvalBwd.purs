@@ -79,14 +79,14 @@ applyBwd v (T.AppClosure xs w t3) =
    γ1 × γ2 = append_inv xs γ1γ2
    γ1' × δ' × β' = closeDefsBwd γ2
    v' × σ = matchBwd γ3 (ContExpr e) β w
-applyBwd v (T.AppPrimitive (PrimOp φ × vs) v2) =
+applyBwd v (T.AppPrimitive (PrimOp φ) vs v2) =
    V.Primitive (PrimOp φ) vs'' × v2'
    where
    vs' = vs <> L.singleton v2
    { init: vs'', last: v2' } = definitely' $ unsnoc $
       if φ.arity > length vs' then unsafePartial $ let V.Fun (V.Primitive _ vs'') = v in vs''
       else φ.op_bwd v vs'
-applyBwd v (T.AppConstr (c × _)) =
+applyBwd v (T.AppConstr c _) =
    V.PartialConstr β c vs' × v2
    where
    vs × β = case v of
