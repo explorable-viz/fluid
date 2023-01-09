@@ -26,8 +26,8 @@ data Trace
 
 data AppTrace
    = AppClosure (Set Var) Match Trace
-   | AppPrimitive (PrimOp × List (Raw Val)) (Raw Val) -- prior arguments
-   | AppConstr (Ctr × Int) -- number of prior arguments
+   | AppPrimitive (PrimOp × List (Raw Val)) (Raw Val) -- original arguments
+   | AppConstr (Ctr × Int) -- number of original arguments (unsaturated)
 
 data VarDef = VarDef Match Trace
 
