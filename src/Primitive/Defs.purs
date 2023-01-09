@@ -109,7 +109,8 @@ map = PrimOp { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    bwd (Dictionary α d') (Fun φ : Dictionary _ d : Nil) =
       Fun (foldl (∨) (botOf φ) (d'' <#> (snd >>> fst))) : Dictionary α (d'' <#> second snd) : Nil
       where
-      d'' = D.intersectionWith (\(_ × _) (β × v) -> β × applyBwd v (error "TODO")) d d'
+      d'' =
+         D.intersectionWith (\(_ × _) (β × v) -> β × applyBwd v (error "TODO")) d d'
             :: Dict (_ × (Fun _ × Val _))
 
 plus :: Int + Number -> Endo (Int + Number)
