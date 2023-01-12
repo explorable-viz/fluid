@@ -134,23 +134,23 @@ test_bwd =
         \37, 41, 54, 34, 20,\n\
         \21, 35, 31, 31, 42,\n\
         \13, 32, 35, 19, 26"
-   , testBwd (File "dict-create") (File "dict-create.expect")
+   , testBwd (File "dict/create") (File "dict/create.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              , "ab" ↦ (true × Int false 6)
              ]
         )
         "{|\"a\": 5, _\"ab\"_: 6|}"
-   , testBwd (File "dict-difference") (File "dict-difference.expect")
+   , testBwd (File "dict/difference") (File "dict/difference.expect")
         ( const $ Dictionary true $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              ]
         )
         "_{|\"a\": 5|}_"
-   , testBwd (File "dict-get") (File "dict-get.expect")
+   , testBwd (File "dict/get") (File "dict/get.expect")
         (const $ Int true 0)
         "_0_"
-   , testBwd (File "dict-map") (File "dict-map.expect")
+   , testBwd (File "dict/map") (File "dict/map.expect")
         (const $ Int true 20)
         "_20_"
    , testBwd (File "divide") (File "divide.expect") topOf "_40.22222222222222_"
