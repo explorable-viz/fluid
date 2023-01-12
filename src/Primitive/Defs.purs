@@ -14,8 +14,8 @@ import Data.Traversable (traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
-import Dict (Dict)
-import Dict (difference, empty, fromFoldable, intersectionWith, lookup, singleton, unzip) as D
+import Dict (Dict, (\\))
+import Dict (disjointUnion, empty, fromFoldable, intersectionWith, lookup, singleton, unzip) as D
 import Eval (apply)
 import EvalBwd (applyBwd)
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
@@ -24,7 +24,7 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, report, (×))
-import Val (Array2, Env, ForeignOp, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), updateMatrix)
+import Val (Array2, Env, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), ForeignOp, updateMatrix)
 
 extern :: forall a. ForeignOp -> Val a
 extern = flip Foreign Nil >>> Fun
@@ -53,6 +53,7 @@ primitives = D.fromFoldable
    , "++" × binary { i1: string, i2: string, o: string, fwd: concat }
    , "!" × extern matrixLookup
    , "dict_difference" × extern dict_difference
+   , "dict_disjointUnion" × extern dict_disjointUnion
    , "dict_fromRecord" × extern dict_fromRecord
    , "dict_get" × extern dict_get
    , "dict_map" × extern dict_map
@@ -105,7 +106,7 @@ dict_difference = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafeParti
    where
    fwd :: OpFwd Unit
    fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
-      pure $ unit × Dictionary (α1 ∧ α2) (D.difference d1 d2)
+      pure $ unit × Dictionary (α1 ∧ α2) (d1 \\ d2)
    fwd _ = report "Dictionaries expected."
 
    bwd :: Partial => OpBwd Unit
@@ -122,6 +123,18 @@ dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafeParti
 
    bwd :: Partial => OpBwd Unit
    bwd (_ × Dictionary α d) = Record (foldl (∨) α (d <#> fst)) (d <#> snd) : Nil
+
+dict_disjointUnion :: ForeignOp
+dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: OpFwd (Dict Unit × Dict Unit)
+   fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) = 
+      pure $ ((const unit <$> d1) × (const unit <$> d2)) × Dictionary (α1 ∧ α2) (D.disjointUnion d1 d2)
+   fwd _ = report "Dictionaries expected"
+
+   bwd :: Partial => OpBwd (Dict Unit × Dict Unit)
+   bwd ((d1 × d2) × Dictionary α d) = 
+      Dictionary α (d \\ d2) : Dictionary α (d \\ d1) : Nil
 
 dict_get :: ForeignOp
 dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
