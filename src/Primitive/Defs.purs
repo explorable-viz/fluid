@@ -108,13 +108,13 @@ dict_difference = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd
 dict_get :: ExternOp
 dict_get = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd (List (Raw Val))
-   fwd vs@(Str _ k : Dictionary _ d : Nil) = do
+   fwd :: Partial => OpFwd String
+   fwd (Str _ k : Dictionary _ d : Nil) = do
       v <- snd <$> D.lookup k d # orElse ("Key \"" <> k <> "\" not found")
-      pure $ (erase <$> vs) × v
+      pure $ k × v
 
-   bwd :: Partial => OpBwd (List (Raw Val))
-   bwd ((Str _ k : Dictionary _ _ : Nil) × v) _ =
+   bwd :: Partial => OpBwd String
+   bwd (k × v) _ =
       Str bot k : Dictionary bot (D.singleton k (bot × v)) : Nil
 
 dict_map :: ExternOp
