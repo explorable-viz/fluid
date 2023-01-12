@@ -106,7 +106,7 @@ dict_difference = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafeParti
    fwd :: OpFwd Unit
    fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
       pure $ unit × Dictionary (α1 ∧ α2) (D.difference d1 d2)
-   fwd _ = report "Dictionaries expected."   
+   fwd _ = report "Dictionaries expected."
 
    bwd :: Partial => OpBwd Unit
    bwd (_ × Dictionary α d) =
@@ -116,7 +116,7 @@ dict_fromRecord :: ForeignOp
 dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd Unit
-   fwd (Record α xvs : Nil) = 
+   fwd (Record α xvs : Nil) =
       pure $ unit × Dictionary α (xvs <#> (α × _))
    fwd _ = report "Record expected."
 
