@@ -18,7 +18,7 @@ import Dict (Dict)
 import Dict (difference, empty, fromFoldable, intersectionWith, lookup, singleton, unzip) as D
 import Eval (apply)
 import EvalBwd (applyBwd)
-import Lattice (Raw, (∨), (∧), bot, botOf)
+import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
@@ -67,27 +67,27 @@ error_ = error
 dims :: ExternOp
 dims = mkExists $ ExternOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd Unit
-   fwd (Matrix α (_ × (i × β1) × (j × β2)) : Nil) =
-      pure $ unit × Constr α cPair (Int β1 i : Int β2 j : Nil)
+   fwd :: Partial => OpFwd (List (Raw Val))
+   fwd vs@(Matrix α (_ × (i × β1) × (j × β2)) : Nil) =
+      pure $ (erase <$> vs) × Constr α cPair (Int β1 i : Int β2 j : Nil)
 
-   bwd :: Partial => OpBwd Unit
-   bwd (_ × Constr α c (Int β1 i : Int β2 j : Nil)) (Matrix _ (vss × _ × _) : Nil) | c == cPair =
+   bwd :: Partial => OpBwd (List (Raw Val))
+   bwd ((Matrix _ (vss × _ × _) : Nil) × Constr α c (Int β1 i : Int β2 j : Nil)) _ | c == cPair =
       Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
 
 matrixLookup :: ExternOp
 matrixLookup = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd Unit
-   fwd (Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+   fwd :: Partial => OpFwd (List (Raw Val))
+   fwd vs@(Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = do
            v <- orElse "Index out of bounds" $ do
-              vs <- vss !! (i - 1)
-              vs !! (j - 1)
-           pure $ unit × v
+              us <- vss !! (i - 1)
+              us !! (j - 1)
+           pure $ (erase <$> vs) × v
 
-   bwd :: Partial => OpBwd Unit
-   bwd (_ × v) (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+   bwd :: Partial => OpBwd (List (Raw Val))
+   bwd ((Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil) × v) _
       | c == cPair =
            Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
               : Constr bot cPair (Int bot i : Int bot j : Nil)
@@ -96,24 +96,24 @@ matrixLookup = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: u
 dict_difference :: ExternOp
 dict_difference = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd Unit
-   fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
-      pure $ unit × Dictionary (α1 ∧ α2) (D.difference d1 d2)
+   fwd :: Partial => OpFwd (List (Raw Val))
+   fwd vs@(Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
+      pure $ (erase <$> vs) × Dictionary (α1 ∧ α2) (D.difference d1 d2)
 
-   bwd :: Partial => OpBwd Unit
-   bwd (_ × Dictionary α d) (Dictionary _ _ : Dictionary _ _ : Nil) =
+   bwd :: Partial => OpBwd (List (Raw Val))
+   bwd ((Dictionary _ _ : Dictionary _ _ : Nil) × Dictionary α d) _ =
       Dictionary α d : Dictionary α D.empty : Nil
 
 dict_get :: ExternOp
 dict_get = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd Unit
-   fwd (Str _ k : Dictionary _ d : Nil) = do
+   fwd :: Partial => OpFwd (List (Raw Val))
+   fwd vs@(Str _ k : Dictionary _ d : Nil) = do
       v <- snd <$> D.lookup k d # orElse ("Key \"" <> k <> "\" not found")
-      pure $ unit × v
+      pure $ (erase <$> vs) × v
 
-   bwd :: Partial => OpBwd Unit
-   bwd (_ × v) (Str _ k : Dictionary _ _ : Nil) =
+   bwd :: Partial => OpBwd (List (Raw Val))
+   bwd ((Str _ k : Dictionary _ _ : Nil) × v) _ =
       Str bot k : Dictionary bot (D.singleton k (bot × v)) : Nil
 
 dict_map :: ExternOp

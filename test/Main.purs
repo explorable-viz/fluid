@@ -14,21 +14,16 @@ import Util ((×))
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
--- tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
 
-tests = [ test_scratchpad ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ testBwd (File "dict-difference") (File "dict-difference.expect")
-        ( const $ Dictionary true $ fromFoldable
-             [ "a" ↦ (false × Int false 5)
-             ]
-        )
-        "_{|\"a\": 5|}_"
+   [ 
    ]
 
 test_linking :: Array (Test Unit)
@@ -145,6 +140,12 @@ test_bwd =
              ]
         )
         "{|\"a\": 5, _\"ab\"_: 6|}"
+   , testBwd (File "dict-difference") (File "dict-difference.expect")
+        ( const $ Dictionary true $ fromFoldable
+             [ "a" ↦ (false × Int false 5)
+             ]
+        )
+        "_{|\"a\": 5|}_"
    , testBwd (File "dict-get") (File "dict-get.expect")
         (const $ Int true 0)
         "_0_"
