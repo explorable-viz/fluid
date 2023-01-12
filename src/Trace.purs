@@ -30,7 +30,7 @@ data Trace
 data AppTrace
    = AppClosure (Set Var) Match Trace
    -- these two forms represent partial (unsaturated) applications
-   | AppExtern Int ExternTrace -- number of arguments (unsaturated)
+   | AppExtern Int ExternTrace -- record number of arguments
    | AppConstr Ctr
 
 data ExternTrace' t = ExternTrace' (ExternOp' t) (Maybe t)
