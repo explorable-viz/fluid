@@ -90,7 +90,7 @@ applyBwd v (T.AppExtern n t) =
       applyBwd' (ExternTrace' (ExternOp' φ) t') =
          mkExists (ExternOp' φ) ×
             if φ.arity > n then unsafePartial $ let V.Fun (V.Extern _ vs'') = v in vs''
-            else φ.op_bwd (definitely' t' × v) 
+            else φ.op_bwd (definitely' t' × v)
 applyBwd v (T.AppConstr c) =
    V.PartialConstr β c vs' × v2
    where

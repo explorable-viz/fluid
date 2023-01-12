@@ -219,8 +219,8 @@ binaryZero op =
    where
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) =
-      pure $ (erase v1 × erase v2) × 
-             op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
+      pure $ (erase v1 × erase v2) ×
+         op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
       where
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 
