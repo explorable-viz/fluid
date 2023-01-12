@@ -110,23 +110,24 @@ test_linking =
 test_bwd :: Array (Test Unit)
 test_bwd =
    [ testBwd (File "add") (File "add.expect") (const $ Int true 8) "_8_"
-   , testBwd (File "array-lookup") (File "array-lookup.expect") (const $ Int true 14) "_14_"
+     -- TODO: array/array test seems to be missing
+   , testBwd (File "array/lookup") (File "array/lookup.expect") (const $ Int true 14) "_14_"
    , testBwd (File "array/dims") (File "array/dims.expect") topOf "_(_3_, _3_)_"
-   , testBwd (File "conv-edgeDetect") (File "conv-edgeDetect.expect")
+   , testBwd (File "convolution/edgeDetect") (File "convolution/edgeDetect.expect")
         (botOf >>> selectCell 1 1 topOf)
         "_0_, -1, 2, 0, -1,\n\
         \0, 3, -2, 3, -2,\n\
         \-1, 1, -5, 0, 4,\n\
         \1, -1, 4, 0, -4,\n\
         \1, 0, -3, 2, 0"
-   , testBwd (File "conv-emboss") (File "conv-emboss.expect")
+   , testBwd (File "convolution/emboss") (File "convolution/emboss.expect")
         (botOf >>> selectCell 1 1 topOf)
         "_5_, 4, 2, 5, 2,\n\
         \3, 1, 2, -1, -2,\n\
         \3, 0, 1, 0, -1,\n\
         \2, 1, -2, 0, 0,\n\
         \1, 0, -1, -1, -2"
-   , testBwd (File "conv-gaussian") (File "conv-gaussian.expect")
+   , testBwd (File "convolution/gaussian") (File "convolution/gaussian.expect")
         (botOf >>> selectCell 1 1 topOf)
         "_38_, 37, 28, 30, 38,\n\
         \38, 36, 46, 31, 34,\n\
