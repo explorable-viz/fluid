@@ -97,12 +97,12 @@ matrixLookup = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: u
 dict_difference :: ExternOp
 dict_difference = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd (List (Raw Val))
-   fwd vs@(Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
-      pure $ (erase <$> vs) × Dictionary (α1 ∧ α2) (D.difference d1 d2)
+   fwd :: Partial => OpFwd Unit
+   fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
+      pure $ unit × Dictionary (α1 ∧ α2) (D.difference d1 d2)
 
-   bwd :: Partial => OpBwd (List (Raw Val))
-   bwd ((Dictionary _ _ : Dictionary _ _ : Nil) × Dictionary α d) _ =
+   bwd :: Partial => OpBwd Unit
+   bwd (_ × Dictionary α d) _ =
       Dictionary α d : Dictionary α D.empty : Nil
 
 dict_get :: ExternOp
