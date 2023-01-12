@@ -41,12 +41,12 @@ instance Ann Unit
 
 -- similar to an isomorphism lens with complement t
 type OpFwd t = forall a. Ann a => List (Val a) -> MayFail (t × Val a)
-type OpBwd t = forall a. Ann a => t × Val a -> List (Raw Val) -> List (Val a)
+type OpBwd t = forall a. Ann a => t × Val a -> List (Val a)
 
 data ExternOp' t = ExternOp'
    { arity :: Int
    , op :: OpFwd t
-   , op_bwd :: OpBwd t -- provided with original inputs
+   , op_bwd :: OpBwd t
    }
 
 type ExternOp = Exists ExternOp'

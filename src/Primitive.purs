@@ -188,7 +188,7 @@ unary op =
       x × α = op.i.match v
 
    bwd :: Partial => OpBwd (Raw Val)
-   bwd (u × v) _ = op.i.constr (x × α) : Nil
+   bwd (u × v) = op.i.constr (x × α) : Nil
       where
       _ × α = op.o.constr_bwd v
       (x × _) = op.i.match u
@@ -205,7 +205,7 @@ binary op =
       (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
 
    bwd :: Partial => OpBwd (Raw Val × Raw Val)
-   bwd ((u1 × u2) × v) _ = op.i1.constr (x × α) : op.i2.constr (y × α) : Nil
+   bwd ((u1 × u2) × v) = op.i1.constr (x × α) : op.i2.constr (y × α) : Nil
       where
       _ × α = op.o.constr_bwd v
       (x × _) × (y × _) = op.i1.match u1 × op.i2.match u2
@@ -225,7 +225,7 @@ binaryZero op =
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 
    bwd :: Partial => OpBwd (Raw Val × Raw Val)
-   bwd ((u1 × u2) × v) _ = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
+   bwd ((u1 × u2) × v) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
       where
       _ × α = op.o.constr_bwd v
       (x × _) × (y × _) = op.i.match u1 × op.i.match u2

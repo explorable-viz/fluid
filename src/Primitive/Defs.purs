@@ -74,7 +74,7 @@ dims = mkExists $ ExternOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePar
       pure $ (map erase <$> vss) × Constr α cPair (Int β1 i : Int β2 j : Nil)
 
    bwd :: Partial => OpBwd (Raw ArrayData)
-   bwd (vss × Constr α c (Int β1 i : Int β2 j : Nil)) _ | c == cPair =
+   bwd (vss × Constr α c (Int β1 i : Int β2 j : Nil)) | c == cPair =
       Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
 
 matrixLookup :: ExternOp
@@ -89,7 +89,7 @@ matrixLookup = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: u
            pure $ ((map erase <$> vss) × (i' × j') × (i × j)) × v
 
    bwd :: Partial => OpBwd (Raw ArrayData × (Int × Int) × (Int × Int))
-   bwd ((vss × (i' × j') × (i × j)) × v) _ =
+   bwd ((vss × (i' × j') × (i × j)) × v) =
       Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : Nil
@@ -102,7 +102,7 @@ dict_difference = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd
       pure $ unit × Dictionary (α1 ∧ α2) (D.difference d1 d2)
 
    bwd :: Partial => OpBwd Unit
-   bwd (_ × Dictionary α d) _ =
+   bwd (_ × Dictionary α d) =
       Dictionary α d : Dictionary α D.empty : Nil
 
 dict_get :: ExternOp
@@ -114,7 +114,7 @@ dict_get = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsaf
       pure $ k × v
 
    bwd :: Partial => OpBwd String
-   bwd (k × v) _ =
+   bwd (k × v) =
       Str bot k : Dictionary bot (D.singleton k (bot × v)) : Nil
 
 dict_map :: ExternOp
@@ -126,7 +126,7 @@ dict_map = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsaf
       pure $ erase φ × ts × Dictionary α βus
 
    bwd :: Partial => OpBwd (Raw Fun × Dict AppTrace)
-   bwd (φ × ts × Dictionary α βus) _ =
+   bwd (φ × ts × Dictionary α βus) =
       Fun (foldl (∨) (botOf φ) φs) : Dictionary α βvs : Nil
       where
       φs × βvs = D.unzip $ D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd u t) ts βus
