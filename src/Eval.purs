@@ -85,7 +85,7 @@ apply (V.Extern φ vs) v = do
             else first Just <$> φ'.op vs'
          pure $ mkExists (ExternTrace' (ExternOp' φ') t) × v''
    t × v'' <- runExists apply' φ
-   pure $ T.AppExtern (erase <$> vs) (erase v) t × v''
+   pure $ T.AppExtern (erase <$> vs) t × v''
 apply (V.PartialConstr α c vs) v = do
    let n = successful (arity c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)

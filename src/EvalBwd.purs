@@ -81,7 +81,7 @@ applyBwd v (T.AppClosure xs w t3) =
    γ1 × γ2 = append_inv xs γ1γ2
    γ1' × δ' × β' = closeDefsBwd γ2
    v' × σ = matchBwd γ3 (ContExpr e) β w
-applyBwd v (T.AppExtern vs _ t) =
+applyBwd v (T.AppExtern vs t) =
    V.Extern φ vs'' × v2'
    where
    φ × { init: vs'', last: v2' } = second (definitely' <<< unsnoc) $ runExists applyBwd' t
