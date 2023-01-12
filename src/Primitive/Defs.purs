@@ -24,10 +24,10 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, report, (×))
-import Val (Array2, Env, ExternOp, ExternOp'(..), Fun(..), OpBwd, OpFwd, Val(..), updateMatrix)
+import Val (Array2, Env, ForeignOp, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), updateMatrix)
 
-extern :: forall a. ExternOp -> Val a
-extern = flip Extern Nil >>> Fun
+extern :: forall a. ForeignOp -> Val a
+extern = flip Foreign Nil >>> Fun
 
 primitives :: Raw Env
 primitives = D.fromFoldable
@@ -70,8 +70,8 @@ error_ = error
 
 type ArrayData a = Array2 (Val a)
 
-dims :: ExternOp
-dims = mkExists $ ExternOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
+dims :: ForeignOp
+dims = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd (Raw ArrayData)
    fwd (Matrix α (vss × (i × β1) × (j × β2)) : Nil) =
@@ -82,8 +82,8 @@ dims = mkExists $ ExternOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
    bwd (vss × Constr α c (Int β1 i : Int β2 j : Nil)) | c == cPair =
       Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
 
-matrixLookup :: ExternOp
-matrixLookup = mkExists $ ExternOp' { arity: 2, op: fwd, op_bwd: bwd }
+matrixLookup :: ForeignOp
+matrixLookup = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: bwd }
    where
    fwd :: OpFwd (Raw ArrayData × (Int × Int) × (Int × Int))
    fwd (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
@@ -100,8 +100,8 @@ matrixLookup = mkExists $ ExternOp' { arity: 2, op: fwd, op_bwd: bwd }
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : Nil
 
-dict_difference :: ExternOp
-dict_difference = mkExists $ ExternOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
+dict_difference :: ForeignOp
+dict_difference = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd Unit
    fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
@@ -112,8 +112,8 @@ dict_difference = mkExists $ ExternOp' { arity: 2, op: fwd, op_bwd: unsafePartia
    bwd (_ × Dictionary α d) =
       Dictionary α d : Dictionary α D.empty : Nil
 
-dict_fromRecord :: ExternOp
-dict_fromRecord = mkExists $ ExternOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
+dict_fromRecord :: ForeignOp
+dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd Unit
    fwd (Record α xvs : Nil) = 
@@ -123,8 +123,8 @@ dict_fromRecord = mkExists $ ExternOp' { arity: 1, op: fwd, op_bwd: unsafePartia
    bwd :: Partial => OpBwd Unit
    bwd (_ × Dictionary α d) = Record (foldl (∨) α (d <#> fst)) (d <#> snd) : Nil
 
-dict_get :: ExternOp
-dict_get = mkExists $ ExternOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
+dict_get :: ForeignOp
+dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd String
    fwd (Str _ k : Dictionary _ d : Nil) =
@@ -135,8 +135,8 @@ dict_get = mkExists $ ExternOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
    bwd (k × v) =
       Str bot k : Dictionary bot (D.singleton k (bot × v)) : Nil
 
-dict_map :: ExternOp
-dict_map = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dict_map :: ForeignOp
+dict_map = mkExists $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd (Raw Fun × Dict AppTrace)
    fwd (Fun φ : Dictionary α βvs : Nil) = do

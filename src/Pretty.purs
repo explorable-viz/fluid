@@ -23,7 +23,7 @@ import Text.Pretty (render) as P
 import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
 import Util.Pair (toTuple)
 import Val (Fun(..), Val(..)) as V
-import Val (class Highlightable, Fun, ExternOp', Val, highlightIf)
+import Val (class Highlightable, Fun, ForeignOp', Val, highlightIf)
 
 infixl 5 beside as :<>:
 
@@ -178,10 +178,10 @@ instance Highlightable a => Pretty (Val a) where
 
 instance Highlightable a => Pretty (Fun a) where
    pretty (V.Closure _ _ _ _) = text "<closure>"
-   pretty (V.Extern φ _) = parens (runExists pretty φ)
+   pretty (V.Foreign φ _) = parens (runExists pretty φ)
    pretty (V.PartialConstr α c vs) = prettyConstr α c vs
 
-instance Pretty (ExternOp' t) where
+instance Pretty (ForeignOp' t) where
    pretty _ = text "<extern op>" -- TODO
 
 -- Surface language

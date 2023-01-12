@@ -21,11 +21,11 @@ import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (AppTrace, ExternTrace'(..), Match(..), Trace)
+import Trace (AppTrace, ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), Endo, absurd, definitely', error, nonEmpty, (!), (×))
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, ExternOp, ExternOp'(..), Fun, Val, append_inv, (<+>))
+import Val (class Ann, Env, ForeignOp, ForeignOp'(..), Fun, Val, append_inv, (<+>))
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
@@ -81,15 +81,15 @@ applyBwd v (T.AppClosure xs w t3) =
    γ1 × γ2 = append_inv xs γ1γ2
    γ1' × δ' × β' = closeDefsBwd γ2
    v' × σ = matchBwd γ3 (ContExpr e) β w
-applyBwd v (T.AppExtern n t) =
-   V.Extern φ vs'' × v2'
+applyBwd v (T.AppForeign n t) =
+   V.Foreign φ vs'' × v2'
    where
    φ × { init: vs'', last: v2' } = second (definitely' <<< unsnoc) $ runExists applyBwd' t
       where
-      applyBwd' :: forall t. ExternTrace' t -> ExternOp × List (Val _)
-      applyBwd' (ExternTrace' (ExternOp' φ) t') =
-         mkExists (ExternOp' φ) ×
-            if φ.arity > n then unsafePartial $ let V.Fun (V.Extern _ vs'') = v in vs''
+      applyBwd' :: forall t. ForeignTrace' t -> ForeignOp × List (Val _)
+      applyBwd' (ForeignTrace' (ForeignOp' φ) t') =
+         mkExists (ForeignOp' φ) ×
+            if φ.arity > n then unsafePartial $ let V.Fun (V.Foreign _ vs'') = v in vs''
             else φ.op_bwd (definitely' t' × v)
 applyBwd v (T.AppConstr c) =
    V.PartialConstr β c vs' × v2

@@ -12,7 +12,7 @@ import Dict (Dict)
 import Expr (class BV, RecDefs, bv)
 import Lattice (Raw)
 import Util (type (×))
-import Val (Array2, ExternOp', Val)
+import Val (Array2, ForeignOp', Val)
 
 data Trace
    = Var Var
@@ -30,11 +30,11 @@ data Trace
 data AppTrace
    = AppClosure (Set Var) Match Trace
    -- these two forms represent partial (unsaturated) applications
-   | AppExtern Int ExternTrace -- record number of arguments
+   | AppForeign Int ForeignTrace -- record number of arguments
    | AppConstr Ctr
 
-data ExternTrace' t = ExternTrace' (ExternOp' t) (Maybe t)
-type ExternTrace = Exists ExternTrace'
+data ForeignTrace' t = ForeignTrace' (ForeignOp' t) (Maybe t)
+type ForeignTrace = Exists ForeignTrace'
 
 data VarDef = VarDef Match Trace
 
