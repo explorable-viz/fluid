@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import Bindings (Var, varAnon)
 import Data.Exists (mkExists, runExists)
-import Data.Foldable (foldr, length)
+import Data.Foldable (foldr)
 import Data.FoldableWithIndex (foldrWithIndex)
 import Data.List (List(..), range, reverse, unsnoc, unzip, zip, (:))
 import Data.List (singleton) as L
@@ -81,7 +81,7 @@ applyBwd v (T.AppClosure xs w t3) =
    γ1 × γ2 = append_inv xs γ1γ2
    γ1' × δ' × β' = closeDefsBwd γ2
    v' × σ = matchBwd γ3 (ContExpr e) β w
-applyBwd v (T.AppExtern vs t) =
+applyBwd v (T.AppExtern n t) =
    V.Extern φ vs'' × v2'
    where
    φ × { init: vs'', last: v2' } = second (definitely' <<< unsnoc) $ runExists applyBwd' t
@@ -89,7 +89,7 @@ applyBwd v (T.AppExtern vs t) =
       applyBwd' :: forall t. ExternTrace' t -> ExternOp × List (Val _)
       applyBwd' (ExternTrace' (ExternOp' φ) t') =
          mkExists (ExternOp' φ) ×
-            if φ.arity > length vs + 1 then unsafePartial $ let V.Fun (V.Extern _ vs'') = v in vs''
+            if φ.arity > n then unsafePartial $ let V.Fun (V.Extern _ vs'') = v in vs''
             else φ.op_bwd (definitely' t' × v) 
 applyBwd v (T.AppConstr c _) =
    V.PartialConstr β c vs' × v2
