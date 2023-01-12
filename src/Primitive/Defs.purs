@@ -23,7 +23,7 @@ import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
-import Util (Endo, (×), type (+), error, orElse)
+import Util (Endo, type (×), (×), type (+), error, orElse)
 import Val (Env, ExternOp, ExternOp'(..), Fun(..), OpBwd, OpFwd, Val(..), updateMatrix)
 
 primitives :: Raw Env
@@ -119,13 +119,13 @@ dict_get = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsaf
 dict_map :: ExternOp
 dict_map = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd (Dict AppTrace)
+   fwd :: Partial => OpFwd (Raw Fun × Dict AppTrace)
    fwd (Fun φ : Dictionary α βvs : Nil) = do
       ts × βus <- D.unzip <$> traverse (\(β × v) -> second (β × _) <$> apply φ v) βvs
-      pure $ ts × Dictionary α βus
+      pure $ erase φ × ts × Dictionary α βus
 
-   bwd :: Partial => OpBwd (Dict AppTrace)
-   bwd (ts × Dictionary α βus) (Fun φ : Dictionary _ _ : Nil) =
+   bwd :: Partial => OpBwd (Raw Fun × Dict AppTrace)
+   bwd (φ × ts × Dictionary α βus) _ =
       Fun (foldl (∨) (botOf φ) φs) : Dictionary α βvs : Nil
       where
       φs × βvs = D.unzip $ D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd u t) ts βus
