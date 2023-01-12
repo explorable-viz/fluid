@@ -6,5 +6,6 @@ in {
    e: e,
    e_ab: dict_get "ab" e,
    f: dict_map ((+) 1) e,
-   g: dict_difference e f
+   g: dict_difference e f,
+   h: dict_fromRecord {fst: 4, snd: [6, 7]}
 }

@@ -23,7 +23,7 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [
+   [ 
    ]
 
 test_linking :: Array (Test Unit)
@@ -111,7 +111,7 @@ test_bwd :: Array (Test Unit)
 test_bwd =
    [ testBwd (File "add") (File "add.expect") (const $ Int true 8) "_8_"
    , testBwd (File "array-lookup") (File "array-lookup.expect") (const $ Int true 14) "_14_"
-   , testBwd (File "array-dims") (File "array-dims.expect") topOf "_(_3_, _3_)_"
+   , testBwd (File "array/dims") (File "array/dims.expect") topOf "_(_3_, _3_)_"
    , testBwd (File "conv-edgeDetect") (File "conv-edgeDetect.expect")
         (botOf >>> selectCell 1 1 topOf)
         "_0_, -1, 2, 0, -1,\n\
@@ -201,7 +201,7 @@ test_misc =
    [ test (File "arithmetic") "42"
    , test (File "array") "(1, (3, 3))"
    , test (File "compose") "5"
-   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}, e_ab: 6, f: {|\"a\": 6, \"ab\": 7|}, g: {|\"a\": 5|}}"
+   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}, e_ab: 6, f: {|\"a\": 6, \"ab\": 7|}, g: {|\"a\": 5|}, h: {|\"fst\": 4, \"snd\": (6 : (7 : []))|}}"
    , test (File "div-mod-quot-rem")
         "((1 : (-1 : (-2 : (2 : [])))) : \
         \((2 : (2 : (1 : (1 : [])))) : \
