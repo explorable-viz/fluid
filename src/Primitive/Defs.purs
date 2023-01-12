@@ -90,9 +90,9 @@ matrixLookup = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: u
 
    bwd :: Partial => OpBwd (Raw ArrayData × (Int × Int) × (Int × Int))
    bwd ((vss × (i' × j') × (i × j)) × v) _ =
-         Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
-            : Constr bot cPair (Int bot i : Int bot j : Nil)
-            : Nil
+      Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
+         : Constr bot cPair (Int bot i : Int bot j : Nil)
+         : Nil
 
 dict_difference :: ExternOp
 dict_difference = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
