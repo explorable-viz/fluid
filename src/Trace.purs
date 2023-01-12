@@ -29,9 +29,9 @@ data Trace
 
 data AppTrace
    = AppClosure (Set Var) Match Trace
-   -- Don't use NonEmptyList here; we always have a final element, not initial element
-   | AppExtern (List (Raw Val)) (Raw Val) ExternTrace -- original arguments
-   | AppConstr Ctr Int -- number of original arguments (unsaturated)
+   -- these two forms represent partial (unsaturated) applications
+   | AppExtern Int ExternTrace -- number of arguments (unsaturated)
+   | AppConstr Ctr
 
 data ExternTrace' t = ExternTrace' (ExternOp' t) (Maybe t)
 type ExternTrace = Exists ExternTrace'

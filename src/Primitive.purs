@@ -10,7 +10,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Lattice ((∧), bot, top)
+import Lattice (Raw, (∧), bot, erase, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), error, (×))
@@ -182,13 +182,13 @@ unary op =
       $ mkExists
       $ ExternOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd Unit
-   fwd (v : Nil) = pure $ unit × op.o.constr (op.fwd x × α)
+   fwd :: Partial => OpFwd (Raw Val)
+   fwd (v : Nil) = pure $ erase v × op.o.constr (op.fwd x × α)
       where
       x × α = op.i.match v
 
-   bwd :: Partial => OpBwd Unit
-   bwd (_ × v) (u : Nil) = op.i.constr (x × α) : Nil
+   bwd :: Partial => OpBwd (Raw Val)
+   bwd (u × v) = op.i.constr (x × α) : Nil
       where
       _ × α = op.o.constr_bwd v
       (x × _) = op.i.match u
@@ -199,13 +199,13 @@ binary op =
       $ mkExists
       $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd Unit
-   fwd (v1 : v2 : Nil) = pure $ unit × op.o.constr (op.fwd x y × (α ∧ β))
+   fwd :: Partial => OpFwd (Raw Val × Raw Val)
+   fwd (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × op.o.constr (op.fwd x y × (α ∧ β))
       where
       (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
 
-   bwd :: Partial => OpBwd Unit
-   bwd (_ × v) (u1 : u2 : Nil) = op.i1.constr (x × α) : op.i2.constr (y × α) : Nil
+   bwd :: Partial => OpBwd (Raw Val × Raw Val)
+   bwd ((u1 × u2) × v) = op.i1.constr (x × α) : op.i2.constr (y × α) : Nil
       where
       _ × α = op.o.constr_bwd v
       (x × _) × (y × _) = op.i1.match u1 × op.i2.match u2
@@ -217,14 +217,15 @@ binaryZero op =
       $ mkExists
       $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd Unit
+   fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) =
-      pure $ unit × op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
+      pure $ (erase v1 × erase v2) ×
+         op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
       where
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 
-   bwd :: Partial => OpBwd Unit
-   bwd (_ × v) (u1 : u2 : Nil) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
+   bwd :: Partial => OpBwd (Raw Val × Raw Val)
+   bwd ((u1 × u2) × v) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
       where
       _ × α = op.o.constr_bwd v
       (x × _) × (y × _) = op.i.match u1 × op.i.match u2
