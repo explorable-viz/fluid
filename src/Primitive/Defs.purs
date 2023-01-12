@@ -148,12 +148,25 @@ dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd 
    bwd (k × v) =
       Str bot k : Dictionary bot (D.singleton k (bot × v)) : Nil
 
+dict_intersectionWith :: ForeignOp
+dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: OpFwd Unit
+   fwd (Fun φ : Dictionary α1 βus : Dictionary α2 βus' : Nil) = 
+      pure $ unit × Dictionary (α1 ∧ α2) (error "TODO")
+      where
+      _ = D.intersectionWith (\(β × _) (β' × _) -> β ∧ β' × apply (φ × error "TODO")) βus βus'
+   fwd _ = report "Function and two dictionaries expected"
+
+   bwd :: OpBwd Unit
+   bwd = error "TODO"
+
 dict_map :: ForeignOp
 dict_map = mkExists $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd (Raw Fun × Dict AppTrace)
    fwd (Fun φ : Dictionary α βvs : Nil) = do
-      ts × βus <- D.unzip <$> traverse (\(β × v) -> second (β × _) <$> apply φ v) βvs
+      ts × βus <- D.unzip <$> traverse (\(β × v) -> second (β × _) <$> apply (φ × v)) βvs
       pure $ erase φ × ts × Dictionary α βus
 
    bwd :: Partial => OpBwd (Raw Fun × Dict AppTrace)

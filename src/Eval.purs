@@ -69,13 +69,13 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-apply :: forall a. Ann a => Fun a -> Val a -> MayFail (AppTrace × Val a)
-apply (V.Closure β γ1 ρ σ) v = do
+apply :: forall a. Ann a => Fun a × Val a -> MayFail (AppTrace × Val a)
+apply (V.Closure β γ1 ρ σ × v) = do
    let γ2 = closeDefs γ1 ρ β
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
-apply (V.Foreign φ vs) v = do
+apply (V.Foreign φ vs × v) = do
    let vs' = vs <> singleton v
    let
       apply' :: forall t. ForeignOp' t -> MayFail (ForeignTrace × Val _)
@@ -86,7 +86,7 @@ apply (V.Foreign φ vs) v = do
          pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v''
    t × v'' <- runExists apply' φ
    pure $ T.AppForeign (length vs + 1) t × v''
-apply (V.PartialConstr α c vs) v = do
+apply (V.PartialConstr α c vs × v) = do
    let n = successful (arity c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    let
@@ -142,7 +142,7 @@ eval γ (App e e') α = do
    t' × v' <- eval γ e' α
    case v of
       V.Fun φ -> do
-         t'' × v'' <- apply φ v'
+         t'' × v'' <- apply (φ × v')
          pure $ T.App t t' t'' × v''
       _ -> report $ "Found " <> prettyP v <> ", expected function"
 eval γ (Let (VarDef σ e) e') α = do
