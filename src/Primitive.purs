@@ -217,14 +217,15 @@ binaryZero op =
       $ mkExists
       $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd Unit
+   fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) =
-      pure $ unit × op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
+      pure $ (erase v1 × erase v2) × 
+             op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
       where
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 
-   bwd :: Partial => OpBwd Unit
-   bwd (_ × v) (u1 : u2 : Nil) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
+   bwd :: Partial => OpBwd (Raw Val × Raw Val)
+   bwd ((u1 × u2) × v) _ = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
       where
       _ × α = op.o.constr_bwd v
       (x × _) × (y × _) = op.i.match u1 × op.i.match u2
