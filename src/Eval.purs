@@ -93,7 +93,7 @@ apply (V.PartialConstr α c vs) v = do
       v' =
          if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> singleton v)
          else V.Constr α c (vs <> singleton v)
-   pure $ T.AppConstr c (length vs) × v'
+   pure $ T.AppConstr c × v'
 
 eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
