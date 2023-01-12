@@ -24,7 +24,7 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
 import Util (Endo, type (×), (×), type (+), error, orElse)
-import Val (Env, ExternOp, ExternOp'(..), Fun(..), OpBwd, OpFwd, Val(..), updateMatrix)
+import Val (Array2, Env, ExternOp, ExternOp'(..), Fun(..), OpBwd, OpFwd, Val(..), updateMatrix)
 
 primitives :: Raw Env
 primitives = D.fromFoldable
@@ -64,34 +64,35 @@ debugLog x = trace x (const x)
 error_ :: forall a. String -> Val a
 error_ = error
 
+type ArrayData a = Array2 (Val a)
+
 dims :: ExternOp
 dims = mkExists $ ExternOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd (List (Raw Val))
-   fwd vs@(Matrix α (_ × (i × β1) × (j × β2)) : Nil) =
-      pure $ (erase <$> vs) × Constr α cPair (Int β1 i : Int β2 j : Nil)
+   fwd :: Partial => OpFwd (Raw ArrayData)
+   fwd (Matrix α (vss × (i × β1) × (j × β2)) : Nil) =
+      pure $ (map erase <$> vss) × Constr α cPair (Int β1 i : Int β2 j : Nil)
 
-   bwd :: Partial => OpBwd (List (Raw Val))
-   bwd ((Matrix _ (vss × _ × _) : Nil) × Constr α c (Int β1 i : Int β2 j : Nil)) _ | c == cPair =
+   bwd :: Partial => OpBwd (Raw ArrayData)
+   bwd (vss × Constr α c (Int β1 i : Int β2 j : Nil)) _ | c == cPair =
       Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
 
 matrixLookup :: ExternOp
 matrixLookup = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd (List (Raw Val))
-   fwd vs@(Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+   fwd :: Partial => OpFwd (Raw ArrayData × (Int × Int) × (Int × Int))
+   fwd (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = do
            v <- orElse "Index out of bounds" $ do
               us <- vss !! (i - 1)
               us !! (j - 1)
-           pure $ (erase <$> vs) × v
+           pure $ ((map erase <$> vss) × (i' × j') × (i × j)) × v
 
-   bwd :: Partial => OpBwd (List (Raw Val))
-   bwd ((Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil) × v) _
-      | c == cPair =
-           Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
-              : Constr bot cPair (Int bot i : Int bot j : Nil)
-              : Nil
+   bwd :: Partial => OpBwd (Raw ArrayData × (Int × Int) × (Int × Int))
+   bwd ((vss × (i' × j') × (i × j)) × v) _ =
+         Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
+            : Constr bot cPair (Int bot i : Int bot j : Nil)
+            : Nil
 
 dict_difference :: ExternOp
 dict_difference = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
