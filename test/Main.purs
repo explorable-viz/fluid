@@ -116,7 +116,7 @@ test_linking =
 test_bwd :: Array (Test Unit)
 test_bwd =
    [ testBwd (File "add") (File "add.expect") (const $ Int true 8) "_8_"
-     -- TODO: array/array test seems to be missing
+   -- TODO: array/array test seems to be missing
    , testBwd (File "array/lookup") (File "array/lookup.expect") (const $ Int true 14) "_14_"
    , testBwd (File "array/dims") (File "array/dims.expect") topOf "_(_3_, _3_)_"
    , testBwd (File "convolution/edgeDetect") (File "convolution/edgeDetect.expect")
