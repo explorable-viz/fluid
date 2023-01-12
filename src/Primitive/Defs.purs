@@ -128,12 +128,12 @@ dict_disjointUnion :: ForeignOp
 dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd (Dict Unit × Dict Unit)
-   fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) = 
+   fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
       pure $ ((const unit <$> d1) × (const unit <$> d2)) × Dictionary (α1 ∧ α2) (D.disjointUnion d1 d2)
    fwd _ = report "Dictionaries expected"
 
    bwd :: Partial => OpBwd (Dict Unit × Dict Unit)
-   bwd ((d1 × d2) × Dictionary α d) = 
+   bwd ((d1 × d2) × Dictionary α d) =
       Dictionary α (d \\ d2) : Dictionary α (d \\ d1) : Nil
 
 dict_get :: ForeignOp
