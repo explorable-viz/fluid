@@ -1,2 +1,2 @@
-dict_intersectionWith let x = 2                  {|"a":= 5, "b":= _6_|} {|"b":= _-6_, "c":= 7|}
-                      in fun n m = ((n + m) * x)                                               
+dict_intersectionWith let x = _2_                {|"a":= 5, "b":= _6_, "c":= _3_|} {|"b":= _-6_, "c":= _7_|}
+                      in fun n m = ((n + m) * x)                                                            

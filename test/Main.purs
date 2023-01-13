@@ -25,9 +25,11 @@ test_scratchpad :: Array (Test Unit)
 test_scratchpad =
    [ testBwd (File "dict/intersectionWith") (File "dict/intersectionWith.expect")
         ( const $ Dictionary false $ fromFoldable
-             [ "b" ↦ (false × Int true 0) ]
+             [ "b" ↦ (false × Int true 0) 
+             , "c" ↦ (false × Int true 10)
+             ]
         )
-        "{|\"b\":= _0_|}"
+        "{|\"b\":= _0_, \"c\":= _20_|}"
    ]
 
 test_linking :: Array (Test Unit)
