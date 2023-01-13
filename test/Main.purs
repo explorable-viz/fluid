@@ -14,22 +14,16 @@ import Util ((×))
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
 
-tests = [ test_scratchpad ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ testBwd (File "dict/intersectionWith") (File "dict/intersectionWith.expect")
-        ( const $ Dictionary false $ fromFoldable
-             [ "b" ↦ (false × Int true 0) 
-             , "c" ↦ (false × Int true 10)
-             ]
-        )
-        "{|\"b\":= _0_, \"c\":= _20_|}"
+   [ 
    ]
 
 test_linking :: Array (Test Unit)
@@ -163,9 +157,11 @@ test_bwd =
         "{|_\"a\"_:= 5, \"b\":= 6, \"c\":= _7_|}"
    , testBwd (File "dict/intersectionWith") (File "dict/intersectionWith.expect")
         ( const $ Dictionary false $ fromFoldable
-             [ "b" ↦ (false × Int true 18) ]
+             [ "b" ↦ (false × Int true 0) 
+             , "c" ↦ (false × Int true 10)
+             ]
         )
-        "{|\"b\":= _18_|}"
+        "{|\"b\":= _0_, \"c\":= _20_|}"
    , testBwd (File "dict/fromRecord") (File "dict/fromRecord.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (false × Int false 5)
