@@ -17,13 +17,13 @@ import Debug (trace)
 import Dict (Dict, (\\))
 import Dict (disjointUnion, empty, fromFoldable, intersectionWith, lookup, singleton, unzip) as D
 import Eval (apply, apply2)
-import EvalBwd (applyBwd)
+import EvalBwd (apply2Bwd, applyBwd)
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
-import Util (MayFail, type (+), type (×), Endo, error, orElse, report, (×))
+import Util (type (+), type (×), Endo, error, orElse, report, (×))
 import Val (Array2, Env, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), ForeignOp, updateMatrix)
 
 extern :: forall a. ForeignOp -> Val a
@@ -153,13 +153,18 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsaf
    where
    fwd :: OpFwd (Dict (AppTrace × AppTrace))
    fwd (v : Dictionary α1 βus : Dictionary α2 βus' : Nil) = do
-      βttvs <- sequence $ 
+      βttvs <- sequence $
          D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) βus βus'
       pure $ (βttvs <#> snd >>> fst) × Dictionary (α1 ∧ α2) (βttvs <#> second snd)
    fwd _ = report "Function and two dictionaries expected"
 
-   bwd :: OpBwd (Dict (AppTrace × AppTrace))
-   bwd = error "TODO"
+   bwd :: Partial => OpBwd (Dict (AppTrace × AppTrace))
+   bwd (tts × Dictionary α βvs) =
+      (?_ : Dictionary ?_ ?_ : Dictionary ?_ ?_ : Nil)
+      where
+      blah =
+         D.intersectionWith (\ts (_ × v) -> apply2Bwd (ts × v)) tts βvs
+            :: Dict (Val _ × Val _ × Val _)
 
 dict_map :: ForeignOp
 dict_map = mkExists $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
