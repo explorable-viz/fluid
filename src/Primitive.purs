@@ -98,13 +98,13 @@ intOrNumberOrString =
 
 intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
-   { constr: \(nβ × mβ' × α) -> Constr α cPair (int.constr nβ : int.constr mβ' : Nil)
+   { constr: \((nβ × mβ') × α) -> Constr α cPair (int.constr nβ : int.constr mβ' : Nil)
    , constr_bwd: match'
    , match: match'
    }
    where
    match' :: Ann a => Val a -> ((Int × a) × (Int × a)) × a
-   match' (Constr α c (v : v' : Nil)) | c == cPair = int.match v × int.match v' × α
+   match' (Constr α c (v : v' : Nil)) | c == cPair = (int.match v × int.match v') × α
    match' v = error ("Pair expected; got " <> prettyP v)
 
 matrixRep :: forall a. ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a

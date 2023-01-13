@@ -18,8 +18,8 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 
-infixl 6 type Tuple as ×    -- standard library has \/
-infixl 6 Tuple as ×
+infixr 6 type Tuple as ×    -- standard library has \/
+infixr 6 Tuple as ×
 
 infixr 6 type Either as +   -- standard library has \/
 

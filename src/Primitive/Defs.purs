@@ -156,11 +156,11 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsaf
    fwd (v : Dictionary α1 βus : Dictionary α2 βus' : Nil) = do
       βttvs <- sequence $
          D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) βus βus'
-      pure $ erase v × (βttvs <#> snd >>> fst) × Dictionary (α1 ∧ α2) (βttvs <#> second snd)
+      pure $ (erase v × (βttvs <#> snd >>> fst)) × Dictionary (α1 ∧ α2) (βttvs <#> second snd)
    fwd _ = report "Function and two dictionaries expected"
 
    bwd :: Partial => OpBwd (Raw Val × Dict (AppTrace × AppTrace))
-   bwd (v × tts × Dictionary α βvs) =
+   bwd ((v × tts) × Dictionary α βvs) =
       (foldl (∨) (botOf v) vs : Dictionary α βus : Dictionary α βus' : Nil)
       where
       vs = βvuus <#> (snd >>> \(u × _ × _) -> u)
@@ -176,10 +176,10 @@ dict_map = mkExists $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsa
    fwd :: Partial => OpFwd (Raw Val × Dict AppTrace)
    fwd (v : Dictionary α βvs : Nil) = do
       ts × βus <- D.unzip <$> traverse (\(β × u) -> second (β × _) <$> apply (v × u)) βvs
-      pure $ erase v × ts × Dictionary α βus
+      pure $ (erase v × ts) × Dictionary α βus
 
    bwd :: Partial => OpBwd (Raw Val × Dict AppTrace)
-   bwd (v × ts × Dictionary α βus) =
+   bwd ((v × ts) × Dictionary α βus) =
       (foldl (∨) (botOf v) us) : Dictionary α βvs : Nil
       where
       us × βvs = D.unzip $ D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd (t × u)) ts βus

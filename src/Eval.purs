@@ -96,11 +96,11 @@ apply (V.Fun (V.PartialConstr α c vs) × v) = do
    pure $ T.AppConstr c × v'
 apply (_ × v) = report $ "Found " <> prettyP v <> ", expected function"
 
-apply2 :: forall a. Ann a => Val a × Val a × Val a -> MayFail (AppTrace × AppTrace × Val a)
+apply2 :: forall a. Ann a => Val a × Val a × Val a -> MayFail ((AppTrace × AppTrace) × Val a)
 apply2 (u1 × v1 × v2) = do
    t1 × u2 <- apply (u1 × v1)
    t2 × v <- apply (u2 × v2)
-   pure $ t1 × t2 × v
+   pure $ (t1 × t2) × v
 
 eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
@@ -116,7 +116,7 @@ eval γ (Dictionary α ees) α' = do
    let
       ss × αs = (vs <#> \u -> string.match u) # unzip
       d = D.fromFoldable $ zip ss (zip αs us)
-   pure $ T.Dictionary (zip (zip ss ts) ts') (d <#> snd >>> erase) × V.Dictionary (α ∧ α') d
+   pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × V.Dictionary (α ∧ α') d
 eval γ (Constr α c es) α' = do
    checkArity c (length es)
    ts × vs <- traverse (flip (eval γ) α') es <#> unzip
