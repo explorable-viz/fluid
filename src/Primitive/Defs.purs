@@ -162,7 +162,7 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsaf
    bwd :: Partial => OpBwd (Raw Val × Dict (AppTrace × AppTrace))
    bwd (v × tts × Dictionary α βvs) =
       (foldl (∨) (botOf v) vs : Dictionary α βus : Dictionary α βus' : Nil)
-      where 
+      where
       vs = βvuus <#> (snd >>> \(u × _ × _) -> u)
       βus = βvuus <#> (second \(_ × u × _) -> u)
       βus' = βvuus <#> (second \(_ × _ × u) -> u)

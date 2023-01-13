@@ -14,9 +14,9 @@ import Util ((×))
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
---tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
 
-tests = [ test_scratchpad ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -144,13 +144,13 @@ test_bwd =
              , "ab" ↦ (true × Int false 6)
              ]
         )
-        "{|\"a\": 5, _\"ab\"_: 6|}"
+        "{|\"a\":= 5, _\"ab\"_:= 6|}"
    , testBwd (File "dict/difference") (File "dict/difference.expect")
         ( const $ Dictionary true $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              ]
         )
-        "_{|\"a\": 5|}_"
+        "_{|\"a\":= 5|}_"
    , testBwd (File "dict/disjointUnion") (File "dict/disjointUnion.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (true × Int false 5)
@@ -158,14 +158,14 @@ test_bwd =
              , "c" ↦ (false × Int true 7)
              ]
         )
-        "{|_\"a\"_: 5, \"b\": 6, \"c\": _7_|}"
+        "{|_\"a\"_:= 5, \"b\":= 6, \"c\":= _7_|}"
    , testBwd (File "dict/fromRecord") (File "dict/fromRecord.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              , "ab" ↦ (true × Int false 6)
              ]
         )
-        "_{|_\"a\"_: 5, _\"ab\"_: 6|}_"
+        "_{|_\"a\"_:= 5, _\"ab\"_:= 6|}_"
    , testBwd (File "dict/get") (File "dict/get.expect")
         (const $ Int true 0)
         "_0_"
@@ -221,7 +221,7 @@ test_misc =
    [ test (File "arithmetic") "42"
    , test (File "array") "(1, (3, 3))"
    , test (File "compose") "5"
-   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}, e_ab: 6, f: {|\"a\": 6, \"ab\": 7|}, g: {|\"a\": 5|}, h: {|\"fst\": 4, \"snd\": (6 : (7 : []))|}}"
+   , test (File "dicts") "{d: {||}, e: {|\"a\":= 5, \"ab\":= 6|}, e_ab: 6, f: {|\"a\":= 6, \"ab\":= 7|}, g: {|\"a\":= 5|}, h: {|\"fst\":= 4, \"snd\":= (6 : (7 : []))|}}"
    , test (File "div-mod-quot-rem")
         "((1 : (-1 : (-2 : (2 : [])))) : \
         \((2 : (2 : (1 : (1 : [])))) : \
