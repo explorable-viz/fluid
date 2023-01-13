@@ -160,11 +160,13 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsaf
 
    bwd :: Partial => OpBwd (Dict (AppTrace × AppTrace))
    bwd (tts × Dictionary α βvs) =
-      (?_ : Dictionary ?_ ?_ : Dictionary ?_ ?_ : Nil)
+      (?_ : Dictionary ?_ βus : Dictionary ?_ βus' : Nil)
       where
-      blah =
-         D.intersectionWith (\ts (_ × v) -> apply2Bwd (ts × v)) tts βvs
-            :: Dict (Val _ × Val _ × Val _)
+      βus = βvuus <#> (second \(_ × u × _) -> u)
+      βus' = βvuus <#> (second \(_ × _ × u) -> u)
+      βvuus =
+         D.intersectionWith (\ts (β × v) -> β × apply2Bwd (ts × v)) tts βvs
+            :: Dict (_ × (Val _ × Val _ × Val _))
 
 dict_map :: ForeignOp
 dict_map = mkExists $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
