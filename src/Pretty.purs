@@ -108,9 +108,16 @@ prettyConstr α c (x : y : ys)
    | c == cCons = assert (null ys) $ parens (hspace [ pretty x, highlightIf α $ text ":", pretty y ])
 prettyConstr α c xs = hspace (highlightIf α (prettyCtr c) : (prettyParensOpt <$> xs))
 
-prettyRecordOrDict 
-   :: forall d b a. Pretty d 
-   => Highlightable a => Doc -> Endo Doc -> (b -> Doc) -> a -> List (b × d) -> Doc
+prettyRecordOrDict
+   :: forall d b a
+    . Pretty d
+   => Highlightable a
+   => Doc
+   -> Endo Doc
+   -> (b -> Doc)
+   -> a
+   -> List (b × d)
+   -> Doc
 prettyRecordOrDict sep bracify prettyKey α xvs =
    xvs <#> first prettyKey <#> (\(x × v) -> hspace [ x :<>: sep, pretty v ])
       # hcomma >>> bracify >>> highlightIf α

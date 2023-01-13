@@ -260,8 +260,14 @@ union _ g (Right x) (Left y) = as (g x (as y))
 
 -- Helper to avoid some explicit type annotations when defining primitives.
 unionStr
-   :: forall a b. As a a
-   => As b String => (b -> b -> a) -> (String -> String -> a) -> b + String -> b + String -> a
+   :: forall a b
+    . As a a
+   => As b String
+   => (b -> b -> a)
+   -> (String -> String -> a)
+   -> b + String
+   -> b + String
+   -> a
 unionStr = union
 
 instance asIntIntOrNumber :: As Int (Int + a) where

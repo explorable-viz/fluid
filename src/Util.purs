@@ -18,10 +18,10 @@ import Data.Tuple (Tuple(..), fst, snd)
 import Effect.Exception (throw)
 import Effect.Unsafe (unsafePerformEffect)
 
-infixr 6 type Tuple as ×    -- standard library has \/
+infixr 6 type Tuple as × -- standard library has \/
 infixr 6 Tuple as ×
 
-infixr 6 type Either as +   -- standard library has \/
+infixr 6 type Either as + -- standard library has \/
 
 error :: String -> ∀ a. a
 error msg = unsafePerformEffect (throw msg)
