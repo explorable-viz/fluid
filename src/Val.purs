@@ -132,9 +132,7 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
    maybeJoin (Matrix α (vss × (i × βi) × (j × βj))) (Matrix α' (vss' × (i' × βi') × (j' × βj'))) =
       Matrix (α ∨ α') <$>
          ( maybeJoin vss vss'
-              `lift2 (×)` (((flip (×) (βi ∨ βi')) <$> (i ≞ i'))
-              `lift2 (×)`
-                 ((flip (×) (βj ∨ βj')) <$> (j ≞ j')))
+              `lift2 (×)` (((_ × (βi ∨ βi')) <$> (i ≞ i')) `lift2 (×)` ((_ × (βj ∨ βj')) <$> (j ≞ j')))
          )
    maybeJoin (Fun φ) (Fun φ') = Fun <$> maybeJoin φ φ'
    maybeJoin _ _ = report "Incompatible values"
