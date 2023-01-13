@@ -4,6 +4,7 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 9 Jan 23 | Support for higher-order foreign functions | [552](https://github.com/explorable-viz/fluid/issues/552), [554](https://github.com/explorable-viz/fluid/issues/554) |
 | 23 Dec 22 | Parser now builds unannotated (raw) terms | [532](https://github.com/explorable-viz/fluid/issues/532) |
 | 19 Dec 22 | Parameterise dependency analyses on type of annotations | [557](https://github.com/explorable-viz/fluid/issues/557) |
 | 8 Nov 22 | Standardise on `purty` for source code formatting | [514](https://github.com/explorable-viz/fluid/issues/514) |

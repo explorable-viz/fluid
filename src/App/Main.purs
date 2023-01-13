@@ -22,14 +22,14 @@ linkingFig1 =
 fig1 :: FigSpec
 fig1 =
    { divId: "fig-conv-1"
-   , file: File "slicing/conv-emboss"
+   , file: File "slicing/convolution/emboss"
    , xs: [ "image", "filter" ]
    }
 
 fig2 :: FigSpec
 fig2 =
    { divId: "fig-conv-2"
-   , file: File "slicing/conv-emboss-wrap"
+   , file: File "slicing/convolution/emboss-wrap"
    , xs: [ "image", "filter" ]
    }
 

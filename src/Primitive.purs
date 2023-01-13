@@ -14,7 +14,7 @@ import Lattice (Raw, (∧), bot, erase, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), error, (×))
-import Val (class Ann, ExternOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, Val(..))
+import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
@@ -83,28 +83,28 @@ intOrNumber =
 intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
    { constr: case _ of
-        Left (Left n) × α -> Int α n
-        Left (Right n) × α -> Float α n
-        Right str × α -> Str α str
+        Left n × α -> Int α n
+        Right (Left n) × α -> Float α n
+        Right (Right str) × α -> Str α str
    , constr_bwd: match'
    , match: match'
    }
    where
    match' :: Ann a => Val a -> (Int + Number + String) × a
-   match' (Int α n) = Left (Left n) × α
-   match' (Float α n) = Left (Right n) × α
-   match' (Str α str) = Right str × α
+   match' (Int α n) = Left n × α
+   match' (Float α n) = Right (Left n) × α
+   match' (Str α str) = Right (Right str) × α
    match' v = error ("Int, Float or Str expected; got " <> prettyP v)
 
 intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
-   { constr: \(nβ × mβ' × α) -> Constr α cPair (int.constr nβ : int.constr mβ' : Nil)
+   { constr: \((nβ × mβ') × α) -> Constr α cPair (int.constr nβ : int.constr mβ' : Nil)
    , constr_bwd: match'
    , match: match'
    }
    where
    match' :: Ann a => Val a -> ((Int × a) × (Int × a)) × a
-   match' (Constr α c (v : v' : Nil)) | c == cPair = int.match v × int.match v' × α
+   match' (Constr α c (v : v' : Nil)) | c == cPair = (int.match v × int.match v') × α
    match' v = error ("Pair expected; got " <> prettyP v)
 
 matrixRep :: forall a. ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a
@@ -178,9 +178,9 @@ type BinaryZero i o a =
 
 unary :: forall i o a'. (forall a. Unary i o a) -> Val a'
 unary op =
-   Fun $ flip Extern Nil
+   Fun $ flip Foreign Nil
       $ mkExists
-      $ ExternOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd (Raw Val)
    fwd (v : Nil) = pure $ erase v × op.o.constr (op.fwd x × α)
@@ -195,9 +195,9 @@ unary op =
 
 binary :: forall i1 i2 o a'. (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
-   Fun $ flip Extern Nil
+   Fun $ flip Foreign Nil
       $ mkExists
-      $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × op.o.constr (op.fwd x y × (α ∧ β))
@@ -213,9 +213,9 @@ binary op =
 -- If both are zero, depend only on the first.
 binaryZero :: forall i o a'. IsZero i => (forall a. BinaryZero i o a) -> Val a'
 binaryZero op =
-   Fun $ flip Extern Nil
+   Fun $ flip Foreign Nil
       $ mkExists
-      $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) =
@@ -259,13 +259,21 @@ union _ g (Right x) (Right y) = as (g x y)
 union _ g (Right x) (Left y) = as (g x (as y))
 
 -- Helper to avoid some explicit type annotations when defining primitives.
-unionStr :: forall a b. As a a => As b String => (b -> b -> a) -> (String -> String -> a) -> b + String -> b + String -> a
+unionStr
+   :: forall a b
+    . As a a
+   => As b String
+   => (b -> b -> a)
+   -> (String -> String -> a)
+   -> b + String
+   -> b + String
+   -> a
 unionStr = union
 
-instance asIntIntOrNumber :: As Int (Int + Number) where
+instance asIntIntOrNumber :: As Int (Int + a) where
    as = Left
 
-instance asNumberIntOrNumber :: As Number (Int + Number) where
+instance asNumberIntOrNumber :: As Number (a + Number) where
    as = Right
 
 instance asIntNumber :: As Int Number where
@@ -274,9 +282,12 @@ instance asIntNumber :: As Int Number where
 instance asBooleanBoolean :: As Boolean Boolean where
    as = identity
 
-instance asIntOrNumberString :: As (Int + Number) String where
+instance asNumberString :: As Number String where
    as _ = error "Non-uniform argument types"
 
-instance asEither :: As (Int + Number) Number where
+instance asIntNumberOrString :: As Int (Number + a) where
+   as = toNumber >>> Left
+
+instance asIntorNumberNumber :: As (Int + Number) Number where
    as (Left n) = as n
    as (Right n) = n

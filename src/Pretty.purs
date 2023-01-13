@@ -23,7 +23,7 @@ import Text.Pretty (render) as P
 import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
 import Util.Pair (toTuple)
 import Val (Fun(..), Val(..)) as V
-import Val (class Highlightable, Fun, ExternOp', Val, highlightIf)
+import Val (class Highlightable, Fun, ForeignOp', Val, highlightIf)
 
 infixl 5 beside as :<>:
 
@@ -35,9 +35,6 @@ between l r doc = l :<>: doc :<>: r
 
 brackets :: Endo Doc
 brackets = between (text str.lBracket) (text str.rBracket)
-
-colon :: Doc
-colon = text str.colon
 
 comma :: Doc
 comma = text ","
@@ -111,16 +108,25 @@ prettyConstr α c (x : y : ys)
    | c == cCons = assert (null ys) $ parens (hspace [ pretty x, highlightIf α $ text ":", pretty y ])
 prettyConstr α c xs = hspace (highlightIf α (prettyCtr c) : (prettyParensOpt <$> xs))
 
-prettyRecordOrDict :: forall d b a. Pretty d => Highlightable a => Endo Doc -> (b -> Doc) -> a -> List (b × d) -> Doc
-prettyRecordOrDict bracify prettyKey α xvs =
-   xvs <#> first prettyKey <#> (\(x × v) -> hspace [ x :<>: colon, pretty v ])
+prettyRecordOrDict
+   :: forall d b a
+    . Pretty d
+   => Highlightable a
+   => Doc
+   -> Endo Doc
+   -> (b -> Doc)
+   -> a
+   -> List (b × d)
+   -> Doc
+prettyRecordOrDict sep bracify prettyKey α xvs =
+   xvs <#> first prettyKey <#> (\(x × v) -> hspace [ x :<>: sep, pretty v ])
       # hcomma >>> bracify >>> highlightIf α
 
 prettyDict :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
-prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict
+prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colonEq)
 
 prettyRecord :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
-prettyRecord = between (text "{") (text "}") # prettyRecordOrDict
+prettyRecord = between (text "{") (text "}") # prettyRecordOrDict (text str.colon)
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
@@ -178,10 +184,10 @@ instance Highlightable a => Pretty (Val a) where
 
 instance Highlightable a => Pretty (Fun a) where
    pretty (V.Closure _ _ _ _) = text "<closure>"
-   pretty (V.Extern φ _) = parens (runExists pretty φ)
+   pretty (V.Foreign φ _) = parens (runExists pretty φ)
    pretty (V.PartialConstr α c vs) = prettyConstr α c vs
 
-instance Pretty (ExternOp' t) where
+instance Pretty (ForeignOp' t) where
    pretty _ = text "<extern op>" -- TODO
 
 -- Surface language

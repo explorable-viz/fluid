@@ -110,46 +110,69 @@ test_linking =
 test_bwd :: Array (Test Unit)
 test_bwd =
    [ testBwd (File "add") (File "add.expect") (const $ Int true 8) "_8_"
-   , testBwd (File "array-lookup") (File "array-lookup.expect") (const $ Int true 14) "_14_"
-   , testBwd (File "array-dims") (File "array-dims.expect") topOf "_(_3_, _3_)_"
-   , testBwd (File "conv-edgeDetect") (File "conv-edgeDetect.expect")
+   -- TODO: array/array test seems to be missing
+   , testBwd (File "array/lookup") (File "array/lookup.expect") (const $ Int true 14) "_14_"
+   , testBwd (File "array/dims") (File "array/dims.expect") topOf "_(_3_, _3_)_"
+   , testBwd (File "convolution/edgeDetect") (File "convolution/edgeDetect.expect")
         (botOf >>> selectCell 1 1 topOf)
         "_0_, -1, 2, 0, -1,\n\
         \0, 3, -2, 3, -2,\n\
         \-1, 1, -5, 0, 4,\n\
         \1, -1, 4, 0, -4,\n\
         \1, 0, -3, 2, 0"
-   , testBwd (File "conv-emboss") (File "conv-emboss.expect")
+   , testBwd (File "convolution/emboss") (File "convolution/emboss.expect")
         (botOf >>> selectCell 1 1 topOf)
         "_5_, 4, 2, 5, 2,\n\
         \3, 1, 2, -1, -2,\n\
         \3, 0, 1, 0, -1,\n\
         \2, 1, -2, 0, 0,\n\
         \1, 0, -1, -1, -2"
-   , testBwd (File "conv-gaussian") (File "conv-gaussian.expect")
+   , testBwd (File "convolution/gaussian") (File "convolution/gaussian.expect")
         (botOf >>> selectCell 1 1 topOf)
         "_38_, 37, 28, 30, 38,\n\
         \38, 36, 46, 31, 34,\n\
         \37, 41, 54, 34, 20,\n\
         \21, 35, 31, 31, 42,\n\
         \13, 32, 35, 19, 26"
-   , testBwd (File "dict-create") (File "dict-create.expect")
+   , testBwd (File "dict/create") (File "dict/create.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              , "ab" ↦ (true × Int false 6)
              ]
         )
-        "{|\"a\": 5, _\"ab\"_: 6|}"
-   , testBwd (File "dict-difference") (File "dict-difference.expect")
+        "{|\"a\":= 5, _\"ab\"_:= 6|}"
+   , testBwd (File "dict/difference") (File "dict/difference.expect")
         ( const $ Dictionary true $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              ]
         )
-        "_{|\"a\": 5|}_"
-   , testBwd (File "dict-get") (File "dict-get.expect")
+        "_{|\"a\":= 5|}_"
+   , testBwd (File "dict/disjointUnion") (File "dict/disjointUnion.expect")
+        ( const $ Dictionary false $ fromFoldable
+             [ "a" ↦ (true × Int false 5)
+             , "b" ↦ (false × Int false 6)
+             , "c" ↦ (false × Int true 7)
+             ]
+        )
+        "{|_\"a\"_:= 5, \"b\":= 6, \"c\":= _7_|}"
+   , testBwd (File "dict/intersectionWith") (File "dict/intersectionWith.expect")
+        ( const $ Dictionary false $ fromFoldable
+             [ "b" ↦ (false × Int true 0)
+             , "c" ↦ (false × Int true 10)
+             ]
+        )
+        "{|\"b\":= _0_, \"c\":= _20_|}"
+   , testBwd (File "dict/fromRecord") (File "dict/fromRecord.expect")
+        ( const $ Dictionary false $ fromFoldable
+             [ "a" ↦ (false × Int false 5)
+             , "ab" ↦ (true × Int false 6)
+             ]
+        )
+        "_{|_\"a\"_:= 5, _\"ab\"_:= 6|}_"
+   , testBwd (File "dict/get") (File "dict/get.expect")
         (const $ Int true 0)
         "_0_"
-   , testBwd (File "dict-map") (File "dict-map.expect")
+   , testBwd (File "dict/map") (File "dict/map.expect")
         (const $ Int true 20)
         "_20_"
    , testBwd (File "divide") (File "divide.expect") topOf "_40.22222222222222_"
@@ -201,7 +224,7 @@ test_misc =
    [ test (File "arithmetic") "42"
    , test (File "array") "(1, (3, 3))"
    , test (File "compose") "5"
-   , test (File "dicts") "{d: {||}, e: {|\"a\": 5, \"ab\": 6|}, e_ab: 6, f: {|\"a\": 6, \"ab\": 7|}, g: {|\"a\": 5|}}"
+   , test (File "dicts") "{d: {||}, e: {|\"a\":= 5, \"ab\":= 6|}, e_ab: 6, f: {|\"a\":= 6, \"ab\":= 7|}, g: {|\"a\":= 5|}, h: {|\"fst\":= 4, \"snd\":= (6 : (7 : []))|}}"
    , test (File "div-mod-quot-rem")
         "((1 : (-1 : (-2 : (2 : [])))) : \
         \((2 : (2 : (1 : (1 : [])))) : \

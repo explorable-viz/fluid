@@ -10,28 +10,31 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (second)
-import Data.Traversable (traverse)
-import Data.Tuple (snd)
+import Data.Traversable (sequence, traverse)
+import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
-import Dict (Dict)
-import Dict (difference, empty, fromFoldable, intersectionWith, lookup, singleton, unzip) as D
-import Eval (apply)
-import EvalBwd (applyBwd)
+import Dict (Dict, (\\))
+import Dict (disjointUnion, empty, fromFoldable, intersectionWith, lookup, singleton, unzip) as D
+import Eval (apply, apply2)
+import EvalBwd (apply2Bwd, applyBwd)
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
-import Util (Endo, type (×), (×), type (+), error, orElse)
-import Val (Array2, Env, ExternOp, ExternOp'(..), Fun(..), OpBwd, OpFwd, Val(..), updateMatrix)
+import Util (type (+), type (×), Endo, MayFail, error, orElse, report, (×))
+import Val (Array2, Env, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), ForeignOp, updateMatrix)
+
+extern :: forall a. ForeignOp -> Val a
+extern = flip Foreign Nil >>> Fun
 
 primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Fun (PartialConstr bot cCons Nil)
    , "ceiling" × unary { i: number, o: int, fwd: ceil }
    , "debugLog" × unary { i: val, o: val, fwd: debugLog }
-   , "dims" × Fun (Extern dims Nil)
+   , "dims" × extern dims
    , "error" × unary { i: string, o: val, fwd: error_ }
    , "floor" × unary { i: number, o: int, fwd: floor }
    , "log" × unary { i: intOrNumber, o: number, fwd: log }
@@ -48,10 +51,13 @@ primitives = D.fromFoldable
    , "<=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: lessThanEquals }
    , ">=" × binary { i1: intOrNumberOrString, i2: intOrNumberOrString, o: boolean, fwd: greaterThanEquals }
    , "++" × binary { i1: string, i2: string, o: string, fwd: concat }
-   , "!" × Fun (Extern matrixLookup Nil)
-   , "dict_difference" × Fun (Extern dict_difference Nil)
-   , "dict_get" × Fun (Extern dict_get Nil)
-   , "dict_map" × Fun (Extern dict_map Nil)
+   , "!" × extern matrixLookup
+   , "dict_difference" × extern dict_difference
+   , "dict_disjointUnion" × extern dict_disjointUnion
+   , "dict_fromRecord" × extern dict_fromRecord
+   , "dict_get" × extern dict_get
+   , "dict_intersectionWith" × extern dict_intersectionWith
+   , "dict_map" × extern dict_map
    , "div" × binaryZero { i: int, o: int, fwd: div }
    , "mod" × binaryZero { i: int, o: int, fwd: mod }
    , "quot" × binaryZero { i: int, o: int, fwd: quot }
@@ -66,70 +72,120 @@ error_ = error
 
 type ArrayData a = Array2 (Val a)
 
-dims :: ExternOp
-dims = mkExists $ ExternOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dims :: ForeignOp
+dims = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd (Raw ArrayData)
+   fwd :: OpFwd (Raw ArrayData)
    fwd (Matrix α (vss × (i × β1) × (j × β2)) : Nil) =
       pure $ (map erase <$> vss) × Constr α cPair (Int β1 i : Int β2 j : Nil)
+   fwd _ = report "Matrix expected"
 
    bwd :: Partial => OpBwd (Raw ArrayData)
    bwd (vss × Constr α c (Int β1 i : Int β2 j : Nil)) | c == cPair =
       Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
 
-matrixLookup :: ExternOp
-matrixLookup = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+matrixLookup :: ForeignOp
+matrixLookup = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: bwd }
    where
-   fwd :: Partial => OpFwd (Raw ArrayData × (Int × Int) × (Int × Int))
+   fwd :: OpFwd (Raw ArrayData × (Int × Int) × (Int × Int))
    fwd (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = do
            v <- orElse "Index out of bounds" $ do
               us <- vss !! (i - 1)
               us !! (j - 1)
            pure $ ((map erase <$> vss) × (i' × j') × (i × j)) × v
+   fwd _ = report "Matrix and pair of integers expected"
 
-   bwd :: Partial => OpBwd (Raw ArrayData × (Int × Int) × (Int × Int))
+   bwd :: OpBwd (Raw ArrayData × (Int × Int) × (Int × Int))
    bwd ((vss × (i' × j') × (i × j)) × v) =
       Matrix bot (updateMatrix i j (const v) (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot)))
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : Nil
 
-dict_difference :: ExternOp
-dict_difference = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dict_difference :: ForeignOp
+dict_difference = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd Unit
+   fwd :: OpFwd Unit
    fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
-      pure $ unit × Dictionary (α1 ∧ α2) (D.difference d1 d2)
+      pure $ unit × Dictionary (α1 ∧ α2) (d1 \\ d2)
+   fwd _ = report "Dictionaries expected."
 
    bwd :: Partial => OpBwd Unit
    bwd (_ × Dictionary α d) =
       Dictionary α d : Dictionary α D.empty : Nil
 
-dict_get :: ExternOp
-dict_get = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dict_fromRecord :: ForeignOp
+dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd String
-   fwd (Str _ k : Dictionary _ d : Nil) = do
-      v <- snd <$> D.lookup k d # orElse ("Key \"" <> k <> "\" not found")
-      pure $ k × v
+   fwd :: OpFwd Unit
+   fwd (Record α xvs : Nil) =
+      pure $ unit × Dictionary α (xvs <#> (α × _))
+   fwd _ = report "Record expected."
+
+   bwd :: Partial => OpBwd Unit
+   bwd (_ × Dictionary α d) = Record (foldl (∨) α (d <#> fst)) (d <#> snd) : Nil
+
+dict_disjointUnion :: ForeignOp
+dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: OpFwd (Dict Unit × Dict Unit)
+   fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
+      pure $ ((const unit <$> d1) × (const unit <$> d2)) × Dictionary (α1 ∧ α2) (D.disjointUnion d1 d2)
+   fwd _ = report "Dictionaries expected"
+
+   bwd :: Partial => OpBwd (Dict Unit × Dict Unit)
+   bwd ((d1 × d2) × Dictionary α d) =
+      Dictionary α (d \\ d2) : Dictionary α (d \\ d1) : Nil
+
+dict_get :: ForeignOp
+dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: OpFwd String
+   fwd (Str _ k : Dictionary _ d : Nil) =
+      (k × _) <$> (snd <$> D.lookup k d # orElse ("Key \"" <> k <> "\" not found"))
+   fwd _ = report "String and dictionary expected"
 
    bwd :: Partial => OpBwd String
    bwd (k × v) =
       Str bot k : Dictionary bot (D.singleton k (bot × v)) : Nil
 
-dict_map :: ExternOp
-dict_map = mkExists $ ExternOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dict_intersectionWith :: ForeignOp
+dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd (Raw Fun × Dict AppTrace)
-   fwd (Fun φ : Dictionary α βvs : Nil) = do
-      ts × βus <- D.unzip <$> traverse (\(β × v) -> second (β × _) <$> apply φ v) βvs
-      pure $ erase φ × ts × Dictionary α βus
+   fwd :: OpFwd (Raw Val × Dict (AppTrace × AppTrace))
+   fwd (v : Dictionary α1 βus : Dictionary α2 βus' : Nil) = do
+      βttvs <-
+         sequence $
+            D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) βus βus'
+            :: MayFail (Dict (_ × (AppTrace × AppTrace) × Val _))
+      pure $ (erase v × (βttvs <#> snd >>> fst)) × Dictionary (α1 ∧ α2) (βttvs <#> second snd)
+   fwd _ = report "Function and two dictionaries expected"
 
-   bwd :: Partial => OpBwd (Raw Fun × Dict AppTrace)
-   bwd (φ × ts × Dictionary α βus) =
-      Fun (foldl (∨) (botOf φ) φs) : Dictionary α βvs : Nil
+   bwd :: Partial => OpBwd (Raw Val × Dict (AppTrace × AppTrace))
+   bwd ((v × tts) × Dictionary α βvs) =
+      ( foldl (∨) (botOf v) (βvuus <#> (snd >>> fst))
+           : Dictionary α (βvuus <#> (second (snd >>> fst)))
+           : Dictionary α (βvuus <#> (second (snd >>> snd)))
+           : Nil
+      )
       where
-      φs × βvs = D.unzip $ D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd u t) ts βus
+      βvuus =
+         D.intersectionWith (\ts (β × v') -> β × apply2Bwd (ts × v')) tts βvs
+            :: Dict (_ × Val _ × Val _ × Val _)
+
+dict_map :: ForeignOp
+dict_map = mkExists $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: Partial => OpFwd (Raw Val × Dict AppTrace)
+   fwd (v : Dictionary α βvs : Nil) = do
+      ts × βus <- D.unzip <$> traverse (\(β × u) -> second (β × _) <$> apply (v × u)) βvs
+      pure $ (erase v × ts) × Dictionary α βus
+
+   bwd :: Partial => OpBwd (Raw Val × Dict AppTrace)
+   bwd ((v × ts) × Dictionary α βus) =
+      (foldl (∨) (botOf v) us) : Dictionary α βvs : Nil
+      where
+      us × βvs = D.unzip $ D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd (t × u)) ts βus
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
@@ -161,22 +217,27 @@ rem :: Int -> Endo Int
 rem = I.rem
 
 equals :: Int + Number + String -> Int + Number + String -> Boolean
-equals = (==) `union` (==) `unionStr` (==)
+equals = (==) `union` ((==) `unionStr` (==))
+
+-- (Int + Number) + String -> (Int + Number) + String -> Boolean
+
+notEquals' :: Number + String -> Number + String -> Boolean
+notEquals' = (/=) `unionStr` (/=)
 
 notEquals :: Int + Number + String -> Int + Number + String -> Boolean
-notEquals = (/=) `union` (/=) `unionStr` (/=)
+notEquals = (/=) `union` ((/=) `unionStr` (/=))
 
 lessThan :: Int + Number + String -> Int + Number + String -> Boolean
-lessThan = (<) `union` (<) `unionStr` (<)
+lessThan = (<) `union` ((<) `unionStr` (<))
 
 greaterThan :: Int + Number + String -> Int + Number + String -> Boolean
-greaterThan = (>) `union` (>) `unionStr` (>)
+greaterThan = (>) `union` ((>) `unionStr` (>))
 
 lessThanEquals :: Int + Number + String -> Int + Number + String -> Boolean
-lessThanEquals = (<=) `union` (<=) `unionStr` (<=)
+lessThanEquals = (<=) `union` ((<=) `unionStr` (<=))
 
 greaterThanEquals :: Int + Number + String -> Int + Number + String -> Boolean
-greaterThanEquals = (>=) `union` (>=) `unionStr` (>=)
+greaterThanEquals = (>=) `union` ((>=) `unionStr` (>=))
 
 concat :: String -> Endo String
 concat = (<>)

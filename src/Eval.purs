@@ -22,11 +22,11 @@ import Lattice ((∧), erase, top)
 import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (AppTrace, ExternTrace, ExternTrace'(..), Match(..), Trace)
+import Trace (AppTrace, ForeignTrace, ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, ExternOp'(..), Fun, (<+>), Val, for, lookup', restrict)
+import Val (class Ann, Env, ForeignOp'(..), (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -69,24 +69,24 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-apply :: forall a. Ann a => Fun a -> Val a -> MayFail (AppTrace × Val a)
-apply (V.Closure β γ1 ρ σ) v = do
+apply :: forall a. Ann a => Val a × Val a -> MayFail (AppTrace × Val a)
+apply (V.Fun (V.Closure β γ1 ρ σ) × v) = do
    let γ2 = closeDefs γ1 ρ β
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
-apply (V.Extern φ vs) v = do
+apply (V.Fun (V.Foreign φ vs) × v) = do
    let vs' = vs <> singleton v
    let
-      apply' :: forall t. ExternOp' t -> MayFail (ExternTrace × Val _)
-      apply' (ExternOp' φ') = do
+      apply' :: forall t. ForeignOp' t -> MayFail (ForeignTrace × Val _)
+      apply' (ForeignOp' φ') = do
          t × v'' <- do
-            if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Extern φ vs')
+            if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Foreign φ vs')
             else first Just <$> φ'.op vs'
-         pure $ mkExists (ExternTrace' (ExternOp' φ') t) × v''
+         pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v''
    t × v'' <- runExists apply' φ
-   pure $ T.AppExtern (length vs + 1) t × v''
-apply (V.PartialConstr α c vs) v = do
+   pure $ T.AppForeign (length vs + 1) t × v''
+apply (V.Fun (V.PartialConstr α c vs) × v) = do
    let n = successful (arity c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    let
@@ -94,6 +94,13 @@ apply (V.PartialConstr α c vs) v = do
          if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> singleton v)
          else V.Constr α c (vs <> singleton v)
    pure $ T.AppConstr c × v'
+apply (_ × v) = report $ "Found " <> prettyP v <> ", expected function"
+
+apply2 :: forall a. Ann a => Val a × Val a × Val a -> MayFail ((AppTrace × AppTrace) × Val a)
+apply2 (u1 × v1 × v2) = do
+   t1 × u2 <- apply (u1 × v1)
+   t2 × v <- apply (u2 × v2)
+   pure $ (t1 × t2) × v
 
 eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
@@ -109,7 +116,7 @@ eval γ (Dictionary α ees) α' = do
    let
       ss × αs = (vs <#> \u -> string.match u) # unzip
       d = D.fromFoldable $ zip ss (zip αs us)
-   pure $ T.Dictionary (zip (zip ss ts) ts') (d <#> snd >>> erase) × V.Dictionary (α ∧ α') d
+   pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × V.Dictionary (α ∧ α') d
 eval γ (Constr α c es) α' = do
    checkArity c (length es)
    ts × vs <- traverse (flip (eval γ) α') es <#> unzip
@@ -140,11 +147,8 @@ eval γ (Project e x) α = do
 eval γ (App e e') α = do
    t × v <- eval γ e α
    t' × v' <- eval γ e' α
-   case v of
-      V.Fun φ -> do
-         t'' × v'' <- apply φ v'
-         pure $ T.App t t' t'' × v''
-      _ -> report $ "Found " <> prettyP v <> ", expected function"
+   t'' × v'' <- apply (v × v')
+   pure $ T.App t t' t'' × v''
 eval γ (Let (VarDef σ e) e') α = do
    t × v <- eval γ e α
    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
