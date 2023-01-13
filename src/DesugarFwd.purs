@@ -177,4 +177,4 @@ totaliseConstrFwd (c × κ) α =
       defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
       cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
    in
-      D.fromFoldable (c × κ : cκs)
+      D.fromFoldable ((c × κ) : cκs)
