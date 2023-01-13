@@ -56,6 +56,7 @@ primitives = D.fromFoldable
    , "dict_disjointUnion" × extern dict_disjointUnion
    , "dict_fromRecord" × extern dict_fromRecord
    , "dict_get" × extern dict_get
+   , "dict_intersectionWith" × extern dict_intersectionWith
    , "dict_map" × extern dict_map
    , "div" × binaryZero { i: int, o: int, fwd: div }
    , "mod" × binaryZero { i: int, o: int, fwd: mod }

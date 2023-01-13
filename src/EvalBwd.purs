@@ -101,10 +101,12 @@ applyBwd (T.AppConstr c × v) =
    { init: vs', last: v2 } = definitely' (unsnoc vs)
 
 apply2Bwd :: forall a. Ann a => AppTrace × AppTrace × Val a -> Val a × Val a × Val a
-apply2Bwd (t1 × t2 × v) = 
-   let u2 × v2 = applyBwd (t2 × v) 
-       u1 × v1 = applyBwd (t1 × u2)
-   in u1 × v1 × v2
+apply2Bwd (t1 × t2 × v) =
+   let
+      u2 × v2 = applyBwd (t2 × v)
+      u1 × v1 = applyBwd (t1 × u2)
+   in
+      u1 × v1 × v2
 
 evalBwd :: forall a. Ann a => Raw Env -> Raw Expr -> Val a -> Trace -> EvalBwdResult a
 evalBwd γ e v t =
