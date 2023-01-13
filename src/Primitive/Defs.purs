@@ -12,7 +12,6 @@ import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
-import Data.Tuple.Nested (get2)
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict, (\\))
@@ -24,7 +23,7 @@ import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
-import Util (type (+), type (×), Endo, error, orElse, report, (×))
+import Util (type (+), type (×), Endo, MayFail, error, orElse, report, (×))
 import Val (Array2, Env, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), ForeignOp, updateMatrix)
 
 extern :: forall a. ForeignOp -> Val a
@@ -155,18 +154,21 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsaf
    where
    fwd :: OpFwd (Raw Val × Dict (AppTrace × AppTrace))
    fwd (v : Dictionary α1 βus : Dictionary α2 βus' : Nil) = do
-      βttvs <- sequence $
-         D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) βus βus'
-      pure $ (erase v × (βttvs <#> get2)) × Dictionary (α1 ∧ α2) (βttvs <#> second snd)
+      βttvs <-
+         sequence $
+            D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) βus βus'
+            :: MayFail (Dict (_ × (AppTrace × AppTrace) × Val _))
+      pure $ (erase v × (βttvs <#> snd >>> fst)) × Dictionary (α1 ∧ α2) (βttvs <#> second snd)
    fwd _ = report "Function and two dictionaries expected"
 
    bwd :: Partial => OpBwd (Raw Val × Dict (AppTrace × AppTrace))
    bwd ((v × tts) × Dictionary α βvs) =
-      (foldl (∨) (botOf v) vs : Dictionary α βus : Dictionary α βus' : Nil)
+      ( foldl (∨) (botOf v) (βvuus <#> (snd >>> fst))
+           : Dictionary α (βvuus <#> (second (snd >>> fst)))
+           : Dictionary α (βvuus <#> (second (snd >>> snd)))
+           : Nil
+      )
       where
-      vs = βvuus <#> get2
-      βus = βvuus <#> second get2
-      βus' = βvuus <#> (second \(_ × _ × u) -> u)
       βvuus =
          D.intersectionWith (\ts (β × v') -> β × apply2Bwd (ts × v')) tts βvs
             :: Dict (_ × Val _ × Val _ × Val _)
