@@ -12,6 +12,7 @@ import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (second)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
+import Data.Tuple.Nested (get2)
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict, (\\))
@@ -156,19 +157,19 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsaf
    fwd (v : Dictionary α1 βus : Dictionary α2 βus' : Nil) = do
       βttvs <- sequence $
          D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) βus βus'
-      pure $ (erase v × (βttvs <#> snd >>> fst)) × Dictionary (α1 ∧ α2) (βttvs <#> second snd)
+      pure $ (erase v × (βttvs <#> get2)) × Dictionary (α1 ∧ α2) (βttvs <#> second snd)
    fwd _ = report "Function and two dictionaries expected"
 
    bwd :: Partial => OpBwd (Raw Val × Dict (AppTrace × AppTrace))
    bwd ((v × tts) × Dictionary α βvs) =
       (foldl (∨) (botOf v) vs : Dictionary α βus : Dictionary α βus' : Nil)
       where
-      vs = βvuus <#> (snd >>> \(u × _ × _) -> u)
-      βus = βvuus <#> (second \(_ × u × _) -> u)
+      vs = βvuus <#> get2
+      βus = βvuus <#> second get2
       βus' = βvuus <#> (second \(_ × _ × u) -> u)
       βvuus =
          D.intersectionWith (\ts (β × v') -> β × apply2Bwd (ts × v')) tts βvs
-            :: Dict (_ × (Val _ × Val _ × Val _))
+            :: Dict (_ × Val _ × Val _ × Val _)
 
 dict_map :: ForeignOp
 dict_map = mkExists $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }

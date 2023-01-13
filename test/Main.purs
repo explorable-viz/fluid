@@ -23,11 +23,7 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ testBwd (File "dict/intersectionWith") (File "dict/intersectionWith.expect")
-        ( const $ Dictionary false $ fromFoldable
-             [ "b" ↦ (false × Int true 18) ]
-        )
-        "{|\"b\": _18_|}"
+   [
    ]
 
 test_linking :: Array (Test Unit)
@@ -159,6 +155,11 @@ test_bwd =
              ]
         )
         "{|_\"a\"_:= 5, \"b\":= 6, \"c\":= _7_|}"
+   , testBwd (File "dict/intersectionWith") (File "dict/intersectionWith.expect")
+        ( const $ Dictionary false $ fromFoldable
+             [ "b" ↦ (false × Int true 18) ]
+        )
+        "{|\"b\":= _18_|}"
    , testBwd (File "dict/fromRecord") (File "dict/fromRecord.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (false × Int false 5)
