@@ -36,9 +36,6 @@ between l r doc = l :<>: doc :<>: r
 brackets :: Endo Doc
 brackets = between (text str.lBracket) (text str.rBracket)
 
-colon :: Doc
-colon = text str.colon
-
 comma :: Doc
 comma = text ","
 
@@ -113,7 +110,7 @@ prettyConstr α c xs = hspace (highlightIf α (prettyCtr c) : (prettyParensOpt <
 
 prettyRecordOrDict :: forall d b a. Pretty d => Highlightable a => Endo Doc -> (b -> Doc) -> a -> List (b × d) -> Doc
 prettyRecordOrDict bracify prettyKey α xvs =
-   xvs <#> first prettyKey <#> (\(x × v) -> hspace [ x :<>: colon, pretty v ])
+   xvs <#> first prettyKey <#> (\(x × v) -> hspace [ x :<>: text str.colon, pretty v ])
       # hcomma >>> bracify >>> highlightIf α
 
 prettyDict :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
