@@ -14,31 +14,16 @@ import Util ((×))
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
--- tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
 
-tests = [ test_scratchpad ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ testBwd (File "dict/disjointUnion") (File "dict/disjointUnion.expect")
-        ( const $ Dictionary false $ fromFoldable
-             [ "a" ↦ (true × Int false 5)
-             , "b" ↦ (false × Int false 6)
-             , "c" ↦ (false × Int true 7)
-             ]
-        )
-        "{|_\"a\"_: 5, \"b\": 6, \"c\": _7_|}"
-   , testBwd (File "dict/fromRecord") (File "dict/fromRecord.expect")
-        ( const $ Dictionary false $ fromFoldable
-             [ "a" ↦ (false × Int false 5)
-             , "ab" ↦ (true × Int false 6)
-             ]
-        )
-        "_{|_\"a\"_: 5, _\"ab\"_: 6|}_"
-   ]
+   [ ]
 
 test_linking :: Array (Test Unit)
 test_linking =
@@ -161,6 +146,21 @@ test_bwd =
              ]
         )
         "_{|\"a\": 5|}_"
+   , testBwd (File "dict/disjointUnion") (File "dict/disjointUnion.expect")
+        ( const $ Dictionary false $ fromFoldable
+             [ "a" ↦ (true × Int false 5)
+             , "b" ↦ (false × Int false 6)
+             , "c" ↦ (false × Int true 7)
+             ]
+        )
+        "{|_\"a\"_: 5, \"b\": 6, \"c\": _7_|}"
+   , testBwd (File "dict/fromRecord") (File "dict/fromRecord.expect")
+        ( const $ Dictionary false $ fromFoldable
+             [ "a" ↦ (false × Int false 5)
+             , "ab" ↦ (true × Int false 6)
+             ]
+        )
+        "_{|_\"a\"_: 5, _\"ab\"_: 6|}_"
    , testBwd (File "dict/get") (File "dict/get.expect")
         (const $ Int true 0)
         "_0_"

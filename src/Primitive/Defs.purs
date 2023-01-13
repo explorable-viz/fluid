@@ -10,20 +10,20 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (second)
-import Data.Traversable (traverse)
+import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict, (\\))
 import Dict (disjointUnion, empty, fromFoldable, intersectionWith, lookup, singleton, unzip) as D
-import Eval (apply)
+import Eval (apply, apply2)
 import EvalBwd (applyBwd)
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
-import Util (type (+), type (×), Endo, error, orElse, report, (×))
+import Util (MayFail, type (+), type (×), Endo, error, orElse, report, (×))
 import Val (Array2, Env, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), ForeignOp, updateMatrix)
 
 extern :: forall a. ForeignOp -> Val a
@@ -151,29 +151,29 @@ dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd 
 dict_intersectionWith :: ForeignOp
 dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: OpFwd Unit
-   fwd (Fun φ : Dictionary α1 βus : Dictionary α2 βus' : Nil) = 
-      pure $ unit × Dictionary (α1 ∧ α2) (error "TODO")
-      where
-      _ = D.intersectionWith (\(β × _) (β' × _) -> β ∧ β' × apply (φ × error "TODO")) βus βus'
+   fwd :: OpFwd (Dict (AppTrace × AppTrace))
+   fwd (v : Dictionary α1 βus : Dictionary α2 βus' : Nil) = do
+      βttvs <- sequence $ 
+         D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) βus βus'
+      pure $ (βttvs <#> snd >>> fst) × Dictionary (α1 ∧ α2) (βttvs <#> second snd)
    fwd _ = report "Function and two dictionaries expected"
 
-   bwd :: OpBwd Unit
+   bwd :: OpBwd (Dict (AppTrace × AppTrace))
    bwd = error "TODO"
 
 dict_map :: ForeignOp
 dict_map = mkExists $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd (Raw Fun × Dict AppTrace)
-   fwd (Fun φ : Dictionary α βvs : Nil) = do
-      ts × βus <- D.unzip <$> traverse (\(β × v) -> second (β × _) <$> apply (φ × v)) βvs
-      pure $ erase φ × ts × Dictionary α βus
+   fwd :: Partial => OpFwd (Raw Val × Dict AppTrace)
+   fwd (v : Dictionary α βvs : Nil) = do
+      ts × βus <- D.unzip <$> traverse (\(β × u) -> second (β × _) <$> apply (v × u)) βvs
+      pure $ erase v × ts × Dictionary α βus
 
-   bwd :: Partial => OpBwd (Raw Fun × Dict AppTrace)
-   bwd (φ × ts × Dictionary α βus) =
-      Fun (foldl (∨) (botOf φ) φs) : Dictionary α βvs : Nil
+   bwd :: Partial => OpBwd (Raw Val × Dict AppTrace)
+   bwd (v × ts × Dictionary α βus) =
+      (foldl (∨) (botOf v) us) : Dictionary α βvs : Nil
       where
-      φs × βvs = D.unzip $ D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd u t) ts βus
+      us × βvs = D.unzip $ D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd (t × u)) ts βus
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)

@@ -26,7 +26,7 @@ import Trace (AppTrace, ForeignTrace, ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, ForeignOp'(..), Fun, (<+>), Val, for, lookup', restrict)
+import Val (class Ann, Env, ForeignOp'(..), (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -69,13 +69,13 @@ checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-apply :: forall a. Ann a => Fun a × Val a -> MayFail (AppTrace × Val a)
-apply (V.Closure β γ1 ρ σ × v) = do
+apply :: forall a. Ann a => Val a × Val a -> MayFail (AppTrace × Val a)
+apply (V.Fun (V.Closure β γ1 ρ σ) × v) = do
    let γ2 = closeDefs γ1 ρ β
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
-apply (V.Foreign φ vs × v) = do
+apply (V.Fun (V.Foreign φ vs) × v) = do
    let vs' = vs <> singleton v
    let
       apply' :: forall t. ForeignOp' t -> MayFail (ForeignTrace × Val _)
@@ -86,7 +86,7 @@ apply (V.Foreign φ vs × v) = do
          pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v''
    t × v'' <- runExists apply' φ
    pure $ T.AppForeign (length vs + 1) t × v''
-apply (V.PartialConstr α c vs × v) = do
+apply (V.Fun (V.PartialConstr α c vs) × v) = do
    let n = successful (arity c)
    check (length vs < n) ("Too many arguments to " <> showCtr c)
    let
@@ -94,6 +94,13 @@ apply (V.PartialConstr α c vs × v) = do
          if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> singleton v)
          else V.Constr α c (vs <> singleton v)
    pure $ T.AppConstr c × v'
+apply (_ × v) = report $ "Found " <> prettyP v <> ", expected function"
+
+apply2 :: forall a. Ann a => Val a × Val a × Val a -> MayFail (AppTrace × AppTrace × Val a)
+apply2 (u1 × v1 × v2) = do
+   t1 × u2 <- apply (u1 × v1)
+   t2 × v <- apply (u2 × v2)
+   pure $ t1 × t2 × v
 
 eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
@@ -140,11 +147,8 @@ eval γ (Project e x) α = do
 eval γ (App e e') α = do
    t × v <- eval γ e α
    t' × v' <- eval γ e' α
-   case v of
-      V.Fun φ -> do
-         t'' × v'' <- apply (φ × v')
-         pure $ T.App t t' t'' × v''
-      _ -> report $ "Found " <> prettyP v <> ", expected function"
+   t'' × v'' <- apply (v × v')
+   pure $ T.App t t' t'' × v''
 eval γ (Let (VarDef σ e) e') α = do
    t × v <- eval γ e α
    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
