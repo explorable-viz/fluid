@@ -214,22 +214,27 @@ rem :: Int -> Endo Int
 rem = I.rem
 
 equals :: Int + Number + String -> Int + Number + String -> Boolean
-equals = (==) `union` (==) `unionStr` (==)
+equals = (==) `union` ((==) `unionStr` (==))
+
+-- (Int + Number) + String -> (Int + Number) + String -> Boolean
+
+notEquals' :: Number + String -> Number + String -> Boolean
+notEquals' = (/=) `unionStr` (/=)
 
 notEquals :: Int + Number + String -> Int + Number + String -> Boolean
-notEquals = (/=) `union` (/=) `unionStr` (/=)
+notEquals = (/=) `union` ((/=) `unionStr` (/=))
 
 lessThan :: Int + Number + String -> Int + Number + String -> Boolean
-lessThan = (<) `union` (<) `unionStr` (<)
+lessThan = (<) `union` ((<) `unionStr` (<))
 
 greaterThan :: Int + Number + String -> Int + Number + String -> Boolean
-greaterThan = (>) `union` (>) `unionStr` (>)
+greaterThan = (>) `union` ((>) `unionStr` (>))
 
 lessThanEquals :: Int + Number + String -> Int + Number + String -> Boolean
-lessThanEquals = (<=) `union` (<=) `unionStr` (<=)
+lessThanEquals = (<=) `union` ((<=) `unionStr` (<=))
 
 greaterThanEquals :: Int + Number + String -> Int + Number + String -> Boolean
-greaterThanEquals = (>=) `union` (>=) `unionStr` (>=)
+greaterThanEquals = (>=) `union` ((>=) `unionStr` (>=))
 
 concat :: String -> Endo String
 concat = (<>)

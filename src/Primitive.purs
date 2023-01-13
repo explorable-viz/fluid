@@ -83,17 +83,17 @@ intOrNumber =
 intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
    { constr: case _ of
-        Left (Left n) × α -> Int α n
-        Left (Right n) × α -> Float α n
-        Right str × α -> Str α str
+        Left n × α -> Int α n
+        Right (Left n) × α -> Float α n
+        Right (Right str) × α -> Str α str
    , constr_bwd: match'
    , match: match'
    }
    where
    match' :: Ann a => Val a -> (Int + Number + String) × a
-   match' (Int α n) = Left (Left n) × α
-   match' (Float α n) = Left (Right n) × α
-   match' (Str α str) = Right str × α
+   match' (Int α n) = Left n × α
+   match' (Float α n) = Right (Left n) × α
+   match' (Str α str) = Right (Right str) × α
    match' v = error ("Int, Float or Str expected; got " <> prettyP v)
 
 intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
@@ -259,7 +259,9 @@ union _ g (Right x) (Right y) = as (g x y)
 union _ g (Right x) (Left y) = as (g x (as y))
 
 -- Helper to avoid some explicit type annotations when defining primitives.
-unionStr :: forall a b. As a a => As b String => (b -> b -> a) -> (String -> String -> a) -> b + String -> b + String -> a
+unionStr
+   :: forall a b. As a a
+   => As b String => (b -> b -> a) -> (String -> String -> a) -> b + String -> b + String -> a
 unionStr = union
 
 instance asIntIntOrNumber :: As Int (Int + Number) where
@@ -274,8 +276,14 @@ instance asIntNumber :: As Int Number where
 instance asBooleanBoolean :: As Boolean Boolean where
    as = identity
 
+instance asNumberString :: As Number String where
+   as _ = error "Non-uniform argument types"
+
 instance asIntOrNumberString :: As (Int + Number) String where
    as _ = error "Non-uniform argument types"
+
+instance asIntNumberOrString :: As Int (Number + String) where
+   as = toNumber >>> Left
 
 instance asEither :: As (Int + Number) Number where
    as (Left n) = as n
