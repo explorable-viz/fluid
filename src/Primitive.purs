@@ -264,10 +264,10 @@ unionStr
    => As b String => (b -> b -> a) -> (String -> String -> a) -> b + String -> b + String -> a
 unionStr = union
 
-instance asIntIntOrNumber :: As Int (Int + Number) where
+instance asIntIntOrNumber :: As Int (Int + a) where
    as = Left
 
-instance asNumberIntOrNumber :: As Number (Int + Number) where
+instance asNumberIntOrNumber :: As Number (a + Number) where
    as = Right
 
 instance asIntNumber :: As Int Number where
@@ -279,9 +279,9 @@ instance asBooleanBoolean :: As Boolean Boolean where
 instance asNumberString :: As Number String where
    as _ = error "Non-uniform argument types"
 
-instance asIntNumberOrString :: As Int (Number + String) where
+instance asIntNumberOrString :: As Int (Number + a) where
    as = toNumber >>> Left
 
-instance asEither :: As (Int + Number) Number where
+instance asIntorNumberNumber :: As (Int + Number) Number where
    as (Left n) = as n
    as (Right n) = n
