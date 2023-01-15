@@ -4,12 +4,12 @@ import Prelude hiding (absurd, apply, div, mod, top)
 
 import Data.Array ((!!))
 import Data.Exists (mkExists)
-import Data.Foldable (foldl)
+import Data.Foldable (foldl, foldM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
-import Data.Profunctor.Strong (second)
+import Data.Profunctor.Strong (first, second)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
@@ -24,7 +24,7 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, MayFail, error, orElse, report, (×))
-import Val (Array2, Env, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), ForeignOp, updateMatrix)
+import Val (Array2, Env, ForeignOp, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), updateMatrix)
 
 extern :: forall a. ForeignOp -> Val a
 extern = flip Foreign Nil >>> Fun
@@ -136,6 +136,18 @@ dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePa
    bwd :: Partial => OpBwd (Dict Unit × Dict Unit)
    bwd ((d1 × d2) × Dictionary α d) =
       Dictionary α (d \\ d2) : Dictionary α (d \\ d1) : Nil
+
+dict_foldl :: ForeignOp
+dict_foldl = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: OpFwd (List (AppTrace × AppTrace))
+   fwd (v : u : Dictionary _ βvs : Nil) =
+      foldM (\(ts × u') (_ × v') -> apply2 (v × u' × v') <#> first (_ : ts)) (Nil × u) βvs 
+      :: MayFail (List (AppTrace × AppTrace) × Val _)
+   fwd _ = report "Function, value and dictionary expected"
+
+   bwd :: Partial => OpBwd (List (AppTrace × AppTrace))
+   bwd = error "TODO"
 
 dict_get :: ForeignOp
 dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
