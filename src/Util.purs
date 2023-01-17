@@ -137,3 +137,10 @@ unzip = map fst &&& map snd
 
 both :: forall a b. (a -> b) -> a × a -> b × b
 both f = f *** f
+
+-- Couldn't find these in standard library
+assoc1 :: forall a b c. (a × b) × c -> a × (b × c)
+assoc1 ((a × b) × c) = a × (b × c)
+
+assoc2 :: forall a b c. a × (b × c) -> (a × b) × c
+assoc2 (a × (b × c)) = (a × b) × c

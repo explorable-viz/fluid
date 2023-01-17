@@ -5,17 +5,18 @@ import Prelude hiding (absurd, apply, div, mod, top)
 import Data.Array ((!!))
 import Data.Exists (mkExists)
 import Data.Foldable (foldl)
+import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
-import Data.Profunctor.Strong (second)
+import Data.Profunctor.Strong (first, second)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict, (\\))
-import Dict (disjointUnion, empty, fromFoldable, intersectionWith, lookup, singleton, unzip) as D
+import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, lookup, singleton, unzip) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
@@ -24,7 +25,7 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, MayFail, error, orElse, report, (×))
-import Val (Array2, Env, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), ForeignOp, updateMatrix)
+import Val (Array2, Env, ForeignOp, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), updateMatrix)
 
 extern :: forall a. ForeignOp -> Val a
 extern = flip Foreign Nil >>> Fun
@@ -54,6 +55,7 @@ primitives = D.fromFoldable
    , "!" × extern matrixLookup
    , "dict_difference" × extern dict_difference
    , "dict_disjointUnion" × extern dict_disjointUnion
+   , "dict_foldl" × extern dict_foldl
    , "dict_fromRecord" × extern dict_fromRecord
    , "dict_get" × extern dict_get
    , "dict_intersectionWith" × extern dict_intersectionWith
@@ -106,13 +108,13 @@ dict_difference :: ForeignOp
 dict_difference = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd Unit
-   fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
-      pure $ unit × Dictionary (α1 ∧ α2) (d1 \\ d2)
+   fwd (Dictionary α1 βvs1 : Dictionary α2 βvs2 : Nil) =
+      pure $ unit × Dictionary (α1 ∧ α2) (βvs1 \\ βvs2)
    fwd _ = report "Dictionaries expected."
 
    bwd :: Partial => OpBwd Unit
-   bwd (_ × Dictionary α d) =
-      Dictionary α d : Dictionary α D.empty : Nil
+   bwd (_ × Dictionary α βvs) =
+      Dictionary α βvs : Dictionary α D.empty : Nil
 
 dict_fromRecord :: ForeignOp
 dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
@@ -129,20 +131,44 @@ dict_disjointUnion :: ForeignOp
 dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd (Dict Unit × Dict Unit)
-   fwd (Dictionary α1 d1 : Dictionary α2 d2 : Nil) =
-      pure $ ((const unit <$> d1) × (const unit <$> d2)) × Dictionary (α1 ∧ α2) (D.disjointUnion d1 d2)
+   fwd (Dictionary α1 βvs1 : Dictionary α2 βvs2 : Nil) =
+      pure $ ((const unit <$> βvs1) × (const unit <$> βvs2)) × Dictionary (α1 ∧ α2) (D.disjointUnion βvs1 βvs2)
    fwd _ = report "Dictionaries expected"
 
    bwd :: Partial => OpBwd (Dict Unit × Dict Unit)
-   bwd ((d1 × d2) × Dictionary α d) =
-      Dictionary α (d \\ d2) : Dictionary α (d \\ d1) : Nil
+   bwd ((βvs1 × βvs2) × Dictionary α βvs) =
+      Dictionary α (βvs \\ βvs2) : Dictionary α (βvs \\ βvs1) : Nil
+
+dict_foldl :: ForeignOp
+dict_foldl = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bwd }
+   where
+   fwd :: OpFwd (Raw Val × List (String × AppTrace × AppTrace))
+   fwd (v : u : Dictionary _ βvs : Nil) = do
+      tss × u' <-
+         foldWithIndexM
+            (\k (tss × u1) (_ × u2) -> apply2 (v × u1 × u2) <#> first (\ts -> (k × ts) : tss))
+            (Nil × u)
+            βvs
+            :: MayFail (List (String × AppTrace × AppTrace) × Val _)
+      pure $ (erase v × tss) × u'
+   fwd _ = report "Function, value and dictionary expected"
+
+   bwd :: Partial => OpBwd (Raw Val × List (String × AppTrace × AppTrace))
+   bwd ((v × tss) × u) = v' : u' : Dictionary bot βvs : Nil
+      where
+      v' × u' × βvs = foldl
+         ( \(v1 × u' × βvs) (k × ts) ->
+              let v2 × u1 × u2 = apply2Bwd (ts × u') in (v1 ∨ v2) × u1 × D.insert k (bot × u2) βvs
+         )
+         (botOf v × u × D.empty)
+         tss
 
 dict_get :: ForeignOp
 dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd String
-   fwd (Str _ k : Dictionary _ d : Nil) =
-      (k × _) <$> (snd <$> D.lookup k d # orElse ("Key \"" <> k <> "\" not found"))
+   fwd (Str _ k : Dictionary _ αvs : Nil) =
+      (k × _) <$> (snd <$> D.lookup k αvs # orElse ("Key \"" <> k <> "\" not found"))
    fwd _ = report "String and dictionary expected"
 
    bwd :: Partial => OpBwd String
