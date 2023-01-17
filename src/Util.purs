@@ -142,5 +142,5 @@ both f = f *** f
 assoc1 :: forall a b c. (a × b) × c -> a × (b × c)
 assoc1 ((a × b) × c) = a × (b × c)
 
-assoc2 :: forall a b c. a × (b × c) -> (a × b) × c 
-assoc2 (a × (b × c)) = (a × b) × c 
+assoc2 :: forall a b c. a × (b × c) -> (a × b) × c
+assoc2 (a × (b × c)) = (a × b) × c
