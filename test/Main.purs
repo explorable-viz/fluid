@@ -24,7 +24,7 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ 
+   [
    ]
 
 test_linking :: Array (Test Unit)
