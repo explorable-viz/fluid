@@ -153,9 +153,9 @@ dict_foldl = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bw
    fwd _ = report "Function, value and dictionary expected"
 
    bwd :: Partial => OpBwd (Raw Val × Dict (AppTrace × AppTrace))
-   bwd ((v × tss) × u) = v' : Dictionary bot βvs : Nil
+   bwd ((v × tss) × u) = v' : u' : Dictionary bot βvs : Nil
       where
-      v' × _ × βvs = foldlWithIndex
+      v' × u' × βvs = foldlWithIndex
          ( \k (v1 × u' × βvs) ts ->
               let v2 × u1 × u2 = apply2Bwd (ts × u') in (v1 ∨ v2) × u1 × D.insert k (bot × u2) βvs
          )
