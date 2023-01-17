@@ -55,6 +55,7 @@ primitives = D.fromFoldable
    , "!" × extern matrixLookup
    , "dict_difference" × extern dict_difference
    , "dict_disjointUnion" × extern dict_disjointUnion
+   , "dict_foldl" × extern dict_foldl
    , "dict_fromRecord" × extern dict_fromRecord
    , "dict_get" × extern dict_get
    , "dict_intersectionWith" × extern dict_intersectionWith

@@ -95,8 +95,8 @@ applyBwd (T.AppConstr c × v) =
    V.Fun (V.PartialConstr β c vs') × v2
    where
    vs × β = case v of
-      V.Constr β _ vs -> vs × β
-      V.Fun (V.PartialConstr β _ vs) -> vs × β
+      V.Constr β c' vs | c' == c -> vs × β
+      V.Fun (V.PartialConstr β c' vs) | c' == c -> vs × β
       _ -> error absurd
    { init: vs', last: v2 } = definitely' (unsnoc vs)
 

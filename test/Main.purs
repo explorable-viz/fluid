@@ -14,16 +14,18 @@ import Util ((×))
 import Val (Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+--tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
 
---tests = [ test_scratchpad ]
+tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [
+   [ testBwd (File "dict/foldl") (File "dict/foldl.expect")
+        (selectNth 1 botOf)
+        "[5, 6, 9, 10, 3, 4]"
    ]
 
 test_linking :: Array (Test Unit)

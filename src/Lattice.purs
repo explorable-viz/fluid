@@ -106,7 +106,7 @@ instance JoinSemilattice a => JoinSemilattice (List a) where
    join xs = definedJoin xs
    maybeJoin xs ys
       | (length xs :: Int) == length ys = sequence (zipWith maybeJoin xs ys)
-      | otherwise = report "Mismatched lengths"
+      | otherwise = report "Mismatched list lengths"
    neg = (<$>) neg
 
 instance JoinSemilattice a => JoinSemilattice (Dict a) where
@@ -124,7 +124,7 @@ instance JoinSemilattice a => JoinSemilattice (Array a) where
    join xs = definedJoin xs
    maybeJoin xs ys
       | length xs == (length ys :: Int) = sequence (A.zipWith maybeJoin xs ys)
-      | otherwise = report "Mismatched lengths"
+      | otherwise = report "Mismatched array lengths"
    neg = (<$>) neg
 
 -- To express as Expandable (t :: Type -> Type) requires functor composition..
