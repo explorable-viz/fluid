@@ -1,12 +1,13 @@
 module Test.Main where
 
 import Prelude
+
+import App.Util (selectBarChart_data, selectCell, selectNth, selectNthNode, selectPair, selectSome, select_y)
+import Bindings ((↦))
 import Data.Array (concat)
 import Data.Traversable (sequence)
-import Effect (Effect)
-import App.Util (selectBarChart_data, selectCell, selectNth, selectNthNode, selectPair, select_y, selectSome)
-import Bindings ((↦))
 import Dict (fromFoldable)
+import Effect (Effect)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
@@ -23,7 +24,9 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ test (File "dict_foldl") "(5 : (6 : (9 : (10 : (3 : (4 : []))))))"
+   [ testBwd (File "dict/foldl") (File "dict/foldl.expect")
+        (selectNth 1 botOf)
+        "(5 : (6 : (9 : (10 : (3 : (4 : []))))))"
    ]
 
 test_linking :: Array (Test Unit)
