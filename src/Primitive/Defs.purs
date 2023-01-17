@@ -5,7 +5,7 @@ import Prelude hiding (absurd, apply, div, mod, top)
 import Data.Array ((!!))
 import Data.Exists (mkExists)
 import Data.Foldable (foldl)
-import Data.FoldableWithIndex (foldWithIndexM, foldlWithIndex)
+import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
@@ -142,22 +142,22 @@ dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePa
 dict_foldl :: ForeignOp
 dict_foldl = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: OpFwd (Raw Val × Dict (AppTrace × AppTrace))
+   fwd :: OpFwd (Raw Val × List (String × AppTrace × AppTrace))
    fwd (v : u : Dictionary _ βvs : Nil) = do
       tss × u' <-
          foldWithIndexM
-            (\k (tss × u1) (_ × u2) -> apply2 (v × u1 × u2) <#> first (flip (D.insert k) tss))
-            (D.empty × u)
+            (\k (tss × u1) (_ × u2) -> apply2 (v × u1 × u2) <#> first (\ts -> (k × ts) : tss))
+            (Nil × u)
             βvs
-            :: MayFail (Dict (AppTrace × AppTrace) × Val _)
+            :: MayFail (List (String × AppTrace × AppTrace) × Val _)
       pure $ (erase v × tss) × u'
    fwd _ = report "Function, value and dictionary expected"
 
-   bwd :: Partial => OpBwd (Raw Val × Dict (AppTrace × AppTrace))
+   bwd :: Partial => OpBwd (Raw Val × List (String × AppTrace × AppTrace))
    bwd ((v × tss) × u) = v' : u' : Dictionary bot βvs : Nil
       where
-      v' × u' × βvs = foldlWithIndex
-         ( \k (v1 × u' × βvs) ts ->
+      v' × u' × βvs = foldl
+         ( \(v1 × u' × βvs) (k × ts) ->
               let v2 × u1 × u2 = apply2Bwd (ts × u') in (v1 ∨ v2) × u1 × D.insert k (bot × u2) βvs
          )
          (botOf v × u × D.empty)
