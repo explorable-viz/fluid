@@ -1,0 +1,4 @@
+let conc Nil ys = ys;
+    conc (x : xs) ys = (:) x (concat2 xs ys)
+in
+dict_foldl conc [] {| "a" := [5, 6], "b" := [9, 10], "c" := [3, 4] |}
