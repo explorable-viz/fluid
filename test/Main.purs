@@ -25,8 +25,8 @@ main = void (sequence (run <$> concat tests))
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
    [ testBwd (File "dict/foldl") (File "dict/foldl.expect")
-        (selectNth 1 botOf)
-        "(5 : (6 : (9 : (10 : (3 : (4 : []))))))"
+        (selectNth 1 topOf)
+        "(5 : (_6_ : (9 : (10 : (3 : (4 : []))))))"
    ]
 
 test_linking :: Array (Test Unit)
