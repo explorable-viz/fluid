@@ -4,6 +4,8 @@
 
 | When | Activity | Issue(s) |
 | --- | --- | --- |
+| 18 Jan 23 | Release [v0.6.0](https://github.com/explorable-viz/fluid/releases/tag/v0.6.0) |  |
+| 17 Jan 23 | Dictionary operations as foreign functions | [570](https://github.com/explorable-viz/fluid/issues/570) |
 | 9 Jan 23 | Support for higher-order foreign functions | [552](https://github.com/explorable-viz/fluid/issues/552), [554](https://github.com/explorable-viz/fluid/issues/554) |
 | 23 Dec 22 | Parser now builds unannotated (raw) terms | [532](https://github.com/explorable-viz/fluid/issues/532) |
 | 19 Dec 22 | Parameterise dependency analyses on type of annotations | [557](https://github.com/explorable-viz/fluid/issues/557) |
