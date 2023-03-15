@@ -1,9 +1,10 @@
-module Expr where
+module Expr2 where
 
 import Prelude hiding (absurd, top)
 
 import Bindings (Var)
 import Control.Apply (lift2)
+import Data.Exists (Exists)
 import Data.List (List)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
@@ -11,8 +12,30 @@ import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Unsafe.Coerce (unsafeCoerce)
 import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
+
+
+type Sugar'' s a = { sexp :: s a }
+data Sugar' a
+
+class Desugarable s a where
+    desug :: s a -> Expr a
+
+mkSugar' :: forall a s. Sugar'' s a -> Sugar' a
+mkSugar' = unsafeCoerce
+
+runSugar' :: forall a r. (forall s. Functor s => Desugarable s a => Sugar'' s a -> r) -> Sugar' a -> r
+runSugar' = unsafeCoerce
+
+instance Functor Sugar' where 
+    map :: forall a b. (a -> b) -> Sugar' a -> Sugar' b
+    map f = runSugar' (\sugared -> mkSugar' { sexp: map f (sugared.sexp) }) 
+
+
+instance Desugarable Sugar' a where
+  desug _ = error "todo"
 
 data Expr a
    = Var Var
@@ -29,6 +52,7 @@ data Expr a
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
+   | Sugar (Sugar' a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -59,7 +83,6 @@ data Module a = Module (List (VarDef a + RecDefs a))
 class FV a where
    fv :: a -> Set Var
 
-
 instance FV (Expr a) where
    fv (Var x) = singleton x
    fv (Op op) = singleton op
@@ -75,6 +98,9 @@ instance FV (Expr a) where
    fv (App e1 e2) = fv e1 `union` fv e2
    fv (Let def e) = fv def `union` (fv e `difference` bv def)
    fv (LetRec ρ e) = unions (fv <$> ρ) `union` fv e
+   fv (Sugar s) = 
+    let desugged = desug s :: Expr a in
+        fv desugged
 
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ `difference` singleton x
