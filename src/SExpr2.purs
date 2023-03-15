@@ -8,9 +8,8 @@ import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
 import DataType (Ctr)
 import Expr2 (class Desugarable, Expr)
-import Lattice (class JoinSemilattice, definedJoin, neg)
+import Lattice2 (class JoinSemilattice, definedJoin, neg)
 import Util (type (×), (×), type (+), error, unimplemented)
-import Util.Pair (Pair)
 
 
 instance Desugarable SExpr a where
@@ -18,19 +17,7 @@ instance Desugarable SExpr a where
 
 -- Surface language expressions.
 data SExpr a
-   = Var Var
-   | Op Var
-   | Int a Int
-   | Float a Number
-   | Str a String
-   | Constr a Ctr (List (Expr a))
-   | Record a (List (Bind (Expr a)))
-   | Dictionary a (List (Pair (Expr a)))
-   | Matrix a (Expr a) (Var × Var) (Expr a)
-   | Lambda (NonEmptyList (Branch a))
-   | Project (Expr a) Var
-   | App (Expr a) (Expr a)
-   | BinaryApp (Expr a) Var (Expr a)
+   = BinaryApp (Expr a) Var (Expr a)
    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
    | IfElse (Expr a) (Expr a) (Expr a)
    | ListEmpty a -- called [] in the paper

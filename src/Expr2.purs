@@ -4,14 +4,13 @@ import Prelude hiding (absurd, top)
 
 import Bindings (Var)
 import Control.Apply (lift2)
-import Data.Exists (Exists)
 import Data.List (List)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
-import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice2 (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
@@ -19,6 +18,7 @@ import Util.Pair (Pair, toTuple)
 
 type Sugar'' s a = { sexp :: s a }
 data Sugar' a
+
 
 class Desugarable s a where
     desug :: s a -> Expr a
