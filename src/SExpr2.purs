@@ -11,7 +11,7 @@ import Data.NonEmpty ((:|))
 import Data.Traversable (traverse)
 import DataType (Ctr, cFalse, cNil, cTrue, cCons)
 import Dict as D
-import Expr2 (Expr(..)) as E
+import Expr2 (Expr(..), VarDef(..)) as E
 import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, desug, mkSugar)
 import Lattice2 (class JoinSemilattice, definedJoin, join, maybeJoin, neg)
 import Util (type (×), (×), type (+), error, unimplemented)
@@ -22,22 +22,29 @@ scons ann head rest = E.Constr ann cCons (head : rest : Nil)
 instance JoinSemilattice a => Desugarable SExpr a where
     desug (BinaryApp l op r)           = E.App (E.App (E.Op op) l) r 
     desug (MatchAs guard patterns)     = E.App (E.Lambda (clauses patterns)) guard 
-
     desug (IfElse guard trueP falseP)  = E.App (E.Lambda (elimBool (ContExpr trueP) (ContExpr falseP))) guard
                                          where 
                                              elimBool :: forall a'. Cont a' -> Cont a' -> Elim a'
                                              elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
-    
     desug (ListEmpty ann)              = E.Constr ann cNil Nil
     desug (ListNonEmpty ann head rest) = scons ann head (mkSugar rest)
     desug (ListEnum head last)         = E.App (E.App (E.Var "enumFromTo") head) last
     desug (ListComp ann head quals)    = error "todo"
     desug (Let defs exp)               = error "todo"
     desug (LetRec recdefs exp)         = error "todo"
-    
+
 instance JoinSemilattice a => Desugarable ListRest a where
     desug (End ann) = E.Constr ann cNil Nil
     desug (Next ann head rest) = scons ann (desug head) (mkSugar rest)
+
+-- instance JoinSemilattice a => Desugarable VarDefs a where
+processVarDefs :: forall a. JoinSemilattice a => VarDefs a × SExpr a -> E.Expr a
+processVarDefs (NonEmptyList (d :| Nil) × exp) = E.Let (processVarDef d) (mkSugar exp)
+processVarDefs (NonEmptyList (d :| d' : ds) × exp) = 
+    E.Let (processVarDef d) (processVarDefs (NonEmptyList (d' :| ds) × exp))
+
+processVarDef :: forall a. JoinSemilattice a => VarDef a -> E.VarDef a
+processVarDef (VarDef pat exp) = E.VarDef (desugPWithC pat (ContNone :: Cont a)) (mkSugar exp)
 
 clause :: forall a. JoinSemilattice a => Pattern × Expr a -> Elim a
 clause (pat × exp) = let cont = ContExpr exp in desugPWithC pat cont
