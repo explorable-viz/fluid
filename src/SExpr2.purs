@@ -4,27 +4,24 @@ import Prelude
 
 import Bindings (Bind, Var)
 import Data.Either (Either(..))
+import Data.Foldable (foldl)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (NonEmptyList)
+import Data.List.NonEmpty (NonEmptyList(..))
+import Data.NonEmpty ((:|))
+import Data.Traversable (traverse)
 import DataType (Ctr, cFalse, cNil, cTrue, cCons)
 import Dict as D
 import Expr2 (Expr(..)) as E
 import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, desug, mkSugar)
-import Lattice2 (class JoinSemilattice, definedJoin, neg)
+import Lattice2 (class JoinSemilattice, definedJoin, join, maybeJoin, neg)
 import Util (type (×), (×), type (+), error, unimplemented)
 
 scons :: forall a. a -> E.Expr a -> E.Expr a -> E.Expr a
 scons ann head rest = E.Constr ann cCons (head : rest : Nil)
 
-instance Desugarable SExpr a where
+instance JoinSemilattice a => Desugarable SExpr a where
     desug (BinaryApp l op r)           = E.App (E.App (E.Op op) l) r 
-    desug (MatchAs guard patterns)     = E.App (E.Lambda (clauseDS patterns)) guard 
-                                         where
-                                            processClause :: forall a. Pattern × Expr a -> Elim a
-                                            processClause (pattern × expr) =  
-                                                let cont = ContExpr expr in error "todo"
-                                            clauseDS :: forall a. NonEmptyList (Pattern × Expr a) -> Elim a
-                                            clauseDS clauses = error "todo"
+    desug (MatchAs guard patterns)     = E.App (E.Lambda (clauses patterns)) guard 
 
     desug (IfElse guard trueP falseP)  = E.App (E.Lambda (elimBool (ContExpr trueP) (ContExpr falseP))) guard
                                          where 
@@ -37,12 +34,19 @@ instance Desugarable SExpr a where
     desug (ListComp ann head quals)    = error "todo"
     desug (Let defs exp)               = error "todo"
     desug (LetRec recdefs exp)         = error "todo"
-instance Desugarable ListRest a where
+    
+instance JoinSemilattice a => Desugarable ListRest a where
     desug (End ann) = E.Constr ann cNil Nil
     desug (Next ann head rest) = scons ann (desug head) (mkSugar rest)
 
--- clause :: forall a. Pattern × Expr a -> Elim a
--- clause cl = 
+clause :: forall a. JoinSemilattice a => Pattern × Expr a -> Elim a
+clause (pat × exp) = let cont = ContExpr exp in desugPWithC pat cont
+
+clauses :: forall a. JoinSemilattice a => NonEmptyList (Pattern × Expr a) -> Elim a
+clauses cls = let 
+                NonEmptyList (head :| rest) = map clause cls 
+              in
+                foldl join head rest
 
 desugPWithC :: forall a. Pattern -> Cont a -> Elim a
 desugPWithC (PVar x)              k = ElimVar x k
