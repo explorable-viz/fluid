@@ -5,16 +5,16 @@ import Prelude
 import Bindings (Bind, (↦), Var)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
+import Data.Function (on)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (NonEmptyList(..), head)
-import Data.NonEmpty (NonEmpty, (:|))
-import Data.Traversable (traverse)
+import Data.List.NonEmpty (NonEmptyList(..), groupBy, head)
+import Data.NonEmpty ((:|))
 import Data.Tuple (fst, snd)
 import DataType (Ctr, cFalse, cNil, cTrue, cCons)
 import Dict as D
 import Expr2 (Expr(..), RecDefs, VarDef(..)) as E
 import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, desug, mkSugar)
-import Lattice2 (class JoinSemilattice, definedJoin, join, maybeJoin, neg)
+import Lattice2 (class JoinSemilattice, definedJoin, join, neg)
 import Util (type (×), (×), type (+), error, unimplemented)
 
 scons :: forall a. a -> E.Expr a -> E.Expr a -> E.Expr a
@@ -32,7 +32,7 @@ instance JoinSemilattice a => Desugarable SExpr a where
     desug (ListEnum head last)         = E.App (E.App (E.Var "enumFromTo") head) last
     desug (ListComp ann head quals)    = error "todo"
     desug (Let defs exp)               = processVarDefs (defs × exp)
-    desug (LetRec recdefs exp)         = error "todo"
+    desug (LetRec recdefs exp)         = E.LetRec (processRecDefs recdefs) exp
 
 instance JoinSemilattice a => Desugarable ListRest a where
     desug (End ann) = E.Constr ann cNil Nil
@@ -48,10 +48,16 @@ processVarDef :: forall a. JoinSemilattice a => VarDef a -> E.VarDef a
 processVarDef (VarDef pat exp) = E.VarDef (desugPWithC pat (ContNone :: Cont a)) (mkSugar exp)
 
 processRecDefs :: forall a. JoinSemilattice a => RecDefs a -> E.RecDefs a
-processRecDefs cls = error "todo" 
+processRecDefs cls = D.fromFoldable $ map processRecDef clss
+    where
+    clss = groupBy (eq `on` fst) cls :: NonEmptyList (NonEmptyList (Clause a))
 
--- processRecDef :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> Bind (Elim a)
--- processRecDef x = map (fst (head x) ↦ _) (clausesCurried (map snd x))
+processRecDef :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> Bind (Elim a)
+processRecDef x = 
+    let pairer = (fst (head x) ↦ _)          :: forall b. b -> Bind b   
+        cls    =  clausesCurried (map snd x) :: Elim a
+    in 
+        pairer cls
 
 clause :: forall a. JoinSemilattice a => Pattern × Expr a -> Elim a
 clause (pat × exp) = let cont = ContExpr exp in desugPWithC pat cont
