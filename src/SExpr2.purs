@@ -2,16 +2,17 @@ module SExpr2 where
 
 import Prelude
 
-import Bindings (Bind, Var)
+import Bindings (Bind, (↦), Var)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.List (List(..), (:))
-import Data.List.NonEmpty (NonEmptyList(..))
-import Data.NonEmpty ((:|))
+import Data.List.NonEmpty (NonEmptyList(..), head)
+import Data.NonEmpty (NonEmpty, (:|))
 import Data.Traversable (traverse)
+import Data.Tuple (fst, snd)
 import DataType (Ctr, cFalse, cNil, cTrue, cCons)
 import Dict as D
-import Expr2 (Expr(..), VarDef(..)) as E
+import Expr2 (Expr(..), RecDefs, VarDef(..)) as E
 import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, desug, mkSugar)
 import Lattice2 (class JoinSemilattice, definedJoin, join, maybeJoin, neg)
 import Util (type (×), (×), type (+), error, unimplemented)
@@ -30,7 +31,7 @@ instance JoinSemilattice a => Desugarable SExpr a where
     desug (ListNonEmpty ann head rest) = scons ann head (mkSugar rest)
     desug (ListEnum head last)         = E.App (E.App (E.Var "enumFromTo") head) last
     desug (ListComp ann head quals)    = error "todo"
-    desug (Let defs exp)               = error "todo"
+    desug (Let defs exp)               = processVarDefs (defs × exp)
     desug (LetRec recdefs exp)         = error "todo"
 
 instance JoinSemilattice a => Desugarable ListRest a where
@@ -38,7 +39,7 @@ instance JoinSemilattice a => Desugarable ListRest a where
     desug (Next ann head rest) = scons ann (desug head) (mkSugar rest)
 
 -- instance JoinSemilattice a => Desugarable VarDefs a where
-processVarDefs :: forall a. JoinSemilattice a => VarDefs a × SExpr a -> E.Expr a
+processVarDefs :: forall a. JoinSemilattice a => VarDefs a × E.Expr a -> E.Expr a
 processVarDefs (NonEmptyList (d :| Nil) × exp) = E.Let (processVarDef d) (mkSugar exp)
 processVarDefs (NonEmptyList (d :| d' : ds) × exp) = 
     E.Let (processVarDef d) (processVarDefs (NonEmptyList (d' :| ds) × exp))
@@ -46,13 +47,22 @@ processVarDefs (NonEmptyList (d :| d' : ds) × exp) =
 processVarDef :: forall a. JoinSemilattice a => VarDef a -> E.VarDef a
 processVarDef (VarDef pat exp) = E.VarDef (desugPWithC pat (ContNone :: Cont a)) (mkSugar exp)
 
+processRecDefs :: forall a. JoinSemilattice a => RecDefs a -> E.RecDefs a
+processRecDefs cls = error "todo" 
+
+-- processRecDef :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> Bind (Elim a)
+-- processRecDef x = map (fst (head x) ↦ _) (clausesCurried (map snd x))
+
 clause :: forall a. JoinSemilattice a => Pattern × Expr a -> Elim a
 clause (pat × exp) = let cont = ContExpr exp in desugPWithC pat cont
 
+clausesCurried :: forall a. JoinSemilattice a => NonEmptyList (Branch a) -> Elim a
+clausesCurried cls = 
+            let NonEmptyList (head :| rest) = map (error "todo") cls in
+                foldl join head rest
 clauses :: forall a. JoinSemilattice a => NonEmptyList (Pattern × Expr a) -> Elim a
-clauses cls = let 
-                NonEmptyList (head :| rest) = map clause cls 
-              in
+clauses cls = 
+            let NonEmptyList (head :| rest) = map clause cls in
                 foldl join head rest
 
 desugPWithC :: forall a. Pattern -> Cont a -> Elim a
@@ -62,7 +72,10 @@ desugPWithC (PRecord bps)         k = error "todo"
 desugPWithC  PListEmpty           k = error "todo"
 desugPWithC (PListNonEmpty p lrp) k = error "todo" 
 
-
+desugPsWithC :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> Elim a
+desugPsWithC (NonEmptyList (p :| Nil) × exp)     = clause (p × exp)
+desugPsWithC (NonEmptyList (p :| p' : ps) × exp) = 
+    desugPWithC p (ContExpr (E.Lambda (desugPsWithC (NonEmptyList (p' :| ps) × exp))))
 -- Surface language expressions.
 data SExpr a
    = BinaryApp (Expr a) Var (Expr a)
