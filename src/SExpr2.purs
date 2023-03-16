@@ -2,23 +2,29 @@ module SExpr2 where
 
 import Prelude
 
-import Bindings (Bind, (↦), Var)
+import Bindings (Bind, (↦), Var, varAnon)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
-import Data.Function (on)
-import Data.List (List(..), (:))
+import Data.Function (applyN, on)
+import Data.List (List(..), (:), (\\))
+import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head)
 import Data.NonEmpty ((:|))
+import Data.Set (toUnfoldable) as S
 import Data.Tuple (fst, snd)
-import DataType (Ctr, cFalse, cNil, cTrue, cCons)
+import DataType (Ctr, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor, arity)
+import Dict (asSingletonMap)
 import Dict as D
 import Expr2 (Expr(..), RecDefs, VarDef(..)) as E
 import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, desug, mkSugar)
 import Lattice2 (class JoinSemilattice, definedJoin, join, neg)
-import Util (type (×), (×), type (+), error, unimplemented)
+import Util (type (×), (×), type (+), absurd, error, unimplemented, successful)
 
 scons :: forall a. a -> E.Expr a -> E.Expr a -> E.Expr a
 scons ann head rest = E.Constr ann cCons (head : rest : Nil)
+
+snil :: forall a. a -> E.Expr a
+snil ann = E.Constr ann cNil Nil
 
 instance JoinSemilattice a => Desugarable SExpr a where
     desug (BinaryApp l op r)           = E.App (E.App (E.Op op) l) r 
@@ -82,6 +88,23 @@ desugPsWithC :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a ->
 desugPsWithC (NonEmptyList (p :| Nil) × exp)     = clause (p × exp)
 desugPsWithC (NonEmptyList (p :| p' : ps) × exp) = 
     desugPWithC p (ContExpr (E.Lambda (desugPsWithC (NonEmptyList (p' :| ps) × exp))))
+
+totalCont :: forall a. Cont a -> a -> Cont a
+totalCont ContNone _ = error absurd
+totalCont (ContExpr e) _ = ContExpr e
+totalCont (ContElim (ElimConstr m)) ann = ContElim (ElimConstr (totalizeCtr (c × totalCont k ann) ann))
+                                        where
+                                          c × k = asSingletonMap m
+totalCont (ContElim (ElimRecord xs k)) ann = ContElim (ElimRecord xs (totalCont k ann))
+totalCont (ContElim (ElimVar x k)) ann = ContElim (ElimVar x (totalCont k ann))
+
+totalizeCtr :: forall a. Ctr × Cont a -> a -> D.Dict (Cont a)
+totalizeCtr (c × k) ann = 
+    let 
+        defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (snil ann))
+        cks = map defaultBranch ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable ) \\ L.singleton c)
+    in
+        D.fromFoldable ((c × k) : cks) 
 -- Surface language expressions.
 data SExpr a
    = BinaryApp (Expr a) Var (Expr a)
