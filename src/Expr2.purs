@@ -22,6 +22,8 @@ data Sugar' a
 
 class Desugarable s a where
     desug :: s a -> Expr a
+mkSugar :: forall s a. s a -> Expr a
+mkSugar x = Sugar ( mkSugar' {sexp: x} )
 
 mkSugar' :: forall a s. Sugar'' s a -> Sugar' a
 mkSugar' = unsafeCoerce
