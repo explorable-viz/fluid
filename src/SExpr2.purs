@@ -2,41 +2,62 @@ module SExpr2 where
 
 import Prelude
 
-import Bindings (Bind, (↦), Var, varAnon)
+import Bindings (Var, Bind, varAnon, (↦), keys)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Function (applyN, on)
-import Data.List (List(..), (:), (\\))
+import Data.List (List(..), (:), (\\), sortBy)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head)
 import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
-import Data.Tuple (fst, snd)
-import DataType (Ctr, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor, arity)
+import Data.Traversable (traverse)
+import Data.Tuple (fst, snd, uncurry)
+import DataType (Ctr, arity, checkArity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Dict (asSingletonMap)
 import Dict as D
 import Expr2 (Expr(..), RecDefs, VarDef(..)) as E
-import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, desug, mkSugar)
+import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, asElim, desug, mkSugar)
 import Lattice2 (class JoinSemilattice, definedJoin, join, neg)
 import Util (type (×), (×), type (+), absurd, error, unimplemented, successful)
 
 scons :: forall a. a -> E.Expr a -> E.Expr a -> E.Expr a
-scons ann head rest = E.Constr ann cCons (head : rest : Nil)
+scons ann head tail = E.Constr ann cCons (head : tail : Nil)
 
 snil :: forall a. a -> E.Expr a
 snil ann = E.Constr ann cNil Nil
 
+elimBool :: forall a'. Cont a' -> Cont a' -> Elim a'
+elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
+
 instance JoinSemilattice a => Desugarable SExpr a where
     desug (BinaryApp l op r)           = E.App (E.App (E.Op op) l) r 
     desug (MatchAs guard patterns)     = E.App (E.Lambda (clauses patterns)) guard 
-    desug (IfElse guard trueP falseP)  = E.App (E.Lambda (elimBool (ContExpr trueP) (ContExpr falseP))) guard
-                                         where 
-                                             elimBool :: forall a'. Cont a' -> Cont a' -> Elim a'
-                                             elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
+    desug (IfElse guard trueP falseP)  = E.App (E.Lambda (elimBool (ContExpr trueP) (ContExpr falseP))) guard                                             
     desug (ListEmpty ann)              = E.Constr ann cNil Nil
+
     desug (ListNonEmpty ann head rest) = scons ann head (mkSugar rest)
+
     desug (ListEnum head last)         = E.App (E.App (E.Var "enumFromTo") head) last
-    desug (ListComp ann head quals)    = error "todo"
+    desug (ListComp _ body (NonEmptyList (Guard (E.Constr ann2 c Nil) :| Nil))) | c == cTrue = 
+        scons ann2 body (snil ann2) -- not sure about this at all
+    desug (ListComp ann body (NonEmptyList (q :| Nil))) = 
+        desug (ListComp ann body (NonEmptyList  (q :| Guard (E.Constr ann cTrue Nil) : Nil))) -- may need to be mkSugar
+    desug (ListComp ann body (NonEmptyList (Guard s :| q : qs))) = 
+        let e = mkSugar (ListComp ann body (NonEmptyList (q :| qs))) in
+        E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (snil ann)))) s
+    desug (ListComp ann body (NonEmptyList (Declaration (VarDef pi s) :| q : qs))) = 
+        let 
+            e   = mkSugar (ListComp ann body (NonEmptyList (q :| qs)))
+            sig = desugPWithC pi (ContExpr e :: Cont a)
+        in
+        E.App (E.Lambda sig) (mkSugar s)
+    desug (ListComp ann body (NonEmptyList (Generator p s :| q : qs))) = 
+        let 
+            e = mkSugar (ListComp ann body (NonEmptyList (q :| qs)))
+            sig = desugPWithC p (ContExpr e)
+        in
+        E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totalCont (ContElim sig) ann)))) s
     desug (Let defs exp)               = processVarDefs (defs × exp)
     desug (LetRec recdefs exp)         = E.LetRec (processRecDefs recdefs) exp
 
@@ -70,7 +91,7 @@ clause (pat × exp) = let cont = ContExpr exp in desugPWithC pat cont
 
 clausesCurried :: forall a. JoinSemilattice a => NonEmptyList (Branch a) -> Elim a
 clausesCurried cls = 
-            let NonEmptyList (head :| rest) = map (error "todo") cls in
+            let NonEmptyList (head :| rest) = traverse desugPWithC cls in
                 foldl join head rest
 clauses :: forall a. JoinSemilattice a => NonEmptyList (Pattern × Expr a) -> Elim a
 clauses cls = 
@@ -79,15 +100,29 @@ clauses cls =
 
 desugPWithC :: forall a. Pattern -> Cont a -> Elim a
 desugPWithC (PVar x)              k = ElimVar x k
-desugPWithC (PConstr c ps)        k = error "todo"
-desugPWithC (PRecord bps)         k = error "todo"
-desugPWithC  PListEmpty           k = error "todo"
-desugPWithC (PListNonEmpty p lrp) k = error "todo" 
+desugPWithC (PConstr c ps)        k = 
+    ElimConstr ((D.singleton c) (argPat (map Left ps) k)) 
+desugPWithC (PRecord bps)         k = ElimRecord (keys bps) (recordPat (sortBy (flip compare `on` fst) bps) k)
+desugPWithC  PListEmpty           k = ElimConstr (D.singleton cNil k)
+desugPWithC (PListNonEmpty p lrp) k = ElimConstr (D.singleton cCons (argPat (Left p : Right lrp : Nil) k))
 
 desugPsWithC :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> Elim a
 desugPsWithC (NonEmptyList (p :| Nil) × exp)     = clause (p × exp)
 desugPsWithC (NonEmptyList (p :| p' : ps) × exp) = 
     desugPWithC p (ContExpr (E.Lambda (desugPsWithC (NonEmptyList (p' :| ps) × exp))))
+
+argPat :: forall a. List (Pattern + ListRestPattern) -> Cont a -> Cont a
+argPat Nil k = k
+argPat (Left p : pis) k = let apf = argPat pis k   in ContElim (desugPWithC p apf)
+argPat (Right o: pis) k = let apf = argPat pis k in ContElim (listRestPat o apf)
+
+listRestPat :: forall a. ListRestPattern -> Cont a -> Elim a
+listRestPat PEnd k = ElimConstr (D.singleton cNil k)
+listRestPat (PNext p o) k = ElimConstr (D.singleton cCons (argPat (Left p : Right o : Nil) k))
+
+recordPat :: forall a. List (Bind Pattern) -> Cont a -> Cont a
+recordPat Nil k = k
+recordPat (_ ↦ p : xps) k = ContElim (desugPWithC p k)
 
 totalCont :: forall a. Cont a -> a -> Cont a
 totalCont ContNone _ = error absurd
@@ -143,8 +178,8 @@ data VarDef a = VarDef Pattern (SExpr a)
 type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a
-   = Guard (SExpr a)
-   | Generator Pattern (SExpr a)
+   = Guard (Expr a)
+   | Generator Pattern (Expr a)
    | Declaration (VarDef a) -- could allow VarDefs instead
 
 data Module a = Module (List (VarDefs a + RecDefs a))
