@@ -15,33 +15,38 @@ import Unsafe.Coerce (unsafeCoerce)
 import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
+type Sugar'' (s :: Type -> Type) a = { sexp :: s a }
 
-type Sugar'' s a = { sexp :: s a }
-data Sugar' a
-
-
-class Desugarable s a where
-    desug :: s a -> Expr a
+data Sugar' (a :: Type)
 
 
-mkSugar :: forall s a. s a -> Expr a
+class Desugarable (s :: Type -> Type) where
+    desug :: forall a. JoinSemilattice a => s a -> Expr a
+
+
+mkSugar2 :: forall s a. Desugarable s => s a -> Sugar' a
+mkSugar2 x = mkSugar' {sexp: x}
+
+
+mkSugar :: forall s a. Desugarable s => s a -> Expr a
 mkSugar x = Sugar ( mkSugar' {sexp: x} )
 
 mkSugar' :: forall a s. Sugar'' s a -> Sugar' a
 mkSugar' = unsafeCoerce
 
-runSugar' :: forall a r. (forall s. Functor s => Desugarable s a => Sugar'' s a -> r) -> Sugar' a -> r
+runSugar' :: forall a r. (forall s. Functor s => Desugarable s => Sugar'' s a -> r) -> Sugar' a -> r
 runSugar' = unsafeCoerce
 
-runSugar :: forall a s. Desugarable s a => Sugar' a -> Expr a
+runSugar :: forall a. JoinSemilattice a => Sugar' a -> Expr a
 runSugar sug = runSugar' (\s -> desug s.sexp) sug
 
-instance Functor Sugar' where 
+instance Functor Sugar' where
     map :: forall a b. (a -> b) -> Sugar' a -> Sugar' b
-    map f = runSugar' (\sugared -> mkSugar' { sexp: map f (sugared.sexp) }) 
+    map f x = runSugar' (\sugar'' ->
+      mkSugar' ({ sexp: map f (sugar''.sexp) })) x
 
 
-instance Desugarable Sugar' a where
+instance Desugarable Sugar' where
   desug _ = error "todo"
 
 data Expr a
@@ -90,7 +95,7 @@ data Module a = Module (List (VarDef a + RecDefs a))
 class FV a where
    fv :: a -> Set Var
 
-instance FV (Expr a) where
+instance JoinSemilattice a => FV (Expr a) where
    fv (Var x) = singleton x
    fv (Op op) = singleton op
    fv (Int _ _) = empty
@@ -105,21 +110,21 @@ instance FV (Expr a) where
    fv (App e1 e2) = fv e1 `union` fv e2
    fv (Let def e) = fv def `union` (fv e `difference` bv def)
    fv (LetRec ρ e) = unions (fv <$> ρ) `union` fv e
-   fv (Sugar s) = 
+   fv (Sugar s) =
     let desugged = desug s :: Expr a in
         fv desugged
 
-instance FV (Elim a) where
+instance JoinSemilattice a => FV (Elim a) where
    fv (ElimVar x κ) = fv κ `difference` singleton x
    fv (ElimConstr m) = unions (fv <$> m)
    fv (ElimRecord _ κ) = fv κ
 
-instance FV (Cont a) where
+instance JoinSemilattice a => FV (Cont a) where
    fv ContNone = empty
    fv (ContElim σ) = fv σ
    fv (ContExpr e) = fv e
 
-instance FV (VarDef a) where
+instance JoinSemilattice a => FV (VarDef a) where
    fv (VarDef _ e) = fv e
 
 instance FV a => FV (Dict a) where

@@ -144,7 +144,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.LetRec δ e) = atop (hspace [ text str.let_, pretty δ, text str.in_ ]) (pretty e)
    pretty (E.Project _ _) = error "todo"
    pretty (E.App e e') = hspace [ pretty e, pretty e' ]
-   pretty (E.Sugar s) = error "todo"
+   pretty (E.Sugar _) = error "todo"
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty = D.toUnfoldable >>> go
@@ -215,10 +215,10 @@ instance Highlightable a => Pretty (S.ListRest a) where
    pretty (S.End α) = highlightIf α (text str.rBracket)
    pretty (S.Next α s l) = hspace [ highlightIf α comma, pretty s :<>: pretty l ]
 
-instance Highlightable a => Pretty (String × (NonEmptyList S.Pattern × S.SExpr a)) where
+instance Highlightable a => Pretty (String × (NonEmptyList S.Pattern × E.Expr a)) where
    pretty (x × b) = hspace [ text x, pretty b ]
 
-instance Highlightable a => Pretty (NonEmptyList S.Pattern × S.SExpr a) where
+instance Highlightable a => Pretty (NonEmptyList S.Pattern × E.Expr a) where
    pretty (ps × s) = hspace ((pretty <$> NEL.toList ps) <> (text str.equals : pretty s : Nil))
 
 instance Highlightable a => Pretty (S.VarDef a) where

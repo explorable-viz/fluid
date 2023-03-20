@@ -17,7 +17,7 @@ import Data.Tuple (fst, snd)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
-import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
+import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv, runSugar)
 import Lattice2 ((∧), erase, top)
 import Pretty2 (prettyP)
 import Primitive2 (intPair, string)
@@ -60,7 +60,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
 
-closeDefs :: forall a. Env a -> RecDefs a -> a -> Env a
+closeDefs :: forall a. Ann a => Env a -> RecDefs a -> a -> Env a
 closeDefs γ ρ α = ρ <#> \σ ->
    let ρ' = ρ `for` σ in V.Fun $ V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
