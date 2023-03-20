@@ -1,6 +1,6 @@
 module Expr2 where
 
-import Prelude hiding (absurd, top)
+import Prelude hiding (absurd, join)
 
 import Bindings (Var)
 import Control.Apply (lift2)
@@ -16,30 +16,34 @@ import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
 
-type Sugar'' s a = { sexp :: s a }
-data Sugar' a
+type Sugar'' (s :: Type -> Type) a = { sexp :: s a }
+data Sugar' (a :: Type)
 
 
 class Desugarable s a where
     desug :: s a -> Expr a
 
 
-mkSugar :: forall s a. s a -> Expr a
+mkSugar :: forall s a. Desugarable s a => s a -> Expr a
 mkSugar x = Sugar ( mkSugar' {sexp: x} )
 
-mkSugar' :: forall a s. Sugar'' s a -> Sugar' a
+mkSugar' :: forall a s. Desugarable s a => Sugar'' s a -> Sugar' a
 mkSugar' = unsafeCoerce
+
+unwrapSugar :: forall s a. Desugarable s a => Sugar' a -> Sugar'' s a
+unwrapSugar sugared = unwrapSugar' sugared
+unwrapSugar' :: forall a s. Sugar' a -> Sugar'' s a
+unwrapSugar' = unsafeCoerce
 
 runSugar' :: forall a r. (forall s. Functor s => Desugarable s a => Sugar'' s a -> r) -> Sugar' a -> r
 runSugar' = unsafeCoerce
 
-runSugar :: forall a s. Desugarable s a => Sugar' a -> Expr a
+runSugar :: forall a. Sugar' a -> Expr a
 runSugar sug = runSugar' (\s -> desug s.sexp) sug
 
 instance Functor Sugar' where 
     map :: forall a b. (a -> b) -> Sugar' a -> Sugar' b
-    map f = runSugar' (\sugared -> mkSugar' { sexp: map f (sugared.sexp) }) 
-
+    map f s = let _unwrapped = unwrapSugar' s in error "todo"
 
 instance Desugarable Sugar' a where
   desug _ = error "todo"

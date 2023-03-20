@@ -62,7 +62,7 @@ instance JoinSemilattice a => Desugarable SExpr a where
             e   = mkSugar (ListComp ann body (NonEmptyList (q :| qs)))
             sig = patternFwd pi (ContExpr e :: Cont a)
         in
-        E.App (E.Lambda sig) (mkSugar s)
+        E.App (E.Lambda sig) s
     -- Need to check mkSugars
     desug (ListComp ann body (NonEmptyList (Generator p s :| q : qs))) = 
         let 
@@ -89,14 +89,14 @@ instance JoinSemilattice a => Desugarable ListRest a where
 
 -- vardefsFwd equivalent
 processVarDefs :: forall a. JoinSemilattice a => VarDefs a × E.Expr a -> E.Expr a
-processVarDefs (NonEmptyList (d :| Nil) × exp) = E.Let (processVarDef d) (mkSugar exp)
+processVarDefs (NonEmptyList (d :| Nil) × exp) = E.Let (processVarDef d) exp
 processVarDefs (NonEmptyList (d :| d' : ds) × exp) = 
     E.Let (processVarDef d) (processVarDefs (NonEmptyList (d' :| ds) × exp))
 
 
 --vardefFwd equivalent
 processVarDef :: forall a. JoinSemilattice a => VarDef a -> E.VarDef a
-processVarDef (VarDef pat exp) = E.VarDef (patternFwd pat (ContNone :: Cont a)) (mkSugar exp)
+processVarDef (VarDef pat exp) = E.VarDef (patternFwd pat (ContNone :: Cont a)) exp
 
 -- recdefsFwd equivalent
 processRecDefs :: forall a. JoinSemilattice a => RecDefs a -> E.RecDefs a
@@ -149,7 +149,7 @@ listRestPat (PNext p o) k = ElimConstr (D.singleton cCons (argPat (Left p : Righ
 
 recordPat :: forall a. List (Bind Pattern) -> Cont a -> Cont a
 recordPat Nil k = k
-recordPat (_ ↦ p : xps) k = ContElim (patternFwd p k)
+recordPat (_ ↦ p : xps) k = ContElim (patternFwd p k) -- todo
 
 -- Totalize equivalents
 totalCont :: forall a. Cont a -> a -> Cont a
