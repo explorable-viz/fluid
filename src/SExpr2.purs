@@ -31,54 +31,64 @@ elimBool :: forall a'. Cont a' -> Cont a' -> Elim a'
 elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
 
 instance JoinSemilattice a => Desugarable SExpr a where
+    -- Correct
     desug (BinaryApp l op r)           = E.App (E.App (E.Op op) l) r 
+    -- Correct dependent on "clauses" which is meant to be equivalent to branchesFwd_uncurried
     desug (MatchAs guard patterns)     = E.App (E.Lambda (clauses patterns)) guard 
-    desug (IfElse guard trueP falseP)  = E.App (E.Lambda (elimBool (ContExpr trueP) (ContExpr falseP))) guard                                             
+    -- Correct
+    desug (IfElse guard trueP falseP)  = E.App (E.Lambda (elimBool (ContExpr trueP) (ContExpr falseP))) guard
+    -- Correct                                             
     desug (ListEmpty ann)              = E.Constr ann cNil Nil
-
+    -- Needs to be checked but either this is correct or, we need mkSugar in parsing
     desug (ListNonEmpty ann head rest) = scons ann head (mkSugar rest)
-
+    -- Correct
     desug (ListEnum head last)         = E.App (E.App (E.Var "enumFromTo") head) last
     desug (ListComp _ body (NonEmptyList (Guard (E.Constr ann2 c Nil) :| Nil))) | c == cTrue = 
-        scons ann2 body (snil ann2) -- not sure about this at all
+        scons ann2 body (snil ann2) -- Should be correct
+    -- Need to check this one
     desug (ListComp ann body (NonEmptyList (q :| Nil))) = 
-        desug (ListComp ann body (NonEmptyList  (q :| Guard (E.Constr ann cTrue Nil) : Nil))) -- may need to be mkSugar
+        desug (ListComp ann body (NonEmptyList  (q :| Guard (E.Constr ann cTrue Nil) : Nil))) -- may need to be mkSugar 
+    -- Need to check
     desug (ListComp ann body (NonEmptyList (Guard s :| q : qs))) = 
         let e = mkSugar (ListComp ann body (NonEmptyList (q :| qs))) in
         E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (snil ann)))) s
+    -- Need to check the mkSugar's here
     desug (ListComp ann body (NonEmptyList (Declaration (VarDef pi s) :| q : qs))) = 
         let 
             e   = mkSugar (ListComp ann body (NonEmptyList (q :| qs)))
             sig = desugPWithC pi (ContExpr e :: Cont a)
         in
         E.App (E.Lambda sig) (mkSugar s)
+    -- Need to check mkSugars
     desug (ListComp ann body (NonEmptyList (Generator p s :| q : qs))) = 
         let 
             e = mkSugar (ListComp ann body (NonEmptyList (q :| qs)))
             sig = desugPWithC p (ContExpr e)
         in
         E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totalCont (ContElim sig) ann)))) s
+    -- these 2 are correct if their auxiliaries are correct
     desug (Let defs exp)               = processVarDefs (defs × exp)
     desug (LetRec recdefs exp)         = E.LetRec (processRecDefs recdefs) exp
 
+-- ListRest auxiliaries
 instance JoinSemilattice a => Desugarable ListRest a where
     desug (End ann) = E.Constr ann cNil Nil
     desug (Next ann head rest) = scons ann (desug head) (mkSugar rest)
 
--- instance JoinSemilattice a => Desugarable VarDefs a where
+-- vardefsFwd equivalent
 processVarDefs :: forall a. JoinSemilattice a => VarDefs a × E.Expr a -> E.Expr a
 processVarDefs (NonEmptyList (d :| Nil) × exp) = E.Let (processVarDef d) (mkSugar exp)
 processVarDefs (NonEmptyList (d :| d' : ds) × exp) = 
     E.Let (processVarDef d) (processVarDefs (NonEmptyList (d' :| ds) × exp))
-
+--vardefFwd equivalent
 processVarDef :: forall a. JoinSemilattice a => VarDef a -> E.VarDef a
 processVarDef (VarDef pat exp) = E.VarDef (desugPWithC pat (ContNone :: Cont a)) (mkSugar exp)
-
+-- recdefsFwd equivalent
 processRecDefs :: forall a. JoinSemilattice a => RecDefs a -> E.RecDefs a
 processRecDefs cls = D.fromFoldable $ map processRecDef clss
     where
     clss = groupBy (eq `on` fst) cls :: NonEmptyList (NonEmptyList (Clause a))
-
+-- recdefFwd equivalent
 processRecDef :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> Bind (Elim a)
 processRecDef x = 
     let pairer = (fst (head x) ↦ _)          :: forall b. b -> Bind b   
@@ -86,6 +96,7 @@ processRecDef x =
     in 
         pairer cls
 
+-- clause functions equivalent to branches
 clause :: forall a. JoinSemilattice a => Pattern × Expr a -> Elim a
 clause (pat × exp) = let cont = ContExpr exp in desugPWithC pat cont
 
@@ -97,7 +108,7 @@ clauses :: forall a. JoinSemilattice a => NonEmptyList (Pattern × Expr a) -> El
 clauses cls = 
             let NonEmptyList (head :| rest) = map clause cls in
                 foldl join head rest
-
+-- these are equivalent to patternsFwd etc
 desugPWithC :: forall a. Pattern -> Cont a -> Elim a
 desugPWithC (PVar x)              k = ElimVar x k
 desugPWithC (PConstr c ps)        k = 
@@ -124,6 +135,7 @@ recordPat :: forall a. List (Bind Pattern) -> Cont a -> Cont a
 recordPat Nil k = k
 recordPat (_ ↦ p : xps) k = ContElim (desugPWithC p k)
 
+-- Totalize equivalents
 totalCont :: forall a. Cont a -> a -> Cont a
 totalCont ContNone _ = error absurd
 totalCont (ContExpr e) _ = ContExpr e
