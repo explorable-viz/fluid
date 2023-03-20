@@ -22,6 +22,8 @@ data Sugar' a
 
 class Desugarable s a where
     desug :: s a -> Expr a
+
+
 mkSugar :: forall s a. s a -> Expr a
 mkSugar x = Sugar ( mkSugar' {sexp: x} )
 
@@ -30,6 +32,9 @@ mkSugar' = unsafeCoerce
 
 runSugar' :: forall a r. (forall s. Functor s => Desugarable s a => Sugar'' s a -> r) -> Sugar' a -> r
 runSugar' = unsafeCoerce
+
+runSugar :: forall a s. Desugarable s a => Sugar' a -> Expr a
+runSugar sug = runSugar' (\s -> desug s.sexp) sug
 
 instance Functor Sugar' where 
     map :: forall a b. (a -> b) -> Sugar' a -> Sugar' b
