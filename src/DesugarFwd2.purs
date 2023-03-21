@@ -16,8 +16,8 @@ import Data.Tuple (fst, snd, uncurry)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Dict (Dict, asSingletonMap)
 import Dict (fromFoldable, singleton) as D
+import Expr2 (Cont(..), Elim(..), asElim, thunkSugar)
 import Expr2 (Expr(..), Module(..), RecDefs, VarDef(..)) as E
-import Expr2 (Cont(..), Elim(..), asElim, mkSugar)
 import Lattice2 (class JoinSemilattice, maybeJoin)
 import SExpr2 (Branch, Clause, ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, SExpr(..), VarDef(..), VarDefs)
 import Util (type (+), type (×), MayFail, absurd, error, successful, (×))
@@ -40,7 +40,8 @@ elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
 
 -- Surface language supports "blocks" of variable declarations; core does not.
 moduleFwd :: forall a. JoinSemilattice a => Module a -> MayFail (E.Module a)
-moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarDefs <$> ds))
+moduleFwd (Module ds) = 
+   E.Module <$> traverse varDefOrRecDefsFwd (join (desugarDefs <$> ds))
    where
    varDefOrRecDefsFwd :: VarDef a + RecDefs a -> MayFail (E.VarDef a + E.RecDefs a)
    varDefOrRecDefsFwd (Left d) = Left <$> varDefFwd d
@@ -76,7 +77,7 @@ exprFwd (MatchAs s bs) = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> p
 exprFwd (IfElse s1 s2 s3) = 
    E.App (E.Lambda (elimBool (ContExpr s2) (ContExpr s3))) <$> pure s1
 exprFwd (ListEmpty α) = pure (enil α)
-exprFwd (ListNonEmpty α s l) = pure (econs α s (mkSugar l))
+exprFwd (ListNonEmpty α s l) = pure (econs α s (thunkSugar l))
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> pure s1) <*> pure s2
 -- | List-comp-done
 exprFwd (ListComp _ s_body (NonEmptyList (Guard (E.Constr α2 c Nil) :| Nil))) | c == cTrue =
@@ -86,16 +87,16 @@ exprFwd (ListComp α s_body (NonEmptyList (q :| Nil))) =
    exprFwd (ListComp α s_body (NonEmptyList (q :| Guard (E.Constr α cTrue Nil) : Nil)))
 -- | List-comp-guard
 exprFwd (ListComp α s_body (NonEmptyList (Guard s :| q : qs))) = do
-   e <- exprFwd (ListComp α s_body (NonEmptyList (q :| qs)))
+   let e = thunkSugar (ListComp α s_body (NonEmptyList (q :| qs)))
    E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> pure s
 -- | List-comp-decl
 exprFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))) = do
-   e <- exprFwd (ListComp α s_body (NonEmptyList (q :| qs)))
+   let e = thunkSugar (ListComp α s_body (NonEmptyList (q :| qs)))
    σ <- patternFwd π (ContExpr e :: Cont a)
    E.App (E.Lambda σ) <$> pure s
 -- | List-comp-gen
 exprFwd (ListComp α s_body (NonEmptyList (Generator p s :| q : qs))) = do
-   e <- exprFwd (ListComp α s_body (NonEmptyList (q :| qs)))
+   let e = thunkSugar (ListComp α s_body (NonEmptyList (q :| qs)))
    σ <- patternFwd p (ContExpr e)
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totaliseFwd (ContElim σ) α)))) <$> pure s
 exprFwd (Let ds s) = varDefsFwd (ds × s)
@@ -104,7 +105,7 @@ exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> pure s
 -- l desugar_fwd e
 listRestFwd :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
 listRestFwd (End α) = pure (enil α)
-listRestFwd (Next α s l) = pure (econs α s (mkSugar l))
+listRestFwd (Next α s l) = pure (econs α s (thunkSugar l))
 
 -- ps, e desugar_fwd σ
 patternsFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × E.Expr a -> MayFail (Elim a)

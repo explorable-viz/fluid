@@ -25,17 +25,19 @@ class Desugarable (s :: Type -> Type) where
 class Desugarable2 (s :: Type -> Type) where
    desug2 :: forall a. JoinSemilattice a => s a -> MayFail (Expr a)
 
-mkSugar2 :: forall s a. Desugarable s => s a -> Sugar' a
-mkSugar2 x = mkSugar' { sexp: x }
+thunkSugar2 :: forall s a. Desugarable s => s a -> Sugar' a
+thunkSugar2 x = thunkSugar' { sexp: x }
 
-mkSugar :: forall s a. Desugarable s => s a -> Expr a
-mkSugar x = Sugar (mkSugar' { sexp: x })
+thunkSugar :: forall s a. Desugarable s => s a -> Expr a
+thunkSugar x = Sugar (thunkSugar' { sexp: x })
 
-mkSugar' :: forall a s. Desugarable s => Sugar'' s a -> Sugar' a
-mkSugar' = unsafeCoerce
+thunkSugar' :: forall a s. Desugarable s => Sugar'' s a -> Sugar' a
+thunkSugar' = unsafeCoerce
 
 runSugar' :: forall a r. (forall s. Functor s => Desugarable s => Sugar'' s a -> r) -> Sugar' a -> r
 runSugar' = unsafeCoerce
+runSugarF' :: forall a r. (forall s. Functor s => Desugarable2 s => Sugar'' s a -> r) -> Sugar' a -> r
+runSugarF' = unsafeCoerce
 
 runSugar :: forall a. JoinSemilattice a => Sugar' a -> Expr a
 runSugar sug = runSugar' (\s -> desug s.sexp) sug
@@ -44,9 +46,19 @@ instance Functor Sugar' where
    map :: forall a b. (a -> b) -> Sugar' a -> Sugar' b
    map f x = runSugar'
       ( \sugar'' ->
-           mkSugar' ({ sexp: map f (sugar''.sexp) })
+           thunkSugar' ({ sexp: map f (sugar''.sexp) })
       )
       x
+
+thunkSugarF :: forall a s. Desugarable2 s => s a -> MayFail (Expr a)
+thunkSugarF x = pure (Sugar (thunkSugarF' {sexp: x}))
+
+thunkSugarF' :: forall a s. Desugarable2 s => Sugar'' s a -> Sugar' a
+thunkSugarF' = unsafeCoerce
+
+runSugarF :: forall a. JoinSemilattice a => Sugar' a -> MayFail (Expr a)
+runSugarF sug = runSugarF' (\s -> desug2 s.sexp) sug 
+
 
 instance Desugarable Sugar' where
    desug = runSugar' (\s -> desug s.sexp)
