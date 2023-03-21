@@ -1,3 +1,6 @@
+"use strict"
+
+import * as d3 from "d3";
 import {EditorState} from "@codemirror/state"
 import {EditorView, keymap} from "@codemirror/view"
 import {defaultKeymap} from "@codemirror/commands"
