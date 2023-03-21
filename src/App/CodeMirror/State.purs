@@ -1,9 +1,6 @@
 module App.CodeMirror.State where
 
-import Web.HTML (HTMLElement)
+import Prelude
+import Effect (Effect)
 
-type EditorView = {
-   dom :: HTMLElement
-}
-
-foreign import view :: EditorView
+foreign import addEditorView :: Effect Unit

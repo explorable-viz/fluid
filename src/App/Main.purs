@@ -1,12 +1,14 @@
 module App.Main where
 
 import Prelude hiding (absurd)
+
+import App.CodeMirror.State (addEditorView)
+import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
-import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
 import Lattice (botOf)
 import Module (File(..))
 
@@ -50,5 +52,6 @@ drawFigs loadFigs =
 
 main :: Effect Unit
 main = do
+   addEditorView
    drawFigs [ loadFig fig1, loadFig fig2 ]
    drawLinkFigs [ loadLinkFig linkingFig1 ]

@@ -7,7 +7,13 @@ let startState = EditorState.create({
   extensions: [keymap.of(defaultKeymap)]
 })
 
-export var view = new EditorView({
-   state: startState,
-   parent: document.body
-})
+function addEditorView (id) {
+   const view = new EditorView({
+      state: startState,
+      parent: document.body
+   })
+   const div = d3.select('#' + id)
+   div.append(view.dom)
+}
+
+export var addEditorView = addEditorView
