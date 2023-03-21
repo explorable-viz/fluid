@@ -10,7 +10,7 @@ let startState = EditorState.create({
   extensions: [keymap.of(defaultKeymap)]
 })
 
-function addEditorView (id) {
+function addEditorView_ (id) {
    const view = new EditorView({
       state: startState,
       parent: document.body
@@ -19,4 +19,4 @@ function addEditorView (id) {
    div.append(view.dom)
 }
 
-export var addEditorView = addEditorView
+export var addEditorView = addEditorView_
