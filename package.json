@@ -16,6 +16,9 @@
     "tidy": "yarn purs-tidy format-in-place src/**/*.purs test/**/*.purs"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.2.2",
+    "@codemirror/state": "^6.2.0",
+    "@codemirror/view": "^6.9.3",
     "d3": "6.7.0",
     "d3-tip": "0.9.1"
   },
