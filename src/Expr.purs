@@ -59,7 +59,6 @@ data Module a = Module (List (VarDef a + RecDefs a))
 class FV a where
    fv :: a -> Set Var
 
-
 instance FV (Expr a) where
    fv (Var x) = singleton x
    fv (Op op) = singleton op

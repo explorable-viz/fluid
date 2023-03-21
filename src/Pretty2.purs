@@ -194,7 +194,7 @@ instance Pretty (ForeignOp' t) where
 -- Surface language
 
 instance Highlightable a => ToPair (S.SExpr a) where
---    toPair (S.Constr _ c (s : s' : Nil)) | c == cPair = s × s'
+   --    toPair (S.Constr _ c (s : s' : Nil)) | c == cPair = s × s'
    toPair s = error ("Not a pair: " <> prettyP s)
 
 instance Highlightable a => Pretty (S.SExpr a) where
