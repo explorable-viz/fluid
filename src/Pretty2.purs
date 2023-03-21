@@ -217,10 +217,7 @@ instance Highlightable a => Pretty (S.ListRest a) where
 
 instance Highlightable a => Pretty (String × (NonEmptyList S.Pattern × E.Expr a)) where
    pretty (x × b) = hspace [ text x, pretty b ]
-<<<<<<< HEAD
-=======
 
->>>>>>> sugar-existential-roly
 instance Highlightable a => Pretty (NonEmptyList S.Pattern × E.Expr a) where
    pretty (ps × s) = hspace ((pretty <$> NEL.toList ps) <> (text str.equals : pretty s : Nil))
 

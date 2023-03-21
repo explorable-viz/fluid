@@ -34,7 +34,7 @@ mkSugar x = Sugar (mkSugar' { sexp: x })
 mkSugar' :: forall a s. Desugarable s => Sugar'' s a -> Sugar' a
 mkSugar' = unsafeCoerce
 
-runSugar' :: forall a r. (forall s. Functor s => Desugarable s a => Sugar'' s a -> r) -> Sugar' a -> r
+runSugar' :: forall a r. (forall s. Functor s => Desugarable s => Sugar'' s a -> r) -> Sugar' a -> r
 runSugar' = unsafeCoerce
 
 runSugar :: forall a. JoinSemilattice a => Sugar' a -> Expr a
