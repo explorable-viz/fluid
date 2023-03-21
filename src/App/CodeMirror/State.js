@@ -11,12 +11,14 @@ let startState = EditorState.create({
 })
 
 function addEditorView_ (id) {
-   const view = new EditorView({
-      state: startState,
-      parent: document.body
-   })
-   const div = d3.select('#' + id)
-   div.append(view.dom)
+   return () => {
+      const view = new EditorView({
+         state: startState,
+         parent: document.body
+      })
+      const div = d3.select('#' + id)
+      div.append(view.dom)
+   }
 }
 
 export var addEditorView = addEditorView_
