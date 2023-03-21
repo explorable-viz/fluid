@@ -60,7 +60,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
 
-closeDefs :: forall a. Env a -> RecDefs a -> a -> Env a
+closeDefs :: forall a. Ann a => Env a -> RecDefs a -> a -> Env a
 closeDefs γ ρ α = ρ <#> \σ ->
    let ρ' = ρ `for` σ in V.Fun $ V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 

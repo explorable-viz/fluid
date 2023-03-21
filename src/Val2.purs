@@ -67,7 +67,7 @@ append_inv xs γ = filterKeys (_ `not <<< member` xs) γ × restrict γ xs
 restrict :: forall a. Dict a -> Set Var -> Dict a
 restrict γ xs = filterKeys (_ `member` xs) γ
 
-reaches :: forall a. RecDefs a -> Endo (Set Var)
+reaches :: forall a. JoinSemilattice a => RecDefs a -> Endo (Set Var)
 reaches ρ xs = go (toUnfoldable xs) empty
    where
    dom_ρ = fromFoldable $ O.keys ρ
@@ -81,7 +81,7 @@ reaches ρ xs = go (toUnfoldable xs) empty
       where
       σ = get x ρ
 
-for :: forall a. RecDefs a -> Elim a -> RecDefs a
+for :: forall a. JoinSemilattice a => RecDefs a -> Elim a -> RecDefs a
 for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.keys ρ))
 
 -- Matrices.
