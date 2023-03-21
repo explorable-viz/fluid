@@ -1,6 +1,5 @@
 "use strict"
 
-import * as d3 from "d3";
 import {EditorState} from "@codemirror/state"
 import {EditorView, keymap} from "@codemirror/view"
 import {defaultKeymap} from "@codemirror/commands"
@@ -12,12 +11,11 @@ let startState = EditorState.create({
 
 function addEditorView_ (id) {
    return () => {
-      const view = new EditorView({
+      const div = document.getElementById(id)
+      new EditorView({
          state: startState,
-         parent: document.body
+         parent: div
       })
-      const div = d3.select('#' + id)
-      div.append(view.dom)
    }
 }
 
