@@ -52,6 +52,6 @@ drawFigs loadFigs =
 
 main :: Effect Unit
 main = do
-   addEditorView
+   addEditorView "codemirror-expt"
    drawFigs [ loadFig fig1, loadFig fig2 ]
    drawLinkFigs [ loadLinkFig linkingFig1 ]
