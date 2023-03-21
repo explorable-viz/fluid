@@ -10,9 +10,9 @@ import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
-import Lattice2 (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice2 (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, neg, (∨))
 import Unsafe.Coerce (unsafeCoerce)
-import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
+import Util (type (+), type (×), both, error, report, (×), (≜), (≞), MayFail)
 import Util.Pair (Pair, toTuple)
 
 type Sugar'' (s :: Type -> Type) a = { sexp :: s a }
@@ -22,13 +22,16 @@ data Sugar' (a :: Type)
 class Desugarable (s :: Type -> Type) where
    desug :: forall a. JoinSemilattice a => s a -> Expr a
 
+class Desugarable2 (s :: Type -> Type) where
+   desug2 :: forall a. JoinSemilattice a => s a -> MayFail (Expr a)
+
 mkSugar2 :: forall s a. Desugarable s => s a -> Sugar' a
 mkSugar2 x = mkSugar' { sexp: x }
 
 mkSugar :: forall s a. Desugarable s => s a -> Expr a
 mkSugar x = Sugar (mkSugar' { sexp: x })
 
-mkSugar' :: forall a s. Sugar'' s a -> Sugar' a
+mkSugar' :: forall a s. Desugarable s => Sugar'' s a -> Sugar' a
 mkSugar' = unsafeCoerce
 
 runSugar' :: forall a r. (forall s. Functor s => Desugarable s => Sugar'' s a -> r) -> Sugar' a -> r
@@ -46,7 +49,7 @@ instance Functor Sugar' where
       x
 
 instance Desugarable Sugar' where
-   desug _ = error "todo"
+   desug = runSugar' (\s -> desug s.sexp)
 
 data Expr a
    = Var Var

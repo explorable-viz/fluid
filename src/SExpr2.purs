@@ -15,7 +15,7 @@ import DataType (Ctr, arity, cCons, cFalse, cNil, cTrue, ctrs, dataTypeFor)
 import Dict (asSingletonMap)
 import Dict as D
 import Expr2 (Expr(..), RecDefs, VarDef(..)) as E
-import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, asElim, desug, mkSugar)
+import Expr2 (class Desugarable, class Desugarable2, Cont(..), Elim(..), Expr, asElim, desug, mkSugar)
 import Lattice2 (class JoinSemilattice, definedJoin, join, neg)
 import Util (type (×), (×), type (+), absurd, error, unimplemented, successful)
 
@@ -27,7 +27,8 @@ snil ann = E.Constr ann cNil Nil
 
 elimBool :: forall a'. Cont a' -> Cont a' -> Elim a'
 elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
-
+-- instance Desugarable2 SExpr where
+--     desug2 = exprFwd
 instance Desugarable SExpr where
    -- Correct
    desug (BinaryApp l op r) = E.App (E.App (E.Op op) l) r
