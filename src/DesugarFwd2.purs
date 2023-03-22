@@ -40,7 +40,7 @@ elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
 
 -- Surface language supports "blocks" of variable declarations; core does not.
 moduleFwd :: forall a. JoinSemilattice a => Module a -> MayFail (E.Module a)
-moduleFwd (Module ds) = 
+moduleFwd (Module ds) =
    E.Module <$> traverse varDefOrRecDefsFwd (join (desugarDefs <$> ds))
    where
    varDefOrRecDefsFwd :: VarDef a + RecDefs a -> MayFail (E.VarDef a + E.RecDefs a)
@@ -74,7 +74,7 @@ recDefFwd xcs = (fst (head xcs) ↦ _) <$> branchesFwd_curried (snd <$> xcs)
 exprFwd :: forall a. JoinSemilattice a => SExpr a -> MayFail (E.Expr a)
 exprFwd (BinaryApp s1 op s2) = pure (E.App (E.App (E.Op op) s1) s2)
 exprFwd (MatchAs s bs) = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> pure s
-exprFwd (IfElse s1 s2 s3) = 
+exprFwd (IfElse s1 s2 s3) =
    E.App (E.Lambda (elimBool (ContExpr s2) (ContExpr s3))) <$> pure s1
 exprFwd (ListEmpty α) = pure (enil α)
 exprFwd (ListNonEmpty α s l) = pure (econs α s ( E.Sugar $ thunkSugar l))
