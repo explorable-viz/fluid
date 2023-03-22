@@ -40,7 +40,7 @@ instance Desugarable SExpr where
    desug (ListEmpty ann) = E.Constr ann cNil Nil
 
    -- Needs to be checked but either this is correct or, we need thunkSugar in parsing
-   desug (ListNonEmpty ann head rest) = scons ann head (thunkSugar rest)
+   desug (ListNonEmpty ann head rest) = scons ann head (E.Sugar (thunkSugar rest))
 
    -- Correct
    desug (ListEnum head last) = E.App (E.App (E.Var "enumFromTo") head) last
@@ -52,20 +52,20 @@ instance Desugarable SExpr where
    -- Need to check
    desug (ListComp ann body (NonEmptyList (Guard s :| q : qs))) =
       let
-         e = thunkSugar (ListComp ann body (NonEmptyList (q :| qs)))
+         e = E.Sugar $ thunkSugar (ListComp ann body (NonEmptyList (q :| qs)))
       in
          E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (snil ann)))) s
    -- Need to check the thunkSugar's here
    desug (ListComp ann body (NonEmptyList (Declaration (VarDef pi s) :| q : qs))) =
       let
-         e = thunkSugar (ListComp ann body (NonEmptyList (q :| qs)))
+         e = E.Sugar $ thunkSugar (ListComp ann body (NonEmptyList (q :| qs)))
          sig = patternFwd2 pi (ContExpr e :: Cont _)
       in
          E.App (E.Lambda sig) s
    -- Need to check thunkSugars
    desug (ListComp ann body (NonEmptyList (Generator p s :| q : qs))) =
       let
-         e = thunkSugar (ListComp ann body (NonEmptyList (q :| qs)))
+         e = E.Sugar $ thunkSugar (ListComp ann body (NonEmptyList (q :| qs)))
          sig = patternFwd2 p (ContExpr e)
       in
          E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totalCont (ContElim sig) ann)))) s
@@ -74,9 +74,9 @@ instance Desugarable SExpr where
    desug (LetRec recdefs exp) = E.LetRec (processRecDefs recdefs) exp
 
 -- ListRest auxiliaries
-instance Desugarable ListRest where
-   desug (End ann) = E.Constr ann cNil Nil
-   desug (Next ann head rest) = scons ann head (thunkSugar rest)
+instance Desugarable2 ListRest where
+   desug2 (End ann) = Right $ E.Constr ann cNil Nil
+   desug2 (Next ann head rest) = Right $ scons ann head (E.Sugar (thunkSugar rest))
 
 -- vardefsFwd equivalent
 processVarDefs :: forall a. JoinSemilattice a => VarDefs a × E.Expr a -> E.Expr a
@@ -291,26 +291,26 @@ exprFwd (MatchAs s bs) = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> p
 exprFwd (IfElse s1 s2 s3) = 
    E.App (E.Lambda (elimBool (ContExpr s2) (ContExpr s3))) <$> pure s1
 exprFwd (ListEmpty α) = pure (enil α)
-exprFwd (ListNonEmpty α s l) = pure (econs α s (thunkSugar l))
+exprFwd (ListNonEmpty α s l) = pure (econs α s (E.Sugar (thunkSugar l)))
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> pure s1) <*> pure s2
 -- | List-comp-done
 exprFwd (ListComp _ s_body (NonEmptyList (Guard (E.Constr α2 c Nil) :| Nil))) | c == cTrue =
    pure (econs α2 s_body (enil α2))
 -- | List-comp-last
 exprFwd (ListComp α s_body (NonEmptyList (q :| Nil))) =
-   pure $ thunkSugar (ListComp α s_body (NonEmptyList (q :| Guard (E.Constr α cTrue Nil) : Nil)))
+   pure $ E.Sugar (thunkSugar (ListComp α s_body (NonEmptyList (q :| Guard (E.Constr α cTrue Nil) : Nil))))
 -- | List-comp-guard
 exprFwd (ListComp α s_body (NonEmptyList (Guard s :| q : qs))) = do
-   let e = thunkSugar (ListComp α s_body (NonEmptyList (q :| qs)))
+   let e = E.Sugar $ thunkSugar (ListComp α s_body (NonEmptyList (q :| qs)))
    E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> pure s
 -- | List-comp-decl
 exprFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))) = do
-   let e = thunkSugar (ListComp α s_body (NonEmptyList (q :| qs)))
+   let e = E.Sugar $ thunkSugar (ListComp α s_body (NonEmptyList (q :| qs)))
    σ <- patternFwd π (ContExpr e :: Cont a)
    E.App (E.Lambda σ) <$> pure s
 -- | List-comp-gen
 exprFwd (ListComp α s_body (NonEmptyList (Generator p s :| q : qs))) = do
-   let e = thunkSugar (ListComp α s_body (NonEmptyList (q :| qs)))
+   let e = E.Sugar $ thunkSugar (ListComp α s_body (NonEmptyList (q :| qs)))
    σ <- patternFwd p (ContExpr e)
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totaliseFwd (ContElim σ) α)))) <$> pure s
 exprFwd (Let ds s) = varDefsFwd (ds × s)
@@ -319,7 +319,7 @@ exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> pure s
 -- l desugar_fwd e
 listRestFwd :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
 listRestFwd (End α) = pure (enil α)
-listRestFwd (Next α s l) = pure (econs α s (thunkSugar l))
+listRestFwd (Next α s l) = pure (econs α s (E.Sugar (thunkSugar l)))
 
 -- ps, e desugar_fwd σ
 patternsFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × E.Expr a -> MayFail (Elim a)
