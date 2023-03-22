@@ -5,7 +5,7 @@
    "editor.fontFamily": "Fira Code",
    "editor.fontLigatures": true,
    "editor.guides.indentation": false,
-   "editor.lineNumbers": "off",
+   "editor.lineNumbers": "on",
    "editor.occurrencesHighlight": false,
    "editor.renderLineHighlight": "none",
    "editor.selectionHighlight": false
