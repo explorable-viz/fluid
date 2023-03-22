@@ -2,7 +2,7 @@
    "git.ignoreLimitWarning": true,
    "javascript.suggestionActions.enabled": false,
    "editor.codeLens": false,
-   "editor.fontFamily": "'Fixedsys Excelsior'",
+   "editor.fontFamily": "Fira Code",
    "editor.fontLigatures": true,
    "editor.guides.indentation": false,
    "editor.lineNumbers": "on",
