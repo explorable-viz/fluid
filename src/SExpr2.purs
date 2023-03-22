@@ -14,11 +14,11 @@ import Data.Set (toUnfoldable) as S
 import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (Ctr, arity, cCons, cFalse, cNil, cTrue, checkArity, ctrs, dataTypeFor)
-import Dict (asSingletonMap, Dict(..))
+import Dict (asSingletonMap, Dict)
 import Dict as D
 import Expr2 (class Desugarable, class Desugarable2, Cont(..), Elim(..), Expr, asElim, desug, thunkSugar)
 import Expr2 (Expr(..), RecDefs, VarDef(..), Module(..)) as E
-import Lattice2 (class JoinSemilattice, definedJoin, join, neg, maybeJoin )
+import Lattice2 (class JoinSemilattice, definedJoin, join, neg, maybeJoin)
 import Util (type (×), (×), type (+), absurd, error, unimplemented, successful, MayFail)
 
 scons :: forall a. a -> E.Expr a -> E.Expr a -> E.Expr a
@@ -28,7 +28,8 @@ snil :: forall a. a -> E.Expr a
 snil ann = E.Constr ann cNil Nil
 
 instance Desugarable2 SExpr where
-    desug2 = exprFwd
+   desug2 = exprFwd
+
 instance Desugarable SExpr where
    -- Correct
    desug (BinaryApp l op r) = E.App (E.App (E.Op op) l) r
@@ -236,7 +237,6 @@ instance JoinSemilattice a => JoinSemilattice (SExpr a) where
    eval term2 = V.Constr cCons (1 : (eval (Sugar (LR.Next 2 (LR.Next 3 (LR.Next 4 LR.End))))))
 -}
 
-
 enil :: forall a. a -> E.Expr a
 enil α = E.Constr α cNil Nil
 
@@ -246,12 +246,9 @@ econs α e e' = E.Constr α cCons (e : e' : Nil)
 elimBool :: forall a. Cont a -> Cont a -> Elim a
 elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
 
-
-
-
 -- Surface language supports "blocks" of variable declarations; core does not.
 moduleFwd :: forall a. JoinSemilattice a => Module a -> MayFail (E.Module a)
-moduleFwd (Module ds) = 
+moduleFwd (Module ds) =
    E.Module <$> traverse varDefOrRecDefsFwd (P.join (desugarDefs <$> ds))
    where
    varDefOrRecDefsFwd :: (VarDef a + RecDefs a) -> MayFail (E.VarDef a + E.RecDefs a)
@@ -261,9 +258,6 @@ moduleFwd (Module ds) =
    desugarDefs :: (VarDefs a + RecDefs a) -> List (VarDef a + RecDefs a)
    desugarDefs (Left ds') = Left <$> toList ds'
    desugarDefs (Right δ) = pure (Right δ)
-
-
-
 
 varDefFwd :: forall a. JoinSemilattice a => VarDef a -> MayFail (E.VarDef a)
 varDefFwd (VarDef π s) = E.VarDef <$> patternFwd π (ContNone :: Cont a) <*> pure s
@@ -288,7 +282,7 @@ recDefFwd xcs = (fst (head xcs) ↦ _) <$> branchesFwd_curried (snd <$> xcs)
 exprFwd :: forall a. JoinSemilattice a => SExpr a -> MayFail (E.Expr a)
 exprFwd (BinaryApp s1 op s2) = pure (E.App (E.App (E.Op op) s1) s2)
 exprFwd (MatchAs s bs) = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> pure s
-exprFwd (IfElse s1 s2 s3) = 
+exprFwd (IfElse s1 s2 s3) =
    E.App (E.Lambda (elimBool (ContExpr s2) (ContExpr s3))) <$> pure s1
 exprFwd (ListEmpty α) = pure (enil α)
 exprFwd (ListNonEmpty α s l) = pure (econs α s (E.Sugar (thunkSugar l)))

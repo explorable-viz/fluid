@@ -50,21 +50,22 @@ class Functor s <= Desugarable2 (s :: Type -> Type) where
 -- runSugar sug = runSugar' (\s -> desug s.sexp) sug
 
 instance Functor Sugar' where
--- k :: (forall r. (forall s. Desugarable2 s => s a -> r) -> r)
--- sug :: forall s. Desugarable2 s => s b -> r
+   -- k :: (forall r. (forall s. Desugarable2 s => s a -> r) -> r)
+   -- sug :: forall s. Desugarable2 s => s b -> r
    map :: forall a b. (a -> b) -> Sugar' a -> Sugar' b
-   map f (Sugar' k) = Sugar' ( \sug -> k (\sa -> sug (map f sa)) ) 
+   map f (Sugar' k) = Sugar' (\sug -> k (\sa -> sug (map f sa)))
 
 thunkSugarF :: forall a s. Desugarable2 s => s a -> Sugar' a
-thunkSugarF sug  = Sugar' (\ds -> ds sug)
+thunkSugarF sug = Sugar' (\ds -> ds sug)
 
 runSugarF :: forall a. JoinSemilattice a => Sugar' a -> MayFail (Expr a)
 runSugarF (Sugar' k) = k desug2
 
 instance Desugarable Sugar' where
    desug s = case (runSugar s) of
-               Left  _ -> error "todo"
-               Right _ -> error "todo"
+      Left _ -> error "todo"
+      Right _ -> error "todo"
+
 data Expr a
    = Var Var
    | Op Var
