@@ -22,8 +22,6 @@ thunkSugar sa = Sugar' (\ds -> ds sa)
 runSugar :: forall a. JoinSemilattice a => Sugar' a -> MayFail (Expr a)
 runSugar (Sugar' k) = k desug2
 
-type Sugar'' (s :: Type -> Type) a = { sexp :: s a }
-
 newtype Sugar' (a :: Type) = Sugar' (forall r. (forall s. Desugarable2 s => s a -> r) -> r)
 
 class Desugarable (s :: Type -> Type) where

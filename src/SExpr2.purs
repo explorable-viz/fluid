@@ -1,7 +1,7 @@
 module SExpr2 where
 
 import Prelude hiding (absurd, join)
-import Prelude (join) as P
+
 import Bindings (Var, Bind, varAnon, (↦), keys)
 import Data.Either (Either(..))
 import Data.Foldable (foldl, foldM)
@@ -16,9 +16,12 @@ import Data.Tuple (fst, snd, uncurry)
 import DataType (Ctr, arity, cCons, cFalse, cNil, cTrue, checkArity, ctrs, dataTypeFor)
 import Dict (asSingletonMap, Dict)
 import Dict as D
-import Expr2 (class Desugarable, class Desugarable2, Cont(..), Elim(..), Expr, asElim, desug, thunkSugar)
 import Expr2 (Expr(..), RecDefs, VarDef(..), Module(..)) as E
+import Expr2 (class Desugarable, class Desugarable2, Cont(..), Elim(..), Expr, Sugar'(..), asElim, desug, thunkSugar)
 import Lattice2 (class JoinSemilattice, definedJoin, join, neg, maybeJoin)
+import Prelude (join) as P
+
+import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), type (+), absurd, error, unimplemented, successful, MayFail)
 
 scons :: forall a. a -> E.Expr a -> E.Expr a -> E.Expr a
@@ -26,6 +29,9 @@ scons ann head tail = E.Constr ann cCons (head : tail : Nil)
 
 snil :: forall a. a -> E.Expr a
 snil ann = E.Constr ann cNil Nil
+
+unwrapSugar :: forall a. JoinSemilattice a => Sugar' a -> SExpr a
+unwrapSugar (Sugar' k) = k unsafeCoerce
 
 instance Desugarable2 SExpr where
    desug2 = exprFwd
@@ -302,6 +308,7 @@ exprFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))
    let e = E.Sugar $ thunkSugar (ListComp α s_body (NonEmptyList (q :| qs)))
    σ <- patternFwd π (ContExpr e :: Cont a)
    E.App (E.Lambda σ) <$> pure s
+
 -- | List-comp-gen
 exprFwd (ListComp α s_body (NonEmptyList (Generator p s :| q : qs))) = do
    let e = E.Sugar $ thunkSugar (ListComp α s_body (NonEmptyList (q :| qs)))
