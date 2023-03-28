@@ -4,7 +4,6 @@ import Prelude hiding (absurd, join)
 
 import Bindings (Var)
 import Control.Apply (lift2)
-import Data.Either (Either(..))
 import Data.List (List)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
@@ -12,8 +11,7 @@ import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
 import Lattice2 (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, neg, (∨))
--- import Unsafe.Coerce (unsafeCoerce)
-import Util (type (+), type (×), both, error, report, (×), (≜), (≞), MayFail)
+import Util (type (+), type (×), both, error, report, successful, (×), (≜), (≞), MayFail)
 import Util.Pair (Pair, toTuple)
 
 thunkSugar :: forall s a. Desugarable2 s => s a -> Sugar' a
@@ -24,8 +22,8 @@ runSugar (Sugar' k) = k desug2
 
 newtype Sugar' (a :: Type) = Sugar' (forall r. (forall s. Desugarable2 s => s a -> r) -> r)
 
-class Desugarable (s :: Type -> Type) where
-   desug :: forall a. JoinSemilattice a => s a -> Expr a
+class Desugarable (s :: Type -> Type) (e :: Type -> Type) where
+   desug :: forall a. JoinSemilattice a => s a -> e a
 
 class Functor s <= Desugarable2 (s :: Type -> Type) where
    desug2 :: forall a. JoinSemilattice a => s a -> MayFail (Expr a)
@@ -33,11 +31,6 @@ class Functor s <= Desugarable2 (s :: Type -> Type) where
 instance Functor Sugar' where
    map :: forall a b. (a -> b) -> Sugar' a -> Sugar' b
    map f (Sugar' k) = Sugar' (\sug -> k (\sa -> sug (map f sa)))
-
-instance Desugarable Sugar' where
-   desug s = case (runSugar s) of
-      Left _ -> error "todo"
-      Right _ -> error "todo"
 
 data Expr a
    = Var Var
@@ -100,11 +93,7 @@ instance JoinSemilattice a => FV (Expr a) where
    fv (App e1 e2) = fv e1 `union` fv e2
    fv (Let def e) = fv def `union` (fv e `difference` bv def)
    fv (LetRec ρ e) = unions (fv <$> ρ) `union` fv e
-   fv (Sugar s) =
-      let
-         desugged = desug s :: Expr a
-      in
-         fv desugged
+   fv (Sugar s) = fv (successful (runSugar s))
 
 instance JoinSemilattice a => FV (Elim a) where
    fv (ElimVar x κ) = fv κ `difference` singleton x
