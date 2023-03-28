@@ -108,13 +108,13 @@ dict_difference :: ForeignOp
 dict_difference = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd Unit
-   fwd (Dictionary α1 βvs1 : Dictionary α2 βvs2 : Nil) =
-      pure $ unit × Dictionary (α1 ∧ α2) (βvs1 \\ βvs2)
+   fwd (Dictionary α d : Dictionary α' d' : Nil) =
+      pure $ unit × Dictionary (α ∧ α') (d \\ d')
    fwd _ = report "Dictionaries expected."
 
    bwd :: Partial => OpBwd Unit
-   bwd (_ × Dictionary α βvs) =
-      Dictionary α βvs : Dictionary α D.empty : Nil
+   bwd (_ × Dictionary α d) =
+      Dictionary α d : Dictionary α D.empty : Nil
 
 dict_fromRecord :: ForeignOp
 dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
@@ -167,8 +167,8 @@ dict_get :: ForeignOp
 dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd String
-   fwd (Str _ s : Dictionary _ αvs : Nil) =
-      (s × _) <$> (snd <$> D.lookup s αvs # orElse ("Key \"" <> s <> "\" not found"))
+   fwd (Str _ s : Dictionary _ d : Nil) =
+      (s × _) <$> (snd <$> D.lookup s d # orElse ("Key \"" <> s <> "\" not found"))
    fwd _ = report "String and dictionary expected"
 
    bwd :: Partial => OpBwd String
