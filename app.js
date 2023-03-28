@@ -22585,11 +22585,11 @@
                         return $Either("Right", $Tuple(meet(v2._1)(v3._1), $6._1));
                       }
                       fail();
-                    })(v._2._1._2)(v._2._2._1._2)))((\u03B2ttvs) => $Either(
+                    })(v._2._1._2)(v._2._2._1._2)))((d$p$p) => $Either(
                       "Right",
                       $Tuple(
-                        $Tuple(functorVal.map((v$1) => unit)(v._1), _fmapObject(\u03B2ttvs, (x2) => x2._2._1)),
-                        $Val("Dictionary", meet(v._2._1._1)(v._2._2._1._1), _fmapObject(\u03B2ttvs, functorTuple.map(snd)))
+                        $Tuple(functorVal.map((v$1) => unit)(v._1), _fmapObject(d$p$p, (x2) => x2._2._1)),
+                        $Val("Dictionary", meet(v._2._1._1)(v._2._2._1._1), _fmapObject(d$p$p, functorTuple.map(snd)))
                       )
                     ));
                   }
@@ -22612,14 +22612,14 @@
       const join = joinSemilatticeVal(BoundedJoinSemilattice0.JoinSemilattice0()).join;
       return (v) => {
         if (v._2.tag === "Dictionary") {
-          const \u03B2vuus = intersectionWith((ts) => (v2) => $Tuple(v2._1, apply2Bwd2($Tuple(ts, v2._2))))(v._1._2)(v._2._2);
+          const d$p = intersectionWith((tt) => (v2) => $Tuple(v2._1, apply2Bwd2($Tuple(tt, v2._2))))(v._1._2)(v._2._2);
           return $List(
             "Cons",
-            fold((z) => (v$1) => join(z))(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._1))(_fmapObject(\u03B2vuus, (x2) => x2._2._1)),
+            fold((z) => (v$1) => join(z))(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._1))(_fmapObject(d$p, (x2) => x2._2._1)),
             $List(
               "Cons",
-              $Val("Dictionary", v._2._1, _fmapObject(\u03B2vuus, (m) => $Tuple(m._1, m._2._2._1))),
-              $List("Cons", $Val("Dictionary", v._2._1, _fmapObject(\u03B2vuus, (m) => $Tuple(m._1, m._2._2._2))), Nil)
+              $Val("Dictionary", v._2._1, _fmapObject(d$p, (m) => $Tuple(m._1, m._2._2._1))),
+              $List("Cons", $Val("Dictionary", v._2._1, _fmapObject(d$p, (m) => $Tuple(m._1, m._2._2._2))), Nil)
             )
           );
         }
