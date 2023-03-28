@@ -154,14 +154,14 @@ dict_foldl = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bw
    fwd _ = report "Function, value and dictionary expected"
 
    bwd :: Partial => OpBwd (Raw Val × List (String × AppTrace × AppTrace))
-   bwd ((v × tss) × u) = v' : u' : Dictionary bot βvs : Nil
+   bwd ((v × tts) × u) = v' : u' : Dictionary bot βvs : Nil
       where
       v' × u' × βvs = foldl
-         ( \(v1 × u' × βvs) (k × ts) ->
-              let v2 × u1 × u2 = apply2Bwd (ts × u') in (v1 ∨ v2) × u1 × D.insert k (bot × u2) βvs
+         ( \(v1 × u' × βvs) (k × tt) ->
+              let v2 × u1 × u2 = apply2Bwd (tt × u') in (v1 ∨ v2) × u1 × D.insert k (bot × u2) βvs
          )
          (botOf v × u × D.empty)
-         tss
+         tts
 
 dict_get :: ForeignOp
 dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
