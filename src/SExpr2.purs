@@ -29,14 +29,14 @@ scons ann head tail = E.Constr ann cCons (head : tail : Nil)
 snil :: forall a. a -> E.Expr a
 snil ann = E.Constr ann cNil Nil
 
-unwrapSugar :: forall a. JoinSemilattice a => Sugar' a -> SExpr a
+unwrapSugar :: forall s e a. JoinSemilattice a => Desugarable2 s e => Sugar' e a -> s a
 unwrapSugar (Sugar' k) = k unsafeCoerce
 
-instance Desugarable2 SExpr where
+instance Desugarable2 SExpr Expr where
    desug2 = exprFwd
 
 -- ListRest auxiliaries
-instance Desugarable2 ListRest where
+instance Desugarable2 ListRest Expr where
    desug2 (End ann) = Right $ E.Constr ann cNil Nil
    desug2 (Next ann head rest) = Right $ scons ann head (E.Sugar (thunkSugar rest))
 

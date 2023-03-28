@@ -14,22 +14,19 @@ import Lattice2 (class BoundedJoinSemilattice, class Expandable, class JoinSemil
 import Util (type (+), type (×), both, error, report, successful, (×), (≜), (≞), MayFail)
 import Util.Pair (Pair, toTuple)
 
-thunkSugar :: forall s a. Desugarable2 s => s a -> Sugar' a
+thunkSugar :: forall s a. Desugarable2 s Expr => s a -> Sugar' Expr a
 thunkSugar sa = Sugar' (\ds -> ds sa)
 
-runSugar :: forall a. JoinSemilattice a => Sugar' a -> MayFail (Expr a)
+runSugar :: forall e a. JoinSemilattice a => Sugar' e a -> MayFail (e a)
 runSugar (Sugar' k) = k desug2
 
-newtype Sugar' (a :: Type) = Sugar' (forall r. (forall s. Desugarable2 s => s a -> r) -> r)
+newtype Sugar' e (a :: Type) = Sugar' (forall r. (forall s. Desugarable2 s e => s a -> r) -> r)
 
-class Desugarable (s :: Type -> Type) (e :: Type -> Type) where
-   desug :: forall a. JoinSemilattice a => s a -> e a
+class Functor s <= Desugarable2 (s :: Type -> Type) (e :: Type -> Type) | s -> e where
+   desug2 :: forall a. JoinSemilattice a => s a -> MayFail (e a)
 
-class Functor s <= Desugarable2 (s :: Type -> Type) where
-   desug2 :: forall a. JoinSemilattice a => s a -> MayFail (Expr a)
-
-instance Functor Sugar' where
-   map :: forall a b. (a -> b) -> Sugar' a -> Sugar' b
+instance Functor e => Functor (Sugar' e) where
+   map :: forall a b. (a -> b) -> Sugar' e a -> Sugar' e b
    map f (Sugar' k) = Sugar' (\sug -> k (\sa -> sug (map f sa)))
 
 data Expr a
@@ -47,7 +44,7 @@ data Expr a
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
-   | Sugar (Sugar' a)
+   | Sugar (Sugar' Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
