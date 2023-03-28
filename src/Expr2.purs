@@ -34,9 +34,6 @@ instance Functor Sugar' where
    map :: forall a b. (a -> b) -> Sugar' a -> Sugar' b
    map f (Sugar' k) = Sugar' (\sug -> k (\sa -> sug (map f sa)))
 
-runSugarF :: forall a. JoinSemilattice a => Sugar' a -> MayFail (Expr a)
-runSugarF (Sugar' k) = k desug2
-
 instance Desugarable Sugar' where
    desug s = case (runSugar s) of
       Left _ -> error "todo"
