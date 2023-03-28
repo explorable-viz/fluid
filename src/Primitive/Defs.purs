@@ -179,39 +179,39 @@ dict_intersectionWith :: ForeignOp
 dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd (Raw Val × Dict (AppTrace × AppTrace))
-   fwd (v : Dictionary α1 βus : Dictionary α2 βus' : Nil) = do
-      βttvs <-
+   fwd (v : Dictionary α d : Dictionary α' d' : Nil) = do
+      d'' <-
          sequence $
-            D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) βus βus'
+            D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) d d'
             :: MayFail (Dict (_ × (AppTrace × AppTrace) × Val _))
-      pure $ (erase v × (βttvs <#> snd >>> fst)) × Dictionary (α1 ∧ α2) (βttvs <#> second snd)
+      pure $ (erase v × (d'' <#> snd >>> fst)) × Dictionary (α ∧ α') (d'' <#> second snd)
    fwd _ = report "Function and two dictionaries expected"
 
    bwd :: Partial => OpBwd (Raw Val × Dict (AppTrace × AppTrace))
    bwd ((v × tts) × Dictionary α βvs) =
-      ( foldl (∨) (botOf v) (βvuus <#> (snd >>> fst))
-           : Dictionary α (βvuus <#> (second (snd >>> fst)))
-           : Dictionary α (βvuus <#> (second (snd >>> snd)))
+      ( foldl (∨) (botOf v) (d' <#> (snd >>> fst))
+           : Dictionary α (d' <#> (second (snd >>> fst)))
+           : Dictionary α (d' <#> (second (snd >>> snd)))
            : Nil
       )
       where
-      βvuus =
-         D.intersectionWith (\ts (β × v') -> β × apply2Bwd (ts × v')) tts βvs
+      d' =
+         D.intersectionWith (\tt (β × v') -> β × apply2Bwd (tt × v')) tts βvs
             :: Dict (_ × Val _ × Val _ × Val _)
 
 dict_map :: ForeignOp
 dict_map = mkExists $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: Partial => OpFwd (Raw Val × Dict AppTrace)
-   fwd (v : Dictionary α βvs : Nil) = do
-      ts × βus <- D.unzip <$> traverse (\(β × u) -> second (β × _) <$> apply (v × u)) βvs
-      pure $ (erase v × ts) × Dictionary α βus
+   fwd (v : Dictionary α d : Nil) = do
+      ts × d' <- D.unzip <$> traverse (\(β × u) -> second (β × _) <$> apply (v × u)) d
+      pure $ (erase v × ts) × Dictionary α d'
 
    bwd :: Partial => OpBwd (Raw Val × Dict AppTrace)
-   bwd ((v × ts) × Dictionary α βus) =
-      (foldl (∨) (botOf v) us) : Dictionary α βvs : Nil
+   bwd ((v × ts) × Dictionary α d') =
+      (foldl (∨) (botOf v) us) : Dictionary α d : Nil
       where
-      us × βvs = D.unzip $ D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd (t × u)) ts βus
+      us × d = D.unzip $ D.intersectionWith (\t (β × u) -> second (β × _) $ applyBwd (t × u)) ts d'
 
 plus :: Int + Number -> Endo (Int + Number)
 plus = (+) `union` (+)
