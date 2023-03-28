@@ -143,25 +143,25 @@ dict_foldl :: ForeignOp
 dict_foldl = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd (Raw Val × List (String × AppTrace × AppTrace))
-   fwd (v : u : Dictionary _ βvs : Nil) = do
-      tss × u' <-
+   fwd (v : u : Dictionary _ d : Nil) = do
+      ts × u' <-
          foldWithIndexM
             (\s (ts × u1) (_ × u2) -> apply2 (v × u1 × u2) <#> first (\tt -> (s × tt) : ts))
             (Nil × u)
-            βvs
+            d
             :: MayFail (List (String × AppTrace × AppTrace) × Val _)
-      pure $ (erase v × tss) × u'
+      pure $ (erase v × ts) × u'
    fwd _ = report "Function, value and dictionary expected"
 
    bwd :: Partial => OpBwd (Raw Val × List (String × AppTrace × AppTrace))
-   bwd ((v × tts) × u) = v' : u' : Dictionary bot βvs : Nil
+   bwd ((v × ts) × u) = v' : u' : Dictionary bot d : Nil
       where
-      v' × u' × βvs = foldl
-         ( \(v1 × u' × βvs) (k × tt) ->
-              let v2 × u1 × u2 = apply2Bwd (tt × u') in (v1 ∨ v2) × u1 × D.insert k (bot × u2) βvs
+      v' × u' × d = foldl
+         ( \(v1 × u' × d) (s × tt) ->
+              let v2 × u1 × u2 = apply2Bwd (tt × u') in (v1 ∨ v2) × u1 × D.insert s (bot × u2) d
          )
          (botOf v × u × D.empty)
-         tts
+         ts
 
 dict_get :: ForeignOp
 dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
