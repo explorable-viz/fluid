@@ -51,6 +51,7 @@
       <p></p>Try the data linking by selecting (clicking on) the bar for Germany in the left-hand chart below. When a view selection is active, we can automatically generate what we call a <b>data selection</b>: a restricted view of a dataset where only relevant rows are shown and relevant cells within those rows are highlighted. Now try selecting some of the data points for the years 2017 and 2018 in the right-hand chart. (Zoom in if it's hard to select the points.) The relationship between the output selection and the resulting input selection is <i>monotonic</i>: the more output you select, the more input is selected. (The UI doesn't support this yet, but it is also meaningful to select input and have the output selection be derived automatically.)
 
       <p><div class="parent"><div class="center" id="fig-1"></div></div></p>
+      <p><div id="codemirror-expt"></div></p>
 
       <p>Hand-crafting transparency features like these would involve manually tracking the dependencies between input and output. Fluid does this automatically, allowing the programmer to simply express the bar chart and line chart as pure functions, using standard functional programming features such as higher-order functions and list comprehensions. Take a look at the source code below:
          <details><summary>bar-chart.fld</summary>
@@ -61,9 +62,6 @@
          </details>
          <details><summary>dataset.fld</summary>
             <script src="https://gist.github.com/rolyp/367c33ce1c61eea77fe3dc37eb690f2c.js"></script>
-         </details>
-         <details><summary>CodeMirror experiment</summary>
-            <div id="codemirror-expt"></div>
          </details>
       <p>The mathematics of the bidirectional analysis is described by a <b>Galois connection</b>. This establishes that the forward and backward parts of the analysis are <i>adjoint</i>, meaning they almost invert each other in the following sense: the data selection computed by the backwards analysis for a given view selection, if fed into the forward analysis, will suffice for (at least) the original view selection. Similarly, the view selection computed by the forwards analysis, if fed into the backwards analysis, will require (no more than) the original data selection. (&#8220;Require no more, promise no less&#8221; is an apt slogan.) See our <a href="https://dl.acm.org/doi/10.1145/3498668">paper</a> for more on the formal setting.
    </div>

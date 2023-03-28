@@ -1,5 +1,9 @@
 "use strict"
 
+"use strict"
+
+import * as d3 from "d3"
+
 import {EditorState} from "@codemirror/state"
 import {EditorView, keymap} from "@codemirror/view"
 import {defaultKeymap} from "@codemirror/commands"
@@ -11,11 +15,17 @@ let startState = EditorState.create({
 
 function addEditorView_ (id) {
    return () => {
-      const div = document.getElementById(id)
-      new EditorView({
-         state: startState,
-         parent: div
-      })
+      const childId = id + '-' + 1
+      const div = d3.select('#' + id)
+      const svg = div
+         .append('svg')
+         .attr('id', childId)
+         .attr('width', 100)
+         .attr('height', 100)
+//      new EditorView({
+//         state: startState,
+//         parent: div
+//      })
    }
 }
 
