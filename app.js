@@ -22714,13 +22714,13 @@
             if (v._2._2.tag === "Cons") {
               if (v._2._2._1.tag === "Dictionary") {
                 if (v._2._2._2.tag === "Nil") {
-                  return bindEither.bind(foldWithIndexM((k) => (v2) => (v3) => {
+                  return bindEither.bind(foldWithIndexM((s) => (v2) => (v3) => {
                     const $6 = apply22($Tuple(v._1, $Tuple(v2._2, v3._2)));
                     if ($6.tag === "Left") {
                       return $Either("Left", $6._1);
                     }
                     if ($6.tag === "Right") {
-                      return $Either("Right", $Tuple($List("Cons", $Tuple(k, $6._1._1), v2._1), $6._1._2));
+                      return $Either("Right", $Tuple($List("Cons", $Tuple(s, $6._1._1), v2._1), $6._1._2));
                     }
                     fail();
                   })($Tuple(Nil, v._2._1))(v._2._2._1._2))((v2) => $Either(
