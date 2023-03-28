@@ -146,7 +146,7 @@ dict_foldl = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bw
    fwd (v : u : Dictionary _ βvs : Nil) = do
       tss × u' <-
          foldWithIndexM
-            (\k (tss × u1) (_ × u2) -> apply2 (v × u1 × u2) <#> first (\ts -> (k × ts) : tss))
+            (\s (ts × u1) (_ × u2) -> apply2 (v × u1 × u2) <#> first (\tt -> (s × tt) : ts))
             (Nil × u)
             βvs
             :: MayFail (List (String × AppTrace × AppTrace) × Val _)
@@ -167,13 +167,13 @@ dict_get :: ForeignOp
 dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
    where
    fwd :: OpFwd String
-   fwd (Str _ k : Dictionary _ αvs : Nil) =
-      (k × _) <$> (snd <$> D.lookup k αvs # orElse ("Key \"" <> k <> "\" not found"))
+   fwd (Str _ s : Dictionary _ αvs : Nil) =
+      (s × _) <$> (snd <$> D.lookup s αvs # orElse ("Key \"" <> s <> "\" not found"))
    fwd _ = report "String and dictionary expected"
 
    bwd :: Partial => OpBwd String
-   bwd (k × v) =
-      Str bot k : Dictionary bot (D.singleton k (bot × v)) : Nil
+   bwd (s × v) =
+      Str bot s : Dictionary bot (D.singleton s (bot × v)) : Nil
 
 dict_intersectionWith :: ForeignOp
 dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bwd }
