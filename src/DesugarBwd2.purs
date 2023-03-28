@@ -8,6 +8,7 @@ import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.List (List(..), singleton, sortBy, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
+import Data.Newtype (unwrap)
 import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
 import Data.Tuple (uncurry, fst, snd)
@@ -18,7 +19,7 @@ import Expr2 (Cont(..), Elim(..), asElim, asExpr)
 import Expr2 (Expr(..), RecDefs, VarDef(..)) as E
 import Lattice2 (class BoundedJoinSemilattice, (∨), bot)
 import Partial.Unsafe (unsafePartial)
-import SExpr2 (Branch, Clause, ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, SExpr(..), VarDef(..), VarDefs, unwrapSugar)
+import SExpr2 (Branch(..), Clause, ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, SExpr(..), VarDef(..), VarDefs, unwrapSugar)
 import Util (type (+), type (×), Endo, absurd, error, successful, (×))
 
 desugarBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> SExpr a -> SExpr a
@@ -152,7 +153,7 @@ recordBwd σ (_ ↦ p : xps) = recordBwd σ xps # (asElim >>> flip patternBwd p)
 
 -- σ, c desugar_bwd c'
 branchBwd_curried :: forall a. BoundedJoinSemilattice a => Elim a -> NonEmptyList Pattern -> Branch a
-branchBwd_curried σ πs = πs × patternsBwd σ πs
+branchBwd_curried σ πs = Branch (πs × patternsBwd σ πs)
 
 -- σ, c desugar_bwd c'
 branchBwd_uncurried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (Pattern × E.Expr a)
@@ -161,9 +162,9 @@ branchBwd_uncurried σ (p × _) = p × asExpr (patternBwd σ p)
 -- σ, cs desugar_bwd cs'
 branchesBwd_curried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (NonEmptyList (Branch a))
 branchesBwd_curried σ (NonEmptyList (b1 :| b2 : bs)) =
-   NonEmptyList (branchBwd_curried σ (fst b1) :| toList (branchesBwd_curried σ (NonEmptyList (b2 :| bs))))
+   NonEmptyList (branchBwd_curried σ (fst (unwrap b1)) :| toList (branchesBwd_curried σ (NonEmptyList (b2 :| bs))))
 branchesBwd_curried σ (NonEmptyList (b :| Nil)) =
-   NonEmptyList (branchBwd_curried σ (fst b) :| Nil)
+   NonEmptyList (branchBwd_curried σ (fst (unwrap b)) :| Nil)
 
 -- σ, cs desugar_bwd cs'
 branchesBwd_uncurried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (NonEmptyList (Pattern × E.Expr a))

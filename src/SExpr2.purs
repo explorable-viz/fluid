@@ -9,6 +9,7 @@ import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), sortBy, length)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
+import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
 import Data.Traversable (traverse)
@@ -69,7 +70,7 @@ data ListRestPattern
    | PNext Pattern ListRestPattern
 
 -- in the spec, "clause" doesn't include the function name
-type Branch a = NonEmptyList Pattern × Expr a
+newtype Branch a = Branch (NonEmptyList Pattern × Expr a)
 type Clause a = Var × Branch a
 type RecDefs a = NonEmptyList (Clause a)
 
@@ -88,6 +89,8 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 -- ======================
 -- boilerplate
 -- ======================
+derive instance Newtype (Branch a) _
+derive instance Functor Branch
 derive instance Functor SExpr
 derive instance Functor ListRest
 derive instance Functor VarDef
@@ -98,7 +101,7 @@ instance Functor Module where
       where
       mapDefs :: forall a b. (a -> b) -> VarDefs a + RecDefs a -> VarDefs b + RecDefs b
       mapDefs g (Left ds) = Left $ map g <$> ds
-      mapDefs g (Right ds) = Right $ (\(x × (ps × s)) -> x × (ps × (g <$> s))) <$> ds
+      mapDefs g (Right ds) = Right $ (\(x × Branch (ps × s)) -> x × Branch (ps × (g <$> s))) <$> ds
 
 instance JoinSemilattice a => JoinSemilattice (SExpr a) where
    join s = definedJoin s
@@ -224,7 +227,7 @@ branchFwd_uncurried p s = let cont = ContExpr s in patternFwd p cont
 
 branchesFwd_curried :: forall a. JoinSemilattice a => NonEmptyList (Branch a) -> MayFail (Elim a)
 branchesFwd_curried bs = do
-   NonEmptyList (σ :| σs) <- traverse patternsFwd bs
+   NonEmptyList (σ :| σs) <- traverse patternsFwd (map unwrap bs)
    foldM maybeJoin σ σs
 
 branchesFwd_uncurried :: forall a. JoinSemilattice a => NonEmptyList (Pattern × E.Expr a) -> MayFail (Elim a)
