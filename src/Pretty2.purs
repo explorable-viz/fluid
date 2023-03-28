@@ -198,6 +198,7 @@ instance Highlightable a => ToPair (S.SExpr a) where
    toPair s = error ("Not a pair: " <> prettyP s)
 
 instance Highlightable a => Pretty (S.SExpr a) where
+   pretty (S.Record _ _) = error "todo"
    pretty (S.BinaryApp s op s') = parens (hspace [ pretty s, text op, pretty s' ])
    pretty (S.MatchAs s bs) = atop (hspace [ text str.match, pretty s, text str.as ]) (vert semi (pretty <$> bs))
    pretty (S.IfElse s1 s2 s3) =

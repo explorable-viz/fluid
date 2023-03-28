@@ -16,11 +16,10 @@ import Data.Tuple (fst, snd, uncurry)
 import DataType (Ctr, arity, cCons, cFalse, cNil, cTrue, checkArity, ctrs, dataTypeFor)
 import Dict (asSingletonMap, Dict)
 import Dict as D
-import Expr2 (Expr(..), RecDefs, VarDef(..), Module(..)) as E
+import Expr2 (Expr(..), Module(..), VarDef(..), RecDefs) as E
 import Expr2 (class Desugarable, class Desugarable2, Cont(..), Elim(..), Expr, Sugar'(..), asElim, desug, thunkSugar)
 import Lattice2 (class JoinSemilattice, definedJoin, join, neg, maybeJoin)
 import Prelude (join) as P
-
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), type (+), absurd, error, unimplemented, successful, MayFail)
 
@@ -37,6 +36,8 @@ instance Desugarable2 SExpr where
    desug2 = exprFwd
 
 instance Desugarable SExpr where
+   desug (Record α xss) = E.Record α (D.fromFoldable xss)
+   -- Correct dependent on "clauses" which is meant to be equivalent to branchesFwd2_uncurried
    -- Correct
    desug (BinaryApp l op r) = E.App (E.App (E.Op op) l) r
    -- Correct dependent on "clauses" which is meant to be equivalent to branchesFwd2_uncurried
@@ -175,7 +176,8 @@ totalizeCtr (c × k) ann =
 
 -- Surface language expressions.
 data SExpr a
-   = BinaryApp (Expr a) Var (Expr a)
+   = Record a (List (Bind (Expr a)))
+   | BinaryApp (Expr a) Var (Expr a)
    | MatchAs (Expr a) (NonEmptyList (Pattern × Expr a))
    | IfElse (Expr a) (Expr a) (Expr a)
    | ListEmpty a -- called [] in the paper
@@ -286,6 +288,7 @@ recDefFwd xcs = (fst (head xcs) ↦ _) <$> branchesFwd_curried (snd <$> xcs)
 
 -- s desugar_fwd e
 exprFwd :: forall a. JoinSemilattice a => SExpr a -> MayFail (E.Expr a)
+exprFwd (Record α xss) = pure (E.Record α (D.fromFoldable xss))
 exprFwd (BinaryApp s1 op s2) = pure (E.App (E.App (E.Op op) s1) s2)
 exprFwd (MatchAs s bs) = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> pure s
 exprFwd (IfElse s1 s2 s3) =
