@@ -43,7 +43,7 @@ instance Desugarable2 ListRest Expr where
 
 instance Desugarable2 Branch Elim where
    desug2 b = patternsFwd (unwrap b)
-   
+
 -- Surface language expressions.
 data SExpr a
    = Record a (List (Bind (Expr a)))
