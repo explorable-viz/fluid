@@ -28,8 +28,11 @@ mustDesug = successful <<< desug
 class Wibble e where
    wobble :: forall s a. JoinSemilattice a => Desugarable s e => s a -> e a
 
+wabble :: forall s e a. JoinSemilattice a => Desugarable s e => (Sugar' e a -> e a -> e a) -> s a -> e a
+wabble constr x = let exp = mustDesug x in constr (thunkSugar x) exp
+
 instance Wibble Expr where
-   wobble sexp = let exp = mustDesug sexp :: Expr _ in Sugar (thunkSugar sexp) exp
+   wobble = wabble Sugar
 
 class Functor s <= Desugarable (s :: Type -> Type) (e :: Type -> Type) | s -> e where
    desug :: forall a. JoinSemilattice a => s a -> MayFail (e a)
@@ -66,7 +69,7 @@ data Elim a
    | ElimSug (Sugar' Elim a) (Elim a)
 
 instance Wibble Elim where
-   wobble x = let elim = mustDesug x in ElimSug (thunkSugar x) elim
+   wobble = wabble ElimSug
 
 -- Continuation of an eliminator branch.
 data Cont a
