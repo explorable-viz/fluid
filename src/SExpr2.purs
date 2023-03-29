@@ -41,6 +41,8 @@ instance Desugarable2 ListRest Expr where
    desug2 (End ann) = Right $ E.Constr ann cNil Nil
    desug2 (Next ann head rest) = Right $ scons ann head (E.Sugar (thunkSugar rest))
 
+-- instance Desugarable2 (NonEmptyList Branch) Elim where
+--    desug2 = branchesFwd_curried
 -- Surface language expressions.
 data SExpr a
    = Record a (List (Bind (Expr a)))
