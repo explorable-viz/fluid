@@ -44,8 +44,6 @@ instance Desugarable ListRest Expr where
 instance Desugarable Branches Elim where
    desug (Branches b) = branchesFwd_curried b
 
--- instance Desugarable (NonEmptyList Branch) Elim where
---    desug = branchesFwd_curried
 -- Surface language expressions.
 data SExpr a
    = Record a (List (Bind (Expr a)))
