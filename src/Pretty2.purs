@@ -143,7 +143,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.LetRec δ e) = atop (hspace [ text str.let_, pretty δ, text str.in_ ]) (pretty e)
    pretty (E.Project _ _) = error "todo"
    pretty (E.App e e') = hspace [ pretty e, pretty e' ]
-   pretty (E.Sugar _) = error "todo"
+   pretty (E.Sugar _ _) = error "todo"
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty = D.toUnfoldable >>> go
@@ -168,6 +168,7 @@ instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hspace [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
    pretty (ElimRecord _ _) = error "todo"
+   pretty (ElimSug _ σ) = pretty σ
 
 instance Highlightable a => Pretty (Val a) where
    pretty (V.Int α n) = highlightIf α (text (show n))
