@@ -18,7 +18,7 @@ import DataType (Ctr, arity, cCons, cFalse, cNil, cTrue, checkArity, ctrs, dataT
 import Dict (asSingletonMap, Dict)
 import Dict as D
 import Expr2 (Expr(..), Module(..), VarDef(..), RecDefs) as E
-import Expr2 (class Desugarable2, Cont(..), Elim(..), Expr, Sugar'(..), asElim, thunkSugar)
+import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, Sugar'(..), asElim, thunkSugar)
 import Lattice2 (class JoinSemilattice, definedJoin, neg, maybeJoin)
 import Prelude (join) as P
 import Unsafe.Coerce (unsafeCoerce)
@@ -30,19 +30,22 @@ scons ann head tail = E.Constr ann cCons (head : tail : Nil)
 snil :: forall a. a -> E.Expr a
 snil ann = E.Constr ann cNil Nil
 
-unwrapSugar :: forall s e a. JoinSemilattice a => Desugarable2 s e => Sugar' e a -> s a
+unwrapSugar :: forall s e a. JoinSemilattice a => Desugarable s e => Sugar' e a -> s a
 unwrapSugar (Sugar' k) = k unsafeCoerce
 
-instance Desugarable2 SExpr Expr where
-   desug2 = exprFwd
+instance Desugarable SExpr Expr where
+   desug = exprFwd
 
 -- ListRest auxiliaries
-instance Desugarable2 ListRest Expr where
-   desug2 (End ann) = Right $ E.Constr ann cNil Nil
-   desug2 (Next ann head rest) = Right $ scons ann head (E.Sugar (thunkSugar rest))
+instance Desugarable ListRest Expr where
+   desug (End ann) = Right $ E.Constr ann cNil Nil
+   desug (Next ann head rest) = Right $ scons ann head (E.Sugar (thunkSugar rest))
 
--- instance Desugarable2 (NonEmptyList Branch) Elim where
---    desug2 = branchesFwd_curried
+instance Desugarable Branches Elim where
+   desug (Branches b) = branchesFwd_curried b
+
+-- instance Desugarable (NonEmptyList Branch) Elim where
+--    desug = branchesFwd_curried
 -- Surface language expressions.
 data SExpr a
    = Record a (List (Bind (Expr a)))
@@ -73,6 +76,7 @@ data ListRestPattern
 
 -- in the spec, "clause" doesn't include the function name
 newtype Branch a = Branch (NonEmptyList Pattern × Expr a)
+newtype Branches a = Branches (NonEmptyList (Branch a))
 type Clause a = Var × Branch a
 type RecDefs a = NonEmptyList (Clause a)
 
@@ -93,6 +97,8 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 -- ======================
 derive instance Newtype (Branch a) _
 derive instance Functor Branch
+derive instance Newtype (Branches a) _
+derive instance Functor Branches
 derive instance Functor SExpr
 derive instance Functor ListRest
 derive instance Functor VarDef

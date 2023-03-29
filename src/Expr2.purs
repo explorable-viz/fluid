@@ -14,16 +14,16 @@ import Lattice2 (class BoundedJoinSemilattice, class Expandable, class JoinSemil
 import Util (type (+), type (×), both, error, report, successful, (×), (≜), (≞), MayFail)
 import Util.Pair (Pair, toTuple)
 
-thunkSugar :: forall s a. Desugarable2 s Expr => s a -> Sugar' Expr a
+thunkSugar :: forall s a. Desugarable s Expr => s a -> Sugar' Expr a
 thunkSugar sa = Sugar' (\ds -> ds sa)
 
 runSugar :: forall e a. JoinSemilattice a => Sugar' e a -> MayFail (e a)
-runSugar (Sugar' k) = k desug2
+runSugar (Sugar' k) = k desug
 
-newtype Sugar' e (a :: Type) = Sugar' (forall r. (forall s. Desugarable2 s e => s a -> r) -> r)
+newtype Sugar' e (a :: Type) = Sugar' (forall r. (forall s. Desugarable s e => s a -> r) -> r)
 
-class Functor s <= Desugarable2 (s :: Type -> Type) (e :: Type -> Type) | s -> e where
-   desug2 :: forall a. JoinSemilattice a => s a -> MayFail (e a)
+class Functor s <= Desugarable (s :: Type -> Type) (e :: Type -> Type) | s -> e where
+   desug :: forall a. JoinSemilattice a => s a -> MayFail (e a)
 
 instance Functor e => Functor (Sugar' e) where
    map :: forall a b. (a -> b) -> Sugar' e a -> Sugar' e b

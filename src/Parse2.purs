@@ -14,13 +14,12 @@ import Data.Identity (Identity)
 import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy)
 import Data.List.NonEmpty (NonEmptyList(..), toList)
 import Data.Map (values)
-import Data.Newtype (unwrap)
 import Data.NonEmpty ((:|))
 import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Expr2 (Expr(..)) as E
-import Expr2 (class Desugarable2, desug2)
+import Expr2 (class Desugarable, desug)
 import Lattice2 (class JoinSemilattice, Raw)
 import Parsing.Combinators (between, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -29,7 +28,7 @@ import Parsing.String (char, eof)
 import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr2 (Branch(..), Clause, SExpr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr2 (Branch(..), Branches(..), Clause, SExpr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (×), (×), type (+), error, onlyIf, successful)
 import Util.Pair (Pair(..))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
@@ -164,11 +163,11 @@ keyword str' =
    if str' `elem` (unGenLanguageDef languageDef).reservedNames then token.reserved str'
    else error $ str' <> " is not a reserved word"
 
-sugarH :: forall s e. Desugarable2 s e => SParser (Raw s) -> SParser (Raw e)
+sugarH :: forall s e. Desugarable s e => SParser (Raw s) -> SParser (Raw e)
 sugarH sugP = mustDesug <$> sugP
 
-mustDesug :: forall s e. Desugarable2 s e => forall a. JoinSemilattice a => s a -> e a
-mustDesug = successful <<< desug2
+mustDesug :: forall s e. Desugarable s e => forall a. JoinSemilattice a => s a -> e a
+mustDesug = successful <<< desug
 
 ident ∷ SParser Var
 ident = do
@@ -415,7 +414,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
             (pure $ \e e' -> E.Constr unit cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 
          lambda :: SParser (Raw E.Expr)
-         lambda = error "todo" -- E.Lambda <$> (keyword str.fun *> ( branches expr' branch_curried))
+         lambda = E.Lambda <$> (sugarH $ Branches <$> (keyword str.fun *> (branches expr' branch_curried)))
 
          ifElse :: SParser (Raw E.Expr)
          ifElse = sugarH $ pure IfElse
