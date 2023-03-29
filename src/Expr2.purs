@@ -14,7 +14,7 @@ import Lattice2 (class BoundedJoinSemilattice, class Expandable, class JoinSemil
 import Util (type (+), type (×), both, error, report, successful, (×), (≜), (≞), MayFail)
 import Util.Pair (Pair, toTuple)
 
-thunkSugar :: forall s a. Desugarable s Expr => s a -> Sugar' Expr a
+thunkSugar :: forall s e a. Desugarable s e => s a -> Sugar' e a
 thunkSugar sa = Sugar' (\ds -> ds sa)
 
 runSugar :: forall e a. JoinSemilattice a => Sugar' e a -> MayFail (e a)
@@ -29,7 +29,7 @@ class Wibble e where
    wobble :: forall s a. JoinSemilattice a => Desugarable s e => s a -> e a
 
 instance Wibble Expr where
-   wobble sexp = let exp = mustDesug sexp :: Expr _ in exp
+   wobble sexp = let exp = mustDesug sexp :: Expr _ in Sugar (thunkSugar sexp) exp
 
 class Functor s <= Desugarable (s :: Type -> Type) (e :: Type -> Type) | s -> e where
    desug :: forall a. JoinSemilattice a => s a -> MayFail (e a)
@@ -63,6 +63,10 @@ data Elim a
    = ElimVar Var (Cont a)
    | ElimConstr (Dict (Cont a))
    | ElimRecord (Set Var) (Cont a)
+   | ElimSug (Sugar' Elim a) (Elim a)
+
+instance Wibble Elim where
+   wobble x = let elim = mustDesug x in ElimSug (thunkSugar x) elim
 
 -- Continuation of an eliminator branch.
 data Cont a
@@ -105,6 +109,7 @@ instance JoinSemilattice a => FV (Elim a) where
    fv (ElimVar x κ) = fv κ `difference` singleton x
    fv (ElimConstr m) = unions (fv <$> m)
    fv (ElimRecord _ κ) = fv κ
+   fv (ElimSug _ σ) = fv σ
 
 instance JoinSemilattice a => FV (Cont a) where
    fv ContNone = empty
@@ -125,6 +130,7 @@ instance BV (Elim a) where
    bv (ElimVar x κ) = singleton x `union` bv κ
    bv (ElimConstr m) = bv (snd (asSingletonMap m))
    bv (ElimRecord _ κ) = bv κ
+   bv (ElimSug _ σ) = bv σ
 
 instance BV (VarDef a) where
    bv (VarDef σ _) = bv σ

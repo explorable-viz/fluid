@@ -141,6 +141,7 @@ listRestPatternBwd (ElimVar _ _) _ = error absurd
 listRestPatternBwd (ElimRecord _ _) _ = error absurd
 listRestPatternBwd (ElimConstr m) PEnd = get cNil m
 listRestPatternBwd (ElimConstr m) (PNext p o) = argsBwd (get cCons m) (Left p : Right o : Nil)
+listRestPatternBwd (ElimSug _ σ) p = listRestPatternBwd σ p
 
 argsBwd :: forall a. Cont a -> List (Pattern + ListRestPattern) -> Cont a
 argsBwd κ Nil = κ

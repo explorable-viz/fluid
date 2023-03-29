@@ -19,7 +19,7 @@ import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Expr2 (Expr(..)) as E
-import Expr2 (class Desugarable, mustDesug)
+import Expr2 (class Desugarable, mustDesug, wobble, class Wibble)
 import Lattice2 (Raw)
 import Parsing.Combinators (between, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -163,8 +163,8 @@ keyword str' =
    if str' `elem` (unGenLanguageDef languageDef).reservedNames then token.reserved str'
    else error $ str' <> " is not a reserved word"
 
-sugarH :: forall s e. Desugarable s e => SParser (Raw s) -> SParser (Raw e)
-sugarH sugP = mustDesug <$> sugP
+sugarH :: forall s e. Wibble e => Desugarable s e => SParser (Raw s) -> SParser (Raw e)
+sugarH sugP = wobble <$> sugP
 
 ident ∷ SParser Var
 ident = do

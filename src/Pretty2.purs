@@ -168,6 +168,7 @@ instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hspace [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
    pretty (ElimRecord _ _) = error "todo"
+   pretty (ElimSug _ σ) = pretty σ
 
 instance Highlightable a => Pretty (Val a) where
    pretty (V.Int α n) = highlightIf α (text (show n))
