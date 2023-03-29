@@ -70,8 +70,8 @@ exprBwd (E.Constr α2 _ (_ : E.Constr α1 _ Nil : Nil)) (ListComp _ s_body (NonE
    ListComp (α1 ∨ α2) s_body
       (NonEmptyList (Guard (E.Constr (α1 ∨ α2) cTrue Nil) :| Nil))
 
--- list-comp-last
-exprBwd (E.Sugar e) (ListComp _α _s (NonEmptyList (_q :| Nil))) =
+-- list-comp-last NOTE: the e's in the E.Sugar terms are actually Sugar' values
+exprBwd (E.Sugar e _) (ListComp _α _s (NonEmptyList (_q :| Nil))) =
    case unwrapSugar e of
       ListComp β s' (NonEmptyList (q' :| (Guard (E.Constr _ c Nil)) : Nil)) | c == cTrue ->
          (ListComp β s' (NonEmptyList (q' :| Nil)))
@@ -82,7 +82,7 @@ exprBwd (E.App (E.Lambda (ElimConstr m)) _) (ListComp _ _ (NonEmptyList (Guard s
    case
       asExpr (get cTrue m) × asExpr (get cFalse m)
       of
-      E.Sugar e' × E.Constr α c Nil | c == cNil -> case unwrapSugar e' of
+      E.Sugar e' _ × E.Constr α c Nil | c == cNil -> case unwrapSugar e' of
          ListComp β e'' (NonEmptyList (q' :| qs')) -> ListComp (α ∨ β) e'' (NonEmptyList (Guard s2 :| q' : qs'))
          _ -> error absurd
       _ -> error absurd
@@ -90,7 +90,7 @@ exprBwd (E.App (E.Lambda (ElimConstr m)) _) (ListComp _ _ (NonEmptyList (Guard s
 -- list-comp-decl
 exprBwd (E.App (E.Lambda σ) e1) (ListComp _ _ (NonEmptyList (Declaration (VarDef π s1) :| _q : _qs))) =
    case patternsBwd σ (NonEmptyList (π :| Nil)) of
-      E.Sugar e ->
+      E.Sugar e _ ->
          case unwrapSugar e of
             ListComp β _ (NonEmptyList (q' :| qs')) -> ListComp β e1 (NonEmptyList ((Declaration (VarDef π s1)) :| q' : qs'))
             _ -> error absurd
@@ -104,7 +104,7 @@ exprBwd
       σ' × β = totaliseBwd (ContElim σ) (Left p : Nil)
    in
       case asExpr (patternBwd (asElim σ') p) of
-         E.Sugar e -> case unwrapSugar e of
+         E.Sugar e _ -> case unwrapSugar e of
             ListComp β' s2' (NonEmptyList (q' :| qs')) ->
                ListComp (β ∨ β') s2' (NonEmptyList (Generator p s1 :| q' : qs'))
             _ -> error absurd

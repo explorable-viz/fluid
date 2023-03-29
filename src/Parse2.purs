@@ -8,7 +8,7 @@ import Control.Apply (lift2)
 import Control.Lazy (fix)
 import Control.MonadPlus (empty)
 import Data.Array (cons, elem, fromFoldable)
-import Data.Either (choose, Either(..))
+import Data.Either (choose)
 import Data.Function (on)
 import Data.Identity (Identity)
 import Data.List (List(..), (:), concat, foldr, groupBy, singleton, snoc, sortBy)
@@ -19,8 +19,8 @@ import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Expr2 (Expr(..)) as E
-import Expr2 (class Desugarable, desug)
-import Lattice2 (class JoinSemilattice, Raw)
+import Expr2 (class Desugarable, mustDesug)
+import Lattice2 (Raw)
 import Parsing.Combinators (between, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
@@ -29,7 +29,7 @@ import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Primitive.Parse (OpDef, opDefs)
 import SExpr2 (Branch(..), Branches(..), Clause, SExpr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
-import Util (Endo, type (×), (×), type (+), error, onlyIf, successful)
+import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Pair (Pair(..))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
 
@@ -165,9 +165,6 @@ keyword str' =
 
 sugarH :: forall s e. Desugarable s e => SParser (Raw s) -> SParser (Raw e)
 sugarH sugP = mustDesug <$> sugP
-
-mustDesug :: forall s e. Desugarable s e => forall a. JoinSemilattice a => s a -> e a
-mustDesug = successful <<< desug
 
 ident ∷ SParser Var
 ident = do

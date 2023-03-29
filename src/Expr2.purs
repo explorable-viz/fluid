@@ -22,6 +22,15 @@ runSugar (Sugar' k) = k desug
 
 newtype Sugar' e (a :: Type) = Sugar' (forall r. (forall s. Desugarable s e => s a -> r) -> r)
 
+mustDesug :: forall s e. Desugarable s e => forall a. JoinSemilattice a => s a -> e a
+mustDesug = successful <<< desug
+
+class Wibble e where
+   wobble :: forall s a. JoinSemilattice a => Desugarable s e => s a -> e a
+
+instance Wibble Expr where
+   wobble sexp = let exp = mustDesug sexp :: Expr _ in exp
+
 class Functor s <= Desugarable (s :: Type -> Type) (e :: Type -> Type) | s -> e where
    desug :: forall a. JoinSemilattice a => s a -> MayFail (e a)
 
@@ -44,7 +53,7 @@ data Expr a
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
-   | Sugar (Sugar' Expr a)
+   | Sugar (Sugar' Expr a) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -90,7 +99,7 @@ instance JoinSemilattice a => FV (Expr a) where
    fv (App e1 e2) = fv e1 `union` fv e2
    fv (Let def e) = fv def `union` (fv e `difference` bv def)
    fv (LetRec ρ e) = unions (fv <$> ρ) `union` fv e
-   fv (Sugar s) = fv (successful (runSugar s))
+   fv (Sugar _ e) = fv e
 
 instance JoinSemilattice a => FV (Elim a) where
    fv (ElimVar x κ) = fv κ `difference` singleton x
