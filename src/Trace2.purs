@@ -10,7 +10,7 @@ import Data.Set (Set, empty, singleton, unions)
 import DataType (Ctr)
 import Dict (Dict)
 import Expr2 (class BV, RecDefs, bv)
-import Lattice2 (Raw)
+import Lattice (Raw)
 import Util (type (×))
 import Val2 (Array2, ForeignOp', Val)
 

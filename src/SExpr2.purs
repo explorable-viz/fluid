@@ -19,7 +19,7 @@ import Dict (asSingletonMap, Dict)
 import Dict as D
 import Expr2 (Expr(..), Module(..), VarDef(..), RecDefs) as E
 import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, Sugar'(..), asElim, mustDesug, thunkSugar, wobble)
-import Lattice2 (class JoinSemilattice, definedJoin, neg, maybeJoin)
+import Lattice (class JoinSemilattice, definedJoin, neg, maybeJoin)
 import Prelude (join) as P
 import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), type (+), absurd, error, unimplemented, successful, MayFail)

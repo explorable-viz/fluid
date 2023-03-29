@@ -17,7 +17,7 @@ import Dict (Dict, get)
 import Dict (fromFoldable) as D
 import Expr2 (Cont(..), Elim(..), asElim, asExpr)
 import Expr2 (Expr(..), RecDefs, VarDef(..)) as E
-import Lattice2 (class BoundedJoinSemilattice, (∨), bot)
+import Lattice (class BoundedJoinSemilattice, (∨), bot)
 import Partial.Unsafe (unsafePartial)
 import SExpr2 (Branch(..), Clause, ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, SExpr(..), VarDef(..), VarDefs, unwrapSugar)
 import Util (type (+), type (×), Endo, absurd, error, successful, (×))

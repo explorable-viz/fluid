@@ -18,7 +18,7 @@ import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
-import Lattice2 ((∧), erase, top)
+import Lattice ((∧), erase, top)
 import Pretty2 (prettyP)
 import Primitive2 (intPair, string)
 import Trace2 (AppTrace(..), Trace(..), VarDef(..)) as T

@@ -20,7 +20,7 @@ import Data.Profunctor.Choice ((|||))
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Expr2 (Expr(..)) as E
 import Expr2 (class Desugarable, mustDesug, wobble, class Wibble)
-import Lattice2 (Raw)
+import Lattice (Raw)
 import Parsing.Combinators (between, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
 import Parsing.Language (emptyDef)
