@@ -17,7 +17,7 @@ import Data.Tuple (fst, snd)
 import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
-import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv, runSugarF)
+import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv, runSugar)
 import Lattice2 ((∧), erase, top)
 import Pretty2 (prettyP)
 import Primitive2 (intPair, string)
@@ -159,7 +159,7 @@ eval γ (LetRec ρ e) α = do
    t × v <- eval (γ <+> γ') e α
    pure $ T.LetRec (erase <$> ρ) t × v
 eval env (Sugar s) ann = do
-   desugged <- runSugarF s
+   desugged <- runSugar s
    eval env desugged ann
 
 eval_module :: forall a. Ann a => Env a -> Module a -> a -> MayFail (Env a)

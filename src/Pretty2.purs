@@ -6,7 +6,6 @@ import Bindings (Bind, Var, (↦))
 import Data.Exists (runExists)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), fromFoldable, null)
-import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
@@ -17,7 +16,7 @@ import Dict (toUnfoldable) as D
 import Expr2 (Cont(..), Elim(..))
 import Expr2 (Expr(..), VarDef(..)) as E
 import Parse (str)
-import SExpr2 (SExpr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
+import SExpr2 (SExpr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..), Branch(..)) as S
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
 import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
@@ -198,6 +197,7 @@ instance Highlightable a => ToPair (S.SExpr a) where
    toPair s = error ("Not a pair: " <> prettyP s)
 
 instance Highlightable a => Pretty (S.SExpr a) where
+   pretty (S.Record _ _) = error "todo"
    pretty (S.BinaryApp s op s') = parens (hspace [ pretty s, text op, pretty s' ])
    pretty (S.MatchAs s bs) = atop (hspace [ text str.match, pretty s, text str.as ]) (vert semi (pretty <$> bs))
    pretty (S.IfElse s1 s2 s3) =
@@ -215,11 +215,11 @@ instance Highlightable a => Pretty (S.ListRest a) where
    pretty (S.End α) = highlightIf α (text str.rBracket)
    pretty (S.Next α s l) = hspace [ highlightIf α comma, pretty s :<>: pretty l ]
 
-instance Highlightable a => Pretty (String × (NonEmptyList S.Pattern × E.Expr a)) where
+instance Highlightable a => Pretty (String × (S.Branch a)) where
    pretty (x × b) = hspace [ text x, pretty b ]
 
-instance Highlightable a => Pretty (NonEmptyList S.Pattern × E.Expr a) where
-   pretty (ps × s) = hspace ((pretty <$> NEL.toList ps) <> (text str.equals : pretty s : Nil))
+instance Highlightable a => Pretty (S.Branch a) where
+   pretty (S.Branch (ps × s)) = hspace ((pretty <$> NEL.toList ps) <> (text str.equals : pretty s : Nil))
 
 instance Highlightable a => Pretty (S.VarDef a) where
    pretty (S.VarDef p s) = hspace [ pretty p, text str.equals, pretty s ]
