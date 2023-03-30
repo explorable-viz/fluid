@@ -27,7 +27,6 @@ import Util (type (×), MayFail, absurd, both, check, error, report, successful,
 import Util.Pair (unzip) as P
 import Val2 (Fun(..), Val(..)) as V
 import Val2 (class Ann, Env, ForeignOp'(..), (<+>), Val, for, lookup', restrict)
-import Web.HTML.Event.EventTypes (offline)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'

@@ -195,11 +195,11 @@ evalBwd' v (T.LetRec ρ t) =
    { γ: γ1γ2, e, α } = evalBwd' v t
    γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2
    γ1' × ρ' × α' = closeDefsBwd γ2
-evalBwd' v (T.Sugar (Sugar s _) rest) = { γ: γ1, e: Sugar s' e1, α: α1 }
+evalBwd' v (T.Sugar (Sugar s e) rest) = { γ: γ1, e: Sugar s' e', α: α1 }
    where
    { γ: γ1, e: e1, α: α1 } = evalBwd' v rest
    s' = annSugBwd s α1
-
+   e' = expand e1 e
 evalBwd' _ _ = error absurd
 
 annSugBwd :: forall a. Ann a => Raw (Sugar' Expr) -> a -> Sugar' Expr a
