@@ -18,7 +18,7 @@ import DataType (Ctr, arity, cCons, cFalse, cNil, cTrue, checkArity, ctrs, dataT
 import Dict (asSingletonMap, Dict)
 import Dict as D
 import Expr2 (Expr(..), Module(..), VarDef(..), RecDefs) as E
-import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, Sugar'(..), asElim, mustDesug, thunkSugar, wobble)
+import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, Sugar'(..), asElim, mustDesug, thunkSugar, fromSug)
 import Lattice (class JoinSemilattice, definedJoin, neg, maybeJoin)
 import Prelude (join) as P
 import Unsafe.Coerce (unsafeCoerce)
@@ -39,7 +39,7 @@ instance Desugarable SExpr Expr where
 -- ListRest auxiliaries
 instance Desugarable ListRest Expr where
    desug (End ann) = Right $ E.Constr ann cNil Nil
-   desug (Next ann head rest) = Right $ scons ann head (wobble rest)
+   desug (Next ann head rest) = Right $ scons ann head (fromSug rest)
 
 instance Desugarable Branches Elim where
    desug (Branches b) = branchesFwd_curried b
@@ -169,7 +169,7 @@ exprFwd (MatchAs s bs) = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> p
 exprFwd (IfElse s1 s2 s3) =
    E.App (E.Lambda (elimBool (ContExpr s2) (ContExpr s3))) <$> pure s1
 exprFwd (ListEmpty α) = pure (enil α)
-exprFwd (ListNonEmpty α s l) = pure (econs α s (wobble l))
+exprFwd (ListNonEmpty α s l) = pure (econs α s (fromSug l))
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> pure s1) <*> pure s2
 -- | List-comp-done
 exprFwd (ListComp _ s_body (NonEmptyList (Guard (E.Constr α2 c Nil) :| Nil))) | c == cTrue =
@@ -179,18 +179,18 @@ exprFwd (ListComp α s_body (NonEmptyList (q :| Nil))) =
    let
       s = ListComp α s_body (NonEmptyList (q :| Guard (E.Constr α cTrue Nil) : Nil))
    in
-      pure $ wobble s
+      pure $ fromSug s
 -- | List-comp-guard
 exprFwd (ListComp α s_body (NonEmptyList (Guard s :| q : qs))) = do
    let
       s' = ListComp α s_body (NonEmptyList (q :| qs))
-      e = wobble s'
+      e = fromSug s'
    E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> pure s
 -- | List-comp-decl
 exprFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))) = do
    let
       s' = ListComp α s_body (NonEmptyList (q :| qs))
-      e = wobble s'
+      e = fromSug s'
    σ <- patternFwd π (ContExpr e :: Cont a)
    E.App (E.Lambda σ) <$> pure s
 
@@ -198,7 +198,7 @@ exprFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))
 exprFwd (ListComp α s_body (NonEmptyList (Generator p s :| q : qs))) = do
    let
       s' = ListComp α s_body (NonEmptyList (q :| qs))
-      e = wobble s'
+      e = fromSug s'
    σ <- patternFwd p (ContExpr e)
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totaliseFwd (ContElim σ) α)))) <$> pure s
 exprFwd (Let ds s) = varDefsFwd (ds × s)

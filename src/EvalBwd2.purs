@@ -1,4 +1,4 @@
-module EvalBwd where
+module EvalBwd2 where
 
 import Prelude hiding (absurd)
 
@@ -17,15 +17,15 @@ import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
-import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
+import Expr2 (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv, Sugar')
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
-import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (AppTrace, ForeignTrace'(..), Match(..), Trace)
+import Trace2 (AppTrace(..), Trace(..), VarDef(..)) as T
+import Trace2 (AppTrace, ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), Endo, absurd, definitely', error, nonEmpty, (!), (×))
 import Util.Pair (zip) as P
-import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, ForeignOp, ForeignOp'(..), Val, append_inv, (<+>))
+import Val2 (Fun(..), Val(..)) as V
+import Val2 (class Ann, Env, ForeignOp, ForeignOp'(..), Val, append_inv, (<+>))
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
@@ -195,5 +195,10 @@ evalBwd' v (T.LetRec ρ t) =
    { γ: γ1γ2, e, α } = evalBwd' v t
    γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2
    γ1' × ρ' × α' = closeDefsBwd γ2
-
+evalBwd' v (T.Sugar sug@(Sugar s e) rest) = {γ : γ1, e: Sugar s' e1, α: α1}
+    where
+    annSugBwd :: forall a. Ann a => Raw (Sugar' Expr) -> Sugar' Expr a
+    annSugBwd sug = error "todo"
+    s' = annSugBwd s
+    {γ : γ1, e: e1, α: α1} = evalBwd' v rest 
 evalBwd' _ _ = error absurd

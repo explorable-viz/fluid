@@ -27,6 +27,7 @@ import Util (type (×), MayFail, absurd, both, check, error, report, successful,
 import Util.Pair (unzip) as P
 import Val2 (Fun(..), Val(..)) as V
 import Val2 (class Ann, Env, ForeignOp'(..), (<+>), Val, for, lookup', restrict)
+import Web.HTML.Event.EventTypes (offline)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -159,7 +160,10 @@ eval γ (LetRec ρ e) α = do
    let γ' = closeDefs γ ρ α
    t × v <- eval (γ <+> γ') e α
    pure $ T.LetRec (erase <$> ρ) t × v
-eval ρ (Sugar _ e) α = eval ρ e α
+eval ρ sug@(Sugar _ e) α = do
+            (t × v) <- eval ρ e α
+            let t' = T.Sugar (erase sug) t
+            pure (t' × v)               
 
 eval_module :: forall a. Ann a => Env a -> Module a -> a -> MayFail (Env a)
 eval_module γ = go empty

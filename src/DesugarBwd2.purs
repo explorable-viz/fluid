@@ -109,6 +109,9 @@ exprBwd
                ListComp (β ∨ β') s2' (NonEmptyList (Generator p s1 :| q' : qs'))
             _ -> error absurd
          _ -> error absurd
+exprBwd
+   (E.Sugar _ e')
+   s = exprBwd e' s
 exprBwd _ _ = error absurd
 
 -- e, l desugar_bwd l
