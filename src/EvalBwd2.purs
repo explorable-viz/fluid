@@ -17,7 +17,7 @@ import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
-import Expr2 (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv, Sugar')
+import Expr2 (Cont(..), Elim(..), Expr(..), RecDefs, Sugar', VarDef(..), bv)
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace2 (AppTrace(..), Trace(..), VarDef(..)) as T
@@ -195,10 +195,12 @@ evalBwd' v (T.LetRec ρ t) =
    { γ: γ1γ2, e, α } = evalBwd' v t
    γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2
    γ1' × ρ' × α' = closeDefsBwd γ2
-evalBwd' v (T.Sugar sug@(Sugar s e) rest) = {γ : γ1, e: Sugar s' e1, α: α1}
-    where
-    annSugBwd :: forall a. Ann a => Raw (Sugar' Expr) -> Sugar' Expr a
-    annSugBwd sug = error "todo"
-    s' = annSugBwd s
-    {γ : γ1, e: e1, α: α1} = evalBwd' v rest 
+evalBwd' v (T.Sugar (Sugar s _) rest) = { γ: γ1, e: Sugar s' e1, α: α1 }
+   where
+   { γ: γ1, e: e1, α: α1 } = evalBwd' v rest
+   s' = annSugBwd s α1
+
 evalBwd' _ _ = error absurd
+
+annSugBwd :: forall a. Ann a => Raw (Sugar' Expr) -> a -> Sugar' Expr a
+annSugBwd sug α = map (\_ -> α) sug
