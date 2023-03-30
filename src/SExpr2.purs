@@ -166,8 +166,10 @@ exprFwd :: forall a. JoinSemilattice a => SExpr a -> MayFail (E.Expr a)
 exprFwd (Record α xss) = pure (E.Record α (D.fromFoldable xss))
 exprFwd (BinaryApp s1 op s2) = pure (E.App (E.App (E.Op op) s1) s2)
 exprFwd (MatchAs s bs) = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> pure s
+
 exprFwd (IfElse s1 s2 s3) =
    E.App (E.Lambda (elimBool (ContExpr s2) (ContExpr s3))) <$> pure s1
+
 exprFwd (ListEmpty α) = pure (enil α)
 exprFwd (ListNonEmpty α s l) = pure (econs α s (fromSug l))
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> pure s1) <*> pure s2

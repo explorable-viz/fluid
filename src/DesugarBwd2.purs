@@ -52,21 +52,21 @@ recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> NonEmptyList
 recDefBwd (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd
 
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> SExpr a -> SExpr a
-exprBwd (E.Sugar _ (E.App (E.Lambda σ) _)) (MatchAs e' bs) =
+exprBwd (E.App (E.Lambda σ) _) (MatchAs e' bs) =
    MatchAs e' (branchesBwd_uncurried σ bs)
-exprBwd (E.Sugar _ (E.App (E.Lambda (ElimConstr _)) _)) (IfElse s1 s2 s3) =
+exprBwd (E.App (E.Lambda (ElimConstr _)) _) (IfElse s1 s2 s3) =
    IfElse s1 s2 s3
-exprBwd (E.Sugar _(E.App (E.App (E.Op _) _) _)) (BinaryApp s1 op s2) =
+exprBwd (E.App (E.App (E.Op _) _) _) (BinaryApp s1 op s2) =
    BinaryApp s1 op s2
-exprBwd (E.Sugar _ (E.Let d e)) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
-exprBwd (E.Sugar _ (E.LetRec xσs _)) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) s
-exprBwd (E.Sugar _ (E.Constr α _ Nil)) (ListEmpty _) = ListEmpty α
-exprBwd (E.Sugar _(E.Constr α _ (_ : e2 : Nil))) (ListNonEmpty _ s l) =
+exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
+exprBwd (E.LetRec xσs _) (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) s
+exprBwd (E.Constr α _ Nil) (ListEmpty _) = ListEmpty α
+exprBwd (E.Constr α _ (_ : e2 : Nil)) (ListNonEmpty _ s l) =
    ListNonEmpty α s (listRestBwd e2 l)
-exprBwd (E.Sugar _ (E.App (E.App (E.Var "enumFromTo") _) _)) (ListEnum s1 s2) =
+exprBwd (E.App (E.App (E.Var "enumFromTo") _) _) (ListEnum s1 s2) =
    ListEnum s1 s2
 -- list-comp-done
-exprBwd (E.Sugar _ (E.Constr α2 _ (_ : E.Constr α1 _ Nil : Nil))) (ListComp _ s_body (NonEmptyList (Guard (E.Constr _ c Nil) :| Nil))) | c == cTrue =
+exprBwd (E.Constr α2 _ (_ : E.Constr α1 _ Nil : Nil)) (ListComp _ s_body (NonEmptyList (Guard (E.Constr _ c Nil) :| Nil))) | c == cTrue =
    ListComp (α1 ∨ α2) s_body
       (NonEmptyList (Guard (E.Constr (α1 ∨ α2) cTrue Nil) :| Nil))
 
@@ -78,7 +78,7 @@ exprBwd (E.Sugar e _) (ListComp _α _s (NonEmptyList (_q :| Nil))) =
       _ -> error absurd
 
 -- list-comp-guard
-exprBwd (E.Sugar _ (E.App (E.Lambda (ElimConstr m)) _)) (ListComp _ _ (NonEmptyList (Guard s2 :| _ : _))) =
+exprBwd (E.App (E.Lambda (ElimConstr m)) _) (ListComp _ _ (NonEmptyList (Guard s2 :| _ : _))) =
    case
       asExpr (get cTrue m) × asExpr (get cFalse m)
       of
@@ -88,7 +88,7 @@ exprBwd (E.Sugar _ (E.App (E.Lambda (ElimConstr m)) _)) (ListComp _ _ (NonEmptyL
       _ -> error absurd
 
 -- list-comp-decl
-exprBwd ((E.App (E.Lambda σ) e1)) (ListComp _ _ (NonEmptyList (Declaration (VarDef π s1) :| _q : _qs))) =
+exprBwd (E.App (E.Lambda σ) e1) (ListComp _ _ (NonEmptyList (Declaration (VarDef π s1) :| _q : _qs))) =
    case patternsBwd σ (NonEmptyList (π :| Nil)) of
       E.Sugar e _ ->
          case unwrapSugar e of
@@ -98,7 +98,7 @@ exprBwd ((E.App (E.Lambda σ) e1)) (ListComp _ _ (NonEmptyList (Declaration (Var
 
 -- list-comp-gen
 exprBwd
-   (E.Sugar _ (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) _))
+   (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) _)
    (ListComp _α _s2 (NonEmptyList (Generator p s1 :| _q : _qs))) =
    let
       σ' × β = totaliseBwd (ContElim σ) (Left p : Nil)
@@ -109,10 +109,12 @@ exprBwd
                ListComp (β ∨ β') s2' (NonEmptyList (Generator p s1 :| q' : qs'))
             _ -> error absurd
          _ -> error absurd
-exprBwd
-   (E.Sugar _ e')
-   s = exprBwd e' s
+
 exprBwd _ _ = error absurd
+
+exprBwd' :: forall a. BoundedJoinSemilattice a => E.Expr a -> SExpr a
+exprBwd' (E.Sugar s e) = exprBwd e (unwrapSugar s)
+exprBwd' _ = error absurd
 
 -- e, l desugar_bwd l
 listRestBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Endo (ListRest a)
