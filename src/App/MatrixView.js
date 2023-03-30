@@ -38,8 +38,8 @@ function drawMatrix_ (
    id,
    childIndex,
    {
-      title,                                                   // String
-      matrix: { _1: { _1: nss, _2: i_max }, _2: j_max }    // IntMatrix
+      title,                                               // String
+      matrix: { _1: nss, _2: { _1: i_max, _2: j_max } }    // IntMatrix
    },
    listener
 ) {
