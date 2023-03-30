@@ -15,17 +15,11 @@ let startState = EditorState.create({
 
 function addEditorView_ (id) {
    return () => {
-      const childId = id + '-' + 1
-      const div = d3.select('#' + id)
-      const svg = div
-         .append('svg')
-         .attr('id', childId)
-         .attr('width', 100)
-         .attr('height', 100)
-//      new EditorView({
-//         state: startState,
-//         parent: div
-//      })
+      const div2 = document.createElement('div');
+      new EditorView({
+         state: startState,
+         parent: div2
+      })
    }
 }
 
