@@ -16133,7 +16133,7 @@
   }
   function drawMatrix_(id3, childIndex, {
     title: title2,
-    matrix: { _1: { _1: nss, _2: i_max }, _2: j_max }
+    matrix: { _1: nss, _2: { _1: i_max, _2: j_max } }
   }, listener) {
     return () => {
       const childId = id3 + "-" + childIndex;
