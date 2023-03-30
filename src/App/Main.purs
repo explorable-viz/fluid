@@ -2,7 +2,6 @@ module App.Main where
 
 import Prelude hiding (absurd)
 
-import App.CodeMirror.State (addEditorView)
 import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)
@@ -35,7 +34,6 @@ fig2 =
    , xs: [ "image", "filter" ]
    }
 
--- TODO: consolidate these two.
 drawLinkFigs :: Array (Aff LinkFig) -> Effect Unit
 drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)
@@ -54,4 +52,3 @@ main :: Effect Unit
 main = do
    drawFigs [ loadFig fig1, loadFig fig2 ]
    drawLinkFigs [ loadLinkFig linkingFig1 ]
-   addEditorView "codemirror-expt"
