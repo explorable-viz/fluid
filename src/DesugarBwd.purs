@@ -72,10 +72,10 @@ exprBwd (E.Project e _) (Project s x) = Project (exprBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (exprBwd e1 s1) (exprBwd e2 s2)
 exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
    let
-      bwded     = clausesBwd_curried σ (map Clause (map (first $ NE.singleton) bs)) :: NonEmptyList (Clause _)
+      bwded = clausesBwd_curried σ (map Clause (map (first $ NE.singleton) bs)) :: NonEmptyList (Clause _)
       unwrapped = map (\(x × y) -> head x × y) (map unwrap bwded) :: NonEmptyList (Pattern × Expr _)
-   in  
-   MatchAs (exprBwd e s) (unwrapped)
+   in
+      MatchAs (exprBwd e s) (unwrapped)
 exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (exprBwd e1 s1)
       (exprBwd (asExpr (get cTrue m)) s2)
@@ -183,6 +183,7 @@ clausesBwd_curried σ (NonEmptyList (b1 :| b2 : bs)) =
    NonEmptyList (clauseBwd_curried σ b1 :| toList (clausesBwd_curried σ (NonEmptyList (b2 :| bs))))
 clausesBwd_curried σ (NonEmptyList (b :| Nil)) =
    NonEmptyList (clauseBwd_curried σ b :| Nil)
+
 -- κ, πs totalise_bwd κ', α
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
 orElseBwd κ Nil = κ × bot

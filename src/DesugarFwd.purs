@@ -21,7 +21,7 @@ import Dict (fromFoldable, singleton) as D
 import Expr (Cont(..), Elim(..), asElim)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (class JoinSemilattice, maybeJoin)
-import SExpr (Clause(..), Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, RecDef(..),  Qualifier(..))
+import SExpr (Clause(..), Expr(..), ListRestPattern(..), ListRest(..), Module(..), Pattern(..), VarDefs, VarDef(..), RecDefs, RecDef(..), Qualifier(..))
 import Util (type (+), type (×), MayFail, absurd, error, successful, (×))
 
 desugarFwd :: forall a. JoinSemilattice a => Expr a -> MayFail (E.Expr a)
