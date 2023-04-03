@@ -69,7 +69,6 @@ exprBwd (E.Constr α _ Nil) (ListEmpty _) = ListEmpty α
 exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
    ListNonEmpty α e1 (listRestBwd e2 l)
 
-
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
    ListEnum e1 e2
 
@@ -77,7 +76,6 @@ exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
 exprBwd (E.Constr α2 _ (e' : E.Constr α1 _ Nil : Nil)) (ListComp _ s_body (NonEmptyList (Guard (E.Constr _ c Nil) :| Nil))) | c == cTrue =
    ListComp (α1 ∨ α2) e'
       (NonEmptyList (Guard (E.Constr (α1 ∨ α2) cTrue Nil) :| Nil))
-
 
 -- list-comp-last
 exprBwd e (ListComp α s (NonEmptyList (q :| Nil))) =
@@ -90,7 +88,7 @@ exprBwd e (ListComp α s (NonEmptyList (q :| Nil))) =
 exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp α0 s1 (NonEmptyList (Guard s2 :| q : qs))) =
    case
       exprBwd' (asExpr (get cTrue m)) ×
-          asExpr (get cFalse m)
+         asExpr (get cFalse m)
       of
       ListComp β s1' (NonEmptyList (q' :| qs')) × E.Constr α c Nil | c == cNil ->
          ListComp (α ∨ β) s1' (NonEmptyList (Guard e2 :| q' : qs'))
@@ -121,7 +119,7 @@ exprBwd' (E.Sugar s e) = exprBwd e (unwrapSugar s)
 
 -- e, l desugar_bwd l
 listRestBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Endo (ListRest a)
-listRestBwd (E.Constr α _ _)               (End _) = End α
+listRestBwd (E.Constr α _ _) (End _) = End α
 listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
    Next α e1 (listRestBwd e2 l)
 listRestBwd _ _ = error absurd
@@ -149,7 +147,7 @@ listRestPatternBwd (ElimVar _ _) _ = error absurd
 listRestPatternBwd (ElimRecord _ _) _ = error absurd
 listRestPatternBwd (ElimConstr m) PEnd = get cNil m
 listRestPatternBwd (ElimConstr m) (PNext p o) = argsBwd (get cCons m) (Left p : Right o : Nil)
-listRestPatternBwd (ElimSug _ _ ) _ = error "todo"
+listRestPatternBwd (ElimSug _ _) _ = error "todo"
 
 argsBwd :: forall a. Cont a -> List (Pattern + ListRestPattern) -> Cont a
 argsBwd κ Nil = κ
@@ -162,7 +160,7 @@ recordBwd σ (_ ↦ p : xps) = recordBwd σ xps # (asElim >>> flip patternBwd p)
 
 -- σ, c desugar_bwd c'
 branchBwd_curried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (Branch a)
-branchBwd_curried σ ( Branch (πs × _)) = Branch (πs × (patternsBwd σ πs))
+branchBwd_curried σ (Branch (πs × _)) = Branch (πs × (patternsBwd σ πs))
 
 -- σ, c desugar_bwd c'
 branchBwd_uncurried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (Pattern × E.Expr a)
