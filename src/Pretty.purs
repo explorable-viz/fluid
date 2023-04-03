@@ -236,7 +236,7 @@ instance Highlightable a => Pretty (String × (S.Clause a)) where
    pretty (x × b) = hspace [ text x, pretty b ]
 
 instance Highlightable a => Pretty (S.Clause a) where
-   pretty (S.Clause (s × b)) = pretty b
+   pretty (S.Clause (s × b)) = pretty (s × b)
 
 instance Highlightable a => Pretty (NonEmptyList S.Pattern × S.Expr a) where
    pretty (ps × s) = hspace ((pretty <$> NEL.toList ps) <> (text str.equals : pretty s : Nil))

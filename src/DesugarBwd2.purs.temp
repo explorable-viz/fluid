@@ -97,9 +97,9 @@ exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp α0 s1 (NonEmptyList (Gua
 -- list-comp-decl
 exprBwd (E.App (E.Lambda σ) e1) (ListComp α0 s2 (NonEmptyList (Declaration (VarDef π s1) :| q : qs))) =
    case branchBwd_curried σ (Branch (NonEmptyList (π :| Nil) × e1)) of
-      _ × ListComp β s2' (NonEmptyList (q' :| qs')) ->
-         ListComp β s2' (NonEmptyList ((Declaration (VarDef π e1)) :| q' : qs'))
-      _ × _ -> error absurd
+      -- _ × ListComp β s2' (NonEmptyList (q' :| qs')) ->
+      --    ListComp β s2' (NonEmptyList ((Declaration (VarDef π e1)) :| q' : qs'))
+      _ -> error absurd
 
 -- list-comp-gen
 exprBwd
@@ -110,13 +110,13 @@ exprBwd
    in
       case exprBwd (asExpr (patternBwd (asElim σ') p)) (ListComp α s2 (NonEmptyList (q :| qs))) of
          ListComp β' s2' (NonEmptyList (q' :| qs')) ->
-            ListComp (β ∨ β') s2' (NonEmptyList (Generator p (exprBwd e1 s1) :| q' : qs'))
+            ListComp (β ∨ β') s2' (NonEmptyList (Generator p e1 :| q' : qs'))
          _ -> error absurd
 exprBwd _ _ = error absurd
 
 exprBwd' :: forall a. JoinSemilattice a => E.Expr a -> SExpr a
-exprBwd' (E.Sugar s e) = exprBwd e (unwrapSugar s)
-
+exprBwd' (E.Sugar s e) = error "todo" -- exprBwd e (unwrapSugar s)
+exprBwd' _             = error "todo"
 -- e, l desugar_bwd l
 listRestBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Endo (ListRest a)
 listRestBwd (E.Constr α _ _) (End _) = End α

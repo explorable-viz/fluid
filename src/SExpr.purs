@@ -6,7 +6,7 @@ import Bindings (Bind, Var)
 import Data.Either (Either(..))
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
-import Data.Newtype (class Newtype, unwrap)
+import Data.Newtype (class Newtype)
 import DataType (Ctr)
 import Lattice (class JoinSemilattice, definedJoin, neg)
 import Util (type (×), (×), type (+), error, unimplemented)
@@ -54,6 +54,7 @@ data ListRestPattern
 -- in the spec, "clause" doesn't include the function name
 newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
 type Branch a = Var × Clause a
+newtype RecDef a = RecDef (NonEmptyList (Branch a))
 type RecDefs a = NonEmptyList (Branch a)
 
 -- The pattern/expr relationship is different to the one in branch (the expr is the "argument", not the "body").
@@ -72,6 +73,7 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 -- boilerplate
 -- ======================
 derive instance Newtype (Clause a) _
+derive instance Newtype (RecDef a) _
 derive instance Functor Clause
 derive instance Functor Expr
 derive instance Functor ListRest

@@ -252,18 +252,18 @@ branches expr' branch_ =
 
 -- changed clause to branch function
 varDefs :: SParser (Raw Expr) -> SParser (Raw VarDefs)
-varDefs expr' = keyword str.let_ *> sepBy1_try clause token.semi
+varDefs expr' = keyword str.let_ *> sepBy1_try branch token.semi
    where
-   clause :: SParser (Raw VarDef)
-   clause = VarDef <$> (pattern <* equals) <*> expr'
+   branch :: SParser (Raw VarDef)
+   branch = VarDef <$> (pattern <* equals) <*> expr'
 
 -- changed clause function to branch function
 recDefs :: SParser (Raw Expr) -> SParser (Raw RecDefs)
 recDefs expr' = do
-   keyword str.let_ *> sepBy1_try clause token.semi
+   keyword str.let_ *> sepBy1_try branch token.semi
    where
-   clause :: SParser (Raw Branch)
-   clause = ident `lift2 (×)` (clause_curried expr' equals)
+   branch :: SParser (Raw Branch)
+   branch = ident `lift2 (×)` (clause_curried expr' equals)
 
 defs :: SParser (Raw Expr) -> SParser (List (Raw VarDefs + Raw RecDefs))
 defs expr' = singleton <$> choose (try $ varDefs expr') (recDefs expr')
