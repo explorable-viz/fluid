@@ -6,6 +6,7 @@ import Bindings (Bind, Var)
 import Data.Either (Either(..))
 import Data.List (List)
 import Data.List.NonEmpty (NonEmptyList)
+import Data.Newtype (class Newtype, unwrap)
 import DataType (Ctr)
 import Lattice (class JoinSemilattice, definedJoin, neg)
 import Util (type (×), (×), type (+), error, unimplemented)
@@ -22,7 +23,7 @@ data Expr a
    | Record a (List (Bind (Expr a)))
    | Dictionary a (List (Pair (Expr a)))
    | Matrix a (Expr a) (Var × Var) (Expr a)
-   | Lambda (NonEmptyList (Branch a))
+   | Lambda (NonEmptyList (Clause a))
    | Project (Expr a) Var
    | App (Expr a) (Expr a)
    | BinaryApp (Expr a) Var (Expr a)
@@ -51,9 +52,9 @@ data ListRestPattern
    | PNext Pattern ListRestPattern
 
 -- in the spec, "clause" doesn't include the function name
-type Branch a = NonEmptyList Pattern × Expr a
-type Clause a = Var × Branch a
-type RecDefs a = NonEmptyList (Clause a)
+newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
+type Branch a = Var × Clause a
+type RecDefs a = NonEmptyList (Branch a)
 
 -- The pattern/expr relationship is different to the one in branch (the expr is the "argument", not the "body").
 -- Using a data type makes for easier overloading.
@@ -70,6 +71,8 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 -- ======================
 -- boilerplate
 -- ======================
+derive instance Newtype (Clause a) _
+derive instance Functor Clause
 derive instance Functor Expr
 derive instance Functor ListRest
 derive instance Functor VarDef
@@ -80,7 +83,7 @@ instance Functor Module where
       where
       mapDefs :: forall a b. (a -> b) -> VarDefs a + RecDefs a -> VarDefs b + RecDefs b
       mapDefs g (Left ds) = Left $ map g <$> ds
-      mapDefs g (Right ds) = Right $ (\(x × (ps × s)) -> x × (ps × (g <$> s))) <$> ds
+      mapDefs g (Right ds) = Right $ (\(x × Clause (ps × s)) -> x × Clause (ps × (g <$> s))) <$> ds
 
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join s = definedJoin s

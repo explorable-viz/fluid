@@ -18,7 +18,7 @@ import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
 import Lattice (class BoundedJoinSemilattice, (∨), bot)
 import Partial.Unsafe (unsafePartial)
-import SExpr (Branch, Clause, Expr(..), ListRest(..), Pattern(..), ListRestPattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Clause(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, Branch)
 import Util (type (+), type (×), Endo, absurd, error, successful, (×))
 import Util.Pair (Pair(..))
 
@@ -48,8 +48,8 @@ recDefsBwd' ρ (NonEmptyList (xcs :| xcss)) =
    in
       NonEmptyList (recDefBwd (x ↦ get x ρ) xcs :| xcss')
 
-recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> NonEmptyList (Clause a) -> NonEmptyList (Clause a)
-recDefBwd (x ↦ σ) = map (x × _) <<< branchesBwd_curried σ <<< map snd
+recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> NonEmptyList (Branch a) -> NonEmptyList (Branch a)
+recDefBwd (x ↦ σ) = map (x × _) <<< clausesBwd_curried σ <<< map snd
 
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Expr a -> Expr a
 exprBwd (E.Var _) (Var x) = Var x
@@ -64,7 +64,7 @@ exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
    Dictionary α (zipWith (\(Pair e e') (Pair s s') -> Pair (exprBwd e s) (exprBwd e' s')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s (x × y) s') =
    Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
-exprBwd (E.Lambda σ) (Lambda bs) = Lambda (branchesBwd_curried σ bs)
+exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd_curried σ bs)
 exprBwd (E.Project e _) (Project s x) = Project (exprBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (exprBwd e1 s1) (exprBwd e2 s2)
 exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
@@ -104,10 +104,10 @@ exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp α0 s1 (NonEmptyList (Gua
 
 -- list-comp-decl
 exprBwd (E.App (E.Lambda σ) e1) (ListComp α0 s2 (NonEmptyList (Declaration (VarDef π s1) :| q : qs))) =
-   case branchBwd_curried σ (NonEmptyList (π :| Nil) × (ListComp α0 s2 (NonEmptyList (q :| qs)))) of
-      _ × ListComp β s2' (NonEmptyList (q' :| qs')) ->
+   case clauseBwd_curried σ (Clause (NonEmptyList (π :| Nil) × (ListComp α0 s2 (NonEmptyList (q :| qs))))) of
+      Clause (_ × ListComp β s2' (NonEmptyList (q' :| qs'))) ->
          ListComp β s2' (NonEmptyList ((Declaration (VarDef π (exprBwd e1 s1))) :| q' : qs'))
-      _ × _ -> error absurd
+      Clause (_ × _) -> error absurd
 
 -- list-comp-gen
 exprBwd
@@ -163,26 +163,26 @@ recordBwd κ Nil = κ
 recordBwd σ (_ ↦ p : xps) = recordBwd σ xps # (asElim >>> flip patternBwd p)
 
 -- σ, c desugar_bwd c'
-branchBwd_curried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (Branch a)
-branchBwd_curried σ (πs × s) = πs × exprBwd (patternsBwd σ πs) s
+clauseBwd_curried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (Clause a)
+clauseBwd_curried σ (Clause (πs × s)) = Clause $ πs × exprBwd (patternsBwd σ πs) s
 
 -- σ, c desugar_bwd c'
-branchBwd_uncurried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (Pattern × Expr a)
-branchBwd_uncurried σ (p × s) = p × exprBwd (asExpr (patternBwd σ p)) s
+clauseBwd_uncurried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (Pattern × Expr a)
+clauseBwd_uncurried σ (p × s) = p × exprBwd (asExpr (patternBwd σ p)) s
 
 -- σ, cs desugar_bwd cs'
-branchesBwd_curried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (NonEmptyList (Branch a))
-branchesBwd_curried σ (NonEmptyList (b1 :| b2 : bs)) =
-   NonEmptyList (branchBwd_curried σ b1 :| toList (branchesBwd_curried σ (NonEmptyList (b2 :| bs))))
-branchesBwd_curried σ (NonEmptyList (b :| Nil)) =
-   NonEmptyList (branchBwd_curried σ b :| Nil)
+clausesBwd_curried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (NonEmptyList (Clause a))
+clausesBwd_curried σ (NonEmptyList (b1 :| b2 : bs)) =
+   NonEmptyList (clauseBwd_curried σ b1 :| toList (clausesBwd_curried σ (NonEmptyList (b2 :| bs))))
+clausesBwd_curried σ (NonEmptyList (b :| Nil)) =
+   NonEmptyList (clauseBwd_curried σ b :| Nil)
 
 -- σ, cs desugar_bwd cs'
 branchesBwd_uncurried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (NonEmptyList (Pattern × Expr a))
 branchesBwd_uncurried σ (NonEmptyList (b1 :| b2 : bs)) =
-   NonEmptyList (branchBwd_uncurried σ b1 :| toList (branchesBwd_uncurried σ (NonEmptyList (b2 :| bs))))
+   NonEmptyList (clauseBwd_uncurried σ b1 :| toList (branchesBwd_uncurried σ (NonEmptyList (b2 :| bs))))
 branchesBwd_uncurried σ (NonEmptyList (b :| Nil)) =
-   NonEmptyList (branchBwd_uncurried σ b :| Nil)
+   NonEmptyList (clauseBwd_uncurried σ b :| Nil)
 
 -- κ, πs totalise_bwd κ', α
 totaliseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a

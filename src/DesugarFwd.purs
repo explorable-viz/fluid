@@ -9,6 +9,7 @@ import Data.Function (applyN, on)
 import Data.List (List(..), (:), (\\), length, sortBy)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
+import Data.Newtype (class Newtype, unwrap)
 import Data.NonEmpty ((:|))
 import Data.Set (toUnfoldable) as S
 import Data.Traversable (traverse)
@@ -63,10 +64,10 @@ varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
 recDefsFwd :: forall a. JoinSemilattice a => RecDefs a -> MayFail (E.RecDefs a)
 recDefsFwd xcs = D.fromFoldable <$> traverse recDefFwd xcss
    where
-   xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Clause a))
+   xcss = groupBy (eq `on` fst) xcs :: NonEmptyList (NonEmptyList (Branch a))
 
-recDefFwd :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> MayFail (Bind (Elim a))
-recDefFwd xcs = (fst (head xcs) ↦ _) <$> branchesFwd_curried (snd <$> xcs)
+recDefFwd :: forall a. JoinSemilattice a => NonEmptyList (Branch a) -> MayFail (Bind (Elim a))
+recDefFwd xcs = (fst (head xcs) ↦ _) <$> clausesFwd_curried (snd <$> xcs)
 
 -- s desugar_fwd e
 exprFwd :: forall a. JoinSemilattice a => Expr a -> MayFail (E.Expr a)
@@ -79,11 +80,11 @@ exprFwd (Constr α c ss) = E.Constr α c <$> traverse exprFwd ss
 exprFwd (Record α xss) = E.Record α <$> D.fromFoldable <$> traverse (traverse exprFwd) xss
 exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse exprFwd) sss
 exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> exprFwd s <@> x × y <*> exprFwd s'
-exprFwd (Lambda bs) = E.Lambda <$> branchesFwd_curried bs
+exprFwd (Lambda bs) = E.Lambda <$> clausesFwd_curried bs
 exprFwd (Project s x) = E.Project <$> exprFwd s <@> x
 exprFwd (App s1 s2) = E.App <$> exprFwd s1 <*> exprFwd s2
 exprFwd (BinaryApp s1 op s2) = E.App <$> (E.App (E.Op op) <$> exprFwd s1) <*> exprFwd s2
-exprFwd (MatchAs s bs) = E.App <$> (E.Lambda <$> branchesFwd_uncurried bs) <*> exprFwd s
+exprFwd (MatchAs s bs) = E.App <$> (E.Lambda <$> clausesFwd_uncurried bs) <*> exprFwd s
 exprFwd (IfElse s1 s2 s3) = do
    e2 <- exprFwd s2
    e3 <- exprFwd s3
@@ -124,7 +125,7 @@ listRestFwd (Next α s l) = econs α <$> exprFwd s <*> listRestFwd l
 
 -- ps, e desugar_fwd σ
 patternsFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> MayFail (Elim a)
-patternsFwd (NonEmptyList (p :| Nil) × e) = branchFwd_uncurried p e
+patternsFwd (NonEmptyList (p :| Nil) × e) = clauseFwd_uncurried p e
 patternsFwd (NonEmptyList (p :| p' : ps) × e) =
    patternFwd p =<< ContExpr <$> E.Lambda <$> patternsFwd (NonEmptyList (p' :| ps) × e)
 
@@ -150,17 +151,20 @@ recordPatternFwd :: forall a. List (Bind Pattern) -> Cont a -> MayFail (Cont a)
 recordPatternFwd Nil κ = pure κ
 recordPatternFwd (_ ↦ p : xps) κ = patternFwd p κ >>= ContElim >>> recordPatternFwd xps
 
-branchFwd_uncurried :: forall a. JoinSemilattice a => Pattern -> Expr a -> MayFail (Elim a)
-branchFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= patternFwd p
+-- initial: branchFwd_uncurried, new: clauseFwd_uncurried
+clauseFwd_uncurried :: forall a. JoinSemilattice a => Pattern -> Expr a -> MayFail (Elim a)
+clauseFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= patternFwd p
 
-branchesFwd_curried :: forall a. JoinSemilattice a => NonEmptyList (Branch a) -> MayFail (Elim a)
-branchesFwd_curried bs = do
-   NonEmptyList (σ :| σs) <- traverse patternsFwd bs
+-- initial: branchesFwd_curried, new: clausesFwd_curried
+clausesFwd_curried :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> MayFail (Elim a)
+clausesFwd_curried bs = do
+   NonEmptyList (σ :| σs) <- traverse patternsFwd (map unwrap bs)
    foldM maybeJoin σ σs
 
-branchesFwd_uncurried :: forall a. JoinSemilattice a => NonEmptyList (Pattern × Expr a) -> MayFail (Elim a)
-branchesFwd_uncurried bs = do
-   NonEmptyList (σ :| σs) <- traverse (uncurry branchFwd_uncurried) bs
+-- initial: branchesFwd_uncurried, new: clausesFwd_uncurried
+clausesFwd_uncurried :: forall a. JoinSemilattice a => NonEmptyList (Pattern × Expr a) -> MayFail (Elim a)
+clausesFwd_uncurried bs = do
+   NonEmptyList (σ :| σs) <- traverse (uncurry clauseFwd_uncurried) bs
    foldM maybeJoin σ σs
 
 totaliseFwd :: forall a. Cont a -> a -> Cont a
