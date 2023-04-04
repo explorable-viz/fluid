@@ -70,38 +70,43 @@ exprBwd (E.Matrix α e1 _ e2) (Matrix _ s (x × y) s') =
 exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd_curried σ bs)
 exprBwd (E.Project e _) (Project s x) = Project (exprBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (exprBwd e1 s1) (exprBwd e2 s2)
+-- | <<-match checked, assuming bwded+unwrapped implementation are correct
 exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
    let
       bwded = clausesBwd_curried σ (map Clause (map (first $ NE.singleton) bs)) :: NonEmptyList (Clause _)
       unwrapped = map (\(x × y) -> head x × y) (map unwrap bwded) :: NonEmptyList (Pattern × Expr _)
    in
       MatchAs (exprBwd e s) (unwrapped)
+-- | <<-if checked
 exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (exprBwd e1 s1)
       (exprBwd (asExpr (get cTrue m)) s2)
       (exprBwd (asExpr (get cFalse m)) s3)
+-- | <<-binary-apply checked
 exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
    BinaryApp (exprBwd e1 s1) op (exprBwd e2 s2)
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
+-- | <<-let-rec checked
 exprBwd (E.LetRec xσs e') (LetRec xcs s) = LetRec (recDefsBwd xσs xcs) (exprBwd e' s)
 exprBwd (E.Constr α _ Nil) (ListEmpty _) = ListEmpty α
 exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
    ListNonEmpty α (exprBwd e1 s) (listRestBwd e2 l)
+-- | <<-list-enum checked
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
    ListEnum (exprBwd e1 s1) (exprBwd e2 s2)
 -- list-comp-done
 exprBwd (E.Constr α2 _ (e' : E.Constr α1 _ Nil : Nil)) (ListComp _ s_body (NonEmptyList (Guard (Constr _ c Nil) :| Nil))) | c == cTrue =
    ListComp (α1 ∨ α2) (exprBwd e' s_body)
       (NonEmptyList (Guard (Constr (α1 ∨ α2) cTrue Nil) :| Nil))
--- list-comp-last
+-- | <<-list-comp-last
 exprBwd e (ListComp α s (NonEmptyList (q :| Nil))) =
    case exprBwd e (ListComp α s (NonEmptyList (q :| Guard (Constr bot cTrue Nil) : Nil))) of
       ListComp β s' (NonEmptyList (q' :| (Guard (Constr _ c Nil)) : Nil)) | c == cTrue ->
          (ListComp β s' (NonEmptyList (q' :| Nil)))
       _ -> error absurd
--- list-comp-guard
+-- | <<-list-comp-guard checked
 exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp α0 s1 (NonEmptyList (Guard s2 :| q : qs))) =
-   case
+   case -- first element of pair is e†
       exprBwd (asExpr (get cTrue m)) (ListComp α0 s1 (NonEmptyList (q :| qs))) ×
          exprBwd (asExpr (get cFalse m)) (Constr bot cNil Nil)
       of
@@ -109,12 +114,12 @@ exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp α0 s1 (NonEmptyList (Gua
          ListComp (α ∨ β) s1' (NonEmptyList (Guard (exprBwd e2 s2) :| q' : qs'))
       _ × _ -> error absurd
 
--- list-comp-decl
+-- | <<-list-comp-decl
 exprBwd (E.App (E.Lambda σ) e1) (ListComp α0 s2 (NonEmptyList (Declaration (VarDef π s1) :| q : qs))) =
-   case clauseBwd_curried σ (Clause (NonEmptyList (π :| Nil) × (ListComp α0 s2 (NonEmptyList (q :| qs))))) of
-      Clause (_ × ListComp β s2' (NonEmptyList (q' :| qs'))) ->
+   case exprBwd (asExpr (pattContBwd σ π)) (ListComp α0 s2 (NonEmptyList (q :| qs))) of
+      ListComp β s2' (NonEmptyList (q' :| qs')) ->
          ListComp β s2' (NonEmptyList ((Declaration (VarDef π (exprBwd e1 s1))) :| q' : qs'))
-      Clause (_ × _) -> error absurd
+      _ -> error absurd
 
 -- list-comp-gen
 exprBwd
