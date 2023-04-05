@@ -49,7 +49,7 @@ testWithSetup (File file) expected v_expect_opt setup =
             t × v = successful (eval γ e bot)
             v' = fromMaybe identity (fst <$> v_expect_opt) v
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-            s' = desugarBwd e' s
+            s' = desugarBwd e' (erase s)
             _ × v'' = successful (eval γ' (successful (desugarFwd s')) true)
          unless (isGraphical v'') (checkPretty "Value" expected v'')
          case snd <$> v_expect_opt of

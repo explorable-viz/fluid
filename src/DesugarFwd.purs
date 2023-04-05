@@ -174,7 +174,7 @@ clausesFwd bs = do
 orElse :: forall a. Cont a -> a -> Cont a
 orElse ContNone _ = error absurd
 orElse (ContExpr e) _ = ContExpr e
-orElse (ContElim (ElimConstr m)) α = ContElim (ElimConstr (orElseConstrFwd (c × orElse κ α) α))
+orElse (ContElim (ElimConstr m)) α = ContElim (ElimConstr (unlessFwd (c × orElse κ α) α))
    where
    c × κ = asSingletonMap m
 orElse (ContElim (ElimRecord xs κ)) α = ContElim (ElimRecord xs (orElse κ α))
@@ -182,8 +182,8 @@ orElse (ContElim (ElimVar x κ)) α = ContElim (ElimVar x (orElse κ α))
 
 -- Extend singleton branch to set of branches where any missing constructors have been mapped to the empty list,
 -- using anonymous variables in any generated patterns.
-orElseConstrFwd :: forall a. Ctr × Cont a -> a -> Dict (Cont a)
-orElseConstrFwd (c × κ) α =
+unlessFwd :: forall a. Ctr × Cont a -> a -> Dict (Cont a)
+unlessFwd (c × κ) α =
    let
       defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α)) -- corresponds to elimArgs
       cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
