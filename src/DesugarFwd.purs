@@ -93,30 +93,30 @@ exprFwd (IfElse s1 s2 s3) = do -- checked
 exprFwd (ListEmpty α) = pure (enil α) -- checked
 exprFwd (ListNonEmpty α s l) = econs α <$> exprFwd s <*> listRestFwd l -- checked, valid if listrestfwd valid
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd s1) <*> exprFwd s2 -- checked
--- | List-comp-done, checked
-exprFwd (ListComp _ s_body ((Guard (Constr α2 c Nil)) : Nil)) | c == cTrue =
-   econs α2 <$> exprFwd s_body <@> enil α2
--- | List-comp-last ?
-exprFwd (ListComp _ s_body Nil) =
-   exprFwd s_body
--- | List-comp-last ?
-exprFwd (ListComp α s_body ((q : Nil))) =
-   exprFwd (ListComp α s_body ((q : Guard (Constr α cTrue Nil) : Nil)))
+-- -- | List-comp-done, checked
+-- exprFwd (ListComp _ s_body ((Guard (Constr α2 c Nil)) : Nil)) | c == cTrue =
+--    econs α2 <$> exprFwd s_body <@> enil α2
+-- | List-comp-done 
+exprFwd (ListComp α s_body Nil) =
+   econs α <$> (exprFwd s_body) <@> enil α
+-- -- | List-comp-last ?
+-- exprFwd (ListComp α s_body ((q : Nil))) =
+--    exprFwd (ListComp α s_body ((q : Guard (Constr α cTrue Nil) : Nil)))
 
 -- | List-comp-guard checked
-exprFwd (ListComp α s_body ((Guard s : q : qs))) = do
-   e <- exprFwd (ListComp α s_body (q : qs))
+exprFwd (ListComp α s_body (Guard s : qs)) = do
+   e <- exprFwd (ListComp α s_body qs)
    E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> exprFwd s
 
 -- | List-comp-decl checked
-exprFwd (ListComp α s_body ((Declaration (VarDef π s) : q : qs))) = do
-   e <- exprFwd (ListComp α s_body ((q : qs)))
+exprFwd (ListComp α s_body ((Declaration (VarDef π s) : qs))) = do
+   e <- exprFwd (ListComp α s_body qs)
    σ <- pattContFwd π (ContExpr e :: Cont a)
    E.App (E.Lambda σ) <$> exprFwd s
 
 -- | List-comp-gen checked
-exprFwd (ListComp α s_body ((Generator p s : q : qs))) = do
-   e <- exprFwd (ListComp α s_body ((q : qs))) -- effectively the rules premise
+exprFwd (ListComp α s_body ((Generator p s : qs))) = do
+   e <- exprFwd (ListComp α s_body qs) -- effectively the rules premise
    σ <- pattContFwd p (ContExpr e)
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElse (ContElim σ) α)))) <$> exprFwd s
 exprFwd (Let ds s) = varDefsFwd (ds × s)

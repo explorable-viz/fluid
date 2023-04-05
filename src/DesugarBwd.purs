@@ -52,7 +52,7 @@ recDefsBwd' ρ (NonEmptyList (xcs :| xcss)) =
       NonEmptyList (unwrap (recDefBwd (x ↦ get x ρ) (RecDef xcs)) :| xcss')
 
 recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> RecDef a -> RecDef a
-recDefBwd (x ↦ σ) (RecDef rds) = RecDef (map (x × _) (clausesBwd_curried σ (map snd rds)))
+recDefBwd (x ↦ σ) (RecDef rds) = RecDef (map (x × _) (clausesBwd σ (map snd rds)))
 
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Expr a -> Expr a
 exprBwd (E.Var _) (Var x) = Var x
@@ -67,13 +67,13 @@ exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
    Dictionary α (zipWith (\(Pair e e') (Pair s s') -> Pair (exprBwd e s) (exprBwd e' s')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s (x × y) s') =
    Matrix α (exprBwd e1 s) (x × y) (exprBwd e2 s')
-exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd_curried σ bs)
+exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd σ bs)
 exprBwd (E.Project e _) (Project s x) = Project (exprBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (exprBwd e1 s1) (exprBwd e2 s2)
 -- | <<-match checked, assuming bwded+unwrapped implementation are correct
 exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
    let
-      bwded = clausesBwd_curried σ (map Clause (map (first $ NE.singleton) bs)) :: NonEmptyList (Clause _)
+      bwded = clausesBwd σ (map Clause (map (first $ NE.singleton) bs)) :: NonEmptyList (Clause _)
       unwrapped = map (\(x × y) -> head x × y) (map unwrap bwded) :: NonEmptyList (Pattern × Expr _)
    in
       MatchAs (exprBwd e s) (unwrapped)
@@ -183,10 +183,10 @@ clauseBwd_uncurried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (Pat
 clauseBwd_uncurried σ (p × s) = p × exprBwd (asExpr (pattContBwd σ p)) s
 
 -- σ, cs desugar_bwd cs'
-clausesBwd_curried :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (NonEmptyList (Clause a))
-clausesBwd_curried σ (NonEmptyList (b1 :| b2 : bs)) =
-   NonEmptyList (clauseBwd_curried σ b1 :| toList (clausesBwd_curried σ (NonEmptyList (b2 :| bs))))
-clausesBwd_curried σ (NonEmptyList (b :| Nil)) =
+clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Endo (NonEmptyList (Clause a))
+clausesBwd σ (NonEmptyList (b1 :| b2 : bs)) =
+   NonEmptyList (clauseBwd_curried σ b1 :| toList (clausesBwd σ (NonEmptyList (b2 :| bs))))
+clausesBwd σ (NonEmptyList (b :| Nil)) =
    NonEmptyList (clauseBwd_curried σ b :| Nil)
 
 -- κ, πs totalise_bwd κ', α
