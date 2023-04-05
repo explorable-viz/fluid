@@ -17,13 +17,13 @@ import Dict (toUnfoldable) as D
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
 import Parse (str)
-import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
+import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..), Clause(..)) as S
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
 import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
 import Util.Pair (toTuple)
 import Val (Fun(..), Val(..)) as V
-import Val (class Highlightable, Fun, ForeignOp', Val, highlightIf)
+import Val (class Highlightable, ForeignOp', Fun, Val, highlightIf)
 
 infixl 5 beside as :<>:
 
@@ -231,6 +231,12 @@ instance Highlightable a => Pretty (S.ListRest a) where
 
 instance Highlightable a => Pretty (String × (NonEmptyList S.Pattern × S.Expr a)) where
    pretty (x × b) = hspace [ text x, pretty b ]
+
+instance Highlightable a => Pretty (String × (S.Clause a)) where
+   pretty (x × b) = hspace [ text x, pretty b ]
+
+instance Highlightable a => Pretty (S.Clause a) where
+   pretty (S.Clause (s × b)) = pretty (s × b)
 
 instance Highlightable a => Pretty (NonEmptyList S.Pattern × S.Expr a) where
    pretty (ps × s) = hspace ((pretty <$> NEL.toList ps) <> (text str.equals : pretty s : Nil))

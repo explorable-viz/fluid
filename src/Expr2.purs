@@ -10,7 +10,7 @@ import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
-import Lattice2 (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, neg, (∨))
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, neg, (∨))
 import Util (type (+), type (×), both, error, report, successful, (×), (≜), (≞), MayFail)
 import Util.Pair (Pair, toTuple)
 
@@ -25,14 +25,14 @@ newtype Sugar' e (a :: Type) = Sugar' (forall r. (forall s. Desugarable s e => s
 mustDesug :: forall s e. Desugarable s e => forall a. JoinSemilattice a => s a -> e a
 mustDesug = successful <<< desug
 
-class Wibble e where
-   wobble :: forall s a. JoinSemilattice a => Desugarable s e => s a -> e a
+class FromSugar e where
+   fromSug :: forall s a. JoinSemilattice a => Desugarable s e => s a -> e a
 
-wabble :: forall s e a. JoinSemilattice a => Desugarable s e => (Sugar' e a -> e a -> e a) -> s a -> e a
-wabble constr x = let exp = mustDesug x in constr (thunkSugar x) exp
+reifySug :: forall s e a. JoinSemilattice a => Desugarable s e => (Sugar' e a -> e a -> e a) -> s a -> e a
+reifySug constr x = let exp = mustDesug x in constr (thunkSugar x) exp
 
-instance Wibble Expr where
-   wobble = wabble Sugar
+instance FromSugar Expr where
+   fromSug = reifySug Sugar
 
 class Functor s <= Desugarable (s :: Type -> Type) (e :: Type -> Type) | s -> e where
    desug :: forall a. JoinSemilattice a => s a -> MayFail (e a)
@@ -68,8 +68,8 @@ data Elim a
    | ElimRecord (Set Var) (Cont a)
    | ElimSug (Sugar' Elim a) (Elim a)
 
-instance Wibble Elim where
-   wobble = wabble ElimSug
+instance FromSugar Elim where
+   fromSug = reifySug ElimSug
 
 -- Continuation of an eliminator branch.
 data Cont a

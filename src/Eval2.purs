@@ -18,7 +18,7 @@ import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr2 (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
-import Lattice2 ((∧), erase, top)
+import Lattice ((∧), erase, top)
 import Pretty2 (prettyP)
 import Primitive2 (intPair, string)
 import Trace2 (AppTrace(..), Trace(..), VarDef(..)) as T
@@ -159,7 +159,10 @@ eval γ (LetRec ρ e) α = do
    let γ' = closeDefs γ ρ α
    t × v <- eval (γ <+> γ') e α
    pure $ T.LetRec (erase <$> ρ) t × v
-eval ρ (Sugar _ e) α = eval ρ e α
+eval ρ sug@(Sugar _ e) α = do
+   (t × v) <- eval ρ e α
+   let t' = T.Sugar (erase sug) t
+   pure (t' × v)
 
 eval_module :: forall a. Ann a => Env a -> Module a -> a -> MayFail (Env a)
 eval_module γ = go empty

@@ -26,7 +26,7 @@ import Parsing.String (char, eof)
 import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause, Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Pair (Pair(..))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
@@ -218,22 +218,26 @@ patternDelim :: SParser Unit
 patternDelim = rArrow <|> equals
 
 -- "curried" controls whether nested functions are permitted in this context
-branch :: Boolean -> SParser (Raw Expr) -> SParser Unit -> SParser (Raw Branch)
-branch curried expr' delim = do
+-- initial: branch, new: clause
+clause :: Boolean -> SParser (Raw Expr) -> SParser Unit -> SParser (Raw Clause)
+clause curried expr' delim = do
    πs <-
       if curried then some $ simplePattern pattern
       else NonEmptyList <$> pattern `lift2 (:|)` pure Nil
    e <- delim *> expr'
-   pure $ πs × e
+   pure $ Clause (πs × e)
 
-branch_curried :: SParser (Raw Expr) -> SParser Unit -> SParser (Raw Branch)
-branch_curried expr' delim =
-   some (simplePattern pattern) `lift2 (×)` (delim *> expr')
+-- initial: branch_curried, new: clause_curried
+clause_curried :: SParser (Raw Expr) -> SParser Unit -> SParser (Raw Clause)
+clause_curried expr' delim =
+   Clause <$> some (simplePattern pattern) `lift2 (×)` (delim *> expr')
 
-branch_uncurried :: SParser (Raw Expr) -> SParser Unit -> SParser (Pattern × Raw Expr)
-branch_uncurried expr' delim =
+-- initial: branch_uncurried, new: clause_uncurried
+clause_uncurried :: SParser (Raw Expr) -> SParser Unit -> SParser (Pattern × Raw Expr)
+clause_uncurried expr' delim =
    pattern `lift2 (×)` (delim *> expr')
 
+-- initial: branchMany, new: clauseMany
 branchMany
    :: forall b
     . SParser (Raw Expr)
@@ -241,22 +245,25 @@ branchMany
    -> SParser (NonEmptyList b)
 branchMany expr' branch_ = token.braces $ sepBy1 (branch_ expr' rArrow) token.semi
 
+-- initial: branches, new: clauses
 branches :: forall b. SParser (Raw Expr) -> (SParser (Raw Expr) -> SParser Unit -> SParser b) -> SParser (NonEmptyList b)
 branches expr' branch_ =
    (pure <$> branch_ expr' patternDelim) <|> branchMany expr' branch_
 
+-- changed clause to branch function
 varDefs :: SParser (Raw Expr) -> SParser (Raw VarDefs)
-varDefs expr' = keyword str.let_ *> sepBy1_try clause token.semi
+varDefs expr' = keyword str.let_ *> sepBy1_try branch token.semi
    where
-   clause :: SParser (Raw VarDef)
-   clause = VarDef <$> (pattern <* equals) <*> expr'
+   branch :: SParser (Raw VarDef)
+   branch = VarDef <$> (pattern <* equals) <*> expr'
 
+-- changed clause function to branch function
 recDefs :: SParser (Raw Expr) -> SParser (Raw RecDefs)
 recDefs expr' = do
-   keyword str.let_ *> sepBy1_try clause token.semi
+   keyword str.let_ *> sepBy1_try branch token.semi
    where
-   clause :: SParser (Raw Clause)
-   clause = ident `lift2 (×)` (branch_curried expr' equals)
+   branch :: SParser (Raw Branch)
+   branch = ident `lift2 (×)` (clause_curried expr' equals)
 
 defs :: SParser (Raw Expr) -> SParser (List (Raw VarDefs + Raw RecDefs))
 defs expr' = singleton <$> choose (try $ varDefs expr') (recDefs expr')
@@ -345,7 +352,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
 
          listComp :: SParser (Raw Expr)
          listComp = token.brackets $
-            pure (ListComp unit) <*> expr' <* bar <*> sepBy1 qualifier token.comma
+            pure (ListComp unit) <*> expr' <* bar <*> (toList <$> sepBy1 qualifier token.comma)
 
             where
             qualifier :: SParser (Raw Qualifier)
@@ -395,7 +402,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
 
          matchAs :: SParser (Raw Expr)
          matchAs =
-            MatchAs <$> (keyword str.match *> expr' <* keyword str.as) <*> branches expr' branch_uncurried
+            MatchAs <$> (keyword str.match *> expr' <* keyword str.as) <*> branches expr' clause_uncurried
 
          -- any binary operator, in parentheses
          parensOp :: SParser (Raw Expr)
@@ -406,7 +413,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
             (pure $ \e e' -> Constr unit cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 
          lambda :: SParser (Raw Expr)
-         lambda = Lambda <$> (keyword str.fun *> branches expr' branch_curried)
+         lambda = Lambda <$> (keyword str.fun *> branches expr' clause_curried)
 
          ifElse :: SParser (Raw Expr)
          ifElse = pure IfElse
