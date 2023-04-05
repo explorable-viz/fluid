@@ -32,7 +32,7 @@ data Expr a
    | ListEmpty a -- called [] in the paper
    | ListNonEmpty a (Expr a) (ListRest a)
    | ListEnum (Expr a) (Expr a)
-   | ListComp a (Expr a) (NonEmptyList (Qualifier a))
+   | ListComp a (Expr a) (List (Qualifier a))
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 

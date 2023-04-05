@@ -95,42 +95,42 @@ exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
    ListEnum (exprBwd e1 s1) (exprBwd e2 s2)
 -- list-comp-done
-exprBwd (E.Constr α2 _ (e' : E.Constr α1 _ Nil : Nil)) (ListComp _ s_body (NonEmptyList (Guard (Constr _ c Nil) :| Nil))) | c == cTrue =
+exprBwd (E.Constr α2 _ (e' : E.Constr α1 _ Nil : Nil)) (ListComp _ s_body ((Guard (Constr _ c Nil) : Nil))) | c == cTrue =
    ListComp (α1 ∨ α2) (exprBwd e' s_body)
-      (NonEmptyList (Guard (Constr (α1 ∨ α2) cTrue Nil) :| Nil))
+      ((Guard (Constr (α1 ∨ α2) cTrue Nil) : Nil))
 -- | <<-list-comp-last
-exprBwd e (ListComp α s (NonEmptyList (q :| Nil))) =
-   case exprBwd e (ListComp α s (NonEmptyList (q :| Guard (Constr bot cTrue Nil) : Nil))) of
-      ListComp β s' (NonEmptyList (q' :| (Guard (Constr _ c Nil)) : Nil)) | c == cTrue ->
-         (ListComp β s' (NonEmptyList (q' :| Nil)))
+exprBwd e (ListComp α s ((q : Nil))) =
+   case exprBwd e (ListComp α s ((q : Guard (Constr bot cTrue Nil) : Nil))) of
+      ListComp β s' ((q' : (Guard (Constr _ c Nil)) : Nil)) | c == cTrue ->
+         (ListComp β s' ((q' : Nil)))
       _ -> error absurd
 -- | <<-list-comp-guard checked
-exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp α0 s1 (NonEmptyList (Guard s2 :| q : qs))) =
+exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp α0 s1 ((Guard s2 : q : qs))) =
    case -- first element of pair is e†
-      exprBwd (asExpr (get cTrue m)) (ListComp α0 s1 (NonEmptyList (q :| qs))) ×
+      exprBwd (asExpr (get cTrue m)) (ListComp α0 s1 ((q : qs))) ×
          exprBwd (asExpr (get cFalse m)) (Constr bot cNil Nil)
       of
-      ListComp β s1' (NonEmptyList (q' :| qs')) × Constr α c Nil | c == cNil ->
-         ListComp (α ∨ β) s1' (NonEmptyList (Guard (exprBwd e2 s2) :| q' : qs'))
+      ListComp β s1' ((q' : qs')) × Constr α c Nil | c == cNil ->
+         ListComp (α ∨ β) s1' ((Guard (exprBwd e2 s2) : q' : qs'))
       _ × _ -> error absurd
 
 -- | <<-list-comp-decl
-exprBwd (E.App (E.Lambda σ) e1) (ListComp α0 s2 (NonEmptyList (Declaration (VarDef π s1) :| q : qs))) =
-   case exprBwd (asExpr (pattContBwd σ π)) (ListComp α0 s2 (NonEmptyList (q :| qs))) of
-      ListComp β s2' (NonEmptyList (q' :| qs')) ->
-         ListComp β s2' (NonEmptyList ((Declaration (VarDef π (exprBwd e1 s1))) :| q' : qs'))
+exprBwd (E.App (E.Lambda σ) e1) (ListComp α0 s2 ((Declaration (VarDef π s1) : q : qs))) =
+   case exprBwd (asExpr (pattContBwd σ π)) (ListComp α0 s2 ((q : qs))) of
+      ListComp β s2' ((q' : qs')) ->
+         ListComp β s2' (((Declaration (VarDef π (exprBwd e1 s1))) : q' : qs'))
       _ -> error absurd
 
 -- list-comp-gen
 exprBwd
    (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1)
-   (ListComp α s2 (NonEmptyList (Generator p s1 :| q : qs))) =
+   (ListComp α s2 ((Generator p s1 : q : qs))) =
    let
       σ' × β = orElseBwd (ContElim σ) (Left p : Nil)
    in
-      case exprBwd (asExpr (pattContBwd (asElim σ') p)) (ListComp α s2 (NonEmptyList (q :| qs))) of
-         ListComp β' s2' (NonEmptyList (q' :| qs')) ->
-            ListComp (β ∨ β') s2' (NonEmptyList (Generator p (exprBwd e1 s1) :| q' : qs'))
+      case exprBwd (asExpr (pattContBwd (asElim σ') p)) (ListComp α s2 ((q : qs))) of
+         ListComp β' s2' ((q' : qs')) ->
+            ListComp (β ∨ β') s2' ((Generator p (exprBwd e1 s1) : q' : qs'))
          _ -> error absurd
 exprBwd _ _ = error absurd
 

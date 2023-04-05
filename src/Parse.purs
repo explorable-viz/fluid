@@ -352,7 +352,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
 
          listComp :: SParser (Raw Expr)
          listComp = token.brackets $
-            pure (ListComp unit) <*> expr' <* bar <*> sepBy1 qualifier token.comma
+            pure (ListComp unit) <*> expr' <* bar <*> (toList <$> sepBy1 qualifier token.comma)
 
             where
             qualifier :: SParser (Raw Qualifier)
