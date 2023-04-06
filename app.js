@@ -16432,13 +16432,7 @@
     if (v.tag === "Nil") {
       return $Either("Right", \u03BA);
     }
-    if (v.tag === "Cons") {
-      return bindEither.bind(pattContFwd(v._1._2)(\u03BA))((() => {
-        const $2 = pattCont_record_Fwd(v._2);
-        return (x2) => $2($Cont("ContElim", x2));
-      })());
-    }
-    fail();
+    return pattCont_arg_Fwd(listMap((v1) => $Either("Left", v1._2))(v))(\u03BA);
   };
   var pattCont_arg_Fwd = (v) => (\u03BA) => {
     if (v.tag === "Nil") {
@@ -16546,7 +16540,7 @@
     }
     if (v.tag === "PRecord") {
       const $2 = ElimRecord(keys3(v._1));
-      const $3 = pattCont_record_Fwd(sortBy((x2) => (y2) => ordString.compare(y2._1)(x2._1))(v._1))(\u03BA);
+      const $3 = pattCont_record_Fwd(sortBy((x2) => (y2) => ordString.compare(x2._1)(y2._1))(v._1))(\u03BA);
       if ($3.tag === "Left") {
         return $Either("Left", $3._1);
       }
@@ -16693,7 +16687,16 @@
   };
   var pattsExprFwd = (dictJoinSemilattice) => (v) => {
     if (v._1._2.tag === "Nil") {
-      return clauseFwd_uncurried(dictJoinSemilattice)(v._1._1)(v._2);
+      return bindEither.bind((() => {
+        const $2 = exprFwd(dictJoinSemilattice)(v._2);
+        if ($2.tag === "Left") {
+          return $Either("Left", $2._1);
+        }
+        if ($2.tag === "Right") {
+          return $Either("Right", $Cont("ContExpr", $2._1));
+        }
+        fail();
+      })())(pattContFwd(v._1._1));
     }
     if (v._1._2.tag === "Cons") {
       return bindEither.bind((() => {
@@ -17002,16 +17005,6 @@
     const maybeJoin = joinSemilatticeElim(dictJoinSemilattice).maybeJoin;
     return (bs) => bindEither.bind(traverse(pattsExprFwd(dictJoinSemilattice))(functorNonEmptyList.map(unsafeCoerce)(bs)))((v) => foldM4(maybeJoin)(v._1)(v._2));
   };
-  var clauseFwd_uncurried = (dictJoinSemilattice) => (p) => (s) => bindEither.bind((() => {
-    const $3 = exprFwd(dictJoinSemilattice)(s);
-    if ($3.tag === "Left") {
-      return $Either("Left", $3._1);
-    }
-    if ($3.tag === "Right") {
-      return $Either("Right", $Cont("ContExpr", $3._1));
-    }
-    fail();
-  })())(pattContFwd(p));
   var moduleFwd = (dictJoinSemilattice) => (v) => {
     const $2 = traverse1((v1) => {
       if (v1.tag === "Left") {
@@ -22745,12 +22738,12 @@
     join: (\u03BA) => definedJoin(joinSemilatticeCont2(dictJoinSemilattice))(\u03BA),
     neg: functorCont2.map(dictJoinSemilattice.neg)
   });
-  var reifySug = (dictJoinSemilattice) => (dictDesugarable) => {
-    const $2 = dictDesugarable.desug(dictJoinSemilattice);
-    return (constr) => (x2) => constr((ds) => ds(dictDesugarable)(x2))(successful($2(x2)));
+  var fromSugarExpr = { fromSug: Sugar };
+  var fromSugarElim = { fromSug: ElimSug };
+  var reifySugar = (dictJoinSemilattice) => (dictFromSugar) => (dictDesugarable) => {
+    const tryDesug1 = dictDesugarable.tryDesug(dictJoinSemilattice);
+    return (x2) => dictFromSugar.fromSug((ds) => ds(dictDesugarable)(x2))(successful(tryDesug1(x2)));
   };
-  var fromSugarElim = { fromSug: (dictJoinSemilattice) => (dictDesugarable) => reifySug(dictJoinSemilattice)(dictDesugarable)(ElimSug) };
-  var fromSugarExpr = { fromSug: (dictJoinSemilattice) => (dictDesugarable) => reifySug(dictJoinSemilattice)(dictDesugarable)(Sugar) };
 
   // output-es/SExpr2/index.js
   var $ListRest2 = (tag, _1, _2, _3) => ({ tag, _1, _2, _3 });
@@ -22867,7 +22860,7 @@
     }
   };
   var desugarableListRestExpr = {
-    desug: (dictJoinSemilattice) => (v) => {
+    tryDesug: (dictJoinSemilattice) => (v) => {
       if (v.tag === "End") {
         return $Either("Right", $Expr3("Constr", v._1, "Nil", Nil));
       }
@@ -22881,7 +22874,7 @@
             $List(
               "Cons",
               v._2,
-              $List("Cons", reifySug(dictJoinSemilattice)(desugarableListRestExpr)(Sugar)(v._3), Nil)
+              $List("Cons", reifySugar(dictJoinSemilattice)(fromSugarExpr)(desugarableListRestExpr)(v._3), Nil)
             )
           )
         );
@@ -23154,7 +23147,7 @@
       fail();
     };
   };
-  var desugarableBranchesElim = { desug: (dictJoinSemilattice) => branchesFwd_curried(dictJoinSemilattice), Functor0: () => functorBranches };
+  var desugarableBranchesElim = { tryDesug: (dictJoinSemilattice) => branchesFwd_curried(dictJoinSemilattice), Functor0: () => functorBranches };
   var varDefFwd2 = (dictJoinSemilattice) => (v) => applyEither.apply((() => {
     const $2 = patternFwd(v._1)(ContNone2);
     if ($2.tag === "Left") {
@@ -23192,15 +23185,15 @@
     }
     fail();
   };
-  var desugarableSExprExpr = { desug: (dictJoinSemilattice) => exprFwd2(dictJoinSemilattice), Functor0: () => functorSExpr };
+  var desugarableSExprExpr = { tryDesug: (dictJoinSemilattice) => exprFwd2(dictJoinSemilattice), Functor0: () => functorSExpr };
   var exprFwd2 = (dictJoinSemilattice) => {
     const branchesFwd_uncurried1 = branchesFwd_uncurried(dictJoinSemilattice);
-    const fromSug2 = reifySug(dictJoinSemilattice)(desugarableListRestExpr)(Sugar);
+    const reifySugar12 = reifySugar(dictJoinSemilattice)(fromSugarExpr)(desugarableListRestExpr);
     const recDefsFwd1 = recDefsFwd2(dictJoinSemilattice);
     return (v) => {
       const $5 = (q, s_body, \u03B1) => $Either(
         "Right",
-        reifySug(dictJoinSemilattice)(desugarableSExprExpr)(Sugar)($SExpr(
+        reifySugar(dictJoinSemilattice)(fromSugarExpr)(desugarableSExprExpr)($SExpr(
           "ListComp",
           \u03B1,
           s_body,
@@ -23244,7 +23237,7 @@
       if (v.tag === "ListNonEmpty") {
         return $Either(
           "Right",
-          $Expr3("Constr", v._1, ":", $List("Cons", v._2, $List("Cons", fromSug2(v._3), Nil)))
+          $Expr3("Constr", v._1, ":", $List("Cons", v._2, $List("Cons", reifySugar12(v._3), Nil)))
         );
       }
       if (v.tag === "ListEnum") {
@@ -23296,7 +23289,12 @@
                         "True",
                         $Cont2(
                           "ContExpr",
-                          reifySug(dictJoinSemilattice)(desugarableSExprExpr)(Sugar)($SExpr("ListComp", v._1, v._2, $NonEmpty(v._3._2._1, v._3._2._2)))
+                          reifySugar(dictJoinSemilattice)(fromSugarExpr)(desugarableSExprExpr)($SExpr(
+                            "ListComp",
+                            v._1,
+                            v._2,
+                            $NonEmpty(v._3._2._1, v._3._2._2)
+                          ))
                         )
                       ),
                       $Tuple("False", $Cont2("ContExpr", $Expr3("Constr", v._1, "Nil", Nil)))
@@ -23310,13 +23308,13 @@
           if (v._3._1.tag === "Declaration") {
             return bindEither.bind(patternFwd(v._3._1._1._1)($Cont2(
               "ContExpr",
-              reifySug(dictJoinSemilattice)(desugarableSExprExpr)(Sugar)($SExpr("ListComp", v._1, v._2, $NonEmpty(v._3._2._1, v._3._2._2)))
+              reifySugar(dictJoinSemilattice)(fromSugarExpr)(desugarableSExprExpr)($SExpr("ListComp", v._1, v._2, $NonEmpty(v._3._2._1, v._3._2._2)))
             )))((\u03C3) => $Either("Right", $Expr3("App", $Expr3("Lambda", \u03C3), v._3._1._1._2)));
           }
           if (v._3._1.tag === "Generator") {
             return bindEither.bind(patternFwd(v._3._1._1)($Cont2(
               "ContExpr",
-              reifySug(dictJoinSemilattice)(desugarableSExprExpr)(Sugar)($SExpr("ListComp", v._1, v._2, $NonEmpty(v._3._2._1, v._3._2._2)))
+              reifySugar(dictJoinSemilattice)(fromSugarExpr)(desugarableSExprExpr)($SExpr("ListComp", v._1, v._2, $NonEmpty(v._3._2._1, v._3._2._2)))
             )))((\u03C3) => $Either(
               "Right",
               $Expr3(
@@ -23366,18 +23364,12 @@
   var fromFoldable11 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
   var fromFoldable18 = /* @__PURE__ */ (() => fromFoldableImpl(foldableNonEmptyList.foldr))();
   var choose3 = /* @__PURE__ */ choose(altParserT);
-  var mustDesug = /* @__PURE__ */ (() => {
-    const $0 = exprFwd2(joinSemilatticeUnit);
-    return (x2) => successful($0(x2));
-  })();
+  var reifySugar1 = /* @__PURE__ */ reifySugar(joinSemilatticeUnit)(fromSugarExpr)(desugarableSExprExpr);
   var identity21 = (x2) => x2;
   var fanin4 = /* @__PURE__ */ fanin(categoryFn)(choiceFn);
-  var sugarH = (dictFromSugar) => {
-    const fromSug = dictFromSugar.fromSug(joinSemilatticeUnit);
-    return (dictDesugarable) => {
-      const fromSug1 = fromSug(dictDesugarable);
-      return (sugP) => (state1, more, lift1, $$throw, done) => more((v1) => sugP(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, fromSug1(a)))));
-    };
+  var sugarH = (dictFromSugar) => (dictDesugarable) => {
+    const reifySugar3 = reifySugar(joinSemilatticeUnit)(dictFromSugar)(dictDesugarable);
+    return (sugP) => (state1, more, lift1, $$throw, done) => more((v1) => sugP(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, reifySugar3(a)))));
   };
   var sugarH1 = /* @__PURE__ */ sugarH(fromSugarExpr)(desugarableSExprExpr);
   var sugarH2 = /* @__PURE__ */ sugarH(fromSugarElim)(desugarableBranchesElim);
@@ -23765,7 +23757,7 @@
             more,
             lift1,
             $$throw,
-            (state2, a) => more((v2) => done(state2, (e) => (e$p) => mustDesug($SExpr("BinaryApp", e, a, e$p))))
+            (state2, a) => more((v2) => done(state2, (e) => (e$p) => reifySugar1($SExpr("BinaryApp", e, a, e$p))))
           )),
           AssocLeft
         )
@@ -23792,7 +23784,7 @@
         if (":" === definitely("absurd")(charAt2(0)(a))) {
           return (e) => (e$p) => $Expr3("Constr", unit, a, $List("Cons", e, $List("Cons", e$p, Nil)));
         }
-        return (e) => (e$p) => mustDesug($SExpr("BinaryApp", e, op, e$p));
+        return (e) => (e$p) => reifySugar1($SExpr("BinaryApp", e, op, e$p));
       })())(state2, more, lift1, $$throw, done))
     )))));
     const go$lazy = binding(() => lazyParserT.defer((v) => $0((() => {
@@ -24102,7 +24094,7 @@
             return more((v2$1) => {
               const $16 = foldableList.foldr((def) => {
                 const $172 = fanin4(Let4)(LetRec4)(def);
-                return (x2) => mustDesug($172(x2));
+                return (x2) => reifySugar1($172(x2));
               });
               const $17 = keyword2("in");
               return more((v1$2) => more((v1$3) => more((v2$2) => more((v1$4) => $17(
