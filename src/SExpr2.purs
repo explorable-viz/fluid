@@ -18,7 +18,7 @@ import DataType (Ctr, arity, cCons, cFalse, cNil, cTrue, checkArity, ctrs, dataT
 import Dict (asSingletonMap, Dict)
 import Dict as D
 import Expr2 (Expr(..), Module(..), VarDef(..), RecDefs) as E
-import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, Sugar'(..), asElim, mustDesug, thunkSugar, fromSug)
+import Expr2 (class Desugarable, Cont(..), Elim(..), Expr, Sugar'(..), asElim, reifySugar)
 import Lattice (class JoinSemilattice, definedJoin, neg, maybeJoin)
 import Prelude (join) as P
 import Unsafe.Coerce (unsafeCoerce)
@@ -34,15 +34,15 @@ unwrapSugar :: forall s e a. JoinSemilattice a => Desugarable s e => Sugar' e a 
 unwrapSugar (Sugar' k) = k unsafeCoerce
 
 instance Desugarable SExpr Expr where
-   desug = exprFwd
+   tryDesug = exprFwd
 
 -- ListRest auxiliaries
 instance Desugarable ListRest Expr where
-   desug (End ann) = Right $ E.Constr ann cNil Nil
-   desug (Next ann head rest) = Right $ scons ann head (fromSug rest)
+   tryDesug (End ann) = Right $ E.Constr ann cNil Nil
+   tryDesug (Next ann head rest) = Right $ scons ann head (reifySugar rest)
 
 instance Desugarable Branches Elim where
-   desug (Branches b) = branchesFwd_curried b
+   tryDesug (Branches b) = branchesFwd_curried b
 
 -- Surface language expressions.
 data SExpr a
@@ -114,12 +114,6 @@ instance JoinSemilattice a => JoinSemilattice (SExpr a) where
    maybeJoin _ = error unimplemented
    neg = (<$>) neg
 
-{-
-   let term = parse "[1, 2, 3, 4]" = Sugar (S.ListNonEmpty (1) (LR.Next (2) (LR.Next (3) (LR.Next (4) (LR.End)))))
-   let term2 = desug term = E.Constr cCons (1 : Sugar (LR.Next 2 (LR.Next 3 (LR.Next 4 LR.End))))
-   eval term2 = V.Constr cCons (1 : (eval (Sugar (LR.Next 2 (LR.Next 3 (LR.Next 4 LR.End))))))
--}
-
 enil :: forall a. a -> E.Expr a
 enil α = E.Constr α cNil Nil
 
@@ -171,7 +165,7 @@ exprFwd (IfElse s1 s2 s3) =
    E.App (E.Lambda (elimBool (ContExpr s2) (ContExpr s3))) <$> pure s1
 
 exprFwd (ListEmpty α) = pure (enil α)
-exprFwd (ListNonEmpty α s l) = pure (econs α s (fromSug l))
+exprFwd (ListNonEmpty α s l) = pure (econs α s (reifySugar l))
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> pure s1) <*> pure s2
 -- | List-comp-done
 exprFwd (ListComp _ s_body (NonEmptyList (Guard (E.Constr α2 c Nil) :| Nil))) | c == cTrue =
@@ -181,18 +175,18 @@ exprFwd (ListComp α s_body (NonEmptyList (q :| Nil))) =
    let
       s = ListComp α s_body (NonEmptyList (q :| Guard (E.Constr α cTrue Nil) : Nil))
    in
-      pure $ fromSug s
+      pure $ reifySugar s
 -- | List-comp-guard
 exprFwd (ListComp α s_body (NonEmptyList (Guard s :| q : qs))) = do
    let
       s' = ListComp α s_body (NonEmptyList (q :| qs))
-      e = fromSug s'
+      e = reifySugar s'
    E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> pure s
 -- | List-comp-decl
 exprFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))) = do
    let
       s' = ListComp α s_body (NonEmptyList (q :| qs))
-      e = fromSug s'
+      e = reifySugar s'
    σ <- patternFwd π (ContExpr e :: Cont a)
    E.App (E.Lambda σ) <$> pure s
 
@@ -200,7 +194,7 @@ exprFwd (ListComp α s_body (NonEmptyList (Declaration (VarDef π s) :| q : qs))
 exprFwd (ListComp α s_body (NonEmptyList (Generator p s :| q : qs))) = do
    let
       s' = ListComp α s_body (NonEmptyList (q :| qs))
-      e = fromSug s'
+      e = reifySugar s'
    σ <- patternFwd p (ContExpr e)
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (totaliseFwd (ContElim σ) α)))) <$> pure s
 exprFwd (Let ds s) = varDefsFwd (ds × s)
@@ -209,7 +203,7 @@ exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> pure s
 -- l desugar_fwd e
 listRestFwd :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
 listRestFwd (End α) = pure (enil α)
-listRestFwd (Next α s l) = pure (econs α s (E.Sugar (thunkSugar l) (mustDesug l)))
+listRestFwd (Next α s l) = pure (econs α s (reifySugar l))
 
 -- ps, e desugar_fwd σ
 patternsFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × E.Expr a -> MayFail (Elim a)
