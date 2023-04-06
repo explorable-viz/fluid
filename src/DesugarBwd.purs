@@ -155,7 +155,7 @@ pattContBwd (PVar _) (ElimVar _ κ) = κ
 pattContBwd (PConstr c ps) (ElimConstr m) = pattArgsBwd (get c m) (Left <$> ps)
 pattContBwd (PListEmpty) (ElimConstr m) = get cNil m
 pattContBwd (PListNonEmpty p o) (ElimConstr m) = pattArgsBwd (get cCons m) (Left p : Right o : Nil)
-pattContBwd (PRecord xps) (ElimRecord _ κ) = pattCont_record_Bwd κ (sortBy (flip compare `on` fst) xps)
+pattContBwd (PRecord xps) (ElimRecord _ κ) = pattCont_record_Bwd κ (sortBy (compare `on` fst) xps)
 pattContBwd _ _ = error absurd
 
 -- σ, o desugar_bwd κ
@@ -173,7 +173,7 @@ pattArgsBwd σ (Right o : πs) = pattArgsBwd (pattCont_listRest_Bwd (asElim σ) 
 pattCont_record_Bwd :: forall a. Cont a -> List (Bind Pattern) -> Cont a
 pattCont_record_Bwd κ Nil = κ
 --pattCont_record_Bwd σ (_ ↦ p : xps) = pattCont_record_Bwd σ xps # (asElim >>> pattContBwd p) 
-pattCont_record_Bwd σ πs = pattContRecordTempBwd σ (map (\(_ ↦ p) -> p) πs)
+pattCont_record_Bwd σ πs = pattArgsBwd σ (map (\(_ ↦ p) -> Left p) πs)
 
 pattContRecordTempBwd :: forall a. Cont a -> List (Pattern) -> Cont a
 pattContRecordTempBwd κ Nil = κ
