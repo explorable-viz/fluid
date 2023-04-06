@@ -129,7 +129,10 @@ listRestFwd (Next α s l) = econs α <$> exprFwd s <*> listRestFwd l
 
 -- ps, e desugar_fwd σ
 pattsExprFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> MayFail (Elim a)
-pattsExprFwd (NonEmptyList (p :| Nil) × e) = clauseFwd_uncurried p e
+pattsExprFwd (NonEmptyList (p :| Nil) × e) = clauseFwd p e
+   where
+   clauseFwd :: forall a'. JoinSemilattice a' => Pattern -> Expr a' -> MayFail (Elim a')
+   clauseFwd p s = (ContExpr <$> exprFwd s) >>= pattContFwd p
 pattsExprFwd (NonEmptyList (p :| p' : ps) × e) =
    pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × e)
 
@@ -155,21 +158,11 @@ pattCont_record_Fwd :: forall a. List (Bind Pattern) -> Cont a -> MayFail (Cont 
 pattCont_record_Fwd Nil κ = pure κ
 pattCont_record_Fwd (_ ↦ p : xps) κ = pattContFwd p κ >>= ContElim >>> pattCont_record_Fwd xps
 
--- initial: branchFwd_uncurried, new: clauseFwd_uncurried
-clauseFwd_uncurried :: forall a. JoinSemilattice a => Pattern -> Expr a -> MayFail (Elim a)
-clauseFwd_uncurried p s = (ContExpr <$> exprFwd s) >>= pattContFwd p
-
 -- initial: branchesFwd_curried, new: clausesFwd
 clausesFwd :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> MayFail (Elim a)
 clausesFwd bs = do
    NonEmptyList (σ :| σs) <- traverse pattsExprFwd (map unwrap bs)
    foldM maybeJoin σ σs
-
--- initial: branchesFwd_uncurried, new: clausesFwd_uncurried
--- clausesFwd_uncurried :: forall a. JoinSemilattice a => NonEmptyList (Pattern × Expr a) -> MayFail (Elim a)
--- clausesFwd_uncurried bs = do
---    NonEmptyList (σ :| σs) <- traverse (uncurry clauseFwd_uncurried) bs
---    foldM maybeJoin σ σs
 
 orElse :: forall a. Cont a -> a -> Cont a
 orElse ContNone _ = error absurd
