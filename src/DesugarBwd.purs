@@ -8,7 +8,7 @@ import Data.Foldable (foldl)
 import Data.Function (applyN, on)
 import Data.List (List(..), singleton, sortBy, zip, zipWith, (:), (\\))
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
-import Data.List.NonEmpty (singleton, fromList) as NE
+import Data.List.NonEmpty (singleton) as NE
 import Data.Newtype (unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong (first)
@@ -167,20 +167,25 @@ pattCont_listRest_Bwd (ElimConstr m) (PNext p o) = pattArgsBwd (get cCons m) (Le
 
 pattArgsBwd :: forall a. Cont a -> List (Pattern + ListRestPattern) -> Cont a
 pattArgsBwd κ Nil = κ
-pattArgsBwd κ (Left p : πs) = pattArgsBwd (pattContBwd p (asElim κ)) πs
-pattArgsBwd κ (Right o : πs) = pattArgsBwd (pattCont_listRest_Bwd (asElim κ) o) πs
+pattArgsBwd σ (Left p : πs) = pattArgsBwd (pattContBwd p (asElim σ)) πs
+pattArgsBwd σ (Right o : πs) = pattArgsBwd (pattCont_listRest_Bwd (asElim σ) o) πs
 
 pattCont_record_Bwd :: forall a. Cont a -> List (Bind Pattern) -> Cont a
 pattCont_record_Bwd κ Nil = κ
-pattCont_record_Bwd σ πs = pattArgsBwd σ (map (\(_ ↦ p) -> Left p) πs)
+--pattCont_record_Bwd σ (_ ↦ p : xps) = pattCont_record_Bwd σ xps # (asElim >>> pattContBwd p) 
+pattCont_record_Bwd σ πs = pattContRecordTempBwd σ (map (\(_ ↦ p) -> p) πs)
+
+pattContRecordTempBwd :: forall a. Cont a -> List (Pattern) -> Cont a
+pattContRecordTempBwd κ Nil = κ
+pattContRecordTempBwd σ (p : ps) = asElim ((pattContBwd p) (pattContRecordTempBwd σ ps))
 
 -- σ, cs desugar_bwd cs'
 clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> NonEmptyList (Raw Clause) -> NonEmptyList (Clause a)
 clausesBwd σ bs = map (clauseBwd σ) bs
    where
    -- σ, c desugar_bwd c'
-   clauseBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clause -> Clause a
-   clauseBwd σ (Clause (πs × s)) = Clause $ πs × exprBwd (pattsExprBwd σ πs) s
+   clauseBwd :: forall a'. BoundedJoinSemilattice a' => Elim a' -> Raw Clause -> Clause a'
+   clauseBwd σ' (Clause (πs × s)) = Clause $ πs × exprBwd (pattsExprBwd σ' πs) s
 
 -- κ, πs totalise_bwd κ', α
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a

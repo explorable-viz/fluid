@@ -132,7 +132,7 @@ pattsExprFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a ->
 pattsExprFwd (NonEmptyList (p :| Nil) × e) = clauseFwd p e
    where
    clauseFwd :: forall a'. JoinSemilattice a' => Pattern -> Expr a' -> MayFail (Elim a')
-   clauseFwd p s = (ContExpr <$> exprFwd s) >>= pattContFwd p
+   clauseFwd p' s = (ContExpr <$> exprFwd s) >>= pattContFwd p'
 pattsExprFwd (NonEmptyList (p :| p' : ps) × e) =
    pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × e)
 

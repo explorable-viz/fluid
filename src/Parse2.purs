@@ -19,7 +19,7 @@ import Data.Ordering (invert)
 import Data.Profunctor.Choice ((|||))
 import DataType (Ctr, cPair, isCtrName, isCtrOp)
 import Expr2 (Expr(..)) as E
-import Expr2 (class Desugarable, mustDesug, fromSug, class FromSugar)
+import Expr2 (class Desugarable, reifySugar, class FromSugar)
 import Lattice (Raw)
 import Parsing.Combinators (between, sepBy, sepBy1, try)
 import Parsing.Expr (Assoc(..), Operator(..), OperatorTable, buildExprParser)
@@ -164,7 +164,7 @@ keyword str' =
    else error $ str' <> " is not a reserved word"
 
 sugarH :: forall s e. FromSugar e => Desugarable s e => SParser (Raw s) -> SParser (Raw e)
-sugarH sugP = fromSug <$> sugP
+sugarH sugP = reifySugar <$> sugP
 
 ident ∷ SParser Var
 ident = do
@@ -275,7 +275,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
    backtickOp :: Operator Identity String (Raw E.Expr)
    backtickOp = flip Infix AssocLeft $ do
       x <- between backtick backtick ident
-      pure (\e e' -> mustDesug $ BinaryApp e x e')
+      pure (\e e' -> reifySugar $ BinaryApp e x e')
 
    -- Syntactically distinguishing infix constructors from other operators (a la Haskell) allows us to
    -- optimise an application tree into a (potentially partial) constructor application. We also treat
@@ -289,7 +289,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
             E.Var x -> E.Project e x
             _ -> error "Field names are not first class."
          else if isCtrOp op' then \e e' -> E.Constr unit op' (e : e' : empty)
-         else \e e' -> mustDesug $ BinaryApp e op e'
+         else \e e' -> reifySugar $ BinaryApp e op e'
 
    -- Left-associative tree of applications of one or more simple terms.
    appChain :: Endo (SParser (Raw E.Expr))
@@ -396,7 +396,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
          defsExpr :: SParser (Raw E.Expr)
          defsExpr = do
             defs' <- concat <<< toList <$> sepBy1 (defs expr') token.semi
-            foldr (\def -> mustDesug <<< (Let ||| LetRec) def) <$> (keyword str.in_ *> expr') <@> defs'
+            foldr (\def -> reifySugar <<< (Let ||| LetRec) def) <$> (keyword str.in_ *> expr') <@> defs'
 
          matchAs :: SParser (Raw E.Expr)
          matchAs =

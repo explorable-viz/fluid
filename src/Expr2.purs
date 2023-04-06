@@ -14,28 +14,28 @@ import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemila
 import Util (type (+), type (×), both, error, report, successful, (×), (≜), (≞), MayFail)
 import Util.Pair (Pair, toTuple)
 
-thunkSugar :: forall s e a. Desugarable s e => s a -> Sugar' e a
-thunkSugar sa = Sugar' (\ds -> ds sa)
+wrapSugar :: forall s e a. Desugarable s e => s a -> Sugar' e a
+wrapSugar sa = Sugar' (\ds -> ds sa)
 
 runSugar :: forall e a. JoinSemilattice a => Sugar' e a -> MayFail (e a)
-runSugar (Sugar' k) = k desug
+runSugar (Sugar' k) = k tryDesug
 
 newtype Sugar' e (a :: Type) = Sugar' (forall r. (forall s. Desugarable s e => s a -> r) -> r)
 
-mustDesug :: forall s e. Desugarable s e => forall a. JoinSemilattice a => s a -> e a
-mustDesug = successful <<< desug
-
 class FromSugar e where
-   fromSug :: forall s a. JoinSemilattice a => Desugarable s e => s a -> e a
-
-reifySug :: forall s e a. JoinSemilattice a => Desugarable s e => (Sugar' e a -> e a -> e a) -> s a -> e a
-reifySug constr x = let exp = mustDesug x in constr (thunkSugar x) exp
-
-instance FromSugar Expr where
-   fromSug = reifySug Sugar
+   fromSug :: forall a. Sugar' e a -> e a -> e a
 
 class Functor s <= Desugarable (s :: Type -> Type) (e :: Type -> Type) | s -> e where
-   desug :: forall a. JoinSemilattice a => s a -> MayFail (e a)
+   tryDesug :: forall a. JoinSemilattice a => s a -> MayFail (e a)
+
+reifySug' :: forall s e a. JoinSemilattice a => Desugarable s e => (Sugar' e a -> e a -> e a) -> s a -> e a
+reifySug' constr x = let exp = (successful <<< tryDesug) x in constr (wrapSugar x) exp
+
+reifySugar :: forall s e a. JoinSemilattice a => FromSugar e => Desugarable s e => s a -> e a
+reifySugar x = let exp = (successful <<< tryDesug) x in fromSug (wrapSugar x) exp
+
+instance FromSugar Expr where
+   fromSug = Sugar
 
 instance Functor e => Functor (Sugar' e) where
    map :: forall a b. (a -> b) -> Sugar' e a -> Sugar' e b
@@ -69,7 +69,7 @@ data Elim a
    | ElimSug (Sugar' Elim a) (Elim a)
 
 instance FromSugar Elim where
-   fromSug = reifySug ElimSug
+   fromSug = ElimSug
 
 -- Continuation of an eliminator branch.
 data Cont a
