@@ -175,10 +175,6 @@ pattCont_record_Bwd κ Nil = κ
 --pattCont_record_Bwd σ (_ ↦ p : xps) = pattCont_record_Bwd σ xps # (asElim >>> pattContBwd p) 
 pattCont_record_Bwd σ πs = pattArgsBwd σ (map (\(_ ↦ p) -> Left p) πs)
 
-pattContRecordTempBwd :: forall a. Cont a -> List (Pattern) -> Cont a
-pattContRecordTempBwd κ Nil = κ
-pattContRecordTempBwd σ (p : ps) = (pattContBwd p) (asElim (pattContRecordTempBwd σ ps))
-
 -- σ, cs desugar_bwd cs'
 clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> NonEmptyList (Raw Clause) -> NonEmptyList (Clause a)
 clausesBwd σ bs = map (clauseBwd σ) bs
