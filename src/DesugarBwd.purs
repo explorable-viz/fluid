@@ -168,7 +168,7 @@ pattArgsBwd (Left p : πs) σ = pattArgsBwd πs (pattContBwd p (asElim σ))
 pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim σ) o)
 
 pattCont_record_Bwd :: forall a. List (Bind Pattern) -> Endo (Cont a)
-pattCont_record_Bwd πs κ = pattArgsBwd ((snd >>> Left) <$> πs) κ
+pattCont_record_Bwd πs = pattArgsBwd ((snd >>> Left) <$> πs)
 
 clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> NonEmptyList (Raw Clause) -> NonEmptyList (Clause a)
 clausesBwd σ bs = clauseBwd <$> bs
