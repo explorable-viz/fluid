@@ -153,7 +153,7 @@ pattContBwd (PVar _) (ElimVar _ κ) = κ
 pattContBwd (PConstr c ps) (ElimConstr m) = pattArgsBwd (Left <$> ps) (get c m)
 pattContBwd (PListEmpty) (ElimConstr m) = get cNil m
 pattContBwd (PListNonEmpty p o) (ElimConstr m) = pattArgsBwd (Left p : Right o : Nil) (get cCons m)
-pattContBwd (PRecord xps) (ElimRecord _ κ) = pattCont_record_Bwd (sortBy (compare `on` fst) xps) κ
+pattContBwd (PRecord xps) (ElimRecord _ κ) = pattArgsBwd ((snd >>> Left) <$> sortBy (compare `on` fst) xps) κ
 pattContBwd _ _ = error absurd
 
 pattCont_ListRest_Bwd :: forall a. Elim a -> ListRestPattern -> Cont a
@@ -166,9 +166,6 @@ pattArgsBwd :: forall a. List (Pattern + ListRestPattern) -> Endo (Cont a)
 pattArgsBwd Nil κ = κ
 pattArgsBwd (Left p : πs) σ = pattArgsBwd πs (pattContBwd p (asElim σ))
 pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim σ) o)
-
-pattCont_record_Bwd :: forall a. List (Bind Pattern) -> Endo (Cont a)
-pattCont_record_Bwd πs = pattArgsBwd ((snd >>> Left) <$> πs)
 
 clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> NonEmptyList (Raw Clause) -> NonEmptyList (Clause a)
 clausesBwd σ bs = clauseBwd <$> bs
