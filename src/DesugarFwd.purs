@@ -139,21 +139,20 @@ pattsExprFwd (NonEmptyList (p :| p' : ps) × e) =
 pattContFwd :: forall a. Pattern -> Cont a -> MayFail (Elim a)
 pattContFwd (PVar x) κ = pure (ElimVar x κ)
 pattContFwd (PConstr c ps) κ =
-   checkArity c (length ps) *> (ElimConstr <$> D.singleton c <$> pattCont_arg_Fwd (Left <$> ps) κ)
+   checkArity c (length ps) *> (ElimConstr <$> D.singleton c <$> pattArgs_Fwd (Left <$> ps) κ)
 pattContFwd (PRecord xps) κ =
-   ElimRecord (keys xps) <$> pattCont_arg_Fwd ((snd >>> Left) <$> sortBy (compare `on` fst) xps) κ
+   ElimRecord (keys xps) <$> pattArgs_Fwd ((snd >>> Left) <$> sortBy (compare `on` fst) xps) κ
 pattContFwd PListEmpty κ = pure (ElimConstr (D.singleton cNil κ))
-pattContFwd (PListNonEmpty p o) κ = ElimConstr <$> D.singleton cCons <$> pattCont_arg_Fwd (Left p : Right o : Nil) κ
+pattContFwd (PListNonEmpty p o) κ = ElimConstr <$> D.singleton cCons <$> pattArgs_Fwd (Left p : Right o : Nil) κ
 
--- o, κ desugar_fwd σ
 pattCont_ListRest_Fwd :: forall a. ListRestPattern -> Cont a -> MayFail (Elim a)
 pattCont_ListRest_Fwd PEnd κ = pure (ElimConstr (D.singleton cNil κ))
-pattCont_ListRest_Fwd (PNext p o) κ = ElimConstr <$> D.singleton cCons <$> pattCont_arg_Fwd (Left p : Right o : Nil) κ
+pattCont_ListRest_Fwd (PNext p o) κ = ElimConstr <$> D.singleton cCons <$> pattArgs_Fwd (Left p : Right o : Nil) κ
 
-pattCont_arg_Fwd :: forall a. List (Pattern + ListRestPattern) -> Cont a -> MayFail (Cont a)
-pattCont_arg_Fwd Nil κ = pure κ
-pattCont_arg_Fwd (Left p : πs) κ = ContElim <$> (pattCont_arg_Fwd πs κ >>= pattContFwd p)
-pattCont_arg_Fwd (Right o : πs) κ = ContElim <$> (pattCont_arg_Fwd πs κ >>= pattCont_ListRest_Fwd o)
+pattArgs_Fwd :: forall a. List (Pattern + ListRestPattern) -> Cont a -> MayFail (Cont a)
+pattArgs_Fwd Nil κ = pure κ
+pattArgs_Fwd (Left p : πs) κ = ContElim <$> (pattArgs_Fwd πs κ >>= pattContFwd p)
+pattArgs_Fwd (Right o : πs) κ = ContElim <$> (pattArgs_Fwd πs κ >>= pattCont_ListRest_Fwd o)
 
 clausesFwd :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> MayFail (Elim a)
 clausesFwd bs = do
