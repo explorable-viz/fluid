@@ -61,7 +61,6 @@ varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
    E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
 
 -- In the formalism, "group by name" is part of the syntax.
--- cs desugar_fwd σ
 recDefsFwd :: forall a. JoinSemilattice a => RecDefs a -> MayFail (E.RecDefs a)
 recDefsFwd xcs = D.fromFoldable <$> traverse recDefFwd xcss
    where
@@ -85,39 +84,29 @@ exprFwd (Lambda bs) = E.Lambda <$> clausesFwd bs
 exprFwd (Project s x) = E.Project <$> exprFwd s <@> x
 exprFwd (App s1 s2) = E.App <$> exprFwd s1 <*> exprFwd s2
 exprFwd (BinaryApp s1 op s2) = E.App <$> (E.App (E.Op op) <$> exprFwd s1) <*> exprFwd s2
-exprFwd (MatchAs s bs) = E.App <$> (E.Lambda <$> (clausesFwd ((map (Clause <$> first singleton) bs)))) <*> exprFwd s -- checked
-exprFwd (IfElse s1 s2 s3) = do -- checked
-   e2 <- exprFwd s2
-   e3 <- exprFwd s3
-   E.App (E.Lambda (elimBool (ContExpr e2) (ContExpr e3))) <$> exprFwd s1
-exprFwd (ListEmpty α) = pure (enil α) -- checked
-exprFwd (ListNonEmpty α s l) = econs α <$> exprFwd s <*> listRestFwd l -- checked, valid if listrestfwd valid
-exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd s1) <*> exprFwd s2 -- checked
--- -- | List-comp-done, checked
--- exprFwd (ListComp _ s_body ((Guard (Constr α2 c Nil)) : Nil)) | c == cTrue =
---    econs α2 <$> exprFwd s_body <@> enil α2
--- | List-comp-done 
+exprFwd (MatchAs s bs) =
+   E.App <$> (E.Lambda <$> (clausesFwd ((map (Clause <$> first singleton) bs)))) <*> exprFwd s
+exprFwd (IfElse s1 s2 s3) =
+   E.App <$> (E.Lambda <$> (elimBool <$> (ContExpr <$> exprFwd s2) <*> (ContExpr <$> exprFwd s3))) <*> exprFwd s1
+exprFwd (ListEmpty α) = pure (enil α)
+exprFwd (ListNonEmpty α s l) = econs α <$> exprFwd s <*> listRestFwd l
+exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd s1) <*> exprFwd s2
+-- | list-comp-done
 exprFwd (ListComp α s_body Nil) =
-   econs α <$> (exprFwd s_body) <@> enil α
--- -- | List-comp-last ?
--- exprFwd (ListComp α s_body ((q : Nil))) =
---    exprFwd (ListComp α s_body ((q : Guard (Constr α cTrue Nil) : Nil)))
-
--- | List-comp-guard checked
+   econs α <$> exprFwd s_body <@> enil α
+-- | list-comp-guard
 exprFwd (ListComp α s_body (Guard s : qs)) = do
    e <- exprFwd (ListComp α s_body qs)
    E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> exprFwd s
-
--- | List-comp-decl checked
-exprFwd (ListComp α s_body ((Declaration (VarDef π s) : qs))) = do
-   e <- exprFwd (ListComp α s_body qs)
-   σ <- pattContFwd π (ContExpr e :: Cont a)
+-- | list-comp-decl
+exprFwd (ListComp α s_body (Declaration (VarDef π s) : qs)) = do
+   e <- ContExpr <$> exprFwd (ListComp α s_body qs)
+   σ <- pattContFwd π e
    E.App (E.Lambda σ) <$> exprFwd s
-
--- | List-comp-gen checked
-exprFwd (ListComp α s_body ((Generator p s : qs))) = do
-   e <- exprFwd (ListComp α s_body qs) -- effectively the rules premise
-   σ <- pattContFwd p (ContExpr e)
+-- | list-comp-gen
+exprFwd (ListComp α s_body (Generator p s : qs)) = do
+   e <- ContExpr <$> exprFwd (ListComp α s_body qs)
+   σ <- pattContFwd p e
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElse (ContElim σ) α)))) <$> exprFwd s
 exprFwd (Let ds s) = varDefsFwd (ds × s)
 exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> exprFwd s
@@ -127,41 +116,32 @@ listRestFwd :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
 listRestFwd (End α) = pure (enil α)
 listRestFwd (Next α s l) = econs α <$> exprFwd s <*> listRestFwd l
 
--- ps, e desugar_fwd σ
 pattsExprFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> MayFail (Elim a)
-pattsExprFwd (NonEmptyList (p :| Nil) × e) = clauseFwd p e
-   where
-   clauseFwd :: forall a'. JoinSemilattice a' => Pattern -> Expr a' -> MayFail (Elim a')
-   clauseFwd p' s = (ContExpr <$> exprFwd s) >>= pattContFwd p'
+pattsExprFwd (NonEmptyList (p :| Nil) × e) = (ContExpr <$> exprFwd e) >>= pattContFwd p
 pattsExprFwd (NonEmptyList (p :| p' : ps) × e) =
    pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × e)
 
 pattContFwd :: forall a. Pattern -> Cont a -> MayFail (Elim a)
 pattContFwd (PVar x) κ = pure (ElimVar x κ)
 pattContFwd (PConstr c ps) κ =
-   checkArity c (length ps) *> (ElimConstr <$> D.singleton c <$> pattCont_arg_Fwd (Left <$> ps) κ)
-pattContFwd (PRecord xps) κ = ElimRecord (keys xps) <$> pattCont_record_Fwd (sortBy (compare `on` fst) xps) κ
+   checkArity c (length ps) *> (ElimConstr <$> D.singleton c <$> pattArgs_Fwd (Left <$> ps) κ)
+pattContFwd (PRecord xps) κ =
+   ElimRecord (keys xps) <$> pattArgs_Fwd ((snd >>> Left) <$> sortBy (compare `on` fst) xps) κ
 pattContFwd PListEmpty κ = pure (ElimConstr (D.singleton cNil κ))
-pattContFwd (PListNonEmpty p o) κ = ElimConstr <$> D.singleton cCons <$> pattCont_arg_Fwd (Left p : Right o : Nil) κ
+pattContFwd (PListNonEmpty p o) κ = ElimConstr <$> D.singleton cCons <$> pattArgs_Fwd (Left p : Right o : Nil) κ
 
--- o, κ desugar_fwd σ
 pattCont_ListRest_Fwd :: forall a. ListRestPattern -> Cont a -> MayFail (Elim a)
 pattCont_ListRest_Fwd PEnd κ = pure (ElimConstr (D.singleton cNil κ))
-pattCont_ListRest_Fwd (PNext p o) κ = ElimConstr <$> D.singleton cCons <$> pattCont_arg_Fwd (Left p : Right o : Nil) κ
+pattCont_ListRest_Fwd (PNext p o) κ = ElimConstr <$> D.singleton cCons <$> pattArgs_Fwd (Left p : Right o : Nil) κ
 
-pattCont_arg_Fwd :: forall a. List (Pattern + ListRestPattern) -> Cont a -> MayFail (Cont a)
-pattCont_arg_Fwd Nil κ = pure κ
-pattCont_arg_Fwd (Left p : πs) κ = ContElim <$> (pattCont_arg_Fwd πs κ >>= pattContFwd p)
-pattCont_arg_Fwd (Right o : πs) κ = ContElim <$> (pattCont_arg_Fwd πs κ >>= pattCont_ListRest_Fwd o)
+pattArgs_Fwd :: forall a. List (Pattern + ListRestPattern) -> Cont a -> MayFail (Cont a)
+pattArgs_Fwd Nil κ = pure κ
+pattArgs_Fwd (Left p : πs) κ = ContElim <$> (pattArgs_Fwd πs κ >>= pattContFwd p)
+pattArgs_Fwd (Right o : πs) κ = ContElim <$> (pattArgs_Fwd πs κ >>= pattCont_ListRest_Fwd o)
 
-pattCont_record_Fwd :: forall a. List (Bind Pattern) -> Cont a -> MayFail (Cont a)
-pattCont_record_Fwd Nil κ = pure κ
-pattCont_record_Fwd xps κ = pattCont_arg_Fwd (map (\(_ ↦ p) -> Left p) xps) κ
-
--- initial: branchesFwd_curried, new: clausesFwd
 clausesFwd :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> MayFail (Elim a)
 clausesFwd bs = do
-   NonEmptyList (σ :| σs) <- traverse pattsExprFwd (map unwrap bs)
+   NonEmptyList (σ :| σs) <- traverse pattsExprFwd (unwrap <$> bs)
    foldM maybeJoin σ σs
 
 orElse :: forall a. Cont a -> a -> Cont a
@@ -178,7 +158,7 @@ orElse (ContElim (ElimVar x κ)) α = ContElim (ElimVar x (orElse κ α))
 unlessFwd :: forall a. Ctr × Cont a -> a -> Dict (Cont a)
 unlessFwd (c × κ) α =
    let
-      defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α)) -- corresponds to elimArgs
+      defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
       cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
    in
       D.fromFoldable ((c × κ) : cκs)
