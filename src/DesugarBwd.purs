@@ -172,7 +172,7 @@ pattArgsBwd σ (Right o : πs) = pattArgsBwd (pattCont_listRest_Bwd (asElim σ) 
 
 pattCont_record_Bwd :: forall a. Cont a -> List (Bind Pattern) -> Cont a
 pattCont_record_Bwd κ Nil = κ
---pattCont_record_Bwd σ (_ ↦ p : xps) = pattCont_record_Bwd σ xps # (asElim >>> pattContBwd p) 
+--pattCont_record_Bwd σ (_ ↦ p : xps) = pattCont_record_Bwd σ xps # (asElim >>> pattContBwd p)
 pattCont_record_Bwd σ πs = pattArgsBwd σ (map (\(_ ↦ p) -> Left p) πs)
 
 -- σ, cs desugar_bwd cs'
@@ -188,14 +188,10 @@ orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + Lis
 orElseBwd κ Nil = κ × bot
 orElseBwd ContNone _ = error absurd
 orElseBwd (ContElim (ElimVar _ κ')) (Left (PVar x) : πs) =
-   let
-      κ'' × α = orElseBwd κ' πs
-   in
-      ContElim (ElimVar x κ'') × α
+   orElseBwd κ' πs # (first $ \κ'' -> ContElim (ElimVar x κ''))
 orElseBwd (ContElim (ElimRecord _ κ')) (Left (PRecord xps) : πs) =
    let
-      ps = xps <#> (snd >>> Left)
-      κ'' × α = orElseBwd κ' (ps <> πs)
+      κ'' × α = orElseBwd κ' ((xps <#> (snd >>> Left)) <> πs)
    in
       ContElim (ElimRecord (keys xps) κ'') × α
 orElseBwd (ContElim (ElimConstr m)) (π : πs) =
