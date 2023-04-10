@@ -99,11 +99,7 @@ exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd s
 -- | List-comp-done
 exprFwd (ListComp α s_body Nil) =
    econs α <$> (exprFwd s_body) <@> enil α
--- -- | List-comp-last ?
--- exprFwd (ListComp α s_body ((q : Nil))) =
---    exprFwd (ListComp α s_body ((q : Guard (Constr α cTrue Nil) : Nil)))
-
--- | List-comp-guard checked
+-- | List-comp-guard
 exprFwd (ListComp α s_body (Guard s : qs)) = do
    e <- exprFwd (ListComp α s_body qs)
    E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> exprFwd s
