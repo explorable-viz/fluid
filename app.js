@@ -16428,41 +16428,6 @@
     };
     return go($Either("Right", b0));
   };
-  var pattCont_record_Fwd = (v) => (\u03BA) => {
-    if (v.tag === "Nil") {
-      return $Either("Right", \u03BA);
-    }
-    return pattCont_arg_Fwd(listMap((v1) => $Either("Left", v1._2))(v))(\u03BA);
-  };
-  var pattCont_arg_Fwd = (v) => (\u03BA) => {
-    if (v.tag === "Nil") {
-      return $Either("Right", \u03BA);
-    }
-    if (v.tag === "Cons") {
-      if (v._1.tag === "Left") {
-        const $2 = bindEither.bind(pattCont_arg_Fwd(v._2)(\u03BA))(pattContFwd(v._1._1));
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", $Cont("ContElim", $2._1));
-        }
-        fail();
-      }
-      if (v._1.tag === "Right") {
-        const $2 = bindEither.bind(pattCont_arg_Fwd(v._2)(\u03BA))(pattCont_ListRest_Fwd(v._1._1));
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", $Cont("ContElim", $2._1));
-        }
-        fail();
-      }
-      fail();
-    }
-    fail();
-  };
   var pattCont_ListRest_Fwd = (v) => (\u03BA) => {
     if (v.tag === "PEnd") {
       return $Either(
@@ -16471,7 +16436,7 @@
       );
     }
     if (v.tag === "PNext") {
-      const $2 = pattCont_arg_Fwd($List(
+      const $2 = pattArgs_Fwd($List(
         "Cons",
         $Either("Left", v._1),
         $List("Cons", $Either("Right", v._2), Nil)
@@ -16516,7 +16481,7 @@
         };
         return go(0)(v._2);
       })());
-      const $3 = pattCont_arg_Fwd(listMap(Left)(v._2))(\u03BA);
+      const $3 = pattArgs_Fwd(listMap(Left)(v._2))(\u03BA);
       return applyEither.apply((() => {
         if ($2.tag === "Left") {
           return $Either("Left", $2._1);
@@ -16540,7 +16505,7 @@
     }
     if (v.tag === "PRecord") {
       const $2 = ElimRecord(keys3(v._1));
-      const $3 = pattCont_record_Fwd(sortBy((x2) => (y2) => ordString.compare(x2._1)(y2._1))(v._1))(\u03BA);
+      const $3 = pattArgs_Fwd(listMap((x2) => $Either("Left", x2._2))(sortBy((x2) => (y2) => ordString.compare(x2._1)(y2._1))(v._1)))(\u03BA);
       if ($3.tag === "Left") {
         return $Either("Left", $3._1);
       }
@@ -16556,7 +16521,7 @@
       );
     }
     if (v.tag === "PListNonEmpty") {
-      const $2 = pattCont_arg_Fwd($List(
+      const $2 = pattArgs_Fwd($List(
         "Cons",
         $Either("Left", v._1),
         $List("Cons", $Either("Right", v._2), Nil)
@@ -16569,6 +16534,35 @@
           "Right",
           $Elim("ElimConstr", runST(bind_(newImpl)(poke2(":")($2._1))))
         );
+      }
+      fail();
+    }
+    fail();
+  };
+  var pattArgs_Fwd = (v) => (\u03BA) => {
+    if (v.tag === "Nil") {
+      return $Either("Right", \u03BA);
+    }
+    if (v.tag === "Cons") {
+      if (v._1.tag === "Left") {
+        const $2 = bindEither.bind(pattArgs_Fwd(v._2)(\u03BA))(pattContFwd(v._1._1));
+        if ($2.tag === "Left") {
+          return $Either("Left", $2._1);
+        }
+        if ($2.tag === "Right") {
+          return $Either("Right", $Cont("ContElim", $2._1));
+        }
+        fail();
+      }
+      if (v._1.tag === "Right") {
+        const $2 = bindEither.bind(pattArgs_Fwd(v._2)(\u03BA))(pattCont_ListRest_Fwd(v._1._1));
+        if ($2.tag === "Left") {
+          return $Either("Left", $2._1);
+        }
+        if ($2.tag === "Right") {
+          return $Either("Right", $Cont("ContElim", $2._1));
+        }
+        fail();
       }
       fail();
     }
@@ -16627,6 +16621,7 @@
     }
     fail();
   };
+  var elimBool = (\u03BA) => (\u03BA$p) => $Elim("ElimConstr", fromFoldable13([$Tuple("True", \u03BA), $Tuple("False", \u03BA$p)]));
   var econs = (\u03B1) => (e) => (e$p) => $Expr("Constr", \u03B1, ":", $List("Cons", e, $List("Cons", e$p, Nil)));
   var varDefsFwd = (dictJoinSemilattice) => (v) => {
     if (v._1._2.tag === "Nil") {
@@ -16850,20 +16845,34 @@
       })())(exprFwd(dictJoinSemilattice)(v._1));
     }
     if (v.tag === "IfElse") {
-      return bindEither.bind(exprFwd(dictJoinSemilattice)(v._2))((e22) => bindEither.bind(exprFwd(dictJoinSemilattice)(v._3))((e3) => {
-        const $4 = App2($Expr(
-          "Lambda",
-          $Elim("ElimConstr", fromFoldable13([$Tuple("True", $Cont("ContExpr", e22)), $Tuple("False", $Cont("ContExpr", e3))]))
-        ));
-        const $5 = exprFwd(dictJoinSemilattice)(v._1);
-        if ($5.tag === "Left") {
-          return $Either("Left", $5._1);
+      return applyEither.apply((() => {
+        const $2 = applyEither.apply((() => {
+          const $22 = exprFwd(dictJoinSemilattice)(v._2);
+          if ($22.tag === "Left") {
+            return $Either("Left", $22._1);
+          }
+          if ($22.tag === "Right") {
+            return $Either("Right", elimBool($Cont("ContExpr", $22._1)));
+          }
+          fail();
+        })())((() => {
+          const $22 = exprFwd(dictJoinSemilattice)(v._3);
+          if ($22.tag === "Left") {
+            return $Either("Left", $22._1);
+          }
+          if ($22.tag === "Right") {
+            return $Either("Right", $Cont("ContExpr", $22._1));
+          }
+          fail();
+        })());
+        if ($2.tag === "Left") {
+          return $Either("Left", $2._1);
         }
-        if ($5.tag === "Right") {
-          return $Either("Right", $4($5._1));
+        if ($2.tag === "Right") {
+          return $Either("Right", App2($Expr("Lambda", $2._1)));
         }
         fail();
-      }));
+      })())(exprFwd(dictJoinSemilattice)(v._1));
     }
     if (v.tag === "ListEmpty") {
       return $Either("Right", $Expr("Constr", v._1, "Nil", Nil));
@@ -16936,10 +16945,16 @@
           });
         }
         if (v._3._1.tag === "Declaration") {
-          return bindEither.bind(exprFwd(dictJoinSemilattice)($Expr2("ListComp", v._1, v._2, v._3._2)))((e) => bindEither.bind(pattContFwd(v._3._1._1._1)($Cont(
-            "ContExpr",
-            e
-          )))((\u03C3) => {
+          return bindEither.bind((() => {
+            const $2 = exprFwd(dictJoinSemilattice)($Expr2("ListComp", v._1, v._2, v._3._2));
+            if ($2.tag === "Left") {
+              return $Either("Left", $2._1);
+            }
+            if ($2.tag === "Right") {
+              return $Either("Right", $Cont("ContExpr", $2._1));
+            }
+            fail();
+          })())((e) => bindEither.bind(pattContFwd(v._3._1._1._1)(e))((\u03C3) => {
             const $4 = App2($Expr("Lambda", \u03C3));
             const $5 = exprFwd(dictJoinSemilattice)(v._3._1._1._2);
             if ($5.tag === "Left") {
@@ -16952,10 +16967,16 @@
           }));
         }
         if (v._3._1.tag === "Generator") {
-          return bindEither.bind(exprFwd(dictJoinSemilattice)($Expr2("ListComp", v._1, v._2, v._3._2)))((e) => bindEither.bind(pattContFwd(v._3._1._1)($Cont(
-            "ContExpr",
-            e
-          )))((\u03C3) => {
+          return bindEither.bind((() => {
+            const $2 = exprFwd(dictJoinSemilattice)($Expr2("ListComp", v._1, v._2, v._3._2));
+            if ($2.tag === "Left") {
+              return $Either("Left", $2._1);
+            }
+            if ($2.tag === "Right") {
+              return $Either("Right", $Cont("ContExpr", $2._1));
+            }
+            fail();
+          })())((e) => bindEither.bind(pattContFwd(v._3._1._1)(e))((\u03C3) => {
             const $4 = App2($Expr(
               "App",
               $Expr("Var", "concatMap"),
