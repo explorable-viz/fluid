@@ -74,7 +74,7 @@ exprBwd (E.App e1 e2) (App s1 s2) = App (exprBwd e1 s1) (exprBwd e2 s2)
 exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
    let
       bwded = clausesBwd σ (map Clause (map (first $ NE.singleton) bs)) :: NonEmptyList (Clause _)
-      unwrapped = map (\(x × y) -> head x × y) (map unwrap bwded) :: NonEmptyList (Pattern × Expr _)
+      unwrapped = first head <$> map unwrap bwded :: NonEmptyList (Pattern × Expr _)
    in
       MatchAs (exprBwd e s) (unwrapped)
 exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) =
