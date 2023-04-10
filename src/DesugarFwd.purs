@@ -93,9 +93,6 @@ exprFwd (IfElse s1 s2 s3) = do -- checked
 exprFwd (ListEmpty α) = pure (enil α) -- checked
 exprFwd (ListNonEmpty α s l) = econs α <$> exprFwd s <*> listRestFwd l -- checked, valid if listrestfwd valid
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd s1) <*> exprFwd s2 -- checked
--- -- | List-comp-done, checked
--- exprFwd (ListComp _ s_body ((Guard (Constr α2 c Nil)) : Nil)) | c == cTrue =
---    econs α2 <$> exprFwd s_body <@> enil α2
 -- | List-comp-done
 exprFwd (ListComp α s_body Nil) =
    econs α <$> (exprFwd s_body) <@> enil α
