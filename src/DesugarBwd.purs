@@ -175,15 +175,12 @@ pattCont_record_Bwd κ Nil = κ
 --pattCont_record_Bwd σ (_ ↦ p : xps) = pattCont_record_Bwd σ xps # (asElim >>> pattContBwd p)
 pattCont_record_Bwd σ πs = pattArgsBwd σ (map (\(_ ↦ p) -> Left p) πs)
 
--- σ, cs desugar_bwd cs'
 clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> NonEmptyList (Raw Clause) -> NonEmptyList (Clause a)
-clausesBwd σ bs = map (clauseBwd σ) bs
+clausesBwd σ bs = clauseBwd σ <$> bs
    where
-   -- σ, c desugar_bwd c'
    clauseBwd :: forall a'. BoundedJoinSemilattice a' => Elim a' -> Raw Clause -> Clause a'
    clauseBwd σ' (Clause (πs × s)) = Clause $ πs × exprBwd (pattsExprBwd σ' πs) s
 
--- κ, πs totalise_bwd κ', α
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
 orElseBwd κ Nil = κ × bot
 orElseBwd ContNone _ = error absurd
