@@ -218,10 +218,7 @@ unlessBwd m c = unsafePartial $
       get c m × foldl (∨) bot ((bodyAnn <<< body) <$> cs)
    where
    body :: Partial => Ctr -> Cont a
-   body c' = applyN unargument (successful (arity c')) (get c' m)
-
-   unargument :: Partial => Cont a -> Cont a
-   unargument (ContElim (ElimVar _ κ)) = κ
+   body c' = applyN (\(ContElim (ElimVar _ κ)) -> κ) (successful (arity c')) (get c' m)
 
    bodyAnn :: Partial => Cont a -> a
    bodyAnn (ContExpr (E.Constr α c' Nil)) | c' == cNil = α
