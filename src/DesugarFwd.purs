@@ -141,7 +141,7 @@ pattArgs_Fwd (Right o : πs) κ = ContElim <$> (pattArgs_Fwd πs κ >>= pattCont
 
 clausesFwd :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> MayFail (Elim a)
 clausesFwd bs = do
-   NonEmptyList (σ :| σs) <- traverse pattsExprFwd (map unwrap bs)
+   NonEmptyList (σ :| σs) <- traverse pattsExprFwd (unwrap <$> bs)
    foldM maybeJoin σ σs
 
 orElse :: forall a. Cont a -> a -> Cont a

@@ -142,11 +142,11 @@ listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
 listRestBwd _ _ = error absurd
 
 -- σ, ps desugar_bwd e
-pattsExprBwd :: forall a. Elim a -> NonEmptyList Pattern -> E.Expr a
-pattsExprBwd σ (NonEmptyList (p :| Nil)) = asExpr (pattContBwd p σ)
-pattsExprBwd σ (NonEmptyList (p :| p' : ps)) = pattsExprBwd_rest (asExpr (pattContBwd p σ))
+pattsExprBwd :: forall a. NonEmptyList Pattern -> Elim a -> E.Expr a
+pattsExprBwd (NonEmptyList (p :| Nil)) σ = asExpr (pattContBwd p σ)
+pattsExprBwd (NonEmptyList (p :| p' : ps)) σ = pattsExprBwd_rest (asExpr (pattContBwd p σ))
    where
-   pattsExprBwd_rest (E.Lambda τ) = pattsExprBwd τ (NonEmptyList (p' :| ps))
+   pattsExprBwd_rest (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ
    pattsExprBwd_rest _ = error absurd
 
 -- σ, p desugar_bwd κ
@@ -158,28 +158,26 @@ pattContBwd (PListNonEmpty p o) (ElimConstr m) = pattArgsBwd (get cCons m) (Left
 pattContBwd (PRecord xps) (ElimRecord _ κ) = pattCont_record_Bwd κ (sortBy (compare `on` fst) xps)
 pattContBwd _ _ = error absurd
 
--- σ, o desugar_bwd κ
-pattCont_listRest_Bwd :: forall a. Elim a -> ListRestPattern -> Cont a
-pattCont_listRest_Bwd (ElimVar _ _) _ = error absurd
-pattCont_listRest_Bwd (ElimRecord _ _) _ = error absurd
-pattCont_listRest_Bwd (ElimConstr m) PEnd = get cNil m
-pattCont_listRest_Bwd (ElimConstr m) (PNext p o) = pattArgsBwd (get cCons m) (Left p : Right o : Nil)
+pattCont_ListRest_Bwd :: forall a. Elim a -> ListRestPattern -> Cont a
+pattCont_ListRest_Bwd (ElimVar _ _) _ = error absurd
+pattCont_ListRest_Bwd (ElimRecord _ _) _ = error absurd
+pattCont_ListRest_Bwd (ElimConstr m) PEnd = get cNil m
+pattCont_ListRest_Bwd (ElimConstr m) (PNext p o) = pattArgsBwd (get cCons m) (Left p : Right o : Nil)
 
 pattArgsBwd :: forall a. Cont a -> List (Pattern + ListRestPattern) -> Cont a
 pattArgsBwd κ Nil = κ
 pattArgsBwd σ (Left p : πs) = pattArgsBwd (pattContBwd p (asElim σ)) πs
-pattArgsBwd σ (Right o : πs) = pattArgsBwd (pattCont_listRest_Bwd (asElim σ) o) πs
+pattArgsBwd σ (Right o : πs) = pattArgsBwd (pattCont_ListRest_Bwd (asElim σ) o) πs
 
 pattCont_record_Bwd :: forall a. Cont a -> List (Bind Pattern) -> Cont a
 pattCont_record_Bwd κ Nil = κ
---pattCont_record_Bwd σ (_ ↦ p : xps) = pattCont_record_Bwd σ xps # (asElim >>> pattContBwd p)
 pattCont_record_Bwd σ πs = pattArgsBwd σ (map (\(_ ↦ p) -> Left p) πs)
 
 clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> NonEmptyList (Raw Clause) -> NonEmptyList (Clause a)
-clausesBwd σ bs = clauseBwd σ <$> bs
+clausesBwd σ bs = clauseBwd <$> bs
    where
-   clauseBwd :: forall a'. BoundedJoinSemilattice a' => Elim a' -> Raw Clause -> Clause a'
-   clauseBwd σ' (Clause (πs × s)) = Clause $ πs × exprBwd (pattsExprBwd σ' πs) s
+   clauseBwd :: Raw Clause -> Clause a
+   clauseBwd (Clause (πs × s)) = Clause (πs × exprBwd (pattsExprBwd πs σ) s)
 
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
 orElseBwd κ Nil = κ × bot
