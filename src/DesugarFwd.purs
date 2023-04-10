@@ -158,7 +158,6 @@ pattCont_record_Fwd :: forall a. List (Bind Pattern) -> Cont a -> MayFail (Cont 
 pattCont_record_Fwd Nil κ = pure κ
 pattCont_record_Fwd xps κ = pattCont_arg_Fwd (map (\(_ ↦ p) -> Left p) xps) κ
 
--- initial: branchesFwd_curried, new: clausesFwd
 clausesFwd :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> MayFail (Elim a)
 clausesFwd bs = do
    NonEmptyList (σ :| σs) <- traverse pattsExprFwd (map unwrap bs)
