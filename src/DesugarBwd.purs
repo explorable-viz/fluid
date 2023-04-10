@@ -141,15 +141,13 @@ listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
    Next α (exprBwd e1 s) (listRestBwd e2 l)
 listRestBwd _ _ = error absurd
 
--- σ, ps desugar_bwd e
 pattsExprBwd :: forall a. NonEmptyList Pattern -> Elim a -> E.Expr a
 pattsExprBwd (NonEmptyList (p :| Nil)) σ = asExpr (pattContBwd p σ)
-pattsExprBwd (NonEmptyList (p :| p' : ps)) σ = pattsExprBwd_rest (asExpr (pattContBwd p σ))
+pattsExprBwd (NonEmptyList (p :| p' : ps)) σ = next (asExpr (pattContBwd p σ))
    where
-   pattsExprBwd_rest (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ
-   pattsExprBwd_rest _ = error absurd
+   next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ
+   next _ = error absurd
 
--- σ, p desugar_bwd κ
 pattContBwd :: forall a. Pattern -> Elim a -> Cont a
 pattContBwd (PVar _) (ElimVar _ κ) = κ
 pattContBwd (PConstr c ps) (ElimConstr m) = pattArgsBwd (get c m) (Left <$> ps)
