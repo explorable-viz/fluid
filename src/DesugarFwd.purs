@@ -140,7 +140,8 @@ pattContFwd :: forall a. Pattern -> Cont a -> MayFail (Elim a)
 pattContFwd (PVar x) κ = pure (ElimVar x κ)
 pattContFwd (PConstr c ps) κ =
    checkArity c (length ps) *> (ElimConstr <$> D.singleton c <$> pattCont_arg_Fwd (Left <$> ps) κ)
-pattContFwd (PRecord xps) κ = ElimRecord (keys xps) <$> pattCont_record_Fwd (sortBy (compare `on` fst) xps) κ
+pattContFwd (PRecord xps) κ =
+   ElimRecord (keys xps) <$> pattCont_arg_Fwd ((snd >>> Left) <$> sortBy (compare `on` fst) xps) κ
 pattContFwd PListEmpty κ = pure (ElimConstr (D.singleton cNil κ))
 pattContFwd (PListNonEmpty p o) κ = ElimConstr <$> D.singleton cCons <$> pattCont_arg_Fwd (Left p : Right o : Nil) κ
 
@@ -153,10 +154,6 @@ pattCont_arg_Fwd :: forall a. List (Pattern + ListRestPattern) -> Cont a -> MayF
 pattCont_arg_Fwd Nil κ = pure κ
 pattCont_arg_Fwd (Left p : πs) κ = ContElim <$> (pattCont_arg_Fwd πs κ >>= pattContFwd p)
 pattCont_arg_Fwd (Right o : πs) κ = ContElim <$> (pattCont_arg_Fwd πs κ >>= pattCont_ListRest_Fwd o)
-
-pattCont_record_Fwd :: forall a. List (Bind Pattern) -> Cont a -> MayFail (Cont a)
-pattCont_record_Fwd Nil κ = pure κ
-pattCont_record_Fwd xps κ = pattCont_arg_Fwd (map (\(_ ↦ p) -> Left p) xps) κ
 
 clausesFwd :: forall a. JoinSemilattice a => NonEmptyList (Clause a) -> MayFail (Elim a)
 clausesFwd bs = do
