@@ -96,7 +96,7 @@ exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd s
 -- -- | List-comp-done, checked
 -- exprFwd (ListComp _ s_body ((Guard (Constr α2 c Nil)) : Nil)) | c == cTrue =
 --    econs α2 <$> exprFwd s_body <@> enil α2
--- | List-comp-done 
+-- | List-comp-done
 exprFwd (ListComp α s_body Nil) =
    econs α <$> (exprFwd s_body) <@> enil α
 -- -- | List-comp-last ?
@@ -178,7 +178,7 @@ orElse (ContElim (ElimVar x κ)) α = ContElim (ElimVar x (orElse κ α))
 unlessFwd :: forall a. Ctr × Cont a -> a -> Dict (Cont a)
 unlessFwd (c × κ) α =
    let
-      defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α)) -- corresponds to elimArgs
+      defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
       cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
    in
       D.fromFoldable ((c × κ) : cκs)
