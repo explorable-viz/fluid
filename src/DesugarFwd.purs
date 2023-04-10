@@ -85,27 +85,26 @@ exprFwd (Lambda bs) = E.Lambda <$> clausesFwd bs
 exprFwd (Project s x) = E.Project <$> exprFwd s <@> x
 exprFwd (App s1 s2) = E.App <$> exprFwd s1 <*> exprFwd s2
 exprFwd (BinaryApp s1 op s2) = E.App <$> (E.App (E.Op op) <$> exprFwd s1) <*> exprFwd s2
-exprFwd (MatchAs s bs) = E.App <$> (E.Lambda <$> (clausesFwd ((map (Clause <$> first singleton) bs)))) <*> exprFwd s -- checked
-exprFwd (IfElse s1 s2 s3) = do -- checked
-   e2 <- exprFwd s2
-   e3 <- exprFwd s3
-   E.App (E.Lambda (elimBool (ContExpr e2) (ContExpr e3))) <$> exprFwd s1
-exprFwd (ListEmpty α) = pure (enil α) -- checked
-exprFwd (ListNonEmpty α s l) = econs α <$> exprFwd s <*> listRestFwd l -- checked, valid if listrestfwd valid
-exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd s1) <*> exprFwd s2 -- checked
--- | List-comp-done
+exprFwd (MatchAs s bs) =
+   E.App <$> (E.Lambda <$> (clausesFwd ((map (Clause <$> first singleton) bs)))) <*> exprFwd s
+exprFwd (IfElse s1 s2 s3) =
+   E.App <$> (E.Lambda <$> (elimBool <$> (ContExpr <$> exprFwd s2) <*> (ContExpr <$> exprFwd s3))) <*> exprFwd s1
+exprFwd (ListEmpty α) = pure (enil α)
+exprFwd (ListNonEmpty α s l) = econs α <$> exprFwd s <*> listRestFwd l
+exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd s1) <*> exprFwd s2
+-- | list-comp-done
 exprFwd (ListComp α s_body Nil) =
    econs α <$> (exprFwd s_body) <@> enil α
--- | List-comp-guard
+-- | list-comp-guard
 exprFwd (ListComp α s_body (Guard s : qs)) = do
    e <- exprFwd (ListComp α s_body qs)
    E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> exprFwd s
--- | List-comp-decl
+-- | list-comp-decl
 exprFwd (ListComp α s_body (Declaration (VarDef π s) : qs)) = do
    e <- exprFwd (ListComp α s_body qs)
    σ <- pattContFwd π (ContExpr e :: Cont a)
    E.App (E.Lambda σ) <$> exprFwd s
--- | List-comp-gen
+-- | list-comp-gen
 exprFwd (ListComp α s_body (Generator p s : qs)) = do
    e <- exprFwd (ListComp α s_body qs)
    σ <- pattContFwd p (ContExpr e)
