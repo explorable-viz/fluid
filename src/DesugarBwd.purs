@@ -11,7 +11,7 @@ import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList)
 import Data.List.NonEmpty (singleton) as NE
 import Data.Newtype (unwrap)
 import Data.NonEmpty ((:|))
-import Data.Profunctor.Strong (first)
+import Data.Profunctor.Strong (first, (***))
 import Data.Set (toUnfoldable) as S
 import Data.Tuple (uncurry, fst, snd)
 import DataType (Ctr, arity, cCons, cNil, cTrue, cFalse, ctrs, dataTypeFor)
@@ -188,12 +188,9 @@ orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + Lis
 orElseBwd κ Nil = κ × bot
 orElseBwd ContNone _ = error absurd
 orElseBwd (ContElim (ElimVar _ κ')) (Left (PVar x) : πs) =
-   orElseBwd κ' πs # (first $ \κ'' -> ContElim (ElimVar x κ''))
+   orElseBwd κ' πs # first (\κ'' -> ContElim (ElimVar x κ''))
 orElseBwd (ContElim (ElimRecord _ κ')) (Left (PRecord xps) : πs) =
-   let
-      κ'' × α = orElseBwd κ' ((xps <#> (snd >>> Left)) <> πs)
-   in
-      ContElim (ElimRecord (keys xps) κ'') × α
+   orElseBwd κ' ((xps <#> (snd >>> Left)) <> πs) # first (\κ'' -> ContElim (ElimRecord (keys xps) κ''))
 orElseBwd (ContElim (ElimConstr m)) (π : πs) =
    let
       c × πs' = case π of
@@ -206,9 +203,9 @@ orElseBwd (ContElim (ElimConstr m)) (π : πs) =
          Right PEnd -> cNil × Nil
          Right (PNext p o) -> cCons × (Left p : Right o : Nil)
       κ' × α = unlessBwd m c
-      κ'' × β = orElseBwd κ' (πs' <> πs)
    in
-      ContElim (ElimConstr (D.fromFoldable (singleton (c × κ'')))) × (α ∨ β)
+      orElseBwd κ' (πs' <> πs) #
+         (\κ'' -> ContElim (ElimConstr (D.fromFoldable (singleton (c × κ''))))) *** (α ∨ _)
 orElseBwd _ _ = error absurd
 
 -- Discard all synthesised branches, returning the original singleton branch for c, plus join of annotations
