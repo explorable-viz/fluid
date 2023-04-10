@@ -61,7 +61,6 @@ varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
    E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
 
 -- In the formalism, "group by name" is part of the syntax.
--- cs desugar_fwd σ
 recDefsFwd :: forall a. JoinSemilattice a => RecDefs a -> MayFail (E.RecDefs a)
 recDefsFwd xcs = D.fromFoldable <$> traverse recDefFwd xcss
    where
@@ -94,24 +93,25 @@ exprFwd (ListNonEmpty α s l) = econs α <$> exprFwd s <*> listRestFwd l
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd s1) <*> exprFwd s2
 -- | list-comp-done
 exprFwd (ListComp α s_body Nil) =
-   econs α <$> (exprFwd s_body) <@> enil α
+   econs α <$> exprFwd s_body <@> enil α
 -- | list-comp-guard
 exprFwd (ListComp α s_body (Guard s : qs)) = do
    e <- exprFwd (ListComp α s_body qs)
    E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> exprFwd s
 -- | list-comp-decl
 exprFwd (ListComp α s_body (Declaration (VarDef π s) : qs)) = do
-   e <- exprFwd (ListComp α s_body qs)
-   σ <- pattContFwd π (ContExpr e :: Cont a)
+   e <- ContExpr <$> exprFwd (ListComp α s_body qs)
+   σ <- pattContFwd π e
    E.App (E.Lambda σ) <$> exprFwd s
 -- | list-comp-gen
 exprFwd (ListComp α s_body (Generator p s : qs)) = do
-   e <- exprFwd (ListComp α s_body qs)
-   σ <- pattContFwd p (ContExpr e)
+   e <- ContExpr <$> exprFwd (ListComp α s_body qs)
+   σ <- pattContFwd p e
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElse (ContElim σ) α)))) <$> exprFwd s
 exprFwd (Let ds s) = varDefsFwd (ds × s)
 exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> exprFwd s
 
+-- l desugar_fwd e
 listRestFwd :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
 listRestFwd (End α) = pure (enil α)
 listRestFwd (Next α s l) = econs α <$> exprFwd s <*> listRestFwd l
