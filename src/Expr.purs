@@ -8,11 +8,39 @@ import Data.List (List)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
+import Unsafe.Coerce (unsafeCoerce)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
-import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
-import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg, erase)
+import Util (type (+), type (×), both, error, report, (×), (≜), (≞), MayFail)
 import Util.Pair (Pair, toTuple)
+
+wrapSugar :: forall s e a. Desugarable s e => s a -> Sugar' e a
+wrapSugar sa = Sugar' (\ds -> ds sa)
+
+unwrapSugar :: forall s e a. Desugarable s e => Sugar' e a -> s a
+unwrapSugar (Sugar' k) = k unsafeCoerce
+
+runSugar :: forall e a. JoinSemilattice a => Sugar' e a -> MayFail (e a)
+runSugar (Sugar' k) = k tryDesug
+
+newtype Sugar' e (a :: Type) = Sugar' (forall r. (forall s. Desugarable s e => s a -> r) -> r)
+
+class FromSugar e where
+   fromSug :: forall a. Raw (Sugar' e) -> e a -> e a
+
+class (Functor s, Functor e, FromSugar e) <= Desugarable (s :: Type -> Type) (e :: Type -> Type) | s -> e where
+   tryDesug :: forall a. JoinSemilattice a => s a -> MayFail (e a)
+
+desugar :: forall s e a. JoinSemilattice a => FromSugar e => Desugarable s e => s a -> MayFail (e a)
+desugar x = fromSug (erase (wrapSugar x)) <$> tryDesug x
+
+instance FromSugar Expr where
+   fromSug = Sugar
+
+instance Functor e => Functor (Sugar' e) where
+   map :: forall a b. (a -> b) -> Sugar' e a -> Sugar' e b
+   map f (Sugar' k) = Sugar' (\sug -> k (\sa -> sug (map f sa)))
 
 data Expr a
    = Var Var
@@ -29,6 +57,7 @@ data Expr a
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
+   | Sugar (Raw (Sugar' Expr)) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -38,6 +67,7 @@ data Elim a
    = ElimVar Var (Cont a)
    | ElimConstr (Dict (Cont a))
    | ElimRecord (Set Var) (Cont a)
+   | ElimSug (Raw (Sugar' Elim)) (Elim a)
 
 -- Continuation of an eliminator branch.
 data Cont a
@@ -74,11 +104,13 @@ instance FV (Expr a) where
    fv (App e1 e2) = fv e1 `union` fv e2
    fv (Let def e) = fv def `union` (fv e `difference` bv def)
    fv (LetRec ρ e) = unions (fv <$> ρ) `union` fv e
+   fv (Sugar _ e) = fv e
 
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ `difference` singleton x
    fv (ElimConstr m) = unions (fv <$> m)
    fv (ElimRecord _ κ) = fv κ
+   fv (ElimSug _ κ) = fv κ
 
 instance FV (Cont a) where
    fv ContNone = empty
@@ -99,6 +131,7 @@ instance BV (Elim a) where
    bv (ElimVar x κ) = singleton x `union` bv κ
    bv (ElimConstr m) = bv (snd (asSingletonMap m))
    bv (ElimRecord _ κ) = bv κ
+   bv (ElimSug _ κ) = bv κ
 
 instance BV (VarDef a) where
    bv (VarDef σ _) = bv σ

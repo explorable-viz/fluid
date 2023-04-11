@@ -9,7 +9,7 @@ import Data.Maybe (Maybe)
 import Data.Set (Set, empty, singleton, unions)
 import DataType (Ctr)
 import Dict (Dict)
-import Expr (class BV, RecDefs, bv)
+import Expr (class BV, RecDefs, bv, Expr)
 import Lattice (Raw)
 import Util (type (×))
 import Val (Array2, ForeignOp', Val)
@@ -26,6 +26,7 @@ data Trace
    | App Trace Trace AppTrace
    | Let VarDef Trace
    | LetRec (Raw RecDefs) Trace
+   | Sugar (Raw Expr) Trace
 
 data AppTrace
    = AppClosure (Set Var) Match Trace

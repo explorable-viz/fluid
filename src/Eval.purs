@@ -49,6 +49,7 @@ match (V.Record α xvs) (ElimRecord xs κ) = do
    γ × κ' × α' × ws <- matchMany (xs' <#> flip get xvs) κ
    pure (γ × κ' × (α ∧ α') × MatchRecord (D.fromFoldable (zip xs' ws)))
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
+match v (ElimSug _ κ) = match v κ
 
 matchMany :: forall a. Ann a => List (Val a) -> Cont a -> MayFail (Env a × Cont a × a × List Match)
 matchMany Nil κ = pure (empty × κ × top × Nil)
@@ -158,6 +159,10 @@ eval γ (LetRec ρ e) α = do
    let γ' = closeDefs γ ρ α
    t × v <- eval (γ <+> γ') e α
    pure $ T.LetRec (erase <$> ρ) t × v
+eval ρ sug@(Sugar _ e) α = do
+   (t × v) <- eval ρ e α
+   let t' = T.Sugar (erase sug) t
+   pure (t' × v)
 
 eval_module :: forall a. Ann a => Env a -> Module a -> a -> MayFail (Env a)
 eval_module γ = go empty

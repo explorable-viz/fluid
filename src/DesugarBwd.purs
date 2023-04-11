@@ -90,15 +90,15 @@ exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
    ListNonEmpty α (exprBwd e1 s) (listRestBwd e2 l)
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
    ListEnum (exprBwd e1 s1) (exprBwd e2 s2)
--- list-comp-done
-exprBwd (E.Constr α2 _ (e' : E.Constr α1 _ Nil : Nil)) (ListComp _ s_body (Guard (Constr _ c Nil) : Nil)) | c == cTrue =
-   ListComp (α1 ∨ α2) (exprBwd e' s_body) (Guard (Constr (α1 ∨ α2) cTrue Nil) : Nil)
--- | list-comp-last
-exprBwd e (ListComp _ s (q : Nil)) =
-   case exprBwd e (ListComp unit s (q : Guard (Constr bot cTrue Nil) : Nil)) of
-      ListComp β s' ((q' : (Guard (Constr _ c Nil)) : Nil)) | c == cTrue ->
-         (ListComp β s' (q' : Nil))
-      _ -> error absurd
+
+-- -- list-comp-done
+-- exprBwd (E.Constr α2 _ (e' : E.Constr α1 _ Nil : Nil)) (ListComp _ s_body (Guard (Constr _ c Nil) : Nil)) | c == cTrue =
+--    ListComp (α1 ∨ α2) (exprBwd e' s_body) (Guard (Constr (α1 ∨ α2) cTrue Nil) : Nil)
+
+-- | list-comp-done
+exprBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (ListComp _ s Nil) | c == cCons && c' == cNil =
+   ListComp (α1 ∨ α2) (exprBwd e s) Nil
+
 -- list-comp-guard
 exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp _ s1 (Guard s2 : qs)) =
    case
@@ -117,13 +117,13 @@ exprBwd (E.App (E.Lambda σ) e1) (ListComp _ s2 (Declaration (VarDef π s1) : qs
 -- list-comp-gen
 exprBwd
    (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1)
-   (ListComp _ s2 (Generator p s1 : q : qs)) =
+   (ListComp _ s2 (Generator p s1 : qs)) =
    let
       σ' × β = orElseBwd (ContElim σ) (Left p : Nil)
    in
-      case exprBwd (asExpr (pattContBwd p (asElim σ'))) (ListComp unit s2 (q : qs)) of
-         ListComp β' s2' (q' : qs') ->
-            ListComp (β ∨ β') s2' (Generator p (exprBwd e1 s1) : q' : qs')
+      case exprBwd (asExpr (pattContBwd p (asElim σ'))) (ListComp unit s2 qs) of
+         ListComp β' s2' qs' ->
+            ListComp (β ∨ β') s2' (Generator p (exprBwd e1 s1) : qs')
          _ -> error absurd
 exprBwd _ _ = error absurd
 
@@ -154,6 +154,7 @@ pattCont_ListRest_Bwd (ElimVar _ _) _ = error absurd
 pattCont_ListRest_Bwd (ElimRecord _ _) _ = error absurd
 pattCont_ListRest_Bwd (ElimConstr m) PEnd = get cNil m
 pattCont_ListRest_Bwd (ElimConstr m) (PNext p o) = pattArgsBwd (Left p : Right o : Nil) (get cCons m)
+pattCont_ListRest_Bwd (ElimSug _ κ) p = pattCont_ListRest_Bwd κ p
 
 pattArgsBwd :: forall a. List (Pattern + ListRestPattern) -> Endo (Cont a)
 pattArgsBwd Nil κ = κ

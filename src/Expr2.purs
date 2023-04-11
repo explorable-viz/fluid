@@ -8,6 +8,7 @@ import Data.List (List)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
+import Unsafe.Coerce (unsafeCoerce)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, definedJoin, expand, maybeJoin, neg, (∨))
@@ -16,6 +17,9 @@ import Util.Pair (Pair, toTuple)
 
 wrapSugar :: forall s e a. Desugarable s e => s a -> Sugar' e a
 wrapSugar sa = Sugar' (\ds -> ds sa)
+
+unwrapSugar :: forall s e a. Desugarable s e => Sugar' e a -> s a
+unwrapSugar (Sugar' k) = k unsafeCoerce
 
 runSugar :: forall e a. JoinSemilattice a => Sugar' e a -> MayFail (e a)
 runSugar (Sugar' k) = k tryDesug
@@ -27,9 +31,6 @@ class FromSugar e where
 
 class Functor s <= Desugarable (s :: Type -> Type) (e :: Type -> Type) | s -> e where
    tryDesug :: forall a. JoinSemilattice a => s a -> MayFail (e a)
-
-reifySug' :: forall s e a. JoinSemilattice a => Desugarable s e => (Sugar' e a -> e a -> e a) -> s a -> e a
-reifySug' constr x = let exp = (successful <<< tryDesug) x in constr (wrapSugar x) exp
 
 reifySugar :: forall s e a. JoinSemilattice a => FromSugar e => Desugarable s e => s a -> e a
 reifySugar x = let exp = (successful <<< tryDesug) x in fromSug (wrapSugar x) exp

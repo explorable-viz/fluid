@@ -152,6 +152,10 @@ orElse (ContElim (ElimConstr m)) α = ContElim (ElimConstr (unlessFwd (c × orEl
    c × κ = asSingletonMap m
 orElse (ContElim (ElimRecord xs κ)) α = ContElim (ElimRecord xs (orElse κ α))
 orElse (ContElim (ElimVar x κ)) α = ContElim (ElimVar x (orElse κ α))
+orElse (ContElim (ElimSug x σ)) α =
+   case orElse (ContElim σ) α of
+      ContElim σ' -> ContElim (ElimSug x σ')
+      _ -> error absurd
 
 -- Extend singleton branch to set of branches where any missing constructors have been mapped to the empty list,
 -- using anonymous variables in any generated patterns.
