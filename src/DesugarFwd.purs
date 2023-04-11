@@ -117,9 +117,9 @@ listRestFwd (End α) = pure (enil α)
 listRestFwd (Next α s l) = econs α <$> exprFwd s <*> listRestFwd l
 
 pattsExprFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> MayFail (Elim a)
-pattsExprFwd (NonEmptyList (p :| Nil) × e) = (ContExpr <$> exprFwd e) >>= pattContFwd p
-pattsExprFwd (NonEmptyList (p :| p' : ps) × e) =
-   pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × e)
+pattsExprFwd (NonEmptyList (p :| Nil) × s) = (ContExpr <$> exprFwd s) >>= pattContFwd p
+pattsExprFwd (NonEmptyList (p :| p' : ps) × s) =
+   pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × s)
 
 pattContFwd :: forall a. Pattern -> Cont a -> MayFail (Elim a)
 pattContFwd (PVar x) κ = pure (ElimVar x κ)
