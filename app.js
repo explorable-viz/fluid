@@ -9393,6 +9393,9 @@
       if (m.tag === "LetRec") {
         return $Expr("LetRec", _fmapObject(m._1, functorElim.map(f)), functorExpr.map(f)(m._2));
       }
+      if (m.tag === "Sugar") {
+        return $Expr("Sugar", m._1, functorExpr.map(f)(m._2));
+      }
       fail();
     }
   };
@@ -9406,6 +9409,9 @@
       }
       if (m.tag === "ElimRecord") {
         return $Elim("ElimRecord", m._1, functorCont.map(f)(m._2));
+      }
+      if (m.tag === "ElimSug") {
+        return $Elim("ElimSug", m._1, functorElim.map(f)(m._2));
       }
       fail();
     }
@@ -9931,6 +9937,9 @@
       if (v.tag === "ElimRecord") {
         return bVCont.bv(v._2);
       }
+      if (v.tag === "ElimSug") {
+        return bVElim.bv(v._2);
+      }
       fail();
     }
   };
@@ -9992,6 +10001,9 @@
       if (v.tag === "LetRec") {
         return unionWith(ordString)($$const)(unions(_fmapObject(v._1, fVElim.fv)))(fVExpr.fv(v._2));
       }
+      if (v.tag === "Sugar") {
+        return fVExpr.fv(v._2);
+      }
       fail();
     }
   };
@@ -10005,6 +10017,9 @@
       }
       if (v.tag === "ElimRecord") {
         return fVCont.fv(v._2);
+      }
+      if (v.tag === "ElimSug") {
+        return fVElim.fv(v._2);
       }
       fail();
     }
@@ -16617,6 +16632,13 @@
       if (v._1.tag === "ElimVar") {
         return $Cont("ContElim", $Elim("ElimVar", v._1._1, orElse(v._1._2)(v1)));
       }
+      if (v._1.tag === "ElimSug") {
+        const v2 = orElse($Cont("ContElim", v._1._2))(v1);
+        if (v2.tag === "ContElim") {
+          return $Cont("ContElim", $Elim("ElimSug", v._1._1, v2._1));
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
+      }
       fail();
     }
     fail();
@@ -18216,6 +18238,9 @@
         }
         return $Either("Left", "Pattern mismatch: found " + (prettyP2(v) + (", expected " + show2(v1._1))));
       }
+      if (v1.tag === "ElimSug") {
+        return match6(dictAnn)(v)(v1._2);
+      }
       fail();
     };
   };
@@ -18441,6 +18466,12 @@
         return bindEither.bind($$eval(dictAnn)(unionWith2((v$1) => identity12)(v)(closeDefs(v)(v1._1)(v2)))(v1._2)(v2))((v3) => $Either(
           "Right",
           $Tuple($Trace("LetRec", _fmapObject(v1._1, erase1), v3._1), v3._2)
+        ));
+      }
+      if (v1.tag === "Sugar") {
+        return bindEither.bind($$eval(dictAnn)(v)(v1._2)(v2))((v3) => $Either(
+          "Right",
+          $Tuple($Trace("Sugar", functorExpr.map((v$1) => unit)(v1), v3._1), v3._2)
         ));
       }
       fail();
