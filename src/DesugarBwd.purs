@@ -72,11 +72,7 @@ exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd σ bs)
 exprBwd (E.Project e _) (Project s x) = Project (exprBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (exprBwd e1 s1) (exprBwd e2 s2)
 exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
-   let
-      bwded = clausesBwd σ (map Clause (map (first $ NE.singleton) bs)) :: NonEmptyList (Clause _)
-      unwrapped = first head <$> map unwrap bwded :: NonEmptyList (Pattern × Expr _)
-   in
-      MatchAs (exprBwd e s) (unwrapped)
+   MatchAs (exprBwd e s) (first head <$> unwrap <$> clausesBwd σ (Clause <$> first NE.singleton <$> bs))
 exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (exprBwd e1 s1)
       (exprBwd (asExpr (get cTrue m)) s2)
