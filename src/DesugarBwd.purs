@@ -19,7 +19,7 @@ import Dict (Dict, get)
 import Dict (fromFoldable) as D
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
-import Lattice (class BoundedJoinSemilattice, (∨), bot, Raw)
+import Lattice (class BoundedJoinSemilattice, Raw, bot, (∨))
 import Partial.Unsafe (unsafePartial)
 import SExpr (Clause(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, RecDef(..))
 import Util (Endo, type (+), type (×), absurd, error, successful, (×))
@@ -124,11 +124,11 @@ listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
    Next α (exprBwd e1 s) (listRestBwd e2 l)
 listRestBwd _ _ = error absurd
 
-pattsExprBwd :: forall a. NonEmptyList Pattern -> Elim a -> E.Expr a
-pattsExprBwd (NonEmptyList (p :| Nil)) σ = asExpr (pattContBwd p σ)
-pattsExprBwd (NonEmptyList (p :| p' : ps)) σ = next (asExpr (pattContBwd p σ))
+pattsExprBwd :: forall a. BoundedJoinSemilattice a => NonEmptyList Pattern -> Elim a -> Raw Expr -> Expr a
+pattsExprBwd (NonEmptyList (p :| Nil)) σ s = exprBwd (asExpr (pattContBwd p σ)) s
+pattsExprBwd (NonEmptyList (p :| p' : ps)) σ s = next (asExpr (pattContBwd p σ))
    where
-   next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ
+   next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ s
    next _ = error absurd
 
 pattContBwd :: forall a. Pattern -> Elim a -> Cont a
@@ -155,7 +155,7 @@ clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> NonEmptyList (Raw 
 clausesBwd σ bs = clauseBwd <$> bs
    where
    clauseBwd :: Raw Clause -> Clause a
-   clauseBwd (Clause (πs × s)) = Clause (πs × exprBwd (pattsExprBwd πs σ) s)
+   clauseBwd (Clause (πs × s)) = Clause (πs × pattsExprBwd πs σ s)
 
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
 orElseBwd κ Nil = κ × bot
