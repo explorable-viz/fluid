@@ -86,15 +86,9 @@ exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
    ListNonEmpty α (exprBwd e1 s) (listRestBwd e2 l)
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
    ListEnum (exprBwd e1 s1) (exprBwd e2 s2)
-
--- -- list-comp-done
--- exprBwd (E.Constr α2 _ (e' : E.Constr α1 _ Nil : Nil)) (ListComp _ s_body (Guard (Constr _ c Nil) : Nil)) | c == cTrue =
---    ListComp (α1 ∨ α2) (exprBwd e' s_body) (Guard (Constr (α1 ∨ α2) cTrue Nil) : Nil)
-
 -- | list-comp-done
 exprBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (ListComp _ s Nil) | c == cCons && c' == cNil =
    ListComp (α1 ∨ α2) (exprBwd e s) Nil
-
 -- list-comp-guard
 exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp _ s1 (Guard s2 : qs)) =
    case
