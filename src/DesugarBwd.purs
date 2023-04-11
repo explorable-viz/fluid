@@ -19,7 +19,7 @@ import Dict (Dict, get)
 import Dict (fromFoldable) as D
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), RecDefs, VarDef(..)) as E
-import Lattice (class BoundedJoinSemilattice, (∨), bot, Raw)
+import Lattice (class BoundedJoinSemilattice, Raw, bot, (∨))
 import Partial.Unsafe (unsafePartial)
 import SExpr (Clause(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs, RecDef(..))
 import Util (Endo, type (+), type (×), absurd, error, successful, (×))
@@ -72,11 +72,7 @@ exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd σ bs)
 exprBwd (E.Project e _) (Project s x) = Project (exprBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (exprBwd e1 s1) (exprBwd e2 s2)
 exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
-   let
-      bwded = clausesBwd σ (map Clause (map (first $ NE.singleton) bs)) :: NonEmptyList (Clause _)
-      unwrapped = first head <$> map unwrap bwded :: NonEmptyList (Pattern × Expr _)
-   in
-      MatchAs (exprBwd e s) (unwrapped)
+   MatchAs (exprBwd e s) (first head <$> unwrap <$> clausesBwd σ (Clause <$> first NE.singleton <$> bs))
 exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (exprBwd e1 s1)
       (exprBwd (asExpr (get cTrue m)) s2)
@@ -90,15 +86,9 @@ exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ s l) =
    ListNonEmpty α (exprBwd e1 s) (listRestBwd e2 l)
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum s1 s2) =
    ListEnum (exprBwd e1 s1) (exprBwd e2 s2)
--- list-comp-done
-exprBwd (E.Constr α2 _ (e' : E.Constr α1 _ Nil : Nil)) (ListComp _ s_body (Guard (Constr _ c Nil) : Nil)) | c == cTrue =
-   ListComp (α1 ∨ α2) (exprBwd e' s_body) (Guard (Constr (α1 ∨ α2) cTrue Nil) : Nil)
--- | list-comp-last
-exprBwd e (ListComp _ s (q : Nil)) =
-   case exprBwd e (ListComp unit s (q : Guard (Constr bot cTrue Nil) : Nil)) of
-      ListComp β s' ((q' : (Guard (Constr _ c Nil)) : Nil)) | c == cTrue ->
-         (ListComp β s' (q' : Nil))
-      _ -> error absurd
+-- | list-comp-done
+exprBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (ListComp _ s Nil) | c == cCons && c' == cNil =
+   ListComp (α1 ∨ α2) (exprBwd e s) Nil
 -- list-comp-guard
 exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp _ s1 (Guard s2 : qs)) =
    case
@@ -117,13 +107,13 @@ exprBwd (E.App (E.Lambda σ) e1) (ListComp _ s2 (Declaration (VarDef π s1) : qs
 -- list-comp-gen
 exprBwd
    (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1)
-   (ListComp _ s2 (Generator p s1 : q : qs)) =
+   (ListComp _ s2 (Generator p s1 : qs)) =
    let
       σ' × β = orElseBwd (ContElim σ) (Left p : Nil)
    in
-      case exprBwd (asExpr (pattContBwd p (asElim σ'))) (ListComp unit s2 (q : qs)) of
-         ListComp β' s2' (q' : qs') ->
-            ListComp (β ∨ β') s2' (Generator p (exprBwd e1 s1) : q' : qs')
+      case exprBwd (asExpr (pattContBwd p (asElim σ'))) (ListComp unit s2 qs) of
+         ListComp β' s2' qs' ->
+            ListComp (β ∨ β') s2' (Generator p (exprBwd e1 s1) : qs')
          _ -> error absurd
 exprBwd _ _ = error absurd
 
@@ -134,11 +124,11 @@ listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
    Next α (exprBwd e1 s) (listRestBwd e2 l)
 listRestBwd _ _ = error absurd
 
-pattsExprBwd :: forall a. NonEmptyList Pattern -> Elim a -> E.Expr a
-pattsExprBwd (NonEmptyList (p :| Nil)) σ = asExpr (pattContBwd p σ)
-pattsExprBwd (NonEmptyList (p :| p' : ps)) σ = next (asExpr (pattContBwd p σ))
+pattsExprBwd :: forall a. BoundedJoinSemilattice a => NonEmptyList Pattern -> Elim a -> Raw Expr -> Expr a
+pattsExprBwd (NonEmptyList (p :| Nil)) σ s = exprBwd (asExpr (pattContBwd p σ)) s
+pattsExprBwd (NonEmptyList (p :| p' : ps)) σ s = next (asExpr (pattContBwd p σ))
    where
-   next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ
+   next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ s
    next _ = error absurd
 
 pattContBwd :: forall a. Pattern -> Elim a -> Cont a
@@ -154,6 +144,7 @@ pattCont_ListRest_Bwd (ElimVar _ _) _ = error absurd
 pattCont_ListRest_Bwd (ElimRecord _ _) _ = error absurd
 pattCont_ListRest_Bwd (ElimConstr m) PEnd = get cNil m
 pattCont_ListRest_Bwd (ElimConstr m) (PNext p o) = pattArgsBwd (Left p : Right o : Nil) (get cCons m)
+pattCont_ListRest_Bwd (ElimSug _ κ) p = pattCont_ListRest_Bwd κ p
 
 pattArgsBwd :: forall a. List (Pattern + ListRestPattern) -> Endo (Cont a)
 pattArgsBwd Nil κ = κ
@@ -164,7 +155,7 @@ clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> NonEmptyList (Raw 
 clausesBwd σ bs = clauseBwd <$> bs
    where
    clauseBwd :: Raw Clause -> Clause a
-   clauseBwd (Clause (πs × s)) = Clause (πs × exprBwd (pattsExprBwd πs σ) s)
+   clauseBwd (Clause (πs × s)) = Clause (πs × pattsExprBwd πs σ s)
 
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
 orElseBwd κ Nil = κ × bot
