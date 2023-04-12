@@ -35,7 +35,7 @@ data Expr a
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
-   | Sugar (Raw (Sugar' Expr)) (Expr a)
+   | Sugar (Sugar' Expr) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -45,7 +45,7 @@ data Elim a
    = ElimVar Var (Cont a)
    | ElimConstr (Dict (Cont a))
    | ElimRecord (Set Var) (Cont a)
-   | ElimSug (Raw (Sugar' Elim)) (Elim a)
+   | ElimSug (Sugar' Elim) (Elim a)
 
 instance FromSugar Elim where
    fromSug = ElimSug
