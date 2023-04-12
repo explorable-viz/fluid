@@ -6,21 +6,19 @@ import Affjax.ResponseFormat (string)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
-import Debug (trace)
 import Effect.Aff (Aff)
 import Parsing (runParser)
 import Bindings (Var)
-import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Dict (singleton) as D
 import Eval (eval, eval_module)
 import Lattice (𝔹, bot, botOf)
 import Parse (module_, program)
 import Primitive.Defs (primitives)
+import SExpr (desugarFwd, desugarModuleFwd)
 import SExpr (Expr) as S
 import Util (MayFail, type (×), (×), error, successful)
 import Util.Parse (SParser)
 import Val (Env, (<+>))
-import Parse2 (program) as P2
 
 -- Mainly serve as documentation
 newtype File = File String
@@ -54,9 +52,7 @@ loadModule file γ = do
 parseProgram :: Folder -> File -> Aff (S.Expr 𝔹)
 parseProgram folder file = do
    loaded <- loadFile folder file
-   let x = successful $ flip parse P2.program loaded
-   trace x \_ ->
-      pure (successful $ flip parse (program <#> botOf) loaded)
+   pure (successful $ flip parse (program <#> botOf) loaded)
 
 open :: File -> Aff (S.Expr 𝔹)
 open = parseProgram (Folder "fluid/example")
