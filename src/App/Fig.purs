@@ -21,7 +21,7 @@ import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler
 import App.Util (HTMLId, OnSel, Selector, doNothing, from, record)
 import Bindings (Var)
 import DataType (cBarChart, cCons, cLineChart, cNil)
-import DesugarFwd (desugarFwd, desugarModuleFwd)
+import SExpr (desugarFwd, desugarModuleFwd)
 import Expr (Expr)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)

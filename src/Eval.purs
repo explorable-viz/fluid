@@ -159,8 +159,8 @@ eval γ (LetRec ρ e) α = do
    let γ' = closeDefs γ ρ α
    t × v <- eval (γ <+> γ') e α
    pure $ T.LetRec (erase <$> ρ) t × v
-eval ρ sug@(Sugar _ e) α = do
-   (t × v) <- eval ρ e α
+eval γ sug@(Sugar _ e) α = do
+   (t × v) <- eval γ e α
    let t' = T.Sugar (erase sug) t
    pure (t' × v)
 

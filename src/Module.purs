@@ -10,12 +10,12 @@ import Debug (trace)
 import Effect.Aff (Aff)
 import Parsing (runParser)
 import Bindings (Var)
-import DesugarFwd (desugarFwd, desugarModuleFwd)
 import Dict (singleton) as D
 import Eval (eval, eval_module)
 import Lattice (𝔹, bot, botOf)
 import Parse (module_, program)
 import Primitive.Defs (primitives)
+import SExpr (desugarFwd, desugarModuleFwd)
 import SExpr (Expr) as S
 import Util (MayFail, type (×), (×), error, successful)
 import Util.Parse (SParser)

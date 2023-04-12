@@ -8,39 +8,17 @@ import Data.List (List)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
-import Unsafe.Coerce (unsafeCoerce)
 import DataType (Ctr, consistentWith)
+import Desugarable (Sugar', class FromSugar)
 import Dict (Dict, keys, asSingletonMap)
-import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg, erase)
-import Util (type (+), type (×), both, error, report, (×), (≜), (≞), MayFail)
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Util (type (+), type (×), absurd, both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
-
-wrapSugar :: forall s e a. Desugarable s e => s a -> Sugar' e a
-wrapSugar sa = Sugar' (\ds -> ds sa)
-
-unwrapSugar :: forall s e a. Desugarable s e => Sugar' e a -> s a
-unwrapSugar (Sugar' k) = k unsafeCoerce
-
-runSugar :: forall e a. JoinSemilattice a => Sugar' e a -> MayFail (e a)
-runSugar (Sugar' k) = k tryDesug
-
-newtype Sugar' e (a :: Type) = Sugar' (forall r. (forall s. Desugarable s e => s a -> r) -> r)
-
-class FromSugar e where
-   fromSug :: forall a. Raw (Sugar' e) -> e a -> e a
-
-class (Functor s, Functor e, FromSugar e) <= Desugarable (s :: Type -> Type) (e :: Type -> Type) | s -> e where
-   tryDesug :: forall a. JoinSemilattice a => s a -> MayFail (e a)
-
-desugar :: forall s e a. JoinSemilattice a => FromSugar e => Desugarable s e => s a -> MayFail (e a)
-desugar x = fromSug (erase (wrapSugar x)) <$> tryDesug x
 
 instance FromSugar Expr where
    fromSug = Sugar
-
-instance Functor e => Functor (Sugar' e) where
-   map :: forall a b. (a -> b) -> Sugar' e a -> Sugar' e b
-   map f (Sugar' k) = Sugar' (\sug -> k (\sa -> sug (map f sa)))
+   toSug (Sugar s e) = s × e
+   toSug _ = error absurd
 
 data Expr a
    = Var Var
@@ -68,6 +46,11 @@ data Elim a
    | ElimConstr (Dict (Cont a))
    | ElimRecord (Set Var) (Cont a)
    | ElimSug (Raw (Sugar' Elim)) (Elim a)
+
+instance FromSugar Elim where
+   fromSug = ElimSug
+   toSug (ElimSug s e) = s × e
+   toSug _ = error absurd
 
 -- Continuation of an eliminator branch.
 data Cont a
