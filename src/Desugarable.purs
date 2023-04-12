@@ -6,7 +6,7 @@ import Lattice (Raw, class JoinSemilattice, erase, class BoundedJoinSemilattice)
 import Util (MayFail, type (×), (×))
 
 wrapSugar :: forall s e. Desugarable s e => Raw s -> Sugar' e
-wrapSugar sa = Sugar' (\ds -> ds sa)
+wrapSugar s = Sugar' (\k -> k s)
 
 unwrapSugar :: forall s e. Desugarable s e => Sugar' e -> Raw s
 unwrapSugar (Sugar' k) = k unsafeCoerce
@@ -22,7 +22,7 @@ class (Functor s, Functor e, FromSugar e) <= Desugarable (s :: Type -> Type) (e 
    desugBwd :: forall a. BoundedJoinSemilattice a => e a -> Raw s -> s a
 
 desugFwd' :: forall s e a. JoinSemilattice a => Desugarable s e => s a -> MayFail (e a)
-desugFwd' x = fromSug (wrapSugar $ erase x) <$> desugFwd x
+desugFwd' s = fromSug (wrapSugar $ erase s) <$> desugFwd s
 
 desugBwd' :: forall s e a. BoundedJoinSemilattice a => Desugarable s e => e a -> s a
-desugBwd' exp = let (s × exp') = toSug exp in desugBwd exp' (unwrapSugar s)
+desugBwd' e = let (s × e') = toSug e in desugBwd e' (unwrapSugar s)
