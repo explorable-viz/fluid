@@ -211,5 +211,5 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
    expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
-   expand (Sugar s e) (Sugar _ e') = Sugar s (expand e e') 
+   expand (Sugar s e) (Sugar _ e') = Sugar s (expand e e')
    expand _ _ = error "Incompatible expressions"
