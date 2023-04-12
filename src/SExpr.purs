@@ -158,7 +158,7 @@ exprFwd (MatchAs s bs) =
 exprFwd (IfElse s1 s2 s3) =
    E.App <$> (E.Lambda <$> (elimBool <$> (ContExpr <$> desugFwd' s2) <*> (ContExpr <$> desugFwd' s3))) <*> desugFwd' s1
 exprFwd (ListEmpty α) = pure (enil α)
-exprFwd (ListNonEmpty α s l) = econs α <$> desugFwd' s <*> listRestFwd' l
+exprFwd (ListNonEmpty α s l) = econs α <$> desugFwd' s <*> desugFwd' l
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desugFwd' s1) <*> desugFwd' s2
 -- | list-comp-done
 exprFwd (ListComp α s_body Nil) =
@@ -180,13 +180,10 @@ exprFwd (ListComp α s_body (Generator p s : qs)) = do
 exprFwd (Let ds s) = varDefsFwd (ds × s)
 exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desugFwd' s
 
-listRestFwd' :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
-listRestFwd' r = desugFwd' r
-
 -- l desugar_fwd e
 listRestFwd :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
 listRestFwd (End α) = pure (enil α)
-listRestFwd (Next α s l) = econs α <$> desugFwd' s <*> listRestFwd' l
+listRestFwd (Next α s l) = econs α <$> desugFwd' s <*> desugFwd' l
 
 pattsExprFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> MayFail (Elim a)
 pattsExprFwd (NonEmptyList (p :| Nil) × e) = (ContExpr <$> desugFwd' e) >>= pattContFwd p
@@ -300,8 +297,8 @@ exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp _ op _) =
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
 exprBwd (E.LetRec xσs e') (LetRec xcs _) = LetRec (recDefsBwd xσs xcs) (desugBwd' e')
 exprBwd (E.Constr α _ Nil) (ListEmpty _) = ListEmpty α
-exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ _ l) =
-   ListNonEmpty α (desugBwd' e1) (listRestBwd' e2 l)
+exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ _ _) =
+   ListNonEmpty α (desugBwd' e1) (desugBwd' e2)
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum _ _) =
    ListEnum (desugBwd' e1) (desugBwd' e2)
 -- | list-comp-done
@@ -334,14 +331,11 @@ exprBwd
          _ -> error absurd
 exprBwd _ _ = error absurd
 
-listRestBwd' :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
-listRestBwd' e _ = desugBwd' e
-
 -- e, l desugar_bwd l'
 listRestBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
 listRestBwd (E.Constr α _ _) (End _) = End α
-listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ _ l) =
-   Next α (desugBwd' e1) (listRestBwd' e2 l)
+listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ _ _) =
+   Next α (desugBwd' e1) (desugBwd' e2)
 listRestBwd _ _ = error absurd
 
 pattsExprBwd :: forall a. BoundedJoinSemilattice a => NonEmptyList Pattern -> Elim a -> Expr a
