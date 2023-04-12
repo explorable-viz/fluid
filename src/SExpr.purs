@@ -19,21 +19,13 @@ import Data.Tuple (uncurry, fst, snd)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
 import Dict (Dict, asSingletonMap, get)
 import Dict (fromFoldable, singleton) as D
-import Desugarable (class Desugarable, desugFwd', desugBwd')
+import Desugarable (class Desugarable, desugFwd, desugFwd', desugBwd, desugBwd')
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (class JoinSemilattice, (∨), bot, definedJoin, neg, maybeJoin, class BoundedJoinSemilattice, Raw)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, type (×), (×), type (+), error, unimplemented, MayFail, absurd, successful)
 import Util.Pair (Pair(..))
-
-instance Desugarable Expr E.Expr where
-   desugFwd = exprFwd
-   desugBwd = exprBwd
-
-instance Desugarable ListRest E.Expr where
-   desugFwd = listRestFwd
-   desugBwd = listRestBwd
 
 -- Surface language expressions.
 data Expr a
@@ -91,6 +83,14 @@ data Qualifier a
    | Declaration (VarDef a) -- could allow VarDefs instead
 
 data Module a = Module (List (VarDefs a + RecDefs a))
+
+instance Desugarable Expr E.Expr where
+   desugFwd = exprFwd
+   desugBwd = exprBwd
+
+instance Desugarable ListRest E.Expr where
+   desugFwd = listRestFwd
+   desugBwd = listRestBwd
 
 -- ======================
 -- desugarFwd
@@ -181,7 +181,7 @@ exprFwd (Let ds s) = varDefsFwd (ds × s)
 exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desugFwd' s
 
 listRestFwd' :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
-listRestFwd' r = listRestFwd r
+listRestFwd' r = desugFwd r
 
 -- l desugar_fwd e
 listRestFwd :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
@@ -335,7 +335,7 @@ exprBwd
 exprBwd _ _ = error absurd
 
 listRestBwd' :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
-listRestBwd' e = listRestBwd e
+listRestBwd' e = desugBwd e
 
 -- e, l desugar_bwd l'
 listRestBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
