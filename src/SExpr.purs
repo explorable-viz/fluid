@@ -293,11 +293,7 @@ exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd σ bs)
 exprBwd (E.Project e _) (Project s x) = Project (exprBwd' e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (exprBwd' e1 s1) (exprBwd' e2 s2)
 exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
-   let
-      bwded = clausesBwd σ (map Clause (map (first $ NE.singleton) bs)) :: NonEmptyList (Clause _)
-      unwrapped = first head <$> map unwrap bwded :: NonEmptyList (Pattern × Expr _)
-   in
-      MatchAs (exprBwd' e s) (unwrapped)
+   MatchAs (exprBwd e s) (first head <$> unwrap <$> clausesBwd σ (Clause <$> first NE.singleton <$> bs))
 exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) =
    IfElse (exprBwd e1 s1)
       (exprBwd' (asExpr (get cTrue m)) s2)
@@ -350,11 +346,11 @@ listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
    Next α (exprBwd' e1 s) (listRestBwd e2 l)
 listRestBwd _ _ = error absurd
 
-pattsExprBwd :: forall a. NonEmptyList Pattern -> Elim a -> E.Expr a
-pattsExprBwd (NonEmptyList (p :| Nil)) σ = asExpr (pattContBwd p σ)
-pattsExprBwd (NonEmptyList (p :| p' : ps)) σ = next (asExpr (pattContBwd p σ))
+pattsExprBwd :: forall a. BoundedJoinSemilattice a => NonEmptyList Pattern -> Elim a -> Raw Expr -> Expr a
+pattsExprBwd (NonEmptyList (p :| Nil)) σ s = exprBwd (asExpr (pattContBwd p σ)) s
+pattsExprBwd (NonEmptyList (p :| p' : ps)) σ s = next (asExpr (pattContBwd p σ))
    where
-   next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ
+   next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ s
    next _ = error absurd
 
 pattContBwd :: forall a. Pattern -> Elim a -> Cont a
@@ -381,7 +377,7 @@ clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> NonEmptyList (Raw 
 clausesBwd σ bs = clauseBwd <$> bs
    where
    clauseBwd :: Raw Clause -> Clause a
-   clauseBwd (Clause (πs × s)) = Clause (πs × exprBwd' (pattsExprBwd πs σ) s)
+   clauseBwd (Clause (πs × s)) = Clause (πs × pattsExprBwd πs σ s)
 
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
 orElseBwd κ Nil = κ × bot
