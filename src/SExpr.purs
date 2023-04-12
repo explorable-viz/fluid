@@ -241,16 +241,16 @@ unlessFwd (c × κ) α =
 -- ======================
 
 desugarBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Expr a
-desugarBwd = exprBwd'
+desugarBwd = desugBwd'
 
 varDefsBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw VarDefs × Raw Expr -> VarDefs a × Expr a
 varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π _ :| Nil) × _) =
-   NonEmptyList (VarDef π (exprBwd' e1) :| Nil) × exprBwd' e2
+   NonEmptyList (VarDef π (desugBwd' e1) :| Nil) × desugBwd' e2
 varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π _ :| d : ds) × s2) =
    let
       NonEmptyList (d' :| ds') × s2' = varDefsBwd e2 (NonEmptyList (d :| ds) × s2)
    in
-      NonEmptyList (VarDef π (exprBwd' e1) :| d' : ds') × s2'
+      NonEmptyList (VarDef π (desugBwd' e1) :| d' : ds') × s2'
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
 recDefsBwd :: forall a. BoundedJoinSemilattice a => E.RecDefs a -> Raw RecDefs -> RecDefs a
@@ -269,9 +269,6 @@ recDefsBwd' ρ (NonEmptyList (xcs :| xcss)) =
 recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -> RecDef a
 recDefBwd (x ↦ σ) (RecDef rds) = RecDef (map (x × _) (clausesBwd σ (map snd rds)))
 
-exprBwd' :: forall a. BoundedJoinSemilattice a => E.Expr a -> Expr a
-exprBwd' e = desugBwd' e
-
 -- e, s desugar_bwd s'
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
 exprBwd (E.Var _) (Var x) = Var x
@@ -279,47 +276,47 @@ exprBwd (E.Op _) (Op op) = Op op
 exprBwd (E.Int α _) (Int _ n) = Int α n
 exprBwd (E.Float α _) (Float _ n) = Float α n
 exprBwd (E.Str α _) (Str _ str) = Str α str
-exprBwd (E.Constr α _ es) (Constr _ c _) = Constr α c (exprBwd' <$> es)
+exprBwd (E.Constr α _ es) (Constr _ c _) = Constr α c (desugBwd' <$> es)
 exprBwd (E.Record α xes) (Record _ xss) =
-   Record α $ xss <#> \(x ↦ _) -> x ↦ exprBwd' (get x xes)
+   Record α $ xss <#> \(x ↦ _) -> x ↦ desugBwd' (get x xes)
 exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
-   Dictionary α (zipWith (\(Pair e e') (Pair _ _) -> Pair (exprBwd' e) (exprBwd' e')) ees sss)
+   Dictionary α (zipWith (\(Pair e e') (Pair _ _) -> Pair (desugBwd' e) (desugBwd' e')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ _ (x × y) _) =
-   Matrix α (exprBwd' e1) (x × y) (exprBwd' e2)
+   Matrix α (desugBwd' e1) (x × y) (desugBwd' e2)
 exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd σ bs)
-exprBwd (E.Project e _) (Project _ x) = Project (exprBwd' e) x
-exprBwd (E.App e1 e2) (App _ _) = App (exprBwd' e1) (exprBwd' e2)
+exprBwd (E.Project e _) (Project _ x) = Project (desugBwd' e) x
+exprBwd (E.App e1 e2) (App _ _) = App (desugBwd' e1) (desugBwd' e2)
 exprBwd (E.App (E.Lambda σ) e) (MatchAs _ bs) =
-   MatchAs (exprBwd' e) (first head <$> unwrap <$> clausesBwd σ (Clause <$> first NE.singleton <$> bs))
+   MatchAs (desugBwd' e) (first head <$> unwrap <$> clausesBwd σ (Clause <$> first NE.singleton <$> bs))
 exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse _ _ _) =
-   IfElse (exprBwd' e1)
-      (exprBwd' (asExpr (get cTrue m)))
-      (exprBwd' (asExpr (get cFalse m)))
+   IfElse (desugBwd' e1)
+      (desugBwd' (asExpr (get cTrue m)))
+      (desugBwd' (asExpr (get cFalse m)))
 exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp _ op _) =
-   BinaryApp (exprBwd' e1) op (exprBwd' e2)
+   BinaryApp (desugBwd' e1) op (desugBwd' e2)
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
-exprBwd (E.LetRec xσs e') (LetRec xcs _) = LetRec (recDefsBwd xσs xcs) (exprBwd' e')
+exprBwd (E.LetRec xσs e') (LetRec xcs _) = LetRec (recDefsBwd xσs xcs) (desugBwd' e')
 exprBwd (E.Constr α _ Nil) (ListEmpty _) = ListEmpty α
 exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ _ l) =
-   ListNonEmpty α (exprBwd' e1) (listRestBwd e2 l)
+   ListNonEmpty α (desugBwd' e1) (listRestBwd e2 l)
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum _ _) =
-   ListEnum (exprBwd' e1) (exprBwd' e2)
+   ListEnum (desugBwd' e1) (desugBwd' e2)
 -- | list-comp-done
 exprBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (ListComp _ _ Nil) | c == cCons && c' == cNil =
-   ListComp (α1 ∨ α2) (exprBwd' e) Nil
+   ListComp (α1 ∨ α2) (desugBwd' e) Nil
 -- list-comp-guard
 exprBwd (E.App (E.Lambda (ElimConstr m)) e2) (ListComp _ _ (Guard _ : _)) =
    case
-      exprBwd' (asExpr (get cTrue m)) × asExpr (get cFalse m)
+      desugBwd' (asExpr (get cTrue m)) × asExpr (get cFalse m)
       of
       ListComp β s1' qs' × E.Constr α c Nil | c == cNil ->
-         ListComp (α ∨ β) s1' (Guard (exprBwd' e2) : qs')
+         ListComp (α ∨ β) s1' (Guard (desugBwd' e2) : qs')
       _ × _ -> error absurd
 -- list-comp-decl
 exprBwd (E.App (E.Lambda σ) e1) (ListComp _ _ (Declaration (VarDef π _) : _)) =
-   case exprBwd' (asExpr (pattContBwd π σ)) of
+   case desugBwd' (asExpr (pattContBwd π σ)) of
       ListComp β s2' qs' ->
-         ListComp β s2' (Declaration (VarDef π (exprBwd' e1)) : qs')
+         ListComp β s2' (Declaration (VarDef π (desugBwd' e1)) : qs')
       _ -> error absurd
 -- list-comp-gen
 exprBwd
@@ -328,9 +325,9 @@ exprBwd
    let
       σ' × β = orElseBwd (ContElim σ) (Left p : Nil)
    in
-      case exprBwd' (asExpr (pattContBwd p (asElim σ'))) of
+      case desugBwd' (asExpr (pattContBwd p (asElim σ'))) of
          ListComp β' s2' qs' ->
-            ListComp (β ∨ β') s2' (Generator p (exprBwd' e1) : qs')
+            ListComp (β ∨ β') s2' (Generator p (desugBwd' e1) : qs')
          _ -> error absurd
 exprBwd _ _ = error absurd
 
@@ -338,11 +335,11 @@ exprBwd _ _ = error absurd
 listRestBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
 listRestBwd (E.Constr α _ _) (End _) = End α
 listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ _ l) =
-   Next α (exprBwd' e1) (listRestBwd e2 l)
+   Next α (desugBwd' e1) (listRestBwd e2 l)
 listRestBwd _ _ = error absurd
 
 pattsExprBwd :: forall a. BoundedJoinSemilattice a => NonEmptyList Pattern -> Elim a -> Expr a
-pattsExprBwd (NonEmptyList (p :| Nil)) σ = exprBwd' (asExpr (pattContBwd p σ))
+pattsExprBwd (NonEmptyList (p :| Nil)) σ = desugBwd' (asExpr (pattContBwd p σ))
 pattsExprBwd (NonEmptyList (p :| p' : ps)) σ = next (asExpr (pattContBwd p σ))
    where
    next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ
