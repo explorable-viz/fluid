@@ -13,7 +13,8 @@ import Test.Spec.Mocha (runMocha)
 import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
 import DataType (dataTypeFor, typeName)
-import SExpr (desugarFwd, desugarBwd)
+import Desugarable (desugFwd')
+import SExpr (desugarBwd)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
@@ -44,12 +45,12 @@ testWithSetup (File file) expected v_expect_opt setup =
    before setup $
       it file \(γ × s) -> do
          let
-            e = successful (desugarFwd s)
+            e = successful (desugFwd' s)
             t × v = successful (eval γ e bot)
             v' = fromMaybe identity (fst <$> v_expect_opt) v
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
             s' = desugarBwd e'
-            _ × v'' = successful (eval γ' (successful (desugarFwd s')) true)
+            _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
          unless (isGraphical v'') (checkPretty "Value" expected v'')
          case snd <$> v_expect_opt of
             Nothing -> pure unit

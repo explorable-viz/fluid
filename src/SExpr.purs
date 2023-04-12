@@ -31,6 +31,10 @@ instance Desugarable Expr E.Expr where
    desugFwd = exprFwd
    desugBwd = exprBwd
 
+instance Desugarable ListRest E.Expr where
+   desugFwd = listRestFwd
+   desugBwd = listRestBwd
+
 -- Surface language expressions.
 data Expr a
    = Var Var
@@ -92,9 +96,6 @@ data Module a = Module (List (VarDefs a + RecDefs a))
 -- desugarFwd
 -- ======================
 
-desugarFwd :: forall a. JoinSemilattice a => Expr a -> MayFail (E.Expr a)
-desugarFwd = exprFwd'
-
 desugarModuleFwd :: forall a. JoinSemilattice a => Module a -> MayFail (E.Module a)
 desugarModuleFwd = moduleFwd
 
@@ -120,11 +121,11 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarD
    desugarDefs (Right δ) = pure (Right δ)
 
 varDefFwd :: forall a. JoinSemilattice a => VarDef a -> MayFail (E.VarDef a)
-varDefFwd (VarDef π s) = E.VarDef <$> pattContFwd π (ContNone :: Cont a) <*> exprFwd' s
+varDefFwd (VarDef π s) = E.VarDef <$> pattContFwd π (ContNone :: Cont a) <*> desugFwd' s
 
 varDefsFwd :: forall a. JoinSemilattice a => VarDefs a × Expr a -> MayFail (E.Expr a)
 varDefsFwd (NonEmptyList (d :| Nil) × s) =
-   E.Let <$> varDefFwd d <*> exprFwd' s
+   E.Let <$> varDefFwd d <*> desugFwd' s
 varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
    E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
 
@@ -137,10 +138,6 @@ recDefsFwd xcs = D.fromFoldable <$> traverse recDefFwd xcss
 recDefFwd :: forall a. JoinSemilattice a => RecDef a -> MayFail (Bind (Elim a))
 recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> clausesFwd (snd <$> (unwrap xcs))
 
--- exprFwd' :: forall s a. JoinSemilattice a => Desugarable s E.Expr => E.Expr a -> MayFail (E.Expr a)
-exprFwd' :: forall a. JoinSemilattice a => Expr a -> MayFail (E.Expr a)
-exprFwd' = desugFwd'
-
 -- s desugar_fwd e
 exprFwd :: forall a. JoinSemilattice a => Expr a -> MayFail (E.Expr a)
 exprFwd (Var x) = pure (E.Var x)
@@ -148,48 +145,48 @@ exprFwd (Op op) = pure (E.Op op)
 exprFwd (Int α n) = pure (E.Int α n)
 exprFwd (Float α n) = pure (E.Float α n)
 exprFwd (Str α s) = pure (E.Str α s)
-exprFwd (Constr α c ss) = E.Constr α c <$> traverse exprFwd' ss
-exprFwd (Record α xss) = E.Record α <$> D.fromFoldable <$> traverse (traverse exprFwd') xss
-exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse exprFwd') sss
-exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> exprFwd' s <@> x × y <*> exprFwd' s'
+exprFwd (Constr α c ss) = E.Constr α c <$> traverse desugFwd' ss
+exprFwd (Record α xss) = E.Record α <$> D.fromFoldable <$> traverse (traverse desugFwd') xss
+exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse desugFwd') sss
+exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desugFwd' s <@> x × y <*> desugFwd' s'
 exprFwd (Lambda bs) = E.Lambda <$> clausesFwd bs
-exprFwd (Project s x) = E.Project <$> exprFwd' s <@> x
-exprFwd (App s1 s2) = E.App <$> exprFwd' s1 <*> exprFwd' s2
-exprFwd (BinaryApp s1 op s2) = E.App <$> (E.App (E.Op op) <$> exprFwd' s1) <*> exprFwd' s2
+exprFwd (Project s x) = E.Project <$> desugFwd' s <@> x
+exprFwd (App s1 s2) = E.App <$> desugFwd' s1 <*> desugFwd' s2
+exprFwd (BinaryApp s1 op s2) = E.App <$> (E.App (E.Op op) <$> desugFwd' s1) <*> desugFwd' s2
 exprFwd (MatchAs s bs) =
-   E.App <$> (E.Lambda <$> (clausesFwd ((map (Clause <$> first singleton) bs)))) <*> exprFwd' s
+   E.App <$> (E.Lambda <$> (clausesFwd ((map (Clause <$> first singleton) bs)))) <*> desugFwd' s
 exprFwd (IfElse s1 s2 s3) =
-   E.App <$> (E.Lambda <$> (elimBool <$> (ContExpr <$> exprFwd' s2) <*> (ContExpr <$> exprFwd' s3))) <*> exprFwd' s1
+   E.App <$> (E.Lambda <$> (elimBool <$> (ContExpr <$> desugFwd' s2) <*> (ContExpr <$> desugFwd' s3))) <*> desugFwd' s1
 exprFwd (ListEmpty α) = pure (enil α)
-exprFwd (ListNonEmpty α s l) = econs α <$> exprFwd' s <*> listRestFwd l
-exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> exprFwd' s1) <*> exprFwd' s2
+exprFwd (ListNonEmpty α s l) = econs α <$> desugFwd' s <*> listRestFwd l
+exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desugFwd' s1) <*> desugFwd' s2
 -- | list-comp-done
 exprFwd (ListComp α s_body Nil) =
-   econs α <$> exprFwd' s_body <@> enil α
+   econs α <$> desugFwd' s_body <@> enil α
 -- | list-comp-guard
 exprFwd (ListComp α s_body (Guard s : qs)) = do
-   e <- exprFwd' (ListComp α s_body qs)
-   E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> exprFwd' s
+   e <- desugFwd' (ListComp α s_body qs)
+   E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desugFwd' s
 -- | list-comp-decl
 exprFwd (ListComp α s_body (Declaration (VarDef π s) : qs)) = do
-   e <- ContExpr <$> exprFwd' (ListComp α s_body qs)
+   e <- ContExpr <$> desugFwd' (ListComp α s_body qs)
    σ <- pattContFwd π e
-   E.App (E.Lambda σ) <$> exprFwd' s
+   E.App (E.Lambda σ) <$> desugFwd' s
 -- | list-comp-gen
 exprFwd (ListComp α s_body (Generator p s : qs)) = do
-   e <- ContExpr <$> exprFwd' (ListComp α s_body qs)
+   e <- ContExpr <$> desugFwd' (ListComp α s_body qs)
    σ <- pattContFwd p e
-   E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElse (ContElim σ) α)))) <$> exprFwd' s
+   E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElse (ContElim σ) α)))) <$> desugFwd' s
 exprFwd (Let ds s) = varDefsFwd (ds × s)
-exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> exprFwd' s
+exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desugFwd' s
 
 -- l desugar_fwd e
 listRestFwd :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
 listRestFwd (End α) = pure (enil α)
-listRestFwd (Next α s l) = econs α <$> exprFwd' s <*> listRestFwd l
+listRestFwd (Next α s l) = econs α <$> desugFwd' s <*> listRestFwd l
 
 pattsExprFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> MayFail (Elim a)
-pattsExprFwd (NonEmptyList (p :| Nil) × e) = (ContExpr <$> exprFwd' e) >>= pattContFwd p
+pattsExprFwd (NonEmptyList (p :| Nil) × e) = (ContExpr <$> desugFwd' e) >>= pattContFwd p
 pattsExprFwd (NonEmptyList (p :| p' : ps) × e) =
    pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × e)
 

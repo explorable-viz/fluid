@@ -9,12 +9,13 @@ import Data.HTTP.Method (Method(..))
 import Effect.Aff (Aff)
 import Parsing (runParser)
 import Bindings (Var)
+import Desugarable (desugFwd')
 import Dict (singleton) as D
 import Eval (eval, eval_module)
 import Lattice (𝔹, bot, botOf)
 import Parse (module_, program)
 import Primitive.Defs (primitives)
-import SExpr (desugarFwd, desugarModuleFwd)
+import SExpr (desugarModuleFwd)
 import SExpr (Expr) as S
 import Util (MayFail, type (×), (×), error, successful)
 import Util.Parse (SParser)
@@ -71,5 +72,5 @@ openDatasetAs :: File -> Var -> Aff (Env 𝔹 × Env 𝔹)
 openDatasetAs file x = do
    s <- parseProgram (Folder "fluid") file
    γ <- defaultImports
-   let _ × v = successful (desugarFwd s >>= flip (eval γ) bot)
+   let _ × v = successful (desugFwd' s >>= flip (eval γ) bot)
    pure (γ × D.singleton x v)

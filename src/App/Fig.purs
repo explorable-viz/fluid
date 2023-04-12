@@ -21,7 +21,8 @@ import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler
 import App.Util (HTMLId, OnSel, Selector, doNothing, from, record)
 import Bindings (Var)
 import DataType (cBarChart, cCons, cLineChart, cNil)
-import SExpr (desugarFwd, desugarModuleFwd)
+import Desugarable (desugFwd')
+import SExpr (desugarModuleFwd)
 import Expr (Expr)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
@@ -177,7 +178,7 @@ loadFig spec@{ file } = do
    γ0 × γ <- openDatasetAs (File "example/linking/renewables") "data"
    open file <#> \s' -> successful do
       { γ: γ1, s } <- splitDefs (γ0 <+> γ) s'
-      e <- desugarFwd s
+      e <- desugFwd' s
       let γ0γ = γ0 <+> γ <+> γ1
       t × v <- eval γ0γ e bot
       pure { spec, γ0, γ: γ <+> γ1, s, e, t, v }
@@ -191,7 +192,7 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
    γ0 × γ <- openDatasetAs (File "example/" <> dir <> dataFile) x
    s1 × s2 <- (×) <$> open name1 <*> open name2
    pure $ successful do
-      e1 × e2 <- (×) <$> desugarFwd s1 <*> desugarFwd s2
+      e1 × e2 <- (×) <$> desugFwd' s1 <*> desugFwd' s2
       t1 × v1 <- eval (γ0 <+> γ) e1 bot
       t2 × v2 <- eval (γ0 <+> γ) e2 bot
       v0 <- lookup x γ # orElse absurd
