@@ -9960,7 +9960,7 @@
       }
       if (v.tag === "ElimSug") {
         if (v1.tag === "ElimSug") {
-          return unsafePerformEffect(throwException(error("expanding sugar elims")));
+          return $Elim("ElimSug", v._1, expandableElimRawElim(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
         }
         return unsafePerformEffect(throwException(error("Incompatible eliminators")));
       }
@@ -17719,10 +17719,7 @@
         ));
       }
       if (v1.tag === "Sugar") {
-        return bindEither.bind($$eval(dictAnn)(v)(v1._2)(v2))((v3) => $Either(
-          "Right",
-          $Tuple($Trace("Sugar", functorExpr.map((v$1) => unit)(v1), v3._1), v3._2)
-        ));
+        return bindEither.bind($$eval(dictAnn)(v)(v1._2)(v2))((v3) => $Either("Right", $Tuple($Trace("Sugar", v1._1, v3._1), v3._2)));
       }
       fail();
     };
@@ -18100,10 +18097,7 @@
           return $13(v1._2, v, v1._1);
         }
         if (v1.tag === "Sugar") {
-          if (v1._1.tag === "Sugar") {
-            return $14(v1._1._1, v1._2, v);
-          }
-          return unsafePerformEffect(throwException(error("absurd")));
+          return $14(v1._1, v1._2, v);
         }
         return unsafePerformEffect(throwException(error("absurd")));
       }
@@ -18135,10 +18129,7 @@
           return $13(v1._2, v, v1._1);
         }
         if (v1.tag === "Sugar") {
-          if (v1._1.tag === "Sugar") {
-            return $14(v1._1._1, v1._2, v);
-          }
-          return unsafePerformEffect(throwException(error("absurd")));
+          return $14(v1._1, v1._2, v);
         }
         return unsafePerformEffect(throwException(error("absurd")));
       }
@@ -18163,10 +18154,7 @@
           return $13(v1._2, v, v1._1);
         }
         if (v1.tag === "Sugar") {
-          if (v1._1.tag === "Sugar") {
-            return $14(v1._1._1, v1._2, v);
-          }
-          return unsafePerformEffect(throwException(error("absurd")));
+          return $14(v1._1, v1._2, v);
         }
         return unsafePerformEffect(throwException(error("absurd")));
       }
@@ -18242,10 +18230,7 @@
           return $13(v1._2, v, v1._1);
         }
         if (v1.tag === "Sugar") {
-          if (v1._1.tag === "Sugar") {
-            return $14(v1._1._1, v1._2, v);
-          }
-          return unsafePerformEffect(throwException(error("absurd")));
+          return $14(v1._1, v1._2, v);
         }
         return unsafePerformEffect(throwException(error("absurd")));
       }
@@ -18262,10 +18247,7 @@
         return $13(v1._2, v, v1._1);
       }
       if (v1.tag === "Sugar") {
-        if (v1._1.tag === "Sugar") {
-          return $14(v1._1._1, v1._2, v);
-        }
-        return unsafePerformEffect(throwException(error("absurd")));
+        return $14(v1._1, v1._2, v);
       }
       return unsafePerformEffect(throwException(error("absurd")));
     };
@@ -20777,7 +20759,7 @@
         return $Expr2("Matrix", f(m._1), functorExpr2.map(f)(m._2), m._3, functorExpr2.map(f)(m._4));
       }
       if (m.tag === "Lambda") {
-        return $Expr2("Lambda", functorNonEmptyList.map(functorClause.map(f))(m._1));
+        return $Expr2("Lambda", functorClauses.map(f)(m._1));
       }
       if (m.tag === "Project") {
         return $Expr2("Project", functorExpr2.map(f)(m._1), m._2);
@@ -20815,6 +20797,7 @@
       fail();
     }
   };
+  var functorClauses = { map: (f) => (m) => functorNonEmptyList.map(functorClause.map(f))(m) };
   var functorClause = { map: (f) => (m) => $Tuple(m._1, functorExpr2.map(f)(m._2)) };
   var functorModule = {
     map: (f) => (v) => $Module2(listMap((v1) => {
@@ -20911,7 +20894,7 @@
       );
     }
     if (v.tag === "PNext") {
-      const $2 = pattArgs_Fwd($List(
+      const $2 = pattArgsFwd($List(
         "Cons",
         $Either("Left", v._1),
         $List("Cons", $Either("Right", v._2), Nil)
@@ -20956,7 +20939,7 @@
         };
         return go(0)(v._2);
       })());
-      const $3 = pattArgs_Fwd(listMap(Left)(v._2))(\u03BA);
+      const $3 = pattArgsFwd(listMap(Left)(v._2))(\u03BA);
       return applyEither.apply((() => {
         if ($2.tag === "Left") {
           return $Either("Left", $2._1);
@@ -20980,7 +20963,7 @@
     }
     if (v.tag === "PRecord") {
       const $2 = ElimRecord(keys3(v._1));
-      const $3 = pattArgs_Fwd(listMap((x2) => $Either("Left", x2._2))(sortBy((x2) => (y2) => ordString.compare(x2._1)(y2._1))(v._1)))(\u03BA);
+      const $3 = pattArgsFwd(listMap((x2) => $Either("Left", x2._2))(sortBy((x2) => (y2) => ordString.compare(x2._1)(y2._1))(v._1)))(\u03BA);
       if ($3.tag === "Left") {
         return $Either("Left", $3._1);
       }
@@ -20996,7 +20979,7 @@
       );
     }
     if (v.tag === "PListNonEmpty") {
-      const $2 = pattArgs_Fwd($List(
+      const $2 = pattArgsFwd($List(
         "Cons",
         $Either("Left", v._1),
         $List("Cons", $Either("Right", v._2), Nil)
@@ -21014,13 +20997,13 @@
     }
     fail();
   };
-  var pattArgs_Fwd = (v) => (\u03BA) => {
+  var pattArgsFwd = (v) => (\u03BA) => {
     if (v.tag === "Nil") {
       return $Either("Right", \u03BA);
     }
     if (v.tag === "Cons") {
       if (v._1.tag === "Left") {
-        const $2 = bindEither.bind(pattArgs_Fwd(v._2)(\u03BA))(pattContFwd(v._1._1));
+        const $2 = bindEither.bind(pattArgsFwd(v._2)(\u03BA))(pattContFwd(v._1._1));
         if ($2.tag === "Left") {
           return $Either("Left", $2._1);
         }
@@ -21030,7 +21013,7 @@
         fail();
       }
       if (v._1.tag === "Right") {
-        const $2 = bindEither.bind(pattArgs_Fwd(v._2)(\u03BA))(pattCont_ListRest_Fwd(v._1._1));
+        const $2 = bindEither.bind(pattArgsFwd(v._2)(\u03BA))(pattCont_ListRest_Fwd(v._1._1));
         if ($2.tag === "Left") {
           return $Either("Left", $2._1);
         }
@@ -21307,7 +21290,7 @@
       Nil
     )))
   ));
-  var orElse = (v) => (v1) => {
+  var orElseFwd = (v) => (v1) => {
     if (v.tag === "ContNone") {
       return unsafePerformEffect(throwException(error("absurd")));
     }
@@ -21317,16 +21300,16 @@
     if (v.tag === "ContElim") {
       if (v._1.tag === "ElimConstr") {
         const v2 = asSingletonMap(v._1._1);
-        return $Cont("ContElim", $Elim("ElimConstr", unlessFwd($Tuple(v2._1, orElse(v2._2)(v1)))(v1)));
+        return $Cont("ContElim", $Elim("ElimConstr", unlessFwd($Tuple(v2._1, orElseFwd(v2._2)(v1)))(v1)));
       }
       if (v._1.tag === "ElimRecord") {
-        return $Cont("ContElim", $Elim("ElimRecord", v._1._1, orElse(v._1._2)(v1)));
+        return $Cont("ContElim", $Elim("ElimRecord", v._1._1, orElseFwd(v._1._2)(v1)));
       }
       if (v._1.tag === "ElimVar") {
-        return $Cont("ContElim", $Elim("ElimVar", v._1._1, orElse(v._1._2)(v1)));
+        return $Cont("ContElim", $Elim("ElimVar", v._1._1, orElseFwd(v._1._2)(v1)));
       }
       if (v._1.tag === "ElimSug") {
-        const v2 = orElse($Cont("ContElim", v._1._2))(v1);
+        const v2 = orElseFwd($Cont("ContElim", v._1._2))(v1);
         if (v2.tag === "ContElim") {
           return $Cont("ContElim", $Elim("ElimSug", v._1._1, v2._1));
         }
@@ -21421,20 +21404,22 @@
     }
     fail();
   };
-  var recDefsBwd$p = (dictBoundedJoinSemilattice) => (\u03C1) => (v) => $NonEmpty(
-    recDefBwd(dictBoundedJoinSemilattice)($Tuple(v._1._1._1, $$get(v._1._1._1)(\u03C1)))(v._1),
-    (() => {
-      if (v._2.tag === "Nil") {
-        return Nil;
-      }
-      if (v._2.tag === "Cons") {
-        const $3 = recDefsBwd$p(dictBoundedJoinSemilattice)(\u03C1)($NonEmpty(v._2._1, v._2._2));
-        return $List("Cons", $3._1, $3._2);
-      }
-      fail();
-    })()
-  );
-  var recDefsBwd = (dictBoundedJoinSemilattice) => (\u03C1) => (xcs) => bindNonEmptyList.bind(recDefsBwd$p(dictBoundedJoinSemilattice)(\u03C1)(wrappedOperation("groupBy")(groupBy((x2) => (y2) => x2._1 === y2._1))(xcs)))(identity2);
+  var recDefsBwd = (dictBoundedJoinSemilattice) => (\u03C1) => (xcs) => {
+    const go = (v) => $NonEmpty(
+      recDefBwd(dictBoundedJoinSemilattice)($Tuple(v._1._1._1, $$get(v._1._1._1)(\u03C1)))(v._1),
+      (() => {
+        if (v._2.tag === "Nil") {
+          return Nil;
+        }
+        if (v._2.tag === "Cons") {
+          const $5 = go($NonEmpty(v._2._1, v._2._2));
+          return $List("Cons", $5._1, $5._2);
+        }
+        fail();
+      })()
+    );
+    return bindNonEmptyList.bind(go(wrappedOperation("groupBy")(groupBy((x2) => (y2) => x2._1 === y2._1))(xcs)))(identity2);
+  };
   var recDefFwd = (dictJoinSemilattice) => (xcs) => {
     const $2 = clausesFwd(dictJoinSemilattice)(functorNonEmptyList.map(snd)(xcs));
     if ($2.tag === "Left") {
@@ -21800,7 +21785,7 @@
               $Expr(
                 "Lambda",
                 (() => {
-                  const $42 = orElse($Cont("ContElim", \u03C3))(v._1);
+                  const $42 = orElseFwd($Cont("ContElim", \u03C3))(v._1);
                   if ($42.tag === "ContElim") {
                     return $42._1;
                   }
@@ -22161,12 +22146,12 @@
   };
   var clausesFwd = (dictJoinSemilattice) => {
     const maybeJoin = joinSemilatticeElim(dictJoinSemilattice).maybeJoin;
-    return (bs) => bindEither.bind(traverse4(pattsExprFwd(dictJoinSemilattice))(functorNonEmptyList.map(unsafeCoerce)(bs)))((v) => foldM4(maybeJoin)(v._1)(v._2));
+    return (v) => bindEither.bind(traverse4(pattsExprFwd(dictJoinSemilattice))(functorNonEmptyList.map(unsafeCoerce)(v)))((v1) => foldM4(maybeJoin)(v1._1)(v1._2));
   };
-  var clausesBwd = (dictBoundedJoinSemilattice) => (\u03C3) => (bs) => functorNonEmptyList.map((v) => $Tuple(
-    v._1,
-    pattsExprBwd(dictBoundedJoinSemilattice)(v._1)(\u03C3)
-  ))(bs);
+  var clausesBwd = (dictBoundedJoinSemilattice) => (\u03C3) => (v) => functorNonEmptyList.map((v1) => $Tuple(
+    v1._1,
+    pattsExprBwd(dictBoundedJoinSemilattice)(v1._1)(\u03C3)
+  ))(v);
   var moduleFwd = (dictJoinSemilattice) => (v) => {
     const $2 = traverse12((v1) => {
       if (v1.tag === "Left") {
