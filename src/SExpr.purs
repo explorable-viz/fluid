@@ -319,9 +319,7 @@ exprBwd (E.App (E.Lambda σ) e1) (ListComp _ _ (Declaration (VarDef π _) : _)) 
          ListComp β s2' (Declaration (VarDef π (desugBwd' e1)) : qs')
       _ -> error absurd
 -- list-comp-gen
-exprBwd
-   (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1)
-   (ListComp _ _ (Generator p _ : _)) =
+exprBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1) (ListComp _ _ (Generator p _ : _)) =
    let
       σ' × β = orElseBwd (ContElim σ) (Left p : Nil)
    in
