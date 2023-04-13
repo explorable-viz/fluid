@@ -66,7 +66,6 @@ data ListRestPattern
    = PEnd
    | PNext Pattern ListRestPattern
 
--- in the spec, "clause" doesn't include the function name
 newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
 type Branch a = Var × Clause a
 newtype Clauses a = Clauses (NonEmptyList (Clause a))
@@ -93,10 +92,9 @@ instance Desugarable ListRest E.Expr where
    desugFwd = listRestFwd
    desugBwd = listRestBwd
 
-
 instance Desugarable Clauses Elim where
    desugFwd = clausesFwd
-   desugBwd = clausesBwd'
+   desugBwd = clausesBwd
 
 -- ======================
 -- desugarFwd
@@ -273,7 +271,7 @@ recDefsBwd' ρ (NonEmptyList (xcs :| xcss)) =
       NonEmptyList (unwrap (recDefBwd (x ↦ get x ρ) (RecDef xcs)) :| xcss')
 
 recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -> RecDef a
-recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (clausesBwd' σ (Clauses (snd <$> bs))))
+recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (clausesBwd σ (Clauses (snd <$> bs))))
 
 -- e, s desugar_bwd s'
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
@@ -289,11 +287,12 @@ exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
    Dictionary α (zipWith (\(Pair e e') (Pair _ _) -> Pair (desugBwd' e) (desugBwd' e')) ees sss)
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ _ (x × y) _) =
    Matrix α (desugBwd' e1) (x × y) (desugBwd' e2)
-exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd' σ bs)
+exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd σ bs)
 exprBwd (E.Project e _) (Project _ x) = Project (desugBwd' e) x
 exprBwd (E.App e1 e2) (App _ _) = App (desugBwd' e1) (desugBwd' e2)
 exprBwd (E.App (E.Lambda σ) e) (MatchAs _ bs) =
-   MatchAs (desugBwd' e) (first head <$> unwrap <$> clausesBwd σ (Clause <$> first NE.singleton <$> bs))
+   MatchAs (desugBwd' e)
+      (first head <$> unwrap <$> unwrap (clausesBwd σ (Clauses (Clause <$> first NE.singleton <$> bs))))
 exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse _ _ _) =
    IfElse (desugBwd' e1)
       (desugBwd' (asExpr (get cTrue m)))
@@ -369,14 +368,8 @@ pattArgsBwd Nil κ = κ
 pattArgsBwd (Left p : πs) σ = pattArgsBwd πs (pattContBwd p (asElim σ))
 pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim σ) o)
 
-clausesBwd' :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
-clausesBwd' σ (Clauses bs) = Clauses (clauseBwd <$> bs)
-   where
-   clauseBwd :: Raw Clause -> Clause a
-   clauseBwd (Clause (πs × _)) = Clause (πs × pattsExprBwd πs σ)
-
-clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> NonEmptyList (Raw Clause) -> NonEmptyList (Clause a)
-clausesBwd σ bs = clauseBwd <$> bs
+clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
+clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
    where
    clauseBwd :: Raw Clause -> Clause a
    clauseBwd (Clause (πs × _)) = Clause (πs × pattsExprBwd πs σ)
