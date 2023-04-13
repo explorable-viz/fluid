@@ -147,7 +147,7 @@ instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
    expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
    expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
-   expand (ElimSug _ _) (ElimSug _ _) = error "expanding sugar elims"
+   expand (ElimSug s e) (ElimSug _ e') = ElimSug s (expand e e')
    expand _ _ = error "Incompatible eliminators"
 
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
