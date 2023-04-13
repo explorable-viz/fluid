@@ -17,9 +17,9 @@ import Data.Set (toUnfoldable) as S
 import Data.Traversable (traverse)
 import Data.Tuple (uncurry, fst, snd)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
+import Desugarable (class Desugarable, desugBwd', desugFwd')
 import Dict (Dict, asSingletonMap, get)
 import Dict (fromFoldable, singleton) as D
-import Desugarable (class Desugarable, desugFwd', desugBwd')
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
 import Lattice (class JoinSemilattice, (∨), bot, definedJoin, neg, maybeJoin, class BoundedJoinSemilattice, Raw)
