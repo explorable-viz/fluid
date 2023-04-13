@@ -141,6 +141,7 @@ varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π _ :| d : ds) × s
       NonEmptyList (VarDef π (desugBwd' e1) :| d' : ds') × s2'
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
+-- RecDefs
 -- In the formalism, "group by name" is part of the syntax.
 recDefsFwd :: forall a. JoinSemilattice a => RecDefs a -> MayFail (E.RecDefs a)
 recDefsFwd xcs = D.fromFoldable <$> traverse recDefFwd xcss
@@ -167,7 +168,7 @@ recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> clausesFwd (Clauses (snd <$>
 recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -> RecDef a
 recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (clausesBwd σ (Clauses (snd <$> bs))))
 
--- s desugar_fwd e
+-- Expr
 exprFwd :: forall a. JoinSemilattice a => Expr a -> MayFail (E.Expr a)
 exprFwd (Var x) = pure (E.Var x)
 exprFwd (Op op) = pure (E.Op op)
@@ -205,74 +206,10 @@ exprFwd (ListComp α s_body (Declaration (VarDef π s) : qs)) = do
 exprFwd (ListComp α s_body (Generator p s : qs)) = do
    e <- ContExpr <$> desugFwd' (ListComp α s_body qs)
    σ <- pattContFwd p e
-   E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElse (ContElim σ) α)))) <$> desugFwd' s
+   E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElseFwd (ContElim σ) α)))) <$> desugFwd' s
 exprFwd (Let ds s) = varDefsFwd (ds × s)
 exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desugFwd' s
 
--- l desugar_fwd e
-listRestFwd :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
-listRestFwd (End α) = pure (enil α)
-listRestFwd (Next α s l) = econs α <$> desugFwd' s <*> desugFwd' l
-
-pattsExprFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> MayFail (Elim a)
-pattsExprFwd (NonEmptyList (p :| Nil) × e) = (ContExpr <$> desugFwd' e) >>= pattContFwd p
-pattsExprFwd (NonEmptyList (p :| p' : ps) × e) =
-   pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × e)
-
-pattContFwd :: forall a. Pattern -> Cont a -> MayFail (Elim a)
-pattContFwd (PVar x) κ = pure (ElimVar x κ)
-pattContFwd (PConstr c ps) κ =
-   checkArity c (length ps) *> (ElimConstr <$> D.singleton c <$> pattArgs_Fwd (Left <$> ps) κ)
-pattContFwd (PRecord xps) κ =
-   ElimRecord (keys xps) <$> pattArgs_Fwd ((snd >>> Left) <$> sortBy (compare `on` fst) xps) κ
-pattContFwd PListEmpty κ = pure (ElimConstr (D.singleton cNil κ))
-pattContFwd (PListNonEmpty p o) κ = ElimConstr <$> D.singleton cCons <$> pattArgs_Fwd (Left p : Right o : Nil) κ
-
-pattCont_ListRest_Fwd :: forall a. ListRestPattern -> Cont a -> MayFail (Elim a)
-pattCont_ListRest_Fwd PEnd κ = pure (ElimConstr (D.singleton cNil κ))
-pattCont_ListRest_Fwd (PNext p o) κ = ElimConstr <$> D.singleton cCons <$> pattArgs_Fwd (Left p : Right o : Nil) κ
-
-pattArgs_Fwd :: forall a. List (Pattern + ListRestPattern) -> Cont a -> MayFail (Cont a)
-pattArgs_Fwd Nil κ = pure κ
-pattArgs_Fwd (Left p : πs) κ = ContElim <$> (pattArgs_Fwd πs κ >>= pattContFwd p)
-pattArgs_Fwd (Right o : πs) κ = ContElim <$> (pattArgs_Fwd πs κ >>= pattCont_ListRest_Fwd o)
-
-clausesFwd :: forall a. JoinSemilattice a => Clauses a -> MayFail (Elim a)
-clausesFwd (Clauses bs) = do
-   NonEmptyList (σ :| σs) <- traverse pattsExprFwd (unwrap <$> bs)
-   foldM maybeJoin σ σs
-
-orElse :: forall a. Cont a -> a -> Cont a
-orElse ContNone _ = error absurd
-orElse (ContExpr e) _ = ContExpr e
-orElse (ContElim (ElimConstr m)) α = ContElim (ElimConstr (unlessFwd (c × orElse κ α) α))
-   where
-   c × κ = asSingletonMap m
-orElse (ContElim (ElimRecord xs κ)) α = ContElim (ElimRecord xs (orElse κ α))
-orElse (ContElim (ElimVar x κ)) α = ContElim (ElimVar x (orElse κ α))
-orElse (ContElim (ElimSug x σ)) α =
-   case orElse (ContElim σ) α of
-      ContElim σ' -> ContElim (ElimSug x σ')
-      _ -> error absurd
-
--- Extend singleton branch to set of branches where any missing constructors have been mapped to the empty list,
--- using anonymous variables in any generated patterns.
-unlessFwd :: forall a. Ctr × Cont a -> a -> Dict (Cont a)
-unlessFwd (c × κ) α =
-   let
-      defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
-      cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
-   in
-      D.fromFoldable ((c × κ) : cκs)
-
--- ======================
--- desugarBwd
--- ======================
-
-desugarBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Expr a
-desugarBwd = desugBwd'
-
--- e, s desugar_bwd s'
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
 exprBwd (E.Var _) (Var x) = Var x
 exprBwd (E.Op _) (Op op) = Op op
@@ -333,12 +270,22 @@ exprBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e1) (ListComp _ _ (Gene
          _ -> error absurd
 exprBwd _ _ = error absurd
 
--- e, l desugar_bwd l'
+-- ListRest
+listRestFwd :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
+listRestFwd (End α) = pure (enil α)
+listRestFwd (Next α s l) = econs α <$> desugFwd' s <*> desugFwd' l
+
 listRestBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
 listRestBwd (E.Constr α _ _) (End _) = End α
 listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ _ _) =
    Next α (desugBwd' e1) (desugBwd' e2)
 listRestBwd _ _ = error absurd
+
+-- NonEmptyList Pattern × Expr
+pattsExprFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> MayFail (Elim a)
+pattsExprFwd (NonEmptyList (p :| Nil) × e) = (ContExpr <$> desugFwd' e) >>= pattContFwd p
+pattsExprFwd (NonEmptyList (p :| p' : ps) × e) =
+   pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × e)
 
 pattsExprBwd :: forall a. BoundedJoinSemilattice a => NonEmptyList Pattern -> Elim a -> Expr a
 pattsExprBwd (NonEmptyList (p :| Nil)) σ = desugBwd' (asExpr (pattContBwd p σ))
@@ -346,6 +293,16 @@ pattsExprBwd (NonEmptyList (p :| p' : ps)) σ = next (asExpr (pattContBwd p σ))
    where
    next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ
    next _ = error absurd
+
+-- Pattern × Cont
+pattContFwd :: forall a. Pattern -> Cont a -> MayFail (Elim a)
+pattContFwd (PVar x) κ = pure (ElimVar x κ)
+pattContFwd (PConstr c ps) κ =
+   checkArity c (length ps) *> (ElimConstr <$> D.singleton c <$> pattArgsFwd (Left <$> ps) κ)
+pattContFwd (PRecord xps) κ =
+   ElimRecord (keys xps) <$> pattArgsFwd ((snd >>> Left) <$> sortBy (compare `on` fst) xps) κ
+pattContFwd PListEmpty κ = pure (ElimConstr (D.singleton cNil κ))
+pattContFwd (PListNonEmpty p o) κ = ElimConstr <$> D.singleton cCons <$> pattArgsFwd (Left p : Right o : Nil) κ
 
 pattContBwd :: forall a. Pattern -> Elim a -> Cont a
 pattContBwd (PVar _) (ElimVar _ κ) = κ
@@ -355,6 +312,11 @@ pattContBwd (PListNonEmpty p o) (ElimConstr m) = pattArgsBwd (Left p : Right o :
 pattContBwd (PRecord xps) (ElimRecord _ κ) = pattArgsBwd ((snd >>> Left) <$> sortBy (compare `on` fst) xps) κ
 pattContBwd _ _ = error absurd
 
+-- ListRestPattern × Cont
+pattCont_ListRest_Fwd :: forall a. ListRestPattern -> Cont a -> MayFail (Elim a)
+pattCont_ListRest_Fwd PEnd κ = pure (ElimConstr (D.singleton cNil κ))
+pattCont_ListRest_Fwd (PNext p o) κ = ElimConstr <$> D.singleton cCons <$> pattArgsFwd (Left p : Right o : Nil) κ
+
 pattCont_ListRest_Bwd :: forall a. Elim a -> ListRestPattern -> Cont a
 pattCont_ListRest_Bwd (ElimVar _ _) _ = error absurd
 pattCont_ListRest_Bwd (ElimRecord _ _) _ = error absurd
@@ -362,16 +324,42 @@ pattCont_ListRest_Bwd (ElimConstr m) PEnd = get cNil m
 pattCont_ListRest_Bwd (ElimConstr m) (PNext p o) = pattArgsBwd (Left p : Right o : Nil) (get cCons m)
 pattCont_ListRest_Bwd (ElimSug _ κ) p = pattCont_ListRest_Bwd κ p
 
+-- List (Pattern + ListRestPattern) × Cont
+pattArgsFwd :: forall a. List (Pattern + ListRestPattern) -> Cont a -> MayFail (Cont a)
+pattArgsFwd Nil κ = pure κ
+pattArgsFwd (Left p : πs) κ = ContElim <$> (pattArgsFwd πs κ >>= pattContFwd p)
+pattArgsFwd (Right o : πs) κ = ContElim <$> (pattArgsFwd πs κ >>= pattCont_ListRest_Fwd o)
+
 pattArgsBwd :: forall a. List (Pattern + ListRestPattern) -> Endo (Cont a)
 pattArgsBwd Nil κ = κ
 pattArgsBwd (Left p : πs) σ = pattArgsBwd πs (pattContBwd p (asElim σ))
 pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim σ) o)
+
+-- Clauses
+clausesFwd :: forall a. JoinSemilattice a => Clauses a -> MayFail (Elim a)
+clausesFwd (Clauses bs) = do
+   NonEmptyList (σ :| σs) <- traverse pattsExprFwd (unwrap <$> bs)
+   foldM maybeJoin σ σs
 
 clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
 clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
    where
    clauseBwd :: Raw Clause -> Clause a
    clauseBwd (Clause (πs × _)) = Clause (πs × pattsExprBwd πs σ)
+
+-- orElse
+orElseFwd :: forall a. Cont a -> a -> Cont a
+orElseFwd ContNone _ = error absurd
+orElseFwd (ContExpr e) _ = ContExpr e
+orElseFwd (ContElim (ElimConstr m)) α = ContElim (ElimConstr (unlessFwd (c × orElseFwd κ α) α))
+   where
+   c × κ = asSingletonMap m
+orElseFwd (ContElim (ElimRecord xs κ)) α = ContElim (ElimRecord xs (orElseFwd κ α))
+orElseFwd (ContElim (ElimVar x κ)) α = ContElim (ElimVar x (orElseFwd κ α))
+orElseFwd (ContElim (ElimSug x σ)) α =
+   case orElseFwd (ContElim σ) α of
+      ContElim σ' -> ContElim (ElimSug x σ')
+      _ -> error absurd
 
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
 orElseBwd κ Nil = κ × bot
@@ -397,8 +385,18 @@ orElseBwd (ContElim (ElimConstr m)) (π : πs) =
          (\κ'' -> ContElim (ElimConstr (D.fromFoldable (singleton (c × κ''))))) *** (α ∨ _)
 orElseBwd _ _ = error absurd
 
--- Discard all synthesised branches, returning the original singleton branch for c, plus join of annotations
--- on the empty lists used for bodies of synthesised branches.
+-- unless. In forward direction, extend singleton branch to set of branches where any missing constructors have
+-- been mapped to the empty list, using anonymous variables in any generated patterns. Going backward, discard
+-- all synthesised branches, returning the original singleton branch for c, plus join of annotations on the
+-- empty lists used for bodies of synthesised branches.
+unlessFwd :: forall a. Ctr × Cont a -> a -> Dict (Cont a)
+unlessFwd (c × κ) α =
+   let
+      defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
+      cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
+   in
+      D.fromFoldable ((c × κ) : cκs)
+
 unlessBwd :: forall a. BoundedJoinSemilattice a => Dict (Cont a) -> Ctr -> Cont a × a
 unlessBwd m c =
    let
