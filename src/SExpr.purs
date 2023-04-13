@@ -96,13 +96,10 @@ instance Desugarable Clauses Elim where
    desugFwd = clausesFwd
    desugBwd = clausesBwd
 
--- ======================
--- desugarFwd
--- ======================
-
 desugarModuleFwd :: forall a. JoinSemilattice a => Module a -> MayFail (E.Module a)
 desugarModuleFwd = moduleFwd
 
+-- helpers
 enil :: forall a. a -> E.Expr a
 enil α = E.Constr α cNil Nil
 
@@ -127,11 +124,22 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarD
 varDefFwd :: forall a. JoinSemilattice a => VarDef a -> MayFail (E.VarDef a)
 varDefFwd (VarDef π s) = E.VarDef <$> pattContFwd π (ContNone :: Cont a) <*> desugFwd' s
 
+-- VarDefs
 varDefsFwd :: forall a. JoinSemilattice a => VarDefs a × Expr a -> MayFail (E.Expr a)
 varDefsFwd (NonEmptyList (d :| Nil) × s) =
    E.Let <$> varDefFwd d <*> desugFwd' s
 varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
    E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
+
+varDefsBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw VarDefs × Raw Expr -> VarDefs a × Expr a
+varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π _ :| Nil) × _) =
+   NonEmptyList (VarDef π (desugBwd' e1) :| Nil) × desugBwd' e2
+varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π _ :| d : ds) × s2) =
+   let
+      NonEmptyList (d' :| ds') × s2' = varDefsBwd e2 (NonEmptyList (d :| ds) × s2)
+   in
+      NonEmptyList (VarDef π (desugBwd' e1) :| d' : ds') × s2'
+varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
 -- In the formalism, "group by name" is part of the syntax.
 recDefsFwd :: forall a. JoinSemilattice a => RecDefs a -> MayFail (E.RecDefs a)
@@ -139,8 +147,25 @@ recDefsFwd xcs = D.fromFoldable <$> traverse recDefFwd xcss
    where
    xcss = map RecDef (groupBy (eq `on` fst) xcs) :: NonEmptyList (RecDef a)
 
+recDefsBwd :: forall a. BoundedJoinSemilattice a => E.RecDefs a -> Raw RecDefs -> RecDefs a
+recDefsBwd ρ xcs = join (go (groupBy (eq `on` fst) xcs))
+   where
+   go :: NonEmptyList (Raw RecDefs) -> NonEmptyList (RecDefs a)
+   go (NonEmptyList (xcs1 :| xcss)) =
+      let
+         x = fst (head xcs1)
+         xcss' = case xcss of
+            Nil -> Nil
+            xcs2 : xcss'' -> toList (go (NonEmptyList (xcs2 :| xcss'')))
+      in
+         NonEmptyList (unwrap (recDefBwd (x ↦ get x ρ) (RecDef xcs1)) :| xcss')
+
+-- RecDef
 recDefFwd :: forall a. JoinSemilattice a => RecDef a -> MayFail (Bind (Elim a))
 recDefFwd xcs = (fst (head (unwrap xcs)) ↦ _) <$> clausesFwd (Clauses (snd <$> unwrap xcs))
+
+recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -> RecDef a
+recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (clausesBwd σ (Clauses (snd <$> bs))))
 
 -- s desugar_fwd e
 exprFwd :: forall a. JoinSemilattice a => Expr a -> MayFail (E.Expr a)
@@ -246,32 +271,6 @@ unlessFwd (c × κ) α =
 
 desugarBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Expr a
 desugarBwd = desugBwd'
-
-varDefsBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw VarDefs × Raw Expr -> VarDefs a × Expr a
-varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π _ :| Nil) × _) =
-   NonEmptyList (VarDef π (desugBwd' e1) :| Nil) × desugBwd' e2
-varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π _ :| d : ds) × s2) =
-   let
-      NonEmptyList (d' :| ds') × s2' = varDefsBwd e2 (NonEmptyList (d :| ds) × s2)
-   in
-      NonEmptyList (VarDef π (desugBwd' e1) :| d' : ds') × s2'
-varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
-
-recDefsBwd :: forall a. BoundedJoinSemilattice a => E.RecDefs a -> Raw RecDefs -> RecDefs a
-recDefsBwd ρ xcs = join (recDefsBwd' ρ (groupBy (eq `on` fst) xcs))
-
-recDefsBwd' :: forall a. BoundedJoinSemilattice a => E.RecDefs a -> NonEmptyList (Raw RecDefs) -> NonEmptyList (RecDefs a)
-recDefsBwd' ρ (NonEmptyList (xcs :| xcss)) =
-   let
-      x = fst (head xcs)
-      xcss' = case xcss of
-         Nil -> Nil
-         xcs2 : xcss'' -> toList (recDefsBwd' ρ (NonEmptyList (xcs2 :| xcss'')))
-   in
-      NonEmptyList (unwrap (recDefBwd (x ↦ get x ρ) (RecDef xcs)) :| xcss')
-
-recDefBwd :: forall a. BoundedJoinSemilattice a => Bind (Elim a) -> Raw RecDef -> RecDef a
-recDefBwd (x ↦ σ) (RecDef bs) = RecDef ((x × _) <$> unwrap (clausesBwd σ (Clauses (snd <$> bs))))
 
 -- e, s desugar_bwd s'
 exprBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw Expr -> Expr a
