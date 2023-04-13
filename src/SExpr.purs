@@ -109,17 +109,17 @@ econs α e e' = E.Constr α cCons (e : e' : Nil)
 elimBool :: forall a. Cont a -> Cont a -> Elim a
 elimBool κ κ' = ElimConstr (D.fromFoldable [ cTrue × κ, cFalse × κ' ])
 
--- Surface language supports "blocks" of variable declarations; core does not.
+-- Module. Surface language supports "blocks" of variable declarations; core does not. Currently no backward.
 moduleFwd :: forall a. JoinSemilattice a => Module a -> MayFail (E.Module a)
-moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (desugarDefs <$> ds))
+moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten <$> ds))
    where
    varDefOrRecDefsFwd :: VarDef a + RecDefs a -> MayFail (E.VarDef a + E.RecDefs a)
    varDefOrRecDefsFwd (Left d) = Left <$> varDefFwd d
    varDefOrRecDefsFwd (Right xcs) = Right <$> recDefsFwd xcs
 
-   desugarDefs :: VarDefs a + RecDefs a -> List (VarDef a + RecDefs a)
-   desugarDefs (Left ds') = Left <$> toList ds'
-   desugarDefs (Right δ) = pure (Right δ)
+   flatten :: VarDefs a + RecDefs a -> List (VarDef a + RecDefs a)
+   flatten (Left ds') = Left <$> toList ds'
+   flatten (Right δ) = pure (Right δ)
 
 varDefFwd :: forall a. JoinSemilattice a => VarDef a -> MayFail (E.VarDef a)
 varDefFwd (VarDef π s) = E.VarDef <$> pattContFwd π (ContNone :: Cont a) <*> desugFwd' s
