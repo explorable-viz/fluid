@@ -26,7 +26,7 @@ import Parsing.String (char, eof)
 import Parsing.String.Basic (oneOf)
 import Parsing.Token (GenLanguageDef(..), LanguageDef, TokenParser, alphaNum, letter, makeTokenParser, unGenLanguageDef)
 import Primitive.Parse (OpDef, opDefs)
-import SExpr (Branch, Clause(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Module(..), Pattern(..), Qualifier(..), RecDefs, VarDef(..), VarDefs)
 import Util (Endo, type (×), (×), type (+), error, onlyIf)
 import Util.Pair (Pair(..))
 import Util.Parse (SParser, sepBy_try, sepBy1_try, some)
@@ -413,7 +413,7 @@ expr_ = fix $ appChain >>> buildExprParser ([ backtickOp ] `cons` operators bina
             (pure $ \e e' -> Constr unit cPair (e : e' : empty)) <*> (expr' <* token.comma) <*> expr'
 
          lambda :: SParser (Raw Expr)
-         lambda = Lambda <$> (keyword str.fun *> branches expr' clause_curried)
+         lambda = (Lambda <<< Clauses) <$> (keyword str.fun *> branches expr' clause_curried)
 
          ifElse :: SParser (Raw Expr)
          ifElse = pure IfElse

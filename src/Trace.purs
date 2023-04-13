@@ -8,6 +8,7 @@ import Data.List (List)
 import Data.Maybe (Maybe)
 import Data.Set (Set, empty, singleton, unions)
 import DataType (Ctr)
+import Desugarable (Sugar')
 import Dict (Dict)
 import Expr (class BV, RecDefs, bv, Expr)
 import Lattice (Raw)
@@ -26,7 +27,7 @@ data Trace
    | App Trace Trace AppTrace
    | Let VarDef Trace
    | LetRec (Raw RecDefs) Trace
-   | Sugar (Raw Expr) Trace
+   | Sugar (Sugar' Expr) Trace
 
 data AppTrace
    = AppClosure (Set Var) Match Trace

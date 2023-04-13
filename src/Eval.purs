@@ -159,9 +159,9 @@ eval γ (LetRec ρ e) α = do
    let γ' = closeDefs γ ρ α
    t × v <- eval (γ <+> γ') e α
    pure $ T.LetRec (erase <$> ρ) t × v
-eval γ sug@(Sugar _ e) α = do
+eval γ (Sugar s e) α = do
    (t × v) <- eval γ e α
-   let t' = T.Sugar (erase sug) t
+   let t' = T.Sugar s t
    pure (t' × v)
 
 eval_module :: forall a. Ann a => Env a -> Module a -> a -> MayFail (Env a)

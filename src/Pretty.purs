@@ -8,6 +8,7 @@ import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), fromFoldable, null)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
+import Data.Newtype (unwrap)
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
 import Data.String (Pattern(..), contains) as Data.String
@@ -211,7 +212,7 @@ instance Highlightable a => Pretty (S.Expr a) where
       where
       init = [ text str.arrayLBracket, pretty e, text str.bar ]
       quant = [ parens (hcomma [ text x, text y ]), text (str.in_), pretty e', text str.arrayRBracket ]
-   pretty (S.Lambda bs) = hspace [ text str.fun, vert semi (pretty <$> bs) ]
+   pretty (S.Lambda bs) = hspace [ text str.fun, vert semi (pretty <$> unwrap bs) ]
    pretty (S.Project s x) = pretty s :<>: text (str.dot <> x)
    pretty (S.App s s') = hspace [ pretty s, pretty s' ]
    pretty (S.BinaryApp s op s') = parens (hspace [ pretty s, text op, pretty s' ])
