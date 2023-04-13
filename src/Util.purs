@@ -147,6 +147,7 @@ assoc2 (a × (b × c)) = (a × b) × c
 
 -- Not sure what provision there is for composition of functors with types
 data WithTypeLeft (t :: Type) (f :: Type -> Type) a = WithTypeLeft t (f a)
+
 infixr 6 type WithTypeLeft as <×|
 infixr 6 WithTypeLeft as <×|
 
