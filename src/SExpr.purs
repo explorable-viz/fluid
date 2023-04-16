@@ -298,10 +298,20 @@ listCompFwd ((Generator p s : qs) × s' × α) = do
 
 listCompBwd :: forall a. BoundedJoinSemilattice a =>
                E.Expr a -> List (Raw Qualifier) × Raw Expr -> List (Qualifier a) × Expr a × a
-listCompBwd e (Nil × s) = Nil × desugBwd' e × ?_
-listCompBwd e ((Guard s : qs) × s') = ?_
-listCompBwd e ((Declaration (VarDef π s) : qs) × s') = ?_
-listCompBwd e ((Generator p s : qs) × s') = ?_
+listCompBwd e (Nil × _) = Nil × desugBwd' e × bot
+listCompBwd (E.App (E.Lambda (ElimConstr m)) e) ((Guard _ : qs) × s) =
+   let qs' × s' × _ = listCompBwd (asExpr (get cTrue m)) (qs × s) in
+   case asExpr (get cFalse m) of
+      E.Constr α c Nil | c == cNil -> (Guard (desugBwd' e) : qs') × s' × α
+      _ -> error absurd
+listCompBwd (E.App (E.Lambda σ) e) ((Declaration (VarDef π _) : qs) × s) =
+   let qs' × s' × α = listCompBwd (asExpr (pattContBwd π σ)) (qs × s) in
+   (Declaration (VarDef π (desugBwd' e)) : qs') × s' × α
+listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e) ((Generator p _ : qs) × s) =
+   let σ' × β = orElseBwd (ContElim σ) (Left p : Nil)
+       qs' × s' × α = listCompBwd (asExpr (pattContBwd p (asElim σ'))) (qs × s) in
+   (Generator p (desugBwd' e) : qs') × s' × (α ∨ β)
+listCompBwd _ _ = error absurd
 
 -- NonEmptyList Pattern × Expr
 pattsExprFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> MayFail (Elim a)
