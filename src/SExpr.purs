@@ -296,6 +296,13 @@ listCompFwd ((Generator p s : qs) × s' × α) = do
    σ <- pattContFwd p e
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElseFwd (ContElim σ) α)))) <$> desugFwd' s
 
+listCompBwd :: forall a. BoundedJoinSemilattice a =>
+               E.Expr a -> List (Raw Qualifier) × Raw Expr -> List (Qualifier a) × Expr a × a
+listCompBwd e (Nil × s) = Nil × desugBwd' e × ?_
+listCompBwd e ((Guard s : qs) × s') = ?_
+listCompBwd e ((Declaration (VarDef π s) : qs) × s') = ?_
+listCompBwd e ((Generator p s : qs) × s') = ?_
+
 -- NonEmptyList Pattern × Expr
 pattsExprFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> MayFail (Elim a)
 pattsExprFwd (NonEmptyList (p :| Nil) × s) = (ContExpr <$> desugFwd' s) >>= pattContFwd p
