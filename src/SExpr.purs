@@ -287,7 +287,10 @@ listCompFwd (Nil × s × _) = desugFwd' s
 listCompFwd ((Guard s : qs) × s' × α) = do
    e <- listCompFwd (qs × s' × α)
    E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desugFwd' s
-listCompFwd ((Declaration (VarDef π s) : qs) × s' × _) = ?_
+listCompFwd ((Declaration (VarDef π s) : qs) × s' × α) = do
+   e <- ContExpr <$> listCompFwd (qs × s' × α)
+   σ <- pattContFwd π e
+   E.App (E.Lambda σ) <$> desugFwd' s
 listCompFwd ((Generator p s : qs) × s' × _) = ?_
 
 -- NonEmptyList Pattern × Expr
