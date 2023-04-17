@@ -305,7 +305,7 @@ listCompBwd
 listCompBwd e (Nil × _) = Nil × desugBwd' e × bot
 listCompBwd (E.App (E.Lambda (ElimConstr m)) e) ((Guard _ : qs) × s) =
    case listCompBwd (asExpr (get cTrue m)) (qs × s) × asExpr (get cFalse m) of
-      (qs' × s' × _) × E.Constr α c Nil | c == cNil -> (Guard (desugBwd' e) : qs') × s' × α
+      (qs' × s' × α) × E.Constr β c Nil | c == cNil -> (Guard (desugBwd' e) : qs') × s' × (α ∨ β)
       _ -> error absurd
 listCompBwd (E.App (E.Lambda σ) e) ((Declaration (VarDef π _) : qs) × s) =
    case listCompBwd (asExpr (pattContBwd π σ)) (qs × s) of
