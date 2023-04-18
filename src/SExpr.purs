@@ -282,7 +282,8 @@ listCompBwd_new
    => E.Expr a
    -> Raw Expr × List (Raw Qualifier)
    -> a × Expr a × List (Qualifier a)
-listCompBwd_new e (_ × Nil) = bot × desugBwd' e × Nil
+listCompBwd_new (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (_ × Nil) | c == cCons && c' == cNil =
+   (α1 ∨ α2) × desugBwd' e × Nil
 listCompBwd_new (E.App (E.Lambda (ElimConstr m)) e) (s × (Guard _ : qs)) =
    case listCompBwd_new (asExpr (get cTrue m)) (s × qs) × asExpr (get cFalse m) of
       (α × s' × qs') × E.Constr β c Nil | c == cNil -> (α ∨ β) × s' × (Guard (desugBwd' e) : qs')
