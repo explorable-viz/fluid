@@ -190,7 +190,7 @@ exprFwd (IfElse s1 s2 s3) =
 exprFwd (ListEmpty α) = pure (enil α)
 exprFwd (ListNonEmpty α s l) = econs α <$> desugFwd' s <*> desugFwd' l
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desugFwd' s1) <*> desugFwd' s2
-exprFwd (ListComp α s qs) = listCompFwd (α × s × qs)
+exprFwd (ListComp α s qs) = listCompFwd (α × qs × s)
 exprFwd (Let ds s) = varDefsFwd (ds × s)
 exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desugFwd' s
 
@@ -227,7 +227,7 @@ exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ _ _) =
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum _ _) =
    ListEnum (desugBwd' e1) (desugBwd' e2)
 exprBwd e (ListComp _ s qs) =
-   let α × s' × qs' = listCompBwd e (s × qs) in ListComp α s' qs'
+   let α × qs' × s' = listCompBwd e (qs × s) in ListComp α s' qs'
 exprBwd _ _ = error absurd
 
 -- ListRest
@@ -242,18 +242,18 @@ listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ _ _) =
 listRestBwd _ _ = error absurd
 
 -- List Qualifier × Expr
-listCompFwd :: forall a. JoinSemilattice a => a × Expr a × List (Qualifier a) -> MayFail (E.Expr a)
-listCompFwd (α × s × Nil) =
+listCompFwd :: forall a. JoinSemilattice a => a × List (Qualifier a) × Expr a -> MayFail (E.Expr a)
+listCompFwd (α × Nil × s) =
    econs α <$> desugFwd' s <@> enil α
-listCompFwd (α × s' × (Guard s : qs)) = do
-   e <- listCompFwd (α × s' × qs)
+listCompFwd (α × (Guard s : qs) × s') = do
+   e <- listCompFwd (α × qs × s')
    E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desugFwd' s
-listCompFwd (α × s' × (Declaration (VarDef π s) : qs)) = do
-   e <- ContExpr <$> listCompFwd (α × s' × qs)
+listCompFwd (α × (Declaration (VarDef π s) : qs) × s') = do
+   e <- ContExpr <$> listCompFwd (α × qs × s')
    σ <- pattContFwd π e
    E.App (E.Lambda σ) <$> desugFwd' s
-listCompFwd (α × s' × (Generator p s : qs)) = do
-   e <- ContExpr <$> listCompFwd (α × s' × qs)
+listCompFwd (α × (Generator p s : qs) × s') = do
+   e <- ContExpr <$> listCompFwd (α × qs × s')
    σ <- pattContFwd p e
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElseFwd (ContElim σ) α)))) <$> desugFwd' s
 
@@ -261,21 +261,21 @@ listCompBwd
    :: forall a
     . BoundedJoinSemilattice a
    => E.Expr a
-   -> Raw Expr × List (Raw Qualifier)
-   -> a × Expr a × List (Qualifier a)
-listCompBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (_ × Nil) | c == cCons && c' == cNil =
-   (α1 ∨ α2) × desugBwd' e × Nil
-listCompBwd (E.App (E.Lambda (ElimConstr m)) e) (s × (Guard _ : qs)) =
-   case listCompBwd (asExpr (get cTrue m)) (s × qs) × asExpr (get cFalse m) of
-      (α × s' × qs') × E.Constr β c Nil | c == cNil -> (α ∨ β) × s' × (Guard (desugBwd' e) : qs')
+   -> List (Raw Qualifier) × Raw Expr
+   -> a × List (Qualifier a) × Expr a
+listCompBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (Nil × _) | c == cCons && c' == cNil =
+   (α1 ∨ α2) × Nil × desugBwd' e
+listCompBwd (E.App (E.Lambda (ElimConstr m)) e) ((Guard _ : qs) × s) =
+   case listCompBwd (asExpr (get cTrue m)) (qs × s) × asExpr (get cFalse m) of
+      (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ β) × (Guard (desugBwd' e) : qs') × s'
       _ -> error absurd
-listCompBwd (E.App (E.Lambda σ) e) (s × (Declaration (VarDef π _) : qs)) =
-   case listCompBwd (asExpr (pattContBwd π σ)) (s × qs) of
-      α × s' × qs' -> α × s' × (Declaration (VarDef π (desugBwd' e)) : qs')
-listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e) (s × (Generator p _ : qs)) =
+listCompBwd (E.App (E.Lambda σ) e) ((Declaration (VarDef π _) : qs) × s) =
+   case listCompBwd (asExpr (pattContBwd π σ)) (qs × s) of
+      α × qs' × s' -> α × (Declaration (VarDef π (desugBwd' e)) : qs') × s'
+listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e) ((Generator p _ : qs) × s) =
    case orElseBwd (ContElim σ) (Left p : Nil) of
-      σ' × β -> case listCompBwd (asExpr (pattContBwd p (asElim σ'))) (s × qs) of
-         α × s' × qs' -> (α ∨ β) × s' × (Generator p (desugBwd' e) : qs')
+      σ' × β -> case listCompBwd (asExpr (pattContBwd p (asElim σ'))) (qs × s) of
+         α × qs' × s' -> (α ∨ β) × (Generator p (desugBwd' e) : qs') × s'
 listCompBwd _ _ = error absurd
 
 -- NonEmptyList Pattern × Expr
