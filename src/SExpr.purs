@@ -271,8 +271,8 @@ listCompFwd (α × s_body × Declaration (VarDef π s) : qs) = do
    σ <- pattContFwd π e
    E.App (E.Lambda σ) <$> desugFwd' s
 -- | list-comp-gen
-listCompFwd (α × s_body × Generator p s : qs) = do
-   e <- ContExpr <$> desugFwd' (ListComp α s_body qs)
+listCompFwd (α × s' × Generator p s : qs) = do
+   e <- ContExpr <$> desugFwd' (ListComp α s' qs)
    σ <- pattContFwd p e
    E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElseFwd (ContElim σ) α)))) <$> desugFwd' s
 
