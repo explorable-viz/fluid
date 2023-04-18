@@ -190,7 +190,7 @@ exprFwd (IfElse s1 s2 s3) =
 exprFwd (ListEmpty α) = pure (enil α)
 exprFwd (ListNonEmpty α s l) = econs α <$> desugFwd' s <*> desugFwd' l
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desugFwd' s1) <*> desugFwd' s2
-exprFwd (ListComp α s qs) = listCompFwd (α × s × qs)
+exprFwd (ListComp α s qs) = listCompFwd_new (α × s × qs)
 exprFwd (Let ds s) = varDefsFwd (ds × s)
 exprFwd (LetRec xcs s) = E.LetRec <$> recDefsFwd xcs <*> desugFwd' s
 
@@ -227,7 +227,7 @@ exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ _ _) =
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum _ _) =
    ListEnum (desugBwd' e1) (desugBwd' e2)
 exprBwd e (ListComp _ s qs) =
-   let α × s' × qs' = listCompBwd e (s × qs) in ListComp α s' qs'
+   let α × s' × qs' = listCompBwd_new e (s × qs) in ListComp α s' qs'
 exprBwd _ _ = error absurd
 
 -- ListRest
