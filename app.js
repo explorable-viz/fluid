@@ -21528,8 +21528,8 @@
     return unsafePerformEffect(throwException(error("absurd")));
   };
   var listCompFwd = (dictJoinSemilattice) => (v) => {
-    if (v._2._2.tag === "Nil") {
-      const $2 = desugFwd$p(dictJoinSemilattice)(desugarableExprExpr)(v._2._1);
+    if (v._2._1.tag === "Nil") {
+      const $2 = desugFwd$p(dictJoinSemilattice)(desugarableExprExpr)(v._2._2);
       if ($2.tag === "Left") {
         return $Either("Left", $2._1);
       }
@@ -21546,9 +21546,9 @@
       }
       fail();
     }
-    if (v._2._2.tag === "Cons") {
-      if (v._2._2._1.tag === "Guard") {
-        return bindEither.bind(listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._2._1, v._2._2._2))))((e) => {
+    if (v._2._1.tag === "Cons") {
+      if (v._2._1._1.tag === "Guard") {
+        return bindEither.bind(listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._2._1._2, v._2._2))))((e) => {
           const $3 = App2($Expr(
             "Lambda",
             $Elim(
@@ -21559,7 +21559,7 @@
               ])
             )
           ));
-          const $4 = desugFwd$p(dictJoinSemilattice)(desugarableExprExpr)(v._2._2._1._1);
+          const $4 = desugFwd$p(dictJoinSemilattice)(desugarableExprExpr)(v._2._1._1._1);
           if ($4.tag === "Left") {
             return $Either("Left", $4._1);
           }
@@ -21569,9 +21569,9 @@
           fail();
         });
       }
-      if (v._2._2._1.tag === "Declaration") {
+      if (v._2._1._1.tag === "Declaration") {
         return bindEither.bind((() => {
-          const $2 = listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._2._1, v._2._2._2)));
+          const $2 = listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._2._1._2, v._2._2)));
           if ($2.tag === "Left") {
             return $Either("Left", $2._1);
           }
@@ -21579,9 +21579,9 @@
             return $Either("Right", $Cont("ContExpr", $2._1));
           }
           fail();
-        })())((e) => bindEither.bind(pattContFwd(v._2._2._1._1._1)(e))((\u03C3) => {
+        })())((e) => bindEither.bind(pattContFwd(v._2._1._1._1._1)(e))((\u03C3) => {
           const $4 = App2($Expr("Lambda", \u03C3));
-          const $5 = desugFwd$p(dictJoinSemilattice)(desugarableExprExpr)(v._2._2._1._1._2);
+          const $5 = desugFwd$p(dictJoinSemilattice)(desugarableExprExpr)(v._2._1._1._1._2);
           if ($5.tag === "Left") {
             return $Either("Left", $5._1);
           }
@@ -21591,9 +21591,9 @@
           fail();
         }));
       }
-      if (v._2._2._1.tag === "Generator") {
+      if (v._2._1._1.tag === "Generator") {
         return bindEither.bind((() => {
-          const $2 = listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._2._1, v._2._2._2)));
+          const $2 = listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._2._1._2, v._2._2)));
           if ($2.tag === "Left") {
             return $Either("Left", $2._1);
           }
@@ -21601,7 +21601,7 @@
             return $Either("Right", $Cont("ContExpr", $2._1));
           }
           fail();
-        })())((e) => bindEither.bind(pattContFwd(v._2._2._1._1)(e))((\u03C3) => {
+        })())((e) => bindEither.bind(pattContFwd(v._2._1._1._1)(e))((\u03C3) => {
           const $4 = App2($Expr(
             "App",
             $Expr("Var", "concatMap"),
@@ -21616,7 +21616,7 @@
               })()
             )
           ));
-          const $5 = desugFwd$p(dictJoinSemilattice)(desugarableExprExpr)(v._2._2._1._2);
+          const $5 = desugFwd$p(dictJoinSemilattice)(desugarableExprExpr)(v._2._1._1._2);
           if ($5.tag === "Left") {
             return $Either("Left", $5._1);
           }
@@ -21641,12 +21641,12 @@
             return $10._1;
           }
           return unsafePerformEffect(throwException(error("Expression expected")));
-        })())($Tuple(s, qs));
+        })())($Tuple(qs, s));
         return $Tuple(
           v2._1,
           $Tuple(
-            v2._2._1,
-            $List("Cons", $Qualifier("Declaration", $VarDef3(\u03C0, desugBwd$p(dictBoundedJoinSemilattice)(desugarableExprExpr)(e))), v2._2._2)
+            $List("Cons", $Qualifier("Declaration", $VarDef3(\u03C0, desugBwd$p(dictBoundedJoinSemilattice)(desugarableExprExpr)(e))), v2._2._1),
+            v2._2._2
           )
         );
       };
@@ -21656,11 +21656,11 @@
             if (v._3._2._1.tag === "Constr") {
               if (v._3._2._1._3.tag === "Nil") {
                 if (v._3._2._2.tag === "Nil") {
-                  if (v1._2.tag === "Nil") {
+                  if (v1._1.tag === "Nil") {
                     if (v._2 === ":" && v._3._2._1._2 === "Nil") {
                       return $Tuple(
                         join2(v._3._2._1._1)(v._1),
-                        $Tuple(desugBwd$p(dictBoundedJoinSemilattice)(desugarableExprExpr)(v._3._1), Nil)
+                        $Tuple(Nil, desugBwd$p(dictBoundedJoinSemilattice)(desugarableExprExpr)(v._3._1))
                       );
                     }
                     return unsafePerformEffect(throwException(error("absurd")));
@@ -21678,17 +21678,17 @@
         return unsafePerformEffect(throwException(error("absurd")));
       }
       if (v.tag === "App") {
-        if (v1._2.tag === "Cons") {
+        if (v1._1.tag === "Cons") {
           if (v._1.tag === "Lambda") {
             if (v._1._1.tag === "ElimConstr") {
-              if (v1._2._1.tag === "Guard") {
+              if (v1._1._1.tag === "Guard") {
                 const $6 = listCompBwd(dictBoundedJoinSemilattice)((() => {
                   const $62 = $$get("True")(v._1._1._1);
                   if ($62.tag === "ContExpr") {
                     return $62._1;
                   }
                   return unsafePerformEffect(throwException(error("Expression expected")));
-                })())($Tuple(v1._1, v1._2._2));
+                })())($Tuple(v1._1._2, v1._2));
                 const $7 = $$get("False")(v._1._1._1);
                 const $8 = (() => {
                   if ($7.tag === "ContExpr") {
@@ -21702,8 +21702,8 @@
                       return $Tuple(
                         join2($6._1)($8._1),
                         $Tuple(
-                          $6._2._1,
-                          $List("Cons", $Qualifier("Guard", desugBwd$p(dictBoundedJoinSemilattice)(desugarableExprExpr)(v._2)), $6._2._2)
+                          $List("Cons", $Qualifier("Guard", desugBwd$p(dictBoundedJoinSemilattice)(desugarableExprExpr)(v._2)), $6._2._1),
+                          $6._2._2
                         )
                       );
                     }
@@ -21713,13 +21713,13 @@
                 }
                 return unsafePerformEffect(throwException(error("absurd")));
               }
-              if (v1._2._1.tag === "Declaration") {
-                return $5(v._2, v1._2._2, v1._1, v1._2._1._1._1, v._1._1);
+              if (v1._1._1.tag === "Declaration") {
+                return $5(v._2, v1._1._2, v1._2, v1._1._1._1._1, v._1._1);
               }
               return unsafePerformEffect(throwException(error("absurd")));
             }
-            if (v1._2._1.tag === "Declaration") {
-              return $5(v._2, v1._2._2, v1._1, v1._2._1._1._1, v._1._1);
+            if (v1._1._1.tag === "Declaration") {
+              return $5(v._2, v1._1._2, v1._2, v1._1._1._1._1, v._1._1);
             }
             return unsafePerformEffect(throwException(error("absurd")));
           }
@@ -21727,10 +21727,10 @@
             if (v._1._1.tag === "Var") {
               if (v._1._1._1 === "concatMap") {
                 if (v._1._2.tag === "Lambda") {
-                  if (v1._2._1.tag === "Generator") {
-                    const v2 = orElseBwd1($Cont("ContElim", v._1._2._1))($List("Cons", $Either("Left", v1._2._1._1), Nil));
+                  if (v1._1._1.tag === "Generator") {
+                    const v2 = orElseBwd1($Cont("ContElim", v._1._2._1))($List("Cons", $Either("Left", v1._1._1._1), Nil));
                     const v3 = listCompBwd(dictBoundedJoinSemilattice)((() => {
-                      const $7 = pattContBwd(v1._2._1._1)((() => {
+                      const $7 = pattContBwd(v1._1._1._1)((() => {
                         if (v2._1.tag === "ContElim") {
                           return v2._1._1;
                         }
@@ -21740,12 +21740,12 @@
                         return $7._1;
                       }
                       return unsafePerformEffect(throwException(error("Expression expected")));
-                    })())($Tuple(v1._1, v1._2._2));
+                    })())($Tuple(v1._1._2, v1._2));
                     return $Tuple(
                       join2(v3._1)(v2._2),
                       $Tuple(
-                        v3._2._1,
-                        $List("Cons", $Qualifier("Generator", v1._2._1._1, desugBwd$p(dictBoundedJoinSemilattice)(desugarableExprExpr)(v._2)), v3._2._2)
+                        $List("Cons", $Qualifier("Generator", v1._1._1._1, desugBwd$p(dictBoundedJoinSemilattice)(desugarableExprExpr)(v._2)), v3._2._1),
+                        v3._2._2
                       )
                     );
                   }
@@ -21942,7 +21942,7 @@
       })())(desugFwd$p(dictJoinSemilattice)(desugarableExprExpr)(v._2));
     }
     if (v.tag === "ListComp") {
-      return listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._2, v._3)));
+      return listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._3, v._2)));
     }
     if (v.tag === "Let") {
       return varDefsFwd(dictJoinSemilattice)($Tuple(v._1, v._2));
@@ -21963,8 +21963,8 @@
   };
   var exprBwd = (dictBoundedJoinSemilattice) => (v) => (v1) => {
     const $3 = (e, qs, s) => {
-      const v2 = listCompBwd(dictBoundedJoinSemilattice)(e)($Tuple(s, qs));
-      return $Expr2("ListComp", v2._1, v2._2._1, v2._2._2);
+      const v2 = listCompBwd(dictBoundedJoinSemilattice)(e)($Tuple(qs, s));
+      return $Expr2("ListComp", v2._1, v2._2._2, v2._2._1);
     };
     if (v.tag === "Var") {
       if (v1.tag === "Var") {
