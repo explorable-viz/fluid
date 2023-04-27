@@ -1,7 +1,5 @@
 "use strict"
 
-"use strict"
-
 import * as d3 from "d3"
 
 import {EditorState} from "@codemirror/state"
