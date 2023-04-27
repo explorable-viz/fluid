@@ -16,7 +16,6 @@ let startState = EditorState.create({
 function addEditorView_ (id) {
    return () => {
       const div = d3.select('#' + id).node()
-      //const div2 = document.createElement('div');
       new EditorView({
          state: startState,
          parent: div
