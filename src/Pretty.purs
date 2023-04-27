@@ -8,6 +8,7 @@ import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), fromFoldable, null)
 import Data.List.NonEmpty (NonEmptyList)
 import Data.List.NonEmpty (toList) as NEL
+import Data.Newtype (unwrap)
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
 import Data.String (Pattern(..), contains) as Data.String
@@ -17,13 +18,13 @@ import Dict (toUnfoldable) as D
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
 import Parse (str)
-import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
+import SExpr (Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..), Clause(..)) as S
 import Text.Pretty (Doc, atop, beside, empty, hcat, render, text)
 import Text.Pretty (render) as P
 import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
 import Util.Pair (toTuple)
 import Val (Fun(..), Val(..)) as V
-import Val (class Highlightable, Fun, ForeignOp', Val, highlightIf)
+import Val (class Highlightable, ForeignOp', Fun, Val, highlightIf)
 
 infixl 5 beside as :<>:
 
@@ -144,6 +145,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.LetRec δ e) = atop (hspace [ text str.let_, pretty δ, text str.in_ ]) (pretty e)
    pretty (E.Project _ _) = error "todo"
    pretty (E.App e e') = hspace [ pretty e, pretty e' ]
+   pretty (E.Sugar _ e) = pretty e
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty = D.toUnfoldable >>> go
@@ -167,6 +169,7 @@ instance Highlightable a => Pretty (Ctr × Cont a) where
 instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hspace [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
+   pretty (ElimSug _ κ) = pretty κ
    pretty (ElimRecord _ _) = error "todo"
 
 instance Highlightable a => Pretty (Val a) where
@@ -209,7 +212,7 @@ instance Highlightable a => Pretty (S.Expr a) where
       where
       init = [ text str.arrayLBracket, pretty e, text str.bar ]
       quant = [ parens (hcomma [ text x, text y ]), text (str.in_), pretty e', text str.arrayRBracket ]
-   pretty (S.Lambda bs) = hspace [ text str.fun, vert semi (pretty <$> bs) ]
+   pretty (S.Lambda bs) = hspace [ text str.fun, vert semi (pretty <$> unwrap bs) ]
    pretty (S.Project s x) = pretty s :<>: text (str.dot <> x)
    pretty (S.App s s') = hspace [ pretty s, pretty s' ]
    pretty (S.BinaryApp s op s') = parens (hspace [ pretty s, text op, pretty s' ])
@@ -231,6 +234,12 @@ instance Highlightable a => Pretty (S.ListRest a) where
 
 instance Highlightable a => Pretty (String × (NonEmptyList S.Pattern × S.Expr a)) where
    pretty (x × b) = hspace [ text x, pretty b ]
+
+instance Highlightable a => Pretty (String × (S.Clause a)) where
+   pretty (x × b) = hspace [ text x, pretty b ]
+
+instance Highlightable a => Pretty (S.Clause a) where
+   pretty (S.Clause (s × b)) = pretty (s × b)
 
 instance Highlightable a => Pretty (NonEmptyList S.Pattern × S.Expr a) where
    pretty (ps × s) = hspace ((pretty <$> NEL.toList ps) <> (text str.equals : pretty s : Nil))
