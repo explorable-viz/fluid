@@ -2,13 +2,6 @@ module App.Fig where
 
 import Prelude hiding (absurd)
 
-import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.CodeMirror.State (EditorState, dispatch, replaceSelection)
-import App.LineChart (LineChart, drawLineChart, lineChartHandler)
-import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
-import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
-import App.Util (HTMLId, OnSel, Selector, doNothing, from, record)
-import Bindings (Var)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
@@ -16,25 +9,33 @@ import Data.List (List(..), (:), singleton)
 import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
-import DataType (cBarChart, cCons, cLineChart, cNil)
-import Desugarable (desugFwd')
+import Debug (trace)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
+import Partial.Unsafe (unsafePartial)
+import Foreign.Object (lookup)
+import Web.Event.EventTarget (eventListener)
+import App.BarChart (BarChart, barChartHandler, drawBarChart)
+import App.CodeMirror.State (EditorView, dispatch, replaceSelection)
+import App.LineChart (LineChart, drawLineChart, lineChartHandler)
+import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
+import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
+import App.Util (HTMLId, OnSel, Selector, doNothing, from, record)
+import Bindings (Var)
+import DataType (cBarChart, cCons, cLineChart, cNil)
+import Desugarable (desugFwd')
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import Expr (Expr)
-import Foreign.Object (lookup)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
 import Module (File(..), open, openDatasetAs)
-import Partial.Unsafe (unsafePartial)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
 import Val (Env, Val(..), (<+>), append_inv)
-import Web.Event.EventTarget (eventListener)
 
 data View
    = MatrixFig MatrixView
@@ -122,7 +123,7 @@ type LinkResult =
    , v0' :: Val 𝔹
    }
 
-drawLinkFig :: LinkFig -> EditorState -> Selector + Selector -> Effect Unit
+drawLinkFig :: LinkFig -> EditorView -> Selector + Selector -> Effect Unit
 drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv = do
    log $ "Redrawing " <> divId
    let
@@ -140,8 +141,10 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv =
    drawView divId doNothing 1 $ view "common data" v0
    drawCode ed "Some stuff to go here"
 
-drawCode :: EditorState -> String -> Effect Unit
-drawCode ed s = dispatch [replaceSelection ed s]
+drawCode :: EditorView -> String -> Effect Unit
+drawCode ed s = do
+   dispatch ed [replaceSelection ed.state s]
+   trace ed \_ -> pure unit
 
 drawFig :: Fig -> Selector -> Effect Unit
 drawFig fig@{ spec: { divId } } δv = do

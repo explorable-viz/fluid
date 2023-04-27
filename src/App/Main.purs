@@ -42,7 +42,7 @@ drawLinkFigs loadFigs =
          Left err -> log $ show err
          Right figs -> do
             ed <- addEditorView "codemirror-expt"
-            sequence_ $ (\fig -> drawLinkFig fig ed.state (Left $ botOf)) <$> figs
+            sequence_ $ (\fig -> drawLinkFig fig ed (Left $ botOf)) <$> figs
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =

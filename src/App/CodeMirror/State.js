@@ -38,12 +38,12 @@ function replaceSelection_ (editorState, str) {
    return editorState.replaceSelection(str)
 }
 
-function dispatch_ (specs) {
+function dispatch_ (editorView, specs) {
    return () => {
-      dispatch(specs)
+      editorView.dispatch(specs)
    }
 }
 
 export var addEditorView = addEditorView_
 export var replaceSelection = curry2(replaceSelection_)
-export var dispatch = dispatch_
+export var dispatch = curry2(dispatch_)
