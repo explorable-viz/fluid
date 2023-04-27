@@ -119,4 +119,4 @@ function drawBarChart_ (
    }
 }
 
-export var drawBarChart = curry4(drawBarChart_);
+export var drawBarChart = curry4(drawBarChart_)

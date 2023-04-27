@@ -3,6 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
+import App.CodeMirror.State (EditorState, dispatch, replaceSelection)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
@@ -16,24 +17,24 @@ import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
 import DataType (cBarChart, cCons, cLineChart, cNil)
+import Desugarable (desugFwd')
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
-import Foreign.Object (lookup)
-import Partial.Unsafe (unsafePartial)
-import Web.Event.EventTarget (eventListener)
-import Desugarable (desugFwd')
-import SExpr (desugarModuleFwd)
-import Expr (Expr)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
+import Expr (Expr)
+import Foreign.Object (lookup)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
 import Module (File(..), open, openDatasetAs)
+import Partial.Unsafe (unsafePartial)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
+import SExpr (desugarModuleFwd)
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
 import Val (Env, Val(..), (<+>), append_inv)
+import Web.Event.EventTarget (eventListener)
 
 data View
    = MatrixFig MatrixView
@@ -41,7 +42,6 @@ data View
    | LineChartFig LineChart
    | BarChartFig BarChart
 
--- Want a nicer way to do this.
 drawView :: HTMLId -> OnSel -> Int -> View -> Effect Unit
 drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler)
 drawView divId onSel n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
@@ -122,8 +122,8 @@ type LinkResult =
    , v0' :: Val 𝔹
    }
 
-drawLinkFig :: LinkFig -> Selector + Selector -> Effect Unit
-drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } δv = do
+drawLinkFig :: LinkFig -> EditorState -> Selector + Selector -> Effect Unit
+drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv = do
    log $ "Redrawing " <> divId
    let
       v1' × v2' × δv1 × δv2 × v0 = successful case δv of
@@ -135,9 +135,13 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } δv = do
             let v2' = δv2 v2
             { v', v0' } <- linkResult x γ0 γ e2 e1 t2 t1 v2'
             pure $ v' × v2' × identity × const v2' × v0'
-   drawView divId (\selector -> drawLinkFig fig (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkFig fig (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
+   drawView divId (\selector -> drawLinkFig fig ed (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
+   drawView divId (\selector -> drawLinkFig fig ed (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
+   drawCode ed "Some stuff to go here"
+
+drawCode :: EditorState -> String -> Effect Unit
+drawCode ed s = dispatch [replaceSelection ed s]
 
 drawFig :: Fig -> Selector -> Effect Unit
 drawFig fig@{ spec: { divId } } δv = do

@@ -2,6 +2,19 @@
 
 import * as d3 from "d3"
 
+// This prelude currently duplicated across all FFI implementations.
+function curry2 (f) {
+   return x1 => x2 => f(x1, x2)
+}
+
+function curry3 (f) {
+   return x1 => x2 => x3 => f(x1, x2, x3)
+}
+
+function curry4 (f) {
+   return x1 => x2 => x3 => x4 => f(x1, x2, x3, x4)
+}
+
 import {EditorState} from "@codemirror/state"
 import {EditorView, keymap} from "@codemirror/view"
 import {defaultKeymap} from "@codemirror/commands"
@@ -21,4 +34,16 @@ function addEditorView_ (id) {
    }
 }
 
+function replaceSelection_ (editorState, str) {
+   return editorState.replaceSelection(str)
+}
+
+function dispatch_ (specs) {
+   return () => {
+      dispatch(specs)
+   }
+}
+
 export var addEditorView = addEditorView_
+export var replaceSelection = curry2(replaceSelection_)
+export var dispatch = dispatch_

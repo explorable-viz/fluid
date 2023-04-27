@@ -165,4 +165,4 @@ function drawLineChart_ (
    }
 }
 
-export var drawLineChart = curry4(drawLineChart_);
+export var drawLineChart = curry4(drawLineChart_)

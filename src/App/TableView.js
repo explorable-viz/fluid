@@ -93,4 +93,4 @@ function drawTable_ (
    }
 }
 
-export var drawTable = curry4(drawTable_);
+export var drawTable = curry4(drawTable_)

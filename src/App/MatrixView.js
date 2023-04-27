@@ -110,4 +110,4 @@ function drawMatrix_ (
    }
 }
 
-export var drawMatrix = curry4(drawMatrix_);
+export var drawMatrix = curry4(drawMatrix_)
