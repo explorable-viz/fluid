@@ -6,6 +6,7 @@ import App.CodeMirror.State (addEditorView)
 import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)
+import Debug (trace)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
@@ -41,8 +42,9 @@ drawLinkFigs loadFigs =
       case _ of
          Left err -> log $ show err
          Right figs -> do
-            addEditorView "codemirror-expt"
-            sequence_ $ flip drawLinkFig (Left $ botOf) <$> figs
+            editor <- addEditorView "codemirror-expt"
+            trace editor.state \_ ->
+               sequence_ $ flip drawLinkFig (Left $ botOf) <$> figs
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =
