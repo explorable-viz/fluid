@@ -2,6 +2,7 @@ module App.Main where
 
 import Prelude hiding (absurd)
 
+import App.CodeMirror.State (addEditorView)
 import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)
@@ -39,7 +40,9 @@ drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
          Left err -> log $ show err
-         Right figs -> sequence_ $ flip drawLinkFig (Left $ botOf) <$> figs
+         Right figs -> do
+            addEditorView "codemirror-expt"
+            sequence_ $ flip drawLinkFig (Left $ botOf) <$> figs
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =

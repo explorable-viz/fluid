@@ -3,7 +3,6 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.CodeMirror.State (addEditorView)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
@@ -125,7 +124,6 @@ type LinkResult =
 
 drawLinkFig :: LinkFig -> Selector + Selector -> Effect Unit
 drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } δv = do
-   addEditorView "codemirror-expt"
    log $ "Redrawing " <> divId
    let
       v1' × v2' × δv1 × δv2 × v0 = successful case δv of
