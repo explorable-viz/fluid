@@ -17,7 +17,7 @@ import Partial.Unsafe (unsafePartial)
 import Foreign.Object (lookup)
 import Web.Event.EventTarget (eventListener)
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.CodeMirror.State (EditorView, dispatch, replaceSelection)
+import App.CodeMirror.State (EditorView, blah)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
@@ -143,7 +143,7 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv =
 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s = do
-   dispatch ed [replaceSelection ed.state s]
+   blah ed s
    trace ed \_ -> pure unit
 
 drawFig :: Fig -> Selector -> Effect Unit

@@ -15,5 +15,6 @@ type EditorView = {
 }
 
 foreign import addEditorView :: HTMLId -> Effect EditorView
-foreign import replaceSelection :: EditorState -> String -> TransactionSpec
 foreign import dispatch :: EditorView -> Array TransactionSpec -> Effect Unit
+foreign import blah :: EditorView -> String -> Effect Unit
+foreign import replaceSelection :: EditorState -> String -> TransactionSpec

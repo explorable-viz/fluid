@@ -40,10 +40,23 @@ function replaceSelection_ (editorState, str) {
 
 function dispatch_ (editorView, specs) {
    return () => {
-      editorView.dispatch(specs)
+      trans = editorView.state.update(specs)
+      console.log(trans.state.doc.toString())
+      editorView.dispatch(trans)
+   }
+}
+
+// CodeMirror API design/documentation is a mess, so rather than exposing
+// individual methods, create our own API.
+function blah_(editorView, str) {
+   return () => {
+      const trans = editorView.state.update({changes: {from: 1, to: 3, insert: str}})
+      console.log(trans.state.doc.toString())
+      editorView.dispatch(trans)
    }
 }
 
 export var addEditorView = addEditorView_
-export var replaceSelection = curry2(replaceSelection_)
+export var blah = curry2(blah_)
 export var dispatch = curry2(dispatch_)
+export var replaceSelection = curry2(replaceSelection_)
