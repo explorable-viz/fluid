@@ -4,15 +4,17 @@ import Prelude
 import App.Util (HTMLId)
 import Effect (Effect)
 
-type TransactionSpec = {
-}
+type TransactionSpec =
+   {
+   }
 
-type EditorState = {
-}
+type EditorState =
+   {
+   }
 
-type EditorView = {
-   state :: EditorState
-}
+type EditorView =
+   { state :: EditorState
+   }
 
 foreign import addEditorView :: HTMLId -> Effect EditorView
 foreign import dispatch :: EditorView -> Array TransactionSpec -> Effect Unit
