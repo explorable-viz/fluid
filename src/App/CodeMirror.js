@@ -52,9 +52,9 @@ function blah_ (editorView, str) {
    }
 }
 
-function update_(editorState, spec) {
+function update_(editorState, specs) {
    return () => {
-      return editorState.update(spec)
+      return editorState.update(...specs)
    }
 }
 

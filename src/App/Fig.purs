@@ -138,7 +138,7 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv =
    drawView divId (\selector -> drawLinkFig fig ed (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
    drawView divId (\selector -> drawLinkFig fig ed (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
-   drawCode1 ed "Some stuff to go here"
+   drawCode2 ed "Some stuff to go here"
 
 drawCode1 :: EditorView -> String -> Effect Unit
 drawCode1 ed s = do
@@ -146,7 +146,7 @@ drawCode1 ed s = do
 
 drawCode2 :: EditorView -> String -> Effect Unit
 drawCode2 ed s = do
-   tr <- update ed.state [ { changes: {from: 1, to: 3, insert: s} } ]
+   tr <- update ed.state [ { changes: { from: 1, to: 3, insert: s } } ]
    dispatch ed tr
 
 drawFig :: Fig -> Selector -> Effect Unit
