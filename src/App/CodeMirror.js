@@ -45,13 +45,6 @@ function dispatch_ (editorView, tr) {
    }
 }
 
-function blah_ (editorView, str) {
-   return () => {
-      const tr = editorView.state.update({changes: {from: 1, to: 3, insert: str}})
-      editorView.dispatch(tr)
-   }
-}
-
 function update_(editorState, specs) {
    return () => {
       return editorState.update(...specs)
@@ -59,7 +52,6 @@ function update_(editorState, specs) {
 }
 
 export var addEditorView = addEditorView_
-export var blah = curry2(blah_)
 export var dispatch = curry2(dispatch_)
 export var replaceSelection = curry2(replaceSelection_)
 export var update = curry2(update_)
