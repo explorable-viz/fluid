@@ -143,7 +143,7 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv =
 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s = do
-   tr <- update ed.state [ { changes: { from: 1, to: 3, insert: s } } ]
+   tr <- update ed.state [ { changes: { from: 0, to: 0, insert: s } } ]
    dispatch ed tr
 
 drawFig :: Fig -> Selector -> Effect Unit

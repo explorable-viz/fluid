@@ -20,7 +20,7 @@ import {EditorView, keymap} from "@codemirror/view"
 import {defaultKeymap} from "@codemirror/commands"
 
 let startState = EditorState.create({
-  doc: "Hello World",
+  doc: "",
   extensions: [keymap.of(defaultKeymap)]
 })
 
