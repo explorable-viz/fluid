@@ -8,8 +8,8 @@ import Effect (Effect)
 -- supports our use cases.
 
 type ChangeSpec =
-   { from :: Number,
-     to :: Number,
+   { from :: Int,
+     to :: Int,
      insert :: String
    }
 

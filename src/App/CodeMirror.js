@@ -46,7 +46,7 @@ function dispatch_ (editorView, specs) {
    }
 }
 
-function blah_(editorView, str) {
+function blah_ (editorView, str) {
    return () => {
       const trans = editorView.state.update({changes: {from: 1, to: 3, insert: str}})
       console.log(trans.state.doc.toString())
