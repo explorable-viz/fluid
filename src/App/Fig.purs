@@ -146,7 +146,7 @@ drawCode1 ed s = do
 
 drawCode2 :: EditorView -> String -> Effect Unit
 drawCode2 ed s = do
-   let tr = update ed.state [ { changes: {from: 1, to: 3, insert: s} } ]
+   tr <- update ed.state [ { changes: {from: 1, to: 3, insert: s} } ]
    dispatch ed tr
 
 drawFig :: Fig -> Selector -> Effect Unit

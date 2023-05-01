@@ -53,7 +53,9 @@ function blah_ (editorView, str) {
 }
 
 function update_(editorState, spec) {
-   return editorState.update(spec)
+   return () => {
+      return editorState.update(spec)
+   }
 }
 
 export var addEditorView = addEditorView_
