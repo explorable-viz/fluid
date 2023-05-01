@@ -1,4 +1,8 @@
 @charset "UTF-8";
+@font-face {
+   font-family: "Fira Code";
+   src: url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap");
+ }
 
 .glowing,
 a {
@@ -122,4 +126,9 @@ nav ul li a {
 
 nav ul li a.active-page {
    text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0
+}
+
+.cm-line {
+   font-family: 'Fira Code';
+   font-size: 8pt;
 }
