@@ -9,7 +9,7 @@ import Data.List (List(..), (:), singleton)
 import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
-import Debug (trace)
+-- import Debug (trace)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
@@ -17,7 +17,7 @@ import Partial.Unsafe (unsafePartial)
 import Foreign.Object (lookup)
 import Web.Event.EventTarget (eventListener)
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.CodeMirror (EditorView, blah, update)
+import App.CodeMirror (EditorView, blah{-, dispatch, update-})
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
@@ -144,8 +144,8 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv =
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s = do
    blah ed s
-   let tr = update ed.state [ { changes: {from: 1, to: 3, insert: s} } ]
-   trace tr \_ -> pure unit
+--   let tr = update ed.state [ { changes: {from: 1, to: 3, insert: s} } ]
+--   dispatch ed tr
 
 drawFig :: Fig -> Selector -> Effect Unit
 drawFig fig@{ spec: { divId } } δv = do

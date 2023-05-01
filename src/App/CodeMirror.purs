@@ -30,7 +30,7 @@ type TransactionSpec =
    }
 
 foreign import addEditorView :: HTMLId -> Effect EditorView
-foreign import dispatch :: EditorView -> Array TransactionSpec -> Effect Unit
+foreign import dispatch :: EditorView -> Transaction -> Effect Unit
 foreign import blah :: EditorView -> String -> Effect Unit
 foreign import replaceSelection :: EditorState -> String -> TransactionSpec
 foreign import update :: EditorState -> Array TransactionSpec -> Transaction

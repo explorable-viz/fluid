@@ -38,19 +38,17 @@ function replaceSelection_ (editorState, str) {
    return editorState.replaceSelection(str)
 }
 
-function dispatch_ (editorView, specs) {
+function dispatch_ (editorView, tr) {
    return () => {
-      trans = editorView.state.update(specs)
-      console.log(trans.state.doc.toString())
-      editorView.dispatch(trans)
+      console.log(tr.state.doc.toString())
+      editorView.dispatch(tr)
    }
 }
 
 function blah_ (editorView, str) {
    return () => {
-      const trans = editorView.state.update({changes: {from: 1, to: 3, insert: str}})
-      console.log(trans.state.doc.toString())
-      editorView.dispatch(trans)
+      const tr = editorView.state.update({changes: {from: 1, to: 3, insert: str}})
+      editorView.dispatch(tr)
    }
 }
 
