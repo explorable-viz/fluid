@@ -51,6 +51,7 @@
       <p></p>Try the data linking by selecting (clicking on) the bar for Germany in the left-hand chart below. When a view selection is active, we can automatically generate what we call a <b>data selection</b>: a restricted view of a dataset where only relevant rows are shown and relevant cells within those rows are highlighted. Now try selecting some of the data points for the years 2017 and 2018 in the right-hand chart. (Zoom in if it's hard to select the points.) The relationship between the output selection and the resulting input selection is <i>monotonic</i>: the more output you select, the more input is selected. (The UI doesn't support this yet, but it is also meaningful to select input and have the output selection be derived automatically.)
 
       <p><div class="parent"><div class="center" id="fig-1"></div></div></p>
+      <p><div id="codemirror-expt"></div></p>
 
       <p>Hand-crafting transparency features like these would involve manually tracking the dependencies between input and output. Fluid does this automatically, allowing the programmer to simply express the bar chart and line chart as pure functions, using standard functional programming features such as higher-order functions and list comprehensions. Take a look at the source code below:
          <details><summary>bar-chart.fld</summary>
