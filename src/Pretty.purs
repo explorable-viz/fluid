@@ -143,7 +143,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Let (E.VarDef σ e) e') = atop (hspace [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
       (pretty e')
    pretty (E.LetRec δ e) = atop (hspace [ text str.let_, pretty δ, text str.in_ ]) (pretty e)
-   pretty (E.Project _ _) = error "todo"
+   pretty (E.Project e x) = pretty e :<>: text str.dot :<>: pretty x
    pretty (E.App e e') = hspace [ pretty e, pretty e' ]
    pretty (E.Sugar _ e) = pretty e
 

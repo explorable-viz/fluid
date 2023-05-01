@@ -1,12 +1,14 @@
 module App.Main where
 
 import Prelude hiding (absurd)
+
+import App.CodeMirror (addEditorView)
+import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
-import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
 import Lattice (botOf)
 import Module (File(..))
 
@@ -33,13 +35,14 @@ fig2 =
    , xs: [ "image", "filter" ]
    }
 
--- TODO: consolidate these two.
 drawLinkFigs :: Array (Aff LinkFig) -> Effect Unit
 drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
          Left err -> log $ show err
-         Right figs -> sequence_ $ flip drawLinkFig (Left $ botOf) <$> figs
+         Right figs -> do
+            ed <- addEditorView "codemirror-expt"
+            sequence_ $ (\fig -> drawLinkFig fig ed (Left $ botOf)) <$> figs
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =

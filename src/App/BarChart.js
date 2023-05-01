@@ -1,7 +1,7 @@
 "use strict"
 
-import * as d3 from "d3";
-import * as d3tip from "d3-tip";
+import * as d3 from "d3"
+import * as d3tip from "d3-tip"
 
 // This prelude currently duplicated across all FFI implementations.
 function curry2 (f) {
@@ -119,4 +119,4 @@ function drawBarChart_ (
    }
 }
 
-export var drawBarChart = curry4(drawBarChart_);
+export var drawBarChart = curry4(drawBarChart_)
