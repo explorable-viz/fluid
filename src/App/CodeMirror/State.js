@@ -46,8 +46,6 @@ function dispatch_ (editorView, specs) {
    }
 }
 
-// CodeMirror API design/documentation is a mess, so rather than exposing
-// individual methods, create our own API.
 function blah_(editorView, str) {
    return () => {
       const trans = editorView.state.update({changes: {from: 1, to: 3, insert: str}})

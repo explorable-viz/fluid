@@ -4,8 +4,17 @@ import Prelude
 import App.Util (HTMLId)
 import Effect (Effect)
 
+-- The CodeMirror API, documented in TypeScript, is horrendous. Expose the smallest subset that
+-- supports our use cases.
+
+type ChangeSpec =
+   { from :: Number,
+     to :: Number,
+     insert :: String
+   }
+
 type TransactionSpec =
-   {
+   { changes :: ChangeSpec
    }
 
 type EditorState =
