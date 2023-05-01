@@ -8,9 +8,9 @@ import Effect (Effect)
 -- supports our use cases.
 
 type ChangeSpec =
-   { from :: Int,
-     to :: Int,
-     insert :: String
+   { from :: Int
+   , to :: Int
+   , insert :: String
    }
 
 type EditorState =
