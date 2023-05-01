@@ -2,7 +2,7 @@ module App.Main where
 
 import Prelude hiding (absurd)
 
-import App.CodeMirror.State (addEditorView)
+import App.CodeMirror (addEditorView)
 import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)

@@ -1,4 +1,4 @@
-module App.CodeMirror.State where
+module App.CodeMirror where
 
 import Prelude
 import App.Util (HTMLId)
