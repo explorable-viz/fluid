@@ -9,7 +9,6 @@ import Data.List (List(..), (:), singleton)
 import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
--- import Debug (trace)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
@@ -17,7 +16,7 @@ import Partial.Unsafe (unsafePartial)
 import Foreign.Object (lookup)
 import Web.Event.EventTarget (eventListener)
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.CodeMirror (EditorView, blah{-, dispatch, update-})
+import App.CodeMirror (EditorView, blah, dispatch, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
@@ -139,13 +138,16 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv =
    drawView divId (\selector -> drawLinkFig fig ed (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
    drawView divId (\selector -> drawLinkFig fig ed (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
-   drawCode ed "Some stuff to go here"
+   drawCode1 ed "Some stuff to go here"
 
-drawCode :: EditorView -> String -> Effect Unit
-drawCode ed s = do
+drawCode1 :: EditorView -> String -> Effect Unit
+drawCode1 ed s = do
    blah ed s
---   let tr = update ed.state [ { changes: {from: 1, to: 3, insert: s} } ]
---   dispatch ed tr
+
+drawCode2 :: EditorView -> String -> Effect Unit
+drawCode2 ed s = do
+   let tr = update ed.state [ { changes: {from: 1, to: 3, insert: s} } ]
+   dispatch ed tr
 
 drawFig :: Fig -> Selector -> Effect Unit
 drawFig fig@{ spec: { divId } } δv = do
