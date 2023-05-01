@@ -13,10 +13,6 @@ type ChangeSpec =
      insert :: String
    }
 
-type TransactionSpec =
-   { changes :: ChangeSpec
-   }
-
 type EditorState =
    {
    }
@@ -25,7 +21,16 @@ type EditorView =
    { state :: EditorState
    }
 
+type Transaction =
+   {
+   }
+
+type TransactionSpec =
+   { changes :: ChangeSpec
+   }
+
 foreign import addEditorView :: HTMLId -> Effect EditorView
 foreign import dispatch :: EditorView -> Array TransactionSpec -> Effect Unit
 foreign import blah :: EditorView -> String -> Effect Unit
 foreign import replaceSelection :: EditorState -> String -> TransactionSpec
+foreign import update :: EditorState -> Array TransactionSpec -> Transaction

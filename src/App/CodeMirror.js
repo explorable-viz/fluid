@@ -54,7 +54,12 @@ function blah_(editorView, str) {
    }
 }
 
+function update_(editorState, spec) {
+   return editorState.update(spec)
+}
+
 export var addEditorView = addEditorView_
 export var blah = curry2(blah_)
 export var dispatch = curry2(dispatch_)
 export var replaceSelection = curry2(replaceSelection_)
+export var update = curry2(update_)
