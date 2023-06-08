@@ -19,6 +19,7 @@ import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
 import Pretty (class Pretty, prettyP)
+import Pretty2 (pretty)
 import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..), (<+>))
@@ -45,6 +46,7 @@ testWithSetup (File file) expected v_expect_opt setup =
       it file \(γ × s) -> do
          let
             e = successful (desugFwd' s)
+            _ = pretty s
             t × v = successful (eval γ e bot)
             v' = fromMaybe identity (fst <$> v_expect_opt) v
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
