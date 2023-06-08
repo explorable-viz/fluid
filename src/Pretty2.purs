@@ -1,4 +1,4 @@
-module Pretty2 where 
+module Pretty2 where
 
 import Text.Pretty (Doc, empty)
 import SExpr (Expr)
