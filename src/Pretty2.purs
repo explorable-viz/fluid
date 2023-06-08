@@ -1,10 +1,12 @@
 module Pretty2 where
 
-import Text.Pretty (Doc, empty)
-import SExpr (Expr)
+import Prelude
+import Text.Pretty (Doc, empty, text)
+import SExpr (Expr(..))
 
 emptyDoc :: Doc
 emptyDoc = empty 0 0
 
 pretty :: forall a. Expr a -> Doc
+pretty (Int _ n) = text (show n) 
 pretty _ = emptyDoc
