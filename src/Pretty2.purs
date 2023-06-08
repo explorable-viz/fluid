@@ -15,5 +15,6 @@ pretty (Int _ n) = text (show n)
 pretty (Var x) = text x
 pretty (App s s') = pretty s :<>: pretty s'
 pretty(BinaryApp s x s') = pretty s :<>: text x :<>: pretty s'
+pretty(IfElse s s_1 s_2) = text "if" :<>: pretty s :<>: text "then" :<>: pretty s_1 :<>: text "else" :<>: pretty s_2
 
 pretty _ = emptyDoc
