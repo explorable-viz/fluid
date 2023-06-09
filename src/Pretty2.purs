@@ -19,9 +19,11 @@ pretty (App s s') = pretty s :<>: pretty s'
 pretty (BinaryApp s x s') = pretty s :<>: text x :<>: pretty s'
 pretty (IfElse s s_1 s_2) = text "if" :<>: pretty s :<>: text "then" :<>: pretty s_1 :<>: text "else" :<>: pretty s_2
 pretty (Project s x) = pretty s :<>: text "." :<>: text x
+pretty (Record _ x) = text "{" :<>: prettyAuxillaryFunc x :<>: text "}" -- formatting needs fixing 
 pretty _ = emptyDoc
 
 data Tree a = Leaf | Node a (Tree a) (Tree a)
+
 
 -- subtle error in code needs fixing
 prettyAuxillaryFunc :: forall a. List (Bind (Expr a)) -> Doc
