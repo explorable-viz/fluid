@@ -2,12 +2,12 @@ module Pretty2 where
 
 import Prelude
 import Text.Pretty (Doc, empty, text, beside, atop)
-import SExpr (Expr(..),Pattern(..), Clauses(..), Clause(..), RecDef(..), RecDefs(..), Branch(..))
+import SExpr (Expr(..),Pattern(..), Clauses(..), Clause(..))
 import Data.List (List(..))
 import Bindings (Bind, key, val)
 import Data.List.NonEmpty (toList)
 import Data.Foldable(foldl)
-import Util ((×))
+import Util ((×), type (×))
 
 infixl 5 beside as :<>:
 infixl 5 atop as .-.
@@ -54,7 +54,7 @@ varClauses :: forall a. Expr a -> Clause a -> Doc
 varClauses (Var x) (Clause (ps × e)) = text x :<>: prettyAuxillaryFuncPatterns (toList ps):<>: text "=" :<>: pretty e
 varClauses _ _ = emptyDoc
 
-varClauses2 :: (forall a. Expr a × Clause a) -> Doc 
+varClauses2 :: (forall a. (Expr a) × Clause a) -> Doc 
 varClauses2 ((Var x) × (Clause (ps × e))) =  text x :<>: prettyAuxillaryFuncPatterns (toList ps):<>: text "=" :<>: pretty e
 varClauses2 _ = emptyDoc
 
@@ -64,4 +64,5 @@ prettyAuxillaryFuncClauses (Prefix p@(Var _x)) (Clauses cs) = let docs = map (va
 prettyAuxillaryFuncClauses _ _ = emptyDoc
 
 --prettyRecursiveFunc :: RecDefs -> Doc 
+
 --prettyRecursiveFunc _ = emptyDoc
