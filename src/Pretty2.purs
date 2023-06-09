@@ -2,9 +2,11 @@ module Pretty2 where
 
 import Prelude
 import Text.Pretty (Doc, empty, text, beside, atop)
-import SExpr (Expr(..))
+import SExpr (Expr(..),Pattern(..))
 import Data.List (List(..))
 import Bindings (Bind, key, val)
+
+
 
 infixl 5 beside as :<>:
 infixl 5 atop as .-.
@@ -30,3 +32,17 @@ prettyAuxillaryFunc :: forall a. List (Bind (Expr a)) -> Doc
 prettyAuxillaryFunc (Cons x xs) = text (key x) :<>: text ":" :<>: pretty (val x) .-. prettyAuxillaryFunc xs
 prettyAuxillaryFunc Nil = emptyDoc
 
+data InFront a = Expr a | Unit 
+
+--prettyAuxillaryFuncClauses :: forall a. InFront a -> Clauses a -> Doc 
+--prettyAuxillaryFuncClauses _ _ = emptyDoc
+--prettyAuxillaryFuncClauses Unit (Cons x Nil) = 
+
+prettyAuxillaryFuncPattern :: Pattern -> Doc 
+prettyAuxillaryFuncPattern (PVar x) = text x 
+prettyAuxillaryFuncPattern _ = emptyDoc
+-- prettyAuxillaryFuncPattern (PRecord (List (Bind Pattern))) =
+
+prettyAuxillaryFuncPatterns :: List Pattern -> Doc
+prettyAuxillaryFuncPatterns (Cons x xs) = prettyAuxillaryFuncPattern x .-. prettyAuxillaryFuncPatterns xs 
+prettyAuxillaryFuncPatterns Nil = emptyDoc 
