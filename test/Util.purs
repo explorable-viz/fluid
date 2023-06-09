@@ -18,7 +18,8 @@ import Eval (eval)
 import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
-import Pretty (class Pretty, prettyP)
+import Pretty (class Pretty, prettyP, render)
+import Pretty2 (pretty)
 import SExpr (Expr) as S
 import Util (type (×), (×), successful)
 import Val (Env, Val(..), (<+>))
@@ -34,9 +35,9 @@ run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
 checkPretty :: forall a. Pretty a => String -> String -> a -> Aff Unit
-checkPretty msg expected x =
-   trace (msg <> ":\n" <> prettyP x) \_ ->
-      prettyP x `shouldEqual` expected
+checkPretty _ expected x =
+   -- trace (msg <> ":\n" <> prettyP x) \_ ->
+   prettyP x `shouldEqual` expected
 
 -- v_expect_opt is optional output slice + expected source slice; expected is expected result after round-trip.
 testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
@@ -50,11 +51,12 @@ testWithSetup (File file) expected v_expect_opt setup =
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
             s' = desugBwd' e' :: S.Expr _
             _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
-         unless (isGraphical v'') (checkPretty "Value" expected v'')
-         case snd <$> v_expect_opt of
-            Nothing -> pure unit
-            Just file_expect ->
-               loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+         trace (render (pretty s)) \_ -> do
+            unless (isGraphical v'') (checkPretty "Value" expected v'')
+            case snd <$> v_expect_opt of
+               Nothing -> pure unit
+               Just file_expect ->
+                  loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
