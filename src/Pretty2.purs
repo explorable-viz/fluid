@@ -2,7 +2,7 @@ module Pretty2 where
 
 import Prelude
 import Text.Pretty (Doc, empty, text, beside, atop)
-import SExpr (Expr(..),Pattern(..), Clauses(..), Clause(..))
+import SExpr (Expr(..),Pattern(..), Clauses(..), Clause(..), RecDef(..), RecDefs(..), Branch(..))
 import Data.List (List(..))
 import Bindings (Bind, key, val)
 import Data.List.NonEmpty (toList)
@@ -47,10 +47,6 @@ prettyAuxillaryFuncPatterns :: List Pattern -> Doc
 prettyAuxillaryFuncPatterns (Cons x xs) = prettyAuxillaryFuncPattern x .-. prettyAuxillaryFuncPatterns xs 
 prettyAuxillaryFuncPatterns Nil = emptyDoc 
 
---prettyAuxillaryFuncClauses :: forall a. InFront a -> Clauses a -> Doc 
---prettyAuxillaryFuncClauses Unit (Clauses (NE.Cons x Nil)) = prettyAuxillaryFuncPatterns (key x) :<>: text "=" :<>: pretty (val x)
---prettyAuxillaryFuncClauses _ _ = emptyDoc
-
 unitClauses :: forall a. Clause a -> Doc 
 unitClauses (Clause (ps × e)) = prettyAuxillaryFuncPatterns (toList ps):<>: text "=" :<>: pretty e
 
@@ -58,8 +54,14 @@ varClauses :: forall a. Expr a -> Clause a -> Doc
 varClauses (Var x) (Clause (ps × e)) = text x :<>: prettyAuxillaryFuncPatterns (toList ps):<>: text "=" :<>: pretty e
 varClauses _ _ = emptyDoc
 
+varClauses2 :: (forall a. Expr a × Clause a) -> Doc 
+varClauses2 ((Var x) × (Clause (ps × e))) =  text x :<>: prettyAuxillaryFuncPatterns (toList ps):<>: text "=" :<>: pretty e
+varClauses2 _ = emptyDoc
+
 prettyAuxillaryFuncClauses :: forall a. InFront a -> Clauses a -> Doc 
 prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (.-.) emptyDoc docs 
 prettyAuxillaryFuncClauses (Prefix p@(Var _x)) (Clauses cs) = let docs = map (varClauses p) cs in foldl (.-.) emptyDoc docs 
 prettyAuxillaryFuncClauses _ _ = emptyDoc
 
+--prettyRecursiveFunc :: RecDefs -> Doc 
+--prettyRecursiveFunc _ = emptyDoc
