@@ -40,9 +40,15 @@ data InFront a = Expr a | Unit
 
 prettyAuxillaryFuncPattern :: Pattern -> Doc 
 prettyAuxillaryFuncPattern (PVar x) = text x 
+prettyAuxillaryFuncPattern (PRecord x) = text "{" :<>: prettyAuxillaryFuncVarPatt x :<>: text "}"
+prettyAuxillaryFuncPattern (PConstr c x) = text c :<>: text "(" :<>: prettyAuxillaryFuncPatterns x :<>: text ")"
 prettyAuxillaryFuncPattern _ = emptyDoc
--- prettyAuxillaryFuncPattern (PRecord (List (Bind Pattern))) =
 
 prettyAuxillaryFuncPatterns :: List Pattern -> Doc
 prettyAuxillaryFuncPatterns (Cons x xs) = prettyAuxillaryFuncPattern x .-. prettyAuxillaryFuncPatterns xs 
 prettyAuxillaryFuncPatterns Nil = emptyDoc 
+
+prettyAuxillaryFuncVarPatt :: List (Bind (Pattern)) -> Doc
+prettyAuxillaryFuncVarPatt (Cons x xs) = text (key x) :<>: text ":" :<>: prettyAuxillaryFuncPattern (val x) .-. prettyAuxillaryFuncVarPatt xs
+prettyAuxillaryFuncVarPatt Nil = emptyDoc
+
