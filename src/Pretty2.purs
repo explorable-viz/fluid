@@ -5,7 +5,7 @@ import Text.Pretty (Doc, empty, text, beside, atop)
 import SExpr (Expr(..),Pattern(..), Clauses(..), Clause(..), RecDefs, Branch)
 import Data.List (List(..))
 import Bindings (Bind, key, val)
-import Data.List.NonEmpty (NonEmptyList, toList)
+import Data.List.NonEmpty (NonEmptyList, toList, groupBy)
 import Data.Foldable(foldl)
 import Util ((×), error, type(×))
 
@@ -72,8 +72,15 @@ prettyAuxillaryFuncClauses _ _ = emptyDoc
 
 -- prettyRecursiveFunc (RecDefs x) = let docs = map varClauses2 x in foldl (.-.) emptyDoc docs 
 
+-- grouping by variable name 
+-- RecDefs a  is just a Non Empty List of Var x Clause a
+-- RecDefs = NonEmptyList (Branch a) 
 auxillaryFunction1 :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
-auxillaryFunction1 _ = error "to do"
+auxillaryFunction1 x = groupBy (\p q -> key p == key q) x 
 
-auxillaryFunction2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> NonEmptyList (NonEmptyList (String × Clauses a))
+-- 
+auxillaryFunction2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> NonEmptyList (String × NonEmptyList (Clauses a))
 auxillaryFunction2 _ = error "to do"
+
+auxillaryFunction3 :: forall a. NonEmptyList (String × NonEmptyList (Clauses a)) -> Doc
+auxillaryFunction3 _ = error "to do"
