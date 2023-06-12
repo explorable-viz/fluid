@@ -85,7 +85,7 @@ auxillaryFunction21 x = key (head x) × map (\y -> val y) x
 -- auxillaryFunction21 _ = error "to do"
 
 auxillaryFunction2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> NonEmptyList (String × NonEmptyList (Clause a))
-auxillaryFunction2 _ = 
+auxillaryFunction2 x = map auxillaryFunction21 x
 
 auxillaryFunction3 :: forall a. NonEmptyList (String × NonEmptyList (Clauses a)) -> Doc
 auxillaryFunction3 _ = error "to do"
