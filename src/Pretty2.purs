@@ -13,6 +13,11 @@ infixl 5 beside as :<>:
 infixl 5 atop as .-.
 data InFront = Prefix (String) | Unit
 
+space :: Doc -> Doc -> Doc 
+space x y = x :<>: text " " :<>: y
+
+infixl 5 space as :--:
+
 emptyDoc :: Doc
 emptyDoc = empty 0 0
 
@@ -24,7 +29,7 @@ pretty (BinaryApp s x s') = pretty s :<>: text x :<>: pretty s'
 pretty (IfElse s s_1 s_2) = text "if" :<>: pretty s :<>: text "then" :<>: pretty s_1 :<>: text "else" :<>: pretty s_2
 pretty (Project s x) = pretty s :<>: text "." :<>: text x
 pretty (Record _ x) = text "{" :<>: prettyAuxillaryFuncVarExpr x :<>: text "}" -- formatting needs fixing 
-pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}"
+pretty (Lambda (Clauses cs)) = text "fun" :--: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}"
 pretty (LetRec g s) = text "let" :<>: combiningAuxillaryFunctionsRec g :<>: text "in" :<>: pretty s
 pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: combiningMatch x
 pretty (ListEmpty _) = text "[]"
