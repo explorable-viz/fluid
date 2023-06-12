@@ -7,7 +7,7 @@ import Data.List (List(..))
 import Bindings (Bind, key, val)
 import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head)
 import Data.Foldable(foldl)
-import Util ((×), error, type(×))
+import Util ((×), type(×))
 
 infixl 5 beside as :<>:
 infixl 5 atop as .-.
@@ -15,7 +15,7 @@ infixl 5 atop as .-.
 emptyDoc :: Doc
 emptyDoc = empty 0 0
 
-data InFront a =  Prefix (Expr a) | Unit
+--data InFront a =  Prefix (Expr a) | Unit
 
 pretty :: forall a. Expr a -> Doc
 pretty (Int _ n) = text (show n)
@@ -52,14 +52,25 @@ prettyAuxillaryFuncPatterns Nil = emptyDoc
 unitClauses :: forall a. Clause a -> Doc 
 unitClauses (Clause (ps × e)) = prettyAuxillaryFuncPatterns (toList ps):<>: text "=" :<>: pretty e
 
-varClauses :: forall a. Expr a -> Clause a -> Doc 
-varClauses (Var x) (Clause (ps × e)) = text x :<>: prettyAuxillaryFuncPatterns (toList ps):<>: text "=" :<>: pretty e
-varClauses _ _ = emptyDoc
+--varClauses :: forall a. Expr a -> Clause a -> Doc 
+--varClauses (Var x) (Clause (ps × e)) = text x :<>: prettyAuxillaryFuncPatterns (toList ps):<>: text "=" :<>: pretty e
+--varClauses _ _ = emptyDoc
 
-prettyAuxillaryFuncClauses :: forall a. InFront a -> Clauses a -> Doc 
+--prettyAuxillaryFuncClauses :: forall a. InFront a -> Clauses a -> Doc 
+--prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (.-.) emptyDoc docs 
+--prettyAuxillaryFuncClauses (Prefix p@(Var _x)) (Clauses cs) = let docs = map (varClauses p) cs in foldl (.-.) emptyDoc docs 
+--prettyAuxillaryFuncClauses _ _ = emptyDoc
+
+data InFront =  Prefix (String) | Unit
+
+varClauses :: forall a. String -> Clause a -> Doc 
+varClauses x (Clause (ps × e)) = text x :<>: prettyAuxillaryFuncPatterns (toList ps):<>: text "=" :<>: pretty e
+--varClauses _ _ = emptyDoc
+
+prettyAuxillaryFuncClauses :: forall a. InFront -> Clauses a -> Doc 
 prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (.-.) emptyDoc docs 
-prettyAuxillaryFuncClauses (Prefix p@(Var _x)) (Clauses cs) = let docs = map (varClauses p) cs in foldl (.-.) emptyDoc docs 
-prettyAuxillaryFuncClauses _ _ = emptyDoc
+prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = let docs = map (varClauses x) cs in foldl (.-.) emptyDoc docs 
+--prettyAuxillaryFuncClauses _ _ = emptyDoc
 
 --helperFunctionTemp :: forall a. List (Branch a) -> Doc 
 --helperFunctionTemp (Cons x xs) = (varClauses (key x) (val x)) .-. (helperFunctionTemp xs)
@@ -87,5 +98,9 @@ auxillaryFunction21 x = key (head x) × map (\y -> val y) x
 auxillaryFunction2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> NonEmptyList (String × NonEmptyList (Clause a))
 auxillaryFunction2 x = map auxillaryFunction21 x
 
-auxillaryFunction3 :: forall a. NonEmptyList (String × NonEmptyList (Clauses a)) -> Doc
-auxillaryFunction3 _ = error "to do"
+auxillaryFunction31 :: forall a. String × NonEmptyList (Clause a) -> Doc 
+auxillaryFunction31 (a × b) = prettyAuxillaryFuncClauses (Prefix a) (Clauses b)
+
+--auxillaryFunction3 :: forall a. NonEmptyList (String × NonEmptyList (Clause a)) -> Doc
+--auxillaryFunction3 x = let docs = map prettyAuxillaryFuncClauses
+--auxillaryFunction3 _ = error "to do"
