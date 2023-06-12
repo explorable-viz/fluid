@@ -101,6 +101,6 @@ auxillaryFunction2 x = map auxillaryFunction21 x
 auxillaryFunction31 :: forall a. String × NonEmptyList (Clause a) -> Doc 
 auxillaryFunction31 (a × b) = prettyAuxillaryFuncClauses (Prefix a) (Clauses b)
 
---auxillaryFunction3 :: forall a. NonEmptyList (String × NonEmptyList (Clause a)) -> Doc
---auxillaryFunction3 x = let docs = map prettyAuxillaryFuncClauses
---auxillaryFunction3 _ = error "to do"
+auxillaryFunction3 :: forall a. NonEmptyList (String × NonEmptyList (Clause a)) -> Doc
+auxillaryFunction3 x = let docs = map auxillaryFunction31 x in foldl (.-.) emptyDoc docs 
+-- auxillaryFunction3 _ = error "to do"
