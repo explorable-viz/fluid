@@ -25,7 +25,8 @@ pretty (BinaryApp s x s') = pretty s :<>: text x :<>: pretty s'
 pretty (IfElse s s_1 s_2) = text "if" :<>: pretty s :<>: text "then" :<>: pretty s_1 :<>: text "else" :<>: pretty s_2
 pretty (Project s x) = pretty s :<>: text "." :<>: text x
 pretty (Record _ x) = text "{" :<>: prettyAuxillaryFunc x :<>: text "}" -- formatting needs fixing 
-pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}"  
+pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}" 
+-- pretty (LetRec (RecDefs a) (Expr a)) = text "let" :<>:  
 -- pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: prettyAuxillaryFuncClauses Unit (Clauses (Clause x))
 pretty _ = emptyDoc
 
@@ -104,3 +105,6 @@ auxillaryFunction31 (a × b) = prettyAuxillaryFuncClauses (Prefix a) (Clauses b)
 auxillaryFunction3 :: forall a. NonEmptyList (String × NonEmptyList (Clause a)) -> Doc
 auxillaryFunction3 x = let docs = map auxillaryFunction31 x in foldl (.-.) emptyDoc docs 
 -- auxillaryFunction3 _ = error "to do"
+
+combiningAuxillaryFunctions :: forall a. RecDefs a -> Doc 
+combiningAuxillaryFunctions x =  auxillaryFunction3 (auxillaryFunction2 (auxillaryFunction1 x)) 
