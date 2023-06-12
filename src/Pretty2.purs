@@ -32,7 +32,7 @@ pretty (ListNonEmpty _ s x) = text "[" :<>: pretty s :<>: listAuxillaryFunc x :<
 pretty _ = emptyDoc
 
 listAuxillaryFunc :: forall a. ListRest a -> Doc
-listAuxillaryFunc (Next _ s x) = text "," :<>:  pretty s :<>:  listAuxillaryFunc x
+listAuxillaryFunc (Next _ s x) = text "," :<>: pretty s :<>: listAuxillaryFunc x
 listAuxillaryFunc (End _) = emptyDoc
 
 matchAuxillaryFunc1 :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
