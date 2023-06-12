@@ -78,7 +78,9 @@ prettyAuxillaryFuncClauses _ _ = emptyDoc
 auxillaryFunction1 :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
 auxillaryFunction1 x = groupBy (\p q -> key p == key q) x 
 
--- 
+auxillaryFunction21 :: forall a. NonEmptyList (Branch a) -> Var × Clauses a 
+auxillaryFunction21 _ = error "to do"
+
 auxillaryFunction2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> NonEmptyList (String × NonEmptyList (Clauses a))
 auxillaryFunction2 _ = error "to do"
 
