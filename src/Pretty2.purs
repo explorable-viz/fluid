@@ -2,12 +2,12 @@ module Pretty2 where
 
 import Prelude
 import Text.Pretty (Doc, empty, text, beside, atop)
-import SExpr (Expr(..),Pattern(..), Clauses(..), Clause(..))
+import SExpr (Expr(..),Pattern(..), Clauses(..), Clause(..), RecDefs, Branch)
 import Data.List (List(..))
 import Bindings (Bind, key, val)
-import Data.List.NonEmpty (toList)
+import Data.List.NonEmpty (NonEmptyList, toList)
 import Data.Foldable(foldl)
-import Util ((×))
+import Util ((×), error, type(×))
 
 infixl 5 beside as :<>:
 infixl 5 atop as .-.
@@ -26,7 +26,7 @@ pretty (IfElse s s_1 s_2) = text "if" :<>: pretty s :<>: text "then" :<>: pretty
 pretty (Project s x) = pretty s :<>: text "." :<>: text x
 pretty (Record _ x) = text "{" :<>: prettyAuxillaryFunc x :<>: text "}" -- formatting needs fixing 
 pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}"  
-pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: prettyAuxillaryFuncClauses Unit (Clauses (Clause x))
+-- pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: prettyAuxillaryFuncClauses Unit (Clauses (Clause x))
 pretty _ = emptyDoc
 
 -- subtle error in code needs fixing
@@ -71,3 +71,9 @@ prettyAuxillaryFuncClauses _ _ = emptyDoc
 --prettyRecursiveFunc _ = emptyDoc
 
 -- prettyRecursiveFunc (RecDefs x) = let docs = map varClauses2 x in foldl (.-.) emptyDoc docs 
+
+auxillaryFunction1 :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
+auxillaryFunction1 _ = error "to do"
+
+auxillaryFunction2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> NonEmptyList (NonEmptyList (String × Clauses a))
+auxillaryFunction2 _ = error "to do"
