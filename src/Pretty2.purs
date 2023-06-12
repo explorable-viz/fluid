@@ -26,7 +26,7 @@ pretty (IfElse s s_1 s_2) = text "if" :<>: pretty s :<>: text "then" :<>: pretty
 pretty (Project s x) = pretty s :<>: text "." :<>: text x
 pretty (Record _ x) = text "{" :<>: prettyAuxillaryFunc x :<>: text "}" -- formatting needs fixing 
 pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}" 
--- pretty (LetRec (RecDefs a) (Expr a)) = text "let" :<>:  
+pretty (LetRec g s) = text "let" :<>: combiningAuxillaryFunctions g :<>: text "in" :<>: pretty s 
 -- pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: prettyAuxillaryFuncClauses Unit (Clauses (Clause x))
 pretty _ = emptyDoc
 
