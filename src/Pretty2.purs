@@ -5,7 +5,7 @@ import Text.Pretty (Doc, empty, text, beside, atop)
 import SExpr (Expr(..),Pattern(..), Clauses(..), Clause(..), RecDefs, Branch)
 import Data.List (List(..))
 import Bindings (Bind, key, val)
-import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head)
+import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
 import Data.Foldable(foldl)
 import Util ((×), type(×))
 
@@ -27,8 +27,29 @@ pretty (Project s x) = pretty s :<>: text "." :<>: text x
 pretty (Record _ x) = text "{" :<>: prettyAuxillaryFunc x :<>: text "}" -- formatting needs fixing 
 pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}" 
 pretty (LetRec g s) = text "let" :<>: combiningAuxillaryFunctions g :<>: text "in" :<>: pretty s 
+pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: combiningMatch x 
 -- pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: prettyAuxillaryFuncClauses Unit (Clauses (Clause x))
 pretty _ = emptyDoc
+
+matchAuxillaryFunc11 :: forall a. Pattern × Expr a -> NonEmptyList Pattern × Expr a 
+matchAuxillaryFunc11 (a × b) = singleton a × b 
+-- Clauses = NonEmptyList (Clause) = NonEmptyList (NonEmptyList Pattern x Expr a)
+matchAuxillaryFunc1 :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a) 
+matchAuxillaryFunc1 x = map matchAuxillaryFunc11 x
+-- matchAuxillaryFunc _ = error "to do"
+matchAuxillaryFunc2 :: forall a. NonEmptyList (NonEmptyList Pattern × Expr a) -> NonEmptyList (Clause a)
+matchAuxillaryFunc2 x = map (\y -> Clause y) x 
+
+matchAuxillaryFunc3 :: forall a. NonEmptyList (Clause a) -> Clauses a 
+matchAuxillaryFunc3 x = Clauses x 
+
+combiningMatch :: forall a. NonEmptyList (Pattern × Expr a) -> Doc 
+combiningMatch x = prettyAuxillaryFuncClauses Unit (matchAuxillaryFunc3 (matchAuxillaryFunc2 (matchAuxillaryFunc1 x))) 
+-- in formula sheet says to use clauses function but unsure how to
+-- since we have p1s1, p2s2 rather than p1p2p3... = s (definition of a clause)
+-- matchAuxillaryFunc :: forall a. List (Pattern × Expr a) -> Doc
+-- matchAuxillaryFunc (Cons x xs) = (prettyAuxillaryFuncPattern (key x) :<>: text "=" :<>: pretty (val x)) .-. matchAuxillaryFunc xs
+-- matchAuxillaryFunc Nil = emptyDoc
 
 -- subtle error in code needs fixing
 prettyAuxillaryFunc :: forall a. List (Bind (Expr a)) -> Doc
