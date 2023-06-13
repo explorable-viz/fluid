@@ -57,7 +57,7 @@ combiningMatch x = prettyAuxillaryFuncClauses Unit (matchAuxillaryFunc3 (matchAu
 
 -- subtle error in code needs fixing
 prettyAuxillaryFuncVarExpr :: forall a. List (Bind (Expr a)) -> Doc
-prettyAuxillaryFuncVarExpr (Cons x xs) = text (key x) :<>: text ":" :<>: pretty (val x) .-. prettyAuxillaryFuncVarExpr xs
+prettyAuxillaryFuncVarExpr (Cons x xs) = text (key x) :<>: text ":" :<>: pretty (val x) :<>: prettyAuxillaryFuncVarExpr xs -- edited atop
 prettyAuxillaryFuncVarExpr Nil = emptyDoc
 
 prettyAuxillaryFuncPattern :: Pattern -> Doc
@@ -67,7 +67,8 @@ prettyAuxillaryFuncPattern (PConstr c x) = text c :<>: text "(" :<>: prettyAuxil
 prettyAuxillaryFuncPattern _ = emptyDoc
 
 prettyAuxillaryFuncVarPatt :: List (Bind (Pattern)) -> Doc
-prettyAuxillaryFuncVarPatt (Cons x xs) = text (key x) :<>: text ":" :<>: prettyAuxillaryFuncPattern (val x) .-. prettyAuxillaryFuncVarPatt xs
+prettyAuxillaryFuncVarPatt(Cons x Nil) = text (key x) :<>: text ":" :<>: prettyAuxillaryFuncPattern (val x) :<>: prettyAuxillaryFuncVarPatt Nil -- edited atop
+prettyAuxillaryFuncVarPatt (Cons x xs) = text (key x) :<>: text ":" :<>: prettyAuxillaryFuncPattern (val x) :<>: text "," :<>: prettyAuxillaryFuncVarPatt xs -- edited atop
 prettyAuxillaryFuncVarPatt Nil = emptyDoc
 
 -- in Tex file Patt is more than one pattern but here it can be non-empty (might need to fix this)
@@ -99,7 +100,7 @@ auxillaryFunction31Rec :: forall a. String × NonEmptyList (Clause a) -> Doc
 auxillaryFunction31Rec (a × b) = prettyAuxillaryFuncClauses (Prefix a) (Clauses b)
 
 auxillaryFunction3Rec :: forall a. NonEmptyList (String × NonEmptyList (Clause a)) -> Doc
-auxillaryFunction3Rec x = let docs = map auxillaryFunction31Rec x in foldl (.-.) emptyDoc docs
+auxillaryFunction3Rec x = let docs = map auxillaryFunction31Rec x in foldl (:<>:) emptyDoc docs
 
 combiningAuxillaryFunctionsRec :: forall a. RecDefs a -> Doc
 combiningAuxillaryFunctionsRec x = auxillaryFunction3Rec (auxillaryFunction2Rec (auxillaryFunction1Rec x))
