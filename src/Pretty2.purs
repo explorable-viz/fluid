@@ -22,22 +22,22 @@ emptyDoc :: Doc
 emptyDoc = empty 0 0
 
 pretty :: forall a. Expr a -> Doc
-pretty (Int _ n) = emptyDoc :--: text (show n) :--: emptyDoc -- edited
-pretty (Var x) = text x :--: emptyDoc -- edited
+pretty (Int _ n) = text (show n)  -- edited
+pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
 pretty (App s s') = pretty s :<>: pretty s'
 pretty (BinaryApp s x s') = pretty s :--: text x :--: pretty s' -- edited
-pretty (IfElse s s_1 s_2) = text "if" :<>: pretty s :<>: text "then" :<>: pretty s_1 :<>: text "else" :<>: pretty s_2
+pretty (IfElse s s_1 s_2) = text "if" :--: pretty s :--: text "then" :--: pretty s_1 :--: text "else" :--: pretty s_2
 pretty (Project s x) = pretty s :<>: text "." :<>: text x
 pretty (Record _ x) = text "{" :<>: prettyAuxillaryFuncVarExpr x :<>: text "}" -- formatting needs fixing 
-pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :--: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}" :--: emptyDoc -- edited
-pretty (LetRec g s) = text "let" :<>: combiningAuxillaryFunctionsRec g :<>: text "in" :<>: pretty s
+pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}" :--: emptyDoc -- edited
+pretty (LetRec g s) = text "let" :--: combiningAuxillaryFunctionsRec g :--: text "in" :--: pretty s
 pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: combiningMatch x
 pretty (ListEmpty _) = text "[]"
-pretty (ListNonEmpty _ s x) = emptyDoc :<>: text "[" :<>: pretty s :<>: listAuxillaryFunc x :<>: text "]" -- edited
+pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" :<>: pretty s :<>: listAuxillaryFunc x :<>: text "]" -- edited
 pretty _ = emptyDoc
 
 listAuxillaryFunc :: forall a. ListRest a -> Doc
-listAuxillaryFunc (Next _ s x) = text "," :--: pretty s :<>: listAuxillaryFunc x
+listAuxillaryFunc (Next _ s x) = text "," :<>: pretty s :<>: listAuxillaryFunc x
 listAuxillaryFunc (End _) = emptyDoc
 
 matchAuxillaryFunc1 :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
