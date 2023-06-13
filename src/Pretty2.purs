@@ -22,22 +22,22 @@ emptyDoc :: Doc
 emptyDoc = empty 0 0
 
 pretty :: forall a. Expr a -> Doc
-pretty (Int _ n) = text (show n)
-pretty (Var x) = emptyDoc :--: text x :--: emptyDoc
+pretty (Int _ n) = emptyDoc :--: text (show n) :--: emptyDoc -- edited
+pretty (Var x) = text x :--: emptyDoc -- edited
 pretty (App s s') = pretty s :<>: pretty s'
-pretty (BinaryApp s x s') = pretty s :<>: text x :<>: pretty s'
+pretty (BinaryApp s x s') = pretty s :--: text x :--: pretty s' -- edited
 pretty (IfElse s s_1 s_2) = text "if" :<>: pretty s :<>: text "then" :<>: pretty s_1 :<>: text "else" :<>: pretty s_2
 pretty (Project s x) = pretty s :<>: text "." :<>: text x
 pretty (Record _ x) = text "{" :<>: prettyAuxillaryFuncVarExpr x :<>: text "}" -- formatting needs fixing 
-pretty (Lambda (Clauses cs)) = text "fun" :--: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}"
+pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :--: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}" :--: emptyDoc -- edited
 pretty (LetRec g s) = text "let" :<>: combiningAuxillaryFunctionsRec g :<>: text "in" :<>: pretty s
 pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: combiningMatch x
 pretty (ListEmpty _) = text "[]"
-pretty (ListNonEmpty _ s x) = text "[" :<>: pretty s :<>: listAuxillaryFunc x :<>: text "]"
+pretty (ListNonEmpty _ s x) = emptyDoc :<>: text "[" :<>: pretty s :<>: listAuxillaryFunc x :<>: text "]" -- edited
 pretty _ = emptyDoc
 
 listAuxillaryFunc :: forall a. ListRest a -> Doc
-listAuxillaryFunc (Next _ s x) = text "," :<>: pretty s :<>: listAuxillaryFunc x
+listAuxillaryFunc (Next _ s x) = text "," :--: pretty s :<>: listAuxillaryFunc x
 listAuxillaryFunc (End _) = emptyDoc
 
 matchAuxillaryFunc1 :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
@@ -72,17 +72,17 @@ prettyAuxillaryFuncVarPatt Nil = emptyDoc
 
 -- in Tex file Patt is more than one pattern but here it can be non-empty (might need to fix this)
 prettyAuxillaryFuncPatterns :: List Pattern -> Doc
-prettyAuxillaryFuncPatterns (Cons x xs) = prettyAuxillaryFuncPattern x :<>: prettyAuxillaryFuncPatterns xs -- beside may need to change 
+prettyAuxillaryFuncPatterns (Cons x xs) = prettyAuxillaryFuncPattern x :--: prettyAuxillaryFuncPatterns xs -- beside may need to change to a space
 prettyAuxillaryFuncPatterns Nil = emptyDoc
 
 unitClauses :: forall a. Clause a -> Doc
-unitClauses (Clause (ps × e)) = prettyAuxillaryFuncPatterns (toList ps) :<>: text "=" :<>: pretty e
+unitClauses (Clause (ps × e)) = prettyAuxillaryFuncPatterns (toList ps) :--: text "=" :--: pretty e -- edited beside with spaces
 
 varClauses :: forall a. String -> Clause a -> Doc
 varClauses x (Clause (ps × e)) = text x :<>: prettyAuxillaryFuncPatterns (toList ps) :<>: text "=" :<>: pretty e
 
 prettyAuxillaryFuncClauses :: forall a. InFront -> Clauses a -> Doc
-prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (:<>:) emptyDoc docs -- beside may need to change
+prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (:<>:) emptyDoc docs -- beside may need to change (changed to space)
 prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = let docs = map (varClauses x) cs in foldl (:<>:) emptyDoc docs
 
 auxillaryFunction1Rec :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
