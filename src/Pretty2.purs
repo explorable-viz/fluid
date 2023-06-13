@@ -1,7 +1,8 @@
 module Pretty2 where
 
 import Prelude
-import Text.Pretty (Doc, empty, text, beside, atop)
+import Util.Pretty (Doc, empty, text, atop, beside2)
+-- import Text.Pretty (Doc, empty, text, beside, atop)
 import SExpr (Expr(..), Pattern(..), Clauses(..), Clause(..), RecDefs, Branch, ListRest(..))
 import Data.List (List(..))
 import Bindings (Bind, key, val)
@@ -9,7 +10,7 @@ import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
 import Data.Foldable (foldl)
 import Util ((×), type (×))
 
-infixl 5 beside as :<>:
+infixl 5 beside2 as :<>:
 infixl 5 atop as .-.
 data InFront = Prefix (String) | Unit
 
@@ -30,7 +31,7 @@ pretty (IfElse s s_1 s_2) = text "if" :--: pretty s :--: text "then" :--: pretty
 pretty (Project s x) = pretty s :<>: text "." :<>: text x
 pretty (Record _ x) = text "{" :<>: prettyAuxillaryFuncVarExpr x :<>: text "}" -- formatting needs fixing 
 pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}" :--: emptyDoc -- edited
-pretty (LetRec g s) = text "let" :--: combiningAuxillaryFunctionsRec g :--: text "in" :--: pretty s
+pretty (LetRec g s) = text "let" :<>: combiningAuxillaryFunctionsRec g :<>: text "in" :<>: pretty s
 pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: combiningMatch x
 pretty (ListEmpty _) = text "[]"
 pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" :<>: pretty s :<>: listAuxillaryFunc x :<>: text "]" -- edited
