@@ -152,7 +152,7 @@ helperUnwrapMaybe (Nothing) = ""
 --emptyStringArray :: Doc -> Array String
 --emptyStringArray (Doc d) = replicate (d.width) "_"
 
-emptyStringArray' :: String -> Array String 
+emptyStringArray' :: String -> Array String
 emptyStringArray' d = replicate (S.length d) "_"
 
 -- here you would take [" ", " ", " "] and form "   "
@@ -185,26 +185,26 @@ formingCorrectArray' x y = zipWith (<>) x y
 --beside2 :: Doc -> Doc -> Doc
 --beside2 (Doc d1) (Doc d2) = allButLast (Doc d1) .-. (lastLine (Doc d1) :<>: firstLine (Doc d2)) .-. (temp (Doc d1) (Doc d2))
 
-allButLast' :: Doc -> Array String 
-allButLast' (Doc d) = take (A.length d.lines - 1) d.lines 
+allButLast' :: Doc -> Array String
+allButLast' (Doc d) = take (A.length d.lines - 1) d.lines
 
-allButFirst' :: Doc -> Array String 
+allButFirst' :: Doc -> Array String
 allButFirst' (Doc d) = drop 1 d.lines
 
-firstLine' :: Doc -> String 
+firstLine' :: Doc -> String
 firstLine' (Doc d) = helperUnwrapMaybe (head d.lines)
 
-lastLine' :: Doc -> String 
+lastLine' :: Doc -> String
 lastLine' (Doc d) = helperUnwrapMaybe (last d.lines)
 
-indentations :: Doc -> Doc -> Array String 
-indentations (Doc d1) (Doc d2) = formingCorrectArray' (emptyStringRightIndentation' (allButFirst' (Doc d2)) (emptyStringConcat (emptyStringArray' (lastLine' (Doc d1)))) ) (allButFirst' (Doc d2)) 
+indentations :: Doc -> Doc -> Array String
+indentations (Doc d1) (Doc d2) = formingCorrectArray' (emptyStringRightIndentation' (allButFirst' (Doc d2)) (emptyStringConcat (emptyStringArray' (lastLine' (Doc d1))))) (allButFirst' (Doc d2))
 
 finalLines :: Doc -> Doc -> Array String
-finalLines (Doc d1) (Doc d2) = allButLast' (Doc d1) <> (singleton (lastLine' (Doc d1) <> "" <>  firstLine' (Doc d2))) <> indentations (Doc d1) (Doc d2)
+finalLines (Doc d1) (Doc d2) = allButLast' (Doc d1) <> (singleton (lastLine' (Doc d1) <> "" <> firstLine' (Doc d2))) <> indentations (Doc d1) (Doc d2)
 
-beside3 :: Doc -> Doc -> Doc 
-beside3 (Doc d1) (Doc d2) = Doc {width: d1.width + d2.width , height: d1.height + d2.height, lines: finalLines (Doc d1) (Doc d2)}
+beside3 :: Doc -> Doc -> Doc
+beside3 (Doc d1) (Doc d2) = Doc { width: d1.width + d2.width, height: d1.height + d2.height, lines: finalLines (Doc d1) (Doc d2) }
 
 -- | Place documents in columns
 hcat :: forall f. Foldable f => f Doc -> Doc
