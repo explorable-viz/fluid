@@ -32,7 +32,7 @@ pretty (IfElse s s_1 s_2) = text "if" :--: pretty s :--: text "then" :--: pretty
 pretty (Project s x) = pretty s :<>: text "." :<>: text x
 pretty (Record _ x) = text "{" :<>: prettyAuxillaryFuncVarExpr x :<>: text "}" -- formatting needs fixing 
 pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}" :--: emptyDoc -- edited
-pretty (LetRec g s) = text "let" .<>. combiningAuxillaryFunctionsRec g :<>: text "in" :<>: pretty s
+pretty (LetRec g s) = text "let" .<>. combiningAuxillaryFunctionsRec g .<>. text "in" :<>: pretty s
 pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: combiningMatch x
 pretty (ListEmpty _) = text "[]"
 pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" :<>: pretty s :<>: listAuxillaryFunc x :<>: text "]" -- edited
@@ -86,7 +86,7 @@ varClauses x (Clause (ps × e)) = text x :<>: prettyAuxillaryFuncPatterns (toLis
 
 prettyAuxillaryFuncClauses :: forall a. InFront -> Clauses a -> Doc
 prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (:<>:) emptyDoc docs -- beside may need to change (changed to space)
-prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = let docs = map (varClauses x) cs in foldl (:<>:) emptyDoc docs
+prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = let docs = map (varClauses x) cs in foldl (.-.) emptyDoc docs
 
 auxillaryFunction1Rec :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
 auxillaryFunction1Rec x = groupBy (\p q -> key p == key q) x
@@ -102,7 +102,7 @@ auxillaryFunction31Rec :: forall a. String × NonEmptyList (Clause a) -> Doc
 auxillaryFunction31Rec (a × b) = prettyAuxillaryFuncClauses (Prefix a) (Clauses b)
 
 auxillaryFunction3Rec :: forall a. NonEmptyList (String × NonEmptyList (Clause a)) -> Doc
-auxillaryFunction3Rec x = let docs = map auxillaryFunction31Rec x in foldl (:<>:) emptyDoc docs
+auxillaryFunction3Rec x = let docs = map auxillaryFunction31Rec x in foldl (.-.) emptyDoc docs
 
 combiningAuxillaryFunctionsRec :: forall a. RecDefs a -> Doc
 combiningAuxillaryFunctionsRec x = auxillaryFunction3Rec (auxillaryFunction2Rec (auxillaryFunction1Rec x))
