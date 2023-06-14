@@ -52,7 +52,7 @@ testWithSetup (File file) expected v_expect_opt setup =
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
             s' = desugBwd' e' :: S.Expr _
             _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
-         trace (render (pretty s)) \_ -> do
+         trace ("\n" <> render (pretty s)) \_ -> do
             unless (isGraphical v'') (checkPretty "Value" expected v'')
             case snd <$> v_expect_opt of
                Nothing -> pure unit
