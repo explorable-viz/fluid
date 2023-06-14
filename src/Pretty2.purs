@@ -1,7 +1,8 @@
 module Pretty2 where
 
 import Prelude
-import Text.Pretty (Doc, empty, text, beside, atop)
+import Util.Pretty (Doc, empty, text, atop, beside, beside2, space)
+-- import Text.Pretty (Doc, empty, text, beside, atop)
 import SExpr (Expr(..), Pattern(..), Clauses(..), Clause(..), RecDefs, Branch, ListRest(..))
 import Data.List (List(..))
 import Bindings (Bind, key, val)
@@ -11,24 +12,27 @@ import Util ((×), type (×))
 
 infixl 5 beside as :<>:
 infixl 5 atop as .-.
+infixl 5 beside2 as .<>.
 data InFront = Prefix (String) | Unit
+
+infixl 5 space as :--:
 
 emptyDoc :: Doc
 emptyDoc = empty 0 0
 
 pretty :: forall a. Expr a -> Doc
-pretty (Int _ n) = text (show n)
-pretty (Var x) = text x
+pretty (Int _ n) = text (show n) -- edited
+pretty (Var x) = text x -- edited
 pretty (App s s') = pretty s :<>: pretty s'
-pretty (BinaryApp s x s') = pretty s :<>: text x :<>: pretty s'
-pretty (IfElse s s_1 s_2) = text "if" :<>: pretty s :<>: text "then" :<>: pretty s_1 :<>: text "else" :<>: pretty s_2
+pretty (BinaryApp s x s') = pretty s :--: text x :--: pretty s' -- edited
+pretty (IfElse s s_1 s_2) = text "if" :<>: pretty s .<>. text "then" :<>: pretty s_1 .<>. text "else" :<>: pretty s_2
 pretty (Project s x) = pretty s :<>: text "." :<>: text x
-pretty (Record _ x) = text "{" :<>: prettyAuxillaryFuncVarExpr x :<>: text "}" -- formatting needs fixing 
-pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}"
-pretty (LetRec g s) = text "let" :<>: combiningAuxillaryFunctionsRec g :<>: text "in" :<>: pretty s
+pretty (Record _ x) = text "{" .<>. prettyAuxillaryFuncVarExpr x .<>. text "}" -- formatting needs fixing 
+pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}" :--: emptyDoc -- edited
+pretty (LetRec g s) = text "let" .<>. combiningAuxillaryFunctionsRec g .<>. text "in" .<>. pretty s
 pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: combiningMatch x
 pretty (ListEmpty _) = text "[]"
-pretty (ListNonEmpty _ s x) = text "[" :<>: pretty s :<>: listAuxillaryFunc x :<>: text "]"
+pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" :<>: pretty s :<>: listAuxillaryFunc x :<>: text "]" -- edited
 pretty _ = emptyDoc
 
 listAuxillaryFunc :: forall a. ListRest a -> Doc
@@ -52,7 +56,7 @@ combiningMatch x = prettyAuxillaryFuncClauses Unit (matchAuxillaryFunc3 (matchAu
 
 -- subtle error in code needs fixing
 prettyAuxillaryFuncVarExpr :: forall a. List (Bind (Expr a)) -> Doc
-prettyAuxillaryFuncVarExpr (Cons x xs) = text (key x) :<>: text ":" :<>: pretty (val x) .-. prettyAuxillaryFuncVarExpr xs
+prettyAuxillaryFuncVarExpr (Cons x xs) = text (key x) :<>: text ":" :<>: pretty (val x) .-. prettyAuxillaryFuncVarExpr xs -- edited atop
 prettyAuxillaryFuncVarExpr Nil = emptyDoc
 
 prettyAuxillaryFuncPattern :: Pattern -> Doc
@@ -62,23 +66,24 @@ prettyAuxillaryFuncPattern (PConstr c x) = text c :<>: text "(" :<>: prettyAuxil
 prettyAuxillaryFuncPattern _ = emptyDoc
 
 prettyAuxillaryFuncVarPatt :: List (Bind (Pattern)) -> Doc
-prettyAuxillaryFuncVarPatt (Cons x xs) = text (key x) :<>: text ":" :<>: prettyAuxillaryFuncPattern (val x) .-. prettyAuxillaryFuncVarPatt xs
+prettyAuxillaryFuncVarPatt (Cons x Nil) = text (key x) :<>: text ":" :<>: prettyAuxillaryFuncPattern (val x) .-. prettyAuxillaryFuncVarPatt Nil -- edited atop
+prettyAuxillaryFuncVarPatt (Cons x xs) = text (key x) :<>: text ":" :<>: prettyAuxillaryFuncPattern (val x) .-. text "," .-. prettyAuxillaryFuncVarPatt xs -- edited atop
 prettyAuxillaryFuncVarPatt Nil = emptyDoc
 
 -- in Tex file Patt is more than one pattern but here it can be non-empty (might need to fix this)
 prettyAuxillaryFuncPatterns :: List Pattern -> Doc
-prettyAuxillaryFuncPatterns (Cons x xs) = prettyAuxillaryFuncPattern x :<>: prettyAuxillaryFuncPatterns xs -- beside may need to change 
+prettyAuxillaryFuncPatterns (Cons x xs) = prettyAuxillaryFuncPattern x .-. prettyAuxillaryFuncPatterns xs -- beside may need to change to a space
 prettyAuxillaryFuncPatterns Nil = emptyDoc
 
 unitClauses :: forall a. Clause a -> Doc
-unitClauses (Clause (ps × e)) = prettyAuxillaryFuncPatterns (toList ps) :<>: text "=" :<>: pretty e
+unitClauses (Clause (ps × e)) = prettyAuxillaryFuncPatterns (toList ps) :<>: text "=" :<>: pretty e -- edited beside with spaces
 
 varClauses :: forall a. String -> Clause a -> Doc
 varClauses x (Clause (ps × e)) = text x :<>: prettyAuxillaryFuncPatterns (toList ps) :<>: text "=" :<>: pretty e
 
 prettyAuxillaryFuncClauses :: forall a. InFront -> Clauses a -> Doc
-prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (:<>:) emptyDoc docs -- beside may need to change
-prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = let docs = map (varClauses x) cs in foldl (:<>:) emptyDoc docs
+prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (.-.) emptyDoc docs -- beside may need to change (changed to space)
+prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = let docs = map (varClauses x) cs in foldl (.-.) emptyDoc docs
 
 auxillaryFunction1Rec :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
 auxillaryFunction1Rec x = groupBy (\p q -> key p == key q) x
@@ -98,3 +103,6 @@ auxillaryFunction3Rec x = let docs = map auxillaryFunction31Rec x in foldl (.-.)
 
 combiningAuxillaryFunctionsRec :: forall a. RecDefs a -> Doc
 combiningAuxillaryFunctionsRec x = auxillaryFunction3Rec (auxillaryFunction2Rec (auxillaryFunction1Rec x))
+
+-- need to do normal beside on my documents 
+-- and then apply beside2 to the normal beside 

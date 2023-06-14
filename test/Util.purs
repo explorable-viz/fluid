@@ -18,10 +18,11 @@ import Eval (eval)
 import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
-import Pretty (class Pretty, prettyP, render)
+import Pretty (class Pretty, prettyP)
 import Pretty2 (pretty)
 import SExpr (Expr) as S
 import Util (type (×), (×), successful)
+import Util.Pretty (render)
 import Val (Env, Val(..), (<+>))
 
 -- Don't enforce expected values for graphics tests (values too complex).
