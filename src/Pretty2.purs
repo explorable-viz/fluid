@@ -66,7 +66,7 @@ prettyAuxillaryFuncPattern _ = emptyDoc
 
 prettyAuxillaryFuncVarPatt :: List (Bind (Pattern)) -> Doc
 prettyAuxillaryFuncVarPatt (Cons x Nil) = text (key x) .<>. text ":" .<>. prettyAuxillaryFuncPattern (val x) .-. prettyAuxillaryFuncVarPatt Nil -- edited atop
-prettyAuxillaryFuncVarPatt (Cons x xs) = text (key x) .<>. text ":" .<>. prettyAuxillaryFuncPattern (val x) .-. text "," .-. prettyAuxillaryFuncVarPatt xs -- edited atop
+prettyAuxillaryFuncVarPatt (Cons x xs) = text (key x) .<>. text ":" .<>. prettyAuxillaryFuncPattern (val x) .<>. text "," .-. prettyAuxillaryFuncVarPatt xs -- edited atop
 prettyAuxillaryFuncVarPatt Nil = emptyDoc
 
 -- in Tex file Patt is more than one pattern but here it can be non-empty (might need to fix this)
