@@ -150,7 +150,7 @@ firstLine (Doc d) = Doc { width: S.length (helperUnwrapMaybe (head d.lines)), he
 -- here take last line of d1 and e.g. if this is "let" you would return [" ", " ", " "]
 -- [" A "," A ", " A "]
 emptyStringArray :: Doc -> Array String
-emptyStringArray (Doc d) = replicate (d.width) " _ "
+emptyStringArray (Doc d) = replicate (d.width) "_"
 
 -- here you would take [" ", " ", " "] and form "   "
 emptyStringConcat :: Array String -> String
