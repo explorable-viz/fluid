@@ -1,7 +1,7 @@
 module Pretty2 where
 
 import Prelude
-import Util.Pretty (Doc, empty, text, atop, beside, beside2)
+import Util.Pretty (Doc, empty, text, atop, beside, beside2, space)
 -- import Text.Pretty (Doc, empty, text, beside, atop)
 import SExpr (Expr(..), Pattern(..), Clauses(..), Clause(..), RecDefs, Branch, ListRest(..))
 import Data.List (List(..))
@@ -14,9 +14,6 @@ infixl 5 beside as :<>:
 infixl 5 atop as .-.
 infixl 5 beside2 as .<>.
 data InFront = Prefix (String) | Unit
-
-space :: Doc -> Doc -> Doc 
-space x y = x :<>: text " " :<>: y
 
 infixl 5 space as :--:
 
