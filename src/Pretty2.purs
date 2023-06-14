@@ -1,7 +1,7 @@
 module Pretty2 where
 
 import Prelude
-import Util.Pretty (Doc, empty, text, atop, beside2, space)
+import Util.Pretty (Doc, empty, text, atop, beside3, space)
 -- import Text.Pretty (Doc, empty, text, beside, atop)
 import SExpr (Expr(..), Pattern(..), Clauses(..), Clause(..), RecDefs, Branch, ListRest(..))
 import Data.List (List(..))
@@ -11,7 +11,7 @@ import Data.Foldable (foldl)
 import Util ((×), type (×))
 
 infixl 5 atop as .-.
-infixl 5 beside2 as .<>.
+infixl 5 beside3 as .<>.
 data InFront = Prefix (String) | Unit
 
 infixl 5 space as :--:
