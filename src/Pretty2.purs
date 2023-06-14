@@ -21,13 +21,13 @@ emptyDoc :: Doc
 emptyDoc = empty 0 0
 
 pretty :: forall a. Expr a -> Doc
-pretty (Int _ n) = text (show n)  -- edited
-pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
+pretty (Int _ n) = text (show n) -- edited
+pretty (Var x) = text x -- edited
 pretty (App s s') = pretty s :<>: pretty s'
 pretty (BinaryApp s x s') = pretty s :--: text x :--: pretty s' -- edited
-pretty (IfElse s s_1 s_2) = text "if" :--: pretty s :--: text "then" :--: pretty s_1 :--: text "else" :--: pretty s_2
+pretty (IfElse s s_1 s_2) = text "if" :<>: pretty s .<>. text "then" :<>: pretty s_1 .<>. text "else" :<>: pretty s_2
 pretty (Project s x) = pretty s :<>: text "." :<>: text x
-pretty (Record _ x) = text "{" :<>: prettyAuxillaryFuncVarExpr x .<>. text "}" -- formatting needs fixing 
+pretty (Record _ x) = text "{" .<>. prettyAuxillaryFuncVarExpr x .<>. text "}" -- formatting needs fixing 
 pretty (Lambda (Clauses cs)) = text "fun" :<>: text "{" :<>: prettyAuxillaryFuncClauses Unit (Clauses cs) :<>: text "}" :--: emptyDoc -- edited
 pretty (LetRec g s) = text "let" .<>. combiningAuxillaryFunctionsRec g .<>. text "in" .<>. pretty s
 pretty (MatchAs s x) = text "match" :<>: pretty s :<>: text "as" :<>: combiningMatch x
@@ -66,17 +66,17 @@ prettyAuxillaryFuncPattern (PConstr c x) = text c :<>: text "(" :<>: prettyAuxil
 prettyAuxillaryFuncPattern _ = emptyDoc
 
 prettyAuxillaryFuncVarPatt :: List (Bind (Pattern)) -> Doc
-prettyAuxillaryFuncVarPatt(Cons x Nil) = text (key x) :<>: text ":" :<>: prettyAuxillaryFuncPattern (val x) .<>. prettyAuxillaryFuncVarPatt Nil -- edited atop
-prettyAuxillaryFuncVarPatt (Cons x xs) = text (key x) :<>: text ":" :<>: prettyAuxillaryFuncPattern (val x) :<>: text "," :<>: prettyAuxillaryFuncVarPatt xs -- edited atop
+prettyAuxillaryFuncVarPatt (Cons x Nil) = text (key x) :<>: text ":" :<>: prettyAuxillaryFuncPattern (val x) .-. prettyAuxillaryFuncVarPatt Nil -- edited atop
+prettyAuxillaryFuncVarPatt (Cons x xs) = text (key x) :<>: text ":" :<>: prettyAuxillaryFuncPattern (val x) .-. text "," .-. prettyAuxillaryFuncVarPatt xs -- edited atop
 prettyAuxillaryFuncVarPatt Nil = emptyDoc
 
 -- in Tex file Patt is more than one pattern but here it can be non-empty (might need to fix this)
 prettyAuxillaryFuncPatterns :: List Pattern -> Doc
-prettyAuxillaryFuncPatterns (Cons x xs) = prettyAuxillaryFuncPattern x .<>. prettyAuxillaryFuncPatterns xs -- beside may need to change to a space
+prettyAuxillaryFuncPatterns (Cons x xs) = prettyAuxillaryFuncPattern x .-. prettyAuxillaryFuncPatterns xs -- beside may need to change to a space
 prettyAuxillaryFuncPatterns Nil = emptyDoc
 
 unitClauses :: forall a. Clause a -> Doc
-unitClauses (Clause (ps × e)) = prettyAuxillaryFuncPatterns (toList ps) :--: text "=" :--: pretty e -- edited beside with spaces
+unitClauses (Clause (ps × e)) = prettyAuxillaryFuncPatterns (toList ps) :<>: text "=" :<>: pretty e -- edited beside with spaces
 
 varClauses :: forall a. String -> Clause a -> Doc
 varClauses x (Clause (ps × e)) = text x :<>: prettyAuxillaryFuncPatterns (toList ps) :<>: text "=" :<>: pretty e
