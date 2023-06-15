@@ -41,7 +41,7 @@ pretty (Constr _ _ _) = text "[]"
 pretty _ = emptyDoc
 
 varDefToDoc :: forall a. VarDef a -> Doc 
-varDefToDoc (VarDef p s) = prettyAuxillaryFuncPattern p .<>. text "=" .<>. pretty s 
+varDefToDoc (VarDef p s) = (prettyAuxillaryFuncPattern p :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty s) 
 
 varDefsToDoc :: forall a. VarDefs a -> Doc 
 varDefsToDoc x = let docs = map varDefToDoc x in foldl (.-.) emptyDoc docs  
@@ -103,7 +103,7 @@ prettyAuxillaryFuncPatterns Nil _ = emptyDoc
 -- prettyAuxillaryFuncPatterns Nil = emptyDoc
 
 unitClauses :: forall a. Clause a -> Doc
-unitClauses (Clause (ps × e)) = prettyAuxillaryFuncPatterns (toList ps) "no" .<>. text "=" .<>. pretty e -- edited beside with spaces
+unitClauses (Clause (ps × e)) = (prettyAuxillaryFuncPatterns (toList ps) "no" :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) -- edited beside with spaces
 
 varClauses :: forall a. String -> Clause a -> Doc
 varClauses x (Clause (ps × e)) = (text x :--: emptyDoc) .<>. unitClauses (Clause (ps × e))
