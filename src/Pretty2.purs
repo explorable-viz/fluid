@@ -8,7 +8,7 @@ import Data.List (List(..))
 import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), RecDefs, VarDef(..), VarDefs)
 import Util ((×), type (×))
-import Util.Pretty (Doc, empty, text, atop, beside3, space, beside)
+import Util.Pretty (Doc, atop, beside, beside3, empty, space, text)
 
 infixl 5 atop as .-.
 infixl 5 beside3 as .<>.
@@ -16,9 +16,9 @@ infixl 5 beside as :<>:
 data InFront = Prefix (String) | Unit
 
 infixl 5 space as :--:
--- (key, val)
 emptyDoc :: Doc
 emptyDoc = empty 0 0
+
 
 pretty :: forall a. Expr a -> Doc
 pretty (Int _ n) = text (show n) -- edited
@@ -40,11 +40,26 @@ pretty (Matrix _ _ _ _) = text "[]"
 pretty (Constr _ _ _) = text "[]"
 pretty _ = emptyDoc
 
+intersperse' :: List Doc -> Doc ->  Doc 
+intersperse' (Cons x Nil) _ = x 
+intersperse' (Cons x xs) d = x .<>. d .-. intersperse' xs d
+intersperse' Nil _ = emptyDoc
+
 varDefToDoc :: forall a. VarDef a -> Doc 
-varDefToDoc (VarDef p s) = (prettyAuxillaryFuncPattern p :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty s) 
+varDefToDoc (VarDef p s) = (prettyAuxillaryFuncPattern p :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty s)
+
+varDefsToDocSemiColon :: forall a. VarDefs a -> List Doc
+varDefsToDocSemiColon x = toList (map varDefToDoc x) 
+
+temp :: List Doc -> Doc 
+temp x = intersperse' x (text ";")
 
 varDefsToDoc :: forall a. VarDefs a -> Doc 
-varDefsToDoc x = let docs = map varDefToDoc x in foldl (.-.) emptyDoc docs  
+varDefsToDoc x = intersperse' (toList (map varDefToDoc x)) (text ";") 
+
+
+-- varDefsToDoc :: forall a. VarDefs a -> Doc 
+-- varDefsToDoc x = let docs = map varDefToDoc x in foldl (.-.) emptyDoc docs  
 
 listAuxillaryFunc :: forall a. ListRest a -> Doc
 listAuxillaryFunc (Next _ s x) = text "," .<>. text "" .<>. pretty s .<>. listAuxillaryFunc x
