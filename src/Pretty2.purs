@@ -1,14 +1,15 @@
 module Pretty2 where
 
 import Prelude
-import Util.Pretty (Doc, empty, text, atop, beside3, space)
--- import Text.Pretty (Doc, empty, text, beside, atop)
-import SExpr (Expr(..), Pattern(..), Clauses(..), Clause(..), RecDefs, Branch, ListRest(..))
-import Data.List (List(..))
+
 import Bindings (Bind, key, val)
-import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
 import Data.Foldable (foldl)
+import Data.List (List(..))
+import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
+-- import Parse (varDefs)
+import SExpr (Expr(..), Pattern(..), Clauses(..), Clause(..), RecDefs, Branch, ListRest(..), VarDefs, VarDef(..))
 import Util ((×), type (×))
+import Util.Pretty (Doc, empty, text, atop, beside3, space)
 
 infixl 5 atop as .-.
 infixl 5 beside3 as .<>.
@@ -32,7 +33,16 @@ pretty (LetRec g s) = text "let" :--: emptyDoc .<>. combiningAuxillaryFunctionsR
 pretty (MatchAs s x) = text "match" .<>. pretty s .<>. text "as" .<>. combiningMatch x
 pretty (ListEmpty _) = text "[]"
 pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. listAuxillaryFunc x .<>. text "]" -- edited
+pretty (ListComp _ _ _) = text "[]"
+pretty (ListEnum _ _) = text "[]"
+pretty (Let x s) = text "let" :--: emptyDoc .<>. varDefsToDoc x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s 
 pretty _ = emptyDoc
+
+varDefToDoc :: forall a. VarDef a -> Doc 
+varDefToDoc (VarDef p s) = prettyAuxillaryFuncPattern p .<>. text "=" .<>. pretty s
+
+varDefsToDoc :: forall a. VarDefs a -> Doc 
+varDefsToDoc x = let docs = map varDefToDoc x in foldl (.-.) emptyDoc docs  
 
 listAuxillaryFunc :: forall a. ListRest a -> Doc
 listAuxillaryFunc (Next _ s x) = text "," .<>. text "" .<>. pretty s .<>. listAuxillaryFunc x
