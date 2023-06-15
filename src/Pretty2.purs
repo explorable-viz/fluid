@@ -28,7 +28,8 @@ pretty (BinaryApp s x s') = pretty s :--: text x :--: pretty s' -- edited
 pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
 pretty (Project s x) = pretty s .<>. text "." .<>. text x
 pretty (Record _ x) = text "{" .<>. prettyAuxillaryFuncVarExpr x .<>. text "}" -- formatting needs fixing 
-pretty (Lambda (Clauses cs)) = text "fun" .<>. text "{" .<>. prettyAuxillaryFuncClauses Unit (Clauses cs) .<>. text "}" :--: emptyDoc -- edited
+pretty (Lambda (Clauses cs)) = text "(" .<>. (text "fun" :--: emptyDoc) .<>. prettyAuxillaryFuncClauses Unit (Clauses cs) .<>. text ")" :--: emptyDoc -- edited
+-- pretty (Lambda (Clauses cs)) = (text "fun" :--: emptyDoc) .<>. text "{" .<>. prettyAuxillaryFuncClauses Unit (Clauses cs) .<>. text "}" :--: emptyDoc -- edited
 pretty (LetRec g s) = text "let" :--: emptyDoc .<>. combiningAuxillaryFunctionsRec g .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s
 pretty (MatchAs s x) = text "match" .<>. pretty s .<>. text "as" .<>. combiningMatch x
 pretty (ListEmpty _) = text "[]"
@@ -89,7 +90,7 @@ prettyAuxillaryFuncVarPatt Nil = emptyDoc
 
 -- in Tex file Patt is more than one pattern but here it can be non-empty (might need to fix this)
 prettyAuxillaryFuncPatterns :: List Pattern -> Doc
-prettyAuxillaryFuncPatterns (Cons x xs) = prettyAuxillaryFuncPattern x .-. prettyAuxillaryFuncPatterns xs -- beside may need to change to a space
+prettyAuxillaryFuncPatterns (Cons x xs) = (prettyAuxillaryFuncPattern x :--: emptyDoc) .<>. prettyAuxillaryFuncPatterns xs -- beside may need to change to a space
 prettyAuxillaryFuncPatterns Nil = emptyDoc
 
 unitClauses :: forall a. Clause a -> Doc
