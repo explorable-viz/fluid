@@ -28,14 +28,14 @@ pretty (IfElse s s_1 s_2) = text "if" .<>. pretty s .<>. text "then" .<>. pretty
 pretty (Project s x) = pretty s .<>. text "." .<>. text x
 pretty (Record _ x) = text "{" .<>. prettyAuxillaryFuncVarExpr x .<>. text "}" -- formatting needs fixing 
 pretty (Lambda (Clauses cs)) = text "fun" .<>. text "{" .<>. prettyAuxillaryFuncClauses Unit (Clauses cs) .<>. text "}" :--: emptyDoc -- edited
-pretty (LetRec g s) = text "let" .<>. combiningAuxillaryFunctionsRec g .<>. text "in" .<>. pretty s
+pretty (LetRec g s) = text "let" :--: emptyDoc .<>. combiningAuxillaryFunctionsRec g .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s
 pretty (MatchAs s x) = text "match" .<>. pretty s .<>. text "as" .<>. combiningMatch x
 pretty (ListEmpty _) = text "[]"
 pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. listAuxillaryFunc x .<>. text "]" -- edited
 pretty _ = emptyDoc
 
 listAuxillaryFunc :: forall a. ListRest a -> Doc
-listAuxillaryFunc (Next _ s x) = text "," .<>. pretty s .<>. listAuxillaryFunc x
+listAuxillaryFunc (Next _ s x) = text "," .<>. text "" .<>. pretty s .<>. listAuxillaryFunc x
 listAuxillaryFunc (End _) = emptyDoc
 
 matchAuxillaryFunc1 :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
