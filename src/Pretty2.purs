@@ -16,9 +16,9 @@ infixl 5 beside as :<>:
 data InFront = Prefix (String) | Unit
 
 infixl 5 space as :--:
+
 emptyDoc :: Doc
 emptyDoc = empty 0 0
-
 
 pretty :: forall a. Expr a -> Doc
 pretty (Int _ n) = text (show n) -- edited
@@ -35,28 +35,27 @@ pretty (ListEmpty _) = text "[]"
 pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. listAuxillaryFunc x .<>. text "]" -- edited
 pretty (ListComp _ _ _) = text "[]"
 pretty (ListEnum _ _) = text "[]"
-pretty (Let x s) = text "let" :--: emptyDoc .<>. varDefsToDoc x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s 
+pretty (Let x s) = text "let" :--: emptyDoc .<>. varDefsToDoc x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s
 pretty (Matrix _ _ _ _) = text "[]"
 pretty (Constr _ _ _) = text "[]"
 pretty _ = emptyDoc
 
-intersperse' :: List Doc -> Doc ->  Doc 
-intersperse' (Cons x Nil) _ = x 
+intersperse' :: List Doc -> Doc -> Doc
+intersperse' (Cons x Nil) _ = x
 intersperse' (Cons x xs) d = x .<>. d .-. intersperse' xs d
 intersperse' Nil _ = emptyDoc
 
-varDefToDoc :: forall a. VarDef a -> Doc 
+varDefToDoc :: forall a. VarDef a -> Doc
 varDefToDoc (VarDef p s) = (prettyAuxillaryFuncPattern p :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty s)
 
 varDefsToDocSemiColon :: forall a. VarDefs a -> List Doc
-varDefsToDocSemiColon x = toList (map varDefToDoc x) 
+varDefsToDocSemiColon x = toList (map varDefToDoc x)
 
-temp :: List Doc -> Doc 
+temp :: List Doc -> Doc
 temp x = intersperse' x (text ";")
 
-varDefsToDoc :: forall a. VarDefs a -> Doc 
-varDefsToDoc x = intersperse' (toList (map varDefToDoc x)) (text ";") 
-
+varDefsToDoc :: forall a. VarDefs a -> Doc
+varDefsToDoc x = intersperse' (toList (map varDefToDoc x)) (text ";")
 
 -- varDefsToDoc :: forall a. VarDefs a -> Doc 
 -- varDefsToDoc x = let docs = map varDefToDoc x in foldl (.-.) emptyDoc docs  
@@ -85,19 +84,20 @@ prettyAuxillaryFuncVarExpr :: forall a. List (Bind (Expr a)) -> Doc
 prettyAuxillaryFuncVarExpr (Cons x xs) = text (key x) .<>. text ":" .<>. pretty (val x) .-. prettyAuxillaryFuncVarExpr xs -- edited atop
 prettyAuxillaryFuncVarExpr Nil = emptyDoc
 
-prettyAuxillaryFuncListPattern :: ListRestPattern -> Doc 
-prettyAuxillaryFuncListPattern (PNext p x) = prettyAuxillaryFuncPattern p  .<>. prettyAuxillaryFuncListPattern x
+prettyAuxillaryFuncListPattern :: ListRestPattern -> Doc
+prettyAuxillaryFuncListPattern (PNext p x) = prettyAuxillaryFuncPattern p .<>. prettyAuxillaryFuncListPattern x
 prettyAuxillaryFuncListPattern PEnd = emptyDoc
 
 prettyAuxillaryFuncPattern :: Pattern -> Doc
 prettyAuxillaryFuncPattern (PVar x) = text x
 prettyAuxillaryFuncPattern (PRecord x) = text "{" .<>. prettyAuxillaryFuncVarPatt x .<>. text "}"
-prettyAuxillaryFuncPattern(PConstr "Pair" x) = text "(" .<>. prettyAuxillaryFuncPatterns x true .<>. text ")"
-prettyAuxillaryFuncPattern(PConstr "Empty" x) = text "Empty" .<>. prettyAuxillaryFuncPatterns x false
+prettyAuxillaryFuncPattern (PConstr "Pair" x) = text "(" .<>. prettyAuxillaryFuncPatterns x true .<>. text ")"
+prettyAuxillaryFuncPattern (PConstr "Empty" x) = text "Empty" .<>. prettyAuxillaryFuncPatterns x false
 prettyAuxillaryFuncPattern (PConstr c x) = text "(" .<>. (text c :--: emptyDoc) .<>. prettyAuxillaryFuncPatterns x false .<>. text ")"
 -- prettyAuxillaryFuncPattern (PConstr c x) = text c .<>. text "(" .<>. prettyAuxillaryFuncPatterns x .<>. text ")"
 prettyAuxillaryFuncPattern (PListEmpty) = text "[]"
 prettyAuxillaryFuncPattern (PListNonEmpty _ _) = emptyDoc
+
 -- prettyAuxillaryFuncPattern _ = emptyDoc
 
 prettyAuxillaryFuncVarPatt :: List (Bind (Pattern)) -> Doc
@@ -105,12 +105,12 @@ prettyAuxillaryFuncVarPatt (Cons x Nil) = text (key x) .<>. text ":" .<>. pretty
 prettyAuxillaryFuncVarPatt (Cons x xs) = text (key x) .<>. text ":" .<>. prettyAuxillaryFuncPattern (val x) .<>. text "," .-. prettyAuxillaryFuncVarPatt xs -- edited atop
 prettyAuxillaryFuncVarPatt Nil = emptyDoc
 
-
 prettyAuxillaryFuncPatterns :: List Pattern -> Boolean -> Doc
 prettyAuxillaryFuncPatterns (Cons x Nil) true = prettyAuxillaryFuncPattern x
 prettyAuxillaryFuncPatterns (Cons x xs) true = (prettyAuxillaryFuncPattern x .<>. text ",") .<>. prettyAuxillaryFuncPatterns xs true
-prettyAuxillaryFuncPatterns (Cons x xs) false  = (prettyAuxillaryFuncPattern x :--: emptyDoc) .<>. prettyAuxillaryFuncPatterns xs false -- beside may need to change to a space
+prettyAuxillaryFuncPatterns (Cons x xs) false = (prettyAuxillaryFuncPattern x :--: emptyDoc) .<>. prettyAuxillaryFuncPatterns xs false -- beside may need to change to a space
 prettyAuxillaryFuncPatterns Nil _ = emptyDoc
+
 -- in Tex file Patt is more than one pattern but here it can be non-empty (might need to fix this)
 -- prettyAuxillaryFuncPatterns :: List Pattern -> Doc
 -- prettyAuxillaryFuncPatterns (Cons x xs)  = (prettyAuxillaryFuncPattern x :--: emptyDoc) .<>. prettyAuxillaryFuncPatterns xs -- beside may need to change to a space
@@ -125,6 +125,7 @@ varClauses x (Clause (ps × e)) = (text x :--: emptyDoc) .<>. unitClauses (Claus
 prettyAuxillaryFuncClauses :: forall a. InFront -> Clauses a -> Doc
 prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (.-.) emptyDoc docs -- beside may need to change (changed to space)
 prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
+
 -- prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = let docs = map (varClauses x) cs in foldl (.-.) emptyDoc docs
 
 auxillaryFunction1Rec :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))

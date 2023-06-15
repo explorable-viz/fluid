@@ -28,7 +28,6 @@ import Util (type (×), (×), successful)
 import Util.Pretty (render)
 import Val (Env, Val(..), (<+>))
 
-
 -- Don't enforce expected values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
 isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
