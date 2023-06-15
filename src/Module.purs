@@ -52,8 +52,8 @@ loadModule file γ = do
 
 parseProgram :: Folder -> File -> Aff (S.Expr 𝔹)
 parseProgram folder file = do
-   loaded <- loadFile folder file
-   pure (successful $ flip parse (program <#> botOf) loaded)
+   src <- loadFile folder file
+   pure (successful $ flip parse (program <#> botOf) src)
 
 open :: File -> Aff (S.Expr 𝔹)
 open = parseProgram (Folder "fluid/example")

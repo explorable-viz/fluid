@@ -21,7 +21,7 @@ emptyDoc = empty 0 0
 
 pretty :: forall a. Expr a -> Doc
 pretty (Int _ n) = text (show n) -- edited
-pretty (Var x) = text x -- edited
+pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
 pretty (App s s') = pretty s .<>. pretty s'
 pretty (BinaryApp s x s') = pretty s :--: text x :--: pretty s' -- edited
 pretty (IfElse s s_1 s_2) = text "if" .<>. pretty s .<>. text "then" .<>. pretty s_1 .<>. text "else" .<>. pretty s_2
