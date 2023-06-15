@@ -57,15 +57,17 @@ testWithSetup (File file) expected v_expect_opt setup =
             s' = desugBwd' e' :: S.Expr _
             _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
             src = render (pretty s)
-         case parse src program of
-            Left msg -> fail msg
-            Right _ ->
-               trace ("\n" <> src) \_ -> do
+         trace ("\n" <> src) \_ -> do
+            case parse src program of
+               Left msg -> fail msg
+               Right _ -> do
                   unless (isGraphical v'') (checkPretty "Value" expected v'')
-                  case snd <$> v_expect_opt of
-                     Nothing -> pure unit
-                     Just file_expect ->
-                        loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+                  trace ("\n" <> src) \_ -> do
+                     unless (isGraphical v'') (checkPretty "Value" expected v'')
+                     case snd <$> v_expect_opt of
+                        Nothing -> pure unit
+                        Just file_expect ->
+                           loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)

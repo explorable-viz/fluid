@@ -6,13 +6,13 @@ import Bindings (Bind, key, val)
 import Data.Foldable (foldl)
 import Data.List (List(..))
 import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
--- import Parse (varDefs)
-import SExpr (Expr(..), Pattern(..), Clauses(..), Clause(..), RecDefs, Branch, ListRest(..), VarDefs, VarDef(..))
+import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), RecDefs, VarDef(..), VarDefs)
 import Util ((×), type (×))
-import Util.Pretty (Doc, empty, text, atop, beside3, space)
+import Util.Pretty (Doc, empty, text, atop, beside3, space, beside)
 
 infixl 5 atop as .-.
 infixl 5 beside3 as .<>.
+infixl 5 beside as :<>:
 data InFront = Prefix (String) | Unit
 
 infixl 5 space as :--:
@@ -36,10 +36,12 @@ pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. listAuxi
 pretty (ListComp _ _ _) = text "[]"
 pretty (ListEnum _ _) = text "[]"
 pretty (Let x s) = text "let" :--: emptyDoc .<>. varDefsToDoc x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s 
+pretty (Matrix _ _ _ _) = text "[]"
+pretty (Constr _ _ _) = text "[]"
 pretty _ = emptyDoc
 
 varDefToDoc :: forall a. VarDef a -> Doc 
-varDefToDoc (VarDef p s) = prettyAuxillaryFuncPattern p .<>. text "=" .<>. pretty s
+varDefToDoc (VarDef p s) = prettyAuxillaryFuncPattern p .<>. text "=" .<>. pretty s 
 
 varDefsToDoc :: forall a. VarDefs a -> Doc 
 varDefsToDoc x = let docs = map varDefToDoc x in foldl (.-.) emptyDoc docs  
@@ -68,11 +70,17 @@ prettyAuxillaryFuncVarExpr :: forall a. List (Bind (Expr a)) -> Doc
 prettyAuxillaryFuncVarExpr (Cons x xs) = text (key x) .<>. text ":" .<>. pretty (val x) .-. prettyAuxillaryFuncVarExpr xs -- edited atop
 prettyAuxillaryFuncVarExpr Nil = emptyDoc
 
+prettyAuxillaryFuncListPattern :: ListRestPattern -> Doc 
+prettyAuxillaryFuncListPattern (PNext p x) = prettyAuxillaryFuncPattern p  .<>. prettyAuxillaryFuncListPattern x
+prettyAuxillaryFuncListPattern PEnd = emptyDoc
+
 prettyAuxillaryFuncPattern :: Pattern -> Doc
 prettyAuxillaryFuncPattern (PVar x) = text x
 prettyAuxillaryFuncPattern (PRecord x) = text "{" .<>. prettyAuxillaryFuncVarPatt x .<>. text "}"
 prettyAuxillaryFuncPattern (PConstr c x) = text c .<>. text "(" .<>. prettyAuxillaryFuncPatterns x .<>. text ")"
-prettyAuxillaryFuncPattern _ = emptyDoc
+prettyAuxillaryFuncPattern (PListEmpty) = text "[]"
+prettyAuxillaryFuncPattern (PListNonEmpty _ _) = emptyDoc
+-- prettyAuxillaryFuncPattern _ = emptyDoc
 
 prettyAuxillaryFuncVarPatt :: List (Bind (Pattern)) -> Doc
 prettyAuxillaryFuncVarPatt (Cons x Nil) = text (key x) .<>. text ":" .<>. prettyAuxillaryFuncPattern (val x) .-. prettyAuxillaryFuncVarPatt Nil -- edited atop
