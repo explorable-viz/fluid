@@ -25,7 +25,7 @@ pretty (Int _ n) = text (show n) -- edited
 pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
 pretty (App s s') = pretty s .<>. pretty s'
 pretty (BinaryApp s x s') = pretty s :--: text x :--: pretty s' -- edited
-pretty (IfElse s s_1 s_2) = text "if" .<>. pretty s .<>. text "then" .<>. pretty s_1 .<>. text "else" .<>. pretty s_2
+pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
 pretty (Project s x) = pretty s .<>. text "." .<>. text x
 pretty (Record _ x) = text "{" .<>. prettyAuxillaryFuncVarExpr x .<>. text "}" -- formatting needs fixing 
 pretty (Lambda (Clauses cs)) = text "fun" .<>. text "{" .<>. prettyAuxillaryFuncClauses Unit (Clauses cs) .<>. text "}" :--: emptyDoc -- edited
@@ -88,7 +88,7 @@ unitClauses :: forall a. Clause a -> Doc
 unitClauses (Clause (ps × e)) = prettyAuxillaryFuncPatterns (toList ps) .<>. text "=" .<>. pretty e -- edited beside with spaces
 
 varClauses :: forall a. String -> Clause a -> Doc
-varClauses x (Clause (ps × e)) = text x .<>. unitClauses (Clause (ps × e))
+varClauses x (Clause (ps × e)) = (text x :--: emptyDoc) .<>. unitClauses (Clause (ps × e))
 
 prettyAuxillaryFuncClauses :: forall a. InFront -> Clauses a -> Doc
 prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (.-.) emptyDoc docs -- beside may need to change (changed to space)
