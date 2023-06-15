@@ -124,7 +124,8 @@ varClauses x (Clause (ps × e)) = (text x :--: emptyDoc) .<>. unitClauses (Claus
 
 prettyAuxillaryFuncClauses :: forall a. InFront -> Clauses a -> Doc
 prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (.-.) emptyDoc docs -- beside may need to change (changed to space)
-prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = let docs = map (varClauses x) cs in foldl (.-.) emptyDoc docs
+prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
+-- prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = let docs = map (varClauses x) cs in foldl (.-.) emptyDoc docs
 
 auxillaryFunction1Rec :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
 auxillaryFunction1Rec x = groupBy (\p q -> key p == key q) x
