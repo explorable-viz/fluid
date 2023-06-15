@@ -77,9 +77,9 @@ prettyAuxillaryFuncListPattern PEnd = emptyDoc
 prettyAuxillaryFuncPattern :: Pattern -> Doc
 prettyAuxillaryFuncPattern (PVar x) = text x
 prettyAuxillaryFuncPattern (PRecord x) = text "{" .<>. prettyAuxillaryFuncVarPatt x .<>. text "}"
-prettyAuxillaryFuncPattern(PConstr "Pair" x) = text "(" .<>. prettyAuxillaryFuncPatterns x "yes" .<>. text ")"
-prettyAuxillaryFuncPattern(PConstr "Empty" x) = text "Empty" .<>. prettyAuxillaryFuncPatterns x "no"
-prettyAuxillaryFuncPattern (PConstr c x) = text "(" .<>. (text c :--: emptyDoc) .<>. prettyAuxillaryFuncPatterns x "no" .<>. text ")"
+prettyAuxillaryFuncPattern(PConstr "Pair" x) = text "(" .<>. prettyAuxillaryFuncPatterns x true .<>. text ")"
+prettyAuxillaryFuncPattern(PConstr "Empty" x) = text "Empty" .<>. prettyAuxillaryFuncPatterns x false
+prettyAuxillaryFuncPattern (PConstr c x) = text "(" .<>. (text c :--: emptyDoc) .<>. prettyAuxillaryFuncPatterns x false .<>. text ")"
 -- prettyAuxillaryFuncPattern (PConstr c x) = text c .<>. text "(" .<>. prettyAuxillaryFuncPatterns x .<>. text ")"
 prettyAuxillaryFuncPattern (PListEmpty) = text "[]"
 prettyAuxillaryFuncPattern (PListNonEmpty _ _) = emptyDoc
@@ -91,11 +91,10 @@ prettyAuxillaryFuncVarPatt (Cons x xs) = text (key x) .<>. text ":" .<>. prettyA
 prettyAuxillaryFuncVarPatt Nil = emptyDoc
 
 
-prettyAuxillaryFuncPatterns :: List Pattern -> String -> Doc
-prettyAuxillaryFuncPatterns (Cons x Nil) "yes" = prettyAuxillaryFuncPattern x
-prettyAuxillaryFuncPatterns (Cons x xs) "yes" = (prettyAuxillaryFuncPattern x .<>. text ",") .<>. prettyAuxillaryFuncPatterns xs "yes"
-prettyAuxillaryFuncPatterns (Cons x xs) "no"  = (prettyAuxillaryFuncPattern x :--: emptyDoc) .<>. prettyAuxillaryFuncPatterns xs "no" -- beside may need to change to a space
-prettyAuxillaryFuncPatterns (Cons _ _) _ = emptyDoc
+prettyAuxillaryFuncPatterns :: List Pattern -> Boolean -> Doc
+prettyAuxillaryFuncPatterns (Cons x Nil) true = prettyAuxillaryFuncPattern x
+prettyAuxillaryFuncPatterns (Cons x xs) true = (prettyAuxillaryFuncPattern x .<>. text ",") .<>. prettyAuxillaryFuncPatterns xs true
+prettyAuxillaryFuncPatterns (Cons x xs) false  = (prettyAuxillaryFuncPattern x :--: emptyDoc) .<>. prettyAuxillaryFuncPatterns xs false -- beside may need to change to a space
 prettyAuxillaryFuncPatterns Nil _ = emptyDoc
 -- in Tex file Patt is more than one pattern but here it can be non-empty (might need to fix this)
 -- prettyAuxillaryFuncPatterns :: List Pattern -> Doc
@@ -103,7 +102,7 @@ prettyAuxillaryFuncPatterns Nil _ = emptyDoc
 -- prettyAuxillaryFuncPatterns Nil = emptyDoc
 
 unitClauses :: forall a. Clause a -> Doc
-unitClauses (Clause (ps × e)) = (prettyAuxillaryFuncPatterns (toList ps) "no" :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) -- edited beside with spaces
+unitClauses (Clause (ps × e)) = (prettyAuxillaryFuncPatterns (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) -- edited beside with spaces
 
 varClauses :: forall a. String -> Clause a -> Doc
 varClauses x (Clause (ps × e)) = (text x :--: emptyDoc) .<>. unitClauses (Clause (ps × e))
