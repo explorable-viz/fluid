@@ -9,6 +9,7 @@ import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), RecDefs, VarDef(..), VarDefs)
 import Util ((×), type (×))
 import Util.Pretty (Doc, atop, beside, beside3, empty, space, text)
+import Util.Pair (Pair(..))
 
 infixl 5 atop as .-.
 infixl 5 beside3 as .<>.
@@ -38,7 +39,14 @@ pretty (ListEnum _ _) = text "[]"
 pretty (Let x s) = text "let" :--: emptyDoc .<>. varDefsToDoc x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s
 pretty (Matrix _ _ _ _) = text "[]"
 pretty (Constr _ _ _) = text "[]"
+pretty (Dictionary _ x) = text "{" .<>. text "|" .<>. dictToDoc x .<>. text "|" .<>. text "}"
+pretty (Str _ x) = text x
 pretty _ = emptyDoc
+
+dictToDoc :: forall a. List (Pair (Expr a)) -> Doc 
+dictToDoc (Cons (Pair e e') Nil) = pretty e .<>. text ":=" .<>. pretty e'
+dictToDoc (Cons (Pair e e') xs) = pretty e .<>. text ":=" .<>. pretty e' .<>. (text "," :--: emptyDoc) .<>. dictToDoc xs 
+dictToDoc Nil = emptyDoc
 
 intersperse' :: List Doc -> Doc -> Doc
 intersperse' (Cons x Nil) _ = x
