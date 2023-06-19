@@ -25,7 +25,7 @@ pretty :: forall a. Expr a -> Doc
 pretty (Int _ n) = text (show n) -- edited
 pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
 pretty (App s s') = pretty s .<>. pretty s'
-pretty (BinaryApp s x s') = (pretty s :--: emptyDoc) .<>. (text x :--: emptyDoc) .<>. pretty s' -- edited
+pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: emptyDoc) .<>. (text x :--: emptyDoc) .<>. pretty s' .<>. text ")" -- edited
 pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
 pretty (Project s x) = pretty s .<>. text "." .<>. text x
 pretty (Record _ x) = text "{" .<>. prettyAuxillaryFuncVarExpr x .<>. text "}" -- formatting needs fixing 
@@ -41,6 +41,7 @@ pretty (Matrix _ _ _ _) = text "[]"
 pretty (Constr _ _ _) = text "[]"
 pretty (Dictionary _ x) = text "{" .<>. text "|" .<>. dictToDoc x .<>. text "|" .<>. text "}"
 pretty (Str _ x) = text x
+pretty (Float _ x) = text (show x)
 pretty _ = emptyDoc
 
 dictToDoc :: forall a. List (Pair (Expr a)) -> Doc 
