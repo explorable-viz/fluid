@@ -8,8 +8,8 @@ import Data.List (List(..))
 import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), RecDefs, VarDef(..), VarDefs)
 import Util ((×), type (×))
-import Util.Pretty (Doc, atop, beside, beside3, empty, space, text)
 import Util.Pair (Pair(..))
+import Util.Pretty (Doc, atop, beside, beside3, empty, space, text)
 
 infixl 5 atop as .-.
 infixl 5 beside3 as .<>.
@@ -101,11 +101,21 @@ prettyAuxillaryFuncPattern (PVar x) = text x
 prettyAuxillaryFuncPattern (PRecord x) = text "{" .<>. prettyAuxillaryFuncVarPatt x .<>. text "}"
 prettyAuxillaryFuncPattern (PConstr "Pair" x) = text "(" .<>. prettyAuxillaryFuncPatterns x true .<>. text ")"
 prettyAuxillaryFuncPattern (PConstr "Empty" x) = text "Empty" .<>. prettyAuxillaryFuncPatterns x false
+prettyAuxillaryFuncPattern (PConstr ":" x) = text "(" .<>. semiColonInfix x .<>. text ")"
 prettyAuxillaryFuncPattern (PConstr c x) = text "(" .<>. (text c :--: emptyDoc) .<>. prettyAuxillaryFuncPatterns x false .<>. text ")"
 -- prettyAuxillaryFuncPattern (PConstr c x) = text c .<>. text "(" .<>. prettyAuxillaryFuncPatterns x .<>. text ")"
 prettyAuxillaryFuncPattern (PListEmpty) = text "[]"
-prettyAuxillaryFuncPattern (PListNonEmpty _ _) = emptyDoc
+prettyAuxillaryFuncPattern (PListNonEmpty p x) = text "["  .<>. prettyAuxillaryFuncPattern p .<>. listPatternToDoc x .<>. text "]"
 
+semiColonInfix :: List Pattern -> Doc 
+semiColonInfix (Cons x Nil) = prettyAuxillaryFuncPattern x
+semiColonInfix (Cons x xs) = prettyAuxillaryFuncPattern x .<>. text ":" .<>. semiColonInfix xs 
+semiColonInfix Nil = emptyDoc
+
+listPatternToDoc :: ListRestPattern -> Doc 
+listPatternToDoc (PNext p PEnd) = prettyAuxillaryFuncPattern p
+listPatternToDoc (PNext p x) = text "," .<>. prettyAuxillaryFuncPattern p .<>. listPatternToDoc x
+listPatternToDoc PEnd = emptyDoc
 -- prettyAuxillaryFuncPattern _ = emptyDoc
 
 prettyAuxillaryFuncVarPatt :: List (Bind (Pattern)) -> Doc
