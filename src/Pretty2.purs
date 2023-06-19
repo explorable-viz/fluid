@@ -3,7 +3,7 @@ module Pretty2 where
 import Prelude
 
 import Bindings (Bind, key, val)
-import Data.Foldable (foldl)
+-- import Data.Foldable (foldl)
 import Data.List (List(..))
 import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), RecDefs, VarDef(..), VarDefs)
@@ -141,7 +141,7 @@ varClauses :: forall a. String -> Clause a -> Doc
 varClauses x (Clause (ps × e)) = (text x :--: emptyDoc) .<>. unitClauses (Clause (ps × e))
 
 prettyAuxillaryFuncClauses :: forall a. InFront -> Clauses a -> Doc
-prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (.-.) emptyDoc docs -- beside may need to change (changed to space)
+prettyAuxillaryFuncClauses Unit (Clauses cs) = intersperse' (toList (map unitClauses cs)) (text ";") -- beside may need to change (changed to space)
 prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
 
 
