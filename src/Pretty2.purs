@@ -35,7 +35,7 @@ pretty (MatchAs s x) = text "match" .<>. pretty s .<>. text "as" .<>. combiningM
 pretty (ListEmpty _) = text "[]"
 pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. listAuxillaryFunc x .<>. text "]" -- edited
 pretty (ListComp _ _ _) = text "[]"
-pretty (ListEnum _ _) = text "[]"
+pretty (ListEnum s s') = text "[" .<>. pretty s .<>. text ".." .<>. pretty s' .<>. text "]"
 pretty (Let x s) = text "let" :--: emptyDoc .<>. varDefsToDoc x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s
 pretty (Matrix _ _ _ _) = text "[]"
 pretty (Constr _ _ _) = text "[]"
@@ -51,7 +51,7 @@ dictToDoc Nil = emptyDoc
 intersperse' :: List Doc -> Doc -> Doc
 intersperse' (Cons x Nil) _ = x
 intersperse' (Cons x xs) d = x .<>. d .-. intersperse' xs d
-intersperse' Nil _ = emptyDoc
+intersperse' Nil _ =  emptyDoc
 
 varDefToDoc :: forall a. VarDef a -> Doc
 varDefToDoc (VarDef p s) = (prettyAuxillaryFuncPattern p :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty s)
@@ -144,6 +144,8 @@ prettyAuxillaryFuncClauses :: forall a. InFront -> Clauses a -> Doc
 prettyAuxillaryFuncClauses Unit (Clauses cs) = let docs = map unitClauses cs in foldl (.-.) emptyDoc docs -- beside may need to change (changed to space)
 prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
 
+
+
 -- prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = let docs = map (varClauses x) cs in foldl (.-.) emptyDoc docs
 
 auxillaryFunction1Rec :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
@@ -156,14 +158,19 @@ auxillaryFunction21Rec x = key (head x) × map (\y -> val y) x
 auxillaryFunction2Rec :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> NonEmptyList (String × NonEmptyList (Clause a))
 auxillaryFunction2Rec x = map auxillaryFunction21Rec x
 
+
+
 auxillaryFunction31Rec :: forall a. String × NonEmptyList (Clause a) -> Doc
 auxillaryFunction31Rec (a × b) = prettyAuxillaryFuncClauses (Prefix a) (Clauses b)
 
 auxillaryFunction3Rec :: forall a. NonEmptyList (String × NonEmptyList (Clause a)) -> Doc
-auxillaryFunction3Rec x = let docs = map auxillaryFunction31Rec x in foldl (.-.) emptyDoc docs
+auxillaryFunction3Rec x = intersperse' (toList (map auxillaryFunction31Rec x)) (text ";") 
 
 combiningAuxillaryFunctionsRec :: forall a. RecDefs a -> Doc
 combiningAuxillaryFunctionsRec x = auxillaryFunction3Rec (auxillaryFunction2Rec (auxillaryFunction1Rec x))
 
 -- need to do normal beside on my documents 
 -- and then apply beside2 to the normal beside 
+
+-- for each clause have them as a list of documents 
+-- then call intersperse' on this list 
