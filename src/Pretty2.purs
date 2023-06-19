@@ -24,7 +24,7 @@ emptyDoc = empty 0 0
 pretty :: forall a. Expr a -> Doc
 pretty (Int _ n) = text (show n) -- edited
 pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
-pretty (App s s') = pretty s .<>. pretty s'
+pretty (App s s') = pretty s .<>. letArg s'
 pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: emptyDoc) .<>. (text x :--: emptyDoc) .<>. pretty s' .<>. text ")" -- edited
 pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
 pretty (Project s x) = pretty s .<>. text "." .<>. text x
@@ -40,9 +40,13 @@ pretty (Let x s) = text "let" :--: emptyDoc .<>. varDefsToDoc x .<>. (emptyDoc :
 pretty (Matrix _ _ _ _) = text "[]"
 pretty (Constr _ _ _) = text "[]"
 pretty (Dictionary _ x) = text "{" .<>. text "|" .<>. dictToDoc x .<>. text "|" .<>. text "}"
-pretty (Str _ x) = text x
+pretty (Str _ x) = text "\"" .<>. text x .<>. text "\""
 pretty (Float _ x) = text (show x)
 pretty _ = emptyDoc
+
+letArg :: forall a. Expr a -> Doc 
+letArg (Let x s) = text "(" .<>. pretty (Let x s) .<>. text ")"
+letArg s = pretty s
 
 dictToDoc :: forall a. List (Pair (Expr a)) -> Doc 
 dictToDoc (Cons (Pair e e') Nil) = pretty e .<>. text ":=" .<>. pretty e'
