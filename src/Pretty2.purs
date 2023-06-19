@@ -24,7 +24,7 @@ emptyDoc = empty 0 0
 pretty :: forall a. Expr a -> Doc
 pretty (Int _ n) = text (show n) -- edited
 pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
-pretty (App s s') = pretty s .<>. letArg s'
+pretty (App s s') = pretty s :--: letArg s'
 pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: emptyDoc) .<>. (text x :--: emptyDoc) .<>. pretty s' .<>. text ")" -- edited
 pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
 pretty (Project s x) = pretty s .<>. text "." .<>. text x
@@ -179,3 +179,8 @@ combiningAuxillaryFunctionsRec x = auxillaryFunction3Rec (auxillaryFunction2Rec 
 
 -- for each clause have them as a list of documents 
 -- then call intersperse' on this list 
+
+-- dict_intersectionWith
+--    (let x = 2 in (fun n m -> (n + m) * x))
+--    {| "a" := 5, "b" := 6, "c" := 3 |}
+--    {| "b" := -6, "c" := 7 |}
