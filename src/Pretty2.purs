@@ -24,6 +24,7 @@ pretty :: forall a. Expr a -> Doc
 pretty (Int _ n) = text (show n) -- edited
 -- pretty (App s s') = (pretty s .-. (emptyDoc :--: emptyDoc :--: emptyDoc :--: letArg s'))
 pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
+pretty (Op x) = text "(" .<>. text x .<>. text ")"
 pretty (App s s') = pretty s :--: pretty s'
 pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: emptyDoc) .<>. (text x :--: emptyDoc) .<>. pretty s' .<>. text ")" -- edited
 pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
@@ -48,7 +49,7 @@ pretty (Float _ x) = text (show x)
 pretty (ListComp _ s q) = text "[" .<>. pretty s .<>. text "|" .<>. qualifiersToDoc q .<>. text "]"
 -- pretty (Matrix _ _ _ _) = text "[]"
 -- pretty (Constr _ c x) = text "[]"
-pretty _ = emptyDoc
+-- pretty _ = emptyDoc
 
 listExprList :: forall a. List (Expr a) -> Doc 
 listExprList (Cons x Nil) = pretty x 
