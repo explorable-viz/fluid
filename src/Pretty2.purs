@@ -47,48 +47,48 @@ pretty (Dictionary _ x) = text "{" .<>. (text "|" :--: emptyDoc) .<>. dictToDoc 
 pretty (Str _ x) = text "\"" .<>. text x .<>. text "\""
 pretty (Float _ x) = text (show x)
 pretty (ListComp _ s q) = text "[" .<>. pretty s .<>. text "|" .<>. qualifiersToDoc q .<>. text "]"
+
 -- pretty (Matrix _ _ _ _) = text "[]"
 -- pretty (Constr _ c x) = text "[]"
 -- pretty _ = emptyDoc
 
-listExprList :: forall a. List (Expr a) -> Doc 
-listExprList (Cons x Nil) = pretty x 
-listExprList (Cons x xs) = pretty x .<>. text ":" .<>. listExprList xs 
+listExprList :: forall a. List (Expr a) -> Doc
+listExprList (Cons x Nil) = pretty x
+listExprList (Cons x xs) = pretty x .<>. text ":" .<>. listExprList xs
 listExprList Nil = emptyDoc
 
 listExpr2 :: forall a. List (Expr a) -> Doc
-listExpr2 (Cons x Nil) = pretty x 
-listExpr2 (Cons x xs) = (pretty x :--: emptyDoc) .<>. listExpr2 xs 
+listExpr2 (Cons x Nil) = pretty x
+listExpr2 (Cons x xs) = (pretty x :--: emptyDoc) .<>. listExpr2 xs
 listExpr2 Nil = emptyDoc
 
-listExpr :: forall a. List (Expr a) -> Doc 
-listExpr (Cons x Nil) = pretty x 
-listExpr (Cons x xs) = pretty x .<>. (text "," :--: emptyDoc) .<>. listExpr xs 
+listExpr :: forall a. List (Expr a) -> Doc
+listExpr (Cons x Nil) = pretty x
+listExpr (Cons x xs) = pretty x .<>. (text "," :--: emptyDoc) .<>. listExpr xs
 listExpr Nil = emptyDoc
 
-
-qualifiersToDoc :: forall a. List (Qualifier a) -> Doc 
-qualifiersToDoc (Cons (Guard s) Nil) = pretty s 
-qualifiersToDoc (Cons (Declaration v) Nil) = (text "let" :--: emptyDoc) .<>. varDefToDoc v 
-qualifiersToDoc (Cons (Generator p s) Nil) = prettyAuxillaryFuncPattern p .<>. text "<-" .<>. pretty s 
-qualifiersToDoc (Cons (Guard s) xs) =  pretty s .<>. text "," .<>.  qualifiersToDoc xs 
+qualifiersToDoc :: forall a. List (Qualifier a) -> Doc
+qualifiersToDoc (Cons (Guard s) Nil) = pretty s
+qualifiersToDoc (Cons (Declaration v) Nil) = (text "let" :--: emptyDoc) .<>. varDefToDoc v
+qualifiersToDoc (Cons (Generator p s) Nil) = prettyAuxillaryFuncPattern p .<>. text "<-" .<>. pretty s
+qualifiersToDoc (Cons (Guard s) xs) = pretty s .<>. text "," .<>. qualifiersToDoc xs
 qualifiersToDoc (Cons (Declaration v) xs) = (text "let" :--: emptyDoc) .<>. varDefToDoc v .<>. text "," .<>. qualifiersToDoc xs
-qualifiersToDoc (Cons (Generator p s) xs) = prettyAuxillaryFuncPattern p .<>. text "<-" .<>. pretty s  .<>. text "," .<>. qualifiersToDoc xs 
+qualifiersToDoc (Cons (Generator p s) xs) = prettyAuxillaryFuncPattern p .<>. text "<-" .<>. pretty s .<>. text "," .<>. qualifiersToDoc xs
 qualifiersToDoc Nil = emptyDoc
 
-letArg :: forall a. Expr a -> Doc 
+letArg :: forall a. Expr a -> Doc
 letArg (Let x s) = text "(" .<>. pretty (Let x s) .<>. text ")"
 letArg s = pretty s
 
-dictToDoc :: forall a. List (Pair (Expr a)) -> Doc 
+dictToDoc :: forall a. List (Pair (Expr a)) -> Doc
 dictToDoc (Cons (Pair e e') Nil) = pretty e .<>. (emptyDoc :--: text ":=" :--: emptyDoc) .<>. pretty e'
-dictToDoc (Cons (Pair e e') xs) = pretty e .<>. (emptyDoc :--: text ":=" :--: emptyDoc) .<>. pretty e' .<>. (text "," :--: emptyDoc) .<>. dictToDoc xs 
+dictToDoc (Cons (Pair e e') xs) = pretty e .<>. (emptyDoc :--: text ":=" :--: emptyDoc) .<>. pretty e' .<>. (text "," :--: emptyDoc) .<>. dictToDoc xs
 dictToDoc Nil = emptyDoc
 
 intersperse' :: List Doc -> Doc -> Doc
 intersperse' (Cons x Nil) _ = x
 intersperse' (Cons x xs) d = x .<>. d .-. intersperse' xs d
-intersperse' Nil _ =  emptyDoc
+intersperse' Nil _ = emptyDoc
 
 varDefToDoc :: forall a. VarDef a -> Doc
 varDefToDoc (VarDef p s) = (prettyAuxillaryFuncPattern p :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty s)
@@ -142,17 +142,18 @@ prettyAuxillaryFuncPattern (PConstr ":" x) = text "(" .<>. semiColonInfix x .<>.
 prettyAuxillaryFuncPattern (PConstr c x) = text "(" .<>. (text c :--: emptyDoc) .<>. prettyAuxillaryFuncPatterns x false .<>. text ")"
 -- prettyAuxillaryFuncPattern (PConstr c x) = text c .<>. text "(" .<>. prettyAuxillaryFuncPatterns x .<>. text ")"
 prettyAuxillaryFuncPattern (PListEmpty) = text "[]"
-prettyAuxillaryFuncPattern (PListNonEmpty p x) = text "["  .<>. prettyAuxillaryFuncPattern p .<>. listPatternToDoc x .<>. text "]"
+prettyAuxillaryFuncPattern (PListNonEmpty p x) = text "[" .<>. prettyAuxillaryFuncPattern p .<>. listPatternToDoc x .<>. text "]"
 
-semiColonInfix :: List Pattern -> Doc 
+semiColonInfix :: List Pattern -> Doc
 semiColonInfix (Cons x Nil) = prettyAuxillaryFuncPattern x
-semiColonInfix (Cons x xs) = prettyAuxillaryFuncPattern x .<>. text ":" .<>. semiColonInfix xs 
+semiColonInfix (Cons x xs) = prettyAuxillaryFuncPattern x .<>. text ":" .<>. semiColonInfix xs
 semiColonInfix Nil = emptyDoc
 
-listPatternToDoc :: ListRestPattern -> Doc 
+listPatternToDoc :: ListRestPattern -> Doc
 listPatternToDoc (PNext p PEnd) = prettyAuxillaryFuncPattern p
 listPatternToDoc (PNext p x) = text "," .<>. prettyAuxillaryFuncPattern p .<>. listPatternToDoc x
 listPatternToDoc PEnd = emptyDoc
+
 -- prettyAuxillaryFuncPattern _ = emptyDoc
 
 prettyAuxillaryFuncVarPatt :: List (Bind (Pattern)) -> Doc
@@ -181,8 +182,6 @@ prettyAuxillaryFuncClauses :: forall a. InFront -> Clauses a -> Doc
 prettyAuxillaryFuncClauses Unit (Clauses cs) = intersperse' (toList (map unitClauses cs)) (text ";") -- beside may need to change (changed to space)
 prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
 
-
-
 -- prettyAuxillaryFuncClauses (Prefix x) (Clauses cs) = let docs = map (varClauses x) cs in foldl (.-.) emptyDoc docs
 
 auxillaryFunction1Rec :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
@@ -195,13 +194,11 @@ auxillaryFunction21Rec x = key (head x) × map (\y -> val y) x
 auxillaryFunction2Rec :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> NonEmptyList (String × NonEmptyList (Clause a))
 auxillaryFunction2Rec x = map auxillaryFunction21Rec x
 
-
-
 auxillaryFunction31Rec :: forall a. String × NonEmptyList (Clause a) -> Doc
 auxillaryFunction31Rec (a × b) = prettyAuxillaryFuncClauses (Prefix a) (Clauses b)
 
 auxillaryFunction3Rec :: forall a. NonEmptyList (String × NonEmptyList (Clause a)) -> Doc
-auxillaryFunction3Rec x = intersperse' (toList (map auxillaryFunction31Rec x)) (text ";") 
+auxillaryFunction3Rec x = intersperse' (toList (map auxillaryFunction31Rec x)) (text ";")
 
 combiningAuxillaryFunctionsRec :: forall a. RecDefs a -> Doc
 combiningAuxillaryFunctionsRec x = auxillaryFunction3Rec (auxillaryFunction2Rec (auxillaryFunction1Rec x))
