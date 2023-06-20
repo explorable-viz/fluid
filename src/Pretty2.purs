@@ -22,8 +22,9 @@ emptyDoc = empty 0 0
 
 pretty :: forall a. Expr a -> Doc
 pretty (Int _ n) = text (show n) -- edited
+-- pretty (App s s') = (pretty s .-. (emptyDoc :--: emptyDoc :--: emptyDoc :--: letArg s'))
 pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
-pretty (App s s') = (pretty s .-. (emptyDoc :--: emptyDoc :--: emptyDoc :--: letArg s'))
+pretty (App s s') = pretty s :--: pretty s'
 pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: emptyDoc) .<>. (text x :--: emptyDoc) .<>. pretty s' .<>. text ")" -- edited
 pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
 pretty (Project s x) = pretty s .<>. text "." .<>. text x
@@ -35,13 +36,35 @@ pretty (ListEmpty _) = text "[]"
 pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. listAuxillaryFunc x .<>. text "]" -- edited
 pretty (ListEnum s s') = text "[" .<>. pretty s .<>. text ".." .<>. pretty s' .<>. text "]"
 pretty (Let x s) = text "let" :--: emptyDoc .<>. varDefsToDoc x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s
-pretty (Matrix _ _ _ _) = text "[]"
-pretty (Constr _ _ _) = text "[]"
+pretty (Matrix _ s (v × v') s') = text "[" .<>. text "|" .<>. pretty s .<>. text "|" .<>. text "(" .<>. text v .<>. text "," .<>. text v' .<>. (text ")" :--: emptyDoc) .<>. (text "in" :--: emptyDoc) .<>. pretty s' .<>. text "|" .<>. text "]"
+pretty (Constr _ "NonEmpty" _) = text "NonEmpty"
+pretty (Constr _ "None" _) = text "None"
+pretty (Constr _ "Pair" x) = text "(" .<>. listExpr x .<>. text ")"
+pretty (Constr _ ":" x) = text "(" .<>. listExprList x .<>. text ")"
+pretty (Constr _ c x) = (text c :--: emptyDoc) .<>. listExpr2 x
 pretty (Dictionary _ x) = text "{" .<>. (text "|" :--: emptyDoc) .<>. dictToDoc x .<>. (emptyDoc :--: text "|") .<>. text "}"
 pretty (Str _ x) = text "\"" .<>. text x .<>. text "\""
 pretty (Float _ x) = text (show x)
 pretty (ListComp _ s q) = text "[" .<>. pretty s .<>. text "|" .<>. qualifiersToDoc q .<>. text "]"
+-- pretty (Matrix _ _ _ _) = text "[]"
+-- pretty (Constr _ c x) = text "[]"
 pretty _ = emptyDoc
+
+listExprList :: forall a. List (Expr a) -> Doc 
+listExprList (Cons x Nil) = pretty x 
+listExprList (Cons x xs) = pretty x .<>. text ":" .<>. listExprList xs 
+listExprList Nil = emptyDoc
+
+listExpr2 :: forall a. List (Expr a) -> Doc
+listExpr2 (Cons x Nil) = pretty x 
+listExpr2 (Cons x xs) = (pretty x :--: emptyDoc) .<>. listExpr2 xs 
+listExpr2 Nil = emptyDoc
+
+listExpr :: forall a. List (Expr a) -> Doc 
+listExpr (Cons x Nil) = pretty x 
+listExpr (Cons x xs) = pretty x .<>. (text "," :--: emptyDoc) .<>. listExpr xs 
+listExpr Nil = emptyDoc
+
 
 qualifiersToDoc :: forall a. List (Qualifier a) -> Doc 
 qualifiersToDoc (Cons (Guard s) Nil) = pretty s 
