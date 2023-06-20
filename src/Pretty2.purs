@@ -3,10 +3,9 @@ module Pretty2 where
 import Prelude
 
 import Bindings (Bind, key, val)
--- import Data.Foldable (foldl)
 import Data.List (List(..))
 import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), RecDefs, VarDef(..), VarDefs)
+import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), RecDefs, VarDef(..), VarDefs, Qualifier(..))
 import Util ((×), type (×))
 import Util.Pair (Pair(..))
 import Util.Pretty (Doc, atop, beside, beside3, empty, space, text)
@@ -24,7 +23,7 @@ emptyDoc = empty 0 0
 pretty :: forall a. Expr a -> Doc
 pretty (Int _ n) = text (show n) -- edited
 pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
-pretty (App s s') = pretty s :--: letArg s'
+pretty (App s s') = (pretty s .-. (emptyDoc :--: emptyDoc :--: emptyDoc :--: letArg s'))
 pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: emptyDoc) .<>. (text x :--: emptyDoc) .<>. pretty s' .<>. text ")" -- edited
 pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
 pretty (Project s x) = pretty s .<>. text "." .<>. text x
@@ -34,23 +33,32 @@ pretty (LetRec g s) = text "let" :--: emptyDoc .<>. combiningAuxillaryFunctionsR
 pretty (MatchAs s x) = text "match" .<>. pretty s .<>. text "as" .<>. combiningMatch x
 pretty (ListEmpty _) = text "[]"
 pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. listAuxillaryFunc x .<>. text "]" -- edited
-pretty (ListComp _ _ _) = text "[]"
 pretty (ListEnum s s') = text "[" .<>. pretty s .<>. text ".." .<>. pretty s' .<>. text "]"
 pretty (Let x s) = text "let" :--: emptyDoc .<>. varDefsToDoc x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s
 pretty (Matrix _ _ _ _) = text "[]"
 pretty (Constr _ _ _) = text "[]"
-pretty (Dictionary _ x) = text "{" .<>. text "|" .<>. dictToDoc x .<>. text "|" .<>. text "}"
+pretty (Dictionary _ x) = text "{" .<>. (text "|" :--: emptyDoc) .<>. dictToDoc x .<>. (emptyDoc :--: text "|") .<>. text "}"
 pretty (Str _ x) = text "\"" .<>. text x .<>. text "\""
 pretty (Float _ x) = text (show x)
+pretty (ListComp _ s q) = text "[" .<>. pretty s .<>. text "|" .<>. qualifiersToDoc q .<>. text "]"
 pretty _ = emptyDoc
+
+qualifiersToDoc :: forall a. List (Qualifier a) -> Doc 
+qualifiersToDoc (Cons (Guard s) Nil) = pretty s 
+qualifiersToDoc (Cons (Declaration v) Nil) = (text "let" :--: emptyDoc) .<>. varDefToDoc v 
+qualifiersToDoc (Cons (Generator p s) Nil) = prettyAuxillaryFuncPattern p .<>. text "<-" .<>. pretty s 
+qualifiersToDoc (Cons (Guard s) xs) =  pretty s .<>. text "," .<>.  qualifiersToDoc xs 
+qualifiersToDoc (Cons (Declaration v) xs) = (text "let" :--: emptyDoc) .<>. varDefToDoc v .<>. text "," .<>. qualifiersToDoc xs
+qualifiersToDoc (Cons (Generator p s) xs) = prettyAuxillaryFuncPattern p .<>. text "<-" .<>. pretty s  .<>. text "," .<>. qualifiersToDoc xs 
+qualifiersToDoc Nil = emptyDoc
 
 letArg :: forall a. Expr a -> Doc 
 letArg (Let x s) = text "(" .<>. pretty (Let x s) .<>. text ")"
 letArg s = pretty s
 
 dictToDoc :: forall a. List (Pair (Expr a)) -> Doc 
-dictToDoc (Cons (Pair e e') Nil) = pretty e .<>. text ":=" .<>. pretty e'
-dictToDoc (Cons (Pair e e') xs) = pretty e .<>. text ":=" .<>. pretty e' .<>. (text "," :--: emptyDoc) .<>. dictToDoc xs 
+dictToDoc (Cons (Pair e e') Nil) = pretty e .<>. (emptyDoc :--: text ":=" :--: emptyDoc) .<>. pretty e'
+dictToDoc (Cons (Pair e e') xs) = pretty e .<>. (emptyDoc :--: text ":=" :--: emptyDoc) .<>. pretty e' .<>. (text "," :--: emptyDoc) .<>. dictToDoc xs 
 dictToDoc Nil = emptyDoc
 
 intersperse' :: List Doc -> Doc -> Doc
