@@ -68,13 +68,18 @@ instance Eq (Expr a) where
    eq (MatchAs s1 x) (MatchAs s1' y) = (eq s1 s1') && (checkMatch x y) 
    eq (IfElse s1 s2 s3) (IfElse s1' s2' s3') = (eq s1 s1') && (eq s2 s2') && (eq s3 s3')
    eq (ListEmpty _) (ListEmpty _) = true 
-   -- list non empty 
+   eq (ListNonEmpty _ s1 r1) (ListNonEmpty _ s1' r1') = (eq s1 s1') && (checkListRest r1 r1')
    eq (ListEnum s1 s2) (ListEnum s1' s2') = (eq s1 s1') && (eq s2 s2')
    -- list comprehensions 
    -- vardefs 
    -- letrecs
    eq _ _ = false 
 
+
+checkListRest :: forall a. ListRest a -> ListRest a -> Boolean 
+checkListRest (End _) (End _) = true 
+checkListRest (Next _ s1 r1) (Next _ s1' r1') = (eq s1 s1') && checkListRest r1 r1'
+checkListRest _ _ = false 
 
 -- the below auxillary functions turn a NonEmptyList (Pattern x Expr a) to Clauses a 
 matchAuxillaryFunc1 :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
