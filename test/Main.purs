@@ -162,7 +162,7 @@ test_bwd =
    , testBwd (File "dict/intersectionWith") (File "dict/intersectionWith.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "b" ↦ (false × Int true 0)
-             , "c" ↦ (false × Int true 10)
+             , "c" ↦ (false × Int true 20)
              ]
         )
         "{|\"b\":= _0_, \"c\":= _20_|}"
