@@ -75,6 +75,13 @@ instance Eq (Expr a) where
    -- letrecs
    eq _ _ = false 
 
+
+checkingClause :: forall a. Clause a -> Clause a -> Boolean 
+checkingClause (Clause (p1 × s1)) (Clause (p2 × s2)) = (checkPatterns (toList p1) (toList p2)) && (eq s1 s2) 
+
+checkingClauses :: forall a. Clauses a -> Clauses a -> Boolean 
+checkingClauses (Clauses cs1) (Clauses cs2) = let checked = zipWith checkingClause (toList cs1) (toList cs2) in foldl (&&) true checked 
+
 checkPattern :: Pattern -> Pattern -> Boolean 
 checkPattern (PVar v1) (PVar v2) = eq v1 v2
 checkPattern (PConstr c1 x) (PConstr c2 y) = (eq c1 c2) && (checkPatterns x y)
