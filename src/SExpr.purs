@@ -65,6 +65,14 @@ instance Eq (Expr a) where
    eq (Project s1 v1) (Project s2 v2) = (eq s1 s2) && (eq v1 v2)
    eq (App s1 r1) (App s2 r2) = (eq s1 s2) && (eq r1 r2)
    eq (BinaryApp s1 v1 s1') (BinaryApp s2 v2 s2') = (eq s1 s2) && (eq v1 v2) && (eq s1' s2')
+   -- match as 
+   eq (IfElse s1 s2 s3) (IfElse s1' s2' s3') = (eq s1 s1') && (eq s2 s2') && (eq s3 s3')
+   eq (ListEmpty _) (ListEmpty _) = true 
+   -- list non empty 
+   eq (ListEnum s1 s2) (ListEnum s1' s2') = (eq s1 s1') && (eq s2 s2')
+   -- list comprehensions 
+   -- vardefs 
+   -- letrecs
    eq _ _ = false 
 
 
