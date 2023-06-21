@@ -61,7 +61,10 @@ instance Eq (Expr a) where
    eq (Record _ x) (Record _ y) = checkingVarExpr x y 
    eq (Dictionary _ x) (Dictionary _ y) = checkingPairExpr x y
    eq (Matrix _ s1 (x1 × y1) s1') (Matrix _ s2 (x2 × y2) s2') = (eq s1 s2) && (eq x1 x2) && (eq y1 y2) && (eq s1' s2')
-   
+   -- eq (Lambda (Clauses a))
+   eq (Project s1 v1) (Project s2 v2) = (eq s1 s2) && (eq v1 v2)
+   eq (App s1 r1) (App s2 r2) = (eq s1 s2) && (eq r1 r2)
+   eq (BinaryApp s1 v1 s1') (BinaryApp s2 v2 s2') = (eq s1 s2) && (eq v1 v2) && (eq s1' s2')
    eq _ _ = false 
 
 
