@@ -36529,7 +36529,7 @@
     }
     fail();
   })())));
-  var parseProgram = (folder) => (file) => _bind(loadFile(folder)(file))((loaded) => _pure(successful(parse(loaded)((state1, more, lift1, $$throw, done) => more((v1) => topLevel(expr_)(
+  var parseProgram = (folder) => (file) => _bind(loadFile(folder)(file))((src) => _pure(successful(parse(src)((state1, more, lift1, $$throw, done) => more((v1) => topLevel(expr_)(
     state1,
     more,
     lift1,
