@@ -1,26 +1,31 @@
 module Test.Util where
 
 import Prelude hiding (absurd)
+
+import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
+import App.Util (Selector)
+import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (fst, snd)
+import DataType (dataTypeFor, typeName)
 import Debug (trace)
+import Desugarable (desugFwd', desugBwd')
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Test.Spec (SpecT, before, it)
-import Test.Spec.Assertions (shouldEqual)
-import Test.Spec.Mocha (runMocha)
-import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
-import App.Util (Selector)
-import DataType (dataTypeFor, typeName)
-import Desugarable (desugFwd', desugBwd')
+-- import Effect.Console (log)
+-- import Effect.Class (liftEffect)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
-import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports)
+import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
+import Parse (program)
 import Pretty (class Pretty, prettyP)
 import Pretty2 (pretty)
 import SExpr (Expr) as S
+import Test.Spec (SpecT, before, it)
+import Test.Spec.Assertions (fail, shouldEqual)
+import Test.Spec.Mocha (runMocha)
 import Util (type (×), (×), successful)
 import Util.Pretty (render)
 import Val (Env, Val(..), (<+>))
@@ -52,12 +57,18 @@ testWithSetup (File file) expected v_expect_opt setup =
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
             s' = desugBwd' e' :: S.Expr _
             _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
-         trace ("\n" <> render (pretty s)) \_ -> do
-            unless (isGraphical v'') (checkPretty "Value" expected v'')
-            case snd <$> v_expect_opt of
-               Nothing -> pure unit
-               Just file_expect ->
-                  loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+            src = render (pretty s)
+         trace ("\n" <> src) \_ -> do
+            case parse src program of
+               Left msg -> fail msg
+               Right _ -> do
+                  unless (isGraphical v'') (checkPretty "Value" expected v'')
+                  trace ("\n" <> src) \_ -> do
+                     unless (isGraphical v'') (checkPretty "Value" expected v'')
+                     case snd <$> v_expect_opt of
+                        Nothing -> pure unit
+                        Just file_expect ->
+                           loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)

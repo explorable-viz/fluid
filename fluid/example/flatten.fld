@@ -9,3 +9,4 @@ flatten
       (4, "john")
       (NonEmpty (NonEmpty Empty (6, "sarah") Empty) (7, "claire") Empty)
    )
+
