@@ -75,11 +75,20 @@ instance Eq (Expr a) where
    -- letrecs
    eq _ _ = false 
 
+checkPattern :: Pattern -> Pattern -> Boolean 
+checkPattern (PVar v1) (PVar v2) = eq v1 v2
+checkPattern (PConstr c1 x) (PConstr c2 y) = (eq c1 c2) && (checkPatterns x y)
+-- checkPattern (PRecord List (Bind Pattern))
+checkPattern (PListEmpty) (PListEmpty) = true 
+-- checkPattern (Pattern ListRestPattern)
+checkPattern _ _ = false 
 
-
-   --    --  eq (Dictionary _ (List (Pair (Expr a)))) = 
-   --    eq _ _ = false
-
+checkPatterns :: List (Pattern) -> List Pattern -> Boolean 
+checkPatterns (Cons x xs) (Cons y ys) = (checkPattern x y) && (checkPatterns xs ys)
+checkPatterns (Cons _ _) Nil = false 
+checkPatterns Nil (Cons _ _) = false 
+checkPatterns Nil Nil = true 
+ 
 checkingPairExpr :: forall a. List (Pair (Expr a)) -> (List (Pair (Expr a))) -> Boolean 
 checkingPairExpr (Cons (Pair a b) x) (Cons (Pair c d) y) = (eq a c) && (eq b d) && checkingPairExpr x y 
 checkingPairExpr (Cons (Pair  _ _) _) Nil = false 
