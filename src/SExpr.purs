@@ -61,11 +61,11 @@ instance Eq (Expr a) where
    eq (Record _ x) (Record _ y) = checkingVarExpr x y 
    eq (Dictionary _ x) (Dictionary _ y) = checkingPairExpr x y
    eq (Matrix _ s1 (x1 × y1) s1') (Matrix _ s2 (x2 × y2) s2') = (eq s1 s2) && (eq x1 x2) && (eq y1 y2) && (eq s1' s2')
-   -- eq (Lambda (Clauses a))
+   eq (Lambda c1) (Lambda c2) = checkingClauses c1 c2 
    eq (Project s1 v1) (Project s2 v2) = (eq s1 s2) && (eq v1 v2)
    eq (App s1 r1) (App s2 r2) = (eq s1 s2) && (eq r1 r2)
    eq (BinaryApp s1 v1 s1') (BinaryApp s2 v2 s2') = (eq s1 s2) && (eq v1 v2) && (eq s1' s2')
-   -- match as 
+   eq (MatchAs s1 x) (MatchAs s1' y) = (eq s1 s1') && (checkMatch x y) 
    eq (IfElse s1 s2 s3) (IfElse s1' s2' s3') = (eq s1 s1') && (eq s2 s2') && (eq s3 s3')
    eq (ListEmpty _) (ListEmpty _) = true 
    -- list non empty 
@@ -76,6 +76,25 @@ instance Eq (Expr a) where
    eq _ _ = false 
 
 
+-- the below auxillary functions turn a NonEmptyList (Pattern x Expr a) to Clauses a 
+matchAuxillaryFunc1 :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
+matchAuxillaryFunc1 x = map matchAuxillaryFunc11 x
+
+matchAuxillaryFunc11 :: forall a. Pattern × Expr a -> NonEmptyList Pattern × Expr a
+matchAuxillaryFunc11 (a × b) = singleton a × b
+
+matchAuxillaryFunc2 :: forall a. NonEmptyList (NonEmptyList Pattern × Expr a) -> NonEmptyList (Clause a)
+matchAuxillaryFunc2 x = map (\y -> Clause y) x
+
+matchAuxillaryFunc3 :: forall a. NonEmptyList (Clause a) -> Clauses a
+matchAuxillaryFunc3 x = Clauses x
+
+combiningMatch :: forall a. NonEmptyList (Pattern × Expr a) -> Clauses a
+combiningMatch x = (matchAuxillaryFunc3 (matchAuxillaryFunc2 (matchAuxillaryFunc1 x)))
+
+checkMatch :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (Pattern × Expr a) -> Boolean 
+checkMatch x y  = checkingClauses (combiningMatch x) (combiningMatch y)
+
 checkingClause :: forall a. Clause a -> Clause a -> Boolean 
 checkingClause (Clause (p1 × s1)) (Clause (p2 × s2)) = (checkPatterns (toList p1) (toList p2)) && (eq s1 s2) 
 
@@ -85,11 +104,16 @@ checkingClauses (Clauses cs1) (Clauses cs2) = let checked = zipWith checkingClau
 checkPattern :: Pattern -> Pattern -> Boolean 
 checkPattern (PVar v1) (PVar v2) = eq v1 v2
 checkPattern (PConstr c1 x) (PConstr c2 y) = (eq c1 c2) && (checkPatterns x y)
--- checkPattern (PRecord List (Bind Pattern))
+checkPattern (PRecord x) (PRecord y) = checkingVarPatt x y 
 checkPattern (PListEmpty) (PListEmpty) = true 
--- checkPattern (Pattern ListRestPattern)
+checkPattern (PListNonEmpty p1 x) (PListNonEmpty p2 y) = (checkPattern p1 p2) && (checkListRestPatt x y)
 checkPattern _ _ = false 
 
+checkListRestPatt :: ListRestPattern -> ListRestPattern -> Boolean 
+checkListRestPatt (PEnd) (PEnd) = true 
+checkListRestPatt (PNext p1 x) (PNext p2 y) = (checkPattern p1 p2) && (checkListRestPatt x y)
+
+checkListRestPatt _ _ = false 
 checkPatterns :: List (Pattern) -> List Pattern -> Boolean 
 checkPatterns (Cons x xs) (Cons y ys) = (checkPattern x y) && (checkPatterns xs ys)
 checkPatterns (Cons _ _) Nil = false 
@@ -102,6 +126,12 @@ checkingPairExpr (Cons (Pair  _ _) _) Nil = false
 checkingPairExpr Nil (Cons (Pair _ _) _) = false 
 checkingPairExpr Nil Nil = true 
    
+checkingVarPatt :: List (Bind Pattern) -> List (Bind Pattern) -> Boolean 
+checkingVarPatt (Cons (v1 × p1) x) (Cons (v2 × p2) y) = (eq v1 v2) && (checkPattern p1 p2) && checkingVarPatt x y 
+checkingVarPatt (Cons _ _) Nil = false 
+checkingVarPatt Nil (Cons _ _)  = false 
+checkingVarPatt Nil Nil = true 
+
 -- -- question for a and c will it call Expr a or will it call the String eq 
 checkingVarExpr :: forall a. List (Bind (Expr a)) -> List (Bind (Expr a)) -> Boolean 
 checkingVarExpr (Cons (a × b) x) (Cons (c × d) y) = (eq a c) && (eq b d) && checkingVarExpr x y
