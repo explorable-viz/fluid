@@ -70,11 +70,26 @@ instance Eq (Expr a) where
    eq (ListEmpty _) (ListEmpty _) = true 
    eq (ListNonEmpty _ s1 r1) (ListNonEmpty _ s1' r1') = (eq s1 s1') && (checkListRest r1 r1')
    eq (ListEnum s1 s2) (ListEnum s1' s2') = (eq s1 s1') && (eq s2 s2')
-   -- list comprehensions 
-   -- vardefs 
+   eq (ListComp _ s x) (ListComp _ s' x') = (eq s s') && (checkListQualifier x x')
+   eq (Let v s) (Let v' s') = (checkVarDefs v v') && (eq s s')
    -- letrecs
    eq _ _ = false 
 
+
+checkVarDefs :: forall a. VarDefs a -> VarDefs a -> Boolean 
+checkVarDefs x y = let check = zipWith checkVarDef (toList x) (toList y) in foldl (&&) true check
+
+checkVarDef :: forall a. VarDef a -> VarDef a -> Boolean 
+checkVarDef (VarDef p s) (VarDef p' s') = (checkPattern p p') && (eq s s')
+
+checkListQualifier :: forall a. List (Qualifier a) -> List (Qualifier a) -> Boolean 
+checkListQualifier x y = let check = zipWith checkQualifier x y in foldl (&&) true check
+
+checkQualifier :: forall a. Qualifier a -> Qualifier a -> Boolean 
+checkQualifier (Guard s1) (Guard s1') = (eq s1 s1') 
+checkQualifier (Generator p s) (Generator p' s') = (checkPattern p p') && (eq s s')
+checkQualifier (Declaration x) (Declaration x') = (checkVarDef x x') 
+checkQualifier _ _ = false 
 
 checkListRest :: forall a. ListRest a -> ListRest a -> Boolean 
 checkListRest (End _) (End _) = true 
@@ -101,7 +116,7 @@ checkMatch :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (Patter
 checkMatch x y  = checkingClauses (combiningMatch x) (combiningMatch y)
 
 checkingClause :: forall a. Clause a -> Clause a -> Boolean 
-checkingClause (Clause (p1 × s1)) (Clause (p2 × s2)) = (checkPatterns (toList p1) (toList p2)) && (eq s1 s2) 
+checkingClause (Clause (p1 × s1)) (Clause (p2 × s2)) = (checkPatterns (toList p1) (toList p2)) && (eq s1 s2) -- eq (p1 × s1) (p2 × s2)
 
 checkingClauses :: forall a. Clauses a -> Clauses a -> Boolean 
 checkingClauses (Clauses cs1) (Clauses cs2) = let checked = zipWith checkingClause (toList cs1) (toList cs2) in foldl (&&) true checked 
