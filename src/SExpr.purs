@@ -72,9 +72,14 @@ instance Eq (Expr a) where
    eq (ListEnum s1 s2) (ListEnum s1' s2') = (eq s1 s1') && (eq s2 s2')
    eq (ListComp _ s x) (ListComp _ s' x') = (eq s s') && (checkListQualifier x x')
    eq (Let v s) (Let v' s') = (checkVarDefs v v') && (eq s s')
-   -- letrecs
+   eq (LetRec r s) (LetRec r' s') = (checkRecDefs r r') && (eq s s')
    eq _ _ = false 
 
+checkRecDefs :: forall a. RecDefs a -> RecDefs a -> Boolean 
+checkRecDefs x y = let check = zipWith checkBranch (toList x) (toList y) in foldl (&&) true check 
+
+checkBranch :: forall a. Branch a -> Branch a -> Boolean 
+checkBranch (v × cs) (v' × cs') = (eq v v') && (checkingClause cs cs')
 
 checkVarDefs :: forall a. VarDefs a -> VarDefs a -> Boolean 
 checkVarDefs x y = let check = zipWith checkVarDef (toList x) (toList y) in foldl (&&) true check
@@ -132,8 +137,8 @@ checkPattern _ _ = false
 checkListRestPatt :: ListRestPattern -> ListRestPattern -> Boolean 
 checkListRestPatt (PEnd) (PEnd) = true 
 checkListRestPatt (PNext p1 x) (PNext p2 y) = (checkPattern p1 p2) && (checkListRestPatt x y)
-
 checkListRestPatt _ _ = false 
+
 checkPatterns :: List (Pattern) -> List Pattern -> Boolean 
 checkPatterns (Cons x xs) (Cons y ys) = (checkPattern x y) && (checkPatterns xs ys)
 checkPatterns (Cons _ _) Nil = false 
@@ -152,7 +157,6 @@ checkingVarPatt (Cons _ _) Nil = false
 checkingVarPatt Nil (Cons _ _)  = false 
 checkingVarPatt Nil Nil = true 
 
--- -- question for a and c will it call Expr a or will it call the String eq 
 checkingVarExpr :: forall a. List (Bind (Expr a)) -> List (Bind (Expr a)) -> Boolean 
 checkingVarExpr (Cons (a × b) x) (Cons (c × d) y) = (eq a c) && (eq b d) && checkingVarExpr x y
 checkingVarExpr (Cons _ _) Nil = false 
