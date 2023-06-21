@@ -51,6 +51,43 @@ data Expr a
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
+instance Eq (Expr a) where 
+   eq (Var x) (Var y) = eq x y 
+   eq (Op x) (Op y) = eq x y 
+   eq (Int _ x) (Int _ y) = eq x y 
+   eq (Float _ x) (Float _ y) = eq x y 
+   eq (Str _ x) (Str _ y) = eq x y 
+   eq (Constr _ c1 x) (Constr _ c2 y) = (eq c1 c2) && (checkingLists x y)
+   eq (Record _ x) (Record _ y) = checkingVarExpr x y 
+   eq (Dictionary _ x) (Dictionary _ y) = checkingPairExpr x y
+   eq (Matrix _ s1 (x1 × y1) s1') (Matrix _ s2 (x2 × y2) s2') = (eq s1 s2) && (eq x1 x2) && (eq y1 y2) && (eq s1' s2')
+   
+   eq _ _ = false 
+
+
+
+   --    --  eq (Dictionary _ (List (Pair (Expr a)))) = 
+   --    eq _ _ = false
+
+checkingPairExpr :: forall a. List (Pair (Expr a)) -> (List (Pair (Expr a))) -> Boolean 
+checkingPairExpr (Cons (Pair a b) x) (Cons (Pair c d) y) = (eq a c) && (eq b d) && checkingPairExpr x y 
+checkingPairExpr (Cons (Pair  _ _) _) Nil = false 
+checkingPairExpr Nil (Cons (Pair _ _) _) = false 
+checkingPairExpr Nil Nil = true 
+   
+-- -- question for a and c will it call Expr a or will it call the String eq 
+checkingVarExpr :: forall a. List (Bind (Expr a)) -> List (Bind (Expr a)) -> Boolean 
+checkingVarExpr (Cons (a × b) x) (Cons (c × d) y) = (eq a c) && (eq b d) && checkingVarExpr x y
+checkingVarExpr (Cons _ _) Nil = false 
+checkingVarExpr Nil (Cons _ _)  = false 
+checkingVarExpr Nil Nil = true 
+
+checkingLists :: forall a. List (Expr a) -> List (Expr a) -> Boolean 
+checkingLists (Cons x xs) (Cons y ys) = (eq x y) && (checkingLists xs ys)
+checkingLists (Cons _ _) Nil = false 
+checkingLists Nil (Cons _ _)  = false 
+checkingLists Nil Nil = true  
+
 data ListRest a
    = End a
    | Next a (Expr a) (ListRest a)
