@@ -13,8 +13,8 @@ import Debug (trace)
 import Desugarable (desugFwd', desugBwd')
 import Effect (Effect)
 import Effect.Aff (Aff)
--- import Effect.Console (log)
--- import Effect.Class (liftEffect)
+import Effect.Console (logShow)
+import Effect.Class (liftEffect)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
@@ -61,7 +61,8 @@ testWithSetup (File file) expected v_expect_opt setup =
          trace ("\n" <> src) \_ -> do
             case parse src program of
                Left msg -> fail msg
-               Right _ -> do
+               Right newProg -> do
+                  liftEffect (logShow (eq (erase s) newProg))
                   unless (isGraphical v'') (checkPretty "Value" expected v'')
                   trace ("\n" <> src) \_ -> do
                      unless (isGraphical v'') (checkPretty "Value" expected v'')

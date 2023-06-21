@@ -51,6 +51,124 @@ data Expr a
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
+instance Eq (Expr a) where
+   eq (Var x) (Var y) = eq x y
+   eq (Op x) (Op y) = eq x y
+   eq (Int _ x) (Int _ y) = eq x y
+   eq (Float _ x) (Float _ y) = eq x y
+   eq (Str _ x) (Str _ y) = eq x y
+   eq (Constr _ c1 x) (Constr _ c2 y) = (eq c1 c2) && (checkingLists x y)
+   eq (Record _ x) (Record _ y) = checkingVarExpr x y
+   eq (Dictionary _ x) (Dictionary _ y) = checkingPairExpr x y
+   eq (Matrix _ s1 (x1 × y1) s1') (Matrix _ s2 (x2 × y2) s2') = (eq s1 s2) && (eq x1 x2) && (eq y1 y2) && (eq s1' s2')
+   eq (Lambda c1) (Lambda c2) = checkingClauses c1 c2
+   eq (Project s1 v1) (Project s2 v2) = (eq s1 s2) && (eq v1 v2)
+   eq (App s1 r1) (App s2 r2) = (eq s1 s2) && (eq r1 r2)
+   eq (BinaryApp s1 v1 s1') (BinaryApp s2 v2 s2') = (eq s1 s2) && (eq v1 v2) && (eq s1' s2')
+   eq (MatchAs s1 x) (MatchAs s1' y) = (eq s1 s1') && (checkMatch x y)
+   eq (IfElse s1 s2 s3) (IfElse s1' s2' s3') = (eq s1 s1') && (eq s2 s2') && (eq s3 s3')
+   eq (ListEmpty _) (ListEmpty _) = true
+   eq (ListNonEmpty _ s1 r1) (ListNonEmpty _ s1' r1') = (eq s1 s1') && (checkListRest r1 r1')
+   eq (ListEnum s1 s2) (ListEnum s1' s2') = (eq s1 s1') && (eq s2 s2')
+   eq (ListComp _ s x) (ListComp _ s' x') = (eq s s') && (checkListQualifier x x')
+   eq (Let v s) (Let v' s') = (checkVarDefs v v') && (eq s s')
+   eq (LetRec r s) (LetRec r' s') = (checkRecDefs r r') && (eq s s')
+   eq _ _ = false
+
+checkRecDefs :: forall a. RecDefs a -> RecDefs a -> Boolean
+checkRecDefs x y = let check = zipWith checkBranch (toList x) (toList y) in foldl (&&) true check
+
+checkBranch :: forall a. Branch a -> Branch a -> Boolean
+checkBranch (v × cs) (v' × cs') = (eq v v') && (checkingClause cs cs')
+
+checkVarDefs :: forall a. VarDefs a -> VarDefs a -> Boolean
+checkVarDefs x y = let check = zipWith checkVarDef (toList x) (toList y) in foldl (&&) true check
+
+checkVarDef :: forall a. VarDef a -> VarDef a -> Boolean
+checkVarDef (VarDef p s) (VarDef p' s') = (checkPattern p p') && (eq s s')
+
+checkListQualifier :: forall a. List (Qualifier a) -> List (Qualifier a) -> Boolean
+checkListQualifier x y = let check = zipWith checkQualifier x y in foldl (&&) true check
+
+checkQualifier :: forall a. Qualifier a -> Qualifier a -> Boolean
+checkQualifier (Guard s1) (Guard s1') = (eq s1 s1')
+checkQualifier (Generator p s) (Generator p' s') = (checkPattern p p') && (eq s s')
+checkQualifier (Declaration x) (Declaration x') = (checkVarDef x x')
+checkQualifier _ _ = false
+
+checkListRest :: forall a. ListRest a -> ListRest a -> Boolean
+checkListRest (End _) (End _) = true
+checkListRest (Next _ s1 r1) (Next _ s1' r1') = (eq s1 s1') && checkListRest r1 r1'
+checkListRest _ _ = false
+
+-- the below auxillary functions turn a NonEmptyList (Pattern x Expr a) to Clauses a 
+matchAuxillaryFunc1 :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
+matchAuxillaryFunc1 x = map matchAuxillaryFunc11 x
+
+matchAuxillaryFunc11 :: forall a. Pattern × Expr a -> NonEmptyList Pattern × Expr a
+matchAuxillaryFunc11 (a × b) = singleton a × b
+
+matchAuxillaryFunc2 :: forall a. NonEmptyList (NonEmptyList Pattern × Expr a) -> NonEmptyList (Clause a)
+matchAuxillaryFunc2 x = map (\y -> Clause y) x
+
+matchAuxillaryFunc3 :: forall a. NonEmptyList (Clause a) -> Clauses a
+matchAuxillaryFunc3 x = Clauses x
+
+combiningMatch :: forall a. NonEmptyList (Pattern × Expr a) -> Clauses a
+combiningMatch x = (matchAuxillaryFunc3 (matchAuxillaryFunc2 (matchAuxillaryFunc1 x)))
+
+checkMatch :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (Pattern × Expr a) -> Boolean
+checkMatch x y = checkingClauses (combiningMatch x) (combiningMatch y)
+
+checkingClause :: forall a. Clause a -> Clause a -> Boolean
+checkingClause (Clause (p1 × s1)) (Clause (p2 × s2)) = (checkPatterns (toList p1) (toList p2)) && (eq s1 s2) -- eq (p1 × s1) (p2 × s2)
+
+checkingClauses :: forall a. Clauses a -> Clauses a -> Boolean
+checkingClauses (Clauses cs1) (Clauses cs2) = let checked = zipWith checkingClause (toList cs1) (toList cs2) in foldl (&&) true checked
+
+checkPattern :: Pattern -> Pattern -> Boolean
+checkPattern (PVar v1) (PVar v2) = eq v1 v2
+checkPattern (PConstr c1 x) (PConstr c2 y) = (eq c1 c2) && (checkPatterns x y)
+checkPattern (PRecord x) (PRecord y) = checkingVarPatt x y
+checkPattern (PListEmpty) (PListEmpty) = true
+checkPattern (PListNonEmpty p1 x) (PListNonEmpty p2 y) = (checkPattern p1 p2) && (checkListRestPatt x y)
+checkPattern _ _ = false
+
+checkListRestPatt :: ListRestPattern -> ListRestPattern -> Boolean
+checkListRestPatt (PEnd) (PEnd) = true
+checkListRestPatt (PNext p1 x) (PNext p2 y) = (checkPattern p1 p2) && (checkListRestPatt x y)
+checkListRestPatt _ _ = false
+
+checkPatterns :: List (Pattern) -> List Pattern -> Boolean
+checkPatterns (Cons x xs) (Cons y ys) = (checkPattern x y) && (checkPatterns xs ys)
+checkPatterns (Cons _ _) Nil = false
+checkPatterns Nil (Cons _ _) = false
+checkPatterns Nil Nil = true
+
+checkingPairExpr :: forall a. List (Pair (Expr a)) -> (List (Pair (Expr a))) -> Boolean
+checkingPairExpr (Cons (Pair a b) x) (Cons (Pair c d) y) = (eq a c) && (eq b d) && checkingPairExpr x y
+checkingPairExpr (Cons (Pair _ _) _) Nil = false
+checkingPairExpr Nil (Cons (Pair _ _) _) = false
+checkingPairExpr Nil Nil = true
+
+checkingVarPatt :: List (Bind Pattern) -> List (Bind Pattern) -> Boolean
+checkingVarPatt (Cons (v1 × p1) x) (Cons (v2 × p2) y) = (eq v1 v2) && (checkPattern p1 p2) && checkingVarPatt x y
+checkingVarPatt (Cons _ _) Nil = false
+checkingVarPatt Nil (Cons _ _) = false
+checkingVarPatt Nil Nil = true
+
+checkingVarExpr :: forall a. List (Bind (Expr a)) -> List (Bind (Expr a)) -> Boolean
+checkingVarExpr (Cons (a × b) x) (Cons (c × d) y) = (eq a c) && (eq b d) && checkingVarExpr x y
+checkingVarExpr (Cons _ _) Nil = false
+checkingVarExpr Nil (Cons _ _) = false
+checkingVarExpr Nil Nil = true
+
+checkingLists :: forall a. List (Expr a) -> List (Expr a) -> Boolean
+checkingLists (Cons x xs) (Cons y ys) = (eq x y) && (checkingLists xs ys)
+checkingLists (Cons _ _) Nil = false
+checkingLists Nil (Cons _ _) = false
+checkingLists Nil Nil = true
+
 data ListRest a
    = End a
    | Next a (Expr a) (ListRest a)
