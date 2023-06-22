@@ -12,4 +12,4 @@ lookup
       (NonEmpty Empty (3, "simon") Empty)
       (4, "john")
       (NonEmpty (NonEmpty Empty (6, "sarah") Empty) (7, "claire") Empty)
-   )
+   )                                                                    
