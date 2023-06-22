@@ -29,6 +29,9 @@ instance Traversable Pair where
    traverse f (Pair x y) = Pair <$> f x <*> f y
    sequence = sequenceDefault
 
+instance Show a => Show (Pair a) where
+   show (Pair x y) = "(Pair " <> show x <> " " <> show y <> ")"
+
 toTuple :: forall a. Pair a -> a × a
 toTuple (Pair x y) = x × y
 

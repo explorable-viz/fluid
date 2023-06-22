@@ -193,6 +193,7 @@ type RecDefs a = NonEmptyList (Branch a)
 -- The pattern/expr relationship is different to the one in branch (the expr is the "argument", not the "body").
 -- Using a data type makes for easier overloading.
 data VarDef a = VarDef Pattern (Expr a)
+
 type VarDefs a = NonEmptyList (VarDef a)
 
 data Qualifier a
@@ -549,3 +550,55 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join s = definedJoin s
    maybeJoin _ = error unimplemented
    neg = (<$>) neg
+
+instance Show a => Show (Expr a) where
+   show (Var x) = "(Var " <> show x <> ")"
+   show (Op x) = "(Op " <> show x <> ")"
+   show (Int ann x) = "(Int " <> show ann <> " " <> show x <> ")"
+   show (Float ann x) = "(Float " <> show ann <> " " <> show x <> ")"
+   show (Str ann x) = "(Str " <> show ann <> " " <> show x <> ")"
+   show (Constr ann c1 x) = "(Constr " <> show ann <> " " <> show c1 <> " " <> show x <> ")"
+   show (Record ann x) = "(Record " <> show ann <> " " <> show x <> ")"
+   show (Dictionary ann x) = "(Dictionary " <> show ann <> " " <> show x <> ")"
+   show (Matrix ann s xy s') = "(Matrix " <> show ann <> " " <> show s <> " " <> show xy <> " " <> show s' <> ")"
+   show (Lambda xs) = "(Lambda " <> show xs <> ")"
+   show (Project s v) = "(Project " <> show s <> " " <> show v <> ")"
+   show (App s r) = "(App " <> show s <> " " <> show r <> ")"
+   show (BinaryApp s1 op s2) = "(BinaryApp " <> show s1 <> " " <> show op <> " " <> show s2 <> ")"
+   show (MatchAs s x) = "(MatchAs " <> show s <> " " <> show x <> ")"
+   show (IfElse s1 s2 s3) = "(IfElse " <> show s1 <> " " <> show s2 <> " " <> show s3 <> ")"
+   show (ListEmpty ann) = "(ListEmpty " <> show ann <> ")"
+   show (ListNonEmpty ann s r) = "(ListNonEmpty " <> show ann <> " " <> show s <> " " <> show r <> ")"
+   show (ListEnum s1 s2) = "(ListEnum " <> show s1 <> " " <> show s2 <> ")"
+   show (ListComp ann s x) = "(ListComp " <> show ann <> " " <> show s <> " " <> show x <> ")"
+   show (Let v s) = "(Let " <> show v <> " " <> show s <> ")"
+   show (LetRec r s) = "(LetRec " <> show r <> " " <> show s <> ")"
+
+instance Show a => Show (ListRest a) where
+   show (End ann) = "(End " <> show ann <> ")"
+   show (Next ann e lr) = "(Next " <> show ann <> " " <> show e <> " " <> show lr <> ")"
+
+instance Show Pattern where
+   show (PVar v) = "(PVar " <> show v <> ")"
+   show (PConstr ctr ps) = "(PConstr " <> show ctr <> " " <> show ps <> ")"
+   show (PRecord bs) = "(PRecord " <> show bs <> ")"
+   show PListEmpty = "PListEmpty"
+   show (PListNonEmpty p lrp) = "(PListNonEmpty " <> show p <> " " <> show lrp <> ")"
+
+instance Show ListRestPattern where
+   show PEnd = "PEnd"
+   show (PNext p lrp) = "(PNext " <> show p <> " " <> show lrp <> ")"
+
+instance Show a => Show (Clause a) where
+   show (Clause (ps × e)) = "(Clause " <> show ps <> " " <> show e <> ")"
+
+instance Show a => Show (Clauses a) where
+   show (Clauses cs) = "(Clauses " <> show cs <> ")"
+
+instance Show a => Show (VarDef a) where
+   show (VarDef p e) = "(VarDef " <> show p <> " " <> show e <> ")"
+
+instance Show a => Show (Qualifier a) where
+   show (Guard e) = "(Guard " <> show e <> ")"
+   show (Generator p e) = "(Generator " <> show p <> " " <> show e <> ")"
+   show (Declaration vd) = "(Declaration " <> show vd <> ")"
