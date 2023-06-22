@@ -153,7 +153,7 @@ helperUnwrapMaybe (Nothing) = ""
 --emptyStringArray (Doc d) = replicate (d.width) "_"
 
 emptyStringArray' :: String -> Array String
-emptyStringArray' d = replicate (S.length d) "_"
+emptyStringArray' d = replicate (S.length d) " "
 
 -- here you would take [" ", " ", " "] and form "   "
 emptyStringConcat :: Array String -> String

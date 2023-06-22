@@ -13,8 +13,9 @@ import Debug (trace)
 import Desugarable (desugFwd', desugBwd')
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Console (logShow)
 import Effect.Class (liftEffect)
+import Effect.Class.Console (log)
+import Effect.Console (logShow)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
@@ -45,7 +46,35 @@ checkPretty _ expected x =
    -- trace (msg <> ":\n" <> prettyP x) \_ ->
    prettyP x `shouldEqual` expected
 
--- v_expect_opt is optional output slice + expected source slice; expected is expected result after round-trip.
+-- testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
+-- testWithSetup (File file) expected v_expect_opt setup =
+--    before setup $
+--       it file \(γ × s) -> do
+--          let
+--             e = successful (desugFwd' s)
+--             t × v = successful (eval γ e bot)
+--             v' = fromMaybe identity (fst <$> v_expect_opt) v
+--             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
+--             s' = desugBwd' e' :: S.Expr _
+--             _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
+--             src = render (pretty s)
+--          trace ("1:\n" <> src) \_ -> do
+--             case parse src program of
+--                Left msg -> fail msg
+--                Right newProg -> do
+--                   trace ("2:\n" <> render (pretty newProg)) \_ -> do
+--                      case parse (render (pretty newProg)) program of 
+--                         Left msg -> fail msg 
+--                         Right newProg' -> do 
+--                            trace ("3:\n"<> render (pretty newProg')) \_ -> do 
+--                               liftEffect (logShow (eq (erase s) newProg))
+--                               liftEffect (logShow (eq (erase newProg) newProg'))
+--                               unless (isGraphical v'') (checkPretty "Value" expected v'')
+--                               case snd <$> v_expect_opt of
+--                                  Nothing -> pure unit
+--                                  Just file_expect ->
+--                                     loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+
 testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =
    before setup $
@@ -58,10 +87,15 @@ testWithSetup (File file) expected v_expect_opt setup =
             s' = desugBwd' e' :: S.Expr _
             _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
             src = render (pretty s)
-         trace ("\n" <> src) \_ -> do
+            srcExp = show (erase s)
+         trace ("1:\n" <> src) \_ -> do
+            liftEffect (log ("SRC\n" <> srcExp))
             case parse src program of
                Left msg -> fail msg
                Right newProg -> do
+                  let newExp = show newProg
+                  --liftEffect (log ("SRC\n" <> srcExp))
+                  liftEffect (log ("NEW\n" <> newExp))
                   liftEffect (logShow (eq (erase s) newProg))
                   unless (isGraphical v'') (checkPretty "Value" expected v'')
                   trace ("\n" <> src) \_ -> do
