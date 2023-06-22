@@ -46,9 +46,6 @@ checkPretty _ expected x =
    -- trace (msg <> ":\n" <> prettyP x) \_ ->
    prettyP x `shouldEqual` expected
 
-
-
-
 -- testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 -- testWithSetup (File file) expected v_expect_opt setup =
 --    before setup $
@@ -77,7 +74,6 @@ checkPretty _ expected x =
 --                                  Nothing -> pure unit
 --                                  Just file_expect ->
 --                                     loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
-                     
 
 testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =
@@ -97,17 +93,17 @@ testWithSetup (File file) expected v_expect_opt setup =
             case parse src program of
                Left msg -> fail msg
                Right newProg -> do
-                  let newExp = show newProg 
+                  let newExp = show newProg
                   --liftEffect (log ("SRC\n" <> srcExp))
                   liftEffect (log ("NEW\n" <> newExp))
                   liftEffect (logShow (eq (erase s) newProg))
                   unless (isGraphical v'') (checkPretty "Value" expected v'')
-                  trace("\n" <> src) \_ -> do 
+                  trace ("\n" <> src) \_ -> do
                      unless (isGraphical v'') (checkPretty "Value" expected v'')
                      case snd <$> v_expect_opt of
-                           Nothing -> pure unit
-                           Just file_expect ->
-                                 loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+                        Nothing -> pure unit
+                        Just file_expect ->
+                           loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)

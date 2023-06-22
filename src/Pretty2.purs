@@ -22,7 +22,7 @@ emptyDoc = empty 0 0
 
 pretty :: forall a. Expr a -> Doc
 pretty (Int _ n) = text (show n) -- edited
-pretty (App s s') = ((pretty s :--: emptyDoc) .<>. letArg s')
+pretty (App s s') = ((pretty s :--: emptyDoc) .<>. text "(" .<>. pretty s' .<>. text ")")
 pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
 pretty (Op x) = text "(" .<>. text x .<>. text ")"
 -- pretty (App s s') = pretty s :--: pretty s'
@@ -32,7 +32,7 @@ pretty (Project s x) = pretty s .<>. text "." .<>. text x
 pretty (Record _ x) = text "{" .<>. prettyAuxillaryFuncVarExpr x .<>. text "}" -- formatting needs fixing 
 pretty (Lambda (Clauses cs)) = text "(" .<>. (text "fun" :--: emptyDoc) .<>. prettyAuxillaryFuncClauses Unit (Clauses cs) .<>. text ")" :--: emptyDoc -- edited
 pretty (LetRec g s) = ((text "let" :--: emptyDoc .<>. combiningAuxillaryFunctionsRec g) .-. (emptyDoc :--: text "in" :--: emptyDoc)) .-. pretty s
-pretty (MatchAs s x) = (((text "match":--: emptyDoc) .<>. text "(" .<>. pretty s .<>. text ")" .<>. (emptyDoc :--: text "as {")) .-. (emptyDoc :--: emptyDoc :--: emptyDoc:--: emptyDoc .<>.combiningMatch x)) .-. text "}" 
+pretty (MatchAs s x) = (((text "match" :--: emptyDoc) .<>. text "(" .<>. pretty s .<>. text ")" .<>. (emptyDoc :--: text "as {")) .-. (emptyDoc :--: emptyDoc :--: emptyDoc :--: emptyDoc .<>. combiningMatch x)) .-. text "}"
 pretty (ListEmpty _) = text "[]"
 pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. listAuxillaryFunc x .<>. text "]" -- edited
 pretty (ListEnum s s') = text "[" .<>. pretty s .<>. text ".." .<>. pretty s' .<>. text "]"
@@ -48,7 +48,6 @@ pretty (Dictionary _ x) = text "{" .<>. (text "|" :--: emptyDoc) .<>. dictToDoc 
 pretty (Str _ x) = text "\"" .<>. text x .<>. text "\""
 pretty (Float _ x) = text (show x)
 pretty (ListComp _ s q) = text "[" .<>. pretty s .<>. text "|" .<>. qualifiersToDoc q .<>. text "]"
-
 
 listExprList :: forall a. List (Expr a) -> Doc
 listExprList (Cons x Nil) = pretty x
@@ -74,9 +73,9 @@ qualifiersToDoc (Cons (Declaration v) xs) = (text "let" :--: emptyDoc) .<>. varD
 qualifiersToDoc (Cons (Generator p s) xs) = prettyAuxillaryFuncPattern p .<>. text "<-" .<>. pretty s .<>. text "," .<>. qualifiersToDoc xs
 qualifiersToDoc Nil = emptyDoc
 
-letArg :: forall a. Expr a -> Doc
-letArg (Let x s) = text "(" .<>. pretty (Let x s) .<>. text ")"
-letArg s = pretty s
+--letArg :: forall a. Expr a -> Doc
+--letArg (Let x s) = text "(" .<>. pretty (Let x s) .<>. text ")"
+--letArg s = pretty s
 
 dictToDoc :: forall a. List (Pair (Expr a)) -> Doc
 dictToDoc (Cons (Pair e e') Nil) = pretty e .<>. (emptyDoc :--: text ":=" :--: emptyDoc) .<>. pretty e'
@@ -130,7 +129,8 @@ matchClauses (Clauses cs) = intersperse' (toList (map matchClause cs)) (text ";"
 
 -- subtle error in code needs fixing
 prettyAuxillaryFuncVarExpr :: forall a. List (Bind (Expr a)) -> Doc
-prettyAuxillaryFuncVarExpr (Cons x xs) = text (key x) .<>. text ":" .<>. pretty (val x) .-. prettyAuxillaryFuncVarExpr xs -- edited atop
+prettyAuxillaryFuncVarExpr (Cons x Nil) = text (key x) .<>. text ":" .<>. pretty (val x)
+prettyAuxillaryFuncVarExpr (Cons x xs) = (text (key x) .<>. text ":" .<>. pretty (val x) .<>. text ",") .-. prettyAuxillaryFuncVarExpr xs -- edited atop
 prettyAuxillaryFuncVarExpr Nil = emptyDoc
 
 prettyAuxillaryFuncListPattern :: ListRestPattern -> Doc
