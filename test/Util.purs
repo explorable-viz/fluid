@@ -105,8 +105,8 @@ testWithSetup (File file) expected v_expect_opt setup =
                         Just file_expect ->
                            loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
 
-test :: File -> String -> Test Unit
-test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
+test :: Boolean -> File -> String -> Test Unit
+test _ file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
 
 testBwd :: Boolean -> File -> File -> Selector -> String -> Test Unit
 testBwd _ file file_expect δv expected =
@@ -125,8 +125,8 @@ testLink _ spec@{ x } δv1 v2_expect =
             in
                checkPretty "Linked output" v2_expect v2'
 
-testWithDataset :: File -> File -> Test Unit
-testWithDataset dataset file = do
+testWithDataset :: Boolean -> File -> File -> Test Unit
+testWithDataset _ dataset file = do
    testWithSetup file "" Nothing $ do
       γ0 × γ <- openDatasetAs dataset "data"
       ((γ0 <+> γ) × _) <$> open file

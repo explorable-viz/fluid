@@ -211,50 +211,50 @@ test_bwd =
 
 test_desugaring :: Array (Test Unit)
 test_desugaring =
-   [ test (File "desugar/list-comp-1") "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
-   , test (File "desugar/list-comp-2")
+   [ test false (File "desugar/list-comp-1") "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
+   , test false (File "desugar/list-comp-2")
         "(14 : (14 : (14 : (12 : (12 : (12 : (10 : (10 : (10 : (13 : (13 : (13 : (11 : (11 : (11 : (9 : \
         \(9 : (9 : (12 : (12 : (12 : (10 : (10 : (10 : (8 : (8 : (8 : [])))))))))))))))))))))))))))"
-   , test (File "desugar/list-comp-3") "(9 : (8 : []))"
-   , test (File "desugar/list-comp-4") "(5 : (4 : (3 : [])))"
-   , test (File "desugar/list-comp-5") "(5 : (4 : (3 : [])))"
-   , test (File "desugar/list-comp-6") "(5 : [])"
-   , test (File "desugar/list-comp-7") "([] : [])"
-   , test (File "desugar/list-enum") "(3 : (4 : (5 : (6 : (7 : [])))))"
+   , test false (File "desugar/list-comp-3") "(9 : (8 : []))"
+   , test false (File "desugar/list-comp-4") "(5 : (4 : (3 : [])))"
+   , test false (File "desugar/list-comp-5") "(5 : (4 : (3 : [])))"
+   , test false (File "desugar/list-comp-6") "(5 : [])"
+   , test false (File "desugar/list-comp-7") "([] : [])"
+   , test false (File "desugar/list-enum") "(3 : (4 : (5 : (6 : (7 : [])))))"
    ]
 
 test_misc :: Array (Test Unit)
 test_misc =
-   [ test (File "arithmetic") "42"
-   , test (File "array") "(1, (3, 3))"
-   , test (File "compose") "5"
-   , test (File "dicts") "{d: {||}, e: {|\"a\":= 5, \"ab\":= 6|}, e_ab: 6, f: {|\"a\":= 6, \"ab\":= 7|}, g: {|\"a\":= 5|}, h: {|\"fst\":= 4, \"snd\":= (6 : (7 : []))|}}"
-   , test (File "div-mod-quot-rem")
+   [ test false (File "arithmetic") "42"
+   , test false (File "array") "(1, (3, 3))"
+   , test false (File "compose") "5"
+   , test false (File "dicts") "{d: {||}, e: {|\"a\":= 5, \"ab\":= 6|}, e_ab: 6, f: {|\"a\":= 6, \"ab\":= 7|}, g: {|\"a\":= 5|}, h: {|\"fst\":= 4, \"snd\":= (6 : (7 : []))|}}"
+   , test false (File "div-mod-quot-rem")
         "((1 : (-1 : (-2 : (2 : [])))) : \
         \((2 : (2 : (1 : (1 : [])))) : \
         \((1 : (-1 : (-1 : (1 : [])))) : \
         \((2 : (2 : (-2 : (-2 : [])))) : []))))"
-   , test (File "factorial") "40320"
-   , test (File "filter") "(8 : (7 : []))"
-   , test (File "first-class-constr") "((10 : []) : ((12 : []) : ((20 : []) : [])))"
-   , test (File "flatten") "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
-   , test (File "foldr_sumSquares") "661"
-   , test (File "lexicalScoping") "\"6\""
-   , test (File "length") "2"
-   , test (File "lookup") "Some \"sarah\""
-   , test (File "map") "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
-   , test (File "mergeSort") "(1 : (2 : (3 : [])))"
-   , test (File "normalise") "(33, 66)"
-   , test (File "pattern-match") "4"
-   , test (File "range") "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))"
-   , test (File "records") "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
-   , test (File "reverse") "(2 : (1 : []))"
+   , test false (File "factorial") "40320"
+   , test false (File "filter") "(8 : (7 : []))"
+   , test false (File "first-class-constr") "((10 : []) : ((12 : []) : ((20 : []) : [])))"
+   , test false (File "flatten") "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
+   , test false (File "foldr_sumSquares") "661"
+   , test false (File "lexicalScoping") "\"6\""
+   , test false (File "length") "2"
+   , test false (File "lookup") "Some \"sarah\""
+   , test false (File "map") "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
+   , test false (File "mergeSort") "(1 : (2 : (3 : [])))"
+   , test false (File "normalise") "(33, 66)"
+   , test false (File "pattern-match") "4"
+   , test false (File "range") "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))"
+   , test false (File "records") "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
+   , test false (File "reverse") "(2 : (1 : []))"
    ]
 
 test_graphics :: Array (Test Unit)
 test_graphics =
-   [ testWithDataset (File "dataset/renewables-restricted") (File "graphics/background")
-   , testWithDataset (File "dataset/renewables-restricted") (File "graphics/grouped-bar-chart")
-   , testWithDataset (File "dataset/renewables-restricted") (File "graphics/line-chart")
-   , testWithDataset (File "dataset/renewables-restricted") (File "graphics/stacked-bar-chart")
+   [ testWithDataset false (File "dataset/renewables-restricted") (File "graphics/background")
+   , testWithDataset false (File "dataset/renewables-restricted") (File "graphics/grouped-bar-chart")
+   , testWithDataset false (File "dataset/renewables-restricted") (File "graphics/line-chart")
+   , testWithDataset false (File "dataset/renewables-restricted") (File "graphics/stacked-bar-chart")
    ]
