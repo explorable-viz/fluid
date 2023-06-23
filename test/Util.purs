@@ -92,23 +92,25 @@ testWithSetup (bol) (File file) expected v_expect_opt setup =
             src = render (pretty s)
             srcExp = show (erase s)
          trace ("1:\n" <> src) \_ -> do
-            liftEffect (log ("SRC\n" <> srcExp))
             case bol of 
                true -> do 
                   case parse src program of
                      Left msg -> fail msg
                      Right newProg -> do
                         let newExp = show newProg
-                        --liftEffect (log ("SRC\n" <> srcExp))
-                        liftEffect (log ("NEW\n" <> newExp))
-                        liftEffect (logShow (eq (erase s) newProg))
-                        unless (isGraphical v'') (checkPretty "Value" expected v'')
-                        trace ("\n" <> src) \_ -> do
-                           unless (isGraphical v'') (checkPretty "Value" expected v'')
-                           case snd <$> v_expect_opt of
-                              Nothing -> pure unit
-                              Just file_expect ->
-                                 loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+                        case (eq (erase s) newProg) of 
+                           false -> do 
+                              liftEffect (log ("SRC\n" <> srcExp))
+                              liftEffect (log ("NEW\n" <> newExp))
+                              fail "not equal"
+                           true -> do 
+                              unless (isGraphical v'') (checkPretty "Value" expected v'')
+                              trace ("\n" <> src) \_ -> do
+                                 unless (isGraphical v'') (checkPretty "Value" expected v'')
+                                 case snd <$> v_expect_opt of
+                                    Nothing -> pure unit
+                                    Just file_expect ->
+                                       loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
              
                false -> do 
                   case parse src program of
@@ -129,7 +131,7 @@ testWithSetup (bol) (File file) expected v_expect_opt setup =
 
          
 test :: Boolean -> File -> String -> Test Unit
-test _ file expected = testWithSetup false  file expected Nothing (openWithDefaultImports file)
+test _ file expected = testWithSetup true  file expected Nothing (openWithDefaultImports file)
 
 testBwd :: Boolean -> File -> File -> Selector -> String -> Test Unit
 testBwd _ file file_expect δv expected =
