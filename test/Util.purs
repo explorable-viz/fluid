@@ -46,8 +46,10 @@ checkPretty _ expected x =
    -- trace (msg <> ":\n" <> prettyP x) \_ ->
    prettyP x `shouldEqual` expected
 
--- testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
--- testWithSetup (File file) expected v_expect_opt setup =
+
+
+-- testWithSetup :: Boolean -> File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
+-- testWithSetup (bol) (File file) expected v_expect_opt setup =
 --    before setup $
 --       it file \(γ × s) -> do
 --          let
@@ -58,25 +60,26 @@ checkPretty _ expected x =
 --             s' = desugBwd' e' :: S.Expr _
 --             _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
 --             src = render (pretty s)
+--             srcExp = show (erase s)
 --          trace ("1:\n" <> src) \_ -> do
+--             liftEffect (log ("SRC\n" <> srcExp))
 --             case parse src program of
 --                Left msg -> fail msg
 --                Right newProg -> do
---                   trace ("2:\n" <> render (pretty newProg)) \_ -> do
---                      case parse (render (pretty newProg)) program of 
---                         Left msg -> fail msg 
---                         Right newProg' -> do 
---                            trace ("3:\n"<> render (pretty newProg')) \_ -> do 
---                               liftEffect (logShow (eq (erase s) newProg))
---                               liftEffect (logShow (eq (erase newProg) newProg'))
---                               unless (isGraphical v'') (checkPretty "Value" expected v'')
---                               case snd <$> v_expect_opt of
---                                  Nothing -> pure unit
---                                  Just file_expect ->
---                                     loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+--                   let newExp = show newProg
+--                   --liftEffect (log ("SRC\n" <> srcExp))
+--                   liftEffect (log ("NEW\n" <> newExp))
+--                   liftEffect (logShow (eq (erase s) newProg))
+--                   unless (isGraphical v'') (checkPretty "Value" expected v'')
+--                   trace ("\n" <> src) \_ -> do
+--                      unless (isGraphical v'') (checkPretty "Value" expected v'')
+--                      case snd <$> v_expect_opt of
+--                         Nothing -> pure unit
+--                         Just file_expect ->
+--                            loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
 
 testWithSetup :: Boolean -> File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
-testWithSetup _ (File file) expected v_expect_opt setup =
+testWithSetup (bol) (File file) expected v_expect_opt setup =
    before setup $
       it file \(γ × s) -> do
          let
@@ -90,21 +93,41 @@ testWithSetup _ (File file) expected v_expect_opt setup =
             srcExp = show (erase s)
          trace ("1:\n" <> src) \_ -> do
             liftEffect (log ("SRC\n" <> srcExp))
-            case parse src program of
-               Left msg -> fail msg
-               Right newProg -> do
-                  let newExp = show newProg
-                  --liftEffect (log ("SRC\n" <> srcExp))
-                  liftEffect (log ("NEW\n" <> newExp))
-                  liftEffect (logShow (eq (erase s) newProg))
-                  unless (isGraphical v'') (checkPretty "Value" expected v'')
-                  trace ("\n" <> src) \_ -> do
-                     unless (isGraphical v'') (checkPretty "Value" expected v'')
-                     case snd <$> v_expect_opt of
-                        Nothing -> pure unit
-                        Just file_expect ->
-                           loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+            case bol of 
+               true -> do 
+                  case parse src program of
+                     Left msg -> fail msg
+                     Right newProg -> do
+                        let newExp = show newProg
+                        --liftEffect (log ("SRC\n" <> srcExp))
+                        liftEffect (log ("NEW\n" <> newExp))
+                        liftEffect (logShow (eq (erase s) newProg))
+                        unless (isGraphical v'') (checkPretty "Value" expected v'')
+                        trace ("\n" <> src) \_ -> do
+                           unless (isGraphical v'') (checkPretty "Value" expected v'')
+                           case snd <$> v_expect_opt of
+                              Nothing -> pure unit
+                              Just file_expect ->
+                                 loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+             
+               false -> do 
+                  case parse src program of
+                     Left msg -> fail msg
+                     Right newProg -> do
+                        let newExp = show newProg
+                        --liftEffect (log ("SRC\n" <> srcExp))
+                        liftEffect (log ("NEW\n" <> newExp))
+                        liftEffect (logShow (eq (erase s) newProg))
+                        unless (isGraphical v'') (checkPretty "Value" expected v'')
+                        trace ("\n" <> src) \_ -> do
+                           unless (isGraphical v'') (checkPretty "Value" expected v'')
+                           case snd <$> v_expect_opt of
+                              Nothing -> pure unit
+                              Just file_expect ->
+                                 loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+             
 
+         
 test :: Boolean -> File -> String -> Test Unit
 test _ file expected = testWithSetup false  file expected Nothing (openWithDefaultImports file)
 
