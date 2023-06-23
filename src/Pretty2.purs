@@ -52,10 +52,10 @@ pretty (Str _ x) = text "\"" .<>. text x .<>. text "\""
 pretty (Float _ x) = text (show x)
 pretty (ListComp _ s q) = text "[" .<>. pretty s .<>. text "|" .<>. qualifiersToDoc q .<>. text "]"
 
-checkOp :: String -> Doc 
-checkOp x = case (member x (keys(opDefs))) of 
-                    true -> text x 
-                    false -> text "`" .<>. text x .<>. text "`"
+checkOp :: String -> Doc
+checkOp x = case (member x (keys (opDefs))) of
+   true -> text x
+   false -> text "`" .<>. text x .<>. text "`"
 
 listExprList :: forall a. List (Expr a) -> Doc
 listExprList (Cons x Nil) = pretty x

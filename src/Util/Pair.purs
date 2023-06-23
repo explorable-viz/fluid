@@ -8,12 +8,11 @@ import Data.List (unzip, zip) as L
 import Data.Traversable (class Traversable, sequenceDefault)
 import Util (type (×), (×))
 
-
 -- a |-> a × a can't derive a functor instance, so use this
 data Pair a = Pair a a
-instance Eq a => Eq (Pair a) where 
-   eq (Pair x1 y1) (Pair x2 y2) = (eq x1 x2) && (eq y1 y2)
 
+instance Eq a => Eq (Pair a) where
+   eq (Pair x1 y1) (Pair x2 y2) = (eq x1 x2) && (eq y1 y2)
 
 instance Functor Pair where
    map f (Pair x y) = Pair (f x) (f y)

@@ -50,6 +50,7 @@ data Expr a
    | ListComp a (Expr a) (List (Qualifier a))
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
+
 derive instance Eq (Raw Expr)
 
 -- instance Eq (Expr a) where
@@ -76,28 +77,28 @@ derive instance Eq (Raw Expr)
 --    eq (LetRec r s) (LetRec r' s') = (checkRecDefs r r') && (eq s s')
 --    eq _ _ = false
 
-checkRecDefs :: Raw RecDefs  -> Raw RecDefs  -> Boolean
+checkRecDefs :: Raw RecDefs -> Raw RecDefs -> Boolean
 checkRecDefs x y = let check = zipWith checkBranch (toList x) (toList y) in foldl (&&) true check
 
-checkBranch ::  Raw Branch  -> Raw Branch -> Boolean
+checkBranch :: Raw Branch -> Raw Branch -> Boolean
 checkBranch (v × cs) (v' × cs') = (eq v v') && (eq cs cs')
 
-checkVarDefs :: Raw VarDefs  -> Raw VarDefs  -> Boolean
+checkVarDefs :: Raw VarDefs -> Raw VarDefs -> Boolean
 checkVarDefs x y = let check = zipWith checkVarDef (toList x) (toList y) in foldl (&&) true check
 
-checkVarDef :: Raw VarDef  -> Raw VarDef -> Boolean
+checkVarDef :: Raw VarDef -> Raw VarDef -> Boolean
 checkVarDef (VarDef p s) (VarDef p' s') = (checkPattern p p') && (eq s s')
 
-checkListQualifier ::  List (Raw Qualifier ) -> List (Raw Qualifier) -> Boolean
+checkListQualifier :: List (Raw Qualifier) -> List (Raw Qualifier) -> Boolean
 checkListQualifier x y = let check = zipWith checkQualifier x y in foldl (&&) true check
 
-checkQualifier :: Raw Qualifier  -> Raw Qualifier  -> Boolean
+checkQualifier :: Raw Qualifier -> Raw Qualifier -> Boolean
 checkQualifier (Guard s1) (Guard s1') = (eq s1 s1')
 checkQualifier (Generator p s) (Generator p' s') = (checkPattern p p') && (eq s s')
 checkQualifier (Declaration x) (Declaration x') = (checkVarDef x x')
 checkQualifier _ _ = false
 
-checkListRest :: Raw ListRest  -> Raw ListRest  -> Boolean
+checkListRest :: Raw ListRest -> Raw ListRest -> Boolean
 checkListRest (End _) (End _) = true
 checkListRest (Next _ s1 r1) (Next _ s1' r1') = (eq s1 s1') && checkListRest r1 r1'
 checkListRest _ _ = false
@@ -115,16 +116,16 @@ matchAuxillaryFunc2 x = map (\y -> Clause y) x
 matchAuxillaryFunc3 :: forall a. NonEmptyList (Clause a) -> Clauses a
 matchAuxillaryFunc3 x = Clauses x
 
-combiningMatch :: NonEmptyList (Pattern × (Raw Expr)) -> Raw Clauses 
+combiningMatch :: NonEmptyList (Pattern × (Raw Expr)) -> Raw Clauses
 combiningMatch x = (matchAuxillaryFunc3 (matchAuxillaryFunc2 (matchAuxillaryFunc1 x)))
 
 checkMatch :: NonEmptyList (Pattern × Raw Expr) -> NonEmptyList (Pattern × Raw Expr) -> Boolean
 checkMatch x y = checkingClauses (combiningMatch x) (combiningMatch y)
 
-checkingClause ::  Raw Clause -> Raw Clause  -> Boolean
+checkingClause :: Raw Clause -> Raw Clause -> Boolean
 checkingClause (Clause (p1 × s1)) (Clause (p2 × s2)) = (checkPatterns (toList p1) (toList p2)) && (eq s1 s2) -- eq (p1 × s1) (p2 × s2)
 
-checkingClauses :: Raw Clauses  -> Raw Clauses  -> Boolean
+checkingClauses :: Raw Clauses -> Raw Clauses -> Boolean
 checkingClauses (Clauses cs1) (Clauses cs2) = let checked = zipWith checkingClause (toList cs1) (toList cs2) in foldl (&&) true checked
 
 checkPattern :: Pattern -> Pattern -> Boolean
@@ -145,9 +146,6 @@ checkPatterns (Cons x xs) (Cons y ys) = (checkPattern x y) && (checkPatterns xs 
 checkPatterns (Cons _ _) Nil = false
 checkPatterns Nil (Cons _ _) = false
 checkPatterns Nil Nil = true
-
-
-
 
 checkingPairExpr :: List (Pair (Raw Expr)) -> (List (Pair (Raw Expr))) -> Boolean
 checkingPairExpr (Cons (Pair a b) x) (Cons (Pair c d) y) = (eq a c) && (eq b d) && checkingPairExpr x y
@@ -176,6 +174,7 @@ checkingLists Nil Nil = true
 data ListRest a
    = End a
    | Next a (Expr a) (ListRest a)
+
 derive instance Eq (Raw ListRest)
 
 data Pattern
@@ -184,19 +183,23 @@ data Pattern
    | PRecord (List (Bind Pattern))
    | PListEmpty
    | PListNonEmpty Pattern ListRestPattern
-derive instance Eq Pattern 
+
+derive instance Eq Pattern
 
 data ListRestPattern
    = PEnd
    | PNext Pattern ListRestPattern
+
 derive instance Eq ListRestPattern
 
 newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
+
 derive instance Eq (Raw Clause)
 
 type Branch a = Var × Clause a
 
 newtype Clauses a = Clauses (NonEmptyList (Clause a))
+
 derive instance Eq (Raw Clauses)
 
 newtype RecDef a = RecDef (NonEmptyList (Branch a))
@@ -205,6 +208,7 @@ type RecDefs a = NonEmptyList (Branch a)
 -- The pattern/expr relationship is different to the one in branch (the expr is the "argument", not the "body").
 -- Using a data type makes for easier overloading.
 data VarDef a = VarDef Pattern (Expr a)
+
 derive instance Eq (Raw VarDef)
 
 type VarDefs a = NonEmptyList (VarDef a)
@@ -213,7 +217,8 @@ data Qualifier a
    = Guard (Expr a)
    | Generator Pattern (Expr a)
    | Declaration (VarDef a) -- could allow VarDefs instead
-derive instance Eq (Raw Qualifier )
+
+derive instance Eq (Raw Qualifier)
 
 data Module a = Module (List (VarDefs a + RecDefs a))
 
