@@ -5,6 +5,9 @@ import Prelude
 import Bindings (Bind, key, val)
 import Data.List (List(..))
 import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
+import Data.Map (keys)
+import Data.Set (member)
+import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), RecDefs, VarDef(..), VarDefs, Qualifier(..))
 import Util ((×), type (×))
 import Util.Pair (Pair(..))
@@ -26,7 +29,7 @@ pretty (App s s') = ((pretty s :--: emptyDoc) .<>. text "(" .<>. pretty s' .<>. 
 pretty (Var x) = emptyDoc :--: text x :--: emptyDoc -- edited
 pretty (Op x) = text "(" .<>. text x .<>. text ")"
 -- pretty (App s s') = pretty s :--: pretty s'
-pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: emptyDoc) .<>. (text x :--: emptyDoc) .<>. pretty s' .<>. text ")" -- edited
+pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: emptyDoc) .<>. checkOp x .<>. (emptyDoc :--: pretty s') .<>. text ")" -- edited
 pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
 pretty (Project s x) = pretty s .<>. text "." .<>. text x
 pretty (Record _ x) = text "{" .<>. prettyAuxillaryFuncVarExpr x .<>. text "}" -- formatting needs fixing 
@@ -43,11 +46,16 @@ pretty (Constr _ "None" _) = text "None"
 pretty (Constr _ "Empty" _) = text "Empty"
 pretty (Constr _ "Pair" x) = text "(" .<>. listExpr x .<>. text ")"
 pretty (Constr _ ":" x) = text "(" .<>. listExprList x .<>. text ")"
-pretty (Constr _ c x) = (text c :--: emptyDoc) .<>. listExpr2 x
+pretty (Constr _ c x) = text "(" .<>. (text c :--: emptyDoc) .<>. listExpr2 x .<>. text ")"
 pretty (Dictionary _ x) = text "{" .<>. (text "|" :--: emptyDoc) .<>. dictToDoc x .<>. (emptyDoc :--: text "|") .<>. text "}"
 pretty (Str _ x) = text "\"" .<>. text x .<>. text "\""
 pretty (Float _ x) = text (show x)
 pretty (ListComp _ s q) = text "[" .<>. pretty s .<>. text "|" .<>. qualifiersToDoc q .<>. text "]"
+
+checkOp :: String -> Doc
+checkOp x = case (member x (keys (opDefs))) of
+   true -> text x
+   false -> text "`" .<>. text x .<>. text "`"
 
 listExprList :: forall a. List (Expr a) -> Doc
 listExprList (Cons x Nil) = pretty x
@@ -155,7 +163,6 @@ semiColonInfix (Cons x xs) = prettyAuxillaryFuncPattern x .<>. text ":" .<>. sem
 semiColonInfix Nil = emptyDoc
 
 listPatternToDoc :: ListRestPattern -> Doc
-listPatternToDoc (PNext p PEnd) = prettyAuxillaryFuncPattern p
 listPatternToDoc (PNext p x) = text "," .<>. prettyAuxillaryFuncPattern p .<>. listPatternToDoc x
 listPatternToDoc PEnd = emptyDoc
 
