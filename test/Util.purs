@@ -91,42 +91,38 @@ testWithSetup (bol) (File file) expected v_expect_opt setup =
             _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
             src = render (pretty s)
             srcExp = show (erase s)
-         trace ("1:\n" <> src) \_ -> do
-            case bol of 
-               true -> do 
-                  case parse src program of
-                     Left msg -> fail msg
-                     Right newProg -> do
-                        let newExp = show newProg
-                        case (eq (erase s) newProg) of 
-                           false -> do 
-                              liftEffect (log ("SRC\n" <> srcExp))
-                              liftEffect (log ("NEW\n" <> newExp))
-                              fail "not equal"
-                           true -> do 
-                              unless (isGraphical v'') (checkPretty "Value" expected v'')
-                              trace ("\n" <> src) \_ -> do
+         case parse src program of
+               Left msg -> fail msg
+               Right newProg -> do
+                  trace ("1:\n" <> src) \_ -> do
+                     case bol of 
+                        true -> do 
+                           let newExp = show newProg
+                           case (eq (erase s) newProg) of 
+                              false -> do 
+                                 liftEffect (log ("SRC\n" <> srcExp))
+                                 liftEffect (log ("NEW\n" <> newExp))
+                                 fail "not equal"
+                              true -> do 
                                  unless (isGraphical v'') (checkPretty "Value" expected v'')
-                                 case snd <$> v_expect_opt of
-                                    Nothing -> pure unit
-                                    Just file_expect ->
-                                       loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
-             
-               false -> do 
-                  case parse src program of
-                     Left msg -> fail msg
-                     Right newProg -> do
-                        let newExp = show newProg
-                        --liftEffect (log ("SRC\n" <> srcExp))
-                        liftEffect (log ("NEW\n" <> newExp))
-                        liftEffect (logShow (eq (erase s) newProg))
-                        unless (isGraphical v'') (checkPretty "Value" expected v'')
-                        trace ("\n" <> src) \_ -> do
+                                 trace ("\n" <> src) \_ -> do
+                                    unless (isGraphical v'') (checkPretty "Value" expected v'')
+                                    case snd <$> v_expect_opt of
+                                       Nothing -> pure unit
+                                       Just file_expect ->
+                                          loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+                        false -> do 
+                           let newExp = show newProg
+                           --liftEffect (log ("SRC\n" <> srcExp))
+                           liftEffect (log ("NEW\n" <> newExp))
+                           liftEffect (logShow (eq (erase s) newProg))
                            unless (isGraphical v'') (checkPretty "Value" expected v'')
-                           case snd <$> v_expect_opt of
-                              Nothing -> pure unit
-                              Just file_expect ->
-                                 loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+                           trace ("\n" <> src) \_ -> do
+                              unless (isGraphical v'') (checkPretty "Value" expected v'')
+                              case snd <$> v_expect_opt of
+                                 Nothing -> pure unit
+                                 Just file_expect ->
+                                    loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
              
 
          
