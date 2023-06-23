@@ -50,6 +50,7 @@ data Expr a
    | ListComp a (Expr a) (List (Qualifier a))
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
+-- derive instance Eq a => Eq (Expr a)
 
 instance Eq (Expr a) where
    eq (Var x) (Var y) = eq x y
@@ -145,6 +146,9 @@ checkPatterns (Cons _ _) Nil = false
 checkPatterns Nil (Cons _ _) = false
 checkPatterns Nil Nil = true
 
+
+
+
 checkingPairExpr :: forall a. List (Pair (Expr a)) -> (List (Pair (Expr a))) -> Boolean
 checkingPairExpr (Cons (Pair a b) x) (Cons (Pair c d) y) = (eq a c) && (eq b d) && checkingPairExpr x y
 checkingPairExpr (Cons (Pair _ _) _) Nil = false
@@ -172,6 +176,7 @@ checkingLists Nil Nil = true
 data ListRest a
    = End a
    | Next a (Expr a) (ListRest a)
+derive instance Eq (Raw ListRest)
 
 data Pattern
    = PVar Var
@@ -179,13 +184,18 @@ data Pattern
    | PRecord (List (Bind Pattern))
    | PListEmpty
    | PListNonEmpty Pattern ListRestPattern
+derive instance Eq Pattern 
 
 data ListRestPattern
    = PEnd
    | PNext Pattern ListRestPattern
+derive instance Eq ListRestPattern
 
 newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
+derive instance Eq (Raw Clause)
+
 type Branch a = Var × Clause a
+
 newtype Clauses a = Clauses (NonEmptyList (Clause a))
 newtype RecDef a = RecDef (NonEmptyList (Branch a))
 type RecDefs a = NonEmptyList (Branch a)
@@ -193,6 +203,7 @@ type RecDefs a = NonEmptyList (Branch a)
 -- The pattern/expr relationship is different to the one in branch (the expr is the "argument", not the "body").
 -- Using a data type makes for easier overloading.
 data VarDef a = VarDef Pattern (Expr a)
+derive instance Eq (Raw VarDef)
 
 type VarDefs a = NonEmptyList (VarDef a)
 
@@ -200,6 +211,7 @@ data Qualifier a
    = Guard (Expr a)
    | Generator Pattern (Expr a)
    | Declaration (VarDef a) -- could allow VarDefs instead
+derive instance Eq (Raw Qualifier )
 
 data Module a = Module (List (VarDefs a + RecDefs a))
 

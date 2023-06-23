@@ -8,8 +8,11 @@ import Data.List (unzip, zip) as L
 import Data.Traversable (class Traversable, sequenceDefault)
 import Util (type (×), (×))
 
+
 -- a |-> a × a can't derive a functor instance, so use this
 data Pair a = Pair a a
+
+
 
 instance Functor Pair where
    map f (Pair x y) = Pair (f x) (f y)

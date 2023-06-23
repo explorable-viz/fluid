@@ -108,15 +108,15 @@ testWithSetup (File file) expected v_expect_opt setup =
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
 
-testBwd :: File -> File -> Selector -> String -> Test Unit
-testBwd file file_expect δv expected =
+testBwd :: Boolean -> File -> File -> Selector -> String -> Test Unit
+testBwd _ file file_expect δv expected =
    testWithSetup file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
    where
    folder = File "slicing/"
    file' = folder <> file
 
-testLink :: LinkFigSpec -> Selector -> String -> Test Unit
-testLink spec@{ x } δv1 v2_expect =
+testLink :: Boolean -> LinkFigSpec -> Selector -> String -> Test Unit
+testLink _ spec@{ x } δv1 v2_expect =
    before (loadLinkFig spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
          \{ γ0, γ, e1, e2, t1, t2, v1 } ->
