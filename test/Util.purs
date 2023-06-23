@@ -112,9 +112,8 @@ testWithSetup (bol) (File file) expected v_expect_opt setup =
                                        Just file_expect ->
                                           loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
                         false -> do 
-                           let newExp = show newProg
+                           --let newExp = show newProg
                            --liftEffect (log ("SRC\n" <> srcExp))
-                           liftEffect (log ("NEW\n" <> newExp))
                            liftEffect (logShow (eq (erase s) newProg))
                            unless (isGraphical v'') (checkPretty "Value" expected v'')
                            trace ("\n" <> src) \_ -> do
@@ -127,17 +126,17 @@ testWithSetup (bol) (File file) expected v_expect_opt setup =
 
          
 test :: Boolean -> File -> String -> Test Unit
-test _ file expected = testWithSetup true  file expected Nothing (openWithDefaultImports file)
+test b file expected = testWithSetup b  file expected Nothing (openWithDefaultImports file)
 
 testBwd :: Boolean -> File -> File -> Selector -> String -> Test Unit
-testBwd _ file file_expect δv expected =
-   testWithSetup false  file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
+testBwd b file file_expect δv expected =
+   testWithSetup b  file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
    where
    folder = File "slicing/"
    file' = folder <> file
 
-testLink :: Boolean -> LinkFigSpec -> Selector -> String -> Test Unit
-testLink _ spec@{ x } δv1 v2_expect =
+testLink :: Boolean ->  LinkFigSpec -> Selector -> String -> Test Unit
+testLink _  spec@{ x } δv1 v2_expect =
    before (loadLinkFig spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
          \{ γ0, γ, e1, e2, t1, t2, v1 } ->
@@ -147,7 +146,7 @@ testLink _ spec@{ x } δv1 v2_expect =
                checkPretty "Linked output" v2_expect v2'
 
 testWithDataset :: Boolean -> File -> File -> Test Unit
-testWithDataset _ dataset file = do
-   testWithSetup false  file "" Nothing $ do
+testWithDataset b dataset file = do
+   testWithSetup b  file "" Nothing $ do
       γ0 × γ <- openDatasetAs dataset "data"
       ((γ0 <+> γ) × _) <$> open file

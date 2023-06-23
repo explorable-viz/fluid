@@ -29,7 +29,7 @@ test_scratchpad =
 
 test_linking :: Array (Test Unit)
 test_linking =
-   [ testLink false
+   [ testLink true
         { divId: ""
         , file1: File "pairs-1"
         , file2: File "pairs-2"
@@ -42,7 +42,7 @@ test_linking =
              )
         )
         "(3, (_5_, _7_))"
-   , testLink false
+   , testLink true
         { divId: ""
         , file1: File "convolution-1"
         , file2: File "convolution-2"
@@ -55,7 +55,7 @@ test_linking =
         \_15_, _13_, _20_, 11, 14,\n\
         \7, 15, 15, 8, 20,\n\
         \3, 10, 12, 3, 11"
-   , testLink false
+   , testLink true
         { divId: ""
         , file1: File "bar-chart"
         , file2: File "line-chart"
@@ -110,45 +110,45 @@ test_linking =
 
 test_bwd :: Array (Test Unit)
 test_bwd =
-   [ testBwd false (File "add") (File "add.expect") (const $ Int true 8) "_8_"
+   [ testBwd true (File "add") (File "add.expect") (const $ Int true 8) "_8_"
    -- TODO: array/array test seems to be missing
-   , testBwd false (File "array/lookup") (File "array/lookup.expect") (const $ Int true 14) "_14_"
-   , testBwd false (File "array/dims") (File "array/dims.expect") topOf "_(_3_, _3_)_"
-   , testBwd false (File "convolution/edgeDetect") (File "convolution/edgeDetect.expect")
+   , testBwd true (File "array/lookup") (File "array/lookup.expect") (const $ Int true 14) "_14_"
+   , testBwd true (File "array/dims") (File "array/dims.expect") topOf "_(_3_, _3_)_"
+   , testBwd true (File "convolution/edgeDetect") (File "convolution/edgeDetect.expect")
         (botOf >>> selectCell 1 1 topOf)
         "_0_, -1, 2, 0, -1,\n\
         \0, 3, -2, 3, -2,\n\
         \-1, 1, -5, 0, 4,\n\
         \1, -1, 4, 0, -4,\n\
         \1, 0, -3, 2, 0"
-   , testBwd false (File "convolution/emboss") (File "convolution/emboss.expect")
+   , testBwd true (File "convolution/emboss") (File "convolution/emboss.expect")
         (botOf >>> selectCell 1 1 topOf)
         "_5_, 4, 2, 5, 2,\n\
         \3, 1, 2, -1, -2,\n\
         \3, 0, 1, 0, -1,\n\
         \2, 1, -2, 0, 0,\n\
         \1, 0, -1, -1, -2"
-   , testBwd false (File "convolution/gaussian") (File "convolution/gaussian.expect")
+   , testBwd true (File "convolution/gaussian") (File "convolution/gaussian.expect")
         (botOf >>> selectCell 1 1 topOf)
         "_38_, 37, 28, 30, 38,\n\
         \38, 36, 46, 31, 34,\n\
         \37, 41, 54, 34, 20,\n\
         \21, 35, 31, 31, 42,\n\
         \13, 32, 35, 19, 26"
-   , testBwd false (File "dict/create") (File "dict/create.expect")
+   , testBwd true (File "dict/create") (File "dict/create.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              , "ab" ↦ (true × Int false 6)
              ]
         )
         "{|\"a\":= 5, _\"ab\"_:= 6|}"
-   , testBwd false (File "dict/difference") (File "dict/difference.expect")
+   , testBwd true (File "dict/difference") (File "dict/difference.expect")
         ( const $ Dictionary true $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              ]
         )
         "_{|\"a\":= 5|}_"
-   , testBwd false (File "dict/disjointUnion") (File "dict/disjointUnion.expect")
+   , testBwd true (File "dict/disjointUnion") (File "dict/disjointUnion.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (true × Int false 5)
              , "b" ↦ (false × Int false 6)
@@ -156,105 +156,105 @@ test_bwd =
              ]
         )
         "{|_\"a\"_:= 5, \"b\":= 6, \"c\":= _7_|}"
-   , testBwd false (File "dict/foldl") (File "dict/foldl.expect")
+   , testBwd true (File "dict/foldl") (File "dict/foldl.expect")
         topOf
         "_0_"
-   , testBwd false (File "dict/intersectionWith") (File "dict/intersectionWith.expect")
+   , testBwd true (File "dict/intersectionWith") (File "dict/intersectionWith.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "b" ↦ (false × Int true 0)
              , "c" ↦ (false × Int true 20)
              ]
         )
         "{|\"b\":= _0_, \"c\":= _20_|}"
-   , testBwd false (File "dict/fromRecord") (File "dict/fromRecord.expect")
+   , testBwd true (File "dict/fromRecord") (File "dict/fromRecord.expect")
         ( const $ Dictionary false $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              , "ab" ↦ (true × Int false 6)
              ]
         )
         "_{|_\"a\"_:= 5, _\"ab\"_:= 6|}_"
-   , testBwd false (File "dict/get") (File "dict/get.expect")
+   , testBwd true (File "dict/get") (File "dict/get.expect")
         (const $ Int true 0)
         "_0_"
-   , testBwd false (File "dict/map") (File "dict/map.expect")
+   , testBwd true (File "dict/map") (File "dict/map.expect")
         (const $ Int true 20)
         "_20_"
-   , testBwd false (File "divide") (File "divide.expect") topOf "_40.22222222222222_"
-   , testBwd false (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
-   , testBwd false (File "intersperse") (File "intersperse-1.expect") (botOf >>> selectNthNode 1 neg)
+   , testBwd true (File "divide") (File "divide.expect") topOf "_40.22222222222222_"
+   , testBwd true (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
+   , testBwd true (File "intersperse") (File "intersperse-1.expect") (botOf >>> selectNthNode 1 neg)
         "(1 : (0 _:_ (2 : (0 : (3 : [])))))"
-   , testBwd false (File "intersperse") (File "intersperse-2.expect") (botOf >>> selectNthNode 2 neg)
+   , testBwd true (File "intersperse") (File "intersperse-2.expect") (botOf >>> selectNthNode 2 neg)
         "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))"
-   , testBwd false (File "length") (File "length.expect") topOf "_5_"
-   , testBwd false (File "list-comp") (File "list-comp-1.expect") (botOf >>> selectNthNode 1 neg)
+   , testBwd true (File "length") (File "length.expect") topOf "_5_"
+   , testBwd true (File "list-comp") (File "list-comp-1.expect") (botOf >>> selectNthNode 1 neg)
         "(6.2 : (260 _:_ (19.9 : (91 : []))))"
    , testBwd false (File "list-comp") (File "list-comp-2.expect") (botOf >>> selectNthNode 2 neg)
         "(6.2 : (260 : (19.9 _:_ (91 : []))))"
-   , testBwd false (File "lookup") (File "lookup.expect") selectSome "_Some_ \"Germany\""
-   , testBwd false (File "map") (File "map.expect") (botOf >>> selectNthNode 0 neg >>> selectNthNode 1 neg)
+   , testBwd true (File "lookup") (File "lookup.expect") selectSome "_Some_ \"Germany\""
+   , testBwd true (File "map") (File "map.expect") (botOf >>> selectNthNode 0 neg >>> selectNthNode 1 neg)
         "(5 _:_ (6 _:_ []))"
-   , testBwd false (File "multiply") (File "multiply.expect") (const $ Int true 0) "_0_"
-   , testBwd false (File "nth") (File "nth.expect") (const $ Int true 4) "_4_"
-   , testBwd false (File "section-5-example") (File "section-5-example-1.expect") (botOf >>> selectNthNode 0 neg)
+   , testBwd true (File "multiply") (File "multiply.expect") (const $ Int true 0) "_0_"
+   , testBwd true (File "nth") (File "nth.expect") (const $ Int true 4) "_4_"
+   , testBwd true (File "section-5-example") (File "section-5-example-1.expect") (botOf >>> selectNthNode 0 neg)
         "(88 _:_ (6 : (4 : [])))"
-   , testBwd false (File "section-5-example") (File "section-5-example-2.expect") (botOf >>> selectNth 1 topOf)
+   , testBwd true (File "section-5-example") (File "section-5-example-2.expect") (botOf >>> selectNth 1 topOf)
         "(_88_ : (_6_ : (_4_ : [])))"
-   , testBwd false (File "section-5-example") (File "section-5-example-3.expect") (botOf >>> selectNthNode 2 neg)
+   , testBwd true (File "section-5-example") (File "section-5-example-3.expect") (botOf >>> selectNthNode 2 neg)
         "(88 : (6 : (4 _:_ [])))"
-   , testBwd false (File "zeros") (File "zeros-1.expect") (botOf >>> selectNthNode 0 neg >>> selectNthNode 2 neg)
+   , testBwd true (File "zeros") (File "zeros-1.expect") (botOf >>> selectNthNode 0 neg >>> selectNthNode 2 neg)
         "(0 _:_ (0 : _[]_))"
-   , testBwd false (File "zeros") (File "zeros-2.expect") (botOf >>> selectNthNode 2 neg) "(0 : (0 : _[]_))"
-   , testBwd false (File "zipWith") (File "zipWith-1.expect")
+   , testBwd true (File "zeros") (File "zeros-2.expect") (botOf >>> selectNthNode 2 neg) "(0 : (0 : _[]_))"
+   , testBwd true (File "zipWith") (File "zipWith-1.expect")
         (botOf >>> selectNth 1 (const $ Float true 25.0))
         "(13.0 : (_25.0_ : (41.0 : [])))"
    ]
 
 test_desugaring :: Array (Test Unit)
 test_desugaring =
-   [ test false (File "desugar/list-comp-1") "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
-   , test false (File "desugar/list-comp-2")
+   [ test true (File "desugar/list-comp-1") "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
+   , test true (File "desugar/list-comp-2")
         "(14 : (14 : (14 : (12 : (12 : (12 : (10 : (10 : (10 : (13 : (13 : (13 : (11 : (11 : (11 : (9 : \
         \(9 : (9 : (12 : (12 : (12 : (10 : (10 : (10 : (8 : (8 : (8 : [])))))))))))))))))))))))))))"
-   , test false (File "desugar/list-comp-3") "(9 : (8 : []))"
-   , test false (File "desugar/list-comp-4") "(5 : (4 : (3 : [])))"
-   , test false (File "desugar/list-comp-5") "(5 : (4 : (3 : [])))"
-   , test false (File "desugar/list-comp-6") "(5 : [])"
-   , test false (File "desugar/list-comp-7") "([] : [])"
-   , test false (File "desugar/list-enum") "(3 : (4 : (5 : (6 : (7 : [])))))"
+   , test true (File "desugar/list-comp-3") "(9 : (8 : []))"
+   , test true (File "desugar/list-comp-4") "(5 : (4 : (3 : [])))"
+   , test true (File "desugar/list-comp-5") "(5 : (4 : (3 : [])))"
+   , test true (File "desugar/list-comp-6") "(5 : [])"
+   , test true (File "desugar/list-comp-7") "([] : [])"
+   , test true (File "desugar/list-enum") "(3 : (4 : (5 : (6 : (7 : [])))))"
    ]
 
 test_misc :: Array (Test Unit)
 test_misc =
-   [ test false (File "arithmetic") "42"
-   , test false (File "array") "(1, (3, 3))"
-   , test false (File "compose") "5"
-   , test false (File "dicts") "{d: {||}, e: {|\"a\":= 5, \"ab\":= 6|}, e_ab: 6, f: {|\"a\":= 6, \"ab\":= 7|}, g: {|\"a\":= 5|}, h: {|\"fst\":= 4, \"snd\":= (6 : (7 : []))|}}"
-   , test false (File "div-mod-quot-rem")
+   [ test true (File "arithmetic") "42"
+   , test true (File "array") "(1, (3, 3))"
+   , test true (File "compose") "5"
+   , test true (File "dicts") "{d: {||}, e: {|\"a\":= 5, \"ab\":= 6|}, e_ab: 6, f: {|\"a\":= 6, \"ab\":= 7|}, g: {|\"a\":= 5|}, h: {|\"fst\":= 4, \"snd\":= (6 : (7 : []))|}}"
+   , test true (File "div-mod-quot-rem")
         "((1 : (-1 : (-2 : (2 : [])))) : \
         \((2 : (2 : (1 : (1 : [])))) : \
         \((1 : (-1 : (-1 : (1 : [])))) : \
         \((2 : (2 : (-2 : (-2 : [])))) : []))))"
-   , test false (File "factorial") "40320"
-   , test false (File "filter") "(8 : (7 : []))"
-   , test false (File "first-class-constr") "((10 : []) : ((12 : []) : ((20 : []) : [])))"
-   , test false (File "flatten") "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
-   , test false (File "foldr_sumSquares") "661"
-   , test false (File "lexicalScoping") "\"6\""
-   , test false (File "length") "2"
-   , test false (File "lookup") "Some \"sarah\""
-   , test false (File "map") "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
-   , test false (File "mergeSort") "(1 : (2 : (3 : [])))"
-   , test false (File "normalise") "(33, 66)"
-   , test false (File "pattern-match") "4"
-   , test false (File "range") "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))"
-   , test false (File "records") "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
-   , test false (File "reverse") "(2 : (1 : []))"
+   , test true (File "factorial") "40320"
+   , test true (File "filter") "(8 : (7 : []))"
+   , test true (File "first-class-constr") "((10 : []) : ((12 : []) : ((20 : []) : [])))"
+   , test true (File "flatten") "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
+   , test true (File "foldr_sumSquares") "661"
+   , test true (File "lexicalScoping") "\"6\""
+   , test true (File "length") "2"
+   , test true (File "lookup") "Some \"sarah\""
+   , test true (File "map") "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
+   , test true (File "mergeSort") "(1 : (2 : (3 : [])))"
+   , test true (File "normalise") "(33, 66)"
+   , test true (File "pattern-match") "4"
+   , test true (File "range") "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))"
+   , test true (File "records") "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
+   , test true (File "reverse") "(2 : (1 : []))"
    ]
 
 test_graphics :: Array (Test Unit)
 test_graphics =
-   [ testWithDataset false (File "dataset/renewables-restricted") (File "graphics/background")
-   , testWithDataset false (File "dataset/renewables-restricted") (File "graphics/grouped-bar-chart")
-   , testWithDataset false (File "dataset/renewables-restricted") (File "graphics/line-chart")
-   , testWithDataset false (File "dataset/renewables-restricted") (File "graphics/stacked-bar-chart")
+   [ testWithDataset true (File "dataset/renewables-restricted") (File "graphics/background")
+   , testWithDataset true (File "dataset/renewables-restricted") (File "graphics/grouped-bar-chart")
+   , testWithDataset true (File "dataset/renewables-restricted") (File "graphics/line-chart")
+   , testWithDataset true (File "dataset/renewables-restricted") (File "graphics/stacked-bar-chart")
    ]
