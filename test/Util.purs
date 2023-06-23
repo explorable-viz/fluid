@@ -75,8 +75,8 @@ checkPretty _ expected x =
 --                                  Just file_expect ->
 --                                     loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
 
-testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
-testWithSetup (File file) expected v_expect_opt setup =
+testWithSetup :: Boolean -> File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
+testWithSetup _ (File file) expected v_expect_opt setup =
    before setup $
       it file \(γ × s) -> do
          let
@@ -106,11 +106,11 @@ testWithSetup (File file) expected v_expect_opt setup =
                            loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
 
 test :: Boolean -> File -> String -> Test Unit
-test _ file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
+test _ file expected = testWithSetup false  file expected Nothing (openWithDefaultImports file)
 
 testBwd :: Boolean -> File -> File -> Selector -> String -> Test Unit
 testBwd _ file file_expect δv expected =
-   testWithSetup file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
+   testWithSetup false  file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
    where
    folder = File "slicing/"
    file' = folder <> file
@@ -127,6 +127,6 @@ testLink _ spec@{ x } δv1 v2_expect =
 
 testWithDataset :: Boolean -> File -> File -> Test Unit
 testWithDataset _ dataset file = do
-   testWithSetup file "" Nothing $ do
+   testWithSetup false  file "" Nothing $ do
       γ0 × γ <- openDatasetAs dataset "data"
       ((γ0 <+> γ) × _) <$> open file
