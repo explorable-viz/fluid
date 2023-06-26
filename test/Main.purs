@@ -188,7 +188,7 @@ test_bwd =
    , testBwd true (File "length") (File "length.expect") topOf "_5_"
    , testBwd true (File "list-comp") (File "list-comp-1.expect") (botOf >>> selectNthNode 1 neg)
         "(6.2 : (260 _:_ (19.9 : (91 : []))))"
-   , testBwd false (File "list-comp") (File "list-comp-2.expect") (botOf >>> selectNthNode 2 neg)
+   , testBwd true (File "list-comp") (File "list-comp-2.expect") (botOf >>> selectNthNode 2 neg)
         "(6.2 : (260 : (19.9 _:_ (91 : []))))"
    , testBwd true (File "lookup") (File "lookup.expect") selectSome "_Some_ \"Germany\""
    , testBwd true (File "map") (File "map.expect") (botOf >>> selectNthNode 0 neg >>> selectNthNode 1 neg)
