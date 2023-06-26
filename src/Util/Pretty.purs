@@ -7,13 +7,12 @@ module Util.Pretty
    , render
    , empty
    , text
-   , beside
    , atop
    , Stack(..)
    , vcat
    , Columns(..)
    , hcat
-   , beside3
+   , beside
    , space
    ) where
 
@@ -23,7 +22,7 @@ import Data.Array (length) as A
 import Data.Foldable (class Foldable, foldl, foldMap, intercalate)
 import Data.Newtype (ala, class Newtype, wrap)
 import Data.String as S
-import Data.String.CodeUnits as SCU
+-- import Data.String.CodeUnits as SCU
 import Data.Unfoldable (replicate)
 import Data.Maybe (Maybe(..))
 
@@ -69,26 +68,26 @@ text s =
    lines = S.split (wrap "\n") s
 
 -- | Place one document beside another.
-beside :: Doc -> Doc -> Doc
-beside (Doc d1) (Doc d2) =
-   Doc
-      { width: d1.width + d2.width
-      , height: height_
-      , lines: take height_ $ zipWith append (map (padRight d1.width) (adjust d1)) (adjust d2)
-      }
-   where
-   height_ :: Int
-   height_ = max d1.height d2.height
+-- beside :: Doc -> Doc -> Doc
+-- beside (Doc d1) (Doc d2) =
+--    Doc
+--       { width: d1.width + d2.width
+--       , height: height_
+--       , lines: take height_ $ zipWith append (map (padRight d1.width) (adjust d1)) (adjust d2)
+--       }
+--    where
+--    height_ :: Int
+--    height_ = max d1.height d2.height
 
-   -- Adjust a document to fit the new width and height
-   adjust :: { lines :: Array String, width :: Int, height :: Int } -> Array String
-   adjust d = d.lines <> replicate (height_ - d.height) (emptyLine d.width)
+--    -- Adjust a document to fit the new width and height
+--    adjust :: { lines :: Array String, width :: Int, height :: Int } -> Array String
+--    adjust d = d.lines <> replicate (height_ - d.height) (emptyLine d.width)
 
-   emptyLine :: Int -> String
-   emptyLine w = SCU.fromCharArray (replicate w ' ' :: Array Char)
+--    emptyLine :: Int -> String
+--    emptyLine w = SCU.fromCharArray (replicate w ' ' :: Array Char)
 
-   padRight :: Int -> String -> String
-   padRight w s = s <> emptyLine (w - S.length s)
+--    padRight :: Int -> String -> String
+--    padRight w s = s <> emptyLine (w - S.length s)
 
 -- | Place one document on top of another.
 atop :: Doc -> Doc -> Doc
@@ -203,8 +202,8 @@ indentations (Doc d1) (Doc d2) = formingCorrectArray' (emptyStringRightIndentati
 finalLines :: Doc -> Doc -> Array String
 finalLines (Doc d1) (Doc d2) = allButLast' (Doc d1) <> (singleton (lastLine' (Doc d1) <> "" <> firstLine' (Doc d2))) <> indentations (Doc d1) (Doc d2)
 
-beside3 :: Doc -> Doc -> Doc
-beside3 (Doc d1) (Doc d2) = Doc { width: d1.width + d2.width, height: d1.height + d2.height, lines: finalLines (Doc d1) (Doc d2) }
+beside :: Doc -> Doc -> Doc
+beside (Doc d1) (Doc d2) = Doc { width: d1.width + d2.width, height: d1.height + d2.height, lines: finalLines (Doc d1) (Doc d2) }
 
 -- | Place documents in columns
 hcat :: forall f. Foldable f => f Doc -> Doc
