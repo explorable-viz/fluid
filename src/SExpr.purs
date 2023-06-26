@@ -54,18 +54,18 @@ data Expr a
    | LetRec (RecDefs a) (Expr a)
 
 derive instance Eq (Raw Expr)
-derive instance generalExpr :: Generic (Expr a) _ 
-instance showExpr :: Show a => Show (Expr a) where 
-   show c = genericShow c 
+derive instance generalExpr :: Generic (Expr a) _
+instance showExpr :: Show a => Show (Expr a) where
+   show c = genericShow c
 
 data ListRest a
    = End a
    | Next a (Expr a) (ListRest a)
 
 derive instance Eq (Raw ListRest)
-derive instance genericListRest :: Generic (ListRest a) _ 
-instance showListRest :: Show a =>  Show (ListRest a) where 
-   show c = genericShow c 
+derive instance genericListRest :: Generic (ListRest a) _
+instance showListRest :: Show a => Show (ListRest a) where
+   show c = genericShow c
 
 data Pattern
    = PVar Var
@@ -76,7 +76,7 @@ data Pattern
 
 derive instance Eq Pattern
 derive instance genericPattern :: Generic Pattern _
-instance showPattern :: Show Pattern where 
+instance showPattern :: Show Pattern where
    show c = genericShow c
 
 data ListRestPattern
@@ -84,25 +84,25 @@ data ListRestPattern
    | PNext Pattern ListRestPattern
 
 derive instance Eq ListRestPattern
-derive instance genericListRestPattern :: Generic ListRestPattern _ 
-instance showListRestPattern :: Show ListRestPattern where 
-   show c = genericShow c 
+derive instance genericListRestPattern :: Generic ListRestPattern _
+instance showListRestPattern :: Show ListRestPattern where
+   show c = genericShow c
 
 newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
 
 derive instance Eq (Raw Clause)
-derive instance genericClause :: Generic (Clause a) _ 
-instance showClause :: Show a => Show  (Clause a) where 
-   show c = genericShow c 
+derive instance genericClause :: Generic (Clause a) _
+instance showClause :: Show a => Show (Clause a) where
+   show c = genericShow c
 
 type Branch a = Var × Clause a
 
 newtype Clauses a = Clauses (NonEmptyList (Clause a))
 
 derive instance Eq (Raw Clauses)
-derive instance genericClauses :: Generic (Clauses a) _ 
-instance showClauses :: Show a => Show (Clauses a) where 
-   show c = genericShow c 
+derive instance genericClauses :: Generic (Clauses a) _
+instance showClauses :: Show a => Show (Clauses a) where
+   show c = genericShow c
 
 newtype RecDef a = RecDef (NonEmptyList (Branch a))
 type RecDefs a = NonEmptyList (Branch a)
@@ -112,9 +112,9 @@ type RecDefs a = NonEmptyList (Branch a)
 data VarDef a = VarDef Pattern (Expr a)
 
 derive instance Eq (Raw VarDef)
-derive instance genericVarDef :: Generic (VarDef a) _ 
-instance showVarDef :: Show a => Show (VarDef a) where 
-   show c = genericShow c 
+derive instance genericVarDef :: Generic (VarDef a) _
+instance showVarDef :: Show a => Show (VarDef a) where
+   show c = genericShow c
 
 type VarDefs a = NonEmptyList (VarDef a)
 
@@ -124,9 +124,9 @@ data Qualifier a
    | Declaration (VarDef a) -- could allow VarDefs instead
 
 derive instance Eq (Raw Qualifier)
-derive instance genericQualifier :: Generic (Qualifier a) _ 
-instance showQualifier :: Show a => Show (Qualifier a) where 
-   show c = genericShow c 
+derive instance genericQualifier :: Generic (Qualifier a) _
+instance showQualifier :: Show a => Show (Qualifier a) where
+   show c = genericShow c
 
 data Module a = Module (List (VarDefs a + RecDefs a))
 
@@ -477,5 +477,4 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join s = definedJoin s
    maybeJoin _ = error unimplemented
    neg = (<$>) neg
-
 
