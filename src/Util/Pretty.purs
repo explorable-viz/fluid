@@ -110,97 +110,38 @@ helperUnwrapMaybe :: Maybe String -> String
 helperUnwrapMaybe (Just x) = x
 helperUnwrapMaybe (Nothing) = ""
 
---helperInt :: Maybe Int -> Int
---helperInt (Just x) = x
---helperInt (Nothing) = 0
-
--- takes a document and extracts the last line changing the last line into a document 
--- lastLine :: Doc -> Doc
--- lastLine (Doc d) = Doc { width: S.length (helperUnwrapMaybe (last d.lines)), height: 1, lines: singleton (helperUnwrapMaybe (last d.lines)) }
-
--- finds the string which has the longest length
--- longestString :: Array Int -> Int
--- longestString x = helperInt (last (sort x))
-
--- helper function which takes array of strings and returns array of integers where each integer is the length of the corresponding string
--- helperStringToInt :: Array String -> Array Int
--- helperStringToInt x = map S.length x
-
---findingLongestWidth :: Array String -> Int
---findingLongestWidth x = longestString (helperStringToInt x)
-
--- takes a document with n lines and extracts the first n-1 lines 
---allButLast :: Doc -> Doc
---allButLast (Doc d) = Doc { width: findingLongestWidth (take (A.length d.lines - 1) d.lines), height: d.height - 1, lines: take (A.length d.lines - 1) d.lines }
-
--- takes a document with n lines and extracts the last n-1 lines 
---allButFirst :: Doc -> Doc
---allButFirst (Doc d) = Doc { width: findingLongestWidth (drop 1 d.lines), height: d.height - 1, lines: drop 1 d.lines }
-
--- takes a document with n lines and extracts the first line 
---firstLine :: Doc -> Doc
---firstLine (Doc d) = Doc { width: S.length (helperUnwrapMaybe (head d.lines)), height: 1, lines: singleton (helperUnwrapMaybe (head d.lines)) }
-
--- indenting 
--- create an array of empty strings "" which has same number of elements as allButFirst (Doc d2)
--- each element is an empty string with spaces equal to length of lastLine (Doc d1)
--- then do zipWidth of this array and allButFirst 
-
--- here take last line of d1 and e.g. if this is "let" you would return [" ", " ", " "]
--- [" A "," A ", " A "]
---emptyStringArray :: Doc -> Array String
---emptyStringArray (Doc d) = replicate (d.width) "_"
-
-emptyStringArray' :: String -> Array String
-emptyStringArray' d = replicate (S.length d) " "
+indentedExpressionRequired :: String -> Array String
+indentedExpressionRequired d = replicate (S.length d) " "
 
 -- here you would take [" ", " ", " "] and form "   "
-emptyStringConcat :: Array String -> String
-emptyStringConcat x = foldl (<>) "" x
+spacesNeeded :: Array String -> String
+spacesNeeded x = foldl (<>) "" x
 
 -- here you would take "   " and all but first of d2 and say this has 2 lines you would form ["   ", "   "]
---emptyStringRightIndentation :: Doc -> String -> Array String
---emptyStringRightIndentation (Doc d) x = replicate (A.length d.lines) x
-
-emptyStringRightIndentation' :: Array String -> String -> Array String
-emptyStringRightIndentation' p x = replicate (A.length p) x
+indentingEachLine :: Array String -> String -> Array String
+indentingEachLine p x = replicate (A.length p) x
 
 -- here you would take ["   ", "   "] and all but first of d2 and form the required result 
---formingCorrectArray :: Array String -> Doc -> Array String
---formingCorrectArray x (Doc d) = zipWith (<>) x (d.lines)
+indentedExpressionHelper :: Array String -> Array String -> Array String
+indentedExpressionHelper x y = zipWith (<>) x y
 
-formingCorrectArray' :: Array String -> Array String -> Array String
-formingCorrectArray' x y = zipWith (<>) x y
+allButLast :: Doc -> Array String
+allButLast (Doc d) = take (A.length d.lines - 1) d.lines
 
--- here use the correct array to convert into a document 
---formingNewDocument :: Array String -> Doc -> Doc
---formingNewDocument x (Doc d) = Doc { width: findingLongestWidth x, height: d.height, lines: x }
+allButFirst :: Doc -> Array String
+allButFirst (Doc d) = drop 1 d.lines
 
--- helper function 
---temp :: Doc -> Doc -> Doc
---temp (Doc d1) (Doc d2) = formingNewDocument (formingCorrectArray (emptyStringRightIndentation (allButFirst (Doc d2)) (emptyStringConcat (emptyStringArray (lastLine (Doc d1))))) (allButFirst (Doc d2))) (allButFirst (Doc d2))
+firstLine :: Doc -> String
+firstLine (Doc d) = helperUnwrapMaybe (head d.lines)
 
--- beside alternative 
---beside2 :: Doc -> Doc -> Doc
---beside2 (Doc d1) (Doc d2) = allButLast (Doc d1) .-. (lastLine (Doc d1) :<>: firstLine (Doc d2)) .-. (temp (Doc d1) (Doc d2))
+lastLine :: Doc -> String
+lastLine (Doc d) = helperUnwrapMaybe (last d.lines)
 
-allButLast' :: Doc -> Array String
-allButLast' (Doc d) = take (A.length d.lines - 1) d.lines
-
-allButFirst' :: Doc -> Array String
-allButFirst' (Doc d) = drop 1 d.lines
-
-firstLine' :: Doc -> String
-firstLine' (Doc d) = helperUnwrapMaybe (head d.lines)
-
-lastLine' :: Doc -> String
-lastLine' (Doc d) = helperUnwrapMaybe (last d.lines)
-
-indentations :: Doc -> Doc -> Array String
-indentations (Doc d1) (Doc d2) = formingCorrectArray' (emptyStringRightIndentation' (allButFirst' (Doc d2)) (emptyStringConcat (emptyStringArray' (lastLine' (Doc d1))))) (allButFirst' (Doc d2))
+indentedExpression :: Doc -> Doc -> Array String
+indentedExpression (Doc d1) (Doc d2) = indentedExpressionHelper (indentingEachLine (allButFirst (Doc d2)) (spacesNeeded (indentedExpressionRequired (lastLine (Doc d1))))) (allButFirst (Doc d2))
 
 finalLines :: Doc -> Doc -> Array String
-finalLines (Doc d1) (Doc d2) = allButLast' (Doc d1) <> (singleton (lastLine' (Doc d1) <> "" <> firstLine' (Doc d2))) <> indentations (Doc d1) (Doc d2)
+finalLines (Doc d1) (Doc d2) = allButLast (Doc d1) <> (singleton (lastLine (Doc d1) <> "" <> firstLine (Doc d2))) <> indentedExpression (Doc d1) (Doc d2)
 
 beside :: Doc -> Doc -> Doc
 beside (Doc d1) (Doc d2) = Doc { width: d1.width + d2.width, height: d1.height + d2.height, lines: finalLines (Doc d1) (Doc d2) }
