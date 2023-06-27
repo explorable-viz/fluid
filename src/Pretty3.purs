@@ -4,14 +4,14 @@ import Prelude hiding (absurd, between)
 
 import Bindings (Bind, key, val)
 import Data.List (List(..))
+import Data.List.NonEmpty (NonEmptyList, groupBy, head, singleton, toList)
 import Data.Map (keys)
 import Data.Set (member)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), RecDefs, VarDef(..), VarDefs, Qualifier(..))
+import Util ((×), type (×))
 import Util.Pair (Pair(..))
 import Util.Pretty (Doc, atop, beside, empty, space, text)
-import Data.List.NonEmpty (NonEmptyList, toList, groupBy, head, singleton)
-import Util ((×), type (×))
 
 -- import Bindings (Bind, Var, (↦), key, val)
 -- import Data.Exists (runExists)
@@ -47,6 +47,8 @@ emptyDoc = empty 0 0
 
 data InFront = Prefix (String) | Unit
 type IsPair = Boolean × (List (Pattern))
+data IsRecFunc cs = No (Clauses cs) | Yes (String) (Clauses cs)
+data IsClauseVar c = Not (Clause c) | Is (String) (Clause c)
 
 infixl 5 beside as .<>. 
 infixl 5 space as :--:
@@ -128,23 +130,24 @@ instance Pretty (ListRestPattern) where
     pretty (PNext p x) = text "," .<>. pretty p .<>. pretty x
     pretty PEnd = emptyDoc
 
+-- instance Pretty (IsRecFunc a) where 
+--     pretty (No (Clauses cs)) = intersperse' (toList (map (pretty (Not (cs))))) (text ";")
+--     pretty (Yes x (Clauses cs)) = intersperse' (toList (map (pretty (Is x Clauses (cs))))) (text ";")
 
+-- instance Pretty (IsClauseVar a) where  
+--     pretty (Not (Clause (ps × e))) = (pretty (false × (toList ps)) :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) 
+--     pretty (Is x (Clause (ps × e))) = (text x :--: emptyDoc) .<>. pretty (Not (Clause (ps × e)))
 
+    
+clausesToDoc :: forall a. InFront -> Clauses a -> Doc
+clausesToDoc Unit (Clauses cs) = intersperse' (toList (map unitClauses cs)) (text ";")
+clausesToDoc (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
 
+unitClauses :: forall a. Clause a -> Doc
+unitClauses (Clause (ps × e)) = (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) -- edited beside with spaces
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+varClauses :: forall a. String -> Clause a -> Doc
+varClauses x (Clause (ps × e)) = (text x :--: emptyDoc) .<>. unitClauses (Clause (ps × e))
 
 qualifiersToDoc :: forall a. List (Qualifier a) -> Doc
 qualifiersToDoc (Cons (Guard s) Nil) = pretty s
@@ -208,15 +211,9 @@ pairPattToDoc (Cons x xs) true = (patternToDoc x .<>. text ",") .<>. pairPattToD
 pairPattToDoc (Cons x xs) false = (patternToDoc x :--: emptyDoc) .<>. pairPattToDoc xs false -- beside may need to change to a space
 pairPattToDoc Nil _ = emptyDoc
 
-unitClauses :: forall a. Clause a -> Doc
-unitClauses (Clause (ps × e)) = (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) -- edited beside with spaces
 
-varClauses :: forall a. String -> Clause a -> Doc
-varClauses x (Clause (ps × e)) = (text x :--: emptyDoc) .<>. unitClauses (Clause (ps × e))
 
-clausesToDoc :: forall a. InFront -> Clauses a -> Doc
-clausesToDoc Unit (Clauses cs) = intersperse' (toList (map unitClauses cs)) (text ";")
-clausesToDoc (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
+
 
 recDefsToDoc :: forall a. RecDefs a -> Doc
 recDefsToDoc x = helperRecDefs3 (helperRecDefs2 (helperRecDefs1 x))
@@ -283,3 +280,5 @@ helperRecDefs31 (a × b) = clausesToDoc (Prefix a) (Clauses b)
 
 helperRecDefs3 :: forall a. NonEmptyList (String × NonEmptyList (Clause a)) -> Doc
 helperRecDefs3 x = intersperse' (toList (map helperRecDefs31 x)) (text ";")
+
+
