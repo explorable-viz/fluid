@@ -68,7 +68,7 @@ instance Pretty (Expr a) where
     pretty (Project s x) = pretty s .<>. text "." .<>. text x
     pretty (Record _ x) = text "{" .<>. pretty x .<>. text "}" 
     pretty (Lambda (Clauses cs)) = text "(" .<>. (text "fun" :--: emptyDoc) .<>. pretty (Clauses cs) .<>. text ")" :--: emptyDoc -- edited
-    pretty (LetRec g s) = ((text "let" :--: emptyDoc .<>. pretty g) .-. (emptyDoc :--: text "in" :--: emptyDoc)) .-. pretty s
+    pretty (LetRec g s) = ((text "let" :--: emptyDoc .<>. pretty (First g)) .-. (emptyDoc :--: text "in" :--: emptyDoc)) .-. pretty s
     pretty (MatchAs s x) = (((text "match" :--: emptyDoc) .<>. text "(" .<>. pretty s .<>. text ")" .<>. (emptyDoc :--: text "as {")) .-. (emptyDoc :--: emptyDoc :--: emptyDoc :--: emptyDoc .<>. matchToDoc x)) .-. text "}"
     pretty (ListEmpty _) = text "[]"
     pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. pretty x .<>. text "]" 
