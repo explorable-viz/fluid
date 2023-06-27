@@ -8,7 +8,7 @@ import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (keys)
 import Data.Set (member)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), VarDef(..), VarDefs, Qualifier(..))
+import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), VarDef(..), VarDefs, Qualifier(..), RecDefs)
 import Util ((×), type (×))
 import Util.Pair (Pair(..))
 import Util.Pretty (Doc, atop, beside, empty, space, text)
@@ -47,6 +47,7 @@ emptyDoc = empty 0 0
 
 data InFront = Prefix (String) | Unit
 type IsPair = Boolean × (List (Pattern))
+newtype FirstGroup a = First (RecDefs a)
 
 
 infixl 5 beside as .<>. 
@@ -67,7 +68,7 @@ instance Pretty (Expr a) where
     pretty (Project s x) = pretty s .<>. text "." .<>. text x
     pretty (Record _ x) = text "{" .<>. pretty x .<>. text "}" 
     pretty (Lambda (Clauses cs)) = text "(" .<>. (text "fun" :--: emptyDoc) .<>. pretty (Clauses cs) .<>. text ")" :--: emptyDoc -- edited
-    pretty (LetRec g s) = ((text "let" :--: emptyDoc .<>. temp g) .-. (emptyDoc :--: text "in" :--: emptyDoc)) .-. pretty s
+    pretty (LetRec g s) = ((text "let" :--: emptyDoc .<>. pretty g) .-. (emptyDoc :--: text "in" :--: emptyDoc)) .-. pretty s
     pretty (MatchAs s x) = (((text "match" :--: emptyDoc) .<>. text "(" .<>. pretty s .<>. text ")" .<>. (emptyDoc :--: text "as {")) .-. (emptyDoc :--: emptyDoc :--: emptyDoc :--: emptyDoc .<>. matchToDoc x)) .-. text "}"
     pretty (ListEmpty _) = text "[]"
     pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. pretty x .<>. text "]" 
@@ -144,11 +145,8 @@ instance Pretty (NonEmptyList (Branch a)) where
 instance Pretty (NonEmptyList (NonEmptyList (Branch a))) where 
     pretty x = intersperse' (toList (map pretty x)) (text ";")
 
-
-
-
-temp :: forall a. NonEmptyList (Branch a) -> Doc
-temp x = pretty (groupBy (\p q -> key p == key q) x)
+instance Pretty (FirstGroup a) where 
+    pretty (First x) = pretty (groupBy (\p q -> key p == key q) x)
 
 -- temp2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
 -- temp2 x = intersperse' (map pretty (toList x)) (text ";") 
