@@ -8,7 +8,7 @@ import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (keys)
 import Data.Set (member)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), RecDefs, VarDef(..), VarDefs, Qualifier(..))
+import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), VarDef(..), VarDefs, Qualifier(..))
 import Util ((×), type (×))
 import Util.Pair (Pair(..))
 import Util.Pretty (Doc, atop, beside, empty, space, text)
@@ -67,7 +67,7 @@ instance Pretty (Expr a) where
     pretty (Project s x) = pretty s .<>. text "." .<>. text x
     pretty (Record _ x) = text "{" .<>. pretty x .<>. text "}" 
     pretty (Lambda (Clauses cs)) = text "(" .<>. (text "fun" :--: emptyDoc) .<>. pretty (Clauses cs) .<>. text ")" :--: emptyDoc -- edited
-    pretty (LetRec g s) = ((text "let" :--: emptyDoc .<>. recDefsToDoc g) .-. (emptyDoc :--: text "in" :--: emptyDoc)) .-. pretty s
+    pretty (LetRec g s) = ((text "let" :--: emptyDoc .<>. temp g) .-. (emptyDoc :--: text "in" :--: emptyDoc)) .-. pretty s
     pretty (MatchAs s x) = (((text "match" :--: emptyDoc) .<>. text "(" .<>. pretty s .<>. text ")" .<>. (emptyDoc :--: text "as {")) .-. (emptyDoc :--: emptyDoc :--: emptyDoc :--: emptyDoc .<>. matchToDoc x)) .-. text "}"
     pretty (ListEmpty _) = text "[]"
     pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. pretty x .<>. text "]" 
@@ -139,7 +139,7 @@ instance Pretty (Branch a) where
     pretty (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. pretty (Clause (ps × e))
 
 instance Pretty (NonEmptyList (Branch a)) where 
-    pretty x = intersperse' (toList (map pretty x)) (text ";")
+    pretty x = intersperse' (toList (map pretty x)) (text ";") 
 
 instance Pretty (NonEmptyList (NonEmptyList (Branch a))) where 
     pretty x = intersperse' (toList (map pretty x)) (text ";")
@@ -147,31 +147,29 @@ instance Pretty (NonEmptyList (NonEmptyList (Branch a))) where
 
 
 
+temp :: forall a. NonEmptyList (Branch a) -> Doc
+temp x = pretty (groupBy (\p q -> key p == key q) x)
 
+-- temp2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
+-- temp2 x = intersperse' (map pretty (toList x)) (text ";") 
 
+-- recDefsToDoc :: forall a. RecDefs a -> Doc
+-- recDefsToDoc x = temp3 (helperRecDefs1 x) 
 
+-- helperRecDefs1 :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
+-- helperRecDefs1 x = groupBy (\p q -> key p == key q) x
 
+-- temp1 :: forall a. Branch a -> Doc 
+-- temp1 (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. clauseToDoc' (Clause (ps × e))
 
+-- clauseToDoc' :: forall a. Clause a -> Doc 
+-- clauseToDoc' (Clause (ps × e))  =  (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e)
 
+-- temp2 :: forall a. NonEmptyList (Branch a) -> Doc 
+-- temp2 x = intersperse' (toList (map temp1 x)) (text ";")
 
-
-
-
-
-helperRecDefs1 :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
-helperRecDefs1 x = groupBy (\p q -> key p == key q) x
-
-temp1 :: forall a. Branch a -> Doc 
-temp1 (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. clauseToDoc' (Clause (ps × e))
-
-clauseToDoc' :: forall a. Clause a -> Doc 
-clauseToDoc' (Clause (ps × e))  =  (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e)
-
-temp2 :: forall a. NonEmptyList (Branch a) -> Doc 
-temp2 x = intersperse' (toList (map temp1 x)) (text ";")
-
-temp3 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
-temp3 x = intersperse' (toList (map temp2 x)) (text ";")
+-- temp3 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
+-- temp3 x = intersperse' (toList (map temp2 x)) (text ";")
 -- clausesToDoc :: forall a. InFront -> Clauses a -> Doc
 -- clausesToDoc Unit (Clauses cs) = intersperse' (toList (map unitClauses cs)) (text ";")
 -- clausesToDoc (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
@@ -248,8 +246,7 @@ pairPattToDoc Nil _ = emptyDoc
 
 
 
-recDefsToDoc :: forall a. RecDefs a -> Doc
-recDefsToDoc x = temp3 (helperRecDefs1 x) 
+
 
 checkOp :: String -> Doc
 checkOp x = case (member x (keys (opDefs))) of
