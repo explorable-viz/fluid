@@ -47,8 +47,7 @@ emptyDoc = empty 0 0
 
 data InFront = Prefix (String) | Unit
 type IsPair = Boolean × (List (Pattern))
-data IsRecFunc cs = No (Clauses cs) | Yes (String) (Clauses cs)
-data IsClauseVar c = Not (Clause c) | Is (String) (Clause c)
+
 
 infixl 5 beside as .<>. 
 infixl 5 space as :--:
@@ -67,7 +66,7 @@ instance Pretty (Expr a) where
     pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
     pretty (Project s x) = pretty s .<>. text "." .<>. text x
     pretty (Record _ x) = text "{" .<>. pretty x .<>. text "}" 
-    pretty (Lambda (Clauses cs)) = text "(" .<>. (text "fun" :--: emptyDoc) .<>. clausesToDoc Unit (Clauses cs) .<>. text ")" :--: emptyDoc -- edited
+    pretty (Lambda (Clauses cs)) = text "(" .<>. (text "fun" :--: emptyDoc) .<>. pretty (Clauses cs) .<>. text ")" :--: emptyDoc -- edited
     pretty (LetRec g s) = ((text "let" :--: emptyDoc .<>. recDefsToDoc g) .-. (emptyDoc :--: text "in" :--: emptyDoc)) .-. pretty s
     pretty (MatchAs s x) = (((text "match" :--: emptyDoc) .<>. text "(" .<>. pretty s .<>. text ")" .<>. (emptyDoc :--: text "as {")) .-. (emptyDoc :--: emptyDoc :--: emptyDoc :--: emptyDoc .<>. matchToDoc x)) .-. text "}"
     pretty (ListEmpty _) = text "[]"
@@ -130,24 +129,58 @@ instance Pretty (ListRestPattern) where
     pretty (PNext p x) = text "," .<>. pretty p .<>. pretty x
     pretty PEnd = emptyDoc
 
--- instance Pretty (IsRecFunc a) where 
---     pretty (No (Clauses cs)) = intersperse' (toList (map (pretty (Not (cs))))) (text ";")
---     pretty (Yes x (Clauses cs)) = intersperse' (toList (map (pretty (Is x Clauses (cs))))) (text ";")
+instance Pretty (Clause a) where 
+    pretty (Clause (ps × e)) = (pretty (false × (toList ps)) :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) 
 
--- instance Pretty (IsClauseVar a) where  
---     pretty (Not (Clause (ps × e))) = (pretty (false × (toList ps)) :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) 
---     pretty (Is x (Clause (ps × e))) = (text x :--: emptyDoc) .<>. pretty (Not (Clause (ps × e)))
+instance Pretty (Clauses a) where 
+    pretty (Clauses cs) = intersperse' (toList (map pretty cs)) (text ";")
 
-    
-clausesToDoc :: forall a. InFront -> Clauses a -> Doc
-clausesToDoc Unit (Clauses cs) = intersperse' (toList (map unitClauses cs)) (text ";")
-clausesToDoc (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
+instance Pretty (Branch a) where 
+    pretty (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. pretty (Clause (ps × e))
 
-unitClauses :: forall a. Clause a -> Doc
-unitClauses (Clause (ps × e)) = (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) -- edited beside with spaces
+instance Pretty (NonEmptyList (Branch a)) where 
+    pretty x = intersperse' (toList (map pretty x)) (text ";")
 
-varClauses :: forall a. String -> Clause a -> Doc
-varClauses x (Clause (ps × e)) = (text x :--: emptyDoc) .<>. unitClauses (Clause (ps × e))
+instance Pretty (NonEmptyList (NonEmptyList (Branch a))) where 
+    pretty x = intersperse' (toList (map pretty x)) (text ";")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+helperRecDefs1 :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
+helperRecDefs1 x = groupBy (\p q -> key p == key q) x
+
+temp1 :: forall a. Branch a -> Doc 
+temp1 (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. clauseToDoc' (Clause (ps × e))
+
+clauseToDoc' :: forall a. Clause a -> Doc 
+clauseToDoc' (Clause (ps × e))  =  (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e)
+
+temp2 :: forall a. NonEmptyList (Branch a) -> Doc 
+temp2 x = intersperse' (toList (map temp1 x)) (text ";")
+
+temp3 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
+temp3 x = intersperse' (toList (map temp2 x)) (text ";")
+-- clausesToDoc :: forall a. InFront -> Clauses a -> Doc
+-- clausesToDoc Unit (Clauses cs) = intersperse' (toList (map unitClauses cs)) (text ";")
+-- clausesToDoc (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
+
+-- unitClauses :: forall a. Clause a -> Doc
+-- unitClauses (Clause (ps × e)) = (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) -- edited beside with spaces
+
+-- varClauses :: forall a. String -> Clause a -> Doc
+-- varClauses x (Clause (ps × e)) = (text x :--: emptyDoc) .<>. unitClauses (Clause (ps × e))
 
 qualifiersToDoc :: forall a. List (Qualifier a) -> Doc
 qualifiersToDoc (Cons (Guard s) Nil) = pretty s
@@ -266,19 +299,6 @@ matchClause (Clause (ps × e)) = (pairPattToDoc (toList ps) false :--: emptyDoc)
 matchClauses :: forall a. Clauses a -> Doc
 matchClauses (Clauses cs) = intersperse' (toList (map matchClause cs)) (text ";")
 
-helperRecDefs1 :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
-helperRecDefs1 x = groupBy (\p q -> key p == key q) x
 
-temp1 :: forall a. Branch a -> Doc 
-temp1 (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. clauseToDoc' (Clause (ps × e))
-
-clauseToDoc' :: forall a. Clause a -> Doc 
-clauseToDoc' (Clause (ps × e))  =  (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e)
-
-temp2 :: forall a. NonEmptyList (Branch a) -> Doc 
-temp2 x = intersperse' (toList (map temp1 x)) (text ";")
-
-temp3 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
-temp3 x = intersperse' (toList (map temp2 x)) (text ";")
 
 
