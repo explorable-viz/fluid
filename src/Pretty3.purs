@@ -4,7 +4,7 @@ import Prelude hiding (absurd, between)
 
 import Bindings (Bind, key, val)
 import Data.List (List(..))
-import Data.List.NonEmpty (NonEmptyList, groupBy, head, singleton, toList)
+import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (keys)
 import Data.Set (member)
 import Primitive.Parse (opDefs)
@@ -216,7 +216,7 @@ pairPattToDoc Nil _ = emptyDoc
 
 
 recDefsToDoc :: forall a. RecDefs a -> Doc
-recDefsToDoc x = helperRecDefs3 (helperRecDefs2 (helperRecDefs1 x))
+recDefsToDoc x = temp3 (helperRecDefs1 x) 
 
 checkOp :: String -> Doc
 checkOp x = case (member x (keys (opDefs))) of
@@ -269,16 +269,16 @@ matchClauses (Clauses cs) = intersperse' (toList (map matchClause cs)) (text ";"
 helperRecDefs1 :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
 helperRecDefs1 x = groupBy (\p q -> key p == key q) x
 
-helperRecDefs21 :: forall a. NonEmptyList (Branch a) -> String × NonEmptyList (Clause a)
-helperRecDefs21 x = key (head x) × map (\y -> val y) x
+temp1 :: forall a. Branch a -> Doc 
+temp1 (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. clauseToDoc' (Clause (ps × e))
 
-helperRecDefs2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> NonEmptyList (String × NonEmptyList (Clause a))
-helperRecDefs2 x = map helperRecDefs21 x
+clauseToDoc' :: forall a. Clause a -> Doc 
+clauseToDoc' (Clause (ps × e))  =  (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e)
 
-helperRecDefs31 :: forall a. String × NonEmptyList (Clause a) -> Doc
-helperRecDefs31 (a × b) = clausesToDoc (Prefix a) (Clauses b)
+temp2 :: forall a. NonEmptyList (Branch a) -> Doc 
+temp2 x = intersperse' (toList (map temp1 x)) (text ";")
 
-helperRecDefs3 :: forall a. NonEmptyList (String × NonEmptyList (Clause a)) -> Doc
-helperRecDefs3 x = intersperse' (toList (map helperRecDefs31 x)) (text ";")
+temp3 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
+temp3 x = intersperse' (toList (map temp2 x)) (text ";")
 
 
