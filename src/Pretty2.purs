@@ -92,7 +92,7 @@ patternToDoc (PRecord x) = text "{" .<>. varPattToDoc x .<>. text "}"
 patternToDoc (PConstr "Pair" x) = text "(" .<>. pairPattToDoc x true .<>. text ")"
 patternToDoc (PConstr "Empty" x) = text "Empty" .<>. pairPattToDoc x false
 patternToDoc (PConstr ":" x) = text "(" .<>. listPattToDoc x .<>. text ")"
-patternToDoc (PConstr c Nil) = (text c :--: emptyDoc)
+-- patternToDoc (PConstr c Nil) = (text c :--: emptyDoc)
 patternToDoc (PConstr c x) = text "(" .<>. (text c :--: emptyDoc) .<>. pairPattToDoc x false .<>. text ")"
 patternToDoc (PListEmpty) = text "[]"
 patternToDoc (PListNonEmpty p x) = text "[" .<>. patternToDoc p .<>. listlistRestPatternToDoc x .<>. text "]"
@@ -107,10 +107,10 @@ varPattToDoc (Cons x xs) = text (key x) .<>. text ":" .<>. patternToDoc (val x) 
 varPattToDoc Nil = emptyDoc
 
 pairPattToDoc :: List Pattern -> Boolean -> Doc
+pairPattToDoc Nil _ = emptyDoc
 pairPattToDoc (Cons x Nil) true = patternToDoc x
 pairPattToDoc (Cons x xs) true = (patternToDoc x .<>. text ",") .<>. pairPattToDoc xs true
 pairPattToDoc (Cons x xs) false = (patternToDoc x :--: emptyDoc) .<>. pairPattToDoc xs false -- beside may need to change to a space
-pairPattToDoc Nil _ = emptyDoc
 
 unitClauses :: forall a. Clause a -> Doc
 unitClauses (Clause (ps × e)) = (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) -- edited beside with spaces

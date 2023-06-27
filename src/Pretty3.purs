@@ -46,6 +46,7 @@ emptyDoc :: Doc
 emptyDoc = empty 0 0
 
 data InFront = Prefix (String) | Unit
+type IsPair = Boolean × (List (Pattern))
 
 infixl 5 beside as .<>. 
 infixl 5 space as :--:
@@ -100,19 +101,50 @@ instance Pretty (List (Pair (Expr a))) where
 instance Pretty (Pattern) where 
     pretty (PVar x) = text x
     pretty (PRecord x) = text "{" .<>. pretty x .<>. text "}"
-    --pretty (S.PConstr "Pair" x) = text "(" .<>. pairPattToDoc x true .<>. text ")"
-    --pretty (S.PConstr "Empty" x) = text "Empty" .<>. pairPattToDoc x false
-    --pretty (S.PConstr ":" x) = text "(" .<>. listPattToDoc x .<>. text ")"
-    --pretty (S.PConstr c Nil) = (text c :--: emptyDoc)
-    --pretty (S.PConstr c x) = text "(" .<>. (text c :--: emptyDoc) .<>. pairPattToDoc x false .<>. text ")"
-    --pretty (S.PListEmpty) = text "[]"
-    --pretty (S.PListNonEmpty p x) = text "[" .<>. pretty p .<>. listlistRestpretty x .<>. text "]"
-    pretty _ = emptyDoc 
+    pretty (PConstr "Pair" x) = text "(" .<>. pretty (true × x) .<>. text ")"
+    pretty (PConstr "Empty" x) = text "Empty" .<>. pretty (false × x) 
+    pretty (PConstr ":" x) = text "(" .<>. pretty x .<>. text ")"
+    pretty (PConstr c x) = text "(" .<>. (text c :--: emptyDoc) .<>. pretty (false × x) .<>. text ")"
+    pretty (PListEmpty) = text "[]"
+    pretty (PListNonEmpty p x) = text "[" .<>. pretty p .<>. pretty x .<>. text "]"
 
 instance Pretty (List (Bind (Pattern))) where 
     pretty (Cons x Nil) = text (key x) .<>. text ":" .<>. pretty (val x) .-. emptyDoc 
     pretty (Cons x xs) = text (key x) .<>. text ":" .<>. pretty (val x) .<>. text "," .-. pretty xs 
     pretty Nil = emptyDoc
+
+instance Pretty (IsPair) where
+    pretty (_ × Nil) = emptyDoc 
+    pretty (_ × (Cons x Nil)) = pretty x
+    pretty (true × (Cons x xs)) = (pretty x .<>. text ",") .<>. pretty (true × xs)
+    pretty (false × (Cons x xs)) = (pretty x :--: emptyDoc) .<>. pretty (false × xs)
+
+instance Pretty (List Pattern) where 
+    pretty (Cons x Nil) = pretty x
+    pretty (Cons x xs) = patternToDoc x .<>. text ":" .<>. pretty xs
+    pretty Nil = emptyDoc
+
+instance Pretty (ListRestPattern) where 
+    pretty (PNext p x) = text "," .<>. pretty p .<>. pretty x
+    pretty PEnd = emptyDoc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 qualifiersToDoc :: forall a. List (Qualifier a) -> Doc
 qualifiersToDoc (Cons (Guard s) Nil) = pretty s
