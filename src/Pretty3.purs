@@ -74,7 +74,7 @@ instance Pretty (Expr a) where
     pretty (ListEmpty _) = text "[]"
     pretty (ListNonEmpty _ s x) = emptyDoc :--: text "[" .<>. pretty s .<>. pretty x .<>. text "]" 
     pretty (ListEnum s s') = text "[" .<>. pretty s .<>. text ".." .<>. pretty s' .<>. text "]"
-    pretty (Let x s) = text "(" .<>. text "let" :--: emptyDoc .<>. varDefsToDoc x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s .<>. text ")"
+    pretty (Let x s) = text "(" .<>. text "let" :--: emptyDoc .<>. pretty x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s .<>. text ")"
     pretty (Matrix _ s (v × v') s') = text "[" .<>. text "|" .<>. pretty s .<>. text "|" .<>. text "(" .<>. text v .<>. text "," .<>. text v' .<>. (text ")" :--: emptyDoc) .<>. (text "in" :--: emptyDoc) .<>. pretty s' .<>. text "|" .<>. text "]"
     pretty (Constr _ "NonEmpty" x) = (text "(NonEmpty" :--: emptyDoc) .<>. listExpr x .<>. text ")"
     pretty (Constr _ "None" _) = text "None"
@@ -154,7 +154,20 @@ instance Pretty (FirstGroup a) where
     pretty (First x) = pretty (groupBy (\p q -> key p == key q) x)
 
 instance Pretty  (NonEmptyList (Pattern × Expr a)) where 
-    pretty x = intersperse' (map pretty (map foo2 (map Clause (toList (foo x))))) (text ";")
+    pretty x = intersperse' (map pretty (map helperMatch2 (map Clause (toList (helperMatch x))))) (text ";")
+
+instance Pretty (VarDef a) where 
+    pretty (VarDef p s) = (pretty p :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty s)
+
+
+instance Pretty (VarDefs a) where 
+    pretty x = intersperse' (toList (map pretty x)) (text ";")
+
+varDefToDoc :: forall a. VarDef a -> Doc
+varDefToDoc (VarDef p s) = (patternToDoc p :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty s)
+
+-- varDefsToDoc :: forall a. VarDefs a -> Doc
+-- varDefsToDoc x = intersperse' (toList (map varDefToDoc x)) (text ";")
 
 -- temp2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
 -- temp2 x = intersperse' (map pretty (toList x)) (text ";") 
@@ -200,11 +213,9 @@ dictToDoc (Cons (Pair e e') Nil) = pretty e .<>. (emptyDoc :--: text ":=" :--: e
 dictToDoc (Cons (Pair e e') xs) = pretty e .<>. (emptyDoc :--: text ":=" :--: emptyDoc) .<>. pretty e' .<>. (text "," :--: emptyDoc) .<>. dictToDoc xs
 dictToDoc Nil = emptyDoc
 
-varDefToDoc :: forall a. VarDef a -> Doc
-varDefToDoc (VarDef p s) = (patternToDoc p :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty s)
 
-varDefsToDoc :: forall a. VarDefs a -> Doc
-varDefsToDoc x = intersperse' (toList (map varDefToDoc x)) (text ";")
+
+
 
 listRestToDoc :: forall a. ListRest a -> Doc
 listRestToDoc (Next _ s x) = text "," .<>. text "" .<>. pretty s .<>. listRestToDoc x
@@ -283,30 +294,12 @@ listPattToDoc (Cons x Nil) = patternToDoc x
 listPattToDoc (Cons x xs) = patternToDoc x .<>. text ":" .<>. listPattToDoc xs
 listPattToDoc Nil = emptyDoc
 
--- matchToDoc :: forall a. NonEmptyList (Pattern × Expr a) -> Doc
--- matchToDoc x = matchClauses (Clauses (map Clause (foo x)))
+helperMatch :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
+helperMatch x = map (\ (a × b) -> singleton a × b) x
 
+helperMatch2 :: forall a. Clause a -> Boolean × Clause a
+helperMatch2 (Clause (ps × x)) = true × (Clause (ps × x))
 
-foo :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
-foo x = map (\ (a × b ) -> singleton a × b) x
-
--- foo1 :: forall a. Pattern × Expr a -> NonEmptyList Pattern × Expr a
--- foo1 (a × b) = singleton a × b
-
-foo2 :: forall a. Clause a -> Boolean × Clause a
-foo2 (Clause (ps × x)) = true × (Clause (ps × x))
-
--- helperMatch2 :: forall a. NonEmptyList (NonEmptyList Pattern × Expr a) -> NonEmptyList (Clause a)
--- helperMatch2 x = map (\y -> Clause y) x
-
--- helperMatch3 :: forall a. NonEmptyList (Clause a) -> Clauses a
--- helperMatch3 x = Clauses x
-
--- matchClause :: forall a. Clause a -> Doc
--- matchClause (Clause (ps × e)) = (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "->" .<>. (emptyDoc :--: pretty e) -- edited beside with spaces
-
--- matchClauses :: forall a. Clauses a -> Doc
--- matchClauses (Clauses cs) = intersperse' (toList (map matchClause cs)) (text ";")
 
 
 
