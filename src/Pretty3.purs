@@ -13,35 +13,6 @@ import Util ((×), type (×))
 import Util.Pair (Pair(..))
 import Util.Pretty (Doc, atop, beside, empty, space, text)
 
--- import Bindings (Bind, Var, (↦), key, val)
--- import Data.Exists (runExists)
--- import Data.Foldable (class Foldable)
--- import Data.List (List(..), (:), fromFoldable, null)
--- import Data.List.NonEmpty (NonEmptyList)
--- import Data.List.NonEmpty (toList) as NEL
--- import Data.Map (keys)
--- import Data.Newtype (unwrap)
--- import Data.Profunctor.Choice ((|||))
--- import Data.Profunctor.Strong (first)
--- import Data.Set (member)
--- import Data.String (Pattern(..), contains) as Data.String
--- import DataType (Ctr, cCons, cNil, cPair, showCtr)
--- import Dict (Dict)
--- import Dict (toUnfoldable) as D
--- import Expr (Cont(..), Elim(..))
--- import Expr (Expr(..), VarDef(..)) as E
--- import Parse (str)
--- import Primitive.Parse (opDefs)
--- import SExpr (Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), Qualifier(..), VarDef(..)) as S
--- import Text.Pretty (render) as P
--- import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
--- import Util.Pair (Pair(..))
--- import Util.Pair (toTuple)
--- import Util.Pretty (Doc, atop, beside, empty, hcat, render, space, text)
--- import Val (Fun(..), Val(..)) as V
--- import Val (class Highlightable, ForeignOp', Fun, Val, highlightIf)
-
-
 emptyDoc :: Doc
 emptyDoc = empty 0 0
 
@@ -49,14 +20,11 @@ data InFront = Prefix (String) | Unit
 type IsPair = Boolean × (List (Pattern))
 newtype FirstGroup a = First (RecDefs a)
 type IsMatch c = Boolean × (Clause c)
--- type ConstrType a = String × (List (Expr a))
 type IsConstrPair a = Boolean × (List (Expr a))
-
 
 infixl 5 beside as .<>. 
 infixl 5 space as :--:
 infixl 5 atop as .-.
-
 
 class Pretty p where 
     pretty :: p -> Doc 
@@ -132,16 +100,16 @@ instance Pretty (ListRestPattern) where
 
 instance Pretty (Boolean × Clause a) where 
     pretty (true × Clause (ps × e)) = (pretty (false × toList (ps)) :--: emptyDoc) .<>. text "->" .<>. (emptyDoc :--: pretty e) 
-    pretty _ = emptyDoc 
+    pretty (false × Clause (ps × e)) = (pretty (false × (toList ps)) :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) 
 
-instance Pretty (Clause a) where 
-    pretty (Clause (ps × e)) = (pretty (false × (toList ps)) :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) 
+-- instance Pretty (Clause a) where 
+--     pretty (Clause (ps × e)) = (pretty (false × (toList ps)) :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) 
 
 instance Pretty (Clauses a) where 
-    pretty (Clauses cs) = intersperse' (toList (map pretty cs)) (text ";")
+    pretty (Clauses cs) = intersperse' (toList (map pretty (map (\x -> false × x) cs) )) (text ";")
 
 instance Pretty (Branch a) where 
-    pretty (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. pretty (Clause (ps × e))
+    pretty (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. pretty (false × Clause (ps × e))
 
 instance Pretty (NonEmptyList (Branch a)) where 
     pretty x = intersperse' (toList (map pretty x)) (text ";") 
@@ -172,7 +140,6 @@ instance Pretty (List (Expr a)) where
     pretty (Cons x xs) = (pretty x :--: emptyDoc) .<>. pretty xs 
     pretty Nil = emptyDoc 
 
-
 instance Pretty (List (Qualifier a)) where 
     pretty (Cons (Guard s) Nil) = pretty s
     pretty (Cons (Declaration v) Nil) = (text "let" :--: emptyDoc) .<>. pretty v
@@ -182,44 +149,15 @@ instance Pretty (List (Qualifier a)) where
     pretty (Cons (Generator p s) xs) = pretty p .<>. text "<-" .<>. pretty s .<>. text "," .<>. pretty xs
     pretty Nil = emptyDoc 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 checkOp :: String -> Doc
 checkOp x = case (member x (keys (opDefs))) of
    true -> text x
    false -> text "`" .<>. text x .<>. text "`"
 
-
-
 intersperse' :: List Doc -> Doc -> Doc
 intersperse' (Cons x Nil) _ = x
 intersperse' (Cons x xs) d = x .<>. d .-. intersperse' xs d
 intersperse' Nil _ = emptyDoc
-
 
 helperMatch :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
 helperMatch x = map (\ (a × b) -> singleton a × b) x
