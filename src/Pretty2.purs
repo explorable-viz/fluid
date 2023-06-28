@@ -11,7 +11,7 @@ import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), RecDefs, VarDef(..), VarDefs, Qualifier(..))
 import Util ((×), type (×))
 import Util.Pair (Pair(..))
-import Util.Pretty (Doc, atop, beside,  empty, space, text)
+import Util.Pretty (Doc, atop, beside, empty, space, text)
 
 infixl 5 atop as .-.
 infixl 5 beside as .<>.
@@ -23,9 +23,9 @@ emptyDoc :: Doc
 emptyDoc = empty 0 0
 
 pretty :: forall a. Expr a -> Doc
-pretty (Int _ n) = text (show n) 
+pretty (Int _ n) = text (show n)
 pretty (App s s') = ((pretty s :--: emptyDoc) .<>. text "(" .<>. pretty s' .<>. text ")")
-pretty (Var x) = emptyDoc :--: text x :--: emptyDoc 
+pretty (Var x) = emptyDoc :--: text x :--: emptyDoc
 pretty (Op x) = text "(" .<>. text x .<>. text ")"
 pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: emptyDoc) .<>. checkOp x .<>. (emptyDoc :--: pretty s') .<>. text ")" -- edited
 pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
@@ -123,7 +123,7 @@ clausesToDoc Unit (Clauses cs) = intersperse' (toList (map unitClauses cs)) (tex
 clausesToDoc (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
 
 recDefsToDoc :: forall a. RecDefs a -> Doc
-recDefsToDoc x = temp3 (helperRecDefs1 x) 
+recDefsToDoc x = temp3 (helperRecDefs1 x)
 
 checkOp :: String -> Doc
 checkOp x = case (member x (keys (opDefs))) of
@@ -188,17 +188,17 @@ helperRecDefs31 (a × b) = clausesToDoc (Prefix a) (Clauses b)
 helperRecDefs3 :: forall a. NonEmptyList (String × NonEmptyList (Clause a)) -> Doc
 helperRecDefs3 x = intersperse' (toList (map helperRecDefs31 x)) (text ";")
 
-temp1 :: forall a. Branch a -> Doc 
+temp1 :: forall a. Branch a -> Doc
 temp1 (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. clauseToDoc' (Clause (ps × e))
 
-clauseToDoc' :: forall a. Clause a -> Doc 
-clauseToDoc' (Clause (ps × e))  =  (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e)
+clauseToDoc' :: forall a. Clause a -> Doc
+clauseToDoc' (Clause (ps × e)) = (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e)
 
-temp2 :: forall a. NonEmptyList (Branch a) -> Doc 
+temp2 :: forall a. NonEmptyList (Branch a) -> Doc
 temp2 x = intersperse' (toList (map temp1 x)) (text ";")
 
-temp3 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
+temp3 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc
 temp3 x = intersperse' (toList (map temp2 x)) (text ";")
 
-temp4 :: forall a. RecDefs a -> Doc 
-temp4 x = temp3 (helperRecDefs1 x) 
+temp4 :: forall a. RecDefs a -> Doc
+temp4 x = temp3 (helperRecDefs1 x)
