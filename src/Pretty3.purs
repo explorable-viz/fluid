@@ -78,16 +78,9 @@ instance Pretty (Expr a) where
     pretty (ListEnum s s') = text "[" .<>. pretty s .<>. text ".." .<>. pretty s' .<>. text "]"
     pretty (Let x s) = text "(" .<>. text "let" :--: emptyDoc .<>. pretty x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s .<>. text ")"
     pretty (Matrix _ s (v × v') s') = text "[" .<>. text "|" .<>. pretty s .<>. text "|" .<>. text "(" .<>. text v .<>. text "," .<>. text v' .<>. (text ")" :--: emptyDoc) .<>. (text "in" :--: emptyDoc) .<>. pretty s' .<>. text "|" .<>. text "]"
-    -- pretty (Constr _ "NonEmpty" x) = ( text "(NonEmpty" :--: emptyDoc) .<>. listExpr x .<>. text ")"
-    -- pretty (Constr _ "None" _) = text "(None)"
-    -- pretty (Constr _ "Empty" _) = text "(Empty)"
-    -- pretty (Constr _ "Pair" x) = text "(" .<>. listExprPair x .<>. text ")"
-    -- pretty (Constr _ ":" x) = text "(" .<>. listExprList x .<>. text ")"
-    -- pretty (Constr _ c x) = text "(" .<>. (text c :--: emptyDoc) .<>. listExpr x .<>. text ")"
     pretty (Constr _ "Pair" x) = text "(" .<>. pretty (true × x) .<>. text ")"
     pretty (Constr _ ":" x) = text "(" .<>. pretty (false × x) .<>. text ")"
     pretty (Constr _ c x) = text "(" .<>. (text c :--: emptyDoc) .<>. pretty x .<>. text ")"
-    -- pretty (Constr _ c x) = text "(" .<>. pretty (c × x) .<>. text ")"
     pretty (Dictionary _ x) = text "{" .<>. (text "|" :--: emptyDoc) .<>. pretty x .<>. (emptyDoc :--: text "|") .<>. text "}"
     pretty (Str _ x) = text "\"" .<>. text x .<>. text "\""
     pretty (Float _ x) = text (show x)
@@ -130,7 +123,7 @@ instance Pretty (IsPair) where
 
 instance Pretty (List Pattern) where 
     pretty (Cons x Nil) = pretty x
-    pretty (Cons x xs) = patternToDoc x .<>. text ":" .<>. pretty xs
+    pretty (Cons x xs) = pretty x .<>. text ":" .<>. pretty xs
     pretty Nil = emptyDoc
 
 instance Pretty (ListRestPattern) where 
@@ -179,72 +172,6 @@ instance Pretty (List (Expr a)) where
     pretty (Cons x xs) = (pretty x :--: emptyDoc) .<>. pretty xs 
     pretty Nil = emptyDoc 
 
--- instance Pretty (ConstrType a) where 
---     pretty (_ × (Cons x Nil)) = pretty x
---     pretty("Empty" × _) = text "Empty"
---     pretty ("None" × _) = text "None"
---     pretty ("Pair" × (Cons x xs)) = pretty x .<>. (text "," :--: emptyDoc) .<>. pretty ("Pair" × xs)
---     pretty (":" × (Cons x xs)) = pretty x .<>. text ":" .<>. pretty (":" × xs)
---     pretty (c × (Cons x xs)) = (pretty x :--: emptyDoc) .<>. pretty (c × (Cons x xs))
---     pretty (_ × Nil) = emptyDoc 
-
---  pretty (Constr _ "NonEmpty" x) = (text "(NonEmpty" :--: emptyDoc) .<>. listExpr x .<>. text ")"
---     pretty (Constr _ "None" _) = text "None"
---     pretty (Constr _ "Empty" _) = text "Empty"
---     pretty (Constr _ "Pair" x) = text "(" .<>. listExprPair x .<>. text ")"
---     pretty (Constr _ ":" x) = text "(" .<>. listExprList x .<>. text ")"
---     pretty (Constr _ c x) = text "(" .<>. (text c :--: emptyDoc) .<>. listExpr x .<>. text ")"
-
--- listExprList :: forall a. List (Expr a) -> Doc
--- listExprList (Cons x Nil) = pretty x
--- listExprList (Cons x xs) = pretty x .<>. text ":" .<>. listExprList xs
--- listExprList Nil = emptyDoc
-
--- listExpr :: forall a. List (Expr a) -> Doc
--- listExpr (Cons x Nil) = pretty x
--- listExpr (Cons x xs) = (pretty x :--: emptyDoc) .<>. listExpr xs
--- listExpr Nil = emptyDoc
-
--- listExprPair :: forall a. List (Expr a) -> Doc
--- listExprPair (Cons x Nil) = pretty x
--- listExprPair (Cons x xs) = pretty x .<>. (text "," :--: emptyDoc) .<>. listExprPair xs
--- listExprPair Nil = emptyDoc
-
-varDefToDoc :: forall a. VarDef a -> Doc
-varDefToDoc (VarDef p s) = (patternToDoc p :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty s)
-
--- varDefsToDoc :: forall a. VarDefs a -> Doc
--- varDefsToDoc x = intersperse' (toList (map varDefToDoc x)) (text ";")
-
--- temp2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
--- temp2 x = intersperse' (map pretty (toList x)) (text ";") 
-
--- recDefsToDoc :: forall a. RecDefs a -> Doc
--- recDefsToDoc x = temp3 (helperRecDefs1 x) 
-
--- helperRecDefs1 :: forall a. RecDefs a -> NonEmptyList (NonEmptyList (Branch a))
--- helperRecDefs1 x = groupBy (\p q -> key p == key q) x
-
--- temp1 :: forall a. Branch a -> Doc 
--- temp1 (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. clauseToDoc' (Clause (ps × e))
-
--- clauseToDoc' :: forall a. Clause a -> Doc 
--- clauseToDoc' (Clause (ps × e))  =  (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e)
-
--- temp2 :: forall a. NonEmptyList (Branch a) -> Doc 
--- temp2 x = intersperse' (toList (map temp1 x)) (text ";")
-
--- temp3 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
--- temp3 x = intersperse' (toList (map temp2 x)) (text ";")
--- clausesToDoc :: forall a. InFront -> Clauses a -> Doc
--- clausesToDoc Unit (Clauses cs) = intersperse' (toList (map unitClauses cs)) (text ";")
--- clausesToDoc (Prefix x) (Clauses cs) = intersperse' (toList (map (varClauses x) cs)) (text ";")
-
--- unitClauses :: forall a. Clause a -> Doc
--- unitClauses (Clause (ps × e)) = (pairPattToDoc (toList ps) false :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e) -- edited beside with spaces
-
--- varClauses :: forall a. String -> Clause a -> Doc
--- varClauses x (Clause (ps × e)) = (text x :--: emptyDoc) .<>. unitClauses (Clause (ps × e))
 
 instance Pretty (List (Qualifier a)) where 
     pretty (Cons (Guard s) Nil) = pretty s
@@ -255,64 +182,25 @@ instance Pretty (List (Qualifier a)) where
     pretty (Cons (Generator p s) xs) = pretty p .<>. text "<-" .<>. pretty s .<>. text "," .<>. pretty xs
     pretty Nil = emptyDoc 
 
-qualifiersToDoc :: forall a. List (Qualifier a) -> Doc
-qualifiersToDoc (Cons (Guard s) Nil) = pretty s
-qualifiersToDoc (Cons (Declaration v) Nil) = (text "let" :--: emptyDoc) .<>. varDefToDoc v
-qualifiersToDoc (Cons (Generator p s) Nil) = patternToDoc p .<>. text "<-" .<>. pretty s
-qualifiersToDoc (Cons (Guard s) xs) = pretty s .<>. text "," .<>. qualifiersToDoc xs
-qualifiersToDoc (Cons (Declaration v) xs) = (text "let" :--: emptyDoc) .<>. varDefToDoc v .<>. text "," .<>. qualifiersToDoc xs
-qualifiersToDoc (Cons (Generator p s) xs) = patternToDoc p .<>. text "<-" .<>. pretty s .<>. text "," .<>. qualifiersToDoc xs
-qualifiersToDoc Nil = emptyDoc
-
-dictToDoc :: forall a. List (Pair (Expr a)) -> Doc
-dictToDoc (Cons (Pair e e') Nil) = pretty e .<>. (emptyDoc :--: text ":=" :--: emptyDoc) .<>. pretty e'
-dictToDoc (Cons (Pair e e') xs) = pretty e .<>. (emptyDoc :--: text ":=" :--: emptyDoc) .<>. pretty e' .<>. (text "," :--: emptyDoc) .<>. dictToDoc xs
-dictToDoc Nil = emptyDoc
 
 
 
 
 
-listRestToDoc :: forall a. ListRest a -> Doc
-listRestToDoc (Next _ s x) = text "," .<>. text "" .<>. pretty s .<>. listRestToDoc x
-listRestToDoc (End _) = emptyDoc
 
 
 
-varExprToDoc :: forall a. List (Bind (Expr a)) -> Doc
-varExprToDoc (Cons x Nil) = text (key x) .<>. text ":" .<>. pretty (val x)
-varExprToDoc (Cons x xs) = (text (key x) .<>. text ":" .<>. pretty (val x) .<>. text ",") .-. varExprToDoc xs -- edited atop
-varExprToDoc Nil = emptyDoc
 
-listRestPatternToDoc :: ListRestPattern -> Doc
-listRestPatternToDoc (PNext p x) = patternToDoc p .<>. listRestPatternToDoc x
-listRestPatternToDoc PEnd = emptyDoc
 
-patternToDoc :: Pattern -> Doc
-patternToDoc (PVar x) = text x
-patternToDoc (PRecord x) = text "{" .<>. varPattToDoc x .<>. text "}"
-patternToDoc (PConstr "Pair" x) = text "(" .<>. pairPattToDoc x true .<>. text ")"
-patternToDoc (PConstr "Empty" x) = text "Empty" .<>. pairPattToDoc x false
-patternToDoc (PConstr ":" x) = text "(" .<>. listPattToDoc x .<>. text ")"
-patternToDoc (PConstr c Nil) = (text c :--: emptyDoc)
-patternToDoc (PConstr c x) = text "(" .<>. (text c :--: emptyDoc) .<>. pairPattToDoc x false .<>. text ")"
-patternToDoc (PListEmpty) = text "[]"
-patternToDoc (PListNonEmpty p x) = text "[" .<>. patternToDoc p .<>. listlistRestPatternToDoc x .<>. text "]"
 
-listlistRestPatternToDoc :: ListRestPattern -> Doc
-listlistRestPatternToDoc (PNext p x) = text "," .<>. patternToDoc p .<>. listlistRestPatternToDoc x
-listlistRestPatternToDoc PEnd = emptyDoc
 
-varPattToDoc :: List (Bind (Pattern)) -> Doc
-varPattToDoc (Cons x Nil) = text (key x) .<>. text ":" .<>. patternToDoc (val x) .-. varPattToDoc Nil -- edited atop
-varPattToDoc (Cons x xs) = text (key x) .<>. text ":" .<>. patternToDoc (val x) .<>. text "," .-. varPattToDoc xs -- edited atop
-varPattToDoc Nil = emptyDoc
 
-pairPattToDoc :: List Pattern -> Boolean -> Doc
-pairPattToDoc (Cons x Nil) true = patternToDoc x
-pairPattToDoc (Cons x xs) true = (patternToDoc x .<>. text ",") .<>. pairPattToDoc xs true
-pairPattToDoc (Cons x xs) false = (patternToDoc x :--: emptyDoc) .<>. pairPattToDoc xs false -- beside may need to change to a space
-pairPattToDoc Nil _ = emptyDoc
+
+
+
+
+
+
 
 
 
@@ -325,30 +213,13 @@ checkOp x = case (member x (keys (opDefs))) of
    true -> text x
    false -> text "`" .<>. text x .<>. text "`"
 
-listExprList :: forall a. List (Expr a) -> Doc
-listExprList (Cons x Nil) = pretty x
-listExprList (Cons x xs) = pretty x .<>. text ":" .<>. listExprList xs
-listExprList Nil = emptyDoc
 
-listExpr :: forall a. List (Expr a) -> Doc
-listExpr (Cons x Nil) = pretty x
-listExpr (Cons x xs) = (pretty x :--: emptyDoc) .<>. listExpr xs
-listExpr Nil = emptyDoc
-
-listExprPair :: forall a. List (Expr a) -> Doc
-listExprPair (Cons x Nil) = pretty x
-listExprPair (Cons x xs) = pretty x .<>. (text "," :--: emptyDoc) .<>. listExprPair xs
-listExprPair Nil = emptyDoc
 
 intersperse' :: List Doc -> Doc -> Doc
 intersperse' (Cons x Nil) _ = x
 intersperse' (Cons x xs) d = x .<>. d .-. intersperse' xs d
 intersperse' Nil _ = emptyDoc
 
-listPattToDoc :: List Pattern -> Doc
-listPattToDoc (Cons x Nil) = patternToDoc x
-listPattToDoc (Cons x xs) = patternToDoc x .<>. text ":" .<>. listPattToDoc xs
-listPattToDoc Nil = emptyDoc
 
 helperMatch :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
 helperMatch x = map (\ (a × b) -> singleton a × b) x
