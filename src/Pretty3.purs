@@ -49,7 +49,8 @@ data InFront = Prefix (String) | Unit
 type IsPair = Boolean × (List (Pattern))
 newtype FirstGroup a = First (RecDefs a)
 type IsMatch c = Boolean × (Clause c)
-type ConstrType a = String × (List (Expr a))
+-- type ConstrType a = String × (List (Expr a))
+type IsConstrPair a = Boolean × (List (Expr a))
 
 
 infixl 5 beside as .<>. 
@@ -77,12 +78,15 @@ instance Pretty (Expr a) where
     pretty (ListEnum s s') = text "[" .<>. pretty s .<>. text ".." .<>. pretty s' .<>. text "]"
     pretty (Let x s) = text "(" .<>. text "let" :--: emptyDoc .<>. pretty x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s .<>. text ")"
     pretty (Matrix _ s (v × v') s') = text "[" .<>. text "|" .<>. pretty s .<>. text "|" .<>. text "(" .<>. text v .<>. text "," .<>. text v' .<>. (text ")" :--: emptyDoc) .<>. (text "in" :--: emptyDoc) .<>. pretty s' .<>. text "|" .<>. text "]"
-    pretty (Constr _ "NonEmpty" x) = (text "(NonEmpty" :--: emptyDoc) .<>. listExpr x .<>. text ")"
-    pretty (Constr _ "None" _) = text "(None)"
-    pretty (Constr _ "Empty" _) = text "(Empty)"
-    pretty (Constr _ "Pair" x) = text "(" .<>. listExprPair x .<>. text ")"
-    pretty (Constr _ ":" x) = text "(" .<>. listExprList x .<>. text ")"
-    pretty (Constr _ c x) = text "(" .<>. (text c :--: emptyDoc) .<>. listExpr x .<>. text ")"
+    -- pretty (Constr _ "NonEmpty" x) = ( text "(NonEmpty" :--: emptyDoc) .<>. listExpr x .<>. text ")"
+    -- pretty (Constr _ "None" _) = text "(None)"
+    -- pretty (Constr _ "Empty" _) = text "(Empty)"
+    -- pretty (Constr _ "Pair" x) = text "(" .<>. listExprPair x .<>. text ")"
+    -- pretty (Constr _ ":" x) = text "(" .<>. listExprList x .<>. text ")"
+    -- pretty (Constr _ c x) = text "(" .<>. (text c :--: emptyDoc) .<>. listExpr x .<>. text ")"
+    pretty (Constr _ "Pair" x) = text "(" .<>. pretty (true × x) .<>. text ")"
+    pretty (Constr _ ":" x) = text "(" .<>. pretty (false × x) .<>. text ")"
+    pretty (Constr _ c x) = text "(" .<>. (text c :--: emptyDoc) .<>. pretty x .<>. text ")"
     -- pretty (Constr _ c x) = text "(" .<>. pretty (c × x) .<>. text ")"
     pretty (Dictionary _ x) = text "{" .<>. (text "|" :--: emptyDoc) .<>. pretty x .<>. (emptyDoc :--: text "|") .<>. text "}"
     pretty (Str _ x) = text "\"" .<>. text x .<>. text "\""
@@ -164,14 +168,25 @@ instance Pretty (VarDef a) where
 instance Pretty (VarDefs a) where 
     pretty x = intersperse' (toList (map pretty x)) (text ";")
 
-instance Pretty (ConstrType a) where 
+instance Pretty (IsConstrPair a) where 
     pretty (_ × (Cons x Nil)) = pretty x
-    pretty("Empty" × _) = text "Empty"
-    pretty ("None" × _) = text "None"
-    pretty ("Pair" × (Cons x xs)) = pretty x .<>. (text "," :--: emptyDoc) .<>. pretty ("Pair" × xs)
-    pretty (":" × (Cons x xs)) = pretty x .<>. text ":" .<>. pretty (":" × xs)
-    pretty (c × (Cons x xs)) = (pretty x :--: emptyDoc) .<>. pretty (c × (Cons x xs))
+    pretty (true × (Cons x xs)) = pretty x .<>. (text "," :--: emptyDoc) .<>. pretty (true × xs)
+    pretty (false × (Cons x xs)) = pretty x .<>. text ":" .<>. pretty (false × xs)
     pretty (_ × Nil) = emptyDoc 
+
+instance Pretty (List (Expr a)) where 
+    pretty (Cons x Nil) = pretty x 
+    pretty (Cons x xs) = (pretty x :--: emptyDoc) .<>. pretty xs 
+    pretty Nil = emptyDoc 
+
+-- instance Pretty (ConstrType a) where 
+--     pretty (_ × (Cons x Nil)) = pretty x
+--     pretty("Empty" × _) = text "Empty"
+--     pretty ("None" × _) = text "None"
+--     pretty ("Pair" × (Cons x xs)) = pretty x .<>. (text "," :--: emptyDoc) .<>. pretty ("Pair" × xs)
+--     pretty (":" × (Cons x xs)) = pretty x .<>. text ":" .<>. pretty (":" × xs)
+--     pretty (c × (Cons x xs)) = (pretty x :--: emptyDoc) .<>. pretty (c × (Cons x xs))
+--     pretty (_ × Nil) = emptyDoc 
 
 --  pretty (Constr _ "NonEmpty" x) = (text "(NonEmpty" :--: emptyDoc) .<>. listExpr x .<>. text ")"
 --     pretty (Constr _ "None" _) = text "None"
