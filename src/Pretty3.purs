@@ -153,6 +153,9 @@ instance Pretty (NonEmptyList (NonEmptyList (Branch a))) where
 instance Pretty (FirstGroup a) where 
     pretty (First x) = pretty (groupBy (\p q -> key p == key q) x)
 
+instance Pretty  (NonEmptyList (Pattern × Expr a)) where 
+    pretty x = intersperse' (map pretty (map foo2 (map Clause (toList (foo x))))) (text ";")
+
 -- temp2 :: forall a. NonEmptyList (NonEmptyList (Branch a)) -> Doc 
 -- temp2 x = intersperse' (map pretty (toList x)) (text ";") 
 
@@ -285,10 +288,10 @@ listPattToDoc Nil = emptyDoc
 
 
 foo :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEmptyList Pattern × Expr a)
-foo x = map foo1 x
+foo x = map (\ (a × b ) -> singleton a × b) x
 
-foo1 :: forall a. Pattern × Expr a -> NonEmptyList Pattern × Expr a
-foo1 (a × b) = singleton a × b
+-- foo1 :: forall a. Pattern × Expr a -> NonEmptyList Pattern × Expr a
+-- foo1 (a × b) = singleton a × b
 
 foo2 :: forall a. Clause a -> Boolean × Clause a
 foo2 (Clause (ps × x)) = true × (Clause (ps × x))
@@ -305,8 +308,7 @@ foo2 (Clause (ps × x)) = true × (Clause (ps × x))
 -- matchClauses :: forall a. Clauses a -> Doc
 -- matchClauses (Clauses cs) = intersperse' (toList (map matchClause cs)) (text ";")
 
-instance Pretty  (NonEmptyList (Pattern × Expr a)) where 
-    pretty x = intersperse' (map pretty (map foo2 (map Clause (toList (foo x))))) (text ";")
+
 
 
 
