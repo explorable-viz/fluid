@@ -53,12 +53,13 @@ instance Ann a => Pretty (Expr a) where
    pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: emptyDoc) .<>. checkOp x .<>. (emptyDoc :--: pretty s') .<>. text ")" -- edited
    pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
    pretty (Project s x) = pretty s .<>. text "." .<>. text x
-   pretty (Record ann x) = highlightIf ann $ text "{" .<>. pretty x .<>. text "}"
+   pretty (Record ann x) = highlightIf ann $ text "{" .<>. pretty (false × x) .<>. text "}"
    pretty (Lambda (Clauses cs)) = text "(" .<>. (text "fun" :--: emptyDoc) .<>. pretty (Clauses cs) .<>. text ")" :--: emptyDoc -- edited
    pretty (LetRec g s) = ((text "let" :--: emptyDoc .<>. pretty (First g)) .-. (emptyDoc :--: text "in" :--: emptyDoc)) .-. pretty s
    pretty (MatchAs s x) = (((text "match" :--: emptyDoc) .<>. text "(" .<>. pretty s .<>. text ")" .<>. (emptyDoc :--: text "as {")) .-. (emptyDoc :--: emptyDoc :--: emptyDoc :--: emptyDoc .<>. pretty x)) .-. text "}"
    pretty (ListEmpty ann) = highlightIf ann $ text "[]"
-   pretty (ListNonEmpty ann s x) =  emptyDoc :--: (highlightIf ann $ text "[") .<>. pretty s .<>. pretty x
+   pretty (ListNonEmpty ann s x) =  emptyDoc :--: (highlightIf ann $ text "[") .<>. isRecordInList s .<>. pretty (x)
+   -- pretty (ListNonEmpty ann s x) =  emptyDoc :--: (highlightIf ann $ text "[") .<>. pretty s .<>. pretty x
    pretty (ListEnum s s') = text "[" .<>. pretty s .<>. text ".." .<>. pretty s' .<>. text "]"
    pretty (Let x s) = text "(" .<>. text "let" :--: emptyDoc .<>. pretty x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s .<>. text ")"
    pretty (Matrix ann s (v × v') s') = highlightIf ann $ text "[" .<>. text "|" .<>. pretty s .<>. text "|" .<>. text "(" .<>. text v .<>. text "," .<>. text v' .<>. (text ")" :--: emptyDoc) .<>. (text "in" :--: emptyDoc) .<>. pretty s' .<>. text "|" .<>. text "]"
@@ -71,13 +72,28 @@ instance Ann a => Pretty (Expr a) where
    pretty (Float ann x) = highlightIf ann $ text (show x)
    pretty (ListComp ann s q) = highlightIf ann $ text "[" .<>. pretty s .<>. text "|" .<>. pretty q .<>. text "]"
 
-instance Ann a => Pretty (List (Bind (Expr a))) where
-   pretty (Cons x Nil) = text (key x) .<>. text ":" .<>. pretty (val x)
-   pretty (Cons x xs) = (text (key x) .<>. text ":" .<>. pretty (val x) .<>. text ",") .-. pretty xs -- edited atop
-   pretty Nil = emptyDoc
+
+isRecordInList :: forall a. Ann a => Expr a -> Doc 
+isRecordInList (Record ann  x)  = highlightIf ann $ text "{" .<>. pretty (true × x) .<>. text "}"
+isRecordInList x = pretty x 
+
+instance Ann a => Pretty (Boolean × List (Bind (Expr a))) where
+   pretty ( _ × (Cons x Nil)) = text (key x) .<>. text ":" .<>. pretty (val x)
+   pretty (false × (Cons x xs)) = (text (key x) .<>. text ":" .<>. pretty (val x) .<>. text ",") .-. pretty (false × xs) -- edited atop
+   pretty (true × (Cons x xs)) = (text (key x) .<>. text ":" .<>. pretty (val x) .<>. text ",") .<>. pretty (true × xs)
+   pretty (_ × Nil) = emptyDoc
+
+-- instance Ann a => Pretty (List (Bind (Expr a))) where
+--    pretty ((Cons x Nil)) = text (key x) .<>. text ":" .<>. pretty (val x)
+--    pretty ((Cons x xs)) = (text (key x) .<>. text ":" .<>. pretty (val x) .<>. text ",") .-. pretty xs -- edited atop
+--    pretty Nil = emptyDoc
+
+
+
+
 
 instance Ann a => Pretty (ListRest a) where
-   pretty (Next ann s x) = (highlightIf ann $ text ",") .<>. text "" .<>. pretty s .<>. pretty x
+   pretty (Next ann s x) = (highlightIf ann $ text ",") .<>. text "" .<>. isRecordInList s .<>. pretty x
    pretty (End ann) = highlightIf ann $ text "]"
 
 instance Ann a => Pretty (List (Pair (Expr a))) where
