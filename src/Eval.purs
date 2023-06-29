@@ -19,7 +19,7 @@ import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
 import Lattice ((∧), erase, top)
-import Pretty (prettyP)
+import Pretty3 (prettyP)
 import Primitive (intPair, string)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace, ForeignTrace'(..), Match(..), Trace)
