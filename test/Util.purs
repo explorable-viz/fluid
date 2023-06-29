@@ -43,8 +43,8 @@ run = runMocha -- no reason at all to see the word "Mocha"
 
 checkPretty :: forall a. Pretty a => String -> String -> a -> Aff Unit
 checkPretty msg expected x =
-   trace (msg <> ":\n" ) \_ ->
-   prettyP x `shouldEqual` expected
+   trace (msg <> ":\n") \_ ->
+      prettyP x `shouldEqual` expected
 
 -- testWithSetup :: Boolean -> File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 -- testWithSetup (bol) (File file) expected v_expect_opt setup =

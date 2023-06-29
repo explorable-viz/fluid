@@ -8,7 +8,7 @@ import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (keys)
 import Data.Set (member)
 import Primitive.Parse (opDefs)
-import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), VarDef(..), VarDefs, Qualifier(..), RecDefs) 
+import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), VarDef(..), VarDefs, Qualifier(..), RecDefs)
 import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×))
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc, atop, beside, empty, space, text, render, hcat)
@@ -25,10 +25,9 @@ import Dict (toUnfoldable) as D
 import Data.Profunctor.Choice ((|||))
 import Dict (Dict)
 import Data.Exists (runExists)
+
 -- import Data.List.NonEmpty (toList) as NEL
 -- import Data.Newtype (unwrap)
-
-
 
 emptyDoc :: Doc
 emptyDoc = empty 0 0
@@ -45,9 +44,6 @@ infixl 5 atop as .-.
 
 class Pretty p where
    pretty :: p -> Doc
-
-
-
 
 instance Ann a => Pretty (Expr a) where
    pretty (Int ann n) = highlightIf ann $ text (show n)
@@ -185,7 +181,6 @@ helperMatch2 (Clause (ps × x)) = true × (Clause (ps × x))
 -- ======================================
 -- Legacy Implementation : to be replaced 
 -- ======================================
-
 
 prettyP :: forall d. Pretty d => d -> String
 prettyP = pretty >>> render
@@ -345,6 +340,7 @@ instance Highlightable a => Pretty (Fun a) where
 
 instance Pretty (ForeignOp' t) where
    pretty _ = text "<extern op>" -- TODO
+
 instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty
 
@@ -430,5 +426,4 @@ instance (Pretty a, Pretty b) => Pretty (a + b) where
 -- instance Pretty ListRestPattern where
 --    pretty PEnd = text str.rBracket
 --    pretty (PNext s l) = hspace [ comma, pretty s .<>. pretty l ]
-
 

@@ -53,7 +53,7 @@ data Expr a
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
-derive instance Eq a => Eq (Expr a) 
+derive instance Eq a => Eq (Expr a)
 derive instance generalExpr :: Generic (Expr a) _
 instance showExpr :: Show a => Show (Expr a) where
    show c = genericShow c
