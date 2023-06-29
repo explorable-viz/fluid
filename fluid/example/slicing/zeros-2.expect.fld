@@ -1,4 +1,4 @@
 let zeros [] = _[]_;
-    zeros (x:xs) = (0: zeros  ( xs ))
+    zeros (x:xs) = (0 :  zeros  ( xs ))
  in 
- zeros  ( [1,2__])
+ zeros  ( [1,2_]_)

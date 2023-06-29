@@ -1,5 +1,5 @@
 let intersperse [] _ = [];
     intersperse [x] _ =  [ x ];
-    intersperse (x:(y:ys)) sep = _( x :( sep : intersperse  (_( y : ys )_) ( sep )))_
+    intersperse (x:(y:ys)) sep = ( x  _:_ ( sep  :  intersperse  (( y  _:_  ys )) ( sep )))
  in 
- intersperse  (_ [1_,2_,3__]_) (0)
+ intersperse  ( _[_1_,_2_,_3]) (0)
