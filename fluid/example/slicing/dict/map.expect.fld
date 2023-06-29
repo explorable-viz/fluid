@@ -1,6 +1,4 @@
-let incHead = let x = _3_              ;
-              in fun xs = (head xs + x) 
-    d = {|"a":= [_5_, 6], "b":= [_9_, 10], "c":= [3, 4]|};
-    e = {|"c":= []|};
-    d' = dict_map incHead dict_difference d e
-in (dict_get "a" d' + dict_get "b" d')
+(let incHead = (let x = _3_ in (fun xs = ( head  ( xs ) +  x )) );
+     d = {| "a" :=  [_5_,6], "b" :=  [_9_,10], "c" :=  [3,4] |};
+     e = {| "c" := [] |};
+     d' =  dict_map  ( incHead ) ( dict_difference  ( d ) ( e )) in ( dict_get  ("a") ( d' ) +  dict_get  ("b") ( d' )))
