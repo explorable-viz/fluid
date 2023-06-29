@@ -9706,12 +9706,12 @@
     let byLine = text2.lines == state.selection.ranges.length;
     let linewise = lastLinewiseCopy != null && state.selection.ranges.every((r) => r.empty) && lastLinewiseCopy == text2.toString();
     if (linewise) {
-      let lastLine = -1;
+      let lastLine2 = -1;
       changes = state.changeByRange((range3) => {
         let line = state.doc.lineAt(range3.from);
-        if (line.from == lastLine)
+        if (line.from == lastLine2)
           return { range: range3 };
-        lastLine = line.from;
+        lastLine2 = line.from;
         let insert3 = state.toText((byLine ? text2.line(i++).text : input) + state.lineBreak);
         return {
           changes: { from: line.from, insert: insert3 },
@@ -10310,8 +10310,8 @@
       super(length6, 0);
     }
     heightMetrics(oracle, offset) {
-      let firstLine = oracle.doc.lineAt(offset).number, lastLine = oracle.doc.lineAt(offset + this.length).number;
-      let lines = lastLine - firstLine + 1;
+      let firstLine2 = oracle.doc.lineAt(offset).number, lastLine2 = oracle.doc.lineAt(offset + this.length).number;
+      let lines = lastLine2 - firstLine2 + 1;
       let perLine, perChar = 0;
       if (oracle.lineWrapping) {
         let totalPerLine = Math.min(this.height, oracle.lineHeight * lines);
@@ -10320,18 +10320,18 @@
       } else {
         perLine = this.height / lines;
       }
-      return { firstLine, lastLine, perLine, perChar };
+      return { firstLine: firstLine2, lastLine: lastLine2, perLine, perChar };
     }
     blockAt(height, oracle, top3, offset) {
-      let { firstLine, lastLine, perLine, perChar } = this.heightMetrics(oracle, offset);
+      let { firstLine: firstLine2, lastLine: lastLine2, perLine, perChar } = this.heightMetrics(oracle, offset);
       if (oracle.lineWrapping) {
         let guess = offset + Math.round(Math.max(0, Math.min(1, (height - top3) / this.height)) * this.length);
         let line = oracle.doc.lineAt(guess), lineHeight = perLine + line.length * perChar;
         let lineTop = Math.max(top3, height - lineHeight / 2);
         return new BlockInfo(line.from, line.length, lineTop, lineHeight, BlockType.Text);
       } else {
-        let line = Math.max(0, Math.min(lastLine - firstLine, Math.floor((height - top3) / perLine)));
-        let { from, length: length6 } = oracle.doc.line(firstLine + line);
+        let line = Math.max(0, Math.min(lastLine2 - firstLine2, Math.floor((height - top3) / perLine)));
+        let { from, length: length6 } = oracle.doc.line(firstLine2 + line);
         return new BlockInfo(from, length6, top3 + perLine * line, perLine, BlockType.Text);
       }
     }
@@ -10342,20 +10342,20 @@
         let { from, to } = oracle.doc.lineAt(value);
         return new BlockInfo(from, to - from, 0, 0, BlockType.Text);
       }
-      let { firstLine, perLine, perChar } = this.heightMetrics(oracle, offset);
+      let { firstLine: firstLine2, perLine, perChar } = this.heightMetrics(oracle, offset);
       let line = oracle.doc.lineAt(value), lineHeight = perLine + line.length * perChar;
-      let linesAbove = line.number - firstLine;
+      let linesAbove = line.number - firstLine2;
       let lineTop = top3 + perLine * linesAbove + perChar * (line.from - offset - linesAbove);
       return new BlockInfo(line.from, line.length, Math.max(top3, Math.min(lineTop, top3 + this.height - lineHeight)), lineHeight, BlockType.Text);
     }
     forEachLine(from, to, oracle, top3, offset, f) {
       from = Math.max(from, offset);
       to = Math.min(to, offset + this.length);
-      let { firstLine, perLine, perChar } = this.heightMetrics(oracle, offset);
+      let { firstLine: firstLine2, perLine, perChar } = this.heightMetrics(oracle, offset);
       for (let pos = from, lineTop = top3; pos <= to; ) {
         let line = oracle.doc.lineAt(pos);
         if (pos == from) {
-          let linesAbove = line.number - firstLine;
+          let linesAbove = line.number - firstLine2;
           lineTop += perLine * linesAbove + perChar * (from - offset - linesAbove);
         }
         let lineHeight = perLine + perChar * line.length;
@@ -25230,7 +25230,7 @@
     return _codePointAt(codePointAtFallback)(Just)(Nothing)(unsafeCodePointAt0)(v)(v1);
   };
 
-  // output-es/Text.Pretty/index.js
+  // output-es/Util.Pretty/index.js
   var max3 = (x2) => (y2) => {
     const v = ordInt.compare(x2)(y2);
     if (v.tag === "LT") {
@@ -25254,6 +25254,26 @@
     const lines = split("\n")(s);
     return { width: foldlArray(max3)(0)(arrayMap(length4)(lines)), height: lines.length, lines };
   };
+  var lastLine = (v) => {
+    const $1 = index2(v.lines)(v.lines.length - 1 | 0);
+    if ($1.tag === "Just") {
+      return $1._1;
+    }
+    if ($1.tag === "Nothing") {
+      return "";
+    }
+    fail();
+  };
+  var firstLine = (v) => {
+    const $1 = index2(v.lines)(0);
+    if ($1.tag === "Just") {
+      return $1._1;
+    }
+    if ($1.tag === "Nothing") {
+      return "";
+    }
+    fail();
+  };
   var empty3 = (w) => (h) => ({
     width: w,
     height: h,
@@ -25264,24 +25284,19 @@
       return arrayMap((v) => "")(range2(1)(h));
     })()
   });
-  var beside = (v) => (v1) => {
-    const height_ = max3(v.height)(v1.height);
-    const adjust = (d) => concatArray(d.lines)(replicate(unfoldableArray)(height_ - d.height | 0)(fromCharArray(replicate(unfoldableArray)(d.width)(" "))));
-    return {
-      width: v.width + v1.width | 0,
-      height: height_,
-      lines: (() => {
-        const $4 = zipWith2(concatString)(arrayMap((s) => s + fromCharArray(replicate(unfoldableArray)(v.width - toCodePointArray(s).length | 0)(" ")))(adjust(v)))(adjust(v1));
-        if (height_ < 1) {
-          return [];
-        }
-        return slice3(0)(height_)($4);
-      })()
-    };
+  var atop = (v) => (v1) => ({ width: max3(v.width)(v1.width), height: v.height + v1.height | 0, lines: concatArray(v.lines)(v1.lines) });
+  var allButLast = (v) => {
+    const $1 = v.lines.length - 1 | 0;
+    if ($1 < 1) {
+      return [];
+    }
+    return slice3(0)($1)(v.lines);
   };
+  var indentedExpression = (v) => (v1) => zipWith2(concatString)(replicate(unfoldableArray)(slice3(1)(v1.lines.length)(v1.lines).length)(foldlArray(concatString)("")(replicate(unfoldableArray)(toCodePointArray(lastLine(v)).length)(" "))))(slice3(1)(v1.lines.length)(v1.lines));
+  var finalLines = (v) => (v1) => concatArray(allButLast(v))(concatArray([lastLine(v) + ("" + firstLine(v1))])(indentedExpression(v)(v1)));
+  var beside = (v) => (v1) => ({ width: v.width + v1.width | 0, height: v.height + v1.height | 0, lines: finalLines(v)(v1) });
   var semigroupColumns = { append: (v) => (v1) => beside(v)(v1) };
   var monoidColumns = { mempty: /* @__PURE__ */ empty3(0)(0), Semigroup0: () => semigroupColumns };
-  var atop = (v) => (v1) => ({ width: max3(v.width)(v1.width), height: v.height + v1.height | 0, lines: concatArray(v.lines)(v1.lines) });
 
   // output-es/Expr/index.js
   var $Cont = (tag, _1) => ({ tag, _1 });
