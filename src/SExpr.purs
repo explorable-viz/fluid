@@ -53,7 +53,7 @@ data Expr a
    | Let (VarDefs a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
-derive instance Eq (Raw Expr)
+derive instance Eq a => Eq (Expr a)
 derive instance generalExpr :: Generic (Expr a) _
 instance showExpr :: Show a => Show (Expr a) where
    show c = genericShow c
@@ -62,7 +62,7 @@ data ListRest a
    = End a
    | Next a (Expr a) (ListRest a)
 
-derive instance Eq (Raw ListRest)
+derive instance Eq a => Eq (ListRest a)
 derive instance genericListRest :: Generic (ListRest a) _
 instance showListRest :: Show a => Show (ListRest a) where
    show c = genericShow c
@@ -90,7 +90,7 @@ instance showListRestPattern :: Show ListRestPattern where
 
 newtype Clause a = Clause (NonEmptyList Pattern × Expr a)
 
-derive instance Eq (Raw Clause)
+derive instance Eq a => Eq (Clause a)
 derive instance genericClause :: Generic (Clause a) _
 instance showClause :: Show a => Show (Clause a) where
    show c = genericShow c
@@ -99,7 +99,7 @@ type Branch a = Var × Clause a
 
 newtype Clauses a = Clauses (NonEmptyList (Clause a))
 
-derive instance Eq (Raw Clauses)
+derive instance Eq a => Eq (Clauses a)
 derive instance genericClauses :: Generic (Clauses a) _
 instance showClauses :: Show a => Show (Clauses a) where
    show c = genericShow c
@@ -111,7 +111,7 @@ type RecDefs a = NonEmptyList (Branch a)
 -- Using a data type makes for easier overloading.
 data VarDef a = VarDef Pattern (Expr a)
 
-derive instance Eq (Raw VarDef)
+derive instance Eq a => Eq (VarDef a)
 derive instance genericVarDef :: Generic (VarDef a) _
 instance showVarDef :: Show a => Show (VarDef a) where
    show c = genericShow c
@@ -123,7 +123,7 @@ data Qualifier a
    | Generator Pattern (Expr a)
    | Declaration (VarDef a) -- could allow VarDefs instead
 
-derive instance Eq (Raw Qualifier)
+derive instance Eq a => Eq (Qualifier a)
 derive instance genericQualifier :: Generic (Qualifier a) _
 instance showQualifier :: Show a => Show (Qualifier a) where
    show c = genericShow c

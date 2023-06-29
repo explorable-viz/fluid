@@ -21,8 +21,8 @@ import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
-import Pretty (class Pretty, prettyP)
-import Pretty3 (pretty)
+-- import Pretty (class Pretty, prettyP) as P 
+import Pretty3 (pretty, class Pretty, prettyP)
 import SExpr (Expr) as S
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
@@ -42,9 +42,9 @@ run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
 checkPretty :: forall a. Pretty a => String -> String -> a -> Aff Unit
-checkPretty _ expected x =
-   -- trace (msg <> ":\n" <> prettyP x) \_ ->
-   prettyP x `shouldEqual` expected
+checkPretty msg expected x =
+   trace (msg <> ":\n") \_ ->
+      prettyP x `shouldEqual` expected
 
 -- testWithSetup :: Boolean -> File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 -- testWithSetup (bol) (File file) expected v_expect_opt setup =
@@ -100,13 +100,16 @@ testWithSetup (File file) expected v_expect_opt setup =
                         liftEffect (log ("NEW\n" <> newExp))
                         fail "not equal"
                      true -> do
-                        unless (isGraphical v'') (checkPretty "Value" expected v'')
+                        unless (isGraphical v'') (checkPretty "line103" expected v'')
                         trace ("\n" <> src) \_ -> do
-                           unless (isGraphical v'') (checkPretty "Value" expected v'')
+                           unless (isGraphical v'') (checkPretty "line105" expected v'')
                            case snd <$> v_expect_opt of
                               Nothing -> pure unit
-                              Just file_expect ->
-                                 loadFile (Folder "fluid/example") file_expect >>= flip (checkPretty "Source selection") s'
+                              Just file_expect -> do
+                                 expect <- loadFile (Folder "fluid/example") file_expect
+                                 liftEffect (log ("SRC\n" <> (render (pretty s'))))
+                                 liftEffect (log ("EXP\n" <> expect))
+                                 checkPretty "Source selection" expect s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
