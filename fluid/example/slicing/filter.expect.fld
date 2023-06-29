@@ -1,4 +1,4 @@
 let filter p [] = [];
-    filter p (x:xs) = (let ys =  filter  ( p ) ( xs ) in  if  p  ( x ) then _( x : ys )_ else  ys )
+    filter p (x:xs) = (let ys =  filter  ( p ) ( xs ) in  if  p  ( x ) then ( x  _:_  ys ) else  ys )
  in 
- filter  ((<) (_5_)) (_ [_8_,4,7,3]_)
+ filter  ((<) (_5_)) ( _[__8_,4,7,3])

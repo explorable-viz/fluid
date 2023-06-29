@@ -107,6 +107,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                               Nothing -> pure unit
                               Just file_expect -> do
                                  expect <- loadFile (Folder "fluid/example") file_expect
+                                 liftEffect (log ("SRC0\n" <> show s'))
                                  liftEffect (log ("SRC\n" <> (render (pretty s'))))
                                  liftEffect (log ("EXP\n" <> expect))
                                  checkPretty "Source selection" expect s'
