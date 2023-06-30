@@ -47,24 +47,24 @@ class Pretty p where
 
 instance Ann a => Pretty (Expr a) where
    pretty (Int ann n) = highlightIf ann $ text (show n)
-   pretty (App s s') = ((pretty s :--: emptyDoc) .<>. text "(" .<>. pretty s' .<>. text ")")
+   pretty (App s s') = (pretty s :--:text "(") .<>. pretty s' .<>. text ")"
    pretty (Var x) = emptyDoc :--: text x :--: emptyDoc
    pretty (Op x) = text "(" .<>. text x .<>. text ")"
-   pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: emptyDoc) .<>. checkOp x .<>. (emptyDoc :--: pretty s') .<>. text ")" -- edited
-   pretty (IfElse s s_1 s_2) = (emptyDoc :--: text "if" :--: emptyDoc) .<>. pretty s .<>. (emptyDoc :--: text "then" :--: emptyDoc) .<>. pretty s_1 .<>. (emptyDoc :--: text "else" :--: emptyDoc) .<>. pretty s_2
+   pretty (BinaryApp s x s') = text "(" .<>. (pretty s :--: checkOp x :--: pretty s') .<>. text ")" -- edited
+   pretty (IfElse s s_1 s_2) = emptyDoc :--: text "if" :--: pretty s :--: text "then" :--:  pretty s_1 :--: text "else" :--: pretty s_2
    pretty (Project s x) = pretty s .<>. text "." .<>. text x
    pretty (Record ann x) = highlightIf ann $ text "{" .<>. pretty (false × x) .<>. text "}"
-   pretty (Lambda (Clauses cs)) = text "(" .<>. (text "fun" :--: emptyDoc) .<>. pretty (Clauses cs) .<>. text ")" :--: emptyDoc -- edited
-   pretty (LetRec g s) = ((text "let" :--: emptyDoc .<>. pretty (First g)) .-. (emptyDoc :--: text "in" :--: emptyDoc)) .-. pretty s
-   pretty (MatchAs s x) = (((text "match" :--: emptyDoc) .<>. text "(" .<>. pretty s .<>. text ")" .<>. (emptyDoc :--: text "as {")) .-. (emptyDoc :--: emptyDoc :--: emptyDoc :--: emptyDoc .<>. pretty x)) .-. text "}"
+   pretty (Lambda (Clauses cs)) = text "(" .<>. (text "fun" :--: pretty (Clauses cs)) .<>. text ")" :--: emptyDoc -- edited
+   pretty (LetRec g s) = (text "let" :--: pretty (First g)) .-. text "in" :--: pretty s
+   pretty (MatchAs s x) = ((text "match" :--: text "(" .<>. pretty s .<>. text ")"  :--: text "as {")) .-.  (pretty x) .-. text "}"
    pretty (ListEmpty ann) = highlightIf ann $ text "[]"
    pretty (ListNonEmpty ann (Record _ x) y) = emptyDoc :--: (((highlightIf ann $ text "[") .<>. (highlightIf ann $ text "{" .<>. pretty (true × x) .<>. text "}")) .-. pretty y)
-   pretty (ListNonEmpty ann s x) = emptyDoc :--: (highlightIf ann $ text "[") .<>. pretty s .<>. pretty (x)
+   pretty (ListNonEmpty ann s x) = emptyDoc :--: (highlightIf ann $ text "[") .<>. pretty s .<>. pretty x
    pretty (ListEnum s s') = text "[" .<>. pretty s .<>. text ".." .<>. pretty s' .<>. text "]"
-   pretty (Let x s) = text "(" .<>. text "let" :--: emptyDoc .<>. pretty x .<>. (emptyDoc :--: text "in" :--: emptyDoc) .<>. pretty s .<>. text ")"
-   pretty (Matrix ann s (v × v') s') = highlightIf ann $ text "[" .<>. text "|" .<>. pretty s .<>. text "|" .<>. text "(" .<>. text v .<>. text "," .<>. text v' .<>. (text ")" :--: emptyDoc) .<>. (text "in" :--: emptyDoc) .<>. pretty s' .<>. text "|" .<>. text "]"
+   pretty (Let x s) = text "(" .<>. text "let" :--: pretty x  :--: text "in" :--: pretty s .<>. text ")"
+   pretty (Matrix ann s (v × v') s') = highlightIf ann $ text "[" .<>. text "|" .<>. pretty s .<>. text "|" .<>. text "(" .<>. text v .<>. text "," .<>. text v' .<>. (text ")" :--: text "in" :--: pretty s') .<>. text "|" .<>. text "]"
    pretty (Constr ann c x) = prettyConstr ann c x
-   pretty (Dictionary ann x) = highlightIf ann $ text "{" .<>. (text "|" :--: emptyDoc) .<>. pretty x .<>. (emptyDoc :--: text "|") .<>. text "}"
+   pretty (Dictionary ann x) = highlightIf ann $ text "{" .<>. (text "|" :--: pretty x :--: text "|") .<>. text "}"
    pretty (Str ann x) = highlightIf ann $ text "\"" .<>. text x .<>. text "\""
    pretty (Float ann x) = highlightIf ann $ text (show x)
    pretty (ListComp ann s q) = highlightIf ann $ text "[" .<>. pretty s .<>. text "|" .<>. pretty q .<>. text "]"
@@ -81,8 +81,8 @@ instance Ann a => Pretty (ListRest a) where
    pretty (End ann) = highlightIf ann $ text "]"
 
 instance Ann a => Pretty (List (Pair (Expr a))) where
-   pretty (Cons (Pair e e') Nil) = pretty e .<>. (emptyDoc :--: text ":=" :--: emptyDoc) .<>. pretty e'
-   pretty (Cons (Pair e e') xs) = pretty e .<>. (emptyDoc :--: text ":=" :--: emptyDoc) .<>. pretty e' .<>. (text "," :--: emptyDoc) .<>. pretty xs
+   pretty (Cons (Pair e e') Nil) = pretty e  :--: text ":=" :--: pretty e'
+   pretty (Cons (Pair e e') xs) = pretty e :--: text ":=" :--: pretty e' .<>. (text "," :--: pretty xs)
    pretty Nil = emptyDoc
 
 instance Pretty (Pattern) where
@@ -91,12 +91,12 @@ instance Pretty (Pattern) where
    pretty (PConstr "Pair" x) = text "(" .<>. pretty (true × x) .<>. text ")"
    pretty (PConstr "Empty" x) = text "Empty" .<>. pretty (false × x)
    pretty (PConstr ":" x) = text "(" .<>. pretty x .<>. text ")"
-   pretty (PConstr c x) = text "(" .<>. (text c :--: emptyDoc) .<>. pretty (false × x) .<>. text ")"
+   pretty (PConstr c x) = text "(" .<>. (text c :--: pretty (false × x)) .<>. text ")"
    pretty (PListEmpty) = text "[]"
    pretty (PListNonEmpty p x) = text "[" .<>. pretty p .<>. pretty x .<>. text "]"
 
 instance Pretty (List (Bind (Pattern))) where
-   pretty (Cons x Nil) = text (key x) .<>. text ":" .<>. pretty (val x) .-. emptyDoc
+   pretty (Cons x Nil) = text (key x) .<>. text ":" .<>. pretty (val x) 
    pretty (Cons x xs) = text (key x) .<>. text ":" .<>. pretty (val x) .<>. text "," .-. pretty xs
    pretty Nil = emptyDoc
 
@@ -104,7 +104,7 @@ instance Pretty (IsPair) where
    pretty (_ × Nil) = emptyDoc
    pretty (_ × (Cons x Nil)) = pretty x
    pretty (true × (Cons x xs)) = (pretty x .<>. text ",") .<>. pretty (true × xs)
-   pretty (false × (Cons x xs)) = (pretty x :--: emptyDoc) .<>. pretty (false × xs)
+   pretty (false × (Cons x xs)) = pretty x :--: pretty (false × xs)
 
 instance Pretty (List Pattern) where
    pretty (Cons x Nil) = pretty x
@@ -116,14 +116,14 @@ instance Pretty (ListRestPattern) where
    pretty PEnd = emptyDoc
 
 instance Ann a => Pretty (Boolean × Clause a) where
-   pretty (true × Clause (ps × e)) = (pretty (false × toList (ps)) :--: emptyDoc) .<>. text "->" .<>. (emptyDoc :--: pretty e)
-   pretty (false × Clause (ps × e)) = (pretty (false × (toList ps)) :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty e)
+   pretty (true × Clause (ps × e)) = pretty (false × toList (ps)) :--: text "->" :--: pretty e
+   pretty (false × Clause (ps × e)) = pretty (false × (toList ps)) :--: text "=" :--: pretty e
 
 instance Ann a => Pretty (Clauses a) where
    pretty (Clauses cs) = intersperse' (toList (map pretty (map (\x -> false × x) cs))) (text ";")
 
 instance Ann a => Pretty (Branch a) where
-   pretty (x × Clause (ps × e)) = (text x :--: emptyDoc) .<>. pretty (false × Clause (ps × e))
+   pretty (x × Clause (ps × e)) = text x :--: pretty (false × Clause (ps × e))
 
 instance Ann a => Pretty (NonEmptyList (Branch a)) where
    pretty x = intersperse' (toList (map pretty x)) (text ";")
@@ -138,32 +138,28 @@ instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
    pretty x = intersperse' (map pretty (map helperMatch2 (map Clause (toList (helperMatch x))))) (text ";")
 
 instance Ann a => Pretty (VarDef a) where
-   pretty (VarDef p s) = (pretty p :--: emptyDoc) .<>. text "=" .<>. (emptyDoc :--: pretty s)
+   pretty (VarDef p s) = pretty p :--: text "=":--: pretty s
 
 instance Ann a => Pretty (VarDefs a) where
    pretty x = intersperse' (toList (map pretty x)) (text ";")
 
 instance Ann a => Pretty (IsConstrPair a) where
    pretty (_ × ((Cons x Nil))) = pretty x
-   pretty (true × (Cons x xs)) = pretty x .<>. (text "," :--: emptyDoc) .<>. pretty (true × xs)
+   pretty (true × (Cons x xs)) = pretty x  :--: pretty (true × xs)
    pretty (false × (Cons x xs)) = pretty x .<>. text ":" .<>. pretty (false × xs)
    pretty (_ × Nil) = emptyDoc
 
--- prettyConstr' :: forall d a. Pretty d => Highlightable a => a -> (List (Expr d))  -> Doc 
--- prettyConstr' (ann) (Cons x Nil) = highlightIf ann $ pretty x
--- prettyConstr' _ _ = emptyDoc 
-
 instance Ann a => Pretty (List (Expr a)) where
    pretty (Cons x Nil) = pretty x
-   pretty (Cons x xs) = (pretty x :--: emptyDoc) .<>. pretty xs
+   pretty (Cons x xs) = pretty x :--: pretty xs
    pretty Nil = emptyDoc
 
 instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (Guard s) Nil) = pretty s
-   pretty (Cons (Declaration v) Nil) = (text "let" :--: emptyDoc) .<>. pretty v
+   pretty (Cons (Declaration v) Nil) = text "let" :--: pretty v
    pretty (Cons (Generator p s) Nil) = pretty p .<>. text "<-" .<>. pretty s
    pretty (Cons (Guard s) xs) = pretty s .<>. text "," .<>. pretty xs
-   pretty (Cons (Declaration v) xs) = (text "let" :--: emptyDoc) .<>. pretty v .<>. text "," .<>. pretty xs
+   pretty (Cons (Declaration v) xs) = text "let" :--: pretty v .<>. text "," .<>. pretty xs
    pretty (Cons (Generator p s) xs) = pretty p .<>. text "<-" .<>. pretty s .<>. text "," .<>. pretty xs
    pretty Nil = emptyDoc
 

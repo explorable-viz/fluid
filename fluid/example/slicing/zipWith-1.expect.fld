@@ -1,5 +1,4 @@
 let zipWith op [] ys = [];
     zipWith op (x:xs) [] = [];
     zipWith op (x:xs) (y:ys) = ( op  ( x ) ( y ) :  zipWith  ( op ) ( xs ) ( ys ))
- in 
- zipWith  ((fun x y = (( x  ** _2_) + ( y  ** _2_))) ) ( [2,_3_,4]) ( [3,_4_,5,6])
+in  zipWith  ((fun x y = (( x  ** _2_) + ( y  ** _2_))) ) ( [2,_3_,4]) ( [3,_4_,5,6])
