@@ -157,10 +157,10 @@ instance Ann a => Pretty (List (Expr a)) where
 instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (Guard s) Nil) = pretty s
    pretty (Cons (Declaration v) Nil) = text "let" :--: pretty v
-   pretty (Cons (Generator p s) Nil) = pretty p .<>. text "<-" .<>. pretty s
-   pretty (Cons (Guard s) xs) = pretty s .<>. text "," .<>. pretty xs
-   pretty (Cons (Declaration v) xs) = text "let" :--: pretty v .<>. text "," .<>. pretty xs
-   pretty (Cons (Generator p s) xs) = pretty p .<>. text "<-" .<>. pretty s .<>. text "," .<>. pretty xs
+   pretty (Cons (Generator p s) Nil) = pretty p :--: text "<-" :--: pretty s
+   pretty (Cons (Guard s) xs) = pretty s .<>. text "," :--: pretty xs
+   pretty (Cons (Declaration v) xs) = text "let" :--: pretty v .<>. text "," :--: pretty xs
+   pretty (Cons (Generator p s) xs) = pretty p :--: text "<-" :--: pretty s .<>. text "," :--: pretty xs
    pretty Nil = emptyDoc
 
 checkOp :: String -> Doc
