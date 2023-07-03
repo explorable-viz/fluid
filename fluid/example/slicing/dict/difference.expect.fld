@@ -1,2 +1,2 @@
-(let e = _{| "a" := 5, ("a" ++ "b") := 6 |}_;
-     f = _{| "ab" := 12 |}_ in  dict_difference  ( e ) ( f ))
+(let e = _{|"a" := 5, ("a" ++ "b") := 6|}_;
+     f = _{|"ab" := 12|}_ in  dict_difference  ( e ) ( f ))

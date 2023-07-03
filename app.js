@@ -28238,7 +28238,7 @@
   var semigroupColumns = { append: (v) => (v1) => beside(v)(v1) };
   var monoidColumns = { mempty: /* @__PURE__ */ empty3(0)(0), Semigroup0: () => semigroupColumns };
 
-  // output-es/Pretty3/index.js
+  // output-es/Pretty/index.js
   var hcat = /* @__PURE__ */ (() => foldableList.foldMap(monoidColumns)(unsafeCoerce))();
   var toUnfoldable8 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
   var space2 = /* @__PURE__ */ text(" ");
@@ -28355,7 +28355,7 @@
   };
   var prettyDict = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(text(":="))(between2(text("{|"))(text("|}")));
   var prettyRecord = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(text(":"))(between2(text("{"))(text("}")));
-  var prettyExpr1 = (dictHighlightable) => ({
+  var prettyExpr = (dictHighlightable) => ({
     pretty: (v) => {
       if (v.tag === "Var") {
         return text(v._1);
@@ -28370,13 +28370,13 @@
         return text(showStringImpl(v._2));
       }
       if (v.tag === "Record") {
-        return prettyRecord(prettyExpr1(dictHighlightable))(dictHighlightable)(text)(v._1)(toUnfoldable8(v._2));
+        return prettyRecord(prettyExpr(dictHighlightable))(dictHighlightable)(text)(v._1)(toUnfoldable8(v._2));
       }
       if (v.tag === "Dictionary") {
-        return prettyDict(prettyExpr1(dictHighlightable))(dictHighlightable)(prettyExpr1(dictHighlightable).pretty)(v._1)(listMap(toTuple)(v._2));
+        return prettyDict(prettyExpr(dictHighlightable))(dictHighlightable)(prettyExpr(dictHighlightable).pretty)(v._1)(listMap(toTuple)(v._2));
       }
       if (v.tag === "Constr") {
-        return prettyConstr(prettyExpr1(dictHighlightable))(dictHighlightable)(v._1)(v._2)(v._3);
+        return prettyConstr(prettyExpr(dictHighlightable))(dictHighlightable)(v._1)(v._2)(v._3);
       }
       if (v.tag === "Matrix") {
         return unsafePerformEffect(throwException(error("todo")));
@@ -28392,21 +28392,21 @@
           text("let"),
           prettyElim(dictHighlightable).pretty(v._1._1),
           text("="),
-          prettyExpr1(dictHighlightable).pretty(v._1._2),
+          prettyExpr(dictHighlightable).pretty(v._1._2),
           text("in")
-        ]))(prettyExpr1(dictHighlightable).pretty(v._2));
+        ]))(prettyExpr(dictHighlightable).pretty(v._2));
       }
       if (v.tag === "LetRec") {
-        return atop(hspace1([text("let"), prettyDictElim(dictHighlightable).pretty(v._1), text("in")]))(prettyExpr1(dictHighlightable).pretty(v._2));
+        return atop(hspace1([text("let"), prettyDictElim(dictHighlightable).pretty(v._1), text("in")]))(prettyExpr(dictHighlightable).pretty(v._2));
       }
       if (v.tag === "Project") {
-        return beside(beside(prettyExpr1(dictHighlightable).pretty(v._1))(text(".")))(text(v._2));
+        return beside(beside(prettyExpr(dictHighlightable).pretty(v._1))(text(".")))(text(v._2));
       }
       if (v.tag === "App") {
-        return hspace1([prettyExpr1(dictHighlightable).pretty(v._1), prettyExpr1(dictHighlightable).pretty(v._2)]);
+        return hspace1([prettyExpr(dictHighlightable).pretty(v._1), prettyExpr(dictHighlightable).pretty(v._2)]);
       }
       if (v.tag === "Sugar") {
-        return prettyExpr1(dictHighlightable).pretty(v._2);
+        return prettyExpr(dictHighlightable).pretty(v._2);
       }
       fail();
     }
@@ -28451,7 +28451,7 @@
         return emptyDoc;
       }
       if (v.tag === "ContExpr") {
-        return prettyExpr1(dictHighlightable).pretty(v._1);
+        return prettyExpr(dictHighlightable).pretty(v._1);
       }
       if (v.tag === "ContElim") {
         return prettyElim(dictHighlightable).pretty(v._1);
@@ -36755,7 +36755,7 @@
       drawView(v.spec.divId)((selector) => drawLinkFig(v)(ed)($Either("Left", (x2) => selector(v3._2._2._1(x2)))))(2)(view("left view")(v3._1))();
       drawView(v.spec.divId)((selector) => drawLinkFig(v)(ed)($Either("Right", (x2) => selector(v3._2._2._2._1(x2)))))(0)(view("right view")(v3._2._1))();
       drawView(v.spec.divId)(doNothing)(1)(view("common data")(v3._2._2._2._2))();
-      return drawCode(ed)(intercalate4("\n")(prettyExpr1(highlightableBoolean).pretty(v.e1).lines))();
+      return drawCode(ed)(intercalate4("\n")(prettyExpr(highlightableBoolean).pretty(v.e1).lines))();
     };
   };
 
