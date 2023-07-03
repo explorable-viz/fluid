@@ -12,7 +12,7 @@ import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
 import Lattice (Raw, (∧), bot, erase, top)
 import Partial.Unsafe (unsafePartial)
-import Pretty3 (prettyP)
+import Pretty (prettyP)
 import Util (type (+), type (×), error, (×))
 import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, Val(..))
 

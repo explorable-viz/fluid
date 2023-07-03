@@ -22,7 +22,7 @@ import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
 -- import Pretty (class Pretty, prettyP) as P 
-import Pretty3 (pretty, class Pretty, prettyP)
+import Pretty (pretty, class Pretty, prettyP)
 import SExpr (Expr) as S
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
