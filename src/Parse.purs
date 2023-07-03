@@ -57,14 +57,14 @@ str
       , rArrow :: String
       , rBracket :: String
       , then_ :: String
-      , curlylBracket :: String 
-      , curlyrBracket :: String 
+      , curlylBracket :: String
+      , curlyrBracket :: String
       , slash :: String
-      , curlylBrace :: String 
+      , curlylBrace :: String
       , curlyrBrace :: String
       , comma :: String
       , equal :: String
-      , semiColon :: String 
+      , semiColon :: String
       }
 
 str =
