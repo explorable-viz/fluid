@@ -29,7 +29,7 @@ import EvalBwd (evalBwd)
 import Expr (Expr)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
 import Module (File(..), open, openDatasetAs)
-import Pretty3 (prettyP)
+import Pretty (prettyP)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)

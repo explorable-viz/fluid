@@ -57,6 +57,14 @@ str
       , rArrow :: String
       , rBracket :: String
       , then_ :: String
+      , curlylBracket :: String
+      , curlyrBracket :: String
+      , slash :: String
+      , curlylBrace :: String
+      , curlyrBrace :: String
+      , comma :: String
+      , equal :: String
+      , semiColon :: String
       }
 
 str =
@@ -84,6 +92,14 @@ str =
    , rArrow: "->"
    , rBracket: "]"
    , then_: "then"
+   , curlylBracket: "("
+   , curlyrBracket: ")"
+   , slash: "\""
+   , curlylBrace: "{"
+   , curlyrBrace: "}"
+   , comma: ","
+   , equal: "="
+   , semiColon: ";"
    }
 
 languageDef :: LanguageDef
