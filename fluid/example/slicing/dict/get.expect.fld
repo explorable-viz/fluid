@@ -1,2 +1,2 @@
 (let d = {|"a" := 5, ("a" ++ "b") := {fst:6,
-                                      snd:_0_}|} in ( dict_get  ("a") ( d ) *  dict_get  ("ab") ( d ).snd))
+                                      snd:_0_}|} in (( dict_get  "a")  d  * ( dict_get  "ab")  d .snd))

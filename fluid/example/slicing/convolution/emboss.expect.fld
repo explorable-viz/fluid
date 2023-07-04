@@ -1,4 +1,4 @@
 (let emboss =  [ [-2,-1,0], [-1,_1_,_1_], [0,_1_,_2_]];
-     filter = [| nth2  ( i ) ( j ) ( emboss )|(i,j) in (_3_, _3_)|];
+     filter = [|(( nth2   i )  j )  emboss |(i,j) in (_3_, _3_)|];
      image' =  [ [_15_,_13_,6,9,16], [_12_,_5_,15,4,13], [14,9,20,8,1], [4,10,3,7,19], [3,11,15,2,9]];
-     image = [| nth2  ( i ) ( j ) ( image' )|(i,j) in (5, 5)|] in  convolve  ( image ) ( filter ) ( zero ))
+     image = [|(( nth2   i )  j )  image' |(i,j) in (5, 5)|] in (( convolve   image )  filter )  zero )
