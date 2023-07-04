@@ -33,10 +33,10 @@ data InFront = Prefix String | Unit
 type IsPair = Boolean × List Pattern
 newtype FirstGroup a = First (RecDefs a)
 type IsMatch a = Boolean × Clause a
-data ExprType = Simple | Expression 
-type Sem = ExprType -> Doc 
+data ExprType = Simple | Expression
+type Sem = ExprType -> Doc
 
-exprType :: forall a. Expr a -> ExprType 
+exprType :: forall a. Expr a -> ExprType
 exprType (Var _) = Simple -- try 
 exprType (Op _) = Expression -- need parentheses around Op otherwise some cases do not even parse 
 exprType (Int _ _) = Simple -- try  
@@ -47,11 +47,11 @@ exprType (Record _ _) = Simple
 exprType (Dictionary _ _) = Simple
 exprType (Matrix _ _ _ _) = Simple
 exprType (Lambda _) = Simple
-exprType (Project _ _) = Expression 
-exprType (App _ _) = Expression 
-exprType (BinaryApp _ _ _) = Expression 
+exprType (Project _ _) = Expression
+exprType (App _ _) = Expression
+exprType (BinaryApp _ _ _) = Expression
 exprType (MatchAs _ _) = Simple
-exprType (IfElse _ _ _) = Simple 
+exprType (IfElse _ _ _) = Simple
 exprType (ListEmpty _) = Simple -- try
 exprType (ListNonEmpty _ _ _) = Simple
 exprType (ListEnum _ _) = Simple
@@ -67,9 +67,9 @@ class Pretty p where
    pretty :: p -> Sem
 
 instance Ann a => Pretty (Expr a) where
-   pretty s Simple = case exprType s of 
-                        Simple -> pretty s Expression 
-                        Expression -> parentheses (pretty s Expression)
+   pretty s Simple = case exprType s of
+      Simple -> pretty s Expression
+      Expression -> parentheses (pretty s Expression)
    pretty (Var x) Expression = emptyDoc :--: text x :--: emptyDoc
    pretty (Op op) Expression = parentheses (text op)
    pretty (Int ann n) Expression = highlightIf ann $ text (show n)
@@ -80,7 +80,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Dictionary ann sss) Expression = highlightIf ann $ dictBrackets (pretty sss Expression) -- recursive call to pretty made 
    pretty (Matrix ann e (x × y) e') Expression = highlightIf ann $ arrayBrackets (pretty e Expression .<>. text str.bar .<>. text str.lparenth .<>. text x .<>. text str.comma .<>. text y .<>. text str.rparenth :--: text str.in_ :--: pretty e' Expression)
    pretty (Lambda cs) Expression = parentheses (text str.fun :--: pretty cs Expression) -- recursive call to pretty made 
-   pretty (Project s x) Expression = pretty s Expression .<>. text str.dot .<>. text x 
+   pretty (Project s x) Expression = pretty s Expression .<>. text str.dot .<>. text x
    -- pretty (App s s') Expression = pretty s Expression :--: parentheses (pretty s' Expression)
    pretty (App s s') Expression = pretty s Expression :--: parentheses (pretty s' Expression)
    pretty (BinaryApp s op s') Expression = parentheses (pretty s Expression :--: checkOp op :--: pretty s' Expression)
@@ -118,7 +118,7 @@ instance Pretty Pattern where
       false -> case c == "Empty" of
          true -> text c .<>. pretty (false × ps) Expression
          false -> case c == str.colon of
-            true -> parentheses (pretty ps  Expression)
+            true -> parentheses (pretty ps Expression)
             false -> parentheses (text c :--: pretty (false × ps) Expression)
    pretty (PListEmpty) _ = brackets emptyDoc
    pretty (PListNonEmpty p l) _ = brackets (pretty p Expression .<>. pretty l Expression)
@@ -154,7 +154,7 @@ instance Ann a => Pretty (Branch a) where
    pretty (x × Clause (ps × e)) _ = text x :--: pretty (false × Clause (ps × e)) Expression
 
 instance Ann a => Pretty (NonEmptyList (Branch a)) where
-   pretty h _ = intersperse' (toList (map (flip pretty Expression) h )) (text str.semiColon)
+   pretty h _ = intersperse' (toList (map (flip pretty Expression) h)) (text str.semiColon)
 
 instance Ann a => Pretty (NonEmptyList (NonEmptyList (Branch a))) where
    pretty hs _ = intersperse' (toList (map (flip pretty Expression) hs)) (text str.semiColon)
@@ -177,10 +177,10 @@ instance Ann a => Pretty (List (Expr a)) where
    pretty Nil _ = emptyDoc
 
 instance Ann a => Pretty (List (Qualifier a)) where
-   pretty (Cons (Guard s) Nil) _  = pretty s Expression
+   pretty (Cons (Guard s) Nil) _ = pretty s Expression
    pretty (Cons (Declaration d) Nil) _ = text str.let_ :--: pretty d Expression
    pretty (Cons (Generator p s) Nil) _ = pretty p Expression :--: text str.lArrow :--: pretty s Expression
-   pretty (Cons (Guard s) qs) _  = pretty s Expression .<>. text str.comma :--: pretty qs Expression
+   pretty (Cons (Guard s) qs) _ = pretty s Expression .<>. text str.comma :--: pretty qs Expression
    pretty (Cons (Declaration d) qs) _ = text str.let_ :--: pretty d Expression .<>. text str.comma :--: pretty qs Expression
    pretty (Cons (Generator p s) qs) _ = pretty p Expression :--: text str.lArrow :--: pretty s Expression .<>. text str.comma :--: pretty qs Expression
    pretty Nil _ = emptyDoc
@@ -322,10 +322,10 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Str _ str) _ = text (show str)
    pretty (E.Record α xes) _ = prettyRecord text α (xes # D.toUnfoldable)
    -- prettyDict pretty α (ees <#> toTuple) 
-   pretty (E.Dictionary α ees) _ = prettyDict (flip pretty Expression) α (ees <#> toTuple) 
+   pretty (E.Dictionary α ees) _ = prettyDict (flip pretty Expression) α (ees <#> toTuple)
    pretty (E.Constr α c es) _ = prettyConstr α c es
    pretty (E.Matrix _ _ _ _) _ = error "todo"
-   pretty (E.Lambda σ) _ = hspace [ text str.fun, pretty σ Expression]
+   pretty (E.Lambda σ) _ = hspace [ text str.fun, pretty σ Expression ]
    pretty (E.Op op) _ = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') _ = atop (hspace [ text str.let_, pretty σ Expression, text str.equals, pretty e Expression, text str.in_ ])
       (pretty e' Expression)
@@ -335,18 +335,18 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Sugar _ e) _ = pretty e Expression
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
-   pretty x _ = go (D.toUnfoldable x) 
+   pretty x _ = go (D.toUnfoldable x)
       where
       go :: List (Var × Elim a) -> Doc
       go Nil = error absurd -- non-empty
-      go (xσ : Nil) = pretty xσ Expression 
+      go (xσ : Nil) = pretty xσ Expression
       go (xσ : δ) = atop (go δ .<>. semi) (pretty xσ Expression)
 
 instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) _ = hspace [ text x, text str.equals, pretty σ Expression ]
 
 instance Highlightable a => Pretty (Cont a) where
-   pretty ContNone _  = emptyDoc
+   pretty ContNone _ = emptyDoc
    pretty (ContExpr e) _ = pretty e Expression
    pretty (ContElim σ) _ = pretty σ Expression
 
@@ -354,7 +354,7 @@ instance Highlightable a => Pretty (Ctr × Cont a) where
    pretty (c × κ) _ = hspace [ text (showCtr c), text str.rArrow, pretty κ Expression ]
 
 instance Highlightable a => Pretty (Elim a) where
-   pretty (ElimVar x κ) _ = hspace [ text x, text str.rArrow, pretty κ Expression]
+   pretty (ElimVar x κ) _ = hspace [ text x, text str.rArrow, pretty κ Expression ]
    pretty (ElimConstr κs) _ = hcomma (flip pretty Expression <$> κs) -- looks dodgy
    pretty (ElimSug _ κ) _ = pretty κ Expression
    pretty (ElimRecord _ _) _ = error "todo"
@@ -378,7 +378,7 @@ instance Highlightable a => Pretty (Fun a) where
    pretty (V.PartialConstr α c vs) _ = prettyConstr α c vs
 
 instance Pretty (ForeignOp' t) where
-   pretty _ _  = text "<extern op>" -- TODO
+   pretty _ _ = text "<extern op>" -- TODO
 
 instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty
