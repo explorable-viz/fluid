@@ -38,11 +38,12 @@ type Sem = ExprType -> Doc
 
 exprType :: forall a. Expr a -> ExprType
 exprType (Var _) = Simple -- try 
-exprType (Op _) = Expression -- need parentheses around Op otherwise some cases do not even parse 
+exprType (Op _) = Simple -- need parentheses around Op otherwise some cases do not even parse 
 exprType (Int _ _) = Simple -- try  
 exprType (Float _ _) = Simple -- try 
 exprType (Str _ _) = Simple
-exprType (Constr _ _ _) = Simple -- try 
+exprType (Constr _ _ Nil) = Simple -- try (if Simple then flatten test fails)
+exprType (Constr _ _ _) = Expression
 exprType (Record _ _) = Simple
 exprType (Dictionary _ _) = Simple
 exprType (Matrix _ _ _ _) = Simple
@@ -81,8 +82,8 @@ instance Ann a => Pretty (Expr a) where
    pretty (Matrix ann e (x × y) e') Expression = highlightIf ann $ arrayBrackets (pretty e Expression .<>. text str.bar .<>. text str.lparenth .<>. text x .<>. text str.comma .<>. text y .<>. text str.rparenth :--: text str.in_ :--: pretty e' Expression)
    pretty (Lambda cs) Expression = parentheses (text str.fun :--: pretty cs Expression) -- recursive call to pretty made 
    pretty (Project s x) Expression = pretty s Expression .<>. text str.dot .<>. text x
-   -- pretty (App s s') Expression = pretty s Expression :--: parentheses (pretty s' Expression)
-   pretty (App s s') Expression = pretty s Expression :--: parentheses (pretty s' Expression)
+   --pretty (App s s') Expression = pretty s Expression :--: parentheses (pretty s' Expression)
+   pretty (App s s') Expression = pretty s Simple :--: pretty s' Simple
    pretty (BinaryApp s op s') Expression = parentheses (pretty s Expression :--: checkOp op :--: pretty s' Expression)
    pretty (MatchAs s cs) Expression = ((text str.match :--: parentheses (pretty s Expression) :--: text str.as)) .-. curlyBraces (pretty cs Expression)
    pretty (IfElse s1 s2 s3) Expression = emptyDoc :--: text str.if_ :--: pretty s1 Expression :--: text str.then_ :--: pretty s2 Expression :--: text str.else_ :--: pretty s3 Expression
