@@ -93,7 +93,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (ListNonEmpty ann e l) Expression = emptyDoc :--: (highlightIf ann $ text str.lBracket) .<>. pretty e Expression .<>. pretty l Expression
    pretty (ListEnum s s') Expression = brackets (pretty s Expression .<>. text str.ellipsis .<>. pretty s' Expression)
    pretty (ListComp ann s qs) Expression = highlightIf ann $ brackets (pretty s Expression .<>. text str.bar .<>. pretty qs Expression)
-   pretty (Let ds s) Expression = parentheses (text str.let_ :--: pretty ds Expression :--: text str.in_ :--: pretty s Expression)
+   pretty (Let ds s) Expression = text str.let_ :--: pretty ds Expression :--: text str.in_ :--: pretty s Expression
    pretty (LetRec h s) Expression = (text str.let_ :--: pretty (First h) Expression) .-. text str.in_ :--: pretty s Expression
 
 instance Ann a => Pretty (Boolean × List (Bind (Expr a))) where
