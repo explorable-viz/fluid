@@ -57,8 +57,8 @@ str
       , rArrow :: String
       , rBracket :: String
       , then_ :: String
-      , curlylBracket :: String
-      , curlyrBracket :: String
+      , lparenth :: String
+      , rparenth :: String
       , slash :: String
       , curlylBrace :: String
       , curlyrBrace :: String
@@ -92,8 +92,8 @@ str =
    , rArrow: "->"
    , rBracket: "]"
    , then_: "then"
-   , curlylBracket: "("
-   , curlyrBracket: ")"
+   , lparenth: "("
+   , rparenth: ")"
    , slash: "\""
    , curlylBrace: "{"
    , curlyrBrace: "}"
