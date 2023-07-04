@@ -57,7 +57,7 @@ testWithSetup (File file) expected v_expect_opt setup =
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
             s' = desugBwd' e' :: S.Expr _
             _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
-            src = render (pretty s Simple)
+            src = render (pretty s Expression)
             srcExp = show (erase s)
          case parse src program of
             Left msg -> fail msg
@@ -71,7 +71,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                         fail "not equal"
                      true -> do
                         unless (isGraphical v'') (checkPretty "line103" expected v'')
-                        trace ("Annotated\n" <> render (pretty s' Simple)) \_ -> do
+                        trace ("Annotated\n" <> render (pretty s' Expression)) \_ -> do
                            unless (isGraphical v'') (checkPretty "line105" expected v'')
                            case snd <$> v_expect_opt of
                               Nothing -> pure unit
