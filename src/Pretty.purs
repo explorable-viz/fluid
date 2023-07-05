@@ -36,7 +36,6 @@ newtype FirstGroup a = First (RecDefs a)
 type IsMatch a = Boolean × Clause a
 data ExprType = Simple | Expression
 
-
 exprType :: forall a. Expr a -> ExprType
 exprType (Var _) = Simple -- try 
 exprType (Op _) = Simple -- need parentheses around Op otherwise some cases do not even parse 
@@ -494,13 +493,9 @@ instance (Pretty a, Pretty b) => Pretty (a + b) where
 --    pretty S.PEnd = text str.rBracket
 --    pretty (S.PNext s l) = hspace [ comma, pretty s :<>: pretty l ]
 
-
-
 -- (1+5)*(let x = 2;
-     --      y = 8 in  x * y -let y = 3 in  y * y )
-
+--      y = 8 in  x * y -let y = 3 in  y * y )
 
 -- (BinaryApp (App (Int unit 1) (Int unit 5)) "*" (BinaryApp (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (Int unit 2)) ((VarDef (PVar "y") (Int unit 8)) : Nil))) (BinaryApp (Var "x") "*" (Var "y"))) "-" (Let (NonEmptyList (NonEmpty (VarDef (PVar "y") (Int unit 3)) Nil)) (BinaryApp (Var "y") "*" (Var "y")))))
-
 
 -- (BinaryApp (App (Int unit 1) (Int unit 5)) "*" (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (Int unit 2)) ((VarDef (PVar "y") (Int unit 8)) : Nil))) (BinaryApp (BinaryApp (Var "x") "*" (Var "y")) "-" (Let (NonEmptyList (NonEmpty (VarDef (PVar "y") (Int unit 3)) Nil)) (BinaryApp (Var "y") "*" (Var "y"))))))
