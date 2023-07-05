@@ -1,9 +1,9 @@
 let map f [] = [];
-    map f (x:xs) = ( f   x  : ( map   f )  xs )
-in let data =  [{energyType:"Bio",output:6.2}
-               ,{energyType:"Hydro",output:_260_}
-               ,{energyType:"Solar",output:_19.9_}
-               ,{energyType:"Wind",output:91}
-               ,{energyType:"Geo",output:_14.4_}
-               ];
-       output = [ row .output|type <-  ["Hydro","Solar","Geo"], row <-  data , ( row .energyType) ==  type ] in ( map  (fun x =  floor  (( x  / ( sum   output )) * _100_)))  output 
+    map f (x:xs) = ( f  ( x ) :  map  ( f ) ( xs ))
+in (let data =  [{energyType:"Bio",output:6.2}
+                ,{energyType:"Hydro",output:_260_}
+                ,{energyType:"Solar",output:_19.9_}
+                ,{energyType:"Wind",output:91}
+                ,{energyType:"Geo",output:_14.4_}
+                ];
+        output = [ row .output|type <-  ["Hydro","Solar","Geo"], row <-  data , ( row .energyType ==  type )] in  map  ((fun x =  floor  ((( x  /  sum  ( output )) * _100_)))) ( output ))

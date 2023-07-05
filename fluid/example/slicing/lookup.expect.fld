@@ -1,6 +1,6 @@
 let lookup k Empty = None;
-    lookup k (NonEmpty t1 (key,val) t2) = match (( compare   k )  key ) as
-                                          {(LT ) -> ( lookup   k )  t1 ;
+    lookup k (NonEmpty t1 (key,val) t2) = match ( compare  ( k ) ( key )) as
+                                          {(LT ) ->  lookup  ( k ) ( t1 );
                                            (EQ ) -> _Some_ ( val );
-                                           (GT ) -> ( lookup   k )  t2 }
-in ( lookup  _6_) (NonEmpty (NonEmpty Empty ((3, "USA")) Empty) ((4, "China")) (NonEmpty (_NonEmpty_ Empty (_(_6_, "Germany")_) Empty) ((7, "UK")) Empty))
+                                           (GT ) ->  lookup  ( k ) ( t2 )}
+in  lookup  (_6_) (NonEmpty (NonEmpty Empty ((3, "USA")) Empty) ((4, "China")) (NonEmpty (_NonEmpty_ Empty (_(_6_, "Germany")_) Empty) ((7, "UK")) Empty))
