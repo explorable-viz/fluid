@@ -34,3 +34,5 @@ opDefs = fromFoldable
    , opDef "<=" 4 AssocLeft
    , opDef ">=" 4 AssocLeft
    ]
+
+   

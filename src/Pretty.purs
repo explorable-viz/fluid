@@ -7,7 +7,8 @@ import Data.Exists (runExists)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, (:), null)
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
-import Data.Map (keys)
+import Data.Map (keys, lookup)
+import Data.Maybe (Maybe(..))
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
 import Data.Set (member)
@@ -70,6 +71,19 @@ prettyAppChain :: forall a. Ann a => Expr a -> Doc
 prettyAppChain (App s s') = prettyAppChain s .<>. prettySimple s' 
 prettyAppChain s = prettySimple s
 
+prettyBinApp :: forall a. Ann a => Int -> Expr a -> Doc 
+prettyBinApp n (BinaryApp s op s') = let prec' = getPrec op in case getPrec op of 
+                                          -1 -> prettyBinApp prec' s .<>. backTicks (text op) .<>. prettyBinApp prec' s'
+                                          _ -> case prec' <= n of 
+                                                true -> prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s' 
+                                                false -> parentheses (prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s' )
+prettyBinApp _ s = pretty s
+
+getPrec :: String -> Int 
+getPrec x = case lookup x opDefs of 
+               Just y -> y.prec
+               Nothing -> -1
+
 infixl 5 beside as .<>.
 infixl 5 space as :--:
 infixl 5 atop as .-.
@@ -95,7 +109,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (BinaryApp s op s')  = prettyAppChain s  :--: checkOp op :--: prettySimple s' 
    pretty (MatchAs s cs)  = ((text str.match :--: parentheses (pretty s ) :--: text str.as)) .-. curlyBraces (pretty cs )
    pretty (IfElse s1 s2 s3)  = emptyDoc :--: text str.if_ :--: pretty s1  :--: text str.then_ :--: pretty s2  :--: text str.else_ :--: pretty s3 
-   pretty (ListEmpty ann)  = highlightIf ann $ brackets emptyDoc
+   pretty (ListEmpty ann)  = highlightIf ann $ brackets emptyDoc 
    pretty (ListNonEmpty ann (Record _ xss) l)  = emptyDoc :--: (((highlightIf ann $ text str.lBracket) .<>. (highlightIf ann $ curlyBraces (pretty (true × xss) ))) .-. pretty l )
    pretty (ListNonEmpty ann e l)  = emptyDoc :--: (highlightIf ann $ text str.lBracket) .<>. pretty e  .<>. pretty l 
    pretty (ListEnum s s')  = brackets (pretty s  .<>. text str.ellipsis .<>. pretty s' )
@@ -112,7 +126,7 @@ instance Ann a => Pretty (Boolean × List (Bind (Expr a))) where
 instance Ann a => Pretty (ListRest a) where
    pretty (Next ann (Record _ xss) l)  = (highlightIf ann $ text str.comma) .<>. (highlightIf ann $ curlyBraces (pretty (true × xss) )) .-. pretty l 
    pretty (Next ann s l)  = (highlightIf ann $ text str.comma) .<>. pretty s  .<>. pretty l 
-   pretty (End ann)  = highlightIf ann $ text str.rBracket :--: emptyDoc 
+   pretty (End ann)  = highlightIf ann $ text str.rBracket
 
 instance Ann a => Pretty (List (Pair (Expr a))) where
    pretty (Cons (Pair e e') Nil)  = pretty e  :--: text str.colonEq :--: pretty e' 
