@@ -1,4 +1,4 @@
 let intersperse [] _ = [];
     intersperse [x] _ =  [ x ];
-    intersperse (x:(y:ys)) sep = ( x  _:_ ( sep  : ( intersperse  (( y  _:_  ys )))  sep ))
-in ( intersperse   _[_1_,_2_,_3]) 0
+    intersperse (x:(y:ys)) sep = ( x  _:_ ( sep  :  intersperse (( y  _:_  ys )) sep ))
+in  intersperse  _[_1_,_2_,_3]0
