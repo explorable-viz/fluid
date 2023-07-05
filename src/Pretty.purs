@@ -49,7 +49,7 @@ exprType (Record _ _) = Simple
 exprType (Dictionary _ _) = Simple
 exprType (Matrix _ _ _ _) = Simple
 exprType (Lambda _) = Simple
-exprType (Project _ _) = Expression
+exprType (Project _ _) = Simple
 exprType (App _ _) = Expression -- edited initially was , trying to cut down on brackets
 exprType (BinaryApp _ _ _) = Expression
 exprType (MatchAs _ _) = Simple
@@ -80,7 +80,7 @@ prettyBinApp n (BinaryApp s op s') =
          _ -> case prec' <= n of
             false -> prettyBinApp prec' s :--: text op :--: prettyBinApp prec' s'
             true -> parentheses (prettyBinApp prec' s :--: text op :--: prettyBinApp prec' s')
-prettyBinApp _ s = prettySimple s 
+prettyBinApp _ s = prettyAppChain s
 
 getPrec :: String -> Int
 getPrec x = case lookup x opDefs of
