@@ -85,7 +85,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Str ann str)  = highlightIf ann $ slashes (text str)
    pretty (Constr ann c x)  = prettyConstr ann c x
    pretty (Record ann xss)  = highlightIf ann $ curlyBraces (pretty (false × xss) ) -- recursive call to pretty made 
-   pretty (Dictionary ann sss)  = highlightIf ann $ dictBrackets (pretty sss ) -- recursive call to pretty made 
+   pretty (Dictionary ann sss)  = highlightIf ann $ dictBrackets (pretty sss) -- recursive call to pretty made 
    pretty (Matrix ann e (x × y) e')  = highlightIf ann $ arrayBrackets (pretty e  .<>. text str.bar .<>. text str.lparenth .<>. text x .<>. text str.comma .<>. text y .<>. text str.rparenth :--: text str.in_ :--: pretty e' )
    pretty (Lambda cs)  = parentheses (text str.fun :--: pretty cs ) -- recursive call to pretty made 
    pretty (Project s x)  = pretty s  .<>. text str.dot .<>. text x
@@ -100,7 +100,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (ListNonEmpty ann e l)  = emptyDoc :--: (highlightIf ann $ text str.lBracket) .<>. pretty e  .<>. pretty l 
    pretty (ListEnum s s')  = brackets (pretty s  .<>. text str.ellipsis .<>. pretty s' )
    pretty (ListComp ann s qs)  = highlightIf ann $ brackets (pretty s  .<>. text str.bar .<>. pretty qs )
-   pretty (Let ds s)  = parentheses (text str.let_ :--: pretty ds  :--: text str.in_ :--: pretty s) 
+   pretty (Let ds s)  = text str.let_ :--: pretty ds  :--: text str.in_ :--: pretty s
    pretty (LetRec h s)  = (text str.let_ :--: pretty (First h) ) .-. text str.in_ :--: pretty s 
 
 instance Ann a => Pretty (Boolean × List (Bind (Expr a))) where
@@ -112,7 +112,7 @@ instance Ann a => Pretty (Boolean × List (Bind (Expr a))) where
 instance Ann a => Pretty (ListRest a) where
    pretty (Next ann (Record _ xss) l)  = (highlightIf ann $ text str.comma) .<>. (highlightIf ann $ curlyBraces (pretty (true × xss) )) .-. pretty l 
    pretty (Next ann s l)  = (highlightIf ann $ text str.comma) .<>. pretty s  .<>. pretty l 
-   pretty (End ann)  = highlightIf ann $ text str.rBracket
+   pretty (End ann)  = highlightIf ann $ text str.rBracket :--: emptyDoc 
 
 instance Ann a => Pretty (List (Pair (Expr a))) where
    pretty (Cons (Pair e e') Nil)  = pretty e  :--: text str.colonEq :--: pretty e' 

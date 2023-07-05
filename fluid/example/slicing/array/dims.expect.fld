@@ -1,2 +1,2 @@
-(let (x,y) = _(_3_, _3_)_;
-     yss = _[|0|(i,j) in ( x ,  y )|]_ in  dims  yss )
+let (x,y) = _(_3_, _3_)_;
+    yss = _[|0|(i,j) in ( x ,  y )|]_ in  dims  yss 
