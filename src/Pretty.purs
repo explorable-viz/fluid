@@ -7,11 +7,11 @@ import Data.Exists (runExists)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, (:), null)
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
-import Data.Map (keys, lookup)
+import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
-import Data.Set (member)
+-- import Data.Set (member)
 import Data.String (Pattern(..), contains) as Data.String
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
@@ -36,8 +36,6 @@ newtype FirstGroup a = First (RecDefs a)
 type IsMatch a = Boolean × Clause a
 data ExprType = Simple | Expression
 
--- type Sem = ExprType -> Doc
-
 exprType :: forall a. Expr a -> ExprType
 exprType (Var _) = Simple -- try 
 exprType (Op _) = Simple -- need parentheses around Op otherwise some cases do not even parse 
@@ -50,7 +48,7 @@ exprType (Record _ _) = Simple
 exprType (Dictionary _ _) = Simple
 exprType (Matrix _ _ _ _) = Simple
 exprType (Lambda _) = Simple
-exprType (Project _ _) = Expression
+exprType (Project _ _) = Simple
 exprType (App _ _) = Expression -- edited initially was , trying to cut down on brackets
 exprType (BinaryApp _ _ _) = Expression
 exprType (MatchAs _ _) = Simple
@@ -77,11 +75,11 @@ prettyBinApp n (BinaryApp s op s') =
       prec' = getPrec op
    in
       case getPrec op of
-         -1 -> prettyBinApp prec' s .<>. backTicks (text op) .<>. prettyBinApp prec' s'
+         -1 -> prettyBinApp prec' s :--: backTicks (text op) :--: prettyBinApp prec' s'
          _ -> case prec' <= n of
-            true -> prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s'
-            false -> parentheses (prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s')
-prettyBinApp _ s = pretty s
+            false -> prettyBinApp prec' s :--: text op :--: prettyBinApp prec' s'
+            true -> parentheses (prettyBinApp prec' s :--: text op :--: prettyBinApp prec' s')
+prettyBinApp _ s = prettyAppChain s
 
 getPrec :: String -> Int
 getPrec x = case lookup x opDefs of
@@ -110,7 +108,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (App s s') = prettyAppChain (App s s')
    --pretty (App s s')  = pretty s  :--: pretty s' 
    --pretty (BinaryApp s op s')  =  (pretty s  :--: checkOp op :--: pretty s' )
-   pretty (BinaryApp s op s') = prettyAppChain s :--: checkOp op :--: prettySimple s'
+   pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = ((text str.match :--: parentheses (pretty s) :--: text str.as)) .-. curlyBraces (pretty cs)
    pretty (IfElse s1 s2 s3) = emptyDoc :--: text str.if_ :--: pretty s1 :--: text str.then_ :--: pretty s2 :--: text str.else_ :--: pretty s3
    pretty (ListEmpty ann) = highlightIf ann $ brackets emptyDoc
@@ -212,10 +210,10 @@ instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (Generator p s) qs) = pretty p :--: text str.lArrow :--: pretty s .<>. text str.comma :--: pretty qs
    pretty Nil = emptyDoc
 
-checkOp :: String -> Doc
-checkOp x = case (member x (keys (opDefs))) of
-   true -> text x
-   false -> backTicks (text x)
+-- checkOp :: String -> Doc
+-- checkOp x = case (member x (keys (opDefs))) of
+--    true -> text x
+--    false -> backTicks (text x)
 
 intersperse' :: List Doc -> Doc -> Doc
 intersperse' (Cons dc Nil) _ = dc
@@ -495,3 +493,9 @@ instance (Pretty a, Pretty b) => Pretty (a + b) where
 --    pretty S.PEnd = text str.rBracket
 --    pretty (S.PNext s l) = hspace [ comma, pretty s :<>: pretty l ]
 
+-- (1+5)*(let x = 2;
+--      y = 8 in  x * y -let y = 3 in  y * y )
+
+-- (BinaryApp (App (Int unit 1) (Int unit 5)) "*" (BinaryApp (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (Int unit 2)) ((VarDef (PVar "y") (Int unit 8)) : Nil))) (BinaryApp (Var "x") "*" (Var "y"))) "-" (Let (NonEmptyList (NonEmpty (VarDef (PVar "y") (Int unit 3)) Nil)) (BinaryApp (Var "y") "*" (Var "y")))))
+
+-- (BinaryApp (App (Int unit 1) (Int unit 5)) "*" (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (Int unit 2)) ((VarDef (PVar "y") (Int unit 8)) : Nil))) (BinaryApp (BinaryApp (Var "x") "*" (Var "y")) "-" (Let (NonEmptyList (NonEmpty (VarDef (PVar "y") (Int unit 3)) Nil)) (BinaryApp (Var "y") "*" (Var "y"))))))
