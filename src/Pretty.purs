@@ -34,31 +34,41 @@ type IsPair = Boolean × List Pattern
 newtype FirstGroup a = First (RecDefs a)
 type IsMatch a = Boolean × Clause a
 data ExprType =  Simple | Expression
-type Sem = ExprType -> Doc
+-- type Sem = ExprType -> Doc
 
--- exprType :: forall a. Expr a -> ExprType
--- exprType (Var _) = Simple -- try 
--- exprType (Op _) = Simple -- need parentheses around Op otherwise some cases do not even parse 
--- exprType (Int _ _) = Simple  -- try  
--- exprType (Float _ _) = Simple -- try 
--- exprType (Str _ _) = Simple
--- exprType (Constr _ _ Nil) = Simple -- try (if  then flatten test fails)
--- exprType (Constr _ _ _) = Expression
--- exprType (Record _ _) = Simple
--- exprType (Dictionary _ _) = Simple
--- exprType (Matrix _ _ _ _) = Simple
--- exprType (Lambda _) = Simple
--- exprType (Project _ _) = Expression
--- exprType (App _ _) = Expression  -- edited initially was , trying to cut down on brackets
--- exprType (BinaryApp _ _ _) = Expression 
--- exprType (MatchAs _ _) = Simple
--- exprType (IfElse _ _ _) = Simple
--- exprType (ListEmpty _) =  Simple -- try
--- exprType (ListNonEmpty _ _ _) = Simple
--- exprType (ListEnum _ _) = Simple
--- exprType (ListComp _ _ _) = Simple
--- exprType (Let _ _) = Expression
--- exprType (LetRec _ _) = Expression
+exprType :: forall a. Expr a -> ExprType
+exprType (Var _) = Simple -- try 
+exprType (Op _) = Simple -- need parentheses around Op otherwise some cases do not even parse 
+exprType (Int _ _) = Simple  -- try  
+exprType (Float _ _) = Simple -- try 
+exprType (Str _ _) = Simple
+exprType (Constr _ _ Nil) = Simple -- try (if  then flatten test fails)
+exprType (Constr _ _ _) = Expression
+exprType (Record _ _) = Simple
+exprType (Dictionary _ _) = Simple
+exprType (Matrix _ _ _ _) = Simple
+exprType (Lambda _) = Simple
+exprType (Project _ _) = Expression
+exprType (App _ _) = Expression  -- edited initially was , trying to cut down on brackets
+exprType (BinaryApp _ _ _) = Expression 
+exprType (MatchAs _ _) = Simple
+exprType (IfElse _ _ _) = Simple
+exprType (ListEmpty _) =  Simple -- try
+exprType (ListNonEmpty _ _ _) = Simple
+exprType (ListEnum _ _) = Simple
+exprType (ListComp _ _ _) = Simple
+exprType (Let _ _) = Expression
+exprType (LetRec _ _) = Expression
+
+prettySimple :: forall a. Ann a => Expr a -> Doc 
+prettySimple s = case exprType s of 
+                  Simple -> pretty s 
+                  Expression -> parentheses (pretty s)
+
+
+prettyAppChain :: forall a. Ann a => Expr a -> Doc 
+prettyAppChain (App s s') = prettyAppChain s .<>. prettySimple s' 
+prettyAppChain s = prettySimple s
 
 infixl 5 beside as .<>.
 infixl 5 space as :--:
