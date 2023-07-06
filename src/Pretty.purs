@@ -11,7 +11,6 @@ import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
--- import Data.Set (member)
 import Data.String (Pattern(..), contains) as Data.String
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
@@ -49,7 +48,7 @@ exprType (Dictionary _ _) = Simple
 exprType (Matrix _ _ _ _) = Simple
 exprType (Lambda _) = Simple
 exprType (Project _ _) = Simple
-exprType (App _ _) = Expression -- edited initially was , trying to cut down on brackets
+exprType (App _ _) = Expression 
 exprType (BinaryApp _ _ _) = Expression
 exprType (MatchAs _ _) = Simple
 exprType (IfElse _ _ _) = Simple
@@ -106,10 +105,8 @@ instance Ann a => Pretty (Expr a) where
    pretty (Lambda cs) = parentheses (text str.fun :--: pretty cs) -- recursive call to pretty made 
    pretty (Project s x) = pretty s .<>. text str.dot .<>. text x
    pretty (App s s') = prettyAppChain (App s s')
-   --pretty (App s s')  = pretty s  :--: pretty s' 
-   --pretty (BinaryApp s op s')  =  (pretty s  :--: checkOp op :--: pretty s' )
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
-   pretty (MatchAs s cs) = ((text str.match :--: parentheses (pretty s) :--: text str.as)) .-. curlyBraces (pretty cs)
+   pretty (MatchAs s cs) = ((text str.match :--: pretty s :--: text str.as)) .-. curlyBraces (pretty cs)
    pretty (IfElse s1 s2 s3) = emptyDoc :--: text str.if_ :--: pretty s1 :--: text str.then_ :--: pretty s2 :--: text str.else_ :--: pretty s3
    pretty (ListEmpty ann) = highlightIf ann $ brackets emptyDoc
    pretty (ListNonEmpty ann (Record _ xss) l) = emptyDoc :--: (((highlightIf ann $ text str.lBracket) .<>. (highlightIf ann $ curlyBraces (pretty (true × xss)))) .-. pretty l)
@@ -209,11 +206,6 @@ instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (Declaration d) qs) = text str.let_ :--: pretty d .<>. text str.comma :--: pretty qs
    pretty (Cons (Generator p s) qs) = pretty p :--: text str.lArrow :--: pretty s .<>. text str.comma :--: pretty qs
    pretty Nil = emptyDoc
-
--- checkOp :: String -> Doc
--- checkOp x = case (member x (keys (opDefs))) of
---    true -> text x
---    false -> backTicks (text x)
 
 intersperse' :: List Doc -> Doc -> Doc
 intersperse' (Cons dc Nil) _ = dc
