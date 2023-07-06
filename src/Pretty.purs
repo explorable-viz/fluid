@@ -30,10 +30,11 @@ emptyDoc :: Doc
 emptyDoc = empty 0 0
 
 data InFront = Prefix String | Unit
-type IsPair = Boolean × List Pattern
+type IsPair = PattPairOrList × List Pattern
 newtype FirstGroup a = First (RecDefs a)
 type IsMatch a = Boolean × Clause a
 data ExprType = Simple | Expression
+data PattPairOrList = PattPair | PattList
 
 exprType :: forall a. Expr a -> ExprType
 exprType (Var _) = Simple -- try 
@@ -136,12 +137,12 @@ instance Pretty Pattern where
    pretty (PVar x) = text x
    pretty (PRecord xps) = curlyBraces (pretty xps)
    pretty (PConstr c ps) = case c == cPair of
-      true -> parentheses (pretty (true × ps))
+      true -> parentheses (pretty (PattPair × ps))
       false -> case c == "Empty" of
-         true -> text c .<>. pretty (false × ps)
+         true -> text c .<>. pretty ps
          false -> case c == str.colon of
-            true -> parentheses (pretty ps)
-            false -> parentheses (text c :--: pretty (false × ps))
+            true -> parentheses (pretty (PattList × ps))
+            false -> parentheses (text c :--: pretty ps)
    pretty (PListEmpty) = brackets emptyDoc
    pretty (PListNonEmpty p l) = brackets (pretty p .<>. pretty l)
 
@@ -153,12 +154,12 @@ instance Pretty (List (Bind (Pattern))) where
 instance Pretty IsPair where
    pretty (_ × Nil) = emptyDoc
    pretty (_ × (Cons p Nil)) = pretty p
-   pretty (true × (Cons p ps)) = pretty p .<>. text str.comma .<>. pretty (true × ps)
-   pretty (false × (Cons p ps)) = pretty p :--: pretty (false × ps)
+   pretty (PattPair × (Cons p ps)) = pretty p .<>. text str.comma .<>. pretty (PattPair × ps)
+   pretty (PattList × (Cons p ps)) = pretty p .<>. text str.colon .<>. pretty (PattList × ps)
 
 instance Pretty (List Pattern) where
    pretty (Cons p Nil) = pretty p
-   pretty (Cons p ps) = pretty p .<>. text str.colon .<>. pretty ps
+   pretty (Cons p ps) = pretty p :--: pretty ps
    pretty Nil = emptyDoc
 
 instance Pretty ListRestPattern where
@@ -166,8 +167,8 @@ instance Pretty ListRestPattern where
    pretty PEnd = emptyDoc
 
 instance Ann a => Pretty (Boolean × Clause a) where
-   pretty (true × Clause (ps × e)) = pretty (false × toList (ps)) :--: text str.rArrow :--: pretty e
-   pretty (false × Clause (ps × e)) = pretty (false × (toList ps)) :--: text str.equal :--: pretty e
+   pretty (true × Clause (ps × e)) = pretty (toList ps) :--: text str.rArrow :--: pretty e
+   pretty (false × Clause (ps × e)) = pretty (toList ps) :--: text str.equal :--: pretty e
 
 instance Ann a => Pretty (Clauses a) where
    pretty (Clauses cs) = intersperse' (toList (map pretty (map (\x -> false × x) cs))) (text str.semiColon)
