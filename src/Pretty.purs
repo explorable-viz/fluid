@@ -128,6 +128,7 @@ instance Ann a => Pretty (ListRest a) where
    pretty (Next ann s l) = (highlightIf ann $ text str.comma) .<>. pretty s .<>. pretty l
    pretty (End ann) = highlightIf ann $ text str.rBracket
 
+-- used for dictionaries not in formalism
 instance Ann a => Pretty (List (Pair (Expr a))) where
    pretty (Cons (Pair e e') Nil) = pretty e :--: text str.colonEq :--: pretty e'
    pretty (Cons (Pair e e') sss) = pretty e :--: text str.colonEq :--: pretty e' .<>. text str.comma :--: pretty sss
@@ -144,7 +145,6 @@ instance Pretty Pattern where
             true -> parentheses (pretty (PattList × ps))
             false -> parentheses (text c :--: pretty (Other × ps))
    pretty (PListEmpty) = brackets emptyDoc
-   -- pretty (PListNonEmpty p l) = brackets (pretty p .<>. pretty l)
    pretty (PListNonEmpty p l) = text str.lBracket .<>. pretty p .<>. pretty l
 
 instance Pretty (List (Bind (Pattern))) where
@@ -158,12 +158,6 @@ instance Pretty IsPair where
    pretty (PattPair × (Cons p ps)) = pretty p .<>. text str.comma .<>. pretty (PattPair × ps)
    pretty (PattList × (Cons p ps)) = pretty p .<>. text str.colon .<>. pretty (PattList × ps)
    pretty (Other × (Cons p ps)) = pretty p :--: pretty (Other × ps)
-
-
--- instance Pretty (List Pattern) where
---    pretty (Cons p Nil) = pretty p
---    pretty (Cons p ps) = pretty p :--: pretty ps
---    pretty Nil = emptyDoc
 
 instance Pretty ListRestPattern where
    pretty (PNext p l) = text str.comma .<>. pretty p .<>. pretty l
@@ -206,9 +200,7 @@ instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (Guard s) Nil) = pretty s
    pretty (Cons (Declaration d) Nil) = text str.let_ :--: pretty d
    pretty (Cons (Generator p s) Nil) = pretty p :--: text str.lArrow :--: pretty s
-   pretty (Cons (Guard s) qs) = pretty s .<>. text str.comma :--: pretty qs
-   pretty (Cons (Declaration d) qs) = text str.let_ :--: pretty d .<>. text str.comma :--: pretty qs
-   pretty (Cons (Generator p s) qs) = pretty p :--: text str.lArrow :--: pretty s .<>. text str.comma :--: pretty qs
+   pretty (Cons q qs) = pretty (toList (singleton q)) .<>. text str.comma :--: pretty qs
    pretty Nil = emptyDoc
 
 intersperse' :: List Doc -> Doc -> Doc
