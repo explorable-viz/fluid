@@ -144,7 +144,8 @@ instance Pretty Pattern where
             true -> parentheses (pretty (PattList × ps))
             false -> parentheses (text c :--: pretty (Other × ps))
    pretty (PListEmpty) = brackets emptyDoc
-   pretty (PListNonEmpty p l) = brackets (pretty p .<>. pretty l)
+   -- pretty (PListNonEmpty p l) = brackets (pretty p .<>. pretty l)
+   pretty (PListNonEmpty p l) = text str.lBracket .<>. pretty p .<>. pretty l
 
 instance Pretty (List (Bind (Pattern))) where
    pretty (Cons xp Nil) = text (key xp) .<>. text str.colon .<>. pretty (val xp)
@@ -166,7 +167,7 @@ instance Pretty IsPair where
 
 instance Pretty ListRestPattern where
    pretty (PNext p l) = text str.comma .<>. pretty p .<>. pretty l
-   pretty PEnd = emptyDoc
+   pretty PEnd = text str.rBracket
 
 instance Ann a => Pretty (Boolean × Clause a) where
    pretty (true × Clause (ps × e)) = pretty (Other × toList ps) :--: text str.rArrow :--: pretty e
