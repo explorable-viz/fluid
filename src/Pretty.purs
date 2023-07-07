@@ -117,12 +117,6 @@ instance Ann a => Pretty (Expr a) where
    pretty (Let ds s) = text str.let_ :--: pretty ds :--: text str.in_ :--: pretty s
    pretty (LetRec h s) = (text str.let_ :--: pretty (First h)) .-. text str.in_ :--: pretty s
 
--- instance Ann a => Pretty (Boolean × List (Bind (Expr a))) where
---    pretty (_ × (Cons s Nil)) = prettyBindings s
---    pretty (false × (Cons s xss)) = (prettyBindings s .<>. text str.comma) .-. pretty (false × xss)
---    pretty (true × (Cons s xss)) = prettyBindings s  .<>. text str.comma .<>. pretty (true × xss)
---    pretty (_ × Nil) = emptyDoc
-
 prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc 
 prettyOperator _ (Cons s Nil) = prettyBindings s 
 prettyOperator sep (Cons s xss) = sep (prettyBindings s .<>. text str.comma) (prettyOperator sep xss)
