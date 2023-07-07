@@ -137,9 +137,12 @@ instance Ann a => Pretty (ListRest a) where
    pretty (End ann) = highlightIf ann $ text str.rBracket
 
 instance Ann a => Pretty (List (Pair (Expr a))) where
-   pretty (Cons (Pair e e') Nil) = pretty e :--: text str.colonEq :--: pretty e'
-   pretty (Cons (Pair e e') sss) = pretty e :--: text str.colonEq :--: pretty e' .<>. text str.comma :--: pretty sss
+   pretty (Cons (Pair e e') Nil) = prettyPairs (Pair e e')
+   pretty (Cons (Pair e e') sss) = prettyPairs (Pair e e') .<>. text str.comma :--: pretty sss
    pretty Nil = emptyDoc
+
+prettyPairs :: forall a. Ann a => (Pair (Expr a)) -> Doc 
+prettyPairs (Pair e e') = pretty e :--: text str.colonEq :--: pretty e'
 
 instance Pretty Pattern where
    pretty (PVar x) = text x
