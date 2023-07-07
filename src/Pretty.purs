@@ -118,10 +118,13 @@ instance Ann a => Pretty (Expr a) where
    pretty (LetRec h s) = (text str.let_ :--: pretty (First h)) .-. text str.in_ :--: pretty s
 
 instance Ann a => Pretty (Boolean × List (Bind (Expr a))) where
-   pretty (_ × (Cons s Nil)) = text (key s) .<>. text str.colon .<>. pretty (val s)
-   pretty (false × (Cons s xss)) = (text (key s) .<>. text str.colon .<>. pretty (val s) .<>. text str.comma) .-. pretty (false × xss)
-   pretty (true × (Cons s xss)) = text (key s) .<>. text str.colon .<>. pretty (val s) .<>. text str.comma .<>. pretty (true × xss)
+   pretty (_ × (Cons s Nil)) = prettyBindings s
+   pretty (false × (Cons s xss)) = (prettyBindings s .<>. text str.comma) .-. pretty (false × xss)
+   pretty (true × (Cons s xss)) = prettyBindings s  .<>. text str.comma .<>. pretty (true × xss)
    pretty (_ × Nil) = emptyDoc
+
+prettyBindings :: forall a. Ann a => (Bind (Expr a)) -> Doc
+prettyBindings s = text (key s) .<>. text str.colon .<>. pretty (val s)
 
 instance Ann a => Pretty (ListRest a) where
    pretty (Next ann (Record _ xss) l) = (highlightIf ann $ text str.comma) .<>. (highlightIf ann $ curlyBraces (pretty (true × xss))) .-. pretty l
