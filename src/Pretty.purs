@@ -144,10 +144,10 @@ instance Pretty Pattern where
    pretty (PConstr c ps) = case c == cPair of
       true -> parentheses (pretty (PattPair × ps))
       false -> case c == "Empty" of
-         true -> text c .<>. pretty (Other × ps)
+         true -> text c .<>. prettyPattConstr emptyDoc ps
          false -> case c == str.colon of
             true -> parentheses (pretty (PattList × ps))
-            false -> parentheses (text c :--: pretty (Other × ps))
+            false -> parentheses (text c :--: prettyPattConstr emptyDoc ps)
    pretty (PListEmpty) = brackets emptyDoc
    pretty (PListNonEmpty p l) = text str.lBracket .<>. pretty p .<>. pretty l
 
@@ -163,12 +163,19 @@ instance Pretty IsPair where
    pretty (PattList × (Cons p ps)) = pretty p .<>. text str.colon .<>. pretty (PattList × ps)
    pretty (Other × (Cons p ps)) = pretty p :--: pretty (Other × ps)
 
+prettyPattConstr :: Doc -> List (Pattern) -> Doc
+prettyPattConstr _ Nil = emptyDoc 
+prettyPattConstr _ (Cons p Nil) = pretty p
+prettyPattConstr sep (Cons p ps) = case sep == emptyDoc of 
+                                    true -> pretty p :--: prettyPattConstr sep ps 
+                                    false -> pretty p .<>. sep .<>. prettyPattConstr sep ps 
+
 instance Pretty ListRestPattern where
    pretty (PNext p l) = text str.comma .<>. pretty p .<>. pretty l
    pretty PEnd = text str.rBracket
 
 instance Ann a => Pretty (Boolean × Clause a) where
-   pretty (true × Clause (ps × e)) = pretty (Other × toList ps) :--: text str.rArrow :--: pretty e
+   pretty (true × Clause (ps × e)) = pretty (Other × toList ps)  :--: text str.rArrow :--: pretty e
    pretty (false × Clause (ps × e)) = pretty (Other × toList ps) :--: text str.equal :--: pretty e
 
 instance Ann a => Pretty (Clauses a) where
