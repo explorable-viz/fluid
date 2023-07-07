@@ -100,7 +100,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Float ann n) = highlightIf ann $ text (show n)
    pretty (Str ann str) = highlightIf ann $ slashes (text str)
    pretty (Constr ann c x) = prettyConstr ann c x
-   pretty (Record ann xss) = highlightIf ann $ curlyBraces (pretty (false × xss))
+   pretty (Record ann xss) = highlightIf ann $ curlyBraces (prettyOperator (.-.) xss)
    pretty (Dictionary ann sss) = highlightIf ann $ dictBrackets (pretty sss)
    pretty (Matrix ann e (x × y) e') = highlightIf ann $ arrayBrackets (pretty e .<>. text str.bar .<>. text str.lparenth .<>. text x .<>. text str.comma .<>. text y .<>. text str.rparenth :--: text str.in_ :--: pretty e')
    pretty (Lambda cs) = parentheses (text str.fun :--: pretty cs)
@@ -110,24 +110,29 @@ instance Ann a => Pretty (Expr a) where
    pretty (MatchAs s cs) = ((text str.match :--: pretty s :--: text str.as)) .-. curlyBraces (pretty cs)
    pretty (IfElse s1 s2 s3) = emptyDoc :--: text str.if_ :--: pretty s1 :--: text str.then_ :--: pretty s2 :--: text str.else_ :--: pretty s3
    pretty (ListEmpty ann) = highlightIf ann $ brackets emptyDoc
-   pretty (ListNonEmpty ann (Record _ xss) l) = emptyDoc :--: (((highlightIf ann $ text str.lBracket) .<>. (highlightIf ann $ curlyBraces (pretty (true × xss)))) .-. pretty l)
+   pretty (ListNonEmpty ann (Record _ xss) l) = emptyDoc :--: (((highlightIf ann $ text str.lBracket) .<>. (highlightIf ann $ curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l)
    pretty (ListNonEmpty ann e l) = emptyDoc :--: (highlightIf ann $ text str.lBracket) .<>. pretty e .<>. pretty l
    pretty (ListEnum s s') = brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
    pretty (ListComp ann s qs) = highlightIf ann $ brackets (pretty s .<>. text str.bar .<>. pretty qs)
    pretty (Let ds s) = text str.let_ :--: pretty ds :--: text str.in_ :--: pretty s
    pretty (LetRec h s) = (text str.let_ :--: pretty (First h)) .-. text str.in_ :--: pretty s
 
-instance Ann a => Pretty (Boolean × List (Bind (Expr a))) where
-   pretty (_ × (Cons s Nil)) = prettyBindings s
-   pretty (false × (Cons s xss)) = (prettyBindings s .<>. text str.comma) .-. pretty (false × xss)
-   pretty (true × (Cons s xss)) = prettyBindings s  .<>. text str.comma .<>. pretty (true × xss)
-   pretty (_ × Nil) = emptyDoc
+-- instance Ann a => Pretty (Boolean × List (Bind (Expr a))) where
+--    pretty (_ × (Cons s Nil)) = prettyBindings s
+--    pretty (false × (Cons s xss)) = (prettyBindings s .<>. text str.comma) .-. pretty (false × xss)
+--    pretty (true × (Cons s xss)) = prettyBindings s  .<>. text str.comma .<>. pretty (true × xss)
+--    pretty (_ × Nil) = emptyDoc
+
+prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc 
+prettyOperator _ (Cons s Nil) = prettyBindings s 
+prettyOperator sep (Cons s xss) = sep (prettyBindings s .<>. text str.comma) (prettyOperator sep xss)
+prettyOperator _ Nil = emptyDoc
 
 prettyBindings :: forall a. Ann a => (Bind (Expr a)) -> Doc
 prettyBindings s = text (key s) .<>. text str.colon .<>. pretty (val s)
 
 instance Ann a => Pretty (ListRest a) where
-   pretty (Next ann (Record _ xss) l) = (highlightIf ann $ text str.comma) .<>. (highlightIf ann $ curlyBraces (pretty (true × xss))) .-. pretty l
+   pretty (Next ann (Record _ xss) l) = (highlightIf ann $ text str.comma) .<>. (highlightIf ann $ curlyBraces (prettyOperator (.<>.) xss)) .-. pretty l
    pretty (Next ann s l) = (highlightIf ann $ text str.comma) .<>. pretty s .<>. pretty l
    pretty (End ann) = highlightIf ann $ text str.rBracket
 
