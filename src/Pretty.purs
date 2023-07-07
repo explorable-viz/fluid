@@ -142,11 +142,11 @@ instance Pretty Pattern where
    pretty (PVar x) = text x
    pretty (PRecord xps) = curlyBraces (pretty xps)
    pretty (PConstr c ps) = case c == cPair of
-      true -> parentheses (pretty (PattPair × ps))
+      true -> parentheses (prettyPattConstr (text str.comma) ps)
       false -> case c == "Empty" of
          true -> text c .<>. prettyPattConstr emptyDoc ps
          false -> case c == str.colon of
-            true -> parentheses (pretty (PattList × ps))
+            true -> parentheses (prettyPattConstr (text str.colon) ps)
             false -> parentheses (text c :--: prettyPattConstr emptyDoc ps)
    pretty (PListEmpty) = brackets emptyDoc
    pretty (PListNonEmpty p l) = text str.lBracket .<>. pretty p .<>. pretty l
@@ -155,13 +155,6 @@ instance Pretty (List (Bind (Pattern))) where
    pretty (Cons xp Nil) = text (key xp) .<>. text str.colon .<>. pretty (val xp)
    pretty (Cons x xps) = text (key x) .<>. text str.colon .<>. pretty (val x) .<>. text str.comma .-. pretty xps
    pretty Nil = emptyDoc
-
-instance Pretty IsPair where
-   pretty (_ × Nil) = emptyDoc
-   pretty (_ × (Cons p Nil)) = pretty p
-   pretty (PattPair × (Cons p ps)) = pretty p .<>. text str.comma .<>. pretty (PattPair × ps)
-   pretty (PattList × (Cons p ps)) = pretty p .<>. text str.colon .<>. pretty (PattList × ps)
-   pretty (Other × (Cons p ps)) = pretty p :--: pretty (Other × ps)
 
 prettyPattConstr :: Doc -> List (Pattern) -> Doc
 prettyPattConstr _ Nil = emptyDoc 
@@ -175,8 +168,8 @@ instance Pretty ListRestPattern where
    pretty PEnd = text str.rBracket
 
 instance Ann a => Pretty (Boolean × Clause a) where
-   pretty (true × Clause (ps × e)) = pretty (Other × toList ps)  :--: text str.rArrow :--: pretty e
-   pretty (false × Clause (ps × e)) = pretty (Other × toList ps) :--: text str.equal :--: pretty e
+   pretty (true × Clause (ps × e)) = prettyPattConstr emptyDoc (toList ps)  :--: text str.rArrow :--: pretty e
+   pretty (false × Clause (ps × e)) = prettyPattConstr emptyDoc (toList ps) :--: text str.equal :--: pretty e
 
 instance Ann a => Pretty (Clauses a) where
    pretty (Clauses cs) = intersperse' (toList (map pretty (map (\x -> false × x) cs))) (text str.semiColon)
