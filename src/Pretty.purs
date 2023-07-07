@@ -34,7 +34,7 @@ type IsPair = PattPairOrList × List Pattern
 newtype FirstGroup a = First (RecDefs a)
 type IsMatch a = Boolean × Clause a
 data ExprType = Simple | Expression
-data PattPairOrList = PattPair | PattList | Other 
+data PattPairOrList = PattPair | PattList | Other
 
 exprType :: forall a. Expr a -> ExprType
 exprType (Var _) = Simple -- try 
@@ -49,7 +49,7 @@ exprType (Dictionary _ _) = Simple
 exprType (Matrix _ _ _ _) = Simple
 exprType (Lambda _) = Simple
 exprType (Project _ _) = Simple
-exprType (App _ _) = Expression 
+exprType (App _ _) = Expression
 exprType (BinaryApp _ _ _) = Expression
 exprType (MatchAs _ _) = Simple
 exprType (IfElse _ _ _) = Simple
