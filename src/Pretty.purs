@@ -37,12 +37,12 @@ data ExprType = Simple | Expression
 data PattPairOrList = PattPair | PattList | Other
 
 exprType :: forall a. Expr a -> ExprType
-exprType (Var _) = Simple -- try 
-exprType (Op _) = Simple -- need parentheses around Op otherwise some cases do not even parse 
-exprType (Int _ _) = Simple -- try  
-exprType (Float _ _) = Simple -- try 
+exprType (Var _) = Simple 
+exprType (Op _) = Simple 
+exprType (Int _ _) = Simple 
+exprType (Float _ _) = Simple 
 exprType (Str _ _) = Simple
-exprType (Constr _ _ Nil) = Simple -- try (if  then flatten test fails)
+exprType (Constr _ _ Nil) = Simple 
 exprType (Constr _ _ _) = Expression
 exprType (Record _ _) = Simple
 exprType (Dictionary _ _) = Simple
@@ -100,10 +100,10 @@ instance Ann a => Pretty (Expr a) where
    pretty (Float ann n) = highlightIf ann $ text (show n)
    pretty (Str ann str) = highlightIf ann $ slashes (text str)
    pretty (Constr ann c x) = prettyConstr ann c x
-   pretty (Record ann xss) = highlightIf ann $ curlyBraces (pretty (false × xss)) -- recursive call to pretty made 
-   pretty (Dictionary ann sss) = highlightIf ann $ dictBrackets (pretty sss) -- recursive call to pretty made 
+   pretty (Record ann xss) = highlightIf ann $ curlyBraces (pretty (false × xss))
+   pretty (Dictionary ann sss) = highlightIf ann $ dictBrackets (pretty sss) 
    pretty (Matrix ann e (x × y) e') = highlightIf ann $ arrayBrackets (pretty e .<>. text str.bar .<>. text str.lparenth .<>. text x .<>. text str.comma .<>. text y .<>. text str.rparenth :--: text str.in_ :--: pretty e')
-   pretty (Lambda cs) = parentheses (text str.fun :--: pretty cs) -- recursive call to pretty made 
+   pretty (Lambda cs) = parentheses (text str.fun :--: pretty cs) 
    pretty (Project s x) = pretty s .<>. text str.dot .<>. text x
    pretty (App s s') = prettyAppChain (App s s')
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
@@ -128,7 +128,6 @@ instance Ann a => Pretty (ListRest a) where
    pretty (Next ann s l) = (highlightIf ann $ text str.comma) .<>. pretty s .<>. pretty l
    pretty (End ann) = highlightIf ann $ text str.rBracket
 
--- used for dictionaries not in formalism
 instance Ann a => Pretty (List (Pair (Expr a))) where
    pretty (Cons (Pair e e') Nil) = pretty e :--: text str.colonEq :--: pretty e'
    pretty (Cons (Pair e e') sss) = pretty e :--: text str.colonEq :--: pretty e' .<>. text str.comma :--: pretty sss
@@ -334,7 +333,6 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Float _ n) = text (show n)
    pretty (E.Str _ str) = text (show str)
    pretty (E.Record α xes) = prettyRecord text α (xes # D.toUnfoldable)
-   -- prettyDict pretty α (ees <#> toTuple) 
    pretty (E.Dictionary α ees) = prettyDict pretty α (ees <#> toTuple)
    pretty (E.Constr α c es) = prettyConstr α c es
    pretty (E.Matrix _ _ _ _) = error "todo"
@@ -395,95 +393,3 @@ instance Pretty (ForeignOp' t) where
 
 instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty
-
--- -- Surface language
-
--- instance Highlightable a => ToPair (S.Expr a) where
---    toPair (S.Constr _ c (s : s' : Nil)) | c == cPair = s × s'
---    toPair s = error ("Not a pair: " <> prettyP s)
-
--- instance Highlightable a => Pretty (S.Expr a) where
---    pretty (S.Var x) = text x
---    pretty (S.Op op) = parens (text op)
---    pretty (S.Int α n) = highlightIf α (text (show n))
---    pretty (S.Float α n) = highlightIf α (text (show n))
---    pretty (S.Str α str) = highlightIf α (text (show str))
---    pretty (S.Constr α c ss) = prettyConstr α c ss
---    pretty (S.Record α xss) = prettyRecord text α xss
---    pretty (S.Dictionary α sss) = prettyDict pretty α (sss <#> toTuple)
---    pretty (S.Matrix α e (x × y) e') = highlightIf α (hspace (init <> quant))
---       where
---       init = [ text str.arrayLBracket, pretty e, text str.bar ]
---       quant = [ parens (hcomma [ text x, text y ]), text (str.in_), pretty e', text str.arrayRBracket ]
---    pretty (S.Lambda cs) = hspace [ text str.fun, vert semi (pretty <$> unwrap cs) ]
---    pretty (S.Project s x) = pretty s :<>: text (str.dot <> x)
---    pretty (S.App s s') = hspace [ pretty s, pretty s' ]
---    pretty (S.BinaryApp s op s') = parens (hspace [ pretty s, text op, pretty s' ])
---    pretty (S.MatchAs s cs) = atop (hspace [ text str.match, pretty s, text str.as ]) (vert semi (pretty <$> cs))
---    pretty (S.IfElse s1 s2 s3) =
---       hspace [ text str.if_, pretty s1, text str.then_, pretty s2, text str.else_, pretty s3 ]
---    pretty (S.ListEmpty α) = highlightIf α nil
---    pretty (S.ListNonEmpty α e l) = highlightIf α (text str.lBracket) :<>: pretty e :<>: pretty l
---    pretty (S.ListEnum s s') = brackets (hspace [ pretty s, text str.ellipsis, pretty s' ])
---    pretty (S.ListComp α s qs) = highlightIf α $ brackets (hspace [ pretty s, text str.bar, hcomma (pretty <$> qs) ])
---    pretty (S.Let ds s) = atop (hspace [ text str.let_, vert semi (pretty <$> ds) ])
---       (hspace [ text str.in_, pretty s ])
---    pretty (S.LetRec h s) = atop (hspace [ text str.let_, vert semi (pretty <$> h) ])
---       (hspace [ text str.in_, pretty s ])
-
--- instance Highlightable a => Pretty (S.ListRest a) where
---    pretty (S.End α) = highlightIf α (text str.rBracket)
---    pretty (S.Next α s l) = hspace [ highlightIf α comma, pretty s :<>: pretty l ]
-
--- instance Highlightable a => Pretty (String × (NonEmptyList S.Pattern × S.Expr a)) where
---    pretty (x × b) = hspace [ text x, pretty b ]
-
--- instance Highlightable a => Pretty (String × (S.Clause a)) where
---    pretty (x × b) = hspace [ text x, pretty b ]
-
--- instance Highlightable a => Pretty (S.Clause a) where
---    pretty (S.Clause (s × b)) = pretty (s × b)
-
--- instance Highlightable a => Pretty (NonEmptyList S.Pattern × S.Expr a) where
---    pretty (ps × s) = hspace ((pretty <$> NEL.toList ps) <> (text str.equals : pretty s : Nil))
-
--- instance Highlightable a => Pretty (S.VarDef a) where
---    pretty (S.VarDef p s) = hspace [ pretty p, text str.equals, pretty s ]
-
--- instance Highlightable a => Pretty (S.Pattern × S.Expr a) where
---    pretty (p × s) = pretty p :<>: text str.lArrow :<>: pretty s
-
--- instance Highlightable a => Pretty (S.Qualifier a) where
---    pretty (S.Guard e) = pretty e
---    pretty (S.Generator p e) = hspace [ pretty p, text str.lArrow, pretty e ]
---    pretty (S.Declaration (S.VarDef p e)) = hspace [ text str.let_, pretty p, text str.equals, pretty e ]
-
--- instance (Pretty a, Pretty b) => Pretty (a + b) where
---    pretty = pretty ||| pretty
-
--- instance Pretty S.Pattern where
---    pretty (S.PVar x) = text x
---    pretty (S.PConstr c ps) = prettyConstr false c ps
---    pretty (S.PRecord xps) = prettyRecord text false xps
---    pretty (S.PListEmpty) = nil
---    pretty (S.PListNonEmpty s l) = text str.lBracket :<>: pretty s :<>: pretty l
-
--- instance ToList S.Pattern where
---    toList (S.PConstr c (p : p' : Nil)) | c == cCons = p : toList p'
---    toList (S.PConstr c Nil) | c == cNil = Nil
---    toList _ = error acsurd
-
--- instance ToPair S.Pattern where
---    toPair (S.PConstr c (p : p' : Nil)) | c == cPair = p × p'
---    toPair _ = error acsurd
-
--- instance Pretty S.ListRestPattern where
---    pretty S.PEnd = text str.rBracket
---    pretty (S.PNext s l) = hspace [ comma, pretty s :<>: pretty l ]
-
--- (1+5)*(let x = 2;
---      y = 8 in  x * y -let y = 3 in  y * y )
-
--- (BinaryApp (App (Int unit 1) (Int unit 5)) "*" (BinaryApp (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (Int unit 2)) ((VarDef (PVar "y") (Int unit 8)) : Nil))) (BinaryApp (Var "x") "*" (Var "y"))) "-" (Let (NonEmptyList (NonEmpty (VarDef (PVar "y") (Int unit 3)) Nil)) (BinaryApp (Var "y") "*" (Var "y")))))
-
--- (BinaryApp (App (Int unit 1) (Int unit 5)) "*" (Let (NonEmptyList (NonEmpty (VarDef (PVar "x") (Int unit 2)) ((VarDef (PVar "y") (Int unit 8)) : Nil))) (BinaryApp (BinaryApp (Var "x") "*" (Var "y")) "-" (Let (NonEmptyList (NonEmpty (VarDef (PVar "y") (Int unit 3)) Nil)) (BinaryApp (Var "y") "*" (Var "y"))))))
