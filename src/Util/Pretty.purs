@@ -33,6 +33,8 @@ newtype Doc = Doc
    , lines :: Array String
    }
 
+derive instance Eq Doc
+
 -- | Get the width of a document.
 width :: Doc -> Int
 width (Doc doc) = doc.width
