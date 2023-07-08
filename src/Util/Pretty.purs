@@ -32,7 +32,8 @@ newtype Doc = Doc
    , height :: Int
    , lines :: Array String
    }
-derive instance Eq Doc  
+
+derive instance Eq Doc
 
 -- | Get the width of a document.
 width :: Doc -> Int
