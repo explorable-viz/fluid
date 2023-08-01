@@ -33,9 +33,12 @@ instance Graph GraphImpl where
    allocate (GraphImpl (inN × _)) = Vertex α
       where
       α = show $ 1 + (O.size inN)
-   remove (Vertex α) (GraphImpl (outN × inN)) = let newOutN = map (S.delete (Vertex α)) (O.delete α outN)
-                                                    newInN  = map (S.delete (Vertex α)) (O.delete α inN)
-                                                   in GraphImpl (newOutN × newInN)  
+   remove (Vertex α) (GraphImpl (outN × inN)) =
+      let
+         newOutN = map (S.delete (Vertex α)) (O.delete α outN)
+         newInN = map (S.delete (Vertex α)) (O.delete α inN)
+      in
+         GraphImpl (newOutN × newInN)
    union α αs (GraphImpl (outN × inN)) = (GraphImpl (newoutN × newinN))
       where
       newoutN = O.unionWith S.union outN (outStar α αs)
@@ -60,6 +63,7 @@ outStar' v@(Vertex α) αs = O.unionWith S.union (O.singleton α αs) (star' v �
 
 star' :: Vertex -> Set Vertex -> O.Object (Set Vertex)
 star' (Vertex α) αs = O.fromFoldable $ S.map (\α' -> α × (S.singleton α')) αs
+
 star'' :: Vertex -> Set Vertex -> O.Object (Set Vertex)
 star'' α αs = O.fromFoldable $ S.map (\(Vertex α') -> α' × (S.singleton α)) αs
 
