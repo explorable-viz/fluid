@@ -2,16 +2,19 @@ module Graph where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
+import Data.Foldable (foldl)
+import Data.Maybe (Maybe)
+import Data.Newtype (class Newtype)
 import Data.Set (Set)
-import Data.Set (empty, map, singleton, union, unions) as S
-import Data.Tuple (Tuple(..), fst, snd, swap)
-import Foreign.Object (Object, delete, fromFoldableWith, lookup, singleton, size, toUnfoldable, unionWith) as O
+import Data.Set (map, singleton, union, unions) as S
+import Data.Tuple (Tuple(..), swap)
+import Foreign.Object (Object, delete, empty, lookup, singleton, size, toUnfoldable, unionWith) as O
 import Util (Endo, (×), type (×))
 
 class Graph g where
    union :: Vertex -> Set Vertex -> Endo g
-   outN :: g -> Vertex -> Set Vertex
+   outN :: g -> Vertex -> Maybe (Set Vertex)
+   inN  :: g -> Vertex -> Maybe (Set Vertex)
    singleton :: Vertex -> Set Vertex -> g
    remove :: Vertex -> Endo g
    opp :: Endo g
@@ -24,28 +27,32 @@ unwrap (Vertex string) = string
 
 newtype AnnGraph = AnnGraph (O.Object (Vertex × (Set Vertex)))
 
-newtype GraphImpl = GraphImpl (O.Object (Set Vertex))
+newtype GraphImpl = GraphImpl ((O.Object (Set Vertex)) × (O.Object (Set Vertex)))
 
 instance Graph GraphImpl where
-   allocate (GraphImpl obj) = Vertex α 
+   allocate (GraphImpl (obj × _)) = Vertex α 
       where
       α = show $ 1 + (O.size obj)
-   remove (Vertex α) (GraphImpl obj) = GraphImpl (O.delete α obj)
-   union (Vertex α) αs (GraphImpl obj) = (GraphImpl newObj)
-      where
-      newObj = O.unionWith S.union obj (O.singleton α αs)
-   outN (GraphImpl obj) (Vertex α) = case O.lookup α obj of
-      Just αs -> αs
-      Nothing -> S.empty
-   singleton (Vertex α) αs = GraphImpl (O.singleton α αs)
-   opp s = fromEdges $ reverseEdges $ allEdges s
+   remove (Vertex α) (GraphImpl (obj1 × obj2)) = GraphImpl ((O.delete α obj1) × (O.delete α obj2))
 
--- GraphImpl $ foldrWithIndex combine obj αs
---   where
---   combine v edges = O.unionWith S.union (O.fromFoldable edges)
---   αs = O.αs obj
+   union (Vertex α) αs (GraphImpl (obj1 × obj2)) = (GraphImpl (newObj1 × newObj2))
+      where
+      newSingles = inStar (Vertex α) αs 
+      newObj1 = O.unionWith S.union obj1 (O.singleton α αs)
+      newObj2 = O.unionWith S.union obj2 newSingles
+
+   outN (GraphImpl (obj × _)) (Vertex α) = O.lookup α obj
+   inN  (GraphImpl (_ × obj)) (Vertex α) = O.lookup α obj
+
+   singleton (Vertex α) αs = GraphImpl ((O.singleton α αs) × inStar (Vertex α) αs)
+   opp (GraphImpl (obj1 × obj2)) = GraphImpl (obj2 × obj1)
+
+
+inStar :: Vertex -> Set Vertex -> O.Object (Set Vertex)
+inStar (Vertex α) αs = foldl (O.unionWith S.union) (O.singleton α αs) (S.map (\(Vertex α') -> O.singleton α' (S.singleton (Vertex α))) αs)
+
 allEdges :: GraphImpl -> Set (Vertex × Vertex)
-allEdges (GraphImpl obj) = let out = (map adjEdges (O.toUnfoldable obj :: Array (String × (Set Vertex)))) in S.unions out
+allEdges (GraphImpl (obj × _)) = let out = (map adjEdges (O.toUnfoldable obj :: Array (String × (Set Vertex)))) in S.unions out
 
 adjEdges :: Tuple String (Set Vertex) -> Set (Vertex × Vertex)
 adjEdges (Tuple id αs) = adjEdges' (Vertex id) αs
@@ -56,9 +63,9 @@ adjEdges' v αs = S.map (\node -> (v × node)) αs
 reverseEdges :: Endo (Set (Vertex × Vertex))
 reverseEdges edges = S.map swap edges
 
-fromEdges :: Set (Vertex × Vertex) -> GraphImpl
-fromEdges edges = GraphImpl $
-   O.fromFoldableWith S.union (S.map (\pair -> (unwrap (fst pair)) × (S.singleton $ snd pair)) edges)
+-- fromEdges :: Set (Vertex × Vertex) -> GraphImpl
+-- fromEdges edges = GraphImpl $
+--    O.fromFoldableWith S.union (S.map (\pair -> (unwrap (fst pair)) × (S.singleton $ snd pair)) edges)
 
 -- instance Foldable Graph where
 --     foldl f z (Graph o) = Graph (foldl f z (map fst (O.values o) :: ?_))
@@ -67,3 +74,4 @@ fromEdges edges = GraphImpl $
 
 derive instance Eq Vertex
 derive instance Ord Vertex
+derive instance Newtype Vertex _
