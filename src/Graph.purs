@@ -12,7 +12,7 @@ import Foreign.Object (Object, delete, fromFoldable, lookup, singleton, size, to
 import Util (Endo, (×), type (×))
 
 type SMap = SM.Object
- 
+
 class Graph g where
    union :: Vertex -> Set Vertex -> Endo g
    getOutN :: g -> Vertex -> Maybe (Set Vertex)
