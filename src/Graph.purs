@@ -8,7 +8,7 @@ import Data.Newtype (class Newtype)
 import Data.Set (Set)
 import Data.Set (empty, map, singleton, union, unions) as S
 import Data.Tuple (Tuple(..), swap)
-import Foreign.Object (Object, delete, empty, lookup, singleton, size, toUnfoldable, unionWith) as O
+import Foreign.Object (Object, delete, lookup, singleton, size, toUnfoldable, unionWith) as O
 import Util (Endo, (×), type (×))
 
 class Graph g where
