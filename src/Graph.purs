@@ -47,11 +47,12 @@ instance Graph GraphImpl where
    singleton α αs = GraphImpl (outStar α αs × inStar α αs)
    opp (GraphImpl (obj1 × obj2)) = GraphImpl (obj2 × obj1)
 
+-- these use folds to construct objects of the appropriate fields, with inverted entries, hence the mirror of the structure in each
 outStar :: Vertex -> Set Vertex -> O.Object (Set Vertex)
 outStar (Vertex α) αs = foldl (O.unionWith S.union) (O.singleton α αs) (S.map (\(Vertex α') -> O.singleton α' S.empty) αs)
 
 inStar :: Vertex -> Set Vertex -> O.Object (Set Vertex)
-inStar (Vertex α) αs = foldl (O.unionWith S.union) O.empty (S.map (\(Vertex α') -> O.singleton α' (S.singleton (Vertex α))) αs)
+inStar (Vertex α) αs = foldl (O.unionWith S.union) (O.singleton α S.empty) (S.map (\(Vertex α') -> O.singleton α' (S.singleton (Vertex α))) αs)
 
 allEdges :: GraphImpl -> Set (Vertex × Vertex)
 allEdges (GraphImpl (obj × _)) = let out = (map adjEdges (O.toUnfoldable obj :: Array (String × (Set Vertex)))) in S.unions out
