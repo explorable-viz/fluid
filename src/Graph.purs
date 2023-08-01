@@ -1,4 +1,4 @@
-module DependenceGraph where
+module Graph where
 
 import Prelude
 
