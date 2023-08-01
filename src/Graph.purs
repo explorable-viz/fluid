@@ -35,11 +35,10 @@ instance Graph GraphImpl where
       α = show $ 1 + (O.size obj)
    remove (Vertex α) (GraphImpl (obj1 × obj2)) = GraphImpl ((O.delete α obj1) × (O.delete α obj2))
 
-   union (Vertex α) αs (GraphImpl (obj1 × obj2)) = (GraphImpl (newObj1 × newObj2))
+   union α αs (GraphImpl (obj1 × obj2)) = (GraphImpl (newObj1 × newObj2))
       where
-      newSingles = inStar (Vertex α) αs 
-      newObj1 = O.unionWith S.union obj1 (O.singleton α αs)
-      newObj2 = O.unionWith S.union obj2 newSingles
+      newObj1 = O.unionWith S.union obj1 (outStar α αs)
+      newObj2 = O.unionWith S.union obj2 (inStar α αs)
 
    outN (GraphImpl (obj × _)) (Vertex α) = O.lookup α obj
    inN  (GraphImpl (_ × obj)) (Vertex α) = O.lookup α obj
