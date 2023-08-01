@@ -6,7 +6,7 @@ import Data.Foldable (foldl)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
 import Data.Set (Set)
-import Data.Set (map, singleton, union, unions) as S
+import Data.Set (empty, map, singleton, union, unions) as S
 import Data.Tuple (Tuple(..), swap)
 import Foreign.Object (Object, delete, empty, lookup, singleton, size, toUnfoldable, unionWith) as O
 import Util (Endo, (×), type (×))
@@ -44,9 +44,11 @@ instance Graph GraphImpl where
    outN (GraphImpl (obj × _)) (Vertex α) = O.lookup α obj
    inN  (GraphImpl (_ × obj)) (Vertex α) = O.lookup α obj
 
-   singleton (Vertex α) αs = GraphImpl ((O.singleton α αs) × inStar (Vertex α) αs)
+   singleton α αs = GraphImpl (outStar α αs × inStar α αs)
    opp (GraphImpl (obj1 × obj2)) = GraphImpl (obj2 × obj1)
 
+outStar :: Vertex -> Set Vertex -> O.Object (Set Vertex)
+outStar (Vertex α) αs = foldl (O.unionWith S.union) (O.singleton α αs) (S.map (\(Vertex α') -> O.singleton α' S.empty) αs)
 
 inStar :: Vertex -> Set Vertex -> O.Object (Set Vertex)
 inStar (Vertex α) αs = foldl (O.unionWith S.union) (O.singleton α αs) (S.map (\(Vertex α') -> O.singleton α' (S.singleton (Vertex α))) αs)
