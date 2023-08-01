@@ -14,7 +14,7 @@ import Util (Endo, (×), type (×))
 class Graph g where
    union :: Vertex -> Set Vertex -> Endo g
    outN :: g -> Vertex -> Maybe (Set Vertex)
-   inN  :: g -> Vertex -> Maybe (Set Vertex)
+   inN :: g -> Vertex -> Maybe (Set Vertex)
    singleton :: Vertex -> Set Vertex -> g
    remove :: Vertex -> Endo g
    opp :: Endo g
@@ -30,7 +30,7 @@ newtype AnnGraph = AnnGraph (O.Object (Vertex × (Set Vertex)))
 newtype GraphImpl = GraphImpl ((O.Object (Set Vertex)) × (O.Object (Set Vertex)))
 
 instance Graph GraphImpl where
-   allocate (GraphImpl (obj × _)) = Vertex α 
+   allocate (GraphImpl (obj × _)) = Vertex α
       where
       α = show $ 1 + (O.size obj)
    remove (Vertex α) (GraphImpl (obj1 × obj2)) = GraphImpl ((O.delete α obj1) × (O.delete α obj2))
@@ -41,7 +41,7 @@ instance Graph GraphImpl where
       newObj2 = O.unionWith S.union obj2 (inStar α αs)
 
    outN (GraphImpl (obj × _)) (Vertex α) = O.lookup α obj
-   inN  (GraphImpl (_ × obj)) (Vertex α) = O.lookup α obj
+   inN (GraphImpl (_ × obj)) (Vertex α) = O.lookup α obj
 
    singleton α αs = GraphImpl (outStar α αs × inStar α αs)
    opp (GraphImpl (obj1 × obj2)) = GraphImpl (obj2 × obj1)
