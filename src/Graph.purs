@@ -11,6 +11,8 @@ import Data.Tuple (Tuple(..), swap)
 import Foreign.Object (Object, delete, fromFoldable, lookup, singleton, size, toUnfoldable, unionWith) as O
 import Util (Endo, (×), type (×))
 
+type SMap = O.Object
+ 
 class Graph g where
    union :: Vertex -> Set Vertex -> Endo g
    getOutN :: g -> Vertex -> Maybe (Set Vertex)
@@ -25,9 +27,9 @@ newtype Vertex = Vertex String
 unwrap :: Vertex -> String
 unwrap (Vertex string) = string
 
-newtype AnnGraph = AnnGraph (O.Object (Vertex × (Set Vertex)))
+newtype AnnGraph = AnnGraph (SMap (Vertex × (Set Vertex)))
 
-newtype GraphImpl = GraphImpl ((O.Object (Set Vertex)) × (O.Object (Set Vertex)))
+newtype GraphImpl = GraphImpl ((SMap (Set Vertex)) × (SMap (Set Vertex)))
 
 instance Graph GraphImpl where
    allocate (GraphImpl (inN × _)) = Vertex α
@@ -51,23 +53,23 @@ instance Graph GraphImpl where
    opp (GraphImpl (outN × inN)) = GraphImpl (inN × outN)
 
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
-outStar :: Vertex -> Set Vertex -> O.Object (Set Vertex)
+outStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
 outStar (Vertex α) αs = foldl (O.unionWith S.union) (O.singleton α αs) (S.map (\(Vertex α') -> O.singleton α' S.empty) αs)
 
-inStar :: Vertex -> Set Vertex -> O.Object (Set Vertex)
+inStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
 inStar (Vertex α) αs = foldl (O.unionWith S.union) (O.singleton α S.empty) (S.map (\(Vertex α') -> O.singleton α' (S.singleton (Vertex α))) αs)
 
 -- prototype attempts at more efficiently implementing the above operations
-outStar' :: Vertex -> Set Vertex -> O.Object (Set Vertex)
+outStar' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 outStar' v@(Vertex α) αs = O.unionWith S.union (O.singleton α αs) (star' v αs)
 
-star' :: Vertex -> Set Vertex -> O.Object (Set Vertex)
+star' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 star' (Vertex α) αs = O.fromFoldable $ S.map (\α' -> α × (S.singleton α')) αs
 
-star'' :: Vertex -> Set Vertex -> O.Object (Set Vertex)
+star'' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 star'' α αs = O.fromFoldable $ S.map (\(Vertex α') -> α' × (S.singleton α)) αs
 
-inStar' :: Vertex -> Set Vertex -> O.Object (Set Vertex)
+inStar' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 inStar' v@(Vertex α) αs = O.unionWith S.union (O.singleton α S.empty) (star'' v αs)
 
 allEdges :: GraphImpl -> Set (Vertex × Vertex)
