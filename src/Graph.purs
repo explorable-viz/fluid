@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set (empty, map, singleton, union, unions) as S
 import Data.Tuple (Tuple(..), fst, snd, swap)
-import Foreign.Object (Object, delete, fromFoldableWith, insert, lookup, singleton, size, toUnfoldable) as O
+import Foreign.Object (Object, delete, fromFoldableWith, lookup, singleton, size, toUnfoldable, unionWith) as O
 import Util (Endo, (×), type (×))
 
 class Graph g where
@@ -33,7 +33,7 @@ instance Graph GraphImpl where
    remove (Vertex α) (GraphImpl obj) = GraphImpl (O.delete α obj)
    union (Vertex α) αs (GraphImpl obj) = (GraphImpl newObj)
       where
-      newObj = O.insert α αs obj
+      newObj = O.unionWith S.union obj (O.singleton α αs)
    outN (GraphImpl obj) (Vertex α) = case O.lookup α obj of
       Just αs -> αs
       Nothing -> S.empty
