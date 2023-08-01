@@ -7,7 +7,7 @@ import Data.Set (Set)
 import Data.Set (empty, map, singleton, union, unions) as S
 import Data.Tuple (Tuple(..), fst, snd, swap)
 import Foreign.Object (Object, delete, fromFoldableWith, insert, lookup, singleton, size, toUnfoldable) as O
-import Util (Endo)
+import Util (Endo, (×), type (×))
 
 class Graph g where
    union :: Vertex -> Set Vertex -> Endo g
@@ -22,43 +22,43 @@ newtype Vertex = Vertex String
 unwrap :: Vertex -> String
 unwrap (Vertex string) = string
 
-newtype AnnGraph = AnnGraph (O.Object (Tuple Vertex (Set Vertex)))
+newtype AnnGraph = AnnGraph (O.Object (Vertex × (Set Vertex)))
 
-newtype SimpleGraph = SimpleGraph (O.Object (Set Vertex))
+newtype GraphImpl = GraphImpl (O.Object (Set Vertex))
 
-instance Graph SimpleGraph where
-   allocate (SimpleGraph obj) = Vertex id
+instance Graph GraphImpl where
+   allocate (GraphImpl obj) = Vertex α 
       where
-      id = show $ 1 + (O.size obj)
-   remove (Vertex key) (SimpleGraph obj) = SimpleGraph (O.delete key obj)
-   union (Vertex key) neighbs (SimpleGraph obj) = (SimpleGraph newObj)
+      α = show $ 1 + (O.size obj)
+   remove (Vertex α) (GraphImpl obj) = GraphImpl (O.delete α obj)
+   union (Vertex α) αs (GraphImpl obj) = (GraphImpl newObj)
       where
-      newObj = O.insert key neighbs obj
-   outN (SimpleGraph obj) (Vertex key) = case O.lookup key obj of
-      Just verts -> verts
+      newObj = O.insert α αs obj
+   outN (GraphImpl obj) (Vertex α) = case O.lookup α obj of
+      Just αs -> αs
       Nothing -> S.empty
-   singleton (Vertex key) neighbs = SimpleGraph (O.singleton key neighbs)
+   singleton (Vertex α) αs = GraphImpl (O.singleton α αs)
    opp s = fromEdges $ reverseEdges $ allEdges s
 
--- SimpleGraph $ foldrWithIndex combine obj verts
+-- GraphImpl $ foldrWithIndex combine obj αs
 --   where
 --   combine v edges = O.unionWith S.union (O.fromFoldable edges)
---   verts = O.keys obj
-allEdges :: SimpleGraph -> Set (Tuple Vertex Vertex)
-allEdges (SimpleGraph obj) = let out = (map adjEdges (O.toUnfoldable obj :: Array (Tuple String (Set Vertex)))) in S.unions out
+--   αs = O.αs obj
+allEdges :: GraphImpl -> Set (Vertex × Vertex)
+allEdges (GraphImpl obj) = let out = (map adjEdges (O.toUnfoldable obj :: Array (String × (Set Vertex)))) in S.unions out
 
-adjEdges :: Tuple String (Set Vertex) -> Set (Tuple Vertex Vertex)
-adjEdges (Tuple id neighbs) = adjEdges' (Vertex id) neighbs
+adjEdges :: Tuple String (Set Vertex) -> Set (Vertex × Vertex)
+adjEdges (Tuple id αs) = adjEdges' (Vertex id) αs
 
-adjEdges' :: Vertex -> Set Vertex -> Set (Tuple Vertex Vertex)
-adjEdges' v neighbs = S.map (\node -> (Tuple v node)) neighbs
+adjEdges' :: Vertex -> Set Vertex -> Set (Vertex × Vertex)
+adjEdges' v αs = S.map (\node -> (v × node)) αs
 
-reverseEdges :: Endo (Set (Tuple Vertex Vertex))
+reverseEdges :: Endo (Set (Vertex × Vertex))
 reverseEdges edges = S.map swap edges
 
-fromEdges :: Set (Tuple Vertex Vertex) -> SimpleGraph
-fromEdges edges = SimpleGraph $
-   O.fromFoldableWith S.union (S.map (\pair -> Tuple (unwrap (fst pair)) (S.singleton $ snd pair)) edges)
+fromEdges :: Set (Vertex × Vertex) -> GraphImpl
+fromEdges edges = GraphImpl $
+   O.fromFoldableWith S.union (S.map (\pair -> (unwrap (fst pair)) × (S.singleton $ snd pair)) edges)
 
 -- instance Foldable Graph where
 --     foldl f z (Graph o) = Graph (foldl f z (map fst (O.values o) :: ?_))
