@@ -51,7 +51,7 @@ outStar :: Vertex -> Set Vertex -> O.Object (Set Vertex)
 outStar (Vertex α) αs = foldl (O.unionWith S.union) (O.singleton α αs) (S.map (\(Vertex α') -> O.singleton α' S.empty) αs)
 
 inStar :: Vertex -> Set Vertex -> O.Object (Set Vertex)
-inStar (Vertex α) αs = foldl (O.unionWith S.union) (O.singleton α αs) (S.map (\(Vertex α') -> O.singleton α' (S.singleton (Vertex α))) αs)
+inStar (Vertex α) αs = foldl (O.unionWith S.union) O.empty (S.map (\(Vertex α') -> O.singleton α' (S.singleton (Vertex α))) αs)
 
 allEdges :: GraphImpl -> Set (Vertex × Vertex)
 allEdges (GraphImpl (obj × _)) = let out = (map adjEdges (O.toUnfoldable obj :: Array (String × (Set Vertex)))) in S.unions out
