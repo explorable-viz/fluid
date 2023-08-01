@@ -13,8 +13,8 @@ import Util (Endo, (×), type (×))
 
 class Graph g where
    union :: Vertex -> Set Vertex -> Endo g
-   outN :: g -> Vertex -> Maybe (Set Vertex)
-   inN :: g -> Vertex -> Maybe (Set Vertex)
+   getOutN :: g -> Vertex -> Maybe (Set Vertex)
+   getInN :: g -> Vertex -> Maybe (Set Vertex)
    singleton :: Vertex -> Set Vertex -> g
    remove :: Vertex -> Endo g
    opp :: Endo g
@@ -30,22 +30,22 @@ newtype AnnGraph = AnnGraph (O.Object (Vertex × (Set Vertex)))
 newtype GraphImpl = GraphImpl ((O.Object (Set Vertex)) × (O.Object (Set Vertex)))
 
 instance Graph GraphImpl where
-   allocate (GraphImpl (obj × _)) = Vertex α
+   allocate (GraphImpl (inN × _)) = Vertex α
       where
-      α = show $ 1 + (O.size obj)
-   remove (Vertex α) (GraphImpl (obj1 × obj2)) = let newObj1 = map (S.delete (Vertex α)) (O.delete α obj1)
-                                                     newObj2 = map (S.delete (Vertex α)) (O.delete α obj2)
-                                                   in GraphImpl (newObj1 × newObj2)  
-   union α αs (GraphImpl (obj1 × obj2)) = (GraphImpl (newObj1 × newObj2))
+      α = show $ 1 + (O.size inN)
+   remove (Vertex α) (GraphImpl (outN × inN)) = let newOutN = map (S.delete (Vertex α)) (O.delete α outN)
+                                                    newInN  = map (S.delete (Vertex α)) (O.delete α inN)
+                                                   in GraphImpl (newOutN × newInN)  
+   union α αs (GraphImpl (outN × inN)) = (GraphImpl (newoutN × newinN))
       where
-      newObj1 = O.unionWith S.union obj1 (outStar α αs)
-      newObj2 = O.unionWith S.union obj2 (inStar α αs)
+      newoutN = O.unionWith S.union outN (outStar α αs)
+      newinN = O.unionWith S.union inN (inStar α αs)
 
-   outN (GraphImpl (obj × _)) (Vertex α) = O.lookup α obj
-   inN (GraphImpl (_ × obj)) (Vertex α) = O.lookup α obj
+   getOutN (GraphImpl (outN × _)) (Vertex α) = O.lookup α outN
+   getInN (GraphImpl (_ × inN)) (Vertex α) = O.lookup α inN
 
    singleton α αs = GraphImpl (outStar α αs × inStar α αs)
-   opp (GraphImpl (obj1 × obj2)) = GraphImpl (obj2 × obj1)
+   opp (GraphImpl (outN × inN)) = GraphImpl (inN × outN)
 
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
 outStar :: Vertex -> Set Vertex -> O.Object (Set Vertex)
