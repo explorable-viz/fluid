@@ -6,7 +6,7 @@ import Data.Foldable (foldl)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set)
-import Data.Set (delete, difference, empty, fromFoldable, map, member, singleton, subset, union, unions) as S
+import Data.Set (delete, difference, empty, fromFoldable, map, member, singleton, subset, union, unions, filter) as S
 import Foreign.Object (Object, delete, empty, filterKeys, fromFoldable, keys, lookup, singleton, size, unionWith) as SM
 import Util (Endo, (×), type (×))
 
@@ -77,14 +77,16 @@ outE' graph α = case outN graph α of
 outE :: forall g. Graph g => g -> Set Vertex -> Set (Vertex × Vertex)
 outE g αs = S.unions (S.map (\α -> outE' g α) αs)
 
--- boundary :: Set Vertex -> GraphImpl -> Set (Vertex × Vertex)
--- boundary αs (GraphImpl (out × in_)) = 
---         let 
---             αNames = S.map unwrap αs
---             removedαs = SM.filterKeys (\key -> not $ S.member key αNames) in_
---             ins = SM.filter (\αs' -> S.isEmpty $ S.intersection αs' αs) removedαs
---         in
---             error "todo"
+boundary :: Set Vertex -> GraphImpl -> Set (Vertex × Vertex)
+boundary αs g =
+   let
+      allOut = outE g αs
+   in
+      S.filter (\edge -> not $ endIn edge αs) allOut
+   where
+   endIn :: (Vertex × Vertex) -> Set Vertex -> Boolean
+   endIn (e1 × e2) αs' = S.member e1 αs' || S.member e2 αs'
+
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
 outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
 outStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α αs) (S.map (\(Vertex α') -> SM.singleton α' S.empty) αs)
