@@ -4,11 +4,11 @@ import Prelude
 
 import Data.Foldable (foldl)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype)
+import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set)
-import Data.Set (delete, empty, map, singleton, union) as S
-import Foreign.Object (Object, delete, empty, fromFoldable, lookup, singleton, size, unionWith) as SM
-import Util (Endo, (×), type (×))
+import Data.Set (delete, difference, empty, fromFoldable, isEmpty, map, singleton, subset, union, member) as S
+import Foreign.Object (Object, delete, empty, filterKeys, fromFoldable, keys, lookup, singleton, size, unionWith) as SM
+import Util (Endo, (×), type (×), error)
 
 type SMap = SM.Object
 
@@ -22,9 +22,6 @@ class Graph g where
    allocate :: g -> Vertex
 
 newtype Vertex = Vertex String
-
-unwrap :: Vertex -> String
-unwrap (Vertex string) = string
 
 newtype AnnGraph = AnnGraph (SMap (Vertex × (Set Vertex)))
 
@@ -54,6 +51,22 @@ instance Graph GraphImpl where
 emptyG :: GraphImpl
 emptyG = GraphImpl (SM.empty × SM.empty)
 
+subgraph :: GraphImpl -> Set Vertex -> GraphImpl
+subgraph (GraphImpl (out × in_)) αs = 
+                let keys = S.fromFoldable $ SM.keys out
+                    αNames = S.map unwrap αs
+                in
+                    if S.subset αNames keys
+                    then
+                        let αs' = S.map Vertex (S.difference keys αNames)
+                            filteredOut = SM.filterKeys (S.member αNames) out
+                            filteredIn = SM.filterKeys (S.member αNames)  in_
+                            newOut = map (S.difference αs') out
+                            newIn  = map (S.difference αs')  in_
+                        in
+                            GraphImpl (newOut × newIn)
+                    else
+                        emptyG
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
 outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
 outStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α αs) (S.map (\(Vertex α') -> SM.singleton α' S.empty) αs)
@@ -80,13 +93,16 @@ elem (GraphImpl (out × _)) (Vertex α) =
       Just _ -> true
       Nothing -> false
 
--- bwdSlice :: GraphImpl -> Vertex -> GraphImpl
--- bwdSlice parent start
---     | elem parent start = 
---         let go Nil path = path
---             go () 
+bwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
+bwdSlice αs parent = bwdSlice' parent startG edges
+                    where 
+                    startG = error "todo"
+                    edges = error "todo"
 
---     | otherwise = emptyG
+bwdSlice' :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl
+bwdSlice' _parent g s = if S.isEmpty s then g
+                else emptyG
+                    
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
