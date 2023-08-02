@@ -6,9 +6,9 @@ import Data.Foldable (foldl)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set)
-import Data.Set (delete, difference, empty, fromFoldable, isEmpty, map, singleton, subset, union, member) as S
+import Data.Set (delete, difference, empty, fromFoldable, map, member, singleton, subset, union, unions) as S
 import Foreign.Object (Object, delete, empty, filterKeys, fromFoldable, keys, lookup, singleton, size, unionWith) as SM
-import Util (Endo, (×), type (×), error)
+import Util (Endo, (×), type (×))
 
 type SMap = SM.Object
 
@@ -69,6 +69,22 @@ subgraph (GraphImpl (out × in_)) αs =
       else
          emptyG
 
+outE' :: forall g. Graph g => g -> Vertex -> Set (Vertex × Vertex)
+outE' graph α = case outN graph α of
+   Just set -> S.map (\node -> α × node) set
+   Nothing -> S.empty
+
+outE :: forall g. Graph g => g -> Set Vertex -> Set (Vertex × Vertex)
+outE g αs = S.unions (S.map (\α -> outE' g α) αs)
+
+-- boundary :: Set Vertex -> GraphImpl -> Set (Vertex × Vertex)
+-- boundary αs (GraphImpl (out × in_)) = 
+--         let 
+--             αNames = S.map unwrap αs
+--             removedαs = SM.filterKeys (\key -> not $ S.member key αNames) in_
+--             ins = SM.filter (\αs' -> S.isEmpty $ S.intersection αs' αs) removedαs
+--         in
+--             error "todo"
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
 outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
 outStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α αs) (S.map (\(Vertex α') -> SM.singleton α' S.empty) αs)
@@ -95,16 +111,16 @@ elem (GraphImpl (out × _)) (Vertex α) =
       Just _ -> true
       Nothing -> false
 
-bwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
-bwdSlice αs parent = bwdSlice' parent startG edges
-   where
-   startG = error "todo"
-   edges = error "todo"
+-- bwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
+-- bwdSlice αs parent = bwdSlice' parent startG edges
+--    where
+--    startG = error "todo"
+--    edges = error "todo"
 
-bwdSlice' :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl
-bwdSlice' _parent g s =
-   if S.isEmpty s then g
-   else emptyG
+-- bwdSlice' :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl
+-- bwdSlice' _parent g s =
+--    if S.isEmpty s then g
+--    else emptyG
 
 derive instance Eq Vertex
 derive instance Ord Vertex
