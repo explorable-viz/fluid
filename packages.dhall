@@ -123,7 +123,7 @@ let overrides = {=}
 
 let additions =
       { benchotron =
-        { dependencies = [ "arrays", "unfoldable", "strings" ]
+        { dependencies = [ "arrays", "unfoldable", "strings", "datetime" ]
         , repo = "https://github.com/JordanMartinez/purescript-benchotron"
         , version = "0c5342d"
         }

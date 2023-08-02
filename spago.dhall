@@ -20,6 +20,7 @@ You can edit this file as you like.
   , "exists"
   , "foldable-traversable"
   , "foreign-object"
+  , "formatters"
   , "http-methods"
   , "identity"
   , "integers"
