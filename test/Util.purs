@@ -21,7 +21,7 @@ import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
--- import Pretty (class Pretty, prettyP) as P 
+-- import Pretty (class Pretty, prettyP) as P
 import Pretty (pretty, class Pretty, prettyP)
 import SExpr (Expr) as S
 import Test.Spec (SpecT, before, it)
@@ -45,6 +45,15 @@ checkPretty :: forall a. Pretty a => String -> String -> a -> Aff Unit
 checkPretty _ expected x =
    trace (":\n") \_ ->
       prettyP x `shouldEqual` expected
+
+test' :: File -> Test Unit
+test' (File file) =
+   before (openWithDefaultImports (File file)) $
+      it file \(_ × s) -> do
+         let
+            e = successful (desugFwd' s)
+            src = render (pretty e)
+         log $ "Non-Annotated:\n" <> src
 
 testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =
