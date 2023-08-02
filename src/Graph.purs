@@ -81,6 +81,18 @@ outE αs g =
    in
       S.filter (\(e1 × e2) -> not $ S.member e1 αs || S.member e2 αs) allOut
 
+inE' :: forall g. Graph g => g -> Vertex -> Set (Vertex × Vertex)
+inE' graph α = case inN graph α of
+   Just set -> S.map (\node -> α × node) set
+   Nothing -> S.empty
+
+inE :: Set Vertex -> GraphImpl -> Set (Vertex × Vertex)
+inE αs g =
+   let
+      allIn = S.unions (S.map (\α -> inE' g α) αs)
+   in
+      S.filter (\(e1 × e2) -> not $ S.member e1 αs || S.member e2 αs) allIn
+
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
 outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
 outStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α αs) (S.map (\(Vertex α') -> SM.singleton α' S.empty) αs)
