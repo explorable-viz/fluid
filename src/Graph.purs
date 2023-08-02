@@ -3,11 +3,11 @@ module Graph where
 import Prelude
 
 import Data.Foldable (foldl)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
-import Foreign.Object (Object, delete, fromFoldable, lookup, singleton, size, unionWith) as SM
+import Foreign.Object (Object, delete, empty, fromFoldable, lookup, singleton, size, unionWith) as SM
 import Util (Endo, (×), type (×))
 
 type SMap = SM.Object
@@ -31,9 +31,9 @@ newtype AnnGraph = AnnGraph (SMap (Vertex × (Set Vertex)))
 newtype GraphImpl = GraphImpl ((SMap (Set Vertex)) × (SMap (Set Vertex)))
 
 instance Graph GraphImpl where
-   allocate (GraphImpl (in_ × _)) = Vertex α
+   allocate (GraphImpl (out × _)) = Vertex α
       where
-      α = show $ 1 + (SM.size in_)
+      α = show $ 1 + (SM.size out)
    remove (Vertex α) (GraphImpl (out × in_)) =
       let
          newOutN = map (S.delete (Vertex α)) (SM.delete α out)
@@ -50,6 +50,9 @@ instance Graph GraphImpl where
 
    singleton α αs = GraphImpl (outStar α αs × inStar α αs)
    opp (GraphImpl (outN × inN)) = GraphImpl (inN × outN)
+
+emptyG :: GraphImpl
+emptyG = GraphImpl (SM.empty × SM.empty)
 
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
 outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
@@ -71,6 +74,19 @@ star'' α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × (S.singleton α
 inStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
 inStar v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α S.empty) (star'' v αs)
 
+elem :: GraphImpl -> Vertex -> Boolean
+elem (GraphImpl (out × _)) (Vertex α) =
+   case SM.lookup α out of
+      Just _ -> true
+      Nothing -> false
+
+-- bwdSlice :: GraphImpl -> Vertex -> GraphImpl
+-- bwdSlice parent start
+--     | elem parent start = 
+--         let go Nil path = path
+--             go () 
+
+--     | otherwise = emptyG
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
