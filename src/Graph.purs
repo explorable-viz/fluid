@@ -52,21 +52,23 @@ emptyG :: GraphImpl
 emptyG = GraphImpl (SM.empty × SM.empty)
 
 subgraph :: GraphImpl -> Set Vertex -> GraphImpl
-subgraph (GraphImpl (out × in_)) αs = 
-                let keys = S.fromFoldable $ SM.keys out
-                    αNames = S.map unwrap αs
-                in
-                    if S.subset αNames keys
-                    then
-                        let αs' = S.map Vertex (S.difference keys αNames)
-                            filteredOut = SM.filterKeys (S.member αNames) out
-                            filteredIn = SM.filterKeys (S.member αNames)  in_
-                            newOut = map (S.difference αs') out
-                            newIn  = map (S.difference αs')  in_
-                        in
-                            GraphImpl (newOut × newIn)
-                    else
-                        emptyG
+subgraph (GraphImpl (out × in_)) αs =
+   let
+      keys = S.fromFoldable $ SM.keys out
+      αNames = S.map unwrap αs
+   in
+      if S.subset αNames keys then
+         let
+            αs' = S.map Vertex (S.difference keys αNames)
+            filteredOut = SM.filterKeys (\k -> S.member k αNames) out
+            filteredIn = SM.filterKeys (\k -> S.member k αNames) in_
+            newOut = map (S.difference αs') filteredOut
+            newIn = map (S.difference αs') filteredIn
+         in
+            GraphImpl (newOut × newIn)
+      else
+         emptyG
+
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
 outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
 outStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α αs) (S.map (\(Vertex α') -> SM.singleton α' S.empty) αs)
@@ -95,14 +97,15 @@ elem (GraphImpl (out × _)) (Vertex α) =
 
 bwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
 bwdSlice αs parent = bwdSlice' parent startG edges
-                    where 
-                    startG = error "todo"
-                    edges = error "todo"
+   where
+   startG = error "todo"
+   edges = error "todo"
 
 bwdSlice' :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl
-bwdSlice' _parent g s = if S.isEmpty s then g
-                else emptyG
-                    
+bwdSlice' _parent g s =
+   if S.isEmpty s then g
+   else emptyG
+
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
