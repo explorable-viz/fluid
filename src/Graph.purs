@@ -6,7 +6,7 @@ import Data.Foldable (foldl)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set)
-import Data.Set (delete, difference, empty, fromFoldable, map, member, singleton, subset, union, unions, filter) as S
+import Data.Set (delete, difference, empty, fromFoldable, map, member, singleton, subset, union, unions, filter, isEmpty) as S
 import Foreign.Object (Object, delete, empty, filterKeys, fromFoldable, keys, lookup, singleton, size, unionWith) as SM
 import Util (Endo, (×), type (×))
 
@@ -119,16 +119,17 @@ elem (GraphImpl (out × _)) (Vertex α) =
       Just _ -> true
       Nothing -> false
 
--- bwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
--- bwdSlice αs parent = bwdSlice' parent startG edges
---    where
---    startG = error "todo"
---    edges = error "todo"
+bwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
+bwdSlice αs parent = bwdSlice' parent startG edges
+   where
+   startG = subgraph parent αs
+   edges = outE αs parent
 
--- bwdSlice' :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl
--- bwdSlice' _parent g s =
---    if S.isEmpty s then g
---    else emptyG
+bwdSlice' :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl
+bwdSlice' parent g s =
+   if S.isEmpty s then g -- <|edges-done
+   else
+      emptyG
 
 derive instance Eq Vertex
 derive instance Ord Vertex
