@@ -6,9 +6,8 @@ import Data.Foldable (foldl)
 import Data.Maybe (Maybe)
 import Data.Newtype (class Newtype)
 import Data.Set (Set)
-import Data.Set (delete, empty, map, singleton, union, unions) as S
-import Data.Tuple (Tuple(..), swap)
-import Foreign.Object (Object, delete, fromFoldable, lookup, singleton, size, toUnfoldable, unionWith) as SM
+import Data.Set (delete, empty, map, singleton, union) as S
+import Foreign.Object (Object, delete, fromFoldable, lookup, singleton, size, unionWith) as SM
 import Util (Endo, (×), type (×))
 
 type SMap = SM.Object
