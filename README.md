@@ -12,9 +12,14 @@ For the latest developments, see [news](news.md).
 
 - git
 - yarn
+- `yarn install` to install application dependencies
+
+#### Running the tests
+
+- `yarn build-tests` and then `yarn tests` for core tests
+- `yarn build-app-tests` and then `yarn app-tests` for app tests
 
 #### Running the web app
 
-- `yarn install` to install application dependencies
-- `yarn run serve-app` to build and serve app
+- `yarn serve-app` to build and serve app
 - open a browser (preferably Chrome) at the served URL (usually `127.0.0.1:8080`).
