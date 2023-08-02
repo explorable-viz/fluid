@@ -74,18 +74,12 @@ outE' graph α = case outN graph α of
    Just set -> S.map (\node -> α × node) set
    Nothing -> S.empty
 
-outE :: forall g. Graph g => g -> Set Vertex -> Set (Vertex × Vertex)
-outE g αs = S.unions (S.map (\α -> outE' g α) αs)
-
-boundary :: Set Vertex -> GraphImpl -> Set (Vertex × Vertex)
-boundary αs g =
+outE :: Set Vertex -> GraphImpl -> Set (Vertex × Vertex)
+outE αs g =
    let
-      allOut = outE g αs
+      allOut = S.unions (S.map (\α -> outE' g α) αs)
    in
-      S.filter (\edge -> not $ endIn edge αs) allOut
-   where
-   endIn :: (Vertex × Vertex) -> Set Vertex -> Boolean
-   endIn (e1 × e2) αs' = S.member e1 αs' || S.member e2 αs'
+      S.filter (\(e1 × e2) -> not $ S.member e1 αs || S.member e2 αs) allOut
 
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
 outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
