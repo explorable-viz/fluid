@@ -8,7 +8,7 @@ import Control.Monad.Gen.Common (genTuple)
 import Data.Set (fromFoldable, Set)
 import Data.String.Gen (genDigitString)
 import Data.Tuple (uncurry, Tuple(..))
-import Graph (outStar, outStar', Vertex(..))
+import Graph (outStar, outStarOld, Vertex(..))
 import Test.QuickCheck.Arbitrary (arbitrary)
 import Test.QuickCheck.Gen (vectorOf)
 
@@ -27,7 +27,7 @@ benchOutStar = mkBenchmark
    , inputsPerSize: 3
    , gen: \n -> genTuple (Vertex <$> genDigitString) (vectorOf n (Vertex <$> arbitrary))
    , functions:
-        [ benchFn' "outStarFold" (uncurry outStar) preProcessTuple
-        , benchFn' "outStarFromFoldable" (uncurry outStar') preProcessTuple
+        [ benchFn' "outStarFold" (uncurry outStarOld) preProcessTuple
+        , benchFn' "outStarFromFoldable" (uncurry outStar) preProcessTuple
         ]
    }

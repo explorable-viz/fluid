@@ -15,8 +15,8 @@ type SMap = SM.Object
 
 class Graph g where
    union :: Vertex -> Set Vertex -> Endo g
-   getOutN :: g -> Vertex -> Maybe (Set Vertex)
-   getInN :: g -> Vertex -> Maybe (Set Vertex)
+   outN :: g -> Vertex -> Maybe (Set Vertex)
+   inN :: g -> Vertex -> Maybe (Set Vertex)
    singleton :: Vertex -> Set Vertex -> g
    remove :: Vertex -> Endo g
    opp :: Endo g
@@ -32,36 +32,36 @@ newtype AnnGraph = AnnGraph (SMap (Vertex × (Set Vertex)))
 newtype GraphImpl = GraphImpl ((SMap (Set Vertex)) × (SMap (Set Vertex)))
 
 instance Graph GraphImpl where
-   allocate (GraphImpl (inN × _)) = Vertex α
+   allocate (GraphImpl (in_ × _)) = Vertex α
       where
-      α = show $ 1 + (SM.size inN)
-   remove (Vertex α) (GraphImpl (outN × inN)) =
+      α = show $ 1 + (SM.size in_)
+   remove (Vertex α) (GraphImpl (out × in_)) =
       let
-         newOutN = map (S.delete (Vertex α)) (SM.delete α outN)
-         newInN = map (S.delete (Vertex α)) (SM.delete α inN)
+         newOutN = map (S.delete (Vertex α)) (SM.delete α out)
+         newInN = map (S.delete (Vertex α)) (SM.delete α in_)
       in
          GraphImpl (newOutN × newInN)
-   union α αs (GraphImpl (outN × inN)) = (GraphImpl (newoutN × newinN))
+   union α αs (GraphImpl (out × in_)) = (GraphImpl (newOut × newIn))
       where
-      newoutN = SM.unionWith S.union outN (outStar α αs)
-      newinN = SM.unionWith S.union inN (inStar α αs)
+      newOut = SM.unionWith S.union out (outStar α αs)
+      newIn = SM.unionWith S.union in_ (inStar α αs)
 
-   getOutN (GraphImpl (outN × _)) (Vertex α) = SM.lookup α outN
-   getInN (GraphImpl (_ × inN)) (Vertex α) = SM.lookup α inN
+   outN (GraphImpl (out × _)) (Vertex α) = SM.lookup α out
+   inN (GraphImpl (_ × in_)) (Vertex α) = SM.lookup α in_
 
    singleton α αs = GraphImpl (outStar α αs × inStar α αs)
    opp (GraphImpl (outN × inN)) = GraphImpl (inN × outN)
 
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
-outStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
-outStar (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α αs) (S.map (\(Vertex α') -> SM.singleton α' S.empty) αs)
+outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
+outStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α αs) (S.map (\(Vertex α') -> SM.singleton α' S.empty) αs)
 
-inStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
-inStar (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α S.empty) (S.map (\(Vertex α') -> SM.singleton α' (S.singleton (Vertex α))) αs)
+inStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
+inStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α S.empty) (S.map (\(Vertex α') -> SM.singleton α' (S.singleton (Vertex α))) αs)
 
 -- prototype attempts at more efficiently implementing the above operations
-outStar' :: Vertex -> Set Vertex -> SMap (Set Vertex)
-outStar' v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α αs) (star' v αs)
+outStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
+outStar v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α αs) (star' v αs)
 
 star' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 star' (Vertex α) αs = SM.fromFoldable $ S.map (\α' -> α × (S.singleton α')) αs
@@ -69,29 +69,8 @@ star' (Vertex α) αs = SM.fromFoldable $ S.map (\α' -> α × (S.singleton α')
 star'' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 star'' α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × (S.singleton α)) αs
 
-inStar' :: Vertex -> Set Vertex -> SMap (Set Vertex)
-inStar' v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α S.empty) (star'' v αs)
-
-allEdges :: GraphImpl -> Set (Vertex × Vertex)
-allEdges (GraphImpl (obj × _)) = let out = (map adjEdges (SM.toUnfoldable obj :: Array (String × (Set Vertex)))) in S.unions out
-
-adjEdges :: Tuple String (Set Vertex) -> Set (Vertex × Vertex)
-adjEdges (Tuple id αs) = adjEdges' (Vertex id) αs
-
-adjEdges' :: Vertex -> Set Vertex -> Set (Vertex × Vertex)
-adjEdges' v αs = S.map (\node -> (v × node)) αs
-
-reverseEdges :: Endo (Set (Vertex × Vertex))
-reverseEdges edges = S.map swap edges
-
--- fromEdges :: Set (Vertex × Vertex) -> GraphImpl
--- fromEdges edges = GraphImpl $
---    SM.fromFoldableWith S.union (S.map (\pair -> (unwrap (fst pair)) × (S.singleton $ snd pair)) edges)
-
--- instance Foldable Graph where
---     foldl f z (Graph o) = Graph (foldl f z (map fst (SM.values o) :: ?_))
---     foldr f z (Graph o) = Graph (foldr f z o)
---     foldMap f (Graph o) = Graph (foldMap f o)
+inStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
+inStar v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α S.empty) (star'' v αs)
 
 derive instance Eq Vertex
 derive instance Ord Vertex
