@@ -122,10 +122,10 @@ let upstream =
 let overrides = {=}
 
 let additions =
-      { pprint =
+      { benchotron =
         { dependencies = [ "arrays", "unfoldable", "strings" ]
-        , repo = "https://github.com/paf31/purescript-pprint"
-        , version = "v5.0.0"
+        , repo = "https://github.com/JordanMartinez/purescript-benchotron"
+        , version = "0c5342d"
         }
       }
 
