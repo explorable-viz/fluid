@@ -13,12 +13,14 @@
     "build-app-tests": "yarn clean-app-tests && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.App.Main --to dist/app-tests/app.js",
     "app-tests": "karma start karma.conf.app-tests.js",
     "app-tests-browser": "karma start karma.conf.app-tests.js --browsers=Chrome --singleRun=false",
-    "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs"
+    "tidy": "yarn purs-tidy format-in-place src/*.purs src/App/**/*.purs src/**/*.purs test/*.purs test/**/*.purs",
+    "benchmark": "yarn tidy && spago run -m Benchmark"
   },
   "dependencies": {
     "@codemirror/commands": "6.2.2",
     "@codemirror/state": "6.2.0",
     "@codemirror/view": "6.9.3",
+    "benchmark": "^2.1.4",
     "d3": "6.7.0",
     "d3-tip": "0.9.1",
     "purescript": "^0.15.4"
