@@ -11,7 +11,6 @@ import Data.Set (subset)
 import Data.Traversable (sequence)
 import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, unionWith, update)
 import Bindings (Var)
-import Graph (Vertex(..))
 import Util (Endo, MayFail, type (×), (×), assert, report, successfulWith)
 import Util.Pair (Pair(..))
 

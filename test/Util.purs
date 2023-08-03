@@ -22,7 +22,6 @@ import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
--- import Pretty (class Pretty, prettyP) as P
 import Pretty (pretty, class Pretty, prettyP)
 import SExpr (Expr) as S
 import Test.Spec (SpecT, before, it)
@@ -47,32 +46,26 @@ checkPretty _ expected x =
    trace (":\n") \_ ->
       prettyP x `shouldEqual` expected
 
-test' :: File -> Test Unit
-test' (File file) =
+testAlloc :: File -> Test Unit
+testAlloc (File file) =
    before (openWithDefaultImports (File file)) $
       it file \(_ × s) -> do
          let
-            e  = successful (desug s)
+            e = successful (desug s)
             e' = fst $ runAlloc e
             src' = render (pretty e')
-         log $ "Non-Annotated:\n" <> src'
+         log $ "Allocate:\n" <> src'
 
 testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =
    before setup $
       it file \(γ × s) -> do
          let
-            -- Desugar surface expression to core expression, of arbitrary annotation type
             e = successful (desug s)
-            -- Evaluate the core expression e (annotated with bot) under environment γ, producing a trace and annotated value
             t × v = successful (eval γ e bot)
-
-            -- Either a custom annotated output (from a file), or the default program output annotated with bot
             v' = fromMaybe identity (fst <$> v_expect_opt) v
-            -- Use the annotated output, and backward evaluate the unannotated core expression + environment, producing an annotated core expression + environment.
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
             s' = desugBwd e' (erase s) :: S.Expr _
-
             _ × v'' = successful (eval γ' (successful (desug s')) true)
             src = render (pretty s)
          case parse src program of
