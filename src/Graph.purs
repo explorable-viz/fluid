@@ -4,11 +4,13 @@ import Prelude
 
 import Control.Monad.State (State, StateT, get, put)
 import Data.Foldable (foldl)
+import Data.List (List(..), (:))
+import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set)
 import Data.Set (delete, difference, empty, filter, fromFoldable, isEmpty, map, member, singleton, subset, union, unions) as S
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst)
 import Foreign.Object (Object, delete, empty, filterKeys, fromFoldable, keys, lookup, singleton, size, unionWith) as SM
 import Util (Endo, (×), type (×))
 
@@ -144,35 +146,42 @@ bwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
 bwdSlice αs parent = bwdSlice' parent startG edges
    where
    startG = subgraph parent αs
-   edges = outE αs parent
+   edges = L.fromFoldable $ outE αs parent
 
-bwdSlice' :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl
-bwdSlice' parent g edges =
-   if S.isEmpty edges then g -- <|edges-done
+bwdSlice' :: GraphImpl -> GraphImpl -> List (Vertex × Vertex) -> GraphImpl
+bwdSlice' parent g ((s × t) : es) =
+   if elem g t then
+      bwdSlice' parent g es
    else
       let
-         αs = S.fromFoldable $ S.map snd edges
-         newG = foldl (\g' (e1 × _) -> union e1 (outNSet parent e1) g') g edges -- union + Set ensures we skip things we've already seen
-         newEdges = outE αs parent
+         newG' = union s (outNSet parent s) g
+         newG = union t (outNSet parent t) newG'
+         newEs = append es (L.fromFoldable (outE' parent t))
       in
-         bwdSlice' parent newG newEdges
+         bwdSlice' parent newG newEs
    where
    outNSet :: GraphImpl -> Vertex -> Set Vertex
    outNSet g' v = case outN g' v of
       Just neighbs -> neighbs
       Nothing -> S.empty
 
-fwdSlice :: Set Vertex -> GraphImpl -> GraphImpl 
-fwdSlice αs parent =  fst $ fwdEdges startG emptyG edges
-    where
-        startG = subgraph parent αs
-        edges = inE αs parent
+   append :: forall a. List a -> List a -> List a
+   append Nil xs = xs
+   append (y : ys) xs = append ys (y : xs)
+
+bwdSlice' _ g Nil = g
+
+fwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
+fwdSlice αs parent = fst $ fwdEdges startG emptyG edges
+   where
+   startG = subgraph parent αs
+   edges = inE αs parent
 
 fwdEdges :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl × GraphImpl
-fwdEdges currSlice pending edges = 
-    if S.isEmpty edges then currSlice × pending
-    else -- |>edges edge 
-        emptyG × emptyG
+fwdEdges currSlice pending edges =
+   if S.isEmpty edges then currSlice × pending
+   else
+      emptyG × emptyG
 
 derive instance Eq Vertex
 derive instance Ord Vertex
