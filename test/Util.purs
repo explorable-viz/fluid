@@ -61,7 +61,7 @@ testWithSetup (File file) expected v_expect_opt setup =
       it file \(γ × s) -> do
          let
             -- Desugar surface expression to core expression, of arbitrary annotation type
-            e     = successful (desugFwd' s)
+            e = successful (desugFwd' s)
             -- Evaluate the core expression e (annotated with bot) under environment γ, producing a trace and annotated value
             t × v = successful (eval γ e bot)
 
