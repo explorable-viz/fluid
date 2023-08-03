@@ -1,21 +1,24 @@
 module EvalGraph where
 
-import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (<#>), (<>), (==))
+import Pretty
+
 import Bindings (varAnon)
-import Expr (Cont(..), Elim(..), Expr(..))
-import Graph (Vertex, class Graph, Heap, HeapT, fresh)
 import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
-import Data.Functor ((<$>))
+import Foreign.Object (foldM)
 import Data.Either (Either, note)
+import Data.Functor ((<$>))
 import Data.List (List(..), length, (:))
-import Data.Set as S
 import Data.Set (Set)
+import Data.Set as S
 import Data.Traversable (class Traversable, traverse)
 import DataType (consistentWith, dataTypeFor, showCtr)
-import Dict (disjointUnion, empty, get, keys, lookup, singleton) as D
+import Dict (disjointUnion, empty, get, keys, lookup, singleton, insert) as D
+import Expr (Cont(..), Elim(..), Expr(..))
+import Graph (Vertex, class Graph, Heap, HeapT, fresh)
+import Graph (union) as G
+import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (<#>), (<>), (==))
 import Util (MayFail, error, type (×), (×), with, report, check)
-import Pretty
 import Val (Val(..)) as V
 import Val (Val, Env, lookup')
 
@@ -61,16 +64,31 @@ matchMany (_ : vs) (ContExpr _) = report $
 matchMany _ _ = error "absurd"
 
 {-# Evaluation #-}
+-- evalSeq
+
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT (Either String) (g × Val Vertex)
 eval g γ (Var x) _ = ((×) g) <$> lift (lookup' x γ)
 eval g γ (Op op) _ = ((×) g) <$> lift (lookup' op γ)
--- eval g γ (Int α n) verts = do
---    α' <- freshVertex
---    -- pure (g)
---    error "todo"
+eval g _ (Int α n) vs = do
+   α' <- fresh
+   pure $ (G.union α' (S.insert α vs) g) × (V.Int α' n)
+eval g _ (Float α n) vs = do
+   α' <- fresh
+   pure $ (G.union α' (S.insert α vs) g) × (V.Float α' n)
+eval g _ (Str α str) vs = do
+   α' <- fresh
+   pure $ (G.union α' (S.insert α vs) g) × (V.Str α' str)
+eval g γ (Record α xes) vs = do
+   α' <- fresh
+   g_n × xvs <- foldM
+      ( \(g_prev × xvs) x e -> do
+           (g_next × val_i) <- eval g_prev γ e vs
+           pure $ g_next × D.insert x val_i xvs
+      )
+      (g × D.empty)
+      xes
+   pure $ (G.union α' (S.insert α vs) g_n) × V.Record α' xvs
 eval _ _ _ _ = error "to do"
--- eval _ (Float α n) α' = pure (T.Const × V.Float (α ∧ α') n)
--- eval _ (Str α str) α' = pure (T.Const × V.Str (α ∧ α') str)
 -- eval γ (Record α xes) α' = do
 --    xts × xvs <- traverse (flip (eval γ) α') xes <#> D.unzip
 --    pure $ T.Record xts × V.Record (α ∧ α') xvs
