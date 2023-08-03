@@ -49,7 +49,6 @@ match (V.Record α xvs) (ElimRecord xs κ) = do
    γ × κ' × α' × ws <- matchMany (xs' <#> flip get xvs) κ
    pure (γ × κ' × (α ∧ α') × MatchRecord (D.fromFoldable (zip xs' ws)))
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
-match v (ElimSug _ κ) = match v κ
 
 matchMany :: forall a. Ann a => List (Val a) -> Cont a -> MayFail (Env a × Cont a × a × List Match)
 matchMany Nil κ = pure (empty × κ × top × Nil)

@@ -365,7 +365,6 @@ pattCont_ListRest_Bwd (ElimVar _ _) _ = error absurd
 pattCont_ListRest_Bwd (ElimRecord _ _) _ = error absurd
 pattCont_ListRest_Bwd (ElimConstr m) PEnd = get cNil m
 pattCont_ListRest_Bwd (ElimConstr m) (PNext p o) = pattArgsBwd (Left p : Right o : Nil) (get cCons m)
-pattCont_ListRest_Bwd (ElimSug _ κ) p = pattCont_ListRest_Bwd κ p
 
 -- List (Pattern + ListRestPattern) × Cont
 pattArgsFwd :: forall a. List (Pattern + ListRestPattern) -> Cont a -> MayFail (Cont a)
@@ -399,10 +398,6 @@ orElseFwd (ContElim (ElimConstr m)) α = ContElim (ElimConstr (unlessFwd (c × o
    c × κ = asSingletonMap m
 orElseFwd (ContElim (ElimRecord xs κ)) α = ContElim (ElimRecord xs (orElseFwd κ α))
 orElseFwd (ContElim (ElimVar x κ)) α = ContElim (ElimVar x (orElseFwd κ α))
-orElseFwd (ContElim (ElimSug x σ)) α =
-   case orElseFwd (ContElim σ) α of
-      ContElim σ' -> ContElim (ElimSug x σ')
-      _ -> error absurd
 
 orElseBwd :: forall a. BoundedJoinSemilattice a => Cont a -> List (Pattern + ListRestPattern) -> Cont a × a
 orElseBwd κ Nil = κ × bot

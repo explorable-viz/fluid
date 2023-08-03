@@ -9,10 +9,9 @@ import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
-import Desugarable (Sugar', class FromSugar)
 import Dict (Dict, keys, asSingletonMap)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
-import Util (type (+), type (×), absurd, both, error, report, (×), (≜), (≞))
+import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
 data Expr a
@@ -39,12 +38,6 @@ data Elim a
    = ElimVar Var (Cont a)
    | ElimConstr (Dict (Cont a))
    | ElimRecord (Set Var) (Cont a)
-   | ElimSug (Sugar' Elim) (Elim a)
-
-instance FromSugar Elim where
-   fromSug = ElimSug
-   toSug (ElimSug s e) = s × e
-   toSug _ = error absurd
 
 -- Continuation of an eliminator branch.
 data Cont a
@@ -86,7 +79,6 @@ instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ `difference` singleton x
    fv (ElimConstr m) = unions (fv <$> m)
    fv (ElimRecord _ κ) = fv κ
-   fv (ElimSug _ κ) = fv κ
 
 instance FV (Cont a) where
    fv ContNone = empty
@@ -107,7 +99,6 @@ instance BV (Elim a) where
    bv (ElimVar x κ) = singleton x `union` bv κ
    bv (ElimConstr m) = bv (snd (asSingletonMap m))
    bv (ElimRecord _ κ) = bv κ
-   bv (ElimSug _ κ) = bv κ
 
 instance BV (VarDef a) where
    bv (VarDef σ _) = bv σ
@@ -130,7 +121,6 @@ instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin (ElimConstr cκs) (ElimConstr cκs') =
       ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
-   maybeJoin (ElimSug s e) (ElimSug _ e') = ElimSug s <$> maybeJoin e e'
    maybeJoin _ _ = report "Incompatible eliminators"
 
    join σ = definedJoin σ
@@ -140,7 +130,6 @@ instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
    expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
    expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
-   expand (ElimSug s e) (ElimSug _ e') = ElimSug s (expand e e')
    expand _ _ = error "Incompatible eliminators"
 
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
