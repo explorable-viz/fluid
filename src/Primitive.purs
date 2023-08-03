@@ -7,9 +7,11 @@ import Data.Exists (mkExists)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Profunctor.Choice ((|||))
+import Data.Set (singleton)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
 import Graph (fresh)
+import Graph (union) as G
 import Lattice (Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
@@ -175,11 +177,11 @@ unary op =
       $ ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    op' :: Partial => OpGraph
-   op' (v : Nil) = do
-      _ <- fresh
-      error unimplemented
+   op' (g × v : Nil) = do
+      α' <- fresh
+      pure $ G.union α' (singleton α) g × op.o.constr (op.fwd x × α')
       where
-      _ × _ = op.i.match v
+      x × α = op.i.match v
 
    fwd :: Partial => OpFwd (Raw Val)
    fwd (v : Nil) = pure $ erase v × op.o.constr (op.fwd x × α)
