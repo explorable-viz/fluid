@@ -4,11 +4,13 @@ import Prelude
 
 import Control.Monad.State (State, StateT, get, put)
 import Data.Foldable (foldl)
+import Data.List (List(..), (:))
+import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set)
 import Data.Set (delete, difference, empty, filter, fromFoldable, isEmpty, map, member, singleton, subset, union, unions) as S
-import Data.Tuple (snd)
+import Data.Tuple (fst)
 import Foreign.Object (Object, delete, empty, filterKeys, fromFoldable, keys, lookup, singleton, size, unionWith) as SM
 import Util (Endo, (×), type (×))
 
@@ -48,14 +50,14 @@ instance Graph GraphImpl where
          GraphImpl (newOutN × newInN)
    union α αs (GraphImpl (out × in_)) = (GraphImpl (newOut × newIn))
       where
-      newOut = SM.unionWith S.union out (outStar α αs)
-      newIn = SM.unionWith S.union in_ (inStar α αs)
+      newOut = SM.unionWith S.union out (starInOut α αs)
+      newIn = SM.unionWith S.union in_ (starInIn α αs)
 
    outN (GraphImpl (out × _)) (Vertex α) = SM.lookup α out
    inN (GraphImpl (_ × in_)) (Vertex α) = SM.lookup α in_
 
-   singleton α αs = GraphImpl (outStar α αs × inStar α αs)
-   opp (GraphImpl (outN × inN)) = GraphImpl (inN × outN)
+   singleton α αs = GraphImpl (starInOut α αs × starInIn α αs)
+   opp (GraphImpl (out × in_)) = GraphImpl (in_ × out)
 
 emptyG :: GraphImpl
 emptyG = GraphImpl (SM.empty × SM.empty)
@@ -100,7 +102,7 @@ inE αs g =
    let
       allIn = S.unions (S.map (\α -> inE' g α) αs)
    in
-      S.filter (\(e1 × e2) -> not $ S.member e1 αs || S.member e2 αs) allIn
+      S.filter (\(e1 × e2) -> S.member e1 αs || S.member e2 αs) allIn
 
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
 outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
@@ -110,17 +112,29 @@ inStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
 inStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α S.empty) (S.map (\(Vertex α') -> SM.singleton α' (S.singleton (Vertex α))) αs)
 
 -- prototype attempts at more efficiently implementing the above operations
-outStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
-outStar v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α αs) (star' v αs)
+starInOut :: Vertex -> Set Vertex -> SMap (Set Vertex)
+starInOut α αs = buildStar α αs star'
+
+buildStar :: Vertex -> Set Vertex -> (Vertex -> Set Vertex -> SMap (Set Vertex)) -> SMap (Set Vertex)
+buildStar v@(Vertex α) αs f = SM.unionWith S.union (SM.singleton α αs) (f v αs)
+
+buildStar' :: Vertex -> Set Vertex -> (Vertex -> Set Vertex -> SMap (Set Vertex)) -> SMap (Set Vertex)
+buildStar' v@(Vertex α) αs f = SM.unionWith S.union (SM.singleton α S.empty) (f v αs)
 
 star' :: Vertex -> Set Vertex -> SMap (Set Vertex)
-star' (Vertex _α) αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs
+star' _α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs
 
 star'' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 star'' α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × (S.singleton α)) αs
 
-inStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
-inStar v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α S.empty) (star'' v αs)
+starInIn :: Vertex -> Set Vertex -> SMap (Set Vertex)
+starInIn α αs = buildStar' α αs star''
+
+inStar :: Vertex -> Set Vertex -> GraphImpl
+inStar α αs = opp (outStar α αs)
+
+outStar :: Vertex -> Set Vertex -> GraphImpl
+outStar α αs = GraphImpl ((starInOut α αs) × (starInIn α αs))
 
 elem :: GraphImpl -> Vertex -> Boolean
 elem (GraphImpl (out × _)) (Vertex α) =
@@ -132,23 +146,39 @@ bwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
 bwdSlice αs parent = bwdSlice' parent startG edges
    where
    startG = subgraph parent αs
-   edges = outE αs parent
+   edges = L.fromFoldable $ outE αs parent
 
-bwdSlice' :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl
-bwdSlice' parent g edges =
-   if S.isEmpty edges then g -- <|edges-done
+bwdSlice' :: GraphImpl -> GraphImpl -> List (Vertex × Vertex) -> GraphImpl
+bwdSlice' parent g ((s × t) : es) =
+   if elem g t then
+      let
+         newG = union s (S.singleton t) g
+      in
+         bwdSlice' parent newG es
    else
       let
-         αs = S.fromFoldable $ S.map snd edges
-         newG = foldl (\g' (e1 × _) -> union e1 (outNSet parent e1) g') g edges
-         newEdges = outE αs parent
+         newG = union s (S.singleton t) g
+         newEs = append es (L.fromFoldable (outE' parent t))
       in
-         bwdSlice' parent newG newEdges
+         bwdSlice' parent newG newEs
    where
-   outNSet :: GraphImpl -> Vertex -> Set Vertex
-   outNSet g' v = case outN g' v of
-      Just neighbs -> neighbs
-      Nothing -> S.empty
+   append :: forall a. List a -> List a -> List a
+   append Nil xs = xs
+   append (y : ys) xs = append ys (y : xs)
+
+bwdSlice' _ g Nil = g
+
+fwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
+fwdSlice αs parent = fst $ fwdEdges startG emptyG edges
+   where
+   startG = subgraph parent αs
+   edges = inE αs parent
+
+fwdEdges :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl × GraphImpl
+fwdEdges currSlice pending edges =
+   if S.isEmpty edges then currSlice × pending
+   else
+      emptyG × emptyG
 
 derive instance Eq Vertex
 derive instance Ord Vertex
