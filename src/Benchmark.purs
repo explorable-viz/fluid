@@ -10,7 +10,7 @@ import Data.String.Gen (genDigitString)
 import Data.Tuple (uncurry, Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow, log)
-import Graph (Vertex(..), bwdSlice, emptyG, starInOut, outStarOld, subgraph, union, outE)
+import Graph (Vertex(..), bwdSlice, emptyG, starInOut, outStarOld, subgraph, union, outE, outStar)
 import Test.QuickCheck.Arbitrary (arbitrary)
 import Test.QuickCheck.Gen (vectorOf)
 
@@ -24,13 +24,13 @@ graphTestScript = do
    let
       ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
       graph = foldl (\g α -> union (Vertex (show α)) (fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) emptyG ids
-   logShow graph
    let
       slice = bwdSlice (fromFoldable [ (Vertex "1") ]) graph
-      subG = subgraph graph (fromFoldable [ (Vertex "1") ])
+      starG = outStar (Vertex "1") (fromFoldable [ (Vertex "2"), (Vertex "3"), (Vertex "4"), (Vertex "5"), (Vertex "6") ])
    log ("Outedges: " <> show (outE (fromFoldable [ (Vertex "1") ]) graph))
-   logShow subG
    logShow slice
+   log "Star\n"
+   logShow starG
 
 preProcessTuple :: Tuple Vertex (Array Vertex) -> Tuple Vertex (Set Vertex)
 preProcessTuple (Tuple α αs) = Tuple α (fromFoldable αs)

@@ -116,10 +116,10 @@ starInIn :: Vertex -> Set Vertex -> SMap (Set Vertex)
 starInIn α αs = buildStar α αs star''
 
 inStar :: Vertex -> Set Vertex -> GraphImpl
-inStar α αs = GraphImpl ((starInOut α αs) × (starInIn α αs))
+inStar α αs = opp (outStar α αs)
 
 outStar :: Vertex -> Set Vertex -> GraphImpl
-outStar α αs = opp (inStar α αs)
+outStar α αs = GraphImpl ((starInOut α αs) × (starInIn α αs))
 
 elem :: GraphImpl -> Vertex -> Boolean
 elem (GraphImpl (out × _)) (Vertex α) =
