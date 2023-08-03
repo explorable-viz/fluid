@@ -21,7 +21,7 @@ import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
--- import Pretty (class Pretty, prettyP) as P 
+-- import Pretty (class Pretty, prettyP) as P
 import Pretty (pretty, class Pretty, prettyP)
 import SExpr (Expr) as S
 import Test.Spec (SpecT, before, it)
@@ -58,7 +58,6 @@ testWithSetup (File file) expected v_expect_opt setup =
             s' = desugBwd' e' :: S.Expr _
             _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
             src = render (pretty s)
-            srcExp = show (erase s)
          case parse src program of
             Left msg -> fail msg
             Right newProg -> do
@@ -66,7 +65,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                   let newExp = show newProg
                   case (eq (erase s) newProg) of
                      false -> do
-                        liftEffect (log ("SRC\n" <> srcExp))
+                        liftEffect (log ("SRC\n" <> show (erase s)))
                         liftEffect (log ("NEW\n" <> newExp))
                         fail "not equal"
                      true -> do
