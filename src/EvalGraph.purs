@@ -1,26 +1,23 @@
 module EvalGraph where
 
-import Prelude
-
+import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (<#>), (<>), (==))
 import Bindings (varAnon)
-import Expr
-import Graph
-import Control.Monad.State
-import Data.Either (Either(..), note)
-import Data.List (List(..), (:), length, range, singleton, unzip, zip)
+import Expr (Cont(..), Elim(..), Expr)
+import Graph (Vertex(..))
+import Control.Monad.State (State, get, put, runState)
+import Data.Either (note)
+import Data.List (List(..), length, (:))
 import Data.Set as S
 import Data.Set (Set)
 import Data.Traversable (traverse)
-import DataType (Ctr, arity, consistentWith, dataTypeFor, showCtr)
-import Dict (fromFoldable, empty, get, singleton, disjointUnion, lookup, keys, unzip) as D
+import DataType (consistentWith, dataTypeFor, showCtr)
+import Dict (disjointUnion, empty, get, keys, lookup, singleton) as D
 import Util (MayFail, error, type (×), (×), with, report, check)
-import Util.Pair (Pair, toTuple)
 import Pretty
-import Val (Fun(..), Val(..)) as V
+import Val (Val(..)) as V
 import Val (Val, Env)
 
 {-# Allocating addresses #-}
-
 type Fresh a = State Int a
 
 freshVertex :: Fresh Vertex
