@@ -6,7 +6,8 @@ import Data.Foldable (foldl)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set)
-import Data.Set (delete, difference, empty, fromFoldable, map, member, singleton, subset, union, unions, filter, isEmpty) as S
+import Data.Set (delete, difference, empty, filter, fromFoldable, isEmpty, map, member, singleton, subset, union, unions) as S
+import Data.Tuple (snd)
 import Foreign.Object (Object, delete, empty, filterKeys, fromFoldable, keys, lookup, singleton, size, unionWith) as SM
 import Util (Endo, (×), type (×))
 
@@ -22,8 +23,6 @@ class Graph g where
    allocate :: g -> Vertex
 
 newtype Vertex = Vertex String
-
-newtype AnnGraph = AnnGraph (SMap (Vertex × (Set Vertex)))
 
 newtype GraphImpl = GraphImpl ((SMap (Set Vertex)) × (SMap (Set Vertex)))
 
@@ -125,12 +124,30 @@ bwdSlice αs parent = bwdSlice' parent startG edges
    startG = subgraph parent αs
    edges = outE αs parent
 
+-- bwdInner :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> State GraphImpl
+
 bwdSlice' :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl
-bwdSlice' parent g s =
-   if S.isEmpty s then g -- <|edges-done
+bwdSlice' parent g edges =
+   if S.isEmpty edges then g -- <|edges-done
    else
-      emptyG
+      let
+         αs = S.fromFoldable $ S.map snd edges
+         newG = foldl (\g' α -> union α (outNSet parent α) g') g αs
+         newEdges = outE αs parent
+      in
+         bwdSlice' parent newG newEdges
+   where
+   outNSet :: GraphImpl -> Vertex -> Set Vertex
+   outNSet g' v = case outN g' v of
+      Just neighbs -> neighbs
+      Nothing -> S.empty
 
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
+
+instance Show Vertex where
+   show (Vertex α) = "Vertex " <> α
+
+instance Show GraphImpl where
+   show (GraphImpl (out × in_)) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
