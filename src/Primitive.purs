@@ -10,6 +10,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
+import Graph (fresh)
 import Lattice (Raw, (∧), bot, erase, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
@@ -183,7 +184,9 @@ unary op =
       $ ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    op' :: Partial => OpGraph
-   op' (_ : Nil) = error unimplemented
+   op' (_ : Nil) = do
+      _ <- fresh
+      error unimplemented
 
    fwd :: Partial => OpFwd (Raw Val)
    fwd (v : Nil) = pure $ erase v × op.o.constr (op.fwd x × α)
