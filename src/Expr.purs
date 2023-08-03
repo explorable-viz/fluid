@@ -4,6 +4,7 @@ import Prelude hiding (absurd, top)
 
 import Bindings (Var)
 import Control.Apply (lift2)
+import Data.Foldable (class Foldable)
 import Data.List (List)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
@@ -112,9 +113,13 @@ instance BV (Cont a) where
 -- boilerplate
 -- ======================
 derive instance Functor VarDef
+derive instance Foldable VarDef
 derive instance Functor Cont
+derive instance Foldable Cont
 derive instance Functor Elim
+derive instance Foldable Elim
 derive instance Functor Expr
+derive instance Foldable Expr
 
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
