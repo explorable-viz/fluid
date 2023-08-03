@@ -60,11 +60,17 @@ testWithSetup (File file) expected v_expect_opt setup =
    before setup $
       it file \(γ × s) -> do
          let
-            e = successful (desugFwd' s)
+            -- Desugar surface expression to core expression, of arbitrary annotation type
+            e     = successful (desugFwd' s)
+            -- Evaluate the core expression e (annotated with bot) under environment γ, producing a trace and annotated value
             t × v = successful (eval γ e bot)
+
+            -- Either a custom annotated output (from a file), or the default program output annotated with bot
             v' = fromMaybe identity (fst <$> v_expect_opt) v
+            -- Use the annotated output, and backward evaluate the unannotated core expression + environment, producing an annotated core expression + environment.
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
             s' = desugBwd' e' :: S.Expr _
+
             _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
             src = render (pretty s)
             srcExp = show (erase s)

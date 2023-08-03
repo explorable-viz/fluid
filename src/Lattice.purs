@@ -11,6 +11,7 @@ import Data.Set (subset)
 import Data.Traversable (sequence)
 import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, unionWith, update)
 import Bindings (Var)
+import Graph (Vertex(..))
 import Util (Endo, MayFail, type (×), (×), assert, report, successfulWith)
 import Util.Pair (Pair(..))
 
@@ -64,6 +65,8 @@ class (BoundedJoinSemilattice a, BoundedMeetSemilattice a) <= BoundedLattice a
 instance BoundedLattice Boolean
 instance BoundedLattice Unit
 
+-- instance BoundedLattice Vertex
+
 definedJoin :: forall a. JoinSemilattice a => a -> a -> a
 definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
 
@@ -84,6 +87,9 @@ instance (Functor t, BoundedJoinSemilattice a, BoundedJoinSemilattice a') => Top
 -- Specialises botOf and topOf but omits the lattice constraint.
 erase :: forall t a. Functor t => t a -> Raw t
 erase = (<$>) (const unit)
+
+annotBool :: forall t a. Functor t => t a -> t Boolean
+annotBool = (<$>) (const true)
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
