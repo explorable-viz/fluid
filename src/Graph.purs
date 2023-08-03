@@ -61,8 +61,8 @@ subgraph (GraphImpl (out × in_)) αs =
             αs' = S.map Vertex (S.difference keys αNames)
             filteredOut = SM.filterKeys (\k -> S.member k αNames) out
             filteredIn = SM.filterKeys (\k -> S.member k αNames) in_
-            newOut = map (S.difference αs') filteredOut
-            newIn = map (S.difference αs') filteredIn
+            newOut = map (\set -> S.difference set αs') filteredOut
+            newIn = map (\set -> S.difference set αs') filteredIn
          in
             GraphImpl (newOut × newIn)
       else
@@ -78,7 +78,7 @@ outE αs g =
    let
       allOut = S.unions (S.map (\α -> outE' g α) αs)
    in
-      S.filter (\(e1 × e2) -> not $ S.member e1 αs || S.member e2 αs) allOut
+      S.filter (\(e1 × e2) -> (S.member e1 αs || S.member e2 αs)) allOut
 
 inE' :: forall g. Graph g => g -> Vertex -> Set (Vertex × Vertex)
 inE' graph α = case inN graph α of
@@ -104,7 +104,7 @@ outStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
 outStar v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α αs) (star' v αs)
 
 star' :: Vertex -> Set Vertex -> SMap (Set Vertex)
-star' (Vertex α) αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs
+star' (Vertex _α) αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs
 
 star'' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 star'' α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × (S.singleton α)) αs
@@ -124,15 +124,13 @@ bwdSlice αs parent = bwdSlice' parent startG edges
    startG = subgraph parent αs
    edges = outE αs parent
 
--- bwdInner :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> State GraphImpl
-
 bwdSlice' :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl
 bwdSlice' parent g edges =
    if S.isEmpty edges then g -- <|edges-done
    else
       let
          αs = S.fromFoldable $ S.map snd edges
-         newG = foldl (\g' α -> union α (outNSet parent α) g') g αs
+         newG = foldl (\g' (e1 × _) -> union e1 (outNSet parent e1) g') g edges
          newEdges = outE αs parent
       in
          bwdSlice' parent newG newEdges

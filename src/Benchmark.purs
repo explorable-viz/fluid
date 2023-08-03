@@ -1,27 +1,36 @@
 module Benchmark where
 
 import Prelude
-import Effect (Effect)
-import Effect.Console (logShow)
+
 import Benchotron.Core (Benchmark, benchFn', mkBenchmark)
---import Benchotron.UI.Console (runSuite)
 import Control.Monad.Gen.Common (genTuple)
 import Data.Foldable (foldl)
-import Data.Set (fromFoldable, Set)
+import Data.Set (Set, fromFoldable)
 import Data.String.Gen (genDigitString)
 import Data.Tuple (uncurry, Tuple(..))
-import Graph (outStar, outStarOld, Vertex(..), union, emptyG)
+import Effect (Effect)
+import Effect.Console (logShow, log)
+import Graph (Vertex(..), bwdSlice, emptyG, outStar, outStarOld, subgraph, union, outE)
 import Test.QuickCheck.Arbitrary (arbitrary)
 import Test.QuickCheck.Gen (vectorOf)
 
 main :: Effect Unit
-main = do
-   let
-      ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-      graph = foldl (\g α -> union (Vertex (show α)) (fromFoldable $ map (Vertex <<< show) [ α + 1, α + 2 ]) g) emptyG ids
-   logShow graph
+main = graphTestScript
 
 --runSuite [ benchOutStar ]
+
+graphTestScript :: Effect Unit
+graphTestScript = do
+   let
+      ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+      graph = foldl (\g α -> union (Vertex (show α)) (fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) emptyG ids
+   logShow graph
+   let
+      slice = bwdSlice (fromFoldable [ (Vertex "1") ]) graph
+      subG = subgraph graph (fromFoldable [ (Vertex "1") ])
+   log ("Outedges: " <> show (outE (fromFoldable [ (Vertex "1") ]) graph))
+   logShow subG
+   logShow slice
 
 preProcessTuple :: Tuple Vertex (Array Vertex) -> Tuple Vertex (Set Vertex)
 preProcessTuple (Tuple α αs) = Tuple α (fromFoldable αs)
