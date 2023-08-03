@@ -5,10 +5,10 @@ import Pretty
 import Bindings (varAnon)
 import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
-import Foreign.Object (foldM)
+import Foreign.Object (foldM) as D
 import Data.Either (Either, note)
 import Data.Functor ((<$>))
-import Data.List (List(..), length, (:))
+import Data.List (List(..), (:), length, range, singleton, unzip, zip, foldM)
 import Data.Set (Set)
 import Data.Set as S
 import Data.Traversable (class Traversable, traverse)
@@ -17,8 +17,11 @@ import Dict (disjointUnion, empty, get, keys, lookup, singleton, insert) as D
 import Expr (Cont(..), Elim(..), Expr(..))
 import Graph (Vertex, class Graph, Heap, HeapT, fresh)
 import Graph (union) as G
-import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (<#>), (<>), (==))
-import Util (MayFail, error, type (×), (×), with, report, check)
+import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (<#>), (<>), (==), (<<<))
+import Primitive (string)
+import Util (MayFail, error, type (×), (×), with, report, check, both)
+import Util.Pair (unzip) as P
+import Util.Pair (Pair(..))
 import Val (Val(..)) as V
 import Val (Val, Env, lookup')
 
@@ -80,7 +83,7 @@ eval g _ (Str α str) vs = do
    pure $ (G.union α' (S.insert α vs) g) × (V.Str α' str)
 eval g γ (Record α xes) vs = do
    α' <- fresh
-   g_n × xvs <- foldM
+   g_n × xvs <- D.foldM
       ( \(g_prev × xvs) x e -> do
            (g_next × val_i) <- eval g_prev γ e vs
            pure $ g_next × D.insert x val_i xvs
@@ -88,10 +91,19 @@ eval g γ (Record α xes) vs = do
       (g × D.empty)
       xes
    pure $ (G.union α' (S.insert α vs) g_n) × V.Record α' xvs
+eval g γ (Dictionary α ees) vrts = do
+   α' <- fresh
+   g_n × xvs <- foldM
+      ( \(g_prev × xvs) (Pair e1 e2) -> do
+           (g1 × v1) <- eval g_prev γ e1 vrts
+           let s × β = {- string.match v1 -} error "to be replaced with <string.match v1>" :: String × Vertex
+           (g2 × v2) <- eval g1 γ e2 vrts
+           pure $ g2 × D.insert s (β × v2) xvs
+      )
+      (g × D.empty)
+      ees
+   pure $ (G.union α' (S.insert α vrts) g_n) × V.Dictionary α' xvs
 eval _ _ _ _ = error "to do"
--- eval γ (Record α xes) α' = do
---    xts × xvs <- traverse (flip (eval γ) α') xes <#> D.unzip
---    pure $ T.Record xts × V.Record (α ∧ α') xvs
 -- eval γ (Dictionary α ees) α' = do
 --    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
 --    let
