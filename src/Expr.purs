@@ -8,6 +8,7 @@ import Data.Foldable (class Foldable)
 import Data.List (List)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
+import Data.Traversable (class Traversable)
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
@@ -114,12 +115,16 @@ instance BV (Cont a) where
 -- ======================
 derive instance Functor VarDef
 derive instance Foldable VarDef
+derive instance Traversable VarDef
 derive instance Functor Cont
 derive instance Foldable Cont
+derive instance Traversable Cont
 derive instance Functor Elim
 derive instance Foldable Elim
+derive instance Traversable Elim
 derive instance Functor Expr
 derive instance Foldable Expr
+derive instance Traversable Expr
 
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
