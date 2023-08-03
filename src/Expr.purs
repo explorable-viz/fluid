@@ -15,11 +15,6 @@ import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemila
 import Util (type (+), type (×), absurd, both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
-instance FromSugar Expr where
-   fromSug = Sugar
-   toSug (Sugar s e) = s × e
-   toSug _ = error absurd
-
 data Expr a
    = Var Var
    | Op Var
@@ -35,7 +30,6 @@ data Expr a
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
-   | Sugar (Sugar' Expr) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -87,7 +81,6 @@ instance FV (Expr a) where
    fv (App e1 e2) = fv e1 `union` fv e2
    fv (Let def e) = fv def `union` (fv e `difference` bv def)
    fv (LetRec ρ e) = unions (fv <$> ρ) `union` fv e
-   fv (Sugar _ e) = fv e
 
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ `difference` singleton x
@@ -189,7 +182,6 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    maybeJoin (App e1 e2) (App e1' e2') = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Let def e) (Let def' e') = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec ρ e) (LetRec ρ' e') = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
-   maybeJoin (Sugar s e) (Sugar _ e') = Sugar s <$> maybeJoin e e'
    maybeJoin _ _ = report "Incompatible expressions"
 
    join e = definedJoin e
@@ -211,5 +203,4 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
    expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
-   expand (Sugar s e) (Sugar _ e') = Sugar s (expand e e')
    expand _ _ = error "Incompatible expressions"

@@ -17,6 +17,6 @@ class FromSugar e where
    fromSug :: forall a. Sugar' e -> e a -> e a
    toSug :: forall a. e a -> Sugar' e × e a
 
-class (Functor s, Functor e, FromSugar e) <= Desugarable s e | s -> e where
+class (Functor s, Functor e) <= Desugarable s e | s -> e where
    desug :: forall a. JoinSemilattice a => s a -> MayFail (e a)
    desugBwd :: forall a. BoundedJoinSemilattice a => e a -> Raw s -> s a
