@@ -54,7 +54,7 @@ testAlloc (File file) =
             e = successful (desug s)
             e' = fst $ runAlloc e
             src' = render (pretty e')
-         log $ "Allocate:\n" <> src'
+         log $ "Allocated:\n" <> src'
 
 testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =

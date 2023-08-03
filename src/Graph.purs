@@ -2,6 +2,7 @@ module Graph where
 
 import Prelude
 
+import Control.Monad.State (State, StateT, get, put)
 import Data.Foldable (foldl)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -23,6 +24,15 @@ class Graph g where
    allocate :: g -> Vertex
 
 newtype Vertex = Vertex String
+
+type HeapT m a = StateT Int m a
+type Heap a = State Int a
+
+fresh :: forall m. Monad m => HeapT m Vertex
+fresh = do
+   s <- get
+   put (s + 1)
+   pure (Vertex (show s))
 
 newtype GraphImpl = GraphImpl ((SMap (Set Vertex)) × (SMap (Set Vertex)))
 
