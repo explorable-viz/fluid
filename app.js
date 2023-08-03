@@ -16448,40 +16448,40 @@
     const chunkedRevMap = (chunkedRevMap$a0$copy) => (chunkedRevMap$a1$copy) => {
       let chunkedRevMap$a0 = chunkedRevMap$a0$copy, chunkedRevMap$a1 = chunkedRevMap$a1$copy, chunkedRevMap$c = true, chunkedRevMap$r;
       while (chunkedRevMap$c) {
-        const chunksAcc = chunkedRevMap$a0, v = chunkedRevMap$a1;
-        const $4 = (chunksAcc1, xs) => {
+        const v = chunkedRevMap$a0, v1 = chunkedRevMap$a1;
+        const $4 = (chunksAcc, xs) => {
           const reverseUnrolledMap = (reverseUnrolledMap$a0$copy) => (reverseUnrolledMap$a1$copy) => {
             let reverseUnrolledMap$a0 = reverseUnrolledMap$a0$copy, reverseUnrolledMap$a1 = reverseUnrolledMap$a1$copy, reverseUnrolledMap$c = true, reverseUnrolledMap$r;
             while (reverseUnrolledMap$c) {
-              const v1 = reverseUnrolledMap$a0, acc = reverseUnrolledMap$a1;
-              if (v1.tag === "Cons") {
-                if (v1._1.tag === "Cons") {
-                  if (v1._1._2.tag === "Cons") {
-                    if (v1._1._2._2.tag === "Cons") {
-                      reverseUnrolledMap$a0 = v1._2;
-                      reverseUnrolledMap$a1 = $List("Cons", f(v1._1._1), $List("Cons", f(v1._1._2._1), $List("Cons", f(v1._1._2._2._1), acc)));
+              const v2 = reverseUnrolledMap$a0, v3 = reverseUnrolledMap$a1;
+              if (v2.tag === "Cons") {
+                if (v2._1.tag === "Cons") {
+                  if (v2._1._2.tag === "Cons") {
+                    if (v2._1._2._2.tag === "Cons") {
+                      reverseUnrolledMap$a0 = v2._2;
+                      reverseUnrolledMap$a1 = $List("Cons", f(v2._1._1), $List("Cons", f(v2._1._2._1), $List("Cons", f(v2._1._2._2._1), v3)));
                       continue;
                     }
                     reverseUnrolledMap$c = false;
-                    reverseUnrolledMap$r = acc;
+                    reverseUnrolledMap$r = v3;
                     continue;
                   }
                   reverseUnrolledMap$c = false;
-                  reverseUnrolledMap$r = acc;
+                  reverseUnrolledMap$r = v3;
                   continue;
                 }
                 reverseUnrolledMap$c = false;
-                reverseUnrolledMap$r = acc;
+                reverseUnrolledMap$r = v3;
                 continue;
               }
               reverseUnrolledMap$c = false;
-              reverseUnrolledMap$r = acc;
+              reverseUnrolledMap$r = v3;
               continue;
             }
             ;
             return reverseUnrolledMap$r;
           };
-          return reverseUnrolledMap(chunksAcc1)((() => {
+          return reverseUnrolledMap(chunksAcc)((() => {
             if (xs.tag === "Cons") {
               if (xs._2.tag === "Cons") {
                 if (xs._2._2.tag === "Nil") {
@@ -16497,23 +16497,23 @@
             return Nil;
           })());
         };
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Cons") {
-            if (v._2._2.tag === "Cons") {
-              chunkedRevMap$a0 = $List("Cons", v, chunksAcc);
-              chunkedRevMap$a1 = v._2._2._2;
+        if (v1.tag === "Cons") {
+          if (v1._2.tag === "Cons") {
+            if (v1._2._2.tag === "Cons") {
+              chunkedRevMap$a0 = $List("Cons", v1, v);
+              chunkedRevMap$a1 = v1._2._2._2;
               continue;
             }
             chunkedRevMap$c = false;
-            chunkedRevMap$r = $4(chunksAcc, v);
+            chunkedRevMap$r = $4(v, v1);
             continue;
           }
           chunkedRevMap$c = false;
-          chunkedRevMap$r = $4(chunksAcc, v);
+          chunkedRevMap$r = $4(v, v1);
           continue;
         }
         chunkedRevMap$c = false;
-        chunkedRevMap$r = $4(chunksAcc, v);
+        chunkedRevMap$r = $4(v, v1);
         continue;
       }
       ;
@@ -16530,15 +16530,15 @@
         const go = (go$a0$copy) => (go$a1$copy) => {
           let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
           while (go$c) {
-            const acc = go$a0, v = go$a1;
-            if (v.tag === "Nil") {
+            const v = go$a0, v1 = go$a1;
+            if (v1.tag === "Nil") {
               go$c = false;
-              go$r = acc;
+              go$r = v;
               continue;
             }
-            if (v.tag === "Cons") {
-              go$a0 = $List("Cons", v._1, acc);
-              go$a1 = v._2;
+            if (v1.tag === "Cons") {
+              go$a0 = $List("Cons", v1._1, v);
+              go$a1 = v1._2;
               continue;
             }
             fail();
@@ -16906,42 +16906,42 @@
           continue;
         }
         if ($sequedesceascen$b === 1) {
-          const a = $sequedesceascen$a0, as = $sequedesceascen$a1, v = $sequedesceascen$a2;
-          if (v.tag === "Cons") {
-            if (cmp(a)(v._1).tag === "GT") {
+          const v = $sequedesceascen$a0, v1 = $sequedesceascen$a1, v2 = $sequedesceascen$a2;
+          if (v2.tag === "Cons") {
+            if (cmp(v)(v2._1).tag === "GT") {
               $sequedesceascen$b = 1;
-              $sequedesceascen$a0 = v._1;
-              $sequedesceascen$a1 = $List("Cons", a, as);
-              $sequedesceascen$a2 = v._2;
+              $sequedesceascen$a0 = v2._1;
+              $sequedesceascen$a1 = $List("Cons", v, v1);
+              $sequedesceascen$a2 = v2._2;
               continue;
             }
             $sequedesceascen$c = false;
-            $sequedesceascen$r = $List("Cons", $List("Cons", a, as), sequences(v));
+            $sequedesceascen$r = $List("Cons", $List("Cons", v, v1), sequences(v2));
             continue;
           }
           $sequedesceascen$c = false;
-          $sequedesceascen$r = $List("Cons", $List("Cons", a, as), sequences(v));
+          $sequedesceascen$r = $List("Cons", $List("Cons", v, v1), sequences(v2));
           continue;
         }
         if ($sequedesceascen$b === 2) {
-          const a = $sequedesceascen$a0, as = $sequedesceascen$a1, v = $sequedesceascen$a2;
-          if (v.tag === "Cons") {
+          const v = $sequedesceascen$a0, v1 = $sequedesceascen$a1, v2 = $sequedesceascen$a2;
+          if (v2.tag === "Cons") {
             if ((() => {
-              const $8 = cmp(a)(v._1);
+              const $8 = cmp(v)(v2._1);
               return $8.tag === "LT" || !($8.tag === "GT");
             })()) {
               $sequedesceascen$b = 2;
-              $sequedesceascen$a0 = v._1;
-              $sequedesceascen$a1 = (ys) => as($List("Cons", a, ys));
-              $sequedesceascen$a2 = v._2;
+              $sequedesceascen$a0 = v2._1;
+              $sequedesceascen$a1 = (ys) => v1($List("Cons", v, ys));
+              $sequedesceascen$a2 = v2._2;
               continue;
             }
             $sequedesceascen$c = false;
-            $sequedesceascen$r = $List("Cons", as($List("Cons", a, Nil)), sequences(v));
+            $sequedesceascen$r = $List("Cons", v1($List("Cons", v, Nil)), sequences(v2));
             continue;
           }
           $sequedesceascen$c = false;
-          $sequedesceascen$r = $List("Cons", as($List("Cons", a, Nil)), sequences(v));
+          $sequedesceascen$r = $List("Cons", v1($List("Cons", v, Nil)), sequences(v2));
           continue;
         }
       }
@@ -16949,23 +16949,23 @@
       return $sequedesceascen$r;
     };
     const sequences = (v) => $sequedesceascen(0, v);
-    const descending = (a) => (as) => (v) => $sequedesceascen(1, a, as, v);
-    const ascending3 = (a) => (as) => (v) => $sequedesceascen(2, a, as, v);
+    const descending = (v) => (v1) => (v2) => $sequedesceascen(1, v, v1, v2);
+    const ascending3 = (v) => (v1) => (v2) => $sequedesceascen(2, v, v1, v2);
     return (x2) => mergeAll(sequences(x2));
   };
   var reverse = /* @__PURE__ */ (() => {
     const go = (go$a0$copy) => (go$a1$copy) => {
       let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
       while (go$c) {
-        const acc = go$a0, v = go$a1;
-        if (v.tag === "Nil") {
+        const v = go$a0, v1 = go$a1;
+        if (v1.tag === "Nil") {
           go$c = false;
-          go$r = acc;
+          go$r = v;
           continue;
         }
-        if (v.tag === "Cons") {
-          go$a0 = $List("Cons", v._1, acc);
-          go$a1 = v._2;
+        if (v1.tag === "Cons") {
+          go$a0 = $List("Cons", v1._1, v);
+          go$a1 = v1._2;
           continue;
         }
         fail();
@@ -17010,22 +17010,22 @@
     const go = (go$a0$copy) => (go$a1$copy) => (go$a2$copy) => {
       let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$a2 = go$a2$copy, go$c = true, go$r;
       while (go$c) {
-        const v = go$a0, v1 = go$a1, acc = go$a2;
+        const v = go$a0, v1 = go$a1, v2 = go$a2;
         if (v.tag === "Nil") {
           go$c = false;
-          go$r = acc;
+          go$r = v2;
           continue;
         }
         if (v1.tag === "Nil") {
           go$c = false;
-          go$r = acc;
+          go$r = v2;
           continue;
         }
         if (v.tag === "Cons") {
           if (v1.tag === "Cons") {
             go$a0 = v._2;
             go$a1 = v1._2;
-            go$a2 = $List("Cons", f(v._1)(v1._1), acc);
+            go$a2 = $List("Cons", f(v._1)(v1._1), v2);
             continue;
           }
           fail();
@@ -17490,41 +17490,41 @@
   var fromZipper = (fromZipper$a0$copy) => (fromZipper$a1$copy) => (fromZipper$a2$copy) => {
     let fromZipper$a0 = fromZipper$a0$copy, fromZipper$a1 = fromZipper$a1$copy, fromZipper$a2 = fromZipper$a2$copy, fromZipper$c = true, fromZipper$r;
     while (fromZipper$c) {
-      const dictOrd = fromZipper$a0, v = fromZipper$a1, tree = fromZipper$a2;
+      const dictOrd = fromZipper$a0, v = fromZipper$a1, v1 = fromZipper$a2;
       if (v.tag === "Nil") {
         fromZipper$c = false;
-        fromZipper$r = tree;
+        fromZipper$r = v1;
         continue;
       }
       if (v.tag === "Cons") {
         if (v._1.tag === "TwoLeft") {
           fromZipper$a0 = dictOrd;
           fromZipper$a1 = v._2;
-          fromZipper$a2 = $Map("Two", tree, v._1._1, v._1._2, v._1._3);
+          fromZipper$a2 = $Map("Two", v1, v._1._1, v._1._2, v._1._3);
           continue;
         }
         if (v._1.tag === "TwoRight") {
           fromZipper$a0 = dictOrd;
           fromZipper$a1 = v._2;
-          fromZipper$a2 = $Map("Two", v._1._1, v._1._2, v._1._3, tree);
+          fromZipper$a2 = $Map("Two", v._1._1, v._1._2, v._1._3, v1);
           continue;
         }
         if (v._1.tag === "ThreeLeft") {
           fromZipper$a0 = dictOrd;
           fromZipper$a1 = v._2;
-          fromZipper$a2 = $Map("Three", tree, v._1._1, v._1._2, v._1._3, v._1._4, v._1._5, v._1._6);
+          fromZipper$a2 = $Map("Three", v1, v._1._1, v._1._2, v._1._3, v._1._4, v._1._5, v._1._6);
           continue;
         }
         if (v._1.tag === "ThreeMiddle") {
           fromZipper$a0 = dictOrd;
           fromZipper$a1 = v._2;
-          fromZipper$a2 = $Map("Three", v._1._1, v._1._2, v._1._3, tree, v._1._4, v._1._5, v._1._6);
+          fromZipper$a2 = $Map("Three", v._1._1, v._1._2, v._1._3, v1, v._1._4, v._1._5, v._1._6);
           continue;
         }
         if (v._1.tag === "ThreeRight") {
           fromZipper$a0 = dictOrd;
           fromZipper$a1 = v._2;
-          fromZipper$a2 = $Map("Three", v._1._1, v._1._2, v._1._3, v._1._4, v._1._5, v._1._6, tree);
+          fromZipper$a2 = $Map("Three", v._1._1, v._1._2, v._1._3, v._1._4, v._1._5, v._1._6, v1);
           continue;
         }
         fail();
@@ -17580,58 +17580,58 @@
     const down = (down$a0$copy) => (down$a1$copy) => {
       let down$a0 = down$a0$copy, down$a1 = down$a1$copy, down$c = true, down$r;
       while (down$c) {
-        const ctx = down$a0, v1 = down$a1;
-        if (v1.tag === "Leaf") {
+        const v1 = down$a0, v2 = down$a1;
+        if (v2.tag === "Leaf") {
           down$c = false;
-          down$r = up(ctx)($KickUp(Leaf2, k, v, Leaf2));
+          down$r = up(v1)($KickUp(Leaf2, k, v, Leaf2));
           continue;
         }
-        if (v1.tag === "Two") {
-          const v2 = dictOrd.compare(k)(v1._2);
-          if (v2.tag === "EQ") {
-            down$c = false;
-            down$r = fromZipper(dictOrd)(ctx)($Map("Two", v1._1, k, v, v1._4));
-            continue;
-          }
-          if (v2.tag === "LT") {
-            down$a0 = $List("Cons", $TreeContext("TwoLeft", v1._2, v1._3, v1._4), ctx);
-            down$a1 = v1._1;
-            continue;
-          }
-          down$a0 = $List("Cons", $TreeContext("TwoRight", v1._1, v1._2, v1._3), ctx);
-          down$a1 = v1._4;
-          continue;
-        }
-        if (v1.tag === "Three") {
-          const v3 = dictOrd.compare(k)(v1._2);
+        if (v2.tag === "Two") {
+          const v3 = dictOrd.compare(k)(v2._2);
           if (v3.tag === "EQ") {
             down$c = false;
-            down$r = fromZipper(dictOrd)(ctx)($Map("Three", v1._1, k, v, v1._4, v1._5, v1._6, v1._7));
-            continue;
-          }
-          const v4 = dictOrd.compare(k)(v1._5);
-          if (v4.tag === "EQ") {
-            down$c = false;
-            down$r = fromZipper(dictOrd)(ctx)($Map("Three", v1._1, v1._2, v1._3, v1._4, k, v, v1._7));
+            down$r = fromZipper(dictOrd)(v1)($Map("Two", v2._1, k, v, v2._4));
             continue;
           }
           if (v3.tag === "LT") {
-            down$a0 = $List("Cons", $TreeContext("ThreeLeft", v1._2, v1._3, v1._4, v1._5, v1._6, v1._7), ctx);
-            down$a1 = v1._1;
+            down$a0 = $List("Cons", $TreeContext("TwoLeft", v2._2, v2._3, v2._4), v1);
+            down$a1 = v2._1;
+            continue;
+          }
+          down$a0 = $List("Cons", $TreeContext("TwoRight", v2._1, v2._2, v2._3), v1);
+          down$a1 = v2._4;
+          continue;
+        }
+        if (v2.tag === "Three") {
+          const v3 = dictOrd.compare(k)(v2._2);
+          if (v3.tag === "EQ") {
+            down$c = false;
+            down$r = fromZipper(dictOrd)(v1)($Map("Three", v2._1, k, v, v2._4, v2._5, v2._6, v2._7));
+            continue;
+          }
+          const v4 = dictOrd.compare(k)(v2._5);
+          if (v4.tag === "EQ") {
+            down$c = false;
+            down$r = fromZipper(dictOrd)(v1)($Map("Three", v2._1, v2._2, v2._3, v2._4, k, v, v2._7));
+            continue;
+          }
+          if (v3.tag === "LT") {
+            down$a0 = $List("Cons", $TreeContext("ThreeLeft", v2._2, v2._3, v2._4, v2._5, v2._6, v2._7), v1);
+            down$a1 = v2._1;
             continue;
           }
           if (v3.tag === "GT") {
             if (v4.tag === "LT") {
-              down$a0 = $List("Cons", $TreeContext("ThreeMiddle", v1._1, v1._2, v1._3, v1._5, v1._6, v1._7), ctx);
-              down$a1 = v1._4;
+              down$a0 = $List("Cons", $TreeContext("ThreeMiddle", v2._1, v2._2, v2._3, v2._5, v2._6, v2._7), v1);
+              down$a1 = v2._4;
               continue;
             }
-            down$a0 = $List("Cons", $TreeContext("ThreeRight", v1._1, v1._2, v1._3, v1._4, v1._5, v1._6), ctx);
-            down$a1 = v1._7;
+            down$a0 = $List("Cons", $TreeContext("ThreeRight", v2._1, v2._2, v2._3, v2._4, v2._5, v2._6), v1);
+            down$a1 = v2._7;
             continue;
           }
-          down$a0 = $List("Cons", $TreeContext("ThreeRight", v1._1, v1._2, v1._3, v1._4, v1._5, v1._6), ctx);
-          down$a1 = v1._7;
+          down$a0 = $List("Cons", $TreeContext("ThreeRight", v2._1, v2._2, v2._3, v2._4, v2._5, v2._6), v1);
+          down$a1 = v2._7;
           continue;
         }
         fail();
@@ -25281,24 +25281,24 @@
   var AssocNone = /* @__PURE__ */ $Assoc("AssocNone");
   var AssocLeft = /* @__PURE__ */ $Assoc("AssocLeft");
   var AssocRight = /* @__PURE__ */ $Assoc("AssocRight");
-  var splitOp = (v) => (accum) => {
+  var splitOp = (v) => (v1) => {
     if (v.tag === "Infix") {
       if (v._2.tag === "AssocNone") {
-        return { rassoc: accum.rassoc, lassoc: accum.lassoc, nassoc: $List("Cons", v._1, accum.nassoc), prefix: accum.prefix, postfix: accum.postfix };
+        return { rassoc: v1.rassoc, lassoc: v1.lassoc, nassoc: $List("Cons", v._1, v1.nassoc), prefix: v1.prefix, postfix: v1.postfix };
       }
       if (v._2.tag === "AssocLeft") {
-        return { rassoc: accum.rassoc, lassoc: $List("Cons", v._1, accum.lassoc), nassoc: accum.nassoc, prefix: accum.prefix, postfix: accum.postfix };
+        return { rassoc: v1.rassoc, lassoc: $List("Cons", v._1, v1.lassoc), nassoc: v1.nassoc, prefix: v1.prefix, postfix: v1.postfix };
       }
       if (v._2.tag === "AssocRight") {
-        return { rassoc: $List("Cons", v._1, accum.rassoc), lassoc: accum.lassoc, nassoc: accum.nassoc, prefix: accum.prefix, postfix: accum.postfix };
+        return { rassoc: $List("Cons", v._1, v1.rassoc), lassoc: v1.lassoc, nassoc: v1.nassoc, prefix: v1.prefix, postfix: v1.postfix };
       }
       fail();
     }
     if (v.tag === "Prefix") {
-      return { rassoc: accum.rassoc, lassoc: accum.lassoc, nassoc: accum.nassoc, prefix: $List("Cons", v._1, accum.prefix), postfix: accum.postfix };
+      return { rassoc: v1.rassoc, lassoc: v1.lassoc, nassoc: v1.nassoc, prefix: $List("Cons", v._1, v1.prefix), postfix: v1.postfix };
     }
     if (v.tag === "Postfix") {
-      return { rassoc: accum.rassoc, lassoc: accum.lassoc, nassoc: accum.nassoc, prefix: accum.prefix, postfix: $List("Cons", v._1, accum.postfix) };
+      return { rassoc: v1.rassoc, lassoc: v1.lassoc, nassoc: v1.nassoc, prefix: v1.prefix, postfix: $List("Cons", v._1, v1.postfix) };
     }
     fail();
   };
@@ -26353,24 +26353,24 @@
   var functorClauses = { map: (f) => (m) => functorNonEmptyList.map(functorClause.map(f))(m) };
   var functorClause = { map: (f) => (m) => $Tuple(m._1, functorExpr2.map(f)(m._2)) };
   var functorModule = {
-    map: (f) => (v) => $Module2(listMap((v1) => {
-      if (v1.tag === "Left") {
-        return $Either("Left", functorNonEmptyList.map(functorVarDef2.map(f))(v1._1));
+    map: (f) => (v) => $Module2(listMap((v2) => {
+      if (v2.tag === "Left") {
+        return $Either("Left", functorNonEmptyList.map(functorVarDef2.map(f))(v2._1));
       }
-      if (v1.tag === "Right") {
+      if (v2.tag === "Right") {
         return $Either(
           "Right",
-          functorNonEmptyList.map((v2) => $Tuple(v2._1, $Tuple(v2._2._1, functorExpr2.map(f)(v2._2._2))))(v1._1)
+          functorNonEmptyList.map((v3) => $Tuple(v3._1, $Tuple(v3._2._1, functorExpr2.map(f)(v3._2._2))))(v2._1)
         );
       }
       fail();
     })(v._1))
   };
-  var pattCont_ListRest_Fwd = (v) => (\u03BA) => {
+  var pattCont_ListRest_Fwd = (v) => (v1) => {
     if (v.tag === "PEnd") {
       return $Either(
         "Right",
-        $Elim("ElimConstr", runST(bind_(newImpl)(poke3("Nil")(\u03BA))))
+        $Elim("ElimConstr", runST(bind_(newImpl)(poke3("Nil")(v1))))
       );
     }
     if (v.tag === "PNext") {
@@ -26378,7 +26378,7 @@
         "Cons",
         $Either("Left", v._1),
         $List("Cons", $Either("Right", v._2), Nil)
-      ))(\u03BA);
+      ))(v1);
       if ($2.tag === "Left") {
         return $Either("Left", $2._1);
       }
@@ -26392,9 +26392,9 @@
     }
     fail();
   };
-  var pattContFwd = (v) => (\u03BA) => {
+  var pattContFwd = (v) => (v1) => {
     if (v.tag === "PVar") {
-      return $Either("Right", $Elim("ElimVar", v._1, \u03BA));
+      return $Either("Right", $Elim("ElimVar", v._1, v1));
     }
     if (v.tag === "PConstr") {
       const $2 = checkArity(v._1)((() => {
@@ -26419,7 +26419,7 @@
         };
         return go(0)(v._2);
       })());
-      const $3 = pattArgsFwd(listMap(Left)(v._2))(\u03BA);
+      const $3 = pattArgsFwd(listMap(Left)(v._2))(v1);
       return applyEither.apply((() => {
         if ($2.tag === "Left") {
           return $Either("Left", $2._1);
@@ -26443,7 +26443,7 @@
     }
     if (v.tag === "PRecord") {
       const $2 = ElimRecord(keys3(v._1));
-      const $3 = pattArgsFwd(listMap((x2) => $Either("Left", x2._2))(sortBy((x2) => (y2) => ordString.compare(x2._1)(y2._1))(v._1)))(\u03BA);
+      const $3 = pattArgsFwd(listMap((x2) => $Either("Left", x2._2))(sortBy((x2) => (y2) => ordString.compare(x2._1)(y2._1))(v._1)))(v1);
       if ($3.tag === "Left") {
         return $Either("Left", $3._1);
       }
@@ -26455,7 +26455,7 @@
     if (v.tag === "PListEmpty") {
       return $Either(
         "Right",
-        $Elim("ElimConstr", runST(bind_(newImpl)(poke3("Nil")(\u03BA))))
+        $Elim("ElimConstr", runST(bind_(newImpl)(poke3("Nil")(v1))))
       );
     }
     if (v.tag === "PListNonEmpty") {
@@ -26463,7 +26463,7 @@
         "Cons",
         $Either("Left", v._1),
         $List("Cons", $Either("Right", v._2), Nil)
-      ))(\u03BA);
+      ))(v1);
       if ($2.tag === "Left") {
         return $Either("Left", $2._1);
       }
@@ -26477,13 +26477,13 @@
     }
     fail();
   };
-  var pattArgsFwd = (v) => (\u03BA) => {
+  var pattArgsFwd = (v) => (v1) => {
     if (v.tag === "Nil") {
-      return $Either("Right", \u03BA);
+      return $Either("Right", v1);
     }
     if (v.tag === "Cons") {
       if (v._1.tag === "Left") {
-        const $2 = bindEither.bind(pattArgsFwd(v._2)(\u03BA))(pattContFwd(v._1._1));
+        const $2 = bindEither.bind(pattArgsFwd(v._2)(v1))(pattContFwd(v._1._1));
         if ($2.tag === "Left") {
           return $Either("Left", $2._1);
         }
@@ -26493,7 +26493,7 @@
         fail();
       }
       if (v._1.tag === "Right") {
-        const $2 = bindEither.bind(pattArgsFwd(v._2)(\u03BA))(pattCont_ListRest_Fwd(v._1._1));
+        const $2 = bindEither.bind(pattArgsFwd(v._2)(v1))(pattCont_ListRest_Fwd(v._1._1));
         if ($2.tag === "Left") {
           return $Either("Left", $2._1);
         }
@@ -27240,11 +27240,11 @@
     }
     fail();
   };
-  var intercalate4 = (sep) => (xs) => foldlArray((v) => (x2) => {
+  var intercalate4 = (sep) => (xs) => foldlArray((v) => (v1) => {
     if (v.init) {
-      return { init: false, acc: x2 };
+      return { init: false, acc: v1 };
     }
-    return { init: false, acc: v.acc + (sep + x2) };
+    return { init: false, acc: v.acc + (sep + v1) };
   })({ init: true, acc: "" })(xs).acc;
   var text = (s) => {
     const lines = split("\n")(s);
@@ -27351,63 +27351,63 @@
     }
     return doc2;
   };
-  var prettyConstr = (dictPretty) => (dictHighlightable) => (\u03B1) => (c) => (v) => {
-    const $5 = (c1, xs, \u03B11) => hspace2($List(
+  var prettyConstr = (dictPretty) => (dictHighlightable) => (v) => (v1) => (v2) => {
+    const $5 = (c, xs, \u03B1) => hspace2($List(
       "Cons",
-      dictHighlightable.highlightIf(\u03B11)(text(showCtr(c1))),
+      dictHighlightable.highlightIf(\u03B1)(text(showCtr(c))),
       listMap(prettyParensOpt(dictPretty))(xs)
     ));
-    if (v.tag === "Cons") {
-      if (v._2.tag === "Cons") {
-        if (c === "Pair") {
+    if (v2.tag === "Cons") {
+      if (v2._2.tag === "Cons") {
+        if (v1 === "Pair") {
           return (() => {
-            if (v._2._2.tag === "Nil") {
+            if (v2._2._2.tag === "Nil") {
               return identity12;
             }
-            return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
-          })()(dictHighlightable.highlightIf(\u03B1)(beside(beside(text("("))(hcomma2([dictPretty.pretty(v._1), dictPretty.pretty(v._2._1)])))(text(")"))));
+            return (v1$1) => unsafePerformEffect(throwException(error("Assertion failure")));
+          })()(dictHighlightable.highlightIf(v)(beside(beside(text("("))(hcomma2([dictPretty.pretty(v2._1), dictPretty.pretty(v2._2._1)])))(text(")"))));
         }
-        if (c === "Nil") {
+        if (v1 === "Nil") {
           return (() => {
-            if (v.tag === "Nil") {
+            if (v2.tag === "Nil") {
               return identity12;
             }
-            return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
-          })()(dictHighlightable.highlightIf(\u03B1)(nil2));
+            return (v1$1) => unsafePerformEffect(throwException(error("Assertion failure")));
+          })()(dictHighlightable.highlightIf(v)(nil2));
         }
-        if (c === ":") {
+        if (v1 === ":") {
           return (() => {
-            if (v._2._2.tag === "Nil") {
+            if (v2._2._2.tag === "Nil") {
               return identity12;
             }
-            return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
+            return (v1$1) => unsafePerformEffect(throwException(error("Assertion failure")));
           })()(beside(beside(text("("))(hspace1([
-            dictPretty.pretty(v._1),
-            dictHighlightable.highlightIf(\u03B1)(text(":")),
-            dictPretty.pretty(v._2._1)
+            dictPretty.pretty(v2._1),
+            dictHighlightable.highlightIf(v)(text(":")),
+            dictPretty.pretty(v2._2._1)
           ])))(text(")")));
         }
-        return $5(c, v, \u03B1);
+        return $5(v1, v2, v);
       }
-      if (c === "Nil") {
+      if (v1 === "Nil") {
         return (() => {
-          if (v.tag === "Nil") {
+          if (v2.tag === "Nil") {
             return identity12;
           }
-          return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
-        })()(dictHighlightable.highlightIf(\u03B1)(nil2));
+          return (v1$1) => unsafePerformEffect(throwException(error("Assertion failure")));
+        })()(dictHighlightable.highlightIf(v)(nil2));
       }
-      return $5(c, v, \u03B1);
+      return $5(v1, v2, v);
     }
-    if (c === "Nil") {
+    if (v1 === "Nil") {
       return (() => {
-        if (v.tag === "Nil") {
+        if (v2.tag === "Nil") {
           return identity12;
         }
-        return (v1) => unsafePerformEffect(throwException(error("Assertion failure")));
-      })()(dictHighlightable.highlightIf(\u03B1)(nil2));
+        return (v1$1) => unsafePerformEffect(throwException(error("Assertion failure")));
+      })()(dictHighlightable.highlightIf(v)(nil2));
     }
-    return $5(c, v, \u03B1);
+    return $5(v1, v2, v);
   };
   var prettyDict = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(text(":="))(between2(text("{|"))(text("|}")));
   var prettyRecord = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(text(":"))(between2(text("{"))(text("}")));
@@ -27591,37 +27591,37 @@
     }
   };
   var functorVal = {
-    map: (f) => (v) => {
-      if (v.tag === "Int") {
-        return $Val("Int", f(v._1), v._2);
+    map: (v) => (v1) => {
+      if (v1.tag === "Int") {
+        return $Val("Int", v(v1._1), v1._2);
       }
-      if (v.tag === "Float") {
-        return $Val("Float", f(v._1), v._2);
+      if (v1.tag === "Float") {
+        return $Val("Float", v(v1._1), v1._2);
       }
-      if (v.tag === "Str") {
-        return $Val("Str", f(v._1), v._2);
+      if (v1.tag === "Str") {
+        return $Val("Str", v(v1._1), v1._2);
       }
-      if (v.tag === "Record") {
-        return $Val("Record", f(v._1), _fmapObject(v._2, functorVal.map(f)));
+      if (v1.tag === "Record") {
+        return $Val("Record", v(v1._1), _fmapObject(v1._2, functorVal.map(v)));
       }
-      if (v.tag === "Dictionary") {
-        return $Val("Dictionary", f(v._1), _fmapObject(v._2, bifunctorTuple.bimap(f)(functorVal.map(f))));
+      if (v1.tag === "Dictionary") {
+        return $Val("Dictionary", v(v1._1), _fmapObject(v1._2, bifunctorTuple.bimap(v)(functorVal.map(v))));
       }
-      if (v.tag === "Constr") {
-        return $Val("Constr", f(v._1), v._2, listMap(functorVal.map(f))(v._3));
+      if (v1.tag === "Constr") {
+        return $Val("Constr", v(v1._1), v1._2, listMap(functorVal.map(v))(v1._3));
       }
-      if (v.tag === "Matrix") {
+      if (v1.tag === "Matrix") {
         return $Val(
           "Matrix",
-          f(v._1),
+          v(v1._1),
           $Tuple(
-            arrayMap(arrayMap(functorVal.map(f)))(v._2._1),
-            $Tuple($Tuple(v._2._2._1._1, f(v._2._2._1._2)), $Tuple(v._2._2._2._1, f(v._2._2._2._2)))
+            arrayMap(arrayMap(functorVal.map(v)))(v1._2._1),
+            $Tuple($Tuple(v1._2._2._1._1, v(v1._2._2._1._2)), $Tuple(v1._2._2._2._1, v(v1._2._2._2._2)))
           )
         );
       }
-      if (v.tag === "Fun") {
-        return $Val("Fun", functorFun.map(f)(v._1));
+      if (v1.tag === "Fun") {
+        return $Val("Fun", functorFun.map(v)(v1._1));
       }
       fail();
     }
@@ -28025,15 +28025,15 @@
     const go = (go$a0$copy) => (go$a1$copy) => {
       let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
       while (go$c) {
-        const v = go$a0, acc = go$a1;
+        const v = go$a0, v1 = go$a1;
         if (v.tag === "Nil") {
           go$c = false;
-          go$r = acc;
+          go$r = v1;
           continue;
         }
         if (v.tag === "Cons") {
           if ((() => {
-            const $6 = lookup(ordString)(v._1)(acc);
+            const $6 = lookup(ordString)(v._1)(v1);
             if ($6.tag === "Nothing") {
               return false;
             }
@@ -28043,7 +28043,7 @@
             fail();
           })()) {
             go$a0 = v._2;
-            go$a1 = acc;
+            go$a1 = v1;
             continue;
           }
           go$a0 = foldableList.foldr(Cons)(v._2)(toUnfoldable9(intersection2(fVElim.fv($$get(v._1)(\u03C1)))(dom_\u03C1)));
@@ -28053,7 +28053,7 @@
             v._1,
             unit2,
             Leaf2
-          ))(acc);
+          ))(v1);
           continue;
         }
         fail();
@@ -31688,50 +31688,50 @@
   var fromFoldable15 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2))();
   var foldl1 = /* @__PURE__ */ (() => foldable1NonEmpty(foldableList).foldl1)();
   var map4 = /* @__PURE__ */ (() => functorNonEmpty(functorList).map)();
-  var matchManyBwd = (dictAnn) => (v) => (\u03BA) => (v1) => (v2) => {
-    if (v2.tag === "Nil") {
+  var matchManyBwd = (dictAnn) => (v) => (v1) => (v2) => (v3) => {
+    if (v3.tag === "Nil") {
       if (isEmpty(v)) {
-        return $Tuple(Nil, \u03BA);
+        return $Tuple(Nil, v1);
       }
       return unsafePerformEffect(throwException(error("absurd")));
     }
-    if (v2.tag === "Cons") {
-      const v3 = disjointUnion_inv(bVMatch.bv(v2._1))(v);
-      const v4 = matchBwd(dictAnn)(v3._1)(\u03BA)(v1)(v2._1);
-      const v6 = matchManyBwd(dictAnn)(v3._2)($Cont("ContElim", v4._2))(v1)(v2._2);
-      return $Tuple(foldableList.foldr(Cons)($List("Cons", v4._1, Nil))(v6._1), v6._2);
+    if (v3.tag === "Cons") {
+      const v4 = disjointUnion_inv(bVMatch.bv(v3._1))(v);
+      const v5 = matchBwd(dictAnn)(v4._1)(v1)(v2)(v3._1);
+      const v7 = matchManyBwd(dictAnn)(v4._2)($Cont("ContElim", v5._2))(v2)(v3._2);
+      return $Tuple(foldableList.foldr(Cons)($List("Cons", v5._1, Nil))(v7._1), v7._2);
     }
     fail();
   };
   var matchBwd = (dictAnn) => {
     const $1 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
     const $2 = functorVal.map((v) => $1.bot);
-    return (v) => (\u03BA) => (v1) => (v2) => {
-      if (v2.tag === "MatchVar") {
-        if (eq(keys2(v))($Map("Two", Leaf2, v2._1, unit2, Leaf2))) {
-          return $Tuple($$get(v2._1)(v), $Elim("ElimVar", v2._1, \u03BA));
+    return (v) => (v1) => (v2) => (v3) => {
+      if (v3.tag === "MatchVar") {
+        if (eq(keys2(v))($Map("Two", Leaf2, v3._1, unit2, Leaf2))) {
+          return $Tuple($$get(v3._1)(v), $Elim("ElimVar", v3._1, v1));
         }
-        return $Tuple($2(v2._2), $Elim("ElimVar", v2._1, \u03BA));
+        return $Tuple($2(v3._2), $Elim("ElimVar", v3._1, v1));
       }
-      if (v2.tag === "MatchVarAnon") {
+      if (v3.tag === "MatchVarAnon") {
         if (isEmpty(v)) {
-          return $Tuple($2(v2._1), $Elim("ElimVar", "_", \u03BA));
+          return $Tuple($2(v3._1), $Elim("ElimVar", "_", v1));
         }
         return unsafePerformEffect(throwException(error("absurd")));
       }
-      if (v2.tag === "MatchConstr") {
-        const v3 = matchManyBwd(dictAnn)(v)(\u03BA)(v1)(reverse(v2._2));
+      if (v3.tag === "MatchConstr") {
+        const v4 = matchManyBwd(dictAnn)(v)(v1)(v2)(reverse(v3._2));
         return $Tuple(
-          $Val("Constr", v1, v2._1, v3._1),
-          $Elim("ElimConstr", runST(bind_(newImpl)(poke3(v2._1)(v3._2))))
+          $Val("Constr", v2, v3._1, v4._1),
+          $Elim("ElimConstr", runST(bind_(newImpl)(poke3(v3._1)(v4._2))))
         );
       }
-      if (v2.tag === "MatchRecord") {
-        const v3 = unzip(toUnfoldable11(v2._1));
-        const v4 = matchManyBwd(dictAnn)(v)(\u03BA)(v1)(reverse(v3._2));
+      if (v3.tag === "MatchRecord") {
+        const v4 = unzip(toUnfoldable11(v3._1));
+        const v5 = matchManyBwd(dictAnn)(v)(v1)(v2)(reverse(v4._2));
         return $Tuple(
-          $Val("Record", v1, fromFoldable8(zipWith(Tuple)(v3._1)(v4._1))),
-          $Elim("ElimRecord", fromFoldable15(keys2(v2._1)), v4._2)
+          $Val("Record", v2, fromFoldable8(zipWith(Tuple)(v4._1)(v5._1))),
+          $Elim("ElimRecord", fromFoldable15(keys2(v3._1)), v5._2)
         );
       }
       fail();
@@ -33651,12 +33651,12 @@
             $$throw,
             (state2, a) => more((v2) => done(
               state2,
-              fromCharArray(toUnfoldable13(foldableList.foldr((v1$1) => (chars) => {
+              fromCharArray(toUnfoldable13(foldableList.foldr((v1$1) => (v2$1) => {
                 if (v1$1.tag === "Nothing") {
-                  return chars;
+                  return v2$1;
                 }
                 if (v1$1.tag === "Just") {
-                  return $List("Cons", v1$1._1, chars);
+                  return $List("Cons", v1$1._1, v2$1);
                 }
                 fail();
               })(Nil)(a)))
@@ -35723,18 +35723,18 @@
       $Tuple(view("output")(v3._2), views)
     )));
   };
-  var drawView = (divId) => (onSel) => (n) => (v) => {
-    if (v.tag === "MatrixFig") {
-      return bindE(eventListener((x2) => onSel(matrixViewHandler(x2))))(drawMatrix(divId)(n)(v._1));
+  var drawView = (v) => (v1) => (v2) => (v3) => {
+    if (v3.tag === "MatrixFig") {
+      return bindE(eventListener((x2) => v1(matrixViewHandler(x2))))(drawMatrix(v)(v2)(v3._1));
     }
-    if (v.tag === "EnergyTableView") {
-      return bindE(eventListener((x2) => onSel((x$1) => x$1)))(drawTable(divId)(n)(v._1));
+    if (v3.tag === "EnergyTableView") {
+      return bindE(eventListener((x2) => v1((x$1) => x$1)))(drawTable(v)(v2)(v3._1));
     }
-    if (v.tag === "LineChartFig") {
-      return bindE(eventListener((x2) => onSel(lineChartHandler(x2))))(drawLineChart(divId)(n)(v._1));
+    if (v3.tag === "LineChartFig") {
+      return bindE(eventListener((x2) => v1(lineChartHandler(x2))))(drawLineChart(v)(v2)(v3._1));
     }
-    if (v.tag === "BarChartFig") {
-      return bindE(eventListener((x2) => onSel(barChartHandler(x2))))(drawBarChart(divId)(n)(v._1));
+    if (v3.tag === "BarChartFig") {
+      return bindE(eventListener((x2) => v1(barChartHandler(x2))))(drawBarChart(v)(v2)(v3._1));
     }
     fail();
   };
