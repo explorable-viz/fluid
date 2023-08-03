@@ -223,8 +223,8 @@ exprFwd (Float α n) = pure (E.Float α n)
 exprFwd (Str α s) = pure (E.Str α s)
 exprFwd (Constr α c ss) = E.Constr α c <$> traverse desugFwd ss
 exprFwd (Record α xss) = E.Record α <$> D.fromFoldable <$> traverse (traverse desugFwd) xss
-exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse desugFwd') sss
-exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desugFwd' s <@> x × y <*> desugFwd' s'
+exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse desugFwd) sss
+exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desugFwd s <@> x × y <*> desugFwd s'
 exprFwd (Lambda bs) = E.Lambda <$> clausesFwd bs
 exprFwd (Project s x) = E.Project <$> desugFwd' s <@> x
 exprFwd (App s1 s2) = E.App <$> desugFwd' s1 <*> desugFwd' s2
@@ -250,9 +250,9 @@ exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry desugBwd <$> z
 exprBwd (E.Record α xes) (Record _ xss) =
    Record α $ xss <#> \(x ↦ s) -> x ↦ desugBwd (get x xes) s
 exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
-   Dictionary α (zipWith (\(Pair e e') (Pair _ _) -> Pair (desugBwd' e) (desugBwd' e')) ees sss)
-exprBwd (E.Matrix α e1 _ e2) (Matrix _ _ (x × y) _) =
-   Matrix α (desugBwd' e1) (x × y) (desugBwd' e2)
+   Dictionary α (zipWith (\(Pair e e') (Pair s s') -> Pair (desugBwd e s) (desugBwd e' s')) ees sss)
+exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
+   Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
 exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd σ bs)
 exprBwd (E.Project e _) (Project _ x) = Project (desugBwd' e) x
 exprBwd (E.App e1 e2) (App _ _) = App (desugBwd' e1) (desugBwd' e2)
