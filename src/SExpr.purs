@@ -279,12 +279,12 @@ exprBwd _ _ = error absurd
 -- ListRest
 listRestFwd :: forall a. JoinSemilattice a => ListRest a -> MayFail (E.Expr a)
 listRestFwd (End α) = pure (enil α)
-listRestFwd (Next α s l) = econs α <$> desugFwd' s <*> desugFwd' l
+listRestFwd (Next α s l) = econs α <$> desugFwd s <*> desugFwd l
 
 listRestBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw ListRest -> ListRest a
 listRestBwd (E.Constr α _ _) (End _) = End α
-listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ _ _) =
-   Next α (desugBwd' e1) (desugBwd' e2)
+listRestBwd (E.Constr α _ (e1 : e2 : Nil)) (Next _ s l) =
+   Next α (desugBwd e1 s) (desugBwd e2 l)
 listRestBwd _ _ = error absurd
 
 -- List Qualifier × Expr
