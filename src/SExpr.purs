@@ -290,18 +290,18 @@ listRestBwd _ _ = error absurd
 -- List Qualifier × Expr
 listCompFwd :: forall a. JoinSemilattice a => a × List (Qualifier a) × Expr a -> MayFail (E.Expr a)
 listCompFwd (α × Nil × s) =
-   econs α <$> desugFwd' s <@> enil α
+   econs α <$> desugFwd s <@> enil α
 listCompFwd (α × (Guard s : qs) × s') = do
    e <- listCompFwd (α × qs × s')
-   E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desugFwd' s
+   E.App (E.Lambda (elimBool (ContExpr e) (ContExpr (enil α)))) <$> desugFwd s
 listCompFwd (α × (Declaration (VarDef π s) : qs) × s') = do
    e <- ContExpr <$> listCompFwd (α × qs × s')
    σ <- pattContFwd π e
-   E.App (E.Lambda σ) <$> desugFwd' s
+   E.App (E.Lambda σ) <$> desugFwd s
 listCompFwd (α × (Generator p s : qs) × s') = do
    e <- ContExpr <$> listCompFwd (α × qs × s')
    σ <- pattContFwd p e
-   E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElseFwd (ContElim σ) α)))) <$> desugFwd' s
+   E.App (E.App (E.Var "concatMap") (E.Lambda (asElim (orElseFwd (ContElim σ) α)))) <$> desugFwd s
 
 listCompBwd
    :: forall a
@@ -309,19 +309,19 @@ listCompBwd
    => E.Expr a
    -> List (Raw Qualifier) × Raw Expr
    -> a × List (Qualifier a) × Expr a
-listCompBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (Nil × _) | c == cCons && c' == cNil =
-   (α1 ∨ α2) × Nil × desugBwd' e
-listCompBwd (E.App (E.Lambda (ElimConstr m)) e) ((Guard _ : qs) × s) =
+listCompBwd (E.Constr α2 c (e : E.Constr α1 c' Nil : Nil)) (Nil × s) | c == cCons && c' == cNil =
+   (α1 ∨ α2) × Nil × desugBwd e s
+listCompBwd (E.App (E.Lambda (ElimConstr m)) e) ((Guard s0 : qs) × s) =
    case listCompBwd (asExpr (get cTrue m)) (qs × s) × asExpr (get cFalse m) of
-      (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ β) × (Guard (desugBwd' e) : qs') × s'
+      (α × qs' × s') × E.Constr β c Nil | c == cNil -> (α ∨ β) × (Guard (desugBwd e s0) : qs') × s'
       _ -> error absurd
-listCompBwd (E.App (E.Lambda σ) e) ((Declaration (VarDef π _) : qs) × s) =
+listCompBwd (E.App (E.Lambda σ) e) ((Declaration (VarDef π s0) : qs) × s) =
    case listCompBwd (asExpr (pattContBwd π σ)) (qs × s) of
-      α × qs' × s' -> α × (Declaration (VarDef π (desugBwd' e)) : qs') × s'
-listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e) ((Generator p _ : qs) × s) =
+      α × qs' × s' -> α × (Declaration (VarDef π (desugBwd e s0)) : qs') × s'
+listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e) ((Generator p s0 : qs) × s) =
    case orElseBwd (ContElim σ) (Left p : Nil) of
       σ' × β -> case listCompBwd (asExpr (pattContBwd p (asElim σ'))) (qs × s) of
-         α × qs' × s' -> (α ∨ β) × (Generator p (desugBwd' e) : qs') × s'
+         α × qs' × s' -> (α ∨ β) × (Generator p (desugBwd e s0) : qs') × s'
 listCompBwd _ _ = error absurd
 
 -- NonEmptyList Pattern × Expr
@@ -330,11 +330,11 @@ pattsExprFwd (NonEmptyList (p :| Nil) × s) = (ContExpr <$> desugFwd' s) >>= pat
 pattsExprFwd (NonEmptyList (p :| p' : ps) × s) =
    pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × s)
 
-pattsExprBwd :: forall a. BoundedJoinSemilattice a => NonEmptyList Pattern -> Elim a -> Expr a
-pattsExprBwd (NonEmptyList (p :| Nil)) σ = desugBwd' (asExpr (pattContBwd p σ))
-pattsExprBwd (NonEmptyList (p :| p' : ps)) σ = next (asExpr (pattContBwd p σ))
+pattsExprBwd :: forall a. BoundedJoinSemilattice a => NonEmptyList Pattern × Raw Expr -> Elim a -> Expr a
+pattsExprBwd (NonEmptyList (p :| Nil) × _) σ = desugBwd' (asExpr (pattContBwd p σ))
+pattsExprBwd (NonEmptyList (p :| p' : ps) × s) σ = next (asExpr (pattContBwd p σ))
    where
-   next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps)) τ
+   next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps) × s) τ
    next _ = error absurd
 
 -- Pattern × Cont
@@ -388,7 +388,7 @@ clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Cla
 clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
    where
    clauseBwd :: Raw Clause -> Clause a
-   clauseBwd (Clause (πs × _)) = Clause (πs × pattsExprBwd πs σ)
+   clauseBwd (Clause (πs × s)) = Clause (πs × pattsExprBwd (πs × s) σ)
 
 -- orElse
 orElseFwd :: forall a. Cont a -> a -> Cont a
