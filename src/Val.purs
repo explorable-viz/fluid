@@ -8,12 +8,13 @@ import Data.Exists (Exists)
 import Data.List (List(..), (:))
 import Data.Bifunctor (bimap)
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
+import Data.Set (map) as S
 import DataType (Ctr)
 import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Graph (Vertex(..))
+import Graph (Vertex(..), unwrap)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Util.Pretty (Doc, beside, text)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
@@ -37,7 +38,7 @@ class (Highlightable a, BoundedLattice a) <= Ann a
 
 instance Ann Boolean
 instance Ann Unit
--- instance Ann Vertex
+-- instance Ann (Set Vertex)
 
 -- similar to an isomorphism lens with complement t
 type OpFwd t = forall a. Ann a => List (Val a) -> MayFail (t × Val a)
@@ -109,7 +110,7 @@ instance Highlightable Boolean where
    highlightIf true = \doc -> text "_" `beside` doc `beside` text "_"
 
 instance Highlightable Vertex where
-   highlightIf (Vertex α) = \doc -> doc `beside` text "_" `beside` (text α)
+   highlightIf (Vertex α) = \doc -> doc `beside` text "_" `beside` (text $ show α)
 
 -- ======================
 -- boilerplate

@@ -17,6 +17,7 @@ import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 -- import Effect.Console (logShow)
 import Eval (eval)
+import EvalGraph (runAlloc)
 import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
@@ -53,7 +54,9 @@ test' (File file) =
          let
             e = successful (desugFwd' s)
             src = render (pretty e)
-         log $ "Non-Annotated:\n" <> src
+            e' × counter = runAlloc e
+            src' = render (pretty e')
+         log $ "Non-Annotated:\n" <> src'
 
 testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =

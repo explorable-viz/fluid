@@ -65,8 +65,6 @@ class (BoundedJoinSemilattice a, BoundedMeetSemilattice a) <= BoundedLattice a
 instance BoundedLattice Boolean
 instance BoundedLattice Unit
 
--- instance BoundedLattice Vertex
-
 definedJoin :: forall a. JoinSemilattice a => a -> a -> a
 definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
 
@@ -87,9 +85,6 @@ instance (Functor t, BoundedJoinSemilattice a, BoundedJoinSemilattice a') => Top
 -- Specialises botOf and topOf but omits the lattice constraint.
 erase :: forall t a. Functor t => t a -> Raw t
 erase = (<$>) (const unit)
-
-annotBool :: forall t a. Functor t => t a -> t Boolean
-annotBool = (<$>) (const true)
 
 -- Give ∧ and ∨ same associativity and precedence as * and +
 infixl 7 meet as ∧
