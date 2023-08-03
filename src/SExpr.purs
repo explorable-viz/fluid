@@ -230,9 +230,9 @@ exprFwd (Project s x) = E.Project <$> desugFwd s <@> x
 exprFwd (App s1 s2) = E.App <$> desugFwd s1 <*> desugFwd s2
 exprFwd (BinaryApp s1 op s2) = E.App <$> (E.App (E.Op op) <$> desugFwd s1) <*> desugFwd s2
 exprFwd (MatchAs s bs) =
-   E.App <$> (E.Lambda <$> clausesFwd (Clauses (Clause <$> first singleton <$> bs))) <*> desugFwd' s
+   E.App <$> (E.Lambda <$> clausesFwd (Clauses (Clause <$> first singleton <$> bs))) <*> desugFwd s
 exprFwd (IfElse s1 s2 s3) =
-   E.App <$> (E.Lambda <$> (elimBool <$> (ContExpr <$> desugFwd' s2) <*> (ContExpr <$> desugFwd' s3))) <*> desugFwd' s1
+   E.App <$> (E.Lambda <$> (elimBool <$> (ContExpr <$> desugFwd s2) <*> (ContExpr <$> desugFwd s3))) <*> desugFwd s1
 exprFwd (ListEmpty α) = pure (enil α)
 exprFwd (ListNonEmpty α s l) = econs α <$> desugFwd' s <*> desugFwd' l
 exprFwd (ListEnum s1 s2) = E.App <$> ((E.App (E.Var "enumFromTo")) <$> desugFwd' s1) <*> desugFwd' s2
@@ -258,18 +258,18 @@ exprBwd (E.Project e _) (Project s x) = Project (desugBwd e s) x
 exprBwd (E.App e1 e2) (App s1 s2) = App (desugBwd e1 s1) (desugBwd e2 s2)
 exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
    BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2)
-exprBwd (E.App (E.Lambda σ) e) (MatchAs _ bs) =
-   MatchAs (desugBwd' e)
+exprBwd (E.App (E.Lambda σ) e) (MatchAs s bs) =
+   MatchAs (desugBwd e s)
       (first head <$> unwrap <$> unwrap (clausesBwd σ (Clauses (Clause <$> first NE.singleton <$> bs))))
-exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse _ _ _) =
-   IfElse (desugBwd' e1)
-      (desugBwd' (asExpr (get cTrue m)))
-      (desugBwd' (asExpr (get cFalse m)))
-exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
-exprBwd (E.LetRec xσs e) (LetRec xcs _) = LetRec (recDefsBwd xσs xcs) (desugBwd' e)
+exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse s1 s2 s3) =
+   IfElse (desugBwd e1 s1)
+      (desugBwd (asExpr (get cTrue m)) s2)
+      (desugBwd (asExpr (get cFalse m)) s3)
 exprBwd (E.Constr α _ Nil) (ListEmpty _) = ListEmpty α
 exprBwd (E.Constr α _ (e1 : e2 : Nil)) (ListNonEmpty _ _ _) =
    ListNonEmpty α (desugBwd' e1) (desugBwd' e2)
+exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
+exprBwd (E.LetRec xσs e) (LetRec xcs _) = LetRec (recDefsBwd xσs xcs) (desugBwd' e)
 exprBwd (E.App (E.App (E.Var "enumFromTo") e1) e2) (ListEnum _ _) =
    ListEnum (desugBwd' e1) (desugBwd' e2)
 exprBwd e (ListComp _ s qs) =
