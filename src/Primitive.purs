@@ -13,8 +13,8 @@ import Dict (Dict)
 import Lattice (Raw, (∧), bot, erase, top)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Util (type (+), type (×), error, (×))
-import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, Val(..))
+import Util (type (+), type (×), (×), error, unimplemented)
+import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
@@ -180,8 +180,11 @@ unary :: forall i o a'. (forall a. Unary i o a) -> Val a'
 unary op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 1, op': op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
+   op' :: OpGraph
+   op' _ = error unimplemented
+
    fwd :: Partial => OpFwd (Raw Val)
    fwd (v : Nil) = pure $ erase v × op.o.constr (op.fwd x × α)
       where
@@ -197,8 +200,11 @@ binary :: forall i1 i2 o a'. (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op': op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
+   op' :: OpGraph
+   op' _ = error unimplemented
+
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × op.o.constr (op.fwd x y × (α ∧ β))
       where
@@ -215,8 +221,11 @@ binaryZero :: forall i o a'. IsZero i => (forall a. BinaryZero i o a) -> Val a'
 binaryZero op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op': op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
+   op' :: OpGraph
+   op' _ = error unimplemented
+
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) =
       pure $ (erase v1 × erase v2) ×
