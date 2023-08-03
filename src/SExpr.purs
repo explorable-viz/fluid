@@ -226,9 +226,9 @@ exprFwd (Record α xss) = E.Record α <$> D.fromFoldable <$> traverse (traverse 
 exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse desugFwd) sss
 exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desugFwd s <@> x × y <*> desugFwd s'
 exprFwd (Lambda bs) = E.Lambda <$> clausesFwd bs
-exprFwd (Project s x) = E.Project <$> desugFwd' s <@> x
-exprFwd (App s1 s2) = E.App <$> desugFwd' s1 <*> desugFwd' s2
-exprFwd (BinaryApp s1 op s2) = E.App <$> (E.App (E.Op op) <$> desugFwd' s1) <*> desugFwd' s2
+exprFwd (Project s x) = E.Project <$> desugFwd s <@> x
+exprFwd (App s1 s2) = E.App <$> desugFwd s1 <*> desugFwd s2
+exprFwd (BinaryApp s1 op s2) = E.App <$> (E.App (E.Op op) <$> desugFwd s1) <*> desugFwd s2
 exprFwd (MatchAs s bs) =
    E.App <$> (E.Lambda <$> clausesFwd (Clauses (Clause <$> first singleton <$> bs))) <*> desugFwd' s
 exprFwd (IfElse s1 s2 s3) =
@@ -254,8 +254,10 @@ exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
 exprBwd (E.Matrix α e1 _ e2) (Matrix _ s1 (x × y) s2) =
    Matrix α (desugBwd e1 s1) (x × y) (desugBwd e2 s2)
 exprBwd (E.Lambda σ) (Lambda bs) = Lambda (clausesBwd σ bs)
-exprBwd (E.Project e _) (Project _ x) = Project (desugBwd' e) x
-exprBwd (E.App e1 e2) (App _ _) = App (desugBwd' e1) (desugBwd' e2)
+exprBwd (E.Project e _) (Project s x) = Project (desugBwd e s) x
+exprBwd (E.App e1 e2) (App s1 s2) = App (desugBwd e1 s1) (desugBwd e2 s2)
+exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp s1 op s2) =
+   BinaryApp (desugBwd e1 s1) op (desugBwd e2 s2)
 exprBwd (E.App (E.Lambda σ) e) (MatchAs _ bs) =
    MatchAs (desugBwd' e)
       (first head <$> unwrap <$> unwrap (clausesBwd σ (Clauses (Clause <$> first NE.singleton <$> bs))))
@@ -263,8 +265,6 @@ exprBwd (E.App (E.Lambda (ElimConstr m)) e1) (IfElse _ _ _) =
    IfElse (desugBwd' e1)
       (desugBwd' (asExpr (get cTrue m)))
       (desugBwd' (asExpr (get cFalse m)))
-exprBwd (E.App (E.App (E.Op _) e1) e2) (BinaryApp _ op _) =
-   BinaryApp (desugBwd' e1) op (desugBwd' e2)
 exprBwd (E.Let d e) (Let ds s) = uncurry Let (varDefsBwd (E.Let d e) (ds × s))
 exprBwd (E.LetRec xσs e) (LetRec xcs _) = LetRec (recDefsBwd xσs xcs) (desugBwd' e)
 exprBwd (E.Constr α _ Nil) (ListEmpty _) = ListEmpty α
