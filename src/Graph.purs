@@ -151,11 +151,13 @@ bwdSlice αs parent = bwdSlice' parent startG edges
 bwdSlice' :: GraphImpl -> GraphImpl -> List (Vertex × Vertex) -> GraphImpl
 bwdSlice' parent g ((s × t) : es) =
    if elem g t then
-      bwdSlice' parent g es
+      let
+         newG = union t (outNSet parent t) g
+      in
+         bwdSlice' parent newG es
    else
       let
-         newG' = union s (outNSet parent s) g
-         newG = union t (outNSet parent t) newG'
+         newG = union s (S.singleton t) g
          newEs = append es (L.fromFoldable (outE' parent t))
       in
          bwdSlice' parent newG newEs
