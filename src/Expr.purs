@@ -9,16 +9,10 @@ import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
-import Desugarable (Sugar', class FromSugar)
 import Dict (Dict, keys, asSingletonMap)
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
-import Util (type (+), type (×), absurd, both, error, report, (×), (≜), (≞))
+import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
-
-instance FromSugar Expr where
-   fromSug = Sugar
-   toSug (Sugar s e) = s × e
-   toSug _ = error absurd
 
 data Expr a
    = Var Var
@@ -35,7 +29,6 @@ data Expr a
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
-   | Sugar (Sugar' Expr) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -45,12 +38,6 @@ data Elim a
    = ElimVar Var (Cont a)
    | ElimConstr (Dict (Cont a))
    | ElimRecord (Set Var) (Cont a)
-   | ElimSug (Sugar' Elim) (Elim a)
-
-instance FromSugar Elim where
-   fromSug = ElimSug
-   toSug (ElimSug s e) = s × e
-   toSug _ = error absurd
 
 -- Continuation of an eliminator branch.
 data Cont a
@@ -87,13 +74,11 @@ instance FV (Expr a) where
    fv (App e1 e2) = fv e1 `union` fv e2
    fv (Let def e) = fv def `union` (fv e `difference` bv def)
    fv (LetRec ρ e) = unions (fv <$> ρ) `union` fv e
-   fv (Sugar _ e) = fv e
 
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ `difference` singleton x
    fv (ElimConstr m) = unions (fv <$> m)
    fv (ElimRecord _ κ) = fv κ
-   fv (ElimSug _ κ) = fv κ
 
 instance FV (Cont a) where
    fv ContNone = empty
@@ -114,7 +99,6 @@ instance BV (Elim a) where
    bv (ElimVar x κ) = singleton x `union` bv κ
    bv (ElimConstr m) = bv (snd (asSingletonMap m))
    bv (ElimRecord _ κ) = bv κ
-   bv (ElimSug _ κ) = bv κ
 
 instance BV (VarDef a) where
    bv (VarDef σ _) = bv σ
@@ -137,7 +121,6 @@ instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin (ElimConstr cκs) (ElimConstr cκs') =
       ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
-   maybeJoin (ElimSug s e) (ElimSug _ e') = ElimSug s <$> maybeJoin e e'
    maybeJoin _ _ = report "Incompatible eliminators"
 
    join σ = definedJoin σ
@@ -147,7 +130,6 @@ instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
    expand (ElimConstr cκs) (ElimConstr cκs') = ElimConstr (expand cκs cκs')
    expand (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord (xs ≜ ys) (expand κ κ')
-   expand (ElimSug s e) (ElimSug _ e') = ElimSug s (expand e e')
    expand _ _ = error "Incompatible eliminators"
 
 instance JoinSemilattice a => JoinSemilattice (Cont a) where
@@ -189,7 +171,6 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    maybeJoin (App e1 e2) (App e1' e2') = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Let def e) (Let def' e') = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec ρ e) (LetRec ρ' e') = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
-   maybeJoin (Sugar s e) (Sugar _ e') = Sugar s <$> maybeJoin e e'
    maybeJoin _ _ = report "Incompatible expressions"
 
    join e = definedJoin e
@@ -211,5 +192,4 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
    expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
-   expand (Sugar s e) (Sugar _ e') = Sugar s (expand e e')
    expand _ _ = error "Incompatible expressions"

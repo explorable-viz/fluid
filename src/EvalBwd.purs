@@ -195,7 +195,4 @@ evalBwd' v (T.LetRec ρ t) =
    { γ: γ1γ2, e, α } = evalBwd' v t
    γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2
    γ1' × ρ' × α' = closeDefsBwd γ2
-evalBwd' v (T.Sugar s t) = { γ, e: Sugar s e, α }
-   where
-   { γ, e, α } = evalBwd' v t
 evalBwd' _ _ = error absurd
