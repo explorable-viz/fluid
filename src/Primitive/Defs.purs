@@ -22,7 +22,7 @@ import EvalBwd (apply2Bwd, applyBwd)
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
+import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, MayFail, error, orElse, report, unimplemented, (×))
 import Val (Array2, Env, ForeignOp, ForeignOp'(..), Fun(..), OpBwd, OpFwd, OpGraph, Val(..), updateMatrix)
@@ -34,9 +34,9 @@ primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Fun (PartialConstr bot cCons Nil)
    , "ceiling" × unary { i: number, o: int, fwd: ceil }
-   , "debugLog" × unary { i: val, o: val, fwd: debugLog }
+   , "debugLog" × extern debugLog
    , "dims" × extern dims
-   , "error" × unary { i: string, o: val, fwd: error_ }
+   , "error" × extern error_
    , "floor" × unary { i: number, o: int, fwd: floor }
    , "log" × unary { i: intOrNumber, o: number, fwd: log }
    , "numToStr" × unary { i: intOrNumber, o: string, fwd: numToStr }
@@ -66,11 +66,31 @@ primitives = D.fromFoldable
    , "rem" × binaryZero { i: int, o: int, fwd: rem }
    ]
 
-debugLog :: forall a. Val a -> Val a
-debugLog x = trace x (const x)
+error_ :: ForeignOp
+error_ = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }
+   where
+   op' :: OpGraph
+   op' _ = error unimplemented
 
-error_ :: forall a. String -> Val a
-error_ = error
+   fwd :: OpFwd Unit
+   fwd (Str _ s : Nil) = error s
+   fwd _ = report "String expected"
+
+   bwd :: OpBwd Unit
+   bwd _ = error unimplemented
+
+debugLog :: ForeignOp
+debugLog = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }
+   where
+   op' :: OpGraph
+   op' _ = error unimplemented
+
+   fwd :: OpFwd Unit
+   fwd (x : Nil) = pure $ unit × trace x (const x)
+   fwd _ = report "Single value expected"
+
+   bwd :: OpBwd Unit
+   bwd _ = error unimplemented
 
 type ArrayData a = Array2 (Val a)
 
