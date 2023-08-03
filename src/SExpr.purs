@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import Data.Foldable (foldM, foldl)
 import Data.Function (applyN, on)
 import Data.Generic.Rep (class Generic)
-import Data.List (List(..), (:), (\\), length, sortBy, zipWith)
+import Data.List (List(..), (:), (\\), length, sortBy, zip, zipWith)
 import Data.List (singleton) as L
 import Data.List.NonEmpty (NonEmptyList(..), groupBy, head, toList, singleton)
 import Data.List.NonEmpty (singleton) as NE
@@ -19,7 +19,7 @@ import Data.Show.Generic (genericShow)
 import Data.Traversable (traverse)
 import Data.Tuple (uncurry, fst, snd)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
-import Desugarable (class Desugarable, desugBwd', desugFwd')
+import Desugarable (class Desugarable, desugBwd, desugBwd', desugFwd, desugFwd')
 import Dict (Dict, asSingletonMap, get)
 import Dict (fromFoldable, singleton) as D
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -221,7 +221,7 @@ exprFwd (Op op) = pure (E.Op op)
 exprFwd (Int α n) = pure (E.Int α n)
 exprFwd (Float α n) = pure (E.Float α n)
 exprFwd (Str α s) = pure (E.Str α s)
-exprFwd (Constr α c ss) = E.Constr α c <$> traverse desugFwd' ss
+exprFwd (Constr α c ss) = E.Constr α c <$> traverse desugFwd ss
 exprFwd (Record α xss) = E.Record α <$> D.fromFoldable <$> traverse (traverse desugFwd') xss
 exprFwd (Dictionary α sss) = E.Dictionary α <$> traverse (traverse desugFwd') sss
 exprFwd (Matrix α s (x × y) s') = E.Matrix α <$> desugFwd' s <@> x × y <*> desugFwd' s'
@@ -246,7 +246,7 @@ exprBwd (E.Op _) (Op op) = Op op
 exprBwd (E.Int α _) (Int _ n) = Int α n
 exprBwd (E.Float α _) (Float _ n) = Float α n
 exprBwd (E.Str α _) (Str _ str) = Str α str
-exprBwd (E.Constr α _ es) (Constr _ c _) = Constr α c (desugBwd' <$> es)
+exprBwd (E.Constr α _ es) (Constr _ c ss) = Constr α c (uncurry desugBwd <$> zip es ss)
 exprBwd (E.Record α xes) (Record _ xss) =
    Record α $ xss <#> \(x ↦ _) -> x ↦ desugBwd' (get x xes)
 exprBwd (E.Dictionary α ees) (Dictionary _ sss) =
