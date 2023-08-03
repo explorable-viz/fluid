@@ -10,7 +10,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (fst, snd)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
-import Desugarable (desugFwd', desugBwd')
+import Desugarable (desugFwd, desugBwd)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -51,12 +51,12 @@ testWithSetup (File file) expected v_expect_opt setup =
    before setup $
       it file \(γ × s) -> do
          let
-            e = successful (desugFwd' s)
+            e = successful (desugFwd s)
             t × v = successful (eval γ e bot)
             v' = fromMaybe identity (fst <$> v_expect_opt) v
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-            s' = desugBwd' e' :: S.Expr _
-            _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
+            s' = desugBwd e' (erase s) :: S.Expr _
+            _ × v'' = successful (eval γ' (successful (desugFwd s')) true)
             src = render (pretty s)
          case parse src program of
             Left msg -> fail msg

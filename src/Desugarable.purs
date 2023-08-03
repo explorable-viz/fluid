@@ -2,8 +2,8 @@ module Desugarable where
 
 import Prelude
 import Unsafe.Coerce (unsafeCoerce)
-import Lattice (Raw, class JoinSemilattice, erase, class BoundedJoinSemilattice)
-import Util (MayFail, type (×), (×))
+import Lattice (Raw, class JoinSemilattice, class BoundedJoinSemilattice)
+import Util (MayFail, type (×))
 
 wrapSugar :: forall s e. Desugarable s e => Raw s -> Sugar' e
 wrapSugar s = Sugar' (\k -> k s)
@@ -20,13 +20,3 @@ class FromSugar e where
 class (Functor s, Functor e, FromSugar e) <= Desugarable s e | s -> e where
    desugFwd :: forall a. JoinSemilattice a => s a -> MayFail (e a)
    desugBwd :: forall a. BoundedJoinSemilattice a => e a -> Raw s -> s a
-
--- A similar pattern is where some auxiliary data of type p suffices to determine the bwd direction:
--- desugFwd :: forall a. JoinSemilattice a => p -> s a -> MayFail (e a)
--- desugBwd :: forall a. BoundedJoinSemilattice a => p -> e a -> s a
-
-desugFwd' :: forall s e a. JoinSemilattice a => Desugarable s e => s a -> MayFail (e a)
-desugFwd' s = fromSug (wrapSugar $ erase s) <$> desugFwd s
-
-desugBwd' :: forall s e a. BoundedJoinSemilattice a => Desugarable s e => e a -> s a
-desugBwd' e = let (s × e') = toSug e in desugBwd e' (unwrapSugar s)
