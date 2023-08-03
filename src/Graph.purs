@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set)
 import Data.Set (delete, difference, empty, filter, fromFoldable, isEmpty, map, member, singleton, subset, union, unions) as S
-import Data.Tuple (snd)
+import Data.Tuple (fst, snd)
 import Foreign.Object (Object, delete, empty, filterKeys, fromFoldable, keys, lookup, singleton, size, unionWith) as SM
 import Util (Endo, (×), type (×))
 
@@ -100,7 +100,7 @@ inE αs g =
    let
       allIn = S.unions (S.map (\α -> inE' g α) αs)
    in
-      S.filter (\(e1 × e2) -> not $ S.member e1 αs || S.member e2 αs) allIn
+      S.filter (\(e1 × e2) -> S.member e1 αs || S.member e2 αs) allIn
 
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
 outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
@@ -161,6 +161,18 @@ bwdSlice' parent g edges =
    outNSet g' v = case outN g' v of
       Just neighbs -> neighbs
       Nothing -> S.empty
+
+fwdSlice :: Set Vertex -> GraphImpl -> GraphImpl 
+fwdSlice αs parent =  fst $ fwdEdges startG emptyG edges
+    where
+        startG = subgraph parent αs
+        edges = inE αs parent
+
+fwdEdges :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl × GraphImpl
+fwdEdges currSlice pending edges = 
+    if S.isEmpty edges then currSlice × pending
+    else -- |>edges edge 
+        emptyG × emptyG
 
 derive instance Eq Vertex
 derive instance Ord Vertex
