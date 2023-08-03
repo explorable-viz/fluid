@@ -104,7 +104,7 @@ outStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
 outStar v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α αs) (star' v αs)
 
 star' :: Vertex -> Set Vertex -> SMap (Set Vertex)
-star' (Vertex α) αs = SM.fromFoldable $ S.map (\α' -> α × (S.singleton α')) αs
+star' (Vertex α) αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs
 
 star'' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 star'' α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × (S.singleton α)) αs
