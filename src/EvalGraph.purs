@@ -8,11 +8,12 @@ import Control.Monad.Trans.Class (lift)
 import Foreign.Object (foldM) as D
 import Data.Either (Either, note)
 import Data.Functor ((<$>))
-import Data.List (List(..), (:), length, range, singleton, unzip, zip, foldM)
+import Data.List (length, range, singleton, unzip, zip, foldM)
+import Data.List (List(..), (:))
 import Data.Set (Set)
 import Data.Set as S
 import Data.Traversable (class Traversable, traverse)
-import DataType (consistentWith, dataTypeFor, showCtr)
+import DataType (consistentWith, checkArity, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, singleton, insert) as D
 import Expr (Cont(..), Elim(..), Expr(..))
 import Graph (Vertex, class Graph, Heap, HeapT, fresh)
@@ -83,37 +84,38 @@ eval g _ (Str α str) vs = do
    pure $ (G.union α' (S.insert α vs) g) × (V.Str α' str)
 eval g γ (Record α xes) vs = do
    α' <- fresh
-   g_n × xvs <- D.foldM
+   g' × xvs <- D.foldM
       ( \(g_prev × xvs) x e -> do
            (g_next × val_i) <- eval g_prev γ e vs
            pure $ g_next × D.insert x val_i xvs
       )
       (g × D.empty)
       xes
-   pure $ (G.union α' (S.insert α vs) g_n) × V.Record α' xvs
+   pure $ (G.union α' (S.insert α vs) g') × V.Record α' xvs
 eval g γ (Dictionary α ees) vrts = do
    α' <- fresh
-   g_n × xvs <- foldM
+   g' × xvs <- foldM
       ( \(g_prev × xvs) (Pair e1 e2) -> do
            (g1 × v1) <- eval g_prev γ e1 vrts
-           let s × β = {- string.match v1 -} error "to be replaced with <string.match v1>" :: String × Vertex
+           let s × β = error "to be replaced with <string.match v1>" :: String × Vertex {- string.match v1 -}
            (g2 × v2) <- eval g1 γ e2 vrts
            pure $ g2 × D.insert s (β × v2) xvs
       )
       (g × D.empty)
       ees
-   pure $ (G.union α' (S.insert α vrts) g_n) × V.Dictionary α' xvs
+   pure $ (G.union α' (S.insert α vrts) g') × V.Dictionary α' xvs
+eval g γ (Constr α c es) vrts = do
+   α' <- fresh
+   lift $ checkArity c (length es)
+   g_n × vs <- foldM
+      ( \(g_prev × vs) e -> do
+           (g_next × v) <- eval g_prev γ e vrts
+           pure $ g_next × (vs <> (v : Nil)) -- foldM traverses the list from left-to-right, hence we append rather than prepend onto the list of values
+      )
+      (g × Nil)
+      es
+   pure $ (G.union α' (S.insert α vrts) g_n) × (V.Constr α' c vs)
 eval _ _ _ _ = error "to do"
--- eval γ (Dictionary α ees) α' = do
---    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
---    let
---       ss × αs = (vs <#> \u -> string.match u) # unzip
---       d = D.fromFoldable $ zip ss (zip αs us)
---    pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × V.Dictionary (α ∧ α') d
--- eval γ (Constr α c es) α' = do
---    checkArity c (length es)
---    ts × vs <- traverse (flip (eval γ) α') es <#> unzip
---    pure (T.Constr c ts × V.Constr (α ∧ α') c vs)
 -- eval γ (Matrix α e (x × y) e') α' = do
 --    t × v <- eval γ e' α'
 --    let (i' × β) × (j' × β') = fst (intPair.match v)
