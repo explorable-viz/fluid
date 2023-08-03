@@ -10,7 +10,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (fst, snd)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
-import Desugarable (desugFwd', desugBwd')
+import Desugarable (desug, desugBwd)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -52,9 +52,8 @@ test' (File file) =
    before (openWithDefaultImports (File file)) $
       it file \(_ × s) -> do
          let
-            e = successful (desugFwd' s)
-            src = render (pretty e)
-            e' × counter = runAlloc e
+            e  = successful (desug s)
+            e' = fst $ runAlloc e
             src' = render (pretty e')
          log $ "Non-Annotated:\n" <> src'
 
@@ -64,7 +63,7 @@ testWithSetup (File file) expected v_expect_opt setup =
       it file \(γ × s) -> do
          let
             -- Desugar surface expression to core expression, of arbitrary annotation type
-            e = successful (desugFwd' s)
+            e = successful (desug s)
             -- Evaluate the core expression e (annotated with bot) under environment γ, producing a trace and annotated value
             t × v = successful (eval γ e bot)
 
@@ -72,11 +71,10 @@ testWithSetup (File file) expected v_expect_opt setup =
             v' = fromMaybe identity (fst <$> v_expect_opt) v
             -- Use the annotated output, and backward evaluate the unannotated core expression + environment, producing an annotated core expression + environment.
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-            s' = desugBwd' e' :: S.Expr _
+            s' = desugBwd e' (erase s) :: S.Expr _
 
-            _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
+            _ × v'' = successful (eval γ' (successful (desug s')) true)
             src = render (pretty s)
-            srcExp = show (erase s)
          case parse src program of
             Left msg -> fail msg
             Right newProg -> do
@@ -84,7 +82,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                   let newExp = show newProg
                   case (eq (erase s) newProg) of
                      false -> do
-                        liftEffect (log ("SRC\n" <> srcExp))
+                        liftEffect (log ("SRC\n" <> show (erase s)))
                         liftEffect (log ("NEW\n" <> newExp))
                         fail "not equal"
                      true -> do
