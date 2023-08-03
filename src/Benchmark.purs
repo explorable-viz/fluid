@@ -10,7 +10,7 @@ import Data.String.Gen (genDigitString)
 import Data.Tuple (uncurry, Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow, log)
-import Graph (Vertex(..), bwdSlice, emptyG, starInOut, outStarOld, subgraph, union, outE, outStar)
+import Graph (Vertex(..), bwdSlice, emptyG, starInOut, outStarOld, union, outE, outStar)
 import Test.QuickCheck.Arbitrary (arbitrary)
 import Test.QuickCheck.Gen (vectorOf)
 
@@ -27,10 +27,13 @@ graphTestScript = do
    let
       slice = bwdSlice (fromFoldable [ (Vertex "1") ]) graph
       starG = outStar (Vertex "1") (fromFoldable [ (Vertex "2"), (Vertex "3"), (Vertex "4"), (Vertex "5"), (Vertex "6") ])
+      starSlice = bwdSlice (fromFoldable [ (Vertex "2") ]) starG
    log ("Outedges: " <> show (outE (fromFoldable [ (Vertex "1") ]) graph))
    logShow slice
    log "Star\n"
    logShow starG
+   logShow ""
+   logShow starSlice
 
 preProcessTuple :: Tuple Vertex (Array Vertex) -> Tuple Vertex (Set Vertex)
 preProcessTuple (Tuple α αs) = Tuple α (fromFoldable αs)

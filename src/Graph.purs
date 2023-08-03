@@ -55,7 +55,7 @@ instance Graph GraphImpl where
    inN (GraphImpl (_ × in_)) (Vertex α) = SM.lookup α in_
 
    singleton α αs = GraphImpl (starInOut α αs × starInIn α αs)
-   opp (GraphImpl (outN × inN)) = GraphImpl (inN × outN)
+   opp (GraphImpl (out × in_)) = GraphImpl (in_ × out)
 
 emptyG :: GraphImpl
 emptyG = GraphImpl (SM.empty × SM.empty)
@@ -116,6 +116,9 @@ starInOut α αs = buildStar α αs star'
 buildStar :: Vertex -> Set Vertex -> (Vertex -> Set Vertex -> SMap (Set Vertex)) -> SMap (Set Vertex)
 buildStar v@(Vertex α) αs f = SM.unionWith S.union (SM.singleton α αs) (f v αs)
 
+buildStar' :: Vertex -> Set Vertex -> (Vertex -> Set Vertex -> SMap (Set Vertex)) -> SMap (Set Vertex)
+buildStar' v@(Vertex α) αs f = SM.unionWith S.union (SM.singleton α S.empty) (f v αs)
+
 star' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 star' _α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs
 
@@ -123,7 +126,7 @@ star'' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 star'' α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × (S.singleton α)) αs
 
 starInIn :: Vertex -> Set Vertex -> SMap (Set Vertex)
-starInIn α αs = buildStar α αs star''
+starInIn α αs = buildStar' α αs star''
 
 inStar :: Vertex -> Set Vertex -> GraphImpl
 inStar α αs = opp (outStar α αs)
