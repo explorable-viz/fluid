@@ -209,7 +209,7 @@ helperMatch :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEm
 helperMatch pss = map (\(x × y) -> singleton x × y) pss
 
 -- ======================================
--- Legacy Implementation : to be replaced 
+-- Legacy Implementation : to be replaced
 -- ======================================
 
 prettyP :: forall d. Pretty d => d -> String
@@ -341,7 +341,6 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.LetRec δ e) = atop (hspace [ text str.let_, pretty δ, text str.in_ ]) (pretty e)
    pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
    pretty (E.App e e') = hspace [ pretty e, pretty e' ]
-   pretty (E.Sugar _ e) = pretty e
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty x = go (D.toUnfoldable x)
@@ -365,7 +364,6 @@ instance Highlightable a => Pretty (Ctr × Cont a) where
 instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hspace [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
-   pretty (ElimSug _ κ) = pretty κ
    pretty (ElimRecord _ _) = error "todo"
 
 instance Highlightable a => Pretty (Val a) where

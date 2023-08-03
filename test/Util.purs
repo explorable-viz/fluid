@@ -10,7 +10,7 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (fst, snd)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
-import Desugarable (desugFwd', desugBwd')
+import Desugarable (desug, desugBwd)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
@@ -21,7 +21,7 @@ import EvalBwd (evalBwd)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
--- import Pretty (class Pretty, prettyP) as P 
+-- import Pretty (class Pretty, prettyP) as P
 import Pretty (pretty, class Pretty, prettyP)
 import SExpr (Expr) as S
 import Test.Spec (SpecT, before, it)
@@ -51,14 +51,13 @@ testWithSetup (File file) expected v_expect_opt setup =
    before setup $
       it file \(γ × s) -> do
          let
-            e = successful (desugFwd' s)
+            e = successful (desug s)
             t × v = successful (eval γ e bot)
             v' = fromMaybe identity (fst <$> v_expect_opt) v
             { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-            s' = desugBwd' e' :: S.Expr _
-            _ × v'' = successful (eval γ' (successful (desugFwd' s')) true)
+            s' = desugBwd e' (erase s) :: S.Expr _
+            _ × v'' = successful (eval γ' (successful (desug s')) true)
             src = render (pretty s)
-            srcExp = show (erase s)
          case parse src program of
             Left msg -> fail msg
             Right newProg -> do
@@ -66,7 +65,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                   let newExp = show newProg
                   case (eq (erase s) newProg) of
                      false -> do
-                        liftEffect (log ("SRC\n" <> srcExp))
+                        liftEffect (log ("SRC\n" <> show (erase s)))
                         liftEffect (log ("NEW\n" <> newExp))
                         fail "not equal"
                      true -> do
