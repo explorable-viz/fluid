@@ -23,7 +23,7 @@
     "benchmark": "^2.1.4",
     "d3": "6.7.0",
     "d3-tip": "0.9.1",
-    "purescript": "^0.15.4"
+    "purescript": "^0.15.10"
   },
   "devDependencies": {
     "esbuild": "0.15.1",
