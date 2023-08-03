@@ -12,6 +12,7 @@ import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
+import Graph (Vertex(..))
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Util.Pretty (Doc, beside, text)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
@@ -104,6 +105,9 @@ instance Highlightable Unit where
 instance Highlightable Boolean where
    highlightIf false = identity
    highlightIf true = \doc -> text "_" `beside` doc `beside` text "_"
+
+instance Highlightable Vertex where
+   highlightIf (Vertex α) = \doc -> doc `beside` text "_" `beside` text ("⟨" <> α <> "⟩")
 
 -- ======================
 -- boilerplate
