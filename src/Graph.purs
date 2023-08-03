@@ -152,7 +152,7 @@ bwdSlice' :: GraphImpl -> GraphImpl -> List (Vertex × Vertex) -> GraphImpl
 bwdSlice' parent g ((s × t) : es) =
    if elem g t then
       let
-         newG = union t (outNSet parent t) g
+         newG = union s (S.singleton t) g
       in
          bwdSlice' parent newG es
    else
@@ -162,11 +162,6 @@ bwdSlice' parent g ((s × t) : es) =
       in
          bwdSlice' parent newG newEs
    where
-   outNSet :: GraphImpl -> Vertex -> Set Vertex
-   outNSet g' v = case outN g' v of
-      Just neighbs -> neighbs
-      Nothing -> S.empty
-
    append :: forall a. List a -> List a -> List a
    append Nil xs = xs
    append (y : ys) xs = append ys (y : xs)
