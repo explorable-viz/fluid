@@ -6,7 +6,6 @@ import Bindings (Var)
 import Control.Apply (lift2)
 import Data.Exists (Exists)
 import Data.List (List(..), (:))
-import Data.Bifunctor (bimap)
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
 import DataType (Ctr)
 import Dict (Dict, get)
@@ -109,17 +108,7 @@ instance Highlightable Boolean where
 -- ======================
 -- boilerplate
 -- ======================
-instance Functor Val where
-   map f (Int α n) = Int (f α) n
-   map f (Float α n) = Float (f α) n
-   map f (Str α s) = Str (f α) s
-   map f (Record α xvs) = Record (f α) (map f <$> xvs)
-   map f (Dictionary α svs) = Dictionary (f α) (bimap f (map f) <$> svs)
-   map f (Constr α c vs) = Constr (f α) c (map f <$> vs)
-   -- PureScript can't derive this case
-   map f (Matrix α (r × iα × jβ)) = Matrix (f α) ((map (map f) <$> r) × (f <$> iα) × (f <$> jβ))
-   map f (Fun φ) = Fun (f <$> φ)
-
+derive instance Functor Val
 derive instance Functor Fun
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
