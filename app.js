@@ -27591,37 +27591,37 @@
     }
   };
   var functorVal = {
-    map: (v) => (v1) => {
-      if (v1.tag === "Int") {
-        return $Val("Int", v(v1._1), v1._2);
+    map: (f) => (m) => {
+      if (m.tag === "Int") {
+        return $Val("Int", f(m._1), m._2);
       }
-      if (v1.tag === "Float") {
-        return $Val("Float", v(v1._1), v1._2);
+      if (m.tag === "Float") {
+        return $Val("Float", f(m._1), m._2);
       }
-      if (v1.tag === "Str") {
-        return $Val("Str", v(v1._1), v1._2);
+      if (m.tag === "Str") {
+        return $Val("Str", f(m._1), m._2);
       }
-      if (v1.tag === "Record") {
-        return $Val("Record", v(v1._1), _fmapObject(v1._2, functorVal.map(v)));
+      if (m.tag === "Constr") {
+        return $Val("Constr", f(m._1), m._2, listMap(functorVal.map(f))(m._3));
       }
-      if (v1.tag === "Dictionary") {
-        return $Val("Dictionary", v(v1._1), _fmapObject(v1._2, bifunctorTuple.bimap(v)(functorVal.map(v))));
+      if (m.tag === "Record") {
+        return $Val("Record", f(m._1), _fmapObject(m._2, functorVal.map(f)));
       }
-      if (v1.tag === "Constr") {
-        return $Val("Constr", v(v1._1), v1._2, listMap(functorVal.map(v))(v1._3));
+      if (m.tag === "Dictionary") {
+        return $Val("Dictionary", f(m._1), _fmapObject(m._2, bifunctorTuple.bimap(f)(functorVal.map(f))));
       }
-      if (v1.tag === "Matrix") {
+      if (m.tag === "Matrix") {
         return $Val(
           "Matrix",
-          v(v1._1),
+          f(m._1),
           $Tuple(
-            arrayMap(arrayMap(functorVal.map(v)))(v1._2._1),
-            $Tuple($Tuple(v1._2._2._1._1, v(v1._2._2._1._2)), $Tuple(v1._2._2._2._1, v(v1._2._2._2._2)))
+            arrayMap(arrayMap(functorVal.map(f)))(m._2._1),
+            $Tuple($Tuple(m._2._2._1._1, f(m._2._2._1._2)), $Tuple(m._2._2._2._1, f(m._2._2._2._2)))
           )
         );
       }
-      if (v1.tag === "Fun") {
-        return $Val("Fun", functorFun.map(v)(v1._1));
+      if (m.tag === "Fun") {
+        return $Val("Fun", functorFun.map(f)(m._1));
       }
       fail();
     }
