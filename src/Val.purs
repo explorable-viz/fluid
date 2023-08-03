@@ -4,6 +4,7 @@ import Prelude hiding (absurd, append)
 
 import Bindings (Var)
 import Control.Apply (lift2)
+import Control.Monad.State.Trans (StateT)
 import Data.Exists (Exists)
 import Data.List (List(..), (:))
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
@@ -15,7 +16,7 @@ import Foreign.Object (keys) as O
 import Graph (class Graph, Vertex)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Util.Pretty (Doc, beside, text)
-import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
+import Util (Endo, MayFail, type (+), type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
 data Val a
    = Int a Int
@@ -39,7 +40,7 @@ instance Ann Unit
 
 -- similar to an isomorphism lens with complement t
 type OpFwd t = forall a. Ann a => List (Val a) -> MayFail (t × Val a)
-type OpGraph = forall g. Graph g => List (Val Vertex) -> MayFail (g × Val Vertex)
+type OpGraph = forall g. Graph g => List (Val Vertex) -> StateT Int ((+) String) (g × Val Vertex)
 type OpBwd t = forall a. Ann a => t × Val a -> List (Val a)
 
 data ForeignOp' t = ForeignOp'

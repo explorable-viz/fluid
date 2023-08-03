@@ -183,7 +183,7 @@ unary op =
       $ ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    op' :: Partial => OpGraph
-   op' (_ : Nil) = error unimplemented
+   op' (_ : Nil) = ?_
 
    fwd :: Partial => OpFwd (Raw Val)
    fwd (v : Nil) = pure $ erase v × op.o.constr (op.fwd x × α)
