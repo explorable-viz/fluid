@@ -7,30 +7,22 @@ import Data.Exists (mkExists)
 import Data.Int (toNumber)
 import Data.List (List(..), (:))
 import Data.Profunctor.Choice ((|||))
-import Data.Tuple (fst)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Lattice (Raw, (∧), bot, erase, top)
+import Graph (fresh)
+import Lattice (Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Util (type (+), type (×), error, (×))
-import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, Val(..))
+import Util (type (+), type (×), (×), error, unimplemented)
+import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
 -- work with the required higher-rank polymorphism.
 type ToFrom d a =
-   { constr :: Ann a => d × a -> Val a
-   , constr_bwd :: Ann a => Val a -> d × a -- equivalent to match (except at Val)
-   , match :: Ann a => Val a -> d × a
-   }
-
--- Analogous to "variable" case in pattern-matching (or "use existing subvalue" case in construction).
-val :: forall a. ToFrom (Val a) a
-val =
-   { constr: fst -- construction rights not required
-   , constr_bwd: (_ × bot) -- return unit of disjunction rather than conjunction
-   , match: (_ × top) -- construction rights always provided
+   { constr :: d × a -> Val a
+   , constr_bwd :: Val a -> d × a -- equivalent to match (except at Val)
+   , match :: Val a -> d × a
    }
 
 int :: forall a. ToFrom Int a
@@ -40,9 +32,9 @@ int =
    , match: match'
    }
    where
-   match' :: Ann a => _
+   match' :: _
    match' (Int α n) = n × α
-   match' v = error ("Int expected; got " <> prettyP v)
+   match' v = error ("Int expected; got " <> prettyP (erase v))
 
 number :: forall a. ToFrom Number a
 number =
@@ -51,9 +43,9 @@ number =
    , match: match'
    }
    where
-   match' :: Ann a => _
+   match' :: _
    match' (Float α n) = n × α
-   match' v = error ("Float expected; got " <> prettyP v)
+   match' v = error ("Float expected; got " <> prettyP (erase v))
 
 string :: forall a. ToFrom String a
 string =
@@ -62,9 +54,9 @@ string =
    , match: match'
    }
    where
-   match' :: Ann a => _
+   match' :: _
    match' (Str α str) = str × α
-   match' v = error ("Str expected; got " <> prettyP v)
+   match' v = error ("Str expected; got " <> prettyP (erase v))
 
 intOrNumber :: forall a. ToFrom (Int + Number) a
 intOrNumber =
@@ -75,10 +67,10 @@ intOrNumber =
    , match: match'
    }
    where
-   match' :: Ann a => Val a -> (Int + Number) × a
+   match' :: Val a -> (Int + Number) × a
    match' (Int α n) = Left n × α
    match' (Float α n) = Right n × α
-   match' v = error ("Int or Float expected; got " <> prettyP v)
+   match' v = error ("Int or Float expected; got " <> prettyP (erase v))
 
 intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
@@ -90,13 +82,13 @@ intOrNumberOrString =
    , match: match'
    }
    where
-   match' :: Ann a => Val a -> (Int + Number + String) × a
+   match' :: Val a -> (Int + Number + String) × a
    match' (Int α n) = Left n × α
    match' (Float α n) = Right (Left n) × α
    match' (Str α str) = Right (Right str) × α
-   match' v = error ("Int, Float or Str expected; got " <> prettyP v)
+   match' v = error ("Int, Float or Str expected; got " <> prettyP (erase v))
 
-intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
+intPair :: forall a. Ann a => ToFrom ((Int × a) × (Int × a)) a
 intPair =
    { constr: \((nβ × mβ') × α) -> Constr α cPair (int.constr nβ : int.constr mβ' : Nil)
    , constr_bwd: match'
@@ -107,7 +99,7 @@ intPair =
    match' (Constr α c (v : v' : Nil)) | c == cPair = (int.match v × int.match v') × α
    match' v = error ("Pair expected; got " <> prettyP v)
 
-matrixRep :: forall a. ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a
+matrixRep :: forall a. Ann a => ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a
 matrixRep =
    { constr: \(r × α) -> Matrix α r
    , constr_bwd: match'
@@ -118,7 +110,7 @@ matrixRep =
    match' (Matrix α r) = r × α
    match' v = error ("Matrix expected; got " <> prettyP v)
 
-record :: forall a. ToFrom (Dict (Val a)) a
+record :: forall a. Ann a => ToFrom (Dict (Val a)) a
 record =
    { constr: \(xvs × α) -> Record α xvs
    , constr_bwd: match'
@@ -138,11 +130,11 @@ boolean =
    , match: match'
    }
    where
-   match' :: Ann a => Val a -> Boolean × a
+   match' :: Val a -> Boolean × a
    match' (Constr α c Nil)
       | c == cTrue = true × α
       | c == cFalse = false × α
-   match' v = error ("Boolean expected; got " <> prettyP v)
+   match' v = error ("Boolean expected; got " <> prettyP (erase v))
 
 class IsZero a where
    isZero :: a -> Boolean
@@ -180,8 +172,15 @@ unary :: forall i o a'. (forall a. Unary i o a) -> Val a'
 unary op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 1, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
+   op' :: Partial => OpGraph
+   op' (v : Nil) = do
+      _ <- fresh
+      error unimplemented
+      where
+      _ × _ = op.i.match v
+
    fwd :: Partial => OpFwd (Raw Val)
    fwd (v : Nil) = pure $ erase v × op.o.constr (op.fwd x × α)
       where
@@ -197,8 +196,11 @@ binary :: forall i1 i2 o a'. (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op': op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
+   op' :: OpGraph
+   op' _ = error unimplemented
+
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × op.o.constr (op.fwd x y × (α ∧ β))
       where
@@ -215,8 +217,11 @@ binaryZero :: forall i o a'. IsZero i => (forall a. BinaryZero i o a) -> Val a'
 binaryZero op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op': op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
+   op' :: OpGraph
+   op' _ = error unimplemented
+
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) =
       pure $ (erase v1 × erase v2) ×
