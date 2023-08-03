@@ -19,7 +19,7 @@ import Data.Show.Generic (genericShow)
 import Data.Traversable (traverse)
 import Data.Tuple (uncurry, fst, snd)
 import DataType (Ctr, arity, checkArity, ctrs, cCons, cFalse, cNil, cTrue, dataTypeFor)
-import Desugarable (class Desugarable, desugBwd, desugBwd', desugFwd, desugFwd')
+import Desugarable (class Desugarable, desugBwd, desugFwd)
 import Dict (Dict, asSingletonMap, get)
 import Dict (fromFoldable, singleton) as D
 import Expr (Cont(..), Elim(..), asElim, asExpr)
@@ -168,23 +168,23 @@ moduleFwd (Module ds) = E.Module <$> traverse varDefOrRecDefsFwd (join (flatten 
    flatten (Right δ) = pure (Right δ)
 
 varDefFwd :: forall a. JoinSemilattice a => VarDef a -> MayFail (E.VarDef a)
-varDefFwd (VarDef π s) = E.VarDef <$> pattContFwd π (ContNone :: Cont a) <*> desugFwd' s
+varDefFwd (VarDef π s) = E.VarDef <$> pattContFwd π (ContNone :: Cont a) <*> desugFwd s
 
 -- VarDefs
 varDefsFwd :: forall a. JoinSemilattice a => VarDefs a × Expr a -> MayFail (E.Expr a)
 varDefsFwd (NonEmptyList (d :| Nil) × s) =
-   E.Let <$> varDefFwd d <*> desugFwd' s
+   E.Let <$> varDefFwd d <*> desugFwd s
 varDefsFwd (NonEmptyList (d :| d' : ds) × s) =
    E.Let <$> varDefFwd d <*> varDefsFwd (NonEmptyList (d' :| ds) × s)
 
 varDefsBwd :: forall a. BoundedJoinSemilattice a => E.Expr a -> Raw VarDefs × Raw Expr -> VarDefs a × Expr a
-varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π _ :| Nil) × _) =
-   NonEmptyList (VarDef π (desugBwd' e1) :| Nil) × desugBwd' e2
-varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π _ :| d : ds) × s2) =
+varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| Nil) × s2) =
+   NonEmptyList (VarDef π (desugBwd e1 s1) :| Nil) × desugBwd e2 s2
+varDefsBwd (E.Let (E.VarDef _ e1) e2) (NonEmptyList (VarDef π s1 :| d : ds) × s2) =
    let
       NonEmptyList (d' :| ds') × s2' = varDefsBwd e2 (NonEmptyList (d :| ds) × s2)
    in
-      NonEmptyList (VarDef π (desugBwd' e1) :| d' : ds') × s2'
+      NonEmptyList (VarDef π (desugBwd e1 s1) :| d' : ds') × s2'
 varDefsBwd _ (NonEmptyList (_ :| _) × _) = error absurd
 
 -- RecDefs
@@ -326,12 +326,12 @@ listCompBwd _ _ = error absurd
 
 -- NonEmptyList Pattern × Expr
 pattsExprFwd :: forall a. JoinSemilattice a => NonEmptyList Pattern × Expr a -> MayFail (Elim a)
-pattsExprFwd (NonEmptyList (p :| Nil) × s) = (ContExpr <$> desugFwd' s) >>= pattContFwd p
+pattsExprFwd (NonEmptyList (p :| Nil) × s) = (ContExpr <$> desugFwd s) >>= pattContFwd p
 pattsExprFwd (NonEmptyList (p :| p' : ps) × s) =
    pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × s)
 
 pattsExprBwd :: forall a. BoundedJoinSemilattice a => NonEmptyList Pattern × Raw Expr -> Elim a -> Expr a
-pattsExprBwd (NonEmptyList (p :| Nil) × _) σ = desugBwd' (asExpr (pattContBwd p σ))
+pattsExprBwd (NonEmptyList (p :| Nil) × s) σ = desugBwd (asExpr (pattContBwd p σ)) s
 pattsExprBwd (NonEmptyList (p :| p' : ps) × s) σ = next (asExpr (pattContBwd p σ))
    where
    next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps) × s) τ
