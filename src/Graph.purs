@@ -38,13 +38,13 @@ instance Graph GraphImpl where
          GraphImpl (newOutN × newInN)
    union α αs (GraphImpl (out × in_)) = (GraphImpl (newOut × newIn))
       where
-      newOut = SM.unionWith S.union out (outStar α αs)
-      newIn = SM.unionWith S.union in_ (inStar α αs)
+      newOut = SM.unionWith S.union out (starInOut α αs)
+      newIn = SM.unionWith S.union in_ (starInIn α αs)
 
    outN (GraphImpl (out × _)) (Vertex α) = SM.lookup α out
    inN (GraphImpl (_ × in_)) (Vertex α) = SM.lookup α in_
 
-   singleton α αs = GraphImpl (outStar α αs × inStar α αs)
+   singleton α αs = GraphImpl (starInOut α αs × starInIn α αs)
    opp (GraphImpl (outN × inN)) = GraphImpl (inN × outN)
 
 emptyG :: GraphImpl
@@ -100,17 +100,26 @@ inStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
 inStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α S.empty) (S.map (\(Vertex α') -> SM.singleton α' (S.singleton (Vertex α))) αs)
 
 -- prototype attempts at more efficiently implementing the above operations
-outStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
-outStar v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α αs) (star' v αs)
+starInOut :: Vertex -> Set Vertex -> SMap (Set Vertex)
+starInOut α αs = buildStar α αs star'
+
+buildStar :: Vertex -> Set Vertex -> (Vertex -> Set Vertex -> SMap (Set Vertex)) -> SMap (Set Vertex)
+buildStar v@(Vertex α) αs f = SM.unionWith S.union (SM.singleton α αs) (f v αs)
 
 star' :: Vertex -> Set Vertex -> SMap (Set Vertex)
-star' (Vertex _α) αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs
+star' _α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs
 
 star'' :: Vertex -> Set Vertex -> SMap (Set Vertex)
 star'' α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × (S.singleton α)) αs
 
-inStar :: Vertex -> Set Vertex -> SMap (Set Vertex)
-inStar v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α S.empty) (star'' v αs)
+starInIn :: Vertex -> Set Vertex -> SMap (Set Vertex)
+starInIn α αs = buildStar α αs star''
+
+inStar :: Vertex -> Set Vertex -> GraphImpl
+inStar α αs = GraphImpl ((starInOut α αs) × (starInIn α αs))
+
+outStar :: Vertex -> Set Vertex -> GraphImpl
+outStar α αs = opp (inStar α αs)
 
 elem :: GraphImpl -> Vertex -> Boolean
 elem (GraphImpl (out × _)) (Vertex α) =
@@ -130,7 +139,7 @@ bwdSlice' parent g edges =
    else
       let
          αs = S.fromFoldable $ S.map snd edges
-         newG = foldl (\g' (e1 × _) -> union e1 (outNSet parent e1) g') g edges
+         newG = foldl (\g' (e1 × _) -> union e1 (outNSet parent e1) g') g edges -- union + Set ensures we skip things we've already seen
          newEdges = outE αs parent
       in
          bwdSlice' parent newG newEdges
