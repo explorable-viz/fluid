@@ -189,7 +189,10 @@ dict_disjointUnion :: ForeignOp
 dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op _ = error unimplemented
+   op (g × Dictionary α d : Dictionary β d' : Nil) = do
+      α' <- fresh
+      pure $ G.union α' (singleton α # insert β) g × Dictionary α' (D.disjointUnion d d')
+   op _ = lift $ report "Dictionaries expected"
 
    fwd :: OpFwd (Dict Unit × Dict Unit)
    fwd (Dictionary α d : Dictionary α' d' : Nil) =
