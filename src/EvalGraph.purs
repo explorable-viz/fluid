@@ -15,7 +15,7 @@ import Data.Set as S
 import Data.Traversable (class Traversable, traverse)
 import DataType (consistentWith, checkArity, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, singleton, insert) as D
-import Expr (Cont(..), Elim(..), Expr(..))
+import Expr (Cont(..), Elim(..), Expr(..), fv)
 import Graph (Vertex, class Graph, Heap, HeapT, fresh)
 import Graph (union) as G
 import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (<#>), (<>), (==), (<<<))
@@ -23,8 +23,8 @@ import Primitive (string)
 import Util (MayFail, error, type (×), (×), with, report, check, both)
 import Util.Pair (unzip) as P
 import Util.Pair (Pair(..))
-import Val (Val(..)) as V
-import Val (Val, Env, lookup')
+import Val (Val(..), Fun(..)) as V
+import Val (Val, Env, lookup', restrict)
 
 {-# Allocating addresses #-}
 runAlloc :: forall t a. Traversable t => t a -> (t Vertex) × Int
@@ -115,7 +115,6 @@ eval g γ (Constr α c es) vrts = do
       (g × Nil)
       es
    pure $ (G.union α' (S.insert α vrts) g_n) × (V.Constr α' c vs)
-eval _ _ _ _ = error "to do"
 -- eval γ (Matrix α e (x × y) e') α' = do
 --    t × v <- eval γ e' α'
 --    let (i' × β) × (j' × β') = fst (intPair.match v)
@@ -132,18 +131,22 @@ eval _ _ _ _ = error "to do"
 --    where
 --    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
 --    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
--- eval γ (Lambda σ) α =
---    pure $ T.Const × V.Fun (V.Closure α (γ `restrict` fv σ) empty σ)
--- eval γ (Project e x) α = do
---    t × v <- eval γ e α
---    case v of
---       V.Record _ xvs -> (T.Project t x × _) <$> lookup' x xvs
---       _ -> report $ "Found " <> prettyP v <> ", expected record"
--- eval γ (App e e') α = do
---    t × v <- eval γ e α
---    t' × v' <- eval γ e' α
+-- eval g γ (Matrix α e (x × y) e') vrts = do
+--    error "todo"
+eval g γ (Lambda σ) vrts = do
+   α' <- fresh
+   pure $ (G.union α' vrts g) × V.Fun (V.Closure α' (γ `restrict` fv σ) D.empty σ)
+eval g γ (Project e x) vrts = do
+   g' × v <- eval g γ e vrts
+   lift $ case v of
+      V.Record _ xvs -> ((×) g') <$> lookup' x xvs
+      _ -> report $ "Found " <> prettyP v <> ", expected record"
+-- eval g γ (App e e') vrts = do
+--    g1 × cls <- eval g γ e vrts
+--    g2 × v   <- eval g1 γ e' vrts
 --    t'' × v'' <- apply (v × v')
 --    pure $ T.App t t' t'' × v''
+eval _ _ _ _ = error "to do"
 -- eval γ (Let (VarDef σ e) e') α = do
 --    t × v <- eval γ e α
 --    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
