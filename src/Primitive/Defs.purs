@@ -6,7 +6,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Array ((!!))
 import Data.Exists (mkExists)
 import Data.Foldable (foldl)
-import Data.FoldableWithIndex (foldWithIndexM)
+import Data.FoldableWithIndex (foldlWithIndex, foldWithIndexM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
@@ -21,7 +21,8 @@ import Dict (Dict, (\\))
 import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, lookup, singleton, unzip) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
-import Graph (fresh)
+import EvalGraph (apply) as G
+import Graph (class Graph, HeapT, Vertex, fresh)
 import Graph (union) as G
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
@@ -274,11 +275,24 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_b
          D.intersectionWith (\tt (β × v') -> β × apply2Bwd (tt × v')) tts βvs
             :: Dict (_ × Val _ × Val _ × Val _)
 
+blah :: forall g. Graph g
+   => Val Vertex
+   -> g
+   -> Dict (Val Vertex)
+   -> HeapT ((+) String) (g × Dict (Val Vertex))
+blah v g =
+   foldWithIndexM (\k (g' × ss) n -> do
+      (g'' × s) <- G.apply g' (v × n)
+      pure $ (g'' × D.insert k s ss)) (g × D.empty)
+
 dict_map :: ForeignOp
 dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op _ = error unimplemented
+   op (g × v : Dictionary α d : Nil) = do
+      g' × _ <- blah v g (d <#> snd)
+      pure $ g' × Dictionary α (error unimplemented)
+   op _ = lift $ report "Function and dictionary expected"
 
    fwd :: OpFwd (Raw Val × Dict AppTrace)
    fwd (v : Dictionary α d : Nil) = do
