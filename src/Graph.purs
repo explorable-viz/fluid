@@ -113,22 +113,16 @@ inStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α S.empt
 
 -- prototype attempts at more efficiently implementing the above operations
 starInOut :: Vertex -> Set Vertex -> SMap (Set Vertex)
-starInOut α αs = buildStar α αs star'
-
-buildStar :: Vertex -> Set Vertex -> (Vertex -> Set Vertex -> SMap (Set Vertex)) -> SMap (Set Vertex)
-buildStar v@(Vertex α) αs f = SM.unionWith S.union (SM.singleton α αs) (f v αs)
-
-buildStar' :: Vertex -> Set Vertex -> (Vertex -> Set Vertex -> SMap (Set Vertex)) -> SMap (Set Vertex)
-buildStar' v@(Vertex α) αs f = SM.unionWith S.union (SM.singleton α S.empty) (f v αs)
-
-star' :: Vertex -> Set Vertex -> SMap (Set Vertex)
-star' _α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs
-
-star'' :: Vertex -> Set Vertex -> SMap (Set Vertex)
-star'' α αs = SM.fromFoldable $ S.map (\(Vertex α') -> α' × (S.singleton α)) αs
+starInOut (Vertex α) αs = SM.unionWith S.union (SM.singleton α αs) (star αs)
+    where
+      star :: Set Vertex -> SMap (Set Vertex)
+      star αs' = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs'
 
 starInIn :: Vertex -> Set Vertex -> SMap (Set Vertex)
-starInIn α αs = buildStar' α αs star''
+starInIn v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α S.empty) (star v αs)
+    where
+      star :: Vertex -> Set Vertex -> SMap (Set Vertex)
+      star α' αs' = SM.fromFoldable $ S.map (\(Vertex α'') -> α'' × (S.singleton α')) αs'
 
 inStar :: Vertex -> Set Vertex -> GraphImpl
 inStar α αs = opp (outStar α αs)
