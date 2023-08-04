@@ -1,21 +1,21 @@
 module EvalGraph where
 
-import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (<#>), (<>), (==))
+import Prelude
+
 import Bindings (varAnon)
-import Expr (Cont(..), Elim(..), Expr(..))
-import Graph (Vertex, class Graph, Heap, HeapT, fresh)
 import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
-import Data.Functor ((<$>))
 import Data.Either (note)
-import Data.List (List(..), length, (:))
-import Data.Set as S
+import Data.List (List(..), (:), length)
 import Data.Set (Set)
+import Data.Set as S
 import Data.Traversable (class Traversable, traverse)
 import DataType (consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, singleton) as D
-import Util (MayFail, type (+), type (×), (×), check, error, report, unimplemented, with)
-import Pretty
+import Expr (Cont(..), Elim(..), Expr(..))
+import Graph (Vertex, class Graph, Heap, HeapT, fresh)
+import Pretty (prettyP)
+import Util (type (+), type (×), MayFail, check, error, report, unimplemented, with, (×))
 import Val (Val(..)) as V
 import Val (Val, Env, lookup')
 
@@ -60,11 +60,10 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-{-# Application #-}
-apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> MayFail (g × Val Vertex)
+{-# Evaluation #-}
+apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> HeapT ((+) String) (g × Val Vertex)
 apply _ = error unimplemented
 
-{-# Evaluation #-}
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
 eval g γ (Var x) _ = ((×) g) <$> lift (lookup' x γ)
 eval g γ (Op op) _ = ((×) g) <$> lift (lookup' op γ)
