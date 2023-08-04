@@ -125,7 +125,13 @@ matrixLookup :: ForeignOp
 matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
-   op _ = error unimplemented
+   op (g × Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+      | c == cPair = do
+           v <- lift $ orElse "Index out of bounds" $ do
+              us <- vss !! (i - 1)
+              us !! (j - 1)
+           pure $ g × v
+   op _ = lift $ report "Matrix and pair of integers expected"
 
    fwd :: OpFwd (Raw ArrayData × (Int × Int) × (Int × Int))
    fwd (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
