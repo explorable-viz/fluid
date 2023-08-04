@@ -1,39 +1,39 @@
 module EvalGraph
-  ( alloc
-  , eval
-  , match
-  , matchMany
-  , patternMismatch
-  , runAlloc
-  )
-  where
-
-import Prelude
-import Pretty
+   ( alloc
+   , eval
+   , match
+   , matchMany
+   , patternMismatch
+   , runAlloc
+   ) where
 
 import Bindings (varAnon)
 import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
+-- import Data.Array (fromFoldable, concat) as A
+-- import Data.Bifunctor (bimap)
 import Data.Either (note)
-import Data.Exists (mkExists, runExists)
-import Data.List (List(..), (:), length, foldM)
-import Data.Maybe (Maybe(..))
-import Data.Profunctor.Strong (first)
+-- import Data.Exists (mkExists, runExists)
+import Data.List (List(..), (:), length, foldM) -- , unzip, range)
+-- import Data.Maybe (Maybe(..))
+-- import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as S
-import Data.Traversable (class Traversable, traverse)
+-- import Data.Tuple (fst, snd)
+import Data.Traversable (class Traversable, traverse) --, sequence)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, insert, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Foreign.Object (foldM) as D
 import Graph (Vertex, class Graph, Heap, HeapT, fresh)
 import Graph (union) as G
+import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (-), (<), (<$>), (<>), (==))
 import Pretty (prettyP)
-import Primitive (string)
+import Primitive (string) --, intPair)
 import Util (type (+), type (×), MayFail, check, error, report, unimplemented, successful, with, (×))
 import Util.Pair (Pair(..))
 import Val (Val(..), Fun(..)) as V
-import Val (Val, Env, ForeignOp'(..), lookup', for, restrict, (<+>))
+import Val (Val, Env, lookup', for, restrict, (<+>)) --, ForeignOp'(..))
 
 {-# Allocating addresses #-}
 runAlloc :: forall t a. Traversable t => t a -> (t Vertex) × Int
@@ -76,15 +76,17 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall g. Graph g => g -> Env Vertex -> RecDefs Vertex -> Set Vertex -> HeapT ((+) String)  (g × Env Vertex)
+closeDefs :: forall g. Graph g => g -> Env Vertex -> RecDefs Vertex -> Set Vertex -> HeapT ((+) String) (g × Env Vertex)
 closeDefs g γ ρ vrts =
-   D.foldM  (\(g_prev × γ_prev) x_i σ_i -> do
-                  α_i <- fresh
-                  let ρ_i = ρ `for` σ_i
-                  let v_i = V.Fun $ V.Closure α_i (γ `restrict` (fv ρ_i `S.union` fv σ_i)) ρ_i σ_i
-                  pure $ (G.union α_i vrts g_prev) × (D.insert x_i v_i γ_prev))
-            (g × D.empty)
-            ρ
+   D.foldM
+      ( \(g_prev × γ_prev) x_i σ_i -> do
+           α_i <- fresh
+           let ρ_i = ρ `for` σ_i
+           let v_i = V.Fun $ V.Closure α_i (γ `restrict` (fv ρ_i `S.union` fv σ_i)) ρ_i σ_i
+           pure $ (G.union α_i vrts g_prev) × (D.insert x_i v_i γ_prev)
+      )
+      (g × D.empty)
+      ρ
 
 {-# Evaluation #-}
 apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> HeapT ((+) String) (g × Val Vertex)
@@ -95,10 +97,14 @@ apply g2 (V.Fun (V.Closure α γ1 ρ σ) × v) = do
 apply g (V.Fun (V.PartialConstr α c vs) × v) = do
    let n = successful (arity c)
    lift $ check (length vs < n) ("Too many arguments to " <> showCtr c)
-   let v' = if length vs < n - 1
-            then V.Fun $ V.PartialConstr α c (vs <> (v:Nil))
-            else V.Constr α c (vs <> (v:Nil))
+   let
+      v' =
+         if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> (v : Nil))
+         else V.Constr α c (vs <> (v : Nil))
    pure $ g × v'
+apply _ (V.Fun (V.Foreign _ _) × _) = error unimplemented
+apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
+
 -- apply g (V.Fun (V.Foreign φ vs) × v) = do
 --    let vs' = vs <> (v : Nil)
 --    let
@@ -108,11 +114,9 @@ apply g (V.Fun (V.PartialConstr α c vs) × v) = do
 --             then φ'.op' (g × vs')
 --             else error "" -- ??? -- first Just <$> φ'.op vs'
 --    error ""
-   --       pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v'
-   -- t × v'' <- runExists apply' φ
-   -- pure $ T.AppForeign (length vs + 1) t × v''
-apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
-apply _ _ = error unimplemented
+--       pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v'
+-- t × v'' <- runExists apply' φ
+-- pure $ T.AppForeign (length vs + 1) t × v''
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
 eval g γ (Var x) _ = ((×) g) <$> lift (lookup' x γ)
@@ -160,24 +164,25 @@ eval g γ (Constr α c es) αs = do
       es
    pure $ (G.union α' (S.insert α αs) g_n) × (V.Constr α' c vs)
 -- eval g γ (Matrix α e (x × y) e') αs = do
---    t × v <- eval g γ e' αs
---    let (i' × β) × (j' × β') = fst (intPair.match v)
+--    g' × v <- eval g γ e' αs
+--    let (m × β) × (n × β') = fst (intPair.match v)
+--    lift $ check (m × n >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (m × n) <> ")")
+--    gss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
+--       ( sequence $ do
+--            i <- range 1 m
+--            pure $ sequence $ do
+--               j <- range 1 n
+--               let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
+--               pure (eval g' (γ <+> γ') e αs)
+--       )
+--    -- let gss' = fold (G. A.concat gss :: Array g
+--    -- pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
 --    error ""
-   -- check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
-   -- tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
-   --    ( sequence $ do
-   --         i <- range 1 i'
-   --         singleton $ sequence $ do
-   --            j <- range 1 j'
-   --            let γ' = D.singleton x (V.Int β i) `disjointUnion` (D.singleton y (V.Int β' j))
-   --            singleton (eval (γ <+> γ') e α')
-   --    )
-   -- pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
-   -- where
-   -- unzipToArray :: forall b c. List (b × c) -> Array b × Array c
-   -- unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
--- eval g γ (Matrix α e (x × y) e') vrts = do
---    error "todo"
+--    where
+--    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
+--    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
+eval _ _ (Matrix _ _ (_ × _) _) _ = do
+   error "todo"
 eval g γ (Lambda σ) αs = do
    α' <- fresh
    pure $ (G.union α' αs g) × V.Fun (V.Closure α' (γ `restrict` fv σ) D.empty σ)
@@ -188,8 +193,8 @@ eval g γ (Project e x) αs = do
       _ -> report $ "Found " <> prettyP v <> ", expected record"
 eval g γ (App e e') αs = do
    g1 × cls <- eval g γ e αs
-   g2 × v   <- eval g1 γ e' αs
-   g' × u   <- apply g2 (cls × v)
+   g2 × v <- eval g1 γ e' αs
+   g' × u <- apply g2 (cls × v)
    pure $ g' × u
 eval g γ (Let (VarDef σ e) e') αs = do
    g1 × v <- eval g γ e αs
@@ -198,6 +203,5 @@ eval g γ (Let (VarDef σ e) e') αs = do
    pure $ g' × v'
 eval g γ (LetRec ρ e) αs = do
    g1 × γ' <- closeDefs g γ ρ αs
-   g' × v  <- eval g1 (γ <+> γ') e αs
+   g' × v <- eval g1 (γ <+> γ') e αs
    pure $ g' × v
-eval _ _ _ _ = error "to do"
