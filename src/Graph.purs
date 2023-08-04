@@ -5,11 +5,11 @@ import Prelude
 import Control.Monad.State (State, StateT, get, put)
 import Data.Foldable (foldl)
 import Data.List (List(..), (:))
-import Data.List (fromFoldable) as L
+import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set)
-import Data.Set (delete, difference, empty, filter, fromFoldable, isEmpty, map, member, singleton, subset, union, unions) as S
+import Data.Set (delete, difference, empty, filter, fromFoldable, map, member, singleton, subset, union, unions) as S
 import Data.Tuple (fst)
 import Foreign.Object (Object, delete, empty, filterKeys, fromFoldable, keys, lookup, singleton, size, unionWith) as SM
 import Util (Endo, (×), type (×))
@@ -80,29 +80,29 @@ subgraph (GraphImpl (out × in_)) αs =
       else
          emptyG
 
-outE' :: forall g. Graph g => g -> Vertex -> Set (Vertex × Vertex)
+outE' :: forall g. Graph g => g -> Vertex -> List (Vertex × Vertex)
 outE' graph α = case outN graph α of
-   Just set -> S.map (\node -> α × node) set
-   Nothing -> S.empty
+   Just set -> L.fromFoldable $ S.map (\node -> α × node) set
+   Nothing -> Nil
 
-outE :: Set Vertex -> GraphImpl -> Set (Vertex × Vertex)
+outE :: Set Vertex -> GraphImpl -> List (Vertex × Vertex)
 outE αs g =
    let
-      allOut = S.unions (S.map (\α -> outE' g α) αs)
+      allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
    in
-      S.filter (\(e1 × e2) -> (S.member e1 αs || S.member e2 αs)) allOut
+      L.filter (\(e1 × e2) -> (L.elem e1 αs || L.elem e2 αs)) allOut
 
-inE' :: forall g. Graph g => g -> Vertex -> Set (Vertex × Vertex)
+inE' :: forall g. Graph g => g -> Vertex -> List (Vertex × Vertex)
 inE' graph α = case inN graph α of
-   Just set -> S.map (\node -> α × node) set
-   Nothing -> S.empty
+   Just set -> L.fromFoldable $ S.map (\node -> node × α) set
+   Nothing -> Nil
 
-inE :: Set Vertex -> GraphImpl -> Set (Vertex × Vertex)
+inE :: Set Vertex -> GraphImpl -> List (Vertex × Vertex)
 inE αs g =
    let
-      allIn = S.unions (S.map (\α -> inE' g α) αs)
+      allIn = L.concat (map (\α -> inE' g α) (L.fromFoldable αs))
    in
-      S.filter (\(e1 × e2) -> S.member e1 αs || S.member e2 αs) allIn
+      L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
 
 -- Initial attempts at making stargraphs, using foldl to construct intermediate objects
 outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
@@ -146,7 +146,7 @@ bwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
 bwdSlice αs parent = bwdSlice' parent startG edges
    where
    startG = subgraph parent αs
-   edges = L.fromFoldable $ outE αs parent
+   edges = outE αs parent
 
 bwdSlice' :: GraphImpl -> GraphImpl -> List (Vertex × Vertex) -> GraphImpl
 bwdSlice' parent g ((s × t) : es) =
@@ -174,21 +174,30 @@ fwdSlice αs parent = fst $ fwdEdges parent startG emptyG edges
    startG = subgraph parent αs
    edges = inE αs parent
 
-fwdEdges :: GraphImpl -> GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl × GraphImpl
-fwdEdges parent currSlice pending edges =
-   if S.isEmpty edges then currSlice × pending
-   else
-      emptyG × emptyG
+fwdEdges :: GraphImpl -> GraphImpl -> GraphImpl -> List (Vertex × Vertex) -> GraphImpl × GraphImpl
+fwdEdges parent currSlice pending ((s × t) : es) =
+   let
+      (g' × h') = fwdVertex parent currSlice (union s (S.singleton t) pending) s
+   in
+      fwdEdges parent g' h' es
+fwdEdges _ currSlice pending Nil = currSlice × pending
 
 fwdVertex :: GraphImpl -> GraphImpl -> GraphImpl -> Vertex -> GraphImpl × GraphImpl
 fwdVertex parent currSlice pending α =
-    let currNeighbors = outN pending α
-     in
-        if currNeighbors == (outN parent α) then 
-            case currNeighbors of
-                Just αs -> fwdEdges parent (union α αs currSlice) (remove α pending) (inE' parent α )
-                Nothing -> fwdEdges parent (union α S.empty currSlice) (remove α pending) (inE' parent α)
-        else currSlice × pending
+   let
+      currNeighbors = outN pending α
+   in
+      if currNeighbors == (outN parent α) then
+         case currNeighbors of
+            Just αs -> fwdEdges parent (union α αs currSlice) (remove α pending) (inE' parent α)
+            Nothing -> fwdEdges parent (union α S.empty currSlice) pending (inE' parent α)
+      else currSlice × pending
+
+revUnion :: Vertex -> Set Vertex -> Endo GraphImpl
+revUnion α αs (GraphImpl (out × in_)) = (GraphImpl (newOut × newIn))
+   where
+   newOut = SM.unionWith S.union out (starInIn α αs)
+   newIn = SM.unionWith S.union in_ (starInOut α αs)
 
 derive instance Eq Vertex
 derive instance Ord Vertex
