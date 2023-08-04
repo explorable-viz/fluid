@@ -85,7 +85,8 @@ debugLog :: ForeignOp
 debugLog = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }
    where
    op' :: OpGraph
-   op' _ = error unimplemented
+   op' (g × x : Nil) = pure $ g × trace x (const x)
+   op' _ = lift $ report "Single value expected"
 
    fwd :: OpFwd Unit
    fwd (x : Nil) = pure $ unit × trace x (const x)
