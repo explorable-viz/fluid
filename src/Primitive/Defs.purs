@@ -21,6 +21,7 @@ import Dict (Dict, (\\))
 import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, lookup, singleton, unzip) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
+import EvalGraph (apply) as G
 import Graph (fresh)
 import Graph (union) as G
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
@@ -278,7 +279,13 @@ dict_map :: ForeignOp
 dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op _ = error unimplemented
+   op (g × v : Dictionary α d : Nil) = do
+      g' × d' <-
+         foldWithIndexM (\k (g' × ss) (β × u) ->
+            G.apply g' (v × u) <#> second (\s -> D.insert k (β × s) ss)) (g × D.empty) d
+      α' <- fresh
+      pure $ G.union α' (singleton α) g' × Dictionary α' d'
+   op _ = lift $ report "Function and dictionary expected"
 
    fwd :: OpFwd (Raw Val × Dict AppTrace)
    fwd (v : Dictionary α d : Nil) = do
