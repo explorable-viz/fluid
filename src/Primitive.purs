@@ -90,16 +90,16 @@ intOrNumberOrString =
    match' (Str α str) = Right (Right str) × α
    match' v = error ("Int, Float or Str expected; got " <> prettyP (erase v))
 
-intPair :: forall a. Ann a => ToFrom ((Int × a) × (Int × a)) a
+intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
    { constr: \((nβ × mβ') × α) -> Constr α cPair (int.constr nβ : int.constr mβ' : Nil)
    , constr_bwd: match'
    , match: match'
    }
    where
-   match' :: Ann a => Val a -> ((Int × a) × (Int × a)) × a
+   match' :: Val a -> ((Int × a) × (Int × a)) × a
    match' (Constr α c (v : v' : Nil)) | c == cPair = (int.match v × int.match v') × α
-   match' v = error ("Pair expected; got " <> prettyP v)
+   match' v = error ("Pair expected; got " <> prettyP (erase v))
 
 matrixRep :: forall a. Ann a => ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a
 matrixRep =
