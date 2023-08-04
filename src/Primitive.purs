@@ -228,9 +228,11 @@ binaryZero op =
    op' :: Partial => OpGraph
    op' (g × v1 : v2 : Nil) = do
       α' <- fresh
-      let αs = if isZero x
-               then singleton α
-               else if isZero y then singleton β else singleton α # insert β
+      let
+         αs =
+            if isZero x then singleton α
+            else if isZero y then singleton β
+            else singleton α # insert β
       pure $ G.union α' αs g × op.o.constr (op.fwd x y × α')
       where
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2

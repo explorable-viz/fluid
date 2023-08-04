@@ -19,7 +19,7 @@ import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict, (\\))
 import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, lookup, singleton, unzip) as D
-import Eval (apply, applyG, apply2)
+import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import Graph (fresh)
 import Graph (union) as G
