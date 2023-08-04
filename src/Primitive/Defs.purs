@@ -234,7 +234,9 @@ dict_get :: ForeignOp
 dict_get = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op _ = error unimplemented
+   op (g × Str _ s : Dictionary _ d : Nil) =
+      (g × _) <$> (snd <$> lift (D.lookup s d # orElse ("Key \"" <> s <> "\" not found")))
+   op _ = lift $ report "String and dictionary expected"
 
    fwd :: OpFwd String
    fwd (Str _ s : Dictionary _ d : Nil) =
