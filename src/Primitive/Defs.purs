@@ -6,7 +6,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Array ((!!))
 import Data.Exists (mkExists)
 import Data.Foldable (foldl)
-import Data.FoldableWithIndex (foldlWithIndex, foldWithIndexM)
+import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
@@ -290,8 +290,8 @@ dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePar
    where
    op :: OpGraph
    op (g × v : Dictionary α d : Nil) = do
-      g' × _ <- blah v g d
-      pure $ g' × Dictionary α (error unimplemented)
+      g' × d' <- blah v g d
+      pure $ g' × Dictionary α d'
    op _ = lift $ report "Function and dictionary expected"
 
    fwd :: OpFwd (Raw Val × Dict AppTrace)
