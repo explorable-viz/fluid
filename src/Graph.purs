@@ -9,7 +9,7 @@ import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set)
-import Data.Set (delete, difference, empty, filter, fromFoldable, map, member, singleton, subset, union, unions) as S
+import Data.Set (delete, difference, empty, fromFoldable, map, member, singleton, subset, union) as S
 import Data.Tuple (fst)
 import Foreign.Object (Object, delete, empty, filterKeys, fromFoldable, keys, lookup, singleton, size, unionWith) as SM
 import Util (Endo, (×), type (×))
