@@ -193,12 +193,6 @@ fwdVertex parent currSlice pending α =
             Nothing -> fwdEdges parent (union α S.empty currSlice) pending (inE' parent α)
       else currSlice × pending
 
-revUnion :: Vertex -> Set Vertex -> Endo GraphImpl
-revUnion α αs (GraphImpl (out × in_)) = (GraphImpl (newOut × newIn))
-   where
-   newOut = SM.unionWith S.union out (starInIn α αs)
-   newIn = SM.unionWith S.union in_ (starInOut α αs)
-
 derive instance Eq Vertex
 derive instance Ord Vertex
 derive instance Newtype Vertex _
