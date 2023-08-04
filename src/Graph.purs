@@ -3,7 +3,6 @@ module Graph where
 import Prelude
 
 import Control.Monad.State (State, StateT, get, put)
-import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (Maybe(..))
@@ -104,25 +103,18 @@ inE αs g =
    in
       L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
 
--- Initial attempts at making stargraphs, using foldl to construct intermediate objects
-outStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
-outStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α αs) (S.map (\(Vertex α') -> SM.singleton α' S.empty) αs)
-
-inStarOld :: Vertex -> Set Vertex -> SMap (Set Vertex)
-inStarOld (Vertex α) αs = foldl (SM.unionWith S.union) (SM.singleton α S.empty) (S.map (\(Vertex α') -> SM.singleton α' (S.singleton (Vertex α))) αs)
-
 -- prototype attempts at more efficiently implementing the above operations
 starInOut :: Vertex -> Set Vertex -> SMap (Set Vertex)
 starInOut (Vertex α) αs = SM.unionWith S.union (SM.singleton α αs) (star αs)
-    where
-      star :: Set Vertex -> SMap (Set Vertex)
-      star αs' = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs'
+   where
+   star :: Set Vertex -> SMap (Set Vertex)
+   star αs' = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs'
 
 starInIn :: Vertex -> Set Vertex -> SMap (Set Vertex)
 starInIn v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α S.empty) (star v αs)
-    where
-      star :: Vertex -> Set Vertex -> SMap (Set Vertex)
-      star α' αs' = SM.fromFoldable $ S.map (\(Vertex α'') -> α'' × (S.singleton α')) αs'
+   where
+   star :: Vertex -> Set Vertex -> SMap (Set Vertex)
+   star α' αs' = SM.fromFoldable $ S.map (\(Vertex α'') -> α'' × (S.singleton α')) αs'
 
 inStar :: Vertex -> Set Vertex -> GraphImpl
 inStar α αs = opp (outStar α αs)

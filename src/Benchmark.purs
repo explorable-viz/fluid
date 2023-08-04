@@ -10,7 +10,7 @@ import Data.String.Gen (genDigitString)
 import Data.Tuple (uncurry, Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow, log)
-import Graph (Vertex(..), fwdSlice, emptyG, starInOut, outStarOld, union, inE)
+import Graph (Vertex(..), fwdSlice, emptyG, starInOut, union, inE)
 import Test.QuickCheck.Arbitrary (arbitrary)
 import Test.QuickCheck.Gen (vectorOf)
 
@@ -42,7 +42,6 @@ benchOutStar = mkBenchmark
    , inputsPerSize: 3
    , gen: \n -> genTuple (Vertex <$> genDigitString) (vectorOf n (Vertex <$> arbitrary))
    , functions:
-        [ benchFn' "outStarFold" (uncurry outStarOld) preProcessTuple
-        , benchFn' "outStarFromFoldable" (uncurry starInOut) preProcessTuple
+        [ benchFn' "outStarFromFoldable" (uncurry starInOut) preProcessTuple
         ]
    }
