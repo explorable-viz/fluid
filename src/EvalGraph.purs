@@ -29,6 +29,7 @@ import Foreign.Object (foldM) as D
 import Graph (Vertex, class Graph, Heap, HeapT, fresh)
 import Graph (union) as G
 import Pretty (prettyP)
+import Primitive (string)
 import Util (type (+), type (×), MayFail, check, error, report, unimplemented, successful, with, (×))
 import Util.Pair (Pair(..))
 import Val (Val(..), Fun(..)) as V
@@ -140,7 +141,7 @@ eval g γ (Dictionary α ees) αs = do
    g' × xvs <- foldM
       ( \(g_prev × xvs) (Pair e1 e2) -> do
            (g1 × v1) <- eval g_prev γ e1 αs
-           let s × β = error "to be replaced with <string.match v1>" :: String × Vertex {- string.match v1 -}
+           let s × β = string.match v1
            (g2 × v2) <- eval g1 γ e2 αs
            pure $ g2 × D.insert s (β × v2) xvs
       )
