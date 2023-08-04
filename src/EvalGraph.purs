@@ -12,10 +12,8 @@ import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (fromFoldable, foldM, range, snoc) as A
 import Data.Either (note)
--- import Data.Exists (mkExists, runExists)
+import Data.Exists (runExists)
 import Data.List (List(..), (:), length, foldM, snoc)
--- import Data.Maybe (Maybe(..))
--- import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as S
 import Data.Tuple (fst)
@@ -26,13 +24,13 @@ import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Foreign.Object (foldM) as D
 import Graph (Vertex, class Graph, Heap, HeapT, fresh)
 import Graph (union) as G
-import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (-), (<), (<$>), (<>), (==), (>=))
+import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (>), (+), (-), (<), (<$>), (<>), (==), (>=))
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Util (type (+), type (×), MayFail, check, error, report, unimplemented, successful, with, (×))
+import Util (type (+), type (×), MayFail, check, error, report, successful, with, (×))
 import Util.Pair (Pair(..))
 import Val (Val(..), Fun(..)) as V
-import Val (Val, Env, lookup', for, restrict, (<+>)) --, ForeignOp'(..))
+import Val (Val, Env, lookup', for, restrict, (<+>), ForeignOp'(..))
 
 {-# Allocating addresses #-}
 runAlloc :: forall t a. Traversable t => t a -> (t Vertex) × Int
@@ -101,21 +99,15 @@ apply g (V.Fun (V.PartialConstr α c vs) × v) = do
          if length vs < n - 1 then V.Fun $ V.PartialConstr α c (snoc vs v)
          else V.Constr α c (snoc vs v)
    pure $ g × v'
-apply _ (V.Fun (V.Foreign _ _) × _) = error unimplemented
+apply g (V.Fun (V.Foreign φ vs) × v) = do
+   let vs' = snoc vs v
+   let
+      apply' :: forall t. ForeignOp' t -> HeapT ((+) String) (g × Val Vertex)
+      apply' (ForeignOp' φ') =
+         if φ'.arity > length vs' then pure $ g × V.Fun (V.Foreign φ vs')
+         else φ'.op' (g × vs')
+   runExists apply' φ
 apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
-
--- apply g (V.Fun (V.Foreign φ vs) × v) = do
---    let vs' = vs <> (v : Nil)
---    let
---       apply' :: forall t. ForeignOp' t -> HeapT ((+) String)  (g × Val Vertex)
---       apply' (ForeignOp' φ') = do
---          if φ'.arity > length vs'
---             then φ'.op' (g × vs')
---             else error "" -- ??? -- first Just <$> φ'.op vs'
---    error ""
---       pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v'
--- t × v'' <- runExists apply' φ
--- pure $ T.AppForeign (length vs + 1) t × v''
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
 eval g γ (Var x) _ = ((×) g) <$> lift (lookup' x γ)
@@ -157,7 +149,7 @@ eval g γ (Constr α c es) αs = do
    g_n × vs <- foldM
       ( \(g_prev × vs) e -> do
            (g_next × v) <- eval g_prev γ e αs
-           pure $ g_next × (snoc vs v) -- foldM traverses the list from left-to-right, hence we append rather than prepend onto the list of values
+           pure $ g_next × (snoc vs v)
       )
       (g × Nil)
       es
@@ -191,20 +183,16 @@ eval g γ (Lambda σ) αs = do
 eval g γ (Project e x) αs = do
    g' × v <- eval g γ e αs
    lift $ case v of
-      -- Discard the address, as we assume it has been added to g' during eval of e
       V.Record _ xvs -> ((×) g') <$> lookup' x xvs
       _ -> report $ "Found " <> prettyP v <> ", expected record"
 eval g γ (App e e') αs = do
    g1 × cls <- eval g γ e αs
    g2 × v <- eval g1 γ e' αs
-   g' × u <- apply g2 (cls × v)
-   pure $ g' × u
+   apply g2 (cls × v)
 eval g γ (Let (VarDef σ e) e') αs = do
    g1 × v <- eval g γ e αs
    γ' × _ × _ <- lift $ match v σ -- terminal meta-type of eliminator is meta-unit
-   g' × v' <- eval g1 (γ <+> γ') e' αs
-   pure $ g' × v'
+   eval g1 (γ <+> γ') e' αs
 eval g γ (LetRec ρ e) αs = do
    g1 × γ' <- closeDefs g γ ρ αs
-   g' × v <- eval g1 (γ <+> γ') e αs
-   pure $ g' × v
+   eval g1 (γ <+> γ') e αs
