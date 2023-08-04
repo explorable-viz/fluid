@@ -15,7 +15,7 @@ import Graph (union) as G
 import Lattice (Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Util (type (+), type (×), (×), error, unimplemented)
+import Util (type (+), type (×), (×), error)
 import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
@@ -223,10 +223,17 @@ binaryZero :: forall i o a'. IsZero i => (forall a. BinaryZero i o a) -> Val a'
 binaryZero op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 2, op': op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   op' :: OpGraph
-   op' _ = error unimplemented
+   op' :: Partial => OpGraph
+   op' (g × v1 : v2 : Nil) = do
+      α' <- fresh
+      let αs = if isZero x
+               then singleton α
+               else if isZero y then singleton β else singleton α # insert β
+      pure $ G.union α' αs g × op.o.constr (op.fwd x y × α')
+      where
+      (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) =
