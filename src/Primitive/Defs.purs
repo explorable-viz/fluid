@@ -19,7 +19,7 @@ import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict, (\\))
 import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, lookup, singleton, unzip) as D
-import Eval (apply, apply2)
+import Eval (apply, applyG, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import Graph (fresh)
 import Graph (union) as G
@@ -275,15 +275,16 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_b
             :: Dict (_ × Val _ × Val _ × Val _)
 
 dict_map :: ForeignOp
-dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
    op _ = error unimplemented
 
-   fwd :: Partial => OpFwd (Raw Val × Dict AppTrace)
+   fwd :: OpFwd (Raw Val × Dict AppTrace)
    fwd (v : Dictionary α d : Nil) = do
       ts × d' <- D.unzip <$> traverse (\(β × u) -> second (β × _) <$> apply (v × u)) d
       pure $ (erase v × ts) × Dictionary α d'
+   fwd _ = report "Function and dictionary expected"
 
    bwd :: Partial => OpBwd (Raw Val × Dict AppTrace)
    bwd ((v × ts) × Dictionary α d') =
