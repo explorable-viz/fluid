@@ -10,26 +10,25 @@ module EvalGraph
 import Bindings (varAnon)
 import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
--- import Data.Array (fromFoldable, concat) as A
--- import Data.Bifunctor (bimap)
+import Data.Array (fromFoldable, foldM, range, snoc) as A
 import Data.Either (note)
 -- import Data.Exists (mkExists, runExists)
-import Data.List (List(..), (:), length, foldM) -- , unzip, range)
+import Data.List (List(..), (:), length, foldM)
 -- import Data.Maybe (Maybe(..))
 -- import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as S
--- import Data.Tuple (fst, snd)
-import Data.Traversable (class Traversable, traverse) --, sequence)
+import Data.Tuple (fst)
+import Data.Traversable (class Traversable, traverse)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, insert, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Foreign.Object (foldM) as D
 import Graph (Vertex, class Graph, Heap, HeapT, fresh)
 import Graph (union) as G
-import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (-), (<), (<$>), (<>), (==))
+import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (-), (<), (<$>), (<>), (==), (>=))
 import Pretty (prettyP)
-import Primitive (string) --, intPair)
+import Primitive (string, intPair)
 import Util (type (+), type (×), MayFail, check, error, report, unimplemented, successful, with, (×))
 import Util.Pair (Pair(..))
 import Val (Val(..), Fun(..)) as V
@@ -163,26 +162,29 @@ eval g γ (Constr α c es) αs = do
       (g × Nil)
       es
    pure $ (G.union α' (S.insert α αs) g_n) × (V.Constr α' c vs)
--- eval g γ (Matrix α e (x × y) e') αs = do
---    g' × v <- eval g γ e' αs
---    let (m × β) × (n × β') = fst (intPair.match v)
---    lift $ check (m × n >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (m × n) <> ")")
---    gss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
---       ( sequence $ do
---            i <- range 1 m
---            pure $ sequence $ do
---               j <- range 1 n
---               let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
---               pure (eval g' (γ <+> γ') e αs)
---       )
---    -- let gss' = fold (G. A.concat gss :: Array g
---    -- pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
---    error ""
---    where
---    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
---    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
-eval _ _ (Matrix _ _ (_ × _) _) _ = do
-   error "todo"
+eval g γ (Matrix α e (x × y) e') αs = do
+   α' <- fresh
+   g' × v <- eval g γ e' αs
+   let (m × β) × (n × β') = fst (intPair.match v)
+   lift $ check (m × n >= 1 × 1)
+      ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (m × n) <> ")")
+   g_mn × vss <-
+      A.foldM
+         ( \(g_i × vss) i -> do
+              g_i' × vs_i <-
+                 A.foldM
+                    ( \(g_ij × vs) j -> do
+                         let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
+                         g_ij' × v_ij <- eval g_ij (γ <+> γ') e αs
+                         pure $ g_ij' × A.snoc vs v_ij
+                    )
+                    (g_i × A.fromFoldable [])
+                    (A.range 1 n)
+              pure $ g_i' × A.snoc vss vs_i
+         )
+         (g' × A.fromFoldable [])
+         (A.range 1 m)
+   pure $ (G.union α' (S.insert α αs) g_mn) × V.Matrix α' (vss × (m × β) × (n × β'))
 eval g γ (Lambda σ) αs = do
    α' <- fresh
    pure $ (G.union α' αs g) × V.Fun (V.Closure α' (γ `restrict` fv σ) D.empty σ)
