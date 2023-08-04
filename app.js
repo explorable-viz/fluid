@@ -28307,9 +28307,14 @@
       return unsafePerformEffect(throwException(error("Int expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
     }
   };
-  var intPair = (dictAnn) => {
-    const prettyP1 = prettyP(prettyVal(dictAnn.Highlightable0()));
-    const match$p1 = (v) => {
+  var intPair = {
+    constr: (v) => $Val(
+      "Constr",
+      v._2,
+      "Pair",
+      $List("Cons", $Val("Int", v._1._1._2, v._1._1._1), $List("Cons", $Val("Int", v._1._2._2, v._1._2._1), Nil))
+    ),
+    constr_bwd: (v) => {
       if (v.tag === "Constr") {
         if (v._3.tag === "Cons") {
           if (v._3._2.tag === "Cons") {
@@ -28317,26 +28322,34 @@
               if (v._2 === "Pair") {
                 return $Tuple($Tuple($$int.match(v._3._1), $$int.match(v._3._2._1)), v._1);
               }
-              return unsafePerformEffect(throwException(error("Pair expected; got " + prettyP1(v))));
+              return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
             }
-            return unsafePerformEffect(throwException(error("Pair expected; got " + prettyP1(v))));
+            return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
           }
-          return unsafePerformEffect(throwException(error("Pair expected; got " + prettyP1(v))));
+          return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
         }
-        return unsafePerformEffect(throwException(error("Pair expected; got " + prettyP1(v))));
+        return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
       }
-      return unsafePerformEffect(throwException(error("Pair expected; got " + prettyP1(v))));
-    };
-    return {
-      constr: (v) => $Val(
-        "Constr",
-        v._2,
-        "Pair",
-        $List("Cons", $Val("Int", v._1._1._2, v._1._1._1), $List("Cons", $Val("Int", v._1._2._2, v._1._2._1), Nil))
-      ),
-      constr_bwd: match$p1,
-      match: match$p1
-    };
+      return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+    },
+    match: (v) => {
+      if (v.tag === "Constr") {
+        if (v._3.tag === "Cons") {
+          if (v._3._2.tag === "Cons") {
+            if (v._3._2._2.tag === "Nil") {
+              if (v._2 === "Pair") {
+                return $Tuple($Tuple($$int.match(v._3._1), $$int.match(v._3._2._1)), v._1);
+              }
+              return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+            }
+            return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+          }
+          return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+        }
+        return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      }
+      return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+    }
   };
   var $$boolean = {
     constr: (v) => {
@@ -31267,27 +31280,26 @@
   });
   var $$eval = (dictAnn) => {
     const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-    const intPair2 = intPair(dictAnn);
     const prettyP2 = prettyP(prettyVal(dictAnn.Highlightable0()));
     const match1 = match(dictAnn);
     return (v) => (v1) => (v2) => {
       if (v1.tag === "Var") {
-        const $8 = lookup$p(v1._1)(v);
-        if ($8.tag === "Left") {
-          return $Either("Left", $8._1);
+        const $7 = lookup$p(v1._1)(v);
+        if ($7.tag === "Left") {
+          return $Either("Left", $7._1);
         }
-        if ($8.tag === "Right") {
-          return $Either("Right", $Tuple($Trace("Var", v1._1), $8._1));
+        if ($7.tag === "Right") {
+          return $Either("Right", $Tuple($Trace("Var", v1._1), $7._1));
         }
         fail();
       }
       if (v1.tag === "Op") {
-        const $8 = lookup$p(v1._1)(v);
-        if ($8.tag === "Left") {
-          return $Either("Left", $8._1);
+        const $7 = lookup$p(v1._1)(v);
+        if ($7.tag === "Left") {
+          return $Either("Left", $7._1);
         }
-        if ($8.tag === "Right") {
-          return $Either("Right", $Tuple($Trace("Op", v1._1), $8._1));
+        if ($7.tag === "Right") {
+          return $Either("Right", $Tuple($Trace("Op", v1._1), $7._1));
         }
         fail();
       }
@@ -31302,34 +31314,34 @@
       }
       if (v1.tag === "Record") {
         return bindEither.bind((() => {
-          const $8 = traverse4((() => {
-            const $82 = $$eval(dictAnn)(v);
-            return (a) => $82(a)(v2);
+          const $7 = traverse4((() => {
+            const $72 = $$eval(dictAnn)(v);
+            return (a) => $72(a)(v2);
           })())(v1._2);
-          if ($8.tag === "Left") {
-            return $Either("Left", $8._1);
+          if ($7.tag === "Left") {
+            return $Either("Left", $7._1);
           }
-          if ($8.tag === "Right") {
-            return $Either("Right", $Tuple(_fmapObject($8._1, fst), _fmapObject($8._1, snd)));
+          if ($7.tag === "Right") {
+            return $Either("Right", $Tuple(_fmapObject($7._1, fst), _fmapObject($7._1, snd)));
           }
           fail();
         })())((v3) => $Either("Right", $Tuple($Trace("Record", v3._1), $Val("Record", meet(v1._1)(v2), v3._2))));
       }
       if (v1.tag === "Dictionary") {
         return bindEither.bind((() => {
-          const $8 = traverse12(traverse22((() => {
-            const $82 = $$eval(dictAnn)(v);
-            return (a) => $82(a)(v2);
+          const $7 = traverse12(traverse22((() => {
+            const $72 = $$eval(dictAnn)(v);
+            return (a) => $72(a)(v2);
           })()))(v1._2);
-          if ($8.tag === "Left") {
-            return $Either("Left", $8._1);
+          if ($7.tag === "Left") {
+            return $Either("Left", $7._1);
           }
-          if ($8.tag === "Right") {
+          if ($7.tag === "Right") {
             return $Either(
               "Right",
               (() => {
-                const $9 = unzip(listMap(toTuple)($8._1));
-                return $Tuple(unzip($9._1), unzip($9._2));
+                const $8 = unzip(listMap(toTuple)($7._1));
+                return $Tuple(unzip($8._1), unzip($8._2));
               })()
             );
           }
@@ -31373,34 +31385,34 @@
           };
           return go(0)(v1._3);
         })()))(() => bindEither.bind((() => {
-          const $9 = traverse12((() => {
-            const $92 = $$eval(dictAnn)(v);
-            return (a) => $92(a)(v2);
+          const $8 = traverse12((() => {
+            const $82 = $$eval(dictAnn)(v);
+            return (a) => $82(a)(v2);
           })())(v1._3);
-          if ($9.tag === "Left") {
-            return $Either("Left", $9._1);
+          if ($8.tag === "Left") {
+            return $Either("Left", $8._1);
           }
-          if ($9.tag === "Right") {
-            return $Either("Right", unzip($9._1));
+          if ($8.tag === "Right") {
+            return $Either("Right", unzip($8._1));
           }
           fail();
         })())((v3) => $Either("Right", $Tuple($Trace("Constr", v1._2, v3._1), $Val("Constr", meet(v1._1)(v2), v1._2, v3._2)))));
       }
       if (v1.tag === "Matrix") {
         return bindEither.bind($$eval(dictAnn)(v)(v1._4)(v2))((v3) => {
-          const v5 = intPair2.match(v3._2)._1;
+          const v5 = intPair.match(v3._2)._1;
           return bindEither.bind((() => {
-            const $10 = "array must be at least (" + (show3($Tuple(1, 1)) + ("); got (" + (show3($Tuple(v5._1._1, v5._2._1)) + ")")));
+            const $9 = "array must be at least (" + (show3($Tuple(1, 1)) + ("); got (" + (show3($Tuple(v5._1._1, v5._2._1)) + ")")));
             if (greaterThanOrEq1($Tuple(v5._1._1, v5._2._1))($Tuple(1, 1))) {
               return $Either("Right", unit2);
             }
-            return $Either("Left", $10);
+            return $Either("Left", $9);
           })())(() => bindEither.bind((() => {
-            const $11 = listMap((x2) => {
-              const $122 = unzip(x2);
-              return $Tuple(fromFoldable23($122._1), fromFoldable23($122._2));
+            const $10 = listMap((x2) => {
+              const $112 = unzip(x2);
+              return $Tuple(fromFoldable23($112._1), fromFoldable23($112._2));
             });
-            const $12 = sequence2(bindList.bind(range(1)(v5._1._1))((i) => $List(
+            const $11 = sequence2(bindList.bind(range(1)(v5._1._1))((i) => $List(
               "Cons",
               sequence2(bindList.bind(range(1)(v5._2._1))((j) => $List(
                 "Cons",
@@ -31413,15 +31425,15 @@
               ))),
               Nil
             )));
-            if ($12.tag === "Left") {
-              return $Either("Left", $12._1);
+            if ($11.tag === "Left") {
+              return $Either("Left", $11._1);
             }
-            if ($12.tag === "Right") {
+            if ($11.tag === "Right") {
               return $Either(
                 "Right",
                 (() => {
-                  const $13 = unzip($11($12._1));
-                  return $Tuple(fromFoldable23($13._1), fromFoldable23($13._2));
+                  const $12 = unzip($10($11._1));
+                  return $Tuple(fromFoldable23($12._1), fromFoldable23($12._2));
                 })()
               );
             }
@@ -31444,12 +31456,12 @@
       if (v1.tag === "Project") {
         return bindEither.bind($$eval(dictAnn)(v)(v1._1)(v2))((v3) => {
           if (v3._2.tag === "Record") {
-            const $9 = lookup$p(v1._2)(v3._2._2);
-            if ($9.tag === "Left") {
-              return $Either("Left", $9._1);
+            const $8 = lookup$p(v1._2)(v3._2._2);
+            if ($8.tag === "Left") {
+              return $Either("Left", $8._1);
             }
-            if ($9.tag === "Right") {
-              return $Either("Right", $Tuple($Trace("Project", v3._1, v1._2), $9._1));
+            if ($8.tag === "Right") {
+              return $Either("Right", $Tuple($Trace("Project", v3._1, v1._2), $8._1));
             }
             fail();
           }
