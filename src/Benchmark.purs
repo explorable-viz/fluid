@@ -10,7 +10,7 @@ import Data.String.Gen (genDigitString)
 import Data.Tuple (uncurry, Tuple(..))
 import Effect (Effect)
 import Effect.Console (logShow, log)
-import Graph (Vertex(..), bwdSlice, emptyG, outStar, outStarOld, subgraph, union, outE)
+import Graph (Vertex(..), bwdSlice, emptyG, starInOut, outStarOld, union, outE)
 import Test.QuickCheck.Arbitrary (arbitrary)
 import Test.QuickCheck.Gen (vectorOf)
 
@@ -23,13 +23,10 @@ graphTestScript :: Effect Unit
 graphTestScript = do
    let
       ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-      graph = foldl (\g α -> union (Vertex (show α)) (fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) emptyG ids
-   logShow graph
+      graph = foldl (\g α -> union (Vertex (show α)) (fromFoldable $ map (Vertex <<< show) [ α + 2 ]) g) emptyG ids
    let
       slice = bwdSlice (fromFoldable [ (Vertex "1") ]) graph
-      subG = subgraph graph (fromFoldable [ (Vertex "1") ])
    log ("Outedges: " <> show (outE (fromFoldable [ (Vertex "1") ]) graph))
-   logShow subG
    logShow slice
 
 preProcessTuple :: Tuple Vertex (Array Vertex) -> Tuple Vertex (Set Vertex)
@@ -45,6 +42,6 @@ benchOutStar = mkBenchmark
    , gen: \n -> genTuple (Vertex <$> genDigitString) (vectorOf n (Vertex <$> arbitrary))
    , functions:
         [ benchFn' "outStarFold" (uncurry outStarOld) preProcessTuple
-        , benchFn' "outStarFromFoldable" (uncurry outStar) preProcessTuple
+        , benchFn' "outStarFromFoldable" (uncurry starInOut) preProcessTuple
         ]
    }

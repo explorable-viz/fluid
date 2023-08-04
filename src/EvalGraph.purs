@@ -8,31 +8,28 @@ module EvalGraph
   )
   where
 
+import Prelude
 import Pretty
 
 import Bindings (varAnon)
 import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
-import Foreign.Object (foldM) as D
-import Data.Either (Either, note)
-import Data.Functor ((<$>))
-import Data.List (length, range, singleton, unzip, zip, foldM)
-import Data.List (List(..), (:))
+import Data.Either (note)
+import Data.List (List(..), (:), length, foldM)
 import Data.Set (Set)
 import Data.Set as S
 import Data.Traversable (class Traversable, traverse)
-import DataType (consistentWith, checkArity, dataTypeFor, showCtr)
-import Dict (disjointUnion, empty, get, keys, lookup, singleton, insert) as D
+import DataType (checkArity, consistentWith, dataTypeFor, showCtr)
+import Dict (disjointUnion, empty, get, keys, lookup, insert, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv)
+import Foreign.Object (foldM) as D
 import Graph (Vertex, class Graph, Heap, HeapT, fresh)
 import Graph (union) as G
-import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (<#>), (<>), (==), (<<<))
-import Primitive (string)
-import Util (MayFail, error, type (×), (×), with, report, check, both)
-import Util.Pair (unzip) as P
+import Pretty (prettyP)
+import Util (type (+), type (×), MayFail, check, error, report, unimplemented, with, (×))
 import Util.Pair (Pair(..))
 import Val (Val(..), Fun(..)) as V
-import Val (Val, Env, lookup', restrict, for, (<+>))
+import Val (Val, Env, lookup', for, restrict, (<+>))
 
 {-# Allocating addresses #-}
 runAlloc :: forall t a. Traversable t => t a -> (t Vertex) × Int
@@ -75,7 +72,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall g. Graph g => g -> Env Vertex -> RecDefs Vertex -> Set Vertex -> HeapT (Either String)  (g × Env Vertex)
+closeDefs :: forall g. Graph g => g -> Env Vertex -> RecDefs Vertex -> Set Vertex -> HeapT ((+) String)  (g × Env Vertex)
 closeDefs g γ ρ vrts =
    D.foldM  (\(g_prev × γ_prev) x_i σ_i -> do
                   α_i <- fresh
@@ -86,7 +83,10 @@ closeDefs g γ ρ vrts =
             ρ
 
 {-# Evaluation #-}
-eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT (Either String) (g × Val Vertex)
+apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> HeapT ((+) String) (g × Val Vertex)
+apply _ = error unimplemented
+
+eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
 eval g γ (Var x) _ = ((×) g) <$> lift (lookup' x γ)
 eval g γ (Op op) _ = ((×) g) <$> lift (lookup' op γ)
 eval g _ (Int α n) vs = do

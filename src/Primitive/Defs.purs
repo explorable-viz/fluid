@@ -2,6 +2,7 @@ module Primitive.Defs where
 
 import Prelude hiding (absurd, apply, div, mod, top)
 
+import Control.Monad.Trans.Class (lift)
 import Data.Array ((!!))
 import Data.Exists (mkExists)
 import Data.Foldable (foldl)
@@ -11,7 +12,8 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
-import Data.Traversable (sequence, traverse)
+import Data.Set (insert, singleton)
+import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
@@ -19,13 +21,15 @@ import Dict (Dict, (\\))
 import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, lookup, singleton, unzip) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
+import Graph (fresh)
+import Graph (union) as G
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
-import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr, val)
+import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Trace (AppTrace)
-import Util (type (+), type (×), Endo, MayFail, error, orElse, report, (×))
-import Val (Array2, Env, ForeignOp, ForeignOp'(..), Fun(..), OpBwd, OpFwd, Val(..), updateMatrix)
+import Util (type (+), type (×), Endo, MayFail, error, orElse, report, unimplemented, (×))
+import Val (Array2, Env, ForeignOp, ForeignOp'(..), Fun(..), OpBwd, OpFwd, OpGraph, Val(..), updateMatrix)
 
 extern :: forall a. ForeignOp -> Val a
 extern = flip Foreign Nil >>> Fun
@@ -34,9 +38,9 @@ primitives :: Raw Env
 primitives = D.fromFoldable
    [ ":" × Fun (PartialConstr bot cCons Nil)
    , "ceiling" × unary { i: number, o: int, fwd: ceil }
-   , "debugLog" × unary { i: val, o: val, fwd: debugLog }
+   , "debugLog" × extern debugLog
    , "dims" × extern dims
-   , "error" × unary { i: string, o: val, fwd: error_ }
+   , "error" × extern error_
    , "floor" × unary { i: number, o: int, fwd: floor }
    , "log" × unary { i: intOrNumber, o: number, fwd: log }
    , "numToStr" × unary { i: intOrNumber, o: string, fwd: numToStr }
@@ -66,17 +70,48 @@ primitives = D.fromFoldable
    , "rem" × binaryZero { i: int, o: int, fwd: rem }
    ]
 
-debugLog :: forall a. Val a -> Val a
-debugLog x = trace x (const x)
+error_ :: ForeignOp
+error_ = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }
+   where
+   op' :: OpGraph
+   op' (g × Str _ s : Nil) = pure $ g × error s
+   op' _ = lift $ report "String expected"
 
-error_ :: forall a. String -> Val a
-error_ = error
+   fwd :: OpFwd Unit
+   fwd (Str _ s : Nil) = error s
+   fwd _ = report "String expected"
+
+   bwd :: OpBwd Unit
+   bwd _ = error unimplemented
+
+debugLog :: ForeignOp
+debugLog = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }
+   where
+   op' :: OpGraph
+   op' (g × x : Nil) = pure $ g × trace x (const x)
+   op' _ = lift $ report "Single value expected"
+
+   fwd :: OpFwd Unit
+   fwd (x : Nil) = pure $ unit × trace x (const x)
+   fwd _ = report "Single value expected"
+
+   bwd :: OpBwd Unit
+   bwd _ = error unimplemented
 
 type ArrayData a = Array2 (Val a)
 
 dims :: ForeignOp
-dims = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
+dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
+   op :: OpGraph
+   op (g × Matrix α (_ × (i × β1) × (j × β2)) : Nil) = do
+      α' <- fresh
+      β1' <- fresh
+      β2' <- fresh
+      let g' = g # G.union α' (singleton α) # G.union β1' (singleton β1) # G.union β2' (singleton β2)
+      pure $ g' × Constr α cPair (Int β1 i : Int β2 j : Nil)
+   op _ = lift $ report "Matrix expected"
+
    fwd :: OpFwd (Raw ArrayData)
    fwd (Matrix α (vss × (i × β1) × (j × β2)) : Nil) =
       pure $ (map erase <$> vss) × Constr α cPair (Int β1 i : Int β2 j : Nil)
@@ -87,8 +122,17 @@ dims = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
       Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
 
 matrixLookup :: ForeignOp
-matrixLookup = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: bwd }
+matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
    where
+   op :: OpGraph
+   op (g × Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+      | c == cPair = do
+           v <- lift $ orElse "Index out of bounds" $ do
+              us <- vss !! (i - 1)
+              us !! (j - 1)
+           pure $ g × v
+   op _ = lift $ report "Matrix and pair of integers expected"
+
    fwd :: OpFwd (Raw ArrayData × (Int × Int) × (Int × Int))
    fwd (Matrix _ (vss × (i' × _) × (j' × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = do
@@ -105,8 +149,14 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: bwd }
          : Nil
 
 dict_difference :: ForeignOp
-dict_difference = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
+dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
+   op :: OpGraph
+   op (g × Dictionary α d : Dictionary β d' : Nil) = do
+      α' <- fresh
+      pure $ G.union α' (singleton α # insert β) g × Dictionary α' (d \\ d')
+   op _ = lift $ report "Dictionaries expected."
+
    fwd :: OpFwd Unit
    fwd (Dictionary α d : Dictionary α' d' : Nil) =
       pure $ unit × Dictionary (α ∧ α') (d \\ d')
@@ -117,8 +167,16 @@ dict_difference = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafeParti
       Dictionary α d : Dictionary α D.empty : Nil
 
 dict_fromRecord :: ForeignOp
-dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafePartial bwd }
+dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
+   op :: OpGraph
+   op (g × Record α xvs : Nil) = do
+      α' <- fresh
+      xvs' <- for xvs (\v -> fresh <#> (_ × v))
+      let g' = foldl (\h (β × _) -> G.union β (singleton α) h) (G.union α' (singleton α) g) xvs'
+      pure $ g' × Dictionary α' xvs'
+   op _ = lift $ report "Record expected."
+
    fwd :: OpFwd Unit
    fwd (Record α xvs : Nil) =
       pure $ unit × Dictionary α (xvs <#> (α × _))
@@ -128,8 +186,14 @@ dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op: fwd, op_bwd: unsafeParti
    bwd (_ × Dictionary α d) = Record (foldl (∨) α (d <#> fst)) (d <#> snd) : Nil
 
 dict_disjointUnion :: ForeignOp
-dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
+dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
+   op :: OpGraph
+   op (g × Dictionary α d : Dictionary β d' : Nil) = do
+      α' <- fresh
+      pure $ G.union α' (singleton α # insert β) g × Dictionary α' (D.disjointUnion d d')
+   op _ = lift $ report "Dictionaries expected"
+
    fwd :: OpFwd (Dict Unit × Dict Unit)
    fwd (Dictionary α d : Dictionary α' d' : Nil) =
       pure $ ((const unit <$> d) × (const unit <$> d')) × Dictionary (α ∧ α') (D.disjointUnion d d')
@@ -140,8 +204,11 @@ dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePa
       Dictionary α (d'' \\ d') : Dictionary α (d'' \\ d) : Nil
 
 dict_foldl :: ForeignOp
-dict_foldl = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bwd }
+dict_foldl = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
+   op :: OpGraph
+   op _ = error unimplemented
+
    fwd :: OpFwd (Raw Val × List (String × AppTrace × AppTrace))
    fwd (v : u : Dictionary _ d : Nil) = do
       ts × u' <-
@@ -164,8 +231,13 @@ dict_foldl = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bw
          ts
 
 dict_get :: ForeignOp
-dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd }
+dict_get = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
+   op :: OpGraph
+   op (g × Str _ s : Dictionary _ d : Nil) =
+      (g × _) <$> (snd <$> lift (D.lookup s d # orElse ("Key \"" <> s <> "\" not found")))
+   op _ = lift $ report "String and dictionary expected"
+
    fwd :: OpFwd String
    fwd (Str _ s : Dictionary _ d : Nil) =
       (s × _) <$> (snd <$> D.lookup s d # orElse ("Key \"" <> s <> "\" not found"))
@@ -176,8 +248,11 @@ dict_get = mkExists $ ForeignOp' { arity: 2, op: fwd, op_bwd: unsafePartial bwd 
       Str bot s : Dictionary bot (D.singleton s (bot × v)) : Nil
 
 dict_intersectionWith :: ForeignOp
-dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsafePartial bwd }
+dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
+   op :: OpGraph
+   op _ = error unimplemented
+
    fwd :: OpFwd (Raw Val × Dict (AppTrace × AppTrace))
    fwd (v : Dictionary α d : Dictionary α' d' : Nil) = do
       d'' <-
@@ -200,12 +275,16 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op: fwd, op_bwd: unsaf
             :: Dict (_ × Val _ × Val _ × Val _)
 
 dict_map :: ForeignOp
-dict_map = mkExists $ ForeignOp' { arity: 2, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
-   fwd :: Partial => OpFwd (Raw Val × Dict AppTrace)
+   op :: OpGraph
+   op _ = error unimplemented
+
+   fwd :: OpFwd (Raw Val × Dict AppTrace)
    fwd (v : Dictionary α d : Nil) = do
       ts × d' <- D.unzip <$> traverse (\(β × u) -> second (β × _) <$> apply (v × u)) d
       pure $ (erase v × ts) × Dictionary α d'
+   fwd _ = report "Function and dictionary expected"
 
    bwd :: Partial => OpBwd (Raw Val × Dict AppTrace)
    bwd ((v × ts) × Dictionary α d') =
