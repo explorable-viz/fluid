@@ -169,16 +169,26 @@ bwdSlice' parent g ((s × t) : es) =
 bwdSlice' _ g Nil = g
 
 fwdSlice :: Set Vertex -> GraphImpl -> GraphImpl
-fwdSlice αs parent = fst $ fwdEdges startG emptyG edges
+fwdSlice αs parent = fst $ fwdEdges parent startG emptyG edges
    where
    startG = subgraph parent αs
    edges = inE αs parent
 
-fwdEdges :: GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl × GraphImpl
-fwdEdges currSlice pending edges =
+fwdEdges :: GraphImpl -> GraphImpl -> GraphImpl -> Set (Vertex × Vertex) -> GraphImpl × GraphImpl
+fwdEdges parent currSlice pending edges =
    if S.isEmpty edges then currSlice × pending
    else
       emptyG × emptyG
+
+fwdVertex :: GraphImpl -> GraphImpl -> GraphImpl -> Vertex -> GraphImpl × GraphImpl
+fwdVertex parent currSlice pending α =
+    let currNeighbors = outN pending α
+     in
+        if currNeighbors == (outN parent α) then 
+            case currNeighbors of
+                Just αs -> fwdEdges parent (union α αs currSlice) (remove α pending) (inE' parent α )
+                Nothing -> fwdEdges parent (union α S.empty currSlice) (remove α pending) (inE' parent α)
+        else currSlice × pending
 
 derive instance Eq Vertex
 derive instance Ord Vertex
