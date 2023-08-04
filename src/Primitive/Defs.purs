@@ -278,19 +278,19 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_b
 blah :: forall g. Graph g
    => Val Vertex
    -> g
-   -> Dict (Val Vertex)
-   -> HeapT ((+) String) (g × Dict (Val Vertex))
+   -> Dict (Vertex × Val Vertex)
+   -> HeapT ((+) String) (g × Dict (Vertex × Val Vertex))
 blah v g =
-   foldWithIndexM (\k (g' × ss) n -> do
-      (g'' × s) <- G.apply g' (v × n)
-      pure $ (g'' × D.insert k s ss)) (g × D.empty)
+   foldWithIndexM (\k (g' × ss) (α × u) -> do
+      (g'' × s) <- G.apply g' (v × u)
+      pure $ (g'' × D.insert k (α × s) ss)) (g × D.empty)
 
 dict_map :: ForeignOp
 dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
    op (g × v : Dictionary α d : Nil) = do
-      g' × _ <- blah v g (d <#> snd)
+      g' × _ <- blah v g d
       pure $ g' × Dictionary α (error unimplemented)
    op _ = lift $ report "Function and dictionary expected"
 
