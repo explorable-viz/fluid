@@ -5177,24 +5177,24 @@
       scrollIntoView: !!spec.scrollIntoView
     };
   }
-  function resolveTransaction(state, specs, filter6) {
+  function resolveTransaction(state, specs, filter5) {
     let s = resolveTransactionInner(state, specs.length ? specs[0] : {}, state.doc.length);
     if (specs.length && specs[0].filter === false)
-      filter6 = false;
+      filter5 = false;
     for (let i = 1; i < specs.length; i++) {
       if (specs[i].filter === false)
-        filter6 = false;
+        filter5 = false;
       let seq = !!specs[i].sequential;
       s = mergeTransaction(s, resolveTransactionInner(state, specs[i], seq ? s.changes.newLength : state.doc.length), seq);
     }
     let tr = Transaction.create(state, s.changes, s.selection, s.effects, s.annotations, s.scrollIntoView);
-    return extendTransaction(filter6 ? filterTransaction(tr) : tr);
+    return extendTransaction(filter5 ? filterTransaction(tr) : tr);
   }
   function filterTransaction(tr) {
     let state = tr.startState;
     let result = true;
-    for (let filter6 of state.facet(changeFilter)) {
-      let value = filter6(tr);
+    for (let filter5 of state.facet(changeFilter)) {
+      let value = filter5(tr);
       if (value === false) {
         result = false;
         break;
@@ -5601,8 +5601,8 @@
     }
     update(updateSpec) {
       let { add = [], sort = false, filterFrom = 0, filterTo = this.length } = updateSpec;
-      let filter6 = updateSpec.filter;
-      if (add.length == 0 && !filter6)
+      let filter5 = updateSpec.filter;
+      if (add.length == 0 && !filter5)
         return this;
       if (sort)
         add = add.slice().sort(cmpRange);
@@ -5615,17 +5615,17 @@
           let range3 = add[i++];
           if (!builder.addInner(range3.from, range3.to, range3.value))
             spill.push(range3);
-        } else if (cur.rangeIndex == 1 && cur.chunkIndex < this.chunk.length && (i == add.length || this.chunkEnd(cur.chunkIndex) < add[i].from) && (!filter6 || filterFrom > this.chunkEnd(cur.chunkIndex) || filterTo < this.chunkPos[cur.chunkIndex]) && builder.addChunk(this.chunkPos[cur.chunkIndex], this.chunk[cur.chunkIndex])) {
+        } else if (cur.rangeIndex == 1 && cur.chunkIndex < this.chunk.length && (i == add.length || this.chunkEnd(cur.chunkIndex) < add[i].from) && (!filter5 || filterFrom > this.chunkEnd(cur.chunkIndex) || filterTo < this.chunkPos[cur.chunkIndex]) && builder.addChunk(this.chunkPos[cur.chunkIndex], this.chunk[cur.chunkIndex])) {
           cur.nextChunk();
         } else {
-          if (!filter6 || filterFrom > cur.to || filterTo < cur.from || filter6(cur.from, cur.to, cur.value)) {
+          if (!filter5 || filterFrom > cur.to || filterTo < cur.from || filter5(cur.from, cur.to, cur.value)) {
             if (!builder.addInner(cur.from, cur.to, cur.value))
               spill.push(Range.create(cur.from, cur.to, cur.value));
           }
           cur.next();
         }
       }
-      return builder.finishInner(this.nextLayer.isEmpty && !spill.length ? RangeSet.empty : this.nextLayer.update({ add: spill, filter: filter6, filterFrom, filterTo }));
+      return builder.finishInner(this.nextLayer.isEmpty && !spill.length ? RangeSet.empty : this.nextLayer.update({ add: spill, filter: filter5, filterFrom, filterTo }));
     }
     map(changes) {
       if (changes.empty || this.isEmpty)
