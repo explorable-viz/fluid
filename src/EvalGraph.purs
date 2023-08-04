@@ -1,23 +1,27 @@
 module EvalGraph where
 
-import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (<#>), (<>), (==))
-import Bindings (varAnon)
-import Expr (Cont(..), Elim(..), Expr(..))
-import Graph (Vertex, class Graph, Heap, HeapT, fresh)
+import Prelude
 import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
-import Data.Functor ((<$>))
+--import Data.Functor ((<$>))
 import Data.Either (note)
-import Data.List (List(..), length, (:))
+--import Data.Exists (mkExists, runExists)
+import Data.List (List(..), (:), length)
+--import Data.Maybe (Maybe(..))
 import Data.Set as S
 import Data.Set (Set)
+--import Data.Profunctor.Strong (first)
 import Data.Traversable (class Traversable, traverse)
+import Bindings (varAnon)
 import DataType (consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, singleton) as D
+--import DataType (arity)
+import Expr (Cont(..), Elim(..), Expr(..), RecDefs, asExpr, fv)
+import Graph (Vertex, class Graph, Heap, HeapT, fresh)
+import Pretty (prettyP)
 import Util (MayFail, type (+), type (×), (×), check, error, report, unimplemented, with)
-import Pretty
-import Val (Val(..)) as V
-import Val (Val, Env, lookup')
+import Val (Fun(..), Val(..)) as V
+import Val (Val, Env, (<+>), for, lookup', restrict)
 
 {-# Allocating addresses #-}
 runAlloc :: forall t a. Traversable t => t a -> (t Vertex) × Int
@@ -60,11 +64,40 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-{-# Application #-}
-apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> MayFail (g × Val Vertex)
-apply _ = error unimplemented
-
 {-# Evaluation #-}
+closeDefs :: Env Vertex -> RecDefs Vertex -> Vertex -> Env Vertex
+closeDefs γ ρ α = ρ <#> \σ ->
+   let ρ' = ρ `for` σ in V.Fun $ V.Closure α (γ `restrict` (fv ρ' `S.union` fv σ)) ρ' σ
+
+apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> HeapT ((+) String) (g × Val Vertex)
+apply g (V.Fun (V.Closure β γ1 ρ σ) × v) = do
+   let γ2 = closeDefs γ1 ρ β
+   γ3 × e'' × _ <- lift $ match v σ
+   _ × v'' <- eval g (γ1 <+> γ2 <+> γ3) (asExpr e'') (error unimplemented) --(β ∧ β')
+   pure $ g × v''
+{-
+apply g (V.Fun (V.Foreign φ vs) × v) = do
+   let vs' = vs <> singleton v
+   let
+      apply' :: forall t. ForeignOp' t -> MayFail (g × Val _)
+      apply' (ForeignOp' φ') = do
+         t × v'' <- do
+            if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Foreign φ vs')
+            else first Just <$> φ'.op vs'
+         pure $ ?_ × v''
+   t × v'' <- runExists apply' φ
+   pure $ ?_ × v''
+apply g (V.Fun (V.PartialConstr α c vs) × v) = do
+   let n = successful (arity c)
+   check (length vs < n) ("Too many arguments to " <> showCtr c)
+   let
+      v' =
+         if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> singleton v)
+         else V.Constr α c (vs <> singleton v)
+   pure $ ?_ × v'
+-}
+apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
+
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
 eval g γ (Var x) _ = ((×) g) <$> lift (lookup' x γ)
 eval g γ (Op op) _ = ((×) g) <$> lift (lookup' op γ)
