@@ -15,21 +15,24 @@ import Bindings (varAnon)
 import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (note)
+import Data.Exists (mkExists, runExists)
 import Data.List (List(..), (:), length, foldM)
+import Data.Maybe (Maybe(..))
+import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as S
 import Data.Traversable (class Traversable, traverse)
-import DataType (checkArity, consistentWith, dataTypeFor, showCtr)
+import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, insert, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Foreign.Object (foldM) as D
 import Graph (Vertex, class Graph, Heap, HeapT, fresh)
 import Graph (union) as G
 import Pretty (prettyP)
-import Util (type (+), type (×), MayFail, check, error, report, unimplemented, with, (×))
+import Util (type (+), type (×), MayFail, check, error, report, unimplemented, successful, with, (×))
 import Util.Pair (Pair(..))
 import Val (Val(..), Fun(..)) as V
-import Val (Val, Env, lookup', for, restrict, (<+>))
+import Val (Val, Env, ForeignOp'(..), lookup', for, restrict, (<+>))
 
 {-# Allocating addresses #-}
 runAlloc :: forall t a. Traversable t => t a -> (t Vertex) × Int
@@ -84,42 +87,31 @@ closeDefs g γ ρ vrts =
 
 {-# Evaluation #-}
 apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> HeapT ((+) String) (g × Val Vertex)
--- γ1: external environment of the closure, σ: the function eliminator, ρ: functions defined alongside (and including) σ
 apply g2 (V.Fun (V.Closure α γ1 ρ σ) × v) = do
-   -- γ2: the environment of closures, one for each eliminator found in ρ
    g3 × γ2 <- closeDefs g2 γ1 ρ (S.singleton α)
-   -- γ3, κ : the environment and continuation produced by matching v on σ, αs: the addresses in v that the match depends on
    γ3 × κ × αs <- lift $ match v σ
-   -- (S.insert α αs): evaluating the function κ depends on the address α of the closure, and the addresses αs of the matched value
    eval g3 (γ1 <+> γ2 <+> γ3) (asExpr κ) (S.insert α αs)
-apply _ _ = error unimplemented
-
--- apply :: forall a. Ann a => Val a × Val a -> MayFail (AppTrace × Val a)
--- apply (V.Fun (V.Closure β γ1 ρ σ) × v) = do
---    let γ2 = closeDefs γ1 ρ β
---    γ3 × e'' × β' × w <- match v σ
---    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
---    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
--- apply (V.Fun (V.Foreign φ vs) × v) = do
---    let vs' = vs <> singleton v
+apply g (V.Fun (V.PartialConstr α c vs) × v) = do
+   let n = successful (arity c)
+   lift $ check (length vs < n) ("Too many arguments to " <> showCtr c)
+   let v' = if length vs < n - 1
+            then V.Fun $ V.PartialConstr α c (vs <> (v:Nil))
+            else V.Constr α c (vs <> (v:Nil))
+   pure $ g × v'
+-- apply g (V.Fun (V.Foreign φ vs) × v) = do
+--    let vs' = vs <> (v : Nil)
 --    let
---       apply' :: forall t. ForeignOp' t -> MayFail (ForeignTrace × Val _)
+--       apply' :: forall t. ForeignOp' t -> HeapT ((+) String)  (g × Val Vertex)
 --       apply' (ForeignOp' φ') = do
---          t × v'' <- do
---             if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Foreign φ vs')
---             else first Just <$> φ'.op vs'
---          pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v''
---    t × v'' <- runExists apply' φ
---    pure $ T.AppForeign (length vs + 1) t × v''
--- apply (V.Fun (V.PartialConstr α c vs) × v) = do
---    let n = successful (arity c)
---    check (length vs < n) ("Too many arguments to " <> showCtr c)
---    let
---       v' =
---          if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> singleton v)
---          else V.Constr α c (vs <> singleton v)
---    pure $ T.AppConstr c × v'
--- apply (_ × v) = report $ "Found " <> prettyP v <> ", expected function"
+--          if φ'.arity > length vs'
+--             then φ'.op' (g × vs')
+--             else error "" -- ??? -- first Just <$> φ'.op vs'
+--    error ""
+   --       pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v'
+   -- t × v'' <- runExists apply' φ
+   -- pure $ T.AppForeign (length vs + 1) t × v''
+apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
+apply _ _ = error unimplemented
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
 eval g γ (Var x) _ = ((×) g) <$> lift (lookup' x γ)
@@ -166,22 +158,23 @@ eval g γ (Constr α c es) αs = do
       (g × Nil)
       es
    pure $ (G.union α' (S.insert α αs) g_n) × (V.Constr α' c vs)
--- eval γ (Matrix α e (x × y) e') α' = do
---    t × v <- eval γ e' α'
+-- eval g γ (Matrix α e (x × y) e') αs = do
+--    t × v <- eval g γ e' αs
 --    let (i' × β) × (j' × β') = fst (intPair.match v)
---    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
---    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
---       ( sequence $ do
---            i <- range 1 i'
---            singleton $ sequence $ do
---               j <- range 1 j'
---               let γ' = D.singleton x (V.Int β i) `disjointUnion` (D.singleton y (V.Int β' j))
---               singleton (eval (γ <+> γ') e α')
---       )
---    pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
---    where
---    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
---    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
+--    error ""
+   -- check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
+   -- tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
+   --    ( sequence $ do
+   --         i <- range 1 i'
+   --         singleton $ sequence $ do
+   --            j <- range 1 j'
+   --            let γ' = D.singleton x (V.Int β i) `disjointUnion` (D.singleton y (V.Int β' j))
+   --            singleton (eval (γ <+> γ') e α')
+   --    )
+   -- pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
+   -- where
+   -- unzipToArray :: forall b c. List (b × c) -> Array b × Array c
+   -- unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
 -- eval g γ (Matrix α e (x × y) e') vrts = do
 --    error "todo"
 eval g γ (Lambda σ) αs = do
