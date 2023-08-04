@@ -39,8 +39,8 @@ instance Ann Unit
 
 -- similar to an isomorphism lens with complement t
 type OpFwd t = forall a. Ann a => List (Val a) -> MayFail (t × Val a)
-type OpGraph = forall g. Graph g => List (Val Vertex) -> HeapT ((+) String) (g × Val Vertex)
 type OpBwd t = forall a. Ann a => t × Val a -> List (Val a)
+type OpGraph = forall g. Graph g => g × List (Val Vertex) -> HeapT ((+) String) (g × Val Vertex)
 
 data ForeignOp' t = ForeignOp'
    { arity :: Int
