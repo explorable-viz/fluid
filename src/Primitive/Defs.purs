@@ -12,6 +12,7 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
+import Data.Set (singleton)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
@@ -20,6 +21,8 @@ import Dict (Dict, (\\))
 import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, lookup, singleton, unzip) as D
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
+import Graph (fresh)
+import Graph (union) as G
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
@@ -101,7 +104,13 @@ dims :: ForeignOp
 dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op _ = error unimplemented
+   op (g × Matrix α (_ × (i × β1) × (j × β2)) : Nil) = do
+      α' <- fresh
+      β1' <- fresh
+      β2' <- fresh
+      let g' = g # G.union α' (singleton α) # G.union β1' (singleton β1) # G.union β2' (singleton β2)
+      pure $ g' × Constr α cPair (Int β1 i : Int β2 j : Nil)
+   op _ = lift $ report "Matrix expected"
 
    fwd :: OpFwd (Raw ArrayData)
    fwd (Matrix α (vss × (i × β1) × (j × β2)) : Nil) =
