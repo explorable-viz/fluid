@@ -2,6 +2,7 @@ module Primitive.Defs where
 
 import Prelude hiding (absurd, apply, div, mod, top)
 
+import Control.Monad.Trans.Class (lift)
 import Data.Array ((!!))
 import Data.Exists (mkExists)
 import Data.Foldable (foldl)
@@ -70,7 +71,8 @@ error_ :: ForeignOp
 error_ = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }
    where
    op' :: OpGraph
-   op' _ = error unimplemented
+   op' (g × Str _ s : Nil) = pure $ g × error s
+   op' _ = lift $ report "String expected"
 
    fwd :: OpFwd Unit
    fwd (Str _ s : Nil) = error s
