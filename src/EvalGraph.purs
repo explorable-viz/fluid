@@ -13,7 +13,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Array (fromFoldable, foldM, range, snoc) as A
 import Data.Either (note)
 -- import Data.Exists (mkExists, runExists)
-import Data.List (List(..), (:), length, foldM)
+import Data.List (List(..), (:), length, foldM, snoc)
 -- import Data.Maybe (Maybe(..))
 -- import Data.Profunctor.Strong (first)
 import Data.Set (Set)
@@ -76,16 +76,16 @@ matchMany (_ : vs) (ContExpr _) = report $
 matchMany _ _ = error "absurd"
 
 closeDefs :: forall g. Graph g => g -> Env Vertex -> RecDefs Vertex -> Set Vertex -> HeapT ((+) String) (g × Env Vertex)
-closeDefs g γ ρ vrts =
+closeDefs g0 γ0 ρ0 αs =
    D.foldM
-      ( \(g_prev × γ_prev) x_i σ_i -> do
+      ( \(g × γ) x_i σ_i -> do
            α_i <- fresh
-           let ρ_i = ρ `for` σ_i
-           let v_i = V.Fun $ V.Closure α_i (γ `restrict` (fv ρ_i `S.union` fv σ_i)) ρ_i σ_i
-           pure $ (G.union α_i vrts g_prev) × (D.insert x_i v_i γ_prev)
+           let ρ_i = ρ0 `for` σ_i
+           let v_i = V.Fun $ V.Closure α_i (γ0 `restrict` (fv ρ_i `S.union` fv σ_i)) ρ_i σ_i
+           pure $ (G.union α_i αs g) × (D.insert x_i v_i γ)
       )
-      (g × D.empty)
-      ρ
+      (g0 × D.empty)
+      ρ0
 
 {-# Evaluation #-}
 apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> HeapT ((+) String) (g × Val Vertex)
@@ -98,8 +98,8 @@ apply g (V.Fun (V.PartialConstr α c vs) × v) = do
    lift $ check (length vs < n) ("Too many arguments to " <> showCtr c)
    let
       v' =
-         if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> (v : Nil))
-         else V.Constr α c (vs <> (v : Nil))
+         if length vs < n - 1 then V.Fun $ V.PartialConstr α c (snoc vs v)
+         else V.Constr α c (snoc vs v)
    pure $ g × v'
 apply _ (V.Fun (V.Foreign _ _) × _) = error unimplemented
 apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
@@ -157,7 +157,7 @@ eval g γ (Constr α c es) αs = do
    g_n × vs <- foldM
       ( \(g_prev × vs) e -> do
            (g_next × v) <- eval g_prev γ e αs
-           pure $ g_next × (vs <> (v : Nil)) -- foldM traverses the list from left-to-right, hence we append rather than prepend onto the list of values
+           pure $ g_next × (snoc vs v) -- foldM traverses the list from left-to-right, hence we append rather than prepend onto the list of values
       )
       (g × Nil)
       es
@@ -191,6 +191,7 @@ eval g γ (Lambda σ) αs = do
 eval g γ (Project e x) αs = do
    g' × v <- eval g γ e αs
    lift $ case v of
+      -- Discard the address, as we assume it has been added to g' during eval of e
       V.Record _ xvs -> ((×) g') <$> lookup' x xvs
       _ -> report $ "Found " <> prettyP v <> ", expected record"
 eval g γ (App e e') αs = do
