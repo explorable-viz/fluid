@@ -15,6 +15,7 @@ import Util (Endo, (×), type (×))
 
 type SMap = SM.Object
 type Edge = Vertex × Vertex
+
 class Graph g where
    union :: Vertex -> Set Vertex -> Endo g
    outN :: g -> Vertex -> Maybe (Set Vertex)
@@ -25,6 +26,7 @@ class Graph g where
    allocate :: g -> Vertex
    emptyG :: g
    discreteG :: Set Vertex -> g
+
 newtype Vertex = Vertex String
 
 type HeapT m a = StateT Int m a
@@ -72,7 +74,7 @@ bwdSlice αs parent = bwdSlice' parent startG edges
    startG = discreteG αs
    edges = outE αs parent
 
-bwdSlice' :: forall g. Graph g=> g -> g -> List (Edge) -> g
+bwdSlice' :: forall g. Graph g => g -> g -> List (Edge) -> g
 bwdSlice' parent g ((s × t) : es) =
    if elem g t then
       let
@@ -148,9 +150,12 @@ instance Graph GraphImpl where
    singleton α αs = GraphImpl (starInOut α αs × starInIn α αs)
    opp (GraphImpl (out × in_)) = GraphImpl (in_ × out)
    emptyG = GraphImpl (SM.empty × SM.empty)
-   discreteG αs = let pairs = S.map (\(Vertex α) -> α × S.empty) αs
-                      discreteM = SM.fromFoldable pairs in
-                    GraphImpl (discreteM × discreteM)
+   discreteG αs =
+      let
+         pairs = S.map (\(Vertex α) -> α × S.empty) αs
+         discreteM = SM.fromFoldable pairs
+      in
+         GraphImpl (discreteM × discreteM)
 
 -- prototype attempts at more efficiently implementing the above operations
 starInOut :: Vertex -> Set Vertex -> SMap (Set Vertex)
