@@ -12,7 +12,7 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
-import Data.Set (singleton)
+import Data.Set (insert, singleton)
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
@@ -152,7 +152,10 @@ dict_difference :: ForeignOp
 dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op _ = error unimplemented
+   op (g × Dictionary α d : Dictionary β d' : Nil) = do
+      α' <- fresh
+      pure $ G.union α' (singleton α # insert β) g × Dictionary α' (d \\ d')
+   op _ = lift $ report "Dictionaries expected."
 
    fwd :: OpFwd Unit
    fwd (Dictionary α d : Dictionary α' d' : Nil) =
