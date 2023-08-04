@@ -13,7 +13,7 @@ import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
 import Data.Set (insert, singleton)
-import Data.Traversable (sequence, traverse)
+import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
 import Debug (trace)
@@ -170,7 +170,12 @@ dict_fromRecord :: ForeignOp
 dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op _ = error unimplemented
+   op (g × Record α xvs : Nil) = do
+      α' <- fresh
+      xvs' <- for xvs (\v -> fresh <#> (_ × v))
+      let g' = foldl (\h (β × _) -> G.union β (singleton α) h) (G.union α' (singleton α) g) xvs'
+      pure $ g' × Dictionary α' xvs'
+   op _ = lift $ report "Record expected."
 
    fwd :: OpFwd Unit
    fwd (Record α xvs : Nil) =
