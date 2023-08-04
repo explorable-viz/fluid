@@ -1,4 +1,12 @@
-module EvalGraph where
+module EvalGraph
+  ( alloc
+  , eval
+  , match
+  , matchMany
+  , patternMismatch
+  , runAlloc
+  )
+  where
 
 import Pretty
 
@@ -15,7 +23,7 @@ import Data.Set as S
 import Data.Traversable (class Traversable, traverse)
 import DataType (consistentWith, checkArity, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, singleton, insert) as D
-import Expr (Cont(..), Elim(..), Expr(..), fv)
+import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv)
 import Graph (Vertex, class Graph, Heap, HeapT, fresh)
 import Graph (union) as G
 import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (+), (<#>), (<>), (==), (<<<))
@@ -24,7 +32,7 @@ import Util (MayFail, error, type (×), (×), with, report, check, both)
 import Util.Pair (unzip) as P
 import Util.Pair (Pair(..))
 import Val (Val(..), Fun(..)) as V
-import Val (Val, Env, lookup', restrict)
+import Val (Val, Env, lookup', restrict, for, (<+>))
 
 {-# Allocating addresses #-}
 runAlloc :: forall t a. Traversable t => t a -> (t Vertex) × Int
@@ -67,9 +75,17 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-{-# Evaluation #-}
--- evalSeq
+closeDefs :: forall g. Graph g => g -> Env Vertex -> RecDefs Vertex -> Set Vertex -> HeapT (Either String)  (g × Env Vertex)
+closeDefs g γ ρ vrts =
+   D.foldM  (\(g_prev × γ_prev) x_i σ_i -> do
+                  α_i <- fresh
+                  let ρ_i = ρ `for` σ_i
+                  let v_i = V.Fun $ V.Closure α_i (γ `restrict` (fv ρ_i `S.union` fv σ_i)) ρ_i σ_i
+                  pure $ (G.union α_i vrts g_prev) × (D.insert x_i v_i γ_prev))
+            (g × D.empty)
+            ρ
 
+{-# Evaluation #-}
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT (Either String) (g × Val Vertex)
 eval g γ (Var x) _ = ((×) g) <$> lift (lookup' x γ)
 eval g γ (Op op) _ = ((×) g) <$> lift (lookup' op γ)
@@ -146,13 +162,42 @@ eval g γ (Project e x) vrts = do
 --    g2 × v   <- eval g1 γ e' vrts
 --    t'' × v'' <- apply (v × v')
 --    pure $ T.App t t' t'' × v''
+eval g γ (Let (VarDef σ e) e') vrts = do
+   g1 × v <- eval g γ e vrts
+   γ' × _ × _ <- lift $ match v σ -- terminal meta-type of eliminator is meta-unit
+   g' × v' <- eval g1 (γ <+> γ') e' vrts
+   pure $ g' × v'
+eval g γ (LetRec ρ e) vrts = do
+   g1 × γ' <- closeDefs g γ ρ vrts
+   g' × v  <- eval g1 (γ <+> γ') e vrts
+   pure $ g' × v
 eval _ _ _ _ = error "to do"
--- eval γ (Let (VarDef σ e) e') α = do
---    t × v <- eval γ e α
---    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
---    t' × v' <- eval (γ <+> γ') e' α' -- (α ∧ α') for consistency with functions? (similarly for module defs)
---    pure $ T.Let (T.VarDef w t) t' × v'
--- eval γ (LetRec ρ e) α = do
---    let γ' = closeDefs γ ρ α
---    t × v <- eval (γ <+> γ') e α
---    pure $ T.LetRec (erase <$> ρ) t × v
+
+
+
+-- apply :: forall a. Ann a => Val a × Val a -> MayFail (AppTrace × Val a)
+-- apply (V.Fun (V.Closure β γ1 ρ σ) × v) = do
+--    let γ2 = closeDefs γ1 ρ β
+--    γ3 × e'' × β' × w <- match v σ
+--    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
+--    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
+-- apply (V.Fun (V.Foreign φ vs) × v) = do
+--    let vs' = vs <> singleton v
+--    let
+--       apply' :: forall t. ForeignOp' t -> MayFail (ForeignTrace × Val _)
+--       apply' (ForeignOp' φ') = do
+--          t × v'' <- do
+--             if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Foreign φ vs')
+--             else first Just <$> φ'.op vs'
+--          pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v''
+--    t × v'' <- runExists apply' φ
+--    pure $ T.AppForeign (length vs + 1) t × v''
+-- apply (V.Fun (V.PartialConstr α c vs) × v) = do
+--    let n = successful (arity c)
+--    check (length vs < n) ("Too many arguments to " <> showCtr c)
+--    let
+--       v' =
+--          if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> singleton v)
+--          else V.Constr α c (vs <> singleton v)
+--    pure $ T.AppConstr c × v'
+-- apply (_ × v) = report $ "Found " <> prettyP v <> ", expected function"
