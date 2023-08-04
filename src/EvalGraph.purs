@@ -1,5 +1,6 @@
 module EvalGraph
    ( alloc
+   , apply
    , eval
    , match
    , matchMany
