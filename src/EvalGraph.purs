@@ -2,7 +2,6 @@ module EvalGraph
    ( apply
    , eval
    , eval'
-   , eval''
    , match
    , matchMany
    , patternMismatch
@@ -24,7 +23,7 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, insert, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Foreign.Object (foldM) as D
-import Graph (Vertex, class Graph, GraphAccumT, HeapT, extendG', fresh)
+import Graph (Vertex, class Graph, GraphAccumT, HeapT, extendG, fresh)
 import Graph (extend) as G
 import Prelude hiding (apply)
 import Pretty (prettyP)
@@ -104,24 +103,13 @@ apply g (V.Fun (V.Foreign φ vs) × v) = do
    runExists apply' φ
 apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval'' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> ExceptT String (GraphAccumT g (StateT Int Identity)) (Val Vertex)
-eval'' γ (Var x) _ = except $ lookup' x γ
-eval'' γ (Op op) _ = except $ lookup' op γ
-eval'' _ (Int α n) αs = V.Int <$> (lift $ extendG' (S.insert α αs)) <@> n
-eval'' _ _ _ = error unimplemented
-
-eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> GraphAccumT g (StateT Int ((+) String)) (Val Vertex)
-eval' γ (Var x) _ = lift $ lift $ lookup' x γ
-eval' γ (Op op) _ = lift $ lift $ lookup' op γ
-eval' _ (Int α n) αs = V.Int <$> extendG' (S.insert α αs) <@> n
+eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> ExceptT String (GraphAccumT g (StateT Int Identity)) (Val Vertex)
+eval' γ (Var x) _ = except $ lookup' x γ
+eval' γ (Op op) _ = except $ lookup' op γ
+eval' _ (Int α n) αs = V.Int <$> (lift $ extendG (S.insert α αs)) <@> n
 eval' _ _ _ = error unimplemented
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
-eval g γ (Var x) _ = ((×) g) <$> lift (lookup' x γ)
-eval g γ (Op op) _ = ((×) g) <$> lift (lookup' op γ)
-eval g _ (Int α n) αs = do
-   α' <- fresh
-   pure $ (G.extend α' (S.insert α αs) g) × (V.Int α' n)
 eval g _ (Float α n) αs = do
    α' <- fresh
    pure $ (G.extend α' (S.insert α αs) g) × (V.Float α' n)
@@ -203,3 +191,4 @@ eval g γ (Let (VarDef σ e) e') αs = do
 eval g γ (LetRec ρ e) αs = do
    g1 × γ' <- closeDefs g γ ρ αs
    eval g1 (γ <+> γ') e αs
+eval _ _ _ _ = error unimplemented

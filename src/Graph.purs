@@ -51,10 +51,7 @@ alloc = traverse (const fresh)
 
 -- Difference graphs
 class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
-   extendG :: Vertex -> Set Vertex -> m Unit
-
-class (Graph g, Monad m) <= MonadGraphAccum2 g m | m -> g where
-   extendG' :: Set Vertex -> m Vertex
+   extendG :: Set Vertex -> m Vertex
 
 data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
 
@@ -84,16 +81,13 @@ instance Monoid g => MonadTrans (GraphAccumT g) where
       a <- m
       pure $ a × mempty
 
-instance (Graph g, Monad m) => MonadGraphAccum g (GraphAccumT g m) where
-   extendG α αs = GraphAccumT $ pure $ unit × \g -> extend α αs g
-
-instance (Graph g, MonadState Int m) => MonadGraphAccum2 g (GraphAccumT g m) where
-   extendG' αs = do
-      -- want to use fresh here but not defined for MonadState Int
+instance (Graph g, MonadState Int m) => MonadGraphAccum g (GraphAccumT g m) where
+   extendG αs = do
+      -- want "fresh" but not defined for MonadState Int
       n <- lift $ get
       lift $ put (n + 1)
       let α = Vertex (show n)
-      GraphAccumT $ pure $ α × \g -> extend α αs g
+      GraphAccumT $ pure $ α × extend α αs
 
 outE' :: forall g. Graph g => g -> Vertex -> List (Edge)
 outE' graph α = case outN graph α of
