@@ -160,41 +160,41 @@ instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
 -- GraphImpl Specifics
-newtype GraphImpl = GraphImpl ((SMap (Set Vertex)) × (SMap (Set Vertex)))
+data GraphImpl = GraphImpl (SMap (Set Vertex)) (SMap (Set Vertex))
 
 instance Semigroup GraphImpl where
-   append (GraphImpl (out1 × in1)) (GraphImpl (out2 × in2)) =
-      GraphImpl (SM.unionWith S.union out1 out2 × (SM.unionWith S.union in1 in2))
+   append (GraphImpl out1 in1) (GraphImpl out2 in2) =
+      GraphImpl (SM.unionWith S.union out1 out2) (SM.unionWith S.union in1 in2)
 
 instance Monoid GraphImpl where
-   mempty = GraphImpl (SM.empty × SM.empty)
+   mempty = GraphImpl SM.empty SM.empty
 
 instance Graph GraphImpl where
-   allocate (GraphImpl (out × _)) = Vertex α
+   allocate (GraphImpl out _) = Vertex α
       where
       α = show $ 1 + (SM.size out)
-   remove (Vertex α) (GraphImpl (out × in_)) =
+   remove (Vertex α) (GraphImpl out in_) =
       let
          newOutN = map (S.delete (Vertex α)) (SM.delete α out)
          newInN = map (S.delete (Vertex α)) (SM.delete α in_)
       in
-         GraphImpl (newOutN × newInN)
-   extend α αs (GraphImpl (out × in_)) = (GraphImpl (newOut × newIn))
+         GraphImpl newOutN newInN
+   extend α αs (GraphImpl out in_) = GraphImpl newOut newIn
       where
       newOut = SM.unionWith S.union out (starInOut α αs)
       newIn = SM.unionWith S.union in_ (starInIn α αs)
 
-   outN (GraphImpl (out × _)) (Vertex α) = SM.lookup α out
-   inN (GraphImpl (_ × in_)) (Vertex α) = SM.lookup α in_
+   outN (GraphImpl out _) (Vertex α) = SM.lookup α out
+   inN (GraphImpl _ in_) (Vertex α) = SM.lookup α in_
 
-   singleton α αs = GraphImpl (starInOut α αs × starInIn α αs)
-   opp (GraphImpl (out × in_)) = GraphImpl (in_ × out)
+   singleton α αs = GraphImpl (starInOut α αs) (starInIn α αs)
+   opp (GraphImpl out in_) = GraphImpl in_ out
    discreteG αs =
       let
          pairs = S.map (\(Vertex α) -> α × S.empty) αs
          discreteM = SM.fromFoldable pairs
       in
-         GraphImpl (discreteM × discreteM)
+         GraphImpl discreteM discreteM
 
 -- prototype attempts at more efficiently implementing the above operations
 starInOut :: Vertex -> Set Vertex -> SMap (Set Vertex)
@@ -213,7 +213,7 @@ inStar :: Vertex -> Set Vertex -> GraphImpl
 inStar α αs = opp (outStar α αs)
 
 outStar :: Vertex -> Set Vertex -> GraphImpl
-outStar α αs = GraphImpl ((starInOut α αs) × (starInIn α αs))
+outStar α αs = GraphImpl (starInOut α αs) (starInIn α αs)
 
 instance Show GraphImpl where
-   show (GraphImpl (out × in_)) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
+   show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
