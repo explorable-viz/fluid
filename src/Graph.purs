@@ -8,7 +8,6 @@ import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
-import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
@@ -47,21 +46,17 @@ runAlloc e = runState (alloc e) 0
 alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
 
-newtype GraphAccum g a = GraphAccum (a × g)
-
-mapGraphAccum :: forall g g' a b. (a × g -> b × g') -> GraphAccum g a -> GraphAccum g' b
-mapGraphAccum f (GraphAccum x) = GraphAccum (f x)
+-- Difference graphs
+data GraphAccum g a = GraphAccum a (g -> g)
 
 instance Functor (GraphAccum g) where
-   map f (GraphAccum x) = GraphAccum (first f x)
+   map f (GraphAccum x g) = GraphAccum (f x) g
 
-instance (Semigroup g) => Apply (GraphAccum g) where
-   apply (GraphAccum (f × g)) (GraphAccum (v × g')) =
-      GraphAccum (f v × (g <> g'))
+instance Apply (GraphAccum g) where
+   apply (GraphAccum f g) (GraphAccum x g') = GraphAccum (f x) (g >>> g')
 
-instance (Semigroup g) => Bind (GraphAccum g) where
-   bind (GraphAccum (x × g)) k =
-      let GraphAccum (y × g') = k x in GraphAccum $ y × (g <> g')
+instance Bind (GraphAccum g) where
+   bind (GraphAccum x g) f = let GraphAccum y g' = f x in GraphAccum y (g >>> g')
 
 outE' :: forall g. Graph g => g -> Vertex -> List (Edge)
 outE' graph α = case outN graph α of
