@@ -20,7 +20,7 @@ import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
-import Graph (Vertex, WithGraph, class Graph, extendG)
+import Graph (Vertex, WithGraph, class Graph, new)
 import Prelude hiding (apply)
 import Pretty (prettyP)
 import Primitive (string, intPair)
@@ -69,7 +69,7 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `for` σ
       in
-         V.Fun <$> (V.Closure <$> lift (extendG αs) <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
+         V.Fun <$> (V.Closure <$> lift (new αs) <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
 apply :: forall g. Graph g => Val Vertex -> Val Vertex -> WithGraph g (Val Vertex)
@@ -98,22 +98,22 @@ apply _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 eval :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> WithGraph g (Val Vertex)
 eval γ (Var x) _ = except $ lookup' x γ
 eval γ (Op op) _ = except $ lookup' op γ
-eval _ (Int α n) αs = V.Int <$> lift (extendG (S.insert α αs)) <@> n
-eval _ (Float α n) αs = V.Float <$> lift (extendG (S.insert α αs)) <@> n
-eval _ (Str α s) αs = V.Str <$> lift (extendG (S.insert α αs)) <@> s
+eval _ (Int α n) αs = V.Int <$> lift (new (S.insert α αs)) <@> n
+eval _ (Float α n) αs = V.Float <$> lift (new (S.insert α αs)) <@> n
+eval _ (Str α s) αs = V.Str <$> lift (new (S.insert α αs)) <@> s
 eval γ (Record α xes) αs = do
    xvs <- traverse (flip (eval γ) αs) xes
-   V.Record <$> lift (extendG (S.insert α αs)) <@> xvs
+   V.Record <$> lift (new (S.insert α αs)) <@> xvs
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> string.match) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
-   V.Dictionary <$> lift (extendG (S.insert α αs)) <@> d
+   V.Dictionary <$> lift (new (S.insert α αs)) <@> d
 eval γ (Constr α c es) αs = do
    except $ checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   V.Constr <$> lift (extendG (S.insert α αs)) <@> c <@> vs
+   V.Constr <$> lift (new (S.insert α αs)) <@> c <@> vs
 eval γ (Matrix α e (x × y) e') αs = do
    v <- eval γ e' αs
    let (i' × β) × (j' × β') = fst (intPair.match v)
@@ -126,9 +126,9 @@ eval γ (Matrix α e (x × y) e') αs = do
          j <- A.range 1 j'
          let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
          A.singleton (eval (γ <+> γ') e αs)
-   V.Matrix <$> lift (extendG (S.insert α αs)) <@> (vss × (i' × β) × (j' × β'))
+   V.Matrix <$> lift (new (S.insert α αs)) <@> (vss × (i' × β) × (j' × β'))
 eval γ (Lambda σ) αs =
-   V.Fun <$> (V.Closure <$> lift (extendG αs) <@> γ `restrict` fv σ <@> D.empty <@> σ)
+   V.Fun <$> (V.Closure <$> lift (new αs) <@> γ `restrict` fv σ <@> D.empty <@> σ)
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    except $ case v of

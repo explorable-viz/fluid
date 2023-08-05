@@ -11,7 +11,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.Set (insert, singleton)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Graph (extendG)
+import Graph (new)
 import Lattice (Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
@@ -178,7 +178,7 @@ unary op =
    where
    op' :: Partial => OpGraph
    op' (v : Nil) =
-      op.o.constr <$> ((op.fwd x × _) <$> lift (extendG (singleton α)))
+      op.o.constr <$> ((op.fwd x × _) <$> lift (new (singleton α)))
       where
       x × α = op.i.match v
 
@@ -201,7 +201,7 @@ binary op =
    where
    op' :: Partial => OpGraph
    op' (v1 : v2 : Nil) =
-      op.o.constr <$> ((op.fwd x y × _) <$> lift (extendG (singleton α # insert β)))
+      op.o.constr <$> ((op.fwd x y × _) <$> lift (new (singleton α # insert β)))
       where
       (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
 
@@ -231,7 +231,7 @@ binaryZero op =
             else if isZero y then singleton β
             else singleton α # insert β
       in
-         op.o.constr <$> ((op.fwd x y × _) <$> lift (extendG αs))
+         op.o.constr <$> ((op.fwd x y × _) <$> lift (new αs))
       where
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 

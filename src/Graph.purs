@@ -36,11 +36,14 @@ newtype Vertex = Vertex String
 type HeapT m a = StateT Int m a
 type Heap a = HeapT Identity a
 
-fresh :: forall m. Monad m => HeapT m Vertex
-fresh = do
-   s <- get
-   put (s + 1)
-   pure (Vertex (show s))
+class MonadState Int m <= MonadAlloc m where
+   fresh :: m Vertex
+
+instance Monad m => MonadAlloc (StateT Int m) where
+   fresh = do
+      s <- get
+      put (s + 1)
+      pure (Vertex (show s))
 
 {-# Allocating addresses #-}
 runAlloc :: forall t a. Traversable t => t a -> (t Vertex) × Int
@@ -51,10 +54,10 @@ alloc = traverse (const fresh)
 
 -- Difference graphs
 class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
-   extendG :: Set Vertex -> m Vertex
+   -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
+   new :: Set Vertex -> m Vertex
 
 data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
-
 type WithGraph g a = MayFailT (GraphAccumT g (State Int)) a
 
 instance Functor m => Functor (GraphAccumT g m) where
@@ -79,16 +82,11 @@ instance (Monoid g, Applicative m) => Applicative (GraphAccumT g m) where
 instance (Monoid g, Monad m) => Monad (GraphAccumT g m)
 
 instance Monoid g => MonadTrans (GraphAccumT g) where
-   lift m = GraphAccumT do
-      a <- m
-      pure $ a × mempty
+   lift m = GraphAccumT $ (×) <$> m <@> mempty
 
-instance (Graph g, MonadState Int m) => MonadGraphAccum g (GraphAccumT g m) where
-   extendG αs = do
-      -- want "fresh" but not defined for MonadState Int
-      n <- lift $ get
-      lift $ put (n + 1)
-      let α = Vertex (show n)
+instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccumT g m) where
+   new αs = do
+      α <- lift $ fresh
       GraphAccumT $ pure $ α × extend α αs
 
 outE' :: forall g. Graph g => g -> Vertex -> List Edge
