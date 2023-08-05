@@ -1,5 +1,6 @@
 module EvalGraph
    ( apply
+   , closeDefs
    , eval
    , eval'
    , match
@@ -23,7 +24,7 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, insert, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Foreign.Object (foldM) as D
-import Graph (Vertex, class Graph, GraphAccumT, HeapT, extendG, fresh)
+import Graph (Vertex, WithGraph, class Graph, GraphAccumT, HeapT, extendG, fresh)
 import Graph (extend) as G
 import Prelude hiding (apply)
 import Pretty (prettyP)
@@ -84,29 +85,9 @@ closeDefs' = error unimplemented
 
 {-# Evaluation #-}
 apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> HeapT ((+) String) (g × Val Vertex)
-apply g2 (V.Fun (V.Closure α γ1 ρ σ) × v) = do
-   g3 × γ2 <- closeDefs g2 γ1 ρ (S.singleton α)
-   γ3 × κ × αs <- lift $ match v σ
-   eval g3 (γ1 <+> γ2 <+> γ3) (asExpr κ) (S.insert α αs)
-apply g (V.Fun (V.PartialConstr α c vs) × v) = do
-   let n = successful (arity c)
-   lift $ check (length vs < n) ("Too many arguments to " <> showCtr c)
-   let
-      v' =
-         if length vs < n - 1 then V.Fun $ V.PartialConstr α c (snoc vs v)
-         else V.Constr α c (snoc vs v)
-   pure $ g × v'
-apply g (V.Fun (V.Foreign φ vs) × v) = do
-   let vs' = snoc vs v
-   let
-      apply' :: forall t. ForeignOp' t -> HeapT ((+) String) (g × Val Vertex)
-      apply' (ForeignOp' φ') =
-         if φ'.arity > length vs' then pure $ g × V.Fun (V.Foreign φ vs')
-         else φ'.op' (g × vs')
-   runExists apply' φ
-apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
+apply = error unimplemented
 
-apply2 :: forall g. Graph g => Val Vertex -> Val Vertex -> MayFailT (GraphAccumT g (State Int)) (Val Vertex)
+apply2 :: forall g. Graph g => Val Vertex -> Val Vertex -> WithGraph g (Val Vertex)
 apply2 (V.Fun (V.Closure α γ1 ρ σ)) v = do
    γ2 <- closeDefs' γ1 ρ (S.singleton α)
    γ3 × κ × αs <- except $ match v σ
@@ -119,6 +100,14 @@ apply2 (V.Fun (V.PartialConstr α c vs)) v = do
          if length vs < n - 1 then V.Fun $ V.PartialConstr α c (snoc vs v)
          else V.Constr α c (snoc vs v)
    pure v'
+apply2 (V.Fun (V.Foreign φ vs)) v = do
+   let vs' = snoc vs v
+   let
+      apply' :: forall t. ForeignOp' t -> WithGraph g (Val Vertex)
+      apply' (ForeignOp' φ') =
+         if φ'.arity > length vs' then pure $ V.Fun (V.Foreign φ vs')
+         else φ'.op2 vs'
+   runExists apply' φ
 apply2 _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
 eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> MayFailT (GraphAccumT g (State Int)) (Val Vertex)

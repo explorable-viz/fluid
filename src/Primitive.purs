@@ -15,7 +15,7 @@ import Graph (extend) as G
 import Lattice (Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
-import Util (type (+), type (×), (×), error)
+import Util (type (+), type (×), (×), error, unimplemented)
 import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
@@ -174,7 +174,7 @@ unary :: forall i o a'. (forall a. Unary i o a) -> Val a'
 unary op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 1, op2: error unimplemented, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    op' :: Partial => OpGraph
    op' (g × v : Nil) = do
@@ -198,7 +198,7 @@ binary :: forall i1 i2 o a'. (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op2: error unimplemented, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    op' :: Partial => OpGraph
    op' (g × v1 : v2 : Nil) = do
@@ -223,7 +223,7 @@ binaryZero :: forall i o a'. IsZero i => (forall a. BinaryZero i o a) -> Val a'
 binaryZero op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op2: error unimplemented, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    op' :: Partial => OpGraph
    op' (g × v1 : v2 : Nil) = do

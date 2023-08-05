@@ -72,7 +72,7 @@ primitives = D.fromFoldable
    ]
 
 error_ :: ForeignOp
-error_ = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }
+error_ = mkExists $ ForeignOp' { arity: 1, op2: error unimplemented, op': op', op: fwd, op_bwd: unsafePartial bwd }
    where
    op' :: OpGraph
    op' (g × Str _ s : Nil) = pure $ g × error s
@@ -86,7 +86,7 @@ error_ = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePart
    bwd _ = error unimplemented
 
 debugLog :: ForeignOp
-debugLog = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePartial bwd }
+debugLog = mkExists $ ForeignOp' { arity: 1, op2: error unimplemented, op': op', op: fwd, op_bwd: unsafePartial bwd }
    where
    op' :: OpGraph
    op' (g × x : Nil) = pure $ g × trace x (const x)
@@ -102,7 +102,7 @@ debugLog = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePa
 type ArrayData a = Array2 (Val a)
 
 dims :: ForeignOp
-dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dims = mkExists $ ForeignOp' { arity: 1, op2: error unimplemented, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
    op (g × Matrix α (_ × (i × β1) × (j × β2)) : Nil) = do
@@ -123,7 +123,7 @@ dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial
       Matrix α (((<$>) botOf <$> vss) × (i × β1) × (j × β2)) : Nil
 
 matrixLookup :: ForeignOp
-matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
+matrixLookup = mkExists $ ForeignOp' { arity: 2, op2: error unimplemented, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
    op (g × Matrix _ (vss × _ × _) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
@@ -150,7 +150,7 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
          : Nil
 
 dict_difference :: ForeignOp
-dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_difference = mkExists $ ForeignOp' { arity: 2, op2: error unimplemented, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
    op (g × Dictionary α d : Dictionary β d' : Nil) = do
@@ -168,7 +168,7 @@ dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: un
       Dictionary α d : Dictionary α D.empty : Nil
 
 dict_fromRecord :: ForeignOp
-dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op2: error unimplemented, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
    op (g × Record α xvs : Nil) = do
@@ -187,7 +187,7 @@ dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: un
    bwd (_ × Dictionary α d) = Record (foldl (∨) α (d <#> fst)) (d <#> snd) : Nil
 
 dict_disjointUnion :: ForeignOp
-dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op2: error unimplemented, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
    op (g × Dictionary α d : Dictionary β d' : Nil) = do
@@ -205,7 +205,7 @@ dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd:
       Dictionary α (d'' \\ d') : Dictionary α (d'' \\ d) : Nil
 
 dict_foldl :: ForeignOp
-dict_foldl = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_foldl = mkExists $ ForeignOp' { arity: 3, op2: error unimplemented, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
    op _ = error unimplemented
@@ -232,7 +232,7 @@ dict_foldl = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafeP
          ts
 
 dict_get :: ForeignOp
-dict_get = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_get = mkExists $ ForeignOp' { arity: 2, op2: error unimplemented, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
    op (g × Str _ s : Dictionary _ d : Nil) =
@@ -249,7 +249,7 @@ dict_get = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePar
       Str bot s : Dictionary bot (D.singleton s (bot × v)) : Nil
 
 dict_intersectionWith :: ForeignOp
-dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op2: error unimplemented, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
    op _ = error unimplemented
@@ -276,7 +276,7 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_b
             :: Dict (_ × Val _ × Val _ × Val _)
 
 dict_map :: ForeignOp
-dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
+dict_map = mkExists $ ForeignOp' { arity: 2, op2: error unimplemented, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
    op (g × v : Dictionary α d : Nil) = do

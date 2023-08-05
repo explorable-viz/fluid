@@ -2,7 +2,7 @@ module Graph where
 
 import Prelude
 
-import Control.Monad.State (class MonadState, StateT, get, put, runState)
+import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
@@ -15,7 +15,7 @@ import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
 import Foreign.Object (Object, delete, empty, fromFoldable, lookup, singleton, size, unionWith) as SM
-import Util (Endo, (×), type (×))
+import Util (Endo, MayFailT, (×), type (×))
 
 type SMap = SM.Object
 type Edge = Vertex × Vertex
@@ -54,6 +54,8 @@ class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
    extendG :: Set Vertex -> m Vertex
 
 data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
+
+type WithGraph g a = MayFailT (GraphAccumT g (State Int)) a
 
 instance Functor m => Functor (GraphAccumT g m) where
    map f (GraphAccumT m) = GraphAccumT $ m <#> first f
