@@ -137,18 +137,18 @@ eval' γ (Matrix α e (x × y) e') αs = do
    V.Matrix <$> lift (extendG (S.insert α αs)) <@> (vss × (i' × β) × (j' × β'))
 eval' γ (Lambda σ) αs =
    V.Fun <$> (V.Closure <$> lift (extendG αs) <@> γ `restrict` fv σ <@> D.empty <@> σ)
+eval' γ (Project e x) αs = do
+   v <- eval' γ e αs
+   except $ case v of
+      V.Record _ xvs -> lookup' x xvs
+      _ -> report $ "Found " <> prettyP v <> ", expected record"
+eval' γ (App e e') αs = do
+   _ <- eval' γ e αs
+   _ <- eval' γ e' αs
+   error unimplemented -- apply g2 (v × v')
 eval' _ _ _ = error unimplemented
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
-eval g γ (Project e x) αs = do
-   g' × v <- eval g γ e αs
-   lift $ case v of
-      V.Record _ xvs -> ((×) g') <$> lookup' x xvs
-      _ -> report $ "Found " <> prettyP v <> ", expected record"
-eval g γ (App e e') αs = do
-   g1 × cls <- eval g γ e αs
-   g2 × v <- eval g1 γ e' αs
-   apply g2 (cls × v)
 eval g γ (Let (VarDef σ e) e') αs = do
    g1 × v <- eval g γ e αs
    γ' × _ × _ <- lift $ match v σ -- terminal meta-type of eliminator is meta-unit
