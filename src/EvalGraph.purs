@@ -1,5 +1,6 @@
 module EvalGraph
    ( apply
+   , apply2
    , eval
    , match
    , matchMany
@@ -94,7 +95,7 @@ apply2 (V.Fun (V.Foreign φ vs)) v = do
       apply' :: forall t. ForeignOp' t -> WithGraph g (Val Vertex)
       apply' (ForeignOp' φ') =
          if φ'.arity > length vs' then pure $ V.Fun (V.Foreign φ vs')
-         else φ'.op2 vs'
+         else φ'.op' vs'
    runExists apply' φ
 apply2 _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
