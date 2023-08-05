@@ -34,29 +34,6 @@ newtype Vertex = Vertex String
 type HeapT m a = StateT Int m a
 type Heap a = HeapT Identity a
 
-newtype GraphAccum g a = GraphAccum (a × g)
-
-mapGraphAccum :: forall g g' a b. (a × g -> b × g') -> GraphAccum g a -> GraphAccum g' b
-mapGraphAccum f (GraphAccum x) = GraphAccum (f x)
-
-instance Functor (GraphAccum g) where
-   map f (GraphAccum x) = GraphAccum (first f x)
-
-instance (Semigroup g, Apply m) => Apply (GraphAccum g) where
-   apply (GraphAccum (f × g)) (GraphAccum (v × g')) =
-      GraphAccum (f v × (g <> g'))
-
-{-
--- In Writer g would be a semigroup. But here associativity doesn't quite make
--- sense because g <| (α, αs) <| (β, βs) always brackets to the left.
-instance (Semigroup w, Bind m) => Bind (GraphAccumT w m) where
-  bind (GraphAccumT m) k = GraphAccumT $
-    m >>= \(a × g) ->
-      case k a of
-        GraphAccumT m' ->
-          map (\(b × g') -> b × (g <> g')) m'
--}
-
 fresh :: forall m. Monad m => HeapT m Vertex
 fresh = do
    s <- get
@@ -69,6 +46,22 @@ runAlloc e = runState (alloc e) 0
 
 alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
+
+newtype GraphAccum g a = GraphAccum (a × g)
+
+mapGraphAccum :: forall g g' a b. (a × g -> b × g') -> GraphAccum g a -> GraphAccum g' b
+mapGraphAccum f (GraphAccum x) = GraphAccum (f x)
+
+instance Functor (GraphAccum g) where
+   map f (GraphAccum x) = GraphAccum (first f x)
+
+instance (Semigroup g) => Apply (GraphAccum g) where
+   apply (GraphAccum (f × g)) (GraphAccum (v × g')) =
+      GraphAccum (f v × (g <> g'))
+
+instance (Semigroup g) => Bind (GraphAccum g) where
+   bind (GraphAccum (x × g)) k =
+      let GraphAccum (y × g') = k x in GraphAccum $ y × (g <> g')
 
 outE' :: forall g. Graph g => g -> Vertex -> List (Edge)
 outE' graph α = case outN graph α of
