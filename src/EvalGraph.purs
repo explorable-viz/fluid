@@ -107,7 +107,11 @@ apply g (V.Fun (V.Foreign φ vs) × v) = do
 apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
 
 apply2 :: forall g. Graph g => Val Vertex -> Val Vertex -> MayFailT (GraphAccumT g (State Int)) (Val Vertex)
-apply2 = error unimplemented
+apply2 (V.Fun (V.Closure α γ1 ρ σ)) v = do
+   γ2 <- closeDefs' γ1 ρ (S.singleton α)
+   γ3 × κ × αs <- except $ match v σ
+   eval' (γ1 <+> γ2 <+> γ3) (asExpr κ) (S.insert α αs)
+apply2 _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
 eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> MayFailT (GraphAccumT g (State Int)) (Val Vertex)
 eval' γ (Var x) _ = except $ lookup' x γ
