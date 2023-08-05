@@ -2,6 +2,7 @@ module Primitive where
 
 import Prelude hiding (absurd, apply, div, top)
 
+import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.Exists (mkExists)
 import Data.Int (toNumber)
@@ -10,13 +11,13 @@ import Data.Profunctor.Choice ((|||))
 import Data.Set (insert, singleton)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Graph (fresh)
+import Graph (fresh, extendG)
 import Graph (extend) as G
 import Lattice (Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), (×), error, unimplemented)
-import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
+import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, OpGraph', Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
@@ -198,12 +199,11 @@ binary :: forall i1 i2 o a'. (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 2, op2: error unimplemented, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op2: unsafePartial op2, op': error unimplemented, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   op' :: Partial => OpGraph
-   op' (g × v1 : v2 : Nil) = do
-      α' <- fresh
-      pure $ G.extend α' (singleton α # insert β) g × op.o.constr (op.fwd x y × α')
+   op2 :: Partial => OpGraph'
+   op2 (v1 : v2 : Nil) = do
+      op.o.constr <$> ((op.fwd x y × _) <$> lift (extendG (singleton α # insert β)))
       where
       (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
 

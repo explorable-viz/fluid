@@ -1,6 +1,6 @@
 module EvalGraph
    ( apply
-   , eval'
+   , eval
    , match
    , matchMany
    , patternMismatch
@@ -77,7 +77,7 @@ apply2 :: forall g. Graph g => Val Vertex -> Val Vertex -> WithGraph g (Val Vert
 apply2 (V.Fun (V.Closure α γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (S.singleton α)
    γ3 × κ × αs <- except $ match v σ
-   eval' (γ1 <+> γ2 <+> γ3) (asExpr κ) (S.insert α αs)
+   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (S.insert α αs)
 apply2 (V.Fun (V.PartialConstr α c vs)) v = do
    let n = successful (arity c)
    except $ check (length vs < n) ("Too many arguments to " <> showCtr c)
@@ -96,27 +96,27 @@ apply2 (V.Fun (V.Foreign φ vs)) v = do
    runExists apply' φ
 apply2 _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> WithGraph g (Val Vertex)
-eval' γ (Var x) _ = except $ lookup' x γ
-eval' γ (Op op) _ = except $ lookup' op γ
-eval' _ (Int α n) αs = V.Int <$> lift (extendG (S.insert α αs)) <@> n
-eval' _ (Float α n) αs = V.Float <$> lift (extendG (S.insert α αs)) <@> n
-eval' _ (Str α s) αs = V.Str <$> lift (extendG (S.insert α αs)) <@> s
-eval' γ (Record α xes) αs = do
-   xvs <- traverse (flip (eval' γ) αs) xes
+eval :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> WithGraph g (Val Vertex)
+eval γ (Var x) _ = except $ lookup' x γ
+eval γ (Op op) _ = except $ lookup' op γ
+eval _ (Int α n) αs = V.Int <$> lift (extendG (S.insert α αs)) <@> n
+eval _ (Float α n) αs = V.Float <$> lift (extendG (S.insert α αs)) <@> n
+eval _ (Str α s) αs = V.Str <$> lift (extendG (S.insert α αs)) <@> s
+eval γ (Record α xes) αs = do
+   xvs <- traverse (flip (eval γ) αs) xes
    V.Record <$> lift (extendG (S.insert α αs)) <@> xvs
-eval' γ (Dictionary α ees) αs = do
-   vs × us <- traverse (traverse (flip (eval' γ) αs)) ees <#> P.unzip
+eval γ (Dictionary α ees) αs = do
+   vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
       ss × βs = (vs <#> string.match) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
    V.Dictionary <$> lift (extendG (S.insert α αs)) <@> d
-eval' γ (Constr α c es) αs = do
+eval γ (Constr α c es) αs = do
    except $ checkArity c (length es)
-   vs <- traverse (flip (eval' γ) αs) es
+   vs <- traverse (flip (eval γ) αs) es
    V.Constr <$> lift (extendG (S.insert α αs)) <@> c <@> vs
-eval' γ (Matrix α e (x × y) e') αs = do
-   v <- eval' γ e' αs
+eval γ (Matrix α e (x × y) e') αs = do
+   v <- eval γ e' αs
    let (i' × β) × (j' × β') = fst (intPair.match v)
    except $ check
       (i' × j' >= 1 × 1)
@@ -126,23 +126,23 @@ eval' γ (Matrix α e (x × y) e') αs = do
       A.singleton $ sequence $ do
          j <- A.range 1 j'
          let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
-         A.singleton (eval' (γ <+> γ') e αs)
+         A.singleton (eval (γ <+> γ') e αs)
    V.Matrix <$> lift (extendG (S.insert α αs)) <@> (vss × (i' × β) × (j' × β'))
-eval' γ (Lambda σ) αs =
+eval γ (Lambda σ) αs =
    V.Fun <$> (V.Closure <$> lift (extendG αs) <@> γ `restrict` fv σ <@> D.empty <@> σ)
-eval' γ (Project e x) αs = do
-   v <- eval' γ e αs
+eval γ (Project e x) αs = do
+   v <- eval γ e αs
    except $ case v of
       V.Record _ xvs -> lookup' x xvs
       _ -> report $ "Found " <> prettyP v <> ", expected record"
-eval' γ (App e e') αs = do
-   v <- eval' γ e αs
-   v' <- eval' γ e' αs
+eval γ (App e e') αs = do
+   v <- eval γ e αs
+   v' <- eval γ e' αs
    apply2 v v'
-eval' γ (Let (VarDef σ e) e') αs = do
-   v <- eval' γ e αs
+eval γ (Let (VarDef σ e) e') αs = do
+   v <- eval γ e αs
    γ' × _ × _ <- except $ match v σ -- terminal meta-type of eliminator is meta-unit
-   eval' (γ <+> γ') e' αs
-eval' γ (LetRec ρ e) αs = do
+   eval (γ <+> γ') e' αs
+eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
-   eval' (γ <+> γ') e αs
+   eval (γ <+> γ') e αs
