@@ -8,6 +8,7 @@ import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
+import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
@@ -49,11 +50,21 @@ alloc = traverse (const fresh)
 -- Difference graphs
 data GraphAccum g a = GraphAccum a (g -> g)
 
+data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
+
 instance Functor (GraphAccum g) where
    map f (GraphAccum x g) = GraphAccum (f x) g
 
+instance Functor m => Functor (GraphAccumT g m) where
+   map f (GraphAccumT m) = GraphAccumT $ m <#> first f
+
 instance Apply (GraphAccum g) where
    apply (GraphAccum f g) (GraphAccum x g') = GraphAccum (f x) (g >>> g')
+
+instance Apply m => Apply (GraphAccumT g m) where
+   apply (GraphAccumT m) (GraphAccumT m') =
+      let k (f × g) (x × g') = f x × (g >>> g') in
+      GraphAccumT $ k <$> m <*> m'
 
 instance Bind (GraphAccum g) where
    bind (GraphAccum x g) f = let GraphAccum y g' = f x in GraphAccum y (g >>> g')
