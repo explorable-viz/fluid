@@ -2,17 +2,20 @@ module EvalGraph
    ( apply
    , eval
    , eval'
+   , eval''
    , match
    , matchMany
    , patternMismatch
    ) where
 
 import Bindings (varAnon)
-import Control.Monad.Trans.Class (lift)
+import Control.Monad.Except.Trans (ExceptT, except)
 import Control.Monad.State.Trans (StateT)
+import Control.Monad.Trans.Class (lift)
 import Data.Array (fromFoldable, foldM, range, snoc) as A
 import Data.Either (note)
 import Data.Exists (runExists)
+import Data.Identity (Identity)
 import Data.List (List(..), (:), length, foldM, snoc)
 import Data.Set (Set)
 import Data.Set as S
@@ -100,6 +103,15 @@ apply g (V.Fun (V.Foreign φ vs) × v) = do
          else φ'.op' (g × vs')
    runExists apply' φ
 apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
+
+eval'' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> ExceptT String (StateT Int (GraphAccumT g Identity)) (Val Vertex)
+eval'' γ (Var x) _ = except $ lookup' x γ
+eval'' γ (Op op) _ = except $ lookup' op γ
+eval'' _ (Int α n) αs = do
+   α' <- lift $ fresh
+   lift $ lift $ extendG α' (S.insert α αs)
+   pure $ V.Int α' n
+eval'' _ _ _ = error unimplemented
 
 eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> GraphAccumT g (StateT Int ((+) String)) (Val Vertex)
 eval' γ (Var x) _ = lift $ lift $ lookup' x γ
