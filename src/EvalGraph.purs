@@ -24,9 +24,9 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, insert, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Foreign.Object (foldM) as D
-import Graph (Vertex, class Graph, GraphAccumT, HeapT, extendG, fresh)
+import Graph (Vertex, class Graph, GraphAccumT, HeapT, extendG', fresh)
 import Graph (extend) as G
-import Prelude (bind, discard, flip, otherwise, pure, show, (#), ($), (>), (+), (-), (<), (<$>), (<>), (==), (>=))
+import Prelude hiding (apply)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (+), type (×), MayFail, check, error, report, successful, unimplemented, with, (×))
@@ -104,22 +104,16 @@ apply g (V.Fun (V.Foreign φ vs) × v) = do
    runExists apply' φ
 apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval'' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> ExceptT String (StateT Int (GraphAccumT g Identity)) (Val Vertex)
+eval'' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> ExceptT String (GraphAccumT g (StateT Int Identity)) (Val Vertex)
 eval'' γ (Var x) _ = except $ lookup' x γ
 eval'' γ (Op op) _ = except $ lookup' op γ
-eval'' _ (Int α n) αs = do
-   α' <- lift $ fresh
-   lift $ lift $ extendG α' (S.insert α αs)
-   pure $ V.Int α' n
+eval'' _ (Int α n) αs = V.Int <$> (lift $ extendG' (S.insert α αs)) <@> n
 eval'' _ _ _ = error unimplemented
 
 eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> GraphAccumT g (StateT Int ((+) String)) (Val Vertex)
 eval' γ (Var x) _ = lift $ lift $ lookup' x γ
 eval' γ (Op op) _ = lift $ lift $ lookup' op γ
-eval' _ (Int α n) αs = do
-   α' <- lift $ fresh
-   extendG α' (S.insert α αs)
-   pure $ V.Int α' n
+eval' _ (Int α n) αs = V.Int <$> extendG' (S.insert α αs) <@> n
 eval' _ _ _ = error unimplemented
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)

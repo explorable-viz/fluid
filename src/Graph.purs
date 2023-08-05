@@ -2,8 +2,8 @@ module Graph where
 
 import Prelude
 
-import Control.Monad.State (StateT, get, put, runState)
-import Control.Monad.Trans.Class (class MonadTrans)
+import Control.Monad.State (class MonadState, StateT, get, put, runState)
+import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
@@ -53,6 +53,9 @@ alloc = traverse (const fresh)
 class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
    extendG :: Vertex -> Set Vertex -> m Unit
 
+class (Graph g, Monad m) <= MonadGraphAccum2 g m | m -> g where
+   extendG' :: Set Vertex -> m Vertex
+
 data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
 
 instance Functor m => Functor (GraphAccumT g m) where
@@ -83,6 +86,14 @@ instance Monoid g => MonadTrans (GraphAccumT g) where
 
 instance (Graph g, Monad m) => MonadGraphAccum g (GraphAccumT g m) where
    extendG α αs = GraphAccumT $ pure $ unit × \g -> extend α αs g
+
+instance (Graph g, MonadState Int m) => MonadGraphAccum2 g (GraphAccumT g m) where
+   extendG' αs = do
+      -- want to use fresh here but not defined for MonadState Int
+      n <- lift $ get
+      lift $ put (n + 1)
+      let α = Vertex (show n)
+      GraphAccumT $ pure $ α × \g -> extend α αs g
 
 outE' :: forall g. Graph g => g -> Vertex -> List (Edge)
 outE' graph α = case outN graph α of
