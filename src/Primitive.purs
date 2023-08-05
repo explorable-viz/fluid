@@ -175,12 +175,11 @@ unary :: forall i o a'. (forall a. Unary i o a) -> Val a'
 unary op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 1, op2: error unimplemented, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 1, op2: unsafePartial op', op': error unimplemented, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   op' :: Partial => OpGraph
-   op' (g × v : Nil) = do
-      α' <- fresh
-      pure $ G.extend α' (singleton α) g × op.o.constr (op.fwd x × α')
+   op' :: Partial => OpGraph'
+   op' (v : Nil) =
+      op.o.constr <$> ((op.fwd x × _) <$> lift (extendG (singleton α)))
       where
       x × α = op.i.match v
 
@@ -199,10 +198,10 @@ binary :: forall i1 i2 o a'. (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 2, op2: unsafePartial op2, op': error unimplemented, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op2: unsafePartial op', op': error unimplemented, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   op2 :: Partial => OpGraph'
-   op2 (v1 : v2 : Nil) = do
+   op' :: Partial => OpGraph'
+   op' (v1 : v2 : Nil) =
       op.o.constr <$> ((op.fwd x y × _) <$> lift (extendG (singleton α # insert β)))
       where
       (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
