@@ -9,7 +9,6 @@ module EvalGraph
 
 import Bindings (varAnon)
 import Control.Monad.Except (except)
-import Control.Monad.State (State)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (range, singleton) as A
 import Data.Either (note)
@@ -22,11 +21,11 @@ import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
-import Graph (Vertex, WithGraph, class Graph, GraphAccumT, HeapT, extendG)
+import Graph (Vertex, WithGraph, class Graph, HeapT, extendG)
 import Prelude hiding (apply)
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Util (type (+), type (×), MayFail, MayFailT, check, error, report, successful, unimplemented, with, (×))
+import Util (type (+), type (×), MayFail, check, error, report, successful, unimplemented, with, (×))
 import Util.Pair (unzip) as P
 import Val (Val(..), Fun(..)) as V
 import Val (Val, Env, lookup', for, restrict, (<+>), ForeignOp'(..))
@@ -98,7 +97,7 @@ apply2 (V.Fun (V.Foreign φ vs)) v = do
    runExists apply' φ
 apply2 _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> MayFailT (GraphAccumT g (State Int)) (Val Vertex)
+eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> WithGraph g (Val Vertex)
 eval' γ (Var x) _ = except $ lookup' x γ
 eval' γ (Op op) _ = except $ lookup' op γ
 eval' _ (Int α n) αs = V.Int <$> lift (extendG (S.insert α αs)) <@> n
