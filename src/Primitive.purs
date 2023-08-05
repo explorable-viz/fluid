@@ -11,13 +11,12 @@ import Data.Profunctor.Choice ((|||))
 import Data.Set (insert, singleton)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Graph (fresh, extendG)
-import Graph (extend) as G
+import Graph (extendG)
 import Lattice (Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Util (type (+), type (×), (×), error, unimplemented)
-import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, OpGraph', Val(..))
+import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph', Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
@@ -222,17 +221,17 @@ binaryZero :: forall i o a'. IsZero i => (forall a. BinaryZero i o a) -> Val a'
 binaryZero op =
    Fun $ flip Foreign Nil
       $ mkExists
-      $ ForeignOp' { arity: 2, op2: error unimplemented, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
+      $ ForeignOp' { arity: 2, op2: unsafePartial op', op': error unimplemented, op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
-   op' :: Partial => OpGraph
-   op' (g × v1 : v2 : Nil) = do
-      α' <- fresh
+   op' :: Partial => OpGraph'
+   op' (v1 : v2 : Nil) =
       let
          αs =
             if isZero x then singleton α
             else if isZero y then singleton β
             else singleton α # insert β
-      pure $ G.extend α' αs g × op.o.constr (op.fwd x y × α')
+      in
+         op.o.constr <$> ((op.fwd x y × _) <$> lift (extendG αs))
       where
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 

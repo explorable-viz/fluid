@@ -66,8 +66,10 @@ matchMany _ _ = error "absurd"
 closeDefs :: forall g. Graph g => Env Vertex -> RecDefs Vertex -> Set Vertex -> WithGraph g (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
-      let ρ' = ρ `for` σ in
-      V.Fun <$> (V.Closure <$> lift (extendG αs) <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
+      let
+         ρ' = ρ `for` σ
+      in
+         V.Fun <$> (V.Closure <$> lift (extendG αs) <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
 apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> HeapT ((+) String) (g × Val Vertex)
