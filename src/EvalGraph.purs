@@ -11,13 +11,13 @@ import Bindings (varAnon)
 import Control.Monad.Except (except)
 import Control.Monad.State (State)
 import Control.Monad.Trans.Class (lift)
-import Data.Array (fromFoldable, foldM, range, snoc) as A
+import Data.Array (range, singleton) as A
 import Data.Either (note)
 import Data.Exists (runExists)
-import Data.List (List(..), (:), length, foldM, snoc, unzip, zip)
+import Data.List (List(..), (:), length, snoc, unzip, zip)
 import Data.Set (Set)
 import Data.Set as S
-import Data.Traversable (traverse)
+import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, insert, singleton) as D
@@ -122,32 +122,22 @@ eval' γ (Constr α c es) αs = do
    except $ checkArity c (length es)
    vs <- traverse (flip (eval' γ) αs) es
    V.Constr <$> lift (extendG (S.insert α αs)) <@> c <@> vs
+eval' γ (Matrix α e (x × y) e') αs = do
+   v <- eval' γ e' αs
+   let (i' × β) × (j' × β') = fst (intPair.match v)
+   except $ check
+      (i' × j' >= 1 × 1)
+      ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
+   vss <- sequence $ do
+      i <- A.range 1 i'
+      A.singleton $ sequence $ do
+         j <- A.range 1 j'
+         let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
+         A.singleton (eval' (γ <+> γ') e αs)
+   V.Matrix <$> lift (extendG (S.insert α αs)) <@> (vss × (i' × β) × (j' × β'))
 eval' _ _ _ = error unimplemented
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
-eval g γ (Matrix α e (x × y) e') αs = do
-   α' <- fresh
-   g' × v <- eval g γ e' αs
-   let (m × β) × (n × β') = fst (intPair.match v)
-   lift $ check (m × n >= 1 × 1)
-      ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (m × n) <> ")")
-   g_mn × vss <-
-      A.foldM
-         ( \(g_i × vss) i -> do
-              g_i' × vs_i <-
-                 A.foldM
-                    ( \(g_ij × vs) j -> do
-                         let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
-                         g_ij' × v_ij <- eval g_ij (γ <+> γ') e αs
-                         pure $ g_ij' × A.snoc vs v_ij
-                    )
-                    (g_i × A.fromFoldable [])
-                    (A.range 1 n)
-              pure $ g_i' × A.snoc vss vs_i
-         )
-         (g' × A.fromFoldable [])
-         (A.range 1 m)
-   pure $ (G.extend α' (S.insert α αs) g_mn) × V.Matrix α' (vss × (m × β) × (n × β'))
 eval g γ (Lambda σ) αs = do
    α' <- fresh
    pure $ (G.extend α' αs g) × V.Fun (V.Closure α' (γ `restrict` fv σ) D.empty σ)
