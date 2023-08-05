@@ -452,16 +452,16 @@
 
   // node_modules/d3-selection/src/selection/selectChild.js
   var find = Array.prototype.find;
-  function childFind(match4) {
+  function childFind(match5) {
     return function() {
-      return find.call(this.children, match4);
+      return find.call(this.children, match5);
     };
   }
   function childFirst() {
     return this.firstElementChild;
   }
-  function selectChild_default(match4) {
-    return this.select(match4 == null ? childFirst : childFind(typeof match4 === "function" ? match4 : childMatcher(match4)));
+  function selectChild_default(match5) {
+    return this.select(match5 == null ? childFirst : childFind(typeof match5 === "function" ? match5 : childMatcher(match5)));
   }
 
   // node_modules/d3-selection/src/selection/selectChildren.js
@@ -469,22 +469,22 @@
   function children() {
     return this.children;
   }
-  function childrenFilter(match4) {
+  function childrenFilter(match5) {
     return function() {
-      return filter.call(this.children, match4);
+      return filter.call(this.children, match5);
     };
   }
-  function selectChildren_default(match4) {
-    return this.selectAll(match4 == null ? children : childrenFilter(typeof match4 === "function" ? match4 : childMatcher(match4)));
+  function selectChildren_default(match5) {
+    return this.selectAll(match5 == null ? children : childrenFilter(typeof match5 === "function" ? match5 : childMatcher(match5)));
   }
 
   // node_modules/d3-selection/src/selection/filter.js
-  function filter_default(match4) {
-    if (typeof match4 !== "function")
-      match4 = matcher_default(match4);
+  function filter_default(match5) {
+    if (typeof match5 !== "function")
+      match5 = matcher_default(match5);
     for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
       for (var group2 = groups[j], n = group2.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) {
-        if ((node = group2[i]) && match4.call(node, node.__data__, i, group2)) {
+        if ((node = group2[i]) && match5.call(node, node.__data__, i, group2)) {
           subgroup.push(node);
         }
       }
@@ -582,12 +582,12 @@
   function data_default(value, key) {
     if (!arguments.length)
       return Array.from(this, datum);
-    var bind3 = key ? bindKey : bindIndex, parents = this._parents, groups = this._groups;
+    var bind = key ? bindKey : bindIndex, parents = this._parents, groups = this._groups;
     if (typeof value !== "function")
       value = constant_default(value);
     for (var m = groups.length, update3 = new Array(m), enter = new Array(m), exit = new Array(m), j = 0; j < m; ++j) {
       var parent = parents[j], group2 = groups[j], groupLength = group2.length, data = array_default(value.call(parent, parent && parent.__data__, j, parents)), dataLength = data.length, enterGroup = enter[j] = new Array(dataLength), updateGroup = update3[j] = new Array(dataLength), exitGroup = exit[j] = new Array(groupLength);
-      bind3(parent, group2, enterGroup, updateGroup, exitGroup, data, key);
+      bind(parent, group2, enterGroup, updateGroup, exitGroup, data, key);
       for (var i0 = 0, i1 = 0, previous, next; i0 < dataLength; ++i0) {
         if (previous = enterGroup[i0]) {
           if (i0 >= i1)
@@ -2317,12 +2317,12 @@
   }
 
   // node_modules/d3-transition/src/transition/filter.js
-  function filter_default2(match4) {
-    if (typeof match4 !== "function")
-      match4 = matcher_default(match4);
+  function filter_default2(match5) {
+    if (typeof match5 !== "function")
+      match5 = matcher_default(match5);
     for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
       for (var group2 = groups[j], n = group2.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) {
-        if ((node = group2[i]) && match4.call(node, node.__data__, i, group2)) {
+        if ((node = group2[i]) && match5.call(node, node.__data__, i, group2)) {
           subgroup.push(node);
         }
       }
@@ -2844,20 +2844,20 @@
   // node_modules/d3-format/src/formatSpecifier.js
   var re = /^(?:(.)?([<>=^]))?([+\-( ])?([$#])?(0)?(\d+)?(,)?(\.\d+)?(~)?([a-z%])?$/i;
   function formatSpecifier(specifier) {
-    if (!(match4 = re.exec(specifier)))
+    if (!(match5 = re.exec(specifier)))
       throw new Error("invalid format: " + specifier);
-    var match4;
+    var match5;
     return new FormatSpecifier({
-      fill: match4[1],
-      align: match4[2],
-      sign: match4[3],
-      symbol: match4[4],
-      zero: match4[5],
-      width: match4[6],
-      comma: match4[7],
-      precision: match4[8] && match4[8].slice(1),
-      trim: match4[9],
-      type: match4[10]
+      fill: match5[1],
+      align: match5[2],
+      sign: match5[3],
+      symbol: match5[4],
+      zero: match5[5],
+      width: match5[6],
+      comma: match5[7],
+      precision: match5[8] && match5[8].slice(1),
+      trim: match5[9],
+      type: match5[10]
     });
   }
   formatSpecifier.prototype = FormatSpecifier.prototype;
@@ -5041,8 +5041,8 @@
     }
   };
   var StateEffectType = class {
-    constructor(map5) {
-      this.map = map5;
+    constructor(map6) {
+      this.map = map6;
     }
     of(value) {
       return new StateEffect(this, value);
@@ -5424,9 +5424,9 @@
       return this.facet(readOnly);
     }
     phrase(phrase, ...insert3) {
-      for (let map5 of this.facet(EditorState.phrases))
-        if (Object.prototype.hasOwnProperty.call(map5, phrase)) {
-          phrase = map5[phrase];
+      for (let map6 of this.facet(EditorState.phrases))
+        if (Object.prototype.hasOwnProperty.call(map6, phrase)) {
+          phrase = map6[phrase];
           break;
         }
       if (insert3.length)
@@ -10919,21 +10919,21 @@
     }
     getViewport(bias, scrollTarget) {
       let marginTop = 0.5 - Math.max(-0.5, Math.min(0.5, bias / 1e3 / 2));
-      let map5 = this.heightMap, oracle = this.heightOracle;
+      let map6 = this.heightMap, oracle = this.heightOracle;
       let { visibleTop, visibleBottom } = this;
-      let viewport = new Viewport(map5.lineAt(visibleTop - marginTop * 1e3, QueryType.ByHeight, oracle, 0, 0).from, map5.lineAt(visibleBottom + (1 - marginTop) * 1e3, QueryType.ByHeight, oracle, 0, 0).to);
+      let viewport = new Viewport(map6.lineAt(visibleTop - marginTop * 1e3, QueryType.ByHeight, oracle, 0, 0).from, map6.lineAt(visibleBottom + (1 - marginTop) * 1e3, QueryType.ByHeight, oracle, 0, 0).to);
       if (scrollTarget) {
         let { head } = scrollTarget.range;
         if (head < viewport.from || head > viewport.to) {
           let viewHeight = Math.min(this.editorHeight, this.pixelViewport.bottom - this.pixelViewport.top);
-          let block = map5.lineAt(head, QueryType.ByPos, oracle, 0, 0), topPos;
+          let block = map6.lineAt(head, QueryType.ByPos, oracle, 0, 0), topPos;
           if (scrollTarget.y == "center")
             topPos = (block.top + block.bottom) / 2 - viewHeight / 2;
           else if (scrollTarget.y == "start" || scrollTarget.y == "nearest" && head < viewport.from)
             topPos = block.top;
           else
             topPos = block.bottom - viewHeight;
-          viewport = new Viewport(map5.lineAt(topPos - 1e3 / 2, QueryType.ByHeight, oracle, 0, 0).from, map5.lineAt(topPos + viewHeight + 1e3 / 2, QueryType.ByHeight, oracle, 0, 0).to);
+          viewport = new Viewport(map6.lineAt(topPos - 1e3 / 2, QueryType.ByHeight, oracle, 0, 0).from, map6.lineAt(topPos + viewHeight + 1e3 / 2, QueryType.ByHeight, oracle, 0, 0).to);
         }
       }
       return viewport;
@@ -12593,10 +12593,10 @@
   var Keymaps = /* @__PURE__ */ new WeakMap();
   function getKeymap(state) {
     let bindings = state.facet(keymap);
-    let map5 = Keymaps.get(bindings);
-    if (!map5)
-      Keymaps.set(bindings, map5 = buildKeymap(bindings.reduce((a, b) => a.concat(b), [])));
-    return map5;
+    let map6 = Keymaps.get(bindings);
+    if (!map6)
+      Keymaps.set(bindings, map6 = buildKeymap(bindings.reduce((a, b) => a.concat(b), [])));
+    return map6;
   }
   var storedPrefix = null;
   var PrefixTimeout = 4e3;
@@ -12659,7 +12659,7 @@
     }
     return bound;
   }
-  function runHandlers(map5, event2, view2, scope) {
+  function runHandlers(map6, event2, view2, scope) {
     let name3 = keyName(event2);
     let charCode = codePointAt(name3, 0), isChar = codePointSize(charCode) == name3.length && name3 != " ";
     let prefix2 = "", fallthrough = false;
@@ -12682,7 +12682,7 @@
       }
       return false;
     };
-    let scopeObj = map5[scope], baseName, shiftName;
+    let scopeObj = map6[scope], baseName, shiftName;
     if (scopeObj) {
       if (runFor(scopeObj[prefix2 + modifiers(name3, event2, !isChar)]))
         return true;
@@ -12805,13 +12805,13 @@
         throw new Error("This node type doesn't define a deserialize function");
       });
     }
-    add(match4) {
+    add(match5) {
       if (this.perNode)
         throw new RangeError("Can't add per-node props to node types");
-      if (typeof match4 != "function")
-        match4 = NodeType.match(match4);
+      if (typeof match5 != "function")
+        match5 = NodeType.match(match5);
       return (type2) => {
-        let result = match4(type2);
+        let result = match5(type2);
         return result === void 0 ? null : [this, result];
       };
     }
@@ -12870,11 +12870,11 @@
       }
       return this.id == name3;
     }
-    static match(map5) {
+    static match(map6) {
       let direct = /* @__PURE__ */ Object.create(null);
-      for (let prop in map5)
+      for (let prop in map6)
         for (let name3 of prop.split(" "))
-          direct[name3] = map5[prop];
+          direct[name3] = map6[prop];
       return (node) => {
         for (let groups = node.prop(NodeProp.group), i = -1; i < (groups ? groups.length : 0); i++) {
           let found = direct[i < 0 ? node.name : groups[i]];
@@ -14042,13 +14042,13 @@
   };
   Rule.empty = new Rule([], 2, null);
   function tagHighlighter(tags2, options) {
-    let map5 = /* @__PURE__ */ Object.create(null);
+    let map6 = /* @__PURE__ */ Object.create(null);
     for (let style of tags2) {
       if (!Array.isArray(style.tag))
-        map5[style.tag.id] = style.class;
+        map6[style.tag.id] = style.class;
       else
         for (let tag of style.tag)
-          map5[tag.id] = style.class;
+          map6[tag.id] = style.class;
     }
     let { scope, all: all3 = null } = options || {};
     return {
@@ -14056,7 +14056,7 @@
         let cls = all3;
         for (let tag of tags3) {
           for (let sub of tag.set) {
-            let tagClass = map5[sub.id];
+            let tagClass = map6[sub.id];
             if (tagClass) {
               cls = cls ? cls + " " + tagClass : tagClass;
               break;
@@ -15402,9 +15402,9 @@
       else
         at = forward ? next.to : next.from;
     }
-    let bracket2 = pos.type.prop(bracketProp), match4, newPos;
-    if (bracket2 && (match4 = forward ? matchBrackets(state, pos.from, 1) : matchBrackets(state, pos.to, -1)) && match4.matched)
-      newPos = forward ? match4.end.to : match4.end.from;
+    let bracket2 = pos.type.prop(bracketProp), match5, newPos;
+    if (bracket2 && (match5 = forward ? matchBrackets(state, pos.from, 1) : matchBrackets(state, pos.to, -1)) && match5.matched)
+      newPos = forward ? match5.end.to : match5.end.from;
     else
       newPos = forward ? pos.to : pos.from;
     return EditorSelection.cursor(newPos, forward ? -1 : 1);
@@ -16204,6 +16204,17 @@
   // output-es/Control.Apply/index.js
   var identity4 = (x2) => x2;
 
+  // output-es/Control.Bind/foreign.js
+  var arrayBind = function(arr) {
+    return function(f) {
+      var result = [];
+      for (var i = 0, l = arr.length; i < l; i++) {
+        Array.prototype.push.apply(result, f(arr[i]));
+      }
+      return result;
+    };
+  };
+
   // output-es/Control.Bind/index.js
   var identity5 = (x2) => x2;
 
@@ -16363,8 +16374,8 @@
       traverse: (dictApplicative) => {
         const Apply0 = dictApplicative.Apply0();
         const map22 = Apply0.Functor0().map;
-        const traverse13 = dictTraversable.traverse(dictApplicative);
-        return (f) => (v) => Apply0.apply(map22(NonEmpty)(f(v._1)))(traverse13(f)(v._2));
+        const traverse14 = dictTraversable.traverse(dictApplicative);
+        return (f) => (v) => Apply0.apply(map22(NonEmpty)(f(v._1)))(traverse14(f)(v._2));
       },
       Functor0: () => functorNonEmpty1,
       Foldable1: () => foldableNonEmpty1
@@ -16615,7 +16626,7 @@
     traverse: (dictApplicative) => {
       const Apply0 = dictApplicative.Apply0();
       const map1 = Apply0.Functor0().map;
-      const map5 = Apply0.Functor0().map;
+      const map6 = Apply0.Functor0().map;
       return (f) => {
         const $5 = map1((() => {
           const go = (go$a0$copy) => (go$a1$copy) => {
@@ -16650,7 +16661,7 @@
                 continue;
               }
               if (v.tag === "Cons") {
-                go$a0 = Apply0.apply(map5((b$1) => (a) => $List("Cons", a, b$1))(b))(f(v._1));
+                go$a0 = Apply0.apply(map6((b$1) => (a) => $List("Cons", a, b$1))(b))(f(v._1));
                 go$a1 = v._2;
                 continue;
               }
@@ -17071,8 +17082,8 @@
     return (dictAlternative) => {
       const Alt0 = dictAlternative.Plus1().Alt0();
       const map1 = Alt0.Functor0().map;
-      const pure3 = dictAlternative.Applicative0().pure;
-      return (p) => dictMonadRec.tailRecM((acc) => bind1(Alt0.alt(map1(Loop)(p))(pure3($Step("Done", unit2))))((aa) => pure3(bifunctorStep.bimap((v) => $List(
+      const pure2 = dictAlternative.Applicative0().pure;
+      return (p) => dictMonadRec.tailRecM((acc) => bind1(Alt0.alt(map1(Loop)(p))(pure2($Step("Done", unit2))))((aa) => pure2(bifunctorStep.bimap((v) => $List(
         "Cons",
         v,
         acc
@@ -17080,14 +17091,14 @@
     };
   };
   var some = (dictAlternative) => {
-    const apply3 = dictAlternative.Applicative0().Apply0().apply;
+    const apply4 = dictAlternative.Applicative0().Apply0().apply;
     const map1 = dictAlternative.Plus1().Alt0().Functor0().map;
-    return (dictLazy) => (v) => apply3(map1(Cons)(v))(dictLazy.defer((v1) => many(dictAlternative)(dictLazy)(v)));
+    return (dictLazy) => (v) => apply4(map1(Cons)(v))(dictLazy.defer((v1) => many(dictAlternative)(dictLazy)(v)));
   };
   var many = (dictAlternative) => {
     const alt2 = dictAlternative.Plus1().Alt0().alt;
-    const pure3 = dictAlternative.Applicative0().pure;
-    return (dictLazy) => (v) => alt2(some(dictAlternative)(dictLazy)(v))(pure3(Nil));
+    const pure2 = dictAlternative.Applicative0().pure;
+    return (dictLazy) => (v) => alt2(some(dictAlternative)(dictLazy)(v))(pure2(Nil));
   };
   var index = (index$a0$copy) => (index$a1$copy) => {
     let index$a0 = index$a0$copy, index$a1 = index$a1$copy, index$c = true, index$r;
@@ -17208,10 +17219,10 @@
   })();
   var traverse_ = (dictApplicative) => {
     const $1 = dictApplicative.Apply0();
-    const map5 = $1.Functor0().map;
+    const map6 = $1.Functor0().map;
     return (dictFoldable) => (f) => dictFoldable.foldr((x2) => {
       const $6 = f(x2);
-      return (b) => $1.apply(map5((v) => identity4)($6))(b);
+      return (b) => $1.apply(map6((v) => identity4)($6))(b);
     })(dictApplicative.pure(unit2));
   };
   var foldableTuple = { foldr: (f) => (z) => (v) => f(v._2)(z), foldl: (f) => (z) => (v) => f(z)(v._2), foldMap: (dictMonoid) => (f) => (v) => f(v._2) };
@@ -18660,24 +18671,24 @@
         return xs.concat(ys);
       };
     }
-    return function(apply3) {
-      return function(map5) {
-        return function(pure3) {
+    return function(apply4) {
+      return function(map6) {
+        return function(pure2) {
           return function(f) {
             return function(array) {
               function go(bot, top3) {
                 switch (top3 - bot) {
                   case 0:
-                    return pure3([]);
+                    return pure2([]);
                   case 1:
-                    return map5(array1)(f(array[bot]));
+                    return map6(array1)(f(array[bot]));
                   case 2:
-                    return apply3(map5(array2)(f(array[bot])))(f(array[bot + 1]));
+                    return apply4(map6(array2)(f(array[bot])))(f(array[bot + 1]));
                   case 3:
-                    return apply3(apply3(map5(array3)(f(array[bot])))(f(array[bot + 1])))(f(array[bot + 2]));
+                    return apply4(apply4(map6(array3)(f(array[bot])))(f(array[bot + 1])))(f(array[bot + 2]));
                   default:
                     var pivot = bot + Math.floor((top3 - bot) / 4) * 2;
-                    return apply3(map5(concat2)(go(bot, pivot)))(go(pivot, top3));
+                    return apply4(map6(concat2)(go(bot, pivot)))(go(pivot, top3));
                 }
               }
               return go(0, array.length);
@@ -18692,12 +18703,12 @@
   var identity10 = (x2) => x2;
   var traversableTuple = {
     traverse: (dictApplicative) => {
-      const map5 = dictApplicative.Apply0().Functor0().map;
-      return (f) => (v) => map5(Tuple(v._1))(f(v._2));
+      const map6 = dictApplicative.Apply0().Functor0().map;
+      return (f) => (v) => map6(Tuple(v._1))(f(v._2));
     },
     sequence: (dictApplicative) => {
-      const map5 = dictApplicative.Apply0().Functor0().map;
-      return (v) => map5(Tuple(v._1))(v._2);
+      const map6 = dictApplicative.Apply0().Functor0().map;
+      return (v) => map6(Tuple(v._1))(v._2);
     },
     Functor0: () => functorTuple,
     Foldable1: () => foldableTuple
@@ -19003,7 +19014,7 @@
     }
     return m;
   }
-  function _foldM(bind3) {
+  function _foldM(bind) {
     return function(f) {
       return function(mz) {
         return function(m) {
@@ -19015,7 +19026,7 @@
           }
           for (var k in m) {
             if (hasOwnProperty.call(m, k)) {
-              acc = bind3(acc)(g(k));
+              acc = bind(acc)(g(k));
             }
           }
           return acc;
@@ -19082,10 +19093,10 @@
   var functorObject = { map: (f) => (m) => _fmapObject(m, f) };
   var functorWithIndexObject = { mapWithIndex: mapWithKey, Functor0: () => functorObject };
   var fromFoldable2 = (dictFoldable) => {
-    const fromFoldable17 = fromFoldableImpl(dictFoldable.foldr);
+    const fromFoldable18 = fromFoldableImpl(dictFoldable.foldr);
     return (l) => runST(() => {
       const s = newImpl();
-      foreach(fromFoldable17(l))((v) => () => {
+      foreach(fromFoldable18(l))((v) => () => {
         poke3(v._1)(v._2)(s)();
         return unit2;
       })();
@@ -19122,8 +19133,8 @@
   var traversableWithIndexObject = {
     traverseWithIndex: (dictApplicative) => {
       const Apply0 = dictApplicative.Apply0();
-      const map5 = Apply0.Functor0().map;
-      return (f) => (ms) => fold((acc) => (k) => (v) => Apply0.apply(map5((b) => (a) => mutate(poke3(k)(a))(b))(acc))(f(k)(v)))(dictApplicative.pure(empty2))(ms);
+      const map6 = Apply0.Functor0().map;
+      return (f) => (ms) => fold((acc) => (k) => (v) => Apply0.apply(map6((b) => (a) => mutate(poke3(k)(a))(b))(acc))(f(k)(v)))(dictApplicative.pure(empty2))(ms);
     },
     FunctorWithIndex0: () => functorWithIndexObject,
     FoldableWithIndex1: () => foldableWithIndexObject,
@@ -19258,8 +19269,8 @@
   var bind2Flipped = (dictMonad) => {
     const Bind1 = dictMonad.Bind1();
     const $2 = Bind1.Apply0();
-    const map5 = $2.Functor0().map;
-    return (f) => (x2) => (y2) => Bind1.bind($2.apply(map5(f)(x2))(y2))(identity5);
+    const map6 = $2.Functor0().map;
+    return (f) => (x2) => (y2) => Bind1.bind($2.apply(map6(f)(x2))(y2))(identity5);
   };
   var nonEmpty = (v) => {
     if (v.tag === "Nil") {
@@ -19477,14 +19488,15 @@
   var traversablePair = {
     traverse: (dictApplicative) => {
       const Apply0 = dictApplicative.Apply0();
-      const map5 = Apply0.Functor0().map;
-      return (f) => (v) => Apply0.apply(map5(Pair)(f(v._1)))(f(v._2));
+      const map6 = Apply0.Functor0().map;
+      return (f) => (v) => Apply0.apply(map6(Pair)(f(v._1)))(f(v._2));
     },
     sequence: (dictApplicative) => traversablePair.traverse(dictApplicative)(identity10),
     Functor0: () => functorPair,
     Foldable1: () => foldablePair
   };
   var toTuple = (v) => $Tuple(v._1, v._2);
+  var unzip2 = (xys) => unzip(listMap(toTuple)(xys));
   var fromTuple = (v) => $Pair(v._1, v._2);
 
   // output-es/Lattice/index.js
@@ -19655,38 +19667,111 @@
     })()
   });
 
-  // output-es/Control.Monad.State.Trans/index.js
-  var monadTransStateT = {
+  // output-es/Control.Monad.Except.Trans/index.js
+  var monadTransExceptT = {
     lift: (dictMonad) => {
-      const bind3 = dictMonad.Bind1().bind;
-      const pure3 = dictMonad.Applicative0().pure;
-      return (m) => (s) => bind3(m)((x2) => pure3($Tuple(x2, s)));
+      const bind = dictMonad.Bind1().bind;
+      const pure2 = dictMonad.Applicative0().pure;
+      return (m) => bind(m)((a) => pure2($Either("Right", a)));
     }
   };
+  var bindExceptT = (dictMonad) => {
+    const bind = dictMonad.Bind1().bind;
+    const pure2 = dictMonad.Applicative0().pure;
+    return {
+      bind: (v) => (k) => bind(v)((v2) => {
+        if (v2.tag === "Left") {
+          return pure2($Either("Left", v2._1));
+        }
+        if (v2.tag === "Right") {
+          return k(v2._1);
+        }
+        fail();
+      }),
+      Apply0: () => applyExceptT(dictMonad)
+    };
+  };
+  var applyExceptT = (dictMonad) => {
+    const $1 = dictMonad.Bind1().Apply0().Functor0();
+    const functorExceptT1 = { map: (f) => $1.map(functorEither.map(f)) };
+    return {
+      apply: (() => {
+        const bind = bindExceptT(dictMonad).bind;
+        const pure2 = applicativeExceptT(dictMonad).pure;
+        return (f) => (a) => bind(f)((f$p) => bind(a)((a$p) => pure2(f$p(a$p))));
+      })(),
+      Functor0: () => functorExceptT1
+    };
+  };
+  var applicativeExceptT = (dictMonad) => ({
+    pure: (() => {
+      const $1 = dictMonad.Applicative0().pure;
+      return (x2) => $1($Either("Right", x2));
+    })(),
+    Apply0: () => applyExceptT(dictMonad)
+  });
+  var monadThrowExceptT = (dictMonad) => {
+    const monadExceptT1 = { Applicative0: () => applicativeExceptT(dictMonad), Bind1: () => bindExceptT(dictMonad) };
+    return {
+      throwError: (() => {
+        const $2 = dictMonad.Applicative0().pure;
+        return (x2) => $2($Either("Left", x2));
+      })(),
+      Monad0: () => monadExceptT1
+    };
+  };
+  var altExceptT = (dictSemigroup) => (dictMonad) => {
+    const Bind1 = dictMonad.Bind1();
+    const pure2 = dictMonad.Applicative0().pure;
+    const $4 = Bind1.Apply0().Functor0();
+    const functorExceptT1 = { map: (f) => $4.map(functorEither.map(f)) };
+    return {
+      alt: (v) => (v1) => Bind1.bind(v)((rm) => {
+        if (rm.tag === "Right") {
+          return pure2($Either("Right", rm._1));
+        }
+        if (rm.tag === "Left") {
+          return Bind1.bind(v1)((rn) => {
+            if (rn.tag === "Right") {
+              return pure2($Either("Right", rn._1));
+            }
+            if (rn.tag === "Left") {
+              return pure2($Either("Left", dictSemigroup.append(rm._1)(rn._1)));
+            }
+            fail();
+          });
+        }
+        fail();
+      }),
+      Functor0: () => functorExceptT1
+    };
+  };
+
+  // output-es/Control.Monad.State.Trans/index.js
   var functorStateT = (dictFunctor) => ({ map: (f) => (v) => (s) => dictFunctor.map((v1) => $Tuple(f(v1._1), v1._2))(v(s)) });
   var bindStateT = (dictMonad) => {
-    const bind3 = dictMonad.Bind1().bind;
-    return { bind: (v) => (f) => (s) => bind3(v(s))((v1) => f(v1._1)(v1._2)), Apply0: () => applyStateT(dictMonad) };
+    const bind = dictMonad.Bind1().bind;
+    return { bind: (v) => (f) => (s) => bind(v(s))((v1) => f(v1._1)(v1._2)), Apply0: () => applyStateT(dictMonad) };
   };
   var applyStateT = (dictMonad) => {
     const functorStateT1 = functorStateT(dictMonad.Bind1().Apply0().Functor0());
     return {
       apply: (() => {
-        const bind3 = bindStateT(dictMonad).bind;
-        const pure3 = applicativeStateT(dictMonad).pure;
-        return (f) => (a) => bind3(f)((f$p) => bind3(a)((a$p) => pure3(f$p(a$p))));
+        const bind = bindStateT(dictMonad).bind;
+        const pure2 = applicativeStateT(dictMonad).pure;
+        return (f) => (a) => bind(f)((f$p) => bind(a)((a$p) => pure2(f$p(a$p))));
       })(),
       Functor0: () => functorStateT1
     };
   };
   var applicativeStateT = (dictMonad) => {
-    const pure3 = dictMonad.Applicative0().pure;
-    return { pure: (a) => (s) => pure3($Tuple(a, s)), Apply0: () => applyStateT(dictMonad) };
+    const pure2 = dictMonad.Applicative0().pure;
+    return { pure: (a) => (s) => pure2($Tuple(a, s)), Apply0: () => applyStateT(dictMonad) };
   };
   var monadStateStateT = (dictMonad) => {
-    const pure3 = dictMonad.Applicative0().pure;
+    const pure2 = dictMonad.Applicative0().pure;
     const monadStateT1 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-    return { state: (f) => (x2) => pure3(f(x2)), Monad0: () => monadStateT1 };
+    return { state: (f) => (x2) => pure2(f(x2)), Monad0: () => monadStateT1 };
   };
 
   // output-es/Data.Profunctor.Choice/index.js
@@ -19722,16 +19807,65 @@
   }))();
 
   // output-es/Graph/index.js
-  var eqVertex = { eq: (x2) => (y2) => x2 === y2 };
-  var ordVertex = { compare: (x2) => (y2) => ordString.compare(x2)(y2), Eq0: () => eqVertex };
-  var fresh = (dictMonad) => {
+  var $GraphAccumT = (_1) => ({ tag: "GraphAccumT", _1 });
+  var monadTransGraphAccumT = (dictMonoid) => ({
+    lift: (dictMonad) => {
+      const Functor0 = dictMonad.Bind1().Apply0().Functor0();
+      return (m) => $GraphAccumT(Functor0.map((f) => f((v) => dictMonoid.mempty))(Functor0.map(Tuple)(m)));
+    }
+  });
+  var monadAllocStateTInt = (dictMonad) => {
     const bindStateT2 = bindStateT(dictMonad);
     const monadStateStateT2 = monadStateStateT(dictMonad);
-    const pure3 = applicativeStateT(dictMonad).pure;
-    return bindStateT2.bind(monadStateStateT2.state((s) => $Tuple(s, s)))((s) => bindStateT2.bind((() => {
-      const $5 = s + 1 | 0;
-      return monadStateStateT2.state((v) => $Tuple(unit2, $5));
-    })())(() => pure3(showIntImpl(s))));
+    const pure2 = applicativeStateT(dictMonad).pure;
+    return {
+      fresh: bindStateT2.bind(monadStateStateT2.state((s) => $Tuple(s, s)))((s) => bindStateT2.bind((() => {
+        const $5 = s + 1 | 0;
+        return monadStateStateT2.state((v) => $Tuple(unit2, $5));
+      })())(() => pure2(showIntImpl(s)))),
+      MonadState0: () => monadStateStateT2
+    };
+  };
+  var eqVertex = { eq: (x2) => (y2) => x2 === y2 };
+  var ordVertex = { compare: (x2) => (y2) => ordString.compare(x2)(y2), Eq0: () => eqVertex };
+  var applyGraphAccumT = (dictApply) => {
+    const Functor0 = dictApply.Functor0();
+    const functorGraphAccumT1 = { map: (f) => (v) => $GraphAccumT(Functor0.map(strongFn.first(f))(v._1)) };
+    return {
+      apply: (v) => (v1) => $GraphAccumT(dictApply.apply(Functor0.map((v2) => (v3) => $Tuple(v2._1(v3._1), (x2) => v3._2(v2._2(x2))))(v._1))(v1._1)),
+      Functor0: () => functorGraphAccumT1
+    };
+  };
+  var bindGraphAccumT = (dictBind) => {
+    const Apply0 = dictBind.Apply0();
+    const $2 = Apply0.Functor0();
+    const applyGraphAccumT1 = applyGraphAccumT(Apply0);
+    return { bind: (v) => (f) => $GraphAccumT(dictBind.bind(v._1)((v1) => $2.map((m) => $Tuple(m._1, (x2) => m._2(v1._2(x2))))(f(v1._1)._1))), Apply0: () => applyGraphAccumT1 };
+  };
+  var applicativeGraphAccumT = (dictMonoid) => (dictApplicative) => {
+    const applyGraphAccumT1 = applyGraphAccumT(dictApplicative.Apply0());
+    return { pure: (a) => $GraphAccumT(dictApplicative.pure($Tuple(a, (v) => dictMonoid.mempty))), Apply0: () => applyGraphAccumT1 };
+  };
+  var monadGraphAccumT = (dictMonoid) => (dictMonad) => {
+    const applicativeGraphAccumT2 = applicativeGraphAccumT(dictMonoid)(dictMonad.Applicative0());
+    const bindGraphAccumT1 = bindGraphAccumT(dictMonad.Bind1());
+    return { Applicative0: () => applicativeGraphAccumT2, Bind1: () => bindGraphAccumT1 };
+  };
+  var monadGraphAccumGraphAccum = (dictGraph) => {
+    const Monoid0 = dictGraph.Monoid0();
+    const lift = monadTransGraphAccumT(Monoid0).lift;
+    return (dictMonadAlloc) => {
+      const Monad0 = dictMonadAlloc.MonadState0().Monad0();
+      const bind = bindGraphAccumT(Monad0.Bind1()).bind;
+      const lift1 = lift(Monad0);
+      const pure2 = Monad0.Applicative0().pure;
+      const monadGraphAccumT2 = monadGraphAccumT(Monoid0)(Monad0);
+      return {
+        new: (\u03B1s) => bind(lift1(dictMonadAlloc.fresh))((\u03B1) => $GraphAccumT(pure2($Tuple(\u03B1, dictGraph.extend(\u03B1)(\u03B1s))))),
+        Graph0: () => dictGraph,
+        Monad1: () => monadGraphAccumT2
+      };
+    };
   };
 
   // output-es/Data.List.NonEmpty/index.js
@@ -25152,7 +25286,7 @@
   var showParseError = { show: (v) => "(ParseError " + (showStringImpl(v._1) + (" " + (genericShow(v._2) + ")"))) };
   var runParserT$p = (dictMonadRec) => {
     const Monad0 = dictMonadRec.Monad0();
-    const map5 = Monad0.Bind1().Apply0().Functor0().map;
+    const map6 = Monad0.Bind1().Apply0().Functor0().map;
     const pure1 = Monad0.Applicative0().pure;
     return (state1) => (v) => {
       const go = (go$a0$copy) => {
@@ -25166,7 +25300,7 @@
           }
           if (v1.tag === "Lift") {
             go$c = false;
-            go$r = map5(Loop)(v1._1);
+            go$r = map6(Loop)(v1._1);
             continue;
           }
           if (v1.tag === "Stop") {
@@ -25191,9 +25325,9 @@
   var position = (state1, v, v1, v2, done) => done(state1, state1._2);
   var initialPos = { index: 0, line: 1, column: 1 };
   var runParserT = (dictMonadRec) => {
-    const map5 = dictMonadRec.Monad0().Bind1().Apply0().Functor0().map;
+    const map6 = dictMonadRec.Monad0().Bind1().Apply0().Functor0().map;
     const runParserT$p1 = runParserT$p(dictMonadRec);
-    return (s) => (p) => map5(fst)(runParserT$p1($ParseState(s, initialPos, false))(p));
+    return (s) => (p) => map6(fst)(runParserT$p1($ParseState(s, initialPos, false))(p));
   };
   var runParserT1 = /* @__PURE__ */ runParserT(monadRecIdentity);
   var failWithPosition = (message2) => (pos) => (state1, v, v1, $$throw, v2) => $$throw(state1, $ParseError(message2, pos));
@@ -27349,7 +27483,7 @@
   var hspace2 = /* @__PURE__ */ hspace(foldableList);
   var emptyDoc = /* @__PURE__ */ empty3(0)(0);
   var vert = (dictFoldable) => {
-    const fromFoldable10 = dictFoldable.foldr(Cons)(Nil);
+    const fromFoldable11 = dictFoldable.foldr(Cons)(Nil);
     return (delim) => {
       const vert$p = (v) => {
         if (v.tag === "Nil") {
@@ -27366,7 +27500,7 @@
         }
         fail();
       };
-      return (x2) => vert$p(fromFoldable10(x2));
+      return (x2) => vert$p(fromFoldable11(x2));
     };
   };
   var vert1 = /* @__PURE__ */ vert(foldableArray);
@@ -27615,9 +27749,11 @@
   var Record3 = (value0) => (value1) => $Val("Record", value0, value1);
   var Dictionary3 = (value0) => (value1) => $Val("Dictionary", value0, value1);
   var Matrix3 = (value0) => (value1) => $Val("Matrix", value0, value1);
+  var Fun = (value0) => $Val("Fun", value0);
   var Closure = (value0) => (value1) => (value2) => (value3) => $Fun("Closure", value0, value1, value2, value3);
   var Foreign = (value0) => (value1) => $Fun("Foreign", value0, value1);
   var PartialConstr = (value0) => (value1) => (value2) => $Fun("PartialConstr", value0, value1, value2);
+  var highlightableVertex = { highlightIf: (v) => (doc2) => beside(beside(doc2)(text("_")))(text("\u27E8" + (v + "\u27E9"))) };
   var highlightableUnit = { highlightIf: (v) => identity15 };
   var highlightableBoolean = {
     highlightIf: (v) => {
@@ -28132,9 +28268,15 @@
   );
 
   // output-es/Primitive/index.js
-  var bind = /* @__PURE__ */ (() => bindStateT(monadEither).bind)();
-  var fresh2 = /* @__PURE__ */ fresh(monadEither);
-  var pure = /* @__PURE__ */ (() => applicativeStateT(monadEither).pure)();
+  var map3 = /* @__PURE__ */ (() => {
+    const $0 = functorStateT(functorIdentity);
+    return (f) => (v) => $GraphAccumT($0.map(strongFn.first(functorEither.map(f)))(v._1));
+  })();
+  var monadStateT = {
+    Applicative0: () => applicativeStateT(monadIdentity),
+    Bind1: () => bindStateT(monadIdentity)
+  };
+  var monadAllocStateTInt2 = /* @__PURE__ */ monadAllocStateTInt(monadIdentity);
   var fanin2 = /* @__PURE__ */ fanin(categoryFn)(choiceFn);
   var isZeroNumber = { isZero: ($0) => 0 === $0 };
   var isZeroInt = { isZero: ($0) => 0 === $0 };
@@ -28144,18 +28286,25 @@
       "Foreign",
       $ForeignOp$p({
         arity: 1,
-        "op'": (dictGraph) => (v) => {
-          if (v._2.tag === "Cons") {
-            if (v._2._2.tag === "Nil") {
-              const v2 = op.i.match(v._2._1);
-              return bind(fresh2)((\u03B1$p) => pure($Tuple(
-                dictGraph.union(\u03B1$p)($Map("Two", Leaf2, v2._2, unit2, Leaf2))(v._1),
-                op.o.constr($Tuple(op.fwd(v2._1), \u03B1$p))
-              )));
+        "op'": (dictGraph) => {
+          const lift1 = monadTransExceptT.lift(monadGraphAccumT(dictGraph.Monoid0())(monadStateT));
+          const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt2).new;
+          return (v) => {
+            if (v.tag === "Cons") {
+              if (v._2.tag === "Nil") {
+                const v2 = op.i.match(v._1);
+                return map3(op.o.constr)(map3((v3) => $Tuple(op.fwd(v2._1), v3))(lift1($$new($Map(
+                  "Two",
+                  Leaf2,
+                  v2._2,
+                  unit2,
+                  Leaf2
+                )))));
+              }
+              fail();
             }
             fail();
-          }
-          fail();
+          };
         },
         op: (dictAnn) => (v) => {
           if (v.tag === "Cons") {
@@ -28398,36 +28547,37 @@
       "Foreign",
       $ForeignOp$p({
         arity: 2,
-        "op'": (dictGraph) => (v) => {
-          if (v._2.tag === "Cons") {
-            if (v._2._2.tag === "Cons") {
-              if (v._2._2._2.tag === "Nil") {
-                const $4 = op.i.match(v._2._1);
-                const $5 = op.i.match(v._2._2._1);
-                return bind(fresh2)((\u03B1$p) => pure($Tuple(
-                  dictGraph.union(\u03B1$p)((() => {
-                    if (dictIsZero.isZero($4._1)) {
-                      return $Map("Two", Leaf2, $4._2, unit2, Leaf2);
+        "op'": (dictGraph) => {
+          const lift1 = monadTransExceptT.lift(monadGraphAccumT(dictGraph.Monoid0())(monadStateT));
+          const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt2).new;
+          return (v) => {
+            if (v.tag === "Cons") {
+              if (v._2.tag === "Cons") {
+                if (v._2._2.tag === "Nil") {
+                  const $6 = op.i.match(v._1);
+                  const $7 = op.i.match(v._2._1);
+                  return map3(op.o.constr)(map3((v4) => $Tuple(op.fwd($6._1)($7._1), v4))(lift1($$new((() => {
+                    if (dictIsZero.isZero($6._1)) {
+                      return $Map("Two", Leaf2, $6._2, unit2, Leaf2);
                     }
-                    if (dictIsZero.isZero($5._1)) {
-                      return $Map("Two", Leaf2, $5._2, unit2, Leaf2);
+                    if (dictIsZero.isZero($7._1)) {
+                      return $Map("Two", Leaf2, $7._2, unit2, Leaf2);
                     }
-                    return insert2(ordVertex)($5._2)(unit2)($Map(
+                    return insert2(ordVertex)($7._2)(unit2)($Map(
                       "Two",
                       Leaf2,
-                      $4._2,
+                      $6._2,
                       unit2,
                       Leaf2
                     ));
-                  })())(v._1),
-                  op.o.constr($Tuple(op.fwd($4._1)($5._1), \u03B1$p))
-                )));
+                  })()))));
+                }
+                fail();
               }
               fail();
             }
             fail();
-          }
-          fail();
+          };
         },
         op: (dictAnn) => {
           const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
@@ -28500,28 +28650,29 @@
       "Foreign",
       $ForeignOp$p({
         arity: 2,
-        "op'": (dictGraph) => (v) => {
-          if (v._2.tag === "Cons") {
-            if (v._2._2.tag === "Cons") {
-              if (v._2._2._2.tag === "Nil") {
-                const $3 = op.i1.match(v._2._1);
-                const $4 = op.i2.match(v._2._2._1);
-                return bind(fresh2)((\u03B1$p) => pure($Tuple(
-                  dictGraph.union(\u03B1$p)(insert2(ordVertex)($4._2)(unit2)($Map(
+        "op'": (dictGraph) => {
+          const lift1 = monadTransExceptT.lift(monadGraphAccumT(dictGraph.Monoid0())(monadStateT));
+          const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt2).new;
+          return (v) => {
+            if (v.tag === "Cons") {
+              if (v._2.tag === "Cons") {
+                if (v._2._2.tag === "Nil") {
+                  const $5 = op.i1.match(v._1);
+                  const $6 = op.i2.match(v._2._1);
+                  return map3(op.o.constr)(map3((v4) => $Tuple(op.fwd($5._1)($6._1), v4))(lift1($$new(insert2(ordVertex)($6._2)(unit2)($Map(
                     "Two",
                     Leaf2,
-                    $3._2,
+                    $5._2,
                     unit2,
                     Leaf2
-                  )))(v._1),
-                  op.o.constr($Tuple(op.fwd($3._1)($4._1), \u03B1$p))
-                )));
+                  ))))));
+                }
+                fail();
               }
               fail();
             }
             fail();
-          }
-          fail();
+          };
         },
         op: (dictAnn) => {
           const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
@@ -28733,7 +28884,7 @@
   var prefix = "$";
   function Map2() {
   }
-  Map2.prototype = map3.prototype = {
+  Map2.prototype = map4.prototype = {
     constructor: Map2,
     has: function(key) {
       return prefix + key in this;
@@ -28794,26 +28945,26 @@
           f(this[property], property.slice(1), this);
     }
   };
-  function map3(object, f) {
-    var map5 = new Map2();
+  function map4(object, f) {
+    var map6 = new Map2();
     if (object instanceof Map2)
       object.each(function(value, key2) {
-        map5.set(key2, value);
+        map6.set(key2, value);
       });
     else if (Array.isArray(object)) {
       var i = -1, n = object.length, o;
       if (f == null)
         while (++i < n)
-          map5.set(i, object[i]);
+          map6.set(i, object[i]);
       else
         while (++i < n)
-          map5.set(f(o = object[i], i, object), o);
+          map6.set(f(o = object[i], i, object), o);
     } else if (object)
       for (var key in object)
-        map5.set(key, object[key]);
-    return map5;
+        map6.set(key, object[key]);
+    return map6;
   }
-  var map_default = map3;
+  var map_default = map4;
 
   // node_modules/d3-collection/src/set.js
   function Set2() {
@@ -28945,12 +29096,12 @@
   }
 
   // node_modules/d3-tip/node_modules/d3-selection/src/selection/filter.js
-  function filter_default3(match4) {
-    if (typeof match4 !== "function")
-      match4 = matcher_default2(match4);
+  function filter_default3(match5) {
+    if (typeof match5 !== "function")
+      match5 = matcher_default2(match5);
     for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
       for (var group2 = groups[j], n = group2.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) {
-        if ((node = group2[i]) && match4.call(node, node.__data__, i, group2)) {
+        if ((node = group2[i]) && match5.call(node, node.__data__, i, group2)) {
           subgroup.push(node);
         }
       }
@@ -29051,12 +29202,12 @@
       });
       return data;
     }
-    var bind3 = key ? bindKey2 : bindIndex2, parents = this._parents, groups = this._groups;
+    var bind = key ? bindKey2 : bindIndex2, parents = this._parents, groups = this._groups;
     if (typeof value !== "function")
       value = constant_default6(value);
     for (var m = groups.length, update3 = new Array(m), enter = new Array(m), exit = new Array(m), j = 0; j < m; ++j) {
       var parent = parents[j], group2 = groups[j], groupLength = group2.length, data = value.call(parent, parent && parent.__data__, j, parents), dataLength = data.length, enterGroup = enter[j] = new Array(dataLength), updateGroup = update3[j] = new Array(dataLength), exitGroup = exit[j] = new Array(groupLength);
-      bind3(parent, group2, enterGroup, updateGroup, exitGroup, data, key);
+      bind(parent, group2, enterGroup, updateGroup, exitGroup, data, key);
       for (var i0 = 0, i1 = 0, previous, next; i0 < dataLength; ++i0) {
         if (previous = enterGroup[i0]) {
           if (i0 >= i1)
@@ -30116,9 +30267,9 @@
   // output-es/Control.Monad.Error.Class/index.js
   var $$try2 = (dictMonadError) => {
     const Monad0 = dictMonadError.MonadThrow0().Monad0();
-    const map5 = Monad0.Bind1().Apply0().Functor0().map;
-    const pure3 = Monad0.Applicative0().pure;
-    return (a) => dictMonadError.catchError(map5(Right)(a))((x2) => pure3($Either("Left", x2)));
+    const map6 = Monad0.Bind1().Apply0().Functor0().map;
+    const pure2 = Monad0.Applicative0().pure;
+    return (a) => dictMonadError.catchError(map6(Right)(a))((x2) => pure2($Either("Left", x2)));
   };
 
   // output-es/Effect.Aff/foreign.js
@@ -31692,7 +31843,7 @@
   var fromFoldable8 = /* @__PURE__ */ fromFoldable2(foldableList);
   var fromFoldable15 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2))();
   var foldl1 = /* @__PURE__ */ (() => foldable1NonEmpty(foldableList).foldl1)();
-  var map4 = /* @__PURE__ */ (() => functorNonEmpty(functorList).map)();
+  var map5 = /* @__PURE__ */ (() => functorNonEmpty(functorList).map)();
   var matchManyBwd = (dictAnn) => (v) => (v1) => (v2) => (v3) => {
     if (v3.tag === "Nil") {
       if (isEmpty(v)) {
@@ -31921,7 +32072,7 @@
                 $Tuple(JoinSemilattice0.join(v42._2._2._2._1)(v5._2._2._2._1), JoinSemilattice0.join(v42._2._2._2._2)(v5._2._2._2._2))
               )
             )
-          ))(map4((v32) => {
+          ))(map5((v32) => {
             const v42 = evalBwd$p(dictAnn)(definitely("index within bounds")(index2(definitely("index within bounds")(index2(v._2._1)(v32._1 - 1 | 0)))(v32._2 - 1 | 0)))(definitely("index within bounds")(index2(definitely("index within bounds")(index2(v1._1)(v32._1 - 1 | 0)))(v32._2 - 1 | 0)));
             const v5 = append_inv(unionWith(ordString)($$const)($Map(
               "Two",
@@ -32095,79 +32246,6 @@
   // output-es/Affjax.ResponseHeader/index.js
   var $ResponseHeader = (_1, _2) => ({ tag: "ResponseHeader", _1, _2 });
   var ResponseHeader = (value0) => (value1) => $ResponseHeader(value0, value1);
-
-  // output-es/Control.Monad.Except.Trans/index.js
-  var bindExceptT = (dictMonad) => {
-    const bind3 = dictMonad.Bind1().bind;
-    const pure3 = dictMonad.Applicative0().pure;
-    return {
-      bind: (v) => (k) => bind3(v)((v2) => {
-        if (v2.tag === "Left") {
-          return pure3($Either("Left", v2._1));
-        }
-        if (v2.tag === "Right") {
-          return k(v2._1);
-        }
-        fail();
-      }),
-      Apply0: () => applyExceptT(dictMonad)
-    };
-  };
-  var applyExceptT = (dictMonad) => {
-    const $1 = dictMonad.Bind1().Apply0().Functor0();
-    const functorExceptT1 = { map: (f) => $1.map(functorEither.map(f)) };
-    return {
-      apply: (() => {
-        const bind3 = bindExceptT(dictMonad).bind;
-        const pure3 = applicativeExceptT(dictMonad).pure;
-        return (f) => (a) => bind3(f)((f$p) => bind3(a)((a$p) => pure3(f$p(a$p))));
-      })(),
-      Functor0: () => functorExceptT1
-    };
-  };
-  var applicativeExceptT = (dictMonad) => ({
-    pure: (() => {
-      const $1 = dictMonad.Applicative0().pure;
-      return (x2) => $1($Either("Right", x2));
-    })(),
-    Apply0: () => applyExceptT(dictMonad)
-  });
-  var monadThrowExceptT = (dictMonad) => {
-    const monadExceptT1 = { Applicative0: () => applicativeExceptT(dictMonad), Bind1: () => bindExceptT(dictMonad) };
-    return {
-      throwError: (() => {
-        const $2 = dictMonad.Applicative0().pure;
-        return (x2) => $2($Either("Left", x2));
-      })(),
-      Monad0: () => monadExceptT1
-    };
-  };
-  var altExceptT = (dictSemigroup) => (dictMonad) => {
-    const Bind1 = dictMonad.Bind1();
-    const pure3 = dictMonad.Applicative0().pure;
-    const $4 = Bind1.Apply0().Functor0();
-    const functorExceptT1 = { map: (f) => $4.map(functorEither.map(f)) };
-    return {
-      alt: (v) => (v1) => Bind1.bind(v)((rm) => {
-        if (rm.tag === "Right") {
-          return pure3($Either("Right", rm._1));
-        }
-        if (rm.tag === "Left") {
-          return Bind1.bind(v1)((rn) => {
-            if (rn.tag === "Right") {
-              return pure3($Either("Right", rn._1));
-            }
-            if (rn.tag === "Left") {
-              return pure3($Either("Left", dictSemigroup.append(rm._1)(rn._1)));
-            }
-            fail();
-          });
-        }
-        fail();
-      }),
-      Functor0: () => functorExceptT1
-    };
-  };
 
   // output-es/Data.Argonaut.Core/foreign.js
   function id2(x2) {
@@ -32383,7 +32461,7 @@
 
   // output-es/Affjax/index.js
   var $Error = (tag, _1, _2) => ({ tag, _1, _2 });
-  var pure2 = /* @__PURE__ */ (() => applicativeExceptT(monadIdentity).pure)();
+  var pure = /* @__PURE__ */ (() => applicativeExceptT(monadIdentity).pure)();
   var fail3 = /* @__PURE__ */ (() => {
     const $0 = monadThrowExceptT(monadIdentity).throwError;
     return (x2) => $0($NonEmpty(x2, Nil));
@@ -32413,14 +32491,14 @@
         const $3 = unsafeReadTagged2("String");
         return (a) => $2.bind($3(a))((x2) => req2.responseFormat._1((() => {
           if (x2 === "") {
-            return pure2(jsonEmptyObject);
+            return pure(jsonEmptyObject);
           }
           const $6 = _jsonParser(Left, Right, x2);
           if ($6.tag === "Left") {
             return fail3($ForeignError("ForeignError", $6._1));
           }
           if ($6.tag === "Right") {
-            return pure2($6._1);
+            return pure($6._1);
           }
           fail();
         })()));
@@ -32429,7 +32507,7 @@
         return unsafeReadTagged2("String");
       }
       if (req2.responseFormat.tag === "Ignore") {
-        const $2 = req2.responseFormat._1(pure2(unit2));
+        const $2 = req2.responseFormat._1(pure(unit2));
         return (v) => $2;
       }
       fail();
@@ -34901,22 +34979,416 @@
     };
   }();
 
+  // output-es/EvalGraph/index.js
+  var fromFoldable10 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2))();
+  var show22 = /* @__PURE__ */ (() => showSet(showString).show)();
+  var toUnfoldable14 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
+  var monadStateT2 = {
+    Applicative0: () => applicativeStateT(monadIdentity),
+    Bind1: () => bindStateT(monadIdentity)
+  };
+  var functorExceptT = /* @__PURE__ */ (() => {
+    const $0 = functorStateT(functorIdentity);
+    return { map: (f) => (v) => $GraphAccumT($0.map(strongFn.first(functorEither.map(f)))(v._1)) };
+  })();
+  var monadAllocStateTInt3 = /* @__PURE__ */ monadAllocStateTInt(monadIdentity);
+  var fv2 = /* @__PURE__ */ (() => fVDict(fVElim).fv)();
+  var applicativeStateT2 = /* @__PURE__ */ applicativeStateT(monadIdentity);
+  var fromFoldable17 = /* @__PURE__ */ fromFoldable2(foldableList);
+  var greaterThanOrEq = /* @__PURE__ */ (() => {
+    const $0 = ordTuple(ordInt)(ordInt);
+    return (a1) => (a2) => !($0.compare(a1)(a2).tag === "LT");
+  })();
+  var show32 = (v) => "(Tuple " + (showIntImpl(v._1) + (" " + (showIntImpl(v._2) + ")")));
+  var matchMany2 = (v) => (v1) => {
+    if (v.tag === "Nil") {
+      return $Either("Right", $Tuple(empty2, $Tuple(v1, Leaf2)));
+    }
+    if (v.tag === "Cons") {
+      if (v1.tag === "ContElim") {
+        return bindEither.bind(match4(v._1)(v1._1))((v3) => bindEither.bind(matchMany2(v._2)(v3._2._1))((v4) => $Either(
+          "Right",
+          $Tuple(
+            unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(v3._1)(v4._1),
+            $Tuple(v4._2._1, unionWith(ordVertex)($$const)(v3._2._2)(v4._2._2))
+          )
+        )));
+      }
+      if (v1.tag === "ContExpr") {
+        return $Either(
+          "Left",
+          showIntImpl((() => {
+            const go = (go$a0$copy) => (go$a1$copy) => {
+              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+              while (go$c) {
+                const b = go$a0, v$1 = go$a1;
+                if (v$1.tag === "Nil") {
+                  go$c = false;
+                  go$r = b;
+                  continue;
+                }
+                if (v$1.tag === "Cons") {
+                  go$a0 = b + 1 | 0;
+                  go$a1 = v$1._2;
+                  continue;
+                }
+                fail();
+              }
+              ;
+              return go$r;
+            };
+            return go(0)(v._2) + 1 | 0;
+          })()) + " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
+        );
+      }
+      return unsafePerformEffect(throwException(error("absurd")));
+    }
+    return unsafePerformEffect(throwException(error("absurd")));
+  };
+  var match4 = (v) => (v1) => {
+    if (v1.tag === "ElimVar") {
+      if (v1._1 === "_") {
+        return $Either("Right", $Tuple(empty2, $Tuple(v1._2, Leaf2)));
+      }
+      return $Either(
+        "Right",
+        $Tuple(
+          runST(bind_(newImpl)(poke3(v1._1)(v))),
+          $Tuple(v1._2, Leaf2)
+        )
+      );
+    }
+    if (v1.tag === "ElimConstr") {
+      if (v.tag === "Constr") {
+        return bindEither.bind($$with("Pattern mismatch")(consistentWith($Map(
+          "Two",
+          Leaf2,
+          v._2,
+          unit2,
+          Leaf2
+        ))(keys2(v1._1))))(() => bindEither.bind((() => {
+          const $3 = "Incomplete patterns: no branch for " + showCtr(v._2);
+          const $4 = _lookup(Nothing, Just, v._2, v1._1);
+          if ($4.tag === "Nothing") {
+            return $Either("Left", $3);
+          }
+          if ($4.tag === "Just") {
+            return $Either("Right", $4._1);
+          }
+          fail();
+        })())((\u03BA) => bindEither.bind(matchMany2(v._3)(\u03BA))((v2) => $Either(
+          "Right",
+          $Tuple(v2._1, $Tuple(v2._2._1, insert2(ordVertex)(v._1)(unit2)(v2._2._2)))
+        ))));
+      }
+      return bindEither.bind((() => {
+        const v$1 = toUnfoldable6(keys2(v1._1));
+        if (v$1.tag === "Cons") {
+          return dataTypeForCtr.dataTypeFor(v$1._1);
+        }
+        fail();
+      })())((d) => $Either(
+        "Left",
+        "Pattern mismatch: found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v).lines) + (", expected " + d._1))
+      ));
+    }
+    if (v1.tag === "ElimRecord") {
+      if (v.tag === "Record") {
+        return bindEither.bind((() => {
+          const $2 = "Pattern mismatch: found " + (show22(keys2(v._2)) + (", expected " + show22(v1._1)));
+          if (difference3(ordString)(v1._1)(fromFoldable10(keys2(v._2))).tag === "Leaf") {
+            return $Either("Right", unit2);
+          }
+          return $Either("Left", $2);
+        })())(() => bindEither.bind(matchMany2(listMap((a) => $$get(a)(v._2))(toUnfoldable14(v1._1)))(v1._2))((v2) => $Either(
+          "Right",
+          $Tuple(v2._1, $Tuple(v2._2._1, insert2(ordVertex)(v._1)(unit2)(v2._2._2)))
+        )));
+      }
+      return $Either(
+        "Left",
+        "Pattern mismatch: found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v).lines) + (", expected " + show22(v1._1)))
+      );
+    }
+    fail();
+  };
+  var closeDefs2 = (dictGraph) => {
+    const monadGraphAccumT2 = monadGraphAccumT(dictGraph.Monoid0())(monadStateT2);
+    const $2 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT(monadGraphAccumT2));
+    const lift1 = monadTransExceptT.lift(monadGraphAccumT2);
+    const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt3).new;
+    return (\u03B3) => (\u03C1) => (\u03B1s) => $2((v) => (\u03C3) => {
+      const \u03C1$p = $$for(\u03C1)(\u03C3);
+      return functorExceptT.map(Fun)(functorExceptT.map((f) => f(\u03C3))(functorExceptT.map((f) => f(\u03C1$p))((() => {
+        const $11 = restrict(\u03B3)(unionWith(ordString)($$const)(fv2(\u03C1$p))(fVElim.fv(\u03C3)));
+        return functorExceptT.map((f) => f($11))(functorExceptT.map(Closure)(lift1($$new(\u03B1s))));
+      })())));
+    })(\u03C1);
+  };
+  var $$eval2 = (dictGraph) => {
+    const Monoid0 = dictGraph.Monoid0();
+    const $2 = applicativeGraphAccumT(Monoid0)(applicativeStateT2);
+    const monadGraphAccumT2 = monadGraphAccumT(Monoid0)(monadStateT2);
+    const lift1 = monadTransExceptT.lift(monadGraphAccumT2);
+    const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt3).new;
+    const bindExceptT2 = bindExceptT(monadGraphAccumT2);
+    const applicativeExceptT2 = applicativeExceptT(monadGraphAccumT2);
+    const $8 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT2);
+    const traverse42 = traversableList.traverse(applicativeExceptT2);
+    const traverse52 = traversablePair.traverse(applicativeExceptT2);
+    const sequence12 = traversableArray.traverse(applicativeExceptT2)(identity10);
+    const closeDefs1 = closeDefs2(dictGraph);
+    return (v) => (v1) => (v2) => {
+      if (v1.tag === "Var") {
+        return $2.pure(lookup$p(v1._1)(v));
+      }
+      if (v1.tag === "Op") {
+        return $2.pure(lookup$p(v1._1)(v));
+      }
+      if (v1.tag === "Int") {
+        return functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Int3)(lift1($$new(insert2(ordVertex)(v1._1)(unit2)(v2)))));
+      }
+      if (v1.tag === "Float") {
+        return functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Float3)(lift1($$new(insert2(ordVertex)(v1._1)(unit2)(v2)))));
+      }
+      if (v1.tag === "Str") {
+        return functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Str3)(lift1($$new(insert2(ordVertex)(v1._1)(unit2)(v2)))));
+      }
+      if (v1.tag === "Record") {
+        return bindExceptT2.bind((() => {
+          const $16 = $$eval2(dictGraph)(v);
+          return $8((v$1) => (a) => $16(a)(v2))(v1._2);
+        })())((xvs) => functorExceptT.map((f) => f(xvs))(functorExceptT.map(Record3)(lift1($$new(insert2(ordVertex)(v1._1)(unit2)(v2))))));
+      }
+      if (v1.tag === "Dictionary") {
+        return bindExceptT2.bind(functorExceptT.map(unzip2)(traverse42(traverse52((() => {
+          const $16 = $$eval2(dictGraph)(v);
+          return (a) => $16(a)(v2);
+        })()))(v1._2)))((v3) => {
+          const v4 = unzip(listMap(string2.match)(v3._1));
+          const $18 = fromFoldable17(zipWith(Tuple)(v4._1)(zipWith(Tuple)(v4._2)(v3._2)));
+          return functorExceptT.map((f) => f($18))(functorExceptT.map(Dictionary3)(lift1($$new(insert2(ordVertex)(v1._1)(unit2)(v2)))));
+        });
+      }
+      if (v1.tag === "Constr") {
+        return bindExceptT2.bind($2.pure(checkArity(v1._2)((() => {
+          const go = (go$a0$copy) => (go$a1$copy) => {
+            let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+            while (go$c) {
+              const b = go$a0, v$1 = go$a1;
+              if (v$1.tag === "Nil") {
+                go$c = false;
+                go$r = b;
+                continue;
+              }
+              if (v$1.tag === "Cons") {
+                go$a0 = b + 1 | 0;
+                go$a1 = v$1._2;
+                continue;
+              }
+              fail();
+            }
+            ;
+            return go$r;
+          };
+          return go(0)(v1._3);
+        })())))(() => bindExceptT2.bind(traverse42((() => {
+          const $17 = $$eval2(dictGraph)(v);
+          return (a) => $17(a)(v2);
+        })())(v1._3))((vs) => functorExceptT.map((f) => f(vs))(functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Constr3)(lift1($$new(insert2(ordVertex)(v1._1)(unit2)(v2))))))));
+      }
+      if (v1.tag === "Matrix") {
+        return bindExceptT2.bind($$eval2(dictGraph)(v)(v1._4)(v2))((v3) => {
+          const v4 = intPair.match(v3)._1;
+          return bindExceptT2.bind((() => {
+            const $18 = "array must be at least (" + (show32($Tuple(1, 1)) + ("); got (" + (show32($Tuple(v4._1._1, v4._2._1)) + ")")));
+            return $2.pure((() => {
+              if (greaterThanOrEq($Tuple(v4._1._1, v4._2._1))($Tuple(1, 1))) {
+                return $Either("Right", unit2);
+              }
+              return $Either("Left", $18);
+            })());
+          })())(() => bindExceptT2.bind(sequence12(arrayBind(range2(1)(v4._1._1))((i) => [
+            sequence12(arrayBind(range2(1)(v4._2._1))((j) => [
+              $$eval2(dictGraph)(unionWith2((v$1) => identity15)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._3._1)($Val(
+                "Int",
+                v4._1._2,
+                i
+              )))))(runST(bind_(newImpl)(poke3(v1._3._2)($Val("Int", v4._2._2, j)))))))(v1._2)(v2)
+            ]))
+          ])))((vss) => functorExceptT.map((f) => f($Tuple(vss, $Tuple($Tuple(v4._1._1, v4._1._2), $Tuple(v4._2._1, v4._2._2)))))(functorExceptT.map(Matrix3)(lift1($$new(insert2(ordVertex)(v1._1)(unit2)(v2)))))));
+        });
+      }
+      if (v1.tag === "Lambda") {
+        return functorExceptT.map(Fun)(functorExceptT.map((f) => f(v1._1))(functorExceptT.map((f) => f(empty2))((() => {
+          const $16 = restrict(v)(fVElim.fv(v1._1));
+          return functorExceptT.map((f) => f($16))(functorExceptT.map(Closure)(lift1($$new(v2))));
+        })())));
+      }
+      if (v1.tag === "Project") {
+        return bindExceptT2.bind($$eval2(dictGraph)(v)(v1._1)(v2))((v3) => $2.pure((() => {
+          if (v3.tag === "Record") {
+            return lookup$p(v1._2)(v3._2);
+          }
+          return $Either("Left", "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v3).lines) + ", expected record"));
+        })()));
+      }
+      if (v1.tag === "App") {
+        return bindExceptT2.bind($$eval2(dictGraph)(v)(v1._1)(v2))((v3) => bindExceptT2.bind($$eval2(dictGraph)(v)(v1._2)(v2))((v$p) => apply3(dictGraph)(v3)(v$p)));
+      }
+      if (v1.tag === "Let") {
+        return bindExceptT2.bind($$eval2(dictGraph)(v)(v1._1._2)(v2))((v3) => bindExceptT2.bind($2.pure(match4(v3)(v1._1._1)))((v4) => $$eval2(dictGraph)(unionWith2((v$1) => identity15)(v)(v4._1))(v1._2)(v2)));
+      }
+      if (v1.tag === "LetRec") {
+        return bindExceptT2.bind(closeDefs1(v)(v1._1)(v2))((\u03B3$p) => $$eval2(dictGraph)(unionWith2((v$1) => identity15)(v)(\u03B3$p))(v1._2)(v2));
+      }
+      fail();
+    };
+  };
+  var apply3 = (dictGraph) => {
+    const Monoid0 = dictGraph.Monoid0();
+    const monadGraphAccumT2 = monadGraphAccumT(Monoid0)(monadStateT2);
+    const bindExceptT2 = bindExceptT(monadGraphAccumT2);
+    const closeDefs1 = closeDefs2(dictGraph);
+    const $5 = applicativeGraphAccumT(Monoid0)(applicativeStateT2);
+    const pure1 = applicativeExceptT(monadGraphAccumT2).pure;
+    return (v) => (v1) => {
+      const $9 = (v2) => $5.pure($Either(
+        "Left",
+        "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v2).lines) + ", expected function")
+      ));
+      if (v.tag === "Fun") {
+        if (v._1.tag === "Closure") {
+          return bindExceptT2.bind(closeDefs1(v._1._2)(v._1._3)($Map("Two", Leaf2, v._1._1, unit2, Leaf2)))((\u03B32) => bindExceptT2.bind($5.pure(match4(v1)(v._1._4)))((v3) => $$eval2(dictGraph)(unionWith2((v$1) => identity15)(unionWith2((v$1) => identity15)(v._1._2)(\u03B32))(v3._1))((() => {
+            if (v3._2._1.tag === "ContExpr") {
+              return v3._2._1._1;
+            }
+            return unsafePerformEffect(throwException(error("Expression expected")));
+          })())(insert2(ordVertex)(v._1._1)(unit2)(v3._2._2))));
+        }
+        if (v._1.tag === "PartialConstr") {
+          const n = successful(arity(v._1._2));
+          return bindExceptT2.bind((() => {
+            const $11 = "Too many arguments to " + showCtr(v._1._2);
+            return $5.pure((() => {
+              if ((() => {
+                const go = (go$a0$copy) => (go$a1$copy) => {
+                  let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+                  while (go$c) {
+                    const b = go$a0, v$1 = go$a1;
+                    if (v$1.tag === "Nil") {
+                      go$c = false;
+                      go$r = b;
+                      continue;
+                    }
+                    if (v$1.tag === "Cons") {
+                      go$a0 = b + 1 | 0;
+                      go$a1 = v$1._2;
+                      continue;
+                    }
+                    fail();
+                  }
+                  ;
+                  return go$r;
+                };
+                return go(0)(v._1._3) < n;
+              })()) {
+                return $Either("Right", unit2);
+              }
+              return $Either("Left", $11);
+            })());
+          })())(() => pure1((() => {
+            if ((() => {
+              const go = (go$a0$copy) => (go$a1$copy) => {
+                let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+                while (go$c) {
+                  const b = go$a0, v$1 = go$a1;
+                  if (v$1.tag === "Nil") {
+                    go$c = false;
+                    go$r = b;
+                    continue;
+                  }
+                  if (v$1.tag === "Cons") {
+                    go$a0 = b + 1 | 0;
+                    go$a1 = v$1._2;
+                    continue;
+                  }
+                  fail();
+                }
+                ;
+                return go$r;
+              };
+              return go(0)(v._1._3) < (n - 1 | 0);
+            })()) {
+              return $Val(
+                "Fun",
+                $Fun(
+                  "PartialConstr",
+                  v._1._1,
+                  v._1._2,
+                  foldableList.foldr(Cons)($List("Cons", v1, Nil))(v._1._3)
+                )
+              );
+            }
+            return $Val(
+              "Constr",
+              v._1._1,
+              v._1._2,
+              foldableList.foldr(Cons)($List("Cons", v1, Nil))(v._1._3)
+            );
+          })()));
+        }
+        if (v._1.tag === "Foreign") {
+          const vs$p = foldableList.foldr(Cons)($List("Cons", v1, Nil))(v._1._2);
+          if ((() => {
+            const go = (go$a0$copy) => (go$a1$copy) => {
+              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+              while (go$c) {
+                const b = go$a0, v$1 = go$a1;
+                if (v$1.tag === "Nil") {
+                  go$c = false;
+                  go$r = b;
+                  continue;
+                }
+                if (v$1.tag === "Cons") {
+                  go$a0 = b + 1 | 0;
+                  go$a1 = v$1._2;
+                  continue;
+                }
+                fail();
+              }
+              ;
+              return go$r;
+            };
+            return v._1._1._1.arity > go(0)(vs$p);
+          })()) {
+            return pure1($Val("Fun", $Fun("Foreign", v._1._1, vs$p)));
+          }
+          return v._1._1._1["op'"](dictGraph)(vs$p);
+        }
+        return $9(v1);
+      }
+      return $9(v1);
+    };
+  };
+
   // output-es/Primitive.Defs/index.js
-  var bind2 = /* @__PURE__ */ (() => bindStateT(monadEither).bind)();
-  var lift = /* @__PURE__ */ (() => monadTransStateT.lift(monadEither))();
-  var applicativeStateT2 = /* @__PURE__ */ applicativeStateT(monadEither);
+  var monadStateT3 = {
+    Applicative0: () => applicativeStateT(monadIdentity),
+    Bind1: () => bindStateT(monadIdentity)
+  };
+  var applicativeStateT3 = /* @__PURE__ */ applicativeStateT(monadIdentity);
   var erase = /* @__PURE__ */ (() => functorVal.map((v) => unit2))();
-  var fresh3 = /* @__PURE__ */ fresh(monadEither);
-  var traverse6 = /* @__PURE__ */ (() => {
+  var functorExceptT2 = /* @__PURE__ */ (() => {
+    const $0 = functorStateT(functorIdentity);
+    return { map: (f) => (v) => $GraphAccumT($0.map(strongFn.first(functorEither.map(f)))(v._1)) };
+  })();
+  var monadAllocStateTInt4 = /* @__PURE__ */ monadAllocStateTInt(monadIdentity);
+  var traverse13 = /* @__PURE__ */ (() => {
     const $0 = traversableWithIndexObject.traverseWithIndex(applicativeEither);
     return (x2) => $0((v) => x2);
   })();
   var sequence3 = /* @__PURE__ */ (() => traversableWithIndexObject.traverseWithIndex(applicativeEither)((v) => identity11))();
-  var functorStateT2 = /* @__PURE__ */ functorStateT(functorEither);
-  var $$for2 = /* @__PURE__ */ (() => {
-    const $0 = traversableWithIndexObject.traverseWithIndex(applicativeStateT2);
-    return (x2) => (f) => $0((v) => f)(x2);
-  })();
   var foldWithIndexM = (f) => (a0) => fold((b) => (a) => (b$1) => bindEither.bind(b)((() => {
     const $5 = f(a);
     return (a$1) => $5(a$1)(b$1);
@@ -34934,59 +35406,68 @@
   var notEquals = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumberOrString)(asIntNumberOrString)((x2) => (y2) => x2 !== y2)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asNumberString)(asNumberString)((x2) => (y2) => x2 !== y2)((x2) => (y2) => x2 !== y2));
   var matrixLookup = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
-    "op'": (dictGraph) => (v) => {
-      if (v._2.tag === "Cons") {
-        if (v._2._1.tag === "Matrix") {
-          if (v._2._2.tag === "Cons") {
-            if (v._2._2._1.tag === "Constr") {
-              if (v._2._2._1._3.tag === "Cons") {
-                if (v._2._2._1._3._1.tag === "Int") {
-                  if (v._2._2._1._3._2.tag === "Cons") {
-                    if (v._2._2._1._3._2._1.tag === "Int") {
-                      if (v._2._2._1._3._2._2.tag === "Nil") {
-                        if (v._2._2._2.tag === "Nil") {
-                          if (v._2._2._1._2 === "Pair") {
-                            return bind2(lift((() => {
-                              const $2 = index2(v._2._1._2._1)(v._2._2._1._3._1._2 - 1 | 0);
-                              const $3 = (() => {
-                                if ($2.tag === "Just") {
-                                  return index2($2._1)(v._2._2._1._3._2._1._2 - 1 | 0);
-                                }
-                                if ($2.tag === "Nothing") {
-                                  return Nothing;
-                                }
-                                fail();
-                              })();
-                              if ($3.tag === "Nothing") {
-                                return $Either("Left", "Index out of bounds");
-                              }
-                              if ($3.tag === "Just") {
-                                return $Either("Right", $3._1);
-                              }
-                              fail();
-                            })()))((v1) => applicativeStateT2.pure($Tuple(v._1, v1)));
+    "op'": (dictGraph) => {
+      const Monoid0 = dictGraph.Monoid0();
+      const monadGraphAccumT2 = monadGraphAccumT(Monoid0)(monadStateT3);
+      const bind2 = bindExceptT(monadGraphAccumT2).bind;
+      const $4 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      const pure1 = applicativeExceptT(monadGraphAccumT2).pure;
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Matrix") {
+            if (v._2.tag === "Cons") {
+              if (v._2._1.tag === "Constr") {
+                if (v._2._1._3.tag === "Cons") {
+                  if (v._2._1._3._1.tag === "Int") {
+                    if (v._2._1._3._2.tag === "Cons") {
+                      if (v._2._1._3._2._1.tag === "Int") {
+                        if (v._2._1._3._2._2.tag === "Nil") {
+                          if (v._2._2.tag === "Nil") {
+                            if (v._2._1._2 === "Pair") {
+                              return bind2((() => {
+                                const $7 = index2(v._1._2._1)(v._2._1._3._1._2 - 1 | 0);
+                                const $8 = (() => {
+                                  if ($7.tag === "Just") {
+                                    return index2($7._1)(v._2._1._3._2._1._2 - 1 | 0);
+                                  }
+                                  if ($7.tag === "Nothing") {
+                                    return Nothing;
+                                  }
+                                  fail();
+                                })();
+                                return $4.pure((() => {
+                                  if ($8.tag === "Nothing") {
+                                    return $Either("Left", "Index out of bounds");
+                                  }
+                                  if ($8.tag === "Just") {
+                                    return $Either("Right", $8._1);
+                                  }
+                                  fail();
+                                })());
+                              })())((v1) => pure1(v1));
+                            }
+                            return $4.pure($Either("Left", "Matrix and pair of integers expected"));
                           }
-                          return lift($Either("Left", "Matrix and pair of integers expected"));
+                          return $4.pure($Either("Left", "Matrix and pair of integers expected"));
                         }
-                        return lift($Either("Left", "Matrix and pair of integers expected"));
+                        return $4.pure($Either("Left", "Matrix and pair of integers expected"));
                       }
-                      return lift($Either("Left", "Matrix and pair of integers expected"));
+                      return $4.pure($Either("Left", "Matrix and pair of integers expected"));
                     }
-                    return lift($Either("Left", "Matrix and pair of integers expected"));
+                    return $4.pure($Either("Left", "Matrix and pair of integers expected"));
                   }
-                  return lift($Either("Left", "Matrix and pair of integers expected"));
+                  return $4.pure($Either("Left", "Matrix and pair of integers expected"));
                 }
-                return lift($Either("Left", "Matrix and pair of integers expected"));
+                return $4.pure($Either("Left", "Matrix and pair of integers expected"));
               }
-              return lift($Either("Left", "Matrix and pair of integers expected"));
+              return $4.pure($Either("Left", "Matrix and pair of integers expected"));
             }
-            return lift($Either("Left", "Matrix and pair of integers expected"));
+            return $4.pure($Either("Left", "Matrix and pair of integers expected"));
           }
-          return lift($Either("Left", "Matrix and pair of integers expected"));
+          return $4.pure($Either("Left", "Matrix and pair of integers expected"));
         }
-        return lift($Either("Left", "Matrix and pair of integers expected"));
-      }
-      return lift($Either("Left", "Matrix and pair of integers expected"));
+        return $4.pure($Either("Left", "Matrix and pair of integers expected"));
+      };
     },
     op: (dictAnn) => (v) => {
       if (v.tag === "Cons") {
@@ -35095,17 +35576,22 @@
   var greaterThan = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumberOrString)(asIntNumberOrString)((a1) => (a2) => a1 > a2)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asNumberString)(asNumberString)((a1) => (a2) => a1 > a2)((a1) => (a2) => a1 > a2));
   var error_ = /* @__PURE__ */ $ForeignOp$p({
     arity: 1,
-    "op'": (dictGraph) => (v) => {
-      if (v._2.tag === "Cons") {
-        if (v._2._1.tag === "Str") {
-          if (v._2._2.tag === "Nil") {
-            return applicativeStateT2.pure($Tuple(v._1, unsafePerformEffect(throwException(error(v._2._1._2)))));
+    "op'": (dictGraph) => {
+      const Monoid0 = dictGraph.Monoid0();
+      const pure1 = applicativeExceptT(monadGraphAccumT(Monoid0)(monadStateT3)).pure;
+      const $3 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Str") {
+            if (v._2.tag === "Nil") {
+              return pure1(unsafePerformEffect(throwException(error(v._1._2))));
+            }
+            return $3.pure($Either("Left", "String expected"));
           }
-          return lift($Either("Left", "String expected"));
+          return $3.pure($Either("Left", "String expected"));
         }
-        return lift($Either("Left", "String expected"));
-      }
-      return lift($Either("Left", "String expected"));
+        return $3.pure($Either("Left", "String expected"));
+      };
     },
     op: (dictAnn) => (v) => {
       if (v.tag === "Cons") {
@@ -35124,35 +35610,43 @@
   var divide = /* @__PURE__ */ union4(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => toNumber(x2) / toNumber(y2))(numDiv);
   var dims = /* @__PURE__ */ $ForeignOp$p({
     arity: 1,
-    "op'": (dictGraph) => (v) => {
-      if (v._2.tag === "Cons") {
-        if (v._2._1.tag === "Matrix") {
-          if (v._2._2.tag === "Nil") {
-            return bind2(fresh3)((\u03B1$p) => bind2(fresh3)((\u03B21$p) => bind2(fresh3)((\u03B22$p) => applicativeStateT2.pure($Tuple(
-              dictGraph.union(\u03B22$p)($Map("Two", Leaf2, v._2._1._2._2._2._2, unit2, Leaf2))(dictGraph.union(\u03B21$p)($Map(
+    "op'": (dictGraph) => {
+      const Monoid0 = dictGraph.Monoid0();
+      const monadGraphAccumT2 = monadGraphAccumT(Monoid0)(monadStateT3);
+      const bind2 = bindExceptT(monadGraphAccumT2).bind;
+      const lift1 = monadTransExceptT.lift(monadGraphAccumT2);
+      const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt4).new;
+      const $6 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Matrix") {
+            if (v._2.tag === "Nil") {
+              return bind2(functorExceptT2.map((f) => f(v._1._2._2._1._1))(functorExceptT2.map(Int3)(lift1($$new($Map(
                 "Two",
                 Leaf2,
-                v._2._1._2._2._1._2,
+                v._1._2._2._1._2,
                 unit2,
                 Leaf2
-              ))(dictGraph.union(\u03B1$p)($Map("Two", Leaf2, v._2._1._1, unit2, Leaf2))(v._1))),
-              $Val(
-                "Constr",
-                v._2._1._1,
-                "Pair",
-                $List(
-                  "Cons",
-                  $Val("Int", v._2._1._2._2._1._2, v._2._1._2._2._1._1),
-                  $List("Cons", $Val("Int", v._2._1._2._2._2._2, v._2._1._2._2._2._1), Nil)
-                )
-              )
-            )))));
+              ))))))((v1) => bind2(functorExceptT2.map((f) => f(v._1._2._2._2._1))(functorExceptT2.map(Int3)(lift1($$new($Map(
+                "Two",
+                Leaf2,
+                v._1._2._2._2._2,
+                unit2,
+                Leaf2
+              ))))))((v2) => functorExceptT2.map((f) => f($List("Cons", v1, $List("Cons", v2, Nil))))(functorExceptT2.map((f) => f("Pair"))(functorExceptT2.map(Constr3)(lift1($$new($Map(
+                "Two",
+                Leaf2,
+                v._1._1,
+                unit2,
+                Leaf2
+              ))))))));
+            }
+            return $6.pure($Either("Left", "Matrix expected"));
           }
-          return lift($Either("Left", "Matrix expected"));
+          return $6.pure($Either("Left", "Matrix expected"));
         }
-        return lift($Either("Left", "Matrix expected"));
-      }
-      return lift($Either("Left", "Matrix expected"));
+        return $6.pure($Either("Left", "Matrix expected"));
+      };
     },
     op: (dictAnn) => (v) => {
       if (v.tag === "Cons") {
@@ -35222,17 +35716,47 @@
   });
   var dict_map = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
-    "op'": (dictGraph) => (v) => unsafePerformEffect(throwException(error("unimplemented"))),
+    "op'": (dictGraph) => {
+      const Monoid0 = dictGraph.Monoid0();
+      const monadGraphAccumT2 = monadGraphAccumT(Monoid0)(monadStateT3);
+      const bind2 = bindExceptT(monadGraphAccumT2).bind;
+      const $4 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT(monadGraphAccumT2));
+      const apply4 = apply3(dictGraph);
+      const lift1 = monadTransExceptT.lift(monadGraphAccumT2);
+      const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt4).new;
+      const $8 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._2.tag === "Cons") {
+            if (v._2._1.tag === "Dictionary") {
+              if (v._2._2.tag === "Nil") {
+                return bind2($4((v$1) => (v2) => functorExceptT2.map((v3) => $Tuple(v2._1, v3))(apply4(v._1)(v2._2)))(v._2._1._2))((d$p) => functorExceptT2.map((f) => f(d$p))(functorExceptT2.map(Dictionary3)(lift1($$new($Map(
+                  "Two",
+                  Leaf2,
+                  v._2._1._1,
+                  unit2,
+                  Leaf2
+                ))))));
+              }
+              return $8.pure($Either("Left", "Function and dictionary expected"));
+            }
+            return $8.pure($Either("Left", "Function and dictionary expected"));
+          }
+          return $8.pure($Either("Left", "Function and dictionary expected"));
+        }
+        return $8.pure($Either("Left", "Function and dictionary expected"));
+      };
+    },
     op: (dictAnn) => {
-      const apply3 = apply(dictAnn);
+      const apply4 = apply(dictAnn);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._2.tag === "Cons") {
             if (v._2._1.tag === "Dictionary") {
               if (v._2._2.tag === "Nil") {
                 return bindEither.bind((() => {
-                  const $3 = traverse6((v2) => {
-                    const $4 = apply3($Tuple(v._1, v2._2));
+                  const $3 = traverse13((v2) => {
+                    const $4 = apply4($Tuple(v._1, v2._2));
                     if ($4.tag === "Left") {
                       return $Either("Left", $4._1);
                     }
@@ -35348,33 +35872,38 @@
   });
   var dict_get = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
-    "op'": (dictGraph) => (v) => {
-      if (v._2.tag === "Cons") {
-        if (v._2._1.tag === "Str") {
-          if (v._2._2.tag === "Cons") {
-            if (v._2._2._1.tag === "Dictionary") {
-              if (v._2._2._2.tag === "Nil") {
-                return functorStateT2.map((v1) => $Tuple(v._1, v1))(functorStateT2.map(snd)(lift((() => {
-                  const $2 = 'Key "' + (v._2._1._2 + '" not found');
-                  const $3 = _lookup(Nothing, Just, v._2._1._2, v._2._2._1._2);
-                  if ($3.tag === "Nothing") {
-                    return $Either("Left", $2);
-                  }
-                  if ($3.tag === "Just") {
-                    return $Either("Right", $3._1);
-                  }
-                  fail();
-                })())));
+    "op'": (dictGraph) => {
+      const $1 = applicativeGraphAccumT(dictGraph.Monoid0())(applicativeStateT3);
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Str") {
+            if (v._2.tag === "Cons") {
+              if (v._2._1.tag === "Dictionary") {
+                if (v._2._2.tag === "Nil") {
+                  return functorExceptT2.map(snd)((() => {
+                    const $3 = 'Key "' + (v._1._2 + '" not found');
+                    const $4 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
+                    return $1.pure((() => {
+                      if ($4.tag === "Nothing") {
+                        return $Either("Left", $3);
+                      }
+                      if ($4.tag === "Just") {
+                        return $Either("Right", $4._1);
+                      }
+                      fail();
+                    })());
+                  })());
+                }
+                return $1.pure($Either("Left", "String and dictionary expected"));
               }
-              return lift($Either("Left", "String and dictionary expected"));
+              return $1.pure($Either("Left", "String and dictionary expected"));
             }
-            return lift($Either("Left", "String and dictionary expected"));
+            return $1.pure($Either("Left", "String and dictionary expected"));
           }
-          return lift($Either("Left", "String and dictionary expected"));
+          return $1.pure($Either("Left", "String and dictionary expected"));
         }
-        return lift($Either("Left", "String and dictionary expected"));
-      }
-      return lift($Either("Left", "String and dictionary expected"));
+        return $1.pure($Either("Left", "String and dictionary expected"));
+      };
     },
     op: (dictAnn) => (v) => {
       if (v.tag === "Cons") {
@@ -35418,26 +35947,38 @@
   });
   var dict_fromRecord = /* @__PURE__ */ $ForeignOp$p({
     arity: 1,
-    "op'": (dictGraph) => (v) => {
-      if (v._2.tag === "Cons") {
-        if (v._2._1.tag === "Record") {
-          if (v._2._2.tag === "Nil") {
-            return bind2(fresh3)((\u03B1$p) => bind2($$for2(v._2._1._2)((v1) => functorStateT2.map((v2) => $Tuple(v2, v1))(fresh3)))((xvs$p) => applicativeStateT2.pure($Tuple(
-              fold((z) => (v$1) => (v1) => dictGraph.union(v1._1)($Map(
+    "op'": (dictGraph) => {
+      const Monoid0 = dictGraph.Monoid0();
+      const monadGraphAccumT2 = monadGraphAccumT(Monoid0)(monadStateT3);
+      const bind2 = bindExceptT(monadGraphAccumT2).bind;
+      const $4 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT(monadGraphAccumT2));
+      const lift1 = monadTransExceptT.lift(monadGraphAccumT2);
+      const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt4).new;
+      const $7 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Record") {
+            if (v._2.tag === "Nil") {
+              return bind2($4((v$1) => (v1) => functorExceptT2.map((v2) => $Tuple(v2, v1))(lift1($$new($Map(
                 "Two",
                 Leaf2,
-                v._2._1._1,
+                v._1._1,
                 unit2,
                 Leaf2
-              ))(z))(dictGraph.union(\u03B1$p)($Map("Two", Leaf2, v._2._1._1, unit2, Leaf2))(v._1))(xvs$p),
-              $Val("Dictionary", \u03B1$p, xvs$p)
-            ))));
+              )))))(v._1._2))((xvs$p) => functorExceptT2.map((f) => f(xvs$p))(functorExceptT2.map(Dictionary3)(lift1($$new($Map(
+                "Two",
+                Leaf2,
+                v._1._1,
+                unit2,
+                Leaf2
+              ))))));
+            }
+            return $7.pure($Either("Left", "Record expected."));
           }
-          return lift($Either("Left", "Record expected."));
+          return $7.pure($Either("Left", "Record expected."));
         }
-        return lift($Either("Left", "Record expected."));
-      }
-      return lift($Either("Left", "Record expected."));
+        return $7.pure($Either("Left", "Record expected."));
+      };
     },
     op: (dictAnn) => (v) => {
       if (v.tag === "Cons") {
@@ -35551,36 +36092,36 @@
   });
   var dict_disjointUnion = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
-    "op'": (dictGraph) => (v) => {
-      if (v._2.tag === "Cons") {
-        if (v._2._1.tag === "Dictionary") {
-          if (v._2._2.tag === "Cons") {
-            if (v._2._2._1.tag === "Dictionary") {
-              if (v._2._2._2.tag === "Nil") {
-                return bind2(fresh3)((\u03B1$p) => applicativeStateT2.pure($Tuple(
-                  dictGraph.union(\u03B1$p)(insert2(ordVertex)(v._2._2._1._1)(unit2)($Map(
+    "op'": (dictGraph) => {
+      const Monoid0 = dictGraph.Monoid0();
+      const lift1 = monadTransExceptT.lift(monadGraphAccumT(Monoid0)(monadStateT3));
+      const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt4).new;
+      const $4 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Dictionary") {
+            if (v._2.tag === "Cons") {
+              if (v._2._1.tag === "Dictionary") {
+                if (v._2._2.tag === "Nil") {
+                  const $6 = unionWith2((v$1) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(v._1._2)(v._2._1._2);
+                  return functorExceptT2.map((f) => f($6))(functorExceptT2.map(Dictionary3)(lift1($$new(insert2(ordVertex)(v._2._1._1)(unit2)($Map(
                     "Two",
                     Leaf2,
-                    v._2._1._1,
+                    v._1._1,
                     unit2,
                     Leaf2
-                  )))(v._1),
-                  $Val(
-                    "Dictionary",
-                    \u03B1$p,
-                    unionWith2((v$1) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(v._2._1._2)(v._2._2._1._2)
-                  )
-                )));
+                  ))))));
+                }
+                return $4.pure($Either("Left", "Dictionaries expected"));
               }
-              return lift($Either("Left", "Dictionaries expected"));
+              return $4.pure($Either("Left", "Dictionaries expected"));
             }
-            return lift($Either("Left", "Dictionaries expected"));
+            return $4.pure($Either("Left", "Dictionaries expected"));
           }
-          return lift($Either("Left", "Dictionaries expected"));
+          return $4.pure($Either("Left", "Dictionaries expected"));
         }
-        return lift($Either("Left", "Dictionaries expected"));
-      }
-      return lift($Either("Left", "Dictionaries expected"));
+        return $4.pure($Either("Left", "Dictionaries expected"));
+      };
     },
     op: (dictAnn) => {
       const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
@@ -35626,32 +36167,36 @@
   });
   var dict_difference = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
-    "op'": (dictGraph) => (v) => {
-      if (v._2.tag === "Cons") {
-        if (v._2._1.tag === "Dictionary") {
-          if (v._2._2.tag === "Cons") {
-            if (v._2._2._1.tag === "Dictionary") {
-              if (v._2._2._2.tag === "Nil") {
-                return bind2(fresh3)((\u03B1$p) => applicativeStateT2.pure($Tuple(
-                  dictGraph.union(\u03B1$p)(insert2(ordVertex)(v._2._2._1._1)(unit2)($Map(
+    "op'": (dictGraph) => {
+      const Monoid0 = dictGraph.Monoid0();
+      const lift1 = monadTransExceptT.lift(monadGraphAccumT(Monoid0)(monadStateT3));
+      const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt4).new;
+      const $4 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Dictionary") {
+            if (v._2.tag === "Cons") {
+              if (v._2._1.tag === "Dictionary") {
+                if (v._2._2.tag === "Nil") {
+                  const $6 = difference2(v._1._2)(v._2._1._2);
+                  return functorExceptT2.map((f) => f($6))(functorExceptT2.map(Dictionary3)(lift1($$new(insert2(ordVertex)(v._2._1._1)(unit2)($Map(
                     "Two",
                     Leaf2,
-                    v._2._1._1,
+                    v._1._1,
                     unit2,
                     Leaf2
-                  )))(v._1),
-                  $Val("Dictionary", \u03B1$p, difference2(v._2._1._2)(v._2._2._1._2))
-                )));
+                  ))))));
+                }
+                return $4.pure($Either("Left", "Dictionaries expected."));
               }
-              return lift($Either("Left", "Dictionaries expected."));
+              return $4.pure($Either("Left", "Dictionaries expected."));
             }
-            return lift($Either("Left", "Dictionaries expected."));
+            return $4.pure($Either("Left", "Dictionaries expected."));
           }
-          return lift($Either("Left", "Dictionaries expected."));
+          return $4.pure($Either("Left", "Dictionaries expected."));
         }
-        return lift($Either("Left", "Dictionaries expected."));
-      }
-      return lift($Either("Left", "Dictionaries expected."));
+        return $4.pure($Either("Left", "Dictionaries expected."));
+      };
     },
     op: (dictAnn) => {
       const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
@@ -35687,14 +36232,19 @@
   });
   var debugLog = /* @__PURE__ */ $ForeignOp$p({
     arity: 1,
-    "op'": (dictGraph) => (v) => {
-      if (v._2.tag === "Cons") {
-        if (v._2._2.tag === "Nil") {
-          return applicativeStateT2.pure($Tuple(v._1, _trace(v._2._1, (v$1) => v._2._1)));
+    "op'": (dictGraph) => {
+      const Monoid0 = dictGraph.Monoid0();
+      const pure1 = applicativeExceptT(monadGraphAccumT(Monoid0)(monadStateT3)).pure;
+      const $3 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._2.tag === "Nil") {
+            return pure1(_trace(v._1, (v$1) => v._1));
+          }
+          return $3.pure($Either("Left", "Single value expected"));
         }
-        return lift($Either("Left", "Single value expected"));
-      }
-      return lift($Either("Left", "Single value expected"));
+        return $3.pure($Either("Left", "Single value expected"));
+      };
     },
     op: (dictAnn) => (v) => {
       if (v.tag === "Cons") {
@@ -35782,7 +36332,7 @@
   // output-es/Module/index.js
   var identity20 = (x2) => x2;
   var eval_module2 = /* @__PURE__ */ eval_module(annBoolean);
-  var $$eval2 = /* @__PURE__ */ $$eval(annBoolean);
+  var $$eval3 = /* @__PURE__ */ $$eval(annBoolean);
   var parse = (src) => {
     const $1 = runParserT1(src);
     return (x2) => bifunctorEither.bimap(showParseError.show)(identity20)($1(x2));
@@ -35839,7 +36389,7 @@
   var openDatasetAs = (file) => (x2) => _bind(parseProgram("fluid")(file))((s) => _bind(defaultImports)((\u03B3) => _pure($Tuple(
     \u03B3,
     runST(bind_(newImpl)(poke3(x2)(successful(bindEither.bind(exprFwd(joinSemilatticeBoolean)(s))((() => {
-      const $4 = $$eval2(\u03B3);
+      const $4 = $$eval3(\u03B3);
       return (a) => $4(a)(false);
     })()))._2)))
   ))));
@@ -35858,7 +36408,7 @@
   var matrixRep3 = /* @__PURE__ */ matrixRep(annBoolean);
   var sequence4 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity10))();
   var eval_module3 = /* @__PURE__ */ eval_module(annBoolean);
-  var $$eval3 = /* @__PURE__ */ $$eval(annBoolean);
+  var $$eval4 = /* @__PURE__ */ $$eval(annBoolean);
   var evalBwd2 = /* @__PURE__ */ evalBwd(annBoolean);
   var erase2 = /* @__PURE__ */ (() => functorVal.map((v) => unit2))();
   var joinSemilatticeVal2 = /* @__PURE__ */ joinSemilatticeVal(joinSemilatticeBoolean);
@@ -35942,7 +36492,7 @@
         return $Either("Right", Tuple($5._1));
       }
       fail();
-    })())(exprFwd(joinSemilatticeBoolean)(v3._2)))((v4) => bindEither.bind($$eval3(unionWith2((v$1) => identity15)(v2._1)(v2._2))(v4._1)(false))((v5) => bindEither.bind($$eval3(unionWith2((v$1) => identity15)(v2._1)(v2._2))(v4._2)(false))((v6) => bindEither.bind((() => {
+    })())(exprFwd(joinSemilatticeBoolean)(v3._2)))((v4) => bindEither.bind($$eval4(unionWith2((v$1) => identity15)(v2._1)(v2._2))(v4._1)(false))((v5) => bindEither.bind($$eval4(unionWith2((v$1) => identity15)(v2._1)(v2._2))(v4._2)(false))((v6) => bindEither.bind((() => {
       const $8 = _lookup(Nothing, Just, v.x, v2._2);
       if ($8.tag === "Nothing") {
         return $Either("Left", "absurd");
@@ -35953,7 +36503,7 @@
       fail();
     })())((v0) => $Either("Right", { spec: v, "\u03B30": v2._1, "\u03B3": v2._2, s1: v3._1, s2: v3._2, e1: v4._1, e2: v4._2, t1: v5._1, t2: v6._1, v1: v5._2, v2: v6._2, v0 })))))))));
   };
-  var loadFig = (v) => _bind(openDatasetAs("example/linking/renewables")("data"))((v1) => _map((s$p) => successful(bindEither.bind(splitDefs(unionWith2((v$1) => identity15)(v1._1)(v1._2))(s$p))((v2) => bindEither.bind(exprFwd(joinSemilatticeBoolean)(v2.s))((e) => bindEither.bind($$eval3(unionWith2((v$1) => identity15)(unionWith2((v$1) => identity15)(v1._1)(v1._2))(v2["\u03B3"]))(e)(false))((v3) => $Either("Right", { spec: v, "\u03B30": v1._1, "\u03B3": unionWith2((v$1) => identity15)(v1._2)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file)));
+  var loadFig = (v) => _bind(openDatasetAs("example/linking/renewables")("data"))((v1) => _map((s$p) => successful(bindEither.bind(splitDefs(unionWith2((v$1) => identity15)(v1._1)(v1._2))(s$p))((v2) => bindEither.bind(exprFwd(joinSemilatticeBoolean)(v2.s))((e) => bindEither.bind($$eval4(unionWith2((v$1) => identity15)(unionWith2((v$1) => identity15)(v1._1)(v1._2))(v2["\u03B3"]))(e)(false))((v3) => $Either("Right", { spec: v, "\u03B30": v1._1, "\u03B3": unionWith2((v$1) => identity15)(v1._2)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file)));
   var linkResult = (x2) => (\u03B30) => (\u03B3) => (e1) => (e22) => (t1) => (v) => (v1) => {
     const $8 = append_inv($Map("Two", Leaf2, x2, unit2, Leaf2))(evalBwd2(_fmapObject(
       unionWith2((v$1) => identity15)(\u03B30)(\u03B3),
@@ -35968,14 +36518,14 @@
         return $Either("Right", $9._1);
       }
       fail();
-    })())((v0$p) => bindEither.bind($$eval3(neg4(unionWith2((v$1) => identity15)(_fmapObject(\u03B30, botOf))($8)))(functorExpr.map((x$1) => true)(e22))(true))((v4) => $Either(
+    })())((v0$p) => bindEither.bind($$eval4(neg4(unionWith2((v$1) => identity15)(_fmapObject(\u03B30, botOf))($8)))(functorExpr.map((x$1) => true)(e22))(true))((v4) => $Either(
       "Right",
       { "v'": joinSemilatticeVal2.neg(v4._2), "v0'": v0$p }
     )));
   };
   var figViews = (v) => (\u03B4v) => {
     const v2 = evalBwd2(_fmapObject(unionWith2((v$1) => identity15)(v["\u03B30"])(v["\u03B3"]), erase2))(functorExpr.map((v$1) => unit2)(v.e))(\u03B4v(v.v))(v.t);
-    return bindEither.bind($$eval3(v2["\u03B3"])(v2.e)(v2["\u03B1"]))((v3) => bindEither.bind(sequence4(arrayMap((a) => varView(a)(v2["\u03B3"]))(v.spec.xs)))((views) => $Either(
+    return bindEither.bind($$eval4(v2["\u03B3"])(v2.e)(v2["\u03B1"]))((v3) => bindEither.bind(sequence4(arrayMap((a) => varView(a)(v2["\u03B3"]))(v.spec.xs)))((views) => $Either(
       "Right",
       $Tuple(view("output")(v3._2), views)
     )));
