@@ -58,6 +58,9 @@ instance Apply (GraphAccum g) where
 instance Bind (GraphAccum g) where
    bind (GraphAccum x g) f = let GraphAccum y g' = f x in GraphAccum y (g >>> g')
 
+instance Monoid g => Applicative (GraphAccum g) where
+  pure a = GraphAccum a mempty
+
 outE' :: forall g. Graph g => g -> Vertex -> List (Edge)
 outE' graph α = case outN graph α of
    Just set -> L.fromFoldable $ S.map (\node -> α × node) set
