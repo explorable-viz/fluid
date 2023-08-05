@@ -19,7 +19,7 @@ import Util (Endo, (×), type (×))
 type SMap = SM.Object
 type Edge = Vertex × Vertex
 
-class Graph g where
+class Monoid g <= Graph g where
    extend :: Vertex -> Set Vertex -> Endo g
    outN :: g -> Vertex -> Maybe (Set Vertex)
    inN :: g -> Vertex -> Maybe (Set Vertex)
@@ -27,7 +27,6 @@ class Graph g where
    remove :: Vertex -> Endo g
    opp :: Endo g
    allocate :: g -> Vertex
-   emptyG :: g
    discreteG :: Set Vertex -> g
 
 newtype Vertex = Vertex String
@@ -128,7 +127,7 @@ bwdSlice' parent g ((s × t) : es) =
 bwdSlice' _ g Nil = g
 
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-fwdSlice αs parent = fst $ fwdEdges parent startG emptyG edges
+fwdSlice αs parent = fst $ fwdEdges parent startG mempty edges
    where
    startG = discreteG αs
    edges = inE αs parent
@@ -162,6 +161,13 @@ instance Show Vertex where
 -- GraphImpl Specifics
 newtype GraphImpl = GraphImpl ((SMap (Set Vertex)) × (SMap (Set Vertex)))
 
+instance Semigroup GraphImpl where
+   append (GraphImpl (out1 × in1)) (GraphImpl (out2 × in2)) =
+      GraphImpl (SM.unionWith S.union out1 out2 × (SM.unionWith S.union in1 in2))
+
+instance Monoid GraphImpl where
+   mempty = GraphImpl (SM.empty × SM.empty)
+
 instance Graph GraphImpl where
    allocate (GraphImpl (out × _)) = Vertex α
       where
@@ -182,7 +188,6 @@ instance Graph GraphImpl where
 
    singleton α αs = GraphImpl (starInOut α αs × starInIn α αs)
    opp (GraphImpl (out × in_)) = GraphImpl (in_ × out)
-   emptyG = GraphImpl (SM.empty × SM.empty)
    discreteG αs =
       let
          pairs = S.map (\(Vertex α) -> α × S.empty) αs
