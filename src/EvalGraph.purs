@@ -8,16 +8,16 @@ module EvalGraph
    ) where
 
 import Bindings (varAnon)
-import Control.Monad.Except.Trans (ExceptT, except)
-import Control.Monad.State.Trans (StateT)
+import Control.Monad.Except (except)
+import Control.Monad.State (State)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (fromFoldable, foldM, range, snoc) as A
 import Data.Either (note)
 import Data.Exists (runExists)
-import Data.Identity (Identity)
 import Data.List (List(..), (:), length, foldM, snoc)
 import Data.Set (Set)
 import Data.Set as S
+import Data.Traversable (traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, insert, singleton) as D
@@ -28,7 +28,7 @@ import Graph (extend) as G
 import Prelude hiding (apply)
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Util (type (+), type (×), MayFail, check, error, report, successful, unimplemented, with, (×))
+import Util (type (+), type (×), MayFail, MayFailT, check, error, report, successful, unimplemented, with, (×))
 import Util.Pair (Pair(..))
 import Val (Val(..), Fun(..)) as V
 import Val (Val, Env, lookup', for, restrict, (<+>), ForeignOp'(..))
@@ -103,29 +103,18 @@ apply g (V.Fun (V.Foreign φ vs) × v) = do
    runExists apply' φ
 apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> ExceptT String (GraphAccumT g (StateT Int Identity)) (Val Vertex)
+eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> MayFailT (GraphAccumT g (State Int)) (Val Vertex)
 eval' γ (Var x) _ = except $ lookup' x γ
 eval' γ (Op op) _ = except $ lookup' op γ
-eval' _ (Int α n) αs = V.Int <$> (lift $ extendG (S.insert α αs)) <@> n
+eval' _ (Int α n) αs = V.Int <$> lift (extendG (S.insert α αs)) <@> n
+eval' _ (Float α n) αs = V.Float <$> lift (extendG (S.insert α αs)) <@> n
+eval' _ (Str α s) αs = V.Str <$> lift (extendG (S.insert α αs)) <@> s
+eval' γ (Record α xes) αs = do
+   xvs <- traverse (flip (eval' γ) αs) xes
+   V.Record <$> lift (extendG (S.insert α αs)) <@> xvs
 eval' _ _ _ = error unimplemented
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
-eval g _ (Float α n) αs = do
-   α' <- fresh
-   pure $ (G.extend α' (S.insert α αs) g) × (V.Float α' n)
-eval g _ (Str α str) αs = do
-   α' <- fresh
-   pure $ (G.extend α' (S.insert α αs) g) × (V.Str α' str)
-eval g γ (Record α xes) αs = do
-   α' <- fresh
-   g' × xvs <- D.foldM
-      ( \(g_prev × xvs) x e -> do
-           (g_next × val_i) <- eval g_prev γ e αs
-           pure $ g_next × D.insert x val_i xvs
-      )
-      (g × D.empty)
-      xes
-   pure $ (G.extend α' (S.insert α αs) g') × V.Record α' xvs
 eval g γ (Dictionary α ees) αs = do
    α' <- fresh
    g' × xvs <- foldM
