@@ -91,24 +91,24 @@ instance (Graph g, MonadState Int m) => MonadGraphAccum g (GraphAccumT g m) wher
       let α = Vertex (show n)
       GraphAccumT $ pure $ α × extend α αs
 
-outE' :: forall g. Graph g => g -> Vertex -> List (Edge)
+outE' :: forall g. Graph g => g -> Vertex -> List Edge
 outE' graph α = case outN graph α of
    Just set -> L.fromFoldable $ S.map (\node -> α × node) set
    Nothing -> Nil
 
-outE :: forall g. Graph g => Set Vertex -> g -> List (Edge)
+outE :: forall g. Graph g => Set Vertex -> g -> List Edge
 outE αs g =
    let
       allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
    in
       L.filter (\(e1 × e2) -> (L.elem e1 αs || L.elem e2 αs)) allOut
 
-inE' :: forall g. Graph g => g -> Vertex -> List (Edge)
+inE' :: forall g. Graph g => g -> Vertex -> List Edge
 inE' graph α = case inN graph α of
    Just set -> L.fromFoldable $ S.map (\node -> node × α) set
    Nothing -> Nil
 
-inE :: forall g. Graph g => Set Vertex -> g -> List (Edge)
+inE :: forall g. Graph g => Set Vertex -> g -> List Edge
 inE αs g =
    let
       allIn = L.concat (map (\α -> inE' g α) (L.fromFoldable αs))
@@ -127,7 +127,7 @@ bwdSlice αs parent = bwdSlice' parent startG edges
    startG = discreteG αs
    edges = outE αs parent
 
-bwdSlice' :: forall g. Graph g => g -> g -> List (Edge) -> g
+bwdSlice' :: forall g. Graph g => g -> g -> List Edge -> g
 bwdSlice' parent g ((s × t) : es) =
    if elem g t then
       let
@@ -153,7 +153,7 @@ fwdSlice αs parent = fst $ fwdEdges parent startG mempty edges
    startG = discreteG αs
    edges = inE αs parent
 
-fwdEdges :: forall g. Graph g => g -> g -> g -> List (Edge) -> g × g
+fwdEdges :: forall g. Graph g => g -> g -> g -> List Edge -> g × g
 fwdEdges parent currSlice pending ((s × t) : es) =
    let
       (g' × h') = fwdVertex parent currSlice (extend s (S.singleton t) pending) s

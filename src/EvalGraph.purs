@@ -1,6 +1,5 @@
 module EvalGraph
    ( apply
-   , apply2
    , eval
    , match
    , matchMany
@@ -21,11 +20,11 @@ import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
-import Graph (Vertex, WithGraph, class Graph, HeapT, extendG)
+import Graph (Vertex, WithGraph, class Graph, extendG)
 import Prelude hiding (apply)
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Util (type (+), type (×), MayFail, check, error, report, successful, unimplemented, with, (×))
+import Util (type (×), MayFail, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Val(..), Fun(..)) as V
 import Val (Val, Env, lookup', for, restrict, (<+>), ForeignOp'(..))
@@ -73,15 +72,12 @@ closeDefs γ ρ αs =
          V.Fun <$> (V.Closure <$> lift (extendG αs) <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
-apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> HeapT ((+) String) (g × Val Vertex)
-apply = error unimplemented
-
-apply2 :: forall g. Graph g => Val Vertex -> Val Vertex -> WithGraph g (Val Vertex)
-apply2 (V.Fun (V.Closure α γ1 ρ σ)) v = do
+apply :: forall g. Graph g => Val Vertex -> Val Vertex -> WithGraph g (Val Vertex)
+apply (V.Fun (V.Closure α γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (S.singleton α)
    γ3 × κ × αs <- except $ match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (S.insert α αs)
-apply2 (V.Fun (V.PartialConstr α c vs)) v = do
+apply (V.Fun (V.PartialConstr α c vs)) v = do
    let n = successful (arity c)
    except $ check (length vs < n) ("Too many arguments to " <> showCtr c)
    let
@@ -89,7 +85,7 @@ apply2 (V.Fun (V.PartialConstr α c vs)) v = do
          if length vs < n - 1 then V.Fun $ V.PartialConstr α c (snoc vs v)
          else V.Constr α c (snoc vs v)
    pure v'
-apply2 (V.Fun (V.Foreign φ vs)) v = do
+apply (V.Fun (V.Foreign φ vs)) v = do
    let vs' = snoc vs v
    let
       apply' :: forall t. ForeignOp' t -> WithGraph g (Val Vertex)
@@ -97,7 +93,7 @@ apply2 (V.Fun (V.Foreign φ vs)) v = do
          if φ'.arity > length vs' then pure $ V.Fun (V.Foreign φ vs')
          else φ'.op' vs'
    runExists apply' φ
-apply2 _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
+apply _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
 eval :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> WithGraph g (Val Vertex)
 eval γ (Var x) _ = except $ lookup' x γ
@@ -141,7 +137,7 @@ eval γ (Project e x) αs = do
 eval γ (App e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs
-   apply2 v v'
+   apply v v'
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
    γ' × _ × _ <- except $ match v σ -- terminal meta-type of eliminator is meta-unit
