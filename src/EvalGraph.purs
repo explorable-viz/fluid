@@ -1,6 +1,5 @@
 module EvalGraph
    ( apply
-   , closeDefs
    , eval
    , eval'
    , match
@@ -21,11 +20,9 @@ import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
-import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, insert, singleton) as D
+import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
-import Foreign.Object (foldM) as D
-import Graph (Vertex, WithGraph, class Graph, GraphAccumT, HeapT, extendG, fresh)
-import Graph (extend) as G
+import Graph (Vertex, WithGraph, class Graph, GraphAccumT, HeapT, extendG)
 import Prelude hiding (apply)
 import Pretty (prettyP)
 import Primitive (string, intPair)
@@ -68,20 +65,11 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall g. Graph g => g -> Env Vertex -> RecDefs Vertex -> Set Vertex -> HeapT ((+) String) (g × Env Vertex)
-closeDefs g0 γ0 ρ0 αs =
-   D.foldM
-      ( \(g × γ) x_i σ_i -> do
-           α_i <- fresh
-           let ρ_i = ρ0 `for` σ_i
-           let v_i = V.Fun $ V.Closure α_i (γ0 `restrict` (fv ρ_i `S.union` fv σ_i)) ρ_i σ_i
-           pure $ (G.extend α_i αs g) × (D.insert x_i v_i γ)
-      )
-      (g0 × D.empty)
-      ρ0
-
-closeDefs' :: forall g. Graph g => Env Vertex -> RecDefs Vertex -> Set Vertex -> MayFailT (GraphAccumT g (State Int)) (Env Vertex)
-closeDefs' = error unimplemented
+closeDefs :: forall g. Graph g => Env Vertex -> RecDefs Vertex -> Set Vertex -> WithGraph g (Env Vertex)
+closeDefs γ ρ αs =
+   flip traverse ρ \σ ->
+      let ρ' = ρ `for` σ in
+      V.Fun <$> (V.Closure <$> lift (extendG αs) <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
 apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> HeapT ((+) String) (g × Val Vertex)
@@ -89,7 +77,7 @@ apply = error unimplemented
 
 apply2 :: forall g. Graph g => Val Vertex -> Val Vertex -> WithGraph g (Val Vertex)
 apply2 (V.Fun (V.Closure α γ1 ρ σ)) v = do
-   γ2 <- closeDefs' γ1 ρ (S.singleton α)
+   γ2 <- closeDefs γ1 ρ (S.singleton α)
    γ3 × κ × αs <- except $ match v σ
    eval' (γ1 <+> γ2 <+> γ3) (asExpr κ) (S.insert α αs)
 apply2 (V.Fun (V.PartialConstr α c vs)) v = do
@@ -158,7 +146,7 @@ eval' γ (Let (VarDef σ e) e') αs = do
    γ' × _ × _ <- except $ match v σ -- terminal meta-type of eliminator is meta-unit
    eval' (γ <+> γ') e' αs
 eval' γ (LetRec ρ e) αs = do
-   γ' <- closeDefs' γ ρ αs
+   γ' <- closeDefs γ ρ αs
    eval' (γ <+> γ') e αs
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
