@@ -29,7 +29,6 @@ import Prelude hiding (apply)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (+), type (×), MayFail, MayFailT, check, error, report, successful, unimplemented, with, (×))
-import Util.Pair (Pair(..))
 import Util.Pair (unzip) as P
 import Val (Val(..), Fun(..)) as V
 import Val (Val, Env, lookup', for, restrict, (<+>), ForeignOp'(..))
@@ -119,32 +118,13 @@ eval' γ (Dictionary α ees) αs = do
       ss × βs = (vs <#> string.match) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
    V.Dictionary <$> lift (extendG (S.insert α αs)) <@> d
+eval' γ (Constr α c es) αs = do
+   except $ checkArity c (length es)
+   vs <- traverse (flip (eval' γ) αs) es
+   V.Constr <$> lift (extendG (S.insert α αs)) <@> c <@> vs
 eval' _ _ _ = error unimplemented
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
-eval g γ (Dictionary α ees) αs = do
-   α' <- fresh
-   g' × xvs <- foldM
-      ( \(g_prev × xvs) (Pair e1 e2) -> do
-           (g1 × v1) <- eval g_prev γ e1 αs
-           let s × β = string.match v1
-           (g2 × v2) <- eval g1 γ e2 αs
-           pure $ g2 × D.insert s (β × v2) xvs
-      )
-      (g × D.empty)
-      ees
-   pure $ (G.extend α' (S.insert α αs) g') × V.Dictionary α' xvs
-eval g γ (Constr α c es) αs = do
-   α' <- fresh
-   lift $ checkArity c (length es)
-   g_n × vs <- foldM
-      ( \(g_prev × vs) e -> do
-           (g_next × v) <- eval g_prev γ e αs
-           pure $ g_next × (snoc vs v)
-      )
-      (g × Nil)
-      es
-   pure $ (G.extend α' (S.insert α αs) g_n) × (V.Constr α' c vs)
 eval g γ (Matrix α e (x × y) e') αs = do
    α' <- fresh
    g' × v <- eval g γ e' αs
