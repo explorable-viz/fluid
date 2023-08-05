@@ -14,13 +14,13 @@ import Control.Monad.Trans.Class (lift)
 import Data.Array (fromFoldable, foldM, range, snoc) as A
 import Data.Either (note)
 import Data.Exists (runExists)
-import Data.List (List(..), (:), length, foldM, snoc)
+import Data.List (List(..), (:), length, foldM, snoc, unzip, zip)
 import Data.Set (Set)
 import Data.Set as S
 import Data.Traversable (traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
-import Dict (disjointUnion, empty, get, keys, lookup, insert, singleton) as D
+import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, insert, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Foreign.Object (foldM) as D
 import Graph (Vertex, class Graph, GraphAccumT, HeapT, extendG, fresh)
@@ -30,6 +30,7 @@ import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (+), type (×), MayFail, MayFailT, check, error, report, successful, unimplemented, with, (×))
 import Util.Pair (Pair(..))
+import Util.Pair (unzip) as P
 import Val (Val(..), Fun(..)) as V
 import Val (Val, Env, lookup', for, restrict, (<+>), ForeignOp'(..))
 
@@ -112,6 +113,12 @@ eval' _ (Str α s) αs = V.Str <$> lift (extendG (S.insert α αs)) <@> s
 eval' γ (Record α xes) αs = do
    xvs <- traverse (flip (eval' γ) αs) xes
    V.Record <$> lift (extendG (S.insert α αs)) <@> xvs
+eval' γ (Dictionary α ees) αs = do
+   vs × us <- traverse (traverse (flip (eval' γ) αs)) ees <#> P.unzip
+   let
+      ss × βs = (vs <#> string.match) # unzip
+      d = D.fromFoldable $ zip ss (zip βs us)
+   V.Dictionary <$> lift (extendG (S.insert α αs)) <@> d
 eval' _ _ _ = error unimplemented
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
