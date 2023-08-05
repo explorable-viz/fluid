@@ -2,13 +2,14 @@ module Graph where
 
 import Prelude
 
-import Control.Monad.State (State, StateT, get, put)
+import Control.Monad.State (State, StateT, get, put, runState)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
+import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
 import Foreign.Object (Object, delete, empty, fromFoldable, lookup, singleton, size, unionWith) as SM
 import Util (Endo, (×), type (×))
@@ -37,6 +38,13 @@ fresh = do
    s <- get
    put (s + 1)
    pure (Vertex (show s))
+
+{-# Allocating addresses #-}
+runAlloc :: forall t a. Traversable t => t a -> (t Vertex) × Int
+runAlloc e = runState (alloc e) 0
+
+alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
+alloc = traverse (const fresh)
 
 outE' :: forall g. Graph g => g -> Vertex -> List (Edge)
 outE' graph α = case outN graph α of

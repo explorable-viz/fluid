@@ -281,8 +281,12 @@ dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePar
    op :: OpGraph
    op (g × v : Dictionary α d : Nil) = do
       g' × d' <-
-         foldWithIndexM (\k (g' × ss) (β × u) ->
-            G.apply g' (v × u) <#> second (\s -> D.insert k (β × s) ss)) (g × D.empty) d
+         foldWithIndexM
+            ( \k (g' × ss) (β × u) ->
+                 G.apply g' (v × u) <#> second (\s -> D.insert k (β × s) ss)
+            )
+            (g × D.empty)
+            d
       α' <- fresh
       pure $ G.union α' (singleton α) g' × Dictionary α' d'
    op _ = lift $ report "Function and dictionary expected"

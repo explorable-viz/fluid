@@ -1,15 +1,12 @@
 module EvalGraph
-   ( alloc
-   , apply
+   ( apply
    , eval
    , match
    , matchMany
    , patternMismatch
-   , runAlloc
    ) where
 
 import Bindings (varAnon)
-import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (fromFoldable, foldM, range, snoc) as A
 import Data.Either (note)
@@ -18,27 +15,19 @@ import Data.List (List(..), (:), length, foldM, snoc)
 import Data.Set (Set)
 import Data.Set as S
 import Data.Tuple (fst)
-import Data.Traversable (class Traversable, traverse)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, insert, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Foreign.Object (foldM) as D
-import Graph (Vertex, class Graph, Heap, HeapT, fresh)
+import Graph (Vertex, class Graph, HeapT, fresh)
 import Graph (union) as G
-import Prelude (bind, const, discard, flip, otherwise, pure, show, (#), ($), (>), (+), (-), (<), (<$>), (<>), (==), (>=))
+import Prelude (bind, discard, flip, otherwise, pure, show, (#), ($), (>), (+), (-), (<), (<$>), (<>), (==), (>=))
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (+), type (×), MayFail, check, error, report, successful, with, (×))
 import Util.Pair (Pair(..))
 import Val (Val(..), Fun(..)) as V
 import Val (Val, Env, lookup', for, restrict, (<+>), ForeignOp'(..))
-
-{-# Allocating addresses #-}
-runAlloc :: forall t a. Traversable t => t a -> (t Vertex) × Int
-runAlloc e = runState (alloc e) 0
-
-alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
-alloc = traverse (const fresh)
 
 {-# Matching #-}
 patternMismatch :: String -> String -> String
