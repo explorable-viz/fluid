@@ -19,6 +19,7 @@ import Util (Endo, (×), type (×))
 type SMap = SM.Object
 type Edge = Vertex × Vertex
 
+-- Graphs form a semigroup but we don't actually rely on that (for efficiency).
 class Monoid g <= Graph g where
    extend :: Vertex -> Set Vertex -> Endo g
    outN :: g -> Vertex -> Maybe (Set Vertex)
