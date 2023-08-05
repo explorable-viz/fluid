@@ -135,12 +135,11 @@ eval' γ (Matrix α e (x × y) e') αs = do
          let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
          A.singleton (eval' (γ <+> γ') e αs)
    V.Matrix <$> lift (extendG (S.insert α αs)) <@> (vss × (i' × β) × (j' × β'))
+eval' γ (Lambda σ) αs =
+   V.Fun <$> (V.Closure <$> lift (extendG αs) <@> γ `restrict` fv σ <@> D.empty <@> σ)
 eval' _ _ _ = error unimplemented
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
-eval g γ (Lambda σ) αs = do
-   α' <- fresh
-   pure $ (G.extend α' αs g) × V.Fun (V.Closure α' (γ `restrict` fv σ) D.empty σ)
 eval g γ (Project e x) αs = do
    g' × v <- eval g γ e αs
    lift $ case v of
