@@ -49,6 +49,9 @@ alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
 
 -- Difference graphs
+class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
+  extendG :: Vertex -> Set Vertex -> m Unit
+
 data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
 
 instance Functor m => Functor (GraphAccumT g m) where
@@ -71,6 +74,9 @@ instance (Monoid g, Applicative m) => Applicative (GraphAccumT g m) where
    pure a = GraphAccumT $ pure $ a × mempty
 
 instance (Monoid g, Monad m) => Monad (GraphAccumT g m)
+
+instance (Graph g, Monad m) => MonadGraphAccum g (GraphAccumT g m) where
+   extendG α αs = GraphAccumT $ pure $ unit × \g -> extend α αs g
 
 outE' :: forall g. Graph g => g -> Vertex -> List (Edge)
 outE' graph α = case outN graph α of
