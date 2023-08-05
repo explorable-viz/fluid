@@ -8,7 +8,7 @@ import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
-import Data.Profunctor.Strong (first)
+import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
@@ -68,6 +68,12 @@ instance Apply m => Apply (GraphAccumT g m) where
 
 instance Bind (GraphAccum g) where
    bind (GraphAccum x g) f = let GraphAccum y g' = f x in GraphAccum y (g >>> g')
+
+instance Bind m => Bind (GraphAccumT g m) where
+   bind (GraphAccumT m) f = GraphAccumT $ do
+      x × g <- m
+      let GraphAccumT m' = f x
+      m' <#> second ((>>>) g)
 
 instance Monoid g => Applicative (GraphAccum g) where
   pure a = GraphAccum a mempty
