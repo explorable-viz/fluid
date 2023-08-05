@@ -2,11 +2,13 @@ module Graph where
 
 import Prelude
 
-import Control.Monad.State (State, StateT, get, put, runState)
+import Control.Monad.State (StateT, get, put, runState)
+import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype)
+import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
@@ -18,7 +20,7 @@ type SMap = SM.Object
 type Edge = Vertex × Vertex
 
 class Graph g where
-   union :: Vertex -> Set Vertex -> Endo g
+   extend :: Vertex -> Set Vertex -> Endo g
    outN :: g -> Vertex -> Maybe (Set Vertex)
    inN :: g -> Vertex -> Maybe (Set Vertex)
    singleton :: Vertex -> Set Vertex -> g
@@ -31,7 +33,30 @@ class Graph g where
 newtype Vertex = Vertex String
 
 type HeapT m a = StateT Int m a
-type Heap a = State Int a
+type Heap a = HeapT Identity a
+
+newtype GraphAccum g a = GraphAccum (a × g)
+
+mapGraphAccum :: forall g g' a b. (a × g -> b × g') -> GraphAccum g a -> GraphAccum g' b
+mapGraphAccum f (GraphAccum x) = GraphAccum (f x)
+
+instance Functor (GraphAccum g) where
+   map f (GraphAccum x) = GraphAccum (first f x)
+
+instance (Semigroup g, Apply m) => Apply (GraphAccum g) where
+   apply (GraphAccum (f × g)) (GraphAccum (v × g')) =
+      GraphAccum (f v × (g <> g'))
+
+{-
+-- In Writer g would be a semigroup. But here associativity doesn't quite make
+-- sense because g <| (α, αs) <| (β, βs) always brackets to the left.
+instance (Semigroup w, Bind m) => Bind (GraphAccumT w m) where
+  bind (GraphAccumT m) k = GraphAccumT $
+    m >>= \(a × g) ->
+      case k a of
+        GraphAccumT m' ->
+          map (\(b × g') -> b × (g <> g')) m'
+-}
 
 fresh :: forall m. Monad m => HeapT m Vertex
 fresh = do
@@ -86,12 +111,12 @@ bwdSlice' :: forall g. Graph g => g -> g -> List (Edge) -> g
 bwdSlice' parent g ((s × t) : es) =
    if elem g t then
       let
-         newG = union s (S.singleton t) g
+         newG = extend s (S.singleton t) g
       in
          bwdSlice' parent newG es
    else
       let
-         newG = union s (S.singleton t) g
+         newG = extend s (S.singleton t) g
          newEs = append es (L.fromFoldable (outE' parent t))
       in
          bwdSlice' parent newG newEs
@@ -111,7 +136,7 @@ fwdSlice αs parent = fst $ fwdEdges parent startG emptyG edges
 fwdEdges :: forall g. Graph g => g -> g -> g -> List (Edge) -> g × g
 fwdEdges parent currSlice pending ((s × t) : es) =
    let
-      (g' × h') = fwdVertex parent currSlice (union s (S.singleton t) pending) s
+      (g' × h') = fwdVertex parent currSlice (extend s (S.singleton t) pending) s
    in
       fwdEdges parent g' h' es
 fwdEdges _ currSlice pending Nil = currSlice × pending
@@ -123,8 +148,8 @@ fwdVertex parent currSlice pending α =
    in
       if currNeighbors == (outN parent α) then
          case currNeighbors of
-            Just αs -> fwdEdges parent (union α αs currSlice) (remove α pending) (inE' parent α)
-            Nothing -> fwdEdges parent (union α S.empty currSlice) pending (inE' parent α)
+            Just αs -> fwdEdges parent (extend α αs currSlice) (remove α pending) (inE' parent α)
+            Nothing -> fwdEdges parent (extend α S.empty currSlice) pending (inE' parent α)
       else currSlice × pending
 
 derive instance Eq Vertex
@@ -147,7 +172,7 @@ instance Graph GraphImpl where
          newInN = map (S.delete (Vertex α)) (SM.delete α in_)
       in
          GraphImpl (newOutN × newInN)
-   union α αs (GraphImpl (out × in_)) = (GraphImpl (newOut × newIn))
+   extend α αs (GraphImpl (out × in_)) = (GraphImpl (newOut × newIn))
       where
       newOut = SM.unionWith S.union out (starInOut α αs)
       newIn = SM.unionWith S.union in_ (starInIn α αs)

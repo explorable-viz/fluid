@@ -11,7 +11,7 @@ import Data.Set (insert, singleton)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
 import Graph (fresh)
-import Graph (union) as G
+import Graph (extend) as G
 import Lattice (Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
@@ -179,7 +179,7 @@ unary op =
    op' :: Partial => OpGraph
    op' (g × v : Nil) = do
       α' <- fresh
-      pure $ G.union α' (singleton α) g × op.o.constr (op.fwd x × α')
+      pure $ G.extend α' (singleton α) g × op.o.constr (op.fwd x × α')
       where
       x × α = op.i.match v
 
@@ -203,7 +203,7 @@ binary op =
    op' :: Partial => OpGraph
    op' (g × v1 : v2 : Nil) = do
       α' <- fresh
-      pure $ G.union α' (singleton α # insert β) g × op.o.constr (op.fwd x y × α')
+      pure $ G.extend α' (singleton α # insert β) g × op.o.constr (op.fwd x y × α')
       where
       (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
 
@@ -233,7 +233,7 @@ binaryZero op =
             if isZero x then singleton α
             else if isZero y then singleton β
             else singleton α # insert β
-      pure $ G.union α' αs g × op.o.constr (op.fwd x y × α')
+      pure $ G.extend α' αs g × op.o.constr (op.fwd x y × α')
       where
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 

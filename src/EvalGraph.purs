@@ -20,7 +20,7 @@ import Dict (disjointUnion, empty, get, keys, lookup, insert, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Foreign.Object (foldM) as D
 import Graph (Vertex, class Graph, HeapT, fresh)
-import Graph (union) as G
+import Graph (extend) as G
 import Prelude (bind, discard, flip, otherwise, pure, show, (#), ($), (>), (+), (-), (<), (<$>), (<>), (==), (>=))
 import Pretty (prettyP)
 import Primitive (string, intPair)
@@ -70,7 +70,7 @@ closeDefs g0 γ0 ρ0 αs =
            α_i <- fresh
            let ρ_i = ρ0 `for` σ_i
            let v_i = V.Fun $ V.Closure α_i (γ0 `restrict` (fv ρ_i `S.union` fv σ_i)) ρ_i σ_i
-           pure $ (G.union α_i αs g) × (D.insert x_i v_i γ)
+           pure $ (G.extend α_i αs g) × (D.insert x_i v_i γ)
       )
       (g0 × D.empty)
       ρ0
@@ -104,13 +104,13 @@ eval g γ (Var x) _ = ((×) g) <$> lift (lookup' x γ)
 eval g γ (Op op) _ = ((×) g) <$> lift (lookup' op γ)
 eval g _ (Int α n) αs = do
    α' <- fresh
-   pure $ (G.union α' (S.insert α αs) g) × (V.Int α' n)
+   pure $ (G.extend α' (S.insert α αs) g) × (V.Int α' n)
 eval g _ (Float α n) αs = do
    α' <- fresh
-   pure $ (G.union α' (S.insert α αs) g) × (V.Float α' n)
+   pure $ (G.extend α' (S.insert α αs) g) × (V.Float α' n)
 eval g _ (Str α str) αs = do
    α' <- fresh
-   pure $ (G.union α' (S.insert α αs) g) × (V.Str α' str)
+   pure $ (G.extend α' (S.insert α αs) g) × (V.Str α' str)
 eval g γ (Record α xes) αs = do
    α' <- fresh
    g' × xvs <- D.foldM
@@ -120,7 +120,7 @@ eval g γ (Record α xes) αs = do
       )
       (g × D.empty)
       xes
-   pure $ (G.union α' (S.insert α αs) g') × V.Record α' xvs
+   pure $ (G.extend α' (S.insert α αs) g') × V.Record α' xvs
 eval g γ (Dictionary α ees) αs = do
    α' <- fresh
    g' × xvs <- foldM
@@ -132,7 +132,7 @@ eval g γ (Dictionary α ees) αs = do
       )
       (g × D.empty)
       ees
-   pure $ (G.union α' (S.insert α αs) g') × V.Dictionary α' xvs
+   pure $ (G.extend α' (S.insert α αs) g') × V.Dictionary α' xvs
 eval g γ (Constr α c es) αs = do
    α' <- fresh
    lift $ checkArity c (length es)
@@ -143,7 +143,7 @@ eval g γ (Constr α c es) αs = do
       )
       (g × Nil)
       es
-   pure $ (G.union α' (S.insert α αs) g_n) × (V.Constr α' c vs)
+   pure $ (G.extend α' (S.insert α αs) g_n) × (V.Constr α' c vs)
 eval g γ (Matrix α e (x × y) e') αs = do
    α' <- fresh
    g' × v <- eval g γ e' αs
@@ -166,10 +166,10 @@ eval g γ (Matrix α e (x × y) e') αs = do
          )
          (g' × A.fromFoldable [])
          (A.range 1 m)
-   pure $ (G.union α' (S.insert α αs) g_mn) × V.Matrix α' (vss × (m × β) × (n × β'))
+   pure $ (G.extend α' (S.insert α αs) g_mn) × V.Matrix α' (vss × (m × β) × (n × β'))
 eval g γ (Lambda σ) αs = do
    α' <- fresh
-   pure $ (G.union α' αs g) × V.Fun (V.Closure α' (γ `restrict` fv σ) D.empty σ)
+   pure $ (G.extend α' αs g) × V.Fun (V.Closure α' (γ `restrict` fv σ) D.empty σ)
 eval g γ (Project e x) αs = do
    g' × v <- eval g γ e αs
    lift $ case v of

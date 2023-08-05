@@ -23,7 +23,7 @@ import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
 import Graph (fresh)
-import Graph (union) as G
+import Graph (extend) as G
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
@@ -109,7 +109,7 @@ dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial
       α' <- fresh
       β1' <- fresh
       β2' <- fresh
-      let g' = g # G.union α' (singleton α) # G.union β1' (singleton β1) # G.union β2' (singleton β2)
+      let g' = g # G.extend α' (singleton α) # G.extend β1' (singleton β1) # G.extend β2' (singleton β2)
       pure $ g' × Constr α cPair (Int β1 i : Int β2 j : Nil)
    op _ = lift $ report "Matrix expected"
 
@@ -155,7 +155,7 @@ dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: un
    op :: OpGraph
    op (g × Dictionary α d : Dictionary β d' : Nil) = do
       α' <- fresh
-      pure $ G.union α' (singleton α # insert β) g × Dictionary α' (d \\ d')
+      pure $ G.extend α' (singleton α # insert β) g × Dictionary α' (d \\ d')
    op _ = lift $ report "Dictionaries expected."
 
    fwd :: OpFwd Unit
@@ -174,7 +174,7 @@ dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: un
    op (g × Record α xvs : Nil) = do
       α' <- fresh
       xvs' <- for xvs (\v -> fresh <#> (_ × v))
-      let g' = foldl (\h (β × _) -> G.union β (singleton α) h) (G.union α' (singleton α) g) xvs'
+      let g' = foldl (\h (β × _) -> G.extend β (singleton α) h) (G.extend α' (singleton α) g) xvs'
       pure $ g' × Dictionary α' xvs'
    op _ = lift $ report "Record expected."
 
@@ -192,7 +192,7 @@ dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd:
    op :: OpGraph
    op (g × Dictionary α d : Dictionary β d' : Nil) = do
       α' <- fresh
-      pure $ G.union α' (singleton α # insert β) g × Dictionary α' (D.disjointUnion d d')
+      pure $ G.extend α' (singleton α # insert β) g × Dictionary α' (D.disjointUnion d d')
    op _ = lift $ report "Dictionaries expected"
 
    fwd :: OpFwd (Dict Unit × Dict Unit)
@@ -288,7 +288,7 @@ dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePar
             (g × D.empty)
             d
       α' <- fresh
-      pure $ G.union α' (singleton α) g' × Dictionary α' d'
+      pure $ G.extend α' (singleton α) g' × Dictionary α' d'
    op _ = lift $ report "Function and dictionary expected"
 
    fwd :: OpFwd (Raw Val × Dict AppTrace)
