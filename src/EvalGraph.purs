@@ -1,6 +1,5 @@
 module EvalGraph
    ( apply
-   , eval
    , eval'
    , match
    , matchMany
@@ -147,6 +146,3 @@ eval' γ (Let (VarDef σ e) e') αs = do
 eval' γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval' (γ <+> γ') e αs
-
-eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
-eval _ = error unimplemented
