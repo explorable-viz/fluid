@@ -111,6 +111,14 @@ apply2 (V.Fun (V.Closure α γ1 ρ σ)) v = do
    γ2 <- closeDefs' γ1 ρ (S.singleton α)
    γ3 × κ × αs <- except $ match v σ
    eval' (γ1 <+> γ2 <+> γ3) (asExpr κ) (S.insert α αs)
+apply2 (V.Fun (V.PartialConstr α c vs)) v = do
+   let n = successful (arity c)
+   except $ check (length vs < n) ("Too many arguments to " <> showCtr c)
+   let
+      v' =
+         if length vs < n - 1 then V.Fun $ V.PartialConstr α c (snoc vs v)
+         else V.Constr α c (snoc vs v)
+   pure v'
 apply2 _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
 eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> MayFailT (GraphAccumT g (State Int)) (Val Vertex)
