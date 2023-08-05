@@ -3,6 +3,7 @@ module Graph where
 import Prelude
 
 import Control.Monad.State (StateT, get, put, runState)
+import Control.Monad.Trans.Class (class MonadTrans)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
@@ -74,6 +75,11 @@ instance (Monoid g, Applicative m) => Applicative (GraphAccumT g m) where
    pure a = GraphAccumT $ pure $ a × mempty
 
 instance (Monoid g, Monad m) => Monad (GraphAccumT g m)
+
+instance Monoid g => MonadTrans (GraphAccumT g) where
+  lift m = GraphAccumT do
+    a <- m
+    pure $ a × mempty
 
 instance (Graph g, Monad m) => MonadGraphAccum g (GraphAccumT g m) where
    extendG α αs = GraphAccumT $ pure $ unit × \g -> extend α αs g

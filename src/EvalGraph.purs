@@ -1,6 +1,7 @@
 module EvalGraph
    ( apply
    , eval
+   , eval'
    , match
    , matchMany
    , patternMismatch
@@ -8,6 +9,7 @@ module EvalGraph
 
 import Bindings (varAnon)
 import Control.Monad.Trans.Class (lift)
+import Control.Monad.State.Trans (StateT)
 import Data.Array (fromFoldable, foldM, range, snoc) as A
 import Data.Either (note)
 import Data.Exists (runExists)
@@ -19,12 +21,12 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, empty, get, keys, lookup, insert, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Foreign.Object (foldM) as D
-import Graph (Vertex, class Graph, HeapT, fresh)
+import Graph (Vertex, class Graph, GraphAccumT, HeapT, extendG, fresh)
 import Graph (extend) as G
 import Prelude (bind, discard, flip, otherwise, pure, show, (#), ($), (>), (+), (-), (<), (<$>), (<>), (==), (>=))
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Util (type (+), type (×), MayFail, check, error, report, successful, with, (×))
+import Util (type (+), type (×), MayFail, check, error, report, successful, unimplemented, with, (×))
 import Util.Pair (Pair(..))
 import Val (Val(..), Fun(..)) as V
 import Val (Val, Env, lookup', for, restrict, (<+>), ForeignOp'(..))
@@ -98,6 +100,15 @@ apply g (V.Fun (V.Foreign φ vs) × v) = do
          else φ'.op' (g × vs')
    runExists apply' φ
 apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
+
+eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> GraphAccumT g (StateT Int ((+) String)) (Val Vertex)
+eval' γ (Var x) _ = lift $ lift $ lookup' x γ
+eval' γ (Op op) _ = lift $ lift $ lookup' op γ
+eval' _ (Int α n) αs = do
+   α' <- lift $ fresh
+   extendG α' (S.insert α αs)
+   pure $ V.Int α' n
+eval' _ _ _ = error unimplemented
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
 eval g γ (Var x) _ = ((×) g) <$> lift (lookup' x γ)
