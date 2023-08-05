@@ -79,6 +79,9 @@ closeDefs g0 γ0 ρ0 αs =
       (g0 × D.empty)
       ρ0
 
+closeDefs' :: forall g. Graph g => Env Vertex -> RecDefs Vertex -> Set Vertex -> MayFailT (GraphAccumT g (State Int)) (Env Vertex)
+closeDefs' = error unimplemented
+
 {-# Evaluation #-}
 apply :: forall g. Graph g => g -> Val Vertex × Val Vertex -> HeapT ((+) String) (g × Val Vertex)
 apply g2 (V.Fun (V.Closure α γ1 ρ σ) × v) = do
@@ -102,6 +105,9 @@ apply g (V.Fun (V.Foreign φ vs) × v) = do
          else φ'.op' (g × vs')
    runExists apply' φ
 apply _ (_ × v) = lift $ report $ "Found " <> prettyP v <> ", expected function"
+
+apply2 :: forall g. Graph g => Val Vertex -> Val Vertex -> MayFailT (GraphAccumT g (State Int)) (Val Vertex)
+apply2 = error unimplemented
 
 eval' :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> MayFailT (GraphAccumT g (State Int)) (Val Vertex)
 eval' γ (Var x) _ = except $ lookup' x γ
@@ -143,17 +149,16 @@ eval' γ (Project e x) αs = do
       V.Record _ xvs -> lookup' x xvs
       _ -> report $ "Found " <> prettyP v <> ", expected record"
 eval' γ (App e e') αs = do
-   _ <- eval' γ e αs
-   _ <- eval' γ e' αs
-   error unimplemented -- apply g2 (v × v')
-eval' _ _ _ = error unimplemented
+   v <- eval' γ e αs
+   v' <- eval' γ e' αs
+   apply2 v v'
+eval' γ (Let (VarDef σ e) e') αs = do
+   v <- eval' γ e αs
+   γ' × _ × _ <- except $ match v σ -- terminal meta-type of eliminator is meta-unit
+   eval' (γ <+> γ') e' αs
+eval' γ (LetRec ρ e) αs = do
+   γ' <- closeDefs' γ ρ αs
+   eval' (γ <+> γ') e αs
 
 eval :: forall g. Graph g => g -> Env Vertex -> Expr Vertex -> Set Vertex -> HeapT ((+) String) (g × Val Vertex)
-eval g γ (Let (VarDef σ e) e') αs = do
-   g1 × v <- eval g γ e αs
-   γ' × _ × _ <- lift $ match v σ -- terminal meta-type of eliminator is meta-unit
-   eval g1 (γ <+> γ') e' αs
-eval g γ (LetRec ρ e) αs = do
-   g1 × γ' <- closeDefs g γ ρ αs
-   eval g1 (γ <+> γ') e αs
-eval _ _ _ _ = error unimplemented
+eval _ = error unimplemented
