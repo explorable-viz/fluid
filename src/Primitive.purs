@@ -2,6 +2,7 @@ module Primitive where
 
 import Prelude hiding (absurd, apply, div, top)
 
+import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.Exists (mkExists)
 import Data.Int (toNumber)
@@ -10,8 +11,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.Set (insert, singleton)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
-import Graph (fresh)
-import Graph (union) as G
+import Graph (new)
 import Lattice (Raw, (∧), bot, erase)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
@@ -177,9 +177,8 @@ unary op =
       $ ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    op' :: Partial => OpGraph
-   op' (g × v : Nil) = do
-      α' <- fresh
-      pure $ G.union α' (singleton α) g × op.o.constr (op.fwd x × α')
+   op' (v : Nil) =
+      op.o.constr <$> ((op.fwd x × _) <$> lift (new (singleton α)))
       where
       x × α = op.i.match v
 
@@ -201,9 +200,8 @@ binary op =
       $ ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    op' :: Partial => OpGraph
-   op' (g × v1 : v2 : Nil) = do
-      α' <- fresh
-      pure $ G.union α' (singleton α # insert β) g × op.o.constr (op.fwd x y × α')
+   op' (v1 : v2 : Nil) =
+      op.o.constr <$> ((op.fwd x y × _) <$> lift (new (singleton α # insert β)))
       where
       (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
 
@@ -226,14 +224,14 @@ binaryZero op =
       $ ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
    op' :: Partial => OpGraph
-   op' (g × v1 : v2 : Nil) = do
-      α' <- fresh
+   op' (v1 : v2 : Nil) =
       let
          αs =
             if isZero x then singleton α
             else if isZero y then singleton β
             else singleton α # insert β
-      pure $ G.union α' αs g × op.o.constr (op.fwd x y × α')
+      in
+         op.o.constr <$> ((op.fwd x y × _) <$> lift (new αs))
       where
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 

@@ -3,6 +3,7 @@ module Util where
 import Prelude hiding (absurd)
 
 import Control.Apply (lift2)
+import Control.Monad.Except (ExceptT)
 import Control.MonadPlus (class MonadPlus, empty)
 import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
@@ -55,6 +56,7 @@ onlyIf true = pure
 onlyIf false = const empty
 
 type MayFail a = String + a
+type MayFailT a = ExceptT String a
 
 orElse :: forall a. String -> Maybe a -> MayFail a
 orElse = note
