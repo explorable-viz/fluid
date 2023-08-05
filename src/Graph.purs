@@ -57,6 +57,7 @@ class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
    new :: Set Vertex -> m Vertex
 
+-- Essentially Writer instantiated to the monoid of endofunctions
 data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
 type WithGraph g a = MayFailT (GraphAccumT g (State Int)) a
 
@@ -64,11 +65,9 @@ instance Functor m => Functor (GraphAccumT g m) where
    map f (GraphAccumT m) = GraphAccumT $ m <#> first f
 
 instance Apply m => Apply (GraphAccumT g m) where
-   apply (GraphAccumT m) (GraphAccumT m') =
-      let
-         k (f × g) (x × g') = f x × (g >>> g')
-      in
-         GraphAccumT $ k <$> m <*> m'
+   apply (GraphAccumT m) (GraphAccumT m') = GraphAccumT $ k <$> m <*> m'
+      where
+      k (f × g) (x × g') = f x × (g >>> g')
 
 instance Bind m => Bind (GraphAccumT g m) where
    bind (GraphAccumT m) f = GraphAccumT $ do
