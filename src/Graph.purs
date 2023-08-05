@@ -50,7 +50,7 @@ alloc = traverse (const fresh)
 
 -- Difference graphs
 class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
-  extendG :: Vertex -> Set Vertex -> m Unit
+   extendG :: Vertex -> Set Vertex -> m Unit
 
 data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
 
