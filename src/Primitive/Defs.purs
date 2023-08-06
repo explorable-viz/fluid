@@ -23,7 +23,7 @@ import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, looku
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
-import Graph (Vertex, WithGraph, new)
+import Graph (new)
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
@@ -246,9 +246,12 @@ dict_intersectionWith :: ForeignOp
 dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op (v : Dictionary α d1 : Dictionary α' d2 : Nil) = do
-      let d = D.intersectionWith (\(β × u) (β' × u') -> ?_) d1 d2
-      Dictionary <$> lift (new (singleton α # insert α')) <*> sequence d
+   op (v : Dictionary α d1 : Dictionary α' d2 : Nil) =
+      Dictionary <$> lift (new (singleton α # insert α')) <*> sequence (D.intersectionWith apply' d1 d2)
+      where
+      apply' (β × u) (β' × u') = do
+         β'' <- lift $ new (singleton β # insert β')
+         (×) β'' <$> (G.apply v u >>= flip G.apply u')
    op _ = except $ report "Function and two dictionaries expected"
 
    fwd :: OpFwd (Raw Val × Dict (AppTrace × AppTrace))
