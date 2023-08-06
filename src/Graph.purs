@@ -2,7 +2,7 @@ module Graph where
 
 import Prelude
 
-import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
+import Control.Monad.State (class MonadState, State, StateT, get, put, runStateT)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
@@ -46,8 +46,8 @@ instance Monad m => MonadAlloc (StateT Int m) where
       pure (Vertex (show s))
 
 {-# Allocating addresses #-}
-runAlloc :: forall t a. Traversable t => t a -> t Vertex × Int
-runAlloc = alloc >>> flip runState 0
+runHeapT :: forall m a. HeapT m a -> m (a × Int)
+runHeapT = flip runStateT 0
 
 alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
