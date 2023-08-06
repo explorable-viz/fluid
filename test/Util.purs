@@ -21,6 +21,7 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
+--import EvalGraph (eval) as G
 import Expr (Expr)
 import Graph (runAlloc)
 import Lattice (𝔹, bot, erase)
@@ -100,8 +101,9 @@ testWithSetup (File file) expected v_expect_opt setup =
                      checkPretty "Source selection" expect s'
 
    doGraphTest :: Expr 𝔹 -> MayFailT Aff Unit
-   doGraphTest e =
-      let _ = fst $ runAlloc e in
+   doGraphTest e = do
+      let _ = fst $ runAlloc e
+--      _ <- G.eval ?_ ?_ ?_
       pure unit
 
 test :: File -> String -> Test Unit

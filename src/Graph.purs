@@ -61,6 +61,9 @@ class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
 data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
 type WithGraph g a = MayFailT (GraphAccumT g (State Int)) a
 
+runGraphAccumT :: forall g m a. GraphAccumT g m a -> m (a × (g -> g))
+runGraphAccumT (GraphAccumT x) = x
+
 instance Functor m => Functor (GraphAccumT g m) where
    map f (GraphAccumT m) = GraphAccumT $ m <#> first f
 
