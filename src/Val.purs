@@ -5,10 +5,11 @@ import Prelude hiding (absurd, append)
 import Bindings (Var)
 import Control.Apply (lift2)
 import Data.Exists (Exists)
-import Data.Foldable (class Foldable)
+import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:))
+import Data.Newtype (class Newtype)
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
-import Data.Traversable (class Traversable, traverse)
+import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
@@ -24,6 +25,7 @@ data Val' a
    | Float' a Number
    | Str' a String
    | Constr' a Ctr (List (Val' a)) -- always saturated
+   | Dictionary' a (KeyVal a)
    | Record' a (Dict (Val' a)) -- always saturated
    | Fun' (Fun' a)
 
@@ -34,6 +36,20 @@ data Fun' a
 
 data RecDefs' a = RecDefs' a
 data Elim' a = Elim' a
+
+newtype KeyVal a = KeyVal (a × Val' a)
+
+derive instance Newtype (KeyVal a) _
+derive instance Functor KeyVal
+
+instance Foldable KeyVal where
+   foldl f z (KeyVal (x × v)) = foldl f (f z x) v
+   foldr f = foldrDefault f
+   foldMap f = foldMapDefaultL f
+
+instance Traversable KeyVal where
+   traverse f (KeyVal (x × v)) = KeyVal <$> ((×) <$> f x <*> traverse f v)
+   sequence = sequenceDefault
 
 -- Environments.
 type Env' a = Dict (Val' a)
@@ -49,6 +65,7 @@ derive instance Traversable Fun'
 derive instance Functor RecDefs'
 derive instance Foldable RecDefs'
 derive instance Traversable RecDefs'
+
 derive instance Functor Elim'
 derive instance Foldable Elim'
 derive instance Traversable Elim'
