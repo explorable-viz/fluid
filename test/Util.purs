@@ -4,10 +4,14 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
+import Control.Monad.Error.Class (class MonadThrow)
+import Control.Monad.Except (except, runExceptT)
+import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Tuple (fst, snd)
+import Data.Set as S
+import Data.Tuple (fst, snd, uncurry)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -15,20 +19,21 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
-import Expr as E
--- import Effect.Console (logShow)
+import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import Graph (runAlloc)
+import EvalGraph (eval) as G
+import Expr (Expr)
+import Graph (class Graph, Heap, Vertex, WithGraph, alloc, runHeap, runGraphAccumT)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
 import Pretty (pretty, class Pretty, prettyP)
-import SExpr (Expr) as S
+import SExpr (Expr) as SE
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Util (type (×), (×), successful)
+import Util (MayFailT, type (×), (×), error, successful, unimplemented)
 import Util.Pretty (render)
 import Val (Env, Val(..), (<+>))
 
@@ -38,59 +43,68 @@ isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "Gra
 isGraphical _ = false
 
 type Test a = SpecT Aff Unit Effect a
+type Test' a = MayFailT (SpecT Aff Unit Effect) a
 
 run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
-checkPretty :: forall a. Pretty a => String -> String -> a -> Aff Unit
+checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
 checkPretty _ expected x =
    trace (":\n") \_ ->
       prettyP x `shouldEqual` expected
 
-testAlloc :: File -> Test Unit
-testAlloc (File file) =
-   before (openWithDefaultImports (File file)) $
-      it file \(_ × s) -> do
-         let
-            e = successful (desug s)
-            e' = fst $ runAlloc e
-            src' = render (pretty e')
-         log $ "Allocated:\n" <> src'
-
-testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
+testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × SE.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =
-   before setup $
-      it file \(γ × s) -> do
-         let
-            e = successful (desug s) :: E.Expr 𝔹
-            t × v = successful (eval γ e bot)
-            v' = fromMaybe identity (fst <$> v_expect_opt) v
-            { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-            s' = desugBwd e' (erase s) :: S.Expr 𝔹
-            _ × v'' = successful (eval γ' (successful (desug s')) true)
-            src = render (pretty s)
-         case parse src program of
+   before setup $ it file (uncurry doTest)
+   where
+   doTest :: Env 𝔹 -> SE.Expr 𝔹 -> Aff Unit
+   doTest γ s =
+      runExceptT (doTest' γ s) >>=
+         case _ of
             Left msg -> fail msg
-            Right newProg -> do
-               trace ("Non-Annotated:\n" <> src) \_ -> do
-                  let newExp = show newProg
-                  case (eq (erase s) newProg) of
-                     false -> do
-                        liftEffect (log ("SRC\n" <> show (erase s)))
-                        liftEffect (log ("NEW\n" <> newExp))
-                        fail "not equal"
-                     true -> do
-                        unless (isGraphical v'') (checkPretty "line103" expected v'')
-                        trace ("Annotated\n" <> render (pretty s')) \_ -> do
-                           unless (isGraphical v'') (checkPretty "line105" expected v'')
-                           case snd <$> v_expect_opt of
-                              Nothing -> pure unit
-                              Just file_expect -> do
-                                 expect <- loadFile (Folder "fluid/example") file_expect
-                                 --liftEffect (log ("SRC0\n" <> show s'))
-                                 --liftEffect (log ("SRC\n" <> (render (pretty s'))))
-                                 --liftEffect (log ("EXP\n" <> expect))
-                                 checkPretty "Source selection" expect s'
+            Right unit -> pure unit
+
+   doTest' :: Env 𝔹 -> SE.Expr 𝔹 -> MayFailT Aff Unit
+   doTest' γ s = do
+      e <- except $ desug s
+      --      doGraphTest G.empty γ e
+      t × v <- except $ eval γ e bot
+      let
+         v' = fromMaybe identity (fst <$> v_expect_opt) v
+         { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
+         s' = desugBwd e' (erase s)
+      _ × v'' <- except $ desug s' >>= flip (eval γ') top
+      let src = render (pretty s)
+      s'' <- except $ parse src program
+      trace ("Non-Annotated:\n" <> src) \_ -> lift $
+         if (not $ eq (erase s) s'') then do
+            liftEffect $ do
+               log ("SRC\n" <> show (erase s))
+               log ("NEW\n" <> show s'')
+            fail "not equal"
+         else do
+            unless (isGraphical v'') (checkPretty "Value" expected v'')
+            trace ("Annotated\n" <> render (pretty s')) \_ ->
+               case snd <$> v_expect_opt of
+                  Nothing -> pure unit
+                  Just file_expect -> do
+                     expect <- loadFile (Folder "fluid/example") file_expect
+                     checkPretty "Source selection" expect s'
+
+blahEnv :: forall a. Env a -> Heap (Env Vertex)
+blahEnv _ = error unimplemented
+
+doGraphTest :: forall g a. Graph g => g -> Env a -> Expr a -> MayFailT Aff Unit
+doGraphTest g γ0 e0 = do
+   let maybe_v × δg = runHeap $ runGraphAccumT $ runExceptT (doGraphTest' γ0 e0)
+   let _ = δg g -- make graph and throw away for now
+   except maybe_v <#> const unit
+
+doGraphTest' :: forall g a. Graph g => Env a -> Expr a -> WithGraph g (Val Vertex)
+doGraphTest' γ0 e0 = do
+   γ <- lift $ lift $ blahEnv γ0
+   e <- lift $ lift $ alloc e0
+   G.eval γ e S.empty :: WithGraph g _
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)

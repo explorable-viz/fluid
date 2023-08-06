@@ -6,7 +6,7 @@ import Control.Monad.Except (except)
 import Control.Monad.Trans.Class (lift)
 import Data.Array ((!!))
 import Data.Exists (mkExists)
-import Data.Foldable (foldl)
+import Data.Foldable (foldl, foldM)
 import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
@@ -202,7 +202,9 @@ dict_foldl :: ForeignOp
 dict_foldl = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op _ = error unimplemented
+   op (v : u : Dictionary _ d : Nil) =
+      foldM (\u1 (_ × u2) -> G.apply v u1 >>= flip G.apply u2) u d
+   op _ = except $ report "Function, value and dictionary expected"
 
    fwd :: OpFwd (Raw Val × List (String × AppTrace × AppTrace))
    fwd (v : u : Dictionary _ d : Nil) = do
@@ -246,7 +248,13 @@ dict_intersectionWith :: ForeignOp
 dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op _ = error unimplemented
+   op (v : Dictionary α d1 : Dictionary α' d2 : Nil) =
+      Dictionary <$> lift (new (singleton α # insert α')) <*> sequence (D.intersectionWith apply' d1 d2)
+      where
+      apply' (β × u) (β' × u') = do
+         β'' <- lift $ new (singleton β # insert β')
+         (×) β'' <$> (G.apply v u >>= flip G.apply u')
+   op _ = except $ report "Function and two dictionaries expected"
 
    fwd :: OpFwd (Raw Val × Dict (AppTrace × AppTrace))
    fwd (v : Dictionary α d : Dictionary α' d' : Nil) = do
