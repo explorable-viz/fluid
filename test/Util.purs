@@ -21,6 +21,7 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
+import Expr (Expr)
 import Graph (runAlloc)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
@@ -74,6 +75,7 @@ testWithSetup (File file) expected v_expect_opt setup =
    doTest' :: Env 𝔹 × S.Expr 𝔹 -> MayFailT Aff Unit
    doTest' (γ × s) = do
       e <- except $ desug s
+      doGraphTest e
       t × v <- except $ eval γ e bot
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
@@ -96,6 +98,11 @@ testWithSetup (File file) expected v_expect_opt setup =
                   Just file_expect -> do
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
+
+   doGraphTest :: Expr 𝔹 -> MayFailT Aff Unit
+   doGraphTest e =
+      let _ = fst $ runAlloc e in
+      pure unit
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
