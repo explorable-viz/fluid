@@ -4,7 +4,9 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
+import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
+import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -16,6 +18,7 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
+import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import Graph (runAlloc)
@@ -27,7 +30,7 @@ import SExpr (Expr) as S
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Util (MayFailT, type (×), (×), error, successful, unimplemented)
+import Util (MayFailT, type (×), (×), successful)
 import Util.Pretty (render)
 import Val (Env, Val(..), (<+>))
 
@@ -42,7 +45,7 @@ type Test' a = MayFailT (SpecT Aff Unit Effect) a
 run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
-checkPretty :: forall a. Pretty a => String -> String -> a -> Aff Unit
+checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
 checkPretty _ expected x =
    trace (":\n") \_ ->
       prettyP x `shouldEqual` expected
@@ -61,41 +64,38 @@ testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × 
 testWithSetup (File file) expected v_expect_opt setup =
    before setup $ it file doTest
    where
+   doTest :: Env 𝔹 × S.Expr 𝔹 -> Aff Unit
+   doTest γs =
+      runExceptT (doTest' γs) >>=
+         case _ of
+            Left msg -> fail msg
+            Right unit -> pure unit
+
    doTest' :: Env 𝔹 × S.Expr 𝔹 -> MayFailT Aff Unit
    doTest' (γ × s) = do
       e <- except $ desug s
       t × v <- except $ eval γ e bot
-      let v' = fromMaybe identity (fst <$> v_expect_opt) v
-          { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-          s' = desugBwd e' (erase s)
-      _ × v'' <- except $ desug s' >>= flip (eval γ') true
+      let
+         v' = fromMaybe identity (fst <$> v_expect_opt) v
+         { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
+         s' = desugBwd e' (erase s)
+      _ × v'' <- except $ desug s' >>= flip (eval γ') top
       let src = render (pretty s)
       s'' <- except $ parse src program
-      trace ("Non-Annotated:\n" <> src) \_ -> do
-         if (eq (erase s) s'')
-         then do
-            ?_
-         else do
-            ?_
-{-
-         if (eq (erase s) s'')
-         then do
-            liftEffect (log ("SRC\n" <> show (erase s)))
-            liftEffect (log ("NEW\n" <> show s''))
+      trace ("Non-Annotated:\n" <> src) \_ -> lift $
+         if (not $ eq (erase s) s'') then do
+            liftEffect $ do
+               log ("SRC\n" <> show (erase s))
+               log ("NEW\n" <> show s'')
             fail "not equal"
          else do
-            unless (isGraphical v'') (checkPretty "line103" expected v'')
-            trace ("Annotated\n" <> render (pretty s')) \_ -> do
-               unless (isGraphical v'') (checkPretty "line105" expected v'')
+            unless (isGraphical v'') (checkPretty "Value" expected v'')
+            trace ("Annotated\n" <> render (pretty s')) \_ ->
                case snd <$> v_expect_opt of
                   Nothing -> pure unit
                   Just file_expect -> do
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
--}
-
-   doTest :: Env 𝔹 × S.Expr 𝔹 -> Aff Unit
-   doTest γs = runExceptT (doTest' γs) <#> successful
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
