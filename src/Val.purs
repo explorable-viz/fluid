@@ -5,10 +5,10 @@ import Prelude hiding (absurd, append)
 import Bindings (Var)
 import Control.Apply (lift2)
 import Data.Exists (Exists)
---import Data.Foldable (class Foldable)
+import Data.Foldable (class Foldable)
 import Data.List (List(..), (:))
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
---import Data.Traversable (class Traversable)
+import Data.Traversable (class Traversable)
 import DataType (Ctr)
 import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
@@ -18,6 +18,16 @@ import Graph (class Graph, WithGraph, Vertex(..))
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Util.Pretty (Doc, beside, text)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
+
+data Val' a
+   = Int' a Int
+   | Float' a Number
+   | Str' a String
+   | Constr' a Ctr (List (Val' a)) -- always saturated
+
+derive instance Functor Val'
+derive instance Foldable Val'
+derive instance Traversable Val'
 
 data Val a
    = Int a Int
