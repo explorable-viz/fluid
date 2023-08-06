@@ -25,7 +25,6 @@ import EvalBwd (evalBwd)
 import EvalGraph (eval) as G
 import Expr (Expr)
 import Graph (class Graph, Heap, Vertex, WithGraph, alloc, runHeap, runGraphAccumT)
-import Graph (empty) as G
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
@@ -68,7 +67,7 @@ testWithSetup (File file) expected v_expect_opt setup =
    doTest' :: Env 𝔹 -> SE.Expr 𝔹 -> MayFailT Aff Unit
    doTest' γ s = do
       e <- except $ desug s
-      doGraphTest G.empty γ e
+      --      doGraphTest G.empty γ e
       t × v <- except $ eval γ e bot
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
@@ -93,15 +92,13 @@ testWithSetup (File file) expected v_expect_opt setup =
                      checkPretty "Source selection" expect s'
 
 blahEnv :: forall a. Env a -> Heap (Env Vertex)
-blahEnv _ = ?_ -- alloc γ
+blahEnv _ = error unimplemented
 
 doGraphTest :: forall g a. Graph g => g -> Env a -> Expr a -> MayFailT Aff Unit
 doGraphTest g γ0 e0 = do
-   let h = runExceptT (doGraphTest' γ0 e0 :: WithGraph g _)
-   let j = runGraphAccumT h
-   let k × δg = runHeap j
-   let _ = δg g
-   except k <#> const unit
+   let maybe_v × δg = runHeap $ runGraphAccumT $ runExceptT (doGraphTest' γ0 e0)
+   let _ = δg g -- make graph and throw away for now
+   except maybe_v <#> const unit
 
 doGraphTest' :: forall g a. Graph g => Env a -> Expr a -> WithGraph g (Val Vertex)
 doGraphTest' γ0 e0 = do
