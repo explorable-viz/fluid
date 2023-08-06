@@ -91,8 +91,8 @@ testWithSetup (File file) expected v_expect_opt setup =
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
 
-blahEnv :: forall a. Env a -> Heap (Env Vertex)
-blahEnv _ = error unimplemented
+allocEnv :: forall a. Env a -> Heap (Env Vertex)
+allocEnv _ = error unimplemented
 
 doGraphTest :: forall g a. Graph g => g -> Env a -> Expr a -> MayFailT Aff Unit
 doGraphTest g γ0 e0 = do
@@ -102,7 +102,7 @@ doGraphTest g γ0 e0 = do
 
 doGraphTest' :: forall g a. Graph g => Env a -> Expr a -> WithGraph g (Val Vertex)
 doGraphTest' γ0 e0 = do
-   γ <- lift $ lift $ blahEnv γ0
+   γ <- lift $ lift $ allocEnv γ0
    e <- lift $ lift $ alloc e0
    G.eval γ e S.empty :: WithGraph g _
 

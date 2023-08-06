@@ -5,10 +5,10 @@ import Prelude hiding (absurd, append)
 import Bindings (Var)
 import Control.Apply (lift2)
 import Data.Exists (Exists)
---import Data.Foldable (class Foldable)
+import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:))
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
---import Data.Traversable (class Traversable)
+--import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
@@ -25,7 +25,7 @@ data Val a
    | Str a String
    | Constr a Ctr (List (Val a)) -- always saturated
    | Record a (Dict (Val a)) -- always saturated
-   | Dictionary a (Dict (a × Val a))
+   | Dictionary a (DictRep a)
    | Matrix a (MatrixRep a)
    | Fun (Fun a)
 
@@ -88,13 +88,14 @@ reaches ρ xs = go (toUnfoldable xs) empty
 for :: forall a. RecDefs a -> Elim a -> RecDefs a
 for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.keys ρ))
 
--- Matrices.
+-- Wrap internal representations to provide foldable/traversable instances.
+newtype DictRep a = DictRep (Dict (a × Val a))
+newtype MatrixRep a = MatrixRep (Array2 (Val a) × (Int × a) × (Int × a))
 type Array2 a = Array (Array a)
-type MatrixRep a = Array2 (Val a) × (Int × a) × (Int × a)
 
 updateMatrix :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
-updateMatrix i j δv (vss × h × w) =
-   vss' × h × w
+updateMatrix i j δv (MatrixRep (vss × h × w)) =
+   MatrixRep (vss' × h × w)
    where
    vs_i = vss ! (i - 1)
    v_j = vs_i ! (j - 1)
@@ -116,21 +117,45 @@ instance Highlightable Vertex where
 -- ======================
 -- boilerplate
 -- ======================
+derive instance Functor DictRep
+derive instance Functor MatrixRep
 derive instance Functor Val
+derive instance Foldable Val
 derive instance Functor Fun
+derive instance Foldable Fun
+
+instance Foldable DictRep where
+   foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d
+   foldr f = foldrDefault f
+   foldMap f = foldMapDefaultL f
+
+instance Foldable MatrixRep where
+   foldl f acc (MatrixRep (vss × (_ × βi) × (_ × βj))) = foldl (foldl (foldl f)) (acc `f` βi `f` βj) vss
+   foldr f = foldrDefault f
+   foldMap f = foldMapDefaultL f
+
+instance JoinSemilattice a => JoinSemilattice (DictRep a) where
+   maybeJoin (DictRep svs) (DictRep svs') = DictRep <$> maybeJoin svs svs'
+   join v = definedJoin v
+   neg = (<$>) neg
+
+instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
+   maybeJoin (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × βi') × (j' × βj'))) =
+      MatrixRep <$>
+         ( maybeJoin vss vss'
+              `lift2 (×)` (((_ × (βi ∨ βi')) <$> (i ≞ i')) `lift2 (×)` ((_ × (βj ∨ βj')) <$> (j ≞ j')))
+         )
+   join v = definedJoin v
+   neg = (<$>) neg
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
    maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
    maybeJoin (Str α s) (Str α' s') = Str (α ∨ α') <$> (s ≞ s')
    maybeJoin (Record α xvs) (Record α' xvs') = Record (α ∨ α') <$> maybeJoin xvs xvs'
-   maybeJoin (Dictionary α svs) (Dictionary α' svs') = Dictionary (α ∨ α') <$> maybeJoin svs svs'
+   maybeJoin (Dictionary α d) (Dictionary α' d') = Dictionary (α ∨ α') <$> maybeJoin d d'
    maybeJoin (Constr α c vs) (Constr α' c' us) = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
-   maybeJoin (Matrix α (vss × (i × βi) × (j × βj))) (Matrix α' (vss' × (i' × βi') × (j' × βj'))) =
-      Matrix (α ∨ α') <$>
-         ( maybeJoin vss vss'
-              `lift2 (×)` (((_ × (βi ∨ βi')) <$> (i ≞ i')) `lift2 (×)` ((_ × (βj ∨ βj')) <$> (j ≞ j')))
-         )
+   maybeJoin (Matrix α m) (Matrix α' m') = Matrix (α ∨ α') <$> maybeJoin m m'
    maybeJoin (Fun φ) (Fun φ') = Fun <$> maybeJoin φ φ'
    maybeJoin _ _ = report "Incompatible values"
 
@@ -148,15 +173,21 @@ instance JoinSemilattice a => JoinSemilattice (Fun a) where
    join v = definedJoin v
    neg = (<$>) neg
 
+instance BoundedJoinSemilattice a => Expandable (DictRep a) (Raw DictRep) where
+   expand (DictRep svs) (DictRep svs') = DictRep (expand svs svs')
+
+instance BoundedJoinSemilattice a => Expandable (MatrixRep a) (Raw MatrixRep) where
+   expand (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × _) × (j' × _))) =
+      MatrixRep (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
+
 instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
    expand (Int α n) (Int _ n') = Int α (n ≜ n')
    expand (Float α n) (Float _ n') = Float α (n ≜ n')
    expand (Str α s) (Str _ s') = Str α (s ≜ s')
    expand (Record α xvs) (Record _ xvs') = Record α (expand xvs xvs')
-   expand (Dictionary α svs) (Dictionary _ svs') = Dictionary α (expand svs svs')
+   expand (Dictionary α d) (Dictionary _ d') = Dictionary α (expand d d')
    expand (Constr α c vs) (Constr _ c' us) = Constr α (c ≜ c') (expand vs us)
-   expand (Matrix α (vss × (i × βi) × (j × βj))) (Matrix _ (vss' × (i' × _) × (j' × _))) =
-      Matrix α (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
+   expand (Matrix α m) (Matrix _ m') = Matrix α (expand m m')
    expand (Fun φ) (Fun φ') = Fun (expand φ φ')
    expand _ _ = error "Incompatible values"
 

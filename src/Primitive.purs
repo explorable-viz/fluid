@@ -101,15 +101,15 @@ intPair =
    match' (Constr α c (v : v' : Nil)) | c == cPair = (int.match v × int.match v') × α
    match' v = error ("Pair expected; got " <> prettyP (erase v))
 
-matrixRep :: forall a. Ann a => ToFrom (Array (Array (Val a)) × (Int × a) × (Int × a)) a
+matrixRep :: forall a. Ann a => ToFrom (MatrixRep a) a
 matrixRep =
-   { constr: \(r × α) -> Matrix α r
+   { constr: \(m × α) -> Matrix α m
    , constr_bwd: match'
    , match: match'
    }
    where
    match' :: Ann a => Val a -> MatrixRep a × a
-   match' (Matrix α r) = r × α
+   match' (Matrix α m) = m × α
    match' v = error ("Matrix expected; got " <> prettyP v)
 
 record :: forall a. Ann a => ToFrom (Dict (Val a)) a

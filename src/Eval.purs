@@ -26,7 +26,7 @@ import Trace (AppTrace, ForeignTrace, ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, ForeignOp'(..), (<+>), Val, for, lookup', restrict)
+import Val (class Ann, DictRep(..), Env, ForeignOp'(..), MatrixRep(..), (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -116,7 +116,7 @@ eval γ (Dictionary α ees) α' = do
    let
       ss × αs = (vs <#> \u -> string.match u) # unzip
       d = D.fromFoldable $ zip ss (zip αs us)
-   pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × V.Dictionary (α ∧ α') d
+   pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × V.Dictionary (α ∧ α') (DictRep d)
 eval γ (Constr α c es) α' = do
    checkArity c (length es)
    ts × vs <- traverse (flip (eval γ) α') es <#> unzip
@@ -133,7 +133,7 @@ eval γ (Matrix α e (x × y) e') α' = do
               let γ' = D.singleton x (V.Int β i) `disjointUnion` (D.singleton y (V.Int β' j))
               singleton (eval (γ <+> γ') e α')
       )
-   pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix (α ∧ α') (vss × (i' × β) × (j' × β'))
+   pure $ T.Matrix tss (x × y) (i' × j') t × V.Matrix (α ∧ α') (MatrixRep (vss × (i' × β) × (j' × β')))
    where
    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable

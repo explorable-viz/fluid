@@ -27,7 +27,7 @@ import Primitive (string, intPair)
 import Util (type (×), MayFail, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Val(..), Fun(..)) as V
-import Val (Val, Env, lookup', for, restrict, (<+>), ForeignOp'(..))
+import Val (DictRep(..), Env, MatrixRep(..), Val, lookup', for, restrict, (<+>), ForeignOp'(..))
 
 {-# Matching #-}
 patternMismatch :: String -> String -> String
@@ -109,7 +109,7 @@ eval γ (Dictionary α ees) αs = do
    let
       ss × βs = (vs <#> string.match) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
-   V.Dictionary <$> lift (new (S.insert α αs)) <@> d
+   V.Dictionary <$> lift (new (S.insert α αs)) <@> DictRep d
 eval γ (Constr α c es) αs = do
    except $ checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
@@ -126,7 +126,7 @@ eval γ (Matrix α e (x × y) e') αs = do
          j <- A.range 1 j'
          let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
          A.singleton (eval (γ <+> γ') e αs)
-   V.Matrix <$> lift (new (S.insert α αs)) <@> (vss × (i' × β) × (j' × β'))
+   V.Matrix <$> lift (new (S.insert α αs)) <@> MatrixRep (vss × (i' × β) × (j' × β'))
 eval γ (Lambda σ) αs =
    V.Fun <$> (V.Closure <$> lift (new αs) <@> γ `restrict` fv σ <@> D.empty <@> σ)
 eval γ (Project e x) αs = do

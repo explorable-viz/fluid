@@ -16,7 +16,7 @@ import Dict (Dict, get)
 import Lattice (𝔹, botOf, neg)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
-import Util (Endo, type (×), (×), absurd, error, definitely')
+import Util (Endo, type (×), absurd, error, definitely')
 import Val (Val(..), updateMatrix)
 
 type HTMLId = String
@@ -78,8 +78,7 @@ selectPair _ _ _ _ = error absurd
 
 -- Togglers. TODO: subsumed by selectors now?
 toggleCell :: Int -> Int -> Selector
-toggleCell i j (Matrix α (vss × (i' × β) × (j' × β'))) =
-   Matrix α (updateMatrix i j neg (vss × (i' × β) × (j' × β')))
+toggleCell i j (Matrix α m) = Matrix α (updateMatrix i j neg m)
 toggleCell _ _ _ = error absurd
 
 toggleField :: Var -> Selector -> Selector

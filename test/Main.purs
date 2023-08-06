@@ -12,7 +12,7 @@ import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Util ((×))
-import Val (Val(..))
+import Val (DictRep(..), Val(..))
 
 tests :: Array (Array (Test Unit))
 tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
@@ -136,20 +136,20 @@ test_bwd =
         \21, 35, 31, 31, 42,\n\
         \13, 32, 35, 19, 26"
    , testBwd (File "dict/create") (File "dict/create.expect")
-        ( const $ Dictionary false $ fromFoldable
+        ( const $ Dictionary false $ DictRep $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              , "ab" ↦ (true × Int false 6)
              ]
         )
         "{|\"a\":= 5, _\"ab\"_:= 6|}"
    , testBwd (File "dict/difference") (File "dict/difference.expect")
-        ( const $ Dictionary true $ fromFoldable
+        ( const $ Dictionary true $ DictRep $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              ]
         )
         "_{|\"a\":= 5|}_"
    , testBwd (File "dict/disjointUnion") (File "dict/disjointUnion.expect")
-        ( const $ Dictionary false $ fromFoldable
+        ( const $ Dictionary false $ DictRep $ fromFoldable
              [ "a" ↦ (true × Int false 5)
              , "b" ↦ (false × Int false 6)
              , "c" ↦ (false × Int true 7)
@@ -160,14 +160,14 @@ test_bwd =
         topOf
         "_0_"
    , testBwd (File "dict/intersectionWith") (File "dict/intersectionWith.expect")
-        ( const $ Dictionary false $ fromFoldable
+        ( const $ Dictionary false $ DictRep $ fromFoldable
              [ "b" ↦ (false × Int true 0)
              , "c" ↦ (false × Int true 20)
              ]
         )
         "{|\"b\":= _0_, \"c\":= _20_|}"
    , testBwd (File "dict/fromRecord") (File "dict/fromRecord.expect")
-        ( const $ Dictionary false $ fromFoldable
+        ( const $ Dictionary false $ DictRep $ fromFoldable
              [ "a" ↦ (false × Int false 5)
              , "ab" ↦ (true × Int false 6)
              ]
