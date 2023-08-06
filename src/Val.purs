@@ -7,9 +7,8 @@ import Control.Apply (lift2)
 import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:))
-import Data.Newtype (class Newtype)
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
-import Data.Traversable (class Traversable, sequenceDefault, traverse)
+--import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
@@ -122,13 +121,13 @@ derive instance Functor Fun
 derive instance Foldable Fun
 
 instance Foldable Val where
-   foldl f acc (Int α n) = acc `f` α
-   foldl f acc (Float α n) = acc `f` α
-   foldl f acc (Str α s) = acc `f` α
-   foldl f acc (Constr α c vs) = foldl (foldl f) (acc `f` α) vs
+   foldl f acc (Int α _) = acc `f` α
+   foldl f acc (Float α _) = acc `f` α
+   foldl f acc (Str α _) = acc `f` α
+   foldl f acc (Constr α _ vs) = foldl (foldl f) (acc `f` α) vs
    foldl f acc (Record α xvs) = foldl (foldl f) (acc `f` α) xvs
-   foldl f acc (Dictionary α svs) = foldl (\acc (a × v) -> foldl f (acc `f` a) v) (acc `f` α) svs
-   foldl f acc (Matrix α (vss × (i × βi) × (j × βj))) = ?_
+   foldl f acc (Dictionary α svs) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) (acc `f` α) svs
+   foldl f acc (Matrix α (vss × (_ × βi) × (_ × βj))) = foldl (foldl (foldl f)) (acc `f` α `f` βi `f` βj) vss
    foldl f acc (Fun φ) = foldl f acc φ
 
    foldr f = foldrDefault f
