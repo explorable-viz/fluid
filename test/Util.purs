@@ -74,23 +74,20 @@ testWithSetup (File file) expected v_expect_opt setup =
             Right newProg -> do
                trace ("Non-Annotated:\n" <> src) \_ -> do
                   let newExp = show newProg
-                  case (eq (erase s) newProg) of
-                     false -> do
-                        liftEffect (log ("SRC\n" <> show (erase s)))
-                        liftEffect (log ("NEW\n" <> newExp))
-                        fail "not equal"
-                     true -> do
-                        unless (isGraphical v'') (checkPretty "line103" expected v'')
-                        trace ("Annotated\n" <> render (pretty s')) \_ -> do
-                           unless (isGraphical v'') (checkPretty "line105" expected v'')
-                           case snd <$> v_expect_opt of
-                              Nothing -> pure unit
-                              Just file_expect -> do
-                                 expect <- loadFile (Folder "fluid/example") file_expect
-                                 --liftEffect (log ("SRC0\n" <> show s'))
-                                 --liftEffect (log ("SRC\n" <> (render (pretty s'))))
-                                 --liftEffect (log ("EXP\n" <> expect))
-                                 checkPretty "Source selection" expect s'
+                  if (eq (erase s) newProg)
+                  then do
+                     liftEffect (log ("SRC\n" <> show (erase s)))
+                     liftEffect (log ("NEW\n" <> newExp))
+                     fail "not equal"
+                  else do
+                     unless (isGraphical v'') (checkPretty "line103" expected v'')
+                     trace ("Annotated\n" <> render (pretty s')) \_ -> do
+                        unless (isGraphical v'') (checkPretty "line105" expected v'')
+                        case snd <$> v_expect_opt of
+                           Nothing -> pure unit
+                           Just file_expect -> do
+                              expect <- loadFile (Folder "fluid/example") file_expect
+                              checkPretty "Source selection" expect s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
