@@ -46,8 +46,8 @@ instance Monad m => MonadAlloc (StateT Int m) where
       pure (Vertex (show s))
 
 {-# Allocating addresses #-}
-runAlloc :: forall t a. Traversable t => t a -> (t Vertex) × Int
-runAlloc e = runState (alloc e) 0
+runAlloc :: forall t a. Traversable t => t a -> t Vertex × Int
+runAlloc = alloc >>> flip runState 0
 
 alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
@@ -57,7 +57,7 @@ class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
    new :: Set Vertex -> m Vertex
 
--- Essentially Writer instantiated to the monoid of endofunctions
+-- Essentially Writer instantiated to a monoid of endofunctions
 data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
 type WithGraph g a = MayFailT (GraphAccumT g (State Int)) a
 
