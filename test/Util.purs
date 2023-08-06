@@ -10,7 +10,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst, snd, uncurry)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -23,7 +23,7 @@ import Eval (eval)
 import EvalBwd (evalBwd)
 --import EvalGraph (eval) as G
 import Expr (Expr)
-import Graph (runAlloc)
+import Graph (runAlloc{-, runGraphAccumT-})
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
@@ -64,19 +64,19 @@ testAlloc (File file) =
 
 testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =
-   before setup $ it file doTest
+   before setup $ it file (uncurry doTest)
    where
-   doTest :: Env 𝔹 × S.Expr 𝔹 -> Aff Unit
-   doTest γs =
-      runExceptT (doTest' γs) >>=
+   doTest :: Env 𝔹 -> S.Expr 𝔹 -> Aff Unit
+   doTest γ s =
+      runExceptT (doTest' γ s) >>=
          case _ of
             Left msg -> fail msg
             Right unit -> pure unit
 
-   doTest' :: Env 𝔹 × S.Expr 𝔹 -> MayFailT Aff Unit
-   doTest' (γ × s) = do
+   doTest' :: Env 𝔹 -> S.Expr 𝔹 -> MayFailT Aff Unit
+   doTest' γ s = do
       e <- except $ desug s
-      doGraphTest e
+      doGraphTest γ e
       t × v <- except $ eval γ e bot
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
@@ -100,10 +100,11 @@ testWithSetup (File file) expected v_expect_opt setup =
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
 
-   doGraphTest :: Expr 𝔹 -> MayFailT Aff Unit
-   doGraphTest e = do
+   doGraphTest :: Env 𝔹 -> Expr 𝔹 -> MayFailT Aff Unit
+   doGraphTest _ e = do
       let _ = fst $ runAlloc e
---      _ <- G.eval ?_ ?_ ?_
+--      let q = G.eval ?_ ?_ ?_
+      --let v × g = runGraphAccumT blah
       pure unit
 
 test :: File -> String -> Test Unit
