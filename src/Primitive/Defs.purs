@@ -30,7 +30,7 @@ import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, MayFail, error, orElse, report, unimplemented, (×))
-import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep'(..), OpBwd, OpFwd, OpGraph, Val(..), updateMatrix)
+import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), updateMatrix)
 
 extern :: forall a. ForeignOp -> Val a
 extern = flip Foreign Nil >>> Fun
@@ -251,7 +251,7 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_b
    op :: OpGraph
    op (v : Dictionary α (DictRep d1) : Dictionary α' (DictRep d2) : Nil) =
       Dictionary <$> lift (new (singleton α # insert α'))
-                 <*> (DictRep <$> sequence (D.intersectionWith apply' d1 d2))
+         <*> (DictRep <$> sequence (D.intersectionWith apply' d1 d2))
       where
       apply' (β × u) (β' × u') = do
          β'' <- lift $ new (singleton β # insert β')

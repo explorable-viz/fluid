@@ -24,7 +24,7 @@ import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc, atop, beside, empty, space, text, render, hcat)
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, class Highlightable, DictRep(..), ForeignOp', Fun, MatrixRep'(..), Val, highlightIf)
+import Val (class Ann, class Highlightable, DictRep(..), ForeignOp', Fun, MatrixRep(..), Val, highlightIf)
 
 emptyDoc :: Doc
 emptyDoc = empty 0 0

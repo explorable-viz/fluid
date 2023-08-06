@@ -25,7 +25,7 @@ import Trace (AppTrace, ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), Endo, absurd, definitely', error, nonEmpty, (!), (×))
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, DictRep(..), Env, ForeignOp, ForeignOp'(..), MatrixRep'(..), Val, append_inv, (<+>))
+import Val (class Ann, DictRep(..), Env, ForeignOp, ForeignOp'(..), MatrixRep(..), Val, append_inv, (<+>))
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =

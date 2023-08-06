@@ -27,7 +27,7 @@ import Primitive (string, intPair)
 import Util (type (×), MayFail, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Val(..), Fun(..)) as V
-import Val (DictRep(..), Env, MatrixRep'(..), Val, lookup', for, restrict, (<+>), ForeignOp'(..))
+import Val (DictRep(..), Env, MatrixRep(..), Val, lookup', for, restrict, (<+>), ForeignOp'(..))
 
 {-# Matching #-}
 patternMismatch :: String -> String -> String

@@ -26,7 +26,7 @@ data Val a
    | Constr a Ctr (List (Val a)) -- always saturated
    | Record a (Dict (Val a)) -- always saturated
    | Dictionary a (DictRep a)
-   | Matrix a (MatrixRep' a)
+   | Matrix a (MatrixRep a)
    | Fun (Fun a)
 
 data Fun a
@@ -90,10 +90,10 @@ for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.key
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))
+newtype MatrixRep a = MatrixRep (Array2 (Val a) × (Int × a) × (Int × a))
 type Array2 a = Array (Array a)
-newtype MatrixRep' a = MatrixRep (Array2 (Val a) × (Int × a) × (Int × a))
 
-updateMatrix :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep' a)
+updateMatrix :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
 updateMatrix i j δv (MatrixRep (vss × h × w)) =
    MatrixRep (vss' × h × w)
    where
@@ -118,7 +118,7 @@ instance Highlightable Vertex where
 -- boilerplate
 -- ======================
 derive instance Functor DictRep
-derive instance Functor MatrixRep'
+derive instance Functor MatrixRep
 derive instance Functor Val
 derive instance Foldable Val
 derive instance Functor Fun
@@ -129,7 +129,7 @@ instance Foldable DictRep where
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 
-instance Foldable MatrixRep' where
+instance Foldable MatrixRep where
    foldl f acc (MatrixRep (vss × (_ × βi) × (_ × βj))) = foldl (foldl (foldl f)) (acc `f` βi `f` βj) vss
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
@@ -139,11 +139,12 @@ instance JoinSemilattice a => JoinSemilattice (DictRep a) where
    join v = definedJoin v
    neg = (<$>) neg
 
-instance JoinSemilattice a => JoinSemilattice (MatrixRep' a) where
+instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
    maybeJoin (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × βi') × (j' × βj'))) =
       MatrixRep <$>
          ( maybeJoin vss vss'
-              `lift2 (×)` (((_ × (βi ∨ βi')) <$> (i ≞ i')) `lift2 (×)` ((_ × (βj ∨ βj')) <$> (j ≞ j'))))
+              `lift2 (×)` (((_ × (βi ∨ βi')) <$> (i ≞ i')) `lift2 (×)` ((_ × (βj ∨ βj')) <$> (j ≞ j')))
+         )
    join v = definedJoin v
    neg = (<$>) neg
 
@@ -175,7 +176,7 @@ instance JoinSemilattice a => JoinSemilattice (Fun a) where
 instance BoundedJoinSemilattice a => Expandable (DictRep a) (Raw DictRep) where
    expand (DictRep svs) (DictRep svs') = DictRep (expand svs svs')
 
-instance BoundedJoinSemilattice a => Expandable (MatrixRep' a) (Raw MatrixRep') where
+instance BoundedJoinSemilattice a => Expandable (MatrixRep a) (Raw MatrixRep) where
    expand (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × _) × (j' × _))) =
       MatrixRep (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
 

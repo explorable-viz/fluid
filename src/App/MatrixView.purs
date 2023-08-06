@@ -10,7 +10,7 @@ import App.Util (Handler, Renderer, toggleCell)
 import Lattice (𝔹)
 import Primitive (int)
 import Util (type (×), (×), (!), definitely')
-import Val (Array2, MatrixRep'(..))
+import Val (Array2, MatrixRep(..))
 
 --  (Rendered) matrices are required to have element type Int for now.
 type IntMatrix = Array2 (Int × 𝔹) × Int × Int
@@ -18,7 +18,7 @@ newtype MatrixView = MatrixView { title :: String, matrix :: IntMatrix }
 
 foreign import drawMatrix :: Renderer MatrixView
 
-matrixRep :: MatrixRep' 𝔹 -> IntMatrix
+matrixRep :: MatrixRep 𝔹 -> IntMatrix
 matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
    ((<$>) ((<$>) (\x -> int.match x))) vss × i × j
 

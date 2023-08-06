@@ -26,7 +26,7 @@ import Trace (AppTrace, ForeignTrace, ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, DictRep(..), Env, ForeignOp'(..), MatrixRep'(..), (<+>), Val, for, lookup', restrict)
+import Val (class Ann, DictRep(..), Env, ForeignOp'(..), MatrixRep(..), (<+>), Val, for, lookup', restrict)
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
