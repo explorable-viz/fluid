@@ -15,8 +15,6 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
-import Expr as E
--- import Effect.Console (logShow)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import Graph (runAlloc)
@@ -28,7 +26,7 @@ import SExpr (Expr) as S
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Util (type (×), (×), successful)
+import Util (MayFailT, type (×), (×), successful)
 import Util.Pretty (render)
 import Val (Env, Val(..), (<+>))
 
@@ -38,6 +36,7 @@ isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "Gra
 isGraphical _ = false
 
 type Test a = SpecT Aff Unit Effect a
+type Test' a = MayFailT (SpecT Aff Unit Effect) a
 
 run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
@@ -59,35 +58,37 @@ testAlloc (File file) =
 
 testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =
-   before setup $
-      it file \(γ × s) -> do
-         let
-            e = successful (desug s) :: E.Expr 𝔹
-            t × v = successful (eval γ e bot)
-            v' = fromMaybe identity (fst <$> v_expect_opt) v
-            { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-            s' = desugBwd e' (erase s) :: S.Expr 𝔹
-            _ × v'' = successful (eval γ' (successful (desug s')) true)
-            src = render (pretty s)
-         case parse src program of
-            Left msg -> fail msg
-            Right newProg -> do
-               trace ("Non-Annotated:\n" <> src) \_ -> do
-                  let newExp = show newProg
-                  if (eq (erase s) newProg)
-                  then do
-                     liftEffect (log ("SRC\n" <> show (erase s)))
-                     liftEffect (log ("NEW\n" <> newExp))
-                     fail "not equal"
-                  else do
-                     unless (isGraphical v'') (checkPretty "line103" expected v'')
-                     trace ("Annotated\n" <> render (pretty s')) \_ -> do
-                        unless (isGraphical v'') (checkPretty "line105" expected v'')
-                        case snd <$> v_expect_opt of
-                           Nothing -> pure unit
-                           Just file_expect -> do
-                              expect <- loadFile (Folder "fluid/example") file_expect
-                              checkPretty "Source selection" expect s'
+   before setup $ it file doTest
+   where
+   doTest :: Env 𝔹 × S.Expr 𝔹 -> Aff Unit
+   doTest (γ × s) = do
+      let
+         e = successful (desug s)
+         t × v = successful (eval γ e bot)
+         v' = fromMaybe identity (fst <$> v_expect_opt) v
+         { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
+         s' = desugBwd e' (erase s)
+         _ × v'' = successful (eval γ' (successful (desug s')) true)
+         src = render (pretty s)
+      case parse src program of
+         Left msg -> fail msg
+         Right newProg -> do
+            trace ("Non-Annotated:\n" <> src) \_ -> do
+               let newExp = show newProg
+               if (eq (erase s) newProg)
+               then do
+                  liftEffect (log ("SRC\n" <> show (erase s)))
+                  liftEffect (log ("NEW\n" <> newExp))
+                  fail "not equal"
+               else do
+                  unless (isGraphical v'') (checkPretty "line103" expected v'')
+                  trace ("Annotated\n" <> render (pretty s')) \_ -> do
+                     unless (isGraphical v'') (checkPretty "line105" expected v'')
+                     case snd <$> v_expect_opt of
+                        Nothing -> pure unit
+                        Just file_expect -> do
+                           expect <- loadFile (Folder "fluid/example") file_expect
+                           checkPretty "Source selection" expect s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
