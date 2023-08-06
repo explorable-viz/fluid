@@ -24,7 +24,7 @@ import Eval (eval)
 import EvalBwd (evalBwd)
 import EvalGraph (eval) as G
 import Expr (Expr)
-import Graph (class Graph, Heap, Vertex, WithGraph, runHeap, runGraphAccumT)
+import Graph (class Graph, Heap, Vertex, WithGraph, alloc, runHeap, runGraphAccumT)
 import Graph (empty) as G
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
@@ -95,9 +95,6 @@ testWithSetup (File file) expected v_expect_opt setup =
 blahEnv :: forall a. Env a -> Heap (Env Vertex)
 blahEnv _ = ?_ -- alloc γ
 
-blahExpr :: forall a. Expr a -> Heap (Expr Vertex)
-blahExpr _ = ?_ -- alloc γ
-
 doGraphTest :: forall g a. Graph g => g -> Env a -> Expr a -> MayFailT Aff Unit
 doGraphTest g γ0 e0 = do
    let h = runExceptT (doGraphTest' γ0 e0 :: WithGraph g _)
@@ -109,7 +106,7 @@ doGraphTest g γ0 e0 = do
 doGraphTest' :: forall g a. Graph g => Env a -> Expr a -> WithGraph g (Val Vertex)
 doGraphTest' γ0 e0 = do
    γ <- lift $ lift $ blahEnv γ0
-   e <- lift $ lift $ blahExpr e0
+   e <- lift $ lift $ alloc e0
    G.eval γ e S.empty :: WithGraph g _
 
 test :: File -> String -> Test Unit
