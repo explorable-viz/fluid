@@ -6,6 +6,7 @@ import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
+import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
@@ -23,7 +24,7 @@ import Eval (eval)
 import EvalBwd (evalBwd)
 --import EvalGraph (eval) as G
 import Expr (Expr)
-import Graph (runAlloc{-, runGraphAccumT-})
+import Graph (alloc{-, runGraphAccumT-})
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
@@ -51,16 +52,6 @@ checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String ->
 checkPretty _ expected x =
    trace (":\n") \_ ->
       prettyP x `shouldEqual` expected
-
-testAlloc :: File -> Test Unit
-testAlloc (File file) =
-   before (openWithDefaultImports (File file)) $
-      it file \(_ × s) -> do
-         let
-            e = successful (desug s)
-            e' = fst $ runAlloc e
-            src' = render (pretty e')
-         log $ "Allocated:\n" <> src'
 
 testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =
@@ -100,12 +91,15 @@ testWithSetup (File file) expected v_expect_opt setup =
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
 
-   doGraphTest :: Env 𝔹 -> Expr 𝔹 -> MayFailT Aff Unit
-   doGraphTest _ e = do
-      let _ = fst $ runAlloc e
---      let q = G.eval ?_ ?_ ?_
-      --let v × g = runGraphAccumT blah
-      pure unit
+doGraphTest :: forall a. Env a -> Expr a -> MayFailT Aff Unit
+doGraphTest γ0 e0 = do
+   let _ = flip runState 0 $ do
+         γ <- alloc γ0
+         e <- alloc e0
+         pure $ γ × e
+   -- let q = G.eval ?_ ?_ ?_
+   --let v × g = runGraphAccumT blah
+   pure unit
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)

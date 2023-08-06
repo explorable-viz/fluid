@@ -10,7 +10,7 @@ import Dict (fromFoldable)
 import Effect (Effect)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
-import Test.Util (Test, run, test, testAlloc, testBwd, testLink, testWithDataset)
+import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Util ((×))
 import Val (Val(..))
 
@@ -24,7 +24,7 @@ main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ testAlloc (File "arithmetic")
+   [
    ]
 
 test_linking :: Array (Test Unit)
