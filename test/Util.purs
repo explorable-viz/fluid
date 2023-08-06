@@ -70,15 +70,18 @@ testWithSetup (File file) expected v_expect_opt setup =
           s' = desugBwd e' (erase s)
       _ × v'' <- except $ desug s' >>= flip (eval γ') true
       let src = render (pretty s)
-      newProg <- except $ parse src program
+      s'' <- except $ parse src program
       trace ("Non-Annotated:\n" <> src) \_ -> do
-         ?_
+         if (eq (erase s) s'')
+         then do
+            ?_
+         else do
+            ?_
 {-
-         let newExp = show newProg
-         if (eq (erase s) newProg)
+         if (eq (erase s) s'')
          then do
             liftEffect (log ("SRC\n" <> show (erase s)))
-            liftEffect (log ("NEW\n" <> newExp))
+            liftEffect (log ("NEW\n" <> show s''))
             fail "not equal"
          else do
             unless (isGraphical v'') (checkPretty "line103" expected v'')
