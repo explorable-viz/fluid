@@ -2,7 +2,7 @@ module Graph where
 
 import Prelude
 
-import Control.Monad.State (class MonadState, State, StateT, get, put, runStateT)
+import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
@@ -46,8 +46,8 @@ instance Monad m => MonadAlloc (StateT Int m) where
       pure (Vertex (show s))
 
 {-# Allocating addresses #-}
-runHeapT :: forall m a. HeapT m a -> m (a × Int)
-runHeapT = flip runStateT 0
+runHeap :: forall a. Heap a -> a
+runHeap = flip runState 0 >>> fst
 
 alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
@@ -62,7 +62,7 @@ data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
 type WithGraph g a = MayFailT (GraphAccumT g (State Int)) a
 
 runGraphAccumT :: forall g m a. GraphAccumT g m a -> m (a × (g -> g))
-runGraphAccumT (GraphAccumT x) = x
+runGraphAccumT (GraphAccumT m) = m
 
 instance Functor m => Functor (GraphAccumT g m) where
    map f (GraphAccumT m) = GraphAccumT $ m <#> first f
@@ -188,6 +188,9 @@ instance Semigroup GraphImpl where
 
 instance Monoid GraphImpl where
    mempty = GraphImpl SM.empty SM.empty
+
+empty :: GraphImpl
+empty = mempty
 
 instance Graph GraphImpl where
    allocate (GraphImpl out _) = Vertex α

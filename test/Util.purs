@@ -6,11 +6,11 @@ import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
-import Control.Monad.State (runState)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Set as S
 import Data.Tuple (fst, snd, uncurry)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
@@ -22,18 +22,19 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
---import EvalGraph (eval) as G
+import EvalGraph (eval) as G
 import Expr (Expr)
-import Graph (alloc{-, runGraphAccumT-})
+import Graph (class Graph, Heap, Vertex, WithGraph, runHeap, runGraphAccumT)
+import Graph (empty) as G
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
 import Pretty (pretty, class Pretty, prettyP)
-import SExpr (Expr) as S
+import SExpr (Expr) as SE
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Util (MayFailT, type (×), (×), successful)
+import Util (MayFailT, type (×), (×), error, successful, unimplemented)
 import Util.Pretty (render)
 import Val (Env, Val(..), (<+>))
 
@@ -53,21 +54,21 @@ checkPretty _ expected x =
    trace (":\n") \_ ->
       prettyP x `shouldEqual` expected
 
-testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × S.Expr 𝔹) -> Test Unit
+testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × SE.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =
    before setup $ it file (uncurry doTest)
    where
-   doTest :: Env 𝔹 -> S.Expr 𝔹 -> Aff Unit
+   doTest :: Env 𝔹 -> SE.Expr 𝔹 -> Aff Unit
    doTest γ s =
       runExceptT (doTest' γ s) >>=
          case _ of
             Left msg -> fail msg
             Right unit -> pure unit
 
-   doTest' :: Env 𝔹 -> S.Expr 𝔹 -> MayFailT Aff Unit
+   doTest' :: Env 𝔹 -> SE.Expr 𝔹 -> MayFailT Aff Unit
    doTest' γ s = do
       e <- except $ desug s
-      doGraphTest γ e
+      doGraphTest G.empty γ e
       t × v <- except $ eval γ e bot
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
@@ -91,15 +92,25 @@ testWithSetup (File file) expected v_expect_opt setup =
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
 
-doGraphTest :: forall a. Env a -> Expr a -> MayFailT Aff Unit
-doGraphTest γ0 e0 = do
-   let _ = flip runState 0 $ do
-         γ <- alloc γ0
-         e <- alloc e0
-         pure $ γ × e
-   -- let q = G.eval ?_ ?_ ?_
-   --let v × g = runGraphAccumT blah
-   pure unit
+blahEnv :: forall a. Env a -> Heap (Env Vertex)
+blahEnv _ = ?_ -- alloc γ
+
+blahExpr :: forall a. Expr a -> Heap (Expr Vertex)
+blahExpr _ = ?_ -- alloc γ
+
+doGraphTest :: forall g a. Graph g => g -> Env a -> Expr a -> MayFailT Aff Unit
+doGraphTest g γ0 e0 = do
+   let h = runExceptT (doGraphTest' γ0 e0 :: WithGraph g _)
+   let j = runGraphAccumT h
+   let k × δg = runHeap j
+   let _ = δg g
+   except k <#> const unit
+
+doGraphTest' :: forall g a. Graph g => Env a -> Expr a -> WithGraph g (Val Vertex)
+doGraphTest' γ0 e0 = do
+   γ <- lift $ lift $ blahEnv γ0
+   e <- lift $ lift $ blahExpr e0
+   G.eval γ e S.empty :: WithGraph g _
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
