@@ -24,7 +24,7 @@ import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc, atop, beside, empty, space, text, render, hcat)
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, class Highlightable, ForeignOp', Fun, Val, highlightIf)
+import Val (class Ann, class Highlightable, DictRep(..), ForeignOp', Fun, MatrixRep'(..), Val, highlightIf)
 
 emptyDoc :: Doc
 emptyDoc = empty 0 0
@@ -371,12 +371,12 @@ instance Highlightable a => Pretty (Val a) where
    pretty (V.Float α n) = highlightIf α (text (show n))
    pretty (V.Str α str) = highlightIf α (text (show str))
    pretty (V.Record α xvs) = prettyRecord text α (xvs # D.toUnfoldable)
-   pretty (V.Dictionary α svs) = prettyDict
+   pretty (V.Dictionary α (DictRep svs)) = prettyDict
       (\(s × β) -> highlightIf β (text (show s)))
       α
       (svs # D.toUnfoldable <#> \(s × (β × v)) -> (s × β) × v)
    pretty (V.Constr α c vs) = prettyConstr α c vs
-   pretty (V.Matrix _ (vss × _ × _)) = vert comma (((<$>) pretty >>> hcomma) <$> vss)
+   pretty (V.Matrix _ (MatrixRep (vss × _ × _))) = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Fun φ) = pretty φ
 
 instance Highlightable a => Pretty (Fun a) where

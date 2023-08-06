@@ -25,7 +25,7 @@ import Trace (AppTrace, ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), Endo, absurd, definitely', error, nonEmpty, (!), (×))
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
-import Val (class Ann, Env, ForeignOp, ForeignOp'(..), Val, append_inv, (<+>))
+import Val (class Ann, DictRep(..), Env, ForeignOp, ForeignOp'(..), MatrixRep'(..), Val, append_inv, (<+>))
 
 closeDefsBwd :: forall a. Ann a => Env a -> Env a × RecDefs a × a
 closeDefsBwd γ =
@@ -127,7 +127,7 @@ evalBwd' (V.Record α xvs) (T.Record xts) =
    where
    xvts = intersectionWith (×) xvs xts
    xγeαs = xvts <#> uncurry evalBwd'
-evalBwd' (V.Dictionary α sαvs) (T.Dictionary stts sus) =
+evalBwd' (V.Dictionary α (DictRep sαvs)) (T.Dictionary stts sus) =
    { γ: foldr (∨) empty ((γeαs <#> _.γ) <> (γeαs' <#> _.γ))
    , e: Dictionary α ((γeαs <#> _.e) `P.zip` (γeαs' <#> _.e))
    , α: foldr (∨) α ((γeαs <#> _.α) <> (γeαs' <#> _.α))
@@ -144,7 +144,7 @@ evalBwd' (V.Constr α _ vs) (T.Constr c ts) =
       where
       { γ: γ'', e, α: α'' } = evalBwd' v' t'
    γ' × es × α' = foldr evalArg_bwd (empty × Nil × α) (zip vs ts)
-evalBwd' (V.Matrix α (vss × (_ × βi) × (_ × βj))) (T.Matrix tss (x × y) (i' × j') t') =
+evalBwd' (V.Matrix α (MatrixRep (vss × (_ × βi) × (_ × βj)))) (T.Matrix tss (x × y) (i' × j') t') =
    { γ: γ ∨ γ', e: Matrix α e (x × y) e', α: α ∨ α' ∨ α'' }
    where
    NonEmptyList ijs = nonEmpty $ do
