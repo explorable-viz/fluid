@@ -24,11 +24,15 @@ data Val' a
    | Float' a Number
    | Str' a String
    | Constr' a Ctr (List (Val' a)) -- always saturated
+   | Fun' (Fun' a)
 
 data Fun' a
-   = Closure' a (Env a) (RecDefs a) (Elim a)
-   | Foreign' ForeignOp (List (Val a)) -- never saturated
-   | PartialConstr' a Ctr (List (Val a)) -- never saturated
+   = Closure' a (Env' a) (RecDefs' a) (Elim' a)
+   | Foreign' ForeignOp (List (Val' a)) -- never saturated
+   | PartialConstr' a Ctr (List (Val' a)) -- never saturated
+
+data RecDefs' a = RecDefs' a
+data Elim' a = Elim' a
 
 -- Environments.
 type Env' a = Dict (Val' a)
@@ -36,6 +40,17 @@ type Env' a = Dict (Val' a)
 derive instance Functor Val'
 derive instance Foldable Val'
 derive instance Traversable Val'
+
+derive instance Functor Fun'
+derive instance Foldable Fun'
+derive instance Traversable Fun'
+
+derive instance Functor RecDefs'
+derive instance Foldable RecDefs'
+derive instance Traversable RecDefs'
+derive instance Functor Elim'
+derive instance Foldable Elim'
+derive instance Traversable Elim'
 
 test :: forall a b m. Applicative m => (a -> m b) -> Env' a -> m (Env' b)
 test f = traverse (traverse f)
