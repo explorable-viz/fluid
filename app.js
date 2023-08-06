@@ -27750,6 +27750,7 @@
   var Dictionary3 = (value0) => (value1) => $Val("Dictionary", value0, value1);
   var Matrix3 = (value0) => (value1) => $Val("Matrix", value0, value1);
   var Fun = (value0) => $Val("Fun", value0);
+  var DictRep = (x2) => x2;
   var Closure = (value0) => (value1) => (value2) => (value3) => $Fun("Closure", value0, value1, value2, value3);
   var Foreign = (value0) => (value1) => $Fun("Foreign", value0, value1);
   var PartialConstr = (value0) => (value1) => (value2) => $Fun("PartialConstr", value0, value1, value2);
@@ -27784,23 +27785,22 @@
         return $Val("Record", f(m._1), _fmapObject(m._2, functorVal.map(f)));
       }
       if (m.tag === "Dictionary") {
-        return $Val("Dictionary", f(m._1), _fmapObject(m._2, bifunctorTuple.bimap(f)(functorVal.map(f))));
+        return $Val("Dictionary", f(m._1), functorDictRep.map(f)(m._2));
       }
       if (m.tag === "Matrix") {
-        return $Val(
-          "Matrix",
-          f(m._1),
-          $Tuple(
-            arrayMap(arrayMap(functorVal.map(f)))(m._2._1),
-            $Tuple($Tuple(m._2._2._1._1, f(m._2._2._1._2)), $Tuple(m._2._2._2._1, f(m._2._2._2._2)))
-          )
-        );
+        return $Val("Matrix", f(m._1), functorMatrixRep.map(f)(m._2));
       }
       if (m.tag === "Fun") {
         return $Val("Fun", functorFun.map(f)(m._1));
       }
       fail();
     }
+  };
+  var functorMatrixRep = {
+    map: (f) => (m) => $Tuple(
+      arrayMap(arrayMap(functorVal.map(f)))(m._1),
+      $Tuple($Tuple(m._2._1._1, f(m._2._1._2)), $Tuple(m._2._2._1, f(m._2._2._2)))
+    )
   };
   var functorFun = {
     map: (f) => (m) => {
@@ -27822,6 +27822,7 @@
       fail();
     }
   };
+  var functorDictRep = { map: (f) => (m) => _fmapObject(m, bifunctorTuple.bimap(f)(functorVal.map(f))) };
   var joinSemilatticeVal = (dictJoinSemilattice) => ({
     maybeJoin: (v) => (v1) => {
       if (v.tag === "Int") {
@@ -27883,7 +27884,7 @@
       if (v.tag === "Dictionary") {
         if (v1.tag === "Dictionary") {
           const $3 = Dictionary3(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = joinSemilatticeDict(joinSemilattice$x215(dictJoinSemilattice)(joinSemilatticeVal(dictJoinSemilattice))).maybeJoin(v._2)(v1._2);
+          const $4 = joinSemilatticeDictRep(dictJoinSemilattice).maybeJoin(v._2)(v1._2);
           if ($4.tag === "Left") {
             return $Either("Left", $4._1);
           }
@@ -27913,64 +27914,12 @@
       if (v.tag === "Matrix") {
         if (v1.tag === "Matrix") {
           const $3 = Matrix3(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = joinSemilatticeArray(joinSemilatticeArray(joinSemilatticeVal(dictJoinSemilattice))).maybeJoin(v._2._1)(v1._2._1);
-          const $5 = mayFailEq(showInt)(eqInt)(v._2._2._1._1)(v1._2._2._1._1);
-          if ($5.tag === "Left") {
-            const $6 = applyEither.apply((() => {
-              if ($4.tag === "Left") {
-                return $Either("Left", $4._1);
-              }
-              if ($4.tag === "Right") {
-                return $Either("Right", Tuple($4._1));
-              }
-              fail();
-            })())(applyEither.apply($Either("Left", $5._1))((() => {
-              const $62 = mayFailEq(showInt)(eqInt)(v._2._2._2._1)(v1._2._2._2._1);
-              if ($62.tag === "Left") {
-                return $Either("Left", $62._1);
-              }
-              if ($62.tag === "Right") {
-                return $Either("Right", $Tuple($62._1, dictJoinSemilattice.join(v._2._2._2._2)(v1._2._2._2._2)));
-              }
-              fail();
-            })()));
-            if ($6.tag === "Left") {
-              return $Either("Left", $6._1);
-            }
-            if ($6.tag === "Right") {
-              return $Either("Right", $3($6._1));
-            }
-            fail();
+          const $4 = joinSemilatticeMatrixRep(dictJoinSemilattice).maybeJoin(v._2)(v1._2);
+          if ($4.tag === "Left") {
+            return $Either("Left", $4._1);
           }
-          if ($5.tag === "Right") {
-            const $6 = applyEither.apply((() => {
-              if ($4.tag === "Left") {
-                return $Either("Left", $4._1);
-              }
-              if ($4.tag === "Right") {
-                return $Either("Right", Tuple($4._1));
-              }
-              fail();
-            })())(applyEither.apply($Either(
-              "Right",
-              Tuple($Tuple($5._1, dictJoinSemilattice.join(v._2._2._1._2)(v1._2._2._1._2)))
-            ))((() => {
-              const $62 = mayFailEq(showInt)(eqInt)(v._2._2._2._1)(v1._2._2._2._1);
-              if ($62.tag === "Left") {
-                return $Either("Left", $62._1);
-              }
-              if ($62.tag === "Right") {
-                return $Either("Right", $Tuple($62._1, dictJoinSemilattice.join(v._2._2._2._2)(v1._2._2._2._2)));
-              }
-              fail();
-            })()));
-            if ($6.tag === "Left") {
-              return $Either("Left", $6._1);
-            }
-            if ($6.tag === "Right") {
-              return $Either("Right", $3($6._1));
-            }
-            fail();
+          if ($4.tag === "Right") {
+            return $Either("Right", $3($4._1));
           }
           fail();
         }
@@ -27993,6 +27942,69 @@
     },
     join: (v) => definedJoin(joinSemilatticeVal(dictJoinSemilattice))(v),
     neg: functorVal.map(dictJoinSemilattice.neg)
+  });
+  var joinSemilatticeMatrixRep = (dictJoinSemilattice) => ({
+    maybeJoin: (v) => (v1) => {
+      const $3 = joinSemilatticeArray(joinSemilatticeArray(joinSemilatticeVal(dictJoinSemilattice))).maybeJoin(v._1)(v1._1);
+      const $4 = mayFailEq(showInt)(eqInt)(v._2._1._1)(v1._2._1._1);
+      if ($4.tag === "Left") {
+        const $5 = applyEither.apply((() => {
+          if ($3.tag === "Left") {
+            return $Either("Left", $3._1);
+          }
+          if ($3.tag === "Right") {
+            return $Either("Right", Tuple($3._1));
+          }
+          fail();
+        })())(applyEither.apply($Either("Left", $4._1))((() => {
+          const $52 = mayFailEq(showInt)(eqInt)(v._2._2._1)(v1._2._2._1);
+          if ($52.tag === "Left") {
+            return $Either("Left", $52._1);
+          }
+          if ($52.tag === "Right") {
+            return $Either("Right", $Tuple($52._1, dictJoinSemilattice.join(v._2._2._2)(v1._2._2._2)));
+          }
+          fail();
+        })()));
+        if ($5.tag === "Left") {
+          return $Either("Left", $5._1);
+        }
+        if ($5.tag === "Right") {
+          return $Either("Right", $5._1);
+        }
+        fail();
+      }
+      if ($4.tag === "Right") {
+        const $5 = applyEither.apply((() => {
+          if ($3.tag === "Left") {
+            return $Either("Left", $3._1);
+          }
+          if ($3.tag === "Right") {
+            return $Either("Right", Tuple($3._1));
+          }
+          fail();
+        })())(applyEither.apply($Either("Right", Tuple($Tuple($4._1, dictJoinSemilattice.join(v._2._1._2)(v1._2._1._2)))))((() => {
+          const $52 = mayFailEq(showInt)(eqInt)(v._2._2._1)(v1._2._2._1);
+          if ($52.tag === "Left") {
+            return $Either("Left", $52._1);
+          }
+          if ($52.tag === "Right") {
+            return $Either("Right", $Tuple($52._1, dictJoinSemilattice.join(v._2._2._2)(v1._2._2._2)));
+          }
+          fail();
+        })()));
+        if ($5.tag === "Left") {
+          return $Either("Left", $5._1);
+        }
+        if ($5.tag === "Right") {
+          return $Either("Right", $5._1);
+        }
+        fail();
+      }
+      fail();
+    },
+    join: (v) => definedJoin(joinSemilatticeMatrixRep(dictJoinSemilattice))(v),
+    neg: functorMatrixRep.map(dictJoinSemilattice.neg)
   });
   var joinSemilatticeFun = (dictJoinSemilattice) => {
     const joinSemilatticeElim2 = joinSemilatticeElim(dictJoinSemilattice);
@@ -28051,91 +28063,94 @@
       neg: functorFun.map(dictJoinSemilattice.neg)
     };
   };
-  var expandableValRawVal = (dictBoundedJoinSemilattice) => {
-    const expandableDictDict1 = expandableDictDict(botOfUnit$x215Raw$x215(functorVal)(dictBoundedJoinSemilattice));
-    return {
-      expand: (v) => (v1) => {
-        if (v.tag === "Int") {
-          if (v1.tag === "Int") {
-            return $Val("Int", v._1, mustEq(eqInt)(showInt)(v._2)(v1._2));
-          }
-          return unsafePerformEffect(throwException(error("Incompatible values")));
-        }
-        if (v.tag === "Float") {
-          if (v1.tag === "Float") {
-            return $Val("Float", v._1, mustEq(eqNumber)(showNumber)(v._2)(v1._2));
-          }
-          return unsafePerformEffect(throwException(error("Incompatible values")));
-        }
-        if (v.tag === "Str") {
-          if (v1.tag === "Str") {
-            return $Val("Str", v._1, mustEq(eqString)(showString)(v._2)(v1._2));
-          }
-          return unsafePerformEffect(throwException(error("Incompatible values")));
-        }
-        if (v.tag === "Record") {
-          if (v1.tag === "Record") {
-            return $Val(
-              "Record",
-              v._1,
-              expandableDictDict({ botOf: functorVal.map((v$1) => dictBoundedJoinSemilattice.bot) })(expandableValRawVal(dictBoundedJoinSemilattice)).expand(v._2)(v1._2)
-            );
-          }
-          return unsafePerformEffect(throwException(error("Incompatible values")));
-        }
-        if (v.tag === "Dictionary") {
-          if (v1.tag === "Dictionary") {
-            return $Val(
-              "Dictionary",
-              v._1,
-              expandableDictDict1((() => {
-                const $4 = expandableValRawVal(dictBoundedJoinSemilattice);
-                return { expand: (v$1) => (v1$1) => $Tuple(v$1._1, $4.expand(v$1._2)(v1$1._2)) };
-              })()).expand(v._2)(v1._2)
-            );
-          }
-          return unsafePerformEffect(throwException(error("Incompatible values")));
-        }
-        if (v.tag === "Constr") {
-          if (v1.tag === "Constr") {
-            return $Val(
-              "Constr",
-              v._1,
-              mustEq(eqString)(showString)(v._2)(v1._2),
-              zipWith(expandableValRawVal(dictBoundedJoinSemilattice).expand)(v._3)(v1._3)
-            );
-          }
-          return unsafePerformEffect(throwException(error("Incompatible values")));
-        }
-        if (v.tag === "Matrix") {
-          if (v1.tag === "Matrix") {
-            return $Val(
-              "Matrix",
-              v._1,
-              $Tuple(
-                (() => {
-                  const $4 = expandableValRawVal(dictBoundedJoinSemilattice);
-                  return zipWith2((xs) => (ys) => zipWith2($4.expand)(xs)(ys))(v._2._1)(v1._2._1);
-                })(),
-                $Tuple(
-                  $Tuple(mustEq(eqInt)(showInt)(v._2._2._1._1)(v1._2._2._1._1), v._2._2._1._2),
-                  $Tuple(mustEq(eqInt)(showInt)(v._2._2._2._1)(v1._2._2._2._1), v._2._2._2._2)
-                )
-              )
-            );
-          }
-          return unsafePerformEffect(throwException(error("Incompatible values")));
-        }
-        if (v.tag === "Fun") {
-          if (v1.tag === "Fun") {
-            return $Val("Fun", expandableFunRawFun(dictBoundedJoinSemilattice).expand(v._1)(v1._1));
-          }
-          return unsafePerformEffect(throwException(error("Incompatible values")));
+  var joinSemilatticeDictRep = (dictJoinSemilattice) => ({
+    maybeJoin: (v) => (v1) => {
+      const $3 = joinSemilatticeDict(joinSemilattice$x215(dictJoinSemilattice)(joinSemilatticeVal(dictJoinSemilattice))).maybeJoin(v)(v1);
+      if ($3.tag === "Left") {
+        return $Either("Left", $3._1);
+      }
+      if ($3.tag === "Right") {
+        return $Either("Right", $3._1);
+      }
+      fail();
+    },
+    join: (v) => definedJoin(joinSemilatticeDictRep(dictJoinSemilattice))(v),
+    neg: functorDictRep.map(dictJoinSemilattice.neg)
+  });
+  var expandableValRawVal = (dictBoundedJoinSemilattice) => ({
+    expand: (v) => (v1) => {
+      if (v.tag === "Int") {
+        if (v1.tag === "Int") {
+          return $Val("Int", v._1, mustEq(eqInt)(showInt)(v._2)(v1._2));
         }
         return unsafePerformEffect(throwException(error("Incompatible values")));
       }
-    };
-  };
+      if (v.tag === "Float") {
+        if (v1.tag === "Float") {
+          return $Val("Float", v._1, mustEq(eqNumber)(showNumber)(v._2)(v1._2));
+        }
+        return unsafePerformEffect(throwException(error("Incompatible values")));
+      }
+      if (v.tag === "Str") {
+        if (v1.tag === "Str") {
+          return $Val("Str", v._1, mustEq(eqString)(showString)(v._2)(v1._2));
+        }
+        return unsafePerformEffect(throwException(error("Incompatible values")));
+      }
+      if (v.tag === "Record") {
+        if (v1.tag === "Record") {
+          return $Val(
+            "Record",
+            v._1,
+            expandableDictDict({ botOf: functorVal.map((v$1) => dictBoundedJoinSemilattice.bot) })(expandableValRawVal(dictBoundedJoinSemilattice)).expand(v._2)(v1._2)
+          );
+        }
+        return unsafePerformEffect(throwException(error("Incompatible values")));
+      }
+      if (v.tag === "Dictionary") {
+        if (v1.tag === "Dictionary") {
+          return $Val("Dictionary", v._1, expandableDictRepRawDictR(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+        }
+        return unsafePerformEffect(throwException(error("Incompatible values")));
+      }
+      if (v.tag === "Constr") {
+        if (v1.tag === "Constr") {
+          return $Val(
+            "Constr",
+            v._1,
+            mustEq(eqString)(showString)(v._2)(v1._2),
+            zipWith(expandableValRawVal(dictBoundedJoinSemilattice).expand)(v._3)(v1._3)
+          );
+        }
+        return unsafePerformEffect(throwException(error("Incompatible values")));
+      }
+      if (v.tag === "Matrix") {
+        if (v1.tag === "Matrix") {
+          return $Val("Matrix", v._1, expandableMatrixRepRawMat(dictBoundedJoinSemilattice).expand(v._2)(v1._2));
+        }
+        return unsafePerformEffect(throwException(error("Incompatible values")));
+      }
+      if (v.tag === "Fun") {
+        if (v1.tag === "Fun") {
+          return $Val("Fun", expandableFunRawFun(dictBoundedJoinSemilattice).expand(v._1)(v1._1));
+        }
+        return unsafePerformEffect(throwException(error("Incompatible values")));
+      }
+      return unsafePerformEffect(throwException(error("Incompatible values")));
+    }
+  });
+  var expandableMatrixRepRawMat = (dictBoundedJoinSemilattice) => ({
+    expand: (v) => (v1) => $Tuple(
+      (() => {
+        const $3 = expandableValRawVal(dictBoundedJoinSemilattice);
+        return zipWith2((xs) => (ys) => zipWith2($3.expand)(xs)(ys))(v._1)(v1._1);
+      })(),
+      $Tuple(
+        $Tuple(mustEq(eqInt)(showInt)(v._2._1._1)(v1._2._1._1), v._2._1._2),
+        $Tuple(mustEq(eqInt)(showInt)(v._2._2._1)(v1._2._2._1), v._2._2._2)
+      )
+    )
+  });
   var expandableFunRawFun = (dictBoundedJoinSemilattice) => {
     const expandableElimRawElim2 = expandableElimRawElim(dictBoundedJoinSemilattice);
     const expand = expandableDictDict({ botOf: functorElim.map((v) => dictBoundedJoinSemilattice.bot) })(expandableElimRawElim2).expand;
@@ -28172,6 +28187,15 @@
         }
         return unsafePerformEffect(throwException(error("Incompatible values")));
       }
+    };
+  };
+  var expandableDictRepRawDictR = (dictBoundedJoinSemilattice) => {
+    const expandableDictDict2 = expandableDictDict(botOfUnit$x215Raw$x215(functorVal)(dictBoundedJoinSemilattice));
+    return {
+      expand: (v) => (v1) => expandableDictDict2((() => {
+        const $4 = expandableValRawVal(dictBoundedJoinSemilattice);
+        return { expand: (v$1) => (v1$1) => $Tuple(v$1._1, $4.expand(v$1._2)(v1$1._2)) };
+      })()).expand(v)(v1)
     };
   };
   var annBoolean = { Highlightable0: () => highlightableBoolean, BoundedLattice1: () => boundedLatticeBoolean };
@@ -28774,14 +28798,7 @@
   };
   var toggleCell = (v) => (v1) => (v2) => {
     if (v2.tag === "Matrix") {
-      return $Val(
-        "Matrix",
-        v2._1,
-        updateMatrix(v)(v1)(neg)($Tuple(
-          v2._2._1,
-          $Tuple($Tuple(v2._2._2._1._1, v2._2._2._1._2), $Tuple(v2._2._2._2._1, v2._2._2._2._2))
-        ))
-      );
+      return $Val("Matrix", v2._1, updateMatrix(v)(v1)(neg)(v2._2));
     }
     return unsafePerformEffect(throwException(error("absurd")));
   };
@@ -35836,13 +35853,13 @@
                       v._2._1._1,
                       unit2,
                       Leaf2
-                    ))))))(sequence22(intersectionWith((v2) => (v3) => bind2(lift1($$new(insert2(ordVertex)(v3._1)(unit2)($Map(
+                    ))))))(functorExceptT2.map(DictRep)(sequence22(intersectionWith((v2) => (v3) => bind2(lift1($$new(insert2(ordVertex)(v3._1)(unit2)($Map(
                       "Two",
                       Leaf2,
                       v2._1,
                       unit2,
                       Leaf2
-                    )))))((\u03B2$p$p) => functorExceptT2.map(Tuple(\u03B2$p$p))(bind2(apply4(v._1)(v2._2))((a) => apply4(a)(v3._2)))))(v._2._1._2)(v._2._2._1._2)));
+                    )))))((\u03B2$p$p) => functorExceptT2.map(Tuple(\u03B2$p$p))(bind2(apply4(v._1)(v2._2))((a) => apply4(a)(v3._2)))))(v._2._1._2)(v._2._2._1._2))));
                   }
                   return $9.pure($Either("Left", "Function and two dictionaries expected"));
                 }
