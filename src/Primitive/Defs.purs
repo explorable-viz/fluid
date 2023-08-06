@@ -202,7 +202,8 @@ dict_foldl :: ForeignOp
 dict_foldl = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op _ = error unimplemented
+   op (v : u : Dictionary _ d : Nil) = ?_
+   op _ = except $ report "Function, value and dictionary expected"
 
    fwd :: OpFwd (Raw Val × List (String × AppTrace × AppTrace))
    fwd (v : u : Dictionary _ d : Nil) = do
