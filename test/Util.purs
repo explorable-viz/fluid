@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
+import Control.Monad.Except (except, runExceptT)
 import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -26,7 +27,7 @@ import SExpr (Expr) as S
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Util (MayFailT, type (×), (×), successful)
+import Util (MayFailT, type (×), (×), error, successful, unimplemented)
 import Util.Pretty (render)
 import Val (Env, Val(..), (<+>))
 
@@ -60,35 +61,38 @@ testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × 
 testWithSetup (File file) expected v_expect_opt setup =
    before setup $ it file doTest
    where
+   doTest' :: Env 𝔹 × S.Expr 𝔹 -> MayFailT Aff Unit
+   doTest' (γ × s) = do
+      e <- except $ desug s
+      t × v <- except $ eval γ e bot
+      let v' = fromMaybe identity (fst <$> v_expect_opt) v
+          { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
+          s' = desugBwd e' (erase s)
+      _ × v'' <- except $ desug s' >>= flip (eval γ') true
+      let src = render (pretty s)
+      newProg <- except $ parse src program
+      trace ("Non-Annotated:\n" <> src) \_ -> do
+         ?_
+{-
+         let newExp = show newProg
+         if (eq (erase s) newProg)
+         then do
+            liftEffect (log ("SRC\n" <> show (erase s)))
+            liftEffect (log ("NEW\n" <> newExp))
+            fail "not equal"
+         else do
+            unless (isGraphical v'') (checkPretty "line103" expected v'')
+            trace ("Annotated\n" <> render (pretty s')) \_ -> do
+               unless (isGraphical v'') (checkPretty "line105" expected v'')
+               case snd <$> v_expect_opt of
+                  Nothing -> pure unit
+                  Just file_expect -> do
+                     expect <- loadFile (Folder "fluid/example") file_expect
+                     checkPretty "Source selection" expect s'
+-}
+
    doTest :: Env 𝔹 × S.Expr 𝔹 -> Aff Unit
-   doTest (γ × s) = do
-      let
-         e = successful (desug s)
-         t × v = successful (eval γ e bot)
-         v' = fromMaybe identity (fst <$> v_expect_opt) v
-         { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-         s' = desugBwd e' (erase s)
-         _ × v'' = successful (eval γ' (successful (desug s')) true)
-         src = render (pretty s)
-      case parse src program of
-         Left msg -> fail msg
-         Right newProg -> do
-            trace ("Non-Annotated:\n" <> src) \_ -> do
-               let newExp = show newProg
-               if (eq (erase s) newProg)
-               then do
-                  liftEffect (log ("SRC\n" <> show (erase s)))
-                  liftEffect (log ("NEW\n" <> newExp))
-                  fail "not equal"
-               else do
-                  unless (isGraphical v'') (checkPretty "line103" expected v'')
-                  trace ("Annotated\n" <> render (pretty s')) \_ -> do
-                     unless (isGraphical v'') (checkPretty "line105" expected v'')
-                     case snd <$> v_expect_opt of
-                        Nothing -> pure unit
-                        Just file_expect -> do
-                           expect <- loadFile (Folder "fluid/example") file_expect
-                           checkPretty "Source selection" expect s'
+   doTest γs = runExceptT (doTest' γs) <#> successful
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
