@@ -6,7 +6,7 @@ import Control.Monad.Except (except)
 import Control.Monad.Trans.Class (lift)
 import Data.Array ((!!))
 import Data.Exists (mkExists)
-import Data.Foldable (foldl)
+import Data.Foldable (foldl, foldM)
 import Data.FoldableWithIndex (foldWithIndexM)
 import Data.Int (ceil, floor, toNumber)
 import Data.Int (quot, rem) as I
@@ -202,7 +202,8 @@ dict_foldl :: ForeignOp
 dict_foldl = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
    op :: OpGraph
-   op (v : u : Dictionary _ d : Nil) = ?_
+   op (v : u : Dictionary _ d : Nil) =
+      foldM (\u1 (_ × u2) -> G.apply v u1 >>= flip G.apply u2) u d
    op _ = except $ report "Function, value and dictionary expected"
 
    fwd :: OpFwd (Raw Val × List (String × AppTrace × AppTrace))
