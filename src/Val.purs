@@ -24,6 +24,7 @@ data Val' a
    | Float' a Number
    | Str' a String
    | Constr' a Ctr (List (Val' a)) -- always saturated
+   | Record' a (Dict (Val' a)) -- always saturated
    | Fun' (Fun' a)
 
 data Fun' a
