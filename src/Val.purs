@@ -119,16 +119,17 @@ instance Highlightable Vertex where
 -- ======================
 derive instance Functor Val
 derive instance Functor Fun
+derive instance Foldable Fun
 
 instance Foldable Val where
-   foldl f z (Int α n) = f z α
-   foldl f z (Float α n) = f z α
-   foldl f z (Str α s) = f z α
-   foldl f z (Constr α c vs) = foldl (foldl f) z vs
-   foldl f z (Record α xvs) = ?_
-   foldl f z (Dictionary α svs) = ?_
-   foldl f z (Matrix α (vss × (i × βi) × (j × βj))) = ?_
-   foldl f z (Fun φ) = ?_
+   foldl f acc (Int α n) = acc `f` α
+   foldl f acc (Float α n) = acc `f` α
+   foldl f acc (Str α s) = acc `f` α
+   foldl f acc (Constr α c vs) = foldl (foldl f) (acc `f` α) vs
+   foldl f acc (Record α xvs) = foldl (foldl f) (acc `f` α) xvs
+   foldl f acc (Dictionary α svs) = foldl (\acc (a × v) -> foldl f (acc `f` a) v) (acc `f` α) svs
+   foldl f acc (Matrix α (vss × (i × βi) × (j × βj))) = ?_
+   foldl f acc (Fun φ) = foldl f acc φ
 
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
