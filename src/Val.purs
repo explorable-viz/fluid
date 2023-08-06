@@ -8,7 +8,7 @@ import Data.Exists (Exists)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), (:))
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
-import Data.Traversable (class Traversable)
+import Data.Traversable (class Traversable, traverse)
 import DataType (Ctr)
 import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
@@ -25,9 +25,20 @@ data Val' a
    | Str' a String
    | Constr' a Ctr (List (Val' a)) -- always saturated
 
+data Fun' a
+   = Closure' a (Env a) (RecDefs a) (Elim a)
+   | Foreign' ForeignOp (List (Val a)) -- never saturated
+   | PartialConstr' a Ctr (List (Val a)) -- never saturated
+
+-- Environments.
+type Env' a = Dict (Val' a)
+
 derive instance Functor Val'
 derive instance Foldable Val'
 derive instance Traversable Val'
+
+test :: forall a b m. Applicative m => (a -> m b) -> Env' a -> m (Env' b)
+test f = traverse (traverse f)
 
 data Val a
    = Int a Int
