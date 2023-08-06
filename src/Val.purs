@@ -20,59 +20,6 @@ import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expand
 import Util.Pretty (Doc, beside, text)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 
-data Val' a
-   = Int' a Int
-   | Float' a Number
-   | Str' a String
-   | Constr' a Ctr (List (Val' a)) -- always saturated
-   | Dictionary' a (KeyVal a)
-   | Record' a (Dict (Val' a)) -- always saturated
-   | Fun' (Fun' a)
-
-data Fun' a
-   = Closure' a (Env' a) (RecDefs' a) (Elim' a)
-   | Foreign' ForeignOp (List (Val' a)) -- never saturated
-   | PartialConstr' a Ctr (List (Val' a)) -- never saturated
-
-data RecDefs' a = RecDefs' a
-data Elim' a = Elim' a
-
-newtype KeyVal a = KeyVal (a × Val' a)
-
-derive instance Newtype (KeyVal a) _
-derive instance Functor KeyVal
-
-instance Foldable KeyVal where
-   foldl f z (KeyVal (x × v)) = foldl f (f z x) v
-   foldr f = foldrDefault f
-   foldMap f = foldMapDefaultL f
-
-instance Traversable KeyVal where
-   traverse f (KeyVal (x × v)) = KeyVal <$> ((×) <$> f x <*> traverse f v)
-   sequence = sequenceDefault
-
--- Environments.
-type Env' a = Dict (Val' a)
-
-derive instance Functor Val'
-derive instance Foldable Val'
-derive instance Traversable Val'
-
-derive instance Functor Fun'
-derive instance Foldable Fun'
-derive instance Traversable Fun'
-
-derive instance Functor RecDefs'
-derive instance Foldable RecDefs'
-derive instance Traversable RecDefs'
-
-derive instance Functor Elim'
-derive instance Foldable Elim'
-derive instance Traversable Elim'
-
-test :: forall a b m. Applicative m => (a -> m b) -> Env' a -> m (Env' b)
-test f = traverse (traverse f)
-
 data Val a
    = Int a Int
    | Float a Number
@@ -172,6 +119,19 @@ instance Highlightable Vertex where
 -- ======================
 derive instance Functor Val
 derive instance Functor Fun
+
+instance Foldable Val where
+   foldl f z (Int α n) = f z α
+   foldl f z (Float α n) = f z α
+   foldl f z (Str α s) = f z α
+   foldl f z (Constr α c vs) = foldl (foldl f) z vs
+   foldl f z (Record α xvs) = ?_
+   foldl f z (Dictionary α svs) = ?_
+   foldl f z (Matrix α (vss × (i × βi) × (j × βj))) = ?_
+   foldl f z (Fun φ) = ?_
+
+   foldr f = foldrDefault f
+   foldMap f = foldMapDefaultL f
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
