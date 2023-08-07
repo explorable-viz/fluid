@@ -137,13 +137,9 @@ bwdSlice' parent g ((s × t) : es) =
    else
       let
          newG = extend s (S.singleton t) g
-         newEs = append es (L.fromFoldable (outE' parent t))
+         newEs = es <> (L.fromFoldable (outE' parent t))
       in
          bwdSlice' parent newG newEs
-   where
-   append :: forall a. List a -> List a -> List a
-   append Nil xs = xs
-   append (y : ys) xs = append ys (y : xs)
 
 bwdSlice' _ g Nil = g
 
