@@ -27738,7 +27738,7 @@
   var $ForeignOp$p = (_1) => ({ tag: "ForeignOp'", _1 });
   var $Fun = (tag, _1, _2, _3, _4) => ({ tag, _1, _2, _3, _4 });
   var $Val = (tag, _1, _2, _3) => ({ tag, _1, _2, _3 });
-  var identity15 = (x2) => x2;
+  var identity17 = (x2) => x2;
   var fromFoldable6 = /* @__PURE__ */ foldlArray((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2);
   var toUnfoldable9 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
   var intersection2 = /* @__PURE__ */ intersection(ordString);
@@ -27755,11 +27755,11 @@
   var Foreign = (value0) => (value1) => $Fun("Foreign", value0, value1);
   var PartialConstr = (value0) => (value1) => (value2) => $Fun("PartialConstr", value0, value1, value2);
   var highlightableVertex = { highlightIf: (v) => (doc2) => beside(beside(doc2)(text("_")))(text("\u27E8" + (v + "\u27E9"))) };
-  var highlightableUnit = { highlightIf: (v) => identity15 };
+  var highlightableUnit = { highlightIf: (v) => identity17 };
   var highlightableBoolean = {
     highlightIf: (v) => {
       if (!v) {
-        return identity15;
+        return identity17;
       }
       if (v) {
         return (doc2) => beside(beside(text("_"))(doc2))(text("_"));
@@ -31260,7 +31260,7 @@
     return go(Leaf2);
   })();
   var unions12 = /* @__PURE__ */ fold((z) => (v) => union2(ordString)(z))(Leaf2);
-  var Const = /* @__PURE__ */ $Trace("Const");
+  var Const2 = /* @__PURE__ */ $Trace("Const");
   var bVMatch = {
     bv: (v) => {
       if (v.tag === "MatchVar") {
@@ -31472,13 +31472,13 @@
         fail();
       }
       if (v1.tag === "Int") {
-        return $Either("Right", $Tuple(Const, $Val("Int", meet(v1._1)(v2), v1._2)));
+        return $Either("Right", $Tuple(Const2, $Val("Int", meet(v1._1)(v2), v1._2)));
       }
       if (v1.tag === "Float") {
-        return $Either("Right", $Tuple(Const, $Val("Float", meet(v1._1)(v2), v1._2)));
+        return $Either("Right", $Tuple(Const2, $Val("Float", meet(v1._1)(v2), v1._2)));
       }
       if (v1.tag === "Str") {
-        return $Either("Right", $Tuple(Const, $Val("Str", meet(v1._1)(v2), v1._2)));
+        return $Either("Right", $Tuple(Const2, $Val("Str", meet(v1._1)(v2), v1._2)));
       }
       if (v1.tag === "Record") {
         return bindEither.bind((() => {
@@ -31584,7 +31584,7 @@
               "Cons",
               sequence2(bindList.bind(range(1)(v5._2._1))((j) => $List(
                 "Cons",
-                $$eval(dictAnn)(unionWith2((v$1) => identity15)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._3._1)($Val(
+                $$eval(dictAnn)(unionWith2((v$1) => identity17)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._3._1)($Val(
                   "Int",
                   v5._1._2,
                   i
@@ -31618,7 +31618,7 @@
       if (v1.tag === "Lambda") {
         return $Either(
           "Right",
-          $Tuple(Const, $Val("Fun", $Fun("Closure", v2, restrict(v)(fVElim.fv(v1._1)), empty2, v1._1)))
+          $Tuple(Const2, $Val("Fun", $Fun("Closure", v2, restrict(v)(fVElim.fv(v1._1)), empty2, v1._1)))
         );
       }
       if (v1.tag === "Project") {
@@ -31643,13 +31643,13 @@
         )))((v6) => $Either("Right", $Tuple($Trace("App", v3._1, v5._1, v6._1), v6._2)))));
       }
       if (v1.tag === "Let") {
-        return bindEither.bind($$eval(dictAnn)(v)(v1._1._2)(v2))((v3) => bindEither.bind(match1(v3._2)(v1._1._1))((v5) => bindEither.bind($$eval(dictAnn)(unionWith2((v$1) => identity15)(v)(v5._1))(v1._2)(v5._2._2._1))((v6) => $Either(
+        return bindEither.bind($$eval(dictAnn)(v)(v1._1._2)(v2))((v3) => bindEither.bind(match1(v3._2)(v1._1._1))((v5) => bindEither.bind($$eval(dictAnn)(unionWith2((v$1) => identity17)(v)(v5._1))(v1._2)(v5._2._2._1))((v6) => $Either(
           "Right",
           $Tuple($Trace("Let", $VarDef3(v5._2._2._2, v3._1), v6._1), v6._2)
         ))));
       }
       if (v1.tag === "LetRec") {
-        return bindEither.bind($$eval(dictAnn)(unionWith2((v$1) => identity15)(v)(closeDefs(v)(v1._1)(v2)))(v1._2)(v2))((v3) => $Either(
+        return bindEither.bind($$eval(dictAnn)(unionWith2((v$1) => identity17)(v)(closeDefs(v)(v1._1)(v2)))(v1._2)(v2))((v3) => $Either(
           "Right",
           $Tuple($Trace("LetRec", _fmapObject(v1._1, erase1), v3._1), v3._2)
         ));
@@ -31665,7 +31665,7 @@
       if (v._1.tag === "Fun") {
         if (v._1._1.tag === "Closure") {
           const \u03B32 = closeDefs(v._1._1._2)(v._1._1._3)(v._1._1._1);
-          return bindEither.bind(match1(v._2)(v._1._1._4))((v2) => bindEither.bind($$eval(dictAnn)(unionWith2((v$1) => identity15)(unionWith2((v$1) => identity15)(v._1._1._2)(\u03B32))(v2._1))((() => {
+          return bindEither.bind(match1(v._2)(v._1._1._4))((v2) => bindEither.bind($$eval(dictAnn)(unionWith2((v$1) => identity17)(unionWith2((v$1) => identity17)(v._1._1._2)(\u03B32))(v2._1))((() => {
             if (v2._2._1.tag === "ContExpr") {
               return v2._2._1._1;
             }
@@ -31841,10 +31841,10 @@
         }
         if (v1._1.tag === "Cons") {
           if (v1._1._1.tag === "Left") {
-            return bindEither.bind(eval1(unionWith2((v$1) => identity15)(\u03B3)(v))(v1._1._1._1._2)(v2))((v3) => bindEither.bind(match1(v3._2)(v1._1._1._1._1))((v5) => go(unionWith2((v$1) => identity15)(v)(v5._1))($Module(v1._1._2))(v5._2._2._1)));
+            return bindEither.bind(eval1(unionWith2((v$1) => identity17)(\u03B3)(v))(v1._1._1._1._2)(v2))((v3) => bindEither.bind(match1(v3._2)(v1._1._1._1._1))((v5) => go(unionWith2((v$1) => identity17)(v)(v5._1))($Module(v1._1._2))(v5._2._2._1)));
           }
           if (v1._1._1.tag === "Right") {
-            return go(unionWith2((v$1) => identity15)(v)(closeDefs(unionWith2((v$1) => identity15)(\u03B3)(v))(v1._1._1._1)(v2)))($Module(v1._1._2))(v2);
+            return go(unionWith2((v$1) => identity17)(v)(closeDefs(unionWith2((v$1) => identity17)(\u03B3)(v))(v1._1._1._1)(v2)))($Module(v1._1._2))(v2);
           }
           fail();
         }
@@ -32098,7 +32098,7 @@
               unit2,
               Leaf2
             ))($Map("Two", Leaf2, v1._2._2, unit2, Leaf2)))(v42["\u03B3"]);
-            const \u03B30 = unionWith2((v$1) => identity15)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._2._1)($Val(
+            const \u03B30 = unionWith2((v$1) => identity17)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._2._1)($Val(
               "Int",
               BoundedJoinSemilattice0.bot,
               v1._3._1
@@ -32258,7 +32258,7 @@
 
   // output-es/Affjax.ResponseFormat/index.js
   var $ResponseFormat = (tag, _1) => ({ tag, _1 });
-  var identity17 = (x2) => x2;
+  var identity19 = (x2) => x2;
 
   // output-es/Affjax.ResponseHeader/index.js
   var $ResponseHeader = (_1, _2) => ({ tag: "ResponseHeader", _1, _2 });
@@ -32951,7 +32951,7 @@
   var toUpperSimple = /* @__PURE__ */ convert(uTowupper);
 
   // output-es/Parsing.Token/index.js
-  var identity18 = (x2) => x2;
+  var identity20 = (x2) => x2;
   var many3 = /* @__PURE__ */ many2(alternativeParserT)(lazyParserT);
   var some3 = /* @__PURE__ */ some2(alternativeParserT)(lazyParserT);
   var choice3 = /* @__PURE__ */ choice(foldableArray);
@@ -33104,8 +33104,8 @@
       more,
       lift1,
       $$throw,
-      (state2, a) => more((v2) => done(state2, identity18))
-    )))((state1, v$1, v1, v2, done) => done(state1, identity18)));
+      (state2, a) => more((v2) => done(state2, identity20))
+    )))((state1, v$1, v1, v2, done) => done(state1, identity20)));
     const $2 = some3(withErrorMessage(satisfyCP(isOctDigit))("oct digit"));
     const octal = (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => oneOf(["o", "O"])(
       state1,
@@ -34056,7 +34056,7 @@
   var fromFoldable9 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
   var fromFoldable16 = /* @__PURE__ */ (() => fromFoldableImpl(foldableNonEmptyList.foldr))();
   var choose2 = /* @__PURE__ */ choose(altParserT);
-  var identity19 = (x2) => x2;
+  var identity21 = (x2) => x2;
   var fanin3 = /* @__PURE__ */ fanin(categoryFn)(choiceFn);
   var operators = (binaryOp) => fromFoldable9(listMap(arrayMap((v) => $Operator("Infix", $$try(binaryOp(v.op)), v.assoc)))(listMap(fromFoldable16)(groupBy((x2) => (y2) => x2.prec === y2.prec)(sortBy((x2) => (x$1) => {
     const $3 = ordInt.compare(x2.prec)(x$1.prec);
@@ -34734,8 +34734,8 @@
           more,
           lift1,
           $$throw,
-          (state2, a) => more((v2) => done(state2, identity19))
-        )))((state1, v$1, v1, v2, done) => done(state1, identity19)));
+          (state2, a) => more((v2) => done(state2, identity21))
+        )))((state1, v$1, v1, v2, done) => done(state1, identity21)));
         return (state1, more, lift1, $$throw, done) => more((v1) => $3(
           state1,
           more,
@@ -34758,8 +34758,8 @@
           more,
           lift1,
           $$throw,
-          (state2, a) => more((v2) => done(state2, identity19))
-        )))((state1, v$1, v1, v2, done) => done(state1, identity19)));
+          (state2, a) => more((v2) => done(state2, identity21))
+        )))((state1, v$1, v1, v2, done) => done(state1, identity21)));
         return (state1, more, lift1, $$throw, done) => more((v1) => $3(
           state1,
           more,
@@ -35227,7 +35227,7 @@
             })());
           })())(() => bindExceptT2.bind(sequence13(arrayBind(range2(1)(v4._1._1))((i) => [
             sequence13(arrayBind(range2(1)(v4._2._1))((j) => [
-              $$eval2(dictGraph)(unionWith2((v$1) => identity15)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._3._1)($Val(
+              $$eval2(dictGraph)(unionWith2((v$1) => identity17)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._3._1)($Val(
                 "Int",
                 v4._1._2,
                 i
@@ -35254,10 +35254,10 @@
         return bindExceptT2.bind($$eval2(dictGraph)(v)(v1._1)(v2))((v3) => bindExceptT2.bind($$eval2(dictGraph)(v)(v1._2)(v2))((v$p) => apply3(dictGraph)(v3)(v$p)));
       }
       if (v1.tag === "Let") {
-        return bindExceptT2.bind($$eval2(dictGraph)(v)(v1._1._2)(v2))((v3) => bindExceptT2.bind($2.pure(match4(v3)(v1._1._1)))((v4) => $$eval2(dictGraph)(unionWith2((v$1) => identity15)(v)(v4._1))(v1._2)(v2)));
+        return bindExceptT2.bind($$eval2(dictGraph)(v)(v1._1._2)(v2))((v3) => bindExceptT2.bind($2.pure(match4(v3)(v1._1._1)))((v4) => $$eval2(dictGraph)(unionWith2((v$1) => identity17)(v)(v4._1))(v1._2)(v2)));
       }
       if (v1.tag === "LetRec") {
-        return bindExceptT2.bind(closeDefs1(v)(v1._1)(v2))((\u03B3$p) => $$eval2(dictGraph)(unionWith2((v$1) => identity15)(v)(\u03B3$p))(v1._2)(v2));
+        return bindExceptT2.bind(closeDefs1(v)(v1._1)(v2))((\u03B3$p) => $$eval2(dictGraph)(unionWith2((v$1) => identity17)(v)(\u03B3$p))(v1._2)(v2));
       }
       fail();
     };
@@ -35276,7 +35276,7 @@
       ));
       if (v.tag === "Fun") {
         if (v._1.tag === "Closure") {
-          return bindExceptT2.bind(closeDefs1(v._1._2)(v._1._3)($Map("Two", Leaf2, v._1._1, unit2, Leaf2)))((\u03B32) => bindExceptT2.bind($5.pure(match4(v1)(v._1._4)))((v3) => $$eval2(dictGraph)(unionWith2((v$1) => identity15)(unionWith2((v$1) => identity15)(v._1._2)(\u03B32))(v3._1))((() => {
+          return bindExceptT2.bind(closeDefs1(v._1._2)(v._1._3)($Map("Two", Leaf2, v._1._1, unit2, Leaf2)))((\u03B32) => bindExceptT2.bind($5.pure(match4(v1)(v._1._4)))((v3) => $$eval2(dictGraph)(unionWith2((v$1) => identity17)(unionWith2((v$1) => identity17)(v._1._2)(\u03B32))(v3._1))((() => {
             if (v3._2._1.tag === "ContExpr") {
               return v3._2._1._1;
             }
@@ -36423,12 +36423,12 @@
   ]))();
 
   // output-es/Module/index.js
-  var identity20 = (x2) => x2;
+  var identity22 = (x2) => x2;
   var eval_module2 = /* @__PURE__ */ eval_module(annBoolean);
   var $$eval3 = /* @__PURE__ */ $$eval(annBoolean);
   var parse = (src) => {
     const $1 = runParserT1(src);
-    return (x2) => bifunctorEither.bimap(showParseError.show)(identity20)($1(x2));
+    return (x2) => bifunctorEither.bimap(showParseError.show)(identity22)($1(x2));
   };
   var loadFile = (v) => (v1) => _bind(request(driver)({
     method: $Either("Left", GET),
@@ -36438,7 +36438,7 @@
     username: Nothing,
     password: Nothing,
     withCredentials: false,
-    responseFormat: $ResponseFormat("String", identity17),
+    responseFormat: $ResponseFormat("String", identity19),
     timeout: Nothing
   }))((result) => {
     if (result.tag === "Left") {
@@ -36464,7 +36464,7 @@
       return $Either("Left", $3._1);
     }
     if ($3.tag === "Right") {
-      return $Either("Right", unionWith2((v) => identity15)(\u03B3)($3._1));
+      return $Either("Right", unionWith2((v) => identity17)(\u03B3)($3._1));
     }
     fail();
   })())));
@@ -36509,7 +36509,7 @@
   var botOf = /* @__PURE__ */ (() => functorVal.map((v) => false))();
   var sequence_ = /* @__PURE__ */ traverse_(applicativeEffect)(foldableArray)(identity8);
   var length5 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
-  var identity21 = (x2) => x2;
+  var identity23 = (x2) => x2;
   var view = (v) => (v1) => {
     if (v1.tag === "Constr") {
       if (v1._3.tag === "Cons") {
@@ -36585,7 +36585,7 @@
         return $Either("Right", Tuple($5._1));
       }
       fail();
-    })())(exprFwd(joinSemilatticeBoolean)(v3._2)))((v4) => bindEither.bind($$eval4(unionWith2((v$1) => identity15)(v2._1)(v2._2))(v4._1)(false))((v5) => bindEither.bind($$eval4(unionWith2((v$1) => identity15)(v2._1)(v2._2))(v4._2)(false))((v6) => bindEither.bind((() => {
+    })())(exprFwd(joinSemilatticeBoolean)(v3._2)))((v4) => bindEither.bind($$eval4(unionWith2((v$1) => identity17)(v2._1)(v2._2))(v4._1)(false))((v5) => bindEither.bind($$eval4(unionWith2((v$1) => identity17)(v2._1)(v2._2))(v4._2)(false))((v6) => bindEither.bind((() => {
       const $8 = _lookup(Nothing, Just, v.x, v2._2);
       if ($8.tag === "Nothing") {
         return $Either("Left", "absurd");
@@ -36596,10 +36596,10 @@
       fail();
     })())((v0) => $Either("Right", { spec: v, "\u03B30": v2._1, "\u03B3": v2._2, s1: v3._1, s2: v3._2, e1: v4._1, e2: v4._2, t1: v5._1, t2: v6._1, v1: v5._2, v2: v6._2, v0 })))))))));
   };
-  var loadFig = (v) => _bind(openDatasetAs("example/linking/renewables")("data"))((v1) => _map((s$p) => successful(bindEither.bind(splitDefs(unionWith2((v$1) => identity15)(v1._1)(v1._2))(s$p))((v2) => bindEither.bind(exprFwd(joinSemilatticeBoolean)(v2.s))((e) => bindEither.bind($$eval4(unionWith2((v$1) => identity15)(unionWith2((v$1) => identity15)(v1._1)(v1._2))(v2["\u03B3"]))(e)(false))((v3) => $Either("Right", { spec: v, "\u03B30": v1._1, "\u03B3": unionWith2((v$1) => identity15)(v1._2)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file)));
+  var loadFig = (v) => _bind(openDatasetAs("example/linking/renewables")("data"))((v1) => _map((s$p) => successful(bindEither.bind(splitDefs(unionWith2((v$1) => identity17)(v1._1)(v1._2))(s$p))((v2) => bindEither.bind(exprFwd(joinSemilatticeBoolean)(v2.s))((e) => bindEither.bind($$eval4(unionWith2((v$1) => identity17)(unionWith2((v$1) => identity17)(v1._1)(v1._2))(v2["\u03B3"]))(e)(false))((v3) => $Either("Right", { spec: v, "\u03B30": v1._1, "\u03B3": unionWith2((v$1) => identity17)(v1._2)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file)));
   var linkResult = (x2) => (\u03B30) => (\u03B3) => (e1) => (e22) => (t1) => (v) => (v1) => {
     const $8 = append_inv($Map("Two", Leaf2, x2, unit2, Leaf2))(evalBwd2(_fmapObject(
-      unionWith2((v$1) => identity15)(\u03B30)(\u03B3),
+      unionWith2((v$1) => identity17)(\u03B30)(\u03B3),
       erase2
     ))(functorExpr.map((v$1) => unit2)(e1))(v1)(t1)["\u03B3"])._2;
     return bindEither.bind((() => {
@@ -36611,13 +36611,13 @@
         return $Either("Right", $9._1);
       }
       fail();
-    })())((v0$p) => bindEither.bind($$eval4(neg4(unionWith2((v$1) => identity15)(_fmapObject(\u03B30, botOf))($8)))(functorExpr.map((x$1) => true)(e22))(true))((v4) => $Either(
+    })())((v0$p) => bindEither.bind($$eval4(neg4(unionWith2((v$1) => identity17)(_fmapObject(\u03B30, botOf))($8)))(functorExpr.map((x$1) => true)(e22))(true))((v4) => $Either(
       "Right",
       { "v'": joinSemilatticeVal2.neg(v4._2), "v0'": v0$p }
     )));
   };
   var figViews = (v) => (\u03B4v) => {
-    const v2 = evalBwd2(_fmapObject(unionWith2((v$1) => identity15)(v["\u03B30"])(v["\u03B3"]), erase2))(functorExpr.map((v$1) => unit2)(v.e))(\u03B4v(v.v))(v.t);
+    const v2 = evalBwd2(_fmapObject(unionWith2((v$1) => identity17)(v["\u03B30"])(v["\u03B3"]), erase2))(functorExpr.map((v$1) => unit2)(v.e))(\u03B4v(v.v))(v.t);
     return bindEither.bind($$eval4(v2["\u03B3"])(v2.e)(v2["\u03B1"]))((v3) => bindEither.bind(sequence3(arrayMap((a) => varView(a)(v2["\u03B3"]))(v.spec.xs)))((views) => $Either(
       "Right",
       $Tuple(view("output")(v3._2), views)
@@ -36663,14 +36663,14 @@
           const v1$p = \u03B4v._1(v.v1);
           return bindEither.bind(linkResult(v.spec.x)(v["\u03B30"])(v["\u03B3"])(v.e1)(v.e2)(v.t1)(v.t2)(v1$p))((v4) => $Either(
             "Right",
-            $Tuple(v1$p, $Tuple(v4["v'"], $Tuple((v$1) => v1$p, $Tuple(identity21, v4["v0'"]))))
+            $Tuple(v1$p, $Tuple(v4["v'"], $Tuple((v$1) => v1$p, $Tuple(identity23, v4["v0'"]))))
           ));
         }
         if (\u03B4v.tag === "Right") {
           const v2$p = \u03B4v._1(v.v2);
           return bindEither.bind(linkResult(v.spec.x)(v["\u03B30"])(v["\u03B3"])(v.e2)(v.e1)(v.t2)(v.t1)(v2$p))((v4) => $Either(
             "Right",
-            $Tuple(v4["v'"], $Tuple(v2$p, $Tuple(identity21, $Tuple((v$1) => v2$p, v4["v0'"]))))
+            $Tuple(v4["v'"], $Tuple(v2$p, $Tuple(identity23, $Tuple((v$1) => v2$p, v4["v0'"]))))
           ));
         }
         fail();
