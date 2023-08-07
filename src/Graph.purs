@@ -26,6 +26,7 @@ class Monoid g <= Graph g where
    outN :: g -> Vertex -> Maybe (Set Vertex)
    inN :: g -> Vertex -> Maybe (Set Vertex)
    singleton :: Vertex -> Set Vertex -> g
+   size :: g -> Int
    remove :: Vertex -> Endo g
    opp :: Endo g
    allocate :: g -> Vertex
@@ -91,8 +92,8 @@ instance Bind m => Bind (GraphAccumT g m) where
       m' <#> second ((>>>) g)
 
 instance Monad m => Bind (GraphAccum2T g m) where
-  bind (GraphAccum2T x) f = GraphAccum2T \g ->
-    x g >>= \(y × g') -> case f y of GraphAccum2T x' -> x' g'
+   bind (GraphAccum2T x) f = GraphAccum2T \g ->
+      x g >>= \(y × g') -> case f y of GraphAccum2T x' -> x' g'
 
 instance (Monoid g, Applicative m) => Applicative (GraphAccumT g m) where
    pure a = GraphAccumT $ pure $ a × identity
@@ -238,8 +239,8 @@ instance Graph GraphImpl where
 
    outN (GraphImpl out _) (Vertex α) = SM.lookup α out
    inN (GraphImpl _ in_) (Vertex α) = SM.lookup α in_
-
    singleton α αs = GraphImpl (starInOut α αs) (starInIn α αs)
+   size (GraphImpl out _) = SM.size out
    opp (GraphImpl out in_) = GraphImpl in_ out
    discreteG αs =
       let

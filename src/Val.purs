@@ -15,7 +15,7 @@ import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Graph (class Graph, WithGraph, Vertex(..))
+import Graph (class Graph, WithGraph2, Vertex(..))
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Util.Pretty (Doc, beside, text)
 import Util (Endo, MayFail, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
@@ -43,7 +43,7 @@ instance Ann Unit
 -- similar to an isomorphism lens with complement t
 type OpFwd t = forall a. Ann a => List (Val a) -> MayFail (t × Val a)
 type OpBwd t = forall a. Ann a => t × Val a -> List (Val a)
-type OpGraph = forall g. Graph g => List (Val Vertex) -> WithGraph g (Val Vertex)
+type OpGraph = forall g. Graph g => List (Val Vertex) -> WithGraph2 g (Val Vertex)
 
 data ForeignOp' t = ForeignOp'
    { arity :: Int

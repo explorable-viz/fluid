@@ -20,7 +20,7 @@ import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
-import Graph (Vertex, WithGraph, class Graph, new)
+import Graph (Vertex, WithGraph2, class Graph, new)
 import Prelude hiding (apply)
 import Pretty (prettyP)
 import Primitive (string, intPair)
@@ -63,7 +63,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall g. Graph g => Env Vertex -> RecDefs Vertex -> Set Vertex -> WithGraph g (Env Vertex)
+closeDefs :: forall g. Graph g => Env Vertex -> RecDefs Vertex -> Set Vertex -> WithGraph2 g (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -72,7 +72,7 @@ closeDefs γ ρ αs =
          V.Fun <$> (V.Closure <$> lift (new αs) <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
-apply :: forall g. Graph g => Val Vertex -> Val Vertex -> WithGraph g (Val Vertex)
+apply :: forall g. Graph g => Val Vertex -> Val Vertex -> WithGraph2 g (Val Vertex)
 apply (V.Fun (V.Closure α γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (S.singleton α)
    γ3 × κ × αs <- except $ match v σ
@@ -88,14 +88,14 @@ apply (V.Fun (V.PartialConstr α c vs)) v = do
 apply (V.Fun (V.Foreign φ vs)) v = do
    let vs' = snoc vs v
    let
-      apply' :: forall t. ForeignOp' t -> WithGraph g (Val Vertex)
+      apply' :: forall t. ForeignOp' t -> WithGraph2 g (Val Vertex)
       apply' (ForeignOp' φ') =
          if φ'.arity > length vs' then pure $ V.Fun (V.Foreign φ vs')
          else φ'.op' vs'
    runExists apply' φ
 apply _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> WithGraph g (Val Vertex)
+eval :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> WithGraph2 g (Val Vertex)
 eval γ (Var x) _ = except $ lookup' x γ
 eval γ (Op op) _ = except $ lookup' op γ
 eval _ (Int α n) αs = V.Int <$> lift (new (S.insert α αs)) <@> n
