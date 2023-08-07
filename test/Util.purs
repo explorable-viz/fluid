@@ -26,6 +26,7 @@ import EvalBwd (evalBwd)
 import EvalGraph (eval) as G
 import Expr (Expr)
 import Graph (class Graph, Vertex, WithGraph, alloc, runHeap, runGraphAccumT)
+import Graph (empty) as G
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
@@ -68,7 +69,7 @@ testWithSetup (File file) expected v_expect_opt setup =
    doTest' :: Env 𝔹 -> SE.Expr 𝔹 -> MayFailT Aff Unit
    doTest' γ s = do
       e <- except $ desug s
-      --      doGraphTest G.empty γ e
+      doGraphTest G.empty γ e
       t × v <- except $ eval γ e bot
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
