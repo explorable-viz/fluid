@@ -47,7 +47,7 @@ instance Monad m => MonadAlloc (StateT Int m) where
 
 {-# Allocating addresses #-}
 runHeap :: forall a. Heap a -> a
-runHeap =  flip runState 0 >>> fst
+runHeap = flip runState 0 >>> fst
 
 alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
