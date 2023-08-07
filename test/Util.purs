@@ -6,6 +6,7 @@ import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
+import Control.Monad.State (get)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
@@ -93,17 +94,22 @@ testWithSetup (File file) expected v_expect_opt setup =
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
 
-doGraphTest :: forall g a. Graph g => g -> Env a -> Expr a -> MayFailT Aff Unit
+doGraphTest :: forall g a. Show g => Graph g => g -> Env a -> Expr a -> MayFailT Aff Unit
 doGraphTest g γ0 e0 = do
    let maybe_v × δg = runHeap $ runGraphAccumT $ runExceptT (doGraphTest' γ0 e0)
-   let _ = δg g -- make graph and throw away for now
-   except maybe_v <#> const unit
+   let g' = δg g -- make graph and throw away for now
+   trace (show g') \_ ->
+      except maybe_v <#> const unit
 
 doGraphTest' :: forall g a. Graph g => Env a -> Expr a -> WithGraph g (Val Vertex)
 doGraphTest' γ0 e0 = do
    γ <- lift $ lift $ traverse alloc γ0
    e <- lift $ lift $ alloc e0
-   G.eval γ e S.empty :: WithGraph g _
+   n <- lift $ lift $ get
+   v <- G.eval γ e S.empty :: WithGraph g _
+   n' <- lift $ lift $ get
+   trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
+      pure v
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)

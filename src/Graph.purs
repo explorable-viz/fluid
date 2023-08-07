@@ -14,7 +14,6 @@ import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
-import Debug (trace)
 import Foreign.Object (Object, delete, empty, fromFoldable, lookup, singleton, size, unionWith) as SM
 import Util (Endo, MayFailT, (×), type (×))
 
@@ -48,10 +47,7 @@ instance Monad m => MonadAlloc (StateT Int m) where
 
 {-# Allocating addresses #-}
 runHeap :: forall a. Heap a -> a
-runHeap h =
-   trace (show n <> " vertices allocated.") \_ -> α
-   where
-   α × n = runState h 0
+runHeap =  flip runState 0 >>> fst
 
 alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
