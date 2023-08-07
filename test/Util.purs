@@ -97,7 +97,7 @@ testWithSetup (File file) expected v_expect_opt setup =
 doGraphTest :: forall g a. Show g => Graph g => g -> Env a -> Expr a -> MayFailT Aff Unit
 doGraphTest g γ0 e0 = do
    let maybe_v × δg = runHeap $ runGraphAccumT $ runExceptT (doGraphTest' γ0 e0)
-   let g' = δg g -- make graph and throw away for now
+   let g' = δg g
    trace (show g') \_ ->
       except maybe_v <#> const unit
 
