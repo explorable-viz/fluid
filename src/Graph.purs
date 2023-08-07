@@ -61,16 +61,28 @@ class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
 data GraphAccumT g m a = GraphAccumT (m (a × Endo g))
 type WithGraph g a = MayFailT (GraphAccumT g (State Int)) a
 
+data GraphAccum2T g m a = GraphAccum2T (g -> m (a × g))
+type WithGraph2 g a = MayFailT (GraphAccum2T g (State Int)) a
+
 runGraphAccumT :: forall g m a. GraphAccumT g m a -> m (a × Endo g)
 runGraphAccumT (GraphAccumT m) = m
 
+runGraphAccum2T :: forall g m a. GraphAccum2T g m a -> g -> m (a × g)
+runGraphAccum2T (GraphAccum2T m) = m
+
 instance Functor m => Functor (GraphAccumT g m) where
    map f (GraphAccumT m) = GraphAccumT $ m <#> first f
+
+instance Functor m => Functor (GraphAccum2T g m) where
+   map f (GraphAccum2T m) = GraphAccum2T $ \g -> m g <#> first f
 
 instance Apply m => Apply (GraphAccumT g m) where
    apply (GraphAccumT m) (GraphAccumT m') = GraphAccumT $ k <$> m <*> m'
       where
       k (f × g) (x × g') = f x × (g >>> g')
+
+instance (Apply m, Monad m) => Apply (GraphAccum2T g m) where
+   apply = ap
 
 instance Bind m => Bind (GraphAccumT g m) where
    bind (GraphAccumT m) f = GraphAccumT $ do
@@ -78,18 +90,35 @@ instance Bind m => Bind (GraphAccumT g m) where
       let GraphAccumT m' = f x
       m' <#> second ((>>>) g)
 
+instance Monad m => Bind (GraphAccum2T g m) where
+  bind (GraphAccum2T x) f = GraphAccum2T \g ->
+    x g >>= \(y × g') -> case f y of GraphAccum2T x' -> x' g'
+
 instance (Monoid g, Applicative m) => Applicative (GraphAccumT g m) where
    pure a = GraphAccumT $ pure $ a × identity
 
+instance Monad m => Applicative (GraphAccum2T g m) where
+   pure x = GraphAccum2T \g -> pure $ x × g
+
 instance (Monoid g, Monad m) => Monad (GraphAccumT g m)
+
+instance Monad m => Monad (GraphAccum2T g m)
 
 instance Monoid g => MonadTrans (GraphAccumT g) where
    lift m = GraphAccumT $ (×) <$> m <@> identity
+
+instance Monoid g => MonadTrans (GraphAccum2T g) where
+   lift m = GraphAccum2T \g -> (×) <$> m <@> g
 
 instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccumT g m) where
    new αs = do
       α <- lift $ fresh
       GraphAccumT $ pure $ α × extend α αs
+
+instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccum2T g m) where
+   new αs = do
+      α <- lift $ fresh
+      GraphAccum2T $ \g -> pure $ α × extend α αs g
 
 outE' :: forall g. Graph g => g -> Vertex -> List Edge
 outE' graph α = case outN graph α of
