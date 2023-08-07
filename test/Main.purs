@@ -17,7 +17,7 @@ import Val (DictRep(..), Val(..))
 tests :: Array (Array (Test Unit))
 tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
 
--- tests = [ test_scratchpad ]
+--tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))

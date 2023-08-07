@@ -79,12 +79,12 @@ instance Bind m => Bind (GraphAccumT g m) where
       m' <#> second ((>>>) g)
 
 instance (Monoid g, Applicative m) => Applicative (GraphAccumT g m) where
-   pure a = GraphAccumT $ pure $ a × mempty
+   pure a = GraphAccumT $ pure $ a × identity
 
 instance (Monoid g, Monad m) => Monad (GraphAccumT g m)
 
 instance Monoid g => MonadTrans (GraphAccumT g) where
-   lift m = GraphAccumT $ (×) <$> m <@> mempty
+   lift m = GraphAccumT $ (×) <$> m <@> identity
 
 instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccumT g m) where
    new αs = do
