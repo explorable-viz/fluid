@@ -11,6 +11,7 @@ import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Set as S
+import Data.Traversable (traverse)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
@@ -24,7 +25,7 @@ import Eval (eval)
 import EvalBwd (evalBwd)
 import EvalGraph (eval) as G
 import Expr (Expr)
-import Graph (class Graph, Heap, Vertex, WithGraph, alloc, runHeap, runGraphAccumT)
+import Graph (class Graph, Vertex, WithGraph, alloc, runHeap, runGraphAccumT)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
@@ -33,7 +34,7 @@ import SExpr (Expr) as SE
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Util (MayFailT, type (×), (×), error, successful, unimplemented)
+import Util (MayFailT, type (×), (×), successful)
 import Util.Pretty (render)
 import Val (Env, Val(..), (<+>))
 
@@ -91,9 +92,6 @@ testWithSetup (File file) expected v_expect_opt setup =
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
 
-allocEnv :: forall a. Env a -> Heap (Env Vertex)
-allocEnv _ = error unimplemented
-
 doGraphTest :: forall g a. Graph g => g -> Env a -> Expr a -> MayFailT Aff Unit
 doGraphTest g γ0 e0 = do
    let maybe_v × δg = runHeap $ runGraphAccumT $ runExceptT (doGraphTest' γ0 e0)
@@ -102,7 +100,7 @@ doGraphTest g γ0 e0 = do
 
 doGraphTest' :: forall g a. Graph g => Env a -> Expr a -> WithGraph g (Val Vertex)
 doGraphTest' γ0 e0 = do
-   γ <- lift $ lift $ allocEnv γ0
+   γ <- lift $ lift $ traverse alloc γ0
    e <- lift $ lift $ alloc e0
    G.eval γ e S.empty :: WithGraph g _
 
