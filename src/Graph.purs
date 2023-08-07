@@ -58,10 +58,10 @@ class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
    new :: Set Vertex -> m Vertex
 
 -- Essentially Writer instantiated to a monoid of endofunctions
-data GraphAccumT g m a = GraphAccumT (m (a × (g -> g)))
+data GraphAccumT g m a = GraphAccumT (m (a × Endo g))
 type WithGraph g a = MayFailT (GraphAccumT g (State Int)) a
 
-runGraphAccumT :: forall g m a. GraphAccumT g m a -> m (a × (g -> g))
+runGraphAccumT :: forall g m a. GraphAccumT g m a -> m (a × Endo g)
 runGraphAccumT (GraphAccumT m) = m
 
 instance Functor m => Functor (GraphAccumT g m) where

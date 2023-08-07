@@ -4,11 +4,12 @@ import Prelude hiding (absurd, append)
 
 import Bindings (Var)
 import Control.Apply (lift2)
+import Data.Bitraversable (bitraverse)
 import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:))
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
---import Data.Traversable (class Traversable, sequenceDefault, traverse)
+import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict, get)
 import Expr (Elim, RecDefs, fv)
@@ -121,18 +122,31 @@ derive instance Functor DictRep
 derive instance Functor MatrixRep
 derive instance Functor Val
 derive instance Foldable Val
+derive instance Traversable Val
 derive instance Functor Fun
 derive instance Foldable Fun
+derive instance Traversable Fun
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 
+instance Traversable DictRep where
+   traverse f (DictRep d) = DictRep <$> traverse (bitraverse f (traverse f)) d
+   sequence = sequenceDefault
+
 instance Foldable MatrixRep where
    foldl f acc (MatrixRep (vss × (_ × βi) × (_ × βj))) = foldl (foldl (foldl f)) (acc `f` βi `f` βj) vss
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
+
+instance Traversable MatrixRep where
+   traverse f (MatrixRep m) =
+      MatrixRep <$> bitraverse (traverse (traverse (traverse f)))
+         (bitraverse (traverse f) (traverse f))
+         m
+   sequence = sequenceDefault
 
 instance JoinSemilattice a => JoinSemilattice (DictRep a) where
    maybeJoin (DictRep svs) (DictRep svs') = DictRep <$> maybeJoin svs svs'
