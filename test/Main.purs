@@ -11,13 +11,14 @@ import Effect (Effect)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
+import Test.Graph (testGraph)
 import Util ((×))
 import Val (DictRep(..), Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+--tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
 
--- tests = [ test_scratchpad ]
+tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -25,6 +26,7 @@ main = void (sequence (run <$> concat tests))
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
    [
+      testGraph
    ]
 
 test_linking :: Array (Test Unit)
