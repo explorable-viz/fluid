@@ -1,4 +1,15 @@
-module Test.Util where
+module Test.Util
+   ( Test
+   , Test'
+   , checkPretty
+   , isGraphical
+   , run
+   , test
+   , testBwd
+   , testLink
+   , testWithDataset
+   , testWithSetup
+   ) where
 
 import Prelude hiding (absurd)
 
@@ -6,13 +17,10 @@ import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
-import Control.Monad.State (get)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Set as S
-import Data.Traversable (traverse)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
@@ -24,10 +32,8 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import EvalGraph (eval) as G
-import Expr (Expr)
-import Graph (class Graph, Vertex, WithGraph2, alloc, runHeap, runGraphAccum2T)
-import Graph (empty, size) as G
+import EvalGraph (evalGraph)
+import Graph (empty) as G
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
@@ -70,12 +76,12 @@ testWithSetup (File file) expected v_expect_opt setup =
    doTest' :: Env 𝔹 -> SE.Expr 𝔹 -> MayFailT Aff Unit
    doTest' γ s = do
       e <- except $ desug s
-      doGraphTest G.empty γ e
       t × v <- except $ eval γ e bot
+      _ × u <- except $ evalGraph γ e G.empty
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
          { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-         s' = desugBwd e' (erase s)
+         s' = desugBwd e' (erase s) :: SE.Expr 𝔹
       _ × v'' <- except $ desug s' >>= flip (eval γ') top
       let src = render (pretty s)
       s'' <- except $ parse src program
@@ -86,29 +92,16 @@ testWithSetup (File file) expected v_expect_opt setup =
                log ("NEW\n" <> show s'')
             fail "not equal"
          else do
-            unless (isGraphical v'') (checkPretty "Value" expected v'')
+            unless (isGraphical v'')
+               (checkPretty "Value" expected v'')
+            unless (isGraphical v'' || isJust v_expect_opt)
+               (checkPretty "Value" expected (erase u))
             trace ("Annotated\n" <> render (pretty s')) \_ ->
                case snd <$> v_expect_opt of
                   Nothing -> pure unit
                   Just file_expect -> do
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
-
-doGraphTest :: forall g a. Show g => Graph g => g -> Env a -> Expr a -> MayFailT Aff Unit
-doGraphTest g γ0 e0 = do
-   let maybe_v × g = runHeap $ flip runGraphAccum2T g $ runExceptT (doGraphTest' γ0 e0)
-   trace (show $ G.size g) \_ ->
-      except maybe_v <#> const unit
-
-doGraphTest' :: forall g a. Graph g => Env a -> Expr a -> WithGraph2 g (Val Vertex)
-doGraphTest' γ0 e0 = do
-   γ <- lift $ lift $ traverse alloc γ0
-   e <- lift $ lift $ alloc e0
-   n <- lift $ lift $ get
-   v <- G.eval γ e S.empty :: WithGraph2 g _
-   n' <- lift $ lift $ get
-   trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
-      pure v
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)

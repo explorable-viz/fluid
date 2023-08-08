@@ -4,10 +4,12 @@ module EvalGraph
    , match
    , matchMany
    , patternMismatch
+   , evalGraph
    ) where
 
 import Bindings (varAnon)
-import Control.Monad.Except (except)
+import Control.Monad.Except (except, runExceptT)
+import Control.Monad.State (get)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (range, singleton) as A
 import Data.Either (note)
@@ -18,9 +20,10 @@ import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
+import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
-import Graph (Vertex, WithGraph2, class Graph, new)
+import Graph (Vertex, WithGraph2, class Graph, alloc, new, runHeap, runGraphAccum2T)
 import Prelude hiding (apply)
 import Pretty (prettyP)
 import Primitive (string, intPair)
@@ -145,3 +148,18 @@ eval γ (Let (VarDef σ e) e') αs = do
 eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
+
+evalGraph :: forall g a. Show g => Graph g => Env a -> Expr a -> g -> MayFail (g × Val Vertex)
+evalGraph γ0 e0 g = do
+   let
+      maybe_v × g' =
+         ( runHeap $ flip runGraphAccum2T g $ runExceptT $ do
+              γ <- lift $ lift $ traverse alloc γ0
+              e <- lift $ lift $ alloc e0
+              n <- lift $ lift $ get
+              v <- eval γ e S.empty :: WithGraph2 g _
+              n' <- lift $ lift $ get
+              trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
+                 pure v
+         ) :: MayFail (Val Vertex) × g
+   ((×) g') <$> maybe_v

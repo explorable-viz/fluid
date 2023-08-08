@@ -4,32 +4,31 @@ import Prelude
 
 import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
+import Data.Foldable (foldl)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
-import Data.Maybe (Maybe(..))
+import Data.Maybe (isJust, maybe)
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
-import Foreign.Object (Object, delete, empty, fromFoldable, lookup, singleton, size, unionWith) as SM
-import Util (Endo, MayFailT, (×), type (×))
+import Dict (Dict, delete, empty, fromFoldable, lookup, unionWith, insertWith, size) as D
+import Util (Endo, MayFailT, (×), type (×), error)
 
-type SMap = SM.Object
 type Edge = Vertex × Vertex
 
 -- Graphs form a semigroup but we don't actually rely on that (for efficiency).
 class Monoid g <= Graph g where
    extend :: Vertex -> Set Vertex -> Endo g
-   outN :: g -> Vertex -> Maybe (Set Vertex)
-   inN :: g -> Vertex -> Maybe (Set Vertex)
-   singleton :: Vertex -> Set Vertex -> g
+   elem :: g -> Vertex -> Boolean
+   outN :: g -> Vertex -> Set Vertex
+   inN :: g -> Vertex -> Set Vertex
    size :: g -> Int
    remove :: Vertex -> Endo g
    opp :: Endo g
-   allocate :: g -> Vertex
    discreteG :: Set Vertex -> g
 
 newtype Vertex = Vertex String
@@ -122,85 +121,48 @@ instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccum2T g m) where
       GraphAccum2T $ \g -> pure $ α × extend α αs g
 
 outE' :: forall g. Graph g => g -> Vertex -> List Edge
-outE' graph α = case outN graph α of
-   Just set -> L.fromFoldable $ S.map (\node -> α × node) set
-   Nothing -> Nil
+outE' graph α = L.fromFoldable $ S.map (α × _) (outN graph α)
 
 outE :: forall g. Graph g => Set Vertex -> g -> List Edge
-outE αs g =
-   let
-      allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
-   in
-      L.filter (\(e1 × e2) -> (L.elem e1 αs || L.elem e2 αs)) allOut
+outE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allOut
+   where
+   allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
 
 inE' :: forall g. Graph g => g -> Vertex -> List Edge
-inE' graph α = case inN graph α of
-   Just set -> L.fromFoldable $ S.map (\node -> node × α) set
-   Nothing -> Nil
+inE' graph α = L.fromFoldable $ S.map (_ × α) (inN graph α)
 
 inE :: forall g. Graph g => Set Vertex -> g -> List Edge
-inE αs g =
-   let
-      allIn = L.concat (map (\α -> inE' g α) (L.fromFoldable αs))
-   in
-      L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
-
-elem :: forall g. Graph g => g -> Vertex -> Boolean
-elem graph α =
-   case outN graph α of
-      Just _ -> true
-      Nothing -> false
+inE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
+   where
+   allIn = L.concat (map (\α -> inE' g α) (L.fromFoldable αs))
 
 bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-bwdSlice αs parent = bwdSlice' parent startG edges
-   where
-   startG = discreteG αs
-   edges = outE αs parent
+bwdSlice αs g' = bwdEdges g' (discreteG αs) (outE αs g')
 
-bwdSlice' :: forall g. Graph g => g -> g -> List Edge -> g
-bwdSlice' parent g ((s × t) : es) =
-   if elem g t then
-      let
-         newG = extend s (S.singleton t) g
-      in
-         bwdSlice' parent newG es
+bwdEdges :: forall g. Graph g => g -> g -> List Edge -> g
+bwdEdges g' g ((α × β) : es) =
+   if elem g β then
+      bwdEdges g' (extend α (S.singleton β) g) es
    else
-      let
-         newG = extend s (S.singleton t) g
-         newEs = append es (L.fromFoldable (outE' parent t))
-      in
-         bwdSlice' parent newG newEs
-   where
-   append :: forall a. List a -> List a -> List a
-   append Nil xs = xs
-   append (y : ys) xs = append ys (y : xs)
-
-bwdSlice' _ g Nil = g
+      bwdEdges g' (extend α (S.singleton β) g) (es <> (L.fromFoldable (outE' g' β)))
+bwdEdges _ g Nil = g
 
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-fwdSlice αs parent = fst $ fwdEdges parent startG mempty edges
-   where
-   startG = discreteG αs
-   edges = inE αs parent
+fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) mempty (inE αs g')
 
 fwdEdges :: forall g. Graph g => g -> g -> g -> List Edge -> g × g
-fwdEdges parent currSlice pending ((s × t) : es) =
-   let
-      (g' × h') = fwdVertex parent currSlice (extend s (S.singleton t) pending) s
-   in
-      fwdEdges parent g' h' es
+fwdEdges g' g h ((α × β) : es) = fwdEdges g' g'' h' es
+   where
+   (g'' × h') = fwdVertex g' g (extend α (S.singleton β) h) α
 fwdEdges _ currSlice pending Nil = currSlice × pending
 
 fwdVertex :: forall g. Graph g => g -> g -> g -> Vertex -> g × g
-fwdVertex parent currSlice pending α =
-   let
-      currNeighbors = outN pending α
-   in
-      if currNeighbors == (outN parent α) then
-         case currNeighbors of
-            Just αs -> fwdEdges parent (extend α αs currSlice) (remove α pending) (inE' parent α)
-            Nothing -> fwdEdges parent (extend α S.empty currSlice) pending (inE' parent α)
-      else currSlice × pending
+fwdVertex g' g h α =
+   if αs == (outN g' α) then
+      fwdEdges g' (extend α αs g) (remove α h) (inE' g' α)
+   else g × h
+   where
+   αs = outN h α
 
 derive instance Eq Vertex
 derive instance Ord Vertex
@@ -210,63 +172,41 @@ instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
 -- GraphImpl Specifics
-data GraphImpl = GraphImpl (SMap (Set Vertex)) (SMap (Set Vertex))
+data GraphImpl = GraphImpl (D.Dict (Set Vertex)) (D.Dict (Set Vertex))
 
 instance Semigroup GraphImpl where
    append (GraphImpl out1 in1) (GraphImpl out2 in2) =
-      GraphImpl (SM.unionWith S.union out1 out2) (SM.unionWith S.union in1 in2)
+      GraphImpl (D.unionWith S.union out1 out2) (D.unionWith S.union in1 in2)
 
 instance Monoid GraphImpl where
-   mempty = GraphImpl SM.empty SM.empty
+   mempty = GraphImpl D.empty D.empty
 
 empty :: GraphImpl
 empty = mempty
 
 instance Graph GraphImpl where
-   allocate (GraphImpl out _) = Vertex α
+   remove (Vertex α) (GraphImpl out in_) = GraphImpl newOutN newInN
       where
-      α = show $ 1 + (SM.size out)
-   remove (Vertex α) (GraphImpl out in_) =
-      let
-         newOutN = map (S.delete (Vertex α)) (SM.delete α out)
-         newInN = map (S.delete (Vertex α)) (SM.delete α in_)
-      in
-         GraphImpl newOutN newInN
-   extend α αs (GraphImpl out in_) = GraphImpl newOut newIn
-      where
-      newOut = SM.unionWith S.union out (starInOut α αs)
-      newIn = SM.unionWith S.union in_ (starInIn α αs)
+      newOutN = map (S.delete (Vertex α)) (D.delete α out)
+      newInN = map (S.delete (Vertex α)) (D.delete α in_)
 
-   outN (GraphImpl out _) (Vertex α) = SM.lookup α out
-   inN (GraphImpl _ in_) (Vertex α) = SM.lookup α in_
-   singleton α αs = GraphImpl (starInOut α αs) (starInIn α αs)
-   size (GraphImpl out _) = SM.size out
+   extend (Vertex α) αs (GraphImpl out in_) = GraphImpl newOut newIn
+      where
+      newOut = D.insertWith S.union α αs out
+      newIn = foldl (\d (Vertex α') -> D.insertWith S.union α' (S.singleton (Vertex α)) d) in_ αs
+
+   outN (GraphImpl out _) (Vertex α) = maybe (error "not in graph") identity $ D.lookup α out
+   inN (GraphImpl _ in_) (Vertex α) = maybe (error "not in graph") identity $ D.lookup α in_
+
+   elem (GraphImpl out _) (Vertex α) = isJust (D.lookup α out)
+   size (GraphImpl out _) = D.size out
+
    opp (GraphImpl out in_) = GraphImpl in_ out
-   discreteG αs =
-      let
-         pairs = S.map (\(Vertex α) -> α × S.empty) αs
-         discreteM = SM.fromFoldable pairs
-      in
-         GraphImpl discreteM discreteM
 
--- prototype attempts at more efficiently implementing the above operations
-starInOut :: Vertex -> Set Vertex -> SMap (Set Vertex)
-starInOut (Vertex α) αs = SM.unionWith S.union (SM.singleton α αs) (star αs)
-   where
-   star :: Set Vertex -> SMap (Set Vertex)
-   star αs' = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs'
-
-starInIn :: Vertex -> Set Vertex -> SMap (Set Vertex)
-starInIn v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α S.empty) (star v αs)
-   where
-   star :: Vertex -> Set Vertex -> SMap (Set Vertex)
-   star α' αs' = SM.fromFoldable $ S.map (\(Vertex α'') -> α'' × (S.singleton α')) αs'
-
-inStar :: Vertex -> Set Vertex -> GraphImpl
-inStar α αs = opp (outStar α αs)
-
-outStar :: Vertex -> Set Vertex -> GraphImpl
-outStar α αs = GraphImpl (starInOut α αs) (starInIn α αs)
+   discreteG αs = GraphImpl discreteM discreteM
+      where
+      pairs = S.map (\(Vertex α) -> α × S.empty) αs
+      discreteM = D.fromFoldable pairs
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
