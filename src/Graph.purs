@@ -192,11 +192,5 @@ starInIn v@(Vertex α) αs = D.unionWith S.union (D.singleton α S.empty) (star 
    star :: Vertex -> Set Vertex -> D.Dict (Set Vertex)
    star α' αs' = D.fromFoldable $ S.map (\(Vertex α'') -> α'' × (S.singleton α')) αs'
 
-inStar :: Vertex -> Set Vertex -> GraphImpl
-inStar α αs = opp (outStar α αs)
-
-outStar :: Vertex -> Set Vertex -> GraphImpl
-outStar α αs = GraphImpl (starInOut α αs) (starInIn α αs)
-
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
