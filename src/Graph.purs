@@ -27,7 +27,6 @@ class Monoid g <= Graph g where
    singleton :: Vertex -> Set Vertex -> g
    remove :: Vertex -> Endo g
    opp :: Endo g
-   allocate :: g -> Vertex
    discreteG :: Set Vertex -> g
 
 newtype Vertex = Vertex String
@@ -188,9 +187,6 @@ empty :: GraphImpl
 empty = mempty
 
 instance Graph GraphImpl where
-   allocate (GraphImpl out _) = Vertex α
-      where
-      α = show $ 1 + (D.size out)
    remove (Vertex α) (GraphImpl out in_) =
       let
          newOutN = map (S.delete (Vertex α)) (D.delete α out)
