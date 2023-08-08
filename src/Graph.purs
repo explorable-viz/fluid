@@ -15,7 +15,7 @@ import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
-import Dict (Dict, delete, empty, fromFoldable, lookup, unionWith, insertWith, size) as D
+import Dict (Dict, delete, empty, fromFoldable, insertWith, keys, lookup, singleton, size, union, unionWith) as D
 import Util (Endo, MayFailT, (×), type (×), error)
 
 type Edge = Vertex × Vertex
@@ -144,6 +144,7 @@ instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
 -- GraphImpl Specifics
+type VSet = D.Dict Unit
 data GraphImpl = GraphImpl (D.Dict (Set Vertex)) (D.Dict (Set Vertex))
 
 instance Semigroup GraphImpl where
@@ -182,3 +183,48 @@ instance Graph GraphImpl where
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
+
+data GraphImpl2 = GraphImpl2 (D.Dict VSet) (D.Dict VSet)
+
+instance Semigroup GraphImpl2 where
+   append (GraphImpl2 out1 in1) (GraphImpl2 out2 in2) =
+      GraphImpl2 (D.unionWith D.union out1 out2) (D.unionWith D.union in1 in2)
+
+instance Monoid GraphImpl2 where
+   mempty = GraphImpl2 D.empty D.empty
+
+empty2 :: GraphImpl2
+empty2 = mempty
+
+instance Graph GraphImpl2 where
+   remove (Vertex α) (GraphImpl2 out in_) = GraphImpl2 newOutN newInN
+      where
+      newOutN = (D.delete α out)
+      newInN = D.delete α in_
+
+   extend (Vertex α) αs (GraphImpl2 out in_) = GraphImpl2 newOut newIn
+      where
+      newOut = D.insertWith D.union α (convSet αs) out
+      newIn = foldl (\d (Vertex α') -> D.insertWith D.union α' (D.singleton α' unit) d) in_ αs
+
+   outN (GraphImpl2 out _) (Vertex α) = maybe (error "not in graph") reverseConvSet $ D.lookup α out
+   inN (GraphImpl2 _ in_) (Vertex α) = maybe (error "not in graph") reverseConvSet $ D.lookup α in_
+
+   elem (GraphImpl2 out _) (Vertex α) = isJust (D.lookup α out)
+   size (GraphImpl2 out _) = D.size out
+
+   opp (GraphImpl2 out in_) = GraphImpl2 in_ out
+
+   discreteG αs = GraphImpl2 discreteM discreteM
+      where
+      pairs = S.map (\(Vertex α) -> α × D.empty) αs
+      discreteM = D.fromFoldable pairs
+
+instance Show GraphImpl2 where
+   show (GraphImpl2 out in_) = "GraphImpl2 (" <> show out <> " × " <> show in_ <> ")"
+
+convSet :: Set Vertex -> VSet
+convSet αs = D.fromFoldable (S.map (\(Vertex α) -> α × unit) αs)
+
+reverseConvSet :: VSet -> Set Vertex
+reverseConvSet αs = S.map Vertex $ D.keys αs
