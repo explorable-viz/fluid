@@ -7,7 +7,7 @@ import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
@@ -23,6 +23,7 @@ type Edge = Vertex × Vertex
 -- Graphs form a semigroup but we don't actually rely on that (for efficiency).
 class Monoid g <= Graph g where
    extend :: Vertex -> Set Vertex -> Endo g
+   elem :: g -> Vertex -> Boolean
    outN :: g -> Vertex -> Maybe (Set Vertex)
    inN :: g -> Vertex -> Maybe (Set Vertex)
    singleton :: Vertex -> Set Vertex -> g
@@ -92,7 +93,7 @@ instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccumT g m) where
 
 outE' :: forall g. Graph g => g -> Vertex -> List Edge
 outE' graph α = case outN graph α of
-   Just set -> L.fromFoldable $ S.map (α × _) set
+   Just αs -> L.fromFoldable $ S.map (α × _) αs
    Nothing -> Nil
 
 outE :: forall g. Graph g => Set Vertex -> g -> List Edge
@@ -102,19 +103,13 @@ outE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allOut
 
 inE' :: forall g. Graph g => g -> Vertex -> List Edge
 inE' graph α = case inN graph α of
-   Just set -> L.fromFoldable $ S.map (_ × α) set
+   Just αs -> L.fromFoldable $ S.map (_ × α) αs
    Nothing -> Nil
 
 inE :: forall g. Graph g => Set Vertex -> g -> List Edge
 inE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
    where
    allIn = L.concat (map (\α -> inE' g α) (L.fromFoldable αs))
-
-elem :: forall g. Graph g => g -> Vertex -> Boolean
-elem graph α =
-   case outN graph α of
-      Just _ -> true
-      Nothing -> false
 
 bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 bwdSlice αs g' = bwdEdges g' (discreteG αs) (outE αs g')
@@ -179,6 +174,8 @@ instance Graph GraphImpl where
 
    outN (GraphImpl out _) (Vertex α) = D.lookup α out
    inN (GraphImpl _ in_) (Vertex α) = D.lookup α in_
+
+   elem (GraphImpl out _) (Vertex α) = isJust (D.lookup α out)
 
    singleton α αs = GraphImpl (starInOut α αs) (starInIn α αs)
 
