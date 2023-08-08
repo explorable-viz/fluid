@@ -7,7 +7,7 @@ import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..), isJust, maybe)
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
@@ -15,8 +15,7 @@ import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
 import Dict (Dict, delete, empty, fromFoldable, lookup, singleton, size, unionWith) as D
-import Util (Endo, MayFailT, (×), type (×))
-import Web.HTML.History (back)
+import Util (Endo, MayFailT, (×), type (×), error)
 
 type Edge = Vertex × Vertex
 
@@ -24,8 +23,8 @@ type Edge = Vertex × Vertex
 class Monoid g <= Graph g where
    extend :: Vertex -> Set Vertex -> Endo g
    elem :: g -> Vertex -> Boolean
-   outN :: g -> Vertex -> Maybe (Set Vertex)
-   inN :: g -> Vertex -> Maybe (Set Vertex)
+   outN :: g -> Vertex -> Set Vertex
+   inN :: g -> Vertex -> Set Vertex
    singleton :: Vertex -> Set Vertex -> g
    remove :: Vertex -> Endo g
    opp :: Endo g
@@ -92,9 +91,7 @@ instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccumT g m) where
       GraphAccumT $ pure $ α × extend α αs
 
 outE' :: forall g. Graph g => g -> Vertex -> List Edge
-outE' graph α = case outN graph α of
-   Just αs -> L.fromFoldable $ S.map (α × _) αs
-   Nothing -> Nil
+outE' graph α = L.fromFoldable $ S.map (α × _) (outN graph α)
 
 outE :: forall g. Graph g => Set Vertex -> g -> List Edge
 outE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allOut
@@ -102,9 +99,7 @@ outE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allOut
    allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
 
 inE' :: forall g. Graph g => g -> Vertex -> List Edge
-inE' graph α = case inN graph α of
-   Just αs -> L.fromFoldable $ S.map (_ × α) αs
-   Nothing -> Nil
+inE' graph α = L.fromFoldable $ S.map (_ × α) (inN graph α)
 
 inE :: forall g. Graph g => Set Vertex -> g -> List Edge
 inE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
@@ -133,13 +128,11 @@ fwdEdges _ currSlice pending Nil = currSlice × pending
 
 fwdVertex :: forall g. Graph g => g -> g -> g -> Vertex -> g × g
 fwdVertex g' g h α =
-   if currNeighbors == (outN g' α) then
-      case currNeighbors of
-         Just αs -> fwdEdges g' (extend α αs g) (remove α h) (inE' g' α)
-         Nothing -> fwdEdges g' (extend α S.empty g) h (inE' g' α)
+   if αs == (outN g' α) then
+        fwdEdges g' (extend α αs g) (remove α h) (inE' g' α)
    else g × h
    where
-   currNeighbors = outN h α
+   αs = outN h α
 
 derive instance Eq Vertex
 derive instance Ord Vertex
@@ -172,13 +165,13 @@ instance Graph GraphImpl where
       newOut = D.unionWith S.union out (starInOut α αs)
       newIn = D.unionWith S.union in_ (starInIn α αs)
 
-   outN (GraphImpl out _) (Vertex α) = D.lookup α out
-   inN (GraphImpl _ in_) (Vertex α) = D.lookup α in_
+   outN (GraphImpl out _) (Vertex α) = maybe (error "not in graph") identity $ D.lookup α out
+   inN (GraphImpl _ in_) (Vertex α) = maybe (error "not in graph") identity $ D.lookup α in_
 
    elem (GraphImpl out _) (Vertex α) = isJust (D.lookup α out)
 
    singleton α αs = GraphImpl (starInOut α αs) (starInIn α αs)
-
+ 
    opp (GraphImpl out in_) = GraphImpl in_ out
 
    discreteG αs = GraphImpl discreteM discreteM
