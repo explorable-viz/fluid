@@ -5,6 +5,7 @@ module EvalGraph
    , matchMany
    , patternMismatch
    , evalGraph
+   , selectVertices
    ) where
 
 import Bindings (varAnon)
@@ -17,7 +18,7 @@ import Data.Exists (runExists)
 import Data.List (List(..), (:), length, snoc, unzip, zip)
 import Data.Set (Set)
 import Data.Set as S
-import Data.Traversable (sequence, traverse)
+import Data.Traversable (sequence, traverse, foldl)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Debug (trace)
@@ -163,3 +164,8 @@ evalGraph γ0 e0 g = do
                  pure v
          ) :: MayFail (Val Vertex) × g
    ((×) g') <$> maybe_v
+
+selectVertices :: Val Boolean -> Val Vertex -> Set Vertex
+selectVertices u v = foldl (S.union) S.empty v_selected
+   where
+   v_selected = (\b -> if b then S.singleton else const S.empty) <$> u <*> v

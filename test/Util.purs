@@ -20,7 +20,7 @@ import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe(..), fromMaybe, isJust) --, isNothing)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
@@ -32,7 +32,7 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import EvalGraph (evalGraph)
+import EvalGraph (evalGraph) --, selectVertices)
 import Graph (empty) as G
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
@@ -96,6 +96,9 @@ testWithSetup (File file) expected v_expect_opt setup =
                (checkPretty "Value" expected v'')
             unless (isGraphical v'' || isJust v_expect_opt)
                (checkPretty "Value" expected (erase u))
+            -- unless (isNothing v_expect_opt)
+            --    (do let αs = selectVertices v'' u
+            --        log (show αs))
             trace ("Annotated\n" <> render (pretty s')) \_ ->
                case snd <$> v_expect_opt of
                   Nothing -> pure unit
