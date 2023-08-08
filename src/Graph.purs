@@ -96,11 +96,9 @@ outE' graph α = case outN graph α of
    Nothing -> Nil
 
 outE :: forall g. Graph g => Set Vertex -> g -> List Edge
-outE αs g =
-   let
-      allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
-   in
-      L.filter (\(e1 × e2) -> (L.elem e1 αs || L.elem e2 αs)) allOut
+outE αs g = L.filter (\(e1 × e2) -> (L.elem e1 αs || L.elem e2 αs)) allOut
+   where
+   allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
 
 inE' :: forall g. Graph g => g -> Vertex -> List Edge
 inE' graph α = case inN graph α of
@@ -108,11 +106,9 @@ inE' graph α = case inN graph α of
    Nothing -> Nil
 
 inE :: forall g. Graph g => Set Vertex -> g -> List Edge
-inE αs g =
-   let
-      allIn = L.concat (map (\α -> inE' g α) (L.fromFoldable αs))
-   in
-      L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
+inE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
+   where
+   allIn = L.concat (map (\α -> inE' g α) (L.fromFoldable αs))
 
 elem :: forall g. Graph g => g -> Vertex -> Boolean
 elem graph α =
@@ -126,33 +122,29 @@ bwdSlice αs g' = bwdEdges g' (discreteG αs) (outE αs g')
 bwdEdges :: forall g. Graph g => g -> g -> List Edge -> g
 bwdEdges g' g ((α × β) : es) =
    if elem g β then
-    bwdEdges g' (extend α (S.singleton β) g) es
+      bwdEdges g' (extend α (S.singleton β) g) es
    else
-    bwdEdges g' (extend α (S.singleton β) g) (es <> (L.fromFoldable (outE' g' β)))
-
+      bwdEdges g' (extend α (S.singleton β) g) (es <> (L.fromFoldable (outE' g' β)))
 bwdEdges _ g Nil = g
 
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) mempty (inE αs g')
 
 fwdEdges :: forall g. Graph g => g -> g -> g -> List Edge -> g × g
-fwdEdges g' g h ((α × β) : es) =
-   let
-      (g'' × h') = fwdVertex g' h (extend α (S.singleton β) h) α
-   in
-      fwdEdges g' g'' h' es
+fwdEdges g' g h ((α × β) : es) = fwdEdges g' g'' h' es
+   where
+   (g'' × h') = fwdVertex g' g (extend α (S.singleton β) h) α
 fwdEdges _ currSlice pending Nil = currSlice × pending
 
 fwdVertex :: forall g. Graph g => g -> g -> g -> Vertex -> g × g
 fwdVertex g' g h α =
-   let
-      currNeighbors = outN h α
-   in
-      if currNeighbors == (outN g' α) then
-         case currNeighbors of
-            Just αs -> fwdEdges g' (extend α αs g) (remove α h) (inE' g' α)
-            Nothing -> fwdEdges g' (extend α S.empty g) h (inE' g' α)
-      else g × h
+   if currNeighbors == (outN g' α) then
+      case currNeighbors of
+         Just αs -> fwdEdges g' (extend α αs g) (remove α h) (inE' g' α)
+         Nothing -> fwdEdges g' (extend α S.empty g) h (inE' g' α)
+   else g × h
+   where
+   currNeighbors = outN h α
 
 derive instance Eq Vertex
 derive instance Ord Vertex
@@ -175,12 +167,11 @@ empty :: GraphImpl
 empty = mempty
 
 instance Graph GraphImpl where
-   remove (Vertex α) (GraphImpl out in_) =
-      let
-         newOutN = map (S.delete (Vertex α)) (D.delete α out)
-         newInN = map (S.delete (Vertex α)) (D.delete α in_)
-      in
-         GraphImpl newOutN newInN
+   remove (Vertex α) (GraphImpl out in_) = GraphImpl newOutN newInN
+      where
+      newOutN = map (S.delete (Vertex α)) (D.delete α out)
+      newInN = map (S.delete (Vertex α)) (D.delete α in_)
+
    extend α αs (GraphImpl out in_) = GraphImpl newOut newIn
       where
       newOut = D.unionWith S.union out (starInOut α αs)
@@ -190,13 +181,13 @@ instance Graph GraphImpl where
    inN (GraphImpl _ in_) (Vertex α) = D.lookup α in_
 
    singleton α αs = GraphImpl (starInOut α αs) (starInIn α αs)
+
    opp (GraphImpl out in_) = GraphImpl in_ out
-   discreteG αs =
-      let
-         pairs = S.map (\(Vertex α) -> α × S.empty) αs
-         discreteM = D.fromFoldable pairs
-      in
-         GraphImpl discreteM discreteM
+
+   discreteG αs = GraphImpl discreteM discreteM
+      where
+      pairs = S.map (\(Vertex α) -> α × S.empty) αs
+      discreteM = D.fromFoldable pairs
 
 -- prototype attempts at more efficiently implementing the above operations
 starInOut :: Vertex -> Set Vertex -> D.Dict (Set Vertex)
