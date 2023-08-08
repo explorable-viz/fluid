@@ -4,17 +4,18 @@ import Prelude
 
 import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
+import Data.Foldable (foldl)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
-import Data.Maybe (Maybe(..), isJust, maybe)
+import Data.Maybe (isJust, maybe)
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
-import Dict (Dict, delete, empty, fromFoldable, lookup, singleton, size, unionWith) as D
+import Dict (Dict, delete, empty, fromFoldable, lookup, unionWith, insertWith) as D
 import Util (Endo, MayFailT, (×), type (×), error)
 
 type Edge = Vertex × Vertex
@@ -25,7 +26,6 @@ class Monoid g <= Graph g where
    elem :: g -> Vertex -> Boolean
    outN :: g -> Vertex -> Set Vertex
    inN :: g -> Vertex -> Set Vertex
-   singleton :: Vertex -> Set Vertex -> g
    remove :: Vertex -> Endo g
    opp :: Endo g
    discreteG :: Set Vertex -> g
@@ -129,7 +129,7 @@ fwdEdges _ currSlice pending Nil = currSlice × pending
 fwdVertex :: forall g. Graph g => g -> g -> g -> Vertex -> g × g
 fwdVertex g' g h α =
    if αs == (outN g' α) then
-        fwdEdges g' (extend α αs g) (remove α h) (inE' g' α)
+      fwdEdges g' (extend α αs g) (remove α h) (inE' g' α)
    else g × h
    where
    αs = outN h α
@@ -160,37 +160,22 @@ instance Graph GraphImpl where
       newOutN = map (S.delete (Vertex α)) (D.delete α out)
       newInN = map (S.delete (Vertex α)) (D.delete α in_)
 
-   extend α αs (GraphImpl out in_) = GraphImpl newOut newIn
+   extend (Vertex α) αs (GraphImpl out in_) = GraphImpl newOut newIn
       where
-      newOut = D.unionWith S.union out (starInOut α αs)
-      newIn = D.unionWith S.union in_ (starInIn α αs)
+      newOut = D.insertWith S.union α αs out
+      newIn = foldl (\d (Vertex α') -> D.insertWith S.union α' (S.singleton (Vertex α)) d) in_ αs
 
    outN (GraphImpl out _) (Vertex α) = maybe (error "not in graph") identity $ D.lookup α out
    inN (GraphImpl _ in_) (Vertex α) = maybe (error "not in graph") identity $ D.lookup α in_
 
    elem (GraphImpl out _) (Vertex α) = isJust (D.lookup α out)
 
-   singleton α αs = GraphImpl (starInOut α αs) (starInIn α αs)
- 
    opp (GraphImpl out in_) = GraphImpl in_ out
 
    discreteG αs = GraphImpl discreteM discreteM
       where
       pairs = S.map (\(Vertex α) -> α × S.empty) αs
       discreteM = D.fromFoldable pairs
-
--- prototype attempts at more efficiently implementing the above operations
-starInOut :: Vertex -> Set Vertex -> D.Dict (Set Vertex)
-starInOut (Vertex α) αs = D.unionWith S.union (D.singleton α αs) (star αs)
-   where
-   star :: Set Vertex -> D.Dict (Set Vertex)
-   star αs' = D.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs'
-
-starInIn :: Vertex -> Set Vertex -> D.Dict (Set Vertex)
-starInIn v@(Vertex α) αs = D.unionWith S.union (D.singleton α S.empty) (star v αs)
-   where
-   star :: Vertex -> Set Vertex -> D.Dict (Set Vertex)
-   star α' αs' = D.fromFoldable $ S.map (\(Vertex α'') -> α'' × (S.singleton α')) αs'
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
