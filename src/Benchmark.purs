@@ -6,7 +6,8 @@ import Data.Foldable (foldl)
 import Data.Set (fromFoldable)
 import Effect (Effect)
 import Effect.Console (logShow, log)
-import Graph (GraphImpl, Vertex(..), extend, fwdSlice, inE)
+import Graph (GraphImpl, Vertex(..), extend, inE)
+import SliceGraph (fwdSlice)
 
 main :: Effect Unit
 main = graphTestScript

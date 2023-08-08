@@ -113,10 +113,10 @@ test_bwd =
    [ testBwd (File "add") (File "add.expect") (const $ Int true 8) "_8_"
    -- TODO: array/array test seems to be missing
    , testBwd (File "array/lookup") (File "array/lookup.expect") (const $ Int true 14) "_14_"
-   {- TODO: the following are slow for evalGraph:
-   ["array/dims", "convolution/edgeDetect", "convolution/emboss",  "convolution/gaussian"] -}
-   {-
    , testBwd (File "array/dims") (File "array/dims.expect") topOf "_(_3_, _3_)_"
+   {- TODO: the following are slow for evalGraph:
+   ["convolution/edgeDetect", "convolution/emboss",  "convolution/gaussian"] -}
+   {-
    , testBwd (File "convolution/edgeDetect") (File "convolution/edgeDetect.expect")
         (botOf >>> selectCell 1 1 topOf)
         "_0_, -1, 2, 0, -1,\n\
