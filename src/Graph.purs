@@ -14,10 +14,9 @@ import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
-import Foreign.Object (Object, delete, empty, fromFoldable, lookup, singleton, size, unionWith) as SM
+import Dict (Dict, delete, empty, fromFoldable, lookup, singleton, size, unionWith) as D
 import Util (Endo, MayFailT, (×), type (×))
 
-type SMap = SM.Object
 type Edge = Vertex × Vertex
 
 -- Graphs form a semigroup but we don't actually rely on that (for efficiency).
@@ -176,14 +175,14 @@ instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
 -- GraphImpl Specifics
-data GraphImpl = GraphImpl (SMap (Set Vertex)) (SMap (Set Vertex))
+data GraphImpl = GraphImpl (D.Dict (Set Vertex)) (D.Dict (Set Vertex))
 
 instance Semigroup GraphImpl where
    append (GraphImpl out1 in1) (GraphImpl out2 in2) =
-      GraphImpl (SM.unionWith S.union out1 out2) (SM.unionWith S.union in1 in2)
+      GraphImpl (D.unionWith S.union out1 out2) (D.unionWith S.union in1 in2)
 
 instance Monoid GraphImpl where
-   mempty = GraphImpl SM.empty SM.empty
+   mempty = GraphImpl D.empty D.empty
 
 empty :: GraphImpl
 empty = mempty
@@ -191,42 +190,42 @@ empty = mempty
 instance Graph GraphImpl where
    allocate (GraphImpl out _) = Vertex α
       where
-      α = show $ 1 + (SM.size out)
+      α = show $ 1 + (D.size out)
    remove (Vertex α) (GraphImpl out in_) =
       let
-         newOutN = map (S.delete (Vertex α)) (SM.delete α out)
-         newInN = map (S.delete (Vertex α)) (SM.delete α in_)
+         newOutN = map (S.delete (Vertex α)) (D.delete α out)
+         newInN = map (S.delete (Vertex α)) (D.delete α in_)
       in
          GraphImpl newOutN newInN
    extend α αs (GraphImpl out in_) = GraphImpl newOut newIn
       where
-      newOut = SM.unionWith S.union out (starInOut α αs)
-      newIn = SM.unionWith S.union in_ (starInIn α αs)
+      newOut = D.unionWith S.union out (starInOut α αs)
+      newIn = D.unionWith S.union in_ (starInIn α αs)
 
-   outN (GraphImpl out _) (Vertex α) = SM.lookup α out
-   inN (GraphImpl _ in_) (Vertex α) = SM.lookup α in_
+   outN (GraphImpl out _) (Vertex α) = D.lookup α out
+   inN (GraphImpl _ in_) (Vertex α) = D.lookup α in_
 
    singleton α αs = GraphImpl (starInOut α αs) (starInIn α αs)
    opp (GraphImpl out in_) = GraphImpl in_ out
    discreteG αs =
       let
          pairs = S.map (\(Vertex α) -> α × S.empty) αs
-         discreteM = SM.fromFoldable pairs
+         discreteM = D.fromFoldable pairs
       in
          GraphImpl discreteM discreteM
 
 -- prototype attempts at more efficiently implementing the above operations
-starInOut :: Vertex -> Set Vertex -> SMap (Set Vertex)
-starInOut (Vertex α) αs = SM.unionWith S.union (SM.singleton α αs) (star αs)
+starInOut :: Vertex -> Set Vertex -> D.Dict (Set Vertex)
+starInOut (Vertex α) αs = D.unionWith S.union (D.singleton α αs) (star αs)
    where
-   star :: Set Vertex -> SMap (Set Vertex)
-   star αs' = SM.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs'
+   star :: Set Vertex -> D.Dict (Set Vertex)
+   star αs' = D.fromFoldable $ S.map (\(Vertex α') -> α' × S.empty) αs'
 
-starInIn :: Vertex -> Set Vertex -> SMap (Set Vertex)
-starInIn v@(Vertex α) αs = SM.unionWith S.union (SM.singleton α S.empty) (star v αs)
+starInIn :: Vertex -> Set Vertex -> D.Dict (Set Vertex)
+starInIn v@(Vertex α) αs = D.unionWith S.union (D.singleton α S.empty) (star v αs)
    where
-   star :: Vertex -> Set Vertex -> SMap (Set Vertex)
-   star α' αs' = SM.fromFoldable $ S.map (\(Vertex α'') -> α'' × (S.singleton α')) αs'
+   star :: Vertex -> Set Vertex -> D.Dict (Set Vertex)
+   star α' αs' = D.fromFoldable $ S.map (\(Vertex α'') -> α'' × (S.singleton α')) αs'
 
 inStar :: Vertex -> Set Vertex -> GraphImpl
 inStar α αs = opp (outStar α αs)
