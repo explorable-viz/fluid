@@ -163,3 +163,6 @@ evalGraph γ0 e0 g = do
                  pure v
          ) :: MayFail (Val Vertex) × (g -> g)
    ((×) (δg g)) <$> maybe_v
+
+-- select :: Val Vertex -> Val Boolean -> Val (Set Boolean)
+-- select u v = error "" <$> u <*> v
