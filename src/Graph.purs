@@ -92,17 +92,17 @@ instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccumT g m) where
 
 outE' :: forall g. Graph g => g -> Vertex -> List Edge
 outE' graph α = case outN graph α of
-   Just set -> L.fromFoldable $ S.map (\node -> α × node) set
+   Just set -> L.fromFoldable $ S.map (α × _) set
    Nothing -> Nil
 
 outE :: forall g. Graph g => Set Vertex -> g -> List Edge
-outE αs g = L.filter (\(e1 × e2) -> (L.elem e1 αs || L.elem e2 αs)) allOut
+outE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allOut
    where
    allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
 
 inE' :: forall g. Graph g => g -> Vertex -> List Edge
 inE' graph α = case inN graph α of
-   Just set -> L.fromFoldable $ S.map (\node -> node × α) set
+   Just set -> L.fromFoldable $ S.map (_ × α) set
    Nothing -> Nil
 
 inE :: forall g. Graph g => Set Vertex -> g -> List Edge
