@@ -16,6 +16,7 @@ import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
 import Dict (Dict, delete, empty, fromFoldable, lookup, singleton, size, unionWith) as D
 import Util (Endo, MayFailT, (×), type (×))
+import Web.HTML.History (back)
 
 type Edge = Vertex × Vertex
 
@@ -120,51 +121,38 @@ elem graph α =
       Nothing -> false
 
 bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-bwdSlice αs parent = bwdSlice' parent startG edges
-   where
-   startG = discreteG αs
-   edges = outE αs parent
+bwdSlice αs g' = bwdEdges g' (discreteG αs) (outE αs g')
 
-bwdSlice' :: forall g. Graph g => g -> g -> List Edge -> g
-bwdSlice' parent g ((s × t) : es) =
-   if elem g t then
-      let
-         newG = extend s (S.singleton t) g
-      in
-         bwdSlice' parent newG es
+bwdEdges :: forall g. Graph g => g -> g -> List Edge -> g
+bwdEdges g' g ((α × β) : es) =
+   if elem g β then
+    bwdEdges g' (extend α (S.singleton β) g) es
    else
-      let
-         newG = extend s (S.singleton t) g
-         newEs = es <> (L.fromFoldable (outE' parent t))
-      in
-         bwdSlice' parent newG newEs
+    bwdEdges g' (extend α (S.singleton β) g) (es <> (L.fromFoldable (outE' g' β)))
 
-bwdSlice' _ g Nil = g
+bwdEdges _ g Nil = g
 
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-fwdSlice αs parent = fst $ fwdEdges parent startG mempty edges
-   where
-   startG = discreteG αs
-   edges = inE αs parent
+fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) mempty (inE αs g')
 
 fwdEdges :: forall g. Graph g => g -> g -> g -> List Edge -> g × g
-fwdEdges parent currSlice pending ((s × t) : es) =
+fwdEdges g' g h ((α × β) : es) =
    let
-      (g' × h') = fwdVertex parent currSlice (extend s (S.singleton t) pending) s
+      (g'' × h') = fwdVertex g' h (extend α (S.singleton β) h) α
    in
-      fwdEdges parent g' h' es
+      fwdEdges g' g'' h' es
 fwdEdges _ currSlice pending Nil = currSlice × pending
 
 fwdVertex :: forall g. Graph g => g -> g -> g -> Vertex -> g × g
-fwdVertex parent currSlice pending α =
+fwdVertex g' g h α =
    let
-      currNeighbors = outN pending α
+      currNeighbors = outN h α
    in
-      if currNeighbors == (outN parent α) then
+      if currNeighbors == (outN g' α) then
          case currNeighbors of
-            Just αs -> fwdEdges parent (extend α αs currSlice) (remove α pending) (inE' parent α)
-            Nothing -> fwdEdges parent (extend α S.empty currSlice) pending (inE' parent α)
-      else currSlice × pending
+            Just αs -> fwdEdges g' (extend α αs g) (remove α h) (inE' g' α)
+            Nothing -> fwdEdges g' (extend α S.empty g) h (inE' g' α)
+      else g × h
 
 derive instance Eq Vertex
 derive instance Ord Vertex
