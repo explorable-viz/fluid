@@ -35011,7 +35011,7 @@
   })();
   var monadAllocStateTInt3 = /* @__PURE__ */ monadAllocStateTInt(monadIdentity);
   var fv2 = /* @__PURE__ */ (() => fVDict(fVElim).fv)();
-  var applicativeStateT2 = /* @__PURE__ */ applicativeStateT(monadIdentity);
+  var applicativeStateT3 = /* @__PURE__ */ applicativeStateT(monadIdentity);
   var fromFoldable17 = /* @__PURE__ */ fromFoldable2(foldableList);
   var greaterThanOrEq = /* @__PURE__ */ (() => {
     const $0 = ordTuple(ordInt)(ordInt);
@@ -35145,15 +35145,15 @@
   };
   var $$eval2 = (dictGraph) => {
     const Monoid0 = dictGraph.Monoid0();
-    const $2 = applicativeGraphAccumT(Monoid0)(applicativeStateT2);
+    const $2 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
     const monadGraphAccumT2 = monadGraphAccumT(Monoid0)(monadStateT2);
     const lift1 = monadTransExceptT.lift(monadGraphAccumT2);
     const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt3).new;
     const bindExceptT2 = bindExceptT(monadGraphAccumT2);
     const applicativeExceptT2 = applicativeExceptT(monadGraphAccumT2);
     const $8 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT2);
-    const traverse42 = traversableList.traverse(applicativeExceptT2);
-    const traverse52 = traversablePair.traverse(applicativeExceptT2);
+    const traverse52 = traversableList.traverse(applicativeExceptT2);
+    const traverse6 = traversablePair.traverse(applicativeExceptT2);
     const sequence13 = traversableArray.traverse(applicativeExceptT2)(identity10);
     const closeDefs1 = closeDefs2(dictGraph);
     return (v) => (v1) => (v2) => {
@@ -35179,7 +35179,7 @@
         })())((xvs) => functorExceptT.map((f) => f(xvs))(functorExceptT.map(Record3)(lift1($$new(insert2(ordVertex)(v1._1)(unit2)(v2))))));
       }
       if (v1.tag === "Dictionary") {
-        return bindExceptT2.bind(functorExceptT.map(unzip2)(traverse42(traverse52((() => {
+        return bindExceptT2.bind(functorExceptT.map(unzip2)(traverse52(traverse6((() => {
           const $16 = $$eval2(dictGraph)(v);
           return (a) => $16(a)(v2);
         })()))(v1._2)))((v3) => {
@@ -35210,7 +35210,7 @@
             return go$r;
           };
           return go(0)(v1._3);
-        })())))(() => bindExceptT2.bind(traverse42((() => {
+        })())))(() => bindExceptT2.bind(traverse52((() => {
           const $17 = $$eval2(dictGraph)(v);
           return (a) => $17(a)(v2);
         })())(v1._3))((vs) => functorExceptT.map((f) => f(vs))(functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Constr3)(lift1($$new(insert2(ordVertex)(v1._1)(unit2)(v2))))))));
@@ -35268,7 +35268,7 @@
     const monadGraphAccumT2 = monadGraphAccumT(Monoid0)(monadStateT2);
     const bindExceptT2 = bindExceptT(monadGraphAccumT2);
     const closeDefs1 = closeDefs2(dictGraph);
-    const $5 = applicativeGraphAccumT(Monoid0)(applicativeStateT2);
+    const $5 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
     const pure1 = applicativeExceptT(monadGraphAccumT2).pure;
     return (v) => (v1) => {
       const $9 = (v2) => $5.pure($Either(
@@ -35395,7 +35395,7 @@
     Applicative0: () => applicativeStateT(monadIdentity),
     Bind1: () => bindStateT(monadIdentity)
   };
-  var applicativeStateT3 = /* @__PURE__ */ applicativeStateT(monadIdentity);
+  var applicativeStateT4 = /* @__PURE__ */ applicativeStateT(monadIdentity);
   var erase = /* @__PURE__ */ (() => functorVal.map((v) => unit2))();
   var functorExceptT2 = /* @__PURE__ */ (() => {
     const $0 = functorStateT(functorIdentity);
@@ -35433,7 +35433,7 @@
       const Monoid0 = dictGraph.Monoid0();
       const monadGraphAccumT2 = monadGraphAccumT(Monoid0)(monadStateT3);
       const bind2 = bindExceptT(monadGraphAccumT2).bind;
-      const $4 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      const $4 = applicativeGraphAccumT(Monoid0)(applicativeStateT4);
       const pure1 = applicativeExceptT(monadGraphAccumT2).pure;
       return (v) => {
         if (v.tag === "Cons") {
@@ -35602,7 +35602,7 @@
     "op'": (dictGraph) => {
       const Monoid0 = dictGraph.Monoid0();
       const pure1 = applicativeExceptT(monadGraphAccumT(Monoid0)(monadStateT3)).pure;
-      const $3 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      const $3 = applicativeGraphAccumT(Monoid0)(applicativeStateT4);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Str") {
@@ -35639,7 +35639,7 @@
       const bind2 = bindExceptT(monadGraphAccumT2).bind;
       const lift1 = monadTransExceptT.lift(monadGraphAccumT2);
       const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt4).new;
-      const $6 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      const $6 = applicativeGraphAccumT(Monoid0)(applicativeStateT4);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Matrix") {
@@ -35747,7 +35747,7 @@
       const apply4 = apply3(dictGraph);
       const lift1 = monadTransExceptT.lift(monadGraphAccumT2);
       const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt4).new;
-      const $8 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      const $8 = applicativeGraphAccumT(Monoid0)(applicativeStateT4);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._2.tag === "Cons") {
@@ -35840,7 +35840,7 @@
       const apply4 = apply3(dictGraph);
       const apply1 = applyExceptT(monadGraphAccumT2).apply;
       const sequence22 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT(monadGraphAccumT2))((v) => identity11);
-      const $9 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      const $9 = applicativeGraphAccumT(Monoid0)(applicativeStateT4);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._2.tag === "Cons") {
@@ -35939,7 +35939,7 @@
   var dict_get = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
     "op'": (dictGraph) => {
-      const $1 = applicativeGraphAccumT(dictGraph.Monoid0())(applicativeStateT3);
+      const $1 = applicativeGraphAccumT(dictGraph.Monoid0())(applicativeStateT4);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Str") {
@@ -36020,7 +36020,7 @@
       const $4 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT(monadGraphAccumT2));
       const lift1 = monadTransExceptT.lift(monadGraphAccumT2);
       const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt4).new;
-      const $7 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      const $7 = applicativeGraphAccumT(Monoid0)(applicativeStateT4);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Record") {
@@ -36090,7 +36090,7 @@
       });
       const bind2 = bindExceptT(monadGraphAccumT2).bind;
       const apply4 = apply3(dictGraph);
-      const $6 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      const $6 = applicativeGraphAccumT(Monoid0)(applicativeStateT4);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._2.tag === "Cons") {
@@ -36190,7 +36190,7 @@
       const Monoid0 = dictGraph.Monoid0();
       const lift1 = monadTransExceptT.lift(monadGraphAccumT(Monoid0)(monadStateT3));
       const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt4).new;
-      const $4 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      const $4 = applicativeGraphAccumT(Monoid0)(applicativeStateT4);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Dictionary") {
@@ -36265,7 +36265,7 @@
       const Monoid0 = dictGraph.Monoid0();
       const lift1 = monadTransExceptT.lift(monadGraphAccumT(Monoid0)(monadStateT3));
       const $$new = monadGraphAccumGraphAccum(dictGraph)(monadAllocStateTInt4).new;
-      const $4 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      const $4 = applicativeGraphAccumT(Monoid0)(applicativeStateT4);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Dictionary") {
@@ -36329,7 +36329,7 @@
     "op'": (dictGraph) => {
       const Monoid0 = dictGraph.Monoid0();
       const pure1 = applicativeExceptT(monadGraphAccumT(Monoid0)(monadStateT3)).pure;
-      const $3 = applicativeGraphAccumT(Monoid0)(applicativeStateT3);
+      const $3 = applicativeGraphAccumT(Monoid0)(applicativeStateT4);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._2.tag === "Nil") {
