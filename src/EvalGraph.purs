@@ -23,7 +23,7 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
-import Graph (Vertex, WithGraph, class Graph, alloc, new, runHeap, runGraphAccumT)
+import Graph (Vertex, WithGraph2, class Graph, alloc, new, runHeap, runGraphAccum2T)
 import Prelude hiding (apply)
 import Pretty (prettyP)
 import Primitive (string, intPair)
@@ -66,7 +66,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall g. Graph g => Env Vertex -> RecDefs Vertex -> Set Vertex -> WithGraph g (Env Vertex)
+closeDefs :: forall g. Graph g => Env Vertex -> RecDefs Vertex -> Set Vertex -> WithGraph2 g (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -75,7 +75,7 @@ closeDefs γ ρ αs =
          V.Fun <$> (V.Closure <$> lift (new αs) <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
-apply :: forall g. Graph g => Val Vertex -> Val Vertex -> WithGraph g (Val Vertex)
+apply :: forall g. Graph g => Val Vertex -> Val Vertex -> WithGraph2 g (Val Vertex)
 apply (V.Fun (V.Closure α γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (S.singleton α)
    γ3 × κ × αs <- except $ match v σ
@@ -91,14 +91,14 @@ apply (V.Fun (V.PartialConstr α c vs)) v = do
 apply (V.Fun (V.Foreign φ vs)) v = do
    let vs' = snoc vs v
    let
-      apply' :: forall t. ForeignOp' t -> WithGraph g (Val Vertex)
+      apply' :: forall t. ForeignOp' t -> WithGraph2 g (Val Vertex)
       apply' (ForeignOp' φ') =
          if φ'.arity > length vs' then pure $ V.Fun (V.Foreign φ vs')
          else φ'.op' vs'
    runExists apply' φ
 apply _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> WithGraph g (Val Vertex)
+eval :: forall g. Graph g => Env Vertex -> Expr Vertex -> Set Vertex -> WithGraph2 g (Val Vertex)
 eval γ (Var x) _ = except $ lookup' x γ
 eval γ (Op op) _ = except $ lookup' op γ
 eval _ (Int α n) αs = V.Int <$> lift (new (S.insert α αs)) <@> n
@@ -152,17 +152,14 @@ eval γ (LetRec ρ e) αs = do
 evalGraph :: forall g a. Show g => Graph g => Env a -> Expr a -> g -> MayFail (g × Val Vertex)
 evalGraph γ0 e0 g = do
    let
-      maybe_v × δg =
-         ( runHeap $ runGraphAccumT $ runExceptT $ do
+      maybe_v × g' =
+         ( runHeap $ flip runGraphAccum2T g $ runExceptT $ do
               γ <- lift $ lift $ traverse alloc γ0
               e <- lift $ lift $ alloc e0
               n <- lift $ lift $ get
-              v <- eval γ e S.empty :: WithGraph g _
+              v <- eval γ e S.empty :: WithGraph2 g _
               n' <- lift $ lift $ get
               trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
                  pure v
-         ) :: MayFail (Val Vertex) × (g -> g)
-   ((×) (δg g)) <$> maybe_v
-
--- select :: Val Vertex -> Val Boolean -> Val (Set Boolean)
--- select u v = error "" <$> u <*> v
+         ) :: MayFail (Val Vertex) × g
+   ((×) g') <$> maybe_v

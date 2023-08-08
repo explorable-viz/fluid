@@ -11,6 +11,7 @@ module Dict
    , disjointUnion_inv
    , fromFoldable
    , get
+   , insertWith
    , intersection
    , intersectionWith
    , keys
@@ -22,12 +23,13 @@ import Prelude hiding (apply)
 
 import Data.Foldable (class Foldable, foldl)
 import Data.List (head)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set)
 import Data.Set (fromFoldable, member) as S
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (Object, fromFoldable, keys, toAscUnfoldable) as O
-import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, lookup, member, singleton, size, union, unionWith, update)
+import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, lookup, member, singleton, size, union, unionWith, update, alter)
 import Util (Endo, type (×), (×), assert, definitely, error)
 
 type Dict a = O.Object a
@@ -72,3 +74,6 @@ fromFoldable = O.fromFoldable
 
 unzip :: forall a b. Dict (a × b) -> Dict a × Dict b
 unzip kvs = (kvs <#> fst) × (kvs <#> snd)
+
+insertWith :: forall a. (a -> a -> a) -> String -> a -> Dict a -> Dict a
+insertWith f k v = alter (Just <<< maybe v (flip f v)) k
