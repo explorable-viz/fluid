@@ -27288,14 +27288,14 @@
       };
     };
   };
-  var _fromCodePointArray = function(singleton3) {
+  var _fromCodePointArray = function(singleton4) {
     return hasFromCodePoint ? function(cps) {
       if (cps.length < 1e4) {
         return String.fromCodePoint.apply(String, cps);
       }
-      return cps.map(singleton3).join("");
+      return cps.map(singleton4).join("");
     } : function(cps) {
-      return cps.map(singleton3).join("");
+      return cps.map(singleton4).join("");
     };
   };
   var _toCodePointArray = function(fallback) {
@@ -31635,7 +31635,7 @@
         });
       }
       if (v1.tag === "App") {
-        return bindEither.bind($$eval(dictAnn)(v)(v1._1)(v2))((v3) => bindEither.bind($$eval(dictAnn)(v)(v1._2)(v2))((v5) => bindEither.bind(apply(dictAnn)($Tuple(
+        return bindEither.bind($$eval(dictAnn)(v)(v1._1)(v2))((v3) => bindEither.bind($$eval(dictAnn)(v)(v1._2)(v2))((v5) => bindEither.bind(apply2(dictAnn)($Tuple(
           v3._2,
           v5._2
         )))((v6) => $Either("Right", $Tuple($Trace("App", v3._1, v5._1, v6._1), v6._2)))));
@@ -31655,7 +31655,7 @@
       fail();
     };
   };
-  var apply = (dictAnn) => {
+  var apply2 = (dictAnn) => {
     const match1 = match(dictAnn);
     const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
     const prettyP2 = prettyP(prettyVal(dictAnn.Highlightable0()));
@@ -31822,8 +31822,8 @@
       return $Either("Left", "Found " + (prettyP2(v._2) + ", expected function"));
     };
   };
-  var apply2 = (dictAnn) => {
-    const apply1 = apply(dictAnn);
+  var apply22 = (dictAnn) => {
+    const apply1 = apply2(dictAnn);
     return (v) => bindEither.bind(apply1($Tuple(v._1, v._2._1)))((v3) => bindEither.bind(apply1($Tuple(v3._2, v._2._2)))((v4) => $Either(
       "Right",
       $Tuple($Tuple(v3._1, v4._1), v4._2)
@@ -35748,7 +35748,7 @@
       };
     },
     op: (dictAnn) => {
-      const apply1 = apply(dictAnn);
+      const apply1 = apply2(dictAnn);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._2.tag === "Cons") {
@@ -35847,7 +35847,7 @@
     },
     op: (dictAnn) => {
       const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-      const apply22 = apply2(dictAnn);
+      const apply23 = apply22(dictAnn);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._2.tag === "Cons") {
@@ -35856,7 +35856,7 @@
                 if (v._2._2._1.tag === "Dictionary") {
                   if (v._2._2._2.tag === "Nil") {
                     return bindEither.bind(sequence22(intersectionWith((v2) => (v3) => {
-                      const $6 = apply22($Tuple(v._1, $Tuple(v2._2, v3._2)));
+                      const $6 = apply23($Tuple(v._1, $Tuple(v2._2, v3._2)));
                       if ($6.tag === "Left") {
                         return $Either("Left", $6._1);
                       }
@@ -36062,7 +36062,7 @@
       };
     },
     op: (dictAnn) => {
-      const apply22 = apply2(dictAnn);
+      const apply23 = apply22(dictAnn);
       return (v) => {
         if (v.tag === "Cons") {
           if (v._2.tag === "Cons") {
@@ -36070,7 +36070,7 @@
               if (v._2._2._1.tag === "Dictionary") {
                 if (v._2._2._2.tag === "Nil") {
                   return bindEither.bind(foldWithIndexM((s) => (v2) => (v3) => {
-                    const $6 = apply22($Tuple(v._1, $Tuple(v2._2, v3._2)));
+                    const $6 = apply23($Tuple(v._1, $Tuple(v2._2, v3._2)));
                     if ($6.tag === "Left") {
                       return $Either("Left", $6._1);
                     }
