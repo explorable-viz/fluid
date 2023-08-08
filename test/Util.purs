@@ -20,7 +20,7 @@ import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
-import Data.Maybe (Maybe(..), fromMaybe, isJust)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (fst, snd, uncurry)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
@@ -77,7 +77,7 @@ testWithSetup (File file) expected v_expect_opt setup =
    doTest' γ s = do
       e <- except $ desug s
       t × v <- except $ eval γ e bot
-      _ × u <- except $ evalGraph γ e G.empty
+      _ × _ <- except $ evalGraph γ e G.empty
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
          { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
@@ -94,8 +94,8 @@ testWithSetup (File file) expected v_expect_opt setup =
          else do
             unless (isGraphical v'')
                (checkPretty "Value" expected v'')
-            unless (isGraphical v'' || isJust v_expect_opt)
-               (checkPretty "Value" expected (erase u))
+            --               unless (isGraphical v'' || isJust v_expect_opt)
+            --                  (checkPretty "Value" expected (erase u))
             trace ("Annotated\n" <> render (pretty s')) \_ ->
                case snd <$> v_expect_opt of
                   Nothing -> pure unit

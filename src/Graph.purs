@@ -162,7 +162,8 @@ instance Graph GraphImpl where
       newOutN = map (S.delete (Vertex α)) (D.delete α out)
       newInN = map (S.delete (Vertex α)) (D.delete α in_)
 
-   extend (Vertex α) αs (GraphImpl out in_) = GraphImpl newOut newIn
+   extend (Vertex α) αs (GraphImpl out in_) =
+      GraphImpl newOut newIn
       where
       newOut = D.insertWith S.union α αs out
       newIn = foldl (\d (Vertex α') -> D.insertWith S.union α' (S.singleton (Vertex α)) d) in_ αs
