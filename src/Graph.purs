@@ -4,7 +4,7 @@ import Prelude
 
 import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
-import Data.Foldable (foldl)
+import Data.Foldable (class Foldable, foldl)
 import Data.Identity (Identity)
 import Data.List (List)
 import Data.List (fromFoldable, filter, elem, concat) as L
@@ -20,15 +20,15 @@ import Util (Endo, MayFailT, (×), type (×), error)
 type Edge = Vertex × Vertex
 
 -- Graphs form a semigroup but we don't actually rely on that (for efficiency).
-class Monoid g <= Graph g where
-   extend :: Vertex -> S.Set Vertex -> Endo g
+class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
+   extend :: Vertex -> s Vertex -> Endo g
    elem :: g -> Vertex -> Boolean
-   outN :: g -> Vertex -> S.Set Vertex
-   inN :: g -> Vertex -> S.Set Vertex
+   outN :: g -> Vertex -> s Vertex
+   inN :: g -> Vertex -> s Vertex
    size :: g -> Int
    remove :: Vertex -> Endo g
    opp :: Endo g
-   discreteG :: S.Set Vertex -> g
+   discreteG :: s Vertex -> g
 
 newtype Vertex = Vertex String
 
@@ -52,9 +52,9 @@ alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
 
 -- Difference graphs
-class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
+class (Graph g s, Monad m) <= MonadGraphAccum g m s | m -> g where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
-   new :: S.Set Vertex -> m Vertex
+   new :: s Vertex -> m Vertex
 
 -- Essentially Writer instantiated to a monoid of endofunctions
 data GraphAccumT g m a = GraphAccumT (m (a × Endo g))
@@ -109,28 +109,28 @@ instance Monoid g => MonadTrans (GraphAccumT g) where
 instance Monoid g => MonadTrans (GraphAccum2T g) where
    lift m = GraphAccum2T \g -> (×) <$> m <@> g
 
-instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccumT g m) where
+instance (Graph g s, MonadAlloc m) => MonadGraphAccum g (GraphAccumT g m) s where
    new αs = do
       α <- lift $ fresh
       GraphAccumT $ pure $ α × extend α αs
 
-instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccum2T g m) where
+instance (Graph g s, MonadAlloc m) => MonadGraphAccum g (GraphAccum2T g m) s where
    new αs = do
       α <- lift $ fresh
       GraphAccum2T $ \g -> pure $ α × extend α αs g
 
-outE' :: forall g. Graph g => g -> Vertex -> List Edge
-outE' graph α = L.fromFoldable $ S.map (α × _) (outN graph α)
+outE' :: forall g s. Set s Vertex => Graph g s => g -> Vertex -> List Edge
+outE' graph α = L.fromFoldable $ smap (α × _) (outN graph α)
 
-outE :: forall g. Graph g => S.Set Vertex -> g -> List Edge
+outE :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> List Edge
 outE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allOut
    where
    allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
 
-inE' :: forall g. Graph g => g -> Vertex -> List Edge
-inE' graph α = L.fromFoldable $ S.map (_ × α) (inN graph α)
+inE' :: forall g s. Set s Vertex => Graph g s => g -> Vertex -> List Edge
+inE' graph α = L.fromFoldable $ smap (_ × α) (inN graph α)
 
-inE :: forall g. Graph g => S.Set Vertex -> g -> List Edge
+inE :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> List Edge
 inE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
    where
    allIn = L.concat (map (\α -> inE' g α) (L.fromFoldable αs))
@@ -143,29 +143,29 @@ instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
 -- GraphImpl Specifics
-data GraphImpl = GraphImpl (D.Dict (S.Set Vertex)) (D.Dict (S.Set Vertex))
+data GraphImpl s = GraphImpl (D.Dict (s Vertex)) (D.Dict (s Vertex))
 
-instance Semigroup GraphImpl where
+instance (Set s Vertex) => Semigroup (GraphImpl s) where
    append (GraphImpl out1 in1) (GraphImpl out2 in2) =
-      GraphImpl (D.unionWith S.union out1 out2) (D.unionWith S.union in1 in2)
+      GraphImpl (D.unionWith union out1 out2) (D.unionWith union in1 in2)
 
-instance Monoid GraphImpl where
+instance (Set s Vertex) => Monoid (GraphImpl s) where
    mempty = GraphImpl D.empty D.empty
 
-empty :: GraphImpl
+empty :: forall s. (Set s Vertex) => GraphImpl s
 empty = mempty
 
-instance Graph GraphImpl where
+instance (Set s Vertex) => Graph (GraphImpl s) s where
    remove (Vertex α) (GraphImpl out in_) = GraphImpl newOutN newInN
       where
-      newOutN = map (S.delete (Vertex α)) (D.delete α out)
-      newInN = map (S.delete (Vertex α)) (D.delete α in_)
+      newOutN = map (delete (Vertex α)) (D.delete α out)
+      newInN = map (delete (Vertex α)) (D.delete α in_)
 
    extend (Vertex α) αs (GraphImpl out in_) =
       GraphImpl newOut newIn
       where
-      newOut = foldl (\d (Vertex α') -> D.insertWith S.union α' S.empty d) (D.insertWith S.union α αs out) αs
-      newIn = foldl (\d (Vertex α') -> D.insertWith S.union α' (S.singleton (Vertex α)) d) (D.insertWith S.union α S.empty in_) αs
+      newOut = foldl (\d (Vertex α') -> D.insertWith union α' sempty d) (D.insertWith union α αs out) αs
+      newIn = foldl (\d (Vertex α') -> D.insertWith union α' (singleton (Vertex α)) d) (D.insertWith union α sempty in_) αs
 
    outN (GraphImpl out _) (Vertex α) = case D.lookup α out of
       Just αs -> αs
@@ -181,22 +181,22 @@ instance Graph GraphImpl where
 
    discreteG αs = GraphImpl discreteM discreteM
       where
-      pairs = S.map (\(Vertex α) -> α × S.empty) αs
+      pairs = smap (\(Vertex α) -> α × sempty) αs
       discreteM = D.fromFoldable pairs
 
-instance Show GraphImpl where
+instance Show (s Vertex) => Show (GraphImpl s) where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
 
-class Ord a <= Set s a where
+class (Ord a, Ord (s a), Foldable s, Show a, Show (s a)) <= Set s a where
    delete :: a -> s a -> s a
    union :: s a -> s a -> s a
    singleton :: a -> s a
    sempty :: s a
    smap :: forall b. Ord b => (a -> b) -> s a -> s b
 
-instance Ord a => Set S.Set a where
-  delete = S.delete
-  union = S.union
-  singleton = S.singleton
-  sempty = S.empty
-  smap = S.map
+instance (Show a, Ord a) => Set S.Set a where
+   delete = S.delete
+   union = S.union
+   singleton = S.singleton
+   sempty = S.empty
+   smap = S.map
