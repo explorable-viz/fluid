@@ -9,7 +9,7 @@ import Data.Foldable (foldl)
 import Data.Identity (Identity)
 import Data.List (List, (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
-import Data.Maybe (Maybe(..), isJust, maybe)
+import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
@@ -184,10 +184,11 @@ instance Graph GraphImpl where
 
    connectOut α β (GraphImpl out in_) =
       GraphImpl (D.insertWith S.union (unwrap α) (S.singleton β) out)
-                (D.update (\αs -> Just $ S.insert α αs) (unwrap β) in_)
+                (D.update (S.insert α >>> Just) (unwrap β) in_)
 
-   connectIn (Vertex α) (Vertex β) (GraphImpl out in_) =
-      GraphImpl ?_ ?_
+   connectIn α β (GraphImpl out in_) =
+      GraphImpl (D.update (S.insert α >>> Just) (unwrap β) out)
+                (D.insertWith S.union (unwrap β) (S.singleton α) in_)
 
    outN (GraphImpl out _) (Vertex α) = D.lookup α out # definitely "in graph"
    inN (GraphImpl _ in_) (Vertex α) = D.lookup α in_ # definitely "in graph"
