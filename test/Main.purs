@@ -270,7 +270,7 @@ test_graphics =
    , testWithDataset (File "dataset/renewables-restricted") (File "graphics/stacked-bar-chart")
    ]
 
--- Can remove once graph slicing tested as part of overall test infrastructure.
+-- Remove once graph slicing tested as part of overall test infrastructure.
 test_graph :: Array (Test Unit)
 test_graph =
    [ graph_test_initial
