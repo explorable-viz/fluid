@@ -6,7 +6,7 @@ import Data.List as L
 import Data.Set (Set)
 import Data.Set as S
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, discreteG, elem, extend, inE, inE', outE, outE', outN, remove)
+import Graph (class Graph, Edge, Vertex, connectOut, discreteG, elem, extend, inE, inE', outE, outE', outN, remove)
 import Util (type (×), (×))
 
 bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
@@ -14,10 +14,8 @@ bwdSlice αs g' = bwdEdges g' (discreteG αs) (outE αs g')
 
 bwdEdges :: forall g. Graph g => g -> g -> List Edge -> g
 bwdEdges g' g ((α × β) : es) =
-   if elem g β then
-      bwdEdges g' (extend α (S.singleton β) g) es
-   else
-      bwdEdges g' (extend α (S.singleton β) g) (es <> (L.fromFoldable (outE' g' β)))
+   bwdEdges g' (connectOut α β g) $
+      es <> if elem g β then Nil else L.fromFoldable (outE' g' β)
 bwdEdges _ g Nil = g
 
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
