@@ -4,6 +4,7 @@ import Prelude
 
 import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
+import Control.Monad.Writer (WriterT)
 import Data.Foldable (foldl)
 import Data.Identity (Identity)
 import Data.List (List)
@@ -63,6 +64,9 @@ type WithGraph g a = MayFailT (GraphAccumT g (State Int)) a
 
 data GraphAccum2T g m a = GraphAccum2T (g -> m (a × g))
 type WithGraph2 g a = MayFailT (GraphAccum2T g (State Int)) a
+
+type GraphExtension = List (Vertex × Set Vertex) -- list of successive arguments to `extend`
+type WithGraph3 a = MayFailT (WriterT (a × Endo GraphExtension) (State Int)) a
 
 runGraphAccumT :: forall g m a. GraphAccumT g m a -> m (a × Endo g)
 runGraphAccumT (GraphAccumT m) = m
