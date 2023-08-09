@@ -4,10 +4,10 @@ import Prelude
 
 import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
-import Control.Monad.Writer (WriterT)
+import Control.Monad.Writer (WriterT, tell)
 import Data.Foldable (foldl)
 import Data.Identity (Identity)
-import Data.List (List)
+import Data.List (List, (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (isJust, maybe)
 import Data.Newtype (class Newtype)
@@ -54,7 +54,7 @@ alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
 
 -- Difference graphs
-class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
+class Monad m <= MonadGraphAccum m where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
    new :: Set Vertex -> m Vertex
 
@@ -66,7 +66,7 @@ data GraphAccum2T g m a = GraphAccum2T (g -> m (a × g))
 type WithGraph2 g a = MayFailT (GraphAccum2T g (State Int)) a
 
 type GraphExtension = List (Vertex × Set Vertex) -- list of successive arguments to `extend`
-type WithGraph3 a = MayFailT (WriterT (a × Endo GraphExtension) (State Int)) a
+type WithGraph3 a = MayFailT (WriterT (Endo GraphExtension) (State Int)) a
 
 runGraphAccumT :: forall g m a. GraphAccumT g m a -> m (a × Endo g)
 runGraphAccumT (GraphAccumT m) = m
@@ -114,15 +114,21 @@ instance Monoid g => MonadTrans (GraphAccumT g) where
 instance Monoid g => MonadTrans (GraphAccum2T g) where
    lift m = GraphAccum2T \g -> (×) <$> m <@> g
 
-instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccumT g m) where
+instance (Graph g, MonadAlloc m) => MonadGraphAccum (GraphAccumT g m) where
    new αs = do
       α <- lift $ fresh
       GraphAccumT $ pure $ α × extend α αs
 
-instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccum2T g m) where
+instance (Graph g, MonadAlloc m) => MonadGraphAccum (GraphAccum2T g m) where
    new αs = do
       α <- lift $ fresh
       GraphAccum2T $ \g -> pure $ α × extend α αs g
+
+instance MonadAlloc m => MonadGraphAccum (MayFailT (WriterT (Endo GraphExtension) m)) where
+   new αs = do
+      α <- lift $ lift $ fresh
+      tell $ (:) (α × αs)
+      pure α
 
 outE' :: forall g. Graph g => g -> Vertex -> List Edge
 outE' graph α = L.fromFoldable $ S.map (α × _) (outN graph α)
