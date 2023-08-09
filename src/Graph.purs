@@ -11,8 +11,7 @@ import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (isJust, Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (first, second)
-import Data.Set (Set)
-import Data.Set (delete, empty, map, singleton, union) as S
+import Data.Set (Set, delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
 import Dict (Dict, delete, empty, fromFoldable, insertWith, lookup, size, unionWith) as D
@@ -22,14 +21,14 @@ type Edge = Vertex × Vertex
 
 -- Graphs form a semigroup but we don't actually rely on that (for efficiency).
 class Monoid g <= Graph g where
-   extend :: Vertex -> Set Vertex -> Endo g
+   extend :: Vertex -> S.Set Vertex -> Endo g
    elem :: g -> Vertex -> Boolean
-   outN :: g -> Vertex -> Set Vertex
-   inN :: g -> Vertex -> Set Vertex
+   outN :: g -> Vertex -> S.Set Vertex
+   inN :: g -> Vertex -> S.Set Vertex
    size :: g -> Int
    remove :: Vertex -> Endo g
    opp :: Endo g
-   discreteG :: Set Vertex -> g
+   discreteG :: S.Set Vertex -> g
 
 newtype Vertex = Vertex String
 
@@ -55,7 +54,7 @@ alloc = traverse (const fresh)
 -- Difference graphs
 class (Graph g, Monad m) <= MonadGraphAccum g m | m -> g where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
-   new :: Set Vertex -> m Vertex
+   new :: S.Set Vertex -> m Vertex
 
 -- Essentially Writer instantiated to a monoid of endofunctions
 data GraphAccumT g m a = GraphAccumT (m (a × Endo g))
@@ -123,7 +122,7 @@ instance (Graph g, MonadAlloc m) => MonadGraphAccum g (GraphAccum2T g m) where
 outE' :: forall g. Graph g => g -> Vertex -> List Edge
 outE' graph α = L.fromFoldable $ S.map (α × _) (outN graph α)
 
-outE :: forall g. Graph g => Set Vertex -> g -> List Edge
+outE :: forall g. Graph g => S.Set Vertex -> g -> List Edge
 outE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allOut
    where
    allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
@@ -131,7 +130,7 @@ outE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allOut
 inE' :: forall g. Graph g => g -> Vertex -> List Edge
 inE' graph α = L.fromFoldable $ S.map (_ × α) (inN graph α)
 
-inE :: forall g. Graph g => Set Vertex -> g -> List Edge
+inE :: forall g. Graph g => S.Set Vertex -> g -> List Edge
 inE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
    where
    allIn = L.concat (map (\α -> inE' g α) (L.fromFoldable αs))
@@ -144,7 +143,7 @@ instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
 -- GraphImpl Specifics
-data GraphImpl = GraphImpl (D.Dict (Set Vertex)) (D.Dict (Set Vertex))
+data GraphImpl = GraphImpl (D.Dict (S.Set Vertex)) (D.Dict (S.Set Vertex))
 
 instance Semigroup GraphImpl where
    append (GraphImpl out1 in1) (GraphImpl out2 in2) =
@@ -187,3 +186,17 @@ instance Graph GraphImpl where
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
+
+class Ord a <= Set s a where
+   delete :: a -> s a -> s a
+   union :: s a -> s a -> s a
+   singleton :: a -> s a
+   sempty :: s a
+   smap :: forall b. Ord b => (a -> b) -> s a -> s b
+
+instance Ord a => Set S.Set a where
+  delete = S.delete
+  union = S.union
+  singleton = S.singleton
+  sempty = S.empty
+  smap = S.map
