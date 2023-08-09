@@ -4,9 +4,8 @@ import Prelude
 import Data.List (List(..), (:))
 import Data.List as L
 import Data.Set (Set)
-import Data.Set as S
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, connectOut, discreteG, elem, extend, inE, inE', outE, outE', outN, remove)
+import Graph (class Graph, Edge, Vertex, connectIn, connectOut, discreteG, elem, extend, inE, inE', outE, outE', outN, remove)
 import Util (type (×), (×))
 
 bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
@@ -24,12 +23,12 @@ fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) mempty (inE αs g')
 fwdEdges :: forall g. Graph g => g -> g -> g -> List Edge -> g × g
 fwdEdges g' g h ((α × β) : es) = fwdEdges g' g'' h' es
    where
-   (g'' × h') = fwdVertex g' g (extend α (S.singleton β) h) α
+   g'' × h' = fwdVertex g' g (connectIn α β h) α
 fwdEdges _ currSlice pending Nil = currSlice × pending
 
 fwdVertex :: forall g. Graph g => g -> g -> g -> Vertex -> g × g
 fwdVertex g' g h α =
-   if αs == (outN g' α) then
+   if αs == outN g' α then
       fwdEdges g' (extend α αs g) (remove α h) (inE' g' α)
    else g × h
    where

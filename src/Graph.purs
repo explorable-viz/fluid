@@ -183,12 +183,12 @@ instance Graph GraphImpl where
       newIn = foldl (\d (Vertex α') -> D.insertWith S.union α' (S.singleton (Vertex α)) d) (D.insertWith S.union α S.empty in_) αs
 
    connectOut α β (GraphImpl out in_) =
-      GraphImpl (D.insertWith S.union (unwrap α) (S.singleton β) out)
-                (D.update (S.insert α >>> Just) (unwrap β) in_)
+      GraphImpl (D.update (S.insert β >>> Just) (unwrap α) out)
+                (D.insertWith S.union (unwrap β) (S.singleton α) in_)
 
    connectIn α β (GraphImpl out in_) =
-      GraphImpl (D.update (S.insert α >>> Just) (unwrap β) out)
-                (D.insertWith S.union (unwrap β) (S.singleton α) in_)
+      GraphImpl (D.insertWith S.union (unwrap α) (S.singleton β) out)
+                (D.update (S.insert α >>> Just) (unwrap β) in_)
 
    outN (GraphImpl out _) (Vertex α) = D.lookup α out # definitely "in graph"
    inN (GraphImpl _ in_) (Vertex α) = D.lookup α in_ # definitely "in graph"
