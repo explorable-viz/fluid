@@ -22,6 +22,5 @@ graphTestScript = do
    let
       slice = fwdSlice (fromFoldable [ (Vertex "13"), (Vertex "12"), Vertex "11" ]) graph
    log ("Outedges: " <> show (inE (fromFoldable [ (Vertex "11") ]) graph))
-   --logShow graph
    logShow slice
 
