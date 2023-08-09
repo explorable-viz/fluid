@@ -11,7 +11,7 @@ import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (isJust, Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (first, second)
-import Data.Set (Set, delete, empty, map, singleton, union) as S
+import Data.Set (Set, delete, empty, insert, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
 import Dict (Dict, delete, empty, fromFoldable, insertWith, lookup, size, unionWith) as D
@@ -52,9 +52,9 @@ alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
 
 -- Difference graphs
-class (Graph g s, Monad m) <= MonadGraphAccum g m s | m -> g where
+class (Monad m) <= MonadGraphAccum g m s | m -> g where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
-   new :: s Vertex -> m Vertex
+   new :: Graph g s => s Vertex -> m Vertex
 
 -- Essentially Writer instantiated to a monoid of endofunctions
 data GraphAccumT g m a = GraphAccumT (m (a × Endo g))
@@ -190,6 +190,7 @@ instance Show (s Vertex) => Show (GraphImpl s) where
 class (Ord a, Ord (s a), Foldable s, Show a, Show (s a)) <= Set s a where
    delete :: a -> s a -> s a
    union :: s a -> s a -> s a
+   insert :: a -> s a -> s a
    singleton :: a -> s a
    sempty :: s a
    smap :: forall b. Ord b => (a -> b) -> s a -> s b
@@ -197,6 +198,7 @@ class (Ord a, Ord (s a), Foldable s, Show a, Show (s a)) <= Set s a where
 instance (Show a, Ord a) => Set S.Set a where
    delete = S.delete
    union = S.union
+   insert = S.insert
    singleton = S.singleton
    sempty = S.empty
    smap = S.map
