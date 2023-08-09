@@ -5,13 +5,14 @@ import Prelude hiding (absurd, top)
 import Bindings (Var)
 import Control.Apply (lift2)
 import Data.Foldable (class Foldable)
-import Data.List (List)
+import Data.List (List, zipWith)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable)
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
+import Dict (apply2) as D
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
 import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
@@ -32,6 +33,23 @@ data Expr a
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
+instance Apply Expr where
+   apply (Var x) (Var _) = Var x
+   apply (Op op) (Op _) = Op op
+   apply (Int fα n) (Int α _) = Int (fα α) n
+   apply (Float fα n) (Float α _) = Float (fα α) n
+   apply (Str fα s) (Str α _) = Str (fα α) s
+   apply (Record fα fxvs) (Record α xvs) = Record (fα α) (D.apply2 fxvs xvs)
+   apply (Dictionary fα fxvs) (Dictionary α xvs) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxvs xvs)
+   apply (Constr fα c fes) (Constr α _ es) = Constr (fα α) c (zipWith (<*>) fes es)
+   apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (_ × _) e2) = Matrix (fα α) (fe1 <*> e1) (x × y) (fe2 <*> e2)
+   apply (Lambda fσ) (Lambda σ) = Lambda (fσ <*> σ)
+   apply (Project fe x) (Project e _) = Project (fe <*> e) x
+   apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
+   apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
+   apply (LetRec fρ fe) (LetRec ρ e) = LetRec (D.apply2 fρ ρ) (fe <*> e)
+   apply _ _ = error "Apply Expr: shape mismatch"
+
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs a = Dict (Elim a)
@@ -41,12 +59,24 @@ data Elim a
    | ElimConstr (Dict (Cont a))
    | ElimRecord (Set Var) (Cont a)
 
+instance Apply Elim where
+   apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)
+   apply (ElimConstr fk) (ElimConstr k) = ElimConstr (D.apply2 fk k)
+   apply (ElimRecord xs fk) (ElimRecord _ k) = ElimRecord xs (fk <*> k)
+   apply _ _ = error "Apply Elim: shape mismatch"
+
 -- Continuation of an eliminator branch.
 data Cont a
    = ContNone
    | -- null continuation, used in let bindings/module variable bindings
      ContExpr (Expr a)
    | ContElim (Elim a)
+
+instance Apply Cont where
+   apply ContNone ContNone = ContNone
+   apply (ContExpr f) (ContExpr e) = ContExpr (f <*> e)
+   apply (ContElim fσ) (ContElim σ) = ContElim (fσ <*> σ)
+   apply _ _ = error "Apply Cont: shape mismatch"
 
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ

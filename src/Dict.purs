@@ -3,6 +3,8 @@ module Dict
    ( module Foreign.Object
    , Dict
    , (\\)
+   , apply
+   , apply2
    , asSingletonMap
    , difference
    , disjointUnion
@@ -17,7 +19,7 @@ module Dict
    , unzip
    ) where
 
-import Prelude
+import Prelude hiding (apply)
 
 import Data.Foldable (class Foldable, foldl)
 import Data.List (head)
@@ -31,6 +33,12 @@ import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, lookup, membe
 import Util (Endo, type (×), (×), assert, definitely, error)
 
 type Dict a = O.Object a
+
+apply :: forall a b. Dict (a -> b) -> Dict a -> Dict b
+apply d ds = intersectionWith ($) d ds
+
+apply2 :: forall f a b. Apply f => Dict (f (a -> b)) -> Dict (f a) -> Dict (f b)
+apply2 d ds = apply (map (<*>) d) ds
 
 -- Unfortunately Foreign.Object doesn't define this; could implement using Foreign.Object.ST instead.
 foreign import intersectionWith :: forall a b c. (a -> b -> c) -> Dict a -> Dict b -> Dict c
