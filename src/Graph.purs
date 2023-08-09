@@ -9,14 +9,14 @@ import Data.Foldable (foldl)
 import Data.Identity (Identity)
 import Data.List (List, (:))
 import Data.List (fromFoldable, filter, elem, concat) as L
-import Data.Maybe (isJust, maybe)
+import Data.Maybe (isJust, Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (first, second)
 import Data.Set (Set)
 import Data.Set (delete, empty, map, singleton, union) as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
-import Dict (Dict, delete, empty, fromFoldable, lookup, unionWith, insertWith, size) as D
+import Dict (Dict, delete, empty, fromFoldable, insertWith, lookup, size, unionWith) as D
 import Util (Endo, MayFailT, (×), type (×), error)
 
 type Edge = Vertex × Vertex
@@ -175,11 +175,15 @@ instance Graph GraphImpl where
    extend (Vertex α) αs (GraphImpl out in_) =
       GraphImpl newOut newIn
       where
-      newOut = D.insertWith S.union α αs out
-      newIn = foldl (\d (Vertex α') -> D.insertWith S.union α' (S.singleton (Vertex α)) d) in_ αs
+      newOut = foldl (\d (Vertex α') -> D.insertWith S.union α' S.empty d) (D.insertWith S.union α αs out) αs
+      newIn = foldl (\d (Vertex α') -> D.insertWith S.union α' (S.singleton (Vertex α)) d) (D.insertWith S.union α S.empty in_) αs
 
-   outN (GraphImpl out _) (Vertex α) = maybe (error "not in graph") identity $ D.lookup α out
-   inN (GraphImpl _ in_) (Vertex α) = maybe (error "not in graph") identity $ D.lookup α in_
+   outN (GraphImpl out _) (Vertex α) = case D.lookup α out of
+      Just αs -> αs
+      Nothing -> error "not in graph"
+   inN (GraphImpl _ in_) (Vertex α) = case D.lookup α in_ of
+      Just αs -> αs
+      Nothing -> error ("Looked up " <> α <> " in " <> show in_)
 
    elem (GraphImpl out _) (Vertex α) = isJust (D.lookup α out)
    size (GraphImpl out _) = D.size out
