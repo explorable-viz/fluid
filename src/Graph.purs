@@ -171,24 +171,24 @@ empty :: GraphImpl
 empty = mempty
 
 instance Graph GraphImpl where
-   remove (Vertex α) (GraphImpl out in_) = GraphImpl newOutN newInN
-      where
-      newOutN = map (S.delete (Vertex α)) (D.delete α out)
-      newInN = map (S.delete (Vertex α)) (D.delete α in_)
+   remove (Vertex α) (GraphImpl out in_) =
+      GraphImpl (map (S.delete (Vertex α)) (D.delete α out))
+         (map (S.delete (Vertex α)) (D.delete α in_))
 
    extend (Vertex α) αs (GraphImpl out in_) =
-      GraphImpl newOut newIn
-      where
-      newOut = foldl (\d (Vertex α') -> D.insertWith S.union α' S.empty d) (D.insertWith S.union α αs out) αs
-      newIn = foldl (\d (Vertex α') -> D.insertWith S.union α' (S.singleton (Vertex α)) d) (D.insertWith S.union α S.empty in_) αs
+      GraphImpl (D.insert α αs out)
+         ( foldl (\d (Vertex α') -> D.insertWith S.union α' (S.singleton (Vertex α)) d)
+              (D.insert α S.empty in_)
+              αs
+         )
 
    connectOut α β (GraphImpl out in_) =
       GraphImpl (D.update (S.insert β >>> Just) (unwrap α) out)
-                (D.insertWith S.union (unwrap β) (S.singleton α) in_)
+         (D.insertWith S.union (unwrap β) (S.singleton α) in_)
 
    connectIn α β (GraphImpl out in_) =
       GraphImpl (D.insertWith S.union (unwrap α) (S.singleton β) out)
-                (D.update (S.insert α >>> Just) (unwrap β) in_)
+         (D.update (S.insert α >>> Just) (unwrap β) in_)
 
    outN (GraphImpl out _) (Vertex α) = D.lookup α out # definitely "in graph"
    inN (GraphImpl _ in_) (Vertex α) = D.lookup α in_ # definitely "in graph"

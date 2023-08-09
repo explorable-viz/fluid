@@ -156,13 +156,13 @@ evalGraph γ0 e0 g = ((×) g') <$> maybe_v
    where
    maybe_v × g_extends =
       ( runHeap $ runWriterT $ runExceptT $ do
-            γ <- lift $ lift $ traverse alloc γ0
-            e <- lift $ lift $ alloc e0
-            n <- lift $ lift $ get
-            v <- eval γ e S.empty :: WithGraph3 _
-            n' <- lift $ lift $ get
-            trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
-               pure v
+           γ <- lift $ lift $ traverse alloc γ0
+           e <- lift $ lift $ alloc e0
+           n <- lift $ lift $ get
+           v <- eval γ e S.empty :: WithGraph3 _
+           n' <- lift $ lift $ get
+           trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
+              pure v
       ) :: MayFail (Val Vertex) × _
    g' = foldl (\h (α × αs) -> extend α αs h) g (g_extends Nil)
 
