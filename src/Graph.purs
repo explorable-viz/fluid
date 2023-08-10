@@ -157,7 +157,7 @@ derive instance Newtype Vertex _
 instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
--- Maintain out neighbours and in neighbours as separate adjacency maps.
+-- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 data GraphImpl = GraphImpl (D.Dict (Set Vertex)) (D.Dict (Set Vertex))
 
 -- Provided for completeness, but for efficiency we avoid them.
