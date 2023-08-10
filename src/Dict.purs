@@ -9,7 +9,6 @@ module Dict
    , difference
    , disjointUnion
    , disjointUnion_inv
-   , fromFoldable
    , get
    , insertWith
    , intersection
@@ -21,15 +20,15 @@ module Dict
 
 import Prelude hiding (apply)
 
-import Data.Foldable (class Foldable, foldl)
+import Data.Foldable (foldl)
 import Data.List (head)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set)
 import Data.Set (fromFoldable, member) as S
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
-import Foreign.Object (Object, fromFoldable, keys, toAscUnfoldable) as O
-import Foreign.Object (delete, empty, filterKeys, insert, isEmpty, lookup, member, singleton, size, union, unionWith, update, alter)
+import Foreign.Object (Object, keys, toAscUnfoldable) as O
+import Foreign.Object (delete, empty, filterKeys, fromFoldable, insert, isEmpty, lookup, member, singleton, size, union, unionWith, update, alter)
 import Util (Endo, type (×), (×), assert, definitely, error)
 
 type Dict a = O.Object a
@@ -69,8 +68,8 @@ disjointUnion_inv ks m = filterKeys (_ `S.member` ks) m × filterKeys (_ `not <<
 toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
 toUnfoldable = O.toAscUnfoldable
 
-fromFoldable :: forall a f. Foldable f => f (String × a) -> Dict a
-fromFoldable = O.fromFoldable
+--fromFoldable :: forall a f. Foldable f => f (String × a) -> Dict a
+--fromFoldable = O.fromFoldable
 
 unzip :: forall a b. Dict (a × b) -> Dict a × Dict b
 unzip kvs = (kvs <#> fst) × (kvs <#> snd)

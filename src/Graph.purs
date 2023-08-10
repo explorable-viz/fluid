@@ -2,7 +2,7 @@ module Graph where
 
 import Prelude hiding (add)
 
-import Data.Foldable (foldl)
+import Data.Foldable (class Foldable, foldl)
 import Data.List (List, concat)
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
@@ -11,7 +11,7 @@ import Data.Set (Set)
 import Data.Set as S
 import Dict (Dict)
 import Dict as D
-import Util (Endo, (×), type (×), definitely)
+import Util (Endo, (×), type (×), definitely, error, unimplemented)
 
 type Edge = Vertex × Vertex
 
@@ -49,6 +49,8 @@ class Monoid g <= Graph g where
 
    -- |   Discrete graph consisting only of a set of vertices.
    discreteG :: Set Vertex -> g
+
+   fromFoldable :: forall f. Foldable f => f (Vertex × Set Vertex) -> g
 
 newtype Vertex = Vertex String
 
@@ -117,6 +119,8 @@ instance Graph GraphImpl where
    discreteG αs = GraphImpl discreteM discreteM
       where
       discreteM = D.fromFoldable $ S.map (\α -> unwrap α × S.empty) αs
+
+   fromFoldable _ = error unimplemented
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
