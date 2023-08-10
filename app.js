@@ -19513,6 +19513,16 @@
     const show4 = showArrayImpl(dictShow.show);
     return { show: (s) => "(fromFoldable " + (show4(toUnfoldable12(s)) + ")") };
   };
+  var member = (dictOrd) => (a) => (v) => {
+    const $3 = lookup(dictOrd)(a)(v);
+    if ($3.tag === "Nothing") {
+      return false;
+    }
+    if ($3.tag === "Just") {
+      return true;
+    }
+    fail();
+  };
   var insert3 = (dictOrd) => (a) => (v) => insert2(dictOrd)(a)(unit2)(v);
   var foldableSet = {
     foldMap: (dictMonoid) => {
@@ -35157,10 +35167,11 @@
       delete: $$delete2(dictOrd),
       union: union2(dictOrd),
       insert: insert3(dictOrd),
+      member: member(dictOrd),
       singleton,
+      subset: subset(dictOrd),
       sempty: Leaf2,
       smap: (dictOrd1) => map2(dictOrd1),
-      subset: subset(dictOrd),
       fromFoldable: (dictFoldable) => dictFoldable.foldl((m) => (a) => insert2(dictOrd)(a)(unit2)(m))(Leaf2),
       toUnfoldable: (dictUnfoldable) => toUnfoldable4(dictUnfoldable),
       Ord0: () => dictOrd,
@@ -35170,9 +35181,10 @@
   };
 
   // output-es/EvalGraph/index.js
-  var fromFoldable10 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2))();
+  var setSet2 = /* @__PURE__ */ setSet(ordString);
+  var fromFoldable10 = /* @__PURE__ */ (() => setSet2.fromFoldable(foldableSet))();
   var show22 = /* @__PURE__ */ (() => showSet(showString).show)();
-  var toUnfoldable14 = /* @__PURE__ */ (() => setSet(ordString).toUnfoldable(unfoldableList))();
+  var toUnfoldable14 = /* @__PURE__ */ (() => setSet2.toUnfoldable(unfoldableList))();
   var monoidFn2 = /* @__PURE__ */ (() => {
     const semigroupFn = { append: (f) => (g) => (x2) => foldableList.foldr(Cons)(g(x2))(f(x2)) };
     return { mempty: (v) => Nil, Semigroup0: () => semigroupFn };
@@ -35268,13 +35280,7 @@
     }
     if (v1.tag === "ElimConstr") {
       if (v.tag === "Constr") {
-        return bindEither.bind($$with("Pattern mismatch")(consistentWith($Map(
-          "Two",
-          Leaf2,
-          v._2,
-          unit2,
-          Leaf2
-        ))(keys2(v1._1))))(() => bindEither.bind((() => {
+        return bindEither.bind($$with("Pattern mismatch")(consistentWith(setSet2.singleton(v._2))(keys2(v1._1))))(() => bindEither.bind((() => {
           const $4 = "Incomplete patterns: no branch for " + showCtr(v._2);
           const $5 = _lookup(Nothing, Just, v._2, v1._1);
           if ($5.tag === "Nothing") {
@@ -35304,7 +35310,7 @@
       if (v.tag === "Record") {
         return bindEither.bind((() => {
           const $3 = "Pattern mismatch: found " + (show22(keys2(v._2)) + (", expected " + show22(v1._1)));
-          if (difference3(ordString)(v1._1)(fromFoldable10(keys2(v._2))).tag === "Leaf") {
+          if (setSet2.subset(v1._1)(fromFoldable10(keys2(v._2)))) {
             return $Either("Right", unit2);
           }
           return $Either("Left", $3);
@@ -35323,7 +35329,7 @@
   var closeDefs2 = (dictSet) => (\u03B3) => (\u03C1) => (\u03B1s) => traverse13((\u03C3) => {
     const \u03C1$p = $$for(\u03C1)(\u03C3);
     return functorExceptT.map(Fun)(functorExceptT.map((f) => f(\u03C3))(functorExceptT.map((f) => f(\u03C1$p))((() => {
-      const $6 = restrict(\u03B3)(unionWith(ordString)($$const)(fv2(\u03C1$p))(fVElim.fv(\u03C3)));
+      const $6 = restrict(\u03B3)(setSet2.union(fv2(\u03C1$p))(fVElim.fv(\u03C3)));
       return functorExceptT.map((f) => f($6))(functorExceptT.map(Closure)($$new2(\u03B1s)));
     })())));
   })(\u03C1);
