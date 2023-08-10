@@ -68,9 +68,6 @@ disjointUnion_inv ks m = filterKeys (_ `S.member` ks) m × filterKeys (_ `not <<
 toUnfoldable :: forall a f. Unfoldable f => Dict a -> f (String × a)
 toUnfoldable = O.toAscUnfoldable
 
---fromFoldable :: forall a f. Foldable f => f (String × a) -> Dict a
---fromFoldable = O.fromFoldable
-
 unzip :: forall a b. Dict (a × b) -> Dict a × Dict b
 unzip kvs = (kvs <#> fst) × (kvs <#> snd)
 
