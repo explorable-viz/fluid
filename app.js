@@ -19876,7 +19876,7 @@
     };
   };
 
-  // output-es/Graph.GraphAccum/index.js
+  // output-es/Graph.GraphWriter/index.js
   var monoidFn = /* @__PURE__ */ (() => {
     const semigroupFn = { append: (f) => (g) => (x2) => foldableList.foldr(Cons)(g(x2))(f(x2)) };
     return { mempty: (v) => Nil, Semigroup0: () => semigroupFn };
@@ -19896,7 +19896,7 @@
       MonadState0: () => monadStateStateT2
     };
   };
-  var monadGraphAccumMayFailTWr = (dictMonadAlloc) => {
+  var monadGraphWriterMayFailTW = (dictMonadAlloc) => {
     const Monad0 = dictMonadAlloc.MonadState0().Monad0();
     const monadWriterT1 = monadWriterT2(Monad0);
     const bindExceptT3 = bindExceptT(monadWriterT1);
@@ -28339,7 +28339,7 @@
     const $0 = functorWriterT(functorStateT(functorIdentity));
     return (f) => $0.map(functorEither.map(f));
   })();
-  var $$new = /* @__PURE__ */ (() => monadGraphAccumMayFailTWr(monadAllocStateTInt(monadIdentity)).new)();
+  var $$new = /* @__PURE__ */ (() => monadGraphWriterMayFailTW(monadAllocStateTInt(monadIdentity)).new)();
   var fanin2 = /* @__PURE__ */ fanin(categoryFn)(choiceFn);
   var isZeroNumber = { isZero: ($0) => 0 === $0 };
   var isZeroInt = { isZero: ($0) => 0 === $0 };
@@ -35045,7 +35045,7 @@
     const $0 = functorWriterT(functorStateT(functorIdentity));
     return { map: (f) => $0.map(functorEither.map(f)) };
   })();
-  var $$new2 = /* @__PURE__ */ (() => monadGraphAccumMayFailTWr(monadAllocStateTInt(monadIdentity)).new)();
+  var $$new2 = /* @__PURE__ */ (() => monadGraphWriterMayFailTW(monadAllocStateTInt(monadIdentity)).new)();
   var fv2 = /* @__PURE__ */ (() => fVDict(fVElim).fv)();
   var applicativeStateT3 = /* @__PURE__ */ applicativeStateT(monadIdentity);
   var except = /* @__PURE__ */ (() => {
@@ -35418,7 +35418,7 @@
     const $0 = functorWriterT(functorStateT(functorIdentity));
     return { map: (f) => $0.map(functorEither.map(f)) };
   })();
-  var $$new3 = /* @__PURE__ */ (() => monadGraphAccumMayFailTWr(monadAllocStateTInt(monadIdentity)).new)();
+  var $$new3 = /* @__PURE__ */ (() => monadGraphWriterMayFailTW(monadAllocStateTInt(monadIdentity)).new)();
   var traverse14 = /* @__PURE__ */ (() => {
     const $0 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT3);
     return (x2) => $0((v) => x2);
