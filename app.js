@@ -19779,6 +19779,10 @@
     Profunctor0: () => profunctorFn
   }))();
 
+  // output-es/Graph/index.js
+  var eqVertex = { eq: (x2) => (y2) => x2 === y2 };
+  var ordVertex = { compare: (x2) => (y2) => ordString.compare(x2)(y2), Eq0: () => eqVertex };
+
   // output-es/Control.Monad.Except.Trans/index.js
   var monadTransExceptT = {
     lift: (dictMonad) => {
@@ -19872,7 +19876,7 @@
     };
   };
 
-  // output-es/Graph/index.js
+  // output-es/Graph.GraphAccum/index.js
   var monoidFn = /* @__PURE__ */ (() => {
     const semigroupFn = { append: (f) => (g) => (x2) => foldableList.foldr(Cons)(g(x2))(f(x2)) };
     return { mempty: (v) => Nil, Semigroup0: () => semigroupFn };
@@ -19892,8 +19896,6 @@
       MonadState0: () => monadStateStateT2
     };
   };
-  var eqVertex = { eq: (x2) => (y2) => x2 === y2 };
-  var ordVertex = { compare: (x2) => (y2) => ordString.compare(x2)(y2), Eq0: () => eqVertex };
   var monadGraphAccumMayFailTWr = (dictMonadAlloc) => {
     const Monad0 = dictMonadAlloc.MonadState0().Monad0();
     const monadWriterT1 = monadWriterT2(Monad0);
