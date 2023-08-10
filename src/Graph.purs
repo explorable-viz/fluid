@@ -16,6 +16,7 @@ import Data.Set (Set)
 import Data.Set as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
+import Dict (Dict)
 import Dict as D
 import Util (Endo, MayFailT, (×), type (×), definitely)
 
@@ -176,7 +177,7 @@ instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
-data GraphImpl = GraphImpl (D.Dict (Set Vertex)) (D.Dict (Set Vertex))
+data GraphImpl = GraphImpl (Dict (Set Vertex)) (Dict (Set Vertex))
 
 -- Provided for completeness, but for efficiency we avoid them.
 instance Semigroup GraphImpl where
