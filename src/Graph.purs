@@ -184,15 +184,16 @@ instance Graph GraphImpl where
          (D.insert (unwrap α) S.empty in_)
          αs
 
-   connectOut α β (GraphImpl out in_) = GraphImpl out' in'
+   connectOut (Vertex α) (Vertex β) (GraphImpl out in_) = GraphImpl out' in'
       where
-      out' = D.update (S.insert β >>> Just) (unwrap α) out
-      in' = D.insertWith S.union (unwrap β) (S.singleton α) in_
+      out' = D.update (S.insert (Vertex β) >>> Just) α out
+      in' = D.insertWith S.union β (S.singleton (Vertex α)) in_
 
-   connectIn α β (GraphImpl out in_) = GraphImpl out' in'
+   connectIn (Vertex α) (Vertex β) (GraphImpl out in_) = GraphImpl out' in'
       where
-      out' = D.insertWith S.union (unwrap α) (S.singleton β) out
-      in' = D.update (S.insert α >>> Just) (unwrap β) in_
+      out' = D.insertWith S.union α (S.singleton (Vertex β)) out
+      in' = D.update (S.insert (Vertex α) >>> Just) β
+         (D.insertWith S.union α S.empty in_)
 
    outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
    inN (GraphImpl _ in_) α = D.lookup (unwrap α) in_ # definitely "in graph"
