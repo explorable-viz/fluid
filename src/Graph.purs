@@ -147,12 +147,14 @@ op' out =
       OST.poke β αs acc
 
    burble :: forall r. ST r (MutableAdjMap r)
-   burble =
-      OST.new >>= tailRecM (go $ L.fromFoldable (D.keys out))
+   burble = do
+      in_ <- OST.new
+      tailRecM go (L.fromFoldable (D.keys out) × in_)
       where
-      go :: List String -> MutableAdjMap r -> ST r (Step (MutableAdjMap r) (MutableAdjMap r))
-      go Nil acc = pure $ Done acc
-      go (α : αs) acc = ?_
+      go :: List String × MutableAdjMap r -> ST r (Step (List String × MutableAdjMap r) (MutableAdjMap r))
+      go (Nil × acc) = pure $ Done acc
+      go ((α : αs) × acc) =
+         pure $ Loop (αs × ?_)
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
