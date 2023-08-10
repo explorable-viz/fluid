@@ -11,9 +11,10 @@ import Data.List (fromFoldable, filter, elem, concat) as L
 import Data.Maybe (isJust, Maybe(..))
 import Data.Newtype (class Newtype)
 import Data.Profunctor.Strong (first, second)
-import Data.Set (Set, delete, empty, insert, map, singleton, union) as S
+import Data.Set (Set, delete, empty, fromFoldable, insert, map, singleton, subset, toUnfoldable, union) as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
+import Data.Unfoldable (class Unfoldable)
 import Dict (Dict, delete, empty, fromFoldable, insertWith, lookup, size, unionWith) as D
 import Util (Endo, MayFailT, (×), type (×), error)
 
@@ -52,7 +53,7 @@ alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
 
 -- Difference graphs
-class (Monad m) <= MonadGraphAccum g m s | m -> g where
+class (Monad m) <= MonadGraphAccum g m s | m -> g, g -> s where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
    new :: Graph g s => s Vertex -> m Vertex
 
@@ -194,11 +195,38 @@ class (Ord a, Ord (s a), Foldable s, Show a, Show (s a)) <= Set s a where
    singleton :: a -> s a
    sempty :: s a
    smap :: forall b. Ord b => (a -> b) -> s a -> s b
+   subset :: s a -> s a -> Boolean
+   fromFoldable :: forall f. Foldable f => f a -> s a 
+   toUnfoldable :: forall f. Unfoldable f => s a -> f a
 
-instance (Show a, Ord a) => Set S.Set a where
+instance Set S.Set Vertex where
    delete = S.delete
    union = S.union
    insert = S.insert
    singleton = S.singleton
    sempty = S.empty
    smap = S.map
+   subset = S.subset
+   fromFoldable = S.fromFoldable
+   toUnfoldable = S.toUnfoldable
+
+instance Set S.Set String where
+   delete = S.delete
+   union = S.union
+   insert = S.insert
+   singleton = S.singleton
+   sempty = S.empty
+   smap = S.map
+   subset = S.subset
+   fromFoldable = S.fromFoldable
+   toUnfoldable = S.toUnfoldable
+-- instance (Show a, Ord a) => Set S.Set a where
+--    delete = S.delete
+--    union = S.union
+--    insert = S.insert
+--    singleton = S.singleton
+--    sempty = S.empty
+--    smap = S.map
+--    subset = S.subset
+--    fromFoldable = S.fromFoldable
+--    toUnfoldable = S.toUnfoldable
