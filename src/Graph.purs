@@ -155,7 +155,7 @@ instance MonadAlloc m => MonadGraphAccum (MayFailT (WriterT (Endo GraphExtension
       pure α
 
 outE' :: forall g. Graph g => g -> Vertex -> List Edge
-outE' graph α = L.fromFoldable $ S.map (α × _) (outN graph α)
+outE' g α = L.fromFoldable $ S.map (α × _) (outN g α)
 
 outE :: forall g. Graph g => Set Vertex -> g -> List Edge
 outE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allOut
@@ -163,7 +163,7 @@ outE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allOut
    allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
 
 inE' :: forall g. Graph g => g -> Vertex -> List Edge
-inE' graph α = L.fromFoldable $ S.map (_ × α) (inN graph α)
+inE' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
 
 inE :: forall g. Graph g => Set Vertex -> g -> List Edge
 inE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
