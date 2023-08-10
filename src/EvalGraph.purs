@@ -27,7 +27,7 @@ import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Graph (Vertex, class Graph, add)
-import Graph.GraphAccum (WithGraph3, alloc, new, runHeap)
+import Graph.GraphWriter (WithGraph3, alloc, new, runHeap)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (×), MayFail, check, error, report, successful, with, (×))

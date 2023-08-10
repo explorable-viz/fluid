@@ -22,7 +22,7 @@ import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, looku
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
-import Graph.GraphAccum (new)
+import Graph.GraphWriter (new)
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
