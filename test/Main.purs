@@ -279,8 +279,9 @@ test_graph =
    graph_test_initial = do
       let
          ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-         graph = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphImpl
+         g' = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphImpl
       let
-         slice = fwdSlice (S.fromFoldable [ (Vertex "13"), (Vertex "12"), Vertex "11" ]) graph
-      lift $ log ("Outedges: " <> show (inE (S.fromFoldable [ (Vertex "11") ]) graph))
-      lift $ logShow slice
+         slice = fwdSlice (S.fromFoldable [ (Vertex "13"), (Vertex "12"), Vertex "11" ]) g'
+      lift $ do
+         log ("Outedges: " <> show (inE g' (S.fromFoldable [ (Vertex "11") ])))
+         logShow slice

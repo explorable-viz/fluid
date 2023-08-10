@@ -9,7 +9,7 @@ import Graph (class Graph, Edge, Vertex, addIn, addOut, discreteG, elem, add, in
 import Util (type (×), (×))
 
 bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-bwdSlice αs g' = bwdEdges g' (discreteG αs) (outE αs g')
+bwdSlice αs g' = bwdEdges g' (discreteG αs) (outE g' αs)
 
 bwdEdges :: forall g. Graph g => g -> g -> List Edge -> g
 bwdEdges g' g ((α × β) : es) =
@@ -18,7 +18,7 @@ bwdEdges g' g ((α × β) : es) =
 bwdEdges _ g Nil = g
 
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
-fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) mempty (inE αs g')
+fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) mempty (inE g' αs)
 
 fwdEdges :: forall g. Graph g => g -> g -> g -> List Edge -> g × g
 fwdEdges g' g h ((α × β) : es) = fwdEdges g' g'' h' es
