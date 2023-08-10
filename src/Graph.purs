@@ -7,8 +7,8 @@ import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Control.Monad.Writer (WriterT, tell)
 import Data.Foldable (foldl)
 import Data.Identity (Identity)
-import Data.List (List, (:))
-import Data.List (fromFoldable, filter, elem, concat) as L
+import Data.List (List, (:), concat, filter)
+import Data.List (fromFoldable, elem) as L
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (first, second)
@@ -164,9 +164,9 @@ inE' :: forall g. Graph g => g -> Vertex -> List Edge
 inE' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
 
 inE :: forall g. Graph g => g -> Set Vertex -> List Edge
-inE g αs = L.filter (\(α × β) -> L.elem α αs || L.elem β αs) allIn
+inE g αs = filter (\(α × β) -> L.elem α αs || L.elem β αs) allIn
    where
-   allIn = L.concat (inE' g <$> L.fromFoldable αs)
+   allIn = concat (inE' g <$> L.fromFoldable αs)
 
 derive instance Eq Vertex
 derive instance Ord Vertex
