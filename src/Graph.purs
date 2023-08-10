@@ -2,8 +2,8 @@ module Graph where
 
 import Prelude hiding (add)
 
-import Control.Monad.ST (ST)
 import Control.Monad.Rec.Class (Step(..), tailRecM)
+import Control.Monad.ST (ST)
 import Data.Foldable (class Foldable, foldl, foldM)
 import Data.FoldableWithIndex (foldWithIndexM)
 import Data.List (List(..), (:), concat)
@@ -18,7 +18,7 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Util (Endo, (×), type (×), definitely)
+import Util (Endo, (×), type (×), definitely, error, unimplemented)
 
 type Edge = Vertex × Vertex
 
@@ -128,15 +128,16 @@ instance Graph GraphImpl where
       where
       discreteM = D.fromFoldable $ S.map (\α -> unwrap α × S.empty) αs
 
-   fromFoldable α_αs = GraphImpl out (op' out)
+   fromFoldable α_αs = GraphImpl out in_
       where
-      out = D.fromFoldable $ α_αs <#> first unwrap
+      out = D.fromFoldable (α_αs <#> first unwrap)
+      in_ = op'' (L.fromFoldable α_αs) -- gratuitous to turn one foldable into another
 
+-- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
 
 op' :: Endo AdjMap
 op' out =
-   -- In-place update of mutable object.
    runST (OST.new >>= flip (foldWithIndexM (flipEdge >>> foldM)) out)
    where
    flipEdge :: forall r. String -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
@@ -146,15 +147,20 @@ op' out =
          Just αs -> S.insert (Vertex α) αs
       OST.poke β αs acc
 
+op'' :: List (Vertex × Set Vertex) -> AdjMap
+op'' α_αs = runST burble
+   where
    burble :: forall r. ST r (MutableAdjMap r)
    burble = do
       in_ <- OST.new
-      tailRecM go (L.fromFoldable (D.keys out) × in_)
+      tailRecM go (α_αs × in_)
       where
-      go :: List String × MutableAdjMap r -> ST r (Step (List String × MutableAdjMap r) (MutableAdjMap r))
+      go
+         :: List (Vertex × Set Vertex) × MutableAdjMap r
+         -> ST r (Step (List (Vertex × Set Vertex) × MutableAdjMap r) (MutableAdjMap r))
       go (Nil × acc) = pure $ Done acc
-      go ((α : αs) × acc) =
-         pure $ Loop (αs × ?_)
+      go (((α × βs) : rest) × acc) = do
+         pure $ Loop (rest × ?_)
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
