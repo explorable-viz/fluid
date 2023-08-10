@@ -100,7 +100,7 @@ testWithSetup (File file) expected v_expect_opt setup =
             unless (isNothing v_expect_opt)
                ( do
                     let αs = selectSources v'' vα
-                    log ("EvalGraph.selectVertices:")
+                    log ("EvalGraph.selectSources:")
                     log ("Val 𝔹: " <> render (pretty v''))
                     log ("Val Vertex: " <> render (pretty vα))
                     log ("Set Vertex: " <> show αs <> "\n")

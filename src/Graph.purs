@@ -16,12 +16,12 @@ import Util (Endo, (×), type (×), definitely)
 type Edge = Vertex × Vertex
 
 -- | Graphs form a semigroup but we don't actually rely on that (for efficiency).
-class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
+class (Set s Vertex) <= Graph g s | g -> s where
    -- add vertex α to g with αs as out neighbours, where each neighbour is already in g.
    -- | add and remove satisfy:
    -- |    remove α (add α αs g) = g
    -- |    add α (outN α g) (remove α g) = g
-   add :: (Set s Vertex) => Vertex -> s Vertex -> Endo g
+   add :: Vertex -> s Vertex -> Endo g
 
    -- remove a vertex from g.
    remove :: Vertex -> Endo g
@@ -38,8 +38,8 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
 
    -- | outN and iN satisfy
    -- |   inN G = outN (op G)
-   outN :: (Set s Vertex) => g -> Vertex -> s Vertex
-   inN :: (Set s Vertex) => g -> Vertex -> s Vertex
+   outN :: g -> Vertex -> s Vertex
+   inN :: g -> Vertex -> s Vertex
 
    -- | Number of vertices in g.
    size :: g -> Int
@@ -50,7 +50,7 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
    op :: Endo g
 
    -- |   Discrete graph consisting only of a set of vertices.
-   discreteG :: (Set s Vertex) => s Vertex -> g
+   discreteG :: s Vertex -> g
 
    empty :: g
 
