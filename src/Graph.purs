@@ -3,6 +3,7 @@ module Graph where
 import Prelude hiding (add)
 
 import Control.Monad.ST (ST)
+import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Data.Foldable (class Foldable, foldl, foldM)
 import Data.FoldableWithIndex (foldWithIndexM)
 import Data.List (List, concat)
@@ -126,9 +127,9 @@ instance Graph GraphImpl where
       where
       discreteM = D.fromFoldable $ S.map (\α -> unwrap α × S.empty) αs
 
-   fromFoldable kvs = GraphImpl out (op' out)
+   fromFoldable α_αs = GraphImpl out (op' out)
       where
-      out = D.fromFoldable $ kvs <#> first unwrap
+      out = D.fromFoldable $ α_αs <#> first unwrap
 
 op' :: Dict (Set Vertex) -> Dict (Set Vertex)
 op' out =
@@ -141,6 +142,14 @@ op' out =
          Nothing -> S.singleton (Vertex α)
          Just αs -> S.insert (Vertex α) αs
       OST.poke β αs acc
+
+   burble :: forall r. ST r (STObject r (Set Vertex))
+   burble = do
+      in_ <- OST.new
+      tailRecM (go $ L.fromFoldable (D.keys out)) in_
+      where
+      go :: forall t. List String -> STObject r t -> ST r (Step (STObject r t) (STObject r (Set Vertex)))
+      go αs acc = ?_
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
