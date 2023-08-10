@@ -1,21 +1,26 @@
 module Test.Main where
 
-import Prelude
-
+import Prelude hiding (add)
 import App.Util (selectBarChart_data, selectCell, selectNth, selectNthNode, selectPair, selectSome, select_y)
 import Bindings ((↦))
+import Control.Monad.Trans.Class (lift)
 import Data.Array (concat)
+import Data.Foldable (foldl)
+import Data.Set (fromFoldable) as S
 import Data.Traversable (sequence)
 import Dict (fromFoldable)
 import Effect (Effect)
+import Effect.Console (log, logShow)
+import Graph (GraphImpl, add, Vertex(..), inEdges)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
+import SliceGraph (fwdSlice)
 import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Util ((×))
 import Val (DictRep(..), Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics ]
+tests = [ test_desugaring, test_misc, test_bwd, test_linking, test_graphics, test_graph ]
 
 --tests = [ test_scratchpad ]
 
@@ -263,3 +268,20 @@ test_graphics =
    , testWithDataset (File "dataset/renewables-restricted") (File "graphics/line-chart")
    , testWithDataset (File "dataset/renewables-restricted") (File "graphics/stacked-bar-chart")
    ]
+
+-- Remove once graph slicing tested as part of overall test infrastructure.
+test_graph :: Array (Test Unit)
+test_graph =
+   [ graph_test_initial
+   ]
+   where
+   graph_test_initial :: Test Unit
+   graph_test_initial = do
+      let
+         ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+         g' = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphImpl
+      let
+         slice = fwdSlice (S.fromFoldable [ (Vertex "13"), (Vertex "12"), Vertex "11" ]) g'
+      lift $ do
+         log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ (Vertex "11") ])))
+         logShow slice

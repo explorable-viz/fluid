@@ -3,7 +3,6 @@ module Primitive.Defs where
 import Prelude hiding (absurd, apply, div, mod, top)
 
 import Control.Monad.Except (except)
-import Control.Monad.Trans.Class (lift)
 import Data.Array ((!!))
 import Data.Exists (mkExists)
 import Data.Foldable (foldl, foldM)
@@ -22,7 +21,7 @@ import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, looku
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
-import Graph (new, insert, singleton)
+import Graph.GraphAccum (new)
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
@@ -105,9 +104,9 @@ dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial
    where
    op :: OpGraph
    op (Matrix α (MatrixRep (_ × (i × β1) × (j × β2))) : Nil) = do
-      v1 <- Int <$> lift (new (singleton β1)) <@> i
-      v2 <- Int <$> lift (new (singleton β2)) <@> j
-      Constr <$> lift (new (singleton α)) <@> cPair <@> (v1 : v2 : Nil)
+      v1 <- Int <$> new (singleton β1) <@> i
+      v2 <- Int <$> new (singleton β2) <@> j
+      Constr <$> new (singleton α) <@> cPair <@> (v1 : v2 : Nil)
    op _ = except $ report "Matrix expected"
 
    fwd :: OpFwd (Raw ArrayData)
@@ -151,7 +150,7 @@ dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: un
    where
    op :: OpGraph
    op (Dictionary α (DictRep d) : Dictionary β (DictRep d') : Nil) =
-      Dictionary <$> lift (new (singleton α # insert β)) <@> DictRep (d \\ d')
+      Dictionary <$> new (singleton α # insert β) <@> DictRep (d \\ d')
    op _ = except $ report "Dictionaries expected."
 
    fwd :: OpFwd Unit
@@ -168,8 +167,8 @@ dict_fromRecord = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: un
    where
    op :: OpGraph
    op (Record α xvs : Nil) = do
-      xvs' <- for xvs (\v -> lift (new (singleton α)) <#> (_ × v))
-      Dictionary <$> lift (new (singleton α)) <@> DictRep xvs'
+      xvs' <- for xvs (\v -> new (singleton α) <#> (_ × v))
+      Dictionary <$> new (singleton α) <@> DictRep xvs'
    op _ = except $ report "Record expected."
 
    fwd :: OpFwd Unit
@@ -186,7 +185,7 @@ dict_disjointUnion = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd:
    where
    op :: OpGraph
    op (Dictionary α (DictRep d) : Dictionary β (DictRep d') : Nil) = do
-      Dictionary <$> lift (new (singleton α # insert β)) <@> DictRep (D.disjointUnion d d')
+      Dictionary <$> new (singleton α # insert β) <@> DictRep (D.disjointUnion d d')
    op _ = except $ report "Dictionaries expected"
 
    fwd :: OpFwd (Dict Unit × Dict Unit)
@@ -249,11 +248,11 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_b
    where
    op :: OpGraph
    op (v : Dictionary α (DictRep d1) : Dictionary α' (DictRep d2) : Nil) =
-      Dictionary <$> lift (new (singleton α # insert α'))
+      Dictionary <$> new (singleton α # insert α')
          <*> (DictRep <$> sequence (D.intersectionWith apply' d1 d2))
       where
       apply' (β × u) (β' × u') = do
-         β'' <- lift $ new (singleton β # insert β')
+         β'' <- new (singleton β # insert β')
          (×) β'' <$> (G.apply v u >>= flip G.apply u')
    op _ = except $ report "Function and two dictionaries expected"
 
@@ -284,7 +283,7 @@ dict_map = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePar
    op :: OpGraph
    op (v : Dictionary α (DictRep d) : Nil) = do
       d' <- traverse (\(β × u) -> (β × _) <$> G.apply v u) d
-      Dictionary <$> lift (new (singleton α)) <@> DictRep d'
+      Dictionary <$> new (singleton α) <@> DictRep d'
    op _ = except $ report "Function and dictionary expected"
 
    fwd :: OpFwd (Raw Val × Dict AppTrace)
