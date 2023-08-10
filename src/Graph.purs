@@ -24,11 +24,11 @@ type Edge = Vertex × Vertex
 -- Graphs form a semigroup but we don't actually rely on that (for efficiency).
 class Monoid g <= Graph g where
    extend :: Vertex -> Set Vertex -> Endo g
-   -- connectOut α β adds β as new out-neighbour of existing vertex α, adding into g if necessary
-   connectOut :: Vertex -> Vertex -> Endo g
-   -- connectIn α β adds α as new in-neighbour of existing vertex β, adding into g if necessary
-   -- connectIn α β G = op (connectOut β α (op G)
-   connectIn :: Vertex -> Vertex -> Endo g
+   -- addOut α β adds β as new out-neighbour of existing vertex α, adding into g if necessary
+   addOut :: Vertex -> Vertex -> Endo g
+   -- addIn α β adds α as new in-neighbour of existing vertex β, adding into g if necessary
+   -- addIn α β G = op (addOut β α (op G)
+   addIn :: Vertex -> Vertex -> Endo g
    elem :: g -> Vertex -> Boolean
    outN :: g -> Vertex -> Set Vertex
    inN :: g -> Vertex -> Set Vertex
@@ -185,13 +185,13 @@ instance Graph GraphImpl where
          (D.insert (unwrap α) S.empty in_)
          αs
 
-   connectOut α β (GraphImpl out in_) = GraphImpl out' in'
+   addOut α β (GraphImpl out in_) = GraphImpl out' in'
       where
       out' = D.update (S.insert β >>> Just) (unwrap α)
          (D.insertWith S.union (unwrap β) S.empty out)
       in' = D.insertWith S.union (unwrap β) (S.singleton α) in_
 
-   connectIn α β g = opp (connectOut β α (opp g))
+   addIn α β g = opp (addOut β α (opp g))
 
    outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
    inN g = outN (opp g)
