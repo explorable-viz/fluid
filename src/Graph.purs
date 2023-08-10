@@ -12,13 +12,12 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as S
-import Data.Traversable (traverse)
 import Dict (Dict)
 import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Util (Endo, (×), type (×), definitely, error, unimplemented)
+import Util (Endo, (×), type (×), definitely)
 
 type Edge = Vertex × Vertex
 
@@ -141,7 +140,7 @@ op' out = runST go
       foldWithIndexM (bibble >>> foldM) in_ out
       where
       bibble :: String -> STObject r (Set Vertex) -> Vertex -> ST r (STObject r (Set Vertex))
-      bibble _ _ = error unimplemented
+      bibble α acc (Vertex β) = OST.poke β (S.singleton (Vertex α)) acc
 
 
 instance Show GraphImpl where
