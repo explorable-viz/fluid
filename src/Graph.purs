@@ -160,6 +160,7 @@ instance Show Vertex where
 -- GraphImpl Specifics
 data GraphImpl = GraphImpl (D.Dict (Set Vertex)) (D.Dict (Set Vertex))
 
+-- These are provided as a technicality, but for efficiency we avoid them.
 instance Semigroup GraphImpl where
    append (GraphImpl out1 in1) (GraphImpl out2 in2) =
       GraphImpl (D.unionWith S.union out1 out2) (D.unionWith S.union in1 in2)
@@ -171,36 +172,38 @@ empty :: GraphImpl
 empty = mempty
 
 instance Graph GraphImpl where
-   remove (Vertex α) (GraphImpl out in_) =
-      GraphImpl (map (S.delete (Vertex α)) (D.delete α out))
-         (map (S.delete (Vertex α)) (D.delete α in_))
+   remove α (GraphImpl out in_) = GraphImpl out' in'
+      where
+      out' = S.delete α <$> D.delete (unwrap α) out
+      in' = S.delete α <$> D.delete (unwrap α) in_
 
-   extend (Vertex α) αs (GraphImpl out in_) =
-      GraphImpl (D.insert α αs out)
-         ( foldl (\d (Vertex α') -> D.insertWith S.union α' (S.singleton (Vertex α)) d)
-              (D.insert α S.empty in_)
-              αs
-         )
+   extend α αs (GraphImpl out in_) = GraphImpl out' in'
+      where
+      out' = D.insert (unwrap α) αs out
+      in' = foldl (\d α' -> D.insertWith S.union (unwrap α') (S.singleton α) d)
+         (D.insert (unwrap α) S.empty in_)
+         αs
 
-   connectOut α β (GraphImpl out in_) =
-      GraphImpl (D.update (S.insert β >>> Just) (unwrap α) out)
-         (D.insertWith S.union (unwrap β) (S.singleton α) in_)
+   connectOut α β (GraphImpl out in_) = GraphImpl out' in'
+      where
+      out' = D.update (S.insert β >>> Just) (unwrap α) out
+      in' = D.insertWith S.union (unwrap β) (S.singleton α) in_
 
    connectIn α β (GraphImpl out in_) =
       GraphImpl (D.insertWith S.union (unwrap α) (S.singleton β) out)
          (D.update (S.insert α >>> Just) (unwrap β) in_)
 
-   outN (GraphImpl out _) (Vertex α) = D.lookup α out # definitely "in graph"
-   inN (GraphImpl _ in_) (Vertex α) = D.lookup α in_ # definitely "in graph"
+   outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
+   inN (GraphImpl _ in_) α = D.lookup (unwrap α) in_ # definitely "in graph"
 
-   elem (GraphImpl out _) (Vertex α) = isJust (D.lookup α out)
+   elem (GraphImpl out _) α = isJust (D.lookup (unwrap α) out)
    size (GraphImpl out _) = D.size out
 
    opp (GraphImpl out in_) = GraphImpl in_ out
 
    discreteG αs = GraphImpl discreteM discreteM
       where
-      discreteM = D.fromFoldable $ S.map (\(Vertex α) -> α × S.empty) αs
+      discreteM = D.fromFoldable $ S.map (\α -> unwrap α × S.empty) αs
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
