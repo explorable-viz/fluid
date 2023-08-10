@@ -131,7 +131,9 @@ instance Graph GraphImpl where
       out = D.fromFoldable $ kvs <#> first unwrap
 
 op' :: Dict (Set Vertex) -> Dict (Set Vertex)
-op' out = runST (OST.new >>= flip (foldWithIndexM (flipEdge >>> foldM)) out)
+op' out =
+   -- In-place update of mutable object.
+   runST (OST.new >>= flip (foldWithIndexM (flipEdge >>> foldM)) out)
    where
    flipEdge :: forall r. String -> STObject r (Set Vertex) -> Vertex -> ST r (STObject r (Set Vertex))
    flipEdge α acc (Vertex β) = do
