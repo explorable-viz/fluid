@@ -12,9 +12,8 @@ import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
 import Control.Monad.Except (except, runExceptT)
-import Control.Monad.State (get)
+import Control.Monad.State (get, runStateT)
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Writer (runWriterT)
 import Data.Array (range, singleton) as A
 import Data.Either (note)
 import Data.Exists (runExists)
@@ -158,7 +157,7 @@ evalGraph :: forall g a. Show g => Graph g => Env a -> Expr a -> g -> MayFail (g
 evalGraph γ0 e0 _ = ((×) g') <$> maybe_v
    where
    maybe_v × g_adds =
-      ( runHeap $ runWriterT $ runExceptT $ do
+      ( runHeap $ flip runStateT Nil $ runExceptT $ do
            γ <- lift $ lift $ traverse alloc γ0
            e <- lift $ lift $ alloc e0
            n <- lift $ lift $ get
@@ -167,7 +166,7 @@ evalGraph γ0 e0 _ = ((×) g') <$> maybe_v
            trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
               pure v
       ) :: MayFail (Val Vertex) × _
-   g' = G.fromFoldable (g_adds Nil)
+   g' = G.fromFoldable g_adds
 
 selectVertices :: Val Boolean -> Val Vertex -> Set Vertex
 selectVertices u v = foldl (S.union) S.empty v_selected

@@ -1,9 +1,8 @@
 module Graph.GraphWriter where
 
 import Prelude hiding (add)
-import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
+import Control.Monad.State (class MonadState, State, StateT, get, modify_, put, runState)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
-import Control.Monad.Writer (WriterT, tell)
 import Data.List (List, (:))
 import Data.Identity (Identity)
 import Data.Profunctor.Strong (first, second)
@@ -103,12 +102,12 @@ instance Monoid g => MonadTrans (GraphWriter2T g) where
    lift m = GraphWriter2T \g -> (×) <$> m <@> g
 
 -- Ιmplementation #3
--- Also Writer-based; builds list of adjacency maplets (arguments to extend).
+-- Builds list of adjacency maplets (arguments to extend).
 type AdjacencyMap = List (Vertex × Set Vertex)
-type WithGraph3 a = MayFailT (WriterT (Endo AdjacencyMap) (State Int)) a
+type WithGraph3 a = MayFailT (StateT AdjacencyMap (State Int)) a
 
-instance MonadAlloc m => MonadGraphWriter (MayFailT (WriterT (Endo AdjacencyMap) m)) where
+instance MonadAlloc m => MonadGraphWriter (MayFailT (StateT AdjacencyMap m)) where
    new αs = do
       α <- lift $ lift $ fresh
-      tell $ (:) (α × αs)
+      modify_ $ (:) (α × αs)
       pure α
