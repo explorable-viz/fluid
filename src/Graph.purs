@@ -27,6 +27,7 @@ class Monoid g <= Graph g where
    -- connectOut α β adds β as new out-neighbour of existing vertex α, adding into g if necessary
    connectOut :: Vertex -> Vertex -> Endo g
    -- connectIn α β adds α as new in-neighbour of existing vertex β, adding into g if necessary
+   -- connectIn α β G = op (connectOut β α (op G)
    connectIn :: Vertex -> Vertex -> Endo g
    elem :: g -> Vertex -> Boolean
    outN :: g -> Vertex -> Set Vertex
@@ -184,20 +185,16 @@ instance Graph GraphImpl where
          (D.insert (unwrap α) S.empty in_)
          αs
 
-   connectOut (Vertex α) (Vertex β) (GraphImpl out in_) = GraphImpl out' in'
+   connectOut α β (GraphImpl out in_) = GraphImpl out' in'
       where
-      out' = D.update (S.insert (Vertex β) >>> Just) α
-         (D.insertWith S.union β S.empty out)
-      in' = D.insertWith S.union β (S.singleton (Vertex α)) in_
+      out' = D.update (S.insert β >>> Just) (unwrap α)
+         (D.insertWith S.union (unwrap β) S.empty out)
+      in' = D.insertWith S.union (unwrap β) (S.singleton α) in_
 
-   connectIn (Vertex α) (Vertex β) (GraphImpl out in_) = GraphImpl out' in'
-      where
-      out' = D.insertWith S.union α (S.singleton (Vertex β)) out
-      in' = D.update (S.insert (Vertex α) >>> Just) β
-         (D.insertWith S.union α S.empty in_)
+   connectIn α β g = opp (connectOut β α (opp g))
 
    outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
-   inN (GraphImpl _ in_) α = D.lookup (unwrap α) in_ # definitely "in graph"
+   inN g = outN (opp g)
 
    elem (GraphImpl out _) α = isJust (D.lookup (unwrap α) out)
    size (GraphImpl out _) = D.size out
