@@ -165,9 +165,9 @@ inE' :: forall g. Graph g => g -> Vertex -> List Edge
 inE' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
 
 inE :: forall g. Graph g => g -> Set Vertex -> List Edge
-inE g αs = filter (\(α × β) -> L.elem α αs || L.elem β αs) allIn
+inE g αs = filter (\(α × β) -> L.elem α αs || L.elem β αs) es
    where
-   allIn = concat (inE' g <$> L.fromFoldable αs)
+   es = concat (inE' g <$> L.fromFoldable αs)
 
 derive instance Eq Vertex
 derive instance Ord Vertex
