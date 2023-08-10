@@ -1,4 +1,4 @@
-module Graph.GraphAccum where
+module Graph.GraphWriter where
 
 import Prelude hiding (add)
 import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
