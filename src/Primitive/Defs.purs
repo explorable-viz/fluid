@@ -14,7 +14,6 @@ import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
-import Data.Set (singleton, insert) 
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict, (\\))
@@ -22,6 +21,7 @@ import Dict (disjointUnion, empty, fromFoldable, insert, intersectionWith, looku
 import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
+import Graph (singleton, insert)
 import Graph.GraphAccum (new)
 import Lattice (Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)

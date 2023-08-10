@@ -16,12 +16,12 @@ import Util (Endo, (×), type (×), definitely)
 type Edge = Vertex × Vertex
 
 -- | Graphs form a semigroup but we don't actually rely on that (for efficiency).
-class (Set s, Monoid g) <= Graph g s | g -> s where
+class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
    -- add vertex α to g with αs as out neighbours, where each neighbour is already in g.
    -- | add and remove satisfy:
    -- |    remove α (add α αs g) = g
    -- |    add α (outN α g) (remove α g) = g
-   add :: (Set s) => Vertex -> s Vertex -> Endo g
+   add :: (Set s Vertex) => Vertex -> s Vertex -> Endo g
 
    -- remove a vertex from g.
    remove :: Vertex -> Endo g
@@ -38,8 +38,8 @@ class (Set s, Monoid g) <= Graph g s | g -> s where
 
    -- | outN and iN satisfy
    -- |   inN G = outN (op G)
-   outN :: (Set s) => g -> Vertex -> s Vertex
-   inN :: (Set s) => g -> Vertex -> s Vertex
+   outN :: (Set s Vertex) => g -> Vertex -> s Vertex
+   inN :: (Set s Vertex) => g -> Vertex -> s Vertex
 
    -- | Number of vertices in g.
    size :: g -> Int
@@ -48,7 +48,7 @@ class (Set s, Monoid g) <= Graph g s | g -> s where
    op :: Endo g
 
    -- |   Discrete graph consisting only of a set of vertices.
-   discreteG :: (Set s) => s Vertex -> g
+   discreteG :: (Set s Vertex) => s Vertex -> g
 
 newtype Vertex = Vertex String
 
@@ -74,18 +74,20 @@ instance Show Vertex where
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 data GraphImpl s = GraphImpl (Dict (s Vertex)) (Dict (s Vertex))
 
+type GraphSet = GraphImpl S.Set
+
 -- Provided for completeness, but for efficiency we avoid them.
-instance (Set s) => Semigroup (GraphImpl s) where
+instance (Set s Vertex) => Semigroup (GraphImpl s) where
    append (GraphImpl out1 in1) (GraphImpl out2 in2) =
       GraphImpl (D.unionWith union out1 out2) (D.unionWith union in1 in2)
 
-instance (Set s) => Monoid (GraphImpl s) where
+instance (Set s Vertex) => Monoid (GraphImpl s) where
    mempty = GraphImpl D.empty D.empty
 
-empty :: forall s. (Set s) => GraphImpl s
+empty :: forall s. (Set s Vertex) => GraphImpl s
 empty = mempty
 
-instance Graph (GraphImpl S.Set) S.Set where
+instance Graph (GraphSet) S.Set where
    remove α (GraphImpl out in_) = GraphImpl out' in'
       where
       out' = delete α <$> D.delete (unwrap α) out
@@ -121,18 +123,18 @@ instance Graph (GraphImpl S.Set) S.Set where
 instance Show (s Vertex) => Show (GraphImpl s) where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
 
-class (Ord (s Vertex), Foldable s, Show (s Vertex)) <= Set s where
-   delete :: Vertex -> s Vertex -> s Vertex
-   union :: s Vertex -> s Vertex -> s Vertex
-   insert :: Vertex -> s Vertex -> s Vertex
-   singleton :: Vertex -> s Vertex
-   sempty :: s Vertex
-   smap :: forall b. Ord b => (Vertex -> b) -> s Vertex -> s b
-   subset :: s Vertex -> s Vertex -> Boolean
-   fromFoldable :: forall f. Foldable f => f Vertex -> s Vertex
-   toUnfoldable :: forall f. Unfoldable f => s Vertex -> f Vertex
+class (Ord a, Ord (s a), Foldable s) <= Set s a where
+   delete :: a -> s a -> s a
+   union :: s a -> s a -> s a
+   insert :: a -> s a -> s a
+   singleton :: a -> s a
+   sempty :: s a
+   smap :: forall b. Ord b => (a -> b) -> s a -> s b
+   subset :: s a -> s a -> Boolean
+   fromFoldable :: forall f. Foldable f => f a -> s a
+   toUnfoldable :: forall f. Unfoldable f => s a -> f a
 
-instance Set S.Set where
+instance Set S.Set Vertex where
    delete = S.delete
    union = S.union
    insert = S.insert
@@ -143,23 +145,13 @@ instance Set S.Set where
    fromFoldable = S.fromFoldable
    toUnfoldable = S.toUnfoldable
 
--- instance Set S.Set String where
---    delete = S.delete
---    union = S.union
---    insert = S.insert
---    singleton = S.singleton
---    sempty = S.empty
---    smap = S.map
---    subset = S.subset
---    fromFoldable = S.fromFoldable
---    toUnfoldable = S.toUnfoldable
--- instance (Show a, Ord a) => Set S.Set a where
---    delete = S.delete
---    union = S.union
---    insert = S.insert
---    singleton = S.singleton
---    sempty = S.empty
---    smap = S.map
---    subset = S.subset
---    fromFoldable = S.fromFoldable
---    toUnfoldable = S.toUnfoldable
+instance Set S.Set String where
+   delete = S.delete
+   union = S.union
+   insert = S.insert
+   singleton = S.singleton
+   sempty = S.empty
+   smap = S.map
+   subset = S.subset
+   fromFoldable = S.fromFoldable
+   toUnfoldable = S.toUnfoldable

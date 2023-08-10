@@ -1,13 +1,14 @@
 module SliceGraph where
 
 import Prelude hiding (add)
+
 import Data.List (List(..), (:))
 import Data.List as L
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, addIn, addOut, discreteG, elem, add, inEdges, inEdges', outEdges, outEdges', outN, remove)
+import Graph (class Graph, class Set, Edge, Vertex, add, addIn, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN, remove)
 import Util (type (×), (×))
 
-bwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
+bwdSlice :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
 bwdSlice αs g' = bwdEdges g' (discreteG αs) (outEdges g' αs)
 
 bwdEdges :: forall g s. Graph g s => g -> g -> List Edge -> g
@@ -25,7 +26,7 @@ fwdEdges g' g h ((α × β) : es) = fwdEdges g' g'' h' es
    g'' × h' = fwdVertex g' g (addIn α β h) α
 fwdEdges _ currSlice pending Nil = currSlice × pending
 
-fwdVertex :: forall g s. Graph g s => g -> g -> g -> Vertex -> g × g
+fwdVertex :: forall g s. Set s Vertex => Graph g s => g -> g -> g -> Vertex -> g × g
 fwdVertex g' g h α =
    if αs == outN g' α then
       fwdEdges g' (add α αs g) (remove α h) (inEdges' g' α)

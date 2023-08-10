@@ -6,12 +6,12 @@ import Bindings ((↦))
 import Control.Monad.Trans.Class (lift)
 import Data.Array (concat)
 import Data.Foldable (foldl)
-import Data.Set (fromFoldable, Set) as S
+import Data.Set (fromFoldable) as S
 import Data.Traversable (sequence)
 import Dict (fromFoldable)
 import Effect (Effect)
 import Effect.Console (log, logShow)
-import Graph (GraphImpl, add, Vertex(..), inEdges)
+import Graph (GraphSet, add, Vertex(..), inEdges)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import SliceGraph (fwdSlice)
@@ -279,8 +279,7 @@ test_graph =
    graph_test_initial = do
       let
          ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-         g' = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphImpl S.Set
-      let
+         g' = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphSet
          slice = fwdSlice (S.fromFoldable [ (Vertex "13"), (Vertex "12"), Vertex "11" ]) g'
       lift $ do
          log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ (Vertex "11") ])))
