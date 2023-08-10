@@ -16769,6 +16769,138 @@
     },
     Unfoldable10: () => unfoldable1List
   };
+  var eq1List = {
+    eq1: (dictEq) => (xs) => (ys) => {
+      const go = (go$a0$copy) => (go$a1$copy) => (go$a2$copy) => {
+        let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$a2 = go$a2$copy, go$c = true, go$r;
+        while (go$c) {
+          const v = go$a0, v1 = go$a1, v2 = go$a2;
+          if (!v2) {
+            go$c = false;
+            go$r = false;
+            continue;
+          }
+          if (v.tag === "Nil") {
+            if (v1.tag === "Nil") {
+              go$c = false;
+              go$r = v2;
+              continue;
+            }
+            go$c = false;
+            go$r = false;
+            continue;
+          }
+          if (v.tag === "Cons") {
+            if (v1.tag === "Cons") {
+              go$a0 = v._2;
+              go$a1 = v1._2;
+              go$a2 = v2 && dictEq.eq(v1._1)(v._1);
+              continue;
+            }
+            go$c = false;
+            go$r = false;
+            continue;
+          }
+          go$c = false;
+          go$r = false;
+          continue;
+        }
+        ;
+        return go$r;
+      };
+      return go(xs)(ys)(true);
+    }
+  };
+  var ord1List = {
+    compare1: (dictOrd) => (xs) => (ys) => {
+      const go = (go$a0$copy) => (go$a1$copy) => {
+        let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+        while (go$c) {
+          const v = go$a0, v1 = go$a1;
+          if (v.tag === "Nil") {
+            if (v1.tag === "Nil") {
+              go$c = false;
+              go$r = EQ;
+              continue;
+            }
+            go$c = false;
+            go$r = LT;
+            continue;
+          }
+          if (v1.tag === "Nil") {
+            go$c = false;
+            go$r = GT;
+            continue;
+          }
+          if (v.tag === "Cons") {
+            if (v1.tag === "Cons") {
+              const v2 = dictOrd.compare(v._1)(v1._1);
+              if (v2.tag === "EQ") {
+                go$a0 = v._2;
+                go$a1 = v1._2;
+                continue;
+              }
+              go$c = false;
+              go$r = v2;
+              continue;
+            }
+            fail();
+          }
+          fail();
+        }
+        ;
+        return go$r;
+      };
+      return go(xs)(ys);
+    },
+    Eq10: () => eq1List
+  };
+  var ordList = (dictOrd) => {
+    const $1 = dictOrd.Eq0();
+    const eqList1 = {
+      eq: (xs) => (ys) => {
+        const go = (go$a0$copy) => (go$a1$copy) => (go$a2$copy) => {
+          let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$a2 = go$a2$copy, go$c = true, go$r;
+          while (go$c) {
+            const v = go$a0, v1 = go$a1, v2 = go$a2;
+            if (!v2) {
+              go$c = false;
+              go$r = false;
+              continue;
+            }
+            if (v.tag === "Nil") {
+              if (v1.tag === "Nil") {
+                go$c = false;
+                go$r = v2;
+                continue;
+              }
+              go$c = false;
+              go$r = false;
+              continue;
+            }
+            if (v.tag === "Cons") {
+              if (v1.tag === "Cons") {
+                go$a0 = v._2;
+                go$a1 = v1._2;
+                go$a2 = v2 && $1.eq(v1._1)(v._1);
+                continue;
+              }
+              go$c = false;
+              go$r = false;
+              continue;
+            }
+            go$c = false;
+            go$r = false;
+            continue;
+          }
+          ;
+          return go$r;
+        };
+        return go(xs)(ys)(true);
+      }
+    };
+    return { compare: ord1List.compare1(dictOrd), Eq0: () => eqList1 };
+  };
   var applyList = {
     apply: (v) => (v1) => {
       if (v.tag === "Nil") {
@@ -19376,10 +19508,12 @@
     return (x2) => $1(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x2));
   };
   var toUnfoldable12 = /* @__PURE__ */ toUnfoldable4(unfoldableArray);
+  var singleton = (a) => $Map("Two", Leaf2, a, unit2, Leaf2);
   var showSet = (dictShow) => {
     const show4 = showArrayImpl(dictShow.show);
     return { show: (s) => "(fromFoldable " + (show4(toUnfoldable12(s)) + ")") };
   };
+  var insert3 = (dictOrd) => (a) => (v) => insert2(dictOrd)(a)(unit2)(v);
   var foldableSet = {
     foldMap: (dictMonoid) => {
       const foldMap1 = foldableList.foldMap(dictMonoid);
@@ -19418,6 +19552,19 @@
       return (x$1) => $2(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x$1));
     }
   };
+  var ordSet = (dictOrd) => {
+    const compare2 = ordList(dictOrd).compare;
+    const eq2 = eqMap(dictOrd.Eq0())(eqUnit).eq;
+    const eqSet1 = { eq: (v) => (v1) => eq2(v)(v1) };
+    return {
+      compare: (s1) => (s2) => compare2(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s1))(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List(
+        "Cons",
+        k,
+        acc
+      ))(Nil)(s2)),
+      Eq0: () => eqSet1
+    };
+  };
   var intersection = (dictOrd) => {
     const fromFoldable32 = foldlArray((m) => (a) => insert2(dictOrd)(a)(unit2)(m))(Leaf2);
     return (s1) => (s2) => {
@@ -19450,6 +19597,7 @@
     };
   };
   var map2 = (dictOrd) => (f) => foldableSet.foldl((m) => (a) => insert2(dictOrd)(f(a))(unit2)(m))(Leaf2);
+  var $$delete2 = (dictOrd) => (a) => (v) => $$delete(dictOrd)(a)(v);
   var difference3 = (dictOrd) => (s1) => (s2) => {
     const go = (go$a0$copy) => (go$a1$copy) => {
       let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
@@ -19472,6 +19620,7 @@
     };
     return go(s1)(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s2));
   };
+  var subset = (dictOrd) => (s1) => (s2) => difference3(dictOrd)(s1)(s2).tag === "Leaf";
 
   // output-es/Util.Pair/index.js
   var $Pair = (_1, _2) => ({ tag: "Pair", _1, _2 });
@@ -19935,7 +20084,7 @@
   var toCharArray = function(s) {
     return s.split("");
   };
-  var singleton = function(c) {
+  var singleton2 = function(c) {
     return c;
   };
   var _charAt = function(just) {
@@ -27388,7 +27537,7 @@
   var unsafeCodePointAt0 = /* @__PURE__ */ _unsafeCodePointAt0(unsafeCodePointAt0Fallback);
   var toCodePointArray = /* @__PURE__ */ _toCodePointArray(toCodePointArrayFallback)(unsafeCodePointAt0);
   var length4 = (x2) => toCodePointArray(x2).length;
-  var fromCharCode2 = (x2) => singleton((() => {
+  var fromCharCode2 = (x2) => singleton2((() => {
     if (x2 >= -2147483648 && x2 <= 2147483647) {
       return fromCharCode(x2);
     }
@@ -33519,7 +33668,7 @@
                 more,
                 lift12,
                 $$throw,
-                (state2$1, a$1) => more((v2$1) => done(state2$1, singleton(a) + fromCharArray(a$1)))
+                (state2$1, a$1) => more((v2$1) => done(state2$1, singleton2(a) + fromCharArray(a$1)))
               ));
             })
           )))("identifier");
@@ -33565,9 +33714,9 @@
               if (v1.tag === "Just") {
                 const $26 = withErrorMessage((() => {
                   if (checkAttr([4096, 512, 524288, 1048576, 16384])(toCharCode(v1._1.head))) {
-                    const $262 = toChar(toLowerSimple(singleton(v1._1.head)));
+                    const $262 = toChar(toLowerSimple(singleton2(v1._1.head)));
                     if ($262.tag === "Just") {
-                      const $272 = toChar(toUpperSimple(singleton(v1._1.head)));
+                      const $272 = toChar(toUpperSimple(singleton2(v1._1.head)));
                       if ($272.tag === "Just") {
                         return altParserT.alt($$char($262._1))($$char($272._1));
                       }
@@ -33623,7 +33772,7 @@
                 more,
                 lift12,
                 $$throw,
-                (state2$1, a$1) => more((v2$1) => done(state2$1, singleton(a) + fromCharArray(a$1)))
+                (state2$1, a$1) => more((v2$1) => done(state2$1, singleton2(a) + fromCharArray(a$1)))
               ));
             })
           )))("operator");
@@ -35001,10 +35150,29 @@
     };
   }();
 
+  // output-es/Graph/index.js
+  var setSet = (dictOrd) => {
+    const ordSet2 = ordSet(dictOrd);
+    return {
+      delete: $$delete2(dictOrd),
+      union: union2(dictOrd),
+      insert: insert3(dictOrd),
+      singleton,
+      sempty: Leaf2,
+      smap: (dictOrd1) => map2(dictOrd1),
+      subset: subset(dictOrd),
+      fromFoldable: (dictFoldable) => dictFoldable.foldl((m) => (a) => insert2(dictOrd)(a)(unit2)(m))(Leaf2),
+      toUnfoldable: (dictUnfoldable) => toUnfoldable4(dictUnfoldable),
+      Ord0: () => dictOrd,
+      Ord1: () => ordSet2,
+      Foldable2: () => foldableSet
+    };
+  };
+
   // output-es/EvalGraph/index.js
   var fromFoldable10 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2))();
   var show22 = /* @__PURE__ */ (() => showSet(showString).show)();
-  var toUnfoldable14 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
+  var toUnfoldable14 = /* @__PURE__ */ (() => setSet(ordString).toUnfoldable(unfoldableList))();
   var monoidFn2 = /* @__PURE__ */ (() => {
     const semigroupFn = { append: (f) => (g) => (x2) => foldableList.foldr(Cons)(g(x2))(f(x2)) };
     return { mempty: (v) => Nil, Semigroup0: () => semigroupFn };
