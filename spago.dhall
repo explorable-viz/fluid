@@ -44,6 +44,7 @@ You can edit this file as you like.
   , "spec"
   , "st"
   , "strings"
+  , "tailrec"
   , "transformers"
   , "tuples"
   , "unfoldable"

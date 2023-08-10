@@ -130,28 +130,26 @@ instance Graph GraphImpl where
    fromFoldable α_αs = GraphImpl out in_
       where
       out = D.fromFoldable (α_αs <#> first unwrap)
-      in_ = opMap (L.fromFoldable α_αs) -- gratuitous to turn one foldable into another
+      in_ = runST (opMap (L.fromFoldable α_αs)) -- gratuitous to turn one foldable into another
 
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap r = STObject r (Set Vertex)
 
-opMap :: List (Vertex × Set Vertex) -> AdjMap
-opMap α_αs = runST opMap' α_αs
-
-opMap' :: List (Vertex × Set Vertex) -> forall r. ST r (MutableAdjMap r)
-opMap' α_αs = do
+opMap :: List (Vertex × Set Vertex) -> forall r. ST r (MutableAdjMap r)
+opMap α_αs = do
    in_ <- OST.new
    tailRecM addEdges (α_αs × in_)
    where
    addEdges
-      :: List (Vertex × Set Vertex) × MutableAdjMap r
+      :: forall r
+       . List (Vertex × Set Vertex) × MutableAdjMap r
       -> ST r (Step (List (Vertex × Set Vertex) × MutableAdjMap r) (MutableAdjMap r))
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : rest) × acc) = do
       acc' <- foldM (addEdge α) acc βs
       pure $ Loop (rest × acc')
 
-   addEdge :: Vertex -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
+   addEdge :: forall r. Vertex -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
    addEdge α acc (Vertex β) = do
       αs <- OST.peek β acc <#> case _ of
          Nothing -> S.singleton α
