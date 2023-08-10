@@ -24,9 +24,9 @@ type Edge = Vertex × Vertex
 -- Graphs form a semigroup but we don't actually rely on that (for efficiency).
 class Monoid g <= Graph g where
    extend :: Vertex -> Set Vertex -> Endo g
-   -- connectOut α β adds β into graph if not present, and αdds β as new out-neighbour of existing vertex α
+   -- connectOut α β adds β as new out-neighbour of existing vertex α, adding into g if necessary
    connectOut :: Vertex -> Vertex -> Endo g
-   -- connectIn α β adds α into graph if not present, and αdds α as new in-neighbour of existing vertex β
+   -- connectIn α β adds α as new in-neighbour of existing vertex β, adding into g if necessary
    connectIn :: Vertex -> Vertex -> Endo g
    elem :: g -> Vertex -> Boolean
    outN :: g -> Vertex -> Set Vertex
