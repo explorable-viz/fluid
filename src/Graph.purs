@@ -6,7 +6,7 @@ import Control.Monad.ST (ST)
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Data.Foldable (class Foldable, foldl, foldM)
 import Data.FoldableWithIndex (foldWithIndexM)
-import Data.List (List, concat)
+import Data.List (List(..), (:), concat)
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (class Newtype, unwrap)
@@ -81,7 +81,8 @@ instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
-data GraphImpl = GraphImpl (Dict (Set Vertex)) (Dict (Set Vertex))
+type AdjMap = Dict (Set Vertex)
+data GraphImpl = GraphImpl (AdjMap) (AdjMap)
 
 -- Provided for completeness, but for efficiency we avoid them.
 instance Semigroup GraphImpl where
@@ -131,25 +132,28 @@ instance Graph GraphImpl where
       where
       out = D.fromFoldable $ α_αs <#> first unwrap
 
-op' :: Dict (Set Vertex) -> Dict (Set Vertex)
+type MutableAdjMap r = STObject r (Set Vertex)
+
+op' :: Endo AdjMap
 op' out =
    -- In-place update of mutable object.
    runST (OST.new >>= flip (foldWithIndexM (flipEdge >>> foldM)) out)
    where
-   flipEdge :: forall r. String -> STObject r (Set Vertex) -> Vertex -> ST r (STObject r (Set Vertex))
+   flipEdge :: forall r. String -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
    flipEdge α acc (Vertex β) = do
       αs <- OST.peek β acc <#> case _ of
          Nothing -> S.singleton (Vertex α)
          Just αs -> S.insert (Vertex α) αs
       OST.poke β αs acc
 
-   burble :: forall r. ST r (STObject r (Set Vertex))
+   burble :: forall r. ST r (MutableAdjMap r)
    burble = do
       in_ <- OST.new
-      tailRecM (go $ L.fromFoldable (D.keys out)) in_
+      tailRecM (go $ L.fromFoldable (D.keys out)) ?_
       where
-      go :: forall t. List String -> STObject r t -> ST r (Step (STObject r t) (STObject r (Set Vertex)))
-      go αs acc = ?_
+      go :: List String -> MutableAdjMap r -> ST r (Step (MutableAdjMap r) (MutableAdjMap r))
+      go Nil acc = pure $ Done acc
+      go (α : αs) acc = ?_
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
