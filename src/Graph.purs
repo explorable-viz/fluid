@@ -130,18 +130,15 @@ instance Graph GraphImpl where
       where
       out = D.fromFoldable $ kvs <#> first unwrap
 
---
 op' :: Dict (Set Vertex) -> Dict (Set Vertex)
-op' out = runST go
+op' out = runST (OST.new >>= flip (foldWithIndexM (flipEdge >>> foldM)) out)
    where
-   go :: forall r. ST r (STObject r (Set Vertex))
-   go = do
-      in_ <- OST.new
-      foldWithIndexM (bibble >>> foldM) in_ out
-      where
-      bibble :: String -> STObject r (Set Vertex) -> Vertex -> ST r (STObject r (Set Vertex))
-      bibble α acc (Vertex β) = OST.poke β (S.singleton (Vertex α)) acc
-
+   flipEdge :: forall r. String -> STObject r (Set Vertex) -> Vertex -> ST r (STObject r (Set Vertex))
+   flipEdge α acc (Vertex β) = do
+      αs <- OST.peek β acc <#> case _ of
+         Nothing -> S.singleton (Vertex α)
+         Just αs -> S.insert (Vertex α) αs
+      OST.poke β αs acc
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
