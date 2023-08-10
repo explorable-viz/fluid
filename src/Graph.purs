@@ -7,8 +7,8 @@ import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Control.Monad.Writer (WriterT, tell)
 import Data.Foldable (foldl)
 import Data.Identity (Identity)
-import Data.List (List, (:))
-import Data.List (fromFoldable, filter, elem, concat) as L
+import Data.List (List, (:), concat)
+import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (first, second)
@@ -16,6 +16,7 @@ import Data.Set (Set)
 import Data.Set as S
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
+import Dict (Dict)
 import Dict as D
 import Util (Endo, MayFailT, (×), type (×), definitely)
 
@@ -154,21 +155,17 @@ instance MonadAlloc m => MonadGraphAccum (MayFailT (WriterT (Endo GraphExtension
       tell $ (:) (α × αs)
       pure α
 
-outE' :: forall g. Graph g => g -> Vertex -> List Edge
-outE' graph α = L.fromFoldable $ S.map (α × _) (outN graph α)
+outEdges' :: forall g. Graph g => g -> Vertex -> List Edge
+outEdges' g = inEdges' (op g)
 
-outE :: forall g. Graph g => Set Vertex -> g -> List Edge
-outE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allOut
-   where
-   allOut = L.concat (map (\α -> outE' g α) (L.fromFoldable αs))
+outEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
+outEdges g = inEdges (op g)
 
-inE' :: forall g. Graph g => g -> Vertex -> List Edge
-inE' graph α = L.fromFoldable $ S.map (_ × α) (inN graph α)
+inEdges' :: forall g. Graph g => g -> Vertex -> List Edge
+inEdges' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
 
-inE :: forall g. Graph g => Set Vertex -> g -> List Edge
-inE αs g = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
-   where
-   allIn = L.concat (map (\α -> inE' g α) (L.fromFoldable αs))
+inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
+inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 
 derive instance Eq Vertex
 derive instance Ord Vertex
@@ -178,7 +175,7 @@ instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
-data GraphImpl = GraphImpl (D.Dict (Set Vertex)) (D.Dict (Set Vertex))
+data GraphImpl = GraphImpl (Dict (Set Vertex)) (Dict (Set Vertex))
 
 -- Provided for completeness, but for efficiency we avoid them.
 instance Semigroup GraphImpl where
