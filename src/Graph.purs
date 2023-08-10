@@ -34,7 +34,7 @@ class Monoid g <= Graph g where
    inN :: g -> Vertex -> Set Vertex
    size :: g -> Int
    remove :: Vertex -> Endo g
-   opp :: Endo g
+   op :: Endo g
    discreteG :: Set Vertex -> g
 
 newtype Vertex = Vertex String
@@ -191,15 +191,15 @@ instance Graph GraphImpl where
          (D.insertWith S.union (unwrap β) S.empty out)
       in' = D.insertWith S.union (unwrap β) (S.singleton α) in_
 
-   addIn α β g = opp (addOut β α (opp g))
+   addIn α β g = op (addOut β α (op g))
 
    outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
-   inN g = outN (opp g)
+   inN g = outN (op g)
 
    elem (GraphImpl out _) α = isJust (D.lookup (unwrap α) out)
    size (GraphImpl out _) = D.size out
 
-   opp (GraphImpl out in_) = GraphImpl in_ out
+   op (GraphImpl out in_) = GraphImpl in_ out
 
    discreteG αs = GraphImpl discreteM discreteM
       where
