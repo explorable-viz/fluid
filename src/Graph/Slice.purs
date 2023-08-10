@@ -1,4 +1,4 @@
-module SliceGraph where
+module Graph.Slice where
 
 import Prelude hiding (add)
 
