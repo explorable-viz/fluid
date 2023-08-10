@@ -20,10 +20,14 @@ import Util ((×))
 import Val (DictRep(..), Val(..))
 
 tests :: Array (Array (Test Unit))
-tests = [ -- test_desugaring, test_misc,
-          test_bwd
-          -- , test_linking, test_graphics, test_graph
-          ]
+tests =
+   [ test_desugaring
+   , test_misc
+   , test_bwd
+   , test_linking
+   , test_graphics
+   , test_graph
+   ]
 
 --tests = [ test_scratchpad ]
 

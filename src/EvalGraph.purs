@@ -7,7 +7,6 @@ module EvalGraph
    , evalGraph
    , selectSources
    , selectSinks
-   , allSinks
    ) where
 
 import Prelude hiding (apply, add)
@@ -166,19 +165,13 @@ evalGraph γ0 e0 g = ((×) g') <$> maybe_v
            n' <- lift $ lift $ get
            trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
               pure (γ × e × v)
-      ) :: MayFail ( Env Vertex × Expr Vertex × Val Vertex) × _
+      ) :: MayFail (Env Vertex × Expr Vertex × Val Vertex) × _
    g' = foldl (\h (α × αs) -> add α αs h) g (g_adds Nil)
 
-selectSources :: Val Boolean -> Val Vertex ->  S.Set Vertex
+selectSources :: Val Boolean -> Val Vertex -> S.Set Vertex
 selectSources u v = foldl (S.union) S.empty v_selected
    where
    v_selected = (\b -> if b then S.singleton else const S.empty) <$> u <*> v
 
--- allSources :: Val Vertex -> Set Vertex
--- allSources v = foldl (flip S.insert) S.empty v
-
 selectSinks :: Expr Vertex -> S.Set Vertex -> Expr Boolean
 selectSinks e αs = map (flip S.member αs) e
-
-allSinks :: Expr Vertex ->  S.Set Vertex
-allSinks e = foldl (flip S.insert) S.empty e
