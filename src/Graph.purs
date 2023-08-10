@@ -30,7 +30,7 @@ class Monoid g <= Graph g where
    add :: Vertex -> Set Vertex -> Endo g
 
    -- remove a vertex from g.
-   remove :: Vertex -> g -> Endo g
+   remove :: Vertex -> Endo g
 
    -- addOut α β adds β as new out-neighbour of existing vertex α, adding into g if necessary
    -- | addIn and addOut satisfy
