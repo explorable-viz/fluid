@@ -25,7 +25,7 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
-import Graph (class Graph, class Set, Vertex, WithGraph2, alloc, fromFoldable, insert, new, runGraphAccum2T, runHeap, sempty, singleton, subset, toUnfoldable, union)
+import Graph (class Graph, Vertex, WithGraph2, alloc, fromFoldable, insert, new, runGraphAccum2T, runHeap, sempty, singleton, subset, toUnfoldable, union)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (×), MayFail, check, error, report, successful, with, (×))
@@ -67,7 +67,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall g s. Graph g S.Set => Env Vertex -> RecDefs Vertex -> S.Set Vertex -> WithGraph2 g (Env Vertex)
+closeDefs :: forall g. Graph g S.Set => Env Vertex -> RecDefs Vertex -> S.Set Vertex -> WithGraph2 g (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -76,7 +76,7 @@ closeDefs γ ρ αs =
          V.Fun <$> (V.Closure <$> lift (new αs) <@> (γ `restrict` (fv ρ' `union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
-apply :: forall g s. Graph g S.Set => Val Vertex -> Val Vertex -> WithGraph2 g (Val Vertex)
+apply :: forall g. Graph g S.Set => Val Vertex -> Val Vertex -> WithGraph2 g (Val Vertex)
 apply (V.Fun (V.Closure α γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- except $ match v σ
@@ -144,7 +144,7 @@ eval γ (App e e') αs = do
    apply v v'
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
-   γ' × _ × _ <- except $ error "todo" --match v σ -- terminal meta-type of eliminator is meta-unit
+   γ' × _ × _ <- except $ match v σ -- terminal meta-type of eliminator is meta-unit
    eval (γ <+> γ') e' αs
 eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
