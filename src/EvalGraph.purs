@@ -154,7 +154,7 @@ eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-evalGraph :: forall g a. Graph g S.Set => Env a -> Expr a -> g -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
+evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> g -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
 evalGraph γ0 e0 g = ((×) g') <$> maybe_v
    where
    maybe_v × g_adds =
@@ -162,7 +162,7 @@ evalGraph γ0 e0 g = ((×) g') <$> maybe_v
            γ <- lift $ lift $ traverse alloc γ0
            e <- lift $ lift $ alloc e0
            n <- lift $ lift $ get
-           v <- eval γ e sempty :: WithGraph3 S.Set _
+           v <- eval γ e sempty :: WithGraph3 s _
            n' <- lift $ lift $ get
            trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
               pure (γ × e × v)

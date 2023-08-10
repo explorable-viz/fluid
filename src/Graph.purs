@@ -44,6 +44,8 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
    -- | Number of vertices in g.
    size :: g -> Int
 
+   -- | s of all vertices in g
+   vertices :: g -> s Vertex
    -- |   op (op g) = g
    op :: Endo g
 
@@ -112,6 +114,8 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 
    elem (GraphImpl out _) α = isJust (D.lookup (unwrap α) out)
    size (GraphImpl out _) = D.size out
+
+   vertices (GraphImpl out _) = fromFoldable $ S.map Vertex $ D.keys out
 
    op (GraphImpl out in_) = GraphImpl in_ out
 
