@@ -196,7 +196,7 @@ class (Ord a, Ord (s a), Foldable s, Show a, Show (s a)) <= Set s a where
    sempty :: s a
    smap :: forall b. Ord b => (a -> b) -> s a -> s b
    subset :: s a -> s a -> Boolean
-   fromFoldable :: forall f. Foldable f => f a -> s a 
+   fromFoldable :: forall f. Foldable f => f a -> s a
    toUnfoldable :: forall f. Unfoldable f => s a -> f a
 
 instance Set S.Set Vertex where

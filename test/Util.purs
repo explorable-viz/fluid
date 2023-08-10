@@ -22,6 +22,7 @@ import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Tuple (fst, snd, uncurry)
+import Data.Set (Set)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -33,7 +34,7 @@ import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import EvalGraph (evalGraph, selectVertices)
-import Graph (empty) as G
+import Graph (empty, GraphImpl) as G
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
@@ -77,7 +78,7 @@ testWithSetup (File file) expected v_expect_opt setup =
    doTest' γ s = do
       e <- except $ desug s
       t × v <- except $ eval γ e bot
-      _ × u <- except $ evalGraph γ e G.empty
+      _ × u <- except $ evalGraph γ e (G.empty :: G.GraphImpl Set)
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
          { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t

@@ -8,7 +8,6 @@ module EvalGraph
    , selectVertices
    ) where
 
-import Data.Foldable
 import Prelude hiding (apply)
 
 import Bindings (varAnon)
@@ -38,7 +37,7 @@ import Val (Val(..), Fun(..)) as V
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall g. Graph g S.Set => Val Vertex -> Elim Vertex -> MayFail (Env Vertex × Cont Vertex × S.Set Vertex)
+match :: Val Vertex -> Elim Vertex -> MayFail (Env Vertex × Cont Vertex × S.Set Vertex)
 match v (ElimVar x κ)
    | x == varAnon = pure (D.empty × κ × sempty)
    | otherwise = pure (D.singleton x v × κ × sempty)
@@ -58,7 +57,7 @@ match (V.Record α xvs) (ElimRecord xs κ) = do
    pure $ γ × κ' × (insert α αs)
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall g. Graph g S.Set => List (Val Vertex) -> Cont Vertex -> MayFail (Env Vertex × Cont Vertex × S.Set Vertex)
+matchMany :: List (Val Vertex) -> Cont Vertex -> MayFail (Env Vertex × Cont Vertex × S.Set Vertex)
 matchMany Nil κ = pure (D.empty × κ × sempty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
@@ -68,7 +67,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall g s. Graph g S.Set => Env Vertex -> RecDefs Vertex -> s Vertex -> WithGraph2 g (Env Vertex)
+closeDefs :: forall g s. Graph g S.Set => Env Vertex -> RecDefs Vertex -> S.Set Vertex -> WithGraph2 g (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -100,7 +99,7 @@ apply (V.Fun (V.Foreign φ vs)) v = do
    runExists apply' φ
 apply _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall g s. Set s Vertex => Graph g S.Set => Env Vertex -> Expr Vertex -> s Vertex -> WithGraph2 g (Val Vertex) 
+eval :: forall g. Graph g S.Set => Env Vertex -> Expr Vertex -> S.Set Vertex -> WithGraph2 g (Val Vertex)
 eval γ (Var x) _ = except $ lookup' x γ
 eval γ (Op op) _ = except $ lookup' op γ
 eval _ (Int α n) αs = V.Int <$> lift (new (insert α αs)) <@> n
@@ -144,14 +143,14 @@ eval γ (App e e') αs = do
    v' <- eval γ e' αs
    apply v v'
 eval γ (Let (VarDef σ e) e') αs = do
-   v :: ?_ <- eval γ e αs
-   γ' × _ × _ <- except $ error "todo"--match v σ -- terminal meta-type of eliminator is meta-unit
+   v <- eval γ e αs
+   γ' × _ × _ <- except $ error "todo" --match v σ -- terminal meta-type of eliminator is meta-unit
    eval (γ <+> γ') e' αs
 eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-evalGraph :: forall g a s. Set s Vertex => Show g => Graph g S.Set => Env a -> Expr a -> g -> MayFail (g × Val Vertex)
+evalGraph :: forall g a. Show g => Graph g S.Set => Env a -> Expr a -> g -> MayFail (g × Val Vertex)
 evalGraph γ0 e0 g = do
    let
       maybe_v × g' =
@@ -166,7 +165,7 @@ evalGraph γ0 e0 g = do
          ) :: MayFail (Val Vertex) × g
    ((×) g') <$> maybe_v
 
-selectVertices :: forall s. Set s Vertex => Val Boolean -> Val Vertex -> s Vertex
+selectVertices :: Val Boolean -> Val Vertex -> S.Set Vertex
 selectVertices u v = foldl (union) sempty v_selected
    where
    v_selected = (\b -> if b then singleton else const sempty) <$> u <*> v
