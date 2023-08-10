@@ -43,19 +43,19 @@ match v (ElimVar x κ)
    | x == varAnon = pure (D.empty × κ × S.empty)
    | otherwise = pure (D.singleton x v × κ × S.empty)
 match (V.Constr α c vs) (ElimConstr m) = do
-   with "Pattern mismatch" $ singleton c `consistentWith` D.keys m
+   with "Pattern mismatch" $ S.singleton c `consistentWith` D.keys m
    κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (D.lookup c m)
    γ × κ' × αs <- matchMany vs κ
-   pure (γ × κ' × (insert α αs))
+   pure (γ × κ' × (S.insert α αs))
 match v (ElimConstr m) = do
    d <- dataTypeFor $ D.keys m
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record α xvs) (ElimRecord xs κ) = do
-   check (subset xs (fromFoldable $ D.keys xvs))
+   check (S.subset xs (S.fromFoldable $ D.keys xvs))
       $ patternMismatch (show (D.keys xvs)) (show xs)
-   let xs' = xs # toUnfoldable :: List String
+   let xs' = xs # S.toUnfoldable :: List String
    γ × κ' × αs <- matchMany (flip D.get xvs <$> xs') κ
-   pure $ γ × κ' × (insert α αs)
+   pure $ γ × κ' × (S.insert α αs)
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: List (Val Vertex) -> Cont Vertex -> MayFail (Env Vertex × Cont Vertex × S.Set Vertex)
@@ -68,7 +68,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: Env Vertex -> RecDefs Vertex -> Set Vertex -> WithGraph3 (Env Vertex)
+closeDefs :: Env Vertex -> RecDefs Vertex -> S.Set Vertex -> WithGraph3 S.Set (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -77,11 +77,11 @@ closeDefs γ ρ αs =
          V.Fun <$> (V.Closure <$> new αs <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
-apply :: Val Vertex -> Val Vertex -> WithGraph3 (Val Vertex)
+apply :: Val Vertex -> Val Vertex -> WithGraph3 S.Set (Val Vertex)
 apply (V.Fun (V.Closure α γ1 ρ σ)) v = do
-   γ2 <- closeDefs γ1 ρ (singleton α)
+   γ2 <- closeDefs γ1 ρ (S.singleton α)
    γ3 × κ × αs <- except $ match v σ
-   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
+   eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (S.insert α αs)
 apply (V.Fun (V.PartialConstr α c vs)) v = do
    let n = successful (arity c)
    except $ check (length vs < n) ("Too many arguments to " <> showCtr c)
@@ -93,14 +93,14 @@ apply (V.Fun (V.PartialConstr α c vs)) v = do
 apply (V.Fun (V.Foreign φ vs)) v = do
    let vs' = snoc vs v
    let
-      apply' :: forall t. ForeignOp' t -> WithGraph3 (Val Vertex)
+      apply' :: forall t. ForeignOp' t -> WithGraph3 S.Set (Val Vertex)
       apply' (ForeignOp' φ') =
          if φ'.arity > length vs' then pure $ V.Fun (V.Foreign φ vs')
          else φ'.op' vs'
    runExists apply' φ
 apply _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval :: Env Vertex -> Expr Vertex -> Set Vertex -> WithGraph3 (Val Vertex)
+eval :: Env Vertex -> Expr Vertex -> S.Set Vertex -> WithGraph3 S.Set (Val Vertex)
 eval γ (Var x) _ = except $ lookup' x γ
 eval γ (Op op) _ = except $ lookup' op γ
 eval _ (Int α n) αs = V.Int <$> new (S.insert α αs) <@> n
@@ -151,7 +151,7 @@ eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-evalGraph :: forall g a. Show g => Graph g => Env a -> Expr a -> g -> MayFail (g × Val Vertex)
+evalGraph :: forall g a. Show g => Graph g S.Set => Env a -> Expr a -> g -> MayFail (g × Val Vertex)
 evalGraph γ0 e0 g = ((×) g') <$> maybe_v
    where
    maybe_v × g_adds =
@@ -159,7 +159,7 @@ evalGraph γ0 e0 g = ((×) g') <$> maybe_v
            γ <- lift $ lift $ traverse alloc γ0
            e <- lift $ lift $ alloc e0
            n <- lift $ lift $ get
-           v <- eval γ e S.empty :: WithGraph3 _
+           v <- eval γ e S.empty :: WithGraph3 S.Set _
            n' <- lift $ lift $ get
            trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
               pure v
@@ -167,6 +167,6 @@ evalGraph γ0 e0 g = ((×) g') <$> maybe_v
    g' = foldl (\h (α × αs) -> add α αs h) g (g_adds Nil)
 
 selectVertices :: Val Boolean -> Val Vertex -> S.Set Vertex
-selectVertices u v = foldl (union) sempty v_selected
+selectVertices u v = foldl (S.union) S.empty v_selected
    where
    v_selected = (\b -> if b then S.singleton else const S.empty) <$> u <*> v

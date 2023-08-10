@@ -14,6 +14,7 @@ import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
+import Data.Set (singleton, insert) 
 import DataType (cCons, cPair)
 import Debug (trace)
 import Dict (Dict, (\\))
