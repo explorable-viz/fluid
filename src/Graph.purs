@@ -157,10 +157,10 @@ derive instance Newtype Vertex _
 instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
--- GraphImpl Specifics
+-- Maintain out neighbours and in neighbours as separate adjacency maps.
 data GraphImpl = GraphImpl (D.Dict (Set Vertex)) (D.Dict (Set Vertex))
 
--- These are provided as a technicality, but for efficiency we avoid them.
+-- Provided for completeness, but for efficiency we avoid them.
 instance Semigroup GraphImpl where
    append (GraphImpl out1 in1) (GraphImpl out2 in2) =
       GraphImpl (D.unionWith S.union out1 out2) (D.unionWith S.union in1 in2)
