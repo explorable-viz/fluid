@@ -5,7 +5,9 @@ module EvalGraph
    , matchMany
    , patternMismatch
    , evalGraph
-   , selectVertices
+   , selectSources
+   , selectSinks
+   , allSinks
    ) where
 
 import Prelude hiding (apply, add)
@@ -152,7 +154,7 @@ eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-evalGraph :: forall g a. Show g => Graph g => Env a -> Expr a -> g -> MayFail (g × Val Vertex)
+evalGraph :: forall g a. Show g => Graph g => Env a -> Expr a -> g -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
 evalGraph γ0 e0 g = ((×) g') <$> maybe_v
    where
    maybe_v × g_adds =
@@ -163,11 +165,20 @@ evalGraph γ0 e0 g = ((×) g') <$> maybe_v
            v <- eval γ e S.empty :: WithGraph3 _
            n' <- lift $ lift $ get
            trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
-              pure v
-      ) :: MayFail (Val Vertex) × _
+              pure (γ × e × v)
+      ) :: MayFail ( Env Vertex × Expr Vertex × Val Vertex) × _
    g' = foldl (\h (α × αs) -> add α αs h) g (g_adds Nil)
 
-selectVertices :: Val Boolean -> Val Vertex -> Set Vertex
-selectVertices u v = foldl (S.union) S.empty v_selected
+selectSources :: Val Boolean -> Val Vertex -> Set Vertex
+selectSources u v = foldl (S.union) S.empty v_selected
    where
    v_selected = (\b -> if b then S.singleton else const S.empty) <$> u <*> v
+
+-- allSources :: Val Vertex -> Set Vertex
+-- allSources v = foldl (flip S.insert) S.empty v
+
+selectSinks :: Expr Vertex -> Set Vertex -> Expr Boolean
+selectSinks e αs = map (flip S.member αs) e
+
+allSinks :: Expr Vertex -> Set Vertex
+allSinks e = foldl (flip S.insert) S.empty e
