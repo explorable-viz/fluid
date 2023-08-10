@@ -186,7 +186,8 @@ instance Graph GraphImpl where
 
    connectOut (Vertex α) (Vertex β) (GraphImpl out in_) = GraphImpl out' in'
       where
-      out' = D.update (S.insert (Vertex β) >>> Just) α out
+      out' = D.update (S.insert (Vertex β) >>> Just) α
+         (D.insertWith S.union β S.empty out)
       in' = D.insertWith S.union β (S.singleton (Vertex α)) in_
 
    connectIn (Vertex α) (Vertex β) (GraphImpl out in_) = GraphImpl out' in'
