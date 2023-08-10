@@ -11,7 +11,7 @@ import Data.Traversable (sequence)
 import Dict (fromFoldable)
 import Effect (Effect)
 import Effect.Console (log, logShow)
-import Graph (GraphImpl, add, Vertex(..), inE)
+import Graph (GraphImpl, add, Vertex(..), inEdges)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import SliceGraph (fwdSlice)
@@ -283,5 +283,5 @@ test_graph =
       let
          slice = fwdSlice (S.fromFoldable [ (Vertex "13"), (Vertex "12"), Vertex "11" ]) g'
       lift $ do
-         log ("Outedges: " <> show (inE g' (S.fromFoldable [ (Vertex "11") ])))
+         log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ (Vertex "11") ])))
          logShow slice

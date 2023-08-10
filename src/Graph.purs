@@ -7,8 +7,8 @@ import Control.Monad.Trans.Class (class MonadTrans, lift)
 import Control.Monad.Writer (WriterT, tell)
 import Data.Foldable (foldl)
 import Data.Identity (Identity)
-import Data.List (List, (:), concat, filter)
-import Data.List (fromFoldable, elem) as L
+import Data.List (List, (:), concat)
+import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (first, second)
@@ -155,19 +155,17 @@ instance MonadAlloc m => MonadGraphAccum (MayFailT (WriterT (Endo GraphExtension
       tell $ (:) (α × αs)
       pure α
 
-outE' :: forall g. Graph g => g -> Vertex -> List Edge
-outE' g = inE' (op g)
+outEdges' :: forall g. Graph g => g -> Vertex -> List Edge
+outEdges' g = inEdges' (op g)
 
-outE :: forall g. Graph g => g -> Set Vertex -> List Edge
-outE g = inE (op g)
+outEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
+outEdges g = inEdges (op g)
 
-inE' :: forall g. Graph g => g -> Vertex -> List Edge
-inE' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
+inEdges' :: forall g. Graph g => g -> Vertex -> List Edge
+inEdges' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
 
-inE :: forall g. Graph g => g -> Set Vertex -> List Edge
-inE g αs = filter (\(α × β) -> L.elem α αs || L.elem β αs) es
-   where
-   es = concat (inE' g <$> L.fromFoldable αs)
+inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
+inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 
 derive instance Eq Vertex
 derive instance Ord Vertex
