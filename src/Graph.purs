@@ -164,7 +164,7 @@ inE' :: forall g. Graph g => g -> Vertex -> List Edge
 inE' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
 
 inE :: forall g. Graph g => g -> Set Vertex -> List Edge
-inE g αs = L.filter (\(e1 × e2) -> L.elem e1 αs || L.elem e2 αs) allIn
+inE g αs = L.filter (\(α × β) -> L.elem α αs || L.elem β αs) allIn
    where
    allIn = L.concat (inE' g <$> L.fromFoldable αs)
 
