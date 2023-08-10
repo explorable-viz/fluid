@@ -20,7 +20,6 @@ import Data.Array (range, singleton) as A
 import Data.Either (note)
 import Data.Exists (runExists)
 import Data.List (List(..), (:), length, snoc, unzip, zip)
-import Data.Set as S
 import Data.Traversable (sequence, traverse, foldl)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
@@ -28,7 +27,7 @@ import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Graph.GraphWriter (WithGraph3, alloc, new, runHeap)
-import Graph (class Graph, class Set, Vertex, add, insert, sempty, singleton, toUnfoldable, union)
+import Graph (class Graph, class Set, Vertex, add, insert, member, sempty, subset, singleton, fromFoldable, toUnfoldable, union)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (×), MayFail, check, error, report, successful, with, (×))
@@ -45,7 +44,7 @@ match v (ElimVar x κ)
    | x == varAnon = pure (D.empty × κ × sempty)
    | otherwise = pure (D.singleton x v × κ × sempty)
 match (V.Constr α c vs) (ElimConstr m) = do
-   with "Pattern mismatch" $ S.singleton c `consistentWith` D.keys m
+   with "Pattern mismatch" $ singleton c `consistentWith` D.keys m
    κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (D.lookup c m)
    γ × κ' × αs <- matchMany vs κ
    pure (γ × κ' × (insert α αs))
@@ -53,7 +52,7 @@ match v (ElimConstr m) = do
    d <- dataTypeFor $ D.keys m
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record α xvs) (ElimRecord xs κ) = do
-   check (S.subset xs (S.fromFoldable $ D.keys xvs))
+   check (subset xs (fromFoldable $ D.keys xvs))
       $ patternMismatch (show (D.keys xvs)) (show xs)
    let xs' = xs # toUnfoldable :: List String
    γ × κ' × αs <- matchMany (flip D.get xvs <$> xs') κ
@@ -76,7 +75,7 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `for` σ
       in
-         V.Fun <$> (V.Closure <$> new αs <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
+         V.Fun <$> (V.Closure <$> new αs <@> (γ `restrict` (fv ρ' `union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
 apply :: forall s. Set s Vertex => Val Vertex -> Val Vertex -> WithGraph3 s (Val Vertex)
@@ -168,10 +167,10 @@ evalGraph γ0 e0 g = ((×) g') <$> maybe_v
       ) :: MayFail (Env Vertex × Expr Vertex × Val Vertex) × _
    g' = foldl (\h (α × αs) -> add α αs h) g (g_adds Nil)
 
-selectSources :: Val Boolean -> Val Vertex -> S.Set Vertex
-selectSources u v = foldl (S.union) S.empty v_selected
+selectSources :: forall s. Set s Vertex => Val Boolean -> Val Vertex -> s Vertex
+selectSources u v = foldl union sempty v_selected
    where
-   v_selected = (\b -> if b then S.singleton else const S.empty) <$> u <*> v
+   v_selected = (\b -> if b then singleton else const sempty) <$> u <*> v
 
-selectSinks :: Expr Vertex -> S.Set Vertex -> Expr Boolean
-selectSinks e αs = map (flip S.member αs) e
+selectSinks :: forall s. Set s Vertex => Expr Vertex -> s Vertex -> Expr Boolean
+selectSinks e αs = map (flip member αs) e

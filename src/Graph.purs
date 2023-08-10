@@ -21,7 +21,7 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
    -- | add and remove satisfy:
    -- |    remove α (add α αs g) = g
    -- |    add α (outN α g) (remove α g) = g
-   add :: (Set s Vertex) => Vertex -> s Vertex -> Endo g
+   add :: Vertex -> s Vertex -> Endo g
 
    -- remove a vertex from g.
    remove :: Vertex -> Endo g
@@ -38,8 +38,8 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
 
    -- | outN and iN satisfy
    -- |   inN G = outN (op G)
-   outN :: (Set s Vertex) => g -> Vertex -> s Vertex
-   inN :: (Set s Vertex) => g -> Vertex -> s Vertex
+   outN :: g -> Vertex -> s Vertex
+   inN :: g -> Vertex -> s Vertex
 
    -- | Number of vertices in g.
    size :: g -> Int
@@ -50,7 +50,7 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
    op :: Endo g
 
    -- |   Discrete graph consisting only of a set of vertices.
-   discreteG :: (Set s Vertex) => s Vertex -> g
+   discreteG :: s Vertex -> g
 
    empty :: g
 
@@ -132,10 +132,11 @@ class (Ord a, Ord (s a), Foldable s) <= Set s a where
    delete :: a -> s a -> s a
    union :: s a -> s a -> s a
    insert :: a -> s a -> s a
+   member :: a -> s a -> Boolean
+   subset :: s a -> s a -> Boolean
    singleton :: a -> s a
    sempty :: s a
    smap :: forall b. Ord b => (a -> b) -> s a -> s b
-   subset :: s a -> s a -> Boolean
    fromFoldable :: forall f. Foldable f => f a -> s a
    toUnfoldable :: forall f. Unfoldable f => s a -> f a
 
@@ -143,9 +144,10 @@ instance Ord a => Set S.Set a where
    delete = S.delete
    union = S.union
    insert = S.insert
+   member = S.member
    singleton = S.singleton
+   subset = S.subset
    sempty = S.empty
    smap = S.map
-   subset = S.subset
    fromFoldable = S.fromFoldable
    toUnfoldable = S.toUnfoldable
