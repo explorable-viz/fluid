@@ -38,7 +38,7 @@ import Val (Val(..), Fun(..)) as V
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: Val Vertex -> Elim Vertex -> MayFail (Env Vertex × Cont Vertex × S.Set Vertex)
+match :: forall g. Graph g S.Set => Val Vertex -> Elim Vertex -> MayFail (Env Vertex × Cont Vertex × S.Set Vertex)
 match v (ElimVar x κ)
    | x == varAnon = pure (D.empty × κ × sempty)
    | otherwise = pure (D.singleton x v × κ × sempty)
@@ -58,7 +58,7 @@ match (V.Record α xvs) (ElimRecord xs κ) = do
    pure $ γ × κ' × (insert α αs)
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
-matchMany ::  List (Val Vertex) -> Cont Vertex -> MayFail (Env Vertex × Cont Vertex × S.Set Vertex)
+matchMany :: forall g. Graph g S.Set => List (Val Vertex) -> Cont Vertex -> MayFail (Env Vertex × Cont Vertex × S.Set Vertex)
 matchMany Nil κ = pure (D.empty × κ × sempty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
@@ -68,7 +68,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall g s. Graph g s => Env Vertex -> RecDefs Vertex -> s Vertex -> WithGraph2 g (Env Vertex)
+closeDefs :: forall g s. Graph g S.Set => Env Vertex -> RecDefs Vertex -> s Vertex -> WithGraph2 g (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -77,7 +77,7 @@ closeDefs γ ρ αs =
          V.Fun <$> (V.Closure <$> lift (new αs) <@> (γ `restrict` (fv ρ' `union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
-apply :: forall g s. Graph g s => Val Vertex -> Val Vertex -> WithGraph2 g (Val Vertex)
+apply :: forall g s. Graph g S.Set => Val Vertex -> Val Vertex -> WithGraph2 g (Val Vertex)
 apply (V.Fun (V.Closure α γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- except $ match v σ
@@ -100,7 +100,7 @@ apply (V.Fun (V.Foreign φ vs)) v = do
    runExists apply' φ
 apply _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall g s. Set s Vertex => Graph g s => Env Vertex -> Expr Vertex -> s Vertex -> WithGraph2 g (Val Vertex) 
+eval :: forall g s. Set s Vertex => Graph g S.Set => Env Vertex -> Expr Vertex -> s Vertex -> WithGraph2 g (Val Vertex) 
 eval γ (Var x) _ = except $ lookup' x γ
 eval γ (Op op) _ = except $ lookup' op γ
 eval _ (Int α n) αs = V.Int <$> lift (new (insert α αs)) <@> n
@@ -151,7 +151,7 @@ eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-evalGraph :: forall g a s. Set s Vertex => Show g => Graph g s => Env a -> Expr a -> g -> MayFail (g × Val Vertex)
+evalGraph :: forall g a s. Set s Vertex => Show g => Graph g S.Set => Env a -> Expr a -> g -> MayFail (g × Val Vertex)
 evalGraph γ0 e0 g = do
    let
       maybe_v × g' =
