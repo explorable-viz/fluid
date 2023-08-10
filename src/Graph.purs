@@ -18,7 +18,7 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Util (Endo, (×), type (×), definitely, error, unimplemented)
+import Util (Endo, (×), type (×), definitely)
 
 type Edge = Vertex × Vertex
 
@@ -148,19 +148,27 @@ op' out =
       OST.poke β αs acc
 
 op'' :: List (Vertex × Set Vertex) -> AdjMap
-op'' α_αs = runST burble
+op'' α_αs = runST opMap
    where
-   burble :: forall r. ST r (MutableAdjMap r)
-   burble = do
+   opMap :: forall r. ST r (MutableAdjMap r)
+   opMap = do
       in_ <- OST.new
-      tailRecM go (α_αs × in_)
+      tailRecM addEdges (α_αs × in_)
       where
-      go
+      addEdges
          :: List (Vertex × Set Vertex) × MutableAdjMap r
          -> ST r (Step (List (Vertex × Set Vertex) × MutableAdjMap r) (MutableAdjMap r))
-      go (Nil × acc) = pure $ Done acc
-      go (((α × βs) : rest) × acc) = do
-         pure $ Loop (rest × ?_)
+      addEdges (Nil × acc) = pure $ Done acc
+      addEdges (((α × βs) : rest) × acc) = do
+         acc' <- foldM (addEdge α) acc βs
+         pure $ Loop (rest × acc')
+
+      addEdge :: Vertex -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
+      addEdge α acc (Vertex β) = do
+         αs <- OST.peek β acc <#> case _ of
+            Nothing -> S.singleton α
+            Just αs -> S.insert α αs
+         OST.poke β αs acc
 
 instance Show GraphImpl where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
