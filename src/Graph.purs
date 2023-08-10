@@ -189,9 +189,10 @@ instance Graph GraphImpl where
       out' = D.update (S.insert β >>> Just) (unwrap α) out
       in' = D.insertWith S.union (unwrap β) (S.singleton α) in_
 
-   connectIn α β (GraphImpl out in_) =
-      GraphImpl (D.insertWith S.union (unwrap α) (S.singleton β) out)
-         (D.update (S.insert α >>> Just) (unwrap β) in_)
+   connectIn α β (GraphImpl out in_) = GraphImpl out' in'
+      where
+      out' = D.insertWith S.union (unwrap α) (S.singleton β) out
+      in' = D.update (S.insert α >>> Just) (unwrap β) in_
 
    outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
    inN (GraphImpl _ in_) α = D.lookup (unwrap α) in_ # definitely "in graph"
