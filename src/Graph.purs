@@ -3,7 +3,8 @@ module Graph where
 import Prelude hiding (add)
 
 import Control.Monad.ST (ST)
-import Data.Foldable (class Foldable, foldl)
+import Data.Foldable (class Foldable, foldl, foldM)
+import Data.FoldableWithIndex (foldWithIndexM)
 import Data.List (List, concat)
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
@@ -11,10 +12,12 @@ import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Set as S
+import Data.Traversable (traverse)
 import Dict (Dict)
 import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
+import Foreign.Object.ST as OST
 import Util (Endo, (×), type (×), definitely, error, unimplemented)
 
 type Edge = Vertex × Vertex
@@ -130,10 +133,15 @@ instance Graph GraphImpl where
 
 --
 op' :: Dict (Set Vertex) -> Dict (Set Vertex)
-op' _ = runST go
+op' out = runST go
    where
    go :: forall r. ST r (STObject r (Set Vertex))
-   go = error unimplemented
+   go = do
+      in_ <- OST.new
+      foldWithIndexM (bibble >>> foldM) in_ out
+      where
+      bibble :: String -> STObject r (Set Vertex) -> Vertex -> ST r (STObject r (Set Vertex))
+      bibble _ _ = error unimplemented
 
 
 instance Show GraphImpl where
