@@ -8,6 +8,7 @@ module EvalGraph
    , selectVertices
    ) where
 
+import Prelude hiding (apply, add)
 import Bindings (varAnon)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.State (get)
@@ -25,8 +26,7 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
-import Graph (Vertex, WithGraph3, class Graph, alloc, extend, new, runHeap)
-import Prelude hiding (apply)
+import Graph (Vertex, WithGraph3, class Graph, alloc, add, new, runHeap)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (×), MayFail, check, error, report, successful, with, (×))
@@ -154,7 +154,7 @@ eval γ (LetRec ρ e) αs = do
 evalGraph :: forall g a. Show g => Graph g => Env a -> Expr a -> g -> MayFail (g × Val Vertex)
 evalGraph γ0 e0 g = ((×) g') <$> maybe_v
    where
-   maybe_v × g_extends =
+   maybe_v × g_adds =
       ( runHeap $ runWriterT $ runExceptT $ do
            γ <- lift $ lift $ traverse alloc γ0
            e <- lift $ lift $ alloc e0
@@ -164,7 +164,7 @@ evalGraph γ0 e0 g = ((×) g') <$> maybe_v
            trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
               pure v
       ) :: MayFail (Val Vertex) × _
-   g' = foldl (\h (α × αs) -> extend α αs h) g (g_extends Nil)
+   g' = foldl (\h (α × αs) -> add α αs h) g (g_adds Nil)
 
 selectVertices :: Val Boolean -> Val Vertex -> Set Vertex
 selectVertices u v = foldl (S.union) S.empty v_selected

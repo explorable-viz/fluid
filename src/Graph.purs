@@ -1,6 +1,6 @@
 module Graph where
 
-import Prelude
+import Prelude hiding (add)
 
 import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
@@ -21,20 +21,39 @@ import Util (Endo, MayFailT, (×), type (×), definitely)
 
 type Edge = Vertex × Vertex
 
--- Graphs form a semigroup but we don't actually rely on that (for efficiency).
+-- | Graphs form a semigroup but we don't actually rely on that (for efficiency).
 class Monoid g <= Graph g where
-   extend :: Vertex -> Set Vertex -> Endo g
+   -- add vertex α to g with αs as out neighbours, where each neighbour is already in g.
+   -- | add and remove satisfy:
+   -- |    remove α (add α αs g) = g
+   -- |    add α (outN α g) (remove α g) = g
+   add :: Vertex -> Set Vertex -> Endo g
+
+   -- remove a vertex from g.
+   remove :: Vertex -> g -> Endo g
+
    -- addOut α β adds β as new out-neighbour of existing vertex α, adding into g if necessary
+   -- | addIn and addOut satisfy
+   -- |   addIn α β G = op (addOut β α (op G)
    addOut :: Vertex -> Vertex -> Endo g
-   -- addIn α β adds α as new in-neighbour of existing vertex β, adding into g if necessary
-   -- addIn α β G = op (addOut β α (op G)
+   -- | addIn α β adds α as new in-neighbour of existing vertex β, adding into g if necessary
    addIn :: Vertex -> Vertex -> Endo g
+
+   -- | Whether g contains a given vertex.
    elem :: g -> Vertex -> Boolean
+
+   -- | outN and iN satisfy
+   -- |   inN G = outN (op G)
    outN :: g -> Vertex -> Set Vertex
    inN :: g -> Vertex -> Set Vertex
+
+   -- | Number of vertices in g.
    size :: g -> Int
-   remove :: Vertex -> Endo g
+
+   -- |   op (op g) = g
    op :: Endo g
+
+   -- |   Discrete graph consisting only of a set of vertices.
    discreteG :: Set Vertex -> g
 
 newtype Vertex = Vertex String
@@ -70,7 +89,7 @@ type WithGraph g a = MayFailT (GraphAccumT g (State Int)) a
 data GraphAccum2T g m a = GraphAccum2T (g -> m (a × g))
 type WithGraph2 g a = MayFailT (GraphAccum2T g (State Int)) a
 
-type GraphExtension = List (Vertex × Set Vertex) -- list of successive arguments to `extend`
+type GraphExtension = List (Vertex × Set Vertex) -- list of successive arguments to `add`
 type WithGraph3 a = MayFailT (WriterT (Endo GraphExtension) (State Int)) a
 
 runGraphAccumT :: forall g m a. GraphAccumT g m a -> m (a × Endo g)
@@ -122,12 +141,12 @@ instance Monoid g => MonadTrans (GraphAccum2T g) where
 instance (Graph g, MonadAlloc m) => MonadGraphAccum (GraphAccumT g m) where
    new αs = do
       α <- lift $ fresh
-      GraphAccumT $ pure $ α × extend α αs
+      GraphAccumT $ pure $ α × add α αs
 
 instance (Graph g, MonadAlloc m) => MonadGraphAccum (GraphAccum2T g m) where
    new αs = do
       α <- lift $ fresh
-      GraphAccum2T $ \g -> pure $ α × extend α αs g
+      GraphAccum2T $ \g -> pure $ α × add α αs g
 
 instance MonadAlloc m => MonadGraphAccum (MayFailT (WriterT (Endo GraphExtension) m)) where
    new αs = do
@@ -178,7 +197,7 @@ instance Graph GraphImpl where
       out' = S.delete α <$> D.delete (unwrap α) out
       in' = S.delete α <$> D.delete (unwrap α) in_
 
-   extend α αs (GraphImpl out in_) = GraphImpl out' in'
+   add α αs (GraphImpl out in_) = GraphImpl out' in'
       where
       out' = D.insert (unwrap α) αs out
       in' = foldl (\d α' -> D.insertWith S.union (unwrap α') (S.singleton α) d)

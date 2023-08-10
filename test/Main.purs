@@ -1,7 +1,6 @@
 module Test.Main where
 
-import Prelude
-
+import Prelude hiding (add)
 import App.Util (selectBarChart_data, selectCell, selectNth, selectNthNode, selectPair, selectSome, select_y)
 import Bindings ((↦))
 import Control.Monad.Trans.Class (lift)
@@ -12,7 +11,7 @@ import Data.Traversable (sequence)
 import Dict (fromFoldable)
 import Effect (Effect)
 import Effect.Console (log, logShow)
-import Graph (GraphImpl, extend, Vertex(..), inE)
+import Graph (GraphImpl, add, Vertex(..), inE)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import SliceGraph (fwdSlice)
@@ -280,7 +279,7 @@ test_graph =
    graph_test_initial = do
       let
          ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-         graph = foldl (\g α -> extend (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphImpl
+         graph = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphImpl
       let
          slice = fwdSlice (S.fromFoldable [ (Vertex "13"), (Vertex "12"), Vertex "11" ]) graph
       lift $ log ("Outedges: " <> show (inE (S.fromFoldable [ (Vertex "11") ]) graph))
