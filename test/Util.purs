@@ -22,6 +22,7 @@ import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Tuple (fst, snd, uncurry)
+import Data.Set (Set) as S
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -33,8 +34,8 @@ import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import EvalGraph (evalGraph, selectSources) -- , selectSinks)
-import Graph (GraphSet, empty) as G -- , vertices, GraphSet) as G
--- import Graph.Slice (bwdSlice) as G
+import Graph (GraphSet, Vertex)
+import Graph (empty) as G -- , vertices, GraphSet) as G
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
@@ -78,11 +79,11 @@ testWithSetup (File file) expected v_expect_opt setup =
    doTest' γ s = do
       e <- except $ desug s
       t × v <- except $ eval γ e bot
-      _ × (_ × _ × vα) <- except $ evalGraph γ e (G.empty :: G.GraphSet)
+      _ × (_ × _ × vα) <- except $ evalGraph γ e (G.empty :: GraphSet)
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
          { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-         s' = desugBwd e' (erase s) :: SE.Expr 𝔹
+         (s' :: SE.Expr 𝔹) = desugBwd e' (erase s)
       _ × v'' <- except $ desug s' >>= flip (eval γ') top
       let src = render (pretty s)
       s'' <- except $ parse src program
@@ -99,7 +100,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                (checkPretty "Value" expected (erase vα))
             unless (isNothing v_expect_opt)
                ( do
-                    let αs = selectSources v'' vα
+                    let (αs :: S.Set Vertex) = selectSources v'' vα
                     log ("EvalGraph.selectSources:")
                     log ("Val 𝔹: " <> render (pretty v''))
                     log ("Val Vertex: " <> render (pretty vα))
