@@ -147,9 +147,8 @@ op' out =
       OST.poke β αs acc
 
    burble :: forall r. ST r (MutableAdjMap r)
-   burble = do
-      in_ <- OST.new
-      tailRecM (go $ L.fromFoldable (D.keys out)) ?_
+   burble =
+      OST.new >>= tailRecM (go $ L.fromFoldable (D.keys out))
       where
       go :: List String -> MutableAdjMap r -> ST r (Step (MutableAdjMap r) (MutableAdjMap r))
       go Nil acc = pure $ Done acc
