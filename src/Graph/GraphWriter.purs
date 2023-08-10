@@ -7,7 +7,6 @@ import Control.Monad.Writer (WriterT, tell)
 import Data.List (List, (:))
 import Data.Identity (Identity)
 import Data.Profunctor.Strong (first, second)
-import Data.Set (Set)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (fst)
 import Graph (class Graph, Vertex(..), add)
@@ -32,82 +31,78 @@ runHeap = flip runState 0 >>> fst
 alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
 
-class Monad m <= MonadGraphWriter m where
+-- Difference graphs
+class Monad m <= MonadGraphAccum s m | m -> s where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
-   new :: Set Vertex -> m Vertex
+   new :: s Vertex -> m Vertex
 
--- Ιmplementation #1
 -- Essentially Writer instantiated to a monoid of endofunctions
-data GraphWriterT g m a = GraphWriterT (m (a × Endo g))
-type WithGraph g a = MayFailT (GraphWriterT g (State Int)) a
+data GraphAccumT (g :: Type -> Type) (s :: Type -> Type) m a = GraphAccumT (m (a × Endo (g (s Vertex))))
+type WithGraph g s a = MayFailT (GraphAccumT g s (State Int)) a
 
-runGraphWriterT :: forall g m a. GraphWriterT g m a -> m (a × Endo g)
-runGraphWriterT (GraphWriterT m) = m
+data GraphAccum2T g m a = GraphAccum2T (g -> m (a × g))
+type WithGraph2 g a = MayFailT (GraphAccum2T g (State Int)) a
 
-instance Functor m => Functor (GraphWriterT g m) where
-   map f (GraphWriterT m) = GraphWriterT $ m <#> first f
+type GraphExtension s = List (Vertex × s Vertex) -- list of successive arguments to `add`
+type WithGraph3 s a = MayFailT (WriterT (Endo (GraphExtension s)) (State Int)) a
 
-instance Apply m => Apply (GraphWriterT g m) where
-   apply (GraphWriterT m) (GraphWriterT m') = GraphWriterT $ k <$> m <*> m'
+runGraphAccumT :: forall g s m a. GraphAccumT g s m a -> m (a × Endo (g (s Vertex)))
+runGraphAccumT (GraphAccumT m) = m
+
+runGraphAccum2T :: forall g m a. GraphAccum2T g m a -> g -> m (a × g)
+runGraphAccum2T (GraphAccum2T m) = m
+
+instance Functor m => Functor (GraphAccumT g s m) where
+   map f (GraphAccumT m) = GraphAccumT $ m <#> first f
+
+instance Functor m => Functor (GraphAccum2T g m) where
+   map f (GraphAccum2T m) = GraphAccum2T $ \g -> m g <#> first f
+
+instance Apply m => Apply (GraphAccumT g s m) where
+   apply (GraphAccumT m) (GraphAccumT m') = GraphAccumT $ k <$> m <*> m'
       where
       k (f × g) (x × g') = f x × (g >>> g')
 
-instance Bind m => Bind (GraphWriterT g m) where
-   bind (GraphWriterT m) f = GraphWriterT $ do
-      x × g <- m
-      let GraphWriterT m' = f x
-      m' <#> second ((>>>) g)
-
-instance (Monoid g, Applicative m) => Applicative (GraphWriterT g m) where
-   pure a = GraphWriterT $ pure $ a × identity
-
-instance (Monoid g, Monad m) => Monad (GraphWriterT g m)
-
-instance Monoid g => MonadTrans (GraphWriterT g) where
-   lift m = GraphWriterT $ (×) <$> m <@> identity
-
-instance (Graph g, MonadAlloc m) => MonadGraphWriter (GraphWriterT g m) where
-   new αs = do
-      α <- lift $ fresh
-      GraphWriterT $ pure $ α × add α αs
-
-instance (Graph g, MonadAlloc m) => MonadGraphWriter (GraphWriter2T g m) where
-   new αs = do
-      α <- lift $ fresh
-      GraphWriter2T $ \g -> pure $ α × add α αs g
-
--- Ιmplementation #2
--- State-based rather than Writer-based.
-data GraphWriter2T g m a = GraphWriter2T (g -> m (a × g))
-type WithGraph2 g a = MayFailT (GraphWriter2T g (State Int)) a
-
-runGraphWriter2T :: forall g m a. GraphWriter2T g m a -> g -> m (a × g)
-runGraphWriter2T (GraphWriter2T m) = m
-
-instance Functor m => Functor (GraphWriter2T g m) where
-   map f (GraphWriter2T m) = GraphWriter2T $ \g -> m g <#> first f
-
-instance (Apply m, Monad m) => Apply (GraphWriter2T g m) where
+instance (Apply m, Monad m) => Apply (GraphAccum2T g m) where
    apply = ap
 
-instance Monad m => Bind (GraphWriter2T g m) where
-   bind (GraphWriter2T x) f = GraphWriter2T \g ->
-      x g >>= \(y × g') -> case f y of GraphWriter2T x' -> x' g'
+instance Bind m => Bind (GraphAccumT g s m) where
+   bind (GraphAccumT m) f = GraphAccumT $ do
+      x × g <- m
+      let GraphAccumT m' = f x
+      m' <#> second ((>>>) g)
 
-instance Monad m => Applicative (GraphWriter2T g m) where
-   pure x = GraphWriter2T \g -> pure $ x × g
+instance Monad m => Bind (GraphAccum2T g m) where
+   bind (GraphAccum2T x) f = GraphAccum2T \g ->
+      x g >>= \(y × g') -> case f y of GraphAccum2T x' -> x' g'
 
-instance Monad m => Monad (GraphWriter2T g m)
+instance (Monoid (g (s Vertex)), Applicative m) => Applicative (GraphAccumT g s m) where
+   pure a = GraphAccumT $ pure $ a × identity
 
-instance Monoid g => MonadTrans (GraphWriter2T g) where
-   lift m = GraphWriter2T \g -> (×) <$> m <@> g
+instance Monad m => Applicative (GraphAccum2T g m) where
+   pure x = GraphAccum2T \g -> pure $ x × g
 
--- Ιmplementation #3
--- Also Writer-based; builds list of adjacency maplets (arguments to extend).
-type AdjacencyMap = List (Vertex × Set Vertex)
-type WithGraph3 a = MayFailT (WriterT (Endo AdjacencyMap) (State Int)) a
+instance (Monoid (g (s Vertex)), Monad m) => Monad (GraphAccumT g s m)
 
-instance MonadAlloc m => MonadGraphWriter (MayFailT (WriterT (Endo AdjacencyMap) m)) where
+instance Monad m => Monad (GraphAccum2T g m)
+
+instance Monoid (g (s Vertex)) => MonadTrans (GraphAccumT g s) where
+   lift m = GraphAccumT $ (×) <$> m <@> identity
+
+instance Monoid g => MonadTrans (GraphAccum2T g) where
+   lift m = GraphAccum2T \g -> (×) <$> m <@> g
+
+instance (Graph (g (s Vertex)) s, MonadAlloc m) => MonadGraphAccum s (GraphAccumT g s m) where
+   new αs = do
+      α <- lift $ fresh
+      GraphAccumT $ pure $ α × add α αs
+
+instance (Graph g s, MonadAlloc m) => MonadGraphAccum s (GraphAccum2T g m) where
+   new αs = do
+      α <- lift $ fresh
+      GraphAccum2T $ \g -> pure $ α × add α αs g
+
+instance MonadAlloc m => MonadGraphAccum s (MayFailT (WriterT (Endo (GraphExtension s)) m)) where
    new αs = do
       α <- lift $ lift $ fresh
       tell $ (:) (α × αs)

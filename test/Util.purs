@@ -32,8 +32,8 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import EvalGraph (evalGraph, selectSinks, selectSources)
-import Graph (empty) as G
+import EvalGraph (evalGraph, selectSources)
+import Graph (empty, GraphSet) as G
 import Graph.Slice (bwdSlice) as G
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
@@ -78,7 +78,7 @@ testWithSetup (File file) expected v_expect_opt setup =
    doTest' γ s = do
       e <- except $ desug s
       t × v <- except $ eval γ e bot
-      g × (γα × eα × vα) <- except $ evalGraph γ e G.empty
+      g × (_ × _ × vα) <- except $ evalGraph γ e (G.empty :: G.GraphSet)
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
          { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
@@ -105,7 +105,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                     log ("Val Vertex: " <> render (pretty vα))
                     log ("Set Vertex: " <> show αs <> "\n")
                     let g' = G.bwdSlice αs g
-                        e' = selectSinks eα αs
+                        -- e' = selectSinks eα αs
                     log ("Graph bwd slice: " <> show g')
                )
             trace ("Annotated\n" <> render (pretty s')) \_ ->
