@@ -19667,6 +19667,118 @@
     })()
   });
 
+  // output-es/Control.Monad.State.Trans/index.js
+  var functorStateT = (dictFunctor) => ({ map: (f) => (v) => (s) => dictFunctor.map((v1) => $Tuple(f(v1._1), v1._2))(v(s)) });
+  var bindStateT = (dictMonad) => {
+    const bind2 = dictMonad.Bind1().bind;
+    return { bind: (v) => (f) => (s) => bind2(v(s))((v1) => f(v1._1)(v1._2)), Apply0: () => applyStateT(dictMonad) };
+  };
+  var applyStateT = (dictMonad) => {
+    const functorStateT1 = functorStateT(dictMonad.Bind1().Apply0().Functor0());
+    return {
+      apply: (() => {
+        const bind2 = bindStateT(dictMonad).bind;
+        const pure2 = applicativeStateT(dictMonad).pure;
+        return (f) => (a) => bind2(f)((f$p) => bind2(a)((a$p) => pure2(f$p(a$p))));
+      })(),
+      Functor0: () => functorStateT1
+    };
+  };
+  var applicativeStateT = (dictMonad) => {
+    const pure2 = dictMonad.Applicative0().pure;
+    return { pure: (a) => (s) => pure2($Tuple(a, s)), Apply0: () => applyStateT(dictMonad) };
+  };
+  var monadStateStateT = (dictMonad) => {
+    const pure2 = dictMonad.Applicative0().pure;
+    const monadStateT1 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+    return { state: (f) => (x2) => pure2(f(x2)), Monad0: () => monadStateT1 };
+  };
+
+  // output-es/Control.Monad.Writer.Trans/index.js
+  var monadTransWriterT = (dictMonoid) => ({
+    lift: (dictMonad) => {
+      const bind2 = dictMonad.Bind1().bind;
+      const pure2 = dictMonad.Applicative0().pure;
+      return (m) => bind2(m)((a) => pure2($Tuple(a, dictMonoid.mempty)));
+    }
+  });
+  var functorWriterT = (dictFunctor) => ({ map: (f) => dictFunctor.map((v) => $Tuple(f(v._1), v._2)) });
+  var applyWriterT = (dictSemigroup) => (dictApply) => {
+    const Functor0 = dictApply.Functor0();
+    const functorWriterT1 = functorWriterT(Functor0);
+    return { apply: (v) => (v1) => dictApply.apply(Functor0.map((v3) => (v4) => $Tuple(v3._1(v4._1), dictSemigroup.append(v3._2)(v4._2)))(v))(v1), Functor0: () => functorWriterT1 };
+  };
+  var bindWriterT = (dictSemigroup) => (dictBind) => {
+    const Apply0 = dictBind.Apply0();
+    const map6 = Apply0.Functor0().map;
+    const applyWriterT2 = applyWriterT(dictSemigroup)(Apply0);
+    return { bind: (v) => (k) => dictBind.bind(v)((v1) => map6((v3) => $Tuple(v3._1, dictSemigroup.append(v1._2)(v3._2)))(k(v1._1))), Apply0: () => applyWriterT2 };
+  };
+  var applicativeWriterT = (dictMonoid) => {
+    const applyWriterT1 = applyWriterT(dictMonoid.Semigroup0());
+    return (dictApplicative) => {
+      const applyWriterT2 = applyWriterT1(dictApplicative.Apply0());
+      return { pure: (a) => dictApplicative.pure($Tuple(a, dictMonoid.mempty)), Apply0: () => applyWriterT2 };
+    };
+  };
+  var monadWriterT = (dictMonoid) => {
+    const applicativeWriterT1 = applicativeWriterT(dictMonoid);
+    const bindWriterT1 = bindWriterT(dictMonoid.Semigroup0());
+    return (dictMonad) => {
+      const applicativeWriterT2 = applicativeWriterT1(dictMonad.Applicative0());
+      const bindWriterT2 = bindWriterT1(dictMonad.Bind1());
+      return { Applicative0: () => applicativeWriterT2, Bind1: () => bindWriterT2 };
+    };
+  };
+  var monadTellWriterT = (dictMonoid) => {
+    const Semigroup0 = dictMonoid.Semigroup0();
+    const monadWriterT1 = monadWriterT(dictMonoid);
+    return (dictMonad) => {
+      const monadWriterT22 = monadWriterT1(dictMonad);
+      return {
+        tell: (() => {
+          const $5 = dictMonad.Applicative0().pure;
+          const $6 = Tuple(unit2);
+          return (x2) => $5($6(x2));
+        })(),
+        Semigroup0: () => Semigroup0,
+        Monad1: () => monadWriterT22
+      };
+    };
+  };
+
+  // output-es/Data.Profunctor.Choice/index.js
+  var identity13 = (x2) => x2;
+  var fanin = (dictCategory) => {
+    const $1 = dictCategory.Semigroupoid0();
+    const $2 = dictCategory.Semigroupoid0();
+    return (dictChoice) => {
+      const dimap = dictChoice.Profunctor0().dimap;
+      return (l) => (r) => $1.compose(dimap((v2) => {
+        if (v2.tag === "Left") {
+          return v2._1;
+        }
+        if (v2.tag === "Right") {
+          return v2._1;
+        }
+        fail();
+      })(identity13)(dictCategory.identity))($2.compose(dictChoice.right(r))(dictChoice.left(l)));
+    };
+  };
+  var choiceFn = /* @__PURE__ */ (() => ({
+    left: (v) => (v1) => {
+      if (v1.tag === "Left") {
+        return $Either("Left", v(v1._1));
+      }
+      if (v1.tag === "Right") {
+        return $Either("Right", v1._1);
+      }
+      fail();
+    },
+    right: functorEither.map,
+    Profunctor0: () => profunctorFn
+  }))();
+
   // output-es/Control.Monad.Except.Trans/index.js
   var monadTransExceptT = {
     lift: (dictMonad) => {
@@ -19710,6 +19822,19 @@
     })(),
     Apply0: () => applyExceptT(dictMonad)
   });
+  var monadTellExceptT = (dictMonadTell) => {
+    const Monad1 = dictMonadTell.Monad1();
+    const Semigroup0 = dictMonadTell.Semigroup0();
+    const monadExceptT1 = { Applicative0: () => applicativeExceptT(Monad1), Bind1: () => bindExceptT(Monad1) };
+    return {
+      tell: (() => {
+        const $4 = monadTransExceptT.lift(Monad1);
+        return (x2) => $4(dictMonadTell.tell(x2));
+      })(),
+      Semigroup0: () => Semigroup0,
+      Monad1: () => monadExceptT1
+    };
+  };
   var monadThrowExceptT = (dictMonad) => {
     const monadExceptT1 = { Applicative0: () => applicativeExceptT(dictMonad), Bind1: () => bindExceptT(dictMonad) };
     return {
@@ -19747,73 +19872,14 @@
     };
   };
 
-  // output-es/Control.Monad.State.Trans/index.js
-  var functorStateT = (dictFunctor) => ({ map: (f) => (v) => (s) => dictFunctor.map((v1) => $Tuple(f(v1._1), v1._2))(v(s)) });
-  var bindStateT = (dictMonad) => {
-    const bind2 = dictMonad.Bind1().bind;
-    return { bind: (v) => (f) => (s) => bind2(v(s))((v1) => f(v1._1)(v1._2)), Apply0: () => applyStateT(dictMonad) };
-  };
-  var applyStateT = (dictMonad) => {
-    const functorStateT1 = functorStateT(dictMonad.Bind1().Apply0().Functor0());
-    return {
-      apply: (() => {
-        const bind2 = bindStateT(dictMonad).bind;
-        const pure2 = applicativeStateT(dictMonad).pure;
-        return (f) => (a) => bind2(f)((f$p) => bind2(a)((a$p) => pure2(f$p(a$p))));
-      })(),
-      Functor0: () => functorStateT1
-    };
-  };
-  var applicativeStateT = (dictMonad) => {
-    const pure2 = dictMonad.Applicative0().pure;
-    return { pure: (a) => (s) => pure2($Tuple(a, s)), Apply0: () => applyStateT(dictMonad) };
-  };
-  var monadStateStateT = (dictMonad) => {
-    const pure2 = dictMonad.Applicative0().pure;
-    const monadStateT1 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-    return { state: (f) => (x2) => pure2(f(x2)), Monad0: () => monadStateT1 };
-  };
-
-  // output-es/Data.Profunctor.Choice/index.js
-  var identity13 = (x2) => x2;
-  var fanin = (dictCategory) => {
-    const $1 = dictCategory.Semigroupoid0();
-    const $2 = dictCategory.Semigroupoid0();
-    return (dictChoice) => {
-      const dimap = dictChoice.Profunctor0().dimap;
-      return (l) => (r) => $1.compose(dimap((v2) => {
-        if (v2.tag === "Left") {
-          return v2._1;
-        }
-        if (v2.tag === "Right") {
-          return v2._1;
-        }
-        fail();
-      })(identity13)(dictCategory.identity))($2.compose(dictChoice.right(r))(dictChoice.left(l)));
-    };
-  };
-  var choiceFn = /* @__PURE__ */ (() => ({
-    left: (v) => (v1) => {
-      if (v1.tag === "Left") {
-        return $Either("Left", v(v1._1));
-      }
-      if (v1.tag === "Right") {
-        return $Either("Right", v1._1);
-      }
-      fail();
-    },
-    right: functorEither.map,
-    Profunctor0: () => profunctorFn
-  }))();
-
   // output-es/Graph/index.js
-  var $GraphAccum2T = (_1) => ({ tag: "GraphAccum2T", _1 });
-  var monadTransGraphAccum2T = (dictMonoid) => ({
-    lift: (dictMonad) => {
-      const Functor0 = dictMonad.Bind1().Apply0().Functor0();
-      return (m) => $GraphAccum2T((g) => Functor0.map((f) => f(g))(Functor0.map(Tuple)(m)));
-    }
-  });
+  var monoidFn = /* @__PURE__ */ (() => {
+    const semigroupFn = { append: (f) => (g) => (x2) => foldableList.foldr(Cons)(g(x2))(f(x2)) };
+    return { mempty: (v) => Nil, Semigroup0: () => semigroupFn };
+  })();
+  var monadWriterT2 = /* @__PURE__ */ monadWriterT(monoidFn);
+  var lift1 = /* @__PURE__ */ (() => monadTransWriterT(monoidFn).lift)();
+  var monadTellWriterT2 = /* @__PURE__ */ monadTellWriterT(monoidFn);
   var monadAllocStateTInt = (dictMonad) => {
     const bindStateT2 = bindStateT(dictMonad);
     const monadStateStateT2 = monadStateStateT(dictMonad);
@@ -19826,43 +19892,20 @@
       MonadState0: () => monadStateStateT2
     };
   };
-  var functorGraphAccum2T = (dictFunctor) => ({ map: (f) => (v) => $GraphAccum2T((g) => dictFunctor.map(strongFn.first(f))(v._1(g))) });
   var eqVertex = { eq: (x2) => (y2) => x2 === y2 };
   var ordVertex = { compare: (x2) => (y2) => ordString.compare(x2)(y2), Eq0: () => eqVertex };
-  var bindGraphAccum2T = (dictMonad) => {
-    const Bind1 = dictMonad.Bind1();
-    const Apply0 = Bind1.Apply0();
-    return { bind: (v) => (f) => $GraphAccum2T((g) => Bind1.bind(v._1(g))((v1) => f(v1._1)._1(v1._2))), Apply0: () => applyGraphAccum2T(Apply0)(dictMonad) };
-  };
-  var applyGraphAccum2T = (dictApply) => {
-    const functorGraphAccum2T1 = functorGraphAccum2T(dictApply.Functor0());
-    return (dictMonad) => ({
-      apply: (() => {
-        const bind2 = bindGraphAccum2T(dictMonad).bind;
-        const pure2 = applicativeGraphAccum2T(dictMonad).pure;
-        return (f) => (a) => bind2(f)((f$p) => bind2(a)((a$p) => pure2(f$p(a$p))));
-      })(),
-      Functor0: () => functorGraphAccum2T1
-    });
-  };
-  var applicativeGraphAccum2T = (dictMonad) => {
-    const pure2 = dictMonad.Applicative0().pure;
-    const Apply0 = dictMonad.Bind1().Apply0();
-    return { pure: (x2) => $GraphAccum2T((g) => pure2($Tuple(x2, g))), Apply0: () => applyGraphAccum2T(Apply0)(dictMonad) };
-  };
-  var monadGraphAccumGraphAccum1 = (dictGraph) => {
-    const lift4 = monadTransGraphAccum2T(dictGraph.Monoid0()).lift;
-    return (dictMonadAlloc) => {
-      const Monad0 = dictMonadAlloc.MonadState0().Monad0();
-      const bind2 = bindGraphAccum2T(Monad0).bind;
-      const lift1 = lift4(Monad0);
-      const pure2 = Monad0.Applicative0().pure;
-      const monadGraphAccum2T1 = { Applicative0: () => applicativeGraphAccum2T(Monad0), Bind1: () => bindGraphAccum2T(Monad0) };
-      return {
-        new: (\u03B1s) => bind2(lift1(dictMonadAlloc.fresh))((\u03B1) => $GraphAccum2T((g) => pure2($Tuple(\u03B1, dictGraph.extend(\u03B1)(\u03B1s)(g))))),
-        Graph0: () => dictGraph,
-        Monad1: () => monadGraphAccum2T1
-      };
+  var monadGraphAccumMayFailTWr = (dictMonadAlloc) => {
+    const Monad0 = dictMonadAlloc.MonadState0().Monad0();
+    const monadWriterT1 = monadWriterT2(Monad0);
+    const bindExceptT3 = bindExceptT(monadWriterT1);
+    const lift2 = monadTransExceptT.lift(monadWriterT1);
+    const lift3 = lift1(Monad0);
+    const tell = monadTellExceptT(monadTellWriterT2(Monad0)).tell;
+    const pure2 = applicativeExceptT(monadWriterT1).pure;
+    const monadExceptT = { Applicative0: () => applicativeExceptT(monadWriterT1), Bind1: () => bindExceptT(monadWriterT1) };
+    return {
+      new: (\u03B1s) => bindExceptT3.bind(lift2(lift3(dictMonadAlloc.fresh)))((\u03B1) => bindExceptT3.bind(tell(Cons($Tuple(\u03B1, \u03B1s))))(() => pure2(\u03B1))),
+      Monad0: () => monadExceptT
     };
   };
 
@@ -25205,7 +25248,7 @@
   var lazyParserT = {
     defer: (f) => {
       const m = defer(f);
-      return (state1, more, lift1, $$throw, done) => force(m)(state1, more, lift1, $$throw, done);
+      return (state1, more, lift12, $$throw, done) => force(m)(state1, more, lift12, $$throw, done);
     }
   };
   var genericShow = /* @__PURE__ */ (() => {
@@ -25225,29 +25268,29 @@
     })({ reflectSymbol: () => "Position" });
     return (x2) => $0["genericShow'"](x2);
   })();
-  var functorParserT = { map: (f) => (v) => (state1, more, lift1, $$throw, done) => more((v1) => v(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, f(a))))) };
+  var functorParserT = { map: (f) => (v) => (state1, more, lift12, $$throw, done) => more((v1) => v(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, f(a))))) };
   var applyParserT = {
-    apply: (v) => (v1) => (state1, more, lift1, $$throw, done) => more((v2) => v(
+    apply: (v) => (v1) => (state1, more, lift12, $$throw, done) => more((v2) => v(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, f) => more((v3) => v1(state2, more, lift1, $$throw, (state3, a) => more((v4) => done(state3, f(a)))))
+      (state2, f) => more((v3) => v1(state2, more, lift12, $$throw, (state3, a) => more((v4) => done(state3, f(a)))))
     )),
     Functor0: () => functorParserT
   };
   var bindParserT = {
-    bind: (v) => (next) => (state1, more, lift1, $$throw, done) => more((v1) => v(state1, more, lift1, $$throw, (state2, a) => more((v2) => next(a)(state2, more, lift1, $$throw, done)))),
+    bind: (v) => (next) => (state1, more, lift12, $$throw, done) => more((v1) => v(state1, more, lift12, $$throw, (state2, a) => more((v2) => next(a)(state2, more, lift12, $$throw, done)))),
     Apply0: () => applyParserT
   };
   var applicativeParserT = { pure: (a) => (state1, v, v1, v2, done) => done(state1, a), Apply0: () => applyParserT };
   var monadParserT = { Applicative0: () => applicativeParserT, Bind1: () => bindParserT };
   var monadRecParserT = {
-    tailRecM: (next) => (initArg) => (state1, more, lift1, $$throw, done) => {
+    tailRecM: (next) => (initArg) => (state1, more, lift12, $$throw, done) => {
       const loop = (state2, arg, gas) => next(arg)(
         state2,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state3, step) => {
           if (step.tag === "Loop") {
@@ -25329,12 +25372,12 @@
   };
   var runParserT1 = /* @__PURE__ */ runParserT(monadRecIdentity);
   var failWithPosition = (message2) => (pos) => (state1, v, v1, $$throw, v2) => $$throw(state1, $ParseError(message2, pos));
-  var fail2 = (message2) => (state1, more, lift1, $$throw, done) => more((v1) => position(
+  var fail2 = (message2) => (state1, more, lift12, $$throw, done) => more((v1) => position(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
-    (state2, a) => more((v2) => failWithPosition(message2)(a)(state2, more, lift1, $$throw, done))
+    (state2, a) => more((v2) => failWithPosition(message2)(a)(state2, more, lift12, $$throw, done))
   ));
   var plusParserT = { empty: /* @__PURE__ */ fail2("No alternative"), Alt0: () => altParserT };
   var alternativeParserT = { Applicative0: () => applicativeParserT, Plus1: () => plusParserT };
@@ -25344,10 +25387,10 @@
   var withLazyErrorMessage = (p) => (msg) => altParserT.alt(p)(lazyParserT.defer((v) => fail2("Expected " + msg(unit2))));
   var withErrorMessage = (p) => (msg) => altParserT.alt(p)(fail2("Expected " + msg));
   var $$try = (v) => (v1, $2, $3, $4, $5) => v(v1, $2, $3, (v2, $7) => $4($ParseState(v2._1, v2._2, v1._3), $7), $5);
-  var skipMany1 = (p) => (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => p(
+  var skipMany1 = (p) => (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => p(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2$1) => more((v3) => {
       const loop = (state2$1, arg, gas) => altParserT.alt((state1$1, more$1, lift1$1, throw$1, done$1) => more$1((v1$1) => p(
@@ -25359,7 +25402,7 @@
       )))((state1$1, v, v1$1, v2$2, done$1) => done$1(state1$1, $Step("Done", unit2)))(
         state2$1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state3, step) => {
           if (step.tag === "Loop") {
@@ -25378,10 +25421,10 @@
     }))
   )));
   var skipMany = (p) => altParserT.alt(skipMany1(p))((state1, v, v1, v2, done) => done(state1, unit2));
-  var sepBy1 = (p) => (sep) => (state1, more, lift1, $$throw, done) => more((v1) => p(
+  var sepBy1 = (p) => (sep) => (state1, more, lift12, $$throw, done) => more((v1) => p(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2) => {
       const $11 = manyRec2((state1$1, more$1, lift1$1, throw$1, done$1) => more$1((v2$1) => more$1((v1$1) => sep(
@@ -25391,23 +25434,23 @@
         throw$1,
         (state2$1, a$1) => more$1((v2$2) => more$1((v3) => p(state2$1, more$1, lift1$1, throw$1, (state3, a$2) => more$1((v4) => done$1(state3, a$2)))))
       ))));
-      return more((v1$1) => $11(state2, more, lift1, $$throw, (state2$1, a$1) => more((v2$1) => done(state2$1, $NonEmpty(a, a$1)))));
+      return more((v1$1) => $11(state2, more, lift12, $$throw, (state2$1, a$1) => more((v2$1) => done(state2$1, $NonEmpty(a, a$1)))));
     })
   ));
-  var sepBy = (p) => (sep) => altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => sepBy1(p)(sep)(
+  var sepBy = (p) => (sep) => altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => sepBy1(p)(sep)(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2) => done(state2, $List("Cons", a._1, a._2)))
   )))((state1, v, v1, v2, done) => done(state1, Nil));
   var option = (a) => (p) => altParserT.alt(p)((state1, v, v1, v2, done) => done(state1, a));
-  var notFollowedBy = (p) => $$try(altParserT.alt((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $$try(p)(
+  var notFollowedBy = (p) => $$try(altParserT.alt((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $$try(p)(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
-    (state2, a) => more((v2$1) => more((v3) => fail2("Negated parser succeeded")(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+    (state2, a) => more((v2$1) => more((v3) => fail2("Negated parser succeeded")(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
   ))))((state1, v, v1, v2, done) => done(state1, unit2)));
   var choice = (dictFoldable) => {
     const $1 = dictFoldable.foldr((p1) => (v) => {
@@ -25430,17 +25473,17 @@
       fail();
     };
   };
-  var between = (open) => (close) => (p) => (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => open(
+  var between = (open) => (close) => (p) => (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => open(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2$2) => more((v3) => p(
       state2,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state3, a$1) => more((v4) => more((v2$3) => more((v3$1) => close(state3, more, lift1, $$throw, (state3$1, a$2) => more((v4$1) => done(state3$1, a$1))))))
+      (state3, a$1) => more((v4) => more((v2$3) => more((v3$1) => close(state3, more, lift12, $$throw, (state3$1, a$2) => more((v4$1) => done(state3$1, a$1))))))
     )))
   )))));
   var asErrorMessage = (b) => (a) => withErrorMessage(a)(b);
@@ -25475,53 +25518,53 @@
     fail();
   };
   var rassocP1 = (x2) => (rassocOp) => (prefixP) => (term) => (postfixP) => altParserT.alt(rassocP(x2)(rassocOp)(prefixP)(term)(postfixP))((state1, v, v1, v2, done) => done(state1, x2));
-  var rassocP = (x2) => (rassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift1, $$throw, done) => more((v1) => rassocOp(
+  var rassocP = (x2) => (rassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift12, $$throw, done) => more((v1) => rassocOp(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2) => more((v1$1) => more((v1$2) => more((v1$3) => prefixP(
       state2,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2$1, a$1) => more((v2$1) => more((v1$4) => term(
         state2$1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2$2, a$2) => more((v2$2) => more((v1$5) => postfixP(
           state2$2,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2$3, a$3) => more((v2$3) => {
             const $28 = a$3(a$1(a$2));
-            return more((v2$4) => rassocP1($28)(rassocOp)(prefixP)(term)(postfixP)(state2$3, more, lift1, $$throw, (state2$4, a$4) => more((v2$5) => done(state2$4, a(x2)(a$4)))));
+            return more((v2$4) => rassocP1($28)(rassocOp)(prefixP)(term)(postfixP)(state2$3, more, lift12, $$throw, (state2$4, a$4) => more((v2$5) => done(state2$4, a(x2)(a$4)))));
           })
         )))
       )))
     )))))
   ));
-  var nassocP = (x2) => (nassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift1, $$throw, done) => more((v1) => nassocOp(
+  var nassocP = (x2) => (nassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift12, $$throw, done) => more((v1) => nassocOp(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2) => more((v1$1) => more((v1$2) => prefixP(
       state2,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2$1, a$1) => more((v2$1) => more((v1$3) => term(
         state2$1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2$2, a$2) => more((v2$2) => more((v1$4) => postfixP(
           state2$2,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2$3, a$3) => more((v2$3) => {
             const $27 = a$3(a$1(a$2));
@@ -25532,29 +25575,29 @@
     ))))
   ));
   var lassocP1 = (x2) => (lassocOp) => (prefixP) => (term) => (postfixP) => altParserT.alt(lassocP(x2)(lassocOp)(prefixP)(term)(postfixP))((state1, v, v1, v2, done) => done(state1, x2));
-  var lassocP = (x2) => (lassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift1, $$throw, done) => more((v1) => lassocOp(
+  var lassocP = (x2) => (lassocOp) => (prefixP) => (term) => (postfixP) => (state1, more, lift12, $$throw, done) => more((v1) => lassocOp(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2) => more((v1$1) => more((v1$2) => prefixP(
       state2,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2$1, a$1) => more((v2$1) => more((v1$3) => term(
         state2$1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2$2, a$2) => more((v2$2) => more((v1$4) => postfixP(
           state2$2,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2$3, a$3) => more((v2$3) => {
             const $27 = a$3(a$1(a$2));
-            return more((v2$4) => lassocP1(a(x2)($27))(lassocOp)(prefixP)(term)(postfixP)(state2$3, more, lift1, $$throw, done));
+            return more((v2$4) => lassocP1(a(x2)($27))(lassocOp)(prefixP)(term)(postfixP)(state2$3, more, lift12, $$throw, done));
           })
         )))
       )))
@@ -25575,27 +25618,27 @@
     const rassocOp = choice2(accum.rassoc);
     const $8 = altParserT.alt(prefixOp)((state1, v, v1, v2, done) => done(state1, identity14));
     const $9 = altParserT.alt(postfixOp)((state1, v, v1, v2, done) => done(state1, identity14));
-    return (state1, more, lift1, $$throw, done) => more((v1) => more((v1$1) => $8(
+    return (state1, more, lift12, $$throw, done) => more((v1) => more((v1$1) => $8(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => more((v1$2) => term(
         state2,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2$1, a$1) => more((v2$1) => more((v1$3) => $9(
           state2$1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2$2, a$2) => more((v2$2) => {
             const $28 = a$2(a(a$1));
             return more((v2$3) => altParserT.alt(rassocP($28)(rassocOp)(altParserT.alt(prefixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity14)))(term)(altParserT.alt(postfixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity14))))(altParserT.alt(lassocP($28)(lassocOp)(altParserT.alt(prefixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(
               state1$1,
               identity14
-            )))(term)(altParserT.alt(postfixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity14))))(altParserT.alt(nassocP($28)(nassocOp)(altParserT.alt(prefixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity14)))(term)(altParserT.alt(postfixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity14))))(withErrorMessage((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, $28))("operator"))))(state2$2, more, lift1, $$throw, done));
+            )))(term)(altParserT.alt(postfixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity14))))(altParserT.alt(nassocP($28)(nassocOp)(altParserT.alt(prefixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity14)))(term)(altParserT.alt(postfixOp)((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, identity14))))(withErrorMessage((state1$1, v, v1$4, v2$4, done$1) => done$1(state1$1, $28))("operator"))))(state2$2, more, lift12, $$throw, done));
           })
         )))
       )))
@@ -28291,17 +28334,10 @@
 
   // output-es/Primitive/index.js
   var map3 = /* @__PURE__ */ (() => {
-    const $0 = functorGraphAccum2T(functorStateT(functorIdentity));
+    const $0 = functorWriterT(functorStateT(functorIdentity));
     return (f) => $0.map(functorEither.map(f));
   })();
-  var lift = /* @__PURE__ */ (() => monadTransExceptT.lift((() => {
-    const $0 = {
-      Applicative0: () => applicativeStateT(monadIdentity),
-      Bind1: () => bindStateT(monadIdentity)
-    };
-    return { Applicative0: () => applicativeGraphAccum2T($0), Bind1: () => bindGraphAccum2T($0) };
-  })()))();
-  var monadAllocStateTInt2 = /* @__PURE__ */ monadAllocStateTInt(monadIdentity);
+  var $$new = /* @__PURE__ */ (() => monadGraphAccumMayFailTWr(monadAllocStateTInt(monadIdentity)).new)();
   var fanin2 = /* @__PURE__ */ fanin(categoryFn)(choiceFn);
   var isZeroNumber = { isZero: ($0) => 0 === $0 };
   var isZeroInt = { isZero: ($0) => 0 === $0 };
@@ -28311,24 +28347,21 @@
       "Foreign",
       $ForeignOp$p({
         arity: 1,
-        "op'": (dictGraph) => {
-          const $$new = monadGraphAccumGraphAccum1(dictGraph)(monadAllocStateTInt2).new;
-          return (v) => {
-            if (v.tag === "Cons") {
-              if (v._2.tag === "Nil") {
-                const v2 = op.i.match(v._1);
-                return map3(op.o.constr)(map3((v3) => $Tuple(op.fwd(v2._1), v3))(lift($$new($Map(
-                  "Two",
-                  Leaf2,
-                  v2._2,
-                  unit2,
-                  Leaf2
-                )))));
-              }
-              fail();
+        "op'": (v) => {
+          if (v.tag === "Cons") {
+            if (v._2.tag === "Nil") {
+              const v2 = op.i.match(v._1);
+              return map3(op.o.constr)(map3((v3) => $Tuple(op.fwd(v2._1), v3))($$new($Map(
+                "Two",
+                Leaf2,
+                v2._2,
+                unit2,
+                Leaf2
+              ))));
             }
             fail();
-          };
+          }
+          fail();
         },
         op: (dictAnn) => (v) => {
           if (v.tag === "Cons") {
@@ -28571,36 +28604,33 @@
       "Foreign",
       $ForeignOp$p({
         arity: 2,
-        "op'": (dictGraph) => {
-          const $$new = monadGraphAccumGraphAccum1(dictGraph)(monadAllocStateTInt2).new;
-          return (v) => {
-            if (v.tag === "Cons") {
-              if (v._2.tag === "Cons") {
-                if (v._2._2.tag === "Nil") {
-                  const $5 = op.i.match(v._1);
-                  const $6 = op.i.match(v._2._1);
-                  return map3(op.o.constr)(map3((v4) => $Tuple(op.fwd($5._1)($6._1), v4))(lift($$new((() => {
-                    if (dictIsZero.isZero($5._1)) {
-                      return $Map("Two", Leaf2, $5._2, unit2, Leaf2);
-                    }
-                    if (dictIsZero.isZero($6._1)) {
-                      return $Map("Two", Leaf2, $6._2, unit2, Leaf2);
-                    }
-                    return insert2(ordVertex)($6._2)(unit2)($Map(
-                      "Two",
-                      Leaf2,
-                      $5._2,
-                      unit2,
-                      Leaf2
-                    ));
-                  })()))));
-                }
-                fail();
+        "op'": (v) => {
+          if (v.tag === "Cons") {
+            if (v._2.tag === "Cons") {
+              if (v._2._2.tag === "Nil") {
+                const $3 = op.i.match(v._1);
+                const $4 = op.i.match(v._2._1);
+                return map3(op.o.constr)(map3((v4) => $Tuple(op.fwd($3._1)($4._1), v4))($$new((() => {
+                  if (dictIsZero.isZero($3._1)) {
+                    return $Map("Two", Leaf2, $3._2, unit2, Leaf2);
+                  }
+                  if (dictIsZero.isZero($4._1)) {
+                    return $Map("Two", Leaf2, $4._2, unit2, Leaf2);
+                  }
+                  return insert2(ordVertex)($4._2)(unit2)($Map(
+                    "Two",
+                    Leaf2,
+                    $3._2,
+                    unit2,
+                    Leaf2
+                  ));
+                })())));
               }
               fail();
             }
             fail();
-          };
+          }
+          fail();
         },
         op: (dictAnn) => {
           const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
@@ -28673,28 +28703,25 @@
       "Foreign",
       $ForeignOp$p({
         arity: 2,
-        "op'": (dictGraph) => {
-          const $$new = monadGraphAccumGraphAccum1(dictGraph)(monadAllocStateTInt2).new;
-          return (v) => {
-            if (v.tag === "Cons") {
-              if (v._2.tag === "Cons") {
-                if (v._2._2.tag === "Nil") {
-                  const $4 = op.i1.match(v._1);
-                  const $5 = op.i2.match(v._2._1);
-                  return map3(op.o.constr)(map3((v4) => $Tuple(op.fwd($4._1)($5._1), v4))(lift($$new(insert2(ordVertex)($5._2)(unit2)($Map(
-                    "Two",
-                    Leaf2,
-                    $4._2,
-                    unit2,
-                    Leaf2
-                  ))))));
-                }
-                fail();
+        "op'": (v) => {
+          if (v.tag === "Cons") {
+            if (v._2.tag === "Cons") {
+              if (v._2._2.tag === "Nil") {
+                const $2 = op.i1.match(v._1);
+                const $3 = op.i2.match(v._2._1);
+                return map3(op.o.constr)(map3((v4) => $Tuple(op.fwd($2._1)($3._1), v4))($$new(insert2(ordVertex)($3._2)(unit2)($Map(
+                  "Two",
+                  Leaf2,
+                  $2._2,
+                  unit2,
+                  Leaf2
+                )))));
               }
               fail();
             }
             fail();
-          };
+          }
+          fail();
         },
         op: (dictAnn) => {
           const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
@@ -32963,12 +32990,12 @@
   };
   var oneLineComment = (v) => {
     const $1 = skipMany(satisfy((v1) => v1 !== "\n"));
-    return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $$try(string3(v.commentLine))(
+    return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $$try(string3(v.commentLine))(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => $1(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+      (state2, a) => more((v2$1) => more((v3) => $1(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
     )));
   };
   var isReserved = (isReserved$a0$copy) => (isReserved$a1$copy) => {
@@ -33007,67 +33034,67 @@
   };
   var inCommentSingle = (v) => {
     const startEnd = concatArray(toCharArray(v.commentEnd))(toCharArray(v.commentStart));
-    const go$lazy = binding(() => lazyParserT.defer((v$1) => altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => $$try(string3(v.commentEnd))(
+    const go$lazy = binding(() => lazyParserT.defer((v$1) => altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => $$try(string3(v.commentEnd))(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => done(state2, unit2))
-    )))(altParserT.alt((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => skipMany1(noneOf(startEnd))(
+    )))(altParserT.alt((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => skipMany1(noneOf(startEnd))(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => go$lazy()(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
-    ))))(withErrorMessage((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => oneOf(startEnd)(
+      (state2, a) => more((v2$1) => more((v3) => go$lazy()(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+    ))))(withErrorMessage((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => oneOf(startEnd)(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => go$lazy()(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+      (state2, a) => more((v2$1) => more((v3) => go$lazy()(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
     ))))("end of comment")))));
     const go = go$lazy();
     return go;
   };
   var multiLineComment = (v) => {
     const $1 = inComment(v);
-    return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $$try(string3(v.commentStart))(
+    return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $$try(string3(v.commentStart))(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => $1(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+      (state2, a) => more((v2$1) => more((v3) => $1(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
     )));
   };
   var inCommentMulti = (v) => {
     const startEnd = concatArray(toCharArray(v.commentEnd))(toCharArray(v.commentStart));
-    const go$lazy = binding(() => lazyParserT.defer((v$1) => altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => $$try(string3(v.commentEnd))(
+    const go$lazy = binding(() => lazyParserT.defer((v$1) => altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => $$try(string3(v.commentEnd))(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => done(state2, unit2))
     )))(altParserT.alt((() => {
       const $4 = multiLineComment(v);
-      return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $4(
+      return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $4(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
-        (state2, a) => more((v2$1) => more((v3) => go$lazy()(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+        (state2, a) => more((v2$1) => more((v3) => go$lazy()(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
       )));
-    })())(altParserT.alt((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => skipMany1(noneOf(startEnd))(
+    })())(altParserT.alt((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => skipMany1(noneOf(startEnd))(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => go$lazy()(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
-    ))))(withErrorMessage((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => oneOf(startEnd)(
+      (state2, a) => more((v2$1) => more((v3) => go$lazy()(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+    ))))(withErrorMessage((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => oneOf(startEnd)(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => go$lazy()(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+      (state2, a) => more((v2$1) => more((v3) => go$lazy()(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
     ))))("end of comment"))))));
     const go = go$lazy();
     return go;
@@ -33091,29 +33118,29 @@
     return skipMany(altParserT.alt(skipMany1(satisfyCodePoint(isSpace)))(altParserT.alt(oneLineComment(v))(withErrorMessage(multiLineComment(v))(""))));
   };
   var makeTokenParser = (v) => {
-    const sign1 = altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => $$char("-")(
+    const sign1 = altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => $$char("-")(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => done(state2, (a$1) => -a$1))
-    )))(altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => $$char("+")(
+    )))(altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => $$char("+")(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => done(state2, identity20))
     )))((state1, v$1, v1, v2, done) => done(state1, identity20)));
     const $2 = some3(withErrorMessage(satisfyCP(isOctDigit))("oct digit"));
-    const octal = (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => oneOf(["o", "O"])(
+    const octal = (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => oneOf(["o", "O"])(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2$1) => more((v3) => more((v1$1) => $2(
         state2,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2$1, a$1) => more((v2$2) => {
           const $18 = foldlArray((v1$2) => (v2$3) => {
@@ -33130,7 +33157,7 @@
             fail();
           })($Maybe("Just", 0))(a$1);
           if ($18.tag === "Nothing") {
-            return fail2("not digits")(state2$1, more, lift1, $$throw, (state3, a$2) => more((v4) => done(state3, a$2)));
+            return fail2("not digits")(state2$1, more, lift12, $$throw, (state3, a$2) => more((v4) => done(state3, a$2)));
           }
           if ($18.tag === "Just") {
             return more((v4) => done(state2$1, $18._1));
@@ -33140,23 +33167,23 @@
       ))))
     )));
     const $4 = whiteSpace$p(v);
-    const semi2 = (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(";")(
+    const semi2 = (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(";")(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => $4(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, ";"))))))
+      (state2, a) => more((v2$1) => more((v3) => $4(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, ";"))))))
     ))));
     const $6 = some3(withErrorMessage(satisfyCP(isHexDigit))("hex digit"));
-    const hexadecimal = (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => oneOf(["x", "X"])(
+    const hexadecimal = (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => oneOf(["x", "X"])(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2$1) => more((v3) => more((v1$1) => $6(
         state2,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2$1, a$1) => more((v2$2) => {
           const $22 = foldlArray((v1$2) => (v2$3) => {
@@ -33173,7 +33200,7 @@
             fail();
           })($Maybe("Just", 0))(a$1);
           if ($22.tag === "Nothing") {
-            return fail2("not digits")(state2$1, more, lift1, $$throw, (state3, a$2) => more((v4) => done(state3, a$2)));
+            return fail2("not digits")(state2$1, more, lift12, $$throw, (state3, a$2) => more((v4) => done(state3, a$2)));
           }
           if ($22.tag === "Just") {
             return more((v4) => done(state2$1, $22._1));
@@ -33182,17 +33209,17 @@
         })
       ))))
     )));
-    const fraction = asErrorMessage("fraction")((state1, more, lift1, $$throw, done) => more((v1) => $$char(".")(
+    const fraction = asErrorMessage("fraction")((state1, more, lift12, $$throw, done) => more((v1) => $$char(".")(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => {
         const $172 = withErrorMessage(some3(withErrorMessage(satisfyCP(isDecDigit))("digit")))("fraction");
         return more((v1$1) => $172(
           state2,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2$1, a$1) => more((v2$1) => {
             const $22 = foldrArray((v1$2) => (v2$2) => {
@@ -33212,7 +33239,7 @@
               fail();
             })($Maybe("Just", 0))(a$1);
             if ($22.tag === "Nothing") {
-              return fail2("not digit")(state2$1, more, lift1, $$throw, done);
+              return fail2("not digit")(state2$1, more, lift12, $$throw, done);
             }
             if ($22.tag === "Just") {
               return done(state2$1, $22._1);
@@ -33224,19 +33251,19 @@
     )));
     const escapeGap = withErrorMessage((() => {
       const $9 = some3(withErrorMessage(satisfyCP(isSpace))("space"));
-      return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $9(
+      return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $9(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
-        (state2, a) => more((v2$1) => more((v3) => $$char("\\")(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+        (state2, a) => more((v2$1) => more((v3) => $$char("\\")(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
       )));
     })())("end of string gap");
     const $10 = some3(withErrorMessage(satisfyCP(isDecDigit))("digit"));
-    const decimal = (state1, more, lift1, $$throw, done) => more((v1) => $10(
+    const decimal = (state1, more, lift12, $$throw, done) => more((v1) => $10(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => {
         const $20 = foldlArray((v1$1) => (v2$1) => {
@@ -33253,7 +33280,7 @@
           fail();
         })($Maybe("Just", 0))(a);
         if ($20.tag === "Nothing") {
-          return fail2("not digits")(state2, more, lift1, $$throw, done);
+          return fail2("not digits")(state2, more, lift12, $$throw, done);
         }
         if ($20.tag === "Just") {
           return done(state2, $20._1);
@@ -33268,43 +33295,43 @@
         }
         return pow(10)(toNumber(e));
       };
-      return asErrorMessage("exponent")((state1, more, lift1, $$throw, done) => more((v1) => oneOf(["e", "E"])(
+      return asErrorMessage("exponent")((state1, more, lift12, $$throw, done) => more((v1) => oneOf(["e", "E"])(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2, a) => more((v2) => more((v1$1) => sign1(
           state2,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2$1, a$1) => more((v2$1) => more((v1$2) => withErrorMessage(decimal)("exponent")(
             state2$1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2$2, a$2) => more((v2$2) => done(state2$2, power(a$1(a$2))))
           )))
         )))
       )));
     })();
-    const fractExponent = (n) => altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => fraction(
+    const fractExponent = (n) => altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => fraction(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => more((v1$1) => option(1)(exponent$p)(
         state2,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2$1, a$1) => more((v2$1) => done(state2$1, (toNumber(n) + a) * a$1))
       )))
-    )))((state1, more, lift1, $$throw, done) => more((v1) => exponent$p(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, toNumber(n) * a)))));
-    const decimalFloat = (state1, more, lift1, $$throw, done) => more((v1) => decimal(
+    )))((state1, more, lift12, $$throw, done) => more((v1) => exponent$p(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, toNumber(n) * a)))));
+    const decimalFloat = (state1, more, lift12, $$throw, done) => more((v1) => decimal(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => option($Either("Left", a))((() => {
         const $23 = fractExponent(a);
@@ -33315,27 +33342,27 @@
           throw$1,
           (state2$1, a$1) => more$1((v2$1) => done$1(state2$1, $Either("Right", a$1)))
         ));
-      })())(state2, more, lift1, $$throw, done))
+      })())(state2, more, lift12, $$throw, done))
     ));
     const $15 = whiteSpace$p(v);
-    const comma2 = (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(",")(
+    const comma2 = (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(",")(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => $15(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, ","))))))
+      (state2, a) => more((v2$1) => more((v3) => $15(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, ","))))))
     ))));
     const $17 = altParserT.alt(decimal)(altParserT.alt((() => {
       const $172 = some3(withErrorMessage(satisfyCP(isOctDigit))("oct digit"));
-      return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $$char("o")(
+      return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $$char("o")(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2, a) => more((v2$1) => more((v3) => more((v1$1) => $172(
           state2,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2$1, a$1) => more((v2$2) => {
             const $33 = foldlArray((v1$2) => (v2$3) => {
@@ -33352,7 +33379,7 @@
               fail();
             })($Maybe("Just", 0))(a$1);
             if ($33.tag === "Nothing") {
-              return fail2("not digits")(state2$1, more, lift1, $$throw, (state3, a$2) => more((v4) => done(state3, a$2)));
+              return fail2("not digits")(state2$1, more, lift12, $$throw, (state3, a$2) => more((v4) => done(state3, a$2)));
             }
             if ($33.tag === "Just") {
               return more((v4) => done(state2$1, $33._1));
@@ -33363,15 +33390,15 @@
       )));
     })())((() => {
       const $172 = some3(withErrorMessage(satisfyCP(isHexDigit))("hex digit"));
-      return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $$char("x")(
+      return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $$char("x")(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2, a) => more((v2$1) => more((v3) => more((v1$1) => $172(
           state2,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2$1, a$1) => more((v2$2) => {
             const $33 = foldlArray((v1$2) => (v2$3) => {
@@ -33388,7 +33415,7 @@
               fail();
             })($Maybe("Just", 0))(a$1);
             if ($33.tag === "Nothing") {
-              return fail2("not digits")(state2$1, more, lift1, $$throw, (state3, a$2) => more((v4) => done(state3, a$2)));
+              return fail2("not digits")(state2$1, more, lift12, $$throw, (state3, a$2) => more((v4) => done(state3, a$2)));
             }
             if ($33.tag === "Just") {
               return more((v4) => done(state2$1, $33._1));
@@ -33398,32 +33425,32 @@
         ))))
       )));
     })()));
-    const charNum = (state1, more, lift1, $$throw, done) => more((v1) => $17(
+    const charNum = (state1, more, lift12, $$throw, done) => more((v1) => $17(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => {
         if (a > 1114111) {
-          return fail2("invalid escape sequence")(state2, more, lift1, $$throw, done);
+          return fail2("invalid escape sequence")(state2, more, lift12, $$throw, done);
         }
         if (a >= -2147483648 && a <= 2147483647) {
           return done(state2, fromCharCode(a));
         }
-        return fail2("invalid character code (should not happen)")(state2, more, lift1, $$throw, done);
+        return fail2("invalid character code (should not happen)")(state2, more, lift12, $$throw, done);
       })
     ));
-    const charEsc = choice3(arrayMap((v1) => (state1, more, lift1, $$throw, done) => more((v1$1) => $$char(v1._1)(
+    const charEsc = choice3(arrayMap((v1) => (state1, more, lift12, $$throw, done) => more((v1$1) => $$char(v1._1)(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => done(state2, v1._2))
     )))(zip(["a", "b", "f", "n", "r", "t", "v", "\\", '"', "'"])(["\x07", "\b", "\f", "\n", "\r", "	", "\v", "\\", '"', "'"])));
-    const charAscii = choice3(arrayMap((v1) => $$try((state1, more, lift1, $$throw, done) => more((v1$1) => string3(v1._1)(
+    const charAscii = choice3(arrayMap((v1) => $$try((state1, more, lift12, $$throw, done) => more((v1$1) => string3(v1._1)(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => done(state2, v1._2))
     ))))(zip([
@@ -33500,26 +33527,26 @@
     return {
       identifier: (() => {
         const $21 = $$try((() => {
-          const $212 = withErrorMessage((state1, more, lift1, $$throw, done) => more((v1) => v.identStart(
+          const $212 = withErrorMessage((state1, more, lift12, $$throw, done) => more((v1) => v.identStart(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2) => {
               const $30 = many3(v.identLetter);
               return more((v1$1) => $30(
                 state2,
                 more,
-                lift1,
+                lift12,
                 $$throw,
                 (state2$1, a$1) => more((v2$1) => done(state2$1, singleton(a) + fromCharArray(a$1)))
               ));
             })
           )))("identifier");
-          return (state1, more, lift1, $$throw, done) => more((v1) => $212(
+          return (state1, more, lift12, $$throw, done) => more((v1) => $212(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2) => {
               if (isReserved(theReservedNames(v))((() => {
@@ -33528,26 +33555,26 @@
                 }
                 return toLower(a);
               })())) {
-                return fail2("reserved word " + showStringImpl(a))(state2, more, lift1, $$throw, done);
+                return fail2("reserved word " + showStringImpl(a))(state2, more, lift12, $$throw, done);
               }
               return done(state2, a);
             })
           ));
         })());
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $21(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $21(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
         )));
       })(),
       reserved: (name3) => {
         const $22 = $$try((() => {
           const $222 = (() => {
             if (v.caseSensitive) {
-              return (state1, more, lift1, $$throw, done) => more((v1) => string3(name3)(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, name3))));
+              return (state1, more, lift12, $$throw, done) => more((v1) => string3(name3)(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, name3))));
             }
             const msg = showStringImpl(name3);
             const walk = (name$p) => {
@@ -33571,99 +33598,99 @@
                   return $$char(v1._1.head);
                 })())(msg);
                 const $27 = walk(v1._1.tail);
-                return (state1, more, lift1, $$throw, done) => more((v2) => more((v1$1) => $26(
+                return (state1, more, lift12, $$throw, done) => more((v2) => more((v1$1) => $26(
                   state1,
                   more,
-                  lift1,
+                  lift12,
                   $$throw,
-                  (state2, a) => more((v2$1) => more((v3) => $27(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+                  (state2, a) => more((v2$1) => more((v3) => $27(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
                 )));
               }
               fail();
             };
             const $24 = walk(name3);
-            return (state1, more, lift1, $$throw, done) => more((v1) => $24(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, name3))));
+            return (state1, more, lift12, $$throw, done) => more((v1) => $24(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, name3))));
           })();
           const $232 = withErrorMessage(notFollowedBy(v.identLetter))("end of " + name3);
-          return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $222(
+          return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $222(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
-            (state2, a) => more((v2$1) => more((v3) => $232(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+            (state2, a) => more((v2$1) => more((v3) => $232(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
           )));
         })());
         const $23 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $22(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $22(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $23(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
+          (state2, a) => more((v2$1) => more((v3) => $23(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
         )));
       },
       operator: (() => {
         const $21 = $$try((() => {
-          const $212 = withErrorMessage((state1, more, lift1, $$throw, done) => more((v1) => v.opStart(
+          const $212 = withErrorMessage((state1, more, lift12, $$throw, done) => more((v1) => v.opStart(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2) => {
               const $30 = many3(v.opLetter);
               return more((v1$1) => $30(
                 state2,
                 more,
-                lift1,
+                lift12,
                 $$throw,
                 (state2$1, a$1) => more((v2$1) => done(state2$1, singleton(a) + fromCharArray(a$1)))
               ));
             })
           )))("operator");
-          return (state1, more, lift1, $$throw, done) => more((v1) => $212(
+          return (state1, more, lift12, $$throw, done) => more((v1) => $212(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2) => {
               if (isReserved(sortBy2(ordString.compare)(v.reservedOpNames))(a)) {
-                return fail2("reserved operator " + a)(state2, more, lift1, $$throw, done);
+                return fail2("reserved operator " + a)(state2, more, lift12, $$throw, done);
               }
               return done(state2, a);
             })
           ));
         })());
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $21(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $21(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
         )));
       })(),
       reservedOp: (name3) => {
-        const $22 = $$try((state1, more, lift1, $$throw, done) => more((v1) => string3(name3)(
+        const $22 = $$try((state1, more, lift12, $$throw, done) => more((v1) => string3(name3)(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2) => withErrorMessage(notFollowedBy(v.opLetter))("end of " + name3)(state2, more, lift1, $$throw, done))
+          (state2, a) => more((v2) => withErrorMessage(notFollowedBy(v.opLetter))("end of " + name3)(state2, more, lift12, $$throw, done))
         )));
         const $23 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $22(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $22(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $23(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
+          (state2, a) => more((v2$1) => more((v3) => $23(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
         )));
       },
       charLiteral: withErrorMessage((() => {
-        const $21 = between($$char("'"))(withErrorMessage($$char("'"))("end of character"))(altParserT.alt(satisfy((c) => c !== "'" && (c !== "\\" && c > "")))(withErrorMessage((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $$char("\\")(
+        const $21 = between($$char("'"))(withErrorMessage($$char("'"))("end of character"))(altParserT.alt(satisfy((c) => c !== "'" && (c !== "\\" && c > "")))(withErrorMessage((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $$char("\\")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2$1) => more((v3) => altParserT.alt(charEsc)(altParserT.alt(charNum)(altParserT.alt(charAscii)(withErrorMessage((state1$1, more$1, lift1$1, throw$1, done$1) => more$1((v1$1) => $$char("^")(
             state1$1,
@@ -33683,26 +33710,26 @@
                 return fail2("invalid character code (should not happen)")(state2$2, more$1, lift1$1, throw$1, done$1);
               })
             )))
-          )))("escape code"))))(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+          )))("escape code"))))(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
         ))))("literal character")));
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $21(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $21(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
         )));
       })())("character"),
       stringLiteral: (() => {
         const $21 = withErrorMessage((() => {
           const $212 = between($$char('"'))(withErrorMessage($$char('"'))("end of string"))(many1(altParserT.alt((() => {
             const $213 = satisfy((c) => c !== '"' && (c !== "\\" && c > ""));
-            return (state1, more, lift1, $$throw, done) => more((v1) => $213(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, $Maybe("Just", a)))));
-          })())(withErrorMessage((state1, more, lift1, $$throw, done) => more((v1) => $$char("\\")(
+            return (state1, more, lift12, $$throw, done) => more((v1) => $213(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, $Maybe("Just", a)))));
+          })())(withErrorMessage((state1, more, lift12, $$throw, done) => more((v1) => $$char("\\")(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2) => altParserT.alt((state1$1, more$1, lift1$1, throw$1, done$1) => more$1((v1$1) => escapeGap(
               state1$1,
@@ -33737,15 +33764,15 @@
             )))("escape code"))))(state1$1, more$1, lift1$1, throw$1, (state2$1, a$1) => more$1((v2$1) => done$1(state2$1, $Maybe("Just", a$1)))))))(
               state2,
               more,
-              lift1,
+              lift12,
               $$throw,
               done
             ))
           )))("string character"))));
-          return (state1, more, lift1, $$throw, done) => more((v1) => $212(
+          return (state1, more, lift12, $$throw, done) => more((v1) => $212(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2) => done(
               state2,
@@ -33762,46 +33789,46 @@
           ));
         })())("literal string");
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $21(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $21(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
         )));
       })(),
       natural: withErrorMessage((() => {
         const $21 = altParserT.alt(withErrorMessage((() => {
           const $212 = altParserT.alt(hexadecimal)(altParserT.alt(octal)(altParserT.alt(decimal)((state1, v$1, v1, v2, done) => done(state1, 0))));
-          return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $$char("0")(
+          return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $$char("0")(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
-            (state2, a) => more((v2$1) => more((v3) => $212(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+            (state2, a) => more((v2$1) => more((v3) => $212(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
           )));
         })())(""))(decimal);
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $21(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $21(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
         )));
       })())("natural"),
       integer: withErrorMessage((() => {
         const $21 = whiteSpace$p(v);
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => more((v1$1) => more((v2$1) => more((v1$2) => sign1(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => more((v1$1) => more((v2$1) => more((v1$2) => sign1(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2$2) => more((v3) => $21(
             state2,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state3, a$1) => more((v4) => more((v2$3) => {
               const $41 = altParserT.alt(withErrorMessage((() => {
@@ -33820,11 +33847,11 @@
               return more((v1$3) => $41(
                 state3,
                 more,
-                lift1,
+                lift12,
                 $$throw,
                 (state2$1, a$2) => more((v2$4) => {
                   const $46 = a(a$2);
-                  return more((v2$5) => more((v3$1) => $22(state2$1, more, lift1, $$throw, (state3$1, a$3) => more((v4$1) => done(state3$1, $46)))));
+                  return more((v2$5) => more((v3$1) => $22(state2$1, more, lift12, $$throw, (state3$1, a$3) => more((v4$1) => done(state3$1, $46)))));
                 })
               ));
             }))
@@ -33833,47 +33860,47 @@
       })())("integer"),
       float: withErrorMessage((() => {
         const $21 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => more((v1$1) => decimal(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => more((v1$1) => decimal(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2$1) => fractExponent(a)(
             state2,
             more,
-            lift1,
+            lift12,
             $$throw,
-            (state2$1, a$1) => more((v2$2) => more((v3) => $21(state2$1, more, lift1, $$throw, (state3, a$2) => more((v4) => done(state3, a$1)))))
+            (state2$1, a$1) => more((v2$2) => more((v3) => $21(state2$1, more, lift12, $$throw, (state3, a$2) => more((v4) => done(state3, a$1)))))
           ))
         ))));
       })())("float"),
       naturalOrFloat: withErrorMessage((() => {
         const $21 = altParserT.alt((() => {
-          const $212 = altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => altParserT.alt(hexadecimal)(octal)(
+          const $212 = altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => altParserT.alt(hexadecimal)(octal)(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2) => done(state2, $Either("Left", a)))
           )))(altParserT.alt(decimalFloat)(altParserT.alt((() => {
             const $213 = fractExponent(0);
-            return (state1, more, lift1, $$throw, done) => more((v1) => $213(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, $Either("Right", a)))));
+            return (state1, more, lift12, $$throw, done) => more((v1) => $213(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, $Either("Right", a)))));
           })())((state1, v$1, v1, v2, done) => done(state1, $Either("Left", 0)))));
-          return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $$char("0")(
+          return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $$char("0")(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
-            (state2, a) => more((v2$1) => more((v3) => $212(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+            (state2, a) => more((v2$1) => more((v3) => $212(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
           )));
         })())(decimalFloat);
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $21(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $21(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
         )));
       })())("number"),
       decimal,
@@ -33881,121 +33908,121 @@
       octal,
       symbol: (name3) => {
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(name3)(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(name3)(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, name3))))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, name3))))))
         ))));
       },
       lexeme: (p) => {
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => p(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => p(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
         )));
       },
       whiteSpace: whiteSpace$p(v),
       parens: (p) => between((() => {
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("(")(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("(")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "("))))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "("))))))
         ))));
       })())((() => {
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(")")(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(")")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, ")"))))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, ")"))))))
         ))));
       })())(p),
       braces: (p) => between((() => {
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("{")(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("{")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "{"))))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "{"))))))
         ))));
       })())((() => {
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("}")(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("}")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "}"))))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "}"))))))
         ))));
       })())(p),
       angles: (p) => between((() => {
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("<")(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("<")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "<"))))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "<"))))))
         ))));
       })())((() => {
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(">")(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(">")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, ">"))))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, ">"))))))
         ))));
       })())(p),
       brackets: (p) => between((() => {
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("[")(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("[")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "["))))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "["))))))
         ))));
       })())((() => {
         const $22 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("]")(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3("]")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "]"))))))
+          (state2, a) => more((v2$1) => more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "]"))))))
         ))));
       })())(p),
       semi: semi2,
       comma: comma2,
       colon: (() => {
         const $21 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(":")(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(":")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $21(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, ":"))))))
+          (state2, a) => more((v2$1) => more((v3) => $21(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, ":"))))))
         ))));
       })(),
       dot: (() => {
         const $21 = whiteSpace$p(v);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(".")(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => string3(".")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
-          (state2, a) => more((v2$1) => more((v3) => $21(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "."))))))
+          (state2, a) => more((v2$1) => more((v3) => $21(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => more((v2$2) => done(state3, "."))))))
         ))));
       })(),
       semiSep: (p) => sepBy(p)(semi2),
@@ -34010,10 +34037,10 @@
   var many4 = /* @__PURE__ */ many(alternativeParserT)(lazyParserT);
   var some4 = (p) => {
     const $1 = some1(p);
-    return (state1, more, lift1, $$throw, done) => more((v1) => $1(
+    return (state1, more, lift12, $$throw, done) => more((v1) => $1(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => done(
         state2,
@@ -34030,24 +34057,24 @@
     ));
   };
   var sepBy1_try = (p) => (sep) => {
-    const $2 = many4($$try((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => sep(
+    const $2 = many4($$try((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => sep(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => p(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+      (state2, a) => more((v2$1) => more((v3) => p(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
     )))));
-    return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => p(
+    return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => p(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => $2(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, $NonEmpty(a, a$1))))))
+      (state2, a) => more((v2$1) => more((v3) => $2(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, $NonEmpty(a, a$1))))))
     )));
   };
   var sepBy_try = (p) => (sep) => altParserT.alt((() => {
     const $2 = sepBy1_try(p)(sep);
-    return (state1, more, lift1, $$throw, done) => more((v1) => $2(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, $List("Cons", a._1, a._2)))));
+    return (state1, more, lift12, $$throw, done) => more((v1) => $2(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, $List("Cons", a._1, a._2)))));
   })())((state1, v, v1, v2, done) => done(state1, Nil));
 
   // output-es/Parse/index.js
@@ -34092,24 +34119,24 @@
   var rArrow = /* @__PURE__ */ (() => token.reservedOp("->"))();
   var rBracket = /* @__PURE__ */ (() => {
     const $0 = token.symbol("]");
-    return (state1, more, lift1, $$throw, done) => more((v1) => $0(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, unit2))));
+    return (state1, more, lift12, $$throw, done) => more((v1) => $0(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, unit2))));
   })();
-  var topLevel = (p) => (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => token.whiteSpace(
+  var topLevel = (p) => (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => token.whiteSpace(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2$2) => more((v3) => p(
       state2,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state3, a$1) => more((v4) => more((v2$3) => more((v3$1) => eof(state3, more, lift1, $$throw, (state3$1, a$2) => more((v4$1) => done(state3$1, a$1))))))
+      (state3, a$1) => more((v4) => more((v2$3) => more((v3$1) => eof(state3, more, lift12, $$throw, (state3$1, a$2) => more((v4$1) => done(state3$1, a$1))))))
     )))
   )))));
   var lBracket = /* @__PURE__ */ (() => {
     const $0 = token.symbol("[");
-    return (state1, more, lift1, $$throw, done) => more((v1) => $0(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, unit2))));
+    return (state1, more, lift12, $$throw, done) => more((v1) => $0(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, unit2))));
   })();
   var lArrow = /* @__PURE__ */ (() => token.reservedOp("<-"))();
   var keyword2 = (str$p) => {
@@ -34118,72 +34145,72 @@
     }
     return unsafePerformEffect(throwException(error(str$p + " is not a reserved word")));
   };
-  var ident = (state1, more, lift1, $$throw, done) => more((v1) => token.identifier(
+  var ident = (state1, more, lift12, $$throw, done) => more((v1) => token.identifier(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2) => {
       if (!isCtrName(a)) {
         return done(state2, a);
       }
-      return fail2("No alternative")(state2, more, lift1, $$throw, done);
+      return fail2("No alternative")(state2, more, lift12, $$throw, done);
     })
   ));
-  var field = (p) => (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => ident(
+  var field = (p) => (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => ident(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2$1) => {
       const $11 = Tuple(a);
       return more((v3) => more((v2$2) => more((v1$1) => token.colon(
         state2,
         more,
-        lift1,
+        lift12,
         $$throw,
-        (state2$1, a$1) => more((v2$3) => more((v3$1) => p(state2$1, more, lift1, $$throw, (state3, a$2) => more((v4) => more((v4$1) => done(state3, $11(a$2)))))))
+        (state2$1, a$1) => more((v2$3) => more((v3$1) => p(state2$1, more, lift12, $$throw, (state3, a$2) => more((v4) => more((v4$1) => done(state3, $11(a$2)))))))
       ))));
     })
   )));
   var equals = /* @__PURE__ */ (() => token.reservedOp("="))();
   var ellipsis = /* @__PURE__ */ (() => token.reservedOp(".."))();
-  var ctr = (state1, more, lift1, $$throw, done) => more((v1) => token.identifier(
+  var ctr = (state1, more, lift12, $$throw, done) => more((v1) => token.identifier(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2) => {
       if (isCtrName(a)) {
         return done(state2, a);
       }
-      return fail2("No alternative")(state2, more, lift1, $$throw, done);
+      return fail2("No alternative")(state2, more, lift12, $$throw, done);
     })
   ));
   var simplePattern = (pattern$p) => altParserT.alt($$try(token.brackets((state1, v, v1, v2, done) => done(state1, PListEmpty))))(altParserT.alt((() => {
     const $1 = (() => {
-      const go$lazy = binding(() => lazyParserT.defer((v) => altParserT.alt((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => rBracket(
+      const go$lazy = binding(() => lazyParserT.defer((v) => altParserT.alt((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => rBracket(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2, a) => more((v2$1) => more((v3) => more((v4) => done(state2, PEnd))))
-      ))))((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => token.comma(
+      ))))((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => token.comma(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2, a) => more((v2$1) => more((v3) => more((v2$2) => more((v1$1) => pattern$p(
           state2,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2$1, a$1) => more((v2$3) => {
             const $19 = PNext(a$1);
             return more((v3$1) => go$lazy()(
               state2$1,
               more,
-              lift1,
+              lift12,
               $$throw,
               (state3, a$2) => more((v4) => {
                 const $24 = $19(a$2);
@@ -34196,22 +34223,22 @@
       const go = go$lazy();
       return go;
     })();
-    return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => lBracket(
+    return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => lBracket(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2$1) => more((v3) => more((v2$2) => more((v1$1) => pattern$p(
         state2,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2$1, a$1) => more((v2$3) => {
           const $18 = PListNonEmpty(a$1);
           return more((v3$1) => $1(
             state2$1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state3, a$2) => more((v4) => {
               const $23 = $18(a$2);
@@ -34221,41 +34248,41 @@
         })
       )))))
     )));
-  })())(altParserT.alt($$try((state1, more, lift1, $$throw, done) => more((v1) => more((v1$1) => ctr(
+  })())(altParserT.alt($$try((state1, more, lift12, $$throw, done) => more((v1) => more((v1$1) => ctr(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2) => {
       const $11 = PConstr(a);
       return more((v2$1) => done(state2, $11(Nil)));
     })
-  )))))(altParserT.alt($$try(token.braces((state1, more, lift1, $$throw, done) => more((v1) => sepBy(field(pattern$p))(token.comma)(
+  )))))(altParserT.alt($$try(token.braces((state1, more, lift12, $$throw, done) => more((v1) => sepBy(field(pattern$p))(token.comma)(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2) => done(state2, $Pattern("PRecord", a)))
-  )))))(altParserT.alt($$try((state1, more, lift1, $$throw, done) => more((v1) => ident(
+  )))))(altParserT.alt($$try((state1, more, lift12, $$throw, done) => more((v1) => ident(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2) => done(state2, $Pattern("PVar", a)))
-  ))))(altParserT.alt($$try(token.parens(pattern$p)))(token.parens((state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => pattern$p(
+  ))))(altParserT.alt($$try(token.parens(pattern$p)))(token.parens((state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => pattern$p(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2$1) => more((v3) => token.comma(
       state2,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state3, a$1) => more((v4) => more((v2$2) => more((v1$2) => pattern$p(
         state3,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2$1, a$2) => more((v2$3) => done(
           state2$1,
@@ -34265,10 +34292,10 @@
     )))
   )))))))))));
   var pattern = /* @__PURE__ */ (() => {
-    const $0 = buildExprParser(operators((op) => (state1, more, lift1, $$throw, done) => more((v1) => token.operator(
+    const $0 = buildExprParser(operators((op) => (state1, more, lift12, $$throw, done) => more((v1) => token.operator(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => (() => {
         if (":" === definitely("absurd")(charAt2(0)(a)) && op === a) {
@@ -34278,7 +34305,7 @@
       })()((\u03C0) => (\u03C0$p) => $Pattern("PConstr", a, $List("Cons", \u03C0, $List("Cons", \u03C0$p, Nil))))(
         state2,
         more,
-        lift1,
+        lift12,
         $$throw,
         done
       ))
@@ -34286,26 +34313,26 @@
     const go$lazy = binding(() => lazyParserT.defer((v) => $0((() => {
       const rest = (v$1) => {
         if (v$1.tag === "PConstr") {
-          return altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => simplePattern(go$lazy())(
+          return altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => simplePattern(go$lazy())(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2) => rest($Pattern(
               "PConstr",
               v$1._1,
               foldableList.foldr(Cons)($List("Cons", a, Nil))(v$1._2)
-            ))(state2, more, lift1, $$throw, done))
+            ))(state2, more, lift12, $$throw, done))
           )))((state1, v$2, v1, v2, done) => done(state1, v$1));
         }
         return (state1, v$2, v1, v2, done) => done(state1, v$1);
       };
-      return (state1, more, lift1, $$throw, done) => more((v1) => simplePattern(go$lazy())(
+      return (state1, more, lift12, $$throw, done) => more((v1) => simplePattern(go$lazy())(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
-        (state2, a) => more((v2) => rest(a)(state2, more, lift1, $$throw, done))
+        (state2, a) => more((v2) => rest(a)(state2, more, lift12, $$throw, done))
       ));
     })())));
     const go = go$lazy();
@@ -34313,65 +34340,65 @@
   })();
   var varDefs = (expr$p) => {
     const $1 = keyword2("let");
-    const $2 = sepBy1_try((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => pattern(
+    const $2 = sepBy1_try((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => pattern(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2$2) => more((v3) => equals(
         state2,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state3, a$1) => more((v4) => more((v2$3) => {
           const $19 = VarDef2(a);
-          return more((v3$1) => expr$p(state3, more, lift1, $$throw, (state3$1, a$2) => more((v4$1) => done(state3$1, $19(a$2)))));
+          return more((v3$1) => expr$p(state3, more, lift12, $$throw, (state3$1, a$2) => more((v4$1) => done(state3$1, $19(a$2)))));
         }))
       )))
     ))))))(token.semi);
-    return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $1(
+    return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $1(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => $2(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+      (state2, a) => more((v2$1) => more((v3) => $2(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
     )));
   };
   var colonEq = /* @__PURE__ */ (() => token.reservedOp(":="))();
-  var clause_uncurried = (expr$p) => (delim) => (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => pattern(
+  var clause_uncurried = (expr$p) => (delim) => (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => pattern(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2$1) => {
       const $12 = Tuple(a);
       return more((v3) => more((v2$2) => more((v1$1) => delim(
         state2,
         more,
-        lift1,
+        lift12,
         $$throw,
-        (state2$1, a$1) => more((v2$3) => more((v3$1) => expr$p(state2$1, more, lift1, $$throw, (state3, a$2) => more((v4) => more((v4$1) => done(state3, $12(a$2)))))))
+        (state2$1, a$1) => more((v2$3) => more((v3$1) => expr$p(state2$1, more, lift12, $$throw, (state3, a$2) => more((v4) => more((v4$1) => done(state3, $12(a$2)))))))
       ))));
     })
   )));
   var clause_curried = (expr$p) => (delim) => {
     const $2 = some4(simplePattern(pattern));
-    return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => $2(
+    return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => $2(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2$1) => {
         const $14 = Tuple(a);
         return more((v3) => more((v2$2) => more((v1$2) => delim(
           state2,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2$1, a$1) => more((v2$3) => more((v3$1) => expr$p(
             state2$1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state3, a$2) => more((v4) => more((v4$1) => {
               const $26 = $14(a$2);
@@ -34386,41 +34413,41 @@
     const $1 = keyword2("let");
     const $2 = sepBy1_try((() => {
       const $22 = clause_curried(expr$p)(equals);
-      return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => ident(
+      return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => ident(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2, a) => more((v2$1) => {
           const $13 = Tuple(a);
-          return more((v3) => $22(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, $13(a$1)))));
+          return more((v3) => $22(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, $13(a$1)))));
         })
       )));
     })())(token.semi);
-    return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $1(
+    return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $1(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
-      (state2, a) => more((v2$1) => more((v3) => $2(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
+      (state2, a) => more((v2$1) => more((v3) => $2(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a$1)))))
     )));
   };
   var defs = (expr$p) => {
     const $1 = choose2($$try(varDefs(expr$p)))(recDefs(expr$p));
-    return (state1, more, lift1, $$throw, done) => more((v1) => $1(
+    return (state1, more, lift12, $$throw, done) => more((v1) => $1(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => done(state2, $List("Cons", a, Nil)))
     ));
   };
   var branches = (expr$p) => (branch_) => altParserT.alt((() => {
     const $2 = branch_(expr$p)(altParserT.alt(rArrow)(equals));
-    return (state1, more, lift1, $$throw, done) => more((v1) => $2(
+    return (state1, more, lift12, $$throw, done) => more((v1) => $2(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => done(state2, $NonEmpty(a, Nil)))
     ));
@@ -34428,27 +34455,27 @@
   var bar = /* @__PURE__ */ (() => token.reservedOp("|"))();
   var backtick = /* @__PURE__ */ (() => {
     const $0 = token.symbol("`");
-    return (state1, more, lift1, $$throw, done) => more((v1) => $0(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, unit2))));
+    return (state1, more, lift12, $$throw, done) => more((v1) => $0(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, unit2))));
   })();
   var expr_ = /* @__PURE__ */ (() => {
     const $0 = buildExprParser(concatArray([
       [
         $Operator(
           "Infix",
-          (state1, more, lift1, $$throw, done) => more((v1) => between(backtick)(backtick)(ident)(
+          (state1, more, lift12, $$throw, done) => more((v1) => between(backtick)(backtick)(ident)(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2) => done(state2, (e) => (e$p) => $Expr2("BinaryApp", e, a, e$p)))
           )),
           AssocLeft
         )
       ]
-    ])(operators((op) => (state1, more, lift1, $$throw, done) => more((v1) => token.operator(
+    ])(operators((op) => (state1, more, lift12, $$throw, done) => more((v1) => token.operator(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => (() => {
         if (op === a) {
@@ -34468,53 +34495,53 @@
           return (e) => (e$p) => $Expr2("Constr", unit2, a, $List("Cons", e, $List("Cons", e$p, Nil)));
         }
         return (e) => (e$p) => $Expr2("BinaryApp", e, op, e$p);
-      })())(state2, more, lift1, $$throw, done))
+      })())(state2, more, lift12, $$throw, done))
     )))));
     const go$lazy = binding(() => lazyParserT.defer((v) => $0((() => {
       const simpleExpr = altParserT.alt(between(token.symbol("[|"))(token.symbol("|]"))((() => {
         const $3 = Matrix2(unit2);
-        const $4 = token.parens((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => ident(
+        const $4 = token.parens((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => ident(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2$1) => {
             const $14 = Tuple(a);
             return more((v3) => more((v2$2) => more((v1$1) => token.comma(
               state2,
               more,
-              lift1,
+              lift12,
               $$throw,
-              (state2$1, a$1) => more((v2$3) => more((v3$1) => ident(state2$1, more, lift1, $$throw, (state3, a$2) => more((v4) => more((v4$1) => done(state3, $14(a$2)))))))
+              (state2$1, a$1) => more((v2$3) => more((v3$1) => ident(state2$1, more, lift12, $$throw, (state3, a$2) => more((v4) => more((v4$1) => done(state3, $14(a$2)))))))
             ))));
           })
         ))));
         const $5 = keyword2("in");
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v2$1) => more((v1) => more((v2$2) => more((v1$1) => go$lazy()(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v2$1) => more((v1) => more((v2$2) => more((v1$1) => go$lazy()(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2$3) => more((v3) => bar(
             state2,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state3, a$1) => more((v4) => more((v2$4) => {
               const $24 = $3(a);
               return more((v3$1) => $4(
                 state3,
                 more,
-                lift1,
+                lift12,
                 $$throw,
                 (state3$1, a$2) => more((v4$1) => {
                   const $29 = $24(a$2);
                   return more((v3$2) => more((v2$5) => more((v1$2) => $5(
                     state3$1,
                     more,
-                    lift1,
+                    lift12,
                     $$throw,
-                    (state2$1, a$3) => more((v2$6) => more((v3$3) => go$lazy()(state2$1, more, lift1, $$throw, (state3$2, a$4) => more((v4$2) => more((v4$3) => done(state3$2, $29(a$4)))))))
+                    (state2$1, a$3) => more((v2$6) => more((v3$3) => go$lazy()(state2$1, more, lift12, $$throw, (state3$2, a$4) => more((v4$2) => more((v4$3) => done(state3$2, $29(a$4)))))))
                   ))));
                 })
               ));
@@ -34524,30 +34551,30 @@
       })()))(altParserT.alt($$try(token.brackets((state1, v$1, v1, v2, done) => done(state1, $Expr2("ListEmpty", unit2)))))(altParserT.alt((() => {
         const $3 = ListNonEmpty(unit2);
         const $4 = (() => {
-          const go$1$lazy = binding(() => lazyParserT.defer((v$1) => altParserT.alt((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => rBracket(
+          const go$1$lazy = binding(() => lazyParserT.defer((v$1) => altParserT.alt((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => rBracket(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2$1) => more((v3) => more((v4) => done(state2, $ListRest("End", unit2)))))
           ))))((() => {
             const $6 = Next(unit2);
-            return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => token.comma(
+            return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => token.comma(
               state1,
               more,
-              lift1,
+              lift12,
               $$throw,
               (state2, a) => more((v2$1) => more((v3) => more((v2$2) => more((v1$1) => go$lazy()(
                 state2,
                 more,
-                lift1,
+                lift12,
                 $$throw,
                 (state2$1, a$1) => more((v2$3) => {
                   const $23 = $6(a$1);
                   return more((v3$1) => go$1$lazy()(
                     state2$1,
                     more,
-                    lift1,
+                    lift12,
                     $$throw,
                     (state3, a$2) => more((v4) => {
                       const $28 = $23(a$2);
@@ -34561,22 +34588,22 @@
           const go$1 = go$1$lazy();
           return go$1;
         })();
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => lBracket(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => lBracket(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2$1) => more((v3) => more((v2$2) => more((v1$1) => go$lazy()(
             state2,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2$1, a$1) => more((v2$3) => {
               const $21 = $3(a$1);
               return more((v3$1) => $4(
                 state2$1,
                 more,
-                lift1,
+                lift12,
                 $$throw,
                 (state3, a$2) => more((v4) => {
                   const $26 = $21(a$2);
@@ -34588,44 +34615,44 @@
         )));
       })())(altParserT.alt(token.brackets((() => {
         const $3 = ListComp(unit2);
-        const $4 = sepBy1(altParserT.alt((state1, more, lift1, $$throw, done) => more((v2) => more((v2$1) => more((v1) => more((v1$1) => pattern(
+        const $4 = sepBy1(altParserT.alt((state1, more, lift12, $$throw, done) => more((v2) => more((v2$1) => more((v1) => more((v1$1) => pattern(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2$2) => {
             const $16 = $$Generator(a);
             return more((v2$3) => more((v3) => lArrow(
               state2,
               more,
-              lift1,
+              lift12,
               $$throw,
-              (state3, a$1) => more((v4) => more((v3$1) => go$lazy()(state3, more, lift1, $$throw, (state3$1, a$2) => more((v4$1) => done(state3$1, $16(a$2))))))
+              (state3, a$1) => more((v4) => more((v3$1) => go$lazy()(state3, more, lift12, $$throw, (state3$1, a$2) => more((v4$1) => done(state3$1, $16(a$2))))))
             )));
           })
         ))))))(altParserT.alt((() => {
           const $42 = keyword2("let");
-          return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => more((v2$1) => more((v1$2) => more((v2$2) => more((v1$3) => $42(
+          return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => more((v2$1) => more((v1$2) => more((v2$2) => more((v1$3) => $42(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2$3) => more((v3) => pattern(
               state2,
               more,
-              lift1,
+              lift12,
               $$throw,
               (state3, a$1) => more((v4) => more((v2$4) => more((v3$1) => equals(
                 state3,
                 more,
-                lift1,
+                lift12,
                 $$throw,
                 (state3$1, a$2) => more((v4$1) => more((v2$5) => {
                   const $30 = VarDef2(a$1);
                   return more((v3$2) => go$lazy()(
                     state3$1,
                     more,
-                    lift1,
+                    lift12,
                     $$throw,
                     (state3$2, a$3) => more((v4$2) => {
                       const $35 = $30(a$3);
@@ -34636,50 +34663,50 @@
               ))))
             )))
           ))))))));
-        })())((state1, more, lift1, $$throw, done) => more((v1) => go$lazy()(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, $Qualifier("Guard", a))))))))(token.comma);
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v2$1) => more((v1) => more((v2$2) => more((v3) => go$lazy()(
+        })())((state1, more, lift12, $$throw, done) => more((v1) => go$lazy()(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, $Qualifier("Guard", a))))))))(token.comma);
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v2$1) => more((v1) => more((v2$2) => more((v3) => go$lazy()(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state3, a) => more((v4) => {
             const $18 = $3(a);
             return more((v2$3) => more((v3$1) => bar(
               state3,
               more,
-              lift1,
+              lift12,
               $$throw,
               (state3$1, a$1) => more((v4$1) => more((v3$2) => more((v1$1) => $4(
                 state3$1,
                 more,
-                lift1,
+                lift12,
                 $$throw,
                 (state2, a$2) => more((v2$4) => more((v4$2) => done(state2, $18($List("Cons", a$2._1, a$2._2)))))
               ))))
             )));
           })
         ))))));
-      })()))(altParserT.alt(token.brackets((state1, more, lift1, $$throw, done) => more((v2) => more((v2$1) => more((v1) => more((v2$2) => more((v3) => go$lazy()(
+      })()))(altParserT.alt(token.brackets((state1, more, lift12, $$throw, done) => more((v2) => more((v2$1) => more((v1) => more((v2$2) => more((v3) => go$lazy()(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state3, a) => more((v4) => {
           const $16 = ListEnum(a);
           return more((v2$3) => more((v3$1) => ellipsis(
             state3,
             more,
-            lift1,
+            lift12,
             $$throw,
-            (state3$1, a$1) => more((v4$1) => more((v3$2) => go$lazy()(state3$1, more, lift1, $$throw, (state3$2, a$2) => more((v4$2) => done(state3$2, $16(a$2))))))
+            (state3$1, a$1) => more((v4$1) => more((v3$2) => go$lazy()(state3$1, more, lift12, $$throw, (state3$2, a$2) => more((v4$2) => done(state3$2, $16(a$2))))))
           )));
         })
       ))))))))(altParserT.alt($$try((() => {
         const $3 = Constr2(unit2);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v1$1) => ctr(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v1$1) => ctr(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2) => {
             const $14 = $3(a);
@@ -34687,96 +34714,96 @@
           })
         )));
       })()))(altParserT.alt(between(token.symbol("{|"))(token.symbol("|}"))((() => {
-        const $3 = sepBy((state1, more, lift1, $$throw, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => go$lazy()(
+        const $3 = sepBy((state1, more, lift12, $$throw, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => go$lazy()(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2$2) => more((v3) => colonEq(
             state2,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state3, a$1) => more((v4) => more((v2$3) => {
               const $20 = Pair(a);
-              return more((v3$1) => go$lazy()(state3, more, lift1, $$throw, (state3$1, a$2) => more((v4$1) => done(state3$1, $20(a$2)))));
+              return more((v3$1) => go$lazy()(state3, more, lift12, $$throw, (state3$1, a$2) => more((v4$1) => done(state3$1, $20(a$2)))));
             }))
           )))
         ))))))(token.comma);
         const $4 = Dictionary2(unit2);
-        return (state1, more, lift1, $$throw, done) => more((v1) => $3(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, $4(a)))));
+        return (state1, more, lift12, $$throw, done) => more((v1) => $3(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, $4(a)))));
       })()))(altParserT.alt(token.braces((() => {
         const $3 = Record2(unit2);
-        return (state1, more, lift1, $$throw, done) => more((v1) => sepBy(field(go$lazy()))(token.comma)(
+        return (state1, more, lift12, $$throw, done) => more((v1) => sepBy(field(go$lazy()))(token.comma)(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2) => done(state2, $3(a)))
         ));
-      })()))(altParserT.alt($$try((state1, more, lift1, $$throw, done) => more((v1) => ident(
+      })()))(altParserT.alt($$try((state1, more, lift12, $$throw, done) => more((v1) => ident(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2, a) => more((v2) => done(state2, $Expr2("Var", a)))
       ))))(altParserT.alt($$try((() => {
-        const $3 = altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => $$char("-")(
+        const $3 = altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => $$char("-")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2) => done(state2, (a$1) => -a$1))
-        )))(altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => $$char("+")(
+        )))(altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => $$char("+")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2) => done(state2, identity21))
         )))((state1, v$1, v1, v2, done) => done(state1, identity21)));
-        return (state1, more, lift1, $$throw, done) => more((v1) => $3(
+        return (state1, more, lift12, $$throw, done) => more((v1) => $3(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2) => {
             const $13 = Float2(unit2);
-            return more((v1$1) => token.float(state2, more, lift1, $$throw, (state2$1, a$1) => more((v2$1) => done(state2$1, $13(a(a$1))))));
+            return more((v1$1) => token.float(state2, more, lift12, $$throw, (state2$1, a$1) => more((v2$1) => done(state2$1, $13(a(a$1))))));
           })
         ));
       })()))(altParserT.alt($$try((() => {
-        const $3 = altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => $$char("-")(
+        const $3 = altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => $$char("-")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2) => done(state2, (a$1) => -a$1))
-        )))(altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => $$char("+")(
+        )))(altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => $$char("+")(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2) => done(state2, identity21))
         )))((state1, v$1, v1, v2, done) => done(state1, identity21)));
-        return (state1, more, lift1, $$throw, done) => more((v1) => $3(
+        return (state1, more, lift12, $$throw, done) => more((v1) => $3(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2) => {
             const $13 = Int2(unit2);
-            return more((v1$1) => token.natural(state2, more, lift1, $$throw, (state2$1, a$1) => more((v2$1) => done(state2$1, $13(a(a$1))))));
+            return more((v1$1) => token.natural(state2, more, lift12, $$throw, (state2$1, a$1) => more((v2$1) => done(state2$1, $13(a(a$1))))));
           })
         ));
       })()))(altParserT.alt((() => {
         const $3 = Str2(unit2);
-        return (state1, more, lift1, $$throw, done) => more((v1) => token.stringLiteral(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, $3(a)))));
+        return (state1, more, lift12, $$throw, done) => more((v1) => token.stringLiteral(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, $3(a)))));
       })())(altParserT.alt((() => {
         const $3 = sepBy1(defs(go$lazy()))(token.semi);
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v1$1) => $3(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v1$1) => $3(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2) => {
             const $14 = bindList.bind($List("Cons", a._1, a._2))(identity7);
@@ -34786,12 +34813,12 @@
               return more((v1$2) => more((v1$3) => more((v2$2) => more((v1$4) => $17(
                 state2,
                 more,
-                lift1,
+                lift12,
                 $$throw,
                 (state2$1, a$1) => more((v2$3) => more((v3) => go$lazy()(
                   state2$1,
                   more,
-                  lift1,
+                  lift12,
                   $$throw,
                   (state3, a$2) => more((v4) => more((v2$4) => {
                     const $30 = $16(a$2);
@@ -34805,45 +34832,45 @@
       })())(altParserT.alt((() => {
         const $3 = keyword2("match");
         const $4 = keyword2("as");
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => more((v2$2) => more((v1$2) => $3(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => more((v2$1) => more((v1$1) => more((v2$2) => more((v1$2) => $3(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2$3) => more((v3) => go$lazy()(
             state2,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state3, a$1) => more((v4) => more((v2$4) => more((v3$1) => $4(
               state3,
               more,
-              lift1,
+              lift12,
               $$throw,
               (state3$1, a$2) => more((v4$1) => more((v2$5) => {
                 const $29 = MatchAs(a$1);
-                return more((v3$2) => branches(go$lazy())(clause_uncurried)(state3$1, more, lift1, $$throw, (state3$2, a$3) => more((v4$2) => done(state3$2, $29(a$3)))));
+                return more((v3$2) => branches(go$lazy())(clause_uncurried)(state3$1, more, lift12, $$throw, (state3$2, a$3) => more((v4$2) => done(state3$2, $29(a$3)))));
               }))
             ))))
           )))
         )))))));
       })())(altParserT.alt($$try(token.parens(go$lazy())))(altParserT.alt($$try((() => {
         const $3 = token.parens(token.operator);
-        return (state1, more, lift1, $$throw, done) => more((v1) => $3(state1, more, lift1, $$throw, (state2, a) => more((v2) => done(state2, $Expr2("Op", a)))));
-      })()))(altParserT.alt(token.parens((state1, more, lift1, $$throw, done) => more((v2) => more((v2$1) => more((v3) => more((v2$2) => more((v1) => go$lazy()(
+        return (state1, more, lift12, $$throw, done) => more((v1) => $3(state1, more, lift12, $$throw, (state2, a) => more((v2) => done(state2, $Expr2("Op", a)))));
+      })()))(altParserT.alt(token.parens((state1, more, lift12, $$throw, done) => more((v2) => more((v2$1) => more((v3) => more((v2$2) => more((v1) => go$lazy()(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
         (state2, a) => more((v2$3) => more((v3$1) => token.comma(
           state2,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state3, a$1) => more((v4) => more((v4$1) => more((v3$2) => go$lazy()(
             state3,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state3$1, a$2) => more((v4$2) => done(
               state3$1,
@@ -34853,15 +34880,15 @@
         )))
       ))))))))(altParserT.alt((() => {
         const $3 = keyword2("fun");
-        return (state1, more, lift1, $$throw, done) => more((v1) => more((v2) => more((v1$1) => $3(
+        return (state1, more, lift12, $$throw, done) => more((v1) => more((v2) => more((v1$1) => $3(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2$1) => more((v3) => branches(go$lazy())(clause_curried)(
             state2,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state3, a$1) => more((v4) => more((v2$2) => done(state3, $Expr2("Lambda", a$1))))
           )))
@@ -34870,36 +34897,36 @@
         const $3 = keyword2("if");
         const $4 = keyword2("then");
         const $5 = keyword2("else");
-        return (state1, more, lift1, $$throw, done) => more((v2) => more((v2$1) => more((v1) => more((v2$2) => more((v2$3) => more((v1$1) => more((v2$4) => more((v3) => more((v2$5) => more((v1$2) => $3(
+        return (state1, more, lift12, $$throw, done) => more((v2) => more((v2$1) => more((v1) => more((v2$2) => more((v2$3) => more((v1$1) => more((v2$4) => more((v3) => more((v2$5) => more((v1$2) => $3(
           state1,
           more,
-          lift1,
+          lift12,
           $$throw,
           (state2, a) => more((v2$6) => more((v3$1) => go$lazy()(
             state2,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state3, a$1) => more((v4) => more((v4$1) => {
               const $29 = IfElse(a$1);
               return more((v2$7) => more((v3$2) => $4(
                 state3,
                 more,
-                lift1,
+                lift12,
                 $$throw,
                 (state3$1, a$2) => more((v4$2) => more((v3$3) => go$lazy()(
                   state3$1,
                   more,
-                  lift1,
+                  lift12,
                   $$throw,
                   (state3$2, a$3) => more((v4$3) => {
                     const $39 = $29(a$3);
                     return more((v2$8) => more((v3$4) => $5(
                       state3$2,
                       more,
-                      lift1,
+                      lift12,
                       $$throw,
-                      (state3$3, a$4) => more((v4$4) => more((v3$5) => go$lazy()(state3$3, more, lift1, $$throw, (state3$4, a$5) => more((v4$5) => done(state3$4, $39(a$5))))))
+                      (state3$3, a$4) => more((v4$4) => more((v3$5) => go$lazy()(state3$3, more, lift12, $$throw, (state3$4, a$5) => more((v4$5) => done(state3$4, $39(a$5))))))
                     )));
                   })
                 )))
@@ -34910,34 +34937,34 @@
       })()))))))))))))))))));
       const rest = (v$1) => {
         if (v$1.tag === "Constr") {
-          return altParserT.alt((state1, more, lift1, $$throw, done) => more((v1) => simpleExpr(
+          return altParserT.alt((state1, more, lift12, $$throw, done) => more((v1) => simpleExpr(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2) => rest($Expr2(
               "Constr",
               v$1._1,
               v$1._2,
               foldableList.foldr(Cons)($List("Cons", a, Nil))(v$1._3)
-            ))(state2, more, lift1, $$throw, done))
+            ))(state2, more, lift12, $$throw, done))
           )))((state1, v$2, v1, v2, done) => done(state1, v$1));
         }
         return altParserT.alt((() => {
           const $6 = App3(v$1);
-          return (state1, more, lift1, $$throw, done) => more((v1) => more((v1$1) => simpleExpr(
+          return (state1, more, lift12, $$throw, done) => more((v1) => more((v1$1) => simpleExpr(
             state1,
             more,
-            lift1,
+            lift12,
             $$throw,
             (state2, a) => more((v2) => {
               const $17 = $6(a);
-              return more((v2$1) => rest($17)(state2, more, lift1, $$throw, done));
+              return more((v2$1) => rest($17)(state2, more, lift12, $$throw, done));
             })
           )));
         })())((state1, v$2, v1, v2, done) => done(state1, v$1));
       };
-      return (state1, more, lift1, $$throw, done) => more((v1) => simpleExpr(state1, more, lift1, $$throw, (state2, a) => more((v2) => rest(a)(state2, more, lift1, $$throw, done))));
+      return (state1, more, lift12, $$throw, done) => more((v1) => simpleExpr(state1, more, lift12, $$throw, (state2, a) => more((v2) => rest(a)(state2, more, lift12, $$throw, done))));
     })())));
     const go = go$lazy();
     return go;
@@ -34945,18 +34972,18 @@
   var module_ = /* @__PURE__ */ (() => {
     const $0 = topLevel((() => {
       const $02 = sepBy_try(defs(expr_))(token.semi);
-      return (state1, more, lift1, $$throw, done) => more((v2) => more((v1) => $02(
+      return (state1, more, lift12, $$throw, done) => more((v2) => more((v1) => $02(
         state1,
         more,
-        lift1,
+        lift12,
         $$throw,
-        (state2, a) => more((v2$1) => more((v3) => token.semi(state2, more, lift1, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
+        (state2, a) => more((v2$1) => more((v3) => token.semi(state2, more, lift12, $$throw, (state3, a$1) => more((v4) => done(state3, a)))))
       )));
     })());
-    return (state1, more, lift1, $$throw, done) => more((v1) => $0(
+    return (state1, more, lift12, $$throw, done) => more((v1) => $0(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => done(state2, $Module2(bindList.bind(a)(identity7))))
     ));
@@ -34998,28 +35025,32 @@
   var fromFoldable10 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2))();
   var show22 = /* @__PURE__ */ (() => showSet(showString).show)();
   var toUnfoldable14 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
+  var monoidFn2 = /* @__PURE__ */ (() => {
+    const semigroupFn = { append: (f) => (g) => (x2) => foldableList.foldr(Cons)(g(x2))(f(x2)) };
+    return { mempty: (v) => Nil, Semigroup0: () => semigroupFn };
+  })();
   var monadStateT = {
     Applicative0: () => applicativeStateT(monadIdentity),
     Bind1: () => bindStateT(monadIdentity)
   };
-  var monadGraphAccum2T = { Applicative0: () => applicativeGraphAccum2T(monadStateT), Bind1: () => bindGraphAccum2T(monadStateT) };
-  var applicativeExceptT2 = /* @__PURE__ */ applicativeExceptT(monadGraphAccum2T);
+  var monadWriterT3 = /* @__PURE__ */ monadWriterT(monoidFn2)(monadStateT);
+  var applicativeExceptT2 = /* @__PURE__ */ applicativeExceptT(monadWriterT3);
   var traverse13 = /* @__PURE__ */ (() => {
     const $0 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT2);
     return (x2) => $0((v) => x2);
   })();
   var functorExceptT = /* @__PURE__ */ (() => {
-    const $0 = functorGraphAccum2T(functorStateT(functorIdentity));
+    const $0 = functorWriterT(functorStateT(functorIdentity));
     return { map: (f) => $0.map(functorEither.map(f)) };
   })();
-  var lift2 = /* @__PURE__ */ (() => monadTransExceptT.lift(monadGraphAccum2T))();
-  var monadAllocStateTInt3 = /* @__PURE__ */ monadAllocStateTInt(monadIdentity);
+  var $$new2 = /* @__PURE__ */ (() => monadGraphAccumMayFailTWr(monadAllocStateTInt(monadIdentity)).new)();
   var fv2 = /* @__PURE__ */ (() => fVDict(fVElim).fv)();
+  var applicativeStateT3 = /* @__PURE__ */ applicativeStateT(monadIdentity);
   var except = /* @__PURE__ */ (() => {
-    const $0 = applicativeGraphAccum2T(monadStateT);
+    const $0 = applicativeWriterT(monoidFn2)(applicativeStateT3);
     return (x2) => $0.pure(x2);
   })();
-  var bindExceptT2 = /* @__PURE__ */ bindExceptT(monadGraphAccum2T);
+  var bindExceptT2 = /* @__PURE__ */ bindExceptT(monadWriterT3);
   var traverse23 = /* @__PURE__ */ (() => traversableList.traverse(applicativeExceptT2))();
   var traverse32 = /* @__PURE__ */ (() => traversablePair.traverse(applicativeExceptT2))();
   var fromFoldable17 = /* @__PURE__ */ fromFoldable2(foldableList);
@@ -35141,208 +35172,131 @@
     }
     fail();
   };
-  var closeDefs2 = (dictGraph) => {
-    const $$new = monadGraphAccumGraphAccum1(dictGraph)(monadAllocStateTInt3).new;
-    return (\u03B3) => (\u03C1) => (\u03B1s) => traverse13((\u03C3) => {
-      const \u03C1$p = $$for(\u03C1)(\u03C3);
-      return functorExceptT.map(Fun)(functorExceptT.map((f) => f(\u03C3))(functorExceptT.map((f) => f(\u03C1$p))((() => {
-        const $7 = restrict(\u03B3)(unionWith(ordString)($$const)(fv2(\u03C1$p))(fVElim.fv(\u03C3)));
-        return functorExceptT.map((f) => f($7))(functorExceptT.map(Closure)(lift2($$new(\u03B1s))));
-      })())));
-    })(\u03C1);
-  };
-  var $$eval2 = (dictGraph) => {
-    const $$new = monadGraphAccumGraphAccum1(dictGraph)(monadAllocStateTInt3).new;
-    const closeDefs1 = closeDefs2(dictGraph);
-    return (v) => (v1) => (v2) => {
-      if (v1.tag === "Var") {
-        return except(lookup$p(v1._1)(v));
-      }
-      if (v1.tag === "Op") {
-        return except(lookup$p(v1._1)(v));
-      }
-      if (v1.tag === "Int") {
-        return functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Int3)(lift2($$new(insert2(ordVertex)(v1._1)(unit2)(v2)))));
-      }
-      if (v1.tag === "Float") {
-        return functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Float3)(lift2($$new(insert2(ordVertex)(v1._1)(unit2)(v2)))));
-      }
-      if (v1.tag === "Str") {
-        return functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Str3)(lift2($$new(insert2(ordVertex)(v1._1)(unit2)(v2)))));
-      }
-      if (v1.tag === "Record") {
-        return bindExceptT2.bind(traverse13((() => {
-          const $6 = $$eval2(dictGraph)(v);
-          return (a) => $6(a)(v2);
-        })())(v1._2))((xvs) => functorExceptT.map((f) => f(xvs))(functorExceptT.map(Record3)(lift2($$new(insert2(ordVertex)(v1._1)(unit2)(v2))))));
-      }
-      if (v1.tag === "Dictionary") {
-        return bindExceptT2.bind(functorExceptT.map(unzip2)(traverse23(traverse32((() => {
-          const $6 = $$eval2(dictGraph)(v);
-          return (a) => $6(a)(v2);
-        })()))(v1._2)))((v3) => {
-          const v4 = unzip(listMap(string2.match)(v3._1));
-          const $8 = fromFoldable17(zipWith(Tuple)(v4._1)(zipWith(Tuple)(v4._2)(v3._2)));
-          return functorExceptT.map((f) => f($8))(functorExceptT.map(Dictionary3)(lift2($$new(insert2(ordVertex)(v1._1)(unit2)(v2)))));
-        });
-      }
-      if (v1.tag === "Constr") {
-        return bindExceptT2.bind(except(checkArity(v1._2)((() => {
-          const go = (go$a0$copy) => (go$a1$copy) => {
-            let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-            while (go$c) {
-              const b = go$a0, v$1 = go$a1;
-              if (v$1.tag === "Nil") {
-                go$c = false;
-                go$r = b;
-                continue;
-              }
-              if (v$1.tag === "Cons") {
-                go$a0 = b + 1 | 0;
-                go$a1 = v$1._2;
-                continue;
-              }
-              fail();
+  var closeDefs2 = (\u03B3) => (\u03C1) => (\u03B1s) => traverse13((\u03C3) => {
+    const \u03C1$p = $$for(\u03C1)(\u03C3);
+    return functorExceptT.map(Fun)(functorExceptT.map((f) => f(\u03C3))(functorExceptT.map((f) => f(\u03C1$p))((() => {
+      const $5 = restrict(\u03B3)(unionWith(ordString)($$const)(fv2(\u03C1$p))(fVElim.fv(\u03C3)));
+      return functorExceptT.map((f) => f($5))(functorExceptT.map(Closure)($$new2(\u03B1s)));
+    })())));
+  })(\u03C1);
+  var $$eval2 = (v) => (v1) => (v2) => {
+    if (v1.tag === "Var") {
+      return except(lookup$p(v1._1)(v));
+    }
+    if (v1.tag === "Op") {
+      return except(lookup$p(v1._1)(v));
+    }
+    if (v1.tag === "Int") {
+      return functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Int3)($$new2(insert2(ordVertex)(v1._1)(unit2)(v2))));
+    }
+    if (v1.tag === "Float") {
+      return functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Float3)($$new2(insert2(ordVertex)(v1._1)(unit2)(v2))));
+    }
+    if (v1.tag === "Str") {
+      return functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Str3)($$new2(insert2(ordVertex)(v1._1)(unit2)(v2))));
+    }
+    if (v1.tag === "Record") {
+      return bindExceptT2.bind(traverse13((() => {
+        const $3 = $$eval2(v);
+        return (a) => $3(a)(v2);
+      })())(v1._2))((xvs) => functorExceptT.map((f) => f(xvs))(functorExceptT.map(Record3)($$new2(insert2(ordVertex)(v1._1)(unit2)(v2)))));
+    }
+    if (v1.tag === "Dictionary") {
+      return bindExceptT2.bind(functorExceptT.map(unzip2)(traverse23(traverse32((() => {
+        const $3 = $$eval2(v);
+        return (a) => $3(a)(v2);
+      })()))(v1._2)))((v3) => {
+        const v4 = unzip(listMap(string2.match)(v3._1));
+        const $5 = fromFoldable17(zipWith(Tuple)(v4._1)(zipWith(Tuple)(v4._2)(v3._2)));
+        return functorExceptT.map((f) => f($5))(functorExceptT.map(Dictionary3)($$new2(insert2(ordVertex)(v1._1)(unit2)(v2))));
+      });
+    }
+    if (v1.tag === "Constr") {
+      return bindExceptT2.bind(except(checkArity(v1._2)((() => {
+        const go = (go$a0$copy) => (go$a1$copy) => {
+          let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+          while (go$c) {
+            const b = go$a0, v$1 = go$a1;
+            if (v$1.tag === "Nil") {
+              go$c = false;
+              go$r = b;
+              continue;
             }
-            ;
-            return go$r;
-          };
-          return go(0)(v1._3);
-        })())))(() => bindExceptT2.bind(traverse23((() => {
-          const $7 = $$eval2(dictGraph)(v);
-          return (a) => $7(a)(v2);
-        })())(v1._3))((vs) => functorExceptT.map((f) => f(vs))(functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Constr3)(lift2($$new(insert2(ordVertex)(v1._1)(unit2)(v2))))))));
-      }
-      if (v1.tag === "Matrix") {
-        return bindExceptT2.bind($$eval2(dictGraph)(v)(v1._4)(v2))((v3) => {
-          const v4 = intPair.match(v3)._1;
-          return bindExceptT2.bind(except((() => {
-            const $8 = "array must be at least (" + (show32($Tuple(1, 1)) + ("); got (" + (show32($Tuple(v4._1._1, v4._2._1)) + ")")));
-            if (greaterThanOrEq($Tuple(v4._1._1, v4._2._1))($Tuple(1, 1))) {
-              return $Either("Right", unit2);
+            if (v$1.tag === "Cons") {
+              go$a0 = b + 1 | 0;
+              go$a1 = v$1._2;
+              continue;
             }
-            return $Either("Left", $8);
-          })()))(() => bindExceptT2.bind(sequence3(arrayBind(range2(1)(v4._1._1))((i) => [
-            sequence3(arrayBind(range2(1)(v4._2._1))((j) => [
-              $$eval2(dictGraph)(unionWith2((v$1) => identity17)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._3._1)($Val(
-                "Int",
-                v4._1._2,
-                i
-              )))))(runST(bind_(newImpl)(poke3(v1._3._2)($Val("Int", v4._2._2, j)))))))(v1._2)(v2)
-            ]))
-          ])))((vss) => functorExceptT.map((f) => f($Tuple(vss, $Tuple($Tuple(v4._1._1, v4._1._2), $Tuple(v4._2._1, v4._2._2)))))(functorExceptT.map(Matrix3)(lift2($$new(insert2(ordVertex)(v1._1)(unit2)(v2)))))));
-        });
-      }
-      if (v1.tag === "Lambda") {
-        return functorExceptT.map(Fun)(functorExceptT.map((f) => f(v1._1))(functorExceptT.map((f) => f(empty2))((() => {
-          const $6 = restrict(v)(fVElim.fv(v1._1));
-          return functorExceptT.map((f) => f($6))(functorExceptT.map(Closure)(lift2($$new(v2))));
-        })())));
-      }
-      if (v1.tag === "Project") {
-        return bindExceptT2.bind($$eval2(dictGraph)(v)(v1._1)(v2))((v3) => except((() => {
-          if (v3.tag === "Record") {
-            return lookup$p(v1._2)(v3._2);
+            fail();
           }
-          return $Either("Left", "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v3).lines) + ", expected record"));
-        })()));
-      }
-      if (v1.tag === "App") {
-        return bindExceptT2.bind($$eval2(dictGraph)(v)(v1._1)(v2))((v3) => bindExceptT2.bind($$eval2(dictGraph)(v)(v1._2)(v2))((v$p) => apply3(dictGraph)(v3)(v$p)));
-      }
-      if (v1.tag === "Let") {
-        return bindExceptT2.bind($$eval2(dictGraph)(v)(v1._1._2)(v2))((v3) => bindExceptT2.bind(except(match4(v3)(v1._1._1)))((v4) => $$eval2(dictGraph)(unionWith2((v$1) => identity17)(v)(v4._1))(v1._2)(v2)));
-      }
-      if (v1.tag === "LetRec") {
-        return bindExceptT2.bind(closeDefs1(v)(v1._1)(v2))((\u03B3$p) => $$eval2(dictGraph)(unionWith2((v$1) => identity17)(v)(\u03B3$p))(v1._2)(v2));
-      }
-      fail();
-    };
+          ;
+          return go$r;
+        };
+        return go(0)(v1._3);
+      })())))(() => bindExceptT2.bind(traverse23((() => {
+        const $4 = $$eval2(v);
+        return (a) => $4(a)(v2);
+      })())(v1._3))((vs) => functorExceptT.map((f) => f(vs))(functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Constr3)($$new2(insert2(ordVertex)(v1._1)(unit2)(v2)))))));
+    }
+    if (v1.tag === "Matrix") {
+      return bindExceptT2.bind($$eval2(v)(v1._4)(v2))((v3) => {
+        const v4 = intPair.match(v3)._1;
+        return bindExceptT2.bind(except((() => {
+          const $5 = "array must be at least (" + (show32($Tuple(1, 1)) + ("); got (" + (show32($Tuple(v4._1._1, v4._2._1)) + ")")));
+          if (greaterThanOrEq($Tuple(v4._1._1, v4._2._1))($Tuple(1, 1))) {
+            return $Either("Right", unit2);
+          }
+          return $Either("Left", $5);
+        })()))(() => bindExceptT2.bind(sequence3(arrayBind(range2(1)(v4._1._1))((i) => [
+          sequence3(arrayBind(range2(1)(v4._2._1))((j) => [
+            $$eval2(unionWith2((v$1) => identity17)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._3._1)($Val(
+              "Int",
+              v4._1._2,
+              i
+            )))))(runST(bind_(newImpl)(poke3(v1._3._2)($Val("Int", v4._2._2, j)))))))(v1._2)(v2)
+          ]))
+        ])))((vss) => functorExceptT.map((f) => f($Tuple(vss, $Tuple($Tuple(v4._1._1, v4._1._2), $Tuple(v4._2._1, v4._2._2)))))(functorExceptT.map(Matrix3)($$new2(insert2(ordVertex)(v1._1)(unit2)(v2))))));
+      });
+    }
+    if (v1.tag === "Lambda") {
+      return functorExceptT.map(Fun)(functorExceptT.map((f) => f(v1._1))(functorExceptT.map((f) => f(empty2))((() => {
+        const $3 = restrict(v)(fVElim.fv(v1._1));
+        return functorExceptT.map((f) => f($3))(functorExceptT.map(Closure)($$new2(v2)));
+      })())));
+    }
+    if (v1.tag === "Project") {
+      return bindExceptT2.bind($$eval2(v)(v1._1)(v2))((v3) => except((() => {
+        if (v3.tag === "Record") {
+          return lookup$p(v1._2)(v3._2);
+        }
+        return $Either("Left", "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v3).lines) + ", expected record"));
+      })()));
+    }
+    if (v1.tag === "App") {
+      return bindExceptT2.bind($$eval2(v)(v1._1)(v2))((v3) => bindExceptT2.bind($$eval2(v)(v1._2)(v2))((v$p) => apply3(v3)(v$p)));
+    }
+    if (v1.tag === "Let") {
+      return bindExceptT2.bind($$eval2(v)(v1._1._2)(v2))((v3) => bindExceptT2.bind(except(match4(v3)(v1._1._1)))((v4) => $$eval2(unionWith2((v$1) => identity17)(v)(v4._1))(v1._2)(v2)));
+    }
+    if (v1.tag === "LetRec") {
+      return bindExceptT2.bind(closeDefs2(v)(v1._1)(v2))((\u03B3$p) => $$eval2(unionWith2((v$1) => identity17)(v)(\u03B3$p))(v1._2)(v2));
+    }
+    fail();
   };
-  var apply3 = (dictGraph) => {
-    const closeDefs1 = closeDefs2(dictGraph);
-    return (v) => (v1) => {
-      if (v.tag === "Fun") {
-        if (v._1.tag === "Closure") {
-          return bindExceptT2.bind(closeDefs1(v._1._2)(v._1._3)($Map("Two", Leaf2, v._1._1, unit2, Leaf2)))((\u03B32) => bindExceptT2.bind(except(match4(v1)(v._1._4)))((v3) => $$eval2(dictGraph)(unionWith2((v$1) => identity17)(unionWith2((v$1) => identity17)(v._1._2)(\u03B32))(v3._1))((() => {
-            if (v3._2._1.tag === "ContExpr") {
-              return v3._2._1._1;
-            }
-            return unsafePerformEffect(throwException(error("Expression expected")));
-          })())(insert2(ordVertex)(v._1._1)(unit2)(v3._2._2))));
-        }
-        if (v._1.tag === "PartialConstr") {
-          const n = successful(arity(v._1._2));
-          return bindExceptT2.bind(except((() => {
-            const $5 = "Too many arguments to " + showCtr(v._1._2);
-            if ((() => {
-              const go = (go$a0$copy) => (go$a1$copy) => {
-                let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-                while (go$c) {
-                  const b = go$a0, v$1 = go$a1;
-                  if (v$1.tag === "Nil") {
-                    go$c = false;
-                    go$r = b;
-                    continue;
-                  }
-                  if (v$1.tag === "Cons") {
-                    go$a0 = b + 1 | 0;
-                    go$a1 = v$1._2;
-                    continue;
-                  }
-                  fail();
-                }
-                ;
-                return go$r;
-              };
-              return go(0)(v._1._3) < n;
-            })()) {
-              return $Either("Right", unit2);
-            }
-            return $Either("Left", $5);
-          })()))(() => applicativeExceptT2.pure((() => {
-            if ((() => {
-              const go = (go$a0$copy) => (go$a1$copy) => {
-                let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-                while (go$c) {
-                  const b = go$a0, v$1 = go$a1;
-                  if (v$1.tag === "Nil") {
-                    go$c = false;
-                    go$r = b;
-                    continue;
-                  }
-                  if (v$1.tag === "Cons") {
-                    go$a0 = b + 1 | 0;
-                    go$a1 = v$1._2;
-                    continue;
-                  }
-                  fail();
-                }
-                ;
-                return go$r;
-              };
-              return go(0)(v._1._3) < (n - 1 | 0);
-            })()) {
-              return $Val(
-                "Fun",
-                $Fun(
-                  "PartialConstr",
-                  v._1._1,
-                  v._1._2,
-                  foldableList.foldr(Cons)($List("Cons", v1, Nil))(v._1._3)
-                )
-              );
-            }
-            return $Val(
-              "Constr",
-              v._1._1,
-              v._1._2,
-              foldableList.foldr(Cons)($List("Cons", v1, Nil))(v._1._3)
-            );
-          })()));
-        }
-        if (v._1.tag === "Foreign") {
-          const vs$p = foldableList.foldr(Cons)($List("Cons", v1, Nil))(v._1._2);
+  var apply3 = (v) => (v1) => {
+    if (v.tag === "Fun") {
+      if (v._1.tag === "Closure") {
+        return bindExceptT2.bind(closeDefs2(v._1._2)(v._1._3)($Map("Two", Leaf2, v._1._1, unit2, Leaf2)))((\u03B32) => bindExceptT2.bind(except(match4(v1)(v._1._4)))((v3) => $$eval2(unionWith2((v$1) => identity17)(unionWith2((v$1) => identity17)(v._1._2)(\u03B32))(v3._1))((() => {
+          if (v3._2._1.tag === "ContExpr") {
+            return v3._2._1._1;
+          }
+          return unsafePerformEffect(throwException(error("Expression expected")));
+        })())(insert2(ordVertex)(v._1._1)(unit2)(v3._2._2))));
+      }
+      if (v._1.tag === "PartialConstr") {
+        const n = successful(arity(v._1._2));
+        return bindExceptT2.bind(except((() => {
+          const $3 = "Too many arguments to " + showCtr(v._1._2);
           if ((() => {
             const go = (go$a0$copy) => (go$a1$copy) => {
               let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
@@ -35363,37 +35317,106 @@
               ;
               return go$r;
             };
-            return v._1._1._1.arity > go(0)(vs$p);
+            return go(0)(v._1._3) < n;
           })()) {
-            return applicativeExceptT2.pure($Val("Fun", $Fun("Foreign", v._1._1, vs$p)));
+            return $Either("Right", unit2);
           }
-          return v._1._1._1["op'"](dictGraph)(vs$p);
+          return $Either("Left", $3);
+        })()))(() => applicativeExceptT2.pure((() => {
+          if ((() => {
+            const go = (go$a0$copy) => (go$a1$copy) => {
+              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+              while (go$c) {
+                const b = go$a0, v$1 = go$a1;
+                if (v$1.tag === "Nil") {
+                  go$c = false;
+                  go$r = b;
+                  continue;
+                }
+                if (v$1.tag === "Cons") {
+                  go$a0 = b + 1 | 0;
+                  go$a1 = v$1._2;
+                  continue;
+                }
+                fail();
+              }
+              ;
+              return go$r;
+            };
+            return go(0)(v._1._3) < (n - 1 | 0);
+          })()) {
+            return $Val(
+              "Fun",
+              $Fun(
+                "PartialConstr",
+                v._1._1,
+                v._1._2,
+                foldableList.foldr(Cons)($List("Cons", v1, Nil))(v._1._3)
+              )
+            );
+          }
+          return $Val(
+            "Constr",
+            v._1._1,
+            v._1._2,
+            foldableList.foldr(Cons)($List("Cons", v1, Nil))(v._1._3)
+          );
+        })()));
+      }
+      if (v._1.tag === "Foreign") {
+        const vs$p = foldableList.foldr(Cons)($List("Cons", v1, Nil))(v._1._2);
+        if ((() => {
+          const go = (go$a0$copy) => (go$a1$copy) => {
+            let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+            while (go$c) {
+              const b = go$a0, v$1 = go$a1;
+              if (v$1.tag === "Nil") {
+                go$c = false;
+                go$r = b;
+                continue;
+              }
+              if (v$1.tag === "Cons") {
+                go$a0 = b + 1 | 0;
+                go$a1 = v$1._2;
+                continue;
+              }
+              fail();
+            }
+            ;
+            return go$r;
+          };
+          return v._1._1._1.arity > go(0)(vs$p);
+        })()) {
+          return applicativeExceptT2.pure($Val("Fun", $Fun("Foreign", v._1._1, vs$p)));
         }
-        return except($Either("Left", "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v1).lines) + ", expected function")));
+        return v._1._1._1["op'"](vs$p);
       }
       return except($Either("Left", "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v1).lines) + ", expected function")));
-    };
+    }
+    return except($Either("Left", "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v1).lines) + ", expected function")));
   };
 
   // output-es/Primitive.Defs/index.js
-  var monadStateT2 = {
+  var monoidFn3 = /* @__PURE__ */ (() => {
+    const semigroupFn = { append: (f) => (g) => (x2) => foldableList.foldr(Cons)(g(x2))(f(x2)) };
+    return { mempty: (v) => Nil, Semigroup0: () => semigroupFn };
+  })();
+  var monadWriterT4 = /* @__PURE__ */ monadWriterT(monoidFn3)({
     Applicative0: () => applicativeStateT(monadIdentity),
     Bind1: () => bindStateT(monadIdentity)
-  };
-  var monadGraphAccum2T2 = { Applicative0: () => applicativeGraphAccum2T(monadStateT2), Bind1: () => bindGraphAccum2T(monadStateT2) };
-  var bind = /* @__PURE__ */ (() => bindExceptT(monadGraphAccum2T2).bind)();
+  });
+  var bind = /* @__PURE__ */ (() => bindExceptT(monadWriterT4).bind)();
   var except2 = /* @__PURE__ */ (() => {
-    const $0 = applicativeGraphAccum2T(monadStateT2);
+    const $0 = applicativeWriterT(monoidFn3)(applicativeStateT(monadIdentity));
     return (x2) => $0.pure(x2);
   })();
-  var applicativeExceptT3 = /* @__PURE__ */ applicativeExceptT(monadGraphAccum2T2);
+  var applicativeExceptT3 = /* @__PURE__ */ applicativeExceptT(monadWriterT4);
   var erase = /* @__PURE__ */ (() => functorVal.map((v) => unit2))();
   var functorExceptT2 = /* @__PURE__ */ (() => {
-    const $0 = functorGraphAccum2T(functorStateT(functorIdentity));
+    const $0 = functorWriterT(functorStateT(functorIdentity));
     return { map: (f) => $0.map(functorEither.map(f)) };
   })();
-  var lift3 = /* @__PURE__ */ (() => monadTransExceptT.lift(monadGraphAccum2T2))();
-  var monadAllocStateTInt4 = /* @__PURE__ */ monadAllocStateTInt(monadIdentity);
+  var $$new3 = /* @__PURE__ */ (() => monadGraphAccumMayFailTWr(monadAllocStateTInt(monadIdentity)).new)();
   var traverse14 = /* @__PURE__ */ (() => {
     const $0 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT3);
     return (x2) => $0((v) => x2);
@@ -35402,7 +35425,7 @@
     const $0 = traversableWithIndexObject.traverseWithIndex(applicativeEither);
     return (x2) => $0((v) => x2);
   })();
-  var apply4 = /* @__PURE__ */ (() => applyExceptT(monadGraphAccum2T2).apply)();
+  var apply4 = /* @__PURE__ */ (() => applyExceptT(monadWriterT4).apply)();
   var sequence12 = /* @__PURE__ */ (() => traversableWithIndexObject.traverseWithIndex(applicativeExceptT3)((v) => identity11))();
   var sequence22 = /* @__PURE__ */ (() => traversableWithIndexObject.traverseWithIndex(applicativeEither)((v) => identity11))();
   var $$for2 = /* @__PURE__ */ (() => {
@@ -35410,8 +35433,8 @@
     return (x2) => (f) => $0((v) => f)(x2);
   })();
   var foldM5 = /* @__PURE__ */ (() => {
-    const bind2 = bindExceptT(monadGraphAccum2T2).bind;
-    const pure2 = applicativeExceptT(monadGraphAccum2T2).pure;
+    const bind2 = bindExceptT(monadWriterT4).bind;
+    const pure2 = applicativeExceptT(monadWriterT4).pure;
     return (f) => (b0) => fold((z) => (v) => (a) => bind2(z)((a$1) => f(a$1)(a)))(pure2(b0));
   })();
   var foldWithIndexM = (f) => (a0) => fold((b) => (a) => (b$1) => bindEither.bind(b)((() => {
@@ -35431,7 +35454,7 @@
   var notEquals = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumberOrString)(asIntNumberOrString)((x2) => (y2) => x2 !== y2)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asNumberString)(asNumberString)((x2) => (y2) => x2 !== y2)((x2) => (y2) => x2 !== y2));
   var matrixLookup = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
-    "op'": (dictGraph) => (v) => {
+    "op'": (v) => {
       if (v.tag === "Cons") {
         if (v._1.tag === "Matrix") {
           if (v._2.tag === "Cons") {
@@ -35444,21 +35467,21 @@
                         if (v._2._2.tag === "Nil") {
                           if (v._2._1._2 === "Pair") {
                             return bind(except2((() => {
-                              const $2 = index2(v._1._2._1)(v._2._1._3._1._2 - 1 | 0);
-                              const $3 = (() => {
-                                if ($2.tag === "Just") {
-                                  return index2($2._1)(v._2._1._3._2._1._2 - 1 | 0);
+                              const $1 = index2(v._1._2._1)(v._2._1._3._1._2 - 1 | 0);
+                              const $2 = (() => {
+                                if ($1.tag === "Just") {
+                                  return index2($1._1)(v._2._1._3._2._1._2 - 1 | 0);
                                 }
-                                if ($2.tag === "Nothing") {
+                                if ($1.tag === "Nothing") {
                                   return Nothing;
                                 }
                                 fail();
                               })();
-                              if ($3.tag === "Nothing") {
+                              if ($2.tag === "Nothing") {
                                 return $Either("Left", "Index out of bounds");
                               }
-                              if ($3.tag === "Just") {
-                                return $Either("Right", $3._1);
+                              if ($2.tag === "Just") {
+                                return $Either("Right", $2._1);
                               }
                               fail();
                             })()))((v1) => applicativeExceptT3.pure(v1));
@@ -35592,7 +35615,7 @@
   var greaterThan = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumberOrString)(asIntNumberOrString)((a1) => (a2) => a1 > a2)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asNumberString)(asNumberString)((a1) => (a2) => a1 > a2)((a1) => (a2) => a1 > a2));
   var error_ = /* @__PURE__ */ $ForeignOp$p({
     arity: 1,
-    "op'": (dictGraph) => (v) => {
+    "op'": (v) => {
       if (v.tag === "Cons") {
         if (v._1.tag === "Str") {
           if (v._2.tag === "Nil") {
@@ -35621,38 +35644,35 @@
   var divide = /* @__PURE__ */ union4(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => toNumber(x2) / toNumber(y2))(numDiv);
   var dims = /* @__PURE__ */ $ForeignOp$p({
     arity: 1,
-    "op'": (dictGraph) => {
-      const $$new = monadGraphAccumGraphAccum1(dictGraph)(monadAllocStateTInt4).new;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Matrix") {
-            if (v._2.tag === "Nil") {
-              return bind(functorExceptT2.map((f) => f(v._1._2._2._1._1))(functorExceptT2.map(Int3)(lift3($$new($Map(
-                "Two",
-                Leaf2,
-                v._1._2._2._1._2,
-                unit2,
-                Leaf2
-              ))))))((v1) => bind(functorExceptT2.map((f) => f(v._1._2._2._2._1))(functorExceptT2.map(Int3)(lift3($$new($Map(
-                "Two",
-                Leaf2,
-                v._1._2._2._2._2,
-                unit2,
-                Leaf2
-              ))))))((v2) => functorExceptT2.map((f) => f($List("Cons", v1, $List("Cons", v2, Nil))))(functorExceptT2.map((f) => f("Pair"))(functorExceptT2.map(Constr3)(lift3($$new($Map(
-                "Two",
-                Leaf2,
-                v._1._1,
-                unit2,
-                Leaf2
-              ))))))));
-            }
-            return except2($Either("Left", "Matrix expected"));
+    "op'": (v) => {
+      if (v.tag === "Cons") {
+        if (v._1.tag === "Matrix") {
+          if (v._2.tag === "Nil") {
+            return bind(functorExceptT2.map((f) => f(v._1._2._2._1._1))(functorExceptT2.map(Int3)($$new3($Map(
+              "Two",
+              Leaf2,
+              v._1._2._2._1._2,
+              unit2,
+              Leaf2
+            )))))((v1) => bind(functorExceptT2.map((f) => f(v._1._2._2._2._1))(functorExceptT2.map(Int3)($$new3($Map(
+              "Two",
+              Leaf2,
+              v._1._2._2._2._2,
+              unit2,
+              Leaf2
+            )))))((v2) => functorExceptT2.map((f) => f($List("Cons", v1, $List("Cons", v2, Nil))))(functorExceptT2.map((f) => f("Pair"))(functorExceptT2.map(Constr3)($$new3($Map(
+              "Two",
+              Leaf2,
+              v._1._1,
+              unit2,
+              Leaf2
+            )))))));
           }
           return except2($Either("Left", "Matrix expected"));
         }
         return except2($Either("Left", "Matrix expected"));
-      };
+      }
+      return except2($Either("Left", "Matrix expected"));
     },
     op: (dictAnn) => (v) => {
       if (v.tag === "Cons") {
@@ -35722,30 +35742,26 @@
   });
   var dict_map = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
-    "op'": (dictGraph) => {
-      const apply1 = apply3(dictGraph);
-      const $$new = monadGraphAccumGraphAccum1(dictGraph)(monadAllocStateTInt4).new;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Cons") {
-            if (v._2._1.tag === "Dictionary") {
-              if (v._2._2.tag === "Nil") {
-                return bind(traverse14((v2) => functorExceptT2.map((v3) => $Tuple(v2._1, v3))(apply1(v._1)(v2._2)))(v._2._1._2))((d$p) => functorExceptT2.map((f) => f(d$p))(functorExceptT2.map(Dictionary3)(lift3($$new($Map(
-                  "Two",
-                  Leaf2,
-                  v._2._1._1,
-                  unit2,
-                  Leaf2
-                ))))));
-              }
-              return except2($Either("Left", "Function and dictionary expected"));
+    "op'": (v) => {
+      if (v.tag === "Cons") {
+        if (v._2.tag === "Cons") {
+          if (v._2._1.tag === "Dictionary") {
+            if (v._2._2.tag === "Nil") {
+              return bind(traverse14((v2) => functorExceptT2.map((v3) => $Tuple(v2._1, v3))(apply3(v._1)(v2._2)))(v._2._1._2))((d$p) => functorExceptT2.map((f) => f(d$p))(functorExceptT2.map(Dictionary3)($$new3($Map(
+                "Two",
+                Leaf2,
+                v._2._1._1,
+                unit2,
+                Leaf2
+              )))));
             }
             return except2($Either("Left", "Function and dictionary expected"));
           }
           return except2($Either("Left", "Function and dictionary expected"));
         }
         return except2($Either("Left", "Function and dictionary expected"));
-      };
+      }
+      return except2($Either("Left", "Function and dictionary expected"));
     },
     op: (dictAnn) => {
       const apply1 = apply2(dictAnn);
@@ -35808,31 +35824,26 @@
   });
   var dict_intersectionWith = /* @__PURE__ */ $ForeignOp$p({
     arity: 3,
-    "op'": (dictGraph) => {
-      const $$new = monadGraphAccumGraphAccum1(dictGraph)(monadAllocStateTInt4).new;
-      const apply1 = apply3(dictGraph);
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Cons") {
-            if (v._2._1.tag === "Dictionary") {
-              if (v._2._2.tag === "Cons") {
-                if (v._2._2._1.tag === "Dictionary") {
-                  if (v._2._2._2.tag === "Nil") {
-                    return apply4(functorExceptT2.map(Dictionary3)(lift3($$new(insert2(ordVertex)(v._2._2._1._1)(unit2)($Map(
-                      "Two",
-                      Leaf2,
-                      v._2._1._1,
-                      unit2,
-                      Leaf2
-                    ))))))(functorExceptT2.map(DictRep)(sequence12(intersectionWith((v2) => (v3) => bind(lift3($$new(insert2(ordVertex)(v3._1)(unit2)($Map(
-                      "Two",
-                      Leaf2,
-                      v2._1,
-                      unit2,
-                      Leaf2
-                    )))))((\u03B2$p$p) => functorExceptT2.map(Tuple(\u03B2$p$p))(bind(apply1(v._1)(v2._2))((a) => apply1(a)(v3._2)))))(v._2._1._2)(v._2._2._1._2))));
-                  }
-                  return except2($Either("Left", "Function and two dictionaries expected"));
+    "op'": (v) => {
+      if (v.tag === "Cons") {
+        if (v._2.tag === "Cons") {
+          if (v._2._1.tag === "Dictionary") {
+            if (v._2._2.tag === "Cons") {
+              if (v._2._2._1.tag === "Dictionary") {
+                if (v._2._2._2.tag === "Nil") {
+                  return apply4(functorExceptT2.map(Dictionary3)($$new3(insert2(ordVertex)(v._2._2._1._1)(unit2)($Map(
+                    "Two",
+                    Leaf2,
+                    v._2._1._1,
+                    unit2,
+                    Leaf2
+                  )))))(functorExceptT2.map(DictRep)(sequence12(intersectionWith((v2) => (v3) => bind($$new3(insert2(ordVertex)(v3._1)(unit2)($Map(
+                    "Two",
+                    Leaf2,
+                    v2._1,
+                    unit2,
+                    Leaf2
+                  ))))((\u03B2$p$p) => functorExceptT2.map(Tuple(\u03B2$p$p))(bind(apply3(v._1)(v2._2))((a) => apply3(a)(v3._2)))))(v._2._1._2)(v._2._2._1._2))));
                 }
                 return except2($Either("Left", "Function and two dictionaries expected"));
               }
@@ -35843,7 +35854,8 @@
           return except2($Either("Left", "Function and two dictionaries expected"));
         }
         return except2($Either("Left", "Function and two dictionaries expected"));
-      };
+      }
+      return except2($Either("Left", "Function and two dictionaries expected"));
     },
     op: (dictAnn) => {
       const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
@@ -35908,20 +35920,20 @@
   });
   var dict_get = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
-    "op'": (dictGraph) => (v) => {
+    "op'": (v) => {
       if (v.tag === "Cons") {
         if (v._1.tag === "Str") {
           if (v._2.tag === "Cons") {
             if (v._2._1.tag === "Dictionary") {
               if (v._2._2.tag === "Nil") {
                 return functorExceptT2.map(snd)(except2((() => {
-                  const $2 = 'Key "' + (v._1._2 + '" not found');
-                  const $3 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
-                  if ($3.tag === "Nothing") {
-                    return $Either("Left", $2);
+                  const $1 = 'Key "' + (v._1._2 + '" not found');
+                  const $2 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
+                  if ($2.tag === "Nothing") {
+                    return $Either("Left", $1);
                   }
-                  if ($3.tag === "Just") {
-                    return $Either("Right", $3._1);
+                  if ($2.tag === "Just") {
+                    return $Either("Right", $2._1);
                   }
                   fail();
                 })()));
@@ -35978,32 +35990,29 @@
   });
   var dict_fromRecord = /* @__PURE__ */ $ForeignOp$p({
     arity: 1,
-    "op'": (dictGraph) => {
-      const $$new = monadGraphAccumGraphAccum1(dictGraph)(monadAllocStateTInt4).new;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Record") {
-            if (v._2.tag === "Nil") {
-              return bind($$for2(v._1._2)((v1) => functorExceptT2.map((v2) => $Tuple(v2, v1))(lift3($$new($Map(
-                "Two",
-                Leaf2,
-                v._1._1,
-                unit2,
-                Leaf2
-              ))))))((xvs$p) => functorExceptT2.map((f) => f(xvs$p))(functorExceptT2.map(Dictionary3)(lift3($$new($Map(
-                "Two",
-                Leaf2,
-                v._1._1,
-                unit2,
-                Leaf2
-              ))))));
-            }
-            return except2($Either("Left", "Record expected."));
+    "op'": (v) => {
+      if (v.tag === "Cons") {
+        if (v._1.tag === "Record") {
+          if (v._2.tag === "Nil") {
+            return bind($$for2(v._1._2)((v1) => functorExceptT2.map((v2) => $Tuple(v2, v1))($$new3($Map(
+              "Two",
+              Leaf2,
+              v._1._1,
+              unit2,
+              Leaf2
+            )))))((xvs$p) => functorExceptT2.map((f) => f(xvs$p))(functorExceptT2.map(Dictionary3)($$new3($Map(
+              "Two",
+              Leaf2,
+              v._1._1,
+              unit2,
+              Leaf2
+            )))));
           }
           return except2($Either("Left", "Record expected."));
         }
         return except2($Either("Left", "Record expected."));
-      };
+      }
+      return except2($Either("Left", "Record expected."));
     },
     op: (dictAnn) => (v) => {
       if (v.tag === "Cons") {
@@ -36040,17 +36049,13 @@
   });
   var dict_foldl = /* @__PURE__ */ $ForeignOp$p({
     arity: 3,
-    "op'": (dictGraph) => {
-      const apply1 = apply3(dictGraph);
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Cons") {
-            if (v._2._2.tag === "Cons") {
-              if (v._2._2._1.tag === "Dictionary") {
-                if (v._2._2._2.tag === "Nil") {
-                  return foldM5((u1) => (v2) => bind(apply1(v._1)(u1))((a) => apply1(a)(v2._2)))(v._2._1)(v._2._2._1._2);
-                }
-                return except2($Either("Left", "Function, value and dictionary expected"));
+    "op'": (v) => {
+      if (v.tag === "Cons") {
+        if (v._2.tag === "Cons") {
+          if (v._2._2.tag === "Cons") {
+            if (v._2._2._1.tag === "Dictionary") {
+              if (v._2._2._2.tag === "Nil") {
+                return foldM5((u1) => (v2) => bind(apply3(v._1)(u1))((a) => apply3(a)(v2._2)))(v._2._1)(v._2._2._1._2);
               }
               return except2($Either("Left", "Function, value and dictionary expected"));
             }
@@ -36059,7 +36064,8 @@
           return except2($Either("Left", "Function, value and dictionary expected"));
         }
         return except2($Either("Left", "Function, value and dictionary expected"));
-      };
+      }
+      return except2($Either("Left", "Function, value and dictionary expected"));
     },
     op: (dictAnn) => {
       const apply23 = apply22(dictAnn);
@@ -36137,24 +36143,20 @@
   });
   var dict_disjointUnion = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
-    "op'": (dictGraph) => {
-      const $$new = monadGraphAccumGraphAccum1(dictGraph)(monadAllocStateTInt4).new;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Dictionary") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Dictionary") {
-                if (v._2._2.tag === "Nil") {
-                  const $3 = unionWith2((v$1) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(v._1._2)(v._2._1._2);
-                  return functorExceptT2.map((f) => f($3))(functorExceptT2.map(Dictionary3)(lift3($$new(insert2(ordVertex)(v._2._1._1)(unit2)($Map(
-                    "Two",
-                    Leaf2,
-                    v._1._1,
-                    unit2,
-                    Leaf2
-                  ))))));
-                }
-                return except2($Either("Left", "Dictionaries expected"));
+    "op'": (v) => {
+      if (v.tag === "Cons") {
+        if (v._1.tag === "Dictionary") {
+          if (v._2.tag === "Cons") {
+            if (v._2._1.tag === "Dictionary") {
+              if (v._2._2.tag === "Nil") {
+                const $1 = unionWith2((v$1) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(v._1._2)(v._2._1._2);
+                return functorExceptT2.map((f) => f($1))(functorExceptT2.map(Dictionary3)($$new3(insert2(ordVertex)(v._2._1._1)(unit2)($Map(
+                  "Two",
+                  Leaf2,
+                  v._1._1,
+                  unit2,
+                  Leaf2
+                )))));
               }
               return except2($Either("Left", "Dictionaries expected"));
             }
@@ -36163,7 +36165,8 @@
           return except2($Either("Left", "Dictionaries expected"));
         }
         return except2($Either("Left", "Dictionaries expected"));
-      };
+      }
+      return except2($Either("Left", "Dictionaries expected"));
     },
     op: (dictAnn) => {
       const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
@@ -36209,24 +36212,20 @@
   });
   var dict_difference = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
-    "op'": (dictGraph) => {
-      const $$new = monadGraphAccumGraphAccum1(dictGraph)(monadAllocStateTInt4).new;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Dictionary") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Dictionary") {
-                if (v._2._2.tag === "Nil") {
-                  const $3 = difference2(v._1._2)(v._2._1._2);
-                  return functorExceptT2.map((f) => f($3))(functorExceptT2.map(Dictionary3)(lift3($$new(insert2(ordVertex)(v._2._1._1)(unit2)($Map(
-                    "Two",
-                    Leaf2,
-                    v._1._1,
-                    unit2,
-                    Leaf2
-                  ))))));
-                }
-                return except2($Either("Left", "Dictionaries expected."));
+    "op'": (v) => {
+      if (v.tag === "Cons") {
+        if (v._1.tag === "Dictionary") {
+          if (v._2.tag === "Cons") {
+            if (v._2._1.tag === "Dictionary") {
+              if (v._2._2.tag === "Nil") {
+                const $1 = difference2(v._1._2)(v._2._1._2);
+                return functorExceptT2.map((f) => f($1))(functorExceptT2.map(Dictionary3)($$new3(insert2(ordVertex)(v._2._1._1)(unit2)($Map(
+                  "Two",
+                  Leaf2,
+                  v._1._1,
+                  unit2,
+                  Leaf2
+                )))));
               }
               return except2($Either("Left", "Dictionaries expected."));
             }
@@ -36235,7 +36234,8 @@
           return except2($Either("Left", "Dictionaries expected."));
         }
         return except2($Either("Left", "Dictionaries expected."));
-      };
+      }
+      return except2($Either("Left", "Dictionaries expected."));
     },
     op: (dictAnn) => {
       const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
@@ -36271,7 +36271,7 @@
   });
   var debugLog = /* @__PURE__ */ $ForeignOp$p({
     arity: 1,
-    "op'": (dictGraph) => (v) => {
+    "op'": (v) => {
       if (v.tag === "Cons") {
         if (v._2.tag === "Nil") {
           return applicativeExceptT3.pure(_trace(v._1, (v$1) => v._1));
@@ -36391,10 +36391,10 @@
     fail();
   });
   var loadModule = (file) => (\u03B3) => _bind(loadFile("fluid/lib")(file))((src) => _pure(successful((() => {
-    const $3 = bindEither.bind(bindEither.bind(parse(src)((state1, more, lift1, $$throw, done) => more((v1) => module_(
+    const $3 = bindEither.bind(bindEither.bind(parse(src)((state1, more, lift12, $$throw, done) => more((v1) => module_(
       state1,
       more,
-      lift1,
+      lift12,
       $$throw,
       (state2, a) => more((v2) => done(state2, functorModule.map((v) => false)(a)))
     ))))(desugarModuleFwd(joinSemilatticeBoolean)))((() => {
@@ -36409,10 +36409,10 @@
     }
     fail();
   })())));
-  var parseProgram = (folder) => (file) => _bind(loadFile(folder)(file))((src) => _pure(successful(parse(src)((state1, more, lift1, $$throw, done) => more((v1) => topLevel(expr_)(
+  var parseProgram = (folder) => (file) => _bind(loadFile(folder)(file))((src) => _pure(successful(parse(src)((state1, more, lift12, $$throw, done) => more((v1) => topLevel(expr_)(
     state1,
     more,
-    lift1,
+    lift12,
     $$throw,
     (state2, a) => more((v2) => done(state2, functorExpr2.map((v) => false)(a)))
   ))))));
