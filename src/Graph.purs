@@ -56,7 +56,7 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
 newtype Vertex = Vertex String
 
 outEdges' :: forall g s. Graph g s => g -> Vertex -> List Edge
-outEdges' g α = L.fromFoldable $ smap (α × _) (outN g α)
+outEdges' g α = L.fromFoldable $ Set.map (α × _) (outN g α)
 
 outEdges :: forall g s. Graph g s => g -> s Vertex -> List Edge
 outEdges g αs = concat (outEdges' g <$> L.fromFoldable αs)
