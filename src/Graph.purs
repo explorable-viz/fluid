@@ -2,15 +2,16 @@ module Graph where
 
 import Prelude hiding (add)
 
-import Data.Foldable (foldl, class Foldable)
+import Data.Foldable (foldl)
 import Data.List (List, concat)
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (class Newtype, unwrap)
-import Data.Set as S
-import Data.Unfoldable (class Unfoldable)
+import Data.Set (Set, map) as S
 import Dict (Dict)
 import Dict as D
+import Set (class Set, delete, insert, sempty, singleton, smap, union)
+import Set (fromFoldable) as S
 import Util (Endo, (×), type (×), definitely)
 
 type Edge = Vertex × Vertex
@@ -115,7 +116,7 @@ instance Set s Vertex => Graph (GraphImpl s) s where
    elem (GraphImpl out _) α = isJust (D.lookup (unwrap α) out)
    size (GraphImpl out _) = D.size out
 
-   vertices (GraphImpl out _) = fromFoldable $ S.map Vertex $ D.keys out
+   vertices (GraphImpl out _) = S.fromFoldable $ S.map Vertex $ D.keys out
 
    op (GraphImpl out in_) = GraphImpl in_ out
 
@@ -127,27 +128,3 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 
 instance Show (s Vertex) => Show (GraphImpl s) where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
-
-class (Ord a, Ord (s a), Foldable s) <= Set s a where
-   delete :: a -> s a -> s a
-   union :: s a -> s a -> s a
-   insert :: a -> s a -> s a
-   member :: a -> s a -> Boolean
-   subset :: s a -> s a -> Boolean
-   singleton :: a -> s a
-   sempty :: s a
-   smap :: forall b. Ord b => (a -> b) -> s a -> s b
-   fromFoldable :: forall f. Foldable f => f a -> s a
-   toUnfoldable :: forall f. Unfoldable f => s a -> f a
-
-instance Ord a => Set S.Set a where
-   delete = S.delete
-   union = S.union
-   insert = S.insert
-   member = S.member
-   singleton = S.singleton
-   subset = S.subset
-   sempty = S.empty
-   smap = S.map
-   fromFoldable = S.fromFoldable
-   toUnfoldable = S.toUnfoldable

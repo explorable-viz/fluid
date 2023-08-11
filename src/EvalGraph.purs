@@ -27,9 +27,11 @@ import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Graph.GraphWriter (WithGraph3, alloc, new, runHeap)
-import Graph (class Graph, class Set, Vertex, add, insert, member, sempty, subset, singleton, fromFoldable, toUnfoldable, union)
+import Graph (class Graph, Vertex, add)
 import Pretty (prettyP)
 import Primitive (string, intPair)
+import Set (class Set, member, insert, sempty, singleton, subset, union)
+import Set (fromFoldable, toUnfoldable) as S
 import Util (type (×), MayFail, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (DictRep(..), Env, MatrixRep(..), Val, lookup', for, restrict, (<+>), ForeignOp'(..))
@@ -52,9 +54,9 @@ match v (ElimConstr m) = do
    d <- dataTypeFor $ D.keys m
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record α xvs) (ElimRecord xs κ) = do
-   check (subset xs (fromFoldable $ D.keys xvs))
+   check (subset xs (S.fromFoldable $ D.keys xvs))
       $ patternMismatch (show (D.keys xvs)) (show xs)
-   let xs' = xs # toUnfoldable :: List String
+   let xs' = xs # S.toUnfoldable
    γ × κ' × αs <- matchMany (flip D.get xvs <$> xs') κ
    pure $ γ × κ' × (insert α αs)
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
