@@ -7,7 +7,7 @@ import Data.List as L
 import Data.Traversable (foldl)
 import Data.Tuple (fst)
 import Expr (Expr)
-import Graph (class Graph,  Edge, Vertex, add, addIn, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN, remove)
+import Graph (class Graph, Edge, Vertex, add, addIn, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN, remove)
 import Set (class Set, singleton, sempty, union, member)
 import Val (Val)
 import Util (type (×), (×))

@@ -11,7 +11,7 @@ import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
 import Control.Monad.Except (except, runExceptT)
-import Control.Monad.State (runStateT)
+import Control.Monad.State (runStateT, get)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (range, singleton) as A
 import Data.Either (note)
@@ -160,12 +160,13 @@ evalGraph γ0 e0 _ = ((×) g') <$> maybe_v
       ( runHeap $ flip runStateT Nil $ runExceptT $ do
            γ <- lift $ lift $ traverse alloc γ0
            e <- lift $ lift $ alloc e0
-           trace ("Original expression: \n" <> (render $ pretty e0)) $ \_  -> do
-            trace ("Allocated expression: \n" <> (render $ pretty e)) $ \_ -> do
-               --   n <- lift $ lift $ get
-               v <- eval γ e sempty :: WithGraph3 s _
-               --   n' <- lift $ lift $ get
-               pure (γ × e × v)
+           trace ("Original expression: \n" <> (render $ pretty e0)) $ \_ -> do
+              trace ("Allocated expression: \n" <> (render $ pretty e)) $ \_ -> do
+                 n <- lift $ lift $ get
+                 v <- eval γ e sempty :: WithGraph3 s _
+                 n' <- lift $ lift $ get
+                 trace ("Nodes allocated during eval: " <> (show (n' - n))) $ \_ ->
+                    pure (γ × e × v)
       ) :: MayFail (Env Vertex × Expr Vertex × Val Vertex) × _
    g' = G.fromFoldable g_adds
 

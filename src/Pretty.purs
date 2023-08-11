@@ -337,8 +337,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Record α xes) = prettyRecord text α (xes # D.toUnfoldable)
    pretty (E.Dictionary α ees) = prettyDict pretty α (ees <#> toTuple)
    pretty (E.Constr α c es) = prettyConstr α c es
-   pretty (E.Matrix α e1 (i × j) e2)
-      = highlightIf α (prettyMatrix e1 i j e2)
+   pretty (E.Matrix α e1 (i × j) e2) = highlightIf α (prettyMatrix e1 i j e2)
    pretty (E.Lambda σ) = hspace [ text str.fun, pretty σ ]
    pretty (E.Op op) = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') = atop (hspace [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
