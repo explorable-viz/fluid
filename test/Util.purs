@@ -33,11 +33,22 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import EvalGraph (evalGraph, selectSources) -- , selectSinks)
+import EvalGraph (evalGraph) -- , selectSinks)
+import Expr (Expr) as E
 import Graph (Vertex)
+import Graph (vertices) as G
+import Graph.Slice (selectSources, selectSinks, bwdSlice) as G
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, erase)
-import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
+import Module
+   ( File(..)
+   , Folder(..)
+   , loadFile
+   , open
+   , openDatasetAs
+   , openWithDefaultImports
+   , parse
+   )
 import Parse (program)
 import Pretty (pretty, class Pretty, prettyP)
 import SExpr (Expr) as SE
@@ -70,16 +81,15 @@ testWithSetup (File file) expected v_expect_opt setup =
    where
    doTest :: Env 𝔹 -> SE.Expr 𝔹 -> Aff Unit
    doTest γ s =
-      runExceptT (doTest' γ s) >>=
+      runExceptT (testTrace γ s >>= testGraph) >>=
          case _ of
             Left msg -> fail msg
             Right unit -> pure unit
 
-   doTest' :: Env 𝔹 -> SE.Expr 𝔹 -> MayFailT Aff Unit
-   doTest' γ s = do
+   testTrace :: Env 𝔹 -> SE.Expr 𝔹 -> MayFailT Aff (Val 𝔹 × Env 𝔹 × E.Expr 𝔹)
+   testTrace γ s = do
       e <- except $ desug s
       t × v <- except $ eval γ e bot
-      _ × (_ × _ × vα) <- except $ evalGraph γ e :: MayFailT _ (GraphImpl S.Set × _)
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
          { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
@@ -87,7 +97,7 @@ testWithSetup (File file) expected v_expect_opt setup =
       _ × v'' <- except $ desug s' >>= flip (eval γ') top
       let src = render (pretty s)
       s'' <- except $ parse src program
-      trace ("Non-Annotated:\n" <> src) \_ -> lift $
+      trace ("Non-Annotated:\n" <> src) \_ -> lift $ do
          if (not $ eq (erase s) s'') then do
             liftEffect $ do
                log ("SRC\n" <> show (erase s))
@@ -96,26 +106,42 @@ testWithSetup (File file) expected v_expect_opt setup =
          else do
             unless (isGraphical v'')
                (checkPretty "Value" expected v'')
-            unless (isGraphical v'' || isJust v_expect_opt)
-               (checkPretty "Value" expected (erase vα))
-            unless (isNothing v_expect_opt)
-               ( do
-                    let (αs :: S.Set Vertex) = selectSources v'' vα
-                    log ("EvalGraph.selectSources:")
-                    log ("Val 𝔹: " <> render (pretty v''))
-                    log ("Val Vertex: " <> render (pretty vα))
-                    log ("Set Vertex: " <> show αs <> "\n")
-               --   let g' = G.bwdSlice αs g
-               --   log ("Graph bwd slice: " <> show g')
-               --   let e' = selectSinks eα (G.vertices g')
-               --   log ("Graph bwd slice: " <> (render $ pretty e'))
-               )
-            trace ("Annotated\n" <> render (pretty s')) \_ ->
+            trace ("Annotated\n" <> render (pretty s')) \_ -> do
                case snd <$> v_expect_opt of
                   Nothing -> pure unit
                   Just file_expect -> do
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
+         pure (v'' × γ' × e')
+
+   testGraph :: (Val 𝔹 × Env 𝔹 × E.Expr 𝔹) -> MayFailT Aff Unit
+   testGraph (v𝔹 × γ𝔹 × e𝔹) = do
+      g × (_ × eα × vα) <- except $ evalGraph γ𝔹 e𝔹 :: MayFailT _ (GraphImpl S.Set × _)
+      lift $ do
+         unless (isGraphical v𝔹 || isJust v_expect_opt)
+            (checkPretty "Value" expected (erase vα))
+         unless (isNothing v_expect_opt)
+            ( do
+                 log ("Expr Vertex:\n" <> render (pretty eα))
+                 log ("Graph:\n" <> show g)
+
+                 let (αs :: S.Set Vertex) = G.selectSources v𝔹 vα
+                 log ("EvalGraph.selectSources:")
+                 log ("Val 𝔹: " <> render (pretty v𝔹))
+                 log ("Val Vertex: " <> render (pretty vα))
+                 log ("Selected vertices: " <> show αs <> "\n")
+                 unless true $ do
+                    let gbwd = G.bwdSlice αs g
+                    log ("Graph.Slice.bwdSlice: ")
+                    log ("Graph: " <> show gbwd)
+
+                    log ("EvalGraph.selectSinks: ")
+                    log ("Selected vertices: " <> show (G.vertices gbwd))
+                    let eα' = G.selectSinks eα (G.vertices gbwd)
+                    log ("Expr 𝔹 expected: \n" <> (render $ pretty e𝔹))
+                    log ("Expr 𝔹 gotten: \n" <> (render $ pretty eα'))
+                    if (not $ eq eα' e𝔹) then fail "not equal" else pure unit
+            )
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)

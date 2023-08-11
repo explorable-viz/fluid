@@ -5,8 +5,6 @@ module EvalGraph
    , matchMany
    , patternMismatch
    , evalGraph
-   , selectSources
-   , selectSinks
    ) where
 
 import Prelude hiding (apply, add)
@@ -20,7 +18,7 @@ import Data.Either (note)
 import Data.Exists (runExists)
 import Data.List (List(..), (:), length, snoc, unzip, zip)
 import Data.Set as S
-import Data.Traversable (sequence, traverse, foldl)
+import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Debug (trace)
@@ -31,11 +29,11 @@ import Graph (fromFoldable) as G
 import Graph.GraphWriter (WithGraph, alloc, new)
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Set (class Set, member, insert, empty, singleton, union)
+import Set (class Set, insert, empty, singleton, union)
 import Util (type (×), (×), MayFail, check, error, report, successful, with)
 import Util.Pair (unzip) as P
-import Val (DictRep(..), Env, MatrixRep(..), Val, lookup', for, restrict, (<+>), ForeignOp'(..))
 import Val (Val(..), Fun(..)) as V
+import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
 
 {-# Matching #-}
 patternMismatch :: String -> String -> String
@@ -168,11 +166,3 @@ evalGraph γ0 e0 = ((×) g') <$> maybe_r
          pure (γ × e × v)
    maybe_r × _ × g_adds = flip runState (0 × Nil) (runExceptT doEval)
    g' = G.fromFoldable g_adds
-
-selectSources :: forall s. Set s Vertex => Val Boolean -> Val Vertex -> s Vertex
-selectSources u v = foldl union empty v_selected
-   where
-   v_selected = (\b -> if b then singleton else const empty) <$> u <*> v
-
-selectSinks :: forall s. Set s Vertex => Expr Vertex -> s Vertex -> Expr Boolean
-selectSinks e αs = map (flip member αs) e

@@ -3,24 +3,25 @@ module Graph.GraphImpl
    ) where
 
 import Prelude
+
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
-import Data.Set as S
 import Data.Foldable (foldl, foldM)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable) as L
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..), isJust, fromMaybe)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
+import Data.Set as S
 import Dict (Dict)
 import Dict as D
-import Graph (class Graph, Vertex(..), addOut, op, outN)
-import Data.Newtype (unwrap)
 import Foreign.Object (runST)
-import Foreign.Object.ST as OST
 import Foreign.Object.ST (STObject)
+import Foreign.Object.ST as OST
+import Graph (class Graph, Vertex(..), addOut, op, outN)
 import Set (class Set, delete, insert, singleton, union)
 import Set as Set
-import Util (type (×), (×), definitely)
+import Util (type (×), (×)) -- ), definitely)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap s = Dict (s Vertex)
@@ -56,7 +57,9 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 
    addIn α β g = op (addOut β α (op g))
 
-   outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
+   -- | Note: outN should really be: `definitely (D.lookup (unwrap α) out)`, but this fails unless `fromFoldable` is correctly implement.
+   -- See notes on `fromFoldable` below.
+   outN (GraphImpl out _) α = fromMaybe Set.empty (D.lookup (unwrap α) out)
    inN g = outN (op g)
 
    elem (GraphImpl out _) α = isJust (D.lookup (unwrap α) out)
@@ -72,6 +75,10 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 
    empty = mempty
 
+   -- | Note: To ensure that fromFoldable produces an `out`` that contains entries for sinks, and an `in` that
+   --         contains entries for sources, we should really return:
+   -- out' = D.unionWith Set.union out ((const (Set.empty :: s Vertex)) <$> in_)
+   -- in' = D.unionWith Set.union in_ ((const (Set.empty :: s Vertex)) <$> out)
    fromFoldable α_αs = GraphImpl out in_
       where
       out = D.fromFoldable (α_αs <#> first unwrap)

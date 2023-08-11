@@ -42,24 +42,12 @@ data Elim a
    | ElimConstr (Dict (Cont a))
    | ElimRecord (Set Var) (Cont a)
 
-instance Apply Elim where
-   apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)
-   apply (ElimConstr fk) (ElimConstr k) = ElimConstr (D.apply2 fk k)
-   apply (ElimRecord xs fk) (ElimRecord _ k) = ElimRecord xs (fk <*> k)
-   apply _ _ = error "Apply Elim: shape mismatch"
-
 -- Continuation of an eliminator branch.
 data Cont a
    = ContNone
    | -- null continuation, used in let bindings/module variable bindings
      ContExpr (Expr a)
    | ContElim (Elim a)
-
-instance Apply Cont where
-   apply ContNone ContNone = ContNone
-   apply (ContExpr f) (ContExpr e) = ContExpr (f <*> e)
-   apply (ContElim fσ) (ContElim σ) = ContElim (fσ <*> σ)
-   apply _ _ = error "Apply Cont: shape mismatch"
 
 asElim :: forall a. Cont a -> Elim a
 asElim (ContElim σ) = σ
@@ -139,6 +127,11 @@ derive instance Functor Expr
 derive instance Foldable Expr
 derive instance Traversable Expr
 
+derive instance Eq a => Eq (Expr a)
+derive instance Eq a => Eq (VarDef a)
+derive instance Eq a => Eq (Elim a)
+derive instance Eq a => Eq (Cont a)
+
 instance Apply Expr where
    apply (Var x) (Var _) = Var x
    apply (Op op) (Op _) = Op op
@@ -155,6 +148,18 @@ instance Apply Expr where
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
    apply (LetRec fρ fe) (LetRec ρ e) = LetRec (D.apply2 fρ ρ) (fe <*> e)
    apply _ _ = error "Apply Expr: shape mismatch"
+
+instance Apply Elim where
+   apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)
+   apply (ElimConstr fk) (ElimConstr k) = ElimConstr (D.apply2 fk k)
+   apply (ElimRecord xs fk) (ElimRecord _ k) = ElimRecord xs (fk <*> k)
+   apply _ _ = error "Apply Elim: shape mismatch"
+
+instance Apply Cont where
+   apply ContNone ContNone = ContNone
+   apply (ContExpr f) (ContExpr e) = ContExpr (f <*> e)
+   apply (ContElim fσ) (ContElim σ) = ContElim (fσ <*> σ)
+   apply _ _ = error "Apply Cont: shape mismatch"
 
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
