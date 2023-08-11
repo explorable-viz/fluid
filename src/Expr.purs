@@ -33,6 +33,8 @@ data Expr a
    | Let (VarDef a) (Expr a)
    | LetRec (RecDefs a) (Expr a)
 
+derive instance Eq a => Eq (Expr a)
+
 instance Apply Expr where
    apply (Var x) (Var _) = Var x
    apply (Op op) (Op _) = Op op
@@ -52,12 +54,16 @@ instance Apply Expr where
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
+derive instance Eq a => Eq (VarDef a)
+
 type RecDefs a = Dict (Elim a)
 
 data Elim a
    = ElimVar Var (Cont a)
    | ElimConstr (Dict (Cont a))
    | ElimRecord (Set Var) (Cont a)
+
+derive instance Eq a => Eq (Elim a)
 
 instance Apply Elim where
    apply (ElimVar x fk) (ElimVar _ k) = ElimVar x (fk <*> k)
@@ -71,6 +77,8 @@ data Cont a
    | -- null continuation, used in let bindings/module variable bindings
      ContExpr (Expr a)
    | ContElim (Elim a)
+
+derive instance Eq a => Eq (Cont a)
 
 instance Apply Cont where
    apply ContNone ContNone = ContNone
