@@ -146,8 +146,8 @@ eval γ (App e e') αs = do
    apply v v'
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
-   γ' × _ × (_ :: s Vertex) <- except $ match v σ -- terminal meta-type of eliminator is meta-unit
-   eval (γ <+> γ') e' αs
+   γ' × _ × (αs' :: s Vertex) <- except $ match v σ -- terminal meta-type of eliminator is meta-unit
+   eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
 eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
