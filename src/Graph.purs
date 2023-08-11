@@ -16,8 +16,8 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST as OST
 import Foreign.Object.ST (STObject)
-import Set (class Set, delete, insert, sempty, singleton, smap, union)
-import Set (fromFoldable) as S
+import Set (class Set, delete, insert, singleton, union)
+import Set (fromFoldable, empty, map) as Set
 import Util (Endo, (×), type (×), definitely)
 
 type Edge = Vertex × Vertex
@@ -72,7 +72,7 @@ outEdges :: forall g s. Graph g s => g -> s Vertex -> List Edge
 outEdges g = inEdges (op g)
 
 inEdges' :: forall g s. Graph g s => g -> Vertex -> List Edge
-inEdges' g α = L.fromFoldable $ smap (_ × α) (inN g α)
+inEdges' g α = L.fromFoldable $ Set.map (_ × α) (inN g α)
 
 inEdges :: forall g s. Graph g s => g -> s Vertex -> List Edge
 inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
@@ -107,13 +107,13 @@ instance Set s Vertex => Graph (GraphImpl s) s where
       where
       out' = D.insert (unwrap α) αs out
       in' = foldl (\d α' -> D.insertWith union (unwrap α') (singleton α) d)
-         (D.insert (unwrap α) sempty in_)
+         (D.insert (unwrap α) Set.empty in_)
          αs
 
    addOut α β (GraphImpl out in_) = GraphImpl out' in'
       where
       out' = D.update (insert β >>> Just) (unwrap α)
-         (D.insertWith union (unwrap β) sempty out)
+         (D.insertWith union (unwrap β) Set.empty out)
       in' = D.insertWith union (unwrap β) (singleton α) in_
 
    addIn α β g = op (addOut β α (op g))
@@ -124,13 +124,13 @@ instance Set s Vertex => Graph (GraphImpl s) s where
    elem (GraphImpl out _) α = isJust (D.lookup (unwrap α) out)
    size (GraphImpl out _) = D.size out
 
-   vertices (GraphImpl out _) = S.fromFoldable $ S.map Vertex $ D.keys out
+   vertices (GraphImpl out _) = Set.fromFoldable $ S.map Vertex $ D.keys out
 
    op (GraphImpl out in_) = GraphImpl in_ out
 
    discreteG αs = GraphImpl discreteM discreteM
       where
-      discreteM = D.fromFoldable $ smap (\α -> unwrap α × sempty) αs
+      discreteM = D.fromFoldable $ Set.map (\α -> unwrap α × Set.empty) αs
 
    empty = mempty
 

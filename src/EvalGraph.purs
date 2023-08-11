@@ -30,7 +30,7 @@ import Graph (fromFoldable) as G
 import Graph.GraphWriter (WithGraph3, alloc, new, runHeap)
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Set (class Set, member, insert, sempty, singleton, subset, union)
+import Set (class Set, member, insert, empty, singleton, subset, union)
 import Set (fromFoldable, toUnfoldable) as S
 import Util (type (×), MayFail, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
@@ -43,8 +43,8 @@ patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
 match :: forall s. Set s Vertex => Val Vertex -> Elim Vertex -> MayFail (Env Vertex × Cont Vertex × s Vertex)
 match v (ElimVar x κ)
-   | x == varAnon = pure (D.empty × κ × sempty)
-   | otherwise = pure (D.singleton x v × κ × sempty)
+   | x == varAnon = pure (D.empty × κ × empty)
+   | otherwise = pure (D.singleton x v × κ × empty)
 match (V.Constr α c vs) (ElimConstr m) = do
    with "Pattern mismatch" $ singleton c `consistentWith` D.keys m
    κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (D.lookup c m)
@@ -62,7 +62,7 @@ match (V.Record α xvs) (ElimRecord xs κ) = do
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
 matchMany :: forall s. Set s Vertex => List (Val Vertex) -> Cont Vertex -> MayFail (Env Vertex × Cont Vertex × s Vertex)
-matchMany Nil κ = pure (D.empty × κ × sempty)
+matchMany Nil κ = pure (D.empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
    γ' × κ' × βs <- matchMany vs κ
@@ -162,7 +162,7 @@ evalGraph γ0 e0 _ = ((×) g') <$> maybe_v
            γ <- lift $ lift $ traverse alloc γ0
            e <- lift $ lift $ alloc e0
            n <- lift $ lift $ get
-           v <- eval γ e sempty :: WithGraph3 s _
+           v <- eval γ e empty :: WithGraph3 s _
            n' <- lift $ lift $ get
            trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
               pure (γ × e × v)
@@ -170,9 +170,9 @@ evalGraph γ0 e0 _ = ((×) g') <$> maybe_v
    g' = G.fromFoldable g_adds
 
 selectSources :: forall s. Set s Vertex => Val Boolean -> Val Vertex -> s Vertex
-selectSources u v = foldl union sempty v_selected
+selectSources u v = foldl union empty v_selected
    where
-   v_selected = (\b -> if b then singleton else const sempty) <$> u <*> v
+   v_selected = (\b -> if b then singleton else const empty) <$> u <*> v
 
 selectSinks :: forall s. Set s Vertex => Expr Vertex -> s Vertex -> Expr Boolean
 selectSinks e αs = map (flip member αs) e
