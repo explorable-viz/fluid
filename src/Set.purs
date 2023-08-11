@@ -12,8 +12,8 @@ class (Ord a, Ord (s a), Foldable s) <= Set s a where
    member :: a -> s a -> Boolean
    subset :: s a -> s a -> Boolean
    singleton :: a -> s a
-   sempty :: s a
-   smap :: forall b. Ord b => (a -> b) -> s a -> s b
+   empty :: s a
+   map :: forall b. Ord b => (a -> b) -> s a -> s b
    fromFoldable :: forall f. Foldable f => f a -> s a
    toUnfoldable :: forall f. Unfoldable f => s a -> f a
 
@@ -24,7 +24,7 @@ instance Ord a => Set S.Set a where
    member = S.member
    singleton = S.singleton
    subset = S.subset
-   sempty = S.empty
-   smap = S.map
+   empty = S.empty
+   map = S.map
    fromFoldable = S.fromFoldable
    toUnfoldable = S.toUnfoldable
