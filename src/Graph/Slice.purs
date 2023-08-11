@@ -5,8 +5,11 @@ import Prelude hiding (add)
 import Data.List (List(..), (:))
 import Data.List as L
 import Data.Tuple (fst)
+import Data.Traversable (foldl)
 import Graph (class Graph, Edge, Vertex, add, addIn, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN, remove)
-import Set (class Set)
+import Set (class Set, singleton, empty, union, member)
+import Expr (Expr)
+import Val (Val)
 import Util (type (×), (×))
 
 bwdSlice :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
@@ -34,3 +37,11 @@ fwdVertex g' g h α =
    else g × h
    where
    αs = outN h α
+
+selectSources :: forall s. Set s Vertex => Val Boolean -> Val Vertex -> s Vertex
+selectSources u v = foldl union empty v_selected
+   where
+   v_selected = (\b -> if b then singleton else const empty) <$> u <*> v
+
+selectSinks :: forall s. Set s Vertex => Expr Vertex -> s Vertex -> Expr Boolean
+selectSinks e αs = map (flip member αs) e
