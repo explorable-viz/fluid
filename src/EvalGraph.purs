@@ -13,7 +13,7 @@ import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
 import Control.Monad.Except (except, runExceptT)
-import Control.Monad.State (get, runStateT)
+import Control.Monad.State (get, runState)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (range, singleton) as A
 import Data.Either (note)
@@ -27,12 +27,12 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Graph (Vertex, class Graph)
 import Graph (fromFoldable) as G
-import Graph.GraphWriter (WithGraph, alloc, new, runHeap)
+import Graph.GraphWriter (WithGraph, alloc, new)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Set (class Set, member, insert, empty, singleton, subset, union)
 import Set (fromFoldable, toUnfoldable) as S
-import Util (type (×), MayFail, check, error, report, successful, with, (×))
+import Util (type (×), (×), MayFail, check, error, report, successful, unimplemented, with)
 import Util.Pair (unzip) as P
 import Val (DictRep(..), Env, MatrixRep(..), Val, lookup', for, restrict, (<+>), ForeignOp'(..))
 import Val (Val(..), Fun(..)) as V
@@ -154,20 +154,23 @@ eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> g -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
-evalGraph γ0 e0 _ = ((×) g') <$> maybe_v
-   where
+evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
+evalGraph γ0 e0 = error unimplemented --((×) g') <$> maybe_v
+   where q :: WithGraph s _
+         q = eval ?_ ?_ empty :: WithGraph s _
+{-
    maybe_v × g_adds =
-      ( runHeap $ flip runStateT Nil $ runExceptT $ do
-           γ <- lift $ lift $ traverse alloc γ0
-           e <- lift $ lift $ alloc e0
-           n <- lift $ lift $ get
+      ( flip runStateT (0 × Nil) $ runExceptT $ do
+           γ <- traverse alloc γ0
+           e <- lift $ alloc e0
+           n <- lift $ get
            v <- eval γ e empty :: WithGraph s _
            n' <- lift $ lift $ get
            trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
               pure (γ × e × v)
       ) :: MayFail (Env Vertex × Expr Vertex × Val Vertex) × _
    g' = G.fromFoldable g_adds
+-}
 
 selectSources :: forall s. Set s Vertex => Val Boolean -> Val Vertex -> s Vertex
 selectSources u v = foldl union empty v_selected

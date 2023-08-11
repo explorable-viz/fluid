@@ -35,7 +35,6 @@ import Eval (eval)
 import EvalBwd (evalBwd)
 import EvalGraph (evalGraph, selectSources) -- , selectSinks)
 import Graph (Vertex)
-import Graph (empty) as G -- , vertices, GraphSet) as G
 import Graph.GraphImpl (GraphSet)
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
@@ -80,7 +79,7 @@ testWithSetup (File file) expected v_expect_opt setup =
    doTest' γ s = do
       e <- except $ desug s
       t × v <- except $ eval γ e bot
-      _ × (_ × _ × vα) <- except $ evalGraph γ e (G.empty :: GraphSet)
+      _ × (_ × _ × vα) <- except $ evalGraph γ e :: MayFailT _ (GraphSet × _)
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
          { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
