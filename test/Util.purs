@@ -21,7 +21,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (fst, uncurry)
 import Data.Set (Set) as S
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
@@ -33,11 +33,15 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import EvalGraph (evalGraph, selectSources) -- , selectSinks)
+import EvalGraph (evalGraph) -- , selectSinks)
 import Graph (GraphSet, Vertex)
-import Graph (empty) as G -- , vertices, GraphSet) as G
+import Graph (empty, vertices) as G -- , vertices, GraphSet) as G
+import Graph.Slice (selectSources, selectSinks, bwdSlice) as G
+import Graph.GraphWriter (alloc, runHeap) as G
 import Lattice (𝔹, bot, erase)
-import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
+import Module (File(..),
+                 -- Folder(..), loadFile,
+                  open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
 import Pretty (pretty, class Pretty, prettyP)
 import SExpr (Expr) as SE
@@ -78,44 +82,50 @@ testWithSetup (File file) expected v_expect_opt setup =
    doTest' :: Env 𝔹 -> SE.Expr 𝔹 -> MayFailT Aff Unit
    doTest' γ s = do
       e <- except $ desug s
-      t × v <- except $ eval γ e bot
-      _ × (_ × _ × vα) <- except $ evalGraph γ e (G.empty :: GraphSet)
-      let
-         v' = fromMaybe identity (fst <$> v_expect_opt) v
-         { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-         (s' :: SE.Expr 𝔹) = desugBwd e' (erase s)
-      _ × v'' <- except $ desug s' >>= flip (eval γ') top
-      let src = render (pretty s)
-      s'' <- except $ parse src program
-      trace ("Non-Annotated:\n" <> src) \_ -> lift $
-         if (not $ eq (erase s) s'') then do
-            liftEffect $ do
-               log ("SRC\n" <> show (erase s))
-               log ("NEW\n" <> show s'')
-            fail "not equal"
-         else do
-            unless (isGraphical v'')
-               (checkPretty "Value" expected v'')
-            unless (isGraphical v'' || isJust v_expect_opt)
-               (checkPretty "Value" expected (erase vα))
-            unless (isNothing v_expect_opt)
-               ( do
-                    let (αs :: S.Set Vertex) = selectSources v'' vα
-                    log ("EvalGraph.selectSources:")
-                    log ("Val 𝔹: " <> render (pretty v''))
-                    log ("Val Vertex: " <> render (pretty vα))
-                    log ("Set Vertex: " <> show αs <> "\n")
-               --   let g' = G.bwdSlice αs g
-               --   log ("Graph bwd slice: " <> show g')
-               --   let e' = selectSinks eα (G.vertices g')
-               --   log ("Graph bwd slice: " <> (render $ pretty e'))
-               )
-            trace ("Annotated\n" <> render (pretty s')) \_ ->
-               case snd <$> v_expect_opt of
-                  Nothing -> pure unit
-                  Just file_expect -> do
-                     expect <- loadFile (Folder "fluid/example") file_expect
-                     checkPretty "Source selection" expect s'
+      log (render $ pretty e)
+      if false then do
+         let eα = G.runHeap $ G.alloc e
+         log (render $ pretty eα)
+         t × v <- except $ eval γ e bot
+         g × (_ × _ × vα) <- except $ evalGraph γ e (G.empty :: GraphSet)
+         let
+            v' = fromMaybe identity (fst <$> v_expect_opt) v
+            { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
+            (s' :: SE.Expr 𝔹) = desugBwd e' (erase s)
+         _ × v'' <- except $ desug s' >>= flip (eval γ') top
+         let src = render (pretty s)
+         s'' <- except $ parse src program
+         trace ("Non-Annotated:\n" <> src) \_ -> lift $
+            if (not $ eq (erase s) s'') then do
+               liftEffect $ do
+                  log ("SRC\n" <> show (erase s))
+                  log ("NEW\n" <> show s'')
+               fail "not equal"
+            else do
+               unless (isGraphical v'')
+                  (checkPretty "Value" expected v'')
+               unless (isGraphical v'' || isJust v_expect_opt)
+                  (checkPretty "Value" expected (erase vα))
+               unless (isNothing v_expect_opt)
+                  ( do
+                     let (αs :: S.Set Vertex) = G.selectSources v'' vα
+                     log ("EvalGraph.selectSources:")
+                     log ("Val 𝔹: " <> render (pretty v''))
+                     log ("Val Vertex: " <> render (pretty vα))
+                     log ("Set Vertex: " <> show αs <> "\n")
+                     let g' = G.bwdSlice αs g
+                     log ("Graph bwd slice: " <> show g')
+                     log (render $ pretty eα)
+                     let e' = G.selectSinks eα (G.vertices g')
+                     log ("Graph bwd slice: " <> (render $ pretty e'))
+                  )
+         else pure unit
+            -- trace ("Annotated\n" <> render (pretty s')) \_ ->
+            --    case snd <$> v_expect_opt of
+            --       Nothing -> pure unit
+            --       Just file_expect -> do
+            --          expect <- loadFile (Folder "fluid/example") file_expect
+            --          checkPretty "Source selection" expect s'
 
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)

@@ -5,21 +5,19 @@ module EvalGraph
    , matchMany
    , patternMismatch
    , evalGraph
-   , selectSources
-   , selectSinks
    ) where
 
 import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
 import Control.Monad.Except (except, runExceptT)
-import Control.Monad.State (get, runStateT)
+import Control.Monad.State (runStateT)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (range, singleton) as A
 import Data.Either (note)
 import Data.Exists (runExists)
 import Data.List (List(..), (:), length, snoc, unzip, zip)
-import Data.Traversable (sequence, traverse, foldl)
+import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Debug (trace)
@@ -28,14 +26,15 @@ import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Graph (Vertex, class Graph)
 import Graph (fromFoldable) as G
 import Graph.GraphWriter (WithGraph3, alloc, new, runHeap)
-import Pretty (prettyP)
+import Pretty (prettyP, pretty)
 import Primitive (string, intPair)
-import Set (class Set, member, insert, sempty, singleton, subset, union)
+import Set (class Set, insert, sempty, singleton, subset, union)
 import Set (fromFoldable, toUnfoldable) as S
 import Util (type (×), MayFail, check, error, report, successful, with, (×))
 import Util.Pair (unzip) as P
-import Val (DictRep(..), Env, MatrixRep(..), Val, lookup', for, restrict, (<+>), ForeignOp'(..))
+import Util.Pretty (render)
 import Val (Val(..), Fun(..)) as V
+import Val (class Highlightable, DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
 
 {-# Matching #-}
 patternMismatch :: String -> String -> String
@@ -154,25 +153,19 @@ eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> g -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
+evalGraph :: forall g s a. Highlightable a => Graph g s => Env a -> Expr a -> g -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
 evalGraph γ0 e0 _ = ((×) g') <$> maybe_v
    where
    maybe_v × g_adds =
       ( runHeap $ flip runStateT Nil $ runExceptT $ do
            γ <- lift $ lift $ traverse alloc γ0
            e <- lift $ lift $ alloc e0
-           n <- lift $ lift $ get
-           v <- eval γ e sempty :: WithGraph3 s _
-           n' <- lift $ lift $ get
-           trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
-              pure (γ × e × v)
+           trace ("Original expression: \n" <> (render $ pretty e0)) $ \_  -> do
+            trace ("Allocated expression: \n" <> (render $ pretty e)) $ \_ -> do
+               --   n <- lift $ lift $ get
+               v <- eval γ e sempty :: WithGraph3 s _
+               --   n' <- lift $ lift $ get
+               pure (γ × e × v)
       ) :: MayFail (Env Vertex × Expr Vertex × Val Vertex) × _
    g' = G.fromFoldable g_adds
 
-selectSources :: forall s. Set s Vertex => Val Boolean -> Val Vertex -> s Vertex
-selectSources u v = foldl union sempty v_selected
-   where
-   v_selected = (\b -> if b then singleton else const sempty) <$> u <*> v
-
-selectSinks :: forall s. Set s Vertex => Expr Vertex -> s Vertex -> Expr Boolean
-selectSinks e αs = map (flip member αs) e

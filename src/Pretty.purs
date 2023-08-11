@@ -11,6 +11,7 @@ import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
+import Data.Set (toUnfoldable) as S
 import Data.String (Pattern(..), contains) as Data.String
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
@@ -325,6 +326,9 @@ prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRec
 prettyRecord :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
 prettyRecord = between (text "{") (text "}") # prettyRecordOrDict (text str.colon)
 
+prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
+prettyMatrix e1 i j e2 = (between (text "[[") (text "]]") (pretty e1 .<>. text " <- " .<>. text (i <> "×" <> j) .<>. text " in " .<>. pretty e2))
+
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
    pretty (E.Int α n) = highlightIf α (text (show n))
@@ -333,7 +337,8 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Record α xes) = prettyRecord text α (xes # D.toUnfoldable)
    pretty (E.Dictionary α ees) = prettyDict pretty α (ees <#> toTuple)
    pretty (E.Constr α c es) = prettyConstr α c es
-   pretty (E.Matrix _ _ _ _) = error "todo"
+   pretty (E.Matrix α e1 (i × j) e2)
+      = highlightIf α (prettyMatrix e1 i j e2)
    pretty (E.Lambda σ) = hspace [ text str.fun, pretty σ ]
    pretty (E.Op op) = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') = atop (hspace [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
@@ -364,7 +369,7 @@ instance Highlightable a => Pretty (Ctr × Cont a) where
 instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hspace [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
-   pretty (ElimRecord _ _) = error "todo"
+   pretty (ElimRecord xs κ) = hspace [ between (text "{") (text "}") $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, between (text "{") (text "}") (pretty κ) ]
 
 instance Highlightable a => Pretty (Val a) where
    pretty (V.Int α n) = highlightIf α (text (show n))
