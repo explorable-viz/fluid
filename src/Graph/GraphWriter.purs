@@ -1,14 +1,13 @@
-module Graph.GraphWriter (
-   class MonadAlloc,
-   class MonadGraphWriter,
-   AdjacencyMap,
-   WithGraph,
-   alloc,
-   fresh,
-   new,
-   runHeap
-)
-where
+module Graph.GraphWriter
+   ( class MonadAlloc
+   , class MonadGraphWriter
+   , AdjacencyMap
+   , WithGraph
+   , alloc
+   , fresh
+   , new
+   , runHeap
+   ) where
 
 import Prelude hiding (add)
 import Control.Monad.State (class MonadState, State, StateT, get, modify_, put, runState)
