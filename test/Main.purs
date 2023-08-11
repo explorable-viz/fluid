@@ -6,13 +6,13 @@ import Bindings ((↦))
 import Control.Monad.Trans.Class (lift)
 import Data.Array (concat)
 import Data.Foldable (foldl)
-import Data.Set (fromFoldable) as S
+import Data.Set as S
 import Data.Traversable (sequence)
 import Dict (fromFoldable)
 import Effect (Effect)
 import Effect.Console (log, logShow)
 import Graph (add, Vertex(..), inEdges)
-import Graph.GraphImpl (GraphSet)
+import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (fwdSlice)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
@@ -21,17 +21,16 @@ import Util ((×))
 import Val (DictRep(..), Val(..))
 
 tests :: Array (Array (Test Unit))
--- tests =
---    [
---       test_desugaring
---    , test_misc,
---     test_bwd
---        , test_linking
---        , test_graphics
---        , test_graph
---    ]
+tests =
+   [ test_desugaring
+   , test_misc
+   , test_bwd
+   , test_linking
+   , test_graphics
+   , test_graph
+   ]
 
-tests = [ test_scratchpad ]
+-- tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
@@ -291,7 +290,7 @@ test_graph =
    graph_test_initial = do
       let
          ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-         g' = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphSet
+         g' = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphImpl (S.Set)
          slice = fwdSlice (S.fromFoldable [ (Vertex "13"), (Vertex "12"), Vertex "11" ]) g'
       lift $ do
          log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ (Vertex "11") ])))

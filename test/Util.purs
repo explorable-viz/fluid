@@ -38,7 +38,7 @@ import Expr (Expr) as E
 import Graph (Vertex)
 import Graph (vertices) as G
 import Graph.Slice (selectSources, selectSinks, bwdSlice) as G
-import Graph.GraphImpl (GraphSet)
+import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, erase)
 import Module
    ( File(..)
@@ -116,7 +116,7 @@ testWithSetup (File file) expected v_expect_opt setup =
 
    testGraph :: (Val 𝔹 × Env 𝔹 × E.Expr 𝔹) -> MayFailT Aff Unit
    testGraph (v𝔹 × γ𝔹 × e𝔹) = do
-      g × (_ × eα × vα) <- except $ evalGraph γ𝔹 e𝔹 :: MayFailT _ (GraphSet × _)
+      g × (_ × eα × vα) <- except $ evalGraph γ𝔹 e𝔹 :: MayFailT _ (GraphImpl S.Set × _)
       lift $ do
          unless (isGraphical v𝔹 || isJust v_expect_opt)
             (checkPretty "Value" expected (erase vα))
@@ -138,8 +138,8 @@ testWithSetup (File file) expected v_expect_opt setup =
                     log ("EvalGraph.selectSinks: ")
                     log ("Selected vertices: " <> show (G.vertices gbwd))
                     let eα' = G.selectSinks eα (G.vertices gbwd)
-                    log ("Expr 𝔹 1: " <> (render $ pretty e𝔹))
-                    log ("Expr 𝔹 2: " <> (render $ pretty eα'))
+                    log ("Expr 𝔹 expected: \n" <> (render $ pretty e𝔹))
+                    log ("Expr 𝔹 gotten: \n" <> (render $ pretty eα'))
                     if (not $ eq eα' e𝔹) then fail "not equal" else pure unit
             )
 

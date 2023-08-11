@@ -54,6 +54,7 @@ instance Apply Expr where
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
+
 derive instance Eq a => Eq (VarDef a)
 
 type RecDefs a = Dict (Elim a)
