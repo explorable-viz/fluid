@@ -13,7 +13,7 @@ import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
 import Control.Monad.Except (except, runExceptT)
-import Control.Monad.State (State, get, runState)
+import Control.Monad.State (get, runState)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (range, singleton) as A
 import Data.Either (note)
@@ -32,7 +32,7 @@ import Pretty (prettyP)
 import Primitive (string, intPair)
 import Set (class Set, member, insert, empty, singleton, subset, union)
 import Set (fromFoldable, toUnfoldable) as S
-import Util (type (×), (×), MayFail, check, error, report, successful, unimplemented, with)
+import Util (type (×), (×), MayFail, check, error, report, successful, with)
 import Util.Pair (unzip) as P
 import Val (DictRep(..), Env, MatrixRep(..), Val, lookup', for, restrict, (<+>), ForeignOp'(..))
 import Val (Val(..), Fun(..)) as V
@@ -155,12 +155,10 @@ eval γ (LetRec ρ e) αs = do
    eval (γ <+> γ') e αs
 
 evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
-evalGraph γ0 e0 = error unimplemented --((×) g') <$> maybe_v
+evalGraph γ0 e0 = ((×) g') <$> maybe_r
    where
-   blah :: State (Int × List _) (MayFail _)
-   blah = runExceptT q
-   q :: WithGraph s _
-   q = do
+   doEval :: WithGraph s _
+   doEval = do
       γ <- traverse alloc γ0
       e <- alloc e0
       n × _ <- lift $ get
@@ -168,12 +166,8 @@ evalGraph γ0 e0 = error unimplemented --((×) g') <$> maybe_v
       n' × _ <- lift $ get
       trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
          pure (γ × e × v)
-{-
-   maybe_v × g_adds =
-      ( flip runStateT (0 × Nil) $ runExceptT $ do
-      ) :: MayFail (Env Vertex × Expr Vertex × Val Vertex) × _
+   maybe_r × _ × g_adds = flip runState (0 × Nil) (runExceptT doEval)
    g' = G.fromFoldable g_adds
--}
 
 selectSources :: forall s. Set s Vertex => Val Boolean -> Val Vertex -> s Vertex
 selectSources u v = foldl union empty v_selected
