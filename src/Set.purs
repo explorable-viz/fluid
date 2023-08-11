@@ -2,11 +2,10 @@ module Set where
 
 import Prelude
 import Data.Foldable (class Foldable)
-import Data.Newtype (class Newtype)
 import Data.Set as S
 import Data.Unfoldable (class Unfoldable)
 
-class (Newtype a String, Ord a, Ord (s a), Foldable s) <= Set s a where
+class (Ord a, Ord (s a), Foldable s) <= Set s a where
    delete :: a -> s a -> s a
    union :: s a -> s a -> s a
    insert :: a -> s a -> s a
@@ -18,7 +17,7 @@ class (Newtype a String, Ord a, Ord (s a), Foldable s) <= Set s a where
    fromFoldable :: forall f. Foldable f => f a -> s a
    toUnfoldable :: forall f. Unfoldable f => s a -> f a
 
-instance (Ord a, Newtype a String) => Set S.Set a where
+instance Ord a => Set S.Set a where
    delete = S.delete
    union = S.union
    insert = S.insert
