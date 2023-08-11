@@ -42,7 +42,7 @@ class Monad m <= MonadGraphWriter s m | m -> s where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
    new :: s Vertex -> m Vertex
 
--- Builds list of adjacency maplets (arguments to extend).
+-- Builds list of adjacency maplets (arguments to 'add').
 type AdjacencyMap s = List (Vertex × s Vertex)
 type WithGraph s a = MayFailT (StateT (AdjacencyMap s) (State Int)) a
 
