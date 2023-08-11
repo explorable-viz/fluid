@@ -1,4 +1,14 @@
-module Graph.GraphWriter where
+module Graph.GraphWriter (
+   class MonadAlloc,
+   class MonadGraphAccum,
+   AdjacencyMap,
+   WithGraph3,
+   alloc,
+   fresh,
+   new,
+   runHeap
+)
+where
 
 import Prelude hiding (add)
 import Control.Monad.State (class MonadState, State, StateT, get, modify_, put, runState)
@@ -41,12 +51,6 @@ type WithGraph g s a = MayFailT (GraphAccumT g s (State Int)) a
 
 data GraphAccum2T g m a = GraphAccum2T (g -> m (a × g))
 type WithGraph2 g a = MayFailT (GraphAccum2T g (State Int)) a
-
-runGraphAccumT :: forall g s m a. GraphAccumT g s m a -> m (a × Endo (g (s Vertex)))
-runGraphAccumT (GraphAccumT m) = m
-
-runGraphAccum2T :: forall g m a. GraphAccum2T g m a -> g -> m (a × g)
-runGraphAccum2T (GraphAccum2T m) = m
 
 instance Functor m => Functor (GraphAccumT g s m) where
    map f (GraphAccumT m) = GraphAccumT $ m <#> first f
