@@ -34,27 +34,10 @@ data Val a
    | Matrix a (MatrixRep a)
    | Fun (Fun a)
 
-instance Apply Val where
-   apply (Int fα n) (Int α _) = Int (fα α) n
-   apply (Float fα n) (Float α _) = Float (fα α) n
-   apply (Str fα s) (Str α _) = Str (fα α) s
-   apply (Constr fα c fes) (Constr α _ es) = Constr (fα α) c (zipWith (<*>) fes es)
-   apply (Record fα fxvs) (Record α xvs) = Record (fα α) (D.apply2 fxvs xvs)
-   apply (Dictionary fα fxvs) (Dictionary α xvs) = Dictionary (fα α) (fxvs <*> xvs)
-   apply (Matrix fα fm) (Matrix α m) = Matrix (fα α) (fm <*> m)
-   apply (Fun ff) (Fun f) = Fun (ff <*> f)
-   apply _ _ = error "Apply Expr: shape mismatch"
-
 data Fun a
    = Closure a (Env a) (RecDefs a) (Elim a)
    | Foreign ForeignOp (List (Val a)) -- never saturated
    | PartialConstr a Ctr (List (Val a)) -- never saturated
-
-instance Apply Fun where
-   apply (Closure fα fγ fρ fσ) (Closure α γ ρ σ) = Closure (fα α) (D.apply2 fγ γ) (D.apply2 fρ ρ) (fσ <*> σ)
-   apply (Foreign op fvs) (Foreign _ vs) = Foreign op (zipWith (<*>) fvs vs)
-   apply (PartialConstr fα c fvs) (PartialConstr α _ vs) = PartialConstr (fα α) c (zipWith (<*>) fvs vs)
-   apply _ _ = error "Apply Fun: shape mismatch"
 
 class (Highlightable a, BoundedLattice a) <= Ann a
 
@@ -112,14 +95,7 @@ for ρ σ = ρ `restrict` reaches ρ (fv σ `intersection` (fromFoldable $ O.key
 
 -- Wrap internal representations to provide foldable/traversable instances.
 newtype DictRep a = DictRep (Dict (a × Val a))
-
-instance Apply DictRep where
-   apply (DictRep fxvs) (DictRep xvs) = DictRep $ D.intersectionWith (\(fα' × fv') (α' × v') -> (fα' α') × (fv' <*> v')) fxvs xvs
-
 newtype MatrixRep a = MatrixRep (Array2 (Val a) × (Int × a) × (Int × a))
-
-instance Apply MatrixRep where
-   apply (MatrixRep (fvss × (n × fnα) × (m × fmα))) (MatrixRep (vss × (_ × nα) × (_ × mα))) = MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × (n × fnα nα) × (m × fmα mα)
 
 type Array2 a = Array (Array a)
 
@@ -155,6 +131,29 @@ derive instance Traversable Val
 derive instance Functor Fun
 derive instance Foldable Fun
 derive instance Traversable Fun
+
+instance Apply Val where
+   apply (Int fα n) (Int α _) = Int (fα α) n
+   apply (Float fα n) (Float α _) = Float (fα α) n
+   apply (Str fα s) (Str α _) = Str (fα α) s
+   apply (Constr fα c fes) (Constr α _ es) = Constr (fα α) c (zipWith (<*>) fes es)
+   apply (Record fα fxvs) (Record α xvs) = Record (fα α) (D.apply2 fxvs xvs)
+   apply (Dictionary fα fxvs) (Dictionary α xvs) = Dictionary (fα α) (fxvs <*> xvs)
+   apply (Matrix fα fm) (Matrix α m) = Matrix (fα α) (fm <*> m)
+   apply (Fun ff) (Fun f) = Fun (ff <*> f)
+   apply _ _ = error "Apply Expr: shape mismatch"
+
+instance Apply Fun where
+   apply (Closure fα fγ fρ fσ) (Closure α γ ρ σ) = Closure (fα α) (D.apply2 fγ γ) (D.apply2 fρ ρ) (fσ <*> σ)
+   apply (Foreign op fvs) (Foreign _ vs) = Foreign op (zipWith (<*>) fvs vs)
+   apply (PartialConstr fα c fvs) (PartialConstr α _ vs) = PartialConstr (fα α) c (zipWith (<*>) fvs vs)
+   apply _ _ = error "Apply Fun: shape mismatch"
+
+instance Apply DictRep where
+   apply (DictRep fxvs) (DictRep xvs) = DictRep $ D.intersectionWith (\(fα' × fv') (α' × v') -> (fα' α') × (fv' <*> v')) fxvs xvs
+
+instance Apply MatrixRep where
+   apply (MatrixRep (fvss × (n × fnα) × (m × fmα))) (MatrixRep (vss × (_ × nα) × (_ × mα))) = MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × (n × fnα nα) × (m × fmα mα)
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d
