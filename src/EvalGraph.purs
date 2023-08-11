@@ -19,6 +19,7 @@ import Data.Array (range, singleton) as A
 import Data.Either (note)
 import Data.Exists (runExists)
 import Data.List (List(..), (:), length, snoc, unzip, zip)
+import Data.Set as S
 import Data.Traversable (sequence, traverse, foldl)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
@@ -30,8 +31,7 @@ import Graph (fromFoldable) as G
 import Graph.GraphWriter (WithGraph, alloc, new)
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Set (class Set, member, insert, empty, singleton, subset, union)
-import Set (fromFoldable, toUnfoldable) as S
+import Set (class Set, member, insert, empty, singleton, union)
 import Util (type (×), (×), MayFail, check, error, report, successful, with)
 import Util.Pair (unzip) as P
 import Val (DictRep(..), Env, MatrixRep(..), Val, lookup', for, restrict, (<+>), ForeignOp'(..))
@@ -46,7 +46,7 @@ match v (ElimVar x κ)
    | x == varAnon = pure (D.empty × κ × empty)
    | otherwise = pure (D.singleton x v × κ × empty)
 match (V.Constr α c vs) (ElimConstr m) = do
-   with "Pattern mismatch" $ singleton c `consistentWith` D.keys m
+   with "Pattern mismatch" $ S.singleton c `consistentWith` D.keys m
    κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (D.lookup c m)
    γ × κ' × αs <- matchMany vs κ
    pure (γ × κ' × (insert α αs))
@@ -54,7 +54,7 @@ match v (ElimConstr m) = do
    d <- dataTypeFor $ D.keys m
    report $ patternMismatch (prettyP v) (show d)
 match (V.Record α xvs) (ElimRecord xs κ) = do
-   check (subset xs (S.fromFoldable $ D.keys xvs))
+   check (S.subset xs (S.fromFoldable $ D.keys xvs))
       $ patternMismatch (show (D.keys xvs)) (show xs)
    let xs' = xs # S.toUnfoldable
    γ × κ' × αs <- matchMany (flip D.get xvs <$> xs') κ
@@ -77,7 +77,7 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `for` σ
       in
-         V.Fun <$> (V.Closure <$> new αs <@> (γ `restrict` (fv ρ' `union` fv σ)) <@> ρ' <@> σ)
+         V.Fun <$> (V.Closure <$> new αs <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
 apply :: forall s. Set s Vertex => Val Vertex -> Val Vertex -> WithGraph s (Val Vertex)
