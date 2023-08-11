@@ -4267,10 +4267,10 @@
           flush();
           total = total ? total.compose(spec.map(total)) : spec;
         } else {
-          let { from, to = from, insert: insert4 } = spec;
+          let { from, to = from, insert: insert3 } = spec;
           if (from > to || from < 0 || to > length6)
             throw new RangeError(`Invalid change range ${from} to ${to} (in doc of length ${length6})`);
-          let insText = !insert4 ? Text.empty : typeof insert4 == "string" ? Text.of(insert4.split(lineSep || DefaultSplit)) : insert4;
+          let insText = !insert3 ? Text.empty : typeof insert3 == "string" ? Text.of(insert3.split(lineSep || DefaultSplit)) : insert3;
           let insLen = insText.length;
           if (from == to && insLen == 0)
             return;
@@ -4367,7 +4367,7 @@
     }
   }
   function mapSet(setA, setB, before, mkSet = false) {
-    let sections = [], insert4 = mkSet ? [] : null;
+    let sections = [], insert3 = mkSet ? [] : null;
     let a = new SectionIter(setA), b = new SectionIter(setB);
     for (let inserted = -1; ; ) {
       if (a.ins == -1 && b.ins == -1) {
@@ -4382,8 +4382,8 @@
           let piece = Math.min(a.len, len);
           if (a.ins >= 0 && inserted < a.i && a.len <= piece) {
             addSection(sections, 0, a.ins);
-            if (insert4)
-              addInsert(insert4, sections, a.text);
+            if (insert3)
+              addInsert(insert3, sections, a.text);
             inserted = a.i;
           }
           a.forward(piece);
@@ -4406,12 +4406,12 @@
           }
         }
         addSection(sections, len, inserted < a.i ? a.ins : 0);
-        if (insert4 && inserted < a.i)
-          addInsert(insert4, sections, a.text);
+        if (insert3 && inserted < a.i)
+          addInsert(insert3, sections, a.text);
         inserted = a.i;
         a.forward(a.len - left2);
       } else if (a.done && b.done) {
-        return insert4 ? ChangeSet.createSet(sections, insert4) : ChangeDesc.create(sections);
+        return insert3 ? ChangeSet.createSet(sections, insert3) : ChangeDesc.create(sections);
       } else {
         throw new Error("Mismatched change set lengths");
       }
@@ -4419,18 +4419,18 @@
   }
   function composeSets(setA, setB, mkSet = false) {
     let sections = [];
-    let insert4 = mkSet ? [] : null;
+    let insert3 = mkSet ? [] : null;
     let a = new SectionIter(setA), b = new SectionIter(setB);
     for (let open = false; ; ) {
       if (a.done && b.done) {
-        return insert4 ? ChangeSet.createSet(sections, insert4) : ChangeDesc.create(sections);
+        return insert3 ? ChangeSet.createSet(sections, insert3) : ChangeDesc.create(sections);
       } else if (a.ins == 0) {
         addSection(sections, a.len, 0, open);
         a.next();
       } else if (b.len == 0 && !b.done) {
         addSection(sections, 0, b.ins, open);
-        if (insert4)
-          addInsert(insert4, sections, b.text);
+        if (insert3)
+          addInsert(insert3, sections, b.text);
         b.next();
       } else if (a.done || b.done) {
         throw new Error("Mismatched change set lengths");
@@ -4439,16 +4439,16 @@
         if (a.ins == -1) {
           let insB = b.ins == -1 ? -1 : b.off ? 0 : b.ins;
           addSection(sections, len, insB, open);
-          if (insert4 && insB)
-            addInsert(insert4, sections, b.text);
+          if (insert3 && insB)
+            addInsert(insert3, sections, b.text);
         } else if (b.ins == -1) {
           addSection(sections, a.off ? 0 : a.len, len, open);
-          if (insert4)
-            addInsert(insert4, sections, a.textBit(len));
+          if (insert3)
+            addInsert(insert3, sections, a.textBit(len));
         } else {
           addSection(sections, a.off ? 0 : a.len, b.off ? 0 : b.ins, open);
-          if (insert4 && !b.off)
-            addInsert(insert4, sections, b.text);
+          if (insert3 && !b.off)
+            addInsert(insert3, sections, b.text);
         }
         open = (a.ins > len || b.ins >= 0 && b.len > len) && (open || sections.length > sectionLen);
         a.forward2(len);
@@ -5423,18 +5423,18 @@
     get readOnly() {
       return this.facet(readOnly);
     }
-    phrase(phrase, ...insert4) {
+    phrase(phrase, ...insert3) {
       for (let map6 of this.facet(EditorState.phrases))
         if (Object.prototype.hasOwnProperty.call(map6, phrase)) {
           phrase = map6[phrase];
           break;
         }
-      if (insert4.length)
+      if (insert3.length)
         phrase = phrase.replace(/\$(\$|\d*)/g, (m, i) => {
           if (i == "$")
             return "$";
           let n = +(i || 1);
-          return !n || n > insert4.length ? m : insert4[n - 1];
+          return !n || n > insert3.length ? m : insert3[n - 1];
         });
       return phrase;
     }
@@ -6928,12 +6928,12 @@
       }
     }
   };
-  function replaceRange(parent, fromI, fromOff, toI, toOff, insert4, breakAtStart, openStart, openEnd) {
+  function replaceRange(parent, fromI, fromOff, toI, toOff, insert3, breakAtStart, openStart, openEnd) {
     let { children: children2 } = parent;
     let before = children2.length ? children2[fromI] : null;
-    let last2 = insert4.length ? insert4[insert4.length - 1] : null;
+    let last2 = insert3.length ? insert3[insert3.length - 1] : null;
     let breakAtEnd = last2 ? last2.breakAfter : breakAtStart;
-    if (fromI == toI && before && !breakAtStart && !breakAtEnd && insert4.length < 2 && before.merge(fromOff, toOff, insert4.length ? last2 : null, fromOff == 0, openStart, openEnd))
+    if (fromI == toI && before && !breakAtStart && !breakAtEnd && insert3.length < 2 && before.merge(fromOff, toOff, insert3.length ? last2 : null, fromOff == 0, openStart, openEnd))
       return;
     if (toI < children2.length) {
       let after = children2[toI];
@@ -6943,11 +6943,11 @@
           toOff = 0;
         }
         if (!breakAtEnd && last2 && after.merge(0, toOff, last2, true, 0, openEnd)) {
-          insert4[insert4.length - 1] = after;
+          insert3[insert3.length - 1] = after;
         } else {
           if (toOff)
             after.merge(0, toOff, null, false, 0, openEnd);
-          insert4.push(after);
+          insert3.push(after);
         }
       } else if (after === null || after === void 0 ? void 0 : after.breakAfter) {
         if (last2)
@@ -6960,41 +6960,41 @@
     if (before) {
       before.breakAfter = breakAtStart;
       if (fromOff > 0) {
-        if (!breakAtStart && insert4.length && before.merge(fromOff, before.length, insert4[0], false, openStart, 0)) {
-          before.breakAfter = insert4.shift().breakAfter;
+        if (!breakAtStart && insert3.length && before.merge(fromOff, before.length, insert3[0], false, openStart, 0)) {
+          before.breakAfter = insert3.shift().breakAfter;
         } else if (fromOff < before.length || before.children.length && before.children[before.children.length - 1].length == 0) {
           before.merge(fromOff, before.length, null, false, openStart, 0);
         }
         fromI++;
       }
     }
-    while (fromI < toI && insert4.length) {
-      if (children2[toI - 1].become(insert4[insert4.length - 1])) {
+    while (fromI < toI && insert3.length) {
+      if (children2[toI - 1].become(insert3[insert3.length - 1])) {
         toI--;
-        insert4.pop();
-        openEnd = insert4.length ? 0 : openStart;
-      } else if (children2[fromI].become(insert4[0])) {
+        insert3.pop();
+        openEnd = insert3.length ? 0 : openStart;
+      } else if (children2[fromI].become(insert3[0])) {
         fromI++;
-        insert4.shift();
-        openStart = insert4.length ? 0 : openEnd;
+        insert3.shift();
+        openStart = insert3.length ? 0 : openEnd;
       } else {
         break;
       }
     }
-    if (!insert4.length && fromI && toI < children2.length && !children2[fromI - 1].breakAfter && children2[toI].merge(0, 0, children2[fromI - 1], false, openStart, openEnd))
+    if (!insert3.length && fromI && toI < children2.length && !children2[fromI - 1].breakAfter && children2[toI].merge(0, 0, children2[fromI - 1], false, openStart, openEnd))
       fromI--;
-    if (fromI < toI || insert4.length)
-      parent.replaceChildren(fromI, toI, insert4);
+    if (fromI < toI || insert3.length)
+      parent.replaceChildren(fromI, toI, insert3);
   }
-  function mergeChildrenInto(parent, from, to, insert4, openStart, openEnd) {
+  function mergeChildrenInto(parent, from, to, insert3, openStart, openEnd) {
     let cur = parent.childCursor();
     let { i: toI, off: toOff } = cur.findPos(to, 1);
     let { i: fromI, off: fromOff } = cur.findPos(from, -1);
     let dLen = from - to;
-    for (let view2 of insert4)
+    for (let view2 of insert3)
       dLen += view2.length;
     parent.length += dLen;
-    replaceRange(parent, fromI, fromOff, toI, toOff, insert4, 0, openStart, openEnd);
+    replaceRange(parent, fromI, fromOff, toI, toOff, insert3, 0, openStart, openEnd);
   }
   var nav = typeof navigator != "undefined" ? navigator : { userAgent: "", vendor: "", platform: "" };
   var doc = typeof document != "undefined" ? document : { documentElement: { style: {} } };
@@ -9712,10 +9712,10 @@
         if (line.from == lastLine2)
           return { range: range3 };
         lastLine2 = line.from;
-        let insert4 = state.toText((byLine ? text2.line(i++).text : input) + state.lineBreak);
+        let insert3 = state.toText((byLine ? text2.line(i++).text : input) + state.lineBreak);
         return {
-          changes: { from: line.from, insert: insert4 },
-          range: EditorSelection.cursor(range3.from + insert4.length)
+          changes: { from: line.from, insert: insert3 },
+          range: EditorSelection.cursor(range3.from + insert3.length)
         };
       });
     } else if (byLine) {
@@ -15807,12 +15807,12 @@
           ({ from, to } = explode);
         else if (from > line.from && from < line.from + 100 && !/\S/.test(line.text.slice(0, from)))
           from = line.from;
-        let insert4 = ["", indentString(state, indent)];
+        let insert3 = ["", indentString(state, indent)];
         if (explode)
-          insert4.push(indentString(state, cx.lineIndent(line.from, -1)));
+          insert3.push(indentString(state, cx.lineIndent(line.from, -1)));
         return {
-          changes: { from, to, insert: Text.of(insert4) },
-          range: EditorSelection.cursor(from + 1 + insert4[1].length)
+          changes: { from, to, insert: Text.of(insert3) },
+          range: EditorSelection.cursor(from + 1 + insert3[1].length)
         };
       });
       dispatch3(state.update(changes, { scrollIntoView: true, userEvent: "input" }));
@@ -15879,10 +15879,10 @@
       if (!space)
         return;
       let col = countColumn(space, state.tabSize), keep = 0;
-      let insert4 = indentString(state, Math.max(0, col - getIndentUnit(state)));
-      while (keep < space.length && keep < insert4.length && space.charCodeAt(keep) == insert4.charCodeAt(keep))
+      let insert3 = indentString(state, Math.max(0, col - getIndentUnit(state)));
+      while (keep < space.length && keep < insert3.length && space.charCodeAt(keep) == insert3.charCodeAt(keep))
         keep++;
-      changes.push({ from: line.from + keep, to: line.from + space.length, insert: insert4.slice(keep) });
+      changes.push({ from: line.from + keep, to: line.from + space.length, insert: insert3.slice(keep) });
     }), { userEvent: "delete.dedent" }));
     return true;
   };
@@ -16768,138 +16768,6 @@
       return go(b)(Nil);
     },
     Unfoldable10: () => unfoldable1List
-  };
-  var eq1List = {
-    eq1: (dictEq) => (xs) => (ys) => {
-      const go = (go$a0$copy) => (go$a1$copy) => (go$a2$copy) => {
-        let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$a2 = go$a2$copy, go$c = true, go$r;
-        while (go$c) {
-          const v = go$a0, v1 = go$a1, v2 = go$a2;
-          if (!v2) {
-            go$c = false;
-            go$r = false;
-            continue;
-          }
-          if (v.tag === "Nil") {
-            if (v1.tag === "Nil") {
-              go$c = false;
-              go$r = v2;
-              continue;
-            }
-            go$c = false;
-            go$r = false;
-            continue;
-          }
-          if (v.tag === "Cons") {
-            if (v1.tag === "Cons") {
-              go$a0 = v._2;
-              go$a1 = v1._2;
-              go$a2 = v2 && dictEq.eq(v1._1)(v._1);
-              continue;
-            }
-            go$c = false;
-            go$r = false;
-            continue;
-          }
-          go$c = false;
-          go$r = false;
-          continue;
-        }
-        ;
-        return go$r;
-      };
-      return go(xs)(ys)(true);
-    }
-  };
-  var ord1List = {
-    compare1: (dictOrd) => (xs) => (ys) => {
-      const go = (go$a0$copy) => (go$a1$copy) => {
-        let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-        while (go$c) {
-          const v = go$a0, v1 = go$a1;
-          if (v.tag === "Nil") {
-            if (v1.tag === "Nil") {
-              go$c = false;
-              go$r = EQ;
-              continue;
-            }
-            go$c = false;
-            go$r = LT;
-            continue;
-          }
-          if (v1.tag === "Nil") {
-            go$c = false;
-            go$r = GT;
-            continue;
-          }
-          if (v.tag === "Cons") {
-            if (v1.tag === "Cons") {
-              const v2 = dictOrd.compare(v._1)(v1._1);
-              if (v2.tag === "EQ") {
-                go$a0 = v._2;
-                go$a1 = v1._2;
-                continue;
-              }
-              go$c = false;
-              go$r = v2;
-              continue;
-            }
-            fail();
-          }
-          fail();
-        }
-        ;
-        return go$r;
-      };
-      return go(xs)(ys);
-    },
-    Eq10: () => eq1List
-  };
-  var ordList = (dictOrd) => {
-    const $1 = dictOrd.Eq0();
-    const eqList1 = {
-      eq: (xs) => (ys) => {
-        const go = (go$a0$copy) => (go$a1$copy) => (go$a2$copy) => {
-          let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$a2 = go$a2$copy, go$c = true, go$r;
-          while (go$c) {
-            const v = go$a0, v1 = go$a1, v2 = go$a2;
-            if (!v2) {
-              go$c = false;
-              go$r = false;
-              continue;
-            }
-            if (v.tag === "Nil") {
-              if (v1.tag === "Nil") {
-                go$c = false;
-                go$r = v2;
-                continue;
-              }
-              go$c = false;
-              go$r = false;
-              continue;
-            }
-            if (v.tag === "Cons") {
-              if (v1.tag === "Cons") {
-                go$a0 = v._2;
-                go$a1 = v1._2;
-                go$a2 = v2 && $1.eq(v1._1)(v._1);
-                continue;
-              }
-              go$c = false;
-              go$r = false;
-              continue;
-            }
-            go$c = false;
-            go$r = false;
-            continue;
-          }
-          ;
-          return go$r;
-        };
-        return go(xs)(ys)(true);
-      }
-    };
-    return { compare: ord1List.compare1(dictOrd), Eq0: () => eqList1 };
   };
   var applyList = {
     apply: (v) => (v1) => {
@@ -19508,22 +19376,10 @@
     return (x2) => $1(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x2));
   };
   var toUnfoldable12 = /* @__PURE__ */ toUnfoldable4(unfoldableArray);
-  var singleton = (a) => $Map("Two", Leaf2, a, unit2, Leaf2);
   var showSet = (dictShow) => {
     const show4 = showArrayImpl(dictShow.show);
     return { show: (s) => "(fromFoldable " + (show4(toUnfoldable12(s)) + ")") };
   };
-  var member = (dictOrd) => (a) => (v) => {
-    const $3 = lookup(dictOrd)(a)(v);
-    if ($3.tag === "Nothing") {
-      return false;
-    }
-    if ($3.tag === "Just") {
-      return true;
-    }
-    fail();
-  };
-  var insert3 = (dictOrd) => (a) => (v) => insert2(dictOrd)(a)(unit2)(v);
   var foldableSet = {
     foldMap: (dictMonoid) => {
       const foldMap1 = foldableList.foldMap(dictMonoid);
@@ -19562,19 +19418,6 @@
       return (x$1) => $2(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(x$1));
     }
   };
-  var ordSet = (dictOrd) => {
-    const compare2 = ordList(dictOrd).compare;
-    const eq2 = eqMap(dictOrd.Eq0())(eqUnit).eq;
-    const eqSet1 = { eq: (v) => (v1) => eq2(v)(v1) };
-    return {
-      compare: (s1) => (s2) => compare2(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s1))(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List(
-        "Cons",
-        k,
-        acc
-      ))(Nil)(s2)),
-      Eq0: () => eqSet1
-    };
-  };
   var intersection = (dictOrd) => {
     const fromFoldable32 = foldlArray((m) => (a) => insert2(dictOrd)(a)(unit2)(m))(Leaf2);
     return (s1) => (s2) => {
@@ -19607,7 +19450,6 @@
     };
   };
   var map2 = (dictOrd) => (f) => foldableSet.foldl((m) => (a) => insert2(dictOrd)(f(a))(unit2)(m))(Leaf2);
-  var $$delete2 = (dictOrd) => (a) => (v) => $$delete(dictOrd)(a)(v);
   var difference3 = (dictOrd) => (s1) => (s2) => {
     const go = (go$a0$copy) => (go$a1$copy) => {
       let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
@@ -19630,7 +19472,6 @@
     };
     return go(s1)(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s2));
   };
-  var subset = (dictOrd) => (s1) => (s2) => difference3(dictOrd)(s1)(s2).tag === "Leaf";
 
   // output-es/Util.Pair/index.js
   var $Pair = (_1, _2) => ({ tag: "Pair", _1, _2 });
@@ -20019,7 +19860,7 @@
   var toCharArray = function(s) {
     return s.split("");
   };
-  var singleton2 = function(c) {
+  var singleton = function(c) {
     return c;
   };
   var _charAt = function(just) {
@@ -27413,14 +27254,14 @@
       };
     };
   };
-  var _fromCodePointArray = function(singleton4) {
+  var _fromCodePointArray = function(singleton3) {
     return hasFromCodePoint ? function(cps) {
       if (cps.length < 1e4) {
         return String.fromCodePoint.apply(String, cps);
       }
-      return cps.map(singleton4).join("");
+      return cps.map(singleton3).join("");
     } : function(cps) {
-      return cps.map(singleton4).join("");
+      return cps.map(singleton3).join("");
     };
   };
   var _toCodePointArray = function(fallback) {
@@ -27472,7 +27313,7 @@
   var unsafeCodePointAt0 = /* @__PURE__ */ _unsafeCodePointAt0(unsafeCodePointAt0Fallback);
   var toCodePointArray = /* @__PURE__ */ _toCodePointArray(toCodePointArrayFallback)(unsafeCodePointAt0);
   var length4 = (x2) => toCodePointArray(x2).length;
-  var fromCharCode2 = (x2) => singleton2((() => {
+  var fromCharCode2 = (x2) => singleton((() => {
     if (x2 >= -2147483648 && x2 <= 2147483647) {
       return fromCharCode(x2);
     }
@@ -33603,7 +33444,7 @@
                 more,
                 lift1,
                 $$throw,
-                (state2$1, a$1) => more((v2$1) => done(state2$1, singleton2(a) + fromCharArray(a$1)))
+                (state2$1, a$1) => more((v2$1) => done(state2$1, singleton(a) + fromCharArray(a$1)))
               ));
             })
           )))("identifier");
@@ -33649,9 +33490,9 @@
               if (v1.tag === "Just") {
                 const $26 = withErrorMessage((() => {
                   if (checkAttr([4096, 512, 524288, 1048576, 16384])(toCharCode(v1._1.head))) {
-                    const $262 = toChar(toLowerSimple(singleton2(v1._1.head)));
+                    const $262 = toChar(toLowerSimple(singleton(v1._1.head)));
                     if ($262.tag === "Just") {
-                      const $272 = toChar(toUpperSimple(singleton2(v1._1.head)));
+                      const $272 = toChar(toUpperSimple(singleton(v1._1.head)));
                       if ($272.tag === "Just") {
                         return altParserT.alt($$char($262._1))($$char($272._1));
                       }
@@ -33707,7 +33548,7 @@
                 more,
                 lift1,
                 $$throw,
-                (state2$1, a$1) => more((v2$1) => done(state2$1, singleton2(a) + fromCharArray(a$1)))
+                (state2$1, a$1) => more((v2$1) => done(state2$1, singleton(a) + fromCharArray(a$1)))
               ));
             })
           )))("operator");
@@ -35085,31 +34926,10 @@
     };
   }();
 
-  // output-es/Set/index.js
-  var setSet = (dictOrd) => {
-    const ordSet2 = ordSet(dictOrd);
-    return {
-      delete: $$delete2(dictOrd),
-      union: union2(dictOrd),
-      insert: insert3(dictOrd),
-      member: member(dictOrd),
-      singleton,
-      subset: subset(dictOrd),
-      empty: Leaf2,
-      map: (dictOrd1) => map2(dictOrd1),
-      fromFoldable: (dictFoldable) => dictFoldable.foldl((m) => (a) => insert2(dictOrd)(a)(unit2)(m))(Leaf2),
-      toUnfoldable: (dictUnfoldable) => toUnfoldable4(dictUnfoldable),
-      Ord0: () => dictOrd,
-      Ord1: () => ordSet2,
-      Foldable2: () => foldableSet
-    };
-  };
-
   // output-es/EvalGraph/index.js
-  var setSet2 = /* @__PURE__ */ setSet(ordString);
-  var fromFoldable10 = /* @__PURE__ */ (() => setSet2.fromFoldable(foldableSet))();
+  var fromFoldable10 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2))();
   var show22 = /* @__PURE__ */ (() => showSet(showString).show)();
-  var toUnfoldable14 = /* @__PURE__ */ (() => setSet2.toUnfoldable(unfoldableList))();
+  var toUnfoldable14 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
   var monadStateT = {
     Applicative0: () => applicativeStateT(monadIdentity),
     Bind1: () => bindStateT(monadIdentity)
@@ -35199,7 +35019,13 @@
     }
     if (v1.tag === "ElimConstr") {
       if (v.tag === "Constr") {
-        return bindEither.bind($$with("Pattern mismatch")(consistentWith(setSet2.singleton(v._2))(keys2(v1._1))))(() => bindEither.bind((() => {
+        return bindEither.bind($$with("Pattern mismatch")(consistentWith($Map(
+          "Two",
+          Leaf2,
+          v._2,
+          unit2,
+          Leaf2
+        ))(keys2(v1._1))))(() => bindEither.bind((() => {
           const $4 = "Incomplete patterns: no branch for " + showCtr(v._2);
           const $5 = _lookup(Nothing, Just, v._2, v1._1);
           if ($5.tag === "Nothing") {
@@ -35229,7 +35055,7 @@
       if (v.tag === "Record") {
         return bindEither.bind((() => {
           const $3 = "Pattern mismatch: found " + (show22(keys2(v._2)) + (", expected " + show22(v1._1)));
-          if (setSet2.subset(v1._1)(fromFoldable10(keys2(v._2)))) {
+          if (difference3(ordString)(v1._1)(fromFoldable10(keys2(v._2))).tag === "Leaf") {
             return $Either("Right", unit2);
           }
           return $Either("Left", $3);
@@ -35248,7 +35074,7 @@
   var closeDefs2 = (dictSet) => (\u03B3) => (\u03C1) => (\u03B1s) => traverse6((\u03C3) => {
     const \u03C1$p = $$for(\u03C1)(\u03C3);
     return functorExceptT.map(Fun)(functorExceptT.map((f) => f(\u03C3))(functorExceptT.map((f) => f(\u03C1$p))((() => {
-      const $6 = restrict(\u03B3)(setSet2.union(fv2(\u03C1$p))(fVElim.fv(\u03C3)));
+      const $6 = restrict(\u03B3)(unionWith(ordString)($$const)(fv2(\u03C1$p))(fVElim.fv(\u03C3)));
       return functorExceptT.map((f) => f($6))(functorExceptT.map(Closure)($$new2(\u03B1s)));
     })())));
   })(\u03C1);
