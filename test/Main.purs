@@ -11,7 +11,8 @@ import Data.Traversable (sequence)
 import Dict (fromFoldable)
 import Effect (Effect)
 import Effect.Console (log, logShow)
-import Graph (GraphSet, add, Vertex(..), inEdges)
+import Graph (add, Vertex(..), inEdges)
+import Graph.GraphImpl (GraphSet)
 import Graph.Slice (fwdSlice)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
@@ -45,7 +46,7 @@ test_scratchpad =
      --    \-1, 1, -5, 0, 4,\n\
      --    \1, -1, 4, 0, -4,\n\
      --    \1, 0, -3, 2, 0"
-        testBwd (File "add") (File "add.expect") (const $ Int true 8) "_8_"
+     testBwd (File "add") (File "add.expect") (const $ Int true 8) "_8_"
    ]
 
 test_linking :: Array (Test Unit)

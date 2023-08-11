@@ -33,10 +33,11 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import EvalGraph (evalGraph)
-import Graph (GraphSet, Vertex)
-import Graph (empty, vertices) as G -- , vertices, GraphSet) as G
+import EvalGraph (evalGraph) -- , selectSinks)
+import Graph (Vertex)
+import Graph (vertices) as G
 import Graph.Slice (selectSources, selectSinks, bwdSlice) as G
+import Graph.GraphImpl (GraphSet)
 import Lattice (𝔹, bot, erase)
 import Module
    ( File(..)
@@ -115,7 +116,7 @@ testWithSetup (File file) expected v_expect_opt setup =
    testGraph :: Env 𝔹 -> SE.Expr 𝔹 -> Val 𝔹 -> MayFailT Aff Unit
    testGraph γ s v = do
       e <- except $ desug s
-      g × (_ × eα × vα) <- except $ evalGraph γ e (G.empty :: GraphSet)
+      g × (_ × eα × vα) <- except $ evalGraph γ e :: MayFailT _ (GraphSet × _)
       lift $ do
          unless (isGraphical v || isJust v_expect_opt)
             (checkPretty "Value" expected (erase vα))
@@ -129,16 +130,16 @@ testWithSetup (File file) expected v_expect_opt setup =
                  log ("Val 𝔹: " <> render (pretty v))
                  log ("Val Vertex: " <> render (pretty vα))
                  log ("Selected vertices: " <> show αs <> "\n")
+                 unless true $ do
+                    let gbwd = G.bwdSlice αs g
+                    log ("Graph.Slice.bwdSlice: ")
+                    log ("Graph: " <> show gbwd)
 
-                 let gbwd = G.bwdSlice αs g
-                 log ("Graph.Slice.bwdSlice: ")
-                 log ("Graph: " <> show gbwd)
-
-                 log ("EvalGraph.selectSinks: ")
-                 log ("Expr Vertex: " <> render (pretty eα))
-                 log ("Selected vertices: " <> show (G.vertices gbwd))
-                 let e' = G.selectSinks eα (G.vertices gbwd)
-                 log ("Expr 𝔹: " <> (render $ pretty e'))
+                    log ("EvalGraph.selectSinks: ")
+                    log ("Expr Vertex: " <> render (pretty eα))
+                    log ("Selected vertices: " <> show (G.vertices gbwd))
+                    let e' = G.selectSinks eα (G.vertices gbwd)
+                    log ("Expr 𝔹: " <> (render $ pretty e'))
             )
 
 test :: File -> String -> Test Unit
