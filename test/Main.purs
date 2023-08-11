@@ -20,30 +20,32 @@ import Util ((×))
 import Val (DictRep(..), Val(..))
 
 tests :: Array (Array (Test Unit))
-tests =
-   [
+-- tests =
+--    [
 --       test_desugaring
 --    , test_misc,
-    test_bwd
-   --    , test_linking
-   --    , test_graphics
-   --    , test_graph
-   ]
+--     test_bwd
+--        , test_linking
+--        , test_graphics
+--        , test_graph
+--    ]
 
---tests = [ test_scratchpad ]
+tests = [ test_scratchpad ]
 
 main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ testBwd (File "convolution/edgeDetect") (File "convolution/edgeDetect.expect")
-        (botOf >>> selectCell 1 1 topOf)
-        "_0_, -1, 2, 0, -1,\n\
-        \0, 3, -2, 3, -2,\n\
-        \-1, 1, -5, 0, 4,\n\
-        \1, -1, 4, 0, -4,\n\
-        \1, 0, -3, 2, 0"
+   [
+     -- testBwd (File "convolution/edgeDetect") (File "convolution/edgeDetect.expect")
+     --    (botOf >>> selectCell 1 1 topOf)
+     --    "_0_, -1, 2, 0, -1,\n\
+     --    \0, 3, -2, 3, -2,\n\
+     --    \-1, 1, -5, 0, 4,\n\
+     --    \1, -1, 4, 0, -4,\n\
+     --    \1, 0, -3, 2, 0"
+        testBwd (File "add") (File "add.expect") (const $ Int true 8) "_8_"
    ]
 
 test_linking :: Array (Test Unit)

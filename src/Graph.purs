@@ -7,7 +7,7 @@ import Control.Monad.ST (ST)
 import Data.Foldable (class Foldable, foldl, foldM)
 import Data.List (List(..), (:), concat)
 import Data.List (fromFoldable) as L
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..), isJust, fromMaybe)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, map) as S
@@ -18,7 +18,7 @@ import Foreign.Object.ST as OST
 import Foreign.Object.ST (STObject)
 import Set (class Set, delete, insert, sempty, singleton, smap, union)
 import Set (fromFoldable) as S
-import Util (Endo, (×), type (×), definitely)
+import Util (Endo, (×), type (×))
 
 type Edge = Vertex × Vertex
 
@@ -118,7 +118,7 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 
    addIn α β g = op (addOut β α (op g))
 
-   outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
+   outN (GraphImpl out _) α = fromMaybe sempty (D.lookup (unwrap α) out) -- # definitely "in graph"
    inN g = outN (op g)
 
    elem (GraphImpl out _) α = isJust (D.lookup (unwrap α) out)
