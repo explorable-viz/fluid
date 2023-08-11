@@ -13,9 +13,8 @@ import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
 import Control.Monad.Except (except, runExceptT)
-import Control.Monad.State (get)
+import Control.Monad.State (get, runStateT)
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Writer (runWriterT)
 import Data.Array (range, singleton) as A
 import Data.Either (note)
 import Data.Exists (runExists)
@@ -26,8 +25,9 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
+import Graph (Vertex, class Graph)
+import Graph (fromFoldable) as G
 import Graph.GraphWriter (WithGraph3, alloc, new, runHeap)
-import Graph (class Graph, Vertex, add)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Set (class Set, member, insert, sempty, singleton, subset, union)
@@ -155,10 +155,10 @@ eval γ (LetRec ρ e) αs = do
    eval (γ <+> γ') e αs
 
 evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> g -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
-evalGraph γ0 e0 g = ((×) g') <$> maybe_v
+evalGraph γ0 e0 _ = ((×) g') <$> maybe_v
    where
    maybe_v × g_adds =
-      ( runHeap $ runWriterT $ runExceptT $ do
+      ( runHeap $ flip runStateT Nil $ runExceptT $ do
            γ <- lift $ lift $ traverse alloc γ0
            e <- lift $ lift $ alloc e0
            n <- lift $ lift $ get
@@ -167,7 +167,7 @@ evalGraph γ0 e0 g = ((×) g') <$> maybe_v
            trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
               pure (γ × e × v)
       ) :: MayFail (Env Vertex × Expr Vertex × Val Vertex) × _
-   g' = foldl (\h (α × αs) -> add α αs h) g (g_adds Nil)
+   g' = G.fromFoldable g_adds
 
 selectSources :: forall s. Set s Vertex => Val Boolean -> Val Vertex -> s Vertex
 selectSources u v = foldl union sempty v_selected

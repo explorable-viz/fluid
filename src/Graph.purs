@@ -2,14 +2,20 @@ module Graph where
 
 import Prelude hiding (add)
 
-import Data.Foldable (foldl)
-import Data.List (List, concat)
+import Control.Monad.Rec.Class (Step(..), tailRecM)
+import Control.Monad.ST (ST)
+import Data.Foldable (class Foldable, foldl, foldM)
+import Data.List (List(..), (:), concat)
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (class Newtype, unwrap)
+import Data.Profunctor.Strong (first)
 import Data.Set (Set, map) as S
 import Dict (Dict)
 import Dict as D
+import Foreign.Object (runST)
+import Foreign.Object.ST as OST
+import Foreign.Object.ST (STObject)
 import Set (class Set, delete, insert, sempty, singleton, smap, union)
 import Set (fromFoldable) as S
 import Util (Endo, (×), type (×), definitely)
@@ -55,6 +61,8 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
 
    empty :: g
 
+   fromFoldable :: forall f. Functor f => Foldable f => f (Vertex × s Vertex) -> g
+
 newtype Vertex = Vertex String
 
 outEdges' :: forall g s. Graph g s => g -> Vertex -> List Edge
@@ -77,8 +85,8 @@ instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
-data GraphImpl s = GraphImpl (Dict (s Vertex)) (Dict (s Vertex))
-
+type AdjMap s = Dict (s Vertex)
+data GraphImpl s = GraphImpl (AdjMap s) (AdjMap s)
 type GraphSet = GraphImpl S.Set
 
 -- Provided for completeness, but for efficiency we avoid them.
@@ -125,6 +133,35 @@ instance Set s Vertex => Graph (GraphImpl s) s where
       discreteM = D.fromFoldable $ smap (\α -> unwrap α × sempty) αs
 
    empty = mempty
+
+   fromFoldable α_αs = GraphImpl out in_
+      where
+      out = D.fromFoldable (α_αs <#> first unwrap)
+      in_ = runST (opMap (L.fromFoldable α_αs)) -- gratuitous to turn one foldable into another
+
+-- In-place update of mutable object to calculate opposite adjacency map.
+type MutableAdjMap s r = STObject r (s Vertex)
+
+opMap :: forall s. Set s Vertex => List (Vertex × s Vertex) -> forall r. ST r (MutableAdjMap s r)
+opMap α_αs = do
+   in_ <- OST.new
+   tailRecM addEdges (α_αs × in_)
+   where
+   addEdges
+      :: forall r
+       . List (Vertex × s Vertex) × MutableAdjMap s r
+      -> ST r (Step (List (Vertex × s Vertex) × MutableAdjMap s r) (MutableAdjMap s r))
+   addEdges (Nil × acc) = pure $ Done acc
+   addEdges (((α × βs) : rest) × acc) = do
+      acc' <- foldM (addEdge α) acc βs
+      pure $ Loop (rest × acc')
+
+   addEdge :: forall r. Vertex -> MutableAdjMap s r -> Vertex -> ST r (MutableAdjMap s r)
+   addEdge α acc (Vertex β) = do
+      αs <- OST.peek β acc <#> case _ of
+         Nothing -> singleton α
+         Just αs -> insert α αs
+      OST.poke β αs acc
 
 instance Show (s Vertex) => Show (GraphImpl s) where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"

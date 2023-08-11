@@ -1,9 +1,8 @@
 module Graph.GraphWriter where
 
 import Prelude hiding (add)
-import Control.Monad.State (class MonadState, State, StateT, get, put, runState)
+import Control.Monad.State (class MonadState, State, StateT, get, modify_, put, runState)
 import Control.Monad.Trans.Class (class MonadTrans, lift)
-import Control.Monad.Writer (WriterT, tell)
 import Data.List (List, (:))
 import Data.Identity (Identity)
 import Data.Profunctor.Strong (first, second)
@@ -43,9 +42,6 @@ type WithGraph g s a = MayFailT (GraphAccumT g s (State Int)) a
 data GraphAccum2T g m a = GraphAccum2T (g -> m (a × g))
 type WithGraph2 g a = MayFailT (GraphAccum2T g (State Int)) a
 
-type GraphExtension s = List (Vertex × s Vertex) -- list of successive arguments to `add`
-type WithGraph3 s a = MayFailT (WriterT (Endo (GraphExtension s)) (State Int)) a
-
 runGraphAccumT :: forall g s m a. GraphAccumT g s m a -> m (a × Endo (g (s Vertex)))
 runGraphAccumT (GraphAccumT m) = m
 
@@ -82,6 +78,11 @@ instance (Monoid (g (s Vertex)), Applicative m) => Applicative (GraphAccumT g s 
 instance Monad m => Applicative (GraphAccum2T g m) where
    pure x = GraphAccum2T \g -> pure $ x × g
 
+-- Ιmplementation #3
+-- Builds list of adjacency maplets (arguments to extend).
+type AdjacencyMap s = List (Vertex × s Vertex)
+type WithGraph3 s a = MayFailT (StateT (AdjacencyMap s) (State Int)) a
+
 instance (Monoid (g (s Vertex)), Monad m) => Monad (GraphAccumT g s m)
 
 instance Monad m => Monad (GraphAccum2T g m)
@@ -102,8 +103,8 @@ instance (Graph g s, MonadAlloc m) => MonadGraphAccum s (GraphAccum2T g m) where
       α <- lift $ fresh
       GraphAccum2T $ \g -> pure $ α × add α αs g
 
-instance MonadAlloc m => MonadGraphAccum s (MayFailT (WriterT (Endo (GraphExtension s)) m)) where
+instance MonadAlloc m => MonadGraphAccum s (MayFailT (StateT (AdjacencyMap s) m)) where
    new αs = do
       α <- lift $ lift $ fresh
-      tell $ (:) (α × αs)
+      modify_ $ (:) (α × αs)
       pure α
