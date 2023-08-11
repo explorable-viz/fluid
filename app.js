@@ -27435,6 +27435,7 @@
   // output-es/Pretty/index.js
   var hcat = /* @__PURE__ */ (() => foldableList.foldMap(monoidColumns)(unsafeCoerce))();
   var toUnfoldable8 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
+  var toUnfoldable13 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
   var space2 = /* @__PURE__ */ text(" ");
   var semi = /* @__PURE__ */ text(";");
   var prettyP = (dictPretty) => (x2) => intercalate4("\n")(dictPretty.pretty(x2).lines);
@@ -27549,105 +27550,6 @@
   };
   var prettyDict = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(text(":="))(between2(text("{|"))(text("|}")));
   var prettyRecord = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(text(":"))(between2(text("{"))(text("}")));
-  var prettyExpr = (dictHighlightable) => ({
-    pretty: (v) => {
-      if (v.tag === "Var") {
-        return text(v._1);
-      }
-      if (v.tag === "Int") {
-        return dictHighlightable.highlightIf(v._1)(text(showIntImpl(v._2)));
-      }
-      if (v.tag === "Float") {
-        return text(showNumberImpl(v._2));
-      }
-      if (v.tag === "Str") {
-        return text(showStringImpl(v._2));
-      }
-      if (v.tag === "Record") {
-        return prettyRecord(prettyExpr(dictHighlightable))(dictHighlightable)(text)(v._1)(toUnfoldable8(v._2));
-      }
-      if (v.tag === "Dictionary") {
-        return prettyDict(prettyExpr(dictHighlightable))(dictHighlightable)(prettyExpr(dictHighlightable).pretty)(v._1)(listMap(toTuple)(v._2));
-      }
-      if (v.tag === "Constr") {
-        return prettyConstr(prettyExpr(dictHighlightable))(dictHighlightable)(v._1)(v._2)(v._3);
-      }
-      if (v.tag === "Matrix") {
-        return unsafePerformEffect(throwException(error("todo")));
-      }
-      if (v.tag === "Lambda") {
-        return hspace1([text("fun"), prettyElim(dictHighlightable).pretty(v._1)]);
-      }
-      if (v.tag === "Op") {
-        return beside(beside(text("("))(text(v._1)))(text(")"));
-      }
-      if (v.tag === "Let") {
-        return atop(hspace1([
-          text("let"),
-          prettyElim(dictHighlightable).pretty(v._1._1),
-          text("="),
-          prettyExpr(dictHighlightable).pretty(v._1._2),
-          text("in")
-        ]))(prettyExpr(dictHighlightable).pretty(v._2));
-      }
-      if (v.tag === "LetRec") {
-        return atop(hspace1([text("let"), prettyDictElim(dictHighlightable).pretty(v._1), text("in")]))(prettyExpr(dictHighlightable).pretty(v._2));
-      }
-      if (v.tag === "Project") {
-        return beside(beside(prettyExpr(dictHighlightable).pretty(v._1))(text(".")))(text(v._2));
-      }
-      if (v.tag === "App") {
-        return hspace1([prettyExpr(dictHighlightable).pretty(v._1), prettyExpr(dictHighlightable).pretty(v._2)]);
-      }
-      fail();
-    }
-  });
-  var prettyElim = (dictHighlightable) => ({
-    pretty: (v) => {
-      if (v.tag === "ElimVar") {
-        return hspace1([text(v._1), text("->"), prettyCont(dictHighlightable).pretty(v._2)]);
-      }
-      if (v.tag === "ElimConstr") {
-        return hcomma3(_fmapObject(v._1, prettyCont(dictHighlightable).pretty));
-      }
-      if (v.tag === "ElimRecord") {
-        return unsafePerformEffect(throwException(error("todo")));
-      }
-      fail();
-    }
-  });
-  var prettyDictElim = (dictHighlightable) => ({
-    pretty: (x2) => {
-      const go = (v) => {
-        if (v.tag === "Nil") {
-          return unsafePerformEffect(throwException(error("absurd")));
-        }
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Nil") {
-            return prettyBindElim(dictHighlightable).pretty(v._1);
-          }
-          return atop(beside(go(v._2))(semi))(prettyBindElim(dictHighlightable).pretty(v._1));
-        }
-        fail();
-      };
-      return go(toUnfoldable8(x2));
-    }
-  });
-  var prettyCont = (dictHighlightable) => ({
-    pretty: (v) => {
-      if (v.tag === "ContNone") {
-        return emptyDoc;
-      }
-      if (v.tag === "ContExpr") {
-        return prettyExpr(dictHighlightable).pretty(v._1);
-      }
-      if (v.tag === "ContElim") {
-        return prettyElim(dictHighlightable).pretty(v._1);
-      }
-      fail();
-    }
-  });
-  var prettyBindElim = (dictHighlightable) => ({ pretty: (v) => hspace1([text(v._1), text("="), prettyElim(dictHighlightable).pretty(v._2)]) });
   var prettyVal = (dictHighlightable) => ({
     pretty: (v) => {
       if (v.tag === "Int") {
@@ -27697,6 +27599,110 @@
       fail();
     }
   });
+  var prettyExpr = (dictHighlightable) => ({
+    pretty: (v) => {
+      if (v.tag === "Var") {
+        return text(v._1);
+      }
+      if (v.tag === "Int") {
+        return dictHighlightable.highlightIf(v._1)(text(showIntImpl(v._2)));
+      }
+      if (v.tag === "Float") {
+        return text(showNumberImpl(v._2));
+      }
+      if (v.tag === "Str") {
+        return text(showStringImpl(v._2));
+      }
+      if (v.tag === "Record") {
+        return prettyRecord(prettyExpr(dictHighlightable))(dictHighlightable)(text)(v._1)(toUnfoldable8(v._2));
+      }
+      if (v.tag === "Dictionary") {
+        return prettyDict(prettyExpr(dictHighlightable))(dictHighlightable)(prettyExpr(dictHighlightable).pretty)(v._1)(listMap(toTuple)(v._2));
+      }
+      if (v.tag === "Constr") {
+        return prettyConstr(prettyExpr(dictHighlightable))(dictHighlightable)(v._1)(v._2)(v._3);
+      }
+      if (v.tag === "Matrix") {
+        return dictHighlightable.highlightIf(v._1)(prettyMatrix(dictHighlightable)(v._2)(v._3._1)(v._3._2)(v._4));
+      }
+      if (v.tag === "Lambda") {
+        return hspace1([text("fun"), prettyElim(dictHighlightable).pretty(v._1)]);
+      }
+      if (v.tag === "Op") {
+        return beside(beside(text("("))(text(v._1)))(text(")"));
+      }
+      if (v.tag === "Let") {
+        return atop(hspace1([
+          text("let"),
+          prettyElim(dictHighlightable).pretty(v._1._1),
+          text("="),
+          prettyExpr(dictHighlightable).pretty(v._1._2),
+          text("in")
+        ]))(prettyExpr(dictHighlightable).pretty(v._2));
+      }
+      if (v.tag === "LetRec") {
+        return atop(hspace1([text("let"), prettyDictElim(dictHighlightable).pretty(v._1), text("in")]))(prettyExpr(dictHighlightable).pretty(v._2));
+      }
+      if (v.tag === "Project") {
+        return beside(beside(prettyExpr(dictHighlightable).pretty(v._1))(text(".")))(text(v._2));
+      }
+      if (v.tag === "App") {
+        return hspace1([prettyExpr(dictHighlightable).pretty(v._1), prettyExpr(dictHighlightable).pretty(v._2)]);
+      }
+      fail();
+    }
+  });
+  var prettyElim = (dictHighlightable) => ({
+    pretty: (v) => {
+      if (v.tag === "ElimVar") {
+        return hspace1([text(v._1), text("->"), prettyCont(dictHighlightable).pretty(v._2)]);
+      }
+      if (v.tag === "ElimConstr") {
+        return hcomma3(_fmapObject(v._1, prettyCont(dictHighlightable).pretty));
+      }
+      if (v.tag === "ElimRecord") {
+        return hspace1([
+          beside(beside(text("{"))(hcomma1(listMap(text)(toUnfoldable13(v._1)))))(text("}")),
+          text("->"),
+          beside(beside(text("{"))(prettyCont(dictHighlightable).pretty(v._2)))(text("}"))
+        ]);
+      }
+      fail();
+    }
+  });
+  var prettyDictElim = (dictHighlightable) => ({
+    pretty: (x2) => {
+      const go = (v) => {
+        if (v.tag === "Nil") {
+          return unsafePerformEffect(throwException(error("absurd")));
+        }
+        if (v.tag === "Cons") {
+          if (v._2.tag === "Nil") {
+            return prettyBindElim(dictHighlightable).pretty(v._1);
+          }
+          return atop(beside(go(v._2))(semi))(prettyBindElim(dictHighlightable).pretty(v._1));
+        }
+        fail();
+      };
+      return go(toUnfoldable8(x2));
+    }
+  });
+  var prettyCont = (dictHighlightable) => ({
+    pretty: (v) => {
+      if (v.tag === "ContNone") {
+        return emptyDoc;
+      }
+      if (v.tag === "ContExpr") {
+        return prettyExpr(dictHighlightable).pretty(v._1);
+      }
+      if (v.tag === "ContElim") {
+        return prettyElim(dictHighlightable).pretty(v._1);
+      }
+      fail();
+    }
+  });
+  var prettyBindElim = (dictHighlightable) => ({ pretty: (v) => hspace1([text(v._1), text("="), prettyElim(dictHighlightable).pretty(v._2)]) });
+  var prettyMatrix = (dictHighlightable) => (e1) => (i) => (j) => (e22) => beside(beside(text("[["))(beside(beside(beside(beside(prettyExpr(dictHighlightable).pretty(e1))(text(" <- ")))(text(i + ("\xD7" + j))))(text(" in ")))(prettyExpr(dictHighlightable).pretty(e22))))(text("]]"));
 
   // output-es/Val/index.js
   var $ForeignOp$p = (_1) => ({ tag: "ForeignOp'", _1 });
@@ -32886,7 +32892,7 @@
   var some3 = /* @__PURE__ */ some2(alternativeParserT)(lazyParserT);
   var choice3 = /* @__PURE__ */ choice(foldableArray);
   var many1 = /* @__PURE__ */ many(alternativeParserT)(lazyParserT);
-  var toUnfoldable13 = /* @__PURE__ */ toUnfoldable(unfoldableArray);
+  var toUnfoldable14 = /* @__PURE__ */ toUnfoldable(unfoldableArray);
   var theReservedNames = (v) => {
     if (v.caseSensitive) {
       return sortBy2(ordString.compare)(v.reservedNames);
@@ -33681,7 +33687,7 @@
             $$throw,
             (state2, a) => more((v2) => done(
               state2,
-              fromCharArray(toUnfoldable13(foldableList.foldr((v1$1) => (v2$1) => {
+              fromCharArray(toUnfoldable14(foldableList.foldr((v1$1) => (v2$1) => {
                 if (v1$1.tag === "Nothing") {
                   return v2$1;
                 }
@@ -34929,7 +34935,7 @@
   // output-es/EvalGraph/index.js
   var fromFoldable10 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2))();
   var show22 = /* @__PURE__ */ (() => showSet(showString).show)();
-  var toUnfoldable14 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
+  var toUnfoldable15 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
   var monadStateT = {
     Applicative0: () => applicativeStateT(monadIdentity),
     Bind1: () => bindStateT(monadIdentity)
@@ -35059,7 +35065,7 @@
             return $Either("Right", unit2);
           }
           return $Either("Left", $3);
-        })())(() => bindEither.bind(matchMany2(dictSet)(listMap((a) => $$get(a)(v._2))(toUnfoldable14(v1._1)))(v1._2))((v2) => $Either(
+        })())(() => bindEither.bind(matchMany2(dictSet)(listMap((a) => $$get(a)(v._2))(toUnfoldable15(v1._1)))(v1._2))((v2) => $Either(
           "Right",
           $Tuple(v2._1, $Tuple(v2._2._1, dictSet.insert(v._1)(v2._2._2)))
         )));
