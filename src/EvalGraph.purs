@@ -13,7 +13,7 @@ import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
 import Control.Monad.Except (except, runExceptT)
-import Control.Monad.State (get, runState)
+import Control.Monad.State (State, get, runState)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (range, singleton) as A
 import Data.Either (note)
@@ -156,18 +156,21 @@ eval γ (LetRec ρ e) αs = do
 
 evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
 evalGraph γ0 e0 = error unimplemented --((×) g') <$> maybe_v
-   where q :: WithGraph s _
-         q = eval ?_ ?_ empty :: WithGraph s _
+   where
+   blah :: State (Int × List _) (MayFail _)
+   blah = runExceptT q
+   q :: WithGraph s _
+   q = do
+      γ <- traverse alloc γ0
+      e <- alloc e0
+      n × _ <- lift $ get
+      v <- eval γ e empty :: WithGraph s _
+      n' × _ <- lift $ get
+      trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
+         pure (γ × e × v)
 {-
    maybe_v × g_adds =
       ( flip runStateT (0 × Nil) $ runExceptT $ do
-           γ <- traverse alloc γ0
-           e <- lift $ alloc e0
-           n <- lift $ get
-           v <- eval γ e empty :: WithGraph s _
-           n' <- lift $ lift $ get
-           trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
-              pure (γ × e × v)
       ) :: MayFail (Env Vertex × Expr Vertex × Val Vertex) × _
    g' = G.fromFoldable g_adds
 -}
