@@ -18,6 +18,7 @@ For the latest developments, see [news](news.md).
 
 - `yarn build-tests` and then `yarn tests` for core tests
 - `yarn build-app-tests` and then `yarn app-tests` for app tests
+- To debug the tests in the browser, use `yarn tests-browser` , hit Debug in the Chrome browser that opens, and then open Developer Tools
 
 #### Running the web app
 
