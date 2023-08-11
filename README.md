@@ -14,11 +14,15 @@ For the latest developments, see [news](news.md).
 - yarn
 - `yarn install` to install application dependencies
 
-#### Running the tests
+#### Running the tests on the command line
 
 - `yarn build-tests` and then `yarn tests` for core tests
 - `yarn build-app-tests` and then `yarn app-tests` for app tests
-- To debug the tests in the browser, use `yarn tests-browser` , hit Debug in the Chrome browser that opens, and then open Developer Tools
+
+#### Running the tests in the browser
+
+- `yarn build-tests` as above, then `yarn tests-browser`
+- hit Debug in the browser window that opens, and then open Developer Tools
 
 #### Running the web app
 

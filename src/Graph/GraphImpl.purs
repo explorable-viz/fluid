@@ -1,4 +1,6 @@
-module Graph.GraphImpl where
+module Graph.GraphImpl
+   ( GraphImpl
+   ) where
 
 import Prelude
 import Control.Monad.Rec.Class (Step(..), tailRecM)
@@ -23,7 +25,6 @@ import Util (type (×), (×), definitely)
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap s = Dict (s Vertex)
 data GraphImpl s = GraphImpl (AdjMap s) (AdjMap s)
-type GraphSet = GraphImpl S.Set
 
 -- Provided for completeness, but for efficiency we avoid them.
 instance Set s Vertex => Semigroup (GraphImpl s) where
