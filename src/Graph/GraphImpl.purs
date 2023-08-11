@@ -1,7 +1,6 @@
-module Graph.GraphImpl (
-   GraphImpl
-)
-where
+module Graph.GraphImpl
+   ( GraphImpl
+   ) where
 
 import Prelude
 import Control.Monad.Rec.Class (Step(..), tailRecM)
