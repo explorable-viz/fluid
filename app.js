@@ -35160,7 +35160,7 @@
     };
   }();
 
-  // output-es/Graph/index.js
+  // output-es/Set/index.js
   var setSet = (dictOrd) => {
     const ordSet2 = ordSet(dictOrd);
     return {
