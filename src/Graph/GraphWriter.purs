@@ -39,7 +39,6 @@ runHeap = flip runState 0 >>> fst
 alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
 
--- Difference graphs
 class Monad m <= MonadGraphAccum s m | m -> s where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
    new :: s Vertex -> m Vertex
