@@ -5,7 +5,8 @@ import Prelude hiding (add)
 import Data.List (List(..), (:))
 import Data.List as L
 import Data.Tuple (fst)
-import Graph (class Graph, class Set, Edge, Vertex, add, addIn, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN, remove)
+import Graph (class Graph, Edge, Vertex, add, addIn, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN, remove)
+import Set (class Set)
 import Util (type (×), (×))
 
 bwdSlice :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
