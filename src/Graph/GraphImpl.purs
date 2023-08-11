@@ -1,21 +1,22 @@
 module Graph.GraphImpl where
 
 import Prelude
+
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
-import Data.Set as S
 import Data.Foldable (foldl, foldM)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
+import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
+import Data.Set as S
 import Dict (Dict)
 import Dict as D
-import Graph (class Graph, Vertex(..), addOut, op, outN)
-import Data.Newtype (unwrap)
 import Foreign.Object (runST)
-import Foreign.Object.ST as OST
 import Foreign.Object.ST (STObject)
+import Foreign.Object.ST as OST
+import Graph (class Graph, Vertex(..), addOut, op, outN)
 import Set (class Set, delete, insert, singleton, union)
 import Set as Set
 import Util (type (×), (×), definitely)
@@ -71,10 +72,13 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 
    empty = mempty
 
-   fromFoldable α_αs = GraphImpl out in_
+   fromFoldable α_αs = GraphImpl out' in'
       where
       out = D.fromFoldable (α_αs <#> first unwrap)
       in_ = runST (opMap (L.fromFoldable α_αs)) -- gratuitous to turn one foldable into another
+      -- | Ensure that `out`` contains entries for sinks, and `in` contains entries for sources.
+      out' = out `D.union` (const (Set.empty :: s Vertex) <$> (D.difference in_ out))
+      in' = in_ `D.union` (const (Set.empty :: s Vertex) <$> (D.difference out in_))
 
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap s r = STObject r (s Vertex)
