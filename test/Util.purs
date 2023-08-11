@@ -22,6 +22,7 @@ import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Tuple (fst, snd, uncurry)
+import Data.Set (Set) as S
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -32,8 +33,9 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import EvalGraph (evalGraph, selectVertices)
-import Graph (empty) as G
+import EvalGraph (evalGraph, selectSources) -- , selectSinks)
+import Graph (GraphSet, Vertex)
+import Graph (empty) as G -- , vertices, GraphSet) as G
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
@@ -77,11 +79,11 @@ testWithSetup (File file) expected v_expect_opt setup =
    doTest' γ s = do
       e <- except $ desug s
       t × v <- except $ eval γ e bot
-      _ × u <- except $ evalGraph γ e G.empty
+      _ × (_ × _ × vα) <- except $ evalGraph γ e (G.empty :: GraphSet)
       let
          v' = fromMaybe identity (fst <$> v_expect_opt) v
          { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-         s' = desugBwd e' (erase s) :: SE.Expr 𝔹
+         (s' :: SE.Expr 𝔹) = desugBwd e' (erase s)
       _ × v'' <- except $ desug s' >>= flip (eval γ') top
       let src = render (pretty s)
       s'' <- except $ parse src program
@@ -95,14 +97,18 @@ testWithSetup (File file) expected v_expect_opt setup =
             unless (isGraphical v'')
                (checkPretty "Value" expected v'')
             unless (isGraphical v'' || isJust v_expect_opt)
-               (checkPretty "Value" expected (erase u))
+               (checkPretty "Value" expected (erase vα))
             unless (isNothing v_expect_opt)
                ( do
-                    let αs = selectVertices v'' u
-                    log ("EvalGraph.selectVertices:")
+                    let (αs :: S.Set Vertex) = selectSources v'' vα
+                    log ("EvalGraph.selectSources:")
                     log ("Val 𝔹: " <> render (pretty v''))
-                    log ("Val Vertex: " <> render (pretty u))
+                    log ("Val Vertex: " <> render (pretty vα))
                     log ("Set Vertex: " <> show αs <> "\n")
+               --   let g' = G.bwdSlice αs g
+               --   log ("Graph bwd slice: " <> show g')
+               --   let e' = selectSinks eα (G.vertices g')
+               --   log ("Graph bwd slice: " <> (render $ pretty e'))
                )
             trace ("Annotated\n" <> render (pretty s')) \_ ->
                case snd <$> v_expect_opt of

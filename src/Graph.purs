@@ -10,24 +10,25 @@ import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (first)
-import Data.Set (Set)
-import Data.Set as S
+import Data.Set (Set, map) as S
 import Dict (Dict)
 import Dict as D
 import Foreign.Object (runST)
-import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
+import Foreign.Object.ST (STObject)
+import Set (class Set, delete, insert, sempty, singleton, smap, union)
+import Set (fromFoldable) as S
 import Util (Endo, (×), type (×), definitely)
 
 type Edge = Vertex × Vertex
 
 -- | Graphs form a semigroup but we don't actually rely on that (for efficiency).
-class Monoid g <= Graph g where
+class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
    -- add vertex α to g with αs as out neighbours, where each neighbour is already in g.
    -- | add and remove satisfy:
    -- |    remove α (add α αs g) = g
    -- |    add α (outN α g) (remove α g) = g
-   add :: Vertex -> Set Vertex -> Endo g
+   add :: Vertex -> s Vertex -> Endo g
 
    -- remove a vertex from g.
    remove :: Vertex -> Endo g
@@ -44,32 +45,36 @@ class Monoid g <= Graph g where
 
    -- | outN and iN satisfy
    -- |   inN G = outN (op G)
-   outN :: g -> Vertex -> Set Vertex
-   inN :: g -> Vertex -> Set Vertex
+   outN :: g -> Vertex -> s Vertex
+   inN :: g -> Vertex -> s Vertex
 
    -- | Number of vertices in g.
    size :: g -> Int
 
+   -- | s of all vertices in g
+   vertices :: g -> s Vertex
    -- |   op (op g) = g
    op :: Endo g
 
    -- |   Discrete graph consisting only of a set of vertices.
-   discreteG :: Set Vertex -> g
+   discreteG :: s Vertex -> g
 
-   fromFoldable :: forall f. Functor f => Foldable f => f (Vertex × Set Vertex) -> g
+   empty :: g
+
+   fromFoldable :: forall f. Functor f => Foldable f => f (Vertex × s Vertex) -> g
 
 newtype Vertex = Vertex String
 
-outEdges' :: forall g. Graph g => g -> Vertex -> List Edge
+outEdges' :: forall g s. Graph g s => g -> Vertex -> List Edge
 outEdges' g = inEdges' (op g)
 
-outEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
+outEdges :: forall g s. Graph g s => g -> s Vertex -> List Edge
 outEdges g = inEdges (op g)
 
-inEdges' :: forall g. Graph g => g -> Vertex -> List Edge
-inEdges' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
+inEdges' :: forall g s. Graph g s => g -> Vertex -> List Edge
+inEdges' g α = L.fromFoldable $ smap (_ × α) (inN g α)
 
-inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
+inEdges :: forall g s. Graph g s => g -> s Vertex -> List Edge
 inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 
 derive instance Eq Vertex
@@ -80,38 +85,36 @@ instance Show Vertex where
    show (Vertex α) = "Vertex " <> α
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
-type AdjMap = Dict (Set Vertex)
-data GraphImpl = GraphImpl (AdjMap) (AdjMap)
+type AdjMap s = Dict (s Vertex)
+data GraphImpl s = GraphImpl (AdjMap s) (AdjMap s)
+type GraphSet = GraphImpl S.Set
 
 -- Provided for completeness, but for efficiency we avoid them.
-instance Semigroup GraphImpl where
+instance Set s Vertex => Semigroup (GraphImpl s) where
    append (GraphImpl out1 in1) (GraphImpl out2 in2) =
-      GraphImpl (D.unionWith S.union out1 out2) (D.unionWith S.union in1 in2)
+      GraphImpl (D.unionWith union out1 out2) (D.unionWith union in1 in2)
 
-instance Monoid GraphImpl where
+instance Set s Vertex => Monoid (GraphImpl s) where
    mempty = GraphImpl D.empty D.empty
 
-empty :: GraphImpl
-empty = mempty
-
-instance Graph GraphImpl where
+instance Set s Vertex => Graph (GraphImpl s) s where
    remove α (GraphImpl out in_) = GraphImpl out' in'
       where
-      out' = S.delete α <$> D.delete (unwrap α) out
-      in' = S.delete α <$> D.delete (unwrap α) in_
+      out' = delete α <$> D.delete (unwrap α) out
+      in' = delete α <$> D.delete (unwrap α) in_
 
    add α αs (GraphImpl out in_) = GraphImpl out' in'
       where
       out' = D.insert (unwrap α) αs out
-      in' = foldl (\d α' -> D.insertWith S.union (unwrap α') (S.singleton α) d)
-         (D.insert (unwrap α) S.empty in_)
+      in' = foldl (\d α' -> D.insertWith union (unwrap α') (singleton α) d)
+         (D.insert (unwrap α) sempty in_)
          αs
 
    addOut α β (GraphImpl out in_) = GraphImpl out' in'
       where
-      out' = D.update (S.insert β >>> Just) (unwrap α)
-         (D.insertWith S.union (unwrap β) S.empty out)
-      in' = D.insertWith S.union (unwrap β) (S.singleton α) in_
+      out' = D.update (insert β >>> Just) (unwrap α)
+         (D.insertWith union (unwrap β) sempty out)
+      in' = D.insertWith union (unwrap β) (singleton α) in_
 
    addIn α β g = op (addOut β α (op g))
 
@@ -121,11 +124,15 @@ instance Graph GraphImpl where
    elem (GraphImpl out _) α = isJust (D.lookup (unwrap α) out)
    size (GraphImpl out _) = D.size out
 
+   vertices (GraphImpl out _) = S.fromFoldable $ S.map Vertex $ D.keys out
+
    op (GraphImpl out in_) = GraphImpl in_ out
 
    discreteG αs = GraphImpl discreteM discreteM
       where
-      discreteM = D.fromFoldable $ S.map (\α -> unwrap α × S.empty) αs
+      discreteM = D.fromFoldable $ smap (\α -> unwrap α × sempty) αs
+
+   empty = mempty
 
    fromFoldable α_αs = GraphImpl out in_
       where
@@ -133,28 +140,28 @@ instance Graph GraphImpl where
       in_ = runST (opMap (L.fromFoldable α_αs)) -- gratuitous to turn one foldable into another
 
 -- In-place update of mutable object to calculate opposite adjacency map.
-type MutableAdjMap r = STObject r (Set Vertex)
+type MutableAdjMap s r = STObject r (s Vertex)
 
-opMap :: List (Vertex × Set Vertex) -> forall r. ST r (MutableAdjMap r)
+opMap :: forall s. Set s Vertex => List (Vertex × s Vertex) -> forall r. ST r (MutableAdjMap s r)
 opMap α_αs = do
    in_ <- OST.new
    tailRecM addEdges (α_αs × in_)
    where
    addEdges
       :: forall r
-       . List (Vertex × Set Vertex) × MutableAdjMap r
-      -> ST r (Step (List (Vertex × Set Vertex) × MutableAdjMap r) (MutableAdjMap r))
+       . List (Vertex × s Vertex) × MutableAdjMap s r
+      -> ST r (Step (List (Vertex × s Vertex) × MutableAdjMap s r) (MutableAdjMap s r))
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : rest) × acc) = do
       acc' <- foldM (addEdge α) acc βs
       pure $ Loop (rest × acc')
 
-   addEdge :: forall r. Vertex -> MutableAdjMap r -> Vertex -> ST r (MutableAdjMap r)
+   addEdge :: forall r. Vertex -> MutableAdjMap s r -> Vertex -> ST r (MutableAdjMap s r)
    addEdge α acc (Vertex β) = do
       αs <- OST.peek β acc <#> case _ of
-         Nothing -> S.singleton α
-         Just αs -> S.insert α αs
+         Nothing -> singleton α
+         Just αs -> insert α αs
       OST.poke β αs acc
 
-instance Show GraphImpl where
+instance Show (s Vertex) => Show (GraphImpl s) where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
