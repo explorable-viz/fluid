@@ -27,7 +27,7 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Graph (Vertex, class Graph)
 import Graph (fromFoldable) as G
-import Graph.GraphWriter (WithGraph3, alloc, new, runHeap)
+import Graph.GraphWriter (WithGraph, alloc, new, runHeap)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Set (class Set, member, insert, empty, singleton, subset, union)
@@ -71,7 +71,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall s. Set s Vertex => Env Vertex -> RecDefs Vertex -> s Vertex -> WithGraph3 s (Env Vertex)
+closeDefs :: forall s. Set s Vertex => Env Vertex -> RecDefs Vertex -> s Vertex -> WithGraph s (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -80,7 +80,7 @@ closeDefs γ ρ αs =
          V.Fun <$> (V.Closure <$> new αs <@> (γ `restrict` (fv ρ' `union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
-apply :: forall s. Set s Vertex => Val Vertex -> Val Vertex -> WithGraph3 s (Val Vertex)
+apply :: forall s. Set s Vertex => Val Vertex -> Val Vertex -> WithGraph s (Val Vertex)
 apply (V.Fun (V.Closure α γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- except $ match v σ
@@ -96,14 +96,14 @@ apply (V.Fun (V.PartialConstr α c vs)) v = do
 apply (V.Fun (V.Foreign φ vs)) v = do
    let vs' = snoc vs v
    let
-      apply' :: forall t. ForeignOp' t -> WithGraph3 s (Val Vertex)
+      apply' :: forall t. ForeignOp' t -> WithGraph s (Val Vertex)
       apply' (ForeignOp' φ') =
          if φ'.arity > length vs' then pure $ V.Fun (V.Foreign φ vs')
          else φ'.op' vs'
    runExists apply' φ
 apply _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall s. Set s Vertex => Env Vertex -> Expr Vertex -> s Vertex -> WithGraph3 s (Val Vertex)
+eval :: forall s. Set s Vertex => Env Vertex -> Expr Vertex -> s Vertex -> WithGraph s (Val Vertex)
 eval γ (Var x) _ = except $ lookup' x γ
 eval γ (Op op) _ = except $ lookup' op γ
 eval _ (Int α n) αs = V.Int <$> new (insert α αs) <@> n
@@ -162,7 +162,7 @@ evalGraph γ0 e0 _ = ((×) g') <$> maybe_v
            γ <- lift $ lift $ traverse alloc γ0
            e <- lift $ lift $ alloc e0
            n <- lift $ lift $ get
-           v <- eval γ e empty :: WithGraph3 s _
+           v <- eval γ e empty :: WithGraph s _
            n' <- lift $ lift $ get
            trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
               pure (γ × e × v)

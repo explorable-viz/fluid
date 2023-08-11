@@ -1,8 +1,8 @@
 module Graph.GraphWriter (
    class MonadAlloc,
-   class MonadGraphAccum,
+   class MonadGraphWriter,
    AdjacencyMap,
-   WithGraph3,
+   WithGraph,
    alloc,
    fresh,
    new,
@@ -39,15 +39,15 @@ runHeap = flip runState 0 >>> fst
 alloc :: forall t a. Traversable t => t a -> Heap (t Vertex)
 alloc = traverse (const fresh)
 
-class Monad m <= MonadGraphAccum s m | m -> s where
+class Monad m <= MonadGraphWriter s m | m -> s where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
    new :: s Vertex -> m Vertex
 
 -- Builds list of adjacency maplets (arguments to extend).
 type AdjacencyMap s = List (Vertex × s Vertex)
-type WithGraph3 s a = MayFailT (StateT (AdjacencyMap s) (State Int)) a
+type WithGraph s a = MayFailT (StateT (AdjacencyMap s) (State Int)) a
 
-instance MonadAlloc m => MonadGraphAccum s (MayFailT (StateT (AdjacencyMap s) m)) where
+instance MonadAlloc m => MonadGraphWriter s (MayFailT (StateT (AdjacencyMap s) m)) where
    new αs = do
       α <- lift $ lift $ fresh
       modify_ $ (:) (α × αs)
