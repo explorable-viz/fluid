@@ -1,7 +1,7 @@
 module Graph.GraphWriter
    ( class MonadAlloc
    , class MonadGraphWriter
-   , AdjacencyMap
+   , AdjMapEntries
    , WithGraph
    , alloc
    , fresh
@@ -42,11 +42,11 @@ class Monad m <= MonadGraphWriter s m | m -> s where
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
    new :: s Vertex -> m Vertex
 
--- Builds list of adjacency maplets (arguments to 'add').
-type AdjacencyMap s = List (Vertex × s Vertex)
-type WithGraph s a = MayFailT (StateT (AdjacencyMap s) (State Int)) a
+-- Builds list of adjacency map entries (arguments to 'add').
+type AdjMapEntries s = List (Vertex × s Vertex)
+type WithGraph s a = MayFailT (StateT (AdjMapEntries s) (State Int)) a
 
-instance MonadAlloc m => MonadGraphWriter s (MayFailT (StateT (AdjacencyMap s) m)) where
+instance MonadAlloc m => MonadGraphWriter s (MayFailT (StateT (AdjMapEntries s) m)) where
    new αs = do
       α <- lift $ lift $ fresh
       modify_ $ (:) (α × αs)
