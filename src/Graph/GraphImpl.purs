@@ -73,7 +73,6 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 
    empty = mempty
 
-   fromFoldable :: forall f. Functor f => Foldable f => f (Vertex × s Vertex) -> GraphImpl s
    fromFoldable α_αs = GraphImpl out in_
       where
       α_αs' = L.fromFoldable α_αs
