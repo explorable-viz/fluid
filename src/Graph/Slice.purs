@@ -1,16 +1,17 @@
 module Graph.Slice where
 
+import Data.Foldable (class Foldable)
 import Prelude hiding (add)
-
 import Data.List (List(..), (:))
 import Data.List as L
-import Data.Tuple (fst)
 import Data.Traversable (foldl)
+import Data.Tuple (fst)
+import Dict (values, lift2) as D
+import Expr (Expr)
 import Graph (class Graph, Edge, Vertex, add, addIn, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN, remove)
 import Set (class Set, singleton, empty, union, member)
-import Expr (Expr)
-import Val (Val)
 import Util (type (×), (×))
+import Val (Val, Env)
 
 bwdSlice :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
 bwdSlice αs g' = bwdEdges g' (discreteG αs) (outEdges g' αs)
@@ -39,17 +40,30 @@ fwdVertex g' g h α =
    αs = outN h α
 
 selectSources :: forall s. Set s Vertex => Val Vertex -> Val Boolean -> s Vertex
-selectSources vα vb = foldl union empty v_selected
+selectSources vα v𝔹 = αs_v
    where
-   v_selected = (\b -> if b then singleton else const empty) <$> vb <*> vα
+   αs_v = gather (asSet <$> v𝔹 <*> vα)
 
-selectSinks :: forall s. Set s Vertex => Expr Vertex -> Expr Boolean -> s Vertex
-selectSinks eα eb = foldl union empty v_selected
+selectSinks :: forall s. Set s Vertex => Env Vertex × Expr Vertex -> Env Boolean × Expr Boolean -> s Vertex
+selectSinks (γα × eα) (γ𝔹 × e𝔹) = union αs_e αs_γ
    where
-   v_selected = (\b -> if b then singleton else const empty) <$> eb <*> eα
+   αs_e = gather (asSet <$> e𝔹 <*> eα)
+   αs_γ = gather (gather <$> D.values (D.lift2 asSet γ𝔹 γα) :: List (s Vertex))
 
-subsetSources :: forall s. Set s Vertex => Val Vertex -> s Vertex -> Val Boolean
-subsetSources vα αs = map (flip member αs) vα
+selectSourcesFrom :: forall s. Set s Vertex => Val Vertex -> s Vertex -> Val Boolean
+selectSourcesFrom vα αs = v𝔹
+   where
+   v𝔹 = map (flip member αs) vα
 
-subsetSinks :: forall s. Set s Vertex => Expr Vertex -> s Vertex -> Expr Boolean
-subsetSinks eα αs = map (flip member αs) eα
+selectSinksFrom :: forall s. Set s Vertex => Env Vertex × Expr Vertex -> s Vertex -> Env Boolean × Expr Boolean
+selectSinksFrom (γα × eα) αs = γ𝔹 × e𝔹
+   where
+   γ𝔹 = map (map (flip member αs)) γα
+   e𝔹 = map (flip member αs) eα
+
+gather :: forall s f. Set s Vertex => Foldable f => f (s Vertex) -> s Vertex
+gather = foldl union empty
+
+asSet :: forall s. Set s Vertex => Boolean -> Vertex -> s Vertex
+asSet true = singleton
+asSet false = const empty
