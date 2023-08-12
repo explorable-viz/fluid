@@ -38,10 +38,18 @@ fwdVertex g' g h α =
    where
    αs = outN h α
 
-selectSources :: forall s. Set s Vertex => Val Boolean -> Val Vertex -> s Vertex
-selectSources u v = foldl union empty v_selected
+selectSources :: forall s. Set s Vertex => Val Vertex -> Val Boolean -> s Vertex
+selectSources vα vb = foldl union empty v_selected
    where
-   v_selected = (\b -> if b then singleton else const empty) <$> u <*> v
+   v_selected = (\b -> if b then singleton else const empty) <$> vb <*> vα
 
-selectSinks :: forall s. Set s Vertex => Expr Vertex -> s Vertex -> Expr Boolean
-selectSinks e αs = map (flip member αs) e
+selectSinks :: forall s. Set s Vertex => Expr Vertex -> Expr Boolean -> s Vertex
+selectSinks eα eb = foldl union empty v_selected
+   where
+   v_selected = (\b -> if b then singleton else const empty) <$> eb <*> eα
+
+subsetSources :: forall s. Set s Vertex => Val Vertex -> s Vertex -> Val Boolean
+subsetSources vα αs = map (flip member αs) vα
+
+subsetSinks :: forall s. Set s Vertex => Expr Vertex -> s Vertex -> Expr Boolean
+subsetSinks eα αs = map (flip member αs) eα
