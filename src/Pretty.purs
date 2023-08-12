@@ -3,6 +3,7 @@ module Pretty (class Pretty, pretty, prettyP) where
 import Prelude hiding (absurd, between)
 
 import Bindings (Bind, key, val, Var, (↦))
+import Data.Bifunctor (rmap)
 import Data.Exists (runExists)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, (:), null)
@@ -11,13 +12,15 @@ import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
-import Data.Set (toUnfoldable) as S
+import Data.Set (Set, toUnfoldable) as S
 import Data.String (Pattern(..), contains) as Data.String
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
 import Dict (toUnfoldable) as D
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
+import Graph (Vertex(..))
+import Graph.GraphImpl (GraphImpl(..))
 import Parse (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), VarDef(..), VarDefs, Qualifier(..), RecDefs)
@@ -393,3 +396,15 @@ instance Pretty (ForeignOp' t) where
 
 instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty
+
+instance Pretty (GraphImpl S.Set) where
+   pretty (GraphImpl out in_) =
+      text "GraphImpl (" .<>. text (showGraphDict out) .<>. text " × " .<>. text (showGraphDict in_) .<>. text ")"
+      where
+      showGraphDict d = show $ map (rmap (pretty >>> render)) (D.toUnfoldable d :: List (String × S.Set Vertex))
+
+instance Pretty Vertex where
+   pretty (Vertex α) = text $ "Vertex " <> α
+
+instance (Pretty a) => Pretty (S.Set a) where
+   pretty s = between (text "{") (text "}") (hcomma (pretty <$> (S.toUnfoldable s :: List a)))
