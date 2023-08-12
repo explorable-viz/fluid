@@ -95,7 +95,7 @@ testWithSetup (File file) expected v_expect_opt setup =
          { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
          (s' :: SE.Expr 𝔹) = desugBwd e' (erase s)
       _ × v'' <- except $ desug s' >>= flip (eval γ') top
-      let src = render (pretty s)
+      let src = prettyP s
       s'' <- except $ parse src program
       trace ("Non-Annotated:\n" <> src) \_ -> lift $ do
          if (not $ eq (erase s) s'') then do
@@ -106,7 +106,7 @@ testWithSetup (File file) expected v_expect_opt setup =
          else do
             unless (isGraphical v'')
                (checkPretty "Value" expected v'')
-            trace ("Annotated\n" <> render (pretty s')) \_ -> do
+            trace ("Annotated\n" <> prettyP s') \_ -> do
                case snd <$> v_expect_opt of
                   Nothing -> pure unit
                   Just file_expect -> do
@@ -114,7 +114,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                      checkPretty "Source selection" expect s'
          pure (v' × γ' × e')
 
-   testGraph :: (Val 𝔹 ×  Env 𝔹 × E.Expr 𝔹) -> MayFailT Aff Unit
+   testGraph :: (Val 𝔹 × Env 𝔹 × E.Expr 𝔹) -> MayFailT Aff Unit
    testGraph (v𝔹 × γ𝔹 × e𝔹) = do
       g × (_ × eα × vα) <- except $ evalGraph γ𝔹 e𝔹 :: MayFailT _ (GraphImpl S.Set × _)
       lift $ do
@@ -122,18 +122,18 @@ testWithSetup (File file) expected v_expect_opt setup =
             (checkPretty "Value" expected (erase vα))
          unless (isNothing v_expect_opt)
             ( do
-                 log ("Expr 𝔹: " <> render (pretty e𝔹))
-                 log ("Val 𝔹: " <> render (pretty v𝔹))
-                 log ("Expr Vertex:\n" <> render (pretty eα))
-                 log ("Val Vertex: " <> render (pretty vα))
-                 log ("Graph:\n" <> render (pretty g))
+                 log ("Expr 𝔹:\n" <> prettyP e𝔹)
+                 log ("Val 𝔹:\n" <> prettyP v𝔹)
+                 log ("Expr Vertex:\n" <> prettyP eα)
+                 log ("Val Vertex:\n" <> prettyP vα)
+                 log ("Graph:\n" <> prettyP g)
                  -- | Test backward slicing
                  unless true $
                     do
                        let (αs_bwd :: S.Set Vertex) = G.selectSources vα v𝔹
                        log ("EvalGraph.selectSources: \n" <> show αs_bwd)
                        let gbwd = G.bwdSlice αs_bwd g
-                       log ("Graph.Slice.bwdSlice: \n" <> render (pretty gbwd))
+                       log ("Graph.Slice.bwdSlice: \n" <> prettyP gbwd)
 
                        log ("EvalGraph.subsetSinks: ")
                        let e𝔹' = G.subsetSinks eα (G.vertices gbwd)
@@ -146,13 +146,13 @@ testWithSetup (File file) expected v_expect_opt setup =
                        let (αs_fwd :: S.Set Vertex) = G.selectSinks eα e𝔹
                        log ("EvalGraph.selectSources: \n" <> show αs_fwd)
                        let gfwd = G.fwdSlice αs_fwd g
-                       log ("Graph.Slice.fwdSlice: \n" <> render (pretty gfwd))
+                       log ("Graph.Slice.fwdSlice: \n" <> prettyP gfwd)
 
                        log ("EvalGraph.subsetSources: ")
                        let v𝔹' = G.subsetSources vα (G.vertices gfwd)
-                       log ("Val 𝔹 expected: \n" <> (render $ pretty v𝔹))
-                       log ("Val 𝔹 gotten: \n" <> (render $ pretty v𝔹'))
-                     --   if (not $ eq (render $ pretty v𝔹) (render $ pretty v𝔹')) then fail "not equal" else pure unit
+                       log ("Val 𝔹 expected: \n" <> prettyP v𝔹)
+                       log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
+            --   if (not $ eq (render $ pretty v𝔹) (render $ pretty v𝔹')) then fail "not equal" else pure unit
             )
 
 test :: File -> String -> Test Unit

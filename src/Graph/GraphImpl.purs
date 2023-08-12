@@ -7,7 +7,7 @@ import Prelude
 
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
-import Data.Foldable (class Foldable, foldl, foldM)
+import Data.Foldable (foldl, foldM)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)

@@ -132,12 +132,6 @@ derive instance Functor Fun
 derive instance Foldable Fun
 derive instance Traversable Fun
 
--- derive instance Eq a => Eq (Val a)
--- derive instance Eq a => Eq (DictRep a)
--- derive instance Eq a => Eq (MatrixRep a)
--- derive instance Eq a => Eq (Fun a)
--- derive instance Eq a => Eq (Exists ForeignOp')
-
 instance Apply Val where
    apply (Int fα n) (Int α _) = Int (fα α) n
    apply (Float fα n) (Float α _) = Float (fα α) n

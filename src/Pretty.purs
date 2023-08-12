@@ -327,10 +327,10 @@ prettyDict :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> Li
 prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colonEq)
 
 prettyRecord :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
-prettyRecord = between (text "{") (text "}") # prettyRecordOrDict (text str.colon)
+prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon)
 
 prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
-prettyMatrix e1 i j e2 = (between (text "[[") (text "]]") (pretty e1 .<>. text " <- " .<>. text (i <> "×" <> j) .<>. text " in " .<>. pretty e2))
+prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text " <- " .<>. text (i <> "×" <> j) .<>. text " in " .<>. pretty e2)
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
@@ -348,6 +348,12 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.LetRec δ e) = atop (hspace [ text str.let_, pretty δ, text str.in_ ]) (pretty e)
    pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
    pretty (E.App e e') = hspace [ pretty e, pretty e' ]
+
+instance Highlightable a => Pretty (Dict (Val a)) where
+   pretty γ = arrayBrackets $ hcomma (map go (D.toUnfoldable γ :: List (Var × Val a)))
+      where
+      go :: (Var × Val a) -> Doc
+      go (x × v) = parens $ text x .<>. text "," .<>. pretty v
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty x = go (D.toUnfoldable x)
