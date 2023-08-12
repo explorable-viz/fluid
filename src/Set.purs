@@ -7,6 +7,7 @@ import Data.Unfoldable (class Unfoldable)
 
 class (Ord a, Ord (s a), Foldable s) <= Set s a where
    delete :: a -> s a -> s a
+   difference :: s a -> s a -> s a
    union :: s a -> s a -> s a
    insert :: a -> s a -> s a
    member :: a -> s a -> Boolean
@@ -19,6 +20,7 @@ class (Ord a, Ord (s a), Foldable s) <= Set s a where
 
 instance Ord a => Set S.Set a where
    delete = S.delete
+   difference = S.difference
    union = S.union
    insert = S.insert
    member = S.member

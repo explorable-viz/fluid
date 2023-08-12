@@ -123,7 +123,7 @@ testWithSetup (File file) expected v_expect_opt setup =
          unless (isNothing v_expect_opt)
             ( do
                  log ("Expr Vertex:\n" <> render (pretty eα))
-                 log ("Graph:\n" <> show g)
+                 log ("Graph:\n" <> render (pretty g))
 
                  let (αs :: S.Set Vertex) = G.selectSources v𝔹 vα
                  log ("EvalGraph.selectSources:")
@@ -133,7 +133,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                  unless true $ do
                     let gbwd = G.bwdSlice αs g
                     log ("Graph.Slice.bwdSlice: ")
-                    log ("Graph: " <> show gbwd)
+                    log ("Graph: " <> render (pretty gbwd))
 
                     log ("EvalGraph.selectSinks: ")
                     log ("Selected vertices: " <> show (G.vertices gbwd))
