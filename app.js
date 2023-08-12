@@ -27483,6 +27483,7 @@
     dictPretty.pretty(v._2)
   ]))(listMap(strongFn.first(prettyKey))(xvs)))));
   var between2 = (l) => (r) => (doc2) => beside(beside(l)(doc2))(r);
+  var curlyBraces = /* @__PURE__ */ between2(/* @__PURE__ */ text("{"))(/* @__PURE__ */ text("}"));
   var prettyParensOpt = (dictPretty) => (x2) => {
     const doc2 = dictPretty.pretty(x2);
     if (contains2(" ")(intercalate4("\n")(doc2.lines))) {
@@ -27549,7 +27550,6 @@
     return $5(v1, v2, v);
   };
   var prettyDict = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(text(":="))(between2(text("{|"))(text("|}")));
-  var prettyRecord = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(text(":"))(between2(text("{"))(text("}")));
   var prettyVal = (dictHighlightable) => ({
     pretty: (v) => {
       if (v.tag === "Int") {
@@ -27562,7 +27562,7 @@
         return dictHighlightable.highlightIf(v._1)(text(showStringImpl(v._2)));
       }
       if (v.tag === "Record") {
-        return prettyRecord(prettyVal(dictHighlightable))(dictHighlightable)(text)(v._1)(toUnfoldable8(v._2));
+        return prettyRecordOrDict(prettyVal(dictHighlightable))(dictHighlightable)(text(":"))(curlyBraces)(text)(v._1)(toUnfoldable8(v._2));
       }
       if (v.tag === "Dictionary") {
         return prettyDict(prettyVal(dictHighlightable))(dictHighlightable)((v1) => dictHighlightable.highlightIf(v1._2)(text(showStringImpl(v1._1))))(v._1)(listMap((v1) => $Tuple(
@@ -27614,7 +27614,7 @@
         return text(showStringImpl(v._2));
       }
       if (v.tag === "Record") {
-        return prettyRecord(prettyExpr(dictHighlightable))(dictHighlightable)(text)(v._1)(toUnfoldable8(v._2));
+        return prettyRecordOrDict(prettyExpr(dictHighlightable))(dictHighlightable)(text(":"))(curlyBraces)(text)(v._1)(toUnfoldable8(v._2));
       }
       if (v.tag === "Dictionary") {
         return prettyDict(prettyExpr(dictHighlightable))(dictHighlightable)(prettyExpr(dictHighlightable).pretty)(v._1)(listMap(toTuple)(v._2));
@@ -27702,7 +27702,7 @@
     }
   });
   var prettyBindElim = (dictHighlightable) => ({ pretty: (v) => hspace1([text(v._1), text("="), prettyElim(dictHighlightable).pretty(v._2)]) });
-  var prettyMatrix = (dictHighlightable) => (e1) => (i) => (j) => (e22) => beside(beside(text("[["))(beside(beside(beside(beside(prettyExpr(dictHighlightable).pretty(e1))(text(" <- ")))(text(i + ("\xD7" + j))))(text(" in ")))(prettyExpr(dictHighlightable).pretty(e22))))(text("]]"));
+  var prettyMatrix = (dictHighlightable) => (e1) => (i) => (j) => (e22) => beside(beside(text("[|"))(beside(beside(beside(beside(prettyExpr(dictHighlightable).pretty(e1))(text(" <- ")))(text(i + ("\xD7" + j))))(text(" in ")))(prettyExpr(dictHighlightable).pretty(e22))))(text("|]"));
 
   // output-es/Val/index.js
   var $ForeignOp$p = (_1) => ({ tag: "ForeignOp'", _1 });
