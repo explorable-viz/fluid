@@ -20,6 +20,9 @@ import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Util ((×))
 import Val (DictRep(..), Val(..))
 
+main :: Effect Unit
+main = void (sequence (run <$> concat tests))
+
 tests :: Array (Array (Test Unit))
 tests =
    [ test_desugaring
@@ -30,24 +33,10 @@ tests =
    , test_graph
    ]
 
--- tests = [ test_scratchpad ]
-
-main :: Effect Unit
-main = void (sequence (run <$> concat tests))
+-- tests = [[ testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"]]
 
 test_scratchpad :: Array (Test Unit)
-test_scratchpad = test_bwd
-
---    [
--- testBwd (File "convolution/edgeDetect") (File "convolution/edgeDetect.expect")
---    (botOf >>> selectCell 1 1 topOf)
---    "_0_, -1, 2, 0, -1,\n\
---    \0, 3, -2, 3, -2,\n\
---    \-1, 1, -5, 0, 4,\n\
---    \1, -1, 4, 0, -4,\n\
---    \1, 0, -3, 2, 0"
-
---    ]
+test_scratchpad = []
 
 test_linking :: Array (Test Unit)
 test_linking =

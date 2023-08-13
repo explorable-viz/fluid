@@ -6,7 +6,6 @@ import Data.List (List(..), (:))
 import Data.List as L
 import Data.Traversable (foldl)
 import Data.Tuple (fst)
-import Dict (values, lift2) as D
 import Expr (Expr)
 import Graph (class Graph, Edge, Vertex, add, addIn, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN, remove)
 import Set (class Set, singleton, empty, union, member)
@@ -39,16 +38,18 @@ fwdVertex g' g h α =
    where
    αs = outN h α
 
-selectSources :: forall s. Set s Vertex => Val Vertex -> Val Boolean -> s Vertex
-selectSources vα v𝔹 = αs_v
+intersectSources :: forall s. Set s Vertex => Val Vertex -> Val Boolean -> s Vertex
+intersectSources vα v𝔹 = αs_v
    where
    αs_v = gather (asSet <$> v𝔹 <*> vα)
 
-selectSinks :: forall s. Set s Vertex => Env Vertex × Expr Vertex -> Env Boolean × Expr Boolean -> s Vertex
-selectSinks (γα × eα) (γ𝔹 × e𝔹) = union αs_e αs_γ
+{-
+intersectSinks :: forall s. Set s Vertex => Env Vertex × Expr Vertex -> Env Boolean × Expr Boolean -> s Vertex
+intersectSinks (γα × eα) (γ𝔹 × e𝔹) = union αs_e αs_γ
    where
    αs_e = gather (asSet <$> e𝔹 <*> eα)
    αs_γ = gather (gather <$> D.values (D.lift2 asSet γ𝔹 γα) :: List (s Vertex))
+-}
 
 selectSourcesFrom :: forall s. Set s Vertex => Val Vertex -> s Vertex -> Val Boolean
 selectSourcesFrom vα αs = v𝔹

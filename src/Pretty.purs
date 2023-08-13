@@ -3,7 +3,6 @@ module Pretty (class Pretty, pretty, prettyP) where
 import Prelude hiding (absurd, between)
 
 import Bindings (Bind, key, val, Var, (↦))
-import Data.Bifunctor (rmap)
 import Data.Exists (runExists)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, (:), null)
@@ -349,12 +348,6 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
    pretty (E.App e e') = hspace [ pretty e, pretty e' ]
 
-instance Highlightable a => Pretty (Dict (Val a)) where
-   pretty γ = arrayBrackets $ hcomma (map go (D.toUnfoldable γ :: List (Var × Val a)))
-      where
-      go :: (Var × Val a) -> Doc
-      go (x × v) = parens $ text x .<>. text "," .<>. pretty v
-
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty x = go (D.toUnfoldable x)
       where
@@ -362,6 +355,20 @@ instance Highlightable a => Pretty (Dict (Elim a)) where
       go Nil = error absurd -- non-empty
       go (xσ : Nil) = pretty xσ
       go (xσ : δ) = atop (go δ .<>. semi) (pretty xσ)
+
+instance Highlightable a => Pretty (Dict (Val a)) where
+   pretty γ = brackets $ go (D.toUnfoldable γ)
+      where
+      go :: List (Var × Val a) -> Doc
+      go Nil = text ""
+      go ((x × v) : rest) = parens $ text x .<>. text str.comma .<>. pretty v .<>. text str.comma .<>. go rest
+
+instance Pretty (Dict (S.Set Vertex)) where
+   pretty d = brackets $ go (D.toUnfoldable d)
+      where
+      go :: List (String × S.Set Vertex) -> Doc
+      go Nil = text ""
+      go ((α × βs) : rest) = text α .<>. text " ↦ " .<>. pretty (βs :: S.Set Vertex) .<>. text str.comma .<>. go rest
 
 instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) = hspace [ text x, text str.equals, pretty σ ]
@@ -377,7 +384,7 @@ instance Highlightable a => Pretty (Ctr × Cont a) where
 instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hspace [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
-   pretty (ElimRecord xs κ) = hspace [ between (text "{") (text "}") $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, between (text "{") (text "}") (pretty κ) ]
+   pretty (ElimRecord xs κ) = hspace [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
 
 instance Highlightable a => Pretty (Val a) where
    pretty (V.Int α n) = highlightIf α (text (show n))
@@ -405,12 +412,14 @@ instance (Pretty a, Pretty b) => Pretty (a + b) where
 
 instance Pretty (GraphImpl S.Set) where
    pretty (GraphImpl out in_) =
-      text "GraphImpl (" .<>. text (showGraphDict out) .<>. text " × " .<>. text (showGraphDict in_) .<>. text ")"
+      text "GraphImpl \n  " .<>.
+         atop
+            ( text "{\n" .<>.
+                 atop (text "OUT: " .<>. pretty out) (text "IN: " .<>. pretty in_)
+            )
+            (text "}")
+
+instance Pretty (S.Set Vertex) where
+   pretty αs = curlyBraces (hcomma (text <<< unwrap <$> (S.toUnfoldable αs :: List Vertex)))
       where
-      showGraphDict d = show $ map (rmap (pretty >>> render)) (D.toUnfoldable d :: List (String × S.Set Vertex))
-
-instance Pretty Vertex where
-   pretty (Vertex α) = text $ "Vertex " <> α
-
-instance (Pretty a) => Pretty (S.Set a) where
-   pretty s = between (text "{") (text "}") (hcomma (pretty <$> (S.toUnfoldable s :: List a)))
+      unwrap (Vertex α) = α

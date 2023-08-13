@@ -43,6 +43,8 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
 
    -- | s of all vertices in g
    vertices :: g -> s Vertex
+   sources :: g -> s Vertex
+   sinks :: g -> s Vertex
    -- |   op (op g) = g
    op :: Endo g
 
