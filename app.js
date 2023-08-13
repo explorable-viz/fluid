@@ -27434,8 +27434,8 @@
 
   // output-es/Pretty/index.js
   var hcat = /* @__PURE__ */ (() => foldableList.foldMap(monoidColumns)(unsafeCoerce))();
-  var toUnfoldable8 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
-  var toUnfoldable13 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
+  var toUnfoldable8 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
+  var toUnfoldable13 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
   var space2 = /* @__PURE__ */ text(" ");
   var semi = /* @__PURE__ */ text(";");
   var prettyP = (dictPretty) => (x2) => intercalate4("\n")(dictPretty.pretty(x2).lines);
@@ -27562,13 +27562,13 @@
         return dictHighlightable.highlightIf(v._1)(text(showStringImpl(v._2)));
       }
       if (v.tag === "Record") {
-        return prettyRecordOrDict(prettyVal(dictHighlightable))(dictHighlightable)(text(":"))(curlyBraces)(text)(v._1)(toUnfoldable8(v._2));
+        return prettyRecordOrDict(prettyVal(dictHighlightable))(dictHighlightable)(text(":"))(curlyBraces)(text)(v._1)(toUnfoldable13(v._2));
       }
       if (v.tag === "Dictionary") {
         return prettyDict(prettyVal(dictHighlightable))(dictHighlightable)((v1) => dictHighlightable.highlightIf(v1._2)(text(showStringImpl(v1._1))))(v._1)(listMap((v1) => $Tuple(
           $Tuple(v1._1, v1._2._1),
           v1._2._2
-        ))(toUnfoldable8(v._2)));
+        ))(toUnfoldable13(v._2)));
       }
       if (v.tag === "Constr") {
         return prettyConstr(prettyVal(dictHighlightable))(dictHighlightable)(v._1)(v._2)(v._3);
@@ -27614,7 +27614,7 @@
         return text(showStringImpl(v._2));
       }
       if (v.tag === "Record") {
-        return prettyRecordOrDict(prettyExpr(dictHighlightable))(dictHighlightable)(text(":"))(curlyBraces)(text)(v._1)(toUnfoldable8(v._2));
+        return prettyRecordOrDict(prettyExpr(dictHighlightable))(dictHighlightable)(text(":"))(curlyBraces)(text)(v._1)(toUnfoldable13(v._2));
       }
       if (v.tag === "Dictionary") {
         return prettyDict(prettyExpr(dictHighlightable))(dictHighlightable)(prettyExpr(dictHighlightable).pretty)(v._1)(listMap(toTuple)(v._2));
@@ -27662,7 +27662,7 @@
       }
       if (v.tag === "ElimRecord") {
         return hspace1([
-          beside(beside(text("{"))(hcomma1(listMap(text)(toUnfoldable13(v._1)))))(text("}")),
+          beside(beside(text("{"))(hcomma1(listMap(text)(toUnfoldable8(v._1)))))(text("}")),
           text("->"),
           beside(beside(text("{"))(prettyCont(dictHighlightable).pretty(v._2)))(text("}"))
         ]);
@@ -27684,7 +27684,7 @@
         }
         fail();
       };
-      return go(toUnfoldable8(x2));
+      return go(toUnfoldable13(x2));
     }
   });
   var prettyCont = (dictHighlightable) => ({
