@@ -36,8 +36,8 @@ import EvalBwd (evalBwd)
 import EvalGraph (evalGraph) -- , selectSinks)
 import Expr (Expr) as E
 import Graph (Vertex)
-import Graph (vertices) as G
-import Graph.Slice (selectSources, selectSourcesFrom, bwdSlice, selectSinks, selectSinksFrom, fwdSlice) as G --
+import Graph (sinks, sources) as G
+import Graph.Slice (intersectSources, selectSourcesFrom, selectSinksFrom, bwdSlice, fwdSlice) as G --
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, erase)
 import Module
@@ -122,36 +122,39 @@ testWithSetup (File file) expected v_expect_opt setup =
          unless (isNothing v_expect_opt)
             ( do
                  log ("Expr 𝔹:\n" <> prettyP e𝔹)
-                 log ("Expr Vertex:\n" <> prettyP eα)
                  log ("Val 𝔹:\n" <> prettyP v𝔹)
+                 log ("Expr Vertex:\n" <> prettyP eα)
                  log ("Val Vertex:\n" <> prettyP vα)
-                 --   log ("Graph:\n" <> show g)
-                 -- | Test backward slicing
+                 --   log ("Graph:\n" <> prettyP g)
                  unless true $
                     do
-                       let (αs_bwd :: S.Set Vertex) = G.selectSources vα v𝔹
-                       log ("EvalGraph.selectSources: \n" <> show αs_bwd)
-                       let gbwd = G.bwdSlice αs_bwd g
-                       log ("Graph.Slice.bwdSlice: \n" <> prettyP gbwd)
+                       -- | Test backward slicing
+                       let (αs_out :: S.Set Vertex) = G.intersectSources vα v𝔹
+                       log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
+                       let gbwd = G.bwdSlice αs_out g
+                       log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
 
-                       log ("EvalGraph.selectSinksFrom: ")
-                       let _ × e𝔹' = G.selectSinksFrom (γα × eα) (G.vertices gbwd)
-                       log ("Expr 𝔹 expected: \n" <> prettyP e𝔹)
-                       log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
-                       if (not $ eq e𝔹' e𝔹) then fail "not equal" else pure unit
-                 -- | Test forward slicing
-                 unless true $
-                    do
-                       let (αs_fwd :: S.Set Vertex) = G.selectSinks (γα × eα) (γ𝔹 × e𝔹)
-                       log ("EvalGraph.selectSinks: \n" <> show αs_fwd)
-                       let gfwd = G.fwdSlice αs_fwd g
-                       log ("Graph.Slice.fwdSlice: \n" <> prettyP gfwd)
+                       -- | Test forward slicing (via round-tripping)
+                       let (αs_in :: S.Set Vertex) = G.sinks gbwd
+                       log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
+                       let gfwd = G.fwdSlice αs_in g
+                       log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
 
-                       log ("EvalGraph.selectSourcesFrom: ")
-                       let v𝔹' = G.selectSourcesFrom vα (G.vertices gfwd)
-                       log ("Val 𝔹 expected: \n" <> expected)
-                       log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
-                       if (not $ eq (prettyP v𝔹') expected) then fail "not equal" else pure unit
+                       -- | Check addresses on bwd graph-sliced expression match the booleans on bwd trace-sliced expression
+                       let _ × e𝔹' = G.selectSinksFrom (γα × eα) αs_in
+                       if (not $ eq e𝔹' e𝔹) then do
+                          log ("Expr 𝔹 expected: \n" <> prettyP e𝔹)
+                          log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
+                          fail "not equal"
+                       else pure unit
+
+                       -- | Check addresses on fwd graph-sliced value match the booleans on fwd trace-sliced value
+                       let v𝔹' = G.selectSourcesFrom vα (G.sources gfwd)
+                       if (not $ eq expected (prettyP v𝔹')) then do
+                          log ("Val 𝔹 expected: \n" <> expected)
+                          log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
+                          fail "not equal"
+                       else pure unit
             )
 
 test :: File -> String -> Test Unit

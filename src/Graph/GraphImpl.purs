@@ -15,7 +15,7 @@ import Data.Newtype (unwrap)
 import Data.Set as S
 import Dict (Dict)
 import Dict as D
-import Foreign.Object (runST)
+import Foreign.Object (runST, filter)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, Vertex(..), addOut, op, outN)
@@ -64,6 +64,8 @@ instance Set s Vertex => Graph (GraphImpl s) s where
    size (GraphImpl out _) = D.size out
 
    vertices (GraphImpl out _) = Set.fromFoldable $ S.map Vertex $ D.keys out
+   sinks (GraphImpl out _) = Set.fromFoldable $ S.map Vertex $ D.keys (filter Set.isEmpty out)
+   sources (GraphImpl _ in_) = Set.fromFoldable $ S.map Vertex $ D.keys (filter Set.isEmpty in_)
 
    op (GraphImpl out in_) = GraphImpl in_ out
 

@@ -1,6 +1,7 @@
 module Set where
 
 import Prelude
+
 import Data.Foldable (class Foldable)
 import Data.Set as S
 import Data.Unfoldable (class Unfoldable)
@@ -10,6 +11,7 @@ class (Ord a, Ord (s a), Foldable s) <= Set s a where
    difference :: s a -> s a -> s a
    union :: s a -> s a -> s a
    insert :: a -> s a -> s a
+   isEmpty :: s a -> Boolean
    member :: a -> s a -> Boolean
    subset :: s a -> s a -> Boolean
    singleton :: a -> s a
@@ -23,6 +25,7 @@ instance Ord a => Set S.Set a where
    difference = S.difference
    union = S.union
    insert = S.insert
+   isEmpty = S.isEmpty
    member = S.member
    singleton = S.singleton
    subset = S.subset
