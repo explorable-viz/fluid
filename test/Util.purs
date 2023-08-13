@@ -50,13 +50,12 @@ import Module
    , parse
    )
 import Parse (program)
-import Pretty (pretty, class Pretty, prettyP)
+import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, type (×), (×), successful)
-import Util.Pretty (render)
 import Val (Env, Val(..), (<+>))
 
 -- Don't enforce expected values for graphics tests (values too complex).
@@ -123,10 +122,10 @@ testWithSetup (File file) expected v_expect_opt setup =
          unless (isNothing v_expect_opt)
             ( do
                  log ("Expr 𝔹:\n" <> prettyP e𝔹)
-                 log ("Val 𝔹:\n" <> prettyP v𝔹)
                  log ("Expr Vertex:\n" <> prettyP eα)
+                 log ("Val 𝔹:\n" <> prettyP v𝔹)
                  log ("Val Vertex:\n" <> prettyP vα)
-                 log ("Graph:\n" <> prettyP g)
+                 --   log ("Graph:\n" <> show g)
                  -- | Test backward slicing
                  unless true $
                     do
@@ -137,8 +136,8 @@ testWithSetup (File file) expected v_expect_opt setup =
 
                        log ("EvalGraph.selectSinksFrom: ")
                        let _ × e𝔹' = G.selectSinksFrom (γα × eα) (G.vertices gbwd)
-                       log ("Expr 𝔹 expected: \n" <> (render $ pretty e𝔹))
-                       log ("Expr 𝔹 gotten: \n" <> (render $ pretty e𝔹'))
+                       log ("Expr 𝔹 expected: \n" <> prettyP e𝔹)
+                       log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
                        if (not $ eq e𝔹' e𝔹) then fail "not equal" else pure unit
                  -- | Test forward slicing
                  unless true $
@@ -150,9 +149,9 @@ testWithSetup (File file) expected v_expect_opt setup =
 
                        log ("EvalGraph.selectSourcesFrom: ")
                        let v𝔹' = G.selectSourcesFrom vα (G.vertices gfwd)
-                       log ("Val 𝔹 expected: \n" <> prettyP v𝔹)
+                       log ("Val 𝔹 expected: \n" <> expected)
                        log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
-                       if (not $ eq (render $ pretty v𝔹) (render $ pretty v𝔹')) then fail "not equal" else pure unit
+                       if (not $ eq (prettyP v𝔹') expected) then fail "not equal" else pure unit
             )
 
 test :: File -> String -> Test Unit

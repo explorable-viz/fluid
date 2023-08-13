@@ -3,7 +3,6 @@ module Pretty (class Pretty, pretty, prettyP) where
 import Prelude hiding (absurd, between)
 
 import Bindings (Bind, key, val, Var, (↦))
-import Data.Bifunctor (rmap)
 import Data.Exists (runExists)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), fromFoldable, (:), null)
@@ -350,7 +349,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.App e e') = hspace [ pretty e, pretty e' ]
 
 instance Highlightable a => Pretty (Dict (Val a)) where
-   pretty γ = arrayBrackets $ hcomma (map go (D.toUnfoldable γ :: List (Var × Val a)))
+   pretty γ = brackets $ hcomma (map go (D.toUnfoldable γ :: List (Var × Val a)))
       where
       go :: (Var × Val a) -> Doc
       go (x × v) = parens $ text x .<>. text "," .<>. pretty v
@@ -377,7 +376,7 @@ instance Highlightable a => Pretty (Ctr × Cont a) where
 instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hspace [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
-   pretty (ElimRecord xs κ) = hspace [ between (text "{") (text "}") $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, between (text "{") (text "}") (pretty κ) ]
+   pretty (ElimRecord xs κ) = hspace [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
 
 instance Highlightable a => Pretty (Val a) where
    pretty (V.Int α n) = highlightIf α (text (show n))
@@ -405,12 +404,18 @@ instance (Pretty a, Pretty b) => Pretty (a + b) where
 
 instance Pretty (GraphImpl S.Set) where
    pretty (GraphImpl out in_) =
-      text "GraphImpl (" .<>. text (showGraphDict out) .<>. text " × " .<>. text (showGraphDict in_) .<>. text ")"
+      text "GraphImpl \n  " .<>.
+         atop
+            ( text "{\n" .<>.
+                 atop (text "OUT: " .<>. brackets (hcomma (prettyNeighbours out)))
+                    (text "IN: " .<>. brackets (hcomma (prettyNeighbours in_)))
+            )
+            (text "}")
       where
-      showGraphDict d = show $ map (rmap (pretty >>> render)) (D.toUnfoldable d :: List (String × S.Set Vertex))
+      prettyNeighbours d = map pretty (D.toUnfoldable d :: List (String × S.Set Vertex))
 
-instance Pretty Vertex where
-   pretty (Vertex α) = text $ "Vertex " <> α
-
-instance (Pretty a) => Pretty (S.Set a) where
-   pretty s = between (text "{") (text "}") (hcomma (pretty <$> (S.toUnfoldable s :: List a)))
+instance Pretty (String × S.Set Vertex) where
+   pretty (α × βs) = text α .<>. text " ↦ " .<>.
+      curlyBraces (hcomma (text <<< unwrap <$> (S.toUnfoldable βs :: List Vertex)))
+      where
+      unwrap (Vertex β) = β
