@@ -33,10 +33,12 @@ tests =
    , test_graph
    ]
 
--- tests = [[ testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"]]
+--tests = [ test_scratchpad ]
 
 test_scratchpad :: Array (Test Unit)
-test_scratchpad = []
+test_scratchpad =
+   [ testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
+   ]
 
 test_linking :: Array (Test Unit)
 test_linking =

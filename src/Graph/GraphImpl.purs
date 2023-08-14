@@ -83,6 +83,12 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap s r = STObject r (s Vertex)
 
+addMissing :: forall s r. Set s Vertex => STObject r (s Vertex) -> Vertex -> ST r (STObject r (s Vertex))
+addMissing acc (Vertex β) = do
+   OST.peek β acc >>= case _ of
+      Nothing -> OST.poke β Set.empty acc
+      Just _ -> pure acc
+
 outMap :: forall s. Set s Vertex => List (Vertex × s Vertex) -> forall r. ST r (MutableAdjMap s r)
 outMap α_αs = do
    out <- OST.new
@@ -90,13 +96,8 @@ outMap α_αs = do
    where
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : rest) × acc) = do
-      acc' <- OST.poke (unwrap α) βs acc >>= flip (foldM addMissingSink) βs
+      acc' <- OST.poke (unwrap α) βs acc >>= flip (foldM addMissing) βs
       pure $ Loop (rest × acc')
-
-   addMissingSink acc (Vertex β) = do
-      OST.peek β acc >>= case _ of
-         Nothing -> OST.poke β Set.empty acc
-         Just _ -> pure acc
 
 inMap :: forall s. Set s Vertex => List (Vertex × s Vertex) -> forall r. ST r (MutableAdjMap s r)
 inMap α_αs = do
@@ -105,18 +106,13 @@ inMap α_αs = do
    where
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : rest) × acc) = do
-      acc' <- foldM (addEdge α) acc βs >>= flip addMissingSource α
+      acc' <- foldM (addEdge α) acc βs >>= flip addMissing α
       pure $ Loop (rest × acc')
 
    addEdge α acc (Vertex β) = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β (singleton α) acc
          Just αs -> OST.poke β (insert α αs) acc
-
-   addMissingSource acc (Vertex α) = do
-      OST.peek α acc >>= case _ of
-         Nothing -> OST.poke α Set.empty acc
-         Just _ -> pure acc
 
 instance Show (s Vertex) => Show (GraphImpl s) where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
