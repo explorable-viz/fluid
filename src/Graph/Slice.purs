@@ -51,7 +51,7 @@ selectVertices' (γα × eα) (γ𝔹 × e𝔹) = union αs_e αs_γ
    αs_γ = gather (gather <$> D.values (D.lift2 asSet γ𝔹 γα) :: List (s Vertex))
 -}
 
-selectSourcesFrom :: forall s. Set s Vertex => Val Vertex -> s Vertex -> Val Boolean
+selectSourcesFrom :: forall s f. Set s Vertex => Functor f => f Vertex -> s Vertex -> f Boolean
 selectSourcesFrom vα αs = v𝔹
    where
    v𝔹 = map (flip member αs) vα
@@ -59,8 +59,8 @@ selectSourcesFrom vα αs = v𝔹
 selectSinksFrom :: forall s. Set s Vertex => Env Vertex × Expr Vertex -> s Vertex -> Env Boolean × Expr Boolean
 selectSinksFrom (γα × eα) αs = γ𝔹 × e𝔹
    where
-   γ𝔹 = map (map (flip member αs)) γα
-   e𝔹 = map (flip member αs) eα
+   γ𝔹 = map (flip selectSourcesFrom αs) γα
+   e𝔹 = selectSourcesFrom eα αs
 
 asSet :: forall s. Set s Vertex => Boolean -> Vertex -> s Vertex
 asSet true = singleton
