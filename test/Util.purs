@@ -74,7 +74,7 @@ checkPretty _ expected x =
    trace (":\n") \_ ->
       prettyP x `shouldEqual` expected
 
-testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × SE.Expr 𝔹) -> Test Unit
+testWithSetup :: File -> String -> Maybe (Selector Val × File) -> Aff (Env 𝔹 × SE.Expr 𝔹) -> Test Unit
 testWithSetup (File file) expected v_expect_opt setup =
    before setup $ it file (uncurry doTest)
    where
@@ -154,14 +154,14 @@ testWithSetup (File file) expected v_expect_opt setup =
 test :: File -> String -> Test Unit
 test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
 
-testBwd :: File -> File -> Selector -> String -> Test Unit
+testBwd :: File -> File -> Selector Val -> String -> Test Unit
 testBwd file file_expect δv expected =
    testWithSetup file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
    where
    folder = File "slicing/"
    file' = folder <> file
 
-testLink :: LinkFigSpec -> Selector -> String -> Test Unit
+testLink :: LinkFigSpec -> Selector Val -> String -> Test Unit
 testLink spec@{ x } δv1 v2_expect =
    before (loadLinkFig spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)

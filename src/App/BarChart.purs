@@ -44,7 +44,7 @@ instance Reflect (Dict (Val Boolean)) BarChart where
 barChartHandler :: Handler
 barChartHandler ev = toggleBar $ unsafeBarIndex $ target ev
    where
-   toggleBar :: Int -> Selector
+   toggleBar :: Int -> Selector Val
    toggleBar i =
       toggleConstrArg cBarChart 0
          $ toggleField f_data
