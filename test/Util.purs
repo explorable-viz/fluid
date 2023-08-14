@@ -111,7 +111,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                   Just file_expect -> do
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
-         pure (v' × γ' × e')
+         pure (v' × γ' × e') -- output slice and corresponding input slice
 
    testGraph :: Val 𝔹 × Env 𝔹 × E.Expr 𝔹 -> MayFailT Aff Unit
    testGraph (v𝔹 × γ𝔹 × e𝔹) = do
