@@ -142,19 +142,17 @@ testWithSetup (File file) expected v_expect_opt setup =
 
                        -- | Check addresses on bwd graph-sliced expression match the booleans on bwd trace-sliced expression
                        let _ × e𝔹' = selectSinksFrom (γα × eα) αs_in
-                       if (not $ eq e𝔹' e𝔹) then do
+                       unless (eq e𝔹' e𝔹) do
                           log ("Expr 𝔹 expected: \n" <> prettyP e𝔹)
                           log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
                           fail "not equal"
-                       else pure unit
 
                        -- | Check addresses on fwd graph-sliced value match the booleans on fwd trace-sliced value
                        let v𝔹' = selectSourcesFrom vα (sources gfwd)
-                       if (not $ eq expected (prettyP v𝔹')) then do
+                       unless (eq expected $ prettyP v𝔹') do
                           log ("Val 𝔹 expected: \n" <> expected)
                           log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
                           fail "not equal"
-                       else pure unit
             )
 
 test :: File -> String -> Test Unit
