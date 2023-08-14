@@ -106,18 +106,13 @@ inMap α_αs = do
    where
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : rest) × acc) = do
-      acc' <- foldM (addEdge α) acc βs >>= flip addMissingSource α
+      acc' <- foldM (addEdge α) acc βs >>= flip addMissingSink α
       pure $ Loop (rest × acc')
 
    addEdge α acc (Vertex β) = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β (singleton α) acc
          Just αs -> OST.poke β (insert α αs) acc
-
-   addMissingSource acc (Vertex α) = do
-      OST.peek α acc >>= case _ of
-         Nothing -> OST.poke α Set.empty acc
-         Just _ -> pure acc
 
 instance Show (s Vertex) => Show (GraphImpl s) where
    show (GraphImpl out in_) = "GraphImpl (" <> show out <> " × " <> show in_ <> ")"
