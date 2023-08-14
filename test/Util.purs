@@ -33,11 +33,11 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import EvalGraph (evalGraph) -- , selectSinks)
+import EvalGraph (evalGraph)
 import Expr (Expr) as E
-import Graph (Vertex)
-import Graph (sinks, sources) as G
-import Graph.Slice (selectVertices, selectSourcesFrom, selectSinksFrom, bwdSlice, fwdSlice) as G --
+import Graph (Vertex, sinks, sources)
+import Graph.Slice (selectVertices, selectSourcesFrom, selectSinksFrom)
+import Graph.Slice (bwdSlice, fwdSlice) as G
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, erase)
 import Module
@@ -129,19 +129,19 @@ testWithSetup (File file) expected v_expect_opt setup =
                  unless true $
                     do
                        -- | Test backward slicing
-                       let (αs_out :: S.Set Vertex) = G.selectVertices vα v𝔹
+                       let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
                        log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
                        let gbwd = G.bwdSlice αs_out g
                        log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
 
                        -- | Test forward slicing (via round-tripping)
-                       let (αs_in :: S.Set Vertex) = G.sinks gbwd
+                       let (αs_in :: S.Set Vertex) = sinks gbwd
                        log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
                        let gfwd = G.fwdSlice αs_in g
                        log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
 
                        -- | Check addresses on bwd graph-sliced expression match the booleans on bwd trace-sliced expression
-                       let _ × e𝔹' = G.selectSinksFrom (γα × eα) αs_in
+                       let _ × e𝔹' = selectSinksFrom (γα × eα) αs_in
                        if (not $ eq e𝔹' e𝔹) then do
                           log ("Expr 𝔹 expected: \n" <> prettyP e𝔹)
                           log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
@@ -149,7 +149,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                        else pure unit
 
                        -- | Check addresses on fwd graph-sliced value match the booleans on fwd trace-sliced value
-                       let v𝔹' = G.selectSourcesFrom vα (G.sources gfwd)
+                       let v𝔹' = selectSourcesFrom vα (sources gfwd)
                        if (not $ eq expected (prettyP v𝔹')) then do
                           log ("Val 𝔹 expected: \n" <> expected)
                           log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
