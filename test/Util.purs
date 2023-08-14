@@ -58,7 +58,7 @@ import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, type (×), (×), successful)
 import Val (Env, Val(..), (<+>))
 
--- Don't enforce expected values for graphics tests (values too complex).
+-- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
 isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
 isGraphical _ = false
@@ -70,12 +70,13 @@ run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
 checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
-checkPretty _ expected x =
+checkPretty _ expect x =
    trace (":\n") \_ ->
-      prettyP x `shouldEqual` expected
+      prettyP x `shouldEqual` expect
 
+-- fwd_expect: prettyprinted value after bwd then fwd round-trip
 testWithSetup :: File -> String -> Maybe (Selector Val × File) -> Aff (Env 𝔹 × SE.Expr 𝔹) -> Test Unit
-testWithSetup (File file) expected v_expect_opt setup =
+testWithSetup (File file) fwd_expect v_expect_opt setup =
    before setup $ it file (uncurry doTest)
    where
    doTest :: Env 𝔹 -> SE.Expr 𝔹 -> Aff Unit
@@ -104,7 +105,7 @@ testWithSetup (File file) expected v_expect_opt setup =
             fail "not equal"
          else do
             unless (isGraphical v'')
-               (checkPretty "Value" expected v'')
+               (checkPretty "Value" fwd_expect v'')
             trace ("Annotated\n" <> prettyP s') \_ -> do
                case snd <$> v_expect_opt of
                   Nothing -> pure unit
@@ -118,7 +119,7 @@ testWithSetup (File file) expected v_expect_opt setup =
       g × (γα × eα × vα) <- except $ evalGraph γ𝔹 e𝔹 :: MayFailT _ (GraphImpl S.Set × _)
       lift $ do
          unless (isGraphical v𝔹 || isJust v_expect_opt)
-            (checkPretty "Value" expected (erase vα))
+            (checkPretty "Value" fwd_expect (erase vα))
          unless (isNothing v_expect_opt) $ do
             log ("Expr 𝔹:\n" <> prettyP e𝔹)
             log ("Val 𝔹:\n" <> prettyP v𝔹)
@@ -140,23 +141,23 @@ testWithSetup (File file) expected v_expect_opt setup =
             -- | Check addresses on bwd graph-sliced expression match the booleans on bwd trace-sliced expression
             let _ × e𝔹' = select𝔹s' (γα × eα) αs_in
             unless (eq e𝔹' e𝔹) do
-               log ("Expr 𝔹 expected: \n" <> prettyP e𝔹)
+               log ("Expr 𝔹 expect: \n" <> prettyP e𝔹)
                log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
                fail "not equal"
 
             -- | Check addresses on fwd graph-sliced value match the booleans on fwd trace-sliced value
             let v𝔹' = select𝔹s vα (sources gfwd)
-            unless (eq expected $ prettyP v𝔹') do
-               log ("Val 𝔹 expected: \n" <> expected)
+            unless (eq fwd_expect $ prettyP v𝔹') do
+               log ("Val 𝔹 expect: \n" <> fwd_expect)
                log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
                fail "not equal"
 
 test :: File -> String -> Test Unit
-test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
+test file fwd_expect = testWithSetup file fwd_expect Nothing (openWithDefaultImports file)
 
 testBwd :: File -> File -> Selector Val -> String -> Test Unit
-testBwd file file_expect δv expected =
-   testWithSetup file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
+testBwd file file_expect δv fwd_expect =
+   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
    where
    folder = File "slicing/"
    file' = folder <> file
