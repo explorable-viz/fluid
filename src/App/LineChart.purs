@@ -56,7 +56,7 @@ instance Reflect (Val Boolean) LinePlot where
 lineChartHandler :: Handler
 lineChartHandler ev = togglePoint $ unsafePos $ target ev
    where
-   togglePoint :: Int × Int -> Selector
+   togglePoint :: Int × Int -> Selector Val
    togglePoint (i × j) =
       toggleConstrArg cLineChart 0
          $ toggleField f_plots

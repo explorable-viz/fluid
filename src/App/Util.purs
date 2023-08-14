@@ -21,9 +21,9 @@ import Val (Val(..), updateMatrix)
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
-type Selector = Val 𝔹 -> Val 𝔹
-type OnSel = Selector -> Effect Unit -- redraw based on modified output selection
-type Handler = Event -> Selector
+type Selector f = f 𝔹 -> f 𝔹
+type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
+type Handler = Event -> Selector Val
 
 doNothing :: OnSel
 doNothing = const $ pure unit
@@ -44,48 +44,48 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
    from (Constr _ c (u1 : u2 : Nil)) | c == cCons = u1 A.: from u2
 
 -- Selection helpers.
-selectCell :: Int -> Int -> Endo Selector
+selectCell :: Int -> Int -> Endo (Selector Val)
 selectCell i j δv (Matrix α r) = Matrix α $ updateMatrix i j δv r
 selectCell _ _ _ _ = error absurd
 
-selectNth :: Int -> Endo Selector
+selectNth :: Int -> Endo (Selector Val)
 selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v : v' : Nil)
 selectNth n δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNth (n - 1) δv v' : Nil)
 selectNth _ _ _ = error absurd
 
-selectNthNode :: Int -> Endo 𝔹 -> Selector
+selectNthNode :: Int -> Endo 𝔹 -> Selector Val
 selectNthNode 0 δα (Constr α c Nil) | c == cNil = Constr (δα α) c Nil
 selectNthNode 0 δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) c (v : v' : Nil)
 selectNthNode n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNthNode (n - 1) δα v' : Nil)
 selectNthNode _ _ _ = error absurd
 
-selectSome :: Selector
+selectSome :: Selector Val
 selectSome (Constr _ c vs) | c == cSome = Constr true c (botOf <$> vs)
 selectSome _ = error absurd
 
-select_y :: Selector -> Selector
+select_y :: Selector Val -> Selector Val
 select_y δv (Record α r) = Record α $ update (δv >>> Just) f_y r
 select_y _ _ = error absurd
 
-selectBarChart_data :: Endo Selector
+selectBarChart_data :: Endo (Selector Val)
 selectBarChart_data δv (Constr α c (Record β r : Nil)) | c == cBarChart =
    Constr α c (Record β (update (δv >>> Just) f_data r) : Nil)
 selectBarChart_data _ _ = error absurd
 
-selectPair :: Endo 𝔹 -> Selector -> Selector -> Selector
+selectPair :: Endo 𝔹 -> Selector Val -> Selector Val -> Selector Val
 selectPair δα δv1 δv2 (Constr α c (v1 : v2 : Nil)) | c == cPair = Constr (δα α) c (δv1 v1 : δv2 v2 : Nil)
 selectPair _ _ _ _ = error absurd
 
 -- Togglers. TODO: subsumed by selectors now?
-toggleCell :: Int -> Int -> Selector
+toggleCell :: Int -> Int -> Selector Val
 toggleCell i j (Matrix α m) = Matrix α (updateMatrix i j neg m)
 toggleCell _ _ _ = error absurd
 
-toggleField :: Var -> Selector -> Selector
+toggleField :: Var -> Selector Val -> Selector Val
 toggleField f selector (Record α r) = Record α $ update (selector >>> Just) f r
 toggleField _ _ _ = error absurd
 
-toggleConstrArg :: Ctr -> Int -> Selector -> Selector
+toggleConstrArg :: Ctr -> Int -> Selector Val -> Selector Val
 toggleConstrArg c n selector (Constr α c' us) | c == c' =
    definitely' $ do
       u1 <- us !! n

@@ -33,11 +33,11 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import EvalGraph (evalGraph) -- , selectSinks)
+import EvalGraph (evalGraph)
 import Expr (Expr) as E
-import Graph (Vertex)
-import Graph (sinks, sources) as G
-import Graph.Slice (intersectSources, selectSourcesFrom, selectSinksFrom, bwdSlice, fwdSlice) as G --
+import Graph (Vertex, sinks, sources)
+import Graph.Slice (selectVertices, select𝔹s, select𝔹s')
+import Graph.Slice (bwdSlice, fwdSlice) as G
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, erase)
 import Module
@@ -58,7 +58,7 @@ import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, type (×), (×), successful)
 import Val (Env, Val(..), (<+>))
 
--- Don't enforce expected values for graphics tests (values too complex).
+-- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
 isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
 isGraphical _ = false
@@ -70,12 +70,13 @@ run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
 checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
-checkPretty _ expected x =
+checkPretty _ expect x =
    trace (":\n") \_ ->
-      prettyP x `shouldEqual` expected
+      prettyP x `shouldEqual` expect
 
-testWithSetup :: File -> String -> Maybe (Selector × File) -> Aff (Env 𝔹 × SE.Expr 𝔹) -> Test Unit
-testWithSetup (File file) expected v_expect_opt setup =
+-- fwd_expect: prettyprinted value after bwd then fwd round-trip
+testWithSetup :: File -> String -> Maybe (Selector Val × File) -> Aff (Env 𝔹 × SE.Expr 𝔹) -> Test Unit
+testWithSetup (File file) fwd_expect v_expect_opt setup =
    before setup $ it file (uncurry doTest)
    where
    doTest :: Env 𝔹 -> SE.Expr 𝔹 -> Aff Unit
@@ -104,70 +105,67 @@ testWithSetup (File file) expected v_expect_opt setup =
             fail "not equal"
          else do
             unless (isGraphical v'')
-               (checkPretty "Value" expected v'')
+               (checkPretty "Value" fwd_expect v'')
             trace ("Annotated\n" <> prettyP s') \_ -> do
                case snd <$> v_expect_opt of
                   Nothing -> pure unit
                   Just file_expect -> do
                      expect <- loadFile (Folder "fluid/example") file_expect
                      checkPretty "Source selection" expect s'
-         pure (v' × γ' × e')
+         pure (v' × γ' × e') -- output slice and corresponding input slice
 
-   testGraph :: (Val 𝔹 × Env 𝔹 × E.Expr 𝔹) -> MayFailT Aff Unit
+   testGraph :: Val 𝔹 × Env 𝔹 × E.Expr 𝔹 -> MayFailT Aff Unit
    testGraph (v𝔹 × γ𝔹 × e𝔹) = do
       g × (γα × eα × vα) <- except $ evalGraph γ𝔹 e𝔹 :: MayFailT _ (GraphImpl S.Set × _)
       lift $ do
          unless (isGraphical v𝔹 || isJust v_expect_opt)
-            (checkPretty "Value" expected (erase vα))
-         unless (isNothing v_expect_opt)
-            ( do
-                 log ("Expr 𝔹:\n" <> prettyP e𝔹)
-                 log ("Val 𝔹:\n" <> prettyP v𝔹)
-                 log ("Expr Vertex:\n" <> prettyP eα)
-                 log ("Val Vertex:\n" <> prettyP vα)
-                 --   log ("Graph:\n" <> prettyP g)
-                 unless true $
-                    do
-                       -- | Test backward slicing
-                       let (αs_out :: S.Set Vertex) = G.intersectSources vα v𝔹
-                       log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
-                       let gbwd = G.bwdSlice αs_out g
-                       log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
+            (checkPretty "Value" fwd_expect (erase vα))
+         unless (isNothing v_expect_opt) $ do
+            log ("Expr 𝔹:\n" <> prettyP e𝔹)
+            log ("Val 𝔹:\n" <> prettyP v𝔹)
+            log ("Expr Vertex:\n" <> prettyP eα)
+            log ("Val Vertex:\n" <> prettyP vα)
+         --   log ("Graph:\n" <> prettyP g)
+         -- | Test backward slicing
+         let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
+         log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
+         let gbwd = G.bwdSlice αs_out g
+         log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
 
-                       -- | Test forward slicing (via round-tripping)
-                       let (αs_in :: S.Set Vertex) = G.sinks gbwd
-                       log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
-                       let gfwd = G.fwdSlice αs_in g
-                       log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
+         -- | Test forward slicing (via round-tripping)
+         let (αs_in :: S.Set Vertex) = sinks gbwd
+         log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
+         let gfwd = G.fwdSlice αs_in g
+         log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
 
-                       -- | Check addresses on bwd graph-sliced expression match the booleans on bwd trace-sliced expression
-                       let _ × e𝔹' = G.selectSinksFrom (γα × eα) αs_in
-                       if (not $ eq e𝔹' e𝔹) then do
-                          log ("Expr 𝔹 expected: \n" <> prettyP e𝔹)
-                          log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
-                          fail "not equal"
-                       else pure unit
+         unless (isNothing v_expect_opt) $ do
+            -- | Check addresses on bwd graph-sliced expression match the booleans on bwd trace-sliced expression
+            let _ × e𝔹' = select𝔹s' (γα × eα) αs_in
+            -- TODO@ reenable these two checks once slicing/filter fixed
+            unless (true || eq e𝔹' e𝔹) do
+               log ("Expr 𝔹 expect: \n" <> prettyP e𝔹)
+               log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
+               fail "not equal"
 
-                       -- | Check addresses on fwd graph-sliced value match the booleans on fwd trace-sliced value
-                       let v𝔹' = G.selectSourcesFrom vα (G.sources gfwd)
-                       if (not $ eq expected (prettyP v𝔹')) then do
-                          log ("Val 𝔹 expected: \n" <> expected)
-                          log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
-                          fail "not equal"
-                       else pure unit
-            )
+            -- | Check addresses on fwd graph-sliced value match the booleans on fwd trace-sliced value
+            let v𝔹' = select𝔹s vα (sources gfwd)
+            unless (true || eq fwd_expect (prettyP v𝔹')) do
+               log ("Val 𝔹 expect: \n" <> fwd_expect)
+               log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
+               fail "not equal"
 
 test :: File -> String -> Test Unit
-test file expected = testWithSetup file expected Nothing (openWithDefaultImports file)
+test file fwd_expect =
+   testWithSetup file fwd_expect Nothing (openWithDefaultImports file)
 
-testBwd :: File -> File -> Selector -> String -> Test Unit
-testBwd file file_expect δv expected =
-   testWithSetup file' expected (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
+testBwd :: File -> File -> Selector Val -> String -> Test Unit
+testBwd file file_expect δv fwd_expect =
+   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
    where
    folder = File "slicing/"
    file' = folder <> file
 
-testLink :: LinkFigSpec -> Selector -> String -> Test Unit
+testLink :: LinkFigSpec -> Selector Val -> String -> Test Unit
 testLink spec@{ x } δv1 v2_expect =
    before (loadLinkFig spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
