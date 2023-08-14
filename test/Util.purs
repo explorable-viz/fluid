@@ -142,7 +142,7 @@ testWithSetup (File file) expected v_expect_opt setup =
 
                        -- | Check addresses on bwd graph-sliced expression match the booleans on bwd trace-sliced expression
                        let _ × e𝔹' = G.selectSinksFrom (γα × eα) αs_in
-                       if (not $ eq e𝔹' e𝔹) then do
+                       if (not $ eq e𝔹 e𝔹') then do
                           log ("Expr 𝔹 expected: \n" <> prettyP e𝔹)
                           log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
                           fail "not equal"

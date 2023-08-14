@@ -361,7 +361,7 @@ instance Highlightable a => Pretty (Dict (Val a)) where
       where
       go :: List (Var × Val a) -> Doc
       go Nil = text ""
-      go ((x × v) : rest) = parens $ text x .<>. text str.comma .<>. pretty v .<>. text str.comma .<>. go rest
+      go ((x × v) : rest) = parens (text x .<>. text str.comma .<>. pretty v) .<>. text str.comma .<>. go rest
 
 instance Pretty (Dict (S.Set Vertex)) where
    pretty d = brackets $ go (D.toUnfoldable d)
@@ -400,8 +400,8 @@ instance Highlightable a => Pretty (Val a) where
    pretty (V.Fun φ) = pretty φ
 
 instance Highlightable a => Pretty (Fun a) where
-   pretty (V.Closure _ _ _ _) = text "<closure>"
-   pretty (V.Foreign φ _) = parens (runExists pretty φ)
+   pretty (V.Closure α _ _ _) = highlightIf α $ text "<closure>"
+   pretty (V.Foreign φ _) = runExists pretty φ
    pretty (V.PartialConstr α c vs) = prettyConstr α c vs
 
 instance Pretty (ForeignOp' t) where
