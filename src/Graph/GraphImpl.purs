@@ -93,6 +93,7 @@ outMap α_αs = do
       acc' <- OST.poke (unwrap α) βs acc >>= flip (foldM addMissingSink) βs
       pure $ Loop (rest × acc')
 
+   addMissingSink :: forall r. STObject r (s Vertex) -> Vertex -> ST r (STObject r (s Vertex))
    addMissingSink acc (Vertex β) = do
       OST.peek β acc >>= case _ of
          Nothing -> OST.poke β Set.empty acc
