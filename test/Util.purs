@@ -150,7 +150,7 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
 
             -- | Check (1) addresses on round-tripped graph-sliced value matches the booleans on round-tripped trace-sliced value + (2) sources of bwd graph are a subset of the sources of round-tripped graph
             let v𝔹' = select𝔹s vα (sources gfwd)
-            unless (true || eq fwd_expect (prettyP v𝔹') || sources gbwd `Set.subset` sources gfwd) do
+            unless (true || (eq fwd_expect (prettyP v𝔹') && sources gbwd `Set.subset` sources gfwd)) do
                log ("Val 𝔹 expect: \n" <> fwd_expect)
                log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
                fail "not equal"
