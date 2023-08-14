@@ -153,7 +153,8 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
                fail "not equal"
 
 test :: File -> String -> Test Unit
-test file fwd_expect = testWithSetup file fwd_expect Nothing (openWithDefaultImports file)
+test file fwd_expect =
+   testWithSetup file fwd_expect Nothing (openWithDefaultImports file)
 
 testBwd :: File -> File -> Selector Val -> String -> Test Unit
 testBwd file file_expect δv fwd_expect =
