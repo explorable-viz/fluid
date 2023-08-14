@@ -27588,10 +27588,10 @@
   var prettyFun = (dictHighlightable) => ({
     pretty: (v) => {
       if (v.tag === "Closure") {
-        return text("<closure>");
+        return dictHighlightable.highlightIf(v._1)(text("<closure>"));
       }
       if (v.tag === "Foreign") {
-        return beside(beside(text("("))(text("<extern op>")))(text(")"));
+        return text("<extern op>");
       }
       if (v.tag === "PartialConstr") {
         return prettyConstr(prettyVal(dictHighlightable))(dictHighlightable)(v._1)(v._2)(v._3);
