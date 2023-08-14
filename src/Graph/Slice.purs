@@ -8,7 +8,7 @@ import Data.Traversable (foldl)
 import Data.Tuple (fst)
 import Expr (Expr)
 import Graph (class Graph, Edge, Vertex, add, addIn, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN, remove)
-import Set (class Set, singleton, empty, union, member)
+import Set (class Set, singleton, empty, union, unions, member)
 import Util (type (×), (×))
 import Val (Val, Env)
 
@@ -41,7 +41,7 @@ fwdVertex g' g h α =
 intersectSources :: forall s. Set s Vertex => Val Vertex -> Val Boolean -> s Vertex
 intersectSources vα v𝔹 = αs_v
    where
-   αs_v = gather (asSet <$> v𝔹 <*> vα)
+   αs_v = unions (asSet <$> v𝔹 <*> vα)
 
 {-
 intersectSinks :: forall s. Set s Vertex => Env Vertex × Expr Vertex -> Env Boolean × Expr Boolean -> s Vertex
@@ -61,9 +61,6 @@ selectSinksFrom (γα × eα) αs = γ𝔹 × e𝔹
    where
    γ𝔹 = map (map (flip member αs)) γα
    e𝔹 = map (flip member αs) eα
-
-gather :: forall s f. Set s Vertex => Foldable f => f (s Vertex) -> s Vertex
-gather = foldl union empty
 
 asSet :: forall s. Set s Vertex => Boolean -> Vertex -> s Vertex
 asSet true = singleton

@@ -2,7 +2,7 @@ module Set where
 
 import Prelude
 
-import Data.Foldable (class Foldable)
+import Data.Foldable (class Foldable, foldl)
 import Data.Set as S
 import Data.Unfoldable (class Unfoldable)
 
@@ -33,3 +33,6 @@ instance Ord a => Set S.Set a where
    map = S.map
    fromFoldable = S.fromFoldable
    toUnfoldable = S.toUnfoldable
+
+unions :: forall s f a. Set s a => Foldable f => f (s a) -> s a
+unions = foldl union empty
