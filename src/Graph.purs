@@ -32,7 +32,6 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
 
    -- | Whether g contains a given vertex.
    elem :: g -> Vertex -> Boolean
-
    -- | outN and iN satisfy
    -- |   inN G = outN (op G)
    outN :: g -> Vertex -> s Vertex

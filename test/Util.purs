@@ -51,6 +51,7 @@ import Module
    )
 import Parse (program)
 import Pretty (class Pretty, prettyP)
+import Set (subset) as Set
 import SExpr (Expr) as SE
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
@@ -126,7 +127,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                  log ("Expr Vertex:\n" <> prettyP eα)
                  log ("Val Vertex:\n" <> prettyP vα)
                  --   log ("Graph:\n" <> prettyP g)
-                 unless true $
+                 unless false $
                     do
                        -- | Test backward slicing
                        let (αs_out :: S.Set Vertex) = G.intersectSources vα v𝔹
@@ -148,9 +149,12 @@ testWithSetup (File file) expected v_expect_opt setup =
                           fail "not equal"
                        else pure unit
 
-                       -- | Check addresses on fwd graph-sliced value match the booleans on fwd trace-sliced value
+                       -- | Check addresses on round-tripped graph-sliced value matches the booleans on round-tripped trace-sliced value, and that the bwd graph's sources are a subset of the round-tripped graph's sources
                        let v𝔹' = G.selectSourcesFrom vα (G.sources gfwd)
-                       if (not $ eq expected (prettyP v𝔹')) then do
+                       if
+                          ( not (eq expected (prettyP v𝔹'))
+                               || not (G.sources gbwd `Set.subset` G.sources gfwd)
+                          ) then do
                           log ("Val 𝔹 expected: \n" <> expected)
                           log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
                           fail "not equal"
