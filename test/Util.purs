@@ -36,7 +36,7 @@ import EvalBwd (evalBwd)
 import EvalGraph (evalGraph)
 import Expr (Expr) as E
 import Graph (Vertex, sinks, sources)
-import Graph.Slice (selectVertices, selectSourcesFrom, selectSinksFrom)
+import Graph.Slice (selectVertices, select𝔹s, select𝔹s')
 import Graph.Slice (bwdSlice, fwdSlice) as G
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, erase)
@@ -141,14 +141,14 @@ testWithSetup (File file) expected v_expect_opt setup =
                        log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
 
                        -- | Check addresses on bwd graph-sliced expression match the booleans on bwd trace-sliced expression
-                       let _ × e𝔹' = selectSinksFrom (γα × eα) αs_in
+                       let _ × e𝔹' = select𝔹s' (γα × eα) αs_in
                        unless (eq e𝔹' e𝔹) do
                           log ("Expr 𝔹 expected: \n" <> prettyP e𝔹)
                           log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
                           fail "not equal"
 
                        -- | Check addresses on fwd graph-sliced value match the booleans on fwd trace-sliced value
-                       let v𝔹' = selectSourcesFrom vα (sources gfwd)
+                       let v𝔹' = select𝔹s vα (sources gfwd)
                        unless (eq expected $ prettyP v𝔹') do
                           log ("Val 𝔹 expected: \n" <> expected)
                           log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
