@@ -38,14 +38,14 @@ fwdVertex g' g h α =
    where
    αs = outN h α
 
-intersectSources :: forall s. Set s Vertex => Val Vertex -> Val Boolean -> s Vertex
-intersectSources vα v𝔹 = αs_v
+selectVertices :: forall s. Set s Vertex => Val Vertex -> Val Boolean -> s Vertex
+selectVertices vα v𝔹 = αs_v
    where
    αs_v = unions (asSet <$> v𝔹 <*> vα)
 
 {-
-intersectSinks :: forall s. Set s Vertex => Env Vertex × Expr Vertex -> Env Boolean × Expr Boolean -> s Vertex
-intersectSinks (γα × eα) (γ𝔹 × e𝔹) = union αs_e αs_γ
+selectVertices' :: forall s. Set s Vertex => Env Vertex × Expr Vertex -> Env Boolean × Expr Boolean -> s Vertex
+selectVertices' (γα × eα) (γ𝔹 × e𝔹) = union αs_e αs_γ
    where
    αs_e = gather (asSet <$> e𝔹 <*> eα)
    αs_γ = gather (gather <$> D.values (D.lift2 asSet γ𝔹 γα) :: List (s Vertex))

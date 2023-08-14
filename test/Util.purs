@@ -37,7 +37,7 @@ import EvalGraph (evalGraph) -- , selectSinks)
 import Expr (Expr) as E
 import Graph (Vertex)
 import Graph (sinks, sources) as G
-import Graph.Slice (intersectSources, selectSourcesFrom, selectSinksFrom, bwdSlice, fwdSlice) as G --
+import Graph.Slice (selectVertices, selectSourcesFrom, selectSinksFrom, bwdSlice, fwdSlice) as G --
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, erase)
 import Module
@@ -129,7 +129,7 @@ testWithSetup (File file) expected v_expect_opt setup =
                  unless true $
                     do
                        -- | Test backward slicing
-                       let (αs_out :: S.Set Vertex) = G.intersectSources vα v𝔹
+                       let (αs_out :: S.Set Vertex) = G.selectVertices vα v𝔹
                        log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
                        let gbwd = G.bwdSlice αs_out g
                        log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
