@@ -153,7 +153,7 @@ eval γ (LetRec ρ e) αs = do
    eval (γ <+> γ') e αs
 
 evalEnv :: forall g s a. Graph g s => Env a -> MayFail ((g × Int) × Env Vertex)
-evalEnv γ = runWithGraph (G.empty × 0) $ traverse alloc γ
+evalEnv γ = runWithGraph (G.empty × 0) (traverse alloc γ)
 
 evalWithEnv :: forall g s a. Graph g s => (g × Int) -> Env Vertex -> Expr a -> MayFail ((g × Int) × (Expr Vertex × Val Vertex))
 evalWithEnv (g0 × n0) γα e = runWithGraph (g0 × n0) doEval
@@ -169,6 +169,6 @@ evalWithEnv (g0 × n0) γα e = runWithGraph (g0 × n0) doEval
 
 evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
 evalGraph γ e = do
-   (g  × n) × γα <- evalEnv γ
+   (g × n) × γα <- evalEnv γ
    (g' × _) × (eα × vα) <- evalWithEnv (g × n) γα e
    pure (g' × γα × eα × vα)
