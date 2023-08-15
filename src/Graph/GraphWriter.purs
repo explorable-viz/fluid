@@ -5,15 +5,17 @@ module Graph.GraphWriter
    , alloc
    , fresh
    , new
+   , runWithGraph
    ) where
 
 import Prelude hiding (add)
-import Control.Monad.State (State, StateT, modify, modify_)
-import Data.List (List, (:))
+import Control.Monad.State (State, StateT, runState, modify, modify_)
+import Control.Monad.Except (runExceptT)
+import Data.List (List(..), (:))
 import Data.Profunctor.Strong (first, second)
 import Data.Traversable (class Traversable, traverse)
-import Graph (Vertex(..))
-import Util (MayFailT, type (×), (×))
+import Graph (Vertex(..), class Graph, fromFoldable)
+import Util (MayFailT, MayFail, type (×), (×))
 
 class Monad m <= MonadGraphWriter s m | m -> s where
    fresh :: m Vertex
@@ -34,5 +36,10 @@ instance Monad m => MonadGraphWriter s (MayFailT (StateT (Int × AdjMapEntries s
       modify_ $ second $ (:) (α × αs)
       pure α
 
-alloc :: forall s t a. Traversable t => t a -> MayFailT (State (Int × AdjMapEntries s)) (t Vertex)
+alloc :: forall s t a. Traversable t => t a -> WithGraph s (t Vertex)
 alloc = traverse (const fresh)
+
+runWithGraph :: forall g s a. Graph g s => WithGraph s a -> MayFail (g × a)
+runWithGraph e = ((×) (fromFoldable g_adds)) <$> maybe_r
+   where
+   maybe_r × _ × g_adds = (flip runState (0 × Nil) <<< runExceptT) e

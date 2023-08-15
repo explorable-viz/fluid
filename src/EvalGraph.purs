@@ -10,8 +10,8 @@ module EvalGraph
 import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
-import Control.Monad.Except (except, runExceptT)
-import Control.Monad.State (get, runState)
+import Control.Monad.Except (except)
+import Control.Monad.State (get)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (range, singleton) as A
 import Data.Either (note)
@@ -25,8 +25,7 @@ import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Graph (Vertex, class Graph)
-import Graph (fromFoldable) as G
-import Graph.GraphWriter (WithGraph, alloc, new)
+import Graph.GraphWriter (WithGraph, alloc, new, runWithGraph)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Set (class Set, insert, empty, singleton, union)
@@ -153,7 +152,7 @@ eval γ (LetRec ρ e) αs = do
    eval (γ <+> γ') e αs
 
 evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
-evalGraph γ0 e0 = ((×) g') <$> maybe_r
+evalGraph γ0 e0 = runWithGraph doEval
    where
    doEval :: WithGraph s _
    doEval = do
@@ -164,5 +163,3 @@ evalGraph γ0 e0 = ((×) g') <$> maybe_r
       n' × _ <- lift $ get
       trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
          pure (γ × e × v)
-   maybe_r × _ × g_adds = flip runState (0 × Nil) (runExceptT doEval)
-   g' = G.fromFoldable g_adds
