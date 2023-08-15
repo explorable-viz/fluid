@@ -25,6 +25,7 @@ import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
 import Graph (Vertex, class Graph)
+import Graph (empty) as G
 import Graph.GraphWriter (WithGraph, alloc, new, runWithGraph)
 import Pretty (prettyP)
 import Primitive (string, intPair)
@@ -151,15 +152,23 @@ eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
-evalGraph γ0 e0 = runWithGraph doEval
+evalEnv :: forall g s a. Graph g s => Env a -> MayFail ((g × Int) × Env Vertex)
+evalEnv γ = runWithGraph (G.empty × 0) $ traverse alloc γ
+
+evalWithEnv :: forall g s a. Graph g s => (g × Int) -> Env Vertex -> Expr a -> MayFail ((g × Int) × (Expr Vertex × Val Vertex))
+evalWithEnv (g0 × n0) γα e = runWithGraph (g0 × n0) doEval
    where
    doEval :: WithGraph s _
    doEval = do
-      γ <- traverse alloc γ0
-      e <- alloc e0
+      eα <- alloc e
       n × _ <- lift $ get
-      v <- eval γ e empty :: WithGraph s _
+      vα <- eval γα eα empty :: WithGraph s _
       n' × _ <- lift $ get
       trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
-         pure (γ × e × v)
+         pure (eα × vα)
+
+evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
+evalGraph γ e = do
+   (g  × n) × γα <- evalEnv γ
+   (g' × _) × (eα × vα) <- evalWithEnv (g × n) γα e
+   pure (g' × γα × eα × vα)

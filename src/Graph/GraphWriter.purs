@@ -1,12 +1,13 @@
 module Graph.GraphWriter
-   ( class MonadGraphWriter
-   , AdjMapEntries
-   , WithGraph
-   , alloc
-   , fresh
-   , new
-   , runWithGraph
-   ) where
+  ( AdjMapEntries
+  , WithGraph
+  , alloc
+  , class MonadGraphWriter
+  , fresh
+  , new
+  , runWithGraph
+  )
+  where
 
 import Prelude hiding (add)
 import Control.Monad.State (State, StateT, runState, modify, modify_)
@@ -39,7 +40,7 @@ instance Monad m => MonadGraphWriter s (MayFailT (StateT (Int × AdjMapEntries s
 alloc :: forall s t a. Traversable t => t a -> WithGraph s (t Vertex)
 alloc = traverse (const fresh)
 
-runWithGraph :: forall g s a. Graph g s => WithGraph s a -> MayFail (g × a)
-runWithGraph e = ((×) (fromFoldable g_adds)) <$> maybe_r
+runWithGraph :: forall g s a. Graph g s => (g × Int) -> WithGraph s a -> MayFail ((g × Int) × a)
+runWithGraph (g × n) e = ((×) ((g <> fromFoldable g_adds) × n')) <$> maybe_r
    where
-   maybe_r × _ × g_adds = (flip runState (0 × Nil) <<< runExceptT) e
+   maybe_r × n' × g_adds = (flip runState (n × Nil) <<< runExceptT) e
