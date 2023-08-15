@@ -5,6 +5,7 @@ module Dict
    , (\\)
    , apply
    , apply2
+   , lift2
    , asSingletonMap
    , difference
    , disjointUnion
@@ -14,6 +15,7 @@ module Dict
    , intersection
    , intersectionWith
    , keys
+   , values
    , toUnfoldable
    , unzip
    ) where
@@ -21,13 +23,14 @@ module Dict
 import Prelude hiding (apply)
 
 import Data.Foldable (foldl)
-import Data.List (head)
+import Data.List (List, head)
+import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), maybe)
 import Data.Set (Set)
 import Data.Set (fromFoldable, member) as S
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
-import Foreign.Object (Object, keys, toAscUnfoldable) as O
+import Foreign.Object (Object, keys, toAscUnfoldable, values) as O
 import Foreign.Object (delete, empty, filterKeys, fromFoldable, insert, isEmpty, lookup, member, singleton, size, union, unionWith, update, alter)
 import Util (Endo, type (×), (×), assert, definitely, error)
 
@@ -38,6 +41,9 @@ apply d ds = intersectionWith ($) d ds
 
 apply2 :: forall f a b. Apply f => Dict (f (a -> b)) -> Dict (f a) -> Dict (f b)
 apply2 d ds = apply (map (<*>) d) ds
+
+lift2 :: forall f a b c. Apply f => (a -> b -> c) -> Dict (f a) -> Dict (f b) -> Dict (f c)
+lift2 f d1 d2 = apply2 (map (map f) d1) d2
 
 -- Unfortunately Foreign.Object doesn't define this; could implement using Foreign.Object.ST instead.
 foreign import intersectionWith :: forall a b c. (a -> b -> c) -> Dict a -> Dict b -> Dict c
@@ -52,6 +58,9 @@ infix 5 difference as \\
 
 keys :: forall a. Dict a -> Set String
 keys = O.keys >>> S.fromFoldable
+
+values :: forall a. Dict a -> List a
+values = O.values >>> L.fromFoldable
 
 asSingletonMap :: forall a. Dict a -> String × a
 asSingletonMap m = assert (size m == 1) (definitely "singleton map" (head (toUnfoldable m)))

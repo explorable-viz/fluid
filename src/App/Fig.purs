@@ -123,7 +123,7 @@ type LinkResult =
    , v0' :: Val 𝔹
    }
 
-drawLinkFig :: LinkFig -> EditorView -> Selector + Selector -> Effect Unit
+drawLinkFig :: LinkFig -> EditorView -> Selector Val + Selector Val -> Effect Unit
 drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv = do
    log $ "Redrawing " <> divId
    let
@@ -146,7 +146,7 @@ drawCode ed s = do
    tr <- update ed.state [ { changes: { from: 0, to: 0, insert: s } } ]
    dispatch ed tr
 
-drawFig :: Fig -> Selector -> Effect Unit
+drawFig :: Fig -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId } } δv = do
    log $ "Redrawing " <> divId
    let v_view × views = successful $ figViews fig δv
@@ -161,7 +161,7 @@ valViews :: Env 𝔹 -> Array Var -> MayFail (Array View)
 valViews γ xs = sequence (flip varView γ <$> xs)
 
 -- For an output selection, views of corresponding input selections.
-figViews :: Fig -> Selector -> MayFail (View × Array View)
+figViews :: Fig -> Selector Val -> MayFail (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
       { γ: γ0γ, e: e', α } = evalBwd (erase <$> (γ0 <+> γ)) (erase e) (δv v) t

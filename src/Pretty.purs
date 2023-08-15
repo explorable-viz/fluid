@@ -11,12 +11,15 @@ import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
+import Data.Set (Set, toUnfoldable) as S
 import Data.String (Pattern(..), contains) as Data.String
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
 import Dict (toUnfoldable) as D
 import Expr (Cont(..), Elim(..))
 import Expr (Expr(..), VarDef(..)) as E
+import Graph (Vertex(..))
+import Graph.GraphImpl (GraphImpl(..))
 import Parse (str)
 import Primitive.Parse (opDefs)
 import SExpr (Branch, Clause(..), Clauses(..), Expr(..), ListRest(..), ListRestPattern(..), Pattern(..), VarDef(..), VarDefs, Qualifier(..), RecDefs)
@@ -323,7 +326,10 @@ prettyDict :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> Li
 prettyDict = between (text str.dictLBracket) (text str.dictRBracket) # prettyRecordOrDict (text str.colonEq)
 
 prettyRecord :: forall d b a. Pretty d => Highlightable a => (b -> Doc) -> a -> List (b × d) -> Doc
-prettyRecord = between (text "{") (text "}") # prettyRecordOrDict (text str.colon)
+prettyRecord = curlyBraces # prettyRecordOrDict (text str.colon)
+
+prettyMatrix :: forall a. Highlightable a => E.Expr a -> Var -> Var -> E.Expr a -> Doc
+prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text " <- " .<>. text (i <> "×" <> j) .<>. text " in " .<>. pretty e2)
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
@@ -333,7 +339,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Record α xes) = prettyRecord text α (xes # D.toUnfoldable)
    pretty (E.Dictionary α ees) = prettyDict pretty α (ees <#> toTuple)
    pretty (E.Constr α c es) = prettyConstr α c es
-   pretty (E.Matrix _ _ _ _) = error "todo"
+   pretty (E.Matrix α e1 (i × j) e2) = highlightIf α (prettyMatrix e1 i j e2)
    pretty (E.Lambda σ) = hspace [ text str.fun, pretty σ ]
    pretty (E.Op op) = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') = atop (hspace [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
@@ -350,6 +356,20 @@ instance Highlightable a => Pretty (Dict (Elim a)) where
       go (xσ : Nil) = pretty xσ
       go (xσ : δ) = atop (go δ .<>. semi) (pretty xσ)
 
+instance Highlightable a => Pretty (Dict (Val a)) where
+   pretty γ = brackets $ go (D.toUnfoldable γ)
+      where
+      go :: List (Var × Val a) -> Doc
+      go Nil = text ""
+      go ((x × v) : rest) = parens (text x .<>. text str.comma .<>. pretty v) .<>. text str.comma .<>. go rest
+
+instance Pretty (Dict (S.Set Vertex)) where
+   pretty d = brackets $ go (D.toUnfoldable d)
+      where
+      go :: List (String × S.Set Vertex) -> Doc
+      go Nil = text ""
+      go ((α × βs) : rest) = text α .<>. text " ↦ " .<>. pretty (βs :: S.Set Vertex) .<>. text str.comma .<>. go rest
+
 instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) = hspace [ text x, text str.equals, pretty σ ]
 
@@ -364,7 +384,7 @@ instance Highlightable a => Pretty (Ctr × Cont a) where
 instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hspace [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
-   pretty (ElimRecord _ _) = error "todo"
+   pretty (ElimRecord xs κ) = hspace [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
 
 instance Highlightable a => Pretty (Val a) where
    pretty (V.Int α n) = highlightIf α (text (show n))
@@ -380,8 +400,8 @@ instance Highlightable a => Pretty (Val a) where
    pretty (V.Fun φ) = pretty φ
 
 instance Highlightable a => Pretty (Fun a) where
-   pretty (V.Closure _ _ _ _) = text "<closure>"
-   pretty (V.Foreign φ _) = parens (runExists pretty φ)
+   pretty (V.Closure α _ _ _) = highlightIf α $ text "<closure>"
+   pretty (V.Foreign φ _) = runExists pretty φ
    pretty (V.PartialConstr α c vs) = prettyConstr α c vs
 
 instance Pretty (ForeignOp' t) where
@@ -389,3 +409,17 @@ instance Pretty (ForeignOp' t) where
 
 instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty
+
+instance Pretty (GraphImpl S.Set) where
+   pretty (GraphImpl out in_) =
+      text "GraphImpl \n  " .<>.
+         atop
+            ( text "{\n" .<>.
+                 atop (text "OUT: " .<>. pretty out) (text "IN: " .<>. pretty in_)
+            )
+            (text "}")
+
+instance Pretty (S.Set Vertex) where
+   pretty αs = curlyBraces (hcomma (text <<< unwrap <$> (S.toUnfoldable αs :: List Vertex)))
+      where
+      unwrap (Vertex α) = α

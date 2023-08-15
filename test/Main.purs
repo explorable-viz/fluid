@@ -6,18 +6,22 @@ import Bindings ((↦))
 import Control.Monad.Trans.Class (lift)
 import Data.Array (concat)
 import Data.Foldable (foldl)
-import Data.Set (fromFoldable) as S
+import Data.Set as S
 import Data.Traversable (sequence)
 import Dict (fromFoldable)
 import Effect (Effect)
 import Effect.Console (log, logShow)
-import Graph (GraphSet, add, Vertex(..), inEdges)
+import Graph (add, Vertex(..), inEdges)
+import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (fwdSlice)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import Test.Util (Test, run, test, testBwd, testLink, testWithDataset)
 import Util ((×))
 import Val (DictRep(..), Val(..))
+
+main :: Effect Unit
+main = void (sequence (run <$> concat tests))
 
 tests :: Array (Array (Test Unit))
 tests =
@@ -31,18 +35,9 @@ tests =
 
 --tests = [ test_scratchpad ]
 
-main :: Effect Unit
-main = void (sequence (run <$> concat tests))
-
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ testBwd (File "convolution/edgeDetect") (File "convolution/edgeDetect.expect")
-        (botOf >>> selectCell 1 1 topOf)
-        "_0_, -1, 2, 0, -1,\n\
-        \0, 3, -2, 3, -2,\n\
-        \-1, 1, -5, 0, 4,\n\
-        \1, -1, 4, 0, -4,\n\
-        \1, 0, -3, 2, 0"
+   [ testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
    ]
 
 test_linking :: Array (Test Unit)
@@ -286,7 +281,7 @@ test_graph =
    graph_test_initial = do
       let
          ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-         g' = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphSet
+         g' = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphImpl (S.Set)
          slice = fwdSlice (S.fromFoldable [ (Vertex "13"), (Vertex "12"), Vertex "11" ]) g'
       lift $ do
          log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ (Vertex "11") ])))
