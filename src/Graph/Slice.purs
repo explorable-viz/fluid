@@ -20,11 +20,19 @@ bwdSlice :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
 bwdSlice αs g' = bwdEdges g' (discreteG αs) (outEdges g' αs)
 
 bwdEdges :: forall g s. Graph g s => g -> g -> List Edge -> g
+bwdEdges _ g Nil = g
 bwdEdges g' g ((α × β) : es) =
    bwdEdges g' (addOut α β g) $
-      es <> if elem g β then Nil else L.fromFoldable (outEdges' g' β)
-bwdEdges _ g Nil = g
+      es <> if elem β g then Nil else L.fromFoldable (outEdges' g' β)
 
+{-
+bwdVertices :: forall g s. Graph g s => g -> g -> List Vertex -> g
+bwdVertices _ g Nil = g
+bwdVertices g' g (α : αs) = 
+   if α `elem` g 
+   then ?_
+   else ?_
+-}
 fwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
 fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) M.empty (inEdges g' αs)
 

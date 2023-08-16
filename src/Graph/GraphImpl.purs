@@ -60,7 +60,7 @@ instance Set s Vertex => Graph (GraphImpl s) s where
    outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
    inN g = outN (op g)
 
-   elem (GraphImpl out _) α = isJust (D.lookup (unwrap α) out)
+   elem α (GraphImpl out _) = isJust (D.lookup (unwrap α) out)
    size (GraphImpl out _) = D.size out
 
    vertices (GraphImpl out _) = Set.fromFoldable $ S.map Vertex $ D.keys out
