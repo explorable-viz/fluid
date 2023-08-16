@@ -1,7 +1,8 @@
 module Graph.Slice where
 
-import Data.Foldable (class Foldable)
 import Prelude hiding (add)
+
+import Data.Foldable (class Foldable)
 import Data.List (List(..), (:))
 import Data.List as L
 import Data.Map (Map, lookup, delete, insertWith)
@@ -11,6 +12,7 @@ import Data.Tuple (fst)
 import Expr (Expr)
 import Graph (class Graph, Edge, Vertex, add, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN)
 import Set (class Set, singleton, empty, unions, member, union)
+import Set (map) as Set
 import Util (type (×), (×))
 import Val (Env)
 
@@ -25,14 +27,18 @@ bwdEdges g' g ((α × β) : es) =
    bwdEdges g' (addOut α β g) $
       es <> if elem β g then Nil else L.fromFoldable (outEdges' g' β)
 
-{-
+bwdSlice' :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
+bwdSlice' αs g' =
+   bwdVertices g' (discreteG αs) (L.fromFoldable βs)
+   where
+   βs = unions (Set.map (outN g') αs)
+
 bwdVertices :: forall g s. Graph g s => g -> g -> List Vertex -> g
 bwdVertices _ g Nil = g
-bwdVertices g' g (α : αs) = 
-   if α `elem` g 
-   then ?_
-   else ?_
--}
+bwdVertices g' g (α : αs) =
+   if α `elem` g then bwdVertices g' g αs
+   else let βs = outN g' α in bwdVertices g' (add α βs g) (L.fromFoldable βs <> αs)
+
 fwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
 fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) M.empty (inEdges g' αs)
 
