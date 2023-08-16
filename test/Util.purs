@@ -21,8 +21,8 @@ import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
-import Data.Tuple (fst, snd, uncurry)
 import Data.Set (Set) as S
+import Data.Tuple (fst, snd, uncurry)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -36,23 +36,15 @@ import EvalBwd (evalBwd)
 import EvalGraph (evalGraph)
 import Expr (Expr) as E
 import Graph (Vertex, sinks, sources)
+import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (selectVertices, select𝔹s, select𝔹s')
 import Graph.Slice (bwdSlice, fwdSlice) as G
-import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, erase)
-import Module
-   ( File(..)
-   , Folder(..)
-   , loadFile
-   , open
-   , openDatasetAs
-   , openWithDefaultImports
-   , parse
-   )
+import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
-import Set (subset) as Set
 import SExpr (Expr) as SE
+import Set (subset) as Set
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual, shouldSatisfy)
 import Test.Spec.Mocha (runMocha)
@@ -127,6 +119,7 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
             log ("Expr Vertex:\n" <> prettyP eα)
             log ("Val Vertex:\n" <> prettyP vα)
          -- log ("Graph:\n" <> prettyP g)
+
          -- | Test backward slicing
          let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
          log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
