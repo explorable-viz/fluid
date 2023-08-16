@@ -19377,8 +19377,8 @@
   };
   var toUnfoldable12 = /* @__PURE__ */ toUnfoldable4(unfoldableArray);
   var showSet = (dictShow) => {
-    const show4 = showArrayImpl(dictShow.show);
-    return { show: (s) => "(fromFoldable " + (show4(toUnfoldable12(s)) + ")") };
+    const show5 = showArrayImpl(dictShow.show);
+    return { show: (s) => "(fromFoldable " + (show5(toUnfoldable12(s)) + ")") };
   };
   var foldableSet = {
     foldMap: (dictMonoid) => {
@@ -34963,7 +34963,7 @@
     const $0 = ordTuple(ordInt)(ordInt);
     return (a1) => (a2) => !($0.compare(a1)(a2).tag === "LT");
   })();
-  var show32 = (v) => "(Tuple " + (showIntImpl(v._1) + (" " + (showIntImpl(v._2) + ")")));
+  var show4 = (v) => "(Tuple " + (showIntImpl(v._1) + (" " + (showIntImpl(v._2) + ")")));
   var sequence3 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeExceptT3)(identity10))();
   var matchMany2 = (dictSet) => (v) => (v1) => {
     if (v.tag === "Nil") {
@@ -35141,13 +35141,16 @@
       })())))(() => bindExceptT2.bind(traverse13((() => {
         const $5 = $$eval2(dictSet)(v);
         return (a) => $5(a)(v2);
-      })())(v1._3))((vs) => functorExceptT.map((f) => f(vs))(functorExceptT.map((f) => f(v1._2))(functorExceptT.map(Constr3)($$new2(dictSet.insert(v1._1)(v2)))))));
+      })())(v1._3))((vs) => bindExceptT2.bind($$new2(dictSet.insert(v1._1)(v2)))((\u03B1$p) => _trace(
+        "Constructing " + (v1._2 + ("@Vertex " + \u03B1$p + ("; adding dependency to Vertex " + v1._1))),
+        (v3) => applicativeExceptT3.pure($Val("Constr", \u03B1$p, v1._2, vs))
+      ))));
     }
     if (v1.tag === "Matrix") {
       return bindExceptT2.bind($$eval2(dictSet)(v)(v1._4)(v2))((v3) => {
         const v4 = intPair.match(v3)._1;
         return bindExceptT2.bind(except((() => {
-          const $6 = "array must be at least (" + (show32($Tuple(1, 1)) + ("); got (" + (show32($Tuple(v4._1._1, v4._2._1)) + ")")));
+          const $6 = "array must be at least (" + (show4($Tuple(1, 1)) + ("); got (" + (show4($Tuple(v4._1._1, v4._2._1)) + ")")));
           if (greaterThanOrEq($Tuple(v4._1._1, v4._2._1))($Tuple(1, 1))) {
             return $Either("Right", unit2);
           }
