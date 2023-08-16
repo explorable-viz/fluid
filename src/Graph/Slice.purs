@@ -1,6 +1,6 @@
 module Graph.Slice where
 
-import Data.Foldable (class Foldable, foldl)
+import Data.Foldable (class Foldable)
 import Prelude hiding (add)
 import Data.List (List(..), (:))
 import Data.List as L
@@ -12,7 +12,7 @@ import Expr (Expr)
 import Graph (class Graph, Edge, Vertex, add, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN)
 import Set (class Set, singleton, empty, unions, member, union)
 import Util (type (×), (×))
-import Val (Env, Val(..), Fun(..))
+import Val (Env)
 
 type PendingSlice s = Map Vertex (s Vertex)
 
@@ -48,34 +48,6 @@ selectVertices :: forall s f. Set s Vertex => Apply f => Foldable f => f Vertex 
 selectVertices vα v𝔹 = αs_v
    where
    αs_v = unions (asSet <$> v𝔹 <*> vα)
-
-allVertices :: forall s f. Set s Vertex => Apply f => Foldable f => f Vertex -> s Vertex
-allVertices vα = selectVertices vα v𝔹
-   where
-   v𝔹 = map (const true) vα
-
-envVertices :: forall s. Set s Vertex => Env Vertex -> s Vertex
-envVertices env = foldl (\set val -> union (getVertex val) set) empty env
-   where
-   getVertex :: Val Vertex -> s Vertex
-   getVertex (Fun (Closure α _ _ _)) = singleton α
-   getVertex (Fun (PartialConstr α _ _)) = singleton α
-   getVertex (Int α _) = singleton α
-   getVertex (Float α _) = singleton α
-   getVertex (Str α _) = singleton α
-   getVertex (Constr α _ _) = singleton α
-   getVertex (Record α _) = singleton α
-   getVertex (Dictionary α _) = singleton α
-   getVertex (Matrix α _) = singleton α
-   getVertex _ = empty
-
-{-
-selectVertices' :: forall s. Set s Vertex => Env Vertex × Expr Vertex -> Env Boolean × Expr Boolean -> s Vertex
-selectVertices' (γα × eα) (γ𝔹 × e𝔹) = union αs_e αs_γ
-   where
-   αs_e = gather (asSet <$> e𝔹 <*> eα)
-   αs_γ = gather (gather <$> D.values (D.lift2 asSet γ𝔹 γα) :: List (s Vertex))
--}
 
 select𝔹s :: forall s f. Set s Vertex => Functor f => f Vertex -> s Vertex -> f Boolean
 select𝔹s vα αs = v𝔹
