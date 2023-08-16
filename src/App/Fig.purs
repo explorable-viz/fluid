@@ -186,8 +186,8 @@ loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
    { γα } × xv :: (GraphConfig (GraphImpl S.Set) × Env _) <- openDatasetAs (File "example/linking/renewables") "data"
    let
-      γ0 = map (const false) <$> γα
-      γ = map (const false) <$> xv
+      γ0 = botOf <$> γα
+      γ = botOf <$> xv
    open file <#> \s' -> successful $ do
       { γ: γ1, s } <- splitDefs (γ0 <+> γ) (botOf s')
       e <- desug s
@@ -204,8 +204,8 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
    { γα } × xv :: (GraphConfig (GraphImpl S.Set) × Env _) <- openDatasetAs (File "example/" <> dir <> dataFile) x
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
-      γ0 = (map (const false) <$> γα)
-      γ = (map (const false) <$> xv)
+      γ0 = botOf <$> γα
+      γ = botOf <$> xv
       s1 = botOf s1'
       s2 = botOf s2'
    pure $ successful do

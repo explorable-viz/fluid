@@ -39,7 +39,7 @@ import Graph (Vertex, sinks, sources)
 import Graph.Slice (selectVertices, select𝔹s, select𝔹s')
 import Graph.Slice (bwdSlice, fwdSlice) as G
 import Graph.GraphImpl (GraphImpl)
-import Lattice (𝔹, bot, erase)
+import Lattice (𝔹, bot, botOf, erase)
 import Module
    ( File(..)
    , Folder(..)
@@ -84,8 +84,8 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
    doTest :: GraphConfig (GraphImpl S.Set) -> Aff Unit
    doTest { γα, s } =
       let
-         γ𝔹 = (map $ const bot) <$> γα
-         s𝔹 = (const bot) <$> s
+         γ𝔹 = botOf <$> γα
+         s𝔹 = botOf s
       in
          runExceptT (testTrace γ𝔹 s𝔹 >>= testGraph) >>=
             case _ of
