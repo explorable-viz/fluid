@@ -44,9 +44,9 @@ import Module
    ( File(..)
    , Folder(..)
    , loadFile
-   , open
-   , openDatasetAs
-   , openWithDefaultImports
+   , open𝔹
+   , openDatasetAs𝔹
+   , openWithDefaultImports𝔹
    , parse
    )
 import Parse (program)
@@ -157,11 +157,11 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
 
 test :: File -> String -> Test Unit
 test file fwd_expect =
-   testWithSetup file fwd_expect Nothing (openWithDefaultImports file)
+   testWithSetup file fwd_expect Nothing (openWithDefaultImports𝔹 file)
 
 testBwd :: File -> File -> Selector Val -> String -> Test Unit
 testBwd file file_expect δv fwd_expect =
-   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
+   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) (openWithDefaultImports𝔹 file')
    where
    folder = File "slicing/"
    file' = folder <> file
@@ -179,5 +179,5 @@ testLink spec@{ x } δv1 v2_expect =
 testWithDataset :: File -> File -> Test Unit
 testWithDataset dataset file = do
    testWithSetup file "" Nothing $ do
-      γ0 × γ <- openDatasetAs dataset "data"
-      ((γ0 <+> γ) × _) <$> open file
+      γ0 × γ <- openDatasetAs𝔹 dataset "data"
+      ((γ0 <+> γ) × _) <$> open𝔹 file

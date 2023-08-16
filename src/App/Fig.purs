@@ -2,19 +2,6 @@ module App.Fig where
 
 import Prelude hiding (absurd)
 
-import Data.Array (range, zip)
-import Data.Either (Either(..))
-import Data.Foldable (length)
-import Data.List (List(..), (:), singleton)
-import Data.Set (singleton) as S
-import Data.Traversable (sequence, sequence_)
-import Data.Tuple (fst, uncurry)
-import Effect (Effect)
-import Effect.Aff (Aff)
-import Effect.Console (log)
-import Partial.Unsafe (unsafePartial)
-import Foreign.Object (lookup)
-import Web.Event.EventTarget (eventListener)
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.CodeMirror (EditorView, dispatch, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
@@ -22,13 +9,25 @@ import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
 import App.Util (HTMLId, OnSel, Selector, doNothing, from, record)
 import Bindings (Var)
+import Data.Array (range, zip)
+import Data.Either (Either(..))
+import Data.Foldable (length)
+import Data.List (List(..), (:), singleton)
+import Data.Set (singleton) as S
+import Data.Traversable (sequence, sequence_)
+import Data.Tuple (fst, uncurry)
 import DataType (cBarChart, cCons, cLineChart, cNil)
 import Desugarable (desug)
+import Effect (Effect)
+import Effect.Aff (Aff)
+import Effect.Console (log)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import Expr (Expr)
+import Foreign.Object (lookup)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
 import Module (File(..), open, openDatasetAs)
+import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
@@ -36,6 +35,7 @@ import SExpr (desugarModuleFwd)
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
 import Val (Env, Val(..), (<+>), append_inv)
+import Web.Event.EventTarget (eventListener)
 
 data View
    = MatrixFig MatrixView
@@ -184,12 +184,16 @@ loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
    γ0 × γ <- openDatasetAs (File "example/linking/renewables") "data"
-   open file <#> \s' -> successful do
-      { γ: γ1, s } <- splitDefs (γ0 <+> γ) s'
-      e <- desug s
-      let γ0γ = γ0 <+> γ <+> γ1
-      t × v <- eval γ0γ e bot
-      pure { spec, γ0, γ: γ <+> γ1, s, e, t, v }
+   open file <#> \s' -> successful $ do
+      let
+         γ0𝔹 = botOf <$> γ0
+         γ𝔹 = botOf <$> γ
+         s𝔹' = botOf s'
+      { s: s𝔹, γ: γ1𝔹 } <- splitDefs (γ0𝔹 <+> γ𝔹) s𝔹'
+      e𝔹 <- desug s𝔹
+      let γ0γ𝔹 = γ0𝔹 <+> γ𝔹 <+> γ1𝔹
+      t × v <- eval γ0γ𝔹 e𝔹 bot
+      pure { spec, γ0: γ0𝔹, γ: γ𝔹 <+> γ1𝔹, s: s𝔹, e: e𝔹, t, v }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
 loadLinkFig spec@{ file1, file2, dataFile, x } = do
@@ -199,6 +203,7 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
    -- the views share an ambient environment γ0 as well as dataset
    γ0 × γ <- openDatasetAs (File "example/" <> dir <> dataFile) x
    s1 × s2 <- (×) <$> open name1 <*> open name2
+   let γ0 × γ × s1 × s2 = map botOf γ0 × map botOf γ × botOf s1 × botOf s2
    pure $ successful do
       e1 × e2 <- (×) <$> desug s1 <*> desug s2
       t1 × v1 <- eval (γ0 <+> γ) e1 bot
