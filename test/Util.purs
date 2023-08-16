@@ -126,7 +126,7 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
             log ("Val 𝔹:\n" <> prettyP v𝔹)
             log ("Expr Vertex:\n" <> prettyP eα)
             log ("Val Vertex:\n" <> prettyP vα)
-         log ("Graph:\n" <> prettyP g)
+         -- log ("Graph:\n" <> prettyP g)
          -- | Test backward slicing
          let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
          log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
@@ -138,7 +138,7 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
          log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
          let gfwd = G.fwdSlice αs_in g
          log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
-         sources gbwd `shouldSatisfy` (Set.subset (sources gfwd))
+         sources gbwd `shouldSatisfy` (flip Set.subset (sources gfwd))
 
          unless (isNothing v_expect_opt) $ do
             -- | Check graph/trace-based slicing procedures agree on expression
