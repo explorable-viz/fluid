@@ -3,7 +3,7 @@ module Module where
 import Prelude
 import Affjax.Web (defaultRequest, printError, request)
 import Affjax.ResponseFormat (string)
--- import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
@@ -13,7 +13,7 @@ import Bindings (Var)
 import Desugarable (desug)
 import Dict (singleton) as D
 import Eval (eval, eval_module)
--- import Graph.GraphWriter (WithGraphT, runWithGraphT)
+import Graph.GraphWriter (WithGraphT)
 -- import Graph (class Graph)
 -- import Graph (empty) as G
 import Lattice (𝔹, bot, botOf)
@@ -61,10 +61,10 @@ loadModule file γ = do
    pure $ successful $
       (parse src (module_ <#> botOf) >>= desugarModuleFwd >>= flip (eval_module γ) bot) <#> (γ <+> _)
 
--- loadModule :: forall s. File -> Env 𝔹 -> WithGraphT s Aff (Env 𝔹)
--- loadModule file γ = do
---    src <- lift $ lift $ loadFile (Folder "fluid/lib") file
---    pure $ successful $ (parse src (module_ <#> botOf) >>= desugarModuleFwd >>= flip (eval_module γ) bot) <#> (γ <+> _)
+loadModuleG :: forall s. File -> Env 𝔹 -> WithGraphT s Aff (Env 𝔹)
+loadModuleG file γ = do
+   src <- lift $ lift $ loadFile (Folder "fluid/lib") file
+   pure $ successful $ (parse src (module_ <#> botOf) >>= desugarModuleFwd >>= flip (eval_module γ) bot) <#> (γ <+> _)
 
 defaultImports :: Aff (Env 𝔹)
 defaultImports =

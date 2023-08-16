@@ -130,17 +130,6 @@ derive instance Foldable Expr
 derive instance Traversable Expr
 derive instance Functor Module
 
-traverseModule :: forall a m b. Monad m => (a -> m b) -> Module a -> m (Module b)
-traverseModule _ (Module Nil) = pure (Module Nil)
-traverseModule f (Module (Left (VarDef σ e) : ds)) = do
-   VarDef σ' e' <- traverse f (VarDef σ e)
-   Module ds' <- traverseModule f (Module ds)
-   pure (Module (Left (VarDef σ' e') : ds'))
-traverseModule f (Module (Right ρ : ds)) = do
-   ρ' <- traverse (traverse f) ρ
-   Module ds' <- traverseModule f (Module ds)
-   pure (Module (Right ρ' : ds'))
-
 derive instance Eq a => Eq (Expr a)
 derive instance Eq a => Eq (VarDef a)
 derive instance Eq a => Eq (Elim a)

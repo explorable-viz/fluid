@@ -1,10 +1,11 @@
 module EvalGraph
    ( apply
    , eval
+   , evalGraph
+   , eval_module
    , match
    , matchMany
    , patternMismatch
-   , evalGraph
    ) where
 
 import Prelude hiding (apply, add)
@@ -14,7 +15,7 @@ import Control.Monad.Except (except)
 import Control.Monad.State (get)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (range, singleton) as A
-import Data.Either (note)
+import Data.Either (Either(..), note)
 import Data.Exists (runExists)
 import Data.List (List(..), (:), length, snoc, unzip, zip)
 import Data.Set as S
@@ -23,7 +24,7 @@ import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
-import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
+import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
 import Graph (Vertex, class Graph)
 import Graph (empty) as G
 import Graph.GraphWriter (WithGraphT, alloc, new, runWithGraphT)
@@ -172,3 +173,27 @@ evalGraph γ e = do
    (g × n) × γα <- evalEnv γ
    (g' × _) × (eα × vα) <- evalWithEnv (g × n) γα e
    pure (g' × γα × eα × vα)
+
+eval_module :: forall m s a. Monad m => Set s Vertex => Env Vertex -> Module a -> s Vertex -> WithGraphT s m (Env Vertex)
+eval_module γ mod αs0 = alloc_module mod >>= flip (go D.empty) αs0
+   where
+   alloc_module :: Module a -> WithGraphT s m (Module Vertex)
+   alloc_module (Module Nil) = pure (Module Nil)
+   alloc_module (Module (Left (VarDef σ e) : ds)) = do
+      VarDef σ' e' <- alloc (VarDef σ e)
+      Module ds' <- alloc_module (Module ds)
+      pure (Module (Left (VarDef σ' e') : ds'))
+   alloc_module (Module (Right ρ : ds)) = do
+      ρ' <- traverse alloc ρ
+      Module ds' <- alloc_module (Module ds)
+      pure (Module (Right ρ' : ds'))
+
+   go :: Env Vertex -> Module Vertex -> s Vertex -> WithGraphT s m (Env Vertex)
+   go γ' (Module Nil) _ = pure γ'
+   go y' (Module (Left (VarDef σ e) : ds)) αs = do
+      v <- eval (γ <+> y') e αs
+      γ'' × _ × α' <- except $ match v σ
+      go (y' <+> γ'') (Module ds) α'
+   go γ' (Module (Right ρ : ds)) αs = do
+      γ'' <- closeDefs (γ <+> γ') ρ αs
+      go (γ' <+> γ'') (Module ds) αs
