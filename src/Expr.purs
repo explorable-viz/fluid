@@ -5,10 +5,11 @@ import Prelude hiding (absurd, top)
 import Bindings (Var)
 import Control.Apply (lift2)
 import Data.Foldable (class Foldable)
-import Data.List (List, zipWith)
+import Data.Either (Either(..))
+import Data.List (List(..), (:), zipWith)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
-import Data.Traversable (class Traversable)
+import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
@@ -36,6 +37,7 @@ data Expr a
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
 type RecDefs a = Dict (Elim a)
+newtype RecDefs' a = RecDefs' (RecDefs a)
 
 data Elim a
    = ElimVar Var (Cont a)
@@ -58,7 +60,6 @@ asExpr (ContExpr e) = e
 asExpr _ = error "Expression expected"
 
 data Module a = Module (List (VarDef a + RecDefs a))
-
 class FV a where
    fv :: a -> Set Var
 
@@ -126,6 +127,18 @@ derive instance Traversable Elim
 derive instance Functor Expr
 derive instance Foldable Expr
 derive instance Traversable Expr
+derive instance Functor Module
+
+traverseModule :: forall a m b. Monad m => (a -> m b) -> Module a -> m (Module b)
+traverseModule _ (Module Nil) = pure (Module Nil)
+traverseModule f (Module (Left (VarDef σ e) : ds)) = do
+   VarDef σ' e' <- traverse f (VarDef σ e)
+   Module ds'   <- traverseModule f (Module ds)
+   pure (Module (Left (VarDef σ' e') : ds'))
+traverseModule f (Module (Right ρ : ds)) = do
+   ρ' <- traverse (traverse f) ρ
+   Module ds'   <- traverseModule f (Module ds)
+   pure (Module (Right ρ' : ds'))
 
 derive instance Eq a => Eq (Expr a)
 derive instance Eq a => Eq (VarDef a)
