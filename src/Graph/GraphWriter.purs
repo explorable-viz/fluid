@@ -41,7 +41,7 @@ instance Monad m => MonadGraphWriter s (MayFailT (StateT (Int × AdjMapEntries s
       modify_ $ second $ (:) (α × αs)
       pure α
 
-alloc :: forall s t a. Traversable t => t a -> WithGraph s (t Vertex)
+alloc :: forall s m t a. Monad m => Traversable t => t a -> WithGraphT s m (t Vertex)
 alloc = traverse (const fresh)
 
 runWithGraph :: forall g s a. Graph g s => (g × Int) -> WithGraph s a -> MayFail ((g × Int) × a)
