@@ -3,6 +3,7 @@ module Graph.GraphWriter
    , WithGraph
    , WithGraphT
    , alloc
+   , alloc'
    , class MonadGraphWriter
    , fresh
    , new
@@ -43,6 +44,9 @@ instance Monad m => MonadGraphWriter s (MayFailT (StateT (Int × AdjMapEntries s
 
 alloc :: forall s m t a. Monad m => Traversable t => t a -> WithGraphT s m (t Vertex)
 alloc = traverse (const fresh)
+
+alloc' :: forall s m a. Monad m => a -> WithGraphT s m Vertex
+alloc' = const fresh
 
 runWithGraph :: forall g s a. Graph g s => (g × Int) -> WithGraph s a -> MayFail ((g × Int) × a)
 runWithGraph (g × n) = extract <<< runWithGraphT (g × n)
