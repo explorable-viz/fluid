@@ -7,20 +7,23 @@ import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
+import Data.Traversable (traverse)
 import Effect.Aff (Aff)
 import Parsing (runParser)
 import Bindings (Var)
 import Desugarable (desug)
 import Dict (singleton) as D
 import Eval (eval, eval_module)
+import EvalGraph (eval_module) as G
 import Graph.GraphWriter (WithGraphT)
--- import Graph (class Graph)
+import Graph (class Graph, Vertex)
 -- import Graph (empty) as G
 import Lattice (𝔹, bot, botOf)
 import Parse (module_, program)
 import Primitive.Defs (primitives)
 import SExpr (desugarModuleFwd)
 import SExpr (Expr) as S
+import Set (class Set, empty)
 import Util (MayFail, type (×), (×), error, successful)
 import Util.Parse (SParser)
 import Val (Env, (<+>))
@@ -61,18 +64,20 @@ loadModule file γ = do
    pure $ successful $
       (parse src (module_ <#> botOf) >>= desugarModuleFwd >>= flip (eval_module γ) bot) <#> (γ <+> _)
 
-loadModuleG :: forall s. File -> Env 𝔹 -> WithGraphT s Aff (Env 𝔹)
-loadModuleG file γ = do
+loadModuleG :: forall s. Set s Vertex => File -> Env Vertex -> WithGraphT s Aff (Env Vertex)
+loadModuleG file γα = do
    src <- lift $ lift $ loadFile (Folder "fluid/lib") file
-   pure $ successful $ (parse src (module_ <#> botOf) >>= desugarModuleFwd >>= flip (eval_module γ) bot) <#> (γ <+> _)
+   let mod = successful $ parse src (module_) >>= desugarModuleFwd
+   G.eval_module γα mod empty <#> (γα <+> _)
 
 defaultImports :: Aff (Env 𝔹)
 defaultImports =
    loadModule (File "prelude") (primitives <#> botOf) >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
--- defaultImports :: forall s. WithGraphT s Aff (Env 𝔹)
--- defaultImports =
---    loadModule (File "prelude") (primitives <#> botOf) >>= loadModule (File "graphics") >>= loadModule (File "convolution")
+-- defaultImportsG :: forall s. Set s Vertex => WithGraphT s Aff (Env Vertex)
+-- defaultImportsG = do
+--    γα <- evalEnv primitives
+--    loadModule (File "prelude") γα >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
 openWithDefaultImports :: File -> Aff (Env 𝔹 × S.Expr 𝔹)
 openWithDefaultImports file = do

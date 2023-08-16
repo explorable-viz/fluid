@@ -153,26 +153,8 @@ eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-evalEnv :: forall g s m a. Monad m => Graph g s => Env a -> m ((g × Int) × Env Vertex)
-evalEnv γ = successful <$> runWithGraphT (G.empty × 0) (traverse alloc γ)
-
-evalWithEnv :: forall g s m a. Monad m => Graph g s => (g × Int) -> Env Vertex -> Expr a -> m ((g × Int) × (Expr Vertex × Val Vertex))
-evalWithEnv (g0 × n0) γα e = successful <$> runWithGraphT (g0 × n0) doEval
-   where
-   doEval :: WithGraphT s m _
-   doEval = do
-      eα <- alloc e
-      n × _ <- lift $ get
-      vα <- eval γα eα empty :: WithGraphT s m _
-      n' × _ <- lift $ get
-      trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
-         pure (eα × vα)
-
-evalGraph :: forall g s m a. Monad m => Graph g s => Env a -> Expr a -> m (g × (Env Vertex × Expr Vertex × Val Vertex))
-evalGraph γ e = do
-   (g × n) × γα <- evalEnv γ
-   (g' × _) × (eα × vα) <- evalWithEnv (g × n) γα e
-   pure (g' × γα × eα × vα)
+eval_env :: forall g s m a. Monad m => Env a -> WithGraphT s m (Env Vertex)
+eval_env γ = traverse alloc γ
 
 eval_module :: forall m s a. Monad m => Set s Vertex => Env Vertex -> Module a -> s Vertex -> WithGraphT s m (Env Vertex)
 eval_module γ mod αs0 = alloc_module mod >>= flip (go D.empty) αs0
@@ -197,3 +179,20 @@ eval_module γ mod αs0 = alloc_module mod >>= flip (go D.empty) αs0
    go γ' (Module (Right ρ : ds)) αs = do
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
+
+evalWithEnv :: forall g s m a. Monad m => Set s Vertex => Env Vertex -> Expr a -> WithGraphT s m (Expr Vertex × Val Vertex)
+evalWithEnv γα e = doEval
+   where
+   doEval = do
+      eα <- alloc e
+      n × _ <- lift $ get
+      vα <- eval γα eα empty :: WithGraphT s m _
+      n' × _ <- lift $ get
+      trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
+         pure (eα × vα)
+
+evalGraph :: forall g s m a. Monad m => Graph g s => Env a -> Expr a -> m (MayFail ((g × Int) × Env Vertex × Expr Vertex × Val Vertex))
+evalGraph γ e = runWithGraphT (G.empty × 0) (do
+   γα <- eval_env γ
+   (eα × vα) <- evalWithEnv γα e
+   pure (γα × eα × vα))

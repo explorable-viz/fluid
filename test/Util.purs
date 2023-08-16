@@ -117,7 +117,7 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
 
    testGraph :: Val 𝔹 × Env 𝔹 × E.Expr 𝔹 -> MayFailT Aff Unit
    testGraph (v𝔹 × γ𝔹 × e𝔹) = do
-      g × (γα × eα × vα) <- except $ evalGraph γ𝔹 e𝔹 :: MayFailT _ (GraphImpl S.Set × _)
+      ((g :: GraphImpl S.Set) × _) × (γα × eα × vα) <- evalGraph γ𝔹 e𝔹 >>= except
       lift $ do
          unless (isGraphical v𝔹 || isJust v_expect_opt)
             (checkPretty "Value" fwd_expect (erase vα))
