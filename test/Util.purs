@@ -54,7 +54,7 @@ import Pretty (class Pretty, prettyP)
 import Set (subset) as Set
 import SExpr (Expr) as SE
 import Test.Spec (SpecT, before, it)
-import Test.Spec.Assertions (fail, shouldEqual)
+import Test.Spec.Assertions (fail, shouldEqual, shouldSatisfy)
 import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, type (×), (×), successful)
 import Val (Env, Val(..), (<+>))
@@ -126,7 +126,7 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
             log ("Val 𝔹:\n" <> prettyP v𝔹)
             log ("Expr Vertex:\n" <> prettyP eα)
             log ("Val Vertex:\n" <> prettyP vα)
-         --   log ("Graph:\n" <> prettyP g)
+         -- log ("Graph:\n" <> prettyP g)
          -- | Test backward slicing
          let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
          log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
@@ -138,19 +138,20 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
          log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
          let gfwd = G.fwdSlice αs_in g
          log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
+         sources gbwd `shouldSatisfy` (flip Set.subset (sources gfwd))
 
          unless (isNothing v_expect_opt) $ do
-            -- | Check addresses on bwd graph-sliced expression match the booleans on bwd trace-sliced expression
+            -- | Check graph/trace-based slicing procedures agree on expression
             let _ × e𝔹' = select𝔹s' (γα × eα) αs_in
-            -- TODO@ reenable these two checks once slicing/filter fixed
+            -- TODO: reenable these two checks once slicing/filter fixed
             unless (true || eq e𝔹 e𝔹') do
                log ("Expr 𝔹 expect: \n" <> prettyP e𝔹)
                log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
                fail "not equal"
 
-            -- | Check (1) addresses on round-tripped graph-sliced value matches the booleans on round-tripped trace-sliced value + (2) sources of bwd graph are a subset of the sources of round-tripped graph
+            -- | Check graph/trace-based slicing procedures agree on round-tripped value.
             let v𝔹' = select𝔹s vα (sources gfwd)
-            unless (true || (eq fwd_expect (prettyP v𝔹') && sources gbwd `Set.subset` sources gfwd)) do
+            unless (true || eq fwd_expect (prettyP v𝔹')) do
                log ("Val 𝔹 expect: \n" <> fwd_expect)
                log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
                fail "not equal"
