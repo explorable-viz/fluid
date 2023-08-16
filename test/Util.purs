@@ -21,7 +21,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
-import Data.Tuple (fst, snd, uncurry)
+import Data.Tuple (fst, snd)
 import Data.Set (Set) as S
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
@@ -43,10 +43,11 @@ import Lattice (𝔹, bot, erase)
 import Module
    ( File(..)
    , Folder(..)
+   , GraphConfig
    , loadFile
-   , open𝔹
-   , openDatasetAs𝔹
-   , openWithDefaultImports𝔹
+   , open
+   , openDatasetAs
+   , openWithDefaultImports
    , parse
    )
 import Parse (program)
@@ -76,16 +77,20 @@ checkPretty _ expect x =
       prettyP x `shouldEqual` expect
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
-testWithSetup :: File -> String -> Maybe (Selector Val × File) -> Aff (Env 𝔹 × SE.Expr 𝔹) -> Test Unit
+testWithSetup :: File -> String -> Maybe (Selector Val × File) -> Aff (GraphConfig (GraphImpl S.Set)) -> Test Unit
 testWithSetup (File file) fwd_expect v_expect_opt setup =
-   before setup $ it file (uncurry doTest)
+   before setup $ it file doTest
    where
-   doTest :: Env 𝔹 -> SE.Expr 𝔹 -> Aff Unit
-   doTest γ s =
-      runExceptT (testTrace γ s >>= testGraph) >>=
-         case _ of
-            Left msg -> fail msg
-            Right unit -> pure unit
+   doTest :: GraphConfig (GraphImpl S.Set) -> Aff Unit
+   doTest { γα, s } =
+      let
+         γ𝔹 = (map $ const bot) <$> γα
+         s𝔹 = (const bot) <$> s
+      in
+         runExceptT (testTrace γ𝔹 s𝔹 >>= testGraph) >>=
+            case _ of
+               Left msg -> fail msg
+               Right unit -> pure unit
 
    testTrace :: Env 𝔹 -> SE.Expr 𝔹 -> MayFailT Aff (Val 𝔹 × Env 𝔹 × E.Expr 𝔹)
    testTrace γ s = do
@@ -157,11 +162,11 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
 
 test :: File -> String -> Test Unit
 test file fwd_expect =
-   testWithSetup file fwd_expect Nothing (openWithDefaultImports𝔹 file)
+   testWithSetup file fwd_expect Nothing (openWithDefaultImports file)
 
 testBwd :: File -> File -> Selector Val -> String -> Test Unit
 testBwd file file_expect δv fwd_expect =
-   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) (openWithDefaultImports𝔹 file')
+   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
    where
    folder = File "slicing/"
    file' = folder <> file
@@ -179,5 +184,6 @@ testLink spec@{ x } δv1 v2_expect =
 testWithDataset :: File -> File -> Test Unit
 testWithDataset dataset file = do
    testWithSetup file "" Nothing $ do
-      γ0 × γ <- openDatasetAs𝔹 dataset "data"
-      ((γ0 <+> γ) × _) <$> open𝔹 file
+      s <- open file
+      { g, n, γα } × γ <- openDatasetAs dataset "data"
+      pure { g, n, γα: γα <+> γ, s }
