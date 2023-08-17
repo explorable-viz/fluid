@@ -13,7 +13,7 @@ import Data.Traversable (traverse)
 import Desugarable (desug)
 import Dict (singleton) as D
 import Effect.Aff (Aff)
-import EvalGraph (eval, eval_module) as G
+import EvalGraph (GraphConfig, eval, eval_module)
 import Expr (traverseModule)
 import Graph (class Graph, Vertex)
 import Graph (empty) as G
@@ -37,12 +37,6 @@ derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
 
-type GraphConfig g =
-   { g :: g
-   , n :: Int
-   , γα :: Env Vertex
-   , s :: S.Expr Unit
-   }
 
 resourceServerUrl :: String
 resourceServerUrl = "."
@@ -70,27 +64,28 @@ loadModule :: forall s. Set s Vertex => File -> Env Vertex -> WithGraphT s Aff (
 loadModule file γα = do
    src <- lift $ lift $ loadFile (Folder "fluid/lib") file
    modα <- traverseModule alloc' (successful $ parse src (module_) >>= desugarModuleFwd)
-   G.eval_module γα modα empty <#> (γα <+> _)
+   eval_module γα modα empty <#> (γα <+> _)
 
 defaultImports :: forall s. Set s Vertex => WithGraphT s Aff (Env Vertex)
 defaultImports = do
    γα <- traverse alloc primitives
    loadModule (File "prelude") γα >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
-openWithDefaultImports :: forall g s. Graph g s => File -> Aff (GraphConfig g)
+openWithDefaultImports :: forall g s. Graph g s => File -> Aff (GraphConfig g × S.Expr Unit)
 openWithDefaultImports file = do
-   (g × n) × γα × s <- successful <$> (runWithGraphT (G.empty × 0) $ defaultImports >>= \γ -> lift $ lift $ open file <#> (γ × _))
-   pure { g, n, γα, s }
+   (g × n) × γ <- successful <$> (runWithGraphT (G.empty × 0) $ defaultImports)
+   s <- open file
+   pure $ { g, n, γ } × s
 
 -- Return ambient environment used to load dataset along with new binding.
 openDatasetAs :: forall g s. Graph g s => File -> Var -> Aff (GraphConfig g × Env Vertex)
 openDatasetAs file x = do
    s <- parseProgram (Folder "fluid") file
-   (g × n) × (γα × xvα) <- successful <$>
+   (g × n) × (γ × xv) <- successful <$>
       ( runWithGraphT (G.empty × 0) $ do
            γα <- defaultImports
            eα <- alloc (successful $ desug s)
-           vα <- G.eval γα eα empty
+           vα <- eval γα eα empty
            pure (γα × D.singleton x vα)
       )
-   pure ({ g, n, γα, s } × xvα)
+   pure ({ g, n, γ } × xv)

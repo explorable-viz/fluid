@@ -1,12 +1,14 @@
 module EvalGraph
-   ( apply
-   , eval
-   , evalGraph
-   , eval_module
-   , match
-   , matchMany
-   , patternMismatch
-   ) where
+  ( GraphConfig
+  , apply
+  , eval
+  , evalWithConfig
+  , eval_module
+  , match
+  , matchMany
+  , patternMismatch
+  )
+  where
 
 import Prelude hiding (apply, add)
 
@@ -23,7 +25,6 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
 import Graph (Vertex, class Graph)
-import Graph (empty) as G
 import Graph.GraphWriter (WithGraphT, alloc, new, runWithGraphT)
 import Pretty (prettyP)
 import Primitive (string, intPair)
@@ -32,6 +33,12 @@ import Util (type (×), (×), MayFail, check, error, report, successful, with)
 import Util.Pair (unzip) as P
 import Val (Val(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
+
+type GraphConfig g =
+   { g :: g
+   , n :: Int
+   , γ :: Env Vertex
+   }
 
 {-# Matching #-}
 patternMismatch :: String -> String -> String
@@ -165,11 +172,11 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
-evalGraph :: forall g s m a. Monad m => Graph g s => Env a -> Expr a -> m (MayFail ((g × Int) × Env Vertex × Expr Vertex × Val Vertex))
-evalGraph γ e = runWithGraphT (G.empty × 0)
+evalWithConfig :: forall g s m a. Monad m => Graph g s => GraphConfig g -> Expr a -> m (MayFail ((g × Int) × Expr Vertex × Val Vertex))
+evalWithConfig {g, n, γ: γα} e = runWithGraphT (g × n)
    ( do
-        γα <- traverse alloc γ
         eα <- alloc e
         vα <- eval γα eα empty
-        pure (γα × eα × vα)
+        pure (eα × vα)
    )
+
