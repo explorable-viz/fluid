@@ -39,7 +39,7 @@ instance Set s Vertex => Monoid (GraphImpl s) where
 instance Set s Vertex => Graph (GraphImpl s) s where
    add α αs (GraphImpl out in_) = GraphImpl out' in'
       where
-      out' = D.insert (unwrap α) αs out
+      out' = D.insertWith union (unwrap α) αs out
       in' = foldl (\acc α' -> D.insertWith union (unwrap α') (singleton α) acc)
          (D.insertWith union (unwrap α) Set.empty in_)
          αs
