@@ -35,11 +35,31 @@ tests =
    , test_graph
    ]
 
---tests = [ test_bwd ]
+--tests = [ test_scratchpad ]
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
-   [ testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
+   [ testBwd (File "convolution/edgeDetect") (File "convolution/edgeDetect.expect")
+        (botOf >>> selectCell 1 1 topOf)
+        "_0_, -1, 2, 0, -1,\n\
+        \0, 3, -2, 3, -2,\n\
+        \-1, 1, -5, 0, 4,\n\
+        \1, -1, 4, 0, -4,\n\
+        \1, 0, -3, 2, 0"
+   , testBwd (File "convolution/emboss") (File "convolution/emboss.expect")
+        (botOf >>> selectCell 1 1 topOf)
+        "_5_, 4, 2, 5, 2,\n\
+        \3, 1, 2, -1, -2,\n\
+        \3, 0, 1, 0, -1,\n\
+        \2, 1, -2, 0, 0,\n\
+        \1, 0, -1, -1, -2"
+   , testBwd (File "convolution/gaussian") (File "convolution/gaussian.expect")
+        (botOf >>> selectCell 1 1 topOf)
+        "_38_, 37, 28, 30, 38,\n\
+        \38, 36, 46, 31, 34,\n\
+        \37, 41, 54, 34, 20,\n\
+        \21, 35, 31, 31, 42,\n\
+        \13, 32, 35, 19, 26"
    ]
 
 test_linking :: Array (Test Unit)
