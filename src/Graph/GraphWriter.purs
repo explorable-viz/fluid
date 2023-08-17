@@ -3,6 +3,7 @@ module Graph.GraphWriter
    , AdjMapEntries
    , WithGraph
    , alloc
+   , extend
    , fresh
    , new
    , runWithGraph
@@ -21,6 +22,8 @@ class Monad m <= MonadGraphWriter s m | m -> s where
    fresh :: m Vertex
    -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
    new :: s Vertex -> m Vertex
+   -- Extend graph with existing vertex pointing to set of existing vertices.
+   extend :: Vertex -> s Vertex -> m Unit
 
 -- Builds list of adjacency map entries (arguments to 'add').
 type AdjMapEntries s = List (Vertex × s Vertex)
@@ -35,6 +38,9 @@ instance Monad m => MonadGraphWriter s (MayFailT (StateT (Int × AdjMapEntries s
       α <- fresh
       modify_ $ second $ (:) (α × αs)
       pure α
+
+   extend α αs = 
+      void $ modify_ $ second $ (:) (α × αs)
 
 alloc :: forall s t a. Traversable t => t a -> WithGraph s (t Vertex)
 alloc = traverse (const fresh)
