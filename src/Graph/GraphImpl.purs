@@ -7,12 +7,13 @@ import Prelude
 
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
+import Data.Array as A
 import Data.Foldable (foldM)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (unwrap)
-import Data.Set as S
+import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Dict as D
 import Foreign.Object (runST)
@@ -31,14 +32,22 @@ instance Set s Vertex => Semigroup (GraphImpl s) where
    append (GraphImpl g) (GraphImpl g') =
       GraphImpl { out: D.unionWith Set.union g.out g'.out, in: D.unionWith Set.union g.in g'.in }
 
+-- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
+-- This works but is still slow if the sink sets contain thousands of vertices.
+sinks' :: forall s. Set s Vertex => AdjMap s -> s Vertex
+sinks' m = D.toArrayWithKey (×) m
+   # A.filter (snd >>> Set.isEmpty)
+   <#> (fst >>> Vertex)
+   # Set.fromFoldable
+
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Set s Vertex => Graph (GraphImpl s) s where
    outN (GraphImpl g) α = D.lookup (unwrap α) g.out # definitely "in graph"
    inN g = outN (op g)
    elem α (GraphImpl g) = isJust (D.lookup (unwrap α) g.out)
    size (GraphImpl g) = D.size g.out
-   sinks (GraphImpl g) = Set.fromFoldable $ S.map Vertex $ D.keys (D.filter Set.isEmpty g.out)
-   sources (GraphImpl g) = Set.fromFoldable $ S.map Vertex $ D.keys (D.filter Set.isEmpty g.in)
+   sinks (GraphImpl g) = sinks' g.out
+   sources (GraphImpl g) = sinks' g.in
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out }
    empty = GraphImpl { out: D.empty, in: D.empty }
 
