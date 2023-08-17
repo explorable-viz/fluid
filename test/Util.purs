@@ -35,7 +35,7 @@ import Module
    , loadFile
    , open
    , openDatasetAs
-   , openWithDefaultImports
+   , openDefaultImports
    , parse
    )
 import Parse (program)
@@ -65,9 +65,9 @@ checkPretty _ expect x =
       prettyP x `shouldEqual` expect
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
-testWithSetup :: File -> String -> Maybe (Selector Val × File) -> Aff (GraphConfig (GraphImpl S.Set) × SE.Expr Unit) -> Test Unit
+testWithSetup :: File -> String -> Maybe (Selector Val × File) -> Aff (GraphConfig (GraphImpl S.Set)) -> Test Unit
 testWithSetup (File file) fwd_expect v_expect_opt setup =
-   before setup $ it file (uncurry doTest)
+   before ((×) <$> setup <*> open (File file)) $ it file (uncurry doTest)
    where
    doTest :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> Aff Unit
    doTest gconf s =
@@ -150,11 +150,11 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
 
 test :: File -> String -> Test Unit
 test file fwd_expect =
-   testWithSetup file fwd_expect Nothing (openWithDefaultImports file)
+   testWithSetup file fwd_expect Nothing openDefaultImports
 
 testBwd :: File -> File -> Selector Val -> String -> Test Unit
 testBwd file file_expect δv fwd_expect =
-   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
+   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) openDefaultImports
    where
    folder = File "slicing/"
    file' = folder <> file
@@ -170,11 +170,10 @@ testLink spec@{ x } δv1 v2_expect =
                checkPretty "Linked output" v2_expect v2'
 
 testWithDataset :: File -> File -> Test Unit
-testWithDataset dataset file = do
+testWithDataset dataset file =
    testWithSetup file "" Nothing $ do
-      s <- open file
       { g, n, γ } × xv <- openDatasetAs dataset "data"
-      pure ({ g, n, γ: γ <+> xv } × s)
+      pure { g, n, γ: γ <+> xv }
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
