@@ -18960,6 +18960,11 @@
       };
     };
   };
+  var filter3 = function(f) {
+    return function(xs) {
+      return xs.filter(f);
+    };
+  };
   var sortByImpl2 = function() {
     function mergeFromTo(compare2, fromOrdering, xs1, xs2, from, to) {
       var mid;
@@ -33206,14 +33211,17 @@
   };
 
   // output-es/Graph/index.js
-  var Vertex = (x2) => x2;
   var eqVertex = { eq: (x2) => (y2) => x2 === y2 };
   var ordVertex = { compare: (x2) => (y2) => ordString.compare(x2)(y2), Eq0: () => eqVertex };
 
   // output-es/Graph.GraphImpl/index.js
-  var $GraphImpl = (_1, _2) => ({ tag: "GraphImpl", _1, _2 });
-  var semigroupGraphImpl = (dictSet) => ({ append: (v) => (v1) => $GraphImpl(unionWith2(dictSet.union)(v._1)(v1._1), unionWith2(dictSet.union)(v._2)(v1._2)) });
-  var addMissing = (dictSet) => (acc) => (v) => {
+  var $GraphImpl = (_1) => ({ tag: "GraphImpl", _1 });
+  var semigroupGraphImpl = (dictSet) => ({ append: (v) => (v1) => $GraphImpl({ out: unionWith2(dictSet.union)(v._1.out)(v1._1.out), in: unionWith2(dictSet.union)(v._1.in)(v1._1.in) }) });
+  var sinks$p = (dictSet) => {
+    const fromFoldable11 = dictSet.fromFoldable(foldableArray);
+    return (m) => fromFoldable11(arrayMap((x2) => x2._1)(filter3((x2) => dictSet.isEmpty(x2._2))(toArrayWithKey(Tuple)(m))));
+  };
+  var addIfMissing = (dictSet) => (acc) => (v) => {
     const $3 = peek(v)(acc);
     return () => {
       const v1 = $3();
@@ -33250,7 +33258,7 @@
               })(() => v._2)(v._1._1._2);
               return () => {
                 const a = $5();
-                return addMissing(dictSet)(a)(v._1._1._1)();
+                return addIfMissing(dictSet)(a)(v._1._1._1)();
               };
             })()();
             return $Step("Loop", $Tuple(v._1._2, acc$p));
@@ -33276,7 +33284,7 @@
                 const a = $5();
                 return $1.foldl((b) => (a$1) => () => {
                   const a$2 = b();
-                  return addMissing(dictSet)(a$2)(a$1)();
+                  return addIfMissing(dictSet)(a$2)(a$1)();
                 })(() => a)(v._1._1._2)();
               };
             })()();
@@ -33288,15 +33296,15 @@
     };
   };
   var graphGraphImpl = (dictSet) => {
-    const fromFoldable11 = dictSet.fromFoldable(foldableSet);
+    const sinks$p1 = sinks$p(dictSet);
     const outMap1 = outMap(dictSet);
     const inMap1 = inMap(dictSet);
     const semigroupGraphImpl1 = semigroupGraphImpl(dictSet);
     return {
-      outN: (v) => (\u03B1) => definitely("in graph")(_lookup(Nothing, Just, \u03B1, v._1)),
+      outN: (v) => (\u03B1) => definitely("in graph")(_lookup(Nothing, Just, \u03B1, v._1.out)),
       inN: (g) => graphGraphImpl(dictSet).outN(graphGraphImpl(dictSet).op(g)),
       elem: (\u03B1) => (v) => {
-        const $7 = _lookup(Nothing, Just, \u03B1, v._1);
+        const $7 = _lookup(Nothing, Just, \u03B1, v._1.out);
         if ($7.tag === "Nothing") {
           return false;
         }
@@ -33305,17 +33313,16 @@
         }
         fail();
       },
-      size: (v) => size(v._1),
-      vertices: (v) => fromFoldable11(map2(ordVertex)(Vertex)(keys2(v._1))),
-      sinks: (v) => fromFoldable11(map2(ordVertex)(Vertex)(keys2(filterWithKey((v$1) => dictSet.isEmpty)(v._1)))),
-      sources: (v) => fromFoldable11(map2(ordVertex)(Vertex)(keys2(filterWithKey((v$1) => dictSet.isEmpty)(v._2)))),
-      op: (v) => $GraphImpl(v._2, v._1),
-      empty: $GraphImpl(empty2, empty2),
+      size: (v) => size(v._1.out),
+      sinks: (v) => sinks$p1(v._1.out),
+      sources: (v) => sinks$p1(v._1.in),
+      op: (v) => $GraphImpl({ out: v._1.in, in: v._1.out }),
+      empty: $GraphImpl({ out: empty2, in: empty2 }),
       fromFoldable: (dictFunctor) => (dictFoldable) => {
-        const fromFoldable18 = dictFoldable.foldr(Cons)(Nil);
+        const fromFoldable11 = dictFoldable.foldr(Cons)(Nil);
         return (\u03B1_\u03B1s) => {
-          const \u03B1_\u03B1s$p = fromFoldable18(\u03B1_\u03B1s);
-          return $GraphImpl(runST(outMap1(\u03B1_\u03B1s$p)), runST(inMap1(\u03B1_\u03B1s$p)));
+          const \u03B1_\u03B1s$p = fromFoldable11(\u03B1_\u03B1s);
+          return $GraphImpl({ out: runST(outMap1(\u03B1_\u03B1s$p)), in: runST(inMap1(\u03B1_\u03B1s$p)) });
         };
       },
       Semigroup0: () => semigroupGraphImpl1,
@@ -37721,6 +37728,7 @@
       delete: $$delete2(dictOrd),
       difference: difference3(dictOrd),
       union: union2(dictOrd),
+      intersection: intersection(dictOrd),
       insert: insert3(dictOrd),
       isEmpty: isEmpty2,
       member: member(dictOrd),
