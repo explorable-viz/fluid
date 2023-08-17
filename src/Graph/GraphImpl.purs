@@ -27,7 +27,7 @@ import Util (type (×), (×), definitely)
 type AdjMap s = Dict (s Vertex)
 data GraphImpl s = GraphImpl (AdjMap s) (AdjMap s)
 
--- Dict-based implementation with inefficient (linear) add and remove.
+-- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Set s Vertex => Graph (GraphImpl s) s where
    outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
    inN g = outN (op g)
