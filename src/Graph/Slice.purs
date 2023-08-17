@@ -7,13 +7,12 @@ import Data.List (List(..), (:))
 import Data.List as L
 import Data.Map (Map, lookup, delete, insertWith)
 import Data.Map (empty) as M
-import Data.Maybe (Maybe(..))
 import Data.Tuple (fst)
 import Expr (Expr)
 import Graph (class Graph, Edge, Vertex, add, discreteG, inEdges, inEdges', outN)
 import Graph.GraphWriter (WithGraph2, extend, runWithGraph2)
 import Set (class Set, empty, insert, member, singleton, union, unions)
-import Util (type (×), (×))
+import Util (type (×), (×), definitely)
 import Val (Env)
 
 type PendingSlice s = Map Vertex (s Vertex)
@@ -46,9 +45,7 @@ fwdVertex g' g h α =
       fwdEdges g' (add α αs g) (delete α h) (inEdges' g' α)
    else g × h
    where
-   αs = case lookup α h of
-      Just αs' -> αs'
-      Nothing -> empty
+   αs = lookup α h # definitely "in pending map"
 
 selectVertices :: forall s f. Set s Vertex => Apply f => Foldable f => f Vertex -> f Boolean -> s Vertex
 selectVertices vα v𝔹 = αs_v
