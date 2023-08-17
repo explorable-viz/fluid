@@ -37,9 +37,9 @@ class Monad m <= MonadGraphWriter s m | m -> s where
 
 -- List of adjacency map entries to serve as a fromFoldable input.
 type AdjMapEntries s = List (Vertex × s Vertex)
-type WithGraphT s m a = MayFailT (StateT (Int × AdjMapEntries s) m) a
-type WithGraph2T s m a = StateT (AdjMapEntries s) m a
-type WithGraph2 s a = WithGraph2T s Identity a
+type WithGraphT s m a = MayFailT (StateT Int (WithGraph2T s m)) a
+type WithGraph2T s = StateT (AdjMapEntries s)
+type WithGraph2 s = WithGraph2T s Identity
 
 instance Monad m => MonadGraphWriter s (MayFailT (StateT (Int × AdjMapEntries s) m)) where
    fresh = do
@@ -65,6 +65,6 @@ runWithGraph2 :: forall g s a. Graph g s => WithGraph2 s a -> g × a
 runWithGraph2 c = unwrap $ runWithGraph2T c
 
 runWithGraphT :: forall g s m a. Monad m => Graph g s => (g × Int) -> WithGraphT s m a -> m (MayFail ((g × Int) × a))
-runWithGraphT (g × n) e = do
-   maybe_r × n' × g_adds <- (flip runStateT (n × Nil) <<< runExceptT) e
-   pure $ ((×) ((g <> fromFoldable g_adds) × n')) <$> maybe_r
+runWithGraphT (g × n) c = do
+   (maybe_a × n') × g_adds <- runStateT (runStateT (runExceptT c) n) Nil
+   pure $ maybe_a <#> ((×) ((g <> fromFoldable g_adds) × n'))
