@@ -1,21 +1,26 @@
 module Graph.GraphWriter
-   ( class MonadGraphWriter
-   , class MonadGraphWriter2
-   , AdjMapEntries
+   ( AdjMapEntries
    , WithGraph
-   , WithGraph2
+   , WithGraphT
    , alloc
+   , class MonadGraphWriter
+   , class MonadGraphWriter2
+   , WithGraph2
    , extend
    , fresh
    , new
    , runWithGraph
    , runWithGraph2
+   , runWithGraphT
    ) where
 
-import Prelude hiding (add)
-import Control.Monad.State (State, StateT, runState, modify, modify_)
+import Prelude (class Monad, Unit, void, const, pure, bind, show, discard, flip, ($), (+), (<<<), (<>), (<$>))
+import Control.Comonad (extract)
+import Control.Monad.State.Trans (StateT, runStateT, modify, modify_)
 import Control.Monad.Except (runExceptT)
+import Data.Identity (Identity)
 import Data.List (List(..), (:))
+import Control.Monad.State
 import Data.Profunctor.Strong (first, second)
 import Data.Traversable (class Traversable, traverse)
 import Graph (Vertex(..), class Graph, fromFoldable)
@@ -32,7 +37,8 @@ class Monad m <= MonadGraphWriter s m | m -> s where
 
 -- Builds list of adjacency map entries (arguments to 'add').
 type AdjMapEntries s = List (Vertex × s Vertex)
-type WithGraph s a = MayFailT (State (Int × AdjMapEntries s)) a
+type WithGraphT s m a = MayFailT (StateT (Int × AdjMapEntries s) m) a
+type WithGraph s a = WithGraphT s Identity a
 -- TODO: factor WithGraph through this.
 type WithGraph2 s a = State (AdjMapEntries s) a
 
@@ -46,19 +52,23 @@ instance Monad m => MonadGraphWriter s (MayFailT (StateT (Int × AdjMapEntries s
       modify_ $ second $ (:) (α × αs)
       pure α
 
-instance Monad m => MonadGraphWriter2 s (StateT (AdjMapEntries s) m) where
-   extend α αs =
-      void $ modify_ $ (:) (α × αs)
-
-alloc :: forall s t a. Traversable t => t a -> WithGraph s (t Vertex)
+alloc :: forall s m t a. Monad m => Traversable t => t a -> WithGraphT s m (t Vertex)
 alloc = traverse (const fresh)
-
-runWithGraph :: forall g s a. Graph g s => WithGraph s a -> MayFail (g × a)
-runWithGraph c = ((×) (fromFoldable g_adds)) <$> maybe_r
-   where
-   maybe_r × _ × g_adds = (flip runState (0 × Nil) <<< runExceptT) c
 
 runWithGraph2 :: forall g s a. Graph g s => WithGraph2 s a -> g × a
 runWithGraph2 c = fromFoldable g_adds × a
    where
    a × g_adds = runState c Nil
+
+runWithGraph :: forall g s a. Graph g s => (g × Int) -> WithGraph s a -> MayFail ((g × Int) × a)
+runWithGraph (g × n) = extract <<< runWithGraphT (g × n)
+
+runWithGraphT :: forall g s m a. Monad m => Graph g s => (g × Int) -> WithGraphT s m a -> m (MayFail ((g × Int) × a))
+runWithGraphT (g × n) e = do
+   maybe_r × n' × g_adds <- (flip runStateT (n × Nil) <<< runExceptT) e
+   pure $ ((×) ((g <> fromFoldable g_adds) × n')) <$> maybe_r
+
+instance Monad m => MonadGraphWriter2 s (StateT (AdjMapEntries s) m) where
+   extend α αs =
+      void $ modify_ $ (:) (α × αs)
+

@@ -8,12 +8,10 @@ import Data.List as L
 import Data.Map (Map, lookup, delete, insertWith)
 import Data.Map (empty) as M
 import Data.Tuple (fst)
-import Expr (Expr)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN)
 import Graph.GraphWriter (WithGraph2, extend, runWithGraph2)
 import Set (class Set, empty, insert, member, singleton, union, unions)
-import Util (type (×), (×), definitely)
-import Val (Env)
+import Util ((×), definitely)
 
 type PendingSlice s = Map Vertex (s Vertex)
 
@@ -59,11 +57,13 @@ select𝔹s vα αs = v𝔹
    where
    v𝔹 = map (flip member αs) vα
 
+{-
 select𝔹s' :: forall s. Set s Vertex => Env Vertex × Expr Vertex -> s Vertex -> Env Boolean × Expr Boolean
 select𝔹s' (γα × eα) αs = γ𝔹 × e𝔹
    where
    γ𝔹 = map (flip select𝔹s αs) γα
    e𝔹 = select𝔹s eα αs
+-}
 
 asSet :: forall s. Set s Vertex => Boolean -> Vertex -> s Vertex
 asSet true = singleton

@@ -1,31 +1,30 @@
 module EvalGraph
-   ( apply
+   ( GraphConfig
+   , apply
    , eval
+   , evalWithConfig
+   , eval_module
    , match
    , matchMany
    , patternMismatch
-   , evalGraph
    ) where
 
 import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
 import Control.Monad.Except (except)
-import Control.Monad.State (get)
-import Control.Monad.Trans.Class (lift)
 import Data.Array (range, singleton) as A
-import Data.Either (note)
+import Data.Either (Either(..), note)
 import Data.Exists (runExists)
 import Data.List (List(..), (:), length, snoc, unzip, zip)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
-import DataType (arity, checkArity, consistentWith, dataTypeFor, showCtr)
-import Debug (trace)
+import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
-import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, fv, asExpr)
+import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
 import Graph (Vertex, class Graph)
-import Graph.GraphWriter (WithGraph, alloc, new, runWithGraph)
+import Graph.GraphWriter (WithGraphT, alloc, new, runWithGraphT)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Set (class Set, insert, empty, singleton, union)
@@ -33,6 +32,12 @@ import Util (type (×), (×), MayFail, check, error, report, successful, with)
 import Util.Pair (unzip) as P
 import Val (Val(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
+
+type GraphConfig g =
+   { g :: g
+   , n :: Int
+   , γ :: Env Vertex
+   }
 
 {-# Matching #-}
 patternMismatch :: String -> String -> String
@@ -68,7 +73,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall s. Set s Vertex => Env Vertex -> RecDefs Vertex -> s Vertex -> WithGraph s (Env Vertex)
+closeDefs :: forall s m. Monad m => Set s Vertex => Env Vertex -> RecDefs Vertex -> s Vertex -> WithGraphT s m (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -77,7 +82,7 @@ closeDefs γ ρ αs =
          V.Fun <$> (V.Closure <$> new αs <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
 
 {-# Evaluation #-}
-apply :: forall s. Set s Vertex => Val Vertex -> Val Vertex -> WithGraph s (Val Vertex)
+apply :: forall s m. Monad m => Set s Vertex => Val Vertex -> Val Vertex -> WithGraphT s m (Val Vertex)
 apply (V.Fun (V.Closure α γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- except $ match v σ
@@ -93,14 +98,14 @@ apply (V.Fun (V.PartialConstr α c vs)) v = do
 apply (V.Fun (V.Foreign φ vs)) v = do
    let vs' = snoc vs v
    let
-      apply' :: forall t. ForeignOp' t -> WithGraph s (Val Vertex)
+      apply' :: forall t. ForeignOp' t -> WithGraphT s m (Val Vertex)
       apply' (ForeignOp' φ') =
          if φ'.arity > length vs' then pure $ V.Fun (V.Foreign φ vs')
          else φ'.op' vs'
    runExists apply' φ
 apply _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall s. Set s Vertex => Env Vertex -> Expr Vertex -> s Vertex -> WithGraph s (Val Vertex)
+eval :: forall s m. Monad m => Set s Vertex => Env Vertex -> Expr Vertex -> s Vertex -> WithGraphT s m (Val Vertex)
 eval γ (Var x) _ = except $ lookup' x γ
 eval γ (Op op) _ = except $ lookup' op γ
 eval _ (Int α n) αs = V.Int <$> new (insert α αs) <@> n
@@ -153,15 +158,24 @@ eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-evalGraph :: forall g s a. Graph g s => Env a -> Expr a -> MayFail (g × (Env Vertex × Expr Vertex × Val Vertex))
-evalGraph γ0 e0 = runWithGraph doEval
+eval_module :: forall m s. Monad m => Set s Vertex => Env Vertex -> Module Vertex -> s Vertex -> WithGraphT s m (Env Vertex)
+eval_module γ = go D.empty
    where
-   doEval :: WithGraph s _
-   doEval = do
-      γ <- traverse alloc γ0
-      e <- alloc e0
-      n × _ <- lift $ get
-      v <- eval γ e empty :: WithGraph s _
-      n' × _ <- lift $ get
-      trace (show (n' - n) <> " vertices allocated during eval.") \_ ->
-         pure (γ × e × v)
+   go :: Env Vertex -> Module Vertex -> s Vertex -> WithGraphT s m (Env Vertex)
+   go γ' (Module Nil) _ = pure γ'
+   go y' (Module (Left (VarDef σ e) : ds)) αs = do
+      v <- eval (γ <+> y') e αs
+      γ'' × _ × α' <- except $ match v σ
+      go (y' <+> γ'') (Module ds) α'
+   go γ' (Module (Right ρ : ds)) αs = do
+      γ'' <- closeDefs (γ <+> γ') ρ αs
+      go (γ' <+> γ'') (Module ds) αs
+
+evalWithConfig :: forall g s m a. Monad m => Graph g s => GraphConfig g -> Expr a -> m (MayFail ((g × Int) × Expr Vertex × Val Vertex))
+evalWithConfig { g, n, γ: γα } e = runWithGraphT (g × n)
+   ( do
+        eα <- alloc e
+        vα <- eval γα eα empty
+        pure (eα × vα)
+   )
+
