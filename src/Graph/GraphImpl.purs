@@ -32,14 +32,6 @@ instance Set s Vertex => Semigroup (GraphImpl s) where
    append (GraphImpl g) (GraphImpl g') =
       GraphImpl { out: D.unionWith Set.union g.out g'.out, in: D.unionWith Set.union g.in g'.in }
 
--- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
--- This works but is still slow if the sink sets contain thousands of vertices.
-sinks' :: forall s. Set s Vertex => AdjMap s -> s Vertex
-sinks' m = D.toArrayWithKey (×) m
-   # A.filter (snd >>> Set.isEmpty)
-   <#> (fst >>> Vertex)
-   # Set.fromFoldable
-
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Set s Vertex => Graph (GraphImpl s) s where
    outN (GraphImpl g) α = D.lookup (unwrap α) g.out # definitely "in graph"
@@ -54,6 +46,14 @@ instance Set s Vertex => Graph (GraphImpl s) s where
    fromFoldable α_αs = GraphImpl { out: runST (outMap α_αs'), in: runST (inMap α_αs') }
       where
       α_αs' = L.fromFoldable α_αs
+
+-- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
+-- This works but is still slow if the sink sets contain thousands of vertices.
+sinks' :: forall s. Set s Vertex => AdjMap s -> s Vertex
+sinks' m = D.toArrayWithKey (×) m
+   # A.filter (snd >>> Set.isEmpty)
+   <#> (fst >>> Vertex)
+   # Set.fromFoldable
 
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap s r = STObject r (s Vertex)
