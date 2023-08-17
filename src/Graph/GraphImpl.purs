@@ -7,7 +7,7 @@ import Prelude
 
 import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Control.Monad.ST (ST)
-import Data.Foldable (foldl, foldM)
+import Data.Foldable (foldM)
 import Data.List (List(..), (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
@@ -19,7 +19,7 @@ import Foreign.Object (runST, filter)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, Vertex(..), op, outN)
-import Set (class Set, insert, singleton, union)
+import Set (class Set, insert, singleton)
 import Set as Set
 import Util (type (×), (×), definitely)
 
@@ -27,25 +27,8 @@ import Util (type (×), (×), definitely)
 type AdjMap s = Dict (s Vertex)
 data GraphImpl s = GraphImpl (AdjMap s) (AdjMap s)
 
--- Provided for completeness, but for efficiency we avoid them.
-instance Set s Vertex => Semigroup (GraphImpl s) where
-   append (GraphImpl out1 in1) (GraphImpl out2 in2) =
-      GraphImpl (D.unionWith union out1 out2) (D.unionWith union in1 in2)
-
-instance Set s Vertex => Monoid (GraphImpl s) where
-   mempty = GraphImpl D.empty D.empty
-
 -- Dict-based implementation with inefficient (linear) add and remove.
 instance Set s Vertex => Graph (GraphImpl s) s where
-   add α αs (GraphImpl out in_) = GraphImpl out' in'
-      where
-      out' = foldl (\acc α' -> D.insertWith union (unwrap α') Set.empty acc)
-         (D.insertWith union (unwrap α) αs out)
-         αs
-      in' = foldl (\acc α' -> D.insertWith union (unwrap α') (singleton α) acc)
-         (D.insertWith union (unwrap α) Set.empty in_)
-         αs
-
    outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
    inN g = outN (op g)
 
@@ -58,11 +41,7 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 
    op (GraphImpl out in_) = GraphImpl in_ out
 
-   discreteG αs = GraphImpl discreteM discreteM
-      where
-      discreteM = D.fromFoldable $ Set.map (\α -> unwrap α × Set.empty) αs
-
-   empty = mempty
+   empty = GraphImpl D.empty D.empty
 
    fromFoldable α_αs = GraphImpl out in_
       where

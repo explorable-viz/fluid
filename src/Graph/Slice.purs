@@ -9,7 +9,7 @@ import Data.Map (Map, lookup, delete, insertWith)
 import Data.Map (empty) as M
 import Data.Tuple (fst)
 import Expr (Expr)
-import Graph (class Graph, Edge, Vertex, add, discreteG, inEdges, inEdges', outN)
+import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN)
 import Graph.GraphWriter (WithGraph2, extend, runWithGraph2)
 import Set (class Set, empty, insert, member, singleton, union, unions)
 import Util (type (×), (×), definitely)
@@ -31,38 +31,21 @@ bwdVertices g' visited (α : αs) =
       bwdVertices g' (visited # insert α) (L.fromFoldable βs <> αs)
 
 fwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
-fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) M.empty (inEdges g' αs)
+fwdSlice αs g' =
+   fst $ runWithGraph2 $ fwdEdges g' M.empty (inEdges g' αs)
 
-fwdSlice' :: forall g s. Graph g s => s Vertex -> g -> g
-fwdSlice' αs g' = 
-   fst $ runWithGraph2 $ fwdEdges' g' M.empty (inEdges g' αs)
+fwdEdges :: forall g s. Graph g s => g -> PendingSlice s -> List Edge -> WithGraph2 s (PendingSlice s)
+fwdEdges _ pending Nil = pure pending
+fwdEdges g' h ((α × β) : es) = do
+   h' <- fwdVertex g' (insertWith union α (singleton β) h) α
+   fwdEdges g' h' es
 
-fwdEdges :: forall g s. Graph g s => g -> g -> PendingSlice s -> List Edge -> g × PendingSlice s
-fwdEdges g' g h ((α × β) : es) = fwdEdges g' g'' h' es
-   where
-   g'' × h' = fwdVertex g' g (insertWith union α (singleton β) h) α
-fwdEdges _ currSlice pending Nil = currSlice × pending
-
-fwdEdges' :: forall g s. Graph g s => g -> PendingSlice s -> List Edge -> WithGraph2 s (PendingSlice s)
-fwdEdges' _ pending Nil = pure pending
-fwdEdges' g' h ((α × β) : es) = do
-   h' <- fwdVertex' g' (insertWith union α (singleton β) h) α
-   fwdEdges' g' h' es
-
-fwdVertex' :: forall g s. Set s Vertex => Graph g s => g -> PendingSlice s -> Vertex -> WithGraph2 s (PendingSlice s)
-fwdVertex' g' h α =
+fwdVertex :: forall g s. Set s Vertex => Graph g s => g -> PendingSlice s -> Vertex -> WithGraph2 s (PendingSlice s)
+fwdVertex g' h α =
    if αs == outN g' α then do
       extend α αs
-      fwdEdges' g' (delete α h) (inEdges' g' α)
+      fwdEdges g' (delete α h) (inEdges' g' α)
    else pure h
-   where
-   αs = lookup α h # definitely "in pending map"
-
-fwdVertex :: forall g s. Set s Vertex => Graph g s => g -> g -> PendingSlice s -> Vertex -> g × PendingSlice s
-fwdVertex g' g h α =
-   if αs == outN g' α then
-      fwdEdges g' (add α αs g) (delete α h) (inEdges' g' α)
-   else g × h
    where
    αs = lookup α h # definitely "in pending map"
 
