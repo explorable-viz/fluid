@@ -6,12 +6,14 @@ import Bindings ((↦))
 import Control.Monad.Trans.Class (lift)
 import Data.Array (concat)
 import Data.Foldable (foldl)
+import Data.List (List(..), (:))
 import Data.Set as S
 import Data.Traversable (sequence)
-import Dict (fromFoldable)
+import Dict (fromFoldable) as D
 import Effect (Effect)
 import Effect.Console (log, logShow)
-import Graph (add, Vertex(..), inEdges)
+import Graph (Vertex(..), inEdges)
+import Graph (fromFoldable) as G
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (fwdSlice)
 import Lattice (botOf, neg, topOf)
@@ -148,20 +150,20 @@ test_bwd =
         \21, 35, 31, 31, 42,\n\
         \13, 32, 35, 19, 26"
    , testBwd (File "dict/create") (File "dict/create.expect")
-        ( const $ Dictionary false $ DictRep $ fromFoldable
+        ( const $ Dictionary false $ DictRep $ D.fromFoldable
              [ "a" ↦ (false × Int false 5)
              , "ab" ↦ (true × Int false 6)
              ]
         )
         "{|\"a\":= 5, _\"ab\"_:= 6|}"
    , testBwd (File "dict/difference") (File "dict/difference.expect")
-        ( const $ Dictionary true $ DictRep $ fromFoldable
+        ( const $ Dictionary true $ DictRep $ D.fromFoldable
              [ "a" ↦ (false × Int false 5)
              ]
         )
         "_{|\"a\":= 5|}_"
    , testBwd (File "dict/disjointUnion") (File "dict/disjointUnion.expect")
-        ( const $ Dictionary false $ DictRep $ fromFoldable
+        ( const $ Dictionary false $ DictRep $ D.fromFoldable
              [ "a" ↦ (true × Int false 5)
              , "b" ↦ (false × Int false 6)
              , "c" ↦ (false × Int true 7)
@@ -172,14 +174,14 @@ test_bwd =
         topOf
         "_0_"
    , testBwd (File "dict/intersectionWith") (File "dict/intersectionWith.expect")
-        ( const $ Dictionary false $ DictRep $ fromFoldable
+        ( const $ Dictionary false $ DictRep $ D.fromFoldable
              [ "b" ↦ (false × Int true 0)
              , "c" ↦ (false × Int true 20)
              ]
         )
         "{|\"b\":= _0_, \"c\":= _20_|}"
    , testBwd (File "dict/fromRecord") (File "dict/fromRecord.expect")
-        ( const $ Dictionary false $ DictRep $ fromFoldable
+        ( const $ Dictionary false $ DictRep $ D.fromFoldable
              [ "a" ↦ (false × Int false 5)
              , "ab" ↦ (true × Int false 6)
              ]
@@ -282,7 +284,13 @@ test_graph =
    graph_test_initial = do
       let
          ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-         g' = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphImpl (S.Set)
+         adds = foldl
+            ( \acc α ->
+                 (Vertex (show α) × S.fromFoldable [ Vertex (show (α + 2)), Vertex (show (α + 3)) ]) : acc
+            )
+            Nil
+            ids
+         g' = G.fromFoldable adds :: GraphImpl (S.Set)
          slice = fwdSlice (S.fromFoldable [ Vertex "13", Vertex "12", Vertex "11" ]) g'
       lift $ do
          log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ Vertex "11" ])))
