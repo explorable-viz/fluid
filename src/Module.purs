@@ -17,7 +17,7 @@ import EvalGraph (GraphConfig, eval, eval_module)
 import Expr (traverseModule)
 import Graph (class Graph, Vertex)
 import Graph (empty) as G
-import Graph.GraphWriter (WithGraphT, runWithGraphT, alloc, alloc')
+import Graph.GraphWriter (WithGraphT, runWithGraphT, alloc, fresh)
 import Lattice (botOf)
 import Parse (module_, program)
 import Parsing (runParser)
@@ -36,7 +36,6 @@ newtype Folder = Folder String
 derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
-
 
 resourceServerUrl :: String
 resourceServerUrl = "."
@@ -63,7 +62,7 @@ open = parseProgram (Folder "fluid/example")
 loadModule :: forall s. Set s Vertex => File -> Env Vertex -> WithGraphT s Aff (Env Vertex)
 loadModule file γα = do
    src <- lift $ lift $ loadFile (Folder "fluid/lib") file
-   modα <- traverseModule alloc' (successful $ parse src (module_) >>= desugarModuleFwd)
+   modα <- traverseModule (const fresh) (successful $ parse src (module_) >>= desugarModuleFwd)
    eval_module γα modα empty <#> (γα <+> _)
 
 defaultImports :: forall s. Set s Vertex => WithGraphT s Aff (Env Vertex)

@@ -3,24 +3,32 @@ module Graph.GraphWriter
    , WithGraph
    , WithGraphT
    , alloc
-   , alloc'
    , class MonadGraphWriter
+   , class MonadGraphWriter2
+   , WithGraph2
+   , extend
    , fresh
    , new
    , runWithGraph
+   , runWithGraph2
    , runWithGraphT
    ) where
 
-import Prelude (class Monad, const, pure, bind, show, discard, flip, ($), (+), (<<<), (<>), (<$>))
+import Prelude (class Monad, Unit, void, const, pure, bind, show, discard, flip, ($), (+), (<<<), (<>), (<$>))
 import Control.Comonad (extract)
 import Control.Monad.State.Trans (StateT, runStateT, modify, modify_)
 import Control.Monad.Except (runExceptT)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
+import Control.Monad.State
 import Data.Profunctor.Strong (first, second)
 import Data.Traversable (class Traversable, traverse)
 import Graph (Vertex(..), class Graph, fromFoldable)
 import Util (MayFailT, MayFail, type (×), (×))
+
+class Monad m <= MonadGraphWriter2 s m | m -> s where
+   -- Extend graph with existing vertex pointing to set of existing vertices.
+   extend :: Vertex -> s Vertex -> m Unit
 
 class Monad m <= MonadGraphWriter s m | m -> s where
    fresh :: m Vertex
@@ -31,6 +39,8 @@ class Monad m <= MonadGraphWriter s m | m -> s where
 type AdjMapEntries s = List (Vertex × s Vertex)
 type WithGraphT s m a = MayFailT (StateT (Int × AdjMapEntries s) m) a
 type WithGraph s a = WithGraphT s Identity a
+-- TODO: factor WithGraph through this.
+type WithGraph2 s a = State (AdjMapEntries s) a
 
 instance Monad m => MonadGraphWriter s (MayFailT (StateT (Int × AdjMapEntries s) m)) where
    fresh = do
@@ -45,8 +55,10 @@ instance Monad m => MonadGraphWriter s (MayFailT (StateT (Int × AdjMapEntries s
 alloc :: forall s m t a. Monad m => Traversable t => t a -> WithGraphT s m (t Vertex)
 alloc = traverse (const fresh)
 
-alloc' :: forall s m a. Monad m => a -> WithGraphT s m Vertex
-alloc' = const fresh
+runWithGraph2 :: forall g s a. Graph g s => WithGraph2 s a -> g × a
+runWithGraph2 c = fromFoldable g_adds × a
+   where
+   a × g_adds = runState c Nil
 
 runWithGraph :: forall g s a. Graph g s => (g × Int) -> WithGraph s a -> MayFail ((g × Int) × a)
 runWithGraph (g × n) = extract <<< runWithGraphT (g × n)
@@ -55,3 +67,8 @@ runWithGraphT :: forall g s m a. Monad m => Graph g s => (g × Int) -> WithGraph
 runWithGraphT (g × n) e = do
    maybe_r × n' × g_adds <- (flip runStateT (n × Nil) <<< runExceptT) e
    pure $ ((×) ((g <> fromFoldable g_adds) × n')) <$> maybe_r
+
+instance Monad m => MonadGraphWriter2 s (StateT (AdjMapEntries s) m) where
+   extend α αs =
+      void $ modify_ $ (:) (α × αs)
+

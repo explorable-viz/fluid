@@ -12,14 +12,8 @@ import Util (Endo, (×), type (×))
 
 type Edge = Vertex × Vertex
 
--- | Graphs form a semigroup but we don't actually rely on that (for efficiency).
+-- | "Static" graphs, optimised for lookup and building from (key, value) pairs.
 class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
-   -- add vertex α to g with αs as out neighbours, where each neighbour is already in g.
-   -- | add and remove satisfy:
-   -- |    remove α (add α αs g) = g
-   -- |    add α (outN α g) (remove α g) = g
-   add :: Vertex -> s Vertex -> Endo g
-
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
    -- | outN and iN satisfy
@@ -30,15 +24,12 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
    -- | Number of vertices in g.
    size :: g -> Int
 
-   -- | s of all vertices in g
+   -- | Set of all vertices in g
    vertices :: g -> s Vertex
    sources :: g -> s Vertex
    sinks :: g -> s Vertex
    -- |   op (op g) = g
    op :: Endo g
-
-   -- |   Discrete graph consisting only of a set of vertices.
-   discreteG :: s Vertex -> g
 
    empty :: g
 

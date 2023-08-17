@@ -71,15 +71,16 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
    where
    doTest :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> Aff Unit
    doTest gconf s =
-         runExceptT (testTrace gconf s >>= testGraph gconf ) >>=
-            case _ of
-               Left msg -> fail msg
-               Right unit -> pure unit
+      runExceptT (testTrace gconf s >>= testGraph gconf) >>=
+         case _ of
+            Left msg -> fail msg
+            Right unit -> pure unit
 
    testTrace :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> MayFailT Aff (Val 𝔹 × E.Expr 𝔹)
    testTrace { γ } s = do
-      let γ𝔹 = botOf <$> γ
-          s𝔹 = botOf s
+      let
+         γ𝔹 = botOf <$> γ
+         s𝔹 = botOf s
       e𝔹 <- except $ desug s𝔹
       t × v𝔹 <- except $ eval γ𝔹 e𝔹 bot
       let

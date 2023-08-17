@@ -1,14 +1,13 @@
 module EvalGraph
-  ( GraphConfig
-  , apply
-  , eval
-  , evalWithConfig
-  , eval_module
-  , match
-  , matchMany
-  , patternMismatch
-  )
-  where
+   ( GraphConfig
+   , apply
+   , eval
+   , evalWithConfig
+   , eval_module
+   , match
+   , matchMany
+   , patternMismatch
+   ) where
 
 import Prelude hiding (apply, add)
 
@@ -173,7 +172,7 @@ eval_module γ = go D.empty
       go (γ' <+> γ'') (Module ds) αs
 
 evalWithConfig :: forall g s m a. Monad m => Graph g s => GraphConfig g -> Expr a -> m (MayFail ((g × Int) × Expr Vertex × Val Vertex))
-evalWithConfig {g, n, γ: γα} e = runWithGraphT (g × n)
+evalWithConfig { g, n, γ: γα } e = runWithGraphT (g × n)
    ( do
         eα <- alloc e
         vα <- eval γα eα empty
