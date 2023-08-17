@@ -118,7 +118,7 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
             log ("Val 𝔹:\n" <> prettyP v𝔹)
             log ("Expr Vertex:\n" <> prettyP eα)
             log ("Val Vertex:\n" <> prettyP vα)
-         -- log ("Graph:\n" <> prettyP g)
+         -- log ("Graph sources:\n" <> prettyP (sources g))
 
          -- | Test backward slicing
          let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹

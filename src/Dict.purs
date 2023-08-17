@@ -33,7 +33,7 @@ import Data.Set (fromFoldable, member) as S
 import Data.Tuple (fst, snd)
 import Data.Unfoldable (class Unfoldable)
 import Foreign.Object (Object, keys, toAscUnfoldable, values) as O
-import Foreign.Object (delete, empty, filterKeys, fromFoldable, insert, isEmpty, lookup, member, singleton, size, union, unionWith, update, alter)
+import Foreign.Object (alter, delete, empty, filter, filterKeys, fromFoldable, insert, isEmpty, lookup, member, singleton, size, toArrayWithKey, union, unionWith, update)
 import Util (Endo, type (×), (×), assert, definitely, error)
 
 type Dict a = O.Object a

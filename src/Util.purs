@@ -24,10 +24,10 @@ infixr 6 Tuple as ×
 
 infixr 6 type Either as + -- standard library has \/
 
-error :: String -> ∀ a. a
+error :: ∀ a. String -> a
 error msg = unsafePerformEffect (throw msg)
 
-assert :: Boolean -> ∀ a. a -> a
+assert :: ∀ a. Boolean -> a -> a
 assert true = identity
 assert false = \_ -> error "Assertion failure"
 
