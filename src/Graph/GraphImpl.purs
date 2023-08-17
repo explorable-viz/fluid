@@ -40,7 +40,7 @@ instance Set s Vertex => Graph (GraphImpl s) s where
    add α αs (GraphImpl out in_) = GraphImpl out' in'
       where
       out' = foldl (\acc α' -> D.insertWith union (unwrap α') Set.empty acc)
-         (D.insertWith union (unwrap α) αs out) 
+         (D.insertWith union (unwrap α) αs out)
          αs
       in' = foldl (\acc α' -> D.insertWith union (unwrap α') (singleton α) acc)
          (D.insertWith union (unwrap α) Set.empty in_)
