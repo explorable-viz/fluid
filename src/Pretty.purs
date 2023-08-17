@@ -411,11 +411,11 @@ instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty
 
 instance Pretty (GraphImpl S.Set) where
-   pretty (GraphImpl out in_) =
+   pretty (GraphImpl g) =
       text "GraphImpl \n  " .<>.
          atop
             ( text "{\n" .<>.
-                 atop (text "OUT: " .<>. pretty out) (text "IN: " .<>. pretty in_)
+                 atop (text "OUT: " .<>. pretty g.out) (text "IN: " .<>. pretty g.in)
             )
             (text "}")
 
