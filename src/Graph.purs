@@ -24,8 +24,6 @@ class Set s Vertex <= Graph g s | g -> s where
    -- | Number of vertices in g.
    size :: g -> Int
 
-   -- | Set of all vertices in g
-   vertices :: g -> s Vertex
    sources :: g -> s Vertex
    sinks :: g -> s Vertex
    -- |   op (op g) = g

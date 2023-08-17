@@ -27,6 +27,25 @@ import Util (type (×), (×), definitely)
 type AdjMap s = Dict (s Vertex)
 data GraphImpl s = GraphImpl (AdjMap s) (AdjMap s)
 
+data GraphImpl2 s = GraphImpl2 {
+   out :: AdjMap s,
+   in :: AdjMap s,
+   sources :: s Vertex,
+   sinks :: s Vertex
+}
+
+instance Set s Vertex => Graph (GraphImpl2 s) s where
+   outN (GraphImpl2 g) α = D.lookup (unwrap α) g.out # definitely "in graph"
+   inN g = outN (op g)
+   elem α (GraphImpl2 g) = isJust (D.lookup (unwrap α) g.out)
+   size (GraphImpl2 g) = D.size g.out
+   sinks (GraphImpl2 g) = g.sinks
+   sources (GraphImpl2 g) = g.sources
+   op (GraphImpl2 g) = GraphImpl2 { out: g.in, in: g.out, sources: g.sinks, sinks: g.sources }
+   empty = GraphImpl2 { out: D.empty, in: D.empty, sources: Set.empty, sinks: Set.empty }
+
+   fromFoldable α_αs = ?_
+
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Set s Vertex => Graph (GraphImpl s) s where
    outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
@@ -35,7 +54,6 @@ instance Set s Vertex => Graph (GraphImpl s) s where
    elem α (GraphImpl out _) = isJust (D.lookup (unwrap α) out)
    size (GraphImpl out _) = D.size out
 
-   vertices (GraphImpl out _) = Set.fromFoldable $ S.map Vertex $ D.keys out
    sinks (GraphImpl out _) = Set.fromFoldable $ S.map Vertex $ D.keys (filter Set.isEmpty out)
    sources (GraphImpl _ in_) = Set.fromFoldable $ S.map Vertex $ D.keys (filter Set.isEmpty in_)
 
