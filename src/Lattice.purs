@@ -75,10 +75,10 @@ class TopOf t u | t -> u where
 
 instance (Functor t, BoundedJoinSemilattice a) => BotOf (Unit × Raw t) (a × t a) where
    botOf = const bot *** botOf
-else instance (Functor t, BoundedJoinSemilattice a, BoundedJoinSemilattice a') => BotOf (t a) (t a') where
+else instance (Functor t, BoundedJoinSemilattice a') => BotOf (t a) (t a') where
    botOf = (<$>) (const bot)
 
-instance (Functor t, BoundedJoinSemilattice a, BoundedJoinSemilattice a') => TopOf (t a) (t a') where
+instance (Functor t, BoundedJoinSemilattice a') => TopOf (t a) (t a') where
    topOf = (<$>) (const bot >>> neg)
 
 -- Specialises botOf and topOf but omits the lattice constraint.

@@ -13,7 +13,7 @@ import Util (Endo, (×), type (×))
 type Edge = Vertex × Vertex
 
 -- | "Static" graphs, optimised for lookup and building from (key, value) pairs.
-class Set s Vertex <= Graph g s | g -> s where
+class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
    -- | outN and iN satisfy

@@ -22,14 +22,22 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
-import EvalGraph (evalGraph)
+import EvalGraph (GraphConfig, evalWithConfig)
 import Expr (Expr) as E
 import Graph (Vertex, sinks, sources)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (selectVertices, select𝔹s, select𝔹s')
+import Graph.Slice (selectVertices, select𝔹s)
 import Graph.Slice (bwdSlice, fwdSlice) as G
-import Lattice (𝔹, bot, erase)
-import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
+import Lattice (𝔹, bot, botOf, erase)
+import Module
+   ( File(..)
+   , Folder(..)
+   , loadFile
+   , open
+   , openDatasetAs
+   , openWithDefaultImports
+   , parse
+   )
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import Set (subset)
@@ -38,7 +46,7 @@ import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, type (×), (×), successful)
-import Val (Env, Val(..), (<+>))
+import Val (Val(..), (<+>))
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
@@ -57,26 +65,29 @@ checkPretty _ expect x =
       prettyP x `shouldEqual` expect
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
-testWithSetup :: File -> String -> Maybe (Selector Val × File) -> Aff (Env 𝔹 × SE.Expr 𝔹) -> Test Unit
+testWithSetup :: File -> String -> Maybe (Selector Val × File) -> Aff (GraphConfig (GraphImpl S.Set) × SE.Expr Unit) -> Test Unit
 testWithSetup (File file) fwd_expect v_expect_opt setup =
    before setup $ it file (uncurry doTest)
    where
-   doTest :: Env 𝔹 -> SE.Expr 𝔹 -> Aff Unit
-   doTest γ s =
-      runExceptT (testTrace γ s >>= testGraph) >>=
+   doTest :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> Aff Unit
+   doTest gconf s =
+      runExceptT (testTrace gconf s >>= testGraph gconf) >>=
          case _ of
             Left msg -> fail msg
             Right unit -> pure unit
 
-   testTrace :: Env 𝔹 -> SE.Expr 𝔹 -> MayFailT Aff (Val 𝔹 × Env 𝔹 × E.Expr 𝔹)
-   testTrace γ s = do
-      e <- except $ desug s
-      t × v <- except $ eval γ e bot
+   testTrace :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> MayFailT Aff (Val 𝔹 × E.Expr 𝔹)
+   testTrace { γ } s = do
       let
-         v' = fromMaybe identity (fst <$> v_expect_opt) v
-         { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-         (s' :: SE.Expr 𝔹) = desugBwd e' (erase s)
-      _ × v'' <- except $ desug s' >>= flip (eval γ') top
+         γ𝔹 = botOf <$> γ
+         s𝔹 = botOf s
+      e𝔹 <- except $ desug s𝔹
+      t × v𝔹 <- except $ eval γ𝔹 e𝔹 bot
+      let
+         v𝔹' = fromMaybe identity (fst <$> v_expect_opt) v𝔹
+         { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
+         s𝔹' = desugBwd e𝔹' (erase s𝔹)
+      _ × v𝔹'' <- except $ desug s𝔹' >>= flip (eval γ𝔹') top
       let src = prettyP s
       s'' <- except $ parse src program
       trace ("Non-Annotated:\n" <> src) \_ -> lift $ do
@@ -86,19 +97,19 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
                log ("NEW\n" <> show s'')
             fail "not equal"
          else do
-            unless (isGraphical v'')
-               (checkPretty "Value" fwd_expect v'')
-            trace ("Annotated\n" <> prettyP s') \_ -> do
+            unless (isGraphical v𝔹'')
+               (checkPretty "Value" fwd_expect v𝔹'')
+            trace ("Annotated\n" <> prettyP s𝔹') \_ -> do
                case snd <$> v_expect_opt of
                   Nothing -> pure unit
                   Just file_expect -> do
                      expect <- loadFile (Folder "fluid/example") file_expect
-                     checkPretty "Source selection" expect s'
-         pure (v' × γ' × e') -- output slice and corresponding input slice
+                     checkPretty "Source selection" expect s𝔹'
+         pure (v𝔹' × e𝔹') -- output slice and corresponding input slice
 
-   testGraph :: Val 𝔹 × Env 𝔹 × E.Expr 𝔹 -> MayFailT Aff Unit
-   testGraph (v𝔹 × γ𝔹 × e𝔹) = do
-      g × (γα × eα × vα) <- except $ evalGraph γ𝔹 e𝔹 :: MayFailT _ (GraphImpl S.Set × _)
+   testGraph :: GraphConfig (GraphImpl S.Set) -> Val 𝔹 × E.Expr 𝔹 -> MayFailT Aff Unit
+   testGraph gconf (v𝔹 × e𝔹) = do
+      (g × _) × (eα × vα) <- evalWithConfig gconf (erase e𝔹) >>= except
       lift $ do
          unless (isGraphical v𝔹 || isJust v_expect_opt)
             (checkPretty "Value" fwd_expect (erase vα))
@@ -125,7 +136,7 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
 
          unless (isNothing v_expect_opt) $ do
             -- | Check graph/trace-based slicing procedures agree on expression
-            let _ × e𝔹' = select𝔹s' (γα × eα) αs_in
+            let e𝔹' = select𝔹s eα αs_in
             unless (eq e𝔹 e𝔹') do
                log ("Expr 𝔹 expect: \n" <> prettyP e𝔹)
                log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
@@ -161,8 +172,9 @@ testLink spec@{ x } δv1 v2_expect =
 testWithDataset :: File -> File -> Test Unit
 testWithDataset dataset file = do
    testWithSetup file "" Nothing $ do
-      γ0 × γ <- openDatasetAs dataset "data"
-      ((γ0 <+> γ) × _) <$> open file
+      s <- open file
+      { g, n, γ } × xv <- openDatasetAs dataset "data"
+      pure ({ g, n, γ: γ <+> xv } × s)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit

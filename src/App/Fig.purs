@@ -2,19 +2,6 @@ module App.Fig where
 
 import Prelude hiding (absurd)
 
-import Data.Array (range, zip)
-import Data.Either (Either(..))
-import Data.Foldable (length)
-import Data.List (List(..), (:), singleton)
-import Data.Set (singleton) as S
-import Data.Traversable (sequence, sequence_)
-import Data.Tuple (fst, uncurry)
-import Effect (Effect)
-import Effect.Aff (Aff)
-import Effect.Console (log)
-import Partial.Unsafe (unsafePartial)
-import Foreign.Object (lookup)
-import Web.Event.EventTarget (eventListener)
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
 import App.CodeMirror (EditorView, dispatch, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
@@ -22,13 +9,27 @@ import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
 import App.Util (HTMLId, OnSel, Selector, doNothing, from, record)
 import Bindings (Var)
+import Data.Array (range, zip)
+import Data.Either (Either(..))
+import Data.Foldable (length)
+import Data.List (List(..), (:), singleton)
+import Data.Set (Set, singleton) as S
+import Data.Traversable (sequence, sequence_)
+import Data.Tuple (fst, uncurry)
 import DataType (cBarChart, cCons, cLineChart, cNil)
 import Desugarable (desug)
+import Effect (Effect)
+import Effect.Aff (Aff)
+import Effect.Console (log)
 import Eval (eval, eval_module)
+import EvalGraph (GraphConfig)
 import EvalBwd (evalBwd)
 import Expr (Expr)
+import Graph.GraphImpl (GraphImpl)
+import Foreign.Object (lookup)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
 import Module (File(..), open, openDatasetAs)
+import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
@@ -36,6 +37,7 @@ import SExpr (desugarModuleFwd)
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
 import Val (Env, Val(..), (<+>), append_inv)
+import Web.Event.EventTarget (eventListener)
 
 data View
    = MatrixFig MatrixView
@@ -183,13 +185,16 @@ linkResult x γ0 γ e1 e2 t1 _ v1 = do
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
-   γ0 × γ <- openDatasetAs (File "example/linking/renewables") "data"
-   open file <#> \s' -> successful do
-      { γ: γ1, s } <- splitDefs (γ0 <+> γ) s'
+   { γ } × xv :: (GraphConfig (GraphImpl S.Set) × Env _) <- openDatasetAs (File "example/linking/renewables") "data"
+   let
+      γ0 = botOf <$> γ
+      xv0 = botOf <$> xv
+   open file <#> \s' -> successful $ do
+      { γ: γ1, s } <- splitDefs (γ0 <+> xv0) (botOf s')
       e <- desug s
-      let γ0γ = γ0 <+> γ <+> γ1
+      let γ0γ = γ0 <+> xv0 <+> γ1
       t × v <- eval γ0γ e bot
-      pure { spec, γ0, γ: γ <+> γ1, s, e, t, v }
+      pure { spec, γ0, γ: γ0 <+> γ1, s, e, t, v }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
 loadLinkFig spec@{ file1, file2, dataFile, x } = do
@@ -197,11 +202,16 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       dir = File "linking/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment γ0 as well as dataset
-   γ0 × γ <- openDatasetAs (File "example/" <> dir <> dataFile) x
-   s1 × s2 <- (×) <$> open name1 <*> open name2
+   { γ } × xv :: (GraphConfig (GraphImpl S.Set) × Env _) <- openDatasetAs (File "example/" <> dir <> dataFile) x
+   s1' × s2' <- (×) <$> open name1 <*> open name2
+   let
+      γ0 = botOf <$> γ
+      xv0 = botOf <$> xv
+      s1 = botOf s1'
+      s2 = botOf s2'
    pure $ successful do
       e1 × e2 <- (×) <$> desug s1 <*> desug s2
-      t1 × v1 <- eval (γ0 <+> γ) e1 bot
-      t2 × v2 <- eval (γ0 <+> γ) e2 bot
-      v0 <- lookup x γ # orElse absurd
-      pure { spec, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, v0 }
+      t1 × v1 <- eval (γ0 <+> xv0) e1 bot
+      t2 × v2 <- eval (γ0 <+> xv0) e2 bot
+      v0 <- lookup x xv0 # orElse absurd
+      pure { spec, γ0, γ: xv0, s1, s2, e1, e2, t1, t2, v1, v2, v0 }
