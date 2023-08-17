@@ -19,7 +19,7 @@ import Foreign.Object (runST, filter)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, Vertex(..), op, outN)
-import Set (class Set, delete, insert, singleton, union)
+import Set (class Set, insert, singleton, union)
 import Set as Set
 import Util (type (×), (×), definitely)
 
@@ -37,11 +37,6 @@ instance Set s Vertex => Monoid (GraphImpl s) where
 
 -- Dict-based implementation with inefficient (linear) add and remove.
 instance Set s Vertex => Graph (GraphImpl s) s where
-   remove α (GraphImpl out in_) = GraphImpl out' in'
-      where
-      out' = delete α <$> D.delete (unwrap α) out
-      in' = delete α <$> D.delete (unwrap α) in_
-
    add α αs (GraphImpl out in_) = GraphImpl out' in'
       where
       out' = D.insert (unwrap α) αs out

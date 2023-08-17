@@ -20,9 +20,6 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
    -- |    add α (outN α g) (remove α g) = g
    add :: Vertex -> s Vertex -> Endo g
 
-   -- remove a vertex from g.
-   remove :: Vertex -> Endo g
-
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
    -- | outN and iN satisfy
