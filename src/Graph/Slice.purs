@@ -12,7 +12,6 @@ import Data.Tuple (fst)
 import Expr (Expr)
 import Graph (class Graph, Edge, Vertex, add, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN)
 import Set (class Set, singleton, empty, unions, member, union)
-import Set (map) as Set
 import Util (type (×), (×))
 import Val (Env)
 
@@ -25,13 +24,10 @@ bwdEdges :: forall g s. Graph g s => g -> g -> List Edge -> g
 bwdEdges _ g Nil = g
 bwdEdges g' g ((α × β) : es) =
    bwdEdges g' (addOut α β g) $
-      es <> if elem β g then Nil else L.fromFoldable (outEdges' g' β)
+      es <> if β `elem` g then Nil else L.fromFoldable (outEdges' g' β)
 
 bwdSlice' :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
-bwdSlice' αs g' =
-   bwdVertices g' (discreteG αs) (L.fromFoldable βs)
-   where
-   βs = unions (Set.map (outN g') αs)
+bwdSlice' αs g' = bwdVertices g' mempty (L.fromFoldable αs)
 
 bwdVertices :: forall g s. Graph g s => g -> g -> List Vertex -> g
 bwdVertices _ g Nil = g

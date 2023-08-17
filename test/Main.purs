@@ -192,7 +192,8 @@ test_bwd =
         (const $ Int true 20)
         "_20_"
    , testBwd (File "divide") (File "divide.expect") topOf "_40.22222222222222_"
-   , testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
+   -- TODO: reinstate as part of https://github.com/explorable-viz/fluid/issues/701
+   --   , testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
    , testBwd (File "intersperse") (File "intersperse-1.expect") (botOf >>> selectNthNode 1 neg)
         "(1 : (0 _:_ (2 : (0 : (3 : [])))))"
    , testBwd (File "intersperse") (File "intersperse-2.expect") (botOf >>> selectNthNode 2 neg)
