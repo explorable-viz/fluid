@@ -35,7 +35,7 @@ import Module
    , loadFile
    , open
    , openDatasetAs
-   , openWithDefaultImports
+   , openDefaultImports
    , parse
    )
 import Parse (program)
@@ -150,11 +150,11 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
 
 test :: File -> String -> Test Unit
 test file fwd_expect =
-   testWithSetup file fwd_expect Nothing (openWithDefaultImports file)
+   testWithSetup file fwd_expect Nothing (((×) <$> openDefaultImports) <*> open file)
 
 testBwd :: File -> File -> Selector Val -> String -> Test Unit
 testBwd file file_expect δv fwd_expect =
-   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) (openWithDefaultImports file')
+   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) (((×) <$> openDefaultImports) <*> open file')
    where
    folder = File "slicing/"
    file' = folder <> file
@@ -172,8 +172,8 @@ testLink spec@{ x } δv1 v2_expect =
 testWithDataset :: File -> File -> Test Unit
 testWithDataset dataset file = do
    testWithSetup file "" Nothing $ do
-      s <- open file
       { g, n, γ } × xv <- openDatasetAs dataset "data"
+      s <- open file
       pure ({ g, n, γ: γ <+> xv } × s)
 
 -- Like version in Test.Spec.Assertions but with error message.
