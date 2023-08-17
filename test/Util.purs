@@ -27,7 +27,7 @@ import Expr (Expr) as E
 import Graph (Vertex, sinks, sources)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (selectVertices, select𝔹s, select𝔹s')
-import Graph.Slice (bwdSlice, fwdSlice) as G
+import Graph.Slice (bwdSlice, bwdSlice', fwdSlice) as G
 import Lattice (𝔹, bot, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openWithDefaultImports, parse)
 import Parse (program)
@@ -113,7 +113,10 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
          let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
          log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
          let gbwd = G.bwdSlice αs_out g
-         log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
+             gbwd' = G.bwdSlice' αs_out g
+         log ("Backward-sliced graph 1: \n" <> prettyP gbwd <> "\n")
+         log ("Backward-sliced graph 2: \n" <> prettyP gbwd' <> "\n")
+         sources gbwd' `shouldEqual` sources gbwd
 
          -- | Test forward slicing (via round-tripping)
          let (αs_in :: S.Set Vertex) = sinks gbwd
