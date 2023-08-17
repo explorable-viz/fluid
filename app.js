@@ -20000,7 +20000,7 @@
     const bind = dictMonad.Bind1().bind;
     const pure2 = dictMonad.Applicative0().pure;
     return (dictGraph) => {
-      const append = dictGraph.Monoid0().Semigroup0().append;
+      const append = dictGraph.Semigroup0().append;
       const fromFoldable11 = dictGraph.fromFoldable(functorList)(foldableList);
       return (v) => (e) => bind(e($Tuple(v._2, Nil)))((v1) => pure2((() => {
         const $9 = Tuple($Tuple(append(v._1)(fromFoldable11(v1._2._2)), v1._2._1));
@@ -33318,7 +33318,7 @@
           return $GraphImpl(runST(outMap1(\u03B1_\u03B1s$p)), runST(inMap1(\u03B1_\u03B1s$p)));
         };
       },
-      Monoid0: () => ({ mempty: $GraphImpl(empty2, empty2), Semigroup0: () => semigroupGraphImpl1 }),
+      Semigroup0: () => semigroupGraphImpl1,
       Set1: () => dictSet
     };
   };
