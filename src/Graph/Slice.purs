@@ -27,7 +27,7 @@ bwdVertices g' αs' g (α : αs) =
    then bwdVertices g' αs' g αs
    else 
       let βs = outN g' α in 
-      bwdVertices g' (αs' # insert α # union βs) (add α βs g) (L.fromFoldable βs <> αs)
+      bwdVertices g' (αs' union βs) (add α βs g) (L.fromFoldable βs <> αs)
 
 fwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
 fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) M.empty (inEdges g' αs)
