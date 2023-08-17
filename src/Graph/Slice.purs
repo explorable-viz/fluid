@@ -11,20 +11,23 @@ import Data.Maybe (Maybe(..))
 import Data.Tuple (fst)
 import Expr (Expr)
 import Graph (class Graph, Edge, Vertex, add, discreteG, elem, inEdges, inEdges', outN)
-import Set (class Set, singleton, empty, unions, member, union)
+import Set (class Set, empty, insert, member, singleton, union, unions)
 import Util (type (×), (×))
 import Val (Env)
 
 type PendingSlice s = Map Vertex (s Vertex)
 
 bwdSlice :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
-bwdSlice αs g' = bwdVertices g' mempty (L.fromFoldable αs)
+bwdSlice αs g' = bwdVertices g' empty mempty (L.fromFoldable αs)
 
-bwdVertices :: forall g s. Graph g s => g -> g -> List Vertex -> g
-bwdVertices _ g Nil = g
-bwdVertices g' g (α : αs) =
-   if α `elem` g then bwdVertices g' g αs
-   else let βs = outN g' α in bwdVertices g' (add α βs g) (L.fromFoldable βs <> αs)
+bwdVertices :: forall g s. Graph g s => g -> s Vertex -> g -> List Vertex -> g
+bwdVertices _ _ g Nil = g
+bwdVertices g' αs' g (α : αs) =
+   if α `elem` g 
+   then bwdVertices g' αs' g αs
+   else 
+      let βs = outN g' α in 
+      bwdVertices g' (αs' # insert α # union βs) (add α βs g) (L.fromFoldable βs <> αs)
 
 fwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
 fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) M.empty (inEdges g' αs)

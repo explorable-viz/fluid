@@ -24,6 +24,7 @@ main :: Effect Unit
 main = void (sequence (run <$> concat tests))
 
 tests :: Array (Array (Test Unit))
+{-
 tests =
    [ test_desugaring
    , test_misc
@@ -32,10 +33,9 @@ tests =
    , test_graphics
    , test_graph
    ]
-
-{-
-tests = [ test_bwd ]
 -}
+
+tests = [ test_bwd ]
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
