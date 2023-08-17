@@ -19,37 +19,28 @@ import Val (Env)
 type PendingSlice s = Map Vertex (s Vertex)
 
 bwdSlice :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
-bwdSlice αs g' = bwdVertices g' empty mempty (L.fromFoldable αs)
+bwdSlice αs g' =
+   fst $ runWithGraph2 $ bwdVertices g' empty (L.fromFoldable αs)
 
-bwdVertices :: forall g s. Graph g s => g -> s Vertex -> g -> List Vertex -> g
-bwdVertices _ _ g Nil = g
-bwdVertices g' visited g (α : αs) =
-   if α `member` visited then bwdVertices g' visited g αs
-   else let βs = outN g' α in bwdVertices g' (visited # insert α) (add α βs g) (L.fromFoldable βs <> αs)
-
-bwdSlice' :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
-bwdSlice' αs g' =
-   fst $ runWithGraph2 $ bwdVertices' g' empty (L.fromFoldable αs)
-
-bwdVertices' :: forall g s. Graph g s => g -> s Vertex -> List Vertex -> WithGraph2 s Unit
-bwdVertices' _ _ Nil = pure unit
-bwdVertices' g' visited (α : αs) =
-   if α `member` visited then bwdVertices' g' visited αs
+bwdVertices :: forall g s. Graph g s => g -> s Vertex -> List Vertex -> WithGraph2 s Unit
+bwdVertices _ _ Nil = pure unit
+bwdVertices g' visited (α : αs) =
+   if α `member` visited then bwdVertices g' visited αs
    else do
       let βs = outN g' α
       extend α βs
-      bwdVertices' g' (visited # insert α) (L.fromFoldable βs <> αs)
+      bwdVertices g' (visited # insert α) (L.fromFoldable βs <> αs)
 
 fwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
 fwdSlice αs g' = fst $ fwdEdges g' (discreteG αs) M.empty (inEdges g' αs)
 
-fwdEdges :: forall g s. Graph g s => g -> g -> PendingSlice s -> List Edge -> g × (PendingSlice s)
+fwdEdges :: forall g s. Graph g s => g -> g -> PendingSlice s -> List Edge -> g × PendingSlice s
 fwdEdges g' g h ((α × β) : es) = fwdEdges g' g'' h' es
    where
    g'' × h' = fwdVertex g' g (insertWith union α (singleton β) h) α
 fwdEdges _ currSlice pending Nil = currSlice × pending
 
-fwdVertex :: forall g s. Set s Vertex => Graph g s => g -> g -> PendingSlice s -> Vertex -> g × (PendingSlice s)
+fwdVertex :: forall g s. Set s Vertex => Graph g s => g -> g -> PendingSlice s -> Vertex -> g × PendingSlice s
 fwdVertex g' g h α =
    if αs == outN g' α then
       fwdEdges g' (add α αs g) (delete α h) (inEdges' g' α)
