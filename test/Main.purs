@@ -33,9 +33,7 @@ tests =
    , test_graph
    ]
 
-{-
-tests = [ test_bwd ]
--}
+--tests = [ test_bwd ]
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
