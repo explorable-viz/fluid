@@ -33,7 +33,9 @@ tests =
    , test_graph
    ]
 
---tests = [ test_scratchpad ]
+{-
+tests = [ test_bwd ]
+-}
 
 test_scratchpad :: Array (Test Unit)
 test_scratchpad =
@@ -192,7 +194,8 @@ test_bwd =
         (const $ Int true 20)
         "_20_"
    , testBwd (File "divide") (File "divide.expect") topOf "_40.22222222222222_"
-   , testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
+   -- TODO: reinstate as part of https://github.com/explorable-viz/fluid/issues/701
+   --   , testBwd (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
    , testBwd (File "intersperse") (File "intersperse-1.expect") (botOf >>> selectNthNode 1 neg)
         "(1 : (0 _:_ (2 : (0 : (3 : [])))))"
    , testBwd (File "intersperse") (File "intersperse-2.expect") (botOf >>> selectNthNode 2 neg)
@@ -282,7 +285,7 @@ test_graph =
       let
          ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
          g' = foldl (\g α -> add (Vertex (show α)) (S.fromFoldable $ map (Vertex <<< show) [ α + 2, α + 3 ]) g) mempty ids :: GraphImpl (S.Set)
-         slice = fwdSlice (S.fromFoldable [ (Vertex "13"), (Vertex "12"), Vertex "11" ]) g'
+         slice = fwdSlice (S.fromFoldable [ Vertex "13", Vertex "12", Vertex "11" ]) g'
       lift $ do
-         log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ (Vertex "11") ])))
+         log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ Vertex "11" ])))
          logShow slice

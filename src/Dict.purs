@@ -1,4 +1,6 @@
 -- Better name and more consistent interface to Foreign.Object, plus some additional functions.
+-- Maybe upgrade Dict into a full replacement of Foreign.Object; in particular Ord instance
+-- seems broken (rather than isSubmap, compares on toAscArray).
 module Dict
    ( module Foreign.Object
    , Dict

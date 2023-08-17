@@ -6,6 +6,8 @@ import Data.Foldable (class Foldable, foldl)
 import Data.Set as S
 import Data.Unfoldable (class Unfoldable)
 
+-- Potential problem here: Ord instance of Dict (via Foreign.Object) seems to be broken,
+-- which may cause problems for a Dict Unit implementation of Set.
 class (Ord a, Ord (s a), Foldable s) <= Set s a where
    delete :: a -> s a -> s a
    difference :: s a -> s a -> s a

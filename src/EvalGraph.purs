@@ -117,7 +117,9 @@ eval γ (Dictionary α ees) αs = do
 eval γ (Constr α c es) αs = do
    except $ checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   V.Constr <$> new (insert α αs) <@> c <@> vs
+   α' <- new (insert α αs)
+   --trace ("Constructing " <> c <> "@" <> show α' <> "; adding dependency to " <> show α) \_ -> do
+   pure $ V.Constr α' c vs
 eval γ (Matrix α e (x × y) e') αs = do
    v <- eval γ e' αs
    let (i' × β) × (j' × β') = fst (intPair.match v)
@@ -144,7 +146,7 @@ eval γ (App e e') αs = do
    apply v v'
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
-   γ' × _ × (αs' :: s Vertex) <- except $ match v σ -- terminal meta-type of eliminator is meta-unit
+   γ' × _ × αs' <- except $ match v σ -- terminal meta-type of eliminator is meta-unit
    eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
 eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs

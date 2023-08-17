@@ -1,15 +1,4 @@
-module Test.Util
-   ( Test
-   , Test'
-   , checkPretty
-   , isGraphical
-   , run
-   , test
-   , testBwd
-   , testLink
-   , testWithDataset
-   , testWithSetup
-   ) where
+module Test.Util where
 
 import Prelude hiding (absurd)
 
@@ -21,8 +10,8 @@ import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
-import Data.Tuple (fst, snd)
 import Data.Set (Set) as S
+import Data.Tuple (fst, snd)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -36,9 +25,9 @@ import EvalBwd (evalBwd)
 import EvalGraph (evalGraph)
 import Expr (Expr) as E
 import Graph (Vertex, sinks, sources)
+import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (selectVertices, select𝔹s, select𝔹s')
 import Graph.Slice (bwdSlice, fwdSlice) as G
-import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, botOf, erase)
 import Module
    ( File(..)
@@ -52,7 +41,7 @@ import Module
    )
 import Parse (program)
 import Pretty (class Pretty, prettyP)
-import Set (subset) as Set
+import Set (subset)
 import SExpr (Expr) as SE
 import Test.Spec (SpecT, before, it)
 import Test.Spec.Assertions (fail, shouldEqual)
@@ -131,7 +120,8 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
             log ("Val 𝔹:\n" <> prettyP v𝔹)
             log ("Expr Vertex:\n" <> prettyP eα)
             log ("Val Vertex:\n" <> prettyP vα)
-         --   log ("Graph:\n" <> prettyP g)
+         -- log ("Graph:\n" <> prettyP g)
+
          -- | Test backward slicing
          let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
          log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
@@ -143,19 +133,19 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
          log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
          let gfwd = G.fwdSlice αs_in g
          log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
+         sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
+            (flip subset (sources gfwd))
 
          unless (isNothing v_expect_opt) $ do
-            -- | Check addresses on bwd graph-sliced expression match the booleans on bwd trace-sliced expression
+            -- | Check graph/trace-based slicing procedures agree on expression
             let _ × e𝔹' = select𝔹s' (γα × eα) αs_in
-            -- TODO@ reenable these two checks once slicing/filter fixed
-            unless (true || eq e𝔹 e𝔹') do
+            unless (eq e𝔹 e𝔹') do
                log ("Expr 𝔹 expect: \n" <> prettyP e𝔹)
                log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
                fail "not equal"
-
-            -- | Check (1) addresses on round-tripped graph-sliced value matches the booleans on round-tripped trace-sliced value + (2) sources of bwd graph are a subset of the sources of round-tripped graph
+            -- | Check graph/trace-based slicing procedures agree on round-tripped value.
             let v𝔹' = select𝔹s vα (sources gfwd)
-            unless (true || (eq fwd_expect (prettyP v𝔹') && sources gbwd `Set.subset` sources gfwd)) do
+            unless (eq fwd_expect (prettyP v𝔹')) do
                log ("Val 𝔹 expect: \n" <> fwd_expect)
                log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
                fail "not equal"
@@ -187,3 +177,10 @@ testWithDataset dataset file = do
       s <- open file
       { g, n, γα } × γ <- openDatasetAs dataset "data"
       pure { g, n, γα: γα <+> γ, s }
+
+-- Like version in Test.Spec.Assertions but with error message.
+shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
+shouldSatisfy msg v pred =
+   unless (pred v)
+      $ fail
+      $ show v <> " doesn't satisfy predicate: " <> msg

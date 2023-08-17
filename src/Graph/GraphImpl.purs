@@ -18,8 +18,8 @@ import Dict as D
 import Foreign.Object (runST, filter)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, Vertex(..), addOut, op, outN)
-import Set (class Set, delete, insert, singleton, union)
+import Graph (class Graph, Vertex(..), op, outN)
+import Set (class Set, insert, singleton, union)
 import Set as Set
 import Util (type (×), (×), definitely)
 
@@ -37,30 +37,17 @@ instance Set s Vertex => Monoid (GraphImpl s) where
 
 -- Dict-based implementation with inefficient (linear) add and remove.
 instance Set s Vertex => Graph (GraphImpl s) s where
-   remove α (GraphImpl out in_) = GraphImpl out' in'
-      where
-      out' = delete α <$> D.delete (unwrap α) out
-      in' = delete α <$> D.delete (unwrap α) in_
-
    add α αs (GraphImpl out in_) = GraphImpl out' in'
       where
       out' = D.insert (unwrap α) αs out
-      in' = foldl (\d α' -> D.insertWith union (unwrap α') (singleton α) d)
-         (D.insert (unwrap α) Set.empty in_)
+      in' = foldl (\acc α' -> D.insertWith union (unwrap α') (singleton α) acc)
+         (D.insertWith union (unwrap α) Set.empty in_)
          αs
-
-   addOut α β (GraphImpl out in_) = GraphImpl out' in'
-      where
-      out' = D.update (insert β >>> Just) (unwrap α)
-         (D.insertWith union (unwrap β) Set.empty out)
-      in' = D.insertWith union (unwrap β) (singleton α) in_
-
-   addIn α β g = op (addOut β α (op g))
 
    outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
    inN g = outN (op g)
 
-   elem (GraphImpl out _) α = isJust (D.lookup (unwrap α) out)
+   elem α (GraphImpl out _) = isJust (D.lookup (unwrap α) out)
    size (GraphImpl out _) = D.size out
 
    vertices (GraphImpl out _) = Set.fromFoldable $ S.map Vertex $ D.keys out
