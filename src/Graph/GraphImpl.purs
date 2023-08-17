@@ -31,9 +31,6 @@ instance Set s Vertex => Semigroup (GraphImpl s) where
    append (GraphImpl out1 in1) (GraphImpl out2 in2) =
       GraphImpl (D.unionWith Set.union out1 out2) (D.unionWith Set.union in1 in2)
 
-instance Set s Vertex => Monoid (GraphImpl s) where
-   mempty = GraphImpl D.empty D.empty
-
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Set s Vertex => Graph (GraphImpl s) s where
    outN (GraphImpl out _) α = D.lookup (unwrap α) out # definitely "in graph"
