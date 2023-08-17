@@ -21,7 +21,7 @@ import Foreign.Object.ST as OST
 import Graph (class Graph, Vertex(..), op, outN)
 import Set (class Set, insert, singleton)
 import Set as Set
-import Util (type (×), (×), definitely)
+import Util (type (×), (×), definitely, error, unimplemented)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
 type AdjMap s = Dict (s Vertex)
@@ -44,7 +44,7 @@ instance Set s Vertex => Graph (GraphImpl2 s) s where
    op (GraphImpl2 g) = GraphImpl2 { out: g.in, in: g.out, sources: g.sinks, sinks: g.sources }
    empty = GraphImpl2 { out: D.empty, in: D.empty, sources: Set.empty, sinks: Set.empty }
 
-   fromFoldable α_αs = ?_
+   fromFoldable _ = error unimplemented
 
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
 instance Set s Vertex => Graph (GraphImpl s) s where
@@ -69,8 +69,8 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 -- In-place update of mutable object to calculate opposite adjacency map.
 type MutableAdjMap s r = STObject r (s Vertex)
 
-addMissing :: forall s r. Set s Vertex => STObject r (s Vertex) -> Vertex -> ST r (STObject r (s Vertex))
-addMissing acc (Vertex β) = do
+addIfMissing :: forall s r. Set s Vertex => STObject r (s Vertex) -> Vertex -> ST r (STObject r (s Vertex))
+addIfMissing acc (Vertex β) = do
    OST.peek β acc >>= case _ of
       Nothing -> OST.poke β Set.empty acc
       Just _ -> pure acc
@@ -82,7 +82,7 @@ outMap α_αs = do
    where
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : rest) × acc) = do
-      acc' <- OST.poke (unwrap α) βs acc >>= flip (foldM addMissing) βs
+      acc' <- OST.poke (unwrap α) βs acc >>= flip (foldM addIfMissing) βs
       pure $ Loop (rest × acc')
 
 inMap :: forall s. Set s Vertex => List (Vertex × s Vertex) -> forall r. ST r (MutableAdjMap s r)
@@ -92,7 +92,7 @@ inMap α_αs = do
    where
    addEdges (Nil × acc) = pure $ Done acc
    addEdges (((α × βs) : rest) × acc) = do
-      acc' <- foldM (addEdge α) acc βs >>= flip addMissing α
+      acc' <- foldM (addEdge α) acc βs >>= flip addIfMissing α
       pure $ Loop (rest × acc')
 
    addEdge α acc (Vertex β) = do
