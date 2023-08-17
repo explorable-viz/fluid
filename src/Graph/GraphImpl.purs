@@ -48,7 +48,7 @@ instance Set s Vertex => Graph (GraphImpl s) s where
       α_αs' = L.fromFoldable α_αs
 
 -- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
--- This works but is still slow if the sink sets contain thousands of vertices.
+-- This works but building the set is still slow if there are thousands of sinks.
 sinks' :: forall s. Set s Vertex => AdjMap s -> s Vertex
 sinks' m = D.toArrayWithKey (×) m
    # A.filter (snd >>> Set.isEmpty)
