@@ -32,6 +32,7 @@ tests =
    , test_graphics
    , test_graph
    ]
+
 {-
 tests = [ test_bwd ]
 -}

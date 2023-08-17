@@ -10,7 +10,7 @@ import Data.Map (empty) as M
 import Data.Maybe (Maybe(..))
 import Data.Tuple (fst)
 import Expr (Expr)
-import Graph (class Graph, Edge, Vertex, add, addOut, discreteG, elem, inEdges, inEdges', outEdges, outEdges', outN)
+import Graph (class Graph, Edge, Vertex, add, discreteG, elem, inEdges, inEdges', outN)
 import Set (class Set, singleton, empty, unions, member, union)
 import Util (type (×), (×))
 import Val (Env)
@@ -18,16 +18,7 @@ import Val (Env)
 type PendingSlice s = Map Vertex (s Vertex)
 
 bwdSlice :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
-bwdSlice αs g' = bwdEdges g' (discreteG αs) (outEdges g' αs)
-
-bwdEdges :: forall g s. Graph g s => g -> g -> List Edge -> g
-bwdEdges _ g Nil = g
-bwdEdges g' g ((α × β) : es) =
-   bwdEdges g' (addOut α β g) $
-      es <> if β `elem` g then Nil else L.fromFoldable (outEdges' g' β)
-
-bwdSlice' :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
-bwdSlice' αs g' = bwdVertices g' mempty (L.fromFoldable αs)
+bwdSlice αs g' = bwdVertices g' mempty (L.fromFoldable αs)
 
 bwdVertices :: forall g s. Graph g s => g -> g -> List Vertex -> g
 bwdVertices _ g Nil = g

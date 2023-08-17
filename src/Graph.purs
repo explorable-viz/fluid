@@ -23,13 +23,6 @@ class (Monoid g, Set s Vertex) <= Graph g s | g -> s where
    -- remove a vertex from g.
    remove :: Vertex -> Endo g
 
-   -- addOut α β adds β as new out-neighbour of existing vertex α, adding into g if necessary
-   -- | addIn and addOut satisfy
-   -- |   addIn α β G = op (addOut β α (op G)
-   addOut :: Vertex -> Vertex -> Endo g
-   -- | addIn α β adds α as new in-neighbour of existing vertex β, adding into g if necessary
-   addIn :: Vertex -> Vertex -> Endo g
-
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
    -- | outN and iN satisfy
