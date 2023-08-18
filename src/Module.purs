@@ -71,11 +71,10 @@ defaultImports = do
    γα <- traverse alloc primitives
    loadModule (File "prelude") γα >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
-openWithDefaultImports :: forall g s. Graph g s => File -> Aff (GraphConfig g × S.Expr Unit)
-openWithDefaultImports file = do
+openDefaultImports :: forall g s. Graph g s => Aff (GraphConfig g)
+openDefaultImports = do
    (g × n) × γ <- successful <$> (runWithGraphAllocT (G.empty × 0) $ defaultImports)
-   s <- open file
-   pure $ { g, n, γ } × s
+   pure $ { g, n, γ }
 
 -- Return ambient environment used to load dataset along with new binding.
 openDatasetAs :: forall g s. Graph g s => File -> Var -> Aff (GraphConfig g × Env Vertex)
@@ -89,3 +88,16 @@ openDatasetAs file x = do
            pure (γα × D.singleton x vα)
       )
    pure ({ g, n, γ } × xv)
+
+{-
+openDatasetAs' :: forall g s. Graph g s => File -> Var -> GraphConfig g -> Aff (GraphConfig g × Env Vertex)
+openDatasetAs' file x {g, n, γ: γα} = do
+   s <- open file
+   (g' × n') × (γα' × xv) <- successful <$>
+      ( runWithGraphT (g × n) $ do
+           eα <- alloc (successful $ desug s)
+           vα <- eval γα eα empty
+           pure (γα × D.singleton x vα)
+      )
+   pure ({ g: g', n: n', γ: γα' } × xv)
+-}
