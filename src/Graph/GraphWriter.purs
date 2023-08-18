@@ -16,12 +16,12 @@ module Graph.GraphWriter
 
 import Prelude 
 import Control.Monad.Except (runExceptT)
-import Control.Monad.State.Trans (StateT, runStateT, modify, modify_)
+import Control.Monad.State.Trans (StateT, lift, modify, modify_, runStateT)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.Newtype (unwrap)
 import Data.Tuple (swap)
-import Data.Profunctor.Strong (first, second)
+import Data.Profunctor.Strong (first)
 import Data.Traversable (class Traversable, traverse)
 import Graph (Vertex(..), class Graph, fromFoldable)
 import Util (MayFailT, MayFail, type (×), (×))
@@ -41,14 +41,14 @@ type WithGraphT s m a = MayFailT (StateT Int (WithGraph2T s m)) a
 type WithGraph2T s = StateT (AdjMapEntries s)
 type WithGraph2 s = WithGraph2T s Identity
 
-instance Monad m => MonadGraphWriter s (MayFailT (StateT (Int × AdjMapEntries s) m)) where
+instance Monad m => MonadGraphWriter s (MayFailT (StateT Int (WithGraph2T s m))) where
    fresh = do
-      n × _ <- modify $ first $ (+) 1
+      n <- modify $ (+) 1
       pure (Vertex $ show n)
 
    new αs = do
       α <- fresh
-      modify_ $ second $ (:) (α × αs)
+      lift $ lift $ modify_ $ (:) (α × αs)
       pure α
 
 instance Monad m => MonadGraphWriter2 s (StateT (AdjMapEntries s) m) where

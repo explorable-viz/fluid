@@ -5,6 +5,7 @@ import Prelude
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
 import Bindings (Var)
+import Control.Monad.Except (except)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
@@ -61,8 +62,8 @@ open = parseProgram (Folder "fluid/example")
 
 loadModule :: forall s. Set s Vertex => File -> Env Vertex -> WithGraphT s Aff (Env Vertex)
 loadModule file γα = do
-   src <- lift $ lift $ loadFile (Folder "fluid/lib") file
-   modα <- traverseModule (const fresh) (successful $ parse src (module_) >>= desugarModuleFwd)
+   src <- lift $ lift $ lift $ loadFile (Folder "fluid/lib") file
+   modα <- except (parse src (module_) >>= desugarModuleFwd) >>= traverseModule (const fresh)
    eval_module γα modα empty <#> (γα <+> _)
 
 defaultImports :: forall s. Set s Vertex => WithGraphT s Aff (Env Vertex)
