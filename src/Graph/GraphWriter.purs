@@ -3,8 +3,8 @@ module Graph.GraphWriter
    , WithGraphT
    , WithGraph2
    , WithGraph2T
+   , class MonadGraphAlloc
    , class MonadGraphWriter
-   , class MonadGraphWriter2
    , alloc
    , extend
    , fresh
@@ -26,11 +26,11 @@ import Data.Traversable (class Traversable, traverse)
 import Graph (Vertex(..), class Graph, fromFoldable)
 import Util (MayFailT, MayFail, type (×), (×))
 
-class Monad m <= MonadGraphWriter2 s m | m -> s where
+class Monad m <= MonadGraphWriter s m | m -> s where
    -- Extend graph with existing vertex pointing to set of existing vertices.
    extend :: Vertex -> s Vertex -> m Unit
 
-class Monad m <= MonadGraphWriter s m | m -> s where
+class Monad m <= MonadGraphAlloc s m | m -> s where
    fresh :: m Vertex
    -- Extend with a freshly allocated vertex.
    new :: s Vertex -> m Vertex
@@ -41,7 +41,7 @@ type WithGraphT s m = MayFailT (StateT Int (WithGraph2T s m))
 type WithGraph2T s = StateT (AdjMapEntries s)
 type WithGraph2 s = WithGraph2T s Identity
 
-instance Monad m => MonadGraphWriter s (WithGraphT s m) where
+instance Monad m => MonadGraphAlloc s (WithGraphT s m) where
    fresh = do
       n <- modify $ (+) 1
       pure (Vertex $ show n)
@@ -51,7 +51,7 @@ instance Monad m => MonadGraphWriter s (WithGraphT s m) where
       lift $ lift $ modify_ $ (:) (α × αs)
       pure α
 
-instance Monad m => MonadGraphWriter2 s (WithGraph2T s m) where
+instance Monad m => MonadGraphWriter s (WithGraph2T s m) where
    extend α αs =
       void $ modify_ $ (:) (α × αs)
 
