@@ -5,6 +5,7 @@ import Prelude
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
 import Bindings (Var)
+import Control.Monad.Except (except)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
@@ -17,7 +18,7 @@ import EvalGraph (GraphConfig, eval, eval_module)
 import Expr (traverseModule)
 import Graph (class Graph, Vertex)
 import Graph (empty) as G
-import Graph.GraphWriter (WithGraphT, runWithGraphT, alloc, fresh)
+import Graph.GraphWriter (WithGraphAllocT, runWithGraphAllocT, alloc, fresh)
 import Lattice (botOf)
 import Parse (module_, program)
 import Parsing (runParser)
@@ -59,20 +60,20 @@ parseProgram folder file = do
 open :: File -> Aff (S.Expr Unit)
 open = parseProgram (Folder "fluid/example")
 
-loadModule :: forall s. Set s Vertex => File -> Env Vertex -> WithGraphT s Aff (Env Vertex)
+loadModule :: forall s. Set s Vertex => File -> Env Vertex -> WithGraphAllocT s Aff (Env Vertex)
 loadModule file γα = do
-   src <- lift $ lift $ loadFile (Folder "fluid/lib") file
-   modα <- traverseModule (const fresh) (successful $ parse src (module_) >>= desugarModuleFwd)
+   src <- lift $ lift $ lift $ loadFile (Folder "fluid/lib") file
+   modα <- except (parse src (module_) >>= desugarModuleFwd) >>= traverseModule (const fresh)
    eval_module γα modα empty <#> (γα <+> _)
 
-defaultImports :: forall s. Set s Vertex => WithGraphT s Aff (Env Vertex)
+defaultImports :: forall s. Set s Vertex => WithGraphAllocT s Aff (Env Vertex)
 defaultImports = do
    γα <- traverse alloc primitives
    loadModule (File "prelude") γα >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
 openDefaultImports :: forall g s. Graph g s => Aff (GraphConfig g)
 openDefaultImports = do
-   (g × n) × γ <- successful <$> (runWithGraphT (G.empty × 0) $ defaultImports)
+   (g × n) × γ <- successful <$> (runWithGraphAllocT (G.empty × 0) $ defaultImports)
    pure $ { g, n, γ }
 
 -- Return ambient environment used to load dataset along with new binding.
@@ -80,7 +81,7 @@ openDatasetAs :: forall g s. Graph g s => File -> Var -> Aff (GraphConfig g × E
 openDatasetAs file x = do
    s <- parseProgram (Folder "fluid") file
    (g × n) × (γ × xv) <- successful <$>
-      ( runWithGraphT (G.empty × 0) $ do
+      ( runWithGraphAllocT (G.empty × 0) $ do
            γα <- defaultImports
            eα <- alloc (successful $ desug s)
            vα <- eval γα eα empty
