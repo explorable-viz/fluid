@@ -42,10 +42,10 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import Set (subset)
 import SExpr (Expr) as SE
-import Test.Spec (SpecT, before, it)
+import Test.Spec (SpecT, before, beforeWith, beforeAll, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Mocha (runMocha)
-import Util (MayFailT, type (×), (×), successful)
+import Util (MayFailT, type (×), (×), successful, error)
 import Val (Val(..), (<+>))
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
@@ -65,17 +65,13 @@ checkPretty _ expect x =
       prettyP x `shouldEqual` expect
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
-testWithSetup :: File -> String -> Maybe (Selector Val × File) -> Aff (GraphConfig (GraphImpl S.Set)) -> Test Unit
-testWithSetup (File file) fwd_expect v_expect_opt setup =
-   before ((×) <$> setup <*> open (File file)) $ it file (uncurry doTest)
-   where
-   doTest :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> Aff Unit
-   doTest gconf s =
-      runExceptT (testTrace gconf s >>= testGraph gconf) >>=
+testWithSetup :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> String -> Maybe (Selector Val × File) -> Aff Unit
+testWithSetup gconfig s fwd_expect v_expect_opt =
+   runExceptT (testTrace gconfig s >>= testGraph gconfig) >>=
          case _ of
             Left msg -> fail msg
             Right unit -> pure unit
-
+   where
    testTrace :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> MayFailT Aff (Val 𝔹 × E.Expr 𝔹)
    testTrace { γ } s = do
       let
@@ -148,32 +144,39 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
                log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
                fail "not equal"
 
-test :: File -> String -> Test Unit
+test ∷ File → String → SpecT Aff Unit Effect Unit
 test file fwd_expect =
-   testWithSetup file fwd_expect Nothing openDefaultImports
+   beforeAll (openDefaultImports :: Aff (GraphConfig (GraphImpl S.Set))) do
+      beforeWith (\gconfig -> (×) gconfig <$>  open file) do
+         it "Opening" (\(gconfig × s) -> testWithSetup gconfig s fwd_expect Nothing )
 
-testBwd :: File -> File -> Selector Val -> String -> Test Unit
-testBwd file file_expect δv fwd_expect =
-   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) openDefaultImports
-   where
-   folder = File "slicing/"
-   file' = folder <> file
+test' ∷ File → String → SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
+test' file fwd_expect =
+      beforeWith (\gconfig -> (×) gconfig <$>  open file) do
+         it "Opening" (\(gconfig × s) -> testWithSetup gconfig s fwd_expect Nothing )
 
-testLink :: LinkFigSpec -> Selector Val -> String -> Test Unit
-testLink spec@{ x } δv1 v2_expect =
-   before (loadLinkFig spec) $
-      it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
-         \{ γ0, γ, e1, e2, t1, t2, v1 } ->
-            let
-               { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
-            in
-               checkPretty "Linked output" v2_expect v2'
+-- testBwd :: File -> File -> Selector Val -> String -> Test Unit
+-- testBwd file file_expect δv fwd_expect =
+--    testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) openDefaultImports
+--    where
+--    folder = File "slicing/"
+--    file' = folder <> file
 
-testWithDataset :: File -> File -> Test Unit
-testWithDataset dataset file =
-   testWithSetup file "" Nothing $ do
-      { g, n, γ } × xv <- openDatasetAs dataset "data"
-      pure { g, n, γ: γ <+> xv }
+-- testLink :: LinkFigSpec -> Selector Val -> String -> Test Unit
+-- testLink spec@{ x } δv1 v2_expect =
+--    before (loadLinkFig spec) $
+--       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
+--          \{ γ0, γ, e1, e2, t1, t2, v1 } ->
+--             let
+--                { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
+--             in
+--                checkPretty "Linked output" v2_expect v2'
+
+-- testWithDataset :: File -> File -> Test Unit
+-- testWithDataset dataset file =
+--    testWithSetup file "" Nothing $ do
+--       { g, n, γ } × xv <- openDatasetAs dataset "data"
+--       pure { g, n, γ: γ <+> xv }
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
