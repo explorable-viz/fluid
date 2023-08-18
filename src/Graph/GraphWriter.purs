@@ -41,7 +41,7 @@ type WithGraphT s m = MayFailT (StateT Int (WithGraph2T s m))
 type WithGraph2T s = StateT (AdjMapEntries s)
 type WithGraph2 s = WithGraph2T s Identity
 
-instance Monad m => MonadGraphWriter s (MayFailT (StateT Int (WithGraph2T s m))) where
+instance Monad m => MonadGraphWriter s (WithGraphT s m) where
    fresh = do
       n <- modify $ (+) 1
       pure (Vertex $ show n)
@@ -51,7 +51,7 @@ instance Monad m => MonadGraphWriter s (MayFailT (StateT Int (WithGraph2T s m)))
       lift $ lift $ modify_ $ (:) (α × αs)
       pure α
 
-instance Monad m => MonadGraphWriter2 s (StateT (AdjMapEntries s) m) where
+instance Monad m => MonadGraphWriter2 s (WithGraph2T s m) where
    extend α αs =
       void $ modify_ $ (:) (α × αs)
 
