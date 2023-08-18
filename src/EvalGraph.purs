@@ -24,7 +24,7 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
 import Graph (Vertex, class Graph)
-import Graph.GraphWriter (WithGraphAllocT, alloc, new, runWithGraphT)
+import Graph.GraphWriter (WithGraphAllocT, alloc, new, runWithGraphAllocT)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Set (class Set, insert, empty, singleton, union)
@@ -172,7 +172,7 @@ eval_module γ = go D.empty
       go (γ' <+> γ'') (Module ds) αs
 
 evalWithConfig :: forall g s m a. Monad m => Graph g s => GraphConfig g -> Expr a -> m (MayFail ((g × Int) × Expr Vertex × Val Vertex))
-evalWithConfig { g, n, γ: γα } e = runWithGraphT (g × n)
+evalWithConfig { g, n, γ: γα } e = runWithGraphAllocT (g × n)
    ( do
         eα <- alloc e
         vα <- eval γα eα empty

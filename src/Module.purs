@@ -18,7 +18,7 @@ import EvalGraph (GraphConfig, eval, eval_module)
 import Expr (traverseModule)
 import Graph (class Graph, Vertex)
 import Graph (empty) as G
-import Graph.GraphWriter (WithGraphAllocT, runWithGraphT, alloc, fresh)
+import Graph.GraphWriter (WithGraphAllocT, runWithGraphAllocT, alloc, fresh)
 import Lattice (botOf)
 import Parse (module_, program)
 import Parsing (runParser)
@@ -73,7 +73,7 @@ defaultImports = do
 
 openWithDefaultImports :: forall g s. Graph g s => File -> Aff (GraphConfig g × S.Expr Unit)
 openWithDefaultImports file = do
-   (g × n) × γ <- successful <$> (runWithGraphT (G.empty × 0) $ defaultImports)
+   (g × n) × γ <- successful <$> (runWithGraphAllocT (G.empty × 0) $ defaultImports)
    s <- open file
    pure $ { g, n, γ } × s
 
@@ -82,7 +82,7 @@ openDatasetAs :: forall g s. Graph g s => File -> Var -> Aff (GraphConfig g × E
 openDatasetAs file x = do
    s <- parseProgram (Folder "fluid") file
    (g × n) × (γ × xv) <- successful <$>
-      ( runWithGraphT (G.empty × 0) $ do
+      ( runWithGraphAllocT (G.empty × 0) $ do
            γα <- defaultImports
            eα <- alloc (successful $ desug s)
            vα <- eval γα eα empty
