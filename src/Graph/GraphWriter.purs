@@ -14,7 +14,7 @@ module Graph.GraphWriter
    , runWithGraphT
    ) where
 
-import Prelude 
+import Prelude
 import Control.Monad.Except (runExceptT)
 import Control.Monad.State.Trans (StateT, lift, modify, modify_, runStateT)
 import Data.Identity (Identity)
@@ -37,7 +37,7 @@ class Monad m <= MonadGraphWriter s m | m -> s where
 
 -- List of adjacency map entries to serve as a fromFoldable input.
 type AdjMapEntries s = List (Vertex × s Vertex)
-type WithGraphT s m a = MayFailT (StateT Int (WithGraph2T s m)) a
+type WithGraphT s m = MayFailT (StateT Int (WithGraph2T s m))
 type WithGraph2T s = StateT (AdjMapEntries s)
 type WithGraph2 s = WithGraph2T s Identity
 
