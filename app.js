@@ -37683,16 +37683,16 @@
   });
   var fresh = /* @__PURE__ */ (() => monadGraphAllocWithGraphA(monadAff).fresh)();
   var eval_module3 = /* @__PURE__ */ eval_module2(monadAff);
+  var runWithGraphAllocT2 = /* @__PURE__ */ runWithGraphAllocT(monadAff);
+  var alloc2 = /* @__PURE__ */ alloc(monadAff);
+  var alloc1 = /* @__PURE__ */ alloc2(traversableExpr);
+  var $$eval3 = /* @__PURE__ */ $$eval2(monadAff);
   var applicativeExceptT2 = /* @__PURE__ */ applicativeExceptT(monadStateT1);
   var traverse6 = /* @__PURE__ */ (() => {
     const $0 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT2);
     return (x2) => $0((v) => x2);
   })();
-  var alloc2 = /* @__PURE__ */ alloc(monadAff);
-  var alloc1 = /* @__PURE__ */ alloc2(traversableVal);
-  var runWithGraphAllocT2 = /* @__PURE__ */ runWithGraphAllocT(monadAff);
-  var alloc22 = /* @__PURE__ */ alloc2(traversableExpr);
-  var $$eval3 = /* @__PURE__ */ $$eval2(monadAff);
+  var alloc22 = /* @__PURE__ */ alloc2(traversableVal);
   var parse = (src) => {
     const $1 = runParserT1(src);
     return (x2) => bifunctorEither.bimap(showParseError.show)(identity24)($1(x2));
@@ -37735,23 +37735,24 @@
     $$throw,
     (state2, a) => more((v2) => done(state2, functorExpr2.map((v) => unit2)(a)))
   ))))));
-  var defaultImports = (dictSet) => {
-    const loadModule1 = loadModule(dictSet);
-    return bind1(traverse6(alloc1)(primitives))((\u03B3\u03B1) => bind1(bind1(loadModule1("prelude")(\u03B3\u03B1))(loadModule1("graphics")))(loadModule1("convolution")));
-  };
   var openDatasetAs = (dictGraph) => {
     const runWithGraphAllocT1 = runWithGraphAllocT2(dictGraph);
     const Set1 = dictGraph.Set1();
-    const defaultImports1 = defaultImports(Set1);
     const eval1 = $$eval3(Set1);
-    return (file) => (x2) => _bind(parseProgram("fluid")(file))((s) => _bind(_map(successful)(runWithGraphAllocT1($Tuple(
-      dictGraph.empty,
-      0
-    ))(bind1(defaultImports1)((\u03B3\u03B1) => bind1(alloc22(successful(exprFwd(joinSemilatticeUnit)(s))))((e\u03B1) => bind1(eval1(\u03B3\u03B1)(e\u03B1)(Set1.empty))((v\u03B1) => applicativeExceptT2.pure($Tuple(
-      \u03B3\u03B1,
+    return (file) => (x2) => (v) => _bind(parseProgram("fluid")(file))((s) => _bind(_map(successful)(runWithGraphAllocT1($Tuple(v.g, v.n))(bind1(alloc1(successful(exprFwd(joinSemilatticeUnit)(s))))((e\u03B1) => bind1(eval1(v["\u03B3"])(e\u03B1)(Set1.empty))((v\u03B1) => applicativeExceptT2.pure($Tuple(
+      v["\u03B3"],
       runST(bind_(newImpl)(poke3(x2)(v\u03B1)))
-    ))))))))((v) => _pure($Tuple({ g: v._1._1, n: v._1._2, "\u03B3": v._2._1 }, v._2._2))));
+    )))))))((v1) => _pure($Tuple({ g: v1._1._1, n: v1._1._2, "\u03B3": v1._2._1 }, v1._2._2))));
   };
+  var defaultImports = (dictSet) => {
+    const loadModule1 = loadModule(dictSet);
+    return bind1(traverse6(alloc22)(primitives))((\u03B3\u03B1) => bind1(bind1(loadModule1("prelude")(\u03B3\u03B1))(loadModule1("graphics")))(loadModule1("convolution")));
+  };
+  var openDefaultImports = (dictGraph) => _bind(_map(successful)(runWithGraphAllocT2(dictGraph)($Tuple(dictGraph.empty, 0))(defaultImports(dictGraph.Set1()))))((v) => _pure({
+    g: v._1._1,
+    n: v._1._2,
+    "\u03B3": v._2
+  }));
 
   // output-es/Set/index.js
   var setSet = (dictOrd) => {
@@ -37790,7 +37791,9 @@
   var matrixRep3 = /* @__PURE__ */ matrixRep(annBoolean);
   var sequence3 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity10))();
   var eval_module4 = /* @__PURE__ */ eval_module(annBoolean);
-  var openDatasetAs2 = /* @__PURE__ */ openDatasetAs(/* @__PURE__ */ graphGraphImpl(/* @__PURE__ */ setSet(ordVertex)));
+  var graphGraphImpl2 = /* @__PURE__ */ graphGraphImpl(/* @__PURE__ */ setSet(ordVertex));
+  var openDefaultImports2 = /* @__PURE__ */ openDefaultImports(graphGraphImpl2);
+  var openDatasetAs2 = /* @__PURE__ */ openDatasetAs(graphGraphImpl2);
   var botOf = /* @__PURE__ */ (() => functorVal.map((v) => false))();
   var $$eval4 = /* @__PURE__ */ $$eval(annBoolean);
   var evalBwd2 = /* @__PURE__ */ evalBwd(annBoolean);
@@ -37866,7 +37869,7 @@
   var loadLinkFig = (v) => {
     const $1 = "linking/" + v.file1;
     const $2 = "linking/" + v.file2;
-    return _bind(openDatasetAs2("example/linking/" + v.dataFile)(v.x))((v2) => _bind(applyAff.apply(_map(Tuple)(parseProgram("fluid/example")($1)))(parseProgram("fluid/example")($2)))((v3) => {
+    return _bind(_bind(openDefaultImports2)(openDatasetAs2("example/linking/" + v.dataFile)(v.x)))((v2) => _bind(applyAff.apply(_map(Tuple)(parseProgram("fluid/example")($1)))(parseProgram("fluid/example")($2)))((v3) => {
       const \u03B30 = _fmapObject(v2._1["\u03B3"], botOf);
       const xv0 = _fmapObject(v2._2, botOf);
       const s2 = functorExpr2.map((v$1) => false)(v3._2);
@@ -37892,7 +37895,7 @@
       })())((v0) => $Either("Right", { spec: v, "\u03B30": \u03B30, "\u03B3": xv0, s1, s2, e1: v4._1, e2: v4._2, t1: v5._1, t2: v6._1, v1: v5._2, v2: v6._2, v0 })))))));
     }));
   };
-  var loadFig = (v) => _bind(openDatasetAs2("example/linking/renewables")("data"))((v1) => {
+  var loadFig = (v) => _bind(_bind(openDefaultImports2)(openDatasetAs2("example/linking/renewables")("data")))((v1) => {
     const \u03B30 = _fmapObject(v1._1["\u03B3"], botOf);
     const xv0 = _fmapObject(v1._2, botOf);
     return _map((s$p) => successful(bindEither.bind(splitDefs(unionWith2((v$1) => identity19)(\u03B30)(xv0))(functorExpr2.map((v$1) => false)(s$p)))((v2) => bindEither.bind(exprFwd(joinSemilatticeBoolean)(v2.s))((e) => bindEither.bind($$eval4(unionWith2((v$1) => identity19)(unionWith2((v$1) => identity19)(\u03B30)(xv0))(v2["\u03B3"]))(e)(false))((v3) => $Either("Right", { spec: v, "\u03B30": \u03B30, "\u03B3": unionWith2((v$1) => identity19)(\u03B30)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file));
