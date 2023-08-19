@@ -31,8 +31,8 @@ tests =
    , test_misc
    , test_bwd
    , test_graphics
-   , test_graph
    , test_linking
+   , test_graph
    ]
 
 test_scratchpad :: Test Unit
@@ -63,85 +63,46 @@ test_scratchpad = testBwdMany
            \13, 32, 35, 19, 26"
    ]
 
-test_linking :: Test Unit
-test_linking = testLinkMany
-   [ { divId: ""
-     , file1: File "pairs-1"
-     , file2: File "pairs-2"
-     , dataFile: File "pairs-data"
-     , x: "data"
-     }
-        ×
-           ( selectPair (const false) botOf
-                ( selectPair (const false) botOf
-                     (selectPair (const false) (const $ Int true 3) botOf)
-                )
-           )
-        × "(3, (_5_, _7_))"
-   , { divId: ""
-     , file1: File "convolution-1"
-     , file2: File "convolution-2"
-     , dataFile: File "convolution-data"
-     , x: "data"
-     }
-        × (botOf >>> selectCell 2 2 topOf)
-        ×
-           "_18_, _12_, _13_, 9, 19,\n\
-           \_20_, _11_, _24_, 9, 14,\n\
-           \_15_, _13_, _20_, 11, 14,\n\
-           \7, 15, 15, 8, 20,\n\
-           \3, 10, 12, 3, 11"
-   , { divId: ""
-     , file1: File "bar-chart"
-     , file2: File "line-chart"
-     , dataFile: File "renewables"
-     , x: "data"
-     }
-        × (botOf >>> selectBarChart_data (selectNth 1 (select_y topOf)))
-        ×
-           "LineChart ({\
-           \caption: \"Output of USA relative to China\", \
-           \plots: \
-           \(LinePlot ({\
-           \data: \
-           \({x: 2013, y: 2.5483870967741935} : \
-           \({x: 2014, y: 1.61} : \
-           \({x: 2015, y: _1.6213592233009706_} : \
-           \({x: 2016, y: 1.4000000000000001} : \
-           \({x: 2017, y: 1.1208053691275166} : \
-           \({x: 2018, y: 0.9101123595505617} : [])))))), \
-           \name: \"Bio\"\
-           \}) : \
-           \(LinePlot ({\
-           \data: \
-           \({x: 2013, y: 0.3} : \
-           \({x: 2014, y: 0.28214285714285714} : \
-           \({x: 2015, y: _0.8333333333333334_} : \
-           \({x: 2016, y: 0.26229508196721313} : \
-           \({x: 2017, y: 0.25559105431309903} : \
-           \({x: 2018, y: 0.2484472049689441} : [])))))), \
-           \name: \"Hydro\"\
-           \}) : \
-           \(LinePlot ({\
-           \data: \
-           \({x: 2013, y: 0.6080402010050252} : \
-           \({x: 2014, y: 0.6428571428571429} : \
-           \({x: 2015, y: _0.5909090909090909_} : \
-           \({x: 2016, y: 0.5324675324675324} : \
-           \({x: 2017, y: 0.3893129770992366} : \
-           \({x: 2018, y: 0.3522727272727273} : [])))))), \
-           \name: \"Solar\"\
-           \}) : \
-           \(LinePlot ({\
-           \data: ({x: 2013, y: 0.6703296703296703} : \
-           \({x: 2014, y: 0.5739130434782609} : \
-           \({x: 2015, y: _0.5103448275862069_} : \
-           \({x: 2016, y: 0.48520710059171596} : \
-           \({x: 2017, y: 0.4734042553191489} : \
-           \({x: 2018, y: 0.45714285714285713} : [])))))), \
-           \name: \"Wind\"\
-           \}) : []))))\
-           \})"
+test_desugaring :: Test Unit
+test_desugaring = testMany
+   [ (File "desugar/list-comp-1") × "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
+   , (File "desugar/list-comp-2") ×
+        "(14 : (14 : (14 : (12 : (12 : (12 : (10 : (10 : (10 : (13 : (13 : (13 : (11 : (11 : (11 : (9 : \
+        \(9 : (9 : (12 : (12 : (12 : (10 : (10 : (10 : (8 : (8 : (8 : [])))))))))))))))))))))))))))"
+   , (File "desugar/list-comp-3") × "(9 : (8 : []))"
+   , (File "desugar/list-comp-4") × "(5 : (4 : (3 : [])))"
+   , (File "desugar/list-comp-5") × "(5 : (4 : (3 : [])))"
+   , (File "desugar/list-comp-6") × "(5 : [])"
+   , (File "desugar/list-comp-7") × "([] : [])"
+   , (File "desugar/list-enum") × "(3 : (4 : (5 : (6 : (7 : [])))))"
+   ]
+
+test_misc :: Test Unit
+test_misc = testMany
+   [ (File "arithmetic") × "42"
+   , (File "array") × "(1, (3, 3))"
+   , (File "compose") × "5"
+   , (File "dicts") × "{d: {||}, e: {|\"a\":= 5, \"ab\":= 6|}, e_ab: 6, f: {|\"a\":= 6, \"ab\":= 7|}, g: {|\"a\":= 5|}, h: {|\"fst\":= 4, \"snd\":= (6 : (7 : []))|}}"
+   , (File "div-mod-quot-rem") ×
+        "((1 : (-1 : (-2 : (2 : [])))) : \
+        \((2 : (2 : (1 : (1 : [])))) : \
+        \((1 : (-1 : (-1 : (1 : [])))) : \
+        \((2 : (2 : (-2 : (-2 : [])))) : []))))"
+   , (File "factorial") × "40320"
+   , (File "filter") × "(8 : (7 : []))"
+   , (File "first-class-constr") × "((10 : []) : ((12 : []) : ((20 : []) : [])))"
+   , (File "flatten") × "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
+   , (File "foldr_sumSquares") × "661"
+   , (File "lexicalScoping") × "\"6\""
+   , (File "length") × "2"
+   , (File "lookup") × "Some \"sarah\""
+   , (File "map") × "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
+   , (File "mergeSort") × "(1 : (2 : (3 : [])))"
+   , (File "normalise") × "(33, 66)"
+   , (File "pattern-match") × "4"
+   , (File "range") × "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))"
+   , (File "records") × "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
+   , (File "reverse") × "(2 : (1 : []))"
    ]
 
 test_bwd :: Test Unit
@@ -262,54 +223,93 @@ test_bwd = testBwdMany
            "(13.0 : (_25.0_ : (41.0 : [])))"
    ]
 
-test_desugaring :: Test Unit
-test_desugaring = testMany
-   [ (File "desugar/list-comp-1") × "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
-   , (File "desugar/list-comp-2") ×
-        "(14 : (14 : (14 : (12 : (12 : (12 : (10 : (10 : (10 : (13 : (13 : (13 : (11 : (11 : (11 : (9 : \
-        \(9 : (9 : (12 : (12 : (12 : (10 : (10 : (10 : (8 : (8 : (8 : [])))))))))))))))))))))))))))"
-   , (File "desugar/list-comp-3") × "(9 : (8 : []))"
-   , (File "desugar/list-comp-4") × "(5 : (4 : (3 : [])))"
-   , (File "desugar/list-comp-5") × "(5 : (4 : (3 : [])))"
-   , (File "desugar/list-comp-6") × "(5 : [])"
-   , (File "desugar/list-comp-7") × "([] : [])"
-   , (File "desugar/list-enum") × "(3 : (4 : (5 : (6 : (7 : [])))))"
-   ]
-
-test_misc :: Test Unit
-test_misc = testMany
-   [ (File "arithmetic") × "42"
-   , (File "array") × "(1, (3, 3))"
-   , (File "compose") × "5"
-   , (File "dicts") × "{d: {||}, e: {|\"a\":= 5, \"ab\":= 6|}, e_ab: 6, f: {|\"a\":= 6, \"ab\":= 7|}, g: {|\"a\":= 5|}, h: {|\"fst\":= 4, \"snd\":= (6 : (7 : []))|}}"
-   , (File "div-mod-quot-rem") ×
-        "((1 : (-1 : (-2 : (2 : [])))) : \
-        \((2 : (2 : (1 : (1 : [])))) : \
-        \((1 : (-1 : (-1 : (1 : [])))) : \
-        \((2 : (2 : (-2 : (-2 : [])))) : []))))"
-   , (File "factorial") × "40320"
-   , (File "filter") × "(8 : (7 : []))"
-   , (File "first-class-constr") × "((10 : []) : ((12 : []) : ((20 : []) : [])))"
-   , (File "flatten") × "((3, \"simon\") : ((4, \"john\") : ((6, \"sarah\") : ((7, \"claire\") : []))))"
-   , (File "foldr_sumSquares") × "661"
-   , (File "lexicalScoping") × "\"6\""
-   , (File "length") × "2"
-   , (File "lookup") × "Some \"sarah\""
-   , (File "map") × "(5 : (7 : (13 : (15 : (4 : (3 : (-3 : [])))))))"
-   , (File "mergeSort") × "(1 : (2 : (3 : [])))"
-   , (File "normalise") × "(33, 66)"
-   , (File "pattern-match") × "4"
-   , (File "range") × "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))"
-   , (File "records") × "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
-   , (File "reverse") × "(2 : (1 : []))"
-   ]
-
 test_graphics :: Test Unit
 test_graphics = testWithDatasetMany
    [ (File "dataset/renewables-restricted") × (File "graphics/background")
    , (File "dataset/renewables-restricted") × (File "graphics/grouped-bar-chart")
    , (File "dataset/renewables-restricted") × (File "graphics/line-chart")
    , (File "dataset/renewables-restricted") × (File "graphics/stacked-bar-chart")
+   ]
+
+test_linking :: Test Unit
+test_linking = testLinkMany
+   [ { divId: ""
+     , file1: File "pairs-1"
+     , file2: File "pairs-2"
+     , dataFile: File "pairs-data"
+     , x: "data"
+     }
+        ×
+           ( selectPair (const false) botOf
+                ( selectPair (const false) botOf
+                     (selectPair (const false) (const $ Int true 3) botOf)
+                )
+           )
+        × "(3, (_5_, _7_))"
+   , { divId: ""
+     , file1: File "convolution-1"
+     , file2: File "convolution-2"
+     , dataFile: File "convolution-data"
+     , x: "data"
+     }
+        × (botOf >>> selectCell 2 2 topOf)
+        ×
+           "_18_, _12_, _13_, 9, 19,\n\
+           \_20_, _11_, _24_, 9, 14,\n\
+           \_15_, _13_, _20_, 11, 14,\n\
+           \7, 15, 15, 8, 20,\n\
+           \3, 10, 12, 3, 11"
+   , { divId: ""
+     , file1: File "bar-chart"
+     , file2: File "line-chart"
+     , dataFile: File "renewables"
+     , x: "data"
+     }
+        × (botOf >>> selectBarChart_data (selectNth 1 (select_y topOf)))
+        ×
+           "LineChart ({\
+           \caption: \"Output of USA relative to China\", \
+           \plots: \
+           \(LinePlot ({\
+           \data: \
+           \({x: 2013, y: 2.5483870967741935} : \
+           \({x: 2014, y: 1.61} : \
+           \({x: 2015, y: _1.6213592233009706_} : \
+           \({x: 2016, y: 1.4000000000000001} : \
+           \({x: 2017, y: 1.1208053691275166} : \
+           \({x: 2018, y: 0.9101123595505617} : [])))))), \
+           \name: \"Bio\"\
+           \}) : \
+           \(LinePlot ({\
+           \data: \
+           \({x: 2013, y: 0.3} : \
+           \({x: 2014, y: 0.28214285714285714} : \
+           \({x: 2015, y: _0.8333333333333334_} : \
+           \({x: 2016, y: 0.26229508196721313} : \
+           \({x: 2017, y: 0.25559105431309903} : \
+           \({x: 2018, y: 0.2484472049689441} : [])))))), \
+           \name: \"Hydro\"\
+           \}) : \
+           \(LinePlot ({\
+           \data: \
+           \({x: 2013, y: 0.6080402010050252} : \
+           \({x: 2014, y: 0.6428571428571429} : \
+           \({x: 2015, y: _0.5909090909090909_} : \
+           \({x: 2016, y: 0.5324675324675324} : \
+           \({x: 2017, y: 0.3893129770992366} : \
+           \({x: 2018, y: 0.3522727272727273} : [])))))), \
+           \name: \"Solar\"\
+           \}) : \
+           \(LinePlot ({\
+           \data: ({x: 2013, y: 0.6703296703296703} : \
+           \({x: 2014, y: 0.5739130434782609} : \
+           \({x: 2015, y: _0.5103448275862069_} : \
+           \({x: 2016, y: 0.48520710059171596} : \
+           \({x: 2017, y: 0.4734042553191489} : \
+           \({x: 2018, y: 0.45714285714285713} : [])))))), \
+           \name: \"Wind\"\
+           \}) : []))))\
+           \})"
    ]
 
 -- Remove once graph slicing tested as part of overall infrastructure.

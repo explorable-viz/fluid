@@ -71,11 +71,13 @@ defaultImports = do
    γα <- traverse alloc primitives
    loadModule (File "prelude") γα >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
+-- | Evaluates the default imports from an empty initial graph config
 openDefaultImports :: forall g s. Graph g s => Aff (GraphConfig g)
 openDefaultImports = do
    (g × n) × γ <- successful <$> (runWithGraphAllocT (G.empty × 0) $ defaultImports)
    pure $ { g, n, γ }
 
+-- | Evaluates a dataset from an existing graph config (produced by openDefaultImports)
 openDatasetAs :: forall g s. Graph g s => File -> Var -> GraphConfig g -> Aff (GraphConfig g × Env Vertex)
 openDatasetAs file x { g, n, γ: γα } = do
    s <- parseProgram (Folder "fluid") file
