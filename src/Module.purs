@@ -75,23 +75,9 @@ openDefaultImports = do
    (g × n) × γ <- successful <$> (runWithGraphT (G.empty × 0) $ defaultImports)
    pure $ { g, n, γ }
 
--- Return ambient environment used to load dataset along with new binding.
-openDatasetAs :: forall g s. Graph g s => File -> Var -> Aff (GraphConfig g × Env Vertex)
-openDatasetAs file x = do
+openDatasetAs :: forall g s. Graph g s => File -> Var -> GraphConfig g -> Aff (GraphConfig g × Env Vertex)
+openDatasetAs file x { g, n, γ: γα } = do
    s <- parseProgram (Folder "fluid") file
-   (g × n) × (γ × xv) <- successful <$>
-      ( runWithGraphT (G.empty × 0) $ do
-           γα <- defaultImports
-           eα <- alloc (successful $ desug s)
-           vα <- eval γα eα empty
-           pure (γα × D.singleton x vα)
-      )
-   pure ({ g, n, γ } × xv)
-
-{-
-openDatasetAs' :: forall g s. Graph g s => File -> Var -> GraphConfig g -> Aff (GraphConfig g × Env Vertex)
-openDatasetAs' file x {g, n, γ: γα} = do
-   s <- open file
    (g' × n') × (γα' × xv) <- successful <$>
       ( runWithGraphT (g × n) $ do
            eα <- alloc (successful $ desug s)
@@ -99,4 +85,3 @@ openDatasetAs' file x {g, n, γ: γα} = do
            pure (γα × D.singleton x vα)
       )
    pure ({ g: g', n: n', γ: γα' } × xv)
--}

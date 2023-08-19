@@ -28,7 +28,7 @@ import Expr (Expr)
 import Graph.GraphImpl (GraphImpl)
 import Foreign.Object (lookup)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
-import Module (File(..), open, openDatasetAs)
+import Module (File(..), open, openDefaultImports, openDatasetAs)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive (matrixRep) as P
@@ -185,7 +185,7 @@ linkResult x γ0 γ e1 e2 t1 _ v1 = do
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
-   { γ } × xv :: (GraphConfig (GraphImpl S.Set) × Env _) <- openDatasetAs (File "example/linking/renewables") "data"
+   { γ } × xv :: (GraphConfig (GraphImpl S.Set) × Env _) <- openDefaultImports >>= openDatasetAs (File "example/linking/renewables") "data"
    let
       γ0 = botOf <$> γ
       xv0 = botOf <$> xv
@@ -202,7 +202,7 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       dir = File "linking/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment γ0 as well as dataset
-   { γ } × xv :: (GraphConfig (GraphImpl S.Set) × Env _) <- openDatasetAs (File "example/" <> dir <> dataFile) x
+   { γ } × xv :: (GraphConfig (GraphImpl S.Set) × Env _) <- openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ0 = botOf <$> γ
