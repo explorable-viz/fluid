@@ -423,7 +423,7 @@ orElseBwd (ContElim (ElimConstr m)) (π : πs) =
          (\κ'' -> ContElim (ElimConstr (D.fromFoldable (singleton (c × κ''))))) *** (α ∨ _)
 orElseBwd _ _ = error absurd
 
--- unless. In forward direction, extend singleton branch to set of branches where any missing constructors have
+-- In forward direction, extend singleton branch to set of branches where any missing constructors have
 -- been mapped to the empty list, using anonymous variables in any generated patterns. Going backward, discard
 -- all synthesised branches, returning the original singleton branch for c, plus join of annotations on the
 -- empty lists used for bodies of synthesised branches.
