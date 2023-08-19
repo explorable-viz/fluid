@@ -11,7 +11,8 @@ import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Set (Set) as S
-import Data.Tuple (fst, snd, uncurry)
+import Data.Traversable (traverse_)
+import Data.Tuple (fst, snd)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -26,23 +27,15 @@ import EvalGraph (GraphConfig, evalWithConfig)
 import Expr (Expr) as E
 import Graph (Vertex, sinks, sources)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (selectVertices, select𝔹s)
 import Graph.Slice (bwdSlice, fwdSlice) as G
+import Graph.Slice (selectVertices, select𝔹s)
 import Lattice (𝔹, bot, botOf, erase)
-import Module
-   ( File(..)
-   , Folder(..)
-   , loadFile
-   , open
-   , openDatasetAs
-   , openDefaultImports
-   , parse
-   )
+import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
-import Set (subset)
 import SExpr (Expr) as SE
-import Test.Spec (SpecT, before, it)
+import Set (subset)
+import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, type (×), (×), successful)
@@ -64,20 +57,23 @@ checkPretty _ expect x =
    trace (":\n") \_ ->
       prettyP x `shouldEqual` expect
 
--- fwd_expect: prettyprinted value after bwd then fwd round-trip
-testWithSetup :: File -> String -> Maybe (Selector Val × File) -> Aff (GraphConfig (GraphImpl S.Set)) -> Test Unit
-testWithSetup (File file) fwd_expect v_expect_opt setup =
-   before ((×) <$> setup <*> open (File file)) $ it file (uncurry doTest)
-   where
-   doTest :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> Aff Unit
-   doTest gconf s =
-      runExceptT (testTrace gconf s >>= testGraph gconf) >>=
-         case _ of
-            Left msg -> fail msg
-            Right unit -> pure unit
+-- Like version in Test.Spec.Assertions but with error message.
+shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
+shouldSatisfy msg v pred =
+   unless (pred v)
+      $ fail
+      $ show v <> " doesn't satisfy predicate: " <> msg
 
-   testTrace :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> MayFailT Aff (Val 𝔹 × E.Expr 𝔹)
-   testTrace { γ } s = do
+-- fwd_expect: prettyprinted value after bwd then fwd round-trip
+testWithSetup :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> String -> Maybe (Selector Val × File) -> Aff Unit
+testWithSetup gconfig s fwd_expect v_expect_opt =
+   runExceptT (testTrace gconfig >>= testGraph gconfig) >>=
+      case _ of
+         Left msg -> fail msg
+         Right unit -> pure unit
+   where
+   testTrace :: GraphConfig (GraphImpl S.Set) -> MayFailT Aff (Val 𝔹 × E.Expr 𝔹)
+   testTrace { γ } = do
       let
          γ𝔹 = botOf <$> γ
          s𝔹 = botOf s
@@ -148,36 +144,38 @@ testWithSetup (File file) fwd_expect v_expect_opt setup =
                log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
                fail "not equal"
 
-test :: File -> String -> Test Unit
-test file fwd_expect =
-   testWithSetup file fwd_expect Nothing openDefaultImports
+withDefaultImports ∷ SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit -> SpecT Aff Unit Effect Unit
+withDefaultImports = beforeAll openDefaultImports
 
-testBwd :: File -> File -> Selector Val -> String -> Test Unit
-testBwd file file_expect δv fwd_expect =
-   testWithSetup file' fwd_expect (Just (δv × (folder <> file_expect))) openDefaultImports
+withDataset :: File -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
+withDataset dataset = beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γ } × xv) -> pure { g, n, γ: γ <+> xv }))
+
+testMany :: Array (File × String) → Test Unit
+testMany fxs = withDefaultImports $ traverse_ test fxs
    where
-   folder = File "slicing/"
-   file' = folder <> file
+   test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) do
+      it (show file) (\(gconfig × s) -> testWithSetup gconfig s fwd_expect Nothing)
 
-testLink :: LinkFigSpec -> Selector Val -> String -> Test Unit
-testLink spec@{ x } δv1 v2_expect =
-   before (loadLinkFig spec) $
+testBwdMany :: Array (File × File × Selector Val × String) → Test Unit
+testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
+   where
+   testBwd (file × file_expect × δv × fwd_expect) = beforeWith ((_ <$> open (folder <> file)) <<< (×)) do
+      it (show $ folder <> file) (\(gconfig × s) -> testWithSetup gconfig s fwd_expect (Just (δv × (folder <> file_expect))))
+   folder = File "slicing/"
+
+testWithDatasetMany :: Array (File × File) -> Test Unit
+testWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
+   where
+   testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
+      it (show file) (\(gconfig × s) -> testWithSetup gconfig s "" Nothing)
+
+testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
+testLinkMany fxs = traverse_ testLink fxs
+   where
+   testLink (spec@{ x } × δv1 × v2_expect) = before (loadLinkFig spec) $
       it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
          \{ γ0, γ, e1, e2, t1, t2, v1 } ->
             let
                { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
             in
                checkPretty "Linked output" v2_expect v2'
-
-testWithDataset :: File -> File -> Test Unit
-testWithDataset dataset file =
-   testWithSetup file "" Nothing $ do
-      { g, n, γ } × xv <- openDatasetAs dataset "data"
-      pure { g, n, γ: γ <+> xv }
-
--- Like version in Test.Spec.Assertions but with error message.
-shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
-shouldSatisfy msg v pred =
-   unless (pred v)
-      $ fail
-      $ show v <> " doesn't satisfy predicate: " <> msg
