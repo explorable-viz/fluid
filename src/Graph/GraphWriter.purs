@@ -1,74 +1,70 @@
 module Graph.GraphWriter
    ( AdjMapEntries
+   , WithGraphAllocT
    , WithGraph
    , WithGraphT
-   , alloc
+   , class MonadGraphAlloc
    , class MonadGraphWriter
-   , class MonadGraphWriter2
-   , WithGraph2
+   , alloc
    , extend
    , fresh
    , new
    , runWithGraph
-   , runWithGraph2
    , runWithGraphT
+   , runWithGraphAllocT
    ) where
 
-import Prelude (class Monad, Unit, void, const, pure, bind, show, discard, flip, ($), (+), (<<<), (<>), (<$>))
-import Control.Comonad (extract)
-import Control.Monad.State.Trans (StateT, runStateT, modify, modify_)
+import Prelude
 import Control.Monad.Except (runExceptT)
+import Control.Monad.State.Trans (StateT, lift, modify, modify_, runStateT)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
-import Control.Monad.State
-import Data.Profunctor.Strong (first, second)
+import Data.Newtype (unwrap)
+import Data.Tuple (swap)
+import Data.Profunctor.Strong (first)
 import Data.Traversable (class Traversable, traverse)
 import Graph (Vertex(..), class Graph, fromFoldable)
 import Util (MayFailT, MayFail, type (×), (×))
 
-class Monad m <= MonadGraphWriter2 s m | m -> s where
+class Monad m <= MonadGraphWriter s m | m -> s where
    -- Extend graph with existing vertex pointing to set of existing vertices.
    extend :: Vertex -> s Vertex -> m Unit
 
-class Monad m <= MonadGraphWriter s m | m -> s where
+class Monad m <= MonadGraphAlloc s m | m -> s where
    fresh :: m Vertex
-   -- Extend graph with fresh vertex pointing to set of existing vertices; return new vertex.
+   -- Extend with a freshly allocated vertex.
    new :: s Vertex -> m Vertex
 
--- Builds list of adjacency map entries (arguments to 'add').
+-- List of adjacency map entries to serve as a fromFoldable input.
 type AdjMapEntries s = List (Vertex × s Vertex)
-type WithGraphT s m a = MayFailT (StateT (Int × AdjMapEntries s) m) a
-type WithGraph s a = WithGraphT s Identity a
--- TODO: factor WithGraph through this.
-type WithGraph2 s a = State (AdjMapEntries s) a
+type WithGraphAllocT s m = MayFailT (StateT Int (WithGraphT s m))
+type WithGraphT s = StateT (AdjMapEntries s)
+type WithGraph s = WithGraphT s Identity
 
-instance Monad m => MonadGraphWriter s (MayFailT (StateT (Int × AdjMapEntries s) m)) where
+instance Monad m => MonadGraphAlloc s (WithGraphAllocT s m) where
    fresh = do
-      n × _ <- modify $ first $ (+) 1
+      n <- modify $ (+) 1
       pure (Vertex $ show n)
 
    new αs = do
       α <- fresh
-      modify_ $ second $ (:) (α × αs)
+      lift $ lift $ modify_ $ (:) (α × αs)
       pure α
 
-alloc :: forall s m t a. Monad m => Traversable t => t a -> WithGraphT s m (t Vertex)
-alloc = traverse (const fresh)
-
-runWithGraph2 :: forall g s a. Graph g s => WithGraph2 s a -> g × a
-runWithGraph2 c = fromFoldable g_adds × a
-   where
-   a × g_adds = runState c Nil
-
-runWithGraph :: forall g s a. Graph g s => (g × Int) -> WithGraph s a -> MayFail ((g × Int) × a)
-runWithGraph (g × n) = extract <<< runWithGraphT (g × n)
-
-runWithGraphT :: forall g s m a. Monad m => Graph g s => (g × Int) -> WithGraphT s m a -> m (MayFail ((g × Int) × a))
-runWithGraphT (g × n) e = do
-   maybe_r × n' × g_adds <- (flip runStateT (n × Nil) <<< runExceptT) e
-   pure $ ((×) ((g <> fromFoldable g_adds) × n')) <$> maybe_r
-
-instance Monad m => MonadGraphWriter2 s (StateT (AdjMapEntries s) m) where
+instance Monad m => MonadGraphWriter s (WithGraphT s m) where
    extend α αs =
       void $ modify_ $ (:) (α × αs)
 
+alloc :: forall s m t a. Monad m => Traversable t => t a -> WithGraphAllocT s m (t Vertex)
+alloc = traverse (const fresh)
+
+runWithGraphT :: forall g s m a. Monad m => Graph g s => WithGraphT s m a -> m (g × a)
+runWithGraphT c = runStateT c Nil <#> swap <#> first fromFoldable
+
+runWithGraph :: forall g s a. Graph g s => WithGraph s a -> g × a
+runWithGraph c = unwrap $ runWithGraphT c
+
+runWithGraphAllocT :: forall g s m a. Monad m => Graph g s => (g × Int) -> WithGraphAllocT s m a -> m (MayFail ((g × Int) × a))
+runWithGraphAllocT (g × n) c = do
+   (maybe_a × n') × g_adds <- runStateT (runStateT (runExceptT c) n) Nil
+   pure $ maybe_a <#> ((×) ((g <> fromFoldable g_adds) × n'))

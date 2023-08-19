@@ -60,17 +60,6 @@ asExpr _ = error "Expression expected"
 
 data Module a = Module (List (VarDef a + RecDefs a))
 
-traverseModule :: forall m a b. Monad m => (a -> m b) -> Module a -> m (Module b)
-traverseModule _ (Module Nil) = pure (Module Nil)
-traverseModule f (Module (Left (VarDef σ e) : ds)) = do
-   VarDef σ' e' <- traverse f (VarDef σ e)
-   Module ds' <- traverseModule f (Module ds)
-   pure (Module (Left (VarDef σ' e') : ds'))
-traverseModule f (Module (Right ρ : ds)) = do
-   ρ' <- traverse (traverse f) ρ
-   Module ds' <- traverseModule f (Module ds)
-   pure (Module (Right ρ' : ds'))
-
 class FV a where
    fv :: a -> Set Var
 
@@ -173,6 +162,18 @@ instance Apply Cont where
    apply (ContExpr f) (ContExpr e) = ContExpr (f <*> e)
    apply (ContElim fσ) (ContElim σ) = ContElim (fσ <*> σ)
    apply _ _ = error "Apply Cont: shape mismatch"
+
+-- Can we make this 'traverse' by relaxing m to Applicative?
+traverseModule :: forall m a b. Monad m => (a -> m b) -> Module a -> m (Module b)
+traverseModule _ (Module Nil) = pure (Module Nil)
+traverseModule f (Module (Left (VarDef σ e) : ds)) = do
+   VarDef σ' e' <- traverse f (VarDef σ e)
+   Module ds' <- traverseModule f (Module ds)
+   pure (Module (Left (VarDef σ' e') : ds'))
+traverseModule f (Module (Right ρ : ds)) = do
+   ρ' <- traverse (traverse f) ρ
+   Module ds' <- traverseModule f (Module ds)
+   pure (Module (Right ρ' : ds'))
 
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'

@@ -148,11 +148,7 @@ withDefaultImports ∷ SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit -> 
 withDefaultImports = beforeAll openDefaultImports
 
 withDataset :: File -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
-withDataset dataset = beforeWith
-   ( \gconf -> do
-        { g, n, γ } × xv <- openDatasetAs dataset "data" gconf
-        pure { g, n, γ: γ <+> xv }
-   )
+withDataset dataset = beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γ } × xv) -> pure { g, n, γ: γ <+> xv }))
 
 testMany :: Array (File × String) → Test Unit
 testMany fxs = withDefaultImports $ traverse_ test fxs

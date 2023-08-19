@@ -9,7 +9,7 @@ import Data.Map (Map, lookup, delete, insertWith)
 import Data.Map (empty) as M
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN)
-import Graph.GraphWriter (WithGraph2, extend, runWithGraph2)
+import Graph.GraphWriter (WithGraph, extend, runWithGraph)
 import Set (class Set, empty, insert, member, singleton, union, unions)
 import Util ((×), definitely)
 
@@ -17,9 +17,9 @@ type PendingSlice s = Map Vertex (s Vertex)
 
 bwdSlice :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
 bwdSlice αs g' =
-   fst $ runWithGraph2 $ bwdVertices g' empty (L.fromFoldable αs)
+   fst $ runWithGraph $ bwdVertices g' empty (L.fromFoldable αs)
 
-bwdVertices :: forall g s. Graph g s => g -> s Vertex -> List Vertex -> WithGraph2 s Unit
+bwdVertices :: forall g s. Graph g s => g -> s Vertex -> List Vertex -> WithGraph s Unit
 bwdVertices _ _ Nil = pure unit
 bwdVertices g' visited (α : αs) =
    if α `member` visited then bwdVertices g' visited αs
@@ -30,15 +30,15 @@ bwdVertices g' visited (α : αs) =
 
 fwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
 fwdSlice αs g' =
-   fst $ runWithGraph2 $ fwdEdges g' M.empty (inEdges g' αs)
+   fst $ runWithGraph $ fwdEdges g' M.empty (inEdges g' αs)
 
-fwdEdges :: forall g s. Graph g s => g -> PendingSlice s -> List Edge -> WithGraph2 s (PendingSlice s)
+fwdEdges :: forall g s. Graph g s => g -> PendingSlice s -> List Edge -> WithGraph s (PendingSlice s)
 fwdEdges _ pending Nil = pure pending
 fwdEdges g' h ((α × β) : es) = do
    h' <- fwdVertex g' (insertWith union α (singleton β) h) α
    fwdEdges g' h' es
 
-fwdVertex :: forall g s. Set s Vertex => Graph g s => g -> PendingSlice s -> Vertex -> WithGraph2 s (PendingSlice s)
+fwdVertex :: forall g s. Set s Vertex => Graph g s => g -> PendingSlice s -> Vertex -> WithGraph s (PendingSlice s)
 fwdVertex g' h α =
    if αs == outN g' α then do
       extend α αs
