@@ -53,11 +53,11 @@ selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v :
 selectNth n δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNth (n - 1) δv v' : Nil)
 selectNth _ _ _ = error absurd
 
-selectNthNode :: Int -> Endo 𝔹 -> Selector Val
-selectNthNode 0 δα (Constr α c Nil) | c == cNil = Constr (δα α) c Nil
-selectNthNode 0 δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) c (v : v' : Nil)
-selectNthNode n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNthNode (n - 1) δα v' : Nil)
-selectNthNode _ _ _ = error absurd
+selectNthCell :: Int -> Endo 𝔹 -> Selector Val
+selectNthCell 0 δα (Constr α c Nil) | c == cNil = Constr (δα α) c Nil
+selectNthCell 0 δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) c (v : v' : Nil)
+selectNthCell n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNthCell (n - 1) δα v' : Nil)
+selectNthCell _ _ _ = error absurd
 
 selectSome :: Selector Val
 selectSome (Constr _ c vs) | c == cSome = Constr true c (botOf <$> vs)

@@ -183,7 +183,7 @@ evalBwd' v (T.App t1 t2 t3) =
    { γ, e, α } = evalBwd' u t1
    { γ: γ', e: e', α: α' } = evalBwd' v2 t2
 evalBwd' v (T.Let (T.VarDef w t1) t2) =
-   { γ: γ1 ∨ γ1', e: Let (VarDef σ e1) e2, α: α1 ∨ α2 }
+   { γ: γ1 ∨ γ1', e: Let (VarDef σ e1) e2, α: α1 }
    where
    { γ: γ1γ2, e: e2, α: α2 } = evalBwd' v t2
    γ1 × γ2 = append_inv (bv w) γ1γ2

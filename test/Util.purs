@@ -25,7 +25,7 @@ import Eval (eval)
 import EvalBwd (evalBwd)
 import EvalGraph (GraphConfig, evalWithConfig)
 import Expr (Expr) as E
-import Graph (Vertex, sinks, sources)
+import Graph (Vertex, sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice) as G
 import Graph.Slice (selectVertices, select𝔹s)
@@ -87,7 +87,7 @@ testWithSetup gconfig s fwd_expect v_expect_opt =
       let src = prettyP s
       s'' <- except $ parse src program
       trace ("Non-Annotated:\n" <> src) \_ -> lift $ do
-         if (not $ eq (erase s) s'') then do
+         if not $ eq (erase s) s'' then do
             liftEffect $ do
                log ("SRC\n" <> show (erase s))
                log ("NEW\n" <> show s'')
@@ -138,7 +138,7 @@ testWithSetup gconfig s fwd_expect v_expect_opt =
                log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
                fail "not equal"
             -- | Check graph/trace-based slicing procedures agree on round-tripped value.
-            let v𝔹' = select𝔹s vα (sources gfwd)
+            let v𝔹' = select𝔹s vα (vertices gfwd)
             unless (eq fwd_expect (prettyP v𝔹')) do
                log ("Val 𝔹 expect: \n" <> fwd_expect)
                log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')

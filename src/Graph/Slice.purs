@@ -7,6 +7,7 @@ import Data.List (List(..), (:))
 import Data.List as L
 import Data.Map (Map, lookup, delete, insertWith)
 import Data.Map (empty) as M
+import Data.Set (Set)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN)
 import Graph.GraphWriter (WithGraph, extend, runWithGraph)
@@ -47,23 +48,11 @@ fwdVertex g' h α =
    where
    αs = lookup α h # definitely "in pending map"
 
-selectVertices :: forall s f. Set s Vertex => Apply f => Foldable f => f Vertex -> f Boolean -> s Vertex
-selectVertices vα v𝔹 = αs_v
-   where
-   αs_v = unions (asSet <$> v𝔹 <*> vα)
+selectVertices :: forall f. Apply f => Foldable f => f Vertex -> f Boolean -> Set Vertex
+selectVertices vα v𝔹 = unions (asSet <$> v𝔹 <*> vα)
 
-select𝔹s :: forall s f. Set s Vertex => Functor f => f Vertex -> s Vertex -> f Boolean
-select𝔹s vα αs = v𝔹
-   where
-   v𝔹 = map (flip member αs) vα
-
-{-
-select𝔹s' :: forall s. Set s Vertex => Env Vertex × Expr Vertex -> s Vertex -> Env Boolean × Expr Boolean
-select𝔹s' (γα × eα) αs = γ𝔹 × e𝔹
-   where
-   γ𝔹 = map (flip select𝔹s αs) γα
-   e𝔹 = select𝔹s eα αs
--}
+select𝔹s :: forall f. Functor f => f Vertex -> Set Vertex -> f Boolean
+select𝔹s vα αs = flip member αs <$> vα
 
 asSet :: forall s. Set s Vertex => Boolean -> Vertex -> s Vertex
 asSet true = singleton

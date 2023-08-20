@@ -61,10 +61,10 @@ open :: File -> Aff (S.Expr Unit)
 open = parseProgram (Folder "fluid/example")
 
 loadModule :: forall s. Set s Vertex => File -> Env Vertex -> WithGraphAllocT s Aff (Env Vertex)
-loadModule file γα = do
+loadModule file γ = do
    src <- lift $ lift $ lift $ loadFile (Folder "fluid/lib") file
-   modα <- except (parse src (module_) >>= desugarModuleFwd) >>= traverseModule (const fresh)
-   eval_module γα modα empty <#> (γα <+> _)
+   mod <- except (parse src (module_) >>= desugarModuleFwd) >>= traverseModule (const fresh)
+   eval_module γ mod empty <#> (γ <+> _)
 
 defaultImports :: forall s. Set s Vertex => WithGraphAllocT s Aff (Env Vertex)
 defaultImports = do
@@ -79,12 +79,12 @@ openDefaultImports = do
 
 -- | Evaluates a dataset from an existing graph config (produced by openDefaultImports)
 openDatasetAs :: forall g s. Graph g s => File -> Var -> GraphConfig g -> Aff (GraphConfig g × Env Vertex)
-openDatasetAs file x { g, n, γ: γα } = do
+openDatasetAs file x { g, n, γ } = do
    s <- parseProgram (Folder "fluid") file
-   (g' × n') × (γα' × xv) <- successful <$>
+   (g' × n') × (γ' × xv) <- successful <$>
       ( runWithGraphAllocT (g × n) $ do
            eα <- alloc (successful $ desug s)
-           vα <- eval γα eα empty
-           pure (γα × D.singleton x vα)
+           vα <- eval γ eα empty
+           pure (γ × D.singleton x vα)
       )
-   pure ({ g: g', n: n', γ: γα' } × xv)
+   pure ({ g: g', n: n', γ: γ' } × xv)
