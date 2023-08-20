@@ -38,6 +38,7 @@ instance Set s Vertex => Graph (GraphImpl s) s where
    inN g = outN (op g)
    elem α (GraphImpl g) = isJust (D.lookup (unwrap α) g.out)
    size (GraphImpl g) = D.size g.out
+   vertices (GraphImpl g) = Set.fromFoldable $ Set.map Vertex $ D.keys g.out
    sinks (GraphImpl g) = sinks' g.out
    sources (GraphImpl g) = sinks' g.in
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out }
