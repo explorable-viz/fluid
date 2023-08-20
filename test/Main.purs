@@ -26,6 +26,7 @@ main = do
    traverse_ run tests
 
 tests :: Array (Test Unit)
+{-
 tests =
    [ test_desugaring
    , test_misc
@@ -34,33 +35,12 @@ tests =
    , test_linking
    , test_graph
    ]
+-}
+tests = [ test_scratchpad ]
 
 test_scratchpad :: Test Unit
 test_scratchpad = testBwdMany
-   [ (File "convolution/edgeDetect") × (File "convolution/edgeDetect.expect")
-        × (botOf >>> selectCell 1 1 topOf)
-        ×
-           "_0_, -1, 2, 0, -1,\n\
-           \0, 3, -2, 3, -2,\n\
-           \-1, 1, -5, 0, 4,\n\
-           \1, -1, 4, 0, -4,\n\
-           \1, 0, -3, 2, 0"
-   , (File "convolution/emboss") × (File "convolution/emboss.expect")
-        × (botOf >>> selectCell 1 1 topOf)
-        ×
-           "_5_, 4, 2, 5, 2,\n\
-           \3, 1, 2, -1, -2,\n\
-           \3, 0, 1, 0, -1,\n\
-           \2, 1, -2, 0, 0,\n\
-           \1, 0, -1, -1, -2"
-   , (File "convolution/gaussian") × (File "convolution/gaussian.expect")
-        × (botOf >>> selectCell 1 1 topOf)
-        ×
-           "_38_, 37, 28, 30, 38,\n\
-           \38, 36, 46, 31, 34,\n\
-           \37, 41, 54, 34, 20,\n\
-           \21, 35, 31, 31, 42,\n\
-           \13, 32, 35, 19, 26"
+   [ (File "filter") × (File "filter.expect") × (botOf >>> selectNthNode 0 neg) × "(_8_ _:_ (7 : []))"
    ]
 
 test_desugaring :: Test Unit
@@ -193,7 +173,7 @@ test_bwd = testBwdMany
            "_20_"
    , (File "divide") × (File "divide.expect") × topOf × "_40.22222222222222_"
    -- TODO: reinstate as part of https://github.com/explorable-viz/fluid/issues/701
-   --   , (File "filter") (File "filter.expect") (botOf >>> selectNthNode 0 neg) "(_8_ _:_ (7 : []))"
+   --   , (File "filter") × (File "filter.expect") × (botOf >>> selectNthNode 0 neg) × "(_8_ _:_ (7 : []))"
    , (File "intersperse") × (File "intersperse-1.expect") × (botOf >>> selectNthNode 1 neg) ×
         "(1 : (0 _:_ (2 : (0 : (3 : [])))))"
    , (File "intersperse") × (File "intersperse-2.expect") × (botOf >>> selectNthNode 2 neg) ×

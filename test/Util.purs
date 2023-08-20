@@ -87,7 +87,7 @@ testWithSetup gconfig s fwd_expect v_expect_opt =
       let src = prettyP s
       s'' <- except $ parse src program
       trace ("Non-Annotated:\n" <> src) \_ -> lift $ do
-         if (not $ eq (erase s) s'') then do
+         if not $ eq (erase s) s'' then do
             liftEffect $ do
                log ("SRC\n" <> show (erase s))
                log ("NEW\n" <> show s'')
