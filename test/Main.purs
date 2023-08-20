@@ -1,7 +1,7 @@
 module Test.Main where
 
 import Prelude hiding (add)
-import App.Util (selectBarChart_data, selectCell, selectNth, selectNthNode, selectPair, selectSome, select_y)
+import App.Util (selectBarChart_data, selectCell, selectNth, selectNthCell, selectPair, selectSome, select_y)
 import Bindings ((↦))
 import Control.Monad.Trans.Class (lift)
 import Data.Foldable (foldl)
@@ -40,7 +40,7 @@ tests = [ test_scratchpad ]
 
 test_scratchpad :: Test Unit
 test_scratchpad = testBwdMany
-   [ (File "filter") × (File "filter.expect") × (botOf >>> selectNthNode 0 neg) × "(_8_ _:_ (7 : []))"
+   [ (File "filter") × (File "filter.expect") × (botOf >>> selectNthCell 0 neg) × "(_8_ _:_ (7 : []))"
    ]
 
 test_desugaring :: Test Unit
@@ -173,30 +173,30 @@ test_bwd = testBwdMany
            "_20_"
    , (File "divide") × (File "divide.expect") × topOf × "_40.22222222222222_"
    -- TODO: reinstate as part of https://github.com/explorable-viz/fluid/issues/701
-   --   , (File "filter") × (File "filter.expect") × (botOf >>> selectNthNode 0 neg) × "(_8_ _:_ (7 : []))"
-   , (File "intersperse") × (File "intersperse-1.expect") × (botOf >>> selectNthNode 1 neg) ×
+   --   , (File "filter") × (File "filter.expect") × (botOf >>> selectNthCell 0 neg) × "(_8_ _:_ (7 : []))"
+   , (File "intersperse") × (File "intersperse-1.expect") × (botOf >>> selectNthCell 1 neg) ×
         "(1 : (0 _:_ (2 : (0 : (3 : [])))))"
-   , (File "intersperse") × (File "intersperse-2.expect") × (botOf >>> selectNthNode 2 neg) ×
+   , (File "intersperse") × (File "intersperse-2.expect") × (botOf >>> selectNthCell 2 neg) ×
         "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))"
    , (File "length") × (File "length.expect") × topOf × "_5_"
-   , (File "list-comp") × (File "list-comp-1.expect") × (botOf >>> selectNthNode 1 neg) ×
+   , (File "list-comp") × (File "list-comp-1.expect") × (botOf >>> selectNthCell 1 neg) ×
         "(6.2 : (260 _:_ (19.9 : (91 : []))))"
-   , (File "list-comp") × (File "list-comp-2.expect") × (botOf >>> selectNthNode 2 neg) ×
+   , (File "list-comp") × (File "list-comp-2.expect") × (botOf >>> selectNthCell 2 neg) ×
         "(6.2 : (260 : (19.9 _:_ (91 : []))))"
    , (File "lookup") × (File "lookup.expect") × selectSome × "_Some_ \"Germany\""
-   , (File "map") × (File "map.expect") × (botOf >>> selectNthNode 0 neg >>> selectNthNode 1 neg) ×
+   , (File "map") × (File "map.expect") × (botOf >>> selectNthCell 0 neg >>> selectNthCell 1 neg) ×
         "(5 _:_ (6 _:_ []))"
    , (File "multiply") × (File "multiply.expect") × (const $ Int true 0) × "_0_"
    , (File "nth") × (File "nth.expect") × (const $ Int true 4) × "_4_"
-   , (File "section-5-example") × (File "section-5-example-1.expect") × (botOf >>> selectNthNode 0 neg) ×
+   , (File "section-5-example") × (File "section-5-example-1.expect") × (botOf >>> selectNthCell 0 neg) ×
         "(88 _:_ (6 : (4 : [])))"
    , (File "section-5-example") × (File "section-5-example-2.expect") × (botOf >>> selectNth 1 topOf) ×
         "(_88_ : (_6_ : (_4_ : [])))"
-   , (File "section-5-example") × (File "section-5-example-3.expect") × (botOf >>> selectNthNode 2 neg) ×
+   , (File "section-5-example") × (File "section-5-example-3.expect") × (botOf >>> selectNthCell 2 neg) ×
         "(88 : (6 : (4 _:_ [])))"
-   , (File "zeros") × (File "zeros-1.expect") × (botOf >>> selectNthNode 0 neg >>> selectNthNode 2 neg) ×
+   , (File "zeros") × (File "zeros-1.expect") × (botOf >>> selectNthCell 0 neg >>> selectNthCell 2 neg) ×
         "(0 _:_ (0 : _[]_))"
-   , (File "zeros") × (File "zeros-2.expect") × (botOf >>> selectNthNode 2 neg) × "(0 : (0 : _[]_))"
+   , (File "zeros") × (File "zeros-2.expect") × (botOf >>> selectNthCell 2 neg) × "(0 : (0 : _[]_))"
    , (File "zipWith") × (File "zipWith-1.expect")
         × (botOf >>> selectNth 1 (const $ Float true 25.0))
         ×
