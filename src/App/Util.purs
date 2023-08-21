@@ -1,6 +1,8 @@
 module App.Util where
 
 import Prelude hiding (absurd)
+
+import Bindings (Var)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
@@ -8,19 +10,18 @@ import Data.Profunctor.Strong (first)
 import Data.Set (Set, union)
 import Data.Set as S
 import Data.Tuple (fst)
-import Effect (Effect)
-import Foreign.Object (update)
-import Web.Event.Event (Event)
-import Web.Event.EventTarget (EventListener)
-import Bindings (Var)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Dict (Dict, get)
+import Effect (Effect)
+import Foreign.Object (update)
 import Graph (Vertex)
 import Lattice (𝔹, botOf, neg)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
-import Util (Endo, type (×), absurd, error, definitely')
-import Val (Val(..), matrixUpdate)
+import Util (Endo, type (×), absurd, error, definitely', successful)
+import Val (Val(..), addr, matrixGet, matrixUpdate)
+import Web.Event.Event (Event)
+import Web.Event.EventTarget (EventListener)
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
@@ -58,12 +59,13 @@ selectMatrixElement :: Int -> Int -> Endo (Selector Val)
 selectMatrixElement i j δv (Matrix α r) = Matrix α $ matrixUpdate i j δv r
 selectMatrixElement _ _ _ _ = error absurd
 
-{-
 selectMatrixElement2 :: Int -> Int -> Selector2 Val
 selectMatrixElement2 i j = Selector2 $ case _ of
-   Matrix _ r -> matrixGet i j r
+   Matrix _ r -> S.singleton (addr v)
+      where
+      v = successful (matrixGet i j r) :: Val Vertex
    _ -> error absurd
--}
+
 selectNth :: Int -> Endo (Selector Val)
 selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v : v' : Nil)
 selectNth n δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNth (n - 1) δv v' : Nil)
