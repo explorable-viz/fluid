@@ -148,7 +148,8 @@ withDefaultImports ∷ SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit -> 
 withDefaultImports = beforeAll openDefaultImports
 
 withDataset :: File -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
-withDataset dataset = beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γ } × xv) -> pure { g, n, γ: γ <+> xv }))
+withDataset dataset =
+   beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γ } × xv) -> pure { g, n, γ: γ <+> xv }))
 
 testMany :: Array (File × String) → Test Unit
 testMany fxs = withDefaultImports $ traverse_ test fxs
@@ -159,8 +160,10 @@ testMany fxs = withDefaultImports $ traverse_ test fxs
 testBwdMany :: Array (File × File × Selector Val × String) → Test Unit
 testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
    where
-   testBwd (file × file_expect × δv × fwd_expect) = beforeWith ((_ <$> open (folder <> file)) <<< (×)) do
-      it (show $ folder <> file) (\(gconfig × s) -> testWithSetup gconfig s fwd_expect (Just (δv × (folder <> file_expect))))
+   testBwd (file × file_expect × δv × fwd_expect) =
+      beforeWith ((_ <$> open (folder <> file)) <<< (×)) do
+         it (show $ folder <> file)
+            (\(gconfig × s) -> testWithSetup gconfig s fwd_expect (Just (δv × (folder <> file_expect))))
    folder = File "slicing/"
 
 testWithDatasetMany :: Array (File × File) -> Test Unit
