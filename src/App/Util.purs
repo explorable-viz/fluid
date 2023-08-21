@@ -5,6 +5,8 @@ import Data.Array ((:)) as A
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
+import Data.Set (Set, union)
+import Data.Set as S
 import Data.Tuple (fst)
 import Effect (Effect)
 import Foreign.Object (update)
@@ -13,6 +15,7 @@ import Web.Event.EventTarget (EventListener)
 import Bindings (Var)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Dict (Dict, get)
+import Graph (Vertex)
 import Lattice (𝔹, botOf, neg)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
@@ -22,8 +25,15 @@ import Val (Val(..), updateMatrix)
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
 type Selector f = f 𝔹 -> f 𝔹
+newtype Selector2 f = Selector2 (f Vertex -> Set Vertex)
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
+
+instance Semigroup (Selector2 f) where
+   append (Selector2 s1) (Selector2 s2) = Selector2 $ \x -> s1 x `union` s2 x
+
+instance Monoid (Selector2 f) where
+   mempty = Selector2 $ const S.empty
 
 doNothing :: OnSel
 doNothing = const $ pure unit
@@ -62,6 +72,11 @@ selectNthCell _ _ _ = error absurd
 selectSome :: Selector Val
 selectSome (Constr _ c vs) | c == cSome = Constr true c (botOf <$> vs)
 selectSome _ = error absurd
+
+selectSome2 :: Selector2 Val
+selectSome2 = Selector2 $ case _ of
+   (Constr α c _) | c == cSome -> S.singleton α
+   _ -> error absurd
 
 select_y :: Selector Val -> Selector Val
 select_y δv (Record α r) = Record α $ update (δv >>> Just) f_y r
