@@ -4,6 +4,7 @@ import Prelude hiding (absurd, append)
 
 import Bindings (Var)
 import Control.Apply (lift2)
+import Data.Array ((!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
 import Data.Exists (Exists)
@@ -98,6 +99,12 @@ newtype DictRep a = DictRep (Dict (a × Val a))
 newtype MatrixRep a = MatrixRep (Array2 (Val a) × (Int × a) × (Int × a))
 
 type Array2 a = Array (Array a)
+
+matrixGet :: forall a. Int -> Int -> MatrixRep a -> MayFail (Val a)
+matrixGet i j (MatrixRep (vss × _ × _)) =
+   orElse "Index out of bounds" $ do
+      us <- vss !! (i - 1)
+      us !! (j - 1)
 
 updateMatrix :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
 updateMatrix i j δv (MatrixRep (vss × h × w)) =

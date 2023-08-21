@@ -58,6 +58,12 @@ selectMatrixElement :: Int -> Int -> Endo (Selector Val)
 selectMatrixElement i j δv (Matrix α r) = Matrix α $ updateMatrix i j δv r
 selectMatrixElement _ _ _ _ = error absurd
 
+{-
+selectMatrixElement2 :: Int -> Int -> Selector2 Val
+selectMatrixElement2 i j = Selector2 $ case _ of
+   Matrix _ r -> ?_
+   _ -> error absurd
+-}
 selectNth :: Int -> Endo (Selector Val)
 selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v : v' : Nil)
 selectNth n δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNth (n - 1) δv v' : Nil)

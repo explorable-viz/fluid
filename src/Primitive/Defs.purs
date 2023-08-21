@@ -3,7 +3,6 @@ module Primitive.Defs where
 import Prelude hiding (absurd, apply, div, mod, top)
 
 import Control.Monad.Except (except)
-import Data.Array ((!!))
 import Data.Exists (mkExists)
 import Data.Foldable (foldl, foldM)
 import Data.FoldableWithIndex (foldWithIndexM)
@@ -29,7 +28,7 @@ import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrSt
 import Set (singleton, insert)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, MayFail, error, orElse, report, unimplemented, (×))
-import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), updateMatrix)
+import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, updateMatrix)
 
 extern :: forall a. ForeignOp -> Val a
 extern = flip Foreign Nil >>> Fun
@@ -123,20 +122,14 @@ matrixLookup :: ForeignOp
 matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
-   op (Matrix _ (MatrixRep (vss × _ × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
-      | c == cPair = do
-           v <- except $ orElse "Index out of bounds" $ do
-              us <- vss !! (i - 1)
-              us !! (j - 1)
-           pure v
+   op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+      | c == cPair = except $ matrixGet i j r
    op _ = except $ report "Matrix and pair of integers expected"
 
    fwd :: OpFwd (Raw ArrayData × (Int × Int) × (Int × Int))
-   fwd (Matrix _ (MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+   fwd (Matrix _ r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = do
-           v <- orElse "Index out of bounds" $ do
-              us <- vss !! (i - 1)
-              us !! (j - 1)
+           v <- matrixGet i j r
            pure $ ((map erase <$> vss) × (i' × j') × (i × j)) × v
    fwd _ = report "Matrix and pair of integers expected"
 
