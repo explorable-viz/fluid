@@ -106,8 +106,8 @@ matrixGet i j (MatrixRep (vss × _ × _)) =
       us <- vss !! (i - 1)
       us !! (j - 1)
 
-updateMatrix :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
-updateMatrix i j δv (MatrixRep (vss × h × w)) =
+matrixUpdate :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
+matrixUpdate i j δv (MatrixRep (vss × h × w)) =
    MatrixRep (vss' × h × w)
    where
    vs_i = vss ! (i - 1)

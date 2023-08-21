@@ -28,7 +28,7 @@ import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrSt
 import Set (singleton, insert)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, MayFail, error, orElse, report, unimplemented, (×))
-import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, updateMatrix)
+import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixUpdate)
 
 extern :: forall a. ForeignOp -> Val a
 extern = flip Foreign Nil >>> Fun
@@ -135,7 +135,7 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
 
    bwd :: OpBwd (Raw ArrayData × (Int × Int) × (Int × Int))
    bwd ((vss × (i' × j') × (i × j)) × v) =
-      Matrix bot (updateMatrix i j (const v) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
+      Matrix bot (matrixUpdate i j (const v) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : Nil
 

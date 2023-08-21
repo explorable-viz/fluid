@@ -20,7 +20,7 @@ import Lattice (𝔹, botOf, neg)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
 import Util (Endo, type (×), absurd, error, definitely')
-import Val (Val(..), updateMatrix)
+import Val (Val(..), matrixUpdate)
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
@@ -55,13 +55,13 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
 
 -- Selection helpers.
 selectMatrixElement :: Int -> Int -> Endo (Selector Val)
-selectMatrixElement i j δv (Matrix α r) = Matrix α $ updateMatrix i j δv r
+selectMatrixElement i j δv (Matrix α r) = Matrix α $ matrixUpdate i j δv r
 selectMatrixElement _ _ _ _ = error absurd
 
 {-
 selectMatrixElement2 :: Int -> Int -> Selector2 Val
 selectMatrixElement2 i j = Selector2 $ case _ of
-   Matrix _ r -> ?_
+   Matrix _ r -> matrixGet i j r
    _ -> error absurd
 -}
 selectNth :: Int -> Endo (Selector Val)
@@ -99,7 +99,7 @@ selectPair _ _ _ _ = error absurd
 
 -- Togglers. TODO: subsumed by selectors now?
 toggleCell :: Int -> Int -> Selector Val
-toggleCell i j (Matrix α m) = Matrix α (updateMatrix i j neg m)
+toggleCell i j (Matrix α m) = Matrix α (matrixUpdate i j neg m)
 toggleCell _ _ _ = error absurd
 
 toggleField :: Var -> Selector Val -> Selector Val
