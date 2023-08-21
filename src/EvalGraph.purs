@@ -79,15 +79,15 @@ closeDefs γ ρ αs =
       let
          ρ' = ρ `for` σ
       in
-         V.Fun <$> (V.Closure <$> new αs <@> (γ `restrict` (fv ρ' `S.union` fv σ)) <@> ρ' <@> σ)
+         V.Fun <$> new αs <@> V.Closure (γ `restrict` (fv ρ' `S.union` fv σ)) ρ' σ
 
 {-# Evaluation #-}
 apply :: forall s m. Monad m => Set s Vertex => Val Vertex -> Val Vertex -> WithGraphAllocT s m (Val Vertex)
-apply (V.Fun (V.Closure α γ1 ρ σ)) v = do
+apply (V.Fun α (V.Closure γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- except $ match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
-apply (V.Fun (V.Foreign α φ vs)) v =
+apply (V.Fun α (V.Foreign φ vs)) v =
    runExists apply' φ
    where
    vs' = snoc vs v
@@ -95,11 +95,11 @@ apply (V.Fun (V.Foreign α φ vs)) v =
    apply' :: forall t. ForeignOp' t -> WithGraphAllocT s m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
-         V.Fun <$> (V.Foreign <$> new (singleton α) <@> φ <@> vs')
+         V.Fun <$> new (singleton α) <@> V.Foreign φ vs'
       else φ'.op' vs'
-apply (V.Fun (V.PartialConstr α c vs)) v = do
+apply (V.Fun α (V.PartialConstr c vs)) v = do
    except $ check (length vs < n) ("Too many arguments to " <> showCtr c)
-   if length vs < n - 1 then V.Fun <$> (V.PartialConstr <$> new (singleton α) <@> c <@> snoc vs v)
+   if length vs < n - 1 then V.Fun <$> new (singleton α) <@> V.PartialConstr c (snoc vs v)
    else pure $ V.Constr α c (snoc vs v)
    where
    n = successful (arity c)
@@ -140,7 +140,7 @@ eval γ (Matrix α e (x × y) e') αs = do
          A.singleton (eval (γ <+> γ') e αs)
    V.Matrix <$> new (insert α αs) <@> MatrixRep (vss × (i' × β) × (j' × β'))
 eval γ (Lambda σ) αs =
-   V.Fun <$> (V.Closure <$> new αs <@> γ `restrict` fv σ <@> D.empty <@> σ)
+   V.Fun <$> new αs <@> V.Closure (γ `restrict` fv σ) D.empty σ
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    except $ case v of

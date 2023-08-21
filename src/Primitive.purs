@@ -171,7 +171,7 @@ type BinaryZero i o a =
 
 unary :: forall i o a'. BoundedJoinSemilattice a' => (forall a. Unary i o a) -> Val a'
 unary op =
-   Fun $ flip (Foreign bot) Nil
+   Fun bot $ flip Foreign Nil
       $ mkExists
       $ ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
@@ -194,7 +194,7 @@ unary op =
 
 binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
-   Fun $ flip (Foreign bot) Nil
+   Fun bot $ flip Foreign Nil
       $ mkExists
       $ ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
@@ -218,7 +218,7 @@ binary op =
 -- If both are zero, depend only on the first.
 binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => (forall a. BinaryZero i o a) -> Val a'
 binaryZero op =
-   Fun $ flip (Foreign bot) Nil
+   Fun bot $ flip Foreign Nil
       $ mkExists
       $ ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where

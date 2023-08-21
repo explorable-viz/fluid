@@ -31,11 +31,11 @@ import Util (type (+), type (×), Endo, MayFail, error, orElse, report, unimplem
 import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixUpdate)
 
 extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Val a
-extern = flip (Foreign bot) Nil >>> Fun
+extern = Fun bot <<< flip Foreign Nil
 
 primitives :: Raw Env
 primitives = D.fromFoldable
-   [ ":" × Fun (PartialConstr bot cCons Nil)
+   [ ":" × Fun bot (PartialConstr cCons Nil)
    , "ceiling" × unary { i: number, o: int, fwd: ceil }
    , "debugLog" × extern debugLog
    , "dims" × extern dims
