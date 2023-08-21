@@ -44,9 +44,9 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
    from (Constr _ c (u1 : u2 : Nil)) | c == cCons = u1 A.: from u2
 
 -- Selection helpers.
-selectCell :: Int -> Int -> Endo (Selector Val)
-selectCell i j δv (Matrix α r) = Matrix α $ updateMatrix i j δv r
-selectCell _ _ _ _ = error absurd
+selectMatrixElement :: Int -> Int -> Endo (Selector Val)
+selectMatrixElement i j δv (Matrix α r) = Matrix α $ updateMatrix i j δv r
+selectMatrixElement _ _ _ _ = error absurd
 
 selectNth :: Int -> Endo (Selector Val)
 selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v : v' : Nil)
