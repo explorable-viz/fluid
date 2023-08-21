@@ -94,18 +94,15 @@ apply (V.Fun (V.Foreign α φ vs)) v =
 
    apply' :: forall t. ForeignOp' t -> WithGraphAllocT s m (Val Vertex)
    apply' (ForeignOp' φ') =
-      if φ'.arity > length vs' then do
-         α' <- new (singleton α)
-         pure $ V.Fun (V.Foreign α' φ vs')
+      if φ'.arity > length vs' then
+         V.Fun <$> (V.Foreign <$> new (singleton α) <@> φ <@> vs')
       else φ'.op' vs'
 apply (V.Fun (V.PartialConstr α c vs)) v = do
    except $ check (length vs < n) ("Too many arguments to " <> showCtr c)
-   pure v'
+   if length vs < n - 1 then V.Fun <$> (V.PartialConstr <$> new (singleton α) <@> c <@> snoc vs v)
+   else pure $ V.Constr α c (snoc vs v)
    where
    n = successful (arity c)
-   v' =
-      if length vs < n - 1 then V.Fun $ V.PartialConstr α c (snoc vs v)
-      else V.Constr α c (snoc vs v)
 apply _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
 
 eval :: forall s m. Monad m => Set s Vertex => Env Vertex -> Expr Vertex -> s Vertex -> WithGraphAllocT s m (Val Vertex)
