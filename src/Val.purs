@@ -35,6 +35,16 @@ data Val a
    | Matrix a (MatrixRep a)
    | Fun a (Fun a)
 
+addr :: Val Vertex -> Vertex
+addr (Int α _) = α
+addr (Float α _) = α
+addr (Str α _) = α
+addr (Constr α _ _) = α
+addr (Record α _) = α
+addr (Dictionary α _) = α
+addr (Matrix α _) = α
+addr (Fun α _) = α
+
 data Fun a
    = Closure (Env a) (RecDefs a) (Elim a)
    | Foreign ForeignOp (List (Val a)) -- never saturated
