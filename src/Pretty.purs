@@ -401,7 +401,7 @@ instance Highlightable a => Pretty (Val a) where
 
 instance Highlightable a => Pretty (Fun a) where
    pretty (V.Closure α _ _ _) = highlightIf α $ text "<closure>"
-   pretty (V.Foreign φ _) = runExists pretty φ
+   pretty (V.Foreign _ φ _) = runExists pretty φ
    pretty (V.PartialConstr α c vs) = prettyConstr α c vs
 
 instance Pretty (ForeignOp' t) where

@@ -37,7 +37,7 @@ data Val a
 
 data Fun a
    = Closure a (Env a) (RecDefs a) (Elim a)
-   | Foreign ForeignOp (List (Val a)) -- never saturated
+   | Foreign a ForeignOp (List (Val a)) -- never saturated
    | PartialConstr a Ctr (List (Val a)) -- never saturated
 
 class (Highlightable a, BoundedLattice a) <= Ann a
@@ -152,7 +152,7 @@ instance Apply Val where
 
 instance Apply Fun where
    apply (Closure fα fγ fρ fσ) (Closure α γ ρ σ) = Closure (fα α) (D.apply2 fγ γ) (D.apply2 fρ ρ) (fσ <*> σ)
-   apply (Foreign op fvs) (Foreign _ vs) = Foreign op (zipWith (<*>) fvs vs)
+   apply (Foreign fα op fvs) (Foreign α _ vs) = Foreign (fα α) op (zipWith (<*>) fvs vs)
    apply (PartialConstr fα c fvs) (PartialConstr α _ vs) = PartialConstr (fα α) c (zipWith (<*>) fvs vs)
    apply _ _ = error "Apply Fun: shape mismatch"
 
@@ -214,7 +214,8 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
 instance JoinSemilattice a => JoinSemilattice (Fun a) where
    maybeJoin (Closure α γ ρ σ) (Closure α' γ' ρ' σ') =
       Closure (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
-   maybeJoin (Foreign φ vs) (Foreign _ vs') = Foreign φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
+   maybeJoin (Foreign α φ vs) (Foreign α' _ vs') =
+      Foreign (α ∨ α') φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin (PartialConstr α c vs) (PartialConstr α' c' us) =
       PartialConstr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
    maybeJoin _ _ = report "Incompatible functions"
@@ -243,6 +244,6 @@ instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
 instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
    expand (Closure α γ ρ σ) (Closure _ γ' ρ' σ') =
       Closure α (expand γ γ') (expand ρ ρ') (expand σ σ')
-   expand (Foreign φ vs) (Foreign _ vs') = Foreign φ (expand vs vs') -- TODO: require φ == φ'
+   expand (Foreign α φ vs) (Foreign _ _ vs') = Foreign α φ (expand vs vs') -- TODO: require φ == φ'
    expand (PartialConstr α c vs) (PartialConstr _ c' us) = PartialConstr α (c ≜ c') (expand vs us)
    expand _ _ = error "Incompatible values"

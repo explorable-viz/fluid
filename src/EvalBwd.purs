@@ -82,15 +82,15 @@ applyBwd (T.AppClosure xs w t3 × v) =
    γ1' × δ' × β' = closeDefsBwd γ2
    v' × σ = matchBwd γ3 (ContExpr e) β w
 applyBwd (T.AppForeign n t × v) =
-   V.Fun (V.Foreign φ vs'') × v2'
+   V.Fun (V.Foreign α φ vs'') × v2'
    where
-   φ × { init: vs'', last: v2' } = second (definitely' <<< unsnoc) $ runExists applyBwd' t
+   φ × α × { init: vs'', last: v2' } = second (second (definitely' <<< unsnoc)) $ runExists applyBwd' t
       where
-      applyBwd' :: forall t. ForeignTrace' t -> ForeignOp × List (Val _)
+      applyBwd' :: forall t. ForeignTrace' t -> ForeignOp × a × List (Val _)
       applyBwd' (ForeignTrace' (ForeignOp' φ) t') =
          mkExists (ForeignOp' φ) ×
-            if φ.arity > n then unsafePartial $ let V.Fun (V.Foreign _ vs'') = v in vs''
-            else φ.op_bwd (definitely' t' × v)
+            if φ.arity > n then unsafePartial $ let V.Fun (V.Foreign α _ vs'') = v in α × vs''
+            else bot × φ.op_bwd (definitely' t' × v)
 applyBwd (T.AppConstr c × v) =
    V.Fun (V.PartialConstr β c vs') × v2
    where
