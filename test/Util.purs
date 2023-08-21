@@ -154,14 +154,14 @@ withDataset dataset =
 testMany :: Array (File × String) → Test Unit
 testMany fxs = withDefaultImports $ traverse_ test fxs
    where
-   test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) do
+   test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
       it (show file) (\(gconfig × s) -> testWithSetup gconfig s fwd_expect Nothing)
 
 testBwdMany :: Array (File × File × Selector Val × String) → Test Unit
 testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
    where
    testBwd (file × file_expect × δv × fwd_expect) =
-      beforeWith ((_ <$> open (folder <> file)) <<< (×)) do
+      beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
          it (show $ folder <> file)
             (\(gconfig × s) -> testWithSetup gconfig s fwd_expect (Just (δv × (folder <> file_expect))))
    folder = File "slicing/"
