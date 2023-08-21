@@ -167,9 +167,9 @@ instance Apply Cont where
 traverseModule :: forall m a b. Monad m => (a -> m b) -> Module a -> m (Module b)
 traverseModule _ (Module Nil) = pure (Module Nil)
 traverseModule f (Module (Left (VarDef σ e) : ds)) = do
-   VarDef σ' e' <- traverse f (VarDef σ e)
+   d <- traverse f (VarDef σ e)
    Module ds' <- traverseModule f (Module ds)
-   pure (Module (Left (VarDef σ' e') : ds'))
+   pure (Module (Left d : ds'))
 traverseModule f (Module (Right ρ : ds)) = do
    ρ' <- traverse (traverse f) ρ
    Module ds' <- traverseModule f (Module ds)

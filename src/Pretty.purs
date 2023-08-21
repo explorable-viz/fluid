@@ -397,12 +397,12 @@ instance Highlightable a => Pretty (Val a) where
       (svs # D.toUnfoldable <#> \(s × (β × v)) -> (s × β) × v)
    pretty (V.Constr α c vs) = prettyConstr α c vs
    pretty (V.Matrix _ (MatrixRep (vss × _ × _))) = vert comma (((<$>) pretty >>> hcomma) <$> vss)
-   pretty (V.Fun φ) = pretty φ
+   pretty (V.Fun α φ) = pretty (α × φ)
 
-instance Highlightable a => Pretty (Fun a) where
-   pretty (V.Closure α _ _ _) = highlightIf α $ text "<closure>"
-   pretty (V.Foreign φ _) = runExists pretty φ
-   pretty (V.PartialConstr α c vs) = prettyConstr α c vs
+instance Highlightable a => Pretty (a × Fun a) where
+   pretty (α × V.Closure _ _ _) = highlightIf α $ text "<closure>"
+   pretty (_ × V.Foreign φ _) = runExists pretty φ
+   pretty (α × V.PartialConstr c vs) = prettyConstr α c vs
 
 instance Pretty (ForeignOp' t) where
    pretty _ = text "<extern op>" -- TODO

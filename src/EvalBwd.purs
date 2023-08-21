@@ -35,7 +35,7 @@ closeDefsBwd γ =
    joinDefs :: Var -> Val a -> Endo (RecDefs a × Env a × RecDefs a × a)
    joinDefs f _ (ρ_acc × γ' × ρ × α) =
       case get f γ of
-         V.Fun (V.Closure α_f γ_f ρ_f σ_f) ->
+         V.Fun α_f (V.Closure γ_f ρ_f σ_f) ->
             (ρ_acc # insert f σ_f) × (γ' ∨ γ_f) × (ρ ∨ ρ_f) × (α ∨ α_f)
          _ -> error absurd
 
@@ -74,7 +74,7 @@ type EvalBwdResult a =
 
 applyBwd :: forall a. Ann a => AppTrace × Val a -> Val a × Val a
 applyBwd (T.AppClosure xs w t3 × v) =
-   V.Fun (V.Closure (β ∨ β') (γ1 ∨ γ1') δ' σ) × v'
+   V.Fun (β ∨ β') (V.Closure (γ1 ∨ γ1') δ' σ) × v'
    where
    { γ: γ1γ2γ3, e, α: β } = evalBwd' v t3
    γ1γ2 × γ3 = append_inv (bv w) γ1γ2γ3
@@ -82,21 +82,21 @@ applyBwd (T.AppClosure xs w t3 × v) =
    γ1' × δ' × β' = closeDefsBwd γ2
    v' × σ = matchBwd γ3 (ContExpr e) β w
 applyBwd (T.AppForeign n t × v) =
-   V.Fun (V.Foreign φ vs'') × v2'
+   V.Fun α (V.Foreign φ vs'') × v2'
    where
-   φ × { init: vs'', last: v2' } = second (definitely' <<< unsnoc) $ runExists applyBwd' t
+   φ × α × { init: vs'', last: v2' } = second (second (definitely' <<< unsnoc)) $ runExists applyBwd' t
       where
-      applyBwd' :: forall t. ForeignTrace' t -> ForeignOp × List (Val _)
+      applyBwd' :: forall t. ForeignTrace' t -> ForeignOp × a × List (Val _)
       applyBwd' (ForeignTrace' (ForeignOp' φ) t') =
          mkExists (ForeignOp' φ) ×
-            if φ.arity > n then unsafePartial $ let V.Fun (V.Foreign _ vs'') = v in vs''
-            else φ.op_bwd (definitely' t' × v)
+            if φ.arity > n then unsafePartial $ let V.Fun α (V.Foreign _ vs'') = v in α × vs''
+            else bot × φ.op_bwd (definitely' t' × v)
 applyBwd (T.AppConstr c × v) =
-   V.Fun (V.PartialConstr β c vs') × v2
+   V.Fun β (V.PartialConstr c vs') × v2
    where
    vs × β = case v of
       V.Constr β c' vs | c' == c -> vs × β
-      V.Fun (V.PartialConstr β c' vs) | c' == c -> vs × β
+      V.Fun β (V.PartialConstr c' vs) | c' == c -> vs × β
       _ -> error absurd
    { init: vs', last: v2 } = definitely' (unsnoc vs)
 
@@ -121,7 +121,7 @@ evalBwd' v (T.Op op) = { γ: D.singleton op v, e: Op op, α: bot }
 evalBwd' (V.Str α str) T.Const = { γ: empty, e: Str α str, α }
 evalBwd' (V.Int α n) T.Const = { γ: empty, e: Int α n, α }
 evalBwd' (V.Float α n) T.Const = { γ: empty, e: Float α n, α }
-evalBwd' (V.Fun (V.Closure α γ _ σ)) T.Const = { γ, e: Lambda σ, α }
+evalBwd' (V.Fun α (V.Closure γ _ σ)) T.Const = { γ, e: Lambda σ, α }
 evalBwd' (V.Record α xvs) (T.Record xts) =
    { γ: foldr (∨) empty (xγeαs <#> _.γ), e: Record α (xγeαs <#> _.e), α: foldr (∨) α (xγeαs <#> _.α) }
    where

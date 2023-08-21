@@ -3,7 +3,6 @@ module Primitive.Defs where
 import Prelude hiding (absurd, apply, div, mod, top)
 
 import Control.Monad.Except (except)
-import Data.Array ((!!))
 import Data.Exists (mkExists)
 import Data.Foldable (foldl, foldM)
 import Data.FoldableWithIndex (foldWithIndexM)
@@ -22,21 +21,21 @@ import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
 import Graph.GraphWriter (new)
-import Lattice (Raw, (∨), (∧), bot, botOf, erase)
+import Lattice (class BoundedJoinSemilattice, Raw, (∨), (∧), bot, botOf, erase)
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
 import Set (singleton, insert)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, MayFail, error, orElse, report, unimplemented, (×))
-import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), updateMatrix)
+import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixUpdate)
 
-extern :: forall a. ForeignOp -> Val a
-extern = flip Foreign Nil >>> Fun
+extern :: forall a. BoundedJoinSemilattice a => ForeignOp -> Val a
+extern = Fun bot <<< flip Foreign Nil
 
 primitives :: Raw Env
 primitives = D.fromFoldable
-   [ ":" × Fun (PartialConstr bot cCons Nil)
+   [ ":" × Fun bot (PartialConstr cCons Nil)
    , "ceiling" × unary { i: number, o: int, fwd: ceil }
    , "debugLog" × extern debugLog
    , "dims" × extern dims
@@ -123,26 +122,20 @@ matrixLookup :: ForeignOp
 matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
-   op (Matrix _ (MatrixRep (vss × _ × _)) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
-      | c == cPair = do
-           v <- except $ orElse "Index out of bounds" $ do
-              us <- vss !! (i - 1)
-              us !! (j - 1)
-           pure v
+   op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+      | c == cPair = except $ matrixGet i j r
    op _ = except $ report "Matrix and pair of integers expected"
 
    fwd :: OpFwd (Raw ArrayData × (Int × Int) × (Int × Int))
-   fwd (Matrix _ (MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
+   fwd (Matrix _ r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = do
-           v <- orElse "Index out of bounds" $ do
-              us <- vss !! (i - 1)
-              us !! (j - 1)
+           v <- matrixGet i j r
            pure $ ((map erase <$> vss) × (i' × j') × (i × j)) × v
    fwd _ = report "Matrix and pair of integers expected"
 
    bwd :: OpBwd (Raw ArrayData × (Int × Int) × (Int × Int))
    bwd ((vss × (i' × j') × (i × j)) × v) =
-      Matrix bot (updateMatrix i j (const v) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
+      Matrix bot (matrixUpdate i j (const v) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : Nil
 

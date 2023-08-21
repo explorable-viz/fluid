@@ -62,7 +62,7 @@ matchMany _ _ = error absurd
 
 closeDefs :: forall a. Env a -> RecDefs a -> a -> Env a
 closeDefs γ ρ α = ρ <#> \σ ->
-   let ρ' = ρ `for` σ in V.Fun $ V.Closure α (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
+   let ρ' = ρ `for` σ in V.Fun α $ V.Closure (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
 checkArity :: Ctr -> Int -> MayFail Unit
 checkArity c n = do
@@ -70,30 +70,31 @@ checkArity c n = do
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
 apply :: forall a. Ann a => Val a × Val a -> MayFail (AppTrace × Val a)
-apply (V.Fun (V.Closure β γ1 ρ σ) × v) = do
+apply (V.Fun β (V.Closure γ1 ρ σ) × v) = do
    let γ2 = closeDefs γ1 ρ β
    γ3 × e'' × β' × w <- match v σ
    t'' × v'' <- eval (γ1 <+> γ2 <+> γ3) (asExpr e'') (β ∧ β')
    pure $ T.AppClosure (S.fromFoldable (keys ρ)) w t'' × v''
-apply (V.Fun (V.Foreign φ vs) × v) = do
-   let vs' = vs <> singleton v
-   let
-      apply' :: forall t. ForeignOp' t -> MayFail (ForeignTrace × Val _)
-      apply' (ForeignOp' φ') = do
-         t × v'' <- do
-            if φ'.arity > length vs' then pure $ Nothing × V.Fun (V.Foreign φ vs')
-            else first Just <$> φ'.op vs'
-         pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v''
+apply (V.Fun α (V.Foreign φ vs) × v) = do
    t × v'' <- runExists apply' φ
    pure $ T.AppForeign (length vs + 1) t × v''
-apply (V.Fun (V.PartialConstr α c vs) × v) = do
-   let n = successful (arity c)
+   where
+   vs' = vs <> singleton v
+
+   apply' :: forall t. ForeignOp' t -> MayFail (ForeignTrace × Val _)
+   apply' (ForeignOp' φ') = do
+      t × v'' <- do
+         if φ'.arity > length vs' then pure $ Nothing × V.Fun α (V.Foreign φ vs')
+         else first Just <$> φ'.op vs'
+      pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v''
+apply (V.Fun α (V.PartialConstr c vs) × v) = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
-   let
-      v' =
-         if length vs < n - 1 then V.Fun $ V.PartialConstr α c (vs <> singleton v)
-         else V.Constr α c (vs <> singleton v)
    pure $ T.AppConstr c × v'
+   where
+   n = successful (arity c)
+   v' =
+      if length vs < n - 1 then V.Fun α $ V.PartialConstr c (vs <> singleton v)
+      else V.Constr α c (vs <> singleton v)
 apply (_ × v) = report $ "Found " <> prettyP v <> ", expected function"
 
 apply2 :: forall a. Ann a => Val a × Val a × Val a -> MayFail ((AppTrace × AppTrace) × Val a)
@@ -138,7 +139,7 @@ eval γ (Matrix α e (x × y) e') α' = do
    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
 eval γ (Lambda σ) α =
-   pure $ T.Const × V.Fun (V.Closure α (γ `restrict` fv σ) empty σ)
+   pure $ T.Const × V.Fun α (V.Closure (γ `restrict` fv σ) empty σ)
 eval γ (Project e x) α = do
    t × v <- eval γ e α
    case v of

@@ -4,6 +4,7 @@ import Prelude hiding (absurd, append)
 
 import Bindings (Var)
 import Control.Apply (lift2)
+import Data.Array ((!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
 import Data.Exists (Exists)
@@ -32,12 +33,22 @@ data Val a
    | Record a (Dict (Val a)) -- always saturated
    | Dictionary a (DictRep a)
    | Matrix a (MatrixRep a)
-   | Fun (Fun a)
+   | Fun a (Fun a)
+
+addr :: Val Vertex -> Vertex
+addr (Int α _) = α
+addr (Float α _) = α
+addr (Str α _) = α
+addr (Constr α _ _) = α
+addr (Record α _) = α
+addr (Dictionary α _) = α
+addr (Matrix α _) = α
+addr (Fun α _) = α
 
 data Fun a
-   = Closure a (Env a) (RecDefs a) (Elim a)
+   = Closure (Env a) (RecDefs a) (Elim a)
    | Foreign ForeignOp (List (Val a)) -- never saturated
-   | PartialConstr a Ctr (List (Val a)) -- never saturated
+   | PartialConstr Ctr (List (Val a)) -- never saturated
 
 class (Highlightable a, BoundedLattice a) <= Ann a
 
@@ -99,8 +110,14 @@ newtype MatrixRep a = MatrixRep (Array2 (Val a) × (Int × a) × (Int × a))
 
 type Array2 a = Array (Array a)
 
-updateMatrix :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
-updateMatrix i j δv (MatrixRep (vss × h × w)) =
+matrixGet :: forall a. Int -> Int -> MatrixRep a -> MayFail (Val a)
+matrixGet i j (MatrixRep (vss × _ × _)) =
+   orElse "Index out of bounds" $ do
+      us <- vss !! (i - 1)
+      us !! (j - 1)
+
+matrixUpdate :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
+matrixUpdate i j δv (MatrixRep (vss × h × w)) =
    MatrixRep (vss' × h × w)
    where
    vs_i = vss ! (i - 1)
@@ -140,13 +157,13 @@ instance Apply Val where
    apply (Record fα fxvs) (Record α xvs) = Record (fα α) (D.apply2 fxvs xvs)
    apply (Dictionary fα fxvs) (Dictionary α xvs) = Dictionary (fα α) (fxvs <*> xvs)
    apply (Matrix fα fm) (Matrix α m) = Matrix (fα α) (fm <*> m)
-   apply (Fun ff) (Fun f) = Fun (ff <*> f)
+   apply (Fun fα ff) (Fun α f) = Fun (fα α) (ff <*> f)
    apply _ _ = error "Apply Expr: shape mismatch"
 
 instance Apply Fun where
-   apply (Closure fα fγ fρ fσ) (Closure α γ ρ σ) = Closure (fα α) (D.apply2 fγ γ) (D.apply2 fρ ρ) (fσ <*> σ)
+   apply (Closure fγ fρ fσ) (Closure γ ρ σ) = Closure (D.apply2 fγ γ) (D.apply2 fρ ρ) (fσ <*> σ)
    apply (Foreign op fvs) (Foreign _ vs) = Foreign op (zipWith (<*>) fvs vs)
-   apply (PartialConstr fα c fvs) (PartialConstr α _ vs) = PartialConstr (fα α) c (zipWith (<*>) fvs vs)
+   apply (PartialConstr c fvs) (PartialConstr _ vs) = PartialConstr c (zipWith (<*>) fvs vs)
    apply _ _ = error "Apply Fun: shape mismatch"
 
 instance Apply DictRep where
@@ -198,18 +215,19 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
    maybeJoin (Dictionary α d) (Dictionary α' d') = Dictionary (α ∨ α') <$> maybeJoin d d'
    maybeJoin (Constr α c vs) (Constr α' c' us) = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
    maybeJoin (Matrix α m) (Matrix α' m') = Matrix (α ∨ α') <$> maybeJoin m m'
-   maybeJoin (Fun φ) (Fun φ') = Fun <$> maybeJoin φ φ'
+   maybeJoin (Fun α φ) (Fun α' φ') = Fun (α ∨ α') <$> maybeJoin φ φ'
    maybeJoin _ _ = report "Incompatible values"
 
    join v = definedJoin v
    neg = (<$>) neg
 
 instance JoinSemilattice a => JoinSemilattice (Fun a) where
-   maybeJoin (Closure α γ ρ σ) (Closure α' γ' ρ' σ') =
-      Closure (α ∨ α') <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
-   maybeJoin (Foreign φ vs) (Foreign _ vs') = Foreign φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
-   maybeJoin (PartialConstr α c vs) (PartialConstr α' c' us) =
-      PartialConstr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
+   maybeJoin (Closure γ ρ σ) (Closure γ' ρ' σ') =
+      Closure <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
+   maybeJoin (Foreign φ vs) (Foreign _ vs') =
+      Foreign φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
+   maybeJoin (PartialConstr c vs) (PartialConstr c' us) =
+      PartialConstr <$> (c ≞ c') <*> maybeJoin vs us
    maybeJoin _ _ = report "Incompatible functions"
 
    join v = definedJoin v
@@ -230,12 +248,12 @@ instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
    expand (Dictionary α d) (Dictionary _ d') = Dictionary α (expand d d')
    expand (Constr α c vs) (Constr _ c' us) = Constr α (c ≜ c') (expand vs us)
    expand (Matrix α m) (Matrix _ m') = Matrix α (expand m m')
-   expand (Fun φ) (Fun φ') = Fun (expand φ φ')
+   expand (Fun α φ) (Fun _ φ') = Fun α (expand φ φ')
    expand _ _ = error "Incompatible values"
 
 instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
-   expand (Closure α γ ρ σ) (Closure _ γ' ρ' σ') =
-      Closure α (expand γ γ') (expand ρ ρ') (expand σ σ')
+   expand (Closure γ ρ σ) (Closure γ' ρ' σ') =
+      Closure (expand γ γ') (expand ρ ρ') (expand σ σ')
    expand (Foreign φ vs) (Foreign _ vs') = Foreign φ (expand vs vs') -- TODO: require φ == φ'
-   expand (PartialConstr α c vs) (PartialConstr _ c' us) = PartialConstr α (c ≜ c') (expand vs us)
+   expand (PartialConstr c vs) (PartialConstr c' us) = PartialConstr (c ≜ c') (expand vs us)
    expand _ _ = error "Incompatible values"

@@ -1,29 +1,40 @@
 module App.Util where
 
 import Prelude hiding (absurd)
+
+import Bindings (Var)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
+import Data.Set (Set, union)
+import Data.Set as S
 import Data.Tuple (fst)
-import Effect (Effect)
-import Foreign.Object (update)
-import Web.Event.Event (Event)
-import Web.Event.EventTarget (EventListener)
-import Bindings (Var)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Dict (Dict, get)
+import Effect (Effect)
+import Foreign.Object (update)
+import Graph (Vertex)
 import Lattice (𝔹, botOf, neg)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
-import Util (Endo, type (×), absurd, error, definitely')
-import Val (Val(..), updateMatrix)
+import Util (Endo, type (×), absurd, error, definitely', successful)
+import Val (Val(..), addr, matrixGet, matrixUpdate)
+import Web.Event.Event (Event)
+import Web.Event.EventTarget (EventListener)
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
 type Selector f = f 𝔹 -> f 𝔹
+newtype Selector2 f = Selector2 (f Vertex -> Set Vertex)
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
+
+instance Semigroup (Selector2 f) where
+   append (Selector2 s1) (Selector2 s2) = Selector2 $ \x -> s1 x `union` s2 x
+
+instance Monoid (Selector2 f) where
+   mempty = Selector2 $ const S.empty
 
 doNothing :: OnSel
 doNothing = const $ pure unit
@@ -44,9 +55,16 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
    from (Constr _ c (u1 : u2 : Nil)) | c == cCons = u1 A.: from u2
 
 -- Selection helpers.
-selectCell :: Int -> Int -> Endo (Selector Val)
-selectCell i j δv (Matrix α r) = Matrix α $ updateMatrix i j δv r
-selectCell _ _ _ _ = error absurd
+selectMatrixElement :: Int -> Int -> Endo (Selector Val)
+selectMatrixElement i j δv (Matrix α r) = Matrix α $ matrixUpdate i j δv r
+selectMatrixElement _ _ _ _ = error absurd
+
+selectMatrixElement2 :: Int -> Int -> Selector2 Val
+selectMatrixElement2 i j = Selector2 $ case _ of
+   Matrix _ r -> S.singleton (addr v)
+      where
+      v = successful (matrixGet i j r) :: Val Vertex
+   _ -> error absurd
 
 selectNth :: Int -> Endo (Selector Val)
 selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v : v' : Nil)
@@ -63,6 +81,11 @@ selectSome :: Selector Val
 selectSome (Constr _ c vs) | c == cSome = Constr true c (botOf <$> vs)
 selectSome _ = error absurd
 
+selectSome2 :: Selector2 Val
+selectSome2 = Selector2 $ case _ of
+   (Constr α c _) | c == cSome -> S.singleton α
+   _ -> error absurd
+
 select_y :: Selector Val -> Selector Val
 select_y δv (Record α r) = Record α $ update (δv >>> Just) f_y r
 select_y _ _ = error absurd
@@ -78,7 +101,7 @@ selectPair _ _ _ _ = error absurd
 
 -- Togglers. TODO: subsumed by selectors now?
 toggleCell :: Int -> Int -> Selector Val
-toggleCell i j (Matrix α m) = Matrix α (updateMatrix i j neg m)
+toggleCell i j (Matrix α m) = Matrix α (matrixUpdate i j neg m)
 toggleCell _ _ _ = error absurd
 
 toggleField :: Var -> Selector Val -> Selector Val
