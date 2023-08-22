@@ -15,7 +15,8 @@ import Partial.Unsafe (unsafePartial)
 import Dict (Dict, keys, lookup)
 import Dict (fromFoldable) as O
 import Bindings (Var)
-import Util (MayFail, type (×), (×), (=<<<), (≞), absurd, error, definitely', with)
+import Control.Monad.Except.Trans (except)
+import Util (MayFailT, type (×), (×), (=<<<), (≞), absurd, error, definitely', with)
 
 type TypeName = String
 type FieldName = String
@@ -56,16 +57,16 @@ ctrToDataType =
    dataTypes <#> (\d -> ctrs d # S.toUnfoldable <#> (_ × d)) # concat # O.fromFoldable
 
 class DataTypeFor a where
-   dataTypeFor :: a -> MayFail DataType
+   dataTypeFor :: forall m. Monad m => a -> MayFailT m DataType
 
 instance DataTypeFor Ctr where
-   dataTypeFor c = note ("Unknown constructor " <> showCtr c) (lookup c ctrToDataType)
+   dataTypeFor c = except $ note ("Unknown constructor " <> showCtr c) (lookup c ctrToDataType)
 
 instance DataTypeFor (Set Ctr) where
    dataTypeFor cs = unsafePartial $ case S.toUnfoldable cs of c : _ -> dataTypeFor c
 
 -- Sets must be non-empty, but this is a more convenient signature.
-consistentWith :: Set Ctr -> Set Ctr -> MayFail Unit
+consistentWith :: forall m. Monad m => Set Ctr -> Set Ctr -> MayFailT m Unit
 consistentWith cs cs' = void $ do
    d <- dataTypeFor cs'
    d' <- dataTypeFor cs'
@@ -74,12 +75,12 @@ consistentWith cs cs' = void $ do
 ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
-arity :: Ctr -> MayFail Int
+arity :: forall m. Monad m => Ctr -> MayFailT m Int
 arity c = do
    DataType _ sigs <- dataTypeFor c
-   note absurd (lookup c sigs)
+   except $ note absurd (lookup c sigs)
 
-checkArity :: Ctr -> Int -> MayFail Unit
+checkArity :: forall m. Monad m => Ctr -> Int -> MayFailT m Unit
 checkArity c n = void $
    with ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
 

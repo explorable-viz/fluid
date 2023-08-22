@@ -77,15 +77,15 @@ testWithSetup gconfig s fwd_expect v_expect_opt =
       let
          γ𝔹 = botOf <$> γ
          s𝔹 = botOf s
-      e𝔹 <- except $ desug s𝔹
-      t × v𝔹 <- except $ eval γ𝔹 e𝔹 bot
+      e𝔹 <- desug s𝔹
+      t × v𝔹 <- eval γ𝔹 e𝔹 bot
       let
          v𝔹' = fromMaybe identity (fst <$> v_expect_opt) v𝔹
          { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
          s𝔹' = desugBwd e𝔹' (erase s𝔹)
-      _ × v𝔹'' <- except $ desug s𝔹' >>= flip (eval γ𝔹') top
+      _ × v𝔹'' <- desug s𝔹' >>= flip (eval γ𝔹') top
       let src = prettyP s
-      s'' <- except $ parse src program
+      s'' <- parse src program
       trace ("Non-Annotated:\n" <> src) \_ -> lift $ do
          if not $ eq (erase s) s'' then do
             liftEffect $ do

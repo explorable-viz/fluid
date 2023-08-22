@@ -24,7 +24,7 @@ import Data.Tuple (swap)
 import Data.Profunctor.Strong (first)
 import Data.Traversable (class Traversable, traverse)
 import Graph (Vertex(..), class Graph, fromFoldable)
-import Util (MayFailT, MayFail, type (×), (×))
+import Util (MayFailT, type (×), type (+), (×))
 
 class Monad m <= MonadGraph s m | m -> s where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -67,7 +67,7 @@ runWithGraphT c = runStateT c Nil <#> swap <#> first fromFoldable
 runWithGraph :: forall g s a. Graph g s => WithGraph s a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
 
-runWithGraphAllocT :: forall g s m a. Monad m => Graph g s => g × Int -> WithGraphAllocT s m a -> m (MayFail ((g × Int) × a))
+runWithGraphAllocT :: forall g s m a. Monad m => Graph g s => g × Int -> WithGraphAllocT s m a -> m (String + ((g × Int) × a))
 runWithGraphAllocT (g × n) c = do
    (maybe_a × n') × g_adds <- runStateT (runStateT (runExceptT c) n) Nil
    pure $ maybe_a <#> (((g <> fromFoldable g_adds) × n') × _)

@@ -26,7 +26,7 @@ import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
 import Set (class Set, empty)
-import Util (MayFail, type (×), (×), error, successful)
+import Util (MayFailT, type (×), (×), error, successful, extractRight)
 import Util.Parse (SParser)
 import Val (Env, (<+>))
 
@@ -49,8 +49,8 @@ loadFile (Folder folder) (File file) = do
       Left err -> error (printError err)
       Right response -> pure response.body
 
-parse :: forall t. String -> SParser t -> MayFail t
-parse src = runParser src >>> show `bimap` identity
+parse :: forall t m. Monad m => String -> SParser t -> MayFailT m t
+parse src = runParser src >>> show `bimap` identity >>> except
 
 parseProgram :: Folder -> File -> Aff (S.Expr Unit)
 parseProgram folder file = do
@@ -63,7 +63,7 @@ open = parseProgram (Folder "fluid/example")
 loadModule :: forall s. Set s Vertex => File -> Env Vertex -> WithGraphAllocT s Aff (Env Vertex)
 loadModule file γ = do
    src <- lift $ lift $ lift $ loadFile (Folder "fluid/lib") file
-   mod <- except (parse src (module_) >>= desugarModuleFwd) >>= traverseModule (const fresh)
+   mod <- ((parse src (module_)) >>= desugarModuleFwd) >>= traverseModule (const fresh)
    eval_module γ mod empty <#> (γ <+> _)
 
 defaultImports :: forall s. Set s Vertex => WithGraphAllocT s Aff (Env Vertex)
@@ -74,14 +74,14 @@ defaultImports = do
 -- | Evaluates the default imports from an empty initial graph config
 openDefaultImports :: forall g s. Graph g s => Aff (GraphConfig g)
 openDefaultImports = do
-   (g × n) × γ <- successful <$> (runWithGraphAllocT (G.empty × 0) $ defaultImports)
+   (g × n) × γ <- extractRight <$> (runWithGraphAllocT (G.empty × 0) $ defaultImports)
    pure $ { g, n, γ }
 
 -- | Evaluates a dataset from an existing graph config (produced by openDefaultImports)
 openDatasetAs :: forall g s. Graph g s => File -> Var -> GraphConfig g -> Aff (GraphConfig g × Env Vertex)
 openDatasetAs file x { g, n, γ } = do
    s <- parseProgram (Folder "fluid") file
-   (g' × n') × (γ' × xv) <- successful <$>
+   (g' × n') × (γ' × xv) <- extractRight <$>
       ( runWithGraphAllocT (g × n) $ do
            eα <- alloc (successful $ desug s)
            vα <- eval γ eα empty
