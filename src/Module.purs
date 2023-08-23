@@ -63,7 +63,7 @@ open = parseProgram (Folder "fluid/example")
 loadModule :: forall s. Set s Vertex => File -> Env Vertex -> WithGraphAllocT s Aff (Env Vertex)
 loadModule file γ = do
    src <- lift $ lift $ lift $ loadFile (Folder "fluid/lib") file
-   mod <- ((parse src (module_)) >>= desugarModuleFwd) >>= traverseModule (const fresh)
+   mod <- parse src module_ >>= desugarModuleFwd >>= traverseModule (const fresh)
    eval_module γ mod empty <#> (γ <+> _)
 
 defaultImports :: forall s. Set s Vertex => WithGraphAllocT s Aff (Env Vertex)
@@ -74,7 +74,7 @@ defaultImports = do
 -- | Evaluates the default imports from an empty initial graph config
 openDefaultImports :: forall g s. Graph g s => Aff (GraphConfig g)
 openDefaultImports = do
-   (g × n) × γ <- extractRight <$> (runWithGraphAllocT (G.empty × 0) $ defaultImports)
+   (g × n) × γ <- extractRight <$> runWithGraphAllocT (G.empty × 0) defaultImports
    pure $ { g, n, γ }
 
 -- | Evaluates a dataset from an existing graph config (produced by openDefaultImports)

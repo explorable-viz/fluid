@@ -2,7 +2,6 @@ module DataType where
 
 import Prelude hiding (absurd)
 import Data.CodePoint.Unicode (isUpper)
-import Data.Either (note)
 import Data.Function (on)
 import Data.List (fromFoldable) as L
 import Data.List (List, concat, (:))
@@ -15,8 +14,7 @@ import Partial.Unsafe (unsafePartial)
 import Dict (Dict, keys, lookup)
 import Dict (fromFoldable) as O
 import Bindings (Var)
-import Control.Monad.Except.Trans (except)
-import Util (MayFailT, type (×), (×), (=<<<), (≞), absurd, error, definitely', with)
+import Util (MayFailT, type (×), (×), (=<<<), (≞), absurd, error, definitely', with, orElse)
 
 type TypeName = String
 type FieldName = String
@@ -60,7 +58,7 @@ class DataTypeFor a where
    dataTypeFor :: forall m. Monad m => a -> MayFailT m DataType
 
 instance DataTypeFor Ctr where
-   dataTypeFor c = except $ note ("Unknown constructor " <> showCtr c) (lookup c ctrToDataType)
+   dataTypeFor c = lookup c ctrToDataType # orElse ("Unknown constructor " <> showCtr c)
 
 instance DataTypeFor (Set Ctr) where
    dataTypeFor cs = unsafePartial $ case S.toUnfoldable cs of c : _ -> dataTypeFor c
@@ -78,7 +76,7 @@ ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 arity :: forall m. Monad m => Ctr -> MayFailT m Int
 arity c = do
    DataType _ sigs <- dataTypeFor c
-   except $ note absurd (lookup c sigs)
+   lookup c sigs # orElse absurd
 
 checkArity :: forall m. Monad m => Ctr -> Int -> MayFailT m Unit
 checkArity c n = void $

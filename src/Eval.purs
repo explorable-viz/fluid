@@ -37,7 +37,7 @@ match v (ElimVar x κ)
    | otherwise = pure (D.singleton x v × κ × top × MatchVar x (erase v))
 match (V.Constr α c vs) (ElimConstr m) = do
    with "Pattern mismatch" $ S.singleton c `consistentWith` keys m
-   κ <- orElse ("Incomplete patterns: no branch for " <> showCtr c) (lookup c m)
+   κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × α' × ws <- matchMany vs κ
    pure (γ × κ' × (α ∧ α') × MatchConstr c ws)
 match v (ElimConstr m) = do

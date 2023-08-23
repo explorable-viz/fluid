@@ -4,13 +4,14 @@ import Prelude hiding (absurd)
 
 import Control.Apply (lift2)
 import Control.Comonad (extract)
-import Control.Monad.Except (Except, ExceptT, withExceptT, runExceptT, except)
+import Control.Monad.Except (Except, ExceptT(..), withExceptT, runExceptT, except)
 import Control.MonadPlus (class MonadPlus, empty)
 import Data.Array ((!!), updateAt)
 import Data.Either (Either(..))
 import Data.Either (note) as Either
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
+import Data.Identity (Identity(..))
 import Data.Map (Map)
 import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
@@ -75,17 +76,11 @@ extractRight (Left msg) = error msg
 extractRight (Right x) = x
 
 successful :: forall a. MayFail a -> a
-successful = extract <<< successfulT
+successful (ExceptT (Identity (Right x))) = x
+successful (ExceptT (Identity (Left msg))) = error msg
 
-successfulT :: forall a m. Monad m => MayFailT m a -> m a
-successfulT m = do
-   e <- runExceptT m
-   case e of
-      (Left msg) -> error msg
-      (Right x) -> pure x
-
-successfulWithT :: String -> forall a m. Monad m => MayFailT m a -> m a
-successfulWithT msg = successfulT <<< with msg
+successfulWith :: String -> forall a. MayFail a -> a
+successfulWith msg = successful <<< with msg
 
 -- If the property fails, add an extra error message.
 with :: forall a m. Functor m => String -> MayFailT m a -> MayFailT m a

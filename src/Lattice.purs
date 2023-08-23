@@ -2,18 +2,16 @@ module Lattice where
 
 import Prelude hiding (absurd, join)
 import Control.Apply (lift2)
-import Control.Comonad (extract)
 import Data.Array (zipWith) as A
 import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
-import Data.Identity (Identity)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
 import Data.Set (subset)
 import Data.Traversable (sequence)
 import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, unionWith, update)
 import Bindings (Var)
-import Util (Endo, MayFailT, type (×), (×), assert, report, successfulWithT)
+import Util (Endo, MayFailT, type (×), (×), assert, report, successfulWith)
 import Util.Pair (Pair(..))
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
@@ -67,7 +65,7 @@ instance BoundedLattice Boolean
 instance BoundedLattice Unit
 
 definedJoin :: forall a. JoinSemilattice a => a -> a -> a
-definedJoin x y = extract $ successfulWithT "Join undefined" (maybeJoin x y :: MayFailT Identity a)
+definedJoin x y = successfulWith "Join undefined" (maybeJoin x y)
 
 class BotOf t u | t -> u where
    botOf :: t -> u

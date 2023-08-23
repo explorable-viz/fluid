@@ -5,7 +5,6 @@ module EvalGraph
    , evalWithConfig
    , eval_module
    , match
-   , matchMany
    , patternMismatch
    ) where
 
@@ -48,7 +47,7 @@ match v (ElimVar x κ)
    | otherwise = pure (D.singleton x v × κ × empty)
 match (V.Constr α c vs) (ElimConstr m) = do
    with "Pattern mismatch" $ S.singleton c `consistentWith` D.keys m
-   κ <- orElse ("Incomplete patterns: no branch for " <> showCtr c) (D.lookup c m)
+   κ <- D.lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × αs <- matchMany vs κ
    pure (γ × κ' × (insert α αs))
 match v (ElimConstr m) = do
