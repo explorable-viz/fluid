@@ -47,7 +47,7 @@ isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "Gra
 isGraphical _ = false
 
 type Test a = SpecT Aff Unit Effect a
-type Test' a = MayFailT (SpecT Aff Unit Effect) a
+type TestWith g a = SpecT Aff g Effect a
 
 run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
@@ -144,10 +144,10 @@ testWithSetup gconfig s fwd_expect v_expect_opt =
                log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
                fail "not equal"
 
-withDefaultImports ∷ SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit -> SpecT Aff Unit Effect Unit
+withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
 withDefaultImports = beforeAll openDefaultImports
 
-withDataset :: File -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
+withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
 withDataset dataset =
    beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γ } × xv) -> pure { g, n, γ: γ <+> xv }))
 
