@@ -26,7 +26,7 @@ import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
 import Set (class Set, empty)
-import Util (MayFailT, type (×), (×), error, successful, extractRight)
+import Util (MayFailT, type (×), (×), error, successful, fromRight)
 import Util.Parse (SParser)
 import Val (Env, (<+>))
 
@@ -74,16 +74,17 @@ defaultImports = do
 -- | Evaluates the default imports from an empty initial graph config
 openDefaultImports :: forall g s. Graph g s => Aff (GraphConfig g)
 openDefaultImports = do
-   (g × n) × γ <- extractRight <$> runWithGraphAllocT (G.empty × 0) defaultImports
+   (g × n) × γ <- fromRight <$> runWithGraphAllocT (G.empty × 0) defaultImports
    pure $ { g, n, γ }
 
 -- | Evaluates a dataset from an existing graph config (produced by openDefaultImports)
 openDatasetAs :: forall g s. Graph g s => File -> Var -> GraphConfig g -> Aff (GraphConfig g × Env Vertex)
 openDatasetAs file x { g, n, γ } = do
    s <- parseProgram (Folder "fluid") file
-   (g' × n') × (γ' × xv) <- extractRight <$>
+   (g' × n') × (γ' × xv) <- fromRight <$>
       ( runWithGraphAllocT (g × n) $ do
-           eα <- alloc (successful $ desug s)
+           e <- desug s
+           eα <- alloc e
            vα <- eval γ eα empty
            pure (γ × D.singleton x vα)
       )

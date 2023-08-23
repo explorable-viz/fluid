@@ -71,9 +71,9 @@ ignoreMessage = runExceptT >>> extract >>> case _ of
 report :: String -> forall a m. Applicative m => MayFailT m a
 report s = except $ Left s
 
-extractRight :: forall a. Either String a -> a
-extractRight (Left msg) = error msg
-extractRight (Right x) = x
+fromRight :: forall a. Either String a -> a
+fromRight (Right x) = x
+fromRight (Left msg) = error msg
 
 successful :: forall a. MayFail a -> a
 successful (ExceptT (Identity (Right x))) = x
