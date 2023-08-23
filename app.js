@@ -582,12 +582,12 @@
   function data_default(value, key) {
     if (!arguments.length)
       return Array.from(this, datum);
-    var bind = key ? bindKey : bindIndex, parents = this._parents, groups = this._groups;
+    var bind2 = key ? bindKey : bindIndex, parents = this._parents, groups = this._groups;
     if (typeof value !== "function")
       value = constant_default(value);
     for (var m = groups.length, update3 = new Array(m), enter = new Array(m), exit = new Array(m), j = 0; j < m; ++j) {
       var parent = parents[j], group2 = groups[j], groupLength = group2.length, data = array_default(value.call(parent, parent && parent.__data__, j, parents)), dataLength = data.length, enterGroup = enter[j] = new Array(dataLength), updateGroup = update3[j] = new Array(dataLength), exitGroup = exit[j] = new Array(groupLength);
-      bind(parent, group2, enterGroup, updateGroup, exitGroup, data, key);
+      bind2(parent, group2, enterGroup, updateGroup, exitGroup, data, key);
       for (var i0 = 0, i1 = 0, previous, next; i0 < dataLength; ++i0) {
         if (previous = enterGroup[i0]) {
           if (i0 >= i1)
@@ -1761,7 +1761,7 @@
   }
 
   // node_modules/d3-interpolate/src/transform/index.js
-  function interpolateTransform(parse2, pxComma, pxParen, degParen) {
+  function interpolateTransform(parse3, pxComma, pxParen, degParen) {
     function pop2(s) {
       return s.length ? s.pop() + " " : "";
     }
@@ -1801,7 +1801,7 @@
     }
     return function(a, b) {
       var s = [], q = [];
-      a = parse2(a), b = parse2(b);
+      a = parse3(a), b = parse3(b);
       translate(a.translateX, a.translateY, b.translateX, b.translateY, s, q);
       rotate(a.rotate, b.rotate, s, q);
       skewX(a.skewX, b.skewX, s, q);
@@ -9306,7 +9306,7 @@
   function moveByChar(view2, start2, forward, by) {
     let line = view2.state.doc.lineAt(start2.head), spans = view2.bidiSpans(line);
     let direction = view2.textDirectionAt(line.from);
-    for (let cur = start2, check = null; ; ) {
+    for (let cur = start2, check2 = null; ; ) {
       let next = moveVisually(line, spans, direction, cur, forward), char2 = movedOver;
       if (!next) {
         if (line.number == (forward ? view2.state.doc.lines : 1))
@@ -9316,11 +9316,11 @@
         spans = view2.bidiSpans(line);
         next = EditorSelection.cursor(forward ? line.from : line.to);
       }
-      if (!check) {
+      if (!check2) {
         if (!by)
           return next;
-        check = by(char2);
-      } else if (!check(char2)) {
+        check2 = by(char2);
+      } else if (!check2(char2)) {
         return cur;
       }
       cur = next;
@@ -13885,9 +13885,9 @@
       return this.createParse(input, fragments || [], ranges);
     }
     parse(input, fragments, ranges) {
-      let parse2 = this.startParse(input, fragments, ranges);
+      let parse3 = this.startParse(input, fragments, ranges);
       for (; ; ) {
-        let done = parse2.advance();
+        let done = parse3.advance();
         if (done)
           return done;
       }
@@ -15989,6 +15989,14 @@
   var $$const = (a) => (v) => a;
   var applyFlipped = (x2) => (f) => f(x2);
 
+  // output-es/Data.Identity/index.js
+  var Identity = (x2) => x2;
+  var functorIdentity = { map: (f) => (m) => f(m) };
+  var applyIdentity = { apply: (v) => (v1) => v(v1), Functor0: () => functorIdentity };
+  var bindIdentity = { bind: (v) => (f) => f(v), Apply0: () => applyIdentity };
+  var applicativeIdentity = { pure: Identity, Apply0: () => applyIdentity };
+  var monadIdentity = { Applicative0: () => applicativeIdentity, Bind1: () => bindIdentity };
+
   // output-es/Type.Proxy/index.js
   var $Proxy = () => ({ tag: "Proxy" });
   var $$Proxy = /* @__PURE__ */ $Proxy();
@@ -16237,46 +16245,6 @@
     const map1 = dictAlt.Functor0().map;
     return (a) => (b) => dictAlt.alt(map1(Left)(a))(map1(Right)(b));
   };
-  var applyEither = {
-    apply: (v) => (v1) => {
-      if (v.tag === "Left") {
-        return $Either("Left", v._1);
-      }
-      if (v.tag === "Right") {
-        if (v1.tag === "Left") {
-          return $Either("Left", v1._1);
-        }
-        if (v1.tag === "Right") {
-          return $Either("Right", v._1(v1._1));
-        }
-        fail();
-      }
-      fail();
-    },
-    Functor0: () => functorEither
-  };
-  var bindEither = {
-    bind: (v2) => {
-      if (v2.tag === "Left") {
-        return (v) => $Either("Left", v2._1);
-      }
-      if (v2.tag === "Right") {
-        return (f) => f(v2._1);
-      }
-      fail();
-    },
-    Apply0: () => applyEither
-  };
-  var applicativeEither = { pure: Right, Apply0: () => applyEither };
-  var monadEither = { Applicative0: () => applicativeEither, Bind1: () => bindEither };
-
-  // output-es/Data.Identity/index.js
-  var Identity = (x2) => x2;
-  var functorIdentity = { map: (f) => (m) => f(m) };
-  var applyIdentity = { apply: (v) => (v1) => v(v1), Functor0: () => functorIdentity };
-  var bindIdentity = { bind: (v) => (f) => f(v), Apply0: () => applyIdentity };
-  var applicativeIdentity = { pure: Identity, Apply0: () => applyIdentity };
-  var monadIdentity = { Applicative0: () => applicativeIdentity, Bind1: () => bindIdentity };
 
   // output-es/Effect/foreign.js
   var pureE = function(a) {
@@ -16368,14 +16336,14 @@
       sequence: (dictApplicative) => {
         const Apply0 = dictApplicative.Apply0();
         const map22 = Apply0.Functor0().map;
-        const sequence13 = dictTraversable.sequence(dictApplicative);
-        return (v) => Apply0.apply(map22(NonEmpty)(v._1))(sequence13(v._2));
+        const sequence1 = dictTraversable.sequence(dictApplicative);
+        return (v) => Apply0.apply(map22(NonEmpty)(v._1))(sequence1(v._2));
       },
       traverse: (dictApplicative) => {
         const Apply0 = dictApplicative.Apply0();
         const map22 = Apply0.Functor0().map;
-        const traverse14 = dictTraversable.traverse(dictApplicative);
-        return (f) => (v) => Apply0.apply(map22(NonEmpty)(f(v._1)))(traverse14(f)(v._2));
+        const traverse1 = dictTraversable.traverse(dictApplicative);
+        return (f) => (v) => Apply0.apply(map22(NonEmpty)(f(v._1)))(traverse1(f)(v._2));
       },
       Functor0: () => functorNonEmpty1,
       Foldable1: () => foldableNonEmpty1
@@ -19084,9 +19052,9 @@
   };
   var cons3 = (x2) => (xs) => concatArray([x2])(xs);
   var some2 = (dictAlternative) => {
-    const apply1 = dictAlternative.Applicative0().Apply0().apply;
+    const apply12 = dictAlternative.Applicative0().Apply0().apply;
     const map32 = dictAlternative.Plus1().Alt0().Functor0().map;
-    return (dictLazy) => (v) => apply1(map32(cons3)(v))(dictLazy.defer((v1) => many2(dictAlternative)(dictLazy)(v)));
+    return (dictLazy) => (v) => apply12(map32(cons3)(v))(dictLazy.defer((v1) => many2(dictAlternative)(dictLazy)(v)));
   };
   var many2 = (dictAlternative) => {
     const alt2 = dictAlternative.Plus1().Alt0().alt;
@@ -19165,7 +19133,7 @@
     }
     return m;
   }
-  function _foldM(bind) {
+  function _foldM(bind2) {
     return function(f) {
       return function(mz) {
         return function(m) {
@@ -19177,7 +19145,7 @@
           }
           for (var k in m) {
             if (hasOwnProperty.call(m, k)) {
-              acc = bind(acc)(g(k));
+              acc = bind2(acc)(g(k));
             }
           }
           return acc;
@@ -19332,6 +19300,101 @@
   // output-es/Control.Category/index.js
   var categoryFn = { identity: (x2) => x2, Semigroupoid0: () => semigroupoidFn };
 
+  // output-es/Control.Monad.Except.Trans/index.js
+  var withExceptT = (dictFunctor) => (f) => (v) => dictFunctor.map((v2) => {
+    if (v2.tag === "Right") {
+      return $Either("Right", v2._1);
+    }
+    if (v2.tag === "Left") {
+      return $Either("Left", f(v2._1));
+    }
+    fail();
+  })(v);
+  var monadTransExceptT = {
+    lift: (dictMonad) => {
+      const bind2 = dictMonad.Bind1().bind;
+      const pure2 = dictMonad.Applicative0().pure;
+      return (m) => bind2(m)((a) => pure2($Either("Right", a)));
+    }
+  };
+  var bindExceptT = (dictMonad) => {
+    const bind2 = dictMonad.Bind1().bind;
+    const pure2 = dictMonad.Applicative0().pure;
+    return {
+      bind: (v) => (k) => bind2(v)((v2) => {
+        if (v2.tag === "Left") {
+          return pure2($Either("Left", v2._1));
+        }
+        if (v2.tag === "Right") {
+          return k(v2._1);
+        }
+        fail();
+      }),
+      Apply0: () => applyExceptT(dictMonad)
+    };
+  };
+  var applyExceptT = (dictMonad) => {
+    const $1 = dictMonad.Bind1().Apply0().Functor0();
+    const functorExceptT1 = { map: (f) => $1.map(functorEither.map(f)) };
+    return {
+      apply: (() => {
+        const bind2 = bindExceptT(dictMonad).bind;
+        const pure2 = applicativeExceptT(dictMonad).pure;
+        return (f) => (a) => bind2(f)((f$p) => bind2(a)((a$p) => pure2(f$p(a$p))));
+      })(),
+      Functor0: () => functorExceptT1
+    };
+  };
+  var applicativeExceptT = (dictMonad) => ({
+    pure: (() => {
+      const $1 = dictMonad.Applicative0().pure;
+      return (x2) => $1($Either("Right", x2));
+    })(),
+    Apply0: () => applyExceptT(dictMonad)
+  });
+  var monadStateExceptT = (dictMonadState) => {
+    const Monad0 = dictMonadState.Monad0();
+    const lift1 = monadTransExceptT.lift(Monad0);
+    const monadExceptT1 = { Applicative0: () => applicativeExceptT(Monad0), Bind1: () => bindExceptT(Monad0) };
+    return { state: (f) => lift1(dictMonadState.state(f)), Monad0: () => monadExceptT1 };
+  };
+  var monadThrowExceptT = (dictMonad) => {
+    const monadExceptT1 = { Applicative0: () => applicativeExceptT(dictMonad), Bind1: () => bindExceptT(dictMonad) };
+    return {
+      throwError: (() => {
+        const $2 = dictMonad.Applicative0().pure;
+        return (x2) => $2($Either("Left", x2));
+      })(),
+      Monad0: () => monadExceptT1
+    };
+  };
+  var altExceptT = (dictSemigroup) => (dictMonad) => {
+    const Bind1 = dictMonad.Bind1();
+    const pure2 = dictMonad.Applicative0().pure;
+    const $4 = Bind1.Apply0().Functor0();
+    const functorExceptT1 = { map: (f) => $4.map(functorEither.map(f)) };
+    return {
+      alt: (v) => (v1) => Bind1.bind(v)((rm) => {
+        if (rm.tag === "Right") {
+          return pure2($Either("Right", rm._1));
+        }
+        if (rm.tag === "Left") {
+          return Bind1.bind(v1)((rn) => {
+            if (rn.tag === "Right") {
+              return pure2($Either("Right", rn._1));
+            }
+            if (rn.tag === "Left") {
+              return pure2($Either("Left", dictSemigroup.append(rm._1)(rn._1)));
+            }
+            fail();
+          });
+        }
+        fail();
+      }),
+      Functor0: () => functorExceptT1
+    };
+  };
+
   // output-es/Data.Profunctor/index.js
   var profunctorFn = { dimap: (a2b) => (c2d) => (b2c) => (x2) => c2d(b2c(a2b(x2))) };
 
@@ -19339,7 +19402,6 @@
   var strongFn = /* @__PURE__ */ (() => ({ first: (a2b) => (v) => $Tuple(a2b(v._1), v._2), second: functorTuple.map, Profunctor0: () => profunctorFn }))();
 
   // output-es/Util/index.js
-  var identity12 = (x2) => x2;
   var intercalate2 = (sep) => (xs) => {
     const go = (go$a0$copy) => (go$a1$copy) => {
       let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
@@ -19367,30 +19429,54 @@
     };
     return go({ init: true, acc: Nil })(xs).acc;
   };
-  var $$with = (msg) => bifunctorEither.bimap((msg$p) => {
+  var identity12 = (x2) => x2;
+  var $$with = (dictFunctor) => (msg) => withExceptT(dictFunctor)((msg$p) => {
     if (msg === "") {
       return msg$p + "";
     }
     return msg$p + ("\n" + msg);
-  })(identity12);
-  var mayFailEq = (dictShow) => (dictEq) => (x2) => (x$p) => {
-    const $4 = dictShow.show(x2) + (" \u2260 " + dictShow.show(x$p));
-    const $5 = dictEq.eq(x2)(x$p);
-    if (!$5) {
-      return $Either("Left", $4);
-    }
-    if ($5) {
-      return $Either("Right", x2);
-    }
-    fail();
+  });
+  var orElse = (dictMonad) => {
+    const $1 = dictMonad.Applicative0();
+    return (s) => (x2) => $1.pure((() => {
+      if (x2.tag === "Nothing") {
+        return $Either("Left", s);
+      }
+      if (x2.tag === "Just") {
+        return $Either("Right", x2._1);
+      }
+      fail();
+    })());
+  };
+  var mayFailEq = (dictMonad) => {
+    const orElse1 = orElse(dictMonad);
+    return (dictShow) => (dictEq) => (x2) => (x$p) => orElse1(dictShow.show(x2) + (" \u2260 " + dictShow.show(x$p)))((() => {
+      const $6 = dictEq.eq(x2)(x$p);
+      if (!$6) {
+        return Nothing;
+      }
+      if ($6) {
+        return $Maybe("Just", x2);
+      }
+      fail();
+    })());
   };
   var intersperse = (x2) => (xs) => intercalate2($List("Cons", x2, Nil))(listMap(applicativeList.pure)(xs));
-  var successful = (v) => {
+  var extractRight = (v) => {
     if (v.tag === "Left") {
       return unsafePerformEffect(throwException(error(v._1)));
     }
     if (v.tag === "Right") {
       return v._1;
+    }
+    fail();
+  };
+  var successful = (v) => {
+    if (v.tag === "Right") {
+      return v._1;
+    }
+    if (v.tag === "Left") {
+      return unsafePerformEffect(throwException(error(v._1)));
     }
     fail();
   };
@@ -19416,6 +19502,16 @@
   var unsafeUpdateAt = (i) => (x2) => {
     const $2 = updateAt2(i)(x2);
     return (x$1) => definitely("index within bounds")($2(x$1));
+  };
+  var check = (dictMonad) => {
+    const pure1 = applicativeExceptT(dictMonad).pure;
+    const Applicative0 = dictMonad.Applicative0();
+    return (v) => (v1) => {
+      if (v) {
+        return pure1(unit2);
+      }
+      return Applicative0.pure($Either("Left", v1));
+    };
   };
   var bind2Flipped = (dictMonad) => {
     const Bind1 = dictMonad.Bind1();
@@ -19449,6 +19545,7 @@
   }
 
   // output-es/Dict/index.js
+  var unzip2 = (kvs) => $Tuple(_fmapObject(kvs, fst), _fmapObject(kvs, snd));
   var toUnfoldable1 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
   var keys2 = /* @__PURE__ */ (() => {
     const $0 = foldlArray((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2);
@@ -19680,89 +19777,73 @@
     Foldable1: () => foldablePair
   };
   var toTuple = (v) => $Tuple(v._1, v._2);
-  var unzip2 = (xys) => unzip(listMap(toTuple)(xys));
+  var unzip3 = (xys) => unzip(listMap(toTuple)(xys));
   var fromTuple = (v) => $Pair(v._1, v._2);
 
   // output-es/Lattice/index.js
   var identity13 = (x2) => x2;
-  var foldM2 = (f) => (b0) => {
-    const go = (go$a0$copy) => (go$a1$copy) => {
-      let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-      while (go$c) {
-        const b = go$a0, v = go$a1;
-        if (v.tag === "Nil") {
-          go$c = false;
-          go$r = b;
-          continue;
-        }
-        if (v.tag === "Cons") {
-          go$a0 = bindEither.bind(b)((a) => f(a)(v._1));
-          go$a1 = v._2;
-          continue;
-        }
-        fail();
-      }
-      ;
-      return go$r;
-    };
-    return go($Either("Right", b0));
-  };
   var toUnfoldable5 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
   var length2 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
-  var sequence = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity10))();
-  var sequence1 = /* @__PURE__ */ (() => traversableList.traverse(applicativeEither)(identity6))();
   var meetSemilatticeBoolean = { meet: boolConj };
   var boundedMeetSemilatticeBoo = { top: true, MeetSemilattice0: () => meetSemilatticeBoolean };
-  var mayFailUpdate = (dictJoinSemilattice) => (m) => (v) => {
-    const v2 = _lookup(Nothing, Just, v._1, m);
-    if (v2.tag === "Nothing") {
-      return $Either("Right", mutate(poke3(v._1)(v._2))(m));
-    }
-    if (v2.tag === "Just") {
-      const $4 = dictJoinSemilattice.maybeJoin(v2._1)(v._2);
-      if ($4.tag === "Left") {
-        return $Either("Left", $4._1);
-      }
-      if ($4.tag === "Right") {
-        return $Either("Right", update2((v$1) => $Maybe("Just", $4._1))(v._1)(m));
-      }
-      fail();
-    }
-    fail();
+  var mayFailUpdate = (dictMonad) => {
+    const pure2 = applicativeExceptT(dictMonad).pure;
+    const $2 = dictMonad.Bind1().Apply0().Functor0();
+    return (dictJoinSemilattice) => {
+      const maybeJoin1 = dictJoinSemilattice.maybeJoin(dictMonad);
+      return (m) => (v) => {
+        const v2 = _lookup(Nothing, Just, v._1, m);
+        if (v2.tag === "Nothing") {
+          return pure2(mutate(poke3(v._1)(v._2))(m));
+        }
+        if (v2.tag === "Just") {
+          return $2.map((m$1) => {
+            if (m$1.tag === "Left") {
+              return $Either("Left", m$1._1);
+            }
+            if (m$1.tag === "Right") {
+              return $Either("Right", m$1._1(m));
+            }
+            fail();
+          })($2.map((m$1) => {
+            if (m$1.tag === "Left") {
+              return $Either("Left", m$1._1);
+            }
+            if (m$1.tag === "Right") {
+              return $Either("Right", m$1._1(v._1));
+            }
+            fail();
+          })($2.map(functorEither.map(update2))($2.map((m$1) => {
+            if (m$1.tag === "Left") {
+              return $Either("Left", m$1._1);
+            }
+            if (m$1.tag === "Right") {
+              return $Either("Right", (v$1) => $Maybe("Just", m$1._1));
+            }
+            fail();
+          })(maybeJoin1(v2._1)(v._2)))));
+        }
+        fail();
+      };
+    };
   };
   var joinSemilatticeBoolean = {
     join: boolDisj,
-    maybeJoin: (x2) => (y2) => $Either("Right", joinSemilatticeBoolean.join(x2)(y2)),
+    maybeJoin: (dictMonad) => {
+      const pure2 = applicativeExceptT(dictMonad).pure;
+      return (x2) => (y2) => pure2(joinSemilatticeBoolean.join(x2)(y2));
+    },
     neg: boolNot
   };
   var boundedJoinSemilatticeBoo = { bot: false, JoinSemilattice0: () => joinSemilatticeBoolean };
   var boundedLatticeBoolean = { BoundedJoinSemilattice0: () => boundedJoinSemilatticeBoo, BoundedMeetSemilattice1: () => boundedMeetSemilatticeBoo };
   var joinSemilatticeDict = (dictJoinSemilattice) => ({
     join: unionWith2(dictJoinSemilattice.join),
-    maybeJoin: (m) => (m$p) => foldM2(mayFailUpdate(dictJoinSemilattice))(m)(toUnfoldable5(m$p)),
-    neg: functorObject.map(dictJoinSemilattice.neg)
-  });
-  var joinSemilatticeUnit = { join: (v) => identity13, maybeJoin: (x2) => (y2) => $Either("Right", joinSemilatticeUnit.join(x2)(y2)), neg: identity13 };
-  var boundedJoinSemilatticeUni = { bot: unit2, JoinSemilattice0: () => joinSemilatticeUnit };
-  var expandablePairPair = (dictExpandable) => ({ expand: (v) => (v1) => $Pair(dictExpandable.expand(v._1)(v1._1), dictExpandable.expand(v._2)(v1._2)) });
-  var definedJoin = (dictJoinSemilattice) => (x2) => {
-    const $2 = dictJoinSemilattice.maybeJoin(x2);
-    return (x$1) => successful($$with("Join undefined")($2(x$1)));
-  };
-  var joinSemilatticeArray = (dictJoinSemilattice) => ({
-    join: (xs) => definedJoin(joinSemilatticeArray(dictJoinSemilattice))(xs),
-    maybeJoin: (xs) => (ys) => {
-      if (length2(xs) === length2(ys)) {
-        return sequence(zipWith2(dictJoinSemilattice.maybeJoin)(xs)(ys));
-      }
-      return $Either("Left", "Mismatched array lengths");
-    },
-    neg: arrayMap(dictJoinSemilattice.neg)
-  });
-  var joinSemilatticeList = (dictJoinSemilattice) => ({
-    join: (xs) => definedJoin(joinSemilatticeList(dictJoinSemilattice))(xs),
-    maybeJoin: (xs) => (ys) => {
-      if ((() => {
+    maybeJoin: (dictMonad) => {
+      const bind2 = bindExceptT(dictMonad).bind;
+      const pure2 = applicativeExceptT(dictMonad).pure;
+      const mayFailUpdate1 = mayFailUpdate(dictMonad)(dictJoinSemilattice);
+      return (m) => (m$p) => {
         const go = (go$a0$copy) => (go$a1$copy) => {
           let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
           while (go$c) {
@@ -19773,7 +19854,7 @@
               continue;
             }
             if (v.tag === "Cons") {
-              go$a0 = 1 + b | 0;
+              go$a0 = bind2(b)((a) => mayFailUpdate1(a)(v._1));
               go$a1 = v._2;
               continue;
             }
@@ -19782,60 +19863,113 @@
           ;
           return go$r;
         };
-        const go$1 = (go$1$a0$copy) => (go$1$a1$copy) => {
-          let go$1$a0 = go$1$a0$copy, go$1$a1 = go$1$a1$copy, go$1$c = true, go$1$r;
-          while (go$1$c) {
-            const b = go$1$a0, v = go$1$a1;
-            if (v.tag === "Nil") {
-              go$1$c = false;
-              go$1$r = b;
-              continue;
+        return go(pure2(m))(toUnfoldable5(m$p));
+      };
+    },
+    neg: functorObject.map(dictJoinSemilattice.neg)
+  });
+  var joinSemilatticeUnit = {
+    join: (v) => identity13,
+    maybeJoin: (dictMonad) => {
+      const pure2 = applicativeExceptT(dictMonad).pure;
+      return (x2) => (y2) => pure2(joinSemilatticeUnit.join(x2)(y2));
+    },
+    neg: identity13
+  };
+  var boundedJoinSemilatticeUni = { bot: unit2, JoinSemilattice0: () => joinSemilatticeUnit };
+  var expandablePairPair = (dictExpandable) => ({ expand: (v) => (v1) => $Pair(dictExpandable.expand(v._1)(v1._1), dictExpandable.expand(v._2)(v1._2)) });
+  var definedJoin = (dictJoinSemilattice) => {
+    const maybeJoin1 = dictJoinSemilattice.maybeJoin(monadIdentity);
+    return (x2) => (y2) => successful($$with(functorIdentity)("Join undefined")(maybeJoin1(x2)(y2)));
+  };
+  var joinSemilatticeArray = (dictJoinSemilattice) => ({
+    join: (xs) => definedJoin(joinSemilatticeArray(dictJoinSemilattice))(xs),
+    maybeJoin: (dictMonad) => {
+      const sequence22 = traversableArray.traverse(applicativeExceptT(dictMonad))(identity10);
+      const maybeJoin2 = dictJoinSemilattice.maybeJoin(dictMonad);
+      const Applicative0 = dictMonad.Applicative0();
+      return (xs) => (ys) => {
+        if (length2(xs) === length2(ys)) {
+          return sequence22(zipWith2(maybeJoin2)(xs)(ys));
+        }
+        return Applicative0.pure($Either("Left", "Mismatched array lengths"));
+      };
+    },
+    neg: arrayMap(dictJoinSemilattice.neg)
+  });
+  var joinSemilatticeList = (dictJoinSemilattice) => ({
+    join: (xs) => definedJoin(joinSemilatticeList(dictJoinSemilattice))(xs),
+    maybeJoin: (dictMonad) => {
+      const sequence22 = traversableList.traverse(applicativeExceptT(dictMonad))(identity6);
+      const maybeJoin2 = dictJoinSemilattice.maybeJoin(dictMonad);
+      const Applicative0 = dictMonad.Applicative0();
+      return (xs) => (ys) => {
+        if ((() => {
+          const go = (go$a0$copy) => (go$a1$copy) => {
+            let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+            while (go$c) {
+              const b = go$a0, v = go$a1;
+              if (v.tag === "Nil") {
+                go$c = false;
+                go$r = b;
+                continue;
+              }
+              if (v.tag === "Cons") {
+                go$a0 = 1 + b | 0;
+                go$a1 = v._2;
+                continue;
+              }
+              fail();
             }
-            if (v.tag === "Cons") {
-              go$1$a0 = 1 + b | 0;
-              go$1$a1 = v._2;
-              continue;
+            ;
+            return go$r;
+          };
+          const go$1 = (go$1$a0$copy) => (go$1$a1$copy) => {
+            let go$1$a0 = go$1$a0$copy, go$1$a1 = go$1$a1$copy, go$1$c = true, go$1$r;
+            while (go$1$c) {
+              const b = go$1$a0, v = go$1$a1;
+              if (v.tag === "Nil") {
+                go$1$c = false;
+                go$1$r = b;
+                continue;
+              }
+              if (v.tag === "Cons") {
+                go$1$a0 = 1 + b | 0;
+                go$1$a1 = v._2;
+                continue;
+              }
+              fail();
             }
-            fail();
-          }
-          ;
-          return go$1$r;
-        };
-        return go(0)(xs) === go$1(0)(ys);
-      })()) {
-        return sequence1(zipWith(dictJoinSemilattice.maybeJoin)(xs)(ys));
-      }
-      return $Either("Left", "Mismatched list lengths");
+            ;
+            return go$1$r;
+          };
+          return go(0)(xs) === go$1(0)(ys);
+        })()) {
+          return sequence22(zipWith(maybeJoin2)(xs)(ys));
+        }
+        return Applicative0.pure($Either("Left", "Mismatched list lengths"));
+      };
     },
     neg: listMap(dictJoinSemilattice.neg)
   });
   var joinSemilatticePair = (dictJoinSemilattice) => ({
     join: (ab) => definedJoin(joinSemilatticePair(dictJoinSemilattice))(ab),
-    maybeJoin: (v) => (v1) => applyEither.apply((() => {
-      const $3 = dictJoinSemilattice.maybeJoin(v._1)(v1._1);
-      if ($3.tag === "Left") {
-        return $Either("Left", $3._1);
-      }
-      if ($3.tag === "Right") {
-        return $Either("Right", Pair($3._1));
-      }
-      fail();
-    })())(dictJoinSemilattice.maybeJoin(v._2)(v1._2)),
+    maybeJoin: (dictMonad) => {
+      const apply4 = applyExceptT(dictMonad).apply;
+      const $3 = dictMonad.Bind1().Apply0().Functor0();
+      const maybeJoin2 = dictJoinSemilattice.maybeJoin(dictMonad);
+      return (v) => (v1) => apply4($3.map(functorEither.map(Pair))(maybeJoin2(v._1)(v1._1)))(maybeJoin2(v._2)(v1._2));
+    },
     neg: functorPair.map(dictJoinSemilattice.neg)
   });
   var joinSemilattice$x215 = (dictJoinSemilattice) => (dictJoinSemilattice1) => ({
     join: (ab) => definedJoin(joinSemilattice$x215(dictJoinSemilattice)(dictJoinSemilattice1))(ab),
-    maybeJoin: (v) => (v1) => {
-      const $4 = dictJoinSemilattice.maybeJoin(v._1)(v1._1);
-      return applyEither.apply((() => {
-        if ($4.tag === "Left") {
-          return $Either("Left", $4._1);
-        }
-        if ($4.tag === "Right") {
-          return $Either("Right", Tuple($4._1));
-        }
-        fail();
-      })())(dictJoinSemilattice1.maybeJoin(v._2)(v1._2));
+    maybeJoin: (dictMonad) => {
+      const $3 = applyExceptT(dictMonad);
+      const map6 = $3.Functor0().map;
+      const maybeJoin3 = dictJoinSemilattice.maybeJoin(dictMonad);
+      const maybeJoin4 = dictJoinSemilattice1.maybeJoin(dictMonad);
+      return (v) => (v1) => $3.apply(map6(Tuple)(maybeJoin3(v._1)(v1._1)))(maybeJoin4(v._2)(v1._2));
     },
     neg: functorTuple.map(dictJoinSemilattice1.neg)
   });
@@ -19857,23 +19991,23 @@
   // output-es/Control.Monad.State.Trans/index.js
   var monadTransStateT = {
     lift: (dictMonad) => {
-      const bind = dictMonad.Bind1().bind;
+      const bind2 = dictMonad.Bind1().bind;
       const pure2 = dictMonad.Applicative0().pure;
-      return (m) => (s) => bind(m)((x2) => pure2($Tuple(x2, s)));
+      return (m) => (s) => bind2(m)((x2) => pure2($Tuple(x2, s)));
     }
   };
   var functorStateT = (dictFunctor) => ({ map: (f) => (v) => (s) => dictFunctor.map((v1) => $Tuple(f(v1._1), v1._2))(v(s)) });
   var bindStateT = (dictMonad) => {
-    const bind = dictMonad.Bind1().bind;
-    return { bind: (v) => (f) => (s) => bind(v(s))((v1) => f(v1._1)(v1._2)), Apply0: () => applyStateT(dictMonad) };
+    const bind2 = dictMonad.Bind1().bind;
+    return { bind: (v) => (f) => (s) => bind2(v(s))((v1) => f(v1._1)(v1._2)), Apply0: () => applyStateT(dictMonad) };
   };
   var applyStateT = (dictMonad) => {
     const functorStateT1 = functorStateT(dictMonad.Bind1().Apply0().Functor0());
     return {
       apply: (() => {
-        const bind = bindStateT(dictMonad).bind;
+        const bind2 = bindStateT(dictMonad).bind;
         const pure2 = applicativeStateT(dictMonad).pure;
-        return (f) => (a) => bind(f)((f$p) => bind(a)((a$p) => pure2(f$p(a$p))));
+        return (f) => (a) => bind2(f)((f$p) => bind2(a)((a$p) => pure2(f$p(a$p))));
       })(),
       Functor0: () => functorStateT1
     };
@@ -19920,92 +20054,6 @@
     Profunctor0: () => profunctorFn
   }))();
 
-  // output-es/Control.Monad.Except.Trans/index.js
-  var monadTransExceptT = {
-    lift: (dictMonad) => {
-      const bind = dictMonad.Bind1().bind;
-      const pure2 = dictMonad.Applicative0().pure;
-      return (m) => bind(m)((a) => pure2($Either("Right", a)));
-    }
-  };
-  var bindExceptT = (dictMonad) => {
-    const bind = dictMonad.Bind1().bind;
-    const pure2 = dictMonad.Applicative0().pure;
-    return {
-      bind: (v) => (k) => bind(v)((v2) => {
-        if (v2.tag === "Left") {
-          return pure2($Either("Left", v2._1));
-        }
-        if (v2.tag === "Right") {
-          return k(v2._1);
-        }
-        fail();
-      }),
-      Apply0: () => applyExceptT(dictMonad)
-    };
-  };
-  var applyExceptT = (dictMonad) => {
-    const $1 = dictMonad.Bind1().Apply0().Functor0();
-    const functorExceptT1 = { map: (f) => $1.map(functorEither.map(f)) };
-    return {
-      apply: (() => {
-        const bind = bindExceptT(dictMonad).bind;
-        const pure2 = applicativeExceptT(dictMonad).pure;
-        return (f) => (a) => bind(f)((f$p) => bind(a)((a$p) => pure2(f$p(a$p))));
-      })(),
-      Functor0: () => functorExceptT1
-    };
-  };
-  var applicativeExceptT = (dictMonad) => ({
-    pure: (() => {
-      const $1 = dictMonad.Applicative0().pure;
-      return (x2) => $1($Either("Right", x2));
-    })(),
-    Apply0: () => applyExceptT(dictMonad)
-  });
-  var monadStateExceptT = (dictMonadState) => {
-    const Monad0 = dictMonadState.Monad0();
-    const lift1 = monadTransExceptT.lift(Monad0);
-    const monadExceptT1 = { Applicative0: () => applicativeExceptT(Monad0), Bind1: () => bindExceptT(Monad0) };
-    return { state: (f) => lift1(dictMonadState.state(f)), Monad0: () => monadExceptT1 };
-  };
-  var monadThrowExceptT = (dictMonad) => {
-    const monadExceptT1 = { Applicative0: () => applicativeExceptT(dictMonad), Bind1: () => bindExceptT(dictMonad) };
-    return {
-      throwError: (() => {
-        const $2 = dictMonad.Applicative0().pure;
-        return (x2) => $2($Either("Left", x2));
-      })(),
-      Monad0: () => monadExceptT1
-    };
-  };
-  var altExceptT = (dictSemigroup) => (dictMonad) => {
-    const Bind1 = dictMonad.Bind1();
-    const pure2 = dictMonad.Applicative0().pure;
-    const $4 = Bind1.Apply0().Functor0();
-    const functorExceptT1 = { map: (f) => $4.map(functorEither.map(f)) };
-    return {
-      alt: (v) => (v1) => Bind1.bind(v)((rm) => {
-        if (rm.tag === "Right") {
-          return pure2($Either("Right", rm._1));
-        }
-        if (rm.tag === "Left") {
-          return Bind1.bind(v1)((rn) => {
-            if (rn.tag === "Right") {
-              return pure2($Either("Right", rn._1));
-            }
-            if (rn.tag === "Left") {
-              return pure2($Either("Left", dictSemigroup.append(rm._1)(rn._1)));
-            }
-            fail();
-          });
-        }
-        fail();
-      }),
-      Functor0: () => functorExceptT1
-    };
-  };
-
   // output-es/Control.Monad.State.Class/index.js
   var modify_ = (dictMonadState) => (f) => dictMonadState.state((s) => $Tuple(unit2, f(s)));
   var modify2 = (dictMonadState) => (f) => dictMonadState.state((s) => {
@@ -20021,12 +20069,12 @@
     return { extend: (\u03B1) => (\u03B1s) => $$void(modify_2(Cons($Tuple(\u03B1, \u03B1s)))), Monad0: () => monadStateT2 };
   };
   var runWithGraphAllocT = (dictMonad) => {
-    const bind = dictMonad.Bind1().bind;
+    const bind2 = dictMonad.Bind1().bind;
     const pure2 = dictMonad.Applicative0().pure;
     return (dictGraph) => {
       const append = dictGraph.Semigroup0().append;
       const fromFoldable11 = dictGraph.fromFoldable(functorList)(foldableList);
-      return (v) => (c) => bind(c(v._2)(Nil))((v1) => pure2((() => {
+      return (v) => (c) => bind2(c(v._2)(Nil))((v1) => pure2((() => {
         if (v1._1._1.tag === "Left") {
           return $Either("Left", v1._1._1._1);
         }
@@ -20059,12 +20107,12 @@
     return { extend: (\u03B1) => (\u03B1s) => lift22(lift32(extend1(\u03B1)(\u03B1s))), Monad0: () => monadExceptT };
   };
   var alloc = (dictMonad) => {
-    const applicativeExceptT3 = applicativeExceptT((() => {
+    const applicativeExceptT4 = applicativeExceptT((() => {
       const $1 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
       return { Applicative0: () => applicativeStateT($1), Bind1: () => bindStateT($1) };
     })());
     const fresh1 = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).fresh;
-    return (dictTraversable) => dictTraversable.traverse(applicativeExceptT3)((v) => fresh1);
+    return (dictTraversable) => dictTraversable.traverse(applicativeExceptT4)((v) => fresh1);
   };
 
   // output-es/Data.List.NonEmpty/index.js
@@ -25271,7 +25319,6 @@
   var fromFoldable12 = /* @__PURE__ */ (() => foldableSet.foldl((m) => (a) => insert2(ordString)(a)(unit2)(m))(Leaf2))();
   var toUnfoldable6 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
   var show = /* @__PURE__ */ (() => showSet(showString).show)();
-  var bind2Flipped2 = /* @__PURE__ */ bind2Flipped(monadEither);
   var DataType = (value0) => (value1) => $DataType$p(value0, value1);
   var typeName2 = (v) => v._1;
   var eqDataType$pInt = { eq: (x2) => (y2) => x2._1 === y2._1 };
@@ -25323,59 +25370,64 @@
     d
   ))(toUnfoldable6(fromFoldable12(keys2(d._2)))))(dataTypes))(identity7)))();
   var dataTypeForCtr = {
-    dataTypeFor: (c) => {
-      const $1 = "Unknown constructor " + showCtr(c);
-      const $2 = _lookup(Nothing, Just, c, ctrToDataType);
-      if ($2.tag === "Nothing") {
-        return $Either("Left", $1);
-      }
-      if ($2.tag === "Just") {
-        return $Either("Right", $2._1);
-      }
-      fail();
+    dataTypeFor: (dictMonad) => {
+      const orElse3 = orElse(dictMonad);
+      return (c) => orElse3("Unknown constructor " + showCtr(c))(_lookup(Nothing, Just, c, ctrToDataType));
     }
   };
-  var consistentWith = (cs) => (cs$p) => {
-    const $2 = bindEither.bind((() => {
-      const v = toUnfoldable6(cs$p);
-      if (v.tag === "Cons") {
-        return dataTypeForCtr.dataTypeFor(v._1);
-      }
-      fail();
-    })())((d) => bindEither.bind((() => {
-      const v = toUnfoldable6(cs$p);
-      if (v.tag === "Cons") {
-        return dataTypeForCtr.dataTypeFor(v._1);
-      }
-      fail();
-    })())((d$p) => $$with("constructors of " + (d$p._1 + (" do not include " + show(map2(ordString)(showCtr)(cs)))))(mayFailEq(showDataType$pInt)(eqDataType$pInt)(d)(d$p))));
-    if ($2.tag === "Left") {
-      return $Either("Left", $2._1);
+  var dataTypeForSetCtr = {
+    dataTypeFor: (dictMonad) => {
+      const dataTypeFor3 = dataTypeForCtr.dataTypeFor(dictMonad);
+      return (cs) => {
+        const v = toUnfoldable6(cs);
+        if (v.tag === "Cons") {
+          return dataTypeFor3(v._1);
+        }
+        fail();
+      };
     }
-    if ($2.tag === "Right") {
-      return $Either("Right", unit2);
-    }
-    fail();
   };
-  var arity = (c) => bindEither.bind(dataTypeForCtr.dataTypeFor(c))((v) => {
-    const $2 = _lookup(Nothing, Just, c, v._2);
-    if ($2.tag === "Nothing") {
-      return $Either("Left", "absurd");
-    }
-    if ($2.tag === "Just") {
-      return $Either("Right", $2._1);
-    }
-    fail();
-  });
-  var checkArity = (c) => (n) => {
-    const $2 = $$with("Checking arity of " + showCtr(c))(bind2Flipped2(mayFailEq(showInt)(eqInt))(arity(c))($Either("Right", n)));
-    if ($2.tag === "Left") {
-      return $Either("Left", $2._1);
-    }
-    if ($2.tag === "Right") {
-      return $Either("Right", unit2);
-    }
-    fail();
+  var consistentWith = (dictMonad) => {
+    const Functor0 = dictMonad.Bind1().Apply0().Functor0();
+    const $$void = Functor0.map((m) => {
+      if (m.tag === "Left") {
+        return $Either("Left", m._1);
+      }
+      if (m.tag === "Right") {
+        return $Either("Right", unit2);
+      }
+      fail();
+    });
+    const bind2 = bindExceptT(dictMonad).bind;
+    const dataTypeFor3 = dataTypeForSetCtr.dataTypeFor(dictMonad);
+    const mayFailEq2 = mayFailEq(dictMonad)(showDataType$pInt)(eqDataType$pInt);
+    return (cs) => (cs$p) => $$void(bind2(dataTypeFor3(cs$p))((d) => bind2(dataTypeFor3(cs$p))((d$p) => $$with(Functor0)("constructors of " + (d$p._1 + (" do not include " + show(map2(ordString)(showCtr)(cs)))))(mayFailEq2(d)(d$p)))));
+  };
+  var arity = (dictMonad) => {
+    const bind2 = bindExceptT(dictMonad).bind;
+    const dataTypeFor3 = dataTypeForCtr.dataTypeFor(dictMonad);
+    const orElse3 = orElse(dictMonad);
+    return (c) => bind2(dataTypeFor3(c))((v) => orElse3("absurd")(_lookup(Nothing, Just, c, v._2)));
+  };
+  var checkArity = (dictMonad) => {
+    const Functor0 = dictMonad.Bind1().Apply0().Functor0();
+    const $$void = Functor0.map((m) => {
+      if (m.tag === "Left") {
+        return $Either("Left", m._1);
+      }
+      if (m.tag === "Right") {
+        return $Either("Right", unit2);
+      }
+      fail();
+    });
+    const bind2Flipped2 = bind2Flipped({
+      Applicative0: () => applicativeExceptT(dictMonad),
+      Bind1: () => bindExceptT(dictMonad)
+    });
+    const mayFailEq2 = mayFailEq(dictMonad)(showInt)(eqInt);
+    const arity1 = arity(dictMonad);
+    const pure2 = applicativeExceptT(dictMonad).pure;
+    return (c) => (n) => $$void($$with(Functor0)("Checking arity of " + showCtr(c))(bind2Flipped2(mayFailEq2)(arity1(c))(pure2(n))));
   };
 
   // output-es/Data.Show.Generic/foreign.js
@@ -25877,6 +25929,10 @@
     return go(Leaf2);
   })();
   var ContNone = /* @__PURE__ */ $Cont("ContNone");
+  var ContExpr = (value0) => $Cont("ContExpr", value0);
+  var ContElim = (value0) => $Cont("ContElim", value0);
+  var Var = (value0) => $Expr("Var", value0);
+  var Op = (value0) => $Expr("Op", value0);
   var Int = (value0) => (value1) => $Expr("Int", value0, value1);
   var Float = (value0) => (value1) => $Expr("Float", value0, value1);
   var Str = (value0) => (value1) => $Expr("Str", value0, value1);
@@ -25884,13 +25940,16 @@
   var Dictionary = (value0) => (value1) => $Expr("Dictionary", value0, value1);
   var Constr = (value0) => (value1) => (value2) => $Expr("Constr", value0, value1, value2);
   var Matrix = (value0) => (value1) => (value2) => (value3) => $Expr("Matrix", value0, value1, value2, value3);
+  var Lambda = (value0) => $Expr("Lambda", value0);
   var Project = (value0) => (value1) => $Expr("Project", value0, value1);
   var App2 = (value0) => (value1) => $Expr("App", value0, value1);
   var Let = (value0) => (value1) => $Expr("Let", value0, value1);
   var LetRec = (value0) => (value1) => $Expr("LetRec", value0, value1);
   var ElimVar = (value0) => (value1) => $Elim("ElimVar", value0, value1);
+  var ElimConstr = (value0) => $Elim("ElimConstr", value0);
   var ElimRecord = (value0) => (value1) => $Elim("ElimRecord", value0, value1);
   var VarDef = (value0) => (value1) => $VarDef(value0, value1);
+  var Module = (value0) => $Module(value0);
   var functorVarDef = { map: (f) => (m) => $VarDef(functorElim.map(f)(m._1), functorExpr.map(f)(m._2)) };
   var functorExpr = {
     map: (f) => (m) => {
@@ -25969,331 +26028,175 @@
   };
   var joinSemilatticeVarDef = (dictJoinSemilattice) => ({
     join: (def) => definedJoin(joinSemilatticeVarDef(dictJoinSemilattice))(def),
-    maybeJoin: (v) => (v1) => applyEither.apply((() => {
-      const $3 = joinSemilatticeElim(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
-      if ($3.tag === "Left") {
-        return $Either("Left", $3._1);
-      }
-      if ($3.tag === "Right") {
-        return $Either("Right", VarDef($3._1));
-      }
-      fail();
-    })())(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(v._2)(v1._2)),
+    maybeJoin: (dictMonad) => {
+      const apply4 = applyExceptT(dictMonad).apply;
+      const $3 = dictMonad.Bind1().Apply0().Functor0();
+      return (v) => (v1) => apply4($3.map(functorEither.map(VarDef))(joinSemilatticeElim(dictJoinSemilattice).maybeJoin(dictMonad)(v._1)(v1._1)))(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(dictMonad)(v._2)(v1._2));
+    },
     neg: functorVarDef.map(dictJoinSemilattice.neg)
   });
   var joinSemilatticeExpr = (dictJoinSemilattice) => ({
-    maybeJoin: (v) => (v1) => {
-      if (v.tag === "Var") {
-        if (v1.tag === "Var") {
-          const $3 = mayFailEq(showString)(eqString)(v._1)(v1._1);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
+    maybeJoin: (dictMonad) => {
+      const $2 = dictMonad.Bind1().Apply0().Functor0();
+      const mayFailEq2 = mayFailEq(dictMonad);
+      const mayFailEq1 = mayFailEq2(showString)(eqString);
+      const mayFailEq22 = mayFailEq2(showInt)(eqInt);
+      const mayFailEq3 = mayFailEq2(showNumber)(eqNumber);
+      const applyExceptT2 = applyExceptT(dictMonad);
+      const map6 = applyExceptT2.Functor0().map;
+      const Applicative0 = dictMonad.Applicative0();
+      return (v) => (v1) => {
+        if (v.tag === "Var") {
+          if (v1.tag === "Var") {
+            return $2.map(functorEither.map(Var))(mayFailEq1(v._1)(v1._1));
           }
-          if ($3.tag === "Right") {
-            return $Either("Right", $Expr("Var", $3._1));
-          }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
         }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "Op") {
-        if (v1.tag === "Op") {
-          const $3 = mayFailEq(showString)(eqString)(v._1)(v1._1);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
+        if (v.tag === "Op") {
+          if (v1.tag === "Op") {
+            return $2.map(functorEither.map(Op))(mayFailEq1(v._1)(v1._1));
           }
-          if ($3.tag === "Right") {
-            return $Either("Right", $Expr("Op", $3._1));
-          }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
         }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "Int") {
-        if (v1.tag === "Int") {
-          const $3 = Int(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = mayFailEq(showInt)(eqInt)(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+        if (v.tag === "Int") {
+          if (v1.tag === "Int") {
+            return $2.map(functorEither.map(Int(dictJoinSemilattice.join(v._1)(v1._1))))(mayFailEq22(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
+        }
+        if (v.tag === "Str") {
+          if (v1.tag === "Str") {
+            return $2.map(functorEither.map(Str(dictJoinSemilattice.join(v._1)(v1._1))))(mayFailEq1(v._2)(v1._2));
           }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
         }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "Str") {
-        if (v1.tag === "Str") {
-          const $3 = Str(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = mayFailEq(showString)(eqString)(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+        if (v.tag === "Float") {
+          if (v1.tag === "Float") {
+            return $2.map(functorEither.map(Float(dictJoinSemilattice.join(v._1)(v1._1))))(mayFailEq3(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
+        }
+        if (v.tag === "Record") {
+          if (v1.tag === "Record") {
+            return $2.map(functorEither.map(Record(dictJoinSemilattice.join(v._1)(v1._1))))(joinSemilatticeDict(joinSemilatticeExpr(dictJoinSemilattice)).maybeJoin(dictMonad)(v._2)(v1._2));
           }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
         }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "Float") {
-        if (v1.tag === "Float") {
-          const $3 = Float(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = mayFailEq(showNumber)(eqNumber)(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+        if (v.tag === "Dictionary") {
+          if (v1.tag === "Dictionary") {
+            return $2.map(functorEither.map(Dictionary(dictJoinSemilattice.join(v._1)(v1._1))))(joinSemilatticeList(joinSemilatticePair(joinSemilatticeExpr(dictJoinSemilattice))).maybeJoin(dictMonad)(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
+        }
+        if (v.tag === "Constr") {
+          if (v1.tag === "Constr") {
+            return applyExceptT2.apply($2.map(functorEither.map(Constr(dictJoinSemilattice.join(v._1)(v1._1))))(mayFailEq1(v._2)(v1._2)))(joinSemilatticeList(joinSemilatticeExpr(dictJoinSemilattice)).maybeJoin(dictMonad)(v._3)(v1._3));
           }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
         }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "Record") {
-        if (v1.tag === "Record") {
-          const $3 = Record(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = joinSemilatticeDict(joinSemilatticeExpr(dictJoinSemilattice)).maybeJoin(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+        if (v.tag === "Matrix") {
+          if (v1.tag === "Matrix") {
+            return applyExceptT2.apply(applyExceptT2.apply($2.map(functorEither.map(Matrix(dictJoinSemilattice.join(v._1)(v1._1))))(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(dictMonad)(v._2)(v1._2)))(applyExceptT2.apply(map6(Tuple)(mayFailEq1(v._3._1)(v1._3._1)))(mayFailEq1(v._3._2)(v1._3._2))))(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(dictMonad)(v._4)(v1._4));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
+        }
+        if (v.tag === "Lambda") {
+          if (v1.tag === "Lambda") {
+            return $2.map(functorEither.map(Lambda))(joinSemilatticeElim(dictJoinSemilattice).maybeJoin(dictMonad)(v._1)(v1._1));
           }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
         }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "Dictionary") {
-        if (v1.tag === "Dictionary") {
-          const $3 = Dictionary(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = joinSemilatticeList(joinSemilatticePair(joinSemilatticeExpr(dictJoinSemilattice))).maybeJoin(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+        if (v.tag === "Project") {
+          if (v1.tag === "Project") {
+            return applyExceptT2.apply($2.map(functorEither.map(Project))(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(dictMonad)(v._1)(v1._1)))(mayFailEq1(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
+        }
+        if (v.tag === "App") {
+          if (v1.tag === "App") {
+            return applyExceptT2.apply($2.map(functorEither.map(App2))(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(dictMonad)(v._1)(v1._1)))(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(dictMonad)(v._2)(v1._2));
           }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
         }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "Constr") {
-        if (v1.tag === "Constr") {
-          return applyEither.apply((() => {
-            const $3 = Constr(dictJoinSemilattice.join(v._1)(v1._1));
-            const $4 = mayFailEq(showString)(eqString)(v._2)(v1._2);
-            if ($4.tag === "Left") {
-              return $Either("Left", $4._1);
-            }
-            if ($4.tag === "Right") {
-              return $Either("Right", $3($4._1));
-            }
-            fail();
-          })())(joinSemilatticeList(joinSemilatticeExpr(dictJoinSemilattice)).maybeJoin(v._3)(v1._3));
-        }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "Matrix") {
-        if (v1.tag === "Matrix") {
-          return applyEither.apply(applyEither.apply((() => {
-            const $3 = Matrix(dictJoinSemilattice.join(v._1)(v1._1));
-            const $4 = joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(v._2)(v1._2);
-            if ($4.tag === "Left") {
-              return $Either("Left", $4._1);
-            }
-            if ($4.tag === "Right") {
-              return $Either("Right", $3($4._1));
-            }
-            fail();
-          })())((() => {
-            const $3 = mayFailEq(showString)(eqString)(v._3._1)(v1._3._1);
-            return applyEither.apply((() => {
-              if ($3.tag === "Left") {
-                return $Either("Left", $3._1);
-              }
-              if ($3.tag === "Right") {
-                return $Either("Right", Tuple($3._1));
-              }
-              fail();
-            })())(mayFailEq(showString)(eqString)(v._3._2)(v1._3._2));
-          })()))(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(v._4)(v1._4));
-        }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "Lambda") {
-        if (v1.tag === "Lambda") {
-          const $3 = joinSemilatticeElim(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
+        if (v.tag === "Let") {
+          if (v1.tag === "Let") {
+            return applyExceptT2.apply($2.map(functorEither.map(Let))(joinSemilatticeVarDef(dictJoinSemilattice).maybeJoin(dictMonad)(v._1)(v1._1)))(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(dictMonad)(v._2)(v1._2));
           }
-          if ($3.tag === "Right") {
-            return $Either("Right", $Expr("Lambda", $3._1));
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
+        }
+        if (v.tag === "LetRec") {
+          if (v1.tag === "LetRec") {
+            return applyExceptT2.apply($2.map(functorEither.map(LetRec))(joinSemilatticeDict(joinSemilatticeElim(dictJoinSemilattice)).maybeJoin(dictMonad)(v._1)(v1._1)))(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(dictMonad)(v._2)(v1._2));
           }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible expressions"));
         }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "Project") {
-        if (v1.tag === "Project") {
-          return applyEither.apply((() => {
-            const $3 = joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
-            }
-            if ($3.tag === "Right") {
-              return $Either("Right", Project($3._1));
-            }
-            fail();
-          })())(mayFailEq(showString)(eqString)(v._2)(v1._2));
-        }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "App") {
-        if (v1.tag === "App") {
-          return applyEither.apply((() => {
-            const $3 = joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
-            }
-            if ($3.tag === "Right") {
-              return $Either("Right", App2($3._1));
-            }
-            fail();
-          })())(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(v._2)(v1._2));
-        }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "Let") {
-        if (v1.tag === "Let") {
-          return applyEither.apply((() => {
-            const $3 = joinSemilatticeVarDef(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
-            }
-            if ($3.tag === "Right") {
-              return $Either("Right", Let($3._1));
-            }
-            fail();
-          })())(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(v._2)(v1._2));
-        }
-        return $Either("Left", "Incompatible expressions");
-      }
-      if (v.tag === "LetRec") {
-        if (v1.tag === "LetRec") {
-          return applyEither.apply((() => {
-            const $3 = joinSemilatticeDict(joinSemilatticeElim(dictJoinSemilattice)).maybeJoin(v._1)(v1._1);
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
-            }
-            if ($3.tag === "Right") {
-              return $Either("Right", LetRec($3._1));
-            }
-            fail();
-          })())(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(v._2)(v1._2));
-        }
-        return $Either("Left", "Incompatible expressions");
-      }
-      return $Either("Left", "Incompatible expressions");
+        return Applicative0.pure($Either("Left", "Incompatible expressions"));
+      };
     },
     join: (e) => definedJoin(joinSemilatticeExpr(dictJoinSemilattice))(e),
     neg: functorExpr.map(dictJoinSemilattice.neg)
   });
   var joinSemilatticeElim = (dictJoinSemilattice) => ({
-    maybeJoin: (v) => (v1) => {
-      if (v.tag === "ElimVar") {
-        if (v1.tag === "ElimVar") {
-          return applyEither.apply((() => {
-            const $3 = mayFailEq(showString)(eqString)(v._1)(v1._1);
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
-            }
-            if ($3.tag === "Right") {
-              return $Either("Right", ElimVar($3._1));
-            }
-            fail();
-          })())(joinSemilatticeCont(dictJoinSemilattice).maybeJoin(v._2)(v1._2));
-        }
-        return $Either("Left", "Incompatible eliminators");
-      }
-      if (v.tag === "ElimConstr") {
-        if (v1.tag === "ElimConstr") {
-          const $3 = consistentWith(keys2(v._1))(keys2(v1._1));
-          const $4 = applyEither.apply((() => {
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
-            }
-            if ($3.tag === "Right") {
-              return $Either("Right", identity4);
-            }
-            fail();
-          })())(joinSemilatticeDict(joinSemilatticeCont(dictJoinSemilattice)).maybeJoin(v._1)(v1._1));
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+    maybeJoin: (dictMonad) => {
+      const applyExceptT2 = applyExceptT(dictMonad);
+      const $3 = dictMonad.Bind1().Apply0().Functor0();
+      const mayFailEq2 = mayFailEq(dictMonad);
+      const mayFailEq1 = mayFailEq2(showString)(eqString);
+      const map6 = applyExceptT2.Functor0().map;
+      const consistentWith2 = consistentWith(dictMonad);
+      const mayFailEq22 = mayFailEq2(showSet2)(eqSet);
+      const Applicative0 = dictMonad.Applicative0();
+      return (v) => (v1) => {
+        if (v.tag === "ElimVar") {
+          if (v1.tag === "ElimVar") {
+            return applyExceptT2.apply($3.map(functorEither.map(ElimVar))(mayFailEq1(v._1)(v1._1)))(joinSemilatticeCont(dictJoinSemilattice).maybeJoin(dictMonad)(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $Elim("ElimConstr", $4._1));
+          return Applicative0.pure($Either("Left", "Incompatible eliminators"));
+        }
+        if (v.tag === "ElimConstr") {
+          if (v1.tag === "ElimConstr") {
+            return $3.map(functorEither.map(ElimConstr))(applyExceptT2.apply(map6((v$1) => identity4)(consistentWith2(keys2(v._1))(keys2(v1._1))))(joinSemilatticeDict(joinSemilatticeCont(dictJoinSemilattice)).maybeJoin(dictMonad)(v._1)(v1._1)));
           }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible eliminators"));
         }
-        return $Either("Left", "Incompatible eliminators");
-      }
-      if (v.tag === "ElimRecord") {
-        if (v1.tag === "ElimRecord") {
-          return applyEither.apply((() => {
-            const $3 = mayFailEq(showSet2)(eqSet)(v._1)(v1._1);
-            if ($3.tag === "Left") {
-              return $Either("Left", $3._1);
-            }
-            if ($3.tag === "Right") {
-              return $Either("Right", ElimRecord($3._1));
-            }
-            fail();
-          })())(joinSemilatticeCont(dictJoinSemilattice).maybeJoin(v._2)(v1._2));
+        if (v.tag === "ElimRecord") {
+          if (v1.tag === "ElimRecord") {
+            return applyExceptT2.apply($3.map(functorEither.map(ElimRecord))(mayFailEq22(v._1)(v1._1)))(joinSemilatticeCont(dictJoinSemilattice).maybeJoin(dictMonad)(v._2)(v1._2));
+          }
+          return Applicative0.pure($Either("Left", "Incompatible eliminators"));
         }
-        return $Either("Left", "Incompatible eliminators");
-      }
-      return $Either("Left", "Incompatible eliminators");
+        return Applicative0.pure($Either("Left", "Incompatible eliminators"));
+      };
     },
     join: (\u03C3) => definedJoin(joinSemilatticeElim(dictJoinSemilattice))(\u03C3),
     neg: functorElim.map(dictJoinSemilattice.neg)
   });
   var joinSemilatticeCont = (dictJoinSemilattice) => ({
-    maybeJoin: (v) => (v1) => {
-      if (v.tag === "ContNone") {
-        if (v1.tag === "ContNone") {
-          return $Either("Right", ContNone);
+    maybeJoin: (dictMonad) => {
+      const pure2 = applicativeExceptT(dictMonad).pure;
+      const $3 = dictMonad.Bind1().Apply0().Functor0();
+      const Applicative0 = dictMonad.Applicative0();
+      return (v) => (v1) => {
+        if (v.tag === "ContNone") {
+          if (v1.tag === "ContNone") {
+            return pure2(ContNone);
+          }
+          return Applicative0.pure($Either("Left", "Incompatible continuations"));
         }
-        return $Either("Left", "Incompatible continuations");
-      }
-      if (v.tag === "ContExpr") {
-        if (v1.tag === "ContExpr") {
-          const $3 = joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
+        if (v.tag === "ContExpr") {
+          if (v1.tag === "ContExpr") {
+            return $3.map(functorEither.map(ContExpr))(joinSemilatticeExpr(dictJoinSemilattice).maybeJoin(dictMonad)(v._1)(v1._1));
           }
-          if ($3.tag === "Right") {
-            return $Either("Right", $Cont("ContExpr", $3._1));
-          }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible continuations"));
         }
-        return $Either("Left", "Incompatible continuations");
-      }
-      if (v.tag === "ContElim") {
-        if (v1.tag === "ContElim") {
-          const $3 = joinSemilatticeElim(dictJoinSemilattice).maybeJoin(v._1)(v1._1);
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
+        if (v.tag === "ContElim") {
+          if (v1.tag === "ContElim") {
+            return $3.map(functorEither.map(ContElim))(joinSemilatticeElim(dictJoinSemilattice).maybeJoin(dictMonad)(v._1)(v1._1));
           }
-          if ($3.tag === "Right") {
-            return $Either("Right", $Cont("ContElim", $3._1));
-          }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible continuations"));
         }
-        return $Either("Left", "Incompatible continuations");
-      }
-      return $Either("Left", "Incompatible continuations");
+        return Applicative0.pure($Either("Left", "Incompatible continuations"));
+      };
     },
     join: (\u03BA) => definedJoin(joinSemilatticeCont(dictJoinSemilattice))(\u03BA),
     neg: functorCont.map(dictJoinSemilattice.neg)
@@ -26594,8 +26497,8 @@
   var traversableVarDef = {
     traverse: (dictApplicative) => {
       const Apply0 = dictApplicative.Apply0();
-      const map8 = Apply0.Functor0().map;
-      return (f) => (m) => Apply0.apply(map8((v2) => (v3) => $VarDef(v2, v3))(traversableElim.traverse(dictApplicative)(f)(m._1)))(traversableExpr.traverse(dictApplicative)(f)(m._2));
+      const map7 = Apply0.Functor0().map;
+      return (f) => (m) => Apply0.apply(map7((v2) => (v3) => $VarDef(v2, v3))(traversableElim.traverse(dictApplicative)(f)(m._1)))(traversableExpr.traverse(dictApplicative)(f)(m._2));
     },
     sequence: (dictApplicative) => (v) => traversableVarDef.traverse(dictApplicative)(identity16)(v),
     Functor0: () => functorVarDef,
@@ -26604,9 +26507,9 @@
   var traversableExpr = {
     traverse: (dictApplicative) => {
       const Apply0 = dictApplicative.Apply0();
-      const map8 = Apply0.Functor0().map;
+      const map7 = Apply0.Functor0().map;
       const $3 = traversableWithIndexObject.traverseWithIndex(dictApplicative);
-      const traverse62 = traversableList.traverse(dictApplicative);
+      const traverse6 = traversableList.traverse(dictApplicative);
       const traverse7 = traversablePair.traverse(dictApplicative);
       return (f) => (m) => {
         if (m.tag === "Var") {
@@ -26616,43 +26519,43 @@
           return dictApplicative.pure($Expr("Op", m._1));
         }
         if (m.tag === "Int") {
-          return map8((v2) => $Expr("Int", v2, m._2))(f(m._1));
+          return map7((v2) => $Expr("Int", v2, m._2))(f(m._1));
         }
         if (m.tag === "Float") {
-          return map8((v2) => $Expr("Float", v2, m._2))(f(m._1));
+          return map7((v2) => $Expr("Float", v2, m._2))(f(m._1));
         }
         if (m.tag === "Str") {
-          return map8((v2) => $Expr("Str", v2, m._2))(f(m._1));
+          return map7((v2) => $Expr("Str", v2, m._2))(f(m._1));
         }
         if (m.tag === "Record") {
-          return Apply0.apply(map8((v2) => (v3) => $Expr("Record", v2, v3))(f(m._1)))((() => {
+          return Apply0.apply(map7((v2) => (v3) => $Expr("Record", v2, v3))(f(m._1)))((() => {
             const $8 = traversableExpr.traverse(dictApplicative)(f);
             return $3((v) => $8)(m._2);
           })());
         }
         if (m.tag === "Dictionary") {
-          return Apply0.apply(map8((v2) => (v3) => $Expr("Dictionary", v2, v3))(f(m._1)))(traverse62(traverse7(traversableExpr.traverse(dictApplicative)(f)))(m._2));
+          return Apply0.apply(map7((v2) => (v3) => $Expr("Dictionary", v2, v3))(f(m._1)))(traverse6(traverse7(traversableExpr.traverse(dictApplicative)(f)))(m._2));
         }
         if (m.tag === "Constr") {
-          return Apply0.apply(map8((v3) => (v4) => $Expr("Constr", v3, m._2, v4))(f(m._1)))(traverse62(traversableExpr.traverse(dictApplicative)(f))(m._3));
+          return Apply0.apply(map7((v3) => (v4) => $Expr("Constr", v3, m._2, v4))(f(m._1)))(traverse6(traversableExpr.traverse(dictApplicative)(f))(m._3));
         }
         if (m.tag === "Matrix") {
-          return Apply0.apply(Apply0.apply(map8((v4) => (v5) => (v6) => $Expr("Matrix", v4, v5, m._3, v6))(f(m._1)))(traversableExpr.traverse(dictApplicative)(f)(m._2)))(traversableExpr.traverse(dictApplicative)(f)(m._4));
+          return Apply0.apply(Apply0.apply(map7((v4) => (v5) => (v6) => $Expr("Matrix", v4, v5, m._3, v6))(f(m._1)))(traversableExpr.traverse(dictApplicative)(f)(m._2)))(traversableExpr.traverse(dictApplicative)(f)(m._4));
         }
         if (m.tag === "Lambda") {
-          return map8((v1) => $Expr("Lambda", v1))(traversableElim.traverse(dictApplicative)(f)(m._1));
+          return map7((v1) => $Expr("Lambda", v1))(traversableElim.traverse(dictApplicative)(f)(m._1));
         }
         if (m.tag === "Project") {
-          return map8((v2) => $Expr("Project", v2, m._2))(traversableExpr.traverse(dictApplicative)(f)(m._1));
+          return map7((v2) => $Expr("Project", v2, m._2))(traversableExpr.traverse(dictApplicative)(f)(m._1));
         }
         if (m.tag === "App") {
-          return Apply0.apply(map8((v2) => (v3) => $Expr("App", v2, v3))(traversableExpr.traverse(dictApplicative)(f)(m._1)))(traversableExpr.traverse(dictApplicative)(f)(m._2));
+          return Apply0.apply(map7((v2) => (v3) => $Expr("App", v2, v3))(traversableExpr.traverse(dictApplicative)(f)(m._1)))(traversableExpr.traverse(dictApplicative)(f)(m._2));
         }
         if (m.tag === "Let") {
-          return Apply0.apply(map8((v2) => (v3) => $Expr("Let", v2, v3))(traversableVarDef.traverse(dictApplicative)(f)(m._1)))(traversableExpr.traverse(dictApplicative)(f)(m._2));
+          return Apply0.apply(map7((v2) => (v3) => $Expr("Let", v2, v3))(traversableVarDef.traverse(dictApplicative)(f)(m._1)))(traversableExpr.traverse(dictApplicative)(f)(m._2));
         }
         if (m.tag === "LetRec") {
-          return Apply0.apply(map8((v2) => (v3) => $Expr("LetRec", v2, v3))((() => {
+          return Apply0.apply(map7((v2) => (v3) => $Expr("LetRec", v2, v3))((() => {
             const $8 = traversableElim.traverse(dictApplicative)(f);
             return $3((v) => $8)(m._1);
           })()))(traversableExpr.traverse(dictApplicative)(f)(m._2));
@@ -26666,20 +26569,20 @@
   };
   var traversableElim = {
     traverse: (dictApplicative) => {
-      const map8 = dictApplicative.Apply0().Functor0().map;
+      const map7 = dictApplicative.Apply0().Functor0().map;
       const $2 = traversableWithIndexObject.traverseWithIndex(dictApplicative);
       return (f) => (m) => {
         if (m.tag === "ElimVar") {
-          return map8((v2) => $Elim("ElimVar", m._1, v2))(traversableCont.traverse(dictApplicative)(f)(m._2));
+          return map7((v2) => $Elim("ElimVar", m._1, v2))(traversableCont.traverse(dictApplicative)(f)(m._2));
         }
         if (m.tag === "ElimConstr") {
-          return map8((v1) => $Elim("ElimConstr", v1))((() => {
+          return map7((v1) => $Elim("ElimConstr", v1))((() => {
             const $5 = traversableCont.traverse(dictApplicative)(f);
             return $2((v) => $5)(m._1);
           })());
         }
         if (m.tag === "ElimRecord") {
-          return map8((v2) => $Elim("ElimRecord", m._1, v2))(traversableCont.traverse(dictApplicative)(f)(m._2));
+          return map7((v2) => $Elim("ElimRecord", m._1, v2))(traversableCont.traverse(dictApplicative)(f)(m._2));
         }
         fail();
       };
@@ -26690,16 +26593,16 @@
   };
   var traversableCont = {
     traverse: (dictApplicative) => {
-      const map8 = dictApplicative.Apply0().Functor0().map;
+      const map7 = dictApplicative.Apply0().Functor0().map;
       return (f) => (m) => {
         if (m.tag === "ContNone") {
           return dictApplicative.pure(ContNone);
         }
         if (m.tag === "ContExpr") {
-          return map8((v1) => $Cont("ContExpr", v1))(traversableExpr.traverse(dictApplicative)(f)(m._1));
+          return map7((v1) => $Cont("ContExpr", v1))(traversableExpr.traverse(dictApplicative)(f)(m._1));
         }
         if (m.tag === "ContElim") {
-          return map8((v1) => $Cont("ContElim", v1))(traversableElim.traverse(dictApplicative)(f)(m._1));
+          return map7((v1) => $Cont("ContElim", v1))(traversableElim.traverse(dictApplicative)(f)(m._1));
         }
         fail();
       };
@@ -26868,8 +26771,8 @@
   });
   var traverseModule = (dictMonad) => {
     const Applicative0 = dictMonad.Applicative0();
-    const bind = dictMonad.Bind1().bind;
-    const traverse52 = traversableVarDef.traverse(Applicative0);
+    const bind2 = dictMonad.Bind1().bind;
+    const traverse5 = traversableVarDef.traverse(Applicative0);
     const $4 = traversableWithIndexObject.traverseWithIndex(Applicative0);
     const traverse7 = traversableElim.traverse(Applicative0);
     return (v) => (v1) => {
@@ -26878,17 +26781,17 @@
       }
       if (v1._1.tag === "Cons") {
         if (v1._1._1.tag === "Left") {
-          return bind(traverse52(v)($VarDef(v1._1._1._1._1, v1._1._1._1._2)))((d) => bind(traverseModule(dictMonad)(v)($Module(v1._1._2)))((v2) => Applicative0.pure($Module($List(
+          return bind2(traverse5(v)($VarDef(v1._1._1._1._1, v1._1._1._1._2)))((d) => bind2(traverseModule(dictMonad)(v)($Module(v1._1._2)))((v2) => Applicative0.pure($Module($List(
             "Cons",
             $Either("Left", d),
             v2._1
           )))));
         }
         if (v1._1._1.tag === "Right") {
-          return bind((() => {
+          return bind2((() => {
             const $8 = traverse7(v);
             return $4((v$1) => $8)(v1._1._1._1);
-          })())((\u03C1$p) => bind(traverseModule(dictMonad)(v)($Module(v1._1._2)))((v2) => Applicative0.pure($Module($List(
+          })())((\u03C1$p) => bind2(traverseModule(dictMonad)(v)($Module(v1._1._2)))((v2) => Applicative0.pure($Module($List(
             "Cons",
             $Either("Right", \u03C1$p),
             v2._1
@@ -27018,37 +26921,13 @@
   var $Pattern = (tag, _1, _2) => ({ tag, _1, _2 });
   var $Qualifier = (tag, _1, _2) => ({ tag, _1, _2 });
   var $VarDef2 = (_1, _2) => ({ tag: "VarDef", _1, _2 });
+  var arity2 = /* @__PURE__ */ arity(monadIdentity);
   var difference4 = /* @__PURE__ */ difference(eqString);
   var toUnfoldable7 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
+  var dataTypeFor = /* @__PURE__ */ (() => dataTypeForCtr.dataTypeFor(monadIdentity))();
   var fromFoldable5 = /* @__PURE__ */ fromFoldable2(foldableNonEmptyList);
   var fromFoldable13 = /* @__PURE__ */ fromFoldable2(foldableList);
   var fromFoldable22 = /* @__PURE__ */ fromFoldable2(foldableArray);
-  var traverse = /* @__PURE__ */ (() => traversableNonEmptyList.traverse(applicativeEither))();
-  var traverse1 = /* @__PURE__ */ (() => traversableList.traverse(applicativeEither))();
-  var traverse2 = /* @__PURE__ */ (() => traversableTuple.traverse(applicativeEither))();
-  var traverse3 = /* @__PURE__ */ (() => traversablePair.traverse(applicativeEither))();
-  var foldM4 = (f) => (b0) => {
-    const go = (go$a0$copy) => (go$a1$copy) => {
-      let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-      while (go$c) {
-        const b = go$a0, v = go$a1;
-        if (v.tag === "Nil") {
-          go$c = false;
-          go$r = b;
-          continue;
-        }
-        if (v.tag === "Cons") {
-          go$a0 = bindEither.bind(b)((a) => f(a)(v._1));
-          go$a1 = v._2;
-          continue;
-        }
-        fail();
-      }
-      ;
-      return go$r;
-    };
-    return go($Either("Right", b0));
-  };
   var PEnd = /* @__PURE__ */ $ListRestPattern("PEnd");
   var PNext = (value0) => (value1) => $ListRestPattern("PNext", value0, value1);
   var PConstr = (value0) => (value1) => $Pattern("PConstr", value0, value1);
@@ -27169,145 +27048,125 @@
   };
   var functorClauses = { map: (f) => (m) => functorNonEmptyList.map(functorClause.map(f))(m) };
   var functorClause = { map: (f) => (m) => $Tuple(m._1, functorExpr2.map(f)(m._2)) };
-  var pattCont_ListRest_Fwd = (v) => (v1) => {
-    if (v.tag === "PEnd") {
-      return $Either(
-        "Right",
-        $Elim("ElimConstr", runST(bind_(newImpl)(poke3("Nil")(v1))))
-      );
-    }
-    if (v.tag === "PNext") {
-      const $2 = pattArgsFwd($List(
-        "Cons",
-        $Either("Left", v._1),
-        $List("Cons", $Either("Right", v._2), Nil)
-      ))(v1);
-      if ($2.tag === "Left") {
-        return $Either("Left", $2._1);
+  var pattCont_ListRest_Fwd = (dictMonad) => {
+    const pure1 = applicativeExceptT(dictMonad).pure;
+    const $2 = dictMonad.Bind1().Apply0().Functor0();
+    return (v) => (v1) => {
+      if (v.tag === "PEnd") {
+        return pure1($Elim("ElimConstr", runST(bind_(newImpl)(poke3("Nil")(v1)))));
       }
-      if ($2.tag === "Right") {
-        return $Either(
-          "Right",
-          $Elim("ElimConstr", runST(bind_(newImpl)(poke3(":")($2._1))))
-        );
-      }
-      fail();
-    }
-    fail();
-  };
-  var pattContFwd = (v) => (v1) => {
-    if (v.tag === "PVar") {
-      return $Either("Right", $Elim("ElimVar", v._1, v1));
-    }
-    if (v.tag === "PConstr") {
-      const $2 = checkArity(v._1)((() => {
-        const go = (go$a0$copy) => (go$a1$copy) => {
-          let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-          while (go$c) {
-            const b = go$a0, v$1 = go$a1;
-            if (v$1.tag === "Nil") {
-              go$c = false;
-              go$r = b;
-              continue;
-            }
-            if (v$1.tag === "Cons") {
-              go$a0 = b + 1 | 0;
-              go$a1 = v$1._2;
-              continue;
-            }
-            fail();
+      if (v.tag === "PNext") {
+        return $2.map((m) => {
+          if (m.tag === "Left") {
+            return $Either("Left", m._1);
           }
-          ;
-          return go$r;
-        };
-        return go(0)(v._2);
-      })());
-      const $3 = pattArgsFwd(listMap(Left)(v._2))(v1);
-      return applyEither.apply((() => {
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", identity4);
-        }
-        fail();
-      })())((() => {
-        if ($3.tag === "Left") {
-          return $Either("Left", $3._1);
-        }
-        if ($3.tag === "Right") {
-          return $Either(
-            "Right",
-            $Elim("ElimConstr", runST(bind_(newImpl)(poke3(v._1)($3._1))))
-          );
-        }
-        fail();
-      })());
-    }
-    if (v.tag === "PRecord") {
-      const $2 = ElimRecord(keys3(v._1));
-      const $3 = pattArgsFwd(listMap((x2) => $Either("Left", x2._2))(sortBy((x2) => (y2) => ordString.compare(x2._1)(y2._1))(v._1)))(v1);
-      if ($3.tag === "Left") {
-        return $Either("Left", $3._1);
-      }
-      if ($3.tag === "Right") {
-        return $Either("Right", $2($3._1));
+          if (m.tag === "Right") {
+            return $Either(
+              "Right",
+              $Elim("ElimConstr", runST(bind_(newImpl)(poke3(":")(m._1))))
+            );
+          }
+          fail();
+        })(pattArgsFwd(dictMonad)($List(
+          "Cons",
+          $Either("Left", v._1),
+          $List("Cons", $Either("Right", v._2), Nil)
+        ))(v1));
       }
       fail();
-    }
-    if (v.tag === "PListEmpty") {
-      return $Either(
-        "Right",
-        $Elim("ElimConstr", runST(bind_(newImpl)(poke3("Nil")(v1))))
-      );
-    }
-    if (v.tag === "PListNonEmpty") {
-      const $2 = pattArgsFwd($List(
-        "Cons",
-        $Either("Left", v._1),
-        $List("Cons", $Either("Right", v._2), Nil)
-      ))(v1);
-      if ($2.tag === "Left") {
-        return $Either("Left", $2._1);
-      }
-      if ($2.tag === "Right") {
-        return $Either(
-          "Right",
-          $Elim("ElimConstr", runST(bind_(newImpl)(poke3(":")($2._1))))
-        );
-      }
-      fail();
-    }
-    fail();
+    };
   };
-  var pattArgsFwd = (v) => (v1) => {
-    if (v.tag === "Nil") {
-      return $Either("Right", v1);
-    }
-    if (v.tag === "Cons") {
-      if (v._1.tag === "Left") {
-        const $2 = bindEither.bind(pattArgsFwd(v._2)(v1))(pattContFwd(v._1._1));
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", $Cont("ContElim", $2._1));
-        }
-        fail();
+  var pattContFwd = (dictMonad) => {
+    const pure1 = applicativeExceptT(dictMonad).pure;
+    const $2 = applyExceptT(dictMonad);
+    const map6 = $2.Functor0().map;
+    const checkArity3 = checkArity(dictMonad);
+    const $5 = dictMonad.Bind1().Apply0().Functor0();
+    return (v) => (v1) => {
+      if (v.tag === "PVar") {
+        return pure1($Elim("ElimVar", v._1, v1));
       }
-      if (v._1.tag === "Right") {
-        const $2 = bindEither.bind(pattArgsFwd(v._2)(v1))(pattCont_ListRest_Fwd(v._1._1));
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
+      if (v.tag === "PConstr") {
+        return $2.apply(map6((v$1) => identity4)(checkArity3(v._1)((() => {
+          const go = (go$a0$copy) => (go$a1$copy) => {
+            let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+            while (go$c) {
+              const b = go$a0, v$1 = go$a1;
+              if (v$1.tag === "Nil") {
+                go$c = false;
+                go$r = b;
+                continue;
+              }
+              if (v$1.tag === "Cons") {
+                go$a0 = b + 1 | 0;
+                go$a1 = v$1._2;
+                continue;
+              }
+              fail();
+            }
+            ;
+            return go$r;
+          };
+          return go(0)(v._2);
+        })())))($5.map((m) => {
+          if (m.tag === "Left") {
+            return $Either("Left", m._1);
+          }
+          if (m.tag === "Right") {
+            return $Either(
+              "Right",
+              $Elim("ElimConstr", runST(bind_(newImpl)(poke3(v._1)(m._1))))
+            );
+          }
+          fail();
+        })(pattArgsFwd(dictMonad)(listMap(Left)(v._2))(v1)));
+      }
+      if (v.tag === "PRecord") {
+        return $5.map(functorEither.map(ElimRecord(keys3(v._1))))(pattArgsFwd(dictMonad)(listMap((x2) => $Either("Left", x2._2))(sortBy((x2) => (y2) => ordString.compare(x2._1)(y2._1))(v._1)))(v1));
+      }
+      if (v.tag === "PListEmpty") {
+        return pure1($Elim("ElimConstr", runST(bind_(newImpl)(poke3("Nil")(v1)))));
+      }
+      if (v.tag === "PListNonEmpty") {
+        return $5.map((m) => {
+          if (m.tag === "Left") {
+            return $Either("Left", m._1);
+          }
+          if (m.tag === "Right") {
+            return $Either(
+              "Right",
+              $Elim("ElimConstr", runST(bind_(newImpl)(poke3(":")(m._1))))
+            );
+          }
+          fail();
+        })(pattArgsFwd(dictMonad)($List(
+          "Cons",
+          $Either("Left", v._1),
+          $List("Cons", $Either("Right", v._2), Nil)
+        ))(v1));
+      }
+      fail();
+    };
+  };
+  var pattArgsFwd = (dictMonad) => {
+    const pure1 = applicativeExceptT(dictMonad).pure;
+    const $2 = dictMonad.Bind1().Apply0().Functor0();
+    const bind2 = bindExceptT(dictMonad).bind;
+    return (v) => (v1) => {
+      if (v.tag === "Nil") {
+        return pure1(v1);
+      }
+      if (v.tag === "Cons") {
+        if (v._1.tag === "Left") {
+          return $2.map(functorEither.map(ContElim))(bind2(pattArgsFwd(dictMonad)(v._2)(v1))(pattContFwd(dictMonad)(v._1._1)));
         }
-        if ($2.tag === "Right") {
-          return $Either("Right", $Cont("ContElim", $2._1));
+        if (v._1.tag === "Right") {
+          return $2.map(functorEither.map(ContElim))(bind2(pattArgsFwd(dictMonad)(v._2)(v1))(pattCont_ListRest_Fwd(dictMonad)(v._1._1)));
         }
         fail();
       }
       fail();
-    }
-    fail();
+    };
   };
   var unlessFwd = (v) => (\u03B1) => fromFoldable13($List(
     "Cons",
@@ -27332,13 +27191,9 @@
           ;
           return go$r;
         };
-        return go(successful(arity(c$p)))($Cont("ContExpr", $Expr("Constr", \u03B1, "Nil", Nil)));
+        return go(successful(arity2(c$p)))($Cont("ContExpr", $Expr("Constr", \u03B1, "Nil", Nil)));
       })()
-    ))(difference4(toUnfoldable7(fromFoldable12(keys2(successful(dataTypeForCtr.dataTypeFor(v._1))._2))))($List(
-      "Cons",
-      v._1,
-      Nil
-    )))
+    ))(difference4(toUnfoldable7(fromFoldable12(keys2(successful(dataTypeFor(v._1))._2))))($List("Cons", v._1, Nil)))
   ));
   var orElseFwd = (v) => (v1) => {
     if (v.tag === "ContNone") {
@@ -27364,131 +27219,100 @@
   };
   var elimBool = (\u03BA) => (\u03BA$p) => $Elim("ElimConstr", fromFoldable22([$Tuple("True", \u03BA), $Tuple("False", \u03BA$p)]));
   var econs = (\u03B1) => (e) => (e$p) => $Expr("Constr", \u03B1, ":", $List("Cons", e, $List("Cons", e$p, Nil)));
-  var varDefsFwd = (dictJoinSemilattice) => (v) => {
-    if (v._1._2.tag === "Nil") {
-      return applyEither.apply((() => {
-        const $2 = varDefFwd(dictJoinSemilattice)(v._1._1);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", Let($2._1));
-        }
-        fail();
-      })())(exprFwd(dictJoinSemilattice)(v._2));
-    }
-    if (v._1._2.tag === "Cons") {
-      return applyEither.apply((() => {
-        const $2 = varDefFwd(dictJoinSemilattice)(v._1._1);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", Let($2._1));
-        }
-        fail();
-      })())(varDefsFwd(dictJoinSemilattice)($Tuple($NonEmpty(v._1._2._1, v._1._2._2), v._2)));
-    }
-    fail();
-  };
-  var varDefFwd = (dictJoinSemilattice) => (v) => applyEither.apply((() => {
-    const $2 = pattContFwd(v._1)(ContNone);
-    if ($2.tag === "Left") {
-      return $Either("Left", $2._1);
-    }
-    if ($2.tag === "Right") {
-      return $Either("Right", VarDef($2._1));
-    }
-    fail();
-  })())(exprFwd(dictJoinSemilattice)(v._2));
-  var recDefsFwd = (dictJoinSemilattice) => (xcs) => {
-    const $2 = traverse(recDefFwd(dictJoinSemilattice))(functorNonEmptyList.map(RecDef)(wrappedOperation("groupBy")(groupBy((x2) => (y2) => x2._1 === y2._1))(xcs)));
-    if ($2.tag === "Left") {
-      return $Either("Left", $2._1);
-    }
-    if ($2.tag === "Right") {
-      return $Either("Right", fromFoldable5($2._1));
-    }
-    fail();
-  };
-  var recDefFwd = (dictJoinSemilattice) => (xcs) => {
-    const $2 = clausesFwd(dictJoinSemilattice)(functorNonEmptyList.map(snd)(xcs));
-    if ($2.tag === "Left") {
-      return $Either("Left", $2._1);
-    }
-    if ($2.tag === "Right") {
-      return $Either("Right", $Tuple(xcs._1._1, $2._1));
-    }
-    fail();
-  };
-  var pattsExprFwd = (dictJoinSemilattice) => (v) => {
-    if (v._1._2.tag === "Nil") {
-      return bindEither.bind((() => {
-        const $2 = exprFwd(dictJoinSemilattice)(v._2);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", $Cont("ContExpr", $2._1));
-        }
-        fail();
-      })())(pattContFwd(v._1._1));
-    }
-    if (v._1._2.tag === "Cons") {
-      return bindEither.bind((() => {
-        const $2 = pattsExprFwd(dictJoinSemilattice)($Tuple($NonEmpty(v._1._2._1, v._1._2._2), v._2));
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", $Cont("ContExpr", $Expr("Lambda", $2._1)));
-        }
-        fail();
-      })())(pattContFwd(v._1._1));
-    }
-    fail();
-  };
-  var listRestFwd = (dictJoinSemilattice) => (v) => {
-    if (v.tag === "End") {
-      return $Either("Right", $Expr("Constr", v._1, "Nil", Nil));
-    }
-    if (v.tag === "Next") {
-      return applyEither.apply((() => {
-        const $2 = exprFwd(dictJoinSemilattice)(v._2);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", econs(v._1)($2._1));
-        }
-        fail();
-      })())(listRestFwd(dictJoinSemilattice)(v._3));
-    }
-    fail();
-  };
-  var listCompFwd = (dictJoinSemilattice) => (v) => {
-    if (v._2._1.tag === "Nil") {
-      const $2 = exprFwd(dictJoinSemilattice)(v._2._2);
-      if ($2.tag === "Left") {
-        return $Either("Left", $2._1);
+  var varDefsFwd = (dictMonad) => {
+    const apply4 = applyExceptT(dictMonad).apply;
+    const $2 = dictMonad.Bind1().Apply0().Functor0();
+    return (dictJoinSemilattice) => (v) => {
+      if (v._1._2.tag === "Nil") {
+        return apply4($2.map(functorEither.map(Let))(varDefFwd(dictMonad)(dictJoinSemilattice)(v._1._1)))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2));
       }
-      if ($2.tag === "Right") {
-        return $Either(
-          "Right",
-          $Expr(
-            "Constr",
-            v._1,
-            ":",
-            $List("Cons", $2._1, $List("Cons", $Expr("Constr", v._1, "Nil", Nil), Nil))
-          )
-        );
+      if (v._1._2.tag === "Cons") {
+        return apply4($2.map(functorEither.map(Let))(varDefFwd(dictMonad)(dictJoinSemilattice)(v._1._1)))(varDefsFwd(dictMonad)(dictJoinSemilattice)($Tuple(
+          $NonEmpty(v._1._2._1, v._1._2._2),
+          v._2
+        )));
       }
       fail();
-    }
-    if (v._2._1.tag === "Cons") {
-      if (v._2._1._1.tag === "Guard") {
-        return bindEither.bind(listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._2._1._2, v._2._2))))((e) => {
-          const $3 = App2($Expr(
+    };
+  };
+  var varDefFwd = (dictMonad) => {
+    const apply4 = applyExceptT(dictMonad).apply;
+    const $2 = dictMonad.Bind1().Apply0().Functor0();
+    const pattContFwd1 = pattContFwd(dictMonad);
+    return (dictJoinSemilattice) => (v) => apply4($2.map(functorEither.map(VarDef))(pattContFwd1(v._1)(ContNone)))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2));
+  };
+  var recDefsFwd = (dictMonad) => {
+    const $1 = dictMonad.Bind1().Apply0().Functor0();
+    const traverse4 = traversableNonEmptyList.traverse(applicativeExceptT(dictMonad));
+    return (dictJoinSemilattice) => (xcs) => $1.map(functorEither.map(fromFoldable5))(traverse4(recDefFwd(dictMonad)(dictJoinSemilattice))(functorNonEmptyList.map(RecDef)(wrappedOperation("groupBy")(groupBy((x2) => (y2) => x2._1 === y2._1))(xcs))));
+  };
+  var recDefFwd = (dictMonad) => {
+    const $1 = dictMonad.Bind1().Apply0().Functor0();
+    return (dictJoinSemilattice) => (xcs) => $1.map((m) => {
+      if (m.tag === "Left") {
+        return $Either("Left", m._1);
+      }
+      if (m.tag === "Right") {
+        return $Either("Right", $Tuple(xcs._1._1, m._1));
+      }
+      fail();
+    })(clausesFwd(dictMonad)(dictJoinSemilattice)(functorNonEmptyList.map(snd)(xcs)));
+  };
+  var pattsExprFwd = (dictMonad) => {
+    const bindExceptT2 = bindExceptT(dictMonad);
+    const $2 = dictMonad.Bind1().Apply0().Functor0();
+    const pattContFwd1 = pattContFwd(dictMonad);
+    return (dictJoinSemilattice) => (v) => {
+      if (v._1._2.tag === "Nil") {
+        return bindExceptT2.bind($2.map(functorEither.map(ContExpr))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2)))(pattContFwd1(v._1._1));
+      }
+      if (v._1._2.tag === "Cons") {
+        return bindExceptT2.bind($2.map((m) => {
+          if (m.tag === "Left") {
+            return $Either("Left", m._1);
+          }
+          if (m.tag === "Right") {
+            return $Either("Right", $Cont("ContExpr", $Expr("Lambda", m._1)));
+          }
+          fail();
+        })(pattsExprFwd(dictMonad)(dictJoinSemilattice)($Tuple($NonEmpty(v._1._2._1, v._1._2._2), v._2))))(pattContFwd1(v._1._1));
+      }
+      fail();
+    };
+  };
+  var listRestFwd = (dictMonad) => {
+    const pure1 = applicativeExceptT(dictMonad).pure;
+    const apply4 = applyExceptT(dictMonad).apply;
+    const $3 = dictMonad.Bind1().Apply0().Functor0();
+    return (dictJoinSemilattice) => (v) => {
+      if (v.tag === "End") {
+        return pure1($Expr("Constr", v._1, "Nil", Nil));
+      }
+      if (v.tag === "Next") {
+        return apply4($3.map(functorEither.map(econs(v._1)))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2)))(listRestFwd(dictMonad)(dictJoinSemilattice)(v._3));
+      }
+      fail();
+    };
+  };
+  var listCompFwd = (dictMonad) => {
+    const $1 = dictMonad.Bind1().Apply0().Functor0();
+    const bind2 = bindExceptT(dictMonad).bind;
+    const pattContFwd1 = pattContFwd(dictMonad);
+    return (dictJoinSemilattice) => (v) => {
+      if (v._2._1.tag === "Nil") {
+        return $1.map((m) => {
+          if (m.tag === "Left") {
+            return $Either("Left", m._1);
+          }
+          if (m.tag === "Right") {
+            return $Either("Right", m._1($Expr("Constr", v._1, "Nil", Nil)));
+          }
+          fail();
+        })($1.map(functorEither.map(econs(v._1)))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2._2)));
+      }
+      if (v._2._1.tag === "Cons") {
+        if (v._2._1._1.tag === "Guard") {
+          return bind2(listCompFwd(dictMonad)(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._2._1._2, v._2._2))))((e) => $1.map(functorEither.map(App2($Expr(
             "Lambda",
             $Elim(
               "ElimConstr",
@@ -27497,320 +27321,198 @@
                 $Tuple("False", $Cont("ContExpr", $Expr("Constr", v._1, "Nil", Nil)))
               ])
             )
-          ));
-          const $4 = exprFwd(dictJoinSemilattice)(v._2._1._1._1);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
-          }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
-          }
-          fail();
-        });
-      }
-      if (v._2._1._1.tag === "Declaration") {
-        return bindEither.bind((() => {
-          const $2 = listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._2._1._2, v._2._2)));
-          if ($2.tag === "Left") {
-            return $Either("Left", $2._1);
-          }
-          if ($2.tag === "Right") {
-            return $Either("Right", $Cont("ContExpr", $2._1));
-          }
-          fail();
-        })())((e) => bindEither.bind(pattContFwd(v._2._1._1._1._1)(e))((\u03C3) => {
-          const $4 = App2($Expr("Lambda", \u03C3));
-          const $5 = exprFwd(dictJoinSemilattice)(v._2._1._1._1._2);
-          if ($5.tag === "Left") {
-            return $Either("Left", $5._1);
-          }
-          if ($5.tag === "Right") {
-            return $Either("Right", $4($5._1));
-          }
-          fail();
-        }));
-      }
-      if (v._2._1._1.tag === "Generator") {
-        return bindEither.bind((() => {
-          const $2 = listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._2._1._2, v._2._2)));
-          if ($2.tag === "Left") {
-            return $Either("Left", $2._1);
-          }
-          if ($2.tag === "Right") {
-            return $Either("Right", $Cont("ContExpr", $2._1));
-          }
-          fail();
-        })())((e) => bindEither.bind(pattContFwd(v._2._1._1._1)(e))((\u03C3) => {
-          const $4 = App2($Expr(
+          ))))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2._1._1._1)));
+        }
+        if (v._2._1._1.tag === "Declaration") {
+          return bind2($1.map(functorEither.map(ContExpr))(listCompFwd(dictMonad)(dictJoinSemilattice)($Tuple(
+            v._1,
+            $Tuple(v._2._1._2, v._2._2)
+          ))))((e) => bind2(pattContFwd1(v._2._1._1._1._1)(e))((\u03C3) => $1.map(functorEither.map(App2($Expr("Lambda", \u03C3))))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2._1._1._1._2))));
+        }
+        if (v._2._1._1.tag === "Generator") {
+          return bind2($1.map(functorEither.map(ContExpr))(listCompFwd(dictMonad)(dictJoinSemilattice)($Tuple(
+            v._1,
+            $Tuple(v._2._1._2, v._2._2)
+          ))))((e) => bind2(pattContFwd1(v._2._1._1._1)(e))((\u03C3) => $1.map(functorEither.map(App2($Expr(
             "App",
             $Expr("Var", "concatMap"),
             $Expr(
               "Lambda",
               (() => {
-                const $42 = orElseFwd($Cont("ContElim", \u03C3))(v._1);
-                if ($42.tag === "ContElim") {
-                  return $42._1;
+                const $8 = orElseFwd($Cont("ContElim", \u03C3))(v._1);
+                if ($8.tag === "ContElim") {
+                  return $8._1;
                 }
                 return unsafePerformEffect(throwException(error("Eliminator expected")));
               })()
             )
-          ));
-          const $5 = exprFwd(dictJoinSemilattice)(v._2._1._1._2);
-          if ($5.tag === "Left") {
-            return $Either("Left", $5._1);
+          ))))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2._1._1._2))));
+        }
+        fail();
+      }
+      fail();
+    };
+  };
+  var exprFwd = (dictMonad) => {
+    const applicativeExceptT4 = applicativeExceptT(dictMonad);
+    const $2 = dictMonad.Bind1().Apply0().Functor0();
+    const traverse4 = traversableList.traverse(applicativeExceptT4);
+    const traverse5 = traversableTuple.traverse(applicativeExceptT4);
+    const traverse6 = traversablePair.traverse(applicativeExceptT4);
+    const apply4 = applyExceptT(dictMonad).apply;
+    return (dictJoinSemilattice) => (v) => {
+      if (v.tag === "Var") {
+        return applicativeExceptT4.pure($Expr("Var", v._1));
+      }
+      if (v.tag === "Op") {
+        return applicativeExceptT4.pure($Expr("Op", v._1));
+      }
+      if (v.tag === "Int") {
+        return applicativeExceptT4.pure($Expr("Int", v._1, v._2));
+      }
+      if (v.tag === "Float") {
+        return applicativeExceptT4.pure($Expr("Float", v._1, v._2));
+      }
+      if (v.tag === "Str") {
+        return applicativeExceptT4.pure($Expr("Str", v._1, v._2));
+      }
+      if (v.tag === "Constr") {
+        return $2.map(functorEither.map(Constr(v._1)(v._2)))(traverse4(exprFwd(dictMonad)(dictJoinSemilattice))(v._3));
+      }
+      if (v.tag === "Record") {
+        const $9 = Record(v._1);
+        return $2.map((m) => {
+          if (m.tag === "Left") {
+            return $Either("Left", m._1);
           }
-          if ($5.tag === "Right") {
-            return $Either("Right", $4($5._1));
+          if (m.tag === "Right") {
+            return $Either("Right", $9(fromFoldable13(m._1)));
           }
           fail();
-        }));
+        })(traverse4(traverse5(exprFwd(dictMonad)(dictJoinSemilattice)))(v._2));
       }
-      fail();
-    }
-    fail();
-  };
-  var exprFwd = (dictJoinSemilattice) => (v) => {
-    if (v.tag === "Var") {
-      return $Either("Right", $Expr("Var", v._1));
-    }
-    if (v.tag === "Op") {
-      return $Either("Right", $Expr("Op", v._1));
-    }
-    if (v.tag === "Int") {
-      return $Either("Right", $Expr("Int", v._1, v._2));
-    }
-    if (v.tag === "Float") {
-      return $Either("Right", $Expr("Float", v._1, v._2));
-    }
-    if (v.tag === "Str") {
-      return $Either("Right", $Expr("Str", v._1, v._2));
-    }
-    if (v.tag === "Constr") {
-      const $2 = Constr(v._1)(v._2);
-      const $3 = traverse1(exprFwd(dictJoinSemilattice))(v._3);
-      if ($3.tag === "Left") {
-        return $Either("Left", $3._1);
+      if (v.tag === "Dictionary") {
+        return $2.map(functorEither.map(Dictionary(v._1)))(traverse4(traverse6(exprFwd(dictMonad)(dictJoinSemilattice)))(v._2));
       }
-      if ($3.tag === "Right") {
-        return $Either("Right", $2($3._1));
-      }
-      fail();
-    }
-    if (v.tag === "Record") {
-      const $2 = Record(v._1);
-      const $3 = traverse1(traverse2(exprFwd(dictJoinSemilattice)))(v._2);
-      if ($3.tag === "Left") {
-        return $Either("Left", $3._1);
-      }
-      if ($3.tag === "Right") {
-        return $Either("Right", $2(fromFoldable13($3._1)));
-      }
-      fail();
-    }
-    if (v.tag === "Dictionary") {
-      const $2 = Dictionary(v._1);
-      const $3 = traverse1(traverse3(exprFwd(dictJoinSemilattice)))(v._2);
-      if ($3.tag === "Left") {
-        return $Either("Left", $3._1);
-      }
-      if ($3.tag === "Right") {
-        return $Either("Right", $2($3._1));
-      }
-      fail();
-    }
-    if (v.tag === "Matrix") {
-      return applyEither.apply((() => {
-        const $2 = Matrix(v._1);
-        const $3 = exprFwd(dictJoinSemilattice)(v._2);
-        if ($3.tag === "Left") {
-          return $Either("Left", $3._1);
-        }
-        if ($3.tag === "Right") {
-          return $Either("Right", $2($3._1)($Tuple(v._3._1, v._3._2)));
-        }
-        fail();
-      })())(exprFwd(dictJoinSemilattice)(v._4));
-    }
-    if (v.tag === "Lambda") {
-      const $2 = clausesFwd(dictJoinSemilattice)(v._1);
-      if ($2.tag === "Left") {
-        return $Either("Left", $2._1);
-      }
-      if ($2.tag === "Right") {
-        return $Either("Right", $Expr("Lambda", $2._1));
-      }
-      fail();
-    }
-    if (v.tag === "Project") {
-      const $2 = exprFwd(dictJoinSemilattice)(v._1);
-      if ($2.tag === "Left") {
-        return $Either("Left", $2._1);
-      }
-      if ($2.tag === "Right") {
-        return $Either("Right", $Expr("Project", $2._1, v._2));
-      }
-      fail();
-    }
-    if (v.tag === "App") {
-      return applyEither.apply((() => {
-        const $2 = exprFwd(dictJoinSemilattice)(v._1);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", App2($2._1));
-        }
-        fail();
-      })())(exprFwd(dictJoinSemilattice)(v._2));
-    }
-    if (v.tag === "BinaryApp") {
-      return applyEither.apply((() => {
-        const $2 = App2($Expr("Op", v._2));
-        const $3 = exprFwd(dictJoinSemilattice)(v._1);
-        if ($3.tag === "Left") {
-          return $Either("Left", $3._1);
-        }
-        if ($3.tag === "Right") {
-          return $Either("Right", App2($2($3._1)));
-        }
-        fail();
-      })())(exprFwd(dictJoinSemilattice)(v._3));
-    }
-    if (v.tag === "MatchAs") {
-      return applyEither.apply((() => {
-        const $2 = clausesFwd(dictJoinSemilattice)(functorNonEmptyList.map((x2) => $Tuple($NonEmpty(x2._1, Nil), x2._2))(v._2));
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", App2($Expr("Lambda", $2._1)));
-        }
-        fail();
-      })())(exprFwd(dictJoinSemilattice)(v._1));
-    }
-    if (v.tag === "IfElse") {
-      return applyEither.apply((() => {
-        const $2 = applyEither.apply((() => {
-          const $22 = exprFwd(dictJoinSemilattice)(v._2);
-          if ($22.tag === "Left") {
-            return $Either("Left", $22._1);
+      if (v.tag === "Matrix") {
+        return apply4($2.map((m) => {
+          if (m.tag === "Left") {
+            return $Either("Left", m._1);
           }
-          if ($22.tag === "Right") {
-            return $Either("Right", elimBool($Cont("ContExpr", $22._1)));
+          if (m.tag === "Right") {
+            return $Either("Right", m._1($Tuple(v._3._1, v._3._2)));
           }
           fail();
-        })())((() => {
-          const $22 = exprFwd(dictJoinSemilattice)(v._3);
-          if ($22.tag === "Left") {
-            return $Either("Left", $22._1);
+        })($2.map(functorEither.map(Matrix(v._1)))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2))))(exprFwd(dictMonad)(dictJoinSemilattice)(v._4));
+      }
+      if (v.tag === "Lambda") {
+        return $2.map(functorEither.map(Lambda))(clausesFwd(dictMonad)(dictJoinSemilattice)(v._1));
+      }
+      if (v.tag === "Project") {
+        return $2.map((m) => {
+          if (m.tag === "Left") {
+            return $Either("Left", m._1);
           }
-          if ($22.tag === "Right") {
-            return $Either("Right", $Cont("ContExpr", $22._1));
+          if (m.tag === "Right") {
+            return $Either("Right", m._1(v._2));
           }
           fail();
-        })());
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", App2($Expr("Lambda", $2._1)));
-        }
-        fail();
-      })())(exprFwd(dictJoinSemilattice)(v._1));
-    }
-    if (v.tag === "ListEmpty") {
-      return $Either("Right", $Expr("Constr", v._1, "Nil", Nil));
-    }
-    if (v.tag === "ListNonEmpty") {
-      return applyEither.apply((() => {
-        const $2 = exprFwd(dictJoinSemilattice)(v._2);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", econs(v._1)($2._1));
-        }
-        fail();
-      })())(listRestFwd(dictJoinSemilattice)(v._3));
-    }
-    if (v.tag === "ListEnum") {
-      return applyEither.apply((() => {
-        const $2 = App2($Expr("Var", "enumFromTo"));
-        const $3 = exprFwd(dictJoinSemilattice)(v._1);
-        if ($3.tag === "Left") {
-          return $Either("Left", $3._1);
-        }
-        if ($3.tag === "Right") {
-          return $Either("Right", App2($2($3._1)));
-        }
-        fail();
-      })())(exprFwd(dictJoinSemilattice)(v._2));
-    }
-    if (v.tag === "ListComp") {
-      return listCompFwd(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._3, v._2)));
-    }
-    if (v.tag === "Let") {
-      return varDefsFwd(dictJoinSemilattice)($Tuple(v._1, v._2));
-    }
-    if (v.tag === "LetRec") {
-      return applyEither.apply((() => {
-        const $2 = recDefsFwd(dictJoinSemilattice)(v._1);
-        if ($2.tag === "Left") {
-          return $Either("Left", $2._1);
-        }
-        if ($2.tag === "Right") {
-          return $Either("Right", LetRec($2._1));
-        }
-        fail();
-      })())(exprFwd(dictJoinSemilattice)(v._2));
-    }
-    fail();
-  };
-  var clausesFwd = (dictJoinSemilattice) => {
-    const maybeJoin = joinSemilatticeElim(dictJoinSemilattice).maybeJoin;
-    return (v) => bindEither.bind(traverse(pattsExprFwd(dictJoinSemilattice))(functorNonEmptyList.map(unsafeCoerce)(v)))((v1) => foldM4(maybeJoin)(v1._1)(v1._2));
-  };
-  var moduleFwd = (dictJoinSemilattice) => (v) => {
-    const $2 = traverse1((v1) => {
-      if (v1.tag === "Left") {
-        const $3 = varDefFwd(dictJoinSemilattice)(v1._1);
-        if ($3.tag === "Left") {
-          return $Either("Left", $3._1);
-        }
-        if ($3.tag === "Right") {
-          return $Either("Right", $Either("Left", $3._1));
-        }
-        fail();
+        })($2.map(functorEither.map(Project))(exprFwd(dictMonad)(dictJoinSemilattice)(v._1)));
       }
-      if (v1.tag === "Right") {
-        const $3 = recDefsFwd(dictJoinSemilattice)(v1._1);
-        if ($3.tag === "Left") {
-          return $Either("Left", $3._1);
-        }
-        if ($3.tag === "Right") {
-          return $Either("Right", $Either("Right", $3._1));
-        }
-        fail();
+      if (v.tag === "App") {
+        return apply4($2.map(functorEither.map(App2))(exprFwd(dictMonad)(dictJoinSemilattice)(v._1)))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2));
+      }
+      if (v.tag === "BinaryApp") {
+        return apply4($2.map(functorEither.map(App2))($2.map(functorEither.map(App2($Expr("Op", v._2))))(exprFwd(dictMonad)(dictJoinSemilattice)(v._1))))(exprFwd(dictMonad)(dictJoinSemilattice)(v._3));
+      }
+      if (v.tag === "MatchAs") {
+        return apply4($2.map(functorEither.map(App2))($2.map(functorEither.map(Lambda))(clausesFwd(dictMonad)(dictJoinSemilattice)(functorNonEmptyList.map((x2) => $Tuple(
+          $NonEmpty(x2._1, Nil),
+          x2._2
+        ))(v._2)))))(exprFwd(dictMonad)(dictJoinSemilattice)(v._1));
+      }
+      if (v.tag === "IfElse") {
+        return apply4($2.map(functorEither.map(App2))($2.map(functorEither.map(Lambda))(apply4($2.map(functorEither.map(elimBool))($2.map(functorEither.map(ContExpr))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2))))($2.map(functorEither.map(ContExpr))(exprFwd(dictMonad)(dictJoinSemilattice)(v._3))))))(exprFwd(dictMonad)(dictJoinSemilattice)(v._1));
+      }
+      if (v.tag === "ListEmpty") {
+        return applicativeExceptT4.pure($Expr("Constr", v._1, "Nil", Nil));
+      }
+      if (v.tag === "ListNonEmpty") {
+        return apply4($2.map(functorEither.map(econs(v._1)))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2)))(listRestFwd(dictMonad)(dictJoinSemilattice)(v._3));
+      }
+      if (v.tag === "ListEnum") {
+        return apply4($2.map(functorEither.map(App2))($2.map(functorEither.map(App2($Expr("Var", "enumFromTo"))))(exprFwd(dictMonad)(dictJoinSemilattice)(v._1))))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2));
+      }
+      if (v.tag === "ListComp") {
+        return listCompFwd(dictMonad)(dictJoinSemilattice)($Tuple(v._1, $Tuple(v._3, v._2)));
+      }
+      if (v.tag === "Let") {
+        return varDefsFwd(dictMonad)(dictJoinSemilattice)($Tuple(v._1, v._2));
+      }
+      if (v.tag === "LetRec") {
+        return apply4($2.map(functorEither.map(LetRec))(recDefsFwd(dictMonad)(dictJoinSemilattice)(v._1)))(exprFwd(dictMonad)(dictJoinSemilattice)(v._2));
       }
       fail();
-    })(bindList.bind(listMap((v1) => {
-      if (v1.tag === "Left") {
-        return listMap(Left)($List("Cons", v1._1._1, v1._1._2));
-      }
-      if (v1.tag === "Right") {
-        return $List("Cons", $Either("Right", v1._1), Nil);
-      }
-      fail();
-    })(v._1))(identity5));
-    if ($2.tag === "Left") {
-      return $Either("Left", $2._1);
-    }
-    if ($2.tag === "Right") {
-      return $Either("Right", $Module($2._1));
-    }
-    fail();
+    };
   };
-  var desugarModuleFwd = (dictJoinSemilattice) => moduleFwd(dictJoinSemilattice);
+  var clausesFwd = (dictMonad) => {
+    const bind2 = bindExceptT(dictMonad).bind;
+    const traverse4 = traversableNonEmptyList.traverse(applicativeExceptT(dictMonad));
+    const bind$1 = bindExceptT(dictMonad).bind;
+    const pure2 = applicativeExceptT(dictMonad).pure;
+    return (dictJoinSemilattice) => {
+      const maybeJoin = joinSemilatticeElim(dictJoinSemilattice).maybeJoin(dictMonad);
+      return (v) => bind2(traverse4(pattsExprFwd(dictMonad)(dictJoinSemilattice))(functorNonEmptyList.map(unsafeCoerce)(v)))((v1) => {
+        const go = (go$a0$copy) => (go$a1$copy) => {
+          let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+          while (go$c) {
+            const b = go$a0, v$1 = go$a1;
+            if (v$1.tag === "Nil") {
+              go$c = false;
+              go$r = b;
+              continue;
+            }
+            if (v$1.tag === "Cons") {
+              go$a0 = bind$1(b)((a) => maybeJoin(a)(v$1._1));
+              go$a1 = v$1._2;
+              continue;
+            }
+            fail();
+          }
+          ;
+          return go$r;
+        };
+        return go(pure2(v1._1))(v1._2);
+      });
+    };
+  };
+  var moduleFwd = (dictMonad) => {
+    const $1 = dictMonad.Bind1().Apply0().Functor0();
+    const varDefFwd1 = varDefFwd(dictMonad);
+    const recDefsFwd1 = recDefsFwd(dictMonad);
+    const traverse4 = traversableList.traverse(applicativeExceptT(dictMonad));
+    return (dictJoinSemilattice) => {
+      const varDefFwd2 = varDefFwd1(dictJoinSemilattice);
+      const recDefsFwd2 = recDefsFwd1(dictJoinSemilattice);
+      return (v) => $1.map(functorEither.map(Module))(traverse4((v1) => {
+        if (v1.tag === "Left") {
+          return $1.map(functorEither.map(Left))(varDefFwd2(v1._1));
+        }
+        if (v1.tag === "Right") {
+          return $1.map(functorEither.map(Right))(recDefsFwd2(v1._1));
+        }
+        fail();
+      })(bindList.bind(listMap((v1) => {
+        if (v1.tag === "Left") {
+          return listMap(Left)($List("Cons", v1._1._1, v1._1._2));
+        }
+        if (v1.tag === "Right") {
+          return $List("Cons", $Either("Right", v1._1), Nil);
+        }
+        fail();
+      })(v._1))(identity5)));
+    };
+  };
 
   // output-es/Data.Semiring/foreign.js
   var intAdd = function(x2) {
@@ -28480,185 +28182,92 @@
   };
   var functorDictRep = { map: (f) => (m) => _fmapObject(m, bifunctorTuple.bimap(f)(functorVal.map(f))) };
   var joinSemilatticeVal = (dictJoinSemilattice) => ({
-    maybeJoin: (v) => (v1) => {
-      if (v.tag === "Int") {
-        if (v1.tag === "Int") {
-          const $3 = Int3(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = mayFailEq(showInt)(eqInt)(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+    maybeJoin: (dictMonad) => {
+      const $2 = dictMonad.Bind1().Apply0().Functor0();
+      const mayFailEq2 = mayFailEq(dictMonad);
+      const mayFailEq1 = mayFailEq2(showInt)(eqInt);
+      const mayFailEq22 = mayFailEq2(showNumber)(eqNumber);
+      const mayFailEq3 = mayFailEq2(showString)(eqString);
+      const apply12 = applyExceptT(dictMonad).apply;
+      const Applicative0 = dictMonad.Applicative0();
+      return (v) => (v1) => {
+        if (v.tag === "Int") {
+          if (v1.tag === "Int") {
+            return $2.map(functorEither.map(Int3(dictJoinSemilattice.join(v._1)(v1._1))))(mayFailEq1(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
-          }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible values"));
         }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Float") {
-        if (v1.tag === "Float") {
-          const $3 = Float3(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = mayFailEq(showNumber)(eqNumber)(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+        if (v.tag === "Float") {
+          if (v1.tag === "Float") {
+            return $2.map(functorEither.map(Float3(dictJoinSemilattice.join(v._1)(v1._1))))(mayFailEq22(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
-          }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible values"));
         }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Str") {
-        if (v1.tag === "Str") {
-          const $3 = Str3(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = mayFailEq(showString)(eqString)(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+        if (v.tag === "Str") {
+          if (v1.tag === "Str") {
+            return $2.map(functorEither.map(Str3(dictJoinSemilattice.join(v._1)(v1._1))))(mayFailEq3(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
-          }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible values"));
         }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Record") {
-        if (v1.tag === "Record") {
-          const $3 = Record3(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = joinSemilatticeDict(joinSemilatticeVal(dictJoinSemilattice)).maybeJoin(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+        if (v.tag === "Record") {
+          if (v1.tag === "Record") {
+            return $2.map(functorEither.map(Record3(dictJoinSemilattice.join(v._1)(v1._1))))(joinSemilatticeDict(joinSemilatticeVal(dictJoinSemilattice)).maybeJoin(dictMonad)(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
-          }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible values"));
         }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Dictionary") {
-        if (v1.tag === "Dictionary") {
-          const $3 = Dictionary3(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = joinSemilatticeDictRep(dictJoinSemilattice).maybeJoin(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+        if (v.tag === "Dictionary") {
+          if (v1.tag === "Dictionary") {
+            return $2.map(functorEither.map(Dictionary3(dictJoinSemilattice.join(v._1)(v1._1))))(joinSemilatticeDictRep(dictJoinSemilattice).maybeJoin(dictMonad)(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
-          }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible values"));
         }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Constr") {
-        if (v1.tag === "Constr") {
-          return applyEither.apply((() => {
-            const $3 = Constr3(dictJoinSemilattice.join(v._1)(v1._1));
-            const $4 = mayFailEq(showString)(eqString)(v._2)(v1._2);
-            if ($4.tag === "Left") {
-              return $Either("Left", $4._1);
-            }
-            if ($4.tag === "Right") {
-              return $Either("Right", $3($4._1));
-            }
-            fail();
-          })())(joinSemilatticeList(joinSemilatticeVal(dictJoinSemilattice)).maybeJoin(v._3)(v1._3));
+        if (v.tag === "Constr") {
+          if (v1.tag === "Constr") {
+            return apply12($2.map(functorEither.map(Constr3(dictJoinSemilattice.join(v._1)(v1._1))))(mayFailEq3(v._2)(v1._2)))(joinSemilatticeList(joinSemilatticeVal(dictJoinSemilattice)).maybeJoin(dictMonad)(v._3)(v1._3));
+          }
+          return Applicative0.pure($Either("Left", "Incompatible values"));
         }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Matrix") {
-        if (v1.tag === "Matrix") {
-          const $3 = Matrix3(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = joinSemilatticeMatrixRep(dictJoinSemilattice).maybeJoin(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+        if (v.tag === "Matrix") {
+          if (v1.tag === "Matrix") {
+            return $2.map(functorEither.map(Matrix3(dictJoinSemilattice.join(v._1)(v1._1))))(joinSemilatticeMatrixRep(dictJoinSemilattice).maybeJoin(dictMonad)(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
-          }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible values"));
         }
-        return $Either("Left", "Incompatible values");
-      }
-      if (v.tag === "Fun") {
-        if (v1.tag === "Fun") {
-          const $3 = Fun(dictJoinSemilattice.join(v._1)(v1._1));
-          const $4 = joinSemilatticeFun(dictJoinSemilattice).maybeJoin(v._2)(v1._2);
-          if ($4.tag === "Left") {
-            return $Either("Left", $4._1);
+        if (v.tag === "Fun") {
+          if (v1.tag === "Fun") {
+            return $2.map(functorEither.map(Fun(dictJoinSemilattice.join(v._1)(v1._1))))(joinSemilatticeFun(dictJoinSemilattice).maybeJoin(dictMonad)(v._2)(v1._2));
           }
-          if ($4.tag === "Right") {
-            return $Either("Right", $3($4._1));
-          }
-          fail();
+          return Applicative0.pure($Either("Left", "Incompatible values"));
         }
-        return $Either("Left", "Incompatible values");
-      }
-      return $Either("Left", "Incompatible values");
+        return Applicative0.pure($Either("Left", "Incompatible values"));
+      };
     },
     join: (v) => definedJoin(joinSemilatticeVal(dictJoinSemilattice))(v),
     neg: functorVal.map(dictJoinSemilattice.neg)
   });
   var joinSemilatticeMatrixRep = (dictJoinSemilattice) => ({
-    maybeJoin: (v) => (v1) => {
-      const $3 = joinSemilatticeArray(joinSemilatticeArray(joinSemilatticeVal(dictJoinSemilattice))).maybeJoin(v._1)(v1._1);
-      const $4 = mayFailEq(showInt)(eqInt)(v._2._1._1)(v1._2._1._1);
-      if ($4.tag === "Left") {
-        const $5 = applyEither.apply((() => {
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
-          }
-          if ($3.tag === "Right") {
-            return $Either("Right", Tuple($3._1));
-          }
-          fail();
-        })())(applyEither.apply($Either("Left", $4._1))((() => {
-          const $52 = mayFailEq(showInt)(eqInt)(v._2._2._1)(v1._2._2._1);
-          if ($52.tag === "Left") {
-            return $Either("Left", $52._1);
-          }
-          if ($52.tag === "Right") {
-            return $Either("Right", $Tuple($52._1, dictJoinSemilattice.join(v._2._2._2)(v1._2._2._2)));
-          }
-          fail();
-        })()));
-        if ($5.tag === "Left") {
-          return $Either("Left", $5._1);
+    maybeJoin: (dictMonad) => {
+      const $2 = dictMonad.Bind1().Apply0().Functor0();
+      const $3 = applyExceptT(dictMonad);
+      const map6 = $3.Functor0().map;
+      const mayFailEq2 = mayFailEq(dictMonad)(showInt)(eqInt);
+      return (v) => (v1) => $2.map(functorEither.map(MatrixRep))($3.apply(map6(Tuple)(joinSemilatticeArray(joinSemilatticeArray(joinSemilatticeVal(dictJoinSemilattice))).maybeJoin(dictMonad)(v._1)(v1._1)))($3.apply(map6(Tuple)($2.map((m) => {
+        if (m.tag === "Left") {
+          return $Either("Left", m._1);
         }
-        if ($5.tag === "Right") {
-          return $Either("Right", $5._1);
+        if (m.tag === "Right") {
+          return $Either("Right", $Tuple(m._1, dictJoinSemilattice.join(v._2._1._2)(v1._2._1._2)));
         }
         fail();
-      }
-      if ($4.tag === "Right") {
-        const $5 = applyEither.apply((() => {
-          if ($3.tag === "Left") {
-            return $Either("Left", $3._1);
-          }
-          if ($3.tag === "Right") {
-            return $Either("Right", Tuple($3._1));
-          }
-          fail();
-        })())(applyEither.apply($Either("Right", Tuple($Tuple($4._1, dictJoinSemilattice.join(v._2._1._2)(v1._2._1._2)))))((() => {
-          const $52 = mayFailEq(showInt)(eqInt)(v._2._2._1)(v1._2._2._1);
-          if ($52.tag === "Left") {
-            return $Either("Left", $52._1);
-          }
-          if ($52.tag === "Right") {
-            return $Either("Right", $Tuple($52._1, dictJoinSemilattice.join(v._2._2._2)(v1._2._2._2)));
-          }
-          fail();
-        })()));
-        if ($5.tag === "Left") {
-          return $Either("Left", $5._1);
+      })(mayFailEq2(v._2._1._1)(v1._2._1._1))))($2.map((m) => {
+        if (m.tag === "Left") {
+          return $Either("Left", m._1);
         }
-        if ($5.tag === "Right") {
-          return $Either("Right", $5._1);
+        if (m.tag === "Right") {
+          return $Either("Right", $Tuple(m._1, dictJoinSemilattice.join(v._2._2._2)(v1._2._2._2)));
         }
         fail();
-      }
-      fail();
+      })(mayFailEq2(v._2._2._1)(v1._2._2._1)))));
     },
     join: (v) => definedJoin(joinSemilatticeMatrixRep(dictJoinSemilattice))(v),
     neg: functorMatrixRep.map(dictJoinSemilattice.neg)
@@ -28667,67 +28276,43 @@
     const joinSemilatticeElim2 = joinSemilatticeElim(dictJoinSemilattice);
     const maybeJoin = joinSemilatticeDict(joinSemilatticeElim2).maybeJoin;
     return {
-      maybeJoin: (v) => (v1) => {
-        if (v.tag === "Closure") {
-          if (v1.tag === "Closure") {
-            return applyEither.apply(applyEither.apply((() => {
-              const $5 = joinSemilatticeDict(joinSemilatticeVal(dictJoinSemilattice)).maybeJoin(v._1)(v1._1);
-              if ($5.tag === "Left") {
-                return $Either("Left", $5._1);
-              }
-              if ($5.tag === "Right") {
-                return $Either("Right", Closure($5._1));
-              }
-              fail();
-            })())(maybeJoin(v._2)(v1._2)))(joinSemilatticeElim2.maybeJoin(v._3)(v1._3));
-          }
-          return $Either("Left", "Incompatible functions");
-        }
-        if (v.tag === "Foreign") {
-          if (v1.tag === "Foreign") {
-            const $5 = Foreign(v._1);
-            const $6 = joinSemilatticeList(joinSemilatticeVal(dictJoinSemilattice)).maybeJoin(v._2)(v1._2);
-            if ($6.tag === "Left") {
-              return $Either("Left", $6._1);
+      maybeJoin: (dictMonad) => {
+        const apply12 = applyExceptT(dictMonad).apply;
+        const $5 = dictMonad.Bind1().Apply0().Functor0();
+        const maybeJoin2 = maybeJoin(dictMonad);
+        const maybeJoin3 = joinSemilatticeElim2.maybeJoin(dictMonad);
+        const mayFailEq2 = mayFailEq(dictMonad)(showString)(eqString);
+        const Applicative0 = dictMonad.Applicative0();
+        return (v) => (v1) => {
+          if (v.tag === "Closure") {
+            if (v1.tag === "Closure") {
+              return apply12(apply12($5.map(functorEither.map(Closure))(joinSemilatticeDict(joinSemilatticeVal(dictJoinSemilattice)).maybeJoin(dictMonad)(v._1)(v1._1)))(maybeJoin2(v._2)(v1._2)))(maybeJoin3(v._3)(v1._3));
             }
-            if ($6.tag === "Right") {
-              return $Either("Right", $5($6._1));
+            return Applicative0.pure($Either("Left", "Incompatible functions"));
+          }
+          if (v.tag === "Foreign") {
+            if (v1.tag === "Foreign") {
+              return $5.map(functorEither.map(Foreign(v._1)))(joinSemilatticeList(joinSemilatticeVal(dictJoinSemilattice)).maybeJoin(dictMonad)(v._2)(v1._2));
             }
-            fail();
+            return Applicative0.pure($Either("Left", "Incompatible functions"));
           }
-          return $Either("Left", "Incompatible functions");
-        }
-        if (v.tag === "PartialConstr") {
-          if (v1.tag === "PartialConstr") {
-            return applyEither.apply((() => {
-              const $5 = mayFailEq(showString)(eqString)(v._1)(v1._1);
-              if ($5.tag === "Left") {
-                return $Either("Left", $5._1);
-              }
-              if ($5.tag === "Right") {
-                return $Either("Right", PartialConstr($5._1));
-              }
-              fail();
-            })())(joinSemilatticeList(joinSemilatticeVal(dictJoinSemilattice)).maybeJoin(v._2)(v1._2));
+          if (v.tag === "PartialConstr") {
+            if (v1.tag === "PartialConstr") {
+              return apply12($5.map(functorEither.map(PartialConstr))(mayFailEq2(v._1)(v1._1)))(joinSemilatticeList(joinSemilatticeVal(dictJoinSemilattice)).maybeJoin(dictMonad)(v._2)(v1._2));
+            }
+            return Applicative0.pure($Either("Left", "Incompatible functions"));
           }
-          return $Either("Left", "Incompatible functions");
-        }
-        return $Either("Left", "Incompatible functions");
+          return Applicative0.pure($Either("Left", "Incompatible functions"));
+        };
       },
       join: (v) => definedJoin(joinSemilatticeFun(dictJoinSemilattice))(v),
       neg: functorFun.map(dictJoinSemilattice.neg)
     };
   };
   var joinSemilatticeDictRep = (dictJoinSemilattice) => ({
-    maybeJoin: (v) => (v1) => {
-      const $3 = joinSemilatticeDict(joinSemilattice$x215(dictJoinSemilattice)(joinSemilatticeVal(dictJoinSemilattice))).maybeJoin(v)(v1);
-      if ($3.tag === "Left") {
-        return $Either("Left", $3._1);
-      }
-      if ($3.tag === "Right") {
-        return $Either("Right", $3._1);
-      }
-      fail();
+    maybeJoin: (dictMonad) => {
+      const $2 = dictMonad.Bind1().Apply0().Functor0();
+      return (v) => (v1) => $2.map(functorEither.map(DictRep))(joinSemilatticeDict(joinSemilattice$x215(dictJoinSemilattice)(joinSemilatticeVal(dictJoinSemilattice))).maybeJoin(dictMonad)(v)(v1));
     },
     join: (v) => definedJoin(joinSemilatticeDictRep(dictJoinSemilattice))(v),
     neg: functorDictRep.map(dictJoinSemilattice.neg)
@@ -28957,36 +28542,36 @@
   var traversableVal = {
     traverse: (dictApplicative) => {
       const Apply0 = dictApplicative.Apply0();
-      const map10 = Apply0.Functor0().map;
-      const traverse52 = traversableList.traverse(dictApplicative);
+      const map9 = Apply0.Functor0().map;
+      const traverse5 = traversableList.traverse(dictApplicative);
       const $4 = traversableWithIndexObject.traverseWithIndex(dictApplicative);
       return (f) => (m) => {
         if (m.tag === "Int") {
-          return map10((v2) => $Val("Int", v2, m._2))(f(m._1));
+          return map9((v2) => $Val("Int", v2, m._2))(f(m._1));
         }
         if (m.tag === "Float") {
-          return map10((v2) => $Val("Float", v2, m._2))(f(m._1));
+          return map9((v2) => $Val("Float", v2, m._2))(f(m._1));
         }
         if (m.tag === "Str") {
-          return map10((v2) => $Val("Str", v2, m._2))(f(m._1));
+          return map9((v2) => $Val("Str", v2, m._2))(f(m._1));
         }
         if (m.tag === "Constr") {
-          return Apply0.apply(map10((v3) => (v4) => $Val("Constr", v3, m._2, v4))(f(m._1)))(traverse52(traversableVal.traverse(dictApplicative)(f))(m._3));
+          return Apply0.apply(map9((v3) => (v4) => $Val("Constr", v3, m._2, v4))(f(m._1)))(traverse5(traversableVal.traverse(dictApplicative)(f))(m._3));
         }
         if (m.tag === "Record") {
-          return Apply0.apply(map10((v2) => (v3) => $Val("Record", v2, v3))(f(m._1)))((() => {
+          return Apply0.apply(map9((v2) => (v3) => $Val("Record", v2, v3))(f(m._1)))((() => {
             const $7 = traversableVal.traverse(dictApplicative)(f);
             return $4((v) => $7)(m._2);
           })());
         }
         if (m.tag === "Dictionary") {
-          return Apply0.apply(map10((v2) => (v3) => $Val("Dictionary", v2, v3))(f(m._1)))(traversableDictRep.traverse(dictApplicative)(f)(m._2));
+          return Apply0.apply(map9((v2) => (v3) => $Val("Dictionary", v2, v3))(f(m._1)))(traversableDictRep.traverse(dictApplicative)(f)(m._2));
         }
         if (m.tag === "Matrix") {
-          return Apply0.apply(map10((v2) => (v3) => $Val("Matrix", v2, v3))(f(m._1)))(traversableMatrixRep.traverse(dictApplicative)(f)(m._2));
+          return Apply0.apply(map9((v2) => (v3) => $Val("Matrix", v2, v3))(f(m._1)))(traversableMatrixRep.traverse(dictApplicative)(f)(m._2));
         }
         if (m.tag === "Fun") {
-          return Apply0.apply(map10((v2) => (v3) => $Val("Fun", v2, v3))(f(m._1)))(traversableFun.traverse(dictApplicative)(f)(m._2));
+          return Apply0.apply(map9((v2) => (v3) => $Val("Fun", v2, v3))(f(m._1)))(traversableFun.traverse(dictApplicative)(f)(m._2));
         }
         fail();
       };
@@ -28997,11 +28582,11 @@
   };
   var traversableMatrixRep = {
     traverse: (dictApplicative) => {
-      const map10 = dictApplicative.Apply0().Functor0().map;
+      const map9 = dictApplicative.Apply0().Functor0().map;
       const bitraverse1 = bitraversableTuple.bitraverse(dictApplicative);
-      const traverse52 = traversableArray.traverse(dictApplicative);
-      const traverse62 = traversableTuple.traverse(dictApplicative);
-      return (f) => (v) => map10(MatrixRep)(bitraverse1(traverse52(traverse52(traversableVal.traverse(dictApplicative)(f))))(bitraverse1(traverse62(f))(traverse62(f)))(v));
+      const traverse5 = traversableArray.traverse(dictApplicative);
+      const traverse6 = traversableTuple.traverse(dictApplicative);
+      return (f) => (v) => map9(MatrixRep)(bitraverse1(traverse5(traverse5(traversableVal.traverse(dictApplicative)(f))))(bitraverse1(traverse6(f))(traverse6(f)))(v));
     },
     sequence: (dictApplicative) => traversableMatrixRep.traverse(dictApplicative)(identity10),
     Functor0: () => functorMatrixRep,
@@ -29010,25 +28595,25 @@
   var traversableFun = {
     traverse: (dictApplicative) => {
       const Apply0 = dictApplicative.Apply0();
-      const map10 = Apply0.Functor0().map;
+      const map9 = Apply0.Functor0().map;
       const $3 = traversableWithIndexObject.traverseWithIndex(dictApplicative);
-      const traverse62 = traversableElim.traverse(dictApplicative);
+      const traverse6 = traversableElim.traverse(dictApplicative);
       const traverse7 = traversableList.traverse(dictApplicative);
       return (f) => (m) => {
         if (m.tag === "Closure") {
-          return Apply0.apply(Apply0.apply(map10((v3) => (v4) => (v5) => $Fun("Closure", v3, v4, v5))((() => {
+          return Apply0.apply(Apply0.apply(map9((v3) => (v4) => (v5) => $Fun("Closure", v3, v4, v5))((() => {
             const $8 = traversableVal.traverse(dictApplicative)(f);
             return $3((v) => $8)(m._1);
           })()))((() => {
-            const $8 = traverse62(f);
+            const $8 = traverse6(f);
             return $3((v) => $8)(m._2);
-          })()))(traverse62(f)(m._3));
+          })()))(traverse6(f)(m._3));
         }
         if (m.tag === "Foreign") {
-          return map10((v2) => $Fun("Foreign", m._1, v2))(traverse7(traversableVal.traverse(dictApplicative)(f))(m._2));
+          return map9((v2) => $Fun("Foreign", m._1, v2))(traverse7(traversableVal.traverse(dictApplicative)(f))(m._2));
         }
         if (m.tag === "PartialConstr") {
-          return map10((v2) => $Fun("PartialConstr", m._1, v2))(traverse7(traversableVal.traverse(dictApplicative)(f))(m._2));
+          return map9((v2) => $Fun("PartialConstr", m._1, v2))(traverse7(traversableVal.traverse(dictApplicative)(f))(m._2));
         }
         fail();
       };
@@ -29039,10 +28624,10 @@
   };
   var traversableDictRep = {
     traverse: (dictApplicative) => {
-      const map10 = dictApplicative.Apply0().Functor0().map;
+      const map9 = dictApplicative.Apply0().Functor0().map;
       const $2 = traversableWithIndexObject.traverseWithIndex(dictApplicative);
       const bitraverse1 = bitraversableTuple.bitraverse(dictApplicative);
-      return (f) => (v) => map10(DictRep)((() => {
+      return (f) => (v) => map9(DictRep)((() => {
         const $6 = bitraverse1(f)(traversableVal.traverse(dictApplicative)(f));
         return $2((v$1) => $6)(v);
       })());
@@ -29234,35 +28819,22 @@
       $Tuple(v._2._1, v._2._2)
     );
   };
-  var matrixGet = (i) => (j) => (v) => {
-    const $3 = index2(v._1)(i - 1 | 0);
-    const $4 = (() => {
-      if ($3.tag === "Just") {
-        return index2($3._1)(j - 1 | 0);
+  var matrixGet = (dictMonad) => {
+    const orElse3 = orElse(dictMonad);
+    return (i) => (j) => (v) => orElse3("Index out of bounds")((() => {
+      const $5 = index2(v._1)(i - 1 | 0);
+      if ($5.tag === "Just") {
+        return index2($5._1)(j - 1 | 0);
       }
-      if ($3.tag === "Nothing") {
+      if ($5.tag === "Nothing") {
         return Nothing;
       }
       fail();
-    })();
-    if ($4.tag === "Nothing") {
-      return $Either("Left", "Index out of bounds");
-    }
-    if ($4.tag === "Just") {
-      return $Either("Right", $4._1);
-    }
-    fail();
+    })());
   };
-  var lookup$p = (x2) => (\u03B3) => {
-    const $2 = "variable " + (x2 + " not found");
-    const $3 = _lookup(Nothing, Just, x2, \u03B3);
-    if ($3.tag === "Nothing") {
-      return $Either("Left", $2);
-    }
-    if ($3.tag === "Just") {
-      return $Either("Right", $3._1);
-    }
-    fail();
+  var lookup$p = (dictMonad) => {
+    const orElse3 = orElse(dictMonad);
+    return (x2) => (\u03B3) => orElse3("variable " + (x2 + " not found"))(_lookup(Nothing, Just, x2, \u03B3));
   };
   var $$for = (\u03C1) => (\u03C3) => restrict(\u03C1)(reaches(\u03C1)(intersection2(fVElim.fv(\u03C3))(fromFoldable6(keys(\u03C1)))));
   var append_inv = (xs) => (\u03B3) => $Tuple(
@@ -29315,15 +28887,18 @@
             fail();
           };
         },
-        op: (dictAnn) => (v) => {
-          if (v.tag === "Cons") {
-            if (v._2.tag === "Nil") {
-              const v2 = op.i.match(v._1);
-              return $Either("Right", $Tuple(functorVal.map((v$1) => unit2)(v._1), op.o.constr($Tuple(op.fwd(v2._1), v2._2))));
+        op: (dictAnn) => (dictMonad) => {
+          const pure2 = applicativeExceptT(dictMonad).pure;
+          return (v) => {
+            if (v.tag === "Cons") {
+              if (v._2.tag === "Nil") {
+                const v2 = op.i.match(v._1);
+                return pure2($Tuple(functorVal.map((v$1) => unit2)(v._1), op.o.constr($Tuple(op.fwd(v2._1), v2._2))));
+              }
+              fail();
             }
             fail();
-          }
-          fail();
+          };
         },
         op_bwd: (dictAnn) => (v) => $List("Cons", op.i.constr($Tuple(op.i.match(v._1)._1, op.o.constr_bwd(v._2)._2)), Nil)
       }),
@@ -29593,36 +29168,36 @@
         },
         op: (dictAnn) => {
           const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-          return (v) => {
-            if (v.tag === "Cons") {
-              if (v._2.tag === "Cons") {
-                if (v._2._2.tag === "Nil") {
-                  const $6 = op.i.match(v._1);
-                  const $7 = op.i.match(v._2._1);
-                  return $Either(
-                    "Right",
-                    $Tuple(
+          return (dictMonad) => {
+            const pure2 = applicativeExceptT(dictMonad).pure;
+            return (v) => {
+              if (v.tag === "Cons") {
+                if (v._2.tag === "Cons") {
+                  if (v._2._2.tag === "Nil") {
+                    const $8 = op.i.match(v._1);
+                    const $9 = op.i.match(v._2._1);
+                    return pure2($Tuple(
                       $Tuple(functorVal.map((v$1) => unit2)(v._1), functorVal.map((v$1) => unit2)(v._2._1)),
                       op.o.constr($Tuple(
-                        op.fwd($6._1)($7._1),
+                        op.fwd($8._1)($9._1),
                         (() => {
-                          if (dictIsZero.isZero($6._1)) {
-                            return $6._2;
+                          if (dictIsZero.isZero($8._1)) {
+                            return $8._2;
                           }
-                          if (dictIsZero.isZero($7._1)) {
-                            return $7._2;
+                          if (dictIsZero.isZero($9._1)) {
+                            return $9._2;
                           }
-                          return meet($6._2)($7._2);
+                          return meet($8._2)($9._2);
                         })()
                       ))
-                    )
-                  );
+                    ));
+                  }
+                  fail();
                 }
                 fail();
               }
               fail();
-            }
-            fail();
+            };
           };
         },
         op_bwd: (dictAnn) => {
@@ -29691,25 +29266,25 @@
         },
         op: (dictAnn) => {
           const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-          return (v) => {
-            if (v.tag === "Cons") {
-              if (v._2.tag === "Cons") {
-                if (v._2._2.tag === "Nil") {
-                  const $5 = op.i1.match(v._1);
-                  const $6 = op.i2.match(v._2._1);
-                  return $Either(
-                    "Right",
-                    $Tuple(
+          return (dictMonad) => {
+            const pure2 = applicativeExceptT(dictMonad).pure;
+            return (v) => {
+              if (v.tag === "Cons") {
+                if (v._2.tag === "Cons") {
+                  if (v._2._2.tag === "Nil") {
+                    const $7 = op.i1.match(v._1);
+                    const $8 = op.i2.match(v._2._1);
+                    return pure2($Tuple(
                       $Tuple(functorVal.map((v$1) => unit2)(v._1), functorVal.map((v$1) => unit2)(v._2._1)),
-                      op.o.constr($Tuple(op.fwd($5._1)($6._1), meet($5._2)($6._2)))
-                    )
-                  );
+                      op.o.constr($Tuple(op.fwd($7._1)($8._1), meet($7._2)($8._2)))
+                    ));
+                  }
+                  fail();
                 }
                 fail();
               }
               fail();
-            }
-            fail();
+            };
           };
         },
         op_bwd: (dictAnn) => (v) => {
@@ -30210,12 +29785,12 @@
       });
       return data;
     }
-    var bind = key ? bindKey2 : bindIndex2, parents = this._parents, groups = this._groups;
+    var bind2 = key ? bindKey2 : bindIndex2, parents = this._parents, groups = this._groups;
     if (typeof value !== "function")
       value = constant_default6(value);
     for (var m = groups.length, update3 = new Array(m), enter = new Array(m), exit = new Array(m), j = 0; j < m; ++j) {
       var parent = parents[j], group2 = groups[j], groupLength = group2.length, data = value.call(parent, parent && parent.__data__, j, parents), dataLength = data.length, enterGroup = enter[j] = new Array(dataLength), updateGroup = update3[j] = new Array(dataLength), exitGroup = exit[j] = new Array(groupLength);
-      bind(parent, group2, enterGroup, updateGroup, exitGroup, data, key);
+      bind2(parent, group2, enterGroup, updateGroup, exitGroup, data, key);
       for (var i0 = 0, i1 = 0, previous, next; i0 < dataLength; ++i0) {
         if (previous = enterGroup[i0]) {
           if (i0 >= i1)
@@ -32276,151 +31851,131 @@
   var toUnfoldable10 = /* @__PURE__ */ toUnfoldable4(unfoldableList);
   var fromFoldable14 = /* @__PURE__ */ fromFoldable2(foldableList);
   var fv = /* @__PURE__ */ (() => fVDict(fVElim).fv)();
-  var traverse4 = /* @__PURE__ */ (() => {
-    const $0 = traversableWithIndexObject.traverseWithIndex(applicativeEither);
-    return (x2) => $0((v) => x2);
-  })();
-  var traverse12 = /* @__PURE__ */ (() => traversableList.traverse(applicativeEither))();
-  var traverse22 = /* @__PURE__ */ (() => traversablePair.traverse(applicativeEither))();
   var fromFoldable23 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
   var greaterThanOrEq1 = /* @__PURE__ */ (() => {
     const $0 = ordTuple(ordInt)(ordInt);
     return (a1) => (a2) => !($0.compare(a1)(a2).tag === "LT");
   })();
   var show3 = (v) => "(Tuple " + (showIntImpl(v._1) + (" " + (showIntImpl(v._2) + ")")));
-  var sequence2 = /* @__PURE__ */ (() => traversableList.traverse(applicativeEither)(identity6))();
   var erase1 = /* @__PURE__ */ (() => functorElim.map((v) => unit2))();
-  var matchMany = (dictAnn) => {
-    const BoundedMeetSemilattice1 = dictAnn.BoundedLattice1().BoundedMeetSemilattice1();
-    const meet = BoundedMeetSemilattice1.MeetSemilattice0().meet;
-    return (v) => (v1) => {
-      if (v.tag === "Nil") {
-        return $Either(
-          "Right",
-          $Tuple(empty2, $Tuple(v1, $Tuple(BoundedMeetSemilattice1.top, Nil)))
-        );
-      }
-      if (v.tag === "Cons") {
-        if (v1.tag === "ContElim") {
-          return bindEither.bind(match(dictAnn)(v._1)(v1._1))((v3) => bindEither.bind(matchMany(dictAnn)(v._2)(v3._2._1))((v4) => $Either(
-            "Right",
-            $Tuple(
+  var arity3 = /* @__PURE__ */ arity(monadIdentity);
+  var matchMany = (dictMonad) => {
+    const pure2 = applicativeExceptT(dictMonad).pure;
+    const bind12 = bindExceptT(dictMonad).bind;
+    const Applicative0 = dictMonad.Applicative0();
+    return (dictAnn) => {
+      const BoundedMeetSemilattice1 = dictAnn.BoundedLattice1().BoundedMeetSemilattice1();
+      const meet = BoundedMeetSemilattice1.MeetSemilattice0().meet;
+      return (v) => (v1) => {
+        if (v.tag === "Nil") {
+          return pure2($Tuple(empty2, $Tuple(v1, $Tuple(BoundedMeetSemilattice1.top, Nil))));
+        }
+        if (v.tag === "Cons") {
+          if (v1.tag === "ContElim") {
+            return bind12(match(dictMonad)(dictAnn)(v._1)(v1._1))((v3) => bind12(matchMany(dictMonad)(dictAnn)(v._2)(v3._2._1))((v4) => pure2($Tuple(
               unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(v3._1)(v4._1),
               $Tuple(v4._2._1, $Tuple(meet(v3._2._2._1)(v4._2._2._1), $List("Cons", v3._2._2._2, v4._2._2._2)))
-            )
-          )));
-        }
-        if (v1.tag === "ContExpr") {
-          return $Either(
-            "Left",
-            showIntImpl((() => {
-              const go = (go$a0$copy) => (go$a1$copy) => {
-                let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-                while (go$c) {
-                  const b = go$a0, v$1 = go$a1;
-                  if (v$1.tag === "Nil") {
-                    go$c = false;
-                    go$r = b;
-                    continue;
+            ))));
+          }
+          if (v1.tag === "ContExpr") {
+            return Applicative0.pure($Either(
+              "Left",
+              showIntImpl((() => {
+                const go = (go$a0$copy) => (go$a1$copy) => {
+                  let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+                  while (go$c) {
+                    const b = go$a0, v$1 = go$a1;
+                    if (v$1.tag === "Nil") {
+                      go$c = false;
+                      go$r = b;
+                      continue;
+                    }
+                    if (v$1.tag === "Cons") {
+                      go$a0 = b + 1 | 0;
+                      go$a1 = v$1._2;
+                      continue;
+                    }
+                    fail();
                   }
-                  if (v$1.tag === "Cons") {
-                    go$a0 = b + 1 | 0;
-                    go$a1 = v$1._2;
-                    continue;
-                  }
-                  fail();
-                }
-                ;
-                return go$r;
-              };
-              return go(0)(v._2) + 1 | 0;
-            })()) + " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
-          );
+                  ;
+                  return go$r;
+                };
+                return go(0)(v._2) + 1 | 0;
+              })()) + " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
+            ));
+          }
+          return unsafePerformEffect(throwException(error("absurd")));
         }
         return unsafePerformEffect(throwException(error("absurd")));
-      }
-      return unsafePerformEffect(throwException(error("absurd")));
+      };
     };
   };
-  var match = (dictAnn) => {
-    const BoundedMeetSemilattice1 = dictAnn.BoundedLattice1().BoundedMeetSemilattice1();
-    const meet = BoundedMeetSemilattice1.MeetSemilattice0().meet;
-    const prettyP2 = prettyP(prettyVal(dictAnn.Highlightable0()));
-    return (v) => (v1) => {
-      if (v1.tag === "ElimVar") {
-        if (v1._1 === "_") {
-          return $Either(
-            "Right",
-            $Tuple(
+  var match = (dictMonad) => {
+    const pure2 = applicativeExceptT(dictMonad).pure;
+    const bindExceptT2 = bindExceptT(dictMonad);
+    const $$with2 = $$with(dictMonad.Bind1().Apply0().Functor0());
+    const consistentWith2 = consistentWith(dictMonad);
+    const orElse3 = orElse(dictMonad);
+    const dataTypeFor1 = dataTypeForSetCtr.dataTypeFor(dictMonad);
+    const Applicative0 = dictMonad.Applicative0();
+    const check2 = check(dictMonad);
+    return (dictAnn) => {
+      const BoundedMeetSemilattice1 = dictAnn.BoundedLattice1().BoundedMeetSemilattice1();
+      const meet = BoundedMeetSemilattice1.MeetSemilattice0().meet;
+      const prettyP2 = prettyP(prettyVal(dictAnn.Highlightable0()));
+      return (v) => (v1) => {
+        if (v1.tag === "ElimVar") {
+          if (v1._1 === "_") {
+            return pure2($Tuple(
               empty2,
               $Tuple(v1._2, $Tuple(BoundedMeetSemilattice1.top, $Match("MatchVarAnon", functorVal.map((v$1) => unit2)(v))))
-            )
-          );
-        }
-        return $Either(
-          "Right",
-          $Tuple(
+            ));
+          }
+          return pure2($Tuple(
             runST(bind_(newImpl)(poke3(v1._1)(v))),
             $Tuple(v1._2, $Tuple(BoundedMeetSemilattice1.top, $Match("MatchVar", v1._1, functorVal.map((v$1) => unit2)(v))))
-          )
-        );
-      }
-      if (v1.tag === "ElimConstr") {
-        if (v.tag === "Constr") {
-          return bindEither.bind($$with("Pattern mismatch")(consistentWith($Map(
-            "Two",
-            Leaf2,
-            v._2,
-            unit2,
-            Leaf2
-          ))(keys2(v1._1))))(() => bindEither.bind((() => {
-            const $7 = "Incomplete patterns: no branch for " + showCtr(v._2);
-            const $8 = _lookup(Nothing, Just, v._2, v1._1);
-            if ($8.tag === "Nothing") {
-              return $Either("Left", $7);
-            }
-            if ($8.tag === "Just") {
-              return $Either("Right", $8._1);
-            }
-            fail();
-          })())((\u03BA) => bindEither.bind(matchMany(dictAnn)(v._3)(\u03BA))((v2) => $Either(
-            "Right",
-            $Tuple(v2._1, $Tuple(v2._2._1, $Tuple(meet(v._1)(v2._2._2._1), $Match("MatchConstr", v._2, v2._2._2._2))))
-          ))));
+          ));
         }
-        return bindEither.bind((() => {
-          const v$1 = toUnfoldable6(keys2(v1._1));
-          if (v$1.tag === "Cons") {
-            return dataTypeForCtr.dataTypeFor(v$1._1);
+        if (v1.tag === "ElimConstr") {
+          if (v.tag === "Constr") {
+            return bindExceptT2.bind($$with2("Pattern mismatch")(consistentWith2($Map(
+              "Two",
+              Leaf2,
+              v._2,
+              unit2,
+              Leaf2
+            ))(keys2(v1._1))))(() => bindExceptT2.bind(orElse3("Incomplete patterns: no branch for " + showCtr(v._2))(_lookup(
+              Nothing,
+              Just,
+              v._2,
+              v1._1
+            )))((\u03BA) => bindExceptT2.bind(matchMany(dictMonad)(dictAnn)(v._3)(\u03BA))((v2) => pure2($Tuple(
+              v2._1,
+              $Tuple(v2._2._1, $Tuple(meet(v._1)(v2._2._2._1), $Match("MatchConstr", v._2, v2._2._2._2)))
+            )))));
           }
-          fail();
-        })())((d) => $Either("Left", "Pattern mismatch: found " + (prettyP2(v) + (", expected " + d._1))));
-      }
-      if (v1.tag === "ElimRecord") {
-        if (v.tag === "Record") {
-          return bindEither.bind((() => {
-            const $6 = "Pattern mismatch: found " + (show2(keys2(v._2)) + (", expected " + show2(v1._1)));
-            if (difference3(ordString)(v1._1)(fromFoldable7(keys2(v._2))).tag === "Leaf") {
-              return $Either("Right", unit2);
-            }
-            return $Either("Left", $6);
-          })())(() => {
-            const xs$p = toUnfoldable10(v1._1);
-            return bindEither.bind(matchMany(dictAnn)(listMap((a) => $$get(a)(v._2))(xs$p))(v1._2))((v2) => $Either(
-              "Right",
-              $Tuple(
+          return bindExceptT2.bind(dataTypeFor1(keys2(v1._1)))((d) => Applicative0.pure($Either(
+            "Left",
+            "Pattern mismatch: found " + (prettyP2(v) + (", expected " + d._1))
+          )));
+        }
+        if (v1.tag === "ElimRecord") {
+          if (v.tag === "Record") {
+            return bindExceptT2.bind(check2(difference3(ordString)(v1._1)(fromFoldable7(keys2(v._2))).tag === "Leaf")("Pattern mismatch: found " + (show2(keys2(v._2)) + (", expected " + show2(v1._1)))))(() => {
+              const xs$p = toUnfoldable10(v1._1);
+              return bindExceptT2.bind(matchMany(dictMonad)(dictAnn)(listMap((a) => $$get(a)(v._2))(xs$p))(v1._2))((v2) => pure2($Tuple(
                 v2._1,
                 $Tuple(
                   v2._2._1,
                   $Tuple(meet(v._1)(v2._2._2._1), $Match("MatchRecord", fromFoldable14(zipWith(Tuple)(xs$p)(v2._2._2._2))))
                 )
-              )
-            ));
-          });
+              )));
+            });
+          }
+          return Applicative0.pure($Either("Left", "Pattern mismatch: found " + (prettyP2(v) + (", expected " + show2(v1._1)))));
         }
-        return $Either("Left", "Pattern mismatch: found " + (prettyP2(v) + (", expected " + show2(v1._1))));
-      }
-      fail();
+        fail();
+      };
     };
   };
   var closeDefs = (\u03B3) => (\u03C1) => (\u03B1) => _fmapObject(
@@ -32430,280 +31985,261 @@
       return $Val("Fun", \u03B1, $Fun("Closure", restrict(\u03B3)(unionWith(ordString)($$const)(fv(\u03C1$p))(fVElim.fv(\u03C3))), \u03C1$p, \u03C3));
     }
   );
-  var checkArity2 = (c) => (n) => bindEither.bind(arity(c))((n$p) => {
-    const $3 = showCtr(c) + (" got " + (showIntImpl(n) + (" argument(s), expects at most " + showIntImpl(n$p))));
-    if (n$p >= n) {
-      return $Either("Right", unit2);
-    }
-    return $Either("Left", $3);
-  });
-  var $$eval = (dictAnn) => {
-    const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-    const prettyP2 = prettyP(prettyVal(dictAnn.Highlightable0()));
-    const match1 = match(dictAnn);
-    return (v) => (v1) => (v2) => {
-      if (v1.tag === "Var") {
-        const $7 = lookup$p(v1._1)(v);
-        if ($7.tag === "Left") {
-          return $Either("Left", $7._1);
+  var checkArity2 = (dictMonad) => {
+    const bind12 = bindExceptT(dictMonad).bind;
+    const arity1 = arity(dictMonad);
+    const check2 = check(dictMonad);
+    return (c) => (n) => bind12(arity1(c))((n$p) => check2(n$p >= n)(showCtr(c) + (" got " + (showIntImpl(n) + (" argument(s), expects at most " + showIntImpl(n$p))))));
+  };
+  var $$eval = (dictMonad) => {
+    const $1 = dictMonad.Bind1().Apply0().Functor0();
+    const lookup$p2 = lookup$p(dictMonad);
+    const applicativeExceptT4 = applicativeExceptT(dictMonad);
+    const bindExceptT2 = bindExceptT(dictMonad);
+    const $5 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT4);
+    const traverse4 = traversableList.traverse(applicativeExceptT4);
+    const traverse5 = traversablePair.traverse(applicativeExceptT4);
+    const checkArity1 = checkArity2(dictMonad);
+    const check2 = check(dictMonad);
+    const sequence1 = traversableList.traverse(applicativeExceptT4)(identity6);
+    const Applicative0 = dictMonad.Applicative0();
+    const match1 = match(dictMonad);
+    return (dictAnn) => {
+      const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
+      const prettyP2 = prettyP(prettyVal(dictAnn.Highlightable0()));
+      const match22 = match1(dictAnn);
+      return (v) => (v1) => (v2) => {
+        if (v1.tag === "Var") {
+          return $1.map((m) => {
+            if (m.tag === "Left") {
+              return $Either("Left", m._1);
+            }
+            if (m.tag === "Right") {
+              return $Either("Right", $Tuple($Trace("Var", v1._1), m._1));
+            }
+            fail();
+          })(lookup$p2(v1._1)(v));
         }
-        if ($7.tag === "Right") {
-          return $Either("Right", $Tuple($Trace("Var", v1._1), $7._1));
+        if (v1.tag === "Op") {
+          return $1.map((m) => {
+            if (m.tag === "Left") {
+              return $Either("Left", m._1);
+            }
+            if (m.tag === "Right") {
+              return $Either("Right", $Tuple($Trace("Op", v1._1), m._1));
+            }
+            fail();
+          })(lookup$p2(v1._1)(v));
         }
-        fail();
-      }
-      if (v1.tag === "Op") {
-        const $7 = lookup$p(v1._1)(v);
-        if ($7.tag === "Left") {
-          return $Either("Left", $7._1);
+        if (v1.tag === "Int") {
+          return applicativeExceptT4.pure($Tuple(Const2, $Val("Int", meet(v1._1)(v2), v1._2)));
         }
-        if ($7.tag === "Right") {
-          return $Either("Right", $Tuple($Trace("Op", v1._1), $7._1));
+        if (v1.tag === "Float") {
+          return applicativeExceptT4.pure($Tuple(Const2, $Val("Float", meet(v1._1)(v2), v1._2)));
         }
-        fail();
-      }
-      if (v1.tag === "Int") {
-        return $Either("Right", $Tuple(Const2, $Val("Int", meet(v1._1)(v2), v1._2)));
-      }
-      if (v1.tag === "Float") {
-        return $Either("Right", $Tuple(Const2, $Val("Float", meet(v1._1)(v2), v1._2)));
-      }
-      if (v1.tag === "Str") {
-        return $Either("Right", $Tuple(Const2, $Val("Str", meet(v1._1)(v2), v1._2)));
-      }
-      if (v1.tag === "Record") {
-        return bindEither.bind((() => {
-          const $7 = traverse4((() => {
-            const $72 = $$eval(dictAnn)(v);
-            return (a) => $72(a)(v2);
-          })())(v1._2);
-          if ($7.tag === "Left") {
-            return $Either("Left", $7._1);
-          }
-          if ($7.tag === "Right") {
-            return $Either("Right", $Tuple(_fmapObject($7._1, fst), _fmapObject($7._1, snd)));
-          }
-          fail();
-        })())((v3) => $Either("Right", $Tuple($Trace("Record", v3._1), $Val("Record", meet(v1._1)(v2), v3._2))));
-      }
-      if (v1.tag === "Dictionary") {
-        return bindEither.bind((() => {
-          const $7 = traverse12(traverse22((() => {
-            const $72 = $$eval(dictAnn)(v);
-            return (a) => $72(a)(v2);
-          })()))(v1._2);
-          if ($7.tag === "Left") {
-            return $Either("Left", $7._1);
-          }
-          if ($7.tag === "Right") {
-            return $Either(
-              "Right",
-              (() => {
-                const $8 = unzip(listMap(toTuple)($7._1));
-                return $Tuple(unzip($8._1), unzip($8._2));
-              })()
-            );
-          }
-          fail();
-        })())((v3) => {
-          const v4 = unzip(listMap((u) => string2.match(u))(v3._1._2));
-          const d = fromFoldable14(zipWith(Tuple)(v4._1)(zipWith(Tuple)(v4._2)(v3._2._2)));
-          return $Either(
-            "Right",
-            $Tuple(
+        if (v1.tag === "Str") {
+          return applicativeExceptT4.pure($Tuple(Const2, $Val("Str", meet(v1._1)(v2), v1._2)));
+        }
+        if (v1.tag === "Record") {
+          return bindExceptT2.bind($1.map(functorEither.map(unzip2))((() => {
+            const $20 = $$eval(dictMonad)(dictAnn)(v);
+            return $5((v$1) => (a) => $20(a)(v2))(v1._2);
+          })()))((v3) => applicativeExceptT4.pure($Tuple($Trace("Record", v3._1), $Val("Record", meet(v1._1)(v2), v3._2))));
+        }
+        if (v1.tag === "Dictionary") {
+          return bindExceptT2.bind($1.map((m) => {
+            if (m.tag === "Left") {
+              return $Either("Left", m._1);
+            }
+            if (m.tag === "Right") {
+              return $Either(
+                "Right",
+                (() => {
+                  const $21 = unzip(listMap(toTuple)(m._1));
+                  return $Tuple(unzip($21._1), unzip($21._2));
+                })()
+              );
+            }
+            fail();
+          })(traverse4(traverse5((() => {
+            const $20 = $$eval(dictMonad)(dictAnn)(v);
+            return (a) => $20(a)(v2);
+          })()))(v1._2)))((v3) => {
+            const v4 = unzip(listMap((u) => string2.match(u))(v3._1._2));
+            const d = fromFoldable14(zipWith(Tuple)(v4._1)(zipWith(Tuple)(v4._2)(v3._2._2)));
+            return applicativeExceptT4.pure($Tuple(
               $Trace(
                 "Dictionary",
                 zipWith(Tuple)(v4._1)(zipWith(Tuple)(v3._1._1)(v3._2._1)),
                 _fmapObject(d, (x2) => functorVal.map((v$1) => unit2)(x2._2))
               ),
               $Val("Dictionary", meet(v1._1)(v2), d)
-            )
-          );
-        });
-      }
-      if (v1.tag === "Constr") {
-        return bindEither.bind(checkArity2(v1._2)((() => {
-          const go = (go$a0$copy) => (go$a1$copy) => {
-            let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-            while (go$c) {
-              const b = go$a0, v$1 = go$a1;
-              if (v$1.tag === "Nil") {
-                go$c = false;
-                go$r = b;
-                continue;
+            ));
+          });
+        }
+        if (v1.tag === "Constr") {
+          return bindExceptT2.bind(checkArity1(v1._2)((() => {
+            const go = (go$a0$copy) => (go$a1$copy) => {
+              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+              while (go$c) {
+                const b = go$a0, v$1 = go$a1;
+                if (v$1.tag === "Nil") {
+                  go$c = false;
+                  go$r = b;
+                  continue;
+                }
+                if (v$1.tag === "Cons") {
+                  go$a0 = b + 1 | 0;
+                  go$a1 = v$1._2;
+                  continue;
+                }
+                fail();
               }
-              if (v$1.tag === "Cons") {
-                go$a0 = b + 1 | 0;
-                go$a1 = v$1._2;
-                continue;
-              }
-              fail();
-            }
-            ;
-            return go$r;
-          };
-          return go(0)(v1._3);
-        })()))(() => bindEither.bind((() => {
-          const $8 = traverse12((() => {
-            const $82 = $$eval(dictAnn)(v);
-            return (a) => $82(a)(v2);
-          })())(v1._3);
-          if ($8.tag === "Left") {
-            return $Either("Left", $8._1);
-          }
-          if ($8.tag === "Right") {
-            return $Either("Right", unzip($8._1));
-          }
-          fail();
-        })())((v3) => $Either("Right", $Tuple($Trace("Constr", v1._2, v3._1), $Val("Constr", meet(v1._1)(v2), v1._2, v3._2)))));
-      }
-      if (v1.tag === "Matrix") {
-        return bindEither.bind($$eval(dictAnn)(v)(v1._4)(v2))((v3) => {
-          const v5 = intPair.match(v3._2)._1;
-          return bindEither.bind((() => {
-            const $9 = "array must be at least (" + (show3($Tuple(1, 1)) + ("); got (" + (show3($Tuple(v5._1._1, v5._2._1)) + ")")));
-            if (greaterThanOrEq1($Tuple(v5._1._1, v5._2._1))($Tuple(1, 1))) {
-              return $Either("Right", unit2);
-            }
-            return $Either("Left", $9);
-          })())(() => bindEither.bind((() => {
-            const $10 = listMap((x2) => {
-              const $112 = unzip(x2);
-              return $Tuple(fromFoldable23($112._1), fromFoldable23($112._2));
-            });
-            const $11 = sequence2(bindList.bind(range(1)(v5._1._1))((i) => $List(
-              "Cons",
-              sequence2(bindList.bind(range(1)(v5._2._1))((j) => $List(
+              ;
+              return go$r;
+            };
+            return go(0)(v1._3);
+          })()))(() => bindExceptT2.bind($1.map(functorEither.map(unzip))(traverse4((() => {
+            const $21 = $$eval(dictMonad)(dictAnn)(v);
+            return (a) => $21(a)(v2);
+          })())(v1._3)))((v3) => applicativeExceptT4.pure($Tuple($Trace("Constr", v1._2, v3._1), $Val("Constr", meet(v1._1)(v2), v1._2, v3._2)))));
+        }
+        if (v1.tag === "Matrix") {
+          return bindExceptT2.bind($$eval(dictMonad)(dictAnn)(v)(v1._4)(v2))((v3) => {
+            const v5 = intPair.match(v3._2)._1;
+            return bindExceptT2.bind(check2(greaterThanOrEq1($Tuple(v5._1._1, v5._2._1))($Tuple(1, 1)))("array must be at least (" + (show3($Tuple(1, 1)) + ("); got (" + (show3($Tuple(v5._1._1, v5._2._1)) + ")")))))(() => bindExceptT2.bind((() => {
+              const $23 = listMap((x2) => {
+                const $24 = unzip(x2);
+                return $Tuple(fromFoldable23($24._1), fromFoldable23($24._2));
+              });
+              return $1.map((m) => {
+                if (m.tag === "Left") {
+                  return $Either("Left", m._1);
+                }
+                if (m.tag === "Right") {
+                  return $Either(
+                    "Right",
+                    (() => {
+                      const $25 = unzip($23(m._1));
+                      return $Tuple(fromFoldable23($25._1), fromFoldable23($25._2));
+                    })()
+                  );
+                }
+                fail();
+              })(sequence1(bindList.bind(range(1)(v5._1._1))((i) => $List(
                 "Cons",
-                $$eval(dictAnn)(unionWith2((v$1) => identity19)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._3._1)($Val(
-                  "Int",
-                  v5._1._2,
-                  i
-                )))))(runST(bind_(newImpl)(poke3(v1._3._2)($Val("Int", v5._2._2, j)))))))(v1._2)(v2),
+                sequence1(bindList.bind(range(1)(v5._2._1))((j) => $List(
+                  "Cons",
+                  $$eval(dictMonad)(dictAnn)(unionWith2((v$1) => identity19)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._3._1)($Val(
+                    "Int",
+                    v5._1._2,
+                    i
+                  )))))(runST(bind_(newImpl)(poke3(v1._3._2)($Val("Int", v5._2._2, j)))))))(v1._2)(v2),
+                  Nil
+                ))),
                 Nil
-              ))),
-              Nil
-            )));
-            if ($11.tag === "Left") {
-              return $Either("Left", $11._1);
-            }
-            if ($11.tag === "Right") {
-              return $Either(
-                "Right",
-                (() => {
-                  const $12 = unzip($10($11._1));
-                  return $Tuple(fromFoldable23($12._1), fromFoldable23($12._2));
-                })()
-              );
-            }
-            fail();
-          })())((v6) => $Either(
-            "Right",
-            $Tuple(
+              ))));
+            })())((v6) => applicativeExceptT4.pure($Tuple(
               $Trace("Matrix", v6._1, $Tuple(v1._3._1, v1._3._2), $Tuple(v5._1._1, v5._2._1), v3._1),
               $Val("Matrix", meet(v1._1)(v2), $Tuple(v6._2, $Tuple($Tuple(v5._1._1, v5._1._2), $Tuple(v5._2._1, v5._2._2))))
-            )
-          )));
-        });
-      }
-      if (v1.tag === "Lambda") {
-        return $Either(
-          "Right",
-          $Tuple(Const2, $Val("Fun", v2, $Fun("Closure", restrict(v)(fVElim.fv(v1._1)), empty2, v1._1)))
-        );
-      }
-      if (v1.tag === "Project") {
-        return bindEither.bind($$eval(dictAnn)(v)(v1._1)(v2))((v3) => {
-          if (v3._2.tag === "Record") {
-            const $8 = lookup$p(v1._2)(v3._2._2);
-            if ($8.tag === "Left") {
-              return $Either("Left", $8._1);
+            ))));
+          });
+        }
+        if (v1.tag === "Lambda") {
+          return applicativeExceptT4.pure($Tuple(
+            Const2,
+            $Val("Fun", v2, $Fun("Closure", restrict(v)(fVElim.fv(v1._1)), empty2, v1._1))
+          ));
+        }
+        if (v1.tag === "Project") {
+          return bindExceptT2.bind($$eval(dictMonad)(dictAnn)(v)(v1._1)(v2))((v3) => {
+            if (v3._2.tag === "Record") {
+              return $1.map((m) => {
+                if (m.tag === "Left") {
+                  return $Either("Left", m._1);
+                }
+                if (m.tag === "Right") {
+                  return $Either("Right", $Tuple($Trace("Project", v3._1, v1._2), m._1));
+                }
+                fail();
+              })(lookup$p2(v1._2)(v3._2._2));
             }
-            if ($8.tag === "Right") {
-              return $Either("Right", $Tuple($Trace("Project", v3._1, v1._2), $8._1));
-            }
-            fail();
-          }
-          return $Either("Left", "Found " + (prettyP2(v3._2) + ", expected record"));
-        });
-      }
-      if (v1.tag === "App") {
-        return bindEither.bind($$eval(dictAnn)(v)(v1._1)(v2))((v3) => bindEither.bind($$eval(dictAnn)(v)(v1._2)(v2))((v5) => bindEither.bind(apply2(dictAnn)($Tuple(
-          v3._2,
-          v5._2
-        )))((v6) => $Either("Right", $Tuple($Trace("App", v3._1, v5._1, v6._1), v6._2)))));
-      }
-      if (v1.tag === "Let") {
-        return bindEither.bind($$eval(dictAnn)(v)(v1._1._2)(v2))((v3) => bindEither.bind(match1(v3._2)(v1._1._1))((v5) => bindEither.bind($$eval(dictAnn)(unionWith2((v$1) => identity19)(v)(v5._1))(v1._2)(v5._2._2._1))((v6) => $Either(
-          "Right",
-          $Tuple($Trace("Let", $VarDef3(v5._2._2._2, v3._1), v6._1), v6._2)
-        ))));
-      }
-      if (v1.tag === "LetRec") {
-        return bindEither.bind($$eval(dictAnn)(unionWith2((v$1) => identity19)(v)(closeDefs(v)(v1._1)(v2)))(v1._2)(v2))((v3) => $Either(
-          "Right",
-          $Tuple($Trace("LetRec", _fmapObject(v1._1, erase1), v3._1), v3._2)
-        ));
-      }
-      fail();
-    };
-  };
-  var apply2 = (dictAnn) => {
-    const match1 = match(dictAnn);
-    const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-    const prettyP2 = prettyP(prettyVal(dictAnn.Highlightable0()));
-    return (v) => {
-      if (v._1.tag === "Fun") {
-        if (v._1._2.tag === "Closure") {
-          const \u03B32 = closeDefs(v._1._2._1)(v._1._2._2)(v._1._1);
-          return bindEither.bind(match1(v._2)(v._1._2._3))((v2) => bindEither.bind($$eval(dictAnn)(unionWith2((v$1) => identity19)(unionWith2((v$1) => identity19)(v._1._2._1)(\u03B32))(v2._1))((() => {
-            if (v2._2._1.tag === "ContExpr") {
-              return v2._2._1._1;
-            }
-            return unsafePerformEffect(throwException(error("Expression expected")));
-          })())(meet(v._1._1)(v2._2._2._1)))((v3) => $Either(
-            "Right",
-            $Tuple($AppTrace("AppClosure", fromFoldable7(keys2(v._1._2._2)), v2._2._2._2, v3._1), v3._2)
+            return Applicative0.pure($Either("Left", "Found " + (prettyP2(v3._2) + ", expected record")));
+          });
+        }
+        if (v1.tag === "App") {
+          return bindExceptT2.bind($$eval(dictMonad)(dictAnn)(v)(v1._1)(v2))((v3) => bindExceptT2.bind($$eval(dictMonad)(dictAnn)(v)(v1._2)(v2))((v5) => bindExceptT2.bind(apply2(dictMonad)(dictAnn)($Tuple(
+            v3._2,
+            v5._2
+          )))((v6) => applicativeExceptT4.pure($Tuple($Trace("App", v3._1, v5._1, v6._1), v6._2)))));
+        }
+        if (v1.tag === "Let") {
+          return bindExceptT2.bind($$eval(dictMonad)(dictAnn)(v)(v1._1._2)(v2))((v3) => bindExceptT2.bind(match22(v3._2)(v1._1._1))((v5) => bindExceptT2.bind($$eval(dictMonad)(dictAnn)(unionWith2((v$1) => identity19)(v)(v5._1))(v1._2)(v5._2._2._1))((v6) => applicativeExceptT4.pure($Tuple(
+            $Trace("Let", $VarDef3(v5._2._2._2, v3._1), v6._1),
+            v6._2
+          )))));
+        }
+        if (v1.tag === "LetRec") {
+          return bindExceptT2.bind($$eval(dictMonad)(dictAnn)(unionWith2((v$1) => identity19)(v)(closeDefs(v)(v1._1)(v2)))(v1._2)(v2))((v3) => applicativeExceptT4.pure($Tuple(
+            $Trace("LetRec", _fmapObject(v1._1, erase1), v3._1),
+            v3._2
           )));
         }
-        if (v._1._2.tag === "Foreign") {
-          const vs$p = foldableList.foldr(Cons)($List("Cons", v._2, Nil))(v._1._2._2);
-          return bindEither.bind(bindEither.bind((() => {
-            if ((() => {
-              const go = (go$a0$copy) => (go$a1$copy) => {
-                let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-                while (go$c) {
-                  const b = go$a0, v$1 = go$a1;
-                  if (v$1.tag === "Nil") {
-                    go$c = false;
-                    go$r = b;
-                    continue;
+        fail();
+      };
+    };
+  };
+  var apply2 = (dictMonad) => {
+    const bindExceptT2 = bindExceptT(dictMonad);
+    const match1 = match(dictMonad);
+    const pure2 = applicativeExceptT(dictMonad).pure;
+    const $4 = dictMonad.Bind1().Apply0().Functor0();
+    const check2 = check(dictMonad);
+    const Applicative0 = dictMonad.Applicative0();
+    return (dictAnn) => {
+      const match22 = match1(dictAnn);
+      const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
+      const prettyP2 = prettyP(prettyVal(dictAnn.Highlightable0()));
+      return (v) => {
+        if (v._1.tag === "Fun") {
+          if (v._1._2.tag === "Closure") {
+            const \u03B32 = closeDefs(v._1._2._1)(v._1._2._2)(v._1._1);
+            return bindExceptT2.bind(match22(v._2)(v._1._2._3))((v2) => bindExceptT2.bind($$eval(dictMonad)(dictAnn)(unionWith2((v$1) => identity19)(unionWith2((v$1) => identity19)(v._1._2._1)(\u03B32))(v2._1))((() => {
+              if (v2._2._1.tag === "ContExpr") {
+                return v2._2._1._1;
+              }
+              return unsafePerformEffect(throwException(error("Expression expected")));
+            })())(meet(v._1._1)(v2._2._2._1)))((v3) => pure2($Tuple($AppTrace("AppClosure", fromFoldable7(keys2(v._1._2._2)), v2._2._2._2, v3._1), v3._2))));
+          }
+          if (v._1._2.tag === "Foreign") {
+            const vs$p = foldableList.foldr(Cons)($List("Cons", v._2, Nil))(v._1._2._2);
+            return bindExceptT2.bind(bindExceptT2.bind((() => {
+              if ((() => {
+                const go = (go$a0$copy) => (go$a1$copy) => {
+                  let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+                  while (go$c) {
+                    const b = go$a0, v$1 = go$a1;
+                    if (v$1.tag === "Nil") {
+                      go$c = false;
+                      go$r = b;
+                      continue;
+                    }
+                    if (v$1.tag === "Cons") {
+                      go$a0 = b + 1 | 0;
+                      go$a1 = v$1._2;
+                      continue;
+                    }
+                    fail();
                   }
-                  if (v$1.tag === "Cons") {
-                    go$a0 = b + 1 | 0;
-                    go$a1 = v$1._2;
-                    continue;
-                  }
-                  fail();
-                }
-                ;
-                return go$r;
-              };
-              return v._1._2._1._1.arity > go(0)(vs$p);
-            })()) {
-              return $Either("Right", $Tuple(Nothing, $Val("Fun", v._1._1, $Fun("Foreign", v._1._2._1, vs$p))));
-            }
-            const $6 = v._1._2._1._1.op(dictAnn)(vs$p);
-            if ($6.tag === "Left") {
-              return $Either("Left", $6._1);
-            }
-            if ($6.tag === "Right") {
-              return $Either("Right", $Tuple($Maybe("Just", $6._1._1), $6._1._2));
-            }
-            fail();
-          })())((v3) => $Either("Right", $Tuple($ForeignTrace$p($ForeignOp$p(v._1._2._1._1), v3._1), v3._2))))((v2) => $Either(
-            "Right",
-            $Tuple(
+                  ;
+                  return go$r;
+                };
+                return v._1._2._1._1.arity > go(0)(vs$p);
+              })()) {
+                return pure2($Tuple(Nothing, $Val("Fun", v._1._1, $Fun("Foreign", v._1._2._1, vs$p))));
+              }
+              return $4.map(functorEither.map(strongFn.first(Just)))(v._1._2._1._1.op(dictAnn)(dictMonad)(vs$p));
+            })())((v3) => pure2($Tuple($ForeignTrace$p($ForeignOp$p(v._1._2._1._1), v3._1), v3._2))))((v2) => pure2($Tuple(
               $AppTrace(
                 "AppForeign",
                 (() => {
@@ -32731,54 +32267,51 @@
                 v2._1
               ),
               v2._2
-            )
-          ));
-        }
-        if (v._1._2.tag === "PartialConstr") {
-          const n = successful(arity(v._1._2._1));
-          const v$p = (() => {
-            if ((() => {
-              const go = (go$a0$copy) => (go$a1$copy) => {
-                let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-                while (go$c) {
-                  const b = go$a0, v$1 = go$a1;
-                  if (v$1.tag === "Nil") {
-                    go$c = false;
-                    go$r = b;
-                    continue;
+            )));
+          }
+          if (v._1._2.tag === "PartialConstr") {
+            const n = successful(arity3(v._1._2._1));
+            const v$p = (() => {
+              if ((() => {
+                const go = (go$a0$copy) => (go$a1$copy) => {
+                  let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+                  while (go$c) {
+                    const b = go$a0, v$1 = go$a1;
+                    if (v$1.tag === "Nil") {
+                      go$c = false;
+                      go$r = b;
+                      continue;
+                    }
+                    if (v$1.tag === "Cons") {
+                      go$a0 = b + 1 | 0;
+                      go$a1 = v$1._2;
+                      continue;
+                    }
+                    fail();
                   }
-                  if (v$1.tag === "Cons") {
-                    go$a0 = b + 1 | 0;
-                    go$a1 = v$1._2;
-                    continue;
-                  }
-                  fail();
-                }
-                ;
-                return go$r;
-              };
-              return go(0)(v._1._2._2) < (n - 1 | 0);
-            })()) {
+                  ;
+                  return go$r;
+                };
+                return go(0)(v._1._2._2) < (n - 1 | 0);
+              })()) {
+                return $Val(
+                  "Fun",
+                  v._1._1,
+                  $Fun(
+                    "PartialConstr",
+                    v._1._2._1,
+                    foldableList.foldr(Cons)($List("Cons", v._2, Nil))(v._1._2._2)
+                  )
+                );
+              }
               return $Val(
-                "Fun",
+                "Constr",
                 v._1._1,
-                $Fun(
-                  "PartialConstr",
-                  v._1._2._1,
-                  foldableList.foldr(Cons)($List("Cons", v._2, Nil))(v._1._2._2)
-                )
+                v._1._2._1,
+                foldableList.foldr(Cons)($List("Cons", v._2, Nil))(v._1._2._2)
               );
-            }
-            return $Val(
-              "Constr",
-              v._1._1,
-              v._1._2._1,
-              foldableList.foldr(Cons)($List("Cons", v._2, Nil))(v._1._2._2)
-            );
-          })();
-          return bindEither.bind((() => {
-            const $7 = "Too many arguments to " + showCtr(v._1._2._1);
-            if ((() => {
+            })();
+            return bindExceptT2.bind(check2((() => {
               const go = (go$a0$copy) => (go$a1$copy) => {
                 let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
                 while (go$c) {
@@ -32799,44 +32332,52 @@
                 return go$r;
               };
               return go(0)(v._1._2._2) < n;
-            })()) {
-              return $Either("Right", unit2);
-            }
-            return $Either("Left", $7);
-          })())(() => $Either("Right", $Tuple($AppTrace("AppConstr", v._1._2._1), v$p)));
+            })())("Too many arguments to " + showCtr(v._1._2._1)))(() => pure2($Tuple($AppTrace("AppConstr", v._1._2._1), v$p)));
+          }
+          return Applicative0.pure($Either("Left", "Found " + (prettyP2(v._2) + ", expected function")));
         }
-        return $Either("Left", "Found " + (prettyP2(v._2) + ", expected function"));
-      }
-      return $Either("Left", "Found " + (prettyP2(v._2) + ", expected function"));
+        return Applicative0.pure($Either("Left", "Found " + (prettyP2(v._2) + ", expected function")));
+      };
     };
   };
-  var apply22 = (dictAnn) => {
-    const apply1 = apply2(dictAnn);
-    return (v) => bindEither.bind(apply1($Tuple(v._1, v._2._1)))((v3) => bindEither.bind(apply1($Tuple(v3._2, v._2._2)))((v4) => $Either(
-      "Right",
-      $Tuple($Tuple(v3._1, v4._1), v4._2)
-    )));
+  var apply22 = (dictMonad) => {
+    const bind12 = bindExceptT(dictMonad).bind;
+    const apply12 = apply2(dictMonad);
+    const pure2 = applicativeExceptT(dictMonad).pure;
+    return (dictAnn) => {
+      const apply32 = apply12(dictAnn);
+      return (v) => bind12(apply32($Tuple(v._1, v._2._1)))((v3) => bind12(apply32($Tuple(v3._2, v._2._2)))((v4) => pure2($Tuple(
+        $Tuple(v3._1, v4._1),
+        v4._2
+      ))));
+    };
   };
-  var eval_module = (dictAnn) => {
-    const eval1 = $$eval(dictAnn);
-    const match1 = match(dictAnn);
-    return (\u03B3) => {
-      const go = (v) => (v1) => (v2) => {
-        if (v1._1.tag === "Nil") {
-          return $Either("Right", v);
-        }
-        if (v1._1.tag === "Cons") {
-          if (v1._1._1.tag === "Left") {
-            return bindEither.bind(eval1(unionWith2((v$1) => identity19)(\u03B3)(v))(v1._1._1._1._2)(v2))((v3) => bindEither.bind(match1(v3._2)(v1._1._1._1._1))((v5) => go(unionWith2((v$1) => identity19)(v)(v5._1))($Module(v1._1._2))(v5._2._2._1)));
+  var eval_module = (dictMonad) => {
+    const pure2 = applicativeExceptT(dictMonad).pure;
+    const bind12 = bindExceptT(dictMonad).bind;
+    const eval1 = $$eval(dictMonad);
+    const match1 = match(dictMonad);
+    return (dictAnn) => {
+      const eval2 = eval1(dictAnn);
+      const match22 = match1(dictAnn);
+      return (\u03B3) => {
+        const go = (v) => (v1) => (v2) => {
+          if (v1._1.tag === "Nil") {
+            return pure2(v);
           }
-          if (v1._1._1.tag === "Right") {
-            return go(unionWith2((v$1) => identity19)(v)(closeDefs(unionWith2((v$1) => identity19)(\u03B3)(v))(v1._1._1._1)(v2)))($Module(v1._1._2))(v2);
+          if (v1._1.tag === "Cons") {
+            if (v1._1._1.tag === "Left") {
+              return bind12(eval2(unionWith2((v$1) => identity19)(\u03B3)(v))(v1._1._1._1._2)(v2))((v3) => bind12(match22(v3._2)(v1._1._1._1._1))((v5) => go(unionWith2((v$1) => identity19)(v)(v5._1))($Module(v1._1._2))(v5._2._2._1)));
+            }
+            if (v1._1._1.tag === "Right") {
+              return go(unionWith2((v$1) => identity19)(v)(closeDefs(unionWith2((v$1) => identity19)(\u03B3)(v))(v1._1._1._1)(v2)))($Module(v1._1._2))(v2);
+            }
+            fail();
           }
           fail();
-        }
-        fail();
+        };
+        return go(empty2);
       };
-      return go(empty2);
     };
   };
 
@@ -33439,10 +32980,10 @@
   };
 
   // output-es/Data.FormURLEncoded/index.js
-  var traverse5 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeMaybe))();
+  var traverse = /* @__PURE__ */ (() => traversableArray.traverse(applicativeMaybe))();
   var encode2 = /* @__PURE__ */ (() => {
     const $0 = functorMaybe.map(joinWith("&"));
-    const $1 = traverse5((v) => {
+    const $1 = traverse((v) => {
       if (v._2.tag === "Nothing") {
         return _encodeFormURLComponent((v$1) => Nothing, Just, v._1);
       }
@@ -33937,117 +33478,101 @@
     return (a1) => (a2) => !($0.compare(a1)(a2).tag === "LT");
   })();
   var show32 = (v) => "(Tuple " + (showIntImpl(v._1) + (" " + (showIntImpl(v._2) + ")")));
-  var matchMany2 = (dictSet) => (v) => (v1) => {
-    if (v.tag === "Nil") {
-      return $Either("Right", $Tuple(empty2, $Tuple(v1, dictSet.empty)));
-    }
-    if (v.tag === "Cons") {
-      if (v1.tag === "ContElim") {
-        return bindEither.bind(match2(dictSet)(v._1)(v1._1))((v3) => bindEither.bind(matchMany2(dictSet)(v._2)(v3._2._1))((v4) => $Either(
-          "Right",
-          $Tuple(
+  var arity4 = /* @__PURE__ */ arity(monadIdentity);
+  var matchMany2 = (dictMonad) => {
+    const pure2 = applicativeExceptT(dictMonad).pure;
+    const bind12 = bindExceptT(dictMonad).bind;
+    const Applicative0 = dictMonad.Applicative0();
+    return (dictSet) => (v) => (v1) => {
+      if (v.tag === "Nil") {
+        return pure2($Tuple(empty2, $Tuple(v1, dictSet.empty)));
+      }
+      if (v.tag === "Cons") {
+        if (v1.tag === "ContElim") {
+          return bind12(match2(dictMonad)(dictSet)(v._1)(v1._1))((v3) => bind12(matchMany2(dictMonad)(dictSet)(v._2)(v3._2._1))((v4) => pure2($Tuple(
             unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(v3._1)(v4._1),
             $Tuple(v4._2._1, dictSet.union(v3._2._2)(v4._2._2))
-          )
-        )));
-      }
-      if (v1.tag === "ContExpr") {
-        return $Either(
-          "Left",
-          showIntImpl((() => {
-            const go = (go$a0$copy) => (go$a1$copy) => {
-              let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-              while (go$c) {
-                const b = go$a0, v$1 = go$a1;
-                if (v$1.tag === "Nil") {
-                  go$c = false;
-                  go$r = b;
-                  continue;
+          ))));
+        }
+        if (v1.tag === "ContExpr") {
+          return Applicative0.pure($Either(
+            "Left",
+            showIntImpl((() => {
+              const go = (go$a0$copy) => (go$a1$copy) => {
+                let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+                while (go$c) {
+                  const b = go$a0, v$1 = go$a1;
+                  if (v$1.tag === "Nil") {
+                    go$c = false;
+                    go$r = b;
+                    continue;
+                  }
+                  if (v$1.tag === "Cons") {
+                    go$a0 = b + 1 | 0;
+                    go$a1 = v$1._2;
+                    continue;
+                  }
+                  fail();
                 }
-                if (v$1.tag === "Cons") {
-                  go$a0 = b + 1 | 0;
-                  go$a1 = v$1._2;
-                  continue;
-                }
-                fail();
-              }
-              ;
-              return go$r;
-            };
-            return go(0)(v._2) + 1 | 0;
-          })()) + " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
-        );
+                ;
+                return go$r;
+              };
+              return go(0)(v._2) + 1 | 0;
+            })()) + " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
+          ));
+        }
+        return unsafePerformEffect(throwException(error("absurd")));
       }
       return unsafePerformEffect(throwException(error("absurd")));
-    }
-    return unsafePerformEffect(throwException(error("absurd")));
+    };
   };
-  var match2 = (dictSet) => (v) => (v1) => {
-    if (v1.tag === "ElimVar") {
-      if (v1._1 === "_") {
-        return $Either("Right", $Tuple(empty2, $Tuple(v1._2, dictSet.empty)));
-      }
-      return $Either(
-        "Right",
-        $Tuple(
+  var match2 = (dictMonad) => {
+    const pure2 = applicativeExceptT(dictMonad).pure;
+    const bindExceptT2 = bindExceptT(dictMonad);
+    const $$with2 = $$with(dictMonad.Bind1().Apply0().Functor0());
+    const consistentWith2 = consistentWith(dictMonad);
+    const orElse3 = orElse(dictMonad);
+    const dataTypeFor1 = dataTypeForSetCtr.dataTypeFor(dictMonad);
+    const Applicative0 = dictMonad.Applicative0();
+    const check2 = check(dictMonad);
+    return (dictSet) => (v) => (v1) => {
+      if (v1.tag === "ElimVar") {
+        if (v1._1 === "_") {
+          return pure2($Tuple(empty2, $Tuple(v1._2, dictSet.empty)));
+        }
+        return pure2($Tuple(
           runST(bind_(newImpl)(poke3(v1._1)(v))),
           $Tuple(v1._2, dictSet.empty)
-        )
-      );
-    }
-    if (v1.tag === "ElimConstr") {
-      if (v.tag === "Constr") {
-        return bindEither.bind($$with("Pattern mismatch")(consistentWith($Map(
-          "Two",
-          Leaf2,
-          v._2,
-          unit2,
-          Leaf2
-        ))(keys2(v1._1))))(() => bindEither.bind((() => {
-          const $4 = "Incomplete patterns: no branch for " + showCtr(v._2);
-          const $5 = _lookup(Nothing, Just, v._2, v1._1);
-          if ($5.tag === "Nothing") {
-            return $Either("Left", $4);
-          }
-          if ($5.tag === "Just") {
-            return $Either("Right", $5._1);
-          }
-          fail();
-        })())((\u03BA) => bindEither.bind(matchMany2(dictSet)(v._3)(\u03BA))((v2) => $Either(
-          "Right",
-          $Tuple(v2._1, $Tuple(v2._2._1, dictSet.insert(v._1)(v2._2._2)))
-        ))));
+        ));
       }
-      return bindEither.bind((() => {
-        const v$1 = toUnfoldable6(keys2(v1._1));
-        if (v$1.tag === "Cons") {
-          return dataTypeForCtr.dataTypeFor(v$1._1);
+      if (v1.tag === "ElimConstr") {
+        if (v.tag === "Constr") {
+          return bindExceptT2.bind($$with2("Pattern mismatch")(consistentWith2($Map("Two", Leaf2, v._2, unit2, Leaf2))(keys2(v1._1))))(() => bindExceptT2.bind(orElse3("Incomplete patterns: no branch for " + showCtr(v._2))(_lookup(
+            Nothing,
+            Just,
+            v._2,
+            v1._1
+          )))((\u03BA) => bindExceptT2.bind(matchMany2(dictMonad)(dictSet)(v._3)(\u03BA))((v2) => pure2($Tuple(v2._1, $Tuple(v2._2._1, dictSet.insert(v._1)(v2._2._2)))))));
         }
-        fail();
-      })())((d) => $Either(
-        "Left",
-        "Pattern mismatch: found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v).lines) + (", expected " + d._1))
-      ));
-    }
-    if (v1.tag === "ElimRecord") {
-      if (v.tag === "Record") {
-        return bindEither.bind((() => {
-          const $3 = "Pattern mismatch: found " + (show22(keys2(v._2)) + (", expected " + show22(v1._1)));
-          if (difference3(ordString)(v1._1)(fromFoldable9(keys2(v._2))).tag === "Leaf") {
-            return $Either("Right", unit2);
-          }
-          return $Either("Left", $3);
-        })())(() => bindEither.bind(matchMany2(dictSet)(listMap((a) => $$get(a)(v._2))(toUnfoldable14(v1._1)))(v1._2))((v2) => $Either(
-          "Right",
-          $Tuple(v2._1, $Tuple(v2._2._1, dictSet.insert(v._1)(v2._2._2)))
+        return bindExceptT2.bind(dataTypeFor1(keys2(v1._1)))((d) => Applicative0.pure($Either(
+          "Left",
+          "Pattern mismatch: found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v).lines) + (", expected " + d._1))
         )));
       }
-      return $Either(
-        "Left",
-        "Pattern mismatch: found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v).lines) + (", expected " + show22(v1._1)))
-      );
-    }
-    fail();
+      if (v1.tag === "ElimRecord") {
+        if (v.tag === "Record") {
+          return bindExceptT2.bind(check2(difference3(ordString)(v1._1)(fromFoldable9(keys2(v._2))).tag === "Leaf")("Pattern mismatch: found " + (show22(keys2(v._2)) + (", expected " + show22(v1._1)))))(() => bindExceptT2.bind(matchMany2(dictMonad)(dictSet)(listMap((a) => $$get(a)(v._2))(toUnfoldable14(v1._1)))(v1._2))((v2) => pure2($Tuple(
+            v2._1,
+            $Tuple(v2._2._1, dictSet.insert(v._1)(v2._2._2))
+          ))));
+        }
+        return Applicative0.pure($Either(
+          "Left",
+          "Pattern mismatch: found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v).lines) + (", expected " + show22(v1._1)))
+        ));
+      }
+      fail();
+    };
   };
   var closeDefs2 = (dictMonad) => {
     const $1 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT((() => {
@@ -34072,28 +33597,33 @@
   };
   var $$eval2 = (dictMonad) => {
     const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-    const $2 = applicativeStateT(monadStateT2);
-    const $3 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-    const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
     const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
+    const lookup$p2 = lookup$p(monadStateT12);
+    const $4 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
+    const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
     const bindExceptT2 = bindExceptT(monadStateT12);
-    const applicativeExceptT3 = applicativeExceptT(monadStateT12);
-    const $8 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT3);
-    const traverse42 = traversableList.traverse(applicativeExceptT3);
-    const traverse52 = traversablePair.traverse(applicativeExceptT3);
-    const sequence13 = traversableArray.traverse(applicativeExceptT3)(identity10);
+    const applicativeExceptT4 = applicativeExceptT(monadStateT12);
+    const $8 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT4);
+    const traverse4 = traversableList.traverse(applicativeExceptT4);
+    const traverse5 = traversablePair.traverse(applicativeExceptT4);
+    const checkArity3 = checkArity(monadStateT12);
+    const check2 = check(monadStateT12);
+    const sequence1 = traversableArray.traverse(applicativeExceptT4)(identity10);
+    const applicativeStateT2 = applicativeStateT(monadStateT2);
+    const match1 = match2(monadStateT12);
     const closeDefs1 = closeDefs2(dictMonad);
     return (dictSet) => {
+      const match22 = match1(dictSet);
       const closeDefs22 = closeDefs1(dictSet);
       return (v) => (v1) => (v2) => {
         if (v1.tag === "Var") {
-          return $2.pure(lookup$p(v1._1)(v));
+          return lookup$p2(v1._1)(v);
         }
         if (v1.tag === "Op") {
-          return $2.pure(lookup$p(v1._1)(v));
+          return lookup$p2(v1._1)(v);
         }
         if (v1.tag === "Int") {
-          return $3.map((m) => {
+          return $4.map((m) => {
             if (m.tag === "Left") {
               return $Either("Left", m._1);
             }
@@ -34101,10 +33631,10 @@
               return $Either("Right", m._1(v1._2));
             }
             fail();
-          })($3.map(functorEither.map(Int3))($$new(dictSet.insert(v1._1)(v2))));
+          })($4.map(functorEither.map(Int3))($$new(dictSet.insert(v1._1)(v2))));
         }
         if (v1.tag === "Float") {
-          return $3.map((m) => {
+          return $4.map((m) => {
             if (m.tag === "Left") {
               return $Either("Left", m._1);
             }
@@ -34112,10 +33642,10 @@
               return $Either("Right", m._1(v1._2));
             }
             fail();
-          })($3.map(functorEither.map(Float3))($$new(dictSet.insert(v1._1)(v2))));
+          })($4.map(functorEither.map(Float3))($$new(dictSet.insert(v1._1)(v2))));
         }
         if (v1.tag === "Str") {
-          return $3.map((m) => {
+          return $4.map((m) => {
             if (m.tag === "Left") {
               return $Either("Left", m._1);
             }
@@ -34123,13 +33653,13 @@
               return $Either("Right", m._1(v1._2));
             }
             fail();
-          })($3.map(functorEither.map(Str3))($$new(dictSet.insert(v1._1)(v2))));
+          })($4.map(functorEither.map(Str3))($$new(dictSet.insert(v1._1)(v2))));
         }
         if (v1.tag === "Record") {
           return bindExceptT2.bind((() => {
-            const $18 = $$eval2(dictMonad)(dictSet)(v);
-            return $8((v$1) => (a) => $18(a)(v2))(v1._2);
-          })())((xvs) => $3.map((m) => {
+            const $23 = $$eval2(dictMonad)(dictSet)(v);
+            return $8((v$1) => (a) => $23(a)(v2))(v1._2);
+          })())((xvs) => $4.map((m) => {
             if (m.tag === "Left") {
               return $Either("Left", m._1);
             }
@@ -34137,28 +33667,28 @@
               return $Either("Right", m._1(xvs));
             }
             fail();
-          })($3.map(functorEither.map(Record3))($$new(dictSet.insert(v1._1)(v2)))));
+          })($4.map(functorEither.map(Record3))($$new(dictSet.insert(v1._1)(v2)))));
         }
         if (v1.tag === "Dictionary") {
-          return bindExceptT2.bind($3.map(functorEither.map(unzip2))(traverse42(traverse52((() => {
-            const $18 = $$eval2(dictMonad)(dictSet)(v);
-            return (a) => $18(a)(v2);
+          return bindExceptT2.bind($4.map(functorEither.map(unzip3))(traverse4(traverse5((() => {
+            const $23 = $$eval2(dictMonad)(dictSet)(v);
+            return (a) => $23(a)(v2);
           })()))(v1._2)))((v3) => {
             const v4 = unzip(listMap(string2.match)(v3._1));
-            const $20 = fromFoldable16(zipWith(Tuple)(v4._1)(zipWith(Tuple)(v4._2)(v3._2)));
-            return $3.map((m) => {
+            const $25 = fromFoldable16(zipWith(Tuple)(v4._1)(zipWith(Tuple)(v4._2)(v3._2)));
+            return $4.map((m) => {
               if (m.tag === "Left") {
                 return $Either("Left", m._1);
               }
               if (m.tag === "Right") {
-                return $Either("Right", m._1($20));
+                return $Either("Right", m._1($25));
               }
               fail();
-            })($3.map(functorEither.map(Dictionary3))($$new(dictSet.insert(v1._1)(v2))));
+            })($4.map(functorEither.map(Dictionary3))($$new(dictSet.insert(v1._1)(v2))));
           });
         }
         if (v1.tag === "Constr") {
-          return bindExceptT2.bind($2.pure(checkArity(v1._2)((() => {
+          return bindExceptT2.bind(checkArity3(v1._2)((() => {
             const go = (go$a0$copy) => (go$a1$copy) => {
               let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
               while (go$c) {
@@ -34179,31 +33709,23 @@
               return go$r;
             };
             return go(0)(v1._3);
-          })())))(() => bindExceptT2.bind(traverse42((() => {
-            const $19 = $$eval2(dictMonad)(dictSet)(v);
-            return (a) => $19(a)(v2);
-          })())(v1._3))((vs) => bindExceptT2.bind($$new(dictSet.insert(v1._1)(v2)))((\u03B1$p) => applicativeExceptT3.pure($Val("Constr", \u03B1$p, v1._2, vs)))));
+          })()))(() => bindExceptT2.bind(traverse4((() => {
+            const $24 = $$eval2(dictMonad)(dictSet)(v);
+            return (a) => $24(a)(v2);
+          })())(v1._3))((vs) => bindExceptT2.bind($$new(dictSet.insert(v1._1)(v2)))((\u03B1$p) => applicativeExceptT4.pure($Val("Constr", \u03B1$p, v1._2, vs)))));
         }
         if (v1.tag === "Matrix") {
           return bindExceptT2.bind($$eval2(dictMonad)(dictSet)(v)(v1._4)(v2))((v3) => {
             const v4 = intPair.match(v3)._1;
-            return bindExceptT2.bind((() => {
-              const $20 = "array must be at least (" + (show32($Tuple(1, 1)) + ("); got (" + (show32($Tuple(v4._1._1, v4._2._1)) + ")")));
-              return $2.pure((() => {
-                if (greaterThanOrEq($Tuple(v4._1._1, v4._2._1))($Tuple(1, 1))) {
-                  return $Either("Right", unit2);
-                }
-                return $Either("Left", $20);
-              })());
-            })())(() => bindExceptT2.bind(sequence13(arrayBind(range2(1)(v4._1._1))((i) => [
-              sequence13(arrayBind(range2(1)(v4._2._1))((j) => [
+            return bindExceptT2.bind(check2(greaterThanOrEq($Tuple(v4._1._1, v4._2._1))($Tuple(1, 1)))("array must be at least (" + (show32($Tuple(1, 1)) + ("); got (" + (show32($Tuple(v4._1._1, v4._2._1)) + ")")))))(() => bindExceptT2.bind(sequence1(arrayBind(range2(1)(v4._1._1))((i) => [
+              sequence1(arrayBind(range2(1)(v4._2._1))((j) => [
                 $$eval2(dictMonad)(dictSet)(unionWith2((v$1) => identity19)(v)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._3._1)($Val(
                   "Int",
                   v4._1._2,
                   i
                 )))))(runST(bind_(newImpl)(poke3(v1._3._2)($Val("Int", v4._2._2, j)))))))(v1._2)(v2)
               ]))
-            ])))((vss) => $3.map((m) => {
+            ])))((vss) => $4.map((m) => {
               if (m.tag === "Left") {
                 return $Either("Left", m._1);
               }
@@ -34214,34 +33736,37 @@
                 );
               }
               fail();
-            })($3.map(functorEither.map(Matrix3))($$new(dictSet.insert(v1._1)(v2))))));
+            })($4.map(functorEither.map(Matrix3))($$new(dictSet.insert(v1._1)(v2))))));
           });
         }
         if (v1.tag === "Lambda") {
-          const $18 = $Fun("Closure", restrict(v)(fVElim.fv(v1._1)), empty2, v1._1);
-          return $3.map((m) => {
+          const $23 = $Fun("Closure", restrict(v)(fVElim.fv(v1._1)), empty2, v1._1);
+          return $4.map((m) => {
             if (m.tag === "Left") {
               return $Either("Left", m._1);
             }
             if (m.tag === "Right") {
-              return $Either("Right", m._1($18));
+              return $Either("Right", m._1($23));
             }
             fail();
-          })($3.map(functorEither.map(Fun))($$new(v2)));
+          })($4.map(functorEither.map(Fun))($$new(v2)));
         }
         if (v1.tag === "Project") {
-          return bindExceptT2.bind($$eval2(dictMonad)(dictSet)(v)(v1._1)(v2))((v3) => $2.pure((() => {
+          return bindExceptT2.bind($$eval2(dictMonad)(dictSet)(v)(v1._1)(v2))((v3) => {
             if (v3.tag === "Record") {
-              return lookup$p(v1._2)(v3._2);
+              return lookup$p2(v1._2)(v3._2);
             }
-            return $Either("Left", "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v3).lines) + ", expected record"));
-          })()));
+            return applicativeStateT2.pure($Either(
+              "Left",
+              "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v3).lines) + ", expected record")
+            ));
+          });
         }
         if (v1.tag === "App") {
           return bindExceptT2.bind($$eval2(dictMonad)(dictSet)(v)(v1._1)(v2))((v3) => bindExceptT2.bind($$eval2(dictMonad)(dictSet)(v)(v1._2)(v2))((v$p) => apply3(dictMonad)(dictSet)(v3)(v$p)));
         }
         if (v1.tag === "Let") {
-          return bindExceptT2.bind($$eval2(dictMonad)(dictSet)(v)(v1._1._2)(v2))((v3) => bindExceptT2.bind($2.pure(match2(dictSet)(v3)(v1._1._1)))((v4) => $$eval2(dictMonad)(dictSet)(unionWith2((v$1) => identity19)(v)(v4._1))(v1._2)(v4._2._2)));
+          return bindExceptT2.bind($$eval2(dictMonad)(dictSet)(v)(v1._1._2)(v2))((v3) => bindExceptT2.bind(match22(v3)(v1._1._1))((v4) => $$eval2(dictMonad)(dictSet)(unionWith2((v$1) => identity19)(v)(v4._1))(v1._2)(v4._2._2)));
         }
         if (v1.tag === "LetRec") {
           return bindExceptT2.bind(closeDefs22(v)(v1._1)(v2))((\u03B3$p) => $$eval2(dictMonad)(dictSet)(unionWith2((v$1) => identity19)(v)(\u03B3$p))(v1._2)(v2));
@@ -34255,20 +33780,23 @@
     const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
     const bindExceptT2 = bindExceptT(monadStateT12);
     const closeDefs1 = closeDefs2(dictMonad);
-    const $5 = applicativeStateT(monadStateT2);
+    const match1 = match2(monadStateT12);
     const $6 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
     const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
-    const pure1 = applicativeExceptT(monadStateT12).pure;
+    const check2 = check(monadStateT12);
+    const pure2 = applicativeExceptT(monadStateT12).pure;
+    const applicativeStateT2 = applicativeStateT(monadStateT2);
     return (dictSet) => {
       const closeDefs22 = closeDefs1(dictSet);
+      const match22 = match1(dictSet);
       return (v) => (v1) => {
-        const $13 = (v2) => $5.pure($Either(
+        const $16 = (v2) => applicativeStateT2.pure($Either(
           "Left",
           "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v2).lines) + ", expected function")
         ));
         if (v.tag === "Fun") {
           if (v._2.tag === "Closure") {
-            return bindExceptT2.bind(closeDefs22(v._2._1)(v._2._2)(dictSet.singleton(v._1)))((\u03B32) => bindExceptT2.bind($5.pure(match2(dictSet)(v1)(v._2._3)))((v3) => $$eval2(dictMonad)(dictSet)(unionWith2((v$1) => identity19)(unionWith2((v$1) => identity19)(v._2._1)(\u03B32))(v3._1))((() => {
+            return bindExceptT2.bind(closeDefs22(v._2._1)(v._2._2)(dictSet.singleton(v._1)))((\u03B32) => bindExceptT2.bind(match22(v1)(v._2._3))((v3) => $$eval2(dictMonad)(dictSet)(unionWith2((v$1) => identity19)(unionWith2((v$1) => identity19)(v._2._1)(\u03B32))(v3._1))((() => {
               if (v3._2._1.tag === "ContExpr") {
                 return v3._2._1._1;
               }
@@ -34312,37 +33840,29 @@
             return v._2._1._1["op'"](dictMonad)(dictSet)(vs$p);
           }
           if (v._2.tag === "PartialConstr") {
-            const n = successful(arity(v._2._1));
-            return bindExceptT2.bind((() => {
-              const $15 = "Too many arguments to " + showCtr(v._2._1);
-              return $5.pure((() => {
-                if ((() => {
-                  const go = (go$a0$copy) => (go$a1$copy) => {
-                    let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
-                    while (go$c) {
-                      const b = go$a0, v$1 = go$a1;
-                      if (v$1.tag === "Nil") {
-                        go$c = false;
-                        go$r = b;
-                        continue;
-                      }
-                      if (v$1.tag === "Cons") {
-                        go$a0 = b + 1 | 0;
-                        go$a1 = v$1._2;
-                        continue;
-                      }
-                      fail();
-                    }
-                    ;
-                    return go$r;
-                  };
-                  return go(0)(v._2._2) < n;
-                })()) {
-                  return $Either("Right", unit2);
+            const n = successful(arity4(v._2._1));
+            return bindExceptT2.bind(check2((() => {
+              const go = (go$a0$copy) => (go$a1$copy) => {
+                let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
+                while (go$c) {
+                  const b = go$a0, v$1 = go$a1;
+                  if (v$1.tag === "Nil") {
+                    go$c = false;
+                    go$r = b;
+                    continue;
+                  }
+                  if (v$1.tag === "Cons") {
+                    go$a0 = b + 1 | 0;
+                    go$a1 = v$1._2;
+                    continue;
+                  }
+                  fail();
                 }
-                return $Either("Left", $15);
-              })());
-            })())(() => {
+                ;
+                return go$r;
+              };
+              return go(0)(v._2._2) < n;
+            })())("Too many arguments to " + showCtr(v._2._1)))(() => {
               if ((() => {
                 const go = (go$a0$copy) => (go$a1$copy) => {
                   let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
@@ -34365,7 +33885,7 @@
                 };
                 return go(0)(v._2._2) < (n - 1 | 0);
               })()) {
-                const $16 = $Fun(
+                const $19 = $Fun(
                   "PartialConstr",
                   v._2._1,
                   foldableList.foldr(Cons)($List("Cons", v1, Nil))(v._2._2)
@@ -34375,12 +33895,12 @@
                     return $Either("Left", m._1);
                   }
                   if (m.tag === "Right") {
-                    return $Either("Right", m._1($16));
+                    return $Either("Right", m._1($19));
                   }
                   fail();
                 })($6.map(functorEither.map(Fun))($$new(dictSet.singleton(v._1))));
               }
-              return pure1($Val(
+              return pure2($Val(
                 "Constr",
                 v._1,
                 v._2._1,
@@ -34388,34 +33908,35 @@
               ));
             });
           }
-          return $13(v1);
+          return $16(v1);
         }
-        return $13(v1);
+        return $16(v1);
       };
     };
   };
   var eval_module2 = (dictMonad) => {
-    const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-    const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
-    const pure1 = applicativeExceptT(monadStateT12).pure;
-    const bind2 = bindExceptT(monadStateT12).bind;
+    const $1 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+    const monadStateT2 = { Applicative0: () => applicativeStateT($1), Bind1: () => bindStateT($1) };
+    const pure2 = applicativeExceptT(monadStateT2).pure;
+    const bind12 = bindExceptT(monadStateT2).bind;
     const eval1 = $$eval2(dictMonad);
-    const $6 = applicativeStateT(monadStateT2);
+    const match1 = match2(monadStateT2);
     const closeDefs1 = closeDefs2(dictMonad);
     return (dictSet) => {
       const eval2 = eval1(dictSet);
+      const match22 = match1(dictSet);
       const closeDefs22 = closeDefs1(dictSet);
       return (\u03B3) => {
         const go = (v) => (v1) => (v2) => {
           if (v1._1.tag === "Nil") {
-            return pure1(v);
+            return pure2(v);
           }
           if (v1._1.tag === "Cons") {
             if (v1._1._1.tag === "Left") {
-              return bind2(eval2(unionWith2((v$1) => identity19)(\u03B3)(v))(v1._1._1._1._2)(v2))((v3) => bind2($6.pure(match2(dictSet)(v3)(v1._1._1._1._1)))((v4) => go(unionWith2((v$1) => identity19)(v)(v4._1))($Module(v1._1._2))(v4._2._2)));
+              return bind12(eval2(unionWith2((v$1) => identity19)(\u03B3)(v))(v1._1._1._1._2)(v2))((v3) => bind12(match22(v3)(v1._1._1._1._1))((v4) => go(unionWith2((v$1) => identity19)(v)(v4._1))($Module(v1._1._2))(v4._2._2)));
             }
             if (v1._1._1.tag === "Right") {
-              return bind2(closeDefs22(unionWith2((v$1) => identity19)(\u03B3)(v))(v1._1._1._1)(v2))((\u03B3$p$p) => go(unionWith2((v$1) => identity19)(v)(\u03B3$p$p))($Module(v1._1._2))(v2));
+              return bind12(closeDefs22(unionWith2((v$1) => identity19)(\u03B3)(v))(v1._1._1._1)(v2))((\u03B3$p$p) => go(unionWith2((v$1) => identity19)(v)(\u03B3$p$p))($Module(v1._1._2))(v2));
             }
             fail();
           }
@@ -36638,20 +36159,19 @@
 
   // output-es/Primitive.Defs/index.js
   var erase = /* @__PURE__ */ (() => functorVal.map((v) => unit2))();
-  var traverse13 = /* @__PURE__ */ (() => {
-    const $0 = traversableWithIndexObject.traverseWithIndex(applicativeEither);
-    return (x2) => $0((v) => x2);
-  })();
-  var sequence12 = /* @__PURE__ */ (() => traversableWithIndexObject.traverseWithIndex(applicativeEither)((v) => identity11))();
-  var foldM5 = (dictMonad) => {
-    const bind = dictMonad.Bind1().bind;
+  var foldM3 = (dictMonad) => {
+    const bind2 = dictMonad.Bind1().bind;
     const pure2 = dictMonad.Applicative0().pure;
-    return (f) => (b0) => fold((z) => (v) => (a) => bind(z)((a$1) => f(a$1)(a)))(pure2(b0));
+    return (f) => (b0) => fold((z) => (v) => (a) => bind2(z)((a$1) => f(a$1)(a)))(pure2(b0));
   };
-  var foldWithIndexM = (f) => (a0) => fold((b) => (a) => (b$1) => bindEither.bind(b)((() => {
-    const $5 = f(a);
-    return (a$1) => $5(a$1)(b$1);
-  })()))($Either("Right", a0));
+  var foldWithIndexM = (dictMonad) => {
+    const bind2 = dictMonad.Bind1().bind;
+    const pure2 = dictMonad.Applicative0().pure;
+    return (f) => (a0) => fold((b) => (a) => (b$1) => bind2(b)((() => {
+      const $8 = f(a);
+      return (a$1) => $8(a$1)(b$1);
+    })()))(pure2(a0));
+  };
   var pow3 = /* @__PURE__ */ union4(asNumberIntOrNumber)(asNumberIntOrNumber)(asIntNumber)(asIntNumber)((x2) => (y2) => pow(toNumber(x2))(toNumber(y2)))(pow);
   var numToStr = (v2) => {
     if (v2.tag === "Left") {
@@ -36666,10 +36186,12 @@
   var matrixLookup = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
     "op'": (dictMonad) => {
-      const $1 = applicativeStateT({
-        Applicative0: () => applicativeStateT(dictMonad),
-        Bind1: () => bindStateT(dictMonad)
+      const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+      const matrixGet2 = matrixGet({
+        Applicative0: () => applicativeStateT(monadStateT2),
+        Bind1: () => bindStateT(monadStateT2)
       });
+      const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Matrix") {
@@ -36682,75 +36204,78 @@
                         if (v._2._1._3._2._2.tag === "Nil") {
                           if (v._2._2.tag === "Nil") {
                             if (v._2._1._2 === "Pair") {
-                              return $1.pure(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2));
+                              return matrixGet2(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2);
                             }
-                            return $1.pure($Either("Left", "Matrix and pair of integers expected"));
+                            return applicativeStateT2.pure($Either("Left", "Matrix and pair of integers expected"));
                           }
-                          return $1.pure($Either("Left", "Matrix and pair of integers expected"));
+                          return applicativeStateT2.pure($Either("Left", "Matrix and pair of integers expected"));
                         }
-                        return $1.pure($Either("Left", "Matrix and pair of integers expected"));
+                        return applicativeStateT2.pure($Either("Left", "Matrix and pair of integers expected"));
                       }
-                      return $1.pure($Either("Left", "Matrix and pair of integers expected"));
+                      return applicativeStateT2.pure($Either("Left", "Matrix and pair of integers expected"));
                     }
-                    return $1.pure($Either("Left", "Matrix and pair of integers expected"));
+                    return applicativeStateT2.pure($Either("Left", "Matrix and pair of integers expected"));
                   }
-                  return $1.pure($Either("Left", "Matrix and pair of integers expected"));
+                  return applicativeStateT2.pure($Either("Left", "Matrix and pair of integers expected"));
                 }
-                return $1.pure($Either("Left", "Matrix and pair of integers expected"));
+                return applicativeStateT2.pure($Either("Left", "Matrix and pair of integers expected"));
               }
-              return $1.pure($Either("Left", "Matrix and pair of integers expected"));
+              return applicativeStateT2.pure($Either("Left", "Matrix and pair of integers expected"));
             }
-            return $1.pure($Either("Left", "Matrix and pair of integers expected"));
+            return applicativeStateT2.pure($Either("Left", "Matrix and pair of integers expected"));
           }
-          return $1.pure($Either("Left", "Matrix and pair of integers expected"));
+          return applicativeStateT2.pure($Either("Left", "Matrix and pair of integers expected"));
         }
-        return $1.pure($Either("Left", "Matrix and pair of integers expected"));
+        return applicativeStateT2.pure($Either("Left", "Matrix and pair of integers expected"));
       };
     },
-    op: (dictAnn) => (v) => {
-      if (v.tag === "Cons") {
-        if (v._1.tag === "Matrix") {
-          if (v._2.tag === "Cons") {
-            if (v._2._1.tag === "Constr") {
-              if (v._2._1._3.tag === "Cons") {
-                if (v._2._1._3._1.tag === "Int") {
-                  if (v._2._1._3._2.tag === "Cons") {
-                    if (v._2._1._3._2._1.tag === "Int") {
-                      if (v._2._1._3._2._2.tag === "Nil") {
-                        if (v._2._2.tag === "Nil") {
-                          if (v._2._1._2 === "Pair") {
-                            return bindEither.bind(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2))((v1) => $Either(
-                              "Right",
-                              $Tuple(
+    op: (dictAnn) => (dictMonad) => {
+      const bind2 = bindExceptT(dictMonad).bind;
+      const matrixGet2 = matrixGet(dictMonad);
+      const pure2 = applicativeExceptT(dictMonad).pure;
+      const Applicative0 = dictMonad.Applicative0();
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Matrix") {
+            if (v._2.tag === "Cons") {
+              if (v._2._1.tag === "Constr") {
+                if (v._2._1._3.tag === "Cons") {
+                  if (v._2._1._3._1.tag === "Int") {
+                    if (v._2._1._3._2.tag === "Cons") {
+                      if (v._2._1._3._2._1.tag === "Int") {
+                        if (v._2._1._3._2._2.tag === "Nil") {
+                          if (v._2._2.tag === "Nil") {
+                            if (v._2._1._2 === "Pair") {
+                              return bind2(matrixGet2(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2))((v1) => pure2($Tuple(
                                 $Tuple(
                                   arrayMap(arrayMap(erase))(v._1._2._1),
                                   $Tuple($Tuple(v._1._2._2._1._1, v._1._2._2._2._1), $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2))
                                 ),
                                 v1
-                              )
-                            ));
+                              )));
+                            }
+                            return Applicative0.pure($Either("Left", "Matrix and pair of integers expected"));
                           }
-                          return $Either("Left", "Matrix and pair of integers expected");
+                          return Applicative0.pure($Either("Left", "Matrix and pair of integers expected"));
                         }
-                        return $Either("Left", "Matrix and pair of integers expected");
+                        return Applicative0.pure($Either("Left", "Matrix and pair of integers expected"));
                       }
-                      return $Either("Left", "Matrix and pair of integers expected");
+                      return Applicative0.pure($Either("Left", "Matrix and pair of integers expected"));
                     }
-                    return $Either("Left", "Matrix and pair of integers expected");
+                    return Applicative0.pure($Either("Left", "Matrix and pair of integers expected"));
                   }
-                  return $Either("Left", "Matrix and pair of integers expected");
+                  return Applicative0.pure($Either("Left", "Matrix and pair of integers expected"));
                 }
-                return $Either("Left", "Matrix and pair of integers expected");
+                return Applicative0.pure($Either("Left", "Matrix and pair of integers expected"));
               }
-              return $Either("Left", "Matrix and pair of integers expected");
+              return Applicative0.pure($Either("Left", "Matrix and pair of integers expected"));
             }
-            return $Either("Left", "Matrix and pair of integers expected");
+            return Applicative0.pure($Either("Left", "Matrix and pair of integers expected"));
           }
-          return $Either("Left", "Matrix and pair of integers expected");
+          return Applicative0.pure($Either("Left", "Matrix and pair of integers expected"));
         }
-        return $Either("Left", "Matrix and pair of integers expected");
-      }
-      return $Either("Left", "Matrix and pair of integers expected");
+        return Applicative0.pure($Either("Left", "Matrix and pair of integers expected"));
+      };
     },
     op_bwd: (dictAnn) => {
       const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
@@ -36802,35 +36327,38 @@
     arity: 1,
     "op'": (dictMonad) => {
       const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-      const pure1 = applicativeExceptT({
+      const pure2 = applicativeExceptT({
         Applicative0: () => applicativeStateT(monadStateT2),
         Bind1: () => bindStateT(monadStateT2)
       }).pure;
-      const $3 = applicativeStateT(monadStateT2);
+      const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Str") {
             if (v._2.tag === "Nil") {
-              return pure1(unsafePerformEffect(throwException(error(v._1._2))));
+              return pure2(unsafePerformEffect(throwException(error(v._1._2))));
             }
-            return $3.pure($Either("Left", "String expected"));
+            return applicativeStateT2.pure($Either("Left", "String expected"));
           }
-          return $3.pure($Either("Left", "String expected"));
+          return applicativeStateT2.pure($Either("Left", "String expected"));
         }
-        return $3.pure($Either("Left", "String expected"));
+        return applicativeStateT2.pure($Either("Left", "String expected"));
       };
     },
-    op: (dictAnn) => (v) => {
-      if (v.tag === "Cons") {
-        if (v._1.tag === "Str") {
-          if (v._2.tag === "Nil") {
-            return unsafePerformEffect(throwException(error(v._1._2)));
+    op: (dictAnn) => (dictMonad) => {
+      const Applicative0 = dictMonad.Applicative0();
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Str") {
+            if (v._2.tag === "Nil") {
+              return unsafePerformEffect(throwException(error(v._1._2)));
+            }
+            return Applicative0.pure($Either("Left", "String expected"));
           }
-          return $Either("Left", "String expected");
+          return Applicative0.pure($Either("Left", "String expected"));
         }
-        return $Either("Left", "String expected");
-      }
-      return $Either("Left", "String expected");
+        return Applicative0.pure($Either("Left", "String expected"));
+      };
     },
     op_bwd: (dictAnn) => (v) => unsafePerformEffect(throwException(error("unimplemented")))
   });
@@ -36839,18 +36367,18 @@
     arity: 1,
     "op'": (dictMonad) => {
       const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-      const bind12 = bindExceptT({
+      const bind2 = bindExceptT({
         Applicative0: () => applicativeStateT(monadStateT2),
         Bind1: () => bindStateT(monadStateT2)
       }).bind;
       const $3 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
       const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
-      const $5 = applicativeStateT(monadStateT2);
+      const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Matrix") {
             if (v._2.tag === "Nil") {
-              return bind12($3.map((m) => {
+              return bind2($3.map((m) => {
                 if (m.tag === "Left") {
                   return $Either("Left", m._1);
                 }
@@ -36858,7 +36386,7 @@
                   return $Either("Right", m._1(v._1._2._2._1._1));
                 }
                 fail();
-              })($3.map(functorEither.map(Int3))($$new(dictSet.singleton(v._1._2._2._1._2)))))((v1) => bind12($3.map((m) => {
+              })($3.map(functorEither.map(Int3))($$new(dictSet.singleton(v._1._2._2._1._2)))))((v1) => bind2($3.map((m) => {
                 if (m.tag === "Left") {
                   return $Either("Left", m._1);
                 }
@@ -36884,20 +36412,21 @@
                 fail();
               })($3.map(functorEither.map(Constr3))($$new(dictSet.singleton(v._1._1)))))));
             }
-            return $5.pure($Either("Left", "Matrix expected"));
+            return applicativeStateT2.pure($Either("Left", "Matrix expected"));
           }
-          return $5.pure($Either("Left", "Matrix expected"));
+          return applicativeStateT2.pure($Either("Left", "Matrix expected"));
         }
-        return $5.pure($Either("Left", "Matrix expected"));
+        return applicativeStateT2.pure($Either("Left", "Matrix expected"));
       };
     },
-    op: (dictAnn) => (v) => {
-      if (v.tag === "Cons") {
-        if (v._1.tag === "Matrix") {
-          if (v._2.tag === "Nil") {
-            return $Either(
-              "Right",
-              $Tuple(
+    op: (dictAnn) => (dictMonad) => {
+      const pure2 = applicativeExceptT(dictMonad).pure;
+      const Applicative0 = dictMonad.Applicative0();
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Matrix") {
+            if (v._2.tag === "Nil") {
+              return pure2($Tuple(
                 arrayMap(arrayMap(erase))(v._1._2._1),
                 $Val(
                   "Constr",
@@ -36909,14 +36438,14 @@
                     $List("Cons", $Val("Int", v._1._2._2._2._2, v._1._2._2._2._1), Nil)
                   )
                 )
-              )
-            );
+              ));
+            }
+            return Applicative0.pure($Either("Left", "Matrix expected"));
           }
-          return $Either("Left", "Matrix expected");
+          return Applicative0.pure($Either("Left", "Matrix expected"));
         }
-        return $Either("Left", "Matrix expected");
-      }
-      return $Either("Left", "Matrix expected");
+        return Applicative0.pure($Either("Left", "Matrix expected"));
+      };
     },
     op_bwd: (dictAnn) => {
       const $1 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
@@ -36962,20 +36491,20 @@
     "op'": (dictMonad) => {
       const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
       const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
-      const bind12 = bindExceptT(monadStateT12).bind;
+      const bind2 = bindExceptT(monadStateT12).bind;
       const $4 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT(monadStateT12));
       const $5 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
       const apply4 = apply3(dictMonad);
       const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
-      const $8 = applicativeStateT(monadStateT2);
+      const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => {
-        const apply1 = apply4(dictSet);
+        const apply12 = apply4(dictSet);
         return (v) => {
           if (v.tag === "Cons") {
             if (v._2.tag === "Cons") {
               if (v._2._1.tag === "Dictionary") {
                 if (v._2._2.tag === "Nil") {
-                  return bind12($4((v$1) => (v2) => $5.map((m) => {
+                  return bind2($4((v$1) => (v2) => $5.map((m) => {
                     if (m.tag === "Left") {
                       return $Either("Left", m._1);
                     }
@@ -36983,7 +36512,7 @@
                       return $Either("Right", $Tuple(v2._1, m._1));
                     }
                     fail();
-                  })(apply1(v._1)(v2._2)))(v._2._1._2))((d$p) => $5.map((m) => {
+                  })(apply12(v._1)(v2._2)))(v._2._1._2))((d$p) => $5.map((m) => {
                     if (m.tag === "Left") {
                       return $Either("Left", m._1);
                     }
@@ -36993,53 +36522,48 @@
                     fail();
                   })($5.map(functorEither.map(Dictionary3))($$new(dictSet.singleton(v._2._1._1)))));
                 }
-                return $8.pure($Either("Left", "Function and dictionary expected"));
+                return applicativeStateT2.pure($Either("Left", "Function and dictionary expected"));
               }
-              return $8.pure($Either("Left", "Function and dictionary expected"));
+              return applicativeStateT2.pure($Either("Left", "Function and dictionary expected"));
             }
-            return $8.pure($Either("Left", "Function and dictionary expected"));
+            return applicativeStateT2.pure($Either("Left", "Function and dictionary expected"));
           }
-          return $8.pure($Either("Left", "Function and dictionary expected"));
+          return applicativeStateT2.pure($Either("Left", "Function and dictionary expected"));
         };
       };
     },
-    op: (dictAnn) => {
-      const apply4 = apply2(dictAnn);
+    op: (dictAnn) => (dictMonad) => {
+      const bind2 = bindExceptT(dictMonad).bind;
+      const $3 = dictMonad.Bind1().Apply0().Functor0();
+      const applicativeExceptT4 = applicativeExceptT(dictMonad);
+      const $5 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT4);
+      const apply4 = apply2(dictMonad)(dictAnn);
+      const Applicative0 = dictMonad.Applicative0();
       return (v) => {
         if (v.tag === "Cons") {
           if (v._2.tag === "Cons") {
             if (v._2._1.tag === "Dictionary") {
               if (v._2._2.tag === "Nil") {
-                return bindEither.bind((() => {
-                  const $3 = traverse13((v2) => {
-                    const $4 = apply4($Tuple(v._1, v2._2));
-                    if ($4.tag === "Left") {
-                      return $Either("Left", $4._1);
-                    }
-                    if ($4.tag === "Right") {
-                      return $Either("Right", $Tuple($4._1._1, $Tuple(v2._1, $4._1._2)));
-                    }
-                    fail();
-                  })(v._2._1._2);
-                  if ($3.tag === "Left") {
-                    return $Either("Left", $3._1);
+                return bind2($3.map(functorEither.map(unzip2))($5((v$1) => (v2) => $3.map((m) => {
+                  if (m.tag === "Left") {
+                    return $Either("Left", m._1);
                   }
-                  if ($3.tag === "Right") {
-                    return $Either("Right", $Tuple(_fmapObject($3._1, fst), _fmapObject($3._1, snd)));
+                  if (m.tag === "Right") {
+                    return $Either("Right", $Tuple(m._1._1, $Tuple(v2._1, m._1._2)));
                   }
                   fail();
-                })())((v2) => $Either(
-                  "Right",
-                  $Tuple($Tuple(functorVal.map((v$1) => unit2)(v._1), v2._1), $Val("Dictionary", v._2._1._1, v2._2))
-                ));
+                })(apply4($Tuple(v._1, v2._2))))(v._2._1._2)))((v2) => applicativeExceptT4.pure($Tuple(
+                  $Tuple(functorVal.map((v$1) => unit2)(v._1), v2._1),
+                  $Val("Dictionary", v._2._1._1, v2._2)
+                )));
               }
-              return $Either("Left", "Function and dictionary expected");
+              return Applicative0.pure($Either("Left", "Function and dictionary expected"));
             }
-            return $Either("Left", "Function and dictionary expected");
+            return Applicative0.pure($Either("Left", "Function and dictionary expected"));
           }
-          return $Either("Left", "Function and dictionary expected");
+          return Applicative0.pure($Either("Left", "Function and dictionary expected"));
         }
-        return $Either("Left", "Function and dictionary expected");
+        return Applicative0.pure($Either("Left", "Function and dictionary expected"));
       };
     },
     op_bwd: (dictAnn) => {
@@ -37067,13 +36591,13 @@
     "op'": (dictMonad) => {
       const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
       const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
-      const bind12 = bindExceptT(monadStateT12).bind;
+      const bind2 = bindExceptT(monadStateT12).bind;
       const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
       const $5 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
       const apply4 = apply3(dictMonad);
-      const apply1 = applyExceptT(monadStateT12).apply;
-      const sequence22 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT(monadStateT12))((v) => identity11);
-      const $9 = applicativeStateT(monadStateT2);
+      const apply12 = applyExceptT(monadStateT12).apply;
+      const sequence1 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT(monadStateT12))((v) => identity11);
+      const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => {
         const apply23 = apply4(dictSet);
         return (v) => {
@@ -37083,60 +36607,63 @@
                 if (v._2._2.tag === "Cons") {
                   if (v._2._2._1.tag === "Dictionary") {
                     if (v._2._2._2.tag === "Nil") {
-                      return apply1($5.map(functorEither.map(Dictionary3))($$new(dictSet.insert(v._2._2._1._1)(dictSet.singleton(v._2._1._1)))))($5.map(functorEither.map(DictRep))(sequence22(intersectionWith((v2) => (v3) => bind12($$new(dictSet.insert(v3._1)(dictSet.singleton(v2._1))))((\u03B2$p$p) => $5.map(functorEither.map(Tuple(\u03B2$p$p)))(bind12(apply23(v._1)(v2._2))((a) => apply23(a)(v3._2)))))(v._2._1._2)(v._2._2._1._2))));
+                      return apply12($5.map(functorEither.map(Dictionary3))($$new(dictSet.insert(v._2._2._1._1)(dictSet.singleton(v._2._1._1)))))($5.map(functorEither.map(DictRep))(sequence1(intersectionWith((v2) => (v3) => bind2($$new(dictSet.insert(v3._1)(dictSet.singleton(v2._1))))((\u03B2$p$p) => $5.map(functorEither.map(Tuple(\u03B2$p$p)))(bind2(apply23(v._1)(v2._2))((a) => apply23(a)(v3._2)))))(v._2._1._2)(v._2._2._1._2))));
                     }
-                    return $9.pure($Either("Left", "Function and two dictionaries expected"));
+                    return applicativeStateT2.pure($Either("Left", "Function and two dictionaries expected"));
                   }
-                  return $9.pure($Either("Left", "Function and two dictionaries expected"));
+                  return applicativeStateT2.pure($Either("Left", "Function and two dictionaries expected"));
                 }
-                return $9.pure($Either("Left", "Function and two dictionaries expected"));
+                return applicativeStateT2.pure($Either("Left", "Function and two dictionaries expected"));
               }
-              return $9.pure($Either("Left", "Function and two dictionaries expected"));
+              return applicativeStateT2.pure($Either("Left", "Function and two dictionaries expected"));
             }
-            return $9.pure($Either("Left", "Function and two dictionaries expected"));
+            return applicativeStateT2.pure($Either("Left", "Function and two dictionaries expected"));
           }
-          return $9.pure($Either("Left", "Function and two dictionaries expected"));
+          return applicativeStateT2.pure($Either("Left", "Function and two dictionaries expected"));
         };
       };
     },
     op: (dictAnn) => {
       const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-      const apply23 = apply22(dictAnn);
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Cons") {
-            if (v._2._1.tag === "Dictionary") {
-              if (v._2._2.tag === "Cons") {
-                if (v._2._2._1.tag === "Dictionary") {
-                  if (v._2._2._2.tag === "Nil") {
-                    return bindEither.bind(sequence12(intersectionWith((v2) => (v3) => {
-                      const $6 = apply23($Tuple(v._1, $Tuple(v2._2, v3._2)));
-                      if ($6.tag === "Left") {
-                        return $Either("Left", $6._1);
-                      }
-                      if ($6.tag === "Right") {
-                        return $Either("Right", $Tuple(meet(v2._1)(v3._1), $6._1));
-                      }
-                      fail();
-                    })(v._2._1._2)(v._2._2._1._2)))((d$p$p) => $Either(
-                      "Right",
-                      $Tuple(
+      return (dictMonad) => {
+        const bind2 = bindExceptT(dictMonad).bind;
+        const applicativeExceptT4 = applicativeExceptT(dictMonad);
+        const sequence1 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT4)((v) => identity11);
+        const $6 = dictMonad.Bind1().Apply0().Functor0();
+        const apply23 = apply22(dictMonad)(dictAnn);
+        const Applicative0 = dictMonad.Applicative0();
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._2.tag === "Cons") {
+              if (v._2._1.tag === "Dictionary") {
+                if (v._2._2.tag === "Cons") {
+                  if (v._2._2._1.tag === "Dictionary") {
+                    if (v._2._2._2.tag === "Nil") {
+                      return bind2(sequence1(intersectionWith((v2) => (v3) => $6.map((m) => {
+                        if (m.tag === "Left") {
+                          return $Either("Left", m._1);
+                        }
+                        if (m.tag === "Right") {
+                          return $Either("Right", $Tuple(meet(v2._1)(v3._1), m._1));
+                        }
+                        fail();
+                      })(apply23($Tuple(v._1, $Tuple(v2._2, v3._2)))))(v._2._1._2)(v._2._2._1._2)))((d$p$p) => applicativeExceptT4.pure($Tuple(
                         $Tuple(functorVal.map((v$1) => unit2)(v._1), _fmapObject(d$p$p, (x2) => x2._2._1)),
                         $Val("Dictionary", meet(v._2._1._1)(v._2._2._1._1), _fmapObject(d$p$p, functorTuple.map(snd)))
-                      )
-                    ));
+                      )));
+                    }
+                    return Applicative0.pure($Either("Left", "Function and two dictionaries expected"));
                   }
-                  return $Either("Left", "Function and two dictionaries expected");
+                  return Applicative0.pure($Either("Left", "Function and two dictionaries expected"));
                 }
-                return $Either("Left", "Function and two dictionaries expected");
+                return Applicative0.pure($Either("Left", "Function and two dictionaries expected"));
               }
-              return $Either("Left", "Function and two dictionaries expected");
+              return Applicative0.pure($Either("Left", "Function and two dictionaries expected"));
             }
-            return $Either("Left", "Function and two dictionaries expected");
+            return Applicative0.pure($Either("Left", "Function and two dictionaries expected"));
           }
-          return $Either("Left", "Function and two dictionaries expected");
-        }
-        return $Either("Left", "Function and two dictionaries expected");
+          return Applicative0.pure($Either("Left", "Function and two dictionaries expected"));
+        };
       };
     },
     op_bwd: (dictAnn) => {
@@ -37163,64 +36690,70 @@
   var dict_get = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
     "op'": (dictMonad) => {
-      const $1 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-      const $2 = applicativeStateT({
-        Applicative0: () => applicativeStateT(dictMonad),
-        Bind1: () => bindStateT(dictMonad)
-      });
+      const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+      const orElse3 = orElse({ Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) });
+      const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Str") {
             if (v._2.tag === "Cons") {
               if (v._2._1.tag === "Dictionary") {
                 if (v._2._2.tag === "Nil") {
-                  return $1.map(functorEither.map(snd))((() => {
-                    const $5 = 'Key "' + (v._1._2 + '" not found');
+                  return orElse3('Key "' + (v._1._2 + '" not found'))((() => {
                     const $6 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
-                    return $2.pure((() => {
-                      if ($6.tag === "Nothing") {
-                        return $Either("Left", $5);
-                      }
-                      if ($6.tag === "Just") {
-                        return $Either("Right", $6._1);
-                      }
-                      fail();
-                    })());
+                    if ($6.tag === "Just") {
+                      return $Maybe("Just", $6._1._2);
+                    }
+                    return Nothing;
                   })());
                 }
-                return $2.pure($Either("Left", "String and dictionary expected"));
+                return applicativeStateT2.pure($Either("Left", "String and dictionary expected"));
               }
-              return $2.pure($Either("Left", "String and dictionary expected"));
+              return applicativeStateT2.pure($Either("Left", "String and dictionary expected"));
             }
-            return $2.pure($Either("Left", "String and dictionary expected"));
+            return applicativeStateT2.pure($Either("Left", "String and dictionary expected"));
           }
-          return $2.pure($Either("Left", "String and dictionary expected"));
+          return applicativeStateT2.pure($Either("Left", "String and dictionary expected"));
         }
-        return $2.pure($Either("Left", "String and dictionary expected"));
+        return applicativeStateT2.pure($Either("Left", "String and dictionary expected"));
       };
     },
-    op: (dictAnn) => (v) => {
-      if (v.tag === "Cons") {
-        if (v._1.tag === "Str") {
-          if (v._2.tag === "Cons") {
-            if (v._2._1.tag === "Dictionary") {
-              if (v._2._2.tag === "Nil") {
-                const $2 = 'Key "' + (v._1._2 + '" not found');
-                const $3 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
-                if ($3.tag === "Just") {
-                  return $Either("Right", $Tuple(v._1._2, $3._1._2));
+    op: (dictAnn) => (dictMonad) => {
+      const $2 = dictMonad.Bind1().Apply0().Functor0();
+      const orElse3 = orElse(dictMonad);
+      const Applicative0 = dictMonad.Applicative0();
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Str") {
+            if (v._2.tag === "Cons") {
+              if (v._2._1.tag === "Dictionary") {
+                if (v._2._2.tag === "Nil") {
+                  return $2.map((m) => {
+                    if (m.tag === "Left") {
+                      return $Either("Left", m._1);
+                    }
+                    if (m.tag === "Right") {
+                      return $Either("Right", $Tuple(v._1._2, m._1));
+                    }
+                    fail();
+                  })(orElse3('Key "' + (v._1._2 + '" not found'))((() => {
+                    const $6 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
+                    if ($6.tag === "Just") {
+                      return $Maybe("Just", $6._1._2);
+                    }
+                    return Nothing;
+                  })()));
                 }
-                return $Either("Left", $2);
+                return Applicative0.pure($Either("Left", "String and dictionary expected"));
               }
-              return $Either("Left", "String and dictionary expected");
+              return Applicative0.pure($Either("Left", "String and dictionary expected"));
             }
-            return $Either("Left", "String and dictionary expected");
+            return Applicative0.pure($Either("Left", "String and dictionary expected"));
           }
-          return $Either("Left", "String and dictionary expected");
+          return Applicative0.pure($Either("Left", "String and dictionary expected"));
         }
-        return $Either("Left", "String and dictionary expected");
-      }
-      return $Either("Left", "String and dictionary expected");
+        return Applicative0.pure($Either("Left", "String and dictionary expected"));
+      };
     },
     op_bwd: (dictAnn) => {
       const bot = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().bot;
@@ -37244,16 +36777,16 @@
     "op'": (dictMonad) => {
       const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
       const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
-      const bind12 = bindExceptT(monadStateT12).bind;
+      const bind2 = bindExceptT(monadStateT12).bind;
       const $4 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT(monadStateT12));
       const $5 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
       const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
-      const $7 = applicativeStateT(monadStateT2);
+      const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Record") {
             if (v._2.tag === "Nil") {
-              return bind12($4((v$1) => (v1) => $5.map((m) => {
+              return bind2($4((v$1) => (v1) => $5.map((m) => {
                 if (m.tag === "Left") {
                   return $Either("Left", m._1);
                 }
@@ -37271,27 +36804,28 @@
                 fail();
               })($5.map(functorEither.map(Dictionary3))($$new(dictSet.singleton(v._1._1)))));
             }
-            return $7.pure($Either("Left", "Record expected."));
+            return applicativeStateT2.pure($Either("Left", "Record expected."));
           }
-          return $7.pure($Either("Left", "Record expected."));
+          return applicativeStateT2.pure($Either("Left", "Record expected."));
         }
-        return $7.pure($Either("Left", "Record expected."));
+        return applicativeStateT2.pure($Either("Left", "Record expected."));
       };
     },
-    op: (dictAnn) => (v) => {
-      if (v.tag === "Cons") {
-        if (v._1.tag === "Record") {
-          if (v._2.tag === "Nil") {
-            return $Either(
-              "Right",
-              $Tuple(unit2, $Val("Dictionary", v._1._1, _fmapObject(v._1._2, (v1) => $Tuple(v._1._1, v1))))
-            );
+    op: (dictAnn) => (dictMonad) => {
+      const pure2 = applicativeExceptT(dictMonad).pure;
+      const Applicative0 = dictMonad.Applicative0();
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Record") {
+            if (v._2.tag === "Nil") {
+              return pure2($Tuple(unit2, $Val("Dictionary", v._1._1, _fmapObject(v._1._2, (v1) => $Tuple(v._1._1, v1)))));
+            }
+            return Applicative0.pure($Either("Left", "Record expected."));
           }
-          return $Either("Left", "Record expected.");
+          return Applicative0.pure($Either("Left", "Record expected."));
         }
-        return $Either("Left", "Record expected.");
-      }
-      return $Either("Left", "Record expected.");
+        return Applicative0.pure($Either("Left", "Record expected."));
+      };
     },
     op_bwd: (dictAnn) => {
       const join = dictAnn.BoundedLattice1().BoundedJoinSemilattice0().JoinSemilattice0().join;
@@ -37316,63 +36850,70 @@
     "op'": (dictMonad) => {
       const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
       const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
-      const foldM12 = foldM5({ Applicative0: () => applicativeExceptT(monadStateT12), Bind1: () => bindExceptT(monadStateT12) });
-      const bind12 = bindExceptT(monadStateT12).bind;
+      const foldM12 = foldM3({ Applicative0: () => applicativeExceptT(monadStateT12), Bind1: () => bindExceptT(monadStateT12) });
+      const bind2 = bindExceptT(monadStateT12).bind;
       const apply4 = apply3(dictMonad);
-      const $6 = applicativeStateT(monadStateT2);
+      const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => {
-        const apply1 = apply4(dictSet);
+        const apply12 = apply4(dictSet);
         return (v) => {
           if (v.tag === "Cons") {
             if (v._2.tag === "Cons") {
               if (v._2._2.tag === "Cons") {
                 if (v._2._2._1.tag === "Dictionary") {
                   if (v._2._2._2.tag === "Nil") {
-                    return foldM12((u1) => (v2) => bind12(apply1(v._1)(u1))((a) => apply1(a)(v2._2)))(v._2._1)(v._2._2._1._2);
+                    return foldM12((u1) => (v2) => bind2(apply12(v._1)(u1))((a) => apply12(a)(v2._2)))(v._2._1)(v._2._2._1._2);
                   }
-                  return $6.pure($Either("Left", "Function, value and dictionary expected"));
+                  return applicativeStateT2.pure($Either("Left", "Function, value and dictionary expected"));
                 }
-                return $6.pure($Either("Left", "Function, value and dictionary expected"));
+                return applicativeStateT2.pure($Either("Left", "Function, value and dictionary expected"));
               }
-              return $6.pure($Either("Left", "Function, value and dictionary expected"));
+              return applicativeStateT2.pure($Either("Left", "Function, value and dictionary expected"));
             }
-            return $6.pure($Either("Left", "Function, value and dictionary expected"));
+            return applicativeStateT2.pure($Either("Left", "Function, value and dictionary expected"));
           }
-          return $6.pure($Either("Left", "Function, value and dictionary expected"));
+          return applicativeStateT2.pure($Either("Left", "Function, value and dictionary expected"));
         };
       };
     },
-    op: (dictAnn) => {
-      const apply23 = apply22(dictAnn);
+    op: (dictAnn) => (dictMonad) => {
+      const bind2 = bindExceptT(dictMonad).bind;
+      const foldWithIndexM1 = foldWithIndexM({
+        Applicative0: () => applicativeExceptT(dictMonad),
+        Bind1: () => bindExceptT(dictMonad)
+      });
+      const $4 = dictMonad.Bind1().Apply0().Functor0();
+      const apply23 = apply22(dictMonad)(dictAnn);
+      const pure2 = applicativeExceptT(dictMonad).pure;
+      const Applicative0 = dictMonad.Applicative0();
       return (v) => {
         if (v.tag === "Cons") {
           if (v._2.tag === "Cons") {
             if (v._2._2.tag === "Cons") {
               if (v._2._2._1.tag === "Dictionary") {
                 if (v._2._2._2.tag === "Nil") {
-                  return bindEither.bind(foldWithIndexM((s) => (v2) => (v3) => {
-                    const $6 = apply23($Tuple(v._1, $Tuple(v2._2, v3._2)));
-                    if ($6.tag === "Left") {
-                      return $Either("Left", $6._1);
+                  return bind2(foldWithIndexM1((s) => (v2) => (v3) => $4.map((m) => {
+                    if (m.tag === "Left") {
+                      return $Either("Left", m._1);
                     }
-                    if ($6.tag === "Right") {
-                      return $Either("Right", $Tuple($List("Cons", $Tuple(s, $6._1._1), v2._1), $6._1._2));
+                    if (m.tag === "Right") {
+                      return $Either("Right", $Tuple($List("Cons", $Tuple(s, m._1._1), v2._1), m._1._2));
                     }
                     fail();
-                  })($Tuple(Nil, v._2._1))(v._2._2._1._2))((v2) => $Either(
-                    "Right",
-                    $Tuple($Tuple(functorVal.map((v$1) => unit2)(v._1), v2._1), v2._2)
-                  ));
+                  })(apply23($Tuple(v._1, $Tuple(v2._2, v3._2)))))($Tuple(Nil, v._2._1))(v._2._2._1._2))((v2) => pure2($Tuple(
+                    $Tuple(functorVal.map((v$1) => unit2)(v._1), v2._1),
+                    v2._2
+                  )));
                 }
-                return $Either("Left", "Function, value and dictionary expected");
+                return Applicative0.pure($Either("Left", "Function, value and dictionary expected"));
               }
-              return $Either("Left", "Function, value and dictionary expected");
+              return Applicative0.pure($Either("Left", "Function, value and dictionary expected"));
             }
-            return $Either("Left", "Function, value and dictionary expected");
+            return Applicative0.pure($Either("Left", "Function, value and dictionary expected"));
           }
-          return $Either("Left", "Function, value and dictionary expected");
+          return Applicative0.pure($Either("Left", "Function, value and dictionary expected"));
         }
-        return $Either("Left", "Function, value and dictionary expected");
+        return Applicative0.pure($Either("Left", "Function, value and dictionary expected"));
       };
     },
     op_bwd: (dictAnn) => {
@@ -37421,7 +36962,7 @@
     "op'": (dictMonad) => {
       const $1 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
       const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
-      const $3 = applicativeStateT({
+      const applicativeStateT2 = applicativeStateT({
         Applicative0: () => applicativeStateT(dictMonad),
         Bind1: () => bindStateT(dictMonad)
       });
@@ -37442,46 +36983,47 @@
                     fail();
                   })($1.map(functorEither.map(Dictionary3))($$new(dictSet.insert(v._2._1._1)(dictSet.singleton(v._1._1)))));
                 }
-                return $3.pure($Either("Left", "Dictionaries expected"));
+                return applicativeStateT2.pure($Either("Left", "Dictionaries expected"));
               }
-              return $3.pure($Either("Left", "Dictionaries expected"));
+              return applicativeStateT2.pure($Either("Left", "Dictionaries expected"));
             }
-            return $3.pure($Either("Left", "Dictionaries expected"));
+            return applicativeStateT2.pure($Either("Left", "Dictionaries expected"));
           }
-          return $3.pure($Either("Left", "Dictionaries expected"));
+          return applicativeStateT2.pure($Either("Left", "Dictionaries expected"));
         }
-        return $3.pure($Either("Left", "Dictionaries expected"));
+        return applicativeStateT2.pure($Either("Left", "Dictionaries expected"));
       };
     },
     op: (dictAnn) => {
       const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Dictionary") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Dictionary") {
-                if (v._2._2.tag === "Nil") {
-                  return $Either(
-                    "Right",
-                    $Tuple(
+      return (dictMonad) => {
+        const pure2 = applicativeExceptT(dictMonad).pure;
+        const Applicative0 = dictMonad.Applicative0();
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Dictionary") {
+              if (v._2.tag === "Cons") {
+                if (v._2._1.tag === "Dictionary") {
+                  if (v._2._2.tag === "Nil") {
+                    return pure2($Tuple(
                       $Tuple(_fmapObject(v._1._2, (v$1) => unit2), _fmapObject(v._2._1._2, (v$1) => unit2)),
                       $Val(
                         "Dictionary",
                         meet(v._1._1)(v._2._1._1),
                         unionWith2((v$1) => (v1) => unsafePerformEffect(throwException(error("not disjoint"))))(v._1._2)(v._2._1._2)
                       )
-                    )
-                  );
+                    ));
+                  }
+                  return Applicative0.pure($Either("Left", "Dictionaries expected"));
                 }
-                return $Either("Left", "Dictionaries expected");
+                return Applicative0.pure($Either("Left", "Dictionaries expected"));
               }
-              return $Either("Left", "Dictionaries expected");
+              return Applicative0.pure($Either("Left", "Dictionaries expected"));
             }
-            return $Either("Left", "Dictionaries expected");
+            return Applicative0.pure($Either("Left", "Dictionaries expected"));
           }
-          return $Either("Left", "Dictionaries expected");
-        }
-        return $Either("Left", "Dictionaries expected");
+          return Applicative0.pure($Either("Left", "Dictionaries expected"));
+        };
       };
     },
     op_bwd: (dictAnn) => (v) => {
@@ -37500,7 +37042,7 @@
     "op'": (dictMonad) => {
       const $1 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
       const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
-      const $3 = applicativeStateT({
+      const applicativeStateT2 = applicativeStateT({
         Applicative0: () => applicativeStateT(dictMonad),
         Bind1: () => bindStateT(dictMonad)
       });
@@ -37521,36 +37063,40 @@
                     fail();
                   })($1.map(functorEither.map(Dictionary3))($$new(dictSet.insert(v._2._1._1)(dictSet.singleton(v._1._1)))));
                 }
-                return $3.pure($Either("Left", "Dictionaries expected."));
+                return applicativeStateT2.pure($Either("Left", "Dictionaries expected."));
               }
-              return $3.pure($Either("Left", "Dictionaries expected."));
+              return applicativeStateT2.pure($Either("Left", "Dictionaries expected."));
             }
-            return $3.pure($Either("Left", "Dictionaries expected."));
+            return applicativeStateT2.pure($Either("Left", "Dictionaries expected."));
           }
-          return $3.pure($Either("Left", "Dictionaries expected."));
+          return applicativeStateT2.pure($Either("Left", "Dictionaries expected."));
         }
-        return $3.pure($Either("Left", "Dictionaries expected."));
+        return applicativeStateT2.pure($Either("Left", "Dictionaries expected."));
       };
     },
     op: (dictAnn) => {
       const meet = dictAnn.BoundedLattice1().BoundedMeetSemilattice1().MeetSemilattice0().meet;
-      return (v) => {
-        if (v.tag === "Cons") {
-          if (v._1.tag === "Dictionary") {
-            if (v._2.tag === "Cons") {
-              if (v._2._1.tag === "Dictionary") {
-                if (v._2._2.tag === "Nil") {
-                  return $Either("Right", $Tuple(unit2, $Val("Dictionary", meet(v._1._1)(v._2._1._1), difference2(v._1._2)(v._2._1._2))));
+      return (dictMonad) => {
+        const pure2 = applicativeExceptT(dictMonad).pure;
+        const Applicative0 = dictMonad.Applicative0();
+        return (v) => {
+          if (v.tag === "Cons") {
+            if (v._1.tag === "Dictionary") {
+              if (v._2.tag === "Cons") {
+                if (v._2._1.tag === "Dictionary") {
+                  if (v._2._2.tag === "Nil") {
+                    return pure2($Tuple(unit2, $Val("Dictionary", meet(v._1._1)(v._2._1._1), difference2(v._1._2)(v._2._1._2))));
+                  }
+                  return Applicative0.pure($Either("Left", "Dictionaries expected."));
                 }
-                return $Either("Left", "Dictionaries expected.");
+                return Applicative0.pure($Either("Left", "Dictionaries expected."));
               }
-              return $Either("Left", "Dictionaries expected.");
+              return Applicative0.pure($Either("Left", "Dictionaries expected."));
             }
-            return $Either("Left", "Dictionaries expected.");
+            return Applicative0.pure($Either("Left", "Dictionaries expected."));
           }
-          return $Either("Left", "Dictionaries expected.");
-        }
-        return $Either("Left", "Dictionaries expected.");
+          return Applicative0.pure($Either("Left", "Dictionaries expected."));
+        };
       };
     },
     op_bwd: (dictAnn) => (v) => {
@@ -37568,29 +37114,33 @@
     arity: 1,
     "op'": (dictMonad) => {
       const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-      const pure1 = applicativeExceptT({
+      const pure2 = applicativeExceptT({
         Applicative0: () => applicativeStateT(monadStateT2),
         Bind1: () => bindStateT(monadStateT2)
       }).pure;
-      const $3 = applicativeStateT(monadStateT2);
+      const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => (v) => {
         if (v.tag === "Cons") {
           if (v._2.tag === "Nil") {
-            return pure1(_trace(v._1, (v$1) => v._1));
+            return pure2(_trace(v._1, (v$1) => v._1));
           }
-          return $3.pure($Either("Left", "Single value expected"));
+          return applicativeStateT2.pure($Either("Left", "Single value expected"));
         }
-        return $3.pure($Either("Left", "Single value expected"));
+        return applicativeStateT2.pure($Either("Left", "Single value expected"));
       };
     },
-    op: (dictAnn) => (v) => {
-      if (v.tag === "Cons") {
-        if (v._2.tag === "Nil") {
-          return $Either("Right", $Tuple(unit2, _trace(v._1, (v$1) => v._1)));
+    op: (dictAnn) => (dictMonad) => {
+      const pure2 = applicativeExceptT(dictMonad).pure;
+      const Applicative0 = dictMonad.Applicative0();
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._2.tag === "Nil") {
+            return pure2($Tuple(unit2, _trace(v._1, (v$1) => v._1)));
+          }
+          return Applicative0.pure($Either("Left", "Single value expected"));
         }
-        return $Either("Left", "Single value expected");
-      }
-      return $Either("Left", "Single value expected");
+        return Applicative0.pure($Either("Left", "Single value expected"));
+      };
     },
     op_bwd: (dictAnn) => (v) => unsafePerformEffect(throwException(error("unimplemented")))
   });
@@ -37703,10 +37253,7 @@
   var lift = /* @__PURE__ */ (() => monadTransExceptT.lift(monadStateT1))();
   var lift2 = /* @__PURE__ */ (() => monadTransStateT.lift(monadStateT))();
   var lift3 = /* @__PURE__ */ (() => monadTransStateT.lift(monadAff))();
-  var except = /* @__PURE__ */ (() => {
-    const $0 = applicativeStateT(monadStateT);
-    return (x2) => $0.pure(x2);
-  })();
+  var desugarModuleFwd = /* @__PURE__ */ moduleFwd(monadStateT1)(joinSemilatticeUnit);
   var traverseModule2 = /* @__PURE__ */ traverseModule({
     Applicative0: () => applicativeExceptT(monadStateT1),
     Bind1: () => bindExceptT(monadStateT1)
@@ -37716,17 +37263,23 @@
   var runWithGraphAllocT2 = /* @__PURE__ */ runWithGraphAllocT(monadAff);
   var alloc2 = /* @__PURE__ */ alloc(monadAff);
   var alloc1 = /* @__PURE__ */ alloc2(traversableExpr);
+  var desug = /* @__PURE__ */ exprFwd(monadIdentity)(joinSemilatticeUnit);
   var $$eval3 = /* @__PURE__ */ $$eval2(monadAff);
   var applicativeExceptT2 = /* @__PURE__ */ applicativeExceptT(monadStateT1);
-  var traverse6 = /* @__PURE__ */ (() => {
+  var traverse2 = /* @__PURE__ */ (() => {
     const $0 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT2);
     return (x2) => $0((v) => x2);
   })();
   var alloc22 = /* @__PURE__ */ alloc2(traversableVal);
-  var parse = (src) => {
-    const $1 = runParserT1(src);
-    return (x2) => bifunctorEither.bimap(showParseError.show)(identity24)($1(x2));
+  var parse = (dictMonad) => {
+    const $1 = dictMonad.Applicative0();
+    return (src) => {
+      const $3 = runParserT1(src);
+      return (x2) => $1.pure(bifunctorEither.bimap(showParseError.show)(identity24)($3(x2)));
+    };
   };
+  var parse1 = /* @__PURE__ */ parse(monadStateT1);
+  var parse2 = /* @__PURE__ */ parse(monadIdentity);
   var loadFile = (v) => (v1) => _bind(request(driver)({
     method: $Either("Left", GET),
     url: "./" + (v + ("/" + (v1 + ".fld"))),
@@ -37748,7 +37301,7 @@
   });
   var loadModule = (dictSet) => {
     const eval_module1 = eval_module3(dictSet);
-    return (file) => (\u03B3) => bind1(lift(lift2(lift3(loadFile("fluid/lib")(file)))))((src) => bind1(bind1(except(bindEither.bind(parse(src)(module_))(desugarModuleFwd(joinSemilatticeUnit))))(traverseModule2((v) => fresh)))((mod) => functorStateT(functorStateT(functorAff)).map((m) => {
+    return (file) => (\u03B3) => bind1(lift(lift2(lift3(loadFile("fluid/lib")(file)))))((src) => bind1(bind1(bind1(parse1(src)(module_))(desugarModuleFwd))(traverseModule2((v) => fresh)))((mod) => functorStateT(functorStateT(functorAff)).map((m) => {
       if (m.tag === "Left") {
         return $Either("Left", m._1);
       }
@@ -37758,7 +37311,7 @@
       fail();
     })(eval_module1(\u03B3)(mod)(dictSet.empty))));
   };
-  var parseProgram = (folder) => (file) => _bind(loadFile(folder)(file))((src) => _pure(successful(parse(src)((state1, more, lift1, $$throw, done) => more((v1) => topLevel(expr_)(
+  var parseProgram = (folder) => (file) => _bind(loadFile(folder)(file))((src) => _pure(successful(parse2(src)((state1, more, lift1, $$throw, done) => more((v1) => topLevel(expr_)(
     state1,
     more,
     lift1,
@@ -37769,16 +37322,19 @@
     const runWithGraphAllocT1 = runWithGraphAllocT2(dictGraph);
     const Set1 = dictGraph.Set1();
     const eval1 = $$eval3(Set1);
-    return (file) => (x2) => (v) => _bind(parseProgram("fluid")(file))((s) => _bind(_map(successful)(runWithGraphAllocT1($Tuple(v.g, v.n))(bind1(alloc1(successful(exprFwd(joinSemilatticeUnit)(s))))((e\u03B1) => bind1(eval1(v["\u03B3"])(e\u03B1)(Set1.empty))((v\u03B1) => applicativeExceptT2.pure($Tuple(
+    return (file) => (x2) => (v) => _bind(parseProgram("fluid")(file))((s) => _bind(_map(extractRight)(runWithGraphAllocT1($Tuple(
+      v.g,
+      v.n
+    ))(bind1(alloc1(successful(desug(s))))((e\u03B1) => bind1(eval1(v["\u03B3"])(e\u03B1)(Set1.empty))((v\u03B1) => applicativeExceptT2.pure($Tuple(
       v["\u03B3"],
       runST(bind_(newImpl)(poke3(x2)(v\u03B1)))
     )))))))((v1) => _pure($Tuple({ g: v1._1._1, n: v1._1._2, "\u03B3": v1._2._1 }, v1._2._2))));
   };
   var defaultImports = (dictSet) => {
     const loadModule1 = loadModule(dictSet);
-    return bind1(traverse6(alloc22)(primitives))((\u03B3\u03B1) => bind1(bind1(loadModule1("prelude")(\u03B3\u03B1))(loadModule1("graphics")))(loadModule1("convolution")));
+    return bind1(traverse2(alloc22)(primitives))((\u03B3\u03B1) => bind1(bind1(loadModule1("prelude")(\u03B3\u03B1))(loadModule1("graphics")))(loadModule1("convolution")));
   };
-  var openDefaultImports = (dictGraph) => _bind(_map(successful)(runWithGraphAllocT2(dictGraph)($Tuple(dictGraph.empty, 0))(defaultImports(dictGraph.Set1()))))((v) => _pure({
+  var openDefaultImports = (dictGraph) => _bind(_map(extractRight)(runWithGraphAllocT2(dictGraph)($Tuple(dictGraph.empty, 0))(defaultImports(dictGraph.Set1()))))((v) => _pure({
     g: v._1._1,
     n: v._1._2,
     "\u03B3": v._2
@@ -37796,13 +37352,19 @@
   // output-es/App.Fig/index.js
   var $View = (tag, _1) => ({ tag, _1 });
   var matrixRep3 = /* @__PURE__ */ matrixRep(annBoolean);
-  var sequence3 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeEither)(identity10))();
-  var eval_module4 = /* @__PURE__ */ eval_module(annBoolean);
+  var orElse2 = /* @__PURE__ */ orElse(monadIdentity);
+  var applicativeExceptT3 = /* @__PURE__ */ applicativeExceptT(monadIdentity);
+  var sequence = /* @__PURE__ */ (() => traversableArray.traverse(applicativeExceptT3)(identity10))();
+  var bind = /* @__PURE__ */ (() => bindExceptT(monadIdentity).bind)();
+  var desugarModuleFwd2 = /* @__PURE__ */ moduleFwd(monadIdentity)(joinSemilatticeBoolean);
+  var eval_module4 = /* @__PURE__ */ eval_module(monadIdentity)(annBoolean);
   var graphGraphImpl2 = /* @__PURE__ */ graphGraphImpl(/* @__PURE__ */ setSet(ordVertex));
   var openDefaultImports2 = /* @__PURE__ */ openDefaultImports(graphGraphImpl2);
   var openDatasetAs2 = /* @__PURE__ */ openDatasetAs(graphGraphImpl2);
   var botOf = /* @__PURE__ */ (() => functorVal.map((v) => false))();
-  var $$eval4 = /* @__PURE__ */ $$eval(annBoolean);
+  var apply1 = /* @__PURE__ */ (() => applyExceptT(monadIdentity).apply)();
+  var desug2 = /* @__PURE__ */ exprFwd(monadIdentity)(joinSemilatticeBoolean);
+  var $$eval4 = /* @__PURE__ */ $$eval(monadIdentity)(annBoolean);
   var evalBwd2 = /* @__PURE__ */ evalBwd(annBoolean);
   var erase2 = /* @__PURE__ */ (() => functorVal.map((v) => unit2))();
   var joinSemilatticeVal2 = /* @__PURE__ */ joinSemilatticeVal(joinSemilatticeBoolean);
@@ -37841,35 +37403,27 @@
     return unsafePerformEffect(throwException(error("absurd")));
   };
   var varView = (x2) => (\u03B3) => {
-    const $2 = _lookup(Nothing, Just, x2, \u03B3);
-    if ($2.tag === "Nothing") {
-      return $Either("Left", "absurd");
+    const $2 = orElse2("absurd")(_lookup(Nothing, Just, x2, \u03B3));
+    if ($2.tag === "Left") {
+      return $Either("Left", $2._1);
     }
-    if ($2.tag === "Just") {
+    if ($2.tag === "Right") {
       return $Either("Right", view(x2)($2._1));
     }
     fail();
   };
   var splitDefs = (\u03B30) => (s$p) => {
     if (s$p.tag === "LetRec") {
-      return bindEither.bind(bindEither.bind(moduleFwd(joinSemilatticeBoolean)($Module2($List(
-        "Cons",
-        $Either("Right", s$p._1),
-        Nil
-      ))))((() => {
+      return bind(bind(desugarModuleFwd2($Module2($List("Cons", $Either("Right", s$p._1), Nil))))((() => {
         const $2 = eval_module4(\u03B30);
         return (a) => $2(a)(false);
-      })()))((\u03B3) => $Either("Right", { "\u03B3": \u03B3, s: s$p._2 }));
+      })()))((\u03B3) => applicativeExceptT3.pure({ "\u03B3": \u03B3, s: s$p._2 }));
     }
     if (s$p.tag === "Let") {
-      return bindEither.bind(bindEither.bind(moduleFwd(joinSemilatticeBoolean)($Module2($List(
-        "Cons",
-        $Either("Left", s$p._1),
-        Nil
-      ))))((() => {
+      return bind(bind(desugarModuleFwd2($Module2($List("Cons", $Either("Left", s$p._1), Nil))))((() => {
         const $2 = eval_module4(\u03B30);
         return (a) => $2(a)(false);
-      })()))((\u03B3) => $Either("Right", { "\u03B3": \u03B3, s: s$p._2 }));
+      })()))((\u03B3) => applicativeExceptT3.pure({ "\u03B3": \u03B3, s: s$p._2 }));
     }
     fail();
   };
@@ -37881,8 +37435,8 @@
       const xv0 = _fmapObject(v2._2, botOf);
       const s2 = functorExpr2.map((v$1) => false)(v3._2);
       const s1 = functorExpr2.map((v$1) => false)(v3._1);
-      return _pure(successful(bindEither.bind(applyEither.apply((() => {
-        const $9 = exprFwd(joinSemilatticeBoolean)(s1);
+      return _pure(successful(bind(apply1((() => {
+        const $9 = desug2(s1);
         if ($9.tag === "Left") {
           return $Either("Left", $9._1);
         }
@@ -37890,48 +37444,35 @@
           return $Either("Right", Tuple($9._1));
         }
         fail();
-      })())(exprFwd(joinSemilatticeBoolean)(s2)))((v4) => bindEither.bind($$eval4(unionWith2((v$1) => identity19)(\u03B30)(xv0))(v4._1)(false))((v5) => bindEither.bind($$eval4(unionWith2((v$1) => identity19)(\u03B30)(xv0))(v4._2)(false))((v6) => bindEither.bind((() => {
-        const $12 = _lookup(Nothing, Just, v.x, xv0);
-        if ($12.tag === "Nothing") {
-          return $Either("Left", "absurd");
-        }
-        if ($12.tag === "Just") {
-          return $Either("Right", $12._1);
-        }
-        fail();
-      })())((v0) => $Either("Right", { spec: v, "\u03B30": \u03B30, "\u03B3": xv0, s1, s2, e1: v4._1, e2: v4._2, t1: v5._1, t2: v6._1, v1: v5._2, v2: v6._2, v0 })))))));
+      })())(desug2(s2)))((v4) => bind($$eval4(unionWith2((v$1) => identity19)(\u03B30)(xv0))(v4._1)(false))((v5) => bind($$eval4(unionWith2((v$1) => identity19)(\u03B30)(xv0))(v4._2)(false))((v6) => bind(orElse2("absurd")(_lookup(
+        Nothing,
+        Just,
+        v.x,
+        xv0
+      )))((v0) => applicativeExceptT3.pure({ spec: v, "\u03B30": \u03B30, "\u03B3": xv0, s1, s2, e1: v4._1, e2: v4._2, t1: v5._1, t2: v6._1, v1: v5._2, v2: v6._2, v0 })))))));
     }));
   };
   var loadFig = (v) => _bind(_bind(openDefaultImports2)(openDatasetAs2("example/linking/renewables")("data")))((v1) => {
     const \u03B30 = _fmapObject(v1._1["\u03B3"], botOf);
     const xv0 = _fmapObject(v1._2, botOf);
-    return _map((s$p) => successful(bindEither.bind(splitDefs(unionWith2((v$1) => identity19)(\u03B30)(xv0))(functorExpr2.map((v$1) => false)(s$p)))((v2) => bindEither.bind(exprFwd(joinSemilatticeBoolean)(v2.s))((e) => bindEither.bind($$eval4(unionWith2((v$1) => identity19)(unionWith2((v$1) => identity19)(\u03B30)(xv0))(v2["\u03B3"]))(e)(false))((v3) => $Either("Right", { spec: v, "\u03B30": \u03B30, "\u03B3": unionWith2((v$1) => identity19)(\u03B30)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file));
+    return _map((s$p) => successful(bind(splitDefs(unionWith2((v$1) => identity19)(\u03B30)(xv0))(functorExpr2.map((v$1) => false)(s$p)))((v2) => bind(desug2(v2.s))((e) => bind($$eval4(unionWith2((v$1) => identity19)(unionWith2((v$1) => identity19)(\u03B30)(xv0))(v2["\u03B3"]))(e)(false))((v3) => applicativeExceptT3.pure({ spec: v, "\u03B30": \u03B30, "\u03B3": unionWith2((v$1) => identity19)(\u03B30)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file));
   });
   var linkResult = (x2) => (\u03B30) => (\u03B3) => (e1) => (e22) => (t1) => (v) => (v1) => {
     const $8 = append_inv($Map("Two", Leaf2, x2, unit2, Leaf2))(evalBwd2(_fmapObject(
       unionWith2((v$1) => identity19)(\u03B30)(\u03B3),
       erase2
     ))(functorExpr.map((v$1) => unit2)(e1))(v1)(t1)["\u03B3"])._2;
-    return bindEither.bind((() => {
-      const $9 = _lookup(Nothing, Just, x2, $8);
-      if ($9.tag === "Nothing") {
-        return $Either("Left", "absurd");
-      }
-      if ($9.tag === "Just") {
-        return $Either("Right", $9._1);
-      }
-      fail();
-    })())((v0$p) => bindEither.bind($$eval4(neg4(unionWith2((v$1) => identity19)(_fmapObject(\u03B30, botOf))($8)))(functorExpr.map((x$1) => true)(e22))(true))((v4) => $Either(
-      "Right",
-      { "v'": joinSemilatticeVal2.neg(v4._2), "v0'": v0$p }
-    )));
+    return bind(orElse2("absurd")(_lookup(Nothing, Just, x2, $8)))((v0$p) => bind($$eval4(neg4(unionWith2((v$1) => identity19)(_fmapObject(
+      \u03B30,
+      botOf
+    ))($8)))(functorExpr.map((x$1) => true)(e22))(true))((v4) => applicativeExceptT3.pure({ "v'": joinSemilatticeVal2.neg(v4._2), "v0'": v0$p })));
   };
   var figViews = (v) => (\u03B4v) => {
     const v2 = evalBwd2(_fmapObject(unionWith2((v$1) => identity19)(v["\u03B30"])(v["\u03B3"]), erase2))(functorExpr.map((v$1) => unit2)(v.e))(\u03B4v(v.v))(v.t);
-    return bindEither.bind($$eval4(v2["\u03B3"])(v2.e)(v2["\u03B1"]))((v3) => bindEither.bind(sequence3(arrayMap((a) => varView(a)(v2["\u03B3"]))(v.spec.xs)))((views) => $Either(
-      "Right",
-      $Tuple(view("output")(v3._2), views)
-    )));
+    return bind($$eval4(v2["\u03B3"])(v2.e)(v2["\u03B1"]))((v3) => bind(sequence(arrayMap((a) => varView(a)(v2["\u03B3"]))(v.spec.xs)))((views) => applicativeExceptT3.pure($Tuple(
+      view("output")(v3._2),
+      views
+    ))));
   };
   var drawView = (v) => (v1) => (v2) => (v3) => {
     if (v3.tag === "MatrixFig") {
@@ -37971,17 +37512,17 @@
       const v3 = successful((() => {
         if (\u03B4v.tag === "Left") {
           const v1$p = \u03B4v._1(v.v1);
-          return bindEither.bind(linkResult(v.spec.x)(v["\u03B30"])(v["\u03B3"])(v.e1)(v.e2)(v.t1)(v.t2)(v1$p))((v4) => $Either(
-            "Right",
-            $Tuple(v1$p, $Tuple(v4["v'"], $Tuple((v$1) => v1$p, $Tuple(identity25, v4["v0'"]))))
-          ));
+          return bind(linkResult(v.spec.x)(v["\u03B30"])(v["\u03B3"])(v.e1)(v.e2)(v.t1)(v.t2)(v1$p))((v4) => applicativeExceptT3.pure($Tuple(
+            v1$p,
+            $Tuple(v4["v'"], $Tuple((v$1) => v1$p, $Tuple(identity25, v4["v0'"])))
+          )));
         }
         if (\u03B4v.tag === "Right") {
           const v2$p = \u03B4v._1(v.v2);
-          return bindEither.bind(linkResult(v.spec.x)(v["\u03B30"])(v["\u03B3"])(v.e2)(v.e1)(v.t2)(v.t1)(v2$p))((v4) => $Either(
-            "Right",
-            $Tuple(v4["v'"], $Tuple(v2$p, $Tuple(identity25, $Tuple((v$1) => v2$p, v4["v0'"]))))
-          ));
+          return bind(linkResult(v.spec.x)(v["\u03B30"])(v["\u03B3"])(v.e2)(v.e1)(v.t2)(v.t1)(v2$p))((v4) => applicativeExceptT3.pure($Tuple(
+            v4["v'"],
+            $Tuple(v2$p, $Tuple(identity25, $Tuple((v$1) => v2$p, v4["v0'"])))
+          )));
         }
         fail();
       })());
@@ -37993,7 +37534,7 @@
   };
 
   // output-es/App.Main/index.js
-  var sequence4 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeAff)(identity10))();
+  var sequence2 = /* @__PURE__ */ (() => traversableArray.traverse(applicativeAff)(identity10))();
   var sequence_2 = /* @__PURE__ */ traverse_(applicativeEffect)(foldableArray)(identity9);
   var botOf2 = /* @__PURE__ */ (() => functorVal.map((v) => false))();
   var linkingFig1 = { divId: "fig-1", file1: "bar-chart", file2: "line-chart", dataFile: "renewables", x: "data" };
@@ -38012,7 +37553,7 @@
         };
       }
       fail();
-    })(sequence4(loadFigs));
+    })(sequence2(loadFigs));
     return () => {
       $1();
       return unit2;
@@ -38027,7 +37568,7 @@
         return sequence_2(arrayMap((a) => drawFig(a)(botOf2))(v._1));
       }
       fail();
-    })(sequence4(loadFigs));
+    })(sequence2(loadFigs));
     return () => {
       $1();
       return unit2;
