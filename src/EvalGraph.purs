@@ -5,16 +5,14 @@ module EvalGraph
    , evalWithConfig
    , eval_module
    , match
-   , matchMany
    , patternMismatch
    ) where
 
 import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
-import Control.Monad.Except (except)
 import Data.Array (range, singleton) as A
-import Data.Either (Either(..), note)
+import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), (:), length, snoc, unzip, zip)
 import Data.Set as S
@@ -28,7 +26,7 @@ import Graph.GraphWriter (WithGraphAllocT, alloc, new, runWithGraphAllocT)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Set (class Set, insert, empty, singleton, union)
-import Util (type (×), (×), MayFail, check, error, report, successful, with)
+import Util (type (+), type (×), (×), MayFailT, check, error, report, successful, with, orElse)
 import Util.Pair (unzip) as P
 import Val (Val(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
@@ -43,13 +41,13 @@ type GraphConfig g =
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall s. Set s Vertex => Val Vertex -> Elim Vertex -> MayFail (Env Vertex × Cont Vertex × s Vertex)
+match :: forall s m. Monad m => Set s Vertex => Val Vertex -> Elim Vertex -> MayFailT m (Env Vertex × Cont Vertex × s Vertex)
 match v (ElimVar x κ)
    | x == varAnon = pure (D.empty × κ × empty)
    | otherwise = pure (D.singleton x v × κ × empty)
 match (V.Constr α c vs) (ElimConstr m) = do
    with "Pattern mismatch" $ S.singleton c `consistentWith` D.keys m
-   κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (D.lookup c m)
+   κ <- D.lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × αs <- matchMany vs κ
    pure (γ × κ' × (insert α αs))
 match v (ElimConstr m) = do
@@ -63,7 +61,7 @@ match (V.Record α xvs) (ElimRecord xs κ) = do
    pure $ γ × κ' × (insert α αs)
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall s. Set s Vertex => List (Val Vertex) -> Cont Vertex -> MayFail (Env Vertex × Cont Vertex × s Vertex)
+matchMany :: forall s m. Monad m => Set s Vertex => List (Val Vertex) -> Cont Vertex -> MayFailT m (Env Vertex × Cont Vertex × s Vertex)
 matchMany Nil κ = pure (D.empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
@@ -85,7 +83,7 @@ closeDefs γ ρ αs =
 apply :: forall s m. Monad m => Set s Vertex => Val Vertex -> Val Vertex -> WithGraphAllocT s m (Val Vertex)
 apply (V.Fun α (V.Closure γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
-   γ3 × κ × αs <- except $ match v σ
+   γ3 × κ × αs <- match v σ
    eval (γ1 <+> γ2 <+> γ3) (asExpr κ) (insert α αs)
 apply (V.Fun α (V.Foreign φ vs)) v =
    runExists apply' φ
@@ -98,16 +96,16 @@ apply (V.Fun α (V.Foreign φ vs)) v =
          V.Fun <$> new (singleton α) <@> V.Foreign φ vs'
       else φ'.op' vs'
 apply (V.Fun α (V.PartialConstr c vs)) v = do
-   except $ check (length vs < n) ("Too many arguments to " <> showCtr c)
+   check (length vs < n) ("Too many arguments to " <> showCtr c)
    if length vs < n - 1 then V.Fun <$> new (singleton α) <@> V.PartialConstr c (snoc vs v)
    else pure $ V.Constr α c (snoc vs v)
    where
    n = successful (arity c)
-apply _ v = except $ report $ "Found " <> prettyP v <> ", expected function"
+apply _ v = report $ "Found " <> prettyP v <> ", expected function"
 
 eval :: forall s m. Monad m => Set s Vertex => Env Vertex -> Expr Vertex -> s Vertex -> WithGraphAllocT s m (Val Vertex)
-eval γ (Var x) _ = except $ lookup' x γ
-eval γ (Op op) _ = except $ lookup' op γ
+eval γ (Var x) _ = lookup' x γ
+eval γ (Op op) _ = lookup' op γ
 eval _ (Int α n) αs = V.Int <$> new (insert α αs) <@> n
 eval _ (Float α n) αs = V.Float <$> new (insert α αs) <@> n
 eval _ (Str α s) αs = V.Str <$> new (insert α αs) <@> s
@@ -121,7 +119,7 @@ eval γ (Dictionary α ees) αs = do
       d = D.fromFoldable $ zip ss (zip βs us)
    V.Dictionary <$> new (insert α αs) <@> DictRep d
 eval γ (Constr α c es) αs = do
-   except $ checkArity c (length es)
+   checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
    α' <- new (insert α αs)
    --trace ("Constructing " <> c <> "@" <> show α' <> "; adding dependency to " <> show α) \_ -> do
@@ -129,7 +127,7 @@ eval γ (Constr α c es) αs = do
 eval γ (Matrix α e (x × y) e') αs = do
    v <- eval γ e' αs
    let (i' × β) × (j' × β') = fst (intPair.match v)
-   except $ check
+   check
       (i' × j' >= 1 × 1)
       ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    vss <- sequence $ do
@@ -143,7 +141,7 @@ eval γ (Lambda σ) αs =
    V.Fun <$> new αs <@> V.Closure (γ `restrict` fv σ) D.empty σ
 eval γ (Project e x) αs = do
    v <- eval γ e αs
-   except $ case v of
+   case v of
       V.Record _ xvs -> lookup' x xvs
       _ -> report $ "Found " <> prettyP v <> ", expected record"
 eval γ (App e e') αs = do
@@ -152,7 +150,7 @@ eval γ (App e e') αs = do
    apply v v'
 eval γ (Let (VarDef σ e) e') αs = do
    v <- eval γ e αs
-   γ' × _ × αs' <- except $ match v σ -- terminal meta-type of eliminator is meta-unit
+   γ' × _ × αs' <- match v σ -- terminal meta-type of eliminator is meta-unit
    eval (γ <+> γ') e' αs' -- (αs ∧ αs') for consistency with functions? (similarly for module defs)
 eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
@@ -165,13 +163,13 @@ eval_module γ = go D.empty
    go γ' (Module Nil) _ = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) αs = do
       v <- eval (γ <+> y') e αs
-      γ'' × _ × α' <- except $ match v σ
+      γ'' × _ × α' <- match v σ
       go (y' <+> γ'') (Module ds) α'
    go γ' (Module (Right ρ : ds)) αs = do
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
-evalWithConfig :: forall g s m a. Monad m => Graph g s => GraphConfig g -> Expr a -> m (MayFail ((g × Int) × Expr Vertex × Val Vertex))
+evalWithConfig :: forall g s m a. Monad m => Graph g s => GraphConfig g -> Expr a -> m (String + ((g × Int) × Expr Vertex × Val Vertex))
 evalWithConfig { g, n, γ: γα } e = runWithGraphAllocT (g × n)
    ( do
         eα <- alloc e

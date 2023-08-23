@@ -3,13 +3,15 @@ module Util where
 import Prelude hiding (absurd)
 
 import Control.Apply (lift2)
-import Control.Monad.Except (ExceptT)
+import Control.Comonad (extract)
+import Control.Monad.Except (Except, ExceptT(..), withExceptT, runExceptT, except)
 import Control.MonadPlus (class MonadPlus, empty)
 import Data.Array ((!!), updateAt)
-import Data.Bifunctor (bimap)
-import Data.Either (Either(..), note)
+import Data.Either (Either(..))
+import Data.Either (note) as Either
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
+import Data.Identity (Identity(..))
 import Data.Map (Map)
 import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
@@ -55,31 +57,36 @@ onlyIf :: Boolean -> forall m a. MonadPlus m => a -> m a
 onlyIf true = pure
 onlyIf false = const empty
 
-type MayFail a = String + a
+type MayFail a = Except String a
 type MayFailT a = ExceptT String a
 
-orElse :: forall a. String -> Maybe a -> MayFail a
-orElse = note
+orElse :: forall a m. Monad m => String -> Maybe a -> MayFailT m a
+orElse s = except <<< Either.note s
 
 ignoreMessage :: forall a. MayFail a -> Maybe a
-ignoreMessage (Left _) = Nothing
-ignoreMessage (Right x) = Just x
+ignoreMessage = runExceptT >>> extract >>> case _ of
+   (Left _) -> Nothing
+   (Right x) -> Just x
 
-report :: String -> forall a. MayFail a
-report = Left
+report :: String -> forall a m. Applicative m => MayFailT m a
+report s = except $ Left s
+
+extractRight :: forall a. Either String a -> a
+extractRight (Left msg) = error msg
+extractRight (Right x) = x
 
 successful :: forall a. MayFail a -> a
-successful (Left msg) = error msg
-successful (Right x) = x
+successful (ExceptT (Identity (Right x))) = x
+successful (ExceptT (Identity (Left msg))) = error msg
 
 successfulWith :: String -> forall a. MayFail a -> a
 successfulWith msg = successful <<< with msg
 
 -- If the property fails, add an extra error message.
-with :: String -> forall a. MayFail a -> MayFail a
-with msg = bimap (\msg' -> msg' <> if msg == "" then "" else ("\n" <> msg)) identity
+with :: forall a m. Functor m => String -> MayFailT m a -> MayFailT m a
+with msg = withExceptT (\msg' -> msg' <> if msg == "" then "" else ("\n" <> msg))
 
-check :: Boolean -> String -> MayFail Unit
+check :: forall m. Monad m => Boolean -> String -> MayFailT m Unit
 check true _ = pure unit
 check false msg = report msg
 
@@ -95,7 +102,7 @@ mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >
 unionWithMaybe :: forall a b. Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = M.unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
 
-mayFailEq :: forall a. Show a => Eq a => a -> a -> MayFail a
+mayFailEq :: forall a m. Monad m => Show a => Eq a => a -> a -> MayFailT m a
 mayFailEq x x' = x ≟ x' # orElse (show x <> " ≠ " <> show x')
 
 infixl 4 mayEq as ≟

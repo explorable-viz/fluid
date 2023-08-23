@@ -11,14 +11,14 @@ import Data.Set (subset)
 import Data.Traversable (sequence)
 import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, unionWith, update)
 import Bindings (Var)
-import Util (Endo, MayFail, type (×), (×), assert, report, successfulWith)
+import Util (Endo, MayFailT, type (×), (×), assert, report, successfulWith)
 import Util.Pair (Pair(..))
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
    join :: a -> a -> a
    -- soft failure for joining incompatible eliminators, used to desugar function clauses
-   maybeJoin :: a -> a -> MayFail a
+   maybeJoin :: forall m. Monad m => a -> a -> MayFailT m a
    -- TODO: extract new typeclass for neg
    neg :: Endo a
 
@@ -65,7 +65,7 @@ instance BoundedLattice Boolean
 instance BoundedLattice Unit
 
 definedJoin :: forall a. JoinSemilattice a => a -> a -> a
-definedJoin x = successfulWith "Join undefined" <<< maybeJoin x
+definedJoin x y = successfulWith "Join undefined" (maybeJoin x y)
 
 class BotOf t u | t -> u where
    botOf :: t -> u
@@ -114,7 +114,7 @@ instance JoinSemilattice a => JoinSemilattice (Dict a) where
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
    neg = (<$>) neg
 
-mayFailUpdate :: forall a. JoinSemilattice a => Dict a -> Var × a -> MayFail (Dict a)
+mayFailUpdate :: forall a m. Monad m => JoinSemilattice a => Dict a -> Var × a -> MayFailT m (Dict a)
 mayFailUpdate m (k × v) =
    case lookup k m of
       Nothing -> pure (insert k v m)

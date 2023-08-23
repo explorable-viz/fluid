@@ -5,7 +5,7 @@ import Prelude hiding (absurd, apply, top)
 import Bindings (varAnon)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
-import Data.Either (Either(..), note)
+import Data.Either (Either(..))
 import Data.Exists (mkExists, runExists)
 import Data.List (List(..), (:), length, range, singleton, unzip, zip)
 import Data.Maybe (Maybe(..))
@@ -23,7 +23,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace, ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), MayFail, absurd, both, check, error, report, successful, with, (×))
+import Util (type (×), MayFailT, absurd, both, check, error, report, successful, orElse, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
 import Val (class Ann, DictRep(..), Env, ForeignOp'(..), MatrixRep(..), (<+>), Val, for, lookup', restrict)
@@ -31,13 +31,13 @@ import Val (class Ann, DictRep(..), Env, ForeignOp'(..), MatrixRep(..), (<+>), V
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall a. Ann a => Val a -> Elim a -> MayFail (Env a × Cont a × a × Match)
+match :: forall a m. Monad m => Ann a => Val a -> Elim a -> MayFailT m (Env a × Cont a × a × Match)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × top × MatchVarAnon (erase v))
    | otherwise = pure (D.singleton x v × κ × top × MatchVar x (erase v))
 match (V.Constr α c vs) (ElimConstr m) = do
    with "Pattern mismatch" $ S.singleton c `consistentWith` keys m
-   κ <- note ("Incomplete patterns: no branch for " <> showCtr c) (lookup c m)
+   κ <- lookup c m # orElse ("Incomplete patterns: no branch for " <> showCtr c)
    γ × κ' × α' × ws <- matchMany vs κ
    pure (γ × κ' × (α ∧ α') × MatchConstr c ws)
 match v (ElimConstr m) = do
@@ -50,7 +50,7 @@ match (V.Record α xvs) (ElimRecord xs κ) = do
    pure (γ × κ' × (α ∧ α') × MatchRecord (D.fromFoldable (zip xs' ws)))
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall a. Ann a => List (Val a) -> Cont a -> MayFail (Env a × Cont a × a × List Match)
+matchMany :: forall a m. Monad m => Ann a => List (Val a) -> Cont a -> MayFailT m (Env a × Cont a × a × List Match)
 matchMany Nil κ = pure (empty × κ × top × Nil)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ' × α × w <- match v σ
@@ -64,12 +64,12 @@ closeDefs :: forall a. Env a -> RecDefs a -> a -> Env a
 closeDefs γ ρ α = ρ <#> \σ ->
    let ρ' = ρ `for` σ in V.Fun α $ V.Closure (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
-checkArity :: Ctr -> Int -> MayFail Unit
+checkArity :: forall m. Monad m => Ctr -> Int -> MayFailT m Unit
 checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-apply :: forall a. Ann a => Val a × Val a -> MayFail (AppTrace × Val a)
+apply :: forall a m. Monad m => Ann a => Val a × Val a -> MayFailT m (AppTrace × Val a)
 apply (V.Fun β (V.Closure γ1 ρ σ) × v) = do
    let γ2 = closeDefs γ1 ρ β
    γ3 × e'' × β' × w <- match v σ
@@ -81,7 +81,7 @@ apply (V.Fun α (V.Foreign φ vs) × v) = do
    where
    vs' = vs <> singleton v
 
-   apply' :: forall t. ForeignOp' t -> MayFail (ForeignTrace × Val _)
+   apply' :: forall t. ForeignOp' t -> MayFailT m (ForeignTrace × Val _)
    apply' (ForeignOp' φ') = do
       t × v'' <- do
          if φ'.arity > length vs' then pure $ Nothing × V.Fun α (V.Foreign φ vs')
@@ -97,13 +97,13 @@ apply (V.Fun α (V.PartialConstr c vs) × v) = do
       else V.Constr α c (vs <> singleton v)
 apply (_ × v) = report $ "Found " <> prettyP v <> ", expected function"
 
-apply2 :: forall a. Ann a => Val a × Val a × Val a -> MayFail ((AppTrace × AppTrace) × Val a)
+apply2 :: forall a m. Monad m => Ann a => Val a × Val a × Val a -> MayFailT m ((AppTrace × AppTrace) × Val a)
 apply2 (u1 × v1 × v2) = do
    t1 × u2 <- apply (u1 × v1)
    t2 × v <- apply (u2 × v2)
    pure $ (t1 × t2) × v
 
-eval :: forall a. Ann a => Env a -> Expr a -> a -> MayFail (Trace × Val a)
+eval :: forall a m. Monad m => Ann a => Env a -> Expr a -> a -> MayFailT m (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
 eval γ (Op op) _ = (T.Op op × _) <$> lookup' op γ
 eval _ (Int α n) α' = pure (T.Const × V.Int (α ∧ α') n)
@@ -160,10 +160,10 @@ eval γ (LetRec ρ e) α = do
    t × v <- eval (γ <+> γ') e α
    pure $ T.LetRec (erase <$> ρ) t × v
 
-eval_module :: forall a. Ann a => Env a -> Module a -> a -> MayFail (Env a)
+eval_module :: forall a m. Monad m => Ann a => Env a -> Module a -> a -> MayFailT m (Env a)
 eval_module γ = go empty
    where
-   go :: Env a -> Module a -> a -> MayFail (Env a)
+   go :: Env a -> Module a -> a -> MayFailT m (Env a)
    go γ' (Module Nil) _ = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) α = do
       _ × v <- eval (γ <+> y') e α
