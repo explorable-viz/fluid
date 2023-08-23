@@ -19462,12 +19462,12 @@
     })());
   };
   var intersperse = (x2) => (xs) => intercalate2($List("Cons", x2, Nil))(listMap(applicativeList.pure)(xs));
-  var extractRight = (v) => {
-    if (v.tag === "Left") {
-      return unsafePerformEffect(throwException(error(v._1)));
-    }
+  var fromRight = (v) => {
     if (v.tag === "Right") {
       return v._1;
+    }
+    if (v.tag === "Left") {
+      return unsafePerformEffect(throwException(error(v._1)));
     }
     fail();
   };
@@ -37261,9 +37261,9 @@
   var fresh = /* @__PURE__ */ (() => monadGraphAllocWithGraphA(monadAff)(monadGraphWithGraphAllocT(monadAff)).fresh)();
   var eval_module3 = /* @__PURE__ */ eval_module2(monadAff);
   var runWithGraphAllocT2 = /* @__PURE__ */ runWithGraphAllocT(monadAff);
+  var desug = /* @__PURE__ */ exprFwd(monadStateT1)(joinSemilatticeUnit);
   var alloc2 = /* @__PURE__ */ alloc(monadAff);
   var alloc1 = /* @__PURE__ */ alloc2(traversableExpr);
-  var desug = /* @__PURE__ */ exprFwd(monadIdentity)(joinSemilatticeUnit);
   var $$eval3 = /* @__PURE__ */ $$eval2(monadAff);
   var applicativeExceptT2 = /* @__PURE__ */ applicativeExceptT(monadStateT1);
   var traverse2 = /* @__PURE__ */ (() => {
@@ -37322,19 +37322,16 @@
     const runWithGraphAllocT1 = runWithGraphAllocT2(dictGraph);
     const Set1 = dictGraph.Set1();
     const eval1 = $$eval3(Set1);
-    return (file) => (x2) => (v) => _bind(parseProgram("fluid")(file))((s) => _bind(_map(extractRight)(runWithGraphAllocT1($Tuple(
-      v.g,
-      v.n
-    ))(bind1(alloc1(successful(desug(s))))((e\u03B1) => bind1(eval1(v["\u03B3"])(e\u03B1)(Set1.empty))((v\u03B1) => applicativeExceptT2.pure($Tuple(
+    return (file) => (x2) => (v) => _bind(parseProgram("fluid")(file))((s) => _bind(_map(fromRight)(runWithGraphAllocT1($Tuple(v.g, v.n))(bind1(desug(s))((e) => bind1(alloc1(e))((e\u03B1) => bind1(eval1(v["\u03B3"])(e\u03B1)(Set1.empty))((v\u03B1) => applicativeExceptT2.pure($Tuple(
       v["\u03B3"],
       runST(bind_(newImpl)(poke3(x2)(v\u03B1)))
-    )))))))((v1) => _pure($Tuple({ g: v1._1._1, n: v1._1._2, "\u03B3": v1._2._1 }, v1._2._2))));
+    ))))))))((v1) => _pure($Tuple({ g: v1._1._1, n: v1._1._2, "\u03B3": v1._2._1 }, v1._2._2))));
   };
   var defaultImports = (dictSet) => {
     const loadModule1 = loadModule(dictSet);
     return bind1(traverse2(alloc22)(primitives))((\u03B3\u03B1) => bind1(bind1(loadModule1("prelude")(\u03B3\u03B1))(loadModule1("graphics")))(loadModule1("convolution")));
   };
-  var openDefaultImports = (dictGraph) => _bind(_map(extractRight)(runWithGraphAllocT2(dictGraph)($Tuple(dictGraph.empty, 0))(defaultImports(dictGraph.Set1()))))((v) => _pure({
+  var openDefaultImports = (dictGraph) => _bind(_map(fromRight)(runWithGraphAllocT2(dictGraph)($Tuple(dictGraph.empty, 0))(defaultImports(dictGraph.Set1()))))((v) => _pure({
     g: v._1._1,
     n: v._1._2,
     "\u03B3": v._2
