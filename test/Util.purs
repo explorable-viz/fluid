@@ -99,57 +99,58 @@ testParse s = do
 
 testTrace :: SE.Expr 𝔹 -> Env 𝔹 -> TestConfig -> MayFailT Aff (Val 𝔹 × E.Expr 𝔹)
 testTrace s γ { δv, bwd_expect, fwd_expect } = do
-   -- forward
+   -- | Eval
    e <- desug s
    t × v <- eval γ e bot
-   -- backward
+   -- | Backward
    let
       v' = δv v
       { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
       s' = desugBwd e' (erase s)
-   -- round-trip
+   -- | Forward (round-tripping)
    _ × v'' <- desug s' >>= flip (eval γ') top
 
-   -- check backward selections
-   unless (null bwd_expect) do
-      log ("Annotated\n" <> prettyP s')
-      lift $ checkPretty "Source selection" bwd_expect s'
-   -- check round-trip selections
-   unless (isGraphical v') do
-      lift $ checkPretty "Value" fwd_expect v''
+   lift $ do
+      -- | Check backward selections
+      unless (null bwd_expect) do
+         log ("Annotated\n" <> prettyP s')
+         checkPretty "Source selection" bwd_expect s'
+      -- | Check round-trip selections
+      unless (isGraphical v') do
+         checkPretty "Value" fwd_expect v''
    pure (v' × e')
 
 testGraph :: Val 𝔹 -> E.Expr 𝔹 -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
 testGraph v𝔹 e𝔹 gconf { fwd_expect } = do
+   -- | Eval
    (g × _) × (eα × vα) <- evalWithConfig gconf (erase e𝔹) >>= except
-   lift $ do
-      -- | Test backward slicing
-      let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
-      log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
-      let gbwd = G.bwdSlice αs_out g
-      log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
+   -- | Backward
+   let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
+   log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
+   let gbwd = G.bwdSlice αs_out g
+   log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
 
-      -- | Test forward slicing (via round-tripping)
-      let (αs_in :: S.Set Vertex) = sinks gbwd
-      log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
-      let gfwd = G.fwdSlice αs_in g
-      log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
+   -- | Forward (round-tripping)
+   let (αs_in :: S.Set Vertex) = sinks gbwd
+   log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
+   let gfwd = G.fwdSlice αs_in g
+   log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
+
+   lift $ do
+      -- | Check graph/trace-based slicing procedures agree on expression
+      let e𝔹' = select𝔹s eα αs_in
+      unless (eq e𝔹 e𝔹') do
+         log ("Expr 𝔹 expect: \n" <> prettyP e𝔹)
+         log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
+         fail "not equal"
+      -- | Check graph/trace-based slicing procedures agree on round-tripped value.
+      let v𝔹' = select𝔹s vα (vertices gfwd)
+      unless (isGraphical v𝔹' || eq fwd_expect (prettyP v𝔹')) do
+         log ("Val 𝔹 expect: \n" <> fwd_expect)
+         log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
+         fail "not equal"
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
-
-      do
-         -- | Check graph/trace-based slicing procedures agree on expression
-         let e𝔹' = select𝔹s eα αs_in
-         unless (eq e𝔹 e𝔹') do
-            log ("Expr 𝔹 expect: \n" <> prettyP e𝔹)
-            log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
-            fail "not equal"
-         -- | Check graph/trace-based slicing procedures agree on round-tripped value.
-         let v𝔹' = select𝔹s vα (vertices gfwd)
-         unless (isGraphical v𝔹' || eq fwd_expect (prettyP v𝔹')) do
-            log ("Val 𝔹 expect: \n" <> fwd_expect)
-            log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
-            fail "not equal"
 
 withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
 withDefaultImports = beforeAll openDefaultImports
