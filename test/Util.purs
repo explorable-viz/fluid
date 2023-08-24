@@ -9,8 +9,8 @@ import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
-import Data.Maybe (Maybe(..), isNothing)
 import Data.Set (Set) as S
+import Data.String (null)
 import Data.Traversable (traverse_)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
@@ -62,91 +62,94 @@ shouldSatisfy msg v pred =
       $ fail
       $ show v <> " doesn't satisfy predicate: " <> msg
 
+type TestConfig =
+   { δv :: Selector Val
+   , fwd_expect :: String
+   , bwd_expect :: String
+   }
+
+-- fwd_expect: prettyprinted value after bwd then fwd round-trip
+testWithSetup :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
+testWithSetup s gconfig tconfig =
+   runExceptT
+      ( do
+           -- test parsing
+           testParse s
+           -- test trace-based
+           let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> gconfig.γ)
+           v𝔹 × e𝔹 <- testTrace s𝔹 γ𝔹 tconfig
+           -- test graph-based
+           testGraph v𝔹 e𝔹 gconfig tconfig
+      ) >>=
+      case _ of
+         Left msg -> fail msg
+         Right unit -> pure unit
+
 testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do
    let src = prettyP s
    s' <- parse src program
-   trace ("Non-Annotated:\n" <> src) (\_ ->
-      unless (eq (erase s) (erase s')) do
-         log ("SRC\n" <> show (erase s))
-         log ("NEW\n" <> show (erase s'))
-         lift $ fail "not equal")
+   trace ("Non-Annotated:\n" <> src)
+      ( \_ ->
+           unless (eq (erase s) (erase s')) do
+              log ("SRC\n" <> show (erase s))
+              log ("NEW\n" <> show (erase s'))
+              lift $ fail "not equal"
+      )
 
-testTrace' :: SE.Expr 𝔹 -> Env 𝔹 -> Selector Val -> Maybe String -> String -> MayFailT Aff (Val 𝔹 × E.Expr 𝔹)
-testTrace' s γ v_selector bwd_expect fwd_expect = do
+testTrace :: SE.Expr 𝔹 -> Env 𝔹 -> TestConfig -> MayFailT Aff (Val 𝔹 × E.Expr 𝔹)
+testTrace s γ { δv, bwd_expect, fwd_expect } = do
    -- forward
    e <- desug s
    t × v <- eval γ e bot
    -- backward
-   let v_selec = v_selector v
-       { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v_selec t
-       s' = desugBwd e' (erase s)
+   let
+      v' = δv v
+      { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
+      s' = desugBwd e' (erase s)
    -- round-trip
-   _ × v' <- desug s' >>= flip (eval γ') top
+   _ × v'' <- desug s' >>= flip (eval γ') top
 
    -- check backward selections
-   trace ("Annotated\n" <> prettyP s') (\_ -> do
-      case bwd_expect of
-         Just src -> lift $ (checkPretty "Source selection") src s'
-         Nothing -> pure unit)
+   unless (null bwd_expect) do
+      log ("Annotated\n" <> prettyP s')
+      lift $ checkPretty "Source selection" bwd_expect s'
    -- check round-trip selections
    unless (isGraphical v') do
-      lift $ checkPretty "Value" fwd_expect v'
+      lift $ checkPretty "Value" fwd_expect v''
    pure (v' × e')
 
--- fwd_expect: prettyprinted value after bwd then fwd round-trip
-testWithSetup :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> String -> Selector Val -> Maybe String -> Aff Unit
-testWithSetup gconfig s fwd_expect v_selector bwd_expect =
-   runExceptT (testParse s >>= \_ -> testTrace gconfig >>= testGraph gconfig) >>=
-      case _ of
-         Left msg -> fail msg
-         Right unit -> pure unit
-   where
-   testTrace :: GraphConfig (GraphImpl S.Set) -> MayFailT Aff (Val 𝔹 × E.Expr 𝔹)
-   testTrace { γ } = do
-      let
-         γ𝔹 = botOf <$> γ
-         s𝔹 = botOf s
-      testTrace' s𝔹 γ𝔹 v_selector bwd_expect fwd_expect
+testGraph :: Val 𝔹 -> E.Expr 𝔹 -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
+testGraph v𝔹 e𝔹 gconf { fwd_expect } = do
+   (g × _) × (eα × vα) <- evalWithConfig gconf (erase e𝔹) >>= except
+   lift $ do
+      -- | Test backward slicing
+      let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
+      log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
+      let gbwd = G.bwdSlice αs_out g
+      log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
 
-   testGraph :: GraphConfig (GraphImpl S.Set) -> Val 𝔹 × E.Expr 𝔹 -> MayFailT Aff Unit
-   testGraph gconf (v𝔹 × e𝔹) = do
-      (g × _) × (eα × vα) <- evalWithConfig gconf (erase e𝔹) >>= except
-      lift $ do
-         unless (isNothing bwd_expect) $ do
-            log ("Expr 𝔹:\n" <> prettyP e𝔹)
-            log ("Val 𝔹:\n" <> prettyP v𝔹)
-            log ("Expr Vertex:\n" <> prettyP eα)
-            log ("Val Vertex:\n" <> prettyP vα)
-         -- log ("Graph sources:\n" <> prettyP (sources g))
+      -- | Test forward slicing (via round-tripping)
+      let (αs_in :: S.Set Vertex) = sinks gbwd
+      log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
+      let gfwd = G.fwdSlice αs_in g
+      log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
+      sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
+         (flip subset (sources gfwd))
 
-         -- | Test backward slicing
-         let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
-         log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
-         let gbwd = G.bwdSlice αs_out g
-         log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
-
-         -- | Test forward slicing (via round-tripping)
-         let (αs_in :: S.Set Vertex) = sinks gbwd
-         log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
-         let gfwd = G.fwdSlice αs_in g
-         log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
-         sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
-            (flip subset (sources gfwd))
-
-         do
-            -- | Check graph/trace-based slicing procedures agree on expression
-            let e𝔹' = select𝔹s eα αs_in
-            unless (eq e𝔹 e𝔹') do
-               log ("Expr 𝔹 expect: \n" <> prettyP e𝔹)
-               log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
-               fail "not equal"
-            -- | Check graph/trace-based slicing procedures agree on round-tripped value.
-            let v𝔹' = select𝔹s vα (vertices gfwd)
-            unless (isGraphical v𝔹' || eq fwd_expect (prettyP v𝔹')) do
-               log ("Val 𝔹 expect: \n" <> fwd_expect)
-               log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
-               fail "not equal"
+      do
+         -- | Check graph/trace-based slicing procedures agree on expression
+         let e𝔹' = select𝔹s eα αs_in
+         unless (eq e𝔹 e𝔹') do
+            log ("Expr 𝔹 expect: \n" <> prettyP e𝔹)
+            log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
+            fail "not equal"
+         -- | Check graph/trace-based slicing procedures agree on round-tripped value.
+         let v𝔹' = select𝔹s vα (vertices gfwd)
+         unless (isGraphical v𝔹' || eq fwd_expect (prettyP v𝔹')) do
+            log ("Val 𝔹 expect: \n" <> fwd_expect)
+            log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
+            fail "not equal"
 
 withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
 withDefaultImports = beforeAll openDefaultImports
@@ -159,7 +162,7 @@ testMany :: Array (File × String) → Test Unit
 testMany fxs = withDefaultImports $ traverse_ test fxs
    where
    test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
-      it (show file) (\(gconfig × s) -> testWithSetup gconfig s fwd_expect identity Nothing)
+      it (show file) (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
 
 testBwdMany :: Array (File × File × Selector Val × String) → Test Unit
 testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
@@ -167,16 +170,17 @@ testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
    testBwd (file × file_expect × δv × fwd_expect) =
       beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
          it (show $ folder <> file)
-            (\(gconfig × s) -> do
-               bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
-               testWithSetup gconfig s fwd_expect δv (Just bwd_expect))
+            ( \(gconfig × s) -> do
+                 bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
+                 testWithSetup s gconfig { δv, fwd_expect, bwd_expect }
+            )
    folder = File "slicing/"
 
 testWithDatasetMany :: Array (File × File) -> Test Unit
 testWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
    where
    testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
-      it (show file) (\(gconfig × s) -> testWithSetup gconfig s "" identity Nothing)
+      it (show file) (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
 
 testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
