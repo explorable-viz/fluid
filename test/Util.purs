@@ -9,7 +9,7 @@ import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
-import Data.Maybe (Maybe(..), isJust, isNothing)
+import Data.Maybe (Maybe(..), isNothing)
 import Data.Set (Set) as S
 import Data.Traversable (traverse_)
 import DataType (dataTypeFor, typeName)
@@ -66,54 +66,33 @@ testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do
    let src = prettyP s
    s' <- parse src program
-   trace ("Non-Annotated:\n" <> src) $ \_ -> lift $
+   trace ("Non-Annotated:\n" <> src) (\_ ->
       unless (eq (erase s) (erase s')) do
          log ("SRC\n" <> show (erase s))
          log ("NEW\n" <> show (erase s'))
-         fail "not equal"
+         lift $ fail "not equal")
 
-testTrace' :: SE.Expr 𝔹 -> Env 𝔹 -> Selector Val -> String -> String -> MayFailT Aff Unit
+testTrace' :: SE.Expr 𝔹 -> Env 𝔹 -> Selector Val -> Maybe String -> String -> MayFailT Aff (Val 𝔹 × E.Expr 𝔹)
 testTrace' s γ v_selector bwd_expect fwd_expect = do
-   -- forward desugaring
+   -- forward
    e <- desug s
-   -- forward evaluation
    t × v <- eval γ e bot
+   -- backward
    let v_selec = v_selector v
-   -- backward evaluation
-   let { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v_selec t
-   -- backward desugaring
+       { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v_selec t
        s' = desugBwd e' (erase s)
-
-   trace ("Annotated\n" <> prettyP s') \_ -> do
-      lift $ checkPretty "Source selection" (prettyP bwd_expect) s'
-
-   -- round-trip evaluation
+   -- round-trip
    _ × v' <- desug s' >>= flip (eval γ') top
+
+   -- check backward selections
+   trace ("Annotated\n" <> prettyP s') (\_ -> do
+      case bwd_expect of
+         Just src -> lift $ (checkPretty "Source selection") src s'
+         Nothing -> pure unit)
+   -- check round-trip selections
    unless (isGraphical v') do
-      lift (checkPretty "Value" fwd_expect v')
-   pure unit
-
--- testTrace :: E.Expr 𝔹 -> Env 𝔹 -> Val 𝔹 -> String -> MayFailT Aff Unit
--- testTrace e γ v_selec fwd_expect = do
---    -- forward evaluation
---    t × v <- eval γ e bot
---    -- backward evaluation
---    let { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v_selec t
---    -- round-trip evaluation
---    _ × v' <- desug s' >>= flip (eval γ') top
---    unless (isGraphical v')
---       (lift $ checkPretty "Value" fwd_expect v')
---    pure unit
-
--- testTraceBwd :: Trace -> Val 𝔹 -> E.Expr 𝔹 -> Env 𝔹 -> Val 𝔹 -> String -> MayFailT Aff Unit
--- testTraceBwd t v e γ fwd_expect = do
---    -- backward evaluation
---    let { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v_selec t
---    -- round-trip evaluation
---    _ × v' <- desug s' >>= flip (eval γ') top
---    unless (isGraphical v')
---       (lift $ checkPretty "Value" fwd_expect v')
---    pure unit
+      lift $ checkPretty "Value" fwd_expect v'
+   pure (v' × e')
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 testWithSetup :: GraphConfig (GraphImpl S.Set) -> SE.Expr Unit -> String -> Selector Val -> Maybe String -> Aff Unit
@@ -128,29 +107,12 @@ testWithSetup gconfig s fwd_expect v_selector bwd_expect =
       let
          γ𝔹 = botOf <$> γ
          s𝔹 = botOf s
-      e𝔹 <- desug s𝔹
-      t × v𝔹 <- eval γ𝔹 e𝔹 bot
-      let
-         v𝔹' = v_selector v𝔹
-         { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
-         s𝔹' = desugBwd e𝔹' (erase s𝔹)
-      _ × v𝔹'' <- desug s𝔹' >>= flip (eval γ𝔹') top
-      lift $ do
-         unless (isGraphical v𝔹'')
-            (checkPretty "Value" fwd_expect v𝔹'')
-         trace ("Annotated\n" <> prettyP s𝔹') \_ -> do
-            case bwd_expect of
-               Nothing -> pure unit
-               Just expect -> do
-                  checkPretty "Source selection" expect s𝔹'
-         pure (v𝔹' × e𝔹') -- output slice and corresponding input slice
+      testTrace' s𝔹 γ𝔹 v_selector bwd_expect fwd_expect
 
    testGraph :: GraphConfig (GraphImpl S.Set) -> Val 𝔹 × E.Expr 𝔹 -> MayFailT Aff Unit
    testGraph gconf (v𝔹 × e𝔹) = do
       (g × _) × (eα × vα) <- evalWithConfig gconf (erase e𝔹) >>= except
       lift $ do
-         unless (isGraphical v𝔹 || isJust bwd_expect)
-            (checkPretty "Value" fwd_expect (erase vα))
          unless (isNothing bwd_expect) $ do
             log ("Expr 𝔹:\n" <> prettyP e𝔹)
             log ("Val 𝔹:\n" <> prettyP v𝔹)
@@ -172,7 +134,7 @@ testWithSetup gconfig s fwd_expect v_selector bwd_expect =
          sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
             (flip subset (sources gfwd))
 
-         unless (isNothing bwd_expect) $ do
+         do
             -- | Check graph/trace-based slicing procedures agree on expression
             let e𝔹' = select𝔹s eα αs_in
             unless (eq e𝔹 e𝔹') do
@@ -181,7 +143,7 @@ testWithSetup gconfig s fwd_expect v_selector bwd_expect =
                fail "not equal"
             -- | Check graph/trace-based slicing procedures agree on round-tripped value.
             let v𝔹' = select𝔹s vα (vertices gfwd)
-            unless (eq fwd_expect (prettyP v𝔹')) do
+            unless (isGraphical v𝔹' || eq fwd_expect (prettyP v𝔹')) do
                log ("Val 𝔹 expect: \n" <> fwd_expect)
                log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
                fail "not equal"
