@@ -52,8 +52,8 @@ run = runMocha -- no reason at all to see the word "Mocha"
 
 checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
 checkPretty msg expect x =
-   unless (prettyP x `eq` expect)
-      $ fail msg
+   unless (expect `eq` prettyP x)
+      $ fail (msg <> "\nExpected: \n" <> expect <> "\nGotten:" <> prettyP x)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
@@ -113,7 +113,6 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
    lift $ do
       -- | Check backward selections
       unless (null bwd_expect) do
-         log ("Annotated\n" <> prettyP s')
          checkPretty "Source selection" bwd_expect s'
       -- | Check round-trip selections
       unless (isGraphical v') do
@@ -123,32 +122,28 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
 testGraph :: Val 𝔹 -> E.Expr 𝔹 -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
 testGraph v𝔹 e𝔹 gconf { fwd_expect } = do
    -- | Eval
-   (g × _) × (eα × vα) <- evalWithConfig gconf (erase e𝔹) >>= except
+   (g × _) × (eα × vα) <- evalWithConfig gconf e𝔹 >>= except
    -- | Backward
-   let (αs_out :: S.Set Vertex) = selectVertices vα v𝔹
+   let
+      αs_out = selectVertices vα v𝔹
+      gbwd = G.bwdSlice αs_out g
+      αs_in = sinks gbwd
+      e𝔹' = select𝔹s eα αs_in
    log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
-   let gbwd = G.bwdSlice αs_out g
    log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
-
    -- | Forward (round-tripping)
-   let (αs_in :: S.Set Vertex) = sinks gbwd
+   let
+      gfwd = G.fwdSlice αs_in g
+      v𝔹' = select𝔹s vα (vertices gfwd)
    log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
-   let gfwd = G.fwdSlice αs_in g
    log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
 
    lift $ do
       -- | Check graph/trace-based slicing procedures agree on expression
-      let e𝔹' = select𝔹s eα αs_in
-      unless (eq e𝔹 e𝔹') do
-         checkPretty ("Expr 𝔹 expect: \n" <> fwd_expect <> "\nExpr 𝔹 gotten: \n" <> prettyP e𝔹')
-            (prettyP e𝔹)
-            e𝔹'
+      checkPretty "Graph-based backward slicing" (prettyP e𝔹) e𝔹'
       -- | Check graph/trace-based slicing procedures agree on round-tripped value.
-      let v𝔹' = select𝔹s vα (vertices gfwd)
       unless (isGraphical v𝔹') do
-         checkPretty ("Val 𝔹 expect: \n" <> fwd_expect <> "\nVal 𝔹 gotten: \n" <> prettyP v𝔹')
-            fwd_expect
-            v𝔹'
+         checkPretty "Graph-based round-tripping" fwd_expect v𝔹'
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
 
