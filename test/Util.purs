@@ -34,7 +34,7 @@ import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Set (subset)
 import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
-import Test.Spec.Assertions (fail, shouldEqual)
+import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, type (×), (×), successful)
 import Val (Env, Val(..), class Ann, (<+>))
@@ -51,9 +51,9 @@ run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
 checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
-checkPretty _ expect x =
-   trace (":\n") \_ ->
-      prettyP x `shouldEqual` expect
+checkPretty msg expect x =
+   unless (prettyP x `eq` expect)
+      $ fail msg
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
@@ -140,15 +140,15 @@ testGraph v𝔹 e𝔹 gconf { fwd_expect } = do
       -- | Check graph/trace-based slicing procedures agree on expression
       let e𝔹' = select𝔹s eα αs_in
       unless (eq e𝔹 e𝔹') do
-         log ("Expr 𝔹 expect: \n" <> prettyP e𝔹)
-         log ("Expr 𝔹 gotten: \n" <> prettyP e𝔹')
-         fail "not equal"
+         checkPretty ("Expr 𝔹 expect: \n" <> fwd_expect <> "\nExpr 𝔹 gotten: \n" <> prettyP e𝔹')
+            (prettyP e𝔹)
+            e𝔹'
       -- | Check graph/trace-based slicing procedures agree on round-tripped value.
       let v𝔹' = select𝔹s vα (vertices gfwd)
-      unless (isGraphical v𝔹' || eq fwd_expect (prettyP v𝔹')) do
-         log ("Val 𝔹 expect: \n" <> fwd_expect)
-         log ("Val 𝔹 gotten: \n" <> prettyP v𝔹')
-         fail "not equal"
+      unless (isGraphical v𝔹') do
+         checkPretty ("Val 𝔹 expect: \n" <> fwd_expect <> "\nVal 𝔹 gotten: \n" <> prettyP v𝔹')
+            fwd_expect
+            v𝔹'
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
 
