@@ -9,9 +9,9 @@ import Data.Map (Map, lookup, delete, insertWith)
 import Data.Map (empty) as M
 import Data.Set (Set)
 import Data.Tuple (fst)
-import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN)
+import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN, sinks, op)
 import Graph.GraphWriter (WithGraph, extend, runWithGraph)
-import Set (class Set, empty, insert, member, singleton, union, unions)
+import Set (class Set, empty, insert, member, singleton, union, unions, difference)
 import Util ((×), definitely)
 
 type PendingSlice s = Map Vertex (s Vertex)
@@ -28,6 +28,10 @@ bwdVertices g' visited (α : αs) =
       let βs = outN g' α
       extend α βs
       bwdVertices g' (visited # insert α) (L.fromFoldable βs <> αs)
+
+fwdSliceDeMorgan :: forall g s. Graph g s => s Vertex -> g -> g
+fwdSliceDeMorgan αs g' =
+   bwdSlice (sinks g' `difference` αs) (op g')
 
 fwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
 fwdSlice αs g' =
