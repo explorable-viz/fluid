@@ -22,8 +22,7 @@ import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import EvalGraph (GraphConfig, evalWithConfig)
-import Expr (Expr) as E
-import Graph (Vertex, sinks, sources, vertices)
+import Graph (sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice) as G
 import Graph.Slice (selectVertices, select𝔹s)
@@ -37,7 +36,7 @@ import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, type (×), (×), successful)
-import Val (Env, Val(..), class Ann, (<+>))
+import Val (Val(..), class Ann, (<+>))
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
@@ -53,7 +52,7 @@ run = runMocha -- no reason at all to see the word "Mocha"
 checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
 checkPretty msg expect x =
    unless (expect `eq` prettyP x)
-      $ fail (msg <> "\nExpected: \n" <> expect <> "\nGotten:" <> prettyP x)
+      $ fail (msg <> "\nExpected:\n" <> expect <> "\nGotten:\n" <> prettyP x)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
@@ -76,10 +75,9 @@ testWithSetup s gconfig tconfig =
            -- test parsing
            testParse s
            -- test trace-based
-           let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> gconfig.γ)
-           v𝔹 × e𝔹 <- testTrace s𝔹 γ𝔹 tconfig
+           v𝔹 <- testTrace s gconfig tconfig
            -- test graph-based
-           testGraph v𝔹 e𝔹 gconfig tconfig
+           testGraph s gconfig tconfig v𝔹
       ) >>=
       case _ of
          Left msg -> fail msg
@@ -97,51 +95,51 @@ testParse s = do
               lift $ fail "not equal"
       )
 
-testTrace :: SE.Expr 𝔹 -> Env 𝔹 -> TestConfig -> MayFailT Aff (Val 𝔹 × E.Expr 𝔹)
-testTrace s γ { δv, bwd_expect, fwd_expect } = do
+testTrace :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff (Val 𝔹)
+testTrace s { γ } { δv, bwd_expect, fwd_expect } = do
+   let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γ)
    -- | Eval
-   e <- desug s
-   t × v <- eval γ e bot
+   e𝔹 <- desug s𝔹
+   t × v𝔹 <- eval γ𝔹 e𝔹 bot
    -- | Backward
    let
-      v' = δv v
-      { γ: γ', e: e' } = evalBwd (erase <$> γ) (erase e) v' t
-      s' = desugBwd e' (erase s)
+      v𝔹' = δv v𝔹
+      { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
+      s𝔹' = desugBwd e𝔹' (erase s)
    -- | Forward (round-tripping)
-   _ × v'' <- desug s' >>= flip (eval γ') top
+   _ × v𝔹'' <- desug s𝔹' >>= flip (eval γ𝔹') top
 
    lift $ do
       -- | Check backward selections
       unless (null bwd_expect) do
-         checkPretty "Source selection" bwd_expect s'
+         checkPretty "Source selection" bwd_expect s𝔹'
       -- | Check round-trip selections
-      unless (isGraphical v') do
-         checkPretty "Value" fwd_expect v''
-   pure (v' × e')
+      unless (isGraphical v𝔹') do
+         checkPretty "Value" fwd_expect v𝔹''
+   pure v𝔹'
 
-testGraph :: Val 𝔹 -> E.Expr 𝔹 -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
-testGraph v𝔹 e𝔹 gconf { fwd_expect } = do
+testGraph :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Val 𝔹 -> MayFailT Aff Unit
+testGraph s gconf { bwd_expect, fwd_expect } v𝔹 = do
    -- | Eval
-   (g × _) × (eα × vα) <- evalWithConfig gconf e𝔹 >>= except
+   e <- desug s
+   (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
    -- | Backward
    let
       αs_out = selectVertices vα v𝔹
       gbwd = G.bwdSlice αs_out g
       αs_in = sinks gbwd
       e𝔹' = select𝔹s eα αs_in
-   log ("Selections on outputs: \n" <> prettyP αs_out <> "\n")
-   log ("Backward-sliced graph: \n" <> prettyP gbwd <> "\n")
+      s𝔹' = desugBwd e𝔹' (erase s)
    -- | Forward (round-tripping)
    let
       gfwd = G.fwdSlice αs_in g
       v𝔹' = select𝔹s vα (vertices gfwd)
-   log ("Selections on inputs: \n" <> prettyP αs_in <> "\n")
-   log ("Forward-sliced graph: \n" <> prettyP gfwd <> "\n")
 
    lift $ do
-      -- | Check graph/trace-based slicing procedures agree on expression
-      checkPretty "Graph-based backward slicing" (prettyP e𝔹) e𝔹'
-      -- | Check graph/trace-based slicing procedures agree on round-tripped value.
+      -- | Check backward selections
+      unless (null bwd_expect) do
+         checkPretty "Graph-based backward slicing" bwd_expect s𝔹'
+      -- | Check round-trip selections
       unless (isGraphical v𝔹') do
          checkPretty "Graph-based round-tripping" fwd_expect v𝔹'
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
