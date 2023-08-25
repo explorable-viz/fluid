@@ -72,11 +72,8 @@ testWithSetup :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> 
 testWithSetup s gconfig tconfig =
    runExceptT
       ( do
-           -- test parsing
            testParse s
-           -- test trace-based
            testTrace s gconfig tconfig
-           -- test graph-based
            testGraph s gconfig tconfig
       ) >>=
       case _ of
@@ -105,17 +102,17 @@ testTrace s { γ } { δv, bwd_expect, fwd_expect } = do
    let
       v𝔹' = δv v𝔹
       { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
-      s𝔹' = desugBwd e𝔹' (erase s)
+      s𝔹' = desugBwd e𝔹' s
    -- | Forward (round-tripping)
    _ × v𝔹'' <- desug s𝔹' >>= flip (eval γ𝔹') top
 
    lift $ do
       -- | Check backward selections
       unless (null bwd_expect) do
-         checkPretty "Source selection" bwd_expect s𝔹'
+         checkPretty "Trace-based source selection" bwd_expect s𝔹'
       -- | Check round-trip selections
       unless (isGraphical v𝔹') do
-         checkPretty "Value" fwd_expect v𝔹''
+         checkPretty "Trace-based value" fwd_expect v𝔹''
 
 testGraph :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
 testGraph s gconf { δv, bwd_expect, fwd_expect } = do
@@ -127,20 +124,25 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
       αs_out = selectVertices (δv (botOf vα)) vα
       gbwd = G.bwdSlice αs_out g
       αs_in = sinks gbwd
-      e𝔹' = select𝔹s eα αs_in
-      s𝔹' = desugBwd e𝔹' (erase s)
+      e𝔹 = select𝔹s eα αs_in
+      s𝔹 = desugBwd e𝔹 (erase s)
    -- | Forward (round-tripping)
    let
       gfwd = G.fwdSlice αs_in g
-      v𝔹' = select𝔹s vα (vertices gfwd)
+      v𝔹 = select𝔹s vα (vertices gfwd)
 
+   {- | Forward (round-tripping) using De Morgan dual
+      gfwd' = G.fwdSliceDeMorgan αs_in g
+      v𝔹' = select𝔹s vα (vertices gfwd') <#> not
+   -}
    lift $ do
       -- | Check backward selections
       unless (null bwd_expect) do
-         checkPretty "Graph-based backward slicing" bwd_expect s𝔹'
+         checkPretty "Graph-based source selection" bwd_expect s𝔹
       -- | Check round-trip selections
-      unless (isGraphical v𝔹') do
-         checkPretty "Graph-based round-tripping" fwd_expect v𝔹'
+      unless (isGraphical v𝔹) do
+         checkPretty "Graph-based value" fwd_expect v𝔹
+      -- checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
 
