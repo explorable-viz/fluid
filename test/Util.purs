@@ -26,7 +26,7 @@ import Graph (sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice) as G
 import Graph.Slice (selectVertices, select𝔹s)
-import Lattice (𝔹, bot, botOf, erase)
+import Lattice (bot, botOf, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
@@ -75,9 +75,9 @@ testWithSetup s gconfig tconfig =
            -- test parsing
            testParse s
            -- test trace-based
-           v𝔹 <- testTrace s gconfig tconfig
+           testTrace s gconfig tconfig
            -- test graph-based
-           testGraph s gconfig tconfig v𝔹
+           testGraph s gconfig tconfig
       ) >>=
       case _ of
          Left msg -> fail msg
@@ -95,7 +95,7 @@ testParse s = do
               lift $ fail "not equal"
       )
 
-testTrace :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff (Val 𝔹)
+testTrace :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
 testTrace s { γ } { δv, bwd_expect, fwd_expect } = do
    let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γ)
    -- | Eval
@@ -116,16 +116,15 @@ testTrace s { γ } { δv, bwd_expect, fwd_expect } = do
       -- | Check round-trip selections
       unless (isGraphical v𝔹') do
          checkPretty "Value" fwd_expect v𝔹''
-   pure v𝔹'
 
-testGraph :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Val 𝔹 -> MayFailT Aff Unit
-testGraph s gconf { bwd_expect, fwd_expect } v𝔹 = do
+testGraph :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
+testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
    (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
    -- | Backward
    let
-      αs_out = selectVertices vα v𝔹
+      αs_out = selectVertices (δv (botOf vα)) vα
       gbwd = G.bwdSlice αs_out g
       αs_in = sinks gbwd
       e𝔹' = select𝔹s eα αs_in
