@@ -37322,10 +37322,10 @@
     const runWithGraphAllocT1 = runWithGraphAllocT2(dictGraph);
     const Set1 = dictGraph.Set1();
     const eval1 = $$eval3(Set1);
-    return (file) => (x2) => (v) => _bind(parseProgram("fluid")(file))((s) => _bind(_map(fromRight)(runWithGraphAllocT1($Tuple(v.g, v.n))(bind1(desug(s))((e) => bind1(alloc1(e))((e\u03B1) => bind1(eval1(v["\u03B3"])(e\u03B1)(Set1.empty))((v\u03B1) => applicativeExceptT2.pure($Tuple(
-      v["\u03B3"],
+    return (file) => (x2) => (v) => _bind(parseProgram("fluid")(file))((s) => _bind(_map(fromRight)(runWithGraphAllocT1($Tuple(v.g, v.n))(bind1(desug(s))((e) => bind1(alloc1(e))((e\u03B1) => bind1(eval1(v["\u03B3\u03B1"])(e\u03B1)(Set1.empty))((v\u03B1) => applicativeExceptT2.pure($Tuple(
+      v["\u03B3\u03B1"],
       runST(bind_(newImpl)(poke3(x2)(v\u03B1)))
-    ))))))))((v1) => _pure($Tuple({ g: v1._1._1, n: v1._1._2, "\u03B3": v1._2._1 }, v1._2._2))));
+    ))))))))((v1) => _pure($Tuple({ g: v1._1._1, n: v1._1._2, "\u03B3\u03B1": v1._2._1 }, v1._2._2))));
   };
   var defaultImports = (dictSet) => {
     const loadModule1 = loadModule(dictSet);
@@ -37334,7 +37334,7 @@
   var openDefaultImports = (dictGraph) => _bind(_map(fromRight)(runWithGraphAllocT2(dictGraph)($Tuple(dictGraph.empty, 0))(defaultImports(dictGraph.Set1()))))((v) => _pure({
     g: v._1._1,
     n: v._1._2,
-    "\u03B3": v._2
+    "\u03B3\u03B1": v._2
   }));
 
   // output-es/Web.Event.EventTarget/foreign.js
@@ -37428,7 +37428,7 @@
     const $1 = "linking/" + v.file1;
     const $2 = "linking/" + v.file2;
     return _bind(_bind(openDefaultImports2)(openDatasetAs2("example/linking/" + v.dataFile)(v.x)))((v2) => _bind(applyAff.apply(_map(Tuple)(parseProgram("fluid/example")($1)))(parseProgram("fluid/example")($2)))((v3) => {
-      const \u03B30 = _fmapObject(v2._1["\u03B3"], botOf);
+      const \u03B30 = _fmapObject(v2._1["\u03B3\u03B1"], botOf);
       const xv0 = _fmapObject(v2._2, botOf);
       const s2 = functorExpr2.map((v$1) => false)(v3._2);
       const s1 = functorExpr2.map((v$1) => false)(v3._1);
@@ -37450,7 +37450,7 @@
     }));
   };
   var loadFig = (v) => _bind(_bind(openDefaultImports2)(openDatasetAs2("example/linking/renewables")("data")))((v1) => {
-    const \u03B30 = _fmapObject(v1._1["\u03B3"], botOf);
+    const \u03B30 = _fmapObject(v1._1["\u03B3\u03B1"], botOf);
     const xv0 = _fmapObject(v1._2, botOf);
     return _map((s$p) => successful(bind(splitDefs(unionWith2((v$1) => identity19)(\u03B30)(xv0))(functorExpr2.map((v$1) => false)(s$p)))((v2) => bind(desug2(v2.s))((e) => bind($$eval4(unionWith2((v$1) => identity19)(unionWith2((v$1) => identity19)(\u03B30)(xv0))(v2["\u03B3"]))(e)(false))((v3) => applicativeExceptT3.pure({ spec: v, "\u03B30": \u03B30, "\u03B3": unionWith2((v$1) => identity19)(\u03B30)(v2["\u03B3"]), s: v2.s, e, t: v3._1, v: v3._2 }))))))(parseProgram("fluid/example")(v.file));
   });
