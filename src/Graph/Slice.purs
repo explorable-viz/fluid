@@ -52,8 +52,8 @@ fwdVertex g' h α =
    where
    αs = lookup α h # definitely "in pending map"
 
-selectVertices :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
-selectVertices v𝔹 vα = unions (asSet <$> v𝔹 <*> vα)
+selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
+selectαs v𝔹 vα = unions (asSet <$> v𝔹 <*> vα)
 
 select𝔹s :: forall f. Functor f => f Vertex -> Set Vertex -> f Boolean
 select𝔹s vα αs = flip member αs <$> vα

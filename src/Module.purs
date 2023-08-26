@@ -74,18 +74,18 @@ defaultImports = do
 -- | Evaluates the default imports from an empty initial graph config
 openDefaultImports :: forall g s. Graph g s => Aff (GraphConfig g)
 openDefaultImports = do
-   (g × n) × γ <- fromRight <$> runWithGraphAllocT (G.empty × 0) defaultImports
-   pure $ { g, n, γ }
+   (g × n) × γα <- fromRight <$> runWithGraphAllocT (G.empty × 0) defaultImports
+   pure $ { g, n, γα }
 
 -- | Evaluates a dataset from an existing graph config (produced by openDefaultImports)
 openDatasetAs :: forall g s. Graph g s => File -> Var -> GraphConfig g -> Aff (GraphConfig g × Env Vertex)
-openDatasetAs file x { g, n, γ } = do
+openDatasetAs file x { g, n, γα } = do
    s <- parseProgram (Folder "fluid") file
-   (g' × n') × (γ' × xv) <- fromRight <$>
+   (g' × n') × (γα' × xv) <- fromRight <$>
       ( runWithGraphAllocT (g × n) $ do
            e <- desug s
            eα <- alloc e
-           vα <- eval γ eα empty
-           pure (γ × D.singleton x vα)
+           vα <- eval γα eα empty
+           pure (γα × D.singleton x vα)
       )
-   pure ({ g: g', n: n', γ: γ' } × xv)
+   pure ({ g: g', n: n', γα: γα' } × xv)

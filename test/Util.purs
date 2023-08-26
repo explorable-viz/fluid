@@ -1,4 +1,21 @@
-module Test.Util where
+module Test.Util
+   ( Test
+   , TestConfig
+   , TestWith
+   , checkPretty
+   , isGraphical
+   , run
+   , shouldSatisfy
+   , testBwdMany
+   , testLinkMany
+   , testMany
+   , testParse
+   , testTrace
+   , testWithDatasetMany
+   , testWithSetup
+   , withDataset
+   , withDefaultImports
+   ) where
 
 import Prelude hiding (absurd)
 
@@ -25,7 +42,7 @@ import EvalGraph (GraphConfig, evalWithConfig)
 import Graph (sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice) as G
-import Graph.Slice (selectVertices, select𝔹s)
+import Graph.Slice (selectαs, select𝔹s)
 import Lattice (bot, botOf, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports, parse)
 import Parse (program)
@@ -38,34 +55,16 @@ import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, type (×), (×), successful)
 import Val (Val(..), class Ann, (<+>))
 
--- Don't enforce fwd_expect values for graphics tests (values too complex).
-isGraphical :: forall a. Val a -> Boolean
-isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
-isGraphical _ = false
-
 type Test a = SpecT Aff Unit Effect a
 type TestWith g a = SpecT Aff g Effect a
-
-run :: forall a. Test a → Effect Unit
-run = runMocha -- no reason at all to see the word "Mocha"
-
-checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
-checkPretty msg expect x =
-   unless (expect `eq` prettyP x)
-      $ fail (msg <> "\nExpected:\n" <> expect <> "\nGotten:\n" <> prettyP x)
-
--- Like version in Test.Spec.Assertions but with error message.
-shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
-shouldSatisfy msg v pred =
-   unless (pred v)
-      $ fail
-      $ show v <> " doesn't satisfy predicate: " <> msg
-
 type TestConfig =
    { δv :: Selector Val
    , fwd_expect :: String
    , bwd_expect :: String
    }
+
+run :: forall a. Test a → Effect Unit
+run = runMocha -- no reason at all to see the word "Mocha"
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 testWithSetup :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
@@ -93,8 +92,8 @@ testParse s = do
       )
 
 testTrace :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
-testTrace s { γ } { δv, bwd_expect, fwd_expect } = do
-   let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γ)
+testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
+   let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γα)
    -- | Eval
    e𝔹 <- desug s𝔹
    t × v𝔹 <- eval γ𝔹 e𝔹 bot
@@ -110,7 +109,7 @@ testTrace s { γ } { δv, bwd_expect, fwd_expect } = do
       -- | Check backward selections
       unless (null bwd_expect) do
          checkPretty "Trace-based source selection" bwd_expect s𝔹'
-      -- | Check round-trip selections
+      -- | Check forward (round-tripping) selections
       unless (isGraphical v𝔹') do
          checkPretty "Trace-based value" fwd_expect v𝔹''
 
@@ -121,7 +120,7 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
    -- | Backward
    let
-      αs_out = selectVertices (δv (botOf vα)) vα
+      αs_out = selectαs (δv (botOf vα)) vα
       gbwd = G.bwdSlice αs_out g
       αs_in = sinks gbwd
       e𝔹 = select𝔹s eα αs_in
@@ -131,59 +130,87 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
       gfwd = G.fwdSlice αs_in g
       v𝔹 = select𝔹s vα (vertices gfwd)
 
-   {- | Forward (round-tripping) using De Morgan dual
-      gfwd' = G.fwdSliceDeMorgan αs_in g
-      v𝔹' = select𝔹s vα (vertices gfwd') <#> not
-   -}
    lift $ do
       -- | Check backward selections
       unless (null bwd_expect) do
          checkPretty "Graph-based source selection" bwd_expect s𝔹
-      -- | Check round-trip selections
+      -- | Check forward (round-tripping) selections
       unless (isGraphical v𝔹) do
          checkPretty "Graph-based value" fwd_expect v𝔹
-      -- checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
+      -- | Check round-tripping property
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
+
+-- | Check forward (round-tripping) selections using De Morgan dual
+{- unless (isGraphical v𝔹 || true) do
+   let
+      gfwd' = G.fwdSliceDeMorgan αs_in g
+      v𝔹' = select𝔹s vα (vertices gfwd') <#> not
+   checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
+-}
 
 withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
 withDefaultImports = beforeAll openDefaultImports
 
 withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
-withDataset dataset =
-   beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γ } × xv) -> pure { g, n, γ: γ <+> xv }))
+withDataset dataset = beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }))
 
 testMany :: Array (File × String) → Test Unit
 testMany fxs = withDefaultImports $ traverse_ test fxs
    where
-   test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
-      it (show file) (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+   test (file × fwd_expect) =
+      beforeWith ((_ <$> open file) <<< (×))
+         ( it (show file)
+              (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+         )
 
 testBwdMany :: Array (File × File × Selector Val × String) → Test Unit
 testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
    where
-   testBwd (file × file_expect × δv × fwd_expect) =
-      beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
-         it (show $ folder <> file)
-            ( \(gconfig × s) -> do
-                 bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
-                 testWithSetup s gconfig { δv, fwd_expect, bwd_expect }
-            )
    folder = File "slicing/"
+   testBwd (file × file_expect × δv × fwd_expect) =
+      beforeWith ((_ <$> open (folder <> file)) <<< (×))
+         ( it (show $ folder <> file)
+              ( \(gconfig × s) -> do
+                   bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
+                   testWithSetup s gconfig { δv, fwd_expect, bwd_expect }
+              )
+         )
 
 testWithDatasetMany :: Array (File × File) -> Test Unit
 testWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
    where
    testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
-      it (show file) (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
+      it (show file)
+         (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
 
 testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
    where
-   testLink (spec@{ x } × δv1 × v2_expect) = before (loadLinkFig spec) $
-      it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
-         \{ γ0, γ, e1, e2, t1, t2, v1 } ->
-            let
-               { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
-            in
-               checkPretty "Linked output" v2_expect v2'
+   testLink (spec@{ x } × δv1 × v2_expect) =
+      before (loadLinkFig spec)
+         ( it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
+              ( \{ γ0, γ, e1, e2, t1, t2, v1 } ->
+                   let
+                      { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
+                   in
+                      checkPretty "Linked output" v2_expect v2'
+              )
+         )
+
+-- Don't enforce fwd_expect values for graphics tests (values too complex).
+isGraphical :: forall a. Val a -> Boolean
+isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
+isGraphical _ = false
+
+checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
+checkPretty msg expect x =
+   unless (expect `eq` prettyP x)
+      $ fail (msg <> "\nExpected:\n" <> expect <> "\nGotten:\n" <> prettyP x)
+
+-- Like version in Test.Spec.Assertions but with error message.
+shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
+shouldSatisfy msg v pred =
+   unless (pred v)
+      $ fail
+      $ show v <> " doesn't satisfy predicate: " <> msg
