@@ -27,7 +27,7 @@ bwdVertices g' visited (α : αs) =
    else do
       let βs = outN g' α
       extend α βs
-      bwdVertices g' (visited # insert α) (L.fromFoldable βs <> αs)
+      bwdVertices g' (visited # insert α) (αs <> L.fromFoldable βs)
 
 fwdSliceDeMorgan :: forall g s. Graph g s => s Vertex -> g -> g
 fwdSliceDeMorgan αs g' =
