@@ -24,6 +24,7 @@ You can edit this file as you like.
   , "js-date"
   , "lists"
   , "maybe"
+  , "minibench"
   , "newtype"
   , "nonempty"
   , "numbers"
@@ -45,5 +46,5 @@ You can edit this file as you like.
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
-, backend = "purs-backend-es build"
+--, backend = "purs-backend-es build"
 }
