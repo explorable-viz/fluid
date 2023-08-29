@@ -1,15 +1,16 @@
-module Test.Main where
+module Test.Benchmark where
 
 import Prelude hiding (add)
+
 import App.Util (selectBarChart_data, selectMatrixElement, selectNth, selectNthCell, selectPair, selectSome, select_y)
 import Bindings ((↦))
-import Control.Monad.Trans.Class (lift)
 import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.Set as S
 import Data.Traversable (traverse_)
 import Dict (fromFoldable) as D
 import Effect (Effect)
+import Effect.Class (liftEffect)
 import Effect.Console (log, logShow)
 import Graph (Vertex(..), inEdges)
 import Graph (fromFoldable) as G
@@ -17,7 +18,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (fwdSlice)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
-import Test.Util (Test, run, testWithDatasetMany, testLinkMany, testMany, testBwdMany)
+import Test.Util (Test, run, benchWithDatasetMany, testLinkMany, benchMany, benchBwdMany)
 import Util ((×))
 import Val (DictRep(..), Val(..))
 
@@ -31,7 +32,7 @@ tests =
    , test_misc
    , test_bwd
    , test_graphics
-   , test_linking
+   -- , test_linking
    , test_graph
    ]
 
@@ -40,12 +41,12 @@ tests = [ test_scratchpad ]
 -}
 
 test_scratchpad :: Test Unit
-test_scratchpad = testBwdMany
+test_scratchpad = benchBwdMany
    [ (File "filter") × (File "filter.expect") × (botOf >>> selectNthCell 0 neg) × "(_8_ _:_ (7 : []))"
    ]
 
 test_desugaring :: Test Unit
-test_desugaring = testMany
+test_desugaring = benchMany
    [ (File "desugar/list-comp-1") × "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
    , (File "desugar/list-comp-2") ×
         "(14 : (14 : (14 : (12 : (12 : (12 : (10 : (10 : (10 : (13 : (13 : (13 : (11 : (11 : (11 : (9 : \
@@ -59,7 +60,7 @@ test_desugaring = testMany
    ]
 
 test_misc :: Test Unit
-test_misc = testMany
+test_misc = benchMany
    [ (File "arithmetic") × "42"
    , (File "array") × "(1, (3, 3))"
    , (File "compose") × "5"
@@ -87,7 +88,7 @@ test_misc = testMany
    ]
 
 test_bwd :: Test Unit
-test_bwd = testBwdMany
+test_bwd = benchBwdMany
    [ (File "add") × (File "add.expect") × (const $ Int true 8) × "_8_"
    , (File "array/lookup") × (File "array/lookup.expect") × (const $ Int true 14) × "_14_"
    , (File "array/dims") × (File "array/dims.expect") × topOf × "_(_3_, _3_)_"
@@ -204,7 +205,7 @@ test_bwd = testBwdMany
    ]
 
 test_graphics :: Test Unit
-test_graphics = testWithDatasetMany
+test_graphics = benchWithDatasetMany
    [ (File "dataset/renewables-restricted") × (File "graphics/background")
    , (File "dataset/renewables-restricted") × (File "graphics/grouped-bar-chart")
    , (File "dataset/renewables-restricted") × (File "graphics/line-chart")
@@ -305,6 +306,7 @@ test_graph = do
          ids
       g' = G.fromFoldable adds :: GraphImpl (S.Set)
       slice = fwdSlice (S.fromFoldable [ Vertex "13", Vertex "12", Vertex "11" ]) g'
-   lift $ do
-      log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ Vertex "11" ])))
-      logShow slice
+   do
+      liftEffect $ do
+         log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ Vertex "11" ])))
+         logShow slice

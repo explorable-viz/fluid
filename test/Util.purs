@@ -21,10 +21,12 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
+import Benchmark.Util (getCurr, timeDiff)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
+import Data.JSDate (now)
 import Data.List (elem)
 import Data.Set (Set) as S
 import Data.String (null)
@@ -34,6 +36,7 @@ import Debug (trace)
 import Desugarable (desug, desugBwd)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
@@ -66,6 +69,11 @@ type TestConfig =
 run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
+switchWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
+switchWithSetup isBench s gconfig tconfig =
+   if isBench then benchWithSetup s gconfig tconfig
+   else testWithSetup s gconfig tconfig
+
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 testWithSetup :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
 testWithSetup s gconfig tconfig =
@@ -74,6 +82,19 @@ testWithSetup s gconfig tconfig =
            testParse s
            testTrace s gconfig tconfig
            testGraph s gconfig tconfig
+      ) >>=
+      case _ of
+         Left msg -> fail msg
+         Right unit -> pure unit
+
+-- fwd_expect: prettyprinted value after bwd then fwd round-trip
+benchWithSetup :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
+benchWithSetup s gconfig tconfig =
+   runExceptT
+      ( do
+           testParse s
+           benchTrace s gconfig tconfig
+           benchGraph s gconfig tconfig
       ) >>=
       case _ of
          Left msg -> fail msg
@@ -113,6 +134,74 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
       unless (isGraphical v𝔹') do
          checkPretty "Trace-based value" fwd_expect v𝔹''
 
+benchTrace :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
+benchTrace s { γ } { δv, bwd_expect, fwd_expect } = do
+   let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γ)
+   -- | Eval
+   pre_desug <- getCurr
+   e𝔹 <- desug s𝔹
+   pre_eval <- getCurr
+   t × v𝔹 <- eval γ𝔹 e𝔹 bot
+   post_eval <- getCurr
+   log ("Desug time: " <> show (timeDiff pre_desug pre_eval) <> "\n")
+   log ("Trace-based eval: " <> show (timeDiff pre_eval post_eval) <> "\n")
+   -- | Backward
+   pre_slice <- getCurr
+   let
+      v𝔹' = δv v𝔹
+      { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
+   post_slice <- getCurr
+   log ("Trace-based bwd slice time: " <> show (timeDiff pre_slice post_slice) <> "\n")
+   let
+      s𝔹' = desugBwd e𝔹' s
+   -- | Forward (round-tripping)
+   e𝔹'' <- desug s𝔹'
+   pre_fwd_slice <- getCurr
+   _ × v𝔹'' <- eval γ𝔹' e𝔹'' top
+   post_fwd_slice <- getCurr
+   log ("Trace-based fwd slice time:" <> show (timeDiff pre_fwd_slice post_fwd_slice) <> "\n")
+   lift $ do
+      -- | Check backward selections
+      unless (null bwd_expect) do
+         checkPretty "Trace-based source selection" bwd_expect s𝔹'
+      -- | Check round-trip selections
+      unless (isGraphical v𝔹') do
+         checkPretty "Trace-based value" fwd_expect v𝔹''
+
+benchTrace :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
+benchTrace s { γ } { δv, bwd_expect, fwd_expect } = do
+   let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γ)
+   -- | Eval
+   pre_desug <- getCurr
+   e𝔹 <- desug s𝔹
+   pre_eval <- getCurr
+   t × v𝔹 <- eval γ𝔹 e𝔹 bot
+   post_eval <- getCurr
+   log ("Desug time: " <> show (timeDiff pre_desug pre_eval) <> "\n")
+   log ("Trace-based eval: " <> show (timeDiff pre_eval post_eval) <> "\n")
+   -- | Backward
+   pre_slice <- getCurr
+   let
+      v𝔹' = δv v𝔹
+      { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
+   post_slice <- getCurr
+   log ("Trace-based bwd slice time: " <> show (timeDiff pre_slice post_slice) <> "\n")
+   let
+      s𝔹' = desugBwd e𝔹' s
+   -- | Forward (round-tripping)
+   e𝔹'' <- desug s𝔹'
+   pre_fwd_slice <- getCurr
+   _ × v𝔹'' <- eval γ𝔹' e𝔹'' top
+   post_fwd_slice <- getCurr
+   log ("Trace-based fwd slice time:" <> show (timeDiff pre_fwd_slice post_fwd_slice) <> "\n")
+   lift $ do
+      -- | Check backward selections
+      unless (null bwd_expect) do
+         checkPretty "Trace-based source selection" bwd_expect s𝔹'
+      -- | Check round-trip selections
+      unless (isGraphical v𝔹') do
+         checkPretty "Trace-based value" fwd_expect v𝔹''
+
 testGraph :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
 testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
@@ -141,13 +230,47 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
 
--- | Check forward (round-tripping) selections using De Morgan dual
-{- unless (isGraphical v𝔹 || true) do
+benchGraph :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
+benchGraph s gconf { δv, bwd_expect, fwd_expect } = do
+   -- | Eval
+   e <- desug s
+   pre_eval <- liftEffect now
+   (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
+   post_eval <- liftEffect now
+   log ("Graph-based eval time: " <> show (timeDiff pre_eval post_eval) <> "\n")
+   -- | Backward
+   pre_slice <- getCurr
    let
+      αs_out = selectVertices (δv (botOf vα)) vα
+      gbwd = G.bwdSlice αs_out g
+      αs_in = sinks gbwd
+   post_slice <- getCurr
+   log ("Graph-based bwd slice time: " <> show (timeDiff pre_slice post_slice) <> "\n")
+   let
+      e𝔹 = select𝔹s eα αs_in
+      s𝔹 = desugBwd e𝔹 (erase s)
+   -- | Forward (round-tripping)
+   pre_fwd_slice <- getCurr
+   let
+      gfwd = G.fwdSlice αs_in g
+      v𝔹 = select𝔹s vα (vertices gfwd)
+   post_fwd_slice <- getCurr
+   log ("Graph-based fwd slice time: " <> show (timeDiff pre_fwd_slice post_fwd_slice) <> "\n")
+
+   {- | Forward (round-tripping) using De Morgan dual
       gfwd' = G.fwdSliceDeMorgan αs_in g
       v𝔹' = select𝔹s vα (vertices gfwd') <#> not
-   checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
--}
+   -}
+   lift $ do
+      -- | Check backward selections
+      unless (null bwd_expect) do
+         checkPretty "Graph-based source selection" bwd_expect s𝔹
+      -- | Check round-trip selections
+      unless (isGraphical v𝔹) do
+         checkPretty "Graph-based value" fwd_expect v𝔹
+      -- checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
+      sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
+         (flip subset (sources gfwd))
 
 withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
 withDefaultImports = beforeAll openDefaultImports
@@ -164,6 +287,18 @@ testMany fxs = withDefaultImports $ traverse_ test fxs
               (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
          )
 
+benchMany :: Array (File × String) -> Test Unit
+benchMany fxs = withDefaultImports $ traverse_ test fxs
+   where
+   test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
+      it (show file) (\(gconfig × s) -> benchWithSetup s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+
+benchMany :: Array (File × String) -> Test Unit
+benchMany fxs = withDefaultImports $ traverse_ test fxs
+   where
+   test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
+      it (show file) (\(gconfig × s) -> benchWithSetup s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+
 testBwdMany :: Array (File × File × Selector Val × String) → Test Unit
 testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
    where
@@ -177,12 +312,49 @@ testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
               )
          )
 
+benchBwdMany :: Array (File × File × Selector Val × String) → Test Unit
+benchBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
+   where
+   folder = File "slicing/"
+   testBwd (file × file_expect × δv × fwd_expect) =
+      beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
+         it (show $ folder <> file)
+            ( \(gconfig × s) -> do
+                 bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
+                 benchWithSetup s gconfig { δv, fwd_expect, bwd_expect }
+            )
+   folder = File "slicing/"
+
+benchBwdMany :: Array (File × File × Selector Val × String) → Test Unit
+benchBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
+   where
+   testBwd (file × file_expect × δv × fwd_expect) =
+      beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
+         it (show $ folder <> file)
+            ( \(gconfig × s) -> do
+                 bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
+                 benchWithSetup s gconfig { δv, fwd_expect, bwd_expect }
+            )
+   folder = File "slicing/"
+
 testWithDatasetMany :: Array (File × File) -> Test Unit
 testWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
    where
    testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
       it (show file)
          (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
+
+benchWithDatasetMany :: Array (File × File) -> Test Unit
+benchWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
+   where
+   testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
+      it (show file) (\(gconfig × s) -> benchWithSetup s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
+
+benchWithDatasetMany :: Array (File × File) -> Test Unit
+benchWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
+   where
+   testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
+      it (show file) (\(gconfig × s) -> benchWithSetup s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
 
 testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
