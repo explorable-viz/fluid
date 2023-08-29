@@ -218,9 +218,12 @@ benchGraph s gconf { δv, bwd_expect, fwd_expect } = do
       e𝔹 = select𝔹s eα αs_in
       s𝔹 = desugBwd e𝔹 (erase s)
    -- | Forward (round-tripping)
+   pre_fwd_slice <- getCurr
    let
       gfwd = G.fwdSlice αs_in g
       v𝔹 = select𝔹s vα (vertices gfwd)
+   post_fwd_slice <- getCurr
+   log ("Graph-based fwd slice time: " <> show (timeDiff pre_fwd_slice post_fwd_slice) <> "\n")
 
    {- | Forward (round-tripping) using De Morgan dual
       gfwd' = G.fwdSliceDeMorgan αs_in g

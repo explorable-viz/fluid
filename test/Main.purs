@@ -31,8 +31,8 @@ tests =
    , test_misc
    , test_bwd
    , test_graphics
-   -- , test_linking
-   -- , test_graph
+   , test_linking
+   , test_graph
    ]
 
 {-
