@@ -70,6 +70,11 @@ type TestConfig =
    , bwd_expect :: String
    }
 
+switchWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
+switchWithSetup isBench s gconfig tconfig =
+   if isBench then benchWithSetup s gconfig tconfig
+   else testWithSetup s gconfig tconfig
+
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 testWithSetup :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
 testWithSetup s gconfig tconfig =
