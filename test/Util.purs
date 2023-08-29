@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
-import Benchmark.Timers (timeDiff)
+import Benchmark.Util (getCurr, timeDiff)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
@@ -94,13 +94,8 @@ benchWithSetup s gconfig tconfig =
    runExceptT
       ( do
            testParse s
-           begin <- liftEffect $ now
-           testTrace s gconfig tconfig
-           middle <- liftEffect $ now
-           testGraph s gconfig tconfig
-           end <- liftEffect $ now
-           log ("testTrace time: " <> show (timeDiff begin middle) <> "\n")
-           log ("testGraph time: " <> show (timeDiff middle end) <> "\n")
+           benchTrace s gconfig tconfig
+           benchGraph s gconfig tconfig
       ) >>=
       case _ of
          Left msg -> fail msg
@@ -140,6 +135,33 @@ testTrace s { γ } { δv, bwd_expect, fwd_expect } = do
       unless (isGraphical v𝔹') do
          checkPretty "Trace-based value" fwd_expect v𝔹''
 
+benchTrace :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
+benchTrace s { γ } { δv, bwd_expect, fwd_expect } = do
+   let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γ)
+   -- | Eval
+   pre_desug <- getCurr
+   e𝔹 <- desug s𝔹
+   pre_eval <- getCurr
+   t × v𝔹 <- eval γ𝔹 e𝔹 bot
+   post_eval <- getCurr
+   log ("Desug time: " <> show (timeDiff pre_desug pre_eval) <> "\n")
+   log ("Trace-based eval: " <> show (timeDiff pre_eval post_eval) <> "\n")
+   -- | Backward
+   let
+      v𝔹' = δv v𝔹
+      { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
+      s𝔹' = desugBwd e𝔹' s
+   -- | Forward (round-tripping)
+   _ × v𝔹'' <- desug s𝔹' >>= flip (eval γ𝔹') top
+
+   lift $ do
+      -- | Check backward selections
+      unless (null bwd_expect) do
+         checkPretty "Trace-based source selection" bwd_expect s𝔹'
+      -- | Check round-trip selections
+      unless (isGraphical v𝔹') do
+         checkPretty "Trace-based value" fwd_expect v𝔹''
+
 testGraph :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
 testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
@@ -150,6 +172,43 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
       αs_out = selectVertices (δv (botOf vα)) vα
       gbwd = G.bwdSlice αs_out g
       αs_in = sinks gbwd
+      e𝔹 = select𝔹s eα αs_in
+      s𝔹 = desugBwd e𝔹 (erase s)
+   -- | Forward (round-tripping)
+   let
+      gfwd = G.fwdSlice αs_in g
+      v𝔹 = select𝔹s vα (vertices gfwd)
+
+   {- | Forward (round-tripping) using De Morgan dual
+      gfwd' = G.fwdSliceDeMorgan αs_in g
+      v𝔹' = select𝔹s vα (vertices gfwd') <#> not
+   -}
+   lift $ do
+      -- | Check backward selections
+      unless (null bwd_expect) do
+         checkPretty "Graph-based source selection" bwd_expect s𝔹
+      -- | Check round-trip selections
+      unless (isGraphical v𝔹) do
+         checkPretty "Graph-based value" fwd_expect v𝔹
+      -- checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
+      sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
+         (flip subset (sources gfwd))
+
+benchGraph :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
+benchGraph s gconf { δv, bwd_expect, fwd_expect } = do
+   -- | Eval
+   e <- desug s
+   pre_eval <- liftEffect now
+   (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
+   post_eval <- liftEffect now
+   log ("Graph-based eval time: " <> show (timeDiff pre_eval post_eval) <> "\n")
+   -- | Backward
+   let
+      αs_out = selectVertices (δv (botOf vα)) vα
+      gbwd = G.bwdSlice αs_out g
+      αs_in = sinks gbwd
+   
+   let   
       e𝔹 = select𝔹s eα αs_in
       s𝔹 = desugBwd e𝔹 (erase s)
    -- | Forward (round-tripping)
