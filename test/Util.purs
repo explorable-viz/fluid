@@ -156,8 +156,11 @@ benchTrace s { γ } { δv, bwd_expect, fwd_expect } = do
    let
       s𝔹' = desugBwd e𝔹' s
    -- | Forward (round-tripping)
-   _ × v𝔹'' <- desug s𝔹' >>= flip (eval γ𝔹') top
-
+   e𝔹'' <- desug s𝔹'
+   pre_fwd_slice <- getCurr
+   _ × v𝔹'' <- eval γ𝔹' e𝔹'' top
+   post_fwd_slice <- getCurr
+   log ("Trace-based fwd slice time:" <> show (timeDiff pre_fwd_slice post_fwd_slice) <> "\n")
    lift $ do
       -- | Check backward selections
       unless (null bwd_expect) do
