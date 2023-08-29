@@ -147,9 +147,13 @@ benchTrace s { γ } { δv, bwd_expect, fwd_expect } = do
    log ("Desug time: " <> show (timeDiff pre_desug pre_eval) <> "\n")
    log ("Trace-based eval: " <> show (timeDiff pre_eval post_eval) <> "\n")
    -- | Backward
+   pre_slice <- getCurr
    let
       v𝔹' = δv v𝔹
       { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
+   post_slice <- getCurr
+   log ("Trace-based bwd slice time: " <> show (timeDiff pre_slice post_slice) <> "\n")
+   let
       s𝔹' = desugBwd e𝔹' s
    -- | Forward (round-tripping)
    _ × v𝔹'' <- desug s𝔹' >>= flip (eval γ𝔹') top
@@ -203,12 +207,14 @@ benchGraph s gconf { δv, bwd_expect, fwd_expect } = do
    post_eval <- liftEffect now
    log ("Graph-based eval time: " <> show (timeDiff pre_eval post_eval) <> "\n")
    -- | Backward
+   pre_slice <- getCurr
    let
       αs_out = selectVertices (δv (botOf vα)) vα
       gbwd = G.bwdSlice αs_out g
       αs_in = sinks gbwd
-   
-   let   
+   post_slice <- getCurr
+   log ("Graph-based bwd slice time: " <> show (timeDiff pre_slice post_slice) <> "\n")
+   let
       e𝔹 = select𝔹s eα αs_in
       s𝔹 = desugBwd e𝔹 (erase s)
    -- | Forward (round-tripping)
