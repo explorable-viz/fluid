@@ -24,7 +24,6 @@ You can edit this file as you like.
   , "js-date"
   , "lists"
   , "maybe"
-  , "minibench"
   , "newtype"
   , "nonempty"
   , "numbers"

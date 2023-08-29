@@ -17,7 +17,6 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (fwdSlice)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
-import Performance.Minibench (benchWith)
 import Test.Util (Test, run, testMany, testBwdMany, testWithDatasetMany, testLinkMany)
 import Util ((×))
 import Val (DictRep(..), Val(..))
@@ -33,7 +32,7 @@ tests =
    , test_bwd
    , test_graphics
    , test_linking
-   , test_graph_perf
+   , test_graph
    ]
 
 {-
@@ -309,7 +308,3 @@ test_graph = do
    lift $ do
       log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ Vertex "11" ])))
       logShow slice
-
-test_graph_perf :: Test Unit
-
-test_graph_perf = lift $ benchWith 10 (\_ -> test_graph)

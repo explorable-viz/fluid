@@ -4,10 +4,12 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
+import Benchmark.Timers (timeDiff)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
+import Data.JSDate (now)
 import Data.List (elem)
 import Data.Set (Set) as S
 import Data.String (null)
@@ -17,6 +19,7 @@ import Debug (trace)
 import Desugarable (desug, desugBwd)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Effect.Class (liftEffect)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
@@ -75,6 +78,24 @@ testWithSetup s gconfig tconfig =
            testParse s
            testTrace s gconfig tconfig
            testGraph s gconfig tconfig
+      ) >>=
+      case _ of
+         Left msg -> fail msg
+         Right unit -> pure unit
+
+-- fwd_expect: prettyprinted value after bwd then fwd round-trip
+benchWithSetup :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
+benchWithSetup s gconfig tconfig =
+   runExceptT
+      ( do
+           testParse s
+           begin <- liftEffect $ now
+           testTrace s gconfig tconfig
+           middle <- liftEffect $ now
+           testGraph s gconfig tconfig
+           end <- liftEffect $ now
+           liftEffect $ log ("testTrace time: " <> show (timeDiff begin middle) <> "\n")
+           liftEffect $ log ("testGraph time: " <> show (timeDiff middle end) <> "\n")
       ) >>=
       case _ of
          Left msg -> fail msg
