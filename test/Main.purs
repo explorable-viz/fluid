@@ -30,7 +30,7 @@ tests =
    [ test_desugaring
    , test_misc
    , test_bwd
-   -- , test_graphics
+   , test_graphics
    -- , test_linking
    -- , test_graph
    ]

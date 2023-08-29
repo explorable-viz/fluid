@@ -17,7 +17,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (fwdSlice)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
-import Test.Util (Test, run, testWithDatasetMany, testLinkMany, benchMany, benchBwdMany)
+import Test.Util (Test, run, benchWithDatasetMany, testLinkMany, benchMany, benchBwdMany)
 import Util ((×))
 import Val (DictRep(..), Val(..))
 
@@ -204,7 +204,7 @@ test_bwd = benchBwdMany
    ]
 
 test_graphics :: Test Unit
-test_graphics = testWithDatasetMany
+test_graphics = benchWithDatasetMany
    [ (File "dataset/renewables-restricted") × (File "graphics/background")
    , (File "dataset/renewables-restricted") × (File "graphics/grouped-bar-chart")
    , (File "dataset/renewables-restricted") × (File "graphics/line-chart")
