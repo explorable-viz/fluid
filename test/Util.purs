@@ -94,8 +94,8 @@ benchWithSetup s gconfig tconfig =
            middle <- liftEffect $ now
            testGraph s gconfig tconfig
            end <- liftEffect $ now
-           liftEffect $ log ("testTrace time: " <> show (timeDiff begin middle) <> "\n")
-           liftEffect $ log ("testGraph time: " <> show (timeDiff middle end) <> "\n")
+           log ("testTrace time: " <> show (timeDiff begin middle) <> "\n")
+           log ("testGraph time: " <> show (timeDiff middle end) <> "\n")
       ) >>=
       case _ of
          Left msg -> fail msg
@@ -180,6 +180,12 @@ testMany fxs = withDefaultImports $ traverse_ test fxs
    test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
       it (show file) (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
 
+benchMany :: Array (File × String) -> Test Unit
+benchMany fxs = withDefaultImports $ traverse_ test fxs
+   where
+   test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
+      it (show file) (\(gconfig × s) -> benchWithSetup s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+
 testBwdMany :: Array (File × File × Selector Val × String) → Test Unit
 testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
    where
@@ -192,11 +198,29 @@ testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
             )
    folder = File "slicing/"
 
+benchBwdMany :: Array (File × File × Selector Val × String) → Test Unit
+benchBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
+   where
+   testBwd (file × file_expect × δv × fwd_expect) =
+      beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
+         it (show $ folder <> file)
+            ( \(gconfig × s) -> do
+                 bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
+                 benchWithSetup s gconfig { δv, fwd_expect, bwd_expect }
+            )
+   folder = File "slicing/"
+
 testWithDatasetMany :: Array (File × File) -> Test Unit
 testWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
    where
    testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
       it (show file) (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
+
+benchWithDatasetMany :: Array (File × File) -> Test Unit
+benchWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
+   where
+   testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
+      it (show file) (\(gconfig × s) -> benchWithSetup s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
 
 testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
