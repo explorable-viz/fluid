@@ -25,6 +25,19 @@ derive newtype instance Semigroup File
 derive newtype instance Monoid File
 type Test a = SpecT Aff Unit Effect a
 
+type BenchResult =
+   { name :: String
+   , desug :: Number
+   , trace_eval :: Number
+   , graph_eval :: Number
+   , trace_fwd :: Number
+   , trace_bwd :: Number
+   , graph_fwd :: Number
+   , graph_bwd :: Number
+   }
+
+type BenchSet = Array BenchResult
+
 getCurr :: forall a. MonadEffect a => a JSDate
 getCurr = liftEffect $ now
 
