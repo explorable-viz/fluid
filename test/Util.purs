@@ -68,32 +68,14 @@ type TestConfig =
    , bwd_expect :: String
    }
 
-switchWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
-switchWithSetup isBench s gconfig tconfig =
-   if isBench then benchWithSetup s gconfig tconfig
-   else testWithSetup s gconfig tconfig
-
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
-testWithSetup :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
-testWithSetup s gconfig tconfig =
+testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
+testWithSetup is_bench s gconfig tconfig =
    runExceptT
       ( do
-           testParse s
-           testTrace false s gconfig tconfig
-           testGraph false s gconfig tconfig
-      ) >>=
-      case _ of
-         Left msg -> fail msg
-         Right unit -> pure unit
-
--- fwd_expect: prettyprinted value after bwd then fwd round-trip
-benchWithSetup :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
-benchWithSetup s gconfig tconfig =
-   runExceptT
-      ( do
-           testParse s
-           testTrace true s gconfig tconfig
-           testGraph true s gconfig tconfig
+           unless is_bench (testParse s)
+           testTrace is_bench s gconfig tconfig
+           testGraph is_bench s gconfig tconfig
       ) >>=
       case _ of
          Left msg -> fail msg
@@ -206,13 +188,13 @@ testMany :: Array (File × String) → Test Unit
 testMany fxs = withDefaultImports $ traverse_ test fxs
    where
    test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
-      it (show file) (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+      it (show file) (\(gconfig × s) -> testWithSetup false s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
 
 benchMany :: Array (File × String) -> Test Unit
 benchMany fxs = withDefaultImports $ traverse_ test fxs
    where
    test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
-      it (show file) (\(gconfig × s) -> benchWithSetup s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+      it (show file) (\(gconfig × s) -> testWithSetup true s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
 
 testBwdMany :: Array (File × File × Selector Val × String) → Test Unit
 testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
@@ -222,7 +204,7 @@ testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
          it (show $ folder <> file)
             ( \(gconfig × s) -> do
                  bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
-                 testWithSetup s gconfig { δv, fwd_expect, bwd_expect }
+                 testWithSetup false s gconfig { δv, fwd_expect, bwd_expect }
             )
    folder = File "slicing/"
 
@@ -234,7 +216,7 @@ benchBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
          it (show $ folder <> file)
             ( \(gconfig × s) -> do
                  bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
-                 benchWithSetup s gconfig { δv, fwd_expect, bwd_expect }
+                 testWithSetup true s gconfig { δv, fwd_expect, bwd_expect }
             )
    folder = File "slicing/"
 
@@ -242,13 +224,13 @@ testWithDatasetMany :: Array (File × File) -> Test Unit
 testWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
    where
    testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
-      it (show file) (\(gconfig × s) -> testWithSetup s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
+      it (show file) (\(gconfig × s) -> testWithSetup false s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
 
 benchWithDatasetMany :: Array (File × File) -> Test Unit
 benchWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
    where
    testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
-      it (show file) (\(gconfig × s) -> benchWithSetup s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
+      it (show file) (\(gconfig × s) -> testWithSetup true s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
 
 testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
