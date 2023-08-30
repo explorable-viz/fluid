@@ -62,7 +62,7 @@ import Util (MayFailT, type (×), (×), successful)
 import Val (Val(..), class Ann, (<+>))
 
 type Test a = SpecT Aff Unit Effect a
-type TestWith g a = SpecT Aff g Effect a
+type TestWith i a = SpecT Aff i Effect a
 type TestConfig =
    { δv :: Selector Val
    , fwd_expect :: String
