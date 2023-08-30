@@ -13,7 +13,7 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Console (logShow)
+import Effect.Console (logShow, log)
 import Test.Spec (SpecT)
 import Util (MayFailT, error)
 
@@ -44,6 +44,10 @@ getCurr = liftEffect $ now
 timeDiff :: JSDate -> JSDate -> Number
 timeDiff begin end =
    getTime end - getTime begin
+
+logTime :: String -> JSDate -> JSDate -> Aff Unit
+logTime msg before after =
+   liftEffect $ log (msg <> show (timeDiff before after) <> "\n")
 
 liftTimer :: Test Unit -> Test Unit
 liftTimer test = do

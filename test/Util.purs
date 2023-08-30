@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
-import Benchmark.Util (getCurr, timeDiff)
+import Benchmark.Util (getCurr, timeDiff, logTime)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
@@ -82,7 +82,7 @@ testWithSetup s gconfig tconfig =
       ( do
            testParse s
            testTrace s gconfig tconfig
-           testGraph s gconfig tconfig
+           testGraph false s gconfig tconfig
       ) >>=
       case _ of
          Left msg -> fail msg
@@ -95,7 +95,7 @@ benchWithSetup s gconfig tconfig =
       ( do
            testParse s
            benchTrace s gconfig tconfig
-           benchGraph s gconfig tconfig
+           testGraph true s gconfig tconfig
       ) >>=
       case _ of
          Left msg -> fail msg
@@ -169,46 +169,13 @@ benchTrace s { γ } { δv, bwd_expect, fwd_expect } = do
       unless (isGraphical v𝔹') do
          checkPretty "Trace-based value" fwd_expect v𝔹''
 
-testGraph :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
-testGraph s gconf { δv, bwd_expect, fwd_expect } = do
-   -- | Eval
-   e <- desug s
-   (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
-   -- | Backward
-   let
-      αs_out = selectVertices (δv (botOf vα)) vα
-      gbwd = G.bwdSlice αs_out g
-      αs_in = sinks gbwd
-      e𝔹 = select𝔹s eα αs_in
-      s𝔹 = desugBwd e𝔹 (erase s)
-   -- | Forward (round-tripping)
-   let
-      gfwd = G.fwdSlice αs_in g
-      v𝔹 = select𝔹s vα (vertices gfwd)
-
-   {- | Forward (round-tripping) using De Morgan dual
-      gfwd' = G.fwdSliceDeMorgan αs_in g
-      v𝔹' = select𝔹s vα (vertices gfwd') <#> not
-   -}
-   lift $ do
-      -- | Check backward selections
-      unless (null bwd_expect) do
-         checkPretty "Graph-based source selection" bwd_expect s𝔹
-      -- | Check round-trip selections
-      unless (isGraphical v𝔹) do
-         checkPretty "Graph-based value" fwd_expect v𝔹
-      -- checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
-      sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
-         (flip subset (sources gfwd))
-
-benchGraph :: SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
-benchGraph s gconf { δv, bwd_expect, fwd_expect } = do
+testGraph :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
+testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
    pre_eval <- liftEffect now
    (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
    post_eval <- liftEffect now
-   log ("Graph-based eval time: " <> show (timeDiff pre_eval post_eval) <> "\n")
    -- | Backward
    pre_slice <- getCurr
    let
@@ -216,7 +183,6 @@ benchGraph s gconf { δv, bwd_expect, fwd_expect } = do
       gbwd = G.bwdSlice αs_out g
       αs_in = sinks gbwd
    post_slice <- getCurr
-   log ("Graph-based bwd slice time: " <> show (timeDiff pre_slice post_slice) <> "\n")
    let
       e𝔹 = select𝔹s eα αs_in
       s𝔹 = desugBwd e𝔹 (erase s)
@@ -226,22 +192,26 @@ benchGraph s gconf { δv, bwd_expect, fwd_expect } = do
       gfwd = G.fwdSlice αs_in g
       v𝔹 = select𝔹s vα (vertices gfwd)
    post_fwd_slice <- getCurr
-   log ("Graph-based fwd slice time: " <> show (timeDiff pre_fwd_slice post_fwd_slice) <> "\n")
-
    {- | Forward (round-tripping) using De Morgan dual
       gfwd' = G.fwdSliceDeMorgan αs_in g
       v𝔹' = select𝔹s vα (vertices gfwd') <#> not
    -}
-   lift $ do
-      -- | Check backward selections
-      unless (null bwd_expect) do
-         checkPretty "Graph-based source selection" bwd_expect s𝔹
-      -- | Check round-trip selections
-      unless (isGraphical v𝔹) do
-         checkPretty "Graph-based value" fwd_expect v𝔹
-      -- checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
-      sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
-         (flip subset (sources gfwd))
+   if not is_bench then
+      lift $ do
+         -- | Check backward selections
+         unless (null bwd_expect) do
+            checkPretty "Graph-based source selection" bwd_expect s𝔹
+         -- | Check round-trip selections
+         unless (isGraphical v𝔹) do
+            checkPretty "Graph-based value" fwd_expect v𝔹
+         -- checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
+         sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
+            (flip subset (sources gfwd))
+   else
+      lift $ do
+         logTime "Graph-based eval time: " pre_eval post_eval
+         logTime "Graph-based bwd slice time: " pre_slice post_slice
+         logTime "Graph-based fwd slice time: " pre_fwd_slice post_fwd_slice
 
 withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
 withDefaultImports = beforeAll openDefaultImports
