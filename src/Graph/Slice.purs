@@ -2,55 +2,48 @@ module Graph.Slice where
 
 import Prelude hiding (add)
 
+import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), (:))
 import Data.List as L
-import Data.Map (Map, lookup, delete, insertWith)
-import Data.Map (empty) as M
+import Data.Map (Map)
+import Data.Map (insert, empty, lookup, delete) as M
+import Data.Maybe (maybe)
 import Data.Set (Set)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN, sinks, op)
 import Graph.GraphWriter (WithGraph, extend, runWithGraph)
-import Set (class Set, empty, insert, member, singleton, union, unions, difference)
-import Util ((×), definitely)
+import Set (class Set, empty, insert, member, singleton, unions, difference)
+import Util (type (×), (×))
 
 type PendingSlice s = Map Vertex (s Vertex)
 
-bwdSlice :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
-bwdSlice αs g' =
-   fst $ runWithGraph $ bwdVertices g' empty (L.fromFoldable αs)
-
-bwdVertices :: forall g s. Graph g s => g -> s Vertex -> List Vertex -> WithGraph s Unit
-bwdVertices _ _ Nil = pure unit
-bwdVertices g' visited (α : αs) =
-   if α `member` visited then bwdVertices g' visited αs
-   else do
-      let βs = outN g' α
+bwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
+bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs0)
+   where
+   go :: (s Vertex × List Vertex) -> WithGraph s (Step _ Unit)
+   go (_ × Nil) = pure $ Done unit
+   go (visited × (α : αs)) = do
+      let βs = outN g0 α
       extend α βs
-      bwdVertices g' (visited # insert α) (αs <> L.fromFoldable βs)
+      pure $ Loop ((visited # insert α) × (L.fromFoldable βs <> αs))
 
 fwdSliceDeMorgan :: forall g s. Graph g s => s Vertex -> g -> g
-fwdSliceDeMorgan αs g' =
-   bwdSlice (sinks g' `difference` αs) (op g')
+fwdSliceDeMorgan αs_0 g_0 =
+   bwdSlice (sinks g_0 `difference` αs_0) (op g_0)
 
 fwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
-fwdSlice αs g' =
-   fst $ runWithGraph $ fwdEdges g' M.empty (inEdges g' αs)
-
-fwdEdges :: forall g s. Graph g s => g -> PendingSlice s -> List Edge -> WithGraph s (PendingSlice s)
-fwdEdges _ pending Nil = pure pending
-fwdEdges g' h ((α × β) : es) = do
-   h' <- fwdVertex g' (insertWith union α (singleton β) h) α
-   fwdEdges g' h' es
-
-fwdVertex :: forall g s. Set s Vertex => Graph g s => g -> PendingSlice s -> Vertex -> WithGraph s (PendingSlice s)
-fwdVertex g' h α =
-   if αs == outN g' α then do
-      extend α αs
-      fwdEdges g' (delete α h) (inEdges' g' α)
-   else pure h
+fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
    where
-   αs = lookup α h # definitely "in pending map"
+   go :: (PendingSlice s × List Edge) -> WithGraph s (Step _ (PendingSlice s))
+   go (h × Nil) = pure $ Done h
+   go (h × ((α × β) : es)) = do
+      let βs = maybe (singleton β) (insert β) (M.lookup α h)
+      if βs == outN g0 α then do
+         extend α βs
+         pure $ Loop ((M.delete α h) × (inEdges' g0 α <> es))
+      else
+         pure $ Loop ((M.insert α βs h) × es)
 
 selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
 selectαs v𝔹 vα = unions (asSet <$> v𝔹 <*> vα)
