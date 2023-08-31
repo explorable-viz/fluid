@@ -2,6 +2,7 @@ module Graph.Slice where
 
 import Prelude hiding (add)
 
+import Control.Monad.Rec.Class (Step(..), tailRecM)
 import Data.Foldable (class Foldable)
 import Data.List (List(..), (:))
 import Data.List as L
@@ -12,22 +13,19 @@ import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN, sinks, op)
 import Graph.GraphWriter (WithGraph, extend, runWithGraph)
 import Set (class Set, empty, insert, member, singleton, union, unions, difference)
-import Util ((×), definitely)
+import Util (type (×), (×), definitely)
 
 type PendingSlice s = Map Vertex (s Vertex)
 
-bwdSlice :: forall g s. Set s Vertex => Graph g s => s Vertex -> g -> g
-bwdSlice αs g' =
-   fst $ runWithGraph $ bwdVertices g' empty (L.fromFoldable αs)
-
-bwdVertices :: forall g s. Graph g s => g -> s Vertex -> List Vertex -> WithGraph s Unit
-bwdVertices _ _ Nil = pure unit
-bwdVertices g' visited (α : αs) =
-   if α `member` visited then bwdVertices g' visited αs
-   else do
+bwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
+bwdSlice αs' g' = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs')
+   where
+   go :: (s Vertex × List Vertex) -> WithGraph s (Step (s Vertex × List Vertex) Unit)
+   go (_ × Nil) = pure $ Done unit
+   go (visited × (α : αs)) = do
       let βs = outN g' α
       extend α βs
-      bwdVertices g' (visited # insert α) (αs <> L.fromFoldable βs)
+      pure $ Loop ((visited # insert α) × (L.fromFoldable βs <> αs))
 
 fwdSliceDeMorgan :: forall g s. Graph g s => s Vertex -> g -> g
 fwdSliceDeMorgan αs g' =

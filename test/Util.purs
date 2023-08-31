@@ -47,7 +47,7 @@ import EvalBwd (evalBwd)
 import EvalGraph (GraphConfig, evalWithConfig)
 import Graph (sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSlice, fwdSlice) as G
+import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
 import Lattice (bot, botOf, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports, parse)
@@ -183,6 +183,10 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
       gfwd = G.fwdSlice αs_in g
       v𝔹 = select𝔹s vα (vertices gfwd)
 
+   {- | Forward (round-tripping) using De Morgan dual    -}
+   let gfwd' = G.fwdSliceDeMorgan αs_in g
+       v𝔹' = select𝔹s vα (vertices gfwd') <#> not
+
    lift $ do
       -- | Check backward selections
       unless (null bwd_expect) do
@@ -190,6 +194,7 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
       -- | Check forward (round-tripping) selections
       unless (isGraphical v𝔹) do
          checkPretty "Graph-based value" fwd_expect v𝔹
+         checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
       -- | Check round-tripping property
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
@@ -221,10 +226,9 @@ benchGraph s gconf { δv, bwd_expect, fwd_expect } = do
    post_fwd_slice <- getCurr
    log ("Graph-based fwd slice time: " <> show (timeDiff pre_fwd_slice post_fwd_slice) <> "\n")
 
-   {- | Forward (round-tripping) using De Morgan dual
-      gfwd' = G.fwdSliceDeMorgan αs_in g
-      v𝔹' = select𝔹s vα (vertices gfwd') <#> not
-   -}
+   {- | Forward (round-tripping) using De Morgan dual    -}
+   -- let gfwd' = G.fwdSliceDeMorgan αs_in g
+   --     v𝔹' = select𝔹s vα (vertices gfwd') <#> not
    lift $ do
       -- | Check backward selections
       unless (null bwd_expect) do
@@ -232,7 +236,7 @@ benchGraph s gconf { δv, bwd_expect, fwd_expect } = do
       -- | Check round-trip selections
       unless (isGraphical v𝔹) do
          checkPretty "Graph-based value" fwd_expect v𝔹
-      -- checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
+         -- checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
 
