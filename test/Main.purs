@@ -40,12 +40,12 @@ tests = [ test_scratchpad ]
 -}
 
 test_scratchpad :: Test Unit
-test_scratchpad = testBwdMany
+test_scratchpad = testBwdMany false
    [ (File "filter") × (File "filter.expect") × (botOf >>> selectNthCell 0 neg) × "(_8_ _:_ (7 : []))"
    ]
 
 test_desugaring :: Test Unit
-test_desugaring = testMany
+test_desugaring = testMany false
    [ (File "desugar/list-comp-1") × "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
    , (File "desugar/list-comp-2") ×
         "(14 : (14 : (14 : (12 : (12 : (12 : (10 : (10 : (10 : (13 : (13 : (13 : (11 : (11 : (11 : (9 : \
@@ -59,7 +59,7 @@ test_desugaring = testMany
    ]
 
 test_misc :: Test Unit
-test_misc = testMany
+test_misc = testMany false
    [ (File "arithmetic") × "42"
    , (File "array") × "(1, (3, 3))"
    , (File "compose") × "5"
@@ -87,7 +87,7 @@ test_misc = testMany
    ]
 
 test_bwd :: Test Unit
-test_bwd = testBwdMany
+test_bwd = testBwdMany false
    [ (File "add") × (File "add.expect") × (const $ Int true 8) × "_8_"
    , (File "array/lookup") × (File "array/lookup.expect") × (const $ Int true 14) × "_14_"
    , (File "array/dims") × (File "array/dims.expect") × topOf × "_(_3_, _3_)_"
@@ -204,7 +204,7 @@ test_bwd = testBwdMany
    ]
 
 test_graphics :: Test Unit
-test_graphics = testWithDatasetMany
+test_graphics = testWithDatasetMany false
    [ (File "dataset/renewables-restricted") × (File "graphics/background")
    , (File "dataset/renewables-restricted") × (File "graphics/grouped-bar-chart")
    , (File "dataset/renewables-restricted") × (File "graphics/line-chart")

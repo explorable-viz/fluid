@@ -184,53 +184,29 @@ withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith
 withDataset dataset =
    beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γ } × xv) -> pure { g, n, γ: γ <+> xv }))
 
-testMany :: Array (File × String) → Test Unit
-testMany fxs = withDefaultImports $ traverse_ test fxs
+testMany :: Boolean -> Array (File × String) → Test Unit
+testMany is_bench fxs = withDefaultImports $ traverse_ test fxs
    where
    test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
-      it (show file) (\(gconfig × s) -> testWithSetup false s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+      it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
 
-benchMany :: Array (File × String) -> Test Unit
-benchMany fxs = withDefaultImports $ traverse_ test fxs
-   where
-   test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
-      it (show file) (\(gconfig × s) -> testWithSetup true s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
-
-testBwdMany :: Array (File × File × Selector Val × String) → Test Unit
-testBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
+testBwdMany :: Boolean -> Array (File × File × Selector Val × String) → Test Unit
+testBwdMany is_bench fxs = withDefaultImports $ traverse_ testBwd fxs
    where
    testBwd (file × file_expect × δv × fwd_expect) =
       beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
          it (show $ folder <> file)
             ( \(gconfig × s) -> do
                  bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
-                 testWithSetup false s gconfig { δv, fwd_expect, bwd_expect }
+                 testWithSetup is_bench s gconfig { δv, fwd_expect, bwd_expect }
             )
    folder = File "slicing/"
 
-benchBwdMany :: Array (File × File × Selector Val × String) → Test Unit
-benchBwdMany fxs = withDefaultImports $ traverse_ testBwd fxs
-   where
-   testBwd (file × file_expect × δv × fwd_expect) =
-      beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
-         it (show $ folder <> file)
-            ( \(gconfig × s) -> do
-                 bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
-                 testWithSetup true s gconfig { δv, fwd_expect, bwd_expect }
-            )
-   folder = File "slicing/"
-
-testWithDatasetMany :: Array (File × File) -> Test Unit
-testWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
+testWithDatasetMany :: Boolean -> Array (File × File) -> Test Unit
+testWithDatasetMany is_bench fxs = withDefaultImports $ traverse_ testWithDataset fxs
    where
    testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
-      it (show file) (\(gconfig × s) -> testWithSetup false s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
-
-benchWithDatasetMany :: Array (File × File) -> Test Unit
-benchWithDatasetMany fxs = withDefaultImports $ traverse_ testWithDataset fxs
-   where
-   testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
-      it (show file) (\(gconfig × s) -> testWithSetup true s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
+      it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
 
 testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
