@@ -13,9 +13,9 @@ import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Console (logShow)
+import Effect.Console (logShow, log)
 import Test.Spec (SpecT)
-import Util (MayFailT, error)
+import Util (MayFailT, error, type (×), (×))
 
 newtype File = File String
 newtype Folder = Folder String
@@ -25,12 +25,36 @@ derive newtype instance Semigroup File
 derive newtype instance Monoid File
 type Test a = SpecT Aff Unit Effect a
 
-getCurr :: forall a. MonadEffect a => a JSDate
+type BenchResult =
+   { name :: String
+   , desug :: Number
+   , trace_eval :: Number
+   , graph_eval :: Number
+   , trace_fwd :: Number
+   , trace_bwd :: Number
+   , graph_fwd :: Number
+   , graph_bwd :: Number
+   }
+
+type BenchSet = Array BenchResult
+
+bench :: forall m a. MonadEffect m => m a -> m (a × Number)
+bench prog = do
+   t <- liftEffect $ now
+   r <- prog
+   t' <- liftEffect $ now
+   pure (r × timeDiff t t')
+
+getCurr :: forall m. MonadEffect m => m JSDate
 getCurr = liftEffect $ now
 
 timeDiff :: JSDate -> JSDate -> Number
 timeDiff begin end =
    getTime end - getTime begin
+
+logTime :: String -> JSDate -> JSDate -> Aff Unit
+logTime msg before after =
+   liftEffect $ log (msg <> show (timeDiff before after) <> "\n")
 
 liftTimer :: Test Unit -> Test Unit
 liftTimer test = do
