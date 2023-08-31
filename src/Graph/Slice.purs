@@ -38,17 +38,12 @@ fwdSlice αs g' =
 fwdEdges :: forall g s. Graph g s => g -> PendingSlice s -> List Edge -> WithGraph s (PendingSlice s)
 fwdEdges _ pending Nil = pure pending
 fwdEdges g' h ((α × β) : es) = do
-   h' <- fwdVertex g' (insertWith union α (singleton β) h) α
-   fwdEdges g' h' es
-
-fwdVertex :: forall g s. Set s Vertex => Graph g s => g -> PendingSlice s -> Vertex -> WithGraph s (PendingSlice s)
-fwdVertex g' h α =
-   if αs == outN g' α then do
-      extend α αs
-      fwdEdges g' (delete α h) (inEdges' g' α)
-   else pure h
-   where
-   αs = lookup α h # definitely "in pending map"
+   let hαβ = insertWith union α (singleton β) h
+       βs = lookup α hαβ # definitely "in pending map"
+   if βs == outN g' α
+      then do extend α βs
+              fwdEdges g' (delete α hαβ) (inEdges' g' α <> es)
+      else fwdEdges g' hαβ es
 
 selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
 selectαs v𝔹 vα = unions (asSet <$> v𝔹 <*> vα)
@@ -59,3 +54,21 @@ select𝔹s vα αs = flip member αs <$> vα
 asSet :: forall s. Set s Vertex => Boolean -> Vertex -> s Vertex
 asSet true = singleton
 asSet false = const empty
+
+-- fwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
+-- fwdSlice αs' g' = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g' αs') where
+--    go :: (PendingSlice s × List Edge) -> WithGraph s (Step (PendingSlice s × List Edge) (PendingSlice s))
+--    go (h × Nil) = pure $ Done h
+--    go (h × ((α × β) : es)) = do
+--       fwdVertex (insertWith union α (singleton β) h) α >>= case _ of
+--          Done h' -> pure $ Loop (h' × es)
+--          Loop (h' × es') -> do _ <- pure $ Loop (h' × es')
+--                                pure $ Loop (delete α h × inEdges' g' α)
+--    fwdVertex ::PendingSlice s -> Vertex -> WithGraph s (Step (PendingSlice s × List Edge) (PendingSlice s))
+--    fwdVertex h α =
+--       if αs == outN g' α then do
+--          extend α αs
+--          pure $ Loop (delete α h × inEdges' g' α)
+--       else pure $ Done h
+--       where
+--       αs = lookup α h # definitely "in pending map"
