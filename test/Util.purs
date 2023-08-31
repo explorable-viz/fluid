@@ -4,15 +4,17 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
-import Benchmark.Util (getCurr, logTime)
+import Benchmark.Util (BenchmarkAcc(..), getCurr, logTime)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
+import Control.Monad.Writer (WriterT(..), runWriterT)
 import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Set (Set) as S
 import Data.String (null)
 import Data.Traversable (traverse_)
+import Data.Tuple (fst)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -33,7 +35,7 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Set (subset)
-import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
+import Test.Spec (SpecT(..), before, beforeAll, beforeWith, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
 import Util (Endo, MayFailT, type (×), (×), successful)
@@ -44,11 +46,17 @@ isGraphical :: forall a. Val a -> Boolean
 isGraphical (Constr _ c _) = typeName (successful (dataTypeFor c)) `elem` [ "GraphicsElement", "Plot" ]
 isGraphical _ = false
 
-type Test a = SpecT Aff Unit Effect a
-type TestWith g a = SpecT Aff g Effect a
+type Test a = SpecT Aff Unit BenchmarkAcc a
+type TestWith g a = SpecT Aff g BenchmarkAcc a
+
+unBenchAcc :: forall a. BenchmarkAcc a -> Effect a
+unBenchAcc (BAcc ba) = map fst $ runWriterT ba
+
+unWriterTest :: forall a. Test a -> SpecT Aff Unit Effect a
+unWriterTest (SpecT (WriterT monadic)) = (SpecT (WriterT (unBenchAcc monadic)))
 
 run :: forall a. Test a → Effect Unit
-run = runMocha -- no reason at all to see the word "Mocha"
+run test = runMocha $ unWriterTest test -- no reason at all to see the word "Mocha"
 
 checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
 checkPretty msg expect x =
@@ -178,7 +186,7 @@ testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
          logTime "Graph-based fwd slice time: " pre_fwd_slice post_fwd_slice
 
 withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
-withDefaultImports = beforeAll openDefaultImports
+withDefaultImports x = beforeAll openDefaultImports x
 
 withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
 withDataset dataset =
@@ -187,14 +195,14 @@ withDataset dataset =
 testMany :: Boolean -> Array (File × String) → Test Unit
 testMany is_bench fxs = withDefaultImports $ traverse_ test fxs
    where
-   test :: File × String -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
+   test :: File × String -> SpecT Aff (GraphConfig (GraphImpl S.Set)) BenchmarkAcc Unit
    test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
       it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
 
 testBwdMany :: Boolean -> Array (File × File × Selector Val × String) → Test Unit
 testBwdMany is_bench fxs = withDefaultImports $ traverse_ testBwd fxs
    where
-   testBwd :: File × File × (Endo (Val Boolean)) × String -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
+   testBwd :: File × File × (Endo (Val Boolean)) × String -> SpecT Aff (GraphConfig (GraphImpl S.Set)) BenchmarkAcc Unit
    testBwd (file × file_expect × δv × fwd_expect) =
       beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
          it (show $ folder <> file)
@@ -207,7 +215,7 @@ testBwdMany is_bench fxs = withDefaultImports $ traverse_ testBwd fxs
 testWithDatasetMany :: Boolean -> Array (File × File) -> Test Unit
 testWithDatasetMany is_bench fxs = withDefaultImports $ traverse_ testWithDataset fxs
    where
-   testWithDataset :: File × File -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
+   testWithDataset :: File × File -> SpecT Aff (GraphConfig (GraphImpl S.Set)) BenchmarkAcc Unit
    testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
       it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
 

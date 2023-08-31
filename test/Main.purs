@@ -3,13 +3,13 @@ module Test.Main where
 import Prelude hiding (add)
 import App.Util (selectBarChart_data, selectMatrixElement, selectNth, selectNthCell, selectPair, selectSome, select_y)
 import Bindings ((↦))
-import Control.Monad.Trans.Class (lift)
 import Data.Foldable (foldl)
 import Data.List (List(..), (:))
 import Data.Set as S
 import Data.Traversable (traverse_)
 import Dict (fromFoldable) as D
 import Effect (Effect)
+import Effect.Class (liftEffect)
 import Effect.Console (log, logShow)
 import Graph (Vertex(..), inEdges)
 import Graph (fromFoldable) as G
@@ -305,6 +305,6 @@ test_graph = do
          ids
       g' = G.fromFoldable adds :: GraphImpl (S.Set)
       slice = fwdSlice (S.fromFoldable [ Vertex "13", Vertex "12", Vertex "11" ]) g'
-   lift $ do
+   liftEffect $  do
       log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ Vertex "11" ])))
       logShow slice
