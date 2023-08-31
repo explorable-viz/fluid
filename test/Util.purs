@@ -182,10 +182,10 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    let
       gfwd = G.fwdSlice αs_in g
       v𝔹 = select𝔹s vα (vertices gfwd)
-
-   {- | Forward (round-tripping) using De Morgan dual    -}
-   let gfwd' = G.fwdSliceDeMorgan αs_in g
-       v𝔹' = select𝔹s vα (vertices gfwd') <#> not
+   -- | Forward (round-tripping) using De Morgan dual
+   let
+      gfwd' = G.fwdSliceDeMorgan αs_in g
+      v𝔹' = select𝔹s vα (vertices gfwd') <#> not
 
    lift $ do
       -- | Check backward selections
@@ -236,7 +236,7 @@ benchGraph s gconf { δv, bwd_expect, fwd_expect } = do
       -- | Check round-trip selections
       unless (isGraphical v𝔹) do
          checkPretty "Graph-based value" fwd_expect v𝔹
-         -- checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
+      -- checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
 
