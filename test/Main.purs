@@ -305,6 +305,6 @@ test_graph = do
          ids
       g' = G.fromFoldable adds :: GraphImpl (S.Set)
       slice = fwdSlice (S.fromFoldable [ Vertex "13", Vertex "12", Vertex "11" ]) g'
-   liftEffect $  do
+   liftEffect $ do
       log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ Vertex "11" ])))
       logShow slice
