@@ -36,7 +36,7 @@ import Set (subset)
 import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
-import Util (MayFailT, type (×), (×), successful)
+import Util (Endo, MayFailT, type (×), (×), successful)
 import Val (Val(..), class Ann, (<+>))
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
@@ -187,12 +187,14 @@ withDataset dataset =
 testMany :: Boolean -> Array (File × String) → Test Unit
 testMany is_bench fxs = withDefaultImports $ traverse_ test fxs
    where
+   test :: File × String -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
    test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
       it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
 
 testBwdMany :: Boolean -> Array (File × File × Selector Val × String) → Test Unit
 testBwdMany is_bench fxs = withDefaultImports $ traverse_ testBwd fxs
    where
+   testBwd :: File × File × (Endo (Val Boolean)) × String -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
    testBwd (file × file_expect × δv × fwd_expect) =
       beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
          it (show $ folder <> file)
@@ -205,6 +207,7 @@ testBwdMany is_bench fxs = withDefaultImports $ traverse_ testBwd fxs
 testWithDatasetMany :: Boolean -> Array (File × File) -> Test Unit
 testWithDatasetMany is_bench fxs = withDefaultImports $ traverse_ testWithDataset fxs
    where
+   testWithDataset :: File × File -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
    testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
       it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
 
