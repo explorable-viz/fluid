@@ -49,14 +49,14 @@ isGraphical _ = false
 type Test a = SpecT Aff Unit BenchmarkAcc a
 type TestWith g a = SpecT Aff g BenchmarkAcc a
 
-unBenchAcc :: forall a. BenchmarkAcc a -> Effect a
-unBenchAcc (BAcc ba) = map fst $ runWriterT ba
+unBenchAcc :: forall a. Boolean -> BenchmarkAcc a -> Effect a
+unBenchAcc is_bench (BAcc ba) = map fst $ runWriterT ba
 
-unWriterTest :: forall a. Test a -> SpecT Aff Unit Effect a
-unWriterTest (SpecT (WriterT monadic)) = (SpecT (WriterT (unBenchAcc monadic)))
+unWriterTest :: forall a. Boolean -> Test a -> SpecT Aff Unit Effect a
+unWriterTest is_bench (SpecT (WriterT monadic)) = (SpecT (WriterT (unBenchAcc is_bench monadic)))
 
 run :: forall a. Test a → Effect Unit
-run test = runMocha $ unWriterTest test -- no reason at all to see the word "Mocha"
+run test = runMocha $ unWriterTest false test -- no reason at all to see the word "Mocha"
 
 checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
 checkPretty msg expect x =

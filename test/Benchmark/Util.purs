@@ -47,6 +47,9 @@ derive newtype instance Bind BenchmarkAcc
 derive newtype instance Monad BenchmarkAcc
 derive newtype instance MonadEffect BenchmarkAcc
 
+instance Show (BenchmarkAcc a) where
+   show (BAcc _ba) = error "todo"
+
 getCurr :: forall a. MonadEffect a => a JSDate
 getCurr = liftEffect $ now
 
