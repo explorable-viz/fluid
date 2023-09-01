@@ -177,17 +177,17 @@ withDefaultImports = beforeAll openDefaultImports
 withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
 withDataset dataset = beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }))
 
-testMany :: Boolean -> Array (File × String) → Test Unit
-testMany is_bench fxs = withDefaultImports $ traverse_ test fxs
+testMany :: Array (File × String) → Boolean -> Test Unit
+testMany fxs is_bench = withDefaultImports $ traverse_ test fxs
    where
-   test :: File × String -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
+   test :: File × String -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
    test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
       it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
 
-testBwdMany :: Boolean -> Array (File × File × Selector Val × String) → Test Unit
-testBwdMany is_bench fxs = withDefaultImports $ traverse_ testBwd fxs
+testBwdMany :: Array (File × File × Selector Val × String) → Boolean -> Test Unit
+testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
    where
-   testBwd :: File × File × (Endo (Val Boolean)) × String -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
+   testBwd :: File × File × (Endo (Val Boolean)) × String -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
    testBwd (file × file_expect × δv × fwd_expect) =
       beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
          it (show $ folder <> file)
@@ -197,10 +197,10 @@ testBwdMany is_bench fxs = withDefaultImports $ traverse_ testBwd fxs
             )
    folder = File "slicing/"
 
-testWithDatasetMany :: Boolean -> Array (File × File) -> Test Unit
-testWithDatasetMany is_bench fxs = withDefaultImports $ traverse_ testWithDataset fxs
+testWithDatasetMany :: Array (File × File) -> Boolean -> Test Unit
+testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDataset fxs
    where
-   testWithDataset :: File × File -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
+   testWithDataset :: File × File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
    testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
       it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
 
