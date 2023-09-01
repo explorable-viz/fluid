@@ -82,7 +82,7 @@ test_misc = testMany
    , (File "normalise") × "(33, 66)"
    , (File "pattern-match") × "4"
    , (File "range") × "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))"
-   , (File "records") × "{a: 2, isBench: 6, c: 7, d: (5 : []), e: 7}"
+   , (File "records") × "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
    , (File "reverse") × "(2 : (1 : []))"
    ]
 
@@ -136,12 +136,12 @@ test_bwd = testBwdMany
         ×
            ( const $ Dictionary false $ DictRep $ D.fromFoldable
                 [ "a" ↦ (true × Int false 5)
-                , "isBench" ↦ (false × Int false 6)
+                , "b" ↦ (false × Int false 6)
                 , "c" ↦ (false × Int true 7)
                 ]
            )
         ×
-           "{|_\"a\"_:= 5, \"isBench\":= 6, \"c\":= _7_|}"
+           "{|_\"a\"_:= 5, \"b\":= 6, \"c\":= _7_|}"
    , (File "dict/foldl") × (File "dict/foldl.expect")
         × topOf
         ×
@@ -149,12 +149,12 @@ test_bwd = testBwdMany
    , (File "dict/intersectionWith") × (File "dict/intersectionWith.expect")
         ×
            ( const $ Dictionary false $ DictRep $ D.fromFoldable
-                [ "isBench" ↦ (false × Int true 0)
+                [ "b" ↦ (false × Int true 0)
                 , "c" ↦ (false × Int true 20)
                 ]
            )
         ×
-           "{|\"isBench\":= _0_, \"c\":= _20_|}"
+           "{|\"b\":= _0_, \"c\":= _20_|}"
    , (File "dict/fromRecord") × (File "dict/fromRecord.expect")
         ×
            ( const $ Dictionary false $ DictRep $ D.fromFoldable
