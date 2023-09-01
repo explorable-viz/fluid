@@ -23,14 +23,14 @@ import Val (DictRep(..), Val(..))
 
 main :: Effect Unit
 main = do
-   traverse_ run tests
+   traverse_ run $ tests false
 
-tests :: Array (Test Unit)
-tests =
-   [ test_desugaring
-   , test_misc
-   , test_bwd
-   , test_graphics
+tests :: Boolean -> Array (Test Unit)
+tests is_bench =
+   [ test_desugaring is_bench
+   , test_misc is_bench
+   , test_bwd is_bench
+   , test_graphics is_bench
    , test_linking
    , test_graph
    ]
@@ -39,13 +39,13 @@ tests =
 tests = [ test_scratchpad ]
 -}
 
-test_scratchpad :: Test Unit
-test_scratchpad = testBwdMany false
+test_scratchpad :: Boolean -> Test Unit
+test_scratchpad = testBwdMany
    [ (File "filter") × (File "filter.expect") × (botOf >>> selectNthCell 0 neg) × "(_8_ _:_ (7 : []))"
    ]
 
-test_desugaring :: Test Unit
-test_desugaring = testMany false
+test_desugaring :: Boolean -> Test Unit
+test_desugaring = testMany
    [ (File "desugar/list-comp-1") × "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
    , (File "desugar/list-comp-2") ×
         "(14 : (14 : (14 : (12 : (12 : (12 : (10 : (10 : (10 : (13 : (13 : (13 : (11 : (11 : (11 : (9 : \
@@ -58,8 +58,8 @@ test_desugaring = testMany false
    , (File "desugar/list-enum") × "(3 : (4 : (5 : (6 : (7 : [])))))"
    ]
 
-test_misc :: Test Unit
-test_misc = testMany false
+test_misc :: Boolean -> Test Unit
+test_misc = testMany
    [ (File "arithmetic") × "42"
    , (File "array") × "(1, (3, 3))"
    , (File "compose") × "5"
@@ -82,12 +82,12 @@ test_misc = testMany false
    , (File "normalise") × "(33, 66)"
    , (File "pattern-match") × "4"
    , (File "range") × "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))"
-   , (File "records") × "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}"
+   , (File "records") × "{a: 2, isBench: 6, c: 7, d: (5 : []), e: 7}"
    , (File "reverse") × "(2 : (1 : []))"
    ]
 
-test_bwd :: Test Unit
-test_bwd = testBwdMany false
+test_bwd :: Boolean -> Test Unit
+test_bwd = testBwdMany
    [ (File "add") × (File "add.expect") × (const $ Int true 8) × "_8_"
    , (File "array/lookup") × (File "array/lookup.expect") × (const $ Int true 14) × "_14_"
    , (File "array/dims") × (File "array/dims.expect") × topOf × "_(_3_, _3_)_"
@@ -136,12 +136,12 @@ test_bwd = testBwdMany false
         ×
            ( const $ Dictionary false $ DictRep $ D.fromFoldable
                 [ "a" ↦ (true × Int false 5)
-                , "b" ↦ (false × Int false 6)
+                , "isBench" ↦ (false × Int false 6)
                 , "c" ↦ (false × Int true 7)
                 ]
            )
         ×
-           "{|_\"a\"_:= 5, \"b\":= 6, \"c\":= _7_|}"
+           "{|_\"a\"_:= 5, \"isBench\":= 6, \"c\":= _7_|}"
    , (File "dict/foldl") × (File "dict/foldl.expect")
         × topOf
         ×
@@ -149,12 +149,12 @@ test_bwd = testBwdMany false
    , (File "dict/intersectionWith") × (File "dict/intersectionWith.expect")
         ×
            ( const $ Dictionary false $ DictRep $ D.fromFoldable
-                [ "b" ↦ (false × Int true 0)
+                [ "isBench" ↦ (false × Int true 0)
                 , "c" ↦ (false × Int true 20)
                 ]
            )
         ×
-           "{|\"b\":= _0_, \"c\":= _20_|}"
+           "{|\"isBench\":= _0_, \"c\":= _20_|}"
    , (File "dict/fromRecord") × (File "dict/fromRecord.expect")
         ×
            ( const $ Dictionary false $ DictRep $ D.fromFoldable
@@ -203,8 +203,8 @@ test_bwd = testBwdMany false
            "(13.0 : (_25.0_ : (41.0 : [])))"
    ]
 
-test_graphics :: Test Unit
-test_graphics = testWithDatasetMany false
+test_graphics :: Boolean -> Test Unit
+test_graphics = testWithDatasetMany
    [ (File "dataset/renewables-restricted") × (File "graphics/background")
    , (File "dataset/renewables-restricted") × (File "graphics/grouped-bar-chart")
    , (File "dataset/renewables-restricted") × (File "graphics/line-chart")
