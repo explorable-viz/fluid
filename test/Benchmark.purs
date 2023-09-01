@@ -1,7 +1,6 @@
 module Test.Benchmark where
 
 import Prelude hiding (add)
-
 import App.Util (selectBarChart_data, selectMatrixElement, selectNth, selectNthCell, selectPair, selectSome, select_y)
 import Bindings ((↦))
 import Data.Foldable (foldl)
@@ -24,15 +23,15 @@ import Val (DictRep(..), Val(..))
 
 main :: Effect Unit
 main = do
-   traverse_ run tests
+   traverse_ run $ tests true
 
-tests :: Array (Test Unit)
-tests =
-   [ test_desugaring
-   , test_misc
-   , test_bwd
-   , test_graphics
-   -- , test_linking
+tests :: Boolean -> Array (Test Unit)
+tests is_bench =
+   [ test_desugaring is_bench
+   , test_misc is_bench
+   , test_bwd is_bench
+   , test_graphics is_bench
+   , test_linking
    , test_graph
    ]
 
@@ -40,13 +39,13 @@ tests =
 tests = [ test_scratchpad ]
 -}
 
-test_scratchpad :: Test Unit
-test_scratchpad = testBwdMany true
+test_scratchpad :: Boolean -> Test Unit
+test_scratchpad is_bench = testBwdMany is_bench
    [ (File "filter") × (File "filter.expect") × (botOf >>> selectNthCell 0 neg) × "(_8_ _:_ (7 : []))"
    ]
 
-test_desugaring :: Test Unit
-test_desugaring = testMany true
+test_desugaring :: Boolean -> Test Unit
+test_desugaring is_bench = testMany is_bench
    [ (File "desugar/list-comp-1") × "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
    , (File "desugar/list-comp-2") ×
         "(14 : (14 : (14 : (12 : (12 : (12 : (10 : (10 : (10 : (13 : (13 : (13 : (11 : (11 : (11 : (9 : \
@@ -59,8 +58,8 @@ test_desugaring = testMany true
    , (File "desugar/list-enum") × "(3 : (4 : (5 : (6 : (7 : [])))))"
    ]
 
-test_misc :: Test Unit
-test_misc = testMany true
+test_misc :: Boolean -> Test Unit
+test_misc is_bench = testMany is_bench
    [ (File "arithmetic") × "42"
    , (File "array") × "(1, (3, 3))"
    , (File "compose") × "5"
@@ -87,8 +86,8 @@ test_misc = testMany true
    , (File "reverse") × "(2 : (1 : []))"
    ]
 
-test_bwd :: Test Unit
-test_bwd = testBwdMany true
+test_bwd :: Boolean -> Test Unit
+test_bwd is_bench = testBwdMany is_bench
    [ (File "add") × (File "add.expect") × (const $ Int true 8) × "_8_"
    , (File "array/lookup") × (File "array/lookup.expect") × (const $ Int true 14) × "_14_"
    , (File "array/dims") × (File "array/dims.expect") × topOf × "_(_3_, _3_)_"
@@ -204,8 +203,8 @@ test_bwd = testBwdMany true
            "(13.0 : (_25.0_ : (41.0 : [])))"
    ]
 
-test_graphics :: Test Unit
-test_graphics = testWithDatasetMany true
+test_graphics :: Boolean -> Test Unit
+test_graphics is_bench = testWithDatasetMany is_bench
    [ (File "dataset/renewables-restricted") × (File "graphics/background")
    , (File "dataset/renewables-restricted") × (File "graphics/grouped-bar-chart")
    , (File "dataset/renewables-restricted") × (File "graphics/line-chart")
@@ -306,7 +305,6 @@ test_graph = do
          ids
       g' = G.fromFoldable adds :: GraphImpl (S.Set)
       slice = fwdSlice (S.fromFoldable [ Vertex "13", Vertex "12", Vertex "11" ]) g'
-   do
-      liftEffect $ do
-         log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ Vertex "11" ])))
-         logShow slice
+   liftEffect $ do
+      log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ Vertex "11" ])))
+      logShow slice

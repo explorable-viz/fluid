@@ -50,7 +50,7 @@ type Test a = SpecT Aff Unit BenchmarkAcc a
 type TestWith g a = SpecT Aff g BenchmarkAcc a
 
 unBenchAcc :: forall a. Boolean -> BenchmarkAcc a -> Effect a
-unBenchAcc is_bench (BAcc ba) = map fst $ runWriterT ba
+unBenchAcc _is_bench (BAcc ba) = map fst $ runWriterT ba
 
 unWriterTest :: forall a. Boolean -> Test a -> SpecT Aff Unit Effect a
 unWriterTest is_bench (SpecT (WriterT monadic)) = (SpecT (WriterT (unBenchAcc is_bench monadic)))
