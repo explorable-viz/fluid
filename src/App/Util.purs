@@ -25,8 +25,8 @@ import Web.Event.EventTarget (EventListener)
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
-type Selector f = f 𝔹 -> f 𝔹
-newtype Selector2 f = Selector2 (f Vertex -> Set Vertex)
+type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
+newtype Selector2 f = Selector2 (f Vertex -> Set Vertex) -- specifies selection
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
 
