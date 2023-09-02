@@ -78,6 +78,11 @@ selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v :
 selectNth n δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNth (n - 1) δv v' : Nil)
 selectNth _ _ _ = error absurd
 
+selectNth2 :: Int -> Endo (Selector2 Val)
+selectNth2 n sel = Selector2 $ unsafePartial $ case _ of
+   Constr _ c (v : _ : Nil) | n == 0 && c == cCons -> unwrap sel v
+   Constr _ c (_ : v' : Nil) | c == cCons -> unwrap (selectNth2 (n - 1) sel) v'
+
 selectNthCell :: Int -> Selector2 Val
 selectNthCell n = Selector2 $ unsafePartial $ case _ of
    Constr α c Nil | n == 0 && c == cNil -> S.singleton α
