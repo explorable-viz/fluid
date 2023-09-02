@@ -19352,12 +19352,6 @@
     })(),
     Apply0: () => applyExceptT(dictMonad)
   });
-  var monadStateExceptT = (dictMonadState) => {
-    const Monad0 = dictMonadState.Monad0();
-    const lift1 = monadTransExceptT.lift(Monad0);
-    const monadExceptT1 = { Applicative0: () => applicativeExceptT(Monad0), Bind1: () => bindExceptT(Monad0) };
-    return { state: (f) => lift1(dictMonadState.state(f)), Monad0: () => monadExceptT1 };
-  };
   var monadThrowExceptT = (dictMonad) => {
     const monadExceptT1 = { Applicative0: () => applicativeExceptT(dictMonad), Bind1: () => bindExceptT(dictMonad) };
     return {
@@ -19605,19 +19599,118 @@
   var eqVertex = { eq: (x2) => (y2) => x2 === y2 };
   var ordVertex = { compare: (x2) => (y2) => ordString.compare(x2)(y2), Eq0: () => eqVertex };
 
-  // output-es/Data.HeytingAlgebra/foreign.js
-  var boolConj = function(b1) {
-    return function(b2) {
-      return b1 && b2;
+  // output-es/Control.Monad.State.Class/index.js
+  var modify_ = (dictMonadState) => (f) => dictMonadState.state((s) => $Tuple(unit2, f(s)));
+
+  // output-es/Control.Monad.State.Trans/index.js
+  var monadTransStateT = {
+    lift: (dictMonad) => {
+      const bind2 = dictMonad.Bind1().bind;
+      const pure2 = dictMonad.Applicative0().pure;
+      return (m) => (s) => bind2(m)((x2) => pure2($Tuple(x2, s)));
+    }
+  };
+  var functorStateT = (dictFunctor) => ({ map: (f) => (v) => (s) => dictFunctor.map((v1) => $Tuple(f(v1._1), v1._2))(v(s)) });
+  var bindStateT = (dictMonad) => {
+    const bind2 = dictMonad.Bind1().bind;
+    return { bind: (v) => (f) => (s) => bind2(v(s))((v1) => f(v1._1)(v1._2)), Apply0: () => applyStateT(dictMonad) };
+  };
+  var applyStateT = (dictMonad) => {
+    const functorStateT1 = functorStateT(dictMonad.Bind1().Apply0().Functor0());
+    return {
+      apply: (() => {
+        const bind2 = bindStateT(dictMonad).bind;
+        const pure2 = applicativeStateT(dictMonad).pure;
+        return (f) => (a) => bind2(f)((f$p) => bind2(a)((a$p) => pure2(f$p(a$p))));
+      })(),
+      Functor0: () => functorStateT1
     };
   };
-  var boolDisj = function(b1) {
-    return function(b2) {
-      return b1 || b2;
+  var applicativeStateT = (dictMonad) => {
+    const pure2 = dictMonad.Applicative0().pure;
+    return { pure: (a) => (s) => pure2($Tuple(a, s)), Apply0: () => applyStateT(dictMonad) };
+  };
+  var monadStateStateT = (dictMonad) => {
+    const pure2 = dictMonad.Applicative0().pure;
+    const monadStateT12 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+    return { state: (f) => (x2) => pure2(f(x2)), Monad0: () => monadStateT12 };
+  };
+
+  // output-es/Graph.GraphWriter/index.js
+  var monadGraphWithGraphT = (dictMonad) => {
+    const $$void = functorStateT(dictMonad.Bind1().Apply0().Functor0()).map((v) => unit2);
+    const modify_2 = modify_(monadStateStateT(dictMonad));
+    const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+    return { extend: (\u03B1) => (\u03B1s) => $$void(modify_2(Cons($Tuple(\u03B1, \u03B1s)))), Monad0: () => monadStateT2 };
+  };
+  var monadAllocWithAllocT = (dictMonad) => {
+    const pure2 = applicativeStateT(dictMonad).pure;
+    const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+    return {
+      fresh: bindStateT(dictMonad).bind(monadStateStateT(dictMonad).state((s) => {
+        const s$p = 1 + s | 0;
+        return $Tuple(s$p, s$p);
+      }))((n) => pure2(showIntImpl(n))),
+      Monad0: () => monadStateT2
     };
   };
-  var boolNot = function(b) {
-    return !b;
+  var runWithAllocT = (dictMonad) => {
+    const bind2 = dictMonad.Bind1().bind;
+    const pure2 = dictMonad.Applicative0().pure;
+    return (n) => (c) => bind2(c(n))((v) => pure2($Tuple(v._2, v._1)));
+  };
+  var runWithGraphAllocT = (dictMonad) => {
+    const bind2 = dictMonad.Bind1().bind;
+    const runWithAllocT1 = runWithAllocT({
+      Applicative0: () => applicativeStateT(dictMonad),
+      Bind1: () => bindStateT(dictMonad)
+    });
+    const pure2 = dictMonad.Applicative0().pure;
+    return (dictGraph) => {
+      const append = dictGraph.Semigroup0().append;
+      const fromFoldable11 = dictGraph.fromFoldable(functorList)(foldableList);
+      return (v) => (c) => bind2(runWithAllocT1(v._2)(c)(Nil))((v1) => pure2((() => {
+        if (v1._1._2.tag === "Left") {
+          return $Either("Left", v1._1._2._1);
+        }
+        if (v1._1._2.tag === "Right") {
+          return $Either("Right", $Tuple($Tuple(append(v._1)(fromFoldable11(v1._2)), v1._1._1), v1._1._2._1));
+        }
+        fail();
+      })()));
+    };
+  };
+  var monadAllocWithGraphAllocT = (dictMonad) => {
+    const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+    const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
+    const monadExceptT = { Applicative0: () => applicativeExceptT(monadStateT12), Bind1: () => bindExceptT(monadStateT12) };
+    return { fresh: monadTransExceptT.lift(monadStateT12)(monadAllocWithAllocT(monadStateT2).fresh), Monad0: () => monadExceptT };
+  };
+  var monadGraphAllocWithGraphA = (dictMonad) => {
+    const $1 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+    const monadStateT2 = { Applicative0: () => applicativeStateT($1), Bind1: () => bindStateT($1) };
+    const bindExceptT2 = bindExceptT(monadStateT2);
+    const pure2 = applicativeExceptT(monadStateT2).pure;
+    return (dictMonadAlloc) => (dictMonadGraph) => ({
+      new: (\u03B1s) => bindExceptT2.bind(dictMonadAlloc.fresh)((\u03B1) => bindExceptT2.bind(dictMonadGraph.extend(\u03B1)(\u03B1s))(() => pure2(\u03B1))),
+      MonadAlloc0: () => dictMonadAlloc,
+      MonadGraph1: () => dictMonadGraph
+    });
+  };
+  var monadGraphWithGraphAllocT = (dictMonad) => {
+    const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
+    const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
+    const lift22 = monadTransExceptT.lift(monadStateT12);
+    const lift32 = monadTransStateT.lift(monadStateT2);
+    const extend1 = monadGraphWithGraphT(dictMonad).extend;
+    const monadExceptT = { Applicative0: () => applicativeExceptT(monadStateT12), Bind1: () => bindExceptT(monadStateT12) };
+    return {
+      extend: (\u03B1) => {
+        const $8 = extend1(\u03B1);
+        return (x2) => lift22(lift32($8(x2)));
+      },
+      Monad0: () => monadExceptT
+    };
   };
 
   // output-es/Data.Set/index.js
@@ -19753,6 +19846,44 @@
     return go(s1)(foldableWithIndexMap.foldrWithIndex((k) => (v) => (acc) => $List("Cons", k, acc))(Nil)(s2));
   };
   var subset = (dictOrd) => (s1) => (s2) => difference3(dictOrd)(s1)(s2).tag === "Leaf";
+
+  // output-es/Set/index.js
+  var setSet = (dictOrd) => {
+    const ordSet2 = ordSet(dictOrd);
+    return {
+      delete: $$delete2(dictOrd),
+      difference: difference3(dictOrd),
+      union: union2(dictOrd),
+      intersection: intersection(dictOrd),
+      insert: insert3(dictOrd),
+      isEmpty: isEmpty2,
+      member: member(dictOrd),
+      singleton,
+      subset: subset(dictOrd),
+      empty: Leaf2,
+      map: (dictOrd1) => map2(dictOrd1),
+      fromFoldable: (dictFoldable) => dictFoldable.foldl((m) => (a) => insert2(dictOrd)(a)(unit2)(m))(Leaf2),
+      toUnfoldable: (dictUnfoldable) => toUnfoldable4(dictUnfoldable),
+      Ord0: () => dictOrd,
+      Ord1: () => ordSet2,
+      Foldable2: () => foldableSet
+    };
+  };
+
+  // output-es/Data.HeytingAlgebra/foreign.js
+  var boolConj = function(b1) {
+    return function(b2) {
+      return b1 && b2;
+    };
+  };
+  var boolDisj = function(b1) {
+    return function(b2) {
+      return b1 || b2;
+    };
+  };
+  var boolNot = function(b) {
+    return !b;
+  };
 
   // output-es/Util.Pair/index.js
   var $Pair = (_1, _2) => ({ tag: "Pair", _1, _2 });
@@ -19988,40 +20119,6 @@
     })()
   });
 
-  // output-es/Control.Monad.State.Trans/index.js
-  var monadTransStateT = {
-    lift: (dictMonad) => {
-      const bind2 = dictMonad.Bind1().bind;
-      const pure2 = dictMonad.Applicative0().pure;
-      return (m) => (s) => bind2(m)((x2) => pure2($Tuple(x2, s)));
-    }
-  };
-  var functorStateT = (dictFunctor) => ({ map: (f) => (v) => (s) => dictFunctor.map((v1) => $Tuple(f(v1._1), v1._2))(v(s)) });
-  var bindStateT = (dictMonad) => {
-    const bind2 = dictMonad.Bind1().bind;
-    return { bind: (v) => (f) => (s) => bind2(v(s))((v1) => f(v1._1)(v1._2)), Apply0: () => applyStateT(dictMonad) };
-  };
-  var applyStateT = (dictMonad) => {
-    const functorStateT1 = functorStateT(dictMonad.Bind1().Apply0().Functor0());
-    return {
-      apply: (() => {
-        const bind2 = bindStateT(dictMonad).bind;
-        const pure2 = applicativeStateT(dictMonad).pure;
-        return (f) => (a) => bind2(f)((f$p) => bind2(a)((a$p) => pure2(f$p(a$p))));
-      })(),
-      Functor0: () => functorStateT1
-    };
-  };
-  var applicativeStateT = (dictMonad) => {
-    const pure2 = dictMonad.Applicative0().pure;
-    return { pure: (a) => (s) => pure2($Tuple(a, s)), Apply0: () => applyStateT(dictMonad) };
-  };
-  var monadStateStateT = (dictMonad) => {
-    const pure2 = dictMonad.Applicative0().pure;
-    const monadStateT12 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-    return { state: (f) => (x2) => pure2(f(x2)), Monad0: () => monadStateT12 };
-  };
-
   // output-es/Data.Profunctor.Choice/index.js
   var identity14 = (x2) => x2;
   var fanin = (dictCategory) => {
@@ -20053,67 +20150,6 @@
     right: functorEither.map,
     Profunctor0: () => profunctorFn
   }))();
-
-  // output-es/Control.Monad.State.Class/index.js
-  var modify_ = (dictMonadState) => (f) => dictMonadState.state((s) => $Tuple(unit2, f(s)));
-  var modify2 = (dictMonadState) => (f) => dictMonadState.state((s) => {
-    const s$p = f(s);
-    return $Tuple(s$p, s$p);
-  });
-
-  // output-es/Graph.GraphWriter/index.js
-  var monadGraphWithGraphT = (dictMonad) => {
-    const $$void = functorStateT(dictMonad.Bind1().Apply0().Functor0()).map((v) => unit2);
-    const modify_2 = modify_(monadStateStateT(dictMonad));
-    const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-    return { extend: (\u03B1) => (\u03B1s) => $$void(modify_2(Cons($Tuple(\u03B1, \u03B1s)))), Monad0: () => monadStateT2 };
-  };
-  var runWithGraphAllocT = (dictMonad) => {
-    const bind2 = dictMonad.Bind1().bind;
-    const pure2 = dictMonad.Applicative0().pure;
-    return (dictGraph) => {
-      const append = dictGraph.Semigroup0().append;
-      const fromFoldable11 = dictGraph.fromFoldable(functorList)(foldableList);
-      return (v) => (c) => bind2(c(v._2)(Nil))((v1) => pure2((() => {
-        if (v1._1._1.tag === "Left") {
-          return $Either("Left", v1._1._1._1);
-        }
-        if (v1._1._1.tag === "Right") {
-          return $Either("Right", $Tuple($Tuple(append(v._1)(fromFoldable11(v1._2)), v1._1._2), v1._1._1._1));
-        }
-        fail();
-      })()));
-    };
-  };
-  var monadGraphAllocWithGraphA = (dictMonad) => {
-    const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-    const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
-    const bindExceptT2 = bindExceptT(monadStateT12);
-    const modify3 = modify2(monadStateExceptT(monadStateStateT(monadStateT2)));
-    const pure2 = applicativeExceptT(monadStateT12).pure;
-    return (dictMonadGraph) => ({
-      fresh: bindExceptT2.bind(modify3(($7) => 1 + $7 | 0))((n) => pure2(showIntImpl(n))),
-      new: (\u03B1s) => bindExceptT2.bind(monadGraphAllocWithGraphA(dictMonad)(dictMonadGraph).fresh)((\u03B1) => bindExceptT2.bind(dictMonadGraph.extend(\u03B1)(\u03B1s))(() => pure2(\u03B1))),
-      MonadGraph0: () => dictMonadGraph
-    });
-  };
-  var monadGraphWithGraphAllocT = (dictMonad) => {
-    const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-    const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
-    const lift22 = monadTransExceptT.lift(monadStateT12);
-    const lift32 = monadTransStateT.lift(monadStateT2);
-    const extend1 = monadGraphWithGraphT(dictMonad).extend;
-    const monadExceptT = { Applicative0: () => applicativeExceptT(monadStateT12), Bind1: () => bindExceptT(monadStateT12) };
-    return { extend: (\u03B1) => (\u03B1s) => lift22(lift32(extend1(\u03B1)(\u03B1s))), Monad0: () => monadExceptT };
-  };
-  var alloc = (dictMonad) => {
-    const applicativeExceptT4 = applicativeExceptT((() => {
-      const $1 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
-      return { Applicative0: () => applicativeStateT($1), Bind1: () => bindStateT($1) };
-    })());
-    const fresh1 = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).fresh;
-    return (dictTraversable) => dictTraversable.traverse(applicativeExceptT4)((v) => fresh1);
-  };
 
   // output-es/Data.List.NonEmpty/index.js
   var wrappedOperation = (name3) => (f) => (v) => {
@@ -28867,7 +28903,7 @@
         arity: 1,
         "op'": (dictMonad) => {
           const $3 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-          const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+          const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
           return (dictSet) => (v) => {
             if (v.tag === "Cons") {
               if (v._2.tag === "Nil") {
@@ -29134,7 +29170,7 @@
         arity: 2,
         "op'": (dictMonad) => {
           const $4 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-          const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+          const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
           return (dictSet) => (v) => {
             if (v.tag === "Cons") {
               if (v._2.tag === "Cons") {
@@ -29240,7 +29276,7 @@
         arity: 2,
         "op'": (dictMonad) => {
           const $3 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-          const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+          const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
           return (dictSet) => (v) => {
             if (v.tag === "Cons") {
               if (v._2.tag === "Cons") {
@@ -32792,29 +32828,6 @@
     };
   };
 
-  // output-es/Set/index.js
-  var setSet = (dictOrd) => {
-    const ordSet2 = ordSet(dictOrd);
-    return {
-      delete: $$delete2(dictOrd),
-      difference: difference3(dictOrd),
-      union: union2(dictOrd),
-      intersection: intersection(dictOrd),
-      insert: insert3(dictOrd),
-      isEmpty: isEmpty2,
-      member: member(dictOrd),
-      singleton,
-      subset: subset(dictOrd),
-      empty: Leaf2,
-      map: (dictOrd1) => map2(dictOrd1),
-      fromFoldable: (dictFoldable) => dictFoldable.foldl((m) => (a) => insert2(dictOrd)(a)(unit2)(m))(Leaf2),
-      toUnfoldable: (dictUnfoldable) => toUnfoldable4(dictUnfoldable),
-      Ord0: () => dictOrd,
-      Ord1: () => ordSet2,
-      Foldable2: () => foldableSet
-    };
-  };
-
   // output-es/Graph.GraphImpl/index.js
   var $GraphImpl = (_1) => ({ tag: "GraphImpl", _1 });
   var map5 = /* @__PURE__ */ (() => setSet(ordString).map(ordVertex))();
@@ -33580,7 +33593,7 @@
       return { Applicative0: () => applicativeStateT($12), Bind1: () => bindStateT($12) };
     })()));
     const $2 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-    const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+    const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
     return (dictSet) => (\u03B3) => (\u03C1) => (\u03B1s) => $1((v) => (\u03C3) => {
       const \u03C1$p = $$for(\u03C1)(\u03C3);
       const $11 = $Fun("Closure", restrict(\u03B3)(unionWith(ordString)($$const)(fv2(\u03C1$p))(fVElim.fv(\u03C3))), \u03C1$p, \u03C3);
@@ -33600,7 +33613,7 @@
     const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
     const lookup$p2 = lookup$p(monadStateT12);
     const $4 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-    const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+    const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
     const bindExceptT2 = bindExceptT(monadStateT12);
     const applicativeExceptT4 = applicativeExceptT(monadStateT12);
     const $8 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT4);
@@ -33782,7 +33795,7 @@
     const closeDefs1 = closeDefs2(dictMonad);
     const match1 = match2(monadStateT12);
     const $6 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-    const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+    const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
     const check2 = check(monadStateT12);
     const pure2 = applicativeExceptT(monadStateT12).pure;
     const applicativeStateT2 = applicativeStateT(monadStateT2);
@@ -36372,7 +36385,7 @@
         Bind1: () => bindStateT(monadStateT2)
       }).bind;
       const $3 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
       const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => (v) => {
         if (v.tag === "Cons") {
@@ -36495,7 +36508,7 @@
       const $4 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT(monadStateT12));
       const $5 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
       const apply4 = apply3(dictMonad);
-      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
       const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => {
         const apply12 = apply4(dictSet);
@@ -36592,7 +36605,7 @@
       const monadStateT2 = { Applicative0: () => applicativeStateT(dictMonad), Bind1: () => bindStateT(dictMonad) };
       const monadStateT12 = { Applicative0: () => applicativeStateT(monadStateT2), Bind1: () => bindStateT(monadStateT2) };
       const bind2 = bindExceptT(monadStateT12).bind;
-      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
       const $5 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
       const apply4 = apply3(dictMonad);
       const apply12 = applyExceptT(monadStateT12).apply;
@@ -36780,7 +36793,7 @@
       const bind2 = bindExceptT(monadStateT12).bind;
       const $4 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT(monadStateT12));
       const $5 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
       const applicativeStateT2 = applicativeStateT(monadStateT2);
       return (dictSet) => (v) => {
         if (v.tag === "Cons") {
@@ -36961,7 +36974,7 @@
     arity: 2,
     "op'": (dictMonad) => {
       const $1 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
       const applicativeStateT2 = applicativeStateT({
         Applicative0: () => applicativeStateT(dictMonad),
         Bind1: () => bindStateT(dictMonad)
@@ -37041,7 +37054,7 @@
     arity: 2,
     "op'": (dictMonad) => {
       const $1 = functorStateT(functorStateT(dictMonad.Bind1().Apply0().Functor0()));
-      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadGraphWithGraphAllocT(dictMonad)).new;
+      const $$new = monadGraphAllocWithGraphA(dictMonad)(monadAllocWithGraphAllocT(dictMonad))(monadGraphWithGraphAllocT(dictMonad)).new;
       const applicativeStateT2 = applicativeStateT({
         Applicative0: () => applicativeStateT(dictMonad),
         Bind1: () => bindStateT(dictMonad)
@@ -37258,19 +37271,22 @@
     Applicative0: () => applicativeExceptT(monadStateT1),
     Bind1: () => bindExceptT(monadStateT1)
   });
-  var fresh = /* @__PURE__ */ (() => monadGraphAllocWithGraphA(monadAff)(monadGraphWithGraphAllocT(monadAff)).fresh)();
+  var monadAllocWithGraphAllocT2 = /* @__PURE__ */ monadAllocWithGraphAllocT(monadAff);
   var eval_module3 = /* @__PURE__ */ eval_module2(monadAff);
   var runWithGraphAllocT2 = /* @__PURE__ */ runWithGraphAllocT(monadAff);
   var desug = /* @__PURE__ */ exprFwd(monadStateT1)(joinSemilatticeUnit);
-  var alloc2 = /* @__PURE__ */ alloc(monadAff);
-  var alloc1 = /* @__PURE__ */ alloc2(traversableExpr);
+  var alloc = /* @__PURE__ */ (() => {
+    const Applicative0 = monadAllocWithGraphAllocT2.Monad0().Applicative0();
+    return (dictTraversable) => dictTraversable.traverse(Applicative0)((v) => monadAllocWithGraphAllocT2.fresh);
+  })();
+  var alloc1 = /* @__PURE__ */ alloc(traversableExpr);
   var $$eval3 = /* @__PURE__ */ $$eval2(monadAff);
   var applicativeExceptT2 = /* @__PURE__ */ applicativeExceptT(monadStateT1);
   var traverse2 = /* @__PURE__ */ (() => {
     const $0 = traversableWithIndexObject.traverseWithIndex(applicativeExceptT2);
     return (x2) => $0((v) => x2);
   })();
-  var alloc22 = /* @__PURE__ */ alloc2(traversableVal);
+  var alloc2 = /* @__PURE__ */ alloc(traversableVal);
   var parse = (dictMonad) => {
     const $1 = dictMonad.Applicative0();
     return (src) => {
@@ -37301,7 +37317,7 @@
   });
   var loadModule = (dictSet) => {
     const eval_module1 = eval_module3(dictSet);
-    return (file) => (\u03B3) => bind1(lift(lift2(lift3(loadFile("fluid/lib")(file)))))((src) => bind1(bind1(bind1(parse1(src)(module_))(desugarModuleFwd))(traverseModule2((v) => fresh)))((mod) => functorStateT(functorStateT(functorAff)).map((m) => {
+    return (file) => (\u03B3) => bind1(lift(lift2(lift3(loadFile("fluid/lib")(file)))))((src) => bind1(bind1(bind1(parse1(src)(module_))(desugarModuleFwd))(traverseModule2((v) => monadAllocWithGraphAllocT2.fresh)))((mod) => functorStateT(functorStateT(functorAff)).map((m) => {
       if (m.tag === "Left") {
         return $Either("Left", m._1);
       }
@@ -37329,7 +37345,7 @@
   };
   var defaultImports = (dictSet) => {
     const loadModule1 = loadModule(dictSet);
-    return bind1(traverse2(alloc22)(primitives))((\u03B3\u03B1) => bind1(bind1(loadModule1("prelude")(\u03B3\u03B1))(loadModule1("graphics")))(loadModule1("convolution")));
+    return bind1(traverse2(alloc2)(primitives))((\u03B3\u03B1) => bind1(bind1(loadModule1("prelude")(\u03B3\u03B1))(loadModule1("graphics")))(loadModule1("convolution")));
   };
   var openDefaultImports = (dictGraph) => _bind(_map(fromRight)(runWithGraphAllocT2(dictGraph)($Tuple(dictGraph.empty, 0))(defaultImports(dictGraph.Set1()))))((v) => _pure({
     g: v._1._1,
