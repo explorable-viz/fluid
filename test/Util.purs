@@ -53,7 +53,7 @@ import Set (subset)
 import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
-import Util (Endo, MayFailT, type (×), (×), successful)
+import Util (MayFailT, type (×), (×), successful)
 import Val (Val(..), class Ann, (<+>))
 
 type Test a = SpecT Aff Unit Effect a
@@ -204,22 +204,23 @@ testWithDatasetMany :: Array (File × File) -> Boolean -> Test Unit
 testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDataset fxs
    where
    testWithDataset :: File × File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
-   testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
-      it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
+   testWithDataset (dataset × file) =
+      withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
+         it (show file)
+            \(gconfig × s) ->
+               testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
 
 testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
    where
    testLink (spec@{ x } × δv1 × v2_expect) =
-      before (loadLinkFig spec)
-         ( it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
-              ( \{ γ0, γ, e1, e2, t1, t2, v1 } ->
-                   let
-                      { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
-                   in
-                      checkPretty "Linked output" v2_expect v2'
-              )
-         )
+      before (loadLinkFig spec) $
+         it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
+            \{ γ0, γ, e1, e2, t1, t2, v1 } ->
+               let
+                  { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
+               in
+                  checkPretty "Linked output" v2_expect v2'
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean
