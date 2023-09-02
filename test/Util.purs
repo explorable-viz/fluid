@@ -66,7 +66,7 @@ type TestConfig =
    , bwd_expect :: String
    }
 
-data BenchRow = BenchRow String TraceRow GraphRow
+data BenchRow = BenchRow TraceRow GraphRow
 
 type TraceRow =
    { tEval :: Number
@@ -82,9 +82,8 @@ type GraphRow =
    }
 
 instance Show BenchRow where
-   show (BenchRow prog trRow grRow) = fold $ intersperse "\n"
-      [ "Program: " <> prog
-      , "Trace-based eval: " <> show trRow.tEval
+   show (BenchRow trRow grRow) = fold $ intersperse "\n"
+      [ "Trace-based eval: " <> show trRow.tEval
       , "Trace-based bwd time: " <> show trRow.tBwd
       , "Trace-based fwd time: " <> show trRow.tFwd
       , "Graph-based eval: " <> show grRow.tEval
@@ -105,11 +104,11 @@ testWithSetup is_bench s gconfig tconfig = do
            unless is_bench (testParse s)
            trRow <- testTrace is_bench s gconfig tconfig
            grRow <- testGraph is_bench s gconfig tconfig
-           pure (BenchRow "" trRow grRow)
+           pure (BenchRow trRow grRow)
       )
    case e of
       Left msg -> error msg
-      Right (row :: BenchRow) -> pure row
+      Right x -> log (show x) >>= \_ -> pure x
 
 testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do
