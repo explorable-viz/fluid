@@ -6,6 +6,7 @@ import Bindings (Var)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, union)
 import Data.Set as S
@@ -18,7 +19,7 @@ import Foreign.Object (update)
 import Graph (Vertex)
 import Graph.GraphWriter (alloc, runWithAlloc)
 import Graph.Slice (select𝔹s)
-import Lattice (𝔹, botOf, neg)
+import Lattice (𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
@@ -38,6 +39,8 @@ type Handler = Event -> Selector Val
 as𝔹Selector :: forall f. Traversable f => Selector2 f -> Selector f
 as𝔹Selector (Selector2 sel) v =
    let _ × vα = runWithAlloc 0 (alloc v) in select𝔹s vα (sel vα)
+
+derive instance Newtype (Selector2 f) _
 
 instance Semigroup (Selector2 f) where
    append (Selector2 s1) (Selector2 s2) = Selector2 $ \x -> s1 x `union` s2 x
@@ -75,18 +78,19 @@ selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v :
 selectNth n δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNth (n - 1) δv v' : Nil)
 selectNth _ _ _ = error absurd
 
-selectNthCell :: Int -> Endo 𝔹 -> Selector Val
-selectNthCell 0 δα (Constr α c Nil) | c == cNil = Constr (δα α) c Nil
-selectNthCell 0 δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) c (v : v' : Nil)
-selectNthCell n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNthCell (n - 1) δα v' : Nil)
-selectNthCell _ _ _ = error absurd
+selectNth2 :: Int -> Endo (Selector2 Val)
+selectNth2 n sel = Selector2 $ unsafePartial $ case _ of
+   Constr _ c (v : _ : Nil) | n == 0 && c == cCons -> unwrap sel v
+   Constr _ c (_ : v' : Nil) | c == cCons -> unwrap (selectNth2 (n - 1) sel) v'
 
-selectSome :: Selector Val
-selectSome (Constr _ c vs) | c == cSome = Constr true c (botOf <$> vs)
-selectSome _ = error absurd
+selectNthCell :: Int -> Selector2 Val
+selectNthCell n = Selector2 $ unsafePartial $ case _ of
+   Constr α c Nil | n == 0 && c == cNil -> S.singleton α
+   Constr α c (_ : _ : Nil) | n == 0 && c == cCons -> S.singleton α
+   Constr _ c (_ : v' : Nil) | c == cCons -> unwrap (selectNthCell (n - 1)) v'
 
-selectSome2 :: Selector2 Val
-selectSome2 = Selector2 $ unsafePartial $ case _ of
+selectSome :: Selector2 Val
+selectSome = Selector2 $ unsafePartial $ case _ of
    Constr α c _ | c == cSome -> S.singleton α
 
 select_y :: Selector Val -> Selector Val
