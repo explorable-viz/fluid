@@ -231,12 +231,17 @@ testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
                void $ testWithSetup is_bench s gconfig { δv, fwd_expect, bwd_expect }
    folder = File "slicing/"
 
-testWithDatasetMany :: Array (File × File) -> Boolean -> Test Unit
+type TestWithDatasetSpec =
+   { dataset :: String
+   , file :: String
+   }
+
+testWithDatasetMany :: Array TestWithDatasetSpec -> Boolean -> Test Unit
 testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDataset fxs
    where
-   testWithDataset :: File × File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
-   testWithDataset (dataset × file) =
-      withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
+   testWithDataset :: TestWithDatasetSpec -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
+   testWithDataset { dataset, file } =
+      withDataset (File dataset) $ beforeWith ((_ <$> open (File file)) <<< (×)) do
          it (show file)
             \(gconfig × s) ->
                void $ testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }

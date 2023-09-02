@@ -3,18 +3,9 @@ module Test.Main where
 import Prelude hiding (add)
 import App.Util (as𝔹Selector, selectBarChart_data, selectMatrixElement, selectNth, selectNthCell, selectPair, selectSome, select_y)
 import Bindings ((↦))
-import Control.Monad.Trans.Class (lift)
-import Data.Foldable (foldl)
-import Data.List (List(..), (:))
-import Data.Set as S
 import Data.Traversable (traverse_)
 import Dict (fromFoldable) as D
 import Effect (Effect)
-import Effect.Console (log, logShow)
-import Graph (Vertex(..), inEdges)
-import Graph (fromFoldable) as G
-import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (fwdSlice)
 import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import Test.Util (Test, run, testWithDatasetMany, testLinkMany, testMany, testBwdMany)
@@ -32,7 +23,6 @@ tests is_bench =
    , test_bwd is_bench
    , test_graphics is_bench
    , test_linking
-   , test_graph
    ]
 
 {-
@@ -258,10 +248,10 @@ test_bwd = testBwdMany
 
 test_graphics :: Boolean -> Test Unit
 test_graphics = testWithDatasetMany
-   [ (File "dataset/renewables-restricted") × (File "graphics/background")
-   , (File "dataset/renewables-restricted") × (File "graphics/grouped-bar-chart")
-   , (File "dataset/renewables-restricted") × (File "graphics/line-chart")
-   , (File "dataset/renewables-restricted") × (File "graphics/stacked-bar-chart")
+   [ { dataset: "dataset/renewables-restricted", file: "graphics/background" }
+   , { dataset: "dataset/renewables-restricted", file: "graphics/grouped-bar-chart" }
+   , { dataset: "dataset/renewables-restricted", file: "graphics/line-chart" }
+   , { dataset: "dataset/renewables-restricted", file: "graphics/stacked-bar-chart" }
    ]
 
 test_linking :: Test Unit
@@ -344,20 +334,3 @@ test_linking = testLinkMany
            \}) : []))))\
            \})"
    ]
-
--- Remove once graph slicing tested as part of overall infrastructure.
-test_graph :: Test Unit
-test_graph = do
-   let
-      ids = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
-      adds = foldl
-         ( \acc α ->
-              (Vertex (show α) × S.fromFoldable [ Vertex (show (α + 2)), Vertex (show (α + 3)) ]) : acc
-         )
-         Nil
-         ids
-      g' = G.fromFoldable adds :: GraphImpl (S.Set)
-      slice = fwdSlice (S.fromFoldable [ Vertex "13", Vertex "12", Vertex "11" ]) g'
-   lift $ do
-      log ("Outedges: " <> show (inEdges g' (S.fromFoldable [ Vertex "11" ])))
-      logShow slice
