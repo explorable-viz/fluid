@@ -187,7 +187,7 @@ testMany fxs is_bench = withDefaultImports $ traverse_ test fxs
 testBwdMany :: Array (File × File × Selector Val × String) → Boolean -> Test Unit
 testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
    where
-   testBwd :: File × File × (Endo (Val Boolean)) × String -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
+   testBwd :: File × File × Selector Val × String -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
    testBwd (file × file_expect × δv × fwd_expect) =
       beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
          it (show $ folder <> file)
