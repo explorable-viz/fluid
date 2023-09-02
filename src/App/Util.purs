@@ -9,17 +9,20 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, union)
 import Data.Set as S
+import Data.Traversable (class Traversable)
 import Data.Tuple (fst)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Dict (Dict, get)
 import Effect (Effect)
 import Foreign.Object (update)
 import Graph (Vertex)
+import Graph.GraphWriter (alloc, runWithAlloc)
+import Graph.Slice (select𝔹s)
 import Lattice (𝔹, botOf, neg)
 import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
-import Util (Endo, type (×), absurd, error, definitely', successful)
+import Util (Endo, type (×), (×), absurd, error, definitely', successful)
 import Val (Val(..), addr, matrixGet, matrixUpdate)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
@@ -30,6 +33,11 @@ type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
 newtype Selector2 f = Selector2 (f Vertex -> Set Vertex) -- specifies selection
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
+
+-- Turn a vertex-based selector into the corresponding constant 𝔹-based selector.
+as𝔹Selector :: forall f. Traversable f => Selector2 f -> Selector f
+as𝔹Selector (Selector2 sel) v =
+   let _ × vα = runWithAlloc 0 (alloc v) in select𝔹s vα (sel vα)
 
 instance Semigroup (Selector2 f) where
    append (Selector2 s1) (Selector2 s2) = Selector2 $ \x -> s1 x `union` s2 x
