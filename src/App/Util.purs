@@ -16,6 +16,7 @@ import Effect (Effect)
 import Foreign.Object (update)
 import Graph (Vertex)
 import Lattice (𝔹, botOf, neg)
+import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
 import Util (Endo, type (×), absurd, error, definitely', successful)
@@ -60,11 +61,10 @@ selectMatrixElement i j δv (Matrix α r) = Matrix α $ matrixUpdate i j δv r
 selectMatrixElement _ _ _ _ = error absurd
 
 selectMatrixElement2 :: Int -> Int -> Selector2 Val
-selectMatrixElement2 i j = Selector2 $ case _ of
+selectMatrixElement2 i j = Selector2 $ unsafePartial $ case _ of
    Matrix _ r -> S.singleton (addr v)
       where
       v = successful (matrixGet i j r) :: Val Vertex
-   _ -> error absurd
 
 selectNth :: Int -> Endo (Selector Val)
 selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v : v' : Nil)
@@ -82,9 +82,8 @@ selectSome (Constr _ c vs) | c == cSome = Constr true c (botOf <$> vs)
 selectSome _ = error absurd
 
 selectSome2 :: Selector2 Val
-selectSome2 = Selector2 $ case _ of
-   (Constr α c _) | c == cSome -> S.singleton α
-   _ -> error absurd
+selectSome2 = Selector2 $ unsafePartial $ case _ of
+   Constr α c _ | c == cSome -> S.singleton α
 
 select_y :: Selector Val -> Selector Val
 select_y δv (Record α r) = Record α $ update (δv >>> Just) f_y r
