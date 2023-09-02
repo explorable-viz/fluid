@@ -175,14 +175,18 @@ withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Uni
 withDefaultImports = beforeAll openDefaultImports
 
 withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
-withDataset dataset = beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }))
+withDataset dataset =
+   beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }))
 
 testMany :: Array (File × String) → Boolean -> Test Unit
 testMany fxs is_bench = withDefaultImports $ traverse_ test fxs
    where
    test :: File × String -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
-   test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
-      it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+   test (file × fwd_expect) =
+      beforeWith ((_ <$> open file) <<< (×)) $
+         it (show file)
+            \(gconfig × s) ->
+               testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
 
 testBwdMany :: Array (File × File × Selector Val × String) → Boolean -> Test Unit
 testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
@@ -191,10 +195,9 @@ testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
    testBwd (file × file_expect × δv × fwd_expect) =
       beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
          it (show $ folder <> file)
-            ( \(gconfig × s) -> do
-                 bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
-                 testWithSetup is_bench s gconfig { δv, fwd_expect, bwd_expect }
-            )
+            \(gconfig × s) -> do
+               bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
+               testWithSetup is_bench s gconfig { δv, fwd_expect, bwd_expect }
    folder = File "slicing/"
 
 testWithDatasetMany :: Array (File × File) -> Boolean -> Test Unit
