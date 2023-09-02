@@ -183,7 +183,7 @@ test_bwd = testBwdMany
         "(6.2 : (260 _:_ (19.9 : (91 : []))))"
    , (File "list-comp") × (File "list-comp-2.expect") × (botOf >>> selectNthCell 2 neg) ×
         "(6.2 : (260 : (19.9 _:_ (91 : []))))"
-   , (File "lookup") × (File "lookup.expect") × selectSome × "_Some_ \"Germany\""
+   , (File "lookup") × (File "lookup.expect") × (selectSome # as𝔹Selector) × "_Some_ \"Germany\""
    , (File "map") × (File "map.expect") × (botOf >>> selectNthCell 0 neg >>> selectNthCell 1 neg) ×
         "(5 _:_ (6 _:_ []))"
    , (File "multiply") × (File "multiply.expect") × (const $ Int true 0) × "_0_"

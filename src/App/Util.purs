@@ -81,12 +81,8 @@ selectNthCell 0 δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α
 selectNthCell n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNthCell (n - 1) δα v' : Nil)
 selectNthCell _ _ _ = error absurd
 
-selectSome :: Selector Val
-selectSome (Constr _ c vs) | c == cSome = Constr true c (botOf <$> vs)
-selectSome _ = error absurd
-
-selectSome2 :: Selector2 Val
-selectSome2 = Selector2 $ unsafePartial $ case _ of
+selectSome :: Selector2 Val
+selectSome = Selector2 $ unsafePartial $ case _ of
    Constr α c _ | c == cSome -> S.singleton α
 
 select_y :: Selector Val -> Selector Val
