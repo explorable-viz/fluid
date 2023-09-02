@@ -55,7 +55,7 @@ import Set (subset)
 import Test.Spec (SpecT, before, beforeAll, beforeWith, it) -- class Example,evaluateExample,
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
-import Util (Endo, MayFailT, type (×), (×), successful, error)
+import Util (MayFailT, type (×), (×), error, successful)
 import Val (Val(..), class Ann, (<+>))
 
 type Test a = SpecT Aff Unit Effect a
@@ -194,57 +194,52 @@ withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Uni
 withDefaultImports = beforeAll openDefaultImports
 
 withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
-withDataset dataset = beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }))
+withDataset dataset =
+   beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }))
 
 testMany :: Array (File × String) → Boolean -> Test Unit
 testMany fxs is_bench = withDefaultImports $ traverse_ test fxs
    where
    test :: File × String -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
-   test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
-      it (show file)
-         ( \(gconfig × s) -> do
-              _ <- testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
-              pure unit
-         )
+   test (file × fwd_expect) =
+      beforeWith ((_ <$> open file) <<< (×)) $
+         it (show file)
+            \(gconfig × s) ->
+               void $ testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
 
 testBwdMany :: Array (File × File × Selector Val × String) → Boolean -> Test Unit
 testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
    where
-   testBwd :: File × File × (Endo (Val Boolean)) × String -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
+   testBwd :: File × File × Selector Val × String -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
    testBwd (file × file_expect × δv × fwd_expect) =
       beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
          it (show $ folder <> file)
-            ( \(gconfig × s) -> do
-                 bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
-                 _ <- testWithSetup is_bench s gconfig { δv, fwd_expect, bwd_expect }
-                 pure unit
-            )
+            \(gconfig × s) -> do
+               bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
+               void $ testWithSetup is_bench s gconfig { δv, fwd_expect, bwd_expect }
    folder = File "slicing/"
 
 testWithDatasetMany :: Array (File × File) -> Boolean -> Test Unit
 testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDataset fxs
    where
    testWithDataset :: File × File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
-   testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
-      it (show file)
-         ( \(gconfig × s) -> do
-              _ <- testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
-              pure unit
-         )
+   testWithDataset (dataset × file) =
+      withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
+         it (show file)
+            \(gconfig × s) ->
+               void $ testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
 
 testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
    where
    testLink (spec@{ x } × δv1 × v2_expect) =
-      before (loadLinkFig spec)
-         ( it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
-              ( \{ γ0, γ, e1, e2, t1, t2, v1 } ->
-                   let
-                      { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
-                   in
-                      checkPretty "Linked output" v2_expect v2'
-              )
-         )
+      before (loadLinkFig spec) $
+         it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
+            \{ γ0, γ, e1, e2, t1, t2, v1 } ->
+               let
+                  { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
+               in
+                  checkPretty "Linked output" v2_expect v2'
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
 isGraphical :: forall a. Val a -> Boolean

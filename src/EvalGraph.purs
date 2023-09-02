@@ -170,10 +170,7 @@ eval_module γ = go D.empty
       go (γ' <+> γ'') (Module ds) αs
 
 evalWithConfig :: forall g s m a. Monad m => Graph g s => GraphConfig g -> Expr a -> m (String + ((g × Int) × Expr Vertex × Val Vertex))
-evalWithConfig { g, n, γα } e = runWithGraphAllocT (g × n)
-   ( do
-        eα <- alloc e
-        vα <- eval γα eα empty
-        pure (eα × vα)
-   )
-
+evalWithConfig { g, n, γα } e = runWithGraphAllocT (g × n) $ do
+   eα <- alloc e
+   vα <- eval γα eα empty
+   pure (eα × vα)

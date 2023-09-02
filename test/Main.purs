@@ -1,7 +1,7 @@
 module Test.Main where
 
 import Prelude hiding (add)
-import App.Util (selectBarChart_data, selectMatrixElement, selectNth, selectNthCell, selectPair, selectSome, select_y)
+import App.Util (as𝔹Selector, selectBarChart_data, selectMatrixElement, selectNth, selectNthCell, selectPair, selectSome, select_y)
 import Bindings ((↦))
 import Control.Monad.Trans.Class (lift)
 import Data.Foldable (foldl)
@@ -92,7 +92,7 @@ test_bwd = testBwdMany
    , (File "array/lookup") × (File "array/lookup.expect") × (const $ Int true 14) × "_14_"
    , (File "array/dims") × (File "array/dims.expect") × topOf × "_(_3_, _3_)_"
    , (File "convolution/edgeDetect") × (File "convolution/edgeDetect.expect")
-        × (botOf >>> selectMatrixElement 1 1 topOf)
+        × (selectMatrixElement 1 1 # as𝔹Selector)
         ×
            "_0_, -1, 2, 0, -1,\n\
            \0, 3, -2, 3, -2,\n\
@@ -100,7 +100,7 @@ test_bwd = testBwdMany
            \1, -1, 4, 0, -4,\n\
            \1, 0, -3, 2, 0"
    , (File "convolution/emboss") × (File "convolution/emboss.expect")
-        × (botOf >>> selectMatrixElement 1 1 topOf)
+        × (selectMatrixElement 1 1 # as𝔹Selector)
         ×
            "_5_, 4, 2, 5, 2,\n\
            \3, 1, 2, -1, -2,\n\
@@ -108,7 +108,7 @@ test_bwd = testBwdMany
            \2, 1, -2, 0, 0,\n\
            \1, 0, -1, -1, -2"
    , (File "convolution/gaussian") × (File "convolution/gaussian.expect")
-        × (botOf >>> selectMatrixElement 1 1 topOf)
+        × (selectMatrixElement 1 1 # as𝔹Selector)
         ×
            "_38_, 37, 28, 30, 38,\n\
            \38, 36, 46, 31, 34,\n\
@@ -232,7 +232,7 @@ test_linking = testLinkMany
      , dataFile: File "convolution-data"
      , x: "data"
      }
-        × (botOf >>> selectMatrixElement 2 2 topOf)
+        × (selectMatrixElement 2 2 # as𝔹Selector)
         ×
            "_18_, _12_, _13_, 9, 19,\n\
            \_20_, _11_, _24_, 9, 14,\n\

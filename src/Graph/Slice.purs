@@ -13,7 +13,7 @@ import Data.Set (Set)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN, sinks, op)
 import Graph.GraphWriter (WithGraph, extend, runWithGraph)
-import Set (class Set, empty, insert, member, singleton, unions, difference)
+import Set (empty, insert, member, singleton, unions, difference)
 import Util (type (×), (×))
 
 type PendingSlice s = Map Vertex (s Vertex)
@@ -46,11 +46,7 @@ fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
          pure $ Loop ((M.insert α βs h) × es)
 
 selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
-selectαs v𝔹 vα = unions (asSet <$> v𝔹 <*> vα)
+selectαs v𝔹 vα = unions ((if _ then singleton else const empty) <$> v𝔹 <*> vα)
 
 select𝔹s :: forall f. Functor f => f Vertex -> Set Vertex -> f Boolean
 select𝔹s vα αs = flip member αs <$> vα
-
-asSet :: forall s. Set s Vertex => Boolean -> Vertex -> s Vertex
-asSet true = singleton
-asSet false = const empty

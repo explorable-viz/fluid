@@ -9,26 +9,35 @@ import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, union)
 import Data.Set as S
+import Data.Traversable (class Traversable)
 import Data.Tuple (fst)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Dict (Dict, get)
 import Effect (Effect)
 import Foreign.Object (update)
 import Graph (Vertex)
+import Graph.GraphWriter (alloc, runWithAlloc)
+import Graph.Slice (select𝔹s)
 import Lattice (𝔹, botOf, neg)
+import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
-import Util (Endo, type (×), absurd, error, definitely', successful)
+import Util (Endo, type (×), (×), absurd, error, definitely', successful)
 import Val (Val(..), addr, matrixGet, matrixUpdate)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
 
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
-type Selector f = f 𝔹 -> f 𝔹
-newtype Selector2 f = Selector2 (f Vertex -> Set Vertex)
+type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
+newtype Selector2 f = Selector2 (f Vertex -> Set Vertex) -- specifies selection
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
+
+-- Turn a vertex-based selector into the corresponding constant 𝔹-based selector.
+as𝔹Selector :: forall f. Traversable f => Selector2 f -> Selector f
+as𝔹Selector (Selector2 sel) v =
+   let _ × vα = runWithAlloc 0 (alloc v) in select𝔹s vα (sel vα)
 
 instance Semigroup (Selector2 f) where
    append (Selector2 s1) (Selector2 s2) = Selector2 $ \x -> s1 x `union` s2 x
@@ -55,16 +64,11 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
    from (Constr _ c (u1 : u2 : Nil)) | c == cCons = u1 A.: from u2
 
 -- Selection helpers.
-selectMatrixElement :: Int -> Int -> Endo (Selector Val)
-selectMatrixElement i j δv (Matrix α r) = Matrix α $ matrixUpdate i j δv r
-selectMatrixElement _ _ _ _ = error absurd
-
-selectMatrixElement2 :: Int -> Int -> Selector2 Val
-selectMatrixElement2 i j = Selector2 $ case _ of
+selectMatrixElement :: Int -> Int -> Selector2 Val
+selectMatrixElement i j = Selector2 $ unsafePartial $ case _ of
    Matrix _ r -> S.singleton (addr v)
       where
       v = successful (matrixGet i j r) :: Val Vertex
-   _ -> error absurd
 
 selectNth :: Int -> Endo (Selector Val)
 selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v : v' : Nil)
@@ -82,9 +86,8 @@ selectSome (Constr _ c vs) | c == cSome = Constr true c (botOf <$> vs)
 selectSome _ = error absurd
 
 selectSome2 :: Selector2 Val
-selectSome2 = Selector2 $ case _ of
-   (Constr α c _) | c == cSome -> S.singleton α
-   _ -> error absurd
+selectSome2 = Selector2 $ unsafePartial $ case _ of
+   Constr α c _ | c == cSome -> S.singleton α
 
 select_y :: Selector Val -> Selector Val
 select_y δv (Record α r) = Record α $ update (δv >>> Just) f_y r
