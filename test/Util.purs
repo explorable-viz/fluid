@@ -2,6 +2,7 @@ module Test.Util
    ( Test
    , TestConfig
    , TestWith
+   , BenchRow
    , run
    , checkPretty
    , isGraphical
@@ -51,10 +52,10 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Set (subset)
-import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
+import Test.Spec (SpecT, before, beforeAll, beforeWith, it) -- class Example,evaluateExample,
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
-import Util (Endo, MayFailT, type (×), (×), successful)
+import Util (Endo, MayFailT, type (×), (×), successful, error)
 import Val (Val(..), class Ann, (<+>))
 
 type Test a = SpecT Aff Unit Effect a
@@ -65,49 +66,49 @@ type TestConfig =
    , bwd_expect :: String
    }
 
-data TraceRow = TraceRow
+data BenchRow = BenchRow TraceRow GraphRow
+
+type TraceRow =
    { tEval :: Number
    , tBwd :: Number
    , tFwd :: Number
    }
 
-data GraphRow = GraphRow
+type GraphRow =
    { tEval :: Number
    , tBwd :: Number
    , tFwd :: Number
    , tFwdDemorgan :: Number
    }
 
-instance Show TraceRow where
-   show (TraceRow { tEval, tBwd, tFwd }) = fold $ intersperse "\n"
-      [ "Trace-based eval: " <> show tEval
-      , "Trace-based bwd time: " <> show tBwd
-      , "Trace-based fwd time: " <> show tFwd
-      ]
-
-instance Show GraphRow where
-   show (GraphRow { tEval, tBwd, tFwd, tFwdDemorgan }) = fold $ intersperse "\n"
-      [ "Graph-based eval: " <> show tEval
-      , "Graph-based bwd time: " <> show tBwd
-      , "Graph-based fwd time:" <> show tFwd
-      , "Graph-based fwd time (De Morgan): " <> show tFwdDemorgan
+instance Show BenchRow where
+   show (BenchRow trRow grRow) = fold $ intersperse "\n"
+      [ "Trace-based eval: " <> show trRow.tEval
+      , "Trace-based bwd time: " <> show trRow.tBwd
+      , "Trace-based fwd time: " <> show trRow.tFwd
+      , "Graph-based eval: " <> show grRow.tEval
+      , "Graph-based bwd time: " <> show grRow.tBwd
+      , "Graph-based fwd time:" <> show grRow.tFwd
+      , "Graph-based fwd time (De Morgan): " <> show grRow.tFwdDemorgan
       ]
 
 run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
-testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff Unit
-testWithSetup is_bench s gconfig tconfig =
-   runExceptT
+-- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
+testWithSetup ∷ Boolean → SE.Expr Unit → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
+testWithSetup is_bench s gconfig tconfig = do
+   e <- runExceptT
       ( do
            unless is_bench (testParse s)
-           testTrace is_bench s gconfig tconfig
-           testGraph is_bench s gconfig tconfig
-      ) >>=
-      case _ of
-         Left msg -> fail msg
-         Right unit -> pure unit
+           trRow <- testTrace is_bench s gconfig tconfig
+           grRow <- testGraph is_bench s gconfig tconfig
+           pure (BenchRow trRow grRow)
+      )
+   case e of
+      Left msg -> error msg
+      Right x -> log (show x) >>= \_ -> pure x
 
 testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do
@@ -121,7 +122,7 @@ testParse s = do
               lift $ fail "not equal"
       )
 
-testTrace :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
+testTrace :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
    let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γα)
    -- | Eval
@@ -139,18 +140,16 @@ testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
    e𝔹'' <- desug s𝔹'
    (_ × v𝔹'') × tFwd <- bench $ eval γ𝔹' e𝔹'' top
 
-   if not is_bench then
-      lift $ do
-         -- | Check backward selections
-         unless (null bwd_expect) do
-            checkPretty "Trace-based source selection" bwd_expect s𝔹'
-         -- | Check round-trip selections
-         unless (isGraphical v𝔹') do
-            checkPretty "Trace-based value" fwd_expect v𝔹''
-   else
-      log $ show (TraceRow { tEval, tBwd, tFwd })
+   unless is_bench $ lift do
+      -- | Check backward selections
+      unless (null bwd_expect) do
+         checkPretty "Trace-based source selection" bwd_expect s𝔹'
+      -- | Check round-trip selections
+      unless (isGraphical v𝔹') do
+         checkPretty "Trace-based value" fwd_expect v𝔹''
+   pure { tEval, tBwd, tFwd }
 
-testGraph :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
+testGraph :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff GraphRow
 testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
@@ -178,19 +177,18 @@ testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
          v𝔹' = select𝔹s vα (vertices gfwd') <#> not
       pure (gfwd' × v𝔹')
 
-   if not is_bench then
-      lift $ do
-         -- | Check backward selections
-         unless (null bwd_expect) do
-            checkPretty "Graph-based source selection" bwd_expect s𝔹
-         -- | Check round-trip selections
-         unless (isGraphical v𝔹) do
-            checkPretty "Graph-based value" fwd_expect v𝔹
-            checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
-         sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
-            (flip subset (sources gfwd))
-   else
-      log $ show (GraphRow { tEval, tBwd, tFwd, tFwdDemorgan })
+   unless is_bench $ lift do
+      -- | Check backward selections
+      unless (null bwd_expect) do
+         checkPretty "Graph-based source selection" bwd_expect s𝔹
+      -- | Check round-trip selections
+      unless (isGraphical v𝔹) do
+         checkPretty "Graph-based value" fwd_expect v𝔹
+         checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
+      sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
+         (flip subset (sources gfwd))
+
+   pure { tEval, tBwd, tFwd, tFwdDemorgan }
 
 withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
 withDefaultImports = beforeAll openDefaultImports
@@ -203,7 +201,11 @@ testMany fxs is_bench = withDefaultImports $ traverse_ test fxs
    where
    test :: File × String -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
    test (file × fwd_expect) = beforeWith ((_ <$> open file) <<< (×)) $
-      it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+      it (show file)
+         ( \(gconfig × s) -> do
+              _ <- testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
+              pure unit
+         )
 
 testBwdMany :: Array (File × File × Selector Val × String) → Boolean -> Test Unit
 testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
@@ -214,7 +216,8 @@ testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
          it (show $ folder <> file)
             ( \(gconfig × s) -> do
                  bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
-                 testWithSetup is_bench s gconfig { δv, fwd_expect, bwd_expect }
+                 _ <- testWithSetup is_bench s gconfig { δv, fwd_expect, bwd_expect }
+                 pure unit
             )
    folder = File "slicing/"
 
@@ -223,7 +226,11 @@ testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDatase
    where
    testWithDataset :: File × File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
    testWithDataset (dataset × file) = withDataset dataset $ beforeWith ((_ <$> open file) <<< (×)) do
-      it (show file) (\(gconfig × s) -> testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty })
+      it (show file)
+         ( \(gconfig × s) -> do
+              _ <- testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
+              pure unit
+         )
 
 testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
