@@ -197,25 +197,37 @@ withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith
 withDataset dataset =
    beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }))
 
-testMany :: Array (File × String) → Boolean -> Test Unit
+type TestSpec =
+   { file :: String
+   , fwd_expect :: String
+   }
+
+type TestBwdSpec =
+   { file :: String
+   , file_expect :: String
+   , δv :: Selector Val
+   , fwd_expect :: String
+   }
+
+testMany :: Array TestSpec → Boolean -> Test Unit
 testMany fxs is_bench = withDefaultImports $ traverse_ test fxs
    where
-   test :: File × String -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
-   test (file × fwd_expect) =
-      beforeWith ((_ <$> open file) <<< (×)) $
+   test :: TestSpec -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
+   test { file, fwd_expect } =
+      beforeWith ((_ <$> open (File file)) <<< (×)) $
          it (show file)
             \(gconfig × s) ->
                void $ testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
 
-testBwdMany :: Array (File × File × Selector Val × String) → Boolean -> Test Unit
+testBwdMany :: Array TestBwdSpec → Boolean -> Test Unit
 testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
    where
-   testBwd :: File × File × Selector Val × String -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
-   testBwd (file × file_expect × δv × fwd_expect) =
-      beforeWith ((_ <$> open (folder <> file)) <<< (×)) $
-         it (show $ folder <> file)
+   testBwd :: TestBwdSpec -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
+   testBwd { file, file_expect, δv, fwd_expect } =
+      beforeWith ((_ <$> open (folder <> File file)) <<< (×)) $
+         it (show $ folder <> File file)
             \(gconfig × s) -> do
-               bwd_expect <- loadFile (Folder "fluid/example") (folder <> file_expect)
+               bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
                void $ testWithSetup is_bench s gconfig { δv, fwd_expect, bwd_expect }
    folder = File "slicing/"
 

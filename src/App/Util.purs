@@ -18,7 +18,7 @@ import Foreign.Object (update)
 import Graph (Vertex)
 import Graph.GraphWriter (alloc, runWithAlloc)
 import Graph.Slice (select𝔹s)
-import Lattice (𝔹, botOf, neg)
+import Lattice (𝔹, neg)
 import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
