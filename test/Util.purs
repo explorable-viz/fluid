@@ -25,6 +25,7 @@ import Benchmark.Util (bench)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
+import Data.Array (fold, intersperse)
 import Data.Either (Either(..))
 import Data.List (elem)
 import Data.Set (Set) as S
@@ -64,6 +65,34 @@ type TestConfig =
    , bwd_expect :: String
    }
 
+data TraceRow = TraceRow
+   { tEval :: Number
+   , tBwd :: Number
+   , tFwd :: Number
+   }
+
+data GraphRow = GraphRow
+   { tEval :: Number
+   , tBwd :: Number
+   , tFwd :: Number
+   , tFwdDemorgan :: Number
+   }
+
+instance Show TraceRow where
+   show (TraceRow { tEval, tBwd, tFwd }) = fold $ intersperse "\n"
+      [ "Trace-based eval: " <> show tEval
+      , "Trace-based bwd time: " <> show tBwd
+      , "Trace-based fwd time: " <> show tFwd
+      ]
+
+instance Show GraphRow where
+   show (GraphRow { tEval, tBwd, tFwd, tFwdDemorgan }) = fold $ intersperse "\n"
+      [ "Graph-based eval: " <> show tEval
+      , "Graph-based bwd time: " <> show tBwd
+      , "Graph-based fwd time:" <> show tFwd
+      , "Graph-based fwd time (De Morgan): " <> show tFwdDemorgan
+      ]
+
 run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
@@ -96,7 +125,7 @@ testTrace :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestCon
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
    let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γα)
    -- | Eval
-   e𝔹 × tDesug <- bench $ desug s𝔹
+   e𝔹 <- desug s𝔹
    (t × v𝔹) × tEval <- bench $ eval γ𝔹 e𝔹 bot
    -- | Backward
    (v𝔹' × γ𝔹' × e𝔹') × tBwd <- bench $ do
@@ -119,11 +148,7 @@ testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
          unless (isGraphical v𝔹') do
             checkPretty "Trace-based value" fwd_expect v𝔹''
    else
-      lift $ do
-         log $ "Desug time: " <> show tDesug
-         log $ "Trace-based eval: " <> show tEval
-         log $ "Trace-based bwd slice time: " <> show tBwd
-         log $ "Trace-based fwd slice time:" <> show tFwd
+      log $ show (TraceRow { tEval, tBwd, tFwd })
 
 testGraph :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff Unit
 testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
@@ -147,7 +172,7 @@ testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
          v𝔹 = select𝔹s vα (vertices gfwd)
       pure (gfwd × v𝔹)
    -- | Forward (round-tripping) using De Morgan dual
-   (_ × v𝔹') × tFwd' <- bench $ do
+   (_ × v𝔹') × tFwdDemorgan <- bench $ do
       let
          gfwd' = G.fwdSliceDeMorgan αs_in g
          v𝔹' = select𝔹s vα (vertices gfwd') <#> not
@@ -165,11 +190,7 @@ testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
          sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
             (flip subset (sources gfwd))
    else
-      lift $ do
-         log $ "Graph-based eval time: " <> show tEval
-         log $ "Graph-based bwd slice time: " <> show tBwd
-         log $ "Graph-based fwd slice time: " <> show tFwd
-         log $ "Graph-based fwd slice time (De Morgan): " <> show tFwd'
+      log $ show (GraphRow { tEval, tBwd, tFwd, tFwdDemorgan })
 
 withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
 withDefaultImports = beforeAll openDefaultImports
