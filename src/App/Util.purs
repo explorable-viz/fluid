@@ -64,12 +64,8 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
    from (Constr _ c (u1 : u2 : Nil)) | c == cCons = u1 A.: from u2
 
 -- Selection helpers.
-selectMatrixElement :: Int -> Int -> Endo (Selector Val)
-selectMatrixElement i j δv (Matrix α r) = Matrix α $ matrixUpdate i j δv r
-selectMatrixElement _ _ _ _ = error absurd
-
-selectMatrixElement2 :: Int -> Int -> Selector2 Val
-selectMatrixElement2 i j = Selector2 $ unsafePartial $ case _ of
+selectMatrixElement :: Int -> Int -> Selector2 Val
+selectMatrixElement i j = Selector2 $ unsafePartial $ case _ of
    Matrix _ r -> S.singleton (addr v)
       where
       v = successful (matrixGet i j r) :: Val Vertex
