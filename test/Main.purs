@@ -6,7 +6,7 @@ import Bindings ((↦))
 import Data.Traversable (traverse_)
 import Dict (fromFoldable) as D
 import Effect (Effect)
-import Lattice (botOf, neg, topOf)
+import Lattice (botOf, topOf)
 import Module (File(..))
 import Test.Util (Test, run, testWithDatasetMany, testLinkMany, testMany, testBwdMany)
 import Util ((×))
@@ -33,7 +33,7 @@ test_scratchpad :: Boolean -> Test Unit
 test_scratchpad = testBwdMany
    [ { file: "filter"
      , file_expect: "filter.expect"
-     , δv: botOf >>> selectNthCell 0 neg
+     , δv: selectNthCell 0 # as𝔹Selector
      , fwd_expect: "(_8_ _:_ (7 : []))"
      }
    ]
@@ -176,30 +176,30 @@ test_bwd = testBwdMany
    , { file: "divide", file_expect: "divide.expect", δv: topOf, fwd_expect: "_40.22222222222222_" }
    , { file: "filter"
      , file_expect: "filter.expect"
-     , δv: botOf >>> selectNthCell 0 neg
+     , δv: selectNthCell 0 # as𝔹Selector
      , fwd_expect: "(_8_ _:_ (7 : []))"
      }
    , { file: "intersperse"
      , file_expect: "intersperse-1.expect"
-     , δv: botOf >>> selectNthCell 1 neg
+     , δv: selectNthCell 1 # as𝔹Selector
      , fwd_expect:
           "(1 : (0 _:_ (2 : (0 : (3 : [])))))"
      }
    , { file: "intersperse"
      , file_expect: "intersperse-2.expect"
-     , δv: botOf >>> selectNthCell 2 neg
+     , δv: selectNthCell 2 # as𝔹Selector
      , fwd_expect:
           "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))"
      }
    , { file: "length", file_expect: "length.expect", δv: topOf, fwd_expect: "_5_" }
    , { file: "list-comp"
      , file_expect: "list-comp-1.expect"
-     , δv: botOf >>> selectNthCell 1 neg
+     , δv: selectNthCell 1 # as𝔹Selector
      , fwd_expect: "(6.2 : (260 _:_ (19.9 : (91 : []))))"
      }
    , { file: "list-comp"
      , file_expect: "list-comp-2.expect"
-     , δv: botOf >>> selectNthCell 2 neg
+     , δv: selectNthCell 2 # as𝔹Selector
      , fwd_expect: "(6.2 : (260 : (19.9 _:_ (91 : []))))"
      }
    , { file: "lookup"
@@ -209,14 +209,14 @@ test_bwd = testBwdMany
      }
    , { file: "map"
      , file_expect: "map.expect"
-     , δv: botOf >>> selectNthCell 0 neg >>> selectNthCell 1 neg
+     , δv: selectNthCell 0 <> selectNthCell 1 # as𝔹Selector
      , fwd_expect: "(5 _:_ (6 _:_ []))"
      }
    , { file: "multiply", file_expect: "multiply.expect", δv: const $ Int true 0, fwd_expect: "_0_" }
    , { file: "nth", file_expect: "nth.expect", δv: const $ Int true 4, fwd_expect: "_4_" }
    , { file: "section-5-example"
      , file_expect: "section-5-example-1.expect"
-     , δv: botOf >>> selectNthCell 0 neg
+     , δv: selectNthCell 0 # as𝔹Selector
      , fwd_expect: "(88 _:_ (6 : (4 : [])))"
      }
    , { file: "section-5-example"
@@ -226,17 +226,17 @@ test_bwd = testBwdMany
      }
    , { file: "section-5-example"
      , file_expect: "section-5-example-3.expect"
-     , δv: botOf >>> selectNthCell 2 neg
+     , δv: selectNthCell 2 # as𝔹Selector
      , fwd_expect: "(88 : (6 : (4 _:_ [])))"
      }
    , { file: "zeros"
      , file_expect: "zeros-1.expect"
-     , δv: botOf >>> selectNthCell 0 neg >>> selectNthCell 2 neg
+     , δv: selectNthCell 0 <> selectNthCell 2 # as𝔹Selector
      , fwd_expect: "(0 _:_ (0 : _[]_))"
      }
    , { file: "zeros"
      , file_expect: "zeros-2.expect"
-     , δv: botOf >>> selectNthCell 2 neg
+     , δv: selectNthCell 2 # as𝔹Selector
      , fwd_expect: "(0 : (0 : _[]_))"
      }
    , { file: "zipWith"

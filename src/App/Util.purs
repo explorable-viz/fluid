@@ -6,6 +6,7 @@ import Bindings (Var)
 import Data.Array ((:)) as A
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, union)
 import Data.Set as S
@@ -38,6 +39,8 @@ type Handler = Event -> Selector Val
 as𝔹Selector :: forall f. Traversable f => Selector2 f -> Selector f
 as𝔹Selector (Selector2 sel) v =
    let _ × vα = runWithAlloc 0 (alloc v) in select𝔹s vα (sel vα)
+
+derive instance Newtype (Selector2 f) _
 
 instance Semigroup (Selector2 f) where
    append (Selector2 s1) (Selector2 s2) = Selector2 $ \x -> s1 x `union` s2 x
@@ -75,11 +78,11 @@ selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v :
 selectNth n δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNth (n - 1) δv v' : Nil)
 selectNth _ _ _ = error absurd
 
-selectNthCell :: Int -> Endo 𝔹 -> Selector Val
-selectNthCell 0 δα (Constr α c Nil) | c == cNil = Constr (δα α) c Nil
-selectNthCell 0 δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) c (v : v' : Nil)
-selectNthCell n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNthCell (n - 1) δα v' : Nil)
-selectNthCell _ _ _ = error absurd
+selectNthCell :: Int -> Selector2 Val
+selectNthCell n = Selector2 $ unsafePartial $ case _ of
+   Constr α c Nil | n == 0 && c == cNil -> S.singleton α
+   Constr α c (_ : _ : Nil) | n == 0 && c == cCons -> S.singleton α
+   Constr _ c (_ : v' : Nil) | c == cCons -> unwrap (selectNthCell (n - 1)) v'
 
 selectSome :: Selector2 Val
 selectSome = Selector2 $ unsafePartial $ case _ of
