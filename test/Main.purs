@@ -1,7 +1,7 @@
 module Test.Main where
 
 import Prelude hiding (add)
-import App.Util (as𝔹Selector, selectBarChart_data, selectMatrixElement, selectNth, selectNthCell, selectPair, selectSome, select_y)
+import App.Util (as𝔹Selector, selectAll, selectBarChart_data, selectMatrixElement, selectNth, selectNth2, selectNthCell, selectPair, selectSome, select_y)
 import Bindings ((↦))
 import Data.Traversable (traverse_)
 import Dict (fromFoldable) as D
@@ -221,7 +221,7 @@ test_bwd = testBwdMany
      }
    , { file: "section-5-example"
      , file_expect: "section-5-example-2.expect"
-     , δv: botOf >>> selectNth 1 topOf
+     , δv: selectNth2 1 selectAll # as𝔹Selector
      , fwd_expect: "(_88_ : (_6_ : (_4_ : [])))"
      }
    , { file: "section-5-example"
@@ -241,7 +241,7 @@ test_bwd = testBwdMany
      }
    , { file: "zipWith"
      , file_expect: "zipWith-1.expect"
-     , δv: botOf >>> selectNth 1 (const $ Float true 25.0)
+     , δv: selectNth2 1 selectAll # as𝔹Selector
      , fwd_expect: "(13.0 : (_25.0_ : (41.0 : [])))"
      }
    ]

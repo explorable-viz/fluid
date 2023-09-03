@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 
 import Bindings (Var)
 import Data.Array ((:)) as A
+import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -18,8 +19,8 @@ import Effect (Effect)
 import Foreign.Object (update)
 import Graph (Vertex)
 import Graph.GraphWriter (alloc, runWithAlloc)
-import Graph.Slice (select𝔹s)
-import Lattice (𝔹, neg)
+import Graph.Slice (selectαs, select𝔹s)
+import Lattice (𝔹, neg, topOf)
 import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
@@ -39,6 +40,9 @@ type Handler = Event -> Selector Val
 as𝔹Selector :: forall f. Traversable f => Selector2 f -> Selector f
 as𝔹Selector (Selector2 sel) v =
    let _ × vα = runWithAlloc 0 (alloc v) in select𝔹s vα (sel vα)
+
+selectAll :: forall f. Apply f => Foldable f => Selector2 f
+selectAll = Selector2 $ \vα -> selectαs (topOf vα) vα
 
 derive instance Newtype (Selector2 f) _
 

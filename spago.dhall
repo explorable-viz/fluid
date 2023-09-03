@@ -25,8 +25,6 @@ You can edit this file as you like.
   , "lists"
   , "maybe"
   , "newtype"
-  , "node-buffer"
-  , "node-fs"
   , "nonempty"
   , "numbers"
   , "ordered-collections"
