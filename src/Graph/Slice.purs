@@ -16,7 +16,7 @@ import Graph.GraphWriter (WithGraph, extend, runWithGraph)
 import Set (empty, insert, member, singleton, unions, difference)
 import Util (type (×), (×))
 
-type PendingSlice s = Map Vertex (s Vertex)
+type PendingVertices s = Map Vertex (s Vertex)
 
 bwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
 bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs0)
@@ -35,7 +35,7 @@ fwdSliceDeMorgan αs_0 g_0 =
 fwdSlice :: forall g s. Graph g s => s Vertex -> g -> g
 fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
    where
-   go :: PendingSlice s × List Edge -> WithGraph s (Step _ (PendingSlice s))
+   go :: PendingVertices s × List Edge -> WithGraph s (Step _ (PendingVertices s))
    go (h × Nil) = pure $ Done h
    go (h × ((α × β) : es)) = do
       let βs = maybe (singleton β) (insert β) (M.lookup α h)
