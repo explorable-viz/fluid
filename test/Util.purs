@@ -115,12 +115,11 @@ testParse s = do
    let src = prettyP s
    s' <- parse src program
    trace ("Non-Annotated:\n" <> src)
-      ( \_ ->
+      \_ ->
            unless (eq (erase s) (erase s')) do
               log ("SRC\n" <> show (erase s))
               log ("NEW\n" <> show (erase s'))
               lift $ fail "not equal"
-      )
 
 testTrace :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
@@ -195,7 +194,7 @@ withDefaultImports = beforeAll openDefaultImports
 
 withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
 withDataset dataset =
-   beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }))
+   beforeWith (openDatasetAs dataset "data" >=> \({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv })
 
 type TestSpec =
    { file :: String
@@ -279,5 +278,4 @@ checkPretty msg expect x =
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
 shouldSatisfy msg v pred =
    unless (pred v)
-      $ fail
-      $ show v <> " doesn't satisfy predicate: " <> msg
+      $ fail (show v <> " doesn't satisfy predicate: " <> msg)
