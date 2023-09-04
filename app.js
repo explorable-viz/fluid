@@ -29376,23 +29376,21 @@
   var toggleConstrArg = (v) => (v1) => (v2) => (v3) => {
     if (v3.tag === "Constr") {
       if (v === v3._2) {
-        return definitely("absurd")((() => {
-          const $4 = index(v3._3)(v1);
-          if ($4.tag === "Just") {
-            const $5 = updateAt(v1)(v2($4._1))(v3._3);
-            if ($5.tag === "Just") {
-              return $Maybe("Just", $Val("Constr", v3._1, v, $5._1));
+        return $Val(
+          "Constr",
+          v3._1,
+          v,
+          definitely("absurd")((() => {
+            const $4 = index(v3._3)(v1);
+            if ($4.tag === "Just") {
+              return updateAt(v1)(v2($4._1))(v3._3);
             }
-            if ($5.tag === "Nothing") {
+            if ($4.tag === "Nothing") {
               return Nothing;
             }
             fail();
-          }
-          if ($4.tag === "Nothing") {
-            return Nothing;
-          }
-          fail();
-        })());
+          })())
+        );
       }
       return unsafePerformEffect(throwException(error("absurd")));
     }
