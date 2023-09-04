@@ -1,7 +1,7 @@
 module Test.Main where
 
 import Prelude hiding (add)
-import App.Util (as𝔹Selector, selectAll, selectBarChart_data, selectMatrixElement, selectNth, selectNth2, selectNthCell, selectPair, selectSome, select_y)
+import App.Util (as𝔹Selector, selectAll, selectBarChart_data, selectMatrixElement, selectNth2, selectNthCell, selectPair, selectSome, select_y)
 import Bindings ((↦))
 import Data.Traversable (traverse_)
 import Dict (fromFoldable) as D
@@ -291,7 +291,7 @@ test_linking = testLinkMany
           , dataFile: File "renewables"
           , x: "data"
           }
-     , δv1: botOf >>> selectBarChart_data (selectNth 1 (select_y topOf))
+     , δv1: botOf >>> selectBarChart_data (selectNth2 1 (select_y selectAll) # as𝔹Selector)
      , v2_expect:
           "LineChart ({\
           \caption: \"Output of USA relative to China\", \

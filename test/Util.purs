@@ -116,10 +116,10 @@ testParse s = do
    s' <- parse src program
    trace ("Non-Annotated:\n" <> src)
       \_ ->
-           unless (eq (erase s) (erase s')) do
-              log ("SRC\n" <> show (erase s))
-              log ("NEW\n" <> show (erase s'))
-              lift $ fail "not equal"
+         unless (eq (erase s) (erase s')) do
+            log ("SRC\n" <> show (erase s))
+            log ("NEW\n" <> show (erase s'))
+            lift $ fail "not equal"
 
 testTrace :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do

@@ -97,9 +97,8 @@ selectSome :: Selector2 Val
 selectSome = Selector2 $ unsafePartial $ case _ of
    Constr α c _ | c == cSome -> S.singleton α
 
-select_y :: Selector Val -> Selector Val
-select_y δv (Record α r) = Record α $ update (δv >>> Just) f_y r
-select_y _ _ = error absurd
+select_y :: Endo (Selector2 Val)
+select_y = selectField f_y
 
 selectBarChart_data :: Endo (Selector Val)
 selectBarChart_data δv (Constr α c (Record β r : Nil)) | c == cBarChart =
@@ -115,14 +114,25 @@ toggleCell :: Int -> Int -> Selector Val
 toggleCell i j (Matrix α m) = Matrix α (matrixUpdate i j neg m)
 toggleCell _ _ _ = error absurd
 
-toggleField :: Var -> Selector Val -> Selector Val
+toggleField :: Var -> Endo (Selector Val)
 toggleField f selector (Record α r) = Record α $ update (selector >>> Just) f r
 toggleField _ _ _ = error absurd
 
-toggleConstrArg :: Ctr -> Int -> Selector Val -> Selector Val
+selectField :: Var -> Endo (Selector2 Val)
+selectField f sel = Selector2 $ unsafePartial $ case _ of
+   Record _ r -> unwrap sel (get f r)
+
+toggleConstrArg :: Ctr -> Int -> Endo (Selector Val)
 toggleConstrArg c n selector (Constr α c' us) | c == c' =
-   definitely' $ do
-      u1 <- us !! n
-      us' <- updateAt n (selector u1) us
-      pure $ Constr α c us'
+   let
+      us' = definitely' $ do
+         u1 <- us !! n
+         updateAt n (selector u1) us
+   in
+      Constr α c us'
 toggleConstrArg _ _ _ _ = error absurd
+
+selectConstrArg :: Ctr -> Int -> Endo (Selector2 Val)
+selectConstrArg c n sel = Selector2 $ unsafePartial $ case _ of
+   Constr _ c' us | c == c' ->
+      unwrap sel $ definitely' $ us !! n
