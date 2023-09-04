@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 
 import Bindings (Var)
 import Data.Array ((:)) as A
+import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
@@ -18,8 +19,8 @@ import Effect (Effect)
 import Foreign.Object (update)
 import Graph (Vertex)
 import Graph.GraphWriter (alloc, runWithAlloc)
-import Graph.Slice (select𝔹s)
-import Lattice (𝔹, neg)
+import Graph.Slice (selectαs, select𝔹s)
+import Lattice (𝔹, neg, topOf)
 import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
@@ -39,6 +40,9 @@ type Handler = Event -> Selector Val
 as𝔹Selector :: forall f. Traversable f => Selector2 f -> Selector f
 as𝔹Selector (Selector2 sel) v =
    let _ × vα = runWithAlloc 0 (alloc v) in select𝔹s vα (sel vα)
+
+selectAll :: forall f. Apply f => Foldable f => Selector2 f
+selectAll = Selector2 $ \vα -> selectαs (topOf vα) vα
 
 derive instance Newtype (Selector2 f) _
 
@@ -93,9 +97,8 @@ selectSome :: Selector2 Val
 selectSome = Selector2 $ unsafePartial $ case _ of
    Constr α c _ | c == cSome -> S.singleton α
 
-select_y :: Selector Val -> Selector Val
-select_y δv (Record α r) = Record α $ update (δv >>> Just) f_y r
-select_y _ _ = error absurd
+select_y :: Endo (Selector2 Val)
+select_y = selectField f_y
 
 selectBarChart_data :: Endo (Selector Val)
 selectBarChart_data δv (Constr α c (Record β r : Nil)) | c == cBarChart =
@@ -111,14 +114,25 @@ toggleCell :: Int -> Int -> Selector Val
 toggleCell i j (Matrix α m) = Matrix α (matrixUpdate i j neg m)
 toggleCell _ _ _ = error absurd
 
-toggleField :: Var -> Selector Val -> Selector Val
+toggleField :: Var -> Endo (Selector Val)
 toggleField f selector (Record α r) = Record α $ update (selector >>> Just) f r
 toggleField _ _ _ = error absurd
 
-toggleConstrArg :: Ctr -> Int -> Selector Val -> Selector Val
+selectField :: Var -> Endo (Selector2 Val)
+selectField f sel = Selector2 $ unsafePartial $ case _ of
+   Record _ r -> unwrap sel (get f r)
+
+toggleConstrArg :: Ctr -> Int -> Endo (Selector Val)
 toggleConstrArg c n selector (Constr α c' us) | c == c' =
-   definitely' $ do
-      u1 <- us !! n
-      us' <- updateAt n (selector u1) us
-      pure $ Constr α c us'
+   let
+      us' = definitely' $ do
+         u1 <- us !! n
+         updateAt n (selector u1) us
+   in
+      Constr α c us'
 toggleConstrArg _ _ _ _ = error absurd
+
+selectConstrArg :: Ctr -> Int -> Endo (Selector2 Val)
+selectConstrArg c n sel = Selector2 $ unsafePartial $ case _ of
+   Constr _ c' us | c == c' ->
+      unwrap sel $ definitely' $ us !! n

@@ -1,7 +1,7 @@
 module Test.Main where
 
 import Prelude hiding (add)
-import App.Util (as𝔹Selector, selectBarChart_data, selectMatrixElement, selectNth, selectNthCell, selectPair, selectSome, select_y)
+import App.Util (as𝔹Selector, selectAll, selectBarChart_data, selectMatrixElement, selectNth2, selectNthCell, selectPair, selectSome, select_y)
 import Bindings ((↦))
 import Data.Traversable (traverse_)
 import Dict (fromFoldable) as D
@@ -221,7 +221,7 @@ test_bwd = testBwdMany
      }
    , { file: "section-5-example"
      , file_expect: "section-5-example-2.expect"
-     , δv: botOf >>> selectNth 1 topOf
+     , δv: selectNth2 1 selectAll # as𝔹Selector
      , fwd_expect: "(_88_ : (_6_ : (_4_ : [])))"
      }
    , { file: "section-5-example"
@@ -241,7 +241,7 @@ test_bwd = testBwdMany
      }
    , { file: "zipWith"
      , file_expect: "zipWith-1.expect"
-     , δv: botOf >>> selectNth 1 (const $ Float true 25.0)
+     , δv: selectNth2 1 selectAll # as𝔹Selector
      , fwd_expect: "(13.0 : (_25.0_ : (41.0 : [])))"
      }
    ]
@@ -256,81 +256,85 @@ test_graphics = testWithDatasetMany
 
 test_linking :: Test Unit
 test_linking = testLinkMany
-   [ { divId: ""
-     , file1: File "pairs-1"
-     , file2: File "pairs-2"
-     , dataFile: File "pairs-data"
-     , x: "data"
+   [ { spec:
+          { divId: ""
+          , file1: File "pairs-1"
+          , file2: File "pairs-2"
+          , dataFile: File "pairs-data"
+          , x: "data"
+          }
+     , δv1: selectPair (const false) botOf
+          ( selectPair (const false) botOf
+               (selectPair (const false) (const $ Int true 3) botOf)
+          )
+     , v2_expect: "(3, (_5_, _7_))"
      }
-        ×
-           ( selectPair (const false) botOf
-                ( selectPair (const false) botOf
-                     (selectPair (const false) (const $ Int true 3) botOf)
-                )
-           )
-        × "(3, (_5_, _7_))"
-   , { divId: ""
-     , file1: File "convolution-1"
-     , file2: File "convolution-2"
-     , dataFile: File "convolution-data"
-     , x: "data"
+   , { spec:
+          { divId: ""
+          , file1: File "convolution-1"
+          , file2: File "convolution-2"
+          , dataFile: File "convolution-data"
+          , x: "data"
+          }
+     , δv1: selectMatrixElement 2 2 # as𝔹Selector
+     , v2_expect:
+          "_18_, _12_, _13_, 9, 19,\n\
+          \_20_, _11_, _24_, 9, 14,\n\
+          \_15_, _13_, _20_, 11, 14,\n\
+          \7, 15, 15, 8, 20,\n\
+          \3, 10, 12, 3, 11"
      }
-        × (selectMatrixElement 2 2 # as𝔹Selector)
-        ×
-           "_18_, _12_, _13_, 9, 19,\n\
-           \_20_, _11_, _24_, 9, 14,\n\
-           \_15_, _13_, _20_, 11, 14,\n\
-           \7, 15, 15, 8, 20,\n\
-           \3, 10, 12, 3, 11"
-   , { divId: ""
-     , file1: File "bar-chart"
-     , file2: File "line-chart"
-     , dataFile: File "renewables"
-     , x: "data"
+   , { spec:
+          { divId: ""
+          , file1: File "bar-chart"
+          , file2: File "line-chart"
+          , dataFile: File "renewables"
+          , x: "data"
+          }
+     , δv1: botOf >>> selectBarChart_data (selectNth2 1 (select_y selectAll) # as𝔹Selector)
+     , v2_expect:
+          "LineChart ({\
+          \caption: \"Output of USA relative to China\", \
+          \plots: \
+          \(LinePlot ({\
+          \data: \
+          \({x: 2013, y: 2.5483870967741935} : \
+          \({x: 2014, y: 1.61} : \
+          \({x: 2015, y: _1.6213592233009706_} : \
+          \({x: 2016, y: 1.4000000000000001} : \
+          \({x: 2017, y: 1.1208053691275166} : \
+          \({x: 2018, y: 0.9101123595505617} : [])))))), \
+          \name: \"Bio\"\
+          \}) : \
+          \(LinePlot ({\
+          \data: \
+          \({x: 2013, y: 0.3} : \
+          \({x: 2014, y: 0.28214285714285714} : \
+          \({x: 2015, y: _0.8333333333333334_} : \
+          \({x: 2016, y: 0.26229508196721313} : \
+          \({x: 2017, y: 0.25559105431309903} : \
+          \({x: 2018, y: 0.2484472049689441} : [])))))), \
+          \name: \"Hydro\"\
+          \}) : \
+          \(LinePlot ({\
+          \data: \
+          \({x: 2013, y: 0.6080402010050252} : \
+          \({x: 2014, y: 0.6428571428571429} : \
+          \({x: 2015, y: _0.5909090909090909_} : \
+          \({x: 2016, y: 0.5324675324675324} : \
+          \({x: 2017, y: 0.3893129770992366} : \
+          \({x: 2018, y: 0.3522727272727273} : [])))))), \
+          \name: \"Solar\"\
+          \}) : \
+          \(LinePlot ({\
+          \data: ({x: 2013, y: 0.6703296703296703} : \
+          \({x: 2014, y: 0.5739130434782609} : \
+          \({x: 2015, y: _0.5103448275862069_} : \
+          \({x: 2016, y: 0.48520710059171596} : \
+          \({x: 2017, y: 0.4734042553191489} : \
+          \({x: 2018, y: 0.45714285714285713} : [])))))), \
+          \name: \"Wind\"\
+          \}) : []))))\
+          \})"
      }
-        × (botOf >>> selectBarChart_data (selectNth 1 (select_y topOf)))
-        ×
-           "LineChart ({\
-           \caption: \"Output of USA relative to China\", \
-           \plots: \
-           \(LinePlot ({\
-           \data: \
-           \({x: 2013, y: 2.5483870967741935} : \
-           \({x: 2014, y: 1.61} : \
-           \({x: 2015, y: _1.6213592233009706_} : \
-           \({x: 2016, y: 1.4000000000000001} : \
-           \({x: 2017, y: 1.1208053691275166} : \
-           \({x: 2018, y: 0.9101123595505617} : [])))))), \
-           \name: \"Bio\"\
-           \}) : \
-           \(LinePlot ({\
-           \data: \
-           \({x: 2013, y: 0.3} : \
-           \({x: 2014, y: 0.28214285714285714} : \
-           \({x: 2015, y: _0.8333333333333334_} : \
-           \({x: 2016, y: 0.26229508196721313} : \
-           \({x: 2017, y: 0.25559105431309903} : \
-           \({x: 2018, y: 0.2484472049689441} : [])))))), \
-           \name: \"Hydro\"\
-           \}) : \
-           \(LinePlot ({\
-           \data: \
-           \({x: 2013, y: 0.6080402010050252} : \
-           \({x: 2014, y: 0.6428571428571429} : \
-           \({x: 2015, y: _0.5909090909090909_} : \
-           \({x: 2016, y: 0.5324675324675324} : \
-           \({x: 2017, y: 0.3893129770992366} : \
-           \({x: 2018, y: 0.3522727272727273} : [])))))), \
-           \name: \"Solar\"\
-           \}) : \
-           \(LinePlot ({\
-           \data: ({x: 2013, y: 0.6703296703296703} : \
-           \({x: 2014, y: 0.5739130434782609} : \
-           \({x: 2015, y: _0.5103448275862069_} : \
-           \({x: 2016, y: 0.48520710059171596} : \
-           \({x: 2017, y: 0.4734042553191489} : \
-           \({x: 2018, y: 0.45714285714285713} : [])))))), \
-           \name: \"Wind\"\
-           \}) : []))))\
-           \})"
    ]

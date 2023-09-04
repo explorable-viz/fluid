@@ -55,7 +55,7 @@ import Set (subset)
 import Test.Spec (SpecT, before, beforeAll, beforeWith, it) -- class Example,evaluateExample,
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
-import Util (MayFailT, type (×), (×), error, successful)
+import Util (MayFailT, (×), error, successful)
 import Val (Val(..), class Ann, (<+>))
 
 type Test a = SpecT Aff Unit Effect a
@@ -115,12 +115,11 @@ testParse s = do
    let src = prettyP s
    s' <- parse src program
    trace ("Non-Annotated:\n" <> src)
-      ( \_ ->
-           unless (eq (erase s) (erase s')) do
-              log ("SRC\n" <> show (erase s))
-              log ("NEW\n" <> show (erase s'))
-              lift $ fail "not equal"
-      )
+      \_ ->
+         unless (eq (erase s) (erase s')) do
+            log ("SRC\n" <> show (erase s))
+            log ("NEW\n" <> show (erase s'))
+            lift $ fail "not equal"
 
 testTrace :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
@@ -195,7 +194,7 @@ withDefaultImports = beforeAll openDefaultImports
 
 withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
 withDataset dataset =
-   beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }))
+   beforeWith (openDatasetAs dataset "data" >=> \({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv })
 
 type TestSpec =
    { file :: String
@@ -207,6 +206,17 @@ type TestBwdSpec =
    , file_expect :: String
    , δv :: Selector Val
    , fwd_expect :: String
+   }
+
+type TestWithDatasetSpec =
+   { dataset :: String
+   , file :: String
+   }
+
+type TestLinkSpec =
+   { spec :: LinkFigSpec
+   , δv1 :: Selector Val
+   , v2_expect :: String
    }
 
 testMany :: Array TestSpec → Boolean -> Test Unit
@@ -231,11 +241,6 @@ testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
                void $ testWithSetup is_bench s gconfig { δv, fwd_expect, bwd_expect }
    folder = File "slicing/"
 
-type TestWithDatasetSpec =
-   { dataset :: String
-   , file :: String
-   }
-
 testWithDatasetMany :: Array TestWithDatasetSpec -> Boolean -> Test Unit
 testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDataset fxs
    where
@@ -246,15 +251,16 @@ testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDatase
             \(gconfig × s) ->
                void $ testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
 
-testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
+testLinkMany :: Array TestLinkSpec -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
    where
-   testLink (spec@{ x } × δv1 × v2_expect) =
+   testLink :: TestLinkSpec -> _
+   testLink { spec, δv1, v2_expect } =
       before (loadLinkFig spec) $
          it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
             \{ γ0, γ, e1, e2, t1, t2, v1 } ->
                let
-                  { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
+                  { v': v2' } = successful $ linkResult spec.x γ0 γ e1 e2 t1 t2 (δv1 v1)
                in
                   checkPretty "Linked output" v2_expect v2'
 
@@ -272,5 +278,4 @@ checkPretty msg expect x =
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
 shouldSatisfy msg v pred =
    unless (pred v)
-      $ fail
-      $ show v <> " doesn't satisfy predicate: " <> msg
+      $ fail (show v <> " doesn't satisfy predicate: " <> msg)
