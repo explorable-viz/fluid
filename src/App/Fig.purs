@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.CodeMirror (EditorView, dispatch, update)
+import App.CodeMirror (EditorView, dispatch, getContentsLength, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
@@ -13,6 +13,7 @@ import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.List (List(..), (:), singleton)
+--import Data.String (length) as S
 import Data.Set (Set, singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
@@ -22,11 +23,11 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
 import Eval (eval, eval_module)
-import EvalGraph (GraphConfig)
 import EvalBwd (evalBwd)
+import EvalGraph (GraphConfig)
 import Expr (Expr)
-import Graph.GraphImpl (GraphImpl)
 import Foreign.Object (lookup)
+import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
 import Module (File(..), open, openDefaultImports, openDatasetAs)
 import Partial.Unsafe (unsafePartial)
@@ -38,6 +39,7 @@ import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
 import Val (Env, Val(..), (<+>), append_inv)
 import Web.Event.EventTarget (eventListener)
+--import Web.HTML.Event.EventTypes (offline)
 
 data View
    = MatrixFig MatrixView
@@ -144,9 +146,12 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv =
    drawCode ed $ prettyP e1
 
 drawCode :: EditorView -> String -> Effect Unit
-drawCode ed s = do
-   tr <- update ed.state [ { changes: { from: 0, to: 0, insert: s } } ]
+drawCode ed _ = do
+   let contentsLength = getContentsLength ed 
+   tr <- update ed.state [ { changes: { from: 0, to:contentsLength, insert: "hello"} } ]
+   -- tr <- update ed.state [ { changes: { from: 0, to: 0, insert: s } } ]
    dispatch ed tr
+
 
 drawFig :: Fig -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId } } δv = do
