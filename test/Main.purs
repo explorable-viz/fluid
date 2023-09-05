@@ -15,14 +15,7 @@ import Val (DictRep(..), Val(..))
 main :: Effect Unit
 main = do
    traverse_ run $ tests false
-   traverse_ run $ tests false
 
-tests :: Boolean -> Array (Test Unit)
-tests is_bench =
-   [ test_desugaring is_bench
-   , test_misc is_bench
-   , test_bwd is_bench
-   , test_graphics is_bench
 tests :: Boolean -> Array (Test Unit)
 tests is_bench =
    [ test_desugaring is_bench

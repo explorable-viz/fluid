@@ -32,7 +32,7 @@ import Data.List (elem)
 import Data.Set (Set) as S
 import Data.String (null)
 import Data.Traversable (traverse_)
-import Data.Tuple (fst)
+import Data.Tuple (Tuple)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -250,6 +250,7 @@ testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDatase
 testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
    where
+   testLink :: (LinkFigSpec × Selector Val × String) -> Test Unit
    testLink (spec@{ x } × δv1 × v2_expect) =
       before (loadLinkFig spec) $
          it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)

@@ -5,16 +5,13 @@ import Prelude
 import Affjax.RequestBody (string) as RB
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
-import Control.Monad.Writer (WriterT)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.JSDate (JSDate, getTime, now)
 import Data.Maybe (Maybe(..))
-import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (logShow, log)
-import Test.Spec (SpecT)
 import Util (MayFailT, error, type (×), (×))
 
 newtype File = File String
@@ -23,7 +20,7 @@ newtype Folder = Folder String
 derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
-type Test a = SpecT Aff Unit BenchmarkAcc a
+-- type Test a = SpecT Aff Unit BenchmarkAcc a
 
 type BenchResult =
    { name :: String
