@@ -55,4 +55,4 @@ runMocha
     . SpecT Aff Unit Effect a
    -> Effect Unit
 runMocha spec =
-   traverse_ registerGroup =<< collect spec
+   traverse_ registerGroup =<< (collect spec)

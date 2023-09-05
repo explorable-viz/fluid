@@ -32,6 +32,7 @@ import Data.List (elem)
 import Data.Set (Set) as S
 import Data.String (null)
 import Data.Traversable (traverse_)
+import Data.Tuple (fst)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -191,7 +192,7 @@ testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
    pure { tEval, tBwd, tFwd, tFwdDemorgan }
 
 withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
-withDefaultImports = beforeAll openDefaultImports
+withDefaultImports x = beforeAll openDefaultImports x
 
 withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
 withDataset dataset =

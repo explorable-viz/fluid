@@ -5,7 +5,7 @@ import Prelude
 import Affjax.RequestBody (string) as RB
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
-import Control.Monad.Trans.Class (lift)
+import Control.Monad.Writer (WriterT)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
 import Data.JSDate (JSDate, getTime, now)
@@ -23,7 +23,7 @@ newtype Folder = Folder String
 derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
-type Test a = SpecT Aff Unit Effect a
+type Test a = SpecT Aff Unit BenchmarkAcc a
 
 type BenchResult =
    { name :: String
@@ -56,13 +56,13 @@ logTime :: String -> JSDate -> JSDate -> Aff Unit
 logTime msg before after =
    liftEffect $ log (msg <> show (timeDiff before after) <> "\n")
 
-liftTimer :: Test Unit -> Test Unit
-liftTimer test = do
-   begin <- lift now
-   out <- test
-   end <- lift now
-   lift $ logShow (timeDiff begin end)
-   pure out
+-- liftTimer :: Test Unit -> Test Unit
+-- liftTimer test = do
+--    (begin :: ?_ )<- lift now
+--    out <- test
+--    end <- lift now
+--    lift $ logShow (timeDiff begin end)
+--    pure out
 
 liftMayFail :: MayFailT Aff Unit -> MayFailT Aff Unit
 liftMayFail test = do
