@@ -32,7 +32,6 @@ import Data.List (elem)
 import Data.Set (Set) as S
 import Data.String (null)
 import Data.Traversable (traverse_)
-import Data.Tuple (Tuple)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
