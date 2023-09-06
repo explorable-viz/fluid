@@ -13,7 +13,6 @@ import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.List (List(..), (:), singleton)
---import Data.String (length) as S
 import Data.Set (Set, singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
@@ -39,6 +38,7 @@ import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
 import Val (Env, Val(..), (<+>), append_inv)
 import Web.Event.EventTarget (eventListener)
+
 --import Web.HTML.Event.EventTypes (offline)
 
 data View
@@ -160,6 +160,15 @@ drawFig fig@{ spec: { divId } } δv = do
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
    drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
+
+drawFigTemp :: Fig -> EditorView -> Selector Val -> Effect Unit
+drawFigTemp fig@{ spec: { divId }, e:e} ed δv = do
+   log $ "Redrawing " <> divId
+   let v_view × views = successful $ figViews fig δv
+   sequence_ $
+      uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
+   drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
+   drawCode ed $ prettyP e
 
 varView :: Var -> Env 𝔹 -> MayFail View
 varView x γ = view x <$> (lookup x γ # orElse absurd)

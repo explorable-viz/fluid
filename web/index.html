@@ -90,10 +90,12 @@
       <p>In particular, notice how only certain parts of the input are relevant to a given output cell. Can some of the irrelevant inputs be attributed to zeros in the filter? Also notice how the demand varies as we approach the edge of the output image: because this implementation of convolution treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation of output cells near the edge. (As mentioned above, it is not yet possible to select input elements and have the output selection be derived automatically.) Interactions like these would be more useful if we could show the actual computation involved for a given element, but even this simple extensional view already reveals interesting things about the implementation. Here is the pure functional code:
 
       <details><summary>convolution.fld</summary>
-         <script src="https://gist.github.com/rolyp/64b04a6a6fc73164d7fbbd1b82365b67.js"></script>
+         <div id="codemirror-fig-conv-1"></div></p>
+         <!--<script src="https://gist.github.com/rolyp/64b04a6a6fc73164d7fbbd1b82365b67.js"></script>-->
       </details>
       <details><summary>emboss-zero-pad.fld</summary>
-         <script src="https://gist.github.com/rolyp/8fc7054973476fdcbbc5f1e0b854913d.js"></script>
+         <div id="codemirror-fig-conv-2"></div></p>
+         <!--<script src="https://gist.github.com/rolyp/8fc7054973476fdcbbc5f1e0b854913d.js"></script>-->
       </details>
 
       <p>The library function <code>convolve</code> implements the convolution algorithm itself, and helper functions <code>zero</code>, <code>wrap</code> and <code>extend</code> implement specific policies (&#8220;methods&#8221;) for dealing with the boundary.

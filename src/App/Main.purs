@@ -3,7 +3,7 @@ module App.Main where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (addEditorView)
-import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
+import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawFigTemp, drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
@@ -51,7 +51,23 @@ drawFigs loadFigs =
          Left err -> log $ show err
          Right figs -> sequence_ $ flip drawFig botOf <$> figs
 
+drawFigsTemp :: Array (Aff Fig) -> Effect Unit
+drawFigsTemp loadFigs =
+   flip runAff_ (sequence loadFigs)
+      case _ of
+         Left err -> log $ show err
+         Right figs -> do
+           -- ed <- addEditorView "codemirror-data"
+           sequence_ $ (\fig -> drawFigsTemp2 fig) <$> figs
+
+drawFigsTemp2 :: Fig -> Effect Unit
+drawFigsTemp2 fig =
+            do
+            ed <- addEditorView ("codemirror-" <> fig.spec.divId)
+            drawFigTemp fig ed botOf 
+
+
 main :: Effect Unit
 main = do
-   drawFigs [ loadFig fig1, loadFig fig2 ]
+   drawFigsTemp [ loadFig fig1, loadFig fig2 ]
    drawLinkFigs [ loadLinkFig linkingFig1 ]
