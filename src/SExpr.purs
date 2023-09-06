@@ -24,7 +24,7 @@ import Dict (Dict, asSingletonMap, get)
 import Dict (fromFoldable, singleton) as D
 import Expr (Cont(..), Elim(..), asElim, asExpr)
 import Expr (Expr(..), Module(..), RecDefs, VarDef(..)) as E
-import Lattice (class JoinSemilattice, (∨), bot, definedJoin, neg, maybeJoin, class BoundedJoinSemilattice, Raw)
+import Lattice (class JoinSemilattice, (∨), bot, definedJoin, maybeJoin, class BoundedJoinSemilattice, Raw)
 import Partial.Unsafe (unsafePartial)
 import Util (type (+), type (×), Endo, MayFailT, absurd, error, successful, unimplemented, (×))
 import Util.Pair (Pair(..))

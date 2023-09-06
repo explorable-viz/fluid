@@ -20,10 +20,10 @@ import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
 import Graph.GraphWriter (WithGraphAllocT)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
 import Set (class Set)
-import Util.Pretty (Doc, beside, text)
 import Util (Endo, MayFailT, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
+import Util.Pretty (Doc, beside, text)
 
 data Val a
    = Int a Int
@@ -253,3 +253,6 @@ instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
    expand (Foreign φ vs) (Foreign _ vs') = Foreign φ (expand vs vs') -- TODO: require φ == φ'
    expand (PartialConstr c vs) (PartialConstr c' us) = PartialConstr (c ≜ c') (expand vs us)
    expand _ _ = error "Incompatible values"
+
+instance Neg a => Neg (Val a) where
+   neg = (<$>) neg

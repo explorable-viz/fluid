@@ -9,7 +9,7 @@ import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, unwrap)
 import Data.Profunctor.Strong (first)
-import Data.Set (Set, union)
+import Data.Set (Set, difference, union)
 import Data.Set as S
 import Data.Traversable (class Traversable)
 import Data.Tuple (fst)
@@ -20,7 +20,7 @@ import Foreign.Object (update)
 import Graph (Vertex)
 import Graph.GraphWriter (alloc, runWithAlloc)
 import Graph.Slice (selectαs, select𝔹s)
-import Lattice (𝔹, neg, topOf)
+import Lattice (class Neg, 𝔹, neg, topOf)
 import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
@@ -35,6 +35,7 @@ type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
 newtype Selector2 f = Selector2 (f Vertex -> Set Vertex) -- specifies selection
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
+type Handler2 = Event -> Selector2 Val
 
 -- Turn vertex selector into corresponding (constant) 𝔹-selector.
 as𝔹Selector :: forall f. Traversable f => Selector2 f -> Selector f
@@ -47,10 +48,13 @@ selectAll = Selector2 $ \vα -> selectαs (topOf vα) vα
 derive instance Newtype (Selector2 f) _
 
 instance Semigroup (Selector2 f) where
-   append (Selector2 s1) (Selector2 s2) = Selector2 $ \x -> s1 x `union` s2 x
+   append (Selector2 sel1) (Selector2 sel2) = Selector2 $ \x -> sel1 x `union` sel2 x
 
 instance Monoid (Selector2 f) where
    mempty = Selector2 $ const S.empty
+
+instance (Apply f, Foldable f) => Neg (Selector2 f) where
+   neg (Selector2 sel) = Selector2 $ \x -> sel x `difference` unwrap selectAll x
 
 doNothing :: OnSel
 doNothing = const $ pure unit

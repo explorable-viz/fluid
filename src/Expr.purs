@@ -14,7 +14,7 @@ import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
 import Dict (apply2) as D
-import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin)
 import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 

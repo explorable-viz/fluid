@@ -116,6 +116,9 @@ instance JoinSemilattice a => JoinSemilattice (Dict a) where
    join = unionWith (∨) -- faster than definedJoin
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
 
+instance Neg a => Neg (Dict a) where
+   neg = (<$>) neg
+
 mayFailUpdate :: forall a m. Monad m => JoinSemilattice a => Dict a -> Var × a -> MayFailT m (Dict a)
 mayFailUpdate m (k × v) =
    case lookup k m of
@@ -129,9 +132,6 @@ instance JoinSemilattice a => JoinSemilattice (Array a) where
       | otherwise = report "Mismatched array lengths"
 
 instance (BoundedJoinSemilattice a, BoundedMeetSemilattice a) => BoundedLattice a
-
-instance (Functor f, Neg a) => Neg (f a) where
-   neg = (<$>) neg
 
 -- To express as Expandable (t :: Type -> Type) requires functor composition..
 class Expandable t u | t -> u where
