@@ -60,14 +60,14 @@ lineChartHandler2 ev = togglePoint $ unsafePos $ target ev
    where
    togglePoint :: Int × Int -> Selector2 Val
    togglePoint (i × j) =
-      neg $
-         selectConstrArg cLineChart 0
-            $ selectField f_plots
-            $ selectNth2 i
-            $ selectConstrArg cLinePlot 0
-            $ selectField f_data
-            $ selectNth2 j
-            $ selectAll
+      neg
+         $ selectConstrArg cLineChart 0
+         $ selectField f_plots
+         $ selectNth2 i
+         $ selectConstrArg cLinePlot 0
+         $ selectField f_data
+         $ selectNth2 j
+         $ selectAll
 
 -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
 -- within line plot.

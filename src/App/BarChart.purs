@@ -46,11 +46,11 @@ barChartHandler2 ev = toggleBar $ unsafeBarIndex $ target ev
    where
    toggleBar :: Int -> Selector2 Val
    toggleBar i =
-      neg $
-         selectConstrArg cBarChart 0
-            $ selectField f_data
-            $ selectNth2 i
-            $ selectAll
+      neg
+         $ selectConstrArg cBarChart 0
+         $ selectField f_data
+         $ selectNth2 i
+         $ selectAll
 
 -- [Unsafe] Datum associated with bar chart mouse event; 0-based index of selected bar.
 unsafeBarIndex :: Maybe EventTarget -> Int
