@@ -2,12 +2,12 @@ module App.Fig where
 
 import Prelude hiding (absurd)
 
-import App.BarChart (BarChart, barChartHandler, drawBarChart)
+import App.BarChart (BarChart, barChartHandler, barChartHandler2, drawBarChart)
 import App.CodeMirror (EditorView, dispatch, update)
-import App.LineChart (LineChart, drawLineChart, lineChartHandler)
-import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
-import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
-import App.Util (HTMLId, OnSel, Selector, doNothing, from, record)
+import App.LineChart (LineChart, drawLineChart, lineChartHandler, lineChartHandler2)
+import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixViewHandler2, matrixRep)
+import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler, tableViewHandler2)
+import App.Util (HTMLId, OnSel, Selector, OnSel2, doNothing, from, record)
 import Bindings (Var)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
@@ -22,11 +22,11 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
 import Eval (eval, eval_module)
-import EvalGraph (GraphConfig)
 import EvalBwd (evalBwd)
+import EvalGraph (GraphConfig)
 import Expr (Expr)
-import Graph.GraphImpl (GraphImpl)
 import Foreign.Object (lookup)
+import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
 import Module (File(..), open, openDefaultImports, openDatasetAs)
 import Partial.Unsafe (unsafePartial)
@@ -50,6 +50,12 @@ drawView divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener 
 drawView divId onSel n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler)
 drawView divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler)
 drawView divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler)
+
+drawView2 :: HTMLId -> OnSel2 -> Int -> View -> Effect Unit
+drawView2 divId onSel n (MatrixFig vw) = drawMatrix divId n vw =<< eventListener (onSel <<< matrixViewHandler2)
+drawView2 divId onSel n (EnergyTableView vw) = drawTable divId n vw =<< eventListener (onSel <<< tableViewHandler2)
+drawView2 divId onSel n (LineChartFig vw) = drawLineChart divId n vw =<< eventListener (onSel <<< lineChartHandler2)
+drawView2 divId onSel n (BarChartFig vw) = drawBarChart divId n vw =<< eventListener (onSel <<< barChartHandler2)
 
 -- Convert sliced value to appropriate View, discarding top-level annotations for now.
 -- 'from' is partial; encapsulate that here.

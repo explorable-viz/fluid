@@ -2,29 +2,18 @@ module App.LineChart where
 
 import Prelude hiding (absurd)
 
+import App.Util (class Reflect, Handler, Handler2, Renderer, Selector, Selector2, from, get_intOrNumber, record, selectAll, selectConstrArg, selectField, selectNth, selectNth2, toggleConstrArg, toggleField)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Unsafe.Coerce (unsafeCoerce)
-import Web.Event.Event (target)
-import Web.Event.EventTarget (EventTarget)
-import App.Util
-   ( Handler
-   , class Reflect
-   , Renderer
-   , Selector
-   , from
-   , get_intOrNumber
-   , record
-   , selectNth
-   , toggleConstrArg
-   , toggleField
-   )
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict, get)
 import Lattice (𝔹, neg)
 import Primitive (string)
+import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), (!), definitely')
 import Val (Val(..))
+import Web.Event.Event (target)
+import Web.Event.EventTarget (EventTarget)
 
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data :: Array Point }
@@ -66,12 +55,26 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
          $ selectNth j
          $ neg
 
-   -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
-   -- within line plot.
-   unsafePos :: Maybe EventTarget -> Int × Int
-   unsafePos tgt_opt =
-      let
-         tgt = definitely' $ tgt_opt
-         xy = (unsafeCoerce tgt).__data__ ! 0 :: Array Int
-      in
-         xy ! 0 × xy ! 1
+lineChartHandler2 :: Handler2
+lineChartHandler2 ev = togglePoint $ unsafePos $ target ev
+   where
+   togglePoint :: Int × Int -> Selector2 Val
+   togglePoint (i × j) =
+      neg $
+         selectConstrArg cLineChart 0
+            $ selectField f_plots
+            $ selectNth2 i
+            $ selectConstrArg cLinePlot 0
+            $ selectField f_data
+            $ selectNth2 j
+            $ selectAll
+
+-- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point
+-- within line plot.
+unsafePos :: Maybe EventTarget -> Int × Int
+unsafePos tgt_opt =
+   let
+      tgt = definitely' $ tgt_opt
+      xy = (unsafeCoerce tgt).__data__ ! 0 :: Array Int
+   in
+      xy ! 0 × xy ! 1
