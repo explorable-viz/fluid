@@ -36,7 +36,7 @@ newtype Selector2 f = Selector2 (f Vertex -> Set Vertex) -- specifies selection
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
 
--- Turn a vertex-based selector into the corresponding constant 𝔹-based selector.
+-- Turn vertex selector into corresponding (constant) 𝔹-selector.
 as𝔹Selector :: forall f. Traversable f => Selector2 f -> Selector f
 as𝔹Selector (Selector2 sel) v =
    let _ × vα = runWithAlloc 0 (alloc v) in select𝔹s vα (sel vα)
