@@ -471,5 +471,4 @@ instance Functor Module where
 instance JoinSemilattice a => JoinSemilattice (Expr a) where
    join s = definedJoin s
    maybeJoin _ = error unimplemented
-   neg = (<$>) neg
 

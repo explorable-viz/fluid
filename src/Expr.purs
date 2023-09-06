@@ -183,7 +183,6 @@ instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin _ _ = report "Incompatible eliminators"
 
    join σ = definedJoin σ
-   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (Elim a) (Raw Elim) where
    expand (ElimVar x κ) (ElimVar x' κ') = ElimVar (x ≜ x') (expand κ κ')
@@ -198,7 +197,6 @@ instance JoinSemilattice a => JoinSemilattice (Cont a) where
    maybeJoin _ _ = report "Incompatible continuations"
 
    join κ = definedJoin κ
-   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
    expand ContNone ContNone = ContNone
@@ -209,7 +207,6 @@ instance BoundedJoinSemilattice a => Expandable (Cont a) (Raw Cont) where
 instance JoinSemilattice a => JoinSemilattice (VarDef a) where
    join def = definedJoin def
    maybeJoin (VarDef σ e) (VarDef σ' e') = VarDef <$> maybeJoin σ σ' <*> maybeJoin e e'
-   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (VarDef a) (Raw VarDef) where
    expand (VarDef σ e) (VarDef σ' e') = VarDef (expand σ σ') (expand e e')
@@ -233,7 +230,6 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    maybeJoin _ _ = report "Incompatible expressions"
 
    join e = definedJoin e
-   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Var x) (Var x') = Var (x ≜ x')

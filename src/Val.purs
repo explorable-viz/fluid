@@ -196,7 +196,6 @@ instance Traversable MatrixRep where
 instance JoinSemilattice a => JoinSemilattice (DictRep a) where
    maybeJoin (DictRep svs) (DictRep svs') = DictRep <$> maybeJoin svs svs'
    join v = definedJoin v
-   neg = (<$>) neg
 
 instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
    maybeJoin (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × βi') × (j' × βj'))) =
@@ -205,7 +204,6 @@ instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
               `lift2 (×)` (((_ × (βi ∨ βi')) <$> (i ≞ i')) `lift2 (×)` ((_ × (βj ∨ βj')) <$> (j ≞ j')))
          )
    join v = definedJoin v
-   neg = (<$>) neg
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
@@ -219,7 +217,6 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
    maybeJoin _ _ = report "Incompatible values"
 
    join v = definedJoin v
-   neg = (<$>) neg
 
 instance JoinSemilattice a => JoinSemilattice (Fun a) where
    maybeJoin (Closure γ ρ σ) (Closure γ' ρ' σ') =
@@ -231,7 +228,6 @@ instance JoinSemilattice a => JoinSemilattice (Fun a) where
    maybeJoin _ _ = report "Incompatible functions"
 
    join v = definedJoin v
-   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (DictRep a) (Raw DictRep) where
    expand (DictRep svs) (DictRep svs') = DictRep (expand svs svs')
