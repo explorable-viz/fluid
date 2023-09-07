@@ -25,7 +25,7 @@ import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
 import Util (Endo, type (×), (×), absurd, error, definitely', successful)
-import Val (Val(..), addr, matrixGet, matrixUpdate)
+import Val (Val(..), matrixGet, matrixUpdate)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
 
@@ -80,9 +80,9 @@ instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
    from (Constr _ c (u1 : u2 : Nil)) | c == cCons = u1 A.: from u2
 
 -- Selection helpers.
-selectMatrixElement :: Int -> Int -> Selector2 Val
-selectMatrixElement i j = Selector2 $ unsafePartial $ case _ of
-   Matrix _ r -> S.singleton (addr v)
+selectMatrixElement :: Int -> Int -> Endo (Selector2 Val)
+selectMatrixElement i j sel = Selector2 $ unsafePartial $ case _ of
+   Matrix _ r -> unwrap sel v
       where
       v = successful (matrixGet i j r) :: Val Vertex
 

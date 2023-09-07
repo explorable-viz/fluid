@@ -99,7 +99,7 @@ test_bwd = testBwdMany
    , { file: "array/dims", file_expect: "array/dims.expect", δv: topOf, fwd_expect: "_(_3_, _3_)_" }
    , { file: "convolution/edgeDetect"
      , file_expect: "convolution/edgeDetect.expect"
-     , δv: selectMatrixElement 1 1 # as𝔹Selector
+     , δv: selectMatrixElement 1 1 selectAll # as𝔹Selector
      , fwd_expect:
           "_0_, -1, 2, 0, -1,\n\
           \0, 3, -2, 3, -2,\n\
@@ -109,7 +109,7 @@ test_bwd = testBwdMany
      }
    , { file: "convolution/emboss"
      , file_expect: "convolution/emboss.expect"
-     , δv: selectMatrixElement 1 1 # as𝔹Selector
+     , δv: selectMatrixElement 1 1 selectAll # as𝔹Selector
      , fwd_expect:
           "_5_, 4, 2, 5, 2,\n\
           \3, 1, 2, -1, -2,\n\
@@ -119,7 +119,7 @@ test_bwd = testBwdMany
      }
    , { file: "convolution/gaussian"
      , file_expect: "convolution/gaussian.expect"
-     , δv: selectMatrixElement 1 1 # as𝔹Selector
+     , δv: selectMatrixElement 1 1 selectAll # as𝔹Selector
      , fwd_expect:
           "_38_, 37, 28, 30, 38,\n\
           \38, 36, 46, 31, 34,\n\
@@ -278,7 +278,7 @@ test_linking = testLinkMany
           , dataFile: File "convolution-data"
           , x: "data"
           }
-     , δv1: selectMatrixElement 2 2 # as𝔹Selector
+     , δv1: selectMatrixElement 2 2 selectAll # as𝔹Selector
      , v2_expect:
           "_18_, _12_, _13_, 9, 19,\n\
           \_20_, _11_, _24_, 9, 14,\n\

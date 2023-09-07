@@ -2,7 +2,7 @@ module App.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (Handler, Handler2, Renderer, selectMatrixElement, toggleCell)
+import App.Util (Handler, Handler2, Renderer, selectAll, selectMatrixElement, toggleCell)
 import Data.Maybe (Maybe)
 import Data.Tuple (uncurry)
 import Lattice (𝔹)
@@ -27,7 +27,7 @@ matrixViewHandler :: Handler
 matrixViewHandler ev = uncurry toggleCell $ unsafePos $ target ev
 
 matrixViewHandler2 :: Handler2
-matrixViewHandler2 ev = uncurry selectMatrixElement $ unsafePos $ target ev
+matrixViewHandler2 ev = flip (uncurry selectMatrixElement) selectAll $ unsafePos $ target ev
 
 -- [Unsafe] Datum associated with matrix view mouse event; 1-based indices of selected cell.
 unsafePos :: Maybe EventTarget -> Int × Int
