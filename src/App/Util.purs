@@ -110,6 +110,10 @@ selectBarChart_data δv (Constr α c (Record β r : Nil)) | c == cBarChart =
    Constr α c (Record β (update (δv >>> Just) f_data r) : Nil)
 selectBarChart_data _ _ = error absurd
 
+selectBarChart_data2 :: Endo (Selector2 Val)
+selectBarChart_data2 sel = Selector2 $ unsafePartial $ case _ of
+   Constr _ c (v : Nil) | c == cBarChart -> unwrap (selectField f_data sel) v
+
 selectPair :: Endo 𝔹 -> Selector Val -> Selector Val -> Selector Val
 selectPair δα δv1 δv2 (Constr α c (v1 : v2 : Nil)) | c == cPair = Constr (δα α) c (δv1 v1 : δv2 v2 : Nil)
 selectPair _ _ _ _ = error absurd

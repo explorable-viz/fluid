@@ -211,7 +211,7 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       dir = File "linking/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment γ0 as well as dataset
-   { γα } × xv :: (GraphConfig (GraphImpl S.Set) × _) <- openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
+   { γα } × xv :: GraphConfig (GraphImpl S.Set) × _ <- openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ0 = botOf <$> γα
