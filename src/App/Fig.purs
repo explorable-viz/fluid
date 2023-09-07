@@ -154,16 +154,14 @@ drawCode ed s = do
    tr <- update ed.state [ { changes: { from: 0, to: 0, insert: s } } ]
    dispatch ed tr
 
-drawFig :: Fig -> Selector Val -> Effect Unit
-drawFig fig@{ spec: { divId } } δv = do
+drawFig :: Fig -> Selector2 Val -> Effect Unit
+drawFig fig@{ spec: { divId } } sel = do
+   let δv = as𝔹Selector sel
    log $ "Redrawing " <> divId
    let v_view × views = successful $ figViews fig δv
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
-
-drawFig2 :: Fig -> Selector2 Val -> Effect Unit
-drawFig2 fig = drawFig fig <<< as𝔹Selector
+   drawView2 divId (\sel' -> drawFig fig (sel <> sel')) (length views) v_view
 
 varView :: Var -> Env 𝔹 -> MayFail View
 varView x γ = view x <$> (lookup x γ # orElse absurd)

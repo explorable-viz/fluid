@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 
 import App.CodeMirror (addEditorView)
 import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
+import App.Util (selectNone)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
@@ -49,7 +50,7 @@ drawFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
          Left err -> log $ show err
-         Right figs -> sequence_ $ flip drawFig botOf <$> figs
+         Right figs -> sequence_ $ flip drawFig selectNone <$> figs
 
 main :: Effect Unit
 main = do
