@@ -2,10 +2,9 @@ module Test.Util
    ( Test
    , TestConfig
    , TestWith
-   , BenchRow
-   , run
    , checkPretty
    , isGraphical
+   , run
    , shouldSatisfy
    , testBwdMany
    , testLinkMany
@@ -14,6 +13,7 @@ module Test.Util
    , testTrace
    , testWithDatasetMany
    , testWithSetup
+   , unWriter
    , withDataset
    , withDefaultImports
    ) where
@@ -22,22 +22,24 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
-import Benchmark.Util (bench)
+import Benchmark.Util (BenchAcc(..), BenchRow(..), GraphRow, TraceRow, bench)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
-import Data.Array (fold, intersperse)
+import Control.Monad.Writer (runWriter)
+import Control.Monad.Writer.Trans (WriterT(..), runWriterT, tell)
 import Data.Either (Either(..))
-import Data.List (elem)
+import Data.List (elem, singleton)
 import Data.Set (Set) as S
 import Data.String (null)
-import Data.Traversable (traverse_)
+import Data.Traversable (traverse, traverse_)
+import Data.Tuple (Tuple(..), snd, fst)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Effect.Class.Console (log)
+import Effect.Class.Console (log, logShow)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
@@ -52,7 +54,7 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Set (subset)
-import Test.Spec (SpecT, before, beforeAll, beforeWith, it) -- class Example,evaluateExample,
+import Test.Spec (SpecT(..), SpecTree, before, beforeAll, beforeWith, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, type (×), (×), error, successful)
@@ -60,37 +62,24 @@ import Val (Val(..), class Ann, (<+>))
 
 type Test a = SpecT Aff Unit Effect a
 type TestWith i a = SpecT Aff i Effect a
+
+type TestIn g i a = SpecT g i Effect a
+
 type TestConfig =
    { δv :: Selector Val
    , fwd_expect :: String
    , bwd_expect :: String
    }
 
-data BenchRow = BenchRow TraceRow GraphRow
+unWriter_2 :: SpecTree (WriterT BenchAcc Aff) Unit -> SpecTree Aff Unit
+unWriter_2 _tree = error "todo"
 
-type TraceRow =
-   { tEval :: Number
-   , tBwd :: Number
-   , tFwd :: Number
-   }
-
-type GraphRow =
-   { tEval :: Number
-   , tBwd :: Number
-   , tFwd :: Number
-   , tFwdDemorgan :: Number
-   }
-
-instance Show BenchRow where
-   show (BenchRow trRow grRow) = fold $ intersperse "\n"
-      [ "Trace-based eval: " <> show trRow.tEval
-      , "Trace-based bwd time: " <> show trRow.tBwd
-      , "Trace-based fwd time: " <> show trRow.tFwd
-      , "Graph-based eval: " <> show grRow.tEval
-      , "Graph-based bwd time: " <> show grRow.tBwd
-      , "Graph-based fwd time:" <> show grRow.tFwd
-      , "Graph-based fwd time (De Morgan): " <> show grRow.tFwdDemorgan
-      ]
+unWriter :: SpecT (WriterT BenchAcc Aff) Unit Effect Unit -> Test Unit
+unWriter (SpecT (WriterT monad_of_tuple)) = do
+   let (contents :: Effect (Array (SpecTree (WriterT BenchAcc Aff) Unit))) = snd <$> monad_of_tuple
+   let (rewritten :: Effect (Array (SpecTree Aff Unit))) = map unWriter_2 <$> contents
+   let new_tup = ((×) $ unit) <$> rewritten
+   SpecT (WriterT new_tup)
 
 run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
@@ -108,7 +97,7 @@ testWithSetup is_bench s gconfig tconfig = do
       )
    case e of
       Left msg -> error msg
-      Right x -> log (show x) >>= \_ -> pure x
+      Right x -> pure x
 
 testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do
@@ -190,7 +179,10 @@ testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
 
    pure { tEval, tBwd, tFwd, tFwdDemorgan }
 
-withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
+withDefaultImports' ∷ forall a. TestIn (WriterT BenchAcc Aff) (GraphConfig (GraphImpl S.Set)) a -> TestIn (WriterT BenchAcc Aff) Unit a
+withDefaultImports' x = beforeAll (lift openDefaultImports) x
+
+withDefaultImports ∷ forall a. TestWith (GraphConfig (GraphImpl S.Set)) a -> Test a
 withDefaultImports x = beforeAll openDefaultImports x
 
 withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
@@ -209,21 +201,28 @@ type TestBwdSpec =
    , fwd_expect :: String
    }
 
-testMany :: Array TestSpec → Boolean -> Test Unit
-testMany fxs is_bench = withDefaultImports $ traverse_ test fxs
+testMany :: Array TestSpec → Boolean -> SpecT (WriterT BenchAcc Aff) Unit Effect Unit
+testMany fxs is_bench = withDefaultImports' $ traverse_ test fxs
    where
-   test :: TestSpec -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
+   test :: TestSpec -> SpecT (WriterT BenchAcc Aff) (GraphConfig (GraphImpl S.Set)) Effect Unit
    test { file, fwd_expect } =
-      beforeWith ((_ <$> open (File file)) <<< (×)) $
+      -- (((_ <$> open (folder <> File file)) <<< (×)) :: GraphConfig -> Aff (GraphConfig × Expr) ) 
+      beforeWith (lift <$> (_ <$> open (File file)) <<< (×)) $
          it (show file)
-            \(gconfig × s) ->
-               void $ testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
+            internal -- a -> g unit 
+      where
+      internal :: (GraphConfig (GraphImpl S.Set) × SE.Expr Unit) -> WriterT BenchAcc Aff Unit
+      internal = \(gconfig × s) -> do
+         outs <- lift (testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+         tell (BenchAcc $ singleton outs)
+         pure unit
 
 testBwdMany :: Array TestBwdSpec → Boolean -> Test Unit
 testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
    where
    testBwd :: TestBwdSpec -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
    testBwd { file, file_expect, δv, fwd_expect } =
+      -- (((_ <$> open (folder <> File file)) <<< (×)) :: GraphConfig -> Aff (GraphConfig × Expr) )   
       beforeWith ((_ <$> open (folder <> File file)) <<< (×)) $
          it (show $ folder <> File file)
             \(gconfig × s) -> do

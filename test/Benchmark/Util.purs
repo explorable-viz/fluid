@@ -5,9 +5,13 @@ import Prelude
 import Affjax.RequestBody (string) as RB
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
+import Control.Monad.Writer (WriterT, runWriterT)
+import Data.Array (intersperse)
 import Data.Either (Either(..))
+import Data.Foldable (fold)
 import Data.HTTP.Method (Method(..))
 import Data.JSDate (JSDate, getTime, now)
+import Data.List (List(..))
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -22,18 +26,44 @@ derive newtype instance Semigroup File
 derive newtype instance Monoid File
 -- type Test a = SpecT Aff Unit BenchmarkAcc a
 
-type BenchResult =
-   { name :: String
-   , desug :: Number
-   , trace_eval :: Number
-   , graph_eval :: Number
-   , trace_fwd :: Number
-   , trace_bwd :: Number
-   , graph_fwd :: Number
-   , graph_bwd :: Number
+data BenchRow = BenchRow TraceRow GraphRow
+
+data BenchAcc = BenchAcc (List BenchRow)
+
+type WithBenchAcc g a = WriterT BenchAcc g a
+
+runWithBenchAcc :: forall g a. Monad g => WithBenchAcc g a -> g (a × BenchAcc)
+runWithBenchAcc = runWriterT
+
+instance Semigroup BenchAcc where
+   append (BenchAcc l1) (BenchAcc l2) = (BenchAcc (l1 <> l2))
+
+instance Monoid BenchAcc where
+   mempty = BenchAcc (Nil)
+
+type TraceRow =
+   { tEval :: Number
+   , tBwd :: Number
+   , tFwd :: Number
    }
 
-type BenchSet = Array BenchResult
+type GraphRow =
+   { tEval :: Number
+   , tBwd :: Number
+   , tFwd :: Number
+   , tFwdDemorgan :: Number
+   }
+
+instance Show BenchRow where
+   show (BenchRow trRow grRow) = fold $ intersperse "\n"
+      [ "Trace-based eval: " <> show trRow.tEval
+      , "Trace-based bwd time: " <> show trRow.tBwd
+      , "Trace-based fwd time: " <> show trRow.tFwd
+      , "Graph-based eval: " <> show grRow.tEval
+      , "Graph-based bwd time: " <> show grRow.tBwd
+      , "Graph-based fwd time:" <> show grRow.tFwd
+      , "Graph-based fwd time (De Morgan): " <> show grRow.tFwdDemorgan
+      ]
 
 bench :: forall m a. MonadEffect m => m a -> m (a × Number)
 bench prog = do
