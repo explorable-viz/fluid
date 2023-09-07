@@ -41,8 +41,9 @@ drawLinkFigs loadFigs =
       case _ of
          Left err -> log $ show err
          Right figs -> do
-            ed <- addEditorView "codemirror-expt"
-            sequence_ $ (\fig -> drawLinkFig fig ed (Left $ botOf)) <$> figs
+            ed1 <- addEditorView "codemirror-barchart"
+            ed2 <- addEditorView "codemirror-linechart"
+            sequence_ $ (\fig -> drawLinkFig fig [ed1, ed2] (Left $ botOf)) <$> figs
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =

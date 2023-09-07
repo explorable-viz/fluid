@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.CodeMirror (EditorView, dispatch, getContentsLength, update)
+import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
@@ -75,9 +75,9 @@ type SplitDefs =
 -- Decompose as above.
 splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail SplitDefs
 splitDefs γ0 s' = do
-   let defs × s = unsafePartial $ unpack s'
+   let defs × _s = unsafePartial $ unpack s'
    γ <- desugarModuleFwd (S.Module (singleton defs)) >>= flip (eval_module γ0) bot
-   pure { γ, s }
+   pure { γ, s:s' }
    where
    unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
    unpack (S.LetRec defs s) = Right defs × s
@@ -127,8 +127,8 @@ type LinkResult =
    , v0' :: Val 𝔹
    }
 
-drawLinkFig :: LinkFig -> EditorView -> Selector Val + Selector Val -> Effect Unit
-drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv = do
+drawLinkFig :: LinkFig -> Array (EditorView) -> Selector Val + Selector Val -> Effect Unit
+drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } [ed1, ed2] δv = do
    log $ "Redrawing " <> divId
    let
       v1' × v2' × δv1 × δv2 × v0 = successful case δv of
@@ -140,10 +140,15 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv =
             let v2' = δv2 v2
             { v', v0' } <- linkResult x γ0 γ e2 e1 t2 t1 v2'
             pure $ v' × v2' × identity × const v2' × v0'
-   drawView divId (\selector -> drawLinkFig fig ed (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkFig fig ed (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
+   drawView divId (\selector -> drawLinkFig fig [ed1, ed2] (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
+   drawView divId (\selector -> drawLinkFig fig [ed1, ed2] (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
-   drawCode ed $ prettyP e1
+   drawCode ed1 $ prettyP e1
+   drawCode ed2  $ prettyP e2 
+drawLinkFig _ _ _ = do
+  ed <- addEditorView "codemirror-gonewrong"
+  drawCode ed $ "something has gone wrong"
+
 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s = do

@@ -51,14 +51,16 @@
       <p></p>Try the data linking by selecting (clicking on) the bar for Germany in the left-hand chart below. When a view selection is active, we can automatically generate what we call a <b>data selection</b>: a restricted view of a dataset where only relevant rows are shown and relevant cells within those rows are highlighted. Now try selecting some of the data points for the years 2017 and 2018 in the right-hand chart. (Zoom in if it's hard to select the points.) The relationship between the output selection and the resulting input selection is <i>monotonic</i>: the more output you select, the more input is selected. (The UI doesn't support this yet, but it is also meaningful to select input and have the output selection be derived automatically.)
 
       <p><div class="parent"><div class="center" id="fig-1"></div></div></p>
-      <div id="codemirror-expt"></div></p>
+      <!--<div id="codemirror-linechart"></div></p>-->
 
       <p>Hand-crafting transparency features like these would involve manually tracking the dependencies between input and output. Fluid does this automatically, allowing the programmer to simply express the bar chart and line chart as pure functions, using standard functional programming features such as higher-order functions and list comprehensions. Take a look at the source code below:
          <details><summary>bar-chart.fld</summary>
-            <script src="https://gist.github.com/rolyp/7d4c2240e6a588d9b3844c025b7db920.js"></script>
+            <div id="codemirror-barchart"></div></p>
+            <!--<script src="https://gist.github.com/rolyp/7d4c2240e6a588d9b3844c025b7db920.js"></script>-->
          </details>
          <details><summary>line-chart.fld</summary>
-            <script src="https://gist.github.com/rolyp/a2bed1325ef0ace335d8fa0fd304acd5.js"></script>
+            <div id="codemirror-linechart"></div></p>
+            <!--<script src="https://gist.github.com/rolyp/a2bed1325ef0ace335d8fa0fd304acd5.js"></script>-->
          </details>
          <details><summary>dataset.fld</summary>
             <script src="https://gist.github.com/rolyp/367c33ce1c61eea77fe3dc37eb690f2c.js"></script>
@@ -90,11 +92,11 @@
       <p>In particular, notice how only certain parts of the input are relevant to a given output cell. Can some of the irrelevant inputs be attributed to zeros in the filter? Also notice how the demand varies as we approach the edge of the output image: because this implementation of convolution treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation of output cells near the edge. (As mentioned above, it is not yet possible to select input elements and have the output selection be derived automatically.) Interactions like these would be more useful if we could show the actual computation involved for a given element, but even this simple extensional view already reveals interesting things about the implementation. Here is the pure functional code:
 
       <details><summary>convolution.fld</summary>
-         <div id="codemirror-fig-conv-1"></div></p>
-         <!--<script src="https://gist.github.com/rolyp/64b04a6a6fc73164d7fbbd1b82365b67.js"></script>-->
+         <!--<div id="codemirror-fig-conv-1"></div></p>-->
+         <script src="https://gist.github.com/rolyp/64b04a6a6fc73164d7fbbd1b82365b67.js"></script>
       </details>
       <details><summary>emboss-zero-pad.fld</summary>
-         <div id="codemirror-fig-conv-2"></div></p>
+         <div id="codemirror-fig-conv-1"></div></p>
          <!--<script src="https://gist.github.com/rolyp/8fc7054973476fdcbbc5f1e0b854913d.js"></script>-->
       </details>
 
@@ -103,7 +105,8 @@
       <p>Contrast the example above, which uses <code>zero</code> as the boundary method, with one which uses <code>wrap</code>. Then selecting an output cell near the edge has a quite different behaviour: instead of some of the filter elements becoming irrelevant, we can see visually that the input image behaves as though opposite sides were connected. These examples show how making the input-output relationships fine-grained rather than monolithic reveals quite a lot about what a computation actually does.
       <p><div class="parent"><div class="center" id="fig-conv-2"></div></div>
       <details><summary>emboss-wrap.fld</summary>
-         <script src="https://gist.github.com/rolyp/2bd783007d919d97e64ba66a6ede8c3a.js"></script>
+         <div id="codemirror-fig-conv-2"></div></p>
+         <!--<script src="https://gist.github.com/rolyp/2bd783007d919d97e64ba66a6ede8c3a.js"></script>-->
       </details>
    </div>
 
