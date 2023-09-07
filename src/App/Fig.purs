@@ -127,7 +127,7 @@ type LinkResult =
    , v0' :: Val 𝔹
    }
 
-drawLinkFig :: LinkFig -> Array (EditorView) -> Selector Val + Selector Val -> Effect Unit
+drawLinkFig :: LinkFig ->  Array (EditorView) -> Selector Val + Selector Val -> Effect Unit
 drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } [ed1, ed2] δv = do
    log $ "Redrawing " <> divId
    let
