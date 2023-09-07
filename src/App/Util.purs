@@ -110,8 +110,8 @@ select_y :: Endo (Selector2 Val)
 select_y = selectField f_y
 
 selectBarChart_data :: Endo (Selector2 Val)
-selectBarChart_data sel = Selector2 $ unsafePartial $ case _ of
-   Constr _ c (v : Nil) | c == cBarChart -> unwrap (selectField f_data sel) v
+selectBarChart_data =
+   selectConstrArg cBarChart 0 <<< selectField f_data
 
 selectPair :: Selector2 Val -> Selector2 Val -> Selector2 Val
 selectPair sel1 sel2 =

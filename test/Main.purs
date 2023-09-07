@@ -264,10 +264,11 @@ test_linking = testLinkMany
           , dataFile: File "pairs-data"
           , x: "data"
           }
-     , δv1: selectPair selectNone
-          ( selectPair selectNone
-               (selectPair selectAll selectNone)
-          ) # as𝔹Selector
+     , δv1:
+          selectPair selectNone
+             ( selectPair selectNone
+                  (selectPair selectAll selectNone)
+             ) # as𝔹Selector
      , v2_expect: "(3, (_5_, _7_))"
      }
    , { spec:
