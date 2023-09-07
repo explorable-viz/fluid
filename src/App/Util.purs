@@ -114,8 +114,8 @@ selectBarChart_data sel = Selector2 $ unsafePartial $ case _ of
    Constr _ c (v : Nil) | c == cBarChart -> unwrap (selectField f_data sel) v
 
 selectPair :: Selector2 Val -> Selector2 Val -> Selector2 Val
-selectPair sel1 sel2 = Selector2 $ unsafePartial $ case _ of
-   Constr _ c (v1 : v2 : Nil) | c == cPair -> unwrap sel1 v1 `union` unwrap sel2 v2
+selectPair sel1 sel2 =
+   selectConstrArg cPair 0 sel1 <> selectConstrArg cPair 1 sel2
 
 -- Togglers. TODO: subsumed by selectors now?
 toggleCell :: Int -> Int -> Selector Val
