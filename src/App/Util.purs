@@ -7,7 +7,7 @@ import Data.Array ((:)) as A
 import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, unwrap)
+import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, difference, union)
 import Data.Set as S
@@ -43,8 +43,12 @@ as𝔹Selector :: forall f. Traversable f => Selector2 f -> Selector f
 as𝔹Selector (Selector2 sel) v =
    let _ × vα = runWithAlloc 0 (alloc v) in select𝔹s vα (sel vα)
 
+-- Can these be TopOf/BotOf instances?
 selectAll :: forall f. Apply f => Foldable f => Selector2 f
-selectAll = Selector2 $ \vα -> selectαs (topOf vα) vα
+selectAll = wrap $ \vα -> selectαs (topOf vα) vα
+
+selectNone :: forall f. Apply f => Foldable f => Selector2 f
+selectNone = wrap $ const S.empty
 
 derive instance Newtype (Selector2 f) _
 
@@ -105,18 +109,17 @@ selectSome = Selector2 $ unsafePartial $ case _ of
 select_y :: Endo (Selector2 Val)
 select_y = selectField f_y
 
-selectBarChart_data :: Endo (Selector Val)
-selectBarChart_data δv (Constr α c (Record β r : Nil)) | c == cBarChart =
-   Constr α c (Record β (update (δv >>> Just) f_data r) : Nil)
-selectBarChart_data _ _ = error absurd
-
-selectBarChart_data2 :: Endo (Selector2 Val)
-selectBarChart_data2 sel = Selector2 $ unsafePartial $ case _ of
+selectBarChart_data :: Endo (Selector2 Val)
+selectBarChart_data sel = Selector2 $ unsafePartial $ case _ of
    Constr _ c (v : Nil) | c == cBarChart -> unwrap (selectField f_data sel) v
 
 selectPair :: Endo 𝔹 -> Selector Val -> Selector Val -> Selector Val
 selectPair δα δv1 δv2 (Constr α c (v1 : v2 : Nil)) | c == cPair = Constr (δα α) c (δv1 v1 : δv2 v2 : Nil)
 selectPair _ _ _ _ = error absurd
+
+selectPair2 :: Selector2 Val -> Selector2 Val -> Selector2 Val
+selectPair2 sel1 sel2 = Selector2 $ unsafePartial $ case _ of
+   Constr _ c (v1 : v2 : Nil) | c == cPair -> unwrap sel1 v1 `union` unwrap sel2 v2
 
 -- Togglers. TODO: subsumed by selectors now?
 toggleCell :: Int -> Int -> Selector Val
