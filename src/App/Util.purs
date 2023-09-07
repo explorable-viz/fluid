@@ -113,12 +113,8 @@ selectBarChart_data :: Endo (Selector2 Val)
 selectBarChart_data sel = Selector2 $ unsafePartial $ case _ of
    Constr _ c (v : Nil) | c == cBarChart -> unwrap (selectField f_data sel) v
 
-selectPair :: Endo 𝔹 -> Selector Val -> Selector Val -> Selector Val
-selectPair δα δv1 δv2 (Constr α c (v1 : v2 : Nil)) | c == cPair = Constr (δα α) c (δv1 v1 : δv2 v2 : Nil)
-selectPair _ _ _ _ = error absurd
-
-selectPair2 :: Selector2 Val -> Selector2 Val -> Selector2 Val
-selectPair2 sel1 sel2 = Selector2 $ unsafePartial $ case _ of
+selectPair :: Selector2 Val -> Selector2 Val -> Selector2 Val
+selectPair sel1 sel2 = Selector2 $ unsafePartial $ case _ of
    Constr _ c (v1 : v2 : Nil) | c == cPair -> unwrap sel1 v1 `union` unwrap sel2 v2
 
 -- Togglers. TODO: subsumed by selectors now?
