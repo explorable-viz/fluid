@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.CodeMirror (EditorView, addEditorView, dispatch, getContentsLength, update)
+import App.CodeMirror (EditorView, dispatch, getContentsLength, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
@@ -38,7 +38,7 @@ import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
 import Val (Env, Val(..), (<+>), append_inv)
 import Web.Event.EventTarget (eventListener)
-
+import Util.Pair (Pair(..))
 --import Web.HTML.Event.EventTypes (offline)
 
 data View
@@ -127,8 +127,8 @@ type LinkResult =
    , v0' :: Val 𝔹
    }
 
-drawLinkFig :: LinkFig ->  Array (EditorView) -> Selector Val + Selector Val -> Effect Unit
-drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } [ed1, ed2] δv = do
+drawLinkFig :: LinkFig ->  Pair (EditorView) -> Selector Val + Selector Val -> Effect Unit
+drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2 } (Pair ed1 ed2) δv = do
    log $ "Redrawing " <> divId
    let
       v1' × v2' × δv1 × δv2 × v0 = successful case δv of
@@ -140,14 +140,11 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } [ed1, ed
             let v2' = δv2 v2
             { v', v0' } <- linkResult x γ0 γ e2 e1 t2 t1 v2'
             pure $ v' × v2' × identity × const v2' × v0'
-   drawView divId (\selector -> drawLinkFig fig [ed1, ed2] (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkFig fig [ed1, ed2] (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
+   drawView divId (\selector -> drawLinkFig fig (Pair ed1 ed2) (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
+   drawView divId (\selector -> drawLinkFig fig (Pair ed1 ed2) (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
-   drawCode ed1 $ prettyP e1
-   drawCode ed2  $ prettyP e2 
-drawLinkFig _ _ _ = do
-  ed <- addEditorView "codemirror-gonewrong"
-  drawCode ed $ "something has gone wrong"
+   drawCode ed1 $ prettyP s1
+   drawCode ed2  $ prettyP s2 
 
 
 drawCode :: EditorView -> String -> Effect Unit
@@ -167,13 +164,13 @@ drawFig fig@{ spec: { divId } } δv = do
    drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
 
 drawFigTemp :: Fig -> EditorView -> Selector Val -> Effect Unit
-drawFigTemp fig@{ spec: { divId }, e:e} ed δv = do
+drawFigTemp fig@{ spec: { divId }, s:s} ed δv = do
    log $ "Redrawing " <> divId
    let v_view × views = successful $ figViews fig δv
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
    drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
-   drawCode ed $ prettyP e
+   drawCode ed $ prettyP s
 
 varView :: Var -> Env 𝔹 -> MayFail View
 varView x γ = view x <$> (lookup x γ # orElse absurd)

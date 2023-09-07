@@ -11,6 +11,7 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Lattice (botOf)
 import Module (File(..))
+import Util.Pair (Pair(..))
 
 linkingFig1 :: LinkFigSpec
 linkingFig1 =
@@ -43,7 +44,7 @@ drawLinkFigs loadFigs =
          Right figs -> do
             ed1 <- addEditorView "codemirror-barchart"
             ed2 <- addEditorView "codemirror-linechart"
-            sequence_ $ (\fig -> drawLinkFig fig [ed1, ed2] (Left $ botOf)) <$> figs
+            sequence_ $ (\fig -> drawLinkFig fig (Pair ed1 ed2) (Left $ botOf)) <$> figs
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =
