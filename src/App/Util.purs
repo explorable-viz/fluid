@@ -12,7 +12,7 @@ import Data.Profunctor.Strong (first)
 import Data.Set (Set, difference, union)
 import Data.Set as S
 import Data.Traversable (class Traversable)
-import Data.Tuple (fst)
+import Data.Tuple (fst, snd)
 import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
 import Dict (Dict, get)
 import Effect (Effect)
@@ -33,24 +33,41 @@ type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
 newtype Selector2 f = Selector2 (f Vertex -> Set Vertex) -- specifies selection
+type Sel f = f Vertex × Set Vertex
+newtype Sel2 f = Sel2 (f Vertex -> Set Vertex) -- specifies selection
+newtype Selector3 f = Selector3 (Sel f -> Sel f)
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type OnSel2 = Selector2 Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
 type Handler2 = Event -> Selector2 Val
+
+derive instance Newtype (Selector2 f) _
+derive instance Newtype (Selector3 f) _
 
 -- Turn vertex selector into corresponding (constant) 𝔹-selector.
 as𝔹Selector :: forall f. Traversable f => Selector2 f -> Selector f
 as𝔹Selector (Selector2 sel) v =
    let _ × vα = runWithAlloc 0 (alloc v) in select𝔹s vα (sel vα)
 
+as𝔹Selector3 :: forall f. Apply f => Traversable f => Selector3 f -> Selector f
+as𝔹Selector3 sel = \v𝔹 ->
+   let
+      _ × vα = runWithAlloc 0 (alloc v𝔹)
+   in
+      select𝔹s vα $ snd $ unwrap sel (vα × selectαs v𝔹 vα)
+
 -- Can these be TopOf/BotOf instances?
 selectAll :: forall f. Apply f => Foldable f => Selector2 f
 selectAll = wrap $ \vα -> selectαs (topOf vα) vα
 
+selectAll' :: forall f. Apply f => Foldable f => Selector3 f
+selectAll' = wrap $ \(vα × _) -> vα × selectαs (topOf vα) vα
+
 selectNone :: forall f. Apply f => Foldable f => Selector2 f
 selectNone = wrap $ const S.empty
 
-derive instance Newtype (Selector2 f) _
+selectNone' :: forall f. Apply f => Foldable f => Selector3 f
+selectNone' = wrap $ \(vα × _) -> vα × S.empty
 
 instance Semigroup (Selector2 f) where
    append (Selector2 sel1) (Selector2 sel2) = Selector2 $ \x -> sel1 x `union` sel2 x
