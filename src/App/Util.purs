@@ -147,6 +147,10 @@ selectField :: Var -> Endo (Selector2 Val)
 selectField f sel = Selector2 $ unsafePartial $ case _ of
    Record _ r -> unwrap sel (get f r)
 
+selectField' :: Var -> Endo (Selector3 Val)
+selectField' f sel = wrap $ unsafePartial $ case _ of
+   v@(Record _ r) × αs -> v × snd (unwrap sel (get f r × αs))
+
 toggleConstrArg :: Ctr -> Int -> Endo (Selector Val)
 toggleConstrArg c n selector (Constr α c' us) | c == c' =
    let

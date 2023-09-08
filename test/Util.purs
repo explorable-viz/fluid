@@ -46,13 +46,13 @@ import Graph (sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
-import Lattice (bot, botOf, erase)
+import Lattice (Raw, bot, botOf, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Set (subset)
-import Test.Spec (SpecT, before, beforeAll, beforeWith, it) -- class Example,evaluateExample,
+import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, (×), error, successful)
@@ -97,7 +97,7 @@ run = runMocha -- no reason at all to see the word "Mocha"
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 -- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
-testWithSetup ∷ Boolean → SE.Expr Unit → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
+testWithSetup ∷ Boolean → Raw SE.Expr → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
 testWithSetup is_bench s gconfig tconfig = do
    e <- runExceptT
       ( do
@@ -121,7 +121,7 @@ testParse s = do
             log ("NEW\n" <> show (erase s'))
             lift $ fail "not equal"
 
-testTrace :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
+testTrace :: Boolean -> Raw SE.Expr -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
    let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γα)
    -- | Eval
@@ -148,7 +148,7 @@ testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
          checkPretty "Trace-based value" fwd_expect v𝔹''
    pure { tEval, tBwd, tFwd }
 
-testGraph :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff GraphRow
+testGraph :: Boolean -> Raw SE.Expr -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff GraphRow
 testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
@@ -246,7 +246,7 @@ testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDatase
    where
    testWithDataset :: TestWithDatasetSpec -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
    testWithDataset { dataset, file } =
-      withDataset (File dataset) $ beforeWith ((_ <$> open (File file)) <<< (×)) do
+      withDataset (File dataset) $ beforeWith ((_ <$> open (File file)) <<< (×)) $
          it (show file)
             \(gconfig × s) ->
                void $ testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
