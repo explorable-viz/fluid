@@ -36,9 +36,11 @@ import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
+import Util.Pair (Pair(..))
 import Val (Env, Val(..), (<+>), append_inv)
 import Web.Event.EventTarget (eventListener)
-import Util.Pair (Pair(..))
+
+
 --import Web.HTML.Event.EventTypes (offline)
 
 data View
@@ -127,6 +129,15 @@ type LinkResult =
    , v0' :: Val 𝔹
    }
 
+
+
+--drawFile :: Folder -> File -> EditorView -> Effect Unit 
+--drawFile fol file ed = do
+  --s <- parseProgEff fol file
+  --drawCode ed ((prettyP s))
+  --drawCode ed $ prettyP sPure
+  --pure (drawCode ed $ prettyP s) 
+
 drawLinkFig :: LinkFig ->  Pair (EditorView) -> Selector Val + Selector Val -> Effect Unit
 drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2 } (Pair ed1 ed2) δv = do
    log $ "Redrawing " <> divId
@@ -171,6 +182,7 @@ drawFigTemp fig@{ spec: { divId }, s:s} ed δv = do
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
    drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
    drawCode ed $ prettyP s
+
 
 varView :: Var -> Env 𝔹 -> MayFail View
 varView x γ = view x <$> (lookup x γ # orElse absurd)

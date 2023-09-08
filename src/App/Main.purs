@@ -3,14 +3,14 @@ module App.Main where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (addEditorView)
-import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawFigTemp, drawLinkFig, loadFig, loadLinkFig)
+import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawCode, drawFig, drawFigTemp,drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Lattice (botOf)
-import Module (File(..))
+import Module (File(..), Folder(..), loadFile)
 import Util.Pair (Pair(..))
 
 linkingFig1 :: LinkFigSpec
@@ -66,10 +66,25 @@ drawFigsTemp2 :: Fig -> Effect Unit
 drawFigsTemp2 fig =
             do
             ed <- addEditorView ("codemirror-" <> fig.spec.divId)
-            drawFigTemp fig ed botOf 
+            drawFigTemp fig ed botOf
+
+ 
+
+drawFiles :: Folder -> File -> Effect Unit 
+drawFiles fol fil = 
+   let conts = loadFile fol fil in 
+      do
+         flip runAff_ conts 
+            case _ of 
+               Left err -> log $ show err 
+               Right fileconts -> do
+                  ed <- addEditorView "temp"
+                  drawCode ed fileconts
 
 
 main :: Effect Unit
 main = do
+   drawFiles (Folder "fluid/lib") (File "convolution")
    drawFigsTemp [ loadFig fig1, loadFig fig2 ]
    drawLinkFigs [ loadLinkFig linkingFig1 ]
+   
