@@ -27,11 +27,11 @@ class (Semigroup g, Set s Vertex) <= Graph g s | g -> s where
 
    sources :: g -> s Vertex
    sinks :: g -> s Vertex
+
    -- |   op (op g) = g
    op :: Endo g
 
    empty :: g
-
    fromFoldable :: forall f. Functor f => Foldable f => f (Vertex × s Vertex) -> g
 
 newtype Vertex = Vertex String
