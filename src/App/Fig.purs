@@ -161,7 +161,7 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2 } 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s = do
    let contentsLength = getContentsLength ed 
-   tr <- update ed.state [ { changes: { from: 0, to:contentsLength, insert: s} } ]
+   tr <- update ed.state [ {changes: { from: 0, to:contentsLength, insert: s}}]
    -- tr <- update ed.state [ { changes: { from: 0, to: 0, insert: s } } ]
    dispatch ed tr
 

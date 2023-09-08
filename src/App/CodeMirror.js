@@ -21,7 +21,7 @@ import {defaultKeymap} from "@codemirror/commands"
 
 let startState = EditorState.create({
   doc: "",
-  extensions: [keymap.of(defaultKeymap)]
+  extensions: [keymap.of(defaultKeymap), EditorState.readOnly.of(true)]
 })
 
 function getContentsLength_ (ed) {

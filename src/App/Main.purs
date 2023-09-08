@@ -11,9 +11,8 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile)
---import Pretty (prettyP)
+import Util ((×), type (×))
 import Util.Pair (Pair(..))
-import Util ((×), type(×))
 
 linkingFig1 :: LinkFigSpec
 linkingFig1 =
