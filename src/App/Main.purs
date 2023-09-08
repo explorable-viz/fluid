@@ -3,7 +3,7 @@ module App.Main where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (addEditorView)
-import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawCode, drawFig, drawFigTemp,drawLinkFig, loadFig, loadLinkFig)
+import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawCode, drawFig, drawFigTemp, drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
@@ -11,6 +11,7 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile)
+import Pretty (prettyP)
 import Util.Pair (Pair(..))
 
 linkingFig1 :: LinkFigSpec
@@ -78,8 +79,8 @@ drawFiles fol fil =
             case _ of 
                Left err -> log $ show err 
                Right fileconts -> do
-                  ed <- addEditorView "temp"
-                  drawCode ed fileconts
+                  ed <- addEditorView "different-name"
+                  drawCode ed $ prettyP fileconts
 
 
 main :: Effect Unit
