@@ -1,6 +1,6 @@
 module Lattice where
 
-import Prelude hiding (absurd, join)
+import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
 import Data.Array (zipWith) as A
 import Data.Foldable (length, foldM)
@@ -101,6 +101,15 @@ type Raw (c :: Type -> Type) = c Unit
 instance (JoinSemilattice a, JoinSemilattice b) => JoinSemilattice (a × b) where
    join ab = definedJoin ab
    maybeJoin (a × a') (b × b') = maybeJoin a b `lift2 (×)` maybeJoin a' b'
+
+instance (MeetSemilattice a, MeetSemilattice b) => MeetSemilattice (a × b) where
+   meet (a × a') (b × b') = meet a b × meet a' b'
+
+instance (BoundedJoinSemilattice a, BoundedJoinSemilattice b) => BoundedJoinSemilattice (a × b) where
+   bot = bot × bot
+
+instance (BoundedMeetSemilattice a, BoundedMeetSemilattice b) => BoundedMeetSemilattice (a × b) where
+   top = top × top
 
 instance JoinSemilattice a => JoinSemilattice (Pair a) where
    join ab = definedJoin ab

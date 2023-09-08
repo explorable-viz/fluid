@@ -45,6 +45,11 @@ class (Highlightable a, BoundedLattice a) <= Ann a
 instance Ann Boolean
 instance Ann Unit
 
+instance Highlightable a => Highlightable (a × b) where
+   highlightIf (a × _) doc = highlightIf a doc
+
+instance (Ann a, BoundedLattice b) => Ann (a × b)
+
 -- similar to an isomorphism lens with complement t
 type OpFwd t = forall a m. Ann a => Monad m => List (Val a) -> MayFailT m (t × Val a)
 type OpBwd t = forall a. Ann a => t × Val a -> List (Val a)
