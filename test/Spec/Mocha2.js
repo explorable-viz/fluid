@@ -1,6 +1,6 @@
 /* global exports, it, describe */
 
-// module Test.Spec.Mocha
+// module Test.Spec.Mocha2
 
 if (typeof describe !== 'function' || typeof it !== 'function') {
     throw new Error('Mocha globals seem to be unavailable!');
