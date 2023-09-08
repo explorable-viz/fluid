@@ -81,6 +81,9 @@ instance (Apply f, Foldable f) => Neg (Selector2 f) where
 doNothing :: OnSel
 doNothing = const $ pure unit
 
+doNothing2 :: OnSel2
+doNothing2 = const $ pure unit
+
 get_intOrNumber :: Var -> Dict (Val 𝔹) -> Number × 𝔹
 get_intOrNumber x r = first as (intOrNumber.match (get x r))
 
@@ -92,7 +95,7 @@ class Reflect a b where
    from :: Partial => a -> b
 
 -- Discard any constructor-level annotations.
-instance reflectArray :: Reflect (Val Boolean) (Array (Val Boolean)) where
+instance Reflect (Val Boolean) (Array (Val Boolean)) where
    from (Constr _ c Nil) | c == cNil = []
    from (Constr _ c (u1 : u2 : Nil)) | c == cCons = u1 A.: from u2
 

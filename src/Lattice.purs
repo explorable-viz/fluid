@@ -113,7 +113,7 @@ instance (BoundedMeetSemilattice a, BoundedMeetSemilattice b) => BoundedMeetSemi
 
 instance JoinSemilattice a => JoinSemilattice (Pair a) where
    join ab = definedJoin ab
-   maybeJoin (Pair a1 a1') (Pair a2 a2') = Pair <$> maybeJoin a1 a2 <*> maybeJoin a1' a2'
+   maybeJoin (Pair a a') (Pair b b') = Pair <$> maybeJoin a b <*> maybeJoin a' b'
 
 instance JoinSemilattice a => JoinSemilattice (List a) where
    join xs = definedJoin xs

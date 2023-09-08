@@ -7,7 +7,7 @@ import App.CodeMirror (EditorView, dispatch, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler, lineChartHandler2)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixViewHandler2, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler, tableViewHandler2)
-import App.Util (HTMLId, OnSel, OnSel2, Selector, Selector2, as𝔹Selector, doNothing, from, record)
+import App.Util (HTMLId, OnSel, OnSel2, Selector, Selector2, as𝔹Selector, doNothing, doNothing2, from, record)
 import Bindings (Var)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
@@ -160,7 +160,7 @@ drawFig fig@{ spec: { divId } } sel = do
    log $ "Redrawing " <> divId
    let v_view × views = successful $ figViews fig δv
    sequence_ $
-      uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
+      uncurry (drawView2 divId doNothing2) <$> zip (range 0 (length views - 1)) views
    drawView2 divId (\sel' -> drawFig fig (sel <> sel')) (length views) v_view
 
 varView :: Var -> Env 𝔹 -> MayFail View
