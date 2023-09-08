@@ -97,8 +97,12 @@ instance Reflect (Val Boolean) (Array (Val Boolean)) where
    from (Constr _ c (u1 : u2 : Nil)) | c == cCons = u1 A.: from u2
 
 -- Selection helpers.
-selectMatrixElement :: Int -> Int -> Endo (Selector2 Val)
-selectMatrixElement i j sel = Selector2 $ unsafePartial $ case _ of
+selectMatrixElement :: Int -> Int -> Endo (Selector Val)
+selectMatrixElement i j δv (Matrix α r) = Matrix α $ matrixUpdate i j δv r
+selectMatrixElement _ _ _ _ = error absurd
+
+selectMatrixElement2 :: Int -> Int -> Endo (Selector2 Val)
+selectMatrixElement2 i j sel = Selector2 $ unsafePartial $ case _ of
    Matrix _ r -> unwrap sel v
       where
       v = successful (matrixGet i j r) :: Val Vertex
@@ -113,11 +117,17 @@ selectNth2 n sel = Selector2 $ unsafePartial $ case _ of
    Constr _ c (v : _ : Nil) | n == 0 && c == cCons -> unwrap sel v
    Constr _ c (_ : v' : Nil) | c == cCons -> unwrap (selectNth2 (n - 1) sel) v'
 
-selectNthCell :: Int -> Selector2 Val
-selectNthCell n = Selector2 $ unsafePartial $ case _ of
+selectNthCell :: Int -> Endo 𝔹 -> Selector Val
+selectNthCell 0 δα (Constr α c Nil) | c == cNil = Constr (δα α) c Nil
+selectNthCell 0 δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) c (v : v' : Nil)
+selectNthCell n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNthCell (n - 1) δα v' : Nil)
+selectNthCell _ _ _ = error absurd
+
+selectNthCell2 :: Int -> Selector2 Val
+selectNthCell2 n = Selector2 $ unsafePartial $ case _ of
    Constr α c Nil | n == 0 && c == cNil -> S.singleton α
    Constr α c (_ : _ : Nil) | n == 0 && c == cCons -> S.singleton α
-   Constr _ c (_ : v' : Nil) | c == cCons -> unwrap (selectNthCell (n - 1)) v'
+   Constr _ c (_ : v' : Nil) | c == cCons -> unwrap (selectNthCell2 (n - 1)) v'
 
 selectSome :: Selector2 Val
 selectSome = Selector2 $ unsafePartial $ case _ of

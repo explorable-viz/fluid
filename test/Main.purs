@@ -7,7 +7,7 @@ import Bindings ((↦))
 import Data.Traversable (traverse_)
 import Dict (fromFoldable) as D
 import Effect (Effect)
-import Lattice (botOf, topOf)
+import Lattice (botOf, neg, topOf)
 import Module (File(..))
 import Test.Util (Test, run, testWithDatasetMany, testLinkMany, testMany, testBwdMany)
 import Util ((×))
@@ -34,7 +34,7 @@ test_scratchpad :: Boolean -> Test Unit
 test_scratchpad = testBwdMany
    [ { file: "filter"
      , file_expect: "filter.expect"
-     , δv: selectNthCell 0 # as𝔹Selector
+     , δv: botOf >>> selectNthCell 0 neg
      , fwd_expect: "(_8_ _:_ (7 : []))"
      }
    ]
@@ -99,7 +99,7 @@ test_bwd = testBwdMany
    , { file: "array/dims", file_expect: "array/dims.expect", δv: topOf, fwd_expect: "_(_3_, _3_)_" }
    , { file: "convolution/edgeDetect"
      , file_expect: "convolution/edgeDetect.expect"
-     , δv: selectMatrixElement 1 1 selectAll # as𝔹Selector
+     , δv: botOf >>> selectMatrixElement 1 1 topOf
      , fwd_expect:
           "_0_, -1, 2, 0, -1,\n\
           \0, 3, -2, 3, -2,\n\
@@ -109,7 +109,7 @@ test_bwd = testBwdMany
      }
    , { file: "convolution/emboss"
      , file_expect: "convolution/emboss.expect"
-     , δv: selectMatrixElement 1 1 selectAll # as𝔹Selector
+     , δv: botOf >>> selectMatrixElement 1 1 topOf
      , fwd_expect:
           "_5_, 4, 2, 5, 2,\n\
           \3, 1, 2, -1, -2,\n\
@@ -119,7 +119,7 @@ test_bwd = testBwdMany
      }
    , { file: "convolution/gaussian"
      , file_expect: "convolution/gaussian.expect"
-     , δv: selectMatrixElement 1 1 selectAll # as𝔹Selector
+     , δv: botOf >>> selectMatrixElement 1 1 topOf
      , fwd_expect:
           "_38_, 37, 28, 30, 38,\n\
           \38, 36, 46, 31, 34,\n\
@@ -177,30 +177,30 @@ test_bwd = testBwdMany
    , { file: "divide", file_expect: "divide.expect", δv: topOf, fwd_expect: "_40.22222222222222_" }
    , { file: "filter"
      , file_expect: "filter.expect"
-     , δv: selectNthCell 0 # as𝔹Selector
+     , δv: botOf >>> selectNthCell 0 neg
      , fwd_expect: "(_8_ _:_ (7 : []))"
      }
    , { file: "intersperse"
      , file_expect: "intersperse-1.expect"
-     , δv: selectNthCell 1 # as𝔹Selector
+     , δv: botOf >>> selectNthCell 1 neg
      , fwd_expect:
           "(1 : (0 _:_ (2 : (0 : (3 : [])))))"
      }
    , { file: "intersperse"
      , file_expect: "intersperse-2.expect"
-     , δv: selectNthCell 2 # as𝔹Selector
+     , δv: botOf >>> selectNthCell 2 neg
      , fwd_expect:
           "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))"
      }
    , { file: "length", file_expect: "length.expect", δv: topOf, fwd_expect: "_5_" }
    , { file: "list-comp"
      , file_expect: "list-comp-1.expect"
-     , δv: selectNthCell 1 # as𝔹Selector
+     , δv: botOf >>> selectNthCell 1 neg
      , fwd_expect: "(6.2 : (260 _:_ (19.9 : (91 : []))))"
      }
    , { file: "list-comp"
      , file_expect: "list-comp-2.expect"
-     , δv: selectNthCell 2 # as𝔹Selector
+     , δv: botOf >>> selectNthCell 2 neg
      , fwd_expect: "(6.2 : (260 : (19.9 _:_ (91 : []))))"
      }
    , { file: "lookup"
@@ -210,14 +210,14 @@ test_bwd = testBwdMany
      }
    , { file: "map"
      , file_expect: "map.expect"
-     , δv: selectNthCell 0 <> selectNthCell 1 # as𝔹Selector
+     , δv: botOf >>> selectNthCell 0 neg >>> selectNthCell 1 neg
      , fwd_expect: "(5 _:_ (6 _:_ []))"
      }
    , { file: "multiply", file_expect: "multiply.expect", δv: const $ Int true 0, fwd_expect: "_0_" }
    , { file: "nth", file_expect: "nth.expect", δv: const $ Int true 4, fwd_expect: "_4_" }
    , { file: "section-5-example"
      , file_expect: "section-5-example-1.expect"
-     , δv: selectNthCell 0 # as𝔹Selector
+     , δv: botOf >>> selectNthCell 0 neg
      , fwd_expect: "(88 _:_ (6 : (4 : [])))"
      }
    , { file: "section-5-example"
@@ -227,17 +227,17 @@ test_bwd = testBwdMany
      }
    , { file: "section-5-example"
      , file_expect: "section-5-example-3.expect"
-     , δv: selectNthCell 2 # as𝔹Selector
+     , δv: botOf >>> selectNthCell 2 neg
      , fwd_expect: "(88 : (6 : (4 _:_ [])))"
      }
    , { file: "zeros"
      , file_expect: "zeros-1.expect"
-     , δv: selectNthCell 0 <> selectNthCell 2 # as𝔹Selector
+     , δv: botOf >>> selectNthCell 0 neg >>> selectNthCell 2 neg
      , fwd_expect: "(0 _:_ (0 : _[]_))"
      }
    , { file: "zeros"
      , file_expect: "zeros-2.expect"
-     , δv: selectNthCell 2 # as𝔹Selector
+     , δv: botOf >>> selectNthCell 2 neg
      , fwd_expect: "(0 : (0 : _[]_))"
      }
    , { file: "zipWith"
@@ -278,7 +278,7 @@ test_linking = testLinkMany
           , dataFile: File "convolution-data"
           , x: "data"
           }
-     , δv1: selectMatrixElement 2 2 selectAll # as𝔹Selector
+     , δv1: botOf >>> selectMatrixElement 2 2 topOf
      , v2_expect:
           "_18_, _12_, _13_, 9, 19,\n\
           \_20_, _11_, _24_, 9, 14,\n\
