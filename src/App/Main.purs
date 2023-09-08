@@ -11,8 +11,9 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile)
-import Pretty (prettyP)
+--import Pretty (prettyP)
 import Util.Pair (Pair(..))
+import Util ((×), type(×))
 
 linkingFig1 :: LinkFigSpec
 linkingFig1 =
@@ -71,21 +72,38 @@ drawFigsTemp2 fig =
 
  
 
-drawFiles :: Folder -> File -> Effect Unit 
-drawFiles fol fil = 
+--drawFiles :: Folder -> File -> Effect Unit 
+--drawFiles fol fil = 
+  -- let conts = loadFile fol fil in 
+    --  do
+      --   flip runAff_ conts 
+        --    case _ of 
+          --     Left err -> log $ show err 
+            --   Right fileconts -> do
+              --    ed <- addEditorView "temp"
+                --  drawCode ed $ prettyP fileconts
+
+
+drawFiles :: Array (Folder × File) -> Effect Unit 
+drawFiles arr = sequence_ $ drawFile <$> arr 
+
+drawFile :: (Folder × File) -> Effect Unit 
+drawFile (fol × fil@(File name)) = 
    let conts = loadFile fol fil in 
       do
-         flip runAff_ conts 
-            case _ of 
-               Left err -> log $ show err 
-               Right fileconts -> do
-                  ed <- addEditorView "different-name"
-                  drawCode ed $ prettyP fileconts
+        flip runAff_ conts 
+         case _ of 
+            Left err -> log $ show err 
+            Right fileconts -> do
+              ed <- addEditorView ("codemirror-" <> name)
+              drawCode ed fileconts  
+
 
 
 main :: Effect Unit
 main = do
-   drawFiles (Folder "fluid/lib") (File "convolution")
+   -- drawFiles (Folder "fluid/example/linking") (File "renewables")
+   drawFiles [(Folder "fluid/lib") × (File "convolution") , (Folder "fluid/example/linking") × (File "renewables")]
    drawFigsTemp [ loadFig fig1, loadFig fig2 ]
    drawLinkFigs [ loadLinkFig linkingFig1 ]
    
