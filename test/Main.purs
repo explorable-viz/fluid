@@ -8,7 +8,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import Lattice (botOf, topOf)
 import Module (File(..))
-import Test.Util (Test, run, testWithDatasetMany, testLinkMany, testMany, testBwdMany, unWriter)
+import Test.Util (Test, run, testWithDatasetMany, testLinkMany, testMany, testBwdMany)
 import Util ((×))
 import Val (DictRep(..), Val(..))
 
@@ -39,7 +39,7 @@ test_scratchpad = testBwdMany
    ]
 
 test_desugaring :: Boolean -> Test Unit
-test_desugaring = unWriter <<< testMany
+test_desugaring = testMany
    [ { file: "desugar/list-comp-1"
      , fwd_expect: "(14 : (12 : (10 : (13 : (11 : (9 : (12 : (10 : (8 : [])))))))))"
      }
@@ -57,7 +57,7 @@ test_desugaring = unWriter <<< testMany
    ]
 
 test_misc :: Boolean -> Test Unit
-test_misc = unWriter <<< testMany
+test_misc = testMany
    [ { file: "arithmetic", fwd_expect: "42" }
    , { file: "array", fwd_expect: "(1, (3, 3))" }
    , { file: "compose", fwd_expect: "5" }

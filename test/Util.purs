@@ -13,7 +13,6 @@ module Test.Util
    , testTrace
    , testWithDatasetMany
    , testWithSetup
-   , unWriter
    , withDataset
    , withDefaultImports
    ) where
@@ -22,17 +21,15 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec, linkResult, loadLinkFig)
 import App.Util (Selector)
-import Benchmark.Util (BenchAcc(..), BenchRow(..), GraphRow, TraceRow, bench)
+import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, bench)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Writer.Trans (WriterT(..), runWriterT, tell)
 import Data.Either (Either(..))
-import Data.List (elem, singleton, List(..))
+import Data.List (elem)
 import Data.Set (Set) as S
 import Data.String (null)
-import Data.Traversable (traverse, traverse_)
-import Data.Tuple (Tuple(..), snd, fst)
+import Data.Traversable (traverse_)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -53,10 +50,9 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Set (subset)
-import Test.Spec (SpecT(..), SpecTree, before, beforeAll, beforeWith, it)
+import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
-import Test.Spec.Tree (Tree(..))
 import Util (MayFailT, type (×), (×), error, successful)
 import Val (Val(..), class Ann, (<+>))
 
@@ -70,22 +66,6 @@ type TestConfig =
    , fwd_expect :: String
    , bwd_expect :: String
    }
--- SpecTree m a = Tree String (ActionWith m a) (Item m a)
--- SpecTree (WriterT BenchAcc Aff) Unit = Tree String (Unit -> (WriterT BenchAcc Aff Unit)) (Item (WriterT BenchAcc Aff) Unit)
-unWriter_2 :: SpecTree (WriterT BenchAcc Aff) Unit -> SpecTree Aff Unit
-unWriter_2 (Node either arr) = error "todo"
-unWriter_2 (Leaf writer maybe) = error "todo"
-
-unWriter :: SpecT (WriterT BenchAcc Aff) Unit Effect Unit -> Test Unit
-unWriter (SpecT (WriterT monad_of_tuple)) = do
-
-   let (contents :: Effect (Array (SpecTree (WriterT BenchAcc Aff) Unit))) = snd <$> monad_of_tuple
-   
-   let (rewritten :: Effect (Array (SpecTree Aff Unit))) = map unWriter_2 <$> contents
-   
-   let new_tup = ((×) $ unit) <$> rewritten
-   
-   SpecT (WriterT new_tup)
 
 run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
@@ -207,22 +187,23 @@ type TestBwdSpec =
    , fwd_expect :: String
    }
 
-testMany :: Array TestSpec → Boolean -> SpecT Aff Unit (WriterT BenchAcc Effect) Unit
-testMany fxs is_bench = error "todo"
+testMany :: Array TestSpec → Boolean -> SpecT Aff Unit Effect Unit
+testMany fxs is_bench = withDefaultImports $ traverse_ test fxs
    where
-   _test :: TestSpec -> SpecT Aff (GraphConfig (GraphImpl S.Set)) (WriterT BenchAcc Effect) Unit
-   _test { file, fwd_expect } =
+   test :: TestSpec -> SpecT Aff (GraphConfig (GraphImpl S.Set)) Effect Unit
+   test { file, fwd_expect } =
       -- (((_ <$> open (folder <> File file)) <<< (×)) :: GraphConfig -> Aff (GraphConfig × Expr) ) 
       beforeWith ((_ <$> open (File file)) <<< (×)) $
          it (show file)
-            (\(gconfig × s) -> do
-             row <- internal (gconfig × s)
-             pure unit) -- a -> g unit 
+            ( \(gconfig × s) -> do
+                 void $ internal (gconfig × s)
+                 pure unit
+            ) -- a -> g unit 
       where
-      internal :: (GraphConfig (GraphImpl S.Set) × SE.Expr Unit) -> Aff BenchAcc
+      internal :: (GraphConfig (GraphImpl S.Set) × SE.Expr Unit) -> Aff Unit
       internal (gconfig × s) = do
          outs <- (testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
-         pure (BenchAcc $ singleton outs)
+         logShow outs
 
 testBwdMany :: Array TestBwdSpec → Boolean -> Test Unit
 testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs

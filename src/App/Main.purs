@@ -50,8 +50,7 @@ drawFigs loadFigs =
       case _ of
          Left err -> log $ show err
          Right figs -> sequence_ $ flip drawFig botOf <$> figs
-      
-                   
+
 main :: Effect Unit
 main = do
    drawFigs [ loadFig fig1, loadFig fig2 ]
