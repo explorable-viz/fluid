@@ -96,19 +96,17 @@ run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
--- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
 testWithSetup ∷ Boolean → Raw SE.Expr → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
-testWithSetup is_bench s gconfig tconfig = do
-   e <- runExceptT
-      ( do
-           unless is_bench (testParse s)
-           trRow <- testTrace is_bench s gconfig tconfig
-           grRow <- testGraph is_bench s gconfig tconfig
-           pure (BenchRow trRow grRow)
-      )
-   case e of
-      Left msg -> error msg
-      Right x -> log (show x) >>= \_ -> pure x
+testWithSetup is_bench s gconfig tconfig =
+   runExceptT
+      do
+         unless is_bench (testParse s)
+         BenchRow
+            <$> testTrace is_bench s gconfig tconfig
+            <*> testGraph is_bench s gconfig tconfig
+      >>= case _ of
+         Left msg -> error msg
+         Right x -> log (show x) >>= const (pure x)
 
 testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do

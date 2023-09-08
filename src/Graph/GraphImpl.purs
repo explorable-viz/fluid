@@ -46,7 +46,7 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 
    fromFoldable α_αs = GraphImpl { out: runST (outMap α_αs'), in: runST (inMap α_αs') }
       where
-      α_αs' = L.fromFoldable α_αs  -- doesn't seem to adversely affect performance
+      α_αs' = L.fromFoldable α_αs -- doesn't seem to adversely affect performance
 
 -- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
 -- This is better but still slow if there are thousands of sinks.
