@@ -6,13 +6,20 @@ if (typeof describe !== 'function' || typeof it !== 'function') {
     throw new Error('Mocha globals seem to be unavailable!');
 }
 
+/*
+    only :: Boolean
+    name :: String
+    run  :: (Effect Unit -> (Error -> Effect Unit) -> Effect Unit)
+    done :: Error -> Effect Unit
+
+*/
 export function itAsync(only) {
     "use strict";
     return function (name) {
         return function (run) {
             return function () {
                 var f = only ? it.only : it;
-                f(name, function (done) {
+                f(name, function (done) {     // f :: String -> 
                     return run(function () {
                         done();
                         return function () {};
