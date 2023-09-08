@@ -49,4 +49,4 @@ selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Ver
 selectαs v𝔹 vα = unions ((if _ then singleton else const empty) <$> v𝔹 <*> vα)
 
 select𝔹s :: forall f. Functor f => f Vertex -> Set Vertex -> f Boolean
-select𝔹s vα αs = flip member αs <$> vα
+select𝔹s vα αs = (_ `member` αs) <$> vα

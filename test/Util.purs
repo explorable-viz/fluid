@@ -121,7 +121,7 @@ testParse s = do
 
 testTrace :: Boolean -> Raw SE.Expr -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
-   let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γα)
+   let s𝔹 × γ𝔹 = botOf s × (botOf <$> γα)
    -- | Eval
    e𝔹 <- desug s𝔹
    (t × v𝔹) × tEval <- bench $ eval γ𝔹 e𝔹 bot

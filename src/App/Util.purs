@@ -81,9 +81,6 @@ instance (Apply f, Foldable f) => Neg (Selector2 f) where
 doNothing :: OnSel
 doNothing = const $ pure unit
 
-doNothing2 :: OnSel2
-doNothing2 = const $ pure unit
-
 get_intOrNumber :: Var -> Dict (Val 𝔹) -> Number × 𝔹
 get_intOrNumber x r = first as (intOrNumber.match (get x r))
 

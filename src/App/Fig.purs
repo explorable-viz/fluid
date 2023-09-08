@@ -7,7 +7,7 @@ import App.CodeMirror (EditorView, dispatch, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler, lineChartHandler2)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixViewHandler2, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler, tableViewHandler2)
-import App.Util (HTMLId, OnSel, OnSel2, Selector, Selector2, as𝔹Selector, doNothing, doNothing2, from, record)
+import App.Util (HTMLId, OnSel, OnSel2, Selector, doNothing, from, record)
 import Bindings (Var)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
@@ -154,14 +154,13 @@ drawCode ed s = do
    tr <- update ed.state [ { changes: { from: 0, to: 0, insert: s } } ]
    dispatch ed tr
 
-drawFig :: Fig -> Selector2 Val -> Effect Unit
-drawFig fig@{ spec: { divId } } sel = do
-   let δv = as𝔹Selector sel
+drawFig :: Fig -> Selector Val -> Effect Unit
+drawFig fig@{ spec: { divId } } δv = do
    log $ "Redrawing " <> divId
    let v_view × views = successful $ figViews fig δv
    sequence_ $
-      uncurry (drawView2 divId doNothing2) <$> zip (range 0 (length views - 1)) views
-   drawView2 divId (\sel' -> drawFig fig (sel <> sel')) (length views) v_view
+      uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
+   drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
 
 varView :: Var -> Env 𝔹 -> MayFail View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
@@ -169,7 +168,7 @@ varView x γ = view x <$> (lookup x γ # orElse absurd)
 valViews :: Env 𝔹 -> Array Var -> MayFail (Array View)
 valViews γ xs = sequence (flip varView γ <$> xs)
 
--- For an output selection, views of corresponding input selections.
+-- For an output selection, views of corresponding input selections and output after round-trip.
 figViews :: Fig -> Selector Val -> MayFail (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
