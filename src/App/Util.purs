@@ -96,7 +96,7 @@ instance Reflect (Val Boolean) (Array (Val Boolean)) where
    from (Constr _ c Nil) | c == cNil = []
    from (Constr _ c (u1 : u2 : Nil)) | c == cCons = u1 A.: from u2
 
--- Selection helpers.
+-- Selection helpers. TODO: turn these into lenses.
 selectMatrixElement :: Int -> Int -> Endo (Selector Val)
 selectMatrixElement i j δv (Matrix α r) = Matrix α $ matrixUpdate i j δv r
 selectMatrixElement _ _ _ _ = error absurd
@@ -136,22 +136,21 @@ selectSome = Selector2 $ unsafePartial $ case _ of
 select_y :: Endo (Selector2 Val)
 select_y = selectField f_y
 
-selectBarChart_data :: Endo (Selector2 Val)
+selectBarChart_data :: Endo (Selector Val)
 selectBarChart_data =
-   selectConstrArg cBarChart 0 <<< selectField f_data
+   selectConstrArg2 cBarChart 0 <<< selectField2 f_data
 
 selectPair :: Selector2 Val -> Selector2 Val -> Selector2 Val
 selectPair sel1 sel2 =
    selectConstrArg cPair 0 sel1 <> selectConstrArg cPair 1 sel2
 
--- Togglers. TODO: subsumed by selectors now?
 toggleCell :: Int -> Int -> Selector Val
 toggleCell i j (Matrix α m) = Matrix α (matrixUpdate i j neg m)
 toggleCell _ _ _ = error absurd
 
-toggleField :: Var -> Endo (Selector Val)
-toggleField f selector (Record α r) = Record α $ update (selector >>> Just) f r
-toggleField _ _ _ = error absurd
+selectField2 :: Var -> Endo (Selector Val)
+selectField2 f selector = unsafePartial $ case _ of
+   Record α r -> Record α $ update (selector >>> Just) f r
 
 selectField :: Var -> Endo (Selector2 Val)
 selectField f sel = Selector2 $ unsafePartial $ case _ of
@@ -161,15 +160,15 @@ selectField' :: Var -> Endo (Selector3 Val)
 selectField' f sel = wrap $ unsafePartial $ case _ of
    v@(Record _ r) × αs -> v × snd (unwrap sel (get f r × αs))
 
-toggleConstrArg :: Ctr -> Int -> Endo (Selector Val)
-toggleConstrArg c n selector (Constr α c' us) | c == c' =
-   let
-      us' = definitely' $ do
-         u1 <- us !! n
-         updateAt n (selector u1) us
-   in
-      Constr α c us'
-toggleConstrArg _ _ _ _ = error absurd
+selectConstrArg2 :: Ctr -> Int -> Endo (Selector Val)
+selectConstrArg2 c n sel = unsafePartial $ case _ of
+   Constr α c' us | c == c' ->
+      let
+         us' = definitely' $ do
+            u1 <- us !! n
+            updateAt n (sel u1) us
+      in
+         Constr α c us'
 
 selectConstrArg :: Ctr -> Int -> Endo (Selector2 Val)
 selectConstrArg c n sel = Selector2 $ unsafePartial $ case _ of

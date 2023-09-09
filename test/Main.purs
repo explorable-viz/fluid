@@ -2,9 +2,22 @@ module Test.Main where
 
 import Prelude hiding (add)
 
-import App.Util (as𝔹Selector, selectAll, selectBarChart_data, selectMatrixElement, selectNone, selectNth2, selectNthCell, selectPair, selectSome, select_y)
+import App.Util
+   ( as𝔹Selector
+   , selectAll
+   , selectBarChart_data
+   , selectField2
+   , selectMatrixElement
+   , selectNone
+   , selectNth
+   , selectNth2
+   , selectNthCell
+   , selectPair
+   , selectSome
+   )
 import Bindings ((↦))
 import Data.Traversable (traverse_)
+import DataType (f_y)
 import Dict (fromFoldable) as D
 import Effect (Effect)
 import Lattice (botOf, neg, topOf)
@@ -242,7 +255,7 @@ test_bwd = testBwdMany
      }
    , { file: "zipWith"
      , file_expect: "zipWith-1.expect"
-     , δv: selectNth2 1 selectAll # as𝔹Selector
+     , δv: botOf >>> selectNth 1 neg
      , fwd_expect: "(13.0 : (_25.0_ : (41.0 : [])))"
      }
    ]
@@ -293,7 +306,7 @@ test_linking = testLinkMany
           , dataFile: File "renewables"
           , x: "data"
           }
-     , δv1: botOf >>> (selectBarChart_data (selectNth2 1 (select_y selectAll)) # as𝔹Selector)
+     , δv1: (botOf >>> selectBarChart_data (selectNth 1 (selectField2 f_y topOf)))
      , v2_expect:
           "LineChart ({\
           \caption: \"Output of USA relative to China\", \

@@ -2,8 +2,7 @@ module App.TableView where
 
 import Prelude
 
-import App.Util (Handler, Handler2, Renderer, Selector2(..), get_intOrNumber)
-import Data.Set as S
+import App.Util (Handler, Renderer, get_intOrNumber)
 import Dict (Dict, get)
 import Lattice (𝔹)
 import Primitive (int, string)
@@ -27,6 +26,3 @@ energyRecord r =
 
 tableViewHandler :: Handler
 tableViewHandler = const identity
-
-tableViewHandler2 :: Handler2
-tableViewHandler2 _ = Selector2 $ const S.empty

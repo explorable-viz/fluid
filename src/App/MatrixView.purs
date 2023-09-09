@@ -25,12 +25,12 @@ matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
 
 matrixViewHandler :: Handler
 matrixViewHandler ev = uncurry toggleCell $ unsafePos $ target ev
-
--- [Unsafe] Datum associated with matrix view mouse event; 1-based indices of selected cell.
-unsafePos :: Maybe EventTarget -> Int × Int
-unsafePos tgt_opt =
-   let
-      tgt = definitely' $ tgt_opt
-      xy = (unsafeCoerce tgt).__data__ ! 0 :: Array Int
-   in
-      xy ! 0 × xy ! 1
+   where
+   -- [Unsafe] Datum associated with matrix view mouse event; 1-based indices of selected cell.
+   unsafePos :: Maybe EventTarget -> Int × Int
+   unsafePos tgt_opt =
+      let
+         tgt = definitely' $ tgt_opt
+         xy = (unsafeCoerce tgt).__data__ ! 0 :: Array Int
+      in
+         xy ! 0 × xy ! 1
