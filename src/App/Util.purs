@@ -13,7 +13,7 @@ import Data.Set (Set, difference, union)
 import Data.Set as S
 import Data.Traversable (class Traversable)
 import Data.Tuple (fst, snd)
-import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data)
+import DataType (Ctr, cBarChart, cCons, cNil, cSome, f_data)
 import Dict (Dict, get)
 import Effect (Effect)
 import Foreign.Object (update)
@@ -130,14 +130,6 @@ toggleCell _ _ _ = error absurd
 selectField2 :: Var -> Endo (Selector Val)
 selectField2 f selector = unsafePartial $ case _ of
    Record α r -> Record α $ update (selector >>> Just) f r
-
-selectField :: Var -> Endo (Selector2 Val)
-selectField f sel = Selector2 $ unsafePartial $ case _ of
-   Record _ r -> unwrap sel (get f r)
-
-selectField' :: Var -> Endo (Selector3 Val)
-selectField' f sel = wrap $ unsafePartial $ case _ of
-   v@(Record _ r) × αs -> v × snd (unwrap sel (get f r × αs))
 
 selectConstrArg2 :: Ctr -> Int -> Endo (Selector Val)
 selectConstrArg2 c n sel = unsafePartial $ case _ of
