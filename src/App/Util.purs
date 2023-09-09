@@ -11,15 +11,13 @@ import Data.Newtype (class Newtype, unwrap, wrap)
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, difference, union)
 import Data.Set as S
-import Data.Traversable (class Traversable)
-import Data.Tuple (fst, snd)
+import Data.Tuple (fst)
 import DataType (Ctr, cBarChart, cCons, cNil, cSome, f_data)
 import Dict (Dict, get)
 import Effect (Effect)
 import Foreign.Object (update)
 import Graph (Vertex)
-import Graph.GraphWriter (alloc, runWithAlloc)
-import Graph.Slice (selectαs, select𝔹s)
+import Graph.Slice (selectαs)
 import Lattice (class Neg, 𝔹, neg, topOf)
 import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
@@ -43,18 +41,6 @@ type Handler2 = Event -> Selector2 Val
 
 derive instance Newtype (Selector2 f) _
 derive instance Newtype (Selector3 f) _
-
--- Turn vertex selector into corresponding (constant) 𝔹-selector.
-as𝔹Selector :: forall f. Traversable f => Selector2 f -> Selector f
-as𝔹Selector (Selector2 sel) v =
-   let _ × vα = runWithAlloc 0 (alloc v) in select𝔹s vα (sel vα)
-
-as𝔹Selector3 :: forall f. Apply f => Traversable f => Selector3 f -> Selector f
-as𝔹Selector3 sel = \v𝔹 ->
-   let
-      _ × vα = runWithAlloc 0 (alloc v𝔹)
-   in
-      select𝔹s vα $ snd $ unwrap sel (vα × selectαs v𝔹 vα)
 
 -- Can these be TopOf/BotOf instances?
 selectAll :: forall f. Apply f => Foldable f => Selector2 f
@@ -140,8 +126,3 @@ selectConstrArg2 c n sel = unsafePartial $ case _ of
             updateAt n (sel u1) us
       in
          Constr α c us'
-
-selectConstrArg :: Ctr -> Int -> Endo (Selector2 Val)
-selectConstrArg c n sel = Selector2 $ unsafePartial $ case _ of
-   Constr _ c' us | c == c' ->
-      unwrap sel $ definitely' $ us !! n
