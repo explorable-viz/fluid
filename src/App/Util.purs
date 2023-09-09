@@ -13,7 +13,7 @@ import Data.Set (Set, difference, union)
 import Data.Set as S
 import Data.Traversable (class Traversable)
 import Data.Tuple (fst, snd)
-import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data, f_y)
+import DataType (Ctr, cBarChart, cCons, cNil, cPair, cSome, f_data)
 import Dict (Dict, get)
 import Effect (Effect)
 import Foreign.Object (update)
@@ -24,8 +24,8 @@ import Lattice (class Neg, 𝔹, neg, topOf)
 import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
-import Util (Endo, type (×), (×), absurd, error, definitely', successful)
-import Val (Val(..), matrixGet, matrixUpdate)
+import Util (Endo, type (×), (×), absurd, error, definitely')
+import Val (Val(..), matrixUpdate)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
 
@@ -101,12 +101,6 @@ selectMatrixElement :: Int -> Int -> Endo (Selector Val)
 selectMatrixElement i j δv (Matrix α r) = Matrix α $ matrixUpdate i j δv r
 selectMatrixElement _ _ _ _ = error absurd
 
-selectMatrixElement2 :: Int -> Int -> Endo (Selector2 Val)
-selectMatrixElement2 i j sel = Selector2 $ unsafePartial $ case _ of
-   Matrix _ r -> unwrap sel v
-      where
-      v = successful (matrixGet i j r) :: Val Vertex
-
 selectNth :: Int -> Endo (Selector Val)
 selectNth 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v : v' : Nil)
 selectNth n δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : selectNth (n - 1) δv v' : Nil)
@@ -125,9 +119,6 @@ selectConstr c' = unsafePartial $ case _ of
 selectSome :: Selector Val
 selectSome = selectConstr cSome
 
-select_y :: Endo (Selector2 Val)
-select_y = selectField f_y
-
 selectBarChart_data :: Endo (Selector Val)
 selectBarChart_data =
    selectConstrArg2 cBarChart 0 <<< selectField2 f_data
@@ -135,6 +126,10 @@ selectBarChart_data =
 selectPair :: Selector2 Val -> Selector2 Val -> Selector2 Val
 selectPair sel1 sel2 =
    selectConstrArg cPair 0 sel1 <> selectConstrArg cPair 1 sel2
+
+selectPair2 :: Selector Val -> Selector Val -> Selector Val
+selectPair2 sel1 sel2 =
+   selectConstrArg2 cPair 0 sel1 >>> selectConstrArg2 cPair 1 sel2
 
 toggleCell :: Int -> Int -> Selector Val
 toggleCell i j (Matrix α m) = Matrix α (matrixUpdate i j neg m)

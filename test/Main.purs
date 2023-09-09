@@ -2,18 +2,7 @@ module Test.Main where
 
 import Prelude hiding (add)
 
-import App.Util
-   ( as𝔹Selector
-   , selectAll
-   , selectBarChart_data
-   , selectField2
-   , selectMatrixElement
-   , selectNone
-   , selectNth
-   , selectNthCell
-   , selectPair
-   , selectSome
-   )
+import App.Util (selectBarChart_data, selectField2, selectMatrixElement, selectNth, selectNthCell, selectPair2, selectSome)
 import Bindings ((↦))
 import Data.Traversable (traverse_)
 import DataType (f_y)
@@ -276,11 +265,11 @@ test_linking = testLinkMany
           , dataFile: File "pairs-data"
           , x: "data"
           }
-     , δv1:
-          selectPair selectNone
-             ( selectPair selectNone
-                  (selectPair selectAll selectNone)
-             ) # as𝔹Selector
+     , δv1: botOf >>>
+          selectPair2 identity
+             ( selectPair2 identity
+                  (selectPair2 neg identity)
+             )
      , v2_expect: "(3, (_5_, _7_))"
      }
    , { spec:
