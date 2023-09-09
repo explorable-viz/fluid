@@ -10,8 +10,8 @@ import App.Util
    , from
    , get_intOrNumber
    , record
-   , selectConstrArg2
-   , selectField2
+   , selectConstrArg
+   , selectField
    , selectNth
    )
 import Data.List (List(..), (:))
@@ -58,11 +58,11 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
    where
    togglePoint :: Int × Int -> Selector Val
    togglePoint (i × j) =
-      selectConstrArg2 cLineChart 0
-         $ selectField2 f_plots
+      selectConstrArg cLineChart 0
+         $ selectField f_plots
          $ selectNth i
-         $ selectConstrArg2 cLinePlot 0
-         $ selectField2 f_data
+         $ selectConstrArg cLinePlot 0
+         $ selectField f_data
          $ selectNth j
          $ neg
 

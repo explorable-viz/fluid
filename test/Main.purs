@@ -2,7 +2,7 @@ module Test.Main where
 
 import Prelude hiding (add)
 
-import App.Util (selectBarChart_data, selectConstrArg2, selectField2, selectMatrixElement, selectNth, selectNthCell, selectSome)
+import App.Util (selectBarChart_data, selectConstrArg, selectField, selectMatrixElement, selectNth, selectNthCell, selectSome)
 import Bindings ((↦))
 import Data.Traversable (traverse_)
 import DataType (cPair, f_y)
@@ -266,9 +266,9 @@ test_linking = testLinkMany
           , x: "data"
           }
      , δv1: botOf >>>
-          selectConstrArg2 cPair 1
-             ( selectConstrArg2 cPair 1
-                  (selectConstrArg2 cPair 0 neg)
+          selectConstrArg cPair 1
+             ( selectConstrArg cPair 1
+                  (selectConstrArg cPair 0 neg)
              )
      , v2_expect: "(3, (_5_, _7_))"
      }
@@ -294,7 +294,7 @@ test_linking = testLinkMany
           , dataFile: File "renewables"
           , x: "data"
           }
-     , δv1: (botOf >>> selectBarChart_data (selectNth 1 (selectField2 f_y topOf)))
+     , δv1: (botOf >>> selectBarChart_data (selectNth 1 (selectField f_y topOf)))
      , v2_expect:
           "LineChart ({\
           \caption: \"Output of USA relative to China\", \

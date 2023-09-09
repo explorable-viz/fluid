@@ -10,8 +10,8 @@ import App.Util
    , from
    , get_intOrNumber
    , record
-   , selectConstrArg2
-   , selectField2
+   , selectConstrArg
+   , selectField
    , selectNth
    )
 import Data.Maybe (Maybe)
@@ -47,8 +47,8 @@ barChartHandler ev = toggleBar $ unsafeBarIndex $ target ev
    where
    toggleBar :: Int -> Selector Val
    toggleBar i =
-      selectConstrArg2 cBarChart 0
-         $ selectField2 f_data
+      selectConstrArg cBarChart 0
+         $ selectField f_data
          $ selectNth i
          $ neg
 

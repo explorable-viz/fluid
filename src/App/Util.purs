@@ -4,25 +4,19 @@ import Prelude hiding (absurd)
 
 import Bindings (Var)
 import Data.Array ((:)) as A
-import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, wrap)
 import Data.Profunctor.Strong (first)
-import Data.Set (Set)
-import Data.Set as S
 import Data.Tuple (fst)
 import DataType (Ctr, cBarChart, cCons, cNil, cSome, f_data)
 import Dict (Dict, get)
 import Effect (Effect)
 import Foreign.Object (update)
-import Graph (Vertex)
-import Graph.Slice (selectαs)
-import Lattice (𝔹, neg, topOf)
+import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Primitive (as, intOrNumber)
 import Primitive (record) as P
-import Util (Endo, type (×), (×), absurd, error, definitely')
+import Util (Endo, type (×), absurd, error, definitely')
 import Val (Val(..), matrixUpdate)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (EventListener)
@@ -30,19 +24,8 @@ import Web.Event.EventTarget (EventListener)
 type HTMLId = String
 type Renderer a = HTMLId -> Int -> a -> EventListener -> Effect Unit
 type Selector f = f 𝔹 -> f 𝔹 -- modifies selection state
-type Sel f = f Vertex × Set Vertex
-newtype Sel2 f = Sel2 (f Vertex -> Set Vertex) -- specifies selection
-newtype Selector3 f = Selector3 (Sel f -> Sel f)
 type OnSel = Selector Val -> Effect Unit -- redraw based on modified output selection
 type Handler = Event -> Selector Val
-
-derive instance Newtype (Selector3 f) _
-
-selectAll' :: forall f. Apply f => Foldable f => Selector3 f
-selectAll' = wrap $ \(vα × _) -> vα × selectαs (topOf vα) vα
-
-selectNone' :: forall f. Apply f => Foldable f => Selector3 f
-selectNone' = wrap $ \(vα × _) -> vα × S.empty
 
 doNothing :: OnSel
 doNothing = const $ pure unit
@@ -87,18 +70,14 @@ selectSome = selectConstr cSome
 
 selectBarChart_data :: Endo (Selector Val)
 selectBarChart_data =
-   selectConstrArg2 cBarChart 0 <<< selectField2 f_data
+   selectConstrArg cBarChart 0 <<< selectField f_data
 
-toggleCell :: Int -> Int -> Selector Val
-toggleCell i j (Matrix α m) = Matrix α (matrixUpdate i j neg m)
-toggleCell _ _ _ = error absurd
-
-selectField2 :: Var -> Endo (Selector Val)
-selectField2 f selector = unsafePartial $ case _ of
+selectField :: Var -> Endo (Selector Val)
+selectField f selector = unsafePartial $ case _ of
    Record α r -> Record α $ update (selector >>> Just) f r
 
-selectConstrArg2 :: Ctr -> Int -> Endo (Selector Val)
-selectConstrArg2 c n sel = unsafePartial $ case _ of
+selectConstrArg :: Ctr -> Int -> Endo (Selector Val)
+selectConstrArg c n sel = unsafePartial $ case _ of
    Constr α c' us | c == c' ->
       let
          us' = definitely' $ do
