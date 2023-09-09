@@ -10,7 +10,6 @@ import App.Util
    , selectMatrixElement
    , selectNone
    , selectNth
-   , selectNth2
    , selectNthCell
    , selectPair
    , selectSome
@@ -218,7 +217,7 @@ test_bwd = testBwdMany
      }
    , { file: "lookup"
      , file_expect: "lookup.expect"
-     , δv: selectSome # as𝔹Selector
+     , δv: botOf >>> selectSome
      , fwd_expect: "_Some_ \"Germany\""
      }
    , { file: "map"
@@ -235,7 +234,7 @@ test_bwd = testBwdMany
      }
    , { file: "section-5-example"
      , file_expect: "section-5-example-2.expect"
-     , δv: selectNth2 1 selectAll # as𝔹Selector
+     , δv: botOf >>> selectNth 1 topOf
      , fwd_expect: "(_88_ : (_6_ : (_4_ : [])))"
      }
    , { file: "section-5-example"
