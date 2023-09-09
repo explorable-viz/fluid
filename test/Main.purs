@@ -95,8 +95,8 @@ test_misc = testMany
 
 test_bwd :: Boolean -> Test Unit
 test_bwd = testBwdMany
-   [ { file: "add", file_expect: "add.expect", δv: const $ Int true 8, fwd_expect: "_8_" }
-   , { file: "array/lookup", file_expect: "array/lookup.expect", δv: const $ Int true 14, fwd_expect: "_14_" }
+   [ { file: "add", file_expect: "add.expect", δv: topOf, fwd_expect: "_8_" }
+   , { file: "array/lookup", file_expect: "array/lookup.expect", δv: topOf, fwd_expect: "_14_" }
    , { file: "array/dims", file_expect: "array/dims.expect", δv: topOf, fwd_expect: "_(_3_, _3_)_" }
    , { file: "convolution/edgeDetect"
      , file_expect: "convolution/edgeDetect.expect"
@@ -173,8 +173,8 @@ test_bwd = testBwdMany
      , fwd_expect:
           "_{|_\"a\"_:= 5, _\"ab\"_:= 6|}_"
      }
-   , { file: "dict/get", file_expect: "dict/get.expect", δv: const $ Int true 0, fwd_expect: "_0_" }
-   , { file: "dict/map", file_expect: "dict/map.expect", δv: const $ Int true 20, fwd_expect: "_20_" }
+   , { file: "dict/get", file_expect: "dict/get.expect", δv: topOf, fwd_expect: "_0_" }
+   , { file: "dict/map", file_expect: "dict/map.expect", δv: topOf, fwd_expect: "_20_" }
    , { file: "divide", file_expect: "divide.expect", δv: topOf, fwd_expect: "_40.22222222222222_" }
    , { file: "filter"
      , file_expect: "filter.expect"
@@ -265,8 +265,7 @@ test_linking = testLinkMany
           , dataFile: File "pairs-data"
           , x: "data"
           }
-     , δv1: botOf >>>
-          selectConstrArg cPair 1
+     , δv1: selectConstrArg cPair 1
              ( selectConstrArg cPair 1
                   (selectConstrArg cPair 0 neg)
              )
@@ -279,7 +278,7 @@ test_linking = testLinkMany
           , dataFile: File "convolution-data"
           , x: "data"
           }
-     , δv1: botOf >>> selectMatrixElement 2 2 topOf
+     , δv1: selectMatrixElement 2 2 topOf
      , v2_expect:
           "_18_, _12_, _13_, 9, 19,\n\
           \_20_, _11_, _24_, 9, 14,\n\
@@ -294,7 +293,7 @@ test_linking = testLinkMany
           , dataFile: File "renewables"
           , x: "data"
           }
-     , δv1: (botOf >>> (selectConstrArg cBarChart 0 <<< selectField f_data) (selectNth 1 (selectField f_y topOf)))
+     , δv1: selectConstrArg cBarChart 0 (selectField f_data (selectNth 1 (selectField f_y topOf)))
      , v2_expect:
           "LineChart ({\
           \caption: \"Output of USA relative to China\", \

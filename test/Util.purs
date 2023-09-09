@@ -202,7 +202,7 @@ type TestSpec =
 type TestBwdSpec =
    { file :: String
    , file_expect :: String
-   , δv :: Selector Val
+   , δv :: Selector Val -- relative to bot
    , fwd_expect :: String
    }
 
@@ -213,7 +213,7 @@ type TestWithDatasetSpec =
 
 type TestLinkSpec =
    { spec :: LinkFigSpec
-   , δv1 :: Selector Val
+   , δv1 :: Selector Val -- relative to bot
    , v2_expect :: String
    }
 
