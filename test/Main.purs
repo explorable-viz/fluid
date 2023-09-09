@@ -2,10 +2,10 @@ module Test.Main where
 
 import Prelude hiding (add)
 
-import App.Util (selectBarChart_data, selectField2, selectMatrixElement, selectNth, selectNthCell, selectPair2, selectSome)
+import App.Util (selectBarChart_data, selectConstrArg2, selectField2, selectMatrixElement, selectNth, selectNthCell, selectSome)
 import Bindings ((↦))
 import Data.Traversable (traverse_)
-import DataType (f_y)
+import DataType (cPair, f_y)
 import Dict (fromFoldable) as D
 import Effect (Effect)
 import Lattice (botOf, neg, topOf)
@@ -266,9 +266,9 @@ test_linking = testLinkMany
           , x: "data"
           }
      , δv1: botOf >>>
-          selectPair2 identity
-             ( selectPair2 identity
-                  (selectPair2 neg identity)
+          selectConstrArg2 cPair 1
+             ( selectConstrArg2 cPair 1
+                  (selectConstrArg2 cPair 0 neg)
              )
      , v2_expect: "(3, (_5_, _7_))"
      }
