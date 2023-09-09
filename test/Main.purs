@@ -214,8 +214,8 @@ test_bwd = testBwdMany
      , δv: botOf >>> selectNthCell 0 neg >>> selectNthCell 1 neg
      , fwd_expect: "(5 _:_ (6 _:_ []))"
      }
-   , { file: "multiply", file_expect: "multiply.expect", δv: const $ Int true 0, fwd_expect: "_0_" }
-   , { file: "nth", file_expect: "nth.expect", δv: const $ Int true 4, fwd_expect: "_4_" }
+   , { file: "multiply", file_expect: "multiply.expect", δv: topOf, fwd_expect: "_0_" }
+   , { file: "nth", file_expect: "nth.expect", δv: topOf, fwd_expect: "_4_" }
    , { file: "section-5-example"
      , file_expect: "section-5-example-1.expect"
      , δv: botOf >>> selectNthCell 0 neg

@@ -123,14 +123,6 @@ selectBarChart_data :: Endo (Selector Val)
 selectBarChart_data =
    selectConstrArg2 cBarChart 0 <<< selectField2 f_data
 
-selectPair :: Selector2 Val -> Selector2 Val -> Selector2 Val
-selectPair sel1 sel2 =
-   selectConstrArg cPair 0 sel1 <> selectConstrArg cPair 1 sel2
-
-selectPair2 :: Selector Val -> Selector Val -> Selector Val
-selectPair2 sel1 sel2 =
-   selectConstrArg2 cPair 0 sel1 >>> selectConstrArg2 cPair 1 sel2
-
 toggleCell :: Int -> Int -> Selector Val
 toggleCell i j (Matrix α m) = Matrix α (matrixUpdate i j neg m)
 toggleCell _ _ _ = error absurd
