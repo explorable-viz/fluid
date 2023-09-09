@@ -2,10 +2,10 @@ module Test.Main where
 
 import Prelude hiding (add)
 
-import App.Util (selectBarChart_data, selectConstrArg, selectField, selectMatrixElement, selectNth, selectNthCell, selectSome)
+import App.Util (selectConstrArg, selectField, selectMatrixElement, selectNth, selectNthCell, selectSome)
 import Bindings ((↦))
 import Data.Traversable (traverse_)
-import DataType (cPair, f_y)
+import DataType (cBarChart, cPair, f_data, f_y)
 import Dict (fromFoldable) as D
 import Effect (Effect)
 import Lattice (botOf, neg, topOf)
@@ -294,7 +294,7 @@ test_linking = testLinkMany
           , dataFile: File "renewables"
           , x: "data"
           }
-     , δv1: (botOf >>> selectBarChart_data (selectNth 1 (selectField f_y topOf)))
+     , δv1: (botOf >>> (selectConstrArg cBarChart 0 <<< selectField f_data) (selectNth 1 (selectField f_y topOf)))
      , v2_expect:
           "LineChart ({\
           \caption: \"Output of USA relative to China\", \

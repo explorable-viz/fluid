@@ -8,7 +8,7 @@ import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong (first)
 import Data.Tuple (fst)
-import DataType (Ctr, cBarChart, cCons, cNil, cSome, f_data)
+import DataType (Ctr, cCons, cNil, cSome)
 import Dict (Dict, get)
 import Effect (Effect)
 import Foreign.Object (update)
@@ -67,10 +67,6 @@ selectConstr c' = unsafePartial $ case _ of
 
 selectSome :: Selector Val
 selectSome = selectConstr cSome
-
-selectBarChart_data :: Endo (Selector Val)
-selectBarChart_data =
-   selectConstrArg cBarChart 0 <<< selectField f_data
 
 selectField :: Var -> Endo (Selector Val)
 selectField f selector = unsafePartial $ case _ of
