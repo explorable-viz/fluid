@@ -18,15 +18,15 @@ matrixElement i j δv (Matrix α r) = Matrix α $ matrixUpdate i j δv r
 matrixElement _ _ _ _ = error absurd
 
 listElement :: Int -> Endo (Selector Val)
-listElement 0 δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (δv v : v' : Nil)
-listElement n δv (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : listElement (n - 1) δv v' : Nil)
-listElement _ _ _ = error absurd
+listElement n δv = unsafePartial $ case _ of
+   Constr α c (v : v' : Nil) | n == 0 && c == cCons -> Constr α c (δv v : v' : Nil)
+   Constr α c (v : v' : Nil) | c == cCons -> Constr α c (v : listElement (n - 1) δv v' : Nil)
 
 listCell :: Int -> Endo 𝔹 -> Selector Val
-listCell 0 δα (Constr α c Nil) | c == cNil = Constr (δα α) c Nil
-listCell 0 δα (Constr α c (v : v' : Nil)) | c == cCons = Constr (δα α) c (v : v' : Nil)
-listCell n δα (Constr α c (v : v' : Nil)) | c == cCons = Constr α c (v : listCell (n - 1) δα v' : Nil)
-listCell _ _ _ = error absurd
+listCell n δα = unsafePartial $ case _ of
+   Constr α c Nil | n == 0 && c == cNil -> Constr (δα α) c Nil
+   Constr α c (v : v' : Nil) | n == 0 && c == cCons -> Constr (δα α) c (v : v' : Nil)
+   Constr α c (v : v' : Nil) | c == cCons -> Constr α c (v : listCell (n - 1) δα v' : Nil)
 
 constr :: Ctr -> Selector Val
 constr c' = unsafePartial $ case _ of
