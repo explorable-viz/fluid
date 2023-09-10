@@ -2,7 +2,7 @@ module Test.Main where
 
 import Prelude hiding (add)
 
-import App.Util.Select (constr, constrArg, dict, dictKey, field, listCell, listElement, matrixElement)
+import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
 import Bindings ((↦))
 import Data.Traversable (traverse_)
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
@@ -145,18 +145,13 @@ test_bwd = testBwdMany
           , "b" ↦ (false × Int false 6)
           , "c" ↦ (false × Int true 7)
           ]
-     , fwd_expect:
-          "{|_\"a\"_:= 5, \"b\":= 6, \"c\":= _7_|}"
+     , fwd_expect: "{|_\"a\"_:= 5, \"b\":= 6, \"c\":= _7_|}"
      }
    , { file: "dict/foldl", file_expect: "dict/foldl.expect", δv: neg, fwd_expect: "_0_" }
    , { file: "dict/intersectionWith"
      , file_expect: "dict/intersectionWith.expect"
-     , δv: const $ Dictionary false $ DictRep $ D.fromFoldable
-          [ "b" ↦ (false × Int true 0)
-          , "c" ↦ (false × Int true 20)
-          ]
-     , fwd_expect:
-          "{|\"b\":= _0_, \"c\":= _20_|}"
+     , δv: dictVal "b" neg >>> dictVal "c" neg
+     , fwd_expect: "{|\"b\":= _0_, \"c\":= _20_|}"
      }
    , { file: "dict/fromRecord"
      , file_expect: "dict/fromRecord.expect"

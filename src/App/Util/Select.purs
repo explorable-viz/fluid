@@ -6,7 +6,7 @@ import App.Util (Selector)
 import Bindings (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
-import Data.Profunctor.Strong (first)
+import Data.Profunctor.Strong (first, second)
 import DataType (Ctr, cCons, cNil)
 import Foreign.Object (update)
 import Lattice (𝔹)
@@ -49,6 +49,10 @@ dict δα = unsafePartial $ case _ of
 dictKey :: String -> Endo 𝔹 -> Selector Val
 dictKey s δα = unsafePartial $ case _ of
    Dictionary α (DictRep d) -> Dictionary α $ DictRep $ update (first δα >>> Just) s d
+
+dictVal :: String -> Endo (Selector Val)
+dictVal s δv = unsafePartial $ case _ of
+   Dictionary α (DictRep d) -> Dictionary α $ DictRep $ update (second δv >>> Just) s d
 
 listCell :: Int -> Endo 𝔹 -> Selector Val
 listCell n δα = unsafePartial $ case _ of
