@@ -3,16 +3,12 @@ module Test.Main where
 import Prelude hiding (add)
 
 import App.Util.Select (constr, constrArg, dict, dictKey, dictVal, field, listCell, listElement, matrixElement)
-import Bindings ((↦))
 import Data.Traversable (traverse_)
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
-import Dict (fromFoldable) as D
 import Effect (Effect)
 import Lattice (neg)
 import Module (File(..))
 import Test.Util (Test, run, testWithDatasetMany, testLinkMany, testMany, testBwdMany)
-import Util ((×))
-import Val (DictRep(..), Val(..))
 
 main :: Effect Unit
 main = do
@@ -140,11 +136,7 @@ test_bwd = testBwdMany
      }
    , { file: "dict/disjointUnion"
      , file_expect: "dict/disjointUnion.expect"
-     , δv: const $ Dictionary false $ DictRep $ D.fromFoldable
-          [ "a" ↦ (true × Int false 5)
-          , "b" ↦ (false × Int false 6)
-          , "c" ↦ (false × Int true 7)
-          ]
+     , δv: dictKey "a" neg >>> dictVal "c" neg
      , fwd_expect: "{|_\"a\"_:= 5, \"b\":= 6, \"c\":= _7_|}"
      }
    , { file: "dict/foldl", file_expect: "dict/foldl.expect", δv: neg, fwd_expect: "_0_" }
@@ -156,8 +148,7 @@ test_bwd = testBwdMany
    , { file: "dict/fromRecord"
      , file_expect: "dict/fromRecord.expect"
      , δv: dictKey "ab" neg
-     , fwd_expect:
-          "_{|_\"a\"_:= 5, _\"ab\"_:= 6|}_"
+     , fwd_expect: "_{|_\"a\"_:= 5, _\"ab\"_:= 6|}_"
      }
    , { file: "dict/get", file_expect: "dict/get.expect", δv: neg, fwd_expect: "_0_" }
    , { file: "dict/map", file_expect: "dict/map.expect", δv: neg, fwd_expect: "_20_" }
@@ -170,14 +161,12 @@ test_bwd = testBwdMany
    , { file: "intersperse"
      , file_expect: "intersperse-1.expect"
      , δv: listCell 1 neg
-     , fwd_expect:
-          "(1 : (0 _:_ (2 : (0 : (3 : [])))))"
+     , fwd_expect: "(1 : (0 _:_ (2 : (0 : (3 : [])))))"
      }
    , { file: "intersperse"
      , file_expect: "intersperse-2.expect"
      , δv: listCell 2 neg
-     , fwd_expect:
-          "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))"
+     , fwd_expect: "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))"
      }
    , { file: "length", file_expect: "length.expect", δv: neg, fwd_expect: "_5_" }
    , { file: "list-comp"
