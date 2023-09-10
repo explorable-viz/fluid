@@ -2,7 +2,7 @@ module Test.Main where
 
 import Prelude hiding (add)
 
-import App.Util.Select (constr, constrArg, dict, field, listCell, listElement, matrixElement)
+import App.Util.Select (constr, constrArg, dict, dictKey, field, listCell, listElement, matrixElement)
 import Bindings ((↦))
 import Data.Traversable (traverse_)
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
@@ -163,11 +163,7 @@ test_bwd = testBwdMany
      }
    , { file: "dict/fromRecord"
      , file_expect: "dict/fromRecord.expect"
-     , δv:
-          const $ Dictionary false $ DictRep $ D.fromFoldable
-             [ "a" ↦ (false × Int false 5)
-             , "ab" ↦ (true × Int false 6)
-             ]
+     , δv: dictKey "ab" neg
      , fwd_expect:
           "_{|_\"a\"_:= 5, _\"ab\"_:= 6|}_"
      }

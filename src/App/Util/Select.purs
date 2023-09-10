@@ -1,16 +1,18 @@
 module App.Util.Select where
 
 import Prelude hiding (absurd)
-import Bindings (Var)
+
 import App.Util (Selector)
+import Bindings (Var)
 import Data.List (List(..), (:), (!!), updateAt)
 import Data.Maybe (Maybe(..))
+import Data.Profunctor.Strong (first)
 import DataType (Ctr, cCons, cNil)
 import Foreign.Object (update)
 import Lattice (𝔹)
 import Partial.Unsafe (unsafePartial)
 import Util (Endo, absurd, error, definitely')
-import Val (Val(..), matrixUpdate)
+import Val (DictRep(..), Val(..), matrixUpdate)
 
 -- Selection helpers. TODO: turn into lenses/prisms.
 matrixElement :: Int -> Int -> Endo (Selector Val)
@@ -43,6 +45,10 @@ constr c' δα = unsafePartial $ case _ of
 dict :: Endo 𝔹 -> Selector Val
 dict δα = unsafePartial $ case _ of
    Dictionary α d -> Dictionary (δα α) d
+
+dictKey :: String -> Endo 𝔹 -> Selector Val
+dictKey s δα = unsafePartial $ case _ of
+   Dictionary α (DictRep d) -> Dictionary α $ DictRep $ update (first δα >>> Just) s d
 
 listCell :: Int -> Endo 𝔹 -> Selector Val
 listCell n δα = unsafePartial $ case _ of
