@@ -2,18 +2,8 @@ module App.LineChart where
 
 import Prelude hiding (absurd)
 
-import App.Util
-   ( class Reflect
-   , Handler
-   , Renderer
-   , Selector
-   , from
-   , get_intOrNumber
-   , record
-   , selectConstrArg
-   , selectField
-   , selectNth
-   )
+import App.Util (class Reflect, Handler, Renderer, Selector, from, get_intOrNumber, record)
+import App.Util.Select (constrArg, field, listElement)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
@@ -58,12 +48,12 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
    where
    togglePoint :: Int × Int -> Selector Val
    togglePoint (i × j) =
-      selectConstrArg cLineChart 0
-         $ selectField f_plots
-         $ selectNth i
-         $ selectConstrArg cLinePlot 0
-         $ selectField f_data
-         $ selectNth j
+      constrArg cLineChart 0
+         $ field f_plots
+         $ listElement i
+         $ constrArg cLinePlot 0
+         $ field f_data
+         $ listElement j
          $ neg
 
    -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point

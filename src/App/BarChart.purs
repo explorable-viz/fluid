@@ -2,18 +2,8 @@ module App.BarChart where
 
 import Prelude hiding (absurd)
 
-import App.Util
-   ( class Reflect
-   , Handler
-   , Renderer
-   , Selector
-   , from
-   , get_intOrNumber
-   , record
-   , selectConstrArg
-   , selectField
-   , selectNth
-   )
+import App.Util (class Reflect, Handler, Renderer, Selector, from, get_intOrNumber, record)
+import App.Util.Select (constrArg, field, listElement)
 import Data.Maybe (Maybe)
 import DataType (cBarChart, f_caption, f_data, f_x, f_y)
 import Dict (Dict, get)
@@ -47,9 +37,9 @@ barChartHandler ev = toggleBar $ unsafeBarIndex $ target ev
    where
    toggleBar :: Int -> Selector Val
    toggleBar i =
-      selectConstrArg cBarChart 0
-         $ selectField f_data
-         $ selectNth i
+      constrArg cBarChart 0
+         $ field f_data
+         $ listElement i
          $ neg
 
    -- [Unsafe] Datum associated with bar chart mouse event; 0-based index of selected bar.

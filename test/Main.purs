@@ -2,10 +2,10 @@ module Test.Main where
 
 import Prelude hiding (add)
 
-import App.Util (selectConstrArg, selectField, selectMatrixElement, selectNth, selectNthCell, selectSome)
+import App.Util.Select (constr, constrArg, field, matrixElement, listElement, listCell)
 import Bindings ((↦))
 import Data.Traversable (traverse_)
-import DataType (cBarChart, cPair, f_data, f_y)
+import DataType (cBarChart, cPair, cSome, f_data, f_y)
 import Dict (fromFoldable) as D
 import Effect (Effect)
 import Lattice (neg)
@@ -35,7 +35,7 @@ test_scratchpad :: Boolean -> Test Unit
 test_scratchpad = testBwdMany
    [ { file: "filter"
      , file_expect: "filter.expect"
-     , δv: selectNthCell 0 neg
+     , δv: listCell 0 neg
      , fwd_expect: "(_8_ _:_ (7 : []))"
      }
    ]
@@ -100,7 +100,7 @@ test_bwd = testBwdMany
    , { file: "array/dims", file_expect: "array/dims.expect", δv: neg, fwd_expect: "_(_3_, _3_)_" }
    , { file: "convolution/edgeDetect"
      , file_expect: "convolution/edgeDetect.expect"
-     , δv: selectMatrixElement 1 1 neg
+     , δv: matrixElement 1 1 neg
      , fwd_expect:
           "_0_, -1, 2, 0, -1,\n\
           \0, 3, -2, 3, -2,\n\
@@ -110,7 +110,7 @@ test_bwd = testBwdMany
      }
    , { file: "convolution/emboss"
      , file_expect: "convolution/emboss.expect"
-     , δv: selectMatrixElement 1 1 neg
+     , δv: matrixElement 1 1 neg
      , fwd_expect:
           "_5_, 4, 2, 5, 2,\n\
           \3, 1, 2, -1, -2,\n\
@@ -120,7 +120,7 @@ test_bwd = testBwdMany
      }
    , { file: "convolution/gaussian"
      , file_expect: "convolution/gaussian.expect"
-     , δv: selectMatrixElement 1 1 neg
+     , δv: matrixElement 1 1 neg
      , fwd_expect:
           "_38_, 37, 28, 30, 38,\n\
           \38, 36, 46, 31, 34,\n\
@@ -178,72 +178,72 @@ test_bwd = testBwdMany
    , { file: "divide", file_expect: "divide.expect", δv: neg, fwd_expect: "_40.22222222222222_" }
    , { file: "filter"
      , file_expect: "filter.expect"
-     , δv: selectNthCell 0 neg
+     , δv: listCell 0 neg
      , fwd_expect: "(_8_ _:_ (7 : []))"
      }
    , { file: "intersperse"
      , file_expect: "intersperse-1.expect"
-     , δv: selectNthCell 1 neg
+     , δv: listCell 1 neg
      , fwd_expect:
           "(1 : (0 _:_ (2 : (0 : (3 : [])))))"
      }
    , { file: "intersperse"
      , file_expect: "intersperse-2.expect"
-     , δv: selectNthCell 2 neg
+     , δv: listCell 2 neg
      , fwd_expect:
           "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))"
      }
    , { file: "length", file_expect: "length.expect", δv: neg, fwd_expect: "_5_" }
    , { file: "list-comp"
      , file_expect: "list-comp-1.expect"
-     , δv: selectNthCell 1 neg
+     , δv: listCell 1 neg
      , fwd_expect: "(6.2 : (260 _:_ (19.9 : (91 : []))))"
      }
    , { file: "list-comp"
      , file_expect: "list-comp-2.expect"
-     , δv: selectNthCell 2 neg
+     , δv: listCell 2 neg
      , fwd_expect: "(6.2 : (260 : (19.9 _:_ (91 : []))))"
      }
    , { file: "lookup"
      , file_expect: "lookup.expect"
-     , δv: selectSome
+     , δv: constr cSome
      , fwd_expect: "_Some_ \"Germany\""
      }
    , { file: "map"
      , file_expect: "map.expect"
-     , δv: selectNthCell 0 neg >>> selectNthCell 1 neg
+     , δv: listCell 0 neg >>> listCell 1 neg
      , fwd_expect: "(5 _:_ (6 _:_ []))"
      }
    , { file: "multiply", file_expect: "multiply.expect", δv: neg, fwd_expect: "_0_" }
    , { file: "nth", file_expect: "nth.expect", δv: neg, fwd_expect: "_4_" }
    , { file: "section-5-example"
      , file_expect: "section-5-example-1.expect"
-     , δv: selectNthCell 0 neg
+     , δv: listCell 0 neg
      , fwd_expect: "(88 _:_ (6 : (4 : [])))"
      }
    , { file: "section-5-example"
      , file_expect: "section-5-example-2.expect"
-     , δv: selectNth 1 neg
+     , δv: listElement 1 neg
      , fwd_expect: "(_88_ : (_6_ : (_4_ : [])))"
      }
    , { file: "section-5-example"
      , file_expect: "section-5-example-3.expect"
-     , δv: selectNthCell 2 neg
+     , δv: listCell 2 neg
      , fwd_expect: "(88 : (6 : (4 _:_ [])))"
      }
    , { file: "zeros"
      , file_expect: "zeros-1.expect"
-     , δv: selectNthCell 0 neg >>> selectNthCell 2 neg
+     , δv: listCell 0 neg >>> listCell 2 neg
      , fwd_expect: "(0 _:_ (0 : _[]_))"
      }
    , { file: "zeros"
      , file_expect: "zeros-2.expect"
-     , δv: selectNthCell 2 neg
+     , δv: listCell 2 neg
      , fwd_expect: "(0 : (0 : _[]_))"
      }
    , { file: "zipWith"
      , file_expect: "zipWith-1.expect"
-     , δv: selectNth 1 neg
+     , δv: listElement 1 neg
      , fwd_expect: "(13.0 : (_25.0_ : (41.0 : [])))"
      }
    ]
@@ -265,7 +265,9 @@ test_linking = testLinkMany
           , dataFile: File "pairs-data"
           , x: "data"
           }
-     , δv1: selectConstrArg cPair 1 (selectConstrArg cPair 1 (selectConstrArg cPair 0 neg))
+     , δv1: constrArg cPair 1
+          $ constrArg cPair 1
+          $ constrArg cPair 0 neg
      , v2_expect: "(3, (_5_, _7_))"
      }
    , { spec:
@@ -275,7 +277,7 @@ test_linking = testLinkMany
           , dataFile: File "convolution-data"
           , x: "data"
           }
-     , δv1: selectMatrixElement 2 2 neg
+     , δv1: matrixElement 2 2 neg
      , v2_expect:
           "_18_, _12_, _13_, 9, 19,\n\
           \_20_, _11_, _24_, 9, 14,\n\
@@ -290,7 +292,10 @@ test_linking = testLinkMany
           , dataFile: File "renewables"
           , x: "data"
           }
-     , δv1: selectConstrArg cBarChart 0 (selectField f_data (selectNth 1 (selectField f_y neg)))
+     , δv1: constrArg cBarChart 0
+          $ field f_data
+          $ listElement 1
+          $ field f_y neg
      , v2_expect:
           "LineChart ({\
           \caption: \"Output of USA relative to China\", \

@@ -2,7 +2,8 @@ module App.MatrixView where
 
 import Prelude hiding (absurd)
 
-import App.Util (Handler, Renderer, selectMatrixElement)
+import App.Util (Handler, Renderer)
+import App.Util.Select (matrixElement)
 import Data.Maybe (Maybe)
 import Data.Tuple (uncurry)
 import Lattice (𝔹, neg)
@@ -24,7 +25,7 @@ matrixRep (MatrixRep (vss × (i × _) × (j × _))) =
    ((<$>) ((<$>) (\x -> int.match x))) vss × i × j
 
 matrixViewHandler :: Handler
-matrixViewHandler ev = flip (uncurry selectMatrixElement) neg $ unsafePos $ target ev
+matrixViewHandler ev = flip (uncurry matrixElement) neg $ unsafePos $ target ev
    where
    -- [Unsafe] Datum associated with matrix view mouse event; 1-based indices of selected cell.
    unsafePos :: Maybe EventTarget -> Int × Int
