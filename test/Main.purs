@@ -130,10 +130,7 @@ test_bwd = testBwdMany
      }
    , { file: "dict/create"
      , file_expect: "dict/create.expect"
-     , δv: const $ Dictionary false $ DictRep $ D.fromFoldable
-          [ "a" ↦ (false × Int false 5)
-          , "ab" ↦ (true × Int false 6)
-          ]
+     , δv: dictKey "ab" neg
      , fwd_expect: "{|\"a\":= 5, _\"ab\"_:= 6|}"
      }
    , { file: "dict/difference"
