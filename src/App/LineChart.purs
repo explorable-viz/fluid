@@ -2,29 +2,19 @@ module App.LineChart where
 
 import Prelude hiding (absurd)
 
+import App.Util (class Reflect, Handler, Renderer, Selector, from, get_intOrNumber, record)
+import App.Util.Select (constrArg, field, listElement)
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe)
-import Unsafe.Coerce (unsafeCoerce)
-import Web.Event.Event (target)
-import Web.Event.EventTarget (EventTarget)
-import App.Util
-   ( Handler
-   , class Reflect
-   , Renderer
-   , Selector
-   , from
-   , get_intOrNumber
-   , record
-   , selectNth
-   , toggleConstrArg
-   , toggleField
-   )
 import DataType (cLineChart, cLinePlot, f_caption, f_data, f_name, f_plots, f_x, f_y)
 import Dict (Dict, get)
 import Lattice (𝔹, neg)
 import Primitive (string)
+import Unsafe.Coerce (unsafeCoerce)
 import Util (type (×), (×), (!), definitely')
 import Val (Val(..))
+import Web.Event.Event (target)
+import Web.Event.EventTarget (EventTarget)
 
 newtype LineChart = LineChart { caption :: String × 𝔹, plots :: Array LinePlot }
 newtype LinePlot = LinePlot { name :: String × 𝔹, data :: Array Point }
@@ -58,12 +48,12 @@ lineChartHandler ev = togglePoint $ unsafePos $ target ev
    where
    togglePoint :: Int × Int -> Selector Val
    togglePoint (i × j) =
-      toggleConstrArg cLineChart 0
-         $ toggleField f_plots
-         $ selectNth i
-         $ toggleConstrArg cLinePlot 0
-         $ toggleField f_data
-         $ selectNth j
+      constrArg cLineChart 0
+         $ field f_plots
+         $ listElement i
+         $ constrArg cLinePlot 0
+         $ field f_data
+         $ listElement j
          $ neg
 
    -- [Unsafe] Datum associated with line-chart mouse event; 0-based indices of line plot and point

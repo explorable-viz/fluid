@@ -1,6 +1,6 @@
 module Lattice where
 
-import Prelude hiding (absurd, join)
+import Prelude hiding (absurd, join, top)
 import Control.Apply (lift2)
 import Data.Array (zipWith) as A
 import Data.Foldable (length, foldM)
@@ -19,8 +19,6 @@ class JoinSemilattice a where
    join :: a -> a -> a
    -- soft failure for joining incompatible eliminators, used to desugar function clauses
    maybeJoin :: forall m. Monad m => a -> a -> MayFailT m a
-   -- TODO: extract new typeclass for neg
-   neg :: Endo a
 
 class MeetSemilattice a where
    meet :: a -> a -> a
@@ -31,10 +29,22 @@ class JoinSemilattice a <= BoundedJoinSemilattice a where
 class MeetSemilattice a <= BoundedMeetSemilattice a where
    top :: a
 
+class (BoundedJoinSemilattice a, BoundedMeetSemilattice a) <= BoundedLattice a
+
+class Neg a where
+   neg :: Endo a
+
+class (BoundedLattice a, Neg a) <= BooleanLattice a
+
+class BotOf t u | t -> u where
+   botOf :: t -> u
+
+class TopOf t u | t -> u where
+   topOf :: t -> u
+
 instance JoinSemilattice Boolean where
    join = (||)
    maybeJoin x y = pure (join x y)
-   neg = not
 
 instance MeetSemilattice Boolean where
    meet = (&&)
@@ -45,10 +55,14 @@ instance BoundedJoinSemilattice Boolean where
 instance BoundedMeetSemilattice Boolean where
    top = true
 
+instance BooleanLattice Boolean
+
+instance Neg Boolean where
+   neg = not
+
 instance JoinSemilattice Unit where
    join _ = identity
    maybeJoin x y = pure (join x y)
-   neg = identity
 
 instance MeetSemilattice Unit where
    meet _ = identity
@@ -59,26 +73,18 @@ instance BoundedJoinSemilattice Unit where
 instance BoundedMeetSemilattice Unit where
    top = unit
 
-class (BoundedJoinSemilattice a, BoundedMeetSemilattice a) <= BoundedLattice a
-
-instance BoundedLattice Boolean
-instance BoundedLattice Unit
+instance Neg Unit where
+   neg = identity
 
 definedJoin :: forall a. JoinSemilattice a => a -> a -> a
 definedJoin x y = successfulWith "Join undefined" (maybeJoin x y)
-
-class BotOf t u | t -> u where
-   botOf :: t -> u
-
-class TopOf t u | t -> u where
-   topOf :: t -> u
 
 instance (Functor t, BoundedJoinSemilattice a) => BotOf (Unit × Raw t) (a × t a) where
    botOf = const bot *** botOf
 else instance (Functor t, BoundedJoinSemilattice a') => BotOf (t a) (t a') where
    botOf = (<$>) (const bot)
 
-instance (Functor t, BoundedJoinSemilattice a') => TopOf (t a) (t a') where
+instance (Functor t, BooleanLattice a') => TopOf (t a) (t a') where
    topOf = (<$>) (const bot >>> neg)
 
 -- Specialises botOf and topOf but omits the lattice constraint.
@@ -95,23 +101,31 @@ type Raw (c :: Type -> Type) = c Unit
 instance (JoinSemilattice a, JoinSemilattice b) => JoinSemilattice (a × b) where
    join ab = definedJoin ab
    maybeJoin (a × a') (b × b') = maybeJoin a b `lift2 (×)` maybeJoin a' b'
-   neg = (<$>) neg
+
+instance (MeetSemilattice a, MeetSemilattice b) => MeetSemilattice (a × b) where
+   meet (a × a') (b × b') = meet a b × meet a' b'
+
+instance (BoundedJoinSemilattice a, BoundedJoinSemilattice b) => BoundedJoinSemilattice (a × b) where
+   bot = bot × bot
+
+instance (BoundedMeetSemilattice a, BoundedMeetSemilattice b) => BoundedMeetSemilattice (a × b) where
+   top = top × top
 
 instance JoinSemilattice a => JoinSemilattice (Pair a) where
    join ab = definedJoin ab
-   maybeJoin (Pair a1 a1') (Pair a2 a2') = Pair <$> maybeJoin a1 a2 <*> maybeJoin a1' a2'
-   neg = (<$>) neg
+   maybeJoin (Pair a a') (Pair b b') = Pair <$> maybeJoin a b <*> maybeJoin a' b'
 
 instance JoinSemilattice a => JoinSemilattice (List a) where
    join xs = definedJoin xs
    maybeJoin xs ys
       | (length xs :: Int) == length ys = sequence (zipWith maybeJoin xs ys)
       | otherwise = report "Mismatched list lengths"
-   neg = (<$>) neg
 
 instance JoinSemilattice a => JoinSemilattice (Dict a) where
    join = unionWith (∨) -- faster than definedJoin
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
+
+instance Neg a => Neg (Dict a) where
    neg = (<$>) neg
 
 mayFailUpdate :: forall a m. Monad m => JoinSemilattice a => Dict a -> Var × a -> MayFailT m (Dict a)
@@ -125,7 +139,8 @@ instance JoinSemilattice a => JoinSemilattice (Array a) where
    maybeJoin xs ys
       | length xs == (length ys :: Int) = sequence (A.zipWith maybeJoin xs ys)
       | otherwise = report "Mismatched array lengths"
-   neg = (<$>) neg
+
+instance (BoundedJoinSemilattice a, BoundedMeetSemilattice a) => BoundedLattice a
 
 -- To express as Expandable (t :: Type -> Type) requires functor composition..
 class Expandable t u | t -> u where

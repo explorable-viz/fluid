@@ -20,10 +20,10 @@ import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
 import Graph.GraphWriter (WithGraphAllocT)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin, neg)
+import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
 import Set (class Set)
-import Util.Pretty (Doc, beside, text)
 import Util (Endo, MayFailT, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
+import Util.Pretty (Doc, beside, text)
 
 data Val a
    = Int a Int
@@ -35,16 +35,6 @@ data Val a
    | Matrix a (MatrixRep a)
    | Fun a (Fun a)
 
-addr :: Val Vertex -> Vertex
-addr (Int α _) = α
-addr (Float α _) = α
-addr (Str α _) = α
-addr (Constr α _ _) = α
-addr (Record α _) = α
-addr (Dictionary α _) = α
-addr (Matrix α _) = α
-addr (Fun α _) = α
-
 data Fun a
    = Closure (Env a) (RecDefs a) (Elim a)
    | Foreign ForeignOp (List (Val a)) -- never saturated
@@ -54,6 +44,11 @@ class (Highlightable a, BoundedLattice a) <= Ann a
 
 instance Ann Boolean
 instance Ann Unit
+
+instance Highlightable a => Highlightable (a × b) where
+   highlightIf (a × _) doc = highlightIf a doc
+
+instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 -- similar to an isomorphism lens with complement t
 type OpFwd t = forall a m. Ann a => Monad m => List (Val a) -> MayFailT m (t × Val a)
@@ -196,7 +191,6 @@ instance Traversable MatrixRep where
 instance JoinSemilattice a => JoinSemilattice (DictRep a) where
    maybeJoin (DictRep svs) (DictRep svs') = DictRep <$> maybeJoin svs svs'
    join v = definedJoin v
-   neg = (<$>) neg
 
 instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
    maybeJoin (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × βi') × (j' × βj'))) =
@@ -205,7 +199,6 @@ instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
               `lift2 (×)` (((_ × (βi ∨ βi')) <$> (i ≞ i')) `lift2 (×)` ((_ × (βj ∨ βj')) <$> (j ≞ j')))
          )
    join v = definedJoin v
-   neg = (<$>) neg
 
 instance JoinSemilattice a => JoinSemilattice (Val a) where
    maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
@@ -219,7 +212,6 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
    maybeJoin _ _ = report "Incompatible values"
 
    join v = definedJoin v
-   neg = (<$>) neg
 
 instance JoinSemilattice a => JoinSemilattice (Fun a) where
    maybeJoin (Closure γ ρ σ) (Closure γ' ρ' σ') =
@@ -231,7 +223,6 @@ instance JoinSemilattice a => JoinSemilattice (Fun a) where
    maybeJoin _ _ = report "Incompatible functions"
 
    join v = definedJoin v
-   neg = (<$>) neg
 
 instance BoundedJoinSemilattice a => Expandable (DictRep a) (Raw DictRep) where
    expand (DictRep svs) (DictRep svs') = DictRep (expand svs svs')
@@ -257,3 +248,6 @@ instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
    expand (Foreign φ vs) (Foreign _ vs') = Foreign φ (expand vs vs') -- TODO: require φ == φ'
    expand (PartialConstr c vs) (PartialConstr c' us) = PartialConstr (c ≜ c') (expand vs us)
    expand _ _ = error "Incompatible values"
+
+instance Neg a => Neg (Val a) where
+   neg = (<$>) neg

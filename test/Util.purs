@@ -46,13 +46,13 @@ import Graph (sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
-import Lattice (bot, botOf, erase)
+import Lattice (Raw, bot, botOf, erase)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Set (subset)
-import Test.Spec (SpecT, before, beforeAll, beforeWith, it) -- class Example,evaluateExample,
+import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, (×), error, successful)
@@ -96,19 +96,17 @@ run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
--- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
-testWithSetup ∷ Boolean → SE.Expr Unit → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
-testWithSetup is_bench s gconfig tconfig = do
-   e <- runExceptT
-      ( do
-           unless is_bench (testParse s)
-           trRow <- testTrace is_bench s gconfig tconfig
-           grRow <- testGraph is_bench s gconfig tconfig
-           pure (BenchRow trRow grRow)
-      )
-   case e of
-      Left msg -> error msg
-      Right x -> log (show x) >>= \_ -> pure x
+testWithSetup ∷ Boolean → Raw SE.Expr → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
+testWithSetup is_bench s gconfig tconfig =
+   runExceptT
+      do
+         unless is_bench (testParse s)
+         BenchRow
+            <$> testTrace is_bench s gconfig tconfig
+            <*> testGraph is_bench s gconfig tconfig
+      >>= case _ of
+         Left msg -> error msg
+         Right x -> log (show x) >>= const (pure x)
 
 testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do
@@ -121,9 +119,9 @@ testParse s = do
             log ("NEW\n" <> show (erase s'))
             lift $ fail "not equal"
 
-testTrace :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
+testTrace :: Boolean -> Raw SE.Expr -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
-   let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γα)
+   let s𝔹 × γ𝔹 = botOf s × (botOf <$> γα)
    -- | Eval
    e𝔹 <- desug s𝔹
    (t × v𝔹) × tEval <- bench $ eval γ𝔹 e𝔹 bot
@@ -148,7 +146,7 @@ testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
          checkPretty "Trace-based value" fwd_expect v𝔹''
    pure { tEval, tBwd, tFwd }
 
-testGraph :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff GraphRow
+testGraph :: Boolean -> Raw SE.Expr -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff GraphRow
 testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
@@ -204,7 +202,7 @@ type TestSpec =
 type TestBwdSpec =
    { file :: String
    , file_expect :: String
-   , δv :: Selector Val
+   , δv :: Selector Val -- relative to bot
    , fwd_expect :: String
    }
 
@@ -215,7 +213,7 @@ type TestWithDatasetSpec =
 
 type TestLinkSpec =
    { spec :: LinkFigSpec
-   , δv1 :: Selector Val
+   , δv1 :: Selector Val -- relative to bot
    , v2_expect :: String
    }
 
@@ -246,7 +244,7 @@ testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDatase
    where
    testWithDataset :: TestWithDatasetSpec -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
    testWithDataset { dataset, file } =
-      withDataset (File dataset) $ beforeWith ((_ <$> open (File file)) <<< (×)) do
+      withDataset (File dataset) $ beforeWith ((_ <$> open (File file)) <<< (×)) $
          it (show file)
             \(gconfig × s) ->
                void $ testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
