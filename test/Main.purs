@@ -2,7 +2,7 @@ module Test.Main where
 
 import Prelude hiding (add)
 
-import App.Util.Select (constr, constrArg, field, matrixElement, listElement, listCell)
+import App.Util.Select (constr, constrArg, dict, field, listCell, listElement, matrixElement)
 import Bindings ((↦))
 import Data.Traversable (traverse_)
 import DataType (cBarChart, cPair, cSome, f_data, f_y)
@@ -28,15 +28,15 @@ tests is_bench =
    ]
 
 {-
-tests = [ test_scratchpad ]
+tests is_bench = [ test_scratchpad is_bench ]
 -}
 
 test_scratchpad :: Boolean -> Test Unit
 test_scratchpad = testBwdMany
-   [ { file: "filter"
-     , file_expect: "filter.expect"
-     , δv: listCell 0 neg
-     , fwd_expect: "(_8_ _:_ (7 : []))"
+   [ { file: "lookup"
+     , file_expect: "lookup.expect"
+     , δv: constr cSome neg
+     , fwd_expect: "_Some_ \"Germany\""
      }
    ]
 
@@ -138,9 +138,7 @@ test_bwd = testBwdMany
      }
    , { file: "dict/difference"
      , file_expect: "dict/difference.expect"
-     , δv: const $ Dictionary true $ DictRep $ D.fromFoldable
-          [ "a" ↦ (false × Int false 5)
-          ]
+     , δv: dict neg
      , fwd_expect: "_{|\"a\":= 5|}_"
      }
    , { file: "dict/disjointUnion"

@@ -36,14 +36,13 @@ constrArg c n δv = unsafePartial $ case _ of
       in
          Constr α c us'
 
--- Specific summands of Val's functor instance for more robust selection.
 constr :: Ctr -> Endo 𝔹 -> Selector Val
 constr c' δα = unsafePartial $ case _ of
-   v@(Constr _ c _) | c == c' -> v <#> δα
+   Constr α c vs | c == c' -> Constr (δα α) c vs
 
 dict :: Endo 𝔹 -> Selector Val
 dict δα = unsafePartial $ case _ of
-   v@(Dictionary _ _) -> v <#> δα
+   Dictionary α d -> Dictionary (δα α) d
 
 listCell :: Int -> Endo 𝔹 -> Selector Val
 listCell n δα = unsafePartial $ case _ of
