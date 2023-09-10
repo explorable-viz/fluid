@@ -22,16 +22,6 @@ listElement n δv = unsafePartial $ case _ of
    Constr α c (v : v' : Nil) | n == 0 && c == cCons -> Constr α c (δv v : v' : Nil)
    Constr α c (v : v' : Nil) | c == cCons -> Constr α c (v : listElement (n - 1) δv v' : Nil)
 
-listCell :: Int -> Endo 𝔹 -> Selector Val
-listCell n δα = unsafePartial $ case _ of
-   Constr α c Nil | n == 0 && c == cNil -> Constr (δα α) c Nil
-   Constr α c (v : v' : Nil) | n == 0 && c == cCons -> Constr (δα α) c (v : v' : Nil)
-   Constr α c (v : v' : Nil) | c == cCons -> Constr α c (v : listCell (n - 1) δα v' : Nil)
-
-constr :: Ctr -> Selector Val
-constr c' = unsafePartial $ case _ of
-   Constr _ c vs | c == c' -> Constr true c vs
-
 field :: Var -> Endo (Selector Val)
 field f δv = unsafePartial $ case _ of
    Record α r -> Record α $ update (δv >>> Just) f r
@@ -45,3 +35,18 @@ constrArg c n δv = unsafePartial $ case _ of
             updateAt n (δv u1) us
       in
          Constr α c us'
+
+-- Specific summands of Val's functor instance for more robust selection.
+constr :: Ctr -> Endo 𝔹 -> Selector Val
+constr c' δα = unsafePartial $ case _ of
+   v@(Constr _ c _) | c == c' -> v <#> δα
+
+dict :: Endo 𝔹 -> Selector Val
+dict δα = unsafePartial $ case _ of
+   v@(Dictionary _ _) -> v <#> δα
+
+listCell :: Int -> Endo 𝔹 -> Selector Val
+listCell n δα = unsafePartial $ case _ of
+   Constr α c Nil | n == 0 && c == cNil -> Constr (δα α) c Nil
+   Constr α c (v : v' : Nil) | n == 0 && c == cCons -> Constr (δα α) c (v : v' : Nil)
+   Constr α c (v : v' : Nil) | c == cCons -> Constr α c (v : listCell (n - 1) δα v' : Nil)

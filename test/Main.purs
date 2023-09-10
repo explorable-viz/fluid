@@ -206,7 +206,7 @@ test_bwd = testBwdMany
      }
    , { file: "lookup"
      , file_expect: "lookup.expect"
-     , δv: constr cSome
+     , δv: constr cSome neg
      , fwd_expect: "_Some_ \"Germany\""
      }
    , { file: "map"
