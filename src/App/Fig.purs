@@ -150,7 +150,6 @@ drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s = do
    let contentsLength = getContentsLength ed
    tr <- update ed.state [ { changes: { from: 0, to: contentsLength, insert: s } } ]
-   -- tr <- update ed.state [ { changes: { from: 0, to: 0, insert: s } } ]
    dispatch ed tr
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
