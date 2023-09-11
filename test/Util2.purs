@@ -15,10 +15,10 @@ import Data.List (elem)
 import Data.Set (Set) as S
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
--- import Debug (trace)
+import Debug (trace)
 import Desugarable (desug, desugBwd)
 import Effect.Aff (Aff)
--- import Effect.Console (log)
+import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
@@ -28,14 +28,14 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
 import Lattice (erase, botOf, bot)
--- import Module (parse)
--- import Parse (program)
+import Module (parse)
+import Parse (program)
 import Pretty (class Pretty, prettyP)
 import Set (subset)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
 import Util (MayFailT, (×), successful, error)
-import Val (Val(..))
+import Val (Val(..), class Ann)
 
 ------------------------
 -- Types
@@ -53,7 +53,7 @@ testWithSetup ∷ Boolean → SE.Expr Unit → GraphConfig (GraphImpl S.Set) →
 testWithSetup is_bench s gconfig tconfig = do
    e <- runExceptT
       ( do
-           --unless is_bench (testParse s)
+           unless is_bench (testParse s)
            trRow <- testTrace is_bench s gconfig tconfig
            grRow <- testGraph is_bench s gconfig tconfig
            pure (BenchRow trRow grRow)
@@ -62,17 +62,16 @@ testWithSetup is_bench s gconfig tconfig = do
       Left msg -> error msg
       Right x -> pure x
 
--- testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
--- testParse s = do
---    let src = prettyP s
---    s' <- parse src program
---    trace ("Non-Annotated:\n" <> src)
---       ( \_ ->
---            unless (eq (erase s) (erase s')) do
---               log ("SRC\n" <> show (erase s))
---               log ("NEW\n" <> show (erase s'))
---               lift $ fail "not equal"
---       )
+testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
+testParse s = do
+   let src = prettyP s
+   s' <- parse src program
+   trace ("Non-Annotated:\n" <> src)
+      \_ -> unless (eq (erase s) (erase s')) do
+         --   unless (eq (erase s) (erase s')) do
+         log ("SRC\n" <> show (erase s))
+         log ("NEW\n" <> show (erase s'))
+         lift $ fail "not equal"
 
 testTrace :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
