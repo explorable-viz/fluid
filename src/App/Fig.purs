@@ -36,13 +36,8 @@ import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
-import Util.Triple (Triple(..))
 import Val (Env, Val(..), (<+>), append_inv)
 import Web.Event.EventTarget (eventListener)
-
-
-
---import Web.HTML.Event.EventTypes (offline)
 
 data View
    = MatrixFig MatrixView
@@ -80,7 +75,7 @@ splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail SplitDefs
 splitDefs γ0 s' = do
    let defs × _s = unsafePartial $ unpack s'
    γ <- desugarModuleFwd (S.Module (singleton defs)) >>= flip (eval_module γ0) bot
-   pure { γ, s:s' }
+   pure { γ, s: s' }
    where
    unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
    unpack (S.LetRec defs s) = Right defs × s
@@ -131,8 +126,8 @@ type LinkResult =
    , v0' :: Val 𝔹
    }
 
-drawLinkFig :: LinkFig -> Triple EditorView -> Selector Val + Selector Val -> Effect Unit
-drawLinkFig fig@{ spec: { x, divId}, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataconts } (Triple ed1 ed2 ed3) δv = do
+drawLinkFig :: LinkFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
+drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataconts } ed1 ed2 ed3 δv = do
    log $ "Redrawing " <> divId
    let
       v1' × v2' × δv1 × δv2 × v0 = successful case δv of
@@ -144,30 +139,28 @@ drawLinkFig fig@{ spec: { x, divId}, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, da
             let v2' = δv2 v2
             { v', v0' } <- linkResult x γ0 γ e2 e1 t2 t1 v2'
             pure $ v' × v2' × identity × const v2' × v0'
-   drawView divId (\selector -> drawLinkFig fig (Triple ed1 ed2 ed3) (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkFig fig (Triple ed1 ed2 ed3) (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
+   drawView divId (\selector -> drawLinkFig fig ed1 ed2 ed3 (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
+   drawView divId (\selector -> drawLinkFig fig ed1 ed2 ed3 (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
    drawCode ed1 $ prettyP s1
-   drawCode ed2  $ prettyP s2
+   drawCode ed2 $ prettyP s2
    drawCode ed3 $ prettyP dataconts
-
 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s = do
-   let contentsLength = getContentsLength ed 
-   tr <- update ed.state [ {changes: { from: 0, to:contentsLength, insert: s}}]
+   let contentsLength = getContentsLength ed
+   tr <- update ed.state [ { changes: { from: 0, to: contentsLength, insert: s } } ]
    -- tr <- update ed.state [ { changes: { from: 0, to: 0, insert: s } } ]
    dispatch ed tr
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
-drawFig fig@{ spec: { divId }, s:s} ed δv = do
+drawFig fig@{ spec: { divId }, s: s } ed δv = do
    log $ "Redrawing " <> divId
    let v_view × views = successful $ figViews fig δv
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
    drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
    drawCode ed $ prettyP s
-
 
 varView :: Var -> Env 𝔹 -> MayFail View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
@@ -228,5 +221,5 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       t1 × v1 <- eval (γ0 <+> xv0) e1 bot
       t2 × v2 <- eval (γ0 <+> xv0) e2 bot
       v0 <- lookup x xv0 # orElse absurd
-      pure { spec, γ0, γ: xv0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataconts: conts}
+      pure { spec, γ0, γ: xv0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataconts: conts }
 
