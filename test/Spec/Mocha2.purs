@@ -32,13 +32,13 @@ foreign import describe
    -> Effect Unit
 
 registerGroup
-   :: Aff Unit -> Effect Unit
+   :: forall a. Aff a -> Effect Unit
 registerGroup example = itAsync true "It works!" cb
    where
    cb :: Effect Unit -> (Error -> Effect Unit) -> Effect Unit
    cb onSuccess onError =
       runAff_ (either onError (const onSuccess)) example
 
-runMocha :: Array (Aff Unit) -> Effect Unit
+runMocha :: forall a. Array (Aff a) -> Effect Unit
 runMocha = traverse_ registerGroup
 

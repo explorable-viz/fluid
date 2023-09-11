@@ -94,7 +94,7 @@ testParse s = do
            unless (eq (erase s) (erase s')) do
               log ("SRC\n" <> show (erase s))
               log ("NEW\n" <> show (erase s'))
-              lift $ fail "not equal"
+              (lift $ fail "not equal") :: MayFailT Aff Unit
       )
 
 testTrace :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
