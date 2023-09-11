@@ -131,15 +131,6 @@ type LinkResult =
    , v0' :: Val 𝔹
    }
 
-
-
---drawFile :: Folder -> File -> EditorView -> Effect Unit 
---drawFile fol file ed = do
-  --s <- parseProgEff fol file
-  --drawCode ed ((prettyP s))
-  --drawCode ed $ prettyP sPure
-  --pure (drawCode ed $ prettyP s) 
-
 drawLinkFig :: LinkFig -> Triple EditorView -> Selector Val + Selector Val -> Effect Unit
 drawLinkFig fig@{ spec: { x, divId}, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataconts } (Triple ed1 ed2 ed3) δv = do
    log $ "Redrawing " <> divId
@@ -167,15 +158,6 @@ drawCode ed s = do
    tr <- update ed.state [ {changes: { from: 0, to:contentsLength, insert: s}}]
    -- tr <- update ed.state [ { changes: { from: 0, to: 0, insert: s } } ]
    dispatch ed tr
-
-
--- drawFig :: Fig -> Selector Val -> Effect Unit
--- drawFig fig@{ spec: { divId } } δv = do
---    log $ "Redrawing " <> divId
---    let v_view × views = successful $ figViews fig δv
---    sequence_ $
---       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
---    drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s:s} ed δv = do
@@ -248,4 +230,3 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       v0 <- lookup x xv0 # orElse absurd
       pure { spec, γ0, γ: xv0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataconts: conts}
 
--- drawFiles (Folder "fluid/example/linking") (File "renewables")

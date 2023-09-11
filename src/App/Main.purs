@@ -11,7 +11,7 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile)
-import Util ((×), type (×))
+import Util ((×), type (×), error)
 import Util.Triple (Triple(..))
 
 linkingFig1 :: LinkFigSpec 
@@ -37,26 +37,12 @@ fig2 =
    , xs: [ "image", "filter" ]
    }
 
--- drawLinkFigs :: Array (Aff LinkFig) -> Effect Unit
--- drawLinkFigs loadFigs =
---    flip runAff_ (sequence loadFigs)
---       case _ of
---          Left err -> log $ show err
---          Right figs -> do
---             ed1 <- addEditorView "codemirror-barchart"
---             ed2 <- addEditorView "codemirror-linechart"
---             ed3 <- addEditorView "empty"
---             sequence_ $ (\fig -> drawLinkFig fig ((ed1 × ed2)× ed3) (Left $ botOf)) <$> figs 
--- (\fig -> do 
-                                   -- let editorviews = getEditorViews fig
-                                    --drawLinkFig fig editorviews (Left $ botOf) <$> figs)
-
 drawLinkFigs :: Array (Aff LinkFig)  -> Effect Unit
 drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
-         Left err -> log $ show err
-         Right figs -> do
+         Left err -> error $ show err 
+         Right figs -> 
             sequence_ $ (\fig -> do
                         Triple e1 e2 e3 <- getEditorViews fig
                         drawLinkFig fig (Triple e1 e2 e3) (Left $ botOf)
@@ -65,19 +51,12 @@ drawLinkFigs loadFigs =
 getEditorViews :: LinkFig -> Effect (Triple EditorView)
 getEditorViews {spec:{file1:File file1, file2:File file2, dataFile:File dataset}} = sequence $ addEditorView <$> (Triple ("codemirror-" <> file1)  ("codemirror-" <> file2)   ("codemirror-" <> dataset))
 
--- drawFigs :: Array (Aff Fig) -> Effect Unit
--- drawFigs loadFigs =
---    flip runAff_ (sequence loadFigs)
---       case _ of
---          Left err -> log $ show err
---          Right figs -> sequence_ $ flip drawFig botOf <$> figs
-
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
-         Left err -> log $ show err
-         Right figs -> do
+         Left err -> log $ show err  
+         Right figs -> 
            sequence_ $ (\fig -> drawFigHelper fig) <$> figs
 
 drawFigHelper :: Fig -> Effect Unit
@@ -100,11 +79,9 @@ drawFile (fol × fil@(File name)) =
               ed <- addEditorView ("codemirror-" <> name)
               drawCode ed fileconts  
 
-
-
 main :: Effect Unit
 main = do
-   drawFiles [(Folder "fluid/lib") × (File "convolution")]
+   drawFiles [Folder "fluid/lib" × File "convolution"]
    drawFigs [ loadFig fig1, loadFig fig2 ]
    drawLinkFigs [ loadLinkFig linkingFig1 ]
    
