@@ -128,7 +128,7 @@ nav ul li a.active-page {
    text-shadow: 0 0 2px #FFF, 0 0 5px #A0A0FF, 0 0 7px #8080A0
 }
 
-.cm-line {
+.CodeMirror {
    font-family: 'Fira Code';
    font-size: 8pt;
 }
