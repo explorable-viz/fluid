@@ -1,11 +1,11 @@
 module Test.Benchmark where
 
-import Prelude (Unit, ($))
-import Data.Traversable (traverse_)
+import Prelude hiding (add)
 import Effect (Effect)
-import Test.Util (run)
-import Test.Main2
+import Effect.Class (liftEffect)
+import Effect.Console (log)
+import Test.Util2 (run)
 
 main :: Effect Unit
 main = do
-   traverse_ run $ tests true
+   run (liftEffect (log "it worked!"))

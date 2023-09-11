@@ -4,6 +4,7 @@ module Test.Util2
    , TestWith
    , checkPretty
    , isGraphical
+   , newRun
    , run
    , shouldSatisfy
    , testBwdMany
@@ -26,10 +27,11 @@ import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
+import Data.Foldable (foldMap)
 import Data.List (elem)
 import Data.Set (Set) as S
 import Data.String (null)
-import Data.Traversable (traverse_)
+import Data.Traversable (traverse_, traverse)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
 import Desugarable (desug, desugBwd)
@@ -40,7 +42,7 @@ import Effect.Exception (Error)
 import Eval (eval)
 import EvalBwd (evalBwd)
 import EvalGraph (GraphConfig, evalWithConfig)
-import Graph (sinks, sources, vertices)
+import Graph (sinks, sources, vertices, class Graph)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
@@ -55,12 +57,17 @@ import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
 import Util (MayFailT, type (×), (×), error, successful)
 import Val (Val(..), class Ann, (<+>))
+import Web.HTML.Event.EventTypes (offline)
 
 type Test a = SpecT Aff Unit Effect a
 type TestWith i a = SpecT Aff i Effect a
 
 type TestIn g i a = SpecT g i Effect a
 
+type TestSuite m = Array (SatTest m BenchRow)
+type UnSatTestSuite m a = Array (SingleTest m a BenchRow)
+type SingleTest m a b = a -> m b
+type SatTest m b = m b
 type TestConfig =
    { δv :: Selector Val
    , fwd_expect :: String
@@ -70,8 +77,25 @@ type TestConfig =
 run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
+newRun :: forall m. TestSuite m -> Effect Unit
+newRun = error "todo"
+
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
+
 -- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
+testWithSetup2 :: SingleTest Aff (Boolean × SE.Expr Unit × GraphConfig (GraphImpl S.Set) × TestConfig) BenchRow
+testWithSetup2 (is_bench × s × gconfig × tconfig) = do
+   e <- runExceptT
+      ( do
+           unless is_bench (testParse s)
+           trRow <- testTrace is_bench s gconfig tconfig
+           grRow <- testGraph is_bench s gconfig tconfig
+           pure (BenchRow trRow grRow)
+      )
+   case e of
+      Left msg -> error msg
+      Right x -> pure x
+
 testWithSetup ∷ Boolean → SE.Expr Unit → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
 testWithSetup is_bench s gconfig tconfig = do
    e <- runExceptT
@@ -84,6 +108,49 @@ testWithSetup is_bench s gconfig tconfig = do
    case e of
       Left msg -> error msg
       Right x -> pure x
+
+withDefaultImports2 ∷ forall a. UnSatTestSuite Aff (GraphConfig (GraphImpl S.Set)) -> TestSuite Aff
+withDefaultImports2 x = map beforeSingleTest x
+
+beforeSingleTest :: forall g s a b. Graph g s => SingleTest Aff (GraphConfig g) b -> SatTest Aff b
+beforeSingleTest f = do
+   imported <- openDefaultImports
+   f imported
+
+preLoadFile :: String -> GraphConfig (GraphImpl S.Set) -> Aff (GraphConfig (GraphImpl S.Set) × SE.Expr Unit)
+preLoadFile file = ((_ <$> open (File file)) <<< (×))
+
+-- myTrav :: Array TestSpec -> (TestSpec -> SatTest Aff BenchRow) -> TestSuite Aff
+-- myTrav fxs test = traverse test fxs
+testMany2 :: Array TestSpec → Boolean -> TestSuite Aff
+testMany2 fxs is_bench = withDefaultImports2 $ error "todo"
+   where
+   test :: TestSpec -> SatTest Aff BenchRow
+   test { file, fwd_expect } =
+      -- (((_ <$> open (folder <> File file)) <<< (×)) :: GraphConfig -> Aff (GraphConfig × Expr) ) 
+      error "todo"
+      -- it (show file)
+      --    ( \(gconfig × s) -> do
+      --         void $ internal (gconfig × s)
+      --         pure unit
+      --    ) -- a -> g unit 
+      where
+      internal :: (GraphConfig (GraphImpl S.Set) × SE.Expr Unit) -> Aff Unit
+      internal (gconfig × s) = do
+         outs <- (testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+         logShow outs
+
+newIt :: forall m a b. Monad m => String -> SingleTest m a b -> Aff BenchRow
+newIt = error "todo"
+
+-- runSingleTest :: TestSpec -> Aff BenchRow
+-- runSingleTest {file, fwd_expect} = do
+--    gconfig × expr <- preLoadFile file
+
+--    newIt (show file)
+--          (
+--             \
+--          )
 
 testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do

@@ -6,12 +6,9 @@ module Test.Spec.Mocha2
 import Prelude
 
 import Data.Either (either)
-import Data.Foldable (traverse_)
-import Data.Maybe (Maybe(..))
+import Data.Traversable (traverse_)
 import Effect (Effect)
 import Effect.Aff (Aff, Error, runAff_)
-import Test.Spec (SpecT, collect)
-import Test.Spec.Tree (Item(..), Tree(..))
 
 foreign import data MOCHA :: Type
 
@@ -35,24 +32,13 @@ foreign import describe
    -> Effect Unit
 
 registerGroup
-   :: ∀ m
-    . Tree m (Item Aff Unit)
-   -> Effect Unit
-registerGroup tree =
-   case tree of
-      Leaf name (Just (Item { isFocused, example })) ->
-         itAsync isFocused name cb
-         where
-         cb onSuccess onError =
-            runAff_ (either onError (const onSuccess)) (example (\a -> a unit))
-      Leaf name Nothing ->
-         itPending name
-      Node _ t ->
-         traverse_ registerGroup t
+   :: Aff Unit -> Effect Unit
+registerGroup example = itAsync true "It works!" cb
+   where
+   cb :: Effect Unit -> (Error -> Effect Unit) -> Effect Unit
+   cb onSuccess onError =
+      runAff_ (either onError (const onSuccess)) example
 
-runMocha
-   :: ∀ a
-    . SpecT Aff Unit Effect a
-   -> Effect Unit
-runMocha spec =
-   traverse_ registerGroup =<< (collect spec)
+runMocha :: Array (Aff Unit) -> Effect Unit
+runMocha = traverse_ registerGroup
+

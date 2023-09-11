@@ -10,7 +10,7 @@ if (typeof describe !== 'function' || typeof it !== 'function') {
     only :: Boolean
     name :: String
     run  :: (Effect Unit -> (Error -> Effect Unit) -> Effect Unit)
-    done :: Error -> Effect Unit
+    done 
 
 */
 export function itAsync(only) {
