@@ -2,8 +2,8 @@ module App.Main where
 
 import Prelude hiding (absurd)
 
-import App.CodeMirror (addEditorView)
-import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawCode, drawFig, drawFigTemp, drawLinkFig, loadFig, loadLinkFig)
+import App.CodeMirror (EditorView, addEditorView)
+import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawCode, drawFigTemp, drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
@@ -12,9 +12,9 @@ import Effect.Console (log)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile)
 import Util ((×), type (×))
-import Util.Pair (Pair(..))
+import Util.Triple (Triple(..))
 
-linkingFig1 :: LinkFigSpec
+linkingFig1 :: LinkFigSpec 
 linkingFig1 =
    { divId: "fig-1"
    , file1: File "bar-chart"
@@ -37,22 +37,40 @@ fig2 =
    , xs: [ "image", "filter" ]
    }
 
-drawLinkFigs :: Array (Aff LinkFig) -> Effect Unit
+-- drawLinkFigs :: Array (Aff LinkFig) -> Effect Unit
+-- drawLinkFigs loadFigs =
+--    flip runAff_ (sequence loadFigs)
+--       case _ of
+--          Left err -> log $ show err
+--          Right figs -> do
+--             ed1 <- addEditorView "codemirror-barchart"
+--             ed2 <- addEditorView "codemirror-linechart"
+--             ed3 <- addEditorView "empty"
+--             sequence_ $ (\fig -> drawLinkFig fig ((ed1 × ed2)× ed3) (Left $ botOf)) <$> figs 
+-- (\fig -> do 
+                                   -- let editorviews = getEditorViews fig
+                                    --drawLinkFig fig editorviews (Left $ botOf) <$> figs)
+
+drawLinkFigs :: Array (Aff LinkFig)  -> Effect Unit
 drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
          Left err -> log $ show err
          Right figs -> do
-            ed1 <- addEditorView "codemirror-barchart"
-            ed2 <- addEditorView "codemirror-linechart"
-            sequence_ $ (\fig -> drawLinkFig fig (Pair ed1 ed2) (Left $ botOf)) <$> figs
+            sequence_ $ (\fig -> do
+                        Triple e1 e2 e3 <- getEditorViews fig
+                        drawLinkFig fig (Triple e1 e2 e3) (Left $ botOf)
+                        ) <$> figs 
 
-drawFigs :: Array (Aff Fig) -> Effect Unit
-drawFigs loadFigs =
-   flip runAff_ (sequence loadFigs)
-      case _ of
-         Left err -> log $ show err
-         Right figs -> sequence_ $ flip drawFig botOf <$> figs
+getEditorViews :: LinkFig -> Effect (Triple EditorView)
+getEditorViews {spec:{file1:File file1, file2:File file2, dataFile:File dataset}} = sequence $ addEditorView <$> (Triple ("codemirror-" <> file1)  ("codemirror-" <> file2)   ("codemirror-" <> dataset))
+
+-- drawFigs :: Array (Aff Fig) -> Effect Unit
+-- drawFigs loadFigs =
+--    flip runAff_ (sequence loadFigs)
+--       case _ of
+--          Left err -> log $ show err
+--          Right figs -> sequence_ $ flip drawFig botOf <$> figs
 
 drawFigsTemp :: Array (Aff Fig) -> Effect Unit
 drawFigsTemp loadFigs =
@@ -60,7 +78,6 @@ drawFigsTemp loadFigs =
       case _ of
          Left err -> log $ show err
          Right figs -> do
-           -- ed <- addEditorView "codemirror-data"
            sequence_ $ (\fig -> drawFigsTemp2 fig) <$> figs
 
 drawFigsTemp2 :: Fig -> Effect Unit
@@ -68,20 +85,6 @@ drawFigsTemp2 fig =
             do
             ed <- addEditorView ("codemirror-" <> fig.spec.divId)
             drawFigTemp fig ed botOf
-
- 
-
---drawFiles :: Folder -> File -> Effect Unit 
---drawFiles fol fil = 
-  -- let conts = loadFile fol fil in 
-    --  do
-      --   flip runAff_ conts 
-        --    case _ of 
-          --     Left err -> log $ show err 
-            --   Right fileconts -> do
-              --    ed <- addEditorView "temp"
-                --  drawCode ed $ prettyP fileconts
-
 
 drawFiles :: Array (Folder × File) -> Effect Unit 
 drawFiles arr = sequence_ $ drawFile <$> arr 
@@ -102,7 +105,7 @@ drawFile (fol × fil@(File name)) =
 main :: Effect Unit
 main = do
    -- drawFiles (Folder "fluid/example/linking") (File "renewables")
-   drawFiles [(Folder "fluid/lib") × (File "convolution") , (Folder "fluid/example/linking") × (File "renewables")]
+   drawFiles [(Folder "fluid/lib") × (File "convolution")]
    drawFigsTemp [ loadFig fig1, loadFig fig2 ]
    drawLinkFigs [ loadLinkFig linkingFig1 ]
    
