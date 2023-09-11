@@ -3,7 +3,7 @@ module App.Main where
 import Prelude hiding (absurd)
 
 import App.CodeMirror (EditorView, addEditorView)
-import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawCode, drawFigTemp, drawLinkFig, loadFig, loadLinkFig)
+import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawCode, drawFig, drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
@@ -72,19 +72,19 @@ getEditorViews {spec:{file1:File file1, file2:File file2, dataFile:File dataset}
 --          Left err -> log $ show err
 --          Right figs -> sequence_ $ flip drawFig botOf <$> figs
 
-drawFigsTemp :: Array (Aff Fig) -> Effect Unit
-drawFigsTemp loadFigs =
+drawFigs :: Array (Aff Fig) -> Effect Unit
+drawFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
          Left err -> log $ show err
          Right figs -> do
-           sequence_ $ (\fig -> drawFigsTemp2 fig) <$> figs
+           sequence_ $ (\fig -> drawFigHelper fig) <$> figs
 
-drawFigsTemp2 :: Fig -> Effect Unit
-drawFigsTemp2 fig =
+drawFigHelper :: Fig -> Effect Unit
+drawFigHelper fig =
             do
             ed <- addEditorView ("codemirror-" <> fig.spec.divId)
-            drawFigTemp fig ed botOf
+            drawFig fig ed botOf
 
 drawFiles :: Array (Folder × File) -> Effect Unit 
 drawFiles arr = sequence_ $ drawFile <$> arr 
@@ -104,8 +104,7 @@ drawFile (fol × fil@(File name)) =
 
 main :: Effect Unit
 main = do
-   -- drawFiles (Folder "fluid/example/linking") (File "renewables")
    drawFiles [(Folder "fluid/lib") × (File "convolution")]
-   drawFigsTemp [ loadFig fig1, loadFig fig2 ]
+   drawFigs [ loadFig fig1, loadFig fig2 ]
    drawLinkFigs [ loadLinkFig linkingFig1 ]
    

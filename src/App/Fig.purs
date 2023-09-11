@@ -169,21 +169,21 @@ drawCode ed s = do
    dispatch ed tr
 
 
-drawFig :: Fig -> Selector Val -> Effect Unit
-drawFig fig@{ spec: { divId } } δv = do
-   log $ "Redrawing " <> divId
-   let v_view × views = successful $ figViews fig δv
-   sequence_ $
-      uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
+-- drawFig :: Fig -> Selector Val -> Effect Unit
+-- drawFig fig@{ spec: { divId } } δv = do
+--    log $ "Redrawing " <> divId
+--    let v_view × views = successful $ figViews fig δv
+--    sequence_ $
+--       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
+--    drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
 
-drawFigTemp :: Fig -> EditorView -> Selector Val -> Effect Unit
-drawFigTemp fig@{ spec: { divId }, s:s} ed δv = do
+drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
+drawFig fig@{ spec: { divId }, s:s} ed δv = do
    log $ "Redrawing " <> divId
    let v_view × views = successful $ figViews fig δv
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
+   drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
    drawCode ed $ prettyP s
 
 
