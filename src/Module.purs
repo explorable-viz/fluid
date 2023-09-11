@@ -10,6 +10,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
+import Data.Newtype (class Newtype)
 import Data.Traversable (traverse)
 import Desugarable (desug)
 import Dict (singleton) as D
@@ -37,6 +38,7 @@ newtype Folder = Folder String
 derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
+derive instance Newtype File _
 
 resourceServerUrl :: String
 resourceServerUrl = "."

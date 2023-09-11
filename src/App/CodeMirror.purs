@@ -15,6 +15,7 @@ type ChangeSpec =
 
 type EditorState =
    {
+
    }
 
 type EditorView =
@@ -33,3 +34,4 @@ foreign import addEditorView :: HTMLId -> Effect EditorView
 foreign import dispatch :: EditorView -> Transaction -> Effect Unit
 foreign import replaceSelection :: EditorState -> String -> TransactionSpec
 foreign import update :: EditorState -> Array TransactionSpec -> Effect Transaction
+foreign import getContentsLength :: EditorView -> Int
