@@ -25,8 +25,6 @@ You can edit this file as you like.
   , "lists"
   , "maybe"
   , "newtype"
-  , "node-buffer"
-  , "node-fs"
   , "nonempty"
   , "numbers"
   , "ordered-collections"
@@ -44,7 +42,6 @@ You can edit this file as you like.
   , "unicode"
   , "unsafe-coerce"
   , "web-events"
-  , "web-html"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]
