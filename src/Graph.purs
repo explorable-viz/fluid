@@ -6,46 +6,46 @@ import Data.Foldable (class Foldable)
 import Data.List (List, concat)
 import Data.List (fromFoldable) as L
 import Data.Newtype (class Newtype)
-import Set (class Set)
-import Set (map) as Set
+import Data.Set (Set)
+import Data.Set as S
 import Util (Endo, (×), type (×))
 
 type Edge = Vertex × Vertex
 
 -- | "Static" graphs, optimised for lookup and building from (key, value) pairs.
-class (Semigroup g, Set s Vertex) <= Graph g s | g -> s where
+class Semigroup g <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
-   -- | outN and iN satisfy
+   -- | outN and inN satisfy
    -- |   inN G = outN (op G)
-   outN :: g -> Vertex -> s Vertex
-   inN :: g -> Vertex -> s Vertex
+   outN :: g -> Vertex -> Set Vertex
+   inN :: g -> Vertex -> Set Vertex
 
    -- | Number of vertices in g.
    size :: g -> Int
-   vertices :: g -> s Vertex
+   vertices :: g -> Set Vertex
 
-   sources :: g -> s Vertex
-   sinks :: g -> s Vertex
+   sources :: g -> Set Vertex
+   sinks :: g -> Set Vertex
 
    -- |   op (op g) = g
    op :: Endo g
 
    empty :: g
-   fromFoldable :: forall f. Functor f => Foldable f => f (Vertex × s Vertex) -> g
+   fromFoldable :: forall f. Functor f => Foldable f => f (Vertex × Set Vertex) -> g
 
 newtype Vertex = Vertex String
 
-outEdges' :: forall g s. Graph g s => g -> Vertex -> List Edge
-outEdges' g α = L.fromFoldable $ Set.map (α × _) (outN g α)
+outEdges' :: forall g. Graph g => g -> Vertex -> List Edge
+outEdges' g α = L.fromFoldable $ S.map (α × _) (outN g α)
 
-outEdges :: forall g s. Graph g s => g -> s Vertex -> List Edge
+outEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
 outEdges g αs = concat (outEdges' g <$> L.fromFoldable αs)
 
-inEdges' :: forall g s. Graph g s => g -> Vertex -> List Edge
-inEdges' g α = L.fromFoldable $ Set.map (_ × α) (inN g α)
+inEdges' :: forall g. Graph g => g -> Vertex -> List Edge
+inEdges' g α = L.fromFoldable $ S.map (_ × α) (inN g α)
 
-inEdges :: forall g s. Graph g s => g -> s Vertex -> List Edge
+inEdges :: forall g. Graph g => g -> Set Vertex -> List Edge
 inEdges g αs = concat (inEdges' g <$> L.fromFoldable αs)
 
 derive instance Eq Vertex

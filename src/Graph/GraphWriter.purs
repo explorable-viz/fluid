@@ -28,47 +28,48 @@ import Data.Newtype (unwrap)
 import Data.Tuple (swap)
 import Data.Profunctor.Strong (first)
 import Data.Traversable (class Traversable, traverse)
+import Data.Set (Set)
 import Graph (Vertex(..), class Graph, fromFoldable)
 import Util (MayFailT, type (×), type (+), (×))
 
-class Monad m <= MonadGraph s m | m -> s where
+class Monad m <= MonadGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
-   extend :: Vertex -> s Vertex -> m Unit
+   extend :: Vertex -> Set Vertex -> m Unit
 
 class Monad m <= MonadAlloc m where
    fresh :: m Vertex
 
-class (MonadAlloc m, MonadGraph s m) <= MonadGraphAlloc s m | m -> s where
+class (MonadAlloc m, MonadGraph m) <= MonadGraphAlloc m where
    -- Extend with a freshly allocated vertex.
-   new :: s Vertex -> m Vertex
+   new :: Set Vertex -> m Vertex
 
 -- List of adjacency map entries to serve as a fromFoldable input.
-type AdjMapEntries s = List (Vertex × s Vertex)
+type AdjMapEntries = List (Vertex × Set Vertex)
 type WithAllocT m = StateT Int m
 type WithAlloc = WithAllocT Identity
-type WithGraphAllocT s m = MayFailT (WithAllocT (WithGraphT s m))
-type WithGraphT s = StateT (AdjMapEntries s)
-type WithGraph s = WithGraphT s Identity
+type WithGraphAllocT m = MayFailT (WithAllocT (WithGraphT m))
+type WithGraphT = StateT AdjMapEntries
+type WithGraph = WithGraphT Identity
 
 instance Monad m => MonadAlloc (WithAllocT m) where
    fresh = do
       n <- modify $ (+) 1
       pure (Vertex $ show n)
 
-instance Monad m => MonadAlloc (WithGraphAllocT s m) where
+instance Monad m => MonadAlloc (WithGraphAllocT m) where
    fresh = lift fresh
 
-instance (Monad m, MonadAlloc (WithGraphAllocT s m), MonadGraph s (WithGraphAllocT s m)) => MonadGraphAlloc s (WithGraphAllocT s m) where
+instance (Monad m, MonadAlloc (WithGraphAllocT m), MonadGraph (WithGraphAllocT m)) => MonadGraphAlloc (WithGraphAllocT m) where
    new αs = do
       α <- fresh
       extend α αs
       pure α
 
-instance Monad m => MonadGraph s (WithGraphT s m) where
+instance Monad m => MonadGraph (WithGraphT m) where
    extend α αs =
       void $ modify_ $ (:) (α × αs)
 
-instance Monad m => MonadGraph s (WithGraphAllocT s m) where
+instance Monad m => MonadGraph (WithGraphAllocT m) where
    extend α = lift <<< lift <<< extend α
 
 alloc :: forall m t a. MonadAlloc m => Traversable t => t a -> m (t Vertex)
@@ -83,13 +84,13 @@ runWithAllocT n c = do
 runWithAlloc :: forall a. Int -> WithAlloc a -> Int × a
 runWithAlloc n c = runState c n # swap
 
-runWithGraphT :: forall g s m a. Monad m => Graph g s => WithGraphT s m a -> m (g × a)
+runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (g × a)
 runWithGraphT c = runStateT c Nil <#> swap <#> first fromFoldable
 
-runWithGraph :: forall g s a. Graph g s => WithGraph s a -> g × a
+runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
 
-runWithGraphAllocT :: forall g s m a. Monad m => Graph g s => g × Int -> WithGraphAllocT s m a -> m (String + ((g × Int) × a))
+runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m (String + ((g × Int) × a))
 runWithGraphAllocT (g × n) c = do
    (n' × maybe_a) × g_adds <- runStateT (runWithAllocT n (runExceptT c)) Nil
    pure $ maybe_a <#> (((g <> fromFoldable g_adds) × n') × _)

@@ -21,7 +21,6 @@ import Foreign.Object (keys) as O
 import Graph (Vertex(..))
 import Graph.GraphWriter (WithGraphAllocT)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
-import Set (class Set)
 import Util (Endo, MayFailT, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
 import Util.Pretty (Doc, beside, text)
 
@@ -53,7 +52,7 @@ instance (Ann a, BoundedLattice b) => Ann (a × b)
 -- similar to an isomorphism lens with complement t
 type OpFwd t = forall a m. Ann a => Monad m => List (Val a) -> MayFailT m (t × Val a)
 type OpBwd t = forall a. Ann a => t × Val a -> List (Val a)
-type OpGraph = forall s m. Monad m => Set s Vertex => List (Val Vertex) -> WithGraphAllocT s m (Val Vertex)
+type OpGraph = forall m. Monad m => List (Val Vertex) -> WithGraphAllocT m (Val Vertex)
 
 data ForeignOp' t = ForeignOp'
    { arity :: Int

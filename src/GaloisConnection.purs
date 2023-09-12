@@ -5,7 +5,7 @@ import Prelude
 import Lattice (class BooleanLattice, neg)
 import Util (Endo)
 
--- Galois connections are actually more general (a and b need only be posets, not Boolean lattices).
+-- a and b are posets, but we don't enforce that here.
 type GaloisConnection a b = {
    fwd :: a -> b,
    bwd :: b -> a
