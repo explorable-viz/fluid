@@ -6,7 +6,7 @@ import Effect (Effect)
 import Test.Spec (before, it)
 import App.Main (fig1, fig2, linkingFig1)
 import App.Fig (FigSpec, LinkFigSpec, loadFig, loadLinkFig)
-import Test.Util (Test, run)
+import Test.TestRunners (Test, run)
 
 -- For now app tests just exercise figure creation code.
 test_fig :: FigSpec -> Test Unit

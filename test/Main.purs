@@ -1,4 +1,12 @@
-module Test.Main where
+module Test.Main
+   ( main
+   , test_bwd
+   , test_desugaring
+   , test_graphics
+   , test_linking
+   , test_misc
+   , test_scratchpad
+   ) where
 
 import Prelude hiding (add)
 import App.Util (as𝔹Selector, selectBarChart_data, selectMatrixElement, selectNth, selectNthCell, selectPair, selectSome, select_y)
@@ -8,7 +16,7 @@ import Dict (fromFoldable) as D
 import Effect (Effect)
 import Lattice (botOf, topOf)
 import Module (File(..))
-import Test.Util (Test, run, testWithDatasetMany, testLinkMany, testMany, testBwdMany)
+import Test.TestRunners (Test, run, testWithDatasetMany, testLinkMany, testMany, testBwdMany)
 import Util ((×))
 import Val (DictRep(..), Val(..))
 
