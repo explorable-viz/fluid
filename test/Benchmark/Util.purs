@@ -52,8 +52,10 @@ type GraphRow =
    , tFwd :: Number
    , tFwdDemorgan :: Number
    }
-instance Show BenchAcc where 
-   show (BenchAcc rows) = "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-DeMorgan\n" <>(fold $ intersperse "\n" (map show rows)) 
+
+instance Show BenchAcc where
+   show (BenchAcc rows) = "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-DeMorgan\n" <> (fold $ intersperse "\n" (map show rows))
+
 instance Show BenchRow where
    show (BenchRow name trRow grRow) = fold $ intersperse ","
       [ name

@@ -1,10 +1,9 @@
 module Test.Benchmark
-  ( bench_desugaring
-  , main
-  , minimalFail
-  , minimalPass
-  )
-  where
+   ( bench_desugaring
+   , main
+   , minimalFail
+   , minimalPass
+   ) where
 
 import Prelude hiding (add)
 
@@ -13,15 +12,16 @@ import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (logShow, log)
-import Test.Util2 (shouldSatisfy, benchMany)
+import Benchmark.Runners (shouldSatisfy, benchMany)
 
 main :: Effect Unit
 main = launchAff_ do
    log "Running benchmarks!"
    arr <- bench_desugaring
    logShow arr
-   -- runMocha [ minimalPass ]
-   -- runMocha [ minimalEval ]
+
+-- runMocha [ minimalPass ]
+-- runMocha [ minimalEval ]
 
 minimalPass :: Aff Unit
 minimalPass = liftEffect (log "it worked!")
@@ -45,4 +45,4 @@ bench_desugaring = benchMany
    , { file: "desugar/list-comp-6", fwd_expect: "(5 : [])" }
    , { file: "desugar/list-comp-7", fwd_expect: "([] : [])" }
    , { file: "desugar/list-enum", fwd_expect: "(3 : (4 : (5 : (6 : (7 : [])))))" }
-   ]   
+   ]

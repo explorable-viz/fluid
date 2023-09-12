@@ -1,23 +1,22 @@
 module Test.Util
-  ( Test
-  , TestConfig
-  , TestSpec
-  , TestWith
-  , checkPretty
-  , isGraphical
-  , run
-  , shouldSatisfy
-  , testBwdMany
-  , testLinkMany
-  , testMany
-  , testParse
-  , testTrace
-  , testWithDatasetMany
-  , testWithSetup
-  , withDataset
-  , withDefaultImports
-  )
-  where
+   ( Test
+   , TestConfig
+   , TestSpec
+   , TestWith
+   , checkPretty
+   , isGraphical
+   , run
+   , shouldSatisfy
+   , testBwdMany
+   , testLinkMany
+   , testMany
+   , testParse
+   , testTrace
+   , testWithDatasetMany
+   , testWithSetup
+   , withDataset
+   , withDefaultImports
+   ) where
 
 import Prelude hiding (absurd)
 
