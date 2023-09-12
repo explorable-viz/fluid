@@ -12,13 +12,11 @@ module EvalGraph
 import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
-import Control.Monad.Except (runExceptT)
 import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
-import Data.Identity (Identity)
+import Data.Identity (Identity(..))
 import Data.List (List(..), (:), length, snoc, unzip, zip)
-import Data.Newtype (unwrap)
 import Data.Set (Set, intersection, union)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
@@ -30,11 +28,11 @@ import GaloisConnection (GaloisConnection)
 import Graph (Vertex, class Graph)
 import Graph (vertices) as G
 import Graph.GraphWriter (WithGraphAllocT, alloc, new, runWithGraphAllocT)
-import Graph.Slice (fwdSlice, vertices)
+import Graph.Slice (bwdSlice, fwdSlice, vertices)
 import Lattice (Raw)
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Util (type (+), type (×), MayFailT, MayFail, check, error, orElse, report, successful, with, (×))
+import Util (type (+), type (×), MayFailT, check, error, orElse, report, successful, with, (×))
 import Util.Pair (unzip) as P
 import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
 import Val (Val(..), Fun(..)) as V
@@ -186,13 +184,13 @@ evalWithConfig { g, n, γα } e =
 
 graphGC :: forall g. Graph g => GraphConfig g -> Raw Expr -> String + GaloisConnection (Set Vertex) (Set Vertex)
 graphGC { g: g0, n, γα } e =
-   let q = (runWithGraphAllocT (g0 × n) :: _ -> Identity _) $ do
+   let Identity q = (runWithGraphAllocT (g0 × n) :: _ -> Identity _) $ do
          eα <- alloc e
-         eval γα eα S.empty
+         vα <- eval γα eα S.empty
+         pure (vα × eα)
    in do
-       (g × _) × v <- unwrap q
+       (g × _) × vα × eα <- q
        pure $ {
-         fwd: \αs -> G.vertices (fwdSlice αs g) `intersection` vertices v,
-         bwd: ?_
+         fwd: \αs -> G.vertices (fwdSlice αs g) `intersection` vertices vα,
+         bwd: \αs -> G.vertices (bwdSlice αs g) `intersection` vertices eα -- needs to include γα
        }
-

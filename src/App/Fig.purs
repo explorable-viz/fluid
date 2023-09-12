@@ -13,7 +13,7 @@ import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.List (List(..), (:), singleton)
-import Data.Set (Set, singleton) as S
+import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
 import DataType (cBarChart, cCons, cLineChart, cNil)
@@ -191,7 +191,7 @@ linkResult x γ0 γ e1 e2 t1 _ v1 = do
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
-   { γα: γα0 } × xv :: GraphConfig (GraphImpl S.Set) × _ <-
+   { γα: γα0 } × xv :: GraphConfig GraphImpl × _ <-
       openDefaultImports >>= openDatasetAs (File "example/linking/renewables") "data"
    let
       γ0 = botOf <$> γα0
@@ -209,7 +209,7 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       dir = File "linking/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment γ0 as well as dataset
-   { γα } × xv :: GraphConfig (GraphImpl S.Set) × _ <- openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
+   { γα } × xv :: GraphConfig GraphImpl × _ <- openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ0 = botOf <$> γα
