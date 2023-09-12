@@ -161,8 +161,10 @@ testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
       s𝔹 = desugBwd e𝔹 (erase s)
    -- | Forward (round-tripping)
    (gfwd × v𝔹) × tFwd <- bench $
-      let gfwd = G.fwdSlice αs_in g
-      in pure (gfwd × select𝔹s vα (vertices gfwd))
+      let
+         gfwd = G.fwdSlice αs_in g
+      in
+         pure (gfwd × select𝔹s vα (vertices gfwd))
    -- | Forward (round-tripping) using De Morgan dual
    (_ × v𝔹') × tFwdDemorgan <- bench $ do
       let

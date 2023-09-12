@@ -202,7 +202,7 @@ evalBwd' v (T.LetRec ρ t) =
 evalBwd' _ _ = error absurd
 
 traceGC :: forall a. Ann a => Raw Env -> Raw Expr -> Trace -> GaloisConnection (EvalBwdResult a) (Val a)
-traceGC γ e t = {
-   fwd: \{ γ: γ', e: e', α } -> snd $ fromRight $ runExcept $ eval γ' e' α,
-   bwd: \v -> evalBwd γ e v t
-}
+traceGC γ e t =
+   { fwd: \{ γ: γ', e: e', α } -> snd $ fromRight $ runExcept $ eval γ' e' α
+   , bwd: \v -> evalBwd γ e v t
+   }

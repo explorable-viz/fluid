@@ -6,10 +6,10 @@ import Lattice (class BooleanLattice, neg)
 import Util (Endo)
 
 -- a and b are posets, but we don't enforce that here.
-type GaloisConnection a b = {
-   fwd :: a -> b,
-   bwd :: b -> a
-}
+type GaloisConnection a b =
+   { fwd :: a -> b
+   , bwd :: b -> a
+   }
 
 deMorgan :: forall a b. BooleanLattice a => BooleanLattice b => Endo (a -> b)
 deMorgan f = neg >>> f >>> neg
