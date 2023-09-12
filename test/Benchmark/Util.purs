@@ -11,7 +11,6 @@ import Data.Either (Either(..))
 import Data.Foldable (fold)
 import Data.HTTP.Method (Method(..))
 import Data.JSDate (JSDate, getTime, now)
-import Data.List (List(..))
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -26,9 +25,9 @@ derive newtype instance Semigroup File
 derive newtype instance Monoid File
 -- type Test a = SpecT Aff Unit BenchmarkAcc a
 
-data BenchRow = BenchRow TraceRow GraphRow
+data BenchRow = BenchRow String TraceRow GraphRow
 
-data BenchAcc = BenchAcc (List BenchRow)
+data BenchAcc = BenchAcc (Array BenchRow)
 
 type WithBenchAcc g a = WriterT BenchAcc g a
 
@@ -39,7 +38,7 @@ instance Semigroup BenchAcc where
    append (BenchAcc l1) (BenchAcc l2) = (BenchAcc (l1 <> l2))
 
 instance Monoid BenchAcc where
-   mempty = BenchAcc (Nil)
+   mempty = BenchAcc ([])
 
 type TraceRow =
    { tEval :: Number
@@ -53,16 +52,18 @@ type GraphRow =
    , tFwd :: Number
    , tFwdDemorgan :: Number
    }
-
+instance Show BenchAcc where 
+   show (BenchAcc rows) = "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-DeMorgan\n" <>(fold $ intersperse "\n" (map show rows)) 
 instance Show BenchRow where
-   show (BenchRow trRow grRow) = fold $ intersperse "\n"
-      [ "Trace-based eval: " <> show trRow.tEval
-      , "Trace-based bwd time: " <> show trRow.tBwd
-      , "Trace-based fwd time: " <> show trRow.tFwd
-      , "Graph-based eval: " <> show grRow.tEval
-      , "Graph-based bwd time: " <> show grRow.tBwd
-      , "Graph-based fwd time:" <> show grRow.tFwd
-      , "Graph-based fwd time (De Morgan): " <> show grRow.tFwdDemorgan
+   show (BenchRow name trRow grRow) = fold $ intersperse ","
+      [ name
+      , show trRow.tEval
+      , show trRow.tBwd
+      , show trRow.tFwd
+      , show grRow.tEval
+      , show grRow.tBwd
+      , show grRow.tFwd
+      , show grRow.tFwdDemorgan
       ]
 
 bench :: forall m a. MonadEffect m => m a -> m (a × Number)

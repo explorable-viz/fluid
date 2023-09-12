@@ -1,21 +1,23 @@
 module Test.Util
-   ( Test
-   , TestConfig
-   , TestWith
-   , checkPretty
-   , isGraphical
-   , run
-   , shouldSatisfy
-   , testBwdMany
-   , testLinkMany
-   , testMany
-   , testParse
-   , testTrace
-   , testWithDatasetMany
-   , testWithSetup
-   , withDataset
-   , withDefaultImports
-   ) where
+  ( Test
+  , TestConfig
+  , TestSpec
+  , TestWith
+  , checkPretty
+  , isGraphical
+  , run
+  , shouldSatisfy
+  , testBwdMany
+  , testLinkMany
+  , testMany
+  , testParse
+  , testTrace
+  , testWithDatasetMany
+  , testWithSetup
+  , withDataset
+  , withDefaultImports
+  )
+  where
 
 import Prelude hiding (absurd)
 
@@ -72,14 +74,14 @@ run = runMocha -- no reason at all to see the word "Mocha"
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 -- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
-testWithSetup ∷ Boolean → SE.Expr Unit → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
-testWithSetup is_bench s gconfig tconfig = do
+testWithSetup ∷ String -> Boolean → SE.Expr Unit → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
+testWithSetup name is_bench s gconfig tconfig = do
    e <- runExceptT
       ( do
            unless is_bench (testParse s)
            trRow <- testTrace is_bench s gconfig tconfig
            grRow <- testGraph is_bench s gconfig tconfig
-           pure (BenchRow trRow grRow)
+           pure (BenchRow name trRow grRow)
       )
    case e of
       Left msg -> error msg
@@ -202,7 +204,7 @@ testMany fxs is_bench = withDefaultImports $ traverse_ test fxs
       where
       internal :: (GraphConfig (GraphImpl S.Set) × SE.Expr Unit) -> Aff Unit
       internal (gconfig × s) = do
-         outs <- (testWithSetup is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
+         outs <- (testWithSetup file is_bench s gconfig { δv: identity, fwd_expect, bwd_expect: mempty })
          logShow outs
 
 testBwdMany :: Array TestBwdSpec → Boolean -> Test Unit
@@ -215,7 +217,7 @@ testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
          it (show $ folder <> File file)
             \(gconfig × s) -> do
                bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
-               void $ testWithSetup is_bench s gconfig { δv, fwd_expect, bwd_expect }
+               void $ testWithSetup file is_bench s gconfig { δv, fwd_expect, bwd_expect }
    folder = File "slicing/"
 
 type TestWithDatasetSpec =
@@ -231,7 +233,7 @@ testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDatase
       withDataset (File dataset) $ beforeWith ((_ <$> open (File file)) <<< (×)) do
          it (show file)
             \(gconfig × s) ->
-               void $ testWithSetup is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
+               void $ testWithSetup file is_bench s gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
 
 testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
 testLinkMany fxs = traverse_ testLink fxs
