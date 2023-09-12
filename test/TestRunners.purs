@@ -31,7 +31,7 @@ withDefaultImports x = beforeAll openDefaultImports x
 
 withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
 withDataset dataset =
-   beforeWith (openDatasetAs dataset "data" >=> (\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }))
+   beforeWith (openDatasetAs dataset "data" >=> ((\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv })))
 
 testMany :: Array TestSpec → Boolean -> SpecT Aff Unit Effect Unit
 testMany fxs is_bench = withDefaultImports $ traverse_ test fxs

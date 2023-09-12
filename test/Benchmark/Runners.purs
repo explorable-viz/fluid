@@ -11,7 +11,6 @@ import Benchmark.Util (BenchAcc(..))
 import Control.Monad.Error.Class (class MonadThrow)
 import Data.Set (Set) as S
 import Data.Traversable (traverse)
-import Data.Tuple (fst)
 import Effect.Aff (Aff)
 import Effect.Exception (Error)
 import EvalGraph (GraphConfig)
@@ -19,6 +18,8 @@ import Graph.GraphImpl (GraphImpl)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports)
 import Test.Spec.Assertions (fail)
 import Test.Util (TestBwdSpec, TestSpec, TestWithDatasetSpec, testWithSetup)
+import Util ((×))
+import Val ((<+>))
 
 ------------------------
 -- Many's
@@ -51,7 +52,8 @@ benchWithDatasetMany fxs = do
    default <- openDefaultImports :: Aff (GraphConfig (GraphImpl S.Set))
    BenchAcc <$> traverse
       ( \{ dataset, file } -> do
-           loadedData <- fst <$> openDatasetAs (File dataset) "data" default
+           { g, n, γα } × xv <- openDatasetAs (File dataset) "data" default
+           let loadedData = { g, n, γα: γα <+> xv }
            expr <- open (File file)
            testWithSetup file true expr loadedData { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
       )
