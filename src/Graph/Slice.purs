@@ -45,6 +45,9 @@ fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
       else
          pure $ Loop (M.insert α βs h × es)
 
+vertices :: forall f. Apply f => Foldable f => f Vertex -> Set Vertex
+vertices vα = selectαs (const true <$> vα) vα
+
 selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
 selectαs v𝔹 vα = unions ((if _ then singleton else const empty) <$> v𝔹 <*> vα)
 

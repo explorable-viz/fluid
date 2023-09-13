@@ -27,7 +27,7 @@ import GaloisConnection (GaloisConnection)
 import Graph (Vertex, class Graph)
 import Graph (vertices) as G
 import Graph.GraphWriter (WithGraphAllocT, alloc, new, runWithGraphAllocT)
-import Graph.Slice (bwdSlice, fwdSlice)
+import Graph.Slice (bwdSlice, fwdSlice, vertices)
 import Lattice (Raw)
 import Pretty (prettyP)
 import Primitive (string, intPair)
