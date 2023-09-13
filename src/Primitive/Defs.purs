@@ -10,6 +10,7 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
+import Data.Set (singleton, insert)
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
@@ -24,7 +25,6 @@ import Lattice (class BoundedJoinSemilattice, Raw, (∨), (∧), bot, botOf, era
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
-import Set (singleton, insert)
 import Trace (AppTrace)
 import Util (type (+), type (×), Endo, error, orElse, report, unimplemented, (×))
 import Val (Array2, DictRep(..), Env, ForeignOp, ForeignOp'(..), Fun(..), MatrixRep(..), OpBwd, OpFwd, OpGraph, Val(..), matrixGet, matrixUpdate)

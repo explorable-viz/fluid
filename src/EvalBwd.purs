@@ -3,6 +3,7 @@ module EvalBwd where
 import Prelude hiding (absurd)
 
 import Bindings (Var, varAnon)
+import Control.Monad.Except (runExcept)
 import Data.Exists (mkExists, runExists)
 import Data.Foldable (foldr)
 import Data.FoldableWithIndex (foldrWithIndex)
@@ -17,12 +18,14 @@ import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
+import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
+import GaloisConnection (GaloisConnection)
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), Endo, absurd, definitely', error, nonEmpty, (!), (×))
+import Util (type (×), Endo, absurd, definitely', error, fromRight, nonEmpty, (!), (×))
 import Util.Pair (zip) as P
 import Val (Fun(..), Val(..)) as V
 import Val (class Ann, DictRep(..), Env, ForeignOp, ForeignOp'(..), MatrixRep(..), Val, append_inv, (<+>))
@@ -196,3 +199,9 @@ evalBwd' v (T.LetRec ρ t) =
    γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
+
+traceGC :: forall a. Ann a => Raw Env -> Raw Expr -> Trace -> GaloisConnection (EvalBwdResult a) (Val a)
+traceGC γ e t =
+   { fwd: \{ γ: γ', e: e', α } -> snd $ fromRight $ runExcept $ eval γ' e' α
+   , bwd: \v -> evalBwd γ e v t
+   }

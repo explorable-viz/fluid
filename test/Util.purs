@@ -29,7 +29,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Array (fold, intersperse)
 import Data.Either (Either(..))
 import Data.List (elem)
-import Data.Set (Set) as S
+import Data.Set (subset)
 import Data.String (null)
 import Data.Traversable (traverse_)
 import DataType (dataTypeFor, typeName)
@@ -51,7 +51,6 @@ import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultI
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
-import Set (subset)
 import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Mocha (runMocha)
@@ -96,7 +95,7 @@ run :: forall a. Test a → Effect Unit
 run = runMocha -- no reason at all to see the word "Mocha"
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
-testWithSetup ∷ Boolean → Raw SE.Expr → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
+testWithSetup ∷ Boolean → Raw SE.Expr → GraphConfig GraphImpl → TestConfig → Aff BenchRow
 testWithSetup is_bench s gconfig tconfig =
    runExceptT
       do
@@ -119,7 +118,7 @@ testParse s = do
             log ("NEW\n" <> show (erase s'))
             lift $ fail "not equal"
 
-testTrace :: Boolean -> Raw SE.Expr -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
+testTrace :: Boolean -> Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
    let s𝔹 × γ𝔹 = botOf s × (botOf <$> γα)
    -- | Eval
@@ -146,7 +145,7 @@ testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
          checkPretty "Trace-based value" fwd_expect v𝔹''
    pure { tEval, tBwd, tFwd }
 
-testGraph :: Boolean -> Raw SE.Expr -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff GraphRow
+testGraph :: Boolean -> Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
 testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
@@ -187,10 +186,10 @@ testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
 
    pure { tEval, tBwd, tFwd, tFwdDemorgan }
 
-withDefaultImports ∷ TestWith (GraphConfig (GraphImpl S.Set)) Unit -> Test Unit
+withDefaultImports ∷ TestWith (GraphConfig GraphImpl) Unit -> Test Unit
 withDefaultImports = beforeAll openDefaultImports
 
-withDataset :: File -> TestWith (GraphConfig (GraphImpl S.Set)) Unit -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
+withDataset :: File -> TestWith (GraphConfig GraphImpl) Unit -> TestWith (GraphConfig GraphImpl) Unit
 withDataset dataset =
    beforeWith (openDatasetAs dataset "data" >=> \({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv })
 
@@ -220,7 +219,7 @@ type TestLinkSpec =
 testMany :: Array TestSpec → Boolean -> Test Unit
 testMany fxs is_bench = withDefaultImports $ traverse_ test fxs
    where
-   test :: TestSpec -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
+   test :: TestSpec -> TestWith (GraphConfig GraphImpl) Unit
    test { file, fwd_expect } =
       beforeWith ((_ <$> open (File file)) <<< (×)) $
          it (show file)
@@ -230,7 +229,7 @@ testMany fxs is_bench = withDefaultImports $ traverse_ test fxs
 testBwdMany :: Array TestBwdSpec → Boolean -> Test Unit
 testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
    where
-   testBwd :: TestBwdSpec -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
+   testBwd :: TestBwdSpec -> TestWith (GraphConfig GraphImpl) Unit
    testBwd { file, file_expect, δv, fwd_expect } =
       beforeWith ((_ <$> open (folder <> File file)) <<< (×)) $
          it (show $ folder <> File file)
@@ -242,7 +241,7 @@ testBwdMany fxs is_bench = withDefaultImports $ traverse_ testBwd fxs
 testWithDatasetMany :: Array TestWithDatasetSpec -> Boolean -> Test Unit
 testWithDatasetMany fxs is_bench = withDefaultImports $ traverse_ testWithDataset fxs
    where
-   testWithDataset :: TestWithDatasetSpec -> TestWith (GraphConfig (GraphImpl S.Set)) Unit
+   testWithDataset :: TestWithDatasetSpec -> TestWith (GraphConfig GraphImpl) Unit
    testWithDataset { dataset, file } =
       withDataset (File dataset) $ beforeWith ((_ <$> open (File file)) <<< (×)) $
          it (show file)

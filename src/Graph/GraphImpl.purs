@@ -13,6 +13,8 @@ import Data.List (List(..), (:))
 import Data.List (fromFoldable) as L
 import Data.Maybe (Maybe(..), isJust)
 import Data.Newtype (unwrap)
+import Data.Set (Set, insert, singleton)
+import Data.Set as S
 import Data.Tuple (fst, snd)
 import Dict (Dict)
 import Dict as D
@@ -20,25 +22,23 @@ import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
 import Graph (class Graph, Vertex(..), op, outN)
-import Set (class Set, insert, singleton)
-import Set as Set
 import Util (type (×), (×), definitely)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
-type AdjMap s = Dict (s Vertex)
-data GraphImpl s = GraphImpl { out :: AdjMap s, in :: AdjMap s }
+type AdjMap = Dict (Set Vertex)
+data GraphImpl = GraphImpl { out :: AdjMap, in :: AdjMap }
 
-instance Set s Vertex => Semigroup (GraphImpl s) where
+instance Semigroup GraphImpl where
    append (GraphImpl g) (GraphImpl g') =
-      GraphImpl { out: D.unionWith Set.union g.out g'.out, in: D.unionWith Set.union g.in g'.in }
+      GraphImpl { out: D.unionWith S.union g.out g'.out, in: D.unionWith S.union g.in g'.in }
 
 -- Dict-based implementation, efficient because Graph doesn't require any update operations.
-instance Set s Vertex => Graph (GraphImpl s) s where
+instance Graph GraphImpl where
    outN (GraphImpl g) α = D.lookup (unwrap α) g.out # definitely "in graph"
    inN g = outN (op g)
    elem α (GraphImpl g) = isJust (D.lookup (unwrap α) g.out)
    size (GraphImpl g) = D.size g.out
-   vertices (GraphImpl g) = Set.fromFoldable $ Set.map Vertex $ D.keys g.out
+   vertices (GraphImpl g) = S.fromFoldable $ S.map Vertex $ D.keys g.out
    sinks (GraphImpl g) = sinks' g.out
    sources (GraphImpl g) = sinks' g.in
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out }
@@ -50,22 +50,22 @@ instance Set s Vertex => Graph (GraphImpl s) s where
 
 -- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
 -- This is better but still slow if there are thousands of sinks.
-sinks' :: forall s. Set s Vertex => AdjMap s -> s Vertex
+sinks' :: AdjMap -> Set Vertex
 sinks' m = D.toArrayWithKey (×) m
-   # A.filter (snd >>> Set.isEmpty)
+   # A.filter (snd >>> S.isEmpty)
    <#> (fst >>> Vertex)
-   # Set.fromFoldable
+   # S.fromFoldable
 
 -- In-place update of mutable object to calculate opposite adjacency map.
-type MutableAdjMap s r = STObject r (s Vertex)
+type MutableAdjMap r = STObject r (Set Vertex)
 
-addIfMissing :: forall s r. Set s Vertex => STObject r (s Vertex) -> Vertex -> ST r (MutableAdjMap s r)
+addIfMissing :: forall r. STObject r (Set Vertex) -> Vertex -> ST r (MutableAdjMap r)
 addIfMissing acc (Vertex β) = do
    OST.peek β acc >>= case _ of
-      Nothing -> OST.poke β Set.empty acc
+      Nothing -> OST.poke β S.empty acc
       Just _ -> pure acc
 
-outMap :: forall s. Set s Vertex => List (Vertex × s Vertex) -> forall r. ST r (MutableAdjMap s r)
+outMap :: List (Vertex × Set Vertex) -> forall r. ST r (MutableAdjMap r)
 outMap α_αs = do
    out <- OST.new
    tailRecM addEdges (α_αs × out)
@@ -75,7 +75,7 @@ outMap α_αs = do
       acc' <- OST.poke (unwrap α) βs acc >>= flip (foldM addIfMissing) βs
       pure $ Loop (rest × acc')
 
-inMap :: forall s. Set s Vertex => List (Vertex × s Vertex) -> forall r. ST r (MutableAdjMap s r)
+inMap :: List (Vertex × Set Vertex) -> forall r. ST r (MutableAdjMap r)
 inMap α_αs = do
    in_ <- OST.new
    tailRecM addEdges (α_αs × in_)
@@ -90,5 +90,5 @@ inMap α_αs = do
          Nothing -> OST.poke β (singleton α) acc
          Just αs -> OST.poke β (insert α αs) acc
 
-instance Show (s Vertex) => Show (GraphImpl s) where
+instance Show GraphImpl where
    show (GraphImpl g) = "GraphImpl (" <> show g.out <> " × " <> show g.in <> ")"
