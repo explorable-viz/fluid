@@ -20,9 +20,8 @@ import Util (type (×))
 -- Many's
 ------------------------
 
-benchMany :: Array TestSpec -> Array (String × Aff BenchRow) 
+benchMany :: Array TestSpec -> Array (String × Aff BenchRow)
 benchMany = many true
-      
 
 benchBwdMany :: Array TestBwdSpec -> Array (String × Aff BenchRow)
 benchBwdMany = bwdMany true

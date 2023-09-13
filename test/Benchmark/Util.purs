@@ -61,8 +61,7 @@ rowShow (str × row) = str <> "," <> show row
 
 instance Show BenchRow where
    show (BenchRow trRow grRow) = fold $ intersperse ","
-      [
-        show trRow.tEval
+      [ show trRow.tEval
       , show trRow.tBwd
       , show trRow.tFwd
       , show grRow.tEval
