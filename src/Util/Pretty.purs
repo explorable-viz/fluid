@@ -1,7 +1,7 @@
 -- | This module defines a set of combinators for pretty printing text.
 
 module Util.Pretty
-   ( Doc
+   ( Doc(..)
    , width
    , height
    , render
@@ -58,6 +58,16 @@ empty w h =
            _ -> range 1 h $> ""
       }
 
+-- text :: String -> Doc 
+-- text s =
+--    if A.length lines > 1 then U.error U.absurd else 
+--    Doc
+--       { width: foldl max 0 $ map S.length lines
+--       , height: A.length lines
+--       , lines: lines
+--       }
+--    where
+--    lines = S.split (wrap "\n") (s <> " ")
 -- | Create a document from some text.
 text :: String -> Doc
 text s =
