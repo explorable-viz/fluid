@@ -13,7 +13,7 @@ import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.List (List(..), (:), singleton)
-import Data.Set (Set, singleton) as S
+import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
 import DataType (cBarChart, cCons, cLineChart, cNil)
@@ -22,11 +22,11 @@ import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
 import Eval (eval, eval_module)
-import EvalGraph (GraphConfig)
 import EvalBwd (evalBwd)
+import EvalGraph (GraphConfig)
 import Expr (Expr)
-import Graph.GraphImpl (GraphImpl)
 import Foreign.Object (lookup)
+import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
 import Module (File(..), open, openDefaultImports, openDatasetAs)
 import Partial.Unsafe (unsafePartial)
@@ -36,7 +36,7 @@ import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
-import Val (Env, Val(..), (<+>), append_inv)
+import Val (class Ann, Env, Val(..), append_inv, (<+>))
 import Web.Event.EventTarget (eventListener)
 
 data View
@@ -65,19 +65,19 @@ view title u@(Matrix _ _) =
 view _ _ = error absurd
 
 -- An example of the form (let <defs> in expr) can be decomposed as follows.
-type SplitDefs =
-   { γ :: Env 𝔹 -- local env (additional let bindings at beginning of ex)
-   , s :: S.Expr 𝔹 -- body of example
+type SplitDefs a =
+   { γ :: Env a -- local env (additional let bindings at beginning of ex)
+   , s :: S.Expr a -- body of example
    }
 
 -- Decompose as above.
-splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail SplitDefs
+splitDefs :: forall a. Ann a => Env a -> S.Expr a -> MayFail (SplitDefs a)
 splitDefs γ0 s' = do
    let defs × _s = unsafePartial $ unpack s'
    γ <- desugarModuleFwd (S.Module (singleton defs)) >>= flip (eval_module γ0) bot
    pure { γ, s: s' }
    where
-   unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
+   unpack :: Partial => S.Expr a -> (S.VarDefs a + S.RecDefs a) × S.Expr a
    unpack (S.LetRec defs s) = Right defs × s
    unpack (S.Let defs s) = Left defs × s
 
@@ -162,7 +162,7 @@ varView x γ = view x <$> (lookup x γ # orElse absurd)
 valViews :: Env 𝔹 -> Array Var -> MayFail (Array View)
 valViews γ xs = sequence (flip varView γ <$> xs)
 
--- For an output selection, views of corresponding input selections.
+-- For an output selection, views of corresponding input selections and output after round-trip.
 figViews :: Fig -> Selector Val -> MayFail (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
@@ -185,9 +185,10 @@ linkResult x γ0 γ e1 e2 t1 _ v1 = do
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
-   { γα } × xv :: (GraphConfig (GraphImpl S.Set) × _) <- openDefaultImports >>= openDatasetAs (File "example/linking/renewables") "data"
+   { γα: γα0 } × xv :: GraphConfig GraphImpl × _ <-
+      openDefaultImports >>= openDatasetAs (File "example/linking/renewables") "data"
    let
-      γ0 = botOf <$> γα
+      γ0 = botOf <$> γα0
       xv0 = botOf <$> xv
    open file <#> \s' -> successful $ do
       { γ: γ1, s } <- splitDefs (γ0 <+> xv0) (botOf s')
@@ -202,7 +203,7 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       dir = File "linking/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment γ0 as well as dataset
-   { γα } × xv :: (GraphConfig (GraphImpl S.Set) × _) <- openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
+   { γα } × xv :: GraphConfig GraphImpl × _ <- openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ0 = botOf <$> γα

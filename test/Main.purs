@@ -32,7 +32,7 @@ tests = concat
    ]
 
 {-
-tests = [ test_scratchpad ]
+tests is_bench = [ test_scratchpad is_bench ]
 -}
 
 -- test_scratchpad :: Boolean -> Test Unit

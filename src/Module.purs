@@ -10,6 +10,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
+import Data.Set (empty)
 import Data.Traversable (traverse)
 import Desugarable (desug)
 import Dict (singleton) as D
@@ -25,7 +26,6 @@ import Parsing (runParser)
 import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Set (class Set, empty)
 import Util (MayFailT, type (×), (×), error, successful, fromRight)
 import Util.Parse (SParser)
 import Val (Env, (<+>))
@@ -60,25 +60,25 @@ parseProgram folder file = do
 open :: File -> Aff (S.Expr Unit)
 open = parseProgram (Folder "fluid/example")
 
-loadModule :: forall s. Set s Vertex => File -> Env Vertex -> WithGraphAllocT s Aff (Env Vertex)
+loadModule :: File -> Env Vertex -> WithGraphAllocT Aff (Env Vertex)
 loadModule file γ = do
    src <- lift $ lift $ lift $ loadFile (Folder "fluid/lib") file
    mod <- parse src module_ >>= desugarModuleFwd >>= traverseModule (const fresh)
    eval_module γ mod empty <#> (γ <+> _)
 
-defaultImports :: forall s. Set s Vertex => WithGraphAllocT s Aff (Env Vertex)
+defaultImports :: WithGraphAllocT Aff (Env Vertex)
 defaultImports = do
    γα <- traverse alloc primitives
    loadModule (File "prelude") γα >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
 -- | Evaluates the default imports from an empty initial graph config
-openDefaultImports :: forall g s. Graph g s => Aff (GraphConfig g)
+openDefaultImports :: forall g. Graph g => Aff (GraphConfig g)
 openDefaultImports = do
    (g × n) × γα <- fromRight <$> runWithGraphAllocT (G.empty × 0) defaultImports
    pure $ { g, n, γα }
 
 -- | Evaluates a dataset from an existing graph config (produced by openDefaultImports)
-openDatasetAs :: forall g s. Graph g s => File -> Var -> GraphConfig g -> Aff (GraphConfig g × Env Vertex)
+openDatasetAs :: forall g. Graph g => File -> Var -> GraphConfig g -> Aff (GraphConfig g × Env Vertex)
 openDatasetAs file x { g, n, γα } = do
    s <- parseProgram (Folder "fluid") file
    (g' × n') × (γα' × xv) <- fromRight <$>

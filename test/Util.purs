@@ -20,7 +20,7 @@ import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.List (elem)
-import Data.Set (Set) as S
+import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
@@ -37,6 +37,8 @@ import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
 import Lattice (bot, botOf, erase)
 import Module (parse)
+import Lattice (Raw, bot, botOf, erase)
+import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
@@ -78,9 +80,9 @@ testParse s = do
               (lift $ fail "not equal") :: MayFailT Aff Unit
       )
 
-testTrace :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff TraceRow
+testTrace :: Boolean -> Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
-   let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γα)
+   let s𝔹 × γ𝔹 = botOf s × (botOf <$> γα)
    -- | Eval
    e𝔹 <- desug s𝔹
    (t × v𝔹) × tEval <- bench $ eval γ𝔹 e𝔹 bot
@@ -105,7 +107,7 @@ testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
          checkPretty "Trace-based value" fwd_expect v𝔹''
    pure { tEval, tBwd, tFwd }
 
-testGraph :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> MayFailT Aff GraphRow
+testGraph :: Boolean -> Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
 testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
@@ -154,7 +156,7 @@ type TestSpec =
 type TestBwdSpec =
    { file :: String
    , file_expect :: String
-   , δv :: Selector Val
+   , δv :: Selector Val -- relative to bot
    , fwd_expect :: String
    }
 
@@ -177,5 +179,4 @@ checkPretty msg expect x =
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
 shouldSatisfy msg v pred =
    unless (pred v)
-      $ fail
-      $ show v <> " doesn't satisfy predicate: " <> msg
+      $ fail (show v <> " doesn't satisfy predicate: " <> msg)

@@ -4,6 +4,7 @@ module EvalGraph
    , eval
    , evalWithConfig
    , eval_module
+   , graphGC
    , match
    , patternMismatch
    ) where
@@ -14,22 +15,27 @@ import Bindings (varAnon)
 import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
+import Data.Identity (Identity(..))
 import Data.List (List(..), (:), length, snoc, unzip, zip)
+import Data.Set (Set, empty, insert, intersection, singleton, union)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
+import GaloisConnection (GaloisConnection)
 import Graph (Vertex, class Graph)
+import Graph (vertices) as G
 import Graph.GraphWriter (WithGraphAllocT, alloc, new, runWithGraphAllocT)
+import Graph.Slice (bwdSlice, fwdSlice, vertices)
+import Lattice (Raw)
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Set (class Set, insert, empty, singleton, union)
 import Util (type (+), type (×), (×), MayFailT, check, error, report, successful, with, orElse)
 import Util.Pair (unzip) as P
-import Val (Val(..), Fun(..)) as V
 import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
+import Val (Val(..), Fun(..)) as V
 
 type GraphConfig g =
    { g :: g
@@ -41,7 +47,7 @@ type GraphConfig g =
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall s m. Monad m => Set s Vertex => Val Vertex -> Elim Vertex -> MayFailT m (Env Vertex × Cont Vertex × s Vertex)
+match :: forall m. Monad m => Val Vertex -> Elim Vertex -> MayFailT m (Env Vertex × Cont Vertex × Set Vertex)
 match v (ElimVar x κ)
    | x == varAnon = pure (D.empty × κ × empty)
    | otherwise = pure (D.singleton x v × κ × empty)
@@ -61,7 +67,7 @@ match (V.Record α xvs) (ElimRecord xs κ) = do
    pure $ γ × κ' × (insert α αs)
 match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall s m. Monad m => Set s Vertex => List (Val Vertex) -> Cont Vertex -> MayFailT m (Env Vertex × Cont Vertex × s Vertex)
+matchMany :: forall m. Monad m => List (Val Vertex) -> Cont Vertex -> MayFailT m (Env Vertex × Cont Vertex × Set Vertex)
 matchMany Nil κ = pure (D.empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
@@ -71,7 +77,7 @@ matchMany (_ : vs) (ContExpr _) = report $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall s m. Monad m => Set s Vertex => Env Vertex -> RecDefs Vertex -> s Vertex -> WithGraphAllocT s m (Env Vertex)
+closeDefs :: forall m. Monad m => Env Vertex -> RecDefs Vertex -> Set Vertex -> WithGraphAllocT m (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -80,7 +86,7 @@ closeDefs γ ρ αs =
          V.Fun <$> new αs <@> V.Closure (γ `restrict` (fv ρ' `S.union` fv σ)) ρ' σ
 
 {-# Evaluation #-}
-apply :: forall s m. Monad m => Set s Vertex => Val Vertex -> Val Vertex -> WithGraphAllocT s m (Val Vertex)
+apply :: forall m. Monad m => Val Vertex -> Val Vertex -> WithGraphAllocT m (Val Vertex)
 apply (V.Fun α (V.Closure γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
@@ -90,7 +96,7 @@ apply (V.Fun α (V.Foreign φ vs)) v =
    where
    vs' = snoc vs v
 
-   apply' :: forall t. ForeignOp' t -> WithGraphAllocT s m (Val Vertex)
+   apply' :: forall t. ForeignOp' t -> WithGraphAllocT m (Val Vertex)
    apply' (ForeignOp' φ') =
       if φ'.arity > length vs' then
          V.Fun <$> new (singleton α) <@> V.Foreign φ vs'
@@ -103,7 +109,7 @@ apply (V.Fun α (V.PartialConstr c vs)) v = do
    n = successful (arity c)
 apply _ v = report $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall s m. Monad m => Set s Vertex => Env Vertex -> Expr Vertex -> s Vertex -> WithGraphAllocT s m (Val Vertex)
+eval :: forall m. Monad m => Env Vertex -> Expr Vertex -> Set Vertex -> WithGraphAllocT m (Val Vertex)
 eval γ (Var x) _ = lookup' x γ
 eval γ (Op op) _ = lookup' op γ
 eval _ (Int α n) αs = V.Int <$> new (insert α αs) <@> n
@@ -156,10 +162,10 @@ eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-eval_module :: forall m s. Monad m => Set s Vertex => Env Vertex -> Module Vertex -> s Vertex -> WithGraphAllocT s m (Env Vertex)
+eval_module :: forall m. Monad m => Env Vertex -> Module Vertex -> Set Vertex -> WithGraphAllocT m (Env Vertex)
 eval_module γ = go D.empty
    where
-   go :: Env Vertex -> Module Vertex -> s Vertex -> WithGraphAllocT s m (Env Vertex)
+   go :: Env Vertex -> Module Vertex -> Set Vertex -> WithGraphAllocT m (Env Vertex)
    go γ' (Module Nil) _ = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) αs = do
       v <- eval (γ <+> y') e αs
@@ -169,8 +175,25 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
-evalWithConfig :: forall g s m a. Monad m => Graph g s => GraphConfig g -> Expr a -> m (String + ((g × Int) × Expr Vertex × Val Vertex))
-evalWithConfig { g, n, γα } e = runWithGraphAllocT (g × n) $ do
-   eα <- alloc e
-   vα <- eval γα eα empty
-   pure (eα × vα)
+-- TODO: Inline into graphGC
+evalWithConfig :: forall g m a. Monad m => Graph g => GraphConfig g -> Expr a -> m (String + ((g × Int) × Expr Vertex × Val Vertex))
+evalWithConfig { g, n, γα } e =
+   runWithGraphAllocT (g × n) $ do
+      eα <- alloc e
+      vα <- eval γα eα S.empty
+      pure (eα × vα)
+
+graphGC :: forall g. Graph g => GraphConfig g -> Raw Expr -> String + GaloisConnection (Set Vertex) (Set Vertex)
+graphGC { g: g0, n, γα } e =
+   let
+      Identity q = (runWithGraphAllocT (g0 × n) :: _ -> Identity _) $ do
+         eα <- alloc e
+         vα <- eval γα eα S.empty
+         pure (vα × eα)
+   in
+      do
+         (g × _) × vα × eα <- q
+         pure $
+            { fwd: \αs -> G.vertices (fwdSlice αs g) `intersection` vertices vα
+            , bwd: \αs -> G.vertices (bwdSlice αs g) `intersection` vertices eα -- needs to include γα
+            }
