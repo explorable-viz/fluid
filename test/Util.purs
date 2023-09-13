@@ -35,10 +35,8 @@ import Graph (sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
-import Lattice (bot, botOf, erase)
+import Lattice (bot, botOf, erase, Raw)
 import Module (parse)
-import Lattice (Raw, bot, botOf, erase)
-import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
