@@ -42,7 +42,6 @@ import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultI
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
-import Set (subset)
 import Test.Spec.Assertions (fail)
 import Util (MayFailT, (×), error, successful)
 import Val (Val(..), class Ann)
@@ -55,7 +54,7 @@ type TestConfig =
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 -- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
-testWithSetup ∷ String -> Boolean → SE.Expr Unit → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
+testWithSetup ∷ String -> Boolean → SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
 testWithSetup _name is_bench s gconfig tconfig = do
    e <- runExceptT
       ( do
