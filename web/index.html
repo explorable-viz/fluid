@@ -9,7 +9,6 @@
   <link href="css/styles.css" rel="stylesheet" type="text/css">
   <link href="css/simplegrid.css" rel="stylesheet" type="text/css">
   <link href="css/data-viz.css" rel="stylesheet" type="text/css">
-  <script src="app.js"></script>
 </head>
 <body>
 
@@ -90,10 +89,10 @@
       <p>In particular, notice how only certain parts of the input are relevant to a given output cell. Can some of the irrelevant inputs be attributed to zeros in the filter? Also notice how the demand varies as we approach the edge of the output image: because this implementation of convolution treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation of output cells near the edge. (As mentioned above, it is not yet possible to select input elements and have the output selection be derived automatically.) Interactions like these would be more useful if we could show the actual computation involved for a given element, but even this simple extensional view already reveals interesting things about the implementation. Here is the pure functional code:
 
       <details><summary>convolution.fld</summary>
-         <div id="codemirror-fig-conv-1"></div>
+         <div id="codemirror-convolution"></div>
       </details>
       <details><summary>emboss-zero-pad.fld</summary>
-         <div id="codemirror-fig-conv-2"></div>
+         <div id="codemirror-fig-conv-1"></div>
       </details>
 
       <p>The library function <code>convolve</code> implements the convolution algorithm itself, and helper functions <code>zero</code>, <code>wrap</code> and <code>extend</code> implement specific policies (&#8220;methods&#8221;) for dealing with the boundary.
@@ -101,7 +100,7 @@
       <p>Contrast the example above, which uses <code>zero</code> as the boundary method, with one which uses <code>wrap</code>. Then selecting an output cell near the edge has a quite different behaviour: instead of some of the filter elements becoming irrelevant, we can see visually that the input image behaves as though opposite sides were connected. These examples show how making the input-output relationships fine-grained rather than monolithic reveals quite a lot about what a computation actually does.
       <p><div class="parent"><div class="center" id="fig-conv-2"></div></div>
       <details><summary>emboss-wrap.fld</summary>
-         <div id="codemirror-fig-conv-3"></div>
+         <div id="codemirror-fig-conv-2"></div>
       </details>
    </div>
 
@@ -113,5 +112,6 @@
    </div>
 </div>
 
+<script src="app.js"></script>
 </body>
 </html>
