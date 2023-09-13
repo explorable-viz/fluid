@@ -59,7 +59,7 @@ instance Monad m => MonadAlloc (WithAllocT m) where
 instance Monad m => MonadAlloc (WithGraphAllocT m) where
    fresh = lift fresh
 
-instance (Monad m, MonadAlloc (WithGraphAllocT m), MonadGraph (WithGraphAllocT m)) => MonadGraphAlloc  (WithGraphAllocT m) where
+instance (Monad m, MonadAlloc (WithGraphAllocT m), MonadGraph (WithGraphAllocT m)) => MonadGraphAlloc (WithGraphAllocT m) where
    new αs = do
       α <- fresh
       extend α αs
