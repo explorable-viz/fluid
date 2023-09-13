@@ -22,23 +22,23 @@ import {tags} from "@lezer/highlight"
 import {HighlightStyle} from "@codemirror/language"
 import {syntaxHighlighting} from "@codemirror/language"
 
-let letDeco = Decoration.mark({class: "let"})
-let decorator = new MatchDecorator({
-   regexp: /(let)/g,
-   decoration: letDeco 
-})
+// let letDeco = Decoration.mark({class: "let"})
+// let decorator = new MatchDecorator({
+//    regexp: /(let)/g || /(in)/g,
+//    decoration: letDeco 
+// })
 
-customPlugin = ViewPlugin.define(
-   (view) => ({
-      decorations: decorator.createDeco(view),
-      update(u) {
-         this.decorations = decorator.updateDeco(u, this.decorations)
-      }
-   }),
-   {
-      decorations: (v) => v.decorations
-   }
-)
+// customPlugin = ViewPlugin.define(
+//    (view) => ({
+//       decorations: decorator.createDeco(view),
+//       update(u) {
+//          this.decorations = decorator.updateDeco(u, this.decorations)
+//       }
+//    }),
+//    {
+//       decorations: (v) => v.decorations
+//    }
+// )
 
 
 // const myHighlightStyle = HighlightStyle.define([
@@ -48,7 +48,7 @@ customPlugin = ViewPlugin.define(
 
 let startState = EditorState.create({
   doc: "",
-  extensions: [keymap.of(defaultKeymap), EditorView.editable.of(false), customPlugin]
+  extensions: [keymap.of(defaultKeymap), EditorView.editable.of(false)]
 })
 
 function getContentsLength_ (ed) {

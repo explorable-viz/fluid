@@ -17,14 +17,14 @@ module Util.Pretty
    ) where
 
 import Prelude
-import Data.Array (range, take, zipWith, last, singleton, head, drop)
-import Data.Array (length) as A
+
+import Data.Array (drop, head, last, range, singleton, take, zipWith)
+import Data.Array (length, replicate) as A
 import Data.Foldable (class Foldable, foldl, foldMap, intercalate)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (ala, class Newtype, wrap)
 import Data.String as S
--- import Data.String.CodeUnits as SCU
-import Data.Unfoldable (replicate)
-import Data.Maybe (Maybe(..))
+import Util (absurd, error) as U
 
 -- | A text document.
 newtype Doc = Doc
@@ -61,6 +61,7 @@ empty w h =
 -- | Create a document from some text.
 text :: String -> Doc
 text s =
+   if A.length lines > 1 then U.error U.absurd else 
    Doc
       { width: foldl max 0 $ map S.length lines
       , height: A.length lines
@@ -68,28 +69,6 @@ text s =
       }
    where
    lines = S.split (wrap "\n") s
-
--- | Place one document beside another.
--- beside :: Doc -> Doc -> Doc
--- beside (Doc d1) (Doc d2) =
---    Doc
---       { width: d1.width + d2.width
---       , height: height_
---       , lines: take height_ $ zipWith append (map (padRight d1.width) (adjust d1)) (adjust d2)
---       }
---    where
---    height_ :: Int
---    height_ = max d1.height d2.height
-
---    -- Adjust a document to fit the new width and height
---    adjust :: { lines :: Array String, width :: Int, height :: Int } -> Array String
---    adjust d = d.lines <> replicate (height_ - d.height) (emptyLine d.width)
-
---    emptyLine :: Int -> String
---    emptyLine w = SCU.fromCharArray (replicate w ' ' :: Array Char)
-
---    padRight :: Int -> String -> String
---    padRight w s = s <> emptyLine (w - S.length s)
 
 -- | Place one document on top of another.
 atop :: Doc -> Doc -> Doc
@@ -102,7 +81,7 @@ atop (Doc d1) (Doc d2) =
 
 -- | Beside with a space
 space :: Doc -> Doc -> Doc
-space x y = x :<>: text " " :<>: y
+space d1 d2 = d1 :<>: text " " :<>: d2
 
 infixl 5 beside as :<>:
 infixl 5 atop as .-.
@@ -112,20 +91,8 @@ helperUnwrapMaybe :: Maybe String -> String
 helperUnwrapMaybe (Just x) = x
 helperUnwrapMaybe (Nothing) = ""
 
-indentedExpressionRequired :: String -> Array String
-indentedExpressionRequired d = replicate (S.length d) " "
-
--- here you would take [" ", " ", " "] and form "   "
-spacesNeeded :: Array String -> String
-spacesNeeded x = foldl (<>) "" x
-
--- here you would take "   " and all but first of d2 and say this has 2 lines you would form ["   ", "   "]
-indentingEachLine :: Array String -> String -> Array String
-indentingEachLine p x = replicate (A.length p) x
-
--- here you would take ["   ", "   "] and all but first of d2 and form the required result 
-indentedExpressionHelper :: Array String -> Array String -> Array String
-indentedExpressionHelper x y = zipWith (<>) x y
+spaces :: Int -> String   
+spaces n = foldl (<>) "" (A.replicate n " ")
 
 allButLast :: Doc -> Array String
 allButLast (Doc d) = take (A.length d.lines - 1) d.lines
@@ -139,8 +106,13 @@ firstLine (Doc d) = helperUnwrapMaybe (head d.lines)
 lastLine :: Doc -> String
 lastLine (Doc d) = helperUnwrapMaybe (last d.lines)
 
+-- takes all but the first lines of d2 so say e.g. [s1, s2] and spaces returns "  " (length of last line of d1) and we do ["  ", " "]
+-- we then zip this with all but the first line of d2 so we have indented the document by the length of the last line of d1 
 indentedExpression :: Doc -> Doc -> Array String
-indentedExpression (Doc d1) (Doc d2) = indentedExpressionHelper (indentingEachLine (allButFirst (Doc d2)) (spacesNeeded (indentedExpressionRequired (lastLine (Doc d1))))) (allButFirst (Doc d2))
+indentedExpression (Doc d1) (Doc d2) =
+   zipWith (<>) (A.replicate (A.length (allButFirst (Doc d2)))  
+      (spaces (S.length (lastLine (Doc d1))))) 
+      (allButFirst (Doc d2))
 
 finalLines :: Doc -> Doc -> Array String
 finalLines (Doc d1) (Doc d2) = allButLast (Doc d1) <> (singleton (lastLine (Doc d1) <> "" <> firstLine (Doc d2))) <> indentedExpression (Doc d1) (Doc d2)
