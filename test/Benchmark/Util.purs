@@ -25,9 +25,9 @@ derive newtype instance Semigroup File
 derive newtype instance Monoid File
 -- type Test a = SpecT Aff Unit BenchmarkAcc a
 
-data BenchRow = BenchRow String TraceRow GraphRow
+data BenchRow = BenchRow TraceRow GraphRow
 
-data BenchAcc = BenchAcc (Array BenchRow)
+data BenchAcc = BenchAcc (Array (String × BenchRow))
 
 type WithBenchAcc g a = WriterT BenchAcc g a
 
@@ -54,12 +54,15 @@ type GraphRow =
    }
 
 instance Show BenchAcc where
-   show (BenchAcc rows) = "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-DeMorgan\n" <> (fold $ intersperse "\n" (map show rows))
+   show (BenchAcc rows) = "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-DeMorgan\n" <> (fold $ intersperse "\n" (map rowShow rows))
+
+rowShow :: String × BenchRow -> String
+rowShow (str × row) = str <> "," <> show row
 
 instance Show BenchRow where
-   show (BenchRow name trRow grRow) = fold $ intersperse ","
-      [ name
-      , show trRow.tEval
+   show (BenchRow trRow grRow) = fold $ intersperse ","
+      [
+        show trRow.tEval
       , show trRow.tBwd
       , show trRow.tFwd
       , show grRow.tEval

@@ -9,6 +9,7 @@ import Data.Either (either)
 import Data.Traversable (traverse_)
 import Effect (Effect)
 import Effect.Aff (Aff, Error, runAff_)
+import Util ((×), type (×))
 
 foreign import data MOCHA :: Type
 
@@ -31,14 +32,14 @@ foreign import describe
    -> Effect Unit
    -> Effect Unit
 
-registerGroup
-   :: forall a. Aff a -> Effect Unit
-registerGroup example = itAsync true "It works!" cb
+executeTest
+   :: forall a. (String × Aff a) -> Effect Unit
+executeTest (name × example) = itAsync true name cb
    where
    cb :: Effect Unit -> (Error -> Effect Unit) -> Effect Unit
    cb onSuccess onError =
       runAff_ (either onError (const onSuccess)) example
 
-runMocha :: forall a. Array (Aff a) -> Effect Unit
-runMocha = traverse_ registerGroup
+runMocha :: forall a. (Array (String × Aff a)) -> Effect Unit
+runMocha = traverse_ executeTest
 
