@@ -17,12 +17,6 @@ import Effect.Console (logShow, log)
 import Test.Spec (SpecT)
 import Util (MayFailT, error, type (×), (×))
 
-newtype File = File String
-newtype Folder = Folder String
-
-derive newtype instance Show File
-derive newtype instance Semigroup File
-derive newtype instance Monoid File
 type Test a = SpecT Aff Unit Effect a
 
 type BenchResult =
