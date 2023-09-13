@@ -148,13 +148,14 @@ drawCode ed s = do
    tr <- update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
    dispatch ed tr
 
-drawFig :: Fig -> Selector Val -> Effect Unit
-drawFig fig@{ spec: { divId } } δv = do
+drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
+drawFig fig@{ spec: { divId }, e } ed δv = do
    log $ "Redrawing " <> divId
    let v_view × views = successful $ figViews fig δv
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
-   drawView divId (\selector -> drawFig fig (δv >>> selector)) (length views) v_view
+   drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
+   drawCode ed $ prettyP e
 
 varView :: Var -> Env 𝔹 -> MayFail View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
@@ -203,7 +204,8 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       dir = File "linking/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment γ0 as well as dataset
-   { γα } × xv :: GraphConfig GraphImpl × _ <- openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
+   { γα } × xv :: GraphConfig GraphImpl × _ <-
+      openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ0 = botOf <$> γα

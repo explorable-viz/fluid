@@ -49,7 +49,9 @@ drawFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
          Left err -> log $ show err
-         Right figs -> sequence_ $ flip drawFig botOf <$> figs
+         Right figs -> sequence_ $ figs <#> \fig -> do
+            ed <- addEditorView ("codemirror-" <> fig.spec.divId)
+            drawFig fig ed botOf
 
 main :: Effect Unit
 main = do
