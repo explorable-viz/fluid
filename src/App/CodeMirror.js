@@ -24,6 +24,10 @@ let startState = EditorState.create({
   extensions: [keymap.of(defaultKeymap)]
 })
 
+function getContentsLength_ (ed) {
+   return ed.state.doc.length
+}
+
 function addEditorView_ (id) {
    return () => {
       const div = d3.select('#' + id).node()
@@ -53,5 +57,6 @@ function update_(editorState, specs) {
 
 export var addEditorView = addEditorView_
 export var dispatch = curry2(dispatch_)
+export var getContentsLength = getContentsLength_
 export var replaceSelection = curry2(replaceSelection_)
 export var update = curry2(update_)

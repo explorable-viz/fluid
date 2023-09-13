@@ -3,7 +3,7 @@ module App.Fig where
 import Prelude hiding (absurd)
 
 import App.BarChart (BarChart, barChartHandler, drawBarChart)
-import App.CodeMirror (EditorView, dispatch, update)
+import App.CodeMirror (EditorView, dispatch, getContentsLength, update)
 import App.LineChart (LineChart, drawLineChart, lineChartHandler)
 import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
@@ -145,7 +145,7 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv =
 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s = do
-   tr <- update ed.state [ { changes: { from: 0, to: 0, insert: s } } ]
+   tr <- update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
    dispatch ed tr
 
 drawFig :: Fig -> Selector Val -> Effect Unit
