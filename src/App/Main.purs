@@ -5,6 +5,7 @@ import Prelude hiding (absurd)
 import App.CodeMirror (addEditorView)
 import App.Fig (Fig, FigSpec, LinkFig, LinkFigSpec, drawFig, drawLinkFig, loadFig, loadLinkFig)
 import Data.Either (Either(..))
+import Data.Newtype (unwrap)
 import Data.Traversable (sequence, sequence_)
 import Effect (Effect)
 import Effect.Aff (Aff, runAff_)
@@ -41,8 +42,10 @@ drawLinkFigs loadFigs =
       case _ of
          Left err -> log $ show err
          Right figs -> do
-            ed <- addEditorView "codemirror-expt"
-            sequence_ $ (\fig -> drawLinkFig fig ed (Left $ botOf)) <$> figs
+            sequence_ $ figs <#> \fig -> do
+               ed1 <- addEditorView $ "codemirror-" <> unwrap (fig.spec.file1)
+               ed2 <- addEditorView $ "codemirror-" <> unwrap (fig.spec.file2)
+               drawLinkFig fig ed1 ed2 (Left $ botOf)
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =

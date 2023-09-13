@@ -91,6 +91,7 @@ type Fig =
    { spec :: FigSpec
    , γ0 :: Env 𝔹 -- ambient env (default imports)
    , γ :: Env 𝔹 -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
+   , s0 :: S.Expr 𝔹 -- program that was originally "split"
    , s :: S.Expr 𝔹 -- body of example
    , e :: Expr 𝔹 -- desugared s
    , t :: Trace
@@ -125,8 +126,8 @@ type LinkResult =
    , v0' :: Val 𝔹
    }
 
-drawLinkFig :: LinkFig -> EditorView -> Selector Val + Selector Val -> Effect Unit
-drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv = do
+drawLinkFig :: LinkFig -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
+drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2 } ed1 ed2 δv = do
    log $ "Redrawing " <> divId
    let
       v1' × v2' × δv1 × δv2 × v0 = successful case δv of
@@ -138,10 +139,11 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, e1, e2, t1, t2, v1, v2 } ed δv =
             let v2' = δv2 v2
             { v', v0' } <- linkResult x γ0 γ e2 e1 t2 t1 v2'
             pure $ v' × v2' × identity × const v2' × v0'
-   drawView divId (\selector -> drawLinkFig fig ed (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkFig fig ed (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
+   drawView divId (\selector -> drawLinkFig fig ed1 ed2 (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
+   drawView divId (\selector -> drawLinkFig fig ed1 ed2 (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
-   drawCode ed $ prettyP e1
+   drawCode ed1 $ prettyP s1
+   drawCode ed2 $ prettyP s2
 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s = do
@@ -149,13 +151,13 @@ drawCode ed s = do
    dispatch ed tr
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
-drawFig fig@{ spec: { divId }, e } ed δv = do
+drawFig fig@{ spec: { divId }, s0 } ed δv = do
    log $ "Redrawing " <> divId
    let v_view × views = successful $ figViews fig δv
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
    drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
-   drawCode ed $ prettyP e
+   drawCode ed $ prettyP s0
 
 varView :: Var -> Env 𝔹 -> MayFail View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
@@ -192,11 +194,12 @@ loadFig spec@{ file } = do
       γ0 = botOf <$> γα0
       xv0 = botOf <$> xv
    open file <#> \s' -> successful $ do
-      { γ: γ1, s } <- splitDefs (γ0 <+> xv0) (botOf s')
+      let s0 = botOf s'
+      { γ: γ1, s } <- splitDefs (γ0 <+> xv0) s0
       e <- desug s
       let γ0γ = γ0 <+> xv0 <+> γ1
       t × v <- eval γ0γ e bot
-      pure { spec, γ0, γ: γ0 <+> γ1, s, e, t, v }
+      pure { spec, γ0, γ: γ0 <+> γ1, s0, s, e, t, v }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
 loadLinkFig spec@{ file1, file2, dataFile, x } = do

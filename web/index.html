@@ -55,13 +55,13 @@
 
       <p>Hand-crafting transparency features like these would involve manually tracking the dependencies between input and output. Fluid does this automatically, allowing the programmer to simply express the bar chart and line chart as pure functions, using standard functional programming features such as higher-order functions and list comprehensions. Take a look at the source code below:
          <details><summary>bar-chart.fld</summary>
-            <script src="https://gist.github.com/rolyp/7d4c2240e6a588d9b3844c025b7db920.js"></script>
+            <div id="codemirror-bar-chart"></div>
          </details>
          <details><summary>line-chart.fld</summary>
-            <script src="https://gist.github.com/rolyp/a2bed1325ef0ace335d8fa0fd304acd5.js"></script>
+            <div id="codemirror-line-chart"></div>
          </details>
          <details><summary>dataset.fld</summary>
-            <script src="https://gist.github.com/rolyp/367c33ce1c61eea77fe3dc37eb690f2c.js"></script>
+            <div id="codemirror-dataset"></div>
          </details>
       <p>The mathematics of the bidirectional analysis is described by a <b>Galois connection</b>. This establishes that the forward and backward parts of the analysis are <i>adjoint</i>, meaning they almost invert each other in the following sense: the data selection computed by the backwards analysis for a given view selection, if fed into the forward analysis, will suffice for (at least) the original view selection. Similarly, the view selection computed by the forwards analysis, if fed into the backwards analysis, will require (no more than) the original data selection. (&#8220;Require no more, promise no less&#8221; is an apt slogan.) See our <a href="https://dl.acm.org/doi/10.1145/3498668">paper</a> for more on the formal setting.
    </div>
