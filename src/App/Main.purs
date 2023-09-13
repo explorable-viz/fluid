@@ -53,7 +53,7 @@ drawFigs loadFigs =
       case _ of
          Left err -> log $ show err
          Right figs -> sequence_ $ figs <#> \fig -> do
-            ed <- addEditorView ("codemirror-" <> fig.spec.divId)
+            ed <- addEditorView $ "codemirror-" <> fig.spec.divId
             drawFig fig ed botOf
 
 drawFiles :: Folder -> File -> Effect Unit
@@ -61,9 +61,9 @@ drawFiles folder file =
    flip runAff_ (loadFile folder file)
       case _ of
          Left err -> log $ show err
-         Right fileconts -> do
-            ed <- addEditorView "temp"
-            drawCode ed fileconts
+         Right src -> do
+            ed <- addEditorView $ "codemirror-" <> unwrap file
+            drawCode ed src
 
 main :: Effect Unit
 main = do
