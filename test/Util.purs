@@ -54,13 +54,13 @@ type TestConfig =
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 -- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
 testWithSetup ∷ String -> Boolean → SE.Expr Unit → GraphConfig (GraphImpl S.Set) → TestConfig → Aff BenchRow
-testWithSetup name is_bench s gconfig tconfig = do
+testWithSetup _name is_bench s gconfig tconfig = do
    e <- runExceptT
       ( do
            unless is_bench (testParse s)
            trRow <- testTrace is_bench s gconfig tconfig
            grRow <- testGraph is_bench s gconfig tconfig
-           pure (BenchRow name trRow grRow)
+           pure (BenchRow trRow grRow)
       )
    case e of
       Left msg -> error msg
