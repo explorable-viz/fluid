@@ -5,9 +5,17 @@ import Prelude
 import Control.Monad.Writer (WriterT, runWriterT)
 import Data.Array (intersperse)
 import Data.Foldable (fold)
-import Data.JSDate (JSDate, getTime, now)
+import Data.JSDate (JSDate, getTime)
+import Data.JSDate (now) as JSDate
 import Effect.Class (class MonadEffect, liftEffect)
 import Util (type (×), (×))
+
+newtype File = File String
+newtype Folder = Folder String
+
+derive newtype instance Show File
+derive newtype instance Semigroup File
+derive newtype instance Monoid File
 
 data BenchRow = BenchRow TraceRow GraphRow
 
@@ -53,13 +61,9 @@ instance Show BenchRow where
       , show grRow.tFwdDemorgan
       ]
 
-bench :: forall m a. MonadEffect m => m a -> m (a × Number)
-bench prog = do
-   t <- liftEffect $ now
-   r <- prog
-   t' <- liftEffect $ now
-   pure (r × timeDiff t t')
+now :: forall m. MonadEffect m => m JSDate
+now = liftEffect JSDate.now
 
-timeDiff :: JSDate -> JSDate -> Number
-timeDiff begin end =
+tdiff :: JSDate -> JSDate -> Number
+tdiff begin end =
    getTime end - getTime begin
