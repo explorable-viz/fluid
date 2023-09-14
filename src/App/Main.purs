@@ -12,6 +12,7 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile)
+import Util (type (×), Endo, (×))
 
 linkingFig1 :: LinkFigSpec
 linkingFig1 =
@@ -36,6 +37,9 @@ fig2 =
    , xs: [ "image", "filter" ]
    }
 
+codeMirrorDiv :: Endo String
+codeMirrorDiv = ("codemirror-" <> _)
+
 drawLinkFigs :: Array (Aff LinkFig) -> Effect Unit
 drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)
@@ -43,8 +47,8 @@ drawLinkFigs loadFigs =
          Left err -> log $ show err
          Right figs -> do
             sequence_ $ figs <#> \fig -> do
-               ed1 <- addEditorView $ "codemirror-" <> unwrap (fig.spec.file1)
-               ed2 <- addEditorView $ "codemirror-" <> unwrap (fig.spec.file2)
+               ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
+               ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
                drawLinkFig fig ed1 ed2 (Left $ botOf)
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
@@ -53,20 +57,23 @@ drawFigs loadFigs =
       case _ of
          Left err -> log $ show err
          Right figs -> sequence_ $ figs <#> \fig -> do
-            ed <- addEditorView $ "codemirror-" <> fig.spec.divId
+            ed <- addEditorView $ codeMirrorDiv fig.spec.divId
             drawFig fig ed botOf
 
-drawFiles :: Folder -> File -> Effect Unit
-drawFiles folder file =
+drawFiles :: Array (Folder × File) -> Effect Unit
+drawFiles files = sequence_ $ files <#> \(folder × file) ->
    flip runAff_ (loadFile folder file)
       case _ of
          Left err -> log $ show err
          Right src -> do
-            ed <- addEditorView $ "codemirror-" <> unwrap file
+            ed <- addEditorView $ codeMirrorDiv $ unwrap file
             drawCode ed src
 
 main :: Effect Unit
 main = do
-   drawFiles (Folder "fluid/lib") (File "convolution")
+   drawFiles [
+      Folder "fluid/lib" × File "convolution",
+      Folder "fluid/example/linking" × File "renewables"
+   ]
    drawFigs [ loadFig fig1, loadFig fig2 ]
    drawLinkFigs [ loadLinkFig linkingFig1 ]
