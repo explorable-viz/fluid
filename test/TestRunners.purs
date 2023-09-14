@@ -5,25 +5,10 @@ import Prelude
 import App.Fig (linkResult, loadLinkFig)
 import Data.Array (zip)
 import Data.Profunctor.Strong (second)
-import Effect (Effect)
 import Effect.Aff (Aff)
 import Test.Many (bwdMany, many, withDatasetMany)
-import Test.Spec.Mocha (runMocha)
 import Test.Util (TestBwdSpec, TestSpec, TestWithDatasetSpec, TestLinkSpec, checkPretty)
 import Util (type (×), successful)
-
-run :: forall a. Array (String × Aff a) -> Effect Unit
-run = runMocha
-
--- withDefaultImports ∷ forall a. TestWith (GraphConfig GraphImpl) a -> Test a
--- withDefaultImports x = beforeAll openDefaultImports x
-
--- withDataset :: File -> TestWith (GraphConfig (GraphImpl)) Unit -> TestWith (GraphConfig (GraphImpl)) Unit
--- withDataset dataset =
---    beforeWith
---       ( openDatasetAs dataset "data" >=>
---            \({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }
---       )
 
 testMany :: Array TestSpec -> Array (String × Aff Unit)
 testMany fxs = map (second void) $ many false fxs

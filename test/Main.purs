@@ -13,11 +13,10 @@ import Prelude hiding (add)
 import Data.Array (concat)
 import Effect (Effect)
 import Effect.Aff (Aff)
-import Module (File(..))
 import Test.Spec.Mocha (run)
 import Test.Spec.Specs (bwd_cases, desugar_cases, graphics_cases, linking_cases, misc_cases)
 import Test.TestRunners (linkMany, testBwdMany, testMany, testWithDatasetMany)
-import Util (type (×), (×))
+import Util (type (×))
 
 main :: Effect Unit
 main = do
