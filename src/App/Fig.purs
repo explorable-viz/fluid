@@ -28,7 +28,7 @@ import Expr (Expr)
 import Foreign.Object (lookup)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
-import Module (File(..), open, openDefaultImports, openDatasetAs)
+import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive (matrixRep) as P
@@ -119,6 +119,7 @@ type LinkFig =
    , v1 :: Val 𝔹
    , v2 :: Val 𝔹
    , v0 :: Val 𝔹 -- common data named by spec.x
+   , dataFile :: String -- TODO: provide surface expression instead and prettyprint
    }
 
 type LinkResult =
@@ -126,8 +127,8 @@ type LinkResult =
    , v0' :: Val 𝔹
    }
 
-drawLinkFig :: LinkFig -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
-drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2 } ed1 ed2 δv = do
+drawLinkFig :: LinkFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
+drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataFile } ed1 ed2 ed3 δv = do
    log $ "Redrawing " <> divId
    let
       v1' × v2' × δv1 × δv2 × v0 = successful case δv of
@@ -139,11 +140,12 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2 } 
             let v2' = δv2 v2
             { v', v0' } <- linkResult x γ0 γ e2 e1 t2 t1 v2'
             pure $ v' × v2' × identity × const v2' × v0'
-   drawView divId (\selector -> drawLinkFig fig ed1 ed2 (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
-   drawView divId (\selector -> drawLinkFig fig ed1 ed2 (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
+   drawView divId (\selector -> drawLinkFig fig ed1 ed2 ed3 (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
+   drawView divId (\selector -> drawLinkFig fig ed1 ed2 ed3 (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
    drawCode ed1 $ prettyP s1
    drawCode ed2 $ prettyP s2
+   drawCode ed3 $ dataFile
 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s = do
@@ -215,9 +217,10 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       xv0 = botOf <$> xv
       s1 = botOf s1'
       s2 = botOf s2'
+   dataFile' <- loadFile (Folder "fluid/example/linking") (dataFile) -- use surface expression instead
    pure $ successful do
       e1 × e2 <- (×) <$> desug s1 <*> desug s2
       t1 × v1 <- eval (γ0 <+> xv0) e1 bot
       t2 × v2 <- eval (γ0 <+> xv0) e2 bot
       v0 <- lookup x xv0 # orElse absurd
-      pure { spec, γ0, γ: xv0, s1, s2, e1, e2, t1, t2, v1, v2, v0 }
+      pure { spec, γ0, γ: xv0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }

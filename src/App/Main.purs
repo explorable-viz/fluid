@@ -49,7 +49,8 @@ drawLinkFigs loadFigs =
             sequence_ $ figs <#> \fig -> do
                ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
                ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
-               drawLinkFig fig ed1 ed2 (Left $ botOf)
+               ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
+               drawLinkFig fig ed1 ed2 ed3 (Left $ botOf)
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =
@@ -71,9 +72,6 @@ drawFiles files = sequence_ $ files <#> \(folder × file) ->
 
 main :: Effect Unit
 main = do
-   drawFiles [
-      Folder "fluid/lib" × File "convolution",
-      Folder "fluid/example/linking" × File "renewables"
-   ]
+   drawFiles [ Folder "fluid/lib" × File "convolution" ]
    drawFigs [ loadFig fig1, loadFig fig2 ]
    drawLinkFigs [ loadLinkFig linkingFig1 ]
