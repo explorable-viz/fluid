@@ -19,19 +19,6 @@ testBwdMany fxs = map (second void) $ bwdMany false fxs
 testWithDatasetMany :: Array TestWithDatasetSpec -> Array (String × Aff Unit)
 testWithDatasetMany fxs = map (second void) $ withDatasetMany false fxs
 
--- testLinkMany :: Array (LinkFigSpec × Selector Val × String) -> Test Unit
--- testLinkMany fxs = traverse_ testLink fxs
---    where
---    testLink :: (LinkFigSpec × Selector Val × String) -> Test Unit
---    testLink (spec@{ x } × δv1 × v2_expect) =
---       before (loadLinkFig spec) $
---          it ("linking/" <> show spec.file1 <> " <-> " <> show spec.file2)
---             \{ γ0, γ, e1, e2, t1, t2, v1 } ->
---                let
---                   { v': v2' } = successful $ linkResult x γ0 γ e1 e2 t1 t2 (δv1 v1)
---                in
---                   checkPretty "Linked output" v2_expect v2'
-
 linkMany :: Array TestLinkSpec -> Array (String × Aff Unit)
 linkMany fxs = zip names affs
    where

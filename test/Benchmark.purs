@@ -20,7 +20,7 @@ import Util (type (×), (×))
 main :: Effect Unit
 main = launchAff_ do
    let arr = concat [ bench_desugaring, bench_misc, bench_bwd, bench_graphics ]
-   outs <- sequence $ map affify arr
+   outs <- sequence $ map (\(str × row) -> lift2 Tuple (pure str) row) arr
    logShow $ BenchAcc outs
 
 bench_desugaring :: Array (String × Aff BenchRow)
@@ -34,6 +34,3 @@ bench_bwd = benchBwdMany bwd_cases
 
 bench_graphics :: Array (String × Aff BenchRow)
 bench_graphics = benchWithDatasetMany graphics_cases
-
-affify :: String × Aff BenchRow -> Aff (String × BenchRow)
-affify (str × row) = lift2 Tuple (pure str) row
