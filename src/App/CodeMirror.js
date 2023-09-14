@@ -44,7 +44,6 @@ function replaceSelection_ (editorState, str) {
 
 function dispatch_ (editorView, tr) {
    return () => {
-      console.log(tr.state.doc.toString())
       editorView.dispatch(tr)
    }
 }

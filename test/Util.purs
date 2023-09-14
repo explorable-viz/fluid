@@ -54,13 +54,11 @@ type TestConfig =
 -- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
 testWithSetup ∷ String -> Boolean → SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
 testWithSetup _name is_bench s gconfig tconfig = do
-   e <- runExceptT
-      ( do
-           unless is_bench (testParse s)
-           trRow <- testTrace is_bench s gconfig tconfig
-           grRow <- testGraph is_bench s gconfig tconfig
-           pure (BenchRow trRow grRow)
-      )
+   e <- runExceptT $ do
+      unless is_bench (testParse s)
+      trRow <- testTrace is_bench s gconfig tconfig
+      grRow <- testGraph is_bench s gconfig tconfig
+      pure (BenchRow trRow grRow)
    case e of
       Left msg -> error msg
       Right x -> pure x
@@ -69,13 +67,11 @@ testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do
    let src = prettyP s
    s' <- parse src program
-   trace ("Non-Annotated:\n" <> src)
-      ( \_ ->
-           unless (eq (erase s) (erase s')) do
-              log ("SRC\n" <> show (erase s))
-              log ("NEW\n" <> show (erase s'))
-              (lift $ fail "not equal") :: MayFailT Aff Unit
-      )
+   trace ("Non-Annotated:\n" <> src) \_ ->
+      unless (eq (erase s) (erase s')) do
+         log ("SRC\n" <> show (erase s))
+         log ("NEW\n" <> show (erase s'))
+         (lift $ fail "not equal") :: MayFailT Aff Unit
 
 testTrace :: Boolean -> Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
 testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
