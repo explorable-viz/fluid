@@ -128,7 +128,6 @@ eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
    α' <- new (insert α αs)
-   --trace ("Constructing " <> c <> "@" <> show α' <> "; adding dependency to " <> show α) \_ -> do
    pure $ V.Constr α' c vs
 eval γ (Matrix α e (x × y) e') αs = do
    v <- eval γ e' αs

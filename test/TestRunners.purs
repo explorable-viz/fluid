@@ -30,7 +30,10 @@ withDefaultImports x = beforeAll openDefaultImports x
 
 withDataset :: File -> TestWith (GraphConfig (GraphImpl)) Unit -> TestWith (GraphConfig (GraphImpl)) Unit
 withDataset dataset =
-   beforeWith (openDatasetAs dataset "data" >=> ((\({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv })))
+   beforeWith
+      ( openDatasetAs dataset "data" >=>
+           \({ g, n, γα } × xv) -> pure { g, n, γα: γα <+> xv }
+      )
 
 testMany :: Array TestSpec -> Array (String × Aff Unit)
 testMany fxs = map (second void) $ many false fxs

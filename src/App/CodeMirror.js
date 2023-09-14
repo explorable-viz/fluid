@@ -21,8 +21,12 @@ import {defaultKeymap} from "@codemirror/commands"
 
 let startState = EditorState.create({
   doc: "",
-  extensions: [keymap.of(defaultKeymap)]
+  extensions: [keymap.of(defaultKeymap), EditorView.editable.of(false)]
 })
+
+function getContentsLength_ (ed) {
+   return ed.state.doc.length
+}
 
 function addEditorView_ (id) {
    return () => {
@@ -40,7 +44,6 @@ function replaceSelection_ (editorState, str) {
 
 function dispatch_ (editorView, tr) {
    return () => {
-      console.log(tr.state.doc.toString())
       editorView.dispatch(tr)
    }
 }
@@ -53,5 +56,6 @@ function update_(editorState, specs) {
 
 export var addEditorView = addEditorView_
 export var dispatch = curry2(dispatch_)
+export var getContentsLength = getContentsLength_
 export var replaceSelection = curry2(replaceSelection_)
 export var update = curry2(update_)
