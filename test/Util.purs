@@ -1,6 +1,7 @@
 module Test.Util
    ( TestBwdSpec
    , TestConfig
+   , TestLinkSpec
    , TestSpec
    , TestWithDatasetSpec
    , checkPretty
@@ -13,6 +14,7 @@ module Test.Util
 
 import Prelude hiding (absurd)
 
+import App.Fig (LinkFigSpec)
 import App.Util (Selector)
 import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, now, tdiff)
 import Control.Monad.Error.Class (class MonadThrow)
@@ -167,6 +169,12 @@ type TestBwdSpec =
 type TestWithDatasetSpec =
    { dataset :: String
    , file :: String
+   }
+
+type TestLinkSpec =
+   { spec :: LinkFigSpec
+   , δv1 :: Selector Val
+   , v2_expect :: String
    }
 
 -- Don't enforce fwd_expect values for graphics tests (values too complex).
