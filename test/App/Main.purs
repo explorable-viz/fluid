@@ -11,18 +11,10 @@ import Util (type (×), (×))
 
 -- For now app tests just exercise figure creation code.
 test_fig :: FigSpec -> String × Aff Unit
-test_fig spec =
-   let
-      _ = void (loadFig spec)
-   in
-      (spec.divId × pure unit)
+test_fig spec = spec.divId × void (loadFig spec)
 
 test_linkingFig :: LinkFigSpec -> String × Aff Unit
-test_linkingFig spec =
-   let
-      _ = void (loadLinkFig spec)
-   in
-      (spec.divId × pure unit)
+test_linkingFig spec = spec.divId × void (loadLinkFig spec)
 
 tests :: Array (String × Aff Unit)
 tests = [ test_fig fig1, test_fig fig2, test_linkingFig linkingFig1 ]
