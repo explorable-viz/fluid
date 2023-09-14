@@ -1,4 +1,4 @@
-module Pretty (class Pretty, pretty, prettyP, pretty') where
+module Pretty (class Pretty, pretty, prettyP) where
 
 import Prelude hiding (absurd, between)
 
@@ -97,7 +97,7 @@ prettyBinApp n (BinaryApp s op s') =
       prec' = getPrec op
    in
       case getPrec op of
-         -1 -> prettyBinApp prec' s .<>. backTicks (text op) .<>. prettyBinApp prec' s'
+         -1 -> prettyBinApp prec' s .<>. (text ("`" <> op <> "`")) .<>. prettyBinApp prec' s'
          _ -> if prec' <= n then 
                parentheses (prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s') else 
                prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s'
@@ -114,7 +114,6 @@ infixl 5 atop as .-.
 
 class Pretty p where
    pretty :: p -> Doc
-   pretty' :: p -> Doc
 
 removeLineWS :: String -> String
 removeLineWS str = foldl (\curr (x×y) -> replaceAll x y curr) str pattRepPairs
@@ -131,7 +130,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (Op op) = parentheses (text op) 
    pretty (Int ann n) = highlightIf ann $ text (show n)
    pretty (Float ann n) = highlightIf ann $ text (show n)
-   pretty (Str ann str) = highlightIf ann $ slashes (text str)
+   pretty (Str ann str) = highlightIf ann $ (text ("\"" <> str <> "\""))
    pretty (Constr ann c x) = prettyConstr ann c x
    pretty (Record ann xss) = highlightIf ann $ curlyBraces (prettyOperator (.-.) xss)
    pretty (Dictionary ann sss) = highlightIf ann $ dictBrackets (pretty sss)
@@ -153,7 +152,6 @@ instance Ann a => Pretty (Expr a) where
    pretty (Let ds s) = text str.let_ .<>. pretty ds .<>. text str.in_ .<>. pretty s
    pretty (LetRec h s) = (text str.let_ .<>. pretty (First h)) .-. text str.in_ .<>. pretty s
    
-   pretty' p = removeDocWS (pretty p) 
 
 prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
@@ -164,14 +162,12 @@ instance Ann a => Pretty (ListRest a) where
    pretty (Next ann (Record _ xss) l) = (highlightIf ann $ text str.comma) .<>. (highlightIf ann $ curlyBraces (prettyOperator (.<>.) xss)) .-. pretty l
    pretty (Next ann s l) = (highlightIf ann $ text str.comma) .<>. pretty s .<>. pretty l
    pretty (End ann) = highlightIf ann $ text str.rBracket
-   pretty' p  = removeDocWS (pretty p) 
 
 
 instance Ann a => Pretty (List (Pair (Expr a))) where
    pretty (Cons (Pair e e') Nil) = prettyPairs (Pair e e')
    pretty (Cons (Pair e e') sss) = prettyPairs (Pair e e') .<>. text str.comma .<>. pretty sss
    pretty Nil = empty
-   pretty' p  = removeDocWS (pretty p) 
 
 
 
@@ -188,14 +184,12 @@ instance Pretty Pattern where
             false -> parentheses (text c .<>. prettyPattConstr empty ps)
    pretty (PListEmpty) = brackets empty
    pretty (PListNonEmpty p l) = text str.lBracket .<>. pretty p .<>. pretty l
-   pretty' p  = removeDocWS (pretty p) 
 
 
 instance Pretty (List (Bind Pattern)) where
    pretty (Cons xp Nil) = text (key xp) .<>. text str.colon .<>. pretty (val xp)
    pretty (Cons xp xps) = text (key xp) .<>. text str.colon .<>. pretty (val xp) .<>. text str.comma .-. pretty xps
    pretty Nil = empty
-   pretty' p  = removeDocWS (pretty p) 
 
 
 prettyPattConstr :: Doc -> List Pattern -> Doc
@@ -206,48 +200,38 @@ prettyPattConstr sep (Cons p ps) = pretty p .<>. sep .<>. prettyPattConstr sep p
 instance Pretty ListRestPattern where
    pretty (PNext p l) = text str.comma .<>. pretty p .<>. pretty l
    pretty PEnd = text str.rBracket
-   pretty' p = removeDocWS (pretty p)
 
 prettyClause :: forall a. Ann a => Doc -> Clause a -> Doc
 prettyClause sep (Clause (ps × e)) = prettyPattConstr empty (toList ps) .<>. sep .<>. pretty e
 
 instance Ann a => Pretty (Clauses a) where
    pretty (Clauses cs) = intersperse' (toList (map (prettyClause (text str.equal)) (cs))) (text str.semiColon)
-   pretty' p = removeDocWS (pretty p)
 
 instance Ann a => Pretty (Branch a) where
    pretty (x × Clause (ps × e)) = text x .<>. prettyClause (text str.equal) (Clause (ps × e))
-   pretty' p = removeDocWS (pretty p)
 
 instance Ann a => Pretty (NonEmptyList (Branch a)) where
    pretty h = intersperse' (toList (map pretty h)) (text str.semiColon)
-   pretty' p = removeDocWS (pretty p)
 
 instance Ann a => Pretty (NonEmptyList (NonEmptyList (Branch a))) where
    pretty hs = intersperse' (toList (map pretty hs)) (text str.semiColon)
-   pretty' p = removeDocWS (pretty p)
 
 instance Ann a => Pretty (FirstGroup a) where
    pretty (First h) = pretty (groupBy (\p q -> key p == key q) h)
-   pretty' p = removeDocWS (pretty p)
 
 instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
    pretty pss = intersperse' (map (prettyClause (text str.rArrow)) (map Clause (toList (helperMatch pss)))) (text str.semiColon)
-   pretty' p = removeDocWS (pretty p)
 
 instance Ann a => Pretty (VarDef a) where
    pretty (VarDef p s) = pretty p .<>. text str.equal .<>. pretty s
-   pretty' p = removeDocWS (pretty p)
 
 instance Ann a => Pretty (VarDefs a) where
    pretty ds = intersperse' (toList (map pretty ds)) (text str.semiColon)
-   pretty' p = removeDocWS (pretty p)
 
 instance Ann a => Pretty (List (Expr a)) where
    pretty (Cons s Nil) = pretty s
    pretty (Cons s ss) = pretty s .<>. pretty ss
    pretty Nil = empty
-   pretty' p = removeDocWS (pretty p)
 
 instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (Guard s) Nil) = pretty s
@@ -255,7 +239,6 @@ instance Ann a => Pretty (List (Qualifier a)) where
    pretty (Cons (Generator p s) Nil) = pretty p .<>. text str.lArrow .<>. pretty s
    pretty (Cons q qs) = pretty (toList (singleton q)) .<>. text str.comma .<>. pretty qs
    pretty Nil = empty
-   pretty' p = removeDocWS (pretty p)
 
 intersperse' :: List Doc -> Doc -> Doc
 intersperse' (Cons dc Nil) _ = dc
@@ -266,7 +249,7 @@ helperMatch :: forall a. NonEmptyList (Pattern × Expr a) -> NonEmptyList (NonEm
 helperMatch pss = map (\(x × y) -> singleton x × y) pss
 
 prettyP :: forall d. Pretty d => d -> String
-prettyP x = render (pretty' x)
+prettyP x = render (removeDocWS (pretty x))
 
 between :: Doc -> Doc -> Endo Doc
 between l r doc = l .<>. doc .<>. r
@@ -280,11 +263,11 @@ dictBrackets = between (text str.dictLBracket) (text str.dictRBracket)
 parentheses :: Endo Doc
 parentheses = between (text str.lparenth) (text str.rparenth)
 
-slashes :: Endo Doc
-slashes = between (text str.slash) (text str.slash)
+-- slashes :: Endo Doc
+-- slashes = between (text str.slash) (text str.slash)
 
-backTicks :: Endo Doc
-backTicks = between (text str.backtick) (text str.backtick)
+-- backTicks :: Endo Doc
+-- backTicks = between (text str.backtick) (text str.backtick)
 
 curlyBraces :: Endo Doc
 curlyBraces = between (text str.curlylBrace) (text str.curlyrBrace)
@@ -297,6 +280,8 @@ comma = text str.comma
 
 semi :: Doc
 semi = text str.semiColon
+
+
 
 hcomma :: forall f. Foldable f => f Doc -> Doc
 hcomma = fromFoldable >>> intersperse comma >>> hcat
@@ -320,7 +305,6 @@ instance ToPair (Val a) where
 
 instance Pretty String where
    pretty = text
-   pretty' p = removeDocWS (pretty p)
 
 vert :: forall f. Foldable f => Doc -> f Doc -> Doc
 vert delim = fromFoldable >>> vert'
@@ -392,7 +376,6 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.LetRec δ e) = atop (hcat [ text str.let_, pretty δ, text str.in_ ]) (pretty e)
    pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
-   pretty' p = removeDocWS (pretty p)
 
 instance Highlightable a => Pretty (Dict (Elim a)) where
    pretty x = go (D.toUnfoldable x)
@@ -401,7 +384,6 @@ instance Highlightable a => Pretty (Dict (Elim a)) where
       go Nil = error absurd -- non-empty
       go (xσ : Nil) = pretty xσ
       go (xσ : δ) = atop (go δ .<>. semi) (pretty xσ)
-   pretty' p = removeDocWS (pretty p)
 
 instance Highlightable a => Pretty (Dict (Val a)) where
    pretty γ = brackets $ go (D.toUnfoldable γ)
@@ -409,7 +391,6 @@ instance Highlightable a => Pretty (Dict (Val a)) where
       go :: List (Var × Val a) -> Doc
       go Nil = empty
       go ((x × v) : rest) = parens (text x .<>. text str.comma .<>. pretty v) .<>. text str.comma .<>. go rest
-   pretty' p = removeDocWS (pretty p)
 
 instance Pretty (Dict (S.Set Vertex)) where
    pretty d = brackets $ go (D.toUnfoldable d)
@@ -417,27 +398,22 @@ instance Pretty (Dict (S.Set Vertex)) where
       go :: List (String × S.Set Vertex) -> Doc
       go Nil = empty
       go ((α × βs) : rest) = text α .<>. text " ↦ " .<>. pretty (βs :: S.Set Vertex) .<>. text str.comma .<>. go rest
-   pretty' p = removeDocWS (pretty p)
 
 instance Highlightable a => Pretty (Bind (Elim a)) where
    pretty (x ↦ σ) = hcat [ text x, text str.equals, pretty σ ]
-   pretty' p = removeDocWS (pretty p)
 
 instance Highlightable a => Pretty (Cont a) where
    pretty ContNone = empty
    pretty (ContExpr e) = pretty e
    pretty (ContElim σ) = pretty σ
-   pretty' p = removeDocWS (pretty p)
 
 instance Highlightable a => Pretty (Ctr × Cont a) where
    pretty (c × κ) = hcat [ text (showCtr c), text str.rArrow, pretty κ ]
-   pretty' p = removeDocWS (pretty p)
 
 instance Highlightable a => Pretty (Elim a) where
    pretty (ElimVar x κ) = hcat [ text x, text str.rArrow, pretty κ ]
    pretty (ElimConstr κs) = hcomma (pretty <$> κs) -- looks dodgy
    pretty (ElimRecord xs κ) = hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
-   pretty' p = removeDocWS (pretty p)
 
 instance Highlightable a => Pretty (Val a) where
    pretty (V.Int α n) = highlightIf α (text (show n))
@@ -451,21 +427,17 @@ instance Highlightable a => Pretty (Val a) where
    pretty (V.Constr α c vs) = prettyConstr α c vs
    pretty (V.Matrix _ (MatrixRep (vss × _ × _))) = vert comma (((<$>) pretty >>> hcomma) <$> vss)
    pretty (V.Fun α φ) = pretty (α × φ)
-   pretty' p = removeDocWS (pretty p)
 
 instance Highlightable a => Pretty (a × Fun a) where
    pretty (α × V.Closure _ _ _) = highlightIf α $ text "<closure>"
    pretty (_ × V.Foreign φ _) = runExists pretty φ
    pretty (α × V.PartialConstr c vs) = prettyConstr α c vs
-   pretty' p = removeDocWS (pretty p)
 
 instance Pretty (ForeignOp' t) where
    pretty _ = text "<extern op>" -- TODO
-   pretty' p = removeDocWS (pretty p)
 
 instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty
-   pretty' p = removeDocWS (pretty p)
 
 instance Pretty (GraphImpl S.Set) where
    pretty (GraphImpl g) =
@@ -475,10 +447,8 @@ instance Pretty (GraphImpl S.Set) where
                  atop (text "OUT: " .<>. pretty g.out) (text "IN: " .<>. pretty g.in)
             )
             (text "}")
-   pretty' p = removeDocWS (pretty p)
 
 instance Pretty (S.Set Vertex) where
    pretty αs = curlyBraces (hcomma (text <<< unwrap <$> (S.toUnfoldable αs :: List Vertex)))
       where
       unwrap (Vertex α) = α
-   pretty' p = removeDocWS (pretty p)
