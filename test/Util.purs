@@ -138,7 +138,8 @@ testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
    -- | Forward (round-tripping)
    e𝔹'' <- desug s𝔹'
    (_ × v𝔹'') × tFwd <- bench $ eval γ𝔹' e𝔹'' top
-
+   unless (isGraphical v𝔹') do
+      lift $ log (prettyP v𝔹'')
    unless is_bench $ lift do
       -- | Check backward selections
       unless (null bwd_expect) do

@@ -18,13 +18,14 @@ module Util.Pretty
 
 import Prelude
 
-import Data.Array (drop, head, last, range, singleton, take, zipWith)
+import Data.Array (drop, singleton, take, uncons, zipWith, head, last)
 import Data.Array (length, replicate) as A
 import Data.Foldable (class Foldable, foldl, foldMap, intercalate)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (ala, class Newtype, wrap)
 import Data.String as S
-import Util (absurd, error) as U
+import Util (absurd) as U
+import Util (error)
 
 -- | A text document.
 newtype Doc = Doc
@@ -48,37 +49,35 @@ render :: Doc -> String
 render (Doc doc) = intercalate "\n" doc.lines
 
 -- | An empty document
-empty :: Int -> Int -> Doc
-empty w h =
-   Doc
-      { width: w
-      , height: h
-      , lines: case h of
-           0 -> []
-           _ -> range 1 h $> ""
-      }
-
--- text :: String -> Doc 
--- text s =
---    if A.length lines > 1 then U.error U.absurd else 
+-- empty :: Int -> Int -> Doc
+-- empty w h =
 --    Doc
---       { width: foldl max 0 $ map S.length lines
---       , height: A.length lines
---       , lines: lines
+--       { width: w
+--       , height: h
+--       , lines: case h of
+--            0 -> []
+--            _ -> range 1 h $> ""
 --       }
---    where
---    lines = S.split (wrap "\n") (s <> " ")
--- | Create a document from some text.
-text :: String -> Doc
-text s =
-   if A.length lines > 1 then U.error U.absurd else 
-   Doc
-      { width: foldl max 0 $ map S.length lines
-      , height: A.length lines
-      , lines: lines
-      }
-   where
-   lines = S.split (wrap "\n") s
+
+empty :: Doc 
+empty =  Doc {
+   width: 0,
+   height: 1,
+   lines: singleton "" 
+}
+
+text :: String -> Doc 
+text s = checkOneLine (S.split (wrap "\n") (" " <> s))
+
+checkOneLine :: Array String -> Doc 
+checkOneLine xs = case uncons xs of 
+   Just {head : x, tail: []} -> Doc {
+      width : S.length x,
+      height : 1,
+      lines: singleton x 
+   }
+   Just {head : _ , tail: _} -> error U.absurd
+   Nothing -> error U.absurd 
 
 -- | Place one document on top of another.
 atop :: Doc -> Doc -> Doc
@@ -124,11 +123,8 @@ indentedExpression (Doc d1) (Doc d2) =
       (spaces (S.length (lastLine (Doc d1))))) 
       (allButFirst (Doc d2))
 
-finalLines :: Doc -> Doc -> Array String
-finalLines (Doc d1) (Doc d2) = allButLast (Doc d1) <> (singleton (lastLine (Doc d1) <> "" <> firstLine (Doc d2))) <> indentedExpression (Doc d1) (Doc d2)
-
 beside :: Doc -> Doc -> Doc
-beside (Doc d1) (Doc d2) = Doc { width: d1.width + d2.width, height: d1.height + d2.height, lines: finalLines (Doc d1) (Doc d2) }
+beside (Doc d1) (Doc d2) = Doc { width: d1.width + d2.width, height: d1.height + d2.height, lines: allButLast (Doc d1) <> (singleton (lastLine (Doc d1) <> "" <> firstLine (Doc d2))) <> indentedExpression (Doc d1) (Doc d2) }
 
 -- | Place documents in columns
 hcat :: forall f. Foldable f => f Doc -> Doc
@@ -147,7 +143,7 @@ instance semigroupStack :: Semigroup Stack where
    append (Stack d1) (Stack d2) = Stack (d1 `atop` d2)
 
 instance monoidStack :: Monoid Stack where
-   mempty = Stack (empty 0 0)
+   mempty = Stack empty
 
 -- | A wrapper for `Doc` with a `Monoid` instance which stacks documents in columns.
 newtype Columns = Columns Doc
@@ -158,4 +154,4 @@ instance semigroupColumns :: Semigroup Columns where
    append (Columns d1) (Columns d2) = Columns (d1 `beside` d2)
 
 instance monoidColumns :: Monoid Columns where
-   mempty = Columns (empty 0 0)
+   mempty = Columns empty
