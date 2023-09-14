@@ -108,6 +108,7 @@ testTrace is_bench s { γα: γ } { δv, bwd_expect, fwd_expect } = do
       -- | Check round-trip selections
       unless (isGraphical v𝔹') do
          checkPretty "Trace-based value" fwd_expect v𝔹''
+
    pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2 }
 
 testGraph :: Boolean -> Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
@@ -143,8 +144,8 @@ testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
       v𝔹' = select𝔹s vα (vertices gfwd') <#> not
    tFwdDeMorgan2 <- now
 
-   -- | Check backward selections
    unless is_bench $ lift do
+      -- | Check backward selections
       unless (null bwd_expect) do
          checkPretty "Graph-based source selection" bwd_expect s𝔹
       -- | Check round-trip selections
