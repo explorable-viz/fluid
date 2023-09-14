@@ -14,7 +14,7 @@ module Test.Util
 import Prelude hiding (absurd)
 
 import App.Util (Selector)
-import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, bench)
+import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, now, tdiff)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
@@ -59,6 +59,7 @@ testWithSetup _name is_bench s gconfig tconfig = do
            unless is_bench (testParse s)
            trRow <- testTrace is_bench s gconfig tconfig
            grRow <- testGraph is_bench s gconfig tconfig
+           --   trace (show (BenchRow trRow grRow)) (\_ -> pure unit)
            pure (BenchRow trRow grRow)
       )
    case e of
@@ -78,22 +79,27 @@ testParse s = do
       )
 
 testTrace :: Boolean -> Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
-testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
-   let s𝔹 × γ𝔹 = botOf s × (botOf <$> γα)
+testTrace is_bench s { γα: γ } { δv, bwd_expect, fwd_expect } = do
+   let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γ)
    -- | Eval
    e𝔹 <- desug s𝔹
-   (t × v𝔹) × tEval <- bench $ eval γ𝔹 e𝔹 bot
+   tEval1 <- now
+   t × v𝔹 <- eval γ𝔹 e𝔹 bot
+   tEval2 <- now
+
    -- | Backward
-   (v𝔹' × γ𝔹' × e𝔹') × tBwd <- bench $ do
-      let
-         v𝔹' = δv v𝔹
-         { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
-      pure (v𝔹' × γ𝔹' × e𝔹')
+   tBwd1 <- now
    let
-      s𝔹' = desugBwd e𝔹' s
+      v𝔹' = δv v𝔹
+      { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
+   tBwd2 <- now
+   let s𝔹' = desugBwd e𝔹' s
+
    -- | Forward (round-tripping)
    e𝔹'' <- desug s𝔹'
-   (_ × v𝔹'') × tFwd <- bench $ eval γ𝔹' e𝔹'' top
+   tFwd1 <- now
+   _ × v𝔹'' <- eval γ𝔹' e𝔹'' top
+   tFwd2 <- now
 
    unless is_bench $ lift do
       -- | Check backward selections
@@ -102,38 +108,43 @@ testTrace is_bench s { γα } { δv, bwd_expect, fwd_expect } = do
       -- | Check round-trip selections
       unless (isGraphical v𝔹') do
          checkPretty "Trace-based value" fwd_expect v𝔹''
-   pure { tEval, tBwd, tFwd }
+   pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2 }
 
 testGraph :: Boolean -> Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
 testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
-   ((g × _) × (eα × vα)) × tEval <- bench $ evalWithConfig gconf e >>= except
+   tEval1 <- now
+   (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
+   tEval2 <- now
+
    -- | Backward
-   (gbwd × αs_in × e𝔹) × tBwd <- bench $ do
-      let
-         αs_out = selectαs (δv (botOf vα)) vα
-         gbwd = G.bwdSlice αs_out g
-         αs_in = sinks gbwd
-         e𝔹 = select𝔹s eα αs_in
-      pure (gbwd × αs_in × e𝔹)
+   tBwd1 <- now
+   let
+      αs_out = selectαs (δv (botOf vα)) vα
+      gbwd = G.bwdSlice αs_out g
+      αs_in = sinks gbwd
+      e𝔹 = select𝔹s eα αs_in
+   tBwd2 <- now
    let
       s𝔹 = desugBwd e𝔹 (erase s)
-   -- | Forward (round-tripping)
-   (gfwd × v𝔹) × tFwd <- bench $ do
-      let
-         gfwd = G.fwdSlice αs_in g
-         v𝔹 = select𝔹s vα (vertices gfwd)
-      pure (gfwd × v𝔹)
-   -- | Forward (round-tripping) using De Morgan dual
-   (_ × v𝔹') × tFwdDemorgan <- bench $ do
-      let
-         gfwd' = G.fwdSliceDeMorgan αs_in g
-         v𝔹' = select𝔹s vα (vertices gfwd') <#> not
-      pure (gfwd' × v𝔹')
 
+   -- | Forward (round-tripping)
+   tFwd1 <- now
+   let
+      gfwd = G.fwdSlice αs_in g
+      v𝔹 = select𝔹s vα (vertices gfwd)
+   tFwd2 <- now
+
+   -- | Forward (round-tripping) using De Morgan dual
+   tFwdDeMorgan1 <- now
+   let
+      gfwd' = G.fwdSliceDeMorgan αs_in g
+      v𝔹' = select𝔹s vα (vertices gfwd') <#> not
+   tFwdDeMorgan2 <- now
+
+   -- | Check backward selections
    unless is_bench $ lift do
-      -- | Check backward selections
       unless (null bwd_expect) do
          checkPretty "Graph-based source selection" bwd_expect s𝔹
       -- | Check round-trip selections
@@ -143,7 +154,7 @@ testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
 
-   pure { tEval, tBwd, tFwd, tFwdDemorgan }
+   pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2, tFwdDemorgan: tdiff tFwdDeMorgan1 tFwdDeMorgan2 }
 
 type TestSpec =
    { file :: String

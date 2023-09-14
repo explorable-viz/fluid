@@ -19,7 +19,6 @@ import Util (type (×), (×))
 
 main :: Effect Unit
 main = launchAff_ do
-   --log "Running benchmarks!"
    let arr = concat [ bench_desugaring, bench_misc, bench_bwd, bench_graphics ]
    outs <- sequence $ map affify arr
    logShow $ BenchAcc outs
