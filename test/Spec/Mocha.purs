@@ -1,5 +1,5 @@
 module Test.Spec.Mocha
-   ( runMocha
+   ( run
    , MOCHA()
    ) where
 
@@ -40,6 +40,6 @@ executeTest (name × example) = itAsync true name cb
    cb onSuccess onError =
       runAff_ (either onError (const onSuccess)) example
 
-runMocha :: forall a. (Array (String × Aff a)) -> Effect Unit
-runMocha = traverse_ executeTest
+run :: forall a. (Array (String × Aff a)) -> Effect Unit
+run = traverse_ executeTest
 

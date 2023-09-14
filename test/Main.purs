@@ -14,8 +14,9 @@ import Prelude hiding (add)
 import Data.Array (concat)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Test.Spec.Mocha (run)
 import Test.Spec.Specs (bwd_cases, desugar_cases, graphics_cases, misc_cases)
-import Test.TestRunners (run, testWithDatasetMany, testMany, testBwdMany)
+import Test.TestRunners (testWithDatasetMany, testMany, testBwdMany)
 import Util (type (×))
 
 main :: Effect Unit

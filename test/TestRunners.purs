@@ -13,7 +13,6 @@ import Graph.GraphImpl (GraphImpl)
 import Module (File, openDatasetAs, openDefaultImports)
 import Test.Many (bwdMany, many, withDatasetMany)
 import Test.Spec (SpecT, before, beforeAll, beforeWith, it)
-import Test.Spec.Mocha (runMocha)
 import Test.Util (TestBwdSpec, TestSpec, TestWithDatasetSpec, checkPretty)
 import Util (type (×), successful, (×))
 import Val (Val, (<+>))
@@ -21,9 +20,6 @@ import Val (Val, (<+>))
 type Test a = SpecT Aff Unit Effect a
 type TestWith i a = SpecT Aff i Effect a
 type TestIn g i a = SpecT g i Effect a
-
-run :: forall a. Array (String × Aff a) -> Effect Unit
-run = runMocha
 
 withDefaultImports ∷ forall a. TestWith (GraphConfig GraphImpl) a -> Test a
 withDefaultImports x = beforeAll openDefaultImports x
