@@ -10,6 +10,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
+import Data.Newtype (class Newtype)
 import Data.Set (empty)
 import Data.Traversable (traverse)
 import Desugarable (desug)
@@ -34,6 +35,7 @@ import Val (Env, (<+>))
 newtype File = File String
 newtype Folder = Folder String
 
+derive instance Newtype File _
 derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
