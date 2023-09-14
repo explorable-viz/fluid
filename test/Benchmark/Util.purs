@@ -44,8 +44,8 @@ type GraphRow =
 
 instance Show BenchAcc where
    show (BenchAcc rows) =
-      "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-DeMorgan\n" <>
-         (fold $ intersperse "\n" (rowShow <$> rows))
+      "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-FwdDeMorgan\n"
+         <> (fold $ intersperse "\n" (map rowShow rows))
 
 rowShow :: String × BenchRow -> String
 rowShow (str × row) = str <> "," <> show row
