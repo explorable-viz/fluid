@@ -19,18 +19,15 @@ import Util (MayFailT, error, type (×), (×))
 
 data BenchRow = BenchRow TraceRow GraphRow
 
-data BenchAcc = BenchAcc (Array (String × BenchRow))
+newtype BenchAcc = BenchAcc (Array (String × BenchRow))
 
 type WithBenchAcc g a = WriterT BenchAcc g a
 
 runWithBenchAcc :: forall g a. Monad g => WithBenchAcc g a -> g (a × BenchAcc)
 runWithBenchAcc = runWriterT
 
-instance Semigroup BenchAcc where
-   append (BenchAcc l1) (BenchAcc l2) = (BenchAcc (l1 <> l2))
-
-instance Monoid BenchAcc where
-   mempty = BenchAcc ([])
+derive newtype instance Semigroup BenchAcc
+derive newtype instance Monoid BenchAcc
 
 type TraceRow =
    { tEval :: Number
@@ -46,7 +43,9 @@ type GraphRow =
    }
 
 instance Show BenchAcc where
-   show (BenchAcc rows) = "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-DeMorgan\n" <> (fold $ intersperse "\n" (map rowShow rows))
+   show (BenchAcc rows) =
+      "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-DeMorgan\n" <>
+         (fold $ intersperse "\n" (rowShow <$> rows))
 
 rowShow :: String × BenchRow -> String
 rowShow (str × row) = str <> "," <> show row
