@@ -5,32 +5,62 @@ import Prelude
 import Affjax.RequestBody (string) as RB
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
-import Control.Monad.Trans.Class (lift)
+import Control.Monad.Writer (WriterT, runWriterT)
+import Data.Array (intersperse)
 import Data.Either (Either(..))
+import Data.Foldable (fold)
 import Data.HTTP.Method (Method(..))
 import Data.JSDate (JSDate, getTime, now)
 import Data.Maybe (Maybe(..))
-import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Console (logShow, log)
-import Test.Spec (SpecT)
 import Util (MayFailT, error, type (×), (×))
 
-type Test a = SpecT Aff Unit Effect a
+data BenchRow = BenchRow TraceRow GraphRow
 
-type BenchResult =
-   { name :: String
-   , desug :: Number
-   , trace_eval :: Number
-   , graph_eval :: Number
-   , trace_fwd :: Number
-   , trace_bwd :: Number
-   , graph_fwd :: Number
-   , graph_bwd :: Number
+data BenchAcc = BenchAcc (Array (String × BenchRow))
+
+type WithBenchAcc g a = WriterT BenchAcc g a
+
+runWithBenchAcc :: forall g a. Monad g => WithBenchAcc g a -> g (a × BenchAcc)
+runWithBenchAcc = runWriterT
+
+instance Semigroup BenchAcc where
+   append (BenchAcc l1) (BenchAcc l2) = (BenchAcc (l1 <> l2))
+
+instance Monoid BenchAcc where
+   mempty = BenchAcc ([])
+
+type TraceRow =
+   { tEval :: Number
+   , tBwd :: Number
+   , tFwd :: Number
    }
 
-type BenchSet = Array BenchResult
+type GraphRow =
+   { tEval :: Number
+   , tBwd :: Number
+   , tFwd :: Number
+   , tFwdDemorgan :: Number
+   }
+
+instance Show BenchAcc where
+   show (BenchAcc rows) = "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-DeMorgan\n" <> (fold $ intersperse "\n" (map rowShow rows))
+
+rowShow :: String × BenchRow -> String
+rowShow (str × row) = str <> "," <> show row
+
+instance Show BenchRow where
+   show (BenchRow trRow grRow) = fold $ intersperse ","
+      [ show trRow.tEval
+      , show trRow.tBwd
+      , show trRow.tFwd
+      , show grRow.tEval
+      , show grRow.tBwd
+      , show grRow.tFwd
+      , show grRow.tFwdDemorgan
+      ]
 
 bench :: forall m a. MonadEffect m => m a -> m (a × Number)
 bench prog = do
@@ -50,13 +80,13 @@ logTime :: String -> JSDate -> JSDate -> Aff Unit
 logTime msg before after =
    liftEffect $ log (msg <> show (timeDiff before after) <> "\n")
 
-liftTimer :: Test Unit -> Test Unit
-liftTimer test = do
-   begin <- lift now
-   out <- test
-   end <- lift now
-   lift $ logShow (timeDiff begin end)
-   pure out
+-- liftTimer :: Test Unit -> Test Unit
+-- liftTimer test = do
+--    (begin :: ?_ )<- lift now
+--    out <- test
+--    end <- lift now
+--    lift $ logShow (timeDiff begin end)
+--    pure out
 
 liftMayFail :: MayFailT Aff Unit -> MayFailT Aff Unit
 liftMayFail test = do
