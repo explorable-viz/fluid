@@ -10,7 +10,7 @@
     "build-tests": "yarn clean-tests && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.Main --to dist/tests/app.js",
     "build-bench": "yarn clean-bench && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.Benchmark --to dist/benches/app.js",
     "tests": "karma start karma.conf.tests.js",
-    "benchmark": "yarn build-bench && npx http-serve dist/benches -a 127.0.0.1",
+    "bench": "npx http-serve dist/benches -a 127.0.0.1",
     "tests-browser": "karma start karma.conf.tests.js --browsers=Chrome --singleRun=false",
     "clean-app-tests": "rm -rf dist/app-tests && mkdir -p dist/app-tests && cp web/tests.html dist/app-tests",
     "build-app-tests": "yarn clean-app-tests && spago build --purs-args '--strict --censor-codes=UserDefinedWarning' && purs-backend-es bundle-app --main Test.App.Main --to dist/app-tests/app.js",
