@@ -15,7 +15,6 @@ import Data.JSDate (now) as JSDate
 import Data.Maybe (Maybe(..))
 import Effect.Aff (Aff)
 import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Console (log)
 import Util (error, type (×), (×))
 
 newtype File = File String
