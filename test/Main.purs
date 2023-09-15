@@ -11,11 +11,12 @@ module Test.Main
 import Prelude hiding (add)
 
 import Data.Array (concat)
+import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
+import Test.Many (bwdMany, linkMany, many, withDatasetMany)
 import Test.Spec.Mocha (run)
 import Test.Spec.Specs (bwd_cases, desugar_cases, graphics_cases, linking_cases, misc_cases)
-import Test.TestRunners (linkMany, testBwdMany, testMany, testWithDatasetMany)
 import Util (type (×))
 
 main :: Effect Unit
@@ -45,16 +46,16 @@ tests is_bench = [ test_scratchpad is_bench ]
 --    ]
 
 test_desugaring :: Array (String × Aff Unit)
-test_desugaring = testMany desugar_cases
+test_desugaring = map (second void) $ many $ desugar_cases
 
 test_misc :: Array (String × Aff Unit)
-test_misc = testMany misc_cases
+test_misc = map (second void) $ many $ misc_cases
 
 test_bwd :: Array (String × Aff Unit)
-test_bwd = testBwdMany bwd_cases
+test_bwd = map (second void) $ bwdMany bwd_cases
 
 test_graphics :: Array (String × Aff Unit)
-test_graphics = testWithDatasetMany graphics_cases
+test_graphics = map (second void) $ withDatasetMany graphics_cases
 
 test_linking :: Array (String × Aff Unit)
 test_linking = linkMany linking_cases
