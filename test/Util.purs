@@ -60,12 +60,12 @@ type TestConfig =
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 -- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
-testWithSetup ∷ String -> Boolean → SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
-testWithSetup _name is_bench s gconfig tconfig = do
+testWithSetup ∷ String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
+testWithSetup _name s gconfig tconfig = do
    e <- runExceptT $ do
-      unless is_bench (testParse s)
-      trRow <- testTrace is_bench s gconfig tconfig
-      grRow <- testGraph is_bench s gconfig tconfig
+      testParse s
+      trRow <- testTrace s gconfig tconfig
+      grRow <- testGraph s gconfig tconfig
       pure (BenchRow trRow grRow)
    case e of
       Left msg -> error msg
@@ -81,8 +81,8 @@ testParse s = do
          log ("NEW\n" <> show (erase s'))
          (lift $ fail "not equal") :: MayFailT Aff Unit
 
-testTrace :: Boolean -> Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
-testTrace is_bench s { γα: γ } { δv, bwd_expect, fwd_expect } = do
+testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
+testTrace s { γα: γ } { δv, bwd_expect, fwd_expect } = do
    let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γ)
    -- | Eval
    e𝔹 <- desug s𝔹
@@ -104,7 +104,7 @@ testTrace is_bench s { γα: γ } { δv, bwd_expect, fwd_expect } = do
    _ × v𝔹'' <- eval γ𝔹' e𝔹'' top
    tFwd2 <- now
 
-   unless is_bench $ lift do
+   lift do
       -- | Check backward selections
       unless (null bwd_expect) do
          checkPretty "Trace-based source selection" bwd_expect s𝔹'
@@ -114,8 +114,8 @@ testTrace is_bench s { γα: γ } { δv, bwd_expect, fwd_expect } = do
 
    pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2 }
 
-testGraph :: Boolean -> Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
-testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
+testGraph :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
+testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
    tEval1 <- now
@@ -147,7 +147,7 @@ testGraph is_bench s gconf { δv, bwd_expect, fwd_expect } = do
       v𝔹' = select𝔹s vα (vertices gfwd') <#> not
    tFwdDeMorgan2 <- now
 
-   unless is_bench $ lift do
+   lift do
       -- | Check backward selections
       unless (null bwd_expect) do
          checkPretty "Graph-based source selection" bwd_expect s𝔹

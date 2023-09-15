@@ -5,7 +5,6 @@ module Test.Benchmark
 
 import Prelude hiding (add)
 
-import Benchmark.BenchRunners (benchBwdMany, benchMany, benchWithDatasetMany)
 import Benchmark.Util (BenchAcc(..), BenchRow)
 import Control.Apply (lift2)
 import Data.Array (concat)
@@ -14,6 +13,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class.Console (logShow)
+import Test.Many (many, bwdMany, withDatasetMany)
 import Test.Spec.Specs (bwd_cases, desugar_cases, graphics_cases, misc_cases)
 import Util (type (×), (×))
 
@@ -24,13 +24,13 @@ main = launchAff_ do
    logShow $ BenchAcc outs
 
 bench_desugaring :: Array (String × Aff BenchRow)
-bench_desugaring = benchMany desugar_cases
+bench_desugaring = many desugar_cases
 
 bench_misc :: Array (String × Aff BenchRow)
-bench_misc = benchMany misc_cases
+bench_misc = many misc_cases
 
 bench_bwd :: Array (String × Aff BenchRow)
-bench_bwd = benchBwdMany bwd_cases
+bench_bwd = bwdMany bwd_cases
 
 bench_graphics :: Array (String × Aff BenchRow)
-bench_graphics = benchWithDatasetMany graphics_cases
+bench_graphics = withDatasetMany graphics_cases
