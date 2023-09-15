@@ -5,9 +5,10 @@ import Prelude
 import Control.Monad.Writer (WriterT, runWriterT)
 import Data.Array (intersperse)
 import Data.Foldable (fold)
-import Data.JSDate (JSDate, getTime)
+import Data.JSDate (JSDate)
 import Data.JSDate (now) as JSDate
 import Effect.Class (class MonadEffect, liftEffect)
+import Test.Spec.Microtime (microtime)
 import Util (type (×), (×))
 
 newtype File = File String
@@ -64,6 +65,13 @@ instance Show BenchRow where
 now :: forall m. MonadEffect m => m JSDate
 now = liftEffect JSDate.now
 
-tdiff :: JSDate -> JSDate -> Number
-tdiff begin end =
-   getTime end - getTime begin
+-- tdiff :: JSDate -> JSDate -> Number
+-- tdiff begin end =
+-- getTime end - getTime begin
+-- 
+
+tdiff :: Number -> Number -> Number
+tdiff x y = sub y x
+
+preciseTime :: forall m. MonadEffect m => m Number
+preciseTime = liftEffect microtime

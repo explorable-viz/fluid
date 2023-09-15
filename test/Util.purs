@@ -17,7 +17,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
-import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, now, tdiff)
+import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
 import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (except, runExceptT)
 import Control.Monad.Trans.Class (lift)
@@ -85,23 +85,23 @@ testTrace s { γα: γ } { δv, bwd_expect, fwd_expect } = do
    let s𝔹 × γ𝔹 = (botOf s) × (botOf <$> γ)
    -- | Eval
    e𝔹 <- desug s𝔹
-   tEval1 <- now
+   tEval1 <- preciseTime
    t × v𝔹 <- eval γ𝔹 e𝔹 bot
-   tEval2 <- now
+   tEval2 <- preciseTime
 
    -- | Backward
-   tBwd1 <- now
+   tBwd1 <- preciseTime
    let
       v𝔹' = δv v𝔹
       { γ: γ𝔹', e: e𝔹' } = evalBwd (erase <$> γ𝔹) (erase e𝔹) v𝔹' t
-   tBwd2 <- now
+   tBwd2 <- preciseTime
    let s𝔹' = desugBwd e𝔹' s
 
    -- | Forward (round-tripping)
    e𝔹'' <- desug s𝔹'
-   tFwd1 <- now
+   tFwd1 <- preciseTime
    _ × v𝔹'' <- eval γ𝔹' e𝔹'' top
-   tFwd2 <- now
+   tFwd2 <- preciseTime
 
    lift do
       -- | Check backward selections
@@ -117,34 +117,34 @@ testGraph :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff 
 testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
-   tEval1 <- now
+   tEval1 <- preciseTime
    (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
-   tEval2 <- now
+   tEval2 <- preciseTime
 
    -- | Backward
-   tBwd1 <- now
+   tBwd1 <- preciseTime
    let
       αs_out = selectαs (δv (botOf vα)) vα
       gbwd = G.bwdSlice αs_out g
       αs_in = sinks gbwd
       e𝔹 = select𝔹s eα αs_in
-   tBwd2 <- now
+   tBwd2 <- preciseTime
    let
       s𝔹 = desugBwd e𝔹 (erase s)
 
    -- | Forward (round-tripping)
-   tFwd1 <- now
+   tFwd1 <- preciseTime
    let
       gfwd = G.fwdSlice αs_in g
       v𝔹 = select𝔹s vα (vertices gfwd)
-   tFwd2 <- now
+   tFwd2 <- preciseTime
 
    -- | Forward (round-tripping) using De Morgan dual
-   tFwdDeMorgan1 <- now
+   tFwdDeMorgan1 <- preciseTime
    let
       gfwd' = G.fwdSliceDeMorgan αs_in g
       v𝔹' = select𝔹s vα (vertices gfwd') <#> not
-   tFwdDeMorgan2 <- now
+   tFwdDeMorgan2 <- preciseTime
 
    lift do
       -- | Check backward selections

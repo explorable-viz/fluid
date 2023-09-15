@@ -1,6 +1,6 @@
 module Test.Benchmark
-   ( bench_desugaring
-   , main
+   ( --bench_desugaring
+     main
    ) where
 
 import Prelude hiding (add)
@@ -14,12 +14,12 @@ import Effect (Effect)
 import Effect.Aff (Aff, launchAff_)
 import Effect.Class.Console (logShow)
 import Test.Many (many, bwdMany, withDatasetMany)
-import Test.Spec.Specs (bwd_cases, desugar_cases, graphics_cases, misc_cases)
+import Test.Spec.Specs (misc_cases, bwd_cases, desugar_cases, graphics_cases)
 import Util (type (×), (×))
 
 main :: Effect Unit
 main = launchAff_ do
-   let arr = concat [ bench_desugaring, bench_misc, bench_bwd, bench_graphics ]
+   let arr = concat [ bench_misc, bench_desugaring, bench_bwd, bench_graphics ]
    outs <- sequence $ map (\(str × row) -> lift2 Tuple (pure str) row) arr
    logShow $ BenchAcc outs
 
