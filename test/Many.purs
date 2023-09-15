@@ -4,11 +4,12 @@ import Prelude
 
 import Benchmark.Util (BenchRow)
 import Data.Array (zip)
+import Data.List.Lazy (replicateM)
 import Effect.Aff (Aff)
 import EvalGraph (GraphConfig)
 import Graph.GraphImpl (GraphImpl)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports)
-import Test.Util (TestBwdSpec, TestSpec, TestWithDatasetSpec, testWithSetup)
+import Test.Util (TestBwdSpec, TestSpec, TestWithDatasetSpec, averageRows, testWithSetup)
 import Util (type (×), (×))
 import Val ((<+>))
 
@@ -19,7 +20,8 @@ many is_bench fxs = zip names affs
       ( \{ file, fwd_expect } -> do
            default <- openDefaultImports :: Aff (GraphConfig GraphImpl)
            expr <- open (File file)
-           testWithSetup file is_bench expr default { δv: identity, fwd_expect, bwd_expect: mempty }
+           rows <- replicateM 10 $ testWithSetup file is_bench expr default { δv: identity, fwd_expect, bwd_expect: mempty }
+           pure $ averageRows rows
       )
       fxs
    names = map _.file fxs
@@ -33,7 +35,8 @@ bwdMany is_bench fxs = zip names affs
            default <- openDefaultImports :: Aff (GraphConfig GraphImpl)
            bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
            expr <- open (folder <> File file)
-           testWithSetup file is_bench expr default { δv, fwd_expect, bwd_expect }
+           rows <- replicateM 10 $ testWithSetup file is_bench expr default { δv, fwd_expect, bwd_expect }
+           pure $ averageRows rows
       )
       fxs
    names = map _.file fxs
@@ -47,7 +50,8 @@ withDatasetMany is_bench fxs = zip names affs
            { g, n, γα } × xv <- openDatasetAs (File dataset) "data" default
            let loadedData = { g, n, γα: γα <+> xv }
            expr <- open (File file)
-           testWithSetup file is_bench expr loadedData { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
+           rows <- replicateM 10 $ testWithSetup file is_bench expr loadedData { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
+           pure $ averageRows rows
       )
       fxs
    names = map (\spec -> spec.file) fxs
