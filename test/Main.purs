@@ -63,7 +63,7 @@ test_misc = testMany
    , { file: "compose", fwd_expect: "5" }
    , { file: "dicts"
      , fwd_expect:
-          "{d: {||}, e: {|\"a\":= 5, \"ab\":= 6|}, e_ab: 6, f: {|\"a\":= 6, \"ab\":= 7|}, g: {|\"a\":= 5|}, h: {|\"fst\":= 4, \"snd\":= (6 : (7 : []))|}}"
+          "{d : {||}, e : {|\"a\" := 5, \"ab\" := 6|}, e_ab : 6, f : {|\"a\" := 6, \"ab\" := 7|}, g : {|\"a\" := 5|}, h : {|\"fst\" := 4, \"snd\" := (6 : (7 : []))|}}"
      }
    , { file: "div-mod-quot-rem"
      , fwd_expect:
@@ -87,20 +87,20 @@ test_misc = testMany
    , { file: "normalise", fwd_expect: "(33, 66)" }
    , { file: "pattern-match", fwd_expect: "4" }
    , { file: "range", fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
-   , { file: "records", fwd_expect: "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}" }
+   , { file: "records", fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
    , { file: "reverse", fwd_expect: "(2 : (1 : []))" }
    ]
 
 test_bwd :: Boolean -> Test Unit
 test_bwd = testBwdMany
-   [ { file: "add", file_expect: "add.expect", δv: const $ Int true 8, fwd_expect: "_8_" }
-   , { file: "array/lookup", file_expect: "array/lookup.expect", δv: const $ Int true 14, fwd_expect: "_14_" }
-   , { file: "array/dims", file_expect: "array/dims.expect", δv: topOf, fwd_expect: "_(_3_, _3_)_" }
+   [ { file: "add", file_expect: "add.expect", δv: const $ Int true 8, fwd_expect: "⸨8⸩" }
+   , { file: "array/lookup", file_expect: "array/lookup.expect", δv: const $ Int true 14, fwd_expect: "⸨14⸩" }
+   , { file: "array/dims", file_expect: "array/dims.expect", δv: topOf, fwd_expect: "⸨(⸨3⸩, ⸨3⸩)⸩" }
    , { file: "convolution/edgeDetect"
      , file_expect: "convolution/edgeDetect.expect"
      , δv: selectMatrixElement 1 1 # as𝔹Selector
      , fwd_expect:
-          "_0_, -1, 2, 0, -1,\n\
+          "⸨0⸩, -1, 2, 0, -1,\n\
           \0, 3, -2, 3, -2,\n\
           \-1, 1, -5, 0, 4,\n\
           \1, -1, 4, 0, -4,\n\
@@ -110,7 +110,7 @@ test_bwd = testBwdMany
      , file_expect: "convolution/emboss.expect"
      , δv: selectMatrixElement 1 1 # as𝔹Selector
      , fwd_expect:
-          "_5_, 4, 2, 5, 2,\n\
+          "⸨5⸩, 4, 2, 5, 2,\n\
           \3, 1, 2, -1, -2,\n\
           \3, 0, 1, 0, -1,\n\
           \2, 1, -2, 0, 0,\n\
@@ -120,7 +120,7 @@ test_bwd = testBwdMany
      , file_expect: "convolution/gaussian.expect"
      , δv: selectMatrixElement 1 1 # as𝔹Selector
      , fwd_expect:
-          "_38_, 37, 28, 30, 38,\n\
+          "⸨38⸩, 37, 28, 30, 38,\n\
           \38, 36, 46, 31, 34,\n\
           \37, 41, 54, 34, 20,\n\
           \21, 35, 31, 31, 42,\n\
@@ -132,14 +132,14 @@ test_bwd = testBwdMany
           [ "a" ↦ (false × Int false 5)
           , "ab" ↦ (true × Int false 6)
           ]
-     , fwd_expect: "{|\"a\":= 5, _\"ab\"_:= 6|}"
+     , fwd_expect: "{|\"a\" := 5, ⸨\"ab\"⸩ := 6|}"
      }
    , { file: "dict/difference"
      , file_expect: "dict/difference.expect"
      , δv: const $ Dictionary true $ DictRep $ D.fromFoldable
           [ "a" ↦ (false × Int false 5)
           ]
-     , fwd_expect: "_{|\"a\":= 5|}_"
+     , fwd_expect: "⸨{|\"a\" := 5|}⸩"
      }
    , { file: "dict/disjointUnion"
      , file_expect: "dict/disjointUnion.expect"
@@ -149,9 +149,9 @@ test_bwd = testBwdMany
           , "c" ↦ (false × Int true 7)
           ]
      , fwd_expect:
-          "{|_\"a\"_:= 5, \"b\":= 6, \"c\":= _7_|}"
+          "{|⸨\"a\"⸩ := 5, \"b\" := 6, \"c\" := ⸨7⸩|}"
      }
-   , { file: "dict/foldl", file_expect: "dict/foldl.expect", δv: topOf, fwd_expect: "_0_" }
+   , { file: "dict/foldl", file_expect: "dict/foldl.expect", δv: topOf, fwd_expect: "⸨0⸩" }
    , { file: "dict/intersectionWith"
      , file_expect: "dict/intersectionWith.expect"
      , δv: const $ Dictionary false $ DictRep $ D.fromFoldable
@@ -159,7 +159,7 @@ test_bwd = testBwdMany
           , "c" ↦ (false × Int true 20)
           ]
      , fwd_expect:
-          "{|\"b\":= _0_, \"c\":= _20_|}"
+          "{|\"b\" := ⸨0⸩, \"c\" := ⸨20⸩|}"
      }
    , { file: "dict/fromRecord"
      , file_expect: "dict/fromRecord.expect"
@@ -169,80 +169,80 @@ test_bwd = testBwdMany
              , "ab" ↦ (true × Int false 6)
              ]
      , fwd_expect:
-          "_{|_\"a\"_:= 5, _\"ab\"_:= 6|}_"
+          "⸨{|⸨\"a\"⸩ := 5, ⸨\"ab\"⸩ := 6|}⸩"
      }
-   , { file: "dict/get", file_expect: "dict/get.expect", δv: const $ Int true 0, fwd_expect: "_0_" }
-   , { file: "dict/map", file_expect: "dict/map.expect", δv: const $ Int true 20, fwd_expect: "_20_" }
-   , { file: "divide", file_expect: "divide.expect", δv: topOf, fwd_expect: "_40.22222222222222_" }
+   , { file: "dict/get", file_expect: "dict/get.expect", δv: const $ Int true 0, fwd_expect: "⸨0⸩" }
+   , { file: "dict/map", file_expect: "dict/map.expect", δv: const $ Int true 20, fwd_expect: "⸨20⸩" }
+   , { file: "divide", file_expect: "divide.expect", δv: topOf, fwd_expect: "⸨40.22222222222222⸩" }
    , { file: "filter"
      , file_expect: "filter.expect"
      , δv: selectNthCell 0 # as𝔹Selector
-     , fwd_expect: "(_8_ _:_ (7 : []))"
+     , fwd_expect: "(⸨8⸩ ⸨:⸩ (7 : []))"
      }
    , { file: "intersperse"
      , file_expect: "intersperse-1.expect"
      , δv: selectNthCell 1 # as𝔹Selector
      , fwd_expect:
-          "(1 : (0 _:_ (2 : (0 : (3 : [])))))"
+          "(1 : (0 ⸨:⸩ (2 : (0 : (3 : [])))))"
      }
    , { file: "intersperse"
      , file_expect: "intersperse-2.expect"
      , δv: selectNthCell 2 # as𝔹Selector
      , fwd_expect:
-          "(1 _:_ (0 : (2 _:_ (0 : (3 : [])))))"
+          "(1 ⸨:⸩ (0 : (2 ⸨:⸩ (0 : (3 : [])))))"
      }
-   , { file: "length", file_expect: "length.expect", δv: topOf, fwd_expect: "_5_" }
+   , { file: "length", file_expect: "length.expect", δv: topOf, fwd_expect: "⸨5⸩" }
    , { file: "list-comp"
      , file_expect: "list-comp-1.expect"
      , δv: selectNthCell 1 # as𝔹Selector
-     , fwd_expect: "(6.2 : (260 _:_ (19.9 : (91 : []))))"
+     , fwd_expect: "(6.2 : (260 ⸨:⸩ (19.9 : (91 : []))))"
      }
    , { file: "list-comp"
      , file_expect: "list-comp-2.expect"
      , δv: selectNthCell 2 # as𝔹Selector
-     , fwd_expect: "(6.2 : (260 : (19.9 _:_ (91 : []))))"
+     , fwd_expect: "(6.2 : (260 : (19.9 ⸨:⸩ (91 : []))))"
      }
    , { file: "lookup"
      , file_expect: "lookup.expect"
      , δv: selectSome # as𝔹Selector
-     , fwd_expect: "_Some_ \"Germany\""
+     , fwd_expect: "⸨Some \"Germany\"⸩"
      }
    , { file: "map"
      , file_expect: "map.expect"
      , δv: selectNthCell 0 <> selectNthCell 1 # as𝔹Selector
-     , fwd_expect: "(5 _:_ (6 _:_ []))"
+     , fwd_expect: "(5 ⸨:⸩ (6 ⸨:⸩ []))"
      }
-   , { file: "multiply", file_expect: "multiply.expect", δv: const $ Int true 0, fwd_expect: "_0_" }
-   , { file: "nth", file_expect: "nth.expect", δv: const $ Int true 4, fwd_expect: "_4_" }
+   , { file: "multiply", file_expect: "multiply.expect", δv: const $ Int true 0, fwd_expect: "⸨0⸩" }
+   , { file: "nth", file_expect: "nth.expect", δv: const $ Int true 4, fwd_expect: "⸨4⸩" }
    , { file: "section-5-example"
      , file_expect: "section-5-example-1.expect"
      , δv: selectNthCell 0 # as𝔹Selector
-     , fwd_expect: "(88 _:_ (6 : (4 : [])))"
+     , fwd_expect: "(88 ⸨:⸩ (6 : (4 : [])))"
      }
    , { file: "section-5-example"
      , file_expect: "section-5-example-2.expect"
      , δv: selectNth2 1 selectAll # as𝔹Selector
-     , fwd_expect: "(_88_ : (_6_ : (_4_ : [])))"
+     , fwd_expect: "(⸨88⸩ : (⸨6⸩ : (⸨4⸩ : [])))"
      }
    , { file: "section-5-example"
      , file_expect: "section-5-example-3.expect"
      , δv: selectNthCell 2 # as𝔹Selector
-     , fwd_expect: "(88 : (6 : (4 _:_ [])))"
+     , fwd_expect: "(88 : (6 : (4 ⸨:⸩ [])))"
      }
    , { file: "zeros"
      , file_expect: "zeros-1.expect"
      , δv: selectNthCell 0 <> selectNthCell 2 # as𝔹Selector
-     , fwd_expect: "(0 _:_ (0 : _[]_))"
+     , fwd_expect: "(0 ⸨:⸩ (0 : ⸨[]⸩))"
      }
    , { file: "zeros"
      , file_expect: "zeros-2.expect"
      , δv: selectNthCell 2 # as𝔹Selector
-     , fwd_expect: "(0 : (0 : _[]_))"
+     , fwd_expect: "(0 : (0 : ⸨[]⸩))"
      }
    , { file: "zipWith"
      , file_expect: "zipWith-1.expect"
      , δv: selectNth2 1 selectAll # as𝔹Selector
-     , fwd_expect: "(13.0 : (_25.0_ : (41.0 : [])))"
+     , fwd_expect: "(13.0 : (⸨25.0⸩ : (41.0 : [])))"
      }
    ]
 
@@ -267,7 +267,7 @@ test_linking = testLinkMany
           ( selectPair (const false) botOf
                (selectPair (const false) (const $ Int true 3) botOf)
           )
-     , v2_expect: "(3, (_5_, _7_))"
+     , v2_expect: "(3, (⸨5⸩, ⸨7⸩))"
      }
    , { spec:
           { divId: ""
@@ -278,9 +278,9 @@ test_linking = testLinkMany
           }
      , δv1: selectMatrixElement 2 2 # as𝔹Selector
      , v2_expect:
-          "_18_, _12_, _13_, 9, 19,\n\
-          \_20_, _11_, _24_, 9, 14,\n\
-          \_15_, _13_, _20_, 11, 14,\n\
+          "⸨18⸩, ⸨12⸩, ⸨13⸩, 9, 19,\n\
+          \⸨20⸩, ⸨11⸩, ⸨24⸩, 9, 14,\n\
+          \⸨15⸩, ⸨13⸩, ⸨20⸩, 11, 14,\n\
           \7, 15, 15, 8, 20,\n\
           \3, 10, 12, 3, 11"
      }
@@ -293,48 +293,51 @@ test_linking = testLinkMany
           }
      , δv1: botOf >>> selectBarChart_data (selectNth2 1 (select_y selectAll) # as𝔹Selector)
      , v2_expect:
-          "LineChart ({\
-          \caption: \"Output of USA relative to China\", \
-          \plots: \
-          \(LinePlot ({\
-          \data: \
-          \({x: 2013, y: 2.5483870967741935} : \
-          \({x: 2014, y: 1.61} : \
-          \({x: 2015, y: _1.6213592233009706_} : \
-          \({x: 2016, y: 1.4000000000000001} : \
-          \({x: 2017, y: 1.1208053691275166} : \
-          \({x: 2018, y: 0.9101123595505617} : [])))))), \
-          \name: \"Bio\"\
-          \}) : \
-          \(LinePlot ({\
-          \data: \
-          \({x: 2013, y: 0.3} : \
-          \({x: 2014, y: 0.28214285714285714} : \
-          \({x: 2015, y: _0.8333333333333334_} : \
-          \({x: 2016, y: 0.26229508196721313} : \
-          \({x: 2017, y: 0.25559105431309903} : \
-          \({x: 2018, y: 0.2484472049689441} : [])))))), \
-          \name: \"Hydro\"\
-          \}) : \
-          \(LinePlot ({\
-          \data: \
-          \({x: 2013, y: 0.6080402010050252} : \
-          \({x: 2014, y: 0.6428571428571429} : \
-          \({x: 2015, y: _0.5909090909090909_} : \
-          \({x: 2016, y: 0.5324675324675324} : \
-          \({x: 2017, y: 0.3893129770992366} : \
-          \({x: 2018, y: 0.3522727272727273} : [])))))), \
-          \name: \"Solar\"\
-          \}) : \
-          \(LinePlot ({\
-          \data: ({x: 2013, y: 0.6703296703296703} : \
-          \({x: 2014, y: 0.5739130434782609} : \
-          \({x: 2015, y: _0.5103448275862069_} : \
-          \({x: 2016, y: 0.48520710059171596} : \
-          \({x: 2017, y: 0.4734042553191489} : \
-          \({x: 2018, y: 0.45714285714285713} : [])))))), \
-          \name: \"Wind\"\
-          \}) : []))))\
-          \})"
+          "LineChart {\
+          \caption : \"Output of USA relative to China\", \
+          \plots : \
+          \(LinePlot {\
+          \data : \
+          \({x : 2013, y : 2.5483870967741935} : \
+          \({x : 2014, y : 1.61} : \
+          \({x : 2015, y : ⸨1.6213592233009706⸩} : \
+          \({x : 2016, y : 1.4000000000000001} : \
+          \({x : 2017, y : 1.1208053691275166} : \
+          \({x : 2018, y : 0.9101123595505617} : [])))))), \
+          \name : \"Bio\"\
+          \} : \
+          \(LinePlot {\
+          \data : \
+          \({x : 2013, y : 0.3} : \
+          \({x : 2014, y : 0.28214285714285714} : \
+          \({x : 2015, y : ⸨0.8333333333333334⸩} : \
+          \({x : 2016, y : 0.26229508196721313} : \
+          \({x : 2017, y : 0.25559105431309903} : \
+          \({x : 2018, y : 0.2484472049689441} : [])))))), \
+          \name : \"Hydro\"\
+          \} : \
+          \(LinePlot {\
+          \data : \
+          \({x : 2013, y : 0.6080402010050252} : \
+          \({x : 2014, y : 0.6428571428571429} : \
+          \({x : 2015, y : ⸨0.5909090909090909⸩} : \
+          \({x : 2016, y : 0.5324675324675324} : \
+          \({x : 2017, y : 0.3893129770992366} : \
+          \({x : 2018, y : 0.3522727272727273} : [])))))), \
+          \name : \"Solar\"\
+          \} : \
+          \(LinePlot {\
+          \data : ({x : 2013, y : 0.6703296703296703} : \
+          \({x : 2014, y : 0.5739130434782609} : \
+          \({x : 2015, y : ⸨0.5103448275862069⸩} : \
+          \({x : 2016, y : 0.48520710059171596} : \
+          \({x : 2017, y : 0.4734042553191489} : \
+          \({x : 2018, y : 0.45714285714285713} : [])))))), \
+          \name : \"Wind\"\
+          \} : []))))\
+          \}"
      }
    ]
+
+
+

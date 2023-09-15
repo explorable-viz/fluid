@@ -132,7 +132,7 @@ instance Highlightable Unit where
 
 instance Highlightable Boolean where
    highlightIf false = identity
-   highlightIf true = \doc -> text "_" `beside` doc `beside` text "_"
+   highlightIf true = \doc -> text "⸨" `beside` doc `beside` text "⸩"
 
 instance Highlightable Vertex where
    highlightIf (Vertex α) = \doc -> doc `beside` text "_" `beside` text ("⟨" <> α <> "⟩")
