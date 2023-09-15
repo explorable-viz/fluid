@@ -1,18 +1,17 @@
 module Test.Util
-  ( TestBwdSpec
-  , TestConfig
-  , TestLinkSpec
-  , TestSpec
-  , TestWithDatasetSpec
-  , averageRows
-  , checkPretty
-  , isGraphical
-  , shouldSatisfy
-  , testParse
-  , testTrace
-  , testWithSetup
-  )
-  where
+   ( TestBwdSpec
+   , TestConfig
+   , TestLinkSpec
+   , TestSpec
+   , TestWithDatasetSpec
+   , averageRows
+   , checkPretty
+   , isGraphical
+   , shouldSatisfy
+   , testParse
+   , testTrace
+   , testWithSetup
+   ) where
 
 import Prelude hiding (absurd)
 
@@ -199,27 +198,26 @@ shouldSatisfy msg v pred =
    unless (pred v)
       $ fail (show v <> " doesn't satisfy predicate: " <> msg)
 
-
 averageRows :: List BenchRow -> BenchRow
 averageRows rows = averagedTr
    where
-   runs = toNumber $ length rows 
+   runs = toNumber $ length rows
+
    zeroRow :: BenchRow
-   zeroRow = BenchRow {tEval: 0.0, tBwd: 0.0, tFwd: 0.0} { tEval: 0.0, tBwd: 0.0, tFwd: 0.0, tFwdDemorgan: 0.0  }
+   zeroRow = BenchRow { tEval: 0.0, tBwd: 0.0, tFwd: 0.0 } { tEval: 0.0, tBwd: 0.0, tFwd: 0.0, tFwdDemorgan: 0.0 }
+
    sumRow :: BenchRow -> BenchRow -> BenchRow
    sumRow (BenchRow trRow1 gRow1) (BenchRow trRow2 gRow2) =
-      BenchRow 
-            {
-               tEval : trRow1.tEval + trRow2.tEval,
-               tBwd: trRow1.tBwd + trRow2.tBwd, 
-               tFwd: trRow1.tFwd + trRow2.tFwd
-            } 
-            {
-               tEval: gRow1.tEval + gRow2.tEval,
-               tBwd: gRow1.tBwd + gRow2.tBwd,
-               tFwd: gRow1.tFwd + gRow2.tFwd,
-               tFwdDemorgan: gRow1.tFwdDemorgan + gRow2.tFwdDemorgan
-            }
-   
-   summed = foldl sumRow zeroRow rows 
+      BenchRow
+         { tEval: trRow1.tEval + trRow2.tEval
+         , tBwd: trRow1.tBwd + trRow2.tBwd
+         , tFwd: trRow1.tFwd + trRow2.tFwd
+         }
+         { tEval: gRow1.tEval + gRow2.tEval
+         , tBwd: gRow1.tBwd + gRow2.tBwd
+         , tFwd: gRow1.tFwd + gRow2.tFwd
+         , tFwdDemorgan: gRow1.tFwdDemorgan + gRow2.tFwdDemorgan
+         }
+
+   summed = foldl sumRow zeroRow rows
    averagedTr = (\(BenchRow tr gr) -> BenchRow (hmap (\num -> num `div` runs) tr) (hmap (\num -> num `div` runs) gr)) $ summed
