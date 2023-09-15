@@ -59,25 +59,25 @@ render (Doc doc) = intercalate "\n" doc.lines
 --            _ -> range 1 h $> ""
 --       }
 
-empty :: Doc 
-empty =  Doc {
-   width: 0,
-   height: 1,
-   lines: singleton "" 
-}
+empty :: Doc
+empty = Doc
+   { width: 0
+   , height: 1
+   , lines: singleton ""
+   }
 
-text :: String -> Doc 
+text :: String -> Doc
 text s = checkOneLine (S.split (wrap "\n") (" " <> s))
 
-checkOneLine :: Array String -> Doc 
-checkOneLine xs = case uncons xs of 
-   Just {head : x, tail: []} -> Doc {
-      width : S.length x,
-      height : 1,
-      lines: singleton x 
-   }
-   Just {head : _ , tail: _} -> error U.absurd
-   Nothing -> error U.absurd 
+checkOneLine :: Array String -> Doc
+checkOneLine xs = case uncons xs of
+   Just { head: x, tail: [] } -> Doc
+      { width: S.length x
+      , height: 1
+      , lines: singleton x
+      }
+   Just { head: _, tail: _ } -> error U.absurd
+   Nothing -> error U.absurd
 
 -- | Place one document on top of another.
 atop :: Doc -> Doc -> Doc
@@ -100,7 +100,7 @@ helperUnwrapMaybe :: Maybe String -> String
 helperUnwrapMaybe (Just x) = x
 helperUnwrapMaybe (Nothing) = ""
 
-spaces :: Int -> String   
+spaces :: Int -> String
 spaces n = foldl (<>) "" (A.replicate n " ")
 
 allButLast :: Doc -> Array String
@@ -119,8 +119,10 @@ lastLine (Doc d) = helperUnwrapMaybe (last d.lines)
 -- we then zip this with all but the first line of d2 so we have indented the document by the length of the last line of d1 
 indentedExpression :: Doc -> Doc -> Array String
 indentedExpression (Doc d1) (Doc d2) =
-   zipWith (<>) (A.replicate (A.length (allButFirst (Doc d2)))  
-      (spaces (S.length (lastLine (Doc d1))))) 
+   zipWith (<>)
+      ( A.replicate (A.length (allButFirst (Doc d2)))
+           (spaces (S.length (lastLine (Doc d1))))
+      )
       (allButFirst (Doc d2))
 
 beside :: Doc -> Doc -> Doc

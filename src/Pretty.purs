@@ -31,33 +31,27 @@ import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
 import Val (Fun(..), Val(..)) as V
 import Val (class Ann, class Highlightable, DictRep(..), ForeignOp', Fun, MatrixRep(..), Val, highlightIf)
 
-
-
 replacement :: Array (String × String)
-replacement = ["( " × "(",
-               " )" × ")",
-               "[ " × "[", 
-               " ]" × "]",
-               "{ " × "{",
-               " }" × "}",
-               ". " × ".",
-               " ." × ".",
-               ". " × ".",
-               " ," × ",",
-               " ;" × ";",
-                "| " × "|",
-                " |" × "|",
-                "⸨ " × "⸨",
-                " ⸩" × "⸩"
-               ]
-
-
-
+replacement =
+   [ "( " × "("
+   , " )" × ")"
+   , "[ " × "["
+   , " ]" × "]"
+   , "{ " × "{"
+   , " }" × "}"
+   , ". " × "."
+   , " ." × "."
+   , ". " × "."
+   , " ," × ","
+   , " ;" × ";"
+   , "| " × "|"
+   , " |" × "|"
+   , "⸨ " × "⸨"
+   , " ⸩" × "⸩"
+   ]
 
 pattRepPairs :: Array (DS.Pattern × DS.Replacement)
 pattRepPairs = map (\(x × y) -> (DS.Pattern x × DS.Replacement y)) replacement
-
-
 
 newtype FirstGroup a = First (RecDefs a)
 data ExprType = Simple | Expression
@@ -103,8 +97,10 @@ prettyBinApp n (BinaryApp s op s') =
    in
       case getPrec op of
          -1 -> prettyBinApp prec' s .<>. (text ("`" <> op <> "`")) .<>. prettyBinApp prec' s'
-         _ -> if prec' <= n then 
-               parentheses (prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s') else 
+         _ ->
+            if prec' <= n then
+               parentheses (prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s')
+            else
                prettyBinApp prec' s .<>. text op .<>. prettyBinApp prec' s'
 prettyBinApp _ s = prettyAppChain s
 
@@ -121,44 +117,45 @@ class Pretty p where
    pretty :: p -> Doc
 
 removeLineWS :: String -> String
-removeLineWS str = foldl (\curr (x×y) -> replaceAll x y curr) str pattRepPairs
+removeLineWS str = foldl (\curr (x × y) -> replaceAll x y curr) str pattRepPairs
 
-removeDocWS :: Doc -> Doc 
-removeDocWS (Doc d) = Doc {
-   width: d.width,
-   height: d.height,
-   lines: map (\x -> removeLineWS (drop 1 x )) d.lines 
-}
-
-
+removeDocWS :: Doc -> Doc
+removeDocWS (Doc d) = Doc
+   { width: d.width
+   , height: d.height
+   , lines: map (\x -> removeLineWS (drop 1 x)) d.lines
+   }
 
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
-   pretty (Op op) = parentheses (text op) 
-   pretty (Int ann n) =  (highlightIf ann $ text (show n))
-   pretty (Float ann n) =  (highlightIf ann $ text (show n))
-   pretty (Str ann str) =  (highlightIf ann $ (text ("\"" <> str <> "\"")))
-   pretty (Constr ann c x) =  (prettyConstr ann c x)
-   pretty (Record ann xss) =  (highlightIf ann $ curlyBraces (prettyOperator (.-.) xss))
-   pretty (Dictionary ann sss) =  (highlightIf ann $ dictBrackets (pretty sss))
-   pretty (Matrix ann e (x × y) e') = 
-       (highlightIf ann $ arrayBrackets (pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y) 
-      .<>. text str.in_ .<>. pretty e'))
+   pretty (Op op) = parentheses (text op)
+   pretty (Int ann n) = (highlightIf ann $ text (show n))
+   pretty (Float ann n) = (highlightIf ann $ text (show n))
+   pretty (Str ann str) = (highlightIf ann $ (text ("\"" <> str <> "\"")))
+   pretty (Constr ann c x) = (prettyConstr ann c x)
+   pretty (Record ann xss) = (highlightIf ann $ curlyBraces (prettyOperator (.-.) xss))
+   pretty (Dictionary ann sss) = (highlightIf ann $ dictBrackets (pretty sss))
+   pretty (Matrix ann e (x × y) e') =
+      ( highlightIf ann $ arrayBrackets
+           ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)
+                .<>. text str.in_
+                .<>. pretty e'
+           )
+      )
    pretty (Lambda cs) = parentheses (text str.fun .<>. pretty cs)
    pretty (Project s x) = pretty s .<>. text str.dot .<>. text x
    pretty (App s s') = prettyAppChain (App s s')
    pretty (BinaryApp s op s') = prettyBinApp 0 (BinaryApp s op s')
    pretty (MatchAs s cs) = ((text str.match .<>. pretty s .<>. text str.as)) .-. curlyBraces (pretty cs)
    pretty (IfElse s1 s2 s3) = text str.if_ .<>. pretty s1 .<>. text str.then_ .<>. pretty s2 .<>. text str.else_ .<>. pretty s3
-   pretty (ListEmpty ann) =  (highlightIf ann $ brackets empty)
-   pretty (ListNonEmpty ann (Record _ xss) l) =  
-      (( (highlightIf ann $ text str.lBracket)) .<>. ( (highlightIf ann $ curlyBraces (prettyOperator (.<>.) xss)))) .-. pretty l
-   pretty (ListNonEmpty ann e l) = ( (highlightIf ann $ text str.lBracket)) .<>. pretty e .<>. pretty l
+   pretty (ListEmpty ann) = (highlightIf ann $ brackets empty)
+   pretty (ListNonEmpty ann (Record _ xss) l) =
+      (((highlightIf ann $ text str.lBracket)) .<>. ((highlightIf ann $ curlyBraces (prettyOperator (.<>.) xss)))) .-. pretty l
+   pretty (ListNonEmpty ann e l) = ((highlightIf ann $ text str.lBracket)) .<>. pretty e .<>. pretty l
    pretty (ListEnum s s') = brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
-   pretty (ListComp ann s qs) =  (highlightIf ann $ brackets (pretty s .<>. text str.bar .<>. pretty qs))
+   pretty (ListComp ann s qs) = (highlightIf ann $ brackets (pretty s .<>. text str.bar .<>. pretty qs))
    pretty (Let ds s) = text str.let_ .<>. pretty ds .<>. text str.in_ .<>. pretty s
    pretty (LetRec h s) = (text str.let_ .<>. pretty (First h)) .-. text str.in_ .<>. pretty s
-   
 
 prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
@@ -166,17 +163,14 @@ prettyOperator sep (Cons s xss) = sep (prettyOperator sep (toList (singleton s))
 prettyOperator _ Nil = empty
 
 instance Ann a => Pretty (ListRest a) where
-   pretty (Next ann (Record _ xss) l) = ( (highlightIf ann $ text str.comma)) .<>. ( (highlightIf ann $ curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l
-   pretty (Next ann s l) = ( (highlightIf ann $ text str.comma)) .<>. pretty s .<>. pretty l
-   pretty (End ann) =  (highlightIf ann $ text str.rBracket)
-
+   pretty (Next ann (Record _ xss) l) = ((highlightIf ann $ text str.comma)) .<>. ((highlightIf ann $ curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l
+   pretty (Next ann s l) = ((highlightIf ann $ text str.comma)) .<>. pretty s .<>. pretty l
+   pretty (End ann) = (highlightIf ann $ text str.rBracket)
 
 instance Ann a => Pretty (List (Pair (Expr a))) where
    pretty (Cons (Pair e e') Nil) = prettyPairs (Pair e e')
    pretty (Cons (Pair e e') sss) = prettyPairs (Pair e e') .<>. text str.comma .<>. pretty sss
    pretty Nil = empty
-
-
 
 prettyPairs :: forall a. Ann a => (Pair (Expr a)) -> Doc
 prettyPairs (Pair e e') = pretty e .<>. text str.colonEq .<>. pretty e'
@@ -184,10 +178,12 @@ prettyPairs (Pair e e') = pretty e .<>. text str.colonEq .<>. pretty e'
 instance Pretty Pattern where
    pretty (PVar x) = text x
    pretty (PRecord xps) = curlyBraces (pretty xps)
-   pretty (PConstr c ps) = case uncons ps of 
-      Just {head :p , tail: Nil} -> pretty c .<>. pretty p 
-      _ -> if c == cPair then (parentheses (prettyPattConstr (text str.comma) ps)) else 
-         if c == cCons then (parentheses (prettyPattConstr (text str.colon) ps)) else 
+   pretty (PConstr c ps) = case uncons ps of
+      Just { head: p, tail: Nil } -> pretty c .<>. pretty p
+      _ ->
+         if c == cPair then (parentheses (prettyPattConstr (text str.comma) ps))
+         else if c == cCons then (parentheses (prettyPattConstr (text str.colon) ps))
+         else
             parentheses (text c .<>. prettyPattConstr empty ps)
 
    --pretty (PConstr c ps) = if c == cPair then parentheses (prettyPattConstr (text str.comma) ps) 
@@ -198,17 +194,15 @@ instance Pretty Pattern where
    pretty (PListEmpty) = brackets empty
    pretty (PListNonEmpty p l) = text str.lBracket .<>. pretty p .<>. pretty l
 
-
 instance Pretty (List (Bind Pattern)) where
    pretty (Cons xp Nil) = text (key xp) .<>. text str.colon .<>. pretty (val xp)
    pretty (Cons xp xps) = text (key xp) .<>. text str.colon .<>. pretty (val xp) .<>. text str.comma .-. pretty xps
    pretty Nil = empty
 
-
 prettyPattConstr :: Doc -> List Pattern -> Doc
 prettyPattConstr _ Nil = empty
 prettyPattConstr _ (Cons p Nil) = pretty p
-prettyPattConstr sep (Cons p ps) = pretty p .<>.  sep .<>. prettyPattConstr sep ps
+prettyPattConstr sep (Cons p ps) = pretty p .<>. sep .<>. prettyPattConstr sep ps
 
 instance Pretty ListRestPattern where
    pretty (PNext p l) = text str.comma .<>. pretty p .<>. pretty l
@@ -294,8 +288,6 @@ comma = text str.comma
 semi :: Doc
 semi = text str.semiColon
 
-
-
 hcomma :: forall f. Foldable f => f Doc -> Doc
 hcomma = fromFoldable >>> intersperse comma >>> hcat
 
@@ -340,6 +332,7 @@ prettyParensOpt x =
 
 nil :: Doc
 nil = text (str.lBracket <> str.rBracket)
+
 -- (highlightIf α $ parens (hcomma [ pretty x, pretty y ]))
 --  (highlightIf ann $ text str.lBracket)
 prettyConstr :: forall d a. Pretty d => Highlightable a => a -> Ctr -> List d -> Doc
@@ -348,9 +341,9 @@ prettyConstr α c (x : y : ys)
 prettyConstr α c ys
    | c == cNil = assert (null ys) $ (highlightIf α nil)
 prettyConstr α c (x : y : ys)
-   | c == cCons = assert (null ys) $ parens (hcat [ pretty x,  ( highlightIf α $ text str.colon), pretty y ])
-prettyConstr α c (x:Nil) = (highlightIf α  (prettyCtr c .<>. pretty x))
-prettyConstr α c xs = hcat ( (highlightIf α (prettyCtr c)) : (prettyParensOpt <$> xs))
+   | c == cCons = assert (null ys) $ parens (hcat [ pretty x, (highlightIf α $ text str.colon), pretty y ])
+prettyConstr α c (x : Nil) = (highlightIf α (prettyCtr c .<>. pretty x))
+prettyConstr α c xs = hcat ((highlightIf α (prettyCtr c)) : (prettyParensOpt <$> xs))
 
 prettyRecordOrDict
    :: forall d b a
@@ -377,13 +370,13 @@ prettyMatrix e1 i j e2 = arrayBrackets (pretty e1 .<>. text str.lArrow .<>. text
 
 instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Var x) = text x
-   pretty (E.Int α n) =  (highlightIf α (text (show n)))
+   pretty (E.Int α n) = (highlightIf α (text (show n)))
    pretty (E.Float _ n) = text (show n)
    pretty (E.Str _ str) = text (show str)
    pretty (E.Record α xes) = prettyRecord text α (xes # D.toUnfoldable)
    pretty (E.Dictionary α ees) = prettyDict pretty α (ees <#> toTuple)
    pretty (E.Constr α c es) = prettyConstr α c es
-   pretty (E.Matrix α e1 (i × j) e2) =  (highlightIf α (prettyMatrix e1 i j e2))
+   pretty (E.Matrix α e1 (i × j) e2) = (highlightIf α (prettyMatrix e1 i j e2))
    pretty (E.Lambda σ) = hcat [ text str.fun, pretty σ ]
    pretty (E.Op op) = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') = atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
@@ -431,9 +424,9 @@ instance Highlightable a => Pretty (Elim a) where
    pretty (ElimRecord xs κ) = hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
 
 instance Highlightable a => Pretty (Val a) where
-   pretty (V.Int α n) =  (highlightIf α (text (show n)))
-   pretty (V.Float α n) =  (highlightIf α (text (show n)))
-   pretty (V.Str α str) =  (highlightIf α (text (show str)))
+   pretty (V.Int α n) = (highlightIf α (text (show n)))
+   pretty (V.Float α n) = (highlightIf α (text (show n)))
+   pretty (V.Str α str) = (highlightIf α (text (show str)))
    pretty (V.Record α xvs) = prettyRecord text α (xvs # D.toUnfoldable)
    pretty (V.Dictionary α (DictRep svs)) = prettyDict
       (\(s × β) -> highlightIf β (text (show s)))
@@ -444,7 +437,7 @@ instance Highlightable a => Pretty (Val a) where
    pretty (V.Fun α φ) = pretty (α × φ)
 
 instance Highlightable a => Pretty (a × Fun a) where
-   pretty (α × V.Closure _ _ _) =  (highlightIf α $ text "<closure>")
+   pretty (α × V.Closure _ _ _) = (highlightIf α $ text "<closure>")
    pretty (_ × V.Foreign φ _) = runExists pretty φ
    pretty (α × V.PartialConstr c vs) = prettyConstr α c vs
 
