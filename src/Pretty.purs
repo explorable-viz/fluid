@@ -6,7 +6,7 @@ import Bindings (Bind, key, val, Var, (↦))
 import Data.Array (foldl)
 import Data.Exists (runExists)
 import Data.Foldable (class Foldable)
-import Data.List (List(..), fromFoldable, (:), null)
+import Data.List (List(..), fromFoldable, null, uncons, (:))
 import Data.List.NonEmpty (NonEmptyList, groupBy, singleton, toList)
 import Data.Map (lookup)
 import Data.Maybe (Maybe(..))
@@ -44,15 +44,23 @@ replacement = ["( " × "(",
                " ." × ".",
                ". " × ".",
                " ," × ",",
-               " ;" × ";"
+               " ;" × ";",
+                "| " × "|",
+                " |" × "|",
+                " :=" × ":="
+
                ]
 
---                " :" × ":",
---                "   :" × " :",
 
+-- subReplacement :: Array (String × String)
+-- subReplacement = ["_ " × "_",
+--                   " _" × "_"]
 
 pattRepPairs :: Array (DS.Pattern × DS.Replacement)
 pattRepPairs = map (\(x × y) -> (DS.Pattern x × DS.Replacement y)) replacement
+
+-- subPattRepPairs :: Array (DS.Pattern × DS.Replacement)
+-- subPattRepPairs = map (\(x × y) -> (DS.Pattern x × DS.Replacement y)) subReplacement
 
 newtype FirstGroup a = First (RecDefs a)
 data ExprType = Simple | Expression
@@ -125,6 +133,15 @@ removeDocWS (Doc d) = Doc {
    lines: map (\x -> removeLineWS (drop 1 x )) d.lines 
 }
 
+-- removeHWSLine :: String -> String 
+-- removeHWSLine str = foldl (\curr (x×y) -> replaceAll x y curr) str subPattRepPairs
+
+-- removeHWS :: Doc -> Doc 
+-- removeHWS(Doc d) = Doc {
+--    width: d.width,
+--    height: d.height,
+--    lines: map (\x -> removeHWSLine (drop 1 x )) d.lines 
+--}
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
    pretty (Op op) = parentheses (text op) 
@@ -177,11 +194,17 @@ prettyPairs (Pair e e') = pretty e .<>. text str.colonEq .<>. pretty e'
 instance Pretty Pattern where
    pretty (PVar x) = text x
    pretty (PRecord xps) = curlyBraces (pretty xps)
-   pretty (PConstr c ps) = case c == cPair of
-      true -> parentheses (prettyPattConstr (text str.comma) ps)
-      false -> case c == cCons of
-            true -> parentheses (prettyPattConstr (text str.colon) ps)
-            false -> parentheses (text c .<>. prettyPattConstr empty ps)
+   pretty (PConstr c ps) = case uncons ps of 
+      Just {head :p , tail: Nil} -> pretty c .<>. pretty p 
+      _ -> if c == cPair then (parentheses (prettyPattConstr (text str.comma) ps)) else 
+         if c == cCons then (parentheses (prettyPattConstr (text str.colon) ps)) else 
+            parentheses (text c .<>. prettyPattConstr empty ps)
+
+   --pretty (PConstr c ps) = if c == cPair then parentheses (prettyPattConstr (text str.comma) ps) 
+   --    if case uncons ps of 
+   --       Nothing -> pretty ps
+   --    --    Just {head : p, tail: Nil} -> text c .<>. pretty p
+   --    --    _ -> parentheses (text c .<>. prettyPattConstr empty ps)
    pretty (PListEmpty) = brackets empty
    pretty (PListNonEmpty p l) = text str.lBracket .<>. pretty p .<>. pretty l
 
@@ -195,7 +218,7 @@ instance Pretty (List (Bind Pattern)) where
 prettyPattConstr :: Doc -> List Pattern -> Doc
 prettyPattConstr _ Nil = empty
 prettyPattConstr _ (Cons p Nil) = pretty p
-prettyPattConstr sep (Cons p ps) = pretty p .<>. sep .<>. prettyPattConstr sep ps
+prettyPattConstr sep (Cons p ps) = pretty p .<>.  sep .<>. prettyPattConstr sep ps
 
 instance Pretty ListRestPattern where
    pretty (PNext p l) = text str.comma .<>. pretty p .<>. pretty l
@@ -205,10 +228,10 @@ prettyClause :: forall a. Ann a => Doc -> Clause a -> Doc
 prettyClause sep (Clause (ps × e)) = prettyPattConstr empty (toList ps) .<>. sep .<>. pretty e
 
 instance Ann a => Pretty (Clauses a) where
-   pretty (Clauses cs) = intersperse' (toList (map (prettyClause (text str.equal)) (cs))) (text str.semiColon)
+   pretty (Clauses cs) = intersperse' (toList (map (prettyClause (text str.equals)) (cs))) (text str.semiColon)
 
 instance Ann a => Pretty (Branch a) where
-   pretty (x × Clause (ps × e)) = text x .<>. prettyClause (text str.equal) (Clause (ps × e))
+   pretty (x × Clause (ps × e)) = text x .<>. prettyClause (text str.equals) (Clause (ps × e))
 
 instance Ann a => Pretty (NonEmptyList (Branch a)) where
    pretty h = intersperse' (toList (map pretty h)) (text str.semiColon)
@@ -223,7 +246,7 @@ instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
    pretty pss = intersperse' (map (prettyClause (text str.rArrow)) (map Clause (toList (helperMatch pss)))) (text str.semiColon)
 
 instance Ann a => Pretty (VarDef a) where
-   pretty (VarDef p s) = pretty p .<>. text str.equal .<>. pretty s
+   pretty (VarDef p s) = pretty p .<>. text str.equals .<>. pretty s
 
 instance Ann a => Pretty (VarDefs a) where
    pretty ds = intersperse' (toList (map pretty ds)) (text str.semiColon)
@@ -335,6 +358,7 @@ prettyConstr α c ys
    | c == cNil = assert (null ys) $ highlightIf α nil
 prettyConstr α c (x : y : ys)
    | c == cCons = assert (null ys) $ parens (hcat [ pretty x, highlightIf α $ text str.colon, pretty y ])
+prettyConstr α c (x:Nil) = highlightIf α  (prettyCtr c .<>. pretty x)
 prettyConstr α c xs = hcat (highlightIf α (prettyCtr c) : (prettyParensOpt <$> xs))
 
 prettyRecordOrDict
