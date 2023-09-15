@@ -14,7 +14,7 @@ import Data.Profunctor.Choice ((|||))
 import Data.Profunctor.Strong (first)
 import Data.Set (Set, toUnfoldable) as S
 import Data.String (Pattern(..), Replacement(..), contains) as DS
-import Data.String (drop, replaceAll)
+import Data.String (contains, drop, replaceAll)
 import DataType (Ctr, cCons, cNil, cPair, showCtr)
 import Dict (Dict)
 import Dict (toUnfoldable) as D
@@ -52,15 +52,15 @@ replacement = ["( " × "(",
                ]
 
 
--- subReplacement :: Array (String × String)
--- subReplacement = ["_ " × "_",
---                   " _" × "_"]
+subReplacement :: Array (String × String)
+subReplacement = ["_ " × "_",
+                  " _" × "_"]
 
 pattRepPairs :: Array (DS.Pattern × DS.Replacement)
 pattRepPairs = map (\(x × y) -> (DS.Pattern x × DS.Replacement y)) replacement
 
--- subPattRepPairs :: Array (DS.Pattern × DS.Replacement)
--- subPattRepPairs = map (\(x × y) -> (DS.Pattern x × DS.Replacement y)) subReplacement
+subPattRepPairs :: Array (DS.Pattern × DS.Replacement)
+subPattRepPairs = map (\(x × y) -> (DS.Pattern x × DS.Replacement y)) subReplacement
 
 newtype FirstGroup a = First (RecDefs a)
 data ExprType = Simple | Expression
@@ -133,20 +133,21 @@ removeDocWS (Doc d) = Doc {
    lines: map (\x -> removeLineWS (drop 1 x )) d.lines 
 }
 
--- removeHWSLine :: String -> String 
--- removeHWSLine str = foldl (\curr (x×y) -> replaceAll x y curr) str subPattRepPairs
+removeHWSLine :: String -> String 
+removeHWSLine str = foldl (\curr (x×y) -> replaceAll x y curr) str subPattRepPairs
 
--- removeHWS :: Doc -> Doc 
--- removeHWS(Doc d) = Doc {
---    width: d.width,
---    height: d.height,
---    lines: map (\x -> removeHWSLine (drop 1 x )) d.lines 
---}
+removeHWS :: Doc -> Doc 
+removeHWS(Doc d) = Doc {
+   width: d.width,
+   height: d.height,
+   lines: map (\x -> if contains (DS.Pattern "_") x then  " " <> removeHWSLine (drop 1 x) else x) d.lines
+}
+
 instance Ann a => Pretty (Expr a) where
    pretty (Var x) = text x
    pretty (Op op) = parentheses (text op) 
-   pretty (Int ann n) = highlightIf ann $ text (show n)
-   pretty (Float ann n) = highlightIf ann $ text (show n)
+   pretty (Int ann n) = removeHWS (highlightIf ann $ text (show n))
+   pretty (Float ann n) = removeHWS (highlightIf ann $ text (show n))
    pretty (Str ann str) = highlightIf ann $ (text ("\"" <> str <> "\""))
    pretty (Constr ann c x) = prettyConstr ann c x
    pretty (Record ann xss) = highlightIf ann $ curlyBraces (prettyOperator (.-.) xss)
@@ -440,7 +441,7 @@ instance Highlightable a => Pretty (Elim a) where
    pretty (ElimRecord xs κ) = hcat [ curlyBraces $ hcomma (text <$> (S.toUnfoldable xs :: List String)), text str.rArrow, curlyBraces (pretty κ) ]
 
 instance Highlightable a => Pretty (Val a) where
-   pretty (V.Int α n) = highlightIf α (text (show n))
+   pretty (V.Int α n) = removeHWS (highlightIf α (text (show n)))
    pretty (V.Float α n) = highlightIf α (text (show n))
    pretty (V.Str α str) = highlightIf α (text (show str))
    pretty (V.Record α xvs) = prettyRecord text α (xvs # D.toUnfoldable)
