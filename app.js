@@ -2819,12 +2819,12 @@
   // node_modules/d3-format/src/formatGroup.js
   function formatGroup_default(grouping, thousands) {
     return function(value, width) {
-      var i = value.length, t2 = [], j = 0, g = grouping[0], length6 = 0;
+      var i = value.length, t2 = [], j = 0, g = grouping[0], length5 = 0;
       while (i > 0 && g > 0) {
-        if (length6 + g + 1 > width)
-          g = Math.max(1, width - length6);
+        if (length5 + g + 1 > width)
+          g = Math.max(1, width - length5);
         t2.push(value.substring(i -= g, i + g));
-        if ((length6 += g + 1) > width)
+        if ((length5 += g + 1) > width)
           break;
         g = grouping[j = (j + 1) % grouping.length];
       }
@@ -2987,7 +2987,7 @@
         }
         if (comma2 && !zero2)
           value = group2(value, Infinity);
-        var length6 = valuePrefix.length + value.length + valueSuffix.length, padding = length6 < width ? new Array(width - length6 + 1).join(fill) : "";
+        var length5 = valuePrefix.length + value.length + valueSuffix.length, padding = length5 < width ? new Array(width - length5 + 1).join(fill) : "";
         if (comma2 && zero2)
           value = group2(padding + value, padding.length ? width - valueSuffix.length : Infinity), padding = "";
         switch (align) {
@@ -2998,7 +2998,7 @@
             value = valuePrefix + padding + value + valueSuffix;
             break;
           case "^":
-            value = padding.slice(0, length6 = padding.length >> 1) + valuePrefix + value + valueSuffix + padding.slice(length6);
+            value = padding.slice(0, length5 = padding.length >> 1) + valuePrefix + value + valueSuffix + padding.slice(length5);
             break;
           default:
             value = padding + valuePrefix + value + valueSuffix;
@@ -3593,10 +3593,10 @@
     }
   };
   var TextLeaf = class extends Text {
-    constructor(text2, length6 = textLength(text2)) {
+    constructor(text2, length5 = textLength(text2)) {
       super();
       this.text = text2;
-      this.length = length6;
+      this.length = length5;
     }
     get lines() {
       return this.text.length;
@@ -3673,10 +3673,10 @@
     }
   };
   var TextNode = class extends Text {
-    constructor(children2, length6) {
+    constructor(children2, length5) {
       super();
       this.children = children2;
-      this.length = length6;
+      this.length = length5;
       this.lines = 0;
       for (let child of children2)
         this.lines += child.lines;
@@ -3740,18 +3740,18 @@
     scanIdentical(other, dir) {
       if (!(other instanceof TextNode))
         return 0;
-      let length6 = 0;
+      let length5 = 0;
       let [iA, iB, eA, eB] = dir > 0 ? [0, 0, this.children.length, other.children.length] : [this.children.length - 1, other.children.length - 1, -1, -1];
       for (; ; iA += dir, iB += dir) {
         if (iA == eA || iB == eB)
-          return length6;
+          return length5;
         let chA = this.children[iA], chB = other.children[iB];
         if (chA != chB)
-          return length6 + chA.scanIdentical(chB, dir);
-        length6 += chA.length + 1;
+          return length5 + chA.scanIdentical(chB, dir);
+        length5 += chA.length + 1;
       }
     }
-    static from(children2, length6 = children2.reduce((l, ch) => l + ch.length + 1, -1)) {
+    static from(children2, length5 = children2.reduce((l, ch) => l + ch.length + 1, -1)) {
       let lines = 0;
       for (let ch of children2)
         lines += ch.lines;
@@ -3759,7 +3759,7 @@
         let flat = [];
         for (let ch of children2)
           ch.flatten(flat);
-        return new TextLeaf(flat, length6);
+        return new TextLeaf(flat, length5);
       }
       let chunk = Math.max(32, lines >> 5), maxChunk = chunk << 1, minChunk = chunk >> 1;
       let chunked = [], currentLines = 0, currentLen = -1, currentChunk = [];
@@ -3793,15 +3793,15 @@
       for (let child of children2)
         add(child);
       flush();
-      return chunked.length == 1 ? chunked[0] : new TextNode(chunked, length6);
+      return chunked.length == 1 ? chunked[0] : new TextNode(chunked, length5);
     }
   };
   Text.empty = /* @__PURE__ */ new TextLeaf([""], 0);
   function textLength(text2) {
-    let length6 = -1;
+    let length5 = -1;
     for (let line of text2)
-      length6 += line.length + 1;
-    return length6;
+      length5 += line.length + 1;
+    return length5;
   }
   function appendText(text2, target, from = 0, to = 1e9) {
     for (let pos = 0, i = 0, first = true; i < text2.length && pos <= to; i++) {
@@ -4243,14 +4243,14 @@
       }
       return parts;
     }
-    static of(changes, length6, lineSep) {
+    static of(changes, length5, lineSep) {
       let sections = [], inserted = [], pos = 0;
       let total = null;
       function flush(force2 = false) {
         if (!force2 && !sections.length)
           return;
-        if (pos < length6)
-          addSection(sections, length6 - pos, -1);
+        if (pos < length5)
+          addSection(sections, length5 - pos, -1);
         let set4 = new ChangeSet(sections, inserted);
         total = total ? total.compose(set4.map(total)) : set4;
         sections = [];
@@ -4262,14 +4262,14 @@
           for (let sub of spec)
             process(sub);
         } else if (spec instanceof ChangeSet) {
-          if (spec.length != length6)
-            throw new RangeError(`Mismatched change set length (got ${spec.length}, expected ${length6})`);
+          if (spec.length != length5)
+            throw new RangeError(`Mismatched change set length (got ${spec.length}, expected ${length5})`);
           flush();
           total = total ? total.compose(spec.map(total)) : spec;
         } else {
           let { from, to = from, insert: insert3 } = spec;
-          if (from > to || from < 0 || to > length6)
-            throw new RangeError(`Invalid change range ${from} to ${to} (in doc of length ${length6})`);
+          if (from > to || from < 0 || to > length5)
+            throw new RangeError(`Invalid change range ${from} to ${to} (in doc of length ${length5})`);
           let insText = !insert3 ? Text.empty : typeof insert3 == "string" ? Text.of(insert3.split(lineSep || DefaultSplit)) : insert3;
           let insLen = insText.length;
           if (from == to && insLen == 0)
@@ -4287,8 +4287,8 @@
       flush(!total);
       return total;
     }
-    static empty(length6) {
-      return new ChangeSet(length6 ? [length6, -1] : [], []);
+    static empty(length5) {
+      return new ChangeSet(length5 ? [length5, -1] : [], []);
     }
     static fromJSON(json) {
       if (!Array.isArray(json))
@@ -5452,7 +5452,7 @@
       return makeCategorizer(this.languageDataAt("wordChars", at).join(""));
     }
     wordAt(pos) {
-      let { text: text2, from, length: length6 } = this.doc.lineAt(pos);
+      let { text: text2, from, length: length5 } = this.doc.lineAt(pos);
       let cat = this.charCategorizer(pos);
       let start2 = pos - from, end = pos - from;
       while (start2 > 0) {
@@ -5461,7 +5461,7 @@
           break;
         start2 = prev;
       }
-      while (end < length6) {
+      while (end < length5) {
         let next = findClusterBreak(text2, end);
         if (cat(text2.slice(end, next)) != CharCategory.Word)
           break;
@@ -5675,7 +5675,7 @@
       let sharedChunks = findSharedChunks(a, b, textDiff);
       let sideA = new SpanCursor(a, sharedChunks, minPointSize);
       let sideB = new SpanCursor(b, sharedChunks, minPointSize);
-      textDiff.iterGaps((fromA, fromB, length6) => compare(sideA, fromA, sideB, fromB, length6, comparator));
+      textDiff.iterGaps((fromA, fromB, length5) => compare(sideA, fromA, sideB, fromB, length5, comparator));
       if (textDiff.empty && textDiff.length == 0)
         compare(sideA, 0, sideB, 0, 0, comparator);
     }
@@ -6087,10 +6087,10 @@
       return open;
     }
   };
-  function compare(a, startA, b, startB, length6, comparator) {
+  function compare(a, startA, b, startB, length5, comparator) {
     a.goto(startA);
     b.goto(startB);
-    let endB = startB + length6;
+    let endB = startB + length5;
     let pos = startB, dPos = startB - startA;
     for (; ; ) {
       let diff = a.to + dPos - b.to || a.endSide - b.endSide;
@@ -7076,11 +7076,11 @@
     }
   };
   var MarkView = class extends ContentView {
-    constructor(mark, children2 = [], length6 = 0) {
+    constructor(mark, children2 = [], length5 = 0) {
       super();
       this.mark = mark;
       this.children = children2;
-      this.length = length6;
+      this.length = length5;
       for (let ch of children2)
         ch.setParent(this);
     }
@@ -7124,13 +7124,13 @@
         off = end;
         i++;
       }
-      let length6 = this.length - from;
+      let length5 = this.length - from;
       this.length = from;
       if (detachFrom > -1) {
         this.children.length = detachFrom;
         this.markDirty();
       }
-      return new MarkView(this.mark, result, length6);
+      return new MarkView(this.mark, result, length5);
     }
     domAtPos(pos) {
       return inlineDOMAtPos(this, pos);
@@ -7140,16 +7140,16 @@
     }
   };
   function textCoords(text2, pos, side) {
-    let length6 = text2.nodeValue.length;
-    if (pos > length6)
-      pos = length6;
+    let length5 = text2.nodeValue.length;
+    if (pos > length5)
+      pos = length5;
     let from = pos, to = pos, flatten2 = 0;
-    if (pos == 0 && side < 0 || pos == length6 && side >= 0) {
+    if (pos == 0 && side < 0 || pos == length5 && side >= 0) {
       if (!(browser.chrome || browser.gecko)) {
         if (pos) {
           from--;
           flatten2 = 1;
-        } else if (to < length6) {
+        } else if (to < length5) {
           to++;
           flatten2 = -1;
         }
@@ -7157,7 +7157,7 @@
     } else {
       if (side < 0)
         from--;
-      else if (to < length6)
+      else if (to < length5)
         to++;
     }
     let rects = textRange(text2, from, to).getClientRects();
@@ -7169,15 +7169,15 @@
     return flatten2 ? flattenRect(rect, flatten2 < 0) : rect || null;
   }
   var WidgetView = class extends ContentView {
-    constructor(widget, length6, side) {
+    constructor(widget, length5, side) {
       super();
       this.widget = widget;
-      this.length = length6;
+      this.length = length5;
       this.side = side;
       this.prevWidget = null;
     }
-    static create(widget, length6, side) {
-      return new (widget.customView || WidgetView)(widget, length6, side);
+    static create(widget, length5, side) {
+      return new (widget.customView || WidgetView)(widget, length5, side);
     }
     split(from) {
       let result = WidgetView.create(this.widget, this.length - from, this.side);
@@ -7809,10 +7809,10 @@
     }
   };
   var BlockWidgetView = class extends ContentView {
-    constructor(widget, length6, type2) {
+    constructor(widget, length5, type2) {
       super();
       this.widget = widget;
-      this.length = length6;
+      this.length = length5;
       this.type = type2;
       this.breakAfter = 0;
       this.prevWidget = null;
@@ -7933,8 +7933,8 @@
       if (!this.posCovered())
         this.getLine();
     }
-    buildText(length6, active, openStart) {
-      while (length6 > 0) {
+    buildText(length5, active, openStart) {
+      while (length5 > 0) {
         if (this.textOff == this.text.length) {
           let { value, lineBreak, done } = this.cursor.next(this.skip);
           this.skip = 0;
@@ -7950,19 +7950,19 @@
             this.flushBuffer();
             this.curLine = null;
             this.atCursorPos = true;
-            length6--;
+            length5--;
             continue;
           } else {
             this.text = value;
             this.textOff = 0;
           }
         }
-        let take4 = Math.min(this.text.length - this.textOff, length6, 512);
+        let take4 = Math.min(this.text.length - this.textOff, length5, 512);
         this.flushBuffer(active.slice(active.length - openStart));
         this.getLine().append(wrapMarks(new TextView(this.text.slice(this.textOff, this.textOff + take4)), active), openStart);
         this.atCursorPos = true;
         this.textOff += take4;
-        length6 -= take4;
+        length5 -= take4;
         openStart = 0;
       }
     }
@@ -8426,8 +8426,8 @@
     }
     return order;
   }
-  function trivialOrder(length6) {
-    return [new BidiSpan(0, length6, 0)];
+  function trivialOrder(length5) {
+    return [new BidiSpan(0, length5, 0)];
   }
   var movedOver = "";
   function moveVisually(line, order, dir, start2, forward) {
@@ -10065,10 +10065,10 @@
         lines += Math.max(0, Math.ceil((to - from - lines * this.lineLength * 0.5) / this.lineLength));
       return this.lineHeight * lines;
     }
-    heightForLine(length6) {
+    heightForLine(length5) {
       if (!this.lineWrapping)
         return this.lineHeight;
-      let lines = 1 + Math.max(0, Math.ceil((length6 - this.lineLength) / (this.lineLength - 5)));
+      let lines = 1 + Math.max(0, Math.ceil((length5 - this.lineLength) / (this.lineLength - 5)));
       return lines * this.lineHeight;
     }
     setDoc(doc2) {
@@ -10123,9 +10123,9 @@
     }
   };
   var BlockInfo = class {
-    constructor(from, length6, top3, height, type2) {
+    constructor(from, length5, top3, height, type2) {
       this.from = from;
-      this.length = length6;
+      this.length = length5;
       this.top = top3;
       this.height = height;
       this.type = type2;
@@ -10149,8 +10149,8 @@
   }(QueryType || (QueryType = {}));
   var Epsilon = 1e-3;
   var HeightMap = class {
-    constructor(length6, height, flags = 2) {
-      this.length = length6;
+    constructor(length5, height, flags = 2) {
+      this.length = length5;
       this.height = height;
       this.flags = flags;
     }
@@ -10249,8 +10249,8 @@
   };
   HeightMap.prototype.size = 1;
   var HeightMapBlock = class extends HeightMap {
-    constructor(length6, height, type2) {
-      super(length6, height);
+    constructor(length5, height, type2) {
+      super(length5, height);
       this.type = type2;
     }
     blockAt(_height, _oracle, top3, offset) {
@@ -10274,8 +10274,8 @@
     }
   };
   var HeightMapText = class extends HeightMapBlock {
-    constructor(length6, height) {
-      super(length6, height, BlockType.Text);
+    constructor(length5, height) {
+      super(length5, height, BlockType.Text);
       this.collapsed = 0;
       this.widgetHeight = 0;
     }
@@ -10306,8 +10306,8 @@
     }
   };
   var HeightMapGap = class extends HeightMap {
-    constructor(length6) {
-      super(length6, 0);
+    constructor(length5) {
+      super(length5, 0);
     }
     heightMetrics(oracle, offset) {
       let firstLine2 = oracle.doc.lineAt(offset).number, lastLine2 = oracle.doc.lineAt(offset + this.length).number;
@@ -10331,8 +10331,8 @@
         return new BlockInfo(line.from, line.length, lineTop, lineHeight, BlockType.Text);
       } else {
         let line = Math.max(0, Math.min(lastLine2 - firstLine2, Math.floor((height - top3) / perLine)));
-        let { from, length: length6 } = oracle.doc.line(firstLine2 + line);
-        return new BlockInfo(from, length6, top3 + perLine * line, perLine, BlockType.Text);
+        let { from, length: length5 } = oracle.doc.line(firstLine2 + line);
+        return new BlockInfo(from, length5, top3 + perLine * line, perLine, BlockType.Text);
       }
     }
     lineAt(value, type2, oracle, top3, offset) {
@@ -10633,12 +10633,12 @@
       if (block.type != BlockType.WidgetBefore)
         this.covering = block;
     }
-    addLineDeco(height, length6) {
+    addLineDeco(height, length5) {
       let line = this.ensureLine();
-      line.length += length6;
-      line.collapsed += length6;
+      line.length += length5;
+      line.collapsed += length5;
       line.widgetHeight = Math.max(line.widgetHeight, height);
-      this.writtenTo = this.pos = this.pos + length6;
+      this.writtenTo = this.pos = this.pos + length5;
     }
     finish(from) {
       let last2 = this.nodes.length == 0 ? null : this.nodes[this.nodes.length - 1];
@@ -12895,11 +12895,11 @@
     IterMode2[IterMode2["IgnoreOverlays"] = 8] = "IgnoreOverlays";
   })(IterMode || (IterMode = {}));
   var Tree = class {
-    constructor(type2, children2, positions, length6, props) {
+    constructor(type2, children2, positions, length5, props) {
       this.type = type2;
       this.children = children2;
       this.positions = positions;
-      this.length = length6;
+      this.length = length5;
       this.props = null;
       if (props && props.length) {
         this.props = /* @__PURE__ */ Object.create(null);
@@ -12976,7 +12976,7 @@
       return result;
     }
     balance(config = {}) {
-      return this.children.length <= 8 ? this : balanceRange(NodeType.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children2, positions, length6) => new Tree(this.type, children2, positions, length6, this.propValues), config.makeTree || ((children2, positions, length6) => new Tree(NodeType.none, children2, positions, length6)));
+      return this.children.length <= 8 ? this : balanceRange(NodeType.none, this.children, this.positions, 0, this.children.length, 0, this.length, (children2, positions, length5) => new Tree(this.type, children2, positions, length5, this.propValues), config.makeTree || ((children2, positions, length5) => new Tree(NodeType.none, children2, positions, length5)));
     }
     static build(data) {
       return buildTree(data);
@@ -13011,9 +13011,9 @@
     }
   };
   var TreeBuffer = class {
-    constructor(buffer, length6, set4) {
+    constructor(buffer, length5, set4) {
       this.buffer = buffer;
-      this.length = length6;
+      this.length = length5;
       this.set = set4;
     }
     get type() {
@@ -13674,15 +13674,15 @@
       positions2.push(startPos);
     }
     function makeBalanced(type2) {
-      return (children3, positions2, length7) => {
+      return (children3, positions2, length6) => {
         let lookAhead2 = 0, lastI = children3.length - 1, last2, lookAheadProp;
         if (lastI >= 0 && (last2 = children3[lastI]) instanceof Tree) {
-          if (!lastI && last2.type == type2 && last2.length == length7)
+          if (!lastI && last2.type == type2 && last2.length == length6)
             return last2;
           if (lookAheadProp = last2.prop(NodeProp.lookAhead))
             lookAhead2 = positions2[lastI] + last2.length + lookAheadProp;
         }
-        return makeTree(type2, children3, positions2, length7, lookAhead2);
+        return makeTree(type2, children3, positions2, length6, lookAhead2);
       };
     }
     function makeRepeatLeaf(children3, positions2, base2, i, from, to, type2, lookAhead2) {
@@ -13694,7 +13694,7 @@
       children3.push(makeTree(nodeSet.types[type2], localChildren, localPositions, to - from, lookAhead2 - to));
       positions2.push(from - base2);
     }
-    function makeTree(type2, children3, positions2, length7, lookAhead2 = 0, props) {
+    function makeTree(type2, children3, positions2, length6, lookAhead2 = 0, props) {
       if (contextHash) {
         let pair = [NodeProp.contextHash, contextHash];
         props = props ? [pair].concat(props) : [pair];
@@ -13703,7 +13703,7 @@
         let pair = [NodeProp.lookAhead, lookAhead2];
         props = props ? [pair].concat(props) : [pair];
       }
-      return new Tree(type2, children3, positions2, length7, props);
+      return new Tree(type2, children3, positions2, length6, props);
     }
     function findBufferSize(maxSize, inRepeat) {
       let fork = cursor.fork();
@@ -13773,8 +13773,8 @@
     let children2 = [], positions = [];
     while (cursor.pos > 0)
       takeNode(data.start || 0, data.bufferStart || 0, children2, positions, -1);
-    let length6 = (_a2 = data.length) !== null && _a2 !== void 0 ? _a2 : children2.length ? positions[0] + children2[0].length : 0;
-    return new Tree(types2[data.topID], children2.reverse(), positions.reverse(), length6);
+    let length5 = (_a2 = data.length) !== null && _a2 !== void 0 ? _a2 : children2.length ? positions[0] + children2[0].length : 0;
+    return new Tree(types2[data.topID], children2.reverse(), positions.reverse(), length5);
   }
   var nodeSizeCache = /* @__PURE__ */ new WeakMap();
   function nodeSize(balanceType, node) {
@@ -13794,7 +13794,7 @@
     }
     return size3;
   }
-  function balanceRange(balanceType, children2, positions, from, to, start2, length6, mkTop, mkTree) {
+  function balanceRange(balanceType, children2, positions, from, to, start2, length5, mkTop, mkTree) {
     let total = 0;
     for (let i = from; i < to; i++)
       total += nodeSize(balanceType, children2[i]);
@@ -13818,14 +13818,14 @@
           }
           localChildren.push(children3[groupFrom]);
         } else {
-          let length7 = positions2[i - 1] + children3[i - 1].length - groupStart;
-          localChildren.push(balanceRange(balanceType, children3, positions2, groupFrom, i, groupStart, length7, null, mkTree));
+          let length6 = positions2[i - 1] + children3[i - 1].length - groupStart;
+          localChildren.push(balanceRange(balanceType, children3, positions2, groupFrom, i, groupStart, length6, null, mkTree));
         }
         localPositions.push(groupStart + offset - start2);
       }
     }
     divide2(children2, positions, from, to, 0);
-    return (mkTop || mkTree)(localChildren, localPositions, length6);
+    return (mkTop || mkTree)(localChildren, localPositions, length5);
   }
   var TreeFragment = class {
     constructor(from, to, tree, offset, openStart = false, openEnd = false) {
@@ -14906,14 +14906,14 @@
   var DefaultScanDist = 1e4;
   var DefaultBrackets = "()[]{}";
   var bracketMatchingHandle = /* @__PURE__ */ new NodeProp();
-  function matchingNodes(node, dir, brackets) {
+  function matchingNodes(node, dir, brackets2) {
     let byProp = node.prop(dir < 0 ? NodeProp.openedBy : NodeProp.closedBy);
     if (byProp)
       return byProp;
     if (node.name.length == 1) {
-      let index3 = brackets.indexOf(node.name);
+      let index3 = brackets2.indexOf(node.name);
       if (index3 > -1 && index3 % 2 == (dir < 0 ? 1 : 0))
-        return [brackets[index3 + dir]];
+        return [brackets2[index3 + dir]];
     }
     return null;
   }
@@ -14922,19 +14922,19 @@
     return hasHandle ? hasHandle(node.node) : node;
   }
   function matchBrackets(state, pos, dir, config = {}) {
-    let maxScanDistance = config.maxScanDistance || DefaultScanDist, brackets = config.brackets || DefaultBrackets;
+    let maxScanDistance = config.maxScanDistance || DefaultScanDist, brackets2 = config.brackets || DefaultBrackets;
     let tree = syntaxTree(state), node = tree.resolveInner(pos, dir);
     for (let cur = node; cur; cur = cur.parent) {
-      let matches = matchingNodes(cur.type, dir, brackets);
+      let matches = matchingNodes(cur.type, dir, brackets2);
       if (matches && cur.from < cur.to) {
         let handle = findHandle(cur);
         if (handle && (dir > 0 ? pos >= handle.from && pos < handle.to : pos > handle.from && pos <= handle.to))
-          return matchMarkedBrackets(state, pos, dir, cur, handle, matches, brackets);
+          return matchMarkedBrackets(state, pos, dir, cur, handle, matches, brackets2);
       }
     }
-    return matchPlainBrackets(state, pos, dir, tree, node.type, maxScanDistance, brackets);
+    return matchPlainBrackets(state, pos, dir, tree, node.type, maxScanDistance, brackets2);
   }
-  function matchMarkedBrackets(_state, _pos, dir, token2, handle, matching, brackets) {
+  function matchMarkedBrackets(_state, _pos, dir, token2, handle, matching, brackets2) {
     let parent = token2.parent, firstToken = { from: handle.from, to: handle.to };
     let depth = 0, cursor = parent === null || parent === void 0 ? void 0 : parent.cursor();
     if (cursor && (dir < 0 ? cursor.childBefore(token2.from) : cursor.childAfter(token2.to)))
@@ -14943,9 +14943,9 @@
           if (depth == 0 && matching.indexOf(cursor.type.name) > -1 && cursor.from < cursor.to) {
             let endHandle = findHandle(cursor);
             return { start: firstToken, end: endHandle ? { from: endHandle.from, to: endHandle.to } : void 0, matched: true };
-          } else if (matchingNodes(cursor.type, dir, brackets)) {
+          } else if (matchingNodes(cursor.type, dir, brackets2)) {
             depth++;
-          } else if (matchingNodes(cursor.type, -dir, brackets)) {
+          } else if (matchingNodes(cursor.type, -dir, brackets2)) {
             if (depth == 0) {
               let endHandle = findHandle(cursor);
               return {
@@ -14960,9 +14960,9 @@
       } while (dir < 0 ? cursor.prevSibling() : cursor.nextSibling());
     return { start: firstToken, matched: false };
   }
-  function matchPlainBrackets(state, pos, dir, tree, tokenType, maxScanDistance, brackets) {
+  function matchPlainBrackets(state, pos, dir, tree, tokenType, maxScanDistance, brackets2) {
     let startCh = dir < 0 ? state.sliceDoc(pos - 1, pos) : state.sliceDoc(pos, pos + 1);
-    let bracket2 = brackets.indexOf(startCh);
+    let bracket2 = brackets2.indexOf(startCh);
     if (bracket2 < 0 || bracket2 % 2 == 0 != dir > 0)
       return null;
     let startToken = { from: dir < 0 ? pos - 1 : pos, to: dir > 0 ? pos + 1 : pos };
@@ -14973,7 +14973,7 @@
         distance += text2.length;
       let basePos = pos + distance * dir;
       for (let pos2 = dir > 0 ? 0 : text2.length - 1, end = dir > 0 ? text2.length : -1; pos2 != end; pos2 += dir) {
-        let found = brackets.indexOf(text2[pos2]);
+        let found = brackets2.indexOf(text2[pos2]);
         if (found < 0 || tree.resolveInner(basePos + pos2, 1).type != tokenType)
           continue;
         if (found % 2 == 0 == dir > 0) {
@@ -15272,16 +15272,16 @@
   function addMappingToBranch(branch, mapping) {
     if (!branch.length)
       return branch;
-    let length6 = branch.length, selections = none3;
-    while (length6) {
-      let event2 = mapEvent(branch[length6 - 1], mapping, selections);
+    let length5 = branch.length, selections = none3;
+    while (length5) {
+      let event2 = mapEvent(branch[length5 - 1], mapping, selections);
       if (event2.changes && !event2.changes.empty || event2.effects.length) {
-        let result = branch.slice(0, length6);
-        result[length6 - 1] = event2;
+        let result = branch.slice(0, length5);
+        result[length5 - 1] = event2;
         return result;
       } else {
         mapping = event2.mapped;
-        length6--;
+        length5--;
         selections = event2.selectionsAfter;
       }
     }
@@ -15963,6 +15963,7 @@
   function addEditorView_(id3) {
     return () => {
       const div = select_default2("#" + id3).node();
+      console.log(div);
       return new EditorView({
         state: startState,
         parent: div
@@ -17343,12 +17344,6 @@
     unfoldr: /* @__PURE__ */ unfoldrArrayImpl(isNothing)(fromJust2)(fst)(snd),
     Unfoldable10: () => unfoldable1Array
   };
-  var replicate = (dictUnfoldable) => (n) => (v) => dictUnfoldable.unfoldr((i) => {
-    if (i <= 0) {
-      return Nothing;
-    }
-    return $Maybe("Just", $Tuple(v, i - 1 | 0));
-  })(n);
 
   // output-es/Partial/foreign.js
   var _crashWith = function(msg) {
@@ -18366,8 +18361,8 @@
     Foldable0: () => foldableMap
   };
   var eqMap = (dictEq) => (dictEq1) => {
-    const eq12 = eqArrayImpl((x2) => (y2) => dictEq.eq(x2._1)(y2._1) && dictEq1.eq(x2._2)(y2._2));
-    return { eq: (m1) => (m2) => eq12(toUnfoldable2(unfoldableArray)(m1))(toUnfoldable2(unfoldableArray)(m2)) };
+    const eq1 = eqArrayImpl((x2) => (y2) => dictEq.eq(x2._1)(y2._1) && dictEq1.eq(x2._2)(y2._2));
+    return { eq: (m1) => (m2) => eq1(toUnfoldable2(unfoldableArray)(m1))(toUnfoldable2(unfoldableArray)(m2)) };
   };
   var fromFoldable = (dictOrd) => (dictFoldable) => dictFoldable.foldl((m) => (v) => insert2(dictOrd)(v._1)(v._2)(m))(Leaf2);
   var $$delete = (dictOrd) => (k) => (m) => {
@@ -18727,7 +18722,7 @@
       return result;
     };
   };
-  var replicate2 = typeof Array.prototype.fill === "function" ? replicateFill : replicatePolyfill;
+  var replicate = typeof Array.prototype.fill === "function" ? replicateFill : replicatePolyfill;
   var fromFoldableImpl = function() {
     function Cons2(head, tail) {
       this.head = head;
@@ -19326,7 +19321,6 @@
       fail();
     })());
   };
-  var intersperse = (x2) => (xs) => intercalate2($List("Cons", x2, Nil))(listMap(applicativeList.pure)(xs));
   var fromRight = (v) => {
     if (v.tag === "Right") {
       return v._1;
@@ -19734,6 +19728,76 @@
     fail();
   };
 
+  // output-es/Data.Bounded/foreign.js
+  var topChar = String.fromCharCode(65535);
+  var bottomChar = String.fromCharCode(0);
+  var topNumber = Number.POSITIVE_INFINITY;
+  var bottomNumber = Number.NEGATIVE_INFINITY;
+
+  // output-es/Data.Enum/foreign.js
+  function toCharCode(c) {
+    return c.charCodeAt(0);
+  }
+  function fromCharCode(c) {
+    return String.fromCharCode(c);
+  }
+
+  // output-es/Data.Semiring/foreign.js
+  var intAdd = function(x2) {
+    return function(y2) {
+      return x2 + y2 | 0;
+    };
+  };
+  var intMul = function(x2) {
+    return function(y2) {
+      return x2 * y2 | 0;
+    };
+  };
+  var numAdd = function(n1) {
+    return function(n2) {
+      return n1 + n2;
+    };
+  };
+  var numMul = function(n1) {
+    return function(n2) {
+      return n1 * n2;
+    };
+  };
+
+  // output-es/Data.Ring/foreign.js
+  var intSub = function(x2) {
+    return function(y2) {
+      return x2 - y2 | 0;
+    };
+  };
+  var numSub = function(n1) {
+    return function(n2) {
+      return n1 - n2;
+    };
+  };
+
+  // output-es/Data.EuclideanRing/foreign.js
+  var intDiv = function(x2) {
+    return function(y2) {
+      if (y2 === 0)
+        return 0;
+      return y2 > 0 ? Math.floor(x2 / y2) : -Math.floor(x2 / -y2);
+    };
+  };
+  var intMod = function(x2) {
+    return function(y2) {
+      if (y2 === 0)
+        return 0;
+      var yy = Math.abs(y2);
+      return (x2 % yy + yy) % yy;
+    };
+  };
+  var numDiv = function(n1) {
+    return function(n2) {
+      return n1 / n2;
+    };
+  };
+
   // output-es/Data.String.Unsafe/foreign.js
   var charAt = function(i) {
     return function(s) {
@@ -19823,6 +19887,206 @@
     };
   };
   var charAt2 = /* @__PURE__ */ _charAt(Just)(Nothing);
+
+  // output-es/Data.String.Common/foreign.js
+  var replaceAll = function(s1) {
+    return function(s2) {
+      return function(s3) {
+        return s3.replace(new RegExp(s1.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"), "g"), s2);
+      };
+    };
+  };
+  var split = function(sep) {
+    return function(s) {
+      return s.split(sep);
+    };
+  };
+  var toLower = function(s) {
+    return s.toLowerCase();
+  };
+  var joinWith = function(s) {
+    return function(xs) {
+      return xs.join(s);
+    };
+  };
+
+  // output-es/Data.String.CodePoints/foreign.js
+  var hasArrayFrom = typeof Array.from === "function";
+  var hasStringIterator = typeof Symbol !== "undefined" && Symbol != null && typeof Symbol.iterator !== "undefined" && typeof String.prototype[Symbol.iterator] === "function";
+  var hasFromCodePoint = typeof String.prototype.fromCodePoint === "function";
+  var hasCodePointAt = typeof String.prototype.codePointAt === "function";
+  var _unsafeCodePointAt0 = function(fallback) {
+    return hasCodePointAt ? function(str) {
+      return str.codePointAt(0);
+    } : fallback;
+  };
+  var _codePointAt = function(fallback) {
+    return function(Just2) {
+      return function(Nothing2) {
+        return function(unsafeCodePointAt02) {
+          return function(index3) {
+            return function(str) {
+              var length5 = str.length;
+              if (index3 < 0 || index3 >= length5)
+                return Nothing2;
+              if (hasStringIterator) {
+                var iter = str[Symbol.iterator]();
+                for (var i = index3; ; --i) {
+                  var o = iter.next();
+                  if (o.done)
+                    return Nothing2;
+                  if (i === 0)
+                    return Just2(unsafeCodePointAt02(o.value));
+                }
+              }
+              return fallback(index3)(str);
+            };
+          };
+        };
+      };
+    };
+  };
+  var _fromCodePointArray = function(singleton4) {
+    return hasFromCodePoint ? function(cps) {
+      if (cps.length < 1e4) {
+        return String.fromCodePoint.apply(String, cps);
+      }
+      return cps.map(singleton4).join("");
+    } : function(cps) {
+      return cps.map(singleton4).join("");
+    };
+  };
+  var _singleton = function(fallback) {
+    return hasFromCodePoint ? String.fromCodePoint : fallback;
+  };
+  var _take = function(fallback) {
+    return function(n) {
+      if (hasStringIterator) {
+        return function(str) {
+          var accum = "";
+          var iter = str[Symbol.iterator]();
+          for (var i = 0; i < n; ++i) {
+            var o = iter.next();
+            if (o.done)
+              return accum;
+            accum += o.value;
+          }
+          return accum;
+        };
+      }
+      return fallback(n);
+    };
+  };
+  var _toCodePointArray = function(fallback) {
+    return function(unsafeCodePointAt02) {
+      if (hasArrayFrom) {
+        return function(str) {
+          return Array.from(str, unsafeCodePointAt02);
+        };
+      }
+      return fallback;
+    };
+  };
+
+  // output-es/Data.String.CodePoints/index.js
+  var uncons3 = (s) => {
+    const v = length2(s);
+    if (v === 0) {
+      return Nothing;
+    }
+    if (v === 1) {
+      return $Maybe("Just", { head: toCharCode(charAt(0)(s)), tail: "" });
+    }
+    const cu1 = toCharCode(charAt(1)(s));
+    const cu0 = toCharCode(charAt(0)(s));
+    if (55296 <= cu0 && cu0 <= 56319 && (56320 <= cu1 && cu1 <= 57343)) {
+      return $Maybe("Just", { head: (((cu0 - 55296 | 0) * 1024 | 0) + (cu1 - 56320 | 0) | 0) + 65536 | 0, tail: drop2(2)(s) });
+    }
+    return $Maybe("Just", { head: cu0, tail: drop2(1)(s) });
+  };
+  var unconsButWithTuple = (s) => {
+    const $1 = uncons3(s);
+    if ($1.tag === "Just") {
+      return $Maybe("Just", $Tuple($1._1.head, $1._1.tail));
+    }
+    return Nothing;
+  };
+  var toCodePointArrayFallback = (s) => unfoldableArray.unfoldr(unconsButWithTuple)(s);
+  var unsafeCodePointAt0Fallback = (s) => {
+    const cu0 = toCharCode(charAt(0)(s));
+    if (55296 <= cu0 && cu0 <= 56319 && length2(s) > 1) {
+      const cu1 = toCharCode(charAt(1)(s));
+      if (56320 <= cu1 && cu1 <= 57343) {
+        return (((cu0 - 55296 | 0) * 1024 | 0) + (cu1 - 56320 | 0) | 0) + 65536 | 0;
+      }
+      return cu0;
+    }
+    return cu0;
+  };
+  var unsafeCodePointAt0 = /* @__PURE__ */ _unsafeCodePointAt0(unsafeCodePointAt0Fallback);
+  var toCodePointArray = /* @__PURE__ */ _toCodePointArray(toCodePointArrayFallback)(unsafeCodePointAt0);
+  var fromCharCode2 = (x2) => singleton((() => {
+    if (x2 >= -2147483648 && x2 <= 2147483647) {
+      return fromCharCode(x2);
+    }
+    if (x2 < 0) {
+      return "\0";
+    }
+    return "\uFFFF";
+  })());
+  var singletonFallback = (v) => {
+    if (v <= 65535) {
+      return fromCharCode2(v);
+    }
+    return fromCharCode2(intDiv(v - 65536 | 0)(1024) + 55296 | 0) + fromCharCode2(intMod(v - 65536 | 0)(1024) + 56320 | 0);
+  };
+  var fromCodePointArray = /* @__PURE__ */ _fromCodePointArray(singletonFallback);
+  var singleton2 = /* @__PURE__ */ _singleton(singletonFallback);
+  var takeFallback = (v) => (v1) => {
+    if (v < 1) {
+      return "";
+    }
+    const v2 = uncons3(v1);
+    if (v2.tag === "Just") {
+      return singleton2(v2._1.head) + takeFallback(v - 1 | 0)(v2._1.tail);
+    }
+    return v1;
+  };
+  var take3 = /* @__PURE__ */ _take(takeFallback);
+  var codePointAtFallback = (codePointAtFallback$a0$copy) => (codePointAtFallback$a1$copy) => {
+    let codePointAtFallback$a0 = codePointAtFallback$a0$copy, codePointAtFallback$a1 = codePointAtFallback$a1$copy, codePointAtFallback$c = true, codePointAtFallback$r;
+    while (codePointAtFallback$c) {
+      const n = codePointAtFallback$a0, s = codePointAtFallback$a1;
+      const v = uncons3(s);
+      if (v.tag === "Just") {
+        if (n === 0) {
+          codePointAtFallback$c = false;
+          codePointAtFallback$r = $Maybe("Just", v._1.head);
+          continue;
+        }
+        codePointAtFallback$a0 = n - 1 | 0;
+        codePointAtFallback$a1 = v._1.tail;
+        continue;
+      }
+      codePointAtFallback$c = false;
+      codePointAtFallback$r = Nothing;
+      continue;
+    }
+    ;
+    return codePointAtFallback$r;
+  };
+  var codePointAt2 = (v) => (v1) => {
+    if (v < 0) {
+      return Nothing;
+    }
+    if (v === 0) {
+      if (v1 === "") {
+        return Nothing;
+      }
+      return $Maybe("Just", unsafeCodePointAt0(v1));
+    }
+    return _codePointAt(codePointAtFallback)(Just)(Nothing)(unsafeCodePointAt0)(v)(v1);
+  };
 
   // output-es/Data.CodePoint.Unicode.Internal/index.js
   var $UnicodeCategory = (tag) => ({ tag });
@@ -24906,20 +25170,6 @@
     fail();
   };
 
-  // output-es/Data.Bounded/foreign.js
-  var topChar = String.fromCharCode(65535);
-  var bottomChar = String.fromCharCode(0);
-  var topNumber = Number.POSITIVE_INFINITY;
-  var bottomNumber = Number.NEGATIVE_INFINITY;
-
-  // output-es/Data.Enum/foreign.js
-  function toCharCode(c) {
-    return c.charCodeAt(0);
-  }
-  function fromCharCode(c) {
-    return String.fromCharCode(c);
-  }
-
   // output-es/DataType/index.js
   var $DataType$p = (_1, _2) => ({ tag: "DataType", _1, _2 });
   var fromFoldable3 = /* @__PURE__ */ fromFoldable2(foldableArray);
@@ -27359,225 +27609,13 @@
     };
   };
 
-  // output-es/Data.Semiring/foreign.js
-  var intAdd = function(x2) {
-    return function(y2) {
-      return x2 + y2 | 0;
-    };
-  };
-  var intMul = function(x2) {
-    return function(y2) {
-      return x2 * y2 | 0;
-    };
-  };
-  var numAdd = function(n1) {
-    return function(n2) {
-      return n1 + n2;
-    };
-  };
-  var numMul = function(n1) {
-    return function(n2) {
-      return n1 * n2;
-    };
-  };
-
-  // output-es/Data.Ring/foreign.js
-  var intSub = function(x2) {
-    return function(y2) {
-      return x2 - y2 | 0;
-    };
-  };
-  var numSub = function(n1) {
-    return function(n2) {
-      return n1 - n2;
-    };
-  };
-
-  // output-es/Data.EuclideanRing/foreign.js
-  var intDiv = function(x2) {
-    return function(y2) {
-      if (y2 === 0)
-        return 0;
-      return y2 > 0 ? Math.floor(x2 / y2) : -Math.floor(x2 / -y2);
-    };
-  };
-  var intMod = function(x2) {
-    return function(y2) {
-      if (y2 === 0)
-        return 0;
-      var yy = Math.abs(y2);
-      return (x2 % yy + yy) % yy;
-    };
-  };
-  var numDiv = function(n1) {
-    return function(n2) {
-      return n1 / n2;
-    };
-  };
-
-  // output-es/Data.String.Common/foreign.js
-  var split = function(sep) {
-    return function(s) {
-      return s.split(sep);
-    };
-  };
-  var toLower = function(s) {
-    return s.toLowerCase();
-  };
-  var joinWith = function(s) {
-    return function(xs) {
-      return xs.join(s);
-    };
-  };
-
-  // output-es/Data.String.CodePoints/foreign.js
-  var hasArrayFrom = typeof Array.from === "function";
-  var hasStringIterator = typeof Symbol !== "undefined" && Symbol != null && typeof Symbol.iterator !== "undefined" && typeof String.prototype[Symbol.iterator] === "function";
-  var hasFromCodePoint = typeof String.prototype.fromCodePoint === "function";
-  var hasCodePointAt = typeof String.prototype.codePointAt === "function";
-  var _unsafeCodePointAt0 = function(fallback) {
-    return hasCodePointAt ? function(str) {
-      return str.codePointAt(0);
-    } : fallback;
-  };
-  var _codePointAt = function(fallback) {
-    return function(Just2) {
-      return function(Nothing2) {
-        return function(unsafeCodePointAt02) {
-          return function(index3) {
-            return function(str) {
-              var length6 = str.length;
-              if (index3 < 0 || index3 >= length6)
-                return Nothing2;
-              if (hasStringIterator) {
-                var iter = str[Symbol.iterator]();
-                for (var i = index3; ; --i) {
-                  var o = iter.next();
-                  if (o.done)
-                    return Nothing2;
-                  if (i === 0)
-                    return Just2(unsafeCodePointAt02(o.value));
-                }
-              }
-              return fallback(index3)(str);
-            };
-          };
-        };
-      };
-    };
-  };
-  var _fromCodePointArray = function(singleton4) {
-    return hasFromCodePoint ? function(cps) {
-      if (cps.length < 1e4) {
-        return String.fromCodePoint.apply(String, cps);
-      }
-      return cps.map(singleton4).join("");
-    } : function(cps) {
-      return cps.map(singleton4).join("");
-    };
-  };
-  var _toCodePointArray = function(fallback) {
-    return function(unsafeCodePointAt02) {
-      if (hasArrayFrom) {
-        return function(str) {
-          return Array.from(str, unsafeCodePointAt02);
-        };
-      }
-      return fallback;
-    };
-  };
-
-  // output-es/Data.String.CodePoints/index.js
-  var uncons3 = (s) => {
-    const v = length2(s);
-    if (v === 0) {
-      return Nothing;
-    }
-    if (v === 1) {
-      return $Maybe("Just", { head: toCharCode(charAt(0)(s)), tail: "" });
-    }
-    const cu1 = toCharCode(charAt(1)(s));
-    const cu0 = toCharCode(charAt(0)(s));
-    if (55296 <= cu0 && cu0 <= 56319 && (56320 <= cu1 && cu1 <= 57343)) {
-      return $Maybe("Just", { head: (((cu0 - 55296 | 0) * 1024 | 0) + (cu1 - 56320 | 0) | 0) + 65536 | 0, tail: drop2(2)(s) });
-    }
-    return $Maybe("Just", { head: cu0, tail: drop2(1)(s) });
-  };
-  var unconsButWithTuple = (s) => {
-    const $1 = uncons3(s);
-    if ($1.tag === "Just") {
-      return $Maybe("Just", $Tuple($1._1.head, $1._1.tail));
-    }
-    return Nothing;
-  };
-  var toCodePointArrayFallback = (s) => unfoldableArray.unfoldr(unconsButWithTuple)(s);
-  var unsafeCodePointAt0Fallback = (s) => {
-    const cu0 = toCharCode(charAt(0)(s));
-    if (55296 <= cu0 && cu0 <= 56319 && length2(s) > 1) {
-      const cu1 = toCharCode(charAt(1)(s));
-      if (56320 <= cu1 && cu1 <= 57343) {
-        return (((cu0 - 55296 | 0) * 1024 | 0) + (cu1 - 56320 | 0) | 0) + 65536 | 0;
-      }
-      return cu0;
-    }
-    return cu0;
-  };
-  var unsafeCodePointAt0 = /* @__PURE__ */ _unsafeCodePointAt0(unsafeCodePointAt0Fallback);
-  var toCodePointArray = /* @__PURE__ */ _toCodePointArray(toCodePointArrayFallback)(unsafeCodePointAt0);
-  var length4 = (x2) => toCodePointArray(x2).length;
-  var fromCharCode2 = (x2) => singleton((() => {
-    if (x2 >= -2147483648 && x2 <= 2147483647) {
-      return fromCharCode(x2);
-    }
-    if (x2 < 0) {
-      return "\0";
-    }
-    return "\uFFFF";
-  })());
-  var singletonFallback = (v) => {
-    if (v <= 65535) {
-      return fromCharCode2(v);
-    }
-    return fromCharCode2(intDiv(v - 65536 | 0)(1024) + 55296 | 0) + fromCharCode2(intMod(v - 65536 | 0)(1024) + 56320 | 0);
-  };
-  var fromCodePointArray = /* @__PURE__ */ _fromCodePointArray(singletonFallback);
-  var codePointAtFallback = (codePointAtFallback$a0$copy) => (codePointAtFallback$a1$copy) => {
-    let codePointAtFallback$a0 = codePointAtFallback$a0$copy, codePointAtFallback$a1 = codePointAtFallback$a1$copy, codePointAtFallback$c = true, codePointAtFallback$r;
-    while (codePointAtFallback$c) {
-      const n = codePointAtFallback$a0, s = codePointAtFallback$a1;
-      const v = uncons3(s);
-      if (v.tag === "Just") {
-        if (n === 0) {
-          codePointAtFallback$c = false;
-          codePointAtFallback$r = $Maybe("Just", v._1.head);
-          continue;
-        }
-        codePointAtFallback$a0 = n - 1 | 0;
-        codePointAtFallback$a1 = v._1.tail;
-        continue;
-      }
-      codePointAtFallback$c = false;
-      codePointAtFallback$r = Nothing;
-      continue;
-    }
-    ;
-    return codePointAtFallback$r;
-  };
-  var codePointAt2 = (v) => (v1) => {
-    if (v < 0) {
-      return Nothing;
-    }
-    if (v === 0) {
-      if (v1 === "") {
-        return Nothing;
-      }
-      return $Maybe("Just", unsafeCodePointAt0(v1));
-    }
-    return _codePointAt(codePointAtFallback)(Just)(Nothing)(unsafeCodePointAt0)(v)(v1);
-  };
-
   // output-es/Util.Pretty/index.js
-  var eq1 = /* @__PURE__ */ eqArrayImpl(eqStringImpl);
+  var intercalate4 = (sep) => (xs) => foldlArray((v) => (v1) => {
+    if (v.init) {
+      return { init: false, acc: v1 };
+    }
+    return { init: false, acc: v.acc + (sep + v1) };
+  })({ init: true, acc: "" })(xs).acc;
   var max3 = (x2) => (y2) => {
     const v = ordInt.compare(x2)(y2);
     if (v.tag === "LT") {
@@ -27590,17 +27628,6 @@
       return x2;
     }
     fail();
-  };
-  var intercalate4 = (sep) => (xs) => foldlArray((v) => (v1) => {
-    if (v.init) {
-      return { init: false, acc: v1 };
-    }
-    return { init: false, acc: v.acc + (sep + v1) };
-  })({ init: true, acc: "" })(xs).acc;
-  var eqDoc = { eq: (x2) => (y2) => x2.height === y2.height && eq1(x2.lines)(y2.lines) && x2.width === y2.width };
-  var text = (s) => {
-    const lines = split("\n")(s);
-    return { width: foldlArray(max3)(0)(arrayMap(length4)(lines)), height: lines.length, lines };
   };
   var lastLine = (v) => {
     const $1 = index2(v.lines)(v.lines.length - 1 | 0);
@@ -27622,16 +27649,21 @@
     }
     fail();
   };
-  var empty3 = (w) => (h) => ({
-    width: w,
-    height: h,
-    lines: (() => {
-      if (h === 0) {
-        return [];
+  var empty3 = { width: 0, height: 1, lines: [""] };
+  var checkOneLine = (xs) => {
+    const v = uncons(xs);
+    if (v.tag === "Just") {
+      if (v._1.tail.length === 0) {
+        return { width: toCodePointArray(v._1.head).length, height: 1, lines: [v._1.head] };
       }
-      return arrayMap((v) => "")(range2(1)(h));
-    })()
-  });
+      return unsafePerformEffect(throwException(error("absurd")));
+    }
+    if (v.tag === "Nothing") {
+      return unsafePerformEffect(throwException(error("absurd")));
+    }
+    fail();
+  };
+  var text = (s) => checkOneLine(split("\n")(" " + s));
   var atop = (v) => (v1) => ({ width: max3(v.width)(v1.width), height: v.height + v1.height | 0, lines: concatArray(v.lines)(v1.lines) });
   var allButLast = (v) => {
     const $1 = v.lines.length - 1 | 0;
@@ -27640,27 +27672,81 @@
     }
     return slice3(0)($1)(v.lines);
   };
-  var indentedExpression = (v) => (v1) => zipWith2(concatString)(replicate(unfoldableArray)(slice3(1)(v1.lines.length)(v1.lines).length)(foldlArray(concatString)("")(replicate(unfoldableArray)(toCodePointArray(lastLine(v)).length)(" "))))(slice3(1)(v1.lines.length)(v1.lines));
-  var finalLines = (v) => (v1) => concatArray(allButLast(v))(concatArray([lastLine(v) + ("" + firstLine(v1))])(indentedExpression(v)(v1)));
-  var beside = (v) => (v1) => ({ width: v.width + v1.width | 0, height: v.height + v1.height | 0, lines: finalLines(v)(v1) });
+  var indentedExpression = (v) => (v1) => zipWith2(concatString)(replicate(slice3(1)(v1.lines.length)(v1.lines).length)(foldlArray(concatString)("")(replicate(toCodePointArray(lastLine(v)).length)(" "))))(slice3(1)(v1.lines.length)(v1.lines));
+  var beside = (v) => (v1) => ({
+    width: v.width + v1.width | 0,
+    height: v.height + v1.height | 0,
+    lines: concatArray(allButLast(v))(concatArray([lastLine(v) + ("" + firstLine(v1))])(indentedExpression(v)(v1)))
+  });
   var semigroupColumns = { append: (v) => (v1) => beside(v)(v1) };
-  var monoidColumns = { mempty: /* @__PURE__ */ empty3(0)(0), Semigroup0: () => semigroupColumns };
+  var monoidColumns = { mempty: empty3, Semigroup0: () => semigroupColumns };
 
   // output-es/Pretty/index.js
   var $ExprType = (tag) => ({ tag });
   var hcat = /* @__PURE__ */ (() => foldableList.foldMap(monoidColumns)(unsafeCoerce))();
+  var hcat1 = /* @__PURE__ */ (() => foldableArray.foldMap(monoidColumns)(unsafeCoerce))();
   var toUnfoldable13 = /* @__PURE__ */ toAscUnfoldable(unfoldableList);
   var Simple = /* @__PURE__ */ $ExprType("Simple");
   var Expression = /* @__PURE__ */ $ExprType("Expression");
-  var space2 = /* @__PURE__ */ text(" ");
-  var prettyP = (dictPretty) => (x2) => intercalate4("\n")(dictPretty.pretty(x2).lines);
-  var nil2 = /* @__PURE__ */ text("[]");
-  var hspace = (dictFoldable) => {
-    const $1 = dictFoldable.foldr(Cons)(Nil);
-    return (x2) => hcat(intercalate2($List("Cons", space2, Nil))(listMap(applicativeList.pure)($1(x2))));
+  var vert = (dictFoldable) => {
+    const fromFoldable19 = dictFoldable.foldr(Cons)(Nil);
+    return (delim) => {
+      const vert$p = (v) => {
+        if (v.tag === "Nil") {
+          return empty3;
+        }
+        if (v.tag === "Cons") {
+          if (v._2.tag === "Nil") {
+            return v._1;
+          }
+          if (v._2.tag === "Cons") {
+            return atop(beside(v._1)(delim))(vert$p($List("Cons", v._2._1, v._2._2)));
+          }
+          fail();
+        }
+        fail();
+      };
+      return (x2) => vert$p(fromFoldable19(x2));
+    };
   };
-  var hspace1 = /* @__PURE__ */ hspace(foldableArray);
-  var hspace2 = /* @__PURE__ */ hspace(foldableList);
+  var vert1 = /* @__PURE__ */ vert(foldableArray);
+  var replacement = [
+    /* @__PURE__ */ $Tuple("( ", "("),
+    /* @__PURE__ */ $Tuple(" )", ")"),
+    /* @__PURE__ */ $Tuple("[ ", "["),
+    /* @__PURE__ */ $Tuple(" ]", "]"),
+    /* @__PURE__ */ $Tuple("{ ", "{"),
+    /* @__PURE__ */ $Tuple(" }", "}"),
+    /* @__PURE__ */ $Tuple(". ", "."),
+    /* @__PURE__ */ $Tuple(" .", "."),
+    /* @__PURE__ */ $Tuple(". ", "."),
+    /* @__PURE__ */ $Tuple(" ,", ","),
+    /* @__PURE__ */ $Tuple(" ;", ";"),
+    /* @__PURE__ */ $Tuple("| ", "|"),
+    /* @__PURE__ */ $Tuple(" |", "|"),
+    /* @__PURE__ */ $Tuple("\u2E28 ", "\u2E28"),
+    /* @__PURE__ */ $Tuple(" \u2E29", "\u2E29")
+  ];
+  var pattRepPairs = /* @__PURE__ */ arrayMap((v) => $Tuple(v._1, v._2))(replacement);
+  var removeDocWS = (v) => ({
+    width: v.width,
+    height: v.height,
+    lines: arrayMap((x2) => foldlArray((curr) => (v$1) => replaceAll(v$1._1)(v$1._2)(curr))(drop2(length2(take3(1)(x2)))(x2))(pattRepPairs))(v.lines)
+  });
+  var prettyP = (dictPretty) => (x2) => intercalate4("\n")(removeDocWS(dictPretty.pretty(x2)).lines);
+  var nil2 = /* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" []"));
+  var intersperse$p = (v) => (v1) => {
+    if (v.tag === "Cons") {
+      if (v._2.tag === "Nil") {
+        return v._1;
+      }
+      return atop(beside(v._1)(v1))(intersperse$p(v._2)(v1));
+    }
+    if (v.tag === "Nil") {
+      return empty3;
+    }
+    fail();
+  };
   var getPrec = (x2) => {
     const v = lookup(ordString)(x2)(opDefs);
     if (v.tag === "Just") {
@@ -27740,66 +27826,33 @@
     }
     fail();
   };
-  var emptyDoc = /* @__PURE__ */ empty3(0)(0);
-  var intersperse$p = (v) => (v1) => {
-    if (v.tag === "Cons") {
-      if (v._2.tag === "Nil") {
-        return v._1;
-      }
-      return atop(beside(v._1)(v1))(intersperse$p(v._2)(v1));
-    }
-    if (v.tag === "Nil") {
-      return emptyDoc;
-    }
-    fail();
-  };
-  var vert = (dictFoldable) => {
-    const fromFoldable19 = dictFoldable.foldr(Cons)(Nil);
-    return (delim) => {
-      const vert$p = (v) => {
-        if (v.tag === "Nil") {
-          return emptyDoc;
-        }
-        if (v.tag === "Cons") {
-          if (v._2.tag === "Nil") {
-            return v._1;
-          }
-          if (v._2.tag === "Cons") {
-            return atop(beside(v._1)(delim))(vert$p($List("Cons", v._2._1, v._2._2)));
-          }
-          fail();
-        }
-        fail();
-      };
-      return (x2) => vert$p(fromFoldable19(x2));
-    };
-  };
-  var vert1 = /* @__PURE__ */ vert(foldableArray);
-  var comma = /* @__PURE__ */ text(",");
+  var comma = /* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" ,"));
   var hcomma = (dictFoldable) => {
     const $1 = dictFoldable.foldr(Cons)(Nil);
-    const $2 = intersperse(beside(comma)(space2));
-    return (x2) => hcat($2($1(x2)));
+    return (x2) => hcat(intercalate2($List("Cons", comma, Nil))(listMap(applicativeList.pure)($1(x2))));
   };
   var hcomma1 = /* @__PURE__ */ hcomma(foldableList);
   var hcomma2 = /* @__PURE__ */ hcomma(foldableArray);
-  var prettyRecordOrDict = (dictPretty) => (dictHighlightable) => (sep) => (bracify) => (prettyKey) => (\u03B1) => (xvs) => dictHighlightable.highlightIf(\u03B1)(bracify(hcomma1(listMap((v) => hspace1([
+  var prettyRecordOrDict = (dictPretty) => (dictHighlightable) => (sep) => (bracify) => (prettyKey) => (\u03B1) => (xvs) => dictHighlightable.highlightIf(\u03B1)(bracify(hcomma1(listMap((v) => hcat1([
     beside(v._1)(sep),
     dictPretty.pretty(v._2)
   ]))(listMap(strongFn.first(prettyKey))(xvs)))));
   var between2 = (l) => (r) => (doc2) => beside(beside(l)(doc2))(r);
-  var curlyBraces = /* @__PURE__ */ between2(/* @__PURE__ */ text("{"))(/* @__PURE__ */ text("}"));
+  var brackets = /* @__PURE__ */ between2(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" [")))(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" ]")));
+  var curlyBraces = /* @__PURE__ */ between2(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" {")))(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" }")));
+  var dictBrackets = /* @__PURE__ */ between2(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" {|")))(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" |}")));
+  var parens = /* @__PURE__ */ between2(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" (")))(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" )")));
   var prettyParensOpt = (dictPretty) => (x2) => {
     const doc2 = dictPretty.pretty(x2);
     if (contains2(" ")(intercalate4("\n")(doc2.lines))) {
-      return beside(beside(text("("))(doc2))(text(")"));
+      return parens(doc2);
     }
     return doc2;
   };
   var prettyConstr = (dictPretty) => (dictHighlightable) => (v) => (v1) => (v2) => {
-    const $5 = (c, xs, \u03B1) => hspace2($List(
+    const $5 = (c, xs, \u03B1) => hcat($List(
       "Cons",
-      dictHighlightable.highlightIf(\u03B1)(text(showCtr(c))),
+      dictHighlightable.highlightIf(\u03B1)(checkOneLine(split("\n")(" " + showCtr(c)))),
       listMap(prettyParensOpt(dictPretty))(xs)
     ));
     if (v2.tag === "Cons") {
@@ -27810,7 +27863,7 @@
               return identity12;
             }
             return (v1$1) => unsafePerformEffect(throwException(error("Assertion failure")));
-          })()(dictHighlightable.highlightIf(v)(beside(beside(text("("))(hcomma2([dictPretty.pretty(v2._1), dictPretty.pretty(v2._2._1)])))(text(")"))));
+          })()(dictHighlightable.highlightIf(v)(parens(hcomma2([dictPretty.pretty(v2._1), dictPretty.pretty(v2._2._1)]))));
         }
         if (v1 === "Nil") {
           return (() => {
@@ -27826,11 +27879,11 @@
               return identity12;
             }
             return (v1$1) => unsafePerformEffect(throwException(error("Assertion failure")));
-          })()(beside(beside(text("("))(hspace1([
+          })()(parens(hcat1([
             dictPretty.pretty(v2._1),
-            dictHighlightable.highlightIf(v)(text(":")),
+            dictHighlightable.highlightIf(v)(checkOneLine(split("\n")(" :"))),
             dictPretty.pretty(v2._2._1)
-          ])))(text(")")));
+          ])));
         }
         return $5(v1, v2, v);
       }
@@ -27841,6 +27894,9 @@
           }
           return (v1$1) => unsafePerformEffect(throwException(error("Assertion failure")));
         })()(dictHighlightable.highlightIf(v)(nil2));
+      }
+      if (v2._2.tag === "Nil") {
+        return dictHighlightable.highlightIf(v)(beside(checkOneLine(split("\n")(" " + showCtr(v1))))(dictPretty.pretty(v2._1)));
       }
       return $5(v1, v2, v);
     }
@@ -27854,31 +27910,44 @@
     }
     return $5(v1, v2, v);
   };
+  var parentheses = /* @__PURE__ */ between2(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" (")))(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" )")));
   var prettyPattern = {
     pretty: (v) => {
       if (v.tag === "PVar") {
-        return text(v._1);
+        return checkOneLine(split("\n")(" " + v._1));
       }
       if (v.tag === "PRecord") {
-        return beside(beside(text("{"))(prettyListBindPattern.pretty(v._1)))(text("}"));
+        return curlyBraces(prettyListBindPattern.pretty(v._1));
       }
       if (v.tag === "PConstr") {
-        if (v._1 === "Pair") {
-          return beside(beside(text("("))(prettyPattConstr(text(","))(v._2)))(text(")"));
+        if (v._2.tag === "Nil") {
+          if (v._1 === "Pair") {
+            return parentheses(prettyPattConstr(checkOneLine(split("\n")(" ,")))(v._2));
+          }
+          if (v._1 === ":") {
+            return parentheses(prettyPattConstr(checkOneLine(split("\n")(" :")))(v._2));
+          }
+          return parentheses(beside(checkOneLine(split("\n")(" " + v._1)))(prettyPattConstr(empty3)(v._2)));
         }
-        if (v._1 === "Empty") {
-          return beside(text(v._1))(prettyPattConstr(emptyDoc)(v._2));
+        if (v._2.tag === "Cons") {
+          if (v._2._2.tag === "Nil") {
+            return beside(checkOneLine(split("\n")(" " + v._1)))(prettyPattern.pretty(v._2._1));
+          }
+          if (v._1 === "Pair") {
+            return parentheses(prettyPattConstr(checkOneLine(split("\n")(" ,")))(v._2));
+          }
+          if (v._1 === ":") {
+            return parentheses(prettyPattConstr(checkOneLine(split("\n")(" :")))(v._2));
+          }
+          return parentheses(beside(checkOneLine(split("\n")(" " + v._1)))(prettyPattConstr(empty3)(v._2)));
         }
-        if (v._1 === ":") {
-          return beside(beside(text("("))(prettyPattConstr(text(":"))(v._2)))(text(")"));
-        }
-        return beside(beside(text("("))(beside(beside(text(v._1))(text(" ")))(prettyPattConstr(emptyDoc)(v._2))))(text(")"));
+        fail();
       }
       if (v.tag === "PListEmpty") {
-        return beside(beside(text("["))(emptyDoc))(text("]"));
+        return brackets(empty3);
       }
       if (v.tag === "PListNonEmpty") {
-        return beside(beside(text("["))(prettyPattern.pretty(v._1)))(prettyListRestPattern.pretty(v._2));
+        return beside(beside(checkOneLine(split("\n")(" [")))(prettyPattern.pretty(v._1)))(prettyListRestPattern.pretty(v._2));
       }
       fail();
     }
@@ -27886,10 +27955,10 @@
   var prettyListRestPattern = {
     pretty: (v) => {
       if (v.tag === "PNext") {
-        return beside(beside(text(","))(prettyPattern.pretty(v._1)))(prettyListRestPattern.pretty(v._2));
+        return beside(beside(checkOneLine(split("\n")(" ,")))(prettyPattern.pretty(v._1)))(prettyListRestPattern.pretty(v._2));
       }
       if (v.tag === "PEnd") {
-        return text("]");
+        return checkOneLine(split("\n")(" ]"));
       }
       fail();
     }
@@ -27898,39 +27967,36 @@
     pretty: (v) => {
       if (v.tag === "Cons") {
         if (v._2.tag === "Nil") {
-          return beside(beside(text(v._1._1))(text(":")))(prettyPattern.pretty(v._1._2));
+          return beside(beside(checkOneLine(split("\n")(" " + v._1._1)))(checkOneLine(split("\n")(" :"))))(prettyPattern.pretty(v._1._2));
         }
-        return atop(beside(beside(beside(text(v._1._1))(text(":")))(prettyPattern.pretty(v._1._2)))(text(",")))(prettyListBindPattern.pretty(v._2));
+        return atop(beside(beside(beside(checkOneLine(split("\n")(" " + v._1._1)))(checkOneLine(split("\n")(" :"))))(prettyPattern.pretty(v._1._2)))(checkOneLine(split("\n")(" ,"))))(prettyListBindPattern.pretty(v._2));
       }
       if (v.tag === "Nil") {
-        return emptyDoc;
+        return empty3;
       }
       fail();
     }
   };
   var prettyPattConstr = (v) => (v1) => {
     if (v1.tag === "Nil") {
-      return emptyDoc;
+      return empty3;
     }
     if (v1.tag === "Cons") {
       if (v1._2.tag === "Nil") {
         return prettyPattern.pretty(v1._1);
       }
-      if (eqDoc.eq(v)(emptyDoc)) {
-        return beside(beside(prettyPattern.pretty(v1._1))(text(" ")))(prettyPattConstr(v)(v1._2));
-      }
       return beside(beside(prettyPattern.pretty(v1._1))(v))(prettyPattConstr(v)(v1._2));
     }
     fail();
   };
-  var prettyDict = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(text(":="))(between2(text("{|"))(text("|}")));
+  var prettyDict = (dictPretty) => (dictHighlightable) => prettyRecordOrDict(dictPretty)(dictHighlightable)(checkOneLine(split("\n")(" :=")))(between2(checkOneLine(split("\n")(" {|")))(checkOneLine(split("\n")(" |}"))));
   var pretty$x215Fun = (dictHighlightable) => ({
     pretty: (v) => {
       if (v._2.tag === "Closure") {
-        return dictHighlightable.highlightIf(v._1)(text("<closure>"));
+        return dictHighlightable.highlightIf(v._1)(checkOneLine(split("\n")(" <closure>")));
       }
       if (v._2.tag === "Foreign") {
-        return text("<extern op>");
+        return checkOneLine(split("\n")(" <extern op>"));
       }
       if (v._2.tag === "PartialConstr") {
         return prettyConstr(prettyVal(dictHighlightable))(dictHighlightable)(v._1)(v._2._1)(v._2._2);
@@ -27941,19 +28007,19 @@
   var prettyVal = (dictHighlightable) => ({
     pretty: (v) => {
       if (v.tag === "Int") {
-        return dictHighlightable.highlightIf(v._1)(text(showIntImpl(v._2)));
+        return dictHighlightable.highlightIf(v._1)(checkOneLine(split("\n")(" " + showIntImpl(v._2))));
       }
       if (v.tag === "Float") {
-        return dictHighlightable.highlightIf(v._1)(text(showNumberImpl(v._2)));
+        return dictHighlightable.highlightIf(v._1)(checkOneLine(split("\n")(" " + showNumberImpl(v._2))));
       }
       if (v.tag === "Str") {
-        return dictHighlightable.highlightIf(v._1)(text(showStringImpl(v._2)));
+        return dictHighlightable.highlightIf(v._1)(checkOneLine(split("\n")(" " + showStringImpl(v._2))));
       }
       if (v.tag === "Record") {
-        return prettyRecordOrDict(prettyVal(dictHighlightable))(dictHighlightable)(text(":"))(curlyBraces)(text)(v._1)(toUnfoldable13(v._2));
+        return prettyRecordOrDict(prettyVal(dictHighlightable))(dictHighlightable)(checkOneLine(split("\n")(" :")))(curlyBraces)(text)(v._1)(toUnfoldable13(v._2));
       }
       if (v.tag === "Dictionary") {
-        return prettyDict(prettyVal(dictHighlightable))(dictHighlightable)((v1) => dictHighlightable.highlightIf(v1._2)(text(showStringImpl(v1._1))))(v._1)(listMap((v1) => $Tuple(
+        return prettyDict(prettyVal(dictHighlightable))(dictHighlightable)((v1) => dictHighlightable.highlightIf(v1._2)(checkOneLine(split("\n")(" " + showStringImpl(v1._1)))))(v._1)(listMap((v1) => $Tuple(
           $Tuple(v1._1, v1._2._1),
           v1._2._2
         ))(toUnfoldable13(v._2)));
@@ -27973,32 +28039,33 @@
       fail();
     }
   });
+  var arrayBrackets = /* @__PURE__ */ between2(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" [|")))(/* @__PURE__ */ checkOneLine(/* @__PURE__ */ split("\n")(" |]")));
   var prettyVarDefs = (dictAnn) => ({
     pretty: (ds) => intersperse$p((() => {
       const $2 = functorNonEmptyList.map(prettyVarDef(dictAnn).pretty)(ds);
       return $List("Cons", $2._1, $2._2);
-    })())(text(";"))
+    })())(checkOneLine(split("\n")(" ;")))
   });
   var prettyVarDef = (dictAnn) => ({
-    pretty: (v) => beside(beside(beside(beside(prettyPattern.pretty(v._1))(text(" ")))(text("=")))(text(" ")))(prettyExpr1(dictAnn).pretty(v._2))
+    pretty: (v) => beside(beside(prettyPattern.pretty(v._1))(checkOneLine(split("\n")(" ="))))(prettyExpr1(dictAnn).pretty(v._2))
   });
   var prettyNonEmptyListPattern = (dictAnn) => ({
-    pretty: (pss) => intersperse$p(listMap(prettyClause(dictAnn)(text("->")))(listMap(Clause)((() => {
+    pretty: (pss) => intersperse$p(listMap(prettyClause(dictAnn)(checkOneLine(split("\n")(" ->"))))(listMap(Clause)((() => {
       const $2 = functorNonEmptyList.map((v) => $Tuple($NonEmpty(v._1, Nil), v._2))(pss);
       return $List("Cons", $2._1, $2._2);
-    })())))(text(";"))
+    })())))(checkOneLine(split("\n")(" ;")))
   });
   var prettyNonEmptyListNonEmpt = (dictAnn) => ({
     pretty: (hs) => intersperse$p((() => {
       const $2 = functorNonEmptyList.map(prettyNonEmptyListBranch(dictAnn).pretty)(hs);
       return $List("Cons", $2._1, $2._2);
-    })())(text(";"))
+    })())(checkOneLine(split("\n")(" ;")))
   });
   var prettyNonEmptyListBranch = (dictAnn) => ({
     pretty: (h) => intersperse$p((() => {
       const $2 = functorNonEmptyList.map(prettyBranch(dictAnn).pretty)(h);
       return $List("Cons", $2._1, $2._2);
-    })())(text(";"))
+    })())(checkOneLine(split("\n")(" ;")))
   });
   var prettyListRest = (dictAnn) => {
     const highlightIf = dictAnn.Highlightable0().highlightIf;
@@ -28006,12 +28073,12 @@
       pretty: (v) => {
         if (v.tag === "Next") {
           if (v._2.tag === "Record") {
-            return atop(beside(highlightIf(v._1)(text(",")))(highlightIf(v._1)(beside(beside(text("{"))(prettyOperator(dictAnn)(beside)(v._2._2)))(text("}")))))(prettyListRest(dictAnn).pretty(v._3));
+            return atop(beside(highlightIf(v._1)(checkOneLine(split("\n")(" ,"))))(highlightIf(v._1)(curlyBraces(prettyOperator(dictAnn)(beside)(v._2._2)))))(prettyListRest(dictAnn).pretty(v._3));
           }
-          return beside(beside(highlightIf(v._1)(text(",")))(prettyExpr1(dictAnn).pretty(v._2)))(prettyListRest(dictAnn).pretty(v._3));
+          return beside(beside(highlightIf(v._1)(checkOneLine(split("\n")(" ,"))))(prettyExpr1(dictAnn).pretty(v._2)))(prettyListRest(dictAnn).pretty(v._3));
         }
         if (v.tag === "End") {
-          return highlightIf(v._1)(text("]"));
+          return highlightIf(v._1)(checkOneLine(split("\n")(" ]")));
         }
         fail();
       }
@@ -28019,28 +28086,24 @@
   };
   var prettyListQualifier = (dictAnn) => ({
     pretty: (v) => {
-      const $2 = (q, qs) => beside(beside(beside(prettyListQualifier(dictAnn).pretty($List(
-        "Cons",
-        q,
-        Nil
-      )))(text(",")))(text(" ")))(prettyListQualifier(dictAnn).pretty(qs));
+      const $2 = (q, qs) => beside(beside(prettyListQualifier(dictAnn).pretty($List("Cons", q, Nil)))(checkOneLine(split("\n")(" ,"))))(prettyListQualifier(dictAnn).pretty(qs));
       if (v.tag === "Cons") {
         if (v._2.tag === "Nil") {
           if (v._1.tag === "Guard") {
             return prettyExpr1(dictAnn).pretty(v._1._1);
           }
           if (v._1.tag === "Declaration") {
-            return beside(beside(text("let"))(text(" ")))(prettyVarDef(dictAnn).pretty(v._1._1));
+            return beside(checkOneLine(split("\n")(" let")))(prettyVarDef(dictAnn).pretty(v._1._1));
           }
           if (v._1.tag === "Generator") {
-            return beside(beside(beside(beside(prettyPattern.pretty(v._1._1))(text(" ")))(text("<-")))(text(" ")))(prettyExpr1(dictAnn).pretty(v._1._2));
+            return beside(beside(prettyPattern.pretty(v._1._1))(checkOneLine(split("\n")(" <-"))))(prettyExpr1(dictAnn).pretty(v._1._2));
           }
           return $2(v._1, v._2);
         }
         return $2(v._1, v._2);
       }
       if (v.tag === "Nil") {
-        return emptyDoc;
+        return empty3;
       }
       fail();
     }
@@ -28051,10 +28114,10 @@
         if (v._2.tag === "Nil") {
           return prettyPairs(dictAnn)($Pair(v._1._1, v._1._2));
         }
-        return beside(beside(beside(prettyPairs(dictAnn)($Pair(v._1._1, v._1._2)))(text(",")))(text(" ")))(prettyListPairExpr(dictAnn).pretty(v._2));
+        return beside(beside(prettyPairs(dictAnn)($Pair(v._1._1, v._1._2)))(checkOneLine(split("\n")(" ,"))))(prettyListPairExpr(dictAnn).pretty(v._2));
       }
       if (v.tag === "Nil") {
-        return emptyDoc;
+        return empty3;
       }
       fail();
     }
@@ -28065,37 +28128,37 @@
     return {
       pretty: (v) => {
         if (v.tag === "Var") {
-          return beside(beside(beside(beside(emptyDoc)(text(" ")))(text(v._1)))(text(" ")))(emptyDoc);
+          return checkOneLine(split("\n")(" " + v._1));
         }
         if (v.tag === "Op") {
-          return beside(beside(text("("))(text(v._1)))(text(")"));
+          return parentheses(checkOneLine(split("\n")(" " + v._1)));
         }
         if (v.tag === "Int") {
-          return Highlightable0.highlightIf(v._1)(text(showIntImpl(v._2)));
+          return Highlightable0.highlightIf(v._1)(checkOneLine(split("\n")(" " + showIntImpl(v._2))));
         }
         if (v.tag === "Float") {
-          return Highlightable0.highlightIf(v._1)(text(showNumberImpl(v._2)));
+          return Highlightable0.highlightIf(v._1)(checkOneLine(split("\n")(" " + showNumberImpl(v._2))));
         }
         if (v.tag === "Str") {
-          return Highlightable0.highlightIf(v._1)(beside(beside(text('"'))(text(v._2)))(text('"')));
+          return Highlightable0.highlightIf(v._1)(checkOneLine(split("\n")(' "' + (v._2 + '"'))));
         }
         if (v.tag === "Constr") {
           return prettyConstr(prettyExpr1(dictAnn))(Highlightable0)(v._1)(v._2)(v._3);
         }
         if (v.tag === "Record") {
-          return Highlightable0.highlightIf(v._1)(beside(beside(text("{"))(prettyOperator(dictAnn)(atop)(v._2)))(text("}")));
+          return Highlightable0.highlightIf(v._1)(curlyBraces(prettyOperator(dictAnn)(atop)(v._2)));
         }
         if (v.tag === "Dictionary") {
-          return Highlightable0.highlightIf(v._1)(beside(beside(text("{|"))(prettyListPairExpr(dictAnn).pretty(v._2)))(text("|}")));
+          return Highlightable0.highlightIf(v._1)(dictBrackets(prettyListPairExpr(dictAnn).pretty(v._2)));
         }
         if (v.tag === "Matrix") {
-          return Highlightable0.highlightIf(v._1)(beside(beside(text("[|"))(beside(beside(beside(beside(beside(beside(beside(beside(beside(beside(prettyExpr1(dictAnn).pretty(v._2))(text("|")))(text("(")))(text(v._3._1)))(text(",")))(text(v._3._2)))(text(")")))(text(" ")))(text("in")))(text(" ")))(prettyExpr1(dictAnn).pretty(v._4))))(text("|]")));
+          return Highlightable0.highlightIf(v._1)(arrayBrackets(beside(beside(beside(beside(prettyExpr1(dictAnn).pretty(v._2))(checkOneLine(split("\n")(" |"))))(parentheses(beside(beside(checkOneLine(split("\n")(" " + v._3._1)))(checkOneLine(split("\n")(" ,"))))(checkOneLine(split("\n")(" " + v._3._2))))))(checkOneLine(split("\n")(" in"))))(prettyExpr1(dictAnn).pretty(v._4))));
         }
         if (v.tag === "Lambda") {
-          return beside(beside(text("("))(beside(beside(text("fun"))(text(" ")))(prettyClauses(dictAnn).pretty(v._1))))(text(")"));
+          return parentheses(beside(checkOneLine(split("\n")(" fun")))(prettyClauses(dictAnn).pretty(v._1)));
         }
         if (v.tag === "Project") {
-          return beside(beside(prettyExpr1(dictAnn).pretty(v._1))(text(".")))(text(v._2));
+          return beside(beside(prettyExpr1(dictAnn).pretty(v._1))(checkOneLine(split("\n")(" ."))))(checkOneLine(split("\n")(" " + v._2)));
         }
         if (v.tag === "App") {
           return prettyAppChain(dictAnn)($Expr2("App", v._1, v._2));
@@ -28104,31 +28167,31 @@
           return prettyBinApp(dictAnn)(0)($Expr2("BinaryApp", v._1, v._2, v._3));
         }
         if (v.tag === "MatchAs") {
-          return atop(beside(beside(beside(beside(text("match"))(text(" ")))(prettyExpr1(dictAnn).pretty(v._1)))(text(" ")))(text("as")))(beside(beside(text("{"))(prettyNonEmptyListPattern(dictAnn).pretty(v._2)))(text("}")));
+          return atop(beside(beside(checkOneLine(split("\n")(" match")))(prettyExpr1(dictAnn).pretty(v._1)))(checkOneLine(split("\n")(" as"))))(curlyBraces(prettyNonEmptyListPattern(dictAnn).pretty(v._2)));
         }
         if (v.tag === "IfElse") {
-          return beside(beside(beside(beside(beside(beside(beside(beside(beside(beside(beside(beside(emptyDoc)(text(" ")))(text("if")))(text(" ")))(prettyExpr1(dictAnn).pretty(v._1)))(text(" ")))(text("then")))(text(" ")))(prettyExpr1(dictAnn).pretty(v._2)))(text(" ")))(text("else")))(text(" ")))(prettyExpr1(dictAnn).pretty(v._3));
+          return beside(beside(beside(beside(beside(checkOneLine(split("\n")(" if")))(prettyExpr1(dictAnn).pretty(v._1)))(checkOneLine(split("\n")(" then"))))(prettyExpr1(dictAnn).pretty(v._2)))(checkOneLine(split("\n")(" else"))))(prettyExpr1(dictAnn).pretty(v._3));
         }
         if (v.tag === "ListEmpty") {
-          return Highlightable0.highlightIf(v._1)(beside(beside(text("["))(emptyDoc))(text("]")));
+          return Highlightable0.highlightIf(v._1)(brackets(empty3));
         }
         if (v.tag === "ListNonEmpty") {
           if (v._2.tag === "Record") {
-            return beside(beside(emptyDoc)(text(" ")))(atop(beside(Highlightable0.highlightIf(v._1)(text("[")))(Highlightable0.highlightIf(v._1)(beside(beside(text("{"))(prettyOperator(dictAnn)(beside)(v._2._2)))(text("}")))))(prettyListRest(dictAnn).pretty(v._3)));
+            return atop(beside(Highlightable0.highlightIf(v._1)(checkOneLine(split("\n")(" ["))))(Highlightable0.highlightIf(v._1)(curlyBraces(prettyOperator(dictAnn)(beside)(v._2._2)))))(prettyListRest(dictAnn).pretty(v._3));
           }
-          return beside(beside(beside(beside(emptyDoc)(text(" ")))(Highlightable0.highlightIf(v._1)(text("["))))(prettyExpr1(dictAnn).pretty(v._2)))(prettyListRest(dictAnn).pretty(v._3));
+          return beside(beside(Highlightable0.highlightIf(v._1)(checkOneLine(split("\n")(" ["))))(prettyExpr1(dictAnn).pretty(v._2)))(prettyListRest(dictAnn).pretty(v._3));
         }
         if (v.tag === "ListEnum") {
-          return beside(beside(text("["))(beside(beside(prettyExpr1(dictAnn).pretty(v._1))(text("..")))(prettyExpr1(dictAnn).pretty(v._2))))(text("]"));
+          return brackets(beside(beside(prettyExpr1(dictAnn).pretty(v._1))(checkOneLine(split("\n")(" .."))))(prettyExpr1(dictAnn).pretty(v._2)));
         }
         if (v.tag === "ListComp") {
-          return Highlightable0.highlightIf(v._1)(beside(beside(text("["))(beside(beside(prettyExpr1(dictAnn).pretty(v._2))(text("|")))(prettyListQualifier(dictAnn).pretty(v._3))))(text("]")));
+          return Highlightable0.highlightIf(v._1)(brackets(beside(beside(prettyExpr1(dictAnn).pretty(v._2))(checkOneLine(split("\n")(" |"))))(prettyListQualifier(dictAnn).pretty(v._3))));
         }
         if (v.tag === "Let") {
-          return beside(beside(beside(beside(beside(beside(text("let"))(text(" ")))(prettyVarDefs(dictAnn).pretty(v._1)))(text(" ")))(text("in")))(text(" ")))(prettyExpr1(dictAnn).pretty(v._2));
+          return beside(beside(beside(checkOneLine(split("\n")(" let")))(prettyVarDefs(dictAnn).pretty(v._1)))(checkOneLine(split("\n")(" in"))))(prettyExpr1(dictAnn).pretty(v._2));
         }
         if (v.tag === "LetRec") {
-          return beside(beside(atop(beside(beside(text("let"))(text(" ")))(prettyFirstGroup(dictAnn).pretty(v._1)))(text("in")))(text(" ")))(prettyExpr1(dictAnn).pretty(v._2));
+          return beside(atop(beside(checkOneLine(split("\n")(" let")))(prettyFirstGroup(dictAnn).pretty(v._1)))(checkOneLine(split("\n")(" in"))))(prettyExpr1(dictAnn).pretty(v._2));
         }
         fail();
       }
@@ -28136,12 +28199,12 @@
   };
   var prettyClauses = (dictAnn) => ({
     pretty: (v) => intersperse$p((() => {
-      const $2 = functorNonEmptyList.map(prettyClause(dictAnn)(text("=")))(v);
+      const $2 = functorNonEmptyList.map(prettyClause(dictAnn)(checkOneLine(split("\n")(" ="))))(v);
       return $List("Cons", $2._1, $2._2);
-    })())(text(";"))
+    })())(checkOneLine(split("\n")(" ;")))
   });
   var prettyBranch = (dictAnn) => ({
-    pretty: (v) => beside(beside(text(v._1))(text(" ")))(prettyClause(dictAnn)(text("="))($Tuple(
+    pretty: (v) => beside(checkOneLine(split("\n")(" " + v._1)))(prettyClause(dictAnn)(checkOneLine(split("\n")(" =")))($Tuple(
       v._2._1,
       v._2._2
     )))
@@ -28152,42 +28215,34 @@
       return prettyExpr1(dictAnn).pretty(s);
     }
     if (v.tag === "Expression") {
-      return beside(beside(text("("))(prettyExpr1(dictAnn).pretty(s)))(text(")"));
+      return parentheses(prettyExpr1(dictAnn).pretty(s));
     }
     fail();
   };
-  var prettyPairs = (dictAnn) => (v) => beside(beside(beside(beside(prettyExpr1(dictAnn).pretty(v._1))(text(" ")))(text(":=")))(text(" ")))(prettyExpr1(dictAnn).pretty(v._2));
+  var prettyPairs = (dictAnn) => (v) => beside(beside(prettyExpr1(dictAnn).pretty(v._1))(checkOneLine(split("\n")(" :="))))(prettyExpr1(dictAnn).pretty(v._2));
   var prettyOperator = (dictAnn) => (v) => (v1) => {
     if (v1.tag === "Cons") {
       if (v1._2.tag === "Nil") {
-        return beside(beside(text(v1._1._1))(text(":")))(prettyExpr1(dictAnn).pretty(v1._1._2));
+        return beside(beside(checkOneLine(split("\n")(" " + v1._1._1)))(checkOneLine(split("\n")(" :"))))(prettyExpr1(dictAnn).pretty(v1._1._2));
       }
-      return v(beside(prettyOperator(dictAnn)(v)($List("Cons", v1._1, Nil)))(text(",")))(prettyOperator(dictAnn)(v)(v1._2));
+      return v(beside(prettyOperator(dictAnn)(v)($List("Cons", v1._1, Nil)))(checkOneLine(split("\n")(" ,"))))(prettyOperator(dictAnn)(v)(v1._2));
     }
     if (v1.tag === "Nil") {
-      return emptyDoc;
+      return empty3;
     }
     fail();
   };
-  var prettyClause = (dictAnn) => (sep) => (v) => beside(beside(beside(beside(prettyPattConstr(emptyDoc)($List(
-    "Cons",
-    v._1._1,
-    v._1._2
-  )))(text(" ")))(sep))(text(" ")))(prettyExpr1(dictAnn).pretty(v._2));
+  var prettyClause = (dictAnn) => (sep) => (v) => beside(beside(prettyPattConstr(empty3)($List("Cons", v._1._1, v._1._2)))(sep))(prettyExpr1(dictAnn).pretty(v._2));
   var prettyBinApp = (dictAnn) => (v) => (v1) => {
     if (v1.tag === "BinaryApp") {
       const prec$p = getPrec(v1._2);
       if (getPrec(v1._2) === -1) {
-        return beside(beside(beside(beside(prettyBinApp(dictAnn)(prec$p)(v1._1))(text(" ")))(beside(beside(text("`"))(text(v1._2)))(text("`"))))(text(" ")))(prettyBinApp(dictAnn)(prec$p)(v1._3));
+        return beside(beside(prettyBinApp(dictAnn)(prec$p)(v1._1))(checkOneLine(split("\n")(" `" + (v1._2 + "`")))))(prettyBinApp(dictAnn)(prec$p)(v1._3));
       }
-      const v3 = prec$p <= v;
-      if (!v3) {
-        return beside(beside(beside(beside(prettyBinApp(dictAnn)(prec$p)(v1._1))(text(" ")))(text(v1._2)))(text(" ")))(prettyBinApp(dictAnn)(prec$p)(v1._3));
+      if (prec$p <= v) {
+        return parentheses(beside(beside(prettyBinApp(dictAnn)(prec$p)(v1._1))(checkOneLine(split("\n")(" " + v1._2))))(prettyBinApp(dictAnn)(prec$p)(v1._3)));
       }
-      if (v3) {
-        return beside(beside(text("("))(beside(beside(beside(beside(prettyBinApp(dictAnn)(prec$p)(v1._1))(text(" ")))(text(v1._2)))(text(" ")))(prettyBinApp(dictAnn)(prec$p)(v1._3))))(text(")"));
-      }
-      fail();
+      return beside(beside(prettyBinApp(dictAnn)(prec$p)(v1._1))(checkOneLine(split("\n")(" " + v1._2))))(prettyBinApp(dictAnn)(prec$p)(v1._3));
     }
     return prettyAppChain(dictAnn)(v1);
   };
@@ -28378,7 +28433,9 @@
     },
     join: (v) => definedJoin(joinSemilatticeDictRep(dictJoinSemilattice))(v)
   });
-  var highlightableVertex = { highlightIf: (v) => (doc2) => beside(beside(doc2)(text("_")))(text("\u27E8" + (v + "\u27E9"))) };
+  var highlightableVertex = {
+    highlightIf: (v) => (doc2) => beside(beside(doc2)(checkOneLine(split("\n")(" _"))))(checkOneLine(split("\n")(" \u27E8" + (v + "\u27E9"))))
+  };
   var highlightableUnit = { highlightIf: (v) => identity19 };
   var highlightableBoolean = {
     highlightIf: (v) => {
@@ -28386,7 +28443,7 @@
         return identity19;
       }
       if (v) {
-        return (doc2) => beside(beside(text("_"))(doc2))(text("_"));
+        return (doc2) => beside(beside(checkOneLine(split("\n")(" \u2E28")))(doc2))(checkOneLine(split("\n")(" \u2E29")));
       }
       fail();
     }
@@ -29035,13 +29092,13 @@
       if (v.tag === "Str") {
         return $Tuple(v._2, v._1);
       }
-      return unsafePerformEffect(throwException(error("Str expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Str expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     },
     match: (v) => {
       if (v.tag === "Str") {
         return $Tuple(v._2, v._1);
       }
-      return unsafePerformEffect(throwException(error("Str expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Str expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     }
   };
   var record = (dictAnn) => {
@@ -29060,13 +29117,13 @@
       if (v.tag === "Float") {
         return $Tuple(v._2, v._1);
       }
-      return unsafePerformEffect(throwException(error("Float expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Float expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     },
     match: (v) => {
       if (v.tag === "Float") {
         return $Tuple(v._2, v._1);
       }
-      return unsafePerformEffect(throwException(error("Float expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Float expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     }
   };
   var matrixRep = (dictAnn) => {
@@ -29105,7 +29162,7 @@
       if (v.tag === "Str") {
         return $Tuple($Either("Right", $Either("Right", v._2)), v._1);
       }
-      return unsafePerformEffect(throwException(error("Int, Float or Str expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Int, Float or Str expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     },
     match: (v) => {
       if (v.tag === "Int") {
@@ -29117,7 +29174,7 @@
       if (v.tag === "Str") {
         return $Tuple($Either("Right", $Either("Right", v._2)), v._1);
       }
-      return unsafePerformEffect(throwException(error("Int, Float or Str expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Int, Float or Str expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     }
   };
   var intOrNumber = {
@@ -29137,7 +29194,7 @@
       if (v.tag === "Float") {
         return $Tuple($Either("Right", v._2), v._1);
       }
-      return unsafePerformEffect(throwException(error("Int or Float expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Int or Float expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     },
     match: (v) => {
       if (v.tag === "Int") {
@@ -29146,7 +29203,7 @@
       if (v.tag === "Float") {
         return $Tuple($Either("Right", v._2), v._1);
       }
-      return unsafePerformEffect(throwException(error("Int or Float expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Int or Float expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     }
   };
   var $$int = {
@@ -29155,13 +29212,13 @@
       if (v.tag === "Int") {
         return $Tuple(v._2, v._1);
       }
-      return unsafePerformEffect(throwException(error("Int expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Int expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     },
     match: (v) => {
       if (v.tag === "Int") {
         return $Tuple(v._2, v._1);
       }
-      return unsafePerformEffect(throwException(error("Int expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Int expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     }
   };
   var intPair = {
@@ -29179,15 +29236,15 @@
               if (v._2 === "Pair") {
                 return $Tuple($Tuple($$int.match(v._3._1), $$int.match(v._3._2._1)), v._1);
               }
-              return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+              return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
             }
-            return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+            return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
           }
-          return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+          return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
         }
-        return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+        return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
       }
-      return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     },
     match: (v) => {
       if (v.tag === "Constr") {
@@ -29197,15 +29254,15 @@
               if (v._2 === "Pair") {
                 return $Tuple($Tuple($$int.match(v._3._1), $$int.match(v._3._2._1)), v._1);
               }
-              return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+              return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
             }
-            return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+            return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
           }
-          return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+          return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
         }
-        return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+        return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
       }
-      return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Pair expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     }
   };
   var $$boolean = {
@@ -29227,11 +29284,11 @@
           if (v._2 === "False") {
             return $Tuple(false, v._1);
           }
-          return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+          return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
         }
-        return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+        return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
       }
-      return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     },
     match: (v) => {
       if (v.tag === "Constr") {
@@ -29242,11 +29299,11 @@
           if (v._2 === "False") {
             return $Tuple(false, v._1);
           }
-          return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+          return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
         }
-        return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+        return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
       }
-      return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v)).lines))));
+      return unsafePerformEffect(throwException(error("Boolean expected; got " + intercalate4("\n")(removeDocWS(prettyVal(highlightableUnit).pretty(functorVal.map((v$1) => unit2)(v))).lines))));
     }
   };
   var binaryZero = (dictBoundedJoinSemilattice) => (dictIsZero) => (op) => $Val(
@@ -33645,7 +33702,7 @@
         }
         return bindExceptT2.bind(dataTypeFor1(keys2(v1._1)))((d) => Applicative0.pure($Either(
           "Left",
-          "Pattern mismatch: found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v).lines) + (", expected " + d._1))
+          "Pattern mismatch: found " + (intercalate4("\n")(removeDocWS(prettyVal(highlightableVertex).pretty(v)).lines) + (", expected " + d._1))
         )));
       }
       if (v1.tag === "ElimRecord") {
@@ -33657,7 +33714,7 @@
         }
         return Applicative0.pure($Either(
           "Left",
-          "Pattern mismatch: found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v).lines) + (", expected " + show22(v1._1)))
+          "Pattern mismatch: found " + (intercalate4("\n")(removeDocWS(prettyVal(highlightableVertex).pretty(v)).lines) + (", expected " + show22(v1._1)))
         ));
       }
       fail();
@@ -33846,7 +33903,7 @@
           }
           return applicativeStateT2.pure($Either(
             "Left",
-            "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v3).lines) + ", expected record")
+            "Found " + (intercalate4("\n")(removeDocWS(prettyVal(highlightableVertex).pretty(v3)).lines) + ", expected record")
           ));
         });
       }
@@ -33876,7 +33933,7 @@
     return (v) => (v1) => {
       const $13 = (v2) => applicativeStateT2.pure($Either(
         "Left",
-        "Found " + (intercalate4("\n")(prettyVal(highlightableVertex).pretty(v2).lines) + ", expected function")
+        "Found " + (intercalate4("\n")(removeDocWS(prettyVal(highlightableVertex).pretty(v2)).lines) + ", expected function")
       ));
       if (v.tag === "Fun") {
         if (v._2.tag === "Closure") {
@@ -37480,7 +37537,7 @@
   var evalBwd2 = /* @__PURE__ */ evalBwd(annBoolean);
   var erase2 = /* @__PURE__ */ (() => functorVal.map((v) => unit2))();
   var sequence_ = /* @__PURE__ */ traverse_(applicativeEffect)(foldableArray)(identity5);
-  var length5 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
+  var length4 = /* @__PURE__ */ foldlArray((c) => (v) => 1 + c | 0)(0);
   var identity25 = (x2) => x2;
   var view = (v) => (v1) => {
     if (v1.tag === "Constr") {
@@ -37526,21 +37583,22 @@
     const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
     const desugarModuleFwd1 = desugarModuleFwd2(BoundedJoinSemilattice0.JoinSemilattice0());
     const eval_module1 = eval_module4(dictAnn);
-    return (\u03B30) => (s$p) => {
-      if (s$p.tag === "LetRec") {
-        return bind(bind(desugarModuleFwd1($Module2($List("Cons", $Either("Right", s$p._1), Nil))))((() => {
-          const $6 = eval_module1(\u03B30);
-          return (a) => $6(a)(BoundedJoinSemilattice0.bot);
-        })()))((\u03B3) => applicativeExceptT3.pure({ "\u03B3": \u03B3, s: s$p._2 }));
-      }
-      if (s$p.tag === "Let") {
-        return bind(bind(desugarModuleFwd1($Module2($List("Cons", $Either("Left", s$p._1), Nil))))((() => {
-          const $6 = eval_module1(\u03B30);
-          return (a) => $6(a)(BoundedJoinSemilattice0.bot);
-        })()))((\u03B3) => applicativeExceptT3.pure({ "\u03B3": \u03B3, s: s$p._2 }));
-      }
-      fail();
-    };
+    return (\u03B30) => (s$p) => bind(bind(desugarModuleFwd1($Module2($List(
+      "Cons",
+      (() => {
+        if (s$p.tag === "LetRec") {
+          return $Either("Right", s$p._1);
+        }
+        if (s$p.tag === "Let") {
+          return $Either("Left", s$p._1);
+        }
+        fail();
+      })(),
+      Nil
+    ))))((() => {
+      const $6 = eval_module1(\u03B30);
+      return (a) => $6(a)(BoundedJoinSemilattice0.bot);
+    })()))((\u03B3) => applicativeExceptT3.pure({ "\u03B3": \u03B3, s: s$p }));
   };
   var splitDefs1 = /* @__PURE__ */ splitDefs(annBoolean);
   var loadLinkFig = (v) => {
@@ -37620,9 +37678,9 @@
     return () => {
       $3();
       const v1 = successful(figViews(v)(\u03B4v));
-      sequence_(arrayMap((v$1) => drawView(v.spec.divId)(doNothing)(v$1._1)(v$1._2))(zip(range2(0)(length5(v1._2) - 1 | 0))(v1._2)))();
-      drawView(v.spec.divId)((selector) => drawFig(v)(ed)((x2) => selector(\u03B4v(x2))))(length5(v1._2))(v1._1)();
-      return drawCode(ed)(intercalate4("\n")(prettyExpr1(annBoolean).pretty(v.s0).lines))();
+      sequence_(arrayMap((v$1) => drawView(v.spec.divId)(doNothing)(v$1._1)(v$1._2))(zip(range2(0)(length4(v1._2) - 1 | 0))(v1._2)))();
+      drawView(v.spec.divId)((selector) => drawFig(v)(ed)((x2) => selector(\u03B4v(x2))))(length4(v1._2))(v1._1)();
+      return drawCode(ed)(intercalate4("\n")(removeDocWS(prettyExpr1(annBoolean).pretty(v.s0)).lines))();
     };
   };
   var drawLinkFig = (v) => (ed1) => (ed2) => (ed3) => (\u03B4v) => {
@@ -37649,8 +37707,8 @@
       drawView(v.spec.divId)((selector) => drawLinkFig(v)(ed1)(ed2)(ed3)($Either("Left", (x2) => selector(v3._2._2._1(x2)))))(2)(view("left view")(v3._1))();
       drawView(v.spec.divId)((selector) => drawLinkFig(v)(ed1)(ed2)(ed3)($Either("Right", (x2) => selector(v3._2._2._2._1(x2)))))(0)(view("right view")(v3._2._1))();
       drawView(v.spec.divId)(doNothing)(1)(view("common data")(v3._2._2._2._2))();
-      drawCode(ed1)(intercalate4("\n")(prettyExpr1(annBoolean).pretty(v.s1).lines))();
-      drawCode(ed2)(intercalate4("\n")(prettyExpr1(annBoolean).pretty(v.s2).lines))();
+      drawCode(ed1)(intercalate4("\n")(removeDocWS(prettyExpr1(annBoolean).pretty(v.s1)).lines))();
+      drawCode(ed2)(intercalate4("\n")(removeDocWS(prettyExpr1(annBoolean).pretty(v.s2)).lines))();
       return drawCode(ed3)(v.dataFile)();
     };
   };
