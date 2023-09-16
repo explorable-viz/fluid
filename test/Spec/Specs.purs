@@ -14,7 +14,7 @@ misc_cases =
    , { file: "compose", fwd_expect: "5" }
    , { file: "dicts"
      , fwd_expect:
-          "{d: {||}, e: {|\"a\":= 5, \"ab\":= 6|}, e_ab: 6, f: {|\"a\":= 6, \"ab\":= 7|}, g: {|\"a\":= 5|}, h: {|\"fst\":= 4, \"snd\":= (6 : (7 : []))|}}"
+          "{d : {||}, e : {|\"a\" := 5, \"ab\" := 6|}, e_ab : 6, f : {|\"a\" := 6, \"ab\" := 7|}, g : {|\"a\" := 5|}, h : {|\"fst\" := 4, \"snd\" := (6 : (7 : []))|}}"
      }
    , { file: "div-mod-quot-rem"
      , fwd_expect:
@@ -38,7 +38,7 @@ misc_cases =
    , { file: "normalise", fwd_expect: "(33, 66)" }
    , { file: "pattern-match", fwd_expect: "4" }
    , { file: "range", fwd_expect: "((0, 0) : ((0, 1) : ((1, 0) : ((1, 1) : []))))" }
-   , { file: "records", fwd_expect: "{a: 2, b: 6, c: 7, d: (5 : []), e: 7}" }
+   , { file: "records", fwd_expect: "{a : 2, b : 6, c : 7, d : (5 : []), e : 7}" }
    , { file: "reverse", fwd_expect: "(2 : (1 : []))" }
    ]
 
@@ -98,7 +98,7 @@ bwd_cases =
    , { file: "dict/create"
      , file_expect: "dict/create.expect"
      , δv: dictKey "ab" neg
-     , fwd_expect: "{|\"a\":= 5, ⸨\"ab\"⸩:= 6|}"
+     , fwd_expect: "{|\"a\" := 5, ⸨\"ab\"⸩ := 6|}"
      }
    , { file: "dict/difference"
      , file_expect: "dict/difference.expect"
@@ -110,7 +110,7 @@ bwd_cases =
      , δv: dictKey "a" neg >>> dictVal "c" neg
      , fwd_expect: "{|⸨\"a\"⸩ := 5, \"b\" := 6, \"c\" := ⸨7⸩|}"
      }
-   , { file: "dict/foldl", file_expect: "dict/foldl.expect", δv: neg, fwd_expect: "_0_" }
+   , { file: "dict/foldl", file_expect: "dict/foldl.expect", δv: neg, fwd_expect: "⸨0⸩" }
    , { file: "dict/intersectionWith"
      , file_expect: "dict/intersectionWith.expect"
      , δv: dictVal "b" neg >>> dictVal "c" neg
@@ -139,7 +139,7 @@ bwd_cases =
      , δv: listCell 2 neg
      , fwd_expect: "(1 ⸨:⸩ (0 : (2 ⸨:⸩ (0 : (3 : [])))))"
      }
-   , { file: "length", file_expect: "length.expect", δv: neg, fwd_expect: "_5_" }
+   , { file: "length", file_expect: "length.expect", δv: neg, fwd_expect: "⸨5⸩" }
    , { file: "list-comp"
      , file_expect: "list-comp-1.expect"
      , δv: listCell 1 neg
@@ -160,8 +160,8 @@ bwd_cases =
      , δv: listCell 0 neg >>> listCell 1 neg
      , fwd_expect: "(5 ⸨:⸩ (6 ⸨:⸩ []))"
      }
-   , { file: "multiply", file_expect: "multiply.expect", δv: neg, fwd_expect: "_0_" }
-   , { file: "nth", file_expect: "nth.expect", δv: neg, fwd_expect: "_4_" }
+   , { file: "multiply", file_expect: "multiply.expect", δv: neg, fwd_expect: "⸨0⸩" }
+   , { file: "nth", file_expect: "nth.expect", δv: neg, fwd_expect: "⸨4⸩" }
    , { file: "section-5-example"
      , file_expect: "section-5-example-1.expect"
      , δv: listCell 0 neg
