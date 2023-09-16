@@ -170,22 +170,22 @@ bwd_cases =
    , { file: "section-5-example"
      , file_expect: "section-5-example-2.expect"
      , δv: listElement 1 neg
-     , fwd_expect: "(_88_ : (_6_ : (_4_ : [])))"
+     , fwd_expect: "(⸨88⸩ : (⸨6⸩ : (⸨4⸩ : [])))"
      }
    , { file: "section-5-example"
      , file_expect: "section-5-example-3.expect"
      , δv: listCell 2 neg
-     , fwd_expect: "(⸨88⸩ : (⸨6⸩ : (⸨4⸩ : [])))"
+     , fwd_expect: "(88 : (6 : (4 ⸨:⸩ [])))"
      }
    , { file: "zeros"
      , file_expect: "zeros-1.expect"
      , δv: listCell 0 neg >>> listCell 2 neg
-     , fwd_expect: "(88 : (6 : (4 ⸨:⸩ [])))"
+     , fwd_expect: "(0 ⸨:⸩ (0 : ⸨[]⸩))"
      }
    , { file: "zeros"
      , file_expect: "zeros-2.expect"
      , δv: listCell 2 neg
-     , fwd_expect: "(0 ⸨:⸩ (0 : ⸨[]⸩))"
+     , fwd_expect: "(0 : (0 : ⸨[]⸩))"
      }
    , { file: "zipWith"
      , file_expect: "zipWith-1.expect"
