@@ -41,6 +41,9 @@ str
       , bar :: String
       , colon :: String
       , colonEq :: String
+      , comma :: String
+      , curlylBrace :: String
+      , curlyrBrace :: String
       , dictLBracket :: String
       , dictRBracket :: String
       , dot :: String
@@ -53,18 +56,13 @@ str
       , lArrow :: String
       , lBracket :: String
       , let_ :: String
+      , lparenth :: String
       , match :: String
       , rArrow :: String
       , rBracket :: String
-      , then_ :: String
-      , lparenth :: String
       , rparenth :: String
-      , slash :: String
-      , curlylBrace :: String
-      , curlyrBrace :: String
-      , comma :: String
-      , equal :: String
       , semiColon :: String
+      , then_ :: String
       }
 
 str =
@@ -76,6 +74,9 @@ str =
    , bar: "|"
    , colon: ":"
    , colonEq: ":="
+   , comma: ","
+   , curlylBrace: "{"
+   , curlyrBrace: "}"
    , dictLBracket: "{|"
    , dictRBracket: "|}"
    , dot: "."
@@ -88,18 +89,14 @@ str =
    , lArrow: "<-"
    , lBracket: "["
    , let_: "let"
+   , lparenth: "("
+
    , match: "match"
    , rArrow: "->"
    , rBracket: "]"
-   , then_: "then"
-   , lparenth: "("
    , rparenth: ")"
-   , slash: "\""
-   , curlylBrace: "{"
-   , curlyrBrace: "}"
-   , comma: ","
-   , equal: "="
    , semiColon: ";"
+   , then_: "then"
    }
 
 languageDef :: LanguageDef

@@ -1,20 +1,6 @@
-module Test.Util
-   ( TestBwdSpec
-   , TestConfig
-   , TestLinkSpec
-   , TestSpec
-   , TestWithDatasetSpec
-   , averageRows
-   , checkPretty
-   , isGraphical
-   , shouldSatisfy
-   , testParse
-   , testTrace
-   , testWithSetup
-   ) where
+module Test.Util where
 
 import Prelude hiding (absurd)
-
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
 import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
@@ -104,11 +90,13 @@ testTrace s { γα: γ } { δv, bwd_expect, fwd_expect } = do
    tFwd2 <- preciseTime
 
    lift do
+      unless (isGraphical v𝔹') $
+         log (prettyP v𝔹'')
       -- | Check backward selections
-      unless (null bwd_expect) do
+      unless (null bwd_expect) $
          checkPretty "Trace-based source selection" bwd_expect s𝔹'
       -- | Check round-trip selections
-      unless (isGraphical v𝔹') do
+      unless (isGraphical v𝔹') $
          checkPretty "Trace-based value" fwd_expect v𝔹''
 
    pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2 }
@@ -190,7 +178,7 @@ isGraphical _ = false
 checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
 checkPretty msg expect x =
    unless (expect `eq` prettyP x)
-      $ fail (msg <> "\nExpected:\n" <> expect <> "\nGotten:\n" <> prettyP x)
+      $ fail (msg <> "\nExpected:\n" <> expect <> "\nReceived:\n" <> prettyP x)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit

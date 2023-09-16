@@ -40,12 +40,9 @@ derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
 
-resourceServerUrl :: String
-resourceServerUrl = "."
-
 loadFile :: Folder -> File -> Aff String
 loadFile (Folder folder) (File file) = do
-   let url = resourceServerUrl <> "/" <> folder <> "/" <> file <> ".fld"
+   let url = "./" <> folder <> "/" <> file <> ".fld"
    result <- request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
       Left err -> error (printError err)

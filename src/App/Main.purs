@@ -12,7 +12,7 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile)
-import Util (type (×), Endo, (×))
+import Util (type (×), (×), Endo)
 
 linkingFig1 :: LinkFigSpec
 linkingFig1 =

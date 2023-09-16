@@ -31,9 +31,10 @@ function getContentsLength_ (ed) {
 function addEditorView_ (id) {
    return () => {
       const div = d3.select('#' + id).node()
+      console.log(div)
       return new EditorView({
          state: startState,
-         parent: div
+         parent: div,
       })
    }
 }

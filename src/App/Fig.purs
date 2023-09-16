@@ -73,9 +73,9 @@ type SplitDefs a =
 -- Decompose as above.
 splitDefs :: forall a. Ann a => Env a -> S.Expr a -> MayFail (SplitDefs a)
 splitDefs γ0 s' = do
-   let defs × s = unsafePartial $ unpack s'
+   let defs × _s = unsafePartial $ unpack s'
    γ <- desugarModuleFwd (S.Module (singleton defs)) >>= flip (eval_module γ0) bot
-   pure { γ, s }
+   pure { γ, s: s' }
    where
    unpack :: Partial => S.Expr a -> (S.VarDefs a + S.RecDefs a) × S.Expr a
    unpack (S.LetRec defs s) = Right defs × s
