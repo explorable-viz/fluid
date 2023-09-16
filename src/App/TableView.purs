@@ -1,6 +1,7 @@
 module App.TableView where
 
 import Prelude
+
 import App.Util (Handler, Renderer, get_intOrNumber)
 import Dict (Dict, get)
 import Lattice (𝔹)

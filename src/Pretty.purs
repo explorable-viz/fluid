@@ -447,7 +447,7 @@ instance Pretty (ForeignOp' t) where
 instance (Pretty a, Pretty b) => Pretty (a + b) where
    pretty = pretty ||| pretty
 
-instance Pretty (GraphImpl S.Set) where
+instance Pretty GraphImpl where
    pretty (GraphImpl g) =
       text "GraphImpl \n  " .<>.
          atop

@@ -13,7 +13,7 @@ import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
 import Data.List (List(..), (:), singleton)
-import Data.Set (Set, singleton) as S
+import Data.Set (singleton) as S
 import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
 import DataType (cBarChart, cCons, cLineChart, cNil)
@@ -28,7 +28,7 @@ import Expr (Expr)
 import Foreign.Object (lookup)
 import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
-import Module (File(..), loadFile, open, openDatasetAs, openDefaultImports, Folder(..))
+import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive (matrixRep) as P
@@ -36,7 +36,7 @@ import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
 import Trace (Trace)
 import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
-import Val (Env, Val(..), (<+>), append_inv)
+import Val (class Ann, Env, Val(..), append_inv, (<+>))
 import Web.Event.EventTarget (eventListener)
 
 data View
@@ -65,19 +65,19 @@ view title u@(Matrix _ _) =
 view _ _ = error absurd
 
 -- An example of the form (let <defs> in expr) can be decomposed as follows.
-type SplitDefs =
-   { γ :: Env 𝔹 -- local env (additional let bindings at beginning of ex)
-   , s :: S.Expr 𝔹 -- body of example
+type SplitDefs a =
+   { γ :: Env a -- local env (additional let bindings at beginning of ex)
+   , s :: S.Expr a -- body of example
    }
 
 -- Decompose as above.
-splitDefs :: Env 𝔹 -> S.Expr 𝔹 -> MayFail SplitDefs
+splitDefs :: forall a. Ann a => Env a -> S.Expr a -> MayFail (SplitDefs a)
 splitDefs γ0 s' = do
    let defs × _s = unsafePartial $ unpack s'
    γ <- desugarModuleFwd (S.Module (singleton defs)) >>= flip (eval_module γ0) bot
    pure { γ, s: s' }
    where
-   unpack :: Partial => S.Expr 𝔹 -> (S.VarDefs 𝔹 + S.RecDefs 𝔹) × S.Expr 𝔹
+   unpack :: Partial => S.Expr a -> (S.VarDefs a + S.RecDefs a) × S.Expr a
    unpack (S.LetRec defs s) = Right defs × s
    unpack (S.Let defs s) = Left defs × s
 
@@ -91,6 +91,7 @@ type Fig =
    { spec :: FigSpec
    , γ0 :: Env 𝔹 -- ambient env (default imports)
    , γ :: Env 𝔹 -- local env (loaded dataset, if any, plus additional let bindings at beginning of ex)
+   , s0 :: S.Expr 𝔹 -- program that was originally "split"
    , s :: S.Expr 𝔹 -- body of example
    , e :: Expr 𝔹 -- desugared s
    , t :: Trace
@@ -118,7 +119,7 @@ type LinkFig =
    , v1 :: Val 𝔹
    , v2 :: Val 𝔹
    , v0 :: Val 𝔹 -- common data named by spec.x
-   , dataconts :: String
+   , dataFile :: String -- TODO: provide surface expression instead and prettyprint
    }
 
 type LinkResult =
@@ -127,7 +128,7 @@ type LinkResult =
    }
 
 drawLinkFig :: LinkFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
-drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataconts } ed1 ed2 ed3 δv = do
+drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataFile } ed1 ed2 ed3 δv = do
    log $ "Redrawing " <> divId
    let
       v1' × v2' × δv1 × δv2 × v0 = successful case δv of
@@ -144,22 +145,21 @@ drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, d
    drawView divId doNothing 1 $ view "common data" v0
    drawCode ed1 $ prettyP s1
    drawCode ed2 $ prettyP s2
-   drawCode ed3 $ prettyP dataconts
+   drawCode ed3 $ dataFile
 
 drawCode :: EditorView -> String -> Effect Unit
 drawCode ed s = do
-   let contentsLength = getContentsLength ed
-   tr <- update ed.state [ { changes: { from: 0, to: contentsLength, insert: s } } ]
+   tr <- update ed.state [ { changes: { from: 0, to: getContentsLength ed, insert: s } } ]
    dispatch ed tr
 
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
-drawFig fig@{ spec: { divId }, s: s } ed δv = do
+drawFig fig@{ spec: { divId }, s0 } ed δv = do
    log $ "Redrawing " <> divId
    let v_view × views = successful $ figViews fig δv
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
    drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
-   drawCode ed $ prettyP s
+   drawCode ed $ prettyP s0
 
 varView :: Var -> Env 𝔹 -> MayFail View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
@@ -167,7 +167,7 @@ varView x γ = view x <$> (lookup x γ # orElse absurd)
 valViews :: Env 𝔹 -> Array Var -> MayFail (Array View)
 valViews γ xs = sequence (flip varView γ <$> xs)
 
--- For an output selection, views of corresponding input selections.
+-- For an output selection, views of corresponding input selections and output after round-trip.
 figViews :: Fig -> Selector Val -> MayFail (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
@@ -190,16 +190,18 @@ linkResult x γ0 γ e1 e2 t1 _ v1 = do
 loadFig :: FigSpec -> Aff Fig
 loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
-   { γα } × xv :: (GraphConfig (GraphImpl S.Set) × _) <- openDefaultImports >>= openDatasetAs (File "example/linking/renewables") "data"
+   { γα: γα0 } × xv :: GraphConfig GraphImpl × _ <-
+      openDefaultImports >>= openDatasetAs (File "example/linking/renewables") "data"
    let
-      γ0 = botOf <$> γα
+      γ0 = botOf <$> γα0
       xv0 = botOf <$> xv
    open file <#> \s' -> successful $ do
-      { γ: γ1, s } <- splitDefs (γ0 <+> xv0) (botOf s')
+      let s0 = botOf s'
+      { γ: γ1, s } <- splitDefs (γ0 <+> xv0) s0
       e <- desug s
       let γ0γ = γ0 <+> xv0 <+> γ1
       t × v <- eval γ0γ e bot
-      pure { spec, γ0, γ: γ0 <+> γ1, s, e, t, v }
+      pure { spec, γ0, γ: γ0 <+> γ1, s0, s, e, t, v }
 
 loadLinkFig :: LinkFigSpec -> Aff LinkFig
 loadLinkFig spec@{ file1, file2, dataFile, x } = do
@@ -207,18 +209,18 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       dir = File "linking/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment γ0 as well as dataset
-   { γα } × xv :: (GraphConfig (GraphImpl S.Set) × _) <- openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
+   { γα } × xv :: GraphConfig GraphImpl × _ <-
+      openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ0 = botOf <$> γα
       xv0 = botOf <$> xv
       s1 = botOf s1'
       s2 = botOf s2'
-   conts <- loadFile (Folder "fluid/example/linking") (dataFile)
+   dataFile' <- loadFile (Folder "fluid/example/linking") (dataFile) -- use surface expression instead
    pure $ successful do
       e1 × e2 <- (×) <$> desug s1 <*> desug s2
       t1 × v1 <- eval (γ0 <+> xv0) e1 bot
       t2 × v2 <- eval (γ0 <+> xv0) e2 bot
       v0 <- lookup x xv0 # orElse absurd
-      pure { spec, γ0, γ: xv0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataconts: conts }
-
+      pure { spec, γ0, γ: xv0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }

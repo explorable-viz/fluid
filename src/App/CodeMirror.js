@@ -16,35 +16,8 @@ function curry4 (f) {
 }
 
 import {EditorState} from "@codemirror/state"
-import {EditorView, keymap, MatchDecorator, ViewPlugin, Decoration} from "@codemirror/view"
+import {EditorView, keymap} from "@codemirror/view"
 import {defaultKeymap} from "@codemirror/commands"
-import {tags} from "@lezer/highlight"
-import {HighlightStyle} from "@codemirror/language"
-import {syntaxHighlighting} from "@codemirror/language"
-
-// let letDeco = Decoration.mark({class: "let"})
-// let decorator = new MatchDecorator({
-//    regexp: /(let)/g || /(in)/g,
-//    decoration: letDeco 
-// })
-
-// customPlugin = ViewPlugin.define(
-//    (view) => ({
-//       decorations: decorator.createDeco(view),
-//       update(u) {
-//          this.decorations = decorator.updateDeco(u, this.decorations)
-//       }
-//    }),
-//    {
-//       decorations: (v) => v.decorations
-//    }
-// )
-
-
-// const myHighlightStyle = HighlightStyle.define([
-//    {tag: tags.integer, color:"#FF0000"},
-//    {tag: tags.comment, color:"#FF0000", fontStyle:"italic"}
-// ])
 
 let startState = EditorState.create({
   doc: "",
@@ -72,7 +45,6 @@ function replaceSelection_ (editorState, str) {
 
 function dispatch_ (editorView, tr) {
    return () => {
-      console.log(tr.state.doc.toString())
       editorView.dispatch(tr)
    }
 }
@@ -85,6 +57,6 @@ function update_(editorState, specs) {
 
 export var addEditorView = addEditorView_
 export var dispatch = curry2(dispatch_)
+export var getContentsLength = getContentsLength_
 export var replaceSelection = curry2(replaceSelection_)
 export var update = curry2(update_)
-export var getContentsLength = getContentsLength_

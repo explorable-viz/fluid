@@ -12,7 +12,7 @@ import Effect.Aff (Aff, runAff_)
 import Effect.Console (log)
 import Lattice (botOf)
 import Module (File(..), Folder(..), loadFile)
-import Util ((×), type (×), error)
+import Util (type (×), (×), Endo)
 
 linkingFig1 :: LinkFigSpec
 linkingFig1 =
@@ -37,38 +37,38 @@ fig2 =
    , xs: [ "image", "filter" ]
    }
 
+codeMirrorDiv :: Endo String
+codeMirrorDiv = ("codemirror-" <> _)
+
 drawLinkFigs :: Array (Aff LinkFig) -> Effect Unit
 drawLinkFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
-         Left err -> error $ show err
-         Right figs ->
-            sequence_ $ figs <#>
-               ( \fig -> do
-                    e1 <- addEditorView ("codemirror-" <> unwrap fig.spec.file1)
-                    e2 <- addEditorView ("codemirror-" <> unwrap fig.spec.file2)
-                    e3 <- addEditorView ("codemirror-" <> unwrap fig.spec.dataFile)
-                    drawLinkFig fig e1 e2 e3 (Left $ botOf)
-               )
+         Left err -> log $ show err
+         Right figs -> do
+            sequence_ $ figs <#> \fig -> do
+               ed1 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file1)
+               ed2 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.file2)
+               ed3 <- addEditorView $ codeMirrorDiv $ unwrap (fig.spec.dataFile)
+               drawLinkFig fig ed1 ed2 ed3 (Left $ botOf)
 
 drawFigs :: Array (Aff Fig) -> Effect Unit
 drawFigs loadFigs =
    flip runAff_ (sequence loadFigs)
       case _ of
          Left err -> log $ show err
-         Right figs ->
-            sequence_ $ figs <#> \fig -> do
-               ed <- addEditorView ("codemirror-" <> fig.spec.divId)
-               drawFig fig ed botOf
+         Right figs -> sequence_ $ figs <#> \fig -> do
+            ed <- addEditorView $ codeMirrorDiv fig.spec.divId
+            drawFig fig ed botOf
 
 drawFiles :: Array (Folder × File) -> Effect Unit
-drawFiles arr = sequence_ $ arr <#> \(folder × file@(File name)) ->
+drawFiles files = sequence_ $ files <#> \(folder × file) ->
    flip runAff_ (loadFile folder file)
       case _ of
          Left err -> log $ show err
-         Right fileconts -> do
-            ed <- addEditorView ("codemirror-" <> name)
-            drawCode ed fileconts
+         Right src -> do
+            ed <- addEditorView $ codeMirrorDiv $ unwrap file
+            drawCode ed src
 
 main :: Effect Unit
 main = do
