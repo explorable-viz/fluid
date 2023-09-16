@@ -37583,22 +37583,21 @@
     const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
     const desugarModuleFwd1 = desugarModuleFwd2(BoundedJoinSemilattice0.JoinSemilattice0());
     const eval_module1 = eval_module4(dictAnn);
-    return (\u03B30) => (s$p) => bind(bind(desugarModuleFwd1($Module2($List(
-      "Cons",
-      (() => {
-        if (s$p.tag === "LetRec") {
-          return $Either("Right", s$p._1);
-        }
-        if (s$p.tag === "Let") {
-          return $Either("Left", s$p._1);
-        }
-        fail();
-      })(),
-      Nil
-    ))))((() => {
-      const $6 = eval_module1(\u03B30);
-      return (a) => $6(a)(BoundedJoinSemilattice0.bot);
-    })()))((\u03B3) => applicativeExceptT3.pure({ "\u03B3": \u03B3, s: s$p }));
+    return (\u03B30) => (s$p) => {
+      if (s$p.tag === "LetRec") {
+        return bind(bind(desugarModuleFwd1($Module2($List("Cons", $Either("Right", s$p._1), Nil))))((() => {
+          const $6 = eval_module1(\u03B30);
+          return (a) => $6(a)(BoundedJoinSemilattice0.bot);
+        })()))((\u03B3) => applicativeExceptT3.pure({ "\u03B3": \u03B3, s: s$p._2 }));
+      }
+      if (s$p.tag === "Let") {
+        return bind(bind(desugarModuleFwd1($Module2($List("Cons", $Either("Left", s$p._1), Nil))))((() => {
+          const $6 = eval_module1(\u03B30);
+          return (a) => $6(a)(BoundedJoinSemilattice0.bot);
+        })()))((\u03B3) => applicativeExceptT3.pure({ "\u03B3": \u03B3, s: s$p._2 }));
+      }
+      fail();
+    };
   };
   var splitDefs1 = /* @__PURE__ */ splitDefs(annBoolean);
   var loadLinkFig = (v) => {
