@@ -97,19 +97,10 @@
       <p><div class="parent"><div class="center" id="fig-conv-1"></div></div>
       <p>In particular, notice how only certain parts of the input are relevant to a given output cell. Can some of the irrelevant inputs be attributed to zeros in the filter? Also notice how the demand varies as we approach the edge of the output image: because this implementation of convolution treats the input as though it were padded with zeros at the boundary, parts of the filter are irrelevant to the computation of output cells near the edge. (As mentioned above, it is not yet possible to select input elements and have the output selection be derived automatically.) Interactions like these would be more useful if we could show the actual computation involved for a given element, but even this simple extensional view already reveals interesting things about the implementation. Here is the pure functional code:
       <details><summary>convolution.fld</summary>
-<<<<<<< HEAD
-         <div id="codemirror-convolution"></div></p>
-         <!-- <script src="https://gist.github.com/rolyp/64b04a6a6fc73164d7fbbd1b82365b67.js"></script> -->
-      </details>
-      <details><summary>emboss-zero-pad.fld</summary>
-         <div id="codemirror-fig-conv-1"></div></p>
-         <!--<script src="https://gist.github.com/rolyp/8fc7054973476fdcbbc5f1e0b854913d.js"></script>-->
-=======
          <div id="codemirror-convolution"></div>
       </details>
       <details><summary>emboss-zero-pad.fld</summary>
          <div id="codemirror-fig-conv-1"></div>
->>>>>>> develop
       </details>
 
       <p>The library function <code>convolve</code> implements the convolution algorithm itself, and helper functions <code>zero</code>, <code>wrap</code> and <code>extend</code> implement specific policies (&#8220;methods&#8221;) for dealing with the boundary.
@@ -117,12 +108,7 @@
       <p>Contrast the example above, which uses <code>zero</code> as the boundary method, with one which uses <code>wrap</code>. Then selecting an output cell near the edge has a quite different behaviour: instead of some of the filter elements becoming irrelevant, we can see visually that the input image behaves as though opposite sides were connected. These examples show how making the input-output relationships fine-grained rather than monolithic reveals quite a lot about what a computation actually does.
       <p><div class="parent"><div class="center" id="fig-conv-2"></div></div>
       <details><summary>emboss-wrap.fld</summary>
-<<<<<<< HEAD
-         <div id="codemirror-fig-conv-2"></div></p>
-         <!--<script src="https://gist.github.com/rolyp/2bd783007d919d97e64ba66a6ede8c3a.js"></script>-->
-=======
          <div id="codemirror-fig-conv-2"></div>
->>>>>>> develop
       </details>
    </div>
 
@@ -133,8 +119,6 @@
       <p>Fluid is being developed by <a href="https://dynamicaspects.org/research/">Roly Perera</a>, <a href="https://min-nguyen.github.io/">Minh Nguyen</a> and <a href="https://github.com/JosephBond">Joe Bond</a>. Our <a href="https://f.luid.org/0.3.1">pilot project</a> was funded by The Alan Turing Institute's AI for Science and Government programme. Follow us on <a href="https://github.com/explorable-viz/fluid">GitHub</a>, or get in touch by <a href = "mailto:roly.perera@bristol.ac.uk">email</a>.
    </div>
 </div>
-<script src="app.js"></script>
-
 <script src="app.js"></script>
 </body>
 </html>
