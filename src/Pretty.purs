@@ -136,12 +136,11 @@ instance Ann a => Pretty (Expr a) where
    pretty (Record ann xss) = (highlightIf ann $ curlyBraces (prettyOperator (.-.) xss))
    pretty (Dictionary ann sss) = (highlightIf ann $ dictBrackets (pretty sss))
    pretty (Matrix ann e (x × y) e') =
-      ( highlightIf ann $ arrayBrackets
+      highlightIf ann $ arrayBrackets
            ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)
                 .<>. text str.in_
                 .<>. pretty e'
            )
-      )
    pretty (Lambda cs) = parentheses (text str.fun .<>. pretty cs)
    pretty (Project s x) = pretty s .<>. text str.dot .<>. text x
    pretty (App s s') = prettyAppChain (App s s')
@@ -154,7 +153,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (ListNonEmpty ann e l) = ((highlightIf ann $ text str.lBracket)) .<>. pretty e .<>. pretty l
    pretty (ListEnum s s') = brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
    pretty (ListComp ann s qs) = (highlightIf ann $ brackets (pretty s .<>. text str.bar .<>. pretty qs))
-   pretty (Let ds s) = text str.let_ .<>. pretty ds .<>. text str.in_ .<>. pretty s
+   pretty (Let ds s) = (text str.let_ .<>. pretty ds .<>. text str.in_) .-. pretty s
    pretty (LetRec h s) = (text str.let_ .<>. pretty (First h) .<>. text str.in_) .-. pretty s
 
 prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
