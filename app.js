@@ -28188,7 +28188,7 @@
           return Highlightable0.highlightIf(v._1)(brackets(beside(beside(prettyExpr1(dictAnn).pretty(v._2))(checkOneLine(split("\n")(" |"))))(prettyListQualifier(dictAnn).pretty(v._3))));
         }
         if (v.tag === "Let") {
-          return beside(beside(beside(checkOneLine(split("\n")(" let")))(prettyVarDefs(dictAnn).pretty(v._1)))(checkOneLine(split("\n")(" in"))))(prettyExpr1(dictAnn).pretty(v._2));
+          return atop(beside(beside(checkOneLine(split("\n")(" let")))(prettyVarDefs(dictAnn).pretty(v._1)))(checkOneLine(split("\n")(" in"))))(prettyExpr1(dictAnn).pretty(v._2));
         }
         if (v.tag === "LetRec") {
           return atop(beside(beside(checkOneLine(split("\n")(" let")))(prettyFirstGroup(dictAnn).pretty(v._1)))(checkOneLine(split("\n")(" in"))))(prettyExpr1(dictAnn).pretty(v._2));

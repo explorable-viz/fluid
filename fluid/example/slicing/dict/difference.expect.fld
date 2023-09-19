@@ -1,2 +1,3 @@
 let e = ⸨{|"a" := 5, "a" ++ "b" := 6|}⸩;
-    f = ⸨{|"ab" := 12|}⸩ in dict_difference e f
+    f = ⸨{|"ab" := 12|}⸩ in
+dict_difference e f
