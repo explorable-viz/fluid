@@ -137,10 +137,10 @@ instance Ann a => Pretty (Expr a) where
    pretty (Dictionary ann sss) = (highlightIf ann $ dictBrackets (pretty sss))
    pretty (Matrix ann e (x × y) e') =
       highlightIf ann $ arrayBrackets
-           ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)
-                .<>. text str.in_
-                .<>. pretty e'
-           )
+         ( pretty e .<>. text str.bar .<>. parentheses (text x .<>. text str.comma .<>. text y)
+              .<>. text str.in_
+              .<>. pretty e'
+         )
    pretty (Lambda cs) = parentheses (text str.fun .<>. pretty cs)
    pretty (Project s x) = pretty s .<>. text str.dot .<>. text x
    pretty (App s s') = prettyAppChain (App s s')
