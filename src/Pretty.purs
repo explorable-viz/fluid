@@ -155,7 +155,7 @@ instance Ann a => Pretty (Expr a) where
    pretty (ListEnum s s') = brackets (pretty s .<>. text str.ellipsis .<>. pretty s')
    pretty (ListComp ann s qs) = (highlightIf ann $ brackets (pretty s .<>. text str.bar .<>. pretty qs))
    pretty (Let ds s) = text str.let_ .<>. pretty ds .<>. text str.in_ .<>. pretty s
-   pretty (LetRec h s) = (text str.let_ .<>. pretty (First h)) .-. text str.in_ .<>. pretty s
+   pretty (LetRec h s) = (text str.let_ .<>. pretty (First h) .<>. text str.in_) .-. pretty s
 
 prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
@@ -186,8 +186,8 @@ instance Pretty Pattern where
          else
             parentheses (text c .<>. prettyPattConstr empty ps)
 
-   --pretty (PConstr c ps) = if c == cPair then parentheses (prettyPattConstr (text str.comma) ps) 
-   --    if case uncons ps of 
+   --pretty (PConstr c ps) = if c == cPair then parentheses (prettyPattConstr (text str.comma) ps)
+   --    if case uncons ps of
    --       Nothing -> pretty ps
    --    --    Just {head : p, tail: Nil} -> text c .<>. pretty p
    --    --    _ -> parentheses (text c .<>. prettyPattConstr empty ps)
