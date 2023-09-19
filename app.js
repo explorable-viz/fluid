@@ -28191,7 +28191,7 @@
           return beside(beside(beside(checkOneLine(split("\n")(" let")))(prettyVarDefs(dictAnn).pretty(v._1)))(checkOneLine(split("\n")(" in"))))(prettyExpr1(dictAnn).pretty(v._2));
         }
         if (v.tag === "LetRec") {
-          return beside(atop(beside(checkOneLine(split("\n")(" let")))(prettyFirstGroup(dictAnn).pretty(v._1)))(checkOneLine(split("\n")(" in"))))(prettyExpr1(dictAnn).pretty(v._2));
+          return atop(beside(beside(checkOneLine(split("\n")(" let")))(prettyFirstGroup(dictAnn).pretty(v._1)))(checkOneLine(split("\n")(" in"))))(prettyExpr1(dictAnn).pretty(v._2));
         }
         fail();
       }
