@@ -175,6 +175,7 @@ step3 dim starred coveredRows coveredCols matrix =
       else
          step4 dim starred coveredRows coveredCols matrix
 
+-- Unsure what this is going to do in reference implementation
 step4 dim starred coveredRows coveredCols matrix = 
    let rowsNC = complement dim coveredRows
        colsNC = complement dim coveredCols
