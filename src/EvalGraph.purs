@@ -194,3 +194,13 @@ graphGC { g: g0, n, γα } e = do
       eα <- alloc e
       vα <- eval γα eα S.empty
       pure (vα × eα)
+{-
+graphGC2 :: forall g m. Monad m => Graph g => GraphConfig g -> Raw Expr -> m (String + GaloisConnection (Set Vertex) (Set Vertex))
+graphGC2 { g: g0, n, γα } e = do
+   ?_
+   where
+   m = (runWithGraphAllocT (g0 × n) :: _ -> m _) $ do
+      eα <- alloc e
+      vα <- eval γα eα S.empty
+      pure (vα × eα)
+-}

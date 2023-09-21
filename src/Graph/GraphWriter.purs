@@ -16,6 +16,7 @@ module Graph.GraphWriter
    , runWithGraph
    , runWithGraphT
    , runWithGraphAllocT
+   , runWithGraphAlloc2T
    ) where
 
 import Prelude
@@ -48,6 +49,8 @@ type AdjMapEntries = List (Vertex × Set Vertex)
 type WithAllocT m = StateT Int m
 type WithAlloc = WithAllocT Identity
 type WithGraphAllocT m = MayFailT (WithAllocT (WithGraphT m))
+-- May make sense to push MayFailT out of WithGraphAllocT. For now:
+type WithGraphAlloc2T m = WithAllocT (WithGraphT m)
 type WithGraphT = StateT AdjMapEntries
 type WithGraph = WithGraphT Identity
 
@@ -90,7 +93,12 @@ runWithGraphT c = runStateT c Nil <#> swap <#> first fromFoldable
 runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
 
+runWithGraphAlloc2T :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAlloc2T m a -> m ((g × Int) × a)
+runWithGraphAlloc2T (g × n) m = do
+   (n' × a) × g_adds <- runStateT (runWithAllocT n m) Nil
+   pure $ ((g <> fromFoldable g_adds) × n') × a
+
 runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m (String + ((g × Int) × a))
-runWithGraphAllocT (g × n) c = do
-   (n' × maybe_a) × g_adds <- runStateT (runWithAllocT n (runExceptT c)) Nil
-   pure $ maybe_a <#> (((g <> fromFoldable g_adds) × n') × _)
+runWithGraphAllocT (g × n) m = do
+   (g' × n') × maybe_a <- runWithGraphAlloc2T (g × n) (runExceptT m)
+   pure $ maybe_a <#> ((g' × n') × _)
