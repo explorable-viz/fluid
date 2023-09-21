@@ -22,3 +22,12 @@ vlenN = toNumber <<< vlen
 mean :: forall len. Number -> Vect len Number -> Number
 mean 0.0 xs = product xs `pow` (1.0 / vlenN xs)
 mean p xs = (1.0 / vlenN xs * sum (map (pow p) xs)) `pow` (1.0/p)
+
+newtype Matrix a = Array (Array a)
+
+matIndex :: forall a. Matrix a -> Int -> Int -> Maybe a
+matIndex mat row col = case mat !! row of
+                            Nothing  -> Nothing
+                            Just arr -> arr !! col
+
+genMat :: Int -> Int -> Matrix (Int × Int)
