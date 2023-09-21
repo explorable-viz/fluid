@@ -12,7 +12,7 @@ type GaloisConnection a b =
    }
 
 deMorgan :: forall a b. BooleanLattice a => BooleanLattice b => Endo (a -> b)
-deMorgan f = neg >>> f >>> neg
+deMorgan = (neg >>> _) >>> (_ >>> neg)
 
 -- Could unify deMorgan and dual but would need to reify notion of opposite category.
 dual :: forall a b. BooleanLattice a => BooleanLattice b => GaloisConnection a b -> GaloisConnection b a

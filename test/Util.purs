@@ -106,7 +106,7 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
    tEval1 <- preciseTime
-   (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
+   (g × _) × eα × vα <- evalWithConfig gconf e >>= except
    tEval2 <- preciseTime
 
    -- | Backward
