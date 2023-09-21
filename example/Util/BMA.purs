@@ -2,18 +2,19 @@ module Example.Util.BMA where
 
 import Prelude
 
-import Data.Array (cons, head, mapMaybe, range, tail, uncons, zip, zipWith, (!!))
+import Data.Array (cons, head, length, mapMaybe, range, sort, tail, uncons, zip, zipWith, (!!), (..))
 import Data.FastVect.FastVect (Vect)
 import Data.Foldable (class Foldable, foldl)
+import Data.Int (pow) as I
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 import Data.Number (pow)
-import Data.Int (pow) as I
 import Data.Ord (abs)
+import Data.Tuple (snd)
 import Effect (Effect)
 import Effect.Class.Console (log)
 import Effect.Console (logShow)
-import Util (type (×), (×))
+import Util (type (×), error, (×))
 
 product :: forall a len. Semiring a => Vect len a -> a
 product v = foldl (*) one v 
@@ -130,6 +131,19 @@ mapMatrix f m = map (\row -> map f row) m
 matSquared :: Matrix IntInf -> Matrix IntInf
 matSquared mat = mapMatrix (\x -> x `ipow` (IInt 2)) mat
 
+mergeUnion :: Array Int -> Array Int -> Array Int
+mergeUnion xxs yys = 
+   case uncons xxs of
+      Nothing -> yys
+      Just {head: x, tail: xs} ->
+         case uncons yys of
+            Nothing -> xxs
+            Just {head: y, tail: ys} ->
+               case compare x y of
+                  LT -> x `cons` mergeUnion xs yys
+                  EQ -> x `cons` mergeUnion xs ys
+                  GT -> y `cons` mergeUnion xxs ys
+
 nonnegRows :: Matrix IntInf -> Matrix IntInf
 nonnegRows mat = map normedRow mat
    where
@@ -139,6 +153,35 @@ nonnegRows mat = map normedRow mat
 nonnegColumns :: Matrix IntInf -> Matrix IntInf
 nonnegColumns = transpose <<< nonnegRows <<< transpose
 
+-- unsure what the point of this is
+complement :: Int -> Array Int -> Array Int
+complement n arr = worker 1 arr
+   where
+   worker :: Int -> Array Int -> Array Int
+   worker k xxs = if k > n then []
+                  else
+                     case uncons xxs of
+                        Nothing -> k..n
+                        Just {head: x, tail: xs} ->
+                           case compare k x of
+                              EQ -> worker (k+1) xs
+                              LT -> k `cons` worker (k+1) xxs
+                              GT -> worker k xs
+
+step3 :: Int -> Array (Int × Int) -> Array Int -> Array Int -> Matrix IntInf -> Array (Int × Int)
+step3 dim starred coveredRows coveredCols matrix = 
+   let colsC = mergeUnion coveredCols (sort $ map snd starred) in
+      if length colsC == (length matrix) then starred 
+      else
+         step4 dim starred coveredRows coveredCols matrix
+
+step4 dim starred coveredRows coveredCols matrix = 
+   let rowsNC = complement dim coveredRows
+       colsNC = complement dim coveredCols
+       f :: Int × Int -> IntInf
+       f ij   = error "todo"
+   in 
+      error "todo"
 main :: Effect Unit
 main = do
    logShow (genMat (\(x × y) -> if (abs $ x - y) <= 3 then IInt 1 else Infty) 10 10)
