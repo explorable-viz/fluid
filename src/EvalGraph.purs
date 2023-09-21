@@ -184,13 +184,13 @@ evalWithConfig { g, n, γα } e =
 
 graphGC :: forall g. Graph g => GraphConfig g -> Raw Expr -> String + GaloisConnection (Set Vertex) (Set Vertex)
 graphGC { g: g0, n, γα } e = do
-   (g × _) × vα × eα <- q
+   (g × _) × vα × eα <- m
    pure $
       { fwd: \αs -> G.vertices (fwdSlice αs g) `intersection` vertices vα
       , bwd: \αs -> G.vertices (bwdSlice αs g) `intersection` vertices eα -- needs to include γα
       }
    where
-   Identity q = (runWithGraphAllocT (g0 × n) :: _ -> Identity _) $ do
+   Identity m = (runWithGraphAllocT (g0 × n) :: _ -> Identity _) $ do
       eα <- alloc e
       vα <- eval γα eα S.empty
       pure (vα × eα)
