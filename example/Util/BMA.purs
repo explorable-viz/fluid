@@ -130,6 +130,15 @@ mapMatrix f m = map (\row -> map f row) m
 matSquared :: Matrix IntInf -> Matrix IntInf
 matSquared mat = mapMatrix (\x -> x `ipow` (IInt 2)) mat
 
+nonnegRows :: Matrix IntInf -> Matrix IntInf
+nonnegRows mat = map normedRow mat
+   where
+   rowMin arr = foldl min Infty arr
+   normedRow arr = let y = rowMin arr in map (\x -> x - y) arr
+
+nonnegColumns :: Matrix IntInf -> Matrix IntInf
+nonnegColumns = transpose <<< nonnegRows <<< transpose
+
 main :: Effect Unit
 main = do
    logShow (genMat (\(x × y) -> if (abs $ x - y) <= 3 then IInt 1 else Infty) 10 10)
@@ -141,4 +150,8 @@ main = do
    logShow testMul
    let testAdd = [[1,0], [0, 1]] `mSub` [[0, 1], [1,0]]
    logShow testAdd
+   let testnonnegRows = nonnegRows [[IInt 1, IInt 2, IInt 3], 
+                                    [IInt 2, IInt 3, IInt 4], 
+                                    [IInt 3, IInt 4, IInt 5]]
+   logShow testnonnegRows
 
