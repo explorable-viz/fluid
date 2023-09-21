@@ -3,6 +3,7 @@ module Eval where
 import Prelude hiding (absurd, apply, top)
 
 import Bindings (varAnon)
+import Control.Monad.Error.Class (class MonadError, throwError)
 import Data.Array (fromFoldable) as A
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
@@ -23,7 +24,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace, ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), MayFailT, absurd, both, check, error, report, successful, orElse, with, (×))
+import Util (type (×), MayFailT, absurd, both, check, error, successful, orElse, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
 import Val (class Ann, DictRep(..), Env, ForeignOp'(..), MatrixRep(..), (<+>), Val, for, lookup', restrict)
@@ -31,7 +32,7 @@ import Val (class Ann, DictRep(..), Env, ForeignOp'(..), MatrixRep(..), (<+>), V
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall a m. Monad m => Ann a => Val a -> Elim a -> MayFailT m (Env a × Cont a × a × Match)
+match :: forall a m. MonadError String m => Ann a => Val a -> Elim a -> m (Env a × Cont a × a × Match)
 match v (ElimVar x κ)
    | x == varAnon = pure (empty × κ × top × MatchVarAnon (erase v))
    | otherwise = pure (D.singleton x v × κ × top × MatchVar x (erase v))
@@ -42,21 +43,21 @@ match (V.Constr α c vs) (ElimConstr m) = do
    pure (γ × κ' × (α ∧ α') × MatchConstr c ws)
 match v (ElimConstr m) = do
    d <- dataTypeFor $ keys m
-   report $ patternMismatch (prettyP v) (show d)
+   throwError $ patternMismatch (prettyP v) (show d)
 match (V.Record α xvs) (ElimRecord xs κ) = do
    check (subset xs (S.fromFoldable $ keys xvs)) $ patternMismatch (show (keys xvs)) (show xs)
    let xs' = xs # S.toUnfoldable
    γ × κ' × α' × ws <- matchMany (xs' <#> flip get xvs) κ
    pure (γ × κ' × (α ∧ α') × MatchRecord (D.fromFoldable (zip xs' ws)))
-match v (ElimRecord xs _) = report (patternMismatch (prettyP v) (show xs))
+match v (ElimRecord xs _) = throwError $ patternMismatch (prettyP v) (show xs)
 
-matchMany :: forall a m. Monad m => Ann a => List (Val a) -> Cont a -> MayFailT m (Env a × Cont a × a × List Match)
+matchMany :: forall a m. MonadError String m => Ann a => List (Val a) -> Cont a -> m (Env a × Cont a × a × List Match)
 matchMany Nil κ = pure (empty × κ × top × Nil)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ' × α × w <- match v σ
    γ' × κ'' × β × ws <- matchMany vs κ'
    pure $ γ `disjointUnion` γ' × κ'' × (α ∧ β) × (w : ws)
-matchMany (_ : vs) (ContExpr _) = report $
+matchMany (_ : vs) (ContExpr _) = throwError $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error absurd
 
@@ -64,12 +65,12 @@ closeDefs :: forall a. Env a -> RecDefs a -> a -> Env a
 closeDefs γ ρ α = ρ <#> \σ ->
    let ρ' = ρ `for` σ in V.Fun α $ V.Closure (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
-checkArity :: forall m. Monad m => Ctr -> Int -> MayFailT m Unit
+checkArity :: forall m. MonadError String m => Ctr -> Int -> m Unit
 checkArity c n = do
    n' <- arity c
    check (n' >= n) (showCtr c <> " got " <> show n <> " argument(s), expects at most " <> show n')
 
-apply :: forall a m. Monad m => Ann a => Val a × Val a -> MayFailT m (AppTrace × Val a)
+apply :: forall a m. MonadError String m => Ann a => Val a × Val a -> m (AppTrace × Val a)
 apply (V.Fun β (V.Closure γ1 ρ σ) × v) = do
    let γ2 = closeDefs γ1 ρ β
    γ3 × e'' × β' × w <- match v σ
@@ -81,7 +82,7 @@ apply (V.Fun α (V.Foreign φ vs) × v) = do
    where
    vs' = vs <> singleton v
 
-   apply' :: forall t. ForeignOp' t -> MayFailT m (ForeignTrace × Val _)
+   apply' :: forall t. ForeignOp' t -> m (ForeignTrace × Val _)
    apply' (ForeignOp' φ') = do
       t × v'' <- do
          if φ'.arity > length vs' then pure $ Nothing × V.Fun α (V.Foreign φ vs')
@@ -95,15 +96,15 @@ apply (V.Fun α (V.PartialConstr c vs) × v) = do
    v' =
       if length vs < n - 1 then V.Fun α $ V.PartialConstr c (vs <> singleton v)
       else V.Constr α c (vs <> singleton v)
-apply (_ × v) = report $ "Found " <> prettyP v <> ", expected function"
+apply (_ × v) = throwError $ "Found " <> prettyP v <> ", expected function"
 
-apply2 :: forall a m. Monad m => Ann a => Val a × Val a × Val a -> MayFailT m ((AppTrace × AppTrace) × Val a)
+apply2 :: forall a m. MonadError String m => Ann a => Val a × Val a × Val a -> m ((AppTrace × AppTrace) × Val a)
 apply2 (u1 × v1 × v2) = do
    t1 × u2 <- apply (u1 × v1)
    t2 × v <- apply (u2 × v2)
    pure $ (t1 × t2) × v
 
-eval :: forall a m. Monad m => Ann a => Env a -> Expr a -> a -> MayFailT m (Trace × Val a)
+eval :: forall a m. MonadError String m => Ann a => Env a -> Expr a -> a -> m (Trace × Val a)
 eval γ (Var x) _ = (T.Var x × _) <$> lookup' x γ
 eval γ (Op op) _ = (T.Op op × _) <$> lookup' op γ
 eval _ (Int α n) α' = pure (T.Const × V.Int (α ∧ α') n)
@@ -144,7 +145,7 @@ eval γ (Project e x) α = do
    t × v <- eval γ e α
    case v of
       V.Record _ xvs -> (T.Project t x × _) <$> lookup' x xvs
-      _ -> report $ "Found " <> prettyP v <> ", expected record"
+      _ -> throwError $ "Found " <> prettyP v <> ", expected record"
 eval γ (App e e') α = do
    t × v <- eval γ e α
    t' × v' <- eval γ e' α

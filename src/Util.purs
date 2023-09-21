@@ -4,14 +4,14 @@ import Prelude hiding (absurd)
 
 import Control.Apply (lift2)
 import Control.Comonad (extract)
-import Control.Monad.Except (Except, ExceptT(..), withExceptT, runExceptT, except)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
+import Control.Monad.Except (Except, ExceptT(..), runExceptT, except)
 import Control.MonadPlus (class MonadPlus, empty)
 import Data.Array ((!!), updateAt)
 import Data.Either (Either(..))
-import Data.Either (note) as Either
+import Data.Identity (Identity(..))
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
-import Data.Identity (Identity(..))
 import Data.Map (Map)
 import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
@@ -58,10 +58,11 @@ onlyIf true = pure
 onlyIf false = const empty
 
 type MayFail a = Except String a
-type MayFailT a = ExceptT String a
+type MayFailT m = ExceptT String m
 
-orElse :: forall a m. Monad m => String -> Maybe a -> MayFailT m a
-orElse s = except <<< Either.note s
+orElse :: forall a m. MonadThrow String m => String -> Maybe a -> m a
+orElse s Nothing = throwError s
+orElse _ (Just x) = pure x
 
 ignoreMessage :: forall a. MayFail a -> Maybe a
 ignoreMessage = runExceptT >>> extract >>> case _ of
@@ -83,12 +84,12 @@ successfulWith :: String -> forall a. MayFail a -> a
 successfulWith msg = successful <<< with msg
 
 -- If the property fails, add an extra error message.
-with :: forall a m. Functor m => String -> MayFailT m a -> MayFailT m a
-with msg = withExceptT (\msg' -> msg' <> if msg == "" then "" else ("\n" <> msg))
+with :: forall a m. MonadError String m => String -> Endo (m a)
+with msg m = catchError m (\msg' -> throwError $ msg' <> if msg == "" then "" else ("\n" <> msg))
 
-check :: forall m. Monad m => Boolean -> String -> MayFailT m Unit
-check true _ = pure unit
-check false msg = report msg
+check :: forall m. MonadError String m => Boolean -> String -> m Unit
+check true = const $ pure unit
+check false = throwError
 
 mayEq :: forall a. Eq a => a -> a -> Maybe a
 mayEq x x' = whenever (x == x') x
@@ -102,7 +103,7 @@ mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >
 unionWithMaybe :: forall a b. Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = M.unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
 
-mayFailEq :: forall a m. Monad m => Show a => Eq a => a -> a -> MayFailT m a
+mayFailEq :: forall a m. MonadError String m => Show a => Eq a => a -> a -> m a
 mayFailEq x x' = x ≟ x' # orElse (show x <> " ≠ " <> show x')
 
 infixl 4 mayEq as ≟

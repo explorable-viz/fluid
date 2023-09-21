@@ -4,6 +4,7 @@ import Prelude hiding (absurd, append)
 
 import Bindings (Var)
 import Control.Apply (lift2)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Array ((!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
@@ -19,9 +20,9 @@ import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
-import Graph.GraphWriter (WithGraphAllocT)
+import Graph.GraphWriter (class MonadGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
-import Util (Endo, MayFailT, type (×), (×), (≞), (≜), (!), error, orElse, report, unsafeUpdateAt)
+import Util (type (×), Endo, error, orElse, report, unsafeUpdateAt, (!), (×), (≜), (≞))
 import Util.Pretty (Doc, beside, text)
 
 data Val a
@@ -50,9 +51,9 @@ instance Highlightable a => Highlightable (a × b) where
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 -- similar to an isomorphism lens with complement t
-type OpFwd t = forall a m. Ann a => Monad m => List (Val a) -> MayFailT m (t × Val a)
+type OpFwd t = forall a m. Ann a => MonadError String m => List (Val a) -> m (t × Val a)
 type OpBwd t = forall a. Ann a => t × Val a -> List (Val a)
-type OpGraph = forall m. Monad m => List (Val Vertex) -> WithGraphAllocT m (Val Vertex)
+type OpGraph = forall m. MonadGraphAlloc m => MonadError String m => List (Val Vertex) -> m (Val Vertex)
 
 data ForeignOp' t = ForeignOp'
    { arity :: Int
@@ -66,7 +67,7 @@ type ForeignOp = Exists ForeignOp'
 -- Environments.
 type Env a = Dict (Val a)
 
-lookup' :: forall a m. Monad m => Var -> Dict a -> MayFailT m a
+lookup' :: forall a m. MonadThrow String m => Var -> Dict a -> m a
 lookup' x γ = lookup x γ # orElse ("variable " <> x <> " not found")
 
 -- Want a monoid instance but needs a newtype
@@ -104,7 +105,7 @@ newtype MatrixRep a = MatrixRep (Array2 (Val a) × (Int × a) × (Int × a))
 
 type Array2 a = Array (Array a)
 
-matrixGet :: forall a m. Monad m => Int -> Int -> MatrixRep a -> MayFailT m (Val a)
+matrixGet :: forall a m. MonadThrow String m => Int -> Int -> MatrixRep a -> m (Val a)
 matrixGet i j (MatrixRep (vss × _ × _)) =
    orElse "Index out of bounds" $ do
       us <- vss !! (i - 1)
