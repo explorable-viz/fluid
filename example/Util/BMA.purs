@@ -2,12 +2,13 @@ module Example.Util.BMA where
 
 import Prelude
 
-import Data.Array (cons, head, mapMaybe, range, tail, uncons, (!!))
+import Data.Array (cons, head, mapMaybe, range, tail, uncons, zip, zipWith, (!!))
 import Data.FastVect.FastVect (Vect)
-import Data.Foldable (foldl)
+import Data.Foldable (class Foldable, foldl)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 import Data.Number (pow)
+import Data.Int (pow) as I
 import Data.Ord (abs)
 import Effect (Effect)
 import Effect.Class.Console (log)
@@ -17,8 +18,11 @@ import Util (type (×), (×))
 product :: forall a len. Semiring a => Vect len a -> a
 product v = foldl (*) one v 
 
-sum :: forall a len. Semiring a => Vect len a -> a
-sum v = foldl (+) zero v
+vsum :: forall a len. Semiring a => Vect len a -> a
+vsum v = foldl (+) zero v
+
+sum :: forall f a. Foldable f => Semiring a => f a -> a
+sum xs = foldl (+) zero xs
 
 vlen :: forall a len. Vect len a -> Int
 vlen xs = foldl (\count _x -> (+) 1 count) 0 xs
@@ -28,7 +32,7 @@ vlenN = toNumber <<< vlen
 
 mean :: forall len. Number -> Vect len Number -> Number
 mean 0.0 xs = product xs `pow` (1.0 / vlenN xs)
-mean p xs = (1.0 / vlenN xs * sum (map (pow p) xs)) `pow` (1.0/p)
+mean p xs = (1.0 / vlenN xs * vsum (map (pow p) xs)) `pow` (1.0/p)
 
 type Matrix a = Array (Array a)
 
@@ -37,6 +41,36 @@ instance Show IntInf where
    show (IInt x) = "IInt" <> show x
    show (Infty) = "Infty"
 
+instance Semiring IntInf where
+   add Infty _ = Infty
+   add _ Infty = Infty
+   add (IInt x) (IInt y) = IInt (x + y)
+   zero = IInt 0
+   one = IInt 1
+   mul Infty _ = Infty
+   mul _ Infty = Infty
+   mul (IInt x) (IInt y) = IInt (x * y)
+instance Ring IntInf where -- seems potentially dangerous?
+   sub Infty _ = Infty
+   sub _ Infty = Infty
+   sub (IInt x) (IInt y) = IInt (x - y)
+
+instance Eq IntInf where
+   eq Infty Infty = true
+   eq Infty (IInt _) = false
+   eq (IInt _) Infty = false
+   eq (IInt x) (IInt y) = eq x y
+
+instance Ord IntInf where
+   compare Infty Infty = EQ
+   compare Infty (IInt _) = GT
+   compare (IInt _) Infty = LT
+   compare (IInt x) (IInt y) = compare x y
+
+ipow :: IntInf -> IntInf -> IntInf
+ipow Infty _ = Infty
+ipow _ Infty = Infty
+ipow (IInt x) (IInt y) = IInt (x `I.pow` y)
 
 matIndex :: forall a. Matrix a -> Int -> Int -> Maybe a
 matIndex mat row col = case mat !! row of
@@ -78,6 +112,23 @@ transpose xs =
         Just { head: x, tail: xs' } ->
           (x `cons` mapMaybe head xss) `cons` transpose (xs' `cons` mapMaybe tail xss)
 
+mMult :: forall a. Semiring a => Matrix a -> Matrix a -> Matrix a
+mMult x y = do
+   ar <- x
+   bc <- (transpose y)
+   pure $ [(sum $ zipWith (*) ar bc)]
+
+mAdd :: forall a. Semiring a => Matrix a -> Matrix a -> Matrix a
+mAdd x y = map (\(xR × yR) -> zipWith (+) xR yR) (zip x y)
+
+mSub :: forall a. Ring a => Matrix a -> Matrix a -> Matrix a
+mSub x y = map (\(xR × yR) -> zipWith (-) xR yR) (zip x y)
+
+mapMatrix :: forall a b. (a -> b) -> Matrix a -> Matrix b
+mapMatrix f m = map (\row -> map f row) m
+
+matSquared :: Matrix IntInf -> Matrix IntInf
+matSquared mat = mapMatrix (\x -> x `ipow` (IInt 2)) mat
 
 main :: Effect Unit
 main = do
@@ -85,4 +136,9 @@ main = do
    let newMat = (genMat (\(x × y) -> x + y) 3 4)
    log $ "newMat: " <> (show newMat)
    log $ "transposed: " <> (show (transpose newMat))
+
+   let testMul = [[1, 2],[3, 4]] `mMult` [[5, 6], [7, 8]]
+   logShow testMul
+   let testAdd = [[1,0], [0, 1]] `mSub` [[0, 1], [1,0]]
+   logShow testAdd
 
