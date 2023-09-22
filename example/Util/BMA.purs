@@ -2,7 +2,7 @@ module Example.Util.BMA where
 
 import Prelude
 
-import Data.Array (cons, head, length, mapMaybe, range, sort, tail, uncons, zip, zipWith, (!!), (..))
+import Data.Array (concatMap, cons, head, length, mapMaybe, range, sort, tail, uncons, zip, zipWith, (!!), (..))
 import Data.FastVect.FastVect (Vect)
 import Data.Foldable (class Foldable, foldl)
 import Data.Int (pow) as I
@@ -34,6 +34,15 @@ vlenN = toNumber <<< vlen
 mean :: forall len. Number -> Vect len Number -> Number
 mean 0.0 xs = product xs `pow` (1.0 / vlenN xs)
 mean p xs = (1.0 / vlenN xs * vsum (map (pow p) xs)) `pow` (1.0/p)
+
+firstJust :: forall a. Array (Maybe a) -> Maybe a
+firstJust aas = 
+   case uncons aas of
+   Nothing -> Nothing
+   Just {head: a, tail: as} ->
+      case a of
+         Nothing -> firstJust as
+         Just _  -> a
 
 type Matrix a = Array (Array a)
 
@@ -113,6 +122,13 @@ transpose xs =
         Just { head: x, tail: xs' } ->
           (x `cons` mapMaybe head xss) `cons` transpose (xs' `cons` mapMaybe tail xss)
 
+
+arrayProduct :: forall a b. Array a -> Array b -> Array (a × b)
+arrayProduct arr1 arr2 = concatMap (\y -> pairify y arr2) arr1
+   where
+     pairify :: a -> Array b -> Array (a × b)
+     pairify elem arr = map (\x -> elem × x) arr
+     
 mMult :: forall a. Semiring a => Matrix a -> Matrix a -> Matrix a
 mMult x y = do
    ar <- x
@@ -179,8 +195,11 @@ step3 dim starred coveredRows coveredCols matrix =
 step4 dim starred coveredRows coveredCols matrix = 
    let rowsNC = complement dim coveredRows
        colsNC = complement dim coveredCols
-       f :: Int × Int -> IntInf
-       f ij   = error "todo"
+       f :: Int × Int -> Maybe (Int × Int)
+       f (i × j)   = 
+         case matIndex matrix i j of
+            Nothing -> Nothing
+            Just iinf -> if iinf == IInt 0 then Just (i × j) else Nothing
    in 
       error "todo"
 main :: Effect Unit
