@@ -4,7 +4,7 @@ import Prelude hiding (absurd, append)
 
 import Bindings (Var)
 import Control.Apply (lift2)
-import Control.Monad.Error.Class (class MonadError, class MonadThrow)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow, throwError)
 import Data.Array ((!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
@@ -22,7 +22,7 @@ import Foreign.Object (keys) as O
 import Graph (Vertex(..))
 import Graph.GraphWriter (class MonadGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
-import Util (type (×), Endo, error, orElse, report, unsafeUpdateAt, (!), (×), (≜), (≞))
+import Util (type (×), Endo, error, orElse, unsafeUpdateAt, (!), (×), (≜), (≞))
 import Util.Pretty (Doc, beside, text)
 
 data Val a
@@ -209,7 +209,7 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
    maybeJoin (Constr α c vs) (Constr α' c' us) = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
    maybeJoin (Matrix α m) (Matrix α' m') = Matrix (α ∨ α') <$> maybeJoin m m'
    maybeJoin (Fun α φ) (Fun α' φ') = Fun (α ∨ α') <$> maybeJoin φ φ'
-   maybeJoin _ _ = report "Incompatible values"
+   maybeJoin _ _ = throwError "Incompatible values"
 
    join v = definedJoin v
 
@@ -220,7 +220,7 @@ instance JoinSemilattice a => JoinSemilattice (Fun a) where
       Foreign φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin (PartialConstr c vs) (PartialConstr c' us) =
       PartialConstr <$> (c ≞ c') <*> maybeJoin vs us
-   maybeJoin _ _ = report "Incompatible functions"
+   maybeJoin _ _ = throwError "Incompatible functions"
 
    join v = definedJoin v
 

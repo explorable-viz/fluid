@@ -20,16 +20,17 @@ module Graph.GraphWriter
    ) where
 
 import Prelude
-import Control.Monad.Except (runExceptT)
+
+import Control.Monad.Except (class MonadError, runExceptT)
 import Control.Monad.State (StateT, runState, runStateT, modify, modify_)
 import Control.Monad.Trans.Class (lift)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.Newtype (unwrap)
 import Data.Profunctor.Strong (first)
+import Data.Set (Set)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
-import Data.Set (Set)
 import Graph (Vertex(..), class Graph, fromFoldable)
 import Util (MayFailT, type (×), type (+), (×))
 
@@ -40,7 +41,7 @@ class Monad m <= MonadGraph m where
 class Monad m <= MonadAlloc m where
    fresh :: m Vertex
 
-class (MonadAlloc m, MonadGraph m) <= MonadGraphAlloc m where
+class (MonadAlloc m, MonadError String m, MonadGraph m) <= MonadGraphAlloc m where
    -- Extend with a freshly allocated vertex.
    new :: Set Vertex -> m Vertex
 

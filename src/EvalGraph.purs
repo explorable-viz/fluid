@@ -15,21 +15,21 @@ import Control.Monad.Error.Class (class MonadError, class MonadThrow, throwError
 import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
-import Data.Identity (Identity(..))
+--import Data.Identity (Identity(..))
 import Data.List (List(..), (:), length, snoc, unzip, zip)
-import Data.Set (Set, empty, insert, intersection, singleton, union)
+import Data.Set (Set, empty, insert, {-intersection, -}singleton, union)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
-import GaloisConnection (GaloisConnection)
+--import GaloisConnection (GaloisConnection)
 import Graph (class Graph, Vertex)
-import Graph (vertices) as G
-import Graph.GraphWriter (class MonadGraphAlloc, WithGraphAllocT, alloc, new, runWithGraphAlloc2T, runWithGraphAllocT)
-import Graph.Slice (bwdSlice, fwdSlice, vertices)
-import Lattice (Raw)
+--import Graph (vertices) as G
+import Graph.GraphWriter (class MonadGraphAlloc, {-WithGraphAllocT, -}alloc, new, {-runWithGraphAlloc2T, -}runWithGraphAllocT)
+--import Graph.Slice (bwdSlice, fwdSlice, vertices)
+--import Lattice (Raw)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (+), type (×), (×), check, error, successful, with, orElse)
@@ -226,7 +226,7 @@ evalWithConfig { g, n, γα } e =
       eα <- alloc e
       vα <- eval γα eα S.empty
       pure (eα × vα)
-
+{-
 graphGC
    :: forall g m
     . Monad m
@@ -238,10 +238,11 @@ graphGC { g: g0, n, γα } e = do
    (g × _) × vα × eα <- m
    pure $
       { fwd: \αs -> G.vertices (fwdSlice αs g) `intersection` vertices vα
-      , bwd: \αs -> G.vertices (bwdSlice αs g) `intersection` vertices eα -- needs to include γα
+      , bwd: \αs -> G.vertices (bwdSlice αs g) `intersection` vertices eα -- TODO: include γα
       }
    where
    m = runWithGraphAlloc2T (g0 × n) $ do
       eα <- alloc e
       vα <- eval γα eα S.empty
       pure (vα × eα)
+-}
