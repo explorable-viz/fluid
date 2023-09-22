@@ -2,14 +2,16 @@ module Example.Util.BMA where
 
 import Prelude
 
-import Data.Array (concatMap, cons, head, length, mapMaybe, range, sort, tail, uncons, zip, zipWith, (!!), (..))
+import Data.Array (concat, concatMap, cons, drop, head, insert, length, mapMaybe, range, sort, tail, take, uncons, zip, zipWith, (!!), (..))
 import Data.FastVect.FastVect (Vect)
-import Data.Foldable (class Foldable, foldl)
+import Data.Foldable (class Foldable, find, foldl)
+import Data.FoldableWithIndex (findWithIndex)
 import Data.Int (pow) as I
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
 import Data.Number (pow)
 import Data.Ord (abs)
+import Data.Traversable (for)
 import Data.Tuple (snd)
 import Effect (Effect)
 import Effect.Class.Console (log)
@@ -163,8 +165,10 @@ mergeUnion xxs yys =
 nonnegRows :: Matrix IntInf -> Matrix IntInf
 nonnegRows mat = map normedRow mat
    where
-   rowMin arr = foldl min Infty arr
    normedRow arr = let y = rowMin arr in map (\x -> x - y) arr
+
+rowMin :: Array IntInf -> IntInf
+rowMin arr = foldl min Infty arr
 
 nonnegColumns :: Matrix IntInf -> Matrix IntInf
 nonnegColumns = transpose <<< nonnegRows <<< transpose
@@ -184,15 +188,15 @@ complement n arr = worker 1 arr
                               LT -> k `cons` worker (k+1) xxs
                               GT -> worker k xs
 
-step3 :: Int -> Array (Int × Int) -> Array Int -> Array Int -> Matrix IntInf -> Array (Int × Int)
-step3 dim starred coveredRows coveredCols matrix = 
+step3 :: Int -> Array (Int × Int) -> Array (Int × Int) ->Array Int -> Array Int -> Matrix IntInf -> Array (Int × Int)
+step3 dim starred primed coveredRows coveredCols matrix = 
    let colsC = mergeUnion coveredCols (sort $ map snd starred) in
       if length colsC == (length matrix) then starred 
       else
-         step4 dim starred coveredRows coveredCols matrix
+         step4 dim starred primed coveredRows coveredCols matrix
 
 -- Unsure what this is going to do in reference implementation
-step4 dim starred coveredRows coveredCols matrix = 
+step4 dim starred primed coveredRows coveredCols matrix = 
    let rowsNC = complement dim coveredRows
        colsNC = complement dim coveredCols
        f :: Int × Int -> Maybe (Int × Int)
@@ -200,8 +204,28 @@ step4 dim starred coveredRows coveredCols matrix =
          case matIndex matrix i j of
             Nothing -> Nothing
             Just iinf -> if iinf == IInt 0 then Just (i × j) else Nothing
-   in 
-      error "todo"
+       uncovered = arrayProduct rowsNC colsNC
+       mp = firstJust (map f uncovered)
+   in
+      case mp of
+         Nothing -> let es = for uncovered (\(x × y) -> matIndex matrix x y) in
+                     case es of
+                        Just es' -> step6 (rowMin es')
+                        Nothing  -> error "Not sure how I got here"
+         Just ij@(i × _) -> let newPrim = cons ij primed in
+                              case find (\(p × _) -> p == i) starred of
+                                 Nothing      -> step5 ij
+                                 Just (_ × q) -> step4 dim starred (insert i coveredRows) (remove q coveredCols)
+
+remove :: forall a. Eq a => a -> Array a -> Array a
+remove elem arr = 
+   case findWithIndex (\_ x -> x == elem) arr of
+      Nothing -> arr
+      Just {index: ind, value: _} ->
+         concat [(take ind arr), (drop (ind + 1) arr)]
+
+step5 = error "todo"
+step6 = error "todo"
 main :: Effect Unit
 main = do
    logShow (genMat (\(x × y) -> if (abs $ x - y) <= 3 then IInt 1 else Infty) 10 10)
