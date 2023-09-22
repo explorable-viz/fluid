@@ -174,7 +174,6 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
--- TODO: Inline into graphGC
 evalWithConfig :: forall g m a. MonadError String m => Graph g => GraphConfig g -> Expr a -> m ((g × Int) × Expr Vertex × Val Vertex)
 evalWithConfig { g, n, γα } e =
    runWithGraphAlloc2T (g × n) $ do
@@ -190,13 +189,8 @@ graphGC
    -> Raw Expr
    -> m (GaloisConnection (Set Vertex) (Set Vertex))
 graphGC { g: g0, n, γα } e = do
-   (g × _) × vα × eα <- m
+   (g × _) × vα × eα <- evalWithConfig { g: g0, n, γα } e
    pure $
       { fwd: \αs -> G.vertices (fwdSlice αs g) `intersection` vertices vα
       , bwd: \αs -> G.vertices (bwdSlice αs g) `intersection` vertices eα -- TODO: include γα
       }
-   where
-   m = runWithGraphAlloc2T (g0 × n) $ do
-      eα <- alloc e
-      vα <- eval γα eα S.empty
-      pure (vα × eα)
