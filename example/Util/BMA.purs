@@ -175,7 +175,7 @@ nonnegColumns = transpose <<< nonnegRows <<< transpose
 
 -- unsure what the point of this is
 complement :: Int -> Array Int -> Array Int
-complement n arr = worker 1 arr
+   complement n arr = worker 1 arr
    where
    worker :: Int -> Array Int -> Array Int
    worker k xxs = if k > n then []
@@ -188,7 +188,7 @@ complement n arr = worker 1 arr
                               LT -> k `cons` worker (k+1) xxs
                               GT -> worker k xs
 
-step3 :: Int -> Array (Int × Int) -> Array (Int × Int) ->Array Int -> Array Int -> Matrix IntInf -> Array (Int × Int)
+step3 :: Int -> Array (Int × Int) -> Array (Int × Int) -> Array Int -> Array Int -> Matrix IntInf -> Array (Int × Int)
 step3 dim starred primed coveredRows coveredCols matrix = 
    let colsC = mergeUnion coveredCols (sort $ map snd starred) in
       if length colsC == (length matrix) then starred 
@@ -225,7 +225,8 @@ remove elem arr =
       Just {index: ind, value: _} ->
          concat [(take ind arr), (drop (ind + 1) arr)]
 
-step5 = error "todo"
+step5 dim starred primed coveredRows coveredCols matrix 
+= error "todo"
 step6 = error "todo"
 main :: Effect Unit
 main = do
