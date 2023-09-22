@@ -14,13 +14,12 @@ import Data.Set (empty)
 import Data.Traversable (traverse)
 import Desugarable (desug)
 import Dict (singleton) as D
-import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import EvalGraph (GraphConfig, eval, eval_module)
 import Expr (traverseModule)
 import Graph (class Graph, Vertex)
 import Graph (empty) as G
-import Graph.GraphWriter (class MonadGraphAlloc, alloc, fresh, runWithGraphAllocT)
+import Graph.GraphWriter (class MonadGraphAlloc, alloc, fresh, runWithGraphAlloc2T, runWithGraphAllocT)
 import Lattice (botOf)
 import Parse (module_, program)
 import Parsing (runParser)
@@ -40,10 +39,10 @@ derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
 
-loadFile :: Folder -> File -> Aff String
+loadFile :: forall m. MonadAff m => MonadError String m => Folder -> File -> m String
 loadFile (Folder folder) (File file) = do
    let url = "./" <> folder <> "/" <> file <> ".fld"
-   result <- request (defaultRequest { url = url, method = Left GET, responseFormat = string })
+   result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
       Left err -> error (printError err)
       Right response -> pure response.body
@@ -53,17 +52,17 @@ parse src p = case runParser src p of
    Left err -> throwError $ show err
    Right x -> pure x
 
-parseProgram :: Folder -> File -> Aff (S.Expr Unit)
+parseProgram :: forall m. MonadAff m => MonadError String m => Folder -> File -> m (S.Expr Unit)
 parseProgram folder file = do
    src <- loadFile folder file
    pure (successful $ flip parse (program <#> botOf) src)
 
-open :: File -> Aff (S.Expr Unit)
+open :: forall m. MonadAff m => MonadError String m => File -> m (S.Expr Unit)
 open = parseProgram (Folder "fluid/example")
 
 loadModule :: forall m. MonadAff m => MonadGraphAlloc m => File -> Env Vertex -> m (Env Vertex)
 loadModule file γ = do
-   src <- liftAff $ loadFile (Folder "fluid/lib") file
+   src <- loadFile (Folder "fluid/lib") file
    mod <- parse src module_ >>= desugarModuleFwd >>= traverseModule (const fresh)
    eval_module γ mod empty <#> (γ <+> _)
 
@@ -73,13 +72,13 @@ defaultImports = do
    loadModule (File "prelude") γα >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
 -- | Evaluates default imports from empty initial graph config
-openDefaultImports :: forall g. Graph g => Aff (GraphConfig g)
+openDefaultImports :: forall m g. MonadAff m => MonadError String m => Graph g => m (GraphConfig g)
 openDefaultImports = do
-   (g × n) × γα <- fromRight <$> runWithGraphAllocT (G.empty × 0) defaultImports
+   (g × n) × γα <- runWithGraphAlloc2T (G.empty × 0) defaultImports
    pure $ { g, n, γα }
 
 -- | Evaluate dataset in context of existing graph config
-openDatasetAs :: forall g. Graph g => File -> Var -> GraphConfig g -> Aff (GraphConfig g × Env Vertex)
+openDatasetAs :: forall m g. MonadAff m => MonadError String m => Graph g => File -> Var -> GraphConfig g -> m (GraphConfig g × Env Vertex)
 openDatasetAs file x { g, n, γα } = do
    s <- parseProgram (Folder "fluid") file
    (g' × n') × (γα' × xv) <- fromRight <$>
