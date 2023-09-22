@@ -196,6 +196,7 @@ step3 dim starred primed coveredRows coveredCols matrix =
          step4 dim starred primed coveredRows coveredCols matrix
 
 -- Unsure what this is going to do in reference implementation
+step4 :: Int -> Array (Int × Int) -> Array (Int × Int) -> Array Int -> Array Int -> Matrix IntInf -> Array (Int × Int)
 step4 dim starred primed coveredRows coveredCols matrix = 
    let rowsNC = complement dim coveredRows
        colsNC = complement dim coveredCols
@@ -215,7 +216,7 @@ step4 dim starred primed coveredRows coveredCols matrix =
          Just ij@(i × _) -> let newPrim = cons ij primed in
                               case find (\(p × _) -> p == i) starred of
                                  Nothing      -> step5 ij
-                                 Just (_ × q) -> step4 dim starred (insert i coveredRows) (remove q coveredCols)
+                                 Just (_ × q) -> step4 dim starred newPrim (insert i coveredRows) (remove q coveredCols) matrix
 
 remove :: forall a. Eq a => a -> Array a -> Array a
 remove elem arr = 
