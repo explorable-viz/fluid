@@ -255,7 +255,6 @@ dict_intersectionWith = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_b
       d'' <-
          sequence $
             D.intersectionWith (\(β × u) (β' × u') -> (β ∧ β' × _) <$> apply2 (v × u × u')) d d'
-      -- :: MayFailT m (Dict (_ × (AppTrace × AppTrace) × Val _))
       pure $ (erase v × (d'' <#> snd >>> fst)) × Dictionary (α ∧ α') (DictRep (d'' <#> second snd))
    fwd _ = throwError "Function and two dictionaries expected"
 

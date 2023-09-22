@@ -5,7 +5,7 @@ import Prelude hiding (absurd)
 import Control.Apply (lift2)
 import Control.Comonad (extract)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
-import Control.Monad.Except (Except, ExceptT(..), runExceptT, except)
+import Control.Monad.Except (Except, ExceptT(..), runExceptT)
 import Control.MonadPlus (class MonadPlus, empty)
 import Data.Array ((!!), updateAt)
 import Data.Either (Either(..))
@@ -68,9 +68,6 @@ ignoreMessage :: forall a. MayFail a -> Maybe a
 ignoreMessage = runExceptT >>> extract >>> case _ of
    (Left _) -> Nothing
    (Right x) -> Just x
-
-report :: String -> forall a m. Applicative m => MayFailT m a
-report s = except $ Left s
 
 fromRight :: forall a. Either String a -> a
 fromRight (Right x) = x

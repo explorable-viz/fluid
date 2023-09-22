@@ -2,6 +2,7 @@ module Graph.GraphWriter
    ( AdjMapEntries
    , WithAllocT
    , WithGraphAllocT
+   , WithGraphAlloc2T
    , WithGraph
    , WithGraphT
    , class MonadAlloc
@@ -63,7 +64,13 @@ instance Monad m => MonadAlloc (WithAllocT m) where
 instance Monad m => MonadAlloc (WithGraphAllocT m) where
    fresh = lift fresh
 
-instance (Monad m, MonadAlloc (WithGraphAllocT m), MonadGraph (WithGraphAllocT m)) => MonadGraphAlloc (WithGraphAllocT m) where
+instance MonadError String m => MonadGraphAlloc (WithGraphAlloc2T m) where
+   new αs = do
+      α <- fresh
+      extend α αs
+      pure α
+
+instance Monad m => MonadGraphAlloc (WithGraphAllocT m) where
    new αs = do
       α <- fresh
       extend α αs
@@ -72,6 +79,9 @@ instance (Monad m, MonadAlloc (WithGraphAllocT m), MonadGraph (WithGraphAllocT m
 instance Monad m => MonadGraph (WithGraphT m) where
    extend α αs =
       void $ modify_ $ (:) (α × αs)
+
+instance Monad m => MonadGraph (WithGraphAlloc2T m) where
+   extend α = lift <<< extend α
 
 instance Monad m => MonadGraph (WithGraphAllocT m) where
    extend α = lift <<< lift <<< extend α

@@ -5,7 +5,7 @@ import App.Fig (LinkFigSpec)
 import App.Util (Selector)
 import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
 import Control.Monad.Error.Class (class MonadThrow)
-import Control.Monad.Except (except, runExceptT)
+import Control.Monad.Except (runExceptT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
@@ -106,7 +106,7 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
    tEval1 <- preciseTime
-   (g × _) × eα × vα <- evalWithConfig gconf e >>= except
+   (g × _) × eα × vα <- evalWithConfig gconf e
    tEval2 <- preciseTime
 
    -- | Backward

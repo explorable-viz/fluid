@@ -24,7 +24,7 @@ import Pretty (prettyP)
 import Primitive (intPair, string)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace, ForeignTrace'(..), Match(..), Trace)
-import Util (type (×), MayFailT, absurd, both, check, error, successful, orElse, with, (×))
+import Util (type (×), absurd, both, check, error, successful, orElse, with, (×))
 import Util.Pair (unzip) as P
 import Val (Fun(..), Val(..)) as V
 import Val (class Ann, DictRep(..), Env, ForeignOp'(..), MatrixRep(..), (<+>), Val, for, lookup', restrict)
@@ -161,10 +161,10 @@ eval γ (LetRec ρ e) α = do
    t × v <- eval (γ <+> γ') e α
    pure $ T.LetRec (erase <$> ρ) t × v
 
-eval_module :: forall a m. Monad m => Ann a => Env a -> Module a -> a -> MayFailT m (Env a)
+eval_module :: forall a m. MonadError String m => Ann a => Env a -> Module a -> a -> m (Env a)
 eval_module γ = go empty
    where
-   go :: Env a -> Module a -> a -> MayFailT m (Env a)
+   go :: Env a -> Module a -> a -> m (Env a)
    go γ' (Module Nil) _ = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) α = do
       _ × v <- eval (γ <+> y') e α
