@@ -83,10 +83,9 @@ openDatasetAs :: forall g. Graph g => File -> Var -> GraphConfig g -> Aff (Graph
 openDatasetAs file x { g, n, γα } = do
    s <- parseProgram (Folder "fluid") file
    (g' × n') × (γα' × xv) <- fromRight <$>
-      ( runWithGraphAllocT (g × n) $ do
+      runWithGraphAllocT (g × n) do
            e <- desug s
            eα <- alloc e
            vα <- eval γα eα empty
            pure (γα × D.singleton x vα)
-      )
    pure ({ g: g', n: n', γα: γα' } × xv)
