@@ -4,7 +4,6 @@ module EvalGraph
    , eval
    , evalWithConfig
    , eval_module
-   , graphGC
    , match
    , patternMismatch
    ) where
@@ -28,7 +27,7 @@ import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, 
 import GaloisConnection (GaloisConnection)
 import Graph (class Graph, Vertex)
 import Graph (vertices) as G
-import Graph.GraphWriter (class MonadGraphAlloc, WithGraphAllocT, alloc, new, runWithGraphAllocT)
+import Graph.GraphWriter (class MonadGraphAlloc, WithGraphAllocT, alloc, new, runWithGraphAlloc2T, runWithGraphAllocT)
 import Graph.Slice (bwdSlice, fwdSlice, vertices)
 import Lattice (Raw)
 import Pretty (prettyP)
@@ -194,10 +193,17 @@ eval γ (LetRec ρ e) αs = do
    γ' <- closeDefs γ ρ αs
    eval (γ <+> γ') e αs
 
-eval_module :: forall m. Monad m => Env Vertex -> Module Vertex -> Set Vertex -> WithGraphAllocT m (Env Vertex)
+eval_module
+   :: forall m
+    . MonadGraphAlloc m
+   => MonadError String m
+   => Env Vertex
+   -> Module Vertex
+   -> Set Vertex
+   -> m (Env Vertex)
 eval_module γ = go D.empty
    where
-   go :: Env Vertex -> Module Vertex -> Set Vertex -> WithGraphAllocT m (Env Vertex)
+   go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
    go γ' (Module Nil) _ = pure γ'
    go y' (Module (Left (VarDef σ e) : ds)) αs = do
       v <- eval (γ <+> y') e αs
@@ -208,14 +214,26 @@ eval_module γ = go D.empty
       go (γ' <+> γ'') (Module ds) αs
 
 -- TODO: Inline into graphGC
-evalWithConfig :: forall g m a. Monad m => Graph g => GraphConfig g -> Expr a -> m (String + ((g × Int) × Expr Vertex × Val Vertex))
+evalWithConfig
+   :: forall g m a
+    . Monad m
+   => Graph g
+   => GraphConfig g
+   -> Expr a
+   -> m (String + ((g × Int) × Expr Vertex × Val Vertex))
 evalWithConfig { g, n, γα } e =
    runWithGraphAllocT (g × n) $ do
       eα <- alloc e
       vα <- eval γα eα S.empty
       pure (eα × vα)
 
-graphGC :: forall g. Graph g => GraphConfig g -> Raw Expr -> String + GaloisConnection (Set Vertex) (Set Vertex)
+graphGC
+   :: forall g m
+    . Monad m
+   => Graph g
+   => GraphConfig g
+   -> Raw Expr
+   -> m (GaloisConnection (Set Vertex) (Set Vertex))
 graphGC { g: g0, n, γα } e = do
    (g × _) × vα × eα <- m
    pure $
@@ -223,17 +241,7 @@ graphGC { g: g0, n, γα } e = do
       , bwd: \αs -> G.vertices (bwdSlice αs g) `intersection` vertices eα -- needs to include γα
       }
    where
-   Identity m = (runWithGraphAllocT (g0 × n) :: _ -> Identity _) $ do
+   m = runWithGraphAlloc2T (g0 × n) $ do
       eα <- alloc e
       vα <- eval γα eα S.empty
       pure (vα × eα)
-{-
-graphGC2 :: forall g m. Monad m => Graph g => GraphConfig g -> Raw Expr -> m (String + GaloisConnection (Set Vertex) (Set Vertex))
-graphGC2 { g: g0, n, γα } e = do
-   ?_
-   where
-   m = (runWithGraphAllocT (g0 × n) :: _ -> m _) $ do
-      eα <- alloc e
-      vα <- eval γα eα S.empty
-      pure (vα × eα)
--}
