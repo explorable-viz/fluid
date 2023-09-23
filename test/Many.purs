@@ -12,37 +12,39 @@ import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, aver
 import Util (type (×), (×), successful)
 import Val ((<+>))
 
-many :: Array TestSpec -> Array (String × Aff BenchRow)
-many fxs = zip names affs
+many :: Array TestSpec -> Int -> Array (String × Aff BenchRow)
+many fxs iter = zip names affs
    where
    affs = fxs <#> \{ file, fwd_expect } -> do
       default <- openDefaultImports
       expr <- open (File file)
-      rows <- replicateM 1 $ testWithSetup file expr default { δv: identity, fwd_expect, bwd_expect: mempty }
+      rows <- replicateM iter $
+         testWithSetup file expr default { δv: identity, fwd_expect, bwd_expect: mempty }
       pure $ averageRows rows
    names = map _.file fxs
 
-bwdMany :: Array TestBwdSpec -> Array (String × Aff BenchRow)
-bwdMany fxs = zip names affs
+bwdMany :: Array TestBwdSpec -> Int -> Array (String × Aff BenchRow)
+bwdMany fxs iter = zip names affs
    where
    folder = File "slicing/"
    affs = fxs <#> \{ file, file_expect, δv, fwd_expect } -> do
       default <- openDefaultImports
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
       expr <- open (folder <> File file)
-      rows <- replicateM 1 $ testWithSetup file expr default { δv, fwd_expect, bwd_expect }
+      rows <- replicateM iter $
+         testWithSetup file expr default { δv, fwd_expect, bwd_expect }
       pure $ averageRows rows
    names = map _.file fxs
 
-withDatasetMany :: Array TestWithDatasetSpec -> Array (String × Aff BenchRow)
-withDatasetMany fxs = zip names affs
+withDatasetMany :: Array TestWithDatasetSpec -> Int -> Array (String × Aff BenchRow)
+withDatasetMany fxs iter = zip names affs
    where
    affs = fxs <#> \{ dataset, file } -> do
       default <- openDefaultImports
       { g, n, γα } × xv <- openDatasetAs (File dataset) "data" default
       let loadedData = { g, n, γα: γα <+> xv }
       expr <- open (File file)
-      rows <- replicateM 1 $
+      rows <- replicateM iter $
          testWithSetup file expr loadedData { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
       pure $ averageRows rows
    names = fxs <#> _.file
