@@ -5,7 +5,7 @@ import Prelude
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
 import Bindings (Var)
-import Control.Monad.Error.Class (throwError)
+import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
@@ -26,7 +26,7 @@ import Parsing (runParser)
 import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), (×), error, successful, fromRight)
+import Util (type (×), fromRight, mapLeft, (×))
 import Util.Parse (SParser)
 import Val (Env, (<+>))
 
@@ -44,18 +44,15 @@ loadFile (Folder folder) (File file) = do
    let url = "./" <> folder <> "/" <> file <> ".fld"
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
-      Left err -> error (printError err)
+      Left err -> throwError $ printError err
       Right response -> pure response.body
 
 parse :: forall a m. MonadError String m => String -> SParser a -> m a
-parse src p = case runParser src p of
-   Left err -> throwError $ show err
-   Right x -> pure x
+parse src = liftEither <<< mapLeft show <<< runParser src
 
 parseProgram :: forall m. MonadAff m => MonadError String m => Folder -> File -> m (S.Expr Unit)
-parseProgram folder file = do
-   src <- loadFile folder file
-   pure (successful $ flip parse (program <#> botOf) src)
+parseProgram folder file =
+   loadFile folder file >>= flip parse (program <#> botOf)
 
 open :: forall m. MonadAff m => MonadError String m => File -> m (S.Expr Unit)
 open = parseProgram (Folder "fluid/example")
@@ -75,7 +72,7 @@ defaultImports = do
 openDefaultImports :: forall m g. MonadAff m => MonadError String m => Graph g => m (GraphConfig g)
 openDefaultImports = do
    (g × n) × γα <- runWithGraphAlloc2T (G.empty × 0) defaultImports
-   pure $ { g, n, γα }
+   pure { g, n, γα }
 
 -- | Evaluate dataset in context of existing graph config
 openDatasetAs :: forall m g. MonadAff m => MonadError String m => Graph g => File -> Var -> GraphConfig g -> m (GraphConfig g × Env Vertex)

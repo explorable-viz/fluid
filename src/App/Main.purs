@@ -62,13 +62,14 @@ drawFigs loadFigs =
             drawFig fig ed botOf
 
 drawFiles :: Array (Folder × File) -> Effect Unit
-drawFiles files = sequence_ $ files <#> \(folder × file) ->
-   flip runAff_ (loadFile folder file)
-      case _ of
-         Left err -> log $ show err
-         Right src -> do
-            ed <- addEditorView $ codeMirrorDiv $ unwrap file
-            drawCode ed src
+drawFiles files =
+   sequence_ $ files <#> \(folder × file) ->
+      flip runAff_ ?_ --(loadFile folder file)
+         case _ of
+            Left err -> log $ show err
+            Right src -> do
+               ed <- addEditorView $ codeMirrorDiv $ unwrap file
+               drawCode ed src
 
 main :: Effect Unit
 main = do

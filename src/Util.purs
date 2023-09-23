@@ -69,9 +69,13 @@ ignoreMessage = runExceptT >>> extract >>> case _ of
    (Left _) -> Nothing
    (Right x) -> Just x
 
-fromRight :: forall a. Either String a -> a
+fromRight :: forall a. String + a -> a
 fromRight (Right x) = x
 fromRight (Left msg) = error msg
+
+mapLeft :: forall a b c. (a -> c) -> Either a b -> Either c b
+mapLeft f (Left x) = Left (f x)
+mapLeft _ (Right x) = Right x
 
 successful :: forall a. MayFail a -> a
 successful (ExceptT (Identity (Right x))) = x
