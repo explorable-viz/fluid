@@ -20,7 +20,7 @@ import Util (type (×), (×))
 main :: Effect Unit
 main = launchAff_ do
    let
-      iter = 10
+      iter = 5
       arr = concat ([ bench_misc, bench_desugaring, bench_bwd, bench_graphics ] <#> (#) iter)
    outs <- sequence $ map (\(str × row) -> lift2 Tuple (pure str) row) arr
    logShow $ BenchAcc outs
