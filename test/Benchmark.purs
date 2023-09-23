@@ -19,18 +19,20 @@ import Util (type (×), (×))
 
 main :: Effect Unit
 main = launchAff_ do
-   let arr = concat [ bench_misc, bench_desugaring, bench_bwd, bench_graphics ]
+   let
+      iter = 10
+      arr = concat ([ bench_misc, bench_desugaring, bench_bwd, bench_graphics ] <#> (#) iter)
    outs <- sequence $ map (\(str × row) -> lift2 Tuple (pure str) row) arr
    logShow $ BenchAcc outs
 
-bench_desugaring :: Array (String × Aff BenchRow)
+bench_desugaring :: Int -> Array (String × Aff BenchRow)
 bench_desugaring = many desugar_cases
 
-bench_misc :: Array (String × Aff BenchRow)
+bench_misc :: Int -> Array (String × Aff BenchRow)
 bench_misc = many misc_cases
 
-bench_bwd :: Array (String × Aff BenchRow)
+bench_bwd :: Int -> Array (String × Aff BenchRow)
 bench_bwd = bwdMany bwd_cases
 
-bench_graphics :: Array (String × Aff BenchRow)
+bench_graphics :: Int -> Array (String × Aff BenchRow)
 bench_graphics = withDatasetMany graphics_cases
