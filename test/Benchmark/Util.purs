@@ -41,11 +41,12 @@ type GraphRow =
    , tBwd :: Number
    , tFwd :: Number
    , tFwdDemorgan :: Number
+   , tBwdAll :: Number
    }
 
 instance Show BenchAcc where
    show (BenchAcc rows) =
-      "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-FwdDeMorgan\n"
+      "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-Fwd, Graph-FwdDeMorgan, Graph-BwdAll\n"
          <> (fold $ intersperse "\n" (map rowShow rows))
 
 rowShow :: String × BenchRow -> String
@@ -60,15 +61,11 @@ instance Show BenchRow where
       , show grRow.tBwd
       , show grRow.tFwd
       , show grRow.tFwdDemorgan
+      , show grRow.tBwdAll
       ]
 
 now :: forall m. MonadEffect m => m JSDate
 now = liftEffect JSDate.now
-
--- tdiff :: JSDate -> JSDate -> Number
--- tdiff begin end =
--- getTime end - getTime begin
--- 
 
 tdiff :: Number -> Number -> Number
 tdiff x y = sub y x
