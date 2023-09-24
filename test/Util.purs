@@ -5,10 +5,9 @@ import Prelude hiding (absurd)
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
 import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
-import Control.Monad.Error.Class (class MonadThrow, throwError)
+import Control.Monad.Error.Class (class MonadThrow, liftEither)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.Trans.Class (lift)
-import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Int (toNumber)
 import Data.List (elem)
@@ -47,15 +46,12 @@ type TestConfig =
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 -- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
 testWithSetup ∷ String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
-testWithSetup _name s gconfig tconfig = do
-   runExceptT $ do
+testWithSetup _name s gconfig tconfig =
+   liftEither =<< (runExceptT $ do
       testParse s
       trRow <- testTrace s gconfig tconfig
       grRow <- testGraph s gconfig tconfig
-      pure (BenchRow trRow grRow)
-   >>= case _ of
-      Left e -> throwError e
-      Right x -> pure x
+      pure $ BenchRow trRow grRow)
 
 testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do
@@ -65,7 +61,7 @@ testParse s = do
       unless (eq (erase s) (erase s')) do
          log ("SRC\n" <> show (erase s))
          log ("NEW\n" <> show (erase s'))
-         (lift $ fail "not equal") :: MayFailT Aff Unit
+         lift $ fail "not equal"
 
 testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
 testTrace s { γα: γ } { δv, bwd_expect, fwd_expect } = do
@@ -178,14 +174,14 @@ isGraphical _ = false
 
 checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
 checkPretty msg expect x =
-   unless (expect `eq` prettyP x)
-      $ fail (msg <> "\nExpected:\n" <> expect <> "\nReceived:\n" <> prettyP x)
+   unless (expect `eq` prettyP x) $
+      fail (msg <> "\nExpected:\n" <> expect <> "\nReceived:\n" <> prettyP x)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
 shouldSatisfy msg v pred =
-   unless (pred v)
-      $ fail (show v <> " doesn't satisfy predicate: " <> msg)
+   unless (pred v) $
+      fail (show v <> " doesn't satisfy predicate: " <> msg)
 
 averageRows :: List BenchRow -> BenchRow
 averageRows rows = averagedTr
