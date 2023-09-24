@@ -15,6 +15,7 @@ import Data.String.CodeUnits (charAt)
 import Data.Tuple (uncurry)
 import Dict (Dict, keys, lookup)
 import Dict (fromFoldable) as O
+import Effect.Exception (Error)
 import Partial.Unsafe (unsafePartial)
 import Util (type (×), absurd, definitely', error, orElse, with, (=<<<), (×), (≞))
 
@@ -57,7 +58,7 @@ ctrToDataType =
    dataTypes <#> (\d -> ctrs d # S.toUnfoldable <#> (_ × d)) # concat # O.fromFoldable
 
 class DataTypeFor a where
-   dataTypeFor :: forall m. MonadThrow String m => a -> m DataType
+   dataTypeFor :: forall m. MonadThrow Error m => a -> m DataType
 
 instance DataTypeFor Ctr where
    dataTypeFor c = lookup c ctrToDataType # orElse ("Unknown constructor " <> showCtr c)
@@ -66,7 +67,7 @@ instance DataTypeFor (Set Ctr) where
    dataTypeFor cs = unsafePartial $ case S.toUnfoldable cs of c : _ -> dataTypeFor c
 
 -- Sets must be non-empty, but this is a more convenient signature.
-consistentWith :: forall m. MonadError String m => Set Ctr -> Set Ctr -> m Unit
+consistentWith :: forall m. MonadError Error m => Set Ctr -> Set Ctr -> m Unit
 consistentWith cs cs' = void $ do
    d <- dataTypeFor cs'
    d' <- dataTypeFor cs'
@@ -75,12 +76,12 @@ consistentWith cs cs' = void $ do
 ctrs :: DataType -> Set Ctr
 ctrs (DataType _ sigs) = keys sigs # S.fromFoldable
 
-arity :: forall m. MonadThrow String m => Ctr -> m Int
+arity :: forall m. MonadThrow Error m => Ctr -> m Int
 arity c = do
    DataType _ sigs <- dataTypeFor c
    lookup c sigs # orElse absurd
 
-checkArity :: forall m. MonadError String m => Ctr -> Int -> m Unit
+checkArity :: forall m. MonadError Error m => Ctr -> Int -> m Unit
 checkArity c n = void $
    with ("Checking arity of " <> showCtr c) (arity c `(=<<<) (≞)` pure n)
 

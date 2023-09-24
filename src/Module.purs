@@ -15,6 +15,7 @@ import Data.Traversable (traverse)
 import Desugarable (desug)
 import Dict (singleton) as D
 import Effect.Aff.Class (class MonadAff, liftAff)
+import Effect.Exception (Error, error)
 import EvalGraph (GraphConfig, eval, eval_module)
 import Expr (traverseModule)
 import Graph (class Graph, Vertex)
@@ -39,22 +40,22 @@ derive newtype instance Show File
 derive newtype instance Semigroup File
 derive newtype instance Monoid File
 
-loadFile :: forall m. MonadAff m => MonadError String m => Folder -> File -> m String
+loadFile :: forall m. MonadAff m => MonadError Error m => Folder -> File -> m String
 loadFile (Folder folder) (File file) = do
    let url = "./" <> folder <> "/" <> file <> ".fld"
    result <- liftAff $ request (defaultRequest { url = url, method = Left GET, responseFormat = string })
    case result of
-      Left err -> throwError $ printError err
+      Left err -> throwError $ error $ printError err
       Right response -> pure response.body
 
-parse :: forall a m. MonadError String m => String -> SParser a -> m a
-parse src = liftEither <<< mapLeft show <<< runParser src
+parse :: forall a m. MonadError Error m => String -> SParser a -> m a
+parse src = liftEither <<< mapLeft (error <<< show) <<< runParser src
 
-parseProgram :: forall m. MonadAff m => MonadError String m => Folder -> File -> m (S.Expr Unit)
+parseProgram :: forall m. MonadAff m => MonadError Error m => Folder -> File -> m (S.Expr Unit)
 parseProgram folder file =
    loadFile folder file >>= flip parse (program <#> botOf)
 
-open :: forall m. MonadAff m => MonadError String m => File -> m (S.Expr Unit)
+open :: forall m. MonadAff m => MonadError Error m => File -> m (S.Expr Unit)
 open = parseProgram (Folder "fluid/example")
 
 loadModule :: forall m. MonadAff m => MonadGraphAlloc m => File -> Env Vertex -> m (Env Vertex)
@@ -69,19 +70,19 @@ defaultImports = do
    loadModule (File "prelude") γα >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
 -- | Evaluates default imports from empty initial graph config
-openDefaultImports :: forall m g. MonadAff m => MonadError String m => Graph g => m (GraphConfig g)
+openDefaultImports :: forall m g. MonadAff m => MonadError Error m => Graph g => m (GraphConfig g)
 openDefaultImports = do
    (g × n) × γα <- runWithGraphAlloc2T (G.empty × 0) defaultImports
    pure { g, n, γα }
 
 -- | Evaluate dataset in context of existing graph config
-openDatasetAs :: forall m g. MonadAff m => MonadError String m => Graph g => File -> Var -> GraphConfig g -> m (GraphConfig g × Env Vertex)
+openDatasetAs :: forall m g. MonadAff m => MonadError Error m => Graph g => File -> Var -> GraphConfig g -> m (GraphConfig g × Env Vertex)
 openDatasetAs file x { g, n, γα } = do
    s <- parseProgram (Folder "fluid") file
    (g' × n') × (γα' × xv) <- fromRight <$>
       runWithGraphAllocT (g × n) do
-           e <- desug s
-           eα <- alloc e
-           vα <- eval γα eα empty
-           pure (γα × D.singleton x vα)
+         e <- desug s
+         eα <- alloc e
+         vα <- eval γα eα empty
+         pure (γα × D.singleton x vα)
    pure ({ g: g', n: n', γα: γα' } × xv)

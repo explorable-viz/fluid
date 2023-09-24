@@ -12,7 +12,7 @@ module EvalGraph
 import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
-import Control.Monad.Error.Class (class MonadError, throwError)
+import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
@@ -23,6 +23,7 @@ import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
+import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
 import GaloisConnection (GaloisConnection)
 import Graph (class Graph, Vertex)
@@ -32,7 +33,7 @@ import Graph.Slice (bwdSlice, fwdSlice, vertices)
 import Lattice (Raw)
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Util (type (×), (×), check, error, successful, with, orElse)
+import Util (type (×), check, error, orElse, successful, throw, with, (×))
 import Util.Pair (unzip) as P
 import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
 import Val (Val(..), Fun(..)) as V
@@ -58,14 +59,14 @@ match (V.Constr α c vs) (ElimConstr m) = do
    pure (γ × κ' × (insert α αs))
 match v (ElimConstr m) = do
    d <- dataTypeFor $ D.keys m
-   throwError $ patternMismatch (prettyP v) (show d)
+   throw $ patternMismatch (prettyP v) (show d)
 match (V.Record α xvs) (ElimRecord xs κ) = do
    check (S.subset xs (S.fromFoldable $ D.keys xvs))
       $ patternMismatch (show (D.keys xvs)) (show xs)
    let xs' = xs # S.toUnfoldable
    γ × κ' × αs <- matchMany (flip D.get xvs <$> xs') κ
    pure $ γ × κ' × (insert α αs)
-match v (ElimRecord xs _) = throwError (patternMismatch (prettyP v) (show xs))
+match v (ElimRecord xs _) = throw (patternMismatch (prettyP v) (show xs))
 
 matchMany :: forall m. MonadGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 matchMany Nil κ = pure (D.empty × κ × empty)
@@ -73,7 +74,7 @@ matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
    γ' × κ' × βs <- matchMany vs κ
    pure $ γ `D.disjointUnion` γ' × κ' × (αs `union` βs)
-matchMany (_ : vs) (ContExpr _) = throwError $
+matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
@@ -107,7 +108,7 @@ apply (V.Fun α (V.PartialConstr c vs)) v = do
    else pure $ V.Constr α c (snoc vs v)
    where
    n = successful (arity c)
-apply _ v = throwError $ "Found " <> prettyP v <> ", expected function"
+apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
 eval :: forall m. MonadGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = lookup' x γ
@@ -148,7 +149,7 @@ eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of
       V.Record _ xvs -> lookup' x xvs
-      _ -> throwError $ "Found " <> prettyP v <> ", expected record"
+      _ -> throw $ "Found " <> prettyP v <> ", expected record"
 eval γ (App e e') αs = do
    v <- eval γ e αs
    v' <- eval γ e' αs
@@ -174,7 +175,7 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
-evalWithConfig :: forall g m a. MonadError String m => Graph g => GraphConfig g -> Expr a -> m ((g × Int) × Expr Vertex × Val Vertex)
+evalWithConfig :: forall g m a. MonadError Error m => Graph g => GraphConfig g -> Expr a -> m ((g × Int) × Expr Vertex × Val Vertex)
 evalWithConfig { g, n, γα } e =
    runWithGraphAlloc2T (g × n) $ do
       eα <- alloc e
@@ -183,7 +184,7 @@ evalWithConfig { g, n, γα } e =
 
 graphGC
    :: forall g m
-    . MonadError String m
+    . MonadError Error m
    => Graph g
    => GraphConfig g
    -> Raw Expr

@@ -4,7 +4,7 @@ import Prelude hiding (absurd, append)
 
 import Bindings (Var)
 import Control.Apply (lift2)
-import Control.Monad.Error.Class (class MonadError, class MonadThrow, throwError)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Array ((!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
@@ -16,13 +16,14 @@ import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict, get)
 import Dict (apply2, intersectionWith) as D
+import Effect.Exception (Error)
 import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
 import Graph.GraphWriter (class MonadGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
-import Util (type (×), Endo, error, orElse, unsafeUpdateAt, (!), (×), (≜), (≞))
+import Util (type (×), Endo, error, orElse, throw, unsafeUpdateAt, (!), (×), (≜), (≞))
 import Util.Pretty (Doc, beside, text)
 
 data Val a
@@ -51,9 +52,9 @@ instance Highlightable a => Highlightable (a × b) where
 instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 -- similar to an isomorphism lens with complement t
-type OpFwd t = forall a m. Ann a => MonadError String m => List (Val a) -> m (t × Val a)
+type OpFwd t = forall a m. Ann a => MonadError Error m => List (Val a) -> m (t × Val a)
 type OpBwd t = forall a. Ann a => t × Val a -> List (Val a)
-type OpGraph = forall m. MonadGraphAlloc m => MonadError String m => List (Val Vertex) -> m (Val Vertex)
+type OpGraph = forall m. MonadGraphAlloc m => MonadError Error m => List (Val Vertex) -> m (Val Vertex)
 
 data ForeignOp' t = ForeignOp'
    { arity :: Int
@@ -67,7 +68,7 @@ type ForeignOp = Exists ForeignOp'
 -- Environments.
 type Env a = Dict (Val a)
 
-lookup' :: forall a m. MonadThrow String m => Var -> Dict a -> m a
+lookup' :: forall a m. MonadThrow Error m => Var -> Dict a -> m a
 lookup' x γ = lookup x γ # orElse ("variable " <> x <> " not found")
 
 -- Want a monoid instance but needs a newtype
@@ -105,7 +106,7 @@ newtype MatrixRep a = MatrixRep (Array2 (Val a) × (Int × a) × (Int × a))
 
 type Array2 a = Array (Array a)
 
-matrixGet :: forall a m. MonadThrow String m => Int -> Int -> MatrixRep a -> m (Val a)
+matrixGet :: forall a m. MonadThrow Error m => Int -> Int -> MatrixRep a -> m (Val a)
 matrixGet i j (MatrixRep (vss × _ × _)) =
    orElse "Index out of bounds" $ do
       us <- vss !! (i - 1)
@@ -209,7 +210,7 @@ instance JoinSemilattice a => JoinSemilattice (Val a) where
    maybeJoin (Constr α c vs) (Constr α' c' us) = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
    maybeJoin (Matrix α m) (Matrix α' m') = Matrix (α ∨ α') <$> maybeJoin m m'
    maybeJoin (Fun α φ) (Fun α' φ') = Fun (α ∨ α') <$> maybeJoin φ φ'
-   maybeJoin _ _ = throwError "Incompatible values"
+   maybeJoin _ _ = throw "Incompatible values"
 
    join v = definedJoin v
 
@@ -220,7 +221,7 @@ instance JoinSemilattice a => JoinSemilattice (Fun a) where
       Foreign φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
    maybeJoin (PartialConstr c vs) (PartialConstr c' us) =
       PartialConstr <$> (c ≞ c') <*> maybeJoin vs us
-   maybeJoin _ _ = throwError "Incompatible functions"
+   maybeJoin _ _ = throw "Incompatible functions"
 
    join v = definedJoin v
 

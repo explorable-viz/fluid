@@ -18,7 +18,8 @@ import Data.Maybe (Maybe(..))
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&), (***))
 import Data.Tuple (Tuple(..), fst, snd)
-import Effect.Exception (throw)
+import Effect.Exception (Error, message)
+import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
 
 infixr 6 type Tuple as × -- standard library has \/
@@ -28,6 +29,9 @@ infixr 6 type Either as + -- standard library has \/
 
 error :: ∀ a. String -> a
 error msg = unsafePerformEffect (throw msg)
+
+throw :: forall m a. MonadThrow Error m => String -> m a
+throw = throwError <<< E.error
 
 assert :: ∀ a. Boolean -> a -> a
 assert true = identity
@@ -57,11 +61,11 @@ onlyIf :: Boolean -> forall m a. MonadPlus m => a -> m a
 onlyIf true = pure
 onlyIf false = const empty
 
-type MayFail a = Except String a
-type MayFailT m = ExceptT String m
+type MayFail a = Except Error a
+type MayFailT m = ExceptT Error m
 
-orElse :: forall a m. MonadThrow String m => String -> Maybe a -> m a
-orElse s Nothing = throwError s
+orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
+orElse s Nothing = throwError $ E.error s
 orElse _ (Just x) = pure x
 
 ignoreMessage :: forall a. MayFail a -> Maybe a
@@ -69,9 +73,9 @@ ignoreMessage = runExceptT >>> extract >>> case _ of
    (Left _) -> Nothing
    (Right x) -> Just x
 
-fromRight :: forall a. String + a -> a
+fromRight :: forall a. Error + a -> a
 fromRight (Right x) = x
-fromRight (Left msg) = error msg
+fromRight (Left e) = error $ show e
 
 mapLeft :: forall a b c. (a -> c) -> Either a b -> Either c b
 mapLeft f (Left x) = Left (f x)
@@ -79,18 +83,19 @@ mapLeft _ (Right x) = Right x
 
 successful :: forall a. MayFail a -> a
 successful (ExceptT (Identity (Right x))) = x
-successful (ExceptT (Identity (Left msg))) = error msg
+successful (ExceptT (Identity (Left e))) = error $ message e
 
 successfulWith :: String -> forall a. MayFail a -> a
 successfulWith msg = successful <<< with msg
 
 -- If the property fails, add an extra error message.
-with :: forall a m. MonadError String m => String -> Endo (m a)
-with msg m = catchError m (\msg' -> throwError $ msg' <> if msg == "" then "" else ("\n" <> msg))
+with :: forall a m. MonadError Error m => String -> Endo (m a)
+with msg m = catchError m \e ->
+   let msg' = message e in throwError $ E.error $ msg' <> if msg == "" then "" else ("\n" <> msg)
 
-check :: forall m. MonadError String m => Boolean -> String -> m Unit
+check :: forall m. MonadError Error m => Boolean -> String -> m Unit
 check true = const $ pure unit
-check false = throwError
+check false = throwError <<< E.error
 
 mayEq :: forall a. Eq a => a -> a -> Maybe a
 mayEq x x' = whenever (x == x') x
@@ -104,7 +109,7 @@ mustGeq x x' = definitely (show x <> " greater than " <> show x') (whenever (x >
 unionWithMaybe :: forall a b. Ord a => (b -> b -> Maybe b) -> Map a b -> Map a b -> Map a (Maybe b)
 unionWithMaybe f m m' = M.unionWith (\x -> lift2 f x >>> join) (Just <$> m) (Just <$> m')
 
-mayFailEq :: forall a m. MonadError String m => Show a => Eq a => a -> a -> m a
+mayFailEq :: forall a m. MonadError Error m => Show a => Eq a => a -> a -> m a
 mayFailEq x x' = x ≟ x' # orElse (show x <> " ≠ " <> show x')
 
 infixl 4 mayEq as ≟

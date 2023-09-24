@@ -32,6 +32,7 @@ import Data.Profunctor.Strong (first)
 import Data.Set (Set)
 import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
+import Effect.Exception (Error)
 import Graph (Vertex(..), class Graph, fromFoldable)
 import Util (MayFailT, type (×), type (+), (×))
 
@@ -42,7 +43,9 @@ class Monad m <= MonadGraph m where
 class Monad m <= MonadAlloc m where
    fresh :: m Vertex
 
-class (MonadAlloc m, MonadError String m, MonadGraph m) <= MonadGraphAlloc m where
+-- Fix exceptions at Error, the type of JavaScript exceptions, because Aff requires Error, and
+-- I can't see a way to convert MonadError Error m (for example) to MonadError Error m.
+class (MonadAlloc m, MonadError Error m, MonadGraph m) <= MonadGraphAlloc m where
    -- Extend with a freshly allocated vertex.
    new :: Set Vertex -> m Vertex
 
@@ -64,7 +67,7 @@ instance Monad m => MonadAlloc (WithAllocT m) where
 instance Monad m => MonadAlloc (WithGraphAllocT m) where
    fresh = lift fresh
 
-instance MonadError String m => MonadGraphAlloc (WithGraphAlloc2T m) where
+instance MonadError Error m => MonadGraphAlloc (WithGraphAlloc2T m) where
    new αs = do
       α <- fresh
       extend α αs
@@ -109,7 +112,7 @@ runWithGraphAlloc2T (g × n) m = do
    (n' × a) × g_adds <- runStateT (runWithAllocT n m) Nil
    pure $ ((g <> fromFoldable g_adds) × n') × a
 
-runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m (String + ((g × Int) × a))
+runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m (Error + ((g × Int) × a))
 runWithGraphAllocT (g × n) m = do
    (g' × n') × maybe_a <- runWithGraphAlloc2T (g × n) (runExceptT m)
    pure $ maybe_a <#> ((g' × n') × _)

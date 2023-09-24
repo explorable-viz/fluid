@@ -1,10 +1,11 @@
 module Test.Util where
 
 import Prelude hiding (absurd)
+
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
 import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
-import Control.Monad.Error.Class (class MonadThrow)
+import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.Trans.Class (lift)
 import Data.Either (Either(..))
@@ -34,7 +35,7 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
-import Util (MayFailT, (×), error, successful)
+import Util (MayFailT, (×), successful)
 import Val (Val(..), class Ann)
 
 type TestConfig =
@@ -47,13 +48,13 @@ type TestConfig =
 -- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
 testWithSetup ∷ String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
 testWithSetup _name s gconfig tconfig = do
-   e <- runExceptT $ do
+   runExceptT $ do
       testParse s
       trRow <- testTrace s gconfig tconfig
       grRow <- testGraph s gconfig tconfig
       pure (BenchRow trRow grRow)
-   case e of
-      Left msg -> error msg
+   >>= case _ of
+      Left e -> throwError e
       Right x -> pure x
 
 testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit

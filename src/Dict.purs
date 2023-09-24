@@ -42,10 +42,10 @@ apply :: forall a b. Dict (a -> b) -> Dict a -> Dict b
 apply d ds = intersectionWith ($) d ds
 
 apply2 :: forall f a b. Apply f => Dict (f (a -> b)) -> Dict (f a) -> Dict (f b)
-apply2 d ds = apply (map (<*>) d) ds
+apply2 d ds = apply ((<*>) <$> d) ds
 
 lift2 :: forall f a b c. Apply f => (a -> b -> c) -> Dict (f a) -> Dict (f b) -> Dict (f c)
-lift2 f d1 d2 = apply2 (map (map f) d1) d2
+lift2 f d1 d2 = apply2 ((f <$> _) <$> d1) d2
 
 -- Unfortunately Foreign.Object doesn't define this; could implement using Foreign.Object.ST instead.
 foreign import intersectionWith :: forall a b c. (a -> b -> c) -> Dict a -> Dict b -> Dict c
