@@ -9,6 +9,7 @@ import App.MatrixView (MatrixView(..), drawMatrix, matrixViewHandler, matrixRep)
 import App.TableView (EnergyTable(..), drawTable, energyRecord, tableViewHandler)
 import App.Util (HTMLId, OnSel, Selector, doNothing, from, record)
 import Bindings (Var)
+import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, zip)
 import Data.Either (Either(..))
 import Data.Foldable (length)
@@ -18,9 +19,11 @@ import Data.Traversable (sequence, sequence_)
 import Data.Tuple (fst, uncurry)
 import DataType (cBarChart, cCons, cLineChart, cNil)
 import Desugarable (desug)
+import Dict (get)
 import Effect (Effect)
-import Effect.Aff (Aff)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Console (log)
+import Effect.Exception (Error)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
 import EvalGraph (GraphConfig)
@@ -187,7 +190,7 @@ linkResult x γ0 γ e1 e2 t1 _ v1 = do
    _ × v2' <- eval (neg ((botOf <$> γ0) <+> γ')) (topOf e2) true
    pure { v': neg v2', v0' }
 
-loadFig :: FigSpec -> Aff Fig
+loadFig :: forall m. MonadAff m => MonadError Error m => FigSpec -> m Fig
 loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
    { γα: γα0 } × xv :: GraphConfig GraphImpl × _ <-
@@ -203,7 +206,7 @@ loadFig spec@{ file } = do
       t × v <- eval γ0γ e bot
       pure { spec, γ0, γ: γ0 <+> γ1, s0, s, e, t, v }
 
-loadLinkFig :: LinkFigSpec -> Aff LinkFig
+loadLinkFig :: forall m. MonadAff m => MonadError Error m => LinkFigSpec -> m LinkFig
 loadLinkFig spec@{ file1, file2, dataFile, x } = do
    let
       dir = File "linking/"
@@ -218,9 +221,8 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       s1 = botOf s1'
       s2 = botOf s2'
    dataFile' <- loadFile (Folder "fluid/example/linking") (dataFile) -- use surface expression instead
-   pure $ successful do
-      e1 × e2 <- (×) <$> desug s1 <*> desug s2
-      t1 × v1 <- eval (γ0 <+> xv0) e1 bot
-      t2 × v2 <- eval (γ0 <+> xv0) e2 bot
-      v0 <- lookup x xv0 # orElse absurd
-      pure { spec, γ0, γ: xv0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
+   e1 × e2 <- (×) <$> desug s1 <*> desug s2
+   t1 × v1 <- eval (γ0 <+> xv0) e1 bot
+   t2 × v2 <- eval (γ0 <+> xv0) e2 bot
+   let v0 = get x xv0
+   pure { spec, γ0, γ: xv0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }

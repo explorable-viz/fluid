@@ -4,8 +4,8 @@ import Prelude hiding (absurd, top)
 
 import Bindings (Var)
 import Control.Apply (lift2)
-import Data.Foldable (class Foldable)
 import Data.Either (Either(..))
+import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), zipWith)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
@@ -15,7 +15,7 @@ import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
 import Dict (apply2) as D
 import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemilattice, Raw, (∨), definedJoin, expand, maybeJoin)
-import Util (type (+), type (×), both, error, report, (×), (≜), (≞))
+import Util (type (+), type (×), both, error, throw, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
 data Expr a
@@ -180,7 +180,7 @@ instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin (ElimConstr cκs) (ElimConstr cκs') =
       ElimConstr <$> ((keys cκs `consistentWith` keys cκs') *> maybeJoin cκs cκs')
    maybeJoin (ElimRecord xs κ) (ElimRecord ys κ') = ElimRecord <$> (xs ≞ ys) <*> maybeJoin κ κ'
-   maybeJoin _ _ = report "Incompatible eliminators"
+   maybeJoin _ _ = throw "Incompatible eliminators"
 
    join σ = definedJoin σ
 
@@ -194,7 +194,7 @@ instance JoinSemilattice a => JoinSemilattice (Cont a) where
    maybeJoin ContNone ContNone = pure ContNone
    maybeJoin (ContExpr e) (ContExpr e') = ContExpr <$> maybeJoin e e'
    maybeJoin (ContElim σ) (ContElim σ') = ContElim <$> maybeJoin σ σ'
-   maybeJoin _ _ = report "Incompatible continuations"
+   maybeJoin _ _ = throw "Incompatible continuations"
 
    join κ = definedJoin κ
 
@@ -227,7 +227,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    maybeJoin (App e1 e2) (App e1' e2') = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Let def e) (Let def' e') = Let <$> maybeJoin def def' <*> maybeJoin e e'
    maybeJoin (LetRec ρ e) (LetRec ρ' e') = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
-   maybeJoin _ _ = report "Incompatible expressions"
+   maybeJoin _ _ = throw "Incompatible expressions"
 
    join e = definedJoin e
 

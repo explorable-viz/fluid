@@ -1,13 +1,13 @@
 module Test.Util where
 
 import Prelude hiding (absurd)
+
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
 import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
-import Control.Monad.Error.Class (class MonadThrow)
-import Control.Monad.Except (except, runExceptT)
+import Control.Monad.Error.Class (class MonadThrow, liftEither)
+import Control.Monad.Except (runExceptT)
 import Control.Monad.Trans.Class (lift)
-import Data.Either (Either(..))
 import Data.Foldable (foldl)
 import Data.Int (toNumber)
 import Data.List (elem)
@@ -34,7 +34,7 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
-import Util (MayFailT, (×), error, successful)
+import Util (MayFailT, (×), successful)
 import Val (Val(..), class Ann)
 
 type TestConfig =
@@ -46,15 +46,14 @@ type TestConfig =
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 -- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
 testWithSetup ∷ String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
-testWithSetup _name s gconfig tconfig = do
-   e <- runExceptT $ do
-      testParse s
-      trRow <- testTrace s gconfig tconfig
-      grRow <- testGraph s gconfig tconfig
-      pure (BenchRow trRow grRow)
-   case e of
-      Left msg -> error msg
-      Right x -> pure x
+testWithSetup _name s gconfig tconfig =
+   liftEither =<<
+      ( runExceptT $ do
+           testParse s
+           trRow <- testTrace s gconfig tconfig
+           grRow <- testGraph s gconfig tconfig
+           pure $ BenchRow trRow grRow
+      )
 
 testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do
@@ -64,7 +63,7 @@ testParse s = do
       unless (eq (erase s) (erase s')) do
          log ("SRC\n" <> show (erase s))
          log ("NEW\n" <> show (erase s'))
-         (lift $ fail "not equal") :: MayFailT Aff Unit
+         lift $ fail "not equal"
 
 testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
 testTrace s { γα: γ } { δv, bwd_expect, fwd_expect } = do
@@ -106,7 +105,7 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
    tEval1 <- preciseTime
-   (g × _) × (eα × vα) <- evalWithConfig gconf e >>= except
+   (g × _) × eα × vα <- evalWithConfig gconf e
    tEval2 <- preciseTime
 
    -- | Backward
@@ -190,14 +189,14 @@ isGraphical _ = false
 
 checkPretty :: forall a m. MonadThrow Error m => Pretty a => String -> String -> a -> m Unit
 checkPretty msg expect x =
-   unless (expect `eq` prettyP x)
-      $ fail (msg <> "\nExpected:\n" <> expect <> "\nReceived:\n" <> prettyP x)
+   unless (expect `eq` prettyP x) $
+      fail (msg <> "\nExpected:\n" <> expect <> "\nReceived:\n" <> prettyP x)
 
 -- Like version in Test.Spec.Assertions but with error message.
 shouldSatisfy :: forall m t. MonadThrow Error m => Show t => String -> t -> (t -> Boolean) -> m Unit
 shouldSatisfy msg v pred =
-   unless (pred v)
-      $ fail (show v <> " doesn't satisfy predicate: " <> msg)
+   unless (pred v) $
+      fail (show v <> " doesn't satisfy predicate: " <> msg)
 
 averageRows :: List BenchRow -> BenchRow
 averageRows rows = averagedTr

@@ -1,7 +1,10 @@
 module Lattice where
 
 import Prelude hiding (absurd, join, top)
+
+import Bindings (Var)
 import Control.Apply (lift2)
+import Control.Monad.Error.Class (class MonadError)
 import Data.Array (zipWith) as A
 import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
@@ -10,15 +13,15 @@ import Data.Profunctor.Strong ((***))
 import Data.Set (subset)
 import Data.Traversable (sequence)
 import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, unionWith, update)
-import Bindings (Var)
-import Util (Endo, MayFailT, type (×), (×), assert, report, successfulWith)
+import Effect.Exception (Error)
+import Util (type (×), Endo, assert, successfulWith, throw, (×))
 import Util.Pair (Pair(..))
 
 -- join here is actually more general "weak join" operation of the formalism, which operates on maps using unionWith.
 class JoinSemilattice a where
    join :: a -> a -> a
    -- soft failure for joining incompatible eliminators, used to desugar function clauses
-   maybeJoin :: forall m. Monad m => a -> a -> MayFailT m a
+   maybeJoin :: forall m. MonadError Error m => a -> a -> m a
 
 class MeetSemilattice a where
    meet :: a -> a -> a
@@ -119,7 +122,7 @@ instance JoinSemilattice a => JoinSemilattice (List a) where
    join xs = definedJoin xs
    maybeJoin xs ys
       | (length xs :: Int) == length ys = sequence (zipWith maybeJoin xs ys)
-      | otherwise = report "Mismatched list lengths"
+      | otherwise = throw "Mismatched list lengths"
 
 instance JoinSemilattice a => JoinSemilattice (Dict a) where
    join = unionWith (∨) -- faster than definedJoin
@@ -128,7 +131,7 @@ instance JoinSemilattice a => JoinSemilattice (Dict a) where
 instance Neg a => Neg (Dict a) where
    neg = (<$>) neg
 
-mayFailUpdate :: forall a m. Monad m => JoinSemilattice a => Dict a -> Var × a -> MayFailT m (Dict a)
+mayFailUpdate :: forall a m. MonadError Error m => JoinSemilattice a => Dict a -> Var × a -> m (Dict a)
 mayFailUpdate m (k × v) =
    case lookup k m of
       Nothing -> pure (insert k v m)
@@ -138,7 +141,7 @@ instance JoinSemilattice a => JoinSemilattice (Array a) where
    join xs = definedJoin xs
    maybeJoin xs ys
       | length xs == (length ys :: Int) = sequence (A.zipWith maybeJoin xs ys)
-      | otherwise = report "Mismatched array lengths"
+      | otherwise = throw "Mismatched array lengths"
 
 instance (BoundedJoinSemilattice a, BoundedMeetSemilattice a) => BoundedLattice a
 
