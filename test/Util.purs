@@ -20,7 +20,6 @@ import Desugarable (desug, desugBwd)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
-import Eval (eval)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, evalWithConfig)
 import Graph (sinks, sources, vertices)
@@ -85,7 +84,7 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    -- | Forward (round-tripping)
    e𝔹' <- desug s𝔹'
    tFwd1 <- preciseTime
-   _ × v𝔹' <- eval γ𝔹 e𝔹' top
+   let v𝔹' = gc.fwd { γ: γ𝔹, e: e𝔹', α: top }
    tFwd2 <- preciseTime
 
    lift do
