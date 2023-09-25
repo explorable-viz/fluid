@@ -28,7 +28,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
 import Heterogeneous.Mapping (hmap)
-import Lattice (bot, botOf, erase, Raw)
+import Lattice (bot, botOf, topOf, erase, Raw)
 import Module (parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
@@ -119,6 +119,15 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    let
       s𝔹 = desugBwd e𝔹 (erase s)
 
+   -- | Backward (all outputs selected)
+   tBwdAll1 <- preciseTime
+   let
+      αs_out_all = selectαs (topOf vα) vα
+      gbwd_all = G.bwdSlice αs_out_all g
+      αs_in_all = sinks gbwd_all
+      e𝔹_all = select𝔹s eα αs_in_all
+   tBwdAll2 <- preciseTime
+
    -- | Forward (round-tripping)
    tFwd1 <- preciseTime
    let
@@ -143,8 +152,12 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
          checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
+      -- | To avoid unused variables when benchmarking
+      unless false do
+         log ("BwdAll selected nodes: " <> show αs_out_all)
+         log (prettyP e𝔹_all)
 
-   pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2, tFwdDemorgan: tdiff tFwdDeMorgan1 tFwdDeMorgan2 }
+   pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2, tFwdDemorgan: tdiff tFwdDeMorgan1 tFwdDeMorgan2, tBwdAll: tdiff tBwdAll1 tBwdAll2 }
 
 type TestSpec =
    { file :: String
@@ -191,7 +204,7 @@ averageRows rows = averagedTr
    runs = toNumber $ length rows
 
    zeroRow :: BenchRow
-   zeroRow = BenchRow { tEval: 0.0, tBwd: 0.0, tFwd: 0.0 } { tEval: 0.0, tBwd: 0.0, tFwd: 0.0, tFwdDemorgan: 0.0 }
+   zeroRow = BenchRow { tEval: 0.0, tBwd: 0.0, tFwd: 0.0 } { tEval: 0.0, tBwd: 0.0, tFwd: 0.0, tFwdDemorgan: 0.0, tBwdAll: 0.0 }
 
    sumRow :: BenchRow -> BenchRow -> BenchRow
    sumRow (BenchRow trRow1 gRow1) (BenchRow trRow2 gRow2) =
@@ -204,6 +217,7 @@ averageRows rows = averagedTr
          , tBwd: gRow1.tBwd + gRow2.tBwd
          , tFwd: gRow1.tFwd + gRow2.tFwd
          , tFwdDemorgan: gRow1.tFwdDemorgan + gRow2.tFwdDemorgan
+         , tBwdAll: gRow1.tBwdAll + gRow2.tBwdAll
          }
 
    summed = foldl sumRow zeroRow rows

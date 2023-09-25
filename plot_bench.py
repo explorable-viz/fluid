@@ -12,9 +12,9 @@ def parse():
   print(df)
 
   # Reorder benchmark columns
-  column_order = ['Trace-Eval', 'Graph-Eval', 'Trace-Bwd', 'Graph-Bwd', 'Trace-Fwd', 'Graph-Fwd', 'Graph-FwdDeMorgan']
-  column_colors = ['#0d6b12', '#93dbb5', '#3e3875', '#b8bef5', '#910303', '#e84d4d', '#e8bceb']
-  
+  column_order = ['Trace-Eval', 'Graph-Eval', 'Trace-Bwd', 'Graph-Bwd', 'Trace-Fwd', 'Graph-Fwd', 'Graph-FwdDeMorgan', 'Graph-BwdAll']
+  column_colors = ['#0d6b12', '#93dbb5', '#3e3875', '#b8bef5', '#910303', '#e84d4d', '#e8bceb', '#5073a1']
+
   # Plot as bar chart
   df[column_order].plot(kind="bar", color=column_colors, ylabel="Milliseconds", rot=0)
 

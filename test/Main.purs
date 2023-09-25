@@ -35,16 +35,16 @@ tests = concat
 -- test_scratchpad = []
 
 test_desugaring :: Array (String × Aff Unit)
-test_desugaring = second void <$> many desugar_cases
+test_desugaring = second void <$> many desugar_cases 1
 
 test_misc :: Array (String × Aff Unit)
-test_misc = second void <$> many misc_cases
+test_misc = second void <$> many misc_cases 1
 
 test_bwd :: Array (String × Aff Unit)
-test_bwd = second void <$> bwdMany bwd_cases
+test_bwd = second void <$> bwdMany bwd_cases 1
 
 test_graphics :: Array (String × Aff Unit)
-test_graphics = second void <$> withDatasetMany graphics_cases
+test_graphics = second void <$> withDatasetMany graphics_cases 1
 
 test_linking :: Array (String × Aff Unit)
 test_linking = linkMany linking_cases
