@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
-import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
+import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, zeroRow, sumRow, preciseTime, tdiff)
 import Control.Monad.Error.Class (class MonadThrow, liftEither)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.Trans.Class (lift)
@@ -25,7 +25,7 @@ import EvalBwd (evalBwd)
 import EvalGraph (GraphConfig, evalWithConfig)
 import Graph (sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
+import Graph.Slice (bwdSlice, bwdSliceDual, fwdSlice, fwdSliceDual, fwdSliceAsDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
 import Heterogeneous.Mapping (hmap)
 import Lattice (bot, botOf, topOf, erase, Raw)
@@ -119,6 +119,15 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
    let
       s𝔹 = desugBwd e𝔹 (erase s)
 
+   -- | De Morgan dual of backward
+   tBwdDual1 <- preciseTime
+   let
+      αs_out_dual = selectαs (δv (botOf vα)) vα
+      gbwd_dual = G.bwdSliceDual αs_out_dual g
+      αs_in_dual = sinks gbwd_dual
+      e𝔹_dual = select𝔹s eα αs_in_dual
+   tBwdDual2 <- preciseTime
+
    -- | Backward (all outputs selected)
    tBwdAll1 <- preciseTime
    let
@@ -135,12 +144,19 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
       v𝔹 = select𝔹s vα (vertices gfwd)
    tFwd2 <- preciseTime
 
-   -- | Forward (round-tripping) using De Morgan dual
-   tFwdDeMorgan1 <- preciseTime
+   -- | De Morgan dual of forward
+   tFwdDual1 <- preciseTime
    let
-      gfwd' = G.fwdSliceDeMorgan αs_in g
-      v𝔹' = select𝔹s vα (vertices gfwd') <#> not
-   tFwdDeMorgan2 <- preciseTime
+      gfwd_dual = G.fwdSliceDual αs_in g
+      v𝔹_dual = select𝔹s vα (vertices gfwd_dual)
+   tFwdDual2 <- preciseTime
+
+   -- | Forward (round-tripping) using De Morgan dual
+   tFwdAsDeMorgan1 <- preciseTime
+   let
+      gfwd_demorgan = G.fwdSliceAsDeMorgan αs_in g
+      v𝔹_demorgan = select𝔹s vα (vertices gfwd_demorgan) <#> not
+   tFwdAsDeMorgan2 <- preciseTime
 
    lift do
       -- | Check backward selections
@@ -149,15 +165,16 @@ testGraph s gconf { δv, bwd_expect, fwd_expect } = do
       -- | Check round-trip selections
       unless (isGraphical v𝔹) do
          checkPretty "Graph-based value" fwd_expect v𝔹
-         checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
+         checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹_demorgan
       sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
       -- | To avoid unused variables when benchmarking
       unless false do
-         log ("BwdAll selected nodes: " <> show αs_out_all)
+         log (prettyP e𝔹_dual)
          log (prettyP e𝔹_all)
+         log (prettyP v𝔹_dual)
 
-   pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2, tFwdDemorgan: tdiff tFwdDeMorgan1 tFwdDeMorgan2, tBwdAll: tdiff tBwdAll1 tBwdAll2 }
+   pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tBwdDual: tdiff tBwdDual1 tBwdDual2, tBwdAll: tdiff tBwdAll1 tBwdAll2, tFwd: tdiff tFwd1 tFwd2, tFwdDual: tdiff tFwdDual1 tFwdDual2, tFwdAsDemorgan: tdiff tFwdAsDeMorgan1 tFwdAsDeMorgan2 }
 
 type TestSpec =
    { file :: String
@@ -202,23 +219,6 @@ averageRows :: List BenchRow -> BenchRow
 averageRows rows = averagedTr
    where
    runs = toNumber $ length rows
-
-   zeroRow :: BenchRow
-   zeroRow = BenchRow { tEval: 0.0, tBwd: 0.0, tFwd: 0.0 } { tEval: 0.0, tBwd: 0.0, tFwd: 0.0, tFwdDemorgan: 0.0, tBwdAll: 0.0 }
-
-   sumRow :: BenchRow -> BenchRow -> BenchRow
-   sumRow (BenchRow trRow1 gRow1) (BenchRow trRow2 gRow2) =
-      BenchRow
-         { tEval: trRow1.tEval + trRow2.tEval
-         , tBwd: trRow1.tBwd + trRow2.tBwd
-         , tFwd: trRow1.tFwd + trRow2.tFwd
-         }
-         { tEval: gRow1.tEval + gRow2.tEval
-         , tBwd: gRow1.tBwd + gRow2.tBwd
-         , tFwd: gRow1.tFwd + gRow2.tFwd
-         , tFwdDemorgan: gRow1.tFwdDemorgan + gRow2.tFwdDemorgan
-         , tBwdAll: gRow1.tBwdAll + gRow2.tBwdAll
-         }
 
    summed = foldl sumRow zeroRow rows
    averagedTr = (\(BenchRow tr gr) -> BenchRow (hmap (\num -> num `div` runs) tr) (hmap (\num -> num `div` runs) gr)) $ summed
