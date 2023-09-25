@@ -71,32 +71,32 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
    tEval1 <- preciseTime
-   t × v𝔹 <- eval γ e bot
+   t × v <- eval γ e bot
    tEval2 <- preciseTime
 
    -- | Backward
    tBwd1 <- preciseTime
    let
-      v𝔹' = δv (botOf v𝔹)
-      { γ: γ𝔹', e: e𝔹' } = evalBwd γ e v𝔹' t
+      v𝔹 = δv (botOf v)
+      { γ: γ𝔹, e: e𝔹 } = evalBwd γ e v𝔹 t
    tBwd2 <- preciseTime
-   let s𝔹' = desugBwd e𝔹' s
+   let s𝔹' = desugBwd e𝔹 s
 
    -- | Forward (round-tripping)
-   e𝔹'' <- desug s𝔹'
+   e𝔹' <- desug s𝔹'
    tFwd1 <- preciseTime
-   _ × v𝔹'' <- eval γ𝔹' e𝔹'' top
+   _ × v𝔹' <- eval γ𝔹 e𝔹' top
    tFwd2 <- preciseTime
 
    lift do
-      unless (isGraphical v𝔹') $
-         log (prettyP v𝔹'')
+      unless (isGraphical v𝔹) $
+         log (prettyP v𝔹')
       -- | Check backward selections
       unless (null bwd_expect) $
          checkPretty "Trace-based source selection" bwd_expect s𝔹'
       -- | Check round-trip selections
-      unless (isGraphical v𝔹') $
-         checkPretty "Trace-based value" fwd_expect v𝔹''
+      unless (isGraphical v𝔹) $
+         checkPretty "Trace-based value" fwd_expect v𝔹'
 
    pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2 }
 
