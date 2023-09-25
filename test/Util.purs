@@ -47,11 +47,13 @@ type TestConfig =
 -- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
 testWithSetup ∷ String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
 testWithSetup _name s gconfig tconfig =
-   liftEither =<< (runExceptT $ do
-      testParse s
-      trRow <- testTrace s gconfig tconfig
-      grRow <- testGraph s gconfig tconfig
-      pure $ BenchRow trRow grRow)
+   liftEither =<<
+      ( runExceptT $ do
+           testParse s
+           trRow <- testTrace s gconfig tconfig
+           grRow <- testGraph s gconfig tconfig
+           pure $ BenchRow trRow grRow
+      )
 
 testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do

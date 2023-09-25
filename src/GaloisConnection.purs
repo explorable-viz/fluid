@@ -5,7 +5,8 @@ import Prelude
 import Lattice (class BooleanLattice, neg)
 import Util (Endo)
 
--- a and b are posets, but we don't enforce that here.
+-- a and b are posets, but we don't enforce that here. Maybe would make more sense as a type class, but
+-- would have to add an explicit value-level representation of the "index" (e.g. graph or trace).
 type GaloisConnection a b =
    { fwd :: a -> b
    , bwd :: b -> a

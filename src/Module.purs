@@ -20,14 +20,14 @@ import EvalGraph (GraphConfig, eval, eval_module)
 import Expr (traverseModule)
 import Graph (class Graph, Vertex)
 import Graph (empty) as G
-import Graph.GraphWriter (class MonadGraphAlloc, alloc, fresh, runWithGraphAlloc2T, runWithGraphAllocT)
+import Graph.GraphWriter (class MonadGraphAlloc, alloc, fresh, runWithGraphAllocT)
 import Lattice (botOf)
 import Parse (module_, program)
 import Parsing (runParser)
 import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), fromRight, mapLeft, (×))
+import Util (type (×), mapLeft, (×))
 import Util.Parse (SParser)
 import Val (Env, (<+>))
 
@@ -72,14 +72,14 @@ defaultImports = do
 -- | Evaluates default imports from empty initial graph config
 openDefaultImports :: forall m g. MonadAff m => MonadError Error m => Graph g => m (GraphConfig g)
 openDefaultImports = do
-   (g × n) × γα <- runWithGraphAlloc2T (G.empty × 0) defaultImports
+   (g × n) × γα <- runWithGraphAllocT (G.empty × 0) defaultImports
    pure { g, n, γα }
 
 -- | Evaluate dataset in context of existing graph config
 openDatasetAs :: forall m g. MonadAff m => MonadError Error m => Graph g => File -> Var -> GraphConfig g -> m (GraphConfig g × Env Vertex)
 openDatasetAs file x { g, n, γα } = do
    s <- parseProgram (Folder "fluid") file
-   (g' × n') × (γα' × xv) <- fromRight <$>
+   (g' × n') × (γα' × xv) <-
       runWithGraphAllocT (g × n) do
          e <- desug s
          eα <- alloc e

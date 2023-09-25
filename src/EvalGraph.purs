@@ -28,7 +28,7 @@ import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, 
 import GaloisConnection (GaloisConnection)
 import Graph (class Graph, Vertex)
 import Graph (vertices) as G
-import Graph.GraphWriter (class MonadGraphAlloc, alloc, new, runWithGraphAlloc2T)
+import Graph.GraphWriter (class MonadGraphAlloc, alloc, new, runWithGraphAllocT)
 import Graph.Slice (bwdSlice, fwdSlice, vertices)
 import Lattice (Raw)
 import Pretty (prettyP)
@@ -177,7 +177,7 @@ eval_module γ = go D.empty
 
 evalWithConfig :: forall g m a. MonadError Error m => Graph g => GraphConfig g -> Expr a -> m ((g × Int) × Expr Vertex × Val Vertex)
 evalWithConfig { g, n, γα } e =
-   runWithGraphAlloc2T (g × n) $ do
+   runWithGraphAllocT (g × n) $ do
       eα <- alloc e
       vα <- eval γα eα S.empty
       pure (eα × vα)

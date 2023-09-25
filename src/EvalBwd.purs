@@ -3,7 +3,7 @@ module EvalBwd where
 import Prelude hiding (absurd)
 
 import Bindings (Var, varAnon)
-import Control.Monad.Except (runExcept)
+import Control.Monad.Except (class MonadError, runExcept)
 import Data.Exists (mkExists, runExists)
 import Data.Foldable (foldr)
 import Data.FoldableWithIndex (foldrWithIndex)
@@ -18,6 +18,7 @@ import Data.Tuple (fst, snd, uncurry)
 import DataType (cPair)
 import Dict (disjointUnion, disjointUnion_inv, empty, get, insert, intersectionWith, isEmpty, keys)
 import Dict (fromFoldable, singleton, toUnfoldable) as D
+import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
 import GaloisConnection (GaloisConnection)
@@ -200,8 +201,8 @@ evalBwd' v (T.LetRec ρ t) =
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
 
-traceGC :: forall a. Ann a => Raw Env -> Raw Expr -> Trace -> GaloisConnection (EvalBwdResult a) (Val a)
-traceGC γ e t =
+traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> Trace -> m (GaloisConnection (EvalBwdResult a) (Val a))
+traceGC γ e t = pure $
    { fwd: \{ γ: γ', e: e', α } -> snd $ fromRight $ runExcept $ eval γ' e' α
    , bwd: \v -> evalBwd γ e v t
    }

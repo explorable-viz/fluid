@@ -17,13 +17,12 @@ module Graph.GraphWriter
    , runWithGraph
    , runWithGraphT
    , runWithGraphAllocT
-   , runWithGraphAlloc2T
    ) where
 
 import Prelude
 
-import Control.Monad.Except (class MonadError, runExceptT)
-import Control.Monad.State (StateT, runState, runStateT, modify, modify_)
+import Control.Monad.Except (class MonadError)
+import Control.Monad.State (StateT, runStateT, modify, modify_)
 import Control.Monad.Trans.Class (lift)
 import Data.Identity (Identity)
 import Data.List (List(..), (:))
@@ -34,7 +33,7 @@ import Data.Traversable (class Traversable, traverse)
 import Data.Tuple (swap)
 import Effect.Exception (Error)
 import Graph (Vertex(..), class Graph, fromFoldable)
-import Util (MayFailT, type (×), type (+), (×))
+import Util (MayFailT, type (×), (×))
 
 class Monad m <= MonadGraph m where
    -- Extend graph with existing vertex pointing to set of existing vertices.
@@ -94,12 +93,10 @@ alloc = traverse (const fresh)
 
 -- TODO: make synonymous with runStateT/runState?
 runWithAllocT :: forall m a. Monad m => Int -> WithAllocT m a -> m (Int × a)
-runWithAllocT n c = do
-   a × n' <- runStateT c n
-   pure $ n' × a
+runWithAllocT n c = runStateT c n <#> swap
 
 runWithAlloc :: forall a. Int -> WithAlloc a -> Int × a
-runWithAlloc n c = runState c n # swap
+runWithAlloc n = runWithAllocT n >>> unwrap
 
 runWithGraphT :: forall g m a. Monad m => Graph g => WithGraphT m a -> m (g × a)
 runWithGraphT c = runStateT c Nil <#> swap <#> first fromFoldable
@@ -107,12 +104,7 @@ runWithGraphT c = runStateT c Nil <#> swap <#> first fromFoldable
 runWithGraph :: forall g a. Graph g => WithGraph a -> g × a
 runWithGraph = runWithGraphT >>> unwrap
 
-runWithGraphAlloc2T :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAlloc2T m a -> m ((g × Int) × a)
-runWithGraphAlloc2T (g × n) m = do
+runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAlloc2T m a -> m ((g × Int) × a)
+runWithGraphAllocT (g × n) m = do
    (n' × a) × g_adds <- runStateT (runWithAllocT n m) Nil
    pure $ ((g <> fromFoldable g_adds) × n') × a
-
-runWithGraphAllocT :: forall g m a. Monad m => Graph g => g × Int -> WithGraphAllocT m a -> m (Error + ((g × Int) × a))
-runWithGraphAllocT (g × n) m = do
-   (g' × n') × maybe_a <- runWithGraphAlloc2T (g × n) (runExceptT m)
-   pure $ maybe_a <#> ((g' × n') × _)
