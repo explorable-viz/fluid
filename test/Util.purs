@@ -21,14 +21,14 @@ import Effect.Aff (Aff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import Eval (eval)
-import EvalBwd (evalBwd)
+import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, evalWithConfig)
 import Graph (sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
 import Heterogeneous.Mapping (hmap)
-import Lattice (bot, botOf, topOf, erase, Raw)
+import Lattice (botOf, topOf, erase, Raw)
 import Module (parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
@@ -71,14 +71,14 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
    tEval1 <- preciseTime
-   t × v <- eval γ e bot
+   gc <- traceGC γ e
    tEval2 <- preciseTime
 
    -- | Backward
    tBwd1 <- preciseTime
    let
-      v𝔹 = δv (botOf v)
-      { γ: γ𝔹, e: e𝔹 } = evalBwd γ e v𝔹 t
+      v𝔹 = δv (botOf gc.v)
+      { γ: γ𝔹, e: e𝔹 } = gc.bwd v𝔹
    tBwd2 <- preciseTime
    let s𝔹' = desugBwd e𝔹 s
 
