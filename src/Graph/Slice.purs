@@ -17,6 +17,7 @@ import Util (type (×), (×))
 
 type PendingVertices = Map Vertex (Set Vertex)
 
+-- | Backward slicing (◁_G)
 bwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs0)
    where
@@ -27,10 +28,11 @@ bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs
       extend α βs
       pure $ Loop ((visited # insert α) × (L.fromFoldable βs <> αs))
 
-fwdSliceDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
-fwdSliceDeMorgan αs_0 g_0 =
-   bwdSlice (sinks g_0 `difference` αs_0) (op g_0)
+-- | De Morgan dual of backward slicing (◁_G)° ≡ Forward slicing on the opposite graph (▷_{G_op})
+bwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
+bwdSliceDual αs0 g0 = fwdSlice αs0 (op g0)
 
+-- | Forward slicing (▷_G)
 fwdSlice :: forall g. Graph g => Set Vertex -> g -> g
 fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
    where
@@ -43,6 +45,15 @@ fwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (M.empty × inEdges g0 αs0)
          pure $ Loop (M.delete α h × (inEdges' g0 α <> es))
       else
          pure $ Loop (M.insert α βs h × es)
+
+-- | De Morgan dual of forward slicing (▷_G)° ≡ Backward slicing on the opposite graph (◁_{G_op})
+fwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
+fwdSliceDual αs0 g0 = bwdSlice αs0 (op g0)
+
+-- | Forward slicing (▷_G) ≡ De Morgan dual of backward slicing on the opposite graph (◁_{G_op})°
+fwdSliceAsDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
+fwdSliceAsDeMorgan αs0 g0 =
+   bwdSlice (sinks g0 `difference` αs0) (op g0)
 
 vertices :: forall f. Apply f => Foldable f => f Vertex -> Set Vertex
 vertices vα = selectαs (const true <$> vα) vα
