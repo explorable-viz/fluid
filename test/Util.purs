@@ -66,11 +66,10 @@ testParse s = do
 
 testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
 testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
-   let γ = erase <$> γα
    -- | Eval
    e <- desug s
    tEval1 <- preciseTime
-   gc <- traceGC γ e
+   gc <- traceGC (erase <$> γα) e
    tEval2 <- preciseTime
 
    -- | Backward
