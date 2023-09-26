@@ -178,14 +178,11 @@ type BooleanLattice2 a r =
    | r
    }
 
-type Powerset a = BooleanLattice2 (Set a) (
-   xs :: Set a
-)
+type Powerset a = BooleanLattice2 (Set a) ()
 
 powerset :: forall a. Ord a => Set a -> Powerset a
 powerset xs =
-   { xs
-   , top: xs
+   { top: xs
    , bot: S.empty
    , meet: intersection
    , join: union
