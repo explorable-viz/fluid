@@ -169,22 +169,37 @@ instance Expandable t u => Expandable (Array t) (Array u) where
    expand xs ys = A.zipWith expand xs ys
 
 -- Sucks a bit as a type class, let's try a record.
-type BooleanLattice2 a r =
+type BooleanLattice2 a =
    { top :: a
    , bot :: a
    , meet :: a -> a -> a
    , join :: a -> a -> a
    , neg :: Endo a
-   | r
    }
 
-type Powerset a = BooleanLattice2 (Set a) ()
+bool :: BooleanLattice2 𝔹
+bool =
+   { top: true
+   , bot: false
+   , meet: (&&)
+   , join: (||)
+   , neg: not
+   }
 
-powerset :: forall a. Ord a => Set a -> Powerset a
+powerset :: forall a. Ord a => Set a -> BooleanLattice2 (Set a)
 powerset xs =
    { top: xs
    , bot: S.empty
    , meet: intersection
    , join: union
    , neg: (xs `S.difference` _)
+   }
+
+slices :: forall f. Apply f => f 𝔹 -> BooleanLattice2 (f 𝔹)
+slices x =
+   { top: x <#> const bool.top
+   , bot: x <#> const bool.bot
+   , meet: \y z -> bool.meet <$> y <*> z
+   , join: \y z -> bool.join <$> y <*> z
+   , neg: (_ <#> bool.neg)
    }
