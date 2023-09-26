@@ -75,27 +75,25 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
 
    -- | Backward
    tBwd1 <- preciseTime
-   let
-      v𝔹 = δv (botOf gc.v)
-      { γ: γ𝔹, e: e𝔹 } = gc.bwd v𝔹
+   let { γ: γ𝔹, e: e𝔹 } = gc.bwd (δv (botOf gc.v))
    tBwd2 <- preciseTime
-   let s𝔹' = desugBwd e𝔹 s
+   let s𝔹 = desugBwd e𝔹 s
 
    -- | Forward (round-tripping)
-   e𝔹' <- desug s𝔹'
+   e𝔹' <- desug s𝔹
    tFwd1 <- preciseTime
-   let v𝔹' = gc.fwd { γ: γ𝔹, e: e𝔹', α: top }
+   let v𝔹 = gc.fwd { γ: γ𝔹, e: e𝔹', α: top }
    tFwd2 <- preciseTime
 
    lift do
-      unless (isGraphical v𝔹) $
-         log (prettyP v𝔹')
+      unless (isGraphical gc.v) $
+         log (prettyP v𝔹)
       -- | Check backward selections
       unless (null bwd_expect) $
-         checkPretty "Trace-based source selection" bwd_expect s𝔹'
+         checkPretty "Trace-based source selection" bwd_expect s𝔹
       -- | Check round-trip selections
-      unless (isGraphical v𝔹) $
-         checkPretty "Trace-based value" fwd_expect v𝔹'
+      unless (isGraphical gc.v) $
+         checkPretty "Trace-based value" fwd_expect v𝔹
 
    pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2 }
 
