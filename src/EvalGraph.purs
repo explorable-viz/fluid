@@ -2,7 +2,6 @@ module EvalGraph
    ( GraphConfig
    , apply
    , eval
-   , evalWithConfig
    , eval_module
    , graphGC
    , match
@@ -174,13 +173,6 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
-evalWithConfig :: forall g m. MonadError Error m => Graph g => GraphConfig g -> Raw Expr -> m ((g × Int) × Expr Vertex × Val Vertex)
-evalWithConfig { g, n, γα } e =
-   runWithGraphAllocT (g × n) $ do
-      eα <- alloc e
-      vα <- eval γα eα S.empty
-      pure (eα × vα)
-
 type EvalGaloisConnection g a b =
    { gconfig :: GraphConfig g
    , eα :: Expr Vertex
@@ -198,7 +190,11 @@ graphGC
    -> Raw Expr
    -> m (EvalGaloisConnection g (Set Vertex) (Set Vertex))
 graphGC gconfig@{ g, n, γα } e = do
-   (g' × _) × eα × vα <- evalWithConfig { g, n, γα } e
+   (g' × _) × eα × vα <- do
+      runWithGraphAllocT (g × n) $ do
+         eα <- alloc e
+         vα <- eval γα eα S.empty
+         pure (eα × vα)
    let
       fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
       -- TODO: want (vertices eα `union` foldMap vertices γα) rather than sinks g' here?
