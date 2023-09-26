@@ -2,7 +2,6 @@ module EvalGraph
    ( GraphConfig
    , apply
    , eval
-   , evalWithConfig
    , eval_module
    , graphGC
    , match
@@ -16,7 +15,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
-import Data.List (List(..), (:), length, snoc, unzip, zip)
+import Data.List (List(..), length, snoc, unzip, zip, (:))
 import Data.Set (Set, empty, insert, intersection, singleton, union)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
@@ -25,8 +24,7 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
-import GaloisConnection (GaloisConnection)
-import Graph (class Graph, Vertex)
+import Graph (class Graph, Vertex, sinks)
 import Graph (vertices) as G
 import Graph.GraphWriter (class MonadGraphAlloc, alloc, new, runWithGraphAllocT)
 import Graph.Slice (bwdSlice, fwdSlice, vertices)
@@ -175,12 +173,14 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
-evalWithConfig :: forall g m a. MonadError Error m => Graph g => GraphConfig g -> Expr a -> m ((g × Int) × Expr Vertex × Val Vertex)
-evalWithConfig { g, n, γα } e =
-   runWithGraphAllocT (g × n) $ do
-      eα <- alloc e
-      vα <- eval γα eα S.empty
-      pure (eα × vα)
+type EvalGaloisConnection g a b =
+   { gconfig :: GraphConfig g
+   , eα :: Expr Vertex
+   , g :: g
+   , vα :: Val Vertex
+   , fwd :: a -> b
+   , bwd :: b -> a
+   }
 
 graphGC
    :: forall g m
@@ -188,10 +188,15 @@ graphGC
    => Graph g
    => GraphConfig g
    -> Raw Expr
-   -> m (GaloisConnection (Set Vertex) (Set Vertex))
-graphGC { g: g0, n, γα } e = do
-   (g × _) × vα × eα <- evalWithConfig { g: g0, n, γα } e
-   pure $
-      { fwd: \αs -> G.vertices (fwdSlice αs g) `intersection` vertices vα
-      , bwd: \αs -> G.vertices (bwdSlice αs g) `intersection` vertices eα -- TODO: include γα
-      }
+   -> m (EvalGaloisConnection g (Set Vertex) (Set Vertex))
+graphGC gconfig@{ g, n, γα } e = do
+   (g' × _) × eα × vα <- do
+      runWithGraphAllocT (g × n) $ do
+         eα <- alloc e
+         vα <- eval γα eα S.empty
+         pure (eα × vα)
+   let
+      fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
+      -- TODO: want (vertices eα `union` foldMap vertices γα) rather than sinks g' here?
+      bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
+   pure { gconfig, eα, g: g', vα, fwd, bwd }

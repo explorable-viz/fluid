@@ -28,6 +28,11 @@ bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs
       extend α βs
       pure $ Loop ((visited # insert α) × (L.fromFoldable βs <> αs))
 
+-- Doesn't do the final negation..
+fwdSliceDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
+fwdSliceDeMorgan αs_0 g_0 =
+   bwdSlice (sinks g_0 `difference` αs_0) (op g_0)
+
 -- | De Morgan dual of backward slicing (◁_G)° ≡ Forward slicing on the opposite graph (▷_{G_op})
 bwdSliceDual :: forall g. Graph g => Set Vertex -> g -> g
 bwdSliceDual αs0 g0 = fwdSlice αs0 (op g0)
