@@ -22,9 +22,9 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
-import Graph (sources, vertices)
+import Graph (vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (fwdSlice, fwdSliceDeMorgan) as G
+import Graph.Slice (fwdSliceDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
 import Heterogeneous.Mapping (hmap)
 import Lattice (botOf, topOf, erase, Raw)
@@ -124,8 +124,8 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Forward (round-tripping)
    tFwd1 <- preciseTime
    let
-      gfwd = G.fwdSlice αs_in gc.g
-      v𝔹 = select𝔹s gc.vα (vertices gfwd)
+      αs_out' = gc.fwd αs_in
+      v𝔹 = select𝔹s gc.vα αs_out'
    tFwd2 <- preciseTime
 
    -- | Forward (round-tripping) using De Morgan dual
@@ -144,7 +144,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
          checkPretty "Graph-based value" fwd_expect v𝔹
          checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
       αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
-         (flip subset (sources gfwd))
+         (flip subset αs_out')
       -- | To avoid unused variables when benchmarking
       unless false do
          log ("BwdAll selected nodes: " <> show αs_out_all)
