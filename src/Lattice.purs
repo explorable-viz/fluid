@@ -10,9 +10,11 @@ import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
-import Data.Set (subset)
+import Data.Set (Set, intersection, subset, union)
+import Data.Set (difference, empty) as S
 import Data.Traversable (sequence)
-import Dict (Dict, difference, intersectionWith, lookup, insert, keys, toUnfoldable, union, unionWith, update)
+import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
+import Dict (difference, intersectionWith, union, unionWith) as D
 import Effect.Exception (Error)
 import Util (type (×), Endo, assert, successfulWith, throw, (×))
 import Util.Pair (Pair(..))
@@ -125,7 +127,7 @@ instance JoinSemilattice a => JoinSemilattice (List a) where
       | otherwise = throw "Mismatched list lengths"
 
 instance JoinSemilattice a => JoinSemilattice (Dict a) where
-   join = unionWith (∨) -- faster than definedJoin
+   join = D.unionWith (∨) -- faster than definedJoin
    maybeJoin m m' = foldM mayFailUpdate m (toUnfoldable m' :: List (Var × a))
 
 instance Neg a => Neg (Dict a) where
@@ -158,10 +160,34 @@ instance Expandable t u => Expandable (Pair t) (Pair u) where
 instance (BotOf u t, Expandable t u) => Expandable (Dict t) (Dict u) where
    expand kvs kvs' =
       assert (keys kvs `subset` keys kvs') $
-         (kvs `intersectionWith expand` kvs') `union` ((kvs' `difference` kvs) <#> botOf)
+         (kvs `D.intersectionWith expand` kvs') `D.union` ((kvs' `D.difference` kvs) <#> botOf)
 
 instance Expandable t u => Expandable (List t) (List u) where
    expand xs ys = zipWith expand xs ys
 
 instance Expandable t u => Expandable (Array t) (Array u) where
    expand xs ys = A.zipWith expand xs ys
+
+-- Sucks a bit as a type class, let's try a record.
+type BooleanLattice2 a r =
+   { top :: a
+   , bot :: a
+   , meet :: a -> a -> a
+   , join :: a -> a -> a
+   , neg :: Endo a
+   | r
+   }
+
+type Powerset a = BooleanLattice2 (Set a) (
+   xs :: Set a
+)
+
+powerset :: forall a. Ord a => Set a -> Powerset a
+powerset xs =
+   { xs
+   , top: xs
+   , bot: S.empty
+   , meet: intersection
+   , join: union
+   , neg: (xs `S.difference` _)
+   }
