@@ -27,6 +27,7 @@ bwdSlice αs0 g0 = fst $ runWithGraph $ tailRecM go (empty × L.fromFoldable αs
       extend α βs
       pure $ Loop ((visited # insert α) × (L.fromFoldable βs <> αs))
 
+-- Doesn't do the final negation.
 fwdSliceDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
 fwdSliceDeMorgan αs_0 g_0 =
    bwdSlice (sinks g_0 `difference` αs_0) (op g_0)

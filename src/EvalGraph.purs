@@ -16,7 +16,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
-import Data.List (List(..), (:), length, snoc, unzip, zip)
+import Data.List (List(..), length, snoc, unzip, zip, (:))
 import Data.Set (Set, empty, insert, intersection, singleton, union)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
@@ -201,6 +201,6 @@ graphGC gconfig@{ g, n, γα } e = do
    (g' × _) × eα × vα <- evalWithConfig { g, n, γα } e
    let
       fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
-      -- TODO: (vertices eα `union` vertices γα) rather than sinks g'
+      -- TODO: want (vertices eα `union` foldMap vertices γα) rather than sinks g' here?
       bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
    pure { gconfig, eα, g: g', vα, fwd, bwd }
