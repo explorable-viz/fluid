@@ -203,3 +203,12 @@ slices x =
    , join: \y z -> bool.join <$> y <*> z
    , neg: (_ <#> bool.neg)
    }
+
+prod :: forall a b. BooleanLattice2 a -> BooleanLattice2 b -> BooleanLattice2 (a × b)
+prod l1 l2 =
+   { top: l1.top × l2.top
+   , bot: l1.bot × l2.bot
+   , meet: \(x1 × y1) (x2 × y2) -> x1 `l1.meet` x2 × y1 `l2.meet` y2
+   , join: \(x1 × y1) (x2 × y2) -> x1 `l1.join` x2 × y1 `l2.join` y2
+   , neg: l1.neg *** l2.neg
+   }
