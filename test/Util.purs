@@ -22,9 +22,9 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
-import Graph (sinks, sources, vertices)
+import Graph (sources, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
+import Graph.Slice (fwdSlice, fwdSliceDeMorgan) as G
 import Graph.Slice (selectαs, select𝔹s)
 import Heterogeneous.Mapping (hmap)
 import Lattice (botOf, topOf, erase, Raw)
@@ -111,15 +111,13 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
       αs_in = gc.bwd αs_out
       e𝔹 = select𝔹s gc.eα αs_in
    tBwd2 <- preciseTime
-   let
-      s𝔹 = desugBwd e𝔹 s
+   let s𝔹 = desugBwd e𝔹 s
 
    -- | Backward (all outputs selected)
    tBwdAll1 <- preciseTime
    let
       αs_out_all = selectαs (topOf gc.vα) gc.vα
-      gbwd_all = G.bwdSlice αs_out_all gc.g
-      αs_in_all = sinks gbwd_all
+      αs_in_all = gc.bwd αs_out_all
       e𝔹_all = select𝔹s gc.eα αs_in_all
    tBwdAll2 <- preciseTime
 
