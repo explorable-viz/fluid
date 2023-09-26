@@ -25,7 +25,7 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
-import Graph (class Graph, Vertex)
+import Graph (class Graph, Vertex, sinks)
 import Graph (vertices) as G
 import Graph.GraphWriter (class MonadGraphAlloc, alloc, new, runWithGraphAllocT)
 import Graph.Slice (bwdSlice, fwdSlice, vertices)
@@ -201,5 +201,6 @@ graphGC gconfig@{ g, n, γα } e = do
    (g' × _) × eα × vα <- evalWithConfig { g, n, γα } e
    let
       fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
-      bwd αs = G.vertices (bwdSlice αs g') `intersection` vertices eα -- TODO: include γα
+      -- TODO: (vertices eα `union` vertices γα) rather than sinks g'
+      bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
    pure { gconfig, eα, g: g', vα, fwd, bwd }

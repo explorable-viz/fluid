@@ -108,8 +108,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    tBwd1 <- preciseTime
    let
       αs_out = selectαs (δv (botOf gc.vα)) gc.vα
-      gbwd = G.bwdSlice αs_out gc.g
-      αs_in = sinks gbwd
+      αs_in = gc.bwd αs_out
       e𝔹 = select𝔹s gc.eα αs_in
    tBwd2 <- preciseTime
    let
@@ -146,7 +145,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
       unless (isGraphical v𝔹) do
          checkPretty "Graph-based value" fwd_expect v𝔹
          checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹'
-      sources gbwd `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
+      αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset (sources gfwd))
       -- | To avoid unused variables when benchmarking
       unless false do
