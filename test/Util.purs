@@ -21,7 +21,7 @@ import Effect.Aff (Aff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
-import EvalGraph (GraphConfig, evalWithConfig)
+import EvalGraph (GraphConfig, graphGC)
 import Graph (sinks, sources, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSlice, fwdSlice, fwdSliceDeMorgan) as G
@@ -33,7 +33,7 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
-import Util (MayFailT, (×), successful)
+import Util (MayFailT, successful)
 import Val (Val(..), class Ann)
 
 type TestConfig =
@@ -101,16 +101,16 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
    tEval1 <- preciseTime
-   (g × _) × eα × vα <- evalWithConfig gconfig e
+   gc <- graphGC gconfig e
    tEval2 <- preciseTime
 
    -- | Backward
    tBwd1 <- preciseTime
    let
-      αs_out = selectαs (δv (botOf vα)) vα
-      gbwd = G.bwdSlice αs_out g
+      αs_out = selectαs (δv (botOf gc.vα)) gc.vα
+      gbwd = G.bwdSlice αs_out gc.g
       αs_in = sinks gbwd
-      e𝔹 = select𝔹s eα αs_in
+      e𝔹 = select𝔹s gc.eα αs_in
    tBwd2 <- preciseTime
    let
       s𝔹 = desugBwd e𝔹 (erase s)
@@ -118,24 +118,24 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Backward (all outputs selected)
    tBwdAll1 <- preciseTime
    let
-      αs_out_all = selectαs (topOf vα) vα
-      gbwd_all = G.bwdSlice αs_out_all g
+      αs_out_all = selectαs (topOf gc.vα) gc.vα
+      gbwd_all = G.bwdSlice αs_out_all gc.g
       αs_in_all = sinks gbwd_all
-      e𝔹_all = select𝔹s eα αs_in_all
+      e𝔹_all = select𝔹s gc.eα αs_in_all
    tBwdAll2 <- preciseTime
 
    -- | Forward (round-tripping)
    tFwd1 <- preciseTime
    let
-      gfwd = G.fwdSlice αs_in g
-      v𝔹 = select𝔹s vα (vertices gfwd)
+      gfwd = G.fwdSlice αs_in gc.g
+      v𝔹 = select𝔹s gc.vα (vertices gfwd)
    tFwd2 <- preciseTime
 
    -- | Forward (round-tripping) using De Morgan dual
    tFwdDeMorgan1 <- preciseTime
    let
-      gfwd' = G.fwdSliceDeMorgan αs_in g
-      v𝔹' = select𝔹s vα (vertices gfwd') <#> not
+      gfwd' = G.fwdSliceDeMorgan αs_in gc.g
+      v𝔹' = select𝔹s gc.vα (vertices gfwd') <#> not
    tFwdDeMorgan2 <- preciseTime
 
    lift do
