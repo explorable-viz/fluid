@@ -97,11 +97,11 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2 }
 
 testGraph :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
-testGraph s gconf { δv, bwd_expect, fwd_expect } = do
+testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    e <- desug s
    tEval1 <- preciseTime
-   (g × _) × eα × vα <- evalWithConfig gconf e
+   (g × _) × eα × vα <- evalWithConfig gconfig e
    tEval2 <- preciseTime
 
    -- | Backward

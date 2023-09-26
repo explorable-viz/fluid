@@ -200,8 +200,8 @@ evalBwd' v (T.LetRec ρ t) =
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
 
--- Haven't yet figured out how to extend record types.
-type GaloisConnectionTraced a b =
+-- TODO: somehow extend GaloisConnection, e.g. by aggregation or row polymorphism.
+type EvalGaloisConnection a b =
    { γ :: Raw Env
    , e :: Raw Expr
    , t :: Trace
@@ -210,7 +210,7 @@ type GaloisConnectionTraced a b =
    , bwd :: b -> a
    }
 
-traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (GaloisConnectionTraced (EvalBwdResult a) (Val a))
+traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (EvalGaloisConnection (EvalBwdResult a) (Val a))
 traceGC γ e = do
    t × v <- eval γ e bot
    let

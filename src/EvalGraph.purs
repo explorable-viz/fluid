@@ -25,7 +25,6 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
-import GaloisConnection (GaloisConnection)
 import Graph (class Graph, Vertex)
 import Graph (vertices) as G
 import Graph.GraphWriter (class MonadGraphAlloc, alloc, new, runWithGraphAllocT)
@@ -182,16 +181,25 @@ evalWithConfig { g, n, γα } e =
       vα <- eval γα eα S.empty
       pure (eα × vα)
 
+type EvalGaloisConnection g a b =
+   { gconfig :: GraphConfig g
+   , eα :: Expr Vertex
+   , g :: g
+   , vα :: Val Vertex
+   , fwd :: a -> b
+   , bwd :: b -> a
+   }
+
 graphGC
    :: forall g m
     . MonadError Error m
    => Graph g
    => GraphConfig g
    -> Raw Expr
-   -> m (GaloisConnection (Set Vertex) (Set Vertex))
-graphGC { g, n, γα } e = do
-   (g' × _) × vα × eα <- evalWithConfig { g, n, γα } e
-   pure $
-      { fwd: \αs -> G.vertices (fwdSlice αs g') `intersection` vertices vα
-      , bwd: \αs -> G.vertices (bwdSlice αs g') `intersection` vertices eα -- TODO: include γα
-      }
+   -> m (EvalGaloisConnection g (Set Vertex) (Set Vertex))
+graphGC gconfig@{ g, n, γα } e = do
+   (g' × _) × eα × vα <- evalWithConfig { g, n, γα } e
+   let
+      fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
+      bwd αs = G.vertices (bwdSlice αs g') `intersection` vertices eα -- TODO: include γα
+   pure { gconfig, eα, g: g', vα, fwd, bwd }
