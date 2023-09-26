@@ -112,7 +112,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
       e𝔹 = select𝔹s gc.eα αs_in
    tBwd2 <- preciseTime
    let
-      s𝔹 = desugBwd e𝔹 (erase s)
+      s𝔹 = desugBwd e𝔹 s
 
    -- | Backward (all outputs selected)
    tBwdAll1 <- preciseTime
