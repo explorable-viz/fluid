@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
+import BoolAlg (bool)
 import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, zeroRow, sumRow, preciseTime, tdiff)
 import Control.Monad.Error.Class (class MonadThrow, liftEither)
 import Control.Monad.Except (runExceptT)
@@ -32,7 +33,7 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
-import Util (MayFailT, successful)
+import Util (MayFailT, successful, (×))
 import Val (Val(..), class Ann)
 
 type TestConfig =
@@ -72,19 +73,19 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    let e = gc_desug.fwd s
    t_eval1 <- preciseTime
-   gc <- traceGC (erase <$> γα) e
+   gc <- traceGC bool (erase <$> γα) e
    t_eval2 <- preciseTime
 
    -- | Backward
    t_bwd1 <- preciseTime
-   let { γ: γ𝔹, e: e𝔹 } = gc.bwd (δv (botOf gc.v))
+   let γ𝔹 × e𝔹 × _ = gc.bwd (δv (botOf gc.v))
    t_bwd2 <- preciseTime
    let s𝔹 = gc_desug𝔹.bwd e𝔹
 
    -- | Forward (round-tripping)
    let e𝔹' = gc_desug𝔹.fwd s𝔹
    t_fwd1 <- preciseTime
-   let v𝔹 = gc.fwd { γ: γ𝔹, e: e𝔹', α: top }
+   let v𝔹 = gc.fwd (γ𝔹 × e𝔹' × top)
    t_fwd2 <- preciseTime
 
    lift do
