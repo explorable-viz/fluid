@@ -24,6 +24,7 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
+import GaloisConnection (GaloisConnection)
 import Graph (class Graph, Vertex, sinks)
 import Graph (vertices) as G
 import Graph.GraphWriter (class MonadGraphAlloc, alloc, new, runWithGraphAllocT)
@@ -173,14 +174,12 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
-type EvalGaloisConnection g a b =
-   { gconfig :: GraphConfig g
+type EvalGaloisConnection g a b = GaloisConnection a b
+   ( gconfig :: GraphConfig g
    , eα :: Expr Vertex
    , g :: g
    , vα :: Val Vertex
-   , fwd :: a -> b
-   , bwd :: b -> a
-   }
+   )
 
 graphGC
    :: forall g m

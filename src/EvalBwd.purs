@@ -21,6 +21,7 @@ import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
+import GaloisConnection (GaloisConnection)
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
@@ -200,17 +201,14 @@ evalBwd' v (T.LetRec ρ t) =
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
 
--- TODO: somehow extend GaloisConnection, e.g. by aggregation or row polymorphism.
-type EvalGaloisConnection a b =
-   { γ :: Raw Env
+type EvalGaloisConnection a = GaloisConnection (EvalBwdResult a) (Val a)
+   ( γ :: Raw Env
    , e :: Raw Expr
    , t :: Trace
    , v :: Raw Val
-   , fwd :: a -> b
-   , bwd :: b -> a
-   }
+   )
 
-traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (EvalGaloisConnection (EvalBwdResult a) (Val a))
+traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (EvalGaloisConnection a)
 traceGC γ e = do
    t × v <- eval γ e bot
    let
