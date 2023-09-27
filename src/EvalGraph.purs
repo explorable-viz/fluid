@@ -8,6 +8,7 @@ module EvalGraph
    , patternMismatch
    ) where
 
+import BoolAlg (BoolAlg, powerset)
 import Prelude hiding (apply, add)
 
 import Bindings (varAnon)
@@ -175,7 +176,9 @@ eval_module γ = go D.empty
       go (γ' <+> γ'') (Module ds) αs
 
 type EvalGaloisConnection g = GaloisConnection (Set Vertex) (Set Vertex)
-   ( selecte𝔹 :: Set Vertex -> Expr 𝔹
+   ( dom :: BoolAlg (Set Vertex)
+   , codom :: BoolAlg (Set Vertex)
+   , selecte𝔹 :: Set Vertex -> Expr 𝔹
    , selectv𝔹 :: Set Vertex -> Val 𝔹
    , runδv :: (Val 𝔹 -> Val 𝔹) -> Set Vertex
    , g :: g
@@ -195,10 +198,12 @@ graphGC { g, n, γα } e = do
          vα <- eval γα eα S.empty
          pure (eα × vα)
    let
+      dom = powerset (sinks g')
+      codom = powerset (vertices vα)
       selecte𝔹 αs = select𝔹s eα αs
       selectv𝔹 αs = select𝔹s vα αs
       runδv δv = selectαs (δv (botOf vα)) vα
       fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
       -- TODO: want (vertices eα `union` foldMap vertices γα) rather than sinks g' here?
       bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
-   pure { selecte𝔹, selectv𝔹, runδv, g: g', fwd, bwd }
+   pure { dom, codom, selecte𝔹, selectv𝔹, runδv, g: g', fwd, bwd }
