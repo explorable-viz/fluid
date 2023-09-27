@@ -12,8 +12,6 @@ import Util (type (×), (×), Endo)
 
 -- Candidate replacement for Lattice.purs, using records rather than type classes as the latter are too
 -- inflexible for the granularity of instande we require. Also flatten the hiearchy of types.
-
--- Sucks a bit as a type class, let's try a record.
 type BoolAlg a =
    { top :: a
    , bot :: a
