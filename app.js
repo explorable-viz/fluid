@@ -31397,54 +31397,52 @@
           BoundedJoinSemilattice0.bot,
           runST(bind_(newImpl)(poke3(x2)(v2)))
         ))(t2);
-        return { "\u03B3": v3["\u03B3"], e: $Expr("Project", v3.e, x2), "\u03B1": v3["\u03B1"] };
+        return $Tuple(v3._1, $Tuple($Expr("Project", v3._2._1, x2), v3._2._2));
       };
       const $11 = (t1, t2, t3, v2) => {
         const v3 = applyBwd(dictAnn)($Tuple(t3, v2));
         const v4 = evalBwd$p(dictAnn)(v3._1)(t1);
         const v5 = evalBwd$p(dictAnn)(v3._2)(t2);
-        return { "\u03B3": join(v4["\u03B3"])(v5["\u03B3"]), e: $Expr("App", v4.e, v5.e), "\u03B1": JoinSemilattice0.join(v4["\u03B1"])(v5["\u03B1"]) };
+        return $Tuple(join(v4._1)(v5._1), $Tuple($Expr("App", v4._2._1, v5._2._1), JoinSemilattice0.join(v4._2._2)(v5._2._2)));
       };
       const $12 = (t1, t2, v2, w) => {
         const v3 = evalBwd$p(dictAnn)(v2)(t2);
-        const v4 = append_inv(bVMatch.bv(w))(v3["\u03B3"]);
-        const v5 = matchBwd1(v4._2)(ContNone)(v3["\u03B1"])(w);
+        const v4 = append_inv(bVMatch.bv(w))(v3._1);
+        const v5 = matchBwd1(v4._2)(ContNone)(v3._2._2)(w);
         const v6 = evalBwd$p(dictAnn)(v5._1)(t1);
-        return { "\u03B3": join(v4._1)(v6["\u03B3"]), e: $Expr("Let", $VarDef(v5._2, v6.e), v3.e), "\u03B1": v6["\u03B1"] };
+        return $Tuple(join(v4._1)(v6._1), $Tuple($Expr("Let", $VarDef(v5._2, v6._2._1), v3._2._1), v6._2._2));
       };
       const $13 = (t2, v2, \u03C1) => {
         const v3 = evalBwd$p(dictAnn)(v2)(t2);
-        const v4 = append_inv(fromFoldable15(keys2(\u03C1)))(v3["\u03B3"]);
+        const v4 = append_inv(fromFoldable15(keys2(\u03C1)))(v3._1);
         const v5 = closeDefsBwd1(v4._2);
-        return { "\u03B3": join(v4._1)(v5._1), e: $Expr("LetRec", v5._2._1, v3.e), "\u03B1": JoinSemilattice0.join(v3["\u03B1"])(v5._2._2) };
+        return $Tuple(join(v4._1)(v5._1), $Tuple($Expr("LetRec", v5._2._1, v3._2._1), JoinSemilattice0.join(v3._2._2)(v5._2._2)));
       };
       if (v1.tag === "Var") {
-        return {
-          "\u03B3": runST(bind_(newImpl)(poke3(v1._1)(v))),
-          e: $Expr("Var", v1._1),
-          "\u03B1": BoundedJoinSemilattice0.bot
-        };
+        return $Tuple(
+          runST(bind_(newImpl)(poke3(v1._1)(v))),
+          $Tuple($Expr("Var", v1._1), BoundedJoinSemilattice0.bot)
+        );
       }
       if (v1.tag === "Op") {
-        return {
-          "\u03B3": runST(bind_(newImpl)(poke3(v1._1)(v))),
-          e: $Expr("Op", v1._1),
-          "\u03B1": BoundedJoinSemilattice0.bot
-        };
+        return $Tuple(
+          runST(bind_(newImpl)(poke3(v1._1)(v))),
+          $Tuple($Expr("Op", v1._1), BoundedJoinSemilattice0.bot)
+        );
       }
       if (v1.tag === "Const") {
         if (v.tag === "Str") {
-          return { "\u03B3": empty2, e: $Expr("Str", v._1, v._2), "\u03B1": v._1 };
+          return $Tuple(empty2, $Tuple($Expr("Str", v._1, v._2), v._1));
         }
         if (v.tag === "Int") {
-          return { "\u03B3": empty2, e: $Expr("Int", v._1, v._2), "\u03B1": v._1 };
+          return $Tuple(empty2, $Tuple($Expr("Int", v._1, v._2), v._1));
         }
         if (v.tag === "Float") {
-          return { "\u03B3": empty2, e: $Expr("Float", v._1, v._2), "\u03B1": v._1 };
+          return $Tuple(empty2, $Tuple($Expr("Float", v._1, v._2), v._1));
         }
         if (v.tag === "Fun") {
           if (v._2.tag === "Closure") {
-            return { "\u03B3": v._2._1, e: $Expr("Lambda", v._2._3), "\u03B1": v._1 };
+            return $Tuple(v._2._1, $Tuple($Expr("Lambda", v._2._3), v._1));
           }
           return unsafePerformEffect(throwException(error("absurd")));
         }
@@ -31454,11 +31452,13 @@
         if (v1.tag === "Record") {
           const $14 = evalBwd$p(dictAnn);
           const x\u03B3e\u03B1s = _fmapObject(intersectionWith(Tuple)(v._2)(v1._1), (v$1) => $14(v$1._1)(v$1._2));
-          return {
-            "\u03B3": foldrArray(join)(empty2)(values(_fmapObject(x\u03B3e\u03B1s, (v2) => v2["\u03B3"]))),
-            e: $Expr("Record", v._1, _fmapObject(x\u03B3e\u03B1s, (v2) => v2.e)),
-            "\u03B1": foldrArray(JoinSemilattice0.join)(v._1)(values(_fmapObject(x\u03B3e\u03B1s, (v2) => v2["\u03B1"])))
-          };
+          return $Tuple(
+            foldrArray(join)(empty2)(values(_fmapObject(x\u03B3e\u03B1s, fst))),
+            $Tuple(
+              $Expr("Record", v._1, _fmapObject(x\u03B3e\u03B1s, (x2) => x2._2._1)),
+              foldrArray(JoinSemilattice0.join)(v._1)(values(_fmapObject(x\u03B3e\u03B1s, (x2) => x2._2._2)))
+            )
+          );
         }
         if (v1.tag === "Project") {
           return $10(v1._1, v, v1._2);
@@ -31479,15 +31479,17 @@
           const s\u03B1vs$p = expand(v._2)(_fmapObject(v1._2, (v2) => $Tuple(unit2, v2)));
           const \u03B3e\u03B1s = listMap((v2) => evalBwd$p(dictAnn)($Val("Str", $$get(v2._1)(s\u03B1vs$p)._1, v2._1))(v2._2._1))(v1._1);
           const \u03B3e\u03B1s$p = listMap((v2) => evalBwd$p(dictAnn)($$get(v2._1)(s\u03B1vs$p)._2)(v2._2._2))(v1._1);
-          return {
-            "\u03B3": foldableList.foldr(join)(empty2)(foldableList.foldr(Cons)(listMap((v2) => v2["\u03B3"])(\u03B3e\u03B1s$p))(listMap((v2) => v2["\u03B3"])(\u03B3e\u03B1s))),
-            e: $Expr(
-              "Dictionary",
-              v._1,
-              listMap(fromTuple)(zipWith(Tuple)(listMap((v2) => v2.e)(\u03B3e\u03B1s))(listMap((v2) => v2.e)(\u03B3e\u03B1s$p)))
-            ),
-            "\u03B1": foldableList.foldr(JoinSemilattice0.join)(v._1)(foldableList.foldr(Cons)(listMap((v2) => v2["\u03B1"])(\u03B3e\u03B1s$p))(listMap((v2) => v2["\u03B1"])(\u03B3e\u03B1s)))
-          };
+          return $Tuple(
+            foldableList.foldr(join)(empty2)(foldableList.foldr(Cons)(listMap(fst)(\u03B3e\u03B1s$p))(listMap(fst)(\u03B3e\u03B1s))),
+            $Tuple(
+              $Expr(
+                "Dictionary",
+                v._1,
+                listMap(fromTuple)(zipWith(Tuple)(listMap((x2) => x2._2._1)(\u03B3e\u03B1s))(listMap((x2) => x2._2._1)(\u03B3e\u03B1s$p)))
+              ),
+              foldableList.foldr(JoinSemilattice0.join)(v._1)(foldableList.foldr(Cons)(listMap((x2) => x2._2._2)(\u03B3e\u03B1s$p))(listMap((x2) => x2._2._2)(\u03B3e\u03B1s)))
+            )
+          );
         }
         if (v1.tag === "Project") {
           return $10(v1._1, v, v1._2);
@@ -31507,9 +31509,9 @@
         if (v1.tag === "Constr") {
           const v2 = foldableList.foldr((v22) => (v3) => {
             const v4 = evalBwd$p(dictAnn)(v22._1)(v22._2);
-            return $Tuple(join(v3._1)(v4["\u03B3"]), $Tuple($List("Cons", v4.e, v3._2._1), JoinSemilattice0.join(v3._2._2)(v4["\u03B1"])));
+            return $Tuple(join(v3._1)(v4._1), $Tuple($List("Cons", v4._2._1, v3._2._1), JoinSemilattice0.join(v3._2._2)(v4._2._2)));
           })($Tuple(empty2, $Tuple(Nil, v._1)))(zipWith(Tuple)(v._3)(v1._2));
-          return { "\u03B3": v2._1, e: $Expr("Constr", v._1, v1._1, v2._2._1), "\u03B1": v2._2._2 };
+          return $Tuple(v2._1, $Tuple($Expr("Constr", v._1, v1._1, v2._2._1), v2._2._2));
         }
         if (v1.tag === "Project") {
           return $10(v1._1, v, v1._2);
@@ -31544,7 +31546,7 @@
               v1._2._1,
               unit2,
               Leaf2
-            ))($Map("Two", Leaf2, v1._2._2, unit2, Leaf2)))(v42["\u03B3"]);
+            ))($Map("Two", Leaf2, v1._2._2, unit2, Leaf2)))(v42._1);
             const \u03B30 = unionWith2((v$1) => identity19)(unionWith2((v$1) => (v1$1) => unsafePerformEffect(throwException(error("not disjoint"))))(runST(bind_(newImpl)(poke3(v1._2._1)($Val(
               "Int",
               BoundedJoinSemilattice0.bot,
@@ -31558,7 +31560,7 @@
             const $19 = $$get(v1._2._1)(\u03B30);
             if ($18.tag === "Int") {
               if ($19.tag === "Int") {
-                return $Tuple(v5._1, $Tuple(v42.e, $Tuple(v42["\u03B1"], $Tuple($18._1, $19._1))));
+                return $Tuple(v5._1, $Tuple(v42._2._1, $Tuple(v42._2._2, $Tuple($18._1, $19._1))));
               }
               fail();
             }
@@ -31578,11 +31580,13 @@
               $List("Cons", $Val("Int", JoinSemilattice0.join(v3._2._2._2._2)(v._2._2._2._2), v1._3._2), Nil)
             )
           ))(v1._4);
-          return {
-            "\u03B3": join(v3._1)(v4["\u03B3"]),
-            e: $Expr("Matrix", v._1, v3._2._1, $Tuple(v1._2._1, v1._2._2), v4.e),
-            "\u03B1": JoinSemilattice0.join(JoinSemilattice0.join(v._1)(v3._2._2._1))(v4["\u03B1"])
-          };
+          return $Tuple(
+            join(v3._1)(v4._1),
+            $Tuple(
+              $Expr("Matrix", v._1, v3._2._1, $Tuple(v1._2._1, v1._2._2), v4._2._1),
+              JoinSemilattice0.join(JoinSemilattice0.join(v._1)(v3._2._2._1))(v4._2._2)
+            )
+          );
         }
         if (v1.tag === "Project") {
           return $10(v1._1, v, v1._2);
@@ -31622,11 +31626,11 @@
     return (v) => {
       if (v._1.tag === "AppClosure") {
         const v2 = evalBwd$p(dictAnn)(v._2)(v._1._3);
-        const v3 = append_inv(bVMatch.bv(v._1._2))(v2["\u03B3"]);
+        const v3 = append_inv(bVMatch.bv(v._1._2))(v2._1);
         const v4 = append_inv(v._1._1)(v3._1);
         const v5 = closeDefsBwd1(v4._2);
-        const v6 = matchBwd1(v3._2)($Cont("ContExpr", v2.e))(v2["\u03B1"])(v._1._2);
-        return $Tuple($Val("Fun", JoinSemilattice0.join(v2["\u03B1"])(v5._2._2), $Fun("Closure", join1(v4._1)(v5._1), v5._2._1, v6._2)), v6._1);
+        const v6 = matchBwd1(v3._2)($Cont("ContExpr", v2._2._1))(v2._2._2)(v._1._2);
+        return $Tuple($Val("Fun", JoinSemilattice0.join(v2._2._2)(v5._2._2), $Fun("Closure", join1(v4._1)(v5._1), v5._2._1, v6._2)), v6._1);
       }
       if (v._1.tag === "AppForeign") {
         if (v._1._2._1._1.arity > v._1._1) {
@@ -31700,7 +31704,7 @@
     const expand1 = expandableExprRawExpr(BoundedJoinSemilattice0).expand;
     return (\u03B3) => (e) => (v) => (t2) => {
       const v1 = evalBwd$p1(v)(t2);
-      return { "\u03B3": expand(v1["\u03B3"])(\u03B3), e: expand1(v1.e)(e), "\u03B1": v1["\u03B1"] };
+      return $Tuple(expand(v1._1)(\u03B3), $Tuple(expand1(v1._2._1)(e), v1._2._2));
     };
   };
   var apply2Bwd = (dictAnn) => {
@@ -37313,7 +37317,7 @@
     const $8 = append_inv($Map("Two", Leaf2, x2, unit2, Leaf2))(evalBwd2(_fmapObject(
       unionWith2((v$1) => identity19)(\u03B30)(\u03B3),
       erase2
-    ))(functorExpr.map((v$1) => unit2)(e1))(v1)(t1)["\u03B3"])._2;
+    ))(functorExpr.map((v$1) => unit2)(e1))(v1)(t1)._1)._2;
     return bind(orElse2("absurd")(_lookup(Nothing, Just, x2, $8)))((v0$p) => bind($$eval3(_fmapObject(
       unionWith2((v$1) => identity19)(_fmapObject(\u03B30, botOf))($8),
       functorVal.map(boolNot)
@@ -37321,7 +37325,7 @@
   };
   var figViews = (v) => (\u03B4v) => {
     const v2 = evalBwd2(_fmapObject(unionWith2((v$1) => identity19)(v["\u03B30"])(v["\u03B3"]), erase2))(functorExpr.map((v$1) => unit2)(v.e))(\u03B4v(v.v))(v.t);
-    return bind($$eval3(v2["\u03B3"])(v2.e)(v2["\u03B1"]))((v3) => bind(sequence(arrayMap((a) => varView(a)(v2["\u03B3"]))(v.spec.xs)))((views) => applicativeExceptT2.pure($Tuple(
+    return bind($$eval3(v2._1)(v2._2._1)(v2._2._2))((v3) => bind(sequence(arrayMap((a) => varView(a)(v2._1))(v.spec.xs)))((views) => applicativeExceptT2.pure($Tuple(
       view("output")(v3._2),
       views
     ))));
