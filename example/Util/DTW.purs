@@ -4,9 +4,9 @@ import Prelude
 
 import Data.Array (concat, concatMap, drop, foldl, length, mapWithIndex, range, replicate, sort, take, unsafeIndex, zip)
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Traversable (for)
-import Example.Util.BMA (IntInf(..), Matrix(..), bandMatrix, genMat, matIndex)
-import Util (type (×), error, (×))
+import Data.Ord (abs)
+import Example.Util.BMA (IntInf(..), Matrix, bandMatrix, matIndex)
+import Util (type (×), (×))
 
 distanceDTW :: forall a. Partial => Array a -> Array a -> Int -> (a -> a -> IntInf) -> Matrix IntInf
 distanceDTW seq1 seq2 window cost = 
@@ -34,3 +34,5 @@ indexInfty i j matrix = fromMaybe Infty (matIndex matrix i j)
 indexIndices :: Int -> Array Int -> Array (Int × Int)
 indexIndices i js = zip (replicate (length js) i) js
 
+distEuclid :: IntInf -> IntInf -> IntInf
+distEuclid x y = abs $ x - y

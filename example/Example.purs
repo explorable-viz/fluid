@@ -1,12 +1,15 @@
 module Example.Example where
 
 import Prelude
+
 import Effect (Effect)
 import Effect.Class.Console (logShow)
-import Example.Util.BMA (mean)
-import Data.FastVect.FastVect ((:), empty)
+import Example.Util.BMA (IntInf(..))
+import Example.Util.DTW (distEuclid, distanceDTW)
 
-main :: Effect Unit
+main :: Partial => Effect Unit
 main = do
-    logShow "100"
-    logShow (mean 2.0 (1.0:2.0:3.0:4.0:5.0:6.0:7.0:8.0:9.0:10.0: empty))
+    let x = [IInt 3, IInt 1, IInt 2, IInt 2, IInt 1]
+        y = [IInt 2, IInt 0, IInt 0, IInt 3, IInt 3, IInt 1, IInt 0]
+        dtwMat = distanceDTW x y 1 distEuclid
+    logShow dtwMat

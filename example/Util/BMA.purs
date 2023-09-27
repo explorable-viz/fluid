@@ -246,4 +246,4 @@ main = do
                                     [IInt 2, IInt 3, IInt 4], 
                                     [IInt 3, IInt 4, IInt 5]]
    logShow testnonnegRows
-
+   
