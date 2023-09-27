@@ -28,8 +28,8 @@ import GaloisConnection (GaloisConnection)
 import Graph (class Graph, Vertex, sinks)
 import Graph (vertices) as G
 import Graph.GraphWriter (class MonadGraphAlloc, alloc, new, runWithGraphAllocT)
-import Graph.Slice (bwdSlice, fwdSlice, vertices)
-import Lattice (Raw)
+import Graph.Slice (bwdSlice, fwdSlice, selectαs, select𝔹s, vertices)
+import Lattice (Raw, 𝔹, botOf)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (×), check, error, orElse, successful, throw, with, (×))
@@ -175,9 +175,10 @@ eval_module γ = go D.empty
       go (γ' <+> γ'') (Module ds) αs
 
 type EvalGaloisConnection g a b = GaloisConnection a b
-   ( eα :: Expr Vertex
+   ( selecte𝔹 :: a -> Expr 𝔹
+   , selectv𝔹 :: b -> Val 𝔹
+   , runδv :: (Val 𝔹 -> Val 𝔹) -> b
    , g :: g
-   , vα :: Val Vertex
    )
 
 graphGC
@@ -194,7 +195,10 @@ graphGC { g, n, γα } e = do
          vα <- eval γα eα S.empty
          pure (eα × vα)
    let
+      selecte𝔹 αs = select𝔹s eα αs
+      selectv𝔹 αs = select𝔹s vα αs
+      runδv δv = selectαs (δv (botOf vα)) vα
       fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
       -- TODO: want (vertices eα `union` foldMap vertices γα) rather than sinks g' here?
       bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
-   pure { eα, g: g', vα, fwd, bwd }
+   pure { selecte𝔹, selectv𝔹, runδv, g: g', fwd, bwd }

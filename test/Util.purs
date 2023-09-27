@@ -25,7 +25,6 @@ import EvalGraph (GraphConfig, graphGC)
 import Graph (sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
-import Graph.Slice (selectαs, select𝔹s)
 import Heterogeneous.Mapping (hmap)
 import Lattice (botOf, topOf, erase, Raw)
 import Module (parse)
@@ -107,48 +106,48 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Backward
    tBwd1 <- preciseTime
    let
-      αs_out = selectαs (δv (botOf gc.vα)) gc.vα
+      αs_out = gc.runδv δv
       αs_in = gc.bwd αs_out
-      e𝔹 = select𝔹s gc.eα αs_in
+      e𝔹 = gc.selecte𝔹 αs_in
    tBwd2 <- preciseTime
    let s𝔹 = desugBwd e𝔹 s
 
    -- | De Morgan dual of backward
    tBwdDual1 <- preciseTime
    let
-      αs_out_dual = selectαs (δv (botOf gc.vα)) gc.vα
+      αs_out_dual = gc.runδv δv
       gbwd_dual = G.bwdSliceDual αs_out_dual gc.g
       αs_in_dual = sinks gbwd_dual
-      e𝔹_dual = select𝔹s gc.eα αs_in_dual
+      e𝔹_dual = gc.selecte𝔹 αs_in_dual
    tBwdDual2 <- preciseTime
 
    -- | Backward (all outputs selected)
    tBwdAll1 <- preciseTime
    let
-      αs_out_all = selectαs (topOf gc.vα) gc.vα
+      αs_out_all = gc.runδv topOf
       αs_in_all = gc.bwd αs_out_all
-      e𝔹_all = select𝔹s gc.eα αs_in_all
+      e𝔹_all = gc.selecte𝔹 αs_in_all
    tBwdAll2 <- preciseTime
 
    -- | Forward (round-tripping)
    tFwd1 <- preciseTime
    let
       αs_out' = gc.fwd αs_in
-      v𝔹 = select𝔹s gc.vα αs_out'
+      v𝔹 = gc.selectv𝔹 αs_out'
    tFwd2 <- preciseTime
 
    -- | De Morgan dual of forward
    tFwdDual1 <- preciseTime
    let
       gfwd_dual = G.fwdSliceDual αs_in gc.g
-      v𝔹_dual = select𝔹s gc.vα (vertices gfwd_dual)
+      v𝔹_dual = gc.selectv𝔹 (vertices gfwd_dual)
    tFwdDual2 <- preciseTime
 
    -- | Forward (round-tripping) using De Morgan dual
    tFwdAsDeMorgan1 <- preciseTime
    let
       gfwd_demorgan = G.fwdSliceDeMorgan αs_in gc.g
-      v𝔹_demorgan = select𝔹s gc.vα (vertices gfwd_demorgan) <#> not
+      v𝔹_demorgan = gc.selectv𝔹 (vertices gfwd_demorgan) <#> not
    tFwdAsDeMorgan2 <- preciseTime
 
    lift do
