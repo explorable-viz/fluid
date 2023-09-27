@@ -16,7 +16,7 @@ import Lattice (class BoundedJoinSemilattice, bot)
 import Partial.Unsafe (unsafePartial)
 import Pretty2 (prettyP)
 import Util (type (+), type (×), (×), error)
-import Val2 (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
+import Val2 (class Highlightable, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph, Val(..))
 
 -- Mediate between values of annotation type a and (potential) underlying datatype d, analogous to
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
@@ -101,25 +101,25 @@ intPair =
    match' (Constr α c (v : v' : Nil)) | c == cPair = (int.match v × int.match v') × α
    match' v = error ("Pair expected; got " <> prettyP (erase v))
 
-matrixRep :: forall a. Ann a => ToFrom (MatrixRep a) a
+matrixRep :: forall a. Highlightable a => ToFrom (MatrixRep a) a
 matrixRep =
    { constr: \(m × α) -> Matrix α m
    , constr_bwd: match'
    , match: match'
    }
    where
-   match' :: Ann a => Val a -> MatrixRep a × a
+   match' :: Highlightable a => Val a -> MatrixRep a × a
    match' (Matrix α m) = m × α
    match' v = error ("Matrix expected; got " <> prettyP v)
 
-record :: forall a. Ann a => ToFrom (Dict (Val a)) a
+record :: forall a. Highlightable a => ToFrom (Dict (Val a)) a
 record =
    { constr: \(xvs × α) -> Record α xvs
    , constr_bwd: match'
    , match: match'
    }
    where
-   match' :: Ann a => _
+   match' :: Highlightable a => _
    match' (Record α xvs) = xvs × α
    match' v = error ("Record expected; got " <> prettyP v)
 
