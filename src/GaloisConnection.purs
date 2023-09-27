@@ -18,4 +18,4 @@ deMorgan 𝒶 𝒷 = (𝒶.neg >>> _) >>> (_ >>> 𝒷.neg)
 
 -- Could unify deMorgan and dual but would need to reify notion of opposite category.
 dual :: forall a b r. BoolAlg a -> BoolAlg b -> GaloisConnection a b r -> GaloisConnection b a r
-dual 𝒶 𝒷 gc@{ fwd, bwd } = gc{ fwd = deMorgan 𝒷 𝒶 bwd, bwd = deMorgan 𝒶 𝒷 fwd }
+dual 𝒶 𝒷 gc@{ fwd, bwd } = gc { fwd = deMorgan 𝒷 𝒶 bwd, bwd = deMorgan 𝒶 𝒷 fwd }
