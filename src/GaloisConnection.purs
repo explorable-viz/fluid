@@ -5,10 +5,10 @@ import Prelude
 import BoolAlg (BoolAlg)
 import Util (Endo)
 
--- a and b are posets, but we don't enforce that here. Use record rather than type class so we can extend with
--- explicit value-level representation of index (e.g. graph or trace) for families of GCs.
+-- Galois connections are more general, this is specialised to Boolean algebras.
 type GaloisConnection a b r =
-   { fwd :: a -> b
+   {
+     fwd :: a -> b
    , bwd :: b -> a
    | r
    }

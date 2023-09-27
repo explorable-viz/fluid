@@ -38,7 +38,7 @@ powerset xs =
    , neg: (xs `S.difference` _)
    }
 
-slices :: forall f a. Apply f => BoolAlg a -> f a -> BoolAlg (f a)
+slices :: forall f a b. Apply f => BoolAlg a -> f b -> BoolAlg (f a)
 slices 𝒶 x =
    { top: x <#> const 𝒶.top
    , bot: x <#> const 𝒶.bot
