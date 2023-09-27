@@ -4,6 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
+import BoolAlg (bool)
 import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, zeroRow, sumRow, preciseTime, tdiff)
 import Control.Monad.Error.Class (class MonadThrow, liftEither)
 import Control.Monad.Except (runExceptT)
@@ -16,7 +17,7 @@ import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
 import Debug (trace)
-import Desugarable (desug, desugBwd)
+import Desug (desugGC)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
@@ -32,7 +33,7 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
-import Util (MayFailT, successful)
+import Util (MayFailT, successful, (×))
 import Val (Val(..), class Ann)
 
 type TestConfig =
@@ -65,23 +66,27 @@ testParse s = do
 
 testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
 testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
+   -- | Desugaring Galois connections for Unit and Boolean type selections
+   gc_desug <- desugGC s
+   gc_desug𝔹 <- desugGC s
+
    -- | Eval
-   e <- desug s
-   tEval1 <- preciseTime
-   gc <- traceGC (erase <$> γα) e
-   tEval2 <- preciseTime
+   let e = gc_desug.fwd s
+   t_eval1 <- preciseTime
+   gc <- traceGC bool (erase <$> γα) e
+   t_eval2 <- preciseTime
 
    -- | Backward
-   tBwd1 <- preciseTime
-   let { γ: γ𝔹, e: e𝔹 } = gc.bwd (δv (botOf gc.v))
-   tBwd2 <- preciseTime
-   let s𝔹 = desugBwd e𝔹 s
+   t_bwd1 <- preciseTime
+   let γ𝔹 × e𝔹 × _ = gc.bwd (δv (botOf gc.v))
+   t_bwd2 <- preciseTime
+   let s𝔹 = gc_desug𝔹.bwd e𝔹
 
    -- | Forward (round-tripping)
-   e𝔹' <- desug s𝔹
-   tFwd1 <- preciseTime
-   let v𝔹 = gc.fwd { γ: γ𝔹, e: e𝔹', α: top }
-   tFwd2 <- preciseTime
+   let e𝔹' = gc_desug𝔹.fwd s𝔹
+   t_fwd1 <- preciseTime
+   let v𝔹 = gc.fwd (γ𝔹 × e𝔹' × top)
+   t_fwd2 <- preciseTime
 
    lift do
       unless (isGraphical gc.v) $
@@ -93,60 +98,64 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
       unless (isGraphical gc.v) $
          checkPretty "Trace-based value" fwd_expect v𝔹
 
-   pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tFwd: tdiff tFwd1 tFwd2 }
+   pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tFwd: tdiff t_fwd1 t_fwd2 }
 
 testGraph :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
 testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
+   -- | Desugaring Galois connections for Unit and Boolean type selections
+   gc_desug <- desugGC s
+   gc_desug𝔹 <- desugGC s
+
    -- | Eval
-   e <- desug s
-   tEval1 <- preciseTime
+   let e = gc_desug.fwd s
+   t_eval1 <- preciseTime
    gc <- graphGC gconfig e
-   tEval2 <- preciseTime
+   t_eval2 <- preciseTime
 
    -- | Backward
-   tBwd1 <- preciseTime
+   t_bwd1 <- preciseTime
    let
       αs_out = gc.runδv δv
       αs_in = gc.bwd αs_out
       e𝔹 = gc.selecte𝔹 αs_in
-   tBwd2 <- preciseTime
-   let s𝔹 = desugBwd e𝔹 s
+   t_bwd2 <- preciseTime
+   let s𝔹 = gc_desug𝔹.bwd e𝔹
 
    -- | De Morgan dual of backward
-   tBwdDual1 <- preciseTime
+   t_bwdDual1 <- preciseTime
    let
       αs_out_dual = gc.runδv δv
       gbwd_dual = G.bwdSliceDual αs_out_dual gc.g
       αs_in_dual = sinks gbwd_dual
       e𝔹_dual = gc.selecte𝔹 αs_in_dual
-   tBwdDual2 <- preciseTime
+   t_bwdDual2 <- preciseTime
 
    -- | Backward (all outputs selected)
-   tBwdAll1 <- preciseTime
+   t_bwdAll1 <- preciseTime
    let
       e𝔹_all = (gc.selecte𝔹 <<< gc.bwd <<< gc.runδv) topOf
-   tBwdAll2 <- preciseTime
+   t_bwdAll2 <- preciseTime
 
    -- | Forward (round-tripping)
-   tFwd1 <- preciseTime
+   t_fwd1 <- preciseTime
    let
       αs_out' = gc.fwd αs_in
       v𝔹 = gc.selectv𝔹 αs_out'
-   tFwd2 <- preciseTime
+   t_fwd2 <- preciseTime
 
    -- | De Morgan dual of forward
-   tFwdDual1 <- preciseTime
+   t_fwdDual1 <- preciseTime
    let
       gfwd_dual = G.fwdSliceDual αs_in gc.g
       v𝔹_dual = gc.selectv𝔹 (vertices gfwd_dual)
-   tFwdDual2 <- preciseTime
+   t_fwdDual2 <- preciseTime
 
    -- | Forward (round-tripping) using De Morgan dual
-   tFwdAsDeMorgan1 <- preciseTime
+   t_fwdAsDeMorgan1 <- preciseTime
    let
       gfwd_demorgan = G.fwdSliceDeMorgan αs_in gc.g
       v𝔹_demorgan = gc.selectv𝔹 (vertices gfwd_demorgan) <#> not
-   tFwdAsDeMorgan2 <- preciseTime
+   t_fwdAsDeMorgan2 <- preciseTime
 
    lift do
       -- | Check backward selections
@@ -164,7 +173,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
          log (prettyP e𝔹_all)
          log (prettyP v𝔹_dual)
 
-   pure { tEval: tdiff tEval1 tEval2, tBwd: tdiff tBwd1 tBwd2, tBwdDual: tdiff tBwdDual1 tBwdDual2, tBwdAll: tdiff tBwdAll1 tBwdAll2, tFwd: tdiff tFwd1 tFwd2, tFwdDual: tdiff tFwdDual1 tFwdDual2, tFwdAsDemorgan: tdiff tFwdAsDeMorgan1 tFwdAsDeMorgan2 }
+   pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tBwdDual: tdiff t_bwdDual1 t_bwdDual2, tBwdAll: tdiff t_bwdAll1 t_bwdAll2, tFwd: tdiff t_fwd1 t_fwd2, tFwdDual: tdiff t_fwdDual1 t_fwdDual2, tFwdAsDemorgan: tdiff t_fwdAsDeMorgan1 t_fwdAsDeMorgan2 }
 
 type TestSpec =
    { file :: String
