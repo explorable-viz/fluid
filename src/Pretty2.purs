@@ -29,7 +29,7 @@ import Util (type (+), type (×), Endo, absurd, assert, error, intersperse, (×)
 import Util.Pair (Pair(..), toTuple)
 import Util.Pretty (Doc(..), atop, beside, empty, hcat, render, text)
 import Val2 (Fun(..), Val(..)) as V
-import Val2 (class Ann, class Highlightable, DictRep(..), ForeignOp', Fun, MatrixRep(..), Val, highlightIf)
+import Val2 (class Highlightable, DictRep(..), ForeignOp', Fun, MatrixRep(..), Val, highlightIf)
 
 replacement :: Array (String × String)
 replacement =
@@ -81,16 +81,16 @@ exprType (ListComp _ _ _) = Simple
 exprType (Let _ _) = Expression
 exprType (LetRec _ _) = Expression
 
-prettySimple :: forall a. Ann a => Expr a -> Doc
+prettySimple :: forall a. Highlightable a => Expr a -> Doc
 prettySimple s = case exprType s of
    Simple -> pretty s
    Expression -> parentheses (pretty s)
 
-prettyAppChain :: forall a. Ann a => Expr a -> Doc
+prettyAppChain :: forall a. Highlightable a => Expr a -> Doc
 prettyAppChain (App s s') = prettyAppChain s .<>. prettySimple s'
 prettyAppChain s = prettySimple s
 
-prettyBinApp :: forall a. Ann a => Int -> Expr a -> Doc
+prettyBinApp :: forall a. Highlightable a => Int -> Expr a -> Doc
 prettyBinApp n (BinaryApp s op s') =
    let
       prec' = getPrec op
@@ -126,7 +126,7 @@ removeDocWS (Doc d) = Doc
    , lines: map (\x -> removeLineWS (drop 1 x)) d.lines
    }
 
-instance Ann a => Pretty (Expr a) where
+instance Highlightable a => Pretty (Expr a) where
    pretty (Var x) = text x
    pretty (Op op) = parentheses (text op)
    pretty (Int ann n) = (highlightIf ann $ text (show n))
@@ -156,22 +156,22 @@ instance Ann a => Pretty (Expr a) where
    pretty (Let ds s) = (text str.let_ .<>. pretty ds .<>. text str.in_) .-. pretty s
    pretty (LetRec h s) = (text str.let_ .<>. pretty (First h) .<>. text str.in_) .-. pretty s
 
-prettyOperator :: forall a. Ann a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
+prettyOperator :: forall a. Highlightable a => (Doc -> Doc -> Doc) -> List (Bind (Expr a)) -> Doc
 prettyOperator _ (Cons s Nil) = text (key s) .<>. text str.colon .<>. pretty (val s)
 prettyOperator sep (Cons s xss) = sep (prettyOperator sep (toList (singleton s)) .<>. text str.comma) (prettyOperator sep xss)
 prettyOperator _ Nil = empty
 
-instance Ann a => Pretty (ListRest a) where
+instance Highlightable a => Pretty (ListRest a) where
    pretty (Next ann (Record _ xss) l) = ((highlightIf ann $ text str.comma)) .<>. ((highlightIf ann $ curlyBraces (prettyOperator (.<>.) xss))) .-. pretty l
    pretty (Next ann s l) = ((highlightIf ann $ text str.comma)) .<>. pretty s .<>. pretty l
    pretty (End ann) = (highlightIf ann $ text str.rBracket)
 
-instance Ann a => Pretty (List (Pair (Expr a))) where
+instance Highlightable a => Pretty (List (Pair (Expr a))) where
    pretty (Cons (Pair e e') Nil) = prettyPairs (Pair e e')
    pretty (Cons (Pair e e') sss) = prettyPairs (Pair e e') .<>. text str.comma .<>. pretty sss
    pretty Nil = empty
 
-prettyPairs :: forall a. Ann a => (Pair (Expr a)) -> Doc
+prettyPairs :: forall a. Highlightable a => (Pair (Expr a)) -> Doc
 prettyPairs (Pair e e') = pretty e .<>. text str.colonEq .<>. pretty e'
 
 instance Pretty Pattern where
@@ -207,39 +207,39 @@ instance Pretty ListRestPattern where
    pretty (PNext p l) = text str.comma .<>. pretty p .<>. pretty l
    pretty PEnd = text str.rBracket
 
-prettyClause :: forall a. Ann a => Doc -> Clause a -> Doc
+prettyClause :: forall a. Highlightable a => Doc -> Clause a -> Doc
 prettyClause sep (Clause (ps × e)) = prettyPattConstr empty (toList ps) .<>. sep .<>. pretty e
 
-instance Ann a => Pretty (Clauses a) where
+instance Highlightable a => Pretty (Clauses a) where
    pretty (Clauses cs) = intersperse' (toList (map (prettyClause (text str.equals)) (cs))) (text str.semiColon)
 
-instance Ann a => Pretty (Branch a) where
+instance Highlightable a => Pretty (Branch a) where
    pretty (x × Clause (ps × e)) = text x .<>. prettyClause (text str.equals) (Clause (ps × e))
 
-instance Ann a => Pretty (NonEmptyList (Branch a)) where
+instance Highlightable a => Pretty (NonEmptyList (Branch a)) where
    pretty h = intersperse' (toList (map pretty h)) (text str.semiColon)
 
-instance Ann a => Pretty (NonEmptyList (NonEmptyList (Branch a))) where
+instance Highlightable a => Pretty (NonEmptyList (NonEmptyList (Branch a))) where
    pretty hs = intersperse' (toList (map pretty hs)) (text str.semiColon)
 
-instance Ann a => Pretty (FirstGroup a) where
+instance Highlightable a => Pretty (FirstGroup a) where
    pretty (First h) = pretty (groupBy (\p q -> key p == key q) h)
 
-instance Ann a => Pretty (NonEmptyList (Pattern × Expr a)) where
+instance Highlightable a => Pretty (NonEmptyList (Pattern × Expr a)) where
    pretty pss = intersperse' (map (prettyClause (text str.rArrow)) (map Clause (toList (helperMatch pss)))) (text str.semiColon)
 
-instance Ann a => Pretty (VarDef a) where
+instance Highlightable a => Pretty (VarDef a) where
    pretty (VarDef p s) = pretty p .<>. text str.equals .<>. pretty s
 
-instance Ann a => Pretty (VarDefs a) where
+instance Highlightable a => Pretty (VarDefs a) where
    pretty ds = intersperse' (toList (map pretty ds)) (text str.semiColon)
 
-instance Ann a => Pretty (List (Expr a)) where
+instance Highlightable a => Pretty (List (Expr a)) where
    pretty (Cons s Nil) = pretty s
    pretty (Cons s ss) = pretty s .<>. pretty ss
    pretty Nil = empty
 
-instance Ann a => Pretty (List (Qualifier a)) where
+instance Highlightable a => Pretty (List (Qualifier a)) where
    pretty (Cons (Guard s) Nil) = pretty s
    pretty (Cons (Declaration d) Nil) = text str.let_ .<>. pretty d
    pretty (Cons (Generator p s) Nil) = pretty p .<>. text str.lArrow .<>. pretty s
