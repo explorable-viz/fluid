@@ -2,12 +2,12 @@ module BoolAlg where
 
 import Prelude
 
+import Ann (𝔹)
 import Control.Apply (lift2)
 import Control.Biapply (bilift2)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, intersection, union)
 import Data.Set (difference, empty) as S
-import Lattice (𝔹)
 import Util (type (×), (×), Endo)
 
 -- Candidate replacement for Lattice.purs, using records rather than type classes as the latter are too
