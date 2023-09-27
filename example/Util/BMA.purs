@@ -175,7 +175,7 @@ nonnegColumns = transpose <<< nonnegRows <<< transpose
 
 -- unsure what the point of this is
 complement :: Int -> Array Int -> Array Int
-   complement n arr = worker 1 arr
+complement n arr = worker 1 arr
    where
    worker :: Int -> Array Int -> Array Int
    worker k xxs = if k > n then []
@@ -215,7 +215,7 @@ step4 dim starred primed coveredRows coveredCols matrix =
                         Nothing  -> error "Not sure how I got here"
          Just ij@(i × _) -> let newPrim = cons ij primed in
                               case find (\(p × _) -> p == i) starred of
-                                 Nothing      -> step5 ij
+                                 Nothing      -> step5 ij dim starred primed coveredRows coveredCols matrix
                                  Just (_ × q) -> step4 dim starred newPrim (insert i coveredRows) (remove q coveredCols) matrix
 
 remove :: forall a. Eq a => a -> Array a -> Array a
@@ -225,8 +225,8 @@ remove elem arr =
       Just {index: ind, value: _} ->
          concat [(take ind arr), (drop (ind + 1) arr)]
 
-step5 dim starred primed coveredRows coveredCols matrix 
-= error "todo"
+step5 ij dim starred primed coveredRows coveredCols matrix = error "todo"
+
 step6 = error "todo"
 main :: Effect Unit
 main = do
