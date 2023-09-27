@@ -4,7 +4,6 @@ import Prelude hiding (absurd, append)
 
 import Bindings (Var)
 import BoolAlg (BoolAlg)
-import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Array ((!!))
 import Data.Array (zipWith) as A
@@ -23,8 +22,7 @@ import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
 import Graph.GraphWriter (class MonadGraphAlloc)
-import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
-import Util (type (×), Endo, error, orElse, throw, unsafeUpdateAt, (!), (×), (≜), (≞))
+import Util (type (×), Endo, error, orElse, unsafeUpdateAt, (!), (×))
 import Util.Pretty (Doc, beside, text)
 
 data Val a
@@ -42,15 +40,8 @@ data Fun a
    | Foreign ForeignOp (List (Val a)) -- never saturated
    | PartialConstr Ctr (List (Val a)) -- never saturated
 
-class (Highlightable a, BoundedLattice a) <= Ann a
-
-instance Ann Boolean
-instance Ann Unit
-
 instance Highlightable a => Highlightable (a × b) where
    highlightIf (a × _) doc = highlightIf a doc
-
-instance (Ann a, BoundedLattice b) => Ann (a × b)
 
 -- similar to an isomorphism lens with complement t
 type OpFwd t = forall a m. Highlightable a => MonadError Error m => BoolAlg a -> List (Val a) -> m (t × Val a)
@@ -189,67 +180,3 @@ instance Traversable MatrixRep where
          (bitraverse (traverse f) (traverse f))
          m
    sequence = sequenceDefault
-
-instance JoinSemilattice a => JoinSemilattice (DictRep a) where
-   maybeJoin (DictRep svs) (DictRep svs') = DictRep <$> maybeJoin svs svs'
-   join v = definedJoin v
-
-instance JoinSemilattice a => JoinSemilattice (MatrixRep a) where
-   maybeJoin (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × βi') × (j' × βj'))) =
-      MatrixRep <$>
-         ( maybeJoin vss vss'
-              `lift2 (×)` (((_ × (βi ∨ βi')) <$> (i ≞ i')) `lift2 (×)` ((_ × (βj ∨ βj')) <$> (j ≞ j')))
-         )
-   join v = definedJoin v
-
-instance JoinSemilattice a => JoinSemilattice (Val a) where
-   maybeJoin (Int α n) (Int α' n') = Int (α ∨ α') <$> (n ≞ n')
-   maybeJoin (Float α n) (Float α' n') = Float (α ∨ α') <$> (n ≞ n')
-   maybeJoin (Str α s) (Str α' s') = Str (α ∨ α') <$> (s ≞ s')
-   maybeJoin (Record α xvs) (Record α' xvs') = Record (α ∨ α') <$> maybeJoin xvs xvs'
-   maybeJoin (Dictionary α d) (Dictionary α' d') = Dictionary (α ∨ α') <$> maybeJoin d d'
-   maybeJoin (Constr α c vs) (Constr α' c' us) = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin vs us
-   maybeJoin (Matrix α m) (Matrix α' m') = Matrix (α ∨ α') <$> maybeJoin m m'
-   maybeJoin (Fun α φ) (Fun α' φ') = Fun (α ∨ α') <$> maybeJoin φ φ'
-   maybeJoin _ _ = throw "Incompatible values"
-
-   join v = definedJoin v
-
-instance JoinSemilattice a => JoinSemilattice (Fun a) where
-   maybeJoin (Closure γ ρ σ) (Closure γ' ρ' σ') =
-      Closure <$> maybeJoin γ γ' <*> maybeJoin ρ ρ' <*> maybeJoin σ σ'
-   maybeJoin (Foreign φ vs) (Foreign _ vs') =
-      Foreign φ <$> maybeJoin vs vs' -- TODO: require φ == φ'
-   maybeJoin (PartialConstr c vs) (PartialConstr c' us) =
-      PartialConstr <$> (c ≞ c') <*> maybeJoin vs us
-   maybeJoin _ _ = throw "Incompatible functions"
-
-   join v = definedJoin v
-
-instance BoundedJoinSemilattice a => Expandable (DictRep a) (Raw DictRep) where
-   expand (DictRep svs) (DictRep svs') = DictRep (expand svs svs')
-
-instance BoundedJoinSemilattice a => Expandable (MatrixRep a) (Raw MatrixRep) where
-   expand (MatrixRep (vss × (i × βi) × (j × βj))) (MatrixRep (vss' × (i' × _) × (j' × _))) =
-      MatrixRep (expand vss vss' × ((i ≜ i') × βi) × ((j ≜ j') × βj))
-
-instance BoundedJoinSemilattice a => Expandable (Val a) (Raw Val) where
-   expand (Int α n) (Int _ n') = Int α (n ≜ n')
-   expand (Float α n) (Float _ n') = Float α (n ≜ n')
-   expand (Str α s) (Str _ s') = Str α (s ≜ s')
-   expand (Record α xvs) (Record _ xvs') = Record α (expand xvs xvs')
-   expand (Dictionary α d) (Dictionary _ d') = Dictionary α (expand d d')
-   expand (Constr α c vs) (Constr _ c' us) = Constr α (c ≜ c') (expand vs us)
-   expand (Matrix α m) (Matrix _ m') = Matrix α (expand m m')
-   expand (Fun α φ) (Fun _ φ') = Fun α (expand φ φ')
-   expand _ _ = error "Incompatible values"
-
-instance BoundedJoinSemilattice a => Expandable (Fun a) (Raw Fun) where
-   expand (Closure γ ρ σ) (Closure γ' ρ' σ') =
-      Closure (expand γ γ') (expand ρ ρ') (expand σ σ')
-   expand (Foreign φ vs) (Foreign _ vs') = Foreign φ (expand vs vs') -- TODO: require φ == φ'
-   expand (PartialConstr c vs) (PartialConstr c' us) = PartialConstr (c ≜ c') (expand vs us)
-   expand _ _ = error "Incompatible values"
-
-instance Neg a => Neg (Val a) where
-   neg = (<$>) neg
