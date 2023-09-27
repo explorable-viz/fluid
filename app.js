@@ -37095,13 +37095,7 @@
     return (dictMonadError) => {
       const loadFile22 = loadFile1(dictMonadError);
       const parse1 = parse(dictMonadError);
-      return (folder) => (file) => bind2(loadFile22(folder)(file))((a) => parse1(a)((state1, more, lift1, $$throw2, done) => more((v1) => topLevel(expr_)(
-        state1,
-        more,
-        lift1,
-        $$throw2,
-        (state2, a$1) => more((v2) => done(state2, functorExpr2.map((v) => unit2)(a$1)))
-      ))));
+      return (folder) => (file) => bind2(loadFile22(folder)(file))((a) => parse1(a)(topLevel(expr_)));
     };
   };
   var openDatasetAs = (dictMonadAff) => {
