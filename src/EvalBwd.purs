@@ -202,7 +202,10 @@ evalBwd' v (T.LetRec ρ t) =
 evalBwd' _ _ = error absurd
 
 type EvalGaloisConnection a = GaloisConnection (EvalBwdResult a) (Val a)
-   ( v :: Raw Val
+   ( γ :: Raw Env
+   , e :: Raw Expr
+   , t :: Trace
+   , v :: Raw Val
    )
 
 traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (EvalGaloisConnection a)
@@ -211,4 +214,4 @@ traceGC γ e = do
    let
       bwd v' = evalBwd γ e v' t
       fwd { γ: γ', e: e', α } = snd $ fromRight $ runExcept $ eval γ' e' α
-   pure { v, fwd, bwd }
+   pure { γ, e, t, v, fwd, bwd }
