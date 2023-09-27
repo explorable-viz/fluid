@@ -3,6 +3,7 @@ module Primitive2 where
 import Prelude hiding (absurd, apply, div, top)
 
 import Ann (Raw, erase)
+import BoolAlg (BoolAlg)
 import Data.Either (Either(..))
 import Data.Exists (mkExists)
 import Data.Int (toNumber)
@@ -12,7 +13,6 @@ import Data.Set (singleton, insert)
 import DataType (cFalse, cPair, cTrue)
 import Dict (Dict)
 import Graph.GraphWriter (new)
-import Lattice (class BoundedJoinSemilattice, bot)
 import Partial.Unsafe (unsafePartial)
 import Pretty2 (prettyP)
 import Util (type (+), type (×), (×), error)
@@ -170,9 +170,9 @@ type BinaryZero i o a =
    , fwd :: i -> i -> o
    }
 
-unary :: forall i o a'. BoundedJoinSemilattice a' => (forall a. Unary i o a) -> Val a'
-unary op =
-   Fun bot $ flip Foreign Nil
+unary :: forall i o a'. BoolAlg a' -> (forall a. Unary i o a) -> Val a'
+unary 𝒶 op =
+   Fun 𝒶.bot $ flip Foreign Nil
       $ mkExists
       $ ForeignOp' { arity: 1, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
@@ -193,9 +193,9 @@ unary op =
       _ × α = op.o.constr_bwd v
       (x × _) = op.i.match u
 
-binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => (forall a. Binary i1 i2 o a) -> Val a'
-binary op =
-   Fun bot $ flip Foreign Nil
+binary :: forall i1 i2 o a'. BoolAlg a' -> (forall a. Binary i1 i2 o a) -> Val a'
+binary 𝒶 op =
+   Fun 𝒶.bot $ flip Foreign Nil
       $ mkExists
       $ ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
@@ -206,7 +206,7 @@ binary op =
       (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
 
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
-   fwd 𝒶 (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × op.o.constr (op.fwd x y × (α `𝒶.meet` β))
+   fwd 𝒶' (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × op.o.constr (op.fwd x y × (α `𝒶'.meet` β))
       where
       (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
 
@@ -217,9 +217,9 @@ binary op =
       (x × _) × (y × _) = op.i1.match u1 × op.i2.match u2
 
 -- If both are zero, depend only on the first.
-binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => (forall a. BinaryZero i o a) -> Val a'
-binaryZero op =
-   Fun bot $ flip Foreign Nil
+binaryZero :: forall i o a'. BoolAlg a' -> IsZero i => (forall a. BinaryZero i o a) -> Val a'
+binaryZero 𝒶 op =
+   Fun 𝒶.bot $ flip Foreign Nil
       $ mkExists
       $ ForeignOp' { arity: 2, op': unsafePartial op', op: unsafePartial fwd, op_bwd: unsafePartial bwd }
    where
@@ -236,20 +236,20 @@ binaryZero op =
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
-   fwd 𝒶 (v1 : v2 : Nil) =
+   fwd 𝒶' (v1 : v2 : Nil) =
       pure $ (erase v1 × erase v2) ×
-         op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α `𝒶.meet` β)
+         op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α `𝒶'.meet` β)
       where
       (x × α) × (y × β) = op.i.match v1 × op.i.match v2
 
    bwd :: Partial => OpBwd (Raw Val × Raw Val)
-   bwd 𝒶 ((u1 × u2) × v) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
+   bwd 𝒶' ((u1 × u2) × v) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
       where
       _ × α = op.o.constr_bwd v
       (x × _) × (y × _) = op.i.match u1 × op.i.match u2
       β1 × β2 =
-         if isZero x then α × 𝒶.bot
-         else if isZero y then 𝒶.bot × α
+         if isZero x then α × 𝒶'.bot
+         else if isZero y then 𝒶'.bot × α
          else α × α
 
 class As a b where

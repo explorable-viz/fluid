@@ -2,6 +2,7 @@ module Trace2 where
 
 import Prelude
 
+import Ann (Raw)
 import Bindings (Var)
 import Data.Exists (Exists)
 import Data.List (List)
@@ -10,7 +11,6 @@ import Data.Set (Set, empty, singleton, unions)
 import DataType (Ctr)
 import Dict (Dict)
 import Expr (class BV, RecDefs, bv)
-import Lattice (Raw)
 import Util (type (×))
 import Val2 (Array2, ForeignOp', Val)
 
