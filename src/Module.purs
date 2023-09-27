@@ -21,7 +21,6 @@ import Expr (traverseModule)
 import Graph (class Graph, Vertex)
 import Graph (empty) as G
 import Graph.GraphWriter (class MonadGraphAlloc, alloc, fresh, runWithGraphAllocT)
-import Lattice (botOf)
 import Parse (module_, program)
 import Parsing (runParser)
 import Primitive.Defs (primitives)
@@ -53,7 +52,7 @@ parse src = liftEither <<< mapLeft (error <<< show) <<< runParser src
 
 parseProgram :: forall m. MonadAff m => MonadError Error m => Folder -> File -> m (S.Expr Unit)
 parseProgram folder file =
-   loadFile folder file >>= flip parse (program <#> botOf)
+   loadFile folder file >>= flip parse program
 
 open :: forall m. MonadAff m => MonadError Error m => File -> m (S.Expr Unit)
 open = parseProgram (Folder "fluid/example")
