@@ -92,9 +92,9 @@ matIndex mat row col = case mat !! row of
 matOfInds :: Int -> Int -> Matrix (Int × Int)
 matOfInds nrows ncols = matrix
    where
-   rowInds = range 1 nrows
+   rowInds = range 0 nrows
    zipRow :: forall a. a -> Int -> Array (a × Int)
-   zipRow datum num = map (\x -> datum × x) (range 1 num)
+   zipRow datum num = map (\x -> datum × x) (range 0 num)
    matrix = map (\x -> zipRow x ncols) rowInds
 
 genMat :: forall a. (Int × Int -> a) -> Int -> Int -> Matrix a
@@ -110,7 +110,7 @@ bandMatrix' :: Matrix (Int × Int) -> Int -> Matrix IntInf
 bandMatrix' indexMat slack = mapIndMat withinBand indexMat 
    where
    withinBand :: (Int × Int) -> IntInf
-   withinBand (x × y) = if (abs $ x - y) <= slack then IInt 0 else Infty
+   withinBand (x × y) = if ((x /= 0) && (y /=0) || (x == 0 && y == 0)) && (abs $ x - y) <= slack then IInt 0 else Infty
 
 bandMatrix :: Int -> Int -> Int -> Matrix IntInf
 bandMatrix rows cols window = bandMatrix' (matOfInds rows cols) window
@@ -246,4 +246,4 @@ main = do
                                     [IInt 2, IInt 3, IInt 4], 
                                     [IInt 3, IInt 4, IInt 5]]
    logShow testnonnegRows
-   
+
