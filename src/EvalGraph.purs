@@ -175,8 +175,7 @@ eval_module γ = go D.empty
       go (γ' <+> γ'') (Module ds) αs
 
 type EvalGaloisConnection g a b = GaloisConnection a b
-   ( gconfig :: GraphConfig g
-   , eα :: Expr Vertex
+   ( eα :: Expr Vertex
    , g :: g
    , vα :: Val Vertex
    )
@@ -188,7 +187,7 @@ graphGC
    => GraphConfig g
    -> Raw Expr
    -> m (EvalGaloisConnection g (Set Vertex) (Set Vertex))
-graphGC gconfig@{ g, n, γα } e = do
+graphGC { g, n, γα } e = do
    (g' × _) × eα × vα <- do
       runWithGraphAllocT (g × n) $ do
          eα <- alloc e
@@ -198,4 +197,4 @@ graphGC gconfig@{ g, n, γα } e = do
       fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
       -- TODO: want (vertices eα `union` foldMap vertices γα) rather than sinks g' here?
       bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
-   pure { gconfig, eα, g: g', vα, fwd, bwd }
+   pure { eα, g: g', vα, fwd, bwd }
