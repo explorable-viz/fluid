@@ -124,9 +124,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Backward (all outputs selected)
    tBwdAll1 <- preciseTime
    let
-      αs_out_all = gc.runδv topOf
-      αs_in_all = gc.bwd αs_out_all
-      e𝔹_all = gc.selecte𝔹 αs_in_all
+      e𝔹_all = (gc.selecte𝔹 <<< gc.bwd <<< gc.runδv) topOf
    tBwdAll2 <- preciseTime
 
    -- | Forward (round-tripping)
