@@ -2,6 +2,7 @@ module BoolAlg where
 
 import Prelude
 
+import Control.Apply (lift2)
 import Control.Biapply (bilift2)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, intersection, union)
@@ -43,8 +44,8 @@ slices :: forall f a. Apply f => BoolAlg a -> f a -> BoolAlg (f a)
 slices 𝒶 x =
    { top: x <#> const 𝒶.top
    , bot: x <#> const 𝒶.bot
-   , meet: \y z -> 𝒶.meet <$> y <*> z
-   , join: \y z -> 𝒶.join <$> y <*> z
+   , meet: lift2 𝒶.meet
+   , join: lift2 𝒶.join
    , neg: (_ <#> 𝒶.neg)
    }
 
@@ -52,7 +53,7 @@ prod :: forall a b. BoolAlg a -> BoolAlg b -> BoolAlg (a × b)
 prod 𝒶 𝒷 =
    { top: 𝒶.top × 𝒷.top
    , bot: 𝒶.bot × 𝒷.bot
-   , meet: bilift2 𝒶.meet 𝒷.meet
-   , join: bilift2 𝒶.join 𝒷.join
+   , meet: 𝒶.meet `bilift2` 𝒷.meet
+   , join: 𝒶.join `bilift2` 𝒷.join
    , neg: 𝒶.neg *** 𝒷.neg
    }
