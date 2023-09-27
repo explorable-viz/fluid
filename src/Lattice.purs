@@ -10,8 +10,7 @@ import Data.Foldable (length, foldM)
 import Data.List (List, zipWith)
 import Data.Maybe (Maybe(..))
 import Data.Profunctor.Strong ((***))
-import Data.Set (Set, intersection, subset, union)
-import Data.Set (difference, empty) as S
+import Data.Set (subset)
 import Data.Traversable (sequence)
 import Dict (Dict, lookup, insert, keys, toUnfoldable, update)
 import Dict (difference, intersectionWith, union, unionWith) as D
@@ -167,48 +166,3 @@ instance Expandable t u => Expandable (List t) (List u) where
 
 instance Expandable t u => Expandable (Array t) (Array u) where
    expand xs ys = A.zipWith expand xs ys
-
--- Sucks a bit as a type class, let's try a record.
-type BooleanLattice2 a =
-   { top :: a
-   , bot :: a
-   , meet :: a -> a -> a
-   , join :: a -> a -> a
-   , neg :: Endo a
-   }
-
-bool :: BooleanLattice2 𝔹
-bool =
-   { top: true
-   , bot: false
-   , meet: (&&)
-   , join: (||)
-   , neg: not
-   }
-
-powerset :: forall a. Ord a => Set a -> BooleanLattice2 (Set a)
-powerset xs =
-   { top: xs
-   , bot: S.empty
-   , meet: intersection
-   , join: union
-   , neg: (xs `S.difference` _)
-   }
-
-slices :: forall f. Apply f => f 𝔹 -> BooleanLattice2 (f 𝔹)
-slices x =
-   { top: x <#> const bool.top
-   , bot: x <#> const bool.bot
-   , meet: \y z -> bool.meet <$> y <*> z
-   , join: \y z -> bool.join <$> y <*> z
-   , neg: (_ <#> bool.neg)
-   }
-
-prod :: forall a b. BooleanLattice2 a -> BooleanLattice2 b -> BooleanLattice2 (a × b)
-prod l1 l2 =
-   { top: l1.top × l2.top
-   , bot: l1.bot × l2.bot
-   , meet: \(x1 × y1) (x2 × y2) -> x1 `l1.meet` x2 × y1 `l2.meet` y2
-   , join: \(x1 × y1) (x2 × y2) -> x1 `l1.join` x2 × y1 `l2.join` y2
-   , neg: l1.neg *** l2.neg
-   }
