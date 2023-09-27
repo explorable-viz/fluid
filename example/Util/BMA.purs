@@ -106,11 +106,14 @@ genMat f nrows ncols = f' matrix
 mapIndMat ∷ ∀ (f71 ∷ Type -> Type) (f74 ∷ Type -> Type) (a75 ∷ Type) (b76 ∷ Type). Functor f71 ⇒ Functor f74 ⇒ (a75 → b76) → f71 (f74 a75) → f71 (f74 b76)
 mapIndMat f = map (\y -> map (\x -> f x) y)
 
-bandMatrix :: Matrix (Int × Int) -> Int -> Matrix IntInf
-bandMatrix indexMat slack = mapIndMat withinBand indexMat 
+bandMatrix' :: Matrix (Int × Int) -> Int -> Matrix IntInf
+bandMatrix' indexMat slack = mapIndMat withinBand indexMat 
    where
    withinBand :: (Int × Int) -> IntInf
-   withinBand (x × y) = if (abs $ x - y) <= slack then IInt 1 else Infty
+   withinBand (x × y) = if (abs $ x - y) <= slack then IInt 0 else Infty
+
+bandMatrix :: Int -> Int -> Int -> Matrix IntInf
+bandMatrix rows cols window = bandMatrix' (matOfInds rows cols) window
 
 transpose :: forall a. Array (Array a) -> Array (Array a)
 transpose xs =
