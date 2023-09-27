@@ -10,10 +10,7 @@ import Lattice (Raw, class BoundedJoinSemilattice)
 import SExpr (Expr) as S
 import Util (successful)
 
-newtype DesugGaloisConnection a = DesugGaloisConnection
-   ( GaloisConnection (S.Expr a) (Expr a)
-        ()
-   )
+type DesugGaloisConnection a = GaloisConnection (S.Expr a) (Expr a) ()
 
 desugGC
    :: forall a m
@@ -25,4 +22,4 @@ desugGC s0 = do
    let
       fwd s = successful $ desug s
       bwd e = desugBwd e s0
-   pure (DesugGaloisConnection { fwd, bwd })
+   pure { fwd, bwd }

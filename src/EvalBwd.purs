@@ -22,7 +22,7 @@ import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
 import GaloisConnection (GaloisConnection)
-import Lattice (Raw, bot, botOf, expand, erase, (∨))
+import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
 import Trace (AppTrace, ForeignTrace'(..), Match(..), Trace)
