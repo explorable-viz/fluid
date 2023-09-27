@@ -1,6 +1,8 @@
 module BoolAlg where
 
 import Prelude
+
+import Control.Biapply (bilift2)
 import Data.Profunctor.Strong ((***))
 import Data.Set (Set, intersection, union)
 import Data.Set (difference, empty) as S
@@ -37,20 +39,20 @@ powerset xs =
    , neg: (xs `S.difference` _)
    }
 
-slices :: forall f. Apply f => f 𝔹 -> BoolAlg (f 𝔹)
-slices x =
-   { top: x <#> const bool.top
-   , bot: x <#> const bool.bot
-   , meet: \y z -> bool.meet <$> y <*> z
-   , join: \y z -> bool.join <$> y <*> z
-   , neg: (_ <#> bool.neg)
+slices :: forall f a. Apply f => BoolAlg a -> f a -> BoolAlg (f a)
+slices 𝒶 x =
+   { top: x <#> const 𝒶.top
+   , bot: x <#> const 𝒶.bot
+   , meet: \y z -> 𝒶.meet <$> y <*> z
+   , join: \y z -> 𝒶.join <$> y <*> z
+   , neg: (_ <#> 𝒶.neg)
    }
 
 prod :: forall a b. BoolAlg a -> BoolAlg b -> BoolAlg (a × b)
-prod l1 l2 =
-   { top: l1.top × l2.top
-   , bot: l1.bot × l2.bot
-   , meet: \(x1 × y1) (x2 × y2) -> x1 `l1.meet` x2 × y1 `l2.meet` y2
-   , join: \(x1 × y1) (x2 × y2) -> x1 `l1.join` x2 × y1 `l2.join` y2
-   , neg: l1.neg *** l2.neg
+prod 𝒶 𝒷 =
+   { top: 𝒶.top × 𝒷.top
+   , bot: 𝒶.bot × 𝒷.bot
+   , meet: bilift2 𝒶.meet 𝒷.meet
+   , join: bilift2 𝒶.join 𝒷.join
+   , neg: 𝒶.neg *** 𝒷.neg
    }
