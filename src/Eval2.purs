@@ -1,6 +1,8 @@
 module Eval2 where
 
 import Prelude hiding (absurd, apply)
+
+import Ann (erase)
 import Bindings (varAnon)
 import BoolAlg (BoolAlg)
 import Control.Monad.Error.Class (class MonadError)
@@ -20,15 +22,14 @@ import Dict (disjointUnion, get, empty, lookup, keys)
 import Dict (fromFoldable, singleton, unzip) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), Module(..), RecDefs, VarDef(..), asExpr, fv)
-import Lattice ((∧), erase, top)
-import Pretty (prettyP)
-import Primitive (intPair, string)
-import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
-import Trace (AppTrace, ForeignTrace, ForeignTrace'(..), Match(..), Trace)
+import Pretty2 (prettyP)
+import Primitive2 (intPair, string)
+import Trace2 (AppTrace(..), Trace(..), VarDef(..)) as T
+import Trace2 (AppTrace, ForeignTrace, ForeignTrace'(..), Match(..), Trace)
 import Util (type (×), absurd, both, check, error, orElse, successful, throw, with, (×))
 import Util.Pair (unzip) as P
-import Val (Fun(..), Val(..)) as V
-import Val (class Ann, class Highlightable, DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
+import Val2 (Fun(..), Val(..)) as V
+import Val2 (class Highlightable, DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
 
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
@@ -87,7 +88,7 @@ apply 𝒶 (V.Fun α (V.Foreign φ vs) × v) = do
    apply' (ForeignOp' φ') = do
       t × v'' <- do
          if φ'.arity > length vs' then pure $ Nothing × V.Fun α (V.Foreign φ vs')
-         else first Just <$> φ'.op vs'
+         else first Just <$> φ'.op 𝒶 vs'
       pure $ mkExists (ForeignTrace' (ForeignOp' φ') t) × v''
 apply _ (V.Fun α (V.PartialConstr c vs) × v) = do
    check (length vs < n) ("Too many arguments to " <> showCtr c)
@@ -99,10 +100,10 @@ apply _ (V.Fun α (V.PartialConstr c vs) × v) = do
       else V.Constr α c (vs <> singleton v)
 apply _ (_ × v) = throw $ "Found " <> prettyP v <> ", expected function"
 
-apply2 :: forall a m. MonadError Error m => Ann a => Val a × Val a × Val a -> m ((AppTrace × AppTrace) × Val a)
-apply2 (u1 × v1 × v2) = do
-   t1 × u2 <- apply (u1 × v1)
-   t2 × v <- apply (u2 × v2)
+apply2 :: forall a m. MonadError Error m => Highlightable a => BoolAlg a -> Val a × Val a × Val a -> m ((AppTrace × AppTrace) × Val a)
+apply2 𝒶 (u1 × v1 × v2) = do
+   t1 × u2 <- apply 𝒶 (u1 × v1)
+   t2 × v <- apply 𝒶 (u2 × v2)
    pure $ (t1 × t2) × v
 
 eval :: forall a m. MonadError Error m => Highlightable a => BoolAlg a -> Env a -> Expr a -> a -> m (Trace × Val a)
@@ -161,3 +162,15 @@ eval 𝒶 γ (LetRec ρ e) α = do
    let γ' = closeDefs γ ρ α
    t × v <- eval 𝒶 (γ <+> γ') e α
    pure $ T.LetRec (erase <$> ρ) t × v
+
+eval_module :: forall a m. MonadError Error m => Highlightable a => BoolAlg a -> Env a -> Module a -> a -> m (Env a)
+eval_module 𝒶 γ = go empty
+   where
+   go :: Env a -> Module a -> a -> m (Env a)
+   go γ' (Module Nil) _ = pure γ'
+   go y' (Module (Left (VarDef σ e) : ds)) α = do
+      _ × v <- eval 𝒶 (γ <+> y') e α
+      γ'' × _ × α' × _ <- match 𝒶 v σ
+      go (y' <+> γ'') (Module ds) α'
+   go γ' (Module (Right ρ : ds)) α =
+      go (γ' <+> closeDefs (γ <+> γ') ρ α) (Module ds) α

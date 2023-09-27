@@ -7,8 +7,7 @@ import Util (Endo)
 
 -- Galois connections are more general, this is specialised to Boolean algebras.
 type GaloisConnection a b r =
-   {
-     fwd :: a -> b
+   { fwd :: a -> b
    , bwd :: b -> a
    | r
    }
