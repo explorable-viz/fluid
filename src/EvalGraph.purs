@@ -174,10 +174,10 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
-type EvalGaloisConnection g a b = GaloisConnection a b
-   ( selecte𝔹 :: a -> Expr 𝔹
-   , selectv𝔹 :: b -> Val 𝔹
-   , runδv :: (Val 𝔹 -> Val 𝔹) -> b
+type EvalGaloisConnection g = GaloisConnection (Set Vertex) (Set Vertex)
+   ( selecte𝔹 :: Set Vertex -> Expr 𝔹
+   , selectv𝔹 :: Set Vertex -> Val 𝔹
+   , runδv :: (Val 𝔹 -> Val 𝔹) -> Set Vertex
    , g :: g
    )
 
@@ -187,7 +187,7 @@ graphGC
    => Graph g
    => GraphConfig g
    -> Raw Expr
-   -> m (EvalGaloisConnection g (Set Vertex) (Set Vertex))
+   -> m (EvalGaloisConnection g)
 graphGC { g, n, γα } e = do
    (g' × _) × eα × vα <- do
       runWithGraphAllocT (g × n) $ do
