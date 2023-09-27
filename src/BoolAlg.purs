@@ -58,8 +58,8 @@ prod 𝒶 𝒷 =
    , neg: 𝒶.neg *** 𝒷.neg
    }
 
-env :: forall a b. BoolAlg a -> Env b -> BoolAlg (Env a)
-env 𝒶 γ =
+slicesγ :: forall a b. BoolAlg a -> Env b -> BoolAlg (Env a)
+slicesγ 𝒶 γ =
    { top: (map $ const 𝒶.top) <$> γ
    , bot: (map $ const 𝒶.bot) <$> γ
    , meet: D.lift2 𝒶.meet

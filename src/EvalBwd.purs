@@ -2,7 +2,7 @@ module EvalBwd where
 
 import Prelude hiding (absurd)
 
-import BoolAlg (BoolAlg, env, slices, prod)
+import BoolAlg (BoolAlg, slicesγ, slices, prod)
 import Bindings (Var, varAnon)
 import Control.Monad.Except (class MonadError, runExcept)
 import Data.Exists (mkExists, runExists)
@@ -111,27 +111,27 @@ evalBwd :: forall a. Ann a => Raw Env -> Raw Expr -> Val a -> Trace -> Env a × 
 evalBwd γ e v t =
    expand γ' γ × expand e' e × α
    where
-   γ' × e' × α  = evalBwd' v t
+   γ' × e' × α = evalBwd' v t
 
 -- Computes a partial slice which evalBwd expands to a full slice.
-evalBwd' :: forall a. Ann a => Val a -> Trace ->  Env a × Expr a × a
+evalBwd' :: forall a. Ann a => Val a -> Trace -> Env a × Expr a × a
 evalBwd' v (T.Var x) = D.singleton x v × Var x × bot
 evalBwd' v (T.Op op) = D.singleton op v × Op op × bot
 evalBwd' (V.Str α str) T.Const = empty × Str α str × α
-evalBwd' (V.Int α n) T.Const =  empty × Int α n × α
+evalBwd' (V.Int α n) T.Const = empty × Int α n × α
 evalBwd' (V.Float α n) T.Const = empty × Float α n × α
-evalBwd' (V.Fun α (V.Closure γ _ σ)) T.Const = γ × Lambda σ ×  α
+evalBwd' (V.Fun α (V.Closure γ _ σ)) T.Const = γ × Lambda σ × α
 evalBwd' (V.Record α xvs) (T.Record xts) =
-      foldr (∨) empty (xγeαs <#> fst)
-   ×  Record α (xγeαs <#> (fst <<< snd))
-   × foldr (∨) α (xγeαs <#> (snd <<< snd))
+   foldr (∨) empty (xγeαs <#> fst)
+      × Record α (xγeαs <#> (fst <<< snd))
+      × foldr (∨) α (xγeαs <#> (snd <<< snd))
    where
    xvts = intersectionWith (×) xvs xts
    xγeαs = xvts <#> uncurry evalBwd'
 evalBwd' (V.Dictionary α (DictRep sαvs)) (T.Dictionary stts sus) =
    foldr (∨) empty ((γeαs <#> fst) <> (γeαs' <#> fst))
-    × Dictionary α ((γeαs <#>  (fst <<< snd)) `P.zip` (γeαs' <#> (fst <<< snd)))
-    × foldr (∨) α ((γeαs <#> (snd <<< snd)) <> (γeαs' <#> (snd <<< snd)))
+      × Dictionary α ((γeαs <#> (fst <<< snd)) `P.zip` (γeαs' <#> (fst <<< snd)))
+      × foldr (∨) α ((γeαs <#> (snd <<< snd)) <> (γeαs' <#> (snd <<< snd)))
    where
    sαvs' = expand sαvs (sus <#> (bot × _))
    γeαs = stts <#> \(s × t × _) -> evalBwd' (V.Str (fst (get s sαvs')) s) t
@@ -142,7 +142,7 @@ evalBwd' (V.Constr α _ vs) (T.Constr c ts) =
    evalArg_bwd :: Val a × Trace -> Endo (Env a × List (Expr a) × a)
    evalArg_bwd (v' × t') (γ' × es × α') = (γ' ∨ γ'') × (e : es) × (α' ∨ α'')
       where
-      γ'' × e × α''  = evalBwd' v' t'
+      γ'' × e × α'' = evalBwd' v' t'
    γ' × es × α' = foldr evalArg_bwd (empty × Nil × α) (zip vs ts)
 evalBwd' (V.Matrix α (MatrixRep (vss × (_ × βi) × (_ × βj)))) (T.Matrix tss (x × y) (i' × j') t') =
    (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
@@ -175,12 +175,12 @@ evalBwd' (V.Matrix α (MatrixRep (vss × (_ × βi) × (_ × βj)))) (T.Matrix t
 evalBwd' v (T.Project t x) =
    γ × Project e x × α
    where
-   γ × e × α  = evalBwd' (V.Record bot (D.singleton x v)) t
+   γ × e × α = evalBwd' (V.Record bot (D.singleton x v)) t
 evalBwd' v (T.App t1 t2 t3) =
    (γ ∨ γ') × App e e' × (α ∨ α')
    where
    u × v2 = applyBwd (t3 × v)
-   γ × e × α  = evalBwd' u t1
+   γ × e × α = evalBwd' u t1
    γ' × e' × α' = evalBwd' v2 t2
 evalBwd' v (T.Let (T.VarDef w t1) t2) =
    (γ1 ∨ γ1') × Let (VarDef σ e1) e2 × α1
@@ -192,13 +192,13 @@ evalBwd' v (T.Let (T.VarDef w t1) t2) =
 evalBwd' v (T.LetRec ρ t) =
    (γ1 ∨ γ1') × LetRec ρ' e × (α ∨ α')
    where
-   γ1γ2 × e ×  α = evalBwd' v t
+   γ1γ2 × e × α = evalBwd' v t
    γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
 
 type EvalGaloisConnection a = GaloisConnection (Env a × Expr a × a) (Val a)
-   ( dom   :: BoolAlg (Env a × Expr a × a)
+   ( dom :: BoolAlg (Env a × Expr a × a)
    , codom :: BoolAlg (Val a)
    , v :: Raw Val
    )
@@ -207,8 +207,8 @@ traceGC :: forall a m. MonadError Error m => Ann a => BoolAlg a -> Raw Env -> Ra
 traceGC 𝒶 γ e = do
    t × v <- eval γ e bot
    let
-      dom =  env 𝒶 γ `prod` (slices 𝒶 e `prod` 𝒶)
+      dom = slicesγ 𝒶 γ `prod` (slices 𝒶 e `prod` 𝒶)
       codom = slices 𝒶 v
       bwd v' = evalBwd γ e v' t
-      fwd (γ' × e' ×  α) = snd $ fromRight $ runExcept $ eval γ' e' α
+      fwd (γ' × e' × α) = snd $ fromRight $ runExcept $ eval γ' e' α
    pure { dom, codom, v, fwd, bwd }

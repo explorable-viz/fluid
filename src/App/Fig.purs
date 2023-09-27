@@ -174,7 +174,7 @@ valViews γ xs = sequence (flip varView γ <$> xs)
 figViews :: Fig -> Selector Val -> MayFail (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
-      γ0γ × e' × α  = evalBwd (erase <$> (γ0 <+> γ)) (erase e) (δv v) t
+      γ0γ × e' × α = evalBwd (erase <$> (γ0 <+> γ)) (erase e) (δv v) t
    _ × v' <- eval γ0γ e' α
    views <- valViews γ0γ xs
    pure $ view "output" v' × views
