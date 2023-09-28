@@ -1,8 +1,6 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
-
-import BoolAlg (BoolAlg, slicesγ, slices, prod)
 import Bindings (Var, varAnon)
 import Control.Monad.Except (class MonadError, runExcept)
 import Data.Exists (mkExists, runExists)
@@ -22,7 +20,7 @@ import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
-import GaloisConnection (GaloisConnection)
+import GaloisConnection (GaloisConnection(..))
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
@@ -197,18 +195,15 @@ evalBwd' v (T.LetRec ρ t) =
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
 
-type EvalGaloisConnection a = GaloisConnection (Env a × Expr a × a) (Val a)
-   ( dom :: BoolAlg (Env a × Expr a × a)
-   , codom :: BoolAlg (Val a)
+type TracedEval a =
+   { gc :: GaloisConnection (Env a × Expr a × a) (Val a)
    , v :: Raw Val
-   )
+   }
 
-traceGC :: forall a m. MonadError Error m => Ann a => BoolAlg a -> Raw Env -> Raw Expr -> m (EvalGaloisConnection a)
-traceGC 𝒶 γ e = do
+traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (TracedEval a)
+traceGC γ e = do
    t × v <- eval γ e bot
    let
-      dom = slicesγ 𝒶 γ `prod` (slices 𝒶 e `prod` 𝒶)
-      codom = slices 𝒶 v
       bwd v' = evalBwd γ e v' t
       fwd (γ' × e' × α) = snd $ fromRight $ runExcept $ eval γ' e' α
-   pure { dom, codom, v, fwd, bwd }
+   pure $ { gc: GC { fwd, bwd }, v }

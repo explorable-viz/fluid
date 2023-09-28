@@ -146,10 +146,10 @@ derive instance Foldable Fun
 derive instance Traversable Fun
 
 instance Apply Val where
-   apply (Int fα n) (Int α _) = Int (fα α) n
-   apply (Float fα n) (Float α _) = Float (fα α) n
-   apply (Str fα s) (Str α _) = Str (fα α) s
-   apply (Constr fα c fes) (Constr α _ es) = Constr (fα α) c (zipWith (<*>) fes es)
+   apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
+   apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
+   apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
+   apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
    apply (Record fα fxvs) (Record α xvs) = Record (fα α) (D.apply2 fxvs xvs)
    apply (Dictionary fα fxvs) (Dictionary α xvs) = Dictionary (fα α) (fxvs <*> xvs)
    apply (Matrix fα fm) (Matrix α m) = Matrix (fα α) (fm <*> m)
@@ -159,14 +159,16 @@ instance Apply Val where
 instance Apply Fun where
    apply (Closure fγ fρ fσ) (Closure γ ρ σ) = Closure (D.apply2 fγ γ) (D.apply2 fρ ρ) (fσ <*> σ)
    apply (Foreign op fvs) (Foreign _ vs) = Foreign op (zipWith (<*>) fvs vs)
-   apply (PartialConstr c fvs) (PartialConstr _ vs) = PartialConstr c (zipWith (<*>) fvs vs)
+   apply (PartialConstr c fvs) (PartialConstr c' vs) = PartialConstr (c ≜ c') (zipWith (<*>) fvs vs)
    apply _ _ = error "Apply Fun: shape mismatch"
 
 instance Apply DictRep where
-   apply (DictRep fxvs) (DictRep xvs) = DictRep $ D.intersectionWith (\(fα' × fv') (α' × v') -> (fα' α') × (fv' <*> v')) fxvs xvs
+   apply (DictRep fxvs) (DictRep xvs) =
+      DictRep $ D.intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs
 
 instance Apply MatrixRep where
-   apply (MatrixRep (fvss × (n × fnα) × (m × fmα))) (MatrixRep (vss × (_ × nα) × (_ × mα))) = MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × (n × fnα nα) × (m × fmα mα)
+   apply (MatrixRep (fvss × (n × fnα) × (m × fmα))) (MatrixRep (vss × (n' × nα) × (m' × mα))) =
+      MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × ((n ≜ n') × fnα nα) × ((m ≜ m') × fmα mα)
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d

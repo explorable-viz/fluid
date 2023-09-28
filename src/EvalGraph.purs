@@ -9,8 +9,6 @@ module EvalGraph
    ) where
 
 import Prelude hiding (apply, add)
-
-import BoolAlg (BoolAlg, powerset)
 import Bindings (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, singleton) as A
@@ -25,7 +23,7 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
-import GaloisConnection (GaloisConnection)
+import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, sinks)
 import Graph (vertices) as G
 import Graph.GraphWriter (class MonadGraphAlloc, alloc, new, runWithGraphAllocT)
@@ -175,13 +173,13 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
-type EvalGaloisConnection g = GaloisConnection (Set Vertex) (Set Vertex)
-   ( dom :: BoolAlg (Set Vertex)
-   , codom :: BoolAlg (Set Vertex)
+type GraphEval g =
+   { gc :: GaloisConnection (Set Vertex) (Set Vertex)
+   , γα :: Env Vertex
    , eα :: Expr Vertex
    , g :: g
    , vα :: Val Vertex
-   )
+   }
 
 graphGC
    :: forall g m
@@ -189,7 +187,7 @@ graphGC
    => Graph g
    => GraphConfig g
    -> Raw Expr
-   -> m (EvalGaloisConnection g)
+   -> m (GraphEval g)
 graphGC { g, n, γα } e = do
    (g' × _) × eα × vα <- do
       runWithGraphAllocT (g × n) $ do
@@ -197,9 +195,7 @@ graphGC { g, n, γα } e = do
          vα <- eval γα eα S.empty
          pure (eα × vα)
    let
-      dom = powerset (sinks g')
-      codom = powerset (vertices vα)
-      fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
       -- TODO: want (vertices eα `union` foldMap vertices γα) rather than sinks g' here?
+      fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
       bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
-   pure { dom, codom, eα, g: g', vα, fwd, bwd }
+   pure { gc: GC { fwd, bwd }, γα, eα, g: g', vα }

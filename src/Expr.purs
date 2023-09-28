@@ -135,15 +135,16 @@ derive instance Eq a => Eq (Elim a)
 derive instance Eq a => Eq (Cont a)
 
 instance Apply Expr where
-   apply (Var x) (Var _) = Var x
+   apply (Var x) (Var x') = Var (x ≜ x')
    apply (Op op) (Op _) = Op op
-   apply (Int fα n) (Int α _) = Int (fα α) n
-   apply (Float fα n) (Float α _) = Float (fα α) n
-   apply (Str fα s) (Str α _) = Str (fα α) s
+   apply (Int fα n) (Int α n') = Int (fα α) (n ≜ n')
+   apply (Float fα n) (Float α n') = Float (fα α) (n ≜ n')
+   apply (Str fα s) (Str α s') = Str (fα α) (s ≜ s')
    apply (Record fα fxvs) (Record α xvs) = Record (fα α) (D.apply2 fxvs xvs)
    apply (Dictionary fα fxvs) (Dictionary α xvs) = Dictionary (fα α) (zipWith (lift2 (<*>)) fxvs xvs)
-   apply (Constr fα c fes) (Constr α _ es) = Constr (fα α) c (zipWith (<*>) fes es)
-   apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (_ × _) e2) = Matrix (fα α) (fe1 <*> e1) (x × y) (fe2 <*> e2)
+   apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
+   apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
+      Matrix (fα α) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
    apply (Lambda fσ) (Lambda σ) = Lambda (fσ <*> σ)
    apply (Project fe x) (Project e _) = Project (fe <*> e) x
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
