@@ -9,14 +9,15 @@ import Example.Util.BMA (IntInf(..), Matrix, bandMatrix, matIndex, matOfInds)
 import Partial.Unsafe (unsafePartial)
 import Util (type (×), (×), error)
 
-distanceDTWWindow :: forall a. Partial => Array a -> Array a -> Int -> (a -> a -> IntInf) -> Matrix IntInf × (Matrix (Int × Int))
+distanceDTWWindow :: forall a. Partial => Array a -> Array a -> Int -> (a -> a -> IntInf) -> Matrix IntInf × (List (Int × Int))
 distanceDTWWindow seq1 seq2 window cost = 
     let n = length seq1
         m = length seq2
         init = bandMatrix n m window
         mappedIndices = sort $ concat (map (\i -> indexIndices i (range (max 1 (i - window)) (min m (i + window)))) (range 1 n))
+        (result × priorcells) = foldl worker (init × (matOfInds n m)) mappedIndices
     in
-        foldl worker (init × (matOfInds n m)) mappedIndices
+        result × (extractPath priorcells)
     where
       worker :: Matrix IntInf × Matrix (Int × Int) -> (Int × Int) -> Matrix IntInf × Matrix (Int × Int)
       worker (dists × inds) (i' × j') = 
@@ -43,8 +44,8 @@ prevDirection (i × j) im1j ijm1 im1jm1 =
 
 extractPath :: Matrix (Int × Int) -> List (Int × Int)
 extractPath matrix = 
-    let i = length matrix
-        j = length (unsafePartial $ unsafeIndex matrix 1)
+    let i = length matrix - 1
+        j = length (unsafePartial $ unsafeIndex matrix 1) - 1
     in 
         traverser i j matrix Nil
     where
