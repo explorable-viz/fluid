@@ -2,15 +2,14 @@ module BoolAlg where
 
 import Prelude
 
-import Ann (𝔹)
 import Control.Apply (lift2)
 import Control.Biapply (bilift2)
 import Data.Profunctor.Strong ((***))
-import Dict (lift2) as D
 import Data.Set (Set, intersection, union)
 import Data.Set (difference, empty) as S
-import Util (type (×), (×), Endo)
-import Val (Env)
+import Dict (Dict)
+import Dict (lift2) as D
+import Util (𝔹, type (×), (×), Endo)
 
 -- Candidate replacement for Lattice.purs, using records rather than type classes as the latter are too
 -- inflexible for the granularity of instande we require. Also flatten the hiearchy of types.
@@ -58,10 +57,10 @@ prod 𝒶 𝒷 =
    , neg: 𝒶.neg *** 𝒷.neg
    }
 
-slicesγ :: forall a b. BoolAlg a -> Env b -> BoolAlg (Env a)
-slicesγ 𝒶 γ =
-   { top: (map $ const 𝒶.top) <$> γ
-   , bot: (map $ const 𝒶.bot) <$> γ
+slices_dict :: forall f a b. Apply f => Functor f => BoolAlg a -> Dict (f b) -> BoolAlg (Dict (f a))
+slices_dict 𝒶 d =
+   { top: (const 𝒶.top <$> _) <$> d
+   , bot: (const 𝒶.bot <$> _) <$> d
    , meet: D.lift2 𝒶.meet
    , join: D.lift2 𝒶.join
    , neg: (_ <#> (_ <#> 𝒶.neg))

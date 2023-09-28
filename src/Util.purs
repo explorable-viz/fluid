@@ -22,6 +22,8 @@ import Effect.Exception (Error, message)
 import Effect.Exception (error) as E
 import Effect.Unsafe (unsafePerformEffect)
 
+type 𝔹 = Boolean
+
 infixr 6 type Tuple as × -- standard library has \/
 infixr 6 Tuple as ×
 

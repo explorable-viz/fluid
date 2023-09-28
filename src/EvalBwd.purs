@@ -2,7 +2,7 @@ module EvalBwd where
 
 import Prelude hiding (absurd)
 
-import BoolAlg (BoolAlg, slicesγ, slices, prod)
+import BoolAlg (BoolAlg, slices, slices_dict, prod)
 import Bindings (Var, varAnon)
 import Control.Monad.Except (class MonadError, runExcept)
 import Data.Exists (mkExists, runExists)
@@ -207,7 +207,7 @@ traceGC :: forall a m. MonadError Error m => Ann a => BoolAlg a -> Raw Env -> Ra
 traceGC 𝒶 γ e = do
    t × v <- eval γ e bot
    let
-      dom = slicesγ 𝒶 γ `prod` (slices 𝒶 e `prod` 𝒶)
+      dom = slices_dict 𝒶 γ `prod` (slices 𝒶 e `prod` 𝒶)
       codom = slices 𝒶 v
       bwd v' = evalBwd γ e v' t
       fwd (γ' × e' × α) = snd $ fromRight $ runExcept $ eval γ' e' α
