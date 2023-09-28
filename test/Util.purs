@@ -4,7 +4,6 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
-import BoolAlg (bool)
 import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, zeroRow, sumRow, preciseTime, tdiff)
 import Control.Monad.Error.Class (class MonadThrow, liftEither)
 import Control.Monad.Except (runExceptT)
@@ -74,12 +73,12 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    let e = gc_desug.fwd s
    t_eval1 <- preciseTime
-   gc <- traceGC bool (erase <$> γα) e
+   gc <- traceGC (erase <$> γα) e
    t_eval2 <- preciseTime
 
    -- | Backward
    t_bwd1 <- preciseTime
-   let γ𝔹 × e𝔹 × _ = gc.bwd (δv (botOf gc.v))
+   let γ𝔹 × e𝔹 × _ = gc.bwd (δv (botOf gc.codom))
    t_bwd2 <- preciseTime
    let s𝔹 = gc_desug𝔹.bwd e𝔹
 
@@ -90,13 +89,13 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    t_fwd2 <- preciseTime
 
    lift do
-      unless (isGraphical gc.v) $
+      unless (isGraphical gc.codom) $
          log (prettyP v𝔹)
       -- | Check backward selections
       unless (null bwd_expect) $
          checkPretty "Trace-based source selection" bwd_expect s𝔹
       -- | Check round-trip selections
-      unless (isGraphical gc.v) $
+      unless (isGraphical gc.codom) $
          checkPretty "Trace-based value" fwd_expect v𝔹
 
    pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tFwd: tdiff t_fwd1 t_fwd2 }
@@ -134,7 +133,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Backward (all outputs selected)
    t_bwdAll1 <- preciseTime
    let
-      e𝔹_all = select𝔹s gc.eα $ gc.bwd $ gc.codom.top
+      e𝔹_all = select𝔹s gc.eα $ gc.bwd $ gc.codom
    t_bwdAll2 <- preciseTime
 
    -- | Forward (round-tripping)

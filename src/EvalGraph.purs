@@ -9,9 +9,7 @@ module EvalGraph
    ) where
 
 import Prelude hiding (apply, add)
-
 import Bindings (varAnon)
-import BoolAlg (BoolAlg, powerset)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
@@ -176,9 +174,7 @@ eval_module γ = go D.empty
       go (γ' <+> γ'') (Module ds) αs
 
 type EvalGaloisConnection g = GaloisConnection (Set Vertex) (Set Vertex)
-   ( dom :: BoolAlg (Set Vertex)
-   , codom :: BoolAlg (Set Vertex)
-   , eα :: Expr Vertex
+   ( eα :: Expr Vertex
    , g :: g
    , vα :: Val Vertex
    )
@@ -197,9 +193,9 @@ graphGC { g, n, γα } e = do
          vα <- eval γα eα S.empty
          pure (eα × vα)
    let
-      dom = powerset (sinks g')
-      codom = powerset (vertices vα)
-      fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
       -- TODO: want (vertices eα `union` foldMap vertices γα) rather than sinks g' here?
-      bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
+      dom = sinks g'
+      codom = vertices vα
+      fwd αs = G.vertices (fwdSlice αs g') `intersection` codom
+      bwd αs = G.vertices (bwdSlice αs g') `intersection` dom
    pure { dom, codom, eα, g: g', vα, fwd, bwd }

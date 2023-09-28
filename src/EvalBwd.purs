@@ -1,8 +1,6 @@
 module EvalBwd where
 
 import Prelude hiding (absurd)
-
-import BoolAlg (BoolAlg, slices, slices_dict, prod)
 import Bindings (Var, varAnon)
 import Control.Monad.Except (class MonadError, runExcept)
 import Data.Exists (mkExists, runExists)
@@ -197,18 +195,14 @@ evalBwd' v (T.LetRec ρ t) =
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
 
-type EvalGaloisConnection a = GaloisConnection (Env a × Expr a × a) (Val a)
-   ( dom :: BoolAlg (Env a × Expr a × a)
-   , codom :: BoolAlg (Val a)
-   , v :: Raw Val
-   )
+type EvalGaloisConnection a = GaloisConnection (Env a × Expr a × a) (Val a) ()
 
-traceGC :: forall a m. MonadError Error m => Ann a => BoolAlg a -> Raw Env -> Raw Expr -> m (EvalGaloisConnection a)
-traceGC 𝒶 γ e = do
+traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (EvalGaloisConnection a)
+traceGC γ e = do
    t × v <- eval γ e bot
    let
-      dom = slices_dict 𝒶 γ `prod` (slices 𝒶 e `prod` 𝒶)
-      codom = slices 𝒶 v
+      dom = (botOf <$> γ) × botOf e × bot
+      codom = botOf v
       bwd v' = evalBwd γ e v' t
       fwd (γ' × e' × α) = snd $ fromRight $ runExcept $ eval γ' e' α
-   pure { dom, codom, v, fwd, bwd }
+   pure { dom, codom, fwd, bwd }
