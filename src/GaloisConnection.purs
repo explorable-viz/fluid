@@ -20,4 +20,4 @@ deMorgan = (neg >>> _) >>> (_ >>> neg)
 
 -- Could unify deMorgan and dual but would need to reify notion of opposite category.
 dual :: forall a b r. BooleanLattice a => BooleanLattice b => GaloisConnection a b r -> GaloisConnection b a r
-dual gc@{ dom, codom, fwd, bwd } = gc { dom = codom, codom = dom, fwd = deMorgan bwd, bwd = deMorgan fwd }
+dual gc = gc { dom = gc.codom, codom = gc.dom, fwd = deMorgan gc.bwd, bwd = deMorgan gc.fwd }

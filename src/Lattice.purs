@@ -146,7 +146,7 @@ instance JoinSemilattice a => JoinSemilattice (Array a) where
 
 instance (BoundedJoinSemilattice a, BoundedMeetSemilattice a) => BoundedLattice a
 
--- To express as Expandable (t :: Type -> Type) requires functor composition..
+-- Expandable (t :: Type -> Type) requires functor composition..
 class Expandable t u | t -> u where
    expand :: t -> u -> t
 
