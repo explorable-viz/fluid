@@ -326,19 +326,6 @@ listCompBwd (E.App (E.App (E.Var "concatMap") (E.Lambda σ)) e) ((Generator p s0
          α × qs' × s' -> (α ∨ β) × (Generator p (desugBwd e s0) : qs') × s'
 listCompBwd _ _ = error absurd
 
--- NonEmptyList Pattern × Expr
-pattsExprFwd :: forall a m. MonadError Error m => JoinSemilattice a => NonEmptyList Pattern × Expr a -> m (Elim a)
-pattsExprFwd (NonEmptyList (p :| Nil) × s) = (ContExpr <$> desug s) >>= pattContFwd p
-pattsExprFwd (NonEmptyList (p :| p' : ps) × s) =
-   pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × s)
-
-pattsExprBwd :: forall a. BoundedJoinSemilattice a => NonEmptyList Pattern × Raw Expr -> Elim a -> Expr a
-pattsExprBwd (NonEmptyList (p :| Nil) × s) σ = desugBwd (asExpr (pattContBwd p σ)) s
-pattsExprBwd (NonEmptyList (p :| p' : ps) × s) σ = next (asExpr (pattContBwd p σ))
-   where
-   next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps) × s) τ
-   next _ = error absurd
-
 -- Pattern × Cont
 pattContFwd :: forall a m. MonadError Error m => Pattern -> Cont a -> m (Elim a)
 pattContFwd (PVar x) κ = pure (ElimVar x κ)
@@ -384,12 +371,24 @@ clausesFwd :: forall a m. MonadError Error m => JoinSemilattice a => Clauses a -
 clausesFwd (Clauses bs) = do
    NonEmptyList (σ :| σs) <- traverse pattsExprFwd (unwrap <$> bs)
    foldM maybeJoin σ σs
+   where
+   pattsExprFwd :: NonEmptyList Pattern × Expr a -> m (Elim a)
+   pattsExprFwd (NonEmptyList (p :| Nil) × s) = (ContExpr <$> desug s) >>= pattContFwd p
+   pattsExprFwd (NonEmptyList (p :| p' : ps) × s) =
+      pattContFwd p =<< ContExpr <$> E.Lambda <$> pattsExprFwd (NonEmptyList (p' :| ps) × s)
 
 clausesBwd :: forall a. BoundedJoinSemilattice a => Elim a -> Raw Clauses -> Clauses a
 clausesBwd σ (Clauses bs) = Clauses (clauseBwd <$> bs)
    where
    clauseBwd :: Raw Clause -> Clause a
    clauseBwd (Clause (πs × s)) = Clause (πs × pattsExprBwd (πs × s) σ)
+
+   pattsExprBwd :: NonEmptyList Pattern × Raw Expr -> Elim a -> Expr a
+   pattsExprBwd (NonEmptyList (p :| Nil) × s) σ' = desugBwd (asExpr (pattContBwd p σ')) s
+   pattsExprBwd (NonEmptyList (p :| p' : ps) × s) σ' = next (asExpr (pattContBwd p σ'))
+      where
+      next (E.Lambda τ) = pattsExprBwd (NonEmptyList (p' :| ps) × s) τ
+      next _ = error absurd
 
 -- orElse
 orElseFwd :: forall a. Cont a -> a -> Cont a
