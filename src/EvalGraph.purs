@@ -10,8 +10,8 @@ module EvalGraph
 
 import Prelude hiding (apply, add)
 
-import BoolAlg (BoolAlg, powerset)
 import Bindings (varAnon)
+import BoolAlg (BoolAlg, powerset)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, singleton) as A
 import Data.Either (Either(..))

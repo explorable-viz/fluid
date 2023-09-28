@@ -38,14 +38,15 @@ import Util (Endo, type (×), (×), assert, definitely, error)
 
 type Dict a = O.Object a
 
+-- `Apply` instance would be an orphan
 apply :: forall a b. Dict (a -> b) -> Dict a -> Dict b
-apply d ds = intersectionWith ($) d ds
+apply = intersectionWith ($) -- why not require dicts to have same shape?
 
 apply2 :: forall f a b. Apply f => Dict (f (a -> b)) -> Dict (f a) -> Dict (f b)
-apply2 d ds = apply ((<*>) <$> d) ds
+apply2 d = apply ((<*>) <$> d)
 
 lift2 :: forall f a b c. Apply f => (a -> b -> c) -> Dict (f a) -> Dict (f b) -> Dict (f c)
-lift2 f d1 d2 = apply2 ((f <$> _) <$> d1) d2
+lift2 f d1 = apply2 ((f <$> _) <$> d1)
 
 -- Unfortunately Foreign.Object doesn't define this; could implement using Foreign.Object.ST instead.
 foreign import intersectionWith :: forall a b c. (a -> b -> c) -> Dict a -> Dict b -> Dict c

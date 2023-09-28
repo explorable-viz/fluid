@@ -1,9 +1,10 @@
 module SExpr2 where
 
 import Prelude hiding (absurd, top)
+
 import Ann (Raw)
 import Bindings (Bind, Var, varAnon, (↦), keys)
-import BoolAlg (BoolAlg)
+import BoolAlg (BoolAlg, slices)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Either (Either(..))
 import Data.Foldable (foldl)
@@ -382,8 +383,8 @@ pattArgsBwd (Right o : πs) σ = pattArgsBwd πs (pattCont_ListRest_Bwd (asElim 
 -- Clauses
 clausesFwd :: forall a m. MonadError Error m => BoolAlg a -> Clauses a -> m (Elim a)
 clausesFwd 𝒶 (Clauses bs) = do
-   NonEmptyList (_ :| _) <- traverse (pattsExprFwd 𝒶) (unwrap <$> bs)
-   error "todo" -- foldM maybeJoin σ σs
+   NonEmptyList (σ :| σs) <- traverse (pattsExprFwd 𝒶) (unwrap <$> bs)
+   pure $ foldl (\σ1 σ2 -> (slices 𝒶 σ1).join σ1 σ2) σ σs -- previously maybeJoin
 
 clausesBwd :: forall a. BoolAlg a -> Elim a -> Raw Clauses -> Clauses a
 clausesBwd 𝒶 σ (Clauses bs) = Clauses (clauseBwd <$> bs)

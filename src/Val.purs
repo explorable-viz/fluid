@@ -163,7 +163,8 @@ instance Apply Fun where
    apply _ _ = error "Apply Fun: shape mismatch"
 
 instance Apply DictRep where
-   apply (DictRep fxvs) (DictRep xvs) = DictRep $ D.intersectionWith (\(fα' × fv') (α' × v') -> (fα' α') × (fv' <*> v')) fxvs xvs
+   apply (DictRep fxvs) (DictRep xvs) =
+      DictRep $ D.intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs
 
 instance Apply MatrixRep where
    apply (MatrixRep (fvss × (n × fnα) × (m × fmα))) (MatrixRep (vss × (n' × nα) × (m' × mα))) =

@@ -13,6 +13,7 @@ import Util (𝔹, type (×), (×), Endo)
 
 -- Candidate replacement for Lattice.purs, using records rather than type classes as the latter are too
 -- inflexible for the granularity of instande we require. Also flatten the hiearchy of types.
+-- Constants (top, bot) are instantiated as soon as instance is created; may be prohibitively expensive.
 type BoolAlg a =
    { top :: a
    , bot :: a
