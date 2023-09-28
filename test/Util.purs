@@ -22,10 +22,12 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
-import Graph (sinks, vertices)
+import Graph (sinks)
+import Graph (vertices) as G
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
-import Graph.Slice (selectαs, select𝔹s)
+import Graph.Slice (selectαs, select𝔹s, vertices)
+import GaloisConnection (GaloisConnection(..))
 import Heterogeneous.Mapping (hmap)
 import Lattice (Raw, botOf, erase)
 import Module (parse)
@@ -66,18 +68,18 @@ testParse s = do
 testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
 testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
-   desug <- desugGC s
-   desug𝔹 <- desugGC s
+   GC desug <- desugGC s
+   GC desug𝔹 <- desugGC s
 
    -- | Eval
    let e = desug.fwd s
    t_eval1 <- preciseTime
-   eval <- traceGC (erase <$> γα) e
+   { gc: GC eval, v } <- traceGC (erase <$> γα) e
    t_eval2 <- preciseTime
 
    -- | Backward
    t_bwd1 <- preciseTime
-   let γ𝔹 × e𝔹 × _ = eval.bwd (δv (botOf eval.codom))
+   let γ𝔹 × e𝔹 × _ = eval.bwd (δv (botOf v))
    t_bwd2 <- preciseTime
    let s𝔹 = desug𝔹.bwd e𝔹
 
@@ -88,13 +90,13 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    t_fwd2 <- preciseTime
 
    lift do
-      unless (isGraphical eval.codom) $
+      unless (isGraphical v) $
          log (prettyP v𝔹)
       -- | Check backward selections
       unless (null bwd_expect) $
          checkPretty "Trace-based source selection" bwd_expect s𝔹
       -- | Check round-trip selections
-      unless (isGraphical eval.codom) $
+      unless (isGraphical v) $
          checkPretty "Trace-based value" fwd_expect v𝔹
 
    pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tFwd: tdiff t_fwd1 t_fwd2 }
@@ -102,23 +104,23 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
 testGraph :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
 testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
-   gc_desug <- desugGC s
-   gc_desug𝔹 <- desugGC s
+   GC desug <- desugGC s
+   GC desug𝔹 <- desugGC s
 
    -- | Eval
-   let e = gc_desug.fwd s
+   let e = desug.fwd s
    t_eval1 <- preciseTime
-   gc × eα × g × vα <- graphGC gconfig e
+   { gc: GC eval, eα, g, vα } <- graphGC gconfig e
    t_eval2 <- preciseTime
 
    -- | Backward
    t_bwd1 <- preciseTime
    let
       αs_out = selectαs (δv (botOf vα)) vα
-      αs_in = gc.bwd αs_out
+      αs_in = eval.bwd αs_out
       e𝔹 = select𝔹s eα αs_in
    t_bwd2 <- preciseTime
-   let s𝔹 = gc_desug𝔹.bwd e𝔹
+   let s𝔹 = desug𝔹.bwd e𝔹
 
    -- | De Morgan dual of backward
    t_bwdDual1 <- preciseTime
@@ -132,13 +134,13 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Backward (all outputs selected)
    t_bwdAll1 <- preciseTime
    let
-      e𝔹_all = select𝔹s eα $ gc.bwd $ gc.codom
+      e𝔹_all = select𝔹s eα $ eval.bwd (vertices vα)
    t_bwdAll2 <- preciseTime
 
    -- | Forward (round-tripping)
    t_fwd1 <- preciseTime
    let
-      αs_out' = gc.fwd αs_in
+      αs_out' = eval.fwd αs_in
       v𝔹 = select𝔹s vα αs_out'
    t_fwd2 <- preciseTime
 
@@ -146,14 +148,14 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    t_fwdDual1 <- preciseTime
    let
       gfwd_dual = G.fwdSliceDual αs_in g
-      v𝔹_dual = select𝔹s vα (vertices gfwd_dual)
+      v𝔹_dual = select𝔹s vα (G.vertices gfwd_dual)
    t_fwdDual2 <- preciseTime
 
    -- | Forward (round-tripping) using De Morgan dual
    t_fwdAsDeMorgan1 <- preciseTime
    let
       gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
-      v𝔹_demorgan = select𝔹s vα (vertices gfwd_demorgan) <#> not
+      v𝔹_demorgan = select𝔹s vα (G.vertices gfwd_demorgan) <#> not
    t_fwdAsDeMorgan2 <- preciseTime
 
    lift do

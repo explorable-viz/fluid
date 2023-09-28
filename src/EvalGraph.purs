@@ -23,7 +23,7 @@ import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
-import GaloisConnection (GaloisConnection)
+import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, sinks)
 import Graph (vertices) as G
 import Graph.GraphWriter (class MonadGraphAlloc, alloc, new, runWithGraphAllocT)
@@ -173,13 +173,21 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
+type GraphEval g =
+   { gc :: GaloisConnection (Set Vertex) (Set Vertex)
+   , γα :: Env Vertex
+   , eα :: Expr Vertex
+   , g :: g
+   , vα :: Val Vertex
+   }
+
 graphGC
    :: forall g m
     . MonadError Error m
    => Graph g
    => GraphConfig g
    -> Raw Expr
-   -> m (GaloisConnection (Set Vertex) (Set Vertex) × Expr Vertex × g × Val Vertex)
+   -> m (GraphEval g)
 graphGC { g, n, γα } e = do
    (g' × _) × eα × vα <- do
       runWithGraphAllocT (g × n) $ do
@@ -188,8 +196,6 @@ graphGC { g, n, γα } e = do
          pure (eα × vα)
    let
       -- TODO: want (vertices eα `union` foldMap vertices γα) rather than sinks g' here?
-      dom = sinks g'
-      codom = vertices vα
-      fwd αs = G.vertices (fwdSlice αs g') `intersection` codom
-      bwd αs = G.vertices (bwdSlice αs g') `intersection` dom
-   pure $ { dom, codom, fwd, bwd } × eα × g' × vα
+      fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
+      bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
+   pure { gc: GC { fwd, bwd }, γα, eα, g: g', vα }

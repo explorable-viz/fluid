@@ -20,7 +20,7 @@ import Dict (fromFoldable, singleton, toUnfoldable) as D
 import Effect.Exception (Error)
 import Eval (eval)
 import Expr (Cont(..), Elim(..), Expr(..), RecDefs, VarDef(..), bv)
-import GaloisConnection (GaloisConnection)
+import GaloisConnection (GaloisConnection(..))
 import Lattice (Raw, bot, botOf, expand, (∨))
 import Partial.Unsafe (unsafePartial)
 import Trace (AppTrace(..), Trace(..), VarDef(..)) as T
@@ -195,12 +195,15 @@ evalBwd' v (T.LetRec ρ t) =
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
 
-traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (GaloisConnection (Env a × Expr a × a) (Val a))
+type TracedEval a =
+   { gc :: GaloisConnection (Env a × Expr a × a) (Val a)
+   , v :: Raw Val
+   }
+
+traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (TracedEval a)
 traceGC γ e = do
    t × v <- eval γ e bot
    let
-      dom = (botOf <$> γ) × botOf e × bot
-      codom = botOf v
       bwd v' = evalBwd γ e v' t
       fwd (γ' × e' × α) = snd $ fromRight $ runExcept $ eval γ' e' α
-   pure { dom, codom, fwd, bwd }
+   pure $ { gc: GC { fwd, bwd }, v }
