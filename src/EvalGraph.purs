@@ -173,19 +173,13 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
-type EvalGaloisConnection g = GaloisConnection (Set Vertex) (Set Vertex)
-   ( eα :: Expr Vertex
-   , g :: g
-   , vα :: Val Vertex
-   )
-
 graphGC
    :: forall g m
     . MonadError Error m
    => Graph g
    => GraphConfig g
    -> Raw Expr
-   -> m (EvalGaloisConnection g)
+   -> m (GaloisConnection (Set Vertex) (Set Vertex) × Expr Vertex × g × Val Vertex)
 graphGC { g, n, γα } e = do
    (g' × _) × eα × vα <- do
       runWithGraphAllocT (g × n) $ do
@@ -198,4 +192,4 @@ graphGC { g, n, γα } e = do
       codom = vertices vα
       fwd αs = G.vertices (fwdSlice αs g') `intersection` codom
       bwd αs = G.vertices (bwdSlice αs g') `intersection` dom
-   pure { dom, codom, eα, g: g', vα, fwd, bwd }
+   pure $ { dom, codom, fwd, bwd } × eα × g' × vα

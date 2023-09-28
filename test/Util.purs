@@ -24,10 +24,10 @@ import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import Graph (sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
-import Graph.Slice (selectαs, select𝔹s)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
+import Graph.Slice (selectαs, select𝔹s)
 import Heterogeneous.Mapping (hmap)
-import Lattice (botOf, erase, Raw)
+import Lattice (Raw, botOf, erase)
 import Module (parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
@@ -43,7 +43,6 @@ type TestConfig =
    }
 
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
--- testWithSetup :: Boolean -> SE.Expr Unit -> GraphConfig (GraphImpl S.Set) -> TestConfig -> Aff BenchRow
 testWithSetup ∷ String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
 testWithSetup _name s gconfig tconfig =
    liftEither =<<
@@ -67,35 +66,35 @@ testParse s = do
 testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
 testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
-   gc_desug <- desugGC s
-   gc_desug𝔹 <- desugGC s
+   desug <- desugGC s
+   desug𝔹 <- desugGC s
 
    -- | Eval
-   let e = gc_desug.fwd s
+   let e = desug.fwd s
    t_eval1 <- preciseTime
-   gc <- traceGC (erase <$> γα) e
+   eval <- traceGC (erase <$> γα) e
    t_eval2 <- preciseTime
 
    -- | Backward
    t_bwd1 <- preciseTime
-   let γ𝔹 × e𝔹 × _ = gc.bwd (δv (botOf gc.codom))
+   let γ𝔹 × e𝔹 × _ = eval.bwd (δv (botOf eval.codom))
    t_bwd2 <- preciseTime
-   let s𝔹 = gc_desug𝔹.bwd e𝔹
+   let s𝔹 = desug𝔹.bwd e𝔹
 
    -- | Forward (round-tripping)
-   let e𝔹' = gc_desug𝔹.fwd s𝔹
+   let e𝔹' = desug𝔹.fwd s𝔹
    t_fwd1 <- preciseTime
-   let v𝔹 = gc.fwd (γ𝔹 × e𝔹' × top)
+   let v𝔹 = eval.fwd (γ𝔹 × e𝔹' × top)
    t_fwd2 <- preciseTime
 
    lift do
-      unless (isGraphical gc.codom) $
+      unless (isGraphical eval.codom) $
          log (prettyP v𝔹)
       -- | Check backward selections
       unless (null bwd_expect) $
          checkPretty "Trace-based source selection" bwd_expect s𝔹
       -- | Check round-trip selections
-      unless (isGraphical gc.codom) $
+      unless (isGraphical eval.codom) $
          checkPretty "Trace-based value" fwd_expect v𝔹
 
    pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tFwd: tdiff t_fwd1 t_fwd2 }
@@ -109,52 +108,52 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    let e = gc_desug.fwd s
    t_eval1 <- preciseTime
-   gc <- graphGC gconfig e
+   gc × eα × g × vα <- graphGC gconfig e
    t_eval2 <- preciseTime
 
    -- | Backward
    t_bwd1 <- preciseTime
    let
-      αs_out = selectαs (δv (botOf gc.vα)) gc.vα
+      αs_out = selectαs (δv (botOf vα)) vα
       αs_in = gc.bwd αs_out
-      e𝔹 = select𝔹s (gc.eα) αs_in
+      e𝔹 = select𝔹s eα αs_in
    t_bwd2 <- preciseTime
    let s𝔹 = gc_desug𝔹.bwd e𝔹
 
    -- | De Morgan dual of backward
    t_bwdDual1 <- preciseTime
    let
-      αs_out_dual = selectαs (δv (botOf gc.vα)) gc.vα
-      gbwd_dual = G.bwdSliceDual αs_out_dual gc.g
+      αs_out_dual = selectαs (δv (botOf vα)) vα
+      gbwd_dual = G.bwdSliceDual αs_out_dual g
       αs_in_dual = sinks gbwd_dual
-      e𝔹_dual = select𝔹s (gc.eα) αs_in_dual
+      e𝔹_dual = select𝔹s eα αs_in_dual
    t_bwdDual2 <- preciseTime
 
    -- | Backward (all outputs selected)
    t_bwdAll1 <- preciseTime
    let
-      e𝔹_all = select𝔹s gc.eα $ gc.bwd $ gc.codom
+      e𝔹_all = select𝔹s eα $ gc.bwd $ gc.codom
    t_bwdAll2 <- preciseTime
 
    -- | Forward (round-tripping)
    t_fwd1 <- preciseTime
    let
       αs_out' = gc.fwd αs_in
-      v𝔹 = select𝔹s gc.vα αs_out'
+      v𝔹 = select𝔹s vα αs_out'
    t_fwd2 <- preciseTime
 
    -- | De Morgan dual of forward
    t_fwdDual1 <- preciseTime
    let
-      gfwd_dual = G.fwdSliceDual αs_in gc.g
-      v𝔹_dual = select𝔹s gc.vα (vertices gfwd_dual)
+      gfwd_dual = G.fwdSliceDual αs_in g
+      v𝔹_dual = select𝔹s vα (vertices gfwd_dual)
    t_fwdDual2 <- preciseTime
 
    -- | Forward (round-tripping) using De Morgan dual
    t_fwdAsDeMorgan1 <- preciseTime
    let
-      gfwd_demorgan = G.fwdSliceDeMorgan αs_in gc.g
-      v𝔹_demorgan = select𝔹s gc.vα (vertices gfwd_demorgan) <#> not
+      gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
+      v𝔹_demorgan = select𝔹s vα (vertices gfwd_demorgan) <#> not
    t_fwdAsDeMorgan2 <- preciseTime
 
    lift do

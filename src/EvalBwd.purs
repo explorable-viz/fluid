@@ -195,9 +195,7 @@ evalBwd' v (T.LetRec ρ t) =
    γ1' × ρ' × α' = closeDefsBwd γ2
 evalBwd' _ _ = error absurd
 
-type EvalGaloisConnection a = GaloisConnection (Env a × Expr a × a) (Val a) ()
-
-traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (EvalGaloisConnection a)
+traceGC :: forall a m. MonadError Error m => Ann a => Raw Env -> Raw Expr -> m (GaloisConnection (Env a × Expr a × a) (Val a))
 traceGC γ e = do
    t × v <- eval γ e bot
    let

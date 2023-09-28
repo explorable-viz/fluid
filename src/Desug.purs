@@ -11,14 +11,12 @@ import Lattice (class BoundedJoinSemilattice, Raw, botOf)
 import SExpr (Expr) as S
 import Util (successful)
 
-type DesugGaloisConnection a = GaloisConnection (S.Expr a) (Expr a) ()
-
 desugGC
    :: forall a m
     . MonadError Error m
    => BoundedJoinSemilattice a
    => Raw S.Expr
-   -> m (DesugGaloisConnection a)
+   -> m (GaloisConnection (S.Expr a) (Expr a))
 desugGC s0 = do
    let
       dom = botOf s0
