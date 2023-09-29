@@ -126,8 +126,7 @@ eval γ (Dictionary α ees) αs = do
 eval γ (Constr α c es) αs = do
    checkArity c (length es)
    vs <- traverse (flip (eval γ) αs) es
-   α' <- new (insert α αs)
-   pure $ V.Constr α' c vs
+   V.Constr <$> new (insert α αs) <@> c <@> vs
 eval γ (Matrix α e (x × y) e') αs = do
    v <- eval γ e' αs
    let (i' × β) × (j' × β') = fst (intPair.match v)
