@@ -6,7 +6,7 @@ module Example.Util.DTW
 
 import Prelude
 
-import Data.Array (cons, elemIndex, head, length, mapMaybe, modifyAtIndices, range, tail, uncons, unsafeIndex, (!!), (..))
+import Data.Array (elemIndex, length, modifyAtIndices, range, unsafeIndex, (!!), (..))
 import Data.Foldable (foldl)
 import Data.List (List(..))
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -24,7 +24,10 @@ costMatrixInit rows cols window = mapMatrix withinBand indexMat
    indexMat = matOfInds rows cols
 
    withinBand :: (Int × Int) -> NumInf
-   withinBand (x × y) = if ((x /= 0) && (y /= 0) || (x == 0 && y == 0)) && (abs $ x - y) <= window then FNum 0.0 else Infty
+   withinBand (0 × 0) = FNum 0.0
+   withinBand (0 × _) = Infty
+   withinBand (_ × 0) = Infty
+   withinBand (x × y) = if (abs $ x - y) <= window then FNum 0.0 else Infty
 
 distanceDTWWindow :: forall a. Partial => Array a -> Array a -> Int -> (a -> a -> NumInf) -> Matrix NumInf × (List (Int × Int))
 distanceDTWWindow seq1 seq2 window cost = result × (extractPath priorcells)
@@ -32,12 +35,12 @@ distanceDTWWindow seq1 seq2 window cost = result × (extractPath priorcells)
    n = length seq1
    m = length seq2
    init = costMatrixInit n m window
-   
+
    nextIndices = do
-      i <- 1..n
-      j <- (max 1 (i - window))..(min m (i + window))
-      [(i × j)]
-   
+      i <- 1 .. n
+      j <- (max 1 (i - window)) .. (min m (i + window))
+      [ (i × j) ]
+
    worker :: Matrix NumInf × Matrix (Int × Int) -> (Int × Int) -> Matrix NumInf × Matrix (Int × Int)
    worker (dists × inds) (i' × j') =
       let
@@ -121,18 +124,6 @@ matOfInds nrows ncols = matrix
    zipRow :: forall a. a -> Int -> Array (a × Int)
    zipRow datum num = map (\x -> datum × x) (range 0 num)
    matrix = map (\x -> zipRow x ncols) rowInds
-
-transpose :: forall a. Array (Array a) -> Array (Array a)
-transpose xs =
-   case uncons xs of
-      Nothing ->
-         xs
-      Just { head: h, tail: xss } ->
-         case uncons h of
-            Nothing ->
-               transpose xss
-            Just { head: x, tail: xs' } ->
-               (x `cons` mapMaybe head xss) `cons` transpose (xs' `cons` mapMaybe tail xss)
 
 updateAt :: forall a. Partial => Int -> Int -> Matrix a -> (a -> a) -> Matrix a
 updateAt i j matrix f = case matIndex matrix i j of

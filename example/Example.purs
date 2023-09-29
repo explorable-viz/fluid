@@ -12,14 +12,14 @@ import Util ((×))
 main :: Effect Unit
 main = do
    log "Beginning DTW!"
-   let 
+   let
       n = 5
       m = 7
-      window = 2 
+      window = 2
       nextIndices = do
-         i <- 1..n
-         j <- (max 1 (i - window))..(min m (i + window))
-         [(i × j)]
+         i <- 1 .. n
+         j <- (max 1 (i - window)) .. (min m (i + window))
+         [ (i × j) ]
    logShow nextIndices
    let
       x = [ 3.0, 1.0, 2.0, 2.0, 1.0 ]
