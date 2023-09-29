@@ -6,31 +6,31 @@ module Example.Util.DTW
 
 import Prelude
 
-import Data.Array (elemIndex, length, modifyAtIndices, range, unsafeIndex, (!!), (..))
+import Data.Array (length, modifyAtIndices, range, (!!), (..))
 import Data.Foldable (foldl)
 import Data.List (List(..))
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (fromJust)
 import Data.Ord (abs)
 import Partial.Unsafe (unsafePartial)
-import Util (type (×), error, (×))
+import Util (type (×), (×))
 
 ----------------------------------------
 -- Dynamic Time Warp Core
 ----------------------------------------
 
 costMatrixInit :: Int -> Int -> Int -> Matrix NumInf
-costMatrixInit rows cols window = mapMatrix withinBand indexMat
+costMatrixInit rows cols window = mapMatrix init indexMat
    where
    indexMat = matOfInds rows cols
 
-   withinBand :: (Int × Int) -> NumInf
-   withinBand (0 × 0) = FNum 0.0
-   withinBand (0 × _) = Infty
-   withinBand (_ × 0) = Infty
-   withinBand (x × y) = if (abs $ x - y) <= window then FNum 0.0 else Infty
+   init :: Int × Int -> NumInf
+   init (0 × 0) = FNum 0.0
+   init (0 × _) = Infty
+   init (_ × 0) = Infty
+   init (x × y) = if (abs $ x - y) <= window then FNum 0.0 else Infty
 
-distanceDTWWindow :: forall a. Partial => Array a -> Array a -> Int -> (a -> a -> NumInf) -> Matrix NumInf × (List (Int × Int))
-distanceDTWWindow seq1 seq2 window cost = result × (extractPath priorcells)
+distanceDTWWindow :: Partial => Array Number -> Array Number -> Int -> (Number -> Number -> NumInf) -> Matrix NumInf × List (Int × Int)
+distanceDTWWindow seq1 seq2 window cost = result × (extractPath priorcells (n × m))
    where
    n = length seq1
    m = length seq2
@@ -44,45 +44,39 @@ distanceDTWWindow seq1 seq2 window cost = result × (extractPath priorcells)
    worker :: Matrix NumInf × Matrix (Int × Int) -> (Int × Int) -> Matrix NumInf × Matrix (Int × Int)
    worker (dists × inds) (i' × j') =
       let
-         im1j = indexInfty (i' - 1) j' dists
-         ijm1 = indexInfty i' (j' - 1) dists
-         im1jm1 = indexInfty (i' - 1) (j' - 1) dists
+         im1j = dists ! i' - 1 ! j'
+         ijm1 = dists ! i' ! j' - 1
+         im1jm1 = dists ! i' - 1 ! j' - 1
          minim × prev = costAndPrevD (i' × j') im1j ijm1 im1jm1
-         costij = (cost (unsafeIndex seq1 (i' - 1)) (unsafeIndex seq2 (j' - 1))) + minim
+         costij = cost (seq1 ! i' - 1) (seq2 ! j' - 1) `plus` minim
       in
-         (updateAt i' j' dists (\_ -> costij)) × (updateAt i' j' inds (\_ -> prev))
+         updateAt i' j' dists (const costij) × updateAt i' j' inds (const prev)
 
    (result × priorcells) = foldl worker (init × (matOfInds n m)) nextIndices
 
-costAndPrevD :: (Int × Int) -> NumInf -> NumInf -> NumInf -> NumInf × (Int × Int)
+costAndPrevD :: (Int × Int) -> NumInf -> NumInf -> NumInf -> NumInf × Int × Int
 costAndPrevD (i × j) im1j ijm1 im1jm1 =
    let
       minimal = min im1j $ min ijm1 im1jm1
-      ind = elemIndex minimal [ im1j, ijm1, im1jm1 ]
    in
-      case ind of
-         Nothing -> error "error, cannot occur"
-         Just y -> case y of 
-                   0 -> (im1j × ((i - 1) × j))
-                   1 -> (ijm1 × (i × (j - 1)))
-                   2 -> (im1jm1 × ((i - 1) × (j - 1)))
-                   _ -> error "cannot occur"
+      if minimal == im1j then
+         im1j × (i - 1) × j
+      else if minimal == ijm1 then
+         ijm1 × i × (j - 1)
+      else -- minimal == im1jm1
 
-extractPath :: Matrix (Int × Int) -> List (Int × Int)
-extractPath matrix = traverser i j matrix Nil
+         im1jm1 × (i - 1) × (j - 1)
+
+extractPath :: Matrix (Int × Int) -> (Int × Int) -> List (Int × Int)
+extractPath matrix (n × m) = traverser n m matrix Nil
    where
-   i = length matrix - 1
-   j = length (unsafePartial $ unsafeIndex matrix 1) - 1
 
    traverser :: Int -> Int -> Matrix (Int × Int) -> List (Int × Int) -> List (Int × Int)
-   traverser 0 0  _  accum = accum
+   traverser 0 0 _ accum = accum
    traverser x y mat accum = traverser nextX nextY mat newPath
       where
       newPath = Cons (x × y) accum
-      (nextX × nextY) = unsafeMatrixInd x y mat
-
-indexInfty :: Int -> Int -> Matrix NumInf -> NumInf
-indexInfty i j matrix = fromMaybe Infty (matIndex matrix i j)
+      (nextX × nextY) = mat ! x ! y
 
 distEuclid :: Number -> Number -> NumInf
 distEuclid x y = FNum ((x - y) * (x - y))
@@ -93,22 +87,10 @@ distEuclid x y = FNum ((x - y) * (x - y))
 
 type Matrix a = Array (Array a)
 
-matIndex :: forall a. Matrix a -> Int -> Int -> Maybe a
-matIndex mat row col = case mat !! row of
-   Nothing -> Nothing
-   Just arr -> arr !! col
+unsafeArrayInd :: forall a. Array a -> Int -> a
+unsafeArrayInd arr ind = unsafePartial $ fromJust (arr !! ind)
 
-unsafeMatrixInd :: forall a. Int -> Int -> Matrix a -> a
-unsafeMatrixInd x y mat = unsafePartial $
-   if x < length mat then
-      let
-         xRow = unsafeIndex mat x
-      in
-         if y < length xRow then
-            unsafeIndex xRow y
-         else
-            error "index out of bounds"
-   else error "index out of bounds"
+infixl 5 unsafeArrayInd as !
 
 mapMatrix :: forall a b. (a -> b) -> Matrix a -> Matrix b
 mapMatrix f m = map (\row -> map f row) m
@@ -122,10 +104,8 @@ matOfInds nrows ncols = matrix
    zipRow datum num = map (\x -> datum × x) (range 0 num)
    matrix = map (\x -> zipRow x ncols) rowInds
 
-updateAt :: forall a. Partial => Int -> Int -> Matrix a -> (a -> a) -> Matrix a
-updateAt i j matrix f = case matIndex matrix i j of
-   -- Nothing -> matrix
-   Just _ -> modifyAtIndices [ i ] (\row -> modifyAtIndices [ j ] f row) matrix
+updateAt :: forall a. Int -> Int -> Matrix a -> (a -> a) -> Matrix a
+updateAt i j matrix f = modifyAtIndices [ i ] (modifyAtIndices [ j ] f) matrix
 
 ----------------------------------------
 -- Ints extended with Infinity, need ot be made into numbers not just ints
@@ -137,15 +117,10 @@ instance Show NumInf where
    show (FNum x) = "FNum " <> show x
    show (Infty) = "Infty"
 
-instance Semiring NumInf where
-   add Infty _ = Infty
-   add _ Infty = Infty
-   add (FNum x) (FNum y) = FNum (x + y)
-   zero = FNum 0.0
-   one = FNum 1.0
-   mul Infty _ = Infty
-   mul _ Infty = Infty
-   mul (FNum x) (FNum y) = FNum (x * y)
+plus :: NumInf -> NumInf -> NumInf
+plus Infty _ = Infty
+plus _ Infty = Infty
+plus (FNum x) (FNum y) = FNum (x + y)
 
 instance Eq NumInf where
    eq Infty Infty = true
