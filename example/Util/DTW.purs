@@ -62,11 +62,11 @@ costAndPrevD (i × j) im1j ijm1 im1jm1 =
    in
       case ind of
          Nothing -> error "error, cannot occur"
-         Just y ->
-            if y == 0 then (im1j × ((i - 1) × j))
-            else if y == 1 then (ijm1 × (i × (j - 1)))
-            else if y == 2 then (im1jm1 × ((i - 1) × (j - 1)))
-            else error "cannot occur"
+         Just y -> case y of 
+                   0 -> (im1j × ((i - 1) × j))
+                   1 -> (ijm1 × (i × (j - 1)))
+                   2 -> (im1jm1 × ((i - 1) × (j - 1)))
+                   _ -> error "cannot occur"
 
 extractPath :: Matrix (Int × Int) -> List (Int × Int)
 extractPath matrix = traverser i j matrix Nil
@@ -75,11 +75,8 @@ extractPath matrix = traverser i j matrix Nil
    j = length (unsafePartial $ unsafeIndex matrix 1) - 1
 
    traverser :: Int -> Int -> Matrix (Int × Int) -> List (Int × Int) -> List (Int × Int)
-   traverser x y mat accum =
-      if x == y && y == 0 then
-         accum
-      else
-         traverser nextX nextY mat newPath
+   traverser 0 0  _  accum = accum
+   traverser x y mat accum = traverser nextX nextY mat newPath
       where
       newPath = Cons (x × y) accum
       (nextX × nextY) = unsafeMatrixInd x y mat
