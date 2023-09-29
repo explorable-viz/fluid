@@ -16,6 +16,7 @@ You can edit this file as you like.
   , "either"
   , "exceptions"
   , "exists"
+  , "fast-vect"
   , "foldable-traversable"
   , "foreign-object"
   , "heterogeneous"
@@ -45,6 +46,6 @@ You can edit this file as you like.
   , "web-events"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs", "test/**/*.purs", "example/**/*.purs" ]
 , backend = "purs-backend-es build"
 }
