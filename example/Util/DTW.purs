@@ -44,9 +44,9 @@ distanceDTWWindow seq1 seq2 window cost = result × (extractPath priorcells (n �
    worker :: Matrix NumInf × Matrix (Int × Int) -> (Int × Int) -> Matrix NumInf × Matrix (Int × Int)
    worker (dists × inds) (i' × j') =
       let
-         im1j =   dists ! i'-1 ! j' 
-         ijm1 =   dists ! i'   ! j'-1 
-         im1jm1 = dists ! i'-1 ! j'-1
+         im1j = dists ! i' - 1 ! j'
+         ijm1 = dists ! i' ! j' - 1
+         im1jm1 = dists ! i' - 1 ! j' - 1
          minim × prev = costAndPrevD (i' × j') im1j ijm1 im1jm1
          costij = cost (seq1 ! i' - 1) (seq2 ! j' - 1) `plus` minim
       in
@@ -64,6 +64,7 @@ costAndPrevD (i × j) im1j ijm1 im1jm1 =
       else if minimal == ijm1 then
          ijm1 × i × (j - 1)
       else -- minimal == im1jm1
+
          im1jm1 × (i - 1) × (j - 1)
 
 extractPath :: Matrix (Int × Int) -> (Int × Int) -> List (Int × Int)
@@ -75,7 +76,7 @@ extractPath matrix (n × m) = traverser n m matrix Nil
    traverser x y mat accum = traverser nextX nextY mat newPath
       where
       newPath = Cons (x × y) accum
-      (nextX × nextY) = mat ! x ! y 
+      (nextX × nextY) = mat ! x ! y
 
 distEuclid :: Number -> Number -> NumInf
 distEuclid x y = FNum ((x - y) * (x - y))
