@@ -6,7 +6,7 @@ module Example.Util.DTW
 
 import Prelude
 
-import Data.Array (concat, cons, elemIndex, head, length, mapMaybe, modifyAtIndices, range, replicate, sort, tail, uncons, unsafeIndex, zip, (!!))
+import Data.Array (cons, elemIndex, head, length, mapMaybe, modifyAtIndices, range, tail, uncons, unsafeIndex, (!!), (..))
 import Data.Foldable (foldl)
 import Data.List (List(..))
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -32,9 +32,12 @@ distanceDTWWindow seq1 seq2 window cost = result × (extractPath priorcells)
    n = length seq1
    m = length seq2
    init = costMatrixInit n m window
--- (1, 1), (1, 2), (2, 1), (2, 2), (2, 3), (3, 2), (3, 3), (3, 4)
-   nextIndices = sort $ concat (map (\i -> mkRowIndices i (range (max 1 (i - window)) (min m (i + window)))) (range 1 n))
-
+   
+   nextIndices = do
+      i <- 1..n
+      j <- (max 1 (i - window))..(min m (i + window))
+      [(i × j)]
+   
    worker :: Matrix NumInf × Matrix (Int × Int) -> (Int × Int) -> Matrix NumInf × Matrix (Int × Int)
    worker (dists × inds) (i' × j') =
       let
@@ -81,9 +84,8 @@ extractPath matrix = traverser i j matrix Nil
 indexInfty :: Int -> Int -> Matrix NumInf -> NumInf
 indexInfty i j matrix = fromMaybe Infty (matIndex matrix i j)
 
-distEuclid :: NumInf -> NumInf -> NumInf
-distEuclid (FNum x) (FNum y) = FNum ((x - y) * (x - y))
-distEuclid _ _ = error "cannot calc distance from Infinity"
+distEuclid :: Number -> Number -> NumInf
+distEuclid x y = FNum ((x - y) * (x - y))
 
 ----------------------------------------
 -- Matrices and associated Utils
@@ -132,9 +134,6 @@ transpose xs =
             Just { head: x, tail: xs' } ->
                (x `cons` mapMaybe head xss) `cons` transpose (xs' `cons` mapMaybe tail xss)
 
-mkRowIndices :: Int -> Array Int -> Array (Int × Int)
-mkRowIndices i js = zip (replicate (length js) i) js
-
 updateAt :: forall a. Partial => Int -> Int -> Matrix a -> (a -> a) -> Matrix a
 updateAt i j matrix f = case matIndex matrix i j of
    -- Nothing -> matrix
@@ -147,7 +146,7 @@ updateAt i j matrix f = case matIndex matrix i j of
 data NumInf = FNum Number | Infty
 
 instance Show NumInf where
-   show (FNum x) = "FNum" <> show x
+   show (FNum x) = "FNum " <> show x
    show (Infty) = "Infty"
 
 instance Semiring NumInf where
