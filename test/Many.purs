@@ -16,10 +16,10 @@ many :: Array TestSpec -> Int -> Array (String × Aff BenchRow)
 many fxs iter = zip names affs
    where
    affs = fxs <#> \{ file, fwd_expect } -> do
-      default <- openDefaultImports
+      gconfig <- openDefaultImports
       expr <- open (File file)
       rows <- replicateM iter $
-         testWithSetup file expr default { δv: identity, fwd_expect, bwd_expect: mempty }
+         testWithSetup file expr gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
       pure $ averageRows rows
    names = map _.file fxs
 
@@ -28,11 +28,11 @@ bwdMany fxs iter = zip names affs
    where
    folder = File "slicing/"
    affs = fxs <#> \{ file, file_expect, δv, fwd_expect } -> do
-      default <- openDefaultImports
+      gconfig <- openDefaultImports
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
       expr <- open (folder <> File file)
       rows <- replicateM iter $
-         testWithSetup file expr default { δv, fwd_expect, bwd_expect }
+         testWithSetup file expr gconfig { δv, fwd_expect, bwd_expect }
       pure $ averageRows rows
    names = map _.file fxs
 
@@ -40,8 +40,7 @@ withDatasetMany :: Array TestWithDatasetSpec -> Int -> Array (String × Aff Benc
 withDatasetMany fxs iter = zip names affs
    where
    affs = fxs <#> \{ dataset, file } -> do
-      default <- openDefaultImports
-      { g, n, γα } × xv <- openDatasetAs (File dataset) "data" default
+      { g, n, γα } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
       let loadedData = { g, n, γα: γα <+> xv }
       expr <- open (File file)
       rows <- replicateM iter $

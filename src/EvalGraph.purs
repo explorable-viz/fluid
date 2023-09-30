@@ -188,7 +188,7 @@ graphGC
    -> Raw Expr
    -> m (GraphEval g)
 graphGC { g, n, γα } e = do
-   (g' × _) × eα × vα <- do
+   (g' × _) × eα × vα <-
       runWithGraphAllocT (g × n) $ do
          eα <- alloc e
          vα <- eval γα eα S.empty
