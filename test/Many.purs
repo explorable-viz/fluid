@@ -13,46 +13,42 @@ import Util (type (×), (×), successful)
 import Val ((<+>))
 
 many :: Array TestSpec -> Int -> Array (String × Aff BenchRow)
-many fxs iter = zip names affs
+many specs iter = zip (specs <#> _.file) (specs <#> one)
    where
-   affs = fxs <#> \{ file, fwd_expect } -> do
+   one { file, fwd_expect } = do
       gconfig <- openDefaultImports
       expr <- open (File file)
       rows <- replicateM iter $
          testWithSetup file expr gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
       pure $ averageRows rows
-   names = map _.file fxs
 
 bwdMany :: Array TestBwdSpec -> Int -> Array (String × Aff BenchRow)
-bwdMany fxs iter = zip names affs
+bwdMany specs iter = zip (specs <#> _.file) (specs <#> bwdOne)
    where
    folder = File "slicing/"
-   affs = fxs <#> \{ file, file_expect, δv, fwd_expect } -> do
+   bwdOne { file, file_expect, δv, fwd_expect } = do
       gconfig <- openDefaultImports
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
       expr <- open (folder <> File file)
       rows <- replicateM iter $
          testWithSetup file expr gconfig { δv, fwd_expect, bwd_expect }
       pure $ averageRows rows
-   names = map _.file fxs
 
 withDatasetMany :: Array TestWithDatasetSpec -> Int -> Array (String × Aff BenchRow)
-withDatasetMany fxs iter = zip names affs
+withDatasetMany specs iter = zip (specs <#> _.file) (specs <#> withDatasetOne)
    where
-   affs = fxs <#> \{ dataset, file } -> do
+   withDatasetOne { dataset, file } = do
       { g, n, γα } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
-      let gconfig = { g, n, γα: γα <+> xv }
       expr <- open (File file)
       rows <- replicateM iter $
-         testWithSetup file expr gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
+         testWithSetup file expr { g, n, γα: γα <+> xv } { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
       pure $ averageRows rows
-   names = fxs <#> _.file
 
 linkMany :: Array TestLinkSpec -> Array (String × Aff Unit)
-linkMany fxs = zip names affs
+linkMany specs = zip (specs <#> name) (specs <#> linkOne)
    where
-   names = fxs <#> \spec -> "linking/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
-   affs = fxs <#> \{ spec, δv1, v2_expect } -> do
+   name spec = "linking/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
+   linkOne { spec, δv1, v2_expect } = do
       { γ0, γ, e1, e2, t1, t2, v1 } <- loadLinkFig spec
       let { v': v2' } = successful $ linkResult spec.x γ0 γ e1 e2 t1 t2 (δv1 v1)
       checkPretty "Linked output" v2_expect v2'
