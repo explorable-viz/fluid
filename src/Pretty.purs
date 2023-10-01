@@ -380,7 +380,7 @@ instance Highlightable a => Pretty (E.Expr a) where
    pretty (E.Op op) = parens (text op)
    pretty (E.Let (E.VarDef σ e) e') = atop (hcat [ text str.let_, pretty σ, text str.equals, pretty e, text str.in_ ])
       (pretty e')
-   pretty (E.LetRec δ e) = atop (hcat [ text str.let_, pretty δ, text str.in_ ]) (pretty e)
+   pretty (E.LetRec _ δ e) = atop (hcat [ text str.let_, pretty δ, text str.in_ ]) (pretty e)
    pretty (E.Project e x) = pretty e .<>. text str.dot .<>. pretty x
    pretty (E.App e e') = hcat [ pretty e, pretty e' ]
 

@@ -18,6 +18,7 @@ import Lattice (class BoundedJoinSemilattice, class Expandable, class JoinSemila
 import Util (type (+), type (×), both, error, throw, (×), (≜), (≞))
 import Util.Pair (Pair, toTuple)
 
+-- Deviate from POPL paper by having closures depend on originating lambda or letrec
 data Expr a
    = Var Var
    | Op Var
@@ -28,11 +29,11 @@ data Expr a
    | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
    | Constr a Ctr (List (Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
-   | Lambda a (Elim a) -- deviate from POPL paper by having closures depend on lambdas
+   | Lambda a (Elim a)
    | Project (Expr a) Var
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
-   | LetRec (RecDefs a) (Expr a)
+   | LetRec a (RecDefs a) (Expr a)
 
 -- eliminator here is a singleton with null terminal continuation
 data VarDef a = VarDef (Elim a) (Expr a)
@@ -77,7 +78,7 @@ instance FV (Expr a) where
    fv (Project e _) = fv e
    fv (App e1 e2) = fv e1 `union` fv e2
    fv (Let def e) = fv def `union` (fv e `difference` bv def)
-   fv (LetRec ρ e) = unions (fv <$> ρ) `union` fv e
+   fv (LetRec _ ρ e) = unions (fv <$> ρ) `union` fv e
 
 instance FV (Elim a) where
    fv (ElimVar x κ) = fv κ `difference` singleton x
@@ -149,7 +150,7 @@ instance Apply Expr where
    apply (Project fe x) (Project e _) = Project (fe <*> e) x
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
-   apply (LetRec fρ fe) (LetRec ρ e) = LetRec (D.apply2 fρ ρ) (fe <*> e)
+   apply (LetRec fα fρ fe) (LetRec α ρ e) = LetRec (fα α) (D.apply2 fρ ρ) (fe <*> e)
    apply _ _ = error "Apply Expr: shape mismatch"
 
 instance Apply Elim where
@@ -227,7 +228,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    maybeJoin (Project e x) (Project e' x') = Project <$> maybeJoin e e' <*> (x ≞ x')
    maybeJoin (App e1 e2) (App e1' e2') = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Let def e) (Let def' e') = Let <$> maybeJoin def def' <*> maybeJoin e e'
-   maybeJoin (LetRec ρ e) (LetRec ρ' e') = LetRec <$> maybeJoin ρ ρ' <*> maybeJoin e e'
+   maybeJoin (LetRec α ρ e) (LetRec α' ρ' e') = LetRec (α ∨ α') <$> maybeJoin ρ ρ' <*> maybeJoin e e'
    maybeJoin _ _ = throw "Incompatible expressions"
 
    join e = definedJoin e
@@ -247,5 +248,5 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Project e x) (Project e' x') = Project (expand e e') (x ≜ x')
    expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')
-   expand (LetRec ρ e) (LetRec ρ' e') = LetRec (expand ρ ρ') (expand e e')
+   expand (LetRec α ρ e) (LetRec _ ρ' e') = LetRec α (expand ρ ρ') (expand e e')
    expand _ _ = error "Incompatible expressions"

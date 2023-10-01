@@ -188,7 +188,7 @@ evalBwd' v (T.Let (T.VarDef w t1) t2) =
    v' × σ = matchBwd γ2 ContNone α2 w
    γ1' × e1 × α1 = evalBwd' v' t1
 evalBwd' v (T.LetRec ρ t) =
-   (γ1 ∨ γ1') × LetRec ρ' e × (α ∨ α')
+   (γ1 ∨ γ1') × LetRec (α ∨ α') ρ' e × (α ∨ α')
    where
    γ1γ2 × e × α = evalBwd' v t
    γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2

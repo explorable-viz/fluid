@@ -68,7 +68,6 @@ defaultImports = do
    γα <- traverse alloc primitives
    loadModule (File "prelude") γα >>= loadModule (File "graphics") >>= loadModule (File "convolution")
 
--- | Evaluates default imports from empty initial graph config
 openDefaultImports :: forall m g. MonadAff m => MonadError Error m => Graph g => m (GraphConfig g)
 openDefaultImports = do
    (g × n) × γα <- runWithGraphAllocT (G.empty × 0) defaultImports
@@ -82,6 +81,5 @@ openDatasetAs file x { g, n, γα } = do
       runWithGraphAllocT (g × n) do
          e <- desug s
          eα <- alloc e
-         vα <- eval γα eα empty
-         pure (D.singleton x vα)
+         D.singleton x <$> eval γα eα empty
    pure ({ g: g', n: n', γα } × xv)

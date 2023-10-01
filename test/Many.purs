@@ -41,10 +41,10 @@ withDatasetMany fxs iter = zip names affs
    where
    affs = fxs <#> \{ dataset, file } -> do
       { g, n, γα } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
-      let loadedData = { g, n, γα: γα <+> xv }
+      let gconfig = { g, n, γα: γα <+> xv }
       expr <- open (File file)
       rows <- replicateM iter $
-         testWithSetup file expr loadedData { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
+         testWithSetup file expr gconfig { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
       pure $ averageRows rows
    names = fxs <#> _.file
 

@@ -157,9 +157,9 @@ eval γ (Let (VarDef σ e) e') α = do
    γ' × _ × α' × w <- match v σ -- terminal meta-type of eliminator is meta-unit
    t' × v' <- eval (γ <+> γ') e' α' -- (α ∧ α') for consistency with functions? (similarly for module defs)
    pure $ T.Let (T.VarDef w t) t' × v'
-eval γ (LetRec ρ e) α = do
-   let γ' = closeDefs γ ρ α
-   t × v <- eval (γ <+> γ') e α
+eval γ (LetRec α ρ e) α' = do
+   let γ' = closeDefs γ ρ (α ∧ α')
+   t × v <- eval (γ <+> γ') e (α ∧ α')
    pure $ T.LetRec (erase <$> ρ) t × v
 
 eval_module :: forall a m. MonadError Error m => Ann a => Env a -> Module a -> a -> m (Env a)
