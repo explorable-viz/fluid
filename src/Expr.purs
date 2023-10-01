@@ -28,7 +28,7 @@ data Expr a
    | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
    | Constr a Ctr (List (Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
-   | Lambda a (Elim a)
+   | Lambda a (Elim a) -- deviate from POPL paper by having closures depend on lambdas
    | Project (Expr a) Var
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
@@ -45,9 +45,9 @@ data Elim a
 
 -- Continuation of an eliminator branch.
 data Cont a
-   = ContNone
-   | -- null continuation, used in let bindings/module variable bindings
-     ContExpr (Expr a)
+   = -- null continuation, used in let bindings/module variable bindings
+     ContNone
+   | ContExpr (Expr a)
    | ContElim (Elim a)
 
 asElim :: forall a. Cont a -> Elim a
