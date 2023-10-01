@@ -199,5 +199,5 @@ graphGC { g, n, γα } e = do
       dom = vertices eα `union` foldMap vertices γα
       fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
       bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
-   trace (show $ sinks g' `S.difference` dom) \_ ->
+   trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->
       pure { gc: GC { fwd, bwd }, γα, eα, g: g', vα }
