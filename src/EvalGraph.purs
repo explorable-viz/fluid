@@ -142,8 +142,8 @@ eval γ (Matrix α e (x × y) e') αs = do
          let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
          A.singleton (eval (γ <+> γ') e αs)
    V.Matrix <$> new (insert α αs) <@> MatrixRep (vss × (i' × β) × (j' × β'))
-eval γ (Lambda σ) αs =
-   V.Fun <$> new αs <@> V.Closure (γ `restrict` fv σ) D.empty σ
+eval γ (Lambda α σ) αs =
+   V.Fun <$> new (insert α αs) <@> V.Closure (γ `restrict` fv σ) D.empty σ
 eval γ (Project e x) αs = do
    v <- eval γ e αs
    case v of

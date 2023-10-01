@@ -118,7 +118,7 @@ evalBwd' v (T.Op op) = D.singleton op v × Op op × bot
 evalBwd' (V.Str α str) T.Const = empty × Str α str × α
 evalBwd' (V.Int α n) T.Const = empty × Int α n × α
 evalBwd' (V.Float α n) T.Const = empty × Float α n × α
-evalBwd' (V.Fun α (V.Closure γ _ σ)) T.Const = γ × Lambda σ × α
+evalBwd' (V.Fun α (V.Closure γ _ σ)) T.Const = γ × Lambda α σ × α
 evalBwd' (V.Record α xvs) (T.Record xts) =
    foldr (∨) empty (xγeαs <#> fst)
       × Record α (xγeαs <#> (fst <<< snd))

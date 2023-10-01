@@ -28,7 +28,7 @@ data Expr a
    | Dictionary a (List (Pair (Expr a))) -- constructor name Dict borks (import of same name)
    | Constr a Ctr (List (Expr a))
    | Matrix a (Expr a) (Var × Var) (Expr a)
-   | Lambda (Elim a)
+   | Lambda a (Elim a)
    | Project (Expr a) Var
    | App (Expr a) (Expr a)
    | Let (VarDef a) (Expr a)
@@ -73,7 +73,7 @@ instance FV (Expr a) where
    fv (Dictionary _ ees) = unions ((unions <<< (fv # both) <<< toTuple) <$> ees)
    fv (Constr _ _ es) = unions (fv <$> es)
    fv (Matrix _ e1 _ e2) = union (fv e1) (fv e2)
-   fv (Lambda σ) = fv σ
+   fv (Lambda _ σ) = fv σ
    fv (Project e _) = fv e
    fv (App e1 e2) = fv e1 `union` fv e2
    fv (Let def e) = fv def `union` (fv e `difference` bv def)
@@ -145,7 +145,7 @@ instance Apply Expr where
    apply (Constr fα c fes) (Constr α c' es) = Constr (fα α) (c ≜ c') (zipWith (<*>) fes es)
    apply (Matrix fα fe1 (x × y) fe2) (Matrix α e1 (x' × y') e2) =
       Matrix (fα α) (fe1 <*> e1) ((x ≜ x') × (y ≜ y')) (fe2 <*> e2)
-   apply (Lambda fσ) (Lambda σ) = Lambda (fσ <*> σ)
+   apply (Lambda fα fσ) (Lambda α σ) = Lambda (fα α) (fσ <*> σ)
    apply (Project fe x) (Project e _) = Project (fe <*> e) x
    apply (App fe1 fe2) (App e1 e2) = App (fe1 <*> e1) (fe2 <*> e2)
    apply (Let (VarDef fσ fe1) fe2) (Let (VarDef σ e1) e2) = Let (VarDef (fσ <*> σ) (fe1 <*> e1)) (fe2 <*> e2)
@@ -223,7 +223,7 @@ instance JoinSemilattice a => JoinSemilattice (Expr a) where
    maybeJoin (Constr α c es) (Constr α' c' es') = Constr (α ∨ α') <$> (c ≞ c') <*> maybeJoin es es'
    maybeJoin (Matrix α e1 (x × y) e2) (Matrix α' e1' (x' × y') e2') =
       Matrix (α ∨ α') <$> maybeJoin e1 e1' <*> ((x ≞ x') `lift2 (×)` (y ≞ y')) <*> maybeJoin e2 e2'
-   maybeJoin (Lambda σ) (Lambda σ') = Lambda <$> maybeJoin σ σ'
+   maybeJoin (Lambda α σ) (Lambda α' σ') = Lambda (α ∨ α') <$> maybeJoin σ σ'
    maybeJoin (Project e x) (Project e' x') = Project <$> maybeJoin e e' <*> (x ≞ x')
    maybeJoin (App e1 e2) (App e1' e2') = App <$> maybeJoin e1 e1' <*> maybeJoin e2 e2'
    maybeJoin (Let def e) (Let def' e') = Let <$> maybeJoin def def' <*> maybeJoin e e'
@@ -243,7 +243,7 @@ instance BoundedJoinSemilattice a => Expandable (Expr a) (Raw Expr) where
    expand (Constr α c es) (Constr _ c' es') = Constr α (c ≜ c') (expand es es')
    expand (Matrix α e1 (x × y) e2) (Matrix _ e1' (x' × y') e2') =
       Matrix α (expand e1 e1') ((x ≜ x') × (y ≜ y')) (expand e2 e2')
-   expand (Lambda σ) (Lambda σ') = Lambda (expand σ σ')
+   expand (Lambda α σ) (Lambda _ σ') = Lambda α (expand σ σ')
    expand (Project e x) (Project e' x') = Project (expand e e') (x ≜ x')
    expand (App e1 e2) (App e1' e2') = App (expand e1 e1') (expand e2 e2')
    expand (Let def e) (Let def' e') = Let (expand def def') (expand e e')

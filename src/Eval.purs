@@ -140,8 +140,8 @@ eval γ (Matrix α e (x × y) e') α' = do
    where
    unzipToArray :: forall b c. List (b × c) -> Array b × Array c
    unzipToArray = unzip >>> bimap A.fromFoldable A.fromFoldable
-eval γ (Lambda σ) α =
-   pure $ T.Const × V.Fun α (V.Closure (γ `restrict` fv σ) empty σ)
+eval γ (Lambda α σ) α' =
+   pure $ T.Const × V.Fun (α ∧ α') (V.Closure (γ `restrict` fv σ) empty σ)
 eval γ (Project e x) α = do
    t × v <- eval γ e α
    case v of
