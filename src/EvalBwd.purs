@@ -145,7 +145,7 @@ evalBwd' (V.Constr α _ vs) (T.Constr c ts) =
 evalBwd' (V.Matrix α (MatrixRep (vss × (_ × βi) × (_ × βj)))) (T.Matrix tss (x × y) (i' × j') t') =
    (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
    where
-   NonEmptyList ijs = nonEmpty $ do
+   NonEmptyList ijs = nonEmpty do
       i <- range 1 i'
       j <- range 1 j'
       L.singleton (i × j)

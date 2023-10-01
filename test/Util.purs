@@ -15,7 +15,6 @@ import Data.List.Lazy (List, length)
 import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
-import Debug (trace)
 import Desug (desugGC)
 import Effect.Aff (Aff)
 import Effect.Class.Console (log)
@@ -44,11 +43,14 @@ type TestConfig =
    , bwd_expect :: String
    }
 
+logging :: Boolean
+logging = false
+
 -- fwd_expect: prettyprinted value after bwd then fwd round-trip
 testWithSetup ∷ String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
 testWithSetup _name s gconfig tconfig =
    liftEither =<<
-      ( runExceptT $ do
+      ( runExceptT do
            testParse s
            trRow <- testTrace s gconfig tconfig
            grRow <- testGraph s gconfig tconfig
@@ -59,11 +61,10 @@ testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testParse s = do
    let src = prettyP s
    s' <- parse src program
-   trace ("Non-Annotated:\n" <> src) \_ ->
-      unless (eq (erase s) (erase s')) do
-         log ("SRC\n" <> show (erase s))
-         log ("NEW\n" <> show (erase s'))
-         lift $ fail "not equal"
+   unless (eq (erase s) (erase s')) do
+      log ("SRC\n" <> show (erase s))
+      log ("NEW\n" <> show (erase s'))
+      lift $ fail "not equal"
 
 testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
 testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
@@ -90,13 +91,12 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    t_fwd2 <- preciseTime
 
    lift do
-      unless (isGraphical v) $
-         log (prettyP v𝔹)
       -- | Check backward selections
       unless (null bwd_expect) $
          checkPretty "Trace-based source selection" bwd_expect s𝔹
       -- | Check round-trip selections
-      unless (isGraphical v) $
+      unless (isGraphical v) do
+         when logging $ log (prettyP v𝔹)
          checkPretty "Trace-based value" fwd_expect v𝔹
 
    pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tFwd: tdiff t_fwd1 t_fwd2 }
@@ -169,7 +169,7 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
       αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
          (flip subset αs_out')
       -- | To avoid unused variables when benchmarking
-      unless false do
+      when logging do
          log (prettyP e𝔹_dual)
          log (prettyP e𝔹_all)
          log (prettyP v𝔹_dual)
@@ -216,9 +216,9 @@ shouldSatisfy msg v pred =
       fail (show v <> " doesn't satisfy predicate: " <> msg)
 
 averageRows :: List BenchRow -> BenchRow
-averageRows rows = averagedTr
+averageRows rows = average summed
    where
    runs = toNumber $ length rows
-
    summed = foldl sumRow zeroRow rows
-   averagedTr = (\(BenchRow tr gr) -> BenchRow (hmap (\num -> num `div` runs) tr) (hmap (\num -> num `div` runs) gr)) $ summed
+   average (BenchRow tr gr) =
+      BenchRow (hmap (\num -> num `div` runs) tr) (hmap (\num -> num `div` runs) gr)

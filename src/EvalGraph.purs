@@ -9,17 +9,19 @@ module EvalGraph
    ) where
 
 import Prelude hiding (apply, add)
+
 import Bindings (varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
-import Data.List (List(..), length, snoc, unzip, zip, (:))
+import Data.List (List(..), foldMap, length, snoc, unzip, zip, (:))
 import Data.Set (Set, empty, insert, intersection, singleton, union)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
+import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
@@ -133,9 +135,9 @@ eval γ (Matrix α e (x × y) e') αs = do
    check
       (i' × j' >= 1 × 1)
       ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
-   vss <- sequence $ do
+   vss <- sequence do
       i <- A.range 1 i'
-      A.singleton $ sequence $ do
+      A.singleton $ sequence do
          j <- A.range 1 j'
          let γ' = D.singleton x (V.Int β i) `D.disjointUnion` (D.singleton y (V.Int β' j))
          A.singleton (eval (γ <+> γ') e αs)
@@ -189,12 +191,13 @@ graphGC
    -> m (GraphEval g)
 graphGC { g, n, γα } e = do
    (g' × _) × eα × vα <-
-      runWithGraphAllocT (g × n) $ do
+      runWithGraphAllocT (g × n) do
          eα <- alloc e
          vα <- eval γα eα S.empty
          pure (eα × vα)
    let
-      -- TODO: want (vertices eα `union` foldMap vertices γα) rather than sinks g' here?
+      dom = vertices eα `union` foldMap vertices γα
       fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
       bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
-   pure { gc: GC { fwd, bwd }, γα, eα, g: g', vα }
+   trace (show $ sinks g' `S.difference` dom) \_ ->
+      pure { gc: GC { fwd, bwd }, γα, eα, g: g', vα }

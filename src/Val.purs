@@ -108,7 +108,7 @@ type Array2 a = Array (Array a)
 
 matrixGet :: forall a m. MonadThrow Error m => Int -> Int -> MatrixRep a -> m (Val a)
 matrixGet i j (MatrixRep (vss × _ × _)) =
-   orElse "Index out of bounds" $ do
+   orElse "Index out of bounds" do
       us <- vss !! (i - 1)
       us !! (j - 1)
 

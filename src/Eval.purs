@@ -129,9 +129,9 @@ eval γ (Matrix α e (x × y) e') α' = do
    let (i' × β) × (j' × β') = fst (intPair.match v)
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
-      ( sequence $ do
+      ( sequence do
            i <- range 1 i'
-           singleton $ sequence $ do
+           singleton $ sequence do
               j <- range 1 j'
               let γ' = D.singleton x (V.Int β i) `disjointUnion` (D.singleton y (V.Int β' j))
               singleton (eval (γ <+> γ') e α')
