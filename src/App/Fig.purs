@@ -74,7 +74,7 @@ type SplitDefs a =
    }
 
 -- Decompose as above.
-splitDefs :: forall a. Ann a => Env a -> S.Expr a -> MayFail (SplitDefs a)
+splitDefs :: forall a m. Ann a => MonadError Error m => Env a -> S.Expr a -> m (SplitDefs a)
 splitDefs γ0 s' = do
    let defs × s = unsafePartial $ unpack s'
    γ <- desugarModuleFwd (S.Module (singleton defs)) >>= flip (eval_module γ0) bot
@@ -198,13 +198,13 @@ loadFig spec@{ file } = do
    let
       γ0 = botOf <$> γα0
       xv0 = botOf <$> xv
-   open file <#> \s' -> successful $ do
-      let s0 = botOf s'
-      { γ: γ1, s } <- splitDefs (γ0 <+> xv0) s0
-      e <- desug s
-      let γ0γ = γ0 <+> xv0 <+> γ1
-      t × v <- eval γ0γ e bot
-      pure { spec, γ0, γ: γ0 <+> γ1, s0, s, e, t, v }
+   s' <- open file
+   let s0 = botOf s'
+   { γ: γ1, s } <- splitDefs (γ0 <+> xv0) s0
+   e <- desug s
+   let γ0γ = γ0 <+> xv0 <+> γ1
+   t × v <- eval γ0γ e bot
+   pure { spec, γ0, γ: γ0 <+> γ1, s0, s, e, t, v }
 
 loadLinkFig :: forall m. MonadAff m => MonadError Error m => LinkFigSpec -> m LinkFig
 loadLinkFig spec@{ file1, file2, dataFile, x } = do
@@ -220,7 +220,7 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       xv0 = botOf <$> xv
       s1 = botOf s1'
       s2 = botOf s2'
-   dataFile' <- loadFile (Folder "fluid/example/linking") (dataFile) -- use surface expression instead
+   dataFile' <- loadFile (Folder "fluid/example/linking") dataFile -- use surface expression instead
    e1 × e2 <- (×) <$> desug s1 <*> desug s2
    t1 × v1 <- eval (γ0 <+> xv0) e1 bot
    t2 × v2 <- eval (γ0 <+> xv0) e2 bot
