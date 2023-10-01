@@ -16,7 +16,6 @@ You can edit this file as you like.
   , "either"
   , "exceptions"
   , "exists"
-  , "fast-vect"
   , "foldable-traversable"
   , "foreign-object"
   , "heterogeneous"
