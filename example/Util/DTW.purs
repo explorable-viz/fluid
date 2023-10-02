@@ -1,8 +1,10 @@
 module Example.Util.DTW
-   ( NumInf(..)
-   , distEuclid
-   , distanceDTWWindow
-   ) where
+  ( NumInf(..)
+  , costMatrixInit
+  , distEuclid
+  , distanceDTWWindow
+  )
+  where
 
 import Prelude
 

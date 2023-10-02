@@ -1,0 +1,5 @@
+let nextIndices n m window = 
+    [(i, j) | i <- enumFromTo 1 n,
+              j <- enumFromTo (max 1 (i - window)) (min m (i + window))]
+in 
+  nextIndices 5 7 2
