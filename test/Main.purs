@@ -18,9 +18,12 @@ import Test.Many (bwdMany, linkMany, many, withDatasetMany)
 import Test.Spec.Mocha (run)
 import Test.Spec.Specs (bwd_cases, desugar_cases, graphics_cases, linking_cases, misc_cases)
 import Util (type (×))
+import Test.Benchmark.PureComp (benchFibs)
 
 main :: Effect Unit
-main = run tests
+main = do
+   if true then benchFibs else pure unit
+   run tests
 
 tests :: Array (String × Aff Unit)
 tests = concat
