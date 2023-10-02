@@ -5,5 +5,5 @@ let abs x y = if x - y < 0 then negate (x - y) else (x - y);
       in 
         [| let initV = if ((abs n m )<= window)  then FNum 0 else Infty 
            in initV | (n, m) in (rows, cols) |]
-in costMatrixInit 3 4 1
+in costMatrixInit 5 7 1
      
