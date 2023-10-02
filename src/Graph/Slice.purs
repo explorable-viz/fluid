@@ -3,13 +3,12 @@ module Graph.Slice where
 import Prelude hiding (add)
 
 import Control.Monad.Rec.Class (Step(..), tailRecM)
-import Data.Foldable (class Foldable)
 import Data.List (List(..), (:))
 import Data.List as L
 import Data.Map (Map)
 import Data.Map (insert, empty, lookup, delete) as M
 import Data.Maybe (maybe)
-import Data.Set (Set, empty, insert, member, singleton, unions, difference)
+import Data.Set (Set, empty, insert, singleton, difference)
 import Data.Tuple (fst)
 import Graph (class Graph, Edge, Vertex, inEdges, inEdges', outN, sinks, op)
 import Graph.GraphWriter (WithGraph, extend, runWithGraph)

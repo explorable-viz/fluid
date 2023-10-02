@@ -34,13 +34,13 @@ import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (×), check, error, orElse, successful, throw, with, (×))
 import Util.Pair (unzip) as P
-import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), ProgramCxt, Val, for, lookup', restrict, (<+>))
+import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), ProgCxt(..), Val, for, lookup', restrict, (<+>))
 import Val (Val(..), Fun(..)) as V
 
 type GraphConfig g =
    { g :: g
    , n :: Int
-   , progCxt :: ProgramCxt Vertex
+   , progCxt :: ProgCxt Vertex
    }
 
 {-# Matching #-}
@@ -188,15 +188,15 @@ graphGC
    => GraphConfig g
    -> Raw Expr
    -> m (GraphEval g)
-graphGC { g, n, progCxt } e = do
+graphGC { g, n, progCxt: ProgCxt { γ } } e = do
    (g' × _) × eα × vα <-
       runWithGraphAllocT (g × n) do
          eα <- alloc e
-         vα <- eval progCxt.γ eα S.empty
+         vα <- eval γ eα S.empty
          pure (eα × vα)
    let
-      dom = vertices eα `union` foldMap vertices progCxt.γ
+      dom = vertices eα `union` foldMap vertices γ
       fwd αs = vertices (fwdSlice αs g') `intersection` vertices vα
       bwd αs = vertices (bwdSlice αs g') `intersection` sinks g'
    trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->
-      pure { gc: GC { fwd, bwd }, γα: progCxt.γ, eα, g: g', vα }
+      pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }

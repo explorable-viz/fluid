@@ -29,7 +29,7 @@ import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
 import Util (type (×), mapLeft, (×))
 import Util.Parse (SParser)
-import Val (Env, ProgramCxt, (<+>))
+import Val (Env, ProgCxt(..), (<+>))
 
 -- Mainly serve as documentation
 newtype File = File String
@@ -58,17 +58,17 @@ parseProgram folder file =
 open :: forall m. MonadAff m => MonadError Error m => File -> m (S.Expr Unit)
 open = parseProgram (Folder "fluid/example")
 
-loadModule :: forall m. MonadAff m => MonadGraphAlloc m => File -> ProgramCxt Vertex -> m (ProgramCxt Vertex)
-loadModule file { mods, γ } = do
+loadModule :: forall m. MonadAff m => MonadGraphAlloc m => File -> ProgCxt Vertex -> m (ProgCxt Vertex)
+loadModule file (ProgCxt { mods, γ }) = do
    src <- loadFile (Folder "fluid/lib") file
    mod <- parse src module_ >>= desugarModuleFwd >>= traverseModule (const fresh)
    γ' <- eval_module γ mod empty
-   pure $ { mods: mod : mods, γ: γ <+> γ' }
+   pure $ ProgCxt { mods: mod : mods, γ: γ <+> γ' }
 
-defaultImports :: forall m. MonadAff m => MonadGraphAlloc m => m (ProgramCxt Vertex)
+defaultImports :: forall m. MonadAff m => MonadGraphAlloc m => m (ProgCxt Vertex)
 defaultImports = do
    γ <- traverse alloc primitives
-   loadModule (File "prelude") { mods: Nil, γ }
+   loadModule (File "prelude") (ProgCxt { mods: Nil, γ })
       >>= loadModule (File "graphics")
       >>= loadModule (File "convolution")
 
@@ -79,11 +79,11 @@ openDefaultImports = do
 
 -- | Evaluate dataset in context of existing graph config
 openDatasetAs :: forall m g. MonadAff m => MonadError Error m => Graph g => File -> Var -> GraphConfig g -> m (GraphConfig g × Env Vertex)
-openDatasetAs file x { g, n, progCxt } = do
+openDatasetAs file x { g, n, progCxt: progCxt@(ProgCxt { γ }) } = do
    s <- parseProgram (Folder "fluid") file
    (g' × n') × xv <-
       runWithGraphAllocT (g × n) do
          e <- desug s
          eα <- alloc e
-         D.singleton x <$> eval progCxt.γ eα empty
+         D.singleton x <$> eval γ eα empty
    pure ({ g: g', n: n', progCxt } × xv)

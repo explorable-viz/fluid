@@ -11,6 +11,7 @@ import Data.Bitraversable (bitraverse)
 import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:), zipWith)
+import Data.Newtype (class Newtype)
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
@@ -72,7 +73,9 @@ lookup' :: forall a m. MonadThrow Error m => Var -> Dict a -> m a
 lookup' x γ = lookup x γ # orElse ("variable " <> x <> " not found")
 
 -- Bunch of loaded modules.
-type ProgramCxt a = { mods :: List (Module a), γ :: Env a }
+newtype ProgCxt a = ProgCxt { mods :: List (Module a), γ :: Env a }
+
+derive instance Newtype (ProgCxt a) _
 
 -- Want a monoid instance but needs a newtype
 append :: forall a. Env a -> Endo (Env a)

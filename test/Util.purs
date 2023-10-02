@@ -33,7 +33,7 @@ import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
 import Util (MayFailT, successful, (×))
-import Val (Val(..), class Ann)
+import Val (class Ann, ProgCxt(..), Val(..))
 
 type TestConfig =
    { δv :: Selector Val
@@ -65,7 +65,7 @@ testParse s = do
       lift $ fail "not equal"
 
 testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
-testTrace s { progCxt } { δv, bwd_expect, fwd_expect } = do
+testTrace s { progCxt: ProgCxt { γ } } { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
    GC desug𝔹 <- desugGC s
@@ -73,7 +73,7 @@ testTrace s { progCxt } { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    let e = desug.fwd s
    t_eval1 <- preciseTime
-   { gc: GC eval, v } <- traceGC (erase <$> progCxt.γ) e
+   { gc: GC eval, v } <- traceGC (erase <$> γ) e
    t_eval2 <- preciseTime
 
    -- | Backward

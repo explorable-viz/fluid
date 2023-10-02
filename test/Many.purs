@@ -10,7 +10,7 @@ import Effect.Aff (Aff)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports)
 import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, averageRows, checkPretty, testWithSetup)
 import Util (type (×), (×), successful)
-import Val ((<+>))
+import Val (ProgCxt(..), (<+>))
 
 many :: Array TestSpec -> Int -> Array (String × Aff BenchRow)
 many specs iter = zip (specs <#> _.file) (specs <#> one)
@@ -39,10 +39,10 @@ withDatasetMany specs iter = zip (specs <#> _.file) (specs <#> withDatasetOne)
    where
    withDatasetOne { dataset, file } = do
       -- TODO: make progCxt consistent with addition of xv
-      gconfig@{ progCxt: { γ } } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
+      gconfig@{ progCxt: ProgCxt r@{ γ } } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
       expr <- open (File file)
       rows <- replicateM iter $
-         testWithSetup file expr gconfig { progCxt { γ = γ <+> xv } }
+         testWithSetup file expr gconfig { progCxt = ProgCxt r{ γ = γ <+> xv } }
             { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
       pure $ averageRows rows
 
