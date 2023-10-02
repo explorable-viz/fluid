@@ -193,10 +193,10 @@ linkResult x γ0 γ e1 e2 t1 _ v1 = do
 loadFig :: forall m. MonadAff m => MonadError Error m => FigSpec -> m Fig
 loadFig spec@{ file } = do
    -- TODO: not every example should run with this dataset.
-   { γα: γα0 } × xv :: GraphConfig GraphImpl × _ <-
+   { progCxt } × xv :: GraphConfig GraphImpl × _ <-
       openDefaultImports >>= openDatasetAs (File "example/linking/renewables") "data"
    let
-      γ0 = botOf <$> γα0
+      γ0 = botOf <$> progCxt.γ
       xv0 = botOf <$> xv
    s' <- open file
    let s0 = botOf s'
@@ -212,11 +212,11 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       dir = File "linking/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- the views share an ambient environment γ0 as well as dataset
-   { γα } × xv :: GraphConfig GraphImpl × _ <-
+   { progCxt } × xv :: GraphConfig GraphImpl × _ <-
       openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
-      γ0 = botOf <$> γα
+      γ0 = botOf <$> progCxt.γ
       xv0 = botOf <$> xv
       s1 = botOf s1'
       s2 = botOf s2'

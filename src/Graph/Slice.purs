@@ -59,12 +59,3 @@ fwdSliceDual αs0 g0 = bwdSlice αs0 (op g0)
 fwdSliceAsDeMorgan :: forall g. Graph g => Set Vertex -> g -> g
 fwdSliceAsDeMorgan αs0 g0 =
    bwdSlice (sinks g0 `difference` αs0) (op g0)
-
-vertices :: forall f. Apply f => Foldable f => f Vertex -> Set Vertex
-vertices vα = selectαs (const true <$> vα) vα
-
-selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
-selectαs v𝔹 vα = unions ((if _ then singleton else const empty) <$> v𝔹 <*> vα)
-
-select𝔹s :: forall f. Functor f => f Vertex -> Set Vertex -> f Boolean
-select𝔹s vα αs = (_ `member` αs) <$> vα

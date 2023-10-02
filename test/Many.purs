@@ -38,10 +38,12 @@ withDatasetMany :: Array TestWithDatasetSpec -> Int -> Array (String × Aff Benc
 withDatasetMany specs iter = zip (specs <#> _.file) (specs <#> withDatasetOne)
    where
    withDatasetOne { dataset, file } = do
-      { g, n, γα } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
+      -- TODO: make progCxt consistent with addition of xv
+      gconfig@{ progCxt: { γ } } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
       expr <- open (File file)
       rows <- replicateM iter $
-         testWithSetup file expr { g, n, γα: γα <+> xv } { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
+         testWithSetup file expr gconfig { progCxt { γ = γ <+> xv } }
+            { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
       pure $ averageRows rows
 
 linkMany :: Array TestLinkSpec -> Array (String × Aff Unit)

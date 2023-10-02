@@ -21,11 +21,9 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
-import Graph (sinks)
-import Graph (vertices) as G
+import Graph (selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
-import Graph.Slice (selectαs, select𝔹s, vertices)
 import GaloisConnection (GaloisConnection(..))
 import Heterogeneous.Mapping (hmap)
 import Lattice (Raw, botOf, erase)
@@ -67,7 +65,7 @@ testParse s = do
       lift $ fail "not equal"
 
 testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
-testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
+testTrace s { progCxt } { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
    GC desug𝔹 <- desugGC s
@@ -75,7 +73,7 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    let e = desug.fwd s
    t_eval1 <- preciseTime
-   { gc: GC eval, v } <- traceGC (erase <$> γα) e
+   { gc: GC eval, v } <- traceGC (erase <$> progCxt.γ) e
    t_eval2 <- preciseTime
 
    -- | Backward
@@ -148,14 +146,14 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    t_fwdDual1 <- preciseTime
    let
       gfwd_dual = G.fwdSliceDual αs_in g
-      v𝔹_dual = select𝔹s vα (G.vertices gfwd_dual)
+      v𝔹_dual = select𝔹s vα (vertices gfwd_dual)
    t_fwdDual2 <- preciseTime
 
    -- | Forward (round-tripping) using De Morgan dual
    t_fwdAsDeMorgan1 <- preciseTime
    let
       gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
-      v𝔹_demorgan = select𝔹s vα (G.vertices gfwd_demorgan) <#> not
+      v𝔹_demorgan = select𝔹s vα (vertices gfwd_demorgan) <#> not
    t_fwdAsDeMorgan2 <- preciseTime
 
    lift do

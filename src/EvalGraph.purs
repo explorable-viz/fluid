@@ -26,22 +26,21 @@ import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) a
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
 import GaloisConnection (GaloisConnection(..))
-import Graph (class Graph, Vertex, sinks)
-import Graph (vertices) as G
+import Graph (class Graph, Vertex, sinks, vertices)
 import Graph.GraphWriter (class MonadGraphAlloc, alloc, new, runWithGraphAllocT)
-import Graph.Slice (bwdSlice, fwdSlice, vertices)
+import Graph.Slice (bwdSlice, fwdSlice)
 import Lattice (Raw)
 import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (×), check, error, orElse, successful, throw, with, (×))
 import Util.Pair (unzip) as P
-import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
+import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), ProgramCxt, Val, for, lookup', restrict, (<+>))
 import Val (Val(..), Fun(..)) as V
 
 type GraphConfig g =
    { g :: g
    , n :: Int
-   , γα :: Env Vertex
+   , progCxt :: ProgramCxt Vertex
    }
 
 {-# Matching #-}
@@ -189,15 +188,15 @@ graphGC
    => GraphConfig g
    -> Raw Expr
    -> m (GraphEval g)
-graphGC { g, n, γα } e = do
+graphGC { g, n, progCxt } e = do
    (g' × _) × eα × vα <-
       runWithGraphAllocT (g × n) do
          eα <- alloc e
-         vα <- eval γα eα S.empty
+         vα <- eval progCxt.γ eα S.empty
          pure (eα × vα)
    let
-      dom = vertices eα `union` foldMap vertices γα
-      fwd αs = G.vertices (fwdSlice αs g') `intersection` vertices vα
-      bwd αs = G.vertices (bwdSlice αs g') `intersection` sinks g'
+      dom = vertices eα `union` foldMap vertices progCxt.γ
+      fwd αs = vertices (fwdSlice αs g') `intersection` vertices vα
+      bwd αs = vertices (bwdSlice αs g') `intersection` sinks g'
    trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->
-      pure { gc: GC { fwd, bwd }, γα, eα, g: g', vα }
+      pure { gc: GC { fwd, bwd }, γα: progCxt.γ, eα, g: g', vα }

@@ -17,7 +17,7 @@ import DataType (Ctr)
 import Dict (Dict, get)
 import Dict (apply2, intersectionWith) as D
 import Effect.Exception (Error)
-import Expr (Elim, RecDefs, fv)
+import Expr (Elim, Module, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
@@ -70,6 +70,9 @@ type Env a = Dict (Val a)
 
 lookup' :: forall a m. MonadThrow Error m => Var -> Dict a -> m a
 lookup' x γ = lookup x γ # orElse ("variable " <> x <> " not found")
+
+-- Bunch of loaded modules.
+type ProgramCxt a = { mods :: List (Module a), γ :: Env a }
 
 -- Want a monoid instance but needs a newtype
 append :: forall a. Env a -> Endo (Env a)
