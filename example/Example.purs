@@ -3,6 +3,7 @@ module Example.Example where
 import Prelude
 
 import Data.Array ((..))
+import Data.List ((:), List(..))
 import Effect (Effect)
 import Effect.Class.Console (log, logShow)
 import Example.Util.DTW (distEuclid, distanceDTWWindow)
@@ -22,8 +23,8 @@ main = do
          [ (i × j) ]
    logShow nextIndices
    let
-      x = [ 3.0, 1.0, 2.0, 2.0, 1.0 ]
-      y = [ 2.0, 0.0, 0.0, 3.0, 3.0, 1.0, 0.0 ]
+      x =  (3.0: 1.0: 2.0: 2.0: 1.0 : Nil)
+      y =  (2.0: 0.0: 0.0: 3.0: 3.0: 1.0: 0.0: Nil)
       m1 × m2 = unsafePartial $ distanceDTWWindow x y 2 distEuclid
    log "Finished DTW"
    logShow m2
