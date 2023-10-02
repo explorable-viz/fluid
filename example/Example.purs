@@ -2,7 +2,7 @@ module Example.Example where
 
 import Prelude
 
-import Data.Array ((..))
+-- import Data.Array ((..))
 import Data.List ((:), List(..))
 import Effect (Effect)
 import Effect.Class.Console (log, logShow)
@@ -17,7 +17,7 @@ main = do
       n = 5
       m = 7
       window = 2
-      initMat = costMatrixInit 5 7 2
+      initMat = costMatrixInit n m window
    logShow initMat
    let
       x = (3.0 : 1.0 : 2.0 : 2.0 : 1.0 : Nil)

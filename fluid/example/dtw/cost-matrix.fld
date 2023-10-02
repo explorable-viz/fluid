@@ -1,0 +1,8 @@
+let abs x y = if x - y < 0 then negate (x - y) else (x - y);
+    costMatrixInit rows cols window = 
+      let ns = [0 .. rows];
+          ms = [0 .. cols]
+      in 
+        [| (n,m) | (n, m) in (ns, ms) |]
+in costMatrixInit 3 4 1
+     

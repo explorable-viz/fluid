@@ -1,16 +1,8 @@
-module Test.Main
-   ( main
-   , test_bwd
-   , test_desugaring
-   , test_graphics
-   --  , test_linking
-   , test_misc
-   --  , test_scratchpad
-   ) where
+module Test.Main where
 
 import Prelude hiding (add)
 
-import Data.Array (concat)
+-- import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -23,16 +15,16 @@ main :: Effect Unit
 main = run tests
 
 tests :: Array (String × Aff Unit)
-tests = concat
-   [ test_desugaring
-   , test_misc
-   , test_bwd
-   , test_graphics
-   , test_linking
-   ]
-
--- test_scratchpad :: Array (String × Aff Unit)
--- test_scratchpad = []
+-- tests = concat
+--    [ test_desugaring
+--    , test_misc
+--    , test_bwd
+--    , test_graphics
+--    , test_linking
+--    ]
+tests = test_scratchpad
+test_scratchpad :: Array (String × Aff Unit)
+test_scratchpad = second void <$> many [ { file: "dtw/cost-matrix", fwd_expect: "forced fail" }] 1
 
 test_desugaring :: Array (String × Aff Unit)
 test_desugaring = second void <$> many desugar_cases 1
