@@ -42,7 +42,7 @@ withDatasetMany specs iter = zip (specs <#> _.file) (specs <#> withDatasetOne)
       gconfig@{ progCxt: ProgCxt r@{ γ } } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
       expr <- open (File file)
       rows <- replicateM iter $
-         testWithSetup file expr gconfig { progCxt = ProgCxt r{ γ = γ <+> xv } }
+         testWithSetup file expr gconfig { progCxt = ProgCxt r { γ = γ <+> xv } }
             { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
       pure $ averageRows rows
 
