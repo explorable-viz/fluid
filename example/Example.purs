@@ -23,8 +23,8 @@ main = do
          [ (i × j) ]
    logShow nextIndices
    let
-      x =  (3.0: 1.0: 2.0: 2.0: 1.0 : Nil)
-      y =  (2.0: 0.0: 0.0: 3.0: 3.0: 1.0: 0.0: Nil)
+      x = (3.0 : 1.0 : 2.0 : 2.0 : 1.0 : Nil)
+      y = (2.0 : 0.0 : 0.0 : 3.0 : 3.0 : 1.0 : 0.0 : Nil)
       m1 × m2 = unsafePartial $ distanceDTWWindow x y 2 distEuclid
    log "Finished DTW"
    logShow m2
