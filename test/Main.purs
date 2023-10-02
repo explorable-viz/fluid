@@ -22,8 +22,7 @@ import Test.Benchmark.ExperimentEffectNow (benchFibs)
 
 main :: Effect Unit
 main = do
-   benchFibs
-   if false then run tests else pure unit
+   if false then run tests else benchFibs
 
 tests :: Array (String × Aff Unit)
 tests = concat
