@@ -25,13 +25,9 @@ tests :: Array (String × Aff Unit)
 tests = test_scratchpad
 
 test_scratchpad :: Array (String × Aff Unit)
-test_scratchpad = second void <$> many [ { file: "dtw/cost-matrix"
+test_scratchpad = second void <$> many [ { file: "dtw/min-prev"
      , fwd_expect:
-          "FNum 0, FNum 0, Infty, Infty, Infty, Infty, Infty,\n\
-          \FNum 0, FNum 0, FNum 0, Infty, Infty, Infty, Infty,\n\
-          \Infty, FNum 0, FNum 0, FNum 0, Infty, Infty, Infty,\n\
-          \Infty, Infty, FNum 0, FNum 0, FNum 0, Infty, Infty,\n\
-          \Infty, Infty, Infty, FNum 0, FNum 0, FNum 0, Infty"
+          "((3, 5), 3)"
      } ] 1
 
 test_desugaring :: Array (String × Aff Unit)
