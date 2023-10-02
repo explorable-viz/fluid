@@ -23,8 +23,9 @@ tests :: Array (String × Aff Unit)
 --    , test_linking
 --    ]
 tests = test_scratchpad
+
 test_scratchpad :: Array (String × Aff Unit)
-test_scratchpad = second void <$> many [ { file: "dtw/cost-matrix", fwd_expect: "forced fail" }] 1
+test_scratchpad = second void <$> many [ { file: "dtw/cost-matrix", fwd_expect: "forced fail" } ] 1
 
 test_desugaring :: Array (String × Aff Unit)
 test_desugaring = second void <$> many desugar_cases 1
