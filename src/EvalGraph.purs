@@ -21,7 +21,6 @@ import Data.Set as S
 import Data.Traversable (sequence, traverse)
 import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
-import Debug (trace)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
@@ -188,15 +187,15 @@ graphGC
    => GraphConfig g
    -> Raw Expr
    -> m (GraphEval g)
-graphGC { g, n, progCxt: progCxt@(ProgCxt { γ }) } e = do
+graphGC { g, n, progCxt: ProgCxt { γ } } e = do
    (g' × _) × eα × vα <-
       runWithGraphAllocT (g × n) do
          eα <- alloc e
          vα <- eval γ eα S.empty
          pure (eα × vα)
    let
-      dom = vertices progCxt `union` vertices eα
+--      dom = vertices progCxt `union` vertices eα
       fwd αs = vertices (fwdSlice αs g') `intersection` vertices vα
       bwd αs = vertices (bwdSlice αs g') `intersection` sinks g'
-   trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->
-      pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }
+--   trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->
+   pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }
