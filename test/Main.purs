@@ -26,9 +26,13 @@ tests = test_scratchpad
 
 test_scratchpad :: Array (String × Aff Unit)
 test_scratchpad = second void <$> many
-   [ { file: "dtw/cost-predicate"
+   [ { file: "dtw/cost-matrix"
      , fwd_expect:
-          "fail"
+          "FNum 0, Infty, Infty, Infty, Infty, Infty, Infty,\n\
+          \Infty, FNum 0, FNum 0, Infty, Infty, Infty, Infty,\n\
+          \Infty, FNum 0, FNum 0, FNum 0, Infty, Infty, Infty,\n\
+          \Infty, Infty, FNum 0, FNum 0, FNum 0, Infty, Infty,\n\
+          \Infty, Infty, Infty, FNum 0, FNum 0, FNum 0, Infty"
      }
    ]
    1

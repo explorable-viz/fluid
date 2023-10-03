@@ -3,9 +3,9 @@ let abs x y = if x - y < 0 then negate (x - y) else (x - y);
       let ns = [0 .. rows];
           ms = [0 .. cols]
       in 
-        [| let initV = if (and ((abs n m) <= window) (or (0 < n) (0 < m)))
+        [| let initV = if (or (and (n == 1) (m == 1)) (and ((abs n m) <= window) (not (or (n == 1) (m == 1)))))
                        then FNum 0
                        else Infty 
            in initV | (n, m) in (rows, cols) |]
-in costMatrixInit 5 7 1
+in costMatrixInit 5 7 2
      
