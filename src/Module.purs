@@ -9,7 +9,7 @@ import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
-import Data.List (List(..), foldl, (:))
+import Data.List (List(..), (:))
 import Data.Newtype (class Newtype)
 import Data.Set (empty)
 import Data.Traversable (traverse)
@@ -26,7 +26,7 @@ import Parsing (runParser)
 import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), mapLeft, (×))
+import Util (type (×), concatM, mapLeft, (×))
 import Util.Parse (SParser)
 import Val (Env, ProgCxt(..), ProgCxt2(..), (<+>))
 
@@ -64,12 +64,6 @@ loadModule file (ProgCxt r@{ mods, γ }) = do
    γ' <- eval_module γ mod empty
    pure $ ProgCxt r { mods = mod : mods, γ = γ <+> γ' }
 
-loadModule2 :: forall m. MonadAff m => MonadGraphAlloc m => File -> ProgCxt2 Unit -> m (ProgCxt2 Unit)
-loadModule2 file (ProgCxt2 r@{ mods }) = do
-   src <- loadFile (Folder "fluid/lib") file
-   mod <- parse src module_ >>= desugarModuleFwd
-   pure $ ProgCxt2 r{ mods = mod : mods }
-
 defaultImports :: forall m. MonadAff m => MonadGraphAlloc m => m (ProgCxt Vertex)
 defaultImports = do
    γ <- traverse alloc primitives
@@ -77,11 +71,22 @@ defaultImports = do
       >>= loadModule (File "graphics")
       >>= loadModule (File "convolution")
 
+loadModule2 :: forall m. MonadAff m => MonadGraphAlloc m => File -> ProgCxt2 Unit -> m (ProgCxt2 Unit)
+loadModule2 file (ProgCxt2 r@{ mods }) = do
+   src <- loadFile (Folder "fluid/lib") file
+   mod <- parse src module_ >>= desugarModuleFwd
+   pure $ ProgCxt2 r{ mods = mod : mods }
+
 defaultImports2 :: forall m. MonadAff m => MonadGraphAlloc m => m (ProgCxt2 Unit)
 defaultImports2 =
    loadModule2 (File "prelude") (ProgCxt2 { mods: Nil, datasets: Nil })
       >>= loadModule2 (File "graphics")
       >>= loadModule2 (File "convolution")
+
+loadDataset ::  forall m. MonadAff m => MonadGraphAlloc m => File -> ProgCxt2 Unit -> m (ProgCxt2 Unit)
+loadDataset file (ProgCxt2 r@{ datasets }) = do
+   dataset <- parseProgram (Folder "fluid") file >>= desug
+   pure $ ProgCxt2 r{ datasets = dataset : datasets }
 
 openDefaultImports :: forall m g. MonadAff m => MonadError Error m => Graph g => m (GraphConfig g)
 openDefaultImports = do
@@ -101,4 +106,4 @@ openDatasetAs file x { g, n, progCxt: ProgCxt r@{ γ, datasets } } = do
 eval_progCxt :: forall m. MonadGraphAlloc m => ProgCxt2 Vertex -> m (Env Vertex)
 eval_progCxt (ProgCxt2 { mods }) =
    traverse alloc primitives
-      >>= foldl (>=>) pure (mods <#> \mod γ' -> eval_module γ' mod empty)
+      >>= concatM (mods <#> \mod γ' -> eval_module γ' mod empty)

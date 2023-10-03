@@ -17,9 +17,9 @@ many specs iter = zip (specs <#> _.file) (specs <#> one)
    where
    one { file, fwd_expect } = do
       gconfig <- openDefaultImports
-      expr <- open (File file)
+      e <- open (File file)
       rows <- replicateM iter $
-         testWithSetup file expr gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
+         testWithSetup file e gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
       pure $ averageRows rows
 
 bwdMany :: Array TestBwdSpec -> Int -> Array (String × Aff BenchRow)
@@ -29,9 +29,9 @@ bwdMany specs iter = zip (specs <#> _.file) (specs <#> bwdOne)
    bwdOne { file, file_expect, δv, fwd_expect } = do
       gconfig <- openDefaultImports
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
-      expr <- open (folder <> File file)
+      e <- open (folder <> File file)
       rows <- replicateM iter $
-         testWithSetup file expr gconfig { δv, fwd_expect, bwd_expect }
+         testWithSetup file e gconfig { δv, fwd_expect, bwd_expect }
       pure $ averageRows rows
 
 withDatasetMany :: Array TestWithDatasetSpec -> Int -> Array (String × Aff BenchRow)
@@ -40,9 +40,9 @@ withDatasetMany specs iter = zip (specs <#> _.file) (specs <#> withDatasetOne)
    withDatasetOne { dataset, file } = do
       -- TODO: make progCxt consistent with addition of xv
       gconfig@{ progCxt: ProgCxt r@{ γ } } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
-      expr <- open (File file)
+      e <- open (File file)
       rows <- replicateM iter $
-         testWithSetup file expr gconfig { progCxt = ProgCxt r { γ = γ <+> xv } }
+         testWithSetup file e gconfig { progCxt = ProgCxt r { γ = γ <+> xv } }
             { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
       pure $ averageRows rows
 
