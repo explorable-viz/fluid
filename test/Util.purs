@@ -33,8 +33,8 @@ import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
-import Util (MayFailT, successful, (×))
-import Val (class Ann, Val(..), Env)
+import Util (MayFailT, successful, (×), type (+))
+import Val (class Ann, Env, ProgCxt2, Val(..))
 
 type TestConfig =
    { δv :: Selector Val
@@ -55,6 +55,20 @@ testWithSetup n file gconfig tconfig = do
       rows <- replicateM n $ do
          trRow <- testTrace s (unwrap gconfig.progCxt).γ tconfig
          grRow <- testGraph s gconfig tconfig
+         pure $ BenchRow trRow grRow
+      pure $ averageRows rows
+
+testWithSetup2 ∷ Int -> File -> ProgCxt2 Unit -> TestConfig -> Aff BenchRow
+testWithSetup2 n file progCxt tconfig = do
+   liftEither =<< test
+   where
+   test :: forall m. Aff (Error + BenchRow)
+   test = runExceptT do
+      s <- open file
+      testPretty s
+      rows <- replicateM n $ do
+         trRow <- testTrace s ?_ tconfig
+         grRow <- testGraph s ?_ tconfig
          pure $ BenchRow trRow grRow
       pure $ averageRows rows
 
