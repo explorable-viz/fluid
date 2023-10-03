@@ -23,9 +23,9 @@ bwdMany specs n = zip (specs <#> _.file) (specs <#> bwdOne)
    where
    folder = File "slicing/"
    bwdOne { file, file_expect, δv, fwd_expect } = do
-      gconfig <- openDefaultImports
+      progCxt <- defaultImports2
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
-      testWithSetup n (folder <> File file) gconfig { δv, fwd_expect, bwd_expect }
+      testWithSetup2 n (folder <> File file) progCxt { δv, fwd_expect, bwd_expect }
 
 withDatasetMany :: Array TestWithDatasetSpec -> Int -> Array (String × Aff BenchRow)
 withDatasetMany specs n = zip (specs <#> _.file) (specs <#> withDatasetOne)
