@@ -1,4 +1,5 @@
-let initV n m window = if n == 0 `or` m == 0
+let abs x y = if x - y < 0 then negate (x - y) else (x - y);
+    initV n m window = if (or (and (n == 0) (m == 0))(and ((abs n m) <= window) (not (or (n == 0) (m == 0)))))
                        then FNum 0 
                        else Infty 
-in initV 4 6 2
+in initV 0 0 2

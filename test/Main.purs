@@ -26,7 +26,7 @@ tests = test_scratchpad
 
 test_scratchpad :: Array (String × Aff Unit)
 test_scratchpad = second void <$> many
-   [ { file: "dtw/min-prev"
+   [ { file: "dtw/cost-predicate"
      , fwd_expect:
           "fail"
      }
