@@ -194,8 +194,8 @@ graphGC { g, n, progCxt: ProgCxt { γ } } e = do
          vα <- eval γ eα S.empty
          pure (eα × vα)
    let
---      dom = vertices progCxt `union` vertices eα
+      --      dom = vertices progCxt `union` vertices eα
       fwd αs = vertices (fwdSlice αs g') `intersection` vertices vα
       bwd αs = vertices (bwdSlice αs g') `intersection` sinks g'
---   trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->
+   --   trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->
    pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }

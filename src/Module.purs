@@ -9,7 +9,7 @@ import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
-import Data.List (List(..), (:))
+import Data.List (List(..), foldl, (:))
 import Data.Newtype (class Newtype)
 import Data.Set (empty)
 import Data.Traversable (traverse)
@@ -62,7 +62,7 @@ loadModule file (ProgCxt r@{ mods, γ }) = do
    src <- loadFile (Folder "fluid/lib") file
    mod <- parse src module_ >>= desugarModuleFwd >>= traverse (const fresh)
    γ' <- eval_module γ mod empty
-   pure $ ProgCxt r{ mods = mod : mods, γ = γ <+> γ' }
+   pure $ ProgCxt r { mods = mod : mods, γ = γ <+> γ' }
 
 defaultImports :: forall m. MonadAff m => MonadGraphAlloc m => m (ProgCxt Vertex)
 defaultImports = do
@@ -84,5 +84,10 @@ openDatasetAs file x { g, n, progCxt: ProgCxt r@{ γ, datasets } } = do
       runWithGraphAllocT (g × n) do
          eα <- desug s >>= alloc
          v <- eval γ eα empty
-         pure $ D.singleton x v × ProgCxt (r{ datasets = eα : datasets })
+         pure $ D.singleton x v × ProgCxt (r { datasets = eα : datasets })
    pure ({ g: g', n: n', progCxt } × xv)
+
+eval_progCxt :: forall m. MonadGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
+eval_progCxt (ProgCxt { mods }) =
+   traverse alloc primitives
+      >>= foldl (>=>) pure (mods <#> \mod γ' -> eval_module γ' mod empty)
