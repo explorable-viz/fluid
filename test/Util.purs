@@ -11,7 +11,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Foldable (foldl)
 import Data.Int (toNumber)
 import Data.List (elem)
-import Data.List.Lazy (List, length)
+import Data.List.Lazy (List, length, replicateM)
 import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
@@ -21,10 +21,10 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
+import GaloisConnection (GaloisConnection(..))
 import Graph (selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
-import GaloisConnection (GaloisConnection(..))
 import Heterogeneous.Mapping (hmap)
 import Lattice (Raw, botOf, erase)
 import Module (parse)
@@ -37,23 +37,24 @@ import Val (class Ann, ProgCxt(..), Val(..))
 
 type TestConfig =
    { δv :: Selector Val
-   , fwd_expect :: String
+   , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
    , bwd_expect :: String
    }
 
 logging :: Boolean
 logging = false
 
--- fwd_expect: prettyprinted value after bwd then fwd round-trip
-testWithSetup ∷ String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
-testWithSetup _name s gconfig tconfig =
-   liftEither =<<
-      ( runExceptT do
-           testPretty s
-           trRow <- testTrace s gconfig tconfig
-           grRow <- testGraph s gconfig tconfig
-           pure $ BenchRow trRow grRow
-      )
+testWithSetup ∷ Int -> String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
+testWithSetup n _ s gconfig tconfig =
+   liftEither =<< test
+   where
+   test = runExceptT do
+      testPretty s
+      rows <- replicateM n $ do
+         trRow <- testTrace s gconfig tconfig
+         grRow <- testGraph s gconfig tconfig
+         pure $ BenchRow trRow grRow
+      pure $ averageRows rows
 
 testPretty :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testPretty s = do
