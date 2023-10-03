@@ -182,8 +182,10 @@ instance Apply Module where
 
 instance Foldable Module where
    foldl _ acc (Module Nil) = acc
-   foldl f acc (Module (Left def : defs)) = foldl (foldl (foldl (foldl f))) (foldl f acc def) defs
-   foldl f acc (Module (Right def : defs)) = foldl (foldl (foldl (foldl f))) (foldl (foldl f) acc def) defs
+   foldl f acc (Module (Left def : defs)) =
+      foldl (foldl (foldl (foldl f))) (foldl f acc def) defs
+   foldl f acc (Module (Right def : defs)) =
+      foldl (foldl (foldl (foldl f))) (foldl (foldl f) acc def) defs
 
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f

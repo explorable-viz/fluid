@@ -38,7 +38,7 @@ newtype Vertex = Vertex String
 class Vertices a where
    vertices :: a -> Set Vertex
 
-instance (Apply f, Foldable f) => Vertices (f Vertex) where
+instance (Functor f, Foldable f) => Vertices (f Vertex) where
    vertices vα = unions (singleton <$> vα)
 
 selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
