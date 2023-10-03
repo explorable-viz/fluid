@@ -10,7 +10,7 @@ import Data.List (List(..), (:), zipWith)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
-import Data.Traversable (class Traversable, traverse)
+import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import Data.Tuple (snd)
 import DataType (Ctr, consistentWith)
 import Dict (Dict, keys, asSingletonMap)
@@ -190,12 +190,14 @@ instance Foldable Module where
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 
-traverseModule :: forall m a b. Applicative m => (a -> m b) -> Module a -> m (Module b)
-traverseModule _ (Module Nil) = pure (Module Nil)
-traverseModule f (Module (Left def : ds)) =
-   Module <$> ((Left <$> traverse f def) `lift2 (:)` (unwrap <$> traverseModule f (Module ds)))
-traverseModule f (Module (Right ρ : ds)) =
-   Module <$> ((Right <$> traverse (traverse f) ρ) `lift2 (:)` (unwrap <$> traverseModule f (Module ds)))
+instance Traversable Module where
+   traverse _ (Module Nil) = pure (Module Nil)
+   traverse f (Module (Left def : ds)) =
+      Module <$> ((Left <$> traverse f def) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
+   traverse f (Module (Right ρ : ds)) =
+      Module <$> ((Right <$> traverse (traverse f) ρ) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
+
+   sequence = sequenceDefault
 
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'

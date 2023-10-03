@@ -18,7 +18,6 @@ import Dict (singleton) as D
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error, error)
 import EvalGraph (GraphConfig, eval, eval_module)
-import Expr (traverseModule)
 import Graph (class Graph, Vertex)
 import Graph (empty) as G
 import Graph.GraphWriter (class MonadGraphAlloc, alloc, fresh, runWithGraphAllocT)
@@ -61,7 +60,7 @@ open = parseProgram (Folder "fluid/example")
 loadModule :: forall m. MonadAff m => MonadGraphAlloc m => File -> ProgCxt Vertex -> m (ProgCxt Vertex)
 loadModule file (ProgCxt r@{ mods, γ }) = do
    src <- loadFile (Folder "fluid/lib") file
-   mod <- parse src module_ >>= desugarModuleFwd >>= traverseModule (const fresh)
+   mod <- parse src module_ >>= desugarModuleFwd >>= traverse (const fresh)
    γ' <- eval_module γ mod empty
    pure $ ProgCxt r{ mods = mod : mods, γ = γ <+> γ' }
 
