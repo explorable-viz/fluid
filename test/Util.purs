@@ -172,7 +172,15 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
          log (prettyP e𝔹_all)
          log (prettyP v𝔹_dual)
 
-   pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tBwdDual: tdiff t_bwdDual1 t_bwdDual2, tBwdAll: tdiff t_bwdAll1 t_bwdAll2, tFwd: tdiff t_fwd1 t_fwd2, tFwdDual: tdiff t_fwdDual1 t_fwdDual2, tFwdAsDemorgan: tdiff t_fwdAsDeMorgan1 t_fwdAsDeMorgan2 }
+   pure
+      { tEval: tdiff t_eval1 t_eval2
+      , tBwd: tdiff t_bwd1 t_bwd2
+      , tBwdDual: tdiff t_bwdDual1 t_bwdDual2
+      , tBwdAll: tdiff t_bwdAll1 t_bwdAll2
+      , tFwd: tdiff t_fwd1 t_fwd2
+      , tFwdDual: tdiff t_fwdDual1 t_fwdDual2
+      , tFwdAsDemorgan: tdiff t_fwdAsDeMorgan1 t_fwdAsDeMorgan2
+      }
 
 type TestSpec =
    { file :: String
