@@ -24,17 +24,19 @@ import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
+import Graph (empty) as G
 import Graph.GraphImpl (GraphImpl)
+import Graph.GraphWriter (alloc, runWithGraphAllocT)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
 import Heterogeneous.Mapping (hmap)
 import Lattice (Raw, botOf, erase)
-import Module (File, open, parse)
+import Module (File, eval_progCxt, open, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
 import Util (MayFailT, successful, (×), type (+))
-import Val (class Ann, Env, ProgCxt2, Val(..))
+import Val (class Ann, Env, ProgCxt, ProgCxtEval(..), Val(..))
 
 type TestConfig =
    { δv :: Selector Val
@@ -58,19 +60,23 @@ testWithSetup n file gconfig tconfig = do
          pure $ BenchRow trRow grRow
       pure $ averageRows rows
 
-testWithSetup2 ∷ Int -> File -> ProgCxt2 Unit -> TestConfig -> Aff BenchRow
-testWithSetup2 n file progCxt tconfig = do
+testWithSetup2 ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
+testWithSetup2 m file progCxt tconfig = do
+   (g × n) × progCxt' <- runWithGraphAllocT (G.empty × 0) do
+      progCxt' <- alloc progCxt
+      γ <- eval_progCxt progCxt'
+      pure $ ProgCxtEval { progCxt: progCxt', γ }
+   let
+      test :: Aff (Error + BenchRow)
+      test = runExceptT do
+         s <- open file
+         testPretty s
+         rows <- replicateM m $ do
+            trRow <- testTrace s ((unwrap progCxt').γ) tconfig
+            grRow <- testGraph s { g, n, progCxt: progCxt' } tconfig
+            pure $ BenchRow trRow grRow
+         pure $ averageRows rows
    liftEither =<< test
-   where
-   test :: forall m. Aff (Error + BenchRow)
-   test = runExceptT do
-      s <- open file
-      testPretty s
-      rows <- replicateM n $ do
-         trRow <- testTrace s ?_ tconfig
-         grRow <- testGraph s ?_ tconfig
-         pure $ BenchRow trRow grRow
-      pure $ averageRows rows
 
 testPretty :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
 testPretty s = do

@@ -73,18 +73,15 @@ lookup' :: forall a m. MonadThrow Error m => Var -> Dict a -> m a
 lookup' x γ = lookup x γ # orElse ("variable " <> x <> " not found")
 
 -- Bunch of loaded modules and datasets, reflecting current somewhat ad hoc approach.
-newtype ProgCxt a = ProgCxt
-   { mods :: List (Module a)
-   , datasets :: List (Expr a)
+newtype ProgCxtEval a = ProgCxtEval
+   { progCxt :: ProgCxt a
    , γ :: Env a
    }
 
-newtype ProgCxt2 a = ProgCxt2
+newtype ProgCxt a = ProgCxt
    { mods :: List (Module a)
    , datasets :: List (Expr a)
    }
-
-derive instance Newtype (ProgCxt a) _
 
 -- Want a monoid instance but needs a newtype
 append :: forall a. Env a -> Endo (Env a)
@@ -154,7 +151,11 @@ instance Highlightable Vertex where
 derive instance Functor DictRep
 derive instance Functor MatrixRep
 derive instance Functor Val
+derive instance Newtype (ProgCxt a) _
 derive instance Functor ProgCxt
+derive instance Newtype (ProgCxtEval a) _
+derive instance Functor ProgCxtEval
+derive instance Traversable ProgCxt
 derive instance Foldable Val
 derive instance Traversable Val
 derive instance Functor Fun
@@ -188,11 +189,10 @@ instance Apply MatrixRep where
       MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × ((n ≜ n') × fnα nα) × ((m ≜ m') × fmα mα)
 
 instance Apply ProgCxt where
-   apply (ProgCxt { mods: fmods, datasets: fdatasets, γ: fγ }) (ProgCxt { mods, datasets, γ }) =
+   apply (ProgCxt { mods: fmods, datasets: fdatasets }) (ProgCxt { mods, datasets }) =
       ProgCxt
          { mods: fmods `zipWith (<*>)` mods
          , datasets: fdatasets `zipWith (<*>)` datasets
-         , γ: D.apply2 fγ γ
          }
 
 instance Foldable DictRep where
@@ -217,7 +217,7 @@ instance Traversable MatrixRep where
    sequence = sequenceDefault
 
 instance Foldable ProgCxt where
-   foldl f acc (ProgCxt { mods, γ }) = foldl (foldl f) (foldl (foldl f) acc γ) mods
+   foldl f acc (ProgCxt { mods }) = foldl (foldl f) acc mods
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 

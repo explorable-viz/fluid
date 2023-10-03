@@ -9,7 +9,7 @@ import Effect.Aff (Aff)
 import Module (File(..), Folder(..), loadFile, openDatasetAs, openDefaultImports)
 import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, checkPretty, testWithSetup)
 import Util (type (×), (×))
-import Val (ProgCxt(..), (<+>))
+import Val (ProgCxtEval(..), (<+>))
 
 many :: Array TestSpec -> Int -> Array (String × Aff BenchRow)
 many specs n = zip (specs <#> _.file) (specs <#> one)
@@ -32,8 +32,8 @@ withDatasetMany specs n = zip (specs <#> _.file) (specs <#> withDatasetOne)
    where
    withDatasetOne { dataset, file } = do
       -- TODO: make progCxt consistent with addition of xv
-      gconfig@{ progCxt: ProgCxt r@{ γ } } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
-      testWithSetup n (File file) gconfig { progCxt = ProgCxt r { γ = γ <+> xv } }
+      gconfig@{ progCxt: ProgCxtEval r@{ γ } } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
+      testWithSetup n (File file) gconfig { progCxt = ProgCxtEval r { γ = γ <+> xv } }
          { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
 
 linkMany :: Array TestLinkSpec -> Array (String × Aff Unit)

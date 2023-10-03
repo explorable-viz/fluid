@@ -33,13 +33,13 @@ import Pretty (prettyP)
 import Primitive (string, intPair)
 import Util (type (×), check, error, orElse, successful, throw, with, (×))
 import Util.Pair (unzip) as P
-import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), ProgCxt(..), Val, for, lookup', restrict, (<+>))
-import Val (Val(..), Fun(..)) as V
+import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), ProgCxtEval(..), Val, for, lookup', restrict, (<+>))
+import Val (Fun(..), Val(..)) as V
 
 type GraphConfig g =
    { g :: g
    , n :: Int
-   , progCxt :: ProgCxt Vertex
+   , progCxt :: ProgCxtEval Vertex
    }
 
 {-# Matching #-}
@@ -187,7 +187,7 @@ graphGC
    => GraphConfig g
    -> Raw Expr
    -> m (GraphEval g)
-graphGC { g, n, progCxt: ProgCxt { γ } } e = do
+graphGC { g, n, progCxt: ProgCxtEval { γ } } e = do
    (g' × _) × eα × vα <-
       runWithGraphAllocT (g × n) do
          eα <- alloc e
