@@ -79,6 +79,11 @@ newtype ProgCxt a = ProgCxt
    , γ :: Env a
    }
 
+newtype ProgCxt2 a = ProgCxt2
+   { mods :: List (Module a)
+   , datasets :: List (Expr a)
+   }
+
 derive instance Newtype (ProgCxt a) _
 
 -- Want a monoid instance but needs a newtype

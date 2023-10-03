@@ -28,7 +28,7 @@ import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
 import Util (type (×), mapLeft, (×))
 import Util.Parse (SParser)
-import Val (Env, ProgCxt(..), (<+>))
+import Val (Env, ProgCxt(..), ProgCxt2(..), (<+>))
 
 -- Mainly serve as documentation
 newtype File = File String
@@ -64,6 +64,12 @@ loadModule file (ProgCxt r@{ mods, γ }) = do
    γ' <- eval_module γ mod empty
    pure $ ProgCxt r { mods = mod : mods, γ = γ <+> γ' }
 
+loadModule2 :: forall m. MonadAff m => MonadGraphAlloc m => File -> ProgCxt2 Unit -> m (ProgCxt2 Unit)
+loadModule2 file (ProgCxt2 r@{ mods }) = do
+   src <- loadFile (Folder "fluid/lib") file
+   mod <- parse src module_ >>= desugarModuleFwd
+   pure $ ProgCxt2 r{ mods = mod : mods }
+
 defaultImports :: forall m. MonadAff m => MonadGraphAlloc m => m (ProgCxt Vertex)
 defaultImports = do
    γ <- traverse alloc primitives
@@ -71,12 +77,17 @@ defaultImports = do
       >>= loadModule (File "graphics")
       >>= loadModule (File "convolution")
 
+defaultImports2 :: forall m. MonadAff m => MonadGraphAlloc m => m (ProgCxt2 Unit)
+defaultImports2 =
+   loadModule2 (File "prelude") (ProgCxt2 { mods: Nil, datasets: Nil })
+      >>= loadModule2 (File "graphics")
+      >>= loadModule2 (File "convolution")
+
 openDefaultImports :: forall m g. MonadAff m => MonadError Error m => Graph g => m (GraphConfig g)
 openDefaultImports = do
    (g × n) × progCxt <- runWithGraphAllocT (G.empty × 0) defaultImports
    pure { g, n, progCxt }
 
--- | Evaluate dataset in context of existing graph config
 openDatasetAs :: forall m g. MonadAff m => MonadError Error m => Graph g => File -> Var -> GraphConfig g -> m (GraphConfig g × Env Vertex)
 openDatasetAs file x { g, n, progCxt: ProgCxt r@{ γ, datasets } } = do
    s <- parseProgram (Folder "fluid") file
@@ -87,7 +98,7 @@ openDatasetAs file x { g, n, progCxt: ProgCxt r@{ γ, datasets } } = do
          pure $ D.singleton x v × ProgCxt (r { datasets = eα : datasets })
    pure ({ g: g', n: n', progCxt } × xv)
 
-eval_progCxt :: forall m. MonadGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
-eval_progCxt (ProgCxt { mods }) =
+eval_progCxt :: forall m. MonadGraphAlloc m => ProgCxt2 Vertex -> m (Env Vertex)
+eval_progCxt (ProgCxt2 { mods }) =
    traverse alloc primitives
       >>= foldl (>=>) pure (mods <#> \mod γ' -> eval_module γ' mod empty)
