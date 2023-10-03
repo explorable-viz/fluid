@@ -26,7 +26,7 @@ import Effect.Exception (Error)
 import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, sinks, vertices)
-import Graph.GraphWriter (class MonadGraphAlloc, alloc, new, runWithGraphAllocT)
+import Graph.GraphWriter (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
 import Graph.Slice (bwdSlice, fwdSlice)
 import Lattice (Raw)
 import Pretty (prettyP)
@@ -46,7 +46,7 @@ type GraphConfig g =
 patternMismatch :: String -> String -> String
 patternMismatch s s' = "Pattern mismatch: found " <> s <> ", expected " <> s'
 
-match :: forall m. MonadGraphAlloc m => Val Vertex -> Elim Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
+match :: forall m. MonadWithGraphAlloc m => Val Vertex -> Elim Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 match v (ElimVar x κ)
    | x == varAnon = pure (D.empty × κ × empty)
    | otherwise = pure (D.singleton x v × κ × empty)
@@ -66,7 +66,7 @@ match (V.Record α xvs) (ElimRecord xs κ) = do
    pure $ γ × κ' × (insert α αs)
 match v (ElimRecord xs _) = throw (patternMismatch (prettyP v) (show xs))
 
-matchMany :: forall m. MonadGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
+matchMany :: forall m. MonadWithGraphAlloc m => List (Val Vertex) -> Cont Vertex -> m (Env Vertex × Cont Vertex × Set Vertex)
 matchMany Nil κ = pure (D.empty × κ × empty)
 matchMany (v : vs) (ContElim σ) = do
    γ × κ × αs <- match v σ
@@ -76,7 +76,7 @@ matchMany (_ : vs) (ContExpr _) = throw $
    show (length vs + 1) <> " extra argument(s) to constructor/record; did you forget parentheses in lambda pattern?"
 matchMany _ _ = error "absurd"
 
-closeDefs :: forall m. MonadGraphAlloc m => Env Vertex -> RecDefs Vertex -> Set Vertex -> m (Env Vertex)
+closeDefs :: forall m. MonadWithGraphAlloc m => Env Vertex -> RecDefs Vertex -> Set Vertex -> m (Env Vertex)
 closeDefs γ ρ αs =
    flip traverse ρ \σ ->
       let
@@ -85,7 +85,7 @@ closeDefs γ ρ αs =
          V.Fun <$> new αs <@> V.Closure (γ `restrict` (fv ρ' `union` fv σ)) ρ' σ
 
 {-# Evaluation #-}
-apply :: forall m. MonadGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
+apply :: forall m. MonadWithGraphAlloc m => Val Vertex -> Val Vertex -> m (Val Vertex)
 apply (V.Fun α (V.Closure γ1 ρ σ)) v = do
    γ2 <- closeDefs γ1 ρ (singleton α)
    γ3 × κ × αs <- match v σ
@@ -108,7 +108,7 @@ apply (V.Fun α (V.PartialConstr c vs)) v = do
    n = successful (arity c)
 apply _ v = throw $ "Found " <> prettyP v <> ", expected function"
 
-eval :: forall m. MonadGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
+eval :: forall m. MonadWithGraphAlloc m => Env Vertex -> Expr Vertex -> Set Vertex -> m (Val Vertex)
 eval γ (Var x) _ = lookup' x γ
 eval γ (Op op) _ = lookup' op γ
 eval _ (Int α n) αs = V.Int <$> new (insert α αs) <@> n
@@ -159,7 +159,7 @@ eval γ (LetRec α ρ e) αs = do
    γ' <- closeDefs γ ρ (insert α αs)
    eval (γ <+> γ') e (insert α αs)
 
-eval_module :: forall m. MonadGraphAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
+eval_module :: forall m. MonadWithGraphAlloc m => Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
 eval_module γ = go D.empty
    where
    go :: Env Vertex -> Module Vertex -> Set Vertex -> m (Env Vertex)
