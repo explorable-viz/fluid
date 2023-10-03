@@ -6,7 +6,7 @@ import App.Fig (linkResult, loadLinkFig)
 import Benchmark.Util (BenchRow)
 import Data.Array (zip)
 import Effect.Aff (Aff)
-import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports)
+import Module (File(..), Folder(..), loadFile, openDatasetAs, openDefaultImports)
 import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, checkPretty, testWithSetup)
 import Util (type (×), (×))
 import Val (ProgCxt(..), (<+>))
@@ -16,8 +16,7 @@ many specs n = zip (specs <#> _.file) (specs <#> one)
    where
    one { file, fwd_expect } = do
       gconfig <- openDefaultImports
-      s <- open (File file)
-      testWithSetup n file s gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
+      testWithSetup n (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
 
 bwdMany :: Array TestBwdSpec -> Int -> Array (String × Aff BenchRow)
 bwdMany specs n = zip (specs <#> _.file) (specs <#> bwdOne)
@@ -26,8 +25,7 @@ bwdMany specs n = zip (specs <#> _.file) (specs <#> bwdOne)
    bwdOne { file, file_expect, δv, fwd_expect } = do
       gconfig <- openDefaultImports
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
-      s <- open (folder <> File file)
-      testWithSetup n file s gconfig { δv, fwd_expect, bwd_expect }
+      testWithSetup n (folder <> File file) gconfig { δv, fwd_expect, bwd_expect }
 
 withDatasetMany :: Array TestWithDatasetSpec -> Int -> Array (String × Aff BenchRow)
 withDatasetMany specs n = zip (specs <#> _.file) (specs <#> withDatasetOne)
@@ -35,8 +33,7 @@ withDatasetMany specs n = zip (specs <#> _.file) (specs <#> withDatasetOne)
    withDatasetOne { dataset, file } = do
       -- TODO: make progCxt consistent with addition of xv
       gconfig@{ progCxt: ProgCxt r@{ γ } } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
-      s <- open (File file)
-      testWithSetup n file s gconfig { progCxt = ProgCxt r { γ = γ <+> xv } }
+      testWithSetup n (File file) gconfig { progCxt = ProgCxt r { γ = γ <+> xv } }
          { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
 
 linkMany :: Array TestLinkSpec -> Array (String × Aff Unit)

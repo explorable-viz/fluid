@@ -27,7 +27,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
 import Heterogeneous.Mapping (hmap)
 import Lattice (Raw, botOf, erase)
-import Module (parse)
+import Module (File, open, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
@@ -44,11 +44,12 @@ type TestConfig =
 logging :: Boolean
 logging = false
 
-testWithSetup ∷ Int -> String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
-testWithSetup n _ s gconfig tconfig =
+testWithSetup ∷ Int -> File -> GraphConfig GraphImpl -> TestConfig -> Aff BenchRow
+testWithSetup n file gconfig tconfig = do
    liftEither =<< test
    where
    test = runExceptT do
+      s <- open file
       testPretty s
       rows <- replicateM n $ do
          trRow <- testTrace s gconfig tconfig

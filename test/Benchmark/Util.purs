@@ -9,13 +9,6 @@ import Effect.Class (class MonadEffect, liftEffect)
 import Test.Spec.Microtime (microtime)
 import Util (type (×), (×))
 
-newtype File = File String
-newtype Folder = Folder String
-
-derive newtype instance Show File
-derive newtype instance Semigroup File
-derive newtype instance Monoid File
-
 data BenchRow = BenchRow TraceRow GraphRow
 
 newtype BenchAcc = BenchAcc (Array (String × BenchRow))

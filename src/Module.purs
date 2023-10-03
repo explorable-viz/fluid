@@ -75,7 +75,7 @@ loadModule2 :: forall m. MonadAff m => MonadGraphAlloc m => File -> ProgCxt2 Uni
 loadModule2 file (ProgCxt2 r@{ mods }) = do
    src <- loadFile (Folder "fluid/lib") file
    mod <- parse src module_ >>= desugarModuleFwd
-   pure $ ProgCxt2 r{ mods = mod : mods }
+   pure $ ProgCxt2 r { mods = mod : mods }
 
 defaultImports2 :: forall m. MonadAff m => MonadGraphAlloc m => m (ProgCxt2 Unit)
 defaultImports2 =
@@ -83,10 +83,10 @@ defaultImports2 =
       >>= loadModule2 (File "graphics")
       >>= loadModule2 (File "convolution")
 
-loadDataset ::  forall m. MonadAff m => MonadGraphAlloc m => File -> ProgCxt2 Unit -> m (ProgCxt2 Unit)
+loadDataset :: forall m. MonadAff m => MonadGraphAlloc m => File -> ProgCxt2 Unit -> m (ProgCxt2 Unit)
 loadDataset file (ProgCxt2 r@{ datasets }) = do
    dataset <- parseProgram (Folder "fluid") file >>= desug
-   pure $ ProgCxt2 r{ datasets = dataset : datasets }
+   pure $ ProgCxt2 r { datasets = dataset : datasets }
 
 openDefaultImports :: forall m g. MonadAff m => MonadError Error m => Graph g => m (GraphConfig g)
 openDefaultImports = do
