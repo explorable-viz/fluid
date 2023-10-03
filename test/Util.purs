@@ -12,6 +12,7 @@ import Data.Foldable (foldl)
 import Data.Int (toNumber)
 import Data.List (elem)
 import Data.List.Lazy (List, length, replicateM)
+import Data.Newtype (unwrap)
 import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
@@ -22,7 +23,7 @@ import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..))
-import Graph (selectαs, select𝔹s, sinks, vertices)
+import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
 import Heterogeneous.Mapping (hmap)
@@ -33,7 +34,7 @@ import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
 import Util (MayFailT, successful, (×))
-import Val (class Ann, ProgCxt(..), Val(..))
+import Val (class Ann, Val(..), Env)
 
 type TestConfig =
    { δv :: Selector Val
@@ -52,7 +53,7 @@ testWithSetup n file gconfig tconfig = do
       s <- open file
       testPretty s
       rows <- replicateM n $ do
-         trRow <- testTrace s gconfig tconfig
+         trRow <- testTrace s (unwrap gconfig.progCxt).γ tconfig
          grRow <- testGraph s gconfig tconfig
          pure $ BenchRow trRow grRow
       pure $ averageRows rows
@@ -66,8 +67,8 @@ testPretty s = do
       log ("NEW\n" <> show (erase s'))
       lift $ fail "not equal"
 
-testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
-testTrace s { progCxt: ProgCxt { γ } } { δv, bwd_expect, fwd_expect } = do
+testTrace :: Raw SE.Expr -> Env Vertex -> TestConfig -> MayFailT Aff TraceRow
+testTrace s γ { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
    GC desug𝔹 <- desugGC s
