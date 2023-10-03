@@ -5,8 +5,6 @@ import Prelude
 import Control.Monad.Writer (WriterT, runWriterT)
 import Data.Array (intersperse)
 import Data.Foldable (fold)
-import Data.JSDate (JSDate)
-import Data.JSDate (now) as JSDate
 import Effect.Class (class MonadEffect, liftEffect)
 import Test.Spec.Microtime (microtime)
 import Util (type (×), (×))
@@ -49,7 +47,7 @@ type GraphRow =
 instance Show BenchAcc where
    show (BenchAcc rows) =
       "Test-Name, Trace-Eval, Trace-Bwd, Trace-Fwd, Graph-Eval, Graph-Bwd, Graph-BwdDual, Graph-BwdAll, Graph-Fwd, Graph-FwdDual, Graph-FwdAsDeMorgan\n"
-         <> (fold $ intersperse "\n" (map rowShow rows))
+         <> (fold $ intersperse "\n" $ rowShow <$> rows)
 
 rowShow :: String × BenchRow -> String
 rowShow (str × row) = str <> "," <> show row
@@ -88,9 +86,6 @@ instance Show BenchRow where
       , grRow.tFwdDual
       , grRow.tFwdAsDemorgan
       ]
-
-now :: forall m. MonadEffect m => m JSDate
-now = liftEffect JSDate.now
 
 tdiff :: Number -> Number -> Number
 tdiff x y = sub y x
