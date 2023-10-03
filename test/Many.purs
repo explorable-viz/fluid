@@ -13,36 +13,36 @@ import Util (type (×), (×))
 import Val (ProgCxt(..), (<+>))
 
 many :: Array TestSpec -> Int -> Array (String × Aff BenchRow)
-many specs iter = zip (specs <#> _.file) (specs <#> one)
+many specs n = zip (specs <#> _.file) (specs <#> one)
    where
    one { file, fwd_expect } = do
       gconfig <- openDefaultImports
-      e <- open (File file)
-      rows <- replicateM iter $
-         testWithSetup file e gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
+      s <- open (File file)
+      rows <- replicateM n $
+         testWithSetup file s gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
       pure $ averageRows rows
 
 bwdMany :: Array TestBwdSpec -> Int -> Array (String × Aff BenchRow)
-bwdMany specs iter = zip (specs <#> _.file) (specs <#> bwdOne)
+bwdMany specs n = zip (specs <#> _.file) (specs <#> bwdOne)
    where
    folder = File "slicing/"
    bwdOne { file, file_expect, δv, fwd_expect } = do
       gconfig <- openDefaultImports
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
-      e <- open (folder <> File file)
-      rows <- replicateM iter $
-         testWithSetup file e gconfig { δv, fwd_expect, bwd_expect }
+      s <- open (folder <> File file)
+      rows <- replicateM n $
+         testWithSetup file s gconfig { δv, fwd_expect, bwd_expect }
       pure $ averageRows rows
 
 withDatasetMany :: Array TestWithDatasetSpec -> Int -> Array (String × Aff BenchRow)
-withDatasetMany specs iter = zip (specs <#> _.file) (specs <#> withDatasetOne)
+withDatasetMany specs n = zip (specs <#> _.file) (specs <#> withDatasetOne)
    where
    withDatasetOne { dataset, file } = do
       -- TODO: make progCxt consistent with addition of xv
       gconfig@{ progCxt: ProgCxt r@{ γ } } × xv <- openDefaultImports >>= openDatasetAs (File dataset) "data"
-      e <- open (File file)
-      rows <- replicateM iter $
-         testWithSetup file e gconfig { progCxt = ProgCxt r { γ = γ <+> xv } }
+      s <- open (File file)
+      rows <- replicateM n $
+         testWithSetup file s gconfig { progCxt = ProgCxt r { γ = γ <+> xv } }
             { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
       pure $ averageRows rows
 
