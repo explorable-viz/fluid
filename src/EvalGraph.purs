@@ -15,7 +15,7 @@ import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
-import Data.List (List(..), foldMap, length, snoc, unzip, zip, (:))
+import Data.List (List(..), length, snoc, unzip, zip, (:))
 import Data.Set (Set, empty, insert, intersection, singleton, union)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
@@ -195,7 +195,7 @@ graphGC { g, n, progCxt: progCxt@(ProgCxt { γ }) } e = do
          vα <- eval γ eα S.empty
          pure (eα × vα)
    let
-      dom = vertices progCxt `union` foldMap vertices γ
+      dom = vertices progCxt `union` vertices eα
       fwd αs = vertices (fwdSlice αs g') `intersection` vertices vα
       bwd αs = vertices (bwdSlice αs g') `intersection` sinks g'
    trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->

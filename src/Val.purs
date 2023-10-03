@@ -5,7 +5,7 @@ import Prelude hiding (absurd, append)
 import Bindings (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
-import Data.Array (foldMap, (!!))
+import Data.Array ((!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
 import Data.Exists (Exists)
@@ -21,7 +21,7 @@ import Effect.Exception (Error)
 import Expr (Elim, Module, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Graph (class Vertices, Vertex(..), vertices)
+import Graph (Vertex(..))
 import Graph.GraphWriter (class MonadGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
 import Util (type (×), Endo, error, orElse, throw, unsafeUpdateAt, (!), (×), (≜), (≞))
@@ -171,6 +171,7 @@ instance Apply Fun where
 
 instance Apply DictRep where
    apply (DictRep fxvs) (DictRep xvs) =
+      -- Restrict to equal domains?
       DictRep $ D.intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs
 
 instance Apply MatrixRep where
@@ -179,7 +180,7 @@ instance Apply MatrixRep where
 
 instance Apply ProgCxt where
    apply (ProgCxt { mods: fmods, γ: fγ }) (ProgCxt { mods, γ }) =
-      ProgCxt $ { mods: zipWith (<*>) fmods mods, γ: D.apply2 fγ γ }
+      ProgCxt $ { mods: fmods `zipWith (<*>)` mods, γ: D.apply2 fγ γ }
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d
@@ -201,6 +202,11 @@ instance Traversable MatrixRep where
          (bitraverse (traverse f) (traverse f))
          m
    sequence = sequenceDefault
+
+instance Foldable ProgCxt where
+   foldl f acc (ProgCxt { mods, γ }) = foldl (foldl f) (foldl (foldl f) acc γ) mods
+   foldr f = foldrDefault f
+   foldMap f = foldMapDefaultL f
 
 instance JoinSemilattice a => JoinSemilattice (DictRep a) where
    maybeJoin (DictRep svs) (DictRep svs') = DictRep <$> maybeJoin svs svs'

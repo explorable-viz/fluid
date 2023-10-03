@@ -5,7 +5,7 @@ import Prelude hiding (absurd, top)
 import Bindings (Var)
 import Control.Apply (lift2)
 import Data.Either (Either(..))
-import Data.Foldable (class Foldable)
+import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:), zipWith)
 import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, difference, empty, singleton, union, unions)
@@ -168,14 +168,25 @@ instance Apply Cont where
    apply (ContElim fσ) (ContElim σ) = ContElim (fσ <*> σ)
    apply _ _ = error "Apply Cont: shape mismatch"
 
+instance Apply VarDef where
+   apply (VarDef fσ fe) (VarDef σ e) = VarDef (fσ <*> σ) (fe <*> e)
+
 -- Apply instance of Either inappropriate here as doesn't assume fixed shape.
 instance Apply Module where
    apply (Module Nil) (Module Nil) = Module Nil
    apply (Module (Left fdef : fdefs)) (Module (Left def : defs)) =
-      Module (?_ : unwrap (apply (Module fdefs) (Module defs)))
+      Module (Left (fdef <*> def) : unwrap (apply (Module fdefs) (Module defs)))
    apply (Module (Right fdef : fdefs)) (Module (Right def : defs)) =
-      Module (?_ : unwrap (apply (Module fdefs) (Module defs)))
+      Module (Right (D.apply2 fdef def) : unwrap (apply (Module fdefs) (Module defs)))
    apply _ _ = error "Apply Module: shape mismatch"
+
+instance Foldable Module where
+   foldl _ acc (Module Nil) = acc
+   foldl f acc (Module (Left def : defs)) = foldl (foldl (foldl (foldl f))) (foldl f acc def) defs
+   foldl f acc (Module (Right def : defs)) = foldl (foldl (foldl (foldl f))) (foldl (foldl f) acc def) defs
+
+   foldr f = foldrDefault f
+   foldMap f = foldMapDefaultL f
 
 -- Can we make this 'traverse' by relaxing m to Applicative?
 traverseModule :: forall m a b. Monad m => (a -> m b) -> Module a -> m (Module b)
