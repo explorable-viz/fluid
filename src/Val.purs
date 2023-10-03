@@ -169,9 +169,9 @@ instance Apply Fun where
    apply (PartialConstr c fvs) (PartialConstr c' vs) = PartialConstr (c ≜ c') (zipWith (<*>) fvs vs)
    apply _ _ = error "Apply Fun: shape mismatch"
 
+-- Should require equal domains?
 instance Apply DictRep where
    apply (DictRep fxvs) (DictRep xvs) =
-      -- Restrict to equal domains?
       DictRep $ D.intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs
 
 instance Apply MatrixRep where
@@ -180,7 +180,7 @@ instance Apply MatrixRep where
 
 instance Apply ProgCxt where
    apply (ProgCxt { mods: fmods, γ: fγ }) (ProgCxt { mods, γ }) =
-      ProgCxt $ { mods: fmods `zipWith (<*>)` mods, γ: D.apply2 fγ γ }
+      ProgCxt { mods: fmods `zipWith (<*>)` mods, γ: D.apply2 fγ γ }
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d

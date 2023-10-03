@@ -12,7 +12,7 @@ import Util (Endo, (×), type (×))
 
 type Edge = Vertex × Vertex
 
--- | "Static" graphs, optimised for lookup and building from (key, value) pairs.
+-- | Immutable graphs, optimised for lookup and building from (key, value) pairs.
 class (Vertices g, Semigroup g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
@@ -27,7 +27,7 @@ class (Vertices g, Semigroup g) <= Graph g where
    sources :: g -> Set Vertex
    sinks :: g -> Set Vertex
 
-   -- |   op (op g) = g
+   -- | op (op g) = g
    op :: Endo g
 
    empty :: g
@@ -39,7 +39,7 @@ class Vertices a where
    vertices :: a -> Set Vertex
 
 instance (Apply f, Foldable f) => Vertices (f Vertex) where
-   vertices vα = selectαs (const true <$> vα) vα
+   vertices vα = unions (singleton <$> vα)
 
 selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
 selectαs v𝔹 vα = unions ((if _ then singleton else const S.empty) <$> v𝔹 <*> vα)

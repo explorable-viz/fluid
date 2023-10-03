@@ -171,7 +171,7 @@ instance Apply Cont where
 instance Apply VarDef where
    apply (VarDef fσ fe) (VarDef σ e) = VarDef (fσ <*> σ) (fe <*> e)
 
--- Apply instance of Either inappropriate here as doesn't assume fixed shape.
+-- Apply instance for Either no good here as doesn't assume fixed shape.
 instance Apply Module where
    apply (Module Nil) (Module Nil) = Module Nil
    apply (Module (Left fdef : fdefs)) (Module (Left def : defs)) =
