@@ -6,8 +6,8 @@ import App.Fig (linkResult, loadLinkFig)
 import Benchmark.Util (BenchRow)
 import Data.Array (zip)
 import Effect.Aff (Aff)
-import Module (File(..), Folder(..), loadFile, openDatasetAs, openDefaultImports)
-import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, checkPretty, testWithSetup)
+import Module (File(..), Folder(..), defaultImports2, loadFile, openDatasetAs, openDefaultImports)
+import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, checkPretty, testWithSetup, testWithSetup2)
 import Util (type (×), (×))
 import Val (ProgCxtEval(..), (<+>))
 
@@ -15,8 +15,8 @@ many :: Array TestSpec -> Int -> Array (String × Aff BenchRow)
 many specs n = zip (specs <#> _.file) (specs <#> one)
    where
    one { file, fwd_expect } = do
-      gconfig <- openDefaultImports
-      testWithSetup n (File file) gconfig { δv: identity, fwd_expect, bwd_expect: mempty }
+      progCxt <- defaultImports2
+      testWithSetup2 n (File file) progCxt { δv: identity, fwd_expect, bwd_expect: mempty }
 
 bwdMany :: Array TestBwdSpec -> Int -> Array (String × Aff BenchRow)
 bwdMany specs n = zip (specs <#> _.file) (specs <#> bwdOne)

@@ -1,12 +1,4 @@
-module Test.Main
-   ( main
-   , test_bwd
-   , test_desugaring
-   , test_graphics
-   --  , test_linking
-   , test_misc
-   --  , test_scratchpad
-   ) where
+module Test.Main where
 
 import Prelude hiding (add)
 

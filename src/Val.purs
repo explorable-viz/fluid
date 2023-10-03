@@ -79,7 +79,7 @@ newtype ProgCxtEval a = ProgCxtEval
    }
 
 newtype ProgCxt a = ProgCxt
-   { mods :: List (Module a)
+   { mods :: List (Module a) -- in reverse order
    , datasets :: List (Expr a)
    }
 

@@ -10,7 +10,7 @@ import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
-import Data.List (List(..), (:))
+import Data.List (List(..), reverse, (:))
 import Data.Newtype (class Newtype)
 import Data.Set (empty)
 import Data.Traversable (traverse)
@@ -20,6 +20,7 @@ import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval, eval_module)
+import Expr (Module)
 import Graph (class Graph, Vertex)
 import Graph (empty) as G
 import Graph.GraphWriter (class MonadWithGraphAlloc, alloc, fresh, runWithGraphAllocT)
@@ -73,13 +74,13 @@ defaultImports = do
       >>= loadModule (File "graphics")
       >>= loadModule (File "convolution")
 
-loadModule2 :: forall m. MonadAff m => MonadWithGraphAlloc m => File -> Raw ProgCxt -> m (Raw ProgCxt)
+loadModule2 :: forall m. MonadAff m => MonadError Error m => File -> Raw ProgCxt -> m (Raw ProgCxt)
 loadModule2 file (ProgCxt r@{ mods }) = do
    src <- loadFile (Folder "fluid/lib") file
    mod <- parse src module_ >>= desugarModuleFwd
    pure $ ProgCxt r { mods = mod : mods }
 
-defaultImports2 :: forall m. MonadAff m => MonadWithGraphAlloc m => m (Raw ProgCxt)
+defaultImports2 :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
 defaultImports2 =
    loadModule2 (File "prelude") (ProgCxt { mods: Nil, datasets: Nil })
       >>= loadModule2 (File "graphics")
@@ -108,4 +109,9 @@ openDatasetAs file x { g, n, progCxt: ProgCxtEval r@{ progCxt: ProgCxt r'@{ data
 eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
 eval_progCxt (ProgCxt { mods }) = do
    traverse alloc primitives
-      >>= concatM (mods <#> \mod γ' -> eval_module γ' mod empty)
+      >>= concatM (reverse mods <#> addDefs)
+   where
+   addDefs :: Module Vertex -> Env Vertex -> m (Env Vertex)
+   addDefs mod γ = do
+      γ' <- eval_module γ mod empty
+      pure $ γ <+> γ'
