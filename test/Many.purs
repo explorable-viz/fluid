@@ -9,7 +9,7 @@ import Data.List.Lazy (replicateM)
 import Effect.Aff (Aff)
 import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports)
 import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, averageRows, checkPretty, testWithSetup)
-import Util (type (×), (×), successful)
+import Util (type (×), (×))
 import Val (ProgCxt(..), (<+>))
 
 many :: Array TestSpec -> Int -> Array (String × Aff BenchRow)
@@ -52,5 +52,5 @@ linkMany specs = zip (specs <#> name) (specs <#> linkOne)
    name spec = "linking/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
    linkOne { spec, δv1, v2_expect } = do
       { γ0, γ, e1, e2, t1, t2, v1 } <- loadLinkFig spec
-      let { v': v2' } = successful $ linkResult spec.x γ0 γ e1 e2 t1 t2 (δv1 v1)
+      { v': v2' } <- linkResult spec.x γ0 γ e1 e2 t1 t2 (δv1 v1)
       checkPretty "Linked output" v2_expect v2'

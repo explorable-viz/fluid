@@ -179,7 +179,7 @@ figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    views <- valViews γ0γ xs
    pure $ view "output" v' × views
 
-linkResult :: Var -> Env 𝔹 -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> MayFail LinkResult
+linkResult :: forall m. MonadError Error m => Var -> Env 𝔹 -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> m LinkResult
 linkResult x γ0 γ e1 e2 t1 _ v1 = do
    let
       γ0γ × _ = evalBwd (erase <$> (γ0 <+> γ)) (erase e1) v1 t1
