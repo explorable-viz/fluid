@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
-import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, zeroRow, sumRow, preciseTime, tdiff)
+import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
 import Control.Monad.Error.Class (class MonadThrow, liftEither)
 import Control.Monad.Except (runExceptT)
 import Control.Monad.Trans.Class (lift)
@@ -214,9 +214,7 @@ shouldSatisfy msg v pred =
       fail (show v <> " doesn't satisfy predicate: " <> msg)
 
 averageRows :: List BenchRow -> BenchRow
-averageRows rows = average summed
+averageRows rows = average $ foldl (<>) mempty rows
    where
    runs = toNumber $ length rows
-   summed = foldl sumRow zeroRow rows
-   average (BenchRow tr gr) =
-      BenchRow (hmap (\num -> num `div` runs) tr) (hmap (\num -> num `div` runs) gr)
+   average (BenchRow tr gr) = BenchRow (hmap (_ `div` runs) tr) (hmap (_ `div` runs) gr)

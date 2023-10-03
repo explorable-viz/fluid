@@ -54,39 +54,39 @@ instance Show BenchAcc where
 rowShow :: String × BenchRow -> String
 rowShow (str × row) = str <> "," <> show row
 
-zeroRow :: BenchRow
-zeroRow =
-   BenchRow { tEval: 0.0, tBwd: 0.0, tFwd: 0.0 }
+instance Semigroup BenchRow where
+   append (BenchRow trRow1 gRow1) (BenchRow trRow2 gRow2) =
+      BenchRow
+         { tEval: trRow1.tEval + trRow2.tEval
+         , tBwd: trRow1.tBwd + trRow2.tBwd
+         , tFwd: trRow1.tFwd + trRow2.tFwd
+         }
+         { tEval: gRow1.tEval + gRow2.tEval
+         , tBwd: gRow1.tBwd + gRow2.tBwd
+         , tBwdDual: gRow1.tBwdDual + gRow2.tBwdDual
+         , tBwdAll: gRow1.tBwdAll + gRow2.tBwdAll
+         , tFwd: gRow1.tFwd + gRow2.tFwd
+         , tFwdDual: gRow1.tFwdDual + gRow2.tFwdDual
+         , tFwdAsDemorgan: gRow1.tFwdAsDemorgan + gRow2.tFwdAsDemorgan
+         }
+
+instance Monoid BenchRow where
+   mempty = BenchRow
+      { tEval: 0.0, tBwd: 0.0, tFwd: 0.0 }
       { tEval: 0.0, tBwd: 0.0, tBwdDual: 0.0, tBwdAll: 0.0, tFwd: 0.0, tFwdDual: 0.0, tFwdAsDemorgan: 0.0 }
 
-sumRow :: BenchRow -> BenchRow -> BenchRow
-sumRow (BenchRow trRow1 gRow1) (BenchRow trRow2 gRow2) =
-   BenchRow
-      { tEval: trRow1.tEval + trRow2.tEval
-      , tBwd: trRow1.tBwd + trRow2.tBwd
-      , tFwd: trRow1.tFwd + trRow2.tFwd
-      }
-      { tEval: gRow1.tEval + gRow2.tEval
-      , tBwd: gRow1.tBwd + gRow2.tBwd
-      , tBwdDual: gRow1.tBwdDual + gRow2.tBwdDual
-      , tBwdAll: gRow1.tBwdAll + gRow2.tBwdAll
-      , tFwd: gRow1.tFwd + gRow2.tFwd
-      , tFwdDual: gRow1.tFwdDual + gRow2.tFwdDual
-      , tFwdAsDemorgan: gRow1.tFwdAsDemorgan + gRow2.tFwdAsDemorgan
-      }
-
 instance Show BenchRow where
-   show (BenchRow trRow grRow) = fold $ intersperse ","
-      [ show trRow.tEval
-      , show trRow.tBwd
-      , show trRow.tFwd
-      , show grRow.tEval
-      , show grRow.tBwd
-      , show grRow.tBwdDual
-      , show grRow.tBwdAll
-      , show grRow.tFwd
-      , show grRow.tFwdDual
-      , show grRow.tFwdAsDemorgan
+   show (BenchRow trRow grRow) = fold $ intersperse "," $ (_ <#> show)
+      [ trRow.tEval
+      , trRow.tBwd
+      , trRow.tFwd
+      , grRow.tEval
+      , grRow.tBwd
+      , grRow.tBwdDual
+      , grRow.tBwdAll
+      , grRow.tFwd
+      , grRow.tFwdDual
+      , grRow.tFwdAsDemorgan
       ]
 
 now :: forall m. MonadEffect m => m JSDate
