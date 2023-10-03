@@ -1,0 +1,4 @@
+let initV n m window = if n == 0 `or` m == 0
+                       then FNum 0 
+                       else Infty 
+in initV 4 6 2

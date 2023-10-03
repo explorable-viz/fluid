@@ -28,7 +28,7 @@ test_scratchpad :: Array (String × Aff Unit)
 test_scratchpad = second void <$> many
    [ { file: "dtw/min-prev"
      , fwd_expect:
-          "((3, 5), 3)"
+          "fail"
      }
    ]
    1
