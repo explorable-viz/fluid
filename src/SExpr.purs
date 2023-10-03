@@ -429,12 +429,10 @@ orElseBwd _ _ = error absurd
 -- all synthesised branches, returning the original singleton branch for c, plus join of annotations on the
 -- empty lists used for bodies of synthesised branches.
 unlessFwd :: forall a. Ctr × Cont a -> a -> Dict (Cont a)
-unlessFwd (c × κ) α =
-   let
-      defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
-      cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
-   in
-      D.fromFoldable ((c × κ) : cκs)
+unlessFwd (c × κ) α = D.fromFoldable ((c × κ) : cκs)
+   where
+   defaultBranch c' = c' × applyN (ContElim <<< ElimVar varAnon) (successful (arity c')) (ContExpr (enil α))
+   cκs = defaultBranch <$> ((ctrs (successful (dataTypeFor c)) # S.toUnfoldable) \\ L.singleton c)
 
 unlessBwd :: forall a. BoundedJoinSemilattice a => Dict (Cont a) -> Ctr -> Cont a × a
 unlessBwd m c =
