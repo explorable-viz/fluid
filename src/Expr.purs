@@ -190,17 +190,12 @@ instance Foldable Module where
    foldr f = foldrDefault f
    foldMap f = foldMapDefaultL f
 
--- Can we make this 'traverse' by relaxing m to Applicative?
-traverseModule :: forall m a b. Monad m => (a -> m b) -> Module a -> m (Module b)
+traverseModule :: forall m a b. Applicative m => (a -> m b) -> Module a -> m (Module b)
 traverseModule _ (Module Nil) = pure (Module Nil)
-traverseModule f (Module (Left (VarDef σ e) : ds)) = do
-   d <- traverse f (VarDef σ e)
-   Module ds' <- traverseModule f (Module ds)
-   pure (Module (Left d : ds'))
-traverseModule f (Module (Right ρ : ds)) = do
-   ρ' <- traverse (traverse f) ρ
-   Module ds' <- traverseModule f (Module ds)
-   pure (Module (Right ρ' : ds'))
+traverseModule f (Module (Left def : ds)) =
+   Module <$> ((Left <$> traverse f def) `lift2 (:)` (unwrap <$> traverseModule f (Module ds)))
+traverseModule f (Module (Right ρ : ds)) =
+   Module <$> ((Right <$> traverse (traverse f) ρ) `lift2 (:)` (unwrap <$> traverseModule f (Module ds)))
 
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'
