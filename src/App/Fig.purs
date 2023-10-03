@@ -38,7 +38,7 @@ import Primitive (matrixRep) as P
 import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
 import Trace (Trace)
-import Util (MayFail, type (×), type (+), (×), absurd, error, orElse, successful)
+import Util (type (×), type (+), (×), absurd, error, orElse)
 import Val (class Ann, Env, ProgCxt(..), Val(..), append_inv, (<+>))
 import Web.Event.EventTarget (eventListener)
 
@@ -133,16 +133,15 @@ type LinkResult =
 drawLinkFig :: LinkFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
 drawLinkFig fig@{ spec: { x, divId }, γ0, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataFile } ed1 ed2 ed3 δv = do
    log $ "Redrawing " <> divId
-   let
-      v1' × v2' × δv1 × δv2 × v0 = successful case δv of
-         Left δv1 -> do
-            let v1' = δv1 v1
-            { v', v0' } <- linkResult x γ0 γ e1 e2 t1 t2 v1'
-            pure $ v1' × v' × const v1' × identity × v0'
-         Right δv2 -> do
-            let v2' = δv2 v2
-            { v', v0' } <- linkResult x γ0 γ e2 e1 t2 t1 v2'
-            pure $ v' × v2' × identity × const v2' × v0'
+   v1' × v2' × δv1 × δv2 × v0 <- case δv of
+      Left δv1 -> do
+         let v1' = δv1 v1
+         { v', v0' } <- linkResult x γ0 γ e1 e2 t1 t2 v1'
+         pure $ v1' × v' × const v1' × identity × v0'
+      Right δv2 -> do
+         let v2' = δv2 v2
+         { v', v0' } <- linkResult x γ0 γ e2 e1 t2 t1 v2'
+         pure $ v' × v2' × identity × const v2' × v0'
    drawView divId (\selector -> drawLinkFig fig ed1 ed2 ed3 (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
    drawView divId (\selector -> drawLinkFig fig ed1 ed2 ed3 (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
    drawView divId doNothing 1 $ view "common data" v0
@@ -158,20 +157,20 @@ drawCode ed s = do
 drawFig :: Fig -> EditorView -> Selector Val -> Effect Unit
 drawFig fig@{ spec: { divId }, s0 } ed δv = do
    log $ "Redrawing " <> divId
-   let v_view × views = successful $ figViews fig δv
+   v_view × views <- figViews fig δv
    sequence_ $
       uncurry (drawView divId doNothing) <$> zip (range 0 (length views - 1)) views
    drawView divId (\selector -> drawFig fig ed (δv >>> selector)) (length views) v_view
    drawCode ed $ prettyP s0
 
-varView :: Var -> Env 𝔹 -> MayFail View
+varView :: forall m. MonadError Error m => Var -> Env 𝔹 -> m View
 varView x γ = view x <$> (lookup x γ # orElse absurd)
 
-valViews :: Env 𝔹 -> Array Var -> MayFail (Array View)
+valViews :: forall m. MonadError Error m => Env 𝔹 -> Array Var -> m (Array View)
 valViews γ xs = sequence (flip varView γ <$> xs)
 
 -- For an output selection, views of corresponding input selections and output after round-trip.
-figViews :: Fig -> Selector Val -> MayFail (View × Array View)
+figViews :: forall m. MonadError Error m => Fig -> Selector Val -> m (View × Array View)
 figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
    let
       γ0γ × e' × α = evalBwd (erase <$> (γ0 <+> γ)) (erase e) (δv v) t
