@@ -59,16 +59,16 @@ open :: forall m. MonadAff m => MonadError Error m => File -> m (S.Expr Unit)
 open = parseProgram (Folder "fluid/example")
 
 loadModule :: forall m. MonadAff m => MonadGraphAlloc m => File -> ProgCxt Vertex -> m (ProgCxt Vertex)
-loadModule file (ProgCxt { mods, γ }) = do
+loadModule file (ProgCxt r@{ mods, γ }) = do
    src <- loadFile (Folder "fluid/lib") file
    mod <- parse src module_ >>= desugarModuleFwd >>= traverseModule (const fresh)
    γ' <- eval_module γ mod empty
-   pure $ ProgCxt { mods: mod : mods, γ: γ <+> γ' }
+   pure $ ProgCxt r{ mods = mod : mods, γ = γ <+> γ' }
 
 defaultImports :: forall m. MonadAff m => MonadGraphAlloc m => m (ProgCxt Vertex)
 defaultImports = do
    γ <- traverse alloc primitives
-   loadModule (File "prelude") (ProgCxt { mods: Nil, γ })
+   loadModule (File "prelude") (ProgCxt { mods: Nil, datasets: Nil, γ })
       >>= loadModule (File "graphics")
       >>= loadModule (File "convolution")
 
@@ -79,11 +79,11 @@ openDefaultImports = do
 
 -- | Evaluate dataset in context of existing graph config
 openDatasetAs :: forall m g. MonadAff m => MonadError Error m => Graph g => File -> Var -> GraphConfig g -> m (GraphConfig g × Env Vertex)
-openDatasetAs file x { g, n, progCxt: progCxt@(ProgCxt { γ }) } = do
+openDatasetAs file x { g, n, progCxt: ProgCxt r@{ γ, datasets } } = do
    s <- parseProgram (Folder "fluid") file
-   (g' × n') × xv <-
+   (g' × n') × xv × progCxt <-
       runWithGraphAllocT (g × n) do
-         e <- desug s
-         eα <- alloc e
-         D.singleton x <$> eval γ eα empty
+         eα <- desug s >>= alloc
+         v <- eval γ eα empty
+         pure $ D.singleton x v × ProgCxt (r{ datasets = eα : datasets })
    pure ({ g: g', n: n', progCxt } × xv)

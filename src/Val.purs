@@ -18,7 +18,7 @@ import DataType (Ctr)
 import Dict (Dict, get)
 import Dict (apply2, intersectionWith) as D
 import Effect.Exception (Error)
-import Expr (Elim, Module, RecDefs, fv)
+import Expr (Elim, Expr, Module, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
@@ -72,8 +72,12 @@ type Env a = Dict (Val a)
 lookup' :: forall a m. MonadThrow Error m => Var -> Dict a -> m a
 lookup' x γ = lookup x γ # orElse ("variable " <> x <> " not found")
 
--- Bunch of loaded modules.
-newtype ProgCxt a = ProgCxt { mods :: List (Module a), γ :: Env a }
+-- Bunch of loaded modules and datasets, reflecting current somewhat ad hoc approach.
+newtype ProgCxt a = ProgCxt
+   { mods :: List (Module a)
+   , datasets :: List (Expr a)
+   , γ :: Env a
+   }
 
 derive instance Newtype (ProgCxt a) _
 
@@ -179,8 +183,12 @@ instance Apply MatrixRep where
       MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × ((n ≜ n') × fnα nα) × ((m ≜ m') × fmα mα)
 
 instance Apply ProgCxt where
-   apply (ProgCxt { mods: fmods, γ: fγ }) (ProgCxt { mods, γ }) =
-      ProgCxt { mods: fmods `zipWith (<*>)` mods, γ: D.apply2 fγ γ }
+   apply (ProgCxt { mods: fmods, datasets: fdatasets, γ: fγ }) (ProgCxt { mods, datasets, γ }) =
+      ProgCxt
+         { mods: fmods `zipWith (<*>)` mods
+         , datasets: fdatasets `zipWith (<*>)` datasets
+         , γ: D.apply2 fγ γ
+         }
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d
