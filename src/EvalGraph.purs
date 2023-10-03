@@ -188,14 +188,14 @@ graphGC
    => GraphConfig g
    -> Raw Expr
    -> m (GraphEval g)
-graphGC { g, n, progCxt: ProgCxt { γ } } e = do
+graphGC { g, n, progCxt: progCxt@(ProgCxt { γ }) } e = do
    (g' × _) × eα × vα <-
       runWithGraphAllocT (g × n) do
          eα <- alloc e
          vα <- eval γ eα S.empty
          pure (eα × vα)
    let
-      dom = vertices eα `union` foldMap vertices γ
+      dom = vertices progCxt `union` foldMap vertices γ
       fwd αs = vertices (fwdSlice αs g') `intersection` vertices vα
       bwd αs = vertices (bwdSlice αs g') `intersection` sinks g'
    trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->

@@ -5,7 +5,7 @@ import Prelude hiding (absurd, append)
 import Bindings (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
-import Data.Array ((!!))
+import Data.Array (foldMap, (!!))
 import Data.Array (zipWith) as A
 import Data.Bitraversable (bitraverse)
 import Data.Exists (Exists)
@@ -21,7 +21,7 @@ import Effect.Exception (Error)
 import Expr (Elim, Module, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
-import Graph (Vertex(..))
+import Graph (class Vertices, Vertex(..), vertices)
 import Graph.GraphWriter (class MonadGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
 import Util (type (×), Endo, error, orElse, throw, unsafeUpdateAt, (!), (×), (≜), (≞))
@@ -145,6 +145,7 @@ instance Highlightable Vertex where
 derive instance Functor DictRep
 derive instance Functor MatrixRep
 derive instance Functor Val
+derive instance Functor ProgCxt
 derive instance Foldable Val
 derive instance Traversable Val
 derive instance Functor Fun
@@ -175,6 +176,10 @@ instance Apply DictRep where
 instance Apply MatrixRep where
    apply (MatrixRep (fvss × (n × fnα) × (m × fmα))) (MatrixRep (vss × (n' × nα) × (m' × mα))) =
       MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × ((n ≜ n') × fnα nα) × ((m ≜ m') × fmα mα)
+
+instance Apply ProgCxt where
+   apply (ProgCxt { mods: fmods, γ: fγ }) (ProgCxt { mods, γ }) =
+      ProgCxt $ { mods: zipWith (<*>) fmods mods, γ: D.apply2 fγ γ }
 
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d

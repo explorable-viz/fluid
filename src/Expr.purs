@@ -7,6 +7,7 @@ import Control.Apply (lift2)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable)
 import Data.List (List(..), (:), zipWith)
+import Data.Newtype (class Newtype, unwrap)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable, traverse)
@@ -59,7 +60,7 @@ asExpr :: forall a. Cont a -> Expr a
 asExpr (ContExpr e) = e
 asExpr _ = error "Expression expected"
 
-data Module a = Module (List (VarDef a + RecDefs a))
+newtype Module a = Module (List (VarDef a + RecDefs a))
 
 class FV a where
    fv :: a -> Set Var
@@ -128,6 +129,7 @@ derive instance Traversable Elim
 derive instance Functor Expr
 derive instance Foldable Expr
 derive instance Traversable Expr
+derive instance Newtype (Module a) _
 derive instance Functor Module
 
 derive instance Eq a => Eq (Expr a)
@@ -135,6 +137,7 @@ derive instance Eq a => Eq (VarDef a)
 derive instance Eq a => Eq (Elim a)
 derive instance Eq a => Eq (Cont a)
 
+-- For terms of a fixed shape.
 instance Apply Expr where
    apply (Var x) (Var x') = Var (x ≜ x')
    apply (Op op) (Op _) = Op op
@@ -164,6 +167,15 @@ instance Apply Cont where
    apply (ContExpr f) (ContExpr e) = ContExpr (f <*> e)
    apply (ContElim fσ) (ContElim σ) = ContElim (fσ <*> σ)
    apply _ _ = error "Apply Cont: shape mismatch"
+
+-- Apply instance of Either inappropriate here as doesn't assume fixed shape.
+instance Apply Module where
+   apply (Module Nil) (Module Nil) = Module Nil
+   apply (Module (Left fdef : fdefs)) (Module (Left def : defs)) =
+      Module (?_ : unwrap (apply (Module fdefs) (Module defs)))
+   apply (Module (Right fdef : fdefs)) (Module (Right def : defs)) =
+      Module (?_ : unwrap (apply (Module fdefs) (Module defs)))
+   apply _ _ = error "Apply Module: shape mismatch"
 
 -- Can we make this 'traverse' by relaxing m to Applicative?
 traverseModule :: forall m a b. Monad m => (a -> m b) -> Module a -> m (Module b)
