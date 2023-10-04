@@ -49,6 +49,12 @@ misc_cases =
           \Infty, Infty, FNum 0, FNum 0, FNum 0, Infty, Infty,\n\
           \Infty, Infty, Infty, FNum 0, FNum 0, FNum 0, Infty"
      }
+   , { file: "dtw/matrix-update"
+     , fwd_expect:
+          "100, (1, 2), (1, 3),\n\
+          \(2, 1), (2, 2), (2, 3),\n\
+          \(3, 1), (3, 2), (3, 3)"
+     }
    ]
 
 desugar_cases :: Array TestSpec
