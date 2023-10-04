@@ -142,12 +142,21 @@ matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
    op :: OpGraph
    op = error "todo"
 
-   fwd :: OpFwd (Raw MatrixRep × (Int × Int))
+   fwd :: OpFwd (Raw MatrixRep × (Int × Int) × Raw Val)
+   fwd (Matrix _ r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
+      | c == cPair = do
+         oldV <- matrixGet i j r
+         let newM =  matrixUpdate i j (const v) r
+         pure $ ((erase newM) × (i × j) × (erase oldV)) × (Matrix bot newM)
+
    fwd _ = throw "Matrix, pair of ints, and new val expected"
 
-   bwd :: OpBwd (Raw MatrixRep × (Int × Int))
-   bwd = error "todo"
-
+   bwd :: OpBwd (Raw MatrixRep × (Int × Int) × Raw Val)
+   bwd ((((MatrixRep (vss × (i' × _) × (j' × _))) × (i × j) × v) × oldV)) = 
+      Matrix bot (matrixUpdate i  j (const oldV) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
+         : Constr bot cPair (Int bot i : Int bot j : Nil)
+         : (map (const bot) v)
+         : Nil
 dict_difference :: ForeignOp
 dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
