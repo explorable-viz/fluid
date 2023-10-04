@@ -210,14 +210,12 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
-      γ0 = botOf <$> γ
-      xv0 = botOf <$> xv
-      γ' = γ0 <+> xv0
+      γ0 = botOf <$> (γ <+> xv)
       s1 = botOf s1'
       s2 = botOf s2'
    dataFile' <- loadFile (Folder "fluid/example/linking") dataFile -- use surface expression instead
    e1 × e2 <- (×) <$> desug s1 <*> desug s2
-   t1 × v1 <- eval γ' e1 bot
-   t2 × v2 <- eval γ' e2 bot
-   let v0 = get x xv0
-   pure { spec, γ: γ', s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
+   t1 × v1 <- eval γ0 e1 bot
+   t2 × v2 <- eval γ0 e2 bot
+   let v0 = get x γ0
+   pure { spec, γ: γ0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
