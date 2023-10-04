@@ -140,7 +140,7 @@ matrixMut :: ForeignOp
 matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
-   op (Matrix α r : Constr _ c (Int _ i : Int _ j : Nil)  : v : Nil)
+   op (Matrix α r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
       | c == cPair = pure $ Matrix α (matrixUpdate i j (const v) r)
    op _ = throw "Matrix, pair of ints, and new val expected"
 
