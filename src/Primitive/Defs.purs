@@ -131,7 +131,7 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
    fwd _ = throw "Matrix and pair of integers expected"
 
    bwd :: OpBwd (Raw MatrixRep × (Int × Int))
-   bwd (((MatrixRep (vss × (i'× _) × (j'× _))) × (i × j)) × v) =
+   bwd (((MatrixRep (vss × (i' × _) × (j' × _))) × (i × j)) × v) =
       Matrix bot (matrixUpdate i j (const v) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : Nil
