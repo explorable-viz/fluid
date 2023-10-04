@@ -140,14 +140,16 @@ matrixMut :: ForeignOp
 matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
-   op = error "todo"
+   op (Matrix α r : Constr _ c (Int _ i : Int _ j : Nil)  : v : Nil)
+      | c == cPair = pure $ Matrix α (matrixUpdate i j (const v) r)
+   op _ = throw "Matrix, pair of ints, and new val expected"
 
    fwd :: OpFwd (Raw MatrixRep × (Int × Int) × Raw Val)
-   fwd (Matrix _ r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
+   fwd (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
       | c == cPair = do
            oldV <- matrixGet i j r
            let newM = matrixUpdate i j (const v) r
-           pure $ ((erase newM) × (i × j) × (erase oldV)) × (Matrix bot newM)
+           pure $ ((erase newM) × (i × j) × (erase v)) × oldV
 
    fwd _ = throw "Matrix, pair of ints, and new val expected"
 
