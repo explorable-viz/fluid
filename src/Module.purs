@@ -119,7 +119,7 @@ eval_progCxt (ProgCxt { mods }) = do
 blah :: forall m g. Graph g => MonadError Error m => ProgCxt Unit -> m (GraphConfig g)
 blah progCxt = do
    (g × n) × progCxt' <- runWithGraphAllocT (G.empty × 0) do
-         progCxt' <- alloc progCxt
-         γ <- eval_progCxt progCxt'
-         pure $ ProgCxtEval { progCxt: progCxt', γ }
+      progCxt' <- alloc progCxt
+      γ <- eval_progCxt progCxt'
+      pure $ ProgCxtEval { progCxt: progCxt', γ }
    pure { g, n, progCxt: progCxt' }

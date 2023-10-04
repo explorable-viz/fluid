@@ -55,15 +55,9 @@ testWithSetup n file gconfig tconfig = do
    pure $ averageRows rows
 
 testWithSetup2 ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
-testWithSetup2 m file progCxt tconfig = do
+testWithSetup2 n file progCxt tconfig = do
    gconfig <- blah progCxt
-   s <- open file
-   testPretty s
-   rows <- replicateM m $ do
-      trRow <- testTrace s (unwrap gconfig.progCxt).γ tconfig
-      grRow <- testGraph s gconfig tconfig
-      pure $ BenchRow trRow grRow
-   pure $ averageRows rows
+   testWithSetup n file gconfig tconfig
 
 testPretty :: forall m a. MonadAff m => MonadError Error m => Ann a => SE.Expr a -> m Unit
 testPretty s = do
