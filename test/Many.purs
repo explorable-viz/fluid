@@ -41,6 +41,6 @@ linkMany specs = zip (specs <#> name) (specs <#> linkOne)
    where
    name spec = "linking/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
    linkOne { spec, δv1, v2_expect } = do
-      { γ0, γ, e1, e2, t1, t2, v1 } <- loadLinkFig spec
-      { v': v2' } <- linkResult spec.x γ0 γ e1 e2 t1 t2 (δv1 v1)
+      { γ0γ, e1, e2, t1, t2, v1 } <- loadLinkFig spec
+      { v': v2' } <- linkResult spec.x γ0γ e1 e2 t1 t2 (δv1 v1)
       checkPretty "Linked output" v2_expect v2'
