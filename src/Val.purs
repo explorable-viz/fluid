@@ -108,8 +108,8 @@ type Array2 a = Array (Array a)
 
 matrixGet :: forall a. Int -> Int -> MatrixRep a -> Val a
 matrixGet i j (MatrixRep (vss × _ × _)) = definitely "index out of bounds!" $ do
-      us <- vss !! (i - 1)
-      us !! (j - 1)
+   us <- vss !! (i - 1)
+   us !! (j - 1)
 
 matrixUpdate :: forall a. Int -> Int -> Endo (Val a) -> Endo (MatrixRep a)
 matrixUpdate i j δv (MatrixRep (vss × h × w)) =

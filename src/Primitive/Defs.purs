@@ -66,7 +66,7 @@ primitives = D.fromFoldable
    , "mod" × binaryZero { i: int, o: int, fwd: mod }
    , "quot" × binaryZero { i: int, o: int, fwd: quot }
    , "rem" × binaryZero { i: int, o: int, fwd: rem }
-   , "matrixUpdate" × extern matrixMut 
+   , "matrixUpdate" × extern matrixMut
    ]
 
 error_ :: ForeignOp
@@ -148,21 +148,23 @@ matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
    fwd :: OpFwd (Raw MatrixRep × (Int × Int) × Raw Val)
    fwd (Matrix α r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
       | c == cPair =
-           let oldV = matrixGet i j r
-               newM = matrixUpdate i j (const v) r
+           let
+              oldV = matrixGet i j r
+              newM = matrixUpdate i j (const v) r
            in
-           pure $ (MatrixRep ((map erase <$> vss) × ((i' × unit) × (j' × unit))) × (i × j) × (erase oldV)) × (Matrix α newM)
+              pure $ (MatrixRep ((map erase <$> vss) × ((i' × unit) × (j' × unit))) × (i × j) × (erase oldV)) × (Matrix α newM)
 
    fwd _ = throw "Matrix, pair of ints, and new val expected"
 
    bwd :: OpBwd (Raw MatrixRep × (Int × Int) × Raw Val)
    bwd ((((MatrixRep (vss × (i' × _) × (j' × _))) × (i × j) × oldV) × (Matrix α r))) =
-      let newV = matrixGet i j r
+      let
+         newV = matrixGet i j r
       in
-      Matrix α (matrixUpdate i j (const (map (const bot) oldV)) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
-         : Constr bot cPair (Int bot i : Int bot j : Nil)
-         : newV
-         : Nil
+         Matrix α (matrixUpdate i j (const (map (const bot) oldV)) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
+            : Constr bot cPair (Int bot i : Int bot j : Nil)
+            : newV
+            : Nil
    bwd _ = error "absurd backwards!"
 
 dict_difference :: ForeignOp
