@@ -96,7 +96,6 @@ debugLog = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePa
    bwd :: OpBwd Unit
    bwd _ = error unimplemented
 
-type ArrayData a = Array2 (Val a)
 
 dims :: ForeignOp
 dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }
@@ -108,12 +107,12 @@ dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial
       Constr <$> new (singleton α) <@> cPair <@> (v1 : v2 : Nil)
    op _ = throw "Matrix expected"
 
-   fwd :: OpFwd (Raw ArrayData)
+   fwd :: OpFwd (Array2 (Raw Val))
    fwd (Matrix α (MatrixRep (vss × (i × β1) × (j × β2))) : Nil) =
       pure $ (map erase <$> vss) × Constr α cPair (Int β1 i : Int β2 j : Nil)
    fwd _ = throw "Matrix expected"
 
-   bwd :: Partial => OpBwd (Raw ArrayData)
+   bwd :: Partial => OpBwd (Array2 (Raw Val))
    bwd (vss × Constr α c (Int β1 i : Int β2 j : Nil)) | c == cPair =
       Matrix α (MatrixRep (((<$>) botOf <$> vss) × (i × β1) × (j × β2))) : Nil
 
@@ -125,19 +124,30 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
       | c == cPair = matrixGet i j r
    op _ = throw "Matrix and pair of integers expected"
 
-   fwd :: OpFwd (Raw ArrayData × (Int × Int) × (Int × Int))
+   fwd :: OpFwd (Array2 (Raw Val) × (Int × Int) × (Int × Int))
    fwd (Matrix _ r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = do
            v <- matrixGet i j r
            pure $ ((map erase <$> vss) × (i' × j') × (i × j)) × v
    fwd _ = throw "Matrix and pair of integers expected"
 
-   bwd :: OpBwd (Raw ArrayData × (Int × Int) × (Int × Int))
+   bwd :: OpBwd (Array2 (Raw Val) × (Int × Int) × (Int × Int))
    bwd ((vss × (i' × j') × (i × j)) × v) =
       Matrix bot (matrixUpdate i j (const v) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : Nil
 
+matrixMut :: ForeignOp
+matrixMut = mkExists $ ForeignOp' {arity: 3, op': op, op: fwd, op_bwd: bwd}
+   where
+   op :: OpGraph
+   op = error "todo"
+
+   fwd :: OpFwd (Array2 (Raw Val) × (Int × Int) × (Int × Int))
+   fwd  _ = throw "Matrix, pair of ints, and new val expected"
+
+   bwd :: OpBwd (Array2 (Raw Val) × (Int × Int) × (Int × Int))
+   bwd = error "todo"
 dict_difference :: ForeignOp
 dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where

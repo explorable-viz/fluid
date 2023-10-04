@@ -3,7 +3,7 @@ let abs x y = if x - y < 0 then negate (x - y) else (x - y);
       let ns = [0 .. rows];
           ms = [0 .. cols]
       in 
-        [| let initV = if (or (and (n == 1) (m == 1)) (and ((abs n m) <= window) (not (or (n == 1) (m == 1)))))
+        [| let initV = if or (and (n == 1) (m == 1)) (and (abs n m <= window) (not (or (n == 1) (m == 1))))
                        then FNum 0
                        else Infty 
            in initV | (n, m) in (rows, cols) |]
