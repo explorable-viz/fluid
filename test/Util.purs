@@ -5,9 +5,7 @@ import Prelude hiding (absurd)
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
 import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
-import Control.Monad.Error.Class (class MonadThrow, liftEither)
-import Control.Monad.Except (runExceptT)
-import Control.Monad.Trans.Class (lift)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Foldable (foldl)
 import Data.Int (toNumber)
 import Data.List (elem)
@@ -18,25 +16,24 @@ import Data.String (null)
 import DataType (dataTypeFor, typeName)
 import Desug (desugGC)
 import Effect.Aff (Aff)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
 import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
-import Graph (empty) as G
 import Graph.GraphImpl (GraphImpl)
-import Graph.GraphWriter (alloc, runWithGraphAllocT)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
 import Heterogeneous.Mapping (hmap)
 import Lattice (Raw, botOf, erase)
-import Module (File, eval_progCxt, open, parse)
+import Module (File, blah, open, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
-import Util (MayFailT, successful, (×), type (+))
-import Val (class Ann, Env, ProgCxt, ProgCxtEval(..), Val(..))
+import Util (successful, (×))
+import Val (class Ann, Env, ProgCxt, Val(..))
 
 type TestConfig =
    { δv :: Selector Val
@@ -49,45 +46,35 @@ logging = false
 
 testWithSetup ∷ Int -> File -> GraphConfig GraphImpl -> TestConfig -> Aff BenchRow
 testWithSetup n file gconfig tconfig = do
-   liftEither =<< test
-   where
-   test = runExceptT do
-      s <- open file
-      testPretty s
-      rows <- replicateM n $ do
-         trRow <- testTrace s (unwrap gconfig.progCxt).γ tconfig
-         grRow <- testGraph s gconfig tconfig
-         pure $ BenchRow trRow grRow
-      pure $ averageRows rows
+   s <- open file
+   testPretty s
+   rows <- replicateM n $ do
+      trRow <- testTrace s (unwrap gconfig.progCxt).γ tconfig
+      grRow <- testGraph s gconfig tconfig
+      pure $ BenchRow trRow grRow
+   pure $ averageRows rows
 
 testWithSetup2 ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
 testWithSetup2 m file progCxt tconfig = do
-   (g × n) × progCxt' <- runWithGraphAllocT (G.empty × 0) do
-      progCxt' <- alloc progCxt
-      γ <- eval_progCxt progCxt'
-      pure $ ProgCxtEval { progCxt: progCxt', γ }
-   let
-      test :: Aff (Error + BenchRow)
-      test = runExceptT do
-         s <- open file
-         testPretty s
-         rows <- replicateM m $ do
-            trRow <- testTrace s ((unwrap progCxt').γ) tconfig
-            grRow <- testGraph s { g, n, progCxt: progCxt' } tconfig
-            pure $ BenchRow trRow grRow
-         pure $ averageRows rows
-   liftEither =<< test
+   gconfig <- blah progCxt
+   s <- open file
+   testPretty s
+   rows <- replicateM m $ do
+      trRow <- testTrace s (unwrap gconfig.progCxt).γ tconfig
+      grRow <- testGraph s gconfig tconfig
+      pure $ BenchRow trRow grRow
+   pure $ averageRows rows
 
-testPretty :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
+testPretty :: forall m a. MonadAff m => MonadError Error m => Ann a => SE.Expr a -> m Unit
 testPretty s = do
    let src = prettyP s
    s' <- parse src program
    unless (eq (erase s) (erase s')) do
       log ("SRC\n" <> show (erase s))
       log ("NEW\n" <> show (erase s'))
-      lift $ fail "not equal"
+      fail "not equal"
 
-testTrace :: Raw SE.Expr -> Env Vertex -> TestConfig -> MayFailT Aff TraceRow
+testTrace :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> Env Vertex -> TestConfig -> m TraceRow
 testTrace s γ { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
@@ -111,18 +98,17 @@ testTrace s γ { δv, bwd_expect, fwd_expect } = do
    let v𝔹 = eval.fwd (γ𝔹 × e𝔹' × top)
    t_fwd2 <- preciseTime
 
-   lift do
-      -- | Check backward selections
-      unless (null bwd_expect) $
-         checkPretty "Trace-based source selection" bwd_expect s𝔹
-      -- | Check round-trip selections
-      unless (isGraphical v) do
-         when logging $ log (prettyP v𝔹)
-         checkPretty "Trace-based value" fwd_expect v𝔹
+   -- | Check backward selections
+   unless (null bwd_expect) $
+      checkPretty "Trace-based source selection" bwd_expect s𝔹
+   -- | Check round-trip selections
+   unless (isGraphical v) do
+      when logging $ log (prettyP v𝔹)
+      checkPretty "Trace-based value" fwd_expect v𝔹
 
    pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tFwd: tdiff t_fwd1 t_fwd2 }
 
-testGraph :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
+testGraph :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> m GraphRow
 testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
@@ -179,21 +165,20 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
       v𝔹_demorgan = select𝔹s vα (vertices gfwd_demorgan) <#> not
    t_fwdAsDeMorgan2 <- preciseTime
 
-   lift do
-      -- | Check backward selections
-      unless (null bwd_expect) do
-         checkPretty "Graph-based source selection" bwd_expect s𝔹
-      -- | Check round-trip selections
-      unless (isGraphical v𝔹) do
-         checkPretty "Graph-based value" fwd_expect v𝔹
-         checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹_demorgan
-      αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
-         (flip subset αs_out')
-      -- | To avoid unused variables when benchmarking
-      when logging do
-         log (prettyP e𝔹_dual)
-         log (prettyP e𝔹_all)
-         log (prettyP v𝔹_dual)
+   -- | Check backward selections
+   unless (null bwd_expect) do
+      checkPretty "Graph-based source selection" bwd_expect s𝔹
+   -- | Check round-trip selections
+   unless (isGraphical v𝔹) do
+      checkPretty "Graph-based value" fwd_expect v𝔹
+      checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹_demorgan
+   αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
+      (flip subset αs_out')
+   -- | To avoid unused variables when benchmarking
+   when logging do
+      log (prettyP e𝔹_dual)
+      log (prettyP e𝔹_all)
+      log (prettyP v𝔹_dual)
 
    pure
       { tEval: tdiff t_eval1 t_eval2
