@@ -111,7 +111,7 @@ type LinkFigSpec =
 
 type LinkFig =
    { spec :: LinkFigSpec
-   , γ0γ :: Env 𝔹 -- prog context environment (modules + dataset)
+   , γ :: Env 𝔹 -- prog context environment (modules + dataset)
    , s1 :: S.Expr 𝔹
    , s2 :: S.Expr 𝔹
    , e1 :: Expr 𝔹
@@ -130,16 +130,16 @@ type LinkResult =
    }
 
 drawLinkFig :: LinkFig -> EditorView -> EditorView -> EditorView -> Selector Val + Selector Val -> Effect Unit
-drawLinkFig fig@{ spec: { x, divId }, γ0γ, s1, s2, e1, e2, t1, t2, v1, v2, dataFile } ed1 ed2 ed3 δv = do
+drawLinkFig fig@{ spec: { x, divId }, γ, s1, s2, e1, e2, t1, t2, v1, v2, dataFile } ed1 ed2 ed3 δv = do
    log $ "Redrawing " <> divId
    v1' × v2' × δv1 × δv2 × v0 <- case δv of
       Left δv1 -> do
          let v1' = δv1 v1
-         { v', v0' } <- linkResult x γ0γ e1 e2 t1 t2 v1'
+         { v', v0' } <- linkResult x γ e1 e2 t1 t2 v1'
          pure $ v1' × v' × const v1' × identity × v0'
       Right δv2 -> do
          let v2' = δv2 v2
-         { v', v0' } <- linkResult x γ0γ e2 e1 t2 t1 v2'
+         { v', v0' } <- linkResult x γ e2 e1 t2 t1 v2'
          pure $ v' × v2' × identity × const v2' × v0'
    drawView divId (\selector -> drawLinkFig fig ed1 ed2 ed3 (Left $ δv1 >>> selector)) 2 $ view "left view" v1'
    drawView divId (\selector -> drawLinkFig fig ed1 ed2 ed3 (Right $ δv2 >>> selector)) 0 $ view "right view" v2'
@@ -212,11 +212,12 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
    let
       γ0 = botOf <$> γ
       xv0 = botOf <$> xv
+      γ' = γ0 <+> xv0
       s1 = botOf s1'
       s2 = botOf s2'
    dataFile' <- loadFile (Folder "fluid/example/linking") dataFile -- use surface expression instead
    e1 × e2 <- (×) <$> desug s1 <*> desug s2
-   t1 × v1 <- eval (γ0 <+> xv0) e1 bot
-   t2 × v2 <- eval (γ0 <+> xv0) e2 bot
+   t1 × v1 <- eval γ' e1 bot
+   t2 × v2 <- eval γ' e2 bot
    let v0 = get x xv0
-   pure { spec, γ0γ: γ0 <+> xv0, s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
+   pure { spec, γ: γ', s1, s2, e1, e2, t1, t2, v1, v2, v0, dataFile: dataFile' }
