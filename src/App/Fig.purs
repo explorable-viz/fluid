@@ -191,17 +191,13 @@ linkResult x γ0 γ e1 e2 t1 _ v1 = do
 
 loadFig :: forall m. MonadAff m => MonadError Error m => FigSpec -> m Fig
 loadFig spec@{ file } = do
-   -- TODO: not every example should run with this dataset.
-   { progCxt: ProgCxtEval { γ } } × xv :: GraphConfig GraphImpl × _ <-
-      openDefaultImports >>= openDatasetAs (File "example/linking/renewables") "data"
-   let
-      γ0 = botOf <$> γ
-      xv0 = botOf <$> xv
+   { progCxt: ProgCxtEval { γ } } :: GraphConfig GraphImpl <- openDefaultImports
+   let γ0 = botOf <$> γ
    s' <- open file
    let s0 = botOf s'
-   { γ: γ1, s } <- splitDefs (γ0 <+> xv0) s0
+   { γ: γ1, s } <- splitDefs γ0 s0
    e <- desug s
-   let γ0γ = γ0 <+> xv0 <+> γ1
+   let γ0γ = γ0 <+> γ1
    t × v <- eval γ0γ e bot
    pure { spec, γ0, γ: γ0 <+> γ1, s0, s, e, t, v }
 
