@@ -23,7 +23,7 @@ import Foreign.Object (keys) as O
 import Graph (Vertex(..))
 import Graph.GraphWriter (class MonadGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
-import Util (type (×), Endo, error, orElse, throw, unsafeUpdateAt, (!), (×), (≜), (≞))
+import Util (type (×), Endo, definitely, error, orElse, throw, unsafeUpdateAt, (!), (×), (≜), (≞))
 import Util.Pretty (Doc, beside, text)
 
 data Val a
@@ -106,9 +106,8 @@ newtype MatrixRep a = MatrixRep (Array2 (Val a) × (Int × a) × (Int × a))
 
 type Array2 a = Array (Array a)
 
-matrixGet :: forall a m. MonadThrow Error m => Int -> Int -> MatrixRep a -> m (Val a)
-matrixGet i j (MatrixRep (vss × _ × _)) =
-   orElse "Index out of bounds" $ do
+matrixGet :: forall a. Int -> Int -> MatrixRep a -> Val a
+matrixGet i j (MatrixRep (vss × _ × _)) = definitely "index out of bounds!" $ do
       us <- vss !! (i - 1)
       us !! (j - 1)
 

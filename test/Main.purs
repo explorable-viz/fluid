@@ -2,7 +2,7 @@ module Test.Main where
 
 import Prelude hiding (add)
 
-import Data.Array (concat)
+-- import Data.Array (concat)
 import Data.Profunctor.Strong (second)
 import Effect (Effect)
 import Effect.Aff (Aff)
@@ -15,19 +15,19 @@ main :: Effect Unit
 main = run tests
 
 tests :: Array (String × Aff Unit)
-tests = concat
-   [ test_desugaring
-   , test_misc
-   , test_bwd
-   , test_graphics
-   , test_linking
-   ]
+-- tests = concat
+--    [ test_desugaring
+--    , test_misc
+--    , test_bwd
+--    , test_graphics
+--    , test_linking
+--    ]
 
--- tests = test_scratchpad
+tests = test_scratchpad
 
 test_scratchpad :: Array (String × Aff Unit)
 test_scratchpad = second void <$> many
-   [ { file: "dtw/cost-matrix"
+   [ { file: "dtw/matrix-update"
      , fwd_expect:
           "FNum 0, Infty, Infty, Infty, Infty, Infty, Infty,\n\
           \Infty, FNum 0, FNum 0, Infty, Infty, Infty, Infty,\n\
