@@ -182,11 +182,11 @@ linkResult :: forall m. MonadError Error m => Var -> Env 𝔹 -> Env 𝔹 -> Exp
 linkResult x γ0 γ e1 e2 t1 _ v1 = do
    let
       γ0γ × _ = evalBwd (erase <$> (γ0 <+> γ)) (erase e1) v1 t1
-      _ × γ' = append_inv (S.singleton x) γ0γ
+      γ0' × γ' = append_inv (S.singleton x) γ0γ
    v0' <- lookup x γ' # orElse absurd
    -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use
    -- (topOf γ0) combined with negation of the dataset environment slice
-   _ × v2' <- eval (neg ((botOf <$> γ0) <+> γ')) (topOf e2) true
+   _ × v2' <- eval (neg ((botOf <$> γ0') <+> γ')) (topOf e2) true
    pure { v': neg v2', v0' }
 
 loadFig :: forall m. MonadAff m => MonadError Error m => FigSpec -> m Fig
