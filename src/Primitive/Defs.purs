@@ -96,7 +96,6 @@ debugLog = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePa
    bwd :: OpBwd Unit
    bwd _ = error unimplemented
 
-
 dims :: ForeignOp
 dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
@@ -138,16 +137,17 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
          : Nil
 
 matrixMut :: ForeignOp
-matrixMut = mkExists $ ForeignOp' {arity: 3, op': op, op: fwd, op_bwd: bwd}
+matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
    op = error "todo"
 
    fwd :: OpFwd (Array2 (Raw Val) × (Int × Int) × (Int × Int))
-   fwd  _ = throw "Matrix, pair of ints, and new val expected"
+   fwd _ = throw "Matrix, pair of ints, and new val expected"
 
    bwd :: OpBwd (Array2 (Raw Val) × (Int × Int) × (Int × Int))
    bwd = error "todo"
+
 dict_difference :: ForeignOp
 dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where

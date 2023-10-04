@@ -22,6 +22,7 @@ tests = concat
    , test_graphics
    , test_linking
    ]
+
 -- tests = test_scratchpad
 
 test_scratchpad :: Array (String × Aff Unit)
