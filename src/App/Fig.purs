@@ -181,8 +181,8 @@ figViews { spec: { xs }, γ0, γ, e, t, v } δv = do
 linkResult :: forall m. MonadError Error m => Var -> Env 𝔹 -> Env 𝔹 -> Expr 𝔹 -> Expr 𝔹 -> Trace -> Trace -> Val 𝔹 -> m LinkResult
 linkResult x γ0 γ e1 e2 t1 _ v1 = do
    let
-      γ0γ × _ = evalBwd (erase <$> (γ0 <+> γ)) (erase e1) v1 t1
-      γ0' × γ' = append_inv (S.singleton x) γ0γ
+      γ0γ' × _ = evalBwd (erase <$> (γ0 <+> γ)) (erase e1) v1 t1
+      γ0' × γ' = append_inv (S.singleton x) γ0γ'
    v0' <- lookup x γ' # orElse absurd
    -- make γ0 and e2 fully available; γ0 was previously too big to operate on, so we use
    -- (topOf γ0) combined with negation of the dataset environment slice
