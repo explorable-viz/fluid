@@ -123,15 +123,15 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
       | c == cPair = matrixGet i j r
    op _ = throw "Matrix and pair of integers expected"
 
-   fwd :: OpFwd (Array2 (Raw Val) × (Int × Int) × (Int × Int))
+   fwd :: OpFwd (Raw MatrixRep × (Int × Int))
    fwd (Matrix _ r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = do
            v <- matrixGet i j r
-           pure $ ((map erase <$> vss) × (i' × j') × (i × j)) × v
+           pure $ (MatrixRep ((map erase <$> vss) × ((i' × unit) × (j' × unit))) × (i × j)) × v
    fwd _ = throw "Matrix and pair of integers expected"
 
-   bwd :: OpBwd (Array2 (Raw Val) × (Int × Int) × (Int × Int))
-   bwd ((vss × (i' × j') × (i × j)) × v) =
+   bwd :: OpBwd (Raw MatrixRep × (Int × Int))
+   bwd (((MatrixRep (vss × (i'× _) × (j'× _))) × (i × j)) × v) =
       Matrix bot (matrixUpdate i j (const v) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : Nil
@@ -142,10 +142,10 @@ matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
    op :: OpGraph
    op = error "todo"
 
-   fwd :: OpFwd (Array2 (Raw Val) × (Int × Int) × (Int × Int))
+   fwd :: OpFwd (Raw MatrixRep × (Int × Int))
    fwd _ = throw "Matrix, pair of ints, and new val expected"
 
-   bwd :: OpBwd (Array2 (Raw Val) × (Int × Int) × (Int × Int))
+   bwd :: OpBwd (Raw MatrixRep × (Int × Int))
    bwd = error "todo"
 
 dict_difference :: ForeignOp
