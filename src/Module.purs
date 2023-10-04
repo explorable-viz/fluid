@@ -53,11 +53,11 @@ loadFile (Folder folder) (File file) = do
 parse :: forall a m. MonadError Error m => String -> SParser a -> m a
 parse src = liftEither <<< mapLeft (E.error <<< show) <<< runParser src
 
-parseProgram :: forall m. MonadAff m => MonadError Error m => Folder -> File -> m (S.Expr Unit)
+parseProgram :: forall m. MonadAff m => MonadError Error m => Folder -> File -> m (Raw S.Expr)
 parseProgram folder file =
    loadFile folder file >>= flip parse program
 
-open :: forall m. MonadAff m => MonadError Error m => File -> m (S.Expr Unit)
+open :: forall m. MonadAff m => MonadError Error m => File -> m (Raw S.Expr)
 open = parseProgram (Folder "fluid/example")
 
 loadModule :: forall m. MonadAff m => MonadWithGraphAlloc m => File -> ProgCxtEval Vertex -> m (ProgCxtEval Vertex)
@@ -86,7 +86,7 @@ defaultImports2 =
       >>= loadModule2 (File "graphics")
       >>= loadModule2 (File "convolution")
 
-loadDataset :: forall m. MonadAff m => MonadWithGraphAlloc m => File -> Raw ProgCxt -> m (ProgCxt Unit)
+loadDataset :: forall m. MonadAff m => MonadWithGraphAlloc m => File -> Raw ProgCxt -> m (Raw ProgCxt)
 loadDataset file (ProgCxt r@{ datasets }) = do
    dataset <- parseProgram (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = dataset : datasets }
@@ -116,7 +116,7 @@ eval_progCxt (ProgCxt { mods }) = do
       γ' <- eval_module γ mod empty
       pure $ γ <+> γ'
 
-blah :: forall m g. Graph g => MonadError Error m => ProgCxt Unit -> m (GraphConfig g)
+blah :: forall m g. Graph g => MonadError Error m => Raw ProgCxt -> m (GraphConfig g)
 blah progCxt = do
    (g × n) × progCxt' <- runWithGraphAllocT (G.empty × 0) do
       progCxt' <- alloc progCxt
