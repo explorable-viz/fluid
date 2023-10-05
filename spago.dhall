@@ -22,7 +22,6 @@ You can edit this file as you like.
   , "http-methods"
   , "identity"
   , "integers"
-  , "js-date"
   , "lists"
   , "maybe"
   , "newtype"

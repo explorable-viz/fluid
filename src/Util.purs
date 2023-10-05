@@ -9,6 +9,7 @@ import Control.Monad.Except (Except, ExceptT(..), runExceptT)
 import Control.MonadPlus (class MonadPlus, empty)
 import Data.Array ((!!), updateAt)
 import Data.Either (Either(..))
+import Data.Foldable (class Foldable, foldr)
 import Data.Identity (Identity(..))
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
@@ -170,3 +171,7 @@ infixr 6 type WithTypeLeft as <×|
 infixr 6 WithTypeLeft as <×|
 
 derive instance Functor f => Functor (t <×| f)
+
+-- Haven't found this yet in PureScript
+concatM :: forall f m a. Foldable f => Monad m => f (a -> m a) -> a -> m a
+concatM = foldr (>=>) pure

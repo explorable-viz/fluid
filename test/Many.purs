@@ -5,55 +5,39 @@ import Prelude
 import App.Fig (linkResult, loadLinkFig)
 import Benchmark.Util (BenchRow)
 import Data.Array (zip)
-import Data.List.Lazy (replicateM)
 import Effect.Aff (Aff)
-import Module (File(..), Folder(..), loadFile, open, openDatasetAs, openDefaultImports)
-import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, averageRows, checkPretty, testWithSetup)
-import Util (type (×), (×), successful)
-import Val ((<+>))
+import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
+import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, checkPretty, test)
+import Util (type (×))
 
 many :: Array TestSpec -> Int -> Array (String × Aff BenchRow)
-many fxs iter = zip names affs
+many specs n = zip (specs <#> _.file) (specs <#> one)
    where
-   affs = fxs <#> \{ file, fwd_expect } -> do
-      default <- openDefaultImports
-      expr <- open (File file)
-      rows <- replicateM iter $
-         testWithSetup file expr default { δv: identity, fwd_expect, bwd_expect: mempty }
-      pure $ averageRows rows
-   names = map _.file fxs
+   one { file, fwd_expect } = do
+      progCxt <- defaultImports
+      test n (File file) progCxt { δv: identity, fwd_expect, bwd_expect: mempty }
 
 bwdMany :: Array TestBwdSpec -> Int -> Array (String × Aff BenchRow)
-bwdMany fxs iter = zip names affs
+bwdMany specs n = zip (specs <#> _.file) (specs <#> one)
    where
    folder = File "slicing/"
-   affs = fxs <#> \{ file, file_expect, δv, fwd_expect } -> do
-      default <- openDefaultImports
+   one { file, file_expect, δv, fwd_expect } = do
+      progCxt <- defaultImports
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
-      expr <- open (folder <> File file)
-      rows <- replicateM iter $
-         testWithSetup file expr default { δv, fwd_expect, bwd_expect }
-      pure $ averageRows rows
-   names = map _.file fxs
+      test n (folder <> File file) progCxt { δv, fwd_expect, bwd_expect }
 
 withDatasetMany :: Array TestWithDatasetSpec -> Int -> Array (String × Aff BenchRow)
-withDatasetMany fxs iter = zip names affs
+withDatasetMany specs n = zip (specs <#> _.file) (specs <#> one)
    where
-   affs = fxs <#> \{ dataset, file } -> do
-      default <- openDefaultImports
-      { g, n, γα } × xv <- openDatasetAs (File dataset) "data" default
-      let loadedData = { g, n, γα: γα <+> xv }
-      expr <- open (File file)
-      rows <- replicateM iter $
-         testWithSetup file expr loadedData { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
-      pure $ averageRows rows
-   names = fxs <#> _.file
+   one { dataset, file } = do
+      progCxt <- defaultImports >>= datasetAs (File dataset) "data"
+      test n (File file) progCxt { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
 
 linkMany :: Array TestLinkSpec -> Array (String × Aff Unit)
-linkMany fxs = zip names affs
+linkMany specs = zip (specs <#> name) (specs <#> one)
    where
-   names = fxs <#> \spec -> "linking/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
-   affs = fxs <#> \{ spec, δv1, v2_expect } -> do
-      { γ0, γ, e1, e2, t1, t2, v1 } <- loadLinkFig spec
-      let { v': v2' } = successful $ linkResult spec.x γ0 γ e1 e2 t1 t2 (δv1 v1)
+   name spec = "linking/" <> show spec.spec.file1 <> "<->" <> show spec.spec.file2
+   one { spec, δv1, v2_expect } = do
+      { γ, e1, e2, t1, t2, v1 } <- loadLinkFig spec
+      { v': v2' } <- linkResult spec.x γ e1 e2 t1 t2 (δv1 v1)
       checkPretty "Linked output" v2_expect v2'

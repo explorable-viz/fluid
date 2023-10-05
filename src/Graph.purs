@@ -6,14 +6,14 @@ import Data.Foldable (class Foldable)
 import Data.List (List, concat)
 import Data.List (fromFoldable) as L
 import Data.Newtype (class Newtype)
-import Data.Set (Set)
-import Data.Set (map) as S
+import Data.Set (Set, member, singleton, unions)
+import Data.Set (empty, map) as S
 import Util (Endo, (×), type (×))
 
 type Edge = Vertex × Vertex
 
--- | "Static" graphs, optimised for lookup and building from (key, value) pairs.
-class Semigroup g <= Graph g where
+-- | Immutable graphs, optimised for lookup and building from (key, value) pairs.
+class (Vertices g, Semigroup g) <= Graph g where
    -- | Whether g contains a given vertex.
    elem :: Vertex -> g -> Boolean
    -- | outN and iN satisfy
@@ -23,18 +23,29 @@ class Semigroup g <= Graph g where
 
    -- | Number of vertices in g.
    size :: g -> Int
-   vertices :: g -> Set Vertex
 
    sources :: g -> Set Vertex
    sinks :: g -> Set Vertex
 
-   -- |   op (op g) = g
+   -- | op (op g) = g
    op :: Endo g
 
    empty :: g
    fromFoldable :: forall f. Functor f => Foldable f => f (Vertex × Set Vertex) -> g
 
 newtype Vertex = Vertex String
+
+class Vertices a where
+   vertices :: a -> Set Vertex
+
+instance (Functor f, Foldable f) => Vertices (f Vertex) where
+   vertices vα = unions (singleton <$> vα)
+
+selectαs :: forall f. Apply f => Foldable f => f Boolean -> f Vertex -> Set Vertex
+selectαs v𝔹 vα = unions ((if _ then singleton else const S.empty) <$> v𝔹 <*> vα)
+
+select𝔹s :: forall f. Functor f => f Vertex -> Set Vertex -> f Boolean
+select𝔹s vα αs = (_ `member` αs) <$> vα
 
 outEdges' :: forall g. Graph g => g -> Vertex -> List Edge
 outEdges' g α = L.fromFoldable $ S.map (α × _) (outN g α)

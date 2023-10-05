@@ -21,7 +21,7 @@ import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
-import Graph.GraphWriter (class MonadGraphAlloc)
+import Graph.GraphWriter (class MonadWithGraphAlloc)
 import Lattice (class BoundedJoinSemilattice, class BoundedLattice, class Expandable, class JoinSemilattice, class Neg, Raw, definedJoin, expand, maybeJoin, neg, (∨))
 import Util (type (×), Endo, definitely, error, orElse, throw, unsafeUpdateAt, (!), (×), (≜), (≞))
 import Util.Pretty (Doc, beside, text)
@@ -54,7 +54,7 @@ instance (Ann a, BoundedLattice b) => Ann (a × b)
 -- similar to an isomorphism lens with complement t
 type OpFwd t = forall a m. Ann a => MonadError Error m => List (Val a) -> m (t × Val a)
 type OpBwd t = forall a. Ann a => t × Val a -> List (Val a)
-type OpGraph = forall m. MonadGraphAlloc m => MonadError Error m => List (Val Vertex) -> m (Val Vertex)
+type OpGraph = forall m. MonadWithGraphAlloc m => MonadError Error m => List (Val Vertex) -> m (Val Vertex)
 
 data ForeignOp' t = ForeignOp'
    { arity :: Int
@@ -161,6 +161,7 @@ instance Apply Fun where
    apply (PartialConstr c fvs) (PartialConstr c' vs) = PartialConstr (c ≜ c') (zipWith (<*>) fvs vs)
    apply _ _ = error "Apply Fun: shape mismatch"
 
+-- Should require equal domains?
 instance Apply DictRep where
    apply (DictRep fxvs) (DictRep xvs) =
       DictRep $ D.intersectionWith (\(fα × fv) (α × v) -> fα α × (fv <*> v)) fxvs xvs

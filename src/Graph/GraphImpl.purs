@@ -21,7 +21,7 @@ import Dict as D
 import Foreign.Object (runST)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as OST
-import Graph (class Graph, Vertex(..), op, outN)
+import Graph (class Graph, class Vertices, Vertex(..), op, outN)
 import Util (type (×), (×), definitely)
 
 -- Maintain out neighbours and in neighbours as separate adjacency maps with a common domain.
@@ -38,7 +38,6 @@ instance Graph GraphImpl where
    inN g = outN (op g)
    elem α (GraphImpl g) = isJust (D.lookup (unwrap α) g.out)
    size (GraphImpl g) = D.size g.out
-   vertices (GraphImpl g) = S.fromFoldable $ S.map Vertex $ D.keys g.out
    sinks (GraphImpl g) = sinks' g.out
    sources (GraphImpl g) = sinks' g.in
    op (GraphImpl g) = GraphImpl { out: g.in, in: g.out }
@@ -47,6 +46,9 @@ instance Graph GraphImpl where
    fromFoldable α_αs = GraphImpl { out: runST (outMap α_αs'), in: runST (inMap α_αs') }
       where
       α_αs' = L.fromFoldable α_αs -- doesn't seem to adversely affect performance
+
+instance Vertices GraphImpl where
+   vertices (GraphImpl g) = S.fromFoldable $ S.map Vertex $ D.keys g.out
 
 -- Naive implementation based on Dict.filter fails with stack overflow on graphs with ~20k vertices.
 -- This is better but still slow if there are thousands of sinks.
