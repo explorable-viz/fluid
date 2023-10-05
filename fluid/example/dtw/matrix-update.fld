@@ -27,7 +27,20 @@ let fadd Infty (FNum x) = Infty;
     fadd (FNum x) Infty = Infty;
     fadd (FNum x) (FNum y) = FNum (x + y);
     fadd Infty Infty = Infty;
+let feq Infty Infty = True;
+    feq Infty (FNum x) = False;
+    feq (FNum x) Infty = False;
+    feq (FNum x) (FNum y) = x == y;
 
+let minAndPrev (i, j) im1 jm1 ijm1 = 
+    let minim = fminimal [im1, jm1, ijm1] in
+        if feq minim im1 then
+            ((i - 1, j), minim)
+        else
+            if feq minim jm1 then
+                ((i, j - 1), minim)
+            else ((i - 1, j - 1), minim);
+        
 let localMinUpdate seq1 seq2 matrix (i, j) = 
       let iEntr = nth (i - 1) seq1;
           jEntr = nth (j - 1) seq2;
@@ -35,7 +48,7 @@ let localMinUpdate seq1 seq2 matrix (i, j) =
           im1 = matrix!(i , j + 1);
           jm1 = matrix!(i + 1, j);
           im1jm1 = matrix!(i , j );
-          minim = fminimal [im1,jm1,im1jm1];
+          ((prei,prej), minim) = minAndPrev (i + 1, j + 1) im1 jm1 im1jm1;
           newVal = fadd (FNum dist) minim
       in matrixUpdate matrix (i + 1,j + 1) newVal
 in foldl (localMinUpdate [3,1,2,2,1] [2,0,0,3,3,1,0]) (costMatrixInit 6 8 2) (nextIndices 5 7 2)  
