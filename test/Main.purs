@@ -28,11 +28,9 @@ test_scratchpad :: Array (String × Aff Unit)
 test_scratchpad = second void <$> many
    [ { file: "dtw/matrix-update"
      , fwd_expect:
-          "FNum 0, Infty, Infty, Infty, Infty, Infty, Infty,\n\
-          \Infty, FNum 0, FNum 0, Infty, Infty, Infty, Infty,\n\
-          \Infty, FNum 0, FNum 0, FNum 0, Infty, Infty, Infty,\n\
-          \Infty, Infty, FNum 0, FNum 0, FNum 0, Infty, Infty,\n\
-          \Infty, Infty, Infty, FNum 0, FNum 0, FNum 0, Infty"
+          "2, 3, 4,\n\
+          \3, 52, 5,\n\
+          \4, 5, -45"
      }
    ]
    1

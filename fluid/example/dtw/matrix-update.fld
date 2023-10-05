@@ -1,5 +1,10 @@
 let mat = [| (n+m) | (n,m) in (3, 3)|];
-let  localMinUpdate seq1 seq2 matrix (i, j) = 
+let fmin Infty Infty = EQ;
+    fmin Infty (FNum y) = GT;
+    fmin (FNum x) Infty = LT;
+    fmin (FNum x) (FNum y) = compare x y;
+let fminimal = foldr1 fmin;
+let localMinUpdate seq1 seq2 matrix (i, j) = 
       let iEntr = nth (i - 1) seq1;
           jEntr = nth (j - 1) seq2;
           dist = iEntr - jEntr;
