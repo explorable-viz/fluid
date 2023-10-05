@@ -2,7 +2,7 @@ module Val where
 
 import Prelude hiding (absurd, append)
 
-import Bindings (Bind, Var)
+import Bindings (Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Array ((!!))
@@ -11,15 +11,13 @@ import Data.Bitraversable (bitraverse)
 import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:), zipWith)
-import Data.Newtype (class Newtype)
-import Data.Profunctor.Strong (second)
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
 import Dict (Dict, get)
 import Dict (apply2, intersectionWith) as D
 import Effect.Exception (Error)
-import Expr (Elim, Expr, Module, RecDefs, fv)
+import Expr (Elim, RecDefs, fv)
 import Foreign.Object (filterKeys, lookup, unionWith)
 import Foreign.Object (keys) as O
 import Graph (Vertex(..))
