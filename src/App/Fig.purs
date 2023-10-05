@@ -30,7 +30,7 @@ import EvalGraph (ProgCxtEval(..))
 import Expr (Expr)
 import Foreign.Object (lookup)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
-import Module (File(..), Folder(..), blah, datasetAs, defaultImports, loadFile, open)
+import Module (File(..), Folder(..), initialConfig, datasetAs, defaultImports, loadFile, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive (matrixRep) as P
@@ -189,7 +189,7 @@ linkResult x γ0γ e1 e2 t1 _ v1 = do
 
 loadFig :: forall m. MonadAff m => MonadError Error m => FigSpec -> m Fig
 loadFig spec@{ file } = do
-   { progCxt: ProgCxtEval { γ } } <- defaultImports >>= blah
+   { progCxt: ProgCxtEval { γ } } <- defaultImports >>= initialConfig
    let γ0 = botOf <$> γ
    s' <- open file
    let s0 = botOf s'
@@ -204,14 +204,14 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
    let
       dir = File "linking/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
-   -- views share ambient environment γ as well as dataset
-   { progCxt: ProgCxtEval { γ } } <- defaultImports >>= datasetAs (File "example/" <> dir <> dataFile) x >>= blah
+   -- views share ambient environment γ
+   { progCxt: ProgCxtEval { γ } } <- defaultImports >>= datasetAs (File "example/" <> dir <> dataFile) x >>= initialConfig
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ0 = botOf <$> γ
       s1 = botOf s1'
       s2 = botOf s2'
-   dataFile' <- loadFile (Folder "fluid/example/linking") dataFile -- use surface expression instead
+   dataFile' <- loadFile (Folder "fluid/example/linking") dataFile -- TODO: use surface expression instead
    e1 × e2 <- (×) <$> desug s1 <*> desug s2
    t1 × v1 <- eval γ0 e1 bot
    t2 × v2 <- eval γ0 e2 bot

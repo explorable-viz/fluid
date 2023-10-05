@@ -75,8 +75,8 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
    eα <- parseProgram (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = x ↦ eα : datasets }
 
-blah :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig GraphImpl)
-blah progCxt = do
+initialConfig :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig GraphImpl)
+initialConfig progCxt = do
    (g × n) × progCxt' <- runWithGraphAllocT (G.empty × 0) do
       progCxt' <- alloc progCxt
       primitives' <- traverse alloc primitives

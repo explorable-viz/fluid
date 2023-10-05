@@ -28,7 +28,7 @@ import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
 import Heterogeneous.Mapping (hmap)
 import Lattice (Raw, botOf, erase)
-import Module (File, blah, open, parse)
+import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
@@ -45,8 +45,9 @@ type TestConfig =
 logging :: Boolean
 logging = false
 
-testWithSetup ∷ Int -> File -> GraphConfig GraphImpl -> TestConfig -> Aff BenchRow
-testWithSetup n file gconfig tconfig = do
+testWithSetup ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
+testWithSetup n file progCxt tconfig = do
+   gconfig <- initialConfig progCxt
    s <- open file
    testPretty s
    rows <- replicateM n $ do
@@ -54,11 +55,6 @@ testWithSetup n file gconfig tconfig = do
       grRow <- testGraph s gconfig tconfig
       pure $ BenchRow trRow grRow
    pure $ averageRows rows
-
-testWithSetup2 ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
-testWithSetup2 n file progCxt tconfig = do
-   gconfig <- blah progCxt
-   testWithSetup n file gconfig tconfig
 
 testPretty :: forall m a. MonadAff m => MonadError Error m => Ann a => SE.Expr a -> m Unit
 testPretty s = do
