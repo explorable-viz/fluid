@@ -6,7 +6,7 @@ import App.Fig (linkResult, loadLinkFig)
 import Benchmark.Util (BenchRow)
 import Data.Array (zip)
 import Effect.Aff (Aff)
-import Module (File(..), Folder(..), datasetAs, defaultImports2, loadFile)
+import Module (File(..), Folder(..), datasetAs, defaultImports, loadFile)
 import Test.Util (TestBwdSpec, TestLinkSpec, TestSpec, TestWithDatasetSpec, checkPretty, testWithSetup2)
 import Util (type (×))
 
@@ -14,7 +14,7 @@ many :: Array TestSpec -> Int -> Array (String × Aff BenchRow)
 many specs n = zip (specs <#> _.file) (specs <#> one)
    where
    one { file, fwd_expect } = do
-      progCxt <- defaultImports2
+      progCxt <- defaultImports
       testWithSetup2 n (File file) progCxt { δv: identity, fwd_expect, bwd_expect: mempty }
 
 bwdMany :: Array TestBwdSpec -> Int -> Array (String × Aff BenchRow)
@@ -22,7 +22,7 @@ bwdMany specs n = zip (specs <#> _.file) (specs <#> one)
    where
    folder = File "slicing/"
    one { file, file_expect, δv, fwd_expect } = do
-      progCxt <- defaultImports2
+      progCxt <- defaultImports
       bwd_expect <- loadFile (Folder "fluid/example") (folder <> File file_expect)
       testWithSetup2 n (folder <> File file) progCxt { δv, fwd_expect, bwd_expect }
 
@@ -30,7 +30,7 @@ withDatasetMany :: Array TestWithDatasetSpec -> Int -> Array (String × Aff Benc
 withDatasetMany specs n = zip (specs <#> _.file) (specs <#> one)
    where
    one { dataset, file } = do
-      progCxt <- defaultImports2 >>= datasetAs (File dataset) "data"
+      progCxt <- defaultImports >>= datasetAs (File dataset) "data"
       testWithSetup2 n (File file) progCxt { δv: identity, fwd_expect: mempty, bwd_expect: mempty }
 
 linkMany :: Array TestLinkSpec -> Array (String × Aff Unit)

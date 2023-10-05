@@ -21,16 +21,16 @@ import Effect.Exception (Error)
 import Effect.Exception (error) as E
 import EvalGraph (GraphConfig, eval, eval_module)
 import Expr (Expr, Module)
-import Graph (class Graph, Vertex)
+import Graph (Vertex)
 import Graph (empty) as G
 import Graph.GraphImpl (GraphImpl)
-import Graph.GraphWriter (class MonadWithGraphAlloc, alloc, fresh, runWithGraphAllocT)
+import Graph.GraphWriter (class MonadWithGraphAlloc, alloc, runWithGraphAllocT)
 import Parse (module_, program) as P
 import Parsing (runParser)
 import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util (type (×), (×), concatM, mapLeft)
+import Util ((×), concatM, mapLeft)
 import Util.Parse (SParser)
 import Val (Env, ProgCxt(..), ProgCxtEval(..), (<+>))
 
@@ -61,28 +61,14 @@ parseProgram folder file =
 open :: forall m. MonadAff m => MonadError Error m => File -> m (Raw S.Expr)
 open = parseProgram (Folder "fluid/example")
 
-loadModule :: forall m. MonadAff m => MonadWithGraphAlloc m => File -> ProgCxtEval Vertex -> m (ProgCxtEval Vertex)
-loadModule file (ProgCxtEval r@{ progCxt: ProgCxt r'@{ mods }, γ }) = do
-   src <- loadFile (Folder "fluid/lib") file
-   mod <- parse src P.module_ >>= desugarModuleFwd >>= traverse (const fresh)
-   γ' <- eval_module γ mod empty
-   pure $ ProgCxtEval r { progCxt = ProgCxt r' { mods = mod : mods }, γ = γ <+> γ' }
-
-defaultImports :: forall m. MonadAff m => MonadWithGraphAlloc m => m (ProgCxtEval Vertex)
-defaultImports = do
-   γ <- traverse alloc primitives
-   loadModule (File "prelude") (ProgCxtEval { progCxt: ProgCxt { mods: Nil, datasets: Nil }, γ })
-      >>= loadModule (File "graphics")
-      >>= loadModule (File "convolution")
-
 module_ :: forall m. MonadAff m => MonadError Error m => File -> Raw ProgCxt -> m (Raw ProgCxt)
 module_ file (ProgCxt r@{ mods }) = do
    src <- loadFile (Folder "fluid/lib") file
    mod <- parse src P.module_ >>= desugarModuleFwd
    pure $ ProgCxt r { mods = mod : mods }
 
-defaultImports2 :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
-defaultImports2 =
+defaultImports :: forall m. MonadAff m => MonadError Error m => m (Raw ProgCxt)
+defaultImports =
    pure (ProgCxt { mods: Nil, datasets: Nil })
       >>= module_ (File "prelude")
       >>= module_ (File "graphics")
@@ -92,21 +78,6 @@ datasetAs :: forall m. MonadAff m => MonadError Error m => File -> Var -> Raw Pr
 datasetAs file x (ProgCxt r@{ datasets }) = do
    eα <- parseProgram (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = x ↦ eα : datasets }
-
-openDefaultImports :: forall m g. MonadAff m => MonadError Error m => Graph g => m (GraphConfig g)
-openDefaultImports = do
-   (g × n) × progCxt <- runWithGraphAllocT (G.empty × 0) defaultImports
-   pure { g, n, progCxt }
-
-openDatasetAs :: forall m g. MonadAff m => MonadError Error m => Graph g => File -> Var -> GraphConfig g -> m (GraphConfig g × Env Vertex)
-openDatasetAs file x { g, n, progCxt: ProgCxtEval r@{ progCxt: ProgCxt r'@{ datasets }, γ } } = do
-   s <- parseProgram (Folder "fluid") file
-   (g' × n') × xv × progCxt <-
-      runWithGraphAllocT (g × n) do
-         eα <- desug s >>= alloc
-         v <- eval γ eα empty
-         pure $ D.singleton x v × ProgCxtEval (r { progCxt = ProgCxt (r' { datasets = x ↦ eα : datasets }) })
-   pure ({ g: g', n: n', progCxt } × xv)
 
 eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
 eval_progCxt (ProgCxt { mods, datasets }) =
