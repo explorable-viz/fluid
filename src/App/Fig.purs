@@ -26,12 +26,10 @@ import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
-import EvalGraph (GraphConfig)
 import Expr (Expr)
 import Foreign.Object (lookup)
-import Graph.GraphImpl (GraphImpl)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
-import Module (File(..), Folder(..), blah, defaultImports2, loadFile, open, openDatasetAs, openDefaultImports)
+import Module (File(..), Folder(..), blah, datasetAs, defaultImports2, loadFile, open)
 import Partial.Unsafe (unsafePartial)
 import Pretty (prettyP)
 import Primitive (matrixRep) as P
@@ -190,7 +188,7 @@ linkResult x γ0γ e1 e2 t1 _ v1 = do
 
 loadFig :: forall m. MonadAff m => MonadError Error m => FigSpec -> m Fig
 loadFig spec@{ file } = do
-   { progCxt: ProgCxtEval { γ } } :: GraphConfig GraphImpl <- defaultImports2 >>= blah
+   { progCxt: ProgCxtEval { γ } } <- defaultImports2 >>= blah
    let γ0 = botOf <$> γ
    s' <- open file
    let s0 = botOf s'
@@ -206,11 +204,10 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       dir = File "linking/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- views share ambient environment γ as well as dataset
-   { progCxt: ProgCxtEval { γ } } × xv :: GraphConfig GraphImpl × _ <-
-      openDefaultImports >>= openDatasetAs (File "example/" <> dir <> dataFile) x
+   { progCxt: ProgCxtEval { γ } } <- defaultImports2 >>= datasetAs (File "example/" <> dir <> dataFile) x >>= blah
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
-      γ0 = botOf <$> (γ <+> xv)
+      γ0 = botOf <$> γ
       s1 = botOf s1'
       s2 = botOf s2'
    dataFile' <- loadFile (Folder "fluid/example/linking") dataFile -- use surface expression instead

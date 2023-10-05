@@ -23,6 +23,7 @@ import EvalGraph (GraphConfig, eval, eval_module)
 import Expr (Expr, Module)
 import Graph (class Graph, Vertex)
 import Graph (empty) as G
+import Graph.GraphImpl (GraphImpl)
 import Graph.GraphWriter (class MonadWithGraphAlloc, alloc, fresh, runWithGraphAllocT)
 import Parse (module_, program) as P
 import Parsing (runParser)
@@ -122,7 +123,7 @@ eval_progCxt (ProgCxt { mods, datasets }) =
       v <- eval γ e empty
       pure $ γ <+> D.singleton x v
 
-blah :: forall m g. Graph g => MonadError Error m => Raw ProgCxt -> m (GraphConfig g)
+blah :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig GraphImpl)
 blah progCxt = do
    (g × n) × progCxt' <- runWithGraphAllocT (G.empty × 0) do
       progCxt' <- alloc progCxt
