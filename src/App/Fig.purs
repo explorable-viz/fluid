@@ -26,6 +26,7 @@ import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
+import EvalGraph (ProgCxtEval(..))
 import Expr (Expr)
 import Foreign.Object (lookup)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
@@ -37,7 +38,7 @@ import SExpr (Expr(..), Module(..), RecDefs, VarDefs) as S
 import SExpr (desugarModuleFwd)
 import Trace (Trace)
 import Util (type (×), type (+), (×), absurd, error, orElse)
-import Val (class Ann, Env, ProgCxtEval(..), Val(..), append_inv, (<+>))
+import Val (class Ann, Env, Val(..), append_inv, (<+>))
 import Web.Event.EventTarget (eventListener)
 
 data View

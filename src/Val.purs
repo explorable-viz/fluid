@@ -73,17 +73,6 @@ type Env a = Dict (Val a)
 lookup' :: forall a m. MonadThrow Error m => Var -> Dict a -> m a
 lookup' x γ = lookup x γ # orElse ("variable " <> x <> " not found")
 
--- Bunch of loaded modules and datasets, reflecting current somewhat ad hoc approach.
-newtype ProgCxtEval a = ProgCxtEval
-   { progCxt :: ProgCxt a
-   , γ :: Env a
-   }
-
-newtype ProgCxt a = ProgCxt
-   { mods :: List (Module a) -- in reverse order
-   , datasets :: List (Bind (Expr a))
-   }
-
 -- Want a monoid instance but needs a newtype
 append :: forall a. Env a -> Endo (Env a)
 append = unionWith (const identity)
@@ -152,11 +141,6 @@ instance Highlightable Vertex where
 derive instance Functor DictRep
 derive instance Functor MatrixRep
 derive instance Functor Val
-derive instance Newtype (ProgCxt a) _
-derive instance Functor ProgCxt
-derive instance Newtype (ProgCxtEval a) _
-derive instance Functor ProgCxtEval
-derive instance Traversable ProgCxt
 derive instance Foldable Val
 derive instance Traversable Val
 derive instance Functor Fun
@@ -189,13 +173,6 @@ instance Apply MatrixRep where
    apply (MatrixRep (fvss × (n × fnα) × (m × fmα))) (MatrixRep (vss × (n' × nα) × (m' × mα))) =
       MatrixRep $ (A.zipWith (A.zipWith (<*>)) fvss vss) × ((n ≜ n') × fnα nα) × ((m ≜ m') × fmα mα)
 
-instance Apply ProgCxt where
-   apply (ProgCxt { mods: fmods, datasets: fdatasets }) (ProgCxt { mods, datasets }) =
-      ProgCxt
-         { mods: fmods `zipWith (<*>)` mods
-         , datasets: (second (<*>) <$> fdatasets) `zipWith (<*>)` datasets
-         }
-
 instance Foldable DictRep where
    foldl f acc (DictRep d) = foldl (\acc' (a × v) -> foldl f (acc' `f` a) v) acc d
    foldr f = foldrDefault f
@@ -216,11 +193,6 @@ instance Traversable MatrixRep where
          (bitraverse (traverse f) (traverse f))
          m
    sequence = sequenceDefault
-
-instance Foldable ProgCxt where
-   foldl f acc (ProgCxt { mods }) = foldl (foldl f) acc mods
-   foldr f = foldrDefault f
-   foldMap f = foldMapDefaultL f
 
 instance JoinSemilattice a => JoinSemilattice (DictRep a) where
    maybeJoin (DictRep svs) (DictRep svs') = DictRep <$> maybeJoin svs svs'

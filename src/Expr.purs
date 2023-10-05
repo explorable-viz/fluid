@@ -2,12 +2,13 @@ module Expr where
 
 import Prelude hiding (absurd, top)
 
-import Bindings (Var)
+import Bindings (Bind, Var)
 import Control.Apply (lift2)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:), zipWith)
 import Data.Newtype (class Newtype, unwrap)
+import Data.Profunctor.Strong (second)
 import Data.Set (Set, difference, empty, singleton, union, unions)
 import Data.Set (fromFoldable) as S
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
@@ -61,6 +62,12 @@ asExpr (ContExpr e) = e
 asExpr _ = error "Expression expected"
 
 newtype Module a = Module (List (VarDef a + RecDefs a))
+
+-- Bunch of loaded modules (and datasets, reflecting current ad hoc approach to that).
+newtype ProgCxt a = ProgCxt
+   { mods :: List (Module a) -- in reverse order
+   , datasets :: List (Bind (Expr a))
+   }
 
 class FV a where
    fv :: a -> Set Var
@@ -131,6 +138,9 @@ derive instance Foldable Expr
 derive instance Traversable Expr
 derive instance Newtype (Module a) _
 derive instance Functor Module
+derive instance Newtype (ProgCxt a) _
+derive instance Functor ProgCxt
+derive instance Traversable ProgCxt
 
 derive instance Eq a => Eq (Expr a)
 derive instance Eq a => Eq (VarDef a)
@@ -198,6 +208,18 @@ instance Traversable Module where
       Module <$> ((Right <$> traverse (traverse f) ρ) `lift2 (:)` (unwrap <$> traverse f (Module ds)))
 
    sequence = sequenceDefault
+
+instance Apply ProgCxt where
+   apply (ProgCxt { mods: fmods, datasets: fdatasets }) (ProgCxt { mods, datasets }) =
+      ProgCxt
+         { mods: fmods `zipWith (<*>)` mods
+         , datasets: (second (<*>) <$> fdatasets) `zipWith (<*>)` datasets
+         }
+
+instance Foldable ProgCxt where
+   foldl f acc (ProgCxt { mods }) = foldl (foldl f) acc mods
+   foldr f = foldrDefault f
+   foldMap f = foldMapDefaultL f
 
 instance JoinSemilattice a => JoinSemilattice (Elim a) where
    maybeJoin (ElimVar x κ) (ElimVar x' κ') = ElimVar <$> (x ≞ x') <*> maybeJoin κ κ'

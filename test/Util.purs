@@ -21,6 +21,7 @@ import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
+import Expr (ProgCxt)
 import GaloisConnection (GaloisConnection(..))
 import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
@@ -33,7 +34,7 @@ import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
 import Util (successful, (×))
-import Val (class Ann, Env, ProgCxt, Val(..))
+import Val (class Ann, Env, Val(..))
 
 type TestConfig =
    { δv :: Selector Val

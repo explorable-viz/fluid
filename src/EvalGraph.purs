@@ -1,8 +1,10 @@
 module EvalGraph
    ( GraphConfig
+   , ProgCxtEval(..)
    , apply
    , eval
    , eval_module
+   , eval_progCxt
    , graphGC
    , match
    , patternMismatch
@@ -10,12 +12,13 @@ module EvalGraph
 
 import Prelude hiding (apply, add)
 
-import Bindings (varAnon)
+import Bindings (Bind, (↦), varAnon)
 import Control.Monad.Error.Class (class MonadError)
 import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
-import Data.List (List(..), length, snoc, unzip, zip, (:))
+import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
+import Data.Newtype (class Newtype)
 import Data.Set (Set, empty, insert, intersection, singleton, union)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
@@ -23,7 +26,7 @@ import Data.Tuple (fst)
 import DataType (checkArity, arity, consistentWith, dataTypeFor, showCtr)
 import Dict (disjointUnion, fromFoldable, empty, get, keys, lookup, singleton) as D
 import Effect.Exception (Error)
-import Expr (Cont(..), Elim(..), Expr(..), VarDef(..), RecDefs, Module(..), fv, asExpr)
+import Expr (Cont(..), Elim(..), Expr(..), Module(..), ProgCxt(..), RecDefs, VarDef(..), asExpr, fv)
 import GaloisConnection (GaloisConnection(..))
 import Graph (class Graph, Vertex, sinks, vertices)
 import Graph.GraphWriter (class MonadWithGraphAlloc, alloc, new, runWithGraphAllocT)
@@ -31,10 +34,16 @@ import Graph.Slice (bwdSlice, fwdSlice)
 import Lattice (Raw)
 import Pretty (prettyP)
 import Primitive (string, intPair)
-import Util (type (×), check, error, orElse, successful, throw, with, (×))
+import Util (type (×), check, concatM, error, orElse, successful, throw, with, (×))
 import Util.Pair (unzip) as P
-import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), ProgCxtEval(..), Val, for, lookup', restrict, (<+>))
+import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
 import Val (Fun(..), Val(..)) as V
+
+-- Combine these two in some way?
+newtype ProgCxtEval a = ProgCxtEval
+   { progCxt :: ProgCxt a
+   , γ :: Env a
+   }
 
 type GraphConfig g =
    { g :: g
@@ -172,6 +181,20 @@ eval_module γ = go D.empty
       γ'' <- closeDefs (γ <+> γ') ρ αs
       go (γ' <+> γ'') (Module ds) αs
 
+eval_progCxt :: forall m. MonadWithGraphAlloc m => Env Vertex -> ProgCxt Vertex -> m (Env Vertex)
+eval_progCxt primitives (ProgCxt { mods, datasets }) =
+   flip concatM primitives ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
+   where
+   addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
+   addModule mod γ = do
+      γ' <- eval_module γ mod empty
+      pure $ γ <+> γ'
+
+   addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
+   addDataset (x ↦ e) γ = do
+      v <- eval γ e empty
+      pure $ γ <+> D.singleton x v
+
 type GraphEval g =
    { gc :: GaloisConnection (Set Vertex) (Set Vertex)
    , γα :: Env Vertex
@@ -199,3 +222,9 @@ graphGC { g, n, progCxt: ProgCxtEval { γ } } e = do
       bwd αs = vertices (bwdSlice αs g') `intersection` sinks g'
    --   trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->
    pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }
+
+-- ======================
+-- boilerplate
+-- ======================
+derive instance Newtype (ProgCxtEval a) _
+derive instance Functor ProgCxtEval

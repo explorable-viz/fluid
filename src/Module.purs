@@ -5,34 +5,30 @@ import Prelude
 import Affjax.ResponseFormat (string)
 import Affjax.Web (defaultRequest, printError, request)
 import Ann (Raw)
-import Bindings (Bind, Var, (↦))
+import Bindings (Var, (↦))
 import Control.Monad.Error.Class (liftEither, throwError)
 import Control.Monad.Except (class MonadError)
 import Data.Either (Either(..))
 import Data.HTTP.Method (Method(..))
-import Data.List (List(..), reverse, (:))
+import Data.List (List(..), (:))
 import Data.Newtype (class Newtype)
-import Data.Set (empty)
 import Data.Traversable (traverse)
 import Desugarable (desug)
-import Dict (singleton) as D
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Exception (Error)
 import Effect.Exception (error) as E
-import EvalGraph (GraphConfig, eval, eval_module)
-import Expr (Expr, Module)
-import Graph (Vertex)
+import EvalGraph (GraphConfig, ProgCxtEval(..), eval_progCxt)
+import Expr (ProgCxt(..))
 import Graph (empty) as G
 import Graph.GraphImpl (GraphImpl)
-import Graph.GraphWriter (class MonadWithGraphAlloc, alloc, runWithGraphAllocT)
+import Graph.GraphWriter (alloc, runWithGraphAllocT)
 import Parse (module_, program) as P
 import Parsing (runParser)
 import Primitive.Defs (primitives)
 import SExpr (Expr) as S
 import SExpr (desugarModuleFwd)
-import Util ((×), concatM, mapLeft)
+import Util ((×), mapLeft)
 import Util.Parse (SParser)
-import Val (Env, ProgCxt(..), ProgCxtEval(..), (<+>))
 
 -- Mainly serve as documentation
 newtype File = File String
@@ -79,25 +75,11 @@ datasetAs file x (ProgCxt r@{ datasets }) = do
    eα <- parseProgram (Folder "fluid") file >>= desug
    pure $ ProgCxt r { datasets = x ↦ eα : datasets }
 
-eval_progCxt :: forall m. MonadWithGraphAlloc m => ProgCxt Vertex -> m (Env Vertex)
-eval_progCxt (ProgCxt { mods, datasets }) =
-   traverse alloc primitives
-      >>= concatM ((reverse mods <#> addModule) <> (reverse datasets <#> addDataset))
-   where
-   addModule :: Module Vertex -> Env Vertex -> m (Env Vertex)
-   addModule mod γ = do
-      γ' <- eval_module γ mod empty
-      pure $ γ <+> γ'
-
-   addDataset :: Bind (Expr Vertex) -> Env Vertex -> m (Env Vertex)
-   addDataset (x ↦ e) γ = do
-      v <- eval γ e empty
-      pure $ γ <+> D.singleton x v
-
 blah :: forall m. MonadError Error m => Raw ProgCxt -> m (GraphConfig GraphImpl)
 blah progCxt = do
    (g × n) × progCxt' <- runWithGraphAllocT (G.empty × 0) do
       progCxt' <- alloc progCxt
-      γ <- eval_progCxt progCxt'
+      primitives' <- traverse alloc primitives
+      γ <- eval_progCxt primitives' progCxt'
       pure $ ProgCxtEval { progCxt: progCxt', γ }
    pure { g, n, progCxt: progCxt' }
