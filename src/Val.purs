@@ -2,7 +2,7 @@ module Val where
 
 import Prelude hiding (absurd, append)
 
-import Bindings (Var)
+import Bindings (Bind, Var)
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Array ((!!))
@@ -12,6 +12,7 @@ import Data.Exists (Exists)
 import Data.Foldable (class Foldable, foldl, foldrDefault, foldMapDefaultL)
 import Data.List (List(..), (:), zipWith)
 import Data.Newtype (class Newtype)
+import Data.Profunctor.Strong (second)
 import Data.Set (Set, empty, fromFoldable, intersection, member, singleton, toUnfoldable, union)
 import Data.Traversable (class Traversable, sequenceDefault, traverse)
 import DataType (Ctr)
@@ -80,7 +81,7 @@ newtype ProgCxtEval a = ProgCxtEval
 
 newtype ProgCxt a = ProgCxt
    { mods :: List (Module a) -- in reverse order
-   , datasets :: List (Expr a)
+   , datasets :: List (Bind (Expr a))
    }
 
 -- Want a monoid instance but needs a newtype
@@ -192,7 +193,7 @@ instance Apply ProgCxt where
    apply (ProgCxt { mods: fmods, datasets: fdatasets }) (ProgCxt { mods, datasets }) =
       ProgCxt
          { mods: fmods `zipWith (<*>)` mods
-         , datasets: fdatasets `zipWith (<*>)` datasets
+         , datasets: (second (<*>) <$> fdatasets) `zipWith (<*>)` datasets
          }
 
 instance Foldable DictRep where
