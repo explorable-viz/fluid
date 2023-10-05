@@ -44,8 +44,8 @@ type TestConfig =
 logging :: Boolean
 logging = false
 
-testWithSetup ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
-testWithSetup n file progCxt tconfig = do
+test ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
+test n file progCxt tconfig = do
    gconfig <- initialConfig progCxt
    s <- open file
    testPretty s
