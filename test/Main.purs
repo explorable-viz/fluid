@@ -29,11 +29,11 @@ test_scratchpad = second void <$> many
    [ { file: "dtw/matrix-update"
      , fwd_expect:
           "(FNum 0, Infty, Infty, Infty, Infty, Infty, Infty, Infty,\n\
-           \  Infty, FNum 1, FNum 10, FNum 19, Infty, Infty, Infty, Infty,\n\
-           \  Infty, FNum 2, FNum 2, FNum 3, FNum 7, Infty, Infty, Infty,\n\
-           \  Infty, FNum 2, FNum 6, FNum 6, FNum 4, FNum 5, Infty, Infty,\n\
-           \  Infty, Infty, FNum 6, FNum 10, FNum 5, FNum 5, FNum 6, Infty,\n\
-           \  Infty, Infty, Infty, FNum 7, FNum 9, FNum 9, FNum 5, FNum 6, ((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : []))))))))"
+          \  Infty, FNum 1, FNum 10, FNum 19, Infty, Infty, Infty, Infty,\n\
+          \  Infty, FNum 2, FNum 2, FNum 3, FNum 7, Infty, Infty, Infty,\n\
+          \  Infty, FNum 2, FNum 6, FNum 6, FNum 4, FNum 5, Infty, Infty,\n\
+          \  Infty, Infty, FNum 6, FNum 10, FNum 5, FNum 5, FNum 6, Infty,\n\
+          \  Infty, Infty, Infty, FNum 7, FNum 9, FNum 9, FNum 5, FNum 6, ((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : []))))))))"
      }
    ]
    1
