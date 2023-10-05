@@ -23,8 +23,20 @@ tests = concat
    , test_linking
    ]
 
--- test_scratchpad :: Array (String × Aff Unit)
--- test_scratchpad = []
+-- tests = test_scratchpad
+
+test_scratchpad :: Array (String × Aff Unit)
+test_scratchpad = second void <$> many
+   [ { file: "dtw/matrix-update"
+     , fwd_expect:
+          "FNum 0, Infty, Infty, Infty, Infty, Infty, Infty,\n\
+          \Infty, FNum 0, FNum 0, Infty, Infty, Infty, Infty,\n\
+          \Infty, FNum 0, FNum 0, FNum 0, Infty, Infty, Infty,\n\
+          \Infty, Infty, FNum 0, FNum 0, FNum 0, Infty, Infty,\n\
+          \Infty, Infty, Infty, FNum 0, FNum 0, FNum 0, Infty"
+     }
+   ]
+   1
 
 test_desugaring :: Array (String × Aff Unit)
 test_desugaring = second void <$> many desugar_cases 1

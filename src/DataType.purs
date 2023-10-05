@@ -168,4 +168,8 @@ dataTypes = L.fromFoldable
    , dataType "Marker"
         [ "Arrowhead" × 0
         ]
+   , dataType "InfNum"
+        [ "FNum" × 1
+        , "Infty" × 0
+        ]
    ]

@@ -66,6 +66,7 @@ primitives = D.fromFoldable
    , "mod" × binaryZero { i: int, o: int, fwd: mod }
    , "quot" × binaryZero { i: int, o: int, fwd: quot }
    , "rem" × binaryZero { i: int, o: int, fwd: rem }
+   , "matrixUpdate" × extern matrixMut
    ]
 
 error_ :: ForeignOp
@@ -96,8 +97,6 @@ debugLog = mkExists $ ForeignOp' { arity: 1, op': op', op: fwd, op_bwd: unsafePa
    bwd :: OpBwd Unit
    bwd _ = error unimplemented
 
-type ArrayData a = Array2 (Val a)
-
 dims :: ForeignOp
 dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial bwd }
    where
@@ -108,12 +107,12 @@ dims = mkExists $ ForeignOp' { arity: 1, op': op, op: fwd, op_bwd: unsafePartial
       Constr <$> new (singleton α) <@> cPair <@> (v1 : v2 : Nil)
    op _ = throw "Matrix expected"
 
-   fwd :: OpFwd (Raw ArrayData)
+   fwd :: OpFwd (Array2 (Raw Val))
    fwd (Matrix α (MatrixRep (vss × (i × β1) × (j × β2))) : Nil) =
       pure $ (map erase <$> vss) × Constr α cPair (Int β1 i : Int β2 j : Nil)
    fwd _ = throw "Matrix expected"
 
-   bwd :: Partial => OpBwd (Raw ArrayData)
+   bwd :: Partial => OpBwd (Array2 (Raw Val))
    bwd (vss × Constr α c (Int β1 i : Int β2 j : Nil)) | c == cPair =
       Matrix α (MatrixRep (((<$>) botOf <$> vss) × (i × β1) × (j × β2))) : Nil
 
@@ -122,21 +121,51 @@ matrixLookup = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
    op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
-      | c == cPair = matrixGet i j r
+      | c == cPair = pure $ matrixGet i j r
    op _ = throw "Matrix and pair of integers expected"
 
-   fwd :: OpFwd (Raw ArrayData × (Int × Int) × (Int × Int))
+   fwd :: OpFwd (Raw MatrixRep × (Int × Int))
    fwd (Matrix _ r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : Nil)
       | c == cPair = do
-           v <- matrixGet i j r
-           pure $ ((map erase <$> vss) × (i' × j') × (i × j)) × v
+           let v = matrixGet i j r
+           pure $ (MatrixRep ((map erase <$> vss) × ((i' × unit) × (j' × unit))) × (i × j)) × v
    fwd _ = throw "Matrix and pair of integers expected"
 
-   bwd :: OpBwd (Raw ArrayData × (Int × Int) × (Int × Int))
-   bwd ((vss × (i' × j') × (i × j)) × v) =
+   bwd :: OpBwd (Raw MatrixRep × (Int × Int))
+   bwd (((MatrixRep (vss × (i' × _) × (j' × _))) × (i × j)) × v) =
       Matrix bot (matrixUpdate i j (const v) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
          : Constr bot cPair (Int bot i : Int bot j : Nil)
          : Nil
+
+matrixMut :: ForeignOp
+matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
+   where
+   op :: OpGraph
+   op (Matrix α r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
+      | c == cPair = Matrix <$> new (singleton α) <@> (matrixUpdate i j (const v) r)
+   op _ = throw "Matrix, pair of ints, and new val expected"
+
+   fwd :: OpFwd (Raw MatrixRep × (Int × Int) × Raw Val)
+   fwd (Matrix α r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
+      | c == cPair =
+           let
+              oldV = matrixGet i j r
+              newM = matrixUpdate i j (const v) r
+           in
+              pure $ (MatrixRep ((map erase <$> vss) × ((i' × unit) × (j' × unit))) × (i × j) × (erase oldV)) × (Matrix α newM)
+
+   fwd _ = throw "Matrix, pair of ints, and new val expected"
+
+   bwd :: OpBwd (Raw MatrixRep × (Int × Int) × Raw Val)
+   bwd ((((MatrixRep (vss × (i' × _) × (j' × _))) × (i × j) × oldV) × (Matrix α r))) =
+      let
+         newV = matrixGet i j r
+      in
+         Matrix α (matrixUpdate i j (const (map (const bot) oldV)) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
+            : Constr bot cPair (Int bot i : Int bot j : Nil)
+            : newV
+            : Nil
+   bwd _ = error "absurd backwards!"
 
 dict_difference :: ForeignOp
 dict_difference = mkExists $ ForeignOp' { arity: 2, op': op, op: fwd, op_bwd: unsafePartial bwd }

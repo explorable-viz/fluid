@@ -2,10 +2,11 @@ module Example.Example where
 
 import Prelude
 
-import Data.Array ((..))
+-- import Data.Array ((..))
+import Data.List ((:), List(..))
 import Effect (Effect)
 import Effect.Class.Console (log, logShow)
-import Example.Util.DTW (distEuclid, distanceDTWWindow)
+import Example.Util.DTW (costMatrixInit, distEuclid, distanceDTWWindow)
 import Partial.Unsafe (unsafePartial)
 import Util ((×))
 
@@ -16,14 +17,11 @@ main = do
       n = 5
       m = 7
       window = 2
-      nextIndices = do
-         i <- 1 .. n
-         j <- (max 1 (i - window)) .. (min m (i + window))
-         [ (i × j) ]
-   logShow nextIndices
+      initMat = costMatrixInit n m window
+   logShow initMat
    let
-      x = [ 3.0, 1.0, 2.0, 2.0, 1.0 ]
-      y = [ 2.0, 0.0, 0.0, 3.0, 3.0, 1.0, 0.0 ]
+      x = (3.0 : 1.0 : 2.0 : 2.0 : 1.0 : Nil)
+      y = (2.0 : 0.0 : 0.0 : 3.0 : 3.0 : 1.0 : 0.0 : Nil)
       m1 × m2 = unsafePartial $ distanceDTWWindow x y 2 distEuclid
    log "Finished DTW"
    logShow m2
