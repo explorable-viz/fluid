@@ -1,16 +1,41 @@
+let abs x y = if x - y < 0 then negate (x - y) else (x - y);
+let nextIndices n m window = 
+    [(i, j) | i <- [1 .. n],
+              j <- [(max 1 (i - window)) .. (min m (i + window))]];
+
+let costMatrixInit rows cols window =
+      [| let initV = if or (and (n == 1) (m == 1)) (and (abs n m <= window) (not (or (n == 1) (m == 1))))
+                      then FNum 0
+                      else Infty 
+          in initV | (n, m) in (rows, cols) |];
+
 let mat = [| (n+m) | (n,m) in (3, 3)|];
-let fmin Infty Infty = EQ;
-    fmin Infty (FNum y) = GT;
-    fmin (FNum x) Infty = LT;
-    fmin (FNum x) (FNum y) = compare x y;
-let fminimal = foldr1 fmin;
+
+let fcomp Infty Infty = EQ;
+    fcomp Infty (FNum y) = GT;
+    fcomp (FNum x) Infty = LT;
+    fcomp (FNum x) (FNum y) = compare x y;
+
+let fmin x y =
+    match fcomp x y as {
+        LT -> x;
+        EQ -> x;
+        GT -> y
+    };
+let fminimal = foldl1 fmin;
+let fadd Infty (FNum x) = Infty;
+    fadd (FNum x) Infty = Infty;
+    fadd (FNum x) (FNum y) = FNum (x + y);
+    fadd Infty Infty = Infty;
+
 let localMinUpdate seq1 seq2 matrix (i, j) = 
       let iEntr = nth (i - 1) seq1;
           jEntr = nth (j - 1) seq2;
-          dist = iEntr - jEntr;
-          im1 = matrix!(i - 1, j);
-          jm1 = matrix!(i, j - 1);
-          im1jm1 = matrix!(i - 1, j - 1);
-          newVal = dist + (minimum [im1, jm1, im1jm1])
-      in matrixUpdate matrix (i,j) newVal
-in foldl (localMinUpdate [1,50,100] [1, 0,150]) mat [(2, 2),(3,3)]  
+          dist = (iEntr - jEntr) * (iEntr - jEntr);
+          im1 = matrix!(i , j + 1);
+          jm1 = matrix!(i + 1, j);
+          im1jm1 = matrix!(i , j );
+          minim = fminimal [im1,jm1,im1jm1];
+          newVal = fadd (FNum dist) minim
+      in matrixUpdate matrix (i + 1,j + 1) newVal
+in foldl (localMinUpdate [3,1,2,2,1] [2,0,0,3,3,1,0]) (costMatrixInit 6 8 2) (nextIndices 5 7 2)  

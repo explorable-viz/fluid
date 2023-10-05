@@ -26,7 +26,7 @@ tests = test_scratchpad
 
 test_scratchpad :: Array (String × Aff Unit)
 test_scratchpad = second void <$> many
-   [ { file: "dtw/cost-matrix"
+   [ { file: "dtw/matrix-update"
      , fwd_expect:
           "2, 3, 4,\n\
           \3, 52, 5,\n\
