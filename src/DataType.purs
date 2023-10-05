@@ -68,7 +68,7 @@ instance DataTypeFor (Set Ctr) where
 
 -- Sets must be non-empty, but this is a more convenient signature.
 consistentWith :: forall m. MonadError Error m => Set Ctr -> Set Ctr -> m Unit
-consistentWith cs cs' = void $ do
+consistentWith cs cs' = void do
    d <- dataTypeFor cs'
    d' <- dataTypeFor cs'
    with ("constructors of " <> show d' <> " do not include " <> (show (S.map showCtr cs))) (d ≞ d')

@@ -4,69 +4,68 @@ import Prelude hiding (absurd)
 
 import App.Fig (LinkFigSpec)
 import App.Util (Selector)
-import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, zeroRow, sumRow, preciseTime, tdiff)
-import Control.Monad.Error.Class (class MonadThrow, liftEither)
-import Control.Monad.Except (runExceptT)
-import Control.Monad.Trans.Class (lift)
+import Benchmark.Util (BenchRow(..), GraphRow, TraceRow, preciseTime, tdiff)
+import Control.Monad.Error.Class (class MonadError, class MonadThrow)
 import Data.Foldable (foldl)
 import Data.Int (toNumber)
 import Data.List (elem)
-import Data.List.Lazy (List, length)
+import Data.List.Lazy (List, length, replicateM)
 import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
-import Debug (trace)
 import Desug (desugGC)
 import Effect.Aff (Aff)
+import Effect.Aff.Class (class MonadAff)
 import Effect.Class.Console (log)
 import Effect.Exception (Error)
 import EvalBwd (traceGC)
 import EvalGraph (GraphConfig, graphGC)
-import Graph (sinks)
-import Graph (vertices) as G
+import Expr (ProgCxt)
+import GaloisConnection (GaloisConnection(..))
+import Graph (Vertex, selectαs, select𝔹s, sinks, vertices)
 import Graph.GraphImpl (GraphImpl)
 import Graph.Slice (bwdSliceDual, fwdSliceDual, fwdSliceDeMorgan) as G
-import Graph.Slice (selectαs, select𝔹s, vertices)
-import GaloisConnection (GaloisConnection(..))
 import Heterogeneous.Mapping (hmap)
 import Lattice (Raw, botOf, erase)
-import Module (parse)
+import Module (File, initialConfig, open, parse)
 import Parse (program)
 import Pretty (class Pretty, prettyP)
 import SExpr (Expr) as SE
 import Test.Spec.Assertions (fail)
-import Util (MayFailT, successful, (×))
-import Val (Val(..), class Ann)
+import Util (successful, (×))
+import Val (class Ann, Env, Val(..))
 
 type TestConfig =
    { δv :: Selector Val
-   , fwd_expect :: String
+   , fwd_expect :: String -- prettyprinted value after bwd then fwd round-trip
    , bwd_expect :: String
    }
 
--- fwd_expect: prettyprinted value after bwd then fwd round-trip
-testWithSetup ∷ String -> SE.Expr Unit → GraphConfig GraphImpl → TestConfig → Aff BenchRow
-testWithSetup _name s gconfig tconfig =
-   liftEither =<<
-      ( runExceptT $ do
-           testParse s
-           trRow <- testTrace s gconfig tconfig
-           grRow <- testGraph s gconfig tconfig
-           pure $ BenchRow trRow grRow
-      )
+logging :: Boolean
+logging = false
 
-testParse :: forall a. Ann a => SE.Expr a -> MayFailT Aff Unit
-testParse s = do
+test ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
+test n file progCxt tconfig = do
+   gconfig <- initialConfig progCxt
+   s <- open file
+   testPretty s
+   rows <- replicateM n $ do
+      trRow <- testTrace s gconfig.γ tconfig
+      grRow <- testGraph s gconfig tconfig
+      pure $ BenchRow trRow grRow
+   pure $ averageRows rows
+
+testPretty :: forall m a. MonadAff m => MonadError Error m => Ann a => SE.Expr a -> m Unit
+testPretty s = do
    let src = prettyP s
    s' <- parse src program
-   trace ("Non-Annotated:\n" <> src) \_ ->
-      unless (eq (erase s) (erase s')) do
-         log ("SRC\n" <> show (erase s))
-         log ("NEW\n" <> show (erase s'))
-         lift $ fail "not equal"
+   unless (eq (erase s) (erase s')) do
+      log ("SRC\n" <> show (erase s))
+      log ("NEW\n" <> show (erase s'))
+      fail "not equal"
 
-testTrace :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff TraceRow
-testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
+testTrace :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> Env Vertex -> TestConfig -> m TraceRow
+testTrace s γ { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
    GC desug𝔹 <- desugGC s
@@ -74,7 +73,7 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    -- | Eval
    let e = desug.fwd s
    t_eval1 <- preciseTime
-   { gc: GC eval, v } <- traceGC (erase <$> γα) e
+   { gc: GC eval, v } <- traceGC (erase <$> γ) e
    t_eval2 <- preciseTime
 
    -- | Backward
@@ -89,19 +88,17 @@ testTrace s { γα } { δv, bwd_expect, fwd_expect } = do
    let v𝔹 = eval.fwd (γ𝔹 × e𝔹' × top)
    t_fwd2 <- preciseTime
 
-   lift do
-      unless (isGraphical v) $
-         log (prettyP v𝔹)
-      -- | Check backward selections
-      unless (null bwd_expect) $
-         checkPretty "Trace-based source selection" bwd_expect s𝔹
-      -- | Check round-trip selections
-      unless (isGraphical v) $
-         checkPretty "Trace-based value" fwd_expect v𝔹
+   -- | Check backward selections
+   unless (null bwd_expect) $
+      checkPretty "Trace-based source selection" bwd_expect s𝔹
+   -- | Check round-trip selections
+   unless (isGraphical v) do
+      when logging $ log (prettyP v𝔹)
+      checkPretty "Trace-based value" fwd_expect v𝔹
 
    pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tFwd: tdiff t_fwd1 t_fwd2 }
 
-testGraph :: Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> MayFailT Aff GraphRow
+testGraph :: forall m. MonadAff m => MonadError Error m => Raw SE.Expr -> GraphConfig GraphImpl -> TestConfig -> m GraphRow
 testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    -- | Desugaring Galois connections for Unit and Boolean type selections
    GC desug <- desugGC s
@@ -148,33 +145,40 @@ testGraph s gconfig { δv, bwd_expect, fwd_expect } = do
    t_fwdDual1 <- preciseTime
    let
       gfwd_dual = G.fwdSliceDual αs_in g
-      v𝔹_dual = select𝔹s vα (G.vertices gfwd_dual)
+      v𝔹_dual = select𝔹s vα (vertices gfwd_dual)
    t_fwdDual2 <- preciseTime
 
    -- | Forward (round-tripping) using De Morgan dual
    t_fwdAsDeMorgan1 <- preciseTime
    let
       gfwd_demorgan = G.fwdSliceDeMorgan αs_in g
-      v𝔹_demorgan = select𝔹s vα (G.vertices gfwd_demorgan) <#> not
+      v𝔹_demorgan = select𝔹s vα (vertices gfwd_demorgan) <#> not
    t_fwdAsDeMorgan2 <- preciseTime
 
-   lift do
-      -- | Check backward selections
-      unless (null bwd_expect) do
-         checkPretty "Graph-based source selection" bwd_expect s𝔹
-      -- | Check round-trip selections
-      unless (isGraphical v𝔹) do
-         checkPretty "Graph-based value" fwd_expect v𝔹
-         checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹_demorgan
-      αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
-         (flip subset αs_out')
-      -- | To avoid unused variables when benchmarking
-      unless false do
-         log (prettyP e𝔹_dual)
-         log (prettyP e𝔹_all)
-         log (prettyP v𝔹_dual)
+   -- | Check backward selections
+   unless (null bwd_expect) do
+      checkPretty "Graph-based source selection" bwd_expect s𝔹
+   -- | Check round-trip selections
+   unless (isGraphical v𝔹) do
+      checkPretty "Graph-based value" fwd_expect v𝔹
+      checkPretty "Graph-based value (De Morgan)" fwd_expect v𝔹_demorgan
+   αs_out `shouldSatisfy "fwd ⚬ bwd round-tripping property"`
+      (flip subset αs_out')
+   -- | To avoid unused variables when benchmarking
+   when logging do
+      log (prettyP e𝔹_dual)
+      log (prettyP e𝔹_all)
+      log (prettyP v𝔹_dual)
 
-   pure { tEval: tdiff t_eval1 t_eval2, tBwd: tdiff t_bwd1 t_bwd2, tBwdDual: tdiff t_bwdDual1 t_bwdDual2, tBwdAll: tdiff t_bwdAll1 t_bwdAll2, tFwd: tdiff t_fwd1 t_fwd2, tFwdDual: tdiff t_fwdDual1 t_fwdDual2, tFwdAsDemorgan: tdiff t_fwdAsDeMorgan1 t_fwdAsDeMorgan2 }
+   pure
+      { tEval: tdiff t_eval1 t_eval2
+      , tBwd: tdiff t_bwd1 t_bwd2
+      , tBwdDual: tdiff t_bwdDual1 t_bwdDual2
+      , tBwdAll: tdiff t_bwdAll1 t_bwdAll2
+      , tFwd: tdiff t_fwd1 t_fwd2
+      , tFwdDual: tdiff t_fwdDual1 t_fwdDual2
+      , tFwdAsDemorgan: tdiff t_fwdAsDeMorgan1 t_fwdAsDeMorgan2
+      }
 
 type TestSpec =
    { file :: String
@@ -216,9 +220,7 @@ shouldSatisfy msg v pred =
       fail (show v <> " doesn't satisfy predicate: " <> msg)
 
 averageRows :: List BenchRow -> BenchRow
-averageRows rows = averagedTr
+averageRows rows = average $ foldl (<>) mempty rows
    where
    runs = toNumber $ length rows
-
-   summed = foldl sumRow zeroRow rows
-   averagedTr = (\(BenchRow tr gr) -> BenchRow (hmap (\num -> num `div` runs) tr) (hmap (\num -> num `div` runs) gr)) $ summed
+   average (BenchRow tr gr) = BenchRow (hmap (_ `div` runs) tr) (hmap (_ `div` runs) gr)

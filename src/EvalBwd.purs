@@ -118,7 +118,7 @@ evalBwd' v (T.Op op) = D.singleton op v × Op op × bot
 evalBwd' (V.Str α str) T.Const = empty × Str α str × α
 evalBwd' (V.Int α n) T.Const = empty × Int α n × α
 evalBwd' (V.Float α n) T.Const = empty × Float α n × α
-evalBwd' (V.Fun α (V.Closure γ _ σ)) T.Const = γ × Lambda σ × α
+evalBwd' (V.Fun α (V.Closure γ _ σ)) T.Const = γ × Lambda α σ × α
 evalBwd' (V.Record α xvs) (T.Record xts) =
    foldr (∨) empty (xγeαs <#> fst)
       × Record α (xγeαs <#> (fst <<< snd))
@@ -145,7 +145,7 @@ evalBwd' (V.Constr α _ vs) (T.Constr c ts) =
 evalBwd' (V.Matrix α (MatrixRep (vss × (_ × βi) × (_ × βj)))) (T.Matrix tss (x × y) (i' × j') t') =
    (γ ∨ γ') × Matrix α e (x × y) e' × (α ∨ α' ∨ α'')
    where
-   NonEmptyList ijs = nonEmpty $ do
+   NonEmptyList ijs = nonEmpty do
       i <- range 1 i'
       j <- range 1 j'
       L.singleton (i × j)
@@ -188,7 +188,7 @@ evalBwd' v (T.Let (T.VarDef w t1) t2) =
    v' × σ = matchBwd γ2 ContNone α2 w
    γ1' × e1 × α1 = evalBwd' v' t1
 evalBwd' v (T.LetRec ρ t) =
-   (γ1 ∨ γ1') × LetRec ρ' e × (α ∨ α')
+   (γ1 ∨ γ1') × LetRec (α ∨ α') ρ' e × (α ∨ α')
    where
    γ1γ2 × e × α = evalBwd' v t
    γ1 × γ2 = append_inv (S.fromFoldable $ keys ρ) γ1γ2

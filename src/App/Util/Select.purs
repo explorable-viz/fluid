@@ -32,7 +32,7 @@ constrArg :: Ctr -> Int -> Endo (Selector Val)
 constrArg c n δv = unsafePartial $ case _ of
    Constr α c' us | c == c' ->
       let
-         us' = definitely' $ do
+         us' = definitely' do
             u1 <- us !! n
             updateAt n (δv u1) us
       in

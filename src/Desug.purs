@@ -7,14 +7,14 @@ import Desugarable (desug, desugBwd)
 import Effect.Exception (Error)
 import Expr (Expr)
 import GaloisConnection (GaloisConnection(..))
-import Lattice (class BoundedJoinSemilattice, Raw)
+import Lattice (class BoundedLattice, Raw)
 import SExpr (Expr) as S
 import Util (successful)
 
 desugGC
    :: forall a m
     . MonadError Error m
-   => BoundedJoinSemilattice a
+   => BoundedLattice a
    => Raw S.Expr
    -> m (GaloisConnection (S.Expr a) (Expr a))
 desugGC s0 = do
