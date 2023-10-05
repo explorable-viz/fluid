@@ -1,6 +1,5 @@
 module EvalGraph
    ( GraphConfig
-   , ProgCxtEval(..)
    , apply
    , eval
    , eval_module
@@ -18,7 +17,6 @@ import Data.Array (range, singleton) as A
 import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.List (List(..), length, reverse, snoc, unzip, zip, (:))
-import Data.Newtype (class Newtype)
 import Data.Set (Set, empty, insert, intersection, singleton, union)
 import Data.Set as S
 import Data.Traversable (sequence, traverse)
@@ -39,16 +37,11 @@ import Util.Pair (unzip) as P
 import Val (DictRep(..), Env, ForeignOp'(..), MatrixRep(..), Val, for, lookup', restrict, (<+>))
 import Val (Fun(..), Val(..)) as V
 
--- Combine these two in some way?
-newtype ProgCxtEval a = ProgCxtEval
-   { progCxt :: ProgCxt a
-   , γ :: Env a
-   }
-
 type GraphConfig g =
-   { g :: g
+   { progCxt :: ProgCxt Vertex
+   , g :: g
    , n :: Int
-   , progCxt :: ProgCxtEval Vertex
+   , γ :: Env Vertex
    }
 
 {-# Matching #-}
@@ -210,7 +203,7 @@ graphGC
    => GraphConfig g
    -> Raw Expr
    -> m (GraphEval g)
-graphGC { g, n, progCxt: ProgCxtEval { γ } } e = do
+graphGC { g, n, γ } e = do
    (g' × _) × eα × vα <-
       runWithGraphAllocT (g × n) do
          eα <- alloc e
@@ -222,9 +215,3 @@ graphGC { g, n, progCxt: ProgCxtEval { γ } } e = do
       bwd αs = vertices (bwdSlice αs g') `intersection` sinks g'
    --   trace (show (S.size $ sinks g' `S.difference` dom) <> " sinks not in inputs.") \_ ->
    pure { gc: GC { fwd, bwd }, γα: γ, eα, g: g', vα }
-
--- ======================
--- boilerplate
--- ======================
-derive instance Newtype (ProgCxtEval a) _
-derive instance Functor ProgCxtEval

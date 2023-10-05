@@ -10,7 +10,6 @@ import Data.Foldable (foldl)
 import Data.Int (toNumber)
 import Data.List (elem)
 import Data.List.Lazy (List, length, replicateM)
-import Data.Newtype (unwrap)
 import Data.Set (subset)
 import Data.String (null)
 import DataType (dataTypeFor, typeName)
@@ -51,7 +50,7 @@ testWithSetup n file progCxt tconfig = do
    s <- open file
    testPretty s
    rows <- replicateM n $ do
-      trRow <- testTrace s (unwrap gconfig.progCxt).γ tconfig
+      trRow <- testTrace s gconfig.γ tconfig
       grRow <- testGraph s gconfig tconfig
       pure $ BenchRow trRow grRow
    pure $ averageRows rows

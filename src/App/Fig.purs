@@ -26,7 +26,6 @@ import Effect.Console (log)
 import Effect.Exception (Error)
 import Eval (eval, eval_module)
 import EvalBwd (evalBwd)
-import EvalGraph (ProgCxtEval(..))
 import Expr (Expr)
 import Foreign.Object (lookup)
 import Lattice (𝔹, bot, botOf, erase, neg, topOf)
@@ -189,7 +188,7 @@ linkResult x γ0γ e1 e2 t1 _ v1 = do
 
 loadFig :: forall m. MonadAff m => MonadError Error m => FigSpec -> m Fig
 loadFig spec@{ file } = do
-   { progCxt: ProgCxtEval { γ } } <- defaultImports >>= initialConfig
+   { γ } <- defaultImports >>= initialConfig
    let γ0 = botOf <$> γ
    s' <- open file
    let s0 = botOf s'
@@ -205,7 +204,7 @@ loadLinkFig spec@{ file1, file2, dataFile, x } = do
       dir = File "linking/"
       name1 × name2 = (dir <> file1) × (dir <> file2)
    -- views share ambient environment γ
-   { progCxt: ProgCxtEval { γ } } <- defaultImports >>= datasetAs (File "example/" <> dir <> dataFile) x >>= initialConfig
+   { γ } <- defaultImports >>= datasetAs (File "example/" <> dir <> dataFile) x >>= initialConfig
    s1' × s2' <- (×) <$> open name1 <*> open name2
    let
       γ0 = botOf <$> γ
