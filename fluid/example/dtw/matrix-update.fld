@@ -1,5 +1,5 @@
 let mat = [| (n+m) | (n,m) in (3, 3)|];
-let  localMinUpdate matrix (i, j) seq1 seq2 = 
+let  localMinUpdate seq1 seq2 matrix (i, j) = 
       let iEntr = nth (i - 1) seq1;
           jEntr = nth (j - 1) seq2;
           dist = iEntr - jEntr;
@@ -8,4 +8,4 @@ let  localMinUpdate matrix (i, j) seq1 seq2 =
           im1jm1 = matrix!(i - 1, j - 1);
           newVal = dist + (minimum [im1, jm1, im1jm1])
       in matrixUpdate matrix (i,j) newVal
-in localMinUpdate mat (2, 2) [1,50] [1, 0]
+in foldl (localMinUpdate [1,50,100] [1, 0,150]) mat [(2, 2),(3,3)]  
