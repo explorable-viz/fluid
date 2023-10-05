@@ -1,10 +1,9 @@
-let localMinUpdate matrix i j = 
+let mat = [| (n+m) | (n,m) in (3, 3)|];
+let  localMinUpdate matrix (i, j) = 
       let dist = i - j;
           im1 = matrix!(i - 1, j);
           jm1 = matrix!(i, j - 1);
           im1jm1 = matrix!(i - 1, j - 1);
-          newVal = dist + (minimum [im1, jm1, im1jm1]); 
-          newMat = matrixUpdate matrix (i,j) newVal
-      in newMat;
-    mat = [| (n+m) | (n,m) in (3, 3)|]
-in localMinUpdate mat 2 2
+          newVal = dist + (minimum [im1, jm1, im1jm1])
+      in matrixUpdate matrix (i,j) newVal
+in localMinUpdate mat (2, 2)
