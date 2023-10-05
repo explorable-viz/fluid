@@ -25122,7 +25122,8 @@
       /* @__PURE__ */ $Tuple("Viewport", 9)
     ]),
     /* @__PURE__ */ dataType("Transform")([/* @__PURE__ */ $Tuple("Scale", 2), /* @__PURE__ */ $Tuple("Translate", 2)]),
-    /* @__PURE__ */ dataType("Marker")([/* @__PURE__ */ $Tuple("Arrowhead", 0)])
+    /* @__PURE__ */ dataType("Marker")([/* @__PURE__ */ $Tuple("Arrowhead", 0)]),
+    /* @__PURE__ */ dataType("InfNum")([/* @__PURE__ */ $Tuple("FNum", 1), /* @__PURE__ */ $Tuple("Infty", 0)])
   ]);
   var ctrToDataType = /* @__PURE__ */ (() => fromFoldable2(foldableList)(bindList.bind(listMap((d) => listMap((v) => $Tuple(
     v,
@@ -28923,19 +28924,16 @@
       $Tuple(v._2._1, v._2._2)
     );
   };
-  var matrixGet = (dictMonadThrow) => {
-    const orElse2 = orElse(dictMonadThrow);
-    return (i) => (j) => (v) => orElse2("Index out of bounds")((() => {
-      const $5 = index2(v._1)(i - 1 | 0);
-      if ($5.tag === "Just") {
-        return index2($5._1)(j - 1 | 0);
-      }
-      if ($5.tag === "Nothing") {
-        return Nothing;
-      }
-      fail();
-    })());
-  };
+  var matrixGet = (i) => (j) => (v) => definitely("index out of bounds!")((() => {
+    const $3 = index2(v._1)(i - 1 | 0);
+    if ($3.tag === "Just") {
+      return index2($3._1)(j - 1 | 0);
+    }
+    if ($3.tag === "Nothing") {
+      return Nothing;
+    }
+    fail();
+  })());
   var lookup$p = (dictMonadThrow) => {
     const orElse2 = orElse(dictMonadThrow);
     return (x2) => (\u03B3) => orElse2("variable " + (x2 + " not found"))(_lookup(Nothing, Just, x2, \u03B3));
@@ -36211,11 +36209,155 @@
     fail();
   };
   var notEquals = /* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asIntNumberOrString)(asIntNumberOrString)((x2) => (y2) => x2 !== y2)(/* @__PURE__ */ union4(asBooleanBoolean)(asBooleanBoolean)(asNumberString)(asNumberString)((x2) => (y2) => x2 !== y2)((x2) => (y2) => x2 !== y2));
+  var matrixMut = /* @__PURE__ */ $ForeignOp$p({
+    arity: 3,
+    "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
+      const MonadThrow0 = dictMonadError.MonadThrow0();
+      const Functor0 = MonadThrow0.Monad0().Bind1().Apply0().Functor0();
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Matrix") {
+            if (v._2.tag === "Cons") {
+              if (v._2._1.tag === "Constr") {
+                if (v._2._1._3.tag === "Cons") {
+                  if (v._2._1._3._1.tag === "Int") {
+                    if (v._2._1._3._2.tag === "Cons") {
+                      if (v._2._1._3._2._1.tag === "Int") {
+                        if (v._2._1._3._2._2.tag === "Nil") {
+                          if (v._2._2.tag === "Cons") {
+                            if (v._2._2._2.tag === "Nil") {
+                              if (v._2._1._2 === "Pair") {
+                                const $5 = matrixUpdate(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2);
+                                return Functor0.map((f) => f($5))(Functor0.map(Matrix3)(dictMonadWithGraphAlloc.new($Map(
+                                  "Two",
+                                  Leaf2,
+                                  v._1._1,
+                                  unit2,
+                                  Leaf2
+                                ))));
+                              }
+                              return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                            }
+                            return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                          }
+                          return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                        }
+                        return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                      }
+                      return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                    }
+                    return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                  }
+                  return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                }
+                return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+              }
+              return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+            }
+            return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+          }
+          return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+        }
+        return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+      };
+    },
+    op: (dictAnn) => (dictMonadError) => {
+      const MonadThrow0 = dictMonadError.MonadThrow0();
+      const pure2 = MonadThrow0.Monad0().Applicative0().pure;
+      return (v) => {
+        if (v.tag === "Cons") {
+          if (v._1.tag === "Matrix") {
+            if (v._2.tag === "Cons") {
+              if (v._2._1.tag === "Constr") {
+                if (v._2._1._3.tag === "Cons") {
+                  if (v._2._1._3._1.tag === "Int") {
+                    if (v._2._1._3._2.tag === "Cons") {
+                      if (v._2._1._3._2._1.tag === "Int") {
+                        if (v._2._1._3._2._2.tag === "Nil") {
+                          if (v._2._2.tag === "Cons") {
+                            if (v._2._2._2.tag === "Nil") {
+                              if (v._2._1._2 === "Pair") {
+                                return pure2($Tuple(
+                                  $Tuple(
+                                    $Tuple(
+                                      arrayMap(arrayMap(erase))(v._1._2._1),
+                                      $Tuple($Tuple(v._1._2._2._1._1, unit2), $Tuple(v._1._2._2._2._1, unit2))
+                                    ),
+                                    $Tuple(
+                                      $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2),
+                                      functorVal.map((v$1) => unit2)(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2))
+                                    )
+                                  ),
+                                  $Val("Matrix", v._1._1, matrixUpdate(v._2._1._3._1._2)(v._2._1._3._2._1._2)((v$1) => v._2._2._1)(v._1._2))
+                                ));
+                              }
+                              return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                            }
+                            return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                          }
+                          return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                        }
+                        return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                      }
+                      return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                    }
+                    return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                  }
+                  return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+                }
+                return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+              }
+              return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+            }
+            return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+          }
+          return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+        }
+        return MonadThrow0.throwError(error("Matrix, pair of ints, and new val expected"));
+      };
+    },
+    op_bwd: (dictAnn) => {
+      const BoundedJoinSemilattice0 = dictAnn.BoundedLattice1().BoundedJoinSemilattice0();
+      return (v) => {
+        if (v._2.tag === "Matrix") {
+          return $List(
+            "Cons",
+            $Val(
+              "Matrix",
+              v._2._1,
+              matrixUpdate(v._1._2._1._1)(v._1._2._1._2)((() => {
+                const $3 = functorVal.map((v$1) => BoundedJoinSemilattice0.bot)(v._1._2._2);
+                return (v$1) => $3;
+              })())($Tuple(
+                arrayMap(arrayMap(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)))(v._1._1._1),
+                $Tuple($Tuple(v._1._1._2._1._1, BoundedJoinSemilattice0.bot), $Tuple(v._1._1._2._2._1, BoundedJoinSemilattice0.bot))
+              ))
+            ),
+            $List(
+              "Cons",
+              $Val(
+                "Constr",
+                BoundedJoinSemilattice0.bot,
+                "Pair",
+                $List(
+                  "Cons",
+                  $Val("Int", BoundedJoinSemilattice0.bot, v._1._2._1._1),
+                  $List("Cons", $Val("Int", BoundedJoinSemilattice0.bot, v._1._2._1._2), Nil)
+                )
+              ),
+              $List("Cons", matrixGet(v._1._2._1._1)(v._1._2._1._2)(v._2._2), Nil)
+            )
+          );
+        }
+        return unsafePerformEffect(throwException(error("absurd backwards!")));
+      };
+    }
+  });
   var matrixLookup = /* @__PURE__ */ $ForeignOp$p({
     arity: 2,
     "op'": (dictMonadWithGraphAlloc) => (dictMonadError) => {
       const MonadThrow0 = dictMonadError.MonadThrow0();
-      const matrixGet2 = matrixGet(MonadThrow0);
+      const pure2 = MonadThrow0.Monad0().Applicative0().pure;
       return (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Matrix") {
@@ -36228,7 +36370,7 @@
                         if (v._2._1._3._2._2.tag === "Nil") {
                           if (v._2._2.tag === "Nil") {
                             if (v._2._1._2 === "Pair") {
-                              return matrixGet2(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2);
+                              return pure2(matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2));
                             }
                             return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
                           }
@@ -36255,10 +36397,7 @@
     },
     op: (dictAnn) => (dictMonadError) => {
       const MonadThrow0 = dictMonadError.MonadThrow0();
-      const Monad0 = MonadThrow0.Monad0();
-      const bind = Monad0.Bind1().bind;
-      const matrixGet2 = matrixGet(MonadThrow0);
-      const pure2 = Monad0.Applicative0().pure;
+      const pure2 = MonadThrow0.Monad0().Applicative0().pure;
       return (v) => {
         if (v.tag === "Cons") {
           if (v._1.tag === "Matrix") {
@@ -36271,13 +36410,16 @@
                         if (v._2._1._3._2._2.tag === "Nil") {
                           if (v._2._2.tag === "Nil") {
                             if (v._2._1._2 === "Pair") {
-                              return bind(matrixGet2(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2))((v1) => pure2($Tuple(
+                              return pure2($Tuple(
                                 $Tuple(
-                                  arrayMap(arrayMap(erase))(v._1._2._1),
-                                  $Tuple($Tuple(v._1._2._2._1._1, v._1._2._2._2._1), $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2))
+                                  $Tuple(
+                                    arrayMap(arrayMap(erase))(v._1._2._1),
+                                    $Tuple($Tuple(v._1._2._2._1._1, unit2), $Tuple(v._1._2._2._2._1, unit2))
+                                  ),
+                                  $Tuple(v._2._1._3._1._2, v._2._1._3._2._1._2)
                                 ),
-                                v1
-                              )));
+                                matrixGet(v._2._1._3._1._2)(v._2._1._3._2._1._2)(v._1._2)
+                              ));
                             }
                             return MonadThrow0.throwError(error("Matrix and pair of integers expected"));
                           }
@@ -36309,9 +36451,9 @@
         $Val(
           "Matrix",
           BoundedJoinSemilattice0.bot,
-          matrixUpdate(v._1._2._2._1)(v._1._2._2._2)((v$1) => v._2)($Tuple(
-            arrayMap(arrayMap(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)))(v._1._1),
-            $Tuple($Tuple(v._1._2._1._1, BoundedJoinSemilattice0.bot), $Tuple(v._1._2._1._2, BoundedJoinSemilattice0.bot))
+          matrixUpdate(v._1._2._1)(v._1._2._2)((v$1) => v._2)($Tuple(
+            arrayMap(arrayMap(functorVal.map((v$1) => BoundedJoinSemilattice0.bot)))(v._1._1._1),
+            $Tuple($Tuple(v._1._1._2._1._1, BoundedJoinSemilattice0.bot), $Tuple(v._1._1._2._2._1, BoundedJoinSemilattice0.bot))
           ))
         ),
         $List(
@@ -36322,8 +36464,8 @@
             "Pair",
             $List(
               "Cons",
-              $Val("Int", BoundedJoinSemilattice0.bot, v._1._2._2._1),
-              $List("Cons", $Val("Int", BoundedJoinSemilattice0.bot, v._1._2._2._2), Nil)
+              $Val("Int", BoundedJoinSemilattice0.bot, v._1._2._1),
+              $List("Cons", $Val("Int", BoundedJoinSemilattice0.bot, v._1._2._2), Nil)
             )
           ),
           Nil
@@ -36525,7 +36667,7 @@
       const MonadThrow0 = dictMonadError.MonadThrow0();
       const Monad0 = MonadThrow0.Monad0();
       const Bind1 = Monad0.Bind1();
-      const map32 = Bind1.Apply0().Functor0().map;
+      const map42 = Bind1.Apply0().Functor0().map;
       const Applicative0 = Monad0.Applicative0();
       const $7 = traversableWithIndexObject.traverseWithIndex(Applicative0);
       const apply5 = apply3(dictMonadError)(dictAnn);
@@ -36534,7 +36676,7 @@
           if (v._2.tag === "Cons") {
             if (v._2._1.tag === "Dictionary") {
               if (v._2._2.tag === "Nil") {
-                return Bind1.bind(map32(unzip2)($7((v$1) => (v2) => map32((m) => $Tuple(m._1, $Tuple(v2._1, m._2)))(apply5($Tuple(v._1, v2._2))))(v._2._1._2)))((v2) => Applicative0.pure($Tuple(
+                return Bind1.bind(map42(unzip2)($7((v$1) => (v2) => map42((m) => $Tuple(m._1, $Tuple(v2._1, m._2)))(apply5($Tuple(v._1, v2._2))))(v._2._1._2)))((v2) => Applicative0.pure($Tuple(
                   $Tuple(functorVal.map((v$1) => unit2)(v._1), v2._1),
                   $Val("Dictionary", v._2._1._1, v2._2)
                 )));
@@ -36577,7 +36719,7 @@
         const Monad0 = MonadThrow0.Monad0();
         const Bind1 = Monad0.Bind1();
         const Apply0 = Bind1.Apply0();
-        const map32 = Apply0.Functor0().map;
+        const map42 = Apply0.Functor0().map;
         const sequence1 = traversableWithIndexObject.traverseWithIndex(Monad0.Applicative0())((v) => identity11);
         return (v) => {
           if (v.tag === "Cons") {
@@ -36586,19 +36728,19 @@
                 if (v._2._2.tag === "Cons") {
                   if (v._2._2._1.tag === "Dictionary") {
                     if (v._2._2._2.tag === "Nil") {
-                      return Apply0.apply(map32(Dictionary3)(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v._2._2._1._1)(unit2)($Map(
+                      return Apply0.apply(map42(Dictionary3)(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v._2._2._1._1)(unit2)($Map(
                         "Two",
                         Leaf2,
                         v._2._1._1,
                         unit2,
                         Leaf2
-                      )))))(map32(DictRep)(sequence1(intersectionWith((v2) => (v3) => Bind1.bind(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v3._1)(unit2)($Map(
+                      )))))(map42(DictRep)(sequence1(intersectionWith((v2) => (v3) => Bind1.bind(dictMonadWithGraphAlloc.new(insert2(ordVertex)(v3._1)(unit2)($Map(
                         "Two",
                         Leaf2,
                         v2._1,
                         unit2,
                         Leaf2
-                      ))))((\u03B2$p$p) => map32(Tuple(\u03B2$p$p))(Bind1.bind(apply5(v._1)(v2._2))((a) => apply5(a)(v3._2)))))(v._2._1._2)(v._2._2._1._2))));
+                      ))))((\u03B2$p$p) => map42(Tuple(\u03B2$p$p))(Bind1.bind(apply5(v._1)(v2._2))((a) => apply5(a)(v3._2)))))(v._2._1._2)(v._2._2._1._2))));
                     }
                     return MonadThrow0.throwError(error("Function and two dictionaries expected"));
                   }
@@ -36622,7 +36764,7 @@
         const Bind1 = Monad0.Bind1();
         const Applicative0 = Monad0.Applicative0();
         const sequence1 = traversableWithIndexObject.traverseWithIndex(Applicative0)((v) => identity11);
-        const map32 = Bind1.Apply0().Functor0().map;
+        const map42 = Bind1.Apply0().Functor0().map;
         const apply23 = apply22(dictMonadError)(dictAnn);
         return (v) => {
           if (v.tag === "Cons") {
@@ -36631,7 +36773,7 @@
                 if (v._2._2.tag === "Cons") {
                   if (v._2._2._1.tag === "Dictionary") {
                     if (v._2._2._2.tag === "Nil") {
-                      return Bind1.bind(sequence1(intersectionWith((v2) => (v3) => map32((v4) => $Tuple(meet(v2._1)(v3._1), v4))(apply23($Tuple(
+                      return Bind1.bind(sequence1(intersectionWith((v2) => (v3) => map42((v4) => $Tuple(meet(v2._1)(v3._1), v4))(apply23($Tuple(
                         v._1,
                         $Tuple(v2._2, v3._2)
                       ))))(v._2._1._2)(v._2._2._1._2)))((d$p$p) => Applicative0.pure($Tuple(
@@ -36706,7 +36848,7 @@
     },
     op: (dictAnn) => (dictMonadError) => {
       const MonadThrow0 = dictMonadError.MonadThrow0();
-      const map32 = MonadThrow0.Monad0().Bind1().Apply0().Functor0().map;
+      const map42 = MonadThrow0.Monad0().Bind1().Apply0().Functor0().map;
       const orElse2 = orElse(MonadThrow0);
       return (v) => {
         if (v.tag === "Cons") {
@@ -36714,7 +36856,7 @@
             if (v._2.tag === "Cons") {
               if (v._2._1.tag === "Dictionary") {
                 if (v._2._2.tag === "Nil") {
-                  return map32((v1) => $Tuple(v._1._2, v1))(orElse2('Key "' + (v._1._2 + '" not found'))((() => {
+                  return map42((v1) => $Tuple(v._1._2, v1))(orElse2('Key "' + (v._1._2 + '" not found'))((() => {
                     const $6 = _lookup(Nothing, Just, v._1._2, v._2._1._2);
                     if ($6.tag === "Just") {
                       return $Maybe("Just", $6._1._2);
@@ -37186,7 +37328,8 @@
     $Tuple("div", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: intDiv })),
     $Tuple("mod", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: intMod })),
     $Tuple("quot", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: quot })),
-    $Tuple("rem", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: rem }))
+    $Tuple("rem", binaryZero(boundedJoinSemilatticeUni)(isZeroInt)({ i: $$int, o: $$int, fwd: rem })),
+    $Tuple("matrixUpdate", extern1(matrixMut))
   ]))();
 
   // output-es/Module/index.js
