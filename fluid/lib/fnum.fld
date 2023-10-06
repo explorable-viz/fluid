@@ -17,7 +17,7 @@ let add Infty (FNum x) = Infty;
     add (FNum x) (FNum y) = FNum (x + y);
     add Infty Infty = Infty;
 
-let feq Infty Infty = True;
-    feq Infty (FNum x) = False;
-    feq (FNum x) Infty = False;
-    feq (FNum x) (FNum y) = x == y;
+let eq Infty Infty = True;
+    eq Infty (FNum x) = False;
+    eq (FNum x) Infty = False;
+    eq (FNum x) (FNum y) = x == y;
