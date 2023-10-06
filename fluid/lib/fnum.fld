@@ -1,0 +1,20 @@
+let fcomp Infty Infty = EQ;
+    fcomp Infty (FNum y) = GT;
+    fcomp (FNum x) Infty = LT;
+    fcomp (FNum x) (FNum y) = compare x y;
+
+let fmin x y =
+    match fcomp x y as {
+        LT -> x;
+        EQ -> x;
+        GT -> y
+    };
+let fminimal = foldl1 fmin;
+let fadd Infty (FNum x) = Infty;
+    fadd (FNum x) Infty = Infty;
+    fadd (FNum x) (FNum y) = FNum (x + y);
+    fadd Infty Infty = Infty;
+let feq Infty Infty = True;
+    feq Infty (FNum x) = False;
+    feq (FNum x) Infty = False;
+    feq (FNum x) (FNum y) = x == y;
