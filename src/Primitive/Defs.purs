@@ -10,7 +10,7 @@ import Data.Int (quot, rem) as I
 import Data.List (List(..), (:))
 import Data.Number (log, pow) as N
 import Data.Profunctor.Strong (first, second)
-import Data.Set (singleton, insert)
+import Data.Set (empty, insert, singleton)
 import Data.Traversable (for, sequence, traverse)
 import Data.Tuple (fst, snd)
 import DataType (cCons, cPair)
@@ -21,7 +21,7 @@ import Eval (apply, apply2)
 import EvalBwd (apply2Bwd, applyBwd)
 import EvalGraph (apply) as G
 import Graph.GraphWriter (new)
-import Lattice (class BoundedJoinSemilattice, Raw, (∨), (∧), bot, botOf, erase)
+import Lattice (class BoundedJoinSemilattice, Raw, bot, botOf, erase, top, (∧), (∨))
 import Partial.Unsafe (unsafePartial)
 import Prelude (div, mod) as P
 import Primitive (binary, binaryZero, boolean, int, intOrNumber, intOrNumberOrString, number, string, unary, union, union1, unionStr)
@@ -141,27 +141,27 @@ matrixMut :: ForeignOp
 matrixMut = mkExists $ ForeignOp' { arity: 3, op': op, op: fwd, op_bwd: bwd }
    where
    op :: OpGraph
-   op (Matrix α r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
-      | c == cPair = Matrix <$> new (singleton α) <@> (matrixUpdate i j (const v) r)
+   op (Matrix _ r : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
+      | c == cPair = Matrix <$> new empty <@> (matrixUpdate i j (const v) r)
    op _ = throw "Matrix, pair of ints, and new val expected"
 
    fwd :: OpFwd (Raw MatrixRep × (Int × Int) × Raw Val)
-   fwd (Matrix α r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
+   fwd (Matrix _ r@(MatrixRep (vss × (i' × _) × (j' × _))) : Constr _ c (Int _ i : Int _ j : Nil) : v : Nil)
       | c == cPair =
            let
               oldV = matrixGet i j r
               newM = matrixUpdate i j (const v) r
            in
-              pure $ (MatrixRep ((map erase <$> vss) × ((i' × unit) × (j' × unit))) × (i × j) × (erase oldV)) × (Matrix α newM)
+              pure $ (MatrixRep ((map erase <$> vss) × ((i' × unit) × (j' × unit))) × (i × j) × (erase oldV)) × (Matrix top newM)
 
    fwd _ = throw "Matrix, pair of ints, and new val expected"
 
    bwd :: OpBwd (Raw MatrixRep × (Int × Int) × Raw Val)
-   bwd ((((MatrixRep (vss × (i' × _) × (j' × _))) × (i × j) × oldV) × (Matrix α r))) =
+   bwd ((((MatrixRep (vss × (i' × _) × (j' × _))) × (i × j) × oldV) × (Matrix _ r))) =
       let
          newV = matrixGet i j r
       in
-         Matrix α (matrixUpdate i j (const (map (const bot) oldV)) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
+         Matrix bot (matrixUpdate i j (const (map (const bot) oldV)) (MatrixRep (((<$>) botOf <$> vss) × (i' × bot) × (j' × bot))))
             : Constr bot cPair (Int bot i : Int bot j : Nil)
             : newV
             : Nil

@@ -42,7 +42,7 @@ type TestConfig =
    }
 
 logging :: Boolean
-logging = false
+logging = true
 
 test ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
 test n file progCxt tconfig = do
