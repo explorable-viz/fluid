@@ -43,17 +43,21 @@ misc_cases =
    , { file: "dtw/next-indices", fwd_expect: "((1, 1) : ((1, 2) : ((1, 3) : ((2, 1) : ((2, 2) : ((2, 3) : ((2, 4) : ((3, 1) : ((3, 2) : ((3, 3) : ((3, 4) : ((3, 5) : ((4, 2) : ((4, 3) : ((4, 4) : ((4, 5) : ((4, 6) : ((5, 3) : ((5, 4) : ((5, 5) : ((5, 6) : ((5, 7) : []))))))))))))))))))))))" }
    , { file: "dtw/cost-matrix"
      , fwd_expect:
-          "FNum 0, Infty, Infty, Infty, Infty, Infty, Infty,\n\
-          \Infty, FNum 0, FNum 0, Infty, Infty, Infty, Infty,\n\
-          \Infty, FNum 0, FNum 0, FNum 0, Infty, Infty, Infty,\n\
-          \Infty, Infty, FNum 0, FNum 0, FNum 0, Infty, Infty,\n\
-          \Infty, Infty, Infty, FNum 0, FNum 0, FNum 0, Infty"
+          "FNum 0, Infty, Infty, Infty, Infty, Infty, Infty, Infty,\n\
+          \Infty, FNum 0, FNum 0, FNum 0, Infty, Infty, Infty, Infty,\n\
+          \Infty, FNum 0, FNum 0, FNum 0, FNum 0, Infty, Infty, Infty,\n\
+          \Infty, FNum 0, FNum 0, FNum 0, FNum 0, FNum 0, Infty, Infty,\n\
+          \Infty, Infty, FNum 0, FNum 0, FNum 0, FNum 0, FNum 0, Infty,\n\
+          \Infty, Infty, Infty, FNum 0, FNum 0, FNum 0, FNum 0, FNum 0"
      }
    , { file: "dtw/matrix-update"
      , fwd_expect:
-          "100, (1, 2), (1, 3),\n\
-          \(2, 1), (2, 2), (2, 3),\n\
-          \(3, 1), (3, 2), (3, 3)"
+          "(FNum 0, Infty, Infty, Infty, Infty, Infty, Infty, Infty,\n\
+        \  Infty, FNum 1, FNum 10, FNum 19, Infty, Infty, Infty, Infty,\n\
+        \  Infty, FNum 2, FNum 2, FNum 3, FNum 7, Infty, Infty, Infty,\n\
+        \  Infty, FNum 2, FNum 6, FNum 6, FNum 4, FNum 5, Infty, Infty,\n\
+        \  Infty, Infty, FNum 6, FNum 10, FNum 5, FNum 5, FNum 6, Infty,\n\
+        \  Infty, Infty, Infty, FNum 7, FNum 9, FNum 9, FNum 5, FNum 6, ((1, 1) : ((2, 2) : ((2, 3) : ((3, 4) : ((4, 5) : ((5, 6) : ((5, 7) : []))))))))"
      }
    ]
 
