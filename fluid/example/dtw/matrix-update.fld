@@ -1,41 +1,4 @@
-let nextIndices n m window = 
-    [(i, j) | i <- [1 .. n],
-              j <- [(max 1 (i - window)) .. (min m (i + window))]];
-
-let costMatrixInit rows cols window =
-      [| let initV = if or (and (n == 1) (m == 1)) (and (abs n m <= window) (not (or (n == 1) (m == 1))))
-                      then FNum 0
-                      else Infty 
-          in initV | (n, m) in (rows, cols) |];
-
-let mat = [| (n+m) | (n,m) in (3, 3)|];
-
-let minAndPrev (i, j) im1 jm1 ijm1 = 
-    let minim = fminimal [im1, jm1, ijm1] in
-        if feq minim im1 then
-            ((i, j + 1), minim)
-        else
-            if feq minim jm1 then
-                ((i + 1, j ), minim)
-            else ((i, j), minim);
-let extractPath indmatrix (i, j) =
-    let traverser (n,m) matrix accum =
-        if and (n == 1) (m == 1)
-        then accum
-        else
-            traverser (matrix!(n,m)) matrix ((n - 1,m - 1) : accum)
-    in traverser (i,j) indmatrix Nil;        
-let localMinUpdate seq1 seq2 (costmatrix, indmatrix) (i, j) = 
-      let iEntr = nth (i - 1) seq1;
-          jEntr = nth (j - 1) seq2;
-          dist = (iEntr - jEntr) * (iEntr - jEntr);
-          im1 = costmatrix!(i , j + 1);
-          jm1 = costmatrix!(i + 1, j);
-          im1jm1 = costmatrix!(i , j );
-          (prev, minim) = minAndPrev (i, j) im1 jm1 im1jm1;
-          newVal = fadd (FNum dist) minim
-      in (matrixUpdate costmatrix (i + 1,j + 1) newVal, matrixUpdate indmatrix (i + 1,j + 1) prev)
-in
-    let (finished, indices) = foldl (localMinUpdate [3,1,2,2,1] [2,0,0,3,3,1,0]) (costMatrixInit 6 8 2, [| 0 | (i,j) in (6, 8) |]) (nextIndices 5 7 2)
-    in
-        (finished, extractPath indices (6,8))
+let seq1 = [3,1,2,2,1];
+    seq2 = [2,0,0,3,3,1,0];
+    window = 2
+in computeDTW seq1 seq2 window

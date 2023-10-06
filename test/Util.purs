@@ -48,7 +48,7 @@ test ∷ Int -> File -> ProgCxt Unit -> TestConfig -> Aff BenchRow
 test n file progCxt tconfig = do
    gconfig <- initialConfig progCxt
    s <- open file
-   -- testPretty s
+   testPretty s
    rows <- replicateM n $ do
       trRow <- testTrace s gconfig.γ tconfig
       grRow <- testGraph s gconfig tconfig
