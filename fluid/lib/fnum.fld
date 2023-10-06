@@ -10,7 +10,7 @@ let fmin x y =
         GT -> y
     };
 
-let fminimal = foldl1 fmin;
+let minimal = foldl1 fmin;
 
 let add Infty (FNum x) = Infty;
     add (FNum x) Infty = Infty;
