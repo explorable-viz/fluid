@@ -6,7 +6,7 @@ import Control.Apply (lift2)
 import Control.Comonad (extract)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
 import Control.Monad.Except (Except, ExceptT(..), runExceptT)
-import Control.MonadPlus (class MonadPlus, empty)
+import Control.MonadPlus (class Alternative, guard)
 import Data.Array ((!!), updateAt)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
@@ -60,9 +60,10 @@ definitely' = definitely absurd
 get :: forall k v. Ord k => k -> Map k v -> v
 get k = definitely' <<< M.lookup k
 
-onlyIf :: Boolean -> forall m a. MonadPlus m => a -> m a
-onlyIf true = pure
-onlyIf false = const empty
+onlyIf :: forall m a. Bind m => Alternative m => Boolean -> a -> m a
+onlyIf b a = do
+   guard b
+   pure a
 
 type MayFail a = Except Error a
 type MayFailT m = ExceptT Error m
