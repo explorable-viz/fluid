@@ -19181,6 +19181,18 @@
     fail();
   })(k)(m);
 
+  // output-es/Control.Alternative/index.js
+  var guard = (dictAlternative) => {
+    const pure2 = dictAlternative.Applicative0().pure;
+    const empty5 = dictAlternative.Plus1().empty;
+    return (v) => {
+      if (v) {
+        return pure2(unit2);
+      }
+      return empty5;
+    };
+  };
+
   // output-es/Control.Category/index.js
   var categoryFn = { identity: (x2) => x2, Semigroupoid0: () => semigroupoidFn };
 
@@ -19281,6 +19293,7 @@
   var strongFn = /* @__PURE__ */ (() => ({ first: (a2b) => (v) => $Tuple(a2b(v._1), v._2), second: functorTuple.map, Profunctor0: () => profunctorFn }))();
 
   // output-es/Util/index.js
+  var identity12 = (x2) => x2;
   var intercalate2 = (sep) => (xs) => {
     const go = (go$a0$copy) => (go$a1$copy) => {
       let go$a0 = go$a0$copy, go$a1 = go$a1$copy, go$c = true, go$r;
@@ -19308,7 +19321,6 @@
     };
     return go({ init: true, acc: Nil })(xs).acc;
   };
-  var identity12 = (x2) => x2;
   var $$with = (dictMonadError) => {
     const throwError = dictMonadError.MonadThrow0().throwError;
     return (msg) => (m) => dictMonadError.catchError(m)((e) => throwError(error(message(e) + (() => {
@@ -19332,6 +19344,11 @@
       fail();
     };
   };
+  var onlyIf = (dictBind) => (dictAlternative) => {
+    const guard2 = guard(dictAlternative);
+    const pure1 = dictAlternative.Applicative0().pure;
+    return (b) => (a) => dictBind.bind(guard2(b))(() => pure1(a));
+  };
   var mayFailEq = (dictMonadError) => {
     const orElse1 = orElse(dictMonadError.MonadThrow0());
     return (dictShow) => (dictEq) => (x2) => (x$p) => orElse1(dictShow.show(x2) + (" \u2260 " + dictShow.show(x$p)))((() => {
@@ -19345,12 +19362,13 @@
       fail();
     })());
   };
-  var successful = (v) => {
-    if (v.tag === "Right") {
-      return v._1;
+  var mapLeft = (a) => bifunctorEither.bimap(a)(identity12);
+  var successful = (x2) => {
+    if (x2.tag === "Right") {
+      return x2._1;
     }
-    if (v.tag === "Left") {
-      return unsafePerformEffect(throwException(error(message(v._1))));
+    if (x2.tag === "Left") {
+      return unsafePerformEffect(throwException(error(showErrorImpl(x2._1))));
     }
     fail();
   };
@@ -35237,6 +35255,7 @@
   // output-es/Parse/index.js
   var fromFoldable11 = /* @__PURE__ */ (() => fromFoldableImpl(foldableList.foldr))();
   var fromFoldable18 = /* @__PURE__ */ (() => fromFoldableImpl(foldableNonEmptyList.foldr))();
+  var onlyIf2 = /* @__PURE__ */ onlyIf(bindParserT)(alternativeParserT);
   var choose2 = /* @__PURE__ */ choose(altParserT);
   var identity23 = (x2) => x2;
   var fanin3 = /* @__PURE__ */ fanin(categoryFn)(choiceFn);
@@ -35307,12 +35326,7 @@
     more,
     lift1,
     $$throw2,
-    (state2, a) => more((v2) => {
-      if (!isCtrName(a)) {
-        return done(state2, a);
-      }
-      return fail2("No alternative")(state2, more, lift1, $$throw2, done);
-    })
+    (state2, a) => more((v2) => onlyIf2(!isCtrName(a))(a)(state2, more, lift1, $$throw2, done))
   ));
   var field2 = (p) => (state1, more, lift1, $$throw2, done) => more((v2) => more((v1) => ident(
     state1,
@@ -35337,12 +35351,7 @@
     more,
     lift1,
     $$throw2,
-    (state2, a) => more((v2) => {
-      if (isCtrName(a)) {
-        return done(state2, a);
-      }
-      return fail2("No alternative")(state2, more, lift1, $$throw2, done);
-    })
+    (state2, a) => more((v2) => onlyIf2(isCtrName(a))(a)(state2, more, lift1, $$throw2, done))
   ));
   var simplePattern = (pattern$p) => altParserT.alt($$try(token.brackets((state1, v, v1, v2, done) => done(state1, PListEmpty))))(altParserT.alt((() => {
     const $1 = (() => {
@@ -35454,18 +35463,11 @@
       more,
       lift1,
       $$throw2,
-      (state2, a) => more((v2) => (() => {
-        if (":" === definitely("absurd")(charAt2(0)(a)) && op === a) {
-          return applicativeParserT.pure;
-        }
-        return (v) => fail2("No alternative");
-      })()((\u03C0) => (\u03C0$p) => $Pattern("PConstr", a, $List("Cons", \u03C0, $List("Cons", \u03C0$p, Nil))))(
-        state2,
-        more,
-        lift1,
-        $$throw2,
-        done
-      ))
+      (state2, a) => more((v2) => onlyIf2(":" === definitely("absurd")(charAt2(0)(a)) && op === a)((\u03C0) => (\u03C0$p) => $Pattern(
+        "PConstr",
+        a,
+        $List("Cons", \u03C0, $List("Cons", \u03C0$p, Nil))
+      ))(state2, more, lift1, $$throw2, done))
     ))));
     const go$lazy = binding(() => lazyParserT.defer((v) => $0((() => {
       const rest = (v$1) => {
@@ -35634,12 +35636,7 @@
       more,
       lift1,
       $$throw2,
-      (state2, a) => more((v2) => (() => {
-        if (op === a) {
-          return applicativeParserT.pure;
-        }
-        return (v) => fail2("No alternative");
-      })()((() => {
+      (state2, a) => more((v2) => onlyIf2(op === a)((() => {
         if (op === ".") {
           return (e) => (e$p) => {
             if (e$p.tag === "Var") {
@@ -37333,14 +37330,15 @@
     const $1 = dictMonadError.MonadThrow0();
     const $2 = $1.Monad0().Applicative0().pure;
     return (src) => {
-      const $4 = runParserT1(src);
+      const $4 = mapLeft((x2) => error(showParseError.show(x2)));
+      const $5 = runParserT1(src);
       return (x2) => {
-        const $6 = $4(x2);
-        if ($6.tag === "Left") {
-          return $1.throwError(error(showParseError.show($6._1)));
+        const $7 = $4($5(x2));
+        if ($7.tag === "Left") {
+          return $1.throwError($7._1);
         }
-        if ($6.tag === "Right") {
-          return $2($6._1);
+        if ($7.tag === "Right") {
+          return $2($7._1);
         }
         fail();
       };
