@@ -25,6 +25,9 @@ type ToFrom d a =
    , unpack :: Val a -> d × a
    }
 
+typeError :: forall a b. Val a -> String -> b
+typeError v typeName = error (typeName <> " expected; got " <> prettyP (erase v))
+
 int :: forall a. ToFrom Int a
 int =
    { pack: \(n × α) -> Int α n
@@ -32,7 +35,7 @@ int =
    }
    where
    unpack (Int α n) = n × α
-   unpack v = error ("Int expected; got " <> prettyP (erase v))
+   unpack v = typeError v "Int"
 
 number :: forall a. ToFrom Number a
 number =
@@ -41,7 +44,7 @@ number =
    }
    where
    unpack (Float α n) = n × α
-   unpack v = error ("Float expected; got " <> prettyP (erase v))
+   unpack v = typeError v "Float"
 
 string :: forall a. ToFrom String a
 string =
@@ -50,7 +53,7 @@ string =
    }
    where
    unpack (Str α str) = str × α
-   unpack v = error ("Str expected; got " <> prettyP (erase v))
+   unpack v = typeError v "Str"
 
 intOrNumber :: forall a. ToFrom (Int + Number) a
 intOrNumber =
@@ -62,7 +65,7 @@ intOrNumber =
    where
    unpack (Int α n) = Left n × α
    unpack (Float α n) = Right n × α
-   unpack v = error ("Int or Float expected; got " <> prettyP (erase v))
+   unpack v = typeError v "Int or Float"
 
 intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
@@ -76,7 +79,7 @@ intOrNumberOrString =
    unpack (Int α n) = Left n × α
    unpack (Float α n) = Right (Left n) × α
    unpack (Str α str) = Right (Right str) × α
-   unpack v = error ("Int, Float or Str expected; got " <> prettyP (erase v))
+   unpack v = typeError v "Int, Float or Str"
 
 intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
@@ -85,7 +88,7 @@ intPair =
    }
    where
    unpack (Constr α c (v : v' : Nil)) | c == cPair = (int.unpack v × int.unpack v') × α
-   unpack v = error ("Pair expected; got " <> prettyP (erase v))
+   unpack v = typeError v "Pair"
 
 matrixRep :: forall a. Ann a => ToFrom (MatrixRep a) a
 matrixRep =
@@ -94,7 +97,7 @@ matrixRep =
    }
    where
    unpack (Matrix α m) = m × α
-   unpack v = error ("Matrix expected; got " <> prettyP v)
+   unpack v = typeError v "Matrix"
 
 record :: forall a. Ann a => ToFrom (Dict (Val a)) a
 record =
@@ -103,7 +106,7 @@ record =
    }
    where
    unpack (Record α xvs) = xvs × α
-   unpack v = error ("Record expected; got " <> prettyP v)
+   unpack v = typeError v "Record"
 
 boolean :: forall a. ToFrom Boolean a
 boolean =
@@ -116,7 +119,7 @@ boolean =
    unpack (Constr α c Nil)
       | c == cTrue = true × α
       | c == cFalse = false × α
-   unpack v = error ("Boolean expected; got " <> prettyP (erase v))
+   unpack v = typeError v "Boolean"
 
 class IsZero a where
    isZero :: a -> Boolean
