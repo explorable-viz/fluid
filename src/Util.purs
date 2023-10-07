@@ -10,12 +10,12 @@ import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
-import Data.Identity (Identity(..))
 import Data.List (List(..), (:), intercalate)
 import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map)
 import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&), (***))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -80,8 +80,7 @@ mapLeft :: forall a b c. (a -> c) -> Either a b -> Either c b
 mapLeft = flip bimap identity
 
 successful :: forall a. MayFail a -> a
-successful (ExceptT (Identity (Right x))) = x
-successful (ExceptT (Identity (Left e))) = error $ message e
+successful (ExceptT e) = unwrap e # fromRight
 
 successfulWith :: String -> forall a. MayFail a -> a
 successfulWith msg = successful <<< with msg
@@ -152,7 +151,6 @@ unzip = map fst &&& map snd
 both :: forall a b. (a -> b) -> a × a -> b × b
 both f = f *** f
 
--- Couldn't find these in standard library
 assoc1 :: forall a b c. (a × b) × c -> a × (b × c)
 assoc1 ((a × b) × c) = a × (b × c)
 
