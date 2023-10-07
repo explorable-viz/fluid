@@ -28,45 +28,41 @@ type ToFrom d a =
 int :: forall a. ToFrom Int a
 int =
    { constr: \(n × α) -> Int α n
-   , match: match'
+   , match
    }
    where
-   match' :: _
-   match' (Int α n) = n × α
-   match' v = error ("Int expected; got " <> prettyP (erase v))
+   match (Int α n) = n × α
+   match v = error ("Int expected; got " <> prettyP (erase v))
 
 number :: forall a. ToFrom Number a
 number =
    { constr: \(n × α) -> Float α n
-   , match: match'
+   , match
    }
    where
-   match' :: _
-   match' (Float α n) = n × α
-   match' v = error ("Float expected; got " <> prettyP (erase v))
+   match (Float α n) = n × α
+   match v = error ("Float expected; got " <> prettyP (erase v))
 
 string :: forall a. ToFrom String a
 string =
    { constr: \(str × α) -> Str α str
-   , match: match'
+   , match: match
    }
    where
-   match' :: _
-   match' (Str α str) = str × α
-   match' v = error ("Str expected; got " <> prettyP (erase v))
+   match (Str α str) = str × α
+   match v = error ("Str expected; got " <> prettyP (erase v))
 
 intOrNumber :: forall a. ToFrom (Int + Number) a
 intOrNumber =
    { constr: case _ of
         Left n × α -> Int α n
         Right n × α -> Float α n
-   , match: match'
+   , match
    }
    where
-   match' :: Val a -> (Int + Number) × a
-   match' (Int α n) = Left n × α
-   match' (Float α n) = Right n × α
-   match' v = error ("Int or Float expected; got " <> prettyP (erase v))
+   match (Int α n) = Left n × α
+   match (Float α n) = Right n × α
+   match v = error ("Int or Float expected; got " <> prettyP (erase v))
 
 intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
@@ -74,58 +70,54 @@ intOrNumberOrString =
         Left n × α -> Int α n
         Right (Left n) × α -> Float α n
         Right (Right str) × α -> Str α str
-   , match: match'
+   , match
    }
    where
-   match' :: Val a -> (Int + Number + String) × a
-   match' (Int α n) = Left n × α
-   match' (Float α n) = Right (Left n) × α
-   match' (Str α str) = Right (Right str) × α
-   match' v = error ("Int, Float or Str expected; got " <> prettyP (erase v))
+   match (Int α n) = Left n × α
+   match (Float α n) = Right (Left n) × α
+   match (Str α str) = Right (Right str) × α
+   match v = error ("Int, Float or Str expected; got " <> prettyP (erase v))
 
 intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
    { constr: \((nβ × mβ') × α) -> Constr α cPair (int.constr nβ : int.constr mβ' : Nil)
-   , match: match'
+   , match
    }
    where
-   match' :: Val a -> ((Int × a) × (Int × a)) × a
-   match' (Constr α c (v : v' : Nil)) | c == cPair = (int.match v × int.match v') × α
-   match' v = error ("Pair expected; got " <> prettyP (erase v))
+   match (Constr α c (v : v' : Nil)) | c == cPair = (int.match v × int.match v') × α
+   match v = error ("Pair expected; got " <> prettyP (erase v))
 
 matrixRep :: forall a. Ann a => ToFrom (MatrixRep a) a
 matrixRep =
    { constr: \(m × α) -> Matrix α m
-   , match: match'
+   , match
    }
    where
-   match' :: Ann a => Val a -> MatrixRep a × a
-   match' (Matrix α m) = m × α
-   match' v = error ("Matrix expected; got " <> prettyP v)
+   match (Matrix α m) = m × α
+   match v = error ("Matrix expected; got " <> prettyP v)
 
 record :: forall a. Ann a => ToFrom (Dict (Val a)) a
 record =
    { constr: \(xvs × α) -> Record α xvs
-   , match: match'
+   , match
    }
    where
-   match' :: Ann a => _
-   match' (Record α xvs) = xvs × α
-   match' v = error ("Record expected; got " <> prettyP v)
+   match :: Ann a => _
+   match (Record α xvs) = xvs × α
+   match v = error ("Record expected; got " <> prettyP v)
 
 boolean :: forall a. ToFrom Boolean a
 boolean =
    { constr: case _ of
         true × α -> Constr α cTrue Nil
         false × α -> Constr α cFalse Nil
-   , match: match'
+   , match
    }
    where
-   match' :: Val a -> Boolean × a
-   match' (Constr α c Nil)
+   match (Constr α c Nil)
       | c == cTrue = true × α
       | c == cFalse = false × α
-   match' v = error ("Boolean expected; got " <> prettyP (erase v))
+   match v = error ("Boolean expected; got " <> prettyP (erase v))
 
 class IsZero a where
    isZero :: a -> Boolean
