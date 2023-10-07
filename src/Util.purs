@@ -72,11 +72,6 @@ orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
 orElse s Nothing = throwError $ E.error s
 orElse _ (Just x) = pure x
 
-ignoreMessage :: forall a. MayFail a -> Maybe a
-ignoreMessage = runExceptT >>> extract >>> case _ of
-   (Left _) -> Nothing
-   (Right x) -> Just x
-
 fromRight :: forall a. Error + a -> a
 fromRight (Right x) = x
 fromRight (Left e) = error $ show e
