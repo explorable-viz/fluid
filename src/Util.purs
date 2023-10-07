@@ -3,11 +3,11 @@ module Util where
 import Prelude hiding (absurd)
 
 import Control.Apply (lift2)
-import Control.Comonad (extract)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
-import Control.Monad.Except (Except, ExceptT(..), runExceptT)
+import Control.Monad.Except (Except, ExceptT(..))
 import Control.MonadPlus (class Alternative, guard)
 import Data.Array ((!!), updateAt)
+import Data.Bifunctor (bimap)
 import Data.Either (Either(..))
 import Data.Foldable (class Foldable, foldr)
 import Data.Identity (Identity(..))
@@ -77,8 +77,7 @@ fromRight (Right x) = x
 fromRight (Left e) = error $ show e
 
 mapLeft :: forall a b c. (a -> c) -> Either a b -> Either c b
-mapLeft f (Left x) = Left (f x)
-mapLeft _ (Right x) = Right x
+mapLeft = flip bimap identity
 
 successful :: forall a. MayFail a -> a
 successful (ExceptT (Identity (Right x))) = x
