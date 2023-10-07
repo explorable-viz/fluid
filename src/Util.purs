@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
-import Control.Monad.Except (Except, ExceptT(..))
+import Control.Monad.Except (Except, ExceptT(..), runExcept)
 import Control.MonadPlus (class Alternative, guard)
 import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
@@ -81,7 +81,7 @@ mapLeft :: forall a b c. (a -> c) -> Either a b -> Either c b
 mapLeft = flip bimap identity
 
 successful :: forall a. MayFail a -> a
-successful (ExceptT e) = unwrap e # fromRight
+successful = runExcept >>> fromRight
 
 successfulWith :: String -> forall a. MayFail a -> a
 successfulWith msg = successful <<< with msg
