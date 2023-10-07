@@ -30,6 +30,7 @@ infixr 6 Tuple as ×
 
 infixr 6 type Either as + -- standard library has \/
 
+-- Rethink: has same name as Effect.Exception.error but without the type!
 error :: ∀ a. String -> a
 error msg = unsafePerformEffect (throw msg)
 
