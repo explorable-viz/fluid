@@ -117,7 +117,7 @@ eval γ (Record α xes) α' = do
 eval γ (Dictionary α ees) α' = do
    (ts × vs) × (ts' × us) <- traverse (traverse (flip (eval γ) α')) ees <#> (P.unzip >>> (unzip # both))
    let
-      ss × αs = (vs <#> \u -> string.match u) # unzip
+      ss × αs = (vs <#> \u -> string.unpack u) # unzip
       d = D.fromFoldable $ zip ss (zip αs us)
    pure $ T.Dictionary (zip ss (zip ts ts')) (d <#> snd >>> erase) × V.Dictionary (α ∧ α') (DictRep d)
 eval γ (Constr α c es) α' = do
@@ -126,7 +126,7 @@ eval γ (Constr α c es) α' = do
    pure (T.Constr c ts × V.Constr (α ∧ α') c vs)
 eval γ (Matrix α e (x × y) e') α' = do
    t × v <- eval γ e' α'
-   let (i' × β) × (j' × β') = fst (intPair.match v)
+   let (i' × β) × (j' × β') = fst (intPair.unpack v)
    check (i' × j' >= 1 × 1) ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
    tss × vss <- unzipToArray <$> ((<$>) unzipToArray) <$>
       ( sequence do
