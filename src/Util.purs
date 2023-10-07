@@ -4,7 +4,7 @@ import Prelude hiding (absurd)
 
 import Control.Apply (lift2)
 import Control.Monad.Error.Class (class MonadError, class MonadThrow, catchError, throwError)
-import Control.Monad.Except (Except, ExceptT(..), runExcept)
+import Control.Monad.Except (Except, ExceptT, runExcept)
 import Control.MonadPlus (class Alternative, guard)
 import Data.Array ((!!), updateAt)
 import Data.Bifunctor (bimap)
@@ -15,7 +15,6 @@ import Data.List.NonEmpty (NonEmptyList(..))
 import Data.Map (Map)
 import Data.Map (lookup, unionWith) as M
 import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap)
 import Data.NonEmpty ((:|))
 import Data.Profunctor.Strong ((&&&), (***))
 import Data.Tuple (Tuple(..), fst, snd)
@@ -73,15 +72,13 @@ orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
 orElse s Nothing = throw s
 orElse _ (Just x) = pure x
 
-fromRight :: forall a. Error + a -> a
-fromRight (Right x) = x
-fromRight (Left e) = error $ show e
-
 mapLeft :: forall a b c. (a -> c) -> Either a b -> Either c b
 mapLeft = flip bimap identity
 
 successful :: forall a. MayFail a -> a
-successful = runExcept >>> fromRight
+successful = runExcept >>> case _ of
+   Right x -> x
+   Left e -> error $ show e
 
 successfulWith :: String -> forall a. MayFail a -> a
 successfulWith msg = successful <<< with msg
