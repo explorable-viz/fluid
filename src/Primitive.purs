@@ -21,103 +21,102 @@ import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph
 -- pattern-matching and construction for data types. Wasn't able to make a typeclass version of this
 -- work with the required higher-rank polymorphism.
 type ToFrom d a =
-   { constr :: d × a -> Val a
-   , match :: Val a -> d × a
+   { pack :: d × a -> Val a
+   , unpack :: Val a -> d × a
    }
 
 int :: forall a. ToFrom Int a
 int =
-   { constr: \(n × α) -> Int α n
-   , match
+   { pack: \(n × α) -> Int α n
+   , unpack
    }
    where
-   match (Int α n) = n × α
-   match v = error ("Int expected; got " <> prettyP (erase v))
+   unpack (Int α n) = n × α
+   unpack v = error ("Int expected; got " <> prettyP (erase v))
 
 number :: forall a. ToFrom Number a
 number =
-   { constr: \(n × α) -> Float α n
-   , match
+   { pack: \(n × α) -> Float α n
+   , unpack
    }
    where
-   match (Float α n) = n × α
-   match v = error ("Float expected; got " <> prettyP (erase v))
+   unpack (Float α n) = n × α
+   unpack v = error ("Float expected; got " <> prettyP (erase v))
 
 string :: forall a. ToFrom String a
 string =
-   { constr: \(str × α) -> Str α str
-   , match: match
+   { pack: \(str × α) -> Str α str
+   , unpack
    }
    where
-   match (Str α str) = str × α
-   match v = error ("Str expected; got " <> prettyP (erase v))
+   unpack (Str α str) = str × α
+   unpack v = error ("Str expected; got " <> prettyP (erase v))
 
 intOrNumber :: forall a. ToFrom (Int + Number) a
 intOrNumber =
-   { constr: case _ of
+   { pack: case _ of
         Left n × α -> Int α n
         Right n × α -> Float α n
-   , match
+   , unpack
    }
    where
-   match (Int α n) = Left n × α
-   match (Float α n) = Right n × α
-   match v = error ("Int or Float expected; got " <> prettyP (erase v))
+   unpack (Int α n) = Left n × α
+   unpack (Float α n) = Right n × α
+   unpack v = error ("Int or Float expected; got " <> prettyP (erase v))
 
 intOrNumberOrString :: forall a. ToFrom (Int + Number + String) a
 intOrNumberOrString =
-   { constr: case _ of
+   { pack: case _ of
         Left n × α -> Int α n
         Right (Left n) × α -> Float α n
         Right (Right str) × α -> Str α str
-   , match
+   , unpack
    }
    where
-   match (Int α n) = Left n × α
-   match (Float α n) = Right (Left n) × α
-   match (Str α str) = Right (Right str) × α
-   match v = error ("Int, Float or Str expected; got " <> prettyP (erase v))
+   unpack (Int α n) = Left n × α
+   unpack (Float α n) = Right (Left n) × α
+   unpack (Str α str) = Right (Right str) × α
+   unpack v = error ("Int, Float or Str expected; got " <> prettyP (erase v))
 
 intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
-   { constr: \((nβ × mβ') × α) -> Constr α cPair (int.constr nβ : int.constr mβ' : Nil)
-   , match
+   { pack: \((nβ × mβ') × α) -> Constr α cPair (int.pack nβ : int.pack mβ' : Nil)
+   , unpack
    }
    where
-   match (Constr α c (v : v' : Nil)) | c == cPair = (int.match v × int.match v') × α
-   match v = error ("Pair expected; got " <> prettyP (erase v))
+   unpack (Constr α c (v : v' : Nil)) | c == cPair = (int.unpack v × int.unpack v') × α
+   unpack v = error ("Pair expected; got " <> prettyP (erase v))
 
 matrixRep :: forall a. Ann a => ToFrom (MatrixRep a) a
 matrixRep =
-   { constr: \(m × α) -> Matrix α m
-   , match
+   { pack: \(m × α) -> Matrix α m
+   , unpack
    }
    where
-   match (Matrix α m) = m × α
-   match v = error ("Matrix expected; got " <> prettyP v)
+   unpack (Matrix α m) = m × α
+   unpack v = error ("Matrix expected; got " <> prettyP v)
 
 record :: forall a. Ann a => ToFrom (Dict (Val a)) a
 record =
-   { constr: \(xvs × α) -> Record α xvs
-   , match
+   { pack: \(xvs × α) -> Record α xvs
+   , unpack
    }
    where
-   match :: Ann a => _
-   match (Record α xvs) = xvs × α
-   match v = error ("Record expected; got " <> prettyP v)
+   unpack (Record α xvs) = xvs × α
+   unpack v = error ("Record expected; got " <> prettyP v)
 
 boolean :: forall a. ToFrom Boolean a
 boolean =
-   { constr: case _ of
+   { pack: case _ of
         true × α -> Constr α cTrue Nil
         false × α -> Constr α cFalse Nil
-   , match
+   , unpack
    }
    where
-   match (Constr α c Nil)
+   unpack (Constr α c Nil)
       | c == cTrue = true × α
       | c == cFalse = false × α
-   match v = error ("Boolean expected; got " <> prettyP (erase v))
+   unpack v = error ("Boolean expected; got " <> prettyP (erase v))
 
 class IsZero a where
    isZero :: a -> Boolean
@@ -159,20 +158,20 @@ unary op =
    where
    op' :: Partial => OpGraph
    op' (v : Nil) =
-      op.o.constr <$> ((op.fwd x × _) <$> new (singleton α))
+      op.o.pack <$> ((op.fwd x × _) <$> new (singleton α))
       where
-      x × α = op.i.match v
+      x × α = op.i.unpack v
 
    fwd :: Partial => OpFwd (Raw Val)
-   fwd (v : Nil) = pure $ erase v × op.o.constr (op.fwd x × α)
+   fwd (v : Nil) = pure $ erase v × op.o.pack (op.fwd x × α)
       where
-      x × α = op.i.match v
+      x × α = op.i.unpack v
 
    bwd :: Partial => OpBwd (Raw Val)
-   bwd (u × v) = op.i.constr (x × α) : Nil
+   bwd (u × v) = op.i.pack (x × α) : Nil
       where
-      _ × α = op.o.match v
-      (x × _) = op.i.match u
+      _ × α = op.o.unpack v
+      (x × _) = op.i.unpack u
 
 binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => (forall a. Binary i1 i2 o a) -> Val a'
 binary op =
@@ -182,20 +181,20 @@ binary op =
    where
    op' :: Partial => OpGraph
    op' (v1 : v2 : Nil) =
-      op.o.constr <$> ((op.fwd x y × _) <$> new (singleton α # insert β))
+      op.o.pack <$> ((op.fwd x y × _) <$> new (singleton α # insert β))
       where
-      (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
+      (x × α) × (y × β) = op.i1.unpack v1 × op.i2.unpack v2
 
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
-   fwd (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × op.o.constr (op.fwd x y × (α ∧ β))
+   fwd (v1 : v2 : Nil) = pure $ (erase v1 × erase v2) × op.o.pack (op.fwd x y × (α ∧ β))
       where
-      (x × α) × (y × β) = op.i1.match v1 × op.i2.match v2
+      (x × α) × (y × β) = op.i1.unpack v1 × op.i2.unpack v2
 
    bwd :: Partial => OpBwd (Raw Val × Raw Val)
-   bwd ((u1 × u2) × v) = op.i1.constr (x × α) : op.i2.constr (y × α) : Nil
+   bwd ((u1 × u2) × v) = op.i1.pack (x × α) : op.i2.pack (y × α) : Nil
       where
-      _ × α = op.o.match v
-      (x × _) × (y × _) = op.i1.match u1 × op.i2.match u2
+      _ × α = op.o.unpack v
+      (x × _) × (y × _) = op.i1.unpack u1 × op.i2.unpack u2
 
 -- If both are zero, depend only on the first.
 binaryZero :: forall i o a'. BoundedJoinSemilattice a' => IsZero i => (forall a. BinaryZero i o a) -> Val a'
@@ -212,22 +211,22 @@ binaryZero op =
             else if isZero y then singleton β
             else singleton α # insert β
       in
-         op.o.constr <$> ((op.fwd x y × _) <$> new αs)
+         op.o.pack <$> ((op.fwd x y × _) <$> new αs)
       where
-      (x × α) × (y × β) = op.i.match v1 × op.i.match v2
+      (x × α) × (y × β) = op.i.unpack v1 × op.i.unpack v2
 
    fwd :: Partial => OpFwd (Raw Val × Raw Val)
    fwd (v1 : v2 : Nil) =
       pure $ (erase v1 × erase v2) ×
-         op.o.constr (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
+         op.o.pack (op.fwd x y × if isZero x then α else if isZero y then β else α ∧ β)
       where
-      (x × α) × (y × β) = op.i.match v1 × op.i.match v2
+      (x × α) × (y × β) = op.i.unpack v1 × op.i.unpack v2
 
    bwd :: Partial => OpBwd (Raw Val × Raw Val)
-   bwd ((u1 × u2) × v) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
+   bwd ((u1 × u2) × v) = op.i.pack (x × β1) : op.i.pack (y × β2) : Nil
       where
-      _ × α = op.o.match v
-      (x × _) × (y × _) = op.i.match u1 × op.i.match u2
+      _ × α = op.o.unpack v
+      (x × _) × (y × _) = op.i.unpack u1 × op.i.unpack u2
       β1 × β2 =
          if isZero x then α × bot
          else if isZero y then bot × α

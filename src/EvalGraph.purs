@@ -122,7 +122,7 @@ eval γ (Record α xes) αs = do
 eval γ (Dictionary α ees) αs = do
    vs × us <- traverse (traverse (flip (eval γ) αs)) ees <#> P.unzip
    let
-      ss × βs = (vs <#> string.match) # unzip
+      ss × βs = (vs <#> string.unpack) # unzip
       d = D.fromFoldable $ zip ss (zip βs us)
    V.Dictionary <$> new (insert α αs) <@> DictRep d
 eval γ (Constr α c es) αs = do
@@ -131,7 +131,7 @@ eval γ (Constr α c es) αs = do
    V.Constr <$> new (insert α αs) <@> c <@> vs
 eval γ (Matrix α e (x × y) e') αs = do
    v <- eval γ e' αs
-   let (i' × β) × (j' × β') = fst (intPair.match v)
+   let (i' × β) × (j' × β') = fst (intPair.unpack v)
    check
       (i' × j' >= 1 × 1)
       ("array must be at least (" <> show (1 × 1) <> "); got (" <> show (i' × j') <> ")")
