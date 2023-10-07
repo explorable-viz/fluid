@@ -22,14 +22,12 @@ import Val (class Ann, ForeignOp'(..), Fun(..), MatrixRep, OpBwd, OpFwd, OpGraph
 -- work with the required higher-rank polymorphism.
 type ToFrom d a =
    { constr :: d × a -> Val a
-   , constr_bwd :: Val a -> d × a -- equivalent to match (except at Val)
    , match :: Val a -> d × a
    }
 
 int :: forall a. ToFrom Int a
 int =
    { constr: \(n × α) -> Int α n
-   , constr_bwd: match'
    , match: match'
    }
    where
@@ -40,7 +38,6 @@ int =
 number :: forall a. ToFrom Number a
 number =
    { constr: \(n × α) -> Float α n
-   , constr_bwd: match'
    , match: match'
    }
    where
@@ -51,7 +48,6 @@ number =
 string :: forall a. ToFrom String a
 string =
    { constr: \(str × α) -> Str α str
-   , constr_bwd: match'
    , match: match'
    }
    where
@@ -64,7 +60,6 @@ intOrNumber =
    { constr: case _ of
         Left n × α -> Int α n
         Right n × α -> Float α n
-   , constr_bwd: match'
    , match: match'
    }
    where
@@ -79,7 +74,6 @@ intOrNumberOrString =
         Left n × α -> Int α n
         Right (Left n) × α -> Float α n
         Right (Right str) × α -> Str α str
-   , constr_bwd: match'
    , match: match'
    }
    where
@@ -92,7 +86,6 @@ intOrNumberOrString =
 intPair :: forall a. ToFrom ((Int × a) × (Int × a)) a
 intPair =
    { constr: \((nβ × mβ') × α) -> Constr α cPair (int.constr nβ : int.constr mβ' : Nil)
-   , constr_bwd: match'
    , match: match'
    }
    where
@@ -103,7 +96,6 @@ intPair =
 matrixRep :: forall a. Ann a => ToFrom (MatrixRep a) a
 matrixRep =
    { constr: \(m × α) -> Matrix α m
-   , constr_bwd: match'
    , match: match'
    }
    where
@@ -114,7 +106,6 @@ matrixRep =
 record :: forall a. Ann a => ToFrom (Dict (Val a)) a
 record =
    { constr: \(xvs × α) -> Record α xvs
-   , constr_bwd: match'
    , match: match'
    }
    where
@@ -127,7 +118,6 @@ boolean =
    { constr: case _ of
         true × α -> Constr α cTrue Nil
         false × α -> Constr α cFalse Nil
-   , constr_bwd: match'
    , match: match'
    }
    where
@@ -189,7 +179,7 @@ unary op =
    bwd :: Partial => OpBwd (Raw Val)
    bwd (u × v) = op.i.constr (x × α) : Nil
       where
-      _ × α = op.o.constr_bwd v
+      _ × α = op.o.match v
       (x × _) = op.i.match u
 
 binary :: forall i1 i2 o a'. BoundedJoinSemilattice a' => (forall a. Binary i1 i2 o a) -> Val a'
@@ -212,7 +202,7 @@ binary op =
    bwd :: Partial => OpBwd (Raw Val × Raw Val)
    bwd ((u1 × u2) × v) = op.i1.constr (x × α) : op.i2.constr (y × α) : Nil
       where
-      _ × α = op.o.constr_bwd v
+      _ × α = op.o.match v
       (x × _) × (y × _) = op.i1.match u1 × op.i2.match u2
 
 -- If both are zero, depend only on the first.
@@ -244,7 +234,7 @@ binaryZero op =
    bwd :: Partial => OpBwd (Raw Val × Raw Val)
    bwd ((u1 × u2) × v) = op.i.constr (x × β1) : op.i.constr (y × β2) : Nil
       where
-      _ × α = op.o.constr_bwd v
+      _ × α = op.o.match v
       (x × _) × (y × _) = op.i.match u1 × op.i.match u2
       β1 × β2 =
          if isZero x then α × bot
