@@ -69,7 +69,7 @@ type MayFail a = Except Error a
 type MayFailT m = ExceptT Error m
 
 orElse :: forall a m. MonadThrow Error m => String -> Maybe a -> m a
-orElse s Nothing = throwError $ E.error s
+orElse s Nothing = throw s
 orElse _ (Just x) = pure x
 
 fromRight :: forall a. Error + a -> a
